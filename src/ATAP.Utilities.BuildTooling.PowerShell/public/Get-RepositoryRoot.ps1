@@ -36,7 +36,7 @@ function Get-RepositoryRoot {
   )
 
   $fn = 'Get-RepositoryRoot'
-  $mn = 'PCMSCAutomation'
+  $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
 
   Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Searching for repository root starting from: $StartPath"
 

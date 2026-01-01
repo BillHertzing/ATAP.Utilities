@@ -226,6 +226,7 @@ $global:configRootKeys = @{
 
   # SecretsManagement
   'SecretVaultBaseDirectoryConfigRootKey'                                                        = 'SecureVaultBasePath'
+  'SecretVaultDatabasesDirectoryConfigRootKey'                                                   = 'SecretVaultDatabasesPath'
   'SecretVaultEncryptionKeyFilePathConfigRootKey'                                                = 'SecretVaultEncryptionKeyFilePath'
   'SecretVaultEncryptedPasswordFilePathConfigRootKey'                                            = 'SecretVaultEncryptedPasswordFilePath'
   'SecretVaultModuleNameConfigRootKey'                                                           = 'SecretVaultModuleName'

@@ -208,14 +208,16 @@ function Invoke-Flyway {
 
     # These may throw
     # ToDo: write a wrapper that catches and logs
+    $databasesCollection = $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
+
     $Environment = Get-PVal 'Environment' $PSBoundParameters
-    $SqlInstance = Get-PVal -ParameterName "SqlInstance" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlInstance" -Settings $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
-    $DatabaseHost = Get-PVal -ParameterName "DatabaseHost"  -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseHost" -Settings $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
-    $ConnectionMethod = Get-PVal -ParameterName "ConnectionMethod" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ConnectionMethod" -Settings $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
-    $UseNamedLogin = Get-PVal -ParameterName "UseNamedLogin" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.UseNamedLogin" -Settings $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']] -AsType ([bool])
-    $LoginName = Get-PVal -ParameterName "LoginName" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.LoginName" -Settings $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
-    $LoginPasswordVaultKey = Get-PVal -ParameterName "LoginPasswordVaultKey" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.LoginPasswordVaultKey" -Settings $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
-    $UseNamedLogin = Get-PVal -ParameterName "UseNamedLogin" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.UseNamedLogin" -Settings $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']] -AsType ([bool])
+    $SqlInstance = Get-PVal -ParameterName "SqlInstance" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlInstance" -Settings $databasesCollection
+    $DatabaseHost = Get-PVal -ParameterName "DatabaseHost"  -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseHost" -Settings $databasesCollection
+    $ConnectionMethod = Get-PVal -ParameterName "ConnectionMethod" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ConnectionMethod" -Settings $databasesCollection
+    $UseNamedLogin = Get-PVal -ParameterName "UseNamedLogin" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.UseNamedLogin" -Settings $databasesCollection -AsType ([bool])
+    $LoginName = Get-PVal -ParameterName "LoginName" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.LoginName" -Settings $databasesCollection
+    $LoginPasswordVaultKey = Get-PVal -ParameterName "LoginPasswordVaultKey" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.LoginPasswordVaultKey" -Settings $databasesCollection
+    $UseNamedLogin = Get-PVal -ParameterName "UseNamedLogin" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.UseNamedLogin" -Settings $databasesCollection -AsType ([bool])
 
     # Validate Environment parameter
     $Environment = Resolve-PVal $Environment 'Production', 'Testing', 'Development', 'Experimental'
@@ -320,17 +322,54 @@ function Invoke-Flyway {
     $env:FLYWAY_PLACEHOLDERS_GITTAG = $GitTag
     $env:FLYWAY_PLACEHOLDERS_GITCOMMIT = $GitCommit
 
-    if ($script:isIntegrated ) {
-      $env:FLYWAY_INTEGRATED = 'true'
-      Remove-Item Env:FLYWAY_USER -ErrorAction SilentlyContinue | Out-Null
-      Remove-Item Env:FLYWAY_PASSWORD -ErrorAction SilentlyContinue | Out-Null
+    # Configure authentication based on connection string
+    if ($script:isIntegrated) {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Configuring Flyway for Windows Integrated Authentication"
+
+      # Clear ALL Flyway user/password environment variables for all environments
+      # This ensures Flyway doesn't try to use SQL authentication
+      $envVarsToRemove = @(
+        'FLYWAY_USER',
+        'FLYWAY_PASSWORD',
+        'FLYWAY_EXP_USER',
+        'FLYWAY_EXP_PASSWORD',
+        'FLYWAY_DEV_USER',
+        'FLYWAY_DEV_PASSWORD',
+        'FLYWAY_TEST_USER',
+        'FLYWAY_TEST_PASSWORD',
+        'FLYWAY_PROD_USER',
+        'FLYWAY_PROD_PASSWORD'
+      )
+
+      foreach ($envVar in $envVarsToRemove) {
+        if (Test-Path "Env:$envVar") {
+          Remove-Item "Env:$envVar" -ErrorAction SilentlyContinue | Out-Null
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Removed environment variable: $envVar"
+        }
+      }
+
+      # Verify authentication settings in connection string
+      if ($script:ConnectionString -notmatch 'integratedSecurity=true') {
+        $msg = "Connection string does not contain 'integratedSecurity=true' but script detected integrated auth"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message $msg
+      }
     }
     else {
-      $env:FLYWAY_INTEGRATED = 'false'
-      $env:FLYWAY_USER = $script:flywayUser
-      $env:FLYWAY_PASSWORD = $script:flywayPwd
-    }
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Configuring Flyway for SQL Server Authentication"
 
+      # Set environment-specific credentials for SQL authentication
+      $envPrefix = switch ($Environment) {
+        'Production' { 'PROD' }
+        'Testing' { 'TEST' }
+        'Development' { 'DEV' }
+        'Experimental' { 'EXP' }
+      }
+
+      # [Environment]::SetEnvironmentVariable("FLYWAY_${envPrefix}_USER", $script:flywayUser, [EnvironmentVariableTarget]::Process)
+      # [Environment]::SetEnvironmentVariable("FLYWAY_${envPrefix}_PASSWORD", $script:flywayPwd, [EnvironmentVariableTarget]::Process)
+
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Set FLYWAY_${envPrefix}_USER and FLYWAY_${envPrefix}_PASSWORD"
+    }
 
     $optionalIinstanceName = switch ($Environment) {
       'Production' { 'instanceName=Production;' }
@@ -344,13 +383,9 @@ function Invoke-Flyway {
       }
     }
     # Create the URL, ensuring all placeholders are replaced with actual values
-    # $env:FLYWAY_URL = "jdbc:sqlserver://$($DatabaseHost);$optionalIinstanceName;databaseName=$($DatabaseName);integratedSecurity=$env:FLYWAY_INTEGRATED;encrypt=$($env:FLYWAY_ENCRYPT);trustServerCertificate=$($env:FLYWAY_TRUSTSERVERCERT);"
     $env:FLYWAY_URL = $script:ConnectionString
 
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Prepared placeholders for Package=$PackageName Version=$PackageVersion Tag=$GitTag Commit=$GitCommit Files=$($Files.Count)"
-
-    $message = (Get-ChildItem Env: | Where-Object { $_.Name -notlike 'Path' -and ($_.Name -like '*flyway*' -or $_.Value -like '*flyway*') }  ) -join "`r`n"
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $message
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Flyway URL: $($env:FLYWAY_URL -replace 'password=[^;]*', 'password=***')"
 
     # Build flyway parameters and execute (use lowercase environment key)
     $environmentKey = $Environment.ToLowerInvariant()

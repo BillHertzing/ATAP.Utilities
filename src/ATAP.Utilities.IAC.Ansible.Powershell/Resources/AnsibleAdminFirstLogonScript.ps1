@@ -50,7 +50,7 @@ $hostsdata = @'
 $hostsdata  | out-file 'C:\Windows\System32\drivers\etc\hosts'
 "hosts file created" | Add-Content -Path $Global:logFilePath
 # enable WinRM
-# Ensure all public netorks are made private
+# Ensure all public networks are made private
 $publicNetworkNames = Get-NetConnectionProfile -NetworkCategory Public
 "Public network names are: ${$publicNetworkNames - join ','}" | Add-Content -Path $Global:logFilePath
 Get-NetConnectionProfile -NetworkCategory Public | Set-NetConnectionProfile -NetworkCategory Private
@@ -80,8 +80,8 @@ winrm get winrm/config/Winrs | Add-Content -Path $Global:logFilePath
 winrm enumerate winrm/config/listener | Add-Content -Path $Global:logFilePath
 # allow diagnostic pings through the Windows Defender Firewall
 "starting the steps to allow diagnostic pings through the Windows Defender Firewall" | Add-Content -Path $Global:logFilePath
-netsh advfirewall firewall add rule name="ICMPv4 Allow Ping Requests" protocol=icmpv4:8,any dir=in action=allow | Add-Content -Path $Global:logFilePath
-netsh advfirewall firewall add rule name="ICMPv6 Allow Ping Requests" protocol=icmpv6:8,any dir=in action=allow | Add-Content -Path $Global:logFilePath
+netsh advfirewall firewall add rule name="ICMPv4 Allow Ping Requests" protocol=icmpv4:8, any dir=in action=allow | Add-Content -Path $Global:logFilePath
+netsh advfirewall firewall add rule name="ICMPv6 Allow Ping Requests" protocol=icmpv6:8, any dir=in action=allow | Add-Content -Path $Global:logFilePath
 "completed the steps to allow diagnostic pings through the Windows Defender Firewall" | Add-Content -Path $Global:logFilePath
 # Ansible requires a temporary directory in order to make an initial connection
 "starting the creation of the Ansible temporary directory at $ansibleTemporaryDirectory" | Add-Content -Path $Global:logFilePath

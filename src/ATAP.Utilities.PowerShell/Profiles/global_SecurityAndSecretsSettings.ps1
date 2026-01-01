@@ -47,7 +47,7 @@ $local_SecurityAndSecretsSettings = @{
   # Related to SecretManagement
   #  In general, places where the files that are used to store Secret Vaults are found
   $global:configRootKeys['SecretVaultBaseDirectoryConfigRootKey']                                              = 'join-path $global:settings[$global:configRootKeys["SECURE_CLOUD_BASE_PATHConfigRootKey"]] "Vaults"'
-  #  Relative to the SecretVaultBasePath, the base directorys for the vault files, Encryption Key files, and Encrypted Password files
+  #  Relative to the SecretVaultBasePath, the base directories for the vault files, Encryption Key files, and Encrypted Password files
   $global:configRootKeys['SecretVaultDatabasesDirectoryConfigRootKey']                                         = 'join-path $global:settings[$global:configRootKeys["SecretVaultBaseDirectoryConfigRootKey"]] "VaultDatabases"'
   $global:configRootKeys['SecretVaultEncryptionKeysDirectoryConfigRootKey']                                    = 'join-path $global:settings[$global:configRootKeys["SecretVaultBaseDirectoryConfigRootKey"]] "EncryptionKeyFiles"'
   $global:configRootKeys['SecretVaultEncryptedPasswordsDirectoryConfigRootKey']                                = 'join-path $global:settings[$global:configRootKeys["SecretVaultBaseDirectoryConfigRootKey"]] "EncryptedPasswordFiles"'

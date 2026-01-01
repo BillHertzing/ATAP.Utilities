@@ -139,13 +139,15 @@
   <Target Name="PublishAfterBuild" AfterTargets="GenerateNuspec">
     <!-- during debugging this BuildTooling, send to the output log messages the location of OutputPath, where the package should be found, and the value of the NuGetLocalFeedPath -->
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="OutputPath = $(OutputPath)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageOutputPath = $(PackageOutputPath)" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="WorkingDirectory = $(MSBuildProjectDirectory)\$(OutputPath)" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="NuGetLocalFeedPath = $(NuGetLocalFeedPath)" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Calling NuGet.exe to push the package to the local feed" />
-    <!-- When debugging the build tooling,the build tooling configuration is debug. Run the NuGet.exe command with detailed verbosity -->
-    <Exec  Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'"  WorkingDirectory="$(MSBuildProjectDirectory)\$(OutputPath)" Command="NuGet.exe push &quot;$(MSBuildProjectDirectory)\$(OutputPath)$(PackageId).$(PackageVersion).nupkg&quot; -Source &quot;$(NuGetLocalFeedPath)&quot; -Verbosity detailed" />
+    <!-- NuGet packages are placed in $(PackageOutputPath) which defaults to bin\$(Configuration)\ without the TFM subfolder -->
+    <!-- When debugging the build tooling, run the NuGet.exe command with detailed verbosity -->
+    <Exec  Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'"  WorkingDirectory="$(MSBuildProjectDirectory)\$(PackageOutputPath)" Command="NuGet.exe push &quot;$(MSBuildProjectDirectory)\$(PackageOutputPath)$(PackageId).$(PackageVersion).nupkg&quot; -Source &quot;$(NuGetLocalFeedPath)&quot; -Verbosity detailed" />
     <!-- Under normal conditions, run the NuGet.exe command with normal verbosity -->
-    <Exec  Condition="'$(ATAPBuildToolingConfiguration)'!='Debug'"  WorkingDirectory="$(MSBuildProjectDirectory)\$(OutputPath)" Command="NuGet.exe push &quot;$(MSBuildProjectDirectory)\$(OutputPath)..\$(PackageId).$(PackageVersion).nupkg&quot; -Source &quot;$(NuGetLocalFeedPath)&quot; -Verbosity normal" />
+    <Exec  Condition="'$(ATAPBuildToolingConfiguration)'!='Debug'"  WorkingDirectory="$(MSBuildProjectDirectory)\$(PackageOutputPath)" Command="NuGet.exe push &quot;$(MSBuildProjectDirectory)\$(PackageOutputPath)$(PackageId).$(PackageVersion).nupkg&quot; -Source &quot;$(NuGetLocalFeedPath)&quot; -Verbosity normal" />
 
   </Target>
 

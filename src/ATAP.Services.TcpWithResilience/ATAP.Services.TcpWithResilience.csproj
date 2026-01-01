@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <PackageReference Include="Polly" />
-    <PackageReference Include="Polly.Extensions.Http" />
+    <PackageReference Include="Polly.Extensions.Http" Version="[3.0.0,)" />
     <PackageReference Include="Polly.Contrib.WaitAndRetry" />
   </ItemGroup>
 

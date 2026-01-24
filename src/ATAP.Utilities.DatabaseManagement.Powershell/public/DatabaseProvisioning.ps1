@@ -61,7 +61,7 @@ function DatabaseProvisioning {
   The Windows or SQL Login name to create or ensure if UseNamedLogin is true.  If UseNamedLogin is false, this parameter is ignored.
   This is usually supplied by an environment variable or from the global settings. but can be overridden here.
 
-  .PARAMETER LoginPasswordVaultKey
+  .PARAMETER CredentialsKey
   The key used to retrieve the password for the login if UseNamedLogin is true and the LoginName is not a Windows' username pattern
   This is usually supplied by an environment variable or from the global settings. but can be overridden here.
 
@@ -121,7 +121,7 @@ function DatabaseProvisioning {
     [string]$LoginName ,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
-    [string]$LoginPasswordVaultKey,
+    [string]$CredentialsKey,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
     [string]$DatabasePath,
@@ -160,6 +160,9 @@ function DatabaseProvisioning {
       }
       if (-not (Get-Command -Name 'Get-ConnectionString' -CommandType Function -ErrorAction SilentlyContinue)) {
         . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Get-ConnectionString.ps1'
+      }
+      if (-not (Get-Command -Name 'New-DbaConnectionStringBuilder' -CommandType Function -ErrorAction SilentlyContinue)) {
+        install-module dbatools -Scope CurrentUser -Force -ErrorAction Stop
       }
     }
     catch {
@@ -253,31 +256,30 @@ function DatabaseProvisioning {
       # ToDo: write a wrapper that catches and logs
       $databasesCollection = $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
 
-      $Environment = Get-PVal 'Environment' $PSBoundParameters
-      $SqlInstance = Get-PVal -ParameterName "SqlInstance" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlInstance" -Settings $databasesCollection
-      $DatabaseHost = Get-PVal -ParameterName "DatabaseHost"  -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseHost" -Settings $databasesCollection
-      $ConnectionMethod = Get-PVal -ParameterName "ConnectionMethod" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ConnectionMethod" -Settings $databasesCollection
-      $DatabasePath = Get-PVal -ParameterName "DatabasePath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection
-      $ScriptDirectory = Get-PVal -ParameterName "ScriptDirectory" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ScriptDirectory" -Settings $databasesCollection
-      $UseNamedLogin = Get-PVal -ParameterName "UseNamedLogin" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.UseNamedLogin" -Settings $databasesCollection -AsType ([bool])
-      $LoginName = Get-PVal -ParameterName "LoginName" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.LoginName" -Settings $databasesCollection
-      $LoginPasswordVaultKey = Get-PVal -ParameterName "LoginPasswordVaultKey" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.LoginPasswordVaultKey" -Settings $databasesCollection
+      $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue $Environment
+      $SqlInstance = Get-PVal -ParameterName "SqlInstance" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlInstance" -Settings $databasesCollection -DefaultValue $SqlInstance
+      $DatabaseHost = Get-PVal -ParameterName "DatabaseHost" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseHost" -Settings $databasesCollection -DefaultValue $DatabaseHost
+      $ConnectionMethod = Get-PVal -ParameterName "ConnectionMethod" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ConnectionMethod" -Settings $databasesCollection -DefaultValue $ConnectionMethod
+      $DatabasePath = Get-PVal -ParameterName "DatabasePath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection -DefaultValue $DatabasePath
+      $ScriptDirectory = Get-PVal -ParameterName "ScriptDirectory" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ScriptDirectory" -Settings $databasesCollection -DefaultValue $ScriptDirectory
+      $UseNamedLogin = Get-PVal -ParameterName "UseNamedLogin" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.UseNamedLogin" -Settings $databasesCollection -DefaultValue $UseNamedLogin -AsType ([bool])
+      $LoginName = Get-PVal -ParameterName "LoginName" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.LoginName" -Settings $databasesCollection -DefaultValue $LoginName
+      $CredentialsKey = Get-PVal -ParameterName "CredentialsKey" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.CredentialsKey" -Settings $databasesCollection -DefaultValue $CredentialsKey
 
       # Validate parameters
       $Environment = Resolve-PVal $Environment 'Production', 'Testing', 'Development', 'Experimental'
       $ConnectionMethod = Resolve-PVal $ConnectionMethod 'tcp', 'np', 'lpc'
 
-
       # Check and populate optional parameter
-      $GrantDatabaseOwner = Get-PVal -ParameterName "GrantDatabaseOwner" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.GrantDatabaseOwner" -Settings $databasesCollection -AsType ([bool]) -AllowMissing -Default $GrantDatabaseOwner
-      $GrantBulkAdmin = Get-PVal -ParameterName "GrantBulkAdmin" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.GrantBulkAdmin" -Settings $databasesCollection -AsType ([bool]) -AllowMissing -Default $GrantBulkAdmin
-      $ProvisionForFlyway = Get-PVal -ParameterName "ProvisionForFlyway" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisionForFlyway" -Settings $databasesCollection -AsType ([bool]) -AllowMissing -Default $ProvisionForFlyway
+      $GrantDatabaseOwner = Get-PVal -ParameterName "GrantDatabaseOwner" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.GrantDatabaseOwner" -Settings $databasesCollection -DefaultValue $GrantDatabaseOwner -AsType ([bool]) -AllowMissing
+      $GrantBulkAdmin = Get-PVal -ParameterName "GrantBulkAdmin" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.GrantBulkAdmin" -Settings $databasesCollection -DefaultValue $GrantBulkAdmin -AsType ([bool]) -AllowMissing
+      $ProvisionForFlyway = Get-PVal -ParameterName "ProvisionForFlyway" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisionForFlyway" -Settings $databasesCollection -DefaultValue $ProvisionForFlyway -AsType ([bool]) -AllowMissing
 
       # Set up SQL client types
       $script:SqlTypes = Initialize-SQLClient
 
       # Build up the connection string
-      $script:ConnectionString = Get-ConnectionString -DatabaseHost $DatabaseHost -DatabaseName $DatabaseName -ConnectionMethod $ConnectionMethod -SqlInstance $SqlInstance -UseNamedLogin $UseNamedLogin -LoginName $LoginName -LoginPasswordVaultKey $LoginPasswordVaultKey
+      $script:ConnectionString = New-DBAConnStrBuilder -DatabaseHost $DatabaseHost -DatabaseName $DatabaseName -ConnectionMethod $ConnectionMethod -SqlInstance $SqlInstance -CredentialsKey $CredentialsKey -IntegratedSecurity:$(-not $UseNamedLogin)
 
       # Create the server portion of the connection string for Invoke-Sqlcmd
       $serverForConnect = "${ConnectionMethod}:$DatabaseHost"
@@ -294,7 +296,7 @@ function DatabaseProvisioning {
       SqlInstance             = $(if ($usingExistingConnection) { $SqlConnection.DataSource } else { $SqlInstance })
       UseNamedLogin           = $UseNamedLogin
       LoginName               = $LoginName
-      LoginPasswordVaultKey   = $LoginPasswordVaultKey
+      CredentialsKey          = $CredentialsKey
       GrantDatabaseOwner      = $GrantDatabaseOwner
       UsingExistingConnection = $usingExistingConnection
       ScriptsPlanned          = @()

@@ -83,11 +83,11 @@ function Get-FinancialModelingData {
 
     # Snippet: Check and populate simple parameter - ApiKey
     if ($PSBoundParameters.ContainsKey('ApiKey')) {
-      $ApiKey = Get-PVal ApiKey $PSBoundParameters ApiKey
+      $ApiKey = Get-PVal -ParameterName 'ApiKey' -originalPSBoundParameters $PSBoundParameters -dottedPath 'ApiKey' -DefaultValue $ApiKey
     }
     elseif ($PSBoundParameters.ContainsKey('ApiKeyVaultKey') -or -not [string]::IsNullOrWhiteSpace($ApiKeyVaultKey)) {
       # Snippet: Check and populate simple parameter - ApiKeyVaultKey
-      $ApiKeyVaultKey = Get-PVal ApiKeyVaultKey $PSBoundParameters ApiKeyVaultKey
+      $ApiKeyVaultKey = Get-PVal -ParameterName 'ApiKeyVaultKey' -originalPSBoundParameters $PSBoundParameters -dottedPath 'ApiKeyVaultKey' -DefaultValue $ApiKeyVaultKey
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Retrieving API key from vault using key: $ApiKeyVaultKey"
       $ApiKey = Get-VaultPassword -VaultKey $ApiKeyVaultKey
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'API key retrieved successfully from vault'

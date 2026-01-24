@@ -1,0 +1,13 @@
+-- RelationshipTypes Seed Data BCP Format
+-- Columns: ResourceKey, IsBidirectionalDefault, InverseTypeKey, DefaultDescription, IsActive, SortOrder
+
+REL_RELATED_TO,1,NULL,General relationship between tags,1,10
+REL_SEE_ALSO,1,NULL,Suggested alternative tags,1,20
+REL_SYNONYM_OF,1,NULL,Tags that mean the same thing,1,30
+REL_BROADER_THAN,0,REL_NARROWER_THAN,Parent-like semantic relationship,1,40
+REL_NARROWER_THAN,0,REL_BROADER_THAN,Child-like semantic relationship,1,50
+REL_OPPOSITE_OF,1,NULL,Antonym relationship,1,60
+REL_REPLACES,0,REL_REPLACED_BY,Tag supersedes another,1,70
+REL_REPLACED_BY,0,REL_REPLACES,Tag was superseded,1,80
+REL_PART_OF,0,REL_HAS_PART,Component relationship,1,90
+REL_HAS_PART,0,REL_PART_OF,Contains component,1,100

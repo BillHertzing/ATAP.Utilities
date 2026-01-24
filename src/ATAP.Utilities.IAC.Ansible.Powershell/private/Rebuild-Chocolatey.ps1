@@ -45,10 +45,10 @@ function Rebuild-Chocolatey {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
     # Snippet: Check and populate simple parameter
-    $ApprovedPackagesPath = Get-PVal ApprovedPackagesPath $PSBoundParameters ApprovedPackagesPath
+    $ApprovedPackagesPath = Get-PVal -ParameterName 'ApprovedPackagesPath' -originalPSBoundParameters $PSBoundParameters -dottedPath 'ApprovedPackagesPath' -DefaultValue $ApprovedPackagesPath
 
     # Snippet: Check and populate simple parameter
-    $AnsiblePlaybookPath = Get-PVal AnsiblePlaybookPath $PSBoundParameters AnsiblePlaybookPath
+    $AnsiblePlaybookPath = Get-PVal -ParameterName 'AnsiblePlaybookPath' -originalPSBoundParameters $PSBoundParameters -dottedPath 'AnsiblePlaybookPath' -DefaultValue $AnsiblePlaybookPath
 
     # Verify PowerShell-Yaml module is available
     if (-not (Get-Module -ListAvailable -Name 'PowerShell-Yaml')) {

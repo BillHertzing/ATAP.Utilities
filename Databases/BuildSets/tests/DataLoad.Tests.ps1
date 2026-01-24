@@ -42,7 +42,7 @@
   The Windows or SQL Login name to create or ensure if UseNamedLogin is true.  If UseNamedLogin is false, this parameter is ignored.
   This is usually supplied by an environment variable or from the global settings. but can be overridden here.
 
-  .PARAMETER LoginPasswordVaultKey
+  .PARAMETER LoginKey
   The key used to retrieve the password for the login if UseNamedLogin is true and the LoginName is not a Windows' username pattern
   This is usually supplied by an environment variable or from the global settings. but can be overridden here.
 
@@ -94,9 +94,9 @@ Param(
   [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
   [string]$LoginName,
 
-  # Optional vault key (mirrors -LoginPasswordVaultKey)
+  # Optional vault key (mirrors -LoginKey)
   [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
-  [string]$LoginPasswordVaultKey
+  [string]$LoginKey
 )
 
 # --- Helper functions (trimmed pattern from DatabaseProvisioning) ---

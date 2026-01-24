@@ -68,7 +68,7 @@ function Test-JunctionFolder {
     }
 
     # Snippet: Check and populate simple parameter - Path
-    $Path = Get-PVal Path $PSBoundParameters Path
+    $Path = Get-PVal -ParameterName 'Path' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Path' -DefaultValue $Path
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Testing if path is a junction: $Path"
   }

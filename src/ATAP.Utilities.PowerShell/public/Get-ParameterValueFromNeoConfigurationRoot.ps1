@@ -16,7 +16,9 @@ function Get-ParameterValueFromNeoConfigurationRoot {
     [hashtable]$Settings, # if not in $PSBoundParameters, the value will be "$global:settings" from $PSDefaultParameterValues
 
     [Parameter(Mandatory = $false, Position = 4, ValueFromPipelineByPropertyName = $true)]
-    [object]$Default = $null,
+    [AllowNull()]
+    [object]$DefaultValue = $null,
+
     [Parameter(Mandatory = $false, Position = 5, ValueFromPipelineByPropertyName = $true)]
     [switch]$AllowMissing,
     [Parameter(Mandatory = $false, Position = 6, ValueFromPipelineByPropertyName = $true)]
@@ -130,21 +132,50 @@ function Get-ParameterValueFromNeoConfigurationRoot {
   }
   Process {  }
   End {
+    # Debug: Report caller information
+    if ($DebugPreference -ne 'SilentlyContinue') {
+      $callStack = Get-PSCallStack
+      $caller = $callStack[1]
+      Write-Debug "Get-PVal called from: $($caller.ScriptName):$($caller.ScriptLineNumber) in function '$($caller.FunctionName)' for parameter '$ParameterName'"
+    }
+
     # If dottedPath is not provided, use ParameterName as the path
     if (-not $dottedPath) {
       $dottedPath = $ParameterName
     }
 
+    # 1. If parameter is in originalPSBoundParameters, return that value
     if ($originalPSBoundParameters.ContainsKey($parameterName)) {
       return $originalPSBoundParameters[$parameterName]
     }
 
-    if (-not $(Test-Path "Env:$parameterName")) {
-      return Resolve-SettingsValue -dottedPath $dottedPath -Settings $Settings -Default $Default -AllowMissing:$AllowMissing -AsType $AsType
+    # 2. If parameter is in environment variable, return that value
+    if (Test-Path "Env:$parameterName") {
+      return $(Get-Item -Path "Env:$parameterName").value
+    }
+
+    # 3. Try to get from settings via dottedPath
+    try {
+      $settingsValue = Resolve-SettingsValue -dottedPath $dottedPath -Settings $Settings -AllowMissing:$true -AsType $AsType
+      if ($null -ne $settingsValue) {
+        return $settingsValue
+      }
+    }
+    catch {
+      # Settings lookup failed, continue to check DefaultValue
+    }
+
+    # 4. If DefaultValue is not null, return it
+    if ($null -ne $DefaultValue) {
+      return $DefaultValue
+    }
+
+    # 5. If AllowMissing, return null; otherwise throw
+    if ($AllowMissing) {
+      return $null
     }
     else {
-      return $(Get-Item -Path "Env:$parameterName").value
-
+      throw "Parameter '$ParameterName' not found in PSBoundParameters, environment variables, or settings path '$dottedPath', and no DefaultValue was provided."
     }
   }
 }

@@ -39,7 +39,7 @@ function Get-IncorrectSymLinksAndJunctions {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
     # Snippet: Check and populate simple parameter
-    $BasePath = Get-PVal BasePath $PSBoundParameters BasePath
+    $BasePath = Get-PVal -ParameterName 'BasePath' -originalPSBoundParameters $PSBoundParameters -dottedPath 'BasePath' -DefaultValue $BasePath
 
     $expectedJunctions = @('.github', '.vscode')
     $expectedSymlinks = @('.gitignore', '.editorconfig', '.markdownlint.yml', '.prettierrc.yml')

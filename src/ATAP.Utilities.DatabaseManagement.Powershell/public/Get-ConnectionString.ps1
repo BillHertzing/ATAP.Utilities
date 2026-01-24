@@ -25,7 +25,7 @@ Boolean indicating whether to use SQL Server authentication instead of Windows a
 .PARAMETER LoginName
 The login name for SQL Server authentication or Windows authentication.
 
-.PARAMETER LoginPasswordVaultKey
+.PARAMETER CredentialsKey
 The vault key to retrieve the password for SQL Server authentication.
 
 .PARAMETER AsJDBC
@@ -40,7 +40,7 @@ $connStr = Get-ConnectionString -DatabaseHost 'sqlserver01' -DatabaseName 'MyDB'
 Creates a connection string using Windows authentication over TCP.
 
 .EXAMPLE
-$connStr = Get-ConnectionString -DatabaseHost 'sqlserver01' -DatabaseName 'MyDB' -ConnectionMethod 'tcp' -UseNamedLogin $true -LoginName 'sqluser' -LoginPasswordVaultKey 'SqlUserPassword'
+$connStr = Get-ConnectionString -DatabaseHost 'sqlserver01' -DatabaseName 'MyDB' -ConnectionMethod 'tcp' -UseNamedLogin $true -LoginName 'sqluser' -CredentialsKey 'SqlUserPassword'
 Creates a connection string using SQL Server authentication.
 
 .EXAMPLE
@@ -72,11 +72,8 @@ function Get-ConnectionString {
     [Parameter(Mandatory = $false, Position = 4, ValueFromPipelineByPropertyName = $true)]
     [bool]$UseNamedLogin = $false,
 
-    [Parameter(Mandatory = $false, Position = 5, ValueFromPipelineByPropertyName = $true)]
-    [string]$LoginName,
-
     [Parameter(Mandatory = $false, Position = 6, ValueFromPipelineByPropertyName = $true)]
-    [string]$LoginPasswordVaultKey,
+    [string]$CredentialsKey,
 
     [Parameter(Mandatory = $false, Position = 7, ValueFromPipelineByPropertyName = $true)]
     [switch]$AsJDBC
@@ -89,30 +86,25 @@ function Get-ConnectionString {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
     # Check and populate simple parameter - DatabaseHost
-    $DatabaseHost = Get-PVal DatabaseHost $PSBoundParameters DatabaseHost
+    $DatabaseHost = Get-PVal -ParameterName 'DatabaseHost' -originalPSBoundParameters $PSBoundParameters -dottedPath 'DatabaseHost' -DefaultValue $DatabaseHost
 
     # Check and populate simple parameter - DatabaseName
-    $DatabaseName = Get-PVal DatabaseName $PSBoundParameters DatabaseName
+    $DatabaseName = Get-PVal -ParameterName 'DatabaseName' -originalPSBoundParameters $PSBoundParameters -dottedPath 'DatabaseName' -DefaultValue $DatabaseName
 
     # Check and populate simple parameter - ConnectionMethod
-    $ConnectionMethod = Get-PVal ConnectionMethod $PSBoundParameters ConnectionMethod
+    $ConnectionMethod = Get-PVal -ParameterName 'ConnectionMethod' -originalPSBoundParameters $PSBoundParameters -dottedPath 'ConnectionMethod' -DefaultValue $ConnectionMethod
 
     # Check and populate simple parameter - SqlInstance (optional)
     if ($PSBoundParameters.ContainsKey('SqlInstance')) {
-      $SqlInstance = Get-PVal SqlInstance $PSBoundParameters SqlInstance
+      $SqlInstance = Get-PVal -ParameterName 'SqlInstance' -originalPSBoundParameters $PSBoundParameters -dottedPath 'SqlInstance' -DefaultValue $SqlInstance
     }
 
     # Check and populate simple parameter - UseNamedLogin (optional)
-    $UseNamedLogin = Get-PVal UseNamedLogin $PSBoundParameters UseNamedLogin -AsType bool
+    $UseNamedLogin = Get-PVal -ParameterName 'UseNamedLogin' -originalPSBoundParameters $PSBoundParameters -dottedPath 'UseNamedLogin' -DefaultValue $UseNamedLogin -AsType ([bool])
 
-    # Check and populate simple parameter - LoginName (optional when UseNamedLogin is true)
-    if ($UseNamedLogin -and $PSBoundParameters.ContainsKey('LoginName')) {
-      $LoginName = Get-PVal LoginName $PSBoundParameters LoginName
-    }
-
-    # Check and populate simple parameter - LoginPasswordVaultKey (optional when UseNamedLogin is true)
-    if ($PSBoundParameters.ContainsKey('LoginPasswordVaultKey')) {
-      $LoginPasswordVaultKey = Get-PVal LoginPasswordVaultKey $PSBoundParameters LoginPasswordVaultKey
+    # Check and populate simple parameter - CredentialsKey (optional when UseNamedLogin is true)
+    if ($PSBoundParameters.ContainsKey('CredentialsKey')) {
+      $CredentialsKey = Get-PVal -ParameterName 'CredentialsKey' -originalPSBoundParameters $PSBoundParameters -dottedPath 'CredentialsKey' -DefaultValue $CredentialsKey
     }
 
     # Check and populate simple parameter - AsJDBC (optional)
@@ -123,17 +115,21 @@ function Get-ConnectionString {
 
   PROCESS {
     try {
-      # Get password from vault if needed
-      if ($UseNamedLogin -and $LoginPasswordVaultKey) {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Retrieving password from vault using key: $LoginPasswordVaultKey"
-        $script:loginPassword = Get-VaultPassword -VaultKey $LoginPasswordVaultKey
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Password retrieved successfully from vault'
-      }
-
       # Determine authentication mode
       $isIntegrated = $false
-      if (-not $UseNamedLogin) {
+      # Get Credentials from vault if needed
+      if ($UseNamedLogin -and $CredentialsKey) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Retrieving credentials from vault using key: $CredentialsKey"
+        # ToDo: rename to Get-CredentialsFromVault
+        $script:credentials = Get-VaultPassword -VaultKey $CredentialsKey
+        # ToDo: throw if $credentials are
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'credentials retrieved successfully from vault'
+        $script:loginUser = $script:credentials.UserName
+        $script:loginPassword = $script:credentials.Password
+        # ToDo: add code to ensure loginUser is not null or empty, throw if null or empty
         $isIntegrated = $true
+      }
+      if (-not $UseNamedLogin) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Using integrated Windows authentication'
       }
       else {

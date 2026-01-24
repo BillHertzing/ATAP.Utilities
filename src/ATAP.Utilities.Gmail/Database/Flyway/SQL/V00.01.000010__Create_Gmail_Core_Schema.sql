@@ -20,11 +20,10 @@ GO
 
 /* === Tables === */
 -- Create referenced tables FIRST (no foreign key dependencies)
-CREATE TABLE dbo.gmailMessageIDs
+CREATE TABLE dbo.gmailMessages
 (
   ID               int           IDENTITY(1,1) NOT NULL
-  ,GmailMessageID   nvarchar(255) NOT NULL
-  ,ProcessedAt      datetime2(7)  NOT NULL DEFAULT SYSDATETIME()
-  ,CONSTRAINT PK_gmailMessageIDs PRIMARY KEY (ID)
-  ,CONSTRAINT UQ_gmailMessageIDs_GmailMessageID UNIQUE (GmailMessageID)
+  ,[Subject]        nvarchar(400) NULL
+  ,[URL]            nvarchar(400) NULL
+  ,CONSTRAINT PK_gmailMessages PRIMARY KEY (ID)
 );

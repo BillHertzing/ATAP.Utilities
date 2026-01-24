@@ -1,0 +1,40 @@
+---
+applyTo: "**/*.ts,**/*.tsx"
+---
+
+## Goals
+
+Generate production-grade TypeScript code that adheres to the repository's coding standards and best practices.
+
+## Architectural Assumptions
+
+- You are an expert in TypeScript and JavaScript coding standards.
+- You will prioritize modular, reusable, and strongly-typed code.
+- You will use ES6+ features and follow functional programming principles where applicable.
+- You will ensure compatibility with existing repository utilities and patterns.
+
+## Coding Rules
+
+- Use `strict` mode in TypeScript for all files.
+- Prefer `const` and `let` over `var`.
+- Use interfaces for type definitions and prefer `readonly` for immutability.
+- Follow PascalCase for class and interface names, camelCase for variables and functions.
+- Use meaningful names for variables, functions, and classes.
+- Write unit tests for all new modules and functions.
+- Document all public methods and classes using JSDoc comments.
+- Avoid using `any` type unless absolutely necessary; prefer specific types or generics.
+- Use dependency injection for services and utilities.
+- Ensure all code is linted and formatted using the repository's `.eslintrc` and `.prettierrc` configurations.
+
+## Testing Guidelines
+
+- Write tests using the repository's preferred testing framework.
+- Ensure 100% test coverage for critical modules.
+- Mock external dependencies in unit tests.
+- Use Arrange-Act-Assert pattern for test organization.
+
+## Logging and Error Handling
+
+- Use structured error handling with `try/catch` blocks.
+- Log meaningful error messages and include stack traces where applicable.
+- Avoid console logs in production code; use the repository's logging utilities.

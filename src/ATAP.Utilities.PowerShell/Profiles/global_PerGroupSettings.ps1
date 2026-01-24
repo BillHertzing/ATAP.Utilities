@@ -2,10 +2,10 @@
 
 $defaultPerGroupSettings = @{
   # Group Settings
-  'all'        = @{
+  'all'          = @{
   }
 
-  'WindowsHosts'    = @{
+  'WindowsHosts' = @{
     # The values of the environment variables for ProgramFiles and for ProgramData
     $global:configRootKeys['ProgramFilesConfigRootKey']                               = 'C:/Program Files'
     $global:configRootKeys['ProgramDataConfigRootKey']                                = 'C:/ProgramData'
@@ -16,7 +16,7 @@ $defaultPerGroupSettings = @{
     # Used by Create-AnsibleDirectoryStructures.ps1
     #  Used by Ansible to create a temporary directory on the remote host
     $global:configRootKeys['ansible_remote_tmpConfigRootKey']                         = 'C:/Temp/Ansible'
-    $global:configRootKeys['AnsibleAllowPrereleaseConfigRootKey']                      = 'false'
+    $global:configRootKeys['AnsibleAllowPrereleaseConfigRootKey']                     = 'false'
 
     #  These are various cloud providers' manifestations on a local filesystem
     $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = 'C:/Dropbox'
@@ -39,7 +39,7 @@ $defaultPerGroupSettings = @{
     $global:configRootKeys['GitExePathConfigRootKey']                                 = 'C:/Program Files/Git/cmd/git.exe'
     $global:configRootKeys['JavaExePathConfigRootKey']                                = 'C:/Program Files/AdoptOpenJDK/jre-16.0.1.9-hotspot/bin/java.exe'
     $global:configRootKeys['CommonJarsBasePathConfigRootKey']                         = 'C:/ProgramData/CommonJars'
-    $global:configRootKeys['PythonExePathConfigRootKey']                                = 'C:/Program Files/JavaInterpreters/AdoptOpenJDK/jre-16.0.1.9-hotspot/bin/java.exe'
+    $global:configRootKeys['PythonExePathConfigRootKey']                              = 'C:/Program Files/JavaInterpreters/AdoptOpenJDK/jre-16.0.1.9-hotspot/bin/java.exe'
     $global:configRootKeys['BuildImageFromPlantUMLPowershellCmdletNameConfigRootKey'] = 'Build-ImageFromPlantUML.ps1'
     $global:configRootKeys['xUnitJenkinsPluginPackageConfigRootKey']                  = 'PathToxUnitJenkinsPlugin'
     $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'
@@ -55,15 +55,15 @@ $defaultPerGroupSettings = @{
     # )
     # $global:configRootKeys['SQLServerPSModulePathsConfigRootKey']                     = Join-Path 'C:' 'Program Files (x86)'' Microsoft SQL Server/150/Tools/Powershell/Modules'
 
-    $global:configRootKeys['FLYWAY_LOCATIONSConfigRootKey']                           = 'filesystem:' + (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities' 'Databases' 'ATAPUtilities' 'Flyway' 'sql')
-    $global:configRootKeys['FLYWAY_URLConfigRootKey']                                 = 'jdbC:sqlserver: / / localhost:1433; databaseName = ATAPUtilities'
-    $global:configRootKeys['FLYWAY_USERConfigRootKey']                                = 'AUADMIN'
-    $global:configRootKeys['FLYWAY_PASSWORDConfigRootKey']                            = 'NotSecret'
-    $global:configRootKeys['FP__projectNameConfigRootKey']                            = 'ATAPUtilities'
-    $global:configRootKeys['FP__projectDescriptionConfigRootKey']                     = 'Test Flyway and Pubs samples'
+    # $global:configRootKeys['FLYWAY_LOCATIONSConfigRootKey']                           = 'filesystem:' + (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities' 'Databases' 'ATAPUtilities' 'Flyway' 'sql')
+    # $global:configRootKeys['FLYWAY_URLConfigRootKey']                                 = 'jdbC:sqlserver: / / localhost:1433; databaseName = ATAPUtilities'
+    # $global:configRootKeys['FLYWAY_USERConfigRootKey']                                = 'AUADMIN'
+    # $global:configRootKeys['FLYWAY_PASSWORDConfigRootKey']                            = 'NotSecret'
+    # $global:configRootKeys['FP__projectNameConfigRootKey']                            = 'ATAPUtilities'
+    # $global:configRootKeys['FP__projectDescriptionConfigRootKey']                     = 'Test Flyway and Pubs samples'
 
   }
-  'WSL2Ubuntu' = @{
+  'WSL2Ubuntu'   = @{
     # Used by Ansible
     $global:configRootKeys['ansible_remote_tmpConfigRootKey'] = '/Temp/Ansible'
   }

@@ -1,0 +1,64 @@
+<mxfile host="65bd71144e">
+  <diagram id="zUG4yj9hqAPjjZIjoQBl" name="Page-1">
+    <mxGraphModel dx="1082" dy="1524" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Public Circle -->
+        <mxCell id="2" value="CP" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="{{PublicTopLeftCornerX}}" y="{{PublicTopLeftCornerY}}" width="{{PublicDiameter}}" height="{{PublicDiameter}}" as="geometry"/>
+        </mxCell>
+
+        <!-- Label for Public Circle -->
+        <mxCell id="3" value="Public" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="{{PublicLabelX}}" y="{{PublicLabelY}}" width="60" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Connector -->
+        <mxCell id="4" style="endArrow=block;" edge="1" parent="1" source="3" target="2">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- MembersAndGuests Circle -->
+        <mxCell id="5" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="{{MembersAndGuestsTopLeftCornerX}}" y="{{MembersAndGuestsTopLeftCornerY}}" width="{{MembersAndGuestsDiameter}}" height="{{MembersAndGuestsDiameter}}" as="geometry"/>
+        </mxCell>
+
+        <!-- Label for MembersAndGuests Circle -->
+        <mxCell id="6" value="Members and Guests" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="{{MembersAndGuestsLabelX}}" y="{{MembersAndGuestsLabelY}}" width="120" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrow to MembersAndGuests Label -->
+        <mxCell id="7" style="endArrow=block;" edge="1" parent="1" source="6" target="5">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Members Circle -->
+        <mxCell id="8" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#D0F0C0;" vertex="1" parent="5">
+          <mxGeometry x="{{MembersTopLeftCornerX}}" y="{{MembersTopLeftCornerY}}" width="{{MembersDiameter}}" height="{{MembersDiameter}}" as="geometry"/>
+        </mxCell>
+        <mxCell id="9" value="Members" style="text;html=1;align=right;verticalAlign=middle;whiteSpace=wrap;" vertex="1" parent="8">
+          <mxGeometry x="{{MembersLabelX}}" y="{{MembersLabelY}}" width="60" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="10" style="endArrow=block;" edge="1" parent="5" source="9" target="8">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Guests Circle -->
+        <mxCell id="11" value="" style="ellipse;html=1;aspect=fixed;fillColor=#ADD8E6;" vertex="1" parent="5">
+          <mxGeometry x="{{GuestsTopLeftCornerX}}" y="{{GuestsTopLeftCornerY}}" width="{{GuestsDiameter}}" height="{{GuestsDiameter}}" as="geometry"/>
+        </mxCell>
+        <mxCell id="12" value="Guests" style="text;html=1;" vertex="1" parent="11">
+          <mxGeometry x="{{GuestsLabelX}}" y="{{GuestsLabelY}}" width="60" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="13" style="endArrow=block;" edge="1" parent="5" source="12" target="11">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

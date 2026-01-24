@@ -72,12 +72,12 @@ $defaultPerMachineSettings = @{
     # )
     # $global:configRootKeys['SQLServerPSModulePathsConfigRootKey']                     = 'C:/Program Files (x86)'' Microsoft SQL Server', '150', 'Tools', 'Powershell', 'Modules/'
 
-    $global:configRootKeys['FLYWAY_LOCATIONSConfigRootKey']        = 'filesystem:' + $([Environment]::GetFolderPath('MyDocuments')) + '/GitHub/ATAP.Utilities/Databases/ATAPUtilities/Flyway/sql'
-    $global:configRootKeys['FLYWAY_URLConfigRootKey']              = 'jdbc:sqlserver: / / localhost:1433; databaseName = ATAPUtilities'
-    $global:configRootKeys['FLYWAY_USERConfigRootKey']             = 'AUADMIN'
-    $global:configRootKeys['FLYWAY_PASSWORDConfigRootKey']         = 'NotSecret'
-    $global:configRootKeys['FP__projectNameConfigRootKey']         = 'ATAPUtilities'
-    $global:configRootKeys['FP__projectDescriptionConfigRootKey']  = 'Test Flyway and Pubs samples'
+    # $global:configRootKeys['FLYWAY_LOCATIONSConfigRootKey']        = 'filesystem:' + $([Environment]::GetFolderPath('MyDocuments')) + '/GitHub/ATAP.Utilities/Databases/ATAPUtilities/Flyway/sql'
+    # $global:configRootKeys['FLYWAY_URLConfigRootKey']              = 'jdbc:sqlserver: / / localhost:1433; databaseName = ATAPUtilities'
+    # $global:configRootKeys['FLYWAY_USERConfigRootKey']             = 'AUADMIN'
+    # $global:configRootKeys['FLYWAY_PASSWORDConfigRootKey']         = 'NotSecret'
+    # $global:configRootKeys['FP__projectNameConfigRootKey']         = 'ATAPUtilities'
+    # $global:configRootKeys['FP__projectDescriptionConfigRootKey']  = 'Test Flyway and Pubs samples'
 
   }
   'ncat016'   = @{
@@ -156,7 +156,8 @@ $defaultPerMachineSettings = @{
 # This supports the ability to have multiple files define these values
 if ($global:PerMachineSettings) {
   Write-PSFMessage -Level Debug -Message 'global:PerMachineSettings are already defined '
-} else {
+}
+else {
   Write-PSFMessage -Level Debug -Message 'global:PerMachineSettings are NOT defined'
   $global:PerMachineSettings = @{}
 }

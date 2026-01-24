@@ -74,7 +74,7 @@ function Write-ArrayIndented {
   $outstr += $a -join [Environment]::NewLine
 }
 
-Function Write-HashIndented {
+function Write-HashIndented {
   param($hash
     , [int] $initialIndent = 0
     , [int] $indentIncrement = 2
@@ -114,7 +114,7 @@ function Write-KVPIndented {
   $outstr
 }
 
-Function Write-EnvironmentVariablesIndented {
+function Write-EnvironmentVariablesIndented {
   param(
     [int] $initialIndent = 0
     , [int] $indentIncrement = 2
@@ -138,7 +138,7 @@ Function Write-EnvironmentVariablesIndented {
 #endregion Functions needed by the machine profile, must be defined in the profile
 ##################################################################################
 
-Function ValidateTools {
+function ValidateTools {
   # validate dotnet
   # validate dotnet build
   # validate java
@@ -170,14 +170,17 @@ Write-PSFMessage -Level Debug -Message ("hostname = $hostName")
 
 # Define default values of common parameters that may be present in a cmdlet's parameter list
 $PSDefaultParameterValues = @{
-  '*:Encoding' = 'UTF8'
+  '*:Encoding' = 'UTF8' # This will be the default parameter value
+  '*:Settings' = { $global:settings } # this will be the default parameter value
 }
 # encoding : New-Object System.Text.UTF8Encoding($false) # UTF8 encoded with or without a ByteOrdermark(BOM) which results in System.Text.UTF8Encoding
 # encoding : [System.Text.Encoding]::UTF8 which results in System.Text.UTF8Encoding+UTF8EncodingSealed
 
 # Dot source the list of configuration keys
 # Configuration root key .ps1 files should be a peer of the machine profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+# ToDo: have Ansible write a complete global_ConfigRootKeys.ps1 file instead of using fragments that have a hostspecific set of keys
 . $PSHOME/global_ConfigRootKeys.ps1
+. $PSHOME/global_ConfigRootKeys.IAC.Fragments/global_ConfigRootKeys.IAC.Fragment.Hosts.ps1
 # Print the global:ConfigRootKeys if Debug
 # Write-PSFMessage -Level Debug -Message ('global:configRootKeys:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:configRootKeys ($indent + $indentIncrement) $indentIncrement) + '}' )
 
@@ -192,13 +195,13 @@ elseif (Test-Path -Path "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\A
   . "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\ATAP.IAC\Windows\HostSettings.ps1"
 }
 else {
-  Write-PSFMessage -Level Debug -Message ("HostSettings.ps1 not found")
+  Write-PSFMessage -Level Debug -Message ('HostSettings.ps1 not found')
 }
 # . $(Join-Path -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.IAC', 'Windows', 'HostSettings.ps1'))
 
 # ToDo: get packaging working
 # During the transition to packaging, see if the function exists. If it does not, then dot-source the development copy from Dropbox
-if (!(get-command Get-ClonedAndModifiedHashtable -erroraction silentlycontinue)) {
+if (!(Get-Command Get-ClonedAndModifiedHashtable -ErrorAction silentlycontinue)) {
   # command not found, must be on a computer that does not have the ATAP.Utilities.Powershell module installed
   . $(Join-PathNoResolve -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-ClonedAndModifiedHashtable.ps1'))
   # . $(Join-PathNoResolve -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-ClonedObject.ps1'))
@@ -206,6 +209,18 @@ if (!(get-command Get-ClonedAndModifiedHashtable -erroraction silentlycontinue))
 
 # Define a global settings hash based on the hostname
 $global:settings = Get-HostSettings $hostName
+
+# temporary - Use this structure for passwords that will eventually be stored in a vault
+# These are throwaway passwords, just for testing
+$global:VaultData = @{
+  'BuildSetsAdminProductionCredentialsKeyValue'          = 'ChangeMe_!234'
+  'BuildSetsAdminTestingCredentialsKeyValue'             = 'ChangeMe_!234'
+  'BuildSetsAdminDevelopmentCredentialsKeyValue'         = 'ChangeMe_!234'
+  'BuildSetsAdminExperimentalCredentialsKeyValue'        = 'ChangeMe_!234'
+  'PCMSCAdminExperimentalCredentialsKeyValue'            = 'ChangeMe_!234'
+  'PCMSC_CEPasswordVaultKey'                             = 'ChangeMe!'
+}
+
 
 # 'Group Vars' 'Role Vars' 'Host Vars'
 #
@@ -282,7 +297,7 @@ $Env:PSModulePath = $modifiedPSModulePath
 ########################################################
 
 # TBD - move to powershell utilities
-Function Set-CredentialFile {
+function Set-CredentialFile {
   # Todo cmdlet
   param (
     # ToDo add whatif
@@ -312,7 +327,7 @@ Function Set-CredentialFile {
   }
 }
 
-Function Get-CredentialFile {
+function Get-CredentialFile {
   param (
     [string] $Path
   )

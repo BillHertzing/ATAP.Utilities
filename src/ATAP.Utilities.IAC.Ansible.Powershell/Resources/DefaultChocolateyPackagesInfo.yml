@@ -108,6 +108,11 @@ docfx:
   AllowPreRelease: false
   Version: Latest
   AddedParameters:
+docker-desktop:
+  Notes: ""
+  AllowPreRelease: false
+  Version: Latest
+  AddedParameters:
 dotUltimate:
   Notes: ""
   AllowPreRelease: false
@@ -418,7 +423,7 @@ seq:
   Version: Latest
   AddedParameters:
 sharex:
-  Notes: "make role that depemds on dropbox role, change configuraiton/registry to put screenshot folder on dropbox MyDocuments "
+  Notes: "make role that depends on dropbox role, change configuration/registry to put screenshot folder on dropbox MyDocuments "
   AllowPreRelease: false
   Version: Latest
   AddedParameters:

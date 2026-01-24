@@ -63,7 +63,7 @@ Instructions from here to TBD are should be executed in a 'ubuntu-22.04' termina
 
 ```bash
 # add the default user to the sudoers file
-# TBD - seems to be difficulat to do....
+sudo usermod -aG sudo <whertzing or your first admin username>
 
 # Upgrade ubuntu
 sudo apt update && sudo apt upgrade
@@ -162,6 +162,9 @@ TBD
 TBD: this may not be needed - no real reason to access SMB from WSL, yet
 `sudo apt install smbclient`
 
+<#
+We will be manamanaging windows hosts using WinRM, and not managing any Linux hosts, so no need to setup ssh
+
 ## SSH Server for Windows
 
 [Configuring OpenSSH-Server (sshd) on Windows 11](https://erwin.co/configuring-openssh-server-sshd-on-windows-11/)
@@ -245,6 +248,9 @@ $SSHService =   (Get-Service | ?{$_.name -eq 'sshd'})[0]
 Stop-Service $SSHService
 Start-Service $SSHService
 ```
+
+This ends the block of code for setting up SSH communications, which is currently not needed
+#>
 
 ## Setup Python in WSL 2
 
@@ -965,7 +971,7 @@ Install-ChocolateyPinnedTaskBarItem "$env:windir\system32\eventvwr.msc"
 
 -ia '/value1=''some value'' '
 
-# Enable SQLServerAgent
+## Enable SQLServerAgent
 
 choco install sql-server-express -ia '/SECURITYMODE=SQL'
 Install-ChocolateyPinnedTaskBarItem "C:\Program Files (x86)\Microsoft SQL Server\110\Tools\Binn\ManagementStudio\Ssms.exe"

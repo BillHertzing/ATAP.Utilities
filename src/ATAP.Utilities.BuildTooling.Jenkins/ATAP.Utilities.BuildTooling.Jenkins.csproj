@@ -17,7 +17,7 @@
     <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
-    <!-- Include NuGet PackageReferenfces to the required DLLs for custom msbuild tasks-->
+    <!-- Include NuGet PackageReferences to the required DLLs for custom msbuild tasks-->
   <ItemGroup>
     <PackageReference Include="Microsoft.Build.Framework"/>
     <PackageReference Include="Microsoft.Build.Utilities.Core" />

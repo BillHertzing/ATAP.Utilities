@@ -74,15 +74,15 @@ Function Get-FileIDs {
           Throw $message
         }
       }
-      $hydrusAPIProtocol = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIProtocol' $global:configRootKeys['hydrusAPISchemeConfigRootKey'] $originalPSBoundParameters
-      $hydrusAPIServer = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIServer' $global:configRootKeys['hydrusAPIHostConfigRootKey'] $originalPSBoundParameters
-      $hydrusAPIPort = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIPort' $global:configRootKeys['hydrusAPIPortConfigRootKey'] $originalPSBoundParameters
+      $hydrusAPIProtocol = Get-PVal -ParameterName 'hydrusAPIProtocol' -originalPSBoundParameters $originalPSBoundParameters -dottedPath $global:configRootKeys['hydrusAPISchemeConfigRootKey'] -DefaultValue $hydrusAPIProtocol
+      $hydrusAPIServer = Get-PVal -ParameterName 'hydrusAPIServer' -originalPSBoundParameters $originalPSBoundParameters -dottedPath $global:configRootKeys['hydrusAPIHostConfigRootKey'] -DefaultValue $hydrusAPIServer
+      $hydrusAPIPort = Get-PVal -ParameterName 'hydrusAPIPort' -originalPSBoundParameters $originalPSBoundParameters -dottedPath $global:configRootKeys['hydrusAPIPortConfigRootKey'] -DefaultValue $hydrusAPIPort
     }
     else {
       $noArgumentsSupplied = $true
-      $hydrusAPIProtocol = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIProtocol' $global:configRootKeys['hydrusAPISchemeConfigRootKey']
-      $hydrusAPIServer = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIServer' $global:configRootKeys['hydrusAPIHostConfigRootKey']
-      $hydrusAPIPort = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIPort' $global:configRootKeys['hydrusAPIPortConfigRootKey']
+      $hydrusAPIProtocol = Get-PVal -ParameterName 'hydrusAPIProtocol' -originalPSBoundParameters @{} -dottedPath $global:configRootKeys['hydrusAPISchemeConfigRootKey'] -DefaultValue $hydrusAPIProtocol
+      $hydrusAPIServer = Get-PVal -ParameterName 'hydrusAPIServer' -originalPSBoundParameters @{} -dottedPath $global:configRootKeys['hydrusAPIHostConfigRootKey'] -DefaultValue $hydrusAPIServer
+      $hydrusAPIPort = Get-PVal -ParameterName 'hydrusAPIPort' -originalPSBoundParameters @{} -dottedPath $global:configRootKeys['hydrusAPIPortConfigRootKey'] -DefaultValue $hydrusAPIPort
     }
 
     $page = '/get_files/search_files'

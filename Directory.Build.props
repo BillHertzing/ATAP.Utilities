@@ -19,7 +19,7 @@
     <!-- when targetframework is netstandard,
     <TargetFrameworks>net47;net471;net472;net48;netcoreapp3.1;net5.0;net6.0;net9.0<</TargetFrameworks>
 	 -->
-    <TargetFrameworks>net8.0;</TargetFrameworks>
+    <TargetFramework>net9.0</TargetFramework>
     <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
@@ -35,10 +35,11 @@
     <!-- specify the root directory of the solution, relative to the location where the current project is found -->
     <!-- when msbuild is run by Visual Studio 15.8.2, ($(MSBuildRuntimeType) != 'Core') the property $(SolutionDir) is already defined at this point, so this line is not executed -->
     <!-- when msbuild is run by dotnet command, ($(MSBuildRuntimeType) == 'Core') the property $(SolutionDir) is not defined at this point, so this line is executed -->
-    <!-- ToDo: Major pain point, there is no way to know how far up SolutionDir may be.  In this repository, code is (almost) always two subdirectories down from the solution dir -->
+    <!-- Using MSBuildThisFileDirectory ensures the path is always relative to this Directory.Build.props file, -->
+    <!-- regardless of how deeply nested the project is (works for src/Project/ and src/Project/Project.SubProject/) -->
 
     <!-- the result is that the $(SolutionDir) is set properly regardless of the $(MSBuildRuntimeType) -->
-    <SolutionDir >$(MSBuildProjectDirectory)\..\..\</SolutionDir>
+    <SolutionDir>$(MSBuildThisFileDirectory)</SolutionDir>
 
     <!-- Directory where all of the custom build tools are stored -->
     <SolutionBuildToolsBaseDir Condition=" '$(SolutionBuildToolsBaseDir)' == '' ">$(SolutionDir)Build\</SolutionBuildToolsBaseDir>

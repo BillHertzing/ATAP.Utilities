@@ -5,8 +5,8 @@
 # }
 
 
-$configRootKeysFragmentPath = "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\Profiles\global_ConfigRootKeysFragment.PackageRepositories.ps1"
-$hostSettingsFragmentPath = "C:\Dropbox\whertzing\GitHub\ATAP.IAC\Windows\HostSettingsFragment.PackageRepositories.ps1"
+$configRootKeysFragmentPath = "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\Profiles\global_ConfigRootKeys.Fragment.PackageRepositories.ps1"
+$hostSettingsFragmentPath = "C:\Dropbox\whertzing\GitHub\ATAP.IAC\Windows\HostSettings.Fragment.PackageRepositories.ps1"
 $base = 50000
 $results = [PSCustomObject]@{HostSettings = [System.Collections.ArrayList]::new(); ConfigRootKeys = [System.Collections.ArrayList]::new(); }
 

@@ -1,0 +1,87 @@
+```
+applyTo: ["**/*.sql", "*/.sql"]
+```
+
+# AI instructions for SQL files
+
+This file is a set of instructions for AI to follow when generating or modifying SQL (.sql) files in this repository.
+
+---
+
+## Goals
+
+- Generate production-grade SQL functions and scripts that follow the repository's database design conventions.
+
+---
+
+## AI Guidelines
+
+- You are an expert in SQL coding standards.
+
+## Coding Guidelines for SQL
+
+- The SQL server version being used is SQL Server 2022 community edition. You may use all features available in this version.
+
+- **General Formatting**:
+  - Use the .editorconfig file in the root of the repository for formatting rules.
+- **Function Naming**:
+  - Use PascalCase for public functions and parameters.
+
+## Database Architecture
+
+### Database Design
+
+### Filesystem Layout
+
+```text
+<repo>/
+  databases/
+    _shared/
+      sql/                             # shared repeatables & (rare) shared versioned migrations
+        R__udf_helpers.sql
+        R__common_views.sql
+      data/                            # shared CSVs (slow-changing)
+        countries.csv
+        currencies.csv
+    <NameOfDatabase01>/
+      flyway/
+        flyway.toml
+        sql/
+          R__Functions.sql                # Function definitions (repeatable)
+          R__Verifications.sql            # Verification scripts (repeatable)
+          V00.01.000010_CreateSchemaManifestTables.sql  # Tables used to hold version information about the repeatables and data loads
+          V00.01.000020__Create<NameOfDatabase01>CoreSchema.sql  # Initial Tables for the core schema
+          V00.01.000030__Load<NameOfDatabase01>DataFromBCP.sql      # uses BULK INSERT with ${data_dir}
+      data/                                # small, slow-changing data for tables
+        <Table01Data>.csv
+        <Table02Data>.csv
+        <Table03Data>.csv
+    <NameOfDatabase02>/
+      flyway/
+        flyway.toml
+        sql/
+          R__Functions.sql                # Function definitions (repeatable)
+          R__Verifications.sql            # Verification scripts (repeatable)
+          V00.01.000010_CreateSchemaManifestTables.sql  # Tables used to hold version information about the repeatables and data loads
+          V00.01.000020__Create<NameOfDatabase03>CoreSchema.sql  # Initial Tables for the core schema
+          V00.01.000030__Load<NameOfDatabase02>DataFromBCP.sql      # uses BULK INSERT with ${data_dir}
+      data/
+        <Table01Data>.csv
+        <Table02Data>.csv
+  ops/                                      # optional: CI scripts, env configs, secrets templates
+    flyway.dev.toml
+    flyway.prod.toml
+```
+
+- Use a modular approach to database design, organizing SQL files by functionality or feature.
+
+### Database Migration
+
+- Use versioned migrations for schema changes.
+- Use Flyway from Redgate Software for versioned migrations. Each migration should be a single SQL file with a descriptive name, following the format `V{version}__{description}.sql`. Ensure migrations are idempotent and can be applied multiple times without error.
+
+Data-in-SQL instead of CSV
+For dozens of rows (true constants), inline INSERT statements in versioned migrations are fine and remove the need to stage files. Use CSVs when: many rows, reused across DBs, or maintained by non-engineers.
+
+hierarchyid/modules
+If shared logic is complex (e.g., your rule tree UDFs), consider a dedicated shared schema (e.g., common) with repeatables that every DB consumes. This keeps shared code clearly scoped.

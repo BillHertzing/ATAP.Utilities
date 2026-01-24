@@ -1,0 +1,910 @@
+{
+  "requesterUsername": "BillHertzing",
+  "requesterAvatarIconUri": {
+    "$mid": 1,
+    "path": "/u/894644",
+    "scheme": "https",
+    "authority": "avatars.githubusercontent.com",
+    "query": "v=4"
+  },
+  "responderUsername": "GitHub Copilot",
+  "responderAvatarIconUri": {
+    "id": "copilot"
+  },
+  "initialLocation": "panel",
+  "requests": [
+    {
+      "requestId": "request_2f59cbd9-4468-4ca0-9e63-77f4faffd683",
+      "message": {
+        "text": "summarize this repository",
+        "parts": [
+          {
+            "range": {
+              "start": 0,
+              "endExclusive": 25
+            },
+            "editorRange": {
+              "startLineNumber": 1,
+              "startColumn": 1,
+              "endLineNumber": 1,
+              "endColumn": 26
+            },
+            "text": "summarize this repository",
+            "kind": "text"
+          }
+        ]
+      },
+      "variableData": {
+        "variables": [
+          {
+            "kind": "file",
+            "id": "vscode.implicit.viewport",
+            "name": "file:ReadMe.md",
+            "value": {
+              "uri": {
+                "$mid": 1,
+                "fsPath": "c:\\Dropbox\\whertzing\\GitHub\\SharedVSCode\\ReadMe.md",
+                "_sep": 1,
+                "external": "file:///c%3A/Dropbox/whertzing/GitHub/SharedVSCode/ReadMe.md",
+                "path": "/C:/Dropbox/whertzing/GitHub/SharedVSCode/ReadMe.md",
+                "scheme": "file"
+              },
+              "range": {
+                "startLineNumber": 1,
+                "startColumn": 1,
+                "endLineNumber": 27,
+                "endColumn": 143
+              }
+            },
+            "modelDescription": "User's current visible code"
+          }
+        ]
+      },
+      "response": [
+        {
+          "value": "# Repository Summary\n\n- Centralizes the VS Code configuration files normally found in ",
+          "supportThemeIcons": false,
+          "supportHtml": false,
+          "baseUri": {
+            "$mid": 1,
+            "path": "/c:/Dropbox/whertzing/GitHub/SharedVSCode/",
+            "scheme": "file"
+          }
+        },
+        {
+          "kind": "inlineReference",
+          "inlineReference": {
+            "$mid": 1,
+            "fsPath": "c:\\Dropbox\\whertzing\\GitHub\\SharedVSCode\\.vscode\\",
+            "_sep": 1,
+            "external": "file:///c%3A/Dropbox/whertzing/GitHub/SharedVSCode/.vscode/",
+            "path": "/c:/Dropbox/whertzing/GitHub/SharedVSCode/.vscode/",
+            "scheme": "file"
+          }
+        },
+        {
+          "value": " under Git version control.  \n- Shared across all ATAP repositories via symbolic links, so updates propagate immediately to every linked project.  \n- Key files included:\n  - `extensions.json` – recommended editor extensions  \n  - `settings.json` – workspace settings  \n  - `tasks.json` – common build/test tasks  \n  - `launch.json` – debug/run configurations  \n  - ",
+          "supportThemeIcons": false,
+          "supportHtml": false,
+          "baseUri": {
+            "$mid": 1,
+            "path": "/c:/Dropbox/whertzing/GitHub/SharedVSCode/",
+            "scheme": "file"
+          }
+        },
+        {
+          "kind": "inlineReference",
+          "inlineReference": {
+            "$mid": 1,
+            "fsPath": "c:\\Dropbox\\whertzing\\GitHub\\SharedVSCode\\.prettierrc.yml",
+            "_sep": 1,
+            "external": "file:///c%3A/Dropbox/whertzing/GitHub/SharedVSCode/.prettierrc.yml",
+            "path": "/c:/Dropbox/whertzing/GitHub/SharedVSCode/.prettierrc.yml",
+            "scheme": "file"
+          }
+        },
+        {
+          "value": " – Prettier formatting rules  \n  - `.eslintrc.json` – ESLint linting rules for JS/TS  \n  - ",
+          "supportThemeIcons": false,
+          "supportHtml": false,
+          "baseUri": {
+            "$mid": 1,
+            "path": "/c:/Dropbox/whertzing/GitHub/SharedVSCode/",
+            "scheme": "file"
+          }
+        },
+        {
+          "kind": "inlineReference",
+          "inlineReference": {
+            "$mid": 1,
+            "fsPath": "c:\\Dropbox\\whertzing\\GitHub\\SharedVSCode\\.copilot\\",
+            "_sep": 1,
+            "external": "file:///c%3A/Dropbox/whertzing/GitHub/SharedVSCode/.copilot/",
+            "path": "/c:/Dropbox/whertzing/GitHub/SharedVSCode/.copilot/",
+            "scheme": "file"
+          }
+        },
+        {
+          "value": " directory – (preview) GitHub Copilot instruction files  \n- Notes/TODOs:\n  - Automate change detection and administrator alerts on updates  \n  - Define a safe workflow for testing and approving modifications  ",
+          "supportThemeIcons": false,
+          "supportHtml": false,
+          "baseUri": {
+            "$mid": 1,
+            "path": "/c:/Dropbox/whertzing/GitHub/SharedVSCode/",
+            "scheme": "file"
+          }
+        }
+      ],
+      "responseId": "response_ae8fd719-fed5-4e97-aba4-75569832cfce",
+      "result": {
+        "timings": {
+          "firstProgress": 1857,
+          "totalElapsed": 2793
+        },
+        "metadata": {
+          "codeBlocks": [],
+          "toolCallRounds": [
+            {
+              "response": "# Repository Summary\n\n- Centralizes the VS Code configuration files normally found in `.vscode` under Git version control.  \n- Shared across all ATAP repositories via symbolic links, so updates propagate immediately to every linked project.  \n- Key files included:\n  - `extensions.json` – recommended editor extensions  \n  - `settings.json` – workspace settings  \n  - `tasks.json` – common build/test tasks  \n  - `launch.json` – debug/run configurations  \n  - `.prettierrc.yml` – Prettier formatting rules  \n  - `.eslintrc.json` – ESLint linting rules for JS/TS  \n  - `.copilot/` directory – (preview) GitHub Copilot instruction files  \n- Notes/TODOs:\n  - Automate change detection and administrator alerts on updates  \n  - Define a safe workflow for testing and approving modifications  ",
+              "toolCalls": [],
+              "toolInputRetry": 0,
+              "id": "342b0d37-2175-4554-bb3f-00ab848f2723"
+            }
+          ],
+          "modelMessageId": "44eb14ad-2850-42a0-8596-2beaa9243f90",
+          "responseId": "a5f213bc-82de-4d4f-a369-88a85391a28d",
+          "sessionId": "98ddcc1f-e1d3-4cf6-b47b-d3ec77441080",
+          "agentId": "github.copilot.default"
+        }
+      },
+      "followups": [],
+      "isCanceled": false,
+      "agent": {
+        "extensionId": {
+          "value": "GitHub.copilot-chat",
+          "_lower": "github.copilot-chat"
+        },
+        "publisherDisplayName": "GitHub",
+        "extensionPublisherId": "GitHub",
+        "extensionDisplayName": "GitHub Copilot Chat",
+        "id": "github.copilot.default",
+        "description": "Ask Copilot",
+        "metadata": {
+          "themeIcon": {
+            "id": "copilot"
+          },
+          "hasFollowups": false,
+          "helpTextPrefix": "You can ask me general programming questions, or chat with the following participants which have specialized expertise and can perform actions:",
+          "helpTextVariablesPrefix": "You can also help me understand your question by using the following variables to give me extra context:",
+          "helpTextPostfix": {
+            "value": "To have a great conversation, ask me questions as if I was a real programmer:\n\n* **Show me the code** you want to talk about by having the files open and selecting the most important lines.\n* **Make refinements** by asking me follow-up questions, adding clarifications, providing errors, etc.\n* **Review my suggested code** and tell me about issues or improvements, so I can iterate on it.\n\nYou can also ask me questions about your editor selection by [starting an inline chat session](command:inlineChat.start).\n\nLearn more about [GitHub Copilot](https://docs.github.com/copilot/using-github-copilot/getting-started-with-github-copilot?tool=vscode&utm_source=editor&utm_medium=chat-panel&utm_campaign=2024q3-em-MSFT-getstarted) in [Visual Studio Code](https://code.visualstudio.com/docs/copilot/overview). Or explore the [Copilot walkthrough](command:github.copilot.open.walkthrough).",
+            "isTrusted": {
+              "enabledCommands": [
+                "inlineChat.start",
+                "github.copilot.open.walkthrough"
+              ]
+            },
+            "supportThemeIcons": false,
+            "supportHtml": false,
+            "uris": {
+              "command:inlineChat.start": {
+                "$mid": 1,
+                "path": "inlineChat.start",
+                "scheme": "command"
+              },
+              "https://docs.github.com/copilot/using-github-copilot/getting-started-with-github-copilot?tool=vscode&utm_source=editor&utm_medium=chat-panel&utm_campaign=2024q3-em-MSFT-getstarted": {
+                "$mid": 1,
+                "path": "/copilot/using-github-copilot/getting-started-with-github-copilot",
+                "scheme": "https",
+                "authority": "docs.github.com",
+                "query": "tool=vscode&utm_source=editor&utm_medium=chat-panel&utm_campaign=2024q3-em-MSFT-getstarted"
+              },
+              "https://code.visualstudio.com/docs/copilot/overview": {
+                "$mid": 1,
+                "path": "/docs/copilot/overview",
+                "scheme": "https",
+                "authority": "code.visualstudio.com"
+              },
+              "command:github.copilot.open.walkthrough": {
+                "$mid": 1,
+                "path": "github.copilot.open.walkthrough",
+                "scheme": "command"
+              }
+            }
+          },
+          "supportIssueReporting": false,
+          "requester": {
+            "name": "BillHertzing",
+            "icon": {
+              "$mid": 1,
+              "path": "/u/894644",
+              "scheme": "https",
+              "authority": "avatars.githubusercontent.com",
+              "query": "v=4"
+            }
+          }
+        },
+        "name": "GitHubCopilot",
+        "fullName": "GitHub Copilot",
+        "isDefault": true,
+        "locations": [
+          "panel"
+        ],
+        "modes": [
+          "ask"
+        ],
+        "slashCommands": [],
+        "disambiguation": [
+          {
+            "category": "generate_code_sample",
+            "description": "The user wants to generate code snippets without referencing the contents of the current workspace. This category does not include generating entire projects.",
+            "examples": [
+              "Write an example of computing a SHA256 hash."
+            ]
+          },
+          {
+            "category": "add_feature_to_file",
+            "description": "The user wants to change code in a file that is provided in their request, without referencing the contents of the current workspace. This category does not include generating entire projects.",
+            "examples": [
+              "Add a refresh button to the table widget."
+            ]
+          },
+          {
+            "category": "question_about_specific_files",
+            "description": "The user has a question about a specific file or code snippet that they have provided as part of their query, and the question does not require additional workspace context to answer.",
+            "examples": [
+              "What does this file do?"
+            ]
+          }
+        ]
+      },
+      "contentReferences": [
+        {
+          "kind": "reference",
+          "reference": {
+            "$mid": 1,
+            "fsPath": "c:\\Dropbox\\whertzing\\GitHub\\SharedVSCode\\ReadMe.md",
+            "_sep": 1,
+            "external": "file:///c%3A/Dropbox/whertzing/GitHub/SharedVSCode/ReadMe.md",
+            "path": "/C:/Dropbox/whertzing/GitHub/SharedVSCode/ReadMe.md",
+            "scheme": "file"
+          }
+        }
+      ],
+      "codeCitations": [],
+      "timestamp": 1754625829806,
+      "modelId": "github.copilot-chat/o4-mini"
+    },
+    {
+      "requestId": "request_2e8bfdef-62bb-4cfa-86e7-36553e39c50b",
+      "message": {
+        "text": "What files in the repository are ot mentioned in the readme",
+        "parts": [
+          {
+            "range": {
+              "start": 0,
+              "endExclusive": 59
+            },
+            "editorRange": {
+              "startLineNumber": 1,
+              "startColumn": 1,
+              "endLineNumber": 1,
+              "endColumn": 60
+            },
+            "text": "What files in the repository are ot mentioned in the readme",
+            "kind": "text"
+          }
+        ]
+      },
+      "variableData": {
+        "variables": [
+          {
+            "kind": "file",
+            "id": "vscode.implicit.viewport",
+            "name": "file:ReadMe.md",
+            "value": {
+              "uri": {
+                "$mid": 1,
+                "fsPath": "c:\\Dropbox\\whertzing\\GitHub\\SharedVSCode\\ReadMe.md",
+                "_sep": 1,
+                "external": "file:///c%3A/Dropbox/whertzing/GitHub/SharedVSCode/ReadMe.md",
+                "path": "/C:/Dropbox/whertzing/GitHub/SharedVSCode/ReadMe.md",
+                "scheme": "file"
+              },
+              "range": {
+                "startLineNumber": 1,
+                "startColumn": 1,
+                "endLineNumber": 27,
+                "endColumn": 143
+              }
+            },
+            "modelDescription": "User's current visible code"
+          }
+        ]
+      },
+      "response": [
+        {
+          "value": "Which approach would you prefer?\n\n1. I can list every file in the workspace so you can spot which aren’t referenced in the README.  \n2. I can run a workspace search for all files (e.g. search pattern `**/*`) and filter out the ones the README mentions.  \n\nLet me know and I’ll proceed.",
+          "supportThemeIcons": false,
+          "supportHtml": false,
+          "baseUri": {
+            "$mid": 1,
+            "path": "/c:/Dropbox/whertzing/GitHub/SharedVSCode/",
+            "scheme": "file"
+          }
+        }
+      ],
+      "responseId": "response_e1845f73-acc0-42e5-80b1-3d30340d1b86",
+      "result": {
+        "timings": {
+          "firstProgress": 6656,
+          "totalElapsed": 6946
+        },
+        "metadata": {
+          "codeBlocks": [],
+          "toolCallRounds": [
+            {
+              "response": "Which approach would you prefer?\n\n1. I can list every file in the workspace so you can spot which aren’t referenced in the README.  \n2. I can run a workspace search for all files (e.g. search pattern `**/*`) and filter out the ones the README mentions.  \n\nLet me know and I’ll proceed.",
+              "toolCalls": [],
+              "toolInputRetry": 0,
+              "id": "0bdea042-b28c-4fe8-ad61-093a7c09a1a4"
+            }
+          ],
+          "modelMessageId": "3ca5b23b-b306-431f-aa4a-1bd4291a1836",
+          "responseId": "8402faeb-8b1d-4e92-9dd6-fe6aebe84dd0",
+          "sessionId": "98ddcc1f-e1d3-4cf6-b47b-d3ec77441080",
+          "agentId": "github.copilot.default"
+        }
+      },
+      "followups": [],
+      "isCanceled": false,
+      "agent": {
+        "extensionId": {
+          "value": "GitHub.copilot-chat",
+          "_lower": "github.copilot-chat"
+        },
+        "publisherDisplayName": "GitHub",
+        "extensionPublisherId": "GitHub",
+        "extensionDisplayName": "GitHub Copilot Chat",
+        "id": "github.copilot.default",
+        "description": "Ask Copilot",
+        "metadata": {
+          "themeIcon": {
+            "id": "copilot"
+          },
+          "hasFollowups": false,
+          "helpTextPrefix": "You can ask me general programming questions, or chat with the following participants which have specialized expertise and can perform actions:",
+          "helpTextVariablesPrefix": "You can also help me understand your question by using the following variables to give me extra context:",
+          "helpTextPostfix": {
+            "value": "To have a great conversation, ask me questions as if I was a real programmer:\n\n* **Show me the code** you want to talk about by having the files open and selecting the most important lines.\n* **Make refinements** by asking me follow-up questions, adding clarifications, providing errors, etc.\n* **Review my suggested code** and tell me about issues or improvements, so I can iterate on it.\n\nYou can also ask me questions about your editor selection by [starting an inline chat session](command:inlineChat.start).\n\nLearn more about [GitHub Copilot](https://docs.github.com/copilot/using-github-copilot/getting-started-with-github-copilot?tool=vscode&utm_source=editor&utm_medium=chat-panel&utm_campaign=2024q3-em-MSFT-getstarted) in [Visual Studio Code](https://code.visualstudio.com/docs/copilot/overview). Or explore the [Copilot walkthrough](command:github.copilot.open.walkthrough).",
+            "isTrusted": {
+              "enabledCommands": [
+                "inlineChat.start",
+                "github.copilot.open.walkthrough"
+              ]
+            },
+            "supportThemeIcons": false,
+            "supportHtml": false,
+            "uris": {
+              "command:inlineChat.start": {
+                "$mid": 1,
+                "path": "inlineChat.start",
+                "scheme": "command"
+              },
+              "https://docs.github.com/copilot/using-github-copilot/getting-started-with-github-copilot?tool=vscode&utm_source=editor&utm_medium=chat-panel&utm_campaign=2024q3-em-MSFT-getstarted": {
+                "$mid": 1,
+                "path": "/copilot/using-github-copilot/getting-started-with-github-copilot",
+                "scheme": "https",
+                "authority": "docs.github.com",
+                "query": "tool=vscode&utm_source=editor&utm_medium=chat-panel&utm_campaign=2024q3-em-MSFT-getstarted"
+              },
+              "https://code.visualstudio.com/docs/copilot/overview": {
+                "$mid": 1,
+                "path": "/docs/copilot/overview",
+                "scheme": "https",
+                "authority": "code.visualstudio.com"
+              },
+              "command:github.copilot.open.walkthrough": {
+                "$mid": 1,
+                "path": "github.copilot.open.walkthrough",
+                "scheme": "command"
+              }
+            }
+          },
+          "supportIssueReporting": false,
+          "requester": {
+            "name": "BillHertzing",
+            "icon": {
+              "$mid": 1,
+              "path": "/u/894644",
+              "scheme": "https",
+              "authority": "avatars.githubusercontent.com",
+              "query": "v=4"
+            }
+          }
+        },
+        "name": "GitHubCopilot",
+        "fullName": "GitHub Copilot",
+        "isDefault": true,
+        "locations": [
+          "panel"
+        ],
+        "modes": [
+          "ask"
+        ],
+        "slashCommands": [],
+        "disambiguation": [
+          {
+            "category": "generate_code_sample",
+            "description": "The user wants to generate code snippets without referencing the contents of the current workspace. This category does not include generating entire projects.",
+            "examples": [
+              "Write an example of computing a SHA256 hash."
+            ]
+          },
+          {
+            "category": "add_feature_to_file",
+            "description": "The user wants to change code in a file that is provided in their request, without referencing the contents of the current workspace. This category does not include generating entire projects.",
+            "examples": [
+              "Add a refresh button to the table widget."
+            ]
+          },
+          {
+            "category": "question_about_specific_files",
+            "description": "The user has a question about a specific file or code snippet that they have provided as part of their query, and the question does not require additional workspace context to answer.",
+            "examples": [
+              "What does this file do?"
+            ]
+          }
+        ]
+      },
+      "contentReferences": [
+        {
+          "kind": "reference",
+          "reference": {
+            "$mid": 1,
+            "fsPath": "c:\\Dropbox\\whertzing\\GitHub\\SharedVSCode\\ReadMe.md",
+            "_sep": 1,
+            "external": "file:///c%3A/Dropbox/whertzing/GitHub/SharedVSCode/ReadMe.md",
+            "path": "/C:/Dropbox/whertzing/GitHub/SharedVSCode/ReadMe.md",
+            "scheme": "file"
+          }
+        }
+      ],
+      "codeCitations": [],
+      "timestamp": 1754625901795,
+      "modelId": "github.copilot-chat/o4-mini"
+    },
+    {
+      "requestId": "request_60604067-11c8-4492-9f2f-ce47c68a216d",
+      "message": {
+        "text": "2",
+        "parts": [
+          {
+            "range": {
+              "start": 0,
+              "endExclusive": 1
+            },
+            "editorRange": {
+              "startLineNumber": 1,
+              "startColumn": 1,
+              "endLineNumber": 1,
+              "endColumn": 2
+            },
+            "text": "2",
+            "kind": "text"
+          }
+        ]
+      },
+      "variableData": {
+        "variables": [
+          {
+            "kind": "file",
+            "id": "vscode.implicit.viewport",
+            "name": "file:ReadMe.md",
+            "value": {
+              "uri": {
+                "$mid": 1,
+                "fsPath": "c:\\Dropbox\\whertzing\\GitHub\\SharedVSCode\\ReadMe.md",
+                "_sep": 1,
+                "external": "file:///c%3A/Dropbox/whertzing/GitHub/SharedVSCode/ReadMe.md",
+                "path": "/C:/Dropbox/whertzing/GitHub/SharedVSCode/ReadMe.md",
+                "scheme": "file"
+              },
+              "range": {
+                "startLineNumber": 1,
+                "startColumn": 1,
+                "endLineNumber": 27,
+                "endColumn": 143
+              }
+            },
+            "modelDescription": "User's current visible code"
+          }
+        ]
+      },
+      "response": [
+        {
+          "value": "Here’s one way to do this in your integrated terminal (PowerShell):\n\n````powershell\n# 1. Grab all files in the repo\n$all = Get-ChildItem -Recurse -File | Select-Object -ExpandProperty FullName\n\n# 2. Define the files the README mentions\n$mentioned = @(\n  \"extensions.json\",\n  \"settings.json\",\n  \"tasks.json\",\n  \"launch.json\",\n  \".prettierrc.yml\",\n  \".eslintrc.json\"\n) + (Get-ChildItem -Recurse -File -Path .\\.copilot | Select-Object -ExpandProperty FullName)\n\n# 3. Show the ones not mentioned\n$all | Where-Object { $mentioned -notcontains $_ } | ForEach-Object { $_.Replace((Get-Location).Path + \"\\\",\"\") }\n````\n\nAfter running that you’ll get the list of files in this repo that aren’t referenced in ",
+          "supportThemeIcons": false,
+          "supportHtml": false,
+          "baseUri": {
+            "$mid": 1,
+            "path": "/c:/Dropbox/whertzing/GitHub/SharedVSCode/",
+            "scheme": "file"
+          }
+        },
+        {
+          "kind": "inlineReference",
+          "inlineReference": {
+            "$mid": 1,
+            "fsPath": "c:\\Dropbox\\whertzing\\GitHub\\SharedVSCode\\ReadMe.md",
+            "_sep": 1,
+            "external": "file:///c%3A/Dropbox/whertzing/GitHub/SharedVSCode/ReadMe.md",
+            "path": "/c:/Dropbox/whertzing/GitHub/SharedVSCode/ReadMe.md",
+            "scheme": "file"
+          }
+        },
+        {
+          "value": " (for example, things like `.gitignore`, `LICENSE`, ",
+          "supportThemeIcons": false,
+          "supportHtml": false,
+          "baseUri": {
+            "$mid": 1,
+            "path": "/c:/Dropbox/whertzing/GitHub/SharedVSCode/",
+            "scheme": "file"
+          }
+        },
+        {
+          "kind": "inlineReference",
+          "inlineReference": {
+            "$mid": 1,
+            "fsPath": "c:\\Dropbox\\whertzing\\GitHub\\SharedVSCode\\ReadMe.md",
+            "_sep": 1,
+            "external": "file:///c%3A/Dropbox/whertzing/GitHub/SharedVSCode/ReadMe.md",
+            "path": "/c:/Dropbox/whertzing/GitHub/SharedVSCode/ReadMe.md",
+            "scheme": "file"
+          }
+        },
+        {
+          "value": " itself, etc.).",
+          "supportThemeIcons": false,
+          "supportHtml": false,
+          "baseUri": {
+            "$mid": 1,
+            "path": "/c:/Dropbox/whertzing/GitHub/SharedVSCode/",
+            "scheme": "file"
+          }
+        }
+      ],
+      "responseId": "response_c84b2395-48aa-44cb-a976-2ff89f6d3ac8",
+      "result": {
+        "timings": {
+          "firstProgress": 11649,
+          "totalElapsed": 12898
+        },
+        "metadata": {
+          "codeBlocks": [
+            {
+              "code": "# 1. Grab all files in the repo\n$all = Get-ChildItem -Recurse -File | Select-Object -ExpandProperty FullName\n\n# 2. Define the files the README mentions\n$mentioned = @(\n  \"extensions.json\",\n  \"settings.json\",\n  \"tasks.json\",\n  \"launch.json\",\n  \".prettierrc.yml\",\n  \".eslintrc.json\"\n) + (Get-ChildItem -Recurse -File -Path .\\.copilot | Select-Object -ExpandProperty FullName)\n\n# 3. Show the ones not mentioned\n$all | Where-Object { $mentioned -notcontains $_ } | ForEach-Object { $_.Replace((Get-Location).Path + \"\\\",\"\") }\n",
+              "language": "powershell",
+              "markdownBeforeBlock": "Here’s one way to do this in your integrated terminal (PowerShell):\n\n"
+            }
+          ],
+          "toolCallRounds": [
+            {
+              "response": "Here’s one way to do this in your integrated terminal (PowerShell):\n\n````powershell\n# filepath: (run in c:\\Dropbox\\whertzing\\GitHub\\SharedVSCode)\n# 1. Grab all files in the repo\n$all = Get-ChildItem -Recurse -File | Select-Object -ExpandProperty FullName\n\n# 2. Define the files the README mentions\n$mentioned = @(\n  \"extensions.json\",\n  \"settings.json\",\n  \"tasks.json\",\n  \"launch.json\",\n  \".prettierrc.yml\",\n  \".eslintrc.json\"\n) + (Get-ChildItem -Recurse -File -Path .\\.copilot | Select-Object -ExpandProperty FullName)\n\n# 3. Show the ones not mentioned\n$all | Where-Object { $mentioned -notcontains $_ } | ForEach-Object { $_.Replace((Get-Location).Path + \"\\\",\"\") }\n````\n\nAfter running that you’ll get the list of files in this repo that aren’t referenced in ReadMe.md (for example, things like `.gitignore`, `LICENSE`, `ReadMe.md` itself, etc.).",
+              "toolCalls": [],
+              "toolInputRetry": 0,
+              "id": "52a2ce4e-21d9-4ec4-9bf8-4683ae61291c"
+            }
+          ],
+          "modelMessageId": "4479db84-b881-4071-810c-5fceda897385",
+          "responseId": "e37db19d-3912-4454-97b6-058cad8c4018",
+          "sessionId": "98ddcc1f-e1d3-4cf6-b47b-d3ec77441080",
+          "agentId": "github.copilot.default"
+        }
+      },
+      "followups": [],
+      "isCanceled": false,
+      "agent": {
+        "extensionId": {
+          "value": "GitHub.copilot-chat",
+          "_lower": "github.copilot-chat"
+        },
+        "publisherDisplayName": "GitHub",
+        "extensionPublisherId": "GitHub",
+        "extensionDisplayName": "GitHub Copilot Chat",
+        "id": "github.copilot.default",
+        "description": "Ask Copilot",
+        "metadata": {
+          "themeIcon": {
+            "id": "copilot"
+          },
+          "hasFollowups": false,
+          "helpTextPrefix": "You can ask me general programming questions, or chat with the following participants which have specialized expertise and can perform actions:",
+          "helpTextVariablesPrefix": "You can also help me understand your question by using the following variables to give me extra context:",
+          "helpTextPostfix": {
+            "value": "To have a great conversation, ask me questions as if I was a real programmer:\n\n* **Show me the code** you want to talk about by having the files open and selecting the most important lines.\n* **Make refinements** by asking me follow-up questions, adding clarifications, providing errors, etc.\n* **Review my suggested code** and tell me about issues or improvements, so I can iterate on it.\n\nYou can also ask me questions about your editor selection by [starting an inline chat session](command:inlineChat.start).\n\nLearn more about [GitHub Copilot](https://docs.github.com/copilot/using-github-copilot/getting-started-with-github-copilot?tool=vscode&utm_source=editor&utm_medium=chat-panel&utm_campaign=2024q3-em-MSFT-getstarted) in [Visual Studio Code](https://code.visualstudio.com/docs/copilot/overview). Or explore the [Copilot walkthrough](command:github.copilot.open.walkthrough).",
+            "isTrusted": {
+              "enabledCommands": [
+                "inlineChat.start",
+                "github.copilot.open.walkthrough"
+              ]
+            },
+            "supportThemeIcons": false,
+            "supportHtml": false,
+            "uris": {
+              "command:inlineChat.start": {
+                "$mid": 1,
+                "path": "inlineChat.start",
+                "scheme": "command"
+              },
+              "https://docs.github.com/copilot/using-github-copilot/getting-started-with-github-copilot?tool=vscode&utm_source=editor&utm_medium=chat-panel&utm_campaign=2024q3-em-MSFT-getstarted": {
+                "$mid": 1,
+                "path": "/copilot/using-github-copilot/getting-started-with-github-copilot",
+                "scheme": "https",
+                "authority": "docs.github.com",
+                "query": "tool=vscode&utm_source=editor&utm_medium=chat-panel&utm_campaign=2024q3-em-MSFT-getstarted"
+              },
+              "https://code.visualstudio.com/docs/copilot/overview": {
+                "$mid": 1,
+                "path": "/docs/copilot/overview",
+                "scheme": "https",
+                "authority": "code.visualstudio.com"
+              },
+              "command:github.copilot.open.walkthrough": {
+                "$mid": 1,
+                "path": "github.copilot.open.walkthrough",
+                "scheme": "command"
+              }
+            }
+          },
+          "supportIssueReporting": false,
+          "requester": {
+            "name": "BillHertzing",
+            "icon": {
+              "$mid": 1,
+              "path": "/u/894644",
+              "scheme": "https",
+              "authority": "avatars.githubusercontent.com",
+              "query": "v=4"
+            }
+          }
+        },
+        "name": "GitHubCopilot",
+        "fullName": "GitHub Copilot",
+        "isDefault": true,
+        "locations": [
+          "panel"
+        ],
+        "modes": [
+          "ask"
+        ],
+        "slashCommands": [],
+        "disambiguation": [
+          {
+            "category": "generate_code_sample",
+            "description": "The user wants to generate code snippets without referencing the contents of the current workspace. This category does not include generating entire projects.",
+            "examples": [
+              "Write an example of computing a SHA256 hash."
+            ]
+          },
+          {
+            "category": "add_feature_to_file",
+            "description": "The user wants to change code in a file that is provided in their request, without referencing the contents of the current workspace. This category does not include generating entire projects.",
+            "examples": [
+              "Add a refresh button to the table widget."
+            ]
+          },
+          {
+            "category": "question_about_specific_files",
+            "description": "The user has a question about a specific file or code snippet that they have provided as part of their query, and the question does not require additional workspace context to answer.",
+            "examples": [
+              "What does this file do?"
+            ]
+          }
+        ]
+      },
+      "contentReferences": [
+        {
+          "kind": "reference",
+          "reference": {
+            "$mid": 1,
+            "fsPath": "c:\\Dropbox\\whertzing\\GitHub\\SharedVSCode\\ReadMe.md",
+            "_sep": 1,
+            "external": "file:///c%3A/Dropbox/whertzing/GitHub/SharedVSCode/ReadMe.md",
+            "path": "/C:/Dropbox/whertzing/GitHub/SharedVSCode/ReadMe.md",
+            "scheme": "file"
+          }
+        }
+      ],
+      "codeCitations": [],
+      "timestamp": 1754625918991,
+      "modelId": "github.copilot-chat/o4-mini"
+    },
+    {
+      "requestId": "request_f9f45bfc-1e1a-4097-8237-18ce5ab4df77",
+      "message": {
+        "text": "modify to ignore the .git subdirectory",
+        "parts": [
+          {
+            "range": {
+              "start": 0,
+              "endExclusive": 38
+            },
+            "editorRange": {
+              "startLineNumber": 1,
+              "startColumn": 1,
+              "endLineNumber": 1,
+              "endColumn": 39
+            },
+            "text": "modify to ignore the .git subdirectory",
+            "kind": "text"
+          }
+        ]
+      },
+      "variableData": {
+        "variables": []
+      },
+      "response": [
+        {
+          "value": "Here’s the updated PowerShell snippet that skips anything under ",
+          "supportThemeIcons": false,
+          "supportHtml": false,
+          "baseUri": {
+            "$mid": 1,
+            "path": "/c:/Dropbox/whertzing/GitHub/SharedVSCode/",
+            "scheme": "file"
+          }
+        },
+        {
+          "kind": "inlineReference",
+          "inlineReference": {
+            "$mid": 1,
+            "fsPath": "c:\\Dropbox\\whertzing\\GitHub\\SharedVSCode\\.git\\",
+            "_sep": 1,
+            "external": "file:///c%3A/Dropbox/whertzing/GitHub/SharedVSCode/.git/",
+            "path": "/c:/Dropbox/whertzing/GitHub/SharedVSCode/.git/",
+            "scheme": "file"
+          }
+        },
+        {
+          "value": ":\n\n````powershell\n# 1. Grab all files in the repo, excluding .git\n$all = Get-ChildItem -Recurse -File `\n       | Where-Object { $_.FullName -notmatch '\\\\\\.git\\\\\\' } `\n       | Select-Object -ExpandProperty FullName\n\n# 2. Define the files the README mentions\n$mentioned = @(\n  \"extensions.json\",\n  \"settings.json\",\n  \"tasks.json\",\n  \"launch.json\",\n  \".prettierrc.yml\",\n  \".eslintrc.json\"\n) + (\n  Get-ChildItem -Recurse -File -Path .\\.copilot `\n    | Where-Object { $_.FullName -notmatch '\\\\\\.git\\\\\\' } `\n    | Select-Object -ExpandProperty FullName\n)\n\n# 3. Show the ones not mentioned\n$all |\n  Where-Object { $mentioned -notcontains $_ } |\n  ForEach-Object { $_.Replace((Get-Location).Path + \"\\\",\"\") }\n```# filepath: (run in c:\\Dropbox\\whertzing\\GitHub\\SharedVSCode)\n# 1. Grab all files in the repo, excluding .git\n$all = Get-ChildItem -Recurse -File `\n       | Where-Object { $_.FullName -notmatch '\\\\\\.git\\\\\\' } `\n       | Select-Object -ExpandProperty FullName\n\n# 2. Define the files the README mentions\n$mentioned = @(\n  \"extensions.json\",\n  \"settings.json\",\n  \"tasks.json\",\n  \"launch.json\",\n  \".prettierrc.yml\",\n  \".eslintrc.json\"\n) + (\n  Get-ChildItem -Recurse -File -Path .\\.copilot `\n    | Where-Object { $_.FullName -notmatch '\\\\\\.git\\\\\\' } `\n    | Select-Object -ExpandProperty FullName\n)\n\n# 3. Show the ones not mentioned\n$all |\n  Where-Object { $mentioned -notcontains $_ } |\n  ForEach-Object { $_.Replace((Get-Location).Path + \"\\\",\"\") }\n",
+          "supportThemeIcons": false,
+          "supportHtml": false,
+          "baseUri": {
+            "$mid": 1,
+            "path": "/c:/Dropbox/whertzing/GitHub/SharedVSCode/",
+            "scheme": "file"
+          }
+        }
+      ],
+      "responseId": "response_20e562ce-cd74-49a9-92ca-4a22e81b1f1f",
+      "result": {
+        "timings": {
+          "firstProgress": 5452,
+          "totalElapsed": 6752
+        },
+        "metadata": {
+          "codeBlocks": [],
+          "toolCallRounds": [
+            {
+              "response": "Here’s the updated PowerShell snippet that skips anything under `.git`:\n\n````powershell\n# filepath: (run in c:\\Dropbox\\whertzing\\GitHub\\SharedVSCode)\n# 1. Grab all files in the repo, excluding .git\n$all = Get-ChildItem -Recurse -File `\n       | Where-Object { $_.FullName -notmatch '\\\\\\.git\\\\\\' } `\n       | Select-Object -ExpandProperty FullName\n\n# 2. Define the files the README mentions\n$mentioned = @(\n  \"extensions.json\",\n  \"settings.json\",\n  \"tasks.json\",\n  \"launch.json\",\n  \".prettierrc.yml\",\n  \".eslintrc.json\"\n) + (\n  Get-ChildItem -Recurse -File -Path .\\.copilot `\n    | Where-Object { $_.FullName -notmatch '\\\\\\.git\\\\\\' } `\n    | Select-Object -ExpandProperty FullName\n)\n\n# 3. Show the ones not mentioned\n$all |\n  Where-Object { $mentioned -notcontains $_ } |\n  ForEach-Object { $_.Replace((Get-Location).Path + \"\\\",\"\") }\n```",
+              "toolCalls": [],
+              "toolInputRetry": 0,
+              "id": "d67008ad-a02e-4414-9806-0e2857598a69"
+            }
+          ],
+          "modelMessageId": "ab7cd434-af84-40d0-b1ca-15aa88148eb8",
+          "responseId": "7be54852-964f-4468-b881-9e82f890e39f",
+          "sessionId": "98ddcc1f-e1d3-4cf6-b47b-d3ec77441080",
+          "agentId": "github.copilot.default"
+        }
+      },
+      "followups": [],
+      "isCanceled": false,
+      "agent": {
+        "extensionId": {
+          "value": "GitHub.copilot-chat",
+          "_lower": "github.copilot-chat"
+        },
+        "publisherDisplayName": "GitHub",
+        "extensionPublisherId": "GitHub",
+        "extensionDisplayName": "GitHub Copilot Chat",
+        "id": "github.copilot.default",
+        "description": "Ask Copilot",
+        "metadata": {
+          "themeIcon": {
+            "id": "copilot"
+          },
+          "hasFollowups": false,
+          "helpTextPrefix": "You can ask me general programming questions, or chat with the following participants which have specialized expertise and can perform actions:",
+          "helpTextVariablesPrefix": "You can also help me understand your question by using the following variables to give me extra context:",
+          "helpTextPostfix": {
+            "value": "To have a great conversation, ask me questions as if I was a real programmer:\n\n* **Show me the code** you want to talk about by having the files open and selecting the most important lines.\n* **Make refinements** by asking me follow-up questions, adding clarifications, providing errors, etc.\n* **Review my suggested code** and tell me about issues or improvements, so I can iterate on it.\n\nYou can also ask me questions about your editor selection by [starting an inline chat session](command:inlineChat.start).\n\nLearn more about [GitHub Copilot](https://docs.github.com/copilot/using-github-copilot/getting-started-with-github-copilot?tool=vscode&utm_source=editor&utm_medium=chat-panel&utm_campaign=2024q3-em-MSFT-getstarted) in [Visual Studio Code](https://code.visualstudio.com/docs/copilot/overview). Or explore the [Copilot walkthrough](command:github.copilot.open.walkthrough).",
+            "isTrusted": {
+              "enabledCommands": [
+                "inlineChat.start",
+                "github.copilot.open.walkthrough"
+              ]
+            },
+            "supportThemeIcons": false,
+            "supportHtml": false,
+            "uris": {
+              "command:inlineChat.start": {
+                "$mid": 1,
+                "path": "inlineChat.start",
+                "scheme": "command"
+              },
+              "https://docs.github.com/copilot/using-github-copilot/getting-started-with-github-copilot?tool=vscode&utm_source=editor&utm_medium=chat-panel&utm_campaign=2024q3-em-MSFT-getstarted": {
+                "$mid": 1,
+                "path": "/copilot/using-github-copilot/getting-started-with-github-copilot",
+                "scheme": "https",
+                "authority": "docs.github.com",
+                "query": "tool=vscode&utm_source=editor&utm_medium=chat-panel&utm_campaign=2024q3-em-MSFT-getstarted"
+              },
+              "https://code.visualstudio.com/docs/copilot/overview": {
+                "$mid": 1,
+                "path": "/docs/copilot/overview",
+                "scheme": "https",
+                "authority": "code.visualstudio.com"
+              },
+              "command:github.copilot.open.walkthrough": {
+                "$mid": 1,
+                "path": "github.copilot.open.walkthrough",
+                "scheme": "command"
+              }
+            }
+          },
+          "supportIssueReporting": false,
+          "requester": {
+            "name": "BillHertzing",
+            "icon": {
+              "$mid": 1,
+              "path": "/u/894644",
+              "scheme": "https",
+              "authority": "avatars.githubusercontent.com",
+              "query": "v=4"
+            }
+          }
+        },
+        "name": "GitHubCopilot",
+        "fullName": "GitHub Copilot",
+        "isDefault": true,
+        "locations": [
+          "panel"
+        ],
+        "modes": [
+          "ask"
+        ],
+        "slashCommands": [],
+        "disambiguation": [
+          {
+            "category": "generate_code_sample",
+            "description": "The user wants to generate code snippets without referencing the contents of the current workspace. This category does not include generating entire projects.",
+            "examples": [
+              "Write an example of computing a SHA256 hash."
+            ]
+          },
+          {
+            "category": "add_feature_to_file",
+            "description": "The user wants to change code in a file that is provided in their request, without referencing the contents of the current workspace. This category does not include generating entire projects.",
+            "examples": [
+              "Add a refresh button to the table widget."
+            ]
+          },
+          {
+            "category": "question_about_specific_files",
+            "description": "The user has a question about a specific file or code snippet that they have provided as part of their query, and the question does not require additional workspace context to answer.",
+            "examples": [
+              "What does this file do?"
+            ]
+          }
+        ]
+      },
+      "contentReferences": [],
+      "codeCitations": [],
+      "timestamp": 1754626117051,
+      "modelId": "github.copilot-chat/o4-mini"
+    }
+  ]
+}

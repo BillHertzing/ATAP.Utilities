@@ -7,8 +7,7 @@
 
   <!-- This project will run under the following target frameworks -->
   <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
-    <TargetFrameworks>net48;</TargetFrameworks>
+    <TargetFrameworks>net48;net8.0;net9.0</TargetFrameworks>
   </PropertyGroup>
 
   <!-- The Assembly will be packed into a NuGet Package on every build -->
@@ -76,7 +75,7 @@
     <PackageReference Include="System.Reactive" />
   </ItemGroup>
 
-  <!-- ServiceStack Serilization and dump utility -->
+  <!-- ServiceStack Serialization and dump utility -->
   <ItemGroup>
     <PackageReference Include="ServiceStack.Text" />
   </ItemGroup>

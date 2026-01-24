@@ -82,10 +82,10 @@ function New-MCPServerJunction {
     }
 
     # Snippet: Check and populate simple parameter - SharedVSCodePathToMCPServers
-    $SharedVSCodePathToMCPServers = Get-PVal SharedVSCodePathToMCPServers $PSBoundParameters SharedVSCodePathToMCPServers
+    $SharedVSCodePathToMCPServers = Get-PVal -ParameterName 'SharedVSCodePathToMCPServers' -originalPSBoundParameters $PSBoundParameters -dottedPath 'SharedVSCodePathToMCPServers' -DefaultValue $SharedVSCodePathToMCPServers
 
     # Snippet: Check and populate simple parameter - JunctionName
-    $JunctionName = Get-PVal JunctionName $PSBoundParameters JunctionName
+    $JunctionName = Get-PVal -ParameterName 'JunctionName' -originalPSBoundParameters $PSBoundParameters -dottedPath 'JunctionName' -DefaultValue $JunctionName
 
     # Get repository root using helper function
     $repositoryRoot = Get-RepositoryRoot -StartPath $PSScriptRoot

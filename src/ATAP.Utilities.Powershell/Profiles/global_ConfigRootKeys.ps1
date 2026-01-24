@@ -255,21 +255,6 @@ $global:configRootKeys = @{
   'ProGetPackageRepositoryProviderComputerRoleConfigRootKey'                                     = 'ProGetPackageRepositoryProviderComputer'
 }
 
-# PackageRepository Uris for Packaging, Deploying, Delivering, Updating
-# Uri locations and their component parts for internal and external PackageRepositories
-# PackageRepository Uri subkeys are formed as
-# 'PackageRepository' + ('External' |'Internal' ) + ('Released' | 'Prerelease') + ('Filesystem' | 'NuGet' | 'PSResourceGet' | 'ChocolateyGet') + ('Production' | 'QualityAssurance') + 'Package' + ('Pull' | 'Push') + 'Uri'
-# Every PackageRepository entry needs a 'shortname' as many package providers limit the name of a feed (e.g., proget limits to 50 chars)
-. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\Profiles\global_ConfigRootKeysFragment.PackageRepositories.ps1'
-
-
-# ConfigRootKeys for Databases and related
-. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\Profiles\global_ConfigRootKeysFragment.Databases.ps1'
-
-# ConfigRootKeys for Park City <Mountain Sports Club (PCMSC) Club Express (CE) keys.
-. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\Profiles\global_ConfigRootKeysFragment.PCMSC_CE.ps1'
-
-
 $global:CanaconicalUserRoleStrings = @{
   'SecurityAdministratorRole'              = 'SecurityAdministrator'
   'DeveloperRole'                          = 'Developer'

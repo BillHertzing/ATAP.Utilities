@@ -64,7 +64,7 @@ function Get-Patterns {
     }
 
     # Snippet used: "Check and populate simple parameter"
-    $PatternTags = Get-PVal PatternTags $PSBoundParameters PatternTags
+    $PatternTags = Get-PVal -ParameterName 'PatternTags' -originalPSBoundParameters $PSBoundParameters -dottedPath 'PatternTags' -DefaultValue $PatternTags
 
     # Internal patterns hashtable structure with regex patterns
     $patterns = @{

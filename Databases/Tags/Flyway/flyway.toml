@@ -1,0 +1,49 @@
+# Flyway configuration for Tags database
+# Implements I18N-ready hierarchical tag system with ResourceKey-based localization
+
+[flyway]
+# Shared (baseline) configuration
+cleanDisabled = true
+outOfOrder = false
+validateOnMigrate = true
+validateMigrationNaming = true
+
+# Locations for SQL migrations
+locations = [
+  "filesystem:./SQL",
+  "filesystem:${env:FLYWAY_SHARED_SQL_PATH}"
+]
+
+[flyway.placeholders]
+# All placeholders use environment variables
+data_dir       = "${env:FLYWAY_DATA_DIR}"
+PackageName    = "${env:FLYWAY_PACKAGE_NAME}"
+PackageVersion = "${env:FLYWAY_PACKAGE_VERSION}"
+GitTag         = "${env:FLYWAY_GIT_TAG}"
+GitCommit      = "${env:FLYWAY_GIT_COMMIT}"
+ManifestValues = "${env:FLYWAY_MANIFEST_VALUES}"
+
+# Database connection set via environment variables:
+# FLYWAY_URL
+# FLYWAY_USER (optional if using integrated auth)
+# FLYWAY_PASSWORD (optional if using integrated auth)
+
+[environments.production]
+url      = "${env:FLYWAY_PROD_URL}"
+user     = "${env:FLYWAY_PROD_USER}"
+password = "${env:FLYWAY_PROD_PASSWORD}"
+
+[environments.testing]
+url      = "${env:FLYWAY_TEST_URL}"
+user     = "${env:FLYWAY_TEST_USER}"
+password = "${env:FLYWAY_TEST_PASSWORD}"
+
+[environments.development]
+url      = "${env:FLYWAY_DEV_URL}"
+user     = "${env:FLYWAY_DEV_USER}"
+password = "${env:FLYWAY_DEV_PASSWORD}"
+
+[environments.experimental]
+url      = "${env:FLYWAY_EXP_URL}"
+user     = "${env:FLYWAY_EXP_USER}"
+password = "${env:FLYWAY_EXP_PASSWORD}"

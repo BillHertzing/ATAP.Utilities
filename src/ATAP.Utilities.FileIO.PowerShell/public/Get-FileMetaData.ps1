@@ -54,13 +54,13 @@ function Get-FileMetaData {
         # toDo catch the errors, add to 'Problems'
         Throw $message
       }
-      $GetFileSignatureAsMetadata = Get-ParameterValueFromNeoConfigurationRoot -Parameter 'GetFileSignatureAsMetadata' -  $global:configRootKeys['GetFileSignatureAsMetadataConfigRootKey'] -originalPSBoundParameters $originalPSBoundParameters
-      $FileMetadataBlockSize = Get-ParameterValueFromNeoConfigurationRoot 'FileMetadataBlockSize' $global:configRootKeys['FileMetadataBlockSizeConfigRootKey'] $originalPSBoundParameters
+      $GetFileSignatureAsMetadata = Get-PVal -ParameterName 'GetFileSignatureAsMetadata' -originalPSBoundParameters $originalPSBoundParameters -dottedPath $global:configRootKeys['GetFileSignatureAsMetadataConfigRootKey'] -DefaultValue $GetFileSignatureAsMetadata
+      $FileMetadataBlockSize = Get-PVal -ParameterName 'FileMetadataBlockSize' -originalPSBoundParameters $originalPSBoundParameters -dottedPath $global:configRootKeys['FileMetadataBlockSizeConfigRootKey'] -DefaultValue $FileMetadataBlockSize
     }
     else {
       $noArgumentsSupplied = $true
-      $GetFileSignatureAsMetadata = Get-ParameterValueFromNeoConfigurationRoot 'GetFileSignatureAsMetadata' $global:configRootKeys['GetFileSignatureAsMetadataConfigRootKey']
-      $FileMetadataBlockSize = Get-ParameterValueFromNeoConfigurationRoot 'FileMetadataBlockSize' $global:configRootKeys['FileMetadataBlockSizeConfigRootKey']
+      $GetFileSignatureAsMetadata = Get-PVal -ParameterName 'GetFileSignatureAsMetadata' -originalPSBoundParameters @{} -dottedPath $global:configRootKeys['GetFileSignatureAsMetadataConfigRootKey'] -DefaultValue $GetFileSignatureAsMetadata
+      $FileMetadataBlockSize = Get-PVal -ParameterName 'FileMetadataBlockSize' -originalPSBoundParameters @{} -dottedPath $global:configRootKeys['FileMetadataBlockSizeConfigRootKey'] -DefaultValue $FileMetadataBlockSize
     }
 
     # ToDO: Add all code necessary to make this available in $global:settings

@@ -88,11 +88,7 @@ function Invoke-Flyway {
     [bool]$UseNamedLogin = $false,
 
     [Parameter(Mandatory = $false)]
-    [string]$LoginName ,
-
-    [Parameter(Mandatory = $false)]
-    #[Securestring]$LoginPasswordVaultKey,
-    [string]$LoginPasswordVaultKey,
+    [string]$CredentialsKey,
 
     # Flyway command selector
     [Parameter(Mandatory = $false)]
@@ -210,14 +206,12 @@ function Invoke-Flyway {
     # ToDo: write a wrapper that catches and logs
     $databasesCollection = $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
 
-    $Environment = Get-PVal 'Environment' $PSBoundParameters
-    $SqlInstance = Get-PVal -ParameterName "SqlInstance" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlInstance" -Settings $databasesCollection
-    $DatabaseHost = Get-PVal -ParameterName "DatabaseHost"  -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseHost" -Settings $databasesCollection
-    $ConnectionMethod = Get-PVal -ParameterName "ConnectionMethod" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ConnectionMethod" -Settings $databasesCollection
-    $UseNamedLogin = Get-PVal -ParameterName "UseNamedLogin" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.UseNamedLogin" -Settings $databasesCollection -AsType ([bool])
-    $LoginName = Get-PVal -ParameterName "LoginName" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.LoginName" -Settings $databasesCollection
-    $LoginPasswordVaultKey = Get-PVal -ParameterName "LoginPasswordVaultKey" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.LoginPasswordVaultKey" -Settings $databasesCollection
-    $UseNamedLogin = Get-PVal -ParameterName "UseNamedLogin" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.UseNamedLogin" -Settings $databasesCollection -AsType ([bool])
+    $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue $Environment
+    $SqlInstance = Get-PVal -ParameterName "SqlInstance" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlInstance" -Settings $databasesCollection -DefaultValue $SqlInstance
+    $DatabaseHost = Get-PVal -ParameterName "DatabaseHost" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseHost" -Settings $databasesCollection -DefaultValue $DatabaseHost
+    $ConnectionMethod = Get-PVal -ParameterName "ConnectionMethod" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ConnectionMethod" -Settings $databasesCollection -DefaultValue $ConnectionMethod
+    $UseNamedLogin = Get-PVal -ParameterName "UseNamedLogin" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.UseNamedLogin" -Settings $databasesCollection -DefaultValue $UseNamedLogin -AsType ([bool])
+    $CredentialsKey = Get-PVal -ParameterName "CredentialsKey" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.CredentialsKey" -Settings $databasesCollection -DefaultValue $CredentialsKey
 
     # Validate Environment parameter
     $Environment = Resolve-PVal $Environment 'Production', 'Testing', 'Development', 'Experimental'
@@ -259,7 +253,7 @@ function Invoke-Flyway {
     $script:SqlTypes = Initialize-SQLClient
 
     # Build up the connection string
-    $script:ConnectionString = Get-ConnectionString -DatabaseHost $DatabaseHost -DatabaseName $DatabaseName -ConnectionMethod $ConnectionMethod -SqlInstance $SqlInstance -UseNamedLogin $UseNamedLogin -LoginName $LoginName -LoginPasswordVaultKey $LoginPasswordVaultKey -AsJDBC
+    $script:ConnectionString = New-DBAConnStrBuilder -DatabaseHost $DatabaseHost -DatabaseName $DatabaseName -ConnectionMethod $ConnectionMethod -SqlInstance $SqlInstance -CredentialsKey $CredentialsKey -IntegratedSecurity:$(-not $UseNamedLogin) -AsJDBC
 
     $script:isIntegrated = $script:ConnectionString -match 'integratedSecurity=true'
     if (-not $script:isIntegrated) {

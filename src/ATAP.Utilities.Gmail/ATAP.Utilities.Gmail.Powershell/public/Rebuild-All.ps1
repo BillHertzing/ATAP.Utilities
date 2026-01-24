@@ -121,22 +121,22 @@ else {
 # Extract SQL Server instance from FLYWAY_URL
 # Expected format: jdbc:sqlserver://localhost:1433;databaseName=Gmail
 if ($env:FLYWAY_URL -match 'sqlserver://([^:; ]+)(?::(\d+))?') {
-  $sqlServerInstance = $matches[1]
+  $SqlInstance = $matches[1]
   $sqlPort = if ($matches[2]) { $matches[2] } else { "1433" }
-  Write-PSFMessage -Level Important -Message "Extracted SQL Server: $sqlServerInstance, Port: $sqlPort"
+  Write-PSFMessage -Level Important -Message "Extracted SQL Server: $SqlInstance, Port: $sqlPort"
 
   # Check for trustServerCertificate setting in connection string
   $trustServerCert = $env:FLYWAY_URL -match 'trustServerCertificate=true'
 
   # Test SQL Server connectivity
   try {
-    Write-PSFMessage -Level Important -Message "Testing SQL Server connection to $sqlServerInstance..."
+    Write-PSFMessage -Level Important -Message "Testing SQL Server connection to $SqlInstance..."
     $testQuery = "SELECT @@VERSION AS Version"
 
     # Build test parameters based on authentication method
     if ($usingIntegratedAuth) {
       $testParams = @{
-        ServerInstance         = $sqlServerInstance
+        ServerInstance         = $SqlInstance
         Query                  = $testQuery
         TrustServerCertificate = $trustServerCert
         ErrorAction            = 'Stop'
@@ -145,7 +145,7 @@ if ($env:FLYWAY_URL -match 'sqlserver://([^:; ]+)(?::(\d+))?') {
     }
     else {
       $testParams = @{
-        ServerInstance         = $sqlServerInstance
+        ServerInstance         = $SqlInstance
         Query                  = $testQuery
         Username               = $env:FLYWAY_USER
         Password               = $env:FLYWAY_PASSWORD
@@ -164,7 +164,7 @@ if ($env:FLYWAY_URL -match 'sqlserver://([^:; ]+)(?::(\d+))?') {
     Write-PSFMessage -Level Important -Message "SQL Server Version: $($testResult.Version)"
   }
   catch {
-    Write-PSFMessage -Level Error -Message "Failed to connect to SQL Server instance '$sqlServerInstance'. Error: $($_.Exception.Message)"
+    Write-PSFMessage -Level Error -Message "Failed to connect to SQL Server instance '$SqlInstance'. Error: $($_.Exception.Message)"
     Write-PSFMessage -Level Error -Message "Please verify:"
     Write-PSFMessage -Level Error -Message "  1. SQL Server service is running"
     Write-PSFMessage -Level Error -Message "  2. Instance name is correct in FLYWAY_URL: $env:FLYWAY_URL"
@@ -201,10 +201,10 @@ $repositoryRoot = Get-RepositoryRoot -ErrorAction Stop
 try {
   . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\DatabaseProvisioning.ps1' -verbose
   . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Invoke-Flyway.ps1'
-  Set-Location "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Gmail\Database\Flyway"
+  Set-Location  (join-path $repositoryRoot "src\ATAP.Utilities.Gmail\Database\Flyway")
 
   Write-PSFMessage -Level Important -Message "Starting database provisioning..."
-  Write-PSFMessage -Level Important -Message "Target Server: $sqlServerInstance"
+  Write-PSFMessage -Level Important -Message "Target Server: $SqlInstance"
   Write-PSFMessage -Level Important -Message "Database: Gmail"
   Write-PSFMessage -Level Important -Message "Environment: Experimental"
 
@@ -218,7 +218,7 @@ try {
   # To: Server=UTAT01;Database=master;Integrated Security=true;Encrypt=false;TrustServerCertificate=true
 
   $connectionStringBuilder = New-Object System.Data.SqlClient.SqlConnectionStringBuilder
-  $connectionStringBuilder["Server"] = $sqlServerInstance
+  $connectionStringBuilder["Server"] = $SqlInstance
   $connectionStringBuilder["Database"] = "master"  # Connect to master initially for provisioning
 
   if ($usingIntegratedAuth) {
@@ -344,12 +344,4 @@ catch {
   throw
 }
 
-# Run the Sync-WPToCE process to fetch data from the WP and CE systems and update the CE system
-try {
-  Write-PSFMessage -Level Important -Message "Starting Sync-WPToCE process..."
-  . 'C:\Dropbox\whertzing\GitHub\Gmail\src\GmailAutomation\public\Sync-WPToCE.ps1'
-}
-catch {
-  Write-PSFMessage -Level Error -Message "Sync-WPToCE process failed: $($_.Exception.Message)"
-  throw
-}
+# invoke the OpenMetadata ingestion process

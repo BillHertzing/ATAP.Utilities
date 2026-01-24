@@ -28,7 +28,7 @@ function Get-OriginalPathFromRecycleBin {
     $fn = 'Get-OriginalPathFromRecycleBin'
     $mn = 'ATAP.Utilities.Powershell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
-    $RecycleBinPath = Get-PVal 'RecycleBinPath' $PSBoundParameters
+    $RecycleBinPath = Get-PVal -ParameterName 'RecycleBinPath' -originalPSBoundParameters $PSBoundParameters -dottedPath 'RecycleBinPath' -DefaultValue $RecycleBinPath
   }
 
   PROCESS {

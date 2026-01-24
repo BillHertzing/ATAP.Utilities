@@ -32,15 +32,15 @@ System.Collections.Hashtable
 Returns a hashtable with keys 'LoginCredential' and 'UnlockCredential'.
 
 .EXAMPLE
-$creds = Get-BitWardenCredential
+$credentials = Get-BitWardenCredential
 Retrieves or creates the BitWarden credentials for the current user.
 
 .EXAMPLE
-$creds = Get-BitWardenCredential -BitWardenUserName 'user@example.com' -BitWardenLoginPassword 'loginPass' -BitWardenUnlockUserName 'BitWarden' -BitWardenUnlockPassword 'masterPass'
+$credentials = Get-BitWardenCredential -BitWardenUserName 'user@example.com' -BitWardenLoginPassword 'loginPass' -BitWardenUnlockUserName 'BitWarden' -BitWardenUnlockPassword 'masterPass'
 Creates new credentials with specified values.
 
 .EXAMPLE
-$creds = Get-BitWardenCredential -Replace
+$credentials = Get-BitWardenCredential -Replace
 Forces recreation of both credential files, backing up the old ones.
 
 .NOTES
@@ -110,7 +110,7 @@ function Get-BitWardenCredential {
       }
     }
     else {
-      $CredentialDirectory = Get-PVal CredentialDirectory $PSBoundParameters CredentialDirectory
+      $CredentialDirectory = Get-PVal -ParameterName 'CredentialDirectory' -originalPSBoundParameters $PSBoundParameters -dottedPath 'CredentialDirectory' -DefaultValue $CredentialDirectory
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Using provided CredentialDirectory: $CredentialDirectory"
     }
 

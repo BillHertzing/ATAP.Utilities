@@ -160,13 +160,6 @@ In every new repository, after running `git init`, run these commands (as an adm
 ```Powershell
   # use a directory junction
   $null = New-Item -Path ./.vscode -ItemType Junction -Target $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] 'whertzing' 'GitHub', 'SharedVSCode', '.vscode')
-  # Don't use individual file symbolic links anymore
-  # $null = New-Item -ItemType Directory -Force '.vscode'
-  # # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
-  # New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\tasks.json"  -symbolicLinkPath ".\.vscode\tasks.json" -force
-  # New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\launch.json"  -symbolicLinkPath ".\.vscode\launch.json" -force
-  # New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\extensions.json"  -symbolicLinkPath ".\.vscode\extensions.json" -force
-  # New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\cspell.json"  -symbolicLinkPath ".\.vscode\cspell.json" -force
 ```
 
 ## Symbolic Links for Prettier formatting rules, CSpell, eslint rules, building Powershell; modules (Invoke-Build) and Mocha
@@ -474,7 +467,7 @@ ToDo: CodeWorkspace File needs correcting.
   }
 ```
 
-### project-specific symbolic links
+### Project-specific symbolic links
 
 #### VSC Extension development symbolic links
 
@@ -484,6 +477,21 @@ Place these symbolic links in the .vscode subdirectory of any project that build
 # OBSOLETE
   # New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\launch4Extension.jsonc"  -symbolicLinkPath ".\.vscode\launch.json" -force
   # New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\tasks4Extension.jsonc"  -symbolicLinkPath ".\.vscode\tasks.json" -force
+```
+
+#### Database development symbolic links
+
+Databases are migrated using FLyway from Red Hat. Flyway migrations require a flyway.toml file. There is a common shared flyway.toml file which should be symlinked. This should be placed in the Database/Flyway folder of the project.
+
+```Powershell
+# Ensure current directory ends in Database\Flyway (cross-platform)
+$expectedSuffix = Join-Path 'Database' 'Flyway'
+$currentPath = (Get-Location).Path
+if (-not $currentPath.EndsWith($expectedSuffix, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Current directory must end in '$expectedSuffix'. Current path: $currentPath"
+}
+$targetPath = $flywayToml = Join-Path -Path 'C:' -ChildPath 'Dropbox' 'whertzing' 'GitHub' 'SharedVSCode' 'Databases' 'flyway.toml'
+New-SymbolicLink -targetPath $targetPath   -symbolicLinkPath ".\flyway.toml" -force
 ```
 
 ## Symbolic Links and cloud-synchronization

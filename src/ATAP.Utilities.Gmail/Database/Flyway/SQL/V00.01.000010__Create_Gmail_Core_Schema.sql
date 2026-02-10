@@ -22,8 +22,14 @@ GO
 -- Create referenced tables FIRST (no foreign key dependencies)
 CREATE TABLE dbo.gmailMessages
 (
-  ID               int           IDENTITY(1,1) NOT NULL
-  ,[Subject]        nvarchar(400) NULL
-  ,[URL]            nvarchar(400) NULL
+  ID               int            IDENTITY(1,1) NOT NULL
+  ,[Subject]       nvarchar(400)  NULL
+  ,[MessageId]     nvarchar(400)  NULL
+  ,[FromAddress]   nvarchar(400)  NULL
+  ,[ToAddress]     nvarchar(400)  NULL
+  ,[Date]          datetime2      NULL
+  ,[Labels]        nvarchar(1000) NULL
+  ,[Body]          nvarchar(MAX)  NULL
+  ,[URL]           nvarchar(2000) NULL
   ,CONSTRAINT PK_gmailMessages PRIMARY KEY (ID)
 );

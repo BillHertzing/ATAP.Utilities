@@ -34,6 +34,8 @@ System.String
 System.String
 
 .NOTES
+DEPRECATED: Use Get-ParameterValueFromNeoConfigurationRoot (alias Get-PVal) with the -ValidValues parameter instead.
+Example: Get-PVal -ParameterName 'Env' -originalPSBoundParameters $PSBoundParameters -ValidValues @('Production','Testing')
 AI assisted using Powershell.instructions.md as guidelines
 Performs case-insensitive validation but returns the correctly cased value from the allowed list
 
@@ -64,6 +66,7 @@ function Resolve-ParameterValueToList {
     $fn = 'Resolve-ParameterValueToList'
     $mn = 'ATAP.Utilities.Powershell'
     # AI Agent Instructions do not log in this file
+    Write-Warning "Resolve-ParameterValueToList is deprecated. Use Get-PVal with -ValidValues instead."
   }
 
   PROCESS {

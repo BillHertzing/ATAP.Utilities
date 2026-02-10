@@ -22,7 +22,10 @@ function Get-ParameterValueFromNeoConfigurationRoot {
     [Parameter(Mandatory = $false, Position = 5, ValueFromPipelineByPropertyName = $true)]
     [switch]$AllowMissing,
     [Parameter(Mandatory = $false, Position = 6, ValueFromPipelineByPropertyName = $true)]
-    [Type]$AsType
+    [Type]$AsType,
+
+    [Parameter(Mandatory = $false, Position = 7, ValueFromPipelineByPropertyName = $true)]
+    [string[]]$ValidValues
   )
   # Copilot instruction: do not log cmdlet entry or exit
   Begin {
@@ -144,38 +147,61 @@ function Get-ParameterValueFromNeoConfigurationRoot {
       $dottedPath = $ParameterName
     }
 
-    # 1. If parameter is in originalPSBoundParameters, return that value
+    $resolvedValue = $null
+    $resolved = $false
+
+    # 1. If parameter is in originalPSBoundParameters, use that value
     if ($originalPSBoundParameters.ContainsKey($parameterName)) {
-      return $originalPSBoundParameters[$parameterName]
+      $resolvedValue = $originalPSBoundParameters[$parameterName]
+      $resolved = $true
     }
 
-    # 2. If parameter is in environment variable, return that value
-    if (Test-Path "Env:$parameterName") {
-      return $(Get-Item -Path "Env:$parameterName").value
+    # 2. If parameter is in environment variable, use that value
+    if (-not $resolved -and (Test-Path "Env:$parameterName")) {
+      $resolvedValue = (Get-Item -Path "Env:$parameterName").Value
+      $resolved = $true
     }
 
     # 3. Try to get from settings via dottedPath
-    try {
-      $settingsValue = Resolve-SettingsValue -dottedPath $dottedPath -Settings $Settings -AllowMissing:$true -AsType $AsType
-      if ($null -ne $settingsValue) {
-        return $settingsValue
+    if (-not $resolved) {
+      try {
+        $settingsValue = Resolve-SettingsValue -dottedPath $dottedPath -Settings $Settings -AllowMissing:$true -AsType $AsType
+        if ($null -ne $settingsValue) {
+          $resolvedValue = $settingsValue
+          $resolved = $true
+        }
+      }
+      catch {
+        # Settings lookup failed, continue to check DefaultValue
       }
     }
-    catch {
-      # Settings lookup failed, continue to check DefaultValue
+
+    # 4. If DefaultValue is not null, use it
+    if (-not $resolved -and $null -ne $DefaultValue) {
+      $resolvedValue = $DefaultValue
+      $resolved = $true
     }
 
-    # 4. If DefaultValue is not null, return it
-    if ($null -ne $DefaultValue) {
-      return $DefaultValue
+    # 5. If not resolved and not AllowMissing, throw
+    if (-not $resolved) {
+      if ($AllowMissing) {
+        return $null
+      }
+      else {
+        throw "Parameter '$ParameterName' not found in PSBoundParameters, environment variables, or settings path '$dottedPath', and no DefaultValue was provided."
+      }
     }
 
-    # 5. If AllowMissing, return null; otherwise throw
-    if ($AllowMissing) {
-      return $null
+    # 6. If ValidValues specified, validate the resolved value against the allowed list (case-insensitive)
+    if ($ValidValues -and $null -ne $resolvedValue) {
+      $lc = $resolvedValue.ToString().ToLowerInvariant()
+      $match = $ValidValues | Where-Object { $_.ToLowerInvariant() -eq $lc }
+      if ($null -eq $match) {
+        throw "Parameter '$ParameterName' value '$resolvedValue' is not valid. Must be one of: $($ValidValues -join ', ')"
+      }
+      $resolvedValue = $match
     }
-    else {
-      throw "Parameter '$ParameterName' not found in PSBoundParameters, environment variables, or settings path '$dottedPath', and no DefaultValue was provided."
-    }
+
+    return $resolvedValue
   }
 }

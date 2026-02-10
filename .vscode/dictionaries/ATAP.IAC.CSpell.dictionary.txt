@@ -1,3 +1,0 @@
-AUADMIN
-AUUSER
-ncat

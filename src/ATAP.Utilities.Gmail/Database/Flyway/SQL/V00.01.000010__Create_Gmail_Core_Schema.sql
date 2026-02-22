@@ -16,6 +16,7 @@ GO
 GO
 
 /* Drop tables in dependency order */
+IF OBJECT_ID('dbo.gmailMessages','U') IS NOT NULL DROP TABLE dbo.gmailMessages;
 GO
 
 /* === Tables === */

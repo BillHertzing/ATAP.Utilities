@@ -5,9 +5,9 @@ function Invoke-Flyway {
 
   .DESCRIPTION
   Uses New-ConnectionStringBuilderFromDbaTools with -AsJDBC to construct the Flyway JDBC URL from
-  structured parameters (DatabaseHost, SqlInstance, etc.) rather than parsing pre-built JDBC strings.
+  structured parameters (DatabaseHost, SqlInstance, etc.).
 
-  Computes SHA256 hashes for specified migration/repeatable SQL files under -SqlDir, builds a
+  Computes SHA256 hashes for specified migration/repeatable SQL files under -SqlMigrationsPath, builds a
   comma-separated (VALUES ...) list for insertion (ManifestValues), and exports these plus package /
   git metadata into environment variables using Flyway's placeholder naming convention
   (FLYWAY_PLACEHOLDERS_*). After exporting, it invokes 'flyway $FlywayCommand'.
@@ -26,8 +26,8 @@ function Invoke-Flyway {
     FLYWAY_PLACEHOLDERS_GITTAG
     FLYWAY_PLACEHOLDERS_GITCOMMIT
 
-  .PARAMETER DatabaseHost
-  The SQL Server host. Can be overridden by vault secret if CredentialsKey returns a HostName. Alias: HostName
+  .PARAMETER DatabaseName
+  The name of the database to migrate.
 
   .PARAMETER Environment
   The target environment: 'Development', 'Testing', 'Production', or 'Experimental'.
@@ -35,16 +35,8 @@ function Invoke-Flyway {
   - Development, Testing, Production: SqlInstance is set to match the Environment value
   - Experimental: SqlInstance is left blank (uses default instance)
 
-  .PARAMETER SqlInstance
-  The SQL Server named instance.
-  Typically derived from the Environment parameter.
-  Can be explicitly specified to override the Environment-based value.
-
-  .PARAMETER DatabaseName
-  The name of the database to migrate.
-
-  .PARAMETER ConnectionMethod
-  Protocol to use for connection: tcp, np (named pipes), lpc (shared memory), or default.
+  .PARAMETER DatabaseHost
+  The SQL Server host. Can be overridden by vault secret if CredentialsKey returns a HostName. Alias: HostName
 
   .PARAMETER IntegratedSecurity
   Use Windows Integrated Authentication. Mandatory for the IntegratedSecurity parameter set.
@@ -58,15 +50,12 @@ function Invoke-Flyway {
   - SqlInstance (optional): Named instance
   - Port (optional): Non-default port
 
+    .PARAMETER FlywayExecutablePath
+  Executable or path for the flyway CLI (default 'flyway').
+
   .PARAMETER FlywayCommand
   The Flyway command to run: validate, migrate, check, repair, info, baseline, clean, or undo.
   Defaults to 'validate'.
-
-  .PARAMETER SqlDir
-  Directory containing Flyway SQL scripts (default .\sql).
-
-  .PARAMETER Files
-  File names (relative to -SqlDir) to include in the manifest values list.
 
   .PARAMETER PackageName
   Logical package/component name.
@@ -74,17 +63,28 @@ function Invoke-Flyway {
   .PARAMETER PackageVersion
   Version string for the package.
 
-  .PARAMETER ConfigPath
+  .PARAMETER FlywayTomlPath
   Path to flyway.toml (used for flyway -configFiles argument only; not parsed here).
+
+  .PARAMETER SqlMigrationsPath
+  Directory containing Flyway SQL scripts (default .\sql).
+
+  .PARAMETER SqlInstance
+  The SQL Server named instance.
+  Typically derived from the Environment parameter.
+  Can be explicitly specified to override the Environment-based value.
+
+  .PARAMETER ConnectionMethod
+  Protocol to use for connection: tcp, np (named pipes), lpc (shared memory), or default.
+
+  .PARAMETER Files
+  File names (relative to -SqlMigrationsPath) to include in the manifest values list.
 
   .PARAMETER GitTag
   Optional explicit Git tag (otherwise discovered from git).
 
   .PARAMETER GitCommit
   Optional explicit Git commit (otherwise discovered from git).
-
-  .PARAMETER FlywayPath
-  Executable or path for the flyway CLI (default 'flyway').
 
   .PARAMETER FlywayAdditionalArgs
   Additional raw arguments passed to flyway before the 'FlywayCommand' verb (e.g. '-X').
@@ -93,10 +93,10 @@ function Invoke-Flyway {
   PSCustomObject summarizing placeholders and flyway execution result.
 
   .EXAMPLE
-  Invoke-Flyway -DatabaseHost 'localhost' -Environment 'Experimental' -DatabaseName 'PCMSC' -IntegratedSecurity -FlywayCommand 'migrate' -PackageName 'PCMSC.Functions' -PackageVersion 1
+  Invoke-Flyway -DatabaseName 'PCMSC' -Environment 'Experimental' -DatabaseHost 'localhost' -IntegratedSecurity -SqlMigrationsPath '.\sql' -FlywayTomlPath '.\flyway.toml' -FlywayCommand 'migrate' -PackageName 'PCMSC.Functions' -PackageVersion 1
 
   .EXAMPLE
-  Invoke-Flyway -DatabaseHost 'utat022' -Environment 'Development' -DatabaseName 'PCMSC' -CredentialsKey 'PCMSC-Dev-Credential' -FlywayCommand 'migrate' -PackageName 'PCMSC.Functions' -PackageVersion 1
+  Invoke-Flyway -DatabaseName 'PCMSC' -Environment 'Development' -DatabaseHost 'utat022' -CredentialsKey 'PCMSC-Dev-Credential' -SqlMigrationsPath '.\sql' -FlywayTomlPath '.\flyway.toml' -FlywayCommand 'migrate' -PackageName 'PCMSC.Functions' -PackageVersion 1
 
   .NOTES
   AI assisted using Powershell.instructions.md as guidelines
@@ -106,57 +106,91 @@ function Invoke-Flyway {
   #>
   [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKey',
     Justification = 'CredentialsKey is a vault lookup key name, not a credential')]
-  [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low', DefaultParameterSetName = 'IntegratedSecurity')]
+  [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low', DefaultParameterSetName = 'ConnectionParameters')]
   param(
-    [Parameter(Mandatory = $false, Position = 0, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'IntegratedSecurity')]
-    [Parameter(Mandatory = $false, Position = 0, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CredentialsFromVault')]
+    # region Database connection parameters
+    [Parameter(Mandatory = $true, Position = 0, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
+    [Parameter(Mandatory = $true, Position = 0, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [string]$DatabaseName,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [string]$Environment,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
     [Alias('HostName')]
     [string]$DatabaseHost,
 
-    [Parameter(Mandatory = $false, Position = 1, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'IntegratedSecurity')]
-    [Parameter(Mandatory = $false, Position = 1, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CredentialsFromVault')]
-    [string]$Environment,
-
-    [Parameter(Mandatory = $false, Position = 2, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'IntegratedSecurity')]
-    [Parameter(Mandatory = $false, Position = 2, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CredentialsFromVault')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
     [string]$SqlInstance,
 
-    [Parameter(Mandatory = $false, Position = 3, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'IntegratedSecurity')]
-    [Parameter(Mandatory = $false, Position = 3, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CredentialsFromVault')]
-    [ValidateNotNullOrEmpty()]
-    [string]$DatabaseName,
-
-    [Parameter(Mandatory = $false, Position = 4, ValueFromPipelineByPropertyName = $true)]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
     [string]$ConnectionMethod,
 
-    [Parameter(Mandatory = $true, ParameterSetName = 'IntegratedSecurity')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [int]$Port,
+
+    [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParameters')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'ExistingConnection')]
     [switch]$IntegratedSecurity,
 
-    [Parameter(Mandatory = $true, ParameterSetName = 'CredentialsFromVault')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
     [string]$CredentialsKey,
 
-    # Flyway command selector
+    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [ValidateNotNull()]
+    [Microsoft.Data.SqlClient.SqlConnection]$SqlConnection,
+    # endregion Database connection parameters
+
+    # region Flyway parameters
+    [Parameter(Mandatory = $false)]
+    [string]$FlywayExecutablePath,
+
     [Parameter(Mandatory = $false)]
     [ValidateSet('validate', 'migrate', 'check', 'repair', 'info', 'baseline', 'clean', 'undo')]
     [string]$FlywayCommand = 'validate',
 
-    [Parameter(Mandatory = $false)]
-    [string]$SqlDir = '.\sql',
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+    [string]$FlywayBasePath,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+    [string]$flywaySqlMigrationsPath,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+    [string]$flywaySharedSqlMigrationsPath,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+    [string]$FlywayDataPath,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+    [string]$FlywayTomlPath,
 
     [Parameter(Mandatory = $false)]
+    [string[]]$FlywayAdditionalArgs,
+
+    #endregion Flyway parameters
+
+    # Optional metadata and execution tuning
+    [Parameter(Mandatory = $false)]
     [string[]]$Files,
+
+    [Parameter(Mandatory = $false)]
+    [string]$GitTag,
+
+    [Parameter(Mandatory = $false)]
+    [string]$GitCommit,
 
     [Parameter(Mandatory = $false)]
     [string]$PackageName,
 
     [Parameter(Mandatory = $false)]
-    [string]$PackageVersion,
+    [string]$PackageVersion
 
-    [string]$ConfigPath = '.\flyway.toml',
-    [string]$GitTag,
-    [string]$GitCommit,
-    [string]$FlywayPath = 'flyway',
-    [string[]]$FlywayAdditionalArgs
   )
 
   BEGIN {
@@ -180,70 +214,69 @@ function Invoke-Flyway {
       throw
     }
 
+    # Parameter validation using Get-PVal pattern
+    # region Database connection parameter validation
+    $databasesCollection = $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
+    $DatabaseName = Get-PVal -ParameterName "DatabaseName" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseName" -Settings $databasesCollection -DefaultValue $DatabaseName
+    $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue $Environment -ValidValues @('Production', 'Testing', 'Development', 'Experimental')
+    $DatabaseHost = Get-PVal -ParameterName "DatabaseHost" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseHost" -Settings $databasesCollection -DefaultValue $DatabaseHost
+    $SqlInstance = Get-PVal -ParameterName "SqlInstance" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlInstance" -Settings $databasesCollection -DefaultValue $SqlInstance -AllowMissing
+    $ConnectionMethod = Get-PVal -ParameterName "ConnectionMethod" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ConnectionMethod" -Settings $databasesCollection -DefaultValue $ConnectionMethod -ValidValues @('tcp', 'np', 'lpc')
+    $Port = Get-PVal -ParameterName "Port" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.Port" -Settings $databasesCollection -DefaultValue $Port -AllowMissing
+    $CredentialsKey = Get-PVal -ParameterName "CredentialsKey" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.CredentialsKey" -Settings $databasesCollection -DefaultValue $CredentialsKey -AllowMissing
+    # endregion Database connection parameters validation
+
+    $usingExistingConnection = $PSCmdlet.ParameterSetName -eq 'ExistingConnection'
+
+    if (-not $CredentialsKey -and -not $IntegratedSecurity) {
+      $IntegratedSecurity = $true
+    }
+
+    if ($usingExistingConnection -and $SqlConnection) {
+      $existingBuilder = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($SqlConnection.ConnectionString)
+      $dataSource = $existingBuilder.DataSource
+      $dataSourceNoProto = if ($dataSource -match ':') { $dataSource.Split(':')[-1] } else { $dataSource }
+
+      if (-not $DatabaseHost) {
+        if ($dataSourceNoProto -match '\\') {
+          $DatabaseHost = $dataSourceNoProto.Split('\\')[0]
+          if (-not $SqlInstance -and $dataSourceNoProto.Split('\\').Count -gt 1) { $SqlInstance = $dataSourceNoProto.Split('\\')[1] }
+        }
+        elseif ($dataSourceNoProto -match ',') {
+          $parts = $dataSourceNoProto.Split(',')
+          $DatabaseHost = $parts[0]
+          if (-not $Port -and $parts.Count -gt 1) { $Port = [int]$parts[1] }
+        }
+        else {
+          $DatabaseHost = $dataSourceNoProto
+        }
+      }
+
+      if (-not $SqlInstance -and $dataSourceNoProto -match '\\') {
+        $SqlInstance = $dataSourceNoProto.Split('\\')[1]
+      }
+
+      if (-not $Port -and $dataSourceNoProto -match ',') {
+        $Port = [int]$dataSourceNoProto.Split(',')[1]
+      }
+
+      if (-not $IntegratedSecurity) {
+        $IntegratedSecurity = $existingBuilder.IntegratedSecurity
+      }
+    }
+    $FlywayExecutablePath = Get-PVal -ParameterName "FlywayBasePath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayBasePath" -Settings $databasesCollection -DefaultValue $FlywayBasePath
+    $FlywayBasePath = Get-PVal -ParameterName "FlywayBasePath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayBasePath" -Settings $databasesCollection -DefaultValue $FlywayBasePath
+    $flywaySqlMigrationsPath = Get-PVal -ParameterName "SqlMigrationsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlMigrationsPath" -Settings $databasesCollection -DefaultValue $flywaySqlMigrationsPath
+    $flywaySharedSqlMigrationsPath = Get-PVal -ParameterName "SharedSqlMigrationsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SharedSqlMigrationsPath" -Settings $databasesCollection -DefaultValue $flywaySharedSqlMigrationsPath
+    $FlywayDataPath = Get-PVal -ParameterName "FlywayDataPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayDataPath" -Settings $databasesCollection -DefaultValue $FlywayDataPath
+    $FlywayTomlPath = Get-PVal -ParameterName "FlywayTomlPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayTomlPath" -Settings $databasesCollection -DefaultValue $FlywayTomlPath
+    $FlywayAdditionalArgs = Get-PVal -ParameterName "FlywayAdditionalArgs" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayAdditionalArgs" -Settings $databasesCollection -DefaultValue $FlywayAdditionalArgs -AllowMissing
+    $PackageName = Get-PVal -ParameterName "PackageName" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.PackageName" -Settings $databasesCollection -DefaultValue $PackageName -AllowMissing
+    $PackageVersion = Get-PVal -ParameterName "PackageVersion" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.PackageVersion" -Settings $databasesCollection -DefaultValue $PackageVersion -AllowMissing
+
     $script:errors = [System.Collections.Generic.List[string]]::new()
     $script:success = $false
 
-    # Parameter validation using Get-PVal pattern (per Powershell.instructions.md)
-
-    # Check and populate Environment parameter
-    $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue 'Experimental' -AllowMissing:$true -ValidValues @('Development', 'Testing', 'Production', 'Experimental')
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Environment: $Environment"
-
-    # Check and populate DatabaseHost parameter
-    $databasesCollection = $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
-    $DatabaseHost = Get-PVal -ParameterName 'DatabaseHost' -originalPSBoundParameters $PSBoundParameters -dottedPath "$DatabaseName.$Environment.DatabaseHost" -Settings $databasesCollection -DefaultValue $DatabaseHost -AllowMissing:$true
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "DatabaseHost: $DatabaseHost"
-
-    # Check and populate SqlInstance parameter
-    # Per Database Design: SqlInstance matches Environment, except 'Experimental' uses default instance (blank)
-    $sqlInstanceDefault = if ($Environment -eq 'Experimental') { $null } else { $Environment }
-    $SqlInstance = Get-PVal -ParameterName 'SqlInstance' -originalPSBoundParameters $PSBoundParameters -dottedPath "$DatabaseName.$Environment.SqlInstance" -Settings $databasesCollection -DefaultValue $sqlInstanceDefault -AllowMissing:$true
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "SqlInstance: $SqlInstance"
-
-    # Check and populate DatabaseName parameter
-    $DatabaseName = Get-PVal -ParameterName 'DatabaseName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$DatabaseName.DatabaseName" -DefaultValue $DatabaseName -AllowMissing:$true
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "DatabaseName: $DatabaseName"
-
-    # Check and populate ConnectionMethod parameter
-    $ConnectionMethod = Get-PVal -ParameterName 'ConnectionMethod' -originalPSBoundParameters $PSBoundParameters -dottedPath "$DatabaseName.$Environment.ConnectionMethod" -Settings $databasesCollection -DefaultValue 'default' -AllowMissing:$true -ValidValues @('tcp', 'np', 'lpc', 'default')
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "ConnectionMethod: $ConnectionMethod"
-
-    # Check and populate CredentialsKey parameter (only for CredentialsFromVault parameter set)
-    if ($PSCmdlet.ParameterSetName -eq 'CredentialsFromVault') {
-      $CredentialsKey = Get-PVal -ParameterName 'CredentialsKey' -originalPSBoundParameters $PSBoundParameters -dottedPath "$DatabaseName.$Environment.CredentialsKey" -Settings $databasesCollection -DefaultValue $CredentialsKey -AllowMissing:$false
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "CredentialsKey: $CredentialsKey"
-    }
-
-    # Validate ConfigPath
-    try {
-      if ([string]::IsNullOrWhiteSpace($ConfigPath)) { throw 'ConfigPath is null or empty.' }
-      if (-not (Test-Path -Path $ConfigPath)) { throw "ConfigPath not found: $ConfigPath" }
-    }
-    catch {
-      $msg = "ConfigPath validation failed. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'Validation', 'Error'
-      $script:errors.Add($msg) | Out-Null; throw
-    }
-
-    # Validate PackageName
-    try {
-      if ([string]::IsNullOrWhiteSpace($PackageName)) { throw 'PackageName is null or empty.' }
-    }
-    catch {
-      $msg = "PackageName validation failed. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'Validation', 'Error'
-      $script:errors.Add($msg) | Out-Null; throw
-    }
-
-    # Validate PackageVersion
-    try {
-      if ([string]::IsNullOrWhiteSpace($PackageVersion)) { throw 'PackageVersion is null or empty.' }
-    }
-    catch {
-      $msg = "PackageVersion validation failed. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'Validation', 'Error'
-      $script:errors.Add($msg) | Out-Null; throw
-    }
 
     # Git metadata
     function Get-GitMeta {
@@ -271,7 +304,7 @@ function Invoke-Flyway {
     $values = @()
     try {
       foreach ($name in $Files) {
-        $full = Join-Path $SqlDir $name
+        $full = Join-Path $flywaySqlMigrationsPath $name
         if (-not (Test-Path $full)) { throw "File not found: $full" }
         $sha = (Get-FileHash -Path $full -Algorithm SHA256).Hash.ToLower()
         $type = if ($name -like 'R__*') { 'R' } elseif ($name -like 'V*__*') { 'V' } else { 'R' }
@@ -292,48 +325,58 @@ function Invoke-Flyway {
 
   PROCESS {
     try {
-      # Build connection string using New-ConnectionStringBuilderFromDbaTools with -AsJDBC
-      $connBuilderParams = @{
-        DatabaseName = $DatabaseName
-        AsJDBC       = $true
-      }
+      $jdbcUrl = $null
+      $dataSourceForLog = $DatabaseHost
+      $useIntegratedSecurity = $false
 
-      # Add DatabaseHost if specified
-      if (-not [string]::IsNullOrWhiteSpace($DatabaseHost)) {
-        $connBuilderParams['DatabaseHost'] = $DatabaseHost
-      }
+      if ($usingExistingConnection) {
+        $existingBuilder = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($SqlConnection.ConnectionString)
+        $dataSourceForLog = $existingBuilder.DataSource
+        $serverSegment = $existingBuilder.DataSource
+        if ($Port -and ($serverSegment -notmatch ',')) { $serverSegment = "$serverSegment,$Port" }
 
-      # Add SqlInstance if specified
-      if (-not [string]::IsNullOrWhiteSpace($SqlInstance)) {
-        $connBuilderParams['SqlInstance'] = $SqlInstance
-      }
-
-      # Add ConnectionMethod if not default
-      if (-not [string]::IsNullOrWhiteSpace($ConnectionMethod) -and $ConnectionMethod -ne 'default') {
-        $connBuilderParams['ConnectionMethod'] = $ConnectionMethod
-      }
-
-      # Set authentication method based on parameter set
-      if ($PSCmdlet.ParameterSetName -eq 'IntegratedSecurity') {
-        $connBuilderParams['IntegratedSecurity'] = $true
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Using Windows Integrated Authentication'
+        $jdbcUrl = "jdbc:sqlserver://$serverSegment;databaseName=$DatabaseName;encrypt=false;trustServerCertificate=true"
+        $useIntegratedSecurity = $existingBuilder.IntegratedSecurity -or $IntegratedSecurity
+        if ($useIntegratedSecurity) {
+          $jdbcUrl += ';integratedSecurity=true'
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Using Windows Integrated Authentication (existing connection)'
+        }
+        else {
+          $jdbcUrl += ";user=$($existingBuilder.UserID);password=$($existingBuilder.Password)"
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Using SQL authentication from existing connection'
+        }
       }
       else {
-        $connBuilderParams['CredentialsKey'] = $CredentialsKey
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Using vault credentials with key: $CredentialsKey"
+        $connBuilderParams = @{
+          DatabaseName = $DatabaseName
+          AsJDBC       = $true
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($DatabaseHost)) { $connBuilderParams['DatabaseHost'] = $DatabaseHost }
+        if (-not [string]::IsNullOrWhiteSpace($SqlInstance)) { $connBuilderParams['SqlInstance'] = $SqlInstance }
+        if (-not [string]::IsNullOrWhiteSpace($ConnectionMethod) -and $ConnectionMethod -ne 'default') { $connBuilderParams['ConnectionMethod'] = $ConnectionMethod }
+        if ($Port) { $connBuilderParams['Port'] = $Port }
+
+        if ($CredentialsKey) {
+          $connBuilderParams['CredentialsKey'] = $CredentialsKey
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Using vault credentials with key: $CredentialsKey"
+        }
+        else {
+          $connBuilderParams['IntegratedSecurity'] = $true
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Using Windows Integrated Authentication'
+        }
+
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Database: $DatabaseName"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "ConnectionMethod: $ConnectionMethod"
+
+        $connectionStringBuilder = New-ConnectionStringBuilderFromDbaTools @connBuilderParams
+        $jdbcUrl = $connectionStringBuilder.ToString()
+        $dataSourceForLog = $connectionStringBuilder.DataSource
+        $useIntegratedSecurity = $connectionStringBuilder.UseIntegratedSecurity
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'JDBC connection string built successfully'
       }
 
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Database: $DatabaseName"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "ConnectionMethod: $ConnectionMethod"
-
-      # Create the connection string builder - ToString() returns the JDBC URL
-      $connectionStringBuilder = New-ConnectionStringBuilderFromDbaTools @connBuilderParams
-
-      # Get the JDBC connection string by calling ToString()
-      $jdbcUrl = $connectionStringBuilder.ToString()
-
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "DataSource: $($connectionStringBuilder.DataSource)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'JDBC connection string built successfully'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "DataSource: $dataSourceForLog"
 
       # Set Flyway environment variables
 
@@ -359,7 +402,7 @@ function Invoke-Flyway {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Flyway URL: $($jdbcUrl -replace 'password=[^;]*', 'password=***')"
 
       # Configure authentication environment variables
-      if ($PSCmdlet.ParameterSetName -eq 'IntegratedSecurity') {
+      if ($useIntegratedSecurity) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Configuring Flyway for Windows Integrated Authentication'
 
         # Clear ALL Flyway user/password environment variables for all environments
@@ -399,15 +442,15 @@ function Invoke-Flyway {
       $env:FLYWAY_PLACEHOLDERS_GITCOMMIT = $GitCommit
 
       # Build flyway parameters and execute
-      $flywayParams = @("-configFiles=$ConfigPath", "-environment=$environmentKey")
+      $flywayParams = @("-configFiles=$FlywayTomlPath", "-environment=$environmentKey")
       if ($FlywayAdditionalArgs) { $flywayParams += $FlywayAdditionalArgs }
       $flywayParams += $FlywayCommand
 
-      if ($PSCmdlet.ShouldProcess($ConfigPath, "flyway $FlywayCommand [$environmentKey]")) {
+      if ($PSCmdlet.ShouldProcess($FlywayTomlPath, "flyway $FlywayCommand [$environmentKey]")) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Running flyway $FlywayCommand..."
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling flyway with args: $($flywayParams -join ' ')"
 
-        & $FlywayPath @flywayParams
+        & $FlywayExecutablePath @flywayParams
         $exit = $LASTEXITCODE
         if ($exit -ne 0) { throw "flyway exited with code $exit" }
 

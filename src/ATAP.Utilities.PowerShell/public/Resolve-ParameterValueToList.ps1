@@ -3,7 +3,7 @@
 
 <#
 .SYNOPSIS
-Resolves and validates a parameter value against an allowed list
+Resolves and validates a parameter value against an allowed list (OBSOLETE - use Get-PVal with -ValidValues instead)
 
 .DESCRIPTION
 Takes a parameter value and validates it against a list of allowed values using case-insensitive comparison.

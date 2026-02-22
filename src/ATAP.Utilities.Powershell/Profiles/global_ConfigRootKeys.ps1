@@ -41,6 +41,8 @@ $global:configRootKeys = @{
   'CHATGPT_URLConfigRootKey'                                                                     = 'CHATGPT_URL'
   'CHATGPT_USER_IDConfigRootKey'                                                                 = 'CHATGPT_USER_ID'
   'CHATGPT_API_TOKENConfigRootKey'                                                               = 'CHATGPT_API_TOKEN'
+  # Perplexity settings
+  'PERPLEXITY_API_TOKENConfigRootKey'                                                            = 'PERPLEXITY_API_TOKEN'
 
   'ChocolateyInstallDirConfigRootKey'                                                            = 'ChocolateyInstall'
   'ChocolateyBinDirConfigRootKey'                                                                = 'ChocolateyBinDir'

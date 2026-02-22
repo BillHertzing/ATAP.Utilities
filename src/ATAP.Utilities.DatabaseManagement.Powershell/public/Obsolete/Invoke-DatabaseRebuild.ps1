@@ -59,8 +59,8 @@ function Invoke-DatabaseRebuild {
       if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
         . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
       }
-      if (-not (Get-Command -Name 'Rebuild-DatabaseFromFlyway' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . (Join-Path $PSScriptRoot 'Rebuild-DatabaseFromFlyway.ps1')
+      if (-not (Get-Command -Name 'Build-DatabaseWithFlyway' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot 'Build-DatabaseWithFlyway.ps1')
       }
     }
     catch {
@@ -82,7 +82,7 @@ function Invoke-DatabaseRebuild {
   PROCESS {
     try {
       if ($PSCmdlet.ShouldProcess($DatabaseName, 'Rebuild database')) {
-        $result = Rebuild-DatabaseFromFlyway `
+        $result = Build-DatabaseWithFlyway `
           -DatabaseName $DatabaseName `
           -Environment $Environment `
           -DatabaseHost $DatabaseHost `

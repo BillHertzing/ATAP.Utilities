@@ -44,26 +44,12 @@ function DatabaseProvisioning {
   If there exists files with the same name as the database in this path, the operation is aborted unless force is true
   If force is true, the existing files are deleted.
 
-  .PARAMETER ScriptDirectory
+  .PARAMETER ProvisioningScriptsPath
   Directory that contains the provisioning SQL scripts and contains the scripts executed by this function.
-  This is usually supplied by an environment variable or from the global settings. but can be overridden here.
-  Defaults to the location where ATAP.Utilities.DatabaseManagement places its 'SharedSQL' subdirectory,
-
-  .PARAMETER UseNamedLogin
-  Boolean. if false, the database is created with integrated security, using the current Windows's user that is running this scrip.
-    the current Windows's user that is running this script is granted datareader / datawriter access, and DBO  and BulkAdmin per the appropriate parameter.
-  If true and LoginName is nonblank, then if the LoginName follows a Window's user's name pattern "contains '\' or \@\",
-  That window's login is granted datareader / datawriter access, and DBO and BulkAdmin per the appropriate parameter.
-  If the LoginName does not follow a Window's user's name pattern a SQL login is created or ensured as part of the provisioning.
-  This is usually supplied by an environment variable or from the global settings. but can be overridden here.
-
-  .PARAMETER LoginName
-  The Windows or SQL Login name to create or ensure if UseNamedLogin is true.  If UseNamedLogin is false, this parameter is ignored.
   This is usually supplied by an environment variable or from the global settings. but can be overridden here.
 
   .PARAMETER CredentialsKey
-  The key used to retrieve the password for the login if UseNamedLogin is true and the LoginName is not a Windows' username pattern
-  This is usually supplied by an environment variable or from the global settings. but can be overridden here.
+  The key used to retrieve the credentials from the vault for a SQL authenticated connection. If not supplied, Windows Integrated Security is used.
 
   .Parameter GrantDatabaseOwner
   If true, grants the login DBO access to the database
@@ -80,59 +66,75 @@ function DatabaseProvisioning {
   # Using existing connection
   $conn = New-Object System.Data.SqlClient.SqlConnection("Server=UTAT01;Database=master;Integrated Security=true")
   $conn.Open()
-  DatabaseProvisioning -DatabaseName PCMSC -SqlConnection $conn -DatabasePath "C:\Data" -ScriptDirectory "C:\Scripts" -Force
+  DatabaseProvisioning -DatabaseName PCMSC -SqlConnection $conn -DatabasePath "C:\Data" -ProvisioningScriptsPath "C:\Scripts" -Force
 
   .EXAMPLE
   # Using connection parameters (legacy mode)
   DatabaseProvisioning -DatabaseName BuildSets -Environment Development
 
   #>
-
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKey',
+    Justification = 'CredentialsKey is a vault lookup key name, not a credential')]
   [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium', DefaultParameterSetName = 'ConnectionParameters')]
   param(
+    # region Database connection parameters
     [Parameter(Mandatory = $true, Position = 0, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
     [Parameter(Mandatory = $true, Position = 0, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
     [ValidateNotNullOrEmpty()]
     [string]$DatabaseName,
 
-    [Parameter(Mandatory = $true, ParameterSetName = 'ExistingConnection')]
-    [ValidateNotNull()]
-    [object]$SqlConnection,
-
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
     [string]$Environment,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [Alias('HostName')]
     [string]$DatabaseHost,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
-    [string]$ConnectionMethod,
-
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
     [string]$SqlInstance,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
-    [bool]$UseNamedLogin = $false,
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [string]$ConnectionMethod,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
-    [string]$LoginName ,
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [int]$Port,
+
+    [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParameters')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'ExistingConnection')]
+    [switch]$IntegratedSecurity,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
     [string]$CredentialsKey,
 
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [ValidateNotNull()]
+    [Microsoft.Data.SqlClient.SqlConnection]$SqlConnection,
+    # endregion Database connection parameters
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
     [string]$DatabasePath,
 
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
-    [string]$ScriptDirectory,
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [string]$ProvisioningScriptsPath,
 
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
     [bool]$GrantDatabaseOwner = $true,
 
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
     [bool]$GrantBulkAdmin = $true,
 
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
     [bool]$ProvisionForFlyway = $true,
 
     [switch]$Force
@@ -161,44 +163,25 @@ function DatabaseProvisioning {
 
     $errors = [System.Collections.Generic.List[string]]::new()
     $scriptsRun = [System.Collections.Generic.List[string]]::new()
-    $usingExistingConnection = $PSCmdlet.ParameterSetName -eq 'ExistingConnection'
-
-    function Test-Blank([string]$s) { [string]::IsNullOrWhiteSpace($s) }
-
-    function Resolve-FromSettings([string]$db, [string]$env, [string]$leafKey) {
-      if ($settings.ContainsKey($global:configRootKeys['DatabasesCollectionConfigRootKey'])) {
-        $root = $settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
-        if ($root.ContainsKey($db) -and $root[$db].ContainsKey($env) -and $root[$db][$env].ContainsKey($leafKey)) {
-          $val = $root[$db][$env][$leafKey]
-          if (-not (Test-Blank $val)) { return $val }
-        }
-      }
-      return $null
+    if (-not $CredentialsKey -and -not $IntegratedSecurity) {
+      $IntegratedSecurity = $true
     }
-
-    function Is-WindowsLoginName([string]$name) {
-      # "domain\user" OR "user@domain"
-      return ($name -match '\\') -or ($name -match '@')
-    }
+    $useIntegratedSecurity = $IntegratedSecurity
 
     # Handle connection based on parameter set
-    if ($usingExistingConnection) {
+    if ($PSCmdlet.ParameterSetName -eq 'ExistingConnection') {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Using existing SQL connection object"
 
-      # Validate the connection object
       try {
-        # Check if connection has required properties/methods
         if (-not ($SqlConnection.PSObject.Properties['State'] -and $SqlConnection.PSObject.Methods['Open'])) {
           throw "Provided SqlConnection object does not appear to be a valid SQL connection (missing State property or Open method)"
         }
 
-        # Ensure connection is open
         if ($SqlConnection.State -ne [System.Data.ConnectionState]::Open) {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Opening provided SQL connection"
           $SqlConnection.Open()
         }
 
-        # Test the connection with a simple query
         $testCmd = $SqlConnection.CreateCommand()
         $testCmd.CommandText = "SELECT @@VERSION AS Version, DB_NAME() AS CurrentDatabase"
         $testCmd.CommandTimeout = 30
@@ -212,24 +195,17 @@ function DatabaseProvisioning {
         $testReader.Close()
         $testCmd.Dispose()
 
-        # Extract server name for logging/validation
-        $script:ConnectionString = $SqlConnection.ConnectionString
+        $ConnectionString = $SqlConnection.ConnectionString
         $serverForConnect = $SqlConnection.DataSource
+        $useIntegratedSecurity = ([Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($SqlConnection.ConnectionString)).IntegratedSecurity
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Using server: $serverForConnect"
 
-        # For ExistingConnection parameter set, we need DatabasePath and ScriptDirectory
         if ([string]::IsNullOrWhiteSpace($DatabasePath)) {
           throw "DatabasePath is required when using SqlConnection parameter"
         }
-        if ([string]::IsNullOrWhiteSpace($ScriptDirectory)) {
-          throw "ScriptDirectory is required when using SqlConnection parameter"
+        if ([string]::IsNullOrWhiteSpace($ProvisioningScriptsPath)) {
+          throw "ProvisioningScriptsPath is required when using SqlConnection parameter"
         }
-
-        # Set defaults for authentication parameters when using existing connection
-        $UseNamedLogin = $false
-        $LoginName = ''
-        $Environment = 'Experimental'  # Default for existing connection mode
-
       }
       catch {
         $errorMessage = "Failed to validate or use provided SQL connection: $($_.Exception.Message)"
@@ -240,19 +216,18 @@ function DatabaseProvisioning {
     else {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Building SQL connection from parameters"
 
-      # These may throw
-      # ToDo: write a wrapper that catches and logs
+      # region Database connection parameter validation
       $databasesCollection = $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
-
       $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue $Environment -ValidValues @('Production', 'Testing', 'Development', 'Experimental')
       $SqlInstance = Get-PVal -ParameterName "SqlInstance" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlInstance" -Settings $databasesCollection -DefaultValue $SqlInstance
       $DatabaseHost = Get-PVal -ParameterName "DatabaseHost" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseHost" -Settings $databasesCollection -DefaultValue $DatabaseHost
       $ConnectionMethod = Get-PVal -ParameterName "ConnectionMethod" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ConnectionMethod" -Settings $databasesCollection -DefaultValue $ConnectionMethod -ValidValues @('tcp', 'np', 'lpc')
+      $Port = Get-PVal -ParameterName "Port" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.Port" -Settings $databasesCollection -DefaultValue $Port -AllowMissing
       $DatabasePath = Get-PVal -ParameterName "DatabasePath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection -DefaultValue $DatabasePath
-      $ScriptDirectory = Get-PVal -ParameterName "ScriptDirectory" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ScriptDirectory" -Settings $databasesCollection -DefaultValue $ScriptDirectory
-      $UseNamedLogin = Get-PVal -ParameterName "UseNamedLogin" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.UseNamedLogin" -Settings $databasesCollection -DefaultValue $UseNamedLogin -AsType ([bool])
-      $LoginName = Get-PVal -ParameterName "LoginName" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.LoginName" -Settings $databasesCollection -DefaultValue $LoginName
       $CredentialsKey = Get-PVal -ParameterName "CredentialsKey" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.CredentialsKey" -Settings $databasesCollection -DefaultValue $CredentialsKey
+      # endregion Database connection parameters validation
+
+      $ProvisioningScriptsPath = Get-PVal -ParameterName "ProvisioningScriptsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisioningScriptsPath" -Settings $databasesCollection -DefaultValue $ProvisioningScriptsPath
 
       # Check and populate optional parameter
       $GrantDatabaseOwner = Get-PVal -ParameterName "GrantDatabaseOwner" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.GrantDatabaseOwner" -Settings $databasesCollection -DefaultValue $GrantDatabaseOwner -AsType ([bool]) -AllowMissing
@@ -260,16 +235,22 @@ function DatabaseProvisioning {
       $ProvisionForFlyway = Get-PVal -ParameterName "ProvisionForFlyway" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisionForFlyway" -Settings $databasesCollection -DefaultValue $ProvisionForFlyway -AsType ([bool]) -AllowMissing
 
       # Build up the connection string
-      # Use different parameter sets based on authentication method
-      if ($UseNamedLogin -and -not [string]::IsNullOrWhiteSpace($CredentialsKey)) {
-        # SQL authentication with credentials from vault
-        $connStrBuilder = New-DBAConnStrBuilder -DatabaseHost $DatabaseHost -DatabaseName $DatabaseName -ConnectionMethod $ConnectionMethod -SqlInstance $SqlInstance -CredentialsKey $CredentialsKey
+      $connBuilderParams = @{
+        DatabaseHost     = $DatabaseHost
+        DatabaseName     = $DatabaseName
+        ConnectionMethod = $ConnectionMethod
+        SqlInstance      = $SqlInstance
       }
-      else {
-        # Windows Integrated Security (current user)
-        $connStrBuilder = New-DBAConnStrBuilder -DatabaseHost $DatabaseHost -DatabaseName $DatabaseName -ConnectionMethod $ConnectionMethod -SqlInstance $SqlInstance -IntegratedSecurity
-      }
-      $script:ConnectionString = $connStrBuilder.ToString()
+
+      if ($Port) { $connBuilderParams['Port'] = $Port }
+      if ($CredentialsKey) { $connBuilderParams['CredentialsKey'] = $CredentialsKey }
+      elseif ($IntegratedSecurity) { $connBuilderParams['IntegratedSecurity'] = $true }
+      else { $connBuilderParams['IntegratedSecurity'] = $true }
+
+      $connStrBuilder = New-DBAConnStrBuilder @connBuilderParams
+      $ConnectionString = $connStrBuilder.ToString()
+      $useIntegratedSecurity = $connStrBuilder.UseIntegratedSecurity
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "IntegratedSecurity (from builder): $useIntegratedSecurity"
 
       # Create the server portion of the connection string for Invoke-Sqlcmd
       $serverForConnect = "${ConnectionMethod}:$DatabaseHost"
@@ -284,11 +265,10 @@ function DatabaseProvisioning {
       Environment             = $Environment
       DatabasePath            = $DatabasePath
       SqlInstance             = $(if ($usingExistingConnection) { $SqlConnection.DataSource } else { $SqlInstance })
-      UseNamedLogin           = $UseNamedLogin
-      LoginName               = $LoginName
       CredentialsKey          = $CredentialsKey
       GrantDatabaseOwner      = $GrantDatabaseOwner
       UsingExistingConnection = $usingExistingConnection
+      UseIntegratedSecurity   = $useIntegratedSecurity
       ScriptsPlanned          = @()
       ScriptsExecuted         = @()
       Success                 = $false
@@ -318,7 +298,7 @@ function DatabaseProvisioning {
     )
 
     foreach ($entry in $plannedScripts) {
-      $full = Join-Path -Path $ScriptDirectory -ChildPath $entry.Name
+      $full = Join-Path -Path $ProvisioningScriptsPath -ChildPath $entry.Name
       if (-not (Test-Path $full)) {
         $msg = "Planned script not found: $full"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
@@ -362,20 +342,20 @@ ELSE
 
       if ($dbExists) {
         if (-not $Force) {
-          $errorMessage = "Database '$DatabaseName' already exists on instance '$SqlInstance'. Use -Force to drop and recreate."
+          $errorMessage = "Database '$DatabaseName' already exists on '$serverForConnect'. Use -Force to drop and recreate."
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
           throw $errorMessage
         }
         else {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Database '$DatabaseName' already exists on '$SqlInstance'. It will be dropped and recreated because -Force is set." -Tag 'Validation', 'Warning'
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Database '$DatabaseName' already exists on '$serverForConnect'. It will be dropped and recreated because -Force is set." -Tag 'Validation', 'Warning'
         }
       }
       else {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Database '$DatabaseName' does not exist on '$SqlInstance'. Proceeding with creation." -Tag 'Validation', 'Info'
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Database '$DatabaseName' does not exist on '$serverForConnect'. Proceeding with creation." -Tag 'Validation', 'Info'
       }
     }
     catch {
-      $errorMessage = "Failed checking database existence on '$SqlInstance': $($_.Exception.Message)"
+      $errorMessage = "Failed checking database existence on '$serverForConnect': $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
       $errors.Add($errorMessage) | Out-Null
       throw
@@ -405,10 +385,10 @@ END
         }
 
         Invoke-Sqlcmd @invokeDrop
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Successfully dropped existing database '$DatabaseName' on '$SqlInstance'." -Tag 'Validation', 'Warning'
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Successfully dropped existing database '$DatabaseName' on '$serverForConnect'." -Tag 'Validation', 'Warning'
       }
       catch {
-        $errorMessage = "Failed dropping existing database '$DatabaseName' on '$SqlInstance': $($_.Exception.Message)"
+        $errorMessage = "Failed dropping existing database '$DatabaseName' on '$serverForConnect': $($_.Exception.Message)"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
         $errors.Add($errorMessage) | Out-Null
         throw
@@ -438,29 +418,29 @@ END
     }
 
 
-    # Stash script metadata in script scope for PROCESS
-    $script:PlannedScriptsMetadata = $plannedScripts
-    $script:loginPasswordValue = $loginPassword
-    $script:dbExists = $dbExists
-    $script:ServerForConnect = $serverForConnect
-    $script:UsingExistingConnection = $usingExistingConnection
-    $script:ProvidedSqlConnection = $SqlConnection
+    # Stash script metadata for PROCESS block
+    $PlannedScriptsMetadata = $plannedScripts
+    $loginPasswordValue = $loginPassword
+    $dbExists = $dbExists
+    $ServerForConnect = $serverForConnect
+    $UsingExistingConnection = $usingExistingConnection
+    $ProvidedSqlConnection = $SqlConnection
   }
 
   PROCESS {
 
-    foreach ($meta in $script:PlannedScriptsMetadata) {
+    foreach ($meta in $PlannedScriptsMetadata) {
       $scriptPath = $meta.FullPath
       $scriptLabel = $meta.Name
       $targetDb = $meta.RunDb
 
-      if ($PSCmdlet.ShouldProcess("$($script:ServerForConnect) / $targetDb", "Execute $scriptLabel")) {
+      if ($PSCmdlet.ShouldProcess("$($ServerForConnect) / $targetDb", "Execute $scriptLabel")) {
         try {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Starting script $scriptLabel"
 
           try {
             $invokeParams = @{
-              ServerInstance         = $script:ServerForConnect
+              ServerInstance         = $ServerForConnect
               InputFile              = $scriptPath
               ErrorAction            = 'Stop'
               Encrypt                = 'Optional'
@@ -479,10 +459,7 @@ END
             $invokeParams.Variable = @{
               DatabaseName       = $DatabaseName
               DatabasePath       = $DatabasePath
-              DBExists           = $script:dbExists
-              UseNamedLogin      = $UseNamedLogin
-              LoginName          = $LoginName
-              loginPassword      = $script:loginPasswordValue
+              DBExists           = $dbExists
               GrantDatabaseOwner = $GrantDatabaseOwner
               GrantBulkAdmin     = $GrantBulkAdmin
             }

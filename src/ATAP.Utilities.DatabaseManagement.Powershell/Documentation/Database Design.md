@@ -20,9 +20,9 @@ the cmdlet New-ConnectionStringBuilderFromDbaTools has a large number of paramet
 
 DatabaseName - the name of the database
 
-Environment - 'Development', 'Testing', 'Production', 'Experimental'. This drives the value of SQLInstance
+Environment - 'Development', 'Testing', 'Production', 'Experimental'. This drives the value of SqlInstance
 
-SQLInstance - the named instances 'Development', 'Testing', 'Production', corresponding to value of the 'Environment' parameter. SQLInstance is blank (left off the connection string) if thevalue of the environment parameter is 'Experimental'
+SqlInstance - the named instances 'Development', 'Testing', 'Production', corresponding to value of the 'Environment' parameter. SqlInstance is blank (left off the connection string) if thevalue of the environment parameter is 'Experimental'
 
 DatabaseServer (Alias 'HostName') - the resolvable name that identifies the computer address to use
 
@@ -38,7 +38,7 @@ CredentialsKey - a string that identifies a secret in the active Secretvault. AT
 many of the other parameters. After fetching credentials from the vault, the following fields may be defined in the returned value, and if present, override parameter values for the following
 
 DatabaseServer
-SQLInstance
+SqlInstance
 DatabaseName
 ConnectionMethod
 IntegratedSecurity

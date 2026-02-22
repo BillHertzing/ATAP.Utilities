@@ -57,19 +57,19 @@ System.Object
 Returns a summary object with the results of the load operation.
 
 .EXAMPLE
-Load-GmailToDatabase -DatabaseHost 'localhost' -Environment 'Development' -DatabaseName 'GMAIL' -IntegratedSecurity -TakeoutZipPath 'C:\Downloads\takeout.zip'
+Load-Gmail -DatabaseHost 'localhost' -Environment 'Development' -DatabaseName 'GMAIL' -IntegratedSecurity -TakeoutZipPath 'C:\Downloads\takeout.zip'
 Loads Gmail data using Windows Integrated Authentication to the Development instance.
 
 .EXAMPLE
-Load-GmailToDatabase -Environment 'Experimental' -DatabaseName 'GMAIL' -CredentialsKey 'Gmail_Dev_Credentials' -TakeoutZipPath 'C:\Downloads\takeout.zip'
+Load-Gmail -Environment 'Experimental' -DatabaseName 'GMAIL' -CredentialsKey 'Gmail_Dev_Credentials' -TakeoutZipPath 'C:\Downloads\takeout.zip'
 Loads Gmail data to Experimental environment (default instance) using vault credentials.
 
 .EXAMPLE
-Load-GmailToDatabase -DatabaseHost 'sqlserver01' -Environment 'Production' -DatabaseName 'GMAIL' -CredentialsKey 'Gmail_SQL_Creds' -ExtractPath 'C:\Temp\Gmail' -SkipExtraction
+Load-Gmail -DatabaseHost 'sqlserver01' -Environment 'Production' -DatabaseName 'GMAIL' -CredentialsKey 'Gmail_SQL_Creds' -ExtractPath 'C:\Temp\Gmail' -SkipExtraction
 Uses vault credentials with Production environment, loads from already-extracted directory.
 
 .EXAMPLE
-Load-GmailToDatabase -DatabaseHost 'localhost' -SqlInstance 'CustomInstance' -DatabaseName 'GMAIL' -IntegratedSecurity -TakeoutZipPath 'C:\Downloads\takeout.zip'
+Load-Gmail -DatabaseHost 'localhost' -SqlInstance 'CustomInstance' -DatabaseName 'GMAIL' -IntegratedSecurity -TakeoutZipPath 'C:\Downloads\takeout.zip'
 Uses an explicitly specified SqlInstance, overriding the Environment-based value.
 
 .NOTES
@@ -81,7 +81,7 @@ Requires Bitwarden CLI (bw) for vault authentication.
 .LINK
 https://github.com/whertzing/ATAP.Utilities
 #>
-function Load-GmailToDatabase {
+function Load-Gmail {
   [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'IntegratedSecurity')]
   param(
     [Parameter(Mandatory = $false, Position = 0, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'IntegratedSecurity')]
@@ -128,7 +128,7 @@ function Load-GmailToDatabase {
   )
 
   BEGIN {
-    $fn = 'Load-GmailToDatabase'
+    $fn = 'Load-Gmail'
     $mn = 'ATAP.Utilities.Gmail.Powershell'
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
@@ -332,7 +332,7 @@ function Load-GmailToDatabase {
       }
     }
     catch {
-      $errorMessage = "Load-GmailToDatabase failed: $($_.Exception.Message)"
+      $errorMessage = "Load-Gmail failed: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Stack trace: $($_.ScriptStackTrace)"
       throw

@@ -8,13 +8,6 @@ $global:EnvVars = @{
   $global:configRootKeys['DropBoxBasePathConfigRootKey']        = $global:Settings[$global:configRootKeys['DropBoxBasePathConfigRootKey']]
   $global:configRootKeys['ErlangHomeDirConfigRootKey']          = $global:Settings[$global:configRootKeys['ErlangHomeDirConfigRootKey']]
   $global:configRootKeys['ENVIRONMENTConfigRootKey']            = $global:Settings[$global:configRootKeys['ENVIRONMENTConfigRootKey']]
-  # $global:configRootKeys['FLYWAY_URLConfigRootKey']             = $global:Settings[$global:configRootKeys['FLYWAY_URLConfigRootKey']]
-  # $global:configRootKeys['FLYWAY_USERConfigRootKey']            = $global:Settings[$global:configRootKeys['FLYWAY_USERConfigRootKey']]
-  # $global:configRootKeys['FLYWAY_LOCATIONSConfigRootKey']       = $global:Settings[$global:configRootKeys['FLYWAY_LOCATIONSConfigRootKey']]
-  # $global:configRootKeys['FLYWAY_PASSWORDConfigRootKey']        = $global:Settings[$global:configRootKeys['FLYWAY_PASSWORDConfigRootKey']]
-  # # Attribution: https://www.red-gate.com/hub/product-learning/flyway/bulk-loading-data-via-a-powershell-script-in-flyway?topic=database-builds&product=flyway
-  # 'FP__projectName'                                             = $global:Settings[$global:configRootKeys['FP__projectNameConfigRootKey']]
-  # 'FP__projectDescription'                                      = $global:Settings[$global:configRootKeys['FP__projectDescriptionConfigRootKey']]
   $global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']      = $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']]
   $global:configRootKeys['GoogleDriveBasePathConfigRootKey']    = $global:Settings[$global:configRootKeys['GoogleDriveBasePathConfigRootKey']]
   # Env variables used by Jenkins
@@ -45,11 +38,13 @@ $global:EnvVars = @{
   $global:configRootKeys['OPENSSL_CONFConfigRootKey']           = $global:Settings[$global:configRootKeys['OPENSSL_CONFConfigRootKey']]
   $global:configRootKeys['RANDFILEConfigRootKey']               = $global:Settings[$global:configRootKeys['RANDFILEConfigRootKey']]
 
-
   # Env variables used by ChatGPT
   $global:configRootKeys['CHATGPT_URLConfigRootKey']            = $global:Settings[$global:configRootKeys['CHATGPT_URLConfigRootKey']]
   $global:configRootKeys['CHATGPT_USER_IDConfigRootKey']        = $global:Settings[$global:configRootKeys['CHATGPT_USER_IDConfigRootKey']]
   $global:configRootKeys['CHATGPT_API_TOKENConfigRootKey']      = $global:Settings[$global:configRootKeys['CHATGPT_API_TOKENConfigRootKey']]
+
+  # Env variables used by Perplexity
+  $global:configRootKeys['PERPLEXITY_API_TOKENConfigRootKey']   = $global:Settings[$global:configRootKeys['PERPLEXITY_API_TOKENConfigRootKey']]
 
   # related to the Hydrus-Network application
   $global:configRootKeys['HYDRUS_ACCESS_KEYConfigRootKey']      = $global:Settings[$global:configRootKeys['HYDRUS_ACCESS_KEYConfigRootKey']]

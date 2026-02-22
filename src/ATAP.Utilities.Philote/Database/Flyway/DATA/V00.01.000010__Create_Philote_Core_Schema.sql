@@ -16,6 +16,7 @@ GO
 GO
 
 /* Drop tables in dependency order */
+IF OBJECT_ID('dbo.Philotes','U') IS NOT NULL DROP TABLE dbo.Philotes;
 GO
 
 /* === Tables === */

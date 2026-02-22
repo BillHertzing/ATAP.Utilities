@@ -67,35 +67,42 @@ function New-ConnectionStringBuilderFromDbaTools {
   $connectionString = $connBuilder.ToString()
   Gets the connection string by calling ToString() on the returned object.
   #>
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKey',
+    Justification = 'CredentialsKey is a vault lookup key name, not a credential')]
   [Alias('New-DBAConnStrBuilder')]
   [CmdletBinding(DefaultParameterSetName = 'IntegratedSecurity')]
   param(
-    # Common parameters
-    [Parameter(Mandatory = $false, ParameterSetName = 'IntegratedSecurity')]
-    [Parameter(Mandatory = $false, ParameterSetName = 'CredentialsFromVault')]
-    [string]$DatabaseHost,
-
-    [Parameter(Mandatory = $true, ParameterSetName = 'IntegratedSecurity')]
-    [Parameter(Mandatory = $true, ParameterSetName = 'CredentialsFromVault')]
+    # region Database connection parameters
+    [Parameter(Mandatory = $true, Position = 0, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'IntegratedSecurity')]
+    [Parameter(Mandatory = $true, Position = 0, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CredentialsFromVault')]
     [string]$DatabaseName,
 
-    [Parameter(Mandatory = $false)]
-    [ValidateSet('tcp', 'np', 'lpc', 'default')]
-    [string]$ConnectionMethod = 'default',
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'IntegratedSecurity')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CredentialsFromVault')]
+    [string]$Environment,
 
-    [Parameter(Mandatory = $false)]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'IntegratedSecurity')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CredentialsFromVault')]
+    [Alias('HostName')]
+    [string]$DatabaseHost,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'IntegratedSecurity')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CredentialsFromVault')]
     [string]$SqlInstance,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'IntegratedSecurity')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CredentialsFromVault')]
+    [string]$ConnectionMethod,
 
     [Parameter(Mandatory = $false)]
     [int]$Port,
 
-    # IntegratedSecurity parameter set
     [Parameter(Mandatory = $true, ParameterSetName = 'IntegratedSecurity')]
     [switch]$IntegratedSecurity,
 
-    # CredentialsFromVault parameter set
     [Parameter(Mandatory = $true, ParameterSetName = 'CredentialsFromVault')]
     [string]$CredentialsKey,
+    # endregion Database connection parameters
 
     # Output format
     [Parameter(Mandatory = $false)]
@@ -156,11 +163,12 @@ function New-ConnectionStringBuilderFromDbaTools {
       $effectivePort = $Port
       $userName = $null
       $password = $null
-      $useIntegrated = $false
+      # Default to integrated security when no credentials key is supplied
+      $useIntegratedSecurity = -not $PSBoundParameters.ContainsKey('CredentialsKey')
 
       switch ($PSCmdlet.ParameterSetName) {
         'IntegratedSecurity' {
-          $useIntegrated = $true
+          $useIntegratedSecurity = $true
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Using integrated Windows authentication'
 
           # DatabaseHost is required for IntegratedSecurity
@@ -186,6 +194,14 @@ function New-ConnectionStringBuilderFromDbaTools {
           $userName = $secret.UserName
           $password = $secret.Password
 
+          # Resolve whether vault explicitly requests integrated security
+          if ($secret.PSObject.Properties['UseIntegratedSecurity']) {
+            $useIntegratedSecurity = [bool]$secret.UseIntegratedSecurity
+          }
+          else {
+            $useIntegratedSecurity = $false
+          }
+
           # Override connection properties from vault if present
           if ($secret.HostName -and [string]::IsNullOrWhiteSpace($effectiveDataSource)) {
             $effectiveDataSource = $secret.HostName
@@ -202,14 +218,7 @@ function New-ConnectionStringBuilderFromDbaTools {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Using Port from vault: $effectivePort"
           }
 
-          # Check if Windows login (contains backslash)
-          if ($userName -match '\\') {
-            $useIntegrated = $true
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Vault credentials indicate Windows authentication'
-          }
-          else {
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Using SQL Server authentication'
-          }
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message ("Vault request UseIntegratedSecurity: $useIntegratedSecurity")
         }
       }
 
@@ -261,7 +270,7 @@ function New-ConnectionStringBuilderFromDbaTools {
       }
 
       # Handle authentication
-      if ($useIntegrated) {
+      if ($useIntegratedSecurity) {
         if ($userName -and $password) {
           # Windows auth with explicit credentials from vault
           $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
@@ -306,10 +315,10 @@ function New-ConnectionStringBuilderFromDbaTools {
           }
         }
 
-        if ($useIntegrated -and -not $userName) {
+        if ($useIntegratedSecurity -and -not $userName) {
           $jdbcStr += "integratedSecurity=true;trustServerCertificate=true;"
         }
-        elseif ($useIntegrated -and $userName) {
+        elseif ($useIntegratedSecurity -and $userName) {
           # Windows auth with explicit creds - JDBC uses integratedSecurity
           $jdbcStr += "integratedSecurity=true;trustServerCertificate=true;"
         }
@@ -332,7 +341,7 @@ function New-ConnectionStringBuilderFromDbaTools {
         IsJdbc                = $AsJDBC.IsPresent
         DataSource            = $fullDataSource
         DatabaseName          = $DatabaseName
-        UseIntegratedSecurity = $useIntegrated
+        UseIntegratedSecurity = $useIntegratedSecurity
       }
 
       # Add ToString() method that returns the connection string

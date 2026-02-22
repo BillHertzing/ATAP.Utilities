@@ -37,7 +37,7 @@ Uses an open SQL connection managed by the caller with batch size of 100 message
 
 .NOTES
 AI assisted using Powershell.instructions.md as guidelines
-This is a private function called by Load-GmailToDatabase.
+This is a private function called by Load-Gmail.
 The caller must manage the connection lifecycle (open before calling, close after).
 
 .LINK

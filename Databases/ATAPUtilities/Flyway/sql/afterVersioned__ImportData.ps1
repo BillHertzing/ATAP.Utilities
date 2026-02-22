@@ -1,6 +1,6 @@
 # Script to add BCP data to an empty database
 # attribution https://www.red-gate.com/hub/product-learning/flyway/bulk-loading-data-via-a-powershell-script-in-flyway
-# This code is a modified evolution of the epoynomous file of commit https://github.com/Phil-Factor/PubsAndFlyway/commit/b70c28b9025da0e96377bb8d0e9e0c1b7b2c0674
+# This code is a modified evolution of the eponymous file of commit https://github.com/Phil-Factor/PubsAndFlyway/commit/b70c28b9025da0e96377bb8d0e9e0c1b7b2c0674
 
 # ToDo: Add Comment-based help file
 
@@ -32,16 +32,17 @@ $FlywayURLRegexKey = 'FlywayURLRegex'
 $config = @{}
 # Path to the library script file, either absolute or relative to current working directory
 $config[$libraryScriptPathKey] = '..\Common\DatabaseBuildAndMigrateTasks.ps1'
-# Regex used for decong a Flyway URL
+# Regex used for decomposing a Flyway URL
 $config[$FlywayURLRegexKey] = 'jdbc:(?<RDBMS>[\w]{1,20})://(?<server>[\w\-\.]{1,40})(?<port>:[\d]{1,4})(;.*databaseName=)(?<database>[\w]{1,20})'
 
 # run the library script, assuming it is in the project directory containing the script directory
 if (Test-Path -path $config[$libraryScriptPathKey]  -PathType Leaf) {
   . $config[$libraryScriptPathKey]
-  } else {
-    $currdir = pwd; write-host "{$currdir}"
-    throw "could not find $config[$libraryScriptPathKey] relative to $currdir"
-  }
+}
+else {
+  $currdir = pwd; write-host "{$currdir}"
+  throw "could not find $config[$libraryScriptPathKey] relative to $currdir"
+}
 
 <# The most useful data passed to this script by Flyway is the URL that you used to call Flyway. This
 is likely to tell you the server, port, database and the type of database (RDBMS). We can use the URL
@@ -61,23 +62,22 @@ as it can trigger the generation of a copy which can cause bewilderment and
 problems- values don't get passed back.
 Don't fill anything in here!!! The script does that for you#>
 $DatabaseDetails = @{
-    'RDBMS'=''; # necessary for systems with several RDBMS on the same server
-  'server' = ''; #the name of your server
-  'database' = ''; #the name of the database
-  'version' = ''; #the version
-  'ProjectFolder' = '.\Flyway\sql'; #where all the migration files are
-  'project' = 'ATAPUtilities'; #the name of your project
-  'projectDescription'=''; #a brief description of the project
-  'flywayTable'='';#The name and schema of the flyway Table
-  'uid' = ''; #optional if you are using windows authewntication
-  'pwd' = ''; #only if you use a uid. Leave blank. we fill it in for you
-  'locations' = @{ }; # for reporting file locations used
-  'problems' = @{ }; # for reporting any big problems
-  'warnings' = @{ } # for reporting any issues
+  'RDBMS'              = ''; # necessary for systems with several RDBMS on the same server
+  'server'             = ''; #the name of your server
+  'database'           = ''; #the name of the database
+  'version'            = ''; #the version
+  'ProjectFolder'      = '.\Flyway\sql'; #where all the migration files are
+  'project'            = 'ATAPUtilities'; #the name of your project
+  'projectDescription' = ''; #a brief description of the project
+  'flywayTable'        = '';#The name and schema of the flyway Table
+  'uid'                = ''; #optional if you are using windows authewntication
+  'pwd'                = ''; #only if you use a uid. Leave blank. we fill it in for you
+  'locations'          = @{ }; # for reporting file locations used
+  'problems'           = @{ }; # for reporting any big problems
+  'warnings'           = @{ } # for reporting any issues
 } # for reporting any warnings
 
-if ($ConnectionInfo -imatch $config[$FlywayURLRegexKey])
-{
+if ($ConnectionInfo -imatch $config[$FlywayURLRegexKey]) {
   $DatabaseDetails.RDBMS = $matches['RDBMS'];
   $DatabaseDetails.server = $matches['server'];
   $DatabaseDetails.port = $matches['port'];
@@ -87,13 +87,13 @@ else
 { write-error "failed to obtain the value of the RDBMS, server, Port or database from the FLYWAY_URL" }
 
 $DatabaseDetails.uid = $env:FLYWAY_USER;
-if ($env:FP__projectName__ -ne $null) {$DatabaseDetails.Project = $env:FP__projectName__;}
-if ($env:FP__projectDescription__ -ne $null) {$DatabaseDetails.ProjectDescription = $env:FP__projectDescription__};
+if ($env:FP__projectName__ -ne $null) { $DatabaseDetails.Project = $env:FP__projectName__; }
+if ($env:FP__projectDescription__ -ne $null) { $DatabaseDetails.ProjectDescription = $env:FP__projectDescription__ };
 $DatabaseDetails.ProjectFolder = split-path $PWD.Path -Parent;
 if ($env:FP__flyway_defaultSchema__ -ne $null -and $env:FP__flyway_table__ -ne $null)
-    {$DatabaseDetails.flywayTable="$($env:FP__flyway_defaultSchema__).$($env:FP__flyway_table__)"}
-    else
-    {$DatabaseDetails.flywayTable='dbo.flyway_schema_history'};
+{ $DatabaseDetails.flywayTable = "$($env:FP__flyway_defaultSchema__).$($env:FP__flyway_table__)" }
+else
+{ $DatabaseDetails.flywayTable = 'dbo.flyway_schema_history' };
 <#
 You can dump this array for debugging so that it is displayed by Flyway
 $DatabaseDetails|convertTo-json
@@ -111,7 +111,7 @@ execute others
 in order to execute tasks, you just load them up in the order you want. It is like loading a
 revolver.
 #>
-    $currdir = pwd; write-host "currdir = {$currdir}"
+$currdir = pwd; write-host "currdir = {$currdir}"
 
 $PostMigrationTasks = @(
   #checks the hash table to see if there is a username without a password.

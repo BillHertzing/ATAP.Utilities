@@ -172,3 +172,95 @@ Sources for the Flyway OSS 10.21.0 configuration reference, environment-variable
 - [Flyway and environment variables (YouTube)](https://www.youtube.com/watch?v=uvGNB57xcH0)
 - [Flyway parameters deep dive (YouTube)](https://www.youtube.com/watch?v=K7mdHjMh46U)
 - [Flyway output and results (YouTube)](https://www.youtube.com/watch?v=mYE_omHLM_A)
+
+---
+
+## Section 2.4 – VS Code Multi-AI Extension, GitHub Copilot, and AI Services
+
+Sources for the Copilot token usage monitoring, Copilot coding agent pull request workflow, Copilot plan management, Claude Code Windows installation, and AI service subscription reference material documented in Module Catalog Sections 2.4.4–2.4.7.
+
+### 2.4.4 – Copilot Token Usage Monitoring and Plan Management
+
+#### GitHub Community Discussions
+
+- [No built-in way to see token usage per conversation in GitHub Copilot Chat](https://github.com/orgs/community/discussions/169702)
+- [Community discussion: Copilot doesn't show token usage stats](https://github.com/orgs/community/discussions/168800)
+- [Copilot Business and Enterprise plan limits (community)](https://github.com/orgs/community/discussions/164101)
+
+#### GitHub / Microsoft Issue Trackers
+
+- [VS Code feature request: Real-time Token Usage Display for GitHub Copilot](https://github.com/microsoft/vscode/issues/251807)
+- [How to change GitHub Copilot settings in VS Code to increase the token limit](https://stackoverflow.com/questions/77842786/how-to-change-github-copilot-settings-in-vscode-to-increase-the-token-limit-to-4)
+
+#### GitHub Official Documentation
+
+- [Monitoring your Copilot usage and entitlements](https://docs.github.com/copilot/how-tos/monitoring-your-copilot-usage-and-entitlements)
+- [View and change your Copilot plan](https://docs.github.com/en/copilot/how-tos/manage-your-account/view-and-change-your-copilot-plan)
+- [Billing for individuals – GitHub Copilot](https://docs.github.com/en/copilot/concepts/billing/billing-for-individuals)
+
+#### Reddit
+
+- [How to track Copilot usage – GitHub Copilot subreddit](https://www.reddit.com/r/GithubCopilot/comments/1lei9yw/how_to_track_my_usage_now_github_copilot/)
+- [How to get token usages in GitHub Copilot Chat](https://www.reddit.com/r/GithubCopilot/comments/1oc61nh/how_to_get_token_usages_in_github_copilot_chat_or/)
+- [GitHub Copilot Usage Tracker (CLI)](https://www.reddit.com/r/opencodeCLI/comments/1qga256/github_copilot_usage_tracker/)
+- [I made a GitHub Copilot usage tracker](https://www.reddit.com/r/GithubCopilot/comments/1qhlim2/i_made_a_github_copilot_usage_tracker/)
+- [Copilot Business and Copilot Enterprise plans (rate limits)](https://www.reddit.com/r/ChatGPTCoding/comments/1jj6zh6/copilot_business_and_copilot_enterprise_plans/)
+
+### 2.4.5 – Copilot Coding Agent: Pull Request Workflow
+
+#### GitHub / VS Code Official Documentation
+
+- [VS Code Copilot coding agent](https://code.visualstudio.com/docs/copilot/copilot-coding-agent)
+- [GitHub Copilot: Create a PR with the coding agent](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/create-a-pr)
+- [About the Copilot coding agent](https://docs.github.com/en/copilot/concepts/agents/coding-agent/about-coding-agent)
+- [GitHub Enterprise: Create a PR with the coding agent](https://docs.github.com/en/enterprise-cloud@latest/copilot/how-tos/use-copilot-agents/coding-agent/create-a-pr)
+- [Reviewing proposed changes in a pull request](https://docs.github.com/articles/reviewing-proposed-changes-in-a-pull-request)
+- [VS Code Copilot smart actions](https://code.visualstudio.com/docs/copilot/copilot-smart-actions)
+
+### 2.4.6 – Claude Code: Windows Installation
+
+#### Official Documentation
+
+- [Claude Code setup (code.claude.com)](https://code.claude.com/docs/en/setup)
+- [Claude Code troubleshooting (code.claude.com)](https://code.claude.com/docs/en/troubleshooting)
+- [Claude Code quickstart](https://code.claude.com/docs/en/quickstart)
+
+#### Community
+
+- [Installing Claude Code CLI on Windows (blog)](https://vincenzopirozzi.substack.com/p/installing-claude-code-cli-on-windows)
+- [How to run Claude Code on Windows (Reddit)](https://www.reddit.com/r/ClaudeAI/comments/1l89j30/this_is_how_i_managed_to_run_claude_code_on/)
+- [Install Claude Code on Windows without WSL (Reddit)](https://www.reddit.com/r/ClaudeAI/comments/1lbrils/install_claude_code_on_windows_without_wsl/)
+- [GitHub Issue: Claude Code install path on Windows](https://github.com/anthropics/claude-code/issues/14942)
+- [Where is Claude Code installed? (claudelog FAQ)](https://www.claudelog.com/faqs/where-is-claude-code-installed/)
+
+### 2.4.7 – AI Service Subscription Reference (Google One / Google AI Plans)
+
+- [Google One – about page](https://one.google.com/about/)
+- [Google AI Plans](https://one.google.com/about/google-ai-plans/)
+- [What is Google One AI Premium? (How-To Geek)](https://www.howtogeek.com/what-is-google-one-ai-premium/)
+- [What is Google One? (Wired)](https://www.wired.com/story/what-is-google-one/)
+- [Reddit: What's the difference between Google One Premium and Google AI plans?](https://www.reddit.com/r/GoogleOne/comments/1p5da6f/whats_the_difference_between_google_one_premium/)
+- [Reddit: Google One Premium 2 TB plan changes](https://www.reddit.com/r/GoogleOne/comments/1pd6bqd/your_google_one_premium_2_tb_plan_has_been/)
+- [YouTube: Google AI Plans explained](https://www.youtube.com/watch?v=iobcFFxgpNQ)
+
+---
+
+## Section 3.3.4 – Dev/Build/Repo Toolchain: GitHub Issue & Branch Workflow
+
+Sources for the GitHub issue-to-branch workflow documented in Module Catalog Section 3.3.4.
+
+### GitHub Official Documentation
+
+- [Creating a branch for an issue (GitHub Docs)](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-a-branch-for-an-issue)
+- [Creating and deleting branches within your repository](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-and-deleting-branches-within-your-repository)
+- [VS Code Branches and Worktrees](https://code.visualstudio.com/docs/sourcecontrol/branches-worktrees)
+- [GitHub changelog: Create a branch for an issue (2022)](https://github.blog/changelog/2022-03-01-create-a-branch-for-an-issue/)
+- [GitHub Docs Enterprise Server 3.11: Creating a branch for an issue](https://docs.github.com/en/enterprise-server@3.11/issues/tracking-your-work-with-issues/using-issues/creating-a-branch-for-an-issue)
+
+### Community & Stack Overflow
+
+- [Stack Overflow: Create new branch from the issue](https://stackoverflow.com/questions/41614421/create-new-branch-from-the-issue)
+- [GitHub Community: Creating and switching branches in VS Code](https://github.com/orgs/community/discussions/89927)
+- [GitHub CLI gist: gh issue develop usage](https://gist.github.com/devinschumacher/ea416af5542ac7102c8e1ffd0ab38a99)
+- [Reddit: Issue with creating branch in VS Code](https://www.reddit.com/r/vscode/comments/1bdwjzr/issue_with_creating_branch/)
+

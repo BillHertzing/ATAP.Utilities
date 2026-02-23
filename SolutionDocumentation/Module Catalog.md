@@ -1,9 +1,9 @@
-# Ace Commander – Module Catalog v0.5
+# Ace Commander – Module Catalog v0.6
 
 **Status:** Baseline (change-controlled)
-**Supersedes:** Module Catalog v0.4
+**Supersedes:** Module Catalog v0.5
 **Date:** February 22, 2026
-**Change:** Section 3.3 expanded with subsection 3.3.3 covering Flyway OSS 10.21.0 environment-variable naming rules, common FLYWAY*\* variable reference, placeholder configuration (FLYWAY_PLACEHOLDERS*\* / FP**flyway\_<name>**), and common pitfalls with placeholders in repeatable migrations.
+**Change:** Section 2.4 expanded: §2.4.4 gains rows for token-usage monitoring and plan management/downgrade; new §2.4.5 Copilot Coding Agent Pull Request Workflow; new §2.4.6 Claude Code Windows Installation Reference; new §2.4.7 AI Service Subscription Reference (Google One / Google AI Plans). Section 3.3 gains new §3.3.4 GitHub Issue & Branch Workflow.
 
 ---
 
@@ -241,14 +241,49 @@ For C#, PowerShell, and .NET development specifically:
 
 When Claude is routed through GitHub Copilot (as a chat agent or via Claude Code actions), usage is governed by Copilot's **premium request quota** (separate from Anthropic's own model limits).
 
-| Topic                        | Detail                                                                                                                                                                                      |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Limit message                | "You've hit your limit · resets 12pm (America/Denver)" — Copilot premium-request quota exhausted; Claude requests blocked until shown reset time                                            |
-| Two overlapping limit layers | Anthropic-side model caps (per account/plan) and Copilot-side premium-request buckets; the effective limit is whichever is exhausted first                                                  |
-| Optimization — batch tasks   | Combine several related tasks in one Claude chat instead of many small prompts; iterate within the same thread rather than opening new chats                                                |
-| Optimization — model routing | Set the VS Code default model to a non-premium model (GPT-based Copilot); switch to Claude manually only for complex C#/.NET refactors, deep code reviews, or multi-project reasoning tasks |
-| Optimization — plan tier     | Higher-tier Copilot plans (Enterprise/Pro+) offer larger or more generous premium-request allocations; consult the org admin if limits are hit frequently                                   |
-| Fallback when limit hit      | Switch to another Copilot model temporarily, or use the Claude web app / API directly where the plan and quota are managed explicitly                                                       |
+| Topic                        | Detail                                                                                                                                                                                                                                                                                                |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Limit message                | "You've hit your limit · resets 12pm (America/Denver)" — Copilot premium-request quota exhausted; Claude requests blocked until shown reset time                                                                                                                                                      |
+| Two overlapping limit layers | Anthropic-side model caps (per account/plan) and Copilot-side premium-request buckets; the effective limit is whichever is exhausted first                                                                                                                                                            |
+| Optimization — batch tasks   | Combine several related tasks in one Claude chat instead of many small prompts; iterate within the same thread rather than opening new chats                                                                                                                                                          |
+| Optimization — model routing | Set the VS Code default model to a non-premium model (GPT-based Copilot); switch to Claude manually only for complex C#/.NET refactors, deep code reviews, or multi-project reasoning tasks                                                                                                           |
+| Optimization — plan tier     | Higher-tier Copilot plans (Enterprise/Pro+) offer larger or more generous premium-request allocations; consult the org admin if limits are hit frequently                                                                                                                                             |
+| Fallback when limit hit      | Switch to another Copilot model temporarily, or use the Claude web app / API directly where the plan and quota are managed explicitly                                                                                                                                                                 |
+| Token usage monitoring       | No per-chat token counter is available in the VS Code Copilot Chat UI; monitor usage via GitHub web (Settings → Billing & Licensing → Usage → Copilot requests); third-party tools (e.g., "Copilot Usage Monitor" OS menu-bar app) can estimate daily usage by observing API traffic or usage reports |
+| Plan management / downgrade  | Downgrade Copilot Pro+ to Copilot Pro: github.com → Profile → Settings → Billing & Licensing → Copilot → Manage Subscription → Downgrade to Copilot Pro; change takes effect at start of next billing cycle; choose Cancel Subscription in the same UI to stop paying entirely                        |
+
+#### 2.4.5 Copilot Coding Agent: Pull Request Workflow
+
+When you ask the Copilot coding agent (Agent mode, e.g., with Claude Opus 4.5) to "create a pull request," the agent creates a branch, edits files, commits, and opens a PR; a link to the PR appears in the chat window when the operation completes.
+
+| Step                                             | Action                                                                                                                                                                                                                                                               |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Confirm PR link in chat                          | Scroll to the bottom of the agent chat and look for a GitHub link (`https://github.com/<org>/<repo>/pull/<N>`)                                                                                                                                                       |
+| If no link — trigger execution                   | Reply: "Go ahead and apply these changes and open a pull request against `<base-branch>`" to step past any confirmation gate; wait for the link                                                                                                                      |
+| Find a created PR if you missed the link         | GitHub → Pull Requests → Created by: you / Open; or use the Source Control / GitHub Pull Requests extension view in VS Code                                                                                                                                          |
+| Fallback — agent only produced draft description | If Agent mode behaved like regular chat (no tools invoked): copy the generated title/description, commit and push your branch manually, use "Create Pull Request" in the GitHub Pull Requests extension, and paste the Copilot-generated text into the PR title/body |
+
+#### 2.4.6 Claude Code: Windows Installation Reference
+
+The official Claude Code CLI installer on Windows places `claude.exe` in `%USERPROFILE%\.local\bin`; there is no supported install-time flag to redirect to `Program Files`.
+
+| Approach                                     | Detail                                                                                                                                                                                                                                          |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Recommended — add existing location to PATH  | System Properties → Advanced → Environment Variables → User variables → Path → add `%USERPROFILE%\.local\bin`; reopen terminal; run `claude doctor` to verify                                                                                   |
+| Wrapper in a custom folder (no UAC friction) | Create `C:\Tools\claude-bin\claude.bat` containing `@"%USERPROFILE%\.local\bin\claude.exe" %*`; add `C:\Tools\claude-bin` to PATH; the real binary stays where updater/uninstall logic expects it                                               |
+| Do not move the executable                   | Moving `claude.exe` to `Program Files` breaks the updater and the documented uninstall commands (`Remove-Item` on `.local\bin` / `.local\share\claude`, or `winget uninstall Anthropic.ClaudeCode`), which assume the binary is in `.local\bin` |
+| Default install paths                        | Binary: `%USERPROFILE%\.local\bin\claude.exe` · Data/config: `%USERPROFILE%\.local\share\claude`                                                                                                                                                |
+
+#### 2.4.7 AI Service Subscription Reference (Google One / Google AI Plans)
+
+As of 2025, Google markets two overlapping subscription products that are easily confused in developer conversations about AI tooling cost:
+
+| Product                                     | Focus                      | Summary                                                                                                                                                                                                      |
+| ------------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Google One                                  | Storage-first subscription | Extra cloud storage (above the free 15 GB) shared across Drive, Photos, and Gmail; higher tiers bundle Google AI features (Gemini in Gmail/Docs/Slides, photo editing, Meet enhancements) and family sharing |
+| Google AI Plans (sometimes called "One AI") | AI-first tiers             | Emphasize advanced Gemini model access, higher message/context limits, and AI creative tools (Veo video generation, Flow/Whisk, NotebookLM, etc.); storage is included but secondary                         |
+
+**Relationship:** Both are part of the Google One subscription family; "Google AI Plans" is the branding applied to the AI Premium and higher tiers — not a separate product. Concrete plan names (e.g., "AI Premium 2 TB") bundle both storage and AI access.
 
 ---
 
@@ -407,6 +442,16 @@ Configuration mapping:
 | Placeholder change doesn’t re-run repeatable | Flyway checksums repeatable (`R__`) scripts from the **raw script text**, typically before substituting placeholders. Changing a `FLYWAY_PLACEHOLDERS_*` value does not change the stored checksum; the script is skipped. | Change the script body itself when you want it to re-run, rather than relying on a placeholder-value flip.                                                                                                          |
 | “Always-run” via changing placeholder fails  | Putting a changing value (e.g., a timestamp placeholder) in a repeatable script and expecting it to run every `migrate` does not work in older versions because checksum is taken pre-substitution.                        | Use Flyway **callbacks** (`beforeMigrate.sql`, `afterMigrate.sql`) for logic that must run every time. Or use the `${flyway:timestamp}` built-in placeholder, which is designed to change the checksum on each run. |
 | Hidden coupling of env config to repeatables | Different `FLYWAY_PLACEHOLDERS_*` values across environments can cause the same repeatable script to produce different SQL, making environment-specific results hard to trace.                                             | Document all placeholder values in version-controlled config files; review placeholder-driven SQL in migration code reviews.                                                                                        |
+
+#### 3.3.4 GitHub Issue & Branch Workflow
+
+Three supported options for creating a branch tied to a GitHub issue, listed in recommended order:
+
+| Option                                                           | Where      | Steps                                                                                                                                                                                                                                          |
+| ---------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| From the GitHub issue (recommended — auto-links branch to issue) | GitHub web | Issues → open the issue → Development section in the right sidebar → Create a branch → set branch name (e.g., `issue-<N>-short-description`) and base branch → Create branch; then `git fetch && git switch <branch-name>` in your local clone |
+| From VS Code Source Control view                                 | VS Code    | Ensure you are on the correct base branch → + Create new branch (or Command Palette: "Git: Create Branch…") → name it `issue-<N>-short-description`; VS Code switches automatically after creation                                             |
+| GitHub CLI (good for scripted flows)                             | Terminal   | `gh issue develop <issue-number> --base main --checkout` — creates a sensibly named branch from `main` and checks it out in one step                                                                                                           |
 
 ---
 

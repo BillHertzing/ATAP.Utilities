@@ -1,9 +1,9 @@
-# Ace Commander – Module Catalog v0.3
+# Ace Commander – Module Catalog v0.4
 
 **Status:** Baseline (change-controlled)
-**Supersedes:** Module Catalog v0.2
+**Supersedes:** Module Catalog v0.3
 **Date:** February 22, 2026
-**Change:** Section 3.3 expanded with full IaC/CI/CD toolchain detail (Ansible, Jenkins, BuildMaster, ProGet responsibilities). Appendix B updated with Jenkins and BuildMaster tech-stack entries.
+**Change:** Section 2.4 expanded into subsections covering Claude Code CLAUDE.md configuration hierarchy (multi-project repo pattern), AI model selection strategy (Opus 4.5 vs Sonnet 4.5 for C#/.NET/PowerShell), and Copilot/Claude usage-limit awareness and optimization.
 
 ---
 
@@ -202,12 +202,53 @@
 
 ### 2.4 VS Code Multi-AI Extension
 
+#### 2.4.1 Core Extension Capabilities
+
 | Capability                    | Description                                                                                                                                                                                                                                  |
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Multi-AI panel                | A VS Code extension that sends one question simultaneously to multiple major AI chat engines via their APIs, receives all answers, and displays them side-by-side (e.g., four panes) so the developer can compare and select the best answer |
 | Apply-to-code action          | Take the chosen AI result and apply it back into the active workspace as a controlled patch (single file or multi-file change set)                                                                                                           |
 | ESM-first extension guideline | The extension and its toolchain are built targeting ECMAScript modules (ESM), aligned with the VS Code team's active ESM support rollout                                                                                                     |
 | Extension bundling pipeline   | A dedicated bundler configuration (esbuild or equivalent) for TypeScript-to-JavaScript transpilation and bundling of the VS Code extension for distribution                                                                                  |
+
+#### 2.4.2 Claude Code Configuration (CLAUDE.md Hierarchy)
+
+Claude Code reads layered `CLAUDE.md` instruction files at multiple scopes. The `.github/instructions/*.instructions.md` pattern is a **GitHub Copilot** convention; Claude Code does not natively load those files. The supported hierarchy is:
+
+| Scope              | File path                                  | Purpose                                                                                                                      |
+| ------------------ | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| Global (user)      | `~/.claude/CLAUDE.md`                      | Applies to all Claude Code sessions on the machine; user-wide defaults and preferences                                       |
+| Repo root          | `<repo-root>/CLAUDE.md`                    | Shared repo-wide conventions, build commands, architecture notes; loaded for all work in the repo                            |
+| Per-project folder | `<repo-root>/<project>/CLAUDE.md`          | Project-specific stack, commands, coding standards; loaded automatically when working with files in that project's directory |
+| Personal overrides | `CLAUDE.local.md` (any level, git-ignored) | Machine- or user-specific overrides that are not committed to source control                                                 |
+
+**Multi-project repo guidance:** For this repository (monorepo with many project subfolders and a VS Code multi-root workspace), the recommended pattern is:
+
+- One `CLAUDE.md` at the repo root describing shared conventions (build discipline, naming, logging patterns).
+- One `CLAUDE.md` inside each project folder describing that project's specific stack, key commands, and standards.
+- Claude Code will automatically apply the root file plus the relevant project-level file when working in that project's files.
+
+#### 2.4.3 AI Model Selection Strategy
+
+For C#, PowerShell, and .NET development specifically:
+
+| Model             | Best used for                                                                                                                                                           | Notes                                                                                                    |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Claude Sonnet 4.5 | Inner-loop / daily coding: quick edits, C# and PowerShell function refactors, test scaffolding, iterative REPL-style changes in VS Code                                 | Optimized for cost + speed; ~90–95% of Opus quality for routine work; preferred default model in VS Code |
+| Claude Opus 4.5   | Large multi-file refactors across several projects, complex architecture decisions, framework migrations, multi-step design tasks where correctness trumps cost/latency | Most capable model; stronger on long-horizon coding tasks and benchmarks; reserve for gnarlier work      |
+
+#### 2.4.4 Copilot / Claude Usage Limits
+
+When Claude is routed through GitHub Copilot (as a chat agent or via Claude Code actions), usage is governed by Copilot's **premium request quota** (separate from Anthropic's own model limits).
+
+| Topic                        | Detail                                                                                                                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Limit message                | "You've hit your limit · resets 12pm (America/Denver)" — Copilot premium-request quota exhausted; Claude requests blocked until shown reset time                                            |
+| Two overlapping limit layers | Anthropic-side model caps (per account/plan) and Copilot-side premium-request buckets; the effective limit is whichever is exhausted first                                                  |
+| Optimization — batch tasks   | Combine several related tasks in one Claude chat instead of many small prompts; iterate within the same thread rather than opening new chats                                                |
+| Optimization — model routing | Set the VS Code default model to a non-premium model (GPT-based Copilot); switch to Claude manually only for complex C#/.NET refactors, deep code reviews, or multi-project reasoning tasks |
+| Optimization — plan tier     | Higher-tier Copilot plans (Enterprise/Pro+) offer larger or more generous premium-request allocations; consult the org admin if limits are hit frequently                                   |
+| Fallback when limit hit      | Switch to another Copilot model temporarily, or use the Claude web app / API directly where the plan and quota are managed explicitly                                                       |
 
 ---
 

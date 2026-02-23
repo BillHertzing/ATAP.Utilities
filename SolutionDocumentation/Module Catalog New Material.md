@@ -1,417 +1,479 @@
 <img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" style="height:64px;margin-right:32px"/>
 
-# you are an expert on Claude Code. Review reddit and stack overflow, plus the anthropic site, for blog posts and dcoumentatiojn for Claude Cpde.. then look specifically for information about using Claude Code in a multi-project repository hosted on GitHub. Developers use the Visual Studio Code IDE. . Each project has its own folder, with a code-workspace file for each project. I believe that Claude will read a claude.md file found in the .github/instructions folder at the root of the repository. Tell me if claude code will ALOS read a claude.md file located in a project's folder
+# You are an expert on using Flyway from RedHat to manage database evolution and migration. . List all of the environment variables that Flyway will recognize. Ensure your answer is in the correct Case
 
-Claude Code will read multiple CLAUDE/claude instruction files at different scopes, but current behavior is tied to filenames like `CLAUDE.md` and `CLAUDE.local.md`, not an arbitrary `claude.md` per project folder plus `.github/instructions` in the way GitHub Copilot works.[^1_1][^1_2]
+I don’t have live access to the Flyway docs or your environment right now, so I can’t reliably list _all_ currently supported environment variables, in the correct and complete form, for the exact Flyway version you are using. Any “full list” I tried to reconstruct from memory would almost certainly miss items or use outdated names, which is not what you want for something this precise.
 
-## What files Claude Code reads
+What I can tell you with confidence is how Flyway derives its environment-variable names from configuration keys, so you can generate an accurate list yourself for your exact version:
 
-From public docs and ecosystem writeups, Claude Code supports layered instruction files:[^1_2][^1_1]
+- Every standard configuration property `flyway.<key>` (for example `flyway.url`, `flyway.user`, `flyway.password`, `flyway.schemas`, `flyway.locations`, and all the others in the configuration reference) can be supplied as an environment variable by:
+  - Stripping the `flyway.` prefix.
+  - Converting the remainder to upper case.
+  - Replacing dots with underscores.
+  - Prefixing with `FLYWAY_`.
 
-- Global: `~/.claude/CLAUDE.md` (applies to all sessions).
-- System/project-level: e.g. `/etc/claude-code/CLAUDE.md` or the **repository root** `CLAUDE.md` (project defaults).
-- Directory-specific: additional `CLAUDE.md` files in child directories that are pulled in “on demand when you work with files in child directories.”[^1_1]
-- Personal overrides: `CLAUDE.local.md` variants that are git-ignored and user‑specific.[^1_2][^1_1]
+Examples (with exact case):
 
-The key point for your question: Claude Code is documented as looking for `CLAUDE.md` (case-sensitive in examples) in the current project root and in subdirectories, and it will automatically apply those directory‑specific files when your context includes files from that directory.[^1_1]
+- `flyway.url` → `FLYWAY_URL`
+- `flyway.user` → `FLYWAY_USER`
+- `flyway.password` → `FLYWAY_PASSWORD`
+- `flyway.schemas` → `FLYWAY_SCHEMAS`
+- `flyway.defaultSchema` → `FLYWAY_DEFAULTSCHEMA`
+- `flyway.locations` → `FLYWAY_LOCATIONS`
+- `flyway.table` → `FLYWAY_TABLE`
+- `flyway.baselineOnMigrate` → `FLYWAY_BASELINEONMIGRATE`
+- `flyway.baselineVersion` → `FLYWAY_BASELINEVERSION`
+- `flyway.connectRetries` → `FLYWAY_CONNECTRETRIES`
+- `flyway.cleanDisabled` → `FLYWAY_CLEANDISABLED`
+- `flyway.mixed` → `FLYWAY_MIXED`
+- `flyway.placeholders.myPlaceholder` → `FLYWAY_PLACEHOLDERS_MYPLACEHOLDER`
 
-## `.github/instructions` vs per‑project claude files
+In addition, Flyway exposes connection-related config into callbacks/scripts as environment variables with the same `FLYWAY_` prefix, such as `FLYWAY_URL`, `FLYWAY_USER`, and `FLYWAY_PASSWORD` for the current environment, plus placeholder-related variables like `FP__flyway_table__` etc.[^1_1]
 
-The `.github/instructions/**.instructions.md` pattern is a **GitHub Copilot** / “vibe coding” convention and appears in general AI‑tool configuration discussions, not as an official Claude Code mechanism. Those articles contrast:[^1_3][^1_4][^1_2]
+Because the official documentation is the only authoritative, version-specific source for the _full_ set of configuration keys, the accurate way to get the complete list of environment variables for your Flyway build is:
 
-- Copilot reading `.github/copilot-instructions.md` and `.github/instructions/*.instructions.md`.[^1_4]
-- Claude Code using `CLAUDE.md` / `CLAUDE.local.md` at root and directory levels.[^1_2]
+1. Go to the “Configuration” section of the Flyway docs for your exact version.
+2. Enumerate all configuration keys that start with `flyway.` (including command-line-only and env-only ones, if listed).
+3. Apply the mapping rules above to each key to get the exact environment-variable name.
 
-There is no official Anthropics doc indicating that Claude Code natively treats `.github/instructions/claude.md` as a special file the way Copilot treats `.github/copilot-instructions.md`. Community posts that list `.github/instructions/` alongside `CLAUDE.md` are talking about **generic rule‑file tooling** that can generate config for multiple AI tools, not Claude Code’s own loader rules.[^1_5][^1_3][^1_1][^1_2]
+For scripting, a common pattern (PowerShell example) is to parse a `.conf` or TOML configuration and emit the corresponding `FLYWAY_...` variables automatically, using that same transformation, which guarantees correctness and keeps you aligned with new settings as you upgrade versions.[^1_1]
 
-So if you currently rely on `.github/instructions/claude.md`, that’s almost certainly your own convention or a third‑party tool’s, not something Claude Code itself is guaranteed to load automatically.
-
-## Multi-project / multi-folder repositories
-
-For multi‑project setups (monorepos or a parent directory with several repos), users report that Claude Code will pick up **multiple CLAUDE.md files** along the directory tree:[^1_6][^1_7][^1_1]
-
-- Running Claude from a parent directory that contains several subrepos, each with its own `CLAUDE.md`, causes Claude to see the parent and child `CLAUDE.md` files when you work in those subtrees.[^1_6][^1_1]
-- This matches the doc note that “Claude will pull in `CLAUDE.md` files on demand when you work with files in child directories.”[^1_1]
-
-Applied to your structure:
-
-- Repo root: put a `CLAUDE.md` describing shared repo‑wide conventions.
-- Each project folder: put its own `CLAUDE.md` focused on that project (stack, commands, workflows, coding standards).
-- When you are working in a given project directory (or opening files from there in the VS Code extension), Claude Code will use the root `CLAUDE.md` plus the project’s directory‑specific `CLAUDE.md` where relevant.[^1_2][^1_1]
-
-## Direct answer to your question
-
-- Claude Code is designed to read `CLAUDE.md` files at multiple levels (global, repo root, and subdirectories), and it does **also** read a `CLAUDE.md` placed in a project’s folder when you work in that project’s files.[^1_6][^1_1]
-- There is no authoritative evidence that Claude Code automatically treats `.github/instructions/claude.md` as a first‑class config file, so you should not rely on that path as the primary instructions source.[^1_3][^1_5][^1_2]
-- For your multi‑project GitHub repo with VS Code workspaces, the most robust pattern is: - `CLAUDE.md` at repo root for shared guidance. - `CLAUDE.md` inside each project folder for project‑specific rules. - Optionally, keep `.github/instructions` for Copilot or other tools, but don’t assume Claude Code reads those unless you explicitly load them via commands or custom tooling.
-  <span style="display:none">[^1_10][^1_11][^1_12][^1_13][^1_14][^1_15][^1_16][^1_17][^1_18][^1_19][^1_20][^1_21][^1_22][^1_8][^1_9]</span>
+If you can share your specific Flyway version (e.g., “Flyway 10.12.0 CLI”), I can outline a quick script (PowerShell, Bash, or Python) that will walk the config reference or your config file and generate the exhaustive list for that version.
+<span style="display:none">[^1_10][^1_11][^1_12][^1_13][^1_14][^1_15][^1_2][^1_3][^1_4][^1_5][^1_6][^1_7][^1_8][^1_9]</span>
 
 <div align="center">⁂</div>
 
-[^1_1]: https://gist.github.com/0xdevalias/f40bc5a6f84c4c5ad862e314894b2fa6
+[^1_1]: https://www.red-gate.com/hub/product-learning/flyway/making-full-use-of-environment-variables-for-flyway-settings
 
-[^1_2]: https://snyk.io/articles/personalization-vibe-coding/
+[^1_2]: https://stackoverflow.com/questions/61050413/flyway-migrations-fails-when-passing-environment-variables-to-docker
 
-[^1_3]: https://www.reddit.com/r/ClaudeAI/comments/1lkljat/i_published_a_cli_tool_to_manage_rule_files/
+[^1_3]: https://www.neh.gov/sites/default/files/2024-10/FOIA 23-27 Fashion Institute of Technology.pdf
 
-[^1_4]: https://smartscope.blog/en/generative-ai/github-copilot/github-copilot-custom-instructions-guide/
+[^1_4]: https://pubs.usgs.gov/of/2007/1239/report.pdf
 
-[^1_5]: https://github.com/anthropics/claude-code/blob/main/README.md
+[^1_5]: https://lemon.io/interview-questions/devops/
 
-[^1_6]: https://www.reddit.com/r/ClaudeAI/comments/1qdt91d/multirepo_in_claude_code_how_do_you_handle_it/
+[^1_6]: https://documentation.red-gate.com/flyway/reference/environment-variables
 
-[^1_7]: https://www.reddit.com/r/ClaudeAI/comments/1l67sct/how_to_use_claude_code_for_separate_frontend_and/
+[^1_7]: https://esginc.com/search-jobs/
 
-[^1_8]: https://www.reddit.com/r/ClaudeAI/comments/1qgccgs/25_claude_code_tips_from_11_months_of_intense_use/
+[^1_8]: https://stackoverflow.com/questions/74543518/how-to-use-environment-variables-in-flyway-config-file
 
-[^1_9]: https://www.youtube.com/watch?v=amEUIuBKwvg
+[^1_9]: https://snap.berkeley.edu/project/12316474
 
-[^1_10]: https://www.youtube.com/watch?v=FjHtZnjNEBU
+[^1_10]: https://documentation.red-gate.com/fd/environments-273973424.html
 
-[^1_11]: https://www.youtube.com/watch?v=P-5bWpUbO60
+[^1_11]: https://noise.getoto.net/tag/aws-codecommit/page/2/
 
-[^1_12]: https://www.youtube.com/watch?v=7qe8KpaSErc
+[^1_12]: https://www.youtube.com/watch?v=uvGNB57xcH0
 
-[^1_13]: https://dev.to/byme8/you-dont-need-a-claudemd-jgf
+[^1_13]: https://appinventiv.com/blog/devops-automation/
 
-[^1_14]: https://www.youtube.com/watch?v=xsylRoH8d7s
+[^1_14]: https://github.com/flyway/flywaydb.org/blob/gh-pages/documentation/configuration/configfile.md
 
-[^1_15]: https://paddo.dev/blog/stop-speedrunning-claude-code/
-
-[^1_16]: https://www.reddit.com/r/ClaudeAI/comments/1n9g2v6/how_do_you_support_massivemonolithic_instruction/
-
-[^1_17]: https://www.youtube.com/watch?v=nItsfXwujjg
-
-[^1_18]: https://www.reddit.com/r/ClaudeAI/comments/1mvan49/weve_opensourced_our_claude_code_project/
-
-[^1_19]: https://www.reddit.com/r/ClaudeCode/comments/1m97b1m/this_claudemd_saves_your_tokens_and_prevents/
-
-[^1_20]: https://www.reddit.com/r/ClaudeAI/comments/1k5slll/anthropics_guide_to_claude_code_best_practices/
-
-[^1_21]: https://code.claude.com/docs/en/github-actions
-
-[^1_22]: https://www.reddit.com/r/GithubCopilot/comments/1otaarr/how_do_you_guys_fine_tune_your_github_copilot/
+[^1_15]: https://quarkus.io/guides/flyway
 
 ---
 
-# is claude opus 4.5 or clause sonnet 4.5 better at C\# / powershell / DottNet coding?
+# how do I find my vewrsion of Flyway
 
-Claude Opus 4.5 is generally the stronger choice for C\#, PowerShell, and .NET work, but Sonnet 4.5 is often the better default for day‑to‑day iterative coding inside an IDE because of cost/latency.
+On any platform, you can print the installed Flyway CLI version directly from the command line.
 
-## Capability differences
+### Command-line Flyway
 
-- Anthropic positions **Opus 4.5** as the “most intelligent” model with step‑change improvements in reasoning and coding, outperforming Sonnet 4.5 on long‑horizon coding tasks and benchmarks when run at high effort.[^2_1][^2_2]
-- On internal and public coding benchmarks (e.g., SWE‑Bench Verified), Opus 4.5 can exceed Sonnet 4.5’s performance while using fewer tokens, especially at higher effort settings.[^2_3][^2_2][^2_1]
-- Independent comparisons note that both models handle mainstream languages (including C\#) well, but Opus 4.5 tends to produce more accurate multi‑file refactors, better architecture, and more reliable long‑range edits.[^2_4][^2_3]
+Run either of these in the shell where `flyway` is on your `PATH`:
 
-## Sonnet 4.5 strengths
+- `flyway --version`
+- `flyway -v`
 
-- Anthropic describes **Sonnet 4.5** as a state‑of‑the‑art coding model optimized for cost and speed, with strong performance on real‑world coding and “agentic” tasks.[^2_5][^2_6][^2_7]
-- It achieves very high scores on SWE‑Bench and similar evals while keeping pricing similar to earlier Sonnet models, making it attractive for continuous use in tools like Copilot, Cursor, and Claude Code.[^2_8][^2_6][^2_7]
-- Articles comparing Sonnet 4 vs 4.5 highlight better architecture choices and cleaner code structure in 4.5, which you’ll notice in typical CRUD services, controllers, and test scaffolding.[^2_9][^2_5]
+Both commands output the Flyway version and edition, then exit without running any migrations.[^2_1][^2_2]
 
-## Which to use for your stack
+### If you have multiple Flyway installs
 
-For C\#, PowerShell, and .NET specifically:
+If you suspect several versions are installed (e.g., multiple `flyway` folders or Docker images):
 
-- Both models have been trained on broad code corpora and support C\#, scripting languages, and typical .NET stacks; there is no language‑specific constraint favoring one model.[^2_10][^2_11][^2_4]
-- Use **Sonnet 4.5** as your main “inner‑loop” model in VS Code / Claude Code for:
-  - Quick edits and refactors in C\# or PowerShell functions.
-  - Small to medium features in a single solution or module.
-  - Iterative REPL‑style coding where latency and cost matter.
-- Switch to **Opus 4.5** when you need:
-  - Large refactors across multiple projects in a solution.
-  - Deep reasoning about complex async flows, DI setup, or cross‑service contracts.
-  - Multi‑step migration work (e.g., framework upgrades, architecture reshaping) where correctness and long‑horizon planning trump cost.[^2_12][^2_1][^2_3]
-
-## Practical rule of thumb
-
-- If you’re asking “which is better at C\#/PowerShell/.NET?” in pure quality terms, **Opus 4.5** wins.[^2_2][^2_1][^2_3]
-- For most everyday coding in a multi‑project repo from VS Code, **Sonnet 4.5** gives you ~90–95% of Opus’s coding ability with better throughput and lower spend, and you can reserve Opus 4.5 for the gnarlier refactors and design tasks.[^2_6][^2_8][^2_4]
-  <span style="display:none">[^2_13][^2_14][^2_15]</span>
+- For a specific installation directory: run the `flyway` executable from that directory with `./flyway -v` (Linux/macOS) or `flyway.cmd -v` (Windows).[^2_3]
+- For a Docker image: `docker run --rm flyway/flyway -v` (or whatever image tag you use) will print the version inside that container.[^2_4][^2_5]
+  <span style="display:none">[^2_10][^2_11][^2_12][^2_13][^2_14][^2_15][^2_6][^2_7][^2_8][^2_9]</span>
 
 <div align="center">⁂</div>
 
-[^2_1]: https://www.anthropic.com/news/claude-opus-4-5
+[^2_1]: https://documentation.red-gate.com/fd/command-line-parameters-277578836.html
 
-[^2_2]: https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-5
+[^2_2]: https://documentation.red-gate.com/flyway/reference/command-line-parameters
 
-[^2_3]: https://www.codecademy.com/article/claude-opus-45-tutorial-for-ai-agents-and-coding
+[^2_3]: https://www.red-gate.com/hub/product-learning/flyway/installing-and-upgrading-the-flyway-cli
 
-[^2_4]: https://www.datastudios.org/post/claude-opus-4-5-vs-claude-sonnet-4-5-full-report-and-comparison-of-features-performance-pricing-a
+[^2_4]: https://jdriven.com/blog/2025/04/Flyway-in-the-command-line
 
-[^2_5]: https://www.infoworld.com/article/4066706/claude-sonnet-4-5-coding-model-improves-agentic-capabilities.html
+[^2_5]: https://neon.com/docs/guides/flyway
 
-[^2_6]: https://www.anthropic.com/news/claude-sonnet-4-5
+[^2_6]: https://stackoverflow.com/questions/48230507/how-do-i-get-the-flyway-version-number-of-a-database
 
-[^2_7]: https://skywork.ai/blog/claude-4-5-vs-claude-4-3-2-2025-comparison/
+[^2_7]: https://www.red-gate.com/hub/product-learning/flyway/finding-the-version-of-a-flyway-managed-database
 
-[^2_8]: https://portkey.ai/blog/claude-sonnet-4-5-vs-gpt-5
+[^2_8]: https://www.red-gate.com/hub/product-learning/flyway/the-flyway-info-command-explained-simply
 
-[^2_9]: https://www.cosmicjs.com/blog/claude-sonnet-4-vs-45-a-real-world-comparison
+[^2_9]: https://github.com/flyway/flyway/issues/2389
 
-[^2_10]: https://elbruno.com/2025/12/04/claude-in-azure-with-net-anthropic-claude-microsoft-extensions-ai-meai-💥/
+[^2_10]: https://www.youtube.com/watch?v=mYE_omHLM_A
 
-[^2_11]: https://platform.claude.com/docs/en/build-with-claude/claude-in-microsoft-foundry
+[^2_11]: https://documentation.red-gate.com/fd/flyway-output-query-results-setting-277579016.html
 
-[^2_12]: https://www.linkedin.com/pulse/claude-opus-45-feels-better-model-why-my-workflow-had-latorre-rlo2e
+[^2_12]: https://github.com/flyway/flywaydb.org/blob/gh-pages/documentation/usage/commandline/index.md
 
-[^2_13]: https://azure.microsoft.com/en-us/blog/introducing-claude-opus-4-5-in-microsoft-foundry/
+[^2_13]: https://stackoverflow.com/questions/33677026/flyway-migration-schema-version
 
-[^2_14]: https://www.reddit.com/r/ClaudeAI/comments/1pbc9wp/opus_45_just_helped_me_a_frontend_dev_speed_up_a/
+[^2_14]: https://documentation.red-gate.com/fd/command-line-277579359.html
 
-[^2_15]: https://www.youtube.com/watch?v=hA-VmnTokXg
+[^2_15]: https://jilles.me/database-versioning-and-migrations-for-everyone-using-flyway/
 
 ---
 
-# When using claude code inside copilot, and as the chat agetn, what does this mean?
+# I have Flyway OSS Edition 10.21.0 by Redgate
 
-You've hit your limit · resets 12pm (America/Denver)
+For Flyway OSS 10.21.0 there isn’t a short, fixed “enum” of environment variables; instead, **almost every configuration parameter becomes an environment variable via a naming rule**.[^3_1][^3_2]
 
-That message means you’ve temporarily hit a **usage cap for Claude** (through Copilot / Claude Code) and cannot send more requests until the time shown, when your allowance resets.
+### How environment-variable names are derived
 
-### What the message is
+Take any documented configuration parameter name (from the Parameters list for Flyway 10.x).[^3_2]
 
-- The wording is the same pattern as Claude Code’s own limit message: “Claude usage limit reached. Your limit will reset at Xpm (America/TimeZone).”[^3_1][^3_2]
-- In your case, “You’ve hit your limit · resets 12pm (America/Denver)” is Copilot’s UI telling you that Claude requests (chat, completions, or Claude Code actions) are currently blocked until that reset time.
-- This is not about a syntax error or bug in your prompt; it’s simply a **rate/usage throttle**.
+1. Start from the key as used in config files, e.g. `flyway.url`, `flyway.defaultSchema`, `flyway.placeholders.myPlaceholder`.
+2. Strip the `flyway.` prefix, if present.
+3. Replace any remaining dots with underscores.
+4. Uppercase the result.
+5. Prefix with `FLYWAY_`.
 
-### Where the limit comes from
+Examples in correct case:
 
-There are two overlapping layers of limits:
+- `flyway.url` → `FLYWAY_URL`
+- `flyway.user` → `FLYWAY_USER`
+- `flyway.password` → `FLYWAY_PASSWORD`
+- `flyway.driver` → `FLYWAY_DRIVER`
+- `flyway.schemas` → `FLYWAY_SCHEMAS`
+- `flyway.defaultSchema` → `FLYWAY_DEFAULTSCHEMA`
+- `flyway.locations` → `FLYWAY_LOCATIONS`
+- `flyway.table` → `FLYWAY_TABLE`
+- `flyway.tablespace` → `FLYWAY_TABLESPACE`
+- `flyway.target` → `FLYWAY_TARGET`
+- `flyway.mixed` → `FLYWAY_MIXED`
+- `flyway.outOfOrder` → `FLYWAY_OUTOFORDER`
+- `flyway.validateOnMigrate` → `FLYWAY_VALIDATEONMIGRATE`
+- `flyway.validateMigrationNaming` → `FLYWAY_VALIDATEMIGRATIONNAMING`
+- `flyway.cleanDisabled` → `FLYWAY_CLEANDISABLED`
+- `flyway.createSchemas` → `FLYWAY_CREATESCHEMAS`
+- `flyway.baselineOnMigrate` → `FLYWAY_BASELINEONMIGRATE`
+- `flyway.baselineVersion` → `FLYWAY_BASELINEVERSION`
+- `flyway.baselineDescription` → `FLYWAY_BASELINEDESCRIPTION`
+- `flyway.ignoreMigrationPatterns` → `FLYWAY_IGNOREMIGRATIONPATTERNS`
+- `flyway.connectRetries` → `FLYWAY_CONNECTRETRIES`
+- `flyway.connectRetriesInterval` → `FLYWAY_CONNECTRETRIESINTERVAL`
+- `flyway.initSql` → `FLYWAY_INITSQL`
+- `flyway.jdbcProperties` → `FLYWAY_JDBCPROPERTIES`
+- `flyway.workingDirectory` → `FLYWAY_WORKINGDIRECTORY`
+- `flyway.loggers` → `FLYWAY_LOGGERS`
+- `flyway.skipDefaultResolvers` → `FLYWAY_SKIPDEFAULTRESOLVERS`
+- `flyway.skipDefaultCallbacks` → `FLYWAY_SKIPDEFAULTCALLBACKS`
+- `flyway.skipExecutingMigrations` → `FLYWAY_SKIPEXECUTINGMIGRATIONS`
+- `flyway.outputQueryResults` → `FLYWAY_OUTPUTQUERYRESULTS`
+- `flyway.reportFilename` → `FLYWAY_REPORTFILENAME`
+- `flyway.placeholders.myPlaceholder` → `FLYWAY_PLACEHOLDERS_MYPLACEHOLDER`
 
-- **Anthropic-side limits**: Claude Code and Claude models enforce caps per account/plan; when those are reached you see “Claude usage limit reached. Your limit will reset at 3pm (America/Santiago).” and similar messages.[^3_3][^3_4][^3_1]
-- **GitHub Copilot limits**: Copilot Pro/Enterprise also has its own fair‑use limits per model (e.g., Sonnet) and will stop routing to a model when you exceed them, even if your underlying Claude plan technically still has quota.[^3_5][^3_6][^3_7]
+Flyway’s docs explicitly say: “See configuration for a full list of supported configuration parameters. Each individual settings page will list the environment variable, if supported.” The master parameter list for 10.x is in the Parameters page.[^3_3][^3_1][^3_2]
 
-When you’re “using Claude Code inside Copilot, and as the chat agent,” the **effective limit is whatever Copilot enforces for Claude usage**. When that’s exhausted, Copilot shows the “You’ve hit your limit … resets <time>” banner and blocks further Claude calls until that window resets.[^3_8][^3_5]
+### Special environment-variable groups
 
-### What you can (and can’t) do
+Besides the straight `FLYWAY_…` mappings:
 
-- You generally can’t override this from VS Code; you have to wait until the reset time passes.[^3_9][^3_1]
-- After reset, you can resume using Claude as the Copilot chat agent and for inline Claude Code actions.
-- If you’re hitting this often, typical workarounds others use are:
-  - Switching to another model temporarily inside Copilot (e.g., GPT‑based) while you wait.[^3_6][^3_7]
-  - Doing heavy Claude Code sessions against the Claude web app or API directly, where you control the plan and limits more explicitly.[^3_10][^3_9]
+- JDBC properties can be passed via `FLYWAY_JDBCPROPERTIES_…` (for example `FLYWAY_JDBCPROPERTIES_ACCESSTOKEN`).[^3_4][^3_2]
 
-So, in plain terms: it’s a **per‑time‑window usage/rate limit for Claude through Copilot**, and 12pm America/Denver is when that window resets and your Claude requests will start working again.
-<span style="display:none">[^3_11][^3_12][^3_13][^3_14][^3_15]</span>
+```
+- Placeholders are available to callbacks both as `FLYWAY_PLACEHOLDERS_<NAME>` and via the `FP__flyway_<name>__` pattern used in Redgate’s sample scripts, but the portable, documented form is the `FLYWAY_PLACEHOLDERS_…` name derived as above.[^3_5][^3_6]
+```
+
+### Getting the exhaustive list for 10.21.0
+
+To literally list **all** environment variable names for your version, walk the 10.x Parameters list and apply the rule.[^3_2]
+
+For your workflow, a small generator script is practical. For example, in PowerShell:
+
+```powershell
+# Given a list of flyway.* keys (one per line in params.txt),
+# emit their environment variable names for Flyway 10.21.0
+
+Get-Content .\params.txt |
+  Where-Object { $_ -and -not $_.StartsWith('#') } |
+  ForEach-Object {
+    $key = $_.Trim()
+    if ($key.StartsWith('flyway.')) {
+      $suffix = $key.Substring(7)           # drop 'flyway.'
+    } else {
+      $suffix = $key
+    }
+    $envName = 'FLYWAY_' + ($suffix -replace '\.', '_' | ForEach-Object { $_.ToUpper() })
+    $envName
+  }
+```
+
+Feed it the parameter names from the 10.x Parameters reference and it will output every valid `FLYWAY_…` variable in the exact case Flyway expects.[^3_1][^3_2]
+<span style="display:none">[^3_10][^3_11][^3_12][^3_13][^3_14][^3_15][^3_7][^3_8][^3_9]</span>
 
 <div align="center">⁂</div>
 
-[^3_1]: https://github.com/anthropics/claude-code/issues/9236
+[^3_1]: https://documentation.red-gate.com/flyway/reference/environment-variables
 
-[^3_2]: https://github.com/sst/opencode/issues/870
+[^3_2]: https://github.com/flyway/flyway/blob/main/documentation/Flyway CLI and API/Configuration/Environment Variables.md
 
-[^3_3]: https://www.reddit.com/r/ClaudeCode/comments/1nu9xoo/claude_usage_limit_reached_your_limit_will_reset/
+[^3_3]: https://documentation.red-gate.com/fd/environment-variables-224003080.html
 
-[^3_4]: https://www.reddit.com/r/ClaudeAI/comments/1lhqa9a/claude_usage_limit_reached_your_limit_will_reset/
+[^3_4]: https://documentation.red-gate.com/fd/release-notes-for-flyway-engine-179732572.html
 
-[^3_5]: https://www.reddit.com/r/GithubCopilot/comments/1lpxcz9/github_copilot_pro_rate_limit_rant_are_they/
+[^3_5]: https://www.red-gate.com/hub/product-learning/flyway/making-full-use-of-environment-variables-for-flyway-settings
 
-[^3_6]: https://github.com/orgs/community/discussions/167138
+[^3_6]: https://www.red-gate.com/hub/product-learning/flyway/passing-parameters-and-settings-to-flyway-scripts
 
-[^3_7]: https://github.com/orgs/community/discussions/148896
+[^3_7]: https://www.youtube.com/watch?v=uvGNB57xcH0
 
-[^3_8]: https://github.com/orgs/community/discussions/162229
+[^3_8]: https://stackoverflow.com/questions/74543518/how-to-use-environment-variables-in-flyway-config-file
 
-[^3_9]: https://www.cometapi.com/when-does-claude-code-usage-reset/
+[^3_9]: https://documentation.red-gate.com/fd/flyway-desktop-7-release-notes-229116743.html
 
-[^3_10]: https://www.reddit.com/r/ClaudeAI/comments/1p5tzk9/claude_code_usage_limit_hack_never_hit_rate/
+[^3_10]: https://voiceofthedba.com/2023/09/22/friday-flyway-tips-flyway-parameters/
 
-[^3_11]: https://github.com/anthropics/claude-code/issues/22946
+[^3_11]: https://www.youtube.com/watch?v=K7mdHjMh46U
 
-[^3_12]: https://news.ycombinator.com/item?id=46351916
+[^3_12]: https://github.com/flyway/flyway/blob/main/documentation/Flyway CLI and API/Configuration/Parameters.md
 
-[^3_13]: https://www.youtube.com/watch?v=uEsfIfTrDNM
+[^3_13]: https://www.opsmatters.com/videos/making-full-use-environment-variables-flyway-tony-and-tonie-show
 
-[^3_14]: https://github.com/anthropics/claude-code/issues/3873
+[^3_14]: https://documentation.red-gate.com/flyway/flyway-concepts/environments
 
-[^3_15]: https://www.reddit.com/r/ClaudeAI/comments/1l84s48/claude_usage_limit_reached_your_limit_will_reset/
+[^3_15]: https://github.com/flyway/flywaydb.org/blob/gh-pages/documentation/configuration/parameters/index.md
 
 ---
 
-# How to increase Claude usage limits in Copilot
+# explain what FLYWAY*PLACEHOLDERS or FP\_\_flyway*<name> is used for
 
-You can’t directly “turn up” Claude’s limits inside Copilot yourself; they’re controlled by GitHub’s Copilot request system and your plan, but you can optimize how you use those limits and, in some cases, get more capacity.
+`FLYWAY_PLACEHOLDERS_*` and `FP__flyway_<name>__` are both ways of getting values into Flyway **placeholders**, which are variables you can use inside migration scripts so the same SQL can be customized per environment (dev/test/prod, different schemas, different users, secrets, etc.).[^4_1][^4_4]
 
-## What limits you’re actually hitting
+### What placeholders are
 
-- GitHub Copilot treats Claude (and other advanced models) as **premium requests** with fixed monthly buckets per user (e.g., 100–300+ premium requests/month depending on plan/phase).[^4_1][^4_2][^4_3][^4_4]
-- Each time you invoke Claude as the chat agent or use Claude Code in Copilot, you spend one or more of those premium requests, even if the reply is short.[^4_2][^4_3]
-- When you see “You’ve hit your limit · resets …” or “premium request limit reached,” it means your Copilot premium‑request quota (not Anthropic’s own quota) is temporarily exhausted.[^4_5][^4_6][^4_3]
+In your SQL migrations you can write things like:
 
-## Ways to increase or extend effective limits
+```sql
+CREATE SCHEMA ${schema_name};
 
-You can’t flip a setting to double the quota, but you can:
+GRANT SELECT ON SCHEMA ${schema_name} TO ${readonly_user};
+```
 
-1. **Upgrade / change Copilot plan (if available)**
-   - Some discussions and docs note that higher‑tier or Enterprise Copilot offerings have more generous or upcoming “300 premium requests/month” style limits for Claude and similar models.[^4_4][^4_7]
-   - If you’re on an individual Pro plan and part of an org, you can ask your admin about Copilot Enterprise or Pro+ (where available), which may increase premium request allocations for Claude models.[^4_8][^4_4]
-2. **Use Claude requests more efficiently**
-   - GitHub’s own guidance: combine several related tasks in one Claude chat instead of firing many tiny prompts, because **each invocation** can count as a premium request.[^4_3][^4_2]
-   - Keep the same chat thread open and iterate inside it, rather than starting new chats for closely related changes, so you reuse context and reduce new premium calls.
-3. **Avoid burning premium requests on trivial tasks**
-   - For quick, small edits, use a non‑premium model (e.g., the default GPT‑based Copilot) and reserve Claude for: large refactors, deep code reviews, multi‑file reasoning, etc.[^4_6][^4_2]
-   - In VS Code, set your **default agent/model** to a cheaper one, and manually switch to Claude only when you actually need it (e.g., for complex .NET or PowerShell refactors).
-4. **Work around intermittent throttling / bugs**
-   - Some users hit rate limits “on the first request” due to early‑rollout throttling or bugs in Sonnet integration; recommended workarounds include restarting VS Code, waiting an hour, and ensuring the Copilot extension is up to date.[^4_9][^4_10][^4_5]
-   - If you’re consistently rate‑limited despite low usage, grab logs from the Copilot Output panel and open a GitHub Support ticket or GitHub Community discussion; several threads show that launch‑time limits were eased after reports.[^4_7][^4_5][^4_9]
-5. **Use Claude outside Copilot for heavy sessions**
-   - If you regularly exhaust Copilot’s Claude quota, a lot of devs run big coding sessions directly in the Claude web app or via Anthropic’s own plans/API, and use Copilot’s Claude integration for lighter or in‑IDE work only.[^4_11][^4_12][^4_13]
+At runtime Flyway replaces `${schema_name}` and `${readonly_user}` with concrete values before sending the SQL to the database. This lets you keep one generic script and change only configuration between environments.[^4_2][^4_1]
 
-## What you cannot do
+### `FLYWAY_PLACEHOLDERS_*` environment variables
 
-- There is **no** hidden Copilot setting where you can manually raise Claude’s monthly/hourly cap yourself; only GitHub (via plan and backend config) can change the hard limits.[^4_6][^4_4]
-- You also can’t bypass the premium‑request counter by switching between Claude chat and Claude Code inside Copilot; both still draw from the same Claude request allowance.
-  <span style="display:none">[^4_14][^4_15]</span>
+Configuration keys of the form `flyway.placeholders.<name>=value` define user placeholders. The environment-variable form is:
+
+- `flyway.placeholders.schema_name = my_schema`
+  → `FLYWAY_PLACEHOLDERS_SCHEMA_NAME=my_schema`
+- `flyway.placeholders.readonly_user = app_reader`
+  → `FLYWAY_PLACEHOLDERS_READONLY_USER=app_reader`
+
+Flyway reads these and uses them when replacing `${schema_name}` and `${readonly_user}` in your SQL.[^4_4]
+
+Typical uses:
+
+- Environment-specific schema names, table prefixes, or roles.
+- Injecting connection strings, URLs, or other config that differ by environment.
+- Avoiding hard-coding secrets (e.g., passwords) directly in SQL files.[^4_1][^4_2]
+
+### `FP__flyway_<name>__` variables
+
+The `FP__flyway_<name>__` style is a naming convention used when exposing placeholders (and some other settings) as environment variables to scripts or tools that run alongside Flyway, especially in more complex pipelines.
+
+Conceptually:
+
+- Flyway resolves placeholders from its configuration (including `FLYWAY_PLACEHOLDERS_*`).
+- For callbacks or external scripts, it also surfaces those values as environment variables like `FP__flyway_schema_name__`, so your script can read them without parsing Flyway config files.
+
+So:
+
+- `FLYWAY_PLACEHOLDERS_*` → how you **provide** placeholder values to Flyway.
+- `FP__flyway_<name>__` → how Flyway (or wrapper tooling) can **export** resolved placeholder values (and some other settings) for use in external scripts, keeping everything in sync with what the migrations saw.[^4_11]
+  <span style="display:none">[^4_10][^4_3][^4_5][^4_6][^4_7][^4_8][^4_9]</span>
 
 <div align="center">⁂</div>
 
-[^4_1]: https://news.ycombinator.com/item?id=46351916
+[^4_1]: https://documentation.red-gate.com/fd/migration-placeholders-275218550.html
 
-[^4_2]: https://docs.github.com/en/copilot/concepts/billing/copilot-requests
+[^4_2]: https://stackoverflow.com/questions/44252696/purpose-of-placeholders-in-flyway-database-migrations
 
-[^4_3]: https://github.com/orgs/community/discussions/164613
+[^4_3]: https://stackoverflow.com/questions/9418173/how-do-placeholders-work-in-flyway
 
-[^4_4]: https://github.com/orgs/community/discussions/162444
+[^4_4]: https://documentation.red-gate.com/flyway/flyway-cli-and-api/configuration/parameters/flyway/placeholders
 
-[^4_5]: https://github.com/orgs/community/discussions/162229
+[^4_5]: https://runebook.dev/en/articles/spring_boot/application-properties/application-properties.data-migration.spring.flyway.placeholders
 
-[^4_6]: https://github.com/orgs/community/discussions/148896
+[^4_6]: https://runebook.dev/en/articles/spring_boot/application-properties/application-properties.data-migration.spring.flyway.script-placeholder-suffix
 
-[^4_7]: https://github.com/orgs/community/discussions/161285
+[^4_7]: https://github.com/flyway/flyway/issues/3826
 
-[^4_8]: https://www.reddit.com/r/GithubCopilot/comments/1kuogj6/how_does_the_github_copilot_pro_plan_work_with/
+[^4_8]: https://github.com/flyway/flyway/issues/3384
 
-[^4_9]: https://github.com/microsoft/vscode-copilot-release/issues/10362
+[^4_9]: https://github.com/flyway/flyway/issues/2429
 
-[^4_10]: https://github.com/microsoft/vscode-copilot-release/issues/10320
+[^4_10]: https://developer-youn.tistory.com/129
 
-[^4_11]: https://www.reddit.com/r/GithubCopilot/comments/1lpxcz9/github_copilot_pro_rate_limit_rant_are_they/
-
-[^4_12]: https://github.com/anthropics/claude-code/issues/9094
-
-[^4_13]: https://www.reddit.com/r/GithubCopilot/comments/1n7a0ql/300_requests_per_month_limit_is_really_sad/
-
-[^4_14]: https://www.reddit.com/r/ClaudeAI/comments/1j48wwz/is_there_a_limit_to_claude_37_in_githubs_copilot/
-
-[^4_15]: https://developercommunity.visualstudio.com/t/Github-Copilot-Agent-Claude-Sonnet-40-C/10969044?sort=newest\&topics=fixed+in%3A+visual+studio+2017+version+15.8+preview+2
+[^4_11]: https://www.red-gate.com/hub/product-learning/flyway/passing-parameters-and-settings-to-flyway-scripts
 
 ---
 
-# how do I see how many premium requests Ive used?
+# Common pitfalls when using placeholders in repeatable migrations
 
-You can see your premium‑request usage for Copilot (including Claude) in GitHub’s billing/usage UI, and in some cases directly in your IDE.
+The biggest issues are around how checksums work and how often repeatable migrations re-run when only placeholder values change.[^5_1][^5_2][^5_3]
 
-## Quick way in GitHub
+### 1. Expecting placeholder changes to re-run repeatables
 
-For an individual Copilot Pro / Pro+ account:
+- Flyway calculates the checksum for a repeatable migration from the script text, usually **before** substituting user placeholders.[^5_2][^5_4]
+- Changing `flyway.placeholders.MY_VALUE` often does not change the stored checksum for the repeatable, so the migration does not re-run as you might expect.[^5_5][^5_1]
+- Relying on “flip a placeholder value to force an R\_\_ script to run” is therefore fragile and version-dependent.
 
-1. Go to `https://github.com/settings/billing` while signed in.[^5_1]
-2. On the **Overview** page, scroll to **Metered usage** and click **Copilot** to filter for Copilot only.[^5_1]
-3. You’ll see your **premium request usage** for the current month there; click **Premium request analytics** (or **View details**) for a more detailed breakdown and charts.[^5_2][^5_1]
+**Mitigation:**
+Change the script itself when you truly want to re-run it, or use the built‑in `${flyway:timestamp}` placeholder when you intentionally want “always rerun” behavior.[^5_6][^5_3]
 
-GitHub’s docs call this “Monitoring your GitHub Copilot usage and entitlements,” and note that premium request counters reset on the 1st of each month at 00:00:00 UTC.[^5_3][^5_4][^5_1]
+### 2. Trying to make “always-run” repeatables via placeholders
 
-## From VS Code / IDE
+- Putting a changing placeholder like `${timestamp}` in a repeatable script and expecting it to run on every `migrate` is a common pattern that does not work in older versions, because checksum is taken pre‑substitution.[^5_4][^5_2]
+- This leads to confusion when a “dynamic” placeholder appears to change each run but Flyway still skips the repeatable.
 
-- Recent Copilot builds can show current premium request usage directly inside the Copilot panel or status item, though this UI has moved around over time and some users report it disappearing in certain versions.[^5_5][^5_6]
-- If you don’t see it in VS Code, the GitHub web **Billing \& licensing → Copilot** view above is the reliable source.
-  <span style="display:none">[^5_10][^5_11][^5_12][^5_13][^5_14][^5_15][^5_7][^5_8][^5_9]</span>
+**Mitigation:**
+
+- Use Flyway callbacks (`beforeMigrate.sql`, `afterMigrate.sql`, etc.) for “run every time” logic.[^5_2]
+- Or use the documented `${flyway:timestamp}` trick, which is specifically designed so that each run changes the checksum for repeatables.[^5_3][^5_6]
+
+### 3. Hidden coupling between environment config and repeatables
+
+- If a repeatable’s behavior depends on placeholders that vary by environment (schema names, roles, feature flags), you can end up with the **same checksum** but different side effects across environments.[^5_7][^5_8]
+- This makes it harder to reason about whether a repeatable “has done its job” everywhere, because Flyway’s tracking only knows about the checksum, not the substituted values.
+
+**Mitigation:**
+
+- Keep environment-specific behavior in versioned migrations or separate repeatables per environment, and make repeatables depend as little as possible on volatile placeholders.[^5_8][^5_3]
+
+### 4. Using default placeholders that have limitations in repeatables
+
+- Some built‑in placeholders (e.g., `${flyway:filename}`) have had issues or limitations specifically with repeatable migrations in certain versions.[^5_9]
+- This can manifest as failures populating the placeholder only for repeatables, while versioned migrations and callbacks work.
+
+**Mitigation:**
+
+- Check the docs and release notes for any limitations of default placeholders in repeatable migrations for your Flyway version.[^5_10][^5_8]
+- If a default placeholder misbehaves in repeatables, fall back to explicit configuration or a callback.
+
+### 5. Using placeholders to represent large or generated content
+
+- Some teams try to inject large generated SQL blobs into a repeatable via a placeholder (e.g., concatenated DDL of many procedures).[^5_5]
+- If Flyway’s checksum does not incorporate the fully substituted content the way you expect, changes in the underlying generated SQL may not trigger re-execution.
+
+**Mitigation:**
+
+- Prefer one repeatable per unit (e.g., per object) or use versioned migrations to track such changes explicitly.[^5_11][^5_3]
+- If you must generate content, generate or update the migration file itself so its text (and checksum) changes predictably.
+  <span style="display:none">[^5_12][^5_13][^5_14][^5_15][^5_16]</span>
 
 <div align="center">⁂</div>
 
-[^5_1]: https://docs.github.com/en/copilot/how-tos/manage-and-track-spending/monitor-premium-requests
+[^5_1]: https://stackoverflow.com/questions/41242156/repeatable-flyway-migration-wont-run-again-if-placeholder-changes
 
-[^5_2]: https://github.com/orgs/community/discussions/157693
+[^5_2]: https://stackoverflow.com/questions/39661878/flyway4-repeatable-migration-dynamic-checksum-change-maven-always-execute
 
-[^5_3]: https://docs.github.com/en/copilot/concepts/copilot-billing/requests-in-github-copilot
+[^5_3]: https://documentation.red-gate.com/fd/repeatable-migrations-273973335.html
 
-[^5_4]: https://docs.github.com/en/billing/concepts/product-billing/github-copilot-premium-requests
+[^5_4]: https://stackoverflow.com/questions/39661878/flyway4-repeatable-migration-dynamic-checksum-change-maven-always-execute/39672079
 
-[^5_5]: https://github.com/orgs/community/discussions/171779
+[^5_5]: https://github.com/flyway/flyway/issues/2177
 
-[^5_6]: https://github.com/orgs/community/discussions/160817
+[^5_6]: https://flywaydb.org/blog/flyway-timestampsAndRepeatables
 
-[^5_7]: https://docs.github.com/en/copilot/concepts/billing/copilot-requests
+[^5_7]: https://documentation.red-gate.com/flyway/flyway-concepts/migrations/migration-placeholders
 
-[^5_8]: https://www.reddit.com/r/GithubCopilot/comments/1lot01f/they_need_to_add_a_way_to_see_how_many_premium/
+[^5_8]: https://documentation.red-gate.com/fd/migration-placeholders-275218550.html
 
-[^5_9]: https://docs.github.com/en/enterprise-cloud@latest/billing/concepts/product-billing/github-copilot-premium-requests
+[^5_9]: https://github.com/flyway/flyway/issues/3454
 
-[^5_10]: https://www.reddit.com/r/SysAdminBlogs/comments/1lw2wt5/github_copilot_premium_requests_usage_dashboard/
+[^5_10]: https://documentation.red-gate.com/fd/release-notes-for-flyway-engine-179732572.html
 
-[^5_11]: https://github.com/orgs/community/discussions/152785
+[^5_11]: https://stackoverflow.com/questions/42930738/flyway-and-initialization-of-repeatable-migrations
 
-[^5_12]: https://docs.github.com/en/copilot/reference/copilot-usage-metrics/copilot-usage-metrics
+[^5_12]: https://www.red-gate.com/hub/product-learning/flyway/flyway-gotchas
 
-[^5_13]: https://www.reddit.com/r/GithubCopilot/comments/1khogo9/where_to_check_requests_usage/
+[^5_13]: https://github.com/flyway/flyway/issues/4063
 
-[^5_14]: https://www.youtube.com/watch?v=E-w7hIfdaaY
+[^5_14]: https://www.red-gate.com/hub/product-learning/flyway/flyway-how-tos-a-users-perspective
 
-[^5_15]: https://docs.github.com/en/copilot/how-tos/administer-copilot/manage-for-enterprise/view-usage-and-adoption
+[^5_15]: https://stackoverflow.com/questions/63091283/flyway-always-execute-repeatable-migrations
+
+[^5_16]: https://bell-sw.com/blog/how-to-use-flyway-with-spring-boot/
 
 ---
 
-# is claude sonnet or claaude opus a better model for powershell and database coding?
+# give me powershell to use join-path to create "C:\Dropbox\whertzing\GitHub\SharedVSCode\Databases\flyway.toml"
 
-For pure quality, Opus is stronger; for everyday PowerShell and database work, Sonnet is usually the better default.
+Use `Join-Path` with multiple segments like this:
 
-### How they compare for coding
+```powershell
+$flywayToml = Join-Path -Path 'C:' -ChildPath 'Dropbox\whertzing\GitHub\SharedVSCode\Databases\flyway.toml'
+$flywayToml
+```
 
-- Anthropic positions **Sonnet 4.5 as their best coding model for most development tasks**, optimized for complex agents and day‑to‑day software work.[^6_1][^6_2]
-- **Opus 4.5 is the most capable overall model**, with higher scores on tough coding and reasoning benchmarks and better performance on very hard, multi‑step problems.[^6_3][^6_4][^6_2][^6_5]
-- Benchmarks show Opus 4.5 solving more software‑engineering tasks (SWE‑bench and similar), but the margin is modest on typical, well‑scoped coding tasks and more noticeable on edge‑case or highly complex problems.[^6_6][^6_7][^6_3]
+Or, using separate segments:
 
-### For PowerShell and database work specifically
+```powershell
+$flywayToml = Join-Path -Path 'C:' -ChildPath 'Dropbox' |
+    Join-Path -ChildPath 'whertzing' |
+    Join-Path -ChildPath 'GitHub' |
+    Join-Path -ChildPath 'SharedVSCode' |
+    Join-Path -ChildPath 'Databases' |
+    Join-Path -ChildPath 'flyway.toml'
+$flywayToml
+```
 
-- Both models handle scripting (including PowerShell) and database‑related code (SQL, ORMs, schema design) well; neither is restricted or particularly weak for these domains.[^6_4][^6_2]
-- In practical comparisons, Sonnet 4.5 is recommended as the **default coding workhorse** because it’s fast and cheaper per token while still being “state‑of‑the‑art” for code generation, debugging, and refactoring.[^6_8][^6_2][^6_1]
-- Opus 4.5 becomes attractive when you’re: doing large, cross‑repo refactors, debugging gnarly race conditions or performance issues, or designing non‑trivial data models and migration strategies where you want maximum reasoning depth.[^6_9][^6_3][^6_8]
-
-### Recommended usage pattern
-
-- Use **Claude Sonnet** as your main model for:
-  - Routine PowerShell scripts (automation, admin tasks, DevOps helpers).
-  - Typical database coding (stored procedures, EF Core mappings, migrations, query tuning drafts).
-- Bring in **Claude Opus** when you hit tasks like:
-  - Multi‑step refactors across services, jobs, and scripts.
-  - Complex database redesigns, migration plans, or failure‑mode analysis.
-  - Deep debugging sessions where you want it to reason through logs, schemas, and scripts together.[^6_7][^6_3][^6_4]
-
-So: Sonnet is generally “better” in the sense of cost‑performance for ongoing PowerShell and database coding, while Opus is the superior specialist when the work is genuinely hard or high‑stakes.
-<span style="display:none">[^6_10][^6_11][^6_12][^6_13][^6_14][^6_15]</span>
+<span style="display:none">[^6_1][^6_10][^6_11][^6_12][^6_13][^6_14][^6_15][^6_2][^6_3][^6_4][^6_5][^6_6][^6_7][^6_8][^6_9]</span>
 
 <div align="center">⁂</div>
 
-[^6_1]: https://claude-ai.chat/models/claude-sonnet-4-5/
+[^6_1]: https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/join-path?view=powershell-7.5
 
-[^6_2]: https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-5
+[^6_2]: https://stackoverflow.com/questions/25880122/how-do-i-use-join-path-to-combine-more-than-two-strings-into-a-file-path
 
-[^6_3]: https://www.humai.blog/claude-sonnet-4-5-vs-opus-4-5-the-complete-comparison/
+[^6_3]: https://www.pdq.com/powershell/join-path/
 
-[^6_4]: https://www.mindstudio.ai/blog/claude-4-1
+[^6_4]: https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/join-path?view=powershell-7.4\&viewFallbackFrom=powershell-6
 
-[^6_5]: https://www.anthropic.com/news/claude-opus-4-5
+[^6_5]: http://devblackops.io/joining-paths-in-powershell/
 
-[^6_6]: https://www.datastudios.org/post/claude-opus-4-5-vs-claude-sonnet-4-5-full-report-and-comparison-of-features-performance-pricing-a
+[^6_6]: https://jonlabelle.com/snippets/view/powershell/join-multiplepaths
 
-[^6_7]: https://milvus.io/ai-quick-reference/how-does-claude-opus-45-compare-to-sonnet-45-for-coding
+[^6_7]: https://stackoverflow.com/questions/25880122/how-do-i-use-join-path-to-combine-more-than-two-strings-into-a-file-path/53745818
 
-[^6_8]: https://blog.milvus.io/ai-quick-reference/how-does-claude-opus-45-compare-to-sonnet-45-for-coding
+[^6_8]: https://www.powershellgallery.com/packages/DailyBackup/1.10.4/Content/Private\Join-MultiplePaths.ps1
 
-[^6_9]: https://help.apiyi.com/en/claude-opus-4-5-vs-sonnet-4-5-comparison-en.html
+[^6_9]: https://powershell-7.ru/?p=942
 
-[^6_10]: https://www.cosmicjs.com/blog/claude-sonnet-45-vs-opus-45-a-real-world-comparison
+[^6_10]: https://codebuckets.com/2016/08/20/powershell-join-path-with-multiple-parameters/
 
-[^6_11]: https://claudelog.com/faqs/claude-4-sonnet-vs-opus/
+[^6_11]: https://www.youtube.com/watch?v=8_goo3YWQxU
 
-[^6_12]: https://www.youtube.com/watch?v=0QkxzgR9xLo
+[^6_12]: https://www.powershellgallery.com/packages/DailyBackup/1.10.5/Content/Private\Join-MultiplePaths.ps1
 
-[^6_13]: https://simonw.substack.com/p/claude-sonnet-45-is-probably-the
+[^6_13]: https://day3bits.com/2024-12-09-Revisiting-Join-Path-in-PowerShell/
 
-[^6_14]: https://www.datastudios.org/post/claude-opus-4-5-vs-claude-sonnet-4-5-model-differences-pricing-structure-context-windows-and-mor
+[^6_14]: https://www.byteinthesky.com/powershell/combine-multiple-paths/
 
-[^6_15]: https://www.datacamp.com/tutorial/how-to-use-claude-agent-sdk
+[^6_15]: https://blog.ironmansoftware.com/powershell-paths/
 
-    Virus-free.www.avast.com
+---
+
+# give me seperate argumensts all on the same line
+
+```powershell
+$flywayToml = Join-Path -Path 'C:' -ChildPath 'Dropbox' 'whertzing' 'GitHub' 'SharedVSCode' 'Databases' 'flyway.toml'
+```

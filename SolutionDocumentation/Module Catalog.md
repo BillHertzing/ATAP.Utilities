@@ -1,9 +1,9 @@
-# Ace Commander – Module Catalog v0.4
+# Ace Commander – Module Catalog v0.5
 
 **Status:** Baseline (change-controlled)
-**Supersedes:** Module Catalog v0.3
+**Supersedes:** Module Catalog v0.4
 **Date:** February 22, 2026
-**Change:** Section 2.4 expanded into subsections covering Claude Code CLAUDE.md configuration hierarchy (multi-project repo pattern), AI model selection strategy (Opus 4.5 vs Sonnet 4.5 for C#/.NET/PowerShell), and Copilot/Claude usage-limit awareness and optimization.
+**Change:** Section 3.3 expanded with subsection 3.3.3 covering Flyway OSS 10.21.0 environment-variable naming rules, common FLYWAY*\* variable reference, placeholder configuration (FLYWAY_PLACEHOLDERS*\* / FP**flyway\_<name>**), and common pitfalls with placeholders in repeatable migrations.
 
 ---
 
@@ -328,6 +328,85 @@ When Claude is routed through GitHub Copilot (as a chat agent or via Claude Code
 | Jenkins     | Validate every code change via automated build + test pipelines                                               |
 | BuildMaster | Orchestrate releases; package artifacts; publish dependency metadata to ProGet                                |
 | ProGet      | Govern approved package versions; gate dependency consumption; provide vulnerability scanning and audit trail |
+
+#### 3.3.3 Flyway Configuration Reference (OSS 10.21.0)
+
+**Version check:** `flyway -v` (or `flyway --version`) prints the installed edition and version and exits without running any migrations.
+
+**Environment-variable naming rule:** Every Flyway configuration parameter `flyway.<key>` maps to an environment variable by: stripping the `flyway.` prefix, replacing any remaining dots with underscores, uppercasing the result, and prefixing with `FLYWAY_`.
+
+_Example:_ `flyway.defaultSchema` → `FLYWAY_DEFAULTSCHEMA`
+
+##### Common FLYWAY\_\* Environment Variables
+
+| Environment Variable             | Configuration Key                | Purpose                                                                          |
+| -------------------------------- | -------------------------------- | -------------------------------------------------------------------------------- |
+| `FLYWAY_URL`                     | `flyway.url`                     | JDBC connection URL for the target database                                      |
+| `FLYWAY_USER`                    | `flyway.user`                    | Database username (leave empty when using Windows Integrated Authentication)     |
+| `FLYWAY_PASSWORD`                | `flyway.password`                | Database password (leave empty when using Windows Integrated Authentication)     |
+| `FLYWAY_DRIVER`                  | `flyway.driver`                  | Fully qualified JDBC driver class name (auto-detected if omitted)                |
+| `FLYWAY_SCHEMAS`                 | `flyway.schemas`                 | Comma-separated list of schemas managed by Flyway                                |
+| `FLYWAY_DEFAULTSCHEMA`           | `flyway.defaultSchema`           | Default schema for the migration history table and unqualified SQL objects       |
+| `FLYWAY_LOCATIONS`               | `flyway.locations`               | Locations of migration scripts (e.g., `filesystem:./sql`)                        |
+| `FLYWAY_TABLE`                   | `flyway.table`                   | Name of the schema history table (default: `flyway_schema_history`)              |
+| `FLYWAY_TABLESPACE`              | `flyway.tablespace`              | Tablespace for the schema history table (if supported by the DB)                 |
+| `FLYWAY_TARGET`                  | `flyway.target`                  | Target migration version; Flyway migrates up to this version only                |
+| `FLYWAY_MIXED`                   | `flyway.mixed`                   | Allow mixing versioned and repeatable migrations in the same run                 |
+| `FLYWAY_OUTOFORDER`              | `flyway.outOfOrder`              | Allow out-of-order migrations                                                    |
+| `FLYWAY_VALIDATEONMIGRATE`       | `flyway.validateOnMigrate`       | Validate applied migrations against available scripts on each `migrate`          |
+| `FLYWAY_VALIDATEMIGRATIONNAMING` | `flyway.validateMigrationNaming` | Fail if a file in the locations folder doesn't match the expected naming pattern |
+| `FLYWAY_CLEANDISABLED`           | `flyway.cleanDisabled`           | Disable the `clean` command (strongly recommended in non-dev environments)       |
+| `FLYWAY_CREATESCHEMAS`           | `flyway.createSchemas`           | Let Flyway create schemas listed in `flyway.schemas` if they don't exist         |
+| `FLYWAY_BASELINEONMIGRATE`       | `flyway.baselineOnMigrate`       | Automatically baseline when `migrate` is called on a non-empty schema            |
+| `FLYWAY_BASELINEVERSION`         | `flyway.baselineVersion`         | Version tag applied to the schema baseline                                       |
+| `FLYWAY_BASELINEDESCRIPTION`     | `flyway.baselineDescription`     | Description applied to the schema baseline record                                |
+| `FLYWAY_IGNOREMIGRATIONPATTERNS` | `flyway.ignoreMigrationPatterns` | Patterns for migrations to ignore during validate (e.g., `*:missing`)            |
+| `FLYWAY_CONNECTRETRIES`          | `flyway.connectRetries`          | Number of times to retry DB connection on startup failure                        |
+| `FLYWAY_CONNECTRETRIESINTERVAL`  | `flyway.connectRetriesInterval`  | Interval in seconds between connection retries                                   |
+| `FLYWAY_INITSQL`                 | `flyway.initSql`                 | SQL executed once per connection before migrations run                           |
+| `FLYWAY_JDBCPROPERTIES`          | `flyway.jdbcProperties`          | Additional JDBC connection properties                                            |
+| `FLYWAY_WORKINGDIRECTORY`        | `flyway.workingDirectory`        | Working directory for Flyway; relative paths are resolved against this           |
+| `FLYWAY_LOGGERS`                 | `flyway.loggers`                 | Logger(s) to use (e.g., `console`, `file`)                                       |
+| `FLYWAY_SKIPDEFAULTRESOLVERS`    | `flyway.skipDefaultResolvers`    | Skip the built-in migration resolvers                                            |
+| `FLYWAY_SKIPDEFAULTCALLBACKS`    | `flyway.skipDefaultCallbacks`    | Skip the built-in callbacks                                                      |
+| `FLYWAY_SKIPEXECUTINGMIGRATIONS` | `flyway.skipExecutingMigrations` | Scan and validate but do not actually execute migrations                         |
+| `FLYWAY_OUTPUTQUERYRESULTS`      | `flyway.outputQueryResults`      | Output query results to the console during migration                             |
+| `FLYWAY_REPORTFILENAME`          | `flyway.reportFilename`          | Path/filename for the HTML/JSON report generated after a `migrate` run           |
+| `FLYWAY_PLACEHOLDERS_<NAME>`     | `flyway.placeholders.<name>`     | User-defined placeholder value (see subsection below)                            |
+| `FLYWAY_JDBCPROPERTIES_<PROP>`   | `flyway.jdbcProperties.<prop>`   | Individual JDBC property (e.g., `FLYWAY_JDBCPROPERTIES_ACCESSTOKEN`)             |
+
+_For the authoritative full list, see the Parameters reference in the Flyway 10.x documentation and apply the naming rule to every entry._
+
+##### Flyway Placeholders (`FLYWAY_PLACEHOLDERS_*`)
+
+Placeholders allow the same SQL migration script to be customized per environment. In scripts, write `${variable_name}`; Flyway substitutes the configured value before sending SQL to the database.
+
+```sql
+-- Example migration using placeholders
+CREATE SCHEMA ${schema_name};
+GRANT SELECT ON SCHEMA ${schema_name} TO ${readonly_user};
+```
+
+Configuration mapping:
+
+| Configuration key                   | Environment variable                | Script token       |
+| ----------------------------------- | ----------------------------------- | ------------------ |
+| `flyway.placeholders.schema_name`   | `FLYWAY_PLACEHOLDERS_SCHEMA_NAME`   | `${schema_name}`   |
+| `flyway.placeholders.readonly_user` | `FLYWAY_PLACEHOLDERS_READONLY_USER` | `${readonly_user}` |
+| `flyway.placeholders.myPlaceholder` | `FLYWAY_PLACEHOLDERS_MYPLACEHOLDER` | `${myPlaceholder}` |
+
+**`FP__flyway_<name>__` variables:** When Flyway (or Redgate wrapper tooling) runs callbacks or external scripts, it exports resolved placeholder values as `FP__flyway_<name>__` environment variables so those scripts can access the same values the migrations saw, without re-parsing configuration files.
+
+- `FLYWAY_PLACEHOLDERS_*` — how you **provide** placeholder values **to** Flyway.
+- `FP__flyway_<name>__` — how Flyway **exports** resolved placeholder values **out to** callbacks and scripts.
+
+##### Common Pitfalls: Placeholders in Repeatable Migrations
+
+| Pitfall                                      | Detail                                                                                                                                                                                                                     | Mitigation                                                                                                                                                                                                          |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Placeholder change doesn’t re-run repeatable | Flyway checksums repeatable (`R__`) scripts from the **raw script text**, typically before substituting placeholders. Changing a `FLYWAY_PLACEHOLDERS_*` value does not change the stored checksum; the script is skipped. | Change the script body itself when you want it to re-run, rather than relying on a placeholder-value flip.                                                                                                          |
+| “Always-run” via changing placeholder fails  | Putting a changing value (e.g., a timestamp placeholder) in a repeatable script and expecting it to run every `migrate` does not work in older versions because checksum is taken pre-substitution.                        | Use Flyway **callbacks** (`beforeMigrate.sql`, `afterMigrate.sql`) for logic that must run every time. Or use the `${flyway:timestamp}` built-in placeholder, which is designed to change the checksum on each run. |
+| Hidden coupling of env config to repeatables | Different `FLYWAY_PLACEHOLDERS_*` values across environments can cause the same repeatable script to produce different SQL, making environment-specific results hard to trace.                                             | Document all placeholder values in version-controlled config files; review placeholder-driven SQL in migration code reviews.                                                                                        |
 
 ---
 

@@ -3,7 +3,7 @@
 **Status:** Baseline (change-controlled)
 **Supersedes:** Module Catalog v0.8
 **Date:** February 22, 2026
-**Change:** Section 3.3 gains new §3.3.7 VS Code C# Build Configuration (tasks.json and launch.json for class library DLL projects) and §3.3.8 Multi-Project Repository Structure: Aggregator Libraries and NuGet Packaging, covering ProjectReference aggregator patterns, cross-feature referencing, HintPath external DLL references, and single-package NuGet bundling. §3.3.9 Secrets Management: Bitwarden CLI and PowerShell SecretManagement Integration added, covering the known `match`-property extension bug and workaround, the CI/CD headless unlock pattern for Jenkins service accounts, and VS Code development BW_SESSION inheritance.
+**Change:** Section 3.3 gains new §3.3.7 VS Code C# Build Configuration (tasks.json and launch.json for class library DLL projects) and §3.3.8 Multi-Project Repository Structure: Aggregator Libraries and NuGet Packaging, covering ProjectReference aggregator patterns, cross-feature referencing, HintPath external DLL references, and single-package NuGet bundling. §3.3.9 Secrets Management: Bitwarden CLI and PowerShell SecretManagement Integration added, covering the known `match`-property extension bug and workaround, the CI/CD headless unlock pattern for Jenkins service accounts, VS Code development BW_SESSION inheritance, Bitwarden CLI in WSL2, Docker container secrets access patterns, and auto-creating BW_SESSION on WSL login (including pwsh profile setup). §3.3.10 WSL2 Runtime Environment: Installation and Configuration added, covering WSL2 install, distro selection (Ubuntu 24.04 LTS), drive mounting, Windows ↔ WSL2 networking, Ansible setup, PowerShell driving Ansible from Windows, and Docker in WSL2 with API access from .NET and PowerShell.
 
 ---
 
@@ -827,6 +827,299 @@ Environment variables set in an interactive terminal session are not inherited b
 | Always launch VS Code from a shell | `code .` from a PowerShell session where `BW_SESSION` is already set; cleanest approach                                                                                                        |
 | Conditional unlock at task start   | Add to `build.ps1`: `if (-not $env:BW_SESSION) { $env:BW_SESSION = bw unlock --raw }` — will prompt once in the VS Code terminal, then reuse for the session                                   |
 | User-level environment variable    | Set `BW_SESSION` persistently: `[System.Environment]::SetEnvironmentVariable('BW_SESSION', (bw unlock --raw), 'User')`; restart VS Code; be aware the session expires when the vault is locked |
+
+##### Bitwarden CLI in WSL2 (Ubuntu)
+
+For scripts and programs running directly in WSL2 (not inside Docker containers), install the Bitwarden CLI (`bw`) natively in the Ubuntu distro and fetch secrets via the same `BW_SESSION` pattern used on Windows.
+
+**Installation in WSL2:**
+
+- Direct binary (recommended): download the Linux CLI binary from Bitwarden's CLI docs and place `bw` on `$PATH` (e.g., `/usr/local/bin`).
+- Via npm: `npm install -g @bitwarden/cli` — works if Node.js is already installed in WSL.
+
+**Login and unlock:**
+
+```bash
+# One-time login (authenticates and syncs vault)
+bw login
+
+# Subsequent unlocks — returns raw session token
+export BW_SESSION="$(bw unlock --raw)"
+```
+
+With `BW_SESSION` set, all subsequent `bw` calls in that shell are non-interactive until `bw lock` is called or the session expires.
+
+**Fetching secrets:**
+
+```bash
+# Find an item by name
+bw list items --search "my-api-key"
+
+# Retrieve a password by item ID
+bw get password <item-id>
+
+# Use inline in a script
+export DB_PASSWORD=$(bw get password db-prod)
+```
+
+**Self-hosted / Vaultwarden server:** Set `BW_SERVER` before logging in:
+
+```bash
+export BW_SERVER="https://your.vault.url"
+bw login
+```
+
+##### Accessing Bitwarden Secrets from Docker Containers in WSL2
+
+Two patterns for containers running inside WSL2. `SecretManagement` on Windows is not accessible directly from WSL or Docker containers — use Bitwarden as the single source of truth and access it via `bw`/`bws` inside WSL.
+
+**Pattern A — Bitwarden Secrets Manager CLI (`bws`) with access token**
+
+Use when you have a Bitwarden Secrets Manager subscription:
+
+- Include the `bws` CLI in your container image (or use `bitwarden/bws` as a base image).
+- At `docker run` time, pass a short-lived access token:
+
+```bash
+docker run -e BWS_ACCESS_TOKEN=<token> your-image
+```
+
+- Entry-point script runs `bws secret list` / `bws secret get` and exports values or writes a config file before starting the application.
+
+**Pattern B — Standard `bw` CLI pre-deploy `.env` injection**
+
+Use with the standard Bitwarden Password Manager:
+
+1. In WSL (before running Docker), ensure `BW_SESSION` is set and generate an `.env` file:
+
+```bash
+echo "DB_PASSWORD=$(bw get password db-prod)" > /tmp/app.env
+echo "API_KEY=$(bw get password my-api-key)" >> /tmp/app.env
+chmod 600 /tmp/app.env
+```
+
+2. Mount the file into the container at run time:
+
+```bash
+docker run --env-file /tmp/app.env your-image
+# or with Docker Compose:  env_file: /tmp/app.env
+```
+
+3. Delete `/tmp/app.env` after the container starts if the file should not persist.
+
+**Key principle:** Bitwarden credentials and session tokens must not be baked into container images. Fetch secrets at runtime and inject via environment variables or ephemeral config files.
+
+##### Auto-creating BW_SESSION on WSL Login (Bash / pwsh)
+
+To mirror the Windows logon-script behaviour — automatically setting `BW_SESSION` on every shell startup inside Ubuntu WSL — hook a function into the appropriate startup file.
+
+**Bash hook (`~/.bashrc` or `~/.bash_profile`):**
+
+```bash
+bw_auto_unlock() {
+  if [ -z "$BW_SESSION" ]; then
+    echo "Unlocking Bitwarden CLI session..."
+    export BW_SESSION="$(bw unlock --raw)"
+  fi
+}
+bw_auto_unlock
+```
+
+**pwsh (PowerShell 7) profile — `~/.config/powershell/Microsoft.PowerShell_profile.ps1`:**
+
+Create the config directory and profile file if they do not yet exist:
+
+```powershell
+New-Item -ItemType Directory -Path ~/.config/powershell -Force | Out-Null
+New-Item -ItemType File -Path ~/.config/powershell/Microsoft.PowerShell_profile.ps1 -Force | Out-Null
+```
+
+Confirm `$PROFILE` resolves to the expected path:
+
+```powershell
+$PROFILE
+Test-Path $PROFILE
+```
+
+Add to the profile:
+
+```powershell
+# Auto-unlock Bitwarden in WSL sessions only
+if ($env:WSL_DISTRO_NAME -and -not $env:BW_SESSION) {
+    if ($env:BW_PASSWORD) {
+        # Non-interactive: BW_PASSWORD env var was set before pwsh started
+        $session = bw unlock --raw --passwordenv BW_PASSWORD
+    } else {
+        # Interactive: prompt once per session
+        $session = bw unlock --raw
+    }
+    if ($LASTEXITCODE -eq 0 -and $session) {
+        $env:BW_SESSION = $session
+    }
+}
+```
+
+**CLIXML (Windows `SecureString`) files — not suitable for WSL:** CLIXML-encrypted `SecureString` files depend on the Windows DPAPI context. Once moved into WSL, DPAPI is unavailable and the master password would be exposed as plaintext. Use Bitwarden's supported automation patterns instead:
+
+| Automation approach                 | How                                                                                                                                                  |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API key (non-interactive login)     | Set `BW_CLIENTID` and `BW_CLIENTSECRET`; run `bw login --apikey`; store these in a protected file (`chmod 600`) read into the environment at startup |
+| `--passwordenv` for unlock          | Set `BW_PASSWORD` temporarily before running `bw unlock --passwordenv BW_PASSWORD --raw`; unset immediately after                                    |
+| `--passwordfile` for unlock         | Write the master password to a file with `chmod 600`; pass with `bw unlock --passwordfile /path/to/mp.txt --raw`; restrict to owning user only       |
+| Interactive prompt once per session | Allow `bw unlock --raw` to prompt; enter password manually at session start; appropriate when `BW_SESSION` lifespan matches a typical work session   |
+
+**Security note:** `BW_SESSION` grants access to the decrypted vault for the duration of the session. Do not write it to disk, commit it to source control, or log it. Call `bw lock` in logout/cleanup scripts when stronger guarantees are needed.
+
+---
+
+#### 3.3.10 WSL2 Runtime Environment: Installation and Configuration
+
+WSL2 is the Ansible execution runtime and Docker host for development and CI/CD workloads in this project (see §3.3.1 and §2.5). This section is the setup reference for WSL2 on Windows 11.
+
+##### Installation
+
+From an elevated PowerShell on Windows 11:
+
+```powershell
+wsl --install
+wsl --set-default-version 2
+```
+
+Verify after install:
+
+```powershell
+wsl -l -v   # should show the distro with VERSION 2
+```
+
+##### Recommended Distro: Ubuntu 24.04 LTS
+
+| Distro               | Recommendation                                                                                                                                                         |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Ubuntu 24.04 LTS** | Primary choice — first-class WSL support, default Microsoft WSL distro, best tooling ecosystem for Ansible and Docker, largest community and troubleshooting resources |
+| **Debian**           | Alternative — leaner image, more conservative package versions; preferred when production servers are Debian-based to reduce environment drift                         |
+| Alpine               | Not recommended for this use case — library compatibility issues and far less WSL2 + Docker/Ansible guidance available                                                 |
+
+Install the recommended distro:
+
+```powershell
+$distroToInstall = 'Ubuntu-24.04'
+wsl --install $distroToInstall
+wsl --set-default-version 2
+```
+
+With optional interactive default:
+
+```powershell
+$defaultDistro = 'Ubuntu-24.04'
+$distroToInstall = Read-Host -Prompt "Distro to install [`$defaultDistro`]"
+if ([string]::IsNullOrWhiteSpace($distroToInstall)) { $distroToInstall = $defaultDistro }
+wsl --install $distroToInstall
+wsl --set-default-version 2
+```
+
+List all available distros: `wsl --list --online`
+
+##### Windows Drive Mounting (/mnt/c, /mnt/d, /mnt/e)
+
+WSL2 auto-mounts fixed Windows drives under `/mnt` via DrvFs (C: → `/mnt/c` by default). If additional drives (D:, E:) are not auto-mounted:
+
+```bash
+sudo mkdir -p /mnt/d /mnt/e
+sudo mount -t drvfs D: /mnt/d
+sudo mount -t drvfs E: /mnt/e
+```
+
+To make additional mounts persistent, add to `/etc/wsl.conf`:
+
+```ini
+[automount]
+enabled = true
+root = /mnt/
+```
+
+Apply changes: run `wsl --shutdown` from Windows PowerShell, then re-open WSL.
+
+##### Networking: Windows ↔ WSL2 and Organizational Network
+
+| Direction                                          | How                                                                                                                                                                                                        |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| WSL2 → Windows host services                       | Get the Windows IP visible from WSL: `ip route show \| grep default \| awk '{print $3}'`; call services at `http://<host-ip>:port`                                                                         |
+| WSL2 → org network                                 | WSL2 inherits the Windows host's network connectivity; services reachable from Windows are reachable from WSL2 at the same hostnames/IPs                                                                   |
+| Windows → WSL2 services (mirrored networking mode) | Windows 11 22H2+ supports mirrored networking where `http://localhost:port` reaches WSL2 services directly                                                                                                 |
+| Windows → WSL2 services (older NAT mode)           | Use the WSL2 VM IP (`wsl hostname -I`) and optionally configure port forwarding: `netsh interface portproxy add v4tov4 listenport=<port> listenaddress=0.0.0.0 connectport=<port> connectaddress=<wsl-ip>` |
+
+##### Ansible Setup in WSL2
+
+Install Ansible in the Ubuntu distro:
+
+```bash
+sudo apt update && sudo apt install ansible
+```
+
+Keep inventories and playbooks on the Linux filesystem (`/home/<user>/ansible`) for I/O performance. Playbooks in WSL2 can:
+
+- Call Windows-hosted APIs via Ansible URI modules.
+- Manage Linux and Windows targets on the organizational network as long as those endpoints are reachable from WSL2.
+
+##### PowerShell on Windows Driving Ansible in WSL2
+
+From Windows PowerShell, invoke commands inside WSL using `wsl -d <Distro>`:
+
+```powershell
+wsl -d Ubuntu-24.04 -- ansible-playbook /home/<user>/ansible/site.yml -i /home/<user>/ansible/inventory
+```
+
+**Pattern for generating and triggering playbooks from Windows:**
+
+1. Keep "desired state" definitions in a Git repo on Windows (e.g., `D:\OrgInfraDefs`).
+2. A PowerShell script reads definitions, generates Ansible YAML (playbooks + inventory) to an output folder on Windows (e.g., `D:\Generated\Ansible`).
+3. Copy generated files into WSL — either write directly to `\\wsl$\<Distro>\home\<user>\ansible` from Windows, or have WSL read from `/mnt/d/Generated/Ansible`.
+4. Trigger the run from PowerShell:
+
+```powershell
+wsl -d Ubuntu-24.04 -- ansible-playbook /home/<user>/ansible/site.yml -i /home/<user>/ansible/inventory
+```
+
+This pattern centralizes intent in a Windows-hosted repo, auto-generates Ansible assets in PowerShell, and uses WSL2 as the execution engine without requiring a separate Linux build machine.
+
+##### Docker in WSL2 and API Access from Windows
+
+Install Docker Engine directly in the Ubuntu WSL2 distro (or use Docker Desktop with WSL2 integration):
+
+```bash
+sudo apt update
+sudo apt install docker.io
+sudo usermod -aG docker $USER   # run docker without sudo
+# Re-open the WSL session for group membership to take effect
+```
+
+Start a container that exposes an API:
+
+```bash
+docker run -p 5000:80 myorg/myapp
+```
+
+**Access the container API from Windows:**
+
+| Runtime environment                    | URL to use                                                    |
+| -------------------------------------- | ------------------------------------------------------------- |
+| Windows 11 22H2+ (mirrored networking) | `http://localhost:5000` — works directly                      |
+| Older Windows / NAT mode               | `http://<wsl-ip>:5000` — obtain WSL IP with `wsl hostname -I` |
+
+**.NET programs on Windows:**
+
+```csharp
+var client = new HttpClient();
+var response = await client.GetAsync("http://localhost:5000/api/resource");
+```
+
+**PowerShell on Windows:**
+
+```powershell
+Invoke-RestMethod -Uri 'http://localhost:5000/api/resource'
+```
+
+The WSL2 container behaves like any other local web service from the Windows side.
 
 ---
 

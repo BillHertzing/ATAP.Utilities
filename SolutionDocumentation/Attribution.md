@@ -489,3 +489,78 @@ Sources for the Bitwarden SecretManagement extension `match`-property bug analys
 
 - [Bitwarden CLI walkthrough (YouTube)](https://www.youtube.com/watch?v=0PhTVbuffEE)
 - [Bitwarden CI/CD integration demo (YouTube)](https://www.youtube.com/watch?v=mdbpXEzyrJY)
+
+---
+
+## Section 3.3.10 – Dev/Build/Repo Toolchain: WSL2 Runtime Environment
+
+Sources for the WSL2 installation and configuration reference, distro selection guidance, drive mounting, Windows↔WSL2 networking, Ansible setup, PowerShell driving Ansible from Windows, and Docker in WSL2 with API access from .NET and PowerShell documented in Module Catalog Section 3.3.10.
+
+### WSL2 Official Documentation (Microsoft)
+
+- [Install WSL (learn.microsoft.com)](https://learn.microsoft.com/en-us/windows/wsl/install)
+- [WSL networking (learn.microsoft.com)](https://learn.microsoft.com/en-us/windows/wsl/networking)
+- [WSL tutorials: Docker containers](https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-containers)
+- [WSL setup environment](https://learn.microsoft.com/en-us/windows/wsl/setup/environment)
+- [WSL configuration (`wsl.conf` and `.wslconfig`)](https://learn.microsoft.com/en-us/windows/wsl/wsl-config)
+- [Mount a disk in WSL2](https://learn.microsoft.com/en-us/windows/wsl/wsl2-mount-disk)
+- [WSL basic commands](https://learn.microsoft.com/en-us/windows/wsl/basic-commands)
+- [Compare WSL versions](https://learn.microsoft.com/en-us/windows/wsl/compare-versions)
+- [Install WSL on Windows Server](https://learn.microsoft.com/en-us/windows/wsl/install-on-server)
+- [About WSL](https://learn.microsoft.com/en-us/windows/wsl/about)
+
+### Ubuntu / WSL2 Official Documentation
+
+- [Ubuntu on WSL (ubuntu.com)](https://ubuntu.com/desktop/wsl)
+- [Install Ubuntu on WSL2 (documentation.ubuntu.com – stable)](https://documentation.ubuntu.com/wsl/stable/howto/install-ubuntu-wsl2/)
+- [Install Ubuntu on WSL2 (documentation.ubuntu.com – latest)](https://documentation.ubuntu.com/wsl/latest/howto/install-ubuntu-wsl2/)
+- [Ubuntu GitHub – WSL install guide](https://github.com/ubuntu/WSL/blob/main/docs/guides/install-ubuntu-wsl2.md)
+
+### Docker Documentation
+
+- [Docker Desktop WSL2 backend](https://docs.docker.com/desktop/features/wsl/)
+
+### Distro Selection (Community)
+
+- [Reddit: WSL recommended distribution](https://www.reddit.com/r/bashonubuntuonwindows/comments/1co100t/wsl_recommended_distribution/)
+- [Reddit: Which WSL distro is best?](https://www.reddit.com/r/bashonubuntuonwindows/comments/juupsx/which_distro_is_best/)
+- [Reddit: Smallest Linux distro for WSL as a base](https://www.reddit.com/r/bashonubuntuonwindows/comments/15e8knk/what_is_the_smallest_linux_distro_to_use_as/)
+- [Ansible forum: Using WSL with Ansible and RHEL](https://forum.ansible.com/t/using-wsl-with-ansible-and-rhel-to-develop-automation-content/39720)
+- [vanfalchi.com: Developer guide to WSL2](https://vanfalchi.com/unleashing-linux-on-windows-a-developers-guide-to-wsl2/)
+
+### Drive Mounting and Networking (Community)
+
+- [SitePoint: WSL2 overview and setup](https://www.sitepoint.com/wsl2/)
+- [GitHub WSL issue #6286 – automount options](https://github.com/microsoft/WSL/issues/6286)
+- [UIowa IT KB: WSL drive mounting](https://www.public-health.uiowa.edu/it/support/kb48568/)
+- [Stack Overflow: Connecting to WSL2 server via local network](https://stackoverflow.com/questions/61002681/connecting-to-wsl2-server-via-local-network)
+- [Stack Overflow: Reaching localhost from within Docker container using WSL2](https://stackoverflow.com/questions/76959405/reaching-localhost-from-within-docker-container-using-wsl2)
+
+### Bitwarden CLI in WSL2 and Docker Secrets Patterns
+
+- [Bitwarden CLI reference](https://bitwarden.com/help/cli/)
+- [Bitwarden Secrets Manager CLI reference](https://bitwarden.com/help/secrets-manager-cli/)
+- [Bitwarden developer quick start (Secrets Manager)](https://bitwarden.com/help/developer-quick-start/)
+- [Bitwarden Personal API Key](https://bitwarden.com/help/personal-api-key/)
+- [Bitwarden CLI GitHub](https://github.com/bitwarden/cli)
+- [npm: @bitwarden/cli](https://www.npmjs.com/package/@bitwarden/cli)
+- [Reddit: How to install bw CLI in Docker](https://www.reddit.com/r/Bitwarden/comments/xhir0q/how_to_install_bw_cli_in_docker/)
+- [Docker secret management with bw (scottmckendry.tech)](https://scottmckendry.tech/docker-secret-management/)
+- [chezmoi: Bitwarden integration](https://www.chezmoi.io/user-guide/password-managers/bitwarden/)
+- [bwenv Python package](https://pypi.org/project/bwenv/)
+- [SecretManagement.Warden 1.1.0 on PSGallery](https://www.powershellgallery.com/packages/SecretManagement.Warden/1.1.0)
+- [vaultwarden: BW CLI with self-hosted server (Reddit)](https://www.reddit.com/r/vaultwarden/comments/v6f1uv/trying_to_access_bw_cli_commands_in_vaultwarden/)
+- [writerit.nl: Load Bitwarden CLI env variable with one command](https://writerit.nl/productivity/bitwarden/load-bitwarden-cli-environment-variable-with-one-command/)
+- [passageway.id: Bitwarden CLI guide](https://www.passageway.id/article/cli/)
+
+### WSL/pwsh Auto-unlock and Session Management
+
+- [Bitwarden community: CLI session key](https://community.bitwarden.com/t/cli-session-key/13397)
+- [Is the key in BW_SESSION used by bw CLI? (Reddit)](https://www.reddit.com/r/Bitwarden/comments/ul3zy1/is_the_key_in_bw_session_used_by_bwcli/)
+- [Gruntwork: Securely store and load secrets from Bitwarden into shell](https://www.gruntwork.io/blog/how-to-securely-store-secrets-in-bitwarden-cli-and-load-them-into-your-zsh-shell-when-needed)
+- [ergaster.org: direnv + Bitwarden integration](https://ergaster.org/posts/2025/07/28-direnv-bitwarden-integration/)
+- [Bitwarden CLI issue #383 – CLIXML / DPAPI concerns](https://github.com/bitwarden/cli/issues/383)
+- [Bitwarden community: CLI unlock with PIN](https://community.bitwarden.com/t/cli-unlock-with-pin/29779)
+- [Bitwarden community: CLI trying to login with personal API key automatically](https://community.bitwarden.com/t/cli-trying-to-login-with-personal-api-key-automatically-using-environment-variables/43434)
+- [bitwarden/cli issue #378 – piping password via stdin](https://github.com/bitwarden/cli/issues/378)
+- [bitwarden GitHub discussions #12650 – lock on logout](https://github.com/orgs/bitwarden/discussions/12650)

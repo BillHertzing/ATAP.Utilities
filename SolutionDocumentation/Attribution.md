@@ -264,3 +264,38 @@ Sources for the GitHub issue-to-branch workflow documented in Module Catalog Sec
 - [GitHub CLI gist: gh issue develop usage](https://gist.github.com/devinschumacher/ea416af5542ac7102c8e1ffd0ab38a99)
 - [Reddit: Issue with creating branch in VS Code](https://www.reddit.com/r/vscode/comments/1bdwjzr/issue_with_creating_branch/)
 
+---
+
+## Section 3.3.5 – Dev/Build/Repo Toolchain: Jenkins and ProGet Role Comparison
+
+Sources for the Jenkins vs. ProGet toolchain distinction and typical integration pipeline documented in Module Catalog Section 3.3.5.
+
+### Official Product Documentation
+
+- [Jenkins Pipeline Steps reference](https://www.jenkins.io/doc/pipeline/steps/)
+- [ProGet product overview (Inedo)](https://inedo.com/proget)
+- [ProGet feature list (Inedo)](https://inedo.com/proget/features)
+- [ProGet SCA / CI integration (`pgutil`)](https://docs.inedo.com/docs/proget-sca-ci)
+- [ProGet SCA API](https://docs.inedo.com/docs/proget-sca-api)
+- [ProGet SCA Projects & Releases](https://docs.inedo.com/docs/proget-sca-projects-releases)
+- [BuildMaster overview (Inedo)](https://docs.inedo.com/docs/buildmaster-overview)
+- [BuildMaster features](https://inedo.com/buildmaster/features)
+- [BuildMaster integrations: Jenkins](https://docs.inedo.com/docs/buildmaster-integrations-jenkins)
+- [BuildMaster build scripts](https://docs.inedo.com/docs/buildmaster-build-scripts)
+- [BuildMaster OtterScript overview](https://docs.inedo.com/docs/buildmaster-otterscript-overview)
+- [BuildMaster OtterScript operations](https://docs.inedo.com/docs/otter-otterscript-and-operations)
+- [BuildMaster scripts reference](https://docs.inedo.com/docs/buildmaster-scripts)
+
+### Blog Articles
+
+- [Universal Packages in ProGet with Jenkins (Inedo blog)](https://blog.inedo.com/jenkins/universal-packages-in-proget)
+- [Jenkins vs BuildMaster (Inedo blog)](https://blog.inedo.com/jenkins/jenkins-vs-buildmaster)
+- [Repository showdown: Artifactory vs Nexus vs ProGet](https://blog.packagecloud.io/repository-showdown-artifactory-vs-nexus-vs-proget/)
+
+### Community & Stack Overflow
+
+- [TrustRadius: Jenkins vs ProGet comparison](https://www.trustradius.com/compare-products/jenkins-vs-proget)
+- [Reddit: From zero to a Docker app using Jenkins and ProGet](https://www.reddit.com/r/selfhosted/comments/nudv3g/from_zero_to_a_docker_app_using_jenkins_proget/)
+- [Stack Overflow: Differences between Jenkins project types](https://stackoverflow.com/questions/60861091/differences-between-jenkins-projects)
+- [Inedo forums: ProGet Jenkins plugin on slave agents](https://forums.inedo.com/topic/1502/proget-jenkins-plugin-not-working-on-slaves)
+- [Wikipedia: ProGet](https://en.wikipedia.org/wiki/ProGet)

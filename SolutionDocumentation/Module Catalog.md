@@ -1,9 +1,9 @@
-# Ace Commander – Module Catalog v0.6
+# Ace Commander – Module Catalog v0.7
 
 **Status:** Baseline (change-controlled)
-**Supersedes:** Module Catalog v0.5
+**Supersedes:** Module Catalog v0.6
 **Date:** February 22, 2026
-**Change:** Section 2.4 expanded: §2.4.4 gains rows for token-usage monitoring and plan management/downgrade; new §2.4.5 Copilot Coding Agent Pull Request Workflow; new §2.4.6 Claude Code Windows Installation Reference; new §2.4.7 AI Service Subscription Reference (Google One / Google AI Plans). Section 3.3 gains new §3.3.4 GitHub Issue & Branch Workflow.
+**Change:** Section 3.3 gains new §3.3.5 Jenkins vs ProGet: Toolchain Role Comparison, clarifying the distinct and complementary roles of Jenkins (CI build/test execution) and ProGet (package governance/registry) and how they integrate in the build pipeline.
 
 ---
 
@@ -452,6 +452,24 @@ Three supported options for creating a branch tied to a GitHub issue, listed in 
 | From the GitHub issue (recommended — auto-links branch to issue) | GitHub web | Issues → open the issue → Development section in the right sidebar → Create a branch → set branch name (e.g., `issue-<N>-short-description`) and base branch → Create branch; then `git fetch && git switch <branch-name>` in your local clone |
 | From VS Code Source Control view                                 | VS Code    | Ensure you are on the correct base branch → + Create new branch (or Command Palette: "Git: Create Branch…") → name it `issue-<N>-short-description`; VS Code switches automatically after creation                                             |
 | GitHub CLI (good for scripted flows)                             | Terminal   | `gh issue develop <issue-number> --base main --checkout` — creates a sensibly named branch from `main` and checks it out in one step                                                                                                           |
+
+#### 3.3.5 Jenkins vs. ProGet: Toolchain Role Comparison
+
+Jenkins and ProGet serve fundamentally different and complementary roles in the build pipeline; they are not alternatives — they are typically used together.
+
+| Dimension             | Jenkins                                                                                                                                                       | ProGet                                                                                                                                                                |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Primary role          | CI/CD automation server — executes build, test, and deploy pipeline steps (agents, stages, Jenkinsfile steps)                                                 | Package registry/repository — stores, secures, curates, and promotes versioned packages and containers (NuGet, npm, Maven, Docker, Universal Packages, etc.)          |
+| Build execution       | Runs actual build and test steps on agents; orchestrates the full pipeline                                                                                    | Does not execute builds; integrates with CI runners to ingest build/SCA data (SBOM publishing, build scanning via `pgutil`)                                           |
+| Artifact storage      | Can archive Jenkins "artifacts" per build run, but has no package versioning or governance model                                                              | System-of-record for versioned packages; provides package metadata, audit history, and policies across all consumers                                                  |
+| Security / compliance | Security of pipeline scripts and credentials; plugin ecosystem for scanning, but not package-level governance                                                 | Approval workflows, vulnerability and license scanning (SCA), policy enforcement governing which package versions are allowed and how they progress toward production |
+| Promotion model       | Pipeline stages can deploy artifacts to successive environments                                                                                               | Built-in package promotion across feeds (unlisted → tested → production), tracking status and approvals alongside the packages themselves                             |
+| Integration point     | Jenkins publishes built packages **to** ProGet using the Jenkins ProGet plugin or API keys; downstream environments consume approved packages **from** ProGet | Provides a stable, controlled feed URL that Jenkins (and other consumers) pull dependencies from; ensures only approved dependency versions enter builds              |
+| Plugin ecosystem      | Huge plugin ecosystem for almost every tool and service                                                                                                       | Focused integrations: NuGet, npm, Maven, Docker, Helm, Universal Packages; Jenkins plugin; `pgutil` CLI for CI integration                                            |
+| When to reach for it  | When you need a flexible engine to orchestrate builds/tests across repos/branches                                                                             | When you need a hardened internal registry with caching, promotion, and security/compliance controls for dependencies and release artifacts                           |
+
+**Typical pipeline flow for this project:**
+Jenkins build → test → publish packages to ProGet feed → BuildMaster release orchestration → environments pull approved packages from ProGet for deployment.
 
 ---
 

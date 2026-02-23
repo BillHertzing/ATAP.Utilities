@@ -299,3 +299,68 @@ Sources for the Jenkins vs. ProGet toolchain distinction and typical integration
 - [Stack Overflow: Differences between Jenkins project types](https://stackoverflow.com/questions/60861091/differences-between-jenkins-projects)
 - [Inedo forums: ProGet Jenkins plugin on slave agents](https://forums.inedo.com/topic/1502/proget-jenkins-plugin-not-working-on-slaves)
 - [Wikipedia: ProGet](https://en.wikipedia.org/wiki/ProGet)
+
+---
+
+## Section 3.3.6 – Dev/Build/Repo Toolchain: PowerShell Database Connectivity (dbatools & SqlClient)
+
+Sources for the SQL Server connection string builder library survey, dbatools install/import patterns, Microsoft.Data.SqlClient DLL version-conflict resolution, VS Code SQL extension module-loading behavior, and PowerShell module inspection guidance documented in Module Catalog Section 3.3.6.
+
+### dbatools – Official Documentation and Installation
+
+- [dbatools: New-DbaConnectionStringBuilder](https://dbatools.io/New-DbaConnectionStringBuilder/)
+- [dbatools: PowerShell Gallery source for New-DbaConnectionStringBuilder](https://www.powershellgallery.com/packages/dbatools/1.1.54/Content/functions\New-DbaConnectionStringBuilder.ps1)
+- [dbatools: Getting Started](https://dbatools.io/getting-started/)
+- [dbatools: Install guide](https://dbatools.io/install/)
+- [dbatools: Soup to Nuts install walkthrough](https://dbatools.io/soup2nutz/)
+- [dbatools: Command reference](https://dbatools.io/commands/)
+- [Red9: Install dbatools PowerShell guide](https://red9.com/blog/install-dbatools-powershell-guide/)
+- [Ordix: How to install the PowerShell module dbatools](https://blog.ordix.de/how-do-i-install-the-powershell-module-dbatools)
+- [Ordix: Installation without internet connection](https://blog.ordix.de/installation-and-use-of-dbatools-on-a-computer-without-internet-connection)
+- [Rob Sewell: Import dbatools from a zip file / GitHub release into Azure Automation](https://blog.robsewell.com/blog/how-to-import-dbatools-from-a-zip-file-from-the-github-release-into-azure-automation-modules-without-an-error/)
+- [netnerds: Offline install of dbatools and dbatools-library](https://blog.netnerds.net/2023/04/offline-install-of-dbatools-and-dbatools-library/)
+- [SQLShack: dbatools PowerShell module for SQL Server](https://www.sqlshack.com/dbatools-powershell-module-for-sql-server/)
+- [Thomas LaRock: Install-Module dbatools](https://thomaslarock.com/2017/04/install-module-dbatools/)
+
+### Connection String Builder Libraries
+
+- [Microsoft.Data.SqlClient.SqlConnectionStringBuilder (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/microsoft.data.sqlclient.sqlconnectionstringbuilder?view=sqlclient-dotnet-core-6.1)
+- [ADO.NET Connection String Builders (Microsoft Docs)](https://learn.microsoft.com/en-us/sql/connect/ado-net/connection-string-builders?view=sql-server-ver17)
+- [System.Data.SqlClient.SqlConnectionStringBuilder – .NET Framework 4.8](https://learn.microsoft.com/en-us/dotnet/api/system.data.sqlclient.sqlconnectionstringbuilder?view=netframework-4.8.1)
+- [ADO.NET Connection String Builders – .NET Framework](https://learn.microsoft.com/en-us/dotnet/framework/data/adonet/connection-string-builders)
+- [DatabaseWrapper (jchristn/DatabaseWrapper) – GitHub](https://github.com/jchristn/DatabaseWrapper)
+- [Aireforge SQL Server Connection String Generator](https://www.aireforge.com/tools/sql-server-connection-string-generator)
+- [Microsoft Elastic DB Tools for Java – SqlConnectionStringBuilder](https://github.com/microsoft/elastic-db-tools-for-java/blob/master/elastic-db-tools/src/main/java/com/microsoft/azure/elasticdb/shard/sqlstore/SqlConnectionStringBuilder.java)
+- [JDBC SQL Server connection string reference (Beekeeper Studio)](https://www.beekeeperstudio.io/blog/jdbc-sql-server-connection-string)
+- [connectionstrings.com – SQL Server](https://www.connectionstrings.com/sql-server/)
+
+### Microsoft.Data.SqlClient DLL Version Conflict
+
+- [Stack Overflow: Upgrade to PowerShell 7 – dbatools 2 causing "assembly with same name is already loaded"](https://stackoverflow.com/questions/77545580/upgrade-to-powershell-7-dbatools-2-causing-assembly-with-same-name-is-already)
+- [dataplat/dbatools GitHub issue #9019 – SqlClient version conflict](https://github.com/dataplat/dbatools/issues/9019)
+- [dataplat/dbatools GitHub issue #9566 – PS7+ workaround attempts](https://github.com/dataplat/dbatools/issues/9566)
+- [dataplat/dbatools GitHub issue #9379 – assembly unload fragility](https://github.com/dataplat/dbatools/issues/9379)
+- [dataplat/dbatools GitHub issue #9280](https://github.com/dataplat/dbatools/issues/9280)
+- [dataplat/dbatools GitHub issue #8195](https://github.com/dataplat/dbatools/issues/8195)
+- [Stack Overflow: Could not load file or assembly Microsoft.Data.SqlClient Version 5.0.0.0](https://stackoverflow.com/questions/75337123/could-not-load-file-or-assembly-microsoft-data-sqlclient-version-5-0-0-0)
+- [Reddit: Assembly with same name is already loaded](https://www.reddit.com/r/PowerShell/comments/160185w/assembly_with_same_name_is_already_loaded/)
+
+### VS Code SQL Extensions and PowerShell Module Loading
+
+- [mssql extension for VS Code (Microsoft Docs)](https://learn.microsoft.com/en-us/sql/tools/visual-studio-code-extensions/mssql/mssql-extension-visual-studio-code?view=sql-server-ver17)
+- [VS Code – Working with T-SQL](https://code.visualstudio.com/docs/languages/tsql)
+- [mssql on VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-mssql.mssql)
+- [Download SQL Server PowerShell module (Microsoft Docs)](https://learn.microsoft.com/en-us/powershell/sql-server/download-sql-server-ps-module?view=sqlserver-ps)
+- [VS Code – PowerShell language guide](https://code.visualstudio.com/docs/languages/powershell)
+- [PowerShell Pro Tools – Ironman Software forums](https://forums.ironmansoftware.com/t/attempting-to-run-powershell-tools-on-visual-studio-code-produces-error/2025)
+- [PowerShellProTools packaging modules (Ironman forums)](https://forums.ironmansoftware.com/t/package-modules-is-not-packaging-modules/2631)
+- [Ironman Software blog: PowerShell Query SQL](https://blog.ironmansoftware.com/daily-powershell/powershell-query-sql/)
+
+### Inspecting Loaded PowerShell Modules
+
+- [Get-Module cmdlet (PowerShell Docs)](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/get-module?view=powershell-7.5)
+- [Get-InstalledModule (PowerShellGet)](https://learn.microsoft.com/en-us/powershell/module/powershellget/get-installedmodule?view=powershellget-2.x)
+- [Determine if a module was imported (Spiceworks community)](https://community.spiceworks.com/t/determine-if-a-module-was-imported/368461)
+- [List installed PowerShell modules (Active Directory Pro)](https://activedirectorypro.com/list-installed-powershell-modules/)
+- [Ironman Software blog: PowerShell list modules](https://blog.ironmansoftware.com/daily-powershell/powershell-list-modules/)
+- [Stack Overflow: PSModulePaths missing in VS Code](https://stackoverflow.com/questions/76133548/powershell-psmodulepaths-missing-in-vscode)

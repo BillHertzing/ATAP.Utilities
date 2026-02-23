@@ -1,9 +1,9 @@
-# Ace Commander – Module Catalog v0.7
+# Ace Commander – Module Catalog v0.8
 
 **Status:** Baseline (change-controlled)
-**Supersedes:** Module Catalog v0.6
+**Supersedes:** Module Catalog v0.7
 **Date:** February 22, 2026
-**Change:** Section 3.3 gains new §3.3.5 Jenkins vs ProGet: Toolchain Role Comparison, clarifying the distinct and complementary roles of Jenkins (CI build/test execution) and ProGet (package governance/registry) and how they integrate in the build pipeline.
+**Change:** Section 3.3 gains new §3.3.6 PowerShell Database Connectivity: dbatools & SqlClient, covering SQL Server connection string builder libraries, dbatools install/import patterns, Microsoft.Data.SqlClient DLL version-conflict resolution, VS Code SQL extension module-loading behavior, and PowerShell module inspection commands.
 
 ---
 
@@ -470,6 +470,90 @@ Jenkins and ProGet serve fundamentally different and complementary roles in the 
 
 **Typical pipeline flow for this project:**
 Jenkins build → test → publish packages to ProGet feed → BuildMaster release orchestration → environments pull approved packages from ProGet for deployment.
+
+#### 3.3.6 PowerShell Database Connectivity: dbatools & SqlClient
+
+##### SQL Server Connection String Builder Libraries
+
+The following libraries provide builder-style objects for constructing SQL Server connection strings from typed properties (analogous to `UriBuilder` for URLs), with varying degrees of PowerShell integration and JDBC URL support:
+
+| Library                                                              | NuGet / Source                                 | PowerShell friendly                                                                                                 | JDBC URL support                                                                 | Notes                                                                                                       |
+| -------------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **dbatools** `New-DbaConnectionStringBuilder`                        | PowerShell Gallery (`dbatools`)                | Native — cmdlet returns a `Microsoft.Data.SqlClient.SqlConnectionStringBuilder`                                     | Indirect — builder holds all parameters; emit JDBC with a small helper template  | MIT-licensed; largest OSS SQL Server PowerShell module; recommended starting point for PS-centric workflows |
+| **Microsoft.Data.SqlClient** `SqlConnectionStringBuilder`            | NuGet (`Microsoft.Data.SqlClient`)             | Yes — load via `Add-Type` or `#r "nuget:…"` in PS7+; use as `[Microsoft.Data.SqlClient.SqlConnectionStringBuilder]` | Indirect — all parameters available to derive `jdbc:sqlserver://` string         | Current ADO.NET provider; MIT-licensed; used internally by dbatools                                         |
+| **DatabaseWrapper** (`jchristn/DatabaseWrapper`)                     | NuGet / GitHub                                 | Yes — load .dll via `Add-Type`                                                                                      | Indirect — centralises all parameters; easy to add JDBC template                 | C# wrapper for SQL Server, MySQL, PostgreSQL, SQLite; higher-level than raw builder                         |
+| **Aireforge SQL Server Connection String Generator**                 | Web tool / source                              | Primarily GUI/web; compiled logic reusable                                                                          | Native — explicitly generates `jdbc:sqlserver://` URLs alongside ADO.NET strings | Useful reference for JDBC parameter mapping                                                                 |
+| **Microsoft Elastic DB Tools for Java** `SqlConnectionStringBuilder` | GitHub (`microsoft/elastic-db-tools-for-java`) | Java-side only                                                                                                      | Native — designed specifically to emit `jdbc:sqlserver://` URLs                  | Mirrors the .NET `SqlConnectionStringBuilder` API in Java; useful for mixed .NET/Java environments          |
+
+**Recommended pattern for this project:** Use `dbatools` `New-DbaConnectionStringBuilder` for ADO.NET strings in PowerShell scripts; add a small helper function that maps the builder's properties to a `jdbc:sqlserver://` template for Flyway/JDBC consumers.
+
+##### Importing dbatools
+
+Pattern to test for presence and import conditionally:
+
+```powershell
+$module = Get-Module -ListAvailable -Name dbatools
+
+if ($null -eq $module) {
+    Write-PSFMessage -Level Warning -Message "dbatools module is not installed. Install it with: Install-Module -Name dbatools"
+} else {
+    Import-Module -Name dbatools -ErrorAction Stop
+    Write-PSFMessage -Level Important -Message "dbatools module imported. Version: $((Get-Module dbatools).Version)"
+}
+```
+
+To auto-install when missing (acceptable in interactive/dev sessions; evaluate for automation contexts):
+
+```powershell
+if (-not (Get-Module -ListAvailable -Name dbatools)) {
+    Install-Module -Name dbatools -Scope CurrentUser -Force
+}
+Import-Module -Name dbatools -ErrorAction Stop
+```
+
+##### Microsoft.Data.SqlClient DLL Version Conflict
+
+**Symptom:** `Import-Module dbatools -ErrorAction Stop` throws:
+
+> `Couldn't import … Microsoft.Data.SqlClient.dll | Could not load file or assembly 'Microsoft.Data.SqlClient, Version=6.0.0.0 …'. Assembly with same name is already loaded`
+
+**Cause:** A different version of `Microsoft.Data.SqlClient` is already loaded in the runspace (most commonly from `Import-Module SqlServer` earlier in the session).
+
+| Resolution                | Detail                                                                                                                                                                     |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Import dbatools first     | Always import dbatools before `SqlServer` or any other module that bundles its own `Microsoft.Data.SqlClient`; dbatools maintainers explicitly recommend this import order |
+| Use only one in a session | Prefer using either dbatools or SqlServer per script/session, not both; if both are required, dbatools first is the safest order                                           |
+| Fresh PowerShell session  | Assemblies cannot be unloaded in Windows PowerShell 5.1; close the session, open a new one, and import dbatools first                                                      |
+| PowerShell 7+             | Experimental workarounds exist (enumerate and avoid the conflicting assembly), but dbatools maintainers treat them as fragile; the import-order rule is more reliable      |
+
+##### VS Code SQL Extensions and PowerShell Module Loading
+
+The VS Code extensions **mssql** (SQL Server / ms-mssql.mssql) and **SQL Language Server** run their SQL tooling inside their own extension host processes (SQL Tools Service); they do **not** automatically import the `SqlServer` PowerShell module into any integrated terminal window.
+
+The only things that will auto-load `SqlServer` into a VS Code PowerShell terminal are:
+
+- PowerShell profile scripts (e.g. `Microsoft.VSCode_profile.ps1`) that contain `Import-Module SqlServer`.
+- Commands explicitly run in that terminal session.
+
+**PowerShellProTools** (`PowerShellProTools` and `PowerShellProTools.VSCode`) — the Ironman Software GUI designer and VS Code integration modules — do not automatically import `SqlServer` either. They package/debugs PowerShell scripts but have no built-in SQL Server module dependency; any `Import-Module SqlServer` would be explicit in user script code or profiles.
+
+##### Inspecting Loaded Modules in a VS Code Terminal
+
+```powershell
+# List all modules currently loaded in this session
+Get-Module
+
+# Check if specific modules are loaded
+Get-Module SqlServer, dbatools
+
+# List all modules installed and available (not necessarily loaded)
+Get-Module -ListAvailable
+
+# List a specific installed module
+Get-Module -ListAvailable -Name dbatools
+```
+
+If `Get-Module SqlServer` returns nothing, the `SqlServer` module is not loaded in that session and cannot be causing a DLL version conflict.
 
 ---
 

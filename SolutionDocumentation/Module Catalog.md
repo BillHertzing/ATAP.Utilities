@@ -1,9 +1,9 @@
-# Ace Commander – Module Catalog v0.8
+# Ace Commander – Module Catalog v0.9
 
 **Status:** Baseline (change-controlled)
-**Supersedes:** Module Catalog v0.7
+**Supersedes:** Module Catalog v0.8
 **Date:** February 22, 2026
-**Change:** Section 3.3 gains new §3.3.6 PowerShell Database Connectivity: dbatools & SqlClient, covering SQL Server connection string builder libraries, dbatools install/import patterns, Microsoft.Data.SqlClient DLL version-conflict resolution, VS Code SQL extension module-loading behavior, and PowerShell module inspection commands.
+**Change:** Section 3.3 gains new §3.3.7 VS Code C# Build Configuration (tasks.json and launch.json for class library DLL projects) and §3.3.8 Multi-Project Repository Structure: Aggregator Libraries and NuGet Packaging, covering ProjectReference aggregator patterns, cross-feature referencing, HintPath external DLL references, and single-package NuGet bundling.
 
 ---
 
@@ -554,6 +554,159 @@ Get-Module -ListAvailable -Name dbatools
 ```
 
 If `Get-Module SqlServer` returns nothing, the `SqlServer` module is not loaded in that session and cannot be causing a DLL version conflict.
+
+#### 3.3.7 VS Code C# Build Configuration: tasks.json and launch.json
+
+Minimal setup to build a C# class library (`.dll`) inside VS Code: a `.csproj` targeting `OutputType=Library`, a `tasks.json` entry running `dotnet build`, and a `launch.json` entry wired to that task via `preLaunchTask`.
+
+##### Minimal Class Library `.csproj`
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+</Project>
+```
+
+Compiles all `*.cs` files in the project folder into `bin/Debug/net8.0/<AssemblyName>.dll`. For projects using `Microsoft.NET.Sdk`, the default `OutputType` is already `Library`; the explicit entry is included here for clarity.
+
+##### tasks.json Build Entry
+
+```jsonc
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build MyLib",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["build", "${workspaceFolder}/MyLib.csproj", "/property:GenerateFullPaths=true", "/consoleloggerparameters:NoSummary"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}
+```
+
+##### launch.json Entry with preLaunchTask
+
+For a build-only arrangement (the DLL is the artifact, not a runnable executable), wire a `coreclr` launch configuration with `preLaunchTask` so the DLL is rebuilt on every debug session:
+
+```jsonc
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Build MyLib only",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build MyLib",
+      "program": "",
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "justMyCode": true
+    }
+  ]
+}
+```
+
+In practice, set `program` to point to an executable host that references the DLL and keep `preLaunchTask` so the DLL is always rebuilt before the host runs.
+
+| Configuration key              | Purpose                                                                                    |
+| ------------------------------ | ------------------------------------------------------------------------------------------ |
+| `type: "coreclr"`              | Targets the .NET CLR debugger (C# Dev Kit / C# extension requirement)                      |
+| `request: "launch"`            | Launch a new process rather than attach to an existing one                                 |
+| `preLaunchTask`                | Name of the `tasks.json` task to run before launch; ensures the DLL is current             |
+| `program`                      | Path to the executable host; leave empty if the sole goal is to confirm the library builds |
+| `problemMatcher: "$msCompile"` | Enables VS Code to parse MSBuild error output and populate the Problems panel              |
+
+---
+
+#### 3.3.8 Multi-Project Repository Structure: Aggregator Libraries and NuGet Packaging
+
+The repository's pattern for feature libraries (`<FeatureName>.StringConstants`, `<FeatureName>.Enumerations`, `<FeatureName>.DefaultConfiguration`, `<FeatureName>.Interfaces`, `<FeatureName>.Models`) can be organized under a higher-level `<FeatureName>` aggregator project. The aggregator is itself a class library that references all sub-projects via `<ProjectReference>`; consumers reference only the aggregator rather than each sub-project individually.
+
+##### Recommended Directory Structure
+
+```
+src/
+└── <FeatureName>/
+    ├── <FeatureName>.StringConstants/
+    │   └── <FeatureName>.StringConstants.csproj
+    ├── <FeatureName>.Enumerations/
+    │   └── <FeatureName>.Enumerations.csproj
+    ├── <FeatureName>.DefaultConfiguration/
+    │   └── <FeatureName>.DefaultConfiguration.csproj
+    ├── <FeatureName>.Interfaces/
+    │   └── <FeatureName>.Interfaces.csproj
+    ├── <FeatureName>.Models/
+    │   └── <FeatureName>.Models.csproj
+    └── <FeatureName>/                          ← aggregator
+        └── <FeatureName>.csproj
+```
+
+##### Aggregator `.csproj`
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\<FeatureName>.StringConstants\<FeatureName>.StringConstants.csproj" />
+    <ProjectReference Include="..\<FeatureName>.Enumerations\<FeatureName>.Enumerations.csproj" />
+    <ProjectReference Include="..\<FeatureName>.DefaultConfiguration\<FeatureName>.DefaultConfiguration.csproj" />
+    <ProjectReference Include="..\<FeatureName>.Interfaces\<FeatureName>.Interfaces.csproj" />
+    <ProjectReference Include="..\<FeatureName>.Models\<FeatureName>.Models.csproj" />
+  </ItemGroup>
+</Project>
+```
+
+`<ProjectReference>` gives the compiler visibility of all public types from sub-projects; the aggregator DLL depends on those sub-project DLLs at runtime (multiple physical DLLs — this is not IL merging).
+
+##### Cross-Feature References
+
+Within the same multi-project repository, prefer `<ProjectReference>` to the target feature's aggregator `.csproj`:
+
+```xml
+<ItemGroup>
+  <!-- Billing depends on the full OrderProcessing feature -->
+  <ProjectReference Include="..\OrderProcessing\OrderProcessing\OrderProcessing.csproj" />
+</ItemGroup>
+```
+
+This ensures correct build ordering, incremental builds, and proper transitive dependency expression when the consuming project is later packed as a NuGet package.
+
+To reference a pre-built DLL from an external source when a project reference is not available, use `<Reference>` with `HintPath`:
+
+```xml
+<ItemGroup>
+  <Reference Include="ExternalLib">
+    <HintPath>..\packages\ExternalLib\lib\net8.0\ExternalLib.dll</HintPath>
+    <Private>true</Private> <!-- copy to output directory -->
+  </Reference>
+</ItemGroup>
+```
+
+| Reference type             | Use when                                                                                     |
+| -------------------------- | -------------------------------------------------------------------------------------------- |
+| `<ProjectReference>`       | Target project is in the same repo; preferred for build correctness and NuGet pack semantics |
+| `<PackageReference>`       | Consuming a published NuGet package from an internal or public feed                          |
+| `<Reference>` + `HintPath` | Consuming a pre-built external DLL not available via NuGet or project reference              |
+
+##### NuGet Single-Package Bundling
+
+To distribute all sub-project DLLs inside a single `.nupkg`, run `dotnet pack` against the aggregator project. Use a custom `pack.props`/targets file to copy all referenced project outputs into the same `lib/netX.Y` folder of the package before packing so that installing the single package brings in all constituent DLLs.
+
+> **Note:** IL-merging multiple DLLs into a single physical DLL (ILRepack, etc.) is generally discouraged for .NET 6+; NuGet single-package bundling (multiple DLLs inside one `.nupkg`) is the idiomatic and supported alternative.
 
 ---
 

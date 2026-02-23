@@ -364,3 +364,78 @@ Sources for the SQL Server connection string builder library survey, dbatools in
 - [List installed PowerShell modules (Active Directory Pro)](https://activedirectorypro.com/list-installed-powershell-modules/)
 - [Ironman Software blog: PowerShell list modules](https://blog.ironmansoftware.com/daily-powershell/powershell-list-modules/)
 - [Stack Overflow: PSModulePaths missing in VS Code](https://stackoverflow.com/questions/76133548/powershell-psmodulepaths-missing-in-vscode)
+
+---
+
+## Section 3.3.7 – Dev/Build/Repo Toolchain: VS Code C# Build Configuration (tasks.json and launch.json)
+
+Sources for the minimal `.csproj` class library setup, `tasks.json` build entry, and `launch.json` `preLaunchTask` wiring documented in Module Catalog Section 3.3.7.
+
+### Microsoft Official Documentation
+
+- [Create a .NET class library using Visual Studio Code](https://learn.microsoft.com/en-us/dotnet/core/tutorials/library-with-visual-studio-code)
+- [C# build tools in VS Code](https://code.visualstudio.com/docs/csharp/build-tools)
+- [Get started with C# and Visual Studio Code](https://code.visualstudio.com/docs/csharp/get-started)
+- [VS Code Debugging Configuration](https://code.visualstudio.com/docs/debugtest/debugging-configuration)
+- [VS Code Tasks reference](https://code.visualstudio.com/docs/debugtest/tasks)
+- [Create a .NET class library using Visual Studio (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/core/tutorials/library-with-visual-studio)
+
+### Stack Overflow
+
+- [In .NET Core is it possible to create a library project that does not reference other projects](https://stackoverflow.com/questions/68076892/in-dotnet-core-is-it-possible-to-create-a-library-project-that-does-not-referen)
+- [VS Code build script configuration to build class library](https://stackoverflow.com/questions/74780048/vscode-build-script-configuration-to-build-class-library)
+- [How to configure JSON options for C# to debug console app in internal terminal](https://stackoverflow.com/questions/77854353/how-to-configure-json-options-for-c-sharp-to-debug-console-app-in-internal-term)
+- [VS Code for C# – doesn't generate launch.json and tasks.json](https://stackoverflow.com/questions/75572318/problem-on-configuring-vscode-for-c-it-doesnt-generate-launch-json-and-tasks)
+- [Convert C# class to DLL file in Visual Studio Code](https://stackoverflow.com/questions/76341485/convert-c-sharp-class-to-dll-file-in-visual-studio-code)
+- [Creating a DLL file in C# .NET](https://stackoverflow.com/questions/15567893/creating-a-dll-file-in-c-net)
+
+### Community Articles and Guides
+
+- [How to build a .NET Core project with VS Code (joffreykern)](https://joffreykern.github.io/blog/how-to-build-dotnet-core-project-with-vs-code)
+- [Create a C# class library DLL (bradwellsb / dev.to)](https://dev.to/bradwellsb/create-a-c-class-library-dll-3cbb)
+- [Creating and Using DLL Class Library in C# (GeeksforGeeks)](https://www.geeksforgeeks.org/c-sharp/creating-and-using-dll-class-library-in-c/)
+- [VS Code defining tasks.json for debugging (fsharp forums)](https://forums.fsharp.org/t/vs-code-defining-tasks-json-for-debugging/3352)
+- [Arch Linux BBS: .NET debugging in VS Code](https://bbs.archlinux.org/viewtopic.php?id=261729)
+
+### Videos
+
+- [Building .NET projects in VS Code (YouTube)](https://www.youtube.com/watch?v=DAsyjpqhDp4)
+- [C# Class Library DLL walkthrough (YouTube)](https://www.youtube.com/watch?v=6Y63Tg1GDbs)
+- [Using dotnet build / launch in VS Code (YouTube)](https://www.youtube.com/watch?v=MPOuci-6amQ)
+
+---
+
+## Section 3.3.8 – Dev/Build/Repo Toolchain: Multi-Project Repository Structure and Aggregator Libraries
+
+Sources for the aggregator `.csproj` pattern, `<ProjectReference>` / `<Reference HintPath>` usage, NuGet single-package bundling, and multi-project repository structure documented in Module Catalog Section 3.3.8.
+
+### Microsoft Official Documentation
+
+- [Common MSBuild project items (ProjectReference)](https://learn.microsoft.com/en-us/visualstudio/msbuild/common-msbuild-project-items?view=visualstudio)
+- [dotnet pack command](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-pack)
+- [Package references in project files (PackageReference)](https://learn.microsoft.com/en-us/nuget/consume-packages/package-references-in-project-files)
+- [Merge all class into single class (Microsoft Q&A)](https://learn.microsoft.com/en-us/answers/questions/992281/merge-all-class-into-single-class)
+- [dotnet pack (Microsoft Docs – dynamics-usd-3 view)](https://learn.microsoft.com/th-th/dotnet/core/tools/dotnet-pack?view=dynamics-usd-3)
+
+### Stack Overflow
+
+- [dotnet pack / NuGet pack: how to simply pack multiple projects into one package](https://stackoverflow.com/questions/78672095/dotnet-pack-nuget-pack-how-to-simply-pack-multiple-projects-into-one-package)
+- [How to make a condition to add reference when there are many project references](https://stackoverflow.com/questions/76048606/how-can-i-make-a-condition-to-add-reference-when-i-have-many-project-references)
+- [How to merge multiple .NET Core assemblies into a single DLL/exe](https://stackoverflow.com/questions/52320592/how-to-merge-multiple-net-core-assemblies-into-a-single-one-dll-exe/52320733)
+- [How to merge all DLL files of a class library as one DLL (.NET Framework)](https://stackoverflow.com/questions/67331722/how-to-merge-all-dll-files-of-a-class-library-as-one-dll-net-framework)
+- [How to merge DLLs into one DLL](https://stackoverflow.com/questions/28932074/how-to-merge-dlls-into-one-dll)
+
+### Community Articles and Guides
+
+- [Multiple NuGet packages from a single repo (markheath.net)](https://markheath.net/post/multiple-nuget-single-repo)
+- [Include both NuGet package references and project reference DLLs using dotnet pack (dev.to/yerac)](https://dev.to/yerac/include-both-nuget-package-references-and-project-reference-dll-using-dotnet-pack-2d8p)
+- [dotnet-pack-multilib (mwyrebski / GitHub)](https://github.com/mwyrebski/dotnet-pack-multilib)
+- [dotnet/sdk issue #8313 – pack multiple projects](https://github.com/dotnet/sdk/issues/8313)
+- [dotnet/roslyn discussion #47517 – multi-project output](https://github.com/dotnet/roslyn/discussions/47517)
+
+### Reddit
+
+- [NuGet package of multiple projects (r/dotnet)](https://www.reddit.com/r/dotnet/comments/ogcquf/nugget_package_of_multiple_projects/)
+- [How to reference DLL from another project (r/csharp)](https://www.reddit.com/r/csharp/comments/kf4ien/how_to_reference_dll_from_another_project/)
+- [Help bundling several DLL files into one DLL (r/csharp)](https://www.reddit.com/r/csharp/comments/6jl0z9/help_bundling_several_dll_files_into_one_dll/)
+- [Multiple projects in SLN – where to install (r/dotnet)](https://www.reddit.com/r/dotnet/comments/w0wrnr/multiple_projects_in_sln_where_to_install/)

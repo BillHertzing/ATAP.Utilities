@@ -439,3 +439,53 @@ Sources for the aggregator `.csproj` pattern, `<ProjectReference>` / `<Reference
 - [How to reference DLL from another project (r/csharp)](https://www.reddit.com/r/csharp/comments/kf4ien/how_to_reference_dll_from_another_project/)
 - [Help bundling several DLL files into one DLL (r/csharp)](https://www.reddit.com/r/csharp/comments/6jl0z9/help_bundling_several_dll_files_into_one_dll/)
 - [Multiple projects in SLN – where to install (r/dotnet)](https://www.reddit.com/r/dotnet/comments/w0wrnr/multiple_projects_in_sln_where_to_install/)
+
+---
+
+## Section 3.3.9 – Dev/Build/Repo Toolchain: Secrets Management with Bitwarden CLI and PowerShell SecretManagement
+
+Sources for the Bitwarden SecretManagement extension `match`-property bug analysis and workaround, the CI/CD headless unlock pattern for Jenkins service accounts, and the VS Code `BW_SESSION` inheritance workflow documented in Module Catalog Section 3.3.9.
+
+### Bitwarden CLI Official Documentation
+
+- [Bitwarden CLI reference (bitwarden.com)](https://bitwarden.com/help/cli/)
+- [Bitwarden CLI secrets manager reference](https://bitwarden.com/help/secrets-manager-cli/)
+
+### PowerShell SecretManagement Extensions
+
+- [SecretManagement.Warden – GitHub (marshallwp)](https://github.com/marshallwp/SecretManagement.Warden)
+- [SecretManagement.Warden 1.1.3 – PSGallery source: Invoke-BitwardenCLI.ps1](https://www.powershellgallery.com/packages/SecretManagement.Warden/1.1.3/Content/SecretManagement.Warden.Extension\private\Invoke-BitwardenCLI.ps1)
+- [SecretManagement.BitWarden 0.1.1 – PSGallery source: .psm1](https://www.powershellgallery.com/packages/SecretManagement.BitWarden/0.1.1/Content/SecretManagement.BitWarden.Extension\SecretManagement.BitWarden.Extension.psm1)
+
+### CI/CD Integration
+
+- [Bitwarden as an IaaS CI/CD secret vault (Bitwarden community)](https://community.bitwarden.com/t/bitwarden-as-a-iaas-ci-cd-secret-vault/32013/2)
+- [Bitwarden as an IaaS CI/CD secret vault – thread root](https://community.bitwarden.com/t/bitwarden-as-a-iaas-ci-cd-secret-vault/32013)
+- [The simplest way to make Bitwarden and Jenkins work like it should (hoop.dev blog)](https://hoop.dev/blog/the-simplest-way-to-make-bitwarden-jenkins-work-like-it-should/)
+- [Jenkins Bitwarden Credentials Provider plugin](https://plugins.jenkins.io/bitwarden-credentials-provider/)
+- [Bitwarden CLI client Docker image (jitesoft)](https://hub.docker.com/r/jitesoft/bitwarden-client)
+- [Bitwarden clients GitHub issue #16527 – bw lock behavior](https://github.com/bitwarden/clients/issues/16527)
+
+### VS Code and PowerShell Environment Variable Integration
+
+- [Bitwarden CLI usage notes and session key patterns (ryan.himmelwright.net)](https://ryan.himmelwright.net/post/bitwarden-cli/)
+- [Setting environment variables in PowerShell (configu.com)](https://configu.com/blog/setting-environment-variables-in-powershell-a-practical-guide/)
+- [VS Code and environmental variables in PowerShell profiles (PowerShell Forums)](https://forums.powershell.org/t/visual-studio-code-and-environmental-variables/13349)
+- [VS Code Tasks reference](https://code.visualstudio.com/docs/debugtest/tasks)
+- [CLI keeps asking for password in PowerShell (Bitwarden community)](https://community.bitwarden.com/t/cli-keeps-asking-for-password-in-powershell/90610)
+- [CLI session key (Bitwarden community)](https://community.bitwarden.com/t/cli-session-key/13397)
+- [Is the key in BW_SESSION used by bw CLI? (Reddit)](https://www.reddit.com/r/Bitwarden/comments/ul3zy1/is_the_key_in_bw_session_used_by_bwcli/)
+
+### Community Guides
+
+- [Retrieve secrets from Bitwarden via PowerShell (Reddit r/PowerShell)](https://www.reddit.com/r/PowerShell/comments/qil3e7/retrieve_secrets_from_bitwarden/)
+- [Non-interactive API login via PowerShell (Reddit r/Bitwarden)](https://www.reddit.com/r/Bitwarden/comments/s930ik/noninteractive_api_login_via_powershell/)
+- [Password-manage your environment and secrets with Bitwarden (dev.to)](https://dev.to/stevengonsalvez/password-manage-your-environment-and-secrets-with-bitwarden-13n5)
+- [How to securely store secrets in Bitwarden CLI and load them into your shell (Gruntwork)](https://www.gruntwork.io/blog/how-to-securely-store-secrets-in-bitwarden-cli-and-load-them-into-your-zsh-shell-when-needed)
+- [Using bwenv to sync Bitwarden secrets into your shell environment (dev.to)](https://dev.to/s1ks1/use-bwenv-to-sync-your-bitwarden-secrets-into-your-shell-environment-23fh)
+- [Bitwarden GitLab integration guide](https://bitwarden.com/help/gitlab-integration/)
+
+### Videos
+
+- [Bitwarden CLI walkthrough (YouTube)](https://www.youtube.com/watch?v=0PhTVbuffEE)
+- [Bitwarden CI/CD integration demo (YouTube)](https://www.youtube.com/watch?v=mdbpXEzyrJY)

@@ -3,7 +3,7 @@
 **Status:** Baseline (change-controlled)
 **Supersedes:** Module Catalog v0.8
 **Date:** February 22, 2026
-**Change:** Section 3.3 gains new §3.3.7 VS Code C# Build Configuration (tasks.json and launch.json for class library DLL projects) and §3.3.8 Multi-Project Repository Structure: Aggregator Libraries and NuGet Packaging, covering ProjectReference aggregator patterns, cross-feature referencing, HintPath external DLL references, and single-package NuGet bundling.
+**Change:** Section 3.3 gains new §3.3.7 VS Code C# Build Configuration (tasks.json and launch.json for class library DLL projects) and §3.3.8 Multi-Project Repository Structure: Aggregator Libraries and NuGet Packaging, covering ProjectReference aggregator patterns, cross-feature referencing, HintPath external DLL references, and single-package NuGet bundling. §3.3.9 Secrets Management: Bitwarden CLI and PowerShell SecretManagement Integration added, covering the known `match`-property extension bug and workaround, the CI/CD headless unlock pattern for Jenkins service accounts, and VS Code development BW_SESSION inheritance.
 
 ---
 
@@ -707,6 +707,126 @@ To reference a pre-built DLL from an external source when a project reference is
 To distribute all sub-project DLLs inside a single `.nupkg`, run `dotnet pack` against the aggregator project. Use a custom `pack.props`/targets file to copy all referenced project outputs into the same `lib/netX.Y` folder of the package before packing so that installing the single package brings in all constituent DLLs.
 
 > **Note:** IL-merging multiple DLLs into a single physical DLL (ILRepack, etc.) is generally discouraged for .NET 6+; NuGet single-package bundling (multiple DLLs inside one `.nupkg`) is the idiomatic and supported alternative.
+
+---
+
+#### 3.3.9 Secrets Management: Bitwarden CLI and PowerShell SecretManagement Integration
+
+This section documents patterns for using Bitwarden as the secrets vault in developer workflows and CI/CD pipelines, covering both the PowerShell SecretManagement extension approach and direct Bitwarden CLI usage.
+
+##### Available Bitwarden SecretManagement Extensions
+
+Two community-maintained PowerShell SecretManagement extensions wrap the Bitwarden CLI (`bw`):
+
+| Extension                    | PowerShell Gallery slug      | GitHub                                                | Notes                            |
+| ---------------------------- | ---------------------------- | ----------------------------------------------------- | -------------------------------- |
+| `SecretManagement.BitWarden` | `SecretManagement.BitWarden` | (PSGallery-hosted)                                    | Older extension; still published |
+| `SecretManagement.Warden`    | `SecretManagement.Warden`    | https://github.com/marshallwp/SecretManagement.Warden | Actively maintained; recommended |
+
+Both extensions detect the `BW_SESSION` environment variable and append `--session $env:BW_SESSION` to internal `bw` calls automatically, so no interactive prompts occur while the session is valid.
+
+##### Known Bug: `match` Property Error in SecretManagement Extensions
+
+**Symptom:** Calls to `Get-Secret` via the Bitwarden SecretManagement extension fail with:
+
+> `Failed to retrieve secret from Bitwarden. Exception: Exception setting "match": "The property 'match' cannot be found on this object. Verify that the property exists and can be set."`
+
+**Cause:** This is an extension-side bug, not a vault-item configuration error. The extension iterates over `login.uris` objects returned by the Bitwarden CLI and attempts to set a `.match` enum property on each URI object:
+
+```powershell
+$_.login.uris.ForEach({ [BitwardenUriMatchType]$_.match = [int]$_.match })
+```
+
+If the CLI returns a URI object without a `match` property (e.g., because the CLI output format changed or the URI was created without a match-detection policy), PowerShell throws the error. The extension does not guard for missing properties before setting them. Nothing in the Bitwarden vault UI lets you define or fix a `match` property to prevent this exception.
+
+| What to check / try                 | Detail                                                                                                                                                              |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Item definition in vault            | **Not the cause** — no vault UI option prevents this extension exception                                                                                            |
+| Extension version                   | Update to the latest `SecretManagement.Warden` or `SecretManagement.BitWarden`; some versions include guards                                                        |
+| Bitwarden CLI version               | Ensure `bw` is at the latest stable release; CLI output format changes can trigger this                                                                             |
+| Manual workaround (edit the module) | Locate the `ForEach` loop inside the extension and guard the assignment: `if ($_.PSObject.Properties['match']) { [BitwardenUriMatchType]$_.match = [int]$_.match }` |
+| Bypass extension entirely           | Call `bw get password '<item-name>'` directly in scripts; avoids all extension JSON-handling issues                                                                 |
+
+##### CI/CD Headless Unlock Pattern (Jenkins Service Account)
+
+For pipelines where a `JenkinsClient` service (or Jenkins agent) runs on a build computer without interactive login, use the Bitwarden API key flow to authenticate non-interactively and inject `BW_SESSION` into the service's process environment.
+
+**High-level pattern:**
+
+1. Create a dedicated Bitwarden account or organization for CI/CD with minimal vault access (least privilege).
+2. Store `BW_CLIENTID`, `BW_CLIENTSECRET`, and `BW_PASSWORD` as Jenkins Credentials (secret text / username+password) — **not** in scripts or files on disk.
+3. At agent startup (or in a pre-build wrapper), map those credentials into environment variables and run:
+
+```bash
+# Login (once per workspace / node image)
+bw login --apikey    # uses BW_CLIENTID / BW_CLIENTSECRET env vars
+
+# Unlock and capture the session token
+BW_SESSION=$(bw unlock --passwordenv BW_PASSWORD --raw)
+export BW_SESSION
+```
+
+In PowerShell:
+
+```powershell
+$env:BW_SESSION = bw unlock --passwordenv BW_PASSWORD --raw
+```
+
+4. All downstream pipeline stages use `bw get password '<item-name>'` or `Get-Secret -Name '<item-name>'` without further prompts.
+5. Do **not** write `BW_SESSION` to disk; keep it in process environment scope only.
+6. Optionally run `bw lock` at the end of long-lived jobs to force a fresh unlock on the next run.
+
+| Security practice                      | Detail                                                                                                                                                                  |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API key over interactive login         | `bw login --apikey` is the supported non-interactive method for automation; uses `BW_CLIENTID` / `BW_CLIENTSECRET`                                                      |
+| Jenkins credentials store              | Store all Bitwarden credentials as Jenkins Credentials; mask them in log output; never echo in pipeline scripts                                                         |
+| Least privilege vault                  | CI/CD account/org has access only to the secrets the pipeline actually needs                                                                                            |
+| Rotate credentials                     | Rotate API key and master password on a regular cadence                                                                                                                 |
+| Jenkins Bitwarden Credentials Provider | Optional Jenkins plugin that handles token management and lets Jenkins treat Bitwarden items as native Jenkins credentials, removing the need for manual unlock scripts |
+| Containers / ephemeral agents          | Bake `bw` into the agent image; add an entrypoint script that runs `bw login --apikey` + `bw unlock` before starting the Jenkins agent process                          |
+
+##### VS Code Development: Inheriting BW_SESSION from the Shell
+
+When VS Code is launched from an interactive shell that has already unlocked Bitwarden, it inherits `BW_SESSION`; all integrated terminal sessions and PowerShell tasks can access Bitwarden without interactive prompts.
+
+**Recommended setup:**
+
+1. In your PowerShell profile (`Microsoft.PowerShell_profile.ps1`), unlock Bitwarden and set `BW_SESSION`:
+
+```powershell
+# Profile snippet — runs automatically when the shell starts
+$env:BW_SESSION = bw unlock --raw
+```
+
+2. Launch VS Code from **that same shell**: `code .`
+   VS Code inherits the full environment, including `BW_SESSION`.
+
+3. Verify inside the VS Code integrated terminal:
+
+```powershell
+$env:BW_SESSION          # should be non-empty
+bw status                # should report status: "unlocked"
+```
+
+**Tasks integration:** Shell tasks in `tasks.json` that run `pwsh` inherit the environment automatically. Scripts can call Bitwarden directly:
+
+```powershell
+# Using Bitwarden CLI directly
+$DbPassword = bw get password 'my-db-secret'
+
+# Or via SecretManagement extension (detects BW_SESSION automatically)
+$DbPassword = Get-Secret -Name 'my-db-secret'
+```
+
+**If VS Code is launched from the GUI (not a shell):**
+
+Environment variables set in an interactive terminal session are not inherited by processes started from the Windows Start menu or taskbar. Options:
+
+| Approach                           | Detail                                                                                                                                                                                         |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Always launch VS Code from a shell | `code .` from a PowerShell session where `BW_SESSION` is already set; cleanest approach                                                                                                        |
+| Conditional unlock at task start   | Add to `build.ps1`: `if (-not $env:BW_SESSION) { $env:BW_SESSION = bw unlock --raw }` — will prompt once in the VS Code terminal, then reuse for the session                                   |
+| User-level environment variable    | Set `BW_SESSION` persistently: `[System.Environment]::SetEnvironmentVariable('BW_SESSION', (bw unlock --raw), 'User')`; restart VS Code; be aware the session expires when the vault is locked |
 
 ---
 

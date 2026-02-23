@@ -1,9 +1,9 @@
-# Ace Commander – Module Catalog v0.2
+# Ace Commander – Module Catalog v0.3
 
 **Status:** Baseline (change-controlled)
-**Supersedes:** Module Catalog v0.1
+**Supersedes:** Module Catalog v0.2
 **Date:** February 22, 2026
-**Change:** All items from "ACE Commander rough notes 001" added. Nothing removed from v0.1.
+**Change:** Section 3.3 expanded with full IaC/CI/CD toolchain detail (Ansible, Jenkins, BuildMaster, ProGet responsibilities). Appendix B updated with Jenkins and BuildMaster tech-stack entries.
 
 ---
 
@@ -264,12 +264,29 @@
 
 ### 3.3 Dev/Build/Repo Toolchain (for module developers)
 
-| Capability             | Description                                                                                   |
-| ---------------------- | --------------------------------------------------------------------------------------------- |
-| .NET build integration | Compile/test/package C# modules; PowerShell scripting modules where appropriate               |
-| Database migrations    | Flyway-managed schema and repeatable DB objects (views/procs/functions)                       |
-| Package management     | Integration with internal package manager workflow (ProGet-based feeds) for modules/artifacts |
-| CI/CD                  | Automated build/test, security scanning, and publishing pipeline for marketplace distribution |
+**Infrastructure management model:** Infrastructure as Code (IaC). All build agents and developer machines are managed declaratively; configuration drift is not permitted.
+
+**Early development runtime:** Ansible is executed from a WSL2 environment; workloads are containerized where practical.
+
+#### 3.3.1 Toolchain Components
+
+| Tool / Capability      | Role                   | Description                                                                                                                                                                                            |
+| ---------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Ansible                | IaC / provisioning     | Ensures all required build/test/package tools are installed on every organizational computer; enforces consistent configuration, settings, and environment prerequisites across all build environments |
+| Jenkins                | Continuous Integration | Automation server that executes CI pipelines automatically to validate every code change (build + test); drives the module build pipeline and test execution                                           |
+| Inedo BuildMaster      | Release automation     | Automates release orchestration and final packaging; integrates with ProGet to track packages/dependencies as part of builds (scanning outputs, publishing dependency metadata)                        |
+| Inedo ProGet           | Package governance     | Organization's package source of truth; ensures only approved versions of dependencies and tools are consumed via approval workflows and controlled access; supports vulnerability scanning features   |
+| .NET build integration | Build                  | Compile/test/package C# modules; PowerShell scripting modules where appropriate                                                                                                                        |
+| Database migrations    | Schema management      | Flyway-managed versioned migrations and repeatable DB objects (views/procs/functions)                                                                                                                  |
+
+#### 3.3.2 Responsibility Summary
+
+| Tool        | Primary Responsibilities                                                                                      |
+| ----------- | ------------------------------------------------------------------------------------------------------------- |
+| Ansible     | Provision build agents; install tooling; enforce environment consistency across all machines                  |
+| Jenkins     | Validate every code change via automated build + test pipelines                                               |
+| BuildMaster | Orchestrate releases; package artifacts; publish dependency metadata to ProGet                                |
+| ProGet      | Govern approved package versions; gate dependency consumption; provide vulnerability scanning and audit trail |
 
 ---
 
@@ -314,6 +331,9 @@ A future where every person and organization can run a secure, privacy-preservin
 | Database                    | Microsoft SQL Server (Developer Edition for dev/test; Express or hyperscaler-hosted for production)                                           |
 | Schema/migration management | Flyway (free edition, Redgate); versioned migrations + repeatables for views/procs/functions + repeatables for slowly-changing reference data |
 | Package management          | ProGet (Inedo, free edition initially)                                                                                                        |
+| Continuous Integration      | Jenkins (automation server; executes build + test pipelines on every code change)                                                             |
+| Release automation          | Inedo BuildMaster (Free edition; release orchestration, packaging, ProGet integration)                                                        |
+| IaC / provisioning          | Ansible (community/open-source; provision build agents and developer machines; WSL2 runtime during early development)                         |
 | Source control              | Git + GitHub                                                                                                                                  |
 | IDE / code review           | Visual Studio Code + extensions                                                                                                               |
 | Extension language          | TypeScript (transpiles to JavaScript/ESM)                                                                                                     |

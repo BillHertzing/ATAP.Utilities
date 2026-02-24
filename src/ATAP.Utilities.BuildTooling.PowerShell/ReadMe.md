@@ -156,7 +156,7 @@ $null = New-Item -Path ./.github -ItemType Junction -Target $(Join-Path $global:
 
 ### User Settings symbolic link
 
-The `settings.json` file at (e.g) `C:\Users\<username>\AppData\Roaming\Code\User` holds the final fallback to all VSC settings. It applies to all repositories and workspaces. Every developer on a host needs to link to the organization's common settings. to do this,replace <username> with the actual user name in the following command and run it.
+The `settings.json` file at (e.g) `C:\Users\<username>\AppData\Roaming\Code\User` holds the final fallback to all VSC settings. It applies to all repositories and workspaces. Every developer on a host needs to link to the organization's common settings. to do this,replace the value of $username with the actual user name in the following command and run it.
 
 There are also language-specific snippets files stored on a per-user basis. These should be linked to the organization's common settings.
 
@@ -189,26 +189,72 @@ $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey'
 
 ### Repository symbolic links
 
-The organization has multiple GIT repositories. Every repository that uses Visual Studio Code as the IDE, needs a subdirectory `.vscode`, which contains these five files
+#### Junction for folder `.vscode`
+
+The organization has multiple GIT repositories. Every repository that uses Visual Studio Code as the IDE, needs a subdirectory `.vscode`, which contains these files and folders
 
 ```text
-Launch.json
-tasks.json
-settings.json
-cspell.json
-extensions.json
-iis.json (optional)
+repo-root/
+├── .vscode/
+    ├── dictionaries/ # Used by the 'CSpell' VSC extension
+    ├── solution-explorer/ # Used by the 'Solution Explorer' VSC extension
+    ├── cspell.json
+    ├── extensions.json
+    ├── iisexpress.json
+    ├── launch.json
+    ├── mcp.json
+    ├── PSScriptAnalyzerSettings.psd1
+    ├── tasks.json
 ```
 
 This directory and these files need to be present at the root of each repository, and need to be source-controlled and versioned. Having multiple independent copies is prone to errors and misconfigurations. Therefore, we have created a repository named `SharedVSCode`, and placed the source-of-truth copies of these files in this git-versioned repository.
 
-We then create symbolic links from the files in this repository to symblinks that reside in the .vscode directory under every other repository.
-
 In every new repository, after running `git init`, run these commands (as an administrator) in the root folder of the repository:
+We create a junction in each repository that links to the `.vscode` folder in `SharedVSCode`.
+
+ToDo: replace with a BuildTooling.Powershell script for New-Junction
 
 ```Powershell
+  if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
+  }
   # use a directory junction
   $null = New-Item -Path ./.vscode -ItemType Junction -Target $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] 'whertzing' 'GitHub', 'SharedVSCode', '.vscode')
+```
+
+#### Junction for folder `.github` and `.claude`
+
+The organization has multiple GIT repositories. Every repository that uses Visual Studio Code as the IDE, needs a folders `.github` and `.claude`, which contains these files and folders.
+
+```text
+repo-root/
+├── .github/
+│   ├── copilot-instructions.md ← Single source of truth for global instructions
+│   └── instructions/
+│       ├── Powershell.instructions.md
+│       ├── CSharp.instructions.md
+│       └── etc...
+└── .claude/
+    └── rules/
+        ├── python.md ← paths: ["**/*.py"], body: @../../.github/instructions/python.instructions.md
+        └── typescript.md ← paths: ["**/*.ts","**/*.tsx"], body: @../../.github/instructions/typescript.instructions.md
+        └── etc...
+```
+
+of particular note are the AI Agent instruction files, for both Copilot and for Claude Code
+there is a frontmatter format mismatch between Copilot and Claude Code. For proper path-scoping in Claude Code, we need separate .claude/rules/ files with paths frontmatter and then @import the shared content body from .github/instructions/ to avoid duplication.
+​
+In every new repository, after running `git init`, run these commands (as an administrator) in the root folder of the repository:
+We create a junction in each repository that links to the `.github` folder in `SharedVSCode`.
+
+ToDo: replace with a BuildTooling.Powershell script for New-Junction
+
+```Powershell
+  if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
+  }
+  # use a directory junction
+  $null = New-Item -Path ./.github -ItemType Junction -Target $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] 'whertzing' 'GitHub', 'SharedVSCode', '.github')
 ```
 
 ## Symbolic Links for Prettier formatting rules, CSpell, eslint rules, building Powershell; modules (Invoke-Build) and Mocha
@@ -240,7 +286,6 @@ if (!${get-command New-SymbolicLink}) {
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.eslintrc.js"  -symbolicLinkPath ".\.eslintrc.js" -force
   # this command only for repositories that use mocha for testing JavaScript
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.mocharc.yaml"  -symbolicLinkPath ".\.mocharc.yaml" -force
-
 ```
 
 ### additional cSpell dictionaries
@@ -672,7 +717,7 @@ In Ubuntu Powershell terminal
 ```Powershell
 cd /srv/openmetadata-docker
 docker compose ps
-````
+```
 
 ### create a Windows Task Scheduler job that starts docker user login
 
@@ -688,3 +733,4 @@ In a powershell prompt, run the following
 Add-LocalGroupMember -Group "docker-users" -Member $env:USERNAME
 
 ```
+````

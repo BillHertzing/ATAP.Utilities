@@ -90,22 +90,22 @@ Remove-Item -path (join-path $targetScriptDirectory $scriptTargetName) -ErrorAct
 New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $scriptTargetName) -Target (join-path $sourceRepoRoot $relativeScriptSourceDirectory $scriptSourceName )
 }
 
-## Filesystem junction for .Claude folder
+## Filesystem junction for .claude folder
 
-Claude and Claude Code will look up the filesystem to the repository root for folders named `.Claude`. Prompt instructions for Claude AI are stored in the file(s) found in this direcotry. To make the same prompt instructions available to every repository, the .Claude folder is linked, using a junction to the base of the repository. In each respoitory, run the following commands.
+Claude and Claude Code will look up the filesystem to the repository root for folders named `.claude`. Prompt instructions for Claude AI are stored in the file(s) found in this direcotry. To make the same prompt instructions available to every repository, the .claude folder is linked, using a junction to the base of the repository. In each respoitory, run the following commands.
 
 ```powershell
-# Ensure that .Claude is a folder, junction linked from the repo root to the target.
-# The target is GitHub/SharedVSCode/.Claude
-# The junction name is .Claude
-# if .Claude is present in the repo root, and is a junction to the .Claude subfolder under SharedVSCode folder, do nothing.
-# if .Claude is present in the repo root, and is a junction to anything other than the .Claude subfolder under SharedVSCode folder, delete and create it as a junction to the .Claude subfolder under SharedVSCode folder.
-# if .Claude is not present in the repo root create it as a junction to the .Claude subfolder under SharedVSCode folder
+# Ensure that .claude is a folder, junction linked from the repo root to the target.
+# The target is GitHub/SharedVSCode/.claude
+# The junction name is .claude
+# if .claude is present in the repo root, and is a junction to the .claude subfolder under SharedVSCode folder, do nothing.
+# if .claude is present in the repo root, and is a junction to anything other than the .claude subfolder under SharedVSCode folder, delete and create it as a junction to the .claude subfolder under SharedVSCode folder.
+# if .claude is not present in the repo root create it as a junction to the .claude subfolder under SharedVSCode folder
 $userName = 'whertzing'
-$targetFolder = Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $username 'GitHub', 'SharedVSCode', '.Claude'
-$junctionFolderName = '.Claude'
+$targetFolder = Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $username 'GitHub', 'SharedVSCode', '.claude'
+$junctionFolderName = '.claude'
 
-# Check if .Claude exists
+# Check if .claude exists
 if (Test-Path $junctionFolderName) {
     $item = Get-Item $junctionFolderName
     # Check if it's a junction/reparse point
@@ -118,23 +118,23 @@ if (Test-Path $junctionFolderName) {
             Write-PSFMessage -Level Verbose -Message "Removing existing junction with wrong target: $currentTarget"
             Remove-Item -Path $junctionFolderName -Force
             $null = New-Item -Path $junctionFolderName -ItemType Junction -Target $targetFolder
-            Write-PSFMessage -Level Important -Message "Created .Claude junction to: $targetFolder"
+            Write-PSFMessage -Level Important -Message "Created .claude junction to: $targetFolder"
         }
         else {
             # Correct junction already exists, do nothing
-            Write-PSFMessage -Level Verbose -Message ".Claude junction already points to correct target: $targetFolder"
+            Write-PSFMessage -Level Verbose -Message ".claude junction already points to correct target: $targetFolder"
         }
     } else {
         # It exists but is not a junction - remove and create junction
-        Write-PSFMessage -Level Warning -Message ".Claude exists but is not a junction. Removing and recreating as junction"
+        Write-PSFMessage -Level Warning -Message ".claude exists but is not a junction. Removing and recreating as junction"
         Remove-Item -Path $junctionFolderName -Recurse -Force
         $null = New-Item -Path $junctionFolderName -ItemType Junction -Target $targetFolder
-        Write-PSFMessage -Level Important -Message "Created .Claude junction to: $targetFolder"
+        Write-PSFMessage -Level Important -Message "Created .claude junction to: $targetFolder"
     }
 } else {
     # Doesn't exist, create it
     $null = New-Item -Path $junctionFolderName -ItemType Junction -Target $targetFolder
-    Write-PSFMessage -Level Important -Message "Created .Claude junction to: $targetFolder"
+    Write-PSFMessage -Level Important -Message "Created .claude junction to: $targetFolder"
 }
 
 ```

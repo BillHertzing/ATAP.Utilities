@@ -186,6 +186,30 @@ Attribution:
 
 ---
 
+### `<compile-remove>` Rule Primitive
+
+**Philote ID:** "5c4b6d7a-3f5d-4a8d-90d6-0f3cf0f9b6aa"
+
+Description: Removes files from the `Compile` item set.
+
+```bnf
+<compile-remove>          ::= "<Compile" <ws> "Remove=\"" <path-glob> "\"" <ws>? "/>"
+```
+
+Inputs:
+
+- `Remove` (path glob string).
+
+Output: Self-closing `Compile` item with `Remove` attribute.
+
+Attribution:
+
+```text
+1. https://learn.microsoft.com/en-us/visualstudio/msbuild/common-msbuild-item-element#attributes
+```
+
+---
+
 ### `<xml-comment>` Rule Primitive
 
 **Philote ID:** "0d7df833-9bdb-4f4b-a2c8-9e27863cfe26"
@@ -318,6 +342,270 @@ Attribution:
 ```text
 1. https://learn.microsoft.com/en-us/nuget/consume-packages/package-references-in-project-files
 2. [src/ATAP.Utilities.Philote/ATAP.Utilities.Philote.CSharp/ATAP.Utilities.Philote.csproj](src/ATAP.Utilities.Philote/ATAP.Utilities.Philote.CSharp/ATAP.Utilities.Philote.csproj#L1-L34)
+```
+
+### Rule: ATAP.Utilities.StronglyTypedId.csproj (aggregator)
+
+**Philote ID:** "1c8b8c57-0d64-4e4a-8e60-5f8a3f7f7d3a"
+
+**Purpose:** Aggregate child StronglyTypedId projects without compiling their sources.
+
+**Source:** [src/ATAP.Utilities.StronglyTypedId/ATAP.Utilities.StronglyTypedId.csproj](src/ATAP.Utilities.StronglyTypedId/ATAP.Utilities.StronglyTypedId.csproj#L1-L26)
+
+**Primitive Composition (ordered)**
+
+| #   | Primitive             | Philote ID                           | Bound Inputs                                                                                                                                                                         |
+| --- | --------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | `<csproj-file>`       | f0c6f7bf-0a91-402c-8d0a-0e9d828b1b4d | Sdk = "Microsoft.NET.Sdk"; Elements = [2,3,4,5]                                                                                                                                      |
+| 2   | `<property-group>`    | 5f8f4a2d-5c8a-4f71-8b27-7ff6a72f5f1c | Properties = OutputType=Library, GeneratePackageOnBuild=true, IsPackable=true, MajorVersion=0, MinorVersion=1, PatchVersion=0, PackageLifeCycleStage=Development, PackageLabel=Alpha |
+| 3   | `<property-group>`    | 5f8f4a2d-5c8a-4f71-8b27-7ff6a72f5f1c | Properties = EnableDefaultItems=false                                                                                                                                                |
+| 4   | `<item-group>`        | b87e6f6c-9f2c-4e4c-9f54-2da53a46c7f6 | Items = [4a]                                                                                                                                                                         |
+| 4a  | `<compile-remove>`    | 5c4b6d7a-3f5d-4a8d-90d6-0f3cf0f9b6aa | Remove = "\*_/_.cs"                                                                                                                                                                  |
+| 5   | `<item-group>`        | b87e6f6c-9f2c-4e4c-9f54-2da53a46c7f6 | Items = [5a,5b,5c]                                                                                                                                                                   |
+| 5a  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "Interfaces/ATAP.Utilities.StronglyTypedId.Interfaces.csproj"                                                                                                              |
+| 5b  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "Models/ATAP.Utilities.StronglyTypedId.Models.csproj"                                                                                                                      |
+| 5c  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "JsonConverter.Shim.SystemTextJson/ATAP.Utilities.StronglyTypedId.JsonConverter.Shim.SystemTextJson.csproj"                                                                |
+
+Attribution:
+
+```text
+1. https://learn.microsoft.com/en-us/visualstudio/msbuild/how-to-use-project-sdk
+2. https://learn.microsoft.com/en-us/visualstudio/msbuild/common-msbuild-item-element#attributes
+3. Source file linked above
+```
+
+### Rule: ATAP.Utilities.StronglyTypedId.Interfaces.csproj
+
+**Philote ID:** "54bfa6f5-7be2-4a5b-94a4-3f4c2b5e6a1d"
+
+**Purpose:** Interfaces project for StronglyTypedId.
+
+**Source:** [src/ATAP.Utilities.StronglyTypedId/Interfaces/ATAP.Utilities.StronglyTypedId.Interfaces.csproj](src/ATAP.Utilities.StronglyTypedId/Interfaces/ATAP.Utilities.StronglyTypedId.Interfaces.csproj#L1-L25)
+
+**Primitive Composition (ordered)**
+
+| #   | Primitive          | Philote ID                           | Bound Inputs                                                                                                                                                                         |
+| --- | ------------------ | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | `<csproj-file>`    | f0c6f7bf-0a91-402c-8d0a-0e9d828b1b4d | Sdk = "Microsoft.NET.Sdk"; Elements = [2,3,4]                                                                                                                                        |
+| 2   | `<property-group>` | 5f8f4a2d-5c8a-4f71-8b27-7ff6a72f5f1c | Properties = OutputType=Library, GeneratePackageOnBuild=true, IsPackable=true, MajorVersion=0, MinorVersion=1, PatchVersion=0, PackageLifeCycleStage=Development, PackageLabel=Alpha |
+| 3   | `<item-group>`     | b87e6f6c-9f2c-4e4c-9f54-2da53a46c7f6 | Items = []                                                                                                                                                                           |
+| 4   | `<item-group>`     | b87e6f6c-9f2c-4e4c-9f54-2da53a46c7f6 | Items = []                                                                                                                                                                           |
+
+Attribution:
+
+```text
+1. Source file linked above
+```
+
+### Rule: ATAP.Utilities.StronglyTypedId.Models.csproj
+
+**Philote ID:** "c2cbb8dd-2a7a-4c2e-9e31-3bc8d2db1f44"
+
+**Purpose:** Models project for StronglyTypedId.
+
+**Source:** [src/ATAP.Utilities.StronglyTypedId/Models/ATAP.Utilities.StronglyTypedId.Models.csproj](src/ATAP.Utilities.StronglyTypedId/Models/ATAP.Utilities.StronglyTypedId.Models.csproj#L1-L22)
+
+**Primitive Composition (ordered)**
+
+| #   | Primitive             | Philote ID                           | Bound Inputs                                                                                                                                                                         |
+| --- | --------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | `<csproj-file>`       | f0c6f7bf-0a91-402c-8d0a-0e9d828b1b4d | Sdk = "Microsoft.NET.Sdk"; Elements = [2,3,4]                                                                                                                                        |
+| 2   | `<property-group>`    | 5f8f4a2d-5c8a-4f71-8b27-7ff6a72f5f1c | Properties = OutputType=Library, GeneratePackageOnBuild=true, IsPackable=true, MajorVersion=0, MinorVersion=1, PatchVersion=0, PackageLifeCycleStage=Development, PackageLabel=Alpha |
+| 3   | `<item-group>`        | b87e6f6c-9f2c-4e4c-9f54-2da53a46c7f6 | Items = []                                                                                                                                                                           |
+| 4   | `<item-group>`        | b87e6f6c-9f2c-4e4c-9f54-2da53a46c7f6 | Items = [4a]                                                                                                                                                                         |
+| 4a  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "..\\Interfaces\\ATAP.Utilities.StronglyTypedId.Interfaces.csproj"                                                                                                         |
+
+Attribution:
+
+```text
+1. Source file linked above
+```
+
+### Rule: ATAP.Utilities.StronglyTypedId.JsonConverter.Shim.SystemTextJson.csproj
+
+**Philote ID:** "9f4b5a1c-2d71-4d8c-87d2-7d7ab6e9c2c1"
+
+**Purpose:** System.Text.Json shim converters for StronglyTypedId.
+
+**Source:** [src/ATAP.Utilities.StronglyTypedId/JsonConverter.Shim.SystemTextJson/ATAP.Utilities.StronglyTypedId.JsonConverter.Shim.SystemTextJson.csproj](src/ATAP.Utilities.StronglyTypedId/JsonConverter.Shim.SystemTextJson/ATAP.Utilities.StronglyTypedId.JsonConverter.Shim.SystemTextJson.csproj#L1-L25)
+
+**Primitive Composition (ordered)**
+
+| #   | Primitive             | Philote ID                           | Bound Inputs                                                                                                                                                                         |
+| --- | --------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | `<csproj-file>`       | f0c6f7bf-0a91-402c-8d0a-0e9d828b1b4d | Sdk = "Microsoft.NET.Sdk"; Elements = [2,3,4,5]                                                                                                                                      |
+| 2   | `<property-group>`    | 5f8f4a2d-5c8a-4f71-8b27-7ff6a72f5f1c | Properties = OutputType=Library, GeneratePackageOnBuild=true, IsPackable=true, MajorVersion=0, MinorVersion=1, PatchVersion=0, PackageLifeCycleStage=Development, PackageLabel=Alpha |
+| 3   | `<item-group>`        | b87e6f6c-9f2c-4e4c-9f54-2da53a46c7f6 | Items = []                                                                                                                                                                           |
+| 4   | `<item-group>`        | b87e6f6c-9f2c-4e4c-9f54-2da53a46c7f6 | Items = [4a,4b]                                                                                                                                                                      |
+| 4a  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "..\\Interfaces\\ATAP.Utilities.StronglyTypedId.Interfaces.csproj"                                                                                                         |
+| 4b  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "..\\Models\\ATAP.Utilities.StronglyTypedId.Models.csproj"                                                                                                                 |
+| 5   | `<item-group>`        | b87e6f6c-9f2c-4e4c-9f54-2da53a46c7f6 | Items = [5a]                                                                                                                                                                         |
+| 5a  | `<package-reference>` | bc63c4a9-e2ab-4e6f-83b6-8f8a5f09341a | Include = "System.Text.Json"                                                                                                                                                         |
+
+Attribution:
+
+```text
+1. Source file linked above
+```
+
+### Rule: ATAP.Utilities.Philote.csproj (aggregator)
+
+**Philote ID:** "f5a4f28a-2f21-4d0c-9939-6a9d5e6b7c3f"
+
+**Purpose:** Aggregate Philote child projects.
+
+**Source:** [src/ATAP.Utilities.Philote/ATAP.Utilities.Philote.csproj](src/ATAP.Utilities.Philote/ATAP.Utilities.Philote.csproj#L1-L24)
+
+**Primitive Composition (ordered)**
+
+| #   | Primitive             | Philote ID                           | Bound Inputs                                                                                                                                                                         |
+| --- | --------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | `<csproj-file>`       | f0c6f7bf-0a91-402c-8d0a-0e9d828b1b4d | Sdk = "Microsoft.NET.Sdk"; Elements = [2,3]                                                                                                                                          |
+| 2   | `<property-group>`    | 5f8f4a2d-5c8a-4f71-8b27-7ff6a72f5f1c | Properties = OutputType=Library, GeneratePackageOnBuild=true, IsPackable=true, MajorVersion=0, MinorVersion=1, PatchVersion=0, PackageLifeCycleStage=Development, PackageLabel=Alpha |
+| 3   | `<item-group>`        | b87e6f6c-9f2c-4e4c-9f54-2da53a46c7f6 | Items = [3a,3b,3c,3d]                                                                                                                                                                |
+| 3a  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "DefaultConfiguration/ATAP.Utilities.Philote.DefaultConfiguration.csproj"                                                                                                  |
+| 3b  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "Interfaces/ATAP.Utilities.Philote.Interfaces.csproj"                                                                                                                      |
+| 3c  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "Models/ATAP.Utilities.Philote.Models.csproj"                                                                                                                              |
+| 3d  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "JsonConverter.Shim.SystemTextJson/ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson.csproj"                                                                        |
+
+Attribution:
+
+```text
+1. Source file linked above
+```
+
+### Rule: ATAP.Utilities.Philote.DefaultConfiguration.csproj
+
+**Philote ID:** "7a3f1d5c-9c14-4df5-8a6b-3f1a4b2c7d9e"
+
+**Purpose:** Default configuration project for Philote.
+
+**Source:** [src/ATAP.Utilities.Philote/DefaultConfiguration/ATAP.Utilities.Philote.DefaultConfiguration.csproj](src/ATAP.Utilities.Philote/DefaultConfiguration/ATAP.Utilities.Philote.DefaultConfiguration.csproj#L1-L23)
+
+**Primitive Composition (ordered)**
+
+| #   | Primitive             | Philote ID                           | Bound Inputs                                                                                                                                                                         |
+| --- | --------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | `<csproj-file>`       | f0c6f7bf-0a91-402c-8d0a-0e9d828b1b4d | Sdk = "Microsoft.NET.Sdk"; Elements = [2,3]                                                                                                                                          |
+| 2   | `<property-group>`    | 5f8f4a2d-5c8a-4f71-8b27-7ff6a72f5f1c | Properties = OutputType=Library, GeneratePackageOnBuild=true, IsPackable=true, MajorVersion=0, MinorVersion=1, PatchVersion=0, PackageLifeCycleStage=Development, PackageLabel=Alpha |
+| 3   | `<item-group>`        | b87e6f6c-9f2c-4e4c-9f54-2da53a46c7f6 | Items = [3a,3b,3c]                                                                                                                                                                   |
+| 3a  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "..\\..\\ATAP.Utilities.StronglyTypedId\\Interfaces\\ATAP.Utilities.StronglyTypedId.Interfaces.csproj"                                                                     |
+| 3b  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "..\\Interfaces\\ATAP.Utilities.Philote.Interfaces.csproj"                                                                                                                 |
+| 3c  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "..\\Models\\ATAP.Utilities.Philote.Models.csproj"                                                                                                                         |
+
+Attribution:
+
+```text
+1. Source file linked above
+```
+
+### Rule: ATAP.Utilities.Philote.Models.csproj
+
+**Philote ID:** "f6b8c8d2-9c91-4a1c-9f5e-2e7b5c2d6a1f"
+
+**Purpose:** Models project for Philote.
+
+**Source:** [src/ATAP.Utilities.Philote/Models/ATAP.Utilities.Philote.Models.csproj](src/ATAP.Utilities.Philote/Models/ATAP.Utilities.Philote.Models.csproj#L1-L26)
+
+**Primitive Composition (ordered)**
+
+| #   | Primitive             | Philote ID                           | Bound Inputs                                                                                                                                                                         |
+| --- | --------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | `<csproj-file>`       | f0c6f7bf-0a91-402c-8d0a-0e9d828b1b4d | Sdk = "Microsoft.NET.Sdk"; Elements = [2,3,4]                                                                                                                                        |
+| 2   | `<property-group>`    | 5f8f4a2d-5c8a-4f71-8b27-7ff6a72f5f1c | Properties = OutputType=Library, GeneratePackageOnBuild=true, IsPackable=true, MajorVersion=0, MinorVersion=1, PatchVersion=0, PackageLifeCycleStage=Development, PackageLabel=Alpha |
+| 3   | `<item-group>`        | b87e6f6c-9f2c-4e4c-9f54-2da53a46c7f6 | Items = [3a]                                                                                                                                                                         |
+| 3a  | `<package-reference>` | bc63c4a9-e2ab-4e6f-83b6-8f8a5f09341a | Include = "TimePeriodLibrary.NET"                                                                                                                                                    |
+| 4   | `<item-group>`        | b87e6f6c-9f2c-4e4c-9f54-2da53a46c7f6 | Items = [4a,4b,4c]                                                                                                                                                                   |
+| 4a  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "..\\Interfaces\\ATAP.Utilities.Philote.Interfaces.csproj"                                                                                                                 |
+| 4b  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "..\\..\\ATAP.Utilities.StronglyTypedId\\Interfaces\\ATAP.Utilities.StronglyTypedId.Interfaces.csproj"                                                                     |
+| 4c  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "..\\..\\ATAP.Utilities.StronglyTypedId\\Models\\ATAP.Utilities.StronglyTypedId.Models.csproj"                                                                             |
+
+Attribution:
+
+```text
+1. Source file linked above
+```
+
+### Rule: ATAP.Utilities.Philote.Interfaces.csproj
+
+**Philote ID:** "2a5d8b1c-7e6f-4c0b-b2d4-9b2c5e1d7f4a"
+
+**Purpose:** Interfaces project for Philote.
+
+**Source:** [src/ATAP.Utilities.Philote/Interfaces/ATAP.Utilities.Philote.Interfaces.csproj](src/ATAP.Utilities.Philote/Interfaces/ATAP.Utilities.Philote.Interfaces.csproj#L1-L26)
+
+**Primitive Composition (ordered)**
+
+| #   | Primitive             | Philote ID                           | Bound Inputs                                                                                                                                                                         |
+| --- | --------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | `<csproj-file>`       | f0c6f7bf-0a91-402c-8d0a-0e9d828b1b4d | Sdk = "Microsoft.NET.Sdk"; Elements = [2,3,4]                                                                                                                                        |
+| 2   | `<property-group>`    | 5f8f4a2d-5c8a-4f71-8b27-7ff6a72f5f1c | Properties = OutputType=Library, GeneratePackageOnBuild=true, IsPackable=true, MajorVersion=0, MinorVersion=1, PatchVersion=0, PackageLifeCycleStage=Development, PackageLabel=Alpha |
+| 3   | `<item-group>`        | b87e6f6c-9f2c-4e4c-9f54-2da53a46c7f6 | Items = [3a]                                                                                                                                                                         |
+| 3a  | `<package-reference>` | bc63c4a9-e2ab-4e6f-83b6-8f8a5f09341a | Include = "TimePeriodLibrary.NET"                                                                                                                                                    |
+| 4   | `<item-group>`        | b87e6f6c-9f2c-4e4c-9f54-2da53a46c7f6 | Items = [4a]                                                                                                                                                                         |
+| 4a  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "..\\..\\ATAP.Utilities.StronglyTypedId\\Interfaces\\ATAP.Utilities.StronglyTypedId.Interfaces.csproj"                                                                     |
+
+Attribution:
+
+```text
+1. Source file linked above
+```
+
+### Rule: ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson.csproj
+
+**Philote ID:** "4f6c9e5d-1b62-4a42-8a8c-7e4f3c6a9d1e"
+
+**Purpose:** System.Text.Json shim converters for Philote.
+
+**Source:** [src/ATAP.Utilities.Philote/JsonConverter.Shim.SystemTextJson/ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson.csproj](src/ATAP.Utilities.Philote/JsonConverter.Shim.SystemTextJson/ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson.csproj#L1-L28)
+
+**Primitive Composition (ordered)**
+
+| #   | Primitive             | Philote ID                           | Bound Inputs                                                                                                                                                                         |
+| --- | --------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | `<csproj-file>`       | f0c6f7bf-0a91-402c-8d0a-0e9d828b1b4d | Sdk = "Microsoft.NET.Sdk"; Elements = [2,3,4,5]                                                                                                                                      |
+| 2   | `<property-group>`    | 5f8f4a2d-5c8a-4f71-8b27-7ff6a72f5f1c | Properties = OutputType=Library, GeneratePackageOnBuild=true, IsPackable=true, MajorVersion=0, MinorVersion=1, PatchVersion=0, PackageLifeCycleStage=Development, PackageLabel=Alpha |
+| 3   | `<item-group>`        | b87e6f6c-9f2c-4e4c-9f54-2da53a46c7f6 | Items = [3a]                                                                                                                                                                         |
+| 3a  | `<package-reference>` | bc63c4a9-e2ab-4e6f-83b6-8f8a5f09341a | Include = "TimePeriodLibrary.NET"                                                                                                                                                    |
+| 4   | `<item-group>`        | b87e6f6c-9f2c-4e4c-9f54-2da53a46c7f6 | Items = [4a,4b,4c,4d]                                                                                                                                                                |
+| 4a  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "..\\Interfaces\\ATAP.Utilities.Philote.Interfaces.csproj"                                                                                                                 |
+| 4b  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "..\\..\\ATAP.Utilities.Serializer.Interfaces\\ATAP.Utilities.Serializer.Interfaces.csproj"                                                                                |
+| 4c  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "..\\..\\ATAP.Utilities.StronglyTypedId\\Interfaces\\ATAP.Utilities.StronglyTypedId.Interfaces.csproj"                                                                     |
+| 4d  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "..\\..\\ATAP.Utilities.StronglyTypedId\\Models\\ATAP.Utilities.StronglyTypedId.Models.csproj"                                                                             |
+| 5   | `<item-group>`        | b87e6f6c-9f2c-4e4c-9f54-2da53a46c7f6 | Items = [5a]                                                                                                                                                                         |
+| 5a  | `<package-reference>` | bc63c4a9-e2ab-4e6f-83b6-8f8a5f09341a | Include = "System.Text.Json"                                                                                                                                                         |
+
+Attribution:
+
+```text
+1. Source file linked above
+```
+
+### Rule: ATAP.Utilities.Philote.Converters.Interfaces.csproj
+
+**Philote ID:** "b5c9d7f1-1c8f-4d1e-8bba-2f7b2e6d5a10"
+
+**Purpose:** Converter interfaces for Philote serializers.
+
+**Source:** [src/ATAP.Utilities.Philote/Converters.Interfaces.Save/ATAP.Utilities.Philote.Converters.Interfaces.csproj](src/ATAP.Utilities.Philote/Converters.Interfaces.Save/ATAP.Utilities.Philote.Converters.Interfaces.csproj#L1-L26)
+
+**Primitive Composition (ordered)**
+
+| #   | Primitive             | Philote ID                           | Bound Inputs                                                                                                                                                                     |
+| --- | --------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `<csproj-file>`       | f0c6f7bf-0a91-402c-8d0a-0e9d828b1b4d | Sdk = "Microsoft.NET.Sdk"; Elements = [2,3,4]                                                                                                                                    |
+| 2   | `<property-group>`    | 5f8f4a2d-5c8a-4f71-8b27-7ff6a72f5f1c | Properties = OutputType=Library, GeneratePackageOnBuild=true, IsPackable=true, MajorVersion=1, MinorVersion=0, PatchVersion=0, PackageLifeCycleStage=Production, PackageLabel=NA |
+| 3   | `<item-group>`        | b87e6f6c-9f2c-4e4c-9f54-2da53a46c7f6 | Items = [3a]                                                                                                                                                                     |
+| 3a  | `<package-reference>` | bc63c4a9-e2ab-4e6f-83b6-8f8a5f09341a | Include = "TimePeriodLibrary.NET"                                                                                                                                                |
+| 4   | `<item-group>`        | b87e6f6c-9f2c-4e4c-9f54-2da53a46c7f6 | Items = [4a,4b,4c]                                                                                                                                                               |
+| 4a  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "..\\ATAP.Utilities.StronglyTypedId\\Interfaces\\ATAP.Utilities.StronglyTypedId.Interfaces.csproj"                                                                     |
+| 4b  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "..\\ATAP.Utilities.Philote\\Interfaces\\ATAP.Utilities.Philote.Interfaces.csproj"                                                                                     |
+| 4c  | `<project-reference>` | 6a4c6e4e-5035-4c74-9d08-47e0a5b6c17e | Include = "..\\ATAP.Utilities.Serializer.Interfaces\\ATAP.Utilities.Serializer.Interfaces.csproj"                                                                                |
+
+Attribution:
+
+```text
+1. Source file linked above
 ```
 
 ## Rendering Notes

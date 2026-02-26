@@ -999,3 +999,78 @@ Attribution:
 1. https://learn.microsoft.com/en-us/dotnet/api/system.linq.expressions.expression
 2. [src/ATAP.Utilities.Philote/ATAP.Utilities.Philote.CSharp/ActivatorReplacement.cs](src/ATAP.Utilities.Philote/ATAP.Utilities.Philote.CSharp/ActivatorReplacement.cs#L1-L140)
 ```
+
+### StronglyTypedId System.Text.Json Converters
+
+#### Rule: StronglyTypedIdJsonConverterSystemTextJson
+
+**Philote ID:** "6e7f54c4-0b7d-4f0a-8d57-5f1f96c4d7b8"
+
+**Purpose:** Render generic System.Text.Json converter and factory for StronglyTypedId records.
+
+**Source file:** [src/ATAP.Utilities.StronglyTypedId/JsonConverter.Shim.SystemTextJson/StronglyTypedIdJsonConverterSystemTextJson.cs](src/ATAP.Utilities.StronglyTypedId/JsonConverter.Shim.SystemTextJson/StronglyTypedIdJsonConverterSystemTextJson.cs#L1-L116)
+
+**Top-level derivation (condensed):**
+
+```text
+<cs-source-file>
+├── <using-directive> ×4
+└── <namespace-block-declaration> → ATAP.Utilities.StronglyTypedId.JsonConverter.Shim.SystemTextJson { ... }
+  ├── <single-line-comment> (attribution)
+  ├── <class-declaration> → StronglyTypedIdJsonConverter<TStronglyTypedId, TValue> : JsonConverter<TStronglyTypedId>
+  └── <class-declaration> → StronglyTypedIdJsonConverterFactory : JsonConverterFactory
+```
+
+**Primitive Composition Highlights**
+
+| #   | Primitive                       | Philote ID                             | Role                                                     | Bound Inputs (high level)                                                                                                                                 |
+| --- | ------------------------------- | -------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `<cs-source-file>`              | `4f6dbde9-52f2-4d3f-82a1-7b9f3a6c4d85` | File container                                           | `Elements = [usings, ns]`                                                                                                                                 |
+| 2   | `<using-directive>`             | `8b9e0f19-5272-4c1f-90db-e1e6b0c5d3f2` | Imports System, Concurrent, Json namespaces              | 4 namespace imports                                                                                                                                       |
+| 3   | `<namespace-block-declaration>` | `d3f0f6b9-1eae-4a8d-9a6f-5d8f2410c8a4` | Namespace wrapper                                        | `NamespaceName = "ATAP.Utilities.StronglyTypedId.JsonConverter.Shim.SystemTextJson"; Body = [4,5]`                                                        |
+| 4   | `<class-declaration>`           | `5c1f93b8-6db5-4aaf-94ef-7b3d8b8a9d3a` | `StronglyTypedIdJsonConverter<TStronglyTypedId, TValue>` | Generic converter overriding `Read` and `Write` with constraints `where TStronglyTypedId : IAbstractStronglyTypedId<TValue>` and `where TValue : notnull` |
+| 5   | `<class-declaration>`           | `5c1f93b8-6db5-4aaf-94ef-7b3d8b8a9d3a` | `StronglyTypedIdJsonConverterFactory`                    | Inherits `JsonConverterFactory`; overrides `CanConvert`, `CreateConverter`; caches converters                                                             |
+
+Inputs to the Rule include converter cache field, helper invocations (`StronglyTypedIdHelper.GetFactory`, `IsStronglyTypedId`), and JsonSerializer calls.
+
+Attribution:
+
+```text
+1. https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonconverter
+2. Source file linked above
+```
+
+### Philote System.Text.Json Converters (placeholder)
+
+#### Rule: PhiloteJsonConverterSystemTextJson
+
+**Philote ID:** "7d1a3b4c-2f5e-4c9f-9a64-5c7d8e9f0a1b"
+
+**Purpose:** Capture current Philote JsonConverter factory scaffold for System.Text.Json.
+
+**Source file:** [src/ATAP.Utilities.Philote/JsonConverter.Shim.SystemTextJson/JsonConverter.Shim.SystemTextJson.cs](src/ATAP.Utilities.Philote/JsonConverter.Shim.SystemTextJson/JsonConverter.Shim.SystemTextJson.cs#L1-L92)
+
+**Top-level derivation (condensed):**
+
+```text
+<cs-source-file>
+├── <using-directive> ×7
+└── <namespace-block-declaration> → ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson { ... }
+  └── <class-declaration> → PhiloteConverterFactory : JsonConverterFactory { Cache field, CanConvert, CreateConverter stubs }
+```
+
+**Primitive Composition Highlights**
+
+| #   | Primitive                       | Philote ID                             | Role                                             | Bound Inputs (high level)                                                                                 |
+| --- | ------------------------------- | -------------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| 1   | `<cs-source-file>`              | `4f6dbde9-52f2-4d3f-82a1-7b9f3a6c4d85` | File container                                   | `Elements = [usings, ns]`                                                                                 |
+| 2   | `<using-directive>`             | `8b9e0f19-5272-4c1f-90db-e1e6b0c5d3f2` | Imports StronglyTypedId, TimePeriod, Json        | 7 namespace imports                                                                                       |
+| 3   | `<namespace-block-declaration>` | `d3f0f6b9-1eae-4a8d-9a6f-5d8f2410c8a4` | Namespace wrapper                                | `NamespaceName = "ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson"; Body=[4]`                    |
+| 4   | `<class-declaration>`           | `5c1f93b8-6db5-4aaf-94ef-7b3d8b8a9d3a` | `PhiloteConverterFactory` : JsonConverterFactory | Contains cache field, `CanConvert` guard on generic args, `CreateConverter` placeholder returning default |
+
+Attribution:
+
+```text
+1. https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonconverterfactory
+2. Source file linked above
+```

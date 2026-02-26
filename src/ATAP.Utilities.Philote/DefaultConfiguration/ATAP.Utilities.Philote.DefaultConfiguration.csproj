@@ -17,9 +17,9 @@
   </PropertyGroup>
 
 <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.StronglyTypedIds.Interfaces\ATAP.Utilities.StronglyTypedIds.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
+  <ProjectReference Include="..\..\ATAP.Utilities.StronglyTypedId\Interfaces\ATAP.Utilities.StronglyTypedId.Interfaces.csproj" />
+  <ProjectReference Include="..\Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
+  <ProjectReference Include="..\Models\ATAP.Utilities.Philote.Models.csproj" />
   </ItemGroup>
 
 </Project>

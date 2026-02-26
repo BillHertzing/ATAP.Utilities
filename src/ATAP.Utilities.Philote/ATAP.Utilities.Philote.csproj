@@ -16,14 +16,11 @@
     <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
-<ItemGroup>
-    <PackageReference Include="TimePeriodLibrary.NET" />
-</ItemGroup>
-
   <ItemGroup>
-    <ProjectReference Include="..\Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.StronglyTypedId\Interfaces\ATAP.Utilities.StronglyTypedId.Interfaces.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.StronglyTypedId\Models\ATAP.Utilities.StronglyTypedId.Models.csproj" />
+    <ProjectReference Include="DefaultConfiguration\ATAP.Utilities.Philote.DefaultConfiguration.csproj" />
+    <ProjectReference Include="Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
+    <ProjectReference Include="Models\ATAP.Utilities.Philote.Models.csproj" />
+    <ProjectReference Include="JsonConverter.Shim.SystemTextJson\ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson.csproj" />
   </ItemGroup>
 
 </Project>

@@ -489,16 +489,8 @@
       "path": "./src/ATAP.Utilities.String"
     },
     {
-      "name": "ATAP.Utilities.StronglyTypedIds",
-      "path": "./src/ATAP.Utilities.StronglyTypedIds"
-    },
-    {
-      "name": "ATAP.Utilities.StronglyTypedIds.Interfaces",
-      "path": "./src/ATAP.Utilities.StronglyTypedIds.Interfaces"
-    },
-    {
-      "name": "ATAP.Utilities.StronglyTypedIds.JsonConverter.Shim.SystemTextJson",
-      "path": "./src/ATAP.Utilities.StronglyTypedIds.JsonConverter.Shim.SystemTextJson"
+      "name": "ATAP.Utilities.StronglyTypedId",
+      "path": "./src/ATAP.Utilities.StronglyTypedId"
     },
     {
       "name": "ATAP.Utilities.Testing",

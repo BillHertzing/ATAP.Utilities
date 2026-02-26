@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.StronglyTypedIDs.Interfaces\ATAP.Utilities.StronglyTypedIDs.Interfaces.csproj" />
+    <ProjectReference Include="..\Interfaces\ATAP.Utilities.StronglyTypedId.Interfaces.csproj" />
   </ItemGroup>
 
 

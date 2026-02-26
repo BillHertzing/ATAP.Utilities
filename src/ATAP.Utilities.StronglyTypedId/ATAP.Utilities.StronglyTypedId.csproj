@@ -16,6 +16,15 @@
     <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
+  <!-- Aggregator project: do not compile child sources, only reference their outputs -->
+  <PropertyGroup>
+    <EnableDefaultItems>false</EnableDefaultItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="**/*.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="Interfaces/ATAP.Utilities.StronglyTypedId.Interfaces.csproj" />
     <ProjectReference Include="Models/ATAP.Utilities.StronglyTypedId.Models.csproj" />

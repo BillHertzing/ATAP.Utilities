@@ -21,8 +21,8 @@
 </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.StronglyTypedIDs.Interfaces\ATAP.Utilities.StronglyTypedIDs.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.StronglyTypedId\Interfaces\ATAP.Utilities.StronglyTypedId.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Philote\Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
   </ItemGroup>
 

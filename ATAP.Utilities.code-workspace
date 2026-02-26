@@ -421,22 +421,6 @@
       "path": "./src/ATAP.Utilities.Philote"
     },
     {
-      "name": "ATAP.Utilities.Philote.Converters.Interfaces.Save",
-      "path": "./src/ATAP.Utilities.Philote.Converters.Interfaces.Save"
-    },
-    {
-      "name": "ATAP.Utilities.Philote.DefaultConfiguration",
-      "path": "./src/ATAP.Utilities.Philote.DefaultConfiguration"
-    },
-    {
-      "name": "ATAP.Utilities.Philote.Interfaces",
-      "path": "./src/ATAP.Utilities.Philote.Interfaces"
-    },
-    {
-      "name": "ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson",
-      "path": "./src/ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson"
-    },
-    {
       "name": "ATAP.Utilities.Powershell",
       "path": "./src/ATAP.Utilities.Powershell"
     },

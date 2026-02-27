@@ -90,22 +90,22 @@ Remove-Item -path (join-path $targetScriptDirectory $scriptTargetName) -ErrorAct
 New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $scriptTargetName) -Target (join-path $sourceRepoRoot $relativeScriptSourceDirectory $scriptSourceName )
 }
 
-## Filesystem junction for .Claude folder
+## Filesystem junction for .claude folder
 
-Claude and Claude Code will look up the filesystem to the repository root for folders named `.Claude`. Prompt instructions for Claude AI are stored in the file(s) found in this direcotry. To make the same prompt instructions available to every repository, the .Claude folder is linked, using a junction to the base of the repository. In each respoitory, run the following commands.
+Claude and Claude Code will look up the filesystem to the repository root for folders named `.claude`. Prompt instructions for Claude AI are stored in the file(s) found in this direcotry. To make the same prompt instructions available to every repository, the .claude folder is linked, using a junction to the base of the repository. In each respoitory, run the following commands.
 
 ```powershell
-# Ensure that .Claude is a folder, junction linked from the repo root to the target.
-# The target is GitHub/SharedVSCode/.Claude
-# The junction name is .Claude
-# if .Claude is present in the repo root, and is a junction to the .Claude subfolder under SharedVSCode folder, do nothing.
-# if .Claude is present in the repo root, and is a junction to anything other than the .Claude subfolder under SharedVSCode folder, delete and create it as a junction to the .Claude subfolder under SharedVSCode folder.
-# if .Claude is not present in the repo root create it as a junction to the .Claude subfolder under SharedVSCode folder
+# Ensure that .claude is a folder, junction linked from the repo root to the target.
+# The target is GitHub/SharedVSCode/.claude
+# The junction name is .claude
+# if .claude is present in the repo root, and is a junction to the .claude subfolder under SharedVSCode folder, do nothing.
+# if .claude is present in the repo root, and is a junction to anything other than the .claude subfolder under SharedVSCode folder, delete and create it as a junction to the .claude subfolder under SharedVSCode folder.
+# if .claude is not present in the repo root create it as a junction to the .claude subfolder under SharedVSCode folder
 $userName = 'whertzing'
-$targetFolder = Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $username 'GitHub', 'SharedVSCode', '.Claude'
-$junctionFolderName = '.Claude'
+$targetFolder = Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $username 'GitHub', 'SharedVSCode', '.claude'
+$junctionFolderName = '.claude'
 
-# Check if .Claude exists
+# Check if .claude exists
 if (Test-Path $junctionFolderName) {
     $item = Get-Item $junctionFolderName
     # Check if it's a junction/reparse point
@@ -118,23 +118,23 @@ if (Test-Path $junctionFolderName) {
             Write-PSFMessage -Level Verbose -Message "Removing existing junction with wrong target: $currentTarget"
             Remove-Item -Path $junctionFolderName -Force
             $null = New-Item -Path $junctionFolderName -ItemType Junction -Target $targetFolder
-            Write-PSFMessage -Level Important -Message "Created .Claude junction to: $targetFolder"
+            Write-PSFMessage -Level Important -Message "Created .claude junction to: $targetFolder"
         }
         else {
             # Correct junction already exists, do nothing
-            Write-PSFMessage -Level Verbose -Message ".Claude junction already points to correct target: $targetFolder"
+            Write-PSFMessage -Level Verbose -Message ".claude junction already points to correct target: $targetFolder"
         }
     } else {
         # It exists but is not a junction - remove and create junction
-        Write-PSFMessage -Level Warning -Message ".Claude exists but is not a junction. Removing and recreating as junction"
+        Write-PSFMessage -Level Warning -Message ".claude exists but is not a junction. Removing and recreating as junction"
         Remove-Item -Path $junctionFolderName -Recurse -Force
         $null = New-Item -Path $junctionFolderName -ItemType Junction -Target $targetFolder
-        Write-PSFMessage -Level Important -Message "Created .Claude junction to: $targetFolder"
+        Write-PSFMessage -Level Important -Message "Created .claude junction to: $targetFolder"
     }
 } else {
     # Doesn't exist, create it
     $null = New-Item -Path $junctionFolderName -ItemType Junction -Target $targetFolder
-    Write-PSFMessage -Level Important -Message "Created .Claude junction to: $targetFolder"
+    Write-PSFMessage -Level Important -Message "Created .claude junction to: $targetFolder"
 }
 
 ```
@@ -156,7 +156,7 @@ $null = New-Item -Path ./.github -ItemType Junction -Target $(Join-Path $global:
 
 ### User Settings symbolic link
 
-The `settings.json` file at (e.g) `C:\Users\<username>\AppData\Roaming\Code\User` holds the final fallback to all VSC settings. It applies to all repositories and workspaces. Every developer on a host needs to link to the organization's common settings. to do this,replace <username> with the actual user name in the following command and run it.
+The `settings.json` file at (e.g) `C:\Users\<username>\AppData\Roaming\Code\User` holds the final fallback to all VSC settings. It applies to all repositories and workspaces. Every developer on a host needs to link to the organization's common settings. to do this,replace the value of $username with the actual user name in the following command and run it.
 
 There are also language-specific snippets files stored on a per-user basis. These should be linked to the organization's common settings.
 
@@ -189,26 +189,72 @@ $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey'
 
 ### Repository symbolic links
 
-The organization has multiple GIT repositories. Every repository that uses Visual Studio Code as the IDE, needs a subdirectory `.vscode`, which contains these five files
+#### Junction for folder `.vscode`
+
+The organization has multiple GIT repositories. Every repository that uses Visual Studio Code as the IDE, needs a subdirectory `.vscode`, which contains these files and folders
 
 ```text
-Launch.json
-tasks.json
-settings.json
-cspell.json
-extensions.json
-iis.json (optional)
+repo-root/
+├── .vscode/
+    ├── dictionaries/ # Used by the 'CSpell' VSC extension
+    ├── solution-explorer/ # Used by the 'Solution Explorer' VSC extension
+    ├── cspell.json
+    ├── extensions.json
+    ├── iisexpress.json
+    ├── launch.json
+    ├── mcp.json
+    ├── PSScriptAnalyzerSettings.psd1
+    ├── tasks.json
 ```
 
 This directory and these files need to be present at the root of each repository, and need to be source-controlled and versioned. Having multiple independent copies is prone to errors and misconfigurations. Therefore, we have created a repository named `SharedVSCode`, and placed the source-of-truth copies of these files in this git-versioned repository.
 
-We then create symbolic links from the files in this repository to symblinks that reside in the .vscode directory under every other repository.
-
 In every new repository, after running `git init`, run these commands (as an administrator) in the root folder of the repository:
+We create a junction in each repository that links to the `.vscode` folder in `SharedVSCode`.
+
+ToDo: replace with a BuildTooling.Powershell script for New-Junction
 
 ```Powershell
+  if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
+  }
   # use a directory junction
   $null = New-Item -Path ./.vscode -ItemType Junction -Target $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] 'whertzing' 'GitHub', 'SharedVSCode', '.vscode')
+```
+
+#### Junction for folder `.github` and `.claude`
+
+The organization has multiple GIT repositories. Every repository that uses Visual Studio Code as the IDE, needs a folders `.github` and `.claude`, which contains these files and folders.
+
+```text
+repo-root/
+├── .github/
+│   ├── copilot-instructions.md ← Single source of truth for global instructions
+│   └── instructions/
+│       ├── Powershell.instructions.md
+│       ├── CSharp.instructions.md
+│       └── etc...
+└── .claude/
+    └── rules/
+        ├── python.md ← paths: ["**/*.py"], body: @../../.github/instructions/python.instructions.md
+        └── typescript.md ← paths: ["**/*.ts","**/*.tsx"], body: @../../.github/instructions/typescript.instructions.md
+        └── etc...
+```
+
+of particular note are the AI Agent instruction files, for both Copilot and for Claude Code
+there is a frontmatter format mismatch between Copilot and Claude Code. For proper path-scoping in Claude Code, we need separate .claude/rules/ files with paths frontmatter and then @import the shared content body from .github/instructions/ to avoid duplication.
+​
+In every new repository, after running `git init`, run these commands (as an administrator) in the root folder of the repository:
+We create a junction in each repository that links to the `.github` folder in `SharedVSCode`.
+
+ToDo: replace with a BuildTooling.Powershell script for New-Junction
+
+```Powershell
+  if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
+  }
+  # use a directory junction
+  $null = New-Item -Path ./.github -ItemType Junction -Target $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] 'whertzing' 'GitHub', 'SharedVSCode', '.github')
 ```
 
 ## Symbolic Links for Prettier formatting rules, CSpell, eslint rules, building Powershell; modules (Invoke-Build) and Mocha
@@ -240,7 +286,6 @@ if (!${get-command New-SymbolicLink}) {
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.eslintrc.js"  -symbolicLinkPath ".\.eslintrc.js" -force
   # this command only for repositories that use mocha for testing JavaScript
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.mocharc.yaml"  -symbolicLinkPath ".\.mocharc.yaml" -force
-
 ```
 
 ### additional cSpell dictionaries
@@ -533,6 +578,10 @@ Place these symbolic links in the .vscode subdirectory of any project that build
 Databases are migrated using FLyway from Red Hat. Flyway migrations require a flyway.toml file. There is a common shared flyway.toml file which should be symlinked. This should be placed in the Database/Flyway folder of the project.
 
 ```Powershell
+  # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
+if (!${get-command New-SymbolicLink}) {
+  . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\New-SymbolicLink.ps1"
+}
 # Ensure current directory ends in Database\Flyway (cross-platform)
 $expectedSuffix = Join-Path 'Database' 'Flyway'
 $currentPath = (Get-Location).Path
@@ -672,7 +721,7 @@ In Ubuntu Powershell terminal
 ```Powershell
 cd /srv/openmetadata-docker
 docker compose ps
-````
+```
 
 ### create a Windows Task Scheduler job that starts docker user login
 
@@ -688,3 +737,4 @@ In a powershell prompt, run the following
 Add-LocalGroupMember -Group "docker-users" -Member $env:USERNAME
 
 ```
+````

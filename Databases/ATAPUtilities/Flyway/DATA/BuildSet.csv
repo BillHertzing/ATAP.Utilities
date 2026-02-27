@@ -1,0 +1,4 @@
+ID,Name,Description
+1,Database Schema Management,BuildSet for managing database schema generation and migrations
+2,Code Generation Framework,BuildSet for C# code generation from templates
+3,ATAP Utilities Core,Core utilities and services for ATAP ecosystem

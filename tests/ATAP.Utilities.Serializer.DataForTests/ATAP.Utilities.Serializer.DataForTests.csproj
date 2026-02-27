@@ -27,7 +27,7 @@
 
   <!-- Project for StronglyTypedId -->
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedIds\ATAP.Utilities.StronglyTypedIds.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedIDs.Models\ATAP.Utilities.StronglyTypedIds.csproj" />
   </ItemGroup>
 
   <!-- Project for StronglyTypedId JsonConverters for SystemTextJson serializer library -->

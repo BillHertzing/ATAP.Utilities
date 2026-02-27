@@ -456,9 +456,26 @@ END
 
             # These variable names must match those used in the SQL script:
             # $(loginPassword), $(DatabaseName), $(DatabasePath), $(LoginName)
+
+            # Determine LoginName and loginPassword based on authentication method
+            $loginName = ''
+            $loginPassword = ''
+            if ($CredentialsKey) {
+              # Retrieve credentials from vault
+              if (-not (Get-Command -Name 'Get-BitWardenSecret' -CommandType Function -ErrorAction SilentlyContinue)) {
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message 'Get-BitWardenSecret function not found. Loading from known location.'
+                . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\Get-BitWardenSecret.ps1'
+              }
+              $secret = Get-BitWardenSecret -SecretName $CredentialsKey
+              $loginName = $secret.UserName
+              $loginPassword = $secret.Password
+            }
+
             $invokeParams.Variable = @{
               DatabaseName       = $DatabaseName
               DatabasePath       = $DatabasePath
+              LoginName          = $loginName
+              loginPassword      = $loginPassword
               DBExists           = $dbExists
               GrantDatabaseOwner = $GrantDatabaseOwner
               GrantBulkAdmin     = $GrantBulkAdmin

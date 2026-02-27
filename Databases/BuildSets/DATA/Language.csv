@@ -1,0 +1,6 @@
+ID,Name,Description
+1,SQL,Structured Query Language - database query and management language
+2,CSharp,C# programming language for .NET applications
+3,PowerShell,PowerShell scripting and automation language
+4,MSBuild,Microsoft Build Engine project files and targets
+5,Ansible,Ansible YAML playbooks and roles for infrastructure automation

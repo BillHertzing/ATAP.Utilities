@@ -421,22 +421,6 @@
       "path": "./src/ATAP.Utilities.Philote"
     },
     {
-      "name": "ATAP.Utilities.Philote.Converters.Interfaces.Save",
-      "path": "./src/ATAP.Utilities.Philote.Converters.Interfaces.Save"
-    },
-    {
-      "name": "ATAP.Utilities.Philote.DefaultConfiguration",
-      "path": "./src/ATAP.Utilities.Philote.DefaultConfiguration"
-    },
-    {
-      "name": "ATAP.Utilities.Philote.Interfaces",
-      "path": "./src/ATAP.Utilities.Philote.Interfaces"
-    },
-    {
-      "name": "ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson",
-      "path": "./src/ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson"
-    },
-    {
       "name": "ATAP.Utilities.Powershell",
       "path": "./src/ATAP.Utilities.Powershell"
     },
@@ -489,16 +473,8 @@
       "path": "./src/ATAP.Utilities.String"
     },
     {
-      "name": "ATAP.Utilities.StronglyTypedIds",
-      "path": "./src/ATAP.Utilities.StronglyTypedIds"
-    },
-    {
-      "name": "ATAP.Utilities.StronglyTypedIds.Interfaces",
-      "path": "./src/ATAP.Utilities.StronglyTypedIds.Interfaces"
-    },
-    {
-      "name": "ATAP.Utilities.StronglyTypedIds.JsonConverter.Shim.SystemTextJson",
-      "path": "./src/ATAP.Utilities.StronglyTypedIds.JsonConverter.Shim.SystemTextJson"
+      "name": "ATAP.Utilities.StronglyTypedId",
+      "path": "./src/ATAP.Utilities.StronglyTypedId"
     },
     {
       "name": "ATAP.Utilities.Testing",

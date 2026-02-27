@@ -578,6 +578,10 @@ Place these symbolic links in the .vscode subdirectory of any project that build
 Databases are migrated using FLyway from Red Hat. Flyway migrations require a flyway.toml file. There is a common shared flyway.toml file which should be symlinked. This should be placed in the Database/Flyway folder of the project.
 
 ```Powershell
+  # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
+if (!${get-command New-SymbolicLink}) {
+  . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\New-SymbolicLink.ps1"
+}
 # Ensure current directory ends in Database\Flyway (cross-platform)
 $expectedSuffix = Join-Path 'Database' 'Flyway'
 $currentPath = (Get-Location).Path

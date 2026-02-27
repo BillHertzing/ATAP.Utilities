@@ -91,7 +91,6 @@ https://github.com/whertzing/ATAP.Utilities
     [string]$CredentialsKey,
 
     [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
-    [ValidateNotNull()]
     [Microsoft.Data.SqlClient.SqlConnection]$SqlConnection,
     # endregion Database connection parameters
 
@@ -338,8 +337,9 @@ https://github.com/whertzing/ATAP.Utilities
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Calling DatabaseProvisioning with SqlConnection object"
 
       if ($PSCmdlet.ShouldProcess($DatabaseName, 'Provision database')) {
+        $provisioningResult = $null
         try {
-          DatabaseProvisioning @provisioningParams
+          $provisioningResult = DatabaseProvisioning @provisioningParams
         }
         finally {
           # Close the connection after provisioning if we opened it
@@ -348,6 +348,17 @@ https://github.com/whertzing/ATAP.Utilities
             $sqlConnection.Close()
             $sqlConnection.Dispose()
           }
+        }
+
+        # Check provisioning result before continuing to Flyway
+        if (-not $provisioningResult -or -not $provisioningResult.Success) {
+          $errorMessage = "Database provisioning failed. Aborting before Flyway migrations."
+          if ($provisioningResult -and $provisioningResult.Errors) {
+            $errorMessage += " Errors: $($provisioningResult.Errors -join '; ')"
+          }
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+          $result.Errors += $errorMessage
+          throw $errorMessage
         }
 
         # Run Flyway migrations

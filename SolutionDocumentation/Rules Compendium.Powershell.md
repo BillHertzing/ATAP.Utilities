@@ -30,6 +30,8 @@ Rule Primitives are the atomic building blocks from which a Rule is constructed.
 
 ### Complete Powershell Cmdlet Rule Primitive
 
+**Philote ID:** `"e1a2b3c4-d5e6-4f78-9012-a3b4c5d6e7f8"`
+
 Description: This primitive holds an entire Powershell cmdlet
 
 Body: A text block that contains a complete powershell cmdlet
@@ -41,6 +43,8 @@ Output: The cmdlet outputs are the primitives outputs.
 Processing: The primitive is invoked in a Powershell engine context, or, it is rendered into a standalone Powershell file, or it is rendered into a larger powershell container.
 
 ### Composed Powershell Cmdlet Rule Primitive
+
+**Philote ID:** `"f2b3c4d5-e6f7-4089-a123-b4c5d6e7f8a9"`
 
 Description: This primitive defines a container into which Powershell cmdlet sections can be inserted. The Backus–Naur Form (BNF) of the Composed Powershell Cmdlet is as follows:
 

@@ -33,7 +33,7 @@ IF OBJECT_ID(N'dbo.RuleSet',                   N'U') IS NOT NULL DROP TABLE dbo.
 GO
 IF OBJECT_ID(N'dbo.RulePrimitiveComposition',  N'U') IS NOT NULL DROP TABLE dbo.RulePrimitiveComposition;
 GO
-IF OBJECT_ID(N'dbo.Rule',                      N'U') IS NOT NULL DROP TABLE dbo.Rule;
+IF OBJECT_ID(N'dbo.[Rule]',                    N'U') IS NOT NULL DROP TABLE dbo.[Rule];
 GO
 IF OBJECT_ID(N'dbo.RulePrimitiveInput',        N'U') IS NOT NULL DROP TABLE dbo.RulePrimitiveInput;
 GO
@@ -156,7 +156,7 @@ GO
 -- Data loaded from CSV via V00.01.000020__Load_ATAPUtilities_Data_From_BCP.sql
 -- ===========================================================
 
-CREATE TABLE dbo.Rule (
+CREATE TABLE dbo.[Rule] (
     PhiloteId               UNIQUEIDENTIFIER NOT NULL,
     PrimitiveLanguageKindId TINYINT          NOT NULL,
     Name                    NVARCHAR(200)    NOT NULL,
@@ -180,7 +180,7 @@ CREATE TABLE dbo.RulePrimitiveComposition (
     BoundInputsJson            NVARCHAR(MAX)        NULL,
     Notes                      NVARCHAR(MAX)        NULL,
     CONSTRAINT PK_RulePrimitiveComposition       PRIMARY KEY CLUSTERED (RulePrimitiveCompositionId),
-    CONSTRAINT FK_RulePC_Rule                    FOREIGN KEY (RulePhiloteId)        REFERENCES dbo.Rule         (PhiloteId),
+    CONSTRAINT FK_RulePC_Rule                    FOREIGN KEY (RulePhiloteId)        REFERENCES dbo.[Rule]       (PhiloteId),
     CONSTRAINT FK_RulePC_Primitive               FOREIGN KEY (PrimitivePhiloteId)   REFERENCES dbo.RulePrimitive (PhiloteId),
     CONSTRAINT UQ_RulePC_Rule_Key                UNIQUE (RulePhiloteId, SequenceKey)
 );
@@ -209,7 +209,7 @@ CREATE TABLE dbo.RuleSetMember (
     Notes            NVARCHAR(MAX)        NULL,
     CONSTRAINT PK_RuleSetMember              PRIMARY KEY CLUSTERED (RuleSetMemberId),
     CONSTRAINT FK_RuleSetMember_RuleSet      FOREIGN KEY (RuleSetPhiloteId)  REFERENCES dbo.RuleSet (PhiloteId),
-    CONSTRAINT FK_RuleSetMember_Rule         FOREIGN KEY (RulePhiloteId)     REFERENCES dbo.Rule    (PhiloteId),
+    CONSTRAINT FK_RuleSetMember_Rule         FOREIGN KEY (RulePhiloteId)     REFERENCES dbo.[Rule]  (PhiloteId),
     CONSTRAINT UQ_RuleSetMember_Set_Seq      UNIQUE (RuleSetPhiloteId, SequenceNumber)
 );
 GO
@@ -227,7 +227,7 @@ CREATE TABLE dbo.RuleInstantiation (
     Notes           NVARCHAR(MAX)        NULL,
     CONSTRAINT PK_RuleInstantiation          PRIMARY KEY CLUSTERED (PhiloteId),
     CONSTRAINT FK_RuleInstantiation_Philote  FOREIGN KEY (PhiloteId)     REFERENCES dbo.Philote (PhiloteId),
-    CONSTRAINT FK_RuleInstantiation_Rule     FOREIGN KEY (RulePhiloteId) REFERENCES dbo.Rule    (PhiloteId)
+    CONSTRAINT FK_RuleInstantiation_Rule     FOREIGN KEY (RulePhiloteId) REFERENCES dbo.[Rule]  (PhiloteId)
 );
 GO
 

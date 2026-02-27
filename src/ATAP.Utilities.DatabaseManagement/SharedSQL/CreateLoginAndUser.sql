@@ -2,8 +2,7 @@
 Purpose: Ensure server login + database user with least privileges.
 Variables expected (sqlcmd / Flyway placeholders substituted before execution):
 $(DatabaseName) - database name
-$(UseNamedLogin) - server login / db user name (SQL or Windows domain\user)
-$(LoginName) - server login / db user name (SQL or Windows domain\user)
+$(LoginName) - server login / db user name (SQL or Windows domain\user). If empty, uses current session login (ORIGINAL_LOGIN()).
 $(loginPassword) - strong password for SQL login (ignored for Windows logins or if login already exists)
 $(GrantDatabaseOwner) - optional 1/0 elevate to db_owner (default 0)
 $(GrantBulkAdmin) - optional 1/0 add to server role bulkadmin (default 0; discouraged in prod)
@@ -14,13 +13,14 @@ Idempotent.
 Uses ALTER ROLE (not deprecated sp_addrolemember).
 
 Uses THROW and QUOTENAME; limits dynamic SQL to identifier switching and executes with sp_executesql.
+
+If LoginName is provided (not empty), it will be used (Windows login if contains '\' or '@', SQL login otherwise).
+If LoginName is empty, the current session login (ORIGINAL_LOGIN()) will be used and no login creation will be attempted.
 */
 SET
 NOCOUNT ON;
 
 DECLARE @DatabaseName SYSNAME = N'$(DatabaseName)';
-
-DECLARE @UseNamedLogin bit = TRY_CAST('$(UseNamedLogin)' AS bit);
 
 DECLARE @LoginName SYSNAME = N'$(LoginName)';
 
@@ -38,8 +38,19 @@ IF @GrantBulkAdmin IS NULL
 SET
   @GrantBulkAdmin = 0;
 
--- SELECT [Info] = N'UseNamedLogin=' + CONVERT(nvarchar(1), @UseNamedLogin);
--- RAISERROR(N'UseNamedLogin=%d', 10, 1, @UseNamedLogin) WITH NOWAIT;
+-- Resolve LoginName: if not provided (empty string), use current session login
+DECLARE @LoginWasProvided bit = 0;
+IF @LoginName IS NULL OR LTRIM(RTRIM(@LoginName)) = N''
+BEGIN
+  SET @LoginName = ORIGINAL_LOGIN();
+  SET @LoginWasProvided = 0;
+  PRINT N'LoginName not provided; using current session login: ' + @LoginName;
+END
+ELSE
+BEGIN
+  SET @LoginWasProvided = 1;
+  PRINT N'Using provided LoginName: ' + @LoginName;
+END
 
 -- Validate DatabaseName IsNotNullOrEmpty
 IF @DatabaseName IS NULL
@@ -56,18 +67,16 @@ THROW 50002,
 1;
 END
 
--- Login / User provisioning logic adjusted for @UseNamedLogin semantics
--- Cases:
---   @UseNamedLogin = 1 and @LoginName contains '\\' or '@'  => Windows (domain / UPN) login, ignore @Pwd
---   @UseNamedLogin = 1 and @LoginName contains neither        => SQL login, require @Pwd
---   @UseNamedLogin = 0                                       => Use ORIGINAL_LOGIN(), ignore passed @LoginName/@Pwd
+-- Login / User provisioning logic:
+-- After resolving @LoginName (either from parameter or ORIGINAL_LOGIN()):
+--   - If @LoginName contains '\' or '@' => Windows (domain / UPN) login, ignore @Pwd
+--   - Otherwise => SQL login, require @Pwd if creating new login
 
-DECLARE @IsWindowsStyle bit =
-  CASE WHEN CHARINDEX(N'\', @LoginName) > 0 OR CHARINDEX(N'@', @LoginName) > 0 THEN 1 ELSE 0 END;
-
-IF @UseNamedLogin = 1 BEGIN
-  -- Basic presence validation
-  IF @LoginName IS NULL  OR LTRIM(RTRIM(@LoginName)) = N'' THROW 50000,  N'LoginName variable not supplied when @UseNamedLogin = 1.',  1;
+-- Only attempt login creation if LoginName was explicitly provided
+IF @LoginWasProvided = 1 BEGIN
+  -- Named login path
+  DECLARE @IsWindowsStyle bit =
+    CASE WHEN CHARINDEX(N'\', @LoginName) > 0 OR CHARINDEX(N'@', @LoginName) > 0 THEN 1 ELSE 0 END;
 
   DECLARE @ExistingType SYSNAME = (
     SELECT
@@ -89,7 +98,7 @@ IF @UseNamedLogin = 1 BEGIN
   END ELSE BEGIN
     -- SQL Login processing here
     -- SQL login must have a password
-    IF @Pwd IS NULL  OR LTRIM(RTRIM(@Pwd)) = N'' THROW 50011,  N'Missing password for SQL login creation when @UseNamedLogin = 1.',  1;
+    IF @Pwd IS NULL  OR LTRIM(RTRIM(@Pwd)) = N'' THROW 50011,  N'Missing password for SQL login creation.',  1;
 
     IF @ExistingType IS NULL BEGIN
       -- This is a new SQL login; create it
@@ -118,14 +127,10 @@ IF @UseNamedLogin = 1 BEGIN
         EXEC  (@SetDefault2);
       END
   END
-END ELSE BEGIN
-  -- @UseNamedLogin = 0 : Use current session login; do not attempt creation
-  DECLARE @SessionLogin SYSNAME = ORIGINAL_LOGIN();
-  SET    @LoginName = @SessionLogin;
-  PRINT (    N'@UseNamedLogin = 0; using current session login ' + @LoginName + N'.'  );
-
 END;
 
+-- At this point, @LoginName is set (either provided or current session)
+-- Continue with database-level user provisioning and role grants
 
 -- Optional: Add to server role bulkadmin (discouraged unless required)
 IF @GrantBulkAdmin = 1 AND NOT EXISTS (

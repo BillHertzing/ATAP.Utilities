@@ -1,0 +1,7 @@
+PhiloteID,LanguageID,SymbolicName,Description,BNFDefinition
+a3f2e1d0-1b2c-4a5b-8c9d-0e1f2a3b4c5d,1,<sql-script-file>,Top-level container for a .sql file,"<sql-script-file> ::= <script-element-list>"
+b4e3f2c1-2c3d-4b6c-9d0e-1f2a3b4c5d6e,1,<batch>,A batch is a sequence of one or more T-SQL statements sent to SQL Server as a unit,"<batch> ::= <batch-statement-list>"
+c5d4e3b2-3d4e-4c7d-ae1f-2a3b4c5d6e7f,1,<go-separator>,The GO command is a batch separator recognized by SSMS and sqlcmd,"<go-separator> ::= ""GO"" <go-count>? <new-line>"
+d6c5d4a3-4e5f-4d8e-bf20-3b4c5d6e7f80,1,<use-statement>,The USE statement changes the current database context,"<use-statement> ::= ""USE"" <ws> <database-name> <statement-terminator>?"
+e7b6c5f4-5f60-4e9f-c031-4c5d6e7f8091,1,<set-option-statement>,SET statement to configure session options,"<set-option-statement> ::= ""SET"" <ws> <option-name> <ws> <option-value>"
+4f6dbde9-52f2-4d3f-82a1-7b9f3a6c4d85,2,<cs-source-file>,Top-level container for a .cs file,"<cs-source-file> ::= <file-element-list>?"

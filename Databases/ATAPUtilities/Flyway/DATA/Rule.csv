@@ -1,0 +1,6 @@
+Id,PhiloteID,PrimitiveID,ParentID,PeerSortOrder,SymbolicName,Name,Kind,Validity,DisplayOrder,DisplayAction,InputAction,Value,Dirty,IsActive
+1,,,,,Rule_UseDatabase,Use ATAPUtilities Database,SQL Statement,2026-01-01,1,Display,Input,ATAPUtilities,0,1
+2,,,,,Rule_SetAnsiNulls,Set ANSI_NULLS ON,SQL Statement,2026-01-01,2,Display,Input,ON,0,1
+3,,,,,Rule_CreateTable,Create Table Template,SQL Statement,2026-01-01,3,Display,Input,,0,1
+4,,,1,1,Rule_CreateTable_Columns,Define Table Columns,SQL Statement,2026-01-01,1,Display,Input,,0,1
+5,,,1,2,Rule_CreateTable_Constraints,Define Table Constraints,SQL Statement,2026-01-01,2,Display,Input,,0,1

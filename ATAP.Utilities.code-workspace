@@ -321,22 +321,6 @@
       "path": "./src/ATAP.Utilities.MessageQueue"
     },
     {
-      "name": "ATAP.Utilities.MessageQueue.Extensions",
-      "path": "./src/ATAP.Utilities.MessageQueue.Extensions"
-    },
-    {
-      "name": "ATAP.Utilities.MessageQueue.Interfaces",
-      "path": "./src/ATAP.Utilities.MessageQueue.Interfaces"
-    },
-    {
-      "name": "ATAP.Utilities.MessageQueue.Shim",
-      "path": "./src/ATAP.Utilities.MessageQueue.Shim"
-    },
-    {
-      "name": "ATAP.Utilities.MessageQueue.StringConstants",
-      "path": "./src/ATAP.Utilities.MessageQueue.StringConstants"
-    },
-    {
       "name": "ATAP.Utilities.Neo4j.Powershell",
       "path": "./src/ATAP.Utilities.Neo4j.Powershell"
     },

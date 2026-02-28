@@ -372,17 +372,19 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.VoiceAttack"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.MessageQueue", "src\ATAP.Utilities.MessageQueue\ATAP.Utilities.MessageQueue.csproj", "{5BAEB429-9756-479E-934F-3F039529C650}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.MessageQueue.Extensions", "src\ATAP.Utilities.MessageQueue.Extensions\ATAP.Utilities.MessageQueue.Extensions.csproj", "{A542B655-B89C-4A07-8E5C-80E3178B9146}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.MessageQueue.Model", "src\ATAP.Utilities.MessageQueue\Model\ATAP.Utilities.MessageQueue.csproj", "{5BAEB429-9756-479E-934F-3F039529C651}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.MessageQueue.Interfaces", "src\ATAP.Utilities.MessageQueue.Interfaces\ATAP.Utilities.MessageQueue.Interfaces.csproj", "{65379E05-42E0-4B1B-A169-2CABFC85174A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.MessageQueue.Extensions", "src\ATAP.Utilities.MessageQueue\Extensions\ATAP.Utilities.MessageQueue.Extensions.csproj", "{A542B655-B89C-4A07-8E5C-80E3178B9146}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.MessageQueue.StringConstants", "src\ATAP.Utilities.MessageQueue.StringConstants\ATAP.Utilities.MessageQueue.StringConstants.csproj", "{FE6BDC34-A9DF-4832-92CE-F21A8BA02946}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.MessageQueue.Interfaces", "src\ATAP.Utilities.MessageQueue\Interfaces\ATAP.Utilities.MessageQueue.Interfaces.csproj", "{65379E05-42E0-4B1B-A169-2CABFC85174A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.MessageQueue.Shim", "src\ATAP.Utilities.MessageQueue.Shim\ATAP.Utilities.MessageQueue.Shim.csproj", "{F8B3E9A1-0000-0000-0000-000000000001}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.MessageQueue.StringConstants", "src\ATAP.Utilities.MessageQueue\StringConstants\ATAP.Utilities.MessageQueue.StringConstants.csproj", "{FE6BDC34-A9DF-4832-92CE-F21A8BA02946}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.MessageQueue.Shim.RabbitMQ", "src\ATAP.Utilities.MessageQueue.Shim\RabbitMQ\ATAP.Utilities.MessageQueue.Shim.RabbitMQ.csproj", "{11445C5A-6935-44E9-A386-99C5AAE416E3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.MessageQueue.Shim", "src\ATAP.Utilities.MessageQueue\Shim\ATAP.Utilities.MessageQueue.Shim.csproj", "{F8B3E9A1-0000-0000-0000-000000000001}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.MessageQueue.Shim.TPL", "src\ATAP.Utilities.MessageQueue.Shim\TPL\ATAP.Utilities.MessageQueue.Shim.TPL.csproj", "{5691F95A-7FEB-4364-A692-4ED23CA2B312}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.MessageQueue.Shim.RabbitMQ", "src\ATAP.Utilities.MessageQueue\Shim\RabbitMQ\ATAP.Utilities.MessageQueue.Shim.RabbitMQ.csproj", "{11445C5A-6935-44E9-A386-99C5AAE416E3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.MessageQueue.Shim.TPL", "src\ATAP.Utilities.MessageQueue\Shim\TPL\ATAP.Utilities.MessageQueue.Shim.TPL.csproj", "{5691F95A-7FEB-4364-A692-4ED23CA2B312}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Services.Timers.UnitTests", "tests\ATAP.Services.Timers.UnitTests\ATAP.Services.Timers.UnitTests.csproj", "{4498F8AB-DE01-4429-8E3D-B0A7B4BE8A21}"
 EndProject

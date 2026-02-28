@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
@@ -14,17 +15,14 @@
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
     <PackageLabel>Alpha</PackageLabel>
-    <!-- Facade/Aggregator project - no source files to compile -->
-    <EnableDefaultItems>false</EnableDefaultItems>
   </PropertyGroup>
 
+  <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
   <ItemGroup>
-    <!-- Project references to all child projects -->
-    <ProjectReference Include="Model\ATAP.Utilities.MessageQueue.csproj" />
-    <ProjectReference Include="Extensions\ATAP.Utilities.MessageQueue.Extensions.csproj" />
-    <ProjectReference Include="Interfaces\ATAP.Utilities.MessageQueue.Interfaces.csproj" />
-    <ProjectReference Include="Shim\ATAP.Utilities.MessageQueue.Shim.csproj" />
-    <ProjectReference Include="StringConstants\ATAP.Utilities.MessageQueue.StringConstants.csproj" />
+    <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
+    <PackageReference Include="MethodBoundaryAspect.Fody" />
+    <!-- Project Reference to the ETW attribute and log provider -->
+    <ProjectReference Include="..\..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
 
 </Project>

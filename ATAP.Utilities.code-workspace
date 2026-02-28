@@ -41,8 +41,8 @@
       "path": "./src/ATAP.Console.HelloWorld"
     },
     {
-      "name": "ATAP.IAC.Ansible",
-      "path": "./src/ATAP.IAC.Ansible"
+      "name": "ATAP.Console.QueryChatGPT.Powershell",
+      "path": "./src/ATAP.Console.QueryChatGPT.Powershell"
     },
     {
       "name": "ATAP.Service.Service01",
@@ -149,6 +149,10 @@
       "path": "./src/ATAP.Utilities.Collection.Extensions"
     },
     {
+      "name": "ATAP.Utilities.ComputerInventory",
+      "path": "./src/ATAP.Utilities.ComputerInventory"
+    },
+    {
       "name": "ATAP.Utilities.ComputerInventory.Configuration",
       "path": "./src/ATAP.Utilities.ComputerInventory.Configuration"
     },
@@ -161,24 +165,8 @@
       "path": "./src/ATAP.Utilities.ComputerInventory.Extensions"
     },
     {
-      "name": "ATAP.Utilities.ComputerInventory.Hardware.Enumerations",
-      "path": "./src/ATAP.Utilities.ComputerInventory.Hardware.Enumerations"
-    },
-    {
-      "name": "ATAP.Utilities.ComputerInventory.Hardware.Extensions",
-      "path": "./src/ATAP.Utilities.ComputerInventory.Hardware.Extensions"
-    },
-    {
-      "name": "ATAP.Utilities.ComputerInventory.Hardware.Interfaces",
-      "path": "./src/ATAP.Utilities.ComputerInventory.Hardware.Interfaces"
-    },
-    {
-      "name": "ATAP.Utilities.ComputerInventory.Hardware.Models",
-      "path": "./src/ATAP.Utilities.ComputerInventory.Hardware.Models"
-    },
-    {
-      "name": "ATAP.Utilities.ComputerInventory.Hardware.StringConstants",
-      "path": "./src/ATAP.Utilities.ComputerInventory.Hardware.StringConstants"
+      "name": "ATAP.Utilities.ComputerInventory.Hardware",
+      "path": "./src/ATAP.Utilities.ComputerInventory.Hardware"
     },
     {
       "name": "ATAP.Utilities.ComputerInventory.Interfaces",
@@ -189,40 +177,12 @@
       "path": "./src/ATAP.Utilities.ComputerInventory.Models"
     },
     {
-      "name": "ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations",
-      "path": "./src/ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations"
+      "name": "ATAP.Utilities.ComputerInventory.ProcessInfo",
+      "path": "./src/ATAP.Utilities.ComputerInventory.ProcessInfo"
     },
     {
-      "name": "ATAP.Utilities.ComputerInventory.ProcessInfo.Extensions",
-      "path": "./src/ATAP.Utilities.ComputerInventory.ProcessInfo.Extensions"
-    },
-    {
-      "name": "ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces",
-      "path": "./src/ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces"
-    },
-    {
-      "name": "ATAP.Utilities.ComputerInventory.ProcessInfo.Models",
-      "path": "./src/ATAP.Utilities.ComputerInventory.ProcessInfo.Models"
-    },
-    {
-      "name": "ATAP.Utilities.ComputerInventory.ProcessInfo.StringConstants",
-      "path": "./src/ATAP.Utilities.ComputerInventory.ProcessInfo.StringConstants"
-    },
-    {
-      "name": "ATAP.Utilities.ComputerInventory.Software.DefaultConfiguration",
-      "path": "./src/ATAP.Utilities.ComputerInventory.Software.DefaultConfiguration"
-    },
-    {
-      "name": "ATAP.Utilities.ComputerInventory.Software.Enumerations",
-      "path": "./src/ATAP.Utilities.ComputerInventory.Software.Enumerations"
-    },
-    {
-      "name": "ATAP.Utilities.ComputerInventory.Software.Interfaces",
-      "path": "./src/ATAP.Utilities.ComputerInventory.Software.Interfaces"
-    },
-    {
-      "name": "ATAP.Utilities.ComputerInventory.Software.Models",
-      "path": "./src/ATAP.Utilities.ComputerInventory.Software.Models"
+      "name": "ATAP.Utilities.ComputerInventory.Software",
+      "path": "./src/ATAP.Utilities.ComputerInventory.Software"
     },
     {
       "name": "ATAP.Utilities.ConcurrentObservableCollections",
@@ -233,36 +193,12 @@
       "path": "./src/ATAP.Utilities.Configuration.Extensions"
     },
     {
-      "name": "ATAP.Utilities.CryptoCoin.Enumerations",
-      "path": "./src/ATAP.Utilities.CryptoCoin.Enumerations"
+      "name": "ATAP.Utilities.CryptoCoin",
+      "path": "./src/ATAP.Utilities.CryptoCoin"
     },
     {
-      "name": "ATAP.Utilities.CryptoCoin.Extensions",
-      "path": "./src/ATAP.Utilities.CryptoCoin.Extensions"
-    },
-    {
-      "name": "ATAP.Utilities.CryptoCoin.Interfaces",
-      "path": "./src/ATAP.Utilities.CryptoCoin.Interfaces"
-    },
-    {
-      "name": "ATAP.Utilities.CryptoCoin.Models",
-      "path": "./src/ATAP.Utilities.CryptoCoin.Models"
-    },
-    {
-      "name": "ATAP.Utilities.CryptoMiner.Enumerations",
-      "path": "./src/ATAP.Utilities.CryptoMiner.Enumerations"
-    },
-    {
-      "name": "ATAP.Utilities.CryptoMiner.Extensions",
-      "path": "./src/ATAP.Utilities.CryptoMiner.Extensions"
-    },
-    {
-      "name": "ATAP.Utilities.CryptoMiner.Interfaces",
-      "path": "./src/ATAP.Utilities.CryptoMiner.Interfaces"
-    },
-    {
-      "name": "ATAP.Utilities.CryptoMiner.Models",
-      "path": "./src/ATAP.Utilities.CryptoMiner.Models"
+      "name": "ATAP.Utilities.CryptoMiner",
+      "path": "./src/ATAP.Utilities.CryptoMiner"
     },
     {
       "name": "ATAP.Utilities.DatabaseManagement",
@@ -293,6 +229,10 @@
       "path": "./src/ATAP.Utilities.FileIO.PowerShell"
     },
     {
+      "name": "ATAP.Utilities.FinancialAPI",
+      "path": "./src/ATAP.Utilities.FinancialAPI"
+    },
+    {
       "name": "ATAP.Utilities.GenerateProgram",
       "path": "./src/ATAP.Utilities.GenerateProgram"
     },
@@ -309,6 +249,10 @@
       "path": "./src/ATAP.Utilities.GenericHost.Interfaces"
     },
     {
+      "name": "ATAP.Utilities.Gmail",
+      "path": "./src/ATAP.Utilities.Gmail"
+    },
+    {
       "name": "ATAP.Utilities.GraphDataStructures",
       "path": "./src/ATAP.Utilities.GraphDataStructures"
     },
@@ -323,6 +267,10 @@
     {
       "name": "ATAP.Utilities.Hydrus.Powershell",
       "path": "./src/ATAP.Utilities.Hydrus.Powershell"
+    },
+    {
+      "name": "ATAP.Utilities.IAC.Ansible",
+      "path": "./src/ATAP.Utilities.IAC.Ansible"
     },
     {
       "name": "ATAP.Utilities.IAC.Ansible.DefaultConfiguration",
@@ -421,6 +369,18 @@
       "path": "./src/ATAP.Utilities.Philote"
     },
     {
+      "name": "ATAP.Utilities.Philote.DefaultConfiguration",
+      "path": "./src/ATAP.Utilities.Philote.DefaultConfiguration"
+    },
+    {
+      "name": "ATAP.Utilities.Philote.Interfaces",
+      "path": "./src/ATAP.Utilities.Philote.Interfaces"
+    },
+    {
+      "name": "ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson",
+      "path": "./src/ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson"
+    },
+    {
       "name": "ATAP.Utilities.Powershell",
       "path": "./src/ATAP.Utilities.Powershell"
     },
@@ -477,6 +437,22 @@
       "path": "./src/ATAP.Utilities.StronglyTypedId"
     },
     {
+      "name": "ATAP.Utilities.StronglyTypedIds",
+      "path": "./src/ATAP.Utilities.StronglyTypedIds"
+    },
+    {
+      "name": "ATAP.Utilities.StronglyTypedIds.Interfaces",
+      "path": "./src/ATAP.Utilities.StronglyTypedIds.Interfaces"
+    },
+    {
+      "name": "ATAP.Utilities.StronglyTypedIds.JsonConverter.Shim.SystemTextJson",
+      "path": "./src/ATAP.Utilities.StronglyTypedIds.JsonConverter.Shim.SystemTextJson"
+    },
+    {
+      "name": "ATAP.Utilities.Tags",
+      "path": "./src/ATAP.Utilities.Tags"
+    },
+    {
       "name": "ATAP.Utilities.Testing",
       "path": "./src/ATAP.Utilities.Testing"
     },
@@ -511,6 +487,10 @@
     {
       "name": "ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson",
       "path": "./src/ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson"
+    },
+    {
+      "name": "ATAP.Utilities.VennDiagramGenerator.Powershell",
+      "path": "./src/ATAP.Utilities.VennDiagramGenerator.Powershell"
     },
     {
       "name": "ATAP.Utilities.VoiceAttack",

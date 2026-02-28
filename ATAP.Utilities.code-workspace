@@ -541,6 +541,12 @@
     "powershell.cwd": "ATAP.Utilities",
     "cSpell.words": ["ATAP", "bhertzing", "PCMSCCE"],
     "powershell.pester.codeLens": false,
-    "claudeCode.useTerminal": false
+    "claudeCode.useTerminal": false,
+    "chat.tools.terminal.autoApprove": {
+      "/^\\. \"\\.\\\\src\\\\ATAP\\.Utilities\\.BuildTooling\\.PowerShell\\\\public\\\\Get-RefactoringCandidates\\.ps1\" ; Get-RefactoringCandidates -SourcePath \"C:\\\\Dropbox\\\\whertzing\\\\GitHub\\\\ATAP\\.Utilities\\\\src\" -OutputFormat Text$/": {
+        "approve": true,
+        "matchCommandLine": true
+      }
+    }
   }
 }

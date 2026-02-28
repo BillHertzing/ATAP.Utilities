@@ -547,7 +547,9 @@
         "approve": true,
         "matchCommandLine": true
       },
-      "git mv": true
+      "git mv": true,
+      "New-Item": true,
+      "Out-Null": true
     }
   }
 }

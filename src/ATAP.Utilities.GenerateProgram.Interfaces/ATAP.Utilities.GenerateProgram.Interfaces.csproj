@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.StronglyTypedIds.Interfaces\ATAP.Utilities.StronglyTypedIds.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Persistence\Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
   </ItemGroup>
 
 </Project>

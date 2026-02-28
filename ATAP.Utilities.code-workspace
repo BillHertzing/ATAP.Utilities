@@ -349,18 +349,6 @@
       "path": "./src/ATAP.Utilities.Persistence"
     },
     {
-      "name": "ATAP.Utilities.Persistence.Extensions",
-      "path": "./src/ATAP.Utilities.Persistence.Extensions"
-    },
-    {
-      "name": "ATAP.Utilities.Persistence.Interfaces",
-      "path": "./src/ATAP.Utilities.Persistence.Interfaces"
-    },
-    {
-      "name": "ATAP.Utilities.Persistence.StringConstants",
-      "path": "./src/ATAP.Utilities.Persistence.StringConstants"
-    },
-    {
       "name": "ATAP.Utilities.Philote",
       "path": "./src/ATAP.Utilities.Philote"
     },

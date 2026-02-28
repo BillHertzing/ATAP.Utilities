@@ -14,16 +14,17 @@
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
     <PackageLabel>Alpha</PackageLabel>
-    <!-- Facade/Aggregator project - no source files to compile -->
-    <EnableDefaultItems>false</EnableDefaultItems>
+    <!-- Unique assembly name to avoid conflict with parent facade -->
+    <AssemblyName>ATAP.Utilities.Persistence.Model</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Project references to all child projects -->
-    <ProjectReference Include="Model\ATAP.Utilities.Persistence.csproj" />
-    <ProjectReference Include="Extensions\ATAP.Utilities.Persistence.Extensions.csproj" />
-    <ProjectReference Include="Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
-    <ProjectReference Include="StringConstants\ATAP.Utilities.Persistence.StringConstants.csproj" />
+  <PackageReference Include="ServiceStack.OrmLite" />
+  <PackageReference Include="ServiceStack.OrmLite.SqlServer" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
   </ItemGroup>
 
 </Project>

@@ -44,8 +44,8 @@
     <ProjectReference Include="..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.DataBaseManagement\ATAP.Utilities.DatabaseManagement.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Persistence.StringConstants\ATAP.Utilities.Persistence.StringConstants.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Persistence\Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Persistence\StringConstants\ATAP.Utilities.Persistence.StringConstants.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.GenericHost.Extensions\ATAP.Utilities.GenericHost.Extensions.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Configuration.Extensions\ATAP.Utilities.Configuration.Extensions.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Reactive.Extensions\ATAP.Utilities.Reactive.Extensions.csproj" />

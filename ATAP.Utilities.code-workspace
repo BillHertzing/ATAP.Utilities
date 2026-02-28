@@ -329,12 +329,8 @@
       "path": "./src/ATAP.Utilities.MessageQueue.Interfaces"
     },
     {
-      "name": "ATAP.Utilities.MessageQueue.Shim.RabbitMQ",
-      "path": "./src/ATAP.Utilities.MessageQueue.Shim.RabbitMQ"
-    },
-    {
-      "name": "ATAP.Utilities.MessageQueue.Shim.TPL",
-      "path": "./src/ATAP.Utilities.MessageQueue.Shim.TPL"
+      "name": "ATAP.Utilities.MessageQueue.Shim",
+      "path": "./src/ATAP.Utilities.MessageQueue.Shim"
     },
     {
       "name": "ATAP.Utilities.MessageQueue.StringConstants",

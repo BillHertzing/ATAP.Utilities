@@ -75,8 +75,8 @@
     <ProjectReference Include="..\ATAP.Utilities.MessageQueue.StringConstants\ATAP.Utilities.MessageQueue.StringConstants.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.MessageQueue\ATAP.Utilities.MessageQueue.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.MessageQueue.Extensions\ATAP.Utilities.MessageQueue.Extensions.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.MessageQueue.Shim.RabbitMQ\ATAP.Utilities.MessageQueue.Shim.RabbitMQ.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.MessageQueue.Shim.TPL\ATAP.Utilities.MessageQueue.Shim.TPL.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.MessageQueue.Shim\RabbitMQ\ATAP.Utilities.MessageQueue.Shim.RabbitMQ.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.MessageQueue.Shim\TPL\ATAP.Utilities.MessageQueue.Shim.TPL.csproj" />
   </ItemGroup>
 
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->

@@ -14,20 +14,14 @@
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
     <PackageLabel>Alpha</PackageLabel>
+    <!-- Facade/Aggregator project - no source files to compile -->
+    <EnableDefaultItems>false</EnableDefaultItems>
   </PropertyGroup>
 
-<ItemGroup>
-    <ProjectReference Include="..\Enumerations\ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations.csproj" />
-    <ProjectReference Include="..\Interfaces\ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces.csproj" />
-    <ProjectReference Include="..\Models\ATAP.Utilities.ComputerInventory.ProcessInfo.Models.csproj" />
-    <ProjectReference Include="..\StringConstants\ATAP.Utilities.ComputerInventory.ProcessInfo.StringConstants.csproj" />
-</ItemGroup>
-
   <ItemGroup>
-    <PackageReference Include="MedallionShell" />
-    <PackageReference Include="TimePeriodLibrary.NET" />
-    <PackageReference Include="UnitsNet" />
+    <!-- Project references to all child projects -->
+    <ProjectReference Include="RabbitMQ\ATAP.Utilities.MessageQueue.Shim.RabbitMQ.csproj" />
+    <ProjectReference Include="TPL\ATAP.Utilities.MessageQueue.Shim.TPL.csproj" />
   </ItemGroup>
-
 
 </Project>

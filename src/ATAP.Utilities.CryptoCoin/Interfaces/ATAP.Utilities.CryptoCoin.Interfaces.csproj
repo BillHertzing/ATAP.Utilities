@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Enumerations\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />
+    <ProjectReference Include="..\Enumerations\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />
   </ItemGroup>
 
 <ItemGroup>

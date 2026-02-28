@@ -22,7 +22,7 @@
 </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.Enumeration\ATAP.Utilities.Enumeration.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.Enumeration\ATAP.Utilities.Enumeration.csproj" />
   </ItemGroup>
 
 </Project>

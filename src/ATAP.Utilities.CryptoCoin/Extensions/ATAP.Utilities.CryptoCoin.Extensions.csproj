@@ -26,9 +26,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Enumerations\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Models\ATAP.Utilities.CryptoCoin.Models.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Http\ATAP.Utilities.Http.csproj" />
+    <ProjectReference Include="..\Enumerations\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />
+    <ProjectReference Include="..\Models\ATAP.Utilities.CryptoCoin.Models.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.Http\ATAP.Utilities.Http.csproj" />
   </ItemGroup>
 
 </Project>

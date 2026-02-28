@@ -17,7 +17,6 @@
   </PropertyGroup>
 
 <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
-  </ItemGroup>
+    <ProjectReference Include="..\..\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
 
 </Project>

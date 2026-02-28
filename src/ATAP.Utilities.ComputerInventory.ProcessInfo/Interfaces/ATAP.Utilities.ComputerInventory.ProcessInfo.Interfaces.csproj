@@ -21,9 +21,9 @@
 </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations\ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Software.Interfaces\ATAP.Utilities.ComputerInventory.Software.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ConcurrentObservableCollections\ATAP.Utilities.ConcurrentObservableCollections.csproj" />
+    <ProjectReference Include="..\Enumerations\ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory.Software\Interfaces\ATAP.Utilities.ComputerInventory.Software.Interfaces.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.ConcurrentObservableCollections\ATAP.Utilities.ConcurrentObservableCollections.csproj" />
   </ItemGroup>
 
 </Project>

@@ -17,11 +17,10 @@
   </PropertyGroup>
 
 <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations\ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces\ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.Models\ATAP.Utilities.ComputerInventory.ProcessInfo.Models.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.StringConstants\ATAP.Utilities.ComputerInventory.ProcessInfo.StringConstants.csproj" />
-  </ItemGroup>
+    <ProjectReference Include="..\Enumerations\ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations.csproj" />
+    <ProjectReference Include="..\Interfaces\ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces.csproj" />
+    <ProjectReference Include="..\Models\ATAP.Utilities.ComputerInventory.ProcessInfo.Models.csproj" />
+    <ProjectReference Include="..\StringConstants\ATAP.Utilities.ComputerInventory.ProcessInfo.StringConstants.csproj" />
 
   <ItemGroup>
     <PackageReference Include="MedallionShell" />

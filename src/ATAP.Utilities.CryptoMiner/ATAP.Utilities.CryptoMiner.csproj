@@ -14,21 +14,15 @@
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
     <PackageLabel>Alpha</PackageLabel>
+    <!-- Facade/Aggregator project - no source files to compile -->
+    <EnableDefaultItems>false</EnableDefaultItems>
   </PropertyGroup>
 
-<ItemGroup>
-    <PackageReference Include="ServiceStack.Text" />
-<PackageReference Include="ServiceStack.Text.EnumMemberSerializer" />
-<PackageReference Include="MedallionShell" />
-<PackageReference Include="TimePeriodLibrary.NET" />
-<PackageReference Include="UnitsNet" />
-</ItemGroup>
-
   <ItemGroup>
-    <ProjectReference Include="..\Enumerations\ATAP.Utilities.ComputerInventory.Software.Enumerations.csproj" />
-    <ProjectReference Include="..\Interfaces\ATAP.Utilities.ComputerInventory.Software.Interfaces.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
+    <ProjectReference Include="Enumerations\ATAP.Utilities.CryptoMiner.Enumerations.csproj" />
+    <ProjectReference Include="Extensions\ATAP.Utilities.CryptoMiner.Extensions.csproj" />
+    <ProjectReference Include="Interfaces\ATAP.Utilities.CryptoMiner.Interfaces.csproj" />
+    <ProjectReference Include="Models\ATAP.Utilities.CryptoMiner.Models.csproj" />
   </ItemGroup>
 
 </Project>

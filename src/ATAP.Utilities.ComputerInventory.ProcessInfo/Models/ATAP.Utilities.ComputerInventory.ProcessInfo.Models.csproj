@@ -23,9 +23,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces\ATAP.Utilities.ComputerInventory.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces\ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Software.Interfaces\ATAP.Utilities.ComputerInventory.Software.Interfaces.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory.Interfaces\ATAP.Utilities.ComputerInventory.Interfaces.csproj" />
+    <ProjectReference Include="..\Interfaces\ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory.Software\Interfaces\ATAP.Utilities.ComputerInventory.Software.Interfaces.csproj" />
   </ItemGroup>
 
 </Project>

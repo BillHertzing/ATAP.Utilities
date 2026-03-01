@@ -10,14 +10,15 @@ namespace ATAP.Utilities.ComputerInventory.Software
     {
     }
 
-    public ComputerSoftwareDriver(IComputerSoftwareDriverSignil computerSoftwareDriverSignil, IPhilote<IComputerSoftwareDriver>? philote)
+    public ComputerSoftwareDriver(IComputerSoftwareDriverSignil computerSoftwareDriverSignil/*, IPhilote<IComputerSoftwareDriver>? philote*/)
     {
       ComputerSoftwareDriverSignil = computerSoftwareDriverSignil ?? throw new ArgumentNullException(nameof(computerSoftwareDriverSignil));
-      Philote = philote ;
+      // Philote = philote ;
     }
 
     public IComputerSoftwareDriverSignil ComputerSoftwareDriverSignil { get; private set; }
-    public IPhilote<IComputerSoftwareDriver>? Philote { get; private set; }
+    // TODO: Migrate to new Philote API - old IPhilote<T> no longer exists, use IGuidPhilote<TId> or IIntPhilote<TId>
+    // public IPhilote<IComputerSoftwareDriver>? Philote { get; private set; }
   }
 
 }

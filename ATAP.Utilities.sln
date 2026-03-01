@@ -436,13 +436,15 @@ Project("{F5034706-568F-408A-B7B3-4D38C6DB8A32}") = "ATAP.Utilities.Powershell",
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Programs", "Programs", "{B3506774-DC40-42BD-900A-A82A048C4601}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.IAC.Ansible.Interfaces", "src\ATAP.Utilities.IAC.Ansible.Interfaces\ATAP.Utilities.IAC.Ansible.Interfaces.csproj", "{0FCBB344-F507-4158-ADC1-FC0CE077295E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.IAC.Ansible", "src\ATAP.Utilities.IAC.Ansible\ATAP.Utilities.IAC.Ansible.csproj", "{1A2B3C4D-5E6F-7890-ABCD-EF1234567891}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.IAC.Ansible.StringConstants", "src\ATAP.Utilities.IAC.Ansible.StringConstants\ATAP.Utilities.IAC.Ansible.StringConstants.csproj", "{C9726115-B139-4EAA-AB18-851601E06A43}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.IAC.Ansible.Interfaces", "src\ATAP.Utilities.IAC.Ansible\Interfaces\ATAP.Utilities.IAC.Ansible.Interfaces.csproj", "{0FCBB344-F507-4158-ADC1-FC0CE077295E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.IAC.Ansible.Enumerations", "src\ATAP.Utilities.IAC.Ansible.Enumerations\ATAP.Utilities.IAC.Ansible.Enumerations.csproj", "{B2F7EAF4-3FC2-4187-A990-A561DBFBCE10}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.IAC.Ansible.StringConstants", "src\ATAP.Utilities.IAC.Ansible\StringConstants\ATAP.Utilities.IAC.Ansible.StringConstants.csproj", "{C9726115-B139-4EAA-AB18-851601E06A43}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.IAC.Ansible.Models", "src\ATAP.Utilities.IAC.Ansible.Models\ATAP.Utilities.IAC.Ansible.Models.csproj", "{F44539E5-CA14-497B-BC96-DDAF327DCC8F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.IAC.Ansible.Enumerations", "src\ATAP.Utilities.IAC.Ansible\Enumerations\ATAP.Utilities.IAC.Ansible.Enumerations.csproj", "{B2F7EAF4-3FC2-4187-A990-A561DBFBCE10}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.IAC.Ansible.Models", "src\ATAP.Utilities.IAC.Ansible\Models\ATAP.Utilities.IAC.Ansible.Models.csproj", "{F44539E5-CA14-497B-BC96-DDAF327DCC8F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

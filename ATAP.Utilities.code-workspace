@@ -237,28 +237,8 @@
       "path": "./src/ATAP.Utilities.IAC.Ansible"
     },
     {
-      "name": "ATAP.Utilities.IAC.Ansible.DefaultConfiguration",
-      "path": "./src/ATAP.Utilities.IAC.Ansible.DefaultConfiguration"
-    },
-    {
-      "name": "ATAP.Utilities.IAC.Ansible.Enumerations",
-      "path": "./src/ATAP.Utilities.IAC.Ansible.Enumerations"
-    },
-    {
-      "name": "ATAP.Utilities.IAC.Ansible.Interfaces",
-      "path": "./src/ATAP.Utilities.IAC.Ansible.Interfaces"
-    },
-    {
-      "name": "ATAP.Utilities.IAC.Ansible.Models",
-      "path": "./src/ATAP.Utilities.IAC.Ansible.Models"
-    },
-    {
       "name": "ATAP.Utilities.IAC.Ansible.Powershell",
       "path": "./src/ATAP.Utilities.IAC.Ansible.Powershell"
-    },
-    {
-      "name": "ATAP.Utilities.IAC.Ansible.StringConstants",
-      "path": "./src/ATAP.Utilities.IAC.Ansible.StringConstants"
     },
     {
       "name": "ATAP.Utilities.Images.Enumerations",

@@ -349,6 +349,48 @@ git mv src\ATAP.Utilities.Serializer src\ATAP.Utilities.Serializer.Model
 
 ---
 
+## Validation Requirements for Refactoring
+
+**Critical:** Every refactoring operation MUST include updating the following files:
+
+1. **ATAP.Utilities.sln** - The Visual Studio solution file at repository root
+   - Add new facade project entries
+   - Update paths for moved child projects
+   - Add Model project entries for complex refactors
+   - Maintain existing project GUIDs for moved projects
+   - Generate new GUIDs only for newly created facade/Model projects
+
+2. **ATAP.Utilities.code-workspace** - The VS Code workspace configuration
+   - Remove child project entries that have been moved
+   - Keep or add parent container entry
+   - Children will auto-appear under parent in VS Code
+
+3. **Project References** - All .csproj files
+   - Update internal references within moved projects (sibling references)
+   - Update external references from projects that depend on refactored modules
+   - Update reference paths for test projects
+
+4. **Build Validation**
+   - Build the facade project to verify all references resolve
+   - Verify child projects build successfully
+   - Check for assembly naming conflicts (add `<AssemblyName>` if needed)
+   - Create facade `Properties/AssemblyInfo.cs` with unique version info
+
+**Post-Refactoring Checklist:**
+
+- ✅ All folder moves completed via PowerShell Move-Item (with lock file cleanup)
+- ✅ Child project references updated to use nested paths
+- ✅ External project references updated to use nested paths
+- ✅ Facade .csproj created with `EnableDefaultItems=false`
+- ✅ Facade Properties/AssemblyInfo.cs created
+- ✅ Model project has unique `<AssemblyName>` (for complex refactors)
+- ✅ Workspace file updated (removed child entries)
+- ✅ **Solution file updated (paths and new entries)**
+- ✅ Build succeeds for facade and all children
+- ✅ All changes staged in git
+
+---
+
 ## Next Steps - Awaiting Guidance
 
 **Current Status:** ✅ Phase 1 Complete - Discovery and Analysis finished

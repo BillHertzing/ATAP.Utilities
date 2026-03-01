@@ -55,10 +55,10 @@
 
   <!-- The Serializer Fixture Shim to use -->
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Shim.SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Shim\SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" />
     <!--
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Shim.Newtonsoft\ATAP.Utilities.Serializer.Shim.Newtonsoft.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Shim.ServiceStack\ATAP.Utilities.Serializer.Shim.ServiceStack.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Shim\Newtonsoft\ATAP.Utilities.Serializer.Shim.Newtonsoft.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Shim\ServiceStack\ATAP.Utilities.Serializer.Shim.ServiceStack.csproj" />
     -->
   </ItemGroup>
 

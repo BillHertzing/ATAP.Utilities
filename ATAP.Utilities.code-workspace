@@ -153,38 +153,6 @@
       "path": "./src/ATAP.Utilities.ComputerInventory"
     },
     {
-      "name": "ATAP.Utilities.ComputerInventory.Configuration",
-      "path": "./src/ATAP.Utilities.ComputerInventory.Configuration"
-    },
-    {
-      "name": "ATAP.Utilities.ComputerInventory.Enumerations",
-      "path": "./src/ATAP.Utilities.ComputerInventory.Enumerations"
-    },
-    {
-      "name": "ATAP.Utilities.ComputerInventory.Extensions",
-      "path": "./src/ATAP.Utilities.ComputerInventory.Extensions"
-    },
-    {
-      "name": "ATAP.Utilities.ComputerInventory.Hardware",
-      "path": "./src/ATAP.Utilities.ComputerInventory.Hardware"
-    },
-    {
-      "name": "ATAP.Utilities.ComputerInventory.Interfaces",
-      "path": "./src/ATAP.Utilities.ComputerInventory.Interfaces"
-    },
-    {
-      "name": "ATAP.Utilities.ComputerInventory.Models",
-      "path": "./src/ATAP.Utilities.ComputerInventory.Models"
-    },
-    {
-      "name": "ATAP.Utilities.ComputerInventory.ProcessInfo",
-      "path": "./src/ATAP.Utilities.ComputerInventory.ProcessInfo"
-    },
-    {
-      "name": "ATAP.Utilities.ComputerInventory.Software",
-      "path": "./src/ATAP.Utilities.ComputerInventory.Software"
-    },
-    {
       "name": "ATAP.Utilities.ConcurrentObservableCollections",
       "path": "./src/ATAP.Utilities.ConcurrentObservableCollections"
     },
@@ -243,10 +211,6 @@
     {
       "name": "ATAP.Utilities.GenericHost.Extensions",
       "path": "./src/ATAP.Utilities.GenericHost.Extensions"
-    },
-    {
-      "name": "ATAP.Utilities.GenericHost.Interfaces",
-      "path": "./src/ATAP.Utilities.GenericHost.Interfaces"
     },
     {
       "name": "ATAP.Utilities.Gmail",
@@ -337,18 +301,6 @@
       "path": "./src/ATAP.Utilities.Philote"
     },
     {
-      "name": "ATAP.Utilities.Philote.DefaultConfiguration",
-      "path": "./src/ATAP.Utilities.Philote.DefaultConfiguration"
-    },
-    {
-      "name": "ATAP.Utilities.Philote.Interfaces",
-      "path": "./src/ATAP.Utilities.Philote.Interfaces"
-    },
-    {
-      "name": "ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson",
-      "path": "./src/ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson"
-    },
-    {
       "name": "ATAP.Utilities.Powershell",
       "path": "./src/ATAP.Utilities.Powershell"
     },
@@ -367,30 +319,6 @@
     {
       "name": "ATAP.Utilities.Serializer",
       "path": "./src/ATAP.Utilities.Serializer"
-    },
-    {
-      "name": "ATAP.Utilities.Serializer.Interfaces",
-      "path": "./src/ATAP.Utilities.Serializer.Interfaces"
-    },
-    {
-      "name": "ATAP.Utilities.Serializer.Shim.Newtonsoft",
-      "path": "./src/ATAP.Utilities.Serializer.Shim.Newtonsoft"
-    },
-    {
-      "name": "ATAP.Utilities.Serializer.Shim.Plugin",
-      "path": "./src/ATAP.Utilities.Serializer.Shim.Plugin"
-    },
-    {
-      "name": "ATAP.Utilities.Serializer.Shim.ServiceStack",
-      "path": "./src/ATAP.Utilities.Serializer.Shim.ServiceStack"
-    },
-    {
-      "name": "ATAP.Utilities.Serializer.Shim.SystemTextJson",
-      "path": "./src/ATAP.Utilities.Serializer.Shim.SystemTextJson"
-    },
-    {
-      "name": "ATAP.Utilities.Serializer.StringConstants",
-      "path": "./src/ATAP.Utilities.Serializer.StringConstants"
     },
     {
       "name": "ATAP.Utilities.Speech.Powershell",

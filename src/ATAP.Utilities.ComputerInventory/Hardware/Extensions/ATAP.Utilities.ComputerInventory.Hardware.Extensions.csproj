@@ -20,8 +20,8 @@
     <ProjectReference Include="..\Interfaces\ATAP.Utilities.ComputerInventory.Hardware.Interfaces.csproj" />
     <ProjectReference Include="..\Models\ATAP.Utilities.ComputerInventory.Hardware.Models.csproj" />
     <ProjectReference Include="..\StringConstants\ATAP.Utilities.ComputerInventory.Hardware.StringConstants.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.Persistence\Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.Persistence\Model\ATAP.Utilities.Persistence.csproj" />
+    <ProjectReference Include="..\..\..\ATAP.Utilities.Persistence\Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
+    <ProjectReference Include="..\..\..\ATAP.Utilities.Persistence\Model\ATAP.Utilities.Persistence.csproj" />
   </ItemGroup>
 
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
@@ -29,7 +29,7 @@
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
     <PackageReference Include="MethodBoundaryAspect.Fody" />
     <!-- Project Reference to the ETW attribute and log provider -->
-    <ProjectReference Include="..\..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
+    <ProjectReference Include="..\..\..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
 
 

@@ -440,6 +440,7 @@ function Invoke-Flyway {
       $env:FLYWAY_PLACEHOLDERS_PACKAGEVERSION = $PackageVersion
       $env:FLYWAY_PLACEHOLDERS_GITTAG = $GitTag
       $env:FLYWAY_PLACEHOLDERS_GITCOMMIT = $GitCommit
+      $env:FLYWAY_PLACEHOLDERS_DATA_DIR = $FlywayDataPath
 
       # Build flyway parameters and execute
       $flywayParams = @("-configFiles=$FlywayTomlPath", "-environment=$environmentKey")

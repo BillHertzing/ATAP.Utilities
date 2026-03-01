@@ -153,7 +153,7 @@ DELETE FROM dbo.RuleInstantiation;
 DELETE FROM dbo.RuleSetMember;
 DELETE FROM dbo.RuleSet;
 DELETE FROM dbo.RulePrimitiveComposition;
-DELETE FROM dbo.Rule;
+DELETE FROM dbo.[Rule];
 DELETE FROM dbo.RulePrimitiveInput;
 DELETE FROM dbo.RulePrimitive;
 DELETE FROM dbo.Philote;
@@ -190,7 +190,7 @@ WHERE TRY_CONVERT(uniqueidentifier, LTRIM(RTRIM(PhiloteId))) IS NOT NULL;
 PRINT '  Inserted: ' + CAST(@@ROWCOUNT AS nvarchar(10)) + ' Philote GUIDs for rules.';
 
 PRINT 'Inserting Rule entries (24 rows)...';
-INSERT INTO dbo.Rule (PhiloteId, PrimitiveLanguageKindId, [Name], Purpose, SourceFileReference)
+INSERT INTO dbo.[Rule] (PhiloteId, PrimitiveLanguageKindId, [Name], Purpose, SourceFileReference)
 SELECT
     TRY_CONVERT(uniqueidentifier, LTRIM(RTRIM(PhiloteId))),
     TRY_CONVERT(int, LTRIM(RTRIM(PrimitiveLanguageKindId))),
@@ -220,7 +220,7 @@ IF OBJECT_ID('dbo._stg_Rule','U') IS NOT NULL DROP TABLE dbo._stg_Rule;
 PRINT 'Validating row counts...';
 DECLARE @PhiloteCount int = (SELECT COUNT(*) FROM dbo.Philote);
 DECLARE @RulePrimitiveCount int = (SELECT COUNT(*) FROM dbo.RulePrimitive);
-DECLARE @RuleCount int = (SELECT COUNT(*) FROM dbo.Rule);
+DECLARE @RuleCount int = (SELECT COUNT(*) FROM dbo.[Rule]);
 DECLARE @LanguageCount int = (SELECT COUNT(*) FROM dbo.PrimitiveLanguageKind);
 
 IF @PhiloteCount < 75

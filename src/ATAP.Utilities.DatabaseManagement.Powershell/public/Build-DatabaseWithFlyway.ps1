@@ -215,12 +215,6 @@ https://github.com/whertzing/ATAP.Utilities
   PROCESS {
     try {
 
-      # Set FLYWAY_PLACEHOLDERS_DATA_DIR from $FlywaySQLDataPath
-      if ($FlywaySQLDataPath) {
-        $env:FLYWAY_PLACEHOLDERS_DATA_DIR = $FlywaySQLDataPath
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Set FLYWAY_PLACEHOLDERS_DATA_DIR = $env:FLYWAY_PLACEHOLDERS_DATA_DIR"
-      }
-
       # Change to Flyway directory
       $originalLocation = Get-Location
       Set-Location $FlywayBasePath

@@ -13,16 +13,16 @@ $connectionMethod = 'tcp'
 $databasePath = "C:\LocalDBs\$environment\$databaseName"
 # Set the path to the provisioning scripts
 $ProvisioningScriptsPath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement\SharedSQL'
-# Set the FlywayBasePath
-$flywayBasePath = "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\Databases\$databaseName\Flyway"
+# Set the FlywayBasePath - using Database folder (singular) for the new structure
+$flywayBasePath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-branch63\Database\Flyway'
 # Set the path to the SQL migrations
-$flywaySqlMigrationsPath = Join-Path $flywayBasePath 'sql'
+$flywaySqlMigrationsPath = Join-Path $flywayBasePath 'SQL'
 # Set the path to the shared SQL migration scripts
 $flywaySharedSqlMigrationsPath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement\SharedSQL'
 # Set the path to the Flyway Data directory
-$flywayDataPath = Join-Path $flywayBasePath 'DATA'
+$flywayDataPath = Join-Path $flywayBasePath 'Data'
 # Set the path to the Flyway configuration file
-$FlywayTomlPath = Join-Path $flywayBasePath 'flyway.conf'
+$FlywayTomlPath = Join-Path $flywayBasePath 'flyway.toml'
 # Force the database to be dropped and recreated
 $Force = $true
 
@@ -51,12 +51,6 @@ catch {
   $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
   Write-PSFMessage -Level Error -Message $errorMessage
   throw
-}
-
-# Set FLYWAY_PLACEHOLDERS_DATA_DIR from FLYWAY_DATA_DIR
-if ($env:FLYWAY_DATA_DIR) {
-  $env:FLYWAY_PLACEHOLDERS_DATA_DIR = $env:FLYWAY_DATA_DIR
-  Write-PSFMessage -Level Important -Message "Set FLYWAY_PLACEHOLDERS_DATA_DIR = $env:FLYWAY_PLACEHOLDERS_DATA_DIR"
 }
 
 Write-PSFMessage -Level Important -Message "=== Starting $databaseName Database Build ==="

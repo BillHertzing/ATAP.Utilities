@@ -1225,12 +1225,12 @@ DECLARE @PathRuleCount int = (SELECT COUNT(*) FROM dbo.[Rule] WHERE PrimitiveLan
 -- Validation checks
 IF @LanguageCount < 6
     THROW 50010, 'PrimitiveLanguageKind row count below expected (6)', 1;
-IF @PhiloteCount < 101
-    THROW 50011, 'Philote row count below minimum expected (101 = 69 primitives + 42 rules + 3 rulesets + 1 instantiation)', 1;
+IF @PhiloteCount < 115
+    THROW 50011, 'Philote row count below minimum expected (115 = 69 primitives + 42 rules + 3 rulesets + 1 instantiation)', 1;
 IF @RulePrimitiveCount < 69
-    THROW 50012, 'RulePrimitive row count below minimum expected (69 = 51 core + 6 snippet + 12 path)', 1;
+    THROW 50012, 'RulePrimitive row count below minimum expected (69 = 18 CSharp + 2 Powershell + 23 SQL + 8 MSBuild + 6 snippet + 12 path)', 1;
 IF @RuleCount < 42
-    THROW 50013, 'Rule row count below minimum expected (42 = 24 core + 17 snippet + 1 path)', 1;
+    THROW 50013, 'Rule row count below minimum expected (42 = 7 CSharp + 3 SQL + 14 MSBuild + 17 snippet + 1 path)', 1;
 IF @RuleSetCount < 3
     THROW 50014, 'RuleSet row count below minimum expected (3)', 1;
 IF @InstantiationCount < 1

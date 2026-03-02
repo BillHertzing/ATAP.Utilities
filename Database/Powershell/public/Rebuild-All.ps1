@@ -12,13 +12,13 @@ $connectionMethod = 'tcp'
 # Set the path where the database files will be created
 $databasePath = "C:\LocalDBs\$environment\$databaseName"
 # Set the path to the provisioning scripts
-$ProvisioningScriptsPath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement\SharedSQL'
+$ProvisioningScriptsPath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-branch63\src\ATAP.Utilities.DatabaseManagement\SharedSQL'
 # Set the FlywayBasePath - using Database folder (singular) for the new structure
 $flywayBasePath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-branch63\Database\Flyway'
 # Set the path to the SQL migrations
 $flywaySqlMigrationsPath = Join-Path $flywayBasePath 'SQL'
 # Set the path to the shared SQL migration scripts
-$flywaySharedSqlMigrationsPath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement\SharedSQL'
+$flywaySharedSqlMigrationsPath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-branch63\src\ATAP.Utilities.DatabaseManagement\SharedSQL'
 # Set the path to the Flyway Data directory
 $flywayDataPath = Join-Path $flywayBasePath 'Data'
 # Set the path to the Flyway configuration file
@@ -36,10 +36,10 @@ try {
   Import-Module dbatools -ErrorAction Stop
 
   if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
+    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-branch63\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
   }
   if (-not (Get-Command -Name 'Build-DatabaseWithFlyway' -CommandType Function -ErrorAction SilentlyContinue)) {
-    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Build-DatabaseWithFlyway.ps1'
+    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-branch63\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Build-DatabaseWithFlyway.ps1'
   }
 
   # Note: Load-ATAPUtilities function to be created in future if data loading is needed

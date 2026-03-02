@@ -6,9 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Hardware.Extensions\ATAP.Utilities.ComputerInventory.Hardware.Extensions.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.Models\ATAP.Utilities.ComputerInventory.ProcessInfo.Models.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Software.Enumerations\ATAP.Utilities.ComputerInventory.Software.Enumerations.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory\Hardware\Extensions\ATAP.Utilities.ComputerInventory.Hardware.Extensions.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory\ProcessInfo\Models\ATAP.Utilities.ComputerInventory.ProcessInfo.Models.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory\Software\Enumerations\ATAP.Utilities.ComputerInventory.Software.Enumerations.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.DataBaseManagement\ATAP.Utilities.DatabaseManagement.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.GenericHost.Extensions\ATAP.Utilities.GenericHost.Extensions.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence\Model\ATAP.Utilities.Persistence.csproj" />

@@ -17,11 +17,11 @@
   </PropertyGroup>
 
 <ItemGroup>
-    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory.ProcessInfo\Extensions\ATAP.Utilities.ComputerInventory.ProcessInfo.Extensions.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory.Software\Models\ATAP.Utilities.ComputerInventory.Software.Models.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory.Models\ATAP.Utilities.ComputerInventory.Models.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory.Extensions\ATAP.Utilities.ComputerInventory.Extensions.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory.Configuration\ATAP.Utilities.ComputerInventory.Configuration.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory\ProcessInfo\Extensions\ATAP.Utilities.ComputerInventory.ProcessInfo.Extensions.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory\Software\Models\ATAP.Utilities.ComputerInventory.Software.Models.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory\Models\ATAP.Utilities.ComputerInventory.Models.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory\Extensions\ATAP.Utilities.ComputerInventory.Extensions.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory\Configuration\ATAP.Utilities.ComputerInventory.Configuration.csproj" />
     <ProjectReference Include="..\..\ATAP.Utilities.ConcurrentObservableCollections\ATAP.Utilities.ConcurrentObservableCollections.csproj" />
     <ProjectReference Include="..\..\ATAP.Utilities.CryptoCoin\Enumerations\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />
     <ProjectReference Include="..\..\ATAP.Utilities.CryptoCoin\Interfaces\ATAP.Utilities.CryptoCoin.Interfaces.csproj" />

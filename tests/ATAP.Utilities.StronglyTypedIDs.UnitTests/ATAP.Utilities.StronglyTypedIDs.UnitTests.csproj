@@ -42,8 +42,8 @@
 
      <!-- ATAP Utility Packages For the abstract Serializer -->
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.StringConstants/ATAP.Utilities.Serializer.StringConstants.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\StringConstants\ATAP.Utilities.Serializer.StringConstants.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
   </ItemGroup>
 
@@ -79,8 +79,8 @@
 
 <!-- Specific libraries under test-->
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedIDs.Models\ATAP.Utilities.StronglyTypedIds.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedIDs.Interfaces\ATAP.Utilities.StronglyTypedIDs.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedId\Models\ATAP.Utilities.StronglyTypedId.Models.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedId\Interfaces\ATAP.Utilities.StronglyTypedId.Interfaces.csproj" />
   </ItemGroup>
 
 

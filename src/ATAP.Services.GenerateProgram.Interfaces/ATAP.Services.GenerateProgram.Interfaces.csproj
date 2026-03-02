@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.GenerateProgram.Interfaces\ATAP.Utilities.GenerateProgram.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Philote\Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence\Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
   </ItemGroup>
 

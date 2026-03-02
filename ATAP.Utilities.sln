@@ -170,11 +170,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Interfaces", "src\ATAP.Utilities.Serializer\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj", "{CECCF4F9-C220-4F5E-88F0-FEF8CCB7D2BA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Shim", "src\ATAP.Utilities.Serializer.Shim\ATAP.Utilities.Serializer.Shim.csproj", "{E8A9D1C2-5B4F-4E3A-9F7D-2C8A6E4B3D1F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Shim", "src\ATAP.Utilities.Serializer\Shim\ATAP.Utilities.Serializer.Shim.csproj", "{E8A9D1C2-5B4F-4E3A-9F7D-2C8A6E4B3D1F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Shim.Newtonsoft", "src\ATAP.Utilities.Serializer.Shim\Newtonsoft\ATAP.Utilities.Serializer.Shim.Newtonsoft.csproj", "{B4259A1F-B02C-42F5-B22F-40B61C5F6823}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Shim.Newtonsoft", "src\ATAP.Utilities.Serializer\Shim\Newtonsoft\ATAP.Utilities.Serializer.Shim.Newtonsoft.csproj", "{B4259A1F-B02C-42F5-B22F-40B61C5F6823}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Shim.ServiceStack", "src\ATAP.Utilities.Serializer.Shim\ServiceStack\ATAP.Utilities.Serializer.Shim.ServiceStack.csproj", "{C2FFEDF1-281F-41A1-99CA-D235C105BF7C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Shim.ServiceStack", "src\ATAP.Utilities.Serializer\Shim\ServiceStack\ATAP.Utilities.Serializer.Shim.ServiceStack.csproj", "{C2FFEDF1-281F-41A1-99CA-D235C105BF7C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer", "src\ATAP.Utilities.Serializer\Model\ATAP.Utilities.Serializer.Model.csproj", "{F3487177-AE97-4BC5-AA1C-3E86176505B5}"
 EndProject
@@ -362,7 +362,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Services.GenerateProgr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Persistence.StringConstants", "src\ATAP.Utilities.Persistence\StringConstants\ATAP.Utilities.Persistence.StringConstants.csproj", "{DA3CA34F-68BB-4B3C-86B3-720B2FE225C5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Shim.SystemTextJson", "src\ATAP.Utilities.Serializer.Shim\SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj", "{C447A64E-FBE5-4420-B698-EC6EC3A42636}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Shim.SystemTextJson", "src\ATAP.Utilities.Serializer\Shim\SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj", "{C447A64E-FBE5-4420-B698-EC6EC3A42636}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Persistence", "Persistence", "{CC4A74E0-4D31-11EB-8AC3-33928AC602A3}"
 EndProject
@@ -408,7 +408,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Testing.Fixt
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson", "src\ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson\ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson.csproj", "{64717A31-7163-40F0-BD67-16103FA6F5E2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Shim.Plugin", "src\ATAP.Utilities.Serializer.Shim\Plugin\ATAP.Utilities.Serializer.Shim.Plugin.csproj", "{FE14BF06-FE19-4B51-85EB-7394ACE1B282}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Shim.Plugin", "src\ATAP.Utilities.Serializer\Shim\Plugin\ATAP.Utilities.Serializer.Shim.Plugin.csproj", "{FE14BF06-FE19-4B51-85EB-7394ACE1B282}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Testing.Fixture.Serialization.Shim.Newtonsoft.UnitTests", "tests\ATAP.Utilities.Testing.Fixture.Serialization.Shim.Newtonsoft.UnitTests\ATAP.Utilities.Testing.Fixture.Serialization.Shim.Newtonsoft.UnitTests.csproj", "{A8F7131B-96FF-4CBD-B2C7-F11D58F442B4}"
 EndProject

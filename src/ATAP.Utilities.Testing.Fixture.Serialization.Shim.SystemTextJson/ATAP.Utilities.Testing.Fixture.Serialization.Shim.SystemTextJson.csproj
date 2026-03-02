@@ -67,7 +67,7 @@
 
   <!-- The specific Serializer Shim to include in this fixture -->
   <ItemGroup>
-    <ProjectReference Include="../ATAP.Utilities.Serializer.Shim\SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" />
+    <ProjectReference Include="../ATAP.Utilities.Serializer/Shim/SystemTextJson/ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" />
   </ItemGroup>
 
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->

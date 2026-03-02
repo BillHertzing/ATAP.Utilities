@@ -34,7 +34,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
   </ItemGroup>
 
@@ -44,8 +44,8 @@
 
   <ItemGroup>
     <!--
-    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory.Enumerations\ATAP.Utilities.ComputerInventory.Enumerations.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory.Extensions\ATAP.Utilities.ComputerInventory.Extensions.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory\Enumerations\ATAP.Utilities.ComputerInventory.Enumerations.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory\Extensions\ATAP.Utilities.ComputerInventory.Extensions.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory.Models.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.ConcurrentObservableCollections.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />

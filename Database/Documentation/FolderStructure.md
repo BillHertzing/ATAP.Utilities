@@ -45,7 +45,6 @@ Database/
 │   ├── flyway.toml                       # Flyway configuration file
 │   │
 │   ├── Data/                             # Seed data files (CSV format)
-│   │   ├── ATAPUtilities.SeedData.csv
 │   │   ├── Philote_Primitives.csv       # 51 primitive Philote IDs
 │   │   ├── Philote_Rules.csv            # 24 rule Philote IDs
 │   │   ├── Rule.csv                     # 24 rule definitions

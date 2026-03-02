@@ -41,27 +41,27 @@ DECLARE @data_dir nvarchar(4000) = N'${data_dir}';
 DECLARE @sql nvarchar(max);
 
 -- Core data files
-DECLARE @philote_primitives_file nvarchar(4000) = @data_dir + N'\Philote_Primitives.csv';
-DECLARE @rule_primitive_file nvarchar(4000) = @data_dir + N'\RulePrimitive.csv';
-DECLARE @philote_rules_file nvarchar(4000) = @data_dir + N'\Philote_Rules.csv';
-DECLARE @rule_file nvarchar(4000) = @data_dir + N'\Rule.csv';
+DECLARE @philote_primitives_file nvarchar(4000) = @data_dir + N'\Core_Philote_Primitives.csv';
+DECLARE @rule_primitive_file nvarchar(4000) = @data_dir + N'\Core_RulePrimitives.csv';
+DECLARE @philote_rules_file nvarchar(4000) = @data_dir + N'\Core_Philote_Rules.csv';
+DECLARE @rule_file nvarchar(4000) = @data_dir + N'\Core_Rules.csv';
 
 -- Snippet data files
-DECLARE @philote_snippet_primitives_file nvarchar(4000) = @data_dir + N'\Philote_SnippetPrimitives.csv';
-DECLARE @rule_primitive_snippets_file nvarchar(4000) = @data_dir + N'\RulePrimitive_Snippets.csv';
-DECLARE @philote_snippet_rules_file nvarchar(4000) = @data_dir + N'\Philote_SnippetRules.csv';
-DECLARE @rule_snippets_file nvarchar(4000) = @data_dir + N'\Rule_Snippets.csv';
-DECLARE @philote_snippet_rulesets_file nvarchar(4000) = @data_dir + N'\Philote_SnippetRuleSets.csv';
-DECLARE @ruleset_snippets_file nvarchar(4000) = @data_dir + N'\RuleSet_Snippets.csv';
+DECLARE @philote_snippet_primitives_file nvarchar(4000) = @data_dir + N'\Snippet_Philote_Primitives.csv';
+DECLARE @rule_primitive_snippets_file nvarchar(4000) = @data_dir + N'\Snippet_RulePrimitives.csv';
+DECLARE @philote_snippet_rules_file nvarchar(4000) = @data_dir + N'\Snippet_Philote_Rules.csv';
+DECLARE @rule_snippets_file nvarchar(4000) = @data_dir + N'\Snippet_Rules.csv';
+DECLARE @philote_snippet_rulesets_file nvarchar(4000) = @data_dir + N'\Snippet_Philote_RuleSets.csv';
+DECLARE @ruleset_snippets_file nvarchar(4000) = @data_dir + N'\Snippet_RuleSets.csv';
 
 -- Path data files
-DECLARE @philote_path_primitives_file nvarchar(4000) = @data_dir + N'\Philote_PathPrimitives.csv';
-DECLARE @rule_primitive_paths_file nvarchar(4000) = @data_dir + N'\RulePrimitive_Paths.csv';
-DECLARE @philote_path_rules_file nvarchar(4000) = @data_dir + N'\Philote_PathRules.csv';
-DECLARE @rule_paths_file nvarchar(4000) = @data_dir + N'\Rule_Paths.csv';
-DECLARE @philote_path_instantiations_file nvarchar(4000) = @data_dir + N'\Philote_PathInstantiations.csv';
-DECLARE @rule_instantiation_paths_file nvarchar(4000) = @data_dir + N'\RuleInstantiation_Paths.csv';
-DECLARE @rule_instantiation_binding_paths_file nvarchar(4000) = @data_dir + N'\RuleInstantiationBinding_Paths.csv';
+DECLARE @philote_path_primitives_file nvarchar(4000) = @data_dir + N'\Path_Philote_Primitives.csv';
+DECLARE @rule_primitive_paths_file nvarchar(4000) = @data_dir + N'\Path_RulePrimitives.csv';
+DECLARE @philote_path_rules_file nvarchar(4000) = @data_dir + N'\Path_Philote_Rules.csv';
+DECLARE @rule_paths_file nvarchar(4000) = @data_dir + N'\Path_Rules.csv';
+DECLARE @philote_path_instantiations_file nvarchar(4000) = @data_dir + N'\Path_Philote_Instantiations.csv';
+DECLARE @rule_instantiation_paths_file nvarchar(4000) = @data_dir + N'\Path_Instantiations.csv';
+DECLARE @rule_instantiation_binding_paths_file nvarchar(4000) = @data_dir + N'\Path_InstantiationBindings.csv';
 
 -- =====================================================================
 -- SECTION 1: Create Staging Tables

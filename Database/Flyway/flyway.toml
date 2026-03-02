@@ -16,6 +16,9 @@ mixed = true
 # Schema management
 createSchemas = true
 
+# Enable placeholder replacement
+placeholderReplacement = true
+
 # Locations for SQL migrations
 # Note: Uses relative path ./SQL (capital) for migrations
 locations = [

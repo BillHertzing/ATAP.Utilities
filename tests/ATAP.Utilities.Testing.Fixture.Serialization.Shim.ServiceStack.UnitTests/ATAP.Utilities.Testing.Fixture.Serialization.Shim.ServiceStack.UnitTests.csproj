@@ -42,8 +42,8 @@
 
   <!-- ATAP Utility Packages For the abstract Serializer -->
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.StringConstants/ATAP.Utilities.Serializer.StringConstants.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\StringConstants\ATAP.Utilities.Serializer.StringConstants.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
   </ItemGroup>
 

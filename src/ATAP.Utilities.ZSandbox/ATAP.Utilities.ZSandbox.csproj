@@ -22,7 +22,7 @@
 </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Extensions\ATAP.Utilities.CryptoCoin.Extensions.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin\Extensions\ATAP.Utilities.CryptoCoin.Extensions.csproj" />
   </ItemGroup>
 
 </Project>

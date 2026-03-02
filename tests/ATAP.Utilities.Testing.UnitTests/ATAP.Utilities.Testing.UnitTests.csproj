@@ -40,14 +40,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Shim.Newtonsoft\ATAP.Utilities.Serializer.Shim.Newtonsoft.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\Shim\Newtonsoft\ATAP.Utilities.Serializer.Shim.Newtonsoft.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Philote\Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
   </ItemGroup>
 

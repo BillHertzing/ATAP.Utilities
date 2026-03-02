@@ -4,6 +4,8 @@
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
+    <!-- Facade project - disable default items to prevent including child project source files -->
+    <EnableDefaultItems>false</EnableDefaultItems>
     <!-- Assembly, File, and Package Information for this assembly-->
     <!-- Build and revision are created based on date-->
     <MajorVersion>0</MajorVersion>
@@ -15,6 +17,11 @@
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
     <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Explicitly include only the facade's AssemblyInfo.cs -->
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="DefaultConfiguration\ATAP.Utilities.Philote.DefaultConfiguration.csproj" />

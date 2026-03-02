@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
+    <!-- Assembly, File, and Package Information for this assembly-->
+    <!-- Build and revision are created based on date-->
+    <MajorVersion>0</MajorVersion>
+    <MinorVersion>1</MinorVersion>
+    <PatchVersion>0</PatchVersion>
+    <!-- Current Lifecycle stage for this assembly-->
+    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
+    <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
+    <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
+    <PackageLabel>Alpha</PackageLabel>
+  </PropertyGroup>
+
+<ItemGroup>
+    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory\ProcessInfo\Extensions\ATAP.Utilities.ComputerInventory.ProcessInfo.Extensions.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory\Software\Models\ATAP.Utilities.ComputerInventory.Software.Models.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory\Models\ATAP.Utilities.ComputerInventory.Models.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory\Extensions\ATAP.Utilities.ComputerInventory.Extensions.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory\Configuration\ATAP.Utilities.ComputerInventory.Configuration.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.ConcurrentObservableCollections\ATAP.Utilities.ConcurrentObservableCollections.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.CryptoCoin\Enumerations\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.CryptoCoin\Interfaces\ATAP.Utilities.CryptoCoin.Interfaces.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.CryptoCoin\Models\ATAP.Utilities.CryptoCoin.Models.csproj" />
+    <ProjectReference Include="..\Enumerations\ATAP.Utilities.CryptoMiner.Enumerations.csproj" />
+    <ProjectReference Include="..\Interfaces\ATAP.Utilities.CryptoMiner.Interfaces.csproj" />
+    <ProjectReference Include="..\..\ATAP.Services.TcpWithResilience\ATAP.Services.TcpWithResilience.csproj" />
+  </ItemGroup>
+
+</Project>

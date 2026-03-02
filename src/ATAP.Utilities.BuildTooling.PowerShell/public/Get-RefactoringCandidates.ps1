@@ -13,6 +13,9 @@ function Get-RefactoringCandidates {
     - Groups them by their common prefix (first N-1 parts)
     - Checks for .csproj files to identify project conflicts
     - Analyzes existing parent folders and their contents
+    - Generates detailed action plans with git mv commands
+    - Identifies folders and facade projects that need to be created
+    - Plans the refactoring to achieve the goal structure defined in the refactor prompt
     - Reports potential refactoring opportunities
 
   .PARAMETER SourcePath
@@ -26,6 +29,10 @@ function Get-RefactoringCandidates {
 
   .PARAMETER OutputFormat
     Format for output: 'Text', 'JSON', or 'Object'. Default is 'Object'.
+
+  .PARAMETER ExclusionPatterns
+    Array of regular expression patterns to exclude folders from analysis. Folders matching any pattern will be skipped.
+    Default patterns exclude: database-related folders, ATAP.Services/Console/IAC/VSCExtension folders, and ATAP.Utilities.Powershell.
 
   .EXAMPLE
     Get-RefactoringCandidates -SourcePath "C:\repo\src"
@@ -42,6 +49,11 @@ function Get-RefactoringCandidates {
 
     Gets only refactoring candidates that have no conflicts.
 
+  .EXAMPLE
+    Get-RefactoringCandidates -ExclusionPatterns @('^ATAP\.Test', '(?i)temp')
+
+    Analyzes folders but excludes any starting with ATAP.Test or containing 'temp' (case-insensitive).
+
   .OUTPUTS
     PSCustomObject[] with properties:
     - GroupPrefix: The common prefix (e.g., "ATAP.Utilities.ComputerInventory")
@@ -49,8 +61,12 @@ function Get-RefactoringCandidates {
     - FolderCount: Number of folders in the group
     - ParentFolderExists: Boolean indicating if parent folder already exists
     - ParentContainsProject: Boolean indicating if parent contains a .csproj file
+    - ParentHasSubfolders: Boolean indicating if parent has existing subfolders
     - ConflictType: 'None', 'ParentHasProject', 'ParentHasSubfolders', or 'Both'
     - RecommendedAction: Suggested refactoring approach
+    - ActionPlan: Array of ordered steps describing the refactoring actions
+    - GitMoveCommands: Array of git mv commands to execute the refactoring
+    - ItemsToCreate: Array of folders and files that need to be created
     - FullPaths: Array of full paths to the candidate folders
 
   .NOTES
@@ -68,15 +84,16 @@ function Get-RefactoringCandidates {
     [string]$SourcePath,
 
     [Parameter(Mandatory = $false, Position = 1)]
-    [ValidateRange(1, 100)]
     [int]$MinimumGroupSize = 2,
 
     [Parameter(Mandatory = $false)]
     [switch]$IncludeExistingParents,
 
     [Parameter(Mandatory = $false)]
-    [ValidateSet('Text', 'JSON', 'Object')]
-    [string]$OutputFormat = 'Object'
+    [string]$OutputFormat = 'Object',
+
+    [Parameter(Mandatory = $false)]
+    [string[]]$ExclusionPatterns
   )
 
   begin {
@@ -85,53 +102,80 @@ function Get-RefactoringCandidates {
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
+    # Load required helper functions
+    try {
+      if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
+      }
+      if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
+      }
+    }
+    catch {
+      $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
+      Write-PSFMessage -Level Error -Message $errorMessage
+      throw
+    }
+
     # Snippet: Check and populate simple parameter
-    if (-not $PSBoundParameters.ContainsKey('SourcePath') -or [string]::IsNullOrWhiteSpace($SourcePath)) {
-      # Try to find repository root and use src folder
+    $SourcePath = Get-PVal -ParameterName 'SourcePath' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Get-RefactoringCandidatesSourcePath' -DefaultValue (Join-Path -Path (Get-RepositoryRoot) -ChildPath 'src')
+
+    # Snippet: Check and populate simple parameter as Type (int)
+    $MinimumGroupSize = Get-PVal -ParameterName 'MinimumGroupSize' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Get-RefactoringCandidatesMinimumGroupSize' -DefaultValue 2
+
+    $OutputFormat = Get-PVal -ParameterName 'OutputFormat' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Get-RefactoringCandidates.OutputFormat' -DefaultValue 'Object'
+
+    # Snippet: Check and populate simple parameter (exclusion patterns array)
+    # Default exclusion patterns based on refactor prompt requirements
+    $defaultExclusionPatterns = @(
+      '(?i)database',                    # Exclude folders containing "database" (case-insensitive)
+      '^ATAP\.Utilities$',               # Exclude ATAP.Utilities itself as a parent container
+      '^ATAP\.Service',                 # Exclude ATAP.Service.* folders
+      '^ATAP\.Services',                 # Exclude ATAP.Services.* folders
+      '^ATAP\.Console',                  # Exclude ATAP.Console.* folders
+      '^ATAP\.IAC',                      # Exclude ATAP.IAC.* folders
+      '^ATAP\.VSCExtension',             # Exclude ATAP.VSCExtension.* folders
+      '^ATAP-AiAssist',                  # Exclude ATAP-AiAssist.* folders
+      '^ATAP\.Utilities\.BuildTooling',  # Exclude ATAP.Utilities.BuildTooling.* folders
+      '^ATAP\.Utilities\.Powershell$'    # Exclude ATAP.Utilities.Powershell specifically
+    )
+    $ExclusionPatterns = Get-PVal -ParameterName 'ExclusionPatterns' -originalPSBoundParameters $PSBoundParameters -dottedPath 'ExclusionPatterns' -DefaultValue $defaultExclusionPatterns
+
+    # Compile regex patterns for efficient matching
+    $compiledExclusions = @()
+    foreach ($pattern in $ExclusionPatterns) {
       try {
-        if (Get-Command Get-RepositoryRoot -ErrorAction SilentlyContinue) {
-          $repoRoot = Get-RepositoryRoot
-          $SourcePath = Join-Path -Path $repoRoot -ChildPath 'src'
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "SourcePath not provided, using repository src folder: $SourcePath"
-        }
-        else {
-          $errorMessage = 'No SourcePath specified and Get-RepositoryRoot is not available. Please specify -SourcePath.'
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-          throw $errorMessage
-        }
+        $compiledExclusions += [regex]::new($pattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Compiled exclusion pattern: $pattern"
       }
       catch {
-        $errorMessage = "Failed to determine SourcePath. Exception: $($_.Exception.Message)"
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-        throw
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Invalid regex pattern '$pattern': $($_.Exception.Message)"
       }
     }
 
-    # Snippet: Check and populate simple parameter as Type (int)
-    if ($MinimumGroupSize -lt 1) {
-      $errorMessage = "MinimumGroupSize must be at least 1, received: $MinimumGroupSize"
+    # Validate Parameters
+    if (-not (Test-Path -Path $SourcePath -PathType Container)) {
+      $errorMessage = "Source path does not exist or is not a directory: $SourcePath"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       throw $errorMessage
     }
 
-    # Snippet: Try-Catch-Finally - Validate source path exists
-    try {
-      if (-not (Test-Path -Path $SourcePath -PathType Container)) {
-        $errorMessage = "Source path does not exist or is not a directory: $SourcePath"
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-        throw $errorMessage
-      }
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Analyzing folder structure in: $SourcePath"
-    }
-    catch {
-      $errorMessage = "Failed to validate SourcePath. Exception: $($_.Exception.Message)"
+    if ($MinimumGroupSize -lt 1 -or $MinimumGroupSize -gt 100) {
+      $errorMessage = "MinimumGroupSize must be between 1 and 100, received: $MinimumGroupSize"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-      throw
+      throw $errorMessage
+    }
+    if ($OutputFormat -notin @('Text', 'JSON', 'Object')) {
+      $errorMessage = "Invalid OutputFormat: $OutputFormat. Valid options are 'Text', 'JSON', or 'Object'."
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      throw $errorMessage
     }
 
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Analyzing folder structure in: $SourcePath"
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "MinimumGroupSize is $MinimumGroupSize"
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "IncludeExistingParents is $IncludeExistingParents"
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "OutputFormat is $OutputFormat"
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Using $($ExclusionPatterns.Count) exclusion patterns"
   }
 
   process {
@@ -142,10 +186,28 @@ function Get-RefactoringCandidates {
 
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Found $($allFolders.Count) folders to analyze"
 
+      # Filter out excluded folders based on regex patterns
+      $filteredFolders = @()
+      foreach ($folder in $allFolders) {
+        $excluded = $false
+        foreach ($regex in $compiledExclusions) {
+          if ($regex.IsMatch($folder)) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Excluding folder '$folder' (matched pattern: $($regex.ToString()))"
+            $excluded = $true
+            break
+          }
+        }
+        if (-not $excluded) {
+          $filteredFolders += $folder
+        }
+      }
+
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "After exclusions: $($filteredFolders.Count) folders remain"
+
       # Group folders by their potential parent (all parts except the last)
       $groupedFolders = @{}
 
-      foreach ($folder in $allFolders) {
+      foreach ($folder in $filteredFolders) {
         $parts = $folder -split '\.'
 
         # Only consider folders with 3 or more parts (e.g., ATAP.Utilities.Something)
@@ -169,6 +231,19 @@ function Get-RefactoringCandidates {
       foreach ($parentName in $groupedFolders.Keys | Sort-Object) {
         $candidates = $groupedFolders[$parentName]
 
+        # Skip if parent name matches exclusion patterns
+        $parentExcluded = $false
+        foreach ($regex in $compiledExclusions) {
+          if ($regex.IsMatch($parentName)) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Skipping parent '$parentName' - matches exclusion pattern: $($regex.ToString())"
+            $parentExcluded = $true
+            break
+          }
+        }
+        if ($parentExcluded) {
+          continue
+        }
+
         # Skip if below minimum group size
         if ($candidates.Count -lt $MinimumGroupSize) {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Skipping $parentName - only $($candidates.Count) folders (minimum: $MinimumGroupSize)"
@@ -187,6 +262,11 @@ function Get-RefactoringCandidates {
         $conflictType = 'None'
         $recommendedAction = 'Safe to refactor - create parent folder and move children'
 
+        # Generate detailed action plan
+        $actionPlan = @()
+        $gitMoveCommands = @()
+        $createItems = @()
+
         if ($parentExists) {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Parent folder exists: $parentPath"
 
@@ -203,17 +283,41 @@ function Get-RefactoringCandidates {
             $conflictType = 'Both'
             $recommendedAction = 'Complex refactor - parent has both project and subfolders. Consider creating intermediate folder.'
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Conflict detected for $parentName - both project and subfolders exist"
+
+            # Plan: Move parent project to Model subfolder first
+            $actionPlan += "1. Rename parent project folder to Model subfolder to resolve conflict"
+            $gitMoveCommands += "git mv `"src/$parentName`" `"src/$parentName.Model`""
+            $actionPlan += "2. Create new parent container folder: $parentName"
+            $createItems += "Parent folder: src/$parentName"
+            $actionPlan += "3. Move Model subfolder under parent"
+            $gitMoveCommands += "git mv `"src/$parentName.Model`" `"src/$parentName/Model`""
           }
           elseif ($parentHasProject) {
             $conflictType = 'ParentHasProject'
             $recommendedAction = 'Moderate refactor - move parent project to subfolder, then move peer folders.'
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Conflict detected for $parentName - parent has project file"
+
+            # Plan: Rename existing folder to Model, create new parent, move Model under parent
+            $actionPlan += "1. Rename existing project folder to temporary name with Model suffix"
+            $gitMoveCommands += "git mv `"src/$parentName`" `"src/$parentName.Model`""
+            $actionPlan += "2. Create new parent container folder"
+            $createItems += "Parent folder: src/$parentName"
+            $createItems += "Properties folder: src/$parentName/Properties"
+            $actionPlan += "3. Move renamed folder under parent as Model subfolder"
+            $gitMoveCommands += "git mv `"src/$parentName.Model`" `"src/$parentName/Model`""
           }
           elseif ($parentHasSubfolders) {
             $conflictType = 'ParentHasSubfolders'
             if ($IncludeExistingParents) {
               $recommendedAction = 'Simple refactor - parent already exists with subfolders, just move peer folders.'
               Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Parent $parentName has subfolders but including due to -IncludeExistingParents"
+
+              $actionPlan += "1. Parent folder already exists with subfolders"
+              # Check if Properties folder exists
+              $propertiesPath = Join-Path -Path $parentPath -ChildPath 'Properties'
+              if (-not (Test-Path -Path $propertiesPath)) {
+                $createItems += "Properties folder: src/$parentName/Properties"
+              }
             }
             else {
               Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Skipping $parentName - parent has subfolders (use -IncludeExistingParents to include)"
@@ -221,6 +325,32 @@ function Get-RefactoringCandidates {
             }
           }
         }
+        else {
+          # Parent doesn't exist - straightforward case
+          $actionPlan += "1. Create parent container folder"
+          $createItems += "Parent folder: src/$parentName"
+          $createItems += "Properties folder: src/$parentName/Properties"
+        }
+
+        # Process each candidate folder to generate move commands
+        foreach ($candidateFolder in $candidates) {
+          # Extract role name from folder name (last segment after final dot)
+          $roleName = ($candidateFolder -split '\.')[-1]
+
+          # Determine target subfolder name and path
+          $targetSubfolder = $roleName
+          $targetPath = "src/$parentName/$targetSubfolder"
+
+          $actionPlan += "Move $candidateFolder to $targetSubfolder/"
+          $gitMoveCommands += "git mv `"src/$candidateFolder`" `"$targetPath`""
+        }
+
+        # Add facade project creation to plan
+        # Note: Per refactor prompt (line 95-96), create facade project within each parent container,
+        # NOT in the root of SourcePath. This creates it at src/{ParentName}/{ParentName}.csproj
+        $facadeProjectPath = "src/$parentName/$parentName.csproj"
+        $createItems += "Facade project: $facadeProjectPath"
+        $actionPlan += "Create facade .csproj file that references all child projects"
 
         # Build result object
         $result = [PSCustomObject]@{
@@ -232,6 +362,9 @@ function Get-RefactoringCandidates {
           ParentHasSubfolders   = $parentHasSubfolders
           ConflictType          = $conflictType
           RecommendedAction     = $recommendedAction
+          ActionPlan            = $actionPlan
+          GitMoveCommands       = $gitMoveCommands
+          ItemsToCreate         = $createItems
           FullPaths             = $candidates | ForEach-Object { Join-Path -Path $SourcePath -ChildPath $_ }
         }
 
@@ -260,6 +393,15 @@ function Get-RefactoringCandidates {
             }
             Write-Output "Conflict Type: $($result.ConflictType)"
             Write-Output "Recommended Action: $($result.RecommendedAction)"
+            Write-Output ""
+            Write-Output "Action Plan:"
+            $result.ActionPlan | ForEach-Object { Write-Output "  $_" }
+            Write-Output ""
+            Write-Output "Items to Create:"
+            $result.ItemsToCreate | ForEach-Object { Write-Output "  - $_" }
+            Write-Output ""
+            Write-Output "Git Move Commands:"
+            $result.GitMoveCommands | ForEach-Object { Write-Output "  $_" }
           }
         }
         'Object' {
@@ -281,4 +423,4 @@ function Get-RefactoringCandidates {
 }
 
 # Export the function
-Export-ModuleMember -Function Get-RefactoringCandidates
+# Export-ModuleMember -Function Get-RefactoringCandidates

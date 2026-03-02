@@ -1,3 +1,0 @@
-namespace ATAP.Utilities.Persistence {
-  
-}

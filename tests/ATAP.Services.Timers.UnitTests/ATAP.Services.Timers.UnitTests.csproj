@@ -36,7 +36,6 @@
 
   <!-- Packages to add xUnit Testing dotnet tool -->
   <ItemGroup>
-    <DotNetCliToolReference Include="dotnet-xunit" />
   </ItemGroup>
 
 <!-- Packages for Testing the ATAP utilities and Services -->

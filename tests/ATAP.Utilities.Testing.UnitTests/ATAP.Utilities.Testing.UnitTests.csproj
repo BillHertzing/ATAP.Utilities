@@ -36,7 +36,6 @@
 
   <!-- Packages to add xUnit Testing dotnet tool -->
   <ItemGroup>
-    <DotNetCliToolReference Include="dotnet-xunit" />
   </ItemGroup>
 
   <ItemGroup>

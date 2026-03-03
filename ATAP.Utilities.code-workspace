@@ -399,10 +399,6 @@
     "powershell.pester.codeLens": false,
     "claudeCode.useTerminal": false,
     "chat.tools.terminal.autoApprove": {
-      "/^\\. \"\\.\\\\src\\\\ATAP\\.Utilities\\.BuildTooling\\.PowerShell\\\\public\\\\Get-RefactoringCandidates\\.ps1\" ; Get-RefactoringCandidates -SourcePath \"C:\\\\Dropbox\\\\whertzing\\\\GitHub\\\\ATAP\\.Utilities\\\\src\" -OutputFormat Text$/": {
-        "approve": true,
-        "matchCommandLine": true
-      },
       "git mv": true,
       "New-Item": true,
       "Out-Null": true

@@ -37,7 +37,6 @@
 
   <!-- Packages to add xUnit Testing dotnet tool -->
   <ItemGroup>
-    <DotNetCliToolReference Include="dotnet-xunit" />
   </ItemGroup>
 
   <!-- ATAP Utility Packages For the abstract Serializer -->

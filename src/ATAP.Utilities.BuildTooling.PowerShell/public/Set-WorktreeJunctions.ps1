@@ -10,6 +10,11 @@ relative paths and targets.
 This is useful when working with repositories that use junctions for shared configuration
 or dependencies, ensuring an existing worktree maintains the same junction structure as the source repository.
 
+This function can also remove an existing junction and replace it with a similar junction only pointing to a worktree
+instance of the source folder. This is useful during development, to point junctions like .claude and .github to
+an instance of the source folder that is being developed - it allows a development branch / worktree to access
+folders a development / branch worktree in another repository
+
 .PARAMETER SourceRepoPath
 The absolute path to the source git repository. This is the main repository from which
 junctions will be scanned.
@@ -21,6 +26,20 @@ FileInfo, or PathInfo). The underlying path must resolve to an existing director
 .PARAMETER WorktreePath
 The path to an existing worktree where junctions will be recreated. Can be relative or absolute.
 Example: "..\ATAP.Utilities-branch63"
+
+.PARAMETER DevSourceRepoPath
+The path to an existing folder. Can be relative or absolute.
+Example: "..\ATAP.Utilities-branch63"
+
+.PARAMETER DevSourceRepoPathInfo
+A file system path object to a folder (for example, DirectoryInfo, FileInfo, or PathInfo).
+The underlying path must resolve to an existing directory.
+
+.PARAMETER DevSourceRepoFolderNames
+A string array containing the names of the folders in the source repository that should be
+recreated as junctions in the worktree, but with their targets pointing to a development source repository.
+This is useful for development scenarios where you want certain junctions to point to a different location
+(like a development branch) while still maintaining the same relative paths.
 
 .OUTPUTS
 System.Management.Automation.PSCustomObject
@@ -64,6 +83,14 @@ function Set-WorktreeJunctions {
             ValueFromPipelineByPropertyName = $true,
             HelpMessage = 'The absolute path to the source git repository'
         )]
+        [Parameter(
+            Mandatory = $true,
+            Position = 0,
+            ParameterSetName = 'ByPathWithDev',
+            ValueFromPipeline = $false,
+            ValueFromPipelineByPropertyName = $true,
+            HelpMessage = 'The absolute path to the source git repository'
+        )]
         [ValidateNotNullOrEmpty()]
         [ValidateScript({ Test-Path $_ -PathType Container })]
         [string]$SourceRepoPath,
@@ -72,6 +99,14 @@ function Set-WorktreeJunctions {
             Mandatory = $true,
             Position = 0,
             ParameterSetName = 'ByPathInfo',
+            ValueFromPipeline = $false,
+            ValueFromPipelineByPropertyName = $true,
+            HelpMessage = 'A path object for the source git repository directory'
+        )]
+        [Parameter(
+            Mandatory = $true,
+            Position = 0,
+            ParameterSetName = 'ByPathInfoWithDev',
             ValueFromPipeline = $false,
             ValueFromPipelineByPropertyName = $true,
             HelpMessage = 'A path object for the source git repository directory'
@@ -87,20 +122,63 @@ function Set-WorktreeJunctions {
             HelpMessage = 'The path to an existing worktree where junctions will be recreated'
         )]
         [ValidateNotNullOrEmpty()]
-        [string]$WorktreePath
+        [string]$WorktreePath,
+
+        [Parameter(
+            Mandatory = $true,
+            Position = 2,
+            ParameterSetName = 'ByPathWithDev',
+            ValueFromPipeline = $false,
+            ValueFromPipelineByPropertyName = $true,
+            HelpMessage = 'The path to an existing dev source folder whose sub-folders will be used as junction targets'
+        )]
+        [ValidateNotNullOrEmpty()]
+        [ValidateScript({ Test-Path $_ -PathType Container })]
+        [string]$DevSourceRepoPath,
+
+        [Parameter(
+            Mandatory = $true,
+            Position = 2,
+            ParameterSetName = 'ByPathInfoWithDev',
+            ValueFromPipeline = $false,
+            ValueFromPipelineByPropertyName = $true,
+            HelpMessage = 'A path object for the dev source folder whose sub-folders will be used as junction targets'
+        )]
+        [ValidateNotNull()]
+        [object]$DevSourceRepoPathInfo,
+
+        [Parameter(
+            Mandatory = $true,
+            Position = 3,
+            ParameterSetName = 'ByPathWithDev',
+            ValueFromPipeline = $false,
+            ValueFromPipelineByPropertyName = $true,
+            HelpMessage = 'Names of junction folders whose targets should be redirected to the dev source repository'
+        )]
+        [Parameter(
+            Mandatory = $true,
+            Position = 3,
+            ParameterSetName = 'ByPathInfoWithDev',
+            ValueFromPipeline = $false,
+            ValueFromPipelineByPropertyName = $true,
+            HelpMessage = 'Names of junction folders whose targets should be redirected to the dev source repository'
+        )]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$DevSourceRepoFolderNames
     )
 
     BEGIN {
         $fn = 'Set-WorktreeJunctions'
         $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
         $sourceRepoFullPath = $null
+        $devSourceRepoFullPath = $null
 
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
         # Resolve and validate source repository path
         try {
             $sourceRepoInputPath = $null
-            if ($PSCmdlet.ParameterSetName -eq 'ByPath') {
+            if ($PSCmdlet.ParameterSetName -in @('ByPath', 'ByPathWithDev')) {
                 if (-not $PSBoundParameters.ContainsKey('SourceRepoPath') -or [string]::IsNullOrWhiteSpace($SourceRepoPath)) {
                     throw 'Parameter SourceRepoPath is required but was not provided or is empty'
                 }
@@ -183,6 +261,64 @@ function Set-WorktreeJunctions {
             throw $errorMessage
         }
 
+        # Resolve and validate dev source repository path (only for Dev parameter sets)
+        if ($PSCmdlet.ParameterSetName -in @('ByPathWithDev', 'ByPathInfoWithDev')) {
+            try {
+                $devSourceRepoInputPath = $null
+                if ($PSCmdlet.ParameterSetName -eq 'ByPathWithDev') {
+                    if (-not $PSBoundParameters.ContainsKey('DevSourceRepoPath') -or [string]::IsNullOrWhiteSpace($DevSourceRepoPath)) {
+                        throw 'Parameter DevSourceRepoPath is required but was not provided or is empty'
+                    }
+                    $devSourceRepoInputPath = $DevSourceRepoPath
+                }
+                else {
+                    if (-not $PSBoundParameters.ContainsKey('DevSourceRepoPathInfo') -or $null -eq $DevSourceRepoPathInfo) {
+                        throw 'Parameter DevSourceRepoPathInfo is required but was not provided'
+                    }
+
+                    if ($DevSourceRepoPathInfo -is [System.Management.Automation.PathInfo]) {
+                        $devSourceRepoInputPath = $DevSourceRepoPathInfo.Path
+                    }
+                    elseif ($DevSourceRepoPathInfo -is [System.IO.FileSystemInfo]) {
+                        $devSourceRepoInputPath = $DevSourceRepoPathInfo.FullName
+                    }
+                    elseif ($DevSourceRepoPathInfo.PSObject.Properties.Name -contains 'FullName') {
+                        $devSourceRepoInputPath = $DevSourceRepoPathInfo.FullName
+                    }
+                    elseif ($DevSourceRepoPathInfo.PSObject.Properties.Name -contains 'Path') {
+                        $devSourceRepoInputPath = $DevSourceRepoPathInfo.Path
+                    }
+
+                    if ([string]::IsNullOrWhiteSpace($devSourceRepoInputPath)) {
+                        throw 'DevSourceRepoPathInfo must contain a usable path value via FullName or Path'
+                    }
+                }
+
+                $resolvedDevSourceRepoPath = Resolve-Path $devSourceRepoInputPath -ErrorAction Stop
+                if (-not (Test-Path $resolvedDevSourceRepoPath.Path -PathType Container)) {
+                    throw "Dev source repository path '$($resolvedDevSourceRepoPath.Path)' is not a directory"
+                }
+
+                $devSourceRepoFullPath = $resolvedDevSourceRepoPath.Path
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Dev source repository path resolved to: $devSourceRepoFullPath"
+
+                # Snippet: Check and populate simple parameter
+                # Parameter: DevSourceRepoFolderNames
+                if (-not $PSBoundParameters.ContainsKey('DevSourceRepoFolderNames') -or $null -eq $DevSourceRepoFolderNames -or $DevSourceRepoFolderNames.Count -eq 0) {
+                    $errorMessage = 'Parameter DevSourceRepoFolderNames is required but was not provided or is empty'
+                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+                    throw $errorMessage
+                }
+
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Dev source folder names to redirect: $($DevSourceRepoFolderNames -join ', ')"
+            }
+            catch {
+                $errorMessage = "Failed to resolve DevSourceRepoPath: $($_.Exception.Message)"
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+                throw $errorMessage
+            }
+        }
+
         # Initialize result object
         $result = [PSCustomObject]@{
             Success          = $false
@@ -222,8 +358,19 @@ function Set-WorktreeJunctions {
                             # Target path in the existing worktree
                             $newJunctionPath = Join-Path $result.WorktreePath $relativePath
 
-                            # Junction's current target
+                            # Junction's current target — redirect to dev source if folder name matches
+                            $junctionLeafName = Split-Path $relativePath -Leaf
                             $target = $junction.Target
+                            if ($devSourceRepoFullPath -and $DevSourceRepoFolderNames -contains $junctionLeafName) {
+                                $devTarget = Join-Path $devSourceRepoFullPath $junctionLeafName
+                                if (Test-Path $devTarget -PathType Container) {
+                                    $target = $devTarget
+                                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Redirecting junction '$junctionLeafName' to dev source: $target"
+                                }
+                                else {
+                                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Dev source folder '$devTarget' not found; using original target for '$junctionLeafName'"
+                                }
+                            }
 
                             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Processing junction: $relativePath -> $target"
 
@@ -234,10 +381,18 @@ function Set-WorktreeJunctions {
                                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Created parent directory: $parentDir"
                             }
 
-                            # Remove placeholder folder if git created one, then create junction
+                            # Remove existing item at the target path.
+                            # Use 'cmd /c rmdir' for junctions to avoid deleting junction target contents.
                             if (Test-Path $newJunctionPath) {
-                                Remove-Item $newJunctionPath -Force -Recurse -ErrorAction Stop
-                                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Removed existing item at: $newJunctionPath"
+                                $existingItem = Get-Item -LiteralPath $newJunctionPath -Force -ErrorAction Stop
+                                if ($existingItem.LinkType -eq 'Junction') {
+                                    cmd /c rmdir "$newJunctionPath"
+                                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Removed existing junction at: $newJunctionPath"
+                                }
+                                else {
+                                    Remove-Item $newJunctionPath -Force -Recurse -ErrorAction Stop
+                                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Removed existing item at: $newJunctionPath"
+                                }
                             }
 
                             # Create the junction

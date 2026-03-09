@@ -170,9 +170,9 @@ ToDo: replace with a BuildTooling.Powershell script for New-Junction
 # if .claude is present in the repo root, and is a junction to the .claude subfolder under SharedVSCode folder, do nothing.
 # if .claude is present in the repo root, and is a junction to anything other than the .claude subfolder under SharedVSCode folder, delete and create it as a junction to the .claude subfolder under SharedVSCode folder.
 # if .claude is not present in the repo root create it as a junction to the .claude subfolder under SharedVSCode folder
-  if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
-  }
+if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+  . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
+}
 
 $userName = 'whertzing'
 $junctionFolderNames = ('.claude', '.github', '.vscode')
@@ -216,7 +216,26 @@ if (Test-Path $junctionFolderName) {
 
 ### Repository symbolic links
 
-### User Settings symbolic link
+#### Claude.md AI Agent symbolic link
+
+The file CLAUDE.md should be placed at the repository root
+
+```Powershell
+  # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
+  # ToDo: Fix after packaging is working
+  if (!${get-command New-SymbolicLink}) {
+    . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\New-SymbolicLink.ps1"
+  }
+  if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
+  }
+ $repositoryRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
+ cd $respoitoryRoot
+  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\CLAUDE.md"  -symbolicLinkPath ".\CLAUDE.md" -force
+
+```
+
+#### User Settings symbolic link
 
 The `settings.json` file at (e.g) `C:\Users\<username>\AppData\Roaming\Code\User` holds the final fallback to all VSC settings. It applies to all repositories and workspaces. Every developer on a host needs to link to the organization's common settings. to do this,replace the value of $username with the actual user name in the following command and run it.
 
@@ -249,14 +268,6 @@ $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey'
 
 ```
 
-of particular note are the AI Agent instruction files, for both Copilot and for Claude Code
-there is a frontmatter format mismatch between Copilot and Claude Code. For proper path-scoping in Claude Code, we need separate .claude/rules/ files with paths frontmatter and then @import the shared content body from .github/instructions/ to avoid duplication.
-​
-In every new repository, after running `git init`, run these commands (as an administrator) in the root folder of the repository:
-We create a junction in each repository that links to the `.github` folder in `SharedVSCode`.
-
-ToDo: replace with a BuildTooling.Powershell script for New-Junction
-
 ## Symbolic Links for Prettier formatting rules, CSpell, eslint rules, building Powershell; modules (Invoke-Build) and Mocha
 
 The organization has multiple GIT repositories. Every repository that uses Visual Studio Code as the IDE, needs a `.prettierrc.yml` with formatting rules and an `.eslintrc.js` with linting rules for Javascript at the repository base. We use the YAML format in order to support comments in the file.
@@ -272,9 +283,12 @@ In every new repository, after creating the .vscode directory and its contents, 
 
 ```Powershell
   # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
-if (!${get-command New-SymbolicLink}) {
-  . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\New-SymbolicLink.ps1"
-}
+  # ToDo: Fix after packaging is working
+  if (!${get-command New-SymbolicLink}) {
+    . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\New-SymbolicLink.ps1"
+  }
+
+  # ToDO: ensure we are at the repo root
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.markdownlint.yml"  -symbolicLinkPath ".\.markdownlint.yml" -force
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.prettierrc.yml"  -symbolicLinkPath ".\.prettierrc.yml" -force
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.gitignore"  -symbolicLinkPath ".\.gitignore" -force
@@ -309,10 +323,14 @@ Put the project name into a local setting.
 ToDo: CodeWorkspace File needs correcting.
 
 ```Powershell
+  if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
+  }
+
   # ToDo: must get the username for the specific computer from a vault
   $username = 'whertzing'
   # be SURE you are in the new project's directory
- # ToDo: Add Get-RepoRoot and make sure it navigates you to a empty direcotry
+ # ToDo: Add Get-RepoRoot and make sure it navigates you to a empty directory
   $AddPowershell = $false
   $AddCSharp = $true
   # set the local project name

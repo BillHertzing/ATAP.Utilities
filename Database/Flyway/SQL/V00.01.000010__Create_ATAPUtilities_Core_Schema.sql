@@ -118,7 +118,7 @@ GO
 -- SECTION 3 — Rule Primitives
 -- Holds the atomic BNF building blocks from the Rules Compendium
 -- markdown files, each keyed by its stable Philote GUID.
--- Data loaded from CSV via V00.01.000020__Load_ATAPUtilities_Data_From_BCP.sql
+-- Data loaded from CSV via V00.01.000020-000025__Load_ATAPUtilities_*_From_CSV.sql
 -- ===========================================================
 
 CREATE TABLE dbo.RulePrimitive (
@@ -155,7 +155,7 @@ GO
 -- ===========================================================
 -- SECTION 4 — Rule Definitions
 -- A Rule is a named composition of ordered RulePrimitives.
--- Data loaded from CSV via V00.01.000020__Load_ATAPUtilities_Data_From_BCP.sql
+-- Data loaded from CSV via V00.01.000020-000025__Load_ATAPUtilities_*_From_CSV.sql
 -- ===========================================================
 
 CREATE TABLE dbo.[Rule] (
@@ -247,6 +247,6 @@ GO
 
 -- ===========================================================
 -- All Philote, RulePrimitive, and Rule seed data is now loaded
--- from CSV files via V00.01.000020__Load_ATAPUtilities_Data_From_BCP.sql
+-- from CSV files via V00.01.000020-000025__Load_ATAPUtilities_*_From_CSV.sql
 -- This keeps schema (DDL) separate from data (DML).
 -- ===========================================================

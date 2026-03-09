@@ -1,0 +1,18 @@
+PhiloteId,RulePhiloteId,Notes
+ff743cde-3760-4f8f-aa73-7e22399520f3,f9a8b7c6-5d4e-3f2a-1b0c-9d8e7f6a5b4c,Instantiation of the YAML DataForTests snippet in UserSnippetsYAML.jsonc
+ad53413f-363e-4163-93f6-e48af564de1d,a2b3c4d5-6e7f-8a9b-0c1d-2e3f4a5b6c7d,Instantiation of the simple parameter check snippet in UserSnippetsPowershell.jsonc
+fb3e11f0-3477-48a1-995d-4a142958b5a8,b3c4d5e6-7f8a-9b0c-1d2e-3f4a5b6c7d8e,Instantiation of the simple parameter as Type check snippet in UserSnippetsPowershell.jsonc
+ed4cee01-d859-4d65-9c24-aafcf84e6701,c4d5e6f7-8a9b-0c1d-2e3f-4a5b6c7d8e9f,Instantiation of the deep parameter check snippet in UserSnippetsPowershell.jsonc
+729df80e-43a1-4393-83a9-8149b54b3ad7,d5e6f7a8-9b0c-1d2e-3f4a-5b6c7d8e9f0a,Instantiation of the deep parameter as Type check snippet in UserSnippetsPowershell.jsonc
+38481cc3-7dd6-4233-9057-275282271552,e6f7a8b9-0c1d-2e3f-4a5b-6c7d8e9f0a1b,Instantiation of the New-Cmdlet string input template snippet in UserSnippetsPowershell.jsonc
+b2329076-9ae8-4e7f-88d7-8297c4fc92ec,f7a8b9c0-1d2e-3f4a-5b6c-7d8e9f0a1b2c,Instantiation of the Pester test template snippet in UserSnippetsPowershell.jsonc
+580fc7ea-ea74-4be6-a4dc-7468193442de,a8b9c0d1-2e3f-4a5b-6c7d-8e9f0a1b2c3d,Instantiation of the PS DataForTests template snippet in UserSnippetsPowershell.jsonc
+b6bedbc3-113e-445d-a542-1fd356b472b7,b9c0d1e2-3f4a-5b6c-7d8e-9f0a1b2c3d4e,Instantiation of the ConfigRootKey access snippet in UserSnippetsPowershell.jsonc
+a1d43a35-1d24-4fcd-87c1-f56ec4620672,c0d1e2f3-4a5b-6c7d-8e9f-0a1b2c3d4e5f,Instantiation of the Log Debug statement snippet in UserSnippetsPowershell.jsonc
+9201ed36-c22a-40f0-8adc-713d5b7d2bd9,d1e2f3a4-5b6c-7d8e-9f0a-1b2c3d4e5f6a,Instantiation of the Throw Message block snippet in UserSnippetsPowershell.jsonc
+151aa5b1-5356-42df-808d-c456f717082a,e2f3a4b5-6c7d-8e9f-0a1b-2c3d4e5f6a7b,Instantiation of the Try-Catch-Finally block snippet in UserSnippetsPowershell.jsonc
+bee05f53-f4bd-4121-8cea-0b9158c0017a,f3a4b5c6-7d8e-9f0a-1b2c-3d4e5f6a7b8c,Instantiation of the ArrayList iteration snippet in UserSnippetsPowershell.jsonc
+7b130358-7e3a-4db1-b556-5b738513da03,a4b5c6d7-8e9f-0a1b-2c3d-4e5f6a7b8c9d,Instantiation of the HashTable iteration snippet in UserSnippetsPowershell.jsonc
+003dc4be-df93-4f9a-af7b-61a60f3a4f0b,b5c6d7e8-9f0a-1b2c-3d4e-5f6a7b8c9d0e,Instantiation of the PublicDatabaseAccess cmdlet snippet in UserSnippetsPowershell.jsonc
+943607d1-f8e4-413a-9b7c-8dae83352628,c6d7e8f9-0a1b-2c3d-4e5f-6a7b8c9d0e1f,Instantiation of the PrivateDatabaseAccess function snippet in UserSnippetsPowershell.jsonc
+974378cd-6a76-4dcd-a105-037dea8d7f27,d7e8f9a0-1b2c-3d4e-5f6a-7b8c9d0e1f2a,Instantiation of the FileParser loop snippet in UserSnippetsPowershell.jsonc

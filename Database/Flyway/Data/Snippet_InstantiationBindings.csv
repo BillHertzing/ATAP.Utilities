@@ -1,0 +1,35 @@
+InstantiationPhiloteId,InputName,InputValue
+ff743cde-3760-4f8f-aa73-7e22399520f3,SnippetName,Create DataForTests Template (YAML)
+ff743cde-3760-4f8f-aa73-7e22399520f3,TargetFile,C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsYAML.jsonc
+ad53413f-363e-4163-93f6-e48af564de1d,SnippetName,Check and populate simple parameter
+ad53413f-363e-4163-93f6-e48af564de1d,TargetFile,C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc
+fb3e11f0-3477-48a1-995d-4a142958b5a8,SnippetName,Check and populate simple parameter as Type
+fb3e11f0-3477-48a1-995d-4a142958b5a8,TargetFile,C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc
+ed4cee01-d859-4d65-9c24-aafcf84e6701,SnippetName,Check and populate Deep parameter
+ed4cee01-d859-4d65-9c24-aafcf84e6701,TargetFile,C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc
+729df80e-43a1-4393-83a9-8149b54b3ad7,SnippetName,Check and populate Deep parameter as Type
+729df80e-43a1-4393-83a9-8149b54b3ad7,TargetFile,C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc
+38481cc3-7dd6-4233-9057-275282271552,SnippetName,New-Cmdlet with String as primary input
+38481cc3-7dd6-4233-9057-275282271552,TargetFile,C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc
+b2329076-9ae8-4e7f-88d7-8297c4fc92ec,SnippetName,Create Pester Test Template
+b2329076-9ae8-4e7f-88d7-8297c4fc92ec,TargetFile,C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc
+580fc7ea-ea74-4be6-a4dc-7468193442de,SnippetName,Create DataForTests Template (PS)
+580fc7ea-ea74-4be6-a4dc-7468193442de,TargetFile,C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc
+b6bedbc3-113e-445d-a542-1fd356b472b7,SnippetName,ConfigRootKey
+b6bedbc3-113e-445d-a542-1fd356b472b7,TargetFile,C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc
+a1d43a35-1d24-4fcd-87c1-f56ec4620672,SnippetName,Log Debug
+a1d43a35-1d24-4fcd-87c1-f56ec4620672,TargetFile,C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc
+9201ed36-c22a-40f0-8adc-713d5b7d2bd9,SnippetName,Throw Message
+9201ed36-c22a-40f0-8adc-713d5b7d2bd9,TargetFile,C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc
+151aa5b1-5356-42df-808d-c456f717082a,SnippetName,Try-Catch-Finally
+151aa5b1-5356-42df-808d-c456f717082a,TargetFile,C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc
+bee05f53-f4bd-4121-8cea-0b9158c0017a,SnippetName,Iterate ArrayList
+bee05f53-f4bd-4121-8cea-0b9158c0017a,TargetFile,C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc
+7b130358-7e3a-4db1-b556-5b738513da03,SnippetName,Iterate HashTable
+7b130358-7e3a-4db1-b556-5b738513da03,TargetFile,C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc
+003dc4be-df93-4f9a-af7b-61a60f3a4f0b,SnippetName,PublicDatabaseAccess
+003dc4be-df93-4f9a-af7b-61a60f3a4f0b,TargetFile,C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc
+943607d1-f8e4-413a-9b7c-8dae83352628,SnippetName,PrivateDatabaseAccess
+943607d1-f8e4-413a-9b7c-8dae83352628,TargetFile,C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc
+974378cd-6a76-4dcd-a105-037dea8d7f27,SnippetName,FileParser
+974378cd-6a76-4dcd-a105-037dea8d7f27,TargetFile,C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc

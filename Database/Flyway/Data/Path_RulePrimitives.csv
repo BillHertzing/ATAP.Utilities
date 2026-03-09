@@ -7,7 +7,7 @@ b5c6d7e8-9f0a-1b2c-3d4e-5f6a7b8c9d0e,6,<extended-path>,Extended-length path with
 c6d7e8f9-0a1b-2c3d-4e5f-6a7b8c9d0e1f,6,<drive>,Drive letter followed by colon (e.g. C: D: Z:)
 d7e8f9a0-1b2c-3d4e-5f6a-7b8c9d0e1f2a,6,<path-tail>,Recursive path segment structure (folder\subfolder\file)
 e8f9a0b1-2c3d-4e5f-6a7b-8c9d0e1f2a3b,6,<name>,File or directory name with reserved name validation
-f9a0b1c2-3d4e-5f6a-7b8c-9d0e1f2a3b4c,6,<namechar>,Valid path character excluding \ / : * ? " < > |
+f9a0b1c2-3d4e-5f6a-7b8c-9d0e1f2a3b4c,6,<namechar>,"Valid path character excluding \ / : * ? "" < > |"
 a0b1c2d3-4e5f-6a7b-8c9d-0e1f2a3b4c5d,6,<server>,UNC server name (hostname/FQDN/IP address)
 b1c2d3e4-5f6a-7b8c-9d0e-1f2a3b4c5d6e,6,<share>,UNC share name identifying shared resource
 c2d3e4f5-6a7b-8c9d-0e1f-2a3b4c5d6e7f,6,<letter>,Alphabetic drive letter character (A-Z or a-z)

@@ -159,10 +159,10 @@ function Invoke-Flyway {
     [string]$FlywayBasePath,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
-    [string]$flywaySqlMigrationsPath,
+    [string]$FlywaySqlMigrationsPath,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
-    [string]$flywaySharedSqlMigrationsPath,
+    [string]$FlywaySharedSqlMigrationsPath,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
     [string]$FlywayDataPath,
@@ -266,8 +266,8 @@ function Invoke-Flyway {
     }
     $FlywayExecutablePath = Get-PVal -ParameterName "FlywayExecutablePath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayExecutablePath" -Settings $databasesCollection -DefaultValue $(if ($FlywayExecutablePath) { $FlywayExecutablePath } else { 'flyway' })
     $FlywayBasePath = Get-PVal -ParameterName "FlywayBasePath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayBasePath" -Settings $databasesCollection -DefaultValue $FlywayBasePath
-    $flywaySqlMigrationsPath = Get-PVal -ParameterName "SqlMigrationsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlMigrationsPath" -Settings $databasesCollection -DefaultValue $flywaySqlMigrationsPath
-    $flywaySharedSqlMigrationsPath = Get-PVal -ParameterName "SharedSqlMigrationsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SharedSqlMigrationsPath" -Settings $databasesCollection -DefaultValue $flywaySharedSqlMigrationsPath
+    $FlywaySqlMigrationsPath = Get-PVal -ParameterName "FlywaySqlMigrationsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywaySqlMigrationsPath" -Settings $databasesCollection -DefaultValue $FlywaySqlMigrationsPath
+    $FlywaySharedSqlMigrationsPath = Get-PVal -ParameterName "FlywaySharedSqlMigrationsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SharedSqlMigrationsPath" -Settings $databasesCollection -DefaultValue $FlywaySharedSqlMigrationsPath
     $FlywayDataPath = Get-PVal -ParameterName "FlywayDataPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayDataPath" -Settings $databasesCollection -DefaultValue $FlywayDataPath
     $FlywayTomlPath = Get-PVal -ParameterName "FlywayTomlPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayTomlPath" -Settings $databasesCollection -DefaultValue $FlywayTomlPath
     $FlywayAdditionalArgs = Get-PVal -ParameterName "FlywayAdditionalArgs" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayAdditionalArgs" -Settings $databasesCollection -DefaultValue $FlywayAdditionalArgs -AllowMissing
@@ -304,7 +304,7 @@ function Invoke-Flyway {
     $values = @()
     try {
       foreach ($name in $Files) {
-        $full = Join-Path $flywaySqlMigrationsPath $name
+        $full = Join-Path $FlywaySqlMigrationsPath $name
         if (-not (Test-Path $full)) { throw "File not found: $full" }
         $sha = (Get-FileHash -Path $full -Algorithm SHA256).Hash.ToLower()
         $type = if ($name -like 'R__*') { 'R' } elseif ($name -like 'V*__*') { 'V' } else { 'R' }
@@ -443,17 +443,24 @@ function Invoke-Flyway {
       $env:FLYWAY_PLACEHOLDERS_DATA_DIR = $FlywayDataPath
 
       # Build flyway parameters and execute
-      $flywayParams = @("-configFiles=$FlywayTomlPath", "-environment=$environmentKey")
+      $flywayParams = @("-configFiles=$FlywayTomlPath", "-environment=$environmentKey", "-X")
       if ($FlywayAdditionalArgs) { $flywayParams += $FlywayAdditionalArgs }
       $flywayParams += $FlywayCommand
 
       if ($PSCmdlet.ShouldProcess($FlywayTomlPath, "flyway $FlywayCommand [$environmentKey]")) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Running flyway $FlywayCommand..."
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling flyway with args: $($flywayParams -join ' ')"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Changing to FlywayBasePath: $FlywayBasePath"
 
-        & $FlywayExecutablePath @flywayParams
-        $exit = $LASTEXITCODE
-        if ($exit -ne 0) { throw "flyway exited with code $exit" }
+        Push-Location $FlywayBasePath
+        try {
+          & $FlywayExecutablePath @flywayParams
+          $exit = $LASTEXITCODE
+          if ($exit -ne 0) { throw "flyway exited with code $exit" }
+        }
+        finally {
+          Pop-Location
+        }
 
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "flyway $FlywayCommand completed successfully"
         $script:success = $true

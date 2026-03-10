@@ -1,1 +1,9 @@
-C:/Dropbox/whertzing/GitHub/SharedVSCode/.gitattributes
+*             text=auto
+
+# Windows line endings
+Windows/**    text eol=crlf
+
+# Linux line endings
+Wsl2Ubuntu/** text eol=lf
+
+*.jpg         -text

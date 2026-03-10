@@ -292,6 +292,7 @@ In every new repository, after creating the .vscode directory and its contents, 
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.markdownlint.yml"  -symbolicLinkPath ".\.markdownlint.yml" -force
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.prettierrc.yml"  -symbolicLinkPath ".\.prettierrc.yml" -force
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.gitignore"  -symbolicLinkPath ".\.gitignore" -force
+  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.gitattributes"  -symbolicLinkPath ".\.gitattributes" -force
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.editorconfig"  -symbolicLinkPath ".\.editorconfig" -force
   # Every projects in a repository needs a ReadMe.md
   Set-Content -Path './ReadMe.md' -Value "ReadMe file for $(pwd | split-path -leaf)"

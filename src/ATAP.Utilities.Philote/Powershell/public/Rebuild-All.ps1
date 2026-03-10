@@ -52,14 +52,6 @@ catch {
   throw
 }
 
-# Set SqlInstance based on $environment
-
-# Set FLYWAY_PLACEHOLDERS_DATA_DIR from FLYWAY_DATA_DIR
-if ($env:FLYWAY_DATA_DIR) {
-  $env:FLYWAY_PLACEHOLDERS_DATA_DIR = $env:FLYWAY_DATA_DIR
-  Write-PSFMessage -Level Important -Message "Set FLYWAY_PLACEHOLDERS_DATA_DIR = $env:FLYWAY_PLACEHOLDERS_DATA_DIR"
-}
-
 Write-PSFMessage -Level Important -Message "=== Starting $databaseName Database Build ==="
 Write-PSFMessage -Level Important -Message "Database: $databaseName"
 Write-PSFMessage -Level Important -Message "Database host: $databaseHost"

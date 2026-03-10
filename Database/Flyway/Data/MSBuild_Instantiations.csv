@@ -1,0 +1,15 @@
+PhiloteId,RulePhiloteId,Notes
+9e75e55e-6214-4f2f-94c1-e2bd89722e5d,2f8b8c1b-3e25-44a0-9c6d-6b2f9f3f5e6c,Instantiation of the StronglyTypedIds interfaces project file
+12ff5708-3c77-4f14-afd5-a5af865a9f6f,8d6a0bf9-4ed6-4a4d-8e9d-7f1f0cfad3e3,Instantiation of the StronglyTypedIds implementation project file
+177f5b16-b693-4a63-89ae-f732fad91265,12df4c1d-7f30-4a3c-b0fd-83f6de6a2c38,Instantiation of the Philote interfaces project file (old location)
+d6f31996-1d7c-4350-a94b-bc525c87dace,6c7dbe32-3c6a-4ea8-bc10-5a1b1d0584db,Instantiation of the Philote implementation project file
+95204ea0-ed40-45db-81f5-0feb1eb31736,1c8b8c57-0d64-4e4a-8e60-5f8a3f7f7d3a,Instantiation of the StronglyTypedId aggregator project file
+12ea4297-d74f-44fd-b245-2cfbfe48d80d,54bfa6f5-7be2-4a5b-94a4-3f4c2b5e6a1d,Instantiation of the StronglyTypedId interfaces project file
+d4b19694-38e0-40f3-8947-2e17b88a1f33,c2cbb8dd-2a7a-4c2e-9e31-3bc8d2db1f44,Instantiation of the StronglyTypedId models project file
+69653f08-b533-4cbd-967f-68d1493a8017,9f4b5a1c-2d71-4d8c-87d2-7d7ab6e9c2c1,Instantiation of the StronglyTypedId System.Text.Json converter project file
+857f59b0-c734-4a28-975b-3c9799b323f5,f5a4f28a-2f21-4d0c-9939-6a9d5e6b7c3f,Instantiation of the Philote aggregator project file
+bb3ea83d-1f5a-4300-b8bc-9cbaaf97cb8d,7a3f1d5c-9c14-4df5-8a6b-3f1a4b2c7d9e,Instantiation of the Philote default configuration project file
+54f34812-5b42-4638-932c-72d0fae1e432,f6b8c8d2-9c91-4a1c-9f5e-2e7b5c2d6a1f,Instantiation of the Philote models project file
+5edf1de7-ebd8-42f9-abe5-54598785fe7d,2a5d8b1c-7e6f-4c0b-b2d4-9b2c5e1d7f4a,Instantiation of the Philote interfaces project file (sub-folder)
+b0e79a86-60a7-4947-b467-0cce93c01040,4f6c9e5d-1b62-4a42-8a8c-7e4f3c6a9d1e,Instantiation of the Philote System.Text.Json converter project file
+d22dcd35-5699-4c89-82fb-d40d8d1e5064,b5c9d7f1-1c8f-4d1e-8bba-2f7b2e6d5a10,Instantiation of the Philote converter interfaces project file

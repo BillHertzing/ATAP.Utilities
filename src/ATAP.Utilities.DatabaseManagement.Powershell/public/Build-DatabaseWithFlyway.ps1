@@ -154,7 +154,7 @@ https://github.com/whertzing/ATAP.Utilities
         . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\DatabaseProvisioning.ps1'
       }
       if (-not (Get-Command -Name 'Invoke-Flyway' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Invoke-Flyway.ps1'
+        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-branch63\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Invoke-Flyway.ps1'
       }
     }
     catch {
@@ -178,8 +178,8 @@ https://github.com/whertzing/ATAP.Utilities
     # endregion Database connection parameter validation
     $DatabasePath = Get-PVal -ParameterName "DatabasePath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection -DefaultValue $DatabasePath
     $FlywayBasePath = Get-PVal -ParameterName "FlywayBasePath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayBasePath" -Settings $databasesCollection -DefaultValue $FlywayBasePath
-    $flywaySqlMigrationsPath = Get-PVal -ParameterName "SqlMigrationsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlMigrationsPath" -Settings $databasesCollection -DefaultValue $flywaySqlMigrationsPath
-    $flywaySharedSqlMigrationsPath = Get-PVal -ParameterName "SharedSqlMigrationsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SharedSqlMigrationsPath" -Settings $databasesCollection -DefaultValue $flywaySharedSqlMigrationsPath
+    $flywaySqlMigrationsPath = Get-PVal -ParameterName "FlywaySqlMigrationsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywaySqlMigrationsPath" -Settings $databasesCollection -DefaultValue $flywaySqlMigrationsPath
+    $flywaySharedSqlMigrationsPath = Get-PVal -ParameterName "FlywaySharedSqlMigrationsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywaySharedSqlMigrationsPath" -Settings $databasesCollection -DefaultValue $flywaySharedSqlMigrationsPath
     $FlywayDataPath = Get-PVal -ParameterName "FlywayDataPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayDataPath" -Settings $databasesCollection -DefaultValue $FlywayDataPath
     $FlywayTomlPath = Get-PVal -ParameterName "FlywayTomlPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayTomlPath" -Settings $databasesCollection -DefaultValue $FlywayTomlPath
 
@@ -214,12 +214,6 @@ https://github.com/whertzing/ATAP.Utilities
 
   PROCESS {
     try {
-
-      # Set FLYWAY_PLACEHOLDERS_DATA_DIR from $FlywaySQLDataPath
-      if ($FlywaySQLDataPath) {
-        $env:FLYWAY_PLACEHOLDERS_DATA_DIR = $FlywaySQLDataPath
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Set FLYWAY_PLACEHOLDERS_DATA_DIR = $env:FLYWAY_PLACEHOLDERS_DATA_DIR"
-      }
 
       # Change to Flyway directory
       $originalLocation = Get-Location
@@ -372,6 +366,7 @@ https://github.com/whertzing/ATAP.Utilities
           Port                          = $Port
           IntegratedSecurity            = $useIntegratedSecurityForFlyway
           FlywayCommand                 = 'migrate'
+          FlywayBasePath                = $FlywayBasePath
           FlywaySqlMigrationsPath       = $flywaySqlMigrationsPath
           FlywaySharedSqlMigrationsPath = $flywaySharedSqlMigrationsPath
           FlywayDataPath                = $flywayDataPath

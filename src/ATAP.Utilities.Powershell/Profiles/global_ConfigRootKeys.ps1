@@ -42,7 +42,11 @@ $global:configRootKeys = @{
   'CHATGPT_USER_IDConfigRootKey'                                                                 = 'CHATGPT_USER_ID'
   'CHATGPT_API_TOKENConfigRootKey'                                                               = 'CHATGPT_API_TOKEN'
   # Perplexity settings
-  'PERPLEXITY_API_TOKENConfigRootKey'                                                            = 'PERPLEXITY_API_TOKEN'
+  'PERPLEXITY_API_KEYConfigRootKey'                                                              = 'PERPLEXITY_API_KEY'
+  # Syncfusion settings
+  'SYNCFUSION_API_KEYConfigRootKey'                                                              = 'SYNCFUSION_API_KEY'
+  # Context7 settings
+  'CONTEXT7_API_KEYConfigRootKey'                                                                = 'CONTEXT7_API_KEY'
 
   'ChocolateyInstallDirConfigRootKey'                                                            = 'ChocolateyInstall'
   'ChocolateyBinDirConfigRootKey'                                                                = 'ChocolateyBinDir'

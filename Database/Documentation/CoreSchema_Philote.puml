@@ -1,0 +1,76 @@
+@startuml CoreSchema_Philote
+' ============================================================
+' ATAPUtilities Core Schema — Section 1: Philote Foundation
+' Source: V00.01.000010__Create_ATAPUtilities_Core_Schema.sql
+' ============================================================
+' Philote mirrors the C# GuidPhilote<TId> record:
+'   public TId Id { get; init; }
+'   public ConcurrentDictionary<string, IAbstractStronglyTypedId<Guid>>? AdditionalIds
+'   public IEnumerable<ITimeBlock>? TimeBlocks
+' ============================================================
+
+skinparam linetype ortho
+skinparam roundcorner 5
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 11
+skinparam entity {
+    BackgroundColor #EEF6EE
+    BorderColor     #2E7D32
+    FontColor       #1A1A1A
+}
+skinparam arrow {
+    Color           #2E7D32
+    FontSize        9
+}
+
+entity "Philote" as Philote <<table>> {
+    ' Stable GUID identity — maps to GuidPhilote<TId>.Id.Value
+    * PhiloteId  : UNIQUEIDENTIFIER <<PK>>
+    --
+    CreatedAt    : DATETIME2
+    ' DEFAULT: NEWID()
+    ' DEFAULT: SYSUTCDATETIME()
+}
+
+entity "PhiloteAdditionalId" as PhiloteAddId <<table>> {
+    ' Maps ConcurrentDictionary<string, IAbstractStronglyTypedId<Guid>>
+    * PhiloteAdditionalIdId : INT <<PK, IDENTITY>>
+    --
+    PhiloteId   : UNIQUEIDENTIFIER <<FK>>
+    KeyName     : NVARCHAR(200)
+    ' UNIQUE (PhiloteId, KeyName) — dictionary key uniqueness
+    ValueId     : UNIQUEIDENTIFIER
+}
+
+entity "PhiloteTimeBlock" as PhiloteTimeBlock <<table>> {
+    ' Maps IEnumerable<ITimeBlock> (Itenso.TimePeriod.ITimeBlock)
+    * PhiloteTimeBlockId : INT <<PK, IDENTITY>>
+    --
+    PhiloteId   : UNIQUEIDENTIFIER <<FK>>
+    StartAt     : DATETIME2
+    EndAt       : DATETIME2 [NULL]
+    ' NULL EndAt = open-ended time block
+}
+
+' ── Relationships ─────────────────────────────────────────
+Philote ||--o{ PhiloteAddId     : "AdditionalIds\n(dictionary entries)"
+Philote ||--o{ PhiloteTimeBlock : "TimeBlocks\n(time period collection)"
+
+note right of Philote
+  Every domain entity (RulePrimitive, Rule,
+  RuleSet, RuleInstantiation) stores its stable
+  identity as a PhiloteId FK into this table,
+  making Philote the universal identity anchor.
+end note
+
+note bottom of PhiloteAddId
+  UNIQUE constraint on (PhiloteId, KeyName)
+  enforces dictionary-key uniqueness per Philote.
+end note
+
+note bottom of PhiloteTimeBlock
+  NULL EndAt represents an open-ended (still-active)
+  time block, consistent with ITimeBlock semantics.
+end note
+
+@enduml

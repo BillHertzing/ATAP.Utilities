@@ -20,13 +20,14 @@ locations = [
 ]
 
 [flyway.placeholders]
-# All placeholders use environment variables
-data_dir       = "${env:FLYWAY_DATA_DIR}"
-PackageName    = "${env:FLYWAY_PACKAGE_NAME}"
-PackageVersion = "${env:FLYWAY_PACKAGE_VERSION}"
-GitTag         = "${env:FLYWAY_GIT_TAG}"
-GitCommit      = "${env:FLYWAY_GIT_COMMIT}"
-ManifestValues = "${env:FLYWAY_MANIFEST_VALUES}"
+# Placeholders are set via environment variables by Invoke-Flyway.ps1:
+#   $env:FLYWAY_PLACEHOLDERS_DATA_DIR       → ${data_dir}
+#   $env:FLYWAY_PLACEHOLDERS_PACKAGENAME    → ${PackageName}
+#   $env:FLYWAY_PLACEHOLDERS_PACKAGEVERSION → ${PackageVersion}
+#   $env:FLYWAY_PLACEHOLDERS_GITTAG         → ${GitTag}
+#   $env:FLYWAY_PLACEHOLDERS_GITCOMMIT      → ${GitCommit}
+#   $env:FLYWAY_PLACEHOLDERS_MANIFESTVALUES → ${ManifestValues}
+# Do not define them here or they will override the environment variable values
 
 # Database connection set via environment variables:
 # FLYWAY_URL

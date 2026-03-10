@@ -12,17 +12,17 @@ $connectionMethod = 'tcp'
 # Set the path where the database files will be created
 $databasePath = "C:\LocalDBs\$environment\$databaseName"
 # Set the path to the provisioning scripts
-$ProvisioningScriptsPath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement\SharedSQL'
-# Set the FlywayBasePath
-$flywayBasePath = "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\Databases\$databaseName\Flyway"
+$ProvisioningScriptsPath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-branch63\src\ATAP.Utilities.DatabaseManagement\SharedSQL'
+# Set the FlywayBasePath - using Database folder (singular) for the new structure
+$flywayBasePath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-branch63\Database\Flyway'
 # Set the path to the SQL migrations
-$flywaySqlMigrationsPath = Join-Path $flywayBasePath 'sql'
+$flywaySqlMigrationsPath = Join-Path $flywayBasePath 'SQL'
 # Set the path to the shared SQL migration scripts
-$flywaySharedSqlMigrationsPath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement\SharedSQL'
+$flywaySharedSqlMigrationsPath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-branch63\src\ATAP.Utilities.DatabaseManagement\SharedSQL'
 # Set the path to the Flyway Data directory
-$flywayDataPath = Join-Path $flywayBasePath 'DATA'
+$flywayDataPath = Join-Path $flywayBasePath 'Data'
 # Set the path to the Flyway configuration file
-$FlywayTomlPath = Join-Path $flywayBasePath 'flyway.conf'
+$FlywayTomlPath = Join-Path $flywayBasePath 'flyway.toml'
 # Force the database to be dropped and recreated
 $Force = $true
 
@@ -36,10 +36,10 @@ try {
   Import-Module dbatools -ErrorAction Stop
 
   if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
+    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-branch63\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
   }
   if (-not (Get-Command -Name 'Build-DatabaseWithFlyway' -CommandType Function -ErrorAction SilentlyContinue)) {
-    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Build-DatabaseWithFlyway.ps1'
+    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-branch63\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Build-DatabaseWithFlyway.ps1'
   }
 
   # Note: Load-ATAPUtilities function to be created in future if data loading is needed
@@ -51,12 +51,6 @@ catch {
   $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
   Write-PSFMessage -Level Error -Message $errorMessage
   throw
-}
-
-# Set FLYWAY_PLACEHOLDERS_DATA_DIR from FLYWAY_DATA_DIR
-if ($env:FLYWAY_DATA_DIR) {
-  $env:FLYWAY_PLACEHOLDERS_DATA_DIR = $env:FLYWAY_DATA_DIR
-  Write-PSFMessage -Level Important -Message "Set FLYWAY_PLACEHOLDERS_DATA_DIR = $env:FLYWAY_PLACEHOLDERS_DATA_DIR"
 }
 
 Write-PSFMessage -Level Important -Message "=== Starting $databaseName Database Build ==="

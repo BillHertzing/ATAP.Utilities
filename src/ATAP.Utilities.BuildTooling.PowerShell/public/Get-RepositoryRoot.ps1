@@ -1,11 +1,13 @@
 <#
 .SYNOPSIS
-Finds and returns the repository root directory by searching upward for a .git folder.
+Finds and returns the repository root directory by searching upward for .git (folder or file).
 
 .DESCRIPTION
 Searches from the current working directory upward through the directory tree
-until it finds a .git folder, indicating the repository root. Returns the
-relative path from the current directory to the repository root.
+until it finds a .git folder (standard repository) or .git file (Git worktree),
+indicating the repository root. Returns the relative path from the current
+directory to the repository root. Supports both standard Git repositories and
+Git worktrees.
 
 .PARAMETER StartPath
 Optional starting path for the search. Defaults to current working directory (Get-Location).
@@ -59,9 +61,9 @@ function Get-RepositoryRoot {
   while ($currentPath -and $depth -lt $maxDepth) {
     $gitPath = Join-Path $currentPath '.git'
 
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Checking for .git folder at: $gitPath"
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Checking for .git at: $gitPath"
 
-    if (Test-Path $gitPath -PathType Container) {
+    if (Test-Path $gitPath) {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Found repository root at: $currentPath"
 
       # Calculate relative path from original location to repo root

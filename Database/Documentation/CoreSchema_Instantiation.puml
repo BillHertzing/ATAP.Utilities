@@ -1,0 +1,69 @@
+@startuml CoreSchema_Instantiation
+' ============================================================
+' ATAPUtilities Core Schema — Section 6: Rule Instantiations
+' Source: V00.01.000010__Create_ATAPUtilities_Core_Schema.sql
+' ============================================================
+' A RuleInstantiation records a specific rendering / binding
+' of a Rule to concrete input values.
+' ============================================================
+
+skinparam linetype ortho
+skinparam roundcorner 5
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 11
+skinparam entity {
+    BackgroundColor #F3E5F5
+    BorderColor     #6A1B9A
+    FontColor       #1A1A1A
+}
+skinparam arrow {
+    Color           #6A1B9A
+    FontSize        9
+}
+
+' ── Referenced entities (abbreviated for context) ─────────
+entity "Rule" as Rule <<table>> {
+    * PhiloteId               : UNIQUEIDENTIFIER <<PK>>
+    --
+    PrimitiveLanguageKindId   : TINYINT
+    Name                      : NVARCHAR(200)
+}
+
+' ── Instantiation ─────────────────────────────────────────
+entity "RuleInstantiation" as RuleInst <<table>> {
+    ' PhiloteId is both PK and FK into dbo.Philote (identity anchor)
+    * PhiloteId     : UNIQUEIDENTIFIER <<PK, FK→Philote>>
+    --
+    RulePhiloteId   : UNIQUEIDENTIFIER <<FK→Rule>>
+    CreatedAt       : DATETIME2
+    ' DEFAULT: SYSUTCDATETIME()
+    Notes           : NVARCHAR(MAX) [NULL]
+}
+
+entity "RuleInstantiationBinding" as RuleInstBind <<table>> {
+    ' One row per input value bound for this instantiation
+    * RuleInstantiationBindingId : INT <<PK, IDENTITY>>
+    --
+    InstantiationPhiloteId : UNIQUEIDENTIFIER <<FK→RuleInstantiation>>
+    InputName              : NVARCHAR(200)
+    ' UNIQUE (InstantiationPhiloteId, InputName)
+    InputValue             : NVARCHAR(MAX) [NULL]
+}
+
+' ── Relationships ─────────────────────────────────────────
+Rule      ||--o{ RuleInst      : "is instantiated by"
+RuleInst  ||--o{ RuleInstBind  : "has bindings"
+
+note right of RuleInst
+  Each instantiation captures a point-in-time
+  rendering of a Rule with concrete values
+  for all declared RulePrimitiveInputs.
+end note
+
+note bottom of RuleInstBind
+  InputName corresponds to RulePrimitiveInput.InputName.
+  The UNIQUE constraint on (InstantiationPhiloteId, InputName)
+  ensures each input is bound at most once per instantiation.
+end note
+
+@enduml

@@ -1,0 +1,140 @@
+@startuml CoreSchema_Rules
+' ============================================================
+' ATAPUtilities Core Schema — Sections 2–5: Rules Domain
+' Source: V00.01.000010__Create_ATAPUtilities_Core_Schema.sql
+' ============================================================
+' Covers:
+'   2. PrimitiveLanguageKind   — classification lookup
+'   3. RulePrimitive           — atomic BNF building blocks
+'      RulePrimitiveInput      — named inputs per primitive
+'   4. Rule                    — named composition of primitives
+'      RulePrimitiveComposition— ordered primitives inside a rule
+'   5. RuleSet / RuleSetMember — groupings of rules
+' ============================================================
+
+skinparam linetype ortho
+skinparam roundcorner 5
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 11
+skinparam entity {
+    BackgroundColor #FFF8E1
+    BorderColor     #E65100
+    FontColor       #1A1A1A
+}
+skinparam arrow {
+    Color           #E65100
+    FontSize        9
+}
+
+' ── Classification Lookup ─────────────────────────────────
+entity "PrimitiveLanguageKind" as LangKind <<lookup>> {
+    ' Seed rows: CSharp=1, Powershell=2, SQL=3, MSBuild=4, Snippet=5, Path=6
+    * PrimitiveLanguageKindId : TINYINT <<PK>>
+    --
+    Name        : NVARCHAR(50)
+    Description : NVARCHAR(200) [NULL]
+}
+
+' ── Rule Primitives ───────────────────────────────────────
+entity "RulePrimitive" as RulePrimitive <<table>> {
+    ' PhiloteId is both PK and FK into dbo.Philote (identity anchor)
+    * PhiloteId               : UNIQUEIDENTIFIER <<PK, FK→Philote>>
+    --
+    PrimitiveLanguageKindId   : TINYINT <<FK>>
+    Name                      : NVARCHAR(200)
+    ' UNIQUE (PrimitiveLanguageKindId, Name)
+    Description               : NVARCHAR(MAX) [NULL]
+    BnfDefinition             : NVARCHAR(MAX) [NULL]
+    Attribution               : NVARCHAR(MAX) [NULL]
+}
+
+entity "RulePrimitiveInput" as RulePrimInput <<table>> {
+    ' Named inputs declared by each primitive (like formal parameters)
+    * RulePrimitiveInputId : INT <<PK, IDENTITY>>
+    --
+    PhiloteId     : UNIQUEIDENTIFIER <<FK→RulePrimitive>>
+    InputName     : NVARCHAR(200)
+    ' UNIQUE (PhiloteId, InputName)
+    TypeName      : NVARCHAR(200) [NULL]
+    Description   : NVARCHAR(MAX) [NULL]
+    DefaultValue  : NVARCHAR(MAX) [NULL]
+    IsRequired    : BIT
+    ' DEFAULT: 1 (required by default)
+}
+
+' ── Rule Definitions ──────────────────────────────────────
+entity "Rule" as Rule <<table>> {
+    ' PhiloteId is both PK and FK into dbo.Philote (identity anchor)
+    * PhiloteId               : UNIQUEIDENTIFIER <<PK, FK→Philote>>
+    --
+    PrimitiveLanguageKindId   : TINYINT <<FK>>
+    Name                      : NVARCHAR(200)
+    ' UNIQUE (PrimitiveLanguageKindId, Name)
+    Purpose                   : NVARCHAR(MAX) [NULL]
+    SourceFileReference       : NVARCHAR(500) [NULL]
+}
+
+entity "RulePrimitiveComposition" as RulePC <<table>> {
+    ' Ordered list of primitives that compose a Rule
+    * RulePrimitiveCompositionId : INT <<PK, IDENTITY>>
+    --
+    RulePhiloteId      : UNIQUEIDENTIFIER <<FK→Rule>>
+    SequenceKey        : NVARCHAR(20)
+    ' Short label e.g. "1", "2a", "3b" — UNIQUE (RulePhiloteId, SequenceKey)
+    PrimitivePhiloteId : UNIQUEIDENTIFIER <<FK→RulePrimitive>>
+    BoundInputsJson    : NVARCHAR(MAX) [NULL]
+    ' JSON: {"InputName": "BoundValue", ...}
+    Notes              : NVARCHAR(MAX) [NULL]
+}
+
+' ── Rule Sets ─────────────────────────────────────────────
+entity "RuleSet" as RuleSet <<table>> {
+    ' PhiloteId is both PK and FK into dbo.Philote (identity anchor)
+    * PhiloteId   : UNIQUEIDENTIFIER <<PK, FK→Philote>>
+    --
+    Name          : NVARCHAR(200)
+    ' UNIQUE (Name)
+    Description   : NVARCHAR(MAX) [NULL]
+}
+
+entity "RuleSetMember" as RuleSetMember <<table>> {
+    ' Ordered membership — a Rule within a RuleSet
+    * RuleSetMemberId  : INT <<PK, IDENTITY>>
+    --
+    RuleSetPhiloteId   : UNIQUEIDENTIFIER <<FK→RuleSet>>
+    RulePhiloteId      : UNIQUEIDENTIFIER <<FK→Rule>>
+    SequenceNumber     : INT
+    ' UNIQUE (RuleSetPhiloteId, SequenceNumber)
+    Notes              : NVARCHAR(MAX) [NULL]
+}
+
+' ── Relationships ─────────────────────────────────────────
+LangKind      ||--o{ RulePrimitive  : "classifies"
+LangKind      ||--o{ Rule           : "classifies"
+
+RulePrimitive ||--o{ RulePrimInput  : "declares inputs"
+
+Rule          ||--o{ RulePC         : "is composed of"
+RulePrimitive ||--o{ RulePC         : "used in\ncomposition"
+
+RuleSet       ||--o{ RuleSetMember  : "contains"
+Rule          ||--o{ RuleSetMember  : "member of"
+
+note right of LangKind
+  Seed values (static lookup):
+  1 = CSharp
+  2 = Powershell
+  3 = SQL
+  4 = MSBuild
+  5 = Snippet
+  6 = Path
+end note
+
+note bottom of RulePC
+  BoundInputsJson stores the concrete values
+  bound to RulePrimitiveInput.InputName keys
+  as a JSON object, e.g.:
+  { "typeName": "string", "argName": "value" }
+end note
+
+@enduml

@@ -9,14 +9,15 @@
 
 Created 4 new CSV files containing all RRSBS seed data:
 
-| File | Rows | Columns | Purpose |
-|------|------|---------|---------|
-| `Philote_Primitives.csv` | 51 | 2 | Philote GUID entries for all rule primitives |
-| `Philote_Rules.csv` | 24 | 2 | Philote GUID entries for all rules |
-| `RulePrimitive.csv` | 51 | 4 | Complete primitive definitions with language, name, description |
-| `Rule.csv` | 24 | 5 | Complete rule definitions with language, name, purpose, source reference |
+| File                     | Rows | Columns | Purpose                                                                  |
+| ------------------------ | ---- | ------- | ------------------------------------------------------------------------ |
+| `Philote_Primitives.csv` | 51   | 2       | Philote GUID entries for all rule primitives                             |
+| `Philote_Rules.csv`      | 24   | 2       | Philote GUID entries for all rules                                       |
+| `RulePrimitive.csv`      | 51   | 4       | Complete primitive definitions with language, name, description          |
+| `Rule.csv`               | 24   | 5       | Complete rule definitions with language, name, purpose, source reference |
 
 **Data Distribution by Language:**
+
 - **MSBuild**: 8 primitives, 14 rules
 - **CSharp**: 18 primitives, 7 rules
 - **SQL**: 23 primitives, 3 rules
@@ -28,6 +29,7 @@ Created 4 new CSV files containing all RRSBS seed data:
 **File**: `Database/Flyway/SQL/V00.01.000010__Create_ATAPUtilities_Core_Schema.sql`
 
 **Changes**:
+
 - ✅ Removed SECTION 7 (Seed Data: Known Rule Primitives) - ~140 lines of INSERT statements
 - ✅ Removed SECTION 8 (Seed Data: Known Rules) - ~146 lines of INSERT statements
 - ✅ Kept only pure DDL (Data Definition Language) for all 10 RRSBS tables
@@ -41,9 +43,9 @@ Created 4 new CSV files containing all RRSBS seed data:
 **File**: `Database/Flyway/SQL/V00.01.000020__Load_ATAPUtilities_Data_From_BCP.sql`
 
 **Changes**:
-- ✅ Complete rewrite replacing legacy ATAPUtilities.SeedData loading
+
 - ✅ Loads all 4 RRSBS CSV files via BULK INSERT
-- ✅ Uses staging table pattern (_stg_* tables) for safe data transformation
+- ✅ Uses staging table pattern (_stg_\* tables) for safe data transformation
 - ✅ Clears existing data in proper dependency order (children first)
 - ✅ Converts and validates data with TRY_CONVERT, LTRIM, RTRIM
 - ✅ Validates minimum row counts for each table
@@ -51,6 +53,7 @@ Created 4 new CSV files containing all RRSBS seed data:
 - ✅ Wrapped in transaction with XACT_ABORT for atomicity
 
 **Loading Sequence**:
+
 1. Create 4 staging tables
 2. BULK INSERT from CSV files (FIRSTROW=2, comma-delimited, LF terminators)
 3. DELETE existing RRSBS data (respecting FK constraints)
@@ -63,6 +66,7 @@ Created 4 new CSV files containing all RRSBS seed data:
 **File**: `Database/Flyway/README.RRSBS.md`
 
 Comprehensive documentation including:
+
 - ✅ RRSBS overview and purpose
 - ✅ Migration file structure and purpose
 - ✅ Complete table schema descriptions
@@ -92,18 +96,18 @@ Before running Flyway migrations, verify:
 
 **Expected Row Counts:**
 
-| Table | Rows | Status |
-|-------|------|--------|
-| `PrimitiveLanguageKind` | 4 | ✅ Static lookup (CSharp, Powershell, SQL, MSBuild) |
-| `Philote` | 75 | ✅ Loaded (51 primitives + 24 rules) |
-| `RulePrimitive` | 51 | ✅ Loaded (8 MSBuild, 18 CSharp, 23 SQL, 2 PowerShell) |
-| `RulePrimitiveInput` | 0 | ⏳ Future enhancement (parameter definitions) |
-| `Rule` | 24 | ✅ Loaded (14 MSBuild, 7 CSharp, 3 SQL) |
-| `RulePrimitiveComposition` | 0 | ⏳ Future enhancement (BNF derivation trees) |
-| `RuleSet` | 0 | ⏳ Future enhancement (rule groupings) |
-| `RuleSetMember` | 0 | ⏳ Future enhancement (set memberships) |
-| `RuleInstantiation` | 0 | ⏳ Future enhancement (instantiation tracking) |
-| `RuleInstantiationBinding` | 0 | ⏳ Future enhancement (binding values) |
+| Table                      | Rows | Status                                                 |
+| -------------------------- | ---- | ------------------------------------------------------ |
+| `PrimitiveLanguageKind`    | 4    | ✅ Static lookup (CSharp, Powershell, SQL, MSBuild)    |
+| `Philote`                  | 75   | ✅ Loaded (51 primitives + 24 rules)                   |
+| `RulePrimitive`            | 51   | ✅ Loaded (8 MSBuild, 18 CSharp, 23 SQL, 2 PowerShell) |
+| `RulePrimitiveInput`       | 0    | ⏳ Future enhancement (parameter definitions)          |
+| `Rule`                     | 24   | ✅ Loaded (14 MSBuild, 7 CSharp, 3 SQL)                |
+| `RulePrimitiveComposition` | 0    | ⏳ Future enhancement (BNF derivation trees)           |
+| `RuleSet`                  | 0    | ⏳ Future enhancement (rule groupings)                 |
+| `RuleSetMember`            | 0    | ⏳ Future enhancement (set memberships)                |
+| `RuleInstantiation`        | 0    | ⏳ Future enhancement (instantiation tracking)         |
+| `RuleInstantiationBinding` | 0    | ⏳ Future enhancement (binding values)                 |
 
 ## Testing Instructions
 
@@ -210,15 +214,15 @@ The database now contains all information from these markdown files:
 
 ## Files Modified
 
-| File | Change Type | Lines Changed |
-|------|-------------|---------------|
-| `Database/Flyway/SQL/V00.01.000010__Create_ATAPUtilities_Core_Schema.sql` | Modified | -286 deleted, +6 added |
-| `Database/Flyway/SQL/V00.01.000020__Load_ATAPUtilities_Data_From_BCP.sql` | Rewritten | -60 deleted, +273 added |
-| `Database/Flyway/Data/Philote_Primitives.csv` | Created | 52 lines (header + 51 rows) |
-| `Database/Flyway/Data/Philote_Rules.csv` | Created | 25 lines (header + 24 rows) |
-| `Database/Flyway/Data/RulePrimitive.csv` | Created | 52 lines (header + 51 rows) |
-| `Database/Flyway/Data/Rule.csv` | Created | 25 lines (header + 24 rows) |
-| `Database/Flyway/README.RRSBS.md` | Created | 380 lines (comprehensive documentation) |
+| File                                                                      | Change Type | Lines Changed                           |
+| ------------------------------------------------------------------------- | ----------- | --------------------------------------- |
+| `Database/Flyway/SQL/V00.01.000010__Create_ATAPUtilities_Core_Schema.sql` | Modified    | -286 deleted, +6 added                  |
+| `Database/Flyway/SQL/V00.01.000020__Load_ATAPUtilities_Data_From_BCP.sql` | Rewritten   | -60 deleted, +273 added                 |
+| `Database/Flyway/Data/Philote_Primitives.csv`                             | Created     | 52 lines (header + 51 rows)             |
+| `Database/Flyway/Data/Philote_Rules.csv`                                  | Created     | 25 lines (header + 24 rows)             |
+| `Database/Flyway/Data/RulePrimitive.csv`                                  | Created     | 52 lines (header + 51 rows)             |
+| `Database/Flyway/Data/Rule.csv`                                           | Created     | 25 lines (header + 24 rows)             |
+| `Database/Flyway/README.RRSBS.md`                                         | Created     | 380 lines (comprehensive documentation) |
 
 ## Next Steps
 

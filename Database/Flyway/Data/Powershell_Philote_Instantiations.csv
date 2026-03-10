@@ -1,0 +1,8 @@
+PhiloteId,Comment
+e834c990-2f92-48a6-ad7f-2875e5af8396,Instantiation of Build-ImageFromPlantUML rule - Build-ImageFromPlantUML.ps1
+cf5f50ed-cb63-4d25-a975-83f5dd4f3015,Instantiation of Test-PowerShellSyntax rule - check-syntax.ps1
+f9c0dcb5-67a4-4af5-a0d1-58731c8950db,Instantiation of New-MCPServerJunction rule - Create-MCPJunction.ps1
+3710da2c-a0bd-43b5-a5ba-116aee83f7db,Instantiation of Get-RepositoryRoot rule - Get-RepositoryRoot.ps1
+98407929-ec12-450a-9725-69b8b12d4109,Instantiation of Remove-ObjAndBinSubDirectories rule - Remove-ObjAndBinSubDirectories.ps1
+52a1e6f4-7c72-40de-89b7-bc8026833c0c,Instantiation of Sync-RulesToCSV rule - Sync-RulesToCSV.ps1
+ee4ce73b-8f4d-42a2-a8fe-681b312df6d9,Instantiation of Read-SourceAndCreateRules rule - Read-SourceAndCreateRules.ps1

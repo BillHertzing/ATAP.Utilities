@@ -109,14 +109,16 @@ VALUES
     (1, N'CSharp',     N'C# source language primitives and rules'),
     (2, N'Powershell', N'PowerShell script language primitives and rules'),
     (3, N'SQL',        N'T-SQL / SQL Server script primitives and rules'),
-    (4, N'MSBuild',    N'MSBuild .csproj XML primitives and rules');
+    (4, N'MSBuild',    N'MSBuild .csproj XML primitives and rules'),
+    (5, N'Snippet',    N'VS Code snippet primitives and rules for code templates'),
+    (6, N'Path',       N'Windows filesystem path primitives following EBNF grammar for UNC, absolute, relative, and extended-length paths with validation rules');
 GO
 
 -- ===========================================================
 -- SECTION 3 — Rule Primitives
 -- Holds the atomic BNF building blocks from the Rules Compendium
 -- markdown files, each keyed by its stable Philote GUID.
--- Data loaded from CSV via V00.01.000020__Load_ATAPUtilities_Data_From_BCP.sql
+-- Data loaded from CSV via V00.01.000020-000025__Load_ATAPUtilities_*_From_CSV.sql
 -- ===========================================================
 
 CREATE TABLE dbo.RulePrimitive (
@@ -153,7 +155,7 @@ GO
 -- ===========================================================
 -- SECTION 4 — Rule Definitions
 -- A Rule is a named composition of ordered RulePrimitives.
--- Data loaded from CSV via V00.01.000020__Load_ATAPUtilities_Data_From_BCP.sql
+-- Data loaded from CSV via V00.01.000020-000025__Load_ATAPUtilities_*_From_CSV.sql
 -- ===========================================================
 
 CREATE TABLE dbo.[Rule] (
@@ -245,6 +247,6 @@ GO
 
 -- ===========================================================
 -- All Philote, RulePrimitive, and Rule seed data is now loaded
--- from CSV files via V00.01.000020__Load_ATAPUtilities_Data_From_BCP.sql
+-- from CSV files via V00.01.000020-000025__Load_ATAPUtilities_*_From_CSV.sql
 -- This keeps schema (DDL) separate from data (DML).
 -- ===========================================================

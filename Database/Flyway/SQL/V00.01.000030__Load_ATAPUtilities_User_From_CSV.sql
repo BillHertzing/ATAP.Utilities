@@ -72,7 +72,7 @@ WHERE TRY_CONVERT(UNIQUEIDENTIFIER, LTRIM(RTRIM(s.PhiloteId))) IS NOT NULL
 -- -----------------------------------------------------------------
 -- 2. Insert User rows
 -- -----------------------------------------------------------------
-INSERT INTO ATAPUtilities.[User] (PhiloteId, UserId, EmailHash, HashAlgorithm)
+INSERT INTO ATAPUtilities.[User] (PhiloteId, UserId, EmailHash, HashAlgorithmName)
 SELECT
     TRY_CONVERT(UNIQUEIDENTIFIER, LTRIM(RTRIM(s.PhiloteId))),
     TRY_CONVERT(UNIQUEIDENTIFIER, LTRIM(RTRIM(s.UserId))),
@@ -114,9 +114,10 @@ WHERE TRY_CONVERT(UNIQUEIDENTIFIER, LTRIM(RTRIM(s.UserId))) IS NOT NULL
 
 -- -----------------------------------------------------------------
 -- 4. Insert UserSettings rows
---    DarkMode is stored as '0'/'1' in the CSV; cast to BIT.
+--    CSV columns Theme/DarkMode/OverlayColor are mapped to
+--    PreferredTheme/IsDarkMode/Language in the table.
 -- -----------------------------------------------------------------
-INSERT INTO ATAPUtilities.UserSettings (UserId, Theme, DarkMode, OverlayColor)
+INSERT INTO ATAPUtilities.UserSettings (UserId, PreferredTheme, IsDarkMode, Language)
 SELECT
     TRY_CONVERT(UNIQUEIDENTIFIER, LTRIM(RTRIM(s.UserId))),
     NULLIF(LTRIM(RTRIM(s.Theme)),        N''),

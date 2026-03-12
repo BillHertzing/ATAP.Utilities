@@ -441,6 +441,7 @@ function Invoke-Flyway {
       $env:FLYWAY_PLACEHOLDERS_GITTAG = $GitTag
       $env:FLYWAY_PLACEHOLDERS_GITCOMMIT = $GitCommit
       $env:FLYWAY_PLACEHOLDERS_DATA_DIR = $FlywayDataPath
+      $env:FLYWAY_PLACEHOLDERS_USER_PII_PASSPHRASE = $env:AceCommander_UserPii__PassphraseV1
 
       # Build flyway parameters and execute
       $flywayParams = @("-configFiles=$FlywayTomlPath", "-environment=$environmentKey", "-X")
@@ -452,7 +453,10 @@ function Invoke-Flyway {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling flyway with args: $($flywayParams -join ' ')"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Changing to FlywayBasePath: $FlywayBasePath"
 
-        Push-Location $FlywayBasePath
+        if (-not (Test-Path -LiteralPath $FlywayBasePath -PathType Container)) {
+          throw "FlywayBasePath does not exist: '$FlywayBasePath'"
+        }
+        Push-Location $FlywayBasePath -ErrorAction Stop
         try {
           & $FlywayExecutablePath @flywayParams
           $exit = $LASTEXITCODE

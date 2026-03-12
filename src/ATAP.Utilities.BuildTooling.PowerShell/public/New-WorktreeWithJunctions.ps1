@@ -16,7 +16,7 @@ the worktree will be created and junctions will be scanned.
 
 .PARAMETER WorktreePath
 The path where the new worktree will be created. Can be relative or absolute.
-Example: "..\ATAP.Utilities-branch63"
+Example: "..\ATAP.Utilities_wt\100-<issueShortName>"
 
 .PARAMETER BranchName
 The name of the git branch to checkout in the new worktree.
@@ -32,7 +32,7 @@ Returns a result object containing:
   - Errors (array): Any errors encountered during the operation
 
 .EXAMPLE
-New-WorktreeWithJunctions -SourceRepoPath 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities' -WorktreePath '..\ATAP.Utilities-branch63' -BranchName '63-update-atap-utilities-database-scripts'
+New-WorktreeWithJunctions -SourceRepoPath 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities' -WorktreePath '..\ATAP.Utilities_wt\100-<issueShortName>' -BranchName '63-update-atap-utilities-database-scripts'
 
 Creates a new worktree in the parent directory for branch 63 and recreates all junctions.
 

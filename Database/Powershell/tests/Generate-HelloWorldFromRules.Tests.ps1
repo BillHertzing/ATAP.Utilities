@@ -1,8 +1,8 @@
 # AI assisted using Powershell.instructions.md as guidelines
 
-$script:SqlInstance = 'localhost'
-$script:DatabaseName = 'ATAPUtilities'
-$script:SchemaTablesValidated = $false
+$SqlInstance = if ($env:ATAPUTILITIES_SQLINSTANCE) { $env:ATAPUTILITIES_SQLINSTANCE } else { 'localhost' }
+$DatabaseName = 'ATAPUtilities'
+$SchemaTablesValidated = $false
 
 Describe 'ATAPUtilities Rule schema prerequisites' {
   BeforeAll {
@@ -25,29 +25,20 @@ Describe 'ATAPUtilities Rule schema prerequisites' {
       'RuleInstantiationBinding'
     )
 
-    $tableQuery = @"
-SELECT t.name AS TableName
-FROM sys.tables t
-INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
-WHERE s.name = N'ATAPUtilities'
-  AND t.name IN (N'Philote', N'PrimitiveLanguageKind', N'Rule', N'RuleInstantiation', N'RuleInstantiationBinding');
-"@
-
-    $results = Invoke-DbaQuery -SqlInstance $script:SqlInstance -Database $script:DatabaseName -Query $tableQuery -As PSObject
-    $existingTableNames = @($results | Select-Object -ExpandProperty TableName)
+    $existingTableNames = @(
+      Get-DbaDbTable -SqlInstance $SqlInstance -Database $DatabaseName -Schema 'ATAPUtilities' -EnableException |
+      Select-Object -ExpandProperty Name
+    )
     $missingTables = @($requiredTables | Where-Object { $_ -notin $existingTableNames })
 
-    $missingTables.Count | Should -Be 0 -Because "Missing required tables in ATAPUtilities schema: $($missingTables -join ', ')"
-    $script:SchemaTablesValidated = $true
+    $missingTables.Count | Should -Be 0 -Because "SqlInstance=$SqlInstance; Database=$DatabaseName; ExistingTables=$($existingTableNames -join ', '); Missing required tables in ATAPUtilities schema: $($missingTables -join ', ')"
+    $SchemaTablesValidated = $true
   }
 }
 
 Describe 'Generate HelloWorld artifacts from ATAPUtilities Rule tables' {
   BeforeAll {
-    if (-not $script:SchemaTablesValidated) {
-      throw 'Precondition failed: ATAPUtilities schema/table prerequisite test did not run successfully.'
-    }
-
+    # Keep this block self-contained: state set in one Describe can be unavailable in another Describe under Pester discovery/runtime scoping.
     $script:RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
     $script:GeneratedRoot = Join-Path $script:RepoRoot 'Database\_generated'
     $script:QueryPath = Join-Path $script:RepoRoot 'Database\Queries\Query_Generate_HelloWorld_From_Rules.sql'
@@ -157,7 +148,7 @@ VALUES
   (@MSBuildInst, N'FileContent', @ProjectContent);
 "@
 
-    Invoke-DbaQuery -SqlInstance $script:SqlInstance -Database $script:DatabaseName -Query $seedSql | Out-Null
+    Invoke-DbaQuery -SqlInstance $SqlInstance -Database $DatabaseName -Query $seedSql | Out-Null
 
     if (Test-Path $script:GeneratedRoot) {
       Remove-Item -Path $script:GeneratedRoot -Recurse -Force
@@ -165,7 +156,7 @@ VALUES
     New-Item -Path $script:GeneratedRoot -ItemType Directory -Force | Out-Null
 
     $queryText = Get-Content -Path $script:QueryPath -Raw
-    $script:Artifacts = Invoke-DbaQuery -SqlInstance $script:SqlInstance -Database $script:DatabaseName -Query $queryText -As PSObject
+    $script:Artifacts = Invoke-DbaQuery -SqlInstance $SqlInstance -Database $DatabaseName -Query $queryText -As PSObject
 
     foreach ($artifact in $script:Artifacts) {
       $relativePath = $artifact.RelativePath

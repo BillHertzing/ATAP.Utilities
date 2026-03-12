@@ -29,7 +29,11 @@ This folder contains ad-hoc SQL queries, query templates, and development/debugg
 
 ```powershell
 # Execute a query from this folder
-$queryPath = "C:\Dropbox\whertzing\GitHub\ATAP.Utilities-branch63\Database\Queries\Query_Rule_By_Name.sql"
+      if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
+      }
+$repositoryRoot  = Get-RepositoryRoot
+$queryPath = (Join-Path $repositoryRoot "Database\Queries\Query_Rule_By_Name.sql")
 $query = Get-Content $queryPath -Raw
 
 Invoke-DbaQuery -SqlInstance 'localhost' `

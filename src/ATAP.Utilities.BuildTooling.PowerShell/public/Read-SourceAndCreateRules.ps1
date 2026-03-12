@@ -142,6 +142,21 @@ https://github.com/whertzing/ATAP.Utilities
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
+    try {
+
+      # Load Get-RepositoryRoot if needed
+      if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
+      }
+
+    }
+    catch {
+      $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
+      Write-PSFMessage -Level Error -Message $errorMessage
+      throw
+    }
+
+
     # Handle $PSScriptRoot being null (e.g., when running from debugger or dot-sourced)
     $scriptRoot = if ([string]::IsNullOrEmpty($PSScriptRoot)) {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message '$PSScriptRoot is null/empty (debugger or dot-sourced), using current location'
@@ -170,27 +185,6 @@ https://github.com/whertzing/ATAP.Utilities
         throw
       }
     }
-    try {
-
-      if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-branch63\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
-      }
-
-      # Load Get-RepositoryRoot if needed
-      if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        $getRepoRootPath = Join-Path $scriptRoot 'Get-RepositoryRoot.ps1'
-        if (Test-Path $getRepoRootPath) {
-          . $getRepoRootPath
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Loaded Get-RepositoryRoot from: $getRepoRootPath"
-        }
-      }
-    }
-    catch {
-      $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -Level Error -Message $errorMessage
-      throw
-    }
-
     # Get repository root for relative paths
     try {
       $repoRootRelative = Get-RepositoryRoot -StartPath $scriptRoot

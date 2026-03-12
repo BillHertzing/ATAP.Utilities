@@ -223,14 +223,14 @@ The file CLAUDE.md should be placed at the repository root
 ```Powershell
   # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
   # ToDo: Fix after packaging is working
-  if (!${get-command New-SymbolicLink}) {
-    . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\New-SymbolicLink.ps1"
-  }
   if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
     . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
   }
- $repositoryRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
- cd $respoitoryRoot
+  $repositoryRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
+  if (!${get-command New-SymbolicLink}) {
+    . (join-Path  $repositoryRoot "src\ATAP.Utilities.Powershell\public\New-SymbolicLink.ps1")
+  }
+  cd $repositoryRoot
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\CLAUDE.md"  -symbolicLinkPath ".\CLAUDE.md" -force
 
 ```

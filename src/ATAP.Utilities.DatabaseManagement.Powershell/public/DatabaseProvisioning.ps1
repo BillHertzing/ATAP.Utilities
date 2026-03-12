@@ -147,9 +147,13 @@ function DatabaseProvisioning {
 
     # Load required helper functions
     try {
+      if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
+      }
+      $repositoryRoot = Get-RepositoryRoot
       # Load utility functions
       if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
+        . (Join-Path $repositoryRoot 'src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1')
       }
       if (-not (Get-Command -Name 'New-DbaConnectionStringBuilder' -CommandType Function -ErrorAction SilentlyContinue)) {
         install-module dbatools -Scope CurrentUser -Force -ErrorAction Stop
@@ -160,6 +164,16 @@ function DatabaseProvisioning {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       throw
     }
+
+    # Validate the parameters that do not depend on the database connection first, so that we can fail fast if there are issues with them
+
+    $ProvisioningScriptsPath = Get-PVal -ParameterName "ProvisioningScriptsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisioningScriptsPath" -Settings $databasesCollection -DefaultValue $ProvisioningScriptsPath
+    $DatabasePath = Get-PVal -ParameterName "DatabasePath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection -DefaultValue $DatabasePath
+    # Check and populate optional parameter
+    $GrantDatabaseOwner = Get-PVal -ParameterName "GrantDatabaseOwner" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.GrantDatabaseOwner" -Settings $databasesCollection -DefaultValue $GrantDatabaseOwner -AsType ([bool]) -AllowMissing
+    $GrantBulkAdmin = Get-PVal -ParameterName "GrantBulkAdmin" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.GrantBulkAdmin" -Settings $databasesCollection -DefaultValue $GrantBulkAdmin -AsType ([bool]) -AllowMissing
+    $ProvisionForFlyway = Get-PVal -ParameterName "ProvisionForFlyway" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisionForFlyway" -Settings $databasesCollection -DefaultValue $ProvisionForFlyway -AsType ([bool]) -AllowMissing
+
 
     $errors = [System.Collections.Generic.List[string]]::new()
     $scriptsRun = [System.Collections.Generic.List[string]]::new()
@@ -200,12 +214,6 @@ function DatabaseProvisioning {
         $useIntegratedSecurity = ([Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($SqlConnection.ConnectionString)).IntegratedSecurity
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Using server: $serverForConnect"
 
-        if ([string]::IsNullOrWhiteSpace($DatabasePath)) {
-          throw "DatabasePath is required when using SqlConnection parameter"
-        }
-        if ([string]::IsNullOrWhiteSpace($ProvisioningScriptsPath)) {
-          throw "ProvisioningScriptsPath is required when using SqlConnection parameter"
-        }
       }
       catch {
         $errorMessage = "Failed to validate or use provided SQL connection: $($_.Exception.Message)"
@@ -226,13 +234,6 @@ function DatabaseProvisioning {
       $DatabasePath = Get-PVal -ParameterName "DatabasePath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection -DefaultValue $DatabasePath
       $CredentialsKey = Get-PVal -ParameterName "CredentialsKey" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.CredentialsKey" -Settings $databasesCollection -DefaultValue $CredentialsKey
       # endregion Database connection parameters validation
-
-      $ProvisioningScriptsPath = Get-PVal -ParameterName "ProvisioningScriptsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisioningScriptsPath" -Settings $databasesCollection -DefaultValue $ProvisioningScriptsPath
-
-      # Check and populate optional parameter
-      $GrantDatabaseOwner = Get-PVal -ParameterName "GrantDatabaseOwner" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.GrantDatabaseOwner" -Settings $databasesCollection -DefaultValue $GrantDatabaseOwner -AsType ([bool]) -AllowMissing
-      $GrantBulkAdmin = Get-PVal -ParameterName "GrantBulkAdmin" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.GrantBulkAdmin" -Settings $databasesCollection -DefaultValue $GrantBulkAdmin -AsType ([bool]) -AllowMissing
-      $ProvisionForFlyway = Get-PVal -ParameterName "ProvisionForFlyway" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisionForFlyway" -Settings $databasesCollection -DefaultValue $ProvisionForFlyway -AsType ([bool]) -AllowMissing
 
       # Build up the connection string
       $connBuilderParams = @{

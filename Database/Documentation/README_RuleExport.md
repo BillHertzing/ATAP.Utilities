@@ -69,8 +69,12 @@ PowerShell function that queries the database using the stored procedure and exp
 ### Installation
 
 ```powershell
+if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+  . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
+}
+$repositoryRoot = Get-RepositoryRoot
 # Dot-source the script to load the function
-. "C:\Dropbox\whertzing\GitHub\ATAP.Utilities-branch63\Database\Powershell\public\Export-RuleToTextFile.ps1"
+. (Join-Path $repositoryRoot "Database\Powershell\public\Export-RuleToTextFile.ps1")
 ```
 
 ### Usage Examples

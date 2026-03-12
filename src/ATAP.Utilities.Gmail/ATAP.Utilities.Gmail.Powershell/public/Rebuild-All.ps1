@@ -39,12 +39,12 @@ try {
     . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
   }
   if (-not (Get-Command -Name 'Build-DatabaseWithFlyway' -CommandType Function -ErrorAction SilentlyContinue)) {
-    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Build-DatabaseWithFlyway.ps1'
+    . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\Build-DatabaseWithFlyway.ps1')
   }
 
   # Load the data loading function
   if (-not (Get-Command -Name 'Load-Gmail' -CommandType Function -ErrorAction SilentlyContinue)) {
-    . (Join-Path $PSScriptRoot 'Load-Gmail.ps1')
+    . (Join-Path $repositoryRoot 'Load-Gmail.ps1')
   }
 }
 catch {

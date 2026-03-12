@@ -1,6 +1,11 @@
 # Rebuild-All script for ATAPUtilities database
 # This script builds the ATAPUtilities database and loads initial data
 
+# Compute repo root from this script's known position in the tree:
+#   <repo_root>\Database\Powershell\public\Rebuild-All.ps1  =>  3 levels up
+# Using $PSScriptRoot makes this work regardless of the shell's current directory.
+$repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
+
 # Set the database name
 $databaseName = 'ATAPUtilities'
 # Set the database host
@@ -9,16 +14,16 @@ $databaseHost = 'localhost'
 $environment = 'Experimental'
 # Set the ConnectionMethod
 $connectionMethod = 'tcp'
-# Set the path where the database files will be created
+# Set the path where the database files will be created (intentionally absolute - storage location)
 $databasePath = "C:\LocalDBs\$environment\$databaseName"
 # Set the path to the provisioning scripts
-$ProvisioningScriptsPath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-branch63\src\ATAP.Utilities.DatabaseManagement\SharedSQL'
+$ProvisioningScriptsPath = Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement\SharedSQL'
 # Set the FlywayBasePath - using Database folder (singular) for the new structure
-$flywayBasePath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-branch63\Database\Flyway'
+$flywayBasePath = Join-Path $repositoryRoot 'Database\Flyway'
 # Set the path to the SQL migrations
 $flywaySqlMigrationsPath = Join-Path $flywayBasePath 'SQL'
 # Set the path to the shared SQL migration scripts
-$flywaySharedSqlMigrationsPath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-branch63\src\ATAP.Utilities.DatabaseManagement\SharedSQL'
+$flywaySharedSqlMigrationsPath = Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement\SharedSQL'
 # Set the path to the Flyway Data directory
 $flywayDataPath = Join-Path $flywayBasePath 'Data'
 # Set the path to the Flyway configuration file
@@ -27,6 +32,8 @@ $FlywayTomlPath = Join-Path $flywayBasePath 'flyway.toml'
 $Force = $true
 
 # Load required helper functions
+# Pre-loading from $repositoryRoot ensures the -if already loaded- guards inside each function
+# skip their own hardcoded dot-source paths (which point to the non-worktree repo).
 try {
   # Import dbatools module for database operations (avoid SqlServer module to prevent assembly conflicts)
   if (-not (Get-Module -Name dbatools -ListAvailable)) {
@@ -35,17 +42,22 @@ try {
   }
   Import-Module dbatools -ErrorAction Stop
 
-  if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-branch63\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
+  $helperScripts = @(
+    'src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1',
+    'src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1',
+    'src\ATAP.Utilities.Security.Powershell\public\Get-BitWardenSecret.ps1',
+    'src\ATAP.Utilities.DatabaseManagement.Powershell\public\New-ConnectionStringBuilderFromDbaTools.ps1',
+    'src\ATAP.Utilities.DatabaseManagement.Powershell\public\DatabaseProvisioning.ps1',
+    'src\ATAP.Utilities.DatabaseManagement.Powershell\public\Invoke-Flyway.ps1',
+    'src\ATAP.Utilities.DatabaseManagement.Powershell\public\Build-DatabaseWithFlyway.ps1'
+  )
+  foreach ($script in $helperScripts) {
+    $scriptPath = Join-Path $repositoryRoot $script
+    if (-not (Test-Path $scriptPath)) {
+      throw "Required helper script not found: $scriptPath"
+    }
+    . $scriptPath
   }
-  if (-not (Get-Command -Name 'Build-DatabaseWithFlyway' -CommandType Function -ErrorAction SilentlyContinue)) {
-    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-branch63\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Build-DatabaseWithFlyway.ps1'
-  }
-
-  # Note: Load-ATAPUtilities function to be created in future if data loading is needed
-  # if (-not (Get-Command -Name 'Load-ATAPUtilities' -CommandType Function -ErrorAction SilentlyContinue)) {
-  #   . (Join-Path $PSScriptRoot 'Load-ATAPUtilities.ps1')
-  # }
 }
 catch {
   $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
@@ -54,6 +66,7 @@ catch {
 }
 
 Write-PSFMessage -Level Important -Message "=== Starting $databaseName Database Build ==="
+Write-PSFMessage -Level Important -Message "Repository root: $repositoryRoot"
 Write-PSFMessage -Level Important -Message "Database: $databaseName"
 Write-PSFMessage -Level Important -Message "Database host: $databaseHost"
 Write-PSFMessage -Level Important -Message "Using environment: $environment"
@@ -82,7 +95,7 @@ try {
     -ConnectionMethod $connectionMethod `
     -DatabasePath $databasePath `
     -ProvisioningScriptsPath $ProvisioningScriptsPath `
-    -FlywayBasePath $FlywayBasePath `
+    -FlywayBasePath $flywayBasePath `
     -FlywaySqlMigrationsPath $flywaySqlMigrationsPath `
     -FlywaySharedSqlMigrationsPath $flywaySharedSqlMigrationsPath `
     -FlywayDataPath $flywayDataPath `

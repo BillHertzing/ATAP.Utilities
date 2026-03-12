@@ -313,7 +313,7 @@ CREATE TABLE ATAPUtilities.UserInformation (
     Email                VARBINARY(MAX)       NULL,
     Phone                VARBINARY(MAX)       NULL,
     Role                 VARBINARY(MAX)       NULL,
-    EncryptionKeyVersion INT              NOT NULL CONSTRAINT DF_UserInformation_EncryptionKeyVersion DEFAULT 1,
+    EncryptionKeyVersion TINYINT              NOT NULL CONSTRAINT DF_UserInformation_EncryptionKeyVersion DEFAULT 1,
     CONSTRAINT PK_UserInformation          PRIMARY KEY CLUSTERED (UserId),
     CONSTRAINT FK_UserInformation_User     FOREIGN KEY (UserId) REFERENCES ATAPUtilities.[User] (UserId),
     CONSTRAINT CK_UserInformation_Contact  CHECK (

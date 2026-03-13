@@ -394,14 +394,6 @@
     }
   ],
   "settings": {
-    "powershell.cwd": "ATAP.Utilities",
-    "cSpell.words": ["ATAP", "bhertzing", "PCMSCCE"],
-    "powershell.pester.codeLens": false,
-    "claudeCode.useTerminal": false,
-    "chat.tools.terminal.autoApprove": {
-      "git mv": true,
-      "New-Item": true,
-      "Out-Null": true
-    }
+    "powershell.cwd": "ATAP.Utilities"
   }
 }

@@ -1,3 +1,54 @@
+<#
+.SYNOPSIS
+Registers a scheduled task that runs a PowerShell script at system startup.
+
+.DESCRIPTION
+Creates and registers a Windows Scheduled Task configured with an AtStartup trigger.
+The task runs the provided script path using `pwsh.exe` with execution policy bypass.
+If a credential is supplied, the task is registered using that user context. If no
+credential is supplied, the task is registered to run as the SYSTEM service account.
+
+.PARAMETER TaskName
+The name of the scheduled task to register.
+
+.PARAMETER ScriptPath
+The full path to the PowerShell script file that should execute at startup.
+
+.PARAMETER Description
+The description assigned to the scheduled task.
+
+.PARAMETER Credential
+Optional credential used to register and run the task as a specific user account.
+Use `Get-Credential` to provide this value.
+
+.PARAMETER LogonType
+The scheduled task logon type. Valid values are `Password`, `S4U`, `Interactive`, and
+`ServiceAccount`.
+
+.PARAMETER RunLevel
+The privilege level for the scheduled task. Valid values are `Highest` and `Limited`.
+
+.OUTPUTS
+[void]
+
+.EXAMPLE
+$credential = Get-Credential
+Register-StartupScheduledTask -TaskName 'ATAPLoginScript' -ScriptPath 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-branch071\src\ATAP.Utilities.PowerShell\Profiles\LoginScript.ps1' -Description 'Run ATAP login script at startup' -Credential $credential -RunLevel Highest
+
+Registers a startup task named `ATAPLoginScript` that runs `LoginScript.ps1` with the
+credential captured from `Get-Credential`.
+
+.EXAMPLE
+Register-StartupScheduledTask -TaskName 'ATAPStartupSystemTask' -ScriptPath 'C:\Scripts\StartupScript.ps1' -Description 'Run startup script as SYSTEM' -RunLevel Highest
+
+Registers a startup task to run as SYSTEM when no credential is supplied.
+
+.NOTES
+AI assisted using Powershell.instructions.md as guidelines
+
+.LINK
+https://learn.microsoft.com/powershell/module/scheduledtasks/register-scheduledtask
+#>
 function Register-StartupScheduledTask {
   [CmdletBinding(SupportsShouldProcess = $true)]
   param (

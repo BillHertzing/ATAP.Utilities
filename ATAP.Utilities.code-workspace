@@ -394,8 +394,6 @@
     }
   ],
   "settings": {
-    "powershell.cwd": "ATAP.Utilities",
-    "cSpell.words": ["ATAP", "bhertzing", "PCMSCCE"],
-    "powershell.pester.codeLens": false
+    "powershell.cwd": "ATAP.Utilities"
   }
 }

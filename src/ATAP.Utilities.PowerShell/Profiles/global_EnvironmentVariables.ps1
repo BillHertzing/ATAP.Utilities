@@ -44,7 +44,7 @@ $global:EnvVars = @{
   $global:configRootKeys['CHATGPT_API_TOKENConfigRootKey']      = $global:Settings[$global:configRootKeys['CHATGPT_API_TOKENConfigRootKey']]
 
   # Env variables used by Perplexity
-  $global:configRootKeys['PERPLEXITY_API_TOKENConfigRootKey']   = $global:Settings[$global:configRootKeys['PERPLEXITY_API_TOKENConfigRootKey']]
+  $global:configRootKeys['PERPLEXITY_API_KEYConfigRootKey']     = $global:Settings[$global:configRootKeys['PERPLEXITY_API_KEYConfigRootKey']]
 
   # related to the Hydrus-Network application
   $global:configRootKeys['HYDRUS_ACCESS_KEYConfigRootKey']      = $global:Settings[$global:configRootKeys['HYDRUS_ACCESS_KEYConfigRootKey']]

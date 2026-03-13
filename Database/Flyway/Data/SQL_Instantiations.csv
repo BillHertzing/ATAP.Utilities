@@ -1,0 +1,4 @@
+PhiloteId,RulePhiloteId,Notes
+4ed45ad2-5d34-4caf-b83a-2756ca2c84c1,7a1b2c3d-4e5f-4061-8273-a4b5c6d7e8f9,Instantiation of the udf_dateperiod test query script
+a1f1eb63-0870-40bc-8eeb-9f28e93b8a17,8b2c3d4e-5f60-4172-9384-b5c6d7e8f9a0,Instantiation of the udf_dateperiod DDL creation script
+9cce26ea-3ee9-4ed4-803e-8a2d17c2b84c,9c3d4e5f-60a1-4283-a495-c6d7e8f9b0a1,Instantiation of the Philote core schema Flyway migration script

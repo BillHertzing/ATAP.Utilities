@@ -128,6 +128,23 @@ https://github.com/whertzing/ATAP.Utilities
   )
 
   BEGIN {
+    # Local helper: adjust a path so it is valid after Set-Location $FlywayBasePath.
+    # Absolute paths are returned unchanged.
+    # Relative paths were originally relative to $OriginalLocation; they are resolved
+    # to an absolute path so they remain correct once the working directory changes.
+    # Call syntax: adjust-path $originalLocation, $FlywayBasePath, $SomePath
+    #   (the three values arrive as a single [string[]] array due to PowerShell comma syntax)
+    function adjust-path {
+      param([string[]]$PathArgs)
+      $originalLoc = $PathArgs[0]
+      # $PathArgs[1] ($FlywayBasePath) is accepted for call-site symmetry but not needed here
+      $path = $PathArgs[2]
+      if (-not $path) { return $path }
+      if ([System.IO.Path]::IsPathRooted($path)) { return $path }
+      # Resolve relative path against the original working directory
+      return [System.IO.Path]::GetFullPath((Join-Path $originalLoc $path))
+    }
+
     $fn = 'Build-DatabaseWithFlyway'
     $mn = 'ATAP.Utilities.DatabaseManagement.Powershell'
 
@@ -141,20 +158,21 @@ https://github.com/whertzing/ATAP.Utilities
         Install-Module -Name dbatools -Scope CurrentUser -Force -AllowClobber
       }
       Import-Module dbatools -ErrorAction Stop
-      if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
-      }
       if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
         . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
       }
+      $repositoryRoot = Get-RepositoryRoot
+      if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . (Join-Path $repositoryRoot 'src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1')
+      }
       if (-not (Get-Command -Name 'New-DBAConnStrBuilder' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\New-ConnectionStringBuilderFromDbaTools.ps1'
+        . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\New-ConnectionStringBuilderFromDbaTools.ps1')
       }
       if (-not (Get-Command -Name 'DatabaseProvisioning' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\DatabaseProvisioning.ps1'
+        . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\DatabaseProvisioning.ps1')
       }
       if (-not (Get-Command -Name 'Invoke-Flyway' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Invoke-Flyway.ps1'
+        . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\Invoke-Flyway.ps1')
       }
     }
     catch {
@@ -177,9 +195,10 @@ https://github.com/whertzing/ATAP.Utilities
     $CredentialsKey = Get-PVal -ParameterName "CredentialsKey" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.CredentialsKey" -Settings $databasesCollection -DefaultValue $CredentialsKey -AllowMissing
     # endregion Database connection parameter validation
     $DatabasePath = Get-PVal -ParameterName "DatabasePath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection -DefaultValue $DatabasePath
+    $ProvisioningScriptsPath = Get-PVal -ParameterName "ProvisioningScriptsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisioningScriptsPath" -Settings $databasesCollection -DefaultValue $ProvisioningScriptsPath
     $FlywayBasePath = Get-PVal -ParameterName "FlywayBasePath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayBasePath" -Settings $databasesCollection -DefaultValue $FlywayBasePath
-    $flywaySqlMigrationsPath = Get-PVal -ParameterName "SqlMigrationsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlMigrationsPath" -Settings $databasesCollection -DefaultValue $flywaySqlMigrationsPath
-    $flywaySharedSqlMigrationsPath = Get-PVal -ParameterName "SharedSqlMigrationsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SharedSqlMigrationsPath" -Settings $databasesCollection -DefaultValue $flywaySharedSqlMigrationsPath
+    $flywaySqlMigrationsPath = Get-PVal -ParameterName "FlywaySqlMigrationsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywaySqlMigrationsPath" -Settings $databasesCollection -DefaultValue $flywaySqlMigrationsPath
+    $flywaySharedSqlMigrationsPath = Get-PVal -ParameterName "FlywaySharedSqlMigrationsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywaySharedSqlMigrationsPath" -Settings $databasesCollection -DefaultValue $flywaySharedSqlMigrationsPath
     $FlywayDataPath = Get-PVal -ParameterName "FlywayDataPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayDataPath" -Settings $databasesCollection -DefaultValue $FlywayDataPath
     $FlywayTomlPath = Get-PVal -ParameterName "FlywayTomlPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayTomlPath" -Settings $databasesCollection -DefaultValue $FlywayTomlPath
 
@@ -215,14 +234,18 @@ https://github.com/whertzing/ATAP.Utilities
   PROCESS {
     try {
 
-      # Set FLYWAY_PLACEHOLDERS_DATA_DIR from $FlywaySQLDataPath
-      if ($FlywaySQLDataPath) {
-        $env:FLYWAY_PLACEHOLDERS_DATA_DIR = $FlywaySQLDataPath
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Set FLYWAY_PLACEHOLDERS_DATA_DIR = $env:FLYWAY_PLACEHOLDERS_DATA_DIR"
-      }
-
       # Change to Flyway directory
       $originalLocation = Get-Location
+      # Any other paths paramters need to be adjusted
+      #  absolute paths need no adjustments
+      #  relative paths need to be adjusted to be relative to the FlywayBasePath, because
+      #  that's where the Flyway command will be run from
+      $DatabasePath = adjust-path $originalLocation, $FlywayBasePath, $DatabasePath
+      $ProvisioningScriptsPath = adjust-path $originalLocation, $FlywayBasePath, $ProvisioningScriptsPath
+      $flywaySharedSqlMigrationsPath = adjust-path $originalLocation, $FlywayBasePath, $flywaySharedSqlMigrationsPath
+      $FlywayDataPath = adjust-path $originalLocation, $FlywayBasePath, $FlywayDataPath
+      $FlywayTomlPath = adjust-path $originalLocation, $FlywayBasePath, $FlywayTomlPath
+
       Set-Location $FlywayBasePath
 
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Starting database provisioning..."
@@ -372,6 +395,7 @@ https://github.com/whertzing/ATAP.Utilities
           Port                          = $Port
           IntegratedSecurity            = $useIntegratedSecurityForFlyway
           FlywayCommand                 = 'migrate'
+          FlywayBasePath                = $FlywayBasePath
           FlywaySqlMigrationsPath       = $flywaySqlMigrationsPath
           FlywaySharedSqlMigrationsPath = $flywaySharedSqlMigrationsPath
           FlywayDataPath                = $flywayDataPath

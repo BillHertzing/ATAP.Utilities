@@ -39,25 +39,17 @@ try {
     . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
   }
   if (-not (Get-Command -Name 'Build-DatabaseWithFlyway' -CommandType Function -ErrorAction SilentlyContinue)) {
-    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Build-DatabaseWithFlyway.ps1'
+    . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\Build-DatabaseWithFlyway.ps1')
   }
   # Load the data loading function
   if (-not (Get-Command -Name 'Load-Philotes' -CommandType Function -ErrorAction SilentlyContinue)) {
-    . (Join-Path $PSScriptRoot 'Load-Philotes.ps1')
+    . (Join-Path $repositoryRoot 'Load-Philotes.ps1')
   }
 }
 catch {
   $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
   Write-PSFMessage -Level Error -Message $errorMessage
   throw
-}
-
-# Set SqlInstance based on $environment
-
-# Set FLYWAY_PLACEHOLDERS_DATA_DIR from FLYWAY_DATA_DIR
-if ($env:FLYWAY_DATA_DIR) {
-  $env:FLYWAY_PLACEHOLDERS_DATA_DIR = $env:FLYWAY_DATA_DIR
-  Write-PSFMessage -Level Important -Message "Set FLYWAY_PLACEHOLDERS_DATA_DIR = $env:FLYWAY_PLACEHOLDERS_DATA_DIR"
 }
 
 Write-PSFMessage -Level Important -Message "=== Starting $databaseName Database Build ==="

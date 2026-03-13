@@ -48,31 +48,13 @@ function New-MCPServerJunction {
 
     # Load required helper functions
     try {
-      if (-not (Get-Command -Name 'Get-PVal' -CommandType Function -ErrorAction SilentlyContinue)) {
-        $getPValPath = Join-Path $PSScriptRoot '..\..\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
-        if (Test-Path $getPValPath) {
-          . $getPValPath
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Loaded Get-PVal from: $getPValPath"
-        }
-        else {
-          $errorMessage = "Required function Get-PVal not found and could not be loaded from: $getPValPath"
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-          throw $errorMessage
-        }
-      }
-
-      # Load Get-RepositoryRoot helper function
       if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        $getRepoRootPath = Join-Path $PSScriptRoot 'Get-RepositoryRoot.ps1'
-        if (Test-Path $getRepoRootPath) {
-          . $getRepoRootPath
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Loaded Get-RepositoryRoot from: $getRepoRootPath"
-        }
-        else {
-          $errorMessage = "Required function Get-RepositoryRoot not found and could not be loaded from: $getRepoRootPath"
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-          throw $errorMessage
-        }
+        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
+      }
+      $repositoryRoot = Get-RepositoryRoot
+
+      if (-not (Get-Command -Name 'Get-PVal' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . (Join-Path $repositoryRoot 'src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1')
       }
     }
     catch {
@@ -88,7 +70,6 @@ function New-MCPServerJunction {
     $JunctionName = Get-PVal -ParameterName 'JunctionName' -originalPSBoundParameters $PSBoundParameters -dottedPath 'JunctionName' -DefaultValue $JunctionName
 
     # Get repository root using helper function
-    $repositoryRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
     $junctionPath = Join-Path $repositoryRoot $JunctionName
     $targetPath = Resolve-Path $SharedVSCodePathToMCPServers
 

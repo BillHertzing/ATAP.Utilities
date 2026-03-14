@@ -345,5 +345,8 @@
     "@StateMachineService": "_generated/out/StateMachineService",
     "@TypeMap": "_generated/out/TypeMap",
     "@Utilities": "_generated/out/Utilities"
+  },
+  "overrides": {
+    "serialize-javascript": "^7.0.4"
   }
 }

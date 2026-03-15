@@ -1,0 +1,46 @@
+@startuml
+
+title ProGet Initialization with Pagootle
+caption Visualizing the setup of feeds, API keys, connectors, and groups
+
+package "ProGet Server" {
+     node "Pagootle Script" { 
+           rectangle "Initialize-ProGetWithPagootle" as Script 
+        }
+ 
+
+    folder "Feeds" {
+        [choco-internal-upload] : chocolatey
+        [choco-external-upload] : chocolatey
+        [choco-internal-approved] : chocolatey
+        [choco-external-approved] : chocolatey
+        [ps-internal-upload] : powershell
+        [ps-external-upload] : powershell
+        [ps-internal-approved] : powershell
+        [ps-external-approved] : powershell
+    }
+
+  folder "API Keys" {
+        [key-choco-internal-upload]
+        [key-choco-external-upload]
+        [key-choco-internal-approved]
+        [key-choco-external-approved]
+        [key-ps-internal-upload]
+        [key-ps-external-upload]
+        [key-ps-internal-approved]
+        [key-ps-external-approved]
+    }
+
+    database "Connectors" {
+        [PSGallery Connector]
+    }
+
+    frame "Feed Group: approved-group" {
+        [choco-internal-approved]
+        [choco-external-approved]
+        [ps-internal-approved]
+        [ps-external-approved]
+    }
+
+}
+@enduml

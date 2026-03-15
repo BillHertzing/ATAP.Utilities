@@ -23,22 +23,19 @@ $defaultPerRoleSettings = @{
     $global:configRootKeys['xUnitJenkinsPluginPackageConfigRootKey']                  = 'PathToxUnitJenkinsPlugin'
     $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'
 
-
   }
   'JenkinsControllerServers' = @{
     # Should only be set per machine if the machine is a Jenkins Controller Node
     $global:configRootKeys['JENKINS_HOMEConfigRootKey']                    = 'C:/Dropbox'
-    $global:configRootKeys['JenkinsControllerServiceAccountConfigRootKey']  = 'JenkinsContrlSrvAcct'
+    $global:configRootKeys['JenkinsControllerServiceAccountConfigRootKey'] = 'JenkinsContrlSrvAcct'
 
   }
-  'JenkinsAgentServers'     = @{
+  'JenkinsAgentServers'      = @{
     # Jenkins CI/CD confguration keys
     # These used to access a Jenkins Controller and Authenticate
-    $global:configRootKeys['JENKINS_URLConfigRootKey']                 = 'http://utat022:4040/'
-    $global:configRootKeys['JENKINS_USER_IDConfigRootKey']             = 'whertzing'
-    $global:configRootKeys['JENKINS_API_TOKENConfigRootKey']           = '117e33cc37af54e0b4fc6cb05de92b3553' # the value from the configuration page ToDo: use Secrets GUID/file
-
-
+    $global:configRootKeys['JENKINS_URLConfigRootKey']       = 'http://utat022:4040/'
+    $global:configRootKeys['JENKINS_USER_IDConfigRootKey']   = 'whertzing'
+    $global:configRootKeys['JENKINS_API_TOKENConfigRootKey'] = '117e33cc37af54e0b4fc6cb05de92b3553' # the value from the configuration page ToDo: use Secrets GUID/file
   }
   'QualityAssuranceServers'  = @{
   }
@@ -46,12 +43,12 @@ $defaultPerRoleSettings = @{
   }
 
   'DatabaseServers'          = @{
-    $global:configRootKeys['FLYWAY_LOCATIONSConfigRootKey']       = 'filesystem:' + (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities' 'Databases' 'ATAPUtilities' 'Flyway' 'sql')
-    $global:configRootKeys['FLYWAY_URLConfigRootKey']             = 'jdbC:sqlserver: / / localhost:1433; databaseName = ATAPUtilities'
-    $global:configRootKeys['FLYWAY_USERConfigRootKey']            = 'AUADMIN'
-    $global:configRootKeys['FLYWAY_PASSWORDConfigRootKey']        = 'NotSecret'
-    $global:configRootKeys['FP__projectNameConfigRootKey']        = 'ATAPUtilities'
-    $global:configRootKeys['FP__projectDescriptionConfigRootKey'] = 'Test Flyway and Pubs samples'
+    # $global:configRootKeys['FLYWAY_LOCATIONSConfigRootKey']       = 'filesystem:' + (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities' 'Databases' 'ATAPUtilities' 'Flyway' 'sql')
+    # $global:configRootKeys['FLYWAY_URLConfigRootKey']             = 'jdbC:sqlserver: / / localhost:1433; databaseName = ATAPUtilities'
+    # $global:configRootKeys['FLYWAY_USERConfigRootKey']            = 'AUADMIN'
+    # $global:configRootKeys['FLYWAY_PASSWORDConfigRootKey']        = 'NotSecret'
+    # $global:configRootKeys['FP__projectNameConfigRootKey']        = 'ATAPUtilities'
+    # $global:configRootKeys['FP__projectDescriptionConfigRootKey'] = 'Test Flyway and Pubs samples'
 
 
     # $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(

@@ -7,9 +7,9 @@ function Invoke-GitPostCheckoutHook {
   $VerbosePreference = 'Continue' # Continue  SilentlyContinue
   $DebugPreference = 'Continue'
 
-  Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+  Write-Verbose -Message "Starting $($MyInvocation.MyCommand)"
   Write-Debug ("Current Working Directory = $(Get-Location)" )
-  # Write-Debug ("Environment Variables at start of $($MyInvocation.Mycommand) = " + [Environment]::NewLine + $(Write-EnvironmentVariablesIndented 0 2 ))
+  # Write-Debug ("Environment Variables at start of $($MyInvocation.MyCommand) = " + [Environment]::NewLine + $(Write-EnvironmentVariablesIndented 0 2 ))
 
   $moduleName = [System.Environment]::GetEnvironmentVariable('ModuleName')
   Write-Verbose ('Environment Variable ModuleName = ' + $moduleName)
@@ -37,7 +37,7 @@ function Invoke-GitPostCheckoutHook {
 
   # List of AddedChangedModifiedRenamed files in the commit
   $changedFiles = (git diff --name-only --cached --diff-filter=ACMR)
-  # ToDo: add error handling might be null on a brand new resoitory or after a git init, or if no files are in the commit
+  # ToDo: add error handling might be null on a brand new repository or after a git init, or if no files are in the commit
   if ($changedFiles.count -eq 0) {
     # ToDo: support --force-allow
     Write-Output "PrecommitHook not passing: Number of changed files = $($changedFiles.count)"
@@ -51,7 +51,7 @@ function Invoke-GitPostCheckoutHook {
   # Project Languages. Used to classify projects based on the scriptblock
   $projectLanguageStrs = @{'C#' = { Write-Debug 'C#' }; 'SQL' = 'SQL'; 'Powershell' = 'Powershell' }
 
-  # List of Projects in the commit (Sourc, Tests, or database), and the language (C#, SQL (Database), and Powershell) of each project
+  # List of Projects in the commit (Source, Tests, or database), and the language (C#, SQL (Database), and Powershell) of each project
   $changedFileCustomProperties = @{}
   $sourceProjects = $changedFiles | ForEach-Object { $fn = $_
     Write-Debug "Working on file named $fn"
@@ -84,8 +84,7 @@ function Invoke-GitPostCheckoutHook {
       # ToDo: run validation tests on the SubdirectoryName
       $changedFileCustomProperties[$fn]['ProjectSubdirectoryName'] = $ProjectSubdirectoryName
 
-    }
-    else {
+    } else {
       # the changed file does not match the $ProjectKindAndNameExtractorPattern
       $changedFileCustomProperties[$fn]['UNEXPECTED'] = $true
       Write-Output "PrecommitHook not passing: committed file name did not match : $ProjectKindAndNameExtractorPattern"

@@ -51,20 +51,59 @@ If a developer is modifying these profile and settings files (and they are in a 
 
 ```powershell
 
+# link to the development copy if no package provide the function
+if (!${get-command New-SymbolicLink}) {
+  . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\New-SymbolicLink.ps1"
+}
+
+# User's 'Microsoft.PowerShell_profile.ps1' linked to 'CurrentUserAllHostsV7CoreProfile.ps1'
 Remove-Item -path $(join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'CurrentUserAllHostsV7CoreProfile.ps1')
 
+# Machine scope Powershell Core 'profile.ps1' linked to 'CurrentUserAllHostsV7CoreProfile.ps1'
 Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles  'PowerShell' '7' 'profile.ps1') -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'AllUsersAllHostsV7CoreProfile.ps1')
 
-Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles  'PowerShell' '7' 'global_ConfigRootKeys.ps1') -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeys.ps1')
+# Machine scope Powershell Core 'global_ConfigRootKeys.ps1' linked to 'global_ConfigRootKeys.ps1'
+New-SymbolicLink -symbolicLinkPath $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeys.ps1') -force
 
-Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.ps1') -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.IAC' 'Windows' 'HostSettings.ps1')
+# Machine scope Powershell Core 'global_ConfigRootKeys.IAC.Fragment.Hosts.ps1' linked to
+# New-SymbolicLink -symbolicLinkPath $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.IAC.Fragment.Hosts.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.IAC','Windows', 'global_ConfigRootKeys.IAC.Fragments','global_ConfigRootKeys.IAC.Fragment.Hosts.ps1') -force
 
-Remove-Item -path $(join-path ($env:ProgramFiles) 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_EnvironmentVariables.ps1')
+# Machine scope Powershell Core 'global_ConfigRootKeys.IAC.Fragments' junction
+$null = New-Item -Path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.IAC.Fragments') -ItemType Junction -Target $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] 'whertzing' 'GitHub', 'ATAP.IAC', 'Windows', 'global_ConfigRootKeys.IAC.Fragments')
+
+
+# Machine scope Powershell Core 'HostSettings.ps1' linked to 'HostSettings.ps1'
+New-SymbolicLink -symbolicLinkPath $$(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.IAC' 'Windows' 'HostSettings.ps1') -force
+
+# Machine scope Powershell Core 'HostSettings.IAC.Fragments' junction
+  # use a directory junction
+  $null = New-Item -Path $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.IAC.Fragments') -ItemType Junction -Target $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] 'whertzing' 'GitHub', 'ATAP.IAC', 'Windows', 'HostSettings.IAC.Fragments')
+
+
+# Machine scope Powershell Core 'HostSettings.Fragment.PCMSC_CE.ps1' linked to 'HostSettings.Fragment.PCMSC_CE.ps1'
+New-SymbolicLink -symbolicLinkPath $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.Fragment.PCMSC_CE.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.IAC' 'Windows' 'HostSettings.Fragment.PCMSC_CE.ps1') -force
+
+# Machine scope Powershell Core 'global_EnvironmentVariables' linked to 'global_EnvironmentVariables'
+New-SymbolicLink -symbolicLinkPath $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_EnvironmentVariables.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_EnvironmentVariables.ps1') -force
 
 # Per User profile for Powershell Desktop aka Powershell V5
+# ToDo: V5 profile stuff needs work
 
-Remove-Item -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'profile.ps1')  -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','CurrentUserAllHostsV5Profile.ps1')
-Remove-Item -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'global_ConfigRootKeys.ps1')  -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','global_ConfigRootKeys.ps1')
+# User Scope Powershell V5 Profile linked to 'CurrentUserAllHostsV5Profile.ps1'
+New-SymbolicLink -symbolicLinkPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'profile.ps1')  -targetPath (join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','CurrentUserAllHostsV5Profile.ps1') -force
+
+# ToDo: Move to machine scope V5 profile
+New-SymbolicLink -symbolicLinkPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'global_ConfigRootKeys.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','global_ConfigRootKeys.ps1') -force
+
+# ToDo: Move to machine scope V5 profile
+# User scope Powershell Core 'global_ConfigRootKeys.Fragment.PackageRepositories.ps1' linked to 'global_ConfigRootKeys.Fragment.PackageRepositories.ps1'
+New-SymbolicLink -symbolicLinkPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'global_ConfigRootKeys.Fragment.PackageRepositories.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeys.Fragment.PackageRepositories.ps1') -force
+
+# User scope Powershell Core 'global_ConfigRootKeys.Fragment.Databases.ps1' linked to 'global_ConfigRootKeys.Fragment.Databases.ps1'
+New-SymbolicLink -symbolicLinkPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'global_ConfigRootKeys.Fragment.Databases.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeys.Fragment.Databases.ps1') -force
+
+# User scope Powershell Core 'global_ConfigRootKeys.Fragment.PCMSC_CE.ps1' linked to 'global_ConfigRootKeys.Fragment.PCMSC_CE.ps1'
+New-SymbolicLink -symbolicLinkPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'global_ConfigRootKeys.Fragment.PCMSC_CE.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeys.Fragment.PCMSC_CE.ps1') -force
 
 ```
 
@@ -207,3 +246,16 @@ The Dropbox access token must be set in the environment for the dropbox link cre
 
 [System.Environment]::SetEnvironmentVariable('DropBoxAccessToken','<paste token here>',[System.EnvironmentVariableTarget]::User)
 ```
+
+### ConvertFrom-Mbox
+
+needs MimeKit dll installed
+using DotNet 8 version 2.5.0
+
+```powershell
+
+
+```
+
+Formatting - using PSScriptAnalyzer
+https://github.com/PowerShell/PSScriptAnalyzer/tree/main/Engine/Settings

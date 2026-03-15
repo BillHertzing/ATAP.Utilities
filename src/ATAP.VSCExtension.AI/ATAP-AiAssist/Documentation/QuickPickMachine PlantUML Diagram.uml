@@ -1,0 +1,41 @@
+@startuml
+
+[*] --> startedState
+
+state startedState {
+    state operationState {
+        [*] --> quickPickState
+
+        quickPickState: do / invoke quickPickActor with quickPickActorLogic
+        quickPickState -down-> innerDoneState: onDone / assignQuickPickActorDoneOutputToQuickPickMachineContext
+        quickPickState -down-> errorState: onError / assignQuickPickActorErrorOutputToQuickPickMachineContext
+
+        errorState -down-> innerDoneState: always
+        innerDoneState --> [*]
+        note right of quickPickState
+          quickPickActor is invoked here
+          using quickPickActorLogic as its logic.
+        end note
+
+    }
+
+    state disposeState {
+        [*] --> inactiveState
+
+        inactiveState -down-> disposingState: DISPOSE_START
+        disposingState: do / invoke disposingActor with disposingActorLogic
+        disposingState -down-> disposeCompleteState: DISPOSE_COMPLETE
+
+        disposeCompleteState --> [*]
+    }
+}
+
+' Suggest horizontal layout for operationState and disposeState
+operationState -[hidden]-> disposeState
+
+startedState -down-> outerDoneState: xstate.done.actor.quickPickActor | xstate.done.actor.disposingActor
+outerDoneState: entry / sendQuickPickMachineDoneEvent
+outerDoneState -down-> [*]
+
+
+@enduml

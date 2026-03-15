@@ -70,9 +70,11 @@ if (-not (Test-Path -Path $settings.OutDir -PathType Container)) {
 }
 # Validate that the $Settings.OutDir is writable
 $testOutFn = $settings.OutDir + 'test.txt'
-try { New-Item $testOutFn -Force -type file >$null
+try {
+  New-Item $testOutFn -Force -type file >$null
 }
-catch { # if an exception ocurrs
+catch {
+  # if an exception ocurrs
   # handle the exception
   $where = $PSItem.InvocationInfo.PositionMessage
   $ErrorMessage = $_.Exception.Message
@@ -128,7 +130,8 @@ Switch ($lineEnding) {
 $encoding = New-Object System.Text.UTF8Encoding($true)
 
 # move this function to a library for reuse
-function New-Tuple { #https://stackoverflow.com/questions/54373785/tuples-arraylist-of-pairs
+function New-Tuple {
+  #https://stackoverflow.com/questions/54373785/tuples-arraylist-of-pairs
   Param(
     [Parameter(
       Mandatory = $true,

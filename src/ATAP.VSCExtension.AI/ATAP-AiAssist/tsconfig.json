@@ -2,13 +2,22 @@
   "compilerOptions": {
     "module": "Node16",
     "target": "ES2022",
-    "experimentalDecorators": true,
-    "types": ["node"],
+    "moduleResolution": "Node16",
+    // "types": ["node"],
     "lib": ["ES2022"],
-    "sourceMap": true,
+    "esModuleInterop": true, // allow entry.cts as commonjs and all modules as ESM
+    "sourceMap": true, // only for development, and for test development. False for production and for production testing
+    "skipLibCheck": true, // recommended by xState library
+    "strict": true, // enable all strict type-checking options
+    "noImplicitReturns": true, // Report error when not all code paths in function return a value.
+    "noImplicitAny": false, // Report error when a value is implicitly any
+    "noFallthroughCasesInSwitch": true, // Report errors for fallthrough cases in switch statement.
+    // "noUnusedParameters": true,  /* Report errors on unused parameters. */
+    "experimentalDecorators": true,
     "rootDirs": ["src", "src/ATAP.VSCExtension.AI/ATAP-AiAssist"],
     "baseUrl": "src", // This must be specified if "paths" is set.
     "paths": {
+      "@BaseEnumerations/*": ["BaseEnumerations/*"],
       "@CommandsService/*": ["CommandsService/*"],
       "@DataService/*": ["DataService/*"],
       "@Decorators/*": ["Decorators/*"],
@@ -27,11 +36,12 @@
       "@Utilities/*": ["Utilities/*"]
       // Add more path mappings as needed.
     },
-
-    "strict": true /* enable all strict type-checking options */,
-    /* Additional Checks */
-    "noImplicitReturns": true /* Report error when not all code paths in function return a value. */,
-    "noFallthroughCasesInSwitch": true /* Report errors for fallthrough cases in switch statement. */
-    // "noUnusedParameters": true,  /* Report errors on unused parameters. */
+    "outDir": "_generated/oops" // This is where the generated files will be placed. This is the default value, should never be used, should be replaced by command line option",
+  },
+  "include": ["src/**/*.ts", "src/**/*.mts"], // all files that end in .ts or .mts below the src directory
+  "exclude": ["node_modules", ".vscode-test", "_generated"], // exclude these directories
+  "ts-node": {
+    "esm": true,
+    "transpileOnly": true
   }
 }

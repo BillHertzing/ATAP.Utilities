@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <RuntimeIdentifiers>win10-x64</RuntimeIdentifiers>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
@@ -59,9 +59,9 @@
 
   <!-- ATAP Utility Packages For the Serializer -->
   <ItemGroup>
-    <ProjectReference Include="../ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
-    <ProjectReference Include="../ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
-    <ProjectReference Include="../ATAP.Utilities.Serializer.StringConstants/ATAP.Utilities.Serializer.StringConstants.csproj" />
+    <ProjectReference Include="../ATAP.Utilities.Serializer\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="../ATAP.Utilities.Serializer\Model\ATAP.Utilities.Serializer.Model.csproj" />
+    <ProjectReference Include="../ATAP.Utilities.Serializer\StringConstants/ATAP.Utilities.Serializer.StringConstants.csproj" />
   </ItemGroup>
 
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->

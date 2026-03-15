@@ -1,0 +1,55 @@
+# Flyway shared configuration template
+# Symlink this file from: sharedVSCode/Database/flyway.toml
+# Set database-specific values via environment variables in .code-workspace
+
+[flyway]
+# Shared (baseline) configuration
+# --- Safety
+cleanDisabled = true
+# --- Idempotence
+# (Not required, but recommended defaults)
+outOfOrder = false
+validateOnMigrate = true
+validateMigrationNaming = true
+
+# --- Locations for SQL migrations
+# Uses environment variable for shared SQL location
+locations = [
+  "filesystem:./sql",
+  "filesystem:${env:FLYWAY_SHARED_SQL_PATH}"
+]
+
+[flyway.placeholders]
+# Placeholders are set via environment variables by Invoke-Flyway.ps1:
+#   $env:FLYWAY_PLACEHOLDERS_DATA_DIR       → ${data_dir}
+#   $env:FLYWAY_PLACEHOLDERS_PACKAGENAME    → ${PackageName}
+#   $env:FLYWAY_PLACEHOLDERS_PACKAGEVERSION → ${PackageVersion}
+#   $env:FLYWAY_PLACEHOLDERS_GITTAG         → ${GitTag}
+#   $env:FLYWAY_PLACEHOLDERS_GITCOMMIT      → ${GitCommit}
+#   $env:FLYWAY_PLACEHOLDERS_MANIFESTVALUES → ${ManifestValues}
+# Do not define them here or they will override the environment variable values
+
+# Database connection set via environment variables:
+# FLYWAY_URL
+# FLYWAY_USER (optional if using integrated auth)
+# FLYWAY_PASSWORD (optional if using integrated auth)
+
+[environments.production]
+url      = "${env:FLYWAY_PROD_URL}"
+user     = "${env:FLYWAY_PROD_USER}"
+password = "${env:FLYWAY_PROD_PASSWORD}"
+
+[environments.testing]
+url      = "${env:FLYWAY_TEST_URL}"
+user     = "${env:FLYWAY_TEST_USER}"
+password = "${env:FLYWAY_TEST_PASSWORD}"
+
+[environments.development]
+url      = "${env:FLYWAY_DEV_URL}"
+user     = "${env:FLYWAY_DEV_USER}"
+password = "${env:FLYWAY_DEV_PASSWORD}"
+
+[environments.experimental]
+url      = "${env:FLYWAY_EXP_URL}"
+user     = "${env:FLYWAY_EXP_USER}"
+password = "${env:FLYWAY_EXP_PASSWORD}"

@@ -4,8 +4,8 @@
 .SYNOPSIS
 Confirm that all the 3rd party tools and scripts needed to build, analyze, test, package and deploy both c# and powershell code are present, configured, and accessable,
 .DESCRIPTION
-This function looks for the presence of Powershell Package Repository Sources
-  - deploy packages to internal and external location, to three public location (PowershellGet, Nuget, and Chocolotey)
+This function looks for the presence of Powershell Package Sources
+  - deploy packages to internal and external location, to three public location (Nuget, PSResourceGet, ChocolateyGet)
 
 .PARAMETER Name
 ToDo: write Help For the parameter X
@@ -60,21 +60,21 @@ Function Confirm-RepositoryPackageSource {
   PROCESS {
     if (-not $(Get-PackageSource -Name $RepositoryPackageSourceName)) {
       # if it doesn't exists, register it
-      # ToDo - require an admin role and eleveted permisions to register one
-      # ToDo : get ProviderName and provider repositorylifecycle from the TBD powershell class
-      $providerName = ''
+      # ToDo - require an admin role and elevated permissions to register one
+      # ToDo : get PackageProviderName and provider repositorylifecycle from the TBD powershell class
+      $packageProviderName = ''
       $ProviderLifecycle = ''
       switch -regex ($RepositoryPackageSourceName) {
         'nuget' {
-          $providerName = 'NuGet'
+          $packageProviderName = 'NuGet'
           break
         }
-        'PowershellGet' {
-          $providerName = 'PowershellGet'
+        'PSResourceGet' {
+          $packageProviderName = 'PSResourceGet'
           break
         }
-        'Chocolatey' {
-          $providerName = 'Chocolatey'
+        'ChocolateyGet' {
+          $packageProviderName = 'ChocolateyGet'
           break
         }
       }
@@ -95,16 +95,16 @@ Function Confirm-RepositoryPackageSource {
 
 
       Write-PSFMessage -Level Debug -Message "global:configRootKeys['PackageRepositoriesCollectionConfigRootKey'] = $(Write-HashIndented $global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']])"
-      Write-PSFMessage -Level Debug -Message "providerName = $providerName;ProviderLifecycle = $ProviderLifecycle"
+      Write-PSFMessage -Level Debug -Message "packageProviderName = $packageProviderName;ProviderLifecycle = $ProviderLifecycle"
       Write-PSFMessage -Level Debug -Message "RepositoryPackageSourceName = $RepositoryPackageSourceName; Location = $($global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']][$RepositoryPackageSourceName])"
       "$($global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']][$RepositoryPackageSourceName])"
-      if (-not $(Register-PackageSource -Force -ForceBootstrap -Trusted -Name $RepositoryPackageSourceName -ProviderName $providerName -Location $($global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']][$RepositoryPackageSourceName]))) {
+      if (-not $(Register-PackageSource -Force -ForceBootstrap -Trusted -Name $RepositoryPackageSourceName -PackageProviderName $packageProviderName -Location $($global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']][$RepositoryPackageSourceName]))) {
         # ToDo better error logging
-      Write-PSFMessage -Level Error -Message "RepositoryPackageSourceName Not Found; RepositoryPackageSourceName = $RepositoryPackageSourceName" -Tag 'Validation'
-      # Throw Error
-      throw "RepositoryPackageSourceName Not Found; RepositoryPackageSourceName = $RepositoryPackageSourceName"
+        Write-PSFMessage -Level Error -Message "RepositoryPackageSourceName Not Found; RepositoryPackageSourceName = $RepositoryPackageSourceName" -Tag 'Validation'
+        # Throw Error
+        throw "RepositoryPackageSourceName Not Found; RepositoryPackageSourceName = $RepositoryPackageSourceName"
+      }
     }
-  }
 
   }
   #endregion FunctionProcessBlock

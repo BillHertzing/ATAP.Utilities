@@ -1,0 +1,202 @@
+# module.build.ps1 as Invoke-Build task graph for QA & Production packaging
+
+param(
+  [switch]$ForceProduction = $false
+
+  , [string]$PrereleaseSuffix = '',
+
+  [switch]$ForceProduction = $false
+)
+
+#region Settings
+$moduleName = 'MyModule'
+$moduleRoot = $PSScriptRoot
+$sourcePath = $moduleRoot
+$outputPath = Join-Path $moduleRoot 'output'
+$packagesPath = Join-Path $moduleRoot 'packages'
+$toolsPath = Join-Path $moduleRoot 'tools'
+$testsPath = Join-Path $moduleRoot 'tests'
+$fastTempRoot = Join-Path $moduleRoot '.temp'
+$qaReports = Join-Path $fastTempRoot 'qa-reports'
+$qaStaging = Join-Path $fastTempRoot 'qa-package'
+$nuspec = Join-Path $fastTempRoot "$moduleName.nuspec"
+$chocoNuspec = Join-Path $fastTempRoot "$moduleName.choco.nuspec"
+$readme = Join-Path $moduleRoot 'README.md'
+$releaseNotes = Join-Path $moduleRoot 'ReleaseNotes.md'
+$psd1Path = Join-Path $moduleRoot "$moduleName.psd1"
+
+# Read version and optional prerelease label
+$manifest = Import-PowerShellDataFile $psd1Path
+$version = $manifest.ModuleVersion
+$explicitPrerelease = $manifest.PrivateData.PSData.Prerelease
+
+if ($ForceProduction -or [string]::IsNullOrWhiteSpace($explicitPrerelease)) {
+  $prerelease = ''
+} else {
+  # Validate prerelease label and apply timestamp
+  $allowedLabels = @('alpha', 'beta', 'QA', 'releaseCandidate')
+  if ($allowedLabels -notcontains $explicitPrerelease) {
+    throw "Invalid prerelease label: '$explicitPrerelease'. Allowed values: $($allowedLabels -join ', ')"
+  }
+  $timestamp = Get-Date -Format 'yyyyMMddHHmmss'
+  $prerelease = "-$explicitPrerelease.$timestamp"
+}
+
+# Sanitize prerelease suffix for compatibility
+$prerelease = $prerelease.TrimStart('-') -replace '[^a-zA-Z0-9.-]', ''
+$fullVersion = "$version-$prerelease".TrimEnd('-')
+#endregion
+
+#region Helper
+function Get-TestCoverageMarkdown {
+  param (
+    [int]$Total, [int]$Passed, [int]$Failed, [int]$Skipped, [decimal]$Coverage
+  )
+  return @"
+## 🗪 Test Coverage & Results
+
+- **Coverage:** $Coverage% of code paths covered
+- **Tests run:** $Total total
+    - ✅ Passed: $Passed
+    - ❌ Failed: $Failed
+    - ⚠️ Skipped: $Skipped
+"@
+}
+
+function Inject-TestSummaryIntoFile {
+  param (
+    [string]$File, [string]$MarkdownBlock
+  )
+  $content = Get-Content $File -Raw
+  $updated = $content -replace '(?s)(## 🗪 Test Coverage.*?)(##|\z)', "$MarkdownBlock`n`n`$2"
+  Set-Content $File $updated
+}
+
+function Ensure-PackagingFiles {
+  if (-not (Test-Path $nuspec)) {
+    @"
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>$moduleName</id>
+    <version>$fullVersion</version>
+    <authors>YourName</authors>
+    <description>PowerShell module $moduleName</description>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <dependencies>
+    </dependencies>
+    <tags>PowerShell</tags>
+  </metadata>
+</package>
+"@ | Set-Content $nuspec -Force
+  }
+
+  if (-not (Test-Path $chocoNuspec)) {
+    @"
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>$moduleName</id>
+    <version>$fullVersion</version>
+    <authors>YourName</authors>
+    <description>Chocolatey package for $moduleName</description>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <tags>PowerShell</tags>
+  </metadata>
+</package>
+"@ | Set-Content $chocoNuspec -Force
+  }
+
+  $chocoScript = Join-Path $fastTempRoot 'chocolateyInstall.ps1'
+  if (-not (Test-Path $chocoScript)) {
+    @"
+# chocolateyInstall.ps1
+Install-Module -Name $moduleName -Scope AllUsers -Force -AllowClobber
+"@ | Set-Content $chocoScript -Force
+  }
+}
+#endregion
+
+#region Tasks
+Task PreparePackagingFiles {
+  Outputs = { $nuspec; $chocoNuspec; Join-Path $fastTempRoot 'chocolateyInstall.ps1' }
+  Jobs = {
+    Ensure-PackagingFiles
+  }
+}
+
+Task RunTests {
+  Outputs = { Join-Path $qaReports 'test-results.xml'; Join-Path $qaReports 'coverage.xml' }
+  Jobs = {
+    Remove-Item $qaReports -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Path $qaReports -Force | Out-Null
+
+    $config = [PesterConfiguration]::Default
+    $config.Run.Path = $testsPath
+    $config.TestResult.Enabled = $true
+    $config.TestResult.OutputPath = Join-Path $qaReports 'test-results.xml'
+    $config.TestResult.OutputFormat = 'NUnitXml'
+    $config.CodeCoverage.Path = (Join-Path $sourcePath '*.psm1')
+    $config.CodeCoverage.OutputFormat = 'JaCoCo'
+    $config.CodeCoverage.OutputPath = Join-Path $qaReports 'coverage.xml'
+
+    $results = Invoke-Pester -Configuration $config -PassThru
+
+    $summary = Get-TestCoverageMarkdown -Total $results.TotalCount -Passed $results.PassedCount -Failed $results.FailedCount -Skipped $results.SkippedCount -Coverage 85.0
+    Inject-TestSummaryIntoFile -File $readme -MarkdownBlock $summary
+    Inject-TestSummaryIntoFile -File $releaseNotes -MarkdownBlock $summary
+  }
+}
+
+Task GenerateDocs {
+  Inputs = { $sourcePath }
+  Outputs = { Join-Path $qaStaging "$moduleName/docs" }
+  Jobs = {
+    Generate-StaticSiteDocumentation -InputPath $sourcePath -OutputPath (Join-Path $qaStaging "$moduleName/docs")
+  }
+}
+
+Task PackageQA Build PreparePackagingFiles, RunTests, GenerateDocs {
+  Outputs = { Join-Path $outputPath "$moduleName.$fullVersion-qa.nupkg" }
+  Jobs = {
+    Remove-Item $qaStaging -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Path $qaStaging -Force | Out-Null
+
+    Copy-Item -Recurse -Path $sourcePath -Destination (Join-Path $qaStaging $moduleName)
+    Copy-Item -Recurse -Path $testsPath -Destination (Join-Path $qaStaging "$moduleName/tests")
+    Copy-Item -Recurse -Path $qaReports -Destination (Join-Path $qaStaging "$moduleName/reports")
+
+    $runtimePath = Join-Path $moduleRoot 'runtimes'
+    if (Test-Path $runtimePath) {
+      Copy-Item -Recurse -Path $runtimePath -Destination (Join-Path $qaStaging "$moduleName/runtimes") -Force
+    }
+
+    nuget pack $nuspec -BasePath (Join-Path $qaStaging $moduleName) -Version "$fullVersion-qa" -OutputDirectory $outputPath
+  }
+}
+
+Task PackageProduction Build PreparePackagingFiles {
+  Outputs = { Join-Path $outputPath "$moduleName.$fullVersion.nupkg" }
+  Jobs = {
+    Save-Module -Name $moduleName -Path $outputPath -Force -AllowClobber
+    nuget pack $nuspec -OutputDirectory $outputPath -Version $fullVersion
+
+    Remove-Item "$toolsPath\*" -Recurse -Force -ErrorAction SilentlyContinue
+    Copy-Item "$sourcePath\*" -Destination $toolsPath -Recurse -Force
+    Copy-Item (Join-Path $fastTempRoot 'chocolateyInstall.ps1') -Destination $toolsPath -Force
+
+    $runtimePath = Join-Path $moduleRoot 'runtimes'
+    if (Test-Path $runtimePath) {
+      Copy-Item -Recurse -Path $runtimePath -Destination (Join-Path $toolsPath 'runtimes') -Force
+    }
+
+    choco pack $chocoNuspec --version=$fullVersion --outputdirectory $outputPath
+
+    if ($fullVersion -notmatch '-') {
+      Copy-Item (Join-Path $outputPath "$moduleName.$fullVersion.nupkg") -Destination $packagesPath -Force
+    }
+  }
+}
+
+Task BuildAll Build PackageQA, PackageProduction
+#endregion

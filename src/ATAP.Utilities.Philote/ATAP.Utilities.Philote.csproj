@@ -4,6 +4,8 @@
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
+    <!-- Facade project - disable default items to prevent including child project source files -->
+    <EnableDefaultItems>false</EnableDefaultItems>
     <!-- Assembly, File, and Package Information for this assembly-->
     <!-- Build and revision are created based on date-->
     <MajorVersion>0</MajorVersion>
@@ -16,14 +18,16 @@
     <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
-<ItemGroup>
-    <PackageReference Include="TimePeriodLibrary.NET" />
-</ItemGroup>
+  <ItemGroup>
+    <!-- Explicitly include only the facade's AssemblyInfo.cs -->
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.StronglyTypedIds.Interfaces\ATAP.Utilities.StronglyTypedIds.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.StronglyTypedIds\ATAP.Utilities.StronglyTypedIds.csproj" />
+    <ProjectReference Include="DefaultConfiguration\ATAP.Utilities.Philote.DefaultConfiguration.csproj" />
+    <ProjectReference Include="Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
+    <ProjectReference Include="Models\ATAP.Utilities.Philote.Models.csproj" />
+    <ProjectReference Include="JsonConverter.Shim.SystemTextJson\ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson.csproj" />
   </ItemGroup>
 
 </Project>

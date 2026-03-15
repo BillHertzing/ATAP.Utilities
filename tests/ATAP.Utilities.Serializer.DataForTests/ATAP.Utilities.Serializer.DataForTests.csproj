@@ -27,7 +27,7 @@
 
   <!-- Project for StronglyTypedId -->
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedIds\ATAP.Utilities.StronglyTypedIds.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedId\Models\ATAP.Utilities.StronglyTypedId.Models.csproj" />
   </ItemGroup>
 
   <!-- Project for StronglyTypedId JsonConverters for SystemTextJson serializer library -->
@@ -35,7 +35,7 @@
   <!-- Project for Philote -->
   <ItemGroup>
     <!-- <ProjectReference Include="..\..\src\ATAP.Utilities.Philote.StringConstants\ATAP.Utilities.Philote.StringConstants.csproj" /> -->
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Philote\Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
   </ItemGroup>
 

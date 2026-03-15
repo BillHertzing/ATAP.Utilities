@@ -1,0 +1,806 @@
+[
+  {
+    "PackageName": "7zip",
+    "AddedParameters": "",
+    "Notes": "Need to add associations ",
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "AdoptOpenJDKjre",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "audacity",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "audacity-ffmpeg",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "audacity-lame",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "autohotkey",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "autoruns",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "beyondcompare",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "bitwarden",
+    "AddedParameters": "--ia '/allusers'",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "bitwarden-cli",
+    "AddedParameters": "--ia '/allusers'",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "blender",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "brave",
+    "AddedParameters": "",
+    "Notes": "Need to start in incognito mode by default, registry setting",
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "carbon",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "choco-package-list-backup",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "Chocolatey",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "chocolatey.server",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "cinebench",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "cpu-z",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "cura-new",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "dbachecks",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "dbatools",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "discord",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "ditto",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "docfetcher",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "docfx",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "dotUltimate",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "element-desktop",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "es",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "Everything",
+    "AddedParameters": "client-service efu-association",
+    "Notes": "NOT INSTALLED",
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "exiftool",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "fiddler",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "Firefox",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "flyway.commandline",
+    "AddedParameters": "",
+    "Notes": "No longer updated on chocolatey community, now must be downloaded and installed  from RedGate at Flyway 11.11.2 at https://rd.gt/3rXiSlV - NOT INSTALLED",
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "freevideoeditor",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "fusionplusplus",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "geforce-experience",
+    "AddedParameters": "",
+    "Notes": "",
+    "Source": "Ansible"
+  },
+  {
+    "PackageName": "geforce-game-ready-driver",
+    "AddedParameters": "",
+    "Notes": "",
+    "Source": "Ansible"
+  },
+  {
+    "PackageName": "gh",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "gimp",
+    "AddedParameters": "",
+    "Notes": "",
+    "Source": "Ansible"
+  },
+  {
+    "PackageName": "git",
+    "AddedParameters": "",
+    "Notes": "requires the User environment variable GIT_CONFIG_GLOBAL to be set to 'C:\\Dropbox\\whertzing\\Git\\.gitconfig' which is not yet part of IAC (just a cloud file, whihc provides cloud backup and multi-device sync) ",
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "gitter",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "GoogleChrome",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "gopro-quik",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "gpg4win",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "gpu-z",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "grammarly",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "grammarly-chrome",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "grammarly-for-windows",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "graphviz",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "hwinfo",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "ilspy",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "imagemagick",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "invoke-build",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "jetbrains-rider",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "keep-chrome",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "keepass",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "linqpad",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "linqpad6",
+    "AddedParameters": "",
+    "Notes": "",
+    "Source": "Ansible"
+  },
+  {
+    "PackageName": "linqpad7",
+    "AddedParameters": "",
+    "Notes": "",
+    "Source": "Ansible"
+  },
+  {
+    "PackageName": "logitechgaming",
+    "AddedParameters": "",
+    "Notes": "Only on ncat016  - NOT INSTALLED",
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "msbuild-structured-log-viewer",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "msys2",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "mysql",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "mysql.workbench",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "ngrok",
+    "AddedParameters": "",
+    "Notes": "",
+    "Source": "Ansible"
+  },
+  {
+    "PackageName": "nmap",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "nodejs",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "nordvpn",
+    "AddedParameters": "System.Collections.Hashtable",
+    "Notes": "NOT INSTALLED",
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "notepadplusplus",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "nssm",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "ntlite-free",
+    "AddedParameters": "",
+    "Notes": "placed at 'C:\\Program Files\\NTLite\\'' but the path is not updated. requires license, found in per-user e-mail. the file 'C:\\Dropbox\\Downloads\\ntlite home version license.dat' is in the cloud, but the file 'C:\\Program Files\\NTLite\\settings.xml' needs to be backed up (perhaps a symbolic link?)",
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "nuget.commandline",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "NugetPackageExplorer",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "nvidia-display-driver",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "office365proplus",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "OpenSSL.Light",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "pdq-inventory",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "perfview",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "pester",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "plantuml",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "plaster",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "plexmediaserver",
+    "AddedParameters": "",
+    "Notes": "Plex media player app for Windows is outdated on choco need to install manually from plex site - NOT INSTALLED",
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "postman",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "powershell-core",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "powertoys",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "proget",
+    "AddedParameters": "/SkipStartService /SkipLaunch /SkipDatabaseConfiguration",
+    "Notes": "This prevents ProGet from auto-creating a new SQL Server Express instance and lets you configure it manually afterward.",
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "pushbullet",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "putty",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "putty.portable",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "python311",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "rapr",
+    "AddedParameters": "",
+    "Notes": "Driver Store Explorer [RAPR]",
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "razer-synapse-3graph",
+    "AddedParameters": "",
+    "Notes": "",
+    "Source": "Ansible"
+  },
+  {
+    "PackageName": "resharper-platform",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "ruby",
+    "AddedParameters": "",
+    "Notes": "",
+    "Source": "Ansible"
+  },
+  {
+    "PackageName": "rufus",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "samsung-magician",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "sentinel",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "sharex",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "speedtest",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "spotify",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "sql-server-express",
+    "AddedParameters": "",
+    "Notes": "Look at comments in chocolatey community packages for overrideing default parameters and adding extra installation parameteres - NOT INSTALLED",
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "sql-server-management-studio",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "SQLite",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "steam",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "steam-client",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "sysinternals",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "Temurinjre",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "tineye-chrome",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "vault",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "vcredist-all",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "visualstudio-installer",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "vlc",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "vscode",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "vscode-codespellchecker",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "vscode-csharp",
+    "AddedParameters": "",
+    "Notes": "",
+    "Source": "Ansible"
+  },
+  {
+    "PackageName": "vscode-csharpextensions",
+    "AddedParameters": "",
+    "Notes": "",
+    "Source": "Ansible"
+  },
+  {
+    "PackageName": "vscode-drawio",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "vscode-editorconfig",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "vscode-gitattributes",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "vscode-gitignore",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "vscode-gitlens",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "vscode-icons",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "vscode-markdownlint",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "vscode-mssql",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "vscode-powershell",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "vscode-prettier",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "vscode-test-explorer",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "vscode-test-explorer-liveshare",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "vscode-vsliveshare",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "vscode-yaml",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "wireshark",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "xnviewmp",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "XUnit",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  },
+  {
+    "PackageName": "zoom",
+    "AddedParameters": "",
+    "Notes": null,
+    "Source": "ApprovedPackages"
+  }
+]

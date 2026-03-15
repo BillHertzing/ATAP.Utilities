@@ -32,86 +32,79 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
 Function Update-PackageVersion {
-    #region FunctionParameters
-    [CmdletBinding(SupportsShouldProcess = $true)]
-    param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $Path
-        ,[parameter(Mandatory = $false, ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $PreReleaseNumberFormat = 'D3'
-    )
-    #endregion FunctionParameters
-    #region FunctionBeginBlock
-    ########################################
-    BEGIN {
-        Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
-        $DebugPreference = 'Continue'
-        $preReleasePatternExtractor = '(?<PreReleasePrefix>.*?)(?<PreReleaseNumber>\d{1,4})$'
-        $results = @{}
-    }
-    #endregion FunctionBeginBlock
-
-    #region FunctionProcessBlock
-    ########################################
-    PROCESS {
-        $manifest = Import-PowerShellDataFile $path
-        [version]$version = $Manifest.ModuleVersion
-        #  Is there a PreRelease string?
-        $preReleasePrefixStr = $null
-        $preReleaseNumberStr = -1
-        $preReleaseNumber = -1
-        $newPreReleaseNumber = -1
-        $newPreReleaseStr = $null
-        if ($manifest['PrivateData']['PSData']['PreRelease']) {
-          # ToDo: does the following set the [Environment]::Matches special variable? is either a significant security or speed winner? See `ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Invoke-GitPreCommitHook.ps1`
-            $matches = [RegEx]::Matches($manifest['PrivateData']['PSData']['PreRelease'] ,$preReleasePatternExtractor)
-            if ($matches) {
-                $preReleasePrefixStr = $matches.Captures.Groups['PreReleasePrefix'].value
-                $preReleaseNumberStr = $matches.Captures.Groups['PreReleaseNumber'].value
-                if (-not [int32]::TryParse($preReleaseNumberStr, [ref]$preReleaseNumber)) {
-                    throw "manifest['PrivateData']['PSData']['PreRelease'] value is ($manifest['PrivateData']['PSData']['PreRelease']) and a preReleaseNumber could not be parsed from it"
-                }
-                # Add one to the preReleaseNumber
-                $newPreReleaseNumber = $preReleaseNumber + 1
-                # Reassmeble the PreRelease string
-                $newPreReleaseStr = $preReleasePrefixStr + $newPreReleaseNumber.ToString($PreReleaseNumberFormat)
-                if ($PSCmdlet.ShouldProcess(($path, $newPreReleaseStr), "Update-ModuleManifest -Path $path  -ModuleData $newPreReleaseStr (from $preReleasePrefixStr + $preReleaseNumberStr)")) {
-                    #$privateData = $manifest['PrivateData']
-                    #$privateDataPSData = $privateData['PSData']
-                    #$privatePSData['PreRelease'] = $newPreReleaseStr
-                    # Update the module manifest
-                    Update-ModuleManifest -Path $path -Prerelease $newPreReleaseStr
-                    Write-Verbose "Update-ModuleManifest for $path set 'Prerelease' = $newPreReleaseStr"
-                }
-            }
-            else {
-                throw "PreRelease value was present but could not be parsed"
-            }
+  [CmdletBinding(SupportsShouldProcess = $true)]
+  param (
+    [parameter(Mandatory = $true, ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $Path
+    , [parameter(Mandatory = $false, ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $PreReleaseNumberFormat = 'D3'
+  )
+  ########################################
+  BEGIN {
+    $message = "Starting Function $($MyInvocation.MyCommand) in module %ModuleName%"
+    Write-PSFMessage -Level Debug -Message $message -Tag 'Trace'
+    $preReleasePatternExtractor = '(?<PreReleasePrefix>.*?)(?<PreReleaseNumber>\d{1,4})$'
+    $results = @{}
+  }
+  ########################################
+  PROCESS {
+    $manifest = Import-PowerShellDataFile $path
+    [version]$version = $Manifest.ModuleVersion
+    #  Is there a PreRelease string?
+    $preReleasePrefixStr = $null
+    $preReleaseNumberStr = -1
+    $preReleaseNumber = -1
+    $newPreReleaseNumber = -1
+    $newPreReleaseStr = $null
+    if ($manifest.PrivateData.PSData.ContainsKey('Prerelease')) {
+      # ToDo: does the following set the [Environment]::Matches special variable? is either a significant security or speed winner? See `ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Invoke-GitPreCommitHook.ps1`
+      $matches = [RegEx]::Matches($manifest['PrivateData']['PSData']['PreRelease'] , $preReleasePatternExtractor)
+      if ($matches) {
+        $preReleasePrefixStr = $matches.Captures.Groups['PreReleasePrefix'].value
+        $preReleaseNumberStr = $matches.Captures.Groups['PreReleaseNumber'].value
+        if (-not [int32]::TryParse($preReleaseNumberStr, [ref]$preReleaseNumber)) {
+          $message = "manifest['PrivateData']['PSData']['PreRelease'] value is ($manifest['PrivateData']['PSData']['PreRelease']) and a preReleaseNumber could not be parsed from it"
+          Write-PSFMessage -Level Error -Message $message -Tag 'Trace'
+          throw $message
         }
-        else {
-
-            # Add one to the build of the version number
-            [version]$newVersion = "{0}.{1}.{2}" -f $Version.Major, $Version.Minor, ($Version.Build + 1)
-            # Update the manifest file
-            if ($PSCmdlet.ShouldProcess(($path, $version, $newVersion), "Update-ModuleManifest -Path $path  -ModuleVersion $newVersion (from $version)")) {
-                # Update the module manifest
-                Update-ModuleManifest -Path $path  -ModuleVersion $newVersion # This fails on 2022-02-16
-                #region workaround
-                #$manifestHash = Invoke-Expression (Get-Content $path -Raw)
-                #$manifestHash.Moduleversion = $newVersion
-                # ToDo: explorer BOM needs for Nuget packaging and Chocolatey installs
-                #$manifestHash | Set-Content -Path $path
-                #endregion Workaround
-                Write-Verbose "Update-ModuleManifest for $path to NewVersion = $newVersion"
-            }
+        # Add one to the preReleaseNumber
+        $newPreReleaseNumber = $preReleaseNumber + 1
+        # Reassemble the PreRelease string
+        $newPreReleaseStr = $preReleasePrefixStr + $newPreReleaseNumber.ToString($PreReleaseNumberFormat)
+        if ($PSCmdlet.ShouldProcess(($path, "having current preReleasestring $preReleasePrefixStr $preReleaseNumber"), "Update-ModuleManifest -Path $path  -ModuleData $newPreReleaseStr")) {
+          # Update the module manifest
+          Update-ModuleManifest -Path $path -Prerelease $newPreReleaseStr
+          $message = "Update-ModuleManifest for $path set 'Prerelease' = $newPreReleaseStr"
+          Write-PSFMessage -Level Debug -Message $message -Tag 'Trace'
         }
-    }
-    #endregion FunctionProcessBlock
+      } else {
+        $message = "PreRelease value was present but could not be parsed'"
+        Write-PSFMessage -Level Error -Message $message -Tag 'Trace'
+        throw $message
+      }
+    } else {
 
-    #region FunctionEndBlock
-    ########################################
-    END {
-        Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
+      # Add one to the build of the version number
+      [version]$newVersion = '{0}.{1}.{2}' -f $Version.Major, $Version.Minor, ($Version.Build + 1)
+      # Update the manifest file
+      if ($PSCmdlet.ShouldProcess(($path, "(previous version was $version)"), "Update-ModuleManifest -Path $path  -ModuleVersion $newVersion")) {
+        # Update the module manifest
+        Update-ModuleManifest -Path $path -ModuleVersion $newVersion # This fails on 2022-02-16
+        #region workaround
+        #$manifestHash = Invoke-Expression (Get-Content $path -Raw)
+        #$manifestHash.Moduleversion = $newVersion
+        # ToDo: explorer BOM needs for Nuget packaging and Chocolatey installs
+        #$manifestHash | Set-Content -Path $path
+        #endregion Workaround
+        $message = "Update-ModuleManifest for $path set 'ModuleVersion' = $newVersion"
+        Write-PSFMessage -Level Debug -Message $message -Tag 'Trace'
+      }
     }
-    #endregion FunctionEndBlock
+  }
+  ########################################
+  END {
+    $message = "Ending $($MyInvocation.MyCommand)"
+    Write-PSFMessage -Level Debug -Message $message -Tag 'Trace'
+    Write-Verbose -Message "Ending $($MyInvocation.MyCommand)"
+  }
 }
 #endregion Update-PackageVersion
 #############################################################################

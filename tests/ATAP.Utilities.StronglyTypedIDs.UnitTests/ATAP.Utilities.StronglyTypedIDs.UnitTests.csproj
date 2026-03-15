@@ -37,13 +37,12 @@
 
   <!-- Packages to add xUnit Testing dotnet tool -->
   <ItemGroup>
-    <DotNetCliToolReference Include="dotnet-xunit" />
   </ItemGroup>
 
      <!-- ATAP Utility Packages For the abstract Serializer -->
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.StringConstants/ATAP.Utilities.Serializer.StringConstants.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\StringConstants\ATAP.Utilities.Serializer.StringConstants.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
   </ItemGroup>
 
@@ -55,10 +54,10 @@
 
   <!-- The Serializer Fixture Shim to use -->
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Shim.SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Shim\SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" />
     <!--
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Shim.Newtonsoft\ATAP.Utilities.Serializer.Shim.Newtonsoft.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Shim.ServiceStack\ATAP.Utilities.Serializer.Shim.ServiceStack.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Shim\Newtonsoft\ATAP.Utilities.Serializer.Shim.Newtonsoft.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Shim\ServiceStack\ATAP.Utilities.Serializer.Shim.ServiceStack.csproj" />
     -->
   </ItemGroup>
 
@@ -79,10 +78,10 @@
 
 <!-- Specific libraries under test-->
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedIDs\ATAP.Utilities.StronglyTypedIDs.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedIDs.Interfaces\ATAP.Utilities.StronglyTypedIDs.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedId\Models\ATAP.Utilities.StronglyTypedId.Models.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedId\Interfaces\ATAP.Utilities.StronglyTypedId.Interfaces.csproj" />
   </ItemGroup>
-    
+
 
   <!-- ToDo: The concrete serializer libraries for the ISerializerConfigurableAbstract DI-injected service and all their dependencies need to be copied to a PlugIns subdir below the outputdir -->
   <!-- Standalone reference to Microsoft.Extensions.DependencyInjection is used by unitTest projects
@@ -92,12 +91,11 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
   </ItemGroup> -->
 
-  <!-- Plugin Framework for libraries that are dynamically loaded 
+  <!-- Plugin Framework for libraries that are dynamically loaded
   <ItemGroup>
     <PackageReference Include="McMaster.NETCore.Plugins" />
   </ItemGroup>
    -->
-   
+
 
 </Project>
-

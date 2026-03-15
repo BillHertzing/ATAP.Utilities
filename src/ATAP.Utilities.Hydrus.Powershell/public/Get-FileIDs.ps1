@@ -74,15 +74,15 @@ Function Get-FileIDs {
           Throw $message
         }
       }
-      $hydrusAPIProtocol = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIProtocol' $global:configRootKeys['hydrusAPIProtocolConfigRootKey'] $originalPSBoundParameters
-      $hydrusAPIServer = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIServer' $global:configRootKeys['hydrusAPIServerConfigRootKey'] $originalPSBoundParameters
-      $hydrusAPIPort = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIPort' $global:configRootKeys['hydrusAPIPortConfigRootKey'] $originalPSBoundParameters
+      $hydrusAPIProtocol = Get-PVal -ParameterName 'hydrusAPIProtocol' -originalPSBoundParameters $originalPSBoundParameters -dottedPath $global:configRootKeys['hydrusAPISchemeConfigRootKey'] -DefaultValue $hydrusAPIProtocol
+      $hydrusAPIServer = Get-PVal -ParameterName 'hydrusAPIServer' -originalPSBoundParameters $originalPSBoundParameters -dottedPath $global:configRootKeys['hydrusAPIHostConfigRootKey'] -DefaultValue $hydrusAPIServer
+      $hydrusAPIPort = Get-PVal -ParameterName 'hydrusAPIPort' -originalPSBoundParameters $originalPSBoundParameters -dottedPath $global:configRootKeys['hydrusAPIPortConfigRootKey'] -DefaultValue $hydrusAPIPort
     }
     else {
       $noArgumentsSupplied = $true
-      $hydrusAPIProtocol = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIProtocol' $global:configRootKeys['hydrusAPIProtocolConfigRootKey']
-      $hydrusAPIServer = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIServer' $global:configRootKeys['hydrusAPIServerConfigRootKey']
-      $hydrusAPIPort = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIPort' $global:configRootKeys['hydrusAPIPortConfigRootKey']
+      $hydrusAPIProtocol = Get-PVal -ParameterName 'hydrusAPIProtocol' -originalPSBoundParameters @{} -dottedPath $global:configRootKeys['hydrusAPISchemeConfigRootKey'] -DefaultValue $hydrusAPIProtocol
+      $hydrusAPIServer = Get-PVal -ParameterName 'hydrusAPIServer' -originalPSBoundParameters @{} -dottedPath $global:configRootKeys['hydrusAPIHostConfigRootKey'] -DefaultValue $hydrusAPIServer
+      $hydrusAPIPort = Get-PVal -ParameterName 'hydrusAPIPort' -originalPSBoundParameters @{} -dottedPath $global:configRootKeys['hydrusAPIPortConfigRootKey'] -DefaultValue $hydrusAPIPort
     }
 
     $page = '/get_files/search_files'
@@ -144,21 +144,23 @@ Function Get-FileIDs {
                 'hydrusAPIPort' { $hydrusAPIPort = $obj.PSobject.Properties['hydrusAPIPort'].value; break }
                 'PassThru' { $PassThru = $obj.PSobject.Properties['PassThru'].value; break }
                 'computerNames' { $computerNames = $obj.PSobject.Properties['computerNames'].value; break }
-                default { # ignore any property names that are not parameters of this cmdlet}
+                default {
+                  # ignore any property names that are not parameters of this cmdlet}
                 }
               }
             }
             # $SearchParameters is a hashtable array or a single hashtable
             for ($SearchParametersIndex = 0; $SearchParametersIndex -lt $SearchParameters.Count; $SearchParametersIndex++) {
               $SearchParameter = $SearchParameters[$SearchParametersIndex]
-            # ToDo: accumulate any errors and add them to the pipeline object
-            # If FileIDs or HashIDs passed as pipeline object parameters
-            if ($PassThru) {
-             $obj| Add-Member -MemberType NoteProperty -Name 'FileIDs' -Value $(InternalGetFileIDs $SearchParameter)
-              Write-Output $obj
-            } else {
-              Write-Output $(InternalGetFileIDs $SearchParameter)
-            }
+              # ToDo: accumulate any errors and add them to the pipeline object
+              # If FileIDs or HashIDs passed as pipeline object parameters
+              if ($PassThru) {
+                $obj | Add-Member -MemberType NoteProperty -Name 'FileIDs' -Value $(InternalGetFileIDs $SearchParameter)
+                Write-Output $obj
+              }
+              else {
+                Write-Output $(InternalGetFileIDs $SearchParameter)
+              }
             }
           }
         }
@@ -173,8 +175,8 @@ Function Get-FileIDs {
         if ($PassThru) {
           # Create a new object to pass down the pipeline
           $result = [pscustomobject](@{HydrusSessionKey = $hydrusSessionKey
-              SearchParameters                         = $searchParameters
-              FileIDs                                  = $(InternalGetFileIDs $searchParameter)
+              SearchParameters                          = $searchParameters
+              FileIDs                                   = $(InternalGetFileIDs $searchParameter)
             })
           Write-Output $result
         }

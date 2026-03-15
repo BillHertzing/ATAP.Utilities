@@ -6,14 +6,13 @@ How to use the ATAP.Utilities.BuildTooling.Jenkins pipelines and tools in a Wind
 
 [Build Continuous Integration with Jenkins in C#](https://developer.okta.com/blog/2019/07/26/jenkins-continuous-integration-csharp-aspnetcore)
 
-
 ## Conventions
 
 An ATAP Utilities Jenkins pipeline has a lot of options. All have a default value, and all can be override at multiple levels.
 
 ## Dotnet Core ConfigurationRoot
 
-Configuration is handled by creating a Configuration root object.  ToDo: Insert link to MS documentation.
+Configuration is handled by creating a Configuration root object. ToDo: Insert link to MS documentation.
 
 ```Plantuml
 @startStandardConfigurationRoot
@@ -56,39 +55,73 @@ ToDo: Once installed, the path to the executable must be supplied to the databas
 
 ## Installing powershell modules on DevOps machines
 
-Powershell modules can be installed using Chocolatey, PowershellGet, or NuGet package providers
+Powershell modules can be installed using Filesystem, NuGet, PSResourceGet, or ChocolateyGet package providers.
 
-The PackageSource (location) for each provider and Lifecycle stage is found at ```$global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']]```
+The Uri for every permutation of is found at:
 
-DevOps machines are considered 'production' unless specifically assigned a development or test role. As such, all DevOps production machines should use only production modules. The PackageSource for production modules are found in found in ```$global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']]``` under the subkeys ```$global:configRootKeys['RepositoryNuGetProductionWebServerProductionPackageNameConfigRootKey']```, ```RepositoryPowershellGetProductionWebServerProductionPackageNameConfigRootKey```, and ```RepositoryChocolateyProductionWebServerProductionPackageNameConfigRootKey```. Using the publicly published modules ensures that internally, the DevOps machines use the same cade that the public uses.
+- `$global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']]`
 
-Modules that are published only internally, not for general public consumption, can also be found under the subkeys ```RepositoryNuGetFilesystemProductionPackageNameConfigRootKey```, ```RepositoryPowershellGetFilesystemProductionPackageNameConfigRootKey```, and ```RepositoryChocolateyFilesystemProductionPackageNameConfigRootKey```
+DevOps machines are considered 'production' unless specifically assigned a development or test role. As such, all DevOps production machines should use only production modules. All machines in the enterprise should get their software packages from approved internal PackageRepositories. Using the publicly published modules ensures that internally, the DevOps machines use the same code that the public uses.
 
+The PackageSource Uri for the Released PackageVersions of ProductionPackage modules are found in found under the subkeys:
 
-The Development repository is at:
-The QualityAssurance repositories are at locations matching this pattern:
-The Staging Repositories are at locations matching this pattern:
-The Production (Public) repositories are at: Chocolatey, PSGallery, NuGet
+- `$global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePullUriConfigRootKey']`
+- `$global:configRootKeys['PackageRepositoryInternalReleasedChocolateyGetProductionPackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryInternalReleasedPSResourceGetProductionPackagePullUriConfigRootKey']`.
 
-Repository meta information is kept in the global data structures keyed for each machine.
+The PackageSource Uri for the Released PackageVersions of QualityAssurancePackage modules are found under the subkeys:
+
+- `$global:configRootKeys['PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryInternalReleasedPSResourceGetQualityAssurancePackagePullUriConfigRootKey']`
+
+Production PackageVersions of modules that are published only internally, not for general public consumption, can also be found under the subkeys:
+
+- `$global:configRootKeys['PackageRepositoryInternalReleasedFilesystemProductionPackagePathNameConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryInternalReleasedFilesystemQualityAssurancePackagePathNameConfigRootKey']`
+
+The (External / Public) Production repositories for Released PackageVersions are at: Chocolatey Community Packages, PSGallery, NuGet. The PackageSource Uri for these can be found under the subkeys:
+
+- `$global:configRootKeys['PackageRepositoryExternalReleasedNuGetProductionPackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryExternalReleasedChocolateyGetProductionPackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryExternalReleasedPSResourceGetProductionPackagePullUriConfigRootKey']`
+
+The (External / Public) Production repositories for Prerelease PackageVersions are varied, but there are a number of common ones at: TBD
+
+Prerelease PackageVersions can be pushed to external PackageRepositories for Prerelease PackageVersions like TBD.
+The PackageSource Uri for the the Prerelease PackageVersions of the QualityAssurance and Production packages are under the subkeys:
+
+- `$global:configRootKeys['PackageRepositoryExternalPrereleaseNuGetProductionPackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryExternalPrereleasePSResourceGetProductionPackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryExternalPrereleasePSResourceGetQualityAssurancePackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePullUriConfigRootKey']`,
+
+Ansible is responsible for ensuring that all host's `$global:Settings` are correct for that host's roles.
 
 ### Using NuGet Provider
 
-NuGet configuration file listing the available NuGet package sources is nuget.config, located in the filesystem at the base of all development respoitories. Every DevOps machine that will use the NuGet package provider for pulling or pushing packages needs a copy of this file. The contents of this file should match the values found in ```$global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']]```
+NuGet configuration file listing the available NuGet package sources is nuget.config, located in the filesystem at the base of all development respoitories. Every DevOps machine that will use the NuGet package provider for pulling or pushing packages needs a copy of this file. The contents of this file should match the values found in `$global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']]`
 see also [Common NuGet configurations:Config file locations and uses](https://learn.microsoft.com/en-us/nuget/consume-packages/configuring-nuget-behavior#config-file-locations-and-uses)
 
 The IAC (official) version is stored in "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\Resources\NuGet.Config". After installing the module to machine scope using the production package from the ChocolateyGet provider, the installation will create a symbolic link from the installed NuGet.Config in the Resources subdir, to the root of the repository(s). Manually this looks like
 
 ```Powershell
+# During Development
 Remove-Item -path (join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'NuGet.Config') -ErrorAction SilentlyContinue
 New-Item -ItemType SymbolicLink -path (join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'NuGet.Config') -Target (join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.BuildTooling.PowerShell','Resources','NuGet.Config')
+# After an IAC intervention
+# IAC will ensure the machin conforms to the NuGet client role. The NuGet client role will install a custom NuGet.config
+#  file in the default machine path, so it will provide the lowest level of the config stack
+
 ```
 
-### Using PowershellGet provider
+### Using PSResourceGet provider
 
-[Unofficial example of PowerShellGet-friendly package. How to create, publish and use](https://github.com/anpur/powershellget-module)
+[Unofficial example of PSResourceGet-friendly package. How to create, publish and use](https://github.com/anpur/PSResourceGet-module)
 
-```Install-Module '<ModuleName>' -Scope CurrentUser```
+`Install-Module '<ModuleName>' -Scope CurrentUser`
 
 ToDo: Once installed, the path to the module must be supplied to the database under the key for the machine name. See the ATAP Utilities packages for computer hardware, software, and processes for the data structures to record necessary information.
 
@@ -97,8 +130,6 @@ The module contains Functions, and also information about the expected environme
 ToDo: Find a tool that reads FunctionHelp blocks and turns them into HTML pages. Ask the DocFx folks?
 
 ### Using the Chocolatey provider
-
-
 
 ## Certificates
 
@@ -143,10 +174,10 @@ Name of Windows User account used to run the Jenkins Controller service is `Jenk
 
 Name of Windows User account used to run the Jenkins Agent service is found in the setting `$($global:settings[$global:configRootKeys['JenkinsAgentServiceAccountConfigRootKey']])`, password Temporary value is `NotSecret`, used in the service as "LogOnAs"
 
--  Download the WinSW executable, and rename it to `JenkinsAgent-<Client Version>-<DotNetDesktopframeworkVersion>.exe`
--  Create the file `JenkinsAgent-<Client Version>-<DotNetDesktopFrameworkVersion>.xml`, populate it as follows:
+- Download the WinSW executable, and rename it to `JenkinsAgent-<Client Version>-<DotNetDesktopframeworkVersion>.exe`
+- Create the file `JenkinsAgent-<Client Version>-<DotNetDesktopFrameworkVersion>.xml`, populate it as follows:
 
-``` xml
+```xml
 <service>
   <id>JenkinsAgent</id>
   <name>Jenkins Agent</name>
@@ -174,9 +205,9 @@ Name of Windows User account used to run the Jenkins Agent service is found in t
 </service>
 ```
 
-Note that the Java.exe does not specify a path. Instead it will use the first java.exe found in the process's `$env:Path`. This is based on the machine profile and the user rpofile for `JenkinsAgentSrvAcct`
+Note that the Java.exe does not specify a path. Instead it will use the first java.exe found in the process's `$env:Path`. This is based on the machine profile and the user profile for `JenkinsAgentSrvAcct`
 The configuration specifies that the agent jar file is found exactly at
-The jnlpURL argument is  using http (TBD switch to https when Jenkins Controller is configured with a SSL certificate)
+The jnlpURL argument is using http (TBD switch to https when Jenkins Controller is configured with a SSL certificate)
 The 'secret' comes from the node configuration page
 The WorkDir should depend on the current node's global settings
 
@@ -213,7 +244,7 @@ java -jar agent.jar \
   @agent_options.cfg
 ```
 
- With an `agent_options.cfg` file containing
+With an `agent_options.cfg` file containing
 
 ```Text
 -jnlpUrl
@@ -243,9 +274,9 @@ pipeline {
 
 Follow these steps:
 
-1) Navigate to the latest build of the pipeline job you would like to clean the workspace of.
-1) Click the Replay link in the LHS menu.
-1) Paste the above script in the text box and click Run
+1. Navigate to the latest build of the pipeline job you would like to clean the workspace of.
+1. Click the Replay link in the LHS menu.
+1. Paste the above script in the text box and click Run
 
 Also try variations on the below script... Will work for default workspace as well
 
@@ -282,7 +313,7 @@ If the Artifacts contain one or more Powershell modules being, the <modulename>.
 
 Resource files have to be generated by a build stage, from the .resx files in a project's directory
 
-Executable code, either .dll or .exe files, that are expected to run **As Services** under Core on Linux and Windows, must be built with specific RunTimeIdentifiers. The normal *dotnet build* has to be in a loop across all supported RIDs
+Executable code, either .dll or .exe files, that are expected to run **As Services** under Core on Linux and Windows, must be built with specific RunTimeIdentifiers. The normal _dotnet build_ has to be in a loop across all supported RIDs
 
 Executable code being built has to be built inside a loop that calls the build with each supported TargetFramework, although for many TargetFramework values, the build specification file itself (the .csproj file and the Directory.Build.props and directory.Build.targets files it includes) can take care of this by specifying TargetFrameworks ad a list of target frameworks to build against
 
@@ -293,14 +324,15 @@ Executable code being built has to be built inside a loop that calls the build w
 - [MSBuild Structured Log](https://github.com/KirillOsenkov/MSBuildStructuredLog) is a logger for creating detailed logs of the build process
 - [StructuredLogger Nuget package](https://www.nuget.org/packages/MSBuild.StructuredLogger/2.1.507)
 
-1) Install the package as part of the .csproj file
-2) add the switch /logger:BinaryLogger,"packages\MSBuild.StructuredLogger.2.1.507\lib\netstandard2.0\StructuredLogger.dll";"C:\Users\SomeUser\Desktop\binarylog.binlog"
+1. Install the package as part of the .csproj file
+2. add the switch /logger:BinaryLogger,"packages\MSBuild.StructuredLogger.2.1.507\lib\netstandard2.0\StructuredLogger.dll";"C:\Users\SomeUser\Desktop\binarylog.binlog"
 
 ToDo: version control? hardcoded version number in switch?
 
 ## PlantUmlClassDiagramGenerator stage
 
 [PlantUmlClassDiagramGenerator](https://www.nuget.org/packages/PlantUmlClassDiagramGenerator)
+
 ### prerequisites
 
 ToDo: Move into prerequisites step of the pipeline, test for installed and minimum required version
@@ -325,23 +357,23 @@ Since the Jenkinsfile has already built the code and the tests, add the followin
 
 ### Where to find the binaries to run
 
---output <OUTPUT_DIRECTORY>  defaults to default path is ./bin/<configuration>/<framework>/  but ATAP Standard ?todo:? Expects a `Published` directory to be the location . From within test code methods , ` AppDomain.BaseDirectory` will return the location from which the tests are running
+--output <OUTPUT_DIRECTORY> defaults to default path is ./bin/<configuration>/<framework>/ but ATAP Standard ?todo:? Expects a `Published` directory to be the location . From within test code methods , ` AppDomain.BaseDirectory` will return the location from which the tests are running
 
 ### Where to put the test results
 
---results-directory <RESULTS_DIR>   default is `TestResults` subdirectory in the `_generated` subdirectory alongside the project file
+--results-directory <RESULTS_DIR> default is `TestResults` subdirectory in the `_generated` subdirectory alongside the project file
 
 ### Runtime Identifier
 
--runtime <RUNTIME_IDENTIFIER>  - Important for tests that validating a portion of the code that installs as a service, different RIDs for Windows, Linux, and MacOS. Validate all the dll and executable code exists for each RID, and validate that the files in each group do indeed have the metadata that identifies the RID it was built against.
+-runtime <RUNTIME_IDENTIFIER> - Important for tests that validating a portion of the code that installs as a service, different RIDs for Windows, Linux, and MacOS. Validate all the dll and executable code exists for each RID, and validate that the files in each group do indeed have the metadata that identifies the RID it was built against.
 
 ### Build configuration
 
 The build stage should loop over each value of the configuration list \<Debug>,\<Production>,\<ProductionWithTrace> and build the .dll and .exe files once with each value
 
---configuration <CONFIGURATION>  - defaults to `Debug`
+--configuration <CONFIGURATION> - defaults to `Debug`
 
-###  Code Coverage
+### Code Coverage
 
 Install [Coverlet](https://github.com/coverlet-coverage/coverlet)
 
@@ -357,10 +389,10 @@ Install [Coverlet](https://github.com/coverlet-coverage/coverlet)
 
 ## Documentation Generation
 
-The stage needs a step that moves the readme.html over to index.html, renames any generated assets located in _site/Assets/*, and reworks the asset links from readme to index
+The stage needs a step that moves the readme.html over to index.html, renames any generated assets located in \_site/Assets/\*, and reworks the asset links from readme to index
 
-The post build cleanup stage should include a step that removes generated `.puml`  files from directories where a source file contains the source of the diagram.
+The post build cleanup stage should include a step that removes generated `.puml` files from directories where a source file contains the source of the diagram.
 
-ToDo: Better would be to put all generated files in a tree structure located somewhere below _generated, and then convert each to an asset and write that asset to the correct subdir under _site/assets, such that the subdir matches the subdir where the source code was found
+ToDo: Better would be to put all generated files in a tree structure located somewhere below \_generated, and then convert each to an asset and write that asset to the correct subdir under \_site/assets, such that the subdir matches the subdir where the source code was found
 
-C2Plantuml puts one .puml file for each class/interface/etc. found in a compilation unit into the directory alongside the compilation unit. ToDo: move these to a identical tree under _generated. Convert each to an asset and put them into the correct subdir under _site/assets. Have a build step create a `<compilationunit>.md file, and populate it with a link between each svg asset and the original source code file from which it was generated
+C2Plantuml puts one .puml file for each class/interface/etc. found in a compilation unit into the directory alongside the compilation unit. ToDo: move these to a identical tree under \_generated. Convert each to an asset and put them into the correct subdir under \_site/assets. Have a build step create a `<compilationunit>.md file, and populate it with a link between each svg asset and the original source code file from which it was generated

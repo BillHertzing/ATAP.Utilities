@@ -4,8 +4,8 @@
 .SYNOPSIS
 Confirm that all the 3rd party tools and scripts needed to build, analyze, test, package and deploy both c# and powershell code are present, configured, and accessable,
 .DESCRIPTION
-This function looks for the presence of Powershell Package Repository Sources
-  - deploy packages to internal and external location, to three public location (PowershellGet, Nuget, and Chocolotey)
+This function looks for the presence of a Powershell Package Repository Provider
+  - it expects to support three package providers Nuget, PSResourceGet, ChocolateyGet
 
 .PARAMETER Name
 ToDo: write Help For the parameter X
@@ -35,7 +35,7 @@ Function Confirm-RepositoryPackageProvider {
   [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'NoParameters')]
   param (
     [parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
-    [string] $ProviderName
+    [string] $PackageProviderName
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, Mandatory = $False)]
     [string] $Encoding # Often found in the $PSDefaultParameterValues preference variable
   )
@@ -56,20 +56,20 @@ Function Confirm-RepositoryPackageProvider {
   #region FunctionProcessBlock
   ########################################
   PROCESS {
-    if (-not $(Get-PackageProvider -Name $ProviderName)) {
+    if (-not $(Get-PackageProvider -Name $PackageProviderName)) {
       # if it doesn't exists, install it
-      if (-not $(Install-PackageProvider -Force -ForceBootstrap -Name $ProviderName)) {
+      if (-not $(Install-PackageProvider -Force -ForceBootstrap -Name $PackageProviderName)) {
         # ToDo better error logging
-        Write-PSFMessage -Level Error -Message "Install-PackageProvider failed. ProviderName = $ProviderName" -Tag 'Validation'
+        Write-PSFMessage -Level Error -Message "Install-PackageProvider failed. PackageProviderName = $PackageProviderName" -Tag 'Validation'
         # Throw Error
-        throw "Install-PackageProvider failed; ProviderName = $ProviderName"
+        throw "Install-PackageProvider failed; PackageProviderName = $PackageProviderName"
       }
       # Import the newly registered provider into this session
-      if (-not $(Import-PackageProvider -Force -ForceBootstrap -Name $ProviderName)) {
+      if (-not $(Import-PackageProvider -Force -ForceBootstrap -Name $PackageProviderName)) {
         # ToDo better error logging
-        Write-PSFMessage -Level Error -Message "Import-PackageProvider failed. ProviderName = $ProviderName" -Tag 'Validation'
+        Write-PSFMessage -Level Error -Message "Import-PackageProvider failed. PackageProviderName = $PackageProviderName" -Tag 'Validation'
         # Throw Error
-        throw "Import-PackageProvider failed; ProviderName = $ProviderName"
+        throw "Import-PackageProvider failed; PackageProviderName = $PackageProviderName"
       }
     }
   }

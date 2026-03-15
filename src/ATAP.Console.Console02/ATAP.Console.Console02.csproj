@@ -7,8 +7,7 @@
 
   <!-- This project will run under the following target frameworks -->
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-    <TargetFrameworks>net5.0;</TargetFrameworks>
+    <TargetFrameworks>net48;net8.0;net9.0</TargetFrameworks>
   </PropertyGroup>
 
   <!-- The Assembly will be packed into a NuGet Package on every build -->
@@ -41,12 +40,12 @@
     <ProjectReference Include="..\ATAP.Utilities.Loader.Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Loader.StringConstants\ATAP.Utilities.Loader.StringConstants.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Loader\ATAP.Utilities.Loader.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Serializer.StringConstants\ATAP.Utilities.Serializer.StringConstants.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer\StringConstants\ATAP.Utilities.Serializer.StringConstants.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer\Model\ATAP.Utilities.Serializer.Model.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.DataBaseManagement\ATAP.Utilities.DatabaseManagement.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Persistence.StringConstants\ATAP.Utilities.Persistence.StringConstants.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Persistence\Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Persistence\StringConstants\ATAP.Utilities.Persistence.StringConstants.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.GenericHost.Extensions\ATAP.Utilities.GenericHost.Extensions.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Configuration.Extensions\ATAP.Utilities.Configuration.Extensions.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Reactive.Extensions\ATAP.Utilities.Reactive.Extensions.csproj" />
@@ -118,8 +117,8 @@
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Importance="High" Text="SerializerSubModulesShimProjects = @(SerializerSubModulesShimProjects)" />
     <!-- ToDo: figure out how to MSBuild with target PublishAll for each element of the SerializerSubModuleShimProjects array-->
     <!-- Workaround: list -->
-    <MSBuild Projects="..\ATAP.Utilities.Serializer.Shim.SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" Targets="PublishAll" Properties="Configuration=$(Configuration);PublishDir=$(PluginsDir)" />
-    <MSBuild Projects="..\ATAP.Utilities.Serializer.Shim.Newtonsoft\ATAP.Utilities.Serializer.Shim.Newtonsoft.csproj" Targets="PublishAll" Properties="Configuration=$(Configuration);PublishDir=$(PluginsDir)" />
+    <MSBuild Projects="..\ATAP.Utilities.Serializer.Shim\SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" Targets="PublishAll" Properties="Configuration=$(Configuration);PublishDir=$(PluginsDir)" />
+    <MSBuild Projects="..\ATAP.Utilities.Serializer.Shim\Newtonsoft\ATAP.Utilities.Serializer.Shim.Newtonsoft.csproj" Targets="PublishAll" Properties="Configuration=$(Configuration);PublishDir=$(PluginsDir)" />
   </Target>
 
   <!-- copy all of the Serializer SubModule shims, for all Serializer Shims, for all Run-time identifiers for the ISerializerConfigurableAbstract DI-injected service to a serializers subdirectory of the Outputdir before build -->

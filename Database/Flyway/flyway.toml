@@ -1,0 +1,40 @@
+# Flyway configuration for ATAPUtilities Database
+# This configuration supports the Database folder structure for RRSBS (Rules, Rule Sets, Build Sets)
+
+[flyway]
+# Safety settings
+cleanDisabled = true
+
+# Validation settings
+outOfOrder = false
+validateOnMigrate = true
+validateMigrationNaming = true
+
+# Mixed mode allows both versioned and repeatable migrations
+mixed = true
+
+# Schema management
+createSchemas = true
+
+# Enable placeholder replacement
+placeholderReplacement = true
+
+# Locations for SQL migrations
+# Note: Uses relative path ./SQL (capital) for migrations
+locations = [
+  "filesystem:./SQL"
+]
+
+# Placeholder configuration
+# Placeholders are populated via environment variables by Invoke-Flyway.ps1:
+#   $env:FLYWAY_PLACEHOLDERS_DATA_DIR       → ${data_dir}
+#   $env:FLYWAY_PLACEHOLDERS_PACKAGENAME    → ${PackageName}
+#   $env:FLYWAY_PLACEHOLDERS_PACKAGEVERSION → ${PackageVersion}
+#   $env:FLYWAY_PLACEHOLDERS_GITTAG         → ${GitTag}
+#   $env:FLYWAY_PLACEHOLDERS_GITCOMMIT      → ${GitCommit}
+#   $env:FLYWAY_PLACEHOLDERS_MANIFESTVALUES → ${ManifestValues}
+#
+# Flyway automatically reads FLYWAY_PLACEHOLDERS_* environment variables
+# when placeholderReplacement=true (set above)
+# DO NOT add a [flyway.placeholders] section - it blocks environment variable detection
+

@@ -76,8 +76,7 @@ Function Create-ServiceAccount {
         # The service account user cannot change its own password.
         try {
           Install-CUser -Credential $credential -Description $serviceAccountDescription -FullName $serviceAccountFullname -UserCannotChangePassword
-        }
-        catch {
+        } catch {
           $result.InstallCUser = $PSItem
           Write-PSFMessage -Level Error -Message "Failed to create the user $serviceAccount, error is $PSItem"
           $stringToReturn = $($result | ConvertTo-Yaml)
@@ -89,23 +88,21 @@ Function Create-ServiceAccount {
         # Grant the new user the right to login as a service
         try {
           Grant-CPrivilege -Identity $serviceAccount -Privilege SeServiceLogonRight
-        }
-        catch {
+        } catch {
           $result.GrantLoginAsAServiceToCUser = $PSItem
           Write-PSFMessage -Level Error -Message "Failed to grant the user $serviceAccount the SeServiceLogonRight privelege , error is $PSItem"
           $stringToReturn = $($result | ConvertTo-Yaml)
           Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
           return  $stringToReturn
         }
-        $result.GrantLoginAsAServiceToCUser = $trueTest-Privilege -Identity whertzing -Privilege SeServiceLogonRight
+        $result.GrantLoginAsAServiceToCUser = Test-Privilege -Identity whertzing -Privilege SeServiceLogonRight
 
 
         # Create a home directory for the Service Account User
         try {
           # send the command's normal stdout to $null
           New-Item -ItemType directory $serviceAccountUserHomeDirectory -Force > $null
-        }
-        catch {
+        } catch {
           $result.CreateHomeDirectory = $PSItem
           Write-PSFMessage -Level Error -Message "Failed to create the user's home directory $serviceAccountUserHomeDirectory, error is $PSItem"
           Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
@@ -117,8 +114,7 @@ Function Create-ServiceAccount {
         try {
           #
           # Grant-CPermission -Identity $serviceAccount -Permission FullControl -Path $serviceAccountUserHomeDirectory   }
-        }
-        catch {
+        } catch {
           $result.GrantFullControlToHomeDirectory = $PSItem
           Write-PSFMessage -Level Error -Message "Failed to set ACL on the home directory $serviceAccountUserHomeDirectory for user $serviceAccount , error is $PSItem"
           $stringToReturn = $($result | ConvertTo-Yaml)
@@ -137,8 +133,7 @@ Function Create-ServiceAccount {
           Remove-Item -Path (Join-Path $powershellDirectory 'Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue
           New-Item -ItemType SymbolicLink -Path (Join-Path $powershellDirectory 'Microsoft.PowerShell_profile.ps1') -Target $serviceAccountPowershellCoreProfileSourcePath > $null
           $result.LinkPowershellCoreProfile = $PSItem
-        }
-        catch {
+        } catch {
           Write-PSFMessage -Level Error -Message "Failed to link home directory $powershellDirectory to target $serviceAccountPowershellCoreProfileSourcePath for user $serviceAccount , error is $PSItem"
           $stringToReturn = $($result | ConvertTo-Yaml)
           Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
@@ -158,8 +153,7 @@ Function Create-ServiceAccount {
           Remove-Item -Path (Join-Path $powershellDirectory 'Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue
           New-Item -ItemType SymbolicLink -Path (Join-Path $powershellDirectory 'Microsoft.PowerShell_profile.ps1') -Target $serviceAccountPowershellDesktopProfileSourcePath > $null
           $result.LinkPowershellDesktopProfile = $PSItem
-        }
-        catch {
+        } catch {
           Write-PSFMessage -Level Error -Message "Failed to link home directory $powershellDirectory to target $serviceAccountPowershellCoreProfileSourcePath for user $serviceAccount , error is $PSItem"
           $stringToReturn = $($result | ConvertTo-Yaml)
           Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
@@ -184,8 +178,7 @@ Function Create-ServiceAccount {
         try {
           # send the command's normal stdout to $null
           Remove-Item -Recurse $serviceAccountUserHomeDirectory -Force > $null
-        }
-        catch {
+        } catch {
           $result.CreateHomeDirectory = $PSItem
           Write-PSFMessage -Level Error -Message "Failed to delete the user's home directory $serviceAccountUserHomeDirectory, error is $PSItem"
           Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
@@ -196,8 +189,7 @@ Function Create-ServiceAccount {
         # remove the Service Account User
         try {
           Uninstall-CUser -Username $serviceAccount #-Verbose:$VerbosePreference -Whatif:$WhatIfPreference -Confirm:$ConfirmPreference
-        }
-        catch {
+        } catch {
           $result.InstallCUser = $PSItem
           Write-PSFMessage -Level Error -Message "Failed to create the user $serviceAccount, error is $PSItem"
           Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
@@ -234,15 +226,15 @@ Function Create-ServiceAccount {
       }
       'Test' {
         $result = [ordered]@{
-          Success             = $false
-          UserAccountExists = $false
-          UserAccountDisabled = $false
+          Success                = $false
+          UserAccountExists      = $false
+          UserAccountDisabled    = $false
           LoginAsAServiceEnabled = $false
         }
 
         # does the Service User Account exist?
         # Does the Service USer Account have the Login As Service  permission
-        $result.LoginAsAServiceEnabled =  Test-CPrivilege -Identity $serviceAccount -Privilege SeServiceLogonRight
+        $result.LoginAsAServiceEnabled = Test-CPrivilege -Identity $serviceAccount -Privilege SeServiceLogonRight
         # Does the home directory exist?
         # are the ACL permisisons as expected?
         # is there a Powershell Core profile?

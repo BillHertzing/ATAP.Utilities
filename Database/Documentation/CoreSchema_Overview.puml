@@ -1,0 +1,156 @@
+@startuml CoreSchema_Overview
+' ============================================================
+' ATAPUtilities Core Schema — Complete Overview
+' Source: V00.01.000010__Create_ATAPUtilities_Core_Schema.sql
+' ============================================================
+
+skinparam linetype ortho
+skinparam roundcorner 5
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 11
+skinparam entity {
+    BackgroundColor #F0F4FF
+    BorderColor     #3366CC
+    FontColor       #1A1A2E
+}
+skinparam arrow {
+    Color           #3366CC
+    FontSize        9
+}
+
+' ── Philote Foundation ────────────────────────────────────
+entity "Philote" as Philote <<table>> {
+    * PhiloteId  : UNIQUEIDENTIFIER <<PK>>
+    --
+    CreatedAt    : DATETIME2
+}
+
+entity "PhiloteAdditionalId" as PhiloteAddId <<table>> {
+    * PhiloteAdditionalIdId : INT <<PK, IDENTITY>>
+    --
+    PhiloteId   : UNIQUEIDENTIFIER <<FK>>
+    KeyName     : NVARCHAR(200)
+    ValueId     : UNIQUEIDENTIFIER
+}
+
+entity "PhiloteTimeBlock" as PhiloteTimeBlock <<table>> {
+    * PhiloteTimeBlockId : INT <<PK, IDENTITY>>
+    --
+    PhiloteId   : UNIQUEIDENTIFIER <<FK>>
+    StartAt     : DATETIME2
+    EndAt       : DATETIME2 [NULL]
+}
+
+' ── Classification Lookup ─────────────────────────────────
+entity "PrimitiveLanguageKind" as LangKind <<table>> {
+    * PrimitiveLanguageKindId : TINYINT <<PK>>
+    --
+    Name        : NVARCHAR(50)
+    Description : NVARCHAR(200) [NULL]
+}
+
+' ── Rule Primitives ───────────────────────────────────────
+entity "RulePrimitive" as RulePrimitive <<table>> {
+    * PhiloteId               : UNIQUEIDENTIFIER <<PK, FK>>
+    --
+    PrimitiveLanguageKindId   : TINYINT <<FK>>
+    Name                      : NVARCHAR(200)
+    Description               : NVARCHAR(MAX) [NULL]
+    BnfDefinition             : NVARCHAR(MAX) [NULL]
+    Attribution               : NVARCHAR(MAX) [NULL]
+}
+
+entity "RulePrimitiveInput" as RulePrimInput <<table>> {
+    * RulePrimitiveInputId : INT <<PK, IDENTITY>>
+    --
+    PhiloteId     : UNIQUEIDENTIFIER <<FK>>
+    InputName     : NVARCHAR(200)
+    TypeName      : NVARCHAR(200) [NULL]
+    Description   : NVARCHAR(MAX) [NULL]
+    DefaultValue  : NVARCHAR(MAX) [NULL]
+    IsRequired    : BIT
+}
+
+' ── Rule Definitions ──────────────────────────────────────
+entity "Rule" as Rule <<table>> {
+    * PhiloteId               : UNIQUEIDENTIFIER <<PK, FK>>
+    --
+    PrimitiveLanguageKindId   : TINYINT <<FK>>
+    Name                      : NVARCHAR(200)
+    Purpose                   : NVARCHAR(MAX) [NULL]
+    SourceFileReference       : NVARCHAR(500) [NULL]
+}
+
+entity "RulePrimitiveComposition" as RulePC <<table>> {
+    * RulePrimitiveCompositionId : INT <<PK, IDENTITY>>
+    --
+    RulePhiloteId      : UNIQUEIDENTIFIER <<FK>>
+    SequenceKey        : NVARCHAR(20)
+    PrimitivePhiloteId : UNIQUEIDENTIFIER <<FK>>
+    BoundInputsJson    : NVARCHAR(MAX) [NULL]
+    Notes              : NVARCHAR(MAX) [NULL]
+}
+
+' ── Rule Sets ─────────────────────────────────────────────
+entity "RuleSet" as RuleSet <<table>> {
+    * PhiloteId   : UNIQUEIDENTIFIER <<PK, FK>>
+    --
+    Name          : NVARCHAR(200)
+    Description   : NVARCHAR(MAX) [NULL]
+}
+
+entity "RuleSetMember" as RuleSetMember <<table>> {
+    * RuleSetMemberId  : INT <<PK, IDENTITY>>
+    --
+    RuleSetPhiloteId   : UNIQUEIDENTIFIER <<FK>>
+    RulePhiloteId      : UNIQUEIDENTIFIER <<FK>>
+    SequenceNumber     : INT
+    Notes              : NVARCHAR(MAX) [NULL]
+}
+
+' ── Rule Instantiations ───────────────────────────────────
+entity "RuleInstantiation" as RuleInst <<table>> {
+    * PhiloteId     : UNIQUEIDENTIFIER <<PK, FK>>
+    --
+    RulePhiloteId   : UNIQUEIDENTIFIER <<FK>>
+    CreatedAt       : DATETIME2
+    Notes           : NVARCHAR(MAX) [NULL]
+}
+
+entity "RuleInstantiationBinding" as RuleInstBind <<table>> {
+    * RuleInstantiationBindingId : INT <<PK, IDENTITY>>
+    --
+    InstantiationPhiloteId : UNIQUEIDENTIFIER <<FK>>
+    InputName              : NVARCHAR(200)
+    InputValue             : NVARCHAR(MAX) [NULL]
+}
+
+' ── Relationships ─────────────────────────────────────────
+' Philote foundation (one Philote row backs each keyed entity)
+Philote            ||--o{ PhiloteAddId      : "AdditionalIds"
+Philote            ||--o{ PhiloteTimeBlock  : "TimeBlocks"
+Philote            ||--o| RulePrimitive     : "is-a"
+Philote            ||--o| Rule              : "is-a"
+Philote            ||--o| RuleSet           : "is-a"
+Philote            ||--o| RuleInst          : "is-a"
+
+' Language kind lookup
+LangKind           ||--o{ RulePrimitive     : "classifies"
+LangKind           ||--o{ Rule              : "classifies"
+
+' Primitive inputs
+RulePrimitive      ||--o{ RulePrimInput     : "declares"
+
+' Rule composition (many primitives ordered inside a rule)
+Rule               ||--o{ RulePC            : "composes"
+RulePrimitive      ||--o{ RulePC            : "used-in"
+
+' Rule sets
+RuleSet            ||--o{ RuleSetMember     : "contains"
+Rule               ||--o{ RuleSetMember     : "member-of"
+
+' Instantiation
+Rule               ||--o{ RuleInst          : "instantiates"
+RuleInst           ||--o{ RuleInstBind      : "binds"
+
+@enduml

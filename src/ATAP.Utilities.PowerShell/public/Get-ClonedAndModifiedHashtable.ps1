@@ -41,6 +41,7 @@ Function Get-ClonedAndModifiedHashtable {
       $source
     )
   )
+
   for ($modificationsIndex = 0; $modificationsIndex -lt $modifications.Count; $modificationsIndex++) {
     $modification = $modifications[$modificationsIndex]
     $clonedModification = [psserializer]::Deserialize(

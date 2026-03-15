@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>netstandard2.1;net5.0;net471</TargetFrameworks>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
     <!-- Assembly, File, and Package Information for this assembly-->
@@ -17,7 +17,7 @@
     <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
-    <!-- Include NuGet PackageReferenfces to the required DLLs for custom msbuild tasks-->
+    <!-- Include NuGet PackageReferences to the required DLLs for custom msbuild tasks-->
   <ItemGroup>
     <PackageReference Include="Microsoft.Build.Framework"/>
     <PackageReference Include="Microsoft.Build.Utilities.Core" />

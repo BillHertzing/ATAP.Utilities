@@ -1,0 +1,10 @@
+digraph G {
+    node [shape=record];
+    ILogger [label="{ILogger|+ createChannel(message: string): void\l+ setChannel(message: string): void\l+ fatal(message: string): void\l+ error(message: string): void\l+ warn(message: string): void\l+ info(message: string): void\l+ debug(message: string): void\l+ trace(message: string): void\l+ performance(message: string): void\l}"];
+    Logger [label="{Logger|+ constructor()\l+ createChannel(message: string): void → pinoLogger\l+ setChannel(message: string): void → pinoLogger\l+ fatal(message: string): void → pinoLogger\l+ error(message: string): void → pinoLogger\l+ warn(message: string): void → pinoLogger\l+ info(message: string): void → pinoLogger\l+ debug(message: string): void → pinoLogger\l+ trace(message: string): void → pinoLogger\l+ performance(message: string): void → pinoLogger\l}"];
+    pinoLogger [label="{pinoLogger|+ fatal(message: string): void\l+ error(message: string): void\l+ warn(message: string): void\l+ info(message: string): void\l+ debug(message: string): void\l+ trace(message: string): void\l+ performance(message: string): void\l}", shape=ellipse, style=filled, color=lightgrey];
+
+    edge [arrowhead="empty"];
+    Logger -> ILogger [label="implements"];
+    Logger -> pinoLogger [label="delegates", style=dotted];
+}

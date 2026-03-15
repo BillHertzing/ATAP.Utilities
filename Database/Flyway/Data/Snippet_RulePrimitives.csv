@@ -1,0 +1,7 @@
+PhiloteId,PrimitiveLanguageKindId,Name,Description
+f8e3d2c1-4b5a-6d7e-8f9a-0b1c2d3e4f5a,5,<snippet-file>,"Top-level container for a VS Code snippet file. A snippet file is a JSON object containing one or more snippet definitions."
+a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d,5,<snippet-definition>,"A complete snippet definition with a unique name, trigger prefix, body content, and description."
+b2c3d4e5-6f7a-8b9c-0d1e-2f3a4b5c6d7e,5,<prefix-property>,"The trigger prefix that activates the snippet."
+c3d4e5f6-7a8b-9c0d-1e2f-3a4b5c6d7e8f,5,<body-property>,"The template body containing the code to insert, with optional placeholders and tab stops."
+d4e5f6a7-8b9c-0d1e-2f3a-4b5c6d7e8f9a,5,<description-property>,"Human-readable description of the snippet's purpose."
+e5f6a7b8-9c0d-1e2f-3a4b-5c6d7e8f9a0b,5,<scope-property>,"Language scope restricting where the snippet is available."

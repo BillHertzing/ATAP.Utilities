@@ -1,0 +1,54 @@
+@startuml
+package "PublicRepositories" as PublicRepositories {
+  together {
+    node "PSGallery" {
+      artifact "Public Powershell Module Package"
+    }
+    node "Community Chocolatey Repository" as CCR {
+      artifact "Public Chocolatey Package"
+    }
+    node "NuGet Server" as NGS {
+      artifact "NuGet Library Package"
+    }
+    PSGallery .. CCR
+    CCR .. NGS  
+  }
+}
+
+package "Internal Build Processes" as InternalBuildProcesse {
+  together {
+    node "PublishToPSResourceGet" {
+      artifact "Internal Powershell Module Package"
+    }
+    node "PublishToChocolateyRepository" {
+      artifact "Internal Chocolatey Package"
+    }
+    node "PublishToInternalNuGetFeed" {
+      artifact "Internal NuGet Package"
+    }
+    PublishToPSResourceGet -down-> PublishToChocolateyRepository
+    PublishToChocolateyRepository -down-> PublishToInternalNuGetFeed
+
+  }
+}
+
+package "ProGet Server" {
+  rectangle "External Connector Cluster" {
+    [PSGallery Connector] <<Connector>>
+    [Community Chocolatey Connector] <<Connector>>
+    [NuGet Library Connector] <<Connector>>
+  }
+  rectangle "Internal Feed Cluster" {
+    [Internal PSResourceGet Production Feed] <<Feed>>
+    [Internal Chocolatey Production Feed] <<Feed>>
+    [Internal NuGet Package Feed] <<Feed>>
+  }
+}
+
+"Public Powershell Module Package" --> "PSGallery Connector"
+"Public Chocolatey Package" --> "Community Chocolatey Connector"
+"NuGet Library Package" --> "NuGet Library Connector"
+"Internal Powershell Module Package" --> "Internal PSResourceGet Production Feed"
+"Internal Chocolatey Package" --> "Internal Chocolatey Production Feed"
+"Internal NuGet Package" --> "Internal NuGet Package Feed"
+@enduml

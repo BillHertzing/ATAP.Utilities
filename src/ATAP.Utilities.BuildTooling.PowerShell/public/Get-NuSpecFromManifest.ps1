@@ -1,5 +1,3 @@
-#Requires -Modules PowerShellGet
-#Requires -Version 5.0
 #region Get-NuSpecFromManifest
 <#
 .SYNOPSIS
@@ -45,9 +43,16 @@ Function Get-NuSpecFromManifest {
     $ManifestPath,
 
     [Parameter(Mandatory = $true)]
-    [ValidateSet('NuGet', 'PowershellGet', 'ChocolateyGet')]
+    # ToDo: Replace with enumeration
+    [ValidateSet('Filesystem', 'NuGet', 'PSResourceGet', 'ChocolateyGet', 'ChocolateyCLI')]
     [string]
-    $ProviderName,
+    $PackageProviderName,
+
+    [Parameter(Mandatory = $true)]
+    # ToDo: Replace with enumeration
+    [ValidateSet('Production', 'QualityAssurance')]
+    [string]
+    $SoftwarePackageType,
 
     [Parameter(Mandatory = $false)]
     [ValidateScript({
@@ -298,6 +303,9 @@ Function Get-NuSpecFromManifest {
           $Version = [string]$Version + '-' + $psmoduleInfoPrereleaseString
         }
       }
+      if ($SoftwarePackageType -eq 'QualityAssurance') {
+        $Version = [string]$Version + '-diagnostics'
+      }
 
       if ($PSModuleInfo.PrivateData.PSData['RequireLicenseAcceptance']) {
         $requireLicenseAcceptance = $PSModuleInfo.PrivateData.PSData.requireLicenseAcceptance.ToString().ToLower()
@@ -313,14 +321,14 @@ Function Get-NuSpecFromManifest {
             Throw $message
           }
 
-          if ((Get-Content -LiteralPath $LicenseFilePath) -eq $null) {
+          if ($null -eq ${Get-Content -LiteralPath $LicenseFilePath}) {
             $message = 'License.txt is empty.'
             Throw $message
           }
         }
         elseif ($requireLicenseAcceptance -ne 'false') {
           $InvalidValueForRequireLicenseAcceptance = "The specified value '{0}' for the parameter '{1}' is invalid. It should be $true or $false." -f ($requireLicenseAcceptance, 'requireLicenseAcceptance')
-          Write-PSFMessage -Level Warning -Message  $InvalidValueForRequireLicenseAcceptance
+          Write-PSFMessage -Level Warning -Message $InvalidValueForRequireLicenseAcceptance
         }
       }
     }
@@ -353,8 +361,11 @@ Function Get-NuSpecFromManifest {
         "PSCommand_$_"
       }
     }
-
+    # Suppress progress output
+    $storedProgressPreference = $ProgressPreference
+    $ProgressPreference = 'SilentlyContinue'
     $dscResourceNames = Get-ExportedDscResources -PSModuleInfo $PSModuleInfo
+    $ProgressPreference = $storedProgressPreference
     if ($dscResourceNames) {
       $Tags += 'PSIncludes_DscResource'
 
@@ -385,24 +396,24 @@ Function Get-NuSpecFromManifest {
       $requiredModules += $ModuleManifestHashTable.NestedModules
     }
 
-    Write-PSFMessage -Level Verbose -Message "Total dependent modules: $($requiredModules.count)"
+    Write-PSFMessage -Level Debug -Message "Total dependent modules: $($requiredModules.count)"
     Foreach ($requiredModule in $requiredModules) {
       $DependentModuleDetail = @{}
       if ($requiredModule.GetType().ToString() -eq 'System.Collections.Hashtable') {
         $ModuleName = $requiredModule.ModuleName
-        Write-PSFMessage -Level Verbose -Message "Processing dependency module '$ModuleName'"
+        Write-PSFMessage -Level Debug -Message "Processing dependency module '$ModuleName'"
         if ($requiredModule.Keys -Contains 'RequiredVersion') {
-          Write-PSFMessage -Level Verbose -Message "'$ModuleName': Required version: $($requiredModule.RequiredVersion)"
+          Write-PSFMessage -Level Debug -Message "'$ModuleName': Required version: $($requiredModule.RequiredVersion)"
           $DependentModuleDetail.add('RequiredVersion', $requiredModule.RequiredVersion)
         }
         elseif ($requiredModule.Keys -Contains 'ModuleVersion') {
-          Write-PSFMessage -Level Verbose -Message "$ModuleName': Module version: $($requiredModule.ModuleVersion)"
+          Write-PSFMessage -Level Debug -Message "$ModuleName': Module version: $($requiredModule.ModuleVersion)"
           $DependentModuleDetail.add('ModuleVersion', $requiredModule.ModuleVersion)
         }
       }
       else {
         # Just module name was specified
-        Write-PSFMessage -Level Verbose -Message "'$ModuleName': Module version not specified."
+        Write-PSFMessage -Level Debug -Message "'$ModuleName': Module version not specified."
         $ModuleName = $requiredModule.ToString()
       }
       $DependentModuleDetail.add('Name', $ModuleName)
@@ -482,16 +493,16 @@ Function Get-NuSpecFromManifest {
 
     if ($LASTEXITCODE -or -not $NuspecPath -or -not (Test-Path -Path $NuspecPath -PathType Leaf)) {
       Write-PSFMessage -Level Error -Message "failed to create nuspec file '$NuspecPath'" # ToDO add tags
-      #ToDo: implement errorid ? $errorId = 'FailedToCreateNuspecFile'
+      #ToDo: implement errorId ? $errorId = 'FailedToCreateNuspecFile'
       # Write-Error -Message $message -ErrorId $errorId -Category InvalidOperation
-      # returning a null indicates an error occurre
+      # returning a null indicates an error occurred
       return
     }
     # ensure the file is not empty
     if (-not $(Get-Content -LiteralPath $NuspecPath -Raw)) {
       Write-PSFMessage -Level Error -Message "Empty nuspec file '$NuspecPath'" # ToDO add tags
-      #ToDo: implement errorid ? $errorId = 'EmptyNuspecFile'
-      # returning a null indicates an error occurre
+      #ToDo: implement errorId ? $errorId = 'EmptyNuspecFile'
+      # returning a null indicates an error occurred
       return
     }
 
@@ -501,7 +512,7 @@ Function Get-NuSpecFromManifest {
 
   #region main
   $message = "Generating .nuspec file based on PowerShell Module Manifest '$ManifestPath'"
-  Write-PSFMessage -Level Verbose -Message $message
+  Write-PSFMessage -Level Debug -Message $message
   $param = @{
     'ManifestPath' = $ManifestPath
   }
@@ -510,7 +521,7 @@ Function Get-NuSpecFromManifest {
   }
   $NuspecFile = New-NuSpecFile @param
   If ($NuspecFile) {
-    Write-PSFMessage -Level Verbose -Message "Nuspec file created: $NuspecFile"
+    Write-PSFMessage -Level Debug -Message "Nuspec file created: $NuspecFile"
   }
   else {
     Write-PSFMessage -Level Error -Message 'Failed to create Nuspec file.'

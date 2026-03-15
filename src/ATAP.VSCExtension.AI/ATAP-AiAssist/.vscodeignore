@@ -1,11 +1,12 @@
+.git/**
 .vscode/**
 .vscode-test/**
-src/**
 .gitignore
+.vscodeignore
 .yarnrc
-vsc-extension-quickstart.md
+src/**
 **/tsconfig.json
-**/.eslintrc.json
+**/.eslintrc.js
 **/*.map
 **/*.ts
 node_modules/prettier/**  // prettier has a dynamic dependency, whihc webpack can't handle, so it has to be excluded from the extension bundle, and must be installed globally

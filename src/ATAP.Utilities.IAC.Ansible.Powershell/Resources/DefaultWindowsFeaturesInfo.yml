@@ -1,0 +1,9 @@
+Defender:
+  version: Latest
+  comments: ""
+VirtualMachinePlatform:
+  version: Latest
+  comments: "Required for WSL"
+SSH.Server:
+  version: latest
+  comments: ""

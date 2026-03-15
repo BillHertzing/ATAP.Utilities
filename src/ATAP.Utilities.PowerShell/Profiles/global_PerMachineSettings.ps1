@@ -5,7 +5,7 @@ $PerHostSettingsKeys = @(
   , $global:configRootKeys['OneDriveBasePathConfigRootKey']
   # This is the default cloud provider's manifestation
   , $global:configRootKeys['CloudBasePathConfigRootKey']
-  # varous temporary directories
+  # various temporary directories
   , $global:configRootKeys['FastTempBasePathConfigRootKey']
   , $global:configRootKeys['BigTempBasePathConfigRootKey']
   , $global:configRootKeys['SecureTempBasePathConfigRootKey']
@@ -34,7 +34,7 @@ $defaultPerMachineSettings = @{
     $global:configRootKeys['OneDriveBasePathConfigRootKey']        = 'Dummy' # 'C:/OneDrive/'
     # This is the default cloud provider's manifestation
     $global:configRootKeys['CloudBasePathConfigRootKey']           = 'C:/Dropbox/'
-    # varous temporary directories
+    # various temporary directories
     $global:configRootKeys['FastTempBasePathConfigRootKey']        = 'C:/Temp/'
     $global:configRootKeys['BigTempBasePathConfigRootKey']         = 'C:/Temp/'
     $global:configRootKeys['SecureTempBasePathConfigRootKey']      = 'C:/Temp/Insecure/'
@@ -51,7 +51,7 @@ $defaultPerMachineSettings = @{
     $global:configRootKeys['OneDriveBasePathConfigRootKey']        = 'Dummy' # 'C:/OneDrive/'
     # This is the default cloud provider's manifestation
     $global:configRootKeys['CloudBasePathConfigRootKey']           = 'C:/Dropbox/'
-    # varous temporary directories
+    # various temporary directories
     $global:configRootKeys['FastTempBasePathConfigRootKey']        = 'C:/Temp/'
     $global:configRootKeys['BigTempBasePathConfigRootKey']         = 'C:/Temp/'
     $global:configRootKeys['SecureTempBasePathConfigRootKey']      = 'C:/Temp/Insecure/'
@@ -72,12 +72,12 @@ $defaultPerMachineSettings = @{
     # )
     # $global:configRootKeys['SQLServerPSModulePathsConfigRootKey']                     = 'C:/Program Files (x86)'' Microsoft SQL Server', '150', 'Tools', 'Powershell', 'Modules/'
 
-    $global:configRootKeys['FLYWAY_LOCATIONSConfigRootKey']        = 'filesystem:' + $([Environment]::GetFolderPath('MyDocuments')) + '/GitHub/ATAP.Utilities/Databases/ATAPUtilities/Flyway/sql'
-    $global:configRootKeys['FLYWAY_URLConfigRootKey']              = 'jdbc:sqlserver: / / localhost:1433; databaseName = ATAPUtilities'
-    $global:configRootKeys['FLYWAY_USERConfigRootKey']             = 'AUADMIN'
-    $global:configRootKeys['FLYWAY_PASSWORDConfigRootKey']         = 'NotSecret'
-    $global:configRootKeys['FP__projectNameConfigRootKey']         = 'ATAPUtilities'
-    $global:configRootKeys['FP__projectDescriptionConfigRootKey']  = 'Test Flyway and Pubs samples'
+    # $global:configRootKeys['FLYWAY_LOCATIONSConfigRootKey']        = 'filesystem:' + $([Environment]::GetFolderPath('MyDocuments')) + '/GitHub/ATAP.Utilities/Databases/ATAPUtilities/Flyway/sql'
+    # $global:configRootKeys['FLYWAY_URLConfigRootKey']              = 'jdbc:sqlserver: / / localhost:1433; databaseName = ATAPUtilities'
+    # $global:configRootKeys['FLYWAY_USERConfigRootKey']             = 'AUADMIN'
+    # $global:configRootKeys['FLYWAY_PASSWORDConfigRootKey']         = 'NotSecret'
+    # $global:configRootKeys['FP__projectNameConfigRootKey']         = 'ATAPUtilities'
+    # $global:configRootKeys['FP__projectDescriptionConfigRootKey']  = 'Test Flyway and Pubs samples'
 
   }
   'ncat016'   = @{
@@ -87,7 +87,7 @@ $defaultPerMachineSettings = @{
     $global:configRootKeys['OneDriveBasePathConfigRootKey']        = 'Dummy' # 'C:/OneDrive/'
     # This is the default cloud provider's manifestation
     $global:configRootKeys['CloudBasePathConfigRootKey']           = 'D:/Dropbox/'
-    # varous temporary directories
+    # various temporary directories
     $global:configRootKeys['FastTempBasePathConfigRootKey']        = 'D:/Temp/'
     $global:configRootKeys['BigTempBasePathConfigRootKey']         = 'D:/Temp/'
     $global:configRootKeys['SecureTempBasePathConfigRootKey']      = 'D:/Temp/Insecure/'
@@ -104,7 +104,7 @@ $defaultPerMachineSettings = @{
     $global:configRootKeys['OneDriveBasePathConfigRootKey']        = 'Dummy' # 'C:/OneDrive/'
     # This is the default cloud provider's manifestation
     $global:configRootKeys['CloudBasePathConfigRootKey']           = 'C:/Dropbox/'
-    # varous temporary directories
+    # various temporary directories
     $global:configRootKeys['FastTempBasePathConfigRootKey']        = 'C:/Temp/'
     $global:configRootKeys['BigTempBasePathConfigRootKey']         = 'C:/Temp/'
     $global:configRootKeys['SecureTempBasePathConfigRootKey']      = 'C:/Temp/Insecure/'
@@ -122,7 +122,7 @@ $defaultPerMachineSettings = @{
     $global:configRootKeys['OneDriveBasePathConfigRootKey']        = 'Dummy' # 'C:/OneDrive/'
     # This is the default cloud provider's manifestation
     $global:configRootKeys['CloudBasePathConfigRootKey']           = 'D:/Dropbox/'
-    # varous temporary directories
+    # various temporary directories
     $global:configRootKeys['FastTempBasePathConfigRootKey']        = 'D:/Temp/'
     $global:configRootKeys['BigTempBasePathConfigRootKey']         = 'D:/Temp/'
     $global:configRootKeys['SecureTempBasePathConfigRootKey']      = 'D:/Temp/Insecure/'
@@ -140,7 +140,7 @@ $defaultPerMachineSettings = @{
     $global:configRootKeys['OneDriveBasePathConfigRootKey']        = 'Dummy' # 'C:/OneDrive/'
     # This is the default cloud provider's manifestation
     $global:configRootKeys['CloudBasePathConfigRootKey']           = 'D:/Dropbox/'
-    # varous temporary directories
+    # various temporary directories
     $global:configRootKeys['FastTempBasePathConfigRootKey']        = 'D:/Temp/'
     $global:configRootKeys['BigTempBasePathConfigRootKey']         = 'D:/Temp/'
     $global:configRootKeys['SecureTempBasePathConfigRootKey']      = 'D:/Temp/Insecure/'

@@ -206,6 +206,11 @@ Function Show-context {
 
 }
 
+# Alias to the project planning scope creep mitigation powershell commands
+# ToDo: create a global setting for the location of all github repositories on this machine
+$GithubBase = 'C:\Dropbox\whertzingGitHub'
+Set-Alias idea (Join-path $GithubBase '_Planning' 'Scripts' 'Add-ScopeCreepIdea.ps1')
+Set-Alias plan (Join-path $GithubBase '_Planning' 'Scripts' 'Start-PlanningSession.ps1')
 
 
 # https://stackoverflow.com/questions/138144/what-s-in-your-powershell-profile-ps1-file

@@ -47,6 +47,8 @@ $global:configRootKeys = @{
   'SYNCFUSION_API_KEYConfigRootKey'                                                              = 'SYNCFUSION_API_KEY'
   # Context7 settings
   'CONTEXT7_API_KEYConfigRootKey'                                                                = 'CONTEXT7_API_KEY'
+  # Proget Package Repository software settings
+  'ProGetHostConfigRootKey'                                                                      = 'ProGetHost'
 
   'ChocolateyInstallDirConfigRootKey'                                                            = 'ChocolateyInstall'
   'ChocolateyBinDirConfigRootKey'                                                                = 'ChocolateyBinDir'

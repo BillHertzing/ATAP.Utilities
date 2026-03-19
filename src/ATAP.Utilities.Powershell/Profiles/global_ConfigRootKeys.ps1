@@ -49,7 +49,9 @@ $global:configRootKeys = @{
   'CONTEXT7_API_KEYConfigRootKey'                                                                = 'CONTEXT7_API_KEY'
   # Proget Package Repository software settings
   'ProGetHostConfigRootKey'                                                                      = 'ProGetHost'
-  'ProGetBaseUrlBuilderConfigRootKey'                                                            = 'ProGetBaseUrlBuilder'
+  # ToDo: work issue to fix the consistency of the naming for  the package manager - might be many more feed
+  'ProGetBaseUriBuilderConfigRootKey'                                                            = 'ProGetBaseUriBuilder'
+  'ProGetBaseUriConfigRootKey'                                                                   = 'ProGetBaseUri'
 
   'ChocolateyInstallDirConfigRootKey'                                                            = 'ChocolateyInstall'
   'ChocolateyBinDirConfigRootKey'                                                                = 'ChocolateyBinDir'

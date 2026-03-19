@@ -49,6 +49,7 @@ $global:configRootKeys = @{
   'CONTEXT7_API_KEYConfigRootKey'                                                                = 'CONTEXT7_API_KEY'
   # Proget Package Repository software settings
   'ProGetHostConfigRootKey'                                                                      = 'ProGetHost'
+  'ProGetBaseUrlBuilderConfigRootKey'                                                            = 'ProGetBaseUrlBuilder'
 
   'ChocolateyInstallDirConfigRootKey'                                                            = 'ChocolateyInstall'
   'ChocolateyBinDirConfigRootKey'                                                                = 'ChocolateyBinDir'

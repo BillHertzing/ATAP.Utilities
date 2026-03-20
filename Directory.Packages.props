@@ -30,6 +30,10 @@
     <PackageVersion Include="System.Reactive" Version="5.0.0" />
     <!-- Text-To-Speech (TTS) packages -->
     <PackageVersion Include="System.Speech" Version="5.0.0" />
+    <!-- newtonsoft JSON serializer -->
+    <PackageVersion Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageVersion Include="System.Collections.Immutable" Version="5.0.0" />
+    <PackageVersion Include="McMaster.NETCore.Plugins" Version="1.4.0" />
   </ItemGroup>
 
   <ItemGroup Label="ServiceStack Suite">
@@ -108,8 +112,8 @@
 
   <ItemGroup Label="MSBuild Custom Tasks">
     <!-- Packages used for custom build tasks -->
-    <PackageVersion Include="Microsoft.Build.Framework" Version="17.12.6" />
-    <PackageVersion Include="Microsoft.Build.Utilities.Core" Version="17.12.6" />
+    <PackageVersion Include="Microsoft.Build.Framework" Version="17.14.28" />
+    <PackageVersion Include="Microsoft.Build.Utilities.Core" Version="17.14.28" />
   </ItemGroup>
 
   <ItemGroup Label="Source Link">
@@ -184,31 +188,6 @@
     <!-- Condition matches: net472, net48, netstandard, netcore, net5+, net6+, net7+, net8+, net9+ -->
     <PackageVersion Include="System.Text.Json" Version="5.0.0"
                     Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('$(TargetFramework)', '(net|net472|standard|core|net[56789])'))"/>
-  </ItemGroup>
-
-  <ItemGroup Label="Framework-Conditional: .NET Standard and .NET Core/5+">
-    <!-- Packages specific to .Net Standard or Core -->
-    <!-- Condition matches: netstandard, netcoreapp, net5+, net6+, net7+, net8+, net9+ -->
-    <PackageVersion Include="System.Collections.Immutable" Version="5.0.0"
-                    Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('$(TargetFramework)', '(standard|core|net[56789])'))"/>
-    <PackageVersion Include="Newtonsoft.Json" Version="12.0.3"
-                    Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('$(TargetFramework)', '(standard|core|net[56789])'))"/>
-  </ItemGroup>
-
-  <ItemGroup Label="Framework-Conditional: .NET Framework 4.x">
-    <!-- Packages specific to .Net Desktop (Framework 4.x) -->
-    <!-- Condition matches: net40, net45, net46, net461, net462, net47, net471, net472, net48 -->
-    <PackageVersion Include="System.Collections.Immutable" Version="1.7.1"
-                    Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('$(TargetFramework)', '^net4'))"/>
-    <PackageVersion Include="Newtonsoft.Json" Version="12.0.3"
-                    Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('$(TargetFramework)', '^net4'))"/>
-  </ItemGroup>
-
-  <ItemGroup Label="Framework-Conditional: .NET Core and .NET 5+">
-    <!-- Plugin Framework - only available for .NET Core and .NET 5+ -->
-    <!-- Condition matches: netcoreapp, net5, net6, net7, net8, net9 -->
-    <PackageVersion Include="McMaster.NETCore.Plugins" Version="1.4.0"
-                    Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('$(TargetFramework)', '^(core|net[56789])'))"/>
   </ItemGroup>
 
   <ItemGroup Label="Roslyn Code Analysis">

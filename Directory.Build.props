@@ -56,7 +56,7 @@
     <ATAPBuildToolingDebugVerbosity>Trace</ATAPBuildToolingDebugVerbosity>
     <ATAPUtilitiesBuildToolingTargetsPath>$(SolutionBuildToolsBaseDir)$(ATAPBuildToolingRelativeBasePath)</ATAPUtilitiesBuildToolingTargetsPath>
     <ATAPUtilitiesBuildToolingTasksPath>$(SolutionBuildToolsBaseDir)$(ATAPBuildToolingRelativeBasePath)</ATAPUtilitiesBuildToolingTasksPath>
-    <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' == 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\Release\net9.0\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
+    <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' == 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\Release\net10.0\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
     <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' != 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\Release\net471\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
 
     <!-- The Roslyn Code Analyzers for FxCop Rules should be installed as a Nuget Package at the Solution level, per this article https://docs.microsoft.com/en-us/visualstudio/code-quality/install-fxcop-analyzers?view=vs-2019 -->

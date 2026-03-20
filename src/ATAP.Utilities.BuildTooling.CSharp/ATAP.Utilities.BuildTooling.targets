@@ -134,19 +134,31 @@
     <Delete Files="$(UpdatePackageVersionLockFilePath)"/>
   </Target>
 
-  <!-- NuGet Publish target package to local feed after successful package generation-->
-  <!-- Appveyor artifacts https://www.appveyor.com/docs/packaging-artifacts/ -->
-  <Target Name="PublishAfterBuild" AfterTargets="GenerateNuspec">
-    <!-- during debugging this BuildTooling, send to the output log messages the location of OutputPath, where the package should be found, and the value of the NuGetLocalFeedPath -->
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="OutputPath = $(OutputPath)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="WorkingDirectory = $(MSBuildProjectDirectory)\$(OutputPath)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="NuGetLocalFeedPath = $(NuGetLocalFeedPath)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Calling NuGet.exe to push the package to the local feed" />
-    <!-- When debugging the build tooling,the build tooling configuration is debug. Run the NuGet.exe command with detailed verbosity -->
-    <Exec  Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'"  WorkingDirectory="$(MSBuildProjectDirectory)\$(OutputPath)" Command="NuGet.exe push &quot;$(MSBuildProjectDirectory)\$(OutputPath)$(PackageId).$(PackageVersion).nupkg&quot; -Source &quot;$(NuGetLocalFeedPath)&quot; -Verbosity detailed" />
-    <!-- Under normal conditions, run the NuGet.exe command with normal verbosity -->
-    <Exec  Condition="'$(ATAPBuildToolingConfiguration)'!='Debug'"  WorkingDirectory="$(MSBuildProjectDirectory)\$(OutputPath)" Command="NuGet.exe push &quot;$(MSBuildProjectDirectory)\$(OutputPath)$(PackageId).$(PackageVersion).nupkg&quot; -Source &quot;$(NuGetLocalFeedPath)&quot; -Verbosity normal" />
+  <!-- Read PackageVersion from AssemblyInfo.cs into the outer-build scope so GenerateNuspec picks it up.
+       For multi-TFM projects, UpdateVersion runs only in the inner build scope; this target re-reads the
+       already-updated value back into the outer build before pack runs. Works for single-TFM too. -->
+  <Target Name="SetPackageVersionForPack" BeforeTargets="GenerateNuspec">
+    <GetVersion VersionFile="$(VersionFile)"
+                ATAPBuildToolingConfiguration="$(ATAPBuildToolingConfiguration)"
+                ATAPBuildToolingDebugVerbosity="$(ATAPBuildToolingDebugVerbosity)">
+      <Output TaskParameter="PackageVersion" PropertyName="PackageVersion" />
+    </GetVersion>
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="SetPackageVersionForPack: PackageVersion = $(PackageVersion)" />
+  </Target>
 
+  <!-- NuGet Publish target: push package to ProGet nuget-experimental feed after successful package generation -->
+  <!-- ProGet URL defaults to localhost:50000; override via $(ProGetExperimentalFeedUrl) property or PROGET_URL env var -->
+  <!-- API key must be set as env var PROGET_ADMIN_API_TOKEN (stored in Bitwarden) -->
+  <PropertyGroup>
+    <ProGetExperimentalFeedUrl Condition="'$(ProGetExperimentalFeedUrl)' == ''">http://localhost:50000/nuget/nuget-experimental/v3/index.json</ProGetExperimentalFeedUrl>
+  </PropertyGroup>
+  <Target Name="PublishAfterBuild" AfterTargets="GenerateNuspec">
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="OutputPath = $(OutputPath)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageOutputPath = $(PackageOutputPath)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="ProGetExperimentalFeedUrl = $(ProGetExperimentalFeedUrl)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Pushing $(PackageId).$(PackageVersion).nupkg to ProGet nuget-experimental feed" />
+    <Exec WorkingDirectory="$(MSBuildProjectDirectory)\$(PackageOutputPath)"
+          Command="dotnet nuget push &quot;$(MSBuildProjectDirectory)\$(PackageOutputPath)$(PackageId).$(PackageVersion).nupkg&quot; --source &quot;$(ProGetExperimentalFeedUrl)&quot; --api-key &quot;$(PROGET_ADMIN_API_TOKEN)&quot;" />
   </Target>
 
   <!-- Examples of other kinds of targets  -->

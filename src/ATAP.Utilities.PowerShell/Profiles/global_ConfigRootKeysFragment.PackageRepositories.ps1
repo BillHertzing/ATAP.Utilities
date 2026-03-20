@@ -102,9 +102,12 @@ $global:configRootKeys['ProGetFeedNuGetProductionFeedConfigRootKey'] = 'ProGetFe
 
 # ══════════════════════════════════════════════════════════════════════════
 #  PowerShell Feeds — Phase 1 (combined push/pull per tier)
+#  NOTE: Actual feed names on utat022 use 'PowershellGallery-' prefix
+#  (e.g. PowershellGallery-experimental), not 'powershell-'. These keys
+#  hold the feed name as a value set in HostSettings (ATAP.IAC).
 # ══════════════════════════════════════════════════════════════════════════
 
-# ── powershell-experimental ──────────────────────────────────────────────
+# ── PowershellGallery-experimental ───────────────────────────────────────
 $global:configRootKeys['ProGetFeedPowerShellExperimentalUriSchemeConfigRootKey'] = 'ProGetFeedPowerShellExperimentalUriScheme'
 $global:configRootKeys['ProGetFeedPowerShellExperimentalUriHostConfigRootKey'] = 'ProGetFeedPowerShellExperimentalUriHost'
 $global:configRootKeys['ProGetFeedPowerShellExperimentalUriPortConfigRootKey'] = 'ProGetFeedPowerShellExperimentalUriPort'
@@ -116,7 +119,7 @@ $global:configRootKeys['ProGetFeedPowerShellExperimentalFeedTypeConfigRootKey'] 
 $global:configRootKeys['ProGetFeedPowerShellExperimentalApiKeyNameConfigRootKey'] = 'ProGetFeedPowerShellExperimentalApiKeyName'
 $global:configRootKeys['ProGetFeedPowerShellExperimentalFeedConfigRootKey'] = 'ProGetFeedPowerShellExperimental'
 
-# ── powershell-development ───────────────────────────────────────────────
+# ── PowershellGallery-development ────────────────────────────────────────
 $global:configRootKeys['ProGetFeedPowerShellDevelopmentUriSchemeConfigRootKey'] = 'ProGetFeedPowerShellDevelopmentUriScheme'
 $global:configRootKeys['ProGetFeedPowerShellDevelopmentUriHostConfigRootKey'] = 'ProGetFeedPowerShellDevelopmentUriHost'
 $global:configRootKeys['ProGetFeedPowerShellDevelopmentUriPortConfigRootKey'] = 'ProGetFeedPowerShellDevelopmentUriPort'
@@ -128,7 +131,7 @@ $global:configRootKeys['ProGetFeedPowerShellDevelopmentFeedTypeConfigRootKey'] =
 $global:configRootKeys['ProGetFeedPowerShellDevelopmentApiKeyNameConfigRootKey'] = 'ProGetFeedPowerShellDevelopmentApiKeyName'
 $global:configRootKeys['ProGetFeedPowerShellDevelopmentFeedConfigRootKey'] = 'ProGetFeedPowerShellDevelopment'
 
-# ── powershell-testing ───────────────────────────────────────────────────
+# ── PowershellGallery-testing ────────────────────────────────────────────
 $global:configRootKeys['ProGetFeedPowerShellTestingUriSchemeConfigRootKey'] = 'ProGetFeedPowerShellTestingUriScheme'
 $global:configRootKeys['ProGetFeedPowerShellTestingUriHostConfigRootKey'] = 'ProGetFeedPowerShellTestingUriHost'
 $global:configRootKeys['ProGetFeedPowerShellTestingUriPortConfigRootKey'] = 'ProGetFeedPowerShellTestingUriPort'
@@ -140,7 +143,7 @@ $global:configRootKeys['ProGetFeedPowerShellTestingFeedTypeConfigRootKey'] = 'Pr
 $global:configRootKeys['ProGetFeedPowerShellTestingApiKeyNameConfigRootKey'] = 'ProGetFeedPowerShellTestingApiKeyName'
 $global:configRootKeys['ProGetFeedPowerShellTestingFeedConfigRootKey'] = 'ProGetFeedPowerShellTesting'
 
-# ── powershell-production ────────────────────────────────────────────────
+# ── PowershellGallery-production ─────────────────────────────────────────
 $global:configRootKeys['ProGetFeedPowerShellProductionUriSchemeConfigRootKey'] = 'ProGetFeedPowerShellProductionUriScheme'
 $global:configRootKeys['ProGetFeedPowerShellProductionUriHostConfigRootKey'] = 'ProGetFeedPowerShellProductionUriHost'
 $global:configRootKeys['ProGetFeedPowerShellProductionUriPortConfigRootKey'] = 'ProGetFeedPowerShellProductionUriPort'

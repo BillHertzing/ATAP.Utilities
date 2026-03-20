@@ -14,6 +14,8 @@
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
     <PackageLabel>Alpha</PackageLabel>
+    <Authors>ATAP</Authors>
+    <Description>Extension methods and helpers for ASP.NET Core Generic Host configuration, environment variables, JSON, command-line, localization, and logging setup.</Description>
   </PropertyGroup>
 
   <!-- Packages necessary to run the ASP.Net Core Generic Host and web server hosts Server -->

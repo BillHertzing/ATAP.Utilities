@@ -14,15 +14,13 @@
     <!-- NuGet Package Label for the NuGet Package if the LifeCyclestage is not Production-->
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
     <PackageLabel>Alpha</PackageLabel>
-  </PropertyGroup>
-
-  <!-- Aggregator project: do not compile child sources, only reference their outputs -->
-  <PropertyGroup>
     <EnableDefaultItems>false</EnableDefaultItems>
+    <Authors>ATAP</Authors>
+    <Description>Aggregator package for ATAP.Utilities.StronglyTypedId libraries.</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="**/*.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
 
   <ItemGroup>

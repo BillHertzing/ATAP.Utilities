@@ -285,7 +285,7 @@ if ($MyInvocation.InvocationName -ne '.') {
         [PSCustomObject]@{ EnvVarName = 'JENKINS_API_TOKEN'; BwSearchName = 'Jenkins_API_Token'; BwFieldName = 'token' }
         [PSCustomObject]@{ EnvVarName = 'ANSIBLE_API_TOKEN'; BwSearchName = 'Ansible_API_Token'; BwFieldName = 'token' }
         [PSCustomObject]@{ EnvVarName = 'PROGET_ADMIN_API_TOKEN'; BwSearchName = 'ProGet_Admin_API_Token'; BwFieldName = 'token' }
-        [PSCustomObject]@{ EnvVarName = 'PROGET_BUILDMASTER_KEY'; BwSearchName = 'ProGet_BuildMaster_API_Key'; BwFieldName = 'key' }
+        [PSCustomObject]@{ EnvVarName = 'BUILDMASTER_API_KEY'; BwSearchName = 'BuildMaster_Admin_API_Key'; BwFieldName = 'key' }
         [PSCustomObject]@{ EnvVarName = 'AceCommander_UserPii__PassphraseV1'; BwSearchName = 'AceCommander_UserPii__PassphraseV1'; BwFieldName = 'Passphrase' }
         [PSCustomObject]@{ EnvVarName = 'AceCommander_UserPii__PassphraseV2'; BwSearchName = 'AceCommander_UserPii__PassphraseV2'; BwFieldName = 'Passphrase' }
       )

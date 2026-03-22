@@ -95,6 +95,21 @@ structure is:
 
 ---
 
+## VS Code Settings
+
+All repositories share a single VS Code user settings file. There is **no**
+`.vscode/settings.json` in any repository. The source of truth for all VS Code
+settings is:
+
+```text
+SharedVSCode/UserSettings.jsonc   ← canonical source
+```
+
+Do NOT create or modify `.vscode/settings.json` in any repository. If a setting
+needs to change, edit `SharedVSCode/UserSettings.jsonc`.
+
+---
+
 ## General Conventions
 
 - **Primary language:** C# (.NET 8+), PowerShell Core, SQL (T-SQL / MSSQL)

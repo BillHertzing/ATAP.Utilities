@@ -34,9 +34,9 @@
 
     <!-- Include the custom tasks from the ATAP.Utilities.BuildTooling Assembly
         The location of the Assembly has been specified in Directory.Build.props -->
-  <UsingTask TaskName="ATAP.Utilities.BuildTooling.GetVersion" AssemblyFile="$(ATAPUtilitiesBuildToolingTasksAssembly)" />
-  <UsingTask TaskName="ATAP.Utilities.BuildTooling.UpdateVersion" AssemblyFile="$(ATAPUtilitiesBuildToolingTasksAssembly)" />
-  <UsingTask TaskName="ATAP.Utilities.BuildTooling.SetVersion" AssemblyFile="$(ATAPUtilitiesBuildToolingTasksAssembly)" />
+  <UsingTask TaskName="ATAP.Utilities.BuildTooling.GetVersion"    AssemblyFile="$(ATAPUtilitiesBuildToolingTasksAssembly)" Condition="'$(ATAPUtilitiesBuildToolingTasksAssembly)' != ''" />
+  <UsingTask TaskName="ATAP.Utilities.BuildTooling.UpdateVersion" AssemblyFile="$(ATAPUtilitiesBuildToolingTasksAssembly)" Condition="'$(ATAPUtilitiesBuildToolingTasksAssembly)' != ''" />
+  <UsingTask TaskName="ATAP.Utilities.BuildTooling.SetVersion"    AssemblyFile="$(ATAPUtilitiesBuildToolingTasksAssembly)" Condition="'$(ATAPUtilitiesBuildToolingTasksAssembly)' != ''" />
 
   <!-- http://blog.casavian.eu/2014/04/23/increment-version-for-changed-assemblies-only-first-part/ -->
   <!--%Program Files (x86)%\MSBuild\12.0\Bin\Microsoft.CSharp.CurrentVersion.targets  -->
@@ -128,7 +128,7 @@
   </Target>
 
   <!-- after all framework builds have been completed, its time to remove the lockfile -->
-  <Target Name="UpdatePackageVersionAfterOuterBuild" AfterTargets="DispatchToInnerBuilds">
+  <Target Name="UpdatePackageVersionAfterOuterBuild" AfterTargets="DispatchToInnerBuilds;AfterBuild">
     <!-- during debugging this BuildTooling, send to the output log messages  indicating lockfile will be deleted -->
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Deleting LockFile $(UpdatePackageVersionLockFilePath)" />
     <Delete Files="$(UpdatePackageVersionLockFilePath)"/>
@@ -157,8 +157,49 @@
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageOutputPath = $(PackageOutputPath)" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="ProGetExperimentalFeedUrl = $(ProGetExperimentalFeedUrl)" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Pushing $(PackageId).$(PackageVersion).nupkg to ProGet nuget-experimental feed" />
-    <Exec WorkingDirectory="$(MSBuildProjectDirectory)\$(PackageOutputPath)"
-          Command="dotnet nuget push &quot;$(MSBuildProjectDirectory)\$(PackageOutputPath)$(PackageId).$(PackageVersion).nupkg&quot; --source &quot;$(ProGetExperimentalFeedUrl)&quot; --api-key &quot;$(PROGET_ADMIN_API_TOKEN)&quot;" />
+    <!-- Resolve nupkg directory: PackageOutputPath may be absolute (from --output) or relative.
+         String-concatenation with MSBuildProjectDirectory breaks when it is absolute, so we
+         use IsPathRooted to pick the right base. WorkingDirectory is omitted — dotnet nuget
+         push only needs the full nupkg path, not a cwd. --skip-duplicate avoids errors on
+         re-push of an already-published version. -->
+    <PropertyGroup>
+      <_NupkgDir Condition="$([System.IO.Path]::IsPathRooted('$(PackageOutputPath)'))">$(PackageOutputPath)</_NupkgDir>
+      <_NupkgDir Condition="'$(_NupkgDir)' == ''">$(MSBuildProjectDirectory)\$(PackageOutputPath)</_NupkgDir>
+    </PropertyGroup>
+    <Exec Command="dotnet nuget push &quot;$(_NupkgDir)$(PackageId).$(PackageVersion).nupkg&quot; --source &quot;$(ProGetExperimentalFeedUrl)&quot; --api-key &quot;$(PROGET_ADMIN_API_TOKEN)&quot; --skip-duplicate" />
+  </Target>
+
+  <!-- Deploy the freshly-built BuildTooling DLL and targets file to the Build directory,
+       then write the sentinel file so Directory.Build.props resolves the path automatically
+       on the next build of any project in the solution.
+       Only runs for the ATAP.Utilities.BuildTooling.CSharp project, Release configuration,
+       and only once (for net10.0) to avoid redundant copies across multi-TFM inner builds. -->
+  <Target Name="DeployBuildToolingToBuildDirectory"
+          AfterTargets="Build"
+          Condition="'$(MSBuildProjectName)' == 'ATAP.Utilities.BuildTooling.CSharp'
+                     AND '$(Configuration)' == 'Release'
+                     AND '$(TargetFramework)' == 'net10.0'">
+    <PropertyGroup>
+      <_NewBuildToolingVersion>$(MajorVersion).$(MinorVersion).$(PatchVersion)</_NewBuildToolingVersion>
+      <_DeployBuildDir>$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.$(_NewBuildToolingVersion)\build\</_DeployBuildDir>
+      <_DeployTFMDir>$(_DeployBuildDir)Release\$(TargetFramework)\</_DeployTFMDir>
+    </PropertyGroup>
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="DeployBuildToolingToBuildDirectory: deploying version $(_NewBuildToolingVersion) to $(_DeployBuildDir)" />
+    <!-- Create the target directory tree -->
+    <MakeDir Directories="$(_DeployTFMDir)" />
+    <!-- Copy the compiled DLL and PDB -->
+    <ItemGroup>
+      <_BuildToolingBinaries Include="$(OutputPath)ATAP.Utilities.BuildTooling.CSharp.dll" />
+      <_BuildToolingBinaries Include="$(OutputPath)ATAP.Utilities.BuildTooling.CSharp.pdb" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_BuildToolingBinaries)" DestinationFolder="$(_DeployTFMDir)" SkipUnchangedFiles="true" />
+    <!-- Copy the companion .targets file (always overwrite to pick up any edits) -->
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\ATAP.Utilities.BuildTooling.targets"
+          DestinationFolder="$(_DeployBuildDir)" SkipUnchangedFiles="false" />
+    <!-- Write the sentinel file — Directory.Build.props reads this at evaluation time -->
+    <WriteLinesToFile File="$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.current-version"
+                      Lines="$(_NewBuildToolingVersion)" Overwrite="true" />
+    <Message Text="DeployBuildToolingToBuildDirectory: deployed ATAP.Utilities.BuildTooling.CSharp $(_NewBuildToolingVersion) — next project build will load from $(_DeployBuildDir)" />
   </Target>
 
   <!-- Examples of other kinds of targets  -->

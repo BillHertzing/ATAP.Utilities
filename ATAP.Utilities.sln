@@ -102,7 +102,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInve
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Configuration", "Configuration", "{8200B6C7-7958-4593-94C2-7D90C056F419}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Configuration.Extensions", "src\ATAP.Utilities.Configuration.Extensions\ATAP.Utilities.Configuration.Extensions.csproj", "{85A6DA84-9B79-48B5-94AF-846F829A0828}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Configuration.Extensions", "src\ATAP.Utilities.Configuration\Extensions\ATAP.Utilities.Configuration.Extensions.csproj", "{85A6DA84-9B79-48B5-94AF-846F829A0828}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Configuration", "src\ATAP.Utilities.Configuration\ATAP.Utilities.Configuration.csproj", "{A2CF5831-1847-4BCC-B7E1-8D9F2E3C7A14}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Configuration.Secrets", "src\ATAP.Utilities.Configuration\Secrets\ATAP.Utilities.Configuration.Secrets.csproj", "{B3D06942-295A-4CDD-C8F2-9E0A3F4D8B25}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Configuration.Secrets.Shims", "src\ATAP.Utilities.Configuration\Secrets\Shims\ATAP.Utilities.Configuration.Secrets.Shims.csproj", "{C4E17A53-3A6B-5DEE-D903-0F1B4A5E9C36}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Configuration.Secrets.Shims.Interfaces", "src\ATAP.Utilities.Configuration\Secrets\Shims\Interfaces\ATAP.Utilities.Configuration.Secrets.Shims.Interfaces.csproj", "{E6A39B75-5C8D-4F1B-A926-3E7F8D9B0C24}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden", "src\ATAP.Utilities.Configuration\Secrets\Shims\Bitwarden\ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden.csproj", "{D5F28B64-4B7C-6EFF-EA14-1A2C5B6FAD47}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoCoin.Interfaces", "src\ATAP.Utilities.CryptoCoin\Interfaces\ATAP.Utilities.CryptoCoin.Interfaces.csproj", "{0B53AFE8-D9E3-4EF6-9DA1-484B9B5A30FC}"
 EndProject
@@ -1260,6 +1270,36 @@ Global
 		{F44539E5-CA14-497B-BC96-DDAF327DCC8F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F44539E5-CA14-497B-BC96-DDAF327DCC8F}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
 		{F44539E5-CA14-497B-BC96-DDAF327DCC8F}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
+		{A2CF5831-1847-4BCC-B7E1-8D9F2E3C7A14}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2CF5831-1847-4BCC-B7E1-8D9F2E3C7A14}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2CF5831-1847-4BCC-B7E1-8D9F2E3C7A14}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2CF5831-1847-4BCC-B7E1-8D9F2E3C7A14}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2CF5831-1847-4BCC-B7E1-8D9F2E3C7A14}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
+		{A2CF5831-1847-4BCC-B7E1-8D9F2E3C7A14}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
+		{B3D06942-295A-4CDD-C8F2-9E0A3F4D8B25}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3D06942-295A-4CDD-C8F2-9E0A3F4D8B25}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3D06942-295A-4CDD-C8F2-9E0A3F4D8B25}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3D06942-295A-4CDD-C8F2-9E0A3F4D8B25}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B3D06942-295A-4CDD-C8F2-9E0A3F4D8B25}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
+		{B3D06942-295A-4CDD-C8F2-9E0A3F4D8B25}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
+		{C4E17A53-3A6B-5DEE-D903-0F1B4A5E9C36}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4E17A53-3A6B-5DEE-D903-0F1B4A5E9C36}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4E17A53-3A6B-5DEE-D903-0F1B4A5E9C36}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4E17A53-3A6B-5DEE-D903-0F1B4A5E9C36}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C4E17A53-3A6B-5DEE-D903-0F1B4A5E9C36}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
+		{C4E17A53-3A6B-5DEE-D903-0F1B4A5E9C36}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
+		{E6A39B75-5C8D-4F1B-A926-3E7F8D9B0C24}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E6A39B75-5C8D-4F1B-A926-3E7F8D9B0C24}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E6A39B75-5C8D-4F1B-A926-3E7F8D9B0C24}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E6A39B75-5C8D-4F1B-A926-3E7F8D9B0C24}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E6A39B75-5C8D-4F1B-A926-3E7F8D9B0C24}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
+		{E6A39B75-5C8D-4F1B-A926-3E7F8D9B0C24}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
+		{D5F28B64-4B7C-6EFF-EA14-1A2C5B6FAD47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5F28B64-4B7C-6EFF-EA14-1A2C5B6FAD47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5F28B64-4B7C-6EFF-EA14-1A2C5B6FAD47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5F28B64-4B7C-6EFF-EA14-1A2C5B6FAD47}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5F28B64-4B7C-6EFF-EA14-1A2C5B6FAD47}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
+		{D5F28B64-4B7C-6EFF-EA14-1A2C5B6FAD47}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1301,7 +1341,12 @@ Global
 		{8EB36189-3E85-45EB-954A-58B4043DE356} = {4A8B9C3D-6E7F-5A9B-8C1D-3E5F7A8B9C0D}
 		{CB30C9BA-A2F2-45A6-9A4A-E19CD7560768} = {3F7A8D2E-5B9C-4E8F-9D3A-2B4E6C7D8E9F}
 		{8200B6C7-7958-4593-94C2-7D90C056F419} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
-		{85A6DA84-9B79-48B5-94AF-846F829A0828} = {8200B6C7-7958-4593-94C2-7D90C056F419}
+		{A2CF5831-1847-4BCC-B7E1-8D9F2E3C7A14} = {8200B6C7-7958-4593-94C2-7D90C056F419}
+		{85A6DA84-9B79-48B5-94AF-846F829A0828} = {A2CF5831-1847-4BCC-B7E1-8D9F2E3C7A14}
+		{B3D06942-295A-4CDD-C8F2-9E0A3F4D8B25} = {A2CF5831-1847-4BCC-B7E1-8D9F2E3C7A14}
+		{C4E17A53-3A6B-5DEE-D903-0F1B4A5E9C36} = {B3D06942-295A-4CDD-C8F2-9E0A3F4D8B25}
+		{E6A39B75-5C8D-4F1B-A926-3E7F8D9B0C24} = {C4E17A53-3A6B-5DEE-D903-0F1B4A5E9C36}
+		{D5F28B64-4B7C-6EFF-EA14-1A2C5B6FAD47} = {C4E17A53-3A6B-5DEE-D903-0F1B4A5E9C36}
 		{0B53AFE8-D9E3-4EF6-9DA1-484B9B5A30FC} = {B570FA40-33A6-11EB-9C14-5132EBA7B73D}
 		{5BBC9254-FAB7-4EED-980F-F256387D7D80} = {B570FA40-33A6-11EB-9C14-5132EBA7B73D}
 		{5D10533D-42BE-4C88-A64C-A371D1350000} = {B570FA40-33A6-11EB-9C14-5132EBA7B73D}

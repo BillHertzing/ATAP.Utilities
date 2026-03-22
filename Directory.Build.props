@@ -50,7 +50,12 @@
     <!-- bring in the build tasks extensions defined in the ATAP.Utilities.BuildTooling project-->
     <!-- ATAPBuildToolingConfiguration is normally set to Release; use Debug if developing the BuildTooling assemblies and scripts -->
     <ATAPBuildToolingConfiguration>Debug</ATAPBuildToolingConfiguration>
-    <ATAPBuildToolingRelativeBasePath>ATAP.Utilities.BuildTooling.0.1.0.1\build\</ATAPBuildToolingRelativeBasePath>
+    <!-- Read the deployed BuildTooling version from the sentinel file written by DeployBuildToolingToBuildDirectory. -->
+    <!-- Fallback to the last known-good version if the file does not yet exist (first bootstrap). -->
+    <ATAPBuildToolingVersion Condition="Exists('$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.current-version')"
+      >$([System.IO.File]::ReadAllText('$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.current-version').Trim())</ATAPBuildToolingVersion>
+    <ATAPBuildToolingVersion Condition="'$(ATAPBuildToolingVersion)' == ''">0.1.0.1</ATAPBuildToolingVersion>
+    <ATAPBuildToolingRelativeBasePath>ATAP.Utilities.BuildTooling.$(ATAPBuildToolingVersion)\build\</ATAPBuildToolingRelativeBasePath>
     <!-- ATAPBuildToolingDebugVerbosity controls the level of details the Debug mode logging. If ATAPBuildToolingConfiguration is not Debug, this setting has no effect -->
     <!-- valid values for ATAPBuildToolingDebugVerbosity are trace -->
     <ATAPBuildToolingDebugVerbosity>Trace</ATAPBuildToolingDebugVerbosity>

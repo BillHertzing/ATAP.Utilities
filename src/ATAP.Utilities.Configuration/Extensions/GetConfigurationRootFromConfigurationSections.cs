@@ -59,7 +59,7 @@ namespace ATAP.Utilities.Configuration {
     /// <returns></returns>
     /// <exception cref="ArgumentNullException"></exception>
     ///
-    public static IConfigurationBuilder ATAPConfigurationBuilderFromConfigurationSections(bool isProduction, string envName, string loadedFromDirectory, string initialStartupDirectory, (List<Dictionary<string, string>> lDCs, List<(string, string)> lSFTs, List<string> lEVPs) configSections) {
+    public static IConfigurationBuilder ATAPConfigurationBuilderFromConfigurationSections(bool isProduction, string envName, string loadedFromDirectory, string initialStartupDirectory, (List<Dictionary<string, string?>> lDCs, List<(string, string)> lSFTs, List<string> lEVPs) configSections) {
       // ToDo: expand configsections Tuple to add command line arguments and switchMappings from the hierarchy
       if (envName == null) { throw new ArgumentNullException(nameof(envName)); }
       if (loadedFromDirectory == null) { throw new ArgumentNullException(nameof(loadedFromDirectory)); }

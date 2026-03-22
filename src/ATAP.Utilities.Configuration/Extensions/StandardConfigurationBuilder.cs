@@ -8,11 +8,13 @@ using System.Threading;
 using System.IO;
 using System.Diagnostics; // breakpoint insertion
 
-namespace ATAP.Utilities.Configuration {
+namespace ATAP.Utilities.Configuration
+{
 #if TRACE
   [ETWLogAttribute]
 #endif
-  public static partial class Extensions {
+  public static partial class Extensions
+  {
 
     //public static IConfigurationBuilder StandardConfigurationBuilder(string loadedFromDirectory, string initialStartupDirectory, Dictionary<string, string> defaultConfiguration, string settingsFileName, string settingsFileNameSuffix, string customEnvironmentVariablePrefix, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, CancellationToken externalCancellationToken) {
     //  ILogger logger = loggerFactory.CreateLogger(nameof(Extensions));
@@ -91,7 +93,8 @@ namespace ATAP.Utilities.Configuration {
     /// <param name="envVarPrefixs"></param>
     /// <param name="args"></param>
     /// <returns></returns>
-    public static IConfigurationBuilder ATAPStandardConfigurationBuilder(Dictionary<string, string> compiledInConfiguration, bool isProduction, string? envNameFromConfiguration, string settingsFileName, string settingsFileNameSuffix, string loadedFromDirectory, string initialStartupDirectory, IEnumerable<string>? envVarPrefixs, string[]? args, Dictionary<string, string>? switchMappings) {
+    public static IConfigurationBuilder ATAPStandardConfigurationBuilder(Dictionary<string, string?> compiledInConfiguration, bool isProduction, string? envNameFromConfiguration, string settingsFileName, string settingsFileNameSuffix, string loadedFromDirectory, string initialStartupDirectory, IEnumerable<string>? envVarPrefixs, string[]? args, Dictionary<string, string>? switchMappings)
+    {
       IConfigurationBuilder configurationBuilder = new ConfigurationBuilder()
       .AddInMemoryCollection(compiledInConfiguration)
       // SetBasePath creates a Physical File provider pointing to the installation directory, which will be used by the following method
@@ -100,29 +103,37 @@ namespace ATAP.Utilities.Configuration {
       // Todo: File names should be localized
       .AddJsonFile(settingsFileName + settingsFileNameSuffix, optional: true);
       // Add environment-specific settings file
-      if (!isProduction) {
+      if (!isProduction)
+      {
         configurationBuilder.AddJsonFile(settingsFileName + "." + envNameFromConfiguration + settingsFileNameSuffix, optional: true);
-      };
+      }
+      ;
       // and again, SetBasePath creates a Physical File provider, this time pointing to the initial startup directory, which will be used by the following method
       configurationBuilder.SetBasePath(initialStartupDirectory)
       // get any Production level GenericHostSettings file  present in the initial startup directory
       .AddJsonFile(settingsFileName + settingsFileNameSuffix, optional: true);
       // Add environment-specific settings file
-      if (!isProduction) {
+      if (!isProduction)
+      {
         configurationBuilder.AddJsonFile(settingsFileName + "." + envNameFromConfiguration + settingsFileNameSuffix, optional: true);
-      };
+      }
+      ;
       // Add environment variables with the prefixs as specified in the Prefixs collection, if specified
-      if (envVarPrefixs != null) {
-        foreach (var pf in envVarPrefixs) {
+      if (envVarPrefixs != null)
+      {
+        foreach (var pf in envVarPrefixs)
+        {
           configurationBuilder.AddEnvironmentVariables(prefix: pf);
         }
       }
       // add the command line arguments and any mappings, if specified
-      if (args != null) {
+      if (args != null)
+      {
         configurationBuilder.AddCommandLine(args);
       }
       // add command line switchMappings, if specified
-      if (switchMappings != null) {
+      if (switchMappings != null)
+      {
         configurationBuilder.AddCommandLine(args);
       }
       //

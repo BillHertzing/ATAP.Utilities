@@ -95,6 +95,21 @@ structure is:
 
 ---
 
+## VS Code Settings
+
+All repositories share a single VS Code user settings file. There is **no**
+`.vscode/settings.json` in any repository. The source of truth for all VS Code
+settings is:
+
+```text
+SharedVSCode/UserSettings.jsonc   ← canonical source
+```
+
+Do NOT create or modify `.vscode/settings.json` in any repository. If a setting
+needs to change, edit `SharedVSCode/UserSettings.jsonc`.
+
+---
+
 ## General Conventions
 
 - **Primary language:** C# (.NET 8+), PowerShell Core, SQL (T-SQL / MSSQL)
@@ -328,6 +343,51 @@ Copy-Item src/ATAP.Utilities.BuildTooling.PowerShell/Resources/NuGet.Config .
 
 The config must reference the same package feeds defined in:
 `$Global:settings[$global:ConfigRootKeys['PackageRepositoriesCollectionConfigRootKey']]`
+
+### ProGet Package Feeds
+
+ProGet runs on **`localhost:50000`** (configured in `ProGet.config`, symlinked from ATAP.IAC).
+Full setup details: `C:/Dropbox/whertzing/GitHub/_Planning/Explainers/0002-ProGet-Setup.md`
+
+**NuGet feeds** (used in `NuGet.Config` and `dotnet nuget push --source`):
+
+| Key | URL |
+|-----|-----|
+| `nuget-experimental` | `http://localhost:50000/nuget/nuget-experimental/v3/index.json` |
+| `nuget-development`  | `http://localhost:50000/nuget/nuget-development/v3/index.json`  |
+| `nuget-testing`      | `http://localhost:50000/nuget/nuget-testing/v3/index.json`      |
+| `nuget-production`   | `http://localhost:50000/nuget/nuget-production/v3/index.json`   |
+
+**PowerShell feeds** (used in `Register-PSResourceRepository` and `Publish-PSResource -Repository`):
+
+| Name | URI |
+|------|-----|
+| `PowershellGallery-experimental` | `http://localhost:50000/nuget/PowershellGallery-experimental/v2` |
+| `PowershellGallery-development`  | `http://localhost:50000/nuget/PowershellGallery-development/v2`  |
+| `PowershellGallery-testing`      | `http://localhost:50000/nuget/PowershellGallery-testing/v2`      |
+| `PowershellGallery-production`   | `http://localhost:50000/nuget/PowershellGallery-production/v2`   |
+
+> **Critical naming note:** The PowerShell feed prefix is `PowershellGallery-`, **not** `powershell-`.
+> The feeds were created by the ATAP.IAC automated setup before the naming was simplified.
+> Using the wrong prefix (`powershell-experimental` etc.) will silently register a repository
+> pointing to a non-existent feed — `Find-PSResource` will return no results.
+
+**API keys** (both set by `LoginScript.ps1` from Bitwarden at login):
+
+| Env Var | Bitwarden Entry | Use |
+|---------|----------------|-----|
+| `PROGET_ADMIN_API_TOKEN` | `ProGet_Admin_API_Token → token` | `dotnet nuget push --api-key` |
+| `PROGET_BUILDMASTER_KEY` | `ProGet_BuildMaster_API_Key → key` | CI/CD promotion scripts |
+
+**Connector chain** (configured in ProGet, verified 2026-03-20):
+- `nuget-experimental` → nuget.org
+- `nuget-development` → nuget.org + nuget-experimental (inter-tier)
+- `nuget-testing` → nuget-development (inter-tier, hermetic — no public fallback)
+- `nuget-production` → nuget.org + nuget-testing (inter-tier)
+- Same chain for `PowershellGallery-*` feeds with `PowerShellGallery.com` as the public connector
+
+**Read TASKS.md** for the current state of package publishing tasks — Task 2.1 completion
+notes document what was verified and when.
 
 ### .NET SDK Targeting
 

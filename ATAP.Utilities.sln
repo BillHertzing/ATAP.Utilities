@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -207,6 +207,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{984B3A90-8771-486E-9BC3-66D2F35963C2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Configuration.UnitTests", "tests\ATAP.Utilities.ComputerInventory.Configuration.UnitTests\ATAP.Utilities.ComputerInventory.Configuration.UnitTests.csproj", "{1708871D-1637-45B9-B445-EF33C0D0E797}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden.UnitTests", "tests\ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden.UnitTests\ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden.UnitTests.csproj", "{C9378E61-659F-4B37-9072-C1E42A34A637}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.UnitTests", "tests\ATAP.Utilities.ComputerInventory.UnitTests\ATAP.Utilities.ComputerInventory.UnitTests.csproj", "{8B279210-31CE-465E-AC71-9CD0DA6022AF}"
 EndProject
@@ -1300,6 +1302,12 @@ Global
 		{D5F28B64-4B7C-6EFF-EA14-1A2C5B6FAD47}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D5F28B64-4B7C-6EFF-EA14-1A2C5B6FAD47}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
 		{D5F28B64-4B7C-6EFF-EA14-1A2C5B6FAD47}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
+		{C9378E61-659F-4B37-9072-C1E42A34A637}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9378E61-659F-4B37-9072-C1E42A34A637}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9378E61-659F-4B37-9072-C1E42A34A637}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9378E61-659F-4B37-9072-C1E42A34A637}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9378E61-659F-4B37-9072-C1E42A34A637}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
+		{C9378E61-659F-4B37-9072-C1E42A34A637}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1510,6 +1518,7 @@ Global
 		{C9726115-B139-4EAA-AB18-851601E06A43} = {1a59a7c9-25b9-4a6b-ba1f-37c4e7e2c090}
 		{B2F7EAF4-3FC2-4187-A990-A561DBFBCE10} = {1a59a7c9-25b9-4a6b-ba1f-37c4e7e2c090}
 		{F44539E5-CA14-497B-BC96-DDAF327DCC8F} = {1a59a7c9-25b9-4a6b-ba1f-37c4e7e2c090}
+		{C9378E61-659F-4B37-9072-C1E42A34A637} = {984B3A90-8771-486E-9BC3-66D2F35963C2}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {40986DA9-E8C6-49CE-B434-BE8625798C2C}

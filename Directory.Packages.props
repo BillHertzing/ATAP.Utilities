@@ -1,11 +1,9 @@
 <Project>
-
   <!-- Enable Central Package Management (NuGet 6.2+, .NET SDK 6.0.300+) -->
   <!-- Documentation: https://learn.microsoft.com/en-us/nuget/consume-packages/central-package-management -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
-
   <ItemGroup Label="Security Patches (Critical - Addresses Known Vulnerabilities)">
     <!-- Regex library (4.3.0 has a vulnerability) -->
     <PackageVersion Include="System.Text.RegularExpressions" Version="5.0.0" />
@@ -17,7 +15,6 @@
     <PackageVersion Include="System.Runtime.InteropServices" Version="4.3.0" />
     <PackageVersion Include="System.Runtime.Handles" Version="4.3.0" />
   </ItemGroup>
-
   <ItemGroup Label="Core Libraries">
     <!-- Stateless lightweight StateMachine library -->
     <PackageVersion Include="Stateless" Version="5.1.2" />
@@ -35,7 +32,6 @@
     <PackageVersion Include="System.Collections.Immutable" Version="5.0.0" />
     <PackageVersion Include="McMaster.NETCore.Plugins" Version="1.4.0" />
   </ItemGroup>
-
   <ItemGroup Label="ServiceStack Suite">
     <PackageVersion Include="ServiceStack" Version="5.12.0" />
     <!-- ServiceStack serializers and dump utility -->
@@ -52,12 +48,18 @@
     <PackageVersion Include="ServiceStack.OrmLite.MySQL.Core" Version="5.12.0" />
     <PackageVersion Include="ServiceStack.OrmLite.Sqlite.Core" Version="5.12.0" />
   </ItemGroup>
-
   <ItemGroup Label="Time and Date Libraries">
     <!-- Library of rich time and interval manipulation routines -->
     <PackageVersion Include="TimePeriodLibrary.NET" Version="2.1.5" />
   </ItemGroup>
-
+  <ItemGroup Label="ATAP.Utilities.Configuration Family">
+    <PackageVersion Include="ATAP.Utilities.Configuration" Version="0.1.0-Alpha-003" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Extensions" Version="0.1.0-Alpha-009" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets" Version="0.1.0-Alpha-003" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims" Version="0.1.0-Alpha-003" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims.Interfaces" Version="0.1.0-Alpha-001" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden" Version="0.1.0-Alpha-003" />
+  </ItemGroup>
   <ItemGroup Label="Microsoft.Extensions.* (Configuration, Hosting, DI, Logging)">
     <!-- Packages necessary to run the Net Core Generic Host and web server hosts -->
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.0" />
@@ -73,13 +75,11 @@
     <!-- Standalone reference to Microsoft.Extensions.DependencyInjection used by unitTest projects -->
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
   </ItemGroup>
-
   <ItemGroup Label="Dependency Injection Alternatives">
     <!-- Alternate DI container used in UnitTest projects -->
     <PackageVersion Include="Ninject" Version="3.3.6" />
     <PackageVersion Include="Ninject.extensions.conventions" Version="3.3.0" />
   </ItemGroup>
-
   <ItemGroup Label="Resilience and Polly">
     <!-- Packages to add resilience policies to async and synchronous operations which may have transient exceptions -->
     <PackageVersion Include="Polly" Version="8.5.0" />
@@ -87,41 +87,34 @@
     <!-- Deprecated package - retained for backwards compatibility with existing projects -->
     <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0" />
   </ItemGroup>
-
   <ItemGroup Label="File I/O and Abstractions">
     <!-- FileIO Extension to provide file and directory Globbing -->
     <PackageVersion Include="System.IO.Abstractions" Version="21.1.3" />
     <PackageVersion Include="System.IO.Abstractions.TestingHelpers" Version="21.1.3" />
   </ItemGroup>
-
   <ItemGroup Label="Aspect-Oriented Programming">
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
     <PackageVersion Include="MethodBoundaryAspect.Fody" Version="2.0.150" />
   </ItemGroup>
-
   <ItemGroup Label="Messaging and Dataflow">
     <!-- RabbitMQ client library -->
     <PackageVersion Include="RabbitMQ.Client" Version="7.0.0" />
     <!-- Task Parallel (TPL) Library -->
     <PackageVersion Include="System.Threading.Tasks.Dataflow" Version="9.0.0" />
   </ItemGroup>
-
   <ItemGroup Label="Object Mapping">
     <!-- The Automapper Package -->
     <PackageVersion Include="AutoMapper" Version="13.0.1" />
   </ItemGroup>
-
   <ItemGroup Label="MSBuild Custom Tasks">
     <!-- Packages used for custom build tasks -->
     <PackageVersion Include="Microsoft.Build.Framework" Version="17.14.28" />
     <PackageVersion Include="Microsoft.Build.Utilities.Core" Version="17.14.28" />
   </ItemGroup>
-
   <ItemGroup Label="Source Link">
     <!-- Microsoft Source Link -->
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
   </ItemGroup>
-
   <ItemGroup Label="Serilog Logging Suite">
     <PackageVersion Include="Serilog" Version="4.1.0" />
     <PackageVersion Include="Serilog.Settings.Configuration" Version="8.0.4" />
@@ -137,22 +130,18 @@
     <!-- Seq Extensions for Microsoft.Extensions.Logging -->
     <PackageVersion Include="Seq.Extensions.Logging" Version="6.0.0" />
   </ItemGroup>
-
   <ItemGroup Label="Process Management">
     <!-- Package to ease spawning of and communications with processes -->
     <PackageVersion Include="MedallionShell" Version="1.6.2" />
   </ItemGroup>
-
   <ItemGroup Label="Units of Measure">
     <!-- Package to use real-world Units of Measure -->
     <PackageVersion Include="UnitsNet" Version="5.60.0" />
   </ItemGroup>
-
   <ItemGroup Label="DI Extensions">
     <!-- Package to extend Microsoft.Extensions.DependencyInjection with Scan and Decorate methods -->
     <PackageVersion Include="Scrutor" Version="3.3.0" />
   </ItemGroup>
-
   <ItemGroup Label="xUnit Testing Suite">
     <!-- Packages to add xUnit Testing providers and extensions -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
@@ -166,7 +155,6 @@
     <!-- DotNetCliToolReference (deprecated but still used in some projects) -->
     <PackageVersion Include="dotnet-xunit" Version="2.3.1" />
   </ItemGroup>
-
   <ItemGroup Label="Legacy/Unsorted Packages">
     <PackageVersion Include="NLog" Version="4.7.0" />
     <PackageVersion Include="NLog.Config" Version="4.7.0" />
@@ -180,17 +168,13 @@
     <!-- Packages to play with CSharpSyntaxTree -->
     <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="3.5.0" />
   </ItemGroup>
-
   <!-- Framework-Conditional Package Versions -->
   <!-- These package versions vary based on target framework -->
-
   <ItemGroup Label="Framework-Conditional: All Frameworks (net472+)">
     <!-- System.Text.Json V 5.0.0 supports framework 4.7.2 and later -->
     <!-- Condition matches: net472, net48, netstandard, netcore, net5+, net6+, net7+, net8+, net9+ -->
-    <PackageVersion Include="System.Text.Json" Version="5.0.0"
-                    Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('$(TargetFramework)', '(net|net472|standard|core|net[56789])'))"/>
+    <PackageVersion Include="System.Text.Json" Version="5.0.0" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('$(TargetFramework)', '(net|net472|standard|core|net[56789])'))" />
   </ItemGroup>
-
   <ItemGroup Label="Roslyn Code Analysis">
     <!-- Packages for Roslyn code analysis and workspaces -->
     <PackageVersion Include="Microsoft.Build.Locator" Version="1.2.2" />
@@ -199,5 +183,4 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.VisualBasic.Workspaces" Version="3.3.1" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="3.3.1" />
   </ItemGroup>
-
 </Project>

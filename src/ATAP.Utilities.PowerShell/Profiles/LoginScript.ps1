@@ -281,11 +281,12 @@ if ($MyInvocation.InvocationName -ne '.') {
         [PSCustomObject]@{ EnvVarName = 'CONTEXT7_API_KEY'; BwSearchName = 'Context7_API_Key'; BwFieldName = 'key' }
         [PSCustomObject]@{ EnvVarName = 'PERPLEXITY_API_KEY'; BwSearchName = 'Perplexity_API_Key'; BwFieldName = 'key' }
         [PSCustomObject]@{ EnvVarName = 'SYNCFUSION_API_KEY'; BwSearchName = 'SyncFusion_API_Key'; BwFieldName = 'key' }
+        [PSCustomObject]@{ EnvVarName = 'SYNCFUSION_LICENSE_KEY'; BwSearchName = 'SyncFusion_License_Key'; BwFieldName = 'key' }
         [PSCustomObject]@{ EnvVarName = 'CHATGPT_API_KEY'; BwSearchName = 'ChatGPT_API_Key'; BwFieldName = 'key' }
         [PSCustomObject]@{ EnvVarName = 'JENKINS_API_TOKEN'; BwSearchName = 'Jenkins_API_Token'; BwFieldName = 'token' }
         [PSCustomObject]@{ EnvVarName = 'ANSIBLE_API_TOKEN'; BwSearchName = 'Ansible_API_Token'; BwFieldName = 'token' }
-        [PSCustomObject]@{ EnvVarName = 'PROGET_ADMIN_API_TOKEN'; BwSearchName = 'ProGet_Admin_API_Token'; BwFieldName = 'token' }
-        [PSCustomObject]@{ EnvVarName = 'BUILDMASTER_API_KEY'; BwSearchName = 'BuildMaster_Admin_API_Key'; BwFieldName = 'key' }
+        [PSCustomObject]@{ EnvVarName = 'ProGet_Admin_API_Token'; BwSearchName = 'ProGet_Admin_API_Token'; BwFieldName = 'token' }
+        [PSCustomObject]@{ EnvVarName = 'BuildMaster_Admin_API_Key'; BwSearchName = 'BuildMaster_Admin_API_Key'; BwFieldName = 'key' }
         [PSCustomObject]@{ EnvVarName = 'AceCommander_UserPii__PassphraseV1'; BwSearchName = 'AceCommander_UserPii__PassphraseV1'; BwFieldName = 'Passphrase' }
         [PSCustomObject]@{ EnvVarName = 'AceCommander_UserPii__PassphraseV2'; BwSearchName = 'AceCommander_UserPii__PassphraseV2'; BwFieldName = 'Passphrase' }
       )

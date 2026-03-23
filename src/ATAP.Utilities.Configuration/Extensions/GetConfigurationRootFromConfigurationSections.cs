@@ -39,7 +39,7 @@ namespace ATAP.Utilities.Configuration {
           sb.Append(settingsFileTuple.Item1);
           sb.Append(".");
           sb.Append(envName);
-          sb.Append(settingsFileTuple.Item1);
+          sb.Append(settingsFileTuple.Item2);
           configurationBuilder.AddJsonFile(sb.ToString(), optional: true);
         }
       }

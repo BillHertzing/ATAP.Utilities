@@ -43,7 +43,7 @@
 
   <!-- ATAP Utility Packages that handle IConfiguration, and dynamic loading plugin assemblies, and plugins for Serializers -->
   <ItemGroup>
-    <ProjectReference Include="../ATAP.Utilities.Configuration.Extensions/ATAP.Utilities.Configuration.Extensions.csproj" />
+    <ProjectReference Include="../ATAP.Utilities.Configuration/Extensions/ATAP.Utilities.Configuration.Extensions.csproj" />
   </ItemGroup>
 
     <!-- Packages and projects to implement IL Weaving using Fody during the build process -->

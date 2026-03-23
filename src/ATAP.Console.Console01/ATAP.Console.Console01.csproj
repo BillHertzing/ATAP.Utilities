@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -21,7 +21,7 @@
     <ProjectReference Include="..\ATAP.Services.FileSystemWatchers\FileSystemWatchers.csproj" />
     <ProjectReference Include="..\ATAP.Services.FileSystemWatchers.Interfaces\FileSystemWatchers.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.GenericHost.Extensions\ATAP.Utilities.GenericHost.Extensions.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Configuration.Extensions\ATAP.Utilities.Configuration.Extensions.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Configuration\Extensions\ATAP.Utilities.Configuration.Extensions.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory\Hardware\Extensions\ATAP.Utilities.ComputerInventory.Hardware.Extensions.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory\ProcessInfo\Models\ATAP.Utilities.ComputerInventory.ProcessInfo.Models.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory\Software\Enumerations\ATAP.Utilities.ComputerInventory.Software.Enumerations.csproj" />

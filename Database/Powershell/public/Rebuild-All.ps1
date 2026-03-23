@@ -1,6 +1,10 @@
 # Rebuild-All script for ATAPUtilities database
 # This script builds the ATAPUtilities database and loads initial data
 
+# This is a top-level script - it has no parameters. It may be called by
+# other scripts, but it is not designed to be called with parameters itself.
+# All configuration is done via the variables defined below.
+
 # Compute repo root from this script's known position in the tree:
 #   <repo_root>\Database\Powershell\public\Rebuild-All.ps1  =>  3 levels up
 # Using $PSScriptRoot makes this work regardless of the shell's current directory.

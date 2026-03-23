@@ -34,9 +34,9 @@
 
     <!-- Include the custom tasks from the ATAP.Utilities.BuildTooling Assembly
         The location of the Assembly has been specified in Directory.Build.props -->
-  <UsingTask TaskName="ATAP.Utilities.BuildTooling.GetVersion" AssemblyFile="$(ATAPUtilitiesBuildToolingTasksAssembly)" />
-  <UsingTask TaskName="ATAP.Utilities.BuildTooling.UpdateVersion" AssemblyFile="$(ATAPUtilitiesBuildToolingTasksAssembly)" />
-  <UsingTask TaskName="ATAP.Utilities.BuildTooling.SetVersion" AssemblyFile="$(ATAPUtilitiesBuildToolingTasksAssembly)" />
+  <UsingTask TaskName="ATAP.Utilities.BuildTooling.GetVersion"    AssemblyFile="$(ATAPUtilitiesBuildToolingTasksAssembly)" Condition="'$(ATAPUtilitiesBuildToolingTasksAssembly)' != ''" />
+  <UsingTask TaskName="ATAP.Utilities.BuildTooling.UpdateVersion" AssemblyFile="$(ATAPUtilitiesBuildToolingTasksAssembly)" Condition="'$(ATAPUtilitiesBuildToolingTasksAssembly)' != ''" />
+  <UsingTask TaskName="ATAP.Utilities.BuildTooling.SetVersion"    AssemblyFile="$(ATAPUtilitiesBuildToolingTasksAssembly)" Condition="'$(ATAPUtilitiesBuildToolingTasksAssembly)' != ''" />
 
   <!-- http://blog.casavian.eu/2014/04/23/increment-version-for-changed-assemblies-only-first-part/ -->
   <!--%Program Files (x86)%\MSBuild\12.0\Bin\Microsoft.CSharp.CurrentVersion.targets  -->
@@ -71,7 +71,7 @@
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug' AND $(DesignTimeBuild) != true AND !Exists($(UpdatePackageVersionLockFilePath))" Text="Execute because !(DesignTimeBuild != true) AND because $(UpdatePackageVersionLockFilePath) does not exists" />
     <!-- Don't create a lockfile or update package version during design time builds -->
     <!-- Conditional below came frorm here: https://github.com/dotnet/project-system/blob/master/docs/design-time-builds.md#diagnosing-design-time-builds -->
-    <!-- TEMPORARILY DISABLED FOR REFACTORING: <CallTarget Targets="UpdatePackageVersionBeforeOuterBuild" Condition="$(DesignTimeBuild) != true AND !Exists($(UpdatePackageVersionLockFilePath))"/> -->
+    <CallTarget Targets="UpdatePackageVersionBeforeOuterBuild" Condition="$(DesignTimeBuild) != true AND !Exists($(UpdatePackageVersionLockFilePath))"/>
   </Target>
 
 <!-- This is the  target that updates the versioninformation during development for every build -->
@@ -128,25 +128,89 @@
   </Target>
 
   <!-- after all framework builds have been completed, its time to remove the lockfile -->
-  <Target Name="UpdatePackageVersionAfterOuterBuild" AfterTargets="DispatchToInnerBuilds">
+  <Target Name="UpdatePackageVersionAfterOuterBuild" AfterTargets="DispatchToInnerBuilds;AfterBuild">
     <!-- during debugging this BuildTooling, send to the output log messages  indicating lockfile will be deleted -->
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Deleting LockFile $(UpdatePackageVersionLockFilePath)" />
     <Delete Files="$(UpdatePackageVersionLockFilePath)"/>
   </Target>
 
-  <!-- NuGet Publish target package to local feed after successful package generation-->
-  <!-- Appveyor artifacts https://www.appveyor.com/docs/packaging-artifacts/ -->
-  <Target Name="PublishAfterBuild" AfterTargets="GenerateNuspec">
-    <!-- during debugging this BuildTooling, send to the output log messages the location of OutputPath, where the package should be found, and the value of the NuGetLocalFeedPath -->
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="OutputPath = $(OutputPath)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="WorkingDirectory = $(MSBuildProjectDirectory)\$(OutputPath)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="NuGetLocalFeedPath = $(NuGetLocalFeedPath)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Calling NuGet.exe to push the package to the local feed" />
-    <!-- When debugging the build tooling,the build tooling configuration is debug. Run the NuGet.exe command with detailed verbosity -->
-    <Exec  Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'"  WorkingDirectory="$(MSBuildProjectDirectory)\$(OutputPath)" Command="NuGet.exe push &quot;$(MSBuildProjectDirectory)\$(OutputPath)$(PackageId).$(PackageVersion).nupkg&quot; -Source &quot;$(NuGetLocalFeedPath)&quot; -Verbosity detailed" />
-    <!-- Under normal conditions, run the NuGet.exe command with normal verbosity -->
-    <Exec  Condition="'$(ATAPBuildToolingConfiguration)'!='Debug'"  WorkingDirectory="$(MSBuildProjectDirectory)\$(OutputPath)" Command="NuGet.exe push &quot;$(MSBuildProjectDirectory)\$(OutputPath)$(PackageId).$(PackageVersion).nupkg&quot; -Source &quot;$(NuGetLocalFeedPath)&quot; -Verbosity normal" />
+  <!-- Read PackageVersion from AssemblyInfo.cs into the outer-build scope so GenerateNuspec picks it up.
+       For multi-TFM projects, UpdateVersion runs only in the inner build scope; this target re-reads the
+       already-updated value back into the outer build before pack runs. Works for single-TFM too. -->
+  <Target Name="SetPackageVersionForPack" BeforeTargets="GenerateNuspec">
+    <GetVersion VersionFile="$(VersionFile)"
+                ATAPBuildToolingConfiguration="$(ATAPBuildToolingConfiguration)"
+                ATAPBuildToolingDebugVerbosity="$(ATAPBuildToolingDebugVerbosity)">
+      <Output TaskParameter="PackageVersion" PropertyName="PackageVersion" />
+    </GetVersion>
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="SetPackageVersionForPack: PackageVersion = $(PackageVersion)" />
+  </Target>
 
+  <!-- NuGet Publish target: push package to ProGet nuget-experimental feed after successful package generation -->
+  <!-- ProGet URL defaults to localhost:50000; override via $(ProGetExperimentalFeedUrl) property or PROGET_URL env var -->
+  <!-- API key must be set as env var PROGET_ADMIN_API_TOKEN (stored in Bitwarden) -->
+  <PropertyGroup>
+    <ProGetExperimentalFeedUrl Condition="'$(ProGetExperimentalFeedUrl)' == ''">http://localhost:50000/nuget/nuget-experimental/v3/index.json</ProGetExperimentalFeedUrl>
+  </PropertyGroup>
+  <Target Name="PublishAfterBuild" AfterTargets="GenerateNuspec">
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="OutputPath = $(OutputPath)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageOutputPath = $(PackageOutputPath)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="ProGetExperimentalFeedUrl = $(ProGetExperimentalFeedUrl)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Pushing $(PackageId).$(PackageVersion).nupkg to ProGet nuget-experimental feed" />
+    <!-- Resolve nupkg directory: PackageOutputPath may be absolute (from the -output flag) or relative.
+         String-concatenation with MSBuildProjectDirectory breaks when it is absolute, so we
+         use IsPathRooted to pick the right base. WorkingDirectory is omitted - dotnet nuget
+         push only needs the full nupkg path, not a cwd. The -skip-duplicate flag avoids errors on
+         re-push of an already-published version. -->
+    <PropertyGroup>
+      <_NupkgDir Condition="$([System.IO.Path]::IsPathRooted('$(PackageOutputPath)'))">$(PackageOutputPath)</_NupkgDir>
+      <_NupkgDir Condition="'$(_NupkgDir)' == ''">$(MSBuildProjectDirectory)\$(PackageOutputPath)</_NupkgDir>
+    </PropertyGroup>
+    <Exec Command="dotnet nuget push &quot;$(_NupkgDir)$(PackageId).$(PackageVersion).nupkg&quot; --source &quot;$(ProGetExperimentalFeedUrl)&quot; --api-key &quot;$(PROGET_ADMIN_API_TOKEN)&quot; --skip-duplicate" />
+    <!-- Keep Directory.Packages.props in sync: update the PackageVersion entry for this package -->
+    <PropertyGroup>
+      <_DppDir>$([MSBuild]::GetDirectoryNameOfFileAbove('$(MSBuildProjectDirectory)', 'Directory.Packages.props'))</_DppDir>
+      <_DppPath>$(_DppDir)\Directory.Packages.props</_DppPath>
+    </PropertyGroup>
+    <XmlPoke XmlInputPath="$(_DppPath)"
+             Query="//ItemGroup/PackageVersion[@Include='$(PackageId)']/@Version"
+             Value="$(PackageVersion)"
+             Condition="'$(_DppDir)' != '' AND Exists('$(_DppPath)')" />
+    <Message Text="Synced Directory.Packages.props: $(PackageId) = $(PackageVersion)" Importance="high"
+             Condition="'$(_DppDir)' != '' AND Exists('$(_DppPath)')" />
+  </Target>
+
+  <!-- Deploy the freshly-built BuildTooling DLL and targets file to the Build directory,
+       then write the sentinel file so Directory.Build.props resolves the path automatically
+       on the next build of any project in the solution.
+       Only runs for the ATAP.Utilities.BuildTooling.CSharp project, Release configuration,
+       and only once (for net10.0) to avoid redundant copies across multi-TFM inner builds. -->
+  <Target Name="DeployBuildToolingToBuildDirectory"
+          AfterTargets="Build"
+          Condition="'$(MSBuildProjectName)' == 'ATAP.Utilities.BuildTooling.CSharp'
+                     AND '$(Configuration)' == 'Release'
+                     AND '$(TargetFramework)' == 'net10.0'">
+    <PropertyGroup>
+      <_NewBuildToolingVersion>$(MajorVersion).$(MinorVersion).$(PatchVersion)</_NewBuildToolingVersion>
+      <_DeployBuildDir>$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.$(_NewBuildToolingVersion)\build\</_DeployBuildDir>
+      <_DeployTFMDir>$(_DeployBuildDir)Release\$(TargetFramework)\</_DeployTFMDir>
+    </PropertyGroup>
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="DeployBuildToolingToBuildDirectory: deploying version $(_NewBuildToolingVersion) to $(_DeployBuildDir)" />
+    <!-- Create the target directory tree -->
+    <MakeDir Directories="$(_DeployTFMDir)" />
+    <!-- Copy the compiled DLL and PDB -->
+    <ItemGroup>
+      <_BuildToolingBinaries Include="$(OutputPath)ATAP.Utilities.BuildTooling.CSharp.dll" />
+      <_BuildToolingBinaries Include="$(OutputPath)ATAP.Utilities.BuildTooling.CSharp.pdb" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_BuildToolingBinaries)" DestinationFolder="$(_DeployTFMDir)" SkipUnchangedFiles="true" />
+    <!-- Copy the companion .targets file (always overwrite to pick up any edits) -->
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\ATAP.Utilities.BuildTooling.targets"
+          DestinationFolder="$(_DeployBuildDir)" SkipUnchangedFiles="false" />
+    <!-- Write the sentinel file — Directory.Build.props reads this at evaluation time -->
+    <WriteLinesToFile File="$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.current-version"
+                      Lines="$(_NewBuildToolingVersion)" Overwrite="true" />
+    <Message Text="DeployBuildToolingToBuildDirectory: deployed ATAP.Utilities.BuildTooling.CSharp $(_NewBuildToolingVersion) — next project build will load from $(_DeployBuildDir)" />
   </Target>
 
   <!-- Examples of other kinds of targets  -->

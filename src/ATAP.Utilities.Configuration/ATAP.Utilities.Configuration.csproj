@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <OutputType>Library</OutputType>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
+    <!-- Assembly, File, and Package Information for this assembly-->
+    <!-- Build and revision are created based on date-->
+    <MajorVersion>0</MajorVersion>
+    <MinorVersion>1</MinorVersion>
+    <PatchVersion>0</PatchVersion>
+    <!-- Current Lifecycle stage for this assembly-->
+    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
+    <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
+    <PackageLabel>Alpha</PackageLabel>
+    <Authors>ATAP</Authors>
+    <Description>Aggregator package for ATAP.Utilities.Configuration libraries.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+
+  <!-- Aggregate all Configuration child projects -->
+  <ItemGroup>
+    <ProjectReference Include="Extensions\ATAP.Utilities.Configuration.Extensions.csproj" />
+    <ProjectReference Include="Secrets\ATAP.Utilities.Configuration.Secrets.csproj" />
+    <ProjectReference Include="Secrets\Shims\Bitwarden\ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden.csproj" />
+  </ItemGroup>
+
+</Project>

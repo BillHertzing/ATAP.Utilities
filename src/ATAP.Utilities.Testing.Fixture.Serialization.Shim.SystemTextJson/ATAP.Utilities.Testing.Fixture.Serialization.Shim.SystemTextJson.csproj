@@ -43,7 +43,7 @@
 
   <!-- ATAP Utility Packages that handle IConfiguration -->
   <ItemGroup>
-    <ProjectReference Include="../ATAP.Utilities.Configuration.Extensions/ATAP.Utilities.Configuration.Extensions.csproj" />
+    <ProjectReference Include="../ATAP.Utilities.Configuration/Extensions/ATAP.Utilities.Configuration.Extensions.csproj" />
   </ItemGroup>
 
   <!-- Third-party libraries used in testing the Serialization Fixtures -->

@@ -49,7 +49,7 @@ Injecting ConfigurationRoot
 
 This module holds most of the Powershell functions used by the developers and the CI/CD pipeline steps. During the development of a new feature used by developers, the pipelines, or the end users, module development takes place in parallel with pipeline development to add new stuff to the Product
 
-we publish Powershell packages, src, documentation and optionally tests and localization, via nuget packages, PSGallery, and the chocolatey package manager. Chocolatey and the installation script cooperate to set the package installation location and append the information to the system or user PATH environment variable.
+we publish Powershell packages, src, documentation and optionally tests and localization, via nuget packages, PSGallery, and the chocolatey package manager. Chocolatey and the installation script cooperate to set the package installation location and append the information to the system or user environment variable.
 
 ToDo: Once installed, the path to the executable must be supplied to the database under the key for the machine name. See the ATAP Utilities packages for computer hardware, software, and processes for the data structures to record necessary information.
 

@@ -47,11 +47,172 @@ $global:configRootKeys = @{
   'SYNCFUSION_API_KEYConfigRootKey'                                                              = 'SYNCFUSION_API_KEY'
   # Context7 settings
   'CONTEXT7_API_KEYConfigRootKey'                                                                = 'CONTEXT7_API_KEY'
-  # Proget Package Repository software settings
+  ###################################################
+  ## ProGet Package Manager ConfigRootKeys — Phase 1
+  ## Drop-in replacement for the ProGet section of the configRootKeys hashtable.
+  ## Phase 1: 8 combined feeds (no push/pull split).
+  ## Phase 2: Uncomment the -Push keys to add push feed entries.
+  ###################################################
+
+  # ── ProGet Server ──────────────────────────────────────────────────────
   'ProGetHostConfigRootKey'                                                                      = 'ProGetHost'
-  # ToDo: work issue to fix the consistency of the naming for  the package manager - might be many more feed
-  'ProGetBaseUriBuilderConfigRootKey'                                                            = 'ProGetBaseUriBuilder'
-  'ProGetBaseUriConfigRootKey'                                                                   = 'ProGetBaseUri'
+  'ProGetServiceExePathConfigRootKey'                                                            = 'ProGetServiceExePath'
+  'ProGetServiceConfigPathConfigRootKey'                                                         = 'ProGetServiceConfigPath'
+  'ProGetAdminUriSchemeConfigRootKey'                                                            = 'ProGetAdminUriScheme'
+  'ProGetAdminUriHostConfigRootKey'                                                              = 'ProGetAdminUriHost'
+  'ProGetAdminUriPortConfigRootKey'                                                              = 'ProGetAdminUriPort'
+  'ProGetBaseUrlConfigRootKey'                                                                   = 'ProGetBaseUrl'
+  'PGUTIL_SOURCEConfigRootKey'                                                                   = 'PGUTIL_SOURCE'
+
+  # ── ProGet API Keys ────────────────────────────────────────────────────
+  'ProGetAdminApiKeyConfigRootKey'                                                               = 'PROGET_ADMIN_API_TOKEN'
+  'ProGetBuildMasterApiKeyConfigRootKey'                                                         = 'PROGET_BUILDMASTER_KEY'
+  # Phase 2 per-feed API keys (uncomment when push/pull feeds are created):
+  # 'ProGetApiKeyNuGetExperimentalPushConfigRootKey'                                             = 'PROGET_APIKEY_NUGET_EXPERIMENTAL_PUSH'
+  # 'ProGetApiKeyNuGetExperimentalPullConfigRootKey'                                             = 'PROGET_APIKEY_NUGET_EXPERIMENTAL_PULL'
+  # 'ProGetApiKeyNuGetDevelopmentPushConfigRootKey'                                              = 'PROGET_APIKEY_NUGET_DEVELOPMENT_PUSH'
+  # 'ProGetApiKeyNuGetDevelopmentPullConfigRootKey'                                              = 'PROGET_APIKEY_NUGET_DEVELOPMENT_PULL'
+  # 'ProGetApiKeyNuGetTestingPushConfigRootKey'                                                  = 'PROGET_APIKEY_NUGET_TESTING_PUSH'
+  # 'ProGetApiKeyNuGetTestingPullConfigRootKey'                                                  = 'PROGET_APIKEY_NUGET_TESTING_PULL'
+  # 'ProGetApiKeyNuGetProductionPushConfigRootKey'                                               = 'PROGET_APIKEY_NUGET_PRODUCTION_PUSH'
+  # 'ProGetApiKeyNuGetProductionPullConfigRootKey'                                               = 'PROGET_APIKEY_NUGET_PRODUCTION_PULL'
+  # 'ProGetApiKeyPowerShellExperimentalPushConfigRootKey'                                        = 'PROGET_APIKEY_POWERSHELL_EXPERIMENTAL_PUSH'
+  # 'ProGetApiKeyPowerShellExperimentalPullConfigRootKey'                                        = 'PROGET_APIKEY_POWERSHELL_EXPERIMENTAL_PULL'
+  # 'ProGetApiKeyPowerShellDevelopmentPushConfigRootKey'                                         = 'PROGET_APIKEY_POWERSHELL_DEVELOPMENT_PUSH'
+  # 'ProGetApiKeyPowerShellDevelopmentPullConfigRootKey'                                         = 'PROGET_APIKEY_POWERSHELL_DEVELOPMENT_PULL'
+  # 'ProGetApiKeyPowerShellTestingPushConfigRootKey'                                             = 'PROGET_APIKEY_POWERSHELL_TESTING_PUSH'
+  # 'ProGetApiKeyPowerShellTestingPullConfigRootKey'                                             = 'PROGET_APIKEY_POWERSHELL_TESTING_PULL'
+  # 'ProGetApiKeyPowerShellProductionPushConfigRootKey'                                          = 'PROGET_APIKEY_POWERSHELL_PRODUCTION_PUSH'
+  # 'ProGetApiKeyPowerShellProductionPullConfigRootKey'                                          = 'PROGET_APIKEY_POWERSHELL_PRODUCTION_PULL'
+
+  # ── ProGet Connectors ──────────────────────────────────────────────────
+  'ProGetConnectorNuGetOrgConfigRootKey'                                                         = 'ProGetConnectorNuGetOrg'
+  'ProGetConnectorPSGalleryConfigRootKey'                                                        = 'ProGetConnectorPSGallery'
+  'ProGetConnectorChocolateyOrgConfigRootKey'                                                    = 'ProGetConnectorChocolateyOrg'
+
+  # ── Feed Collection & Promotion ────────────────────────────────────────
+  'ProGetFeedCollectionConfigRootKey'                                                            = 'ProGetFeedCollection'
+  'ProGetPromotionTierOrderConfigRootKey'                                                        = 'ProGetPromotionTierOrder'
+
+  # ══════════════════════════════════════════════════════════════════════
+  #  NuGet Feeds — Phase 1 (combined push/pull per tier)
+  # ══════════════════════════════════════════════════════════════════════
+
+  # ── nuget-experimental ─────────────────────────────────────────────────
+  'ProGetFeedNuGetExperimentalUriSchemeConfigRootKey'                                            = 'ProGetFeedNuGetExperimentalUriScheme'
+  'ProGetFeedNuGetExperimentalUriHostConfigRootKey'                                              = 'ProGetFeedNuGetExperimentalUriHost'
+  'ProGetFeedNuGetExperimentalUriPortConfigRootKey'                                              = 'ProGetFeedNuGetExperimentalUriPort'
+  'ProGetFeedNuGetExperimentalUriPathConfigRootKey'                                              = 'ProGetFeedNuGetExperimentalUriPath'
+  'ProGetFeedNuGetExperimentalUriQueryStringConfigRootKey'                                       = 'ProGetFeedNuGetExperimentalUriQueryString'
+  'ProGetFeedNuGetExperimentalUriConfigRootKey'                                                  = 'ProGetFeedNuGetExperimentalUri'
+  'ProGetFeedNuGetExperimentalFeedNameConfigRootKey'                                             = 'ProGetFeedNuGetExperimentalFeedName'
+  'ProGetFeedNuGetExperimentalFeedTypeConfigRootKey'                                             = 'ProGetFeedNuGetExperimentalFeedType'
+  'ProGetFeedNuGetExperimentalApiKeyNameConfigRootKey'                                           = 'ProGetFeedNuGetExperimentalApiKeyName'
+  'ProGetFeedNuGetExperimentalFeedConfigRootKey'                                                 = 'ProGetFeedNuGetExperimental'
+
+  # ── nuget-development ──────────────────────────────────────────────────
+  'ProGetFeedNuGetDevelopmentUriSchemeConfigRootKey'                                             = 'ProGetFeedNuGetDevelopmentUriScheme'
+  'ProGetFeedNuGetDevelopmentUriHostConfigRootKey'                                               = 'ProGetFeedNuGetDevelopmentUriHost'
+  'ProGetFeedNuGetDevelopmentUriPortConfigRootKey'                                               = 'ProGetFeedNuGetDevelopmentUriPort'
+  'ProGetFeedNuGetDevelopmentUriPathConfigRootKey'                                               = 'ProGetFeedNuGetDevelopmentUriPath'
+  'ProGetFeedNuGetDevelopmentUriQueryStringConfigRootKey'                                        = 'ProGetFeedNuGetDevelopmentUriQueryString'
+  'ProGetFeedNuGetDevelopmentUriConfigRootKey'                                                   = 'ProGetFeedNuGetDevelopmentUri'
+  'ProGetFeedNuGetDevelopmentFeedNameConfigRootKey'                                              = 'ProGetFeedNuGetDevelopmentFeedName'
+  'ProGetFeedNuGetDevelopmentFeedTypeConfigRootKey'                                              = 'ProGetFeedNuGetDevelopmentFeedType'
+  'ProGetFeedNuGetDevelopmentApiKeyNameConfigRootKey'                                            = 'ProGetFeedNuGetDevelopmentApiKeyName'
+  'ProGetFeedNuGetDevelopmentFeedConfigRootKey'                                                  = 'ProGetFeedNuGetDevelopment'
+
+  # ── nuget-testing ──────────────────────────────────────────────────────
+  'ProGetFeedNuGetTestingUriSchemeConfigRootKey'                                                 = 'ProGetFeedNuGetTestingUriScheme'
+  'ProGetFeedNuGetTestingUriHostConfigRootKey'                                                   = 'ProGetFeedNuGetTestingUriHost'
+  'ProGetFeedNuGetTestingUriPortConfigRootKey'                                                   = 'ProGetFeedNuGetTestingUriPort'
+  'ProGetFeedNuGetTestingUriPathConfigRootKey'                                                   = 'ProGetFeedNuGetTestingUriPath'
+  'ProGetFeedNuGetTestingUriQueryStringConfigRootKey'                                            = 'ProGetFeedNuGetTestingUriQueryString'
+  'ProGetFeedNuGetTestingUriConfigRootKey'                                                       = 'ProGetFeedNuGetTestingUri'
+  'ProGetFeedNuGetTestingFeedNameConfigRootKey'                                                  = 'ProGetFeedNuGetTestingFeedName'
+  'ProGetFeedNuGetTestingFeedTypeConfigRootKey'                                                  = 'ProGetFeedNuGetTestingFeedType'
+  'ProGetFeedNuGetTestingApiKeyNameConfigRootKey'                                                = 'ProGetFeedNuGetTestingApiKeyName'
+  'ProGetFeedNuGetTestingFeedConfigRootKey'                                                      = 'ProGetFeedNuGetTesting'
+
+  # ── nuget-production ───────────────────────────────────────────────────
+  'ProGetFeedNuGetProductionUriSchemeConfigRootKey'                                              = 'ProGetFeedNuGetProductionUriScheme'
+  'ProGetFeedNuGetProductionUriHostConfigRootKey'                                                = 'ProGetFeedNuGetProductionUriHost'
+  'ProGetFeedNuGetProductionUriPortConfigRootKey'                                                = 'ProGetFeedNuGetProductionUriPort'
+  'ProGetFeedNuGetProductionUriPathConfigRootKey'                                                = 'ProGetFeedNuGetProductionUriPath'
+  'ProGetFeedNuGetProductionUriQueryStringConfigRootKey'                                         = 'ProGetFeedNuGetProductionUriQueryString'
+  'ProGetFeedNuGetProductionUriConfigRootKey'                                                    = 'ProGetFeedNuGetProductionUri'
+  'ProGetFeedNuGetProductionFeedNameConfigRootKey'                                               = 'ProGetFeedNuGetProductionFeedName'
+  'ProGetFeedNuGetProductionFeedTypeConfigRootKey'                                               = 'ProGetFeedNuGetProductionFeedType'
+  'ProGetFeedNuGetProductionApiKeyNameConfigRootKey'                                             = 'ProGetFeedNuGetProductionApiKeyName'
+  'ProGetFeedNuGetProductionFeedConfigRootKey'                                                   = 'ProGetFeedNuGetProduction'
+
+  # ══════════════════════════════════════════════════════════════════════
+  #  PowerShell Feeds — Phase 1 (combined push/pull per tier)
+  # ══════════════════════════════════════════════════════════════════════
+
+  # ── powershell-experimental ────────────────────────────────────────────
+  'ProGetFeedPowerShellExperimentalUriSchemeConfigRootKey'                                       = 'ProGetFeedPowerShellExperimentalUriScheme'
+  'ProGetFeedPowerShellExperimentalUriHostConfigRootKey'                                         = 'ProGetFeedPowerShellExperimentalUriHost'
+  'ProGetFeedPowerShellExperimentalUriPortConfigRootKey'                                         = 'ProGetFeedPowerShellExperimentalUriPort'
+  'ProGetFeedPowerShellExperimentalUriPathConfigRootKey'                                         = 'ProGetFeedPowerShellExperimentalUriPath'
+  'ProGetFeedPowerShellExperimentalUriQueryStringConfigRootKey'                                  = 'ProGetFeedPowerShellExperimentalUriQueryString'
+  'ProGetFeedPowerShellExperimentalUriConfigRootKey'                                             = 'ProGetFeedPowerShellExperimentalUri'
+  'ProGetFeedPowerShellExperimentalFeedNameConfigRootKey'                                        = 'ProGetFeedPowerShellExperimentalFeedName'
+  'ProGetFeedPowerShellExperimentalFeedTypeConfigRootKey'                                        = 'ProGetFeedPowerShellExperimentalFeedType'
+  'ProGetFeedPowerShellExperimentalApiKeyNameConfigRootKey'                                      = 'ProGetFeedPowerShellExperimentalApiKeyName'
+  'ProGetFeedPowerShellExperimentalFeedConfigRootKey'                                            = 'ProGetFeedPowerShellExperimental'
+
+  # ── powershell-development ─────────────────────────────────────────────
+  'ProGetFeedPowerShellDevelopmentUriSchemeConfigRootKey'                                        = 'ProGetFeedPowerShellDevelopmentUriScheme'
+  'ProGetFeedPowerShellDevelopmentUriHostConfigRootKey'                                          = 'ProGetFeedPowerShellDevelopmentUriHost'
+  'ProGetFeedPowerShellDevelopmentUriPortConfigRootKey'                                          = 'ProGetFeedPowerShellDevelopmentUriPort'
+  'ProGetFeedPowerShellDevelopmentUriPathConfigRootKey'                                          = 'ProGetFeedPowerShellDevelopmentUriPath'
+  'ProGetFeedPowerShellDevelopmentUriQueryStringConfigRootKey'                                   = 'ProGetFeedPowerShellDevelopmentUriQueryString'
+  'ProGetFeedPowerShellDevelopmentUriConfigRootKey'                                              = 'ProGetFeedPowerShellDevelopmentUri'
+  'ProGetFeedPowerShellDevelopmentFeedNameConfigRootKey'                                         = 'ProGetFeedPowerShellDevelopmentFeedName'
+  'ProGetFeedPowerShellDevelopmentFeedTypeConfigRootKey'                                         = 'ProGetFeedPowerShellDevelopmentFeedType'
+  'ProGetFeedPowerShellDevelopmentApiKeyNameConfigRootKey'                                       = 'ProGetFeedPowerShellDevelopmentApiKeyName'
+  'ProGetFeedPowerShellDevelopmentFeedConfigRootKey'                                             = 'ProGetFeedPowerShellDevelopment'
+
+  # ── powershell-testing ─────────────────────────────────────────────────
+  'ProGetFeedPowerShellTestingUriSchemeConfigRootKey'                                            = 'ProGetFeedPowerShellTestingUriScheme'
+  'ProGetFeedPowerShellTestingUriHostConfigRootKey'                                              = 'ProGetFeedPowerShellTestingUriHost'
+  'ProGetFeedPowerShellTestingUriPortConfigRootKey'                                              = 'ProGetFeedPowerShellTestingUriPort'
+  'ProGetFeedPowerShellTestingUriPathConfigRootKey'                                              = 'ProGetFeedPowerShellTestingUriPath'
+  'ProGetFeedPowerShellTestingUriQueryStringConfigRootKey'                                       = 'ProGetFeedPowerShellTestingUriQueryString'
+  'ProGetFeedPowerShellTestingUriConfigRootKey'                                                  = 'ProGetFeedPowerShellTestingUri'
+  'ProGetFeedPowerShellTestingFeedNameConfigRootKey'                                             = 'ProGetFeedPowerShellTestingFeedName'
+  'ProGetFeedPowerShellTestingFeedTypeConfigRootKey'                                             = 'ProGetFeedPowerShellTestingFeedType'
+  'ProGetFeedPowerShellTestingApiKeyNameConfigRootKey'                                           = 'ProGetFeedPowerShellTestingApiKeyName'
+  'ProGetFeedPowerShellTestingFeedConfigRootKey'                                                 = 'ProGetFeedPowerShellTesting'
+
+  # ── powershell-production ──────────────────────────────────────────────
+  'ProGetFeedPowerShellProductionUriSchemeConfigRootKey'                                         = 'ProGetFeedPowerShellProductionUriScheme'
+  'ProGetFeedPowerShellProductionUriHostConfigRootKey'                                           = 'ProGetFeedPowerShellProductionUriHost'
+  'ProGetFeedPowerShellProductionUriPortConfigRootKey'                                           = 'ProGetFeedPowerShellProductionUriPort'
+  'ProGetFeedPowerShellProductionUriPathConfigRootKey'                                           = 'ProGetFeedPowerShellProductionUriPath'
+  'ProGetFeedPowerShellProductionUriQueryStringConfigRootKey'                                    = 'ProGetFeedPowerShellProductionUriQueryString'
+  'ProGetFeedPowerShellProductionUriConfigRootKey'                                               = 'ProGetFeedPowerShellProductionUri'
+  'ProGetFeedPowerShellProductionFeedNameConfigRootKey'                                          = 'ProGetFeedPowerShellProductionFeedName'
+  'ProGetFeedPowerShellProductionFeedTypeConfigRootKey'                                          = 'ProGetFeedPowerShellProductionFeedType'
+  'ProGetFeedPowerShellProductionApiKeyNameConfigRootKey'                                        = 'ProGetFeedPowerShellProductionApiKeyName'
+  'ProGetFeedPowerShellProductionFeedConfigRootKey'                                              = 'ProGetFeedPowerShellProduction'
+
+  # ══════════════════════════════════════════════════════════════════════
+  #  Chocolatey Feeds — DEFERRED (uncomment when Chocolatey packaging begins)
+  #  Same pattern: ProGetFeedChocolatey{Tier}{Component}ConfigRootKey
+  # ══════════════════════════════════════════════════════════════════════
+  # 'ProGetFeedChocolateyExperimentalUriSchemeConfigRootKey'                                     = 'ProGetFeedChocolateyExperimentalUriScheme'
+  # 'ProGetFeedChocolateyExperimentalUriHostConfigRootKey'                                       = 'ProGetFeedChocolateyExperimentalUriHost'
+  # 'ProGetFeedChocolateyExperimentalUriPortConfigRootKey'                                       = 'ProGetFeedChocolateyExperimentalUriPort'
+  # 'ProGetFeedChocolateyExperimentalUriPathConfigRootKey'                                       = 'ProGetFeedChocolateyExperimentalUriPath'
+  # 'ProGetFeedChocolateyExperimentalUriQueryStringConfigRootKey'                                = 'ProGetFeedChocolateyExperimentalUriQueryString'
+  # 'ProGetFeedChocolateyExperimentalUriConfigRootKey'                                           = 'ProGetFeedChocolateyExperimentalUri'
+  # 'ProGetFeedChocolateyExperimentalFeedNameConfigRootKey'                                      = 'ProGetFeedChocolateyExperimentalFeedName'
+  # 'ProGetFeedChocolateyExperimentalFeedTypeConfigRootKey'                                      = 'ProGetFeedChocolateyExperimentalFeedType'
+  # 'ProGetFeedChocolateyExperimentalApiKeyNameConfigRootKey'                                    = 'ProGetFeedChocolateyExperimentalApiKeyName'
+  # 'ProGetFeedChocolateyExperimentalFeedConfigRootKey'                                          = 'ProGetFeedChocolateyExperimental'
+  # ... (repeat for development, testing, production)
 
   'ChocolateyInstallDirConfigRootKey'                                                            = 'ChocolateyInstall'
   'ChocolateyBinDirConfigRootKey'                                                                = 'ChocolateyBinDir'
@@ -134,7 +295,7 @@ $global:configRootKeys = @{
   'WindowsIntegrationTestConfigRootKey'                                                          = 'WindowIntegrationTest'
   'WindowsDocumentationBuildConfigRootKey'                                                       = 'WindowsDocumentationBuild'
 
-  # used by the jenkins role that creates a ProGetPackageRepositoryProvider
+  # used by the jenkins role that creates a ProGetPackageRepositoryProvider Service
   'ProGetPackageRepositoryProviderServiceAccountConfigRootKey'                                   = 'ProGetPackageRepositoryProviderServiceAccount'
   'ProGetPackageRepositoryProviderServiceAccountPasswordKeyConfigRootKey'                        = 'ProGetPackageRepositoryProviderServiceAccountPasswordKey'
   'ProGetPackageRepositoryProviderServiceAccountFullnameConfigRootKey'                           = 'ProGetPackageRepositoryProviderServiceAccountFullname'
@@ -142,14 +303,6 @@ $global:configRootKeys = @{
   'ProGetPackageRepositoryProviderServiceAccountUserHomeDirectoryConfigRootKey'                  = 'ProGetPackageRepositoryProviderServiceAccountUserHomeDirectory'
   'ProGetPackageRepositoryProviderServiceAccountPowershellDesktopProfileSourcePathConfigRootKey' = 'ProGetPackageRepositoryProviderServiceAccountPowershellDesktopProfileSourcePath'
   'ProGetPackageRepositoryProviderServiceAccountPowershellCoreProfileSourcePathConfigRootKey'    = 'ProGetPackageRepositoryProviderServiceAccountPowershellCoreProfileSourcePath'
-
-  # used by the ProGetPackageRepositoryProvider itself
-  'ProGetServiceExePathConfigRootKey'                                                            = 'ProGetServiceExePath'
-  'ProGetServiceConfigPathConfigRootKey'                                                         = 'ProGetServicePathPath'
-  'ProGetAdminApiKeyConfigRootKey'                                                               = 'ProGetAdminApiKey'
-  'ProGetAdminUriSchemeConfigRootKey'                                                            = 'ProGetAdminUriScheme'
-  'ProGetAdminUriHostConfigRootKey'                                                              = 'ProGetAdminUriHost'
-  'ProGetAdminUriPortConfigRootKey'                                                              = 'ProGetWebUIUriPort'
 
   # Structure of the subdirectories generated during the process of building a Powershell Module for public distribution
   # The directory name where files used by the module/package creation and generated by the developer build and CI/CD process build are placed
@@ -281,6 +434,7 @@ $global:CanaconicalUserRoleStrings = @{
   'MySQLDatabaseaAdministratorManagerRole' = 'MySQLDatabaseaAdministratorManager'
   'ProductionReleaseManagerRole'           = 'ProductionReleaseManager'
 }
+
 
 $global:CanaconicalUserRoles = @{
   $global:CanaconicalUserRoleStrings['SecurityAdministratorRole']              = @{DependsOn = $null }

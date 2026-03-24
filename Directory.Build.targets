@@ -2,8 +2,11 @@
 
   <!-- import the non-default targets files -->
 
-  <Import Project="$(MSBuildCommunityTasksPath)\MSBuildTasks.Targets" />
-  <Import Project="$(ATAPUtilitiesBuildToolingTargetsPath)\ATAP.Utilities.BuildTooling.targets" />
+  <!-- MSBuild Community Tasks — optional, comment out if MSBuildTasks package not present -->
+  <!-- <Import Project="$(MSBuildCommunityTasksPath)\MSBuildTasks.Targets" /> -->
+  <!-- BuildTooling custom tasks: GetVersion / UpdateVersion / SetVersion + PublishAfterBuild -->
+  <Import Project="$(ATAPUtilitiesBuildToolingTargetsPath)\ATAP.Utilities.BuildTooling.targets"
+          Condition="Exists('$(ATAPUtilitiesBuildToolingTargetsPath)\ATAP.Utilities.BuildTooling.targets')" />
 
   <!-- ItemGroup for automatically generating Designer files and embedding resources in an assembly -->
   <!-- Attribution: https://stackoverflow.com/questions/46584499/how-to-add-a-glob-for-resx-files-for-new-sdk-csproj-file -->
@@ -126,6 +129,40 @@
 
   <!-- Central Package Management is now handled in Directory.Packages.props -->
   <!-- See: https://learn.microsoft.com/en-us/nuget/consume-packages/central-package-management -->
+
+  <!-- Constrain ATAP.* nuspec dependency ranges to [0.0.0-alpha-000, 2.0.0).
+       Without this, NuGet pack writes ProjectReference deps as ">= resolved-version"
+       because PackTask reads %(ProjectVersion) from _ProjectReferencesWithVersions items
+       (populated by _GetProjectReferenceVersions via each referenced project's
+       _GetProjectVersion target). %(ProjectVersion) is set to $(PackageVersion) of the
+       referenced project, which at property-evaluation time resolves to a plain version
+       like "0.1.0-Alpha" — NuGet interprets that as ">= 0.1.0-Alpha".
+       This target runs AfterTargets="_GetProjectReferenceVersions" (items are populated)
+       and before GenerateNuspec (items are consumed). It updates %(ProjectVersion) on
+       every _ProjectReferencesWithVersions item whose csproj filename starts with "ATAP."
+       Only applies to packable projects during the pack pass. -->
+  <Target Name="ConstrainATAPPackageDependencyVersionRange"
+          AfterTargets="_GetProjectReferenceVersions"
+          Condition="'$(IsPackable)' == 'true'">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions
+        Update="@(_ProjectReferencesWithVersions)"
+        Condition="$([System.String]::Copy('%(Filename)').StartsWith('ATAP.'))"
+        ProjectVersion="[0.0.0-alpha-000, 2.0.0)" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Compute $(Version) at property-evaluation time from per-project version properties.
+       This ensures NuGet resolves ProjectReference dependency ranges correctly in nuspecs.
+       The custom BuildTooling task runs at build time (too late for pack dependency resolution),
+       so NuGet falls back to 1.0.0 for ProjectReference deps without this property group.
+       NOTE: This must live in Directory.Build.targets (not .props) so that per-project
+       MajorVersion/MinorVersion/PatchVersion/PackageLabel are already evaluated when this runs. -->
+  <PropertyGroup Condition="'$(MajorVersion)' != ''">
+    <Version Condition="'$(PackageLabel)' != '' and '$(BuildRevision)' != ''">$(MajorVersion).$(MinorVersion).$(PatchVersion)-$(PackageLabel)-$(BuildRevision)</Version>
+    <Version Condition="'$(PackageLabel)' != '' and '$(BuildRevision)' == ''">$(MajorVersion).$(MinorVersion).$(PatchVersion)-$(PackageLabel)</Version>
+    <Version Condition="'$(PackageLabel)' == ''">$(MajorVersion).$(MinorVersion).$(PatchVersion)</Version>
+  </PropertyGroup>
 
   <!-- Include Documentation generation for every project, but only when built with Net47, as docfx 2.51.2  is only supported on net47 -->
   <!--

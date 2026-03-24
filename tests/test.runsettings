@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <RunConfiguration>
+    <!-- Direct test result (.trx) output to the shared generated output directory -->
+    <ResultsDirectory>../../_generated/testing/TestResults</ResultsDirectory>
+    <!-- Maximum number of test assemblies to run in parallel -->
+    <MaxCpuCount>1</MaxCpuCount>
+    <!-- Collect code coverage via coverlet -->
+    <CollectSourceInformation>true</CollectSourceInformation>
+  </RunConfiguration>
+
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <OutputDirectory>../../_generated/testing/Coverage</OutputDirectory>
+          <Include>[ATAP.*]*</Include>
+          <Exclude>[*.UnitTests]*,[*.IntegrationTests]*</Exclude>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

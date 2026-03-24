@@ -157,8 +157,8 @@
       "path": "./src/ATAP.Utilities.ConcurrentObservableCollections"
     },
     {
-      "name": "ATAP.Utilities.Configuration.Extensions",
-      "path": "./src/ATAP.Utilities.Configuration.Extensions"
+      "name": "ATAP.Utilities.Configuration",
+      "path": "./src/ATAP.Utilities.Configuration"
     },
     {
       "name": "ATAP.Utilities.CryptoCoin",

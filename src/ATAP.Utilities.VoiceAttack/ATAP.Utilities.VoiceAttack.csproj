@@ -61,7 +61,7 @@
   <!-- Packages from ATAP.Utilities -->
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.Collection.Extensions\ATAP.Utilities.Collection.Extensions.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Configuration.Extensions\ATAP.Utilities.Configuration.Extensions.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Configuration\Extensions\ATAP.Utilities.Configuration.Extensions.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.GenericHost.Extensions\ATAP.Utilities.GenericHost.Extensions.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Reactive.Extensions\ATAP.Utilities.Reactive.Extensions.csproj" />

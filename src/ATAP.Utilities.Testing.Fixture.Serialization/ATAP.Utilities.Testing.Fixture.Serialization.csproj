@@ -49,7 +49,7 @@
 
   <!-- ATAP Utility Packages that handle IConfiguration -->
   <ItemGroup>
-    <ProjectReference Include="../ATAP.Utilities.Configuration.Extensions/ATAP.Utilities.Configuration.Extensions.csproj" />
+    <ProjectReference Include="../ATAP.Utilities.Configuration/Extensions/ATAP.Utilities.Configuration.Extensions.csproj" />
   </ItemGroup>
 
   <!-- ATAP Utility Packages For the Testing Fixture hierarchy -->

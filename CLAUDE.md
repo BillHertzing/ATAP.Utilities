@@ -341,7 +341,26 @@ Remove-Item NuGet.Config
 Copy-Item src/ATAP.Utilities.BuildTooling.PowerShell/Resources/NuGet.Config .
 ```
 
-The config must reference the same package feeds defined in:
+The active `NuGet.Config` registers five package sources:
+
+| Key | URL | Purpose |
+|-----|-----|---------|
+| `nuget.org` | `https://api.nuget.org/v3/index.json` | All third-party packages |
+| `nuget-experimental` | `http://localhost:50000/nuget/nuget-experimental/v3/index.json` | Dev / feature branch builds |
+| `nuget-development` | `http://localhost:50000/nuget/nuget-development/v3/index.json` | CI-promoted packages |
+| `nuget-testing` | `http://localhost:50000/nuget/nuget-testing/v3/index.json` | Integration-test-promoted packages |
+| `nuget-production` | `http://localhost:50000/nuget/nuget-production/v3/index.json` | Stable releases |
+
+**Push API key:** `PROGET_ADMIN_API_TOKEN` environment variable (loaded from Bitwarden at login by `LoginScript.ps1`).
+
+```powershell
+# Push a package to the experimental feed:
+dotnet nuget push ./artifacts/MyPackage.1.0.0-Alpha-001.nupkg `
+    --source nuget-experimental `
+    --api-key $env:PROGET_ADMIN_API_TOKEN
+```
+
+The config must also reference the same package feeds defined in:
 `$Global:settings[$global:ConfigRootKeys['PackageRepositoriesCollectionConfigRootKey']]`
 
 ### ProGet Package Feeds
@@ -391,7 +410,7 @@ notes document what was verified and when.
 
 ### .NET SDK Targeting
 
-- Default target: **net9.0** (per `Directory.Build.props`)
+- Default target: **net10.0** (per `Directory.Build.props`)
 - All C# projects: `<Nullable>enable</Nullable>`
 - If SDK mismatch: update `global.json` and `Directory.Build.props`; do NOT silently
   downgrade — confirm with user first

@@ -79,12 +79,16 @@ New-SymbolicLink -symbolicLinkPath $$(join-path $env:ProgramFiles 'PowerShell' '
   # use a directory junction
   $null = New-Item -Path $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.IAC.Fragments') -ItemType Junction -Target $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] 'whertzing' 'GitHub', 'ATAP.IAC', 'Windows', 'HostSettings.IAC.Fragments')
 
+# Machine scope Powershell Core 'HostSettings.IAC.Fragment.ProGetFeeds.ps1' linked to 'HostSettings.IAC.Fragment.ProGetFeeds.ps1'
+New-SymbolicLink -symbolicLinkPath $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.IAC.Fragment.ProGetFeeds.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.IAC' 'Windows' 'HostSettings.IAC.Fragment.ProGetFeeds.ps1') -force
+
 
 # Machine scope Powershell Core 'HostSettings.Fragment.PCMSC_CE.ps1' linked to 'HostSettings.Fragment.PCMSC_CE.ps1'
 New-SymbolicLink -symbolicLinkPath $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.Fragment.PCMSC_CE.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.IAC' 'Windows' 'HostSettings.Fragment.PCMSC_CE.ps1') -force
 
 # Machine scope Powershell Core 'global_EnvironmentVariables' linked to 'global_EnvironmentVariables'
 New-SymbolicLink -symbolicLinkPath $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_EnvironmentVariables.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_EnvironmentVariables.ps1') -force
+
 
 # Per User profile for Powershell Desktop aka Powershell V5
 # ToDo: V5 profile stuff needs work

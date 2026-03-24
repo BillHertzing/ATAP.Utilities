@@ -49,10 +49,12 @@
   <ItemGroup>
     <!-- ETW is not used in Unit tests, but ATAP libraries used by unit tests have a reference to this. Until I can figure out how to include these as dependent packages in the appropriate `ATAP.Utilitiies.` libraries, they are included specifically, here -->
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
-    <PackageReference Include="ATAP.Utilities.ETW" Version="1.0.0" />
     <PackageReference Include="MethodBoundaryAspect.Fody" />
+  </ItemGroup>
 
-    <PackageReference Include="ATAP.Utilities.Testing" Version="1.0.0" />
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
 
 
   </ItemGroup>

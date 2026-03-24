@@ -22,7 +22,7 @@ function New-ProGetConnector {
     if ([string]::IsNullOrWhiteSpace($proGetBaseScheme)) {
       if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($global:configRootKeys['ProGetAdminUriSchemeConfigRootKey'], 'Process')) ) {
         if ([string]::IsNullOrWhiteSpace($global:Settings[$global:configRootKeys['ProGetAdminUriSchemeConfigRootKey']])) {
-          $errorMessage = 'ProGetBaseScheme is not available.'
+          $errorMessage = 'ProGetAdminUriScheme is not available.'
           Write-PSFMessage -Level Error -Message $errorMessage -Tag 'List-ProGetApiKeys', 'Trace', 'Error'
           throw $errorMessage
         }

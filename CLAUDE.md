@@ -120,6 +120,7 @@ needs to change, edit `SharedVSCode/UserSettings.jsonc`.
   the skill issue-to-worktree. Stage changes, and summarize the diff for review before any `git commit`.
 - **Secrets:** Never write connection strings, API keys, or credentials into source
   files. Secrets are stored in a Bitwarden vault. Code should expect a secret's value to be in an environment variable
+- **Generated output:** All files produced by build tools or code-generation scripts go under `_generated/`. This directory is in `.gitignore`; never commit generated files (SC-0033).
 
 ---
 
@@ -155,6 +156,22 @@ All agents operate on **Windows** inside **Visual Studio Code**. Use **PowerShel
 - When running Pester, NEVER use `-NoProfile`. Always allow PowerShell profiles:
   `pwsh -Command "Invoke-Pester -Path '<path>' -Output Detailed"`
 - If requirements are ambiguous, ask ONE clarifying question before generating commands
+- **Bash tool override (R-01):** If `tools.bash.command` is configurable, set it to `pwsh`.
+  In the Bash/terminal tool, ALL commands must be PowerShell. Never send bare PowerShell
+  syntax (e.g. `Start-Sleep`, `Write-Host`) as a raw bash command — it will fail with
+  "command not found". Wrap them in `pwsh -Command "..."` instead.
+- **R-02** — Any PowerShell cmdlet inside a Bash tool call must be wrapped in `pwsh -Command "..."`. Never send bare PowerShell syntax as a bash command.
+- **R-05** — Do NOT run Bash tool calls in parallel when they share file-system state. Concurrent calls cancel siblings on first failure. Run sequentially.
+- **R-10** — In agent shells, `$env:VARNAME` is often empty (process scope not inherited). Read user-scope env vars via:
+  ```powershell
+  $token = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_TOKEN', 'User')
+  ```
+- **VS Code extension listing (R-07):** `code --list-extensions` is unreliable from
+  non-interactive agent shells. Scan the extensions folder instead:
+  ```powershell
+  Get-ChildItem "$env:USERPROFILE\.vscode\extensions" -Directory |
+      Select-Object -ExpandProperty Name
+  ```
 
 ---
 
@@ -259,6 +276,8 @@ When asked to create or modify a Rule, Rule Set, or Build Set:
 3. **USE individual project paths** when solution-level build fails
 4. **ONE clarifying question** — if requirements are ambiguous, ask one focused question
    before generating code or commands
+5. **READ BEFORE EDIT** — Always read a file before editing it. The Edit tool fails with `File has not been read yet` if the file was not read in the current turn (R-04).
+6. **GLOB DEEP PATHS FAIL** — The Glob/file-search tool fails for patterns with intermediate wildcards (e.g., `src/**/*Foo*/**`). Use `Get-ChildItem -Recurse` instead (R-08).
 
 ---
 
@@ -343,13 +362,13 @@ Copy-Item src/ATAP.Utilities.BuildTooling.PowerShell/Resources/NuGet.Config .
 
 The active `NuGet.Config` registers five package sources:
 
-| Key | URL | Purpose |
-|-----|-----|---------|
-| `nuget.org` | `https://api.nuget.org/v3/index.json` | All third-party packages |
-| `nuget-experimental` | `http://localhost:50000/nuget/nuget-experimental/v3/index.json` | Dev / feature branch builds |
-| `nuget-development` | `http://localhost:50000/nuget/nuget-development/v3/index.json` | CI-promoted packages |
-| `nuget-testing` | `http://localhost:50000/nuget/nuget-testing/v3/index.json` | Integration-test-promoted packages |
-| `nuget-production` | `http://localhost:50000/nuget/nuget-production/v3/index.json` | Stable releases |
+| Key                  | URL                                                             | Purpose                            |
+| -------------------- | --------------------------------------------------------------- | ---------------------------------- |
+| `nuget.org`          | `https://api.nuget.org/v3/index.json`                           | All third-party packages           |
+| `nuget-experimental` | `http://localhost:50000/nuget/nuget-experimental/v3/index.json` | Dev / feature branch builds        |
+| `nuget-development`  | `http://localhost:50000/nuget/nuget-development/v3/index.json`  | CI-promoted packages               |
+| `nuget-testing`      | `http://localhost:50000/nuget/nuget-testing/v3/index.json`      | Integration-test-promoted packages |
+| `nuget-production`   | `http://localhost:50000/nuget/nuget-production/v3/index.json`   | Stable releases                    |
 
 **Push API key:** `PROGET_ADMIN_API_TOKEN` environment variable (loaded from Bitwarden at login by `LoginScript.ps1`).
 
@@ -370,8 +389,8 @@ Full setup details: `C:/Dropbox/whertzing/GitHub/_Planning/Explainers/0002-ProGe
 
 **NuGet feeds** (used in `NuGet.Config` and `dotnet nuget push --source`):
 
-| Key | URL |
-|-----|-----|
+| Key                  | URL                                                             |
+| -------------------- | --------------------------------------------------------------- |
 | `nuget-experimental` | `http://localhost:50000/nuget/nuget-experimental/v3/index.json` |
 | `nuget-development`  | `http://localhost:50000/nuget/nuget-development/v3/index.json`  |
 | `nuget-testing`      | `http://localhost:50000/nuget/nuget-testing/v3/index.json`      |
@@ -379,8 +398,8 @@ Full setup details: `C:/Dropbox/whertzing/GitHub/_Planning/Explainers/0002-ProGe
 
 **PowerShell feeds** (used in `Register-PSResourceRepository` and `Publish-PSResource -Repository`):
 
-| Name | URI |
-|------|-----|
+| Name                             | URI                                                              |
+| -------------------------------- | ---------------------------------------------------------------- |
 | `PowershellGallery-experimental` | `http://localhost:50000/nuget/PowershellGallery-experimental/v2` |
 | `PowershellGallery-development`  | `http://localhost:50000/nuget/PowershellGallery-development/v2`  |
 | `PowershellGallery-testing`      | `http://localhost:50000/nuget/PowershellGallery-testing/v2`      |
@@ -393,12 +412,13 @@ Full setup details: `C:/Dropbox/whertzing/GitHub/_Planning/Explainers/0002-ProGe
 
 **API keys** (both set by `LoginScript.ps1` from Bitwarden at login):
 
-| Env Var | Bitwarden Entry | Use |
-|---------|----------------|-----|
-| `PROGET_ADMIN_API_TOKEN` | `ProGet_Admin_API_Token → token` | `dotnet nuget push --api-key` |
-| `PROGET_BUILDMASTER_KEY` | `ProGet_BuildMaster_API_Key → key` | CI/CD promotion scripts |
+| Env Var                  | Bitwarden Entry                    | Use                           |
+| ------------------------ | ---------------------------------- | ----------------------------- |
+| `PROGET_ADMIN_API_TOKEN` | `ProGet_Admin_API_Token → token`   | `dotnet nuget push --api-key` |
+| `PROGET_BUILDMASTER_KEY` | `ProGet_BuildMaster_API_Key → key` | CI/CD promotion scripts       |
 
 **Connector chain** (configured in ProGet, verified 2026-03-20):
+
 - `nuget-experimental` → nuget.org
 - `nuget-development` → nuget.org + nuget-experimental (inter-tier)
 - `nuget-testing` → nuget-development (inter-tier, hermetic — no public fallback)
@@ -407,6 +427,24 @@ Full setup details: `C:/Dropbox/whertzing/GitHub/_Planning/Explainers/0002-ProGe
 
 **Read TASKS.md** for the current state of package publishing tasks — Task 2.1 completion
 notes document what was verified and when.
+
+#### Agent Rules for ProGet
+
+- **ProGet Free query endpoint (R-11)** — Only the flatcontainer endpoint works on ProGet Free. Skip `/v3/search`, `/v3/query`, and `/v2/Packages()` OData — they return 404 or "not implemented". Use:
+  ```powershell
+  Invoke-RestMethod 'http://localhost:50000/nuget/{feed}/v3/flatcontainer/{id-lowercase}/index.json'
+  ```
+- **Clear caches after patching (R-12)** — After deleting and re-pushing any ProGet package, always clear all local NuGet caches before restoring/building:
+  ```powershell
+  dotnet nuget locals all --clear
+  dotnet restore
+  dotnet build --no-incremental
+  ```
+- **Push requires API key (R-13)** — `dotnet nuget push` requires `--api-key` even when `NuGet.config` has a `packageSourceCredentials` entry (credentials there apply to restore, not push):
+  ```powershell
+  $token = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_TOKEN', 'User')
+  dotnet nuget push *.nupkg --source 'http://localhost:50000/nuget/nuget-experimental/package' --api-key $token
+  ```
 
 ### .NET SDK Targeting
 
@@ -417,12 +455,13 @@ notes document what was verified and when.
 
 ### Common Build Issues
 
-| Error                                           | Resolution                                           |
-| ----------------------------------------------- | ---------------------------------------------------- |
-| "Could not find NuGet.Config"                   | Fix broken symlink (see above)                       |
-| "ATAP.Utilities.BuildTooling.Targets not found" | Comment out custom imports; build BuildTooling first |
-| "Missing project files"                         | Build individually; solution may have stale entries  |
-| PowerShell "not implemented" errors             | `Install-Module Pester, PSFramework, Assert -Force`  |
+| Error                                           | Resolution                                                                                                                                                                                                                                                                             |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "Could not find NuGet.Config"                   | Fix broken symlink (see above)                                                                                                                                                                                                                                                         |
+| "ATAP.Utilities.BuildTooling.Targets not found" | Comment out custom imports; build BuildTooling first                                                                                                                                                                                                                                   |
+| "Missing project files"                         | Build individually; solution may have stale entries                                                                                                                                                                                                                                    |
+| PowerShell "not implemented" errors             | `Install-Module Pester, PSFramework, Assert -Force`                                                                                                                                                                                                                                    |
+| CS0579 Duplicate assembly attribute             | Both a manual `Properties/AssemblyInfo.cs` and SDK auto-generation are active simultaneously. `<GenerateAssemblyInfo>false</GenerateAssemblyInfo>` is set globally in `Directory.Build.props`. Do NOT re-enable it. Each project provides its own `Properties/AssemblyInfo.cs` (R-14). |
 
 ### Refactoring Project Organization
 

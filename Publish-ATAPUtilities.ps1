@@ -10,7 +10,7 @@
     The ATAP.Utilities.BuildTooling.targets file automatically increments the version,
     packs the NuGet package, and pushes it to ProGet on every successful build.
 
-    Requires the environment variable PROGET_ADMIN_API_TOKEN to be set (loaded from
+    Requires the environment variable PROGET_ADMIN_API_KEY to be set (loaded from
     Bitwarden by the login script).
 
 .PARAMETER ProjectFilter
@@ -57,22 +57,22 @@ BEGIN {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Starting $fn"
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "ProjectFilter: $ProjectFilter"
 
-    if (-not $env:PROGET_ADMIN_API_TOKEN) {
-        $errorMessage = 'PROGET_ADMIN_API_TOKEN environment variable is not set. Load it from Bitwarden before running this script.'
+    if (-not $env:PROGET_ADMIN_API_KEY) {
+        $errorMessage = 'PROGET_ADMIN_API_KEY environment variable is not set. Load it from Bitwarden before running this script.'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
         throw $errorMessage
     }
 
-    $repoRoot  = $PSScriptRoot
+    $repoRoot = $PSScriptRoot
     $succeeded = [System.Collections.Generic.List[string]]::new()
-    $failed    = [System.Collections.Generic.List[string]]::new()
+    $failed = [System.Collections.Generic.List[string]]::new()
 }
 
 PROCESS {
     try {
         $allProjects = Get-ChildItem -Path (Join-Path $repoRoot 'src') -Recurse -Filter '*.csproj' |
-            Where-Object { $_.FullName -like $ProjectFilter } |
-            Sort-Object FullName
+        Where-Object { $_.FullName -like $ProjectFilter } |
+        Sort-Object FullName
 
         if ($allProjects.Count -eq 0) {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "No .csproj files matched filter '$ProjectFilter' under src/."
@@ -89,11 +89,13 @@ PROCESS {
                     try {
                         Remove-Item $lockFile -Force
                         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Removed lock file: $lockFile"
-                    } catch {
+                    }
+                    catch {
                         $errorMessage = "Failed to remove lock file '$lockFile'. Exception: $($_.Exception.Message)"
                         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
                         throw
-                    } finally {
+                    }
+                    finally {
                         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving Function $fn in module $mn"
                     }
                 }
@@ -105,28 +107,34 @@ PROCESS {
                     if ($LASTEXITCODE -eq 0) {
                         $succeeded.Add($proj.Name)
                         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Build succeeded: $($proj.Name)"
-                    } else {
+                    }
+                    else {
                         $errorMessage = "Build failed for $($proj.Name) with exit code $LASTEXITCODE"
                         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
                         $failed.Add($proj.Name)
                     }
-                } catch {
+                }
+                catch {
                     $errorMessage = "Exception building $($proj.Name). Exception: $($_.Exception.Message)"
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
                     $failed.Add($proj.Name)
                     throw
-                } finally {
+                }
+                finally {
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving Function $fn in module $mn"
                 }
-            } else {
+            }
+            else {
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "WhatIf: would delete lock '$lockFile' then build '$($proj.FullName)'"
             }
         }
-    } catch {
+    }
+    catch {
         $errorMessage = "Unhandled error in $fn. Exception: $($_.Exception.Message)"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
         throw
-    } finally {
+    }
+    finally {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving Function $fn in module $mn"
     }
 }

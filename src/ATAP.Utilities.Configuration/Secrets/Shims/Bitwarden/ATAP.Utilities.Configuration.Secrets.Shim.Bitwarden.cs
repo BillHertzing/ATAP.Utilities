@@ -31,7 +31,7 @@ public sealed class BitwardenSecretsShim : IConfigurationSecretsShim
     /// Retrieves a field value from the Bitwarden item named <paramref name="secretName"/>.
     /// Returns <c>null</c> if the item or field does not exist or the CLI exits non-zero.
     /// </summary>
-    /// <param name="secretName">Bitwarden vault item name (e.g. "ProGet_Admin_API_Token").</param>
+    /// <param name="secretName">Bitwarden vault item name (e.g. "ProGet_Admin_API_Key").</param>
     /// <param name="fieldName">
     /// Field to retrieve. <c>"password"</c> returns the built-in Password field.
     /// Any other value (e.g. <c>"token"</c>, <c>"key"</c>, <c>"Passphrase"</c>) targets a

@@ -128,8 +128,14 @@ needs to change, edit `SharedVSCode/UserSettings.jsonc`.
 
 If you find yourself about to edit a file whose path begins with a repo root
 **other than this one**, STOP and confirm with the user before proceeding. The
-single exception is `C:/Dropbox/whertzing/github/TASKS.md`, which is always
-safe to read and update.
+single exception is cross-repo planning files (e.g., `TASKS.md`, Explainers),
+which are always safe to read and update — but **only via the active sprint worktree**
+(e.g., `C:/Dropbox/whertzing/GitHub/_Planning-wt-{N}-sprint-{name}/TASKS.md`).
+
+**Worktree rule:** Never modify files in another repository's main branch worktree.
+All cross-repo changes must be made in the active sprint worktree for that repository.
+Never edit `C:/Dropbox/whertzing/GitHub/_Planning/` directly — always use the
+`_Planning-wt-{N}-sprint-{name}/` worktree. If the worktree path is unknown, ask.
 
 ---
 
@@ -164,7 +170,7 @@ All agents operate on **Windows** inside **Visual Studio Code**. Use **PowerShel
 - **R-05** — Do NOT run Bash tool calls in parallel when they share file-system state. Concurrent calls cancel siblings on first failure. Run sequentially.
 - **R-10** — In agent shells, `$env:VARNAME` is often empty (process scope not inherited). Read user-scope env vars via:
   ```powershell
-  $token = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_TOKEN', 'User')
+  $token = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
   ```
 - **VS Code extension listing (R-07):** `code --list-extensions` is unreliable from
   non-interactive agent shells. Scan the extensions folder instead:
@@ -370,13 +376,13 @@ The active `NuGet.Config` registers five package sources:
 | `nuget-testing`      | `http://localhost:50000/nuget/nuget-testing/v3/index.json`      | Integration-test-promoted packages |
 | `nuget-production`   | `http://localhost:50000/nuget/nuget-production/v3/index.json`   | Stable releases                    |
 
-**Push API key:** `PROGET_ADMIN_API_TOKEN` environment variable (loaded from Bitwarden at login by `LoginScript.ps1`).
+**Push API key:** `PROGET_ADMIN_API_KEY` environment variable (loaded from Bitwarden at login by `LoginScript.ps1`).
 
 ```powershell
 # Push a package to the experimental feed:
 dotnet nuget push ./artifacts/MyPackage.1.0.0-Alpha-001.nupkg `
     --source nuget-experimental `
-    --api-key $env:PROGET_ADMIN_API_TOKEN
+    --api-key $env:PROGET_ADMIN_API_KEY
 ```
 
 The config must also reference the same package feeds defined in:
@@ -412,10 +418,10 @@ Full setup details: `C:/Dropbox/whertzing/GitHub/_Planning/Explainers/0002-ProGe
 
 **API keys** (both set by `LoginScript.ps1` from Bitwarden at login):
 
-| Env Var                  | Bitwarden Entry                    | Use                           |
-| ------------------------ | ---------------------------------- | ----------------------------- |
-| `PROGET_ADMIN_API_TOKEN` | `ProGet_Admin_API_Token → token`   | `dotnet nuget push --api-key` |
-| `PROGET_BUILDMASTER_KEY` | `ProGet_BuildMaster_API_Key → key` | CI/CD promotion scripts       |
+| Env Var                      | Bitwarden Entry                    | Use                           |
+| ---------------------------- | ---------------------------------- | ----------------------------- |
+| `PROGET_ADMIN_API_KEY`       | `ProGet_Admin_API_Key → token`     | `dotnet nuget push --api-key` |
+| `PROGET_BUILDMASTER_API_KEY` | `ProGet_BuildMaster_API_Key → key` | CI/CD promotion scripts       |
 
 **Connector chain** (configured in ProGet, verified 2026-03-20):
 
@@ -442,7 +448,7 @@ notes document what was verified and when.
   ```
 - **Push requires API key (R-13)** — `dotnet nuget push` requires `--api-key` even when `NuGet.config` has a `packageSourceCredentials` entry (credentials there apply to restore, not push):
   ```powershell
-  $token = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_TOKEN', 'User')
+  $token = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
   dotnet nuget push *.nupkg --source 'http://localhost:50000/nuget/nuget-experimental/package' --api-key $token
   ```
 

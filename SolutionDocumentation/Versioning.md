@@ -16,22 +16,22 @@ ATAP.Utilities uses a SemVer pre-release label convention that maps directly to 
 {Major}.{Minor}.{Patch}-{Label}-{LabelCount}
 ```
 
-| Component | Example | Notes |
-| --------- | ------- | ----- |
-| `Major` | `0` | Set in `.csproj` as `<MajorVersion>` |
-| `Minor` | `1` | Set in `.csproj` as `<MinorVersion>` |
-| `Patch` | `0` | Set in `.csproj` as `<PatchVersion>` |
-| `Label` | `Alpha` | Set in `.csproj` as `<PackageLabel>`; ignored when `<PackageLifeCycleStage>` is `Production` |
-| `LabelCount` | `007` | Three-digit zero-padded counter; auto-incremented on each build by the BuildTooling pipeline |
+| Component    | Example | Notes                                                                                        |
+| ------------ | ------- | -------------------------------------------------------------------------------------------- |
+| `Major`      | `0`     | Set in `.csproj` as `<MajorVersion>`                                                         |
+| `Minor`      | `1`     | Set in `.csproj` as `<MinorVersion>`                                                         |
+| `Patch`      | `0`     | Set in `.csproj` as `<PatchVersion>`                                                         |
+| `Label`      | `Alpha` | Set in `.csproj` as `<PackageLabel>`; ignored when `<PackageLifeCycleStage>` is `Production` |
+| `LabelCount` | `007`   | Three-digit zero-padded counter; auto-incremented on each build by the BuildTooling pipeline |
 
 ### Label values by tier
 
-| Tier | `<PackageLabel>` | Example version | Feed |
-| ---- | --------------- | --------------- | ---- |
-| Experimental (dev builds) | `Alpha` | `0.1.0-Alpha-007` | `nuget-experimental` |
-| Development (CI promoted) | `Beta` | `0.1.0-Beta-001` | `nuget-development` |
-| Testing / QA | `QA` | `0.1.0-QA-001` | `nuget-testing` |
-| Production | *(none — `PackageLifeCycleStage=Production`)* | `0.1.0` | `nuget-production` |
+| Tier                      | `<PackageLabel>`                              | Example version   | Feed                 |
+| ------------------------- | --------------------------------------------- | ----------------- | -------------------- |
+| Experimental (dev builds) | `Alpha`                                       | `0.1.0-Alpha-007` | `nuget-experimental` |
+| Development (CI promoted) | `Beta`                                        | `0.1.0-Beta-001`  | `nuget-development`  |
+| Testing / QA              | `QA`                                          | `0.1.0-QA-001`    | `nuget-testing`      |
+| Production                | _(none — `PackageLifeCycleStage=Production`)_ | `0.1.0`           | `nuget-production`   |
 
 Pre-release packages (`Alpha`, `Beta`, `QA`) are consumed during development. Only stable packages (`0.1.0`) flow to `nuget-production`.
 
@@ -52,7 +52,7 @@ On every `dotnet build -c Release`:
 1. **`UpdateVersion`** (`BeforeCompile`) — reads `Properties/AssemblyInfo.cs`, increments `LabelCount`, writes updated `AssemblyInformationalVersion` back.
 2. **`SetPackageVersionForPack`** (`BeforeTargets="GenerateNuspec"`) — reads the updated version into the outer build scope so the `.nupkg` filename matches.
 3. **`GenerateNuspec` + `Pack`** — creates the `.nupkg` with the correct version.
-4. **`PublishAfterBuild`** (`AfterTargets="GenerateNuspec"`) — pushes the `.nupkg` to `nuget-experimental` via `dotnet nuget push` using `$env:PROGET_ADMIN_API_TOKEN`.
+4. **`PublishAfterBuild`** (`AfterTargets="GenerateNuspec"`) — pushes the `.nupkg` to `nuget-experimental` via `dotnet nuget push` using `$env:PROGET_ADMIN_API_KEY`.
 
 A lock file prevents the counter incrementing multiple times in a multi-TFM build.
 
@@ -81,24 +81,24 @@ The `<PackageLabel>` in the `.csproj` is updated at each promotion gate. The `La
 
 ## Feed routing
 
-| Consumer restore source | Sees packages from |
-| ---------------------- | ------------------ |
-| `nuget-experimental` | experimental + nuget.org (via connector) |
-| `nuget-development` | development + experimental + nuget.org (via inter-tier connector) |
-| `nuget-testing` | testing + development only (hermetic — no public fallback) |
-| `nuget-production` | production + testing + nuget.org (via connectors) |
+| Consumer restore source | Sees packages from                                                |
+| ----------------------- | ----------------------------------------------------------------- |
+| `nuget-experimental`    | experimental + nuget.org (via connector)                          |
+| `nuget-development`     | development + experimental + nuget.org (via inter-tier connector) |
+| `nuget-testing`         | testing + development only (hermetic — no public fallback)        |
+| `nuget-production`      | production + testing + nuget.org (via connectors)                 |
 
 ---
 
 ## Files involved
 
-| File | Role |
-| ---- | ---- |
-| `{project}/Properties/AssemblyInfo.cs` | Stores current version; read and updated by BuildTooling on every build |
-| `{project}/{project}.csproj` | Declares `MajorVersion`, `MinorVersion`, `PatchVersion`, `PackageLabel`, `PackageLifeCycleStage` |
-| `Build/ATAP.Utilities.BuildTooling.0.1.0.1/build/ATAP.Utilities.BuildTooling.targets` | Deployed targets file |
-| `Directory.Build.targets` | Solution-wide import of BuildTooling targets |
-| `src/ATAP.Utilities.BuildTooling.PowerShell/public/Publish-ATAPUtilities.ps1` | Batch script to build and publish all libraries |
+| File                                                                                  | Role                                                                                             |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `{project}/Properties/AssemblyInfo.cs`                                                | Stores current version; read and updated by BuildTooling on every build                          |
+| `{project}/{project}.csproj`                                                          | Declares `MajorVersion`, `MinorVersion`, `PatchVersion`, `PackageLabel`, `PackageLifeCycleStage` |
+| `Build/ATAP.Utilities.BuildTooling.0.1.0.1/build/ATAP.Utilities.BuildTooling.targets` | Deployed targets file                                                                            |
+| `Directory.Build.targets`                                                             | Solution-wide import of BuildTooling targets                                                     |
+| `src/ATAP.Utilities.BuildTooling.PowerShell/public/Publish-ATAPUtilities.ps1`         | Batch script to build and publish all libraries                                                  |
 
 ---
 

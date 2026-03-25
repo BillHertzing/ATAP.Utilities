@@ -148,7 +148,7 @@
 
   <!-- NuGet Publish target: push package to ProGet nuget-experimental feed after successful package generation -->
   <!-- ProGet URL defaults to localhost:50000; override via $(ProGetExperimentalFeedUrl) property or PROGET_URL env var -->
-  <!-- API key must be set as env var PROGET_ADMIN_API_TOKEN (stored in Bitwarden) -->
+  <!-- API key must be set as env var PROGET_ADMIN_API_KEY (stored in Bitwarden) -->
   <PropertyGroup>
     <ProGetExperimentalFeedUrl Condition="'$(ProGetExperimentalFeedUrl)' == ''">http://localhost:50000/nuget/nuget-experimental/v3/index.json</ProGetExperimentalFeedUrl>
   </PropertyGroup>
@@ -166,7 +166,7 @@
       <_NupkgDir Condition="$([System.IO.Path]::IsPathRooted('$(PackageOutputPath)'))">$(PackageOutputPath)</_NupkgDir>
       <_NupkgDir Condition="'$(_NupkgDir)' == ''">$(MSBuildProjectDirectory)\$(PackageOutputPath)</_NupkgDir>
     </PropertyGroup>
-    <Exec Command="dotnet nuget push &quot;$(_NupkgDir)$(PackageId).$(PackageVersion).nupkg&quot; --source &quot;$(ProGetExperimentalFeedUrl)&quot; --api-key &quot;$(PROGET_ADMIN_API_TOKEN)&quot; --skip-duplicate" />
+    <Exec Command="dotnet nuget push &quot;$(_NupkgDir)$(PackageId).$(PackageVersion).nupkg&quot; --source &quot;$(ProGetExperimentalFeedUrl)&quot; --api-key &quot;$(PROGET_ADMIN_API_KEY)&quot; --skip-duplicate" />
     <!-- Keep Directory.Packages.props in sync: update the PackageVersion entry for this package -->
     <PropertyGroup>
       <_DppDir>$([MSBuild]::GetDirectoryNameOfFileAbove('$(MSBuildProjectDirectory)', 'Directory.Packages.props'))</_DppDir>

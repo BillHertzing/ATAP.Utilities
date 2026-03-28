@@ -394,6 +394,9 @@
     }
   ],
   "settings": {
-    "powershell.cwd": "ATAP.Utilities"
+    "powershell.cwd": "ATAP.Utilities",
+    "atap.sharedVSCode.repoRoot": "C:\\dropbox\\whertzing\\GitHub\\SharedVSCode",
+    "atap.sharedVSCode.templateRef": "main",
+    "atap.sharedVSCode.profile": "default"
   }
 }

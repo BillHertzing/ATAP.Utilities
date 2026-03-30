@@ -275,22 +275,17 @@ if ($MyInvocation.InvocationName -ne '.') {
     if ($result.Success) {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $result.Message -Tag 'startup'
 
-      # If Bitwarden session was successful, retrieve API keys and tokens
-      $envVarConfigs = @(
-        [PSCustomObject]@{ EnvVarName = 'GITHUB_API_TOKEN'; BwSearchName = 'GitHub_API_Token'; BwFieldName = 'token' }
-        [PSCustomObject]@{ EnvVarName = 'CONTEXT7_API_KEY'; BwSearchName = 'Context7_API_Key'; BwFieldName = 'key' }
-        [PSCustomObject]@{ EnvVarName = 'PERPLEXITY_API_KEY'; BwSearchName = 'Perplexity_API_Key'; BwFieldName = 'key' }
-        [PSCustomObject]@{ EnvVarName = 'SYNCFUSION_API_KEY'; BwSearchName = 'SyncFusion_API_Key'; BwFieldName = 'key' }
-        [PSCustomObject]@{ EnvVarName = 'SYNCFUSION_LICENSE_KEY'; BwSearchName = 'SyncFusion_License_Key'; BwFieldName = 'key' }
-        [PSCustomObject]@{ EnvVarName = 'CHATGPT_API_KEY'; BwSearchName = 'ChatGPT_API_Key'; BwFieldName = 'key' }
-        [PSCustomObject]@{ EnvVarName = 'JENKINS_API_TOKEN'; BwSearchName = 'Jenkins_API_Token'; BwFieldName = 'token' }
-        [PSCustomObject]@{ EnvVarName = 'ANSIBLE_API_TOKEN'; BwSearchName = 'Ansible_API_Token'; BwFieldName = 'token' }
-        [PSCustomObject]@{ EnvVarName = 'PROGET_ADMIN_API_KEY'; BwSearchName = 'ProGet_Admin_API_Key'; BwFieldName = 'key' }
-        [PSCustomObject]@{ EnvVarName = 'BUILDMASTER_ADMIN_API_KEY'; BwSearchName = 'BuildMaster_Admin_API_Key'; BwFieldName = 'key' }
-        [PSCustomObject]@{ EnvVarName = 'PROGET_BUILDMASTER_API_KEY'; BwSearchName = 'ProGet_BuildMaster_API_Key'; BwFieldName = 'key' }
-        [PSCustomObject]@{ EnvVarName = 'AceCommander_UserPii__PassphraseV1'; BwSearchName = 'AceCommander_UserPii__PassphraseV1'; BwFieldName = 'Passphrase' }
-        [PSCustomObject]@{ EnvVarName = 'AceCommander_UserPii__PassphraseV2'; BwSearchName = 'AceCommander_UserPii__PassphraseV2'; BwFieldName = 'Passphrase' }
-      )
+      # Load env var configs from file alongside this script
+      $configFilePath = Join-Path $PSScriptRoot 'BitwardenEnvVarConfig.json'
+      if (-not (Test-Path -Path $configFilePath)) {
+        $errorMessage = "BitwardenEnvVarConfig.json not found at '$configFilePath'. Cannot load environment variable definitions."
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'startup'
+        Write-EventLog -LogName Application -Source 'BitwardenLogin' -EntryType Error -EventId 2002 -Message $errorMessage
+        return
+      }
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Loading env var configs from '$configFilePath'" -Tag 'startup'
+      $envVarConfigs = Get-Content -Path $configFilePath -Raw | ConvertFrom-Json
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Loaded $($envVarConfigs.Count) env var configs from file" -Tag 'startup'
 
       $envVarResults = Set-EnvVarsFromBitWarden -EnvVarConfigs $envVarConfigs
 

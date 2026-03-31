@@ -24,8 +24,8 @@ $global:configRootKeys['ProGetBaseUrlConfigRootKey'] = 'ProGetBaseUrl'
 $global:configRootKeys['PGUTIL_SOURCEConfigRootKey'] = 'PGUTIL_SOURCE'
 
 # ── ProGet API Keys ──────────────────────────────────────────────────────
-$global:configRootKeys['ProGetAdminApiKeyConfigRootKey'] = 'ProGetAdminApiKey'
-$global:configRootKeys['ProGetBuildMasterApiKeyConfigRootKey'] = 'PROGET_BUILDMASTER_KEY'
+$global:configRootKeys['ProGetAdminApiKeyConfigRootKey'] = 'PROGET_ADMIN_API_KEY'
+$global:configRootKeys['ProGetBuildMasterApiKeyConfigRootKey'] = 'PROGET_BUILDMASTER_API_KEY'
 # Phase 2 per-feed API keys (uncomment when push/pull feeds are created):
 # $global:configRootKeys['ProGetApiKeyNuGetExperimentalPushConfigRootKey']    = 'PROGET_APIKEY_NUGET_EXPERIMENTAL_PUSH'
 # $global:configRootKeys['ProGetApiKeyNuGetExperimentalPullConfigRootKey']    = 'PROGET_APIKEY_NUGET_EXPERIMENTAL_PULL'

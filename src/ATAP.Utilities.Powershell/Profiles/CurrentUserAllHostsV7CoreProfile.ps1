@@ -150,14 +150,6 @@ else {
   Write-PSFMessage -FunctionName $fn -Level Verbose -Message 'Bitwarden session initialized, secrets are available'
 }
 
-# ToDo: do not use env variables, instead modify the functions to get the API Key value based on its name from the secrets valid
-# Temporary Setup some API keys for the user.
-# These API keys are being checked in to GitHub, but these are only applicable to a
-#    local installations of their respective applications
-# This is for host utat022.
-# ToDO: implement secrets vault, and per-host API keys for Proget
-[Environment]::SetEnvironmentVariable($global:configRootKeys['ProGetAdminApiKeyConfigRootKey'], 'ce69d48aff2b9e2e2a7bc6f7a150f0de5b8ef450', 'Process')
-
 # Set the console encoding to suport ASCII ;ine drawing characters in Playwright output
 # Set console output encoding to UTF-8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

@@ -32,7 +32,7 @@
     ./Publish-ATAPUtilities.ps1 -WhatIf
 
 .NOTES
-    Requires PROGET_ADMIN_API_TOKEN environment variable (set by LoginScript.ps1 from Bitwarden).
+    Requires PROGET_ADMIN_API_KEY environment variable (set by LoginScript.ps1 from Bitwarden).
     The push destination is http://localhost:50000/nuget/nuget-experimental/ by default.
     Override with -p:ProGetExperimentalFeedUrl=<url> if needed.
 #>
@@ -47,14 +47,14 @@ $fn = $MyInvocation.MyCommand.Name
 $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
 
 # ── Validate prerequisites ──────────────────────────────────────────────────
-if ([string]::IsNullOrWhiteSpace($env:PROGET_ADMIN_API_TOKEN)) {
-    $msg = 'PROGET_ADMIN_API_TOKEN is not set. Run LoginScript.ps1 to load secrets from Bitwarden.'
+if ([string]::IsNullOrWhiteSpace($env:PROGET_ADMIN_API_KEY)) {
+    $msg = 'PROGET_ADMIN_API_KEY is not set. Run LoginScript.ps1 to load secrets from Bitwarden.'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'Publish'
     throw $msg
 }
 
 # ── Resolve solution root ────────────────────────────────────────────────────
-$scriptDir    = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $solutionRoot = Resolve-Path (Join-Path $scriptDir '..\..\..') | Select-Object -ExpandProperty Path
 
 # ── Library list — dependency order (dependencies first) ────────────────────
@@ -91,10 +91,10 @@ foreach ($relPath in $libraries) {
     $exitCode = $LASTEXITCODE
 
     $results.Add([PSCustomObject]@{
-        Project  = $projName
-        Success  = ($exitCode -eq 0)
-        ExitCode = $exitCode
-    })
+            Project  = $projName
+            Success  = ($exitCode -eq 0)
+            ExitCode = $exitCode
+        })
 
     if ($exitCode -ne 0) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `

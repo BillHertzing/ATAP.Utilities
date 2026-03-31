@@ -49,7 +49,7 @@
     $global:ProGetBaseUrl.
 
 .PARAMETER ApiKey
-    The API key for ProGet. Falls back to $env:PROGET_BUILDMASTER_KEY →
+    The API key for ProGet. Falls back to $env:PROGET_BUILDMASTER_API_KEY →
     env var via configRootKeys.
 
 .OUTPUTS
@@ -169,7 +169,7 @@ begin {
 
     if (-not $parsedPrefix -or -not $parsedTier) {
         $errorMessage = "Cannot parse source feed name '$SourceFeed'. " +
-                        'Expected format: {nuget|powershell|chocolatey}-{experimental|development|testing|production}[-push]'
+        'Expected format: {nuget|powershell|chocolatey}-{experimental|development|testing|production}[-push]'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
         throw $errorMessage
     }
@@ -212,10 +212,10 @@ begin {
     # Check and populate simple parameter: ApiKey
     $ApiKey = Get-PVal -ParameterName 'ApiKey' -originalPSBoundParameters $PSBoundParameters -dottedPath 'ApiKey' -DefaultValue $ApiKey
     if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-        $ApiKey = $env:PROGET_BUILDMASTER_KEY
+        $ApiKey = $env:PROGET_BUILDMASTER_API_KEY
     }
     if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-        $errorMessage = 'ApiKey could not be resolved. Pass it explicitly or set $env:PROGET_BUILDMASTER_KEY.'
+        $errorMessage = 'ApiKey could not be resolved. Pass it explicitly or set $env:PROGET_BUILDMASTER_API_KEY.'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
         throw $errorMessage
     }
@@ -238,7 +238,7 @@ process {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Verifying '$PackageName' v$Version exists in '$SourceFeed'"
 
     $checkUrl = "$ProGetBaseUrl/api/packages/$SourceFeed/versions" +
-                "?name=$([uri]::EscapeDataString($PackageName))&version=$([uri]::EscapeDataString($Version))"
+    "?name=$([uri]::EscapeDataString($PackageName))&version=$([uri]::EscapeDataString($Version))"
 
     try {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling $checkUrl" -Tag 'RestCall'

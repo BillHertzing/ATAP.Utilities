@@ -1,3 +1,9 @@
+# ===================================================================
+# GENERATED FILE - DO NOT EDIT DIRECTLY
+# Source: C:\dropbox\whertzing\GitHub\SharedVSCode-wt-36-sprint-0004-work-items\.gitattributes
+# Generated: 2026-04-01T19:54:36Z
+# Regenerate using Set-DownstreamSharedVSCodeContext
+# ===================================================================
 *             text=auto
 
 # Windows line endings
@@ -7,3 +13,4 @@ Windows/**    text eol=crlf
 Wsl2Ubuntu/** text eol=lf
 
 *.jpg         -text
+

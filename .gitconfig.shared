@@ -1,0 +1,50 @@
+# ===================================================================
+# GENERATED FILE - DO NOT EDIT DIRECTLY
+# Source: C:\dropbox\whertzing\GitHub\SharedVSCode-wt-36-sprint-0004-work-items\.gitconfig
+# Generated: 2026-04-01T19:54:36Z
+# Regenerate using Set-DownstreamSharedVSCodeContext
+# ===================================================================
+[alias]
+	mydiff = difftool --dir-diff --tool=bc3 --no-prompt
+	bcreview = "!f() { local SHA=${1:-HEAD}; local BRANCH=${2:-master}; if [ $SHA == $BRANCH ]; then SHA=HEAD; fi; git difftool -y -t bc $BRANCH...$SHA; }; f"
+[core]
+	autocrlf = false
+	editor = code --wait
+	symlinks = true
+[commit]
+	template = GitTemplates/git.commit.template.txt
+[credential]
+	helper = manager
+[diff]
+	tool = bc3
+[difftool]
+	prompt = false
+[difftool "bc3"]
+	path = "C:/Program Files/Beyond Compare 4/bcomp.exe"
+[filter "lfs"]
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+	clean = git-lfs clean -- %f
+[http]
+	postBuffer = 157286400
+[init]
+	defaultBranch = main
+[merge]
+	tool = bc3
+[merge "keep-local-changes"]
+	name = A custom merge driver which always keeps the local changes
+	driver = true
+[mergetool]
+	prompt = false
+[mergetool "bc3"]
+	path = "C:/Program Files/Beyond Compare 4/bcomp.exe"
+[mergetool "bc3"]
+	trustExitCode = true
+[safe]
+	directory = C:/Dropbox/whertzing/GitHub/PlaygroundVSCExtension/MonoWP111
+	directory = C:/Dropbox/whertzing/GitHub/ATAP.Utilities
+[user]
+	name = Bill Hertzing
+	email = bill.hertzing@gmail.com
+

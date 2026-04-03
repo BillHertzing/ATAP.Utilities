@@ -102,8 +102,8 @@
     Run as:       An account with db_backupoperator (or db_owner) on the target database.
                   NetworkService works if UTAT022$ has the required SQL Server role.
     SC refs:      SC-0066 (application backups), SC-0067 (SQL database backups)
-    See also:     _Planning Explainer 0020 — SQL Server Backup Jobs: ProGet and BuildMaster
-                  _Planning Explainer 0021 — Backup & CI Database Evolution, Gaps, and Instructions
+    See also:     _Planning Explainer 0021 — SQL Server Backup Jobs: ProGet and BuildMaster
+                  _Planning Explainer 0022 — Backup & CI Database Evolution, Gaps, and Instructions
 
 .LINK
     https://docs.dbatools.io/Backup-DbaDatabase
@@ -135,7 +135,7 @@ param(
     [Parameter(ParameterSetName = 'SevenZipCompression')]
     [switch] $SevenZipCompress
 
-    # SCAFFOLD: multi-machine (Explainer 0021, section 4B)
+    # SCAFFOLD: multi-machine (Explainer 0022, section 4B)
     # Add -ComputerName [string] parameter (default: 'localhost') to support remote invocation
     # via Invoke-Command. When ComputerName != localhost, wrap PROCESS block body in
     # Invoke-Command -ComputerName $ComputerName -ScriptBlock { ... }.
@@ -204,7 +204,7 @@ begin {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "7-Zip found: $sevenZipExe"
     }
 
-    # SCAFFOLD: dbatools-config (Explainer 0021, section 4B / inconsistency C-04)
+    # SCAFFOLD: dbatools-config (Explainer 0022, section 4B / inconsistency C-04)
     # ATAP.Utilities database scripts set these before every dbaTools call; this script does not.
     # Add:
     #   Set-DbatoolsConfig -FullName 'sql.connection.trustcert' -Value $true
@@ -286,7 +286,7 @@ process {
             # Measure the actual file that landed in the backup directory
             $sizeMB = [math]::Round((Get-Item $backupFilePath).Length / 1MB, 2)
 
-            # SCAFFOLD: retention (Explainer 0021, section 4F)
+            # SCAFFOLD: retention (Explainer 0022, section 4F)
             # After a successful Full backup, invoke Invoke-BackupPrune.ps1 (to be written)
             # to delete .bak files older than -FullRetentionDays (default 90) and
             # differential files older than -DiffRetentionDays (default 14).
@@ -297,7 +297,7 @@ process {
             #         -FullRetentionDays 90 -DiffRetentionDays 14
             # }
 
-            # SCAFFOLD: test-data (Explainer 0021, section 4D)
+            # SCAFFOLD: test-data (Explainer 0022, section 4D)
             # Production backup (this script) is NOT the mechanism for test data management.
             # Test database provisioning (seed / reset / teardown) belongs in
             # Invoke-TestDatabaseProvision.ps1 (to be written) in this same directory.

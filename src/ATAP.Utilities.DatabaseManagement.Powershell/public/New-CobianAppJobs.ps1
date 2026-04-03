@@ -1,75 +1,115 @@
 <#
 .SYNOPSIS
-    Creates four Cobian Reflector SQL backup Dummy tasks (with pre-events) by
-    directly writing to MainList.lst in the exact format confirmed from utat022.
+    Creates five Cobian Reflector application-data backup tasks by directly writing
+    to MainList.lst in the exact format confirmed from utat022.
 
 .DESCRIPTION
-    Each task is a Cobian Dummy task (TaskBackupType=3) that fires a pre-event
-    which runs Invoke-SqlServerBackup.ps1 via pwsh.exe. Cobian acts as both
-    scheduler and executor — no Windows Task Scheduler involvement.
+    Each task is a standard Cobian file-copy task (TaskBackupType 0=Full or 1=Incremental).
+    Cobian copies the source directory tree directly to the destination — no script
+    invocation or pre-event is used (unlike the SQL backup Dummy tasks in New-CobianSqlJobs.ps1).
 
-    Architecture:
-      01:50  Cobian Dummy task fires pre-event:
-               pwsh.exe -NonInteractive -File Invoke-SqlServerBackup.ps1
-                         -DatabaseName ProGet -BackupType Full -SevenZipCompress
-               → .bak.7z → C:\Dropbox\Backups\utat022\ProGet\
+    Tasks created (grouped under 'App Data Backups'):
+      03:00 Sun    App - ProGet - Full           Full backup of C:\ProgramData\ProGet\
+      03:00 Mon-Sat App - ProGet - Incremental   Incremental backup of C:\ProgramData\ProGet\
+      03:30 Sun    App - BuildMaster - Full      Full backup of C:\ProgramData\BuildMaster\
+      03:30 Mon-Sat App - BuildMaster - Incremental  Incremental of C:\ProgramData\BuildMaster\
+      03:50 Sun    App - Cobian Config - Full    Full backup of Cobian Lists\ (MainList.lst itself)
 
-      02:20  Cobian Dummy task fires pre-event:
-               pwsh.exe -NonInteractive -File Invoke-SqlServerBackup.ps1
-                         -DatabaseName BuildMaster -BackupType Full -SevenZipCompress
-               → .bak.7z → C:\Dropbox\Backups\utat022\BuildMaster\
+    All destinations are under C:\Dropbox\Backups\utat022\ so Dropbox syncs them offsite.
+
+    Architecture difference from SQL tasks:
+      SQL tasks  (New-CobianSqlJobs.ps1) — Dummy (type 3) + pre-event → script invoked
+      App tasks  (this script)           — File copy (type 0/1) → no pre-event, direct copy
+
+.PARAMETER ListPath
+    Path to Cobian Reflector's MainList.lst. Default: standard install location.
+
+.PARAMETER ProGetDataPath
+    Source path for ProGet application data. Default: C:\ProgramData\ProGet\.
+    Override only if ProGet was configured with a non-default data directory.
+
+.PARAMETER BuildMasterDataPath
+    Source path for BuildMaster application data. Default: C:\ProgramData\BuildMaster\.
+
+.PARAMETER BackupRoot
+    Root folder for backup destinations. Per-task subdirectories are created here.
+    Default: C:\Dropbox\Backups\utat022\.
 
 .PARAMETER ProGetFullStartTime
-    Start time (HH:MM) for the weekly ProGet Full backup (Sunday). Default: 01:50.
+    Start time (HH:MM) for the weekly ProGet Full backup (Sunday). Default: 03:00.
 
-.PARAMETER ProGetDiffStartTime
-    Start time (HH:MM) for the weekly ProGet Differential backup (Mon-Sat). Default: 01:50.
+.PARAMETER ProGetIncrementalStartTime
+    Start time (HH:MM) for the weekly ProGet Incremental backup (Mon-Sat). Default: 03:00.
 
 .PARAMETER BuildMasterFullStartTime
-    Start time (HH:MM) for the weekly BuildMaster Full backup (Sunday). Default: 02:20.
+    Start time (HH:MM) for the weekly BuildMaster Full backup (Sunday). Default: 03:30.
 
-.PARAMETER BuildMasterDiffStartTime
-    Start time (HH:MM) for the weekly BuildMaster Differential backup (Mon-Sat). Default: 02:20.
+.PARAMETER BuildMasterIncrementalStartTime
+    Start time (HH:MM) for the weekly BuildMaster Incremental backup (Mon-Sat). Default: 03:30.
+
+.PARAMETER CobianConfigFullStartTime
+    Start time (HH:MM) for the weekly Cobian Config Full backup (Sunday). Default: 03:50.
 
 .NOTES
+    AI assisted using Powershell.instructions.md as guidelines
+
     ► Run as Administrator on utat022
     ► Backs up MainList.lst automatically before modifying it
     ► Idempotent — skips tasks that already exist by name
 
+    Confirmed data directories (verified 2026-04-03):
+      ProGet      C:\ProgramData\ProGet\       (9.3 MB — Packages\, Extensions\, LocalStorage\)
+      BuildMaster C:\ProgramData\BuildMaster\  (~0 MB currently — Extensions\, Temp\)
+      Cobian      C:\Program Files\Cobian Reflector\Lists\  (73 KB — MainList.lst)
+
+    Data dirs are NOT under C:\ProgramData\Inedo\ — that directory has only ExtensionCache\
+    and SharedConfig\ (the latter is already under Git via ATAP.IAC).
+
     SCHEDULE NOTE:
-    The script uses Weekly schedule (SchSchedule=2) for all four tasks, confirmed from
-    the live MainList.lst after the Cobian UI updated schedules.
+    The script uses Weekly schedule (SchSchedule=2) for all tasks, confirmed from
+    the live MainList.lst after the Cobian UI updated the SQL tasks to weekly.
     Full tasks          → Weekly, Sunday only (SchDaysOfWeek=0)
-    Differential tasks  → Weekly, Monday-Saturday (SchDaysOfWeek=1..6)
+    Incremental tasks   → Weekly, Monday-Saturday (SchDaysOfWeek=1..6)
     SchDateAndTime format: 'YYYY-MM-DD HH:MM:SS:' (trailing colon, no milliseconds).
     SchDaysOfWeek repeats per selected day — requires §DuplicatedKeys:True on section.
 
-    CRLF NOTE (SC-encoding):
-    The script file is LF-encoded (VS Code default). Cobian Reflector requires CRLF
-    in its UTF-16 MainList.lst. Generated sections are normalized to CRLF before
-    writing to prevent ArgumentOutOfRangeException on service start.
+    COMPRESSION NOTE:
+    ProGet sources use TaskCompression=0 (None) because .nupkg files are already
+    ZIP-compressed; re-compressing provides minimal gain and wastes CPU.
+    BuildMaster and Cobian sources use TaskCompression=2 (7z).
+
+    INCREMENTAL RETENTION NOTE:
+    TaskDifferentialCopiesToKeep is used by Cobian to control incremental archive retention
+    (same key for both Differential SQL and Incremental file backups — confirmed from the
+    existing Hydrus Backup task in MainList.lst).
+
+    See also: _Planning Explainer 0021a — Application Data Backup: ProGet and BuildMaster
+              _Planning Explainer 0023 — Cobian Reflector MainList.lst Format
+              New-CobianSqlJobs.ps1   — reference for SQL Dummy task creation pattern
+
+    SC refs: SC-0066 (application backups), TASKS.md Task 4.4
 #>
 
 #Requires -RunAsAdministrator
 
 param(
-  [string]$ListPath            = 'C:\Program Files\Cobian Reflector\Lists\MainList.lst',
-  [string]$ScriptPath          = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-94-sprint-0004-work-items\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Invoke-SqlServerBackup.ps1',
-  #  [string]$ScriptPath       = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Invoke-SqlServerBackup.ps1',
-  [string]$BackupRoot          = 'C:\Dropbox\Backups\utat022',
-  [string]$PwshExe             = 'C:\Program Files\PowerShell\7\pwsh.exe',
-  # Start times (HH:MM) — defaults match the schedule stagger in Explainer 0021
-  [string]$ProGetFullStartTime       = '01:50',
-  [string]$ProGetDiffStartTime       = '01:50',
-  [string]$BuildMasterFullStartTime  = '02:20',
-  [string]$BuildMasterDiffStartTime  = '02:20'
+  [string]$ListPath                      = 'C:\Program Files\Cobian Reflector\Lists\MainList.lst',
+  [string]$ProGetDataPath                = 'C:\ProgramData\ProGet',
+  [string]$BuildMasterDataPath           = 'C:\ProgramData\BuildMaster',
+  [string]$BackupRoot                    = 'C:\Dropbox\Backups\utat022',
+  # Start times (HH:MM) — defaults match the schedule stagger in Explainer 0021a
+  [string]$ProGetFullStartTime           = '03:00',
+  [string]$ProGetIncrementalStartTime    = '03:00',
+  [string]$BuildMasterFullStartTime      = '03:30',
+  [string]$BuildMasterIncrementalStartTime = '03:30',
+  [string]$CobianConfigFullStartTime     = '03:50'
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # Encrypted-empty constants taken verbatim from existing MainList.lst
-# (represent unused/blank credentials for required SFTP/FTP/proxy sub-sections)
+# (represent blank credentials for required SFTP/FTP/proxy sub-sections)
 $E1 = '#Cob2#00028STtl5ohYeTQp2nUFQ5pQT0MGcTs=000010'
 $E2 = '#Cob2#0002838kVKKCUZXP8aHrszOuGULKbVrQ=000010'
 $E3 = '#Cob2#00028nQojpt8RaLw/IsmOaHreGrieGBk=000010'
@@ -260,26 +300,15 @@ SchUseOrdinaryDaysOfWeek=False
 "@
 }
 
-function Sec-PreEvent([string]$g, [string]$exe, [string]$params) {
-  # BEEventType=2 = Execute and wait (confirmed from Cobian UI test task)
-  # BEParameter1 = executable path, BEParameter2 = argument string
-  return @"
-
-<§- $g -§>
-§DuplicatedKeys:False
-§CaseSensitive:False
-§PairSeparator:=
-BEEventType=2
-BEArgument=
-BEParameter1=$exe
-BEParameter2=$params
-BEParameter3=
-<§§- $g -§§>
-"@
-}
-
-function Sec-Task([string]$g, [hashtable]$j) {
+function Sec-AppTask([string]$g, [hashtable]$j) {
   $tid = ng
+  # TaskBackupType: 0=Full, 1=Incremental (not 3=Dummy used by SQL tasks)
+  # Full  tasks: TaskFullCopiesToKeep=5, TaskDifferentialCopiesToKeep=0
+  # Incr  tasks: TaskFullCopiesToKeep=0, TaskDifferentialCopiesToKeep=6
+  $fullKeep = if ($j.BackupType -eq 0) { 5 } else { 0 }
+  $diffKeep = if ($j.BackupType -eq 0) { 0 } else { 6 }
+  # TaskCompressionLevel: only meaningful when TaskCompression != 0
+  $comprLevel = if ($j.Compression -eq 0) { 1 } else { 5 }
   return @"
 
 <§- $g -§>
@@ -294,26 +323,26 @@ TaskIncludeSubdirectories=True
 TaskSeparatedBackups=True
 TaskUseFileAttributes=True
 TaskUseVolumeShadowCopies=False
-TaskBackupType=3
+TaskBackupType=$($j.BackupType)
+TaskSource={ *§* $($j.SrcGuid) *§* }
 TaskDestination={ *§* $($j.DstGuid) *§* }
 TaskSchedule={ *§* $($j.SchGuid) *§* }
 TaskPriority=2
-TaskFullCopiesToKeep=7
-TaskDifferentialCopiesToKeep=6
+TaskFullCopiesToKeep=$fullKeep
+TaskDifferentialCopiesToKeep=$diffKeep
 TaskForceFullBackupCount=0
 TaskFixedFullBackup=False
 TaskFixedFullBackupDay=0
-TaskCompression=0
+TaskCompression=$($j.Compression)
 TaskArchiveComment=
 TaskEncryptFiles=False
 TaskPassPhrase=$E3
 TaskPhraseHint=
-TaskCompressionLevel=1
+TaskCompressionLevel=$comprLevel
 CompressionMethod=0
 SplitArchive=0
 SplitSize=524288000
-TaskPreBackupEvents={ *§* $($j.EvtGuid) *§* }
-TaskCancelIfPreEventFails=True
+TaskCancelIfPreEventFails=False
 TaskDoNotExecutePostEventsIfError=False
 TaskMirror=False
 TaskUseAbsolutePaths=False
@@ -331,24 +360,76 @@ TaskImpersonationPassword=$E4
 }
 
 # ── Job definitions ───────────────────────────────────────────────────────────
+# BackupType: 0=Full, 1=Incremental
+# Compression: 0=None, 2=7z  (None for .nupkg sources — already ZIP-compressed)
 
 $jobs = @(
-  @{ Name = 'SQL - ProGet - Full';         Group = 'SQL Server Backups'; Database = 'ProGet';      BackupType = 'Full';         DateTime = Get-NextWeekdayDateTime 0 $ProGetFullStartTime;       Days = @(0) }
-  @{ Name = 'SQL - ProGet - Differential'; Group = 'SQL Server Backups'; Database = 'ProGet';      BackupType = 'Differential'; DateTime = Get-NextWeekdayDateTime 1 $ProGetDiffStartTime;       Days = @(1,2,3,4,5,6) }
-  @{ Name = 'SQL - BuildMaster - Full';    Group = 'SQL Server Backups'; Database = 'BuildMaster'; BackupType = 'Full';         DateTime = Get-NextWeekdayDateTime 0 $BuildMasterFullStartTime;   Days = @(0) }
-  @{ Name = 'SQL - BuildMaster - Differential'; Group = 'SQL Server Backups'; Database = 'BuildMaster'; BackupType = 'Differential'; DateTime = Get-NextWeekdayDateTime 1 $BuildMasterDiffStartTime; Days = @(1,2,3,4,5,6) }
+  @{
+    Name        = 'App - ProGet - Full'
+    Group       = 'App Data Backups'
+    SrcPath     = $ProGetDataPath
+    DstSubdir   = 'ProGet-AppData'
+    BackupType  = 0
+    Compression = 0
+    DateTime    = Get-NextWeekdayDateTime 0 $ProGetFullStartTime           # Sunday
+    Days        = @(0)
+  }
+  @{
+    Name        = 'App - ProGet - Incremental'
+    Group       = 'App Data Backups'
+    SrcPath     = $ProGetDataPath
+    DstSubdir   = 'ProGet-AppData'
+    BackupType  = 1
+    Compression = 0
+    DateTime    = Get-NextWeekdayDateTime 1 $ProGetIncrementalStartTime    # Monday (first of Mon-Sat)
+    Days        = @(1, 2, 3, 4, 5, 6)
+  }
+  @{
+    Name        = 'App - BuildMaster - Full'
+    Group       = 'App Data Backups'
+    SrcPath     = $BuildMasterDataPath
+    DstSubdir   = 'BuildMaster-AppData'
+    BackupType  = 0
+    Compression = 2
+    DateTime    = Get-NextWeekdayDateTime 0 $BuildMasterFullStartTime      # Sunday
+    Days        = @(0)
+  }
+  @{
+    Name        = 'App - BuildMaster - Incremental'
+    Group       = 'App Data Backups'
+    SrcPath     = $BuildMasterDataPath
+    DstSubdir   = 'BuildMaster-AppData'
+    BackupType  = 1
+    Compression = 2
+    DateTime    = Get-NextWeekdayDateTime 1 $BuildMasterIncrementalStartTime  # Monday
+    Days        = @(1, 2, 3, 4, 5, 6)
+  }
+  @{
+    Name        = 'App - Cobian Config - Full'
+    Group       = 'App Data Backups'
+    SrcPath     = 'C:\Program Files\Cobian Reflector\Lists'
+    DstSubdir   = 'Cobian-Config'
+    BackupType  = 0
+    Compression = 2
+    DateTime    = Get-NextWeekdayDateTime 0 $CobianConfigFullStartTime     # Sunday
+    Days        = @(0)
+  }
 )
 
 # ── Validate ──────────────────────────────────────────────────────────────────
 if (-not (Test-Path $ListPath)) { throw "Not found: $ListPath" }
-if (-not (Test-Path $ScriptPath)) { throw "Not found: $ScriptPath" }
-if (-not (Test-Path $PwshExe)) { Write-Warning "pwsh.exe not found at: $PwshExe — Cobian may fail to launch the pre-event" }
+foreach ($j in $jobs) {
+  if (-not (Test-Path $j.SrcPath)) {
+    Write-Warning "Source path not found (pausing): $($j.SrcPath)"
+    $null = Read-Host '  Press ENTER to continue (or Ctrl+C to abort)'
+  }
+}
 
-Write-Host "`n===== New-CobianSqlJobs =====" -ForegroundColor Cyan
+Write-Host "`n===== New-CobianAppJobs =====" -ForegroundColor Cyan
 Write-Host "List file  : $ListPath"
-Write-Host "Script path: $ScriptPath"
+Write-Host "ProGet src : $ProGetDataPath"
+Write-Host "BM src     : $BuildMasterDataPath"
 Write-Host "Backup root: $BackupRoot"
-Write-Host "pwsh.exe   : $PwshExe"
 
 # ── Stop Cobian service ───────────────────────────────────────────────────────
 $svc = Get-Service -ErrorAction SilentlyContinue |
@@ -404,31 +485,32 @@ foreach ($job in $jobs) {
   }
 
   # Ensure backup destination folder exists
-  $destPath = Join-Path $BackupRoot $job.Database
+  $destPath = Join-Path $BackupRoot $job.DstSubdir
   if (-not (Test-Path $destPath)) {
     New-Item -ItemType Directory -Path $destPath -Force | Out-Null
     Write-Host "  Created folder: $destPath"
   }
 
-  # Generate all 8 GUIDs for this task's sections
-  $tg = ng                                                   # task section
-  $evtg = ng                                                   # pre-event section
-  $dg = ng; $dsg = ng; $dsp = ng; $dfg = ng; $dfp = ng      # dest + sftp/ftp
-  $schg = ng                                                   # schedule
+  # Generate all 12 GUIDs for this task's sections
+  $tg = ng                                                      # task
+  $sg = ng; $ssg = ng; $ssp = ng; $sfg = ng; $sfp = ng         # src path + sftp + proxy + ftp + proxy
+  $dg = ng; $dsg = ng; $dsp = ng; $dfg = ng; $dfp = ng         # dst path + sftp + proxy + ftp + proxy
+  $schg = ng                                                      # schedule
 
-  $job['EvtGuid'] = $evtg
+  $job['SrcGuid'] = $sg
   $job['DstGuid'] = $dg
   $job['SchGuid'] = $schg
-
-  # Pre-event argument string passed to pwsh.exe
-  $psArgs = "-NonInteractive -File `"$ScriptPath`" -DatabaseName $($job.Database) -BackupType $($job.BackupType) -SevenZipCompress"
 
   # Root index entry (injected into root section before its closing tag)
   $newRefs.Add("BackupTask={ *§* $tg *§* }")
 
-  # Build the 8 sections for this task
-  $null = $newSections.Append((Sec-Task $tg $job))
-  $null = $newSections.Append((Sec-PreEvent $evtg $PwshExe $psArgs))
+  # Build the 12 sections for this task
+  $null = $newSections.Append((Sec-AppTask $tg $job))
+  $null = $newSections.Append((Sec-Path $sg $job.SrcPath $ssg $sfg))
+  $null = $newSections.Append((Sec-Sftp $ssg $ssp))
+  $null = $newSections.Append((Sec-Proxy $ssp))
+  $null = $newSections.Append((Sec-Ftp $sfg $sfp))
+  $null = $newSections.Append((Sec-Proxy $sfp))
   $null = $newSections.Append((Sec-Path $dg $destPath $dsg $dfg))
   $null = $newSections.Append((Sec-Sftp $dsg $dsp))
   $null = $newSections.Append((Sec-Proxy $dsp))
@@ -469,14 +551,22 @@ Write-Host @'
 
 ===== Done =====
 Next steps:
-  1. Open Cobian UI — verify four 'SQL Server Backups' tasks appear.
+  1. Open Cobian UI — verify five 'App Data Backups' tasks appear.
      Full tasks    → Weekly, Sunday only   (already set by script — verify in UI)
-     Differential  → Weekly, Monday-Saturday (already set by script — verify in UI)
+     Incremental   → Weekly, Monday-Saturday (already set by script — verify in UI)
+  2. Right-click each Full task  → Run Now — confirm archives appear in Dropbox.
+
+Destination directories:
+  C:\Dropbox\Backups\utat022\ProGet-AppData\
+  C:\Dropbox\Backups\utat022\BuildMaster-AppData\
+  C:\Dropbox\Backups\utat022\Cobian-Config\
 
 Verification:
-  - Let a task fire, then check C:\Dropbox\Backups\utat022\{Database}\ for .bak.7z
-  - If the pre-event fails, Cobian will abort and log it in Cobian History.
+  Get-ChildItem 'C:\Dropbox\Backups\utat022\ProGet-AppData' | Sort-Object LastWriteTime
+  Get-ChildItem 'C:\Dropbox\Backups\utat022\BuildMaster-AppData' | Sort-Object LastWriteTime
+  Get-ChildItem 'C:\Dropbox\Backups\utat022\Cobian-Config' | Sort-Object LastWriteTime
 
-Recovery (if tasks don't appear):
+Recovery (if tasks do not appear):
   Stop service, copy the .bak_ file back to MainList.lst, restart service.
+  See Explainer 0023 — Recovery Procedure.
 '@ -ForegroundColor White

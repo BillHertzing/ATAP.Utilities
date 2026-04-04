@@ -94,6 +94,47 @@ New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $scriptT
 
 There are multiple folders and files that need to be present at the root of each repository, and need to be source-controlled and versioned. Having multiple independent copies is prone to errors and misconfigurations. Therefore, we have created a repository named `SharedVSCode`, and placed the source-of-truth copies of these shared folders and files in this git-versioned repository.
 
+**Design decision (2026-04-03):** The `.claude`, `.github`, and `.vscode` folders at the root of
+every downstream repo worktree (ATAP.Utilities, AceCommander, \_Planning) are **always NTFS
+junctions** — never real folders and never file-sync copies. The `Sync-WorktreeShared.ps1`
+copy-based approach has been retired (archived) in favour of the junction-only design.
+
+Junctions are listed in `.dropboxignore` so Dropbox does not try to sync them, and in
+`.gitignore` so git does not track them. This is the canonical design.
+
+**Junction targets by worktree type:**
+
+| Worktree                  | Junction target                |
+| ------------------------- | ------------------------------ |
+| Main worktree (permanent) | `SharedVSCode` main worktree   |
+| Sprint worktree           | `SharedVSCode` sprint worktree |
+| Normal issue worktree     | `SharedVSCode` main worktree   |
+
+**CRITICAL junction safety rules:**
+
+1. **Never use `Remove-Item -Recurse` on a junction.** Always use just `Remove-Item` (no
+   `-Recurse`). This removes the reparse point and does not touch the junction target.
+2. **Never use `Remove-Item -Recurse` on any parent folder above a junction.** Always ensure
+   the junction has been removed with `Remove-Item` (no `-Recurse`) BEFORE calling any
+   `Remove-Item -Recurse` on a parent folder.
+3. **Sprint end cleanup:** Before calling `git worktree remove`, always explicitly remove
+   the `.claude`, `.github`, and `.vscode` junctions from the worktree first.
+
+```powershell
+# Safe junction removal
+foreach ($name in @('.claude', '.github', '.vscode')) {
+    $jp = Join-Path $worktreePath $name
+    if (Test-Path -LiteralPath $jp) {
+        $item = Get-Item -LiteralPath $jp -Force
+        if ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
+            Remove-Item -LiteralPath $jp  # NO -Recurse on junctions
+        }
+    }
+}
+# Only AFTER all junctions are confirmed removed:
+git worktree remove $worktreePath --force
+```
+
 ### Filesystem junction for .claude folder
 
 Claude and Claude Code will look up the filesystem to the repository root for folders named `.claude`. Prompt instructions for Claude AI are stored in the file(s) found in this directory. To make the same prompt instructions available to every repository, the .claude folder is linked, using a junction to the base of the repository.
@@ -216,6 +257,8 @@ if (Test-Path $junctionFolderName) {
 
 ### Repository symbolic links
 
+<Author's Note> the following is obsolete. Claude.md is created in every repository by a process that combines a Claude-local.md (for each repository) with a Claude-body.md found ins the SharedVSCode repositories' main branch worktree. </Author's Note>
+
 #### Claude.md AI Agent symbolic link
 
 The file CLAUDE.md should be placed at the repository root
@@ -223,13 +266,10 @@ The file CLAUDE.md should be placed at the repository root
 ```Powershell
   # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
   # ToDo: Fix after packaging is working
-  if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
-  }
-  $repositoryRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
   if (!${get-command New-SymbolicLink}) {
-    . (join-Path  $repositoryRoot "src\ATAP.Utilities.Powershell\public\New-SymbolicLink.ps1")
+    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\New-SymbolicLink.ps1'
   }
+
   cd $repositoryRoot
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\CLAUDE.md"  -symbolicLinkPath ".\CLAUDE.md" -force
 
@@ -266,6 +306,31 @@ $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey'
 'GitHub', 'SharedVSCode', 'UserSnippetsSQL.jsonc') `
 -symbolicLinkPath $(Join-Path 'C:' 'Users' $username,'AppData','Roaming','Code', 'User', 'snippets','sql.json') -force
 
+```
+
+## Symbolic link for ~/.claude/settings.json
+
+The `settings.json` file at (e.g) `C:\Users\<username>\.claude\settings.json` holds the settings that Claude Code will use. It applies to all repositories and workspaces. Every developer on a host needs to link to the organization's common settings, which are stored in the main branch's worktree of the `SharedVSCode` repository. To do this,replace the value of $username with the actual user name in the following command and run the following block of code.
+
+```Powershell
+  $username = 'whertzing'
+  # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
+  # ToDo: Fix after packaging is working
+  if (!${get-command New-SymbolicLink}) {
+    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\New-SymbolicLink.ps1'
+  }
+  # main branch's worktree for SharedVSCode
+  $mainBranchWorktree = Join-Path  $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $username 'GitHub', 'SharedVSCode'
+  # Figure out the best way to get the users home direcotry on this computer
+  $userHome = Join-Path $env:SystemDrive 'Users' $username
+  $claudeFolder =  Join-Path  $userHome '.claude'
+  #ToDo - ensure the folder exists
+  # link the SharedVSCode claude-settings.json to settings.json
+  New-SymbolicLink -targetPath $(Join-Path $mainBranchWorktree 'claude-settings.json') -symbolicLinkPath $(Join-Path $claudeFolder 'settings.json') -force
+  # Note the following may be used during development of the Claude settings.json
+  # Sprint branch's worktree root C:\Dropbox\$usernamewhertzing\GitHub\SharedVSCode-wt-36-sprint-0004-work-items
+  $sprintWorktree = "C:\Dropbox\$username\GitHub\SharedVSCode-wt-36-sprint-0004-work-items"
+  New-SymbolicLink -targetPath $(Join-Path $sprintWorktree 'claude-settings.json') -symbolicLinkPath $(Join-Path $claudeFolder 'settings.json') -force
 ```
 
 ## Symbolic Links for Prettier formatting rules, CSpell, eslint rules, building Powershell; modules (Invoke-Build) and Mocha

@@ -50,6 +50,17 @@ Requires git to be installed and available in the PATH.
 The source repository must be a valid git repository.
 Junction points are Windows-specific; this cmdlet is designed for Windows environments.
 
+JUNCTION SAFETY: Never use Remove-Item -Recurse on a junction or on any parent folder
+that contains a junction. Use Remove-Item (without -Recurse) to remove a junction point
+safely — this removes the reparse point only and does not touch the junction target.
+
+SPRINT WORKTREES: By default this cmdlet recreates junctions with the same targets as
+the source repository. For sprint worktrees, the .claude, .github, and .vscode junctions
+should target the SharedVSCode sprint worktree rather than the SharedVSCode main worktree.
+Recreate the junctions in the sprint worktree afterwards with Set-WorktreeJunctions using
+-DevSourceRepoPath pointing to the SharedVSCode sprint worktree and
+-DevSourceRepoFolderNames @('.claude', '.github', '.vscode').
+
 .LINK
 https://github.com/BillHertzing/ATAP.Utilities
 #>
@@ -88,7 +99,7 @@ function New-WorktreeWithJunctions {
         [string]$BranchName
     )
 
-    BEGIN {
+    begin {
         $fn = 'New-WorktreeWithJunctions'
         $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
 
@@ -106,8 +117,7 @@ function New-WorktreeWithJunctions {
         try {
             $SourceRepoPath = Resolve-Path $SourceRepoPath -ErrorAction Stop
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Source repository path resolved to: $SourceRepoPath"
-        }
-        catch {
+        } catch {
             $errorMessage = "Failed to resolve SourceRepoPath: $($_.Exception.Message)"
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
             throw $errorMessage
@@ -120,8 +130,7 @@ function New-WorktreeWithJunctions {
                 throw 'git command failed'
             }
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Git is available: $gitVersion"
-        }
-        catch {
+        } catch {
             $errorMessage = 'git is not installed or not available in PATH'
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
             throw $errorMessage
@@ -155,7 +164,7 @@ function New-WorktreeWithJunctions {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'All parameters validated successfully'
     }
 
-    PROCESS {
+    process {
         try {
             # Step 1: Create the worktree
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Creating worktree at '$WorktreePath' for branch '$BranchName'"
@@ -170,8 +179,7 @@ function New-WorktreeWithJunctions {
                         throw "git worktree add command failed with exit code ${LASTEXITCODE}. Git output: $gitError"
                     }
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Git worktree created successfully'
-                }
-                catch {
+                } catch {
                     $errorMessage = "Failed to create git worktree: $($_.Exception.Message)"
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
                     $result.Errors += $errorMessage
@@ -183,8 +191,7 @@ function New-WorktreeWithJunctions {
                     $WorktreeFullPath = Resolve-Path $WorktreePath -ErrorAction Stop
                     $result.WorktreePath = $WorktreeFullPath.Path
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Worktree path resolved to: $WorktreeFullPath"
-                }
-                catch {
+                } catch {
                     $errorMessage = "Failed to resolve WorktreePath after creation: $($_.Exception.Message)"
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
                     $result.Errors += $errorMessage
@@ -196,7 +203,7 @@ function New-WorktreeWithJunctions {
 
                 try {
                     $junctions = Get-ChildItem -Path $SourceRepoPath -Recurse -Force -Attributes ReparsePoint -ErrorAction Stop |
-                    Where-Object { $_.LinkType -eq 'Junction' }
+                        Where-Object { $_.LinkType -eq 'Junction' }
 
                     if (-not $junctions) {
                         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'No junctions found in source repository'
@@ -228,9 +235,17 @@ function New-WorktreeWithJunctions {
                             }
 
                             # Remove placeholder folder if git created one, then create junction
+                            # SAFETY: Check for junction first — never use Remove-Item -Recurse on a junction
                             if (Test-Path $newJunctionPath) {
-                                Remove-Item $newJunctionPath -Force -Recurse -ErrorAction Stop
-                                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Removed existing item at: $newJunctionPath"
+                                $existingItem = Get-Item -LiteralPath $newJunctionPath -Force -ErrorAction Stop
+                                if ($existingItem.LinkType -eq 'Junction') {
+                                    # Use cmd /c rmdir to remove junction without touching the target
+                                    cmd /c rmdir "$newJunctionPath"
+                                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Removed existing junction at: $newJunctionPath"
+                                } else {
+                                    Remove-Item $newJunctionPath -Force -Recurse -ErrorAction Stop
+                                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Removed existing item at: $newJunctionPath"
+                                }
                             }
 
                             # Create the junction
@@ -243,8 +258,7 @@ function New-WorktreeWithJunctions {
                                 Target       = $target
                                 FullPath     = $newJunctionPath
                             }
-                        }
-                        catch {
+                        } catch {
                             $errorMessage = "Failed to create junction '$relativePath': $($_.Exception.Message)"
                             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
                             $result.Errors += $errorMessage
@@ -254,16 +268,14 @@ function New-WorktreeWithJunctions {
 
                     $result.Success = $true
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Worktree setup complete with $($result.JunctionsCreated) junction(s) recreated"
-                }
-                catch {
+                } catch {
                     $errorMessage = "Failed to scan or recreate junctions: $($_.Exception.Message)"
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
                     $result.Errors += $errorMessage
                     throw
                 }
             }
-        }
-        catch {
+        } catch {
             $errorMessage = "New-WorktreeWithJunctions failed: $($_.Exception.Message)"
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
             $result.Success = $false
@@ -274,7 +286,7 @@ function New-WorktreeWithJunctions {
         }
     }
 
-    END {
+    end {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function completed'
         $result
     }

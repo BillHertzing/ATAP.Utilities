@@ -88,6 +88,9 @@ $global:configRootKeys = @{
   'PythonInterpretersInstallDirectoryConfigRootKey'                                              = 'PythonInterpretersInstallDirectory'
   'PythonExePathConfigRootKey'                                                                   = 'PythonExePath'
 
+  # Manim animation renderer executable path
+  'ManimExePathConfigRootKey'                                                                    = 'MANIM_EXE_PATH'
+
   # related to the Hydrus-Network application
   'HYDRUS_ACCESS_KEYConfigRootKey'                                                               = 'HydrusAccessKey'
   'HydrusAPIHostConfigRootKey'                                                                   = 'HydrusAPIServer'

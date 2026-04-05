@@ -14,6 +14,7 @@ $PerHostSettingsKeys = @(
   # ansible settings on this host
   , $global:configRootKeys['ansible_remote_tmpConfigRootKey']
   , $global:configRootKeys['ansible_become_userConfigRootKey']
+  , $global:configRootKeys['ManimExePathConfigRootKey']
 )
 
 $scriptblock_perhost = {
@@ -63,6 +64,9 @@ $defaultPerMachineSettings = @{
 
     # Should only be set per machine if the machine is a Jenkins Controller Node
     $global:configRootKeys['JENKINS_HOMEConfigRootKey']            = 'C:/Dropbox/'
+
+    # Manim executable — sprint worktree venv during sprint 94; revert to main at sprint-end (see TASKS.md Task 4.17)
+    $global:configRootKeys['ManimExePathConfigRootKey']            = 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities-wt-94-sprint-0004-work-items/ManimVideoGenerator/.venv/Scripts/manim.exe'
 
     # $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
     #   $global:configRootKeys['WindowsCodeBuildConfigRootKey']

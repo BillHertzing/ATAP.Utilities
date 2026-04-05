@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <DefaultNamespace>ATAP.Utilities.ManimVideoGenerator</DefaultNamespace>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
+    <!-- Assembly, File, and Package Information for this assembly -->
+    <!-- Build and revision are created based on date -->
+    <MajorVersion>0</MajorVersion>
+    <MinorVersion>1</MinorVersion>
+    <PatchVersion>0</PatchVersion>
+    <!-- Current Lifecycle stage for this assembly -->
+    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
+    <!-- NuGet Package Label for the NuGet Package if the LifeCyclestage is not Production -->
+    <PackageLabel>Alpha</PackageLabel>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- StringConstants used in this library -->
+    <ProjectReference Include="..\StringConstants\ATAP.Utilities.ManimVideoGenerator.StringConstants.csproj" />
+    <!-- Enumerations used in this library -->
+    <ProjectReference Include="..\Enumerations\ATAP.Utilities.ManimVideoGenerator.Enumerations.csproj" />
+  </ItemGroup>
+
+</Project>

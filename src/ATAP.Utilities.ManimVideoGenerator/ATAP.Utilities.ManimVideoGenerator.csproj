@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
+    <MajorVersion>0</MajorVersion>
+    <MinorVersion>1</MinorVersion>
+    <PatchVersion>0</PatchVersion>
+    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
+    <PackageLabel>Alpha</PackageLabel>
+    <EnableDefaultItems>false</EnableDefaultItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="DefaultSettings\ATAP.Utilities.ManimVideoGenerator.DefaultSettings.csproj" />
+    <ProjectReference Include="Enumerations\ATAP.Utilities.ManimVideoGenerator.Enumerations.csproj" />
+    <ProjectReference Include="Interfaces\ATAP.Utilities.ManimVideoGenerator.Interfaces.csproj" />
+    <ProjectReference Include="Models\ATAP.Utilities.ManimVideoGenerator.Models.csproj" />
+    <ProjectReference Include="StringConstants\ATAP.Utilities.ManimVideoGenerator.StringConstants.csproj" />
+  </ItemGroup>
+
+</Project>

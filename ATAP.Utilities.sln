@@ -456,6 +456,20 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.IAC.Ansible.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.IAC.Ansible.Models", "src\ATAP.Utilities.IAC.Ansible\Models\ATAP.Utilities.IAC.Ansible.Models.csproj", "{F44539E5-CA14-497B-BC96-DDAF327DCC8F}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ManimVideoGenerator", "ManimVideoGenerator", "{C1D2E3F4-A5B6-7890-CDEF-012345678901}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ManimVideoGenerator", "src\ATAP.Utilities.ManimVideoGenerator\ATAP.Utilities.ManimVideoGenerator.csproj", "{D2E3F4A5-B6C7-8901-DEFA-123456789012}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.ManimVideoGenerator.Enumerations", "src\ATAP.Utilities.ManimVideoGenerator\Enumerations\ATAP.Utilities.ManimVideoGenerator.Enumerations.csproj", "{E3F4A5B6-C7D8-9012-EFA0-234567890123}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.ManimVideoGenerator.StringConstants", "src\ATAP.Utilities.ManimVideoGenerator\StringConstants\ATAP.Utilities.ManimVideoGenerator.StringConstants.csproj", "{F4A5B6C7-D8E9-0123-FA01-345678901234}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.ManimVideoGenerator.Interfaces", "src\ATAP.Utilities.ManimVideoGenerator\Interfaces\ATAP.Utilities.ManimVideoGenerator.Interfaces.csproj", "{A5B6C7D8-E9F0-1234-0B12-456789012345}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.ManimVideoGenerator.DefaultSettings", "src\ATAP.Utilities.ManimVideoGenerator\DefaultSettings\ATAP.Utilities.ManimVideoGenerator.DefaultSettings.csproj", "{B6C7D8E9-F0A1-2345-1C23-567890123456}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.ManimVideoGenerator.Models", "src\ATAP.Utilities.ManimVideoGenerator\Models\ATAP.Utilities.ManimVideoGenerator.Models.csproj", "{C7D8E9F0-A1B2-3456-2D34-678901234567}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1270,6 +1284,36 @@ Global
 		{F44539E5-CA14-497B-BC96-DDAF327DCC8F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F44539E5-CA14-497B-BC96-DDAF327DCC8F}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
 		{F44539E5-CA14-497B-BC96-DDAF327DCC8F}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
+		{E3F4A5B6-C7D8-9012-EFA0-234567890123}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E3F4A5B6-C7D8-9012-EFA0-234567890123}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E3F4A5B6-C7D8-9012-EFA0-234567890123}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E3F4A5B6-C7D8-9012-EFA0-234567890123}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E3F4A5B6-C7D8-9012-EFA0-234567890123}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
+		{E3F4A5B6-C7D8-9012-EFA0-234567890123}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
+		{F4A5B6C7-D8E9-0123-FA01-345678901234}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F4A5B6C7-D8E9-0123-FA01-345678901234}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F4A5B6C7-D8E9-0123-FA01-345678901234}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F4A5B6C7-D8E9-0123-FA01-345678901234}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F4A5B6C7-D8E9-0123-FA01-345678901234}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
+		{F4A5B6C7-D8E9-0123-FA01-345678901234}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
+		{A5B6C7D8-E9F0-1234-0B12-456789012345}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5B6C7D8-E9F0-1234-0B12-456789012345}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5B6C7D8-E9F0-1234-0B12-456789012345}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5B6C7D8-E9F0-1234-0B12-456789012345}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5B6C7D8-E9F0-1234-0B12-456789012345}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
+		{A5B6C7D8-E9F0-1234-0B12-456789012345}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
+		{B6C7D8E9-F0A1-2345-1C23-567890123456}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B6C7D8E9-F0A1-2345-1C23-567890123456}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B6C7D8E9-F0A1-2345-1C23-567890123456}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B6C7D8E9-F0A1-2345-1C23-567890123456}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B6C7D8E9-F0A1-2345-1C23-567890123456}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
+		{B6C7D8E9-F0A1-2345-1C23-567890123456}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
+		{C7D8E9F0-A1B2-3456-2D34-678901234567}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7D8E9F0-A1B2-3456-2D34-678901234567}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7D8E9F0-A1B2-3456-2D34-678901234567}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7D8E9F0-A1B2-3456-2D34-678901234567}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C7D8E9F0-A1B2-3456-2D34-678901234567}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
+		{C7D8E9F0-A1B2-3456-2D34-678901234567}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
 		{A2CF5831-1847-4BCC-B7E1-8D9F2E3C7A14}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A2CF5831-1847-4BCC-B7E1-8D9F2E3C7A14}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A2CF5831-1847-4BCC-B7E1-8D9F2E3C7A14}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1516,6 +1560,12 @@ Global
 		{C9726115-B139-4EAA-AB18-851601E06A43} = {1a59a7c9-25b9-4a6b-ba1f-37c4e7e2c090}
 		{B2F7EAF4-3FC2-4187-A990-A561DBFBCE10} = {1a59a7c9-25b9-4a6b-ba1f-37c4e7e2c090}
 		{F44539E5-CA14-497B-BC96-DDAF327DCC8F} = {1a59a7c9-25b9-4a6b-ba1f-37c4e7e2c090}
+		{C1D2E3F4-A5B6-7890-CDEF-012345678901} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
+		{E3F4A5B6-C7D8-9012-EFA0-234567890123} = {C1D2E3F4-A5B6-7890-CDEF-012345678901}
+		{F4A5B6C7-D8E9-0123-FA01-345678901234} = {C1D2E3F4-A5B6-7890-CDEF-012345678901}
+		{A5B6C7D8-E9F0-1234-0B12-456789012345} = {C1D2E3F4-A5B6-7890-CDEF-012345678901}
+		{B6C7D8E9-F0A1-2345-1C23-567890123456} = {C1D2E3F4-A5B6-7890-CDEF-012345678901}
+		{C7D8E9F0-A1B2-3456-2D34-678901234567} = {C1D2E3F4-A5B6-7890-CDEF-012345678901}
 		{C9378E61-659F-4B37-9072-C1E42A34A637} = {984B3A90-8771-486E-9BC3-66D2F35963C2}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution

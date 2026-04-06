@@ -65,8 +65,8 @@ $defaultPerMachineSettings = @{
     # Should only be set per machine if the machine is a Jenkins Controller Node
     $global:configRootKeys['JENKINS_HOMEConfigRootKey']            = 'C:/Dropbox/'
 
-    # Manim executable — sprint worktree venv during sprint 94; revert to main at sprint-end (see TASKS.md Task 4.17)
-    $global:configRootKeys['ManimExePathConfigRootKey']            = 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities-wt-94-sprint-0004-work-items/ManimVideoGenerator/.venv/Scripts/manim.exe'
+    # Manim executable — main worktree venv (stable path; .venv lives in ATAP.Utilities/ManimVideoGenerator/.venv/)
+    $global:configRootKeys['ManimExePathConfigRootKey']            = 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities/ManimVideoGenerator/.venv/Scripts/manim.exe'
 
     # $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
     #   $global:configRootKeys['WindowsCodeBuildConfigRootKey']
@@ -160,8 +160,7 @@ $defaultPerMachineSettings = @{
 # This supports the ability to have multiple files define these values
 if ($global:PerMachineSettings) {
   Write-PSFMessage -Level Debug -Message 'global:PerMachineSettings are already defined '
-}
-else {
+} else {
   Write-PSFMessage -Level Debug -Message 'global:PerMachineSettings are NOT defined'
   $global:PerMachineSettings = @{}
 }

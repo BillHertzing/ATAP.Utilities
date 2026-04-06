@@ -1,7 +1,7 @@
 {
   "folders": [
     {
-      "name": "ATAP.Utilities",
+      "name": "ATAP.Utilities (Root)",
       "path": "./"
     },
     {
@@ -394,7 +394,8 @@
     }
   ],
   "settings": {
-    "powershell.cwd": "ATAP.Utilities",
+    "dotnet.defaultSolution": "ATAP.Utilities.sln",
+    "powershell.cwd": "ATAP.Utilities (Root)",
     "atap.sharedVSCode.repoRoot": "C:\\dropbox\\whertzing\\GitHub\\SharedVSCode",
     "atap.sharedVSCode.templateRef": "main",
     "atap.sharedVSCode.profile": "default"

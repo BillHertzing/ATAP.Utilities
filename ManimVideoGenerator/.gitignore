@@ -1,0 +1,10 @@
+# Python virtual environment
+.venv/
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+
+media/
+# NOTE:media is generated output, it may soon go under _generated/media.

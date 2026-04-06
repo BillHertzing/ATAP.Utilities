@@ -18,7 +18,7 @@
 
   <!-- The Loader only works with NetCore 3.1, Net5.0 and higher -->
   <PropertyGroup>
-    <TargetFrameworks>net9.0</TargetFrameworks>
+    <TargetFrameworks>net10.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -34,13 +34,13 @@
   </ItemGroup>
 
   <!-- Loader interfaces and classes for any Assembly that may be loaded by the plugin Loader, only works with NetCore 3.1, Net5.0 and higher -->
-  <ItemGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '^(core|net[56789])'))">
+  <ItemGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '^(core|net[5-9]|net1[0-9])'))">
     <ProjectReference Include="..\ATAP.Utilities.Loader.Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Loader.StringConstants\ATAP.Utilities.Loader.StringConstants.csproj" />
   </ItemGroup>
 
   <!-- Plugin Framework, only works with NetCore 3.1, Net5.0 and higher -->
-  <ItemGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '^(core|net[56789])'))">
+  <ItemGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '^(core|net[5-9]|net1[0-9])'))">
     <PackageReference Include="McMaster.NETCore.Plugins" />
   </ItemGroup>
 

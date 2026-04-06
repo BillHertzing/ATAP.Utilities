@@ -6,164 +6,171 @@ using System.Linq;
 using System.IO;
 
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using static ATAP.Utilities.FileIO.Extensions;
 using static ATAP.Utilities.Collection.Extensions;
 
 using ATAP.Utilities.FileIO;
 
-// ToDo figure out how to make the Loader a runtime plugun
-// Currently this code only works with the McMaster Loader, it is hardcoded
-using McMaster.NETCore.Plugins;
-
 using LoaderStringConstants = ATAP.Utilities.Loader.StringConstants;
 
-//using DotNet.Globbing;
-
-using Microsoft.Extensions.DependencyInjection;
-
-namespace ATAP.Utilities.Loader {
+namespace ATAP.Utilities.Loader
+{
   /// <summary>
-  /// The  <see cref="DynamicGlobAndPredicate"> record identifies assemblies to load and from that assembly a predicate to match specific types
+  /// Identifies assemblies to load and from each assembly a predicate to match specific types.
   /// </summary>
-  public record DynamicGlobAndPredicate : IDynamicGlobAndPredicate {
+  public record DynamicGlobAndPredicate : IDynamicGlobAndPredicate
+  {
     public Glob Glob { get; init; }
     public Predicate<Type> Predicate { get; init; }
   }
 
   /// <summary>
-  /// detailed information for loading submodules for a specific dynamic Type,
+  /// Detailed information for loading submodules for a specific dynamic Type.
   /// </summary>
-  public record DynamicSubModulesInfo : IDynamicSubModulesInfo {
-    /// <summary>
-    /// The  <see cref="DynamicGlobAndPredicate"> property contains a globbing pattern to find libraries and then types to load
-    /// </summary>
+  public record DynamicSubModulesInfo : IDynamicSubModulesInfo
+  {
+    /// <summary>Globbing pattern to find libraries and then types to load.</summary>
     public IDynamicGlobAndPredicate DynamicGlobAndPredicate { get; init; }
-    /// <summary>
-    /// The <see cref="Function"> property contains an Action delegate called for each dynamic type that gets instantiated
-    /// </summary>
+    /// <summary>Action delegate called for each dynamic type that gets instantiated.</summary>
     public Action<object> Function { get; init; }
   }
 
-  public abstract class LoaderAbstract<IType> {
+  public abstract class LoaderAbstract<IType>
+  {
     public abstract void LoadExactlyOneInstanceOfITypeFromAssemblyGlobAsSingleton(IDynamicGlobAndPredicate dynamicGlobAndPredicate, IServiceCollection services);
     public abstract IType LoadExactlyOneInstanceOfITypeFromAssemblyGlob(IDynamicGlobAndPredicate dynamicGlobAndPredicate = default);
     public abstract void LoadAndProcessZeroOrMoreInstanceOfITypeFromAssemblyGlob(IDynamicGlobAndPredicate dynamicGlobAndPredicate, Action<Type, object> action);
   }
 
-  public class LoaderFactory {
-    // public LoaderAbstract<Type> GetLoader(Type TypeToLoad) {
-    //   Type genericLoaderType = typeof(Loader<>);
-    //   Type constructedLoaderType = genericLoaderType.MakeGenericType(TypeToLoad);
-    //   return new Loader<constructedLoaderType>();
-    // }
+  public class LoaderFactory
+  {
+    // Reserved for future use: factory that creates Loader<T> via reflection for a runtime-supplied Type.
   }
 
-  // todo: constructor injection of Logger and exception_Localizer
-  public class Loader<IType> : LoaderAbstract<IType> {
-    public override void LoadExactlyOneInstanceOfITypeFromAssemblyGlobAsSingleton(IDynamicGlobAndPredicate dynamicGlobAndPredicate, IServiceCollection services) {
-      // ToDo: Localize this exception
-      if (dynamicGlobAndPredicate == default) { throw new ArgumentNullException(nameof(dynamicGlobAndPredicate)); }
-      IType instance;
-      // allow any exception thrown in lower level to bubble up through here
-      instance = LoadExactlyOneInstanceOfITypeFromAssemblyGlob(dynamicGlobAndPredicate);
-      if (instance == null) { throw new NullReferenceException("ToDo: instance cannot be null. Glob: {0}, Predicate: {3}"); }
-      // ToDo: Support Transient and Scoped
-      services.AddSingleton(typeof(IType), instance);
-      return;
+  /// <summary>
+  /// Plugin loader that uses <see cref="IAssemblyLoader"/> (default: <see cref="NativeAssemblyLoader"/>)
+  /// to discover and instantiate types from assemblies matched by a glob pattern.
+  /// Replaces the hard dependency on McMaster.NETCore.Plugins.
+  /// </summary>
+  public class Loader<IType> : LoaderAbstract<IType>
+  {
+    private readonly IAssemblyLoader _assemblyLoader;
+    private WeakReference? _lastLoadedContextWeakReference;
+
+    public Loader(IAssemblyLoader? assemblyLoader = null)
+    {
+      _assemblyLoader = assemblyLoader ?? new NativeAssemblyLoader();
     }
-    public override IType LoadExactlyOneInstanceOfITypeFromAssemblyGlob(IDynamicGlobAndPredicate dynamicGlobAndPredicate = default) {
-      var loaders = new List<PluginLoader>();
-      var allShimNames = dynamicGlobAndPredicate.Glob.ExpandNames();
-      IType singleInstance;
-      // ToDo: fix an issue if the Glob pattern (file suffix) differs in case from the actual file name, it throws an exception
-      foreach (string shimName in allShimNames) {
-        var loader = PluginLoader.CreateFromAssemblyFile(
-        shimName,
-        sharedTypes: new[] { typeof(IType) });
-        loaders.Add(loader);
+
+    public override void LoadExactlyOneInstanceOfITypeFromAssemblyGlobAsSingleton(IDynamicGlobAndPredicate dynamicGlobAndPredicate, IServiceCollection services)
+    {
+      if (dynamicGlobAndPredicate == default) { throw new ArgumentNullException(nameof(dynamicGlobAndPredicate)); }
+      IType instance = LoadExactlyOneInstanceOfITypeFromAssemblyGlob(dynamicGlobAndPredicate);
+      if (instance == null) { throw new NullReferenceException("ToDo: instance cannot be null."); }
+      services.AddSingleton(typeof(IType), instance);
+    }
+
+    public override IType LoadExactlyOneInstanceOfITypeFromAssemblyGlob(IDynamicGlobAndPredicate dynamicGlobAndPredicate = default)
+    {
+      var allShimPaths = dynamicGlobAndPredicate.Glob.ExpandNames();
+      var loadedContexts = new List<ILoadedAssemblyContext>();
+
+      foreach (string shimPath in allShimPaths)
+      {
+        var ctx = _assemblyLoader.LoadAssembly(shimPath, new[] { typeof(IType) }, isCollectible: true);
+        loadedContexts.Add(ctx);
       }
-      var loaderHavingTypeMatchingPredicateCollection = new List<PluginLoader>();
-      foreach (var loader in loaders) {
-        var typesFromDynamicallyLoadedAssemblyMatchingPredicate = loader
-             .LoadDefaultAssembly()
-             .GetTypes()
-             .Where(_type => dynamicGlobAndPredicate.Predicate(_type));
-        if (typesFromDynamicallyLoadedAssemblyMatchingPredicate.Any()) {
-          loaderHavingTypeMatchingPredicateCollection.Add(loader);
-        }
+
+      // Find contexts whose loaded assembly contains at least one type matching the predicate
+      var contextsWithMatch = loadedContexts
+          .Where(ctx => ctx.LoadedAssembly.GetTypes().Any(t => dynamicGlobAndPredicate.Predicate(t)))
+          .ToList();
+
+      if (!contextsWithMatch.HasSingle<ILoadedAssemblyContext>(out ILoadedAssemblyContext singleContext))
+      {
+        throw new Exception(string.Format(
+            LoaderStringConstants.ExceptionMultipleAssembliesFound,
+            contextsWithMatch.Count,
+            string.Join(", ", contextsWithMatch.Select(c => c.LoadedAssembly.Location))));
       }
-      // Validate the sequence of loaders has exactly one element
-      if (!loaderHavingTypeMatchingPredicateCollection.HasSingle<PluginLoader>(out PluginLoader singleLoader)) {
-        //ToDo: add custom exception to Loader assembly
-        throw new System.Exception("ToDo: localize this message loaderHavingTypeMatchingPredicateCollection must have exactly one");
+
+      _lastLoadedContextWeakReference = singleContext.WeakReference;
+
+      var matchingTypes = singleContext.LoadedAssembly.GetTypes()
+          .Where(t => dynamicGlobAndPredicate.Predicate(t))
+          .ToList();
+
+      if (!matchingTypes.HasSingle<Type>(out Type singleType))
+      {
+        throw new Exception(string.Format(LoaderStringConstants.ExceptionMultipleMatchingTypes, matchingTypes.Count));
       }
-      var typeMatchesPredicateCollection = singleLoader
-          .LoadDefaultAssembly()
-          .GetTypes()
-          .Where(_type => dynamicGlobAndPredicate.Predicate(_type));
-      if (!typeMatchesPredicateCollection.HasSingle<Type>(out Type singleType)) {
-        throw new System.Exception("ToDo: localize this message typeMatchesPredicateCollection must have exactly one");
-      }
+
       // This assumes the implementation of IType has a parameterless constructor
-      singleInstance = (IType)Activator.CreateInstance(singleType);
-      // Does the instance (or pluginLoader) indicate that instance implements the ILoadDynamicSubModules interface
-      bool hasDynamicSubModules = singleLoader.LoadDefaultAssembly().GetTypes().Where(_type => typeof(ILoadDynamicSubModules).IsAssignableFrom(_type) && dynamicGlobAndPredicate.Predicate(_type)).Any();
-      if (hasDynamicSubModules) {
-        // find and load any additional dynamic modules to load as specified by the actual instance
-        // Get the dictionary (by Type) of (functions (by enumeration expected cardinalityofresults (0,1,many) to be applied to each Cardinailty:(collection or individual) submodule Types, using relativePathsToProbe, pattern for finding the submodule .dll files in the existing relativePathsToProbe, , subModuleNamespace
+      var singleInstance = (IType)Activator.CreateInstance(singleType)!;
+
+      // Check if the loaded type also implements ILoadDynamicSubModules
+      bool hasDynamicSubModules = singleContext.LoadedAssembly.GetTypes()
+          .Any(t => typeof(ILoadDynamicSubModules).IsAssignableFrom(t) && dynamicGlobAndPredicate.Predicate(t));
+
+      if (hasDynamicSubModules)
+      {
         var subTypesToFunctionGlobCriteriaDictionary = ((ILoadDynamicSubModules)singleInstance).GetDynamicSubModulesInfo();
-        // Iterate
-        foreach (var subModuleIType in subTypesToFunctionGlobCriteriaDictionary.Keys) {
-          var subModulesInfo = subTypesToFunctionGlobCriteriaDictionary[subModuleIType];
-          // var genericLoaderType = typeof(Loader<subModuleIType.GetType() >).MakeGenericType(subModuleIType.GetType());
-          // var genericLoaderInstance = Activator.CreateInstance(typeof(genericLoaderType));
-          // var iType = subModuleIType.GetType();
-          // var genericLoader = typeof(Loader<>).MakeGenericType(subModuleIType.GetType());
-          // var subModuleLoader = (Loader<type>)Activator.CreateInstance(type);
-          // subModuleLoader.LoadAndProcessZeroOrMoreInstanceOfITypeFromAssemblyGlob(subModulesInfo.DynamicGlobAndPredicate, subModulesInfo.Function);
-          // subModuleLoader.LoadManyInstanceOfITypeFromAssemblyGlob(subModuleIType, subModuleDynamicGlobAndPredicate);
-          // ToDo: add upperbound test for number of iterations/depth that submodules can be loaded, raise custom exception if it happens
+        foreach (var subModuleIType in subTypesToFunctionGlobCriteriaDictionary.Keys)
+        {
+          // ToDo: recurse sub-module loading via IAssemblyLoader
+          // ToDo: add upper-bound test for recursion depth; raise custom exception if exceeded
         }
       }
 
       return singleInstance;
     }
-    public override void LoadAndProcessZeroOrMoreInstanceOfITypeFromAssemblyGlob(IDynamicGlobAndPredicate dynamicGlobAndPredicate, Action<Type, object> action) {
-      // ToDo: add parameter checking
-      var loaders = new List<PluginLoader>();
-      var allShimNames = dynamicGlobAndPredicate.Glob.ExpandNames();
-      //IEnumerable ZeroOrMoreInstanceCollection;
-      // ToDo: fix an issue if the Glob pattern (file suffix) differs in case from the actual file name, it throws an exception
-      foreach (string shimName in allShimNames) {
-        var loader = PluginLoader.CreateFromAssemblyFile(
-        shimName,
-        sharedTypes: new[] { typeof(IType) });
-        loaders.Add(loader);
+
+    /// <summary>
+    /// Returns a WeakReference to the AssemblyLoadContext used by the most recent
+    /// successful call to LoadExactlyOneInstanceOfITypeFromAssemblyGlob.
+    /// </summary>
+    public WeakReference? GetLastLoadedContextWeakReference()
+    {
+      return _lastLoadedContextWeakReference;
+    }
+
+    public override void LoadAndProcessZeroOrMoreInstanceOfITypeFromAssemblyGlob(IDynamicGlobAndPredicate dynamicGlobAndPredicate, Action<Type, object> action)
+    {
+      var allShimPaths = dynamicGlobAndPredicate.Glob.ExpandNames();
+      var loadedContexts = new List<ILoadedAssemblyContext>();
+
+      foreach (string shimPath in allShimPaths)
+      {
+        var ctx = _assemblyLoader.LoadAssembly(shimPath, new[] { typeof(IType) }, isCollectible: true);
+        loadedContexts.Add(ctx);
       }
-      var loaderHavingTypeMatchingPredicateCollection = new List<PluginLoader>();
-      foreach (var loader in loaders) {
-        var typesFromDynamicallyLoadedAssemblyMatchingPredicate = loader
-             .LoadDefaultAssembly()
-             .GetTypes()
-             .Where(_type => dynamicGlobAndPredicate.Predicate(_type));
-        if (typesFromDynamicallyLoadedAssemblyMatchingPredicate.Any()) {
-          loaderHavingTypeMatchingPredicateCollection.Add(loader);
-        }
-      }
-      foreach (PluginLoader loader in loaderHavingTypeMatchingPredicateCollection) {
-        var typeMatchesPredicateCollection = loader
-            .LoadDefaultAssembly()
-            .GetTypes()
-            .Where(_type => dynamicGlobAndPredicate.Predicate(_type));
-        // a single assembly may contain many types that match the predicate
-        foreach (Type matchingType in typeMatchesPredicateCollection) {
+
+      foreach (var ctx in loadedContexts)
+      {
+        var matchingTypes = ctx.LoadedAssembly.GetTypes()
+            .Where(t => dynamicGlobAndPredicate.Predicate(t));
+        // A single assembly may contain many types that match the predicate
+        foreach (Type matchingType in matchingTypes)
+        {
           // This assumes the implementation of IType has a parameterless constructor
-          // ToDo: wrap in a try/catch and handle exceptions
-          var singleInstance = (IType)Activator.CreateInstance(matchingType);
-          // pass the singleInstance of the matchingType to the Action
-          action(matchingType, singleInstance!);
+          var instance = (IType)Activator.CreateInstance(matchingType)!;
+          action(matchingType, instance!);
         }
       }
+    }
+
+    /// <summary>
+    /// Discovers assemblies matching the glob, loads all types matching the predicate, and
+    /// registers each instance in the DI container under <typeparamref name="IType"/>.
+    /// </summary>
+    public void LoadAndRegister(IDynamicGlobAndPredicate dynamicGlobAndPredicate, IServiceCollection services, ServiceLifetime lifetime = ServiceLifetime.Singleton)
+    {
+      LoadAndProcessZeroOrMoreInstanceOfITypeFromAssemblyGlob(dynamicGlobAndPredicate, (type, instance) =>
+      {
+        var descriptor = new ServiceDescriptor(typeof(IType), _ => instance!, lifetime);
+        services.Add(descriptor);
+      });
     }
   }
 

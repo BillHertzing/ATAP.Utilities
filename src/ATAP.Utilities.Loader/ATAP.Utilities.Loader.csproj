@@ -39,10 +39,7 @@
     <ProjectReference Include="..\ATAP.Utilities.Loader.StringConstants\ATAP.Utilities.Loader.StringConstants.csproj" />
   </ItemGroup>
 
-  <!-- Plugin Framework, only works with NetCore 3.1, Net5.0 and higher -->
-  <ItemGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '^(core|net[5-9]|net1[0-9])'))">
-    <PackageReference Include="McMaster.NETCore.Plugins" />
-  </ItemGroup>
+  <!-- McMaster.NETCore.Plugins removed: Loader now uses native AssemblyLoadContext (CollectibleAssemblyLoadContext / NativeAssemblyLoader). -->
 
   <!-- Extensions methods on File and Directory types, along with a Globbing library -->
   <ItemGroup>

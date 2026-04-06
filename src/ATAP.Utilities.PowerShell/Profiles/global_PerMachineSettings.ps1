@@ -14,6 +14,7 @@ $PerHostSettingsKeys = @(
   # ansible settings on this host
   , $global:configRootKeys['ansible_remote_tmpConfigRootKey']
   , $global:configRootKeys['ansible_become_userConfigRootKey']
+  , $global:configRootKeys['ManimExePathConfigRootKey']
 )
 
 $scriptblock_perhost = {
@@ -63,6 +64,9 @@ $defaultPerMachineSettings = @{
 
     # Should only be set per machine if the machine is a Jenkins Controller Node
     $global:configRootKeys['JENKINS_HOMEConfigRootKey']            = 'C:/Dropbox/'
+
+    # Manim executable — main worktree venv (stable path; .venv lives in ATAP.Utilities/ManimVideoGenerator/.venv/)
+    $global:configRootKeys['ManimExePathConfigRootKey']            = 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities/ManimVideoGenerator/.venv/Scripts/manim.exe'
 
     # $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
     #   $global:configRootKeys['WindowsCodeBuildConfigRootKey']
@@ -156,8 +160,7 @@ $defaultPerMachineSettings = @{
 # This supports the ability to have multiple files define these values
 if ($global:PerMachineSettings) {
   Write-PSFMessage -Level Debug -Message 'global:PerMachineSettings are already defined '
-}
-else {
+} else {
   Write-PSFMessage -Level Debug -Message 'global:PerMachineSettings are NOT defined'
   $global:PerMachineSettings = @{}
 }

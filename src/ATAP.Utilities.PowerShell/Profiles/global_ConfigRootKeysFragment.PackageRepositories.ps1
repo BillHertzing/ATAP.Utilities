@@ -21,7 +21,6 @@ $global:configRootKeys['ProGetAdminUriSchemeConfigRootKey'] = 'ProGetAdminUriSch
 $global:configRootKeys['ProGetAdminUriHostConfigRootKey'] = 'ProGetAdminUriHost'
 $global:configRootKeys['ProGetAdminUriPortConfigRootKey'] = 'ProGetAdminUriPort'
 $global:configRootKeys['ProGetBaseUrlConfigRootKey'] = 'ProGetBaseUrl'
-$global:configRootKeys['PGUTIL_SOURCEConfigRootKey'] = 'PGUTIL_SOURCE'
 
 # ── ProGet API Keys ──────────────────────────────────────────────────────
 $global:configRootKeys['ProGetAdminApiKeyConfigRootKey'] = 'PROGET_ADMIN_API_KEY'

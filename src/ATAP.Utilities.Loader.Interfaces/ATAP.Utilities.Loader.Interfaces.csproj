@@ -18,7 +18,7 @@
 
   <!-- The Loader only works with NetCore 3.1, Net5.0 and higher -->
   <PropertyGroup>
-    <TargetFrameworks>net9.0</TargetFrameworks>
+    <TargetFrameworks>net10.0</TargetFrameworks>
   </PropertyGroup>
 
   <!-- Extensions methods on File and Directory types, along with a Globbing library -->

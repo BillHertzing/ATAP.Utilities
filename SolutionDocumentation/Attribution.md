@@ -275,7 +275,6 @@ Sources for the Jenkins vs. ProGet toolchain distinction and typical integration
 - [Jenkins Pipeline Steps reference](https://www.jenkins.io/doc/pipeline/steps/)
 - [ProGet product overview (Inedo)](https://inedo.com/proget)
 - [ProGet feature list (Inedo)](https://inedo.com/proget/features)
-- [ProGet SCA / CI integration (`pgutil`)](https://docs.inedo.com/docs/proget-sca-ci)
 - [ProGet SCA API](https://docs.inedo.com/docs/proget-sca-api)
 - [ProGet SCA Projects & Releases](https://docs.inedo.com/docs/proget-sca-projects-releases)
 - [BuildMaster overview (Inedo)](https://docs.inedo.com/docs/buildmaster-overview)

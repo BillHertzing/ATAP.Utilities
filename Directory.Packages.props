@@ -28,7 +28,7 @@
     <!-- Text-To-Speech (TTS) packages -->
     <PackageVersion Include="System.Speech" Version="5.0.0" />
     <!-- newtonsoft JSON serializer -->
-    <PackageVersion Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageVersion Include="System.Collections.Immutable" Version="5.0.0" />
     <PackageVersion Include="McMaster.NETCore.Plugins" Version="1.4.0" />
   </ItemGroup>

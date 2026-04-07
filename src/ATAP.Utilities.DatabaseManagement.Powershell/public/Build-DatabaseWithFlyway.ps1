@@ -21,6 +21,12 @@ The target environment: 'Development', 'Testing', 'Production', or 'Experimental
 .PARAMETER DatabaseHost
 The SQL Server host. Default is 'localhost'.
 
+.PARAMETER SqlInstance
+The SQL Server instance name to connect to (e.g. 'localhost\SQLEXPRESS' or
+'localhost\development-whertzing'). When specified, this value overrides the
+default instance derived from DatabaseHost. Passed through to DatabaseProvisioning
+and Invoke-Flyway for all database operations.
+
 .PARAMETER FlywayBasePath
 Path to the Flyway directory containing flyway.toml. If not specified, attempts to auto-detect.
 
@@ -127,7 +133,7 @@ https://github.com/whertzing/ATAP.Utilities
     [switch]$Force
   )
 
-  BEGIN {
+  begin {
     # Local helper: adjust a path so it is valid after Set-Location $FlywayBasePath.
     # Absolute paths are returned unchanged.
     # Relative paths were originally relative to $OriginalLocation; they are resolved
@@ -154,7 +160,7 @@ https://github.com/whertzing/ATAP.Utilities
     try {
       # Import dbatools module for database operations
       if (-not (Get-Module -Name dbatools -ListAvailable)) {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "dbatools module not found. Installing..."
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message 'dbatools module not found. Installing...'
         Install-Module -Name dbatools -Scope CurrentUser -Force -AllowClobber
       }
       Import-Module dbatools -ErrorAction Stop
@@ -174,8 +180,7 @@ https://github.com/whertzing/ATAP.Utilities
       if (-not (Get-Command -Name 'Invoke-Flyway' -CommandType Function -ErrorAction SilentlyContinue)) {
         . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\Invoke-Flyway.ps1')
       }
-    }
-    catch {
+    } catch {
       $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       $result.Errors += $errorMessage
@@ -186,21 +191,21 @@ https://github.com/whertzing/ATAP.Utilities
     # Parameter validation using Get-PVal pattern
     # region Database connection parameter validation
     $databasesCollection = $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
-    $DatabaseName = Get-PVal -ParameterName "DatabaseName" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseName" -Settings $databasesCollection -DefaultValue $DatabaseName
+    $DatabaseName = Get-PVal -ParameterName 'DatabaseName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseName" -Settings $databasesCollection -DefaultValue $DatabaseName
     $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue $Environment -ValidValues @('Production', 'Testing', 'Development', 'Experimental')
-    $DatabaseHost = Get-PVal -ParameterName "DatabaseHost" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseHost" -Settings $databasesCollection -DefaultValue $DatabaseHost
-    $SqlInstance = Get-PVal -ParameterName "SqlInstance" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlInstance" -Settings $databasesCollection -DefaultValue $SqlInstance -AllowMissing
-    $ConnectionMethod = Get-PVal -ParameterName "ConnectionMethod" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ConnectionMethod" -Settings $databasesCollection -DefaultValue $ConnectionMethod -ValidValues @('tcp', 'np', 'lpc')
-    $Port = Get-PVal -ParameterName "Port" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.Port" -Settings $databasesCollection -DefaultValue $Port -AllowMissing
-    $CredentialsKey = Get-PVal -ParameterName "CredentialsKey" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.CredentialsKey" -Settings $databasesCollection -DefaultValue $CredentialsKey -AllowMissing
+    $DatabaseHost = Get-PVal -ParameterName 'DatabaseHost' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseHost" -Settings $databasesCollection -DefaultValue $DatabaseHost
+    $SqlInstance = Get-PVal -ParameterName 'SqlInstance' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlInstance" -Settings $databasesCollection -DefaultValue $SqlInstance -AllowMissing
+    $ConnectionMethod = Get-PVal -ParameterName 'ConnectionMethod' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ConnectionMethod" -Settings $databasesCollection -DefaultValue $ConnectionMethod -ValidValues @('tcp', 'np', 'lpc')
+    $Port = Get-PVal -ParameterName 'Port' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.Port" -Settings $databasesCollection -DefaultValue $Port -AllowMissing
+    $CredentialsKey = Get-PVal -ParameterName 'CredentialsKey' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.CredentialsKey" -Settings $databasesCollection -DefaultValue $CredentialsKey -AllowMissing
     # endregion Database connection parameter validation
-    $DatabasePath = Get-PVal -ParameterName "DatabasePath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection -DefaultValue $DatabasePath
-    $ProvisioningScriptsPath = Get-PVal -ParameterName "ProvisioningScriptsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisioningScriptsPath" -Settings $databasesCollection -DefaultValue $ProvisioningScriptsPath
-    $FlywayBasePath = Get-PVal -ParameterName "FlywayBasePath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayBasePath" -Settings $databasesCollection -DefaultValue $FlywayBasePath
-    $flywaySqlMigrationsPath = Get-PVal -ParameterName "FlywaySqlMigrationsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywaySqlMigrationsPath" -Settings $databasesCollection -DefaultValue $flywaySqlMigrationsPath
-    $flywaySharedSqlMigrationsPath = Get-PVal -ParameterName "FlywaySharedSqlMigrationsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywaySharedSqlMigrationsPath" -Settings $databasesCollection -DefaultValue $flywaySharedSqlMigrationsPath
-    $FlywayDataPath = Get-PVal -ParameterName "FlywayDataPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayDataPath" -Settings $databasesCollection -DefaultValue $FlywayDataPath
-    $FlywayTomlPath = Get-PVal -ParameterName "FlywayTomlPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayTomlPath" -Settings $databasesCollection -DefaultValue $FlywayTomlPath
+    $DatabasePath = Get-PVal -ParameterName 'DatabasePath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection -DefaultValue $DatabasePath
+    $ProvisioningScriptsPath = Get-PVal -ParameterName 'ProvisioningScriptsPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisioningScriptsPath" -Settings $databasesCollection -DefaultValue $ProvisioningScriptsPath
+    $FlywayBasePath = Get-PVal -ParameterName 'FlywayBasePath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayBasePath" -Settings $databasesCollection -DefaultValue $FlywayBasePath
+    $flywaySqlMigrationsPath = Get-PVal -ParameterName 'FlywaySqlMigrationsPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywaySqlMigrationsPath" -Settings $databasesCollection -DefaultValue $flywaySqlMigrationsPath
+    $flywaySharedSqlMigrationsPath = Get-PVal -ParameterName 'FlywaySharedSqlMigrationsPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywaySharedSqlMigrationsPath" -Settings $databasesCollection -DefaultValue $flywaySharedSqlMigrationsPath
+    $FlywayDataPath = Get-PVal -ParameterName 'FlywayDataPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayDataPath" -Settings $databasesCollection -DefaultValue $FlywayDataPath
+    $FlywayTomlPath = Get-PVal -ParameterName 'FlywayTomlPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayTomlPath" -Settings $databasesCollection -DefaultValue $FlywayTomlPath
 
     # Determine the SqlInstance value based on the environment if it is not yet defined.
     if (-not $SqlInstance) {
@@ -226,12 +231,12 @@ https://github.com/whertzing/ATAP.Utilities
 
 
     # Configure dbatools SSL/encryption settings
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Configuring dbatools to trust server certificates"
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Configuring dbatools to trust server certificates'
     Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -PassThru | Register-DbatoolsConfig
     Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -PassThru | Register-DbatoolsConfig
   }
 
-  PROCESS {
+  process {
     try {
 
       # Change to Flyway directory
@@ -248,7 +253,7 @@ https://github.com/whertzing/ATAP.Utilities
 
       Set-Location $FlywayBasePath
 
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Starting database provisioning..."
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Starting database provisioning...'
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Target Server: $DatabaseHost"
 
       $sqlConnection = $null
@@ -273,15 +278,13 @@ https://github.com/whertzing/ATAP.Utilities
           $sqlConnection = $SqlConnection
           $existingConnBuilder = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($SqlConnection.ConnectionString)
           $useIntegratedSecurityForFlyway = $existingConnBuilder.IntegratedSecurity
-        }
-        catch {
+        } catch {
           $errorMessage = "Failed to open provided SQL connection: $($_.Exception.Message)"
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
           $result.Errors += $errorMessage
           throw
         }
-      }
-      else {
+      } else {
         # Build connection string for provisioning (connect to master initially)
         $connStrBuilderParams = @{
           DatabaseName     = 'master'
@@ -313,8 +316,7 @@ https://github.com/whertzing/ATAP.Utilities
           $sqlConnection.Open()
           $sqlConnectionOpenedHere = $true
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'SQL connection opened successfully'
-        }
-        catch {
+        } catch {
           $errorMessage = "Failed to open SQL connection: $($_.Exception.Message)"
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
           $result.Errors += $errorMessage
@@ -326,7 +328,7 @@ https://github.com/whertzing/ATAP.Utilities
       # Verify connection
       try {
         $testCmd = $sqlConnection.CreateCommand()
-        $testCmd.CommandText = "SELECT @@SERVERNAME AS ServerName, @@VERSION AS Version"
+        $testCmd.CommandText = 'SELECT @@SERVERNAME AS ServerName, @@VERSION AS Version'
         $testReader = $testCmd.ExecuteReader()
         if ($testReader.Read()) {
           $serverName = $testReader['ServerName']
@@ -336,8 +338,7 @@ https://github.com/whertzing/ATAP.Utilities
         }
         $testReader.Close()
         $testCmd.Dispose()
-      }
-      catch {
+      } catch {
         $errorMessage = "Failed to open or test SQL connection: $($_.Exception.Message)"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
         $result.Errors += $errorMessage
@@ -357,14 +358,13 @@ https://github.com/whertzing/ATAP.Utilities
         Force                   = $Force
       }
 
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Calling DatabaseProvisioning with SqlConnection object"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Calling DatabaseProvisioning with SqlConnection object'
 
       if ($PSCmdlet.ShouldProcess($DatabaseName, 'Provision database')) {
         $provisioningResult = $null
         try {
           $provisioningResult = DatabaseProvisioning @provisioningParams
-        }
-        finally {
+        } finally {
           # Close the connection after provisioning if we opened it
           if ($sqlConnection -and $sqlConnectionOpenedHere -and $sqlConnection.State -eq [System.Data.ConnectionState]::Open) {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Closing SQL connection'
@@ -375,7 +375,7 @@ https://github.com/whertzing/ATAP.Utilities
 
         # Check provisioning result before continuing to Flyway
         if (-not $provisioningResult -or -not $provisioningResult.Success) {
-          $errorMessage = "Database provisioning failed. Aborting before Flyway migrations."
+          $errorMessage = 'Database provisioning failed. Aborting before Flyway migrations.'
           if ($provisioningResult -and $provisioningResult.Errors) {
             $errorMessage += " Errors: $($provisioningResult.Errors -join '; ')"
           }
@@ -385,7 +385,7 @@ https://github.com/whertzing/ATAP.Utilities
         }
 
         # Run Flyway migrations
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Running Flyway migrations..."
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Running Flyway migrations...'
         $FlywayParams = @{
           DatabaseName                  = $DatabaseName
           Environment                   = $Environment
@@ -407,19 +407,17 @@ https://github.com/whertzing/ATAP.Utilities
         if ($CredentialsKey) { $FlywayParams['CredentialsKey'] = $CredentialsKey }
         Invoke-Flyway @FlywayParams
 
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Database build completed successfully"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Database build completed successfully'
         $result.Success = $true
       }
-    }
-    catch {
+    } catch {
       $errorMessage = "Database build failed: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Stack trace: $($_.ScriptStackTrace)"
       $result.Errors += $errorMessage
       $result.Success = $false
       throw
-    }
-    finally {
+    } finally {
       # Restore original location
       if ($originalLocation) {
         Set-Location $originalLocation
@@ -428,7 +426,7 @@ https://github.com/whertzing/ATAP.Utilities
     }
   }
 
-  END {
+  end {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function completed'
     return $result
   }

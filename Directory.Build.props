@@ -150,8 +150,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <!-- Using Fody for methodBoundaryAspect messes up debugging symbols https://github.com/vescon/MethodBoundaryAspect.Fody/issues/71 -->
 
-    <!-- <DefineConstants>DEBUG;TRACE;</DefineConstants> -->
-    <DefineConstants>$(DefineConstants);DEBUG;</DefineConstants>
+    <DefineConstants>$(DefineConstants);DEBUG;TRACE;</DefineConstants>
   </PropertyGroup>
 
   <!-- Any Core TargetFramework -->

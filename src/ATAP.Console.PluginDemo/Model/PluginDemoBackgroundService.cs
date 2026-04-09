@@ -37,6 +37,25 @@ public sealed class PluginDemoBackgroundService : BackgroundService
 
   protected override async Task ExecuteAsync(CancellationToken stoppingToken)
   {
+    // Log whether the Bitwarden configuration secret was loaded into the configuration root
+    var configSecretValue = _configuration[StringConstants.ConfigurationSecretConfigRootKey];
+    if (!string.IsNullOrEmpty(configSecretValue))
+    {
+      var prefixLength = Math.Min(configSecretValue.Length, 4);
+      _logger.LogInformation(
+        StringConstants.ConfigurationSecretAvailableMessage,
+        StringConstants.ConfigurationSecretName,
+        StringConstants.ConfigurationSecretConfigRootKey,
+        configSecretValue[..prefixLength]);
+    }
+    else
+    {
+      _logger.LogWarning(
+        StringConstants.ConfigurationSecretUnavailableMessage,
+        StringConstants.ConfigurationSecretName,
+        StringConstants.ConfigurationSecretConfigRootKey);
+    }
+
     System.Console.WriteLine(StringConstants.WelcomeMessage);
 
     while (!stoppingToken.IsCancellationRequested)

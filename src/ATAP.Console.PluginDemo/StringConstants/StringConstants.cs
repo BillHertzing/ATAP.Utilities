@@ -8,6 +8,10 @@ public static class StringConstants
   public const string TestSecretName = "PluginDemo_TestSecret";
   public const string TestSecretFieldName = "Notes";
 
+  public const string ConfigurationSecretName = "PluginDemo_ConfigurationSecret";
+  public const string ConfigurationSecretFieldName = "Notes";
+  public const string ConfigurationSecretConfigRootKey = "PluginDemo:ConfigurationSecret";
+
   public const string PluginDirectoryConfigRootKey = "PluginDirectory";
   public const string PluginDirectoryDefault = "Plugins";
 
@@ -19,4 +23,9 @@ public static class StringConstants
   public const string SecretNotFoundMessage = "Secret not found.";
   public const string SecretProviderNotFoundMessage = "Secret Provider unavailable.";
   public const string UnloadVerificationMessage = "Plugin ALC unloaded. GC collected: {0}";
+
+  public const string ConfigurationSecretAvailableMessage =
+    "Configuration secret '{SecretName}' read from Bitwarden and available in configuration at key '{ConfigKey}'. Value preview: {Preview}****";
+  public const string ConfigurationSecretUnavailableMessage =
+    "Configuration secret '{SecretName}' was NOT available from Bitwarden at configuration key '{ConfigKey}'";
 }

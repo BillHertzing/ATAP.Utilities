@@ -3,8 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-using ATAP.Utilities.Configuration.Secrets;
-using ATAP.Utilities.Configuration.Secrets.Shims;
+using ATAP.Utilities.Secrets;
 using ATAP.Utilities.FileIO;
 using ATAP.Utilities.Loader;
 
@@ -16,14 +15,14 @@ namespace ATAP.Console.PluginDemo;
 
 public sealed class PluginDemoBackgroundService : BackgroundService
 {
-  private readonly IConfigurationSecrets _staticSecrets;
+  private readonly ISecretsAbstract _staticSecrets;
   private readonly IAssemblyLoader _assemblyLoader;
   private readonly IConfiguration _configuration;
   private readonly IHostApplicationLifetime _lifetime;
   private readonly ILogger<PluginDemoBackgroundService> _logger;
 
   public PluginDemoBackgroundService(
-    IConfigurationSecrets staticSecrets,
+    ISecretsAbstract staticSecrets,
     IAssemblyLoader assemblyLoader,
     IConfiguration configuration,
     IHostApplicationLifetime lifetime,
@@ -90,19 +89,19 @@ public sealed class PluginDemoBackgroundService : BackgroundService
     var glob = new DynamicGlobAndPredicate
     {
       Glob = new Glob { Pattern = pattern },
-      Predicate = type => typeof(IConfigurationSecretsShim).IsAssignableFrom(type)
+      Predicate = type => typeof(ISecretsAbstract).IsAssignableFrom(type)
         && !type.IsAbstract
         && !type.IsInterface,
     };
 
     System.Console.WriteLine($"Searching: {pattern}");
 
-    Loader<IConfigurationSecretsShim>? loader = null;
-    IConfigurationSecretsShim? dynamicSecrets = null;
+    Loader<ISecretsAbstract>? loader = null;
+    ISecretsAbstract? dynamicSecrets = null;
 
     try
     {
-      loader = new Loader<IConfigurationSecretsShim>(_assemblyLoader);
+      loader = new Loader<ISecretsAbstract>(_assemblyLoader);
       dynamicSecrets = loader.LoadExactlyOneInstanceOfITypeFromAssemblyGlob(glob);
       System.Console.WriteLine($"Loaded provider: {dynamicSecrets.ProviderName}");
 

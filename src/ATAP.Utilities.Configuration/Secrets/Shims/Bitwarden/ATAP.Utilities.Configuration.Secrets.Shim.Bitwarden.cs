@@ -28,66 +28,109 @@ public sealed class BitwardenSecretsShim : IConfigurationSecretsShim
     public string ProviderName => "Bitwarden";
 
     /// <summary>
-    /// Retrieves a field value from the Bitwarden item named <paramref name="secretName"/>.
-    /// Returns <c>null</c> if the item or field does not exist or the CLI exits non-zero.
+    /// Retrieves a field value from the first Bitwarden item matching <paramref name="secretName"/>.
+    /// Uses <c>bw list items --search</c> (matching the PowerShell <c>Set-EnvVarsFromBitWarden</c>
+    /// pattern) rather than <c>bw get</c>, which requires an exact ID or exact name.
+    /// Returns <c>null</c> if no matching item is found, the field is absent, or the CLI exits non-zero.
     /// </summary>
-    /// <param name="secretName">Bitwarden vault item name (e.g. "ProGet_Admin_API_Key").</param>
+    /// <param name="secretName">Bitwarden vault item search term (e.g. "ProGet_Admin_API_Key").</param>
     /// <param name="fieldName">
-    /// Field to retrieve. <c>"password"</c> returns the built-in Password field.
-    /// Any other value (e.g. <c>"token"</c>, <c>"key"</c>, <c>"Passphrase"</c>) targets a
-    /// custom field by that name (case-insensitive). Defaults to <c>"password"</c>.
+    /// Field to retrieve:
+    /// <list type="bullet">
+    ///   <item><c>"password"</c> — built-in login Password field</item>
+    ///   <item><c>"username"</c> — built-in login Username field</item>
+    ///   <item><c>"notes"</c> — built-in Notes field</item>
+    ///   <item>Any other value — custom field matched by name, case-insensitive</item>
+    /// </list>
+    /// Defaults to <c>"password"</c>.
     /// </param>
     public async Task<string?> GetSecretAsync(
         string secretName,
         string fieldName = PasswordFieldName,
         CancellationToken cancellationToken = default)
     {
-        if (fieldName.Equals(PasswordFieldName, StringComparison.OrdinalIgnoreCase))
-        {
-            var (output, exitCode) = await RunBwAsync(["get", "password", secretName], cancellationToken);
-            return exitCode == 0 ? output : null;
-        }
-
-        // For any non-password field: retrieve full item JSON and extract the named custom field.
-        var (json, itemExitCode) = await RunBwAsync(["get", "item", secretName], cancellationToken);
-        if (itemExitCode != 0 || string.IsNullOrWhiteSpace(json))
+        var (json, exitCode) = await RunBwAsync(["list", "items", "--search", secretName], cancellationToken);
+        if (exitCode != 0 || string.IsNullOrWhiteSpace(json))
             return null;
 
-        return ExtractCustomField(json, fieldName);
+        return ExtractFieldFromSearchResults(json, fieldName);
     }
 
     /// <summary>
-    /// Returns <c>true</c> if a Bitwarden item named <paramref name="secretName"/> exists
-    /// in the vault (exit code 0 from <c>bw get item</c>).
+    /// Returns <c>true</c> if at least one Bitwarden item matches <paramref name="secretName"/>
+    /// (uses <c>bw list items --search</c>).
     /// </summary>
     public async Task<bool> SecretExistsAsync(
         string secretName,
         CancellationToken cancellationToken = default)
     {
-        var (_, exitCode) = await RunBwAsync(["get", "item", secretName], cancellationToken);
-        return exitCode == 0;
+        var (json, exitCode) = await RunBwAsync(["list", "items", "--search", secretName], cancellationToken);
+        if (exitCode != 0 || string.IsNullOrWhiteSpace(json))
+            return false;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            return doc.RootElement.ValueKind == JsonValueKind.Array &&
+                   doc.RootElement.GetArrayLength() > 0;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 
     /// <summary>
-    /// Parses the JSON returned by <c>bw get item</c> and returns the value of the first
-    /// custom field whose name matches <paramref name="fieldName"/> (case-insensitive).
-    /// Returns <c>null</c> if the field is not present or the JSON cannot be parsed.
+    /// Parses the JSON array returned by <c>bw list items --search</c>, takes the first
+    /// matching item, and extracts the requested field (<c>password</c>, <c>username</c>,
+    /// <c>notes</c>, or a custom field by name).
+    /// Returns <c>null</c> if the array is empty, the field is absent, or parsing fails.
     /// </summary>
-    private static string? ExtractCustomField(string json, string fieldName)
+    private static string? ExtractFieldFromSearchResults(string json, string fieldName)
     {
         try
         {
             using var doc = JsonDocument.Parse(json);
-            if (!doc.RootElement.TryGetProperty("fields", out var fields))
+            if (doc.RootElement.ValueKind != JsonValueKind.Array ||
+                doc.RootElement.GetArrayLength() == 0)
                 return null;
 
-            foreach (var field in fields.EnumerateArray())
+            var item = doc.RootElement[0];
+
+            if (fieldName.Equals(PasswordFieldName, StringComparison.OrdinalIgnoreCase))
             {
-                if (field.TryGetProperty("name", out var name) &&
-                    name.GetString()?.Equals(fieldName, StringComparison.OrdinalIgnoreCase) == true &&
-                    field.TryGetProperty("value", out var value))
+                if (item.TryGetProperty("login", out var login) &&
+                    login.TryGetProperty("password", out var password))
+                    return password.GetString();
+                return null;
+            }
+
+            if (fieldName.Equals("username", StringComparison.OrdinalIgnoreCase))
+            {
+                if (item.TryGetProperty("login", out var login) &&
+                    login.TryGetProperty("username", out var username))
+                    return username.GetString();
+                return null;
+            }
+
+            if (fieldName.Equals("notes", StringComparison.OrdinalIgnoreCase))
+            {
+                if (item.TryGetProperty("notes", out var notes))
+                    return notes.GetString()?.Trim();
+                return null;
+            }
+
+            // Custom field — search item.fields array case-insensitively.
+            if (item.TryGetProperty("fields", out var fields))
+            {
+                foreach (var field in fields.EnumerateArray())
                 {
-                    return value.GetString();
+                    if (field.TryGetProperty("name", out var name) &&
+                        name.GetString()?.Equals(fieldName, StringComparison.OrdinalIgnoreCase) == true &&
+                        field.TryGetProperty("value", out var value))
+                    {
+                        return value.GetString();
+                    }
                 }
             }
         }
@@ -102,7 +145,9 @@ public sealed class BitwardenSecretsShim : IConfigurationSecretsShim
     private static async Task<(string Output, int ExitCode)> RunBwAsync(
         string[] args, CancellationToken cancellationToken)
     {
+        // In agent-spawned shells, process-scope BW_SESSION may be empty; fall back to user scope.
         var sessionKey = Environment.GetEnvironmentVariable("BW_SESSION")
+            ?? Environment.GetEnvironmentVariable("BW_SESSION", EnvironmentVariableTarget.User)
             ?? throw new InvalidOperationException(
                 "BW_SESSION environment variable is not set. " +
                 "Run Initialize-BitwardenSession (LoginScript.ps1) before accessing secrets.");

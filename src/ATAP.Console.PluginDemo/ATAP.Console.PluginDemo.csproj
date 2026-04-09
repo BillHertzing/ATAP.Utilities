@@ -1,8 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <IsPackable>true</IsPackable>
+    <!-- NO TargetFramework/TargetFrameworks here — inherited from Directory.Build.props -->
+    <RootNamespace>ATAP.Console.PluginDemo</RootNamespace>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IsPackable>false</IsPackable>
     <MajorVersion>0</MajorVersion>
     <MinorVersion>1</MinorVersion>
     <PatchVersion>0</PatchVersion>
@@ -11,9 +13,12 @@
     <EnableDefaultItems>false</EnableDefaultItems>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="Model\ATAP.Console.PluginDemo.Model.csproj" />
+    <ItemGroup>
+    <!-- ReferenceOutputAssembly=false prevents NETSDK1150:
+        the facade doesn't try to link the Exe's output assembly -->
+    <ProjectReference Include="Model\ATAP.Console.PluginDemo.Model.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
     <ProjectReference Include="StringConstants\ATAP.Console.PluginDemo.StringConstants.csproj" />
   </ItemGroup>
-
 </Project>

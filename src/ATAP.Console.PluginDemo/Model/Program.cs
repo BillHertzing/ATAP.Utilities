@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-using ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden;
+using ATAP.Utilities.Secrets;
 using ATAP.Utilities.Loader;
 
 using Microsoft.Extensions.DependencyInjection;

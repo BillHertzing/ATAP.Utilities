@@ -29,31 +29,40 @@ public sealed class BitwardenSecretsShim : SecretsConfigurableAbstract
       CancellationToken cancellationToken = default)
   {
     var field = fieldName ?? _options.DefaultFieldName;
-    if (string.Equals(field, PasswordFieldName, StringComparison.OrdinalIgnoreCase))
-    {
-      var (output, exitCode) = await RunBwAsync(["get", PasswordFieldName, secretName], cancellationToken);
-      return exitCode == 0 ? output : null;
-    }
-    else
-    {
-      var (output, exitCode) = await RunBwAsync(["get", "item", secretName], cancellationToken);
-      return exitCode == 0 ? ExtractCustomField(output, field) : null;
-    }
+    var (json, exitCode) = await RunBwAsync(["list", "items", "--search", secretName], cancellationToken);
+    if (exitCode != 0 || string.IsNullOrWhiteSpace(json))
+      return null;
+
+    return ExtractFieldFromSearchResults(json, field);
   }
 
   public override async Task<bool> SecretExistsAsync(
       string secretName,
       CancellationToken cancellationToken = default)
   {
-    var (_, exitCode) = await RunBwAsync(["get", "item", secretName], cancellationToken);
-    return exitCode == 0;
+    var (json, exitCode) = await RunBwAsync(["list", "items", "--search", secretName], cancellationToken);
+    if (exitCode != 0 || string.IsNullOrWhiteSpace(json))
+      return false;
+
+    try
+    {
+      using var doc = JsonDocument.Parse(json);
+      return doc.RootElement.ValueKind == JsonValueKind.Array &&
+             doc.RootElement.GetArrayLength() > 0;
+    }
+    catch (JsonException)
+    {
+      return false;
+    }
   }
 
   private async Task<(string Output, int ExitCode)> RunBwAsync(
       string[] args,
       CancellationToken cancellationToken)
   {
+    // In agent-spawned shells, process-scope BW_SESSION may be empty; fall back to user scope.
     var sessionKey = Environment.GetEnvironmentVariable(_options.SessionEnvVarName)
+        ?? Environment.GetEnvironmentVariable(_options.SessionEnvVarName, EnvironmentVariableTarget.User)
         ?? throw new InvalidOperationException(StringConstants.ExceptionBwSessionNotSet);
 
     using var process = new Process
@@ -86,21 +95,51 @@ public sealed class BitwardenSecretsShim : SecretsConfigurableAbstract
     return (output.Trim(), process.ExitCode);
   }
 
-  private static string? ExtractCustomField(string json, string fieldName)
+  private static string? ExtractFieldFromSearchResults(string json, string fieldName)
   {
     try
     {
       using var doc = JsonDocument.Parse(json);
-      if (!doc.RootElement.TryGetProperty("fields", out var fields))
+      if (doc.RootElement.ValueKind != JsonValueKind.Array ||
+          doc.RootElement.GetArrayLength() == 0)
         return null;
 
-      foreach (var field in fields.EnumerateArray())
+      var item = doc.RootElement[0];
+
+      if (fieldName.Equals(PasswordFieldName, StringComparison.OrdinalIgnoreCase))
       {
-        if (field.TryGetProperty("name", out var name) &&
-            name.GetString()?.Equals(fieldName, StringComparison.OrdinalIgnoreCase) == true &&
-            field.TryGetProperty("value", out var value))
+        if (item.TryGetProperty("login", out var login) &&
+            login.TryGetProperty("password", out var password))
+          return password.GetString();
+        return null;
+      }
+
+      if (fieldName.Equals("username", StringComparison.OrdinalIgnoreCase))
+      {
+        if (item.TryGetProperty("login", out var login) &&
+            login.TryGetProperty("username", out var username))
+          return username.GetString();
+        return null;
+      }
+
+      if (fieldName.Equals("notes", StringComparison.OrdinalIgnoreCase))
+      {
+        if (item.TryGetProperty("notes", out var notes))
+          return notes.GetString()?.Trim();
+        return null;
+      }
+
+      // Custom field — search item.fields array case-insensitively.
+      if (item.TryGetProperty("fields", out var fields))
+      {
+        foreach (var field in fields.EnumerateArray())
         {
-          return value.GetString();
+          if (field.TryGetProperty("name", out var name) &&
+              name.GetString()?.Equals(fieldName, StringComparison.OrdinalIgnoreCase) == true &&
+              field.TryGetProperty("value", out var value))
+          {
+            return value.GetString();
+          }
         }
       }
     }

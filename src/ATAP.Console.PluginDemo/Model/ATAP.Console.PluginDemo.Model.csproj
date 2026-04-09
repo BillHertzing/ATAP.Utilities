@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net10.0</TargetFrameworks>
+    <!-- NO TargetFramework/TargetFrameworks here — inherited from Directory.Build.props -->
     <RootNamespace>ATAP.Console.PluginDemo</RootNamespace>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IsPackable>false</IsPackable>
@@ -15,9 +15,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\StringConstants\ATAP.Console.PluginDemo.StringConstants.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.Configuration\Extensions\ATAP.Utilities.Configuration.Extensions.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.Configuration\Secrets\ATAP.Utilities.Configuration.Secrets.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.Configuration\Secrets\Shims\Bitwarden\ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.Secrets\ATAP.Utilities.Secrets.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.Secrets\Shim\Bitwarden\ATAP.Utilities.Secrets.Shim.Bitwarden.csproj" />
     <ProjectReference Include="..\..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
     <ProjectReference Include="..\..\ATAP.Utilities.Loader\ATAP.Utilities.Loader.csproj" />
     <ProjectReference Include="..\..\ATAP.Utilities.Plugin\ATAP.Utilities.Plugin.csproj" />
@@ -41,12 +40,12 @@
   <Target Name="CopyPluginToOutputPluginsDirectory" AfterTargets="Build">
     <MakeDir Directories="$(OutputPath)Plugins" />
     <Copy
-      SourceFiles="$(OutputPath)ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden.dll"
+      SourceFiles="$(OutputPath)ATAP.Utilities.Secrets.Shim.Bitwarden.dll"
       DestinationFolder="$(OutputPath)Plugins"
       SkipUnchangedFiles="true"
       ContinueOnError="WarnAndContinue" />
     <Copy
-      SourceFiles="$(OutputPath)ATAP.Utilities.Configuration.Secrets.dll"
+      SourceFiles="$(OutputPath)ATAP.Utilities.Secrets.dll"
       DestinationFolder="$(OutputPath)Plugins"
       SkipUnchangedFiles="true"
       ContinueOnError="WarnAndContinue" />

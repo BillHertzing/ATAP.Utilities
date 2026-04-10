@@ -1,14 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <-- Creates an executable Project -->
+  <!-- Creates an executable Project -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
-
-  <-- This project will run under the following target frameworks -->
-  <PropertyGroup>
-      <TargetFrameworks>net48;net8.0;net9.0</TargetFrameworks>
-</PropertyGroup>
 
   <!-- The Assembly will be packed into a NuGet Package on every build -->
   <PropertyGroup>

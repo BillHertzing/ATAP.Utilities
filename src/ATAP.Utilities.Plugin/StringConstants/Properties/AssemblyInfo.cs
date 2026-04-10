@@ -5,9 +5,9 @@ using System.Runtime.InteropServices;
 #if NETDESKTOP || NETCOREAPP3_1 || NETSTANDARD
 using System.ComponentModel;
 #endif
-[assembly: AssemblyFileVersion("0.1.0.0")]
-[assembly: AssemblyInformationalVersion("0.1.0-Alpha-0001")]
-[assembly: AssemblyVersion("0.1.0")]
+[assembly:AssemblyFileVersion("0.1.9596.26623")]
+[assembly:AssemblyInformationalVersion("0.1.0-Alpha-005")]
+[assembly:AssemblyVersion("0.1.0")]
 [assembly: Guid("C3D4E5F6-A7B8-4C03-D4E5-F6A7B8C9D0E1")]
 #if TRACE
 [assembly: ATAP.Utilities.ETW.ETWLogAttribute()]

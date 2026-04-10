@@ -8,24 +8,23 @@
     <!-- Build and revision are created based on date-->
     <MajorVersion>0</MajorVersion>
     <MinorVersion>1</MinorVersion>
-    <PatchVersion>1</PatchVersion>
+    <PatchVersion>0</PatchVersion>
     <!-- Current Lifecycle stage for this assembly-->
     <PackageLifeCycleStage>Development</PackageLifeCycleStage>
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
-    <PackageLabel>Alpha-0000</PackageLabel>
+    <PackageLabel>Alpha</PackageLabel>
+    <!-- Unique assembly name to avoid conflict with parent facade -->
+    <AssemblyName>ATAP.Utilities.Persistence.Model</AssemblyName>
   </PropertyGroup>
 
-    <!-- Include NuGet PackageReferences to the required DLLs for custom msbuild tasks-->
   <ItemGroup>
-    <PackageReference Include="Microsoft.Build.Framework"/>
-    <PackageReference Include="Microsoft.Build.Utilities.Core" />
+  <PackageReference Include="ServiceStack.OrmLite" />
+  <PackageReference Include="ServiceStack.OrmLite.SqlServer" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="ATAP.Utilities.BuildTooling.targets">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <ProjectReference Include="..\Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
   </ItemGroup>
 
 </Project>

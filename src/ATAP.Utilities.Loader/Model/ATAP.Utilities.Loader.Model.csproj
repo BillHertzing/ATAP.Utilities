@@ -16,11 +16,6 @@
     <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
-  <!-- The Loader only works with NetCore 3.1, Net5.0 and higher -->
-  <PropertyGroup>
-    <TargetFrameworks>net10.0</TargetFrameworks>
-  </PropertyGroup>
-
   <ItemGroup>
     <!-- Standalone reference to Microsoft.Extensions.DependencyInjection is used by unitTest projects-->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />

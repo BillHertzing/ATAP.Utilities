@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -10,6 +11,7 @@ namespace ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden;
 /// .NET configuration pipeline at startup.  Wire it in via
 /// <see cref="ConfigurationBuilderExtensions.AddBitwardenSecrets"/>.
 /// </summary>
+[Obsolete("Use ATAP.Utilities.Secrets.BitwardenConfigurationSource instead. This type will be removed in a future release.")]
 public sealed class BitwardenConfigurationSource : IConfigurationSource
 {
     private readonly IEnumerable<BitwardenSecretMapping> _mappings;
@@ -45,6 +47,7 @@ public sealed class BitwardenConfigurationSource : IConfigurationSource
 /// populate a config key and do not throw.
 /// </para>
 /// </remarks>
+[Obsolete("Use ATAP.Utilities.Secrets.BitwardenConfigurationProvider instead. This type will be removed in a future release.")]
 public sealed class BitwardenConfigurationProvider : ConfigurationProvider
 {
     private readonly IEnumerable<BitwardenSecretMapping> _mappings;

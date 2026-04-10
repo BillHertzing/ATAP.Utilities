@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 using System.ComponentModel;
 #endif
 // ATAP.Utilities.BuildTooling.targets will update the build (date), and revision fields each time a new build occurs
-[assembly:AssemblyFileVersion("0.1.9596.26625")]
+[assembly:AssemblyFileVersion("0.1.9596.37284")]
 // ATAP.Utilities.BuildTooling.targets will update the AssemblyInformationalVersion field each time a new build occurs
-[assembly:AssemblyInformationalVersion("0.1.0-Alpha-003")]
+[assembly:AssemblyInformationalVersion("0.1.0-Alpha-004")]
 [assembly:AssemblyVersion("0.1.0")]
 // The following GUID is for the ID of the typelib if this project is exposed to COM
 [assembly: Guid("C2D3E4F5-A6B7-4901-CDEF-012345678901")]

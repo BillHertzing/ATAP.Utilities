@@ -10,6 +10,7 @@ namespace ATAP.Utilities.Configuration.Secrets.Shims;
 /// Returns the first non-null value found, in registration order.
 /// Register via DI as <see cref="ATAP.Utilities.Configuration.Secrets.IConfigurationSecrets"/>.
 /// </summary>
+[Obsolete("Use ATAP.Utilities.Secrets.SecretsRouter instead. This type will be removed in a future release.")]
 public sealed class ConfigurationSecretsShims : ATAP.Utilities.Configuration.Secrets.IConfigurationSecrets
 {
     private readonly IReadOnlyList<IConfigurationSecretsShim> _shims;
@@ -47,6 +48,7 @@ public sealed class ConfigurationSecretsShims : ATAP.Utilities.Configuration.Sec
 /// (e.g. one loaded via the ATAP.Utilities.Secrets plugin system) as an
 /// <see cref="IConfigurationSecretsShim"/>, bridging the two secret-provider type systems.
 /// </summary>
+[Obsolete("Use ATAP.Utilities.Secrets.ISecretsAbstract directly instead. This type will be removed in a future release.")]
 public sealed class SecretsAbstractShimAdapter : IConfigurationSecretsShim
 {
     private readonly ATAP.Utilities.Secrets.ISecretsAbstract _inner;

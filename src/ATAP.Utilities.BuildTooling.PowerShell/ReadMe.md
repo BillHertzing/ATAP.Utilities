@@ -404,35 +404,39 @@ ToDo: CodeWorkspace File needs correcting.
   # set the local project full path
   $projectDirectory = . pwd
 
-  # the code-workspace file
-@'
-{
-  "folders": [
-    {
-      "path": "."
-    }
-  ],
-  "settings": {
-    "dotnet-test-explorer.testProjectPath": "{workspacefolder}/tests",
-    "pester.pesterModulePath": "{workspacefolder}",
-    "powershell.pester.codeLens": false,
-    "powershell.pester.useLegacyCodeLens": false,
-    "powershell.pester.outputVerbosity": "Diagnostic",
-    "powershell.enableProfileLoading": true,
-    "cSpell.customDictionaries": {
-      "custom": {
-        "name": "${projectName}Dictionary",
-        "path": "${workspaceFolder}/${projectName}CustomDictionary.txt",
-        "addWords": true
-      }
-    },
+# .code-workspace files per subproject in a multi-project repo is obsolete
+#   # the code-workspace file
+# @'
+# {
+#   "folders": [
+#     {
+#       "path": "."
+#     }
+#   ],
+#   "settings": {
+#     "dotnet-test-explorer.testProjectPath": "{workspacefolder}/tests",
+#     "pester.pesterModulePath": "{workspacefolder}",
+#     "powershell.pester.codeLens": false,
+#     "powershell.pester.useLegacyCodeLens": false,
+#     "powershell.pester.outputVerbosity": "Diagnostic",
+#     "powershell.enableProfileLoading": true,
+#     "cSpell.customDictionaries": {
+#       "custom": {
+#         "name": "${projectName}Dictionary",
+#         "path": "${workspaceFolder}/${projectName}CustomDictionary.txt",
+#         "addWords": true
+#       }
+#     },
 
-  }
-}
-'@ | Out-File -FilePath "./$projectName.code-workspace" # UTF8 encoding via a parameter default
+#   }
+# }
+# '@ | Out-File -FilePath "./$projectName.code-workspace" # UTF8 encoding via a parameter default
 
+# If the new project exisit inside a repo that already has a custom dictionary, don't createa new one
+if ($false) {
   # The custom dictionary file, which contains the $projectName as an approved word
   "$projectName" | Out-File -FilePath "${projectName}CustomDictionary.txt"
+}
   # The ReadMe file for the repo as a whole
   "ReadMe file for $projectName" | Out-File -FilePath './ReadMe.md'
   # the subdirectory where all generated files are placed

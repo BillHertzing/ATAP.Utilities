@@ -7,6 +7,7 @@ namespace ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden;
 /// <summary>
 /// Extension methods for wiring Bitwarden secrets into the .NET configuration pipeline.
 /// </summary>
+[Obsolete("Use ATAP.Utilities.Secrets.ConfigurationBuilderExtensions instead. This type will be removed in a future release.")]
 public static class ConfigurationBuilderExtensions
 {
     /// <summary>

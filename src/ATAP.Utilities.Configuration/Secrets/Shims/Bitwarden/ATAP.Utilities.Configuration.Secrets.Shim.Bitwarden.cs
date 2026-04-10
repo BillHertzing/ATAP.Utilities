@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ATAP.Utilities.Configuration.Secrets.Shims;
@@ -9,6 +10,7 @@ namespace ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden;
 /// to <see cref="ATAP.Utilities.Secrets.BitwardenSecretsShim"/> — the single
 /// canonical Bitwarden CLI implementation in the ATAP.Utilities.Secrets package.
 /// </summary>
+[Obsolete("Use ATAP.Utilities.Secrets.BitwardenSecretsShim directly instead. This type will be removed in a future release.")]
 public sealed class BitwardenSecretsShim : IConfigurationSecretsShim
 {
     private readonly ATAP.Utilities.Secrets.BitwardenSecretsShim _inner;

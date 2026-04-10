@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Extensions.DependencyInjection;
 
 using ATAP.Utilities.Configuration.Secrets.Shims;
@@ -7,6 +8,7 @@ namespace ATAP.Utilities.Configuration.Secrets;
 /// <summary>
 /// DI registration helpers for the IConfigurationSecrets chain.
 /// </summary>
+[Obsolete("Use ATAP.Utilities.Secrets namespace instead. This type will be removed in a future release.")]
 public static class ServiceCollectionExtensions
 {
     /// <summary>

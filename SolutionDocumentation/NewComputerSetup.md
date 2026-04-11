@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Setting up a new computer can be a daunting task when there are hundreds of customizations needed to make the computer a productive element of an organization's infrastructure.  Infrastructure As Code (IAC) is the discipline that is concerned with formalizing how to codify the customizations, and executing on the configuration to make a computer conform to the customizations desired.
+Setting up a new computer can be a daunting task when there are hundreds of customizations needed to make the computer a productive element of an organization's infrastructure. Infrastructure As Code (IAC) is the discipline that is concerned with formalizing how to codify the customizations, and executing on the configuration to make a computer conform to the customizations desired.
 
 The ATAP utilities repository uses the automation software Ansible to control the setup and upgrade of the hosts in our organization. The sub-repository ATAP.IAC.Ansible contains IAC code that defines the organization's hosts, their roles, and the specific software and configuration needed on the hosts for them to fulfill their roles. See the ATAP.IAC.Ansible [readme] for further information on this
 
@@ -70,7 +70,7 @@ Before any IAC controller can configure a new host, the IAC controller software 
 
 ### Bootstrap a new host accepting communications from Ansible
 
-Ansible (for Windows) uses WinRM to communicate from the AnsibleController host to the remote hosts.  WinRM must be setup durring the bootstrap process.
+Ansible (for Windows) uses WinRM to communicate from the AnsibleController host to the remote hosts. WinRM must be setup durring the bootstrap process.
 
 #### Enable WinRM
 
@@ -80,7 +80,7 @@ Setup the initial WinRM configuration. Run the command `winrm qc`
 
 During the bootstrapping process, we will use the version of the Powershell executable that came with the Windows OS install. During the bootstrapping process, Powershell will be configured to allow running scripts that are unsigned. After the initial configuration, the Powershell ExecutionPolicy will be changed so that only signed scripts will be allowed.
 
-Run the command ```Set-ExecutionPolicy Bypass```
+Run the command `Set-ExecutionPolicy Bypass`
 
 #### Allow Powershell remote access from Ansible
 
@@ -169,7 +169,7 @@ The default ansible temporary directory is 'C:\temp\ansible`, Run the command
 # ToDo: get the actual ansible temp directory from the settings for the new host
 $null = New-Item -ItemType Directory -Force C:\temp\ansible
 
-````
+```
 
 Ensure the organization's `hosts` file includes the new Windows host.
 Ensure the Ansible inventory files include the new host
@@ -180,7 +180,7 @@ Invoke the ansible WindowsHosts.yml playbook, specify the new Windows host's nam
 
 Run this in an `Ubuntu` terminal on the active Ansible Controller's host
 
- ```Powershell
+```Powershell
 $newhostname = 'utat022'
 $defaultUser = 'whertzing'
 ansible-playbook -l $newhostname playbooks/WindowsHostsPlaybook.yml -i ./nonproduction_inventory.yml  --tags "Preamble"  -e "user=$defaultUser password=  "
@@ -194,7 +194,7 @@ TBD - update the list of packages by referencing an organization's confidential 
 
 Run This
 
-ansible-playbook -l $newhostname playbooks/WindowsHostsPlaybook.yml -i ./nonproduction_inventory.yml  --tags "Preamble"  -e 'user=whertzing password=obfuscated'
+ansible-playbook -l $newhostname playbooks/WindowsHostsPlaybook.yml -i ./nonproduction_inventory.yml --tags "Preamble" -e 'user=whertzing password=obfuscated'
 Chocolatey packages
 
 ### Document the Operating System baseline (optional)
@@ -236,7 +236,7 @@ Remove-Item "Setup.msix"
 
 ### Install Python
 
- Note: as of 7/2/2023 StableDiffusion  will only work with Python 3.10, nothing later (pytorch is required)
+Note: as of 7/2/2023 StableDiffusion will only work with Python 3.10, nothing later (pytorch is required)
 
 `winget install Python.Python.3.10 --scope machine`
 
@@ -254,3 +254,37 @@ Windows Update -> Advanced Options -> Optional Updates
 ### Install Dropbox, and sync
 
 ### Map User Directories to dropbox
+
+### Developer tools
+
+#### Add aaronontheweb/mssql-mcp SQL MCP Server
+
+As a development tool, this will have to be installed on a new machine after dotnet has been installed. The MCP server configuration file(s) are found in the SharedVSCode repo
+
+The repo does not publish a NuGet tool package — it's build-from-source only.
+
+Note: an alternative is Microsoft's DAB-based SQL MCP Server, which is officially maintained, integrates directly into VS Code, and uses Windows Integrated Auth without needing to manage credentials. However, since the DAB is spun up for every MCP query, and can take 3-5 seconds, as well as adding a translation layer over the SQL tablesss, the `aaronontheweb/mssql-mcp` MCP server isa better fit
+
+##### Detailed instructions
+
+Clone the repo from github.
+ToDo: replace the path locations below with data from the global settings
+<cloudSharedBaseFolder> = `Join-Path 'C:' 'Dropbox'`
+<username> = `$env:USERNAME`
+<GithubOSSForksFolder> = `Join-Path 'Github' 'OSSForks'`
+<CloneRoot> = `Join-Path 'aaronontheweb' 'mssql-mcp'`
+
+```powershell
+$targetBaseFolderPath = Join-Path 'C:' 'Dropbox' $env:USERNAME 'Github' 'OSSForks' 'aaronontheweb'
+# Ensure the entire tree exists
+New-Item -ItemType Directory -Path $targetBaseFolderPath -Force
+cd $targetBaseFolderPath
+git clone https://github.com/Aaronontheweb/mssql-mcp.git
+cd mssql-mcp
+dotnet build -c Release
+# ToDo: confirm build succeeded
+# ToDo: get instructions on how to do a virus scan from $global:settings, and scan the cloned folder tree
+# configure the server. Use the mcp.json file in the .vscode folder in the SharedVSCode repo
+
+
+```

@@ -58,7 +58,7 @@
     <PackageVersion Include="ATAP.Utilities.Configuration.Secrets" Version="0.1.0-Alpha-008" />
     <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden" Version="0.1.0-Alpha-008" />
     <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims" Version="0.1.0-Alpha-008" />
-    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims.Interfaces" Version="0.1.0-Alpha-005" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims.Interfaces" Version="0.1.0-Alpha-008" />
   </ItemGroup>
   <ItemGroup Label="Microsoft.Extensions.* (Configuration, Hosting, DI, Logging)">
     <!-- Packages necessary to run the Net Core Generic Host and web server hosts -->

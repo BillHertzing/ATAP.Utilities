@@ -25,7 +25,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\StringConstants\ATAP.Utilities.MessageQueue.StringConstants.csproj" />
     <ProjectReference Include="..\..\Interfaces\ATAP.Utilities.MessageQueue.Interfaces.csproj" />
-    <ProjectReference Include="..\..\Model\ATAP.Utilities.MessageQueue.csproj" />
+    <ProjectReference Include="..\..\Model\ATAP.Utilities.MessageQueue.Model.csproj" />
     <ProjectReference Include="..\..\..\ATAP.Utilities.Collection.Extensions\ATAP.Utilities.Collection.Extensions.csproj" />
   </ItemGroup>
 

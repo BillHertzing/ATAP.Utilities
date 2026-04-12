@@ -54,11 +54,11 @@
   </ItemGroup>
   <ItemGroup Label="ATAP.Utilities.Configuration Family">
     <PackageVersion Include="ATAP.Utilities.Configuration" Version="0.1.0-Alpha-009" />
-    <PackageVersion Include="ATAP.Utilities.Configuration.Extensions" Version="0.1.0-Alpha-013" />
-    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets" Version="0.1.0-Alpha-008" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Extensions" Version="0.1.0-Alpha-016" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets" Version="0.1.0-Alpha-011" />
     <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden" Version="0.1.0-Alpha-008" />
-    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims" Version="0.1.0-Alpha-008" />
-    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims.Interfaces" Version="0.1.0-Alpha-008" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims" Version="0.1.0-Alpha-011" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims.Interfaces" Version="0.1.0-Alpha-012" />
   </ItemGroup>
   <ItemGroup Label="Microsoft.Extensions.* (Configuration, Hosting, DI, Logging)">
     <!-- Packages necessary to run the Net Core Generic Host and web server hosts -->
@@ -73,6 +73,7 @@
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Localization" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="9.0.0" />
     <PackageVersion Include="Microsoft.SemanticKernel" Version="1.71.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />

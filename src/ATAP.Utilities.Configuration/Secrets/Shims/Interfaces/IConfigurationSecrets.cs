@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,6 +9,7 @@ namespace ATAP.Utilities.Configuration.Secrets;
 /// Implementations are supplied by the plugin shim layer
 /// (see ATAP.Utilities.Configuration.Secrets.Shims).
 /// </summary>
+[Obsolete("Use ATAP.Utilities.Secrets.ISecretsAbstract instead. This type will be removed in a future release.")]
 public interface IConfigurationSecrets
 {
     /// <summary>

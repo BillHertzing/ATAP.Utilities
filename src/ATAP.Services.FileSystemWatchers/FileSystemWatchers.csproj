@@ -43,11 +43,6 @@
   </ItemGroup>
 
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
-  <!--
-  <PropertyGroup>
-  <ATAP.Utilities.ETW.ETWLogAttribute>True</ATAP.Utilities.ETW.ETWLogAttribute>
-  </PropertyGroup>
-  -->
   <ItemGroup>
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
     <PackageReference Include="MethodBoundaryAspect.Fody" />

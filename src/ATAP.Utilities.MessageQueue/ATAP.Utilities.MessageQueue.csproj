@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <!-- Project references to all child projects -->
-    <ProjectReference Include="Model\ATAP.Utilities.MessageQueue.csproj" />
+    <ProjectReference Include="Model\ATAP.Utilities.MessageQueue.Model.csproj" />
     <ProjectReference Include="Extensions\ATAP.Utilities.MessageQueue.Extensions.csproj" />
     <ProjectReference Include="Interfaces\ATAP.Utilities.MessageQueue.Interfaces.csproj" />
     <ProjectReference Include="Shim\ATAP.Utilities.MessageQueue.Shim.csproj" />

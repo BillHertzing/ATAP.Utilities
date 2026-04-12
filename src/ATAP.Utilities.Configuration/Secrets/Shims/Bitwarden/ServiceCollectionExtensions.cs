@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Extensions.DependencyInjection;
 
 using ATAP.Utilities.Configuration.Secrets;
@@ -7,6 +8,7 @@ namespace ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden;
 /// <summary>
 /// DI registration for the Bitwarden secrets shim.
 /// </summary>
+[Obsolete("Use ATAP.Utilities.Secrets.ServiceCollectionExtensions.AddBitwardenSecrets instead. This type will be removed in a future release.")]
 public static class ServiceCollectionExtensions
 {
     /// <summary>

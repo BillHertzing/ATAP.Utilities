@@ -14,7 +14,7 @@
     <ProjectReference Include="..\ATAP.Utilities.StronglyTypedId\Interfaces\ATAP.Utilities.StronglyTypedId.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.StronglyTypedId\Models\ATAP.Utilities.StronglyTypedId.Models.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence\Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Persistence\Model\ATAP.Utilities.Persistence.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Persistence\Model\ATAP.Utilities.Persistence.Model.csproj" />
   </ItemGroup>
 
   <ItemGroup>

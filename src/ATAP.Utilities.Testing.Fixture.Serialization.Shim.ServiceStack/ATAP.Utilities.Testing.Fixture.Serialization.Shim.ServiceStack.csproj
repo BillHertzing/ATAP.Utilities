@@ -63,7 +63,7 @@
     <ProjectReference Include="../ATAP.Utilities.Serializer\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
     <ProjectReference Include="../ATAP.Utilities.Serializer\StringConstants/ATAP.Utilities.Serializer.StringConstants.csproj" />
     <ProjectReference Include="../ATAP.Utilities.Serializer\Model\ATAP.Utilities.Serializer.Model.csproj" />
-    <ProjectReference Include="../ATAP.Utilities.Serializer.Shim\SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" />
+    <ProjectReference Include="../ATAP.Utilities.Serializer/Shim/SystemTextJson/ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" />
   </ItemGroup>
 
   <!-- ATAP Utility Packages For the Testing Fixture hierarchy -->

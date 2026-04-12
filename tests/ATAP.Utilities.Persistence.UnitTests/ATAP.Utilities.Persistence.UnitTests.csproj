@@ -36,7 +36,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\ATAP.Utilities.Persistence\Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Persistence\Model\ATAP.Utilities.Persistence.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Persistence\Model\ATAP.Utilities.Persistence.Model.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Persistence\Extensions\ATAP.Utilities.Persistence.Extensions.csproj" />
   </ItemGroup>
 

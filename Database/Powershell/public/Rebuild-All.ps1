@@ -16,6 +16,9 @@ $databaseName = 'ATAPUtilities'
 $databaseHost = 'localhost'
 # Set the environment to use (this will be passed to databaseProvisioning and Invoke-Flyway)
 $environment = 'Experimental'
+# Set the SqlInstance to use (this will be passed to databaseProvisioning and Invoke-Flyway)
+$sqlInstance = 'development-whertzing'
+
 # Set the ConnectionMethod
 $connectionMethod = 'tcp'
 # Set the path where the database files will be created (intentionally absolute - storage location)
@@ -41,7 +44,7 @@ $Force = $true
 try {
   # Import dbatools module for database operations (avoid SqlServer module to prevent assembly conflicts)
   if (-not (Get-Module -Name dbatools -ListAvailable)) {
-    Write-PSFMessage -Level Warning -Message "dbatools module not found. Installing..."
+    Write-PSFMessage -Level Warning -Message 'dbatools module not found. Installing...'
     Install-Module -Name dbatools -Scope CurrentUser -Force -AllowClobber
   }
   Import-Module dbatools -ErrorAction Stop
@@ -62,8 +65,7 @@ try {
     }
     . $scriptPath
   }
-}
-catch {
+} catch {
   $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
   Write-PSFMessage -Level Error -Message $errorMessage
   throw
@@ -73,6 +75,7 @@ Write-PSFMessage -Level Important -Message "=== Starting $databaseName Database 
 Write-PSFMessage -Level Important -Message "Repository root: $repositoryRoot"
 Write-PSFMessage -Level Important -Message "Database: $databaseName"
 Write-PSFMessage -Level Important -Message "Database host: $databaseHost"
+Write-PSFMessage -Level Important -Message "SQLInstance: $sqlInstance"
 Write-PSFMessage -Level Important -Message "Using environment: $environment"
 Write-PSFMessage -Level Important -Message "Connection method: $connectionMethod"
 Write-PSFMessage -Level Important -Message "Database path: $databasePath"
@@ -84,18 +87,19 @@ Write-PSFMessage -Level Important -Message "Flyway Data path: $flywayDataPath"
 Write-PSFMessage -Level Important -Message "Flyway configuration file path: $FlywayTomlPath"
 
 # Configure dbatools SSL/encryption settings
-Write-PSFMessage -Level Verbose -Message "Configuring dbatools to trust server certificates"
+Write-PSFMessage -Level Verbose -Message 'Configuring dbatools to trust server certificates'
 Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -PassThru | Register-DbatoolsConfig
 Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -PassThru | Register-DbatoolsConfig
 
 # Build the database using Flyway migrations
 try {
-  Write-PSFMessage -Level Important -Message "Building database from Flyway migrations..."
+  Write-PSFMessage -Level Important -Message 'Building database from Flyway migrations...'
 
   $buildResult = Build-DatabaseWithFlyway `
     -DatabaseName $databaseName `
     -Environment $environment `
     -DatabaseHost $databaseHost `
+    -SqlInstance $sqlInstance `
     -ConnectionMethod $connectionMethod `
     -DatabasePath $databasePath `
     -ProvisioningScriptsPath $ProvisioningScriptsPath `
@@ -112,9 +116,8 @@ try {
     throw "Database build failed. Errors: $($buildResult.Errors -join '; ')"
   }
 
-  Write-PSFMessage -Level Important -Message "Database build completed successfully"
-}
-catch {
+  Write-PSFMessage -Level Important -Message 'Database build completed successfully'
+} catch {
   Write-PSFMessage -Level Error -Message "Database build failed: $($_.Exception.Message)"
   Write-PSFMessage -Level Error -Message "Stack trace: $($_.ScriptStackTrace)"
   throw
@@ -125,7 +128,7 @@ catch {
 # Future: Create Load-ATAPUtilities function if additional data loading is needed
 try {
   Write-PSFMessage -Level Important -Message "=== $databaseName Database Build Complete ==="
-  Write-PSFMessage -Level Important -Message "Note: Initial data loaded via Flyway migration callbacks"
+  Write-PSFMessage -Level Important -Message 'Note: Initial data loaded via Flyway migration callbacks'
 
   # Future data loading example:
   # Write-PSFMessage -Level Important -Message "Loading $databaseName data into database..."
@@ -135,8 +138,7 @@ try {
   #   -Environment $environment `
   #   -IntegratedSecurity `
   #   -Verbose:$VerbosePreference
-}
-catch {
+} catch {
   Write-PSFMessage -Level Error -Message "Post-build processing failed: $($_.Exception.Message)"
   throw
 }

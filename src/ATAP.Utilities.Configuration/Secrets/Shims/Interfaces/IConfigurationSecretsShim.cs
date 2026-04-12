@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -10,6 +11,7 @@ namespace ATAP.Utilities.Configuration.Secrets.Shims;
 /// Register all implementations with DI as <see cref="IConfigurationSecretsShim"/> and
 /// inject <see cref="IConfigurationSecrets"/> as the top-level consumer interface.
 /// </summary>
+[Obsolete("Use ATAP.Utilities.Secrets.ISecretsAbstract instead. This type will be removed in a future release.")]
 public interface IConfigurationSecretsShim
 {
     /// <summary>Unique provider name (e.g. "Bitwarden", "AzureKeyVault").</summary>

@@ -1,6 +1,9 @@
 # For SharedVSCode
 /**/SQL-AI-samples/
 
+# Temporary until new method of file versioning is implemented
+AssemblyInfo.cs
+
 #Temporary for Ace
 ProductionReleases/
 

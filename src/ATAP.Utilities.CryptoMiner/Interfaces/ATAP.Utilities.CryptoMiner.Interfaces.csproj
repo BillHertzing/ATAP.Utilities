@@ -16,7 +16,7 @@
   </PropertyGroup>
 
 <ItemGroup>
-    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory.Hardware\Models\ATAP.Utilities.ComputerInventory.Hardware.Models.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory\Hardware\Models\ATAP.Utilities.ComputerInventory.Hardware.Models.csproj" />
     <ProjectReference Include="..\..\ATAP.Utilities.ConcurrentObservableCollections\ATAP.Utilities.ConcurrentObservableCollections.csproj" />
     <ProjectReference Include="..\..\ATAP.Utilities.CryptoCoin\Enumerations\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />
     <ProjectReference Include="..\..\ATAP.Utilities.CryptoCoin\Interfaces\ATAP.Utilities.CryptoCoin.Interfaces.csproj" />

@@ -9,6 +9,7 @@
     <PackageLifeCycleStage>Development</PackageLifeCycleStage>
     <PackageLabel>Alpha</PackageLabel>
     <EnableDefaultItems>false</EnableDefaultItems>
+    <NoWarn>$(NoWarn);2008</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

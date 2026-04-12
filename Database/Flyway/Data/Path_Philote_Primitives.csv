@@ -11,3 +11,4 @@ f9a0b1c2-3d4e-5f6a-7b8c-9d0e1f2a3b4c,<namechar> - Valid path character primitive
 a0b1c2d3-4e5f-6a7b-8c9d-0e1f2a3b4c5d,<server> - UNC server name primitive
 b1c2d3e4-5f6a-7b8c-9d0e-1f2a3b4c5d6e,<share> - UNC share name primitive
 c2d3e4f5-6a7b-8c9d-0e1f-2a3b4c5d6e7f,<letter> - Alphabetic drive letter primitive
+8c3d6e7f-5a4b-4c9d-0e12-3c4d5e6f7081,<atap-utilities-secrets-csproj-path> - Specialized primitive for ATAP.Utilities.Secrets.csproj absolute path

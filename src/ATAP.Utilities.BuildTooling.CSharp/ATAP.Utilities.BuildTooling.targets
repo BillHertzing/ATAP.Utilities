@@ -3,11 +3,11 @@
 
     <!-- Print debugging information if the BeforeTargets is "PublishAfterBuild" instead of "NeverJustAPlaceHolder"-->
    <Target Name="PrintBuildVariables" BeforeTargets="PublishAfterBuild">
-     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildProjectDirectory = $(MSBuildProjectDirectory)" />
-     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildProjectFullPath = $(MSBuildProjectFullPath)" />
-     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildToolsPath = $(MSBuildToolsPath)" />
-     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildBinPath = $(MSBuildBinPath)" />
-     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Configuration = $(Configuration)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildProjectDirectory = $(MSBuildProjectDirectory)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildProjectFullPath = $(MSBuildProjectFullPath)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildToolsPath = $(MSBuildToolsPath)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildBinPath = $(MSBuildBinPath)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Configuration = $(Configuration)" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Platform = $(Platform)" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="TargetFrameworks = $(TargetFrameworks)" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="TargetFramework = $(TargetFramework)" />
@@ -152,16 +152,17 @@
   <PropertyGroup>
     <ProGetExperimentalFeedUrl Condition="'$(ProGetExperimentalFeedUrl)' == ''">http://localhost:50000/nuget/nuget-experimental/v3/index.json</ProGetExperimentalFeedUrl>
   </PropertyGroup>
-  <Target Name="PublishAfterBuild" AfterTargets="GenerateNuspec">
+  <Target Name="PublishAfterBuild" AfterTargets="GenerateNuspec"
+          Condition="'$(Configuration)' == 'Release'">
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="OutputPath = $(OutputPath)" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageOutputPath = $(PackageOutputPath)" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="ProGetExperimentalFeedUrl = $(ProGetExperimentalFeedUrl)" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Pushing $(PackageId).$(PackageVersion).nupkg to ProGet nuget-experimental feed" />
     <!-- Resolve nupkg directory: PackageOutputPath may be absolute (from the -output flag) or relative.
-         String-concatenation with MSBuildProjectDirectory breaks when it is absolute, so we
-         use IsPathRooted to pick the right base. WorkingDirectory is omitted - dotnet nuget
-         push only needs the full nupkg path, not a cwd. The -skip-duplicate flag avoids errors on
-         re-push of an already-published version. -->
+        String-concatenation with MSBuildProjectDirectory breaks when it is absolute, so we
+        use IsPathRooted to pick the right base. WorkingDirectory is omitted - dotnet nuget
+        push only needs the full nupkg path, not a cwd. The -skip-duplicate flag avoids errors on
+        re-push of an already-published version. -->
     <PropertyGroup>
       <_NupkgDir Condition="$([System.IO.Path]::IsPathRooted('$(PackageOutputPath)'))">$(PackageOutputPath)</_NupkgDir>
       <_NupkgDir Condition="'$(_NupkgDir)' == ''">$(MSBuildProjectDirectory)\$(PackageOutputPath)</_NupkgDir>

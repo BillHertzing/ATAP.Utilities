@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net48;net8.0;net9.0</TargetFrameworks>
     <RootNamespace>ATAP.Utilities.Console01</RootNamespace>
   </PropertyGroup>
 
@@ -27,7 +26,7 @@
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory\Software\Enumerations\ATAP.Utilities.ComputerInventory.Software.Enumerations.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence\Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Persistence\Model\ATAP.Utilities.Persistence.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Persistence\Model\ATAP.Utilities.Persistence.Model.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence\Extensions\ATAP.Utilities.Persistence.Extensions.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Reactive.Extensions\ATAP.Utilities.Reactive.Extensions.csproj" />
   </ItemGroup>

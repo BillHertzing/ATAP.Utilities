@@ -1,3 +1,5 @@
+using System;
+
 namespace ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden;
 
 /// <summary>
@@ -10,4 +12,5 @@ namespace ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden;
 /// <c>"password"</c> targets the built-in Password field;
 /// any other value targets a custom field by that name (case-insensitive).
 /// </param>
+[Obsolete("Use ATAP.Utilities.Secrets.SecretMapping instead. This type will be removed in a future release.")]
 public sealed record BitwardenSecretMapping(string ConfigKey, string BwItemName, string BwFieldName = "password");

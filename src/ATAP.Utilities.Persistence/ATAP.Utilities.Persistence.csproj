@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <!-- Project references to all child projects -->
-    <ProjectReference Include="Model\ATAP.Utilities.Persistence.csproj" />
+    <ProjectReference Include="Model\ATAP.Utilities.Persistence.Model.csproj" />
     <ProjectReference Include="Extensions\ATAP.Utilities.Persistence.Extensions.csproj" />
     <ProjectReference Include="Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
     <ProjectReference Include="StringConstants\ATAP.Utilities.Persistence.StringConstants.csproj" />

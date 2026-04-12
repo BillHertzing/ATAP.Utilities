@@ -5,60 +5,60 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup Label="Security Patches (Critical - Addresses Known Vulnerabilities)">
-    <!-- Regex library (4.3.0 has a vulnerability) -->
-    <PackageVersion Include="System.Text.RegularExpressions" Version="5.0.0" />
-    <!-- URI library (4.3.0 has a vulnerability) -->
-    <PackageVersion Include="System.Private.URI" Version="4.3.4" />
     <!-- HTTP library (4.3.0 has a vulnerability) -->
     <PackageVersion Include="System.Net.HTTP" Version="4.8.1" />
+    <!-- URI library (4.3.0 has a vulnerability) -->
+    <PackageVersion Include="System.Private.URI" Version="4.3.4" />
+    <PackageVersion Include="System.Runtime.Handles" Version="4.3.0" />
     <!-- Required to prevent error NU1605 -->
     <PackageVersion Include="System.Runtime.InteropServices" Version="4.3.0" />
-    <PackageVersion Include="System.Runtime.Handles" Version="4.3.0" />
+    <!-- Regex library (4.3.0 has a vulnerability) -->
+    <PackageVersion Include="System.Text.RegularExpressions" Version="5.0.0" />
   </ItemGroup>
   <ItemGroup Label="Core Libraries">
-    <!-- Stateless lightweight StateMachine library -->
-    <PackageVersion Include="Stateless" Version="5.1.2" />
-    <!-- QuickGraph and its dependencies -->
-    <PackageVersion Include="YC.QuickGraph" Version="3.7.4" />
     <PackageVersion Include="DotNet.Contracts" Version="1.10.20606.1" />
     <PackageVersion Include="FSharp.Core" Version="4.3.4" />
     <PackageVersion Include="FSharpx.Collections.Experimental" Version="2.1.3" />
+    <PackageVersion Include="McMaster.NETCore.Plugins" Version="1.4.0" />
+    <!-- newtonsoft JSON serializer -->
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
+    <!-- Stateless lightweight StateMachine library -->
+    <PackageVersion Include="Stateless" Version="5.1.2" />
+    <PackageVersion Include="System.Collections.Immutable" Version="5.0.0" />
     <!-- Reactive Extensions -->
     <PackageVersion Include="System.Reactive" Version="5.0.0" />
     <!-- Text-To-Speech (TTS) packages -->
     <PackageVersion Include="System.Speech" Version="5.0.0" />
-    <!-- newtonsoft JSON serializer -->
-    <PackageVersion Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageVersion Include="System.Collections.Immutable" Version="5.0.0" />
-    <PackageVersion Include="McMaster.NETCore.Plugins" Version="1.4.0" />
+    <!-- QuickGraph and its dependencies -->
+    <PackageVersion Include="YC.QuickGraph" Version="3.7.4" />
   </ItemGroup>
   <ItemGroup Label="ServiceStack Suite">
     <PackageVersion Include="ServiceStack" Version="5.12.0" />
-    <!-- ServiceStack serializers and dump utility -->
-    <PackageVersion Include="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
-    <PackageVersion Include="ServiceStack.Text" Version="5.12.0" />
     <PackageVersion Include="ServiceStack.HttpClient" Version="5.12.0" />
     <!-- ServiceStack ORMLite and SQLServer -->
     <PackageVersion Include="ServiceStack.OrmLite" Version="5.12.0" />
-    <PackageVersion Include="ServiceStack.OrmLite.SqlServer" Version="5.12.0" />
-    <PackageVersion Include="ServiceStack.OrmLite.MySQL" Version="5.12.0" />
-    <PackageVersion Include="ServiceStack.OrmLite.Sqlite" Version="5.12.0" />
     <PackageVersion Include="ServiceStack.OrmLite.Core" Version="5.12.0" />
-    <PackageVersion Include="ServiceStack.OrmLite.SqlServer.Core" Version="5.12.0" />
+    <PackageVersion Include="ServiceStack.OrmLite.MySQL" Version="5.12.0" />
     <PackageVersion Include="ServiceStack.OrmLite.MySQL.Core" Version="5.12.0" />
+    <PackageVersion Include="ServiceStack.OrmLite.Sqlite" Version="5.12.0" />
     <PackageVersion Include="ServiceStack.OrmLite.Sqlite.Core" Version="5.12.0" />
+    <PackageVersion Include="ServiceStack.OrmLite.SqlServer" Version="5.12.0" />
+    <PackageVersion Include="ServiceStack.OrmLite.SqlServer.Core" Version="5.12.0" />
+    <PackageVersion Include="ServiceStack.Text" Version="5.12.0" />
+    <!-- ServiceStack serializers and dump utility -->
+    <PackageVersion Include="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
   </ItemGroup>
   <ItemGroup Label="Time and Date Libraries">
     <!-- Library of rich time and interval manipulation routines -->
     <PackageVersion Include="TimePeriodLibrary.NET" Version="2.1.5" />
   </ItemGroup>
   <ItemGroup Label="ATAP.Utilities.Configuration Family">
-    <PackageVersion Include="ATAP.Utilities.Configuration" Version="0.1.0-Alpha-003" />
-    <PackageVersion Include="ATAP.Utilities.Configuration.Extensions" Version="0.1.0-Alpha-009" />
-    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets" Version="0.1.0-Alpha-003" />
-    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims" Version="0.1.0-Alpha-003" />
-    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims.Interfaces" Version="0.1.0-Alpha-001" />
-    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden" Version="0.1.0-Alpha-003" />
+    <PackageVersion Include="ATAP.Utilities.Configuration" Version="0.1.0-Alpha-009" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Extensions" Version="0.1.0-Alpha-016" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets" Version="0.1.0-Alpha-011" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden" Version="0.1.0-Alpha-008" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims" Version="0.1.0-Alpha-011" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims.Interfaces" Version="0.1.0-Alpha-012" />
   </ItemGroup>
   <ItemGroup Label="Microsoft.Extensions.* (Configuration, Hosting, DI, Logging)">
     <!-- Packages necessary to run the Net Core Generic Host and web server hosts -->
@@ -68,13 +68,15 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.CommandLine" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Localization" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
     <!-- Standalone reference to Microsoft.Extensions.DependencyInjection used by unitTest projects -->
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Localization" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel" Version="1.71.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
   </ItemGroup>
   <ItemGroup Label="Dependency Injection Alternatives">
     <!-- Alternate DI container used in UnitTest projects -->
@@ -117,19 +119,19 @@
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup Label="Serilog Logging Suite">
+    <!-- Seq Extensions for Microsoft.Extensions.Logging -->
+    <PackageVersion Include="Seq.Extensions.Logging" Version="6.0.0" />
     <PackageVersion Include="Serilog" Version="4.1.0" />
-    <PackageVersion Include="Serilog.Settings.Configuration" Version="8.0.4" />
     <PackageVersion Include="Serilog.Enrichers.Thread" Version="4.0.0" />
+    <PackageVersion Include="Serilog.Exceptions" Version="7.1.0" />
     <PackageVersion Include="Serilog.Extensions.Hosting" Version="4.1.2" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="3.0.1" />
-    <PackageVersion Include="Serilog.Exceptions" Version="7.1.0" />
+    <PackageVersion Include="Serilog.Settings.Configuration" Version="8.0.4" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="4.0.0" />
     <PackageVersion Include="Serilog.Sinks.Debug" Version="2.0" />
     <PackageVersion Include="Serilog.Sinks.File" Version="5.0.0" />
     <PackageVersion Include="Serilog.Sinks.Seq" Version="5.0.0" />
     <PackageVersion Include="SerilogAnalyzer" Version="0.15.0" />
-    <!-- Seq Extensions for Microsoft.Extensions.Logging -->
-    <PackageVersion Include="Seq.Extensions.Logging" Version="6.0.0" />
   </ItemGroup>
   <ItemGroup Label="Process Management">
     <!-- Package to ease spawning of and communications with processes -->
@@ -145,29 +147,29 @@
   </ItemGroup>
   <ItemGroup Label="xUnit Testing Suite">
     <!-- Packages to add xUnit Testing providers and extensions -->
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
-    <PackageVersion Include="FluentAssertions" Version="6.2.0" />
-    <PackageVersion Include="Moq" Version="4.16.1" />
-    <PackageVersion Include="Xunit.DependencyInjection" Version="7.1.0" />
-    <PackageVersion Include="xunit" Version="2.4.1" />
-    <PackageVersion Include="xunit.runner.console" Version="2.4.1" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="2.4.3" />
     <PackageVersion Include="coverlet.collector" Version="3.1.0" />
     <!-- DotNetCliToolReference (deprecated but still used in some projects) -->
     <PackageVersion Include="dotnet-xunit" Version="2.3.1" />
+    <PackageVersion Include="FluentAssertions" Version="6.2.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
+    <PackageVersion Include="Moq" Version="4.16.1" />
+    <PackageVersion Include="xunit" Version="2.4.1" />
+    <PackageVersion Include="Xunit.DependencyInjection" Version="7.1.0" />
+    <PackageVersion Include="xunit.runner.console" Version="2.4.1" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.4.3" />
   </ItemGroup>
   <ItemGroup Label="Legacy/Unsorted Packages">
-    <PackageVersion Include="NLog" Version="4.7.0" />
-    <PackageVersion Include="NLog.Config" Version="4.7.0" />
-    <!-- Windows Task Scheduler wrapper -->
-    <PackageVersion Include="TaskScheduler" Version="2.11.0" />
-    <!-- Dynamic Types -->
-    <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageVersion Include="System.Dynamic.Runtime" Version="4.3.0" />
     <!-- DocFX package -->
     <PackageVersion Include="docfx" Version="2.56.5" />
     <!-- Packages to play with CSharpSyntaxTree -->
     <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="3.5.0" />
+    <!-- Dynamic Types -->
+    <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageVersion Include="NLog" Version="4.7.0" />
+    <PackageVersion Include="NLog.Config" Version="4.7.0" />
+    <PackageVersion Include="System.Dynamic.Runtime" Version="4.3.0" />
+    <!-- Windows Task Scheduler wrapper -->
+    <PackageVersion Include="TaskScheduler" Version="2.11.0" />
   </ItemGroup>
   <!-- Framework-Conditional Package Versions -->
   <!-- These package versions vary based on target framework -->

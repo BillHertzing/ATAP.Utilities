@@ -20,7 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\StringConstants\ATAP.Utilities.MessageQueue.StringConstants.csproj" />
     <ProjectReference Include="..\..\Interfaces\ATAP.Utilities.MessageQueue.Interfaces.csproj" />
-    <ProjectReference Include="..\..\Model\ATAP.Utilities.MessageQueue.csproj" />
+    <ProjectReference Include="..\..\Model\ATAP.Utilities.MessageQueue.Model.csproj" />
     <ProjectReference Include="..\..\..\ATAP.Utilities.Collection.Extensions\ATAP.Utilities.Collection.Extensions.csproj" />
   </ItemGroup>
 
@@ -49,7 +49,6 @@
 
   <!-- Loader interfaces and classes for any Assembly that may be loaded by the dynamic Loader, only works for TargetFramework NetCore -->
   <ItemGroup Condition="$(TargetFramework.Contains('netcore'))">
-    <ProjectReference Include="..\..\ATAP.Utilities.Loader.Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" />
     <ProjectReference Include="..\..\ATAP.Utilities.Loader\ATAP.Utilities.Loader.csproj" />
   </ItemGroup>
 

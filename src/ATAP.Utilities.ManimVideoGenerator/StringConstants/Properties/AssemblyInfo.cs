@@ -6,10 +6,10 @@ using System.Runtime.InteropServices;
 using System.ComponentModel;
 #endif
 // ATAP.Utilities.BuildTooling.targets will update the build (date), and revision fields each time a new build occurs
-[assembly: AssemblyFileVersion("0.1.0.0")]
+[assembly:AssemblyFileVersion("0.1.9598.39376")]
 // ATAP.Utilities.BuildTooling.targets will update the AssemblyInformationalVersion field each time a new build occurs
-[assembly: AssemblyInformationalVersion("0.1.0-Alpha-0001")]
-[assembly: AssemblyVersion("0.1.0")]
+[assembly:AssemblyInformationalVersion("0.1.0-Alpha-012")]
+[assembly:AssemblyVersion("0.1.0")]
 // The following GUID is for the ID of the typelib if this project is exposed to COM
 [assembly: Guid("F5A6B7C8-D9E0-4234-F012-345678901234")]
 // When building with the Trace symbol defined, turn on ETW logging for Method Entry, Method Exit, and Exceptions

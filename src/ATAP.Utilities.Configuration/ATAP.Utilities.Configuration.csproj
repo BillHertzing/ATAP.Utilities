@@ -27,6 +27,7 @@
     <ProjectReference Include="Extensions\ATAP.Utilities.Configuration.Extensions.csproj" />
     <ProjectReference Include="Secrets\ATAP.Utilities.Configuration.Secrets.csproj" />
     <ProjectReference Include="Secrets\Shims\Bitwarden\ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Secrets\ATAP.Utilities.Secrets.csproj" />
   </ItemGroup>
 
 </Project>

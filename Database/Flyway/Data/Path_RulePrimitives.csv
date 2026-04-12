@@ -11,3 +11,4 @@ f9a0b1c2-3d4e-5f6a-7b8c-9d0e1f2a3b4c,6,<namechar>,"Valid path character excludin
 a0b1c2d3-4e5f-6a7b-8c9d-0e1f2a3b4c5d,6,<server>,UNC server name (hostname/FQDN/IP address)
 b1c2d3e4-5f6a-7b8c-9d0e-1f2a3b4c5d6e,6,<share>,UNC share name identifying shared resource
 c2d3e4f5-6a7b-8c9d-0e1f-2a3b4c5d6e7f,6,<letter>,Alphabetic drive letter character (A-Z or a-z)
+8c3d6e7f-5a4b-4c9d-0e12-3c4d5e6f7081,6,<atap-utilities-secrets-csproj-path>,Specialized absolute path primitive for the ATAP.Utilities.Secrets.csproj file instantiation

@@ -1,53 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
-    <!-- Assembly, File, and Package Information for this assembly-->
-    <!-- Build and revision are created based on date-->
     <MajorVersion>0</MajorVersion>
     <MinorVersion>1</MinorVersion>
     <PatchVersion>0</PatchVersion>
-    <!-- Current Lifecycle stage for this assembly-->
     <PackageLifeCycleStage>Development</PackageLifeCycleStage>
-    <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
-    <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
     <PackageLabel>Alpha</PackageLabel>
-  </PropertyGroup>
-
-  <!-- The Loader only works with NetCore 3.1, Net5.0 and higher -->
-  <PropertyGroup>
-    <TargetFrameworks>net10.0</TargetFrameworks>
+    <EnableDefaultItems>false</EnableDefaultItems>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Standalone reference to Microsoft.Extensions.DependencyInjection is used by unitTest projects-->
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <ProjectReference Include="Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" />
+    <ProjectReference Include="Model\ATAP.Utilities.Loader.Model.csproj" />
+    <ProjectReference Include="StringConstants\ATAP.Utilities.Loader.StringConstants.csproj" />
   </ItemGroup>
-
-  <!-- ToDo move the configuration into extensions on loader objects -->
-  <ItemGroup>
-    <!-- The Loader has a method that accepts an IConfiguration object -->
-    <PackageReference Include="Microsoft.Extensions.Configuration" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
-  </ItemGroup>
-
-  <!-- Loader interfaces and classes for any Assembly that may be loaded by the plugin Loader, only works with NetCore 3.1, Net5.0 and higher -->
-  <ItemGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '^(core|net[5-9]|net1[0-9])'))">
-    <ProjectReference Include="..\ATAP.Utilities.Loader.Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Loader.StringConstants\ATAP.Utilities.Loader.StringConstants.csproj" />
-  </ItemGroup>
-
-  <!-- Plugin Framework, only works with NetCore 3.1, Net5.0 and higher -->
-  <ItemGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '^(core|net[5-9]|net1[0-9])'))">
-    <PackageReference Include="McMaster.NETCore.Plugins" />
-  </ItemGroup>
-
-  <!-- Extensions methods on File and Directory types, along with a Globbing library -->
-  <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.FIleIO\ATAP.Utilities.FileIO.csproj" />
-  </ItemGroup>
-
 
 </Project>

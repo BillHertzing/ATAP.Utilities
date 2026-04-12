@@ -41,6 +41,10 @@
       "path": "./src/ATAP.Console.HelloWorld"
     },
     {
+      "name": "ATAP.Console.ManimDemo",
+      "path": "./src/ATAP.Console.ManimDemo"
+    },
+    {
       "name": "ATAP.Console.QueryChatGPT.Powershell",
       "path": "./src/ATAP.Console.QueryChatGPT.Powershell"
     },

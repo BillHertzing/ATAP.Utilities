@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <!-- NO TargetFramework/TargetFrameworks here — inherited from Directory.Build.props -->
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IsPackable>false</IsPackable>
+    <MajorVersion>0</MajorVersion>
+    <MinorVersion>1</MinorVersion>
+    <PatchVersion>0</PatchVersion>
+    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
+    <PackageLabel>Alpha</PackageLabel>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\StringConstants\ATAP.Console.ManimDemo.StringConstants.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
+  </ItemGroup>
+
+</Project>

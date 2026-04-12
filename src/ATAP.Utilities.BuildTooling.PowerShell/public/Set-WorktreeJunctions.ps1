@@ -167,7 +167,7 @@ function Set-WorktreeJunctions {
         [string[]]$DevSourceRepoFolderNames
     )
 
-    BEGIN {
+    begin {
         $fn = 'Set-WorktreeJunctions'
         $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
         $sourceRepoFullPath = $null
@@ -183,22 +183,18 @@ function Set-WorktreeJunctions {
                     throw 'Parameter SourceRepoPath is required but was not provided or is empty'
                 }
                 $sourceRepoInputPath = $SourceRepoPath
-            }
-            else {
+            } else {
                 if (-not $PSBoundParameters.ContainsKey('SourceRepoPathInfo') -or $null -eq $SourceRepoPathInfo) {
                     throw 'Parameter SourceRepoPathInfo is required but was not provided'
                 }
 
                 if ($SourceRepoPathInfo -is [System.Management.Automation.PathInfo]) {
                     $sourceRepoInputPath = $SourceRepoPathInfo.Path
-                }
-                elseif ($SourceRepoPathInfo -is [System.IO.FileSystemInfo]) {
+                } elseif ($SourceRepoPathInfo -is [System.IO.FileSystemInfo]) {
                     $sourceRepoInputPath = $SourceRepoPathInfo.FullName
-                }
-                elseif ($SourceRepoPathInfo.PSObject.Properties.Name -contains 'FullName') {
+                } elseif ($SourceRepoPathInfo.PSObject.Properties.Name -contains 'FullName') {
                     $sourceRepoInputPath = $SourceRepoPathInfo.FullName
-                }
-                elseif ($SourceRepoPathInfo.PSObject.Properties.Name -contains 'Path') {
+                } elseif ($SourceRepoPathInfo.PSObject.Properties.Name -contains 'Path') {
                     $sourceRepoInputPath = $SourceRepoPathInfo.Path
                 }
 
@@ -214,8 +210,7 @@ function Set-WorktreeJunctions {
 
             $sourceRepoFullPath = $resolvedSourceRepoPath.Path
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Source repository path resolved to: $sourceRepoFullPath"
-        }
-        catch {
+        } catch {
             $errorMessage = "Failed to resolve SourceRepoPath: $($_.Exception.Message)"
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
             throw $errorMessage
@@ -225,8 +220,7 @@ function Set-WorktreeJunctions {
         try {
             $resolvedWorktreePath = Resolve-Path $WorktreePath -ErrorAction Stop
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Worktree path resolved to: $resolvedWorktreePath"
-        }
-        catch {
+        } catch {
             $errorMessage = "Failed to resolve WorktreePath: $($_.Exception.Message)"
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
             throw $errorMessage
@@ -246,8 +240,7 @@ function Set-WorktreeJunctions {
                 throw "Path '$sourceRepoFullPath' is not a git repository"
             }
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Source repository validated as git repository'
-        }
-        catch {
+        } catch {
             $errorMessage = "Failed to validate SourceRepoPath as git repository: $($_.Exception.Message)"
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
             throw $errorMessage
@@ -270,22 +263,18 @@ function Set-WorktreeJunctions {
                         throw 'Parameter DevSourceRepoPath is required but was not provided or is empty'
                     }
                     $devSourceRepoInputPath = $DevSourceRepoPath
-                }
-                else {
+                } else {
                     if (-not $PSBoundParameters.ContainsKey('DevSourceRepoPathInfo') -or $null -eq $DevSourceRepoPathInfo) {
                         throw 'Parameter DevSourceRepoPathInfo is required but was not provided'
                     }
 
                     if ($DevSourceRepoPathInfo -is [System.Management.Automation.PathInfo]) {
                         $devSourceRepoInputPath = $DevSourceRepoPathInfo.Path
-                    }
-                    elseif ($DevSourceRepoPathInfo -is [System.IO.FileSystemInfo]) {
+                    } elseif ($DevSourceRepoPathInfo -is [System.IO.FileSystemInfo]) {
                         $devSourceRepoInputPath = $DevSourceRepoPathInfo.FullName
-                    }
-                    elseif ($DevSourceRepoPathInfo.PSObject.Properties.Name -contains 'FullName') {
+                    } elseif ($DevSourceRepoPathInfo.PSObject.Properties.Name -contains 'FullName') {
                         $devSourceRepoInputPath = $DevSourceRepoPathInfo.FullName
-                    }
-                    elseif ($DevSourceRepoPathInfo.PSObject.Properties.Name -contains 'Path') {
+                    } elseif ($DevSourceRepoPathInfo.PSObject.Properties.Name -contains 'Path') {
                         $devSourceRepoInputPath = $DevSourceRepoPathInfo.Path
                     }
 
@@ -311,8 +300,7 @@ function Set-WorktreeJunctions {
                 }
 
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Dev source folder names to redirect: $($DevSourceRepoFolderNames -join ', ')"
-            }
-            catch {
+            } catch {
                 $errorMessage = "Failed to resolve DevSourceRepoPath: $($_.Exception.Message)"
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
                 throw $errorMessage
@@ -331,7 +319,7 @@ function Set-WorktreeJunctions {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'All parameters validated successfully'
     }
 
-    PROCESS {
+    process {
         try {
             # Step 1: Find all junctions in the source repo
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Scanning for junctions in '$sourceRepoFullPath'"
@@ -339,7 +327,7 @@ function Set-WorktreeJunctions {
             if ($PSCmdlet.ShouldProcess("$($result.WorktreePath)", 'Recreate junctions from source repository')) {
                 try {
                     $junctions = Get-ChildItem -Path $sourceRepoFullPath -Recurse -Force -Attributes ReparsePoint -ErrorAction Stop |
-                    Where-Object { $_.LinkType -eq 'Junction' }
+                        Where-Object { $_.LinkType -eq 'Junction' }
 
                     if (-not $junctions) {
                         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'No junctions found in source repository'
@@ -366,8 +354,7 @@ function Set-WorktreeJunctions {
                                 if (Test-Path $devTarget -PathType Container) {
                                     $target = $devTarget
                                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Redirecting junction '$junctionLeafName' to dev source: $target"
-                                }
-                                else {
+                                } else {
                                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Dev source folder '$devTarget' not found; using original target for '$junctionLeafName'"
                                 }
                             }
@@ -388,8 +375,7 @@ function Set-WorktreeJunctions {
                                 if ($existingItem.LinkType -eq 'Junction') {
                                     cmd /c rmdir "$newJunctionPath"
                                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Removed existing junction at: $newJunctionPath"
-                                }
-                                else {
+                                } else {
                                     Remove-Item $newJunctionPath -Force -Recurse -ErrorAction Stop
                                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Removed existing item at: $newJunctionPath"
                                 }
@@ -405,8 +391,7 @@ function Set-WorktreeJunctions {
                                 Target       = $target
                                 FullPath     = $newJunctionPath
                             }
-                        }
-                        catch {
+                        } catch {
                             $errorMessage = "Failed to create junction '$relativePath': $($_.Exception.Message)"
                             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
                             $result.Errors += $errorMessage
@@ -416,16 +401,14 @@ function Set-WorktreeJunctions {
 
                     $result.Success = $true
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Junction recreation complete with $($result.JunctionsCreated) junction(s) recreated"
-                }
-                catch {
+                } catch {
                     $errorMessage = "Failed to scan or recreate junctions: $($_.Exception.Message)"
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
                     $result.Errors += $errorMessage
                     throw
                 }
             }
-        }
-        catch {
+        } catch {
             $errorMessage = "Set-WorktreeJunctions failed: $($_.Exception.Message)"
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
             $result.Success = $false
@@ -436,7 +419,7 @@ function Set-WorktreeJunctions {
         }
     }
 
-    END {
+    end {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function completed'
         $result
     }

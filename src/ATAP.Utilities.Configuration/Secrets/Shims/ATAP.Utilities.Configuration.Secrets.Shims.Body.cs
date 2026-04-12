@@ -10,6 +10,7 @@ namespace ATAP.Utilities.Configuration.Secrets.Shims;
 /// Returns the first non-null value found, in registration order.
 /// Register via DI as <see cref="ATAP.Utilities.Configuration.Secrets.IConfigurationSecrets"/>.
 /// </summary>
+[Obsolete("Use ATAP.Utilities.Secrets.SecretsRouter instead. This type will be removed in a future release.")]
 public sealed class ConfigurationSecretsShims : ATAP.Utilities.Configuration.Secrets.IConfigurationSecrets
 {
     private readonly IReadOnlyList<IConfigurationSecretsShim> _shims;
@@ -40,4 +41,34 @@ public sealed class ConfigurationSecretsShims : ATAP.Utilities.Configuration.Sec
         }
         return false;
     }
+}
+
+/// <summary>
+/// Adapter that wraps an <see cref="ATAP.Utilities.Secrets.ISecretsAbstract"/> provider
+/// (e.g. one loaded via the ATAP.Utilities.Secrets plugin system) as an
+/// <see cref="IConfigurationSecretsShim"/>, bridging the two secret-provider type systems.
+/// </summary>
+[Obsolete("Use ATAP.Utilities.Secrets.ISecretsAbstract directly instead. This type will be removed in a future release.")]
+public sealed class SecretsAbstractShimAdapter : IConfigurationSecretsShim
+{
+    private readonly ATAP.Utilities.Secrets.ISecretsAbstract _inner;
+
+    public SecretsAbstractShimAdapter(ATAP.Utilities.Secrets.ISecretsAbstract inner)
+        => _inner = inner ?? throw new ArgumentNullException(nameof(inner));
+
+    /// <inheritdoc/>
+    public string ProviderName => _inner.ProviderName;
+
+    /// <inheritdoc/>
+    public Task<string?> GetSecretAsync(
+        string secretName,
+        string fieldName = "password",
+        CancellationToken cancellationToken = default)
+        => _inner.GetSecretAsync(secretName, fieldName, cancellationToken);
+
+    /// <inheritdoc/>
+    public Task<bool> SecretExistsAsync(
+        string secretName,
+        CancellationToken cancellationToken = default)
+        => _inner.SecretExistsAsync(secretName, cancellationToken);
 }

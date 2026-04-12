@@ -255,6 +255,10 @@ Windows Update -> Advanced Options -> Optional Updates
 
 ### Map User Directories to dropbox
 
+### Install SQL Server XCommunity edition
+
+#### Create PRODUCTION instance
+
 ### Developer tools
 
 #### Add aaronontheweb/mssql-mcp SQL MCP Server
@@ -288,3 +292,153 @@ dotnet build -c Release
 
 
 ```
+
+#### Install ProGet
+
+> **Prerequisite:** SQL Server must already be installed with a `PRODUCTION` named instance
+> running and accessible at `localhost\PRODUCTION`. Verify with:
+>
+> ```powershell
+> sqlcmd -S 'localhost\PRODUCTION' -E -Q 'SELECT @@SERVERNAME, @@VERSION'
+> ```
+>
+> Expected: returns `<hostname>\PRODUCTION` and the SQL Server version string.
+
+##### Step 1 — Download and run Inedo Hub
+
+1. Open a browser and navigate to **[https://inedo.com/hub](https://inedo.com/hub)**
+2. Click **Download Inedo Hub** (~1 MB bootstrapper)
+3. Run `InedoHub.exe` — it self-updates and opens the Inedo Hub UI
+4. Sign in or continue (Free tier — request a free license key if prompted and enter it)
+
+##### Step 2 — Install ProGet via Inedo Hub
+
+1. In the Inedo Hub, find **ProGet** → **Install**
+2. On the **Database** screen → click **Advanced**
+3. Select **Legacy: Specify SQL Server Connection String**
+4. Enter: `Data Source=localhost\PRODUCTION; Integrated Security=True;`
+5. Press **OK** → **Install**
+
+The installer will:
+
+- Create the `ProGet` database on `localhost\PRODUCTION`
+- Run database schema migrations
+- Install the `INEDOPROGETSVC` Windows service
+- Start the service
+
+Installation typically takes 2–5 minutes.
+
+##### Step 3 — Set up ProGet.config
+
+The `ProGet.config` file is stored under Git version control in the `ATAP.IAC` repository
+and symlinked to the ProGet shared config location. Create the symlink:
+
+```powershell
+cd C:\ProgramData\Inedo\SharedConfig
+New-Item -ItemType SymbolicLink -Path './ProGet.config' `
+    -Target 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\Windows\AnsibleHostInventory\utat022\ProGet.config'
+```
+
+The `ProGet.config` in the IAC repo uses Integrated Security (no username/password in the
+connection string) and a Bitwarden-sourced encryption key placeholder:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<InedoAppConfig>
+  <ConnectionString>Data Source=UTAT022\PRODUCTION;Initial Catalog=ProGet;
+        Integrated Security=True;TrustServerCertificate=True;Encrypt=Optional</ConnectionString>
+  <EncryptionKey>__SET_FROM_BITWARDEN_AT_STARTUP__</EncryptionKey>
+  <WebServer Enabled="true" Urls="http://*:50000/"
+    UseHttpsRedirection="False" IntegratedAuthenticationEnabled="False" />
+</InedoAppConfig>
+```
+
+> If the Inedo Hub installer wrote a `ProGet.config` with a username/password connection
+> string (e.g. `User Id=ProGetUser;Password=...`), remove those credentials now and replace
+> the `ConnectionString` value with the Integrated Security form shown above. See
+> **Step 5** below for the remove-credentials procedure.
+
+##### Step 4 — Bootstrap the SQL service login (one-time)
+
+Run this once after ProGet is installed and the service account `NT SERVICE\INEDOPROGETSVC`
+exists. Call it from the `ATAP.Utilities.BuildTooling.PowerShell` module:
+
+```powershell
+Initialize-ProGetSqlServiceLogin -Encrypt Optional -TrustServerCertificate
+```
+
+Expected output (timestamps will differ):
+
+```text
+[21:32:40][Initialize-ProGetSqlServiceLogin] Applying SQL principal grants on localhost\PRODUCTION for database ProGet and account NT SERVICE\INEDOPROGETSVC
+[21:32:40][Initialize-ProGetSqlServiceLogin] SQL principal grants applied successfully
+
+SqlInstance          DatabaseName ServiceAccount            Status
+-----------          ------------ --------------            ------
+localhost\PRODUCTION ProGet       NT SERVICE\INEDOPROGETSVC Success
+```
+
+This creates the Windows login (if needed), creates the database user in `[ProGet]`, and
+grants `db_owner` to `NT SERVICE\INEDOPROGETSVC`.
+
+##### Step 5 — Remove username/password from ProGet.config connection string
+
+If the Inedo Hub installer added SQL authentication credentials to `ProGet.config`
+(e.g., `User Id=ProGetUser;Password=...`), they must be removed now that Integrated
+Security and the service-account `db_owner` grant are in place.
+
+Open `C:\ProgramData\Inedo\SharedConfig\ProGet.config` (which is the symlink created in
+Step 3, so editing it edits the IAC repo file directly) and ensure the `ConnectionString`
+contains **only** Integrated Security attributes — no `User Id`, `Password`, or `UID`/`PWD`
+keys:
+
+```xml
+<ConnectionString>Data Source=UTAT022\PRODUCTION;Initial Catalog=ProGet;
+    Integrated Security=True;TrustServerCertificate=True;Encrypt=Optional</ConnectionString>
+```
+
+After saving, restart the ProGet service to pick up the change:
+
+```powershell
+Restart-Service INEDOPROGETSVC
+```
+
+Verify the service came back up:
+
+```powershell
+Get-Service INEDOPROGETSVC | Select-Object Name, Status
+```
+
+Expected: `Status = Running`
+
+##### Step 6 — Populate the encryption key from Bitwarden
+
+The `EncryptionKey` placeholder in `ProGet.config` must be replaced at machine startup by
+`LoginScript.ps1`, which reads the key from Bitwarden and writes it to the file under
+controlled ACLs.
+
+TBD: document the exact `LoginScript.ps1` entry and file-ACL hardening steps.
+
+##### Step 7 — Verify the installation
+
+1. Open a browser to **http://localhost:50000**
+2. You should see the ProGet login page
+3. Default admin credentials (first run): Username `Admin`, Password `Admin`
+4. **Immediately change the admin password** via Admin → My Profile → Change Password
+
+Verify the database was created:
+
+```powershell
+sqlcmd -S 'localhost\PRODUCTION' -E -Q "SELECT name FROM sys.databases WHERE name = 'ProGet'"
+```
+
+Expected output: `ProGet`
+
+##### Step 8 — Create the Admin API key and register feeds
+
+See `_Planning/Explainers/0002-ProGet-Setup.md` Steps 4–8 for:
+
+- Creating the `PROGET_ADMIN_API_TOKEN` API key in the ProGet UI
+- Registering NuGet feeds in `NuGet.config`
+- Registering PowerShell feeds with `Register-PSResourceRepository`
+- Setting up inter-tier connectors

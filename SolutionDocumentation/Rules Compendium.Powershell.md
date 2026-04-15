@@ -575,7 +575,7 @@ Description: This primitive represents a PowerShell type-constraint annotation i
 <type-identifier>    ::= <identifier>
 ```
 
-Common built-in type names: `string`, `int`, `bool`, `double`, `datetime`, `object`, `hashtable`, `array`, `scriptblock`, `pscustomobject`.
+Common built-in type names: `string`, `int`, `bool`, `double`, `datetime`, `object`, `hashtable`, `array`, `scriptblock`, `PSCustomObject`.
 
 Body: The `[<type-name>]` token.
 
@@ -892,12 +892,12 @@ Output: The rendered hashtable literal text.
 
 Processing: Each entry is rendered as `Key = Value` indented one level inside the braces. Multi-line style uses newlines; inline style uses `;` separators.
 
-### `<pscustomobject-literal>` Rule Primitive
+### `<PSCustomObject-literal>` Rule Primitive
 
 Description: This primitive represents the cast-hashtable form of a `PSCustomObject` creation: `[PSCustomObject]@{ ... }`. It is the canonical way to create a typed custom object without `New-Object`.
 
 ```bnf
-<pscustomobject-literal> ::= "[PSCustomObject]" <hashtable-literal>
+<PSCustomObject-literal> ::= "[PSCustomObject]" <hashtable-literal>
 ```
 
 Body: `[PSCustomObject]@{ ... }` with entries rendered using `<hashtable-literal>`.
@@ -1364,7 +1364,7 @@ The `<param-block>` is inside the function `<script-block>` body and precedes th
 | 38  | `<if-else-statement>` (SqlInstance defaulting)                       | `if (-not $SqlInstance) { $SqlInstance = if ($Environment -eq 'Experimental') { $null } else { $Environment } }`                                                     | Derives `$SqlInstance` from `$Environment` when caller did not supply it                                                                                             |
 | 39  | `<if-else-statement>` (IntegratedSecurity defaulting)                | `if (-not $CredentialsKey -and -not $IntegratedSecurity) { $IntegratedSecurity = $true }`                                                                            | Defaults to Windows Integrated Auth when no credential key is supplied                                                                                               |
 | 40  | `<assignment-statement>` (`$result`)                                 | `$result = [PSCustomObject]@{ Success=…; DatabaseName=…; … }`                                                                                                        | Creates the output result object                                                                                                                                     |
-| 41  | `<pscustomobject-literal>`                                           | `[PSCustomObject]@{ Success=$false; DatabaseName=$DatabaseName; Environment=$Environment; SqlInstance=$SqlInstance; Errors=@(); StartTime=Get-Date; EndTime=$null }` | Entries table: see result-object entries below                                                                                                                       |
+| 41  | `<PSCustomObject-literal>`                                           | `[PSCustomObject]@{ Success=$false; DatabaseName=$DatabaseName; Environment=$Environment; SqlInstance=$SqlInstance; Errors=@(); StartTime=Get-Date; EndTime=$null }` | Entries table: see result-object entries below                                                                                                                       |
 | 42  | `<pipeline-statement>` × 2 (Set-DbatoolsConfig)                      | `Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true …`; `Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false …`                        | Configures dbatools SSL / encryption for dev environments                                                                                                            |
 | 43  | `<named-block>` (PROCESS)                                            | `PROCESS { try { … } catch { … } finally { … } }`                                                                                                                    | Contains primitive 44                                                                                                                                                |
 | 44  | `<try-catch-finally-statement>` (PROCESS outer)                      | Main PROCESS try/catch/finally                                                                                                                                       | `TryBody` = primitives 45–60; `CatchClauses` = one bare catch; `FinallyBody` = location-restore                                                                      |

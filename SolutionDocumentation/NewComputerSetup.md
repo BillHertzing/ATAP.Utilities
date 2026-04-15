@@ -52,6 +52,20 @@ Power up the machine, boot through the USB stick
 
 The following steps are run via the Windows UI,
 
+## Determine and record the computer name
+
+In many custom Windows installation images, setup asks for the computer name during OOBE. If prompted, set it there and record it immediately.
+
+Use this value consistently everywhere in this document where `<COMPUTERNAME>` appears.
+
+To verify the current computer name after first login:
+
+```powershell
+$env:COMPUTERNAME
+```
+
+If this does not match the intended name, rename the computer before continuing with infrastructure configuration.
+
 ## set Timezone
 
 - via the Windows UI, change timezone as appropriate
@@ -255,11 +269,263 @@ Windows Update -> Advanced Options -> Optional Updates
 
 ### Map User Directories to dropbox
 
-### Install SQL Server XCommunity edition
+### Install SQL Server Community Edition
+
+> **CRITICAL PREREQUISITE:** SQL Server Community Edition (latest version) **must** be installed and configured before installing ProGet or BuildMaster. Both Inedo products depend on SQL Server for their databases.
+
+#### Pre-Installation: Create SvcSQLServer Service Account
+
+Before installing SQL Server, create a dedicated Windows service account for running the SQL Server Engine service. This provides better auditability and password management.
+
+> **Prerequisites:**
+>
+> 1. Ensure a Bitwarden secret named `SvcSQLServer-<COMPUTERNAME>` exists in the `ComputerLogins` folder with:
+>    - Username: `SvcSQLServer`
+>    - Password: the service account password
+> 2. Ensure `ATAP.Utilities.PowerShell` module is loaded, which provides `New-LocalServiceAccount`:
+>
+> ```powershell
+> Import-Module ATAP.Utilities.PowerShell
+> ```
+>
+> If the module is not yet available, you can create this account manually via `lusrmgr.msc` and then grant `SeServiceLogonRight` with `ntrights.exe` or Active Directory Group Policy.
+
+Create the SvcSQLServer account:
+
+```powershell
+# Retrieve password from Bitwarden secret SvcSQLServer-<COMPUTERNAME> in ComputerLogins
+$secret = Get-BitWardenSecret -Name "SvcSQLServer-<COMPUTERNAME>" -FolderName "ComputerLogins"
+$pw = ConvertTo-SecureString -String $secret.password -AsPlainText -Force
+
+New-LocalServiceAccount `
+    -AccountName              SvcSQLServer `
+    -FullName                 'SQL Server Service Identity' `
+    -Description              'Dedicated Windows service account for SQL Server Database Engine' `
+    -Password                 $pw `
+    -GrantSeServiceLogonRight
+```
+
+Expected result: `Status = Success`, `UserCreated = True`, `SeServiceLogonRight = True`.
+
+**Bitwarden record requirement:** Ensure `SvcSQLServer-<COMPUTERNAME>` remains in `ComputerLogins` so the credential can be recovered for SQL Server service maintenance.
+
+---
+
+#### Step 1 — Download and Install SQL Server Community Edition
+
+1. Navigate to [SQL Server Community Edition Downloads](https://www.microsoft.com/en-us/sql-server/sql-server-downloads) in a web browser
+2. Select **Express** edition (note: Community Edition is now called SQL Server Express Community Edition)
+3. Run the installer (`SQLEXPR_*.exe`)
+4. Choose **Custom** installation type
+5. During feature selection, ensure the following are checked:
+   - **Database Engine Services** ✓ (required)
+   - **SQL Server Agent** ✓ (required for backup jobs and scheduled maintenance)
+   - SQL Server Replication (recommended)
+   - Machine Learning Services and Language Extensions (optional, for advanced scenarios)
+6. When prompted for **Service Accounts** configuration:
+   - For **SQL Server Database Engine**, select **Use the following user account** (instead of the default virtual account)
+   - Enter the account name: `<COMPUTERNAME>\SvcSQLServer` (replace `<COMPUTERNAME>` with your actual machine name, or use `.\SvcSQLServer` for local account)
+   - Enter the password you created in the pre-installation step
+   - For **SQL Server Agent**, also specify `<COMPUTERNAME>\SvcSQLServer` with the same password
+7. Accept the default paths or customize as needed
+8. Complete the installation
+9. **Verify and Configure SQL Server Agent:**
+   - After installation completes, open **SQL Server Configuration Manager**
+   - Navigate to **SQL Server Services**
+   - Verify **SQL Server (PRODUCTION)** shows **Log On As: COMPUTERNAME\SvcSQLServer**
+   - Verify **SQL Server Agent (PRODUCTION)** shows **Log On As: COMPUTERNAME\SvcSQLServer**
+   - Ensure both services have **Startup Type** set to **Automatic**
+   - Start both services if they are not already running:
+     ```powershell
+     Start-Service -Name 'MSSQL$PRODUCTION'
+     Start-Service -Name 'SQLAGENT$PRODUCTION'
+     Get-Service -Name 'MSSQL$PRODUCTION', 'SQLAGENT$PRODUCTION' | Select-Object Name, Status
+     # Expected output: Both services show Status = Running
+     ```
+   - SQL Server Engine and Agent are now running under the SvcSQLServer dedicated account
+
+#### Step 2 — Create and Configure the PRODUCTION Named Instance
+
+> **Why a named instance?** Using a named instance (e.g., `localhost\PRODUCTION`) separates this instance from any default SQL Server instance, improves security, and allows multiple instances to coexist on the same machine.
+
+During SQL Server installation, when prompted for **Instance Configuration**:
+
+1. Select **Named Instance** (not Default Instance)
+2. Enter instance name: `PRODUCTION`
+3. Instance ID will auto-populate as `PRODUCTION`
+4. Choose appropriate installation path (default is fine)
+
+#### Step 3 — Configure SQL Server to Listen on TCP
+
+SQL Server must be configured to accept TCP/IP connections. Use **SQL Server Configuration Manager**:
+
+```powershell
+# Open SQL Server Configuration Manager
+# (Search for "SQL Server Configuration Manager" in Windows Start menu)
+# OR run via PowerShell:
+Start-Process 'C:\Program Files\Microsoft SQL Server\170\Tools\Binn\SQLMANAGER.MSC' -Wait
+```
+
+In SQL Server Configuration Manager:
+
+1. Navigate to **SQL Server Network Configuration** → **Protocols for PRODUCTION**
+2. Right-click **TCP/IP** → **Enable**
+3. Right-click **TCP/IP** → **Properties**
+4. On the **Protocol** tab, ensure **Enabled** is set to `Yes`
+5. On the **IP Addresses** tab:
+   - Scroll to **IPAll** section at the bottom
+   - Verify **TCP Port** is set to a non-default port (e.g., `1433` for default, or `50001` for custom)
+   - **Important:** Do NOT use the default port `1433` if other SQL Server instances may exist; use a port like `50001`–`59999`
+6. Click **OK** to save
+7. Restart the **SQL Server (PRODUCTION)** service:
+   ```powershell
+   Restart-Service -Name 'MSSQL$PRODUCTION' -Force
+   ```
+
+#### Step 4 — Configure SQL Server Memory Limits
+
+For **development or "all-in-one" hosts**, SQL Server memory should be limited to a safe percentage of total system RAM:
+
+```powershell
+# Example: on a system with 32 GB RAM, set max to ~3.2 GB (10%)
+# Connect to SQL Server and run:
+
+$sqlInstance = 'localhost\PRODUCTION'
+$maxMemoryMB = [int]([System.Environment]::ProcessorCount * 256 * 0.10)  # 10% of total available
+
+$query = @"
+EXEC sp_configure 'max server memory (MB)', $maxMemoryMB;
+RECONFIGURE;
+"@
+
+Invoke-Sqlcmd -ServerInstance $sqlInstance -Query $query -Encrypt Optional
+```
+
+> **Rationale:** Allowing SQL Server to consume all available RAM can starve the OS and other applications, especially on shared dev machines. 10% is a conservative limit suitable for development and all-in-one deployments.
+
+#### Step 5 — Verify SQL Server PRODUCTION Instance is Running
+
+```powershell
+# Verify the service is running
+Get-Service -Name 'MSSQL$PRODUCTION' | Select-Object Name, Status
+
+# Expected output: Status = Running
+
+# Verify TCP connectivity
+sqlcmd -S 'localhost\PRODUCTION' -E -Q 'SELECT @@SERVERNAME, @@VERSION'
+
+# Expected output: Shows <COMPUTERNAME>\PRODUCTION and SQL Server version
+```
+
+#### Step 6 — Create Service User Accounts (Before Installing ProGet/BuildMaster)
+
+Creating dedicated Windows service accounts provides better auditability and password management than default virtual service accounts.
+
+> **Prerequisite:** Ensure `ATAP.Utilities.PowerShell` module is loaded, which provides `New-LocalServiceAccount`:
+>
+> ```powershell
+> Import-Module ATAP.Utilities.PowerShell
+> ```
+>
+> If the module is not yet available, you can create these accounts manually via `lusrmgr.msc` and then grant `SeServiceLogonRight` with `ntrights.exe` or Active Directory Group Policy.
+
+##### Create SvcProGet Account
+
+Create this account **before** installing ProGet:
+
+```powershell
+# Retrieve or set the password and store it in Bitwarden
+$pw = Read-Host -Prompt 'SvcProGet password' -AsSecureString
+
+New-LocalServiceAccount `
+    -AccountName              SvcProGet `
+    -FullName                 'ProGet Service Identity' `
+    -Description              'Dedicated Windows service account for Inedo ProGet' `
+    -Password                 $pw `
+    -GrantSeServiceLogonRight
+```
+
+Expected result: `Status = Success`, `UserCreated = True`, `SeServiceLogonRight = True`.
+
+**Store the password in Bitwarden:** Use `Get-BitWardenSecret` in your `LoginScript.ps1` to retrieve this at system startup, or record it in Bitwarden for safekeeping.
+
+##### Create SvcBuildmaster Account
+
+Create this account **before** installing BuildMaster:
+
+```powershell
+$pw = Read-Host -Prompt 'SvcBuildmaster password' -AsSecureString
+
+New-LocalServiceAccount `
+    -AccountName              SvcBuildmaster `
+    -FullName                 'BuildMaster Service Identity' `
+    -Description              'Dedicated Windows service account for Inedo BuildMaster' `
+    -Password                 $pw `
+    -GrantSeServiceLogonRight
+```
+
+Expected result: `Status = Success`, `UserCreated = True`, `SeServiceLogonRight = True`.
+
+---
+
+## Install ProGet and BuildMaster (After SQL Server Setup)
+
+> **Prerequisites completed:**
+>
+> - ✅ SQL Server Community Edition installed with PRODUCTION named instance
+>   ✅ TCP enabled on the PRODUCTION instance
+>   ✅ Memory limits configured (10% of total RAM for dev hosts)
+>   ✅ Service accounts SvcProGet and SvcBuildmaster created
+>
+> Now proceed with ProGet and BuildMaster installation.
 
 #### Create PRODUCTION instance
 
-### Developer tools
+##### Step 7 — Verify Service Account Permissions on Databases (After ProGet and BuildMaster Install)
+
+After both ProGet and BuildMaster are installed, you must grant the service accounts `db_owner` rights on their respective databases.
+
+##### Grant SvcProGet db_owner on ProGet Database
+
+After ProGet is installed (see below), run:
+
+```powershell
+Initialize-SqlServiceLogin `
+    -SqlInstance              'localhost\PRODUCTION' `
+    -DatabaseName             'ProGet' `
+    -ServiceAccount           "$env:COMPUTERNAME\SvcProGet" `
+    -Encrypt                  Optional `
+    -TrustServerCertificate
+```
+
+Then reconfigure the ProGet Windows service to log on as `SvcProGet`:
+
+```powershell
+sc.exe config INEDOPROGETSVC obj= "$env:COMPUTERNAME\SvcProGet" password= '<password>'
+```
+
+##### Grant SvcBuildmaster db_owner on BuildMaster Database
+
+After BuildMaster is installed (see below), run:
+
+```powershell
+Initialize-SqlServiceLogin `
+    -SqlInstance              'localhost\PRODUCTION' `
+    -DatabaseName             'BuildMaster' `
+    -ServiceAccount           "$env:COMPUTERNAME\SvcBuildmaster" `
+    -Encrypt                  Optional `
+    -TrustServerCertificate
+```
+
+Then reconfigure the BuildMaster Windows service to log on as `SvcBuildmaster`:
+
+```powershell
+sc.exe config INEDOBUILDMASTERSVC obj= "$env:COMPUTERNAME\SvcBuildmaster" password= '<password>'
+```
+
+---
+
+## Developer tools
 
 #### Add aaronontheweb/mssql-mcp SQL MCP Server
 
@@ -302,7 +568,7 @@ dotnet build -c Release
 > sqlcmd -S 'localhost\PRODUCTION' -E -Q 'SELECT @@SERVERNAME, @@VERSION'
 > ```
 >
-> Expected: returns `<hostname>\PRODUCTION` and the SQL Server version string.
+> Expected: returns `<COMPUTERNAME>\PRODUCTION` and the SQL Server version string.
 
 ##### Step 1 — Download and run Inedo Hub
 
@@ -360,11 +626,24 @@ connection string) and a Bitwarden-sourced encryption key placeholder:
 
 ##### Step 4 — Bootstrap the SQL service login (one-time)
 
-Run this once after ProGet is installed and the service account `NT SERVICE\INEDOPROGETSVC`
-exists. Call it from the `ATAP.Utilities.BuildTooling.PowerShell` module:
+Run this once after ProGet is installed. Use one of these two approaches:
+
+**Option A — default virtual service account** (`NT SERVICE\INEDOPROGETSVC`, from
+`ATAP.Utilities.BuildTooling.PowerShell`):
 
 ```powershell
 Initialize-ProGetSqlServiceLogin -Encrypt Optional -TrustServerCertificate
+```
+
+**Option B — dedicated local account** (`SvcProGet`, created in the pre-install section above):
+
+```powershell
+Initialize-SqlServiceLogin `
+    -SqlInstance    'localhost\PRODUCTION' `
+    -DatabaseName   'ProGet' `
+    -ServiceAccount "$env:COMPUTERNAME\SvcProGet" `
+    -Encrypt        Optional `
+    -TrustServerCertificate
 ```
 
 Expected output (timestamps will differ):
@@ -438,7 +717,7 @@ Expected output: `ProGet`
 
 See `_Planning/Explainers/0002-ProGet-Setup.md` Steps 4–8 for:
 
-- Creating the `PROGET_ADMIN_API_TOKEN` API key in the ProGet UI
+- Creating the `PROGET_ADMIN_API_KEY` API key in the ProGet UI
 - Registering NuGet feeds in `NuGet.config`
 - Registering PowerShell feeds with `Register-PSResourceRepository`
 - Setting up inter-tier connectors

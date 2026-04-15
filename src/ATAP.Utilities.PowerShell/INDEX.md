@@ -1,0 +1,181 @@
+# ATAP.Utilities.PowerShell — Script Index
+
+This module provides general-purpose PowerShell utilities for the ATAP ecosystem: system
+configuration, environment management, Bitwarden/secrets integration, blog post tooling,
+ETW event monitoring, registry search, scheduled task lifecycle management, profile
+infrastructure, and cross-cutting utilities used by developer and CI workflows.
+
+---
+
+## Diagrams
+
+### Private-to-Public Dependency Map
+
+> **[PLACEHOLDER]** A diagram showing which private helper functions are called by which public cmdlets.
+> Suggested tool: PlantUML component diagram or Draw.io.
+> Candidate relationships to illustrate:
+>
+> - `Get-ParameterValueFromNeoConfigurationRoot` (`Get-PVal`) ← used by many cmdlets to resolve `$global:settings`
+> - `Get-TopologicalSort` ← used by `Get-CollectionTraverseEvaluate`
+> - `Get-ClonedObject` / `Get-ClonedAndModifiedHashtable` ← dependency helpers
+> - `Get-SIDfromAccountName` ← used by `Get-AccountsWithUserRight` and `Type-PSLSA`
+> - `Get-SecureEnvVar` ← used by secrets-aware cmdlets
+> - `Set-EnvVarsFromBitWarden` + `Get-SecureEnvVar` ← Bitwarden integration chain
+> - `Register-StartupScheduledTask` / `Unregister-StartupScheduledTask` / `Test-StartupScheduledTaskPresence` ← scheduled task trio
+> - `Get-UniqueFileBaseNames` ← used by `Add-BlogPostImages`
+
+---
+
+### Test Coverage Map
+
+> **[PLACEHOLDER]** A matrix showing which `.Tests.ps1` files cover which public scripts.
+> Suggested format: table with public scripts as rows, test files as columns, with checkmarks.
+> See the Tests section below for the current test file inventory.
+
+---
+
+## Public Scripts (`public/`)
+
+| Script                                                                                                  | Description                                                                                                                                                                                                                         |
+| ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Add-BlogPostImages.ps1](public/Add-BlogPostImages.ps1)                                                 | Orchestrates creating image files in a cloud hosting provider for blog posts; creates a persistence file listing all images with title, description, and media query versions.                                                      |
+| [ConvertFrom-CopilotChatHistory.ps1](public/ConvertFrom-CopilotChatHistory.ps1)                         | Parses GitHub Copilot (panel) chat history exports (.json/.jsonc/Markdown) into paired objects: Index, UserRequest, CopilotResponse, RequestTime, ResponseTime.                                                                     |
+| [ConvertFrom-MboxFile.ps1](public/ConvertFrom-MboxFile.ps1)                                             | Inline script that loads MimeKit and parses `.mbox` email archive files, extracting message data into a result list.                                                                                                                |
+| [ConvertTo-PDF.ps1](public/ConvertTo-PDF.ps1)                                                           | Converts Markdown files to PDF using pandoc with fallback PDF engines (xelatex, pdflatex, wkhtmltopdf) and automatic LaTeX/MiKTeX error handling.                                                                                   |
+| [Format-GroupLikeLines.ps1](public/Format-GroupLikeLines.ps1)                                           | _(synopsis: ToDo)_ — groups and formats like lines found in files matching a path/filename pattern.                                                                                                                                 |
+| [Get-AccountsWithUserRight.ps1](public/Get-AccountsWithUserRight.ps1)                                   | Gets all accounts assigned a specified Windows privilege (user right) via the LSA API; returns SIDs and account names for direct (non-group) right holders.                                                                         |
+| [Get-AllWindowsShortcutHotKeys.ps1](public/Get-AllWindowsShortcutHotKeys.ps1)                           | Scans Windows shell folders (Desktop, Start Menu, Quick Launch) for `.lnk` shortcuts with assigned hotkeys; optionally includes built-in Win+X shortcuts.                                                                           |
+| [Get-ArrayCombinations.ps1](public/Get-ArrayCombinations.ps1)                                           | Returns all unique pair combinations from an input array using nested iteration.                                                                                                                                                    |
+| [Get-BookMarksToTagged.ps1](public/Get-BookMarksToTagged.ps1)                                           | _(synopsis: ToDo)_ — converts or exports browser bookmarks to a tagged format.                                                                                                                                                      |
+| [Get-BrowserBookmarks.ps1](public/Get-BrowserBookmarks.ps1)                                             | _(synopsis: ToDo)_ — reads browser bookmark files from a specified path with filename pattern matching.                                                                                                                             |
+| [Get-ChocolatyPackagesFromProgramsList.ps1](public/Get-ChocolatyPackagesFromProgramsList.ps1)           | _(synopsis: ToDo)_ — cross-references Chocolatey packages against the Windows installed programs list.                                                                                                                              |
+| [Get-ClonedAndModifiedHashtable.ps1](public/Get-ClonedAndModifiedHashtable.ps1)                         | Deep-clones a hashtable via serializer, then applies a second hashtable of modifications to the clone.                                                                                                                              |
+| [Get-ClonedObject.ps1](public/Get-ClonedObject.ps1)                                                     | Deep-clones any object using `BinaryFormatter` serialization (ported from RamblingCookieMonster/PSDeploy).                                                                                                                          |
+| [Get-CollectionTraverseEvaluate.ps1](public/Get-CollectionTraverseEvaluate.ps1)                         | Traverses source collections and evaluates settings values in dependency order, resolving cross-references between settings defined in terms of other settings.                                                                     |
+| [Get-CoreInfo.ps1](public/Get-CoreInfo.ps1)                                                             | Retrieves installed .NET SDK/runtime versions, OS name, OS version, platform, and runtime identifier (RID) for diagnostics.                                                                                                         |
+| [Get-FilesWithContent.ps1](public/Get-FilesWithContent.ps1)                                             | _(synopsis: ToDo)_ — searches files matching a path/filename pattern for specified content.                                                                                                                                         |
+| [Get-LargestLeafFolders.ps1](public/Get-LargestLeafFolders.ps1)                                         | Recursively scans from a start path, sums file sizes per folder, and returns the top-N largest folders (FolderPath, SizeBytes, SizeGB).                                                                                             |
+| [Get-MediaQueryEmbeddedLink.ps1](public/Get-MediaQueryEmbeddedLink.ps1)                                 | Generates markdown embedding link strings for an ATAP `MediaResource` object; used for blog post image embedding.                                                                                                                   |
+| [Get-ParameterValueFromNeoConfigurationRoot.ps1](public/Get-ParameterValueFromNeoConfigurationRoot.ps1) | Resolves parameter values from `$global:settings` via a dotted path; alias `Get-PVal`; falls back to `$PSBoundParameters` or a default value.                                                                                       |
+| [Get-Patterns.ps1](public/Get-Patterns.ps1)                                                             | Returns a hashtable of regex pattern collections (Date, Name, email, Category, Location) filtered by specified pattern tags.                                                                                                        |
+| [Get-ScheduledTasks.ps1](public/Get-ScheduledTasks.ps1)                                                 | Inline script: queries `schtasks.exe /Query /FO LIST /V` and parses the verbose output into `PSCustomObject` per task.                                                                                                              |
+| [Get-SecureEnvVar.ps1](public/Get-SecureEnvVar.ps1)                                                     | Retrieves a secure environment variable value, checking the session cache first, then reading from Bitwarden using `$env:BW_SESSION`.                                                                                               |
+| [Get-SIDfromAccountName.ps1](public/Get-SIDfromAccountName.ps1)                                         | Converts a Windows account name to its SID using a `Win32_UserAccount` CIM query; supports remote computers.                                                                                                                        |
+| [Get-TopologicalSort.ps1](public/Get-TopologicalSort.ps1)                                               | Performs topological sort of a dependency graph expressed as a hashtable of `ID → [DependedOnIDs]`; deep-clones input before modifying.                                                                                             |
+| [Get-UniqueFileBaseNames.ps1](public/Get-UniqueFileBaseNames.ps1)                                       | Extracts unique base filenames from a collection of `FileInfo` objects by stripping media query filename fragments; used by `Add-BlogPostImages`.                                                                                   |
+| [Get-ViewOfProfiles.ps1](public/Get-ViewOfProfiles.ps1)                                                 | Reads a text index of profile file paths and returns structured objects (fullname, leaf, parent, last-write time, line count, hash) for each `.ps1`/`.psm1` file.                                                                   |
+| [Import-EnvFile.ps1](public/Import-EnvFile.ps1)                                                         | Parses a `.env` format file and sets environment variables for the current process; handles quoted values and ignores comments.                                                                                                     |
+| [Initialize-SqlServiceLogin.ps1](public/Initialize-SqlServiceLogin.ps1)                                 | Generic idempotent SQL Server Windows login, database user, and db_owner role setup for a local service account; generalizes Initialize-ProGetSqlServiceLogin for real local Windows accounts such as SvcProGet and SvcBuildmaster. |
+| [Invoke-ProvisionInedoServiceAccounts.ps1](public/Invoke-ProvisionInedoServiceAccounts.ps1)             | Provisions SvcProGet and SvcBuildmaster Windows service accounts with SeServiceLogonRight, then grants db_owner on their respective Inedo databases on a named SQL instance. Idempotent.                                            |
+| [Invoke-SetInedoServiceLogonAccounts.ps1](public/Invoke-SetInedoServiceLogonAccounts.ps1)               | Sets the Windows 'Log On As' account for INEDOPROGETSVC (SvcProGet) and INEDOBMSVC (SvcBuildmaster) via Set-ServiceLogonAccount; used in the NewComputer provisioning process.                                                      |
+| [Invoke-StartupTaskRegistrationTest.ps1](public/Invoke-StartupTaskRegistrationTest.ps1)                 | Tests the full scheduled task lifecycle: registration, verification, and cleanup using a test task name and provided credentials.                                                                                                   |
+| [Invoke-Webserver.ps1](public/Invoke-Webserver.ps1)                                                     | Prototype in-process web server using .NET Core Kestrel; not yet production-ready. Accepts URL prefix and WWW root path.                                                                                                            |
+| [Join-PathNoResolve.ps1](public/Join-PathNoResolve.ps1)                                                 | _(synopsis: ToDo)_ — joins path segments without resolving the result against the filesystem (useful for constructing paths that may not yet exist).                                                                                |
+| [New-LocalServiceAccount.ps1](public/New-LocalServiceAccount.ps1)                                       | Creates or removes a Windows local service account using built-in New-LocalUser (no Carbon dependency); optionally grants SeServiceLogonRight via the Windows LSA API (PS_LSA.LsaWrapper). Idempotent.                              |
+| [New-SymbolicLink.ps1](public/New-SymbolicLink.ps1)                                                     | Creates a symbolic link at `symbolicLinkPath` pointing to `targetPath`; validates that the target exists before creation; supports `-Force`.                                                                                        |
+| [PracticeKeyboardSkills.ps1](public/PracticeKeyboardSkills.ps1)                                         | _(synopsis: ToDo)_ — keyboard skills practice utility.                                                                                                                                                                              |
+| [Register-StartupScheduledTask.ps1](public/Register-StartupScheduledTask.ps1)                           | Registers a Windows Scheduled Task with an AtStartup trigger that runs a PowerShell script; supports SYSTEM account or a supplied credential.                                                                                       |
+| [Resolve-ParameterValueToList.ps1](public/Resolve-ParameterValueToList.ps1)                             | _(OBSOLETE — use `Get-PVal` with `-ValidValues` instead)_ Validates a parameter value against an allowed list using case-insensitive comparison; returns the correctly-cased allowed value or throws.                               |
+| [Search-Registry.ps1](public/Search-Registry.ps1)                                                       | Searches registry key names, value names, and value data using regex; outputs custom objects with key path and first match type (KeyName, ValueName, ValueData).                                                                    |
+| [Search-WindowsIndexs.ps1](public/Search-WindowsIndexs.ps1)                                             | Queries the Windows Search index (Windows.Search) via ADODB/OLE DB for filenames matching a pattern under a specified path.                                                                                                         |
+| [Set-EnvVarsFromBitWarden.ps1](public/Set-EnvVarsFromBitWarden.ps1)                                     | Reads a declarative list of Bitwarden vault entries and sets corresponding environment variables (process and user scope) for API keys and tokens.                                                                                  |
+| [Set-PerceivedTypeInRegistryForPreviewPane.ps1](public/Set-PerceivedTypeInRegistryForPreviewPane.ps1)   | _(synopsis: ToDo)_ — sets the Windows registry `PerceivedType` value for a file extension to enable preview pane support.                                                                                                           |
+| [Set-InedoServicesDependency.ps1](public/Set-InedoServicesDependency.ps1)                               | Sets the Windows service dependency for both ProGet (`INEDOPROGETSVC`) and BuildMaster (`INEDOBMSVC`) so each starts after SQL Server (`MSSQL$PRODUCTION`). Idempotent.                                                             |
+| [Set-RepositoryPackageSources.ps1](public/Set-RepositoryPackageSources.ps1)                             | _(synopsis: ToDo)_ — registers or updates package repository sources (NuGet/PSResourceGet) for the current environment.                                                                                                             |
+| [Set-ScreenReaderOff.ps1](public/Set-ScreenReaderOff.ps1)                                               | Disables the Windows screen reader flag via `SystemParametersInfo` (`SPI_SETSCREENREADER`); includes a C# P/Invoke type definition for the Win32 API call.                                                                          |
+| [Set-ServiceLogonAccount.ps1](public/Set-ServiceLogonAccount.ps1)                                       | Sets the Windows service 'Log On As' account via `sc.exe config obj=`; idempotent — skips if service already runs under the desired account.                                                                                        |
+| [SomethingDebugUtilities.ps1](public/SomethingDebugUtilities.ps1)                                       | Debug utility functions: `write-NULLSortedEntryKeysString` and `Write-NullLookupKeys` — log null counts in sorted entry key strings and lookup key collections.                                                                     |
+| [Test-Copilot.ps1](public/Test-Copilot.ps1)                                                             | _(empty placeholder file)_                                                                                                                                                                                                          |
+| [Test-StartupScheduledTaskPresence.ps1](public/Test-StartupScheduledTaskPresence.ps1)                   | Returns `$true` if a scheduled task with the specified name exists on the system, `$false` otherwise.                                                                                                                               |
+| [Test-WinRM.ps1](public/Test-WinRM.ps1)                                                                 | Tests WinRM connectivity to one or more computers; supports credential, SSL, and self-signed certificate options.                                                                                                                   |
+| [testIcomparer.ps1](public/testIcomparer.ps1)                                                           | Development/test script demonstrating a PowerShell class implementing `System.Collections.Generic.IComparer[Shoe]` for custom sorting.                                                                                              |
+| [Type-PSLSA.ps1](public/Type-PSLSA.ps1)                                                                 | Defines the `PS_LSA` C# type (via `Add-Type`) for accessing the Windows LSA (Local Security Authority) API; used by `Get-AccountsWithUserRight`. Attribution: KurtDeGreeff/PlayPowershell.                                          |
+| [Unregister-StartupScheduledTask.ps1](public/Unregister-StartupScheduledTask.ps1)                       | Removes a Windows Scheduled Task by name; logs a warning if the task does not exist but does not throw.                                                                                                                             |
+| [Watch-ETWEvents.ps1](public/Watch-ETWEvents.ps1)                                                       | Monitors `ATAPUtilitiesETWProvider` ETW events in real-time using `Get-WinEvent`; color-codes output by event level; supports a `-Follow` mode requiring Administrator privileges.                                                  |
+
+---
+
+## Tests (`tests/Unit/`)
+
+| Test File                                                                                       | Covers                           | Link                       |
+| ----------------------------------------------------------------------------------------------- | -------------------------------- | -------------------------- |
+| [ConvertFrom-CopilotChatHistory.Tests.ps1](tests/Unit/ConvertFrom-CopilotChatHistory.Tests.ps1) | `ConvertFrom-CopilotChatHistory` | [tests/Unit/](tests/Unit/) |
+| [Get-CollectionTraverseEvaluate.Tests.ps1](tests/Unit/Get-CollectionTraverseEvaluate.Tests.ps1) | `Get-CollectionTraverseEvaluate` | [tests/Unit/](tests/Unit/) |
+| [Get-CoreInfo.Tests.ps1](tests/Unit/Get-CoreInfo.Tests.ps1)                                     | `Get-CoreInfo`                   | [tests/Unit/](tests/Unit/) |
+| [Initialize-SqlServiceLogin.Tests.ps1](tests/Unit/Initialize-SqlServiceLogin.Tests.ps1)         | `Initialize-SqlServiceLogin`     | [tests/Unit/](tests/Unit/) |
+| [New-LocalServiceAccount.Tests.ps1](tests/Unit/New-LocalServiceAccount.Tests.ps1)               | `New-LocalServiceAccount`        | [tests/Unit/](tests/Unit/) |
+
+---
+
+## Profiles (`Profiles/`)
+
+The Profiles folder contains the PowerShell profile infrastructure for ATAP developer and
+CI/CD machines. Profiles define the environment (`$global:settings`, `$global:configRootKeys`,
+environment variables) for all Hosts/Users combinations across PowerShell V5 and V7 Core.
+
+| File                                                                                                                                      | Description                                                                                                                                                                     |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [AllUsersAllHostsV7CoreProfile.ps1](Profiles/AllUsersAllHostsV7CoreProfile.ps1)                                                           | Machine-wide profile template for PowerShell V7 Core (All Users, All Hosts); sets machine-specific global and environment variables.                                            |
+| [BitwardenEnvVarConfig.json](Profiles/BitwardenEnvVarConfig.json)                                                                         | Declarative JSON array mapping environment variable names to Bitwarden vault item names and field names (used by `Set-EnvVarsFromBitWarden`).                                   |
+| [Create-AllUsersAllHostsV7CoreProfile.ps1](Profiles/Create-AllUsersAllHostsV7CoreProfile.ps1)                                             | Generates a fully expanded, host-specific machine profile from the `AllUsersAllHostsV7Core_Template` file; consumed by the Ansible `WindowsHosts` group playbook.               |
+| [CurrentUserAllHostsV5Profile.ps1](Profiles/CurrentUserAllHostsV5Profile.ps1)                                                             | Per-user profile template for Windows PowerShell V5 (Current User, All Hosts).                                                                                                  |
+| [CurrentUserAllHostsV7CoreProfile.ps1](Profiles/CurrentUserAllHostsV7CoreProfile.ps1)                                                     | Per-user profile template for PowerShell V7 Core (Current User, All Hosts); user-specific settings that supplement or override the machine profile.                             |
+| [global_ConfigRootKeys.ps1](Profiles/global_ConfigRootKeys.ps1)                                                                           | Defines `$global:configRootKeys` — the authoritative hashtable of string constants used as keys throughout `$global:settings`.                                                  |
+| [global_ConfigRootKeysFragment.AmbitiousPackageRepositories.ps1](Profiles/global_ConfigRootKeysFragment.AmbitiousPackageRepositories.ps1) | Fragment appending ambitious (external/internal, push/pull) package repository feed key constants to `$global:configRootKeys`.                                                  |
+| [global_ConfigRootKeysFragment.PackageRepositories.ps1](Profiles/global_ConfigRootKeysFragment.PackageRepositories.ps1)                   | Fragment appending ProGet Phase 1 package feed key constants (8 combined feeds) to `$global:configRootKeys`.                                                                    |
+| [global_EnvironmentVariables.ps1](Profiles/global_EnvironmentVariables.ps1)                                                               | Defines `$global:EnvVars` — the hashtable of process environment variables derived from `$global:settings`; applied to the process environment at startup.                      |
+| [global_MachineAndNodeSettings.ps1](Profiles/global_MachineAndNodeSettings.ps1)                                                           | Defines per-host settings keys and Jenkins role argument lists (e.g., `$global:WindowsUnitTestArgumentsList`).                                                                  |
+| [global_PerGroupSettings.ps1](Profiles/global_PerGroupSettings.ps1)                                                                       | Defines `$defaultPerGroupSettings` — settings organized by Ansible group (e.g., `all`, `WindowsHosts`).                                                                         |
+| [global_PerMachineSettings.ps1](Profiles/global_PerMachineSettings.ps1)                                                                   | Lists `$PerHostSettingsKeys` — the configuration keys expected to be set per machine (Dropbox path, Google Drive path, cloud base path, temp dirs, etc.).                       |
+| [global_PerRoleSettings.ps1](Profiles/global_PerRoleSettings.ps1)                                                                         | Defines `$defaultPerRoleSettings` — settings organized by server role (e.g., `AnsibleServers`, CI roles).                                                                       |
+| [global_SecurityAndSecretsSettings.ps1](Profiles/global_SecurityAndSecretsSettings.ps1)                                                   | Defines `$local_SecurityAndSecretsSettings` — paths and variables for OpenSSL, Bitwarden, and secure cloud storage locations.                                                   |
+| [LoginScript.ps1](Profiles/LoginScript.ps1)                                                                                               | Unlocks the Bitwarden vault using the Bitwarden CLI and stores the session key in process and user-scope environment variables; uses PSFramework logging.                       |
+| [ProfileForServiceAccountUsers.ps1](Profiles/ProfileForServiceAccountUsers.ps1)                                                           | PowerShell V7 profile template for service accounts; same user-specific structure as `CurrentUserAllHostsV7CoreProfile.ps1` but targeted at non-interactive service identities. |
+| [WithProfiles.pssc](Profiles/WithProfiles.pssc)                                                                                           | PowerShell Session Configuration (`.pssc`) file for constrained/JEA-style session endpoints that load ATAP profiles.                                                            |
+
+---
+
+## Tools (`tools/`)
+
+| File                                                 | Description                                                                               |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| [ChocolateyInstall.ps1](tools/ChocolateyInstall.ps1) | Chocolatey package install script for the `ATAP.Utilities.Powershell` Chocolatey package. |
+
+---
+
+## Documentation (`Documentation/`)
+
+| File                                                                                                 | Description                                                                                                                                                            |
+| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [GlobalSettingsRelationships.drawio](Documentation/GlobalSettingsRelationships.drawio)               | Draw.io diagram illustrating the relationships between `$global:configRootKeys`, `$global:settings`, and the profile/fragment files.                                   |
+| [Powershell Useage in ATAP.Utilities.md](Documentation/Powershell%20Useage%20in%20ATAP.Utilities.md) | Overview document describing PowerShell conventions used across ATAP.Utilities: V5 vs V7 differences, logging standards, module structure, and build tooling patterns. |
+| [ReadMe.md](Documentation/ReadMe.md)                                                                 | Concept documentation for the Profiles subsystem; describes the machine/user profile layering model and their role in CI/CD pipeline environments.                     |
+| [toc.yml](Documentation/toc.yml)                                                                     | Table of contents for Documentation folder (used by DocFX or similar documentation generators).                                                                        |
+
+---
+
+## Scripts Without Tests
+
+The following public scripts have no corresponding `*.Tests.ps1` file in `tests/Unit/`:
+
+> **[PLACEHOLDER — generate this list from the public/ inventory minus test coverage above]**
+>
+> Confirmed covered: `ConvertFrom-CopilotChatHistory`, `Get-CollectionTraverseEvaluate`, `Get-CoreInfo`
+>
+> All other public scripts (45 of 48) currently have no Pester test coverage.
+
+---
+
+## Module Root Files
+
+| File                                                                         | Description                                                                                                |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| [ATAP.Utilities.Powershell.psd1](ATAP.Utilities.Powershell.psd1)             | PowerShell module manifest.                                                                                |
+| [ATAP.Utilities.Powershell.psm1](ATAP.Utilities.Powershell.psm1)             | Module root script — dot-sources public and private scripts.                                               |
+| [ATAP.Utilities.Powershell.pssproj](ATAP.Utilities.Powershell.pssproj)       | PowerShell Studio project file.                                                                            |
+| [CommentBasedHelpFunctionTemplate.ps1](CommentBasedHelpFunctionTemplate.ps1) | Template for new public function files; establishes the standard comment-based help and function skeleton. |
+| [Module.Build.ps1](Module.Build.ps1)                                         | Build script for the module (invoked by the CI pipeline / Invoke-Build).                                   |
+| [ReadMe.md](ReadMe.md)                                                       | Module-level readme.                                                                                       |
+| [ReleaseNotes.md](ReleaseNotes.md)                                           | Changelog and release notes.                                                                               |
+| [toc.yml](toc.yml)                                                           | Table of contents for module documentation.                                                                |
+| [version.json](version.json)                                                 | Module version metadata.                                                                                   |

@@ -230,7 +230,7 @@ $queryEmbedding = Get-Embedding -text $question
 $data = Get-Content "embedded-code.json" | ConvertFrom-Json
 $scored = $data | ForEach-Object {
 $sim = Cosine-Similarity -vecA $queryEmbedding -vecB $_.Embedding
-$_ | Add-Member -NotePropertyName Score -NotePropertyValue $sim -Force
+$\_ | Add-Member -NotePropertyName Score -NotePropertyValue $sim -Force
 $\_
 } | Sort-Object Score -Descending
 
@@ -10116,7 +10116,7 @@ Would you like a sample repo layout or script for initializing a local SQL Serve
 You said:
 find propertires on pscyustomobject
 ChatGPT said:
-To find all properties on a [pscustomobject] in PowerShell, use:
+To find all properties on a [PSCustomObject] in PowerShell, use:
 
 ✅ 1. List All Properties and Values
 $object | Format-List
@@ -10130,7 +10130,7 @@ foreach ($property in $object.PSObject.Properties) {
     "$($property.Name) = $($property.Value)"
 }
 ✅ Example
-$person = [pscustomobject]@{
+$person = [PSCustomObject]@{
     Name = 'Alice'
     Age  = 42
     Role = 'DBA'

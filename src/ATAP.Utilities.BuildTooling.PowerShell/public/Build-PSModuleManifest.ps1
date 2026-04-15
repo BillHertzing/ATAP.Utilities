@@ -107,9 +107,7 @@ function Build-PSModuleManifest {
       $params = @{
         Path          = $OutputManifestPath
         ModuleVersion = $ModuleVersion
-      }
-      if (-not [string]::IsNullOrWhiteSpace($Prerelease)) {
-        $params['Prerelease'] = $Prerelease
+        Prerelease    = $Prerelease   # always stamp: empty string clears a pre-existing value; non-empty sets NBGV-derived label
       }
       if ($PublicFunctions -and $PublicFunctions.Count -gt 0) {
         $params['FunctionsToExport'] = $PublicFunctions

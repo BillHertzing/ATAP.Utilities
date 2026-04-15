@@ -31,10 +31,11 @@
   PS> Get-PSModuleVersionFromNBGV -ModuleRoot 'C:\repo\src\ATAP.Utilities.Foo.PowerShell'
   ModuleVersion Prerelease FullNuGetVersion
   ------------- ---------- ----------------
-  0.1.0         Alpha6     0.1.0-Alpha.6
+  0.1.0         Alpha001   0.1.0-Alpha.1
 .EXAMPLE
   PS> $v = Get-PSModuleVersionFromNBGV -ModuleRoot $PSScriptRoot
   PS> Update-ModuleManifest -Path $manifest -ModuleVersion $v.ModuleVersion -Prerelease $v.Prerelease
+  # Prerelease will be e.g. 'beta003' (zero-padded to 3 digits) for correct PS Gallery sort order
 .NOTES
   AI assisted using Powershell.instructions.md as guidelines
 .LINK
@@ -121,8 +122,11 @@ function Get-PSModuleVersionFromNBGV {
       # Stable / T5 Production: no prerelease segment
       $prerelease = ''
     } else {
-      # Prerelease must be alphanumeric only (no dots, no hyphens)
-      $prerelease = '{0}{1}' -f $label, $height
+      # Prerelease must be alphanumeric only (no dots, no hyphens).
+      # Zero-pad the height to 3 digits so lexicographic order matches numeric order
+      # (e.g. 'alpha009' < 'alpha010' < 'alpha100') — required for correct PS Gallery sort.
+      $heightInt = if ([string]::IsNullOrEmpty($height)) { 0 } else { [int]$height }
+      $prerelease = '{0}{1:D3}' -f $label, $heightInt
       if ($prerelease -notmatch '^[A-Za-z0-9]+$') {
         $message = "Computed Prerelease '$prerelease' does not match the required alphanumeric pattern for Update-ModuleManifest."
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $message -Tag 'NBGV'

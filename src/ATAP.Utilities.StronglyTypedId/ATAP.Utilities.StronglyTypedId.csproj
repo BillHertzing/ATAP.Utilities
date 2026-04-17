@@ -4,24 +4,11 @@
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
-    <!-- Assembly, File, and Package Information for this assembly-->
-    <!-- Build and revision are created based on date-->
-    <MajorVersion>0</MajorVersion>
-    <MinorVersion>1</MinorVersion>
-    <PatchVersion>0</PatchVersion>
-    <!-- Current Lifecycle stage for this assembly-->
-    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
-    <!-- NuGet Package Label for the NuGet Package if the LifeCyclestage is not Production-->
-    <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
-    <PackageLabel>Alpha</PackageLabel>
     <EnableDefaultItems>false</EnableDefaultItems>
-    <Authors>ATAP</Authors>
     <Description>Aggregator package for ATAP.Utilities.StronglyTypedId libraries.</Description>
+    <!-- No source files — intentional for this aggregator facade -->
+    <NoWarn>$(NoWarn);CS2008</NoWarn>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="Interfaces/ATAP.Utilities.StronglyTypedId.Interfaces.csproj" />

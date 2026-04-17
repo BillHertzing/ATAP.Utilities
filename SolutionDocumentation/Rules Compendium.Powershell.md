@@ -1081,7 +1081,7 @@ All owners / users of Ace Commander can contribute to the ecosystem of bolt-on m
 
 This section is where the nomenclature and taxonomy of the ATAP.Utilities and Ace Commander are specified, and the individual Rules that make up each Rule Set are referenced.
 
-During the design phase of this project, this document will serve as the 'source of truth' for the nomenclature and taxonomy of the ATAP.Utilities and Ace Commander Rule Sets and this feature / module tagging. As the program / project evolves, the actual Rules and Rule Sets stored in the Ace Commander databases will slowly take over the 'source of truth' , and this document will be updated by Ace Commander to keep it in sync with the databases contents. MOdules and Rule Sets can be hierarchly decomposed into smaller functional units. The Module defintions in the following sections will demonstrate this by listing submodules under 'higher' modules.
+During the design phase of this project, this document will serve as the 'source of truth' for the nomenclature and taxonomy of the ATAP.Utilities and Ace Commander Rule Sets and this feature / module tagging. As the program / project evolves, the actual Rules and Rule Sets stored in the Ace Commander databases will slowly take over the 'source of truth' , and this document will be updated by Ace Commander to keep it in sync with the databases contents. MOdules and Rule Sets can be hierarchal decomposed into smaller functional units. The Module defintions in the following sections will demonstrate this by listing submodules under 'higher' modules.
 
 ### Ace Commander browser-based User Interface
 
@@ -1542,4 +1542,128 @@ Build-DatabaseWithFlyway -DatabaseName 'GMail' -Environment 'Development'
 
 # Build using an already-open SqlConnection (e.g., within a larger pipeline)
 Build-DatabaseWithFlyway -DatabaseName 'Philote' -SqlConnection $existingConn
+```
+
+### Logging Rule Set
+
+**Philote ID:** `"9369e02d-4218-42dc-a487-4a176f9eac46"`
+
+**Priority:** P1 (correctness — apply before all other Rule Sets)
+
+**Description:** This Rule Set defines the canonical PSFramework logging conventions for
+all PowerShell functions and cmdlets in ATAP.Utilities and Ace Commander. Every logging
+call and external-call instrumentation pattern derives from these rules. Compliance is
+required for all production-grade PowerShell code in this repository.
+
+**Source:** `SolutionDocumentation/AI prompt to create Copilot instruction files.md` lines 138-292.
+
+**Cross-references:** Task 1.2 (Error Handling Rule Set), Task 1.3 (GELF/SEQ provider sub-section).
+
+#### Rule L-1 — Approved logging cmdlet
+
+Use `Write-PSFMessage` exclusively for all diagnostic and operational logging.
+
+**Forbidden alternatives:**
+
+| Forbidden | Reason |
+| --- | --- |
+| `Write-Host` | Bypasses the logging pipeline; cannot be suppressed or redirected |
+| `Write-Verbose` | Ignores PSFramework level routing and tagging |
+| `Write-Debug` | Same as above |
+| `Write-Output` | Intended for pipeline output, not logging |
+
+**Correct form:**
+
+```powershell
+Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+    -Level Debug -Message 'Some trace message'
+```
+
+#### Rule L-2 — Approved log levels
+
+`-Level Info` is **never** a valid level with `Write-PSFMessage`.
+
+| Level | When to use |
+| --- | --- |
+| `Debug` | Trace-level detail: entering/leaving functions, before/after external calls |
+| `Verbose` | Lifecycle events: configuration loaded, connection established, finally-block exit |
+| `Important` | Notable operational events worth surfacing to operators in non-debug runs |
+| `Error` | Failures caught in catch blocks |
+
+#### Rule L-3 — Mandatory `-FunctionName` and `-ModuleName`
+
+Every `Write-PSFMessage` call inside a function must include both named parameters:
+
+```powershell
+Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+    -Level Verbose -Message 'some message'
+```
+
+Where `<functionName>` and `<moduleName>` are replaced with the literal name of the
+enclosing function and the module it belongs to, respectively.
+
+#### Rule L-4 — Function entry and exit logging
+
+The **first executable line** of the `begin` block must be:
+
+```powershell
+Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+    -Level Debug -Message 'Entering Function <functionName> in module <moduleName>'
+```
+
+The **next-to-last executable line** of the `end` block (before the return value) must be:
+
+```powershell
+Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+    -Level Debug -Message 'Leaving Function <functionName> in module <moduleName>'
+```
+
+#### Rule L-5 — External call instrumentation and tags
+
+All calls to the following cmdlets must be preceded and followed by a
+`Write-PSFMessage -Level Debug` call using the corresponding `-Tag` value.
+
+| Cmdlet | `-Tag` value | Before-call message | After-call message |
+| --- | --- | --- | --- |
+| `Invoke-RestMethod` | `'RestCall'` | `"Calling <URLOfEndpoint>"` | `"Successfully returned from <URLOfEndpoint>"` |
+| `Invoke-WebRequest` | `'WebRequestCall'` | `"Calling <URLOfEndpoint>"` | `"Successfully returned from <URLOfEndpoint>"` |
+| `Invoke-Expression` | `'InvokeExpressionCall'` | `"Invoke-Expression <command>"` | `"Successfully returned from Invoke-Expression <command>"` |
+| `Invoke-Command` | `'InvokeCommandCall'` | *(see Rule L-5a)* | same pattern |
+
+**Rule L-5a — `Invoke-Command` before-call log message format:**
+
+```powershell
+Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+    -Level Debug -Message $(
+        "Calling Invoke-Command " + `
+        "-ComputerName $computername -ScriptBlock {$scriptBlockToRun} " + `
+        "-Credential $($credential.ToString()) " + `
+        "$(if ($useSSL) { ' -useSSL ' })" + `
+        "$(if ($useSelfSignedCert) { ' -SessionOption $(New-PSSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck)' })"
+    ) -Tag 'InvokeCommandCall'
+```
+
+#### Rule L-6 — Wrap all external calls in try/catch/finally
+
+All four external-call cmdlets (`Invoke-RestMethod`, `Invoke-WebRequest`,
+`Invoke-Expression`, `Invoke-Command`) must be wrapped in a `try/catch/finally` block.
+Use `-ErrorAction Stop` on any call whose failure must abort the enclosing operation.
+
+#### Rule L-7 — Catch and finally block template
+
+```powershell
+try {
+    # ... call with -ErrorAction Stop if failure must abort ...
+}
+catch {
+    $errorMessage = "<description of the attempted operation>. Exception: $($_.Exception.Message)"
+    Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+        -Level Error -Message $errorMessage -Exception $_.Exception `
+        -Tag '<RestCall|WebRequestCall|InvokeExpressionCall|InvokeCommandCall>'
+    throw $_
+}
+finally {
+    Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+        -Level Verbose -Message "Exiting function: <functionName>"
+}
 ```

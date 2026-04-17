@@ -1,0 +1,306 @@
+# SolutionDocumentation Index
+
+This index catalogs the non-AI documents under `SolutionDocumentation/`. Documents
+are grouped by purpose. A top-level distinction separates material that **teaches
+or tells how to create software** (methodology, build, rules, setup) from material
+that **describes how the target application — Ace Commander — will work**
+(architecture, modules, feature intent).
+
+- **Teach / Tell how to create software:** Setup, Security, Producing Software,
+  Rules Compendium, Testing Methodology, and most build/versioning guides.
+- **Describe how Ace Commander works:** Module Catalog, Generic Plugin
+  Architecture, Secrets Plugin Architecture, Developer Musings (SecSub design),
+  architecture-overview, and the various `.drawio` diagrams.
+
+> **Stub / placeholder files:** `GettingStarted.md` and `ContributingGuidelines.md`
+> are single-line stubs. `ReadMe.md` is only partially populated; most of its
+> subsections (Overview, Publishing, Debugging, Packaging, Using, Disaster
+> Preparedness) still contain TBD/ToDo placeholders. `toc.yml` is a minimal
+> 12-line DocFX stub that lists only six of the 40+ Markdown files in this folder
+> and is badly out of date.
+
+> **Known inconsistencies across documents**
+>
+> - **Tier-label vocabulary conflict — RESOLVED.** `Versioning.md` (stale 4-tier
+>   labels) has been deleted; its non-obsolete content was merged into
+>   [BuildMaster-ProGet-CSharp-Package-Pipeline](BuildMaster-ProGet-CSharp-Package-Pipeline.md),
+>   which is now the single source of truth for the 5-tier label/feed mapping.
+> - **"Module Catalog New Material.md"** was mis-titled (Perplexity.ai WSL2 content,
+>   not catalog additions) and has been renamed to
+>   **`AI on WSL2 Ansible Docker and Bitwarden.md`**.
+
+---
+
+## Setup — Computer and Organization
+
+*Teach / Tell how to create software.*
+
+- [New Computer Setup](NewComputerSetup.md) — **Far more than a bootstrap page.**
+  The first half covers Rufus USB preparation, BIOS configuration, Windows
+  install, and WinRM/Ansible enablement via `ConfigureRemotingForAnsible.ps1`.
+  The second half (the bulk of the 700+-line document) is an end-to-end
+  **build-server provisioning runbook**: SQL Server Express install with a
+  PRODUCTION named instance on port 50001; creation of `SvcSQLServer`,
+  `SvcProGet`, and `SvcBuildmaster` service accounts via
+  `New-LocalServiceAccount`; Inedo Hub installation; eight-step ProGet install
+  including `Initialize-ProGetSqlServiceLogin`, `Initialize-SqlServiceLogin`,
+  ProGet.config symlinking, EncryptionKey retrieval from Bitwarden, API-key
+  registration; and a build of the `aaronontheweb/mssql-mcp` MCP server.
+- [Getting Started](GettingStarted.md) — **Stub (1 line).** Intended as the first
+  read for new contributors; content still to be written.
+- [ReadMe](ReadMe.md) — Repository overview, prerequisites, and pointers to the
+  Building, Publishing, Packaging, and Disaster Preparedness sections. **Many
+  sections are still TBD/ToDo placeholders** rather than prose.
+- [Contributing Guidelines](ContributingGuidelines.md) — **Stub (1 line)**
+  reserved for future contributor guidance (branching, PR flow, code review).
+- [Setup for Visual Studio Code Extension](Setup%20for%20Visual%20Studio%20Code%20Extension.md)
+  — Installing Node.js, Yeoman, and `generator-code`; scaffolding the
+  ATAP.AIAssist VS Code extension project. Also lists runtime npm packages
+  (`js-yaml`, `events`), dev packages (`mocha`, `chai`, `sinon`, `ts-node`,
+  `webpack`, `tsconfig-paths`), and LLM-client modules (`axios`, `openai`,
+  `prettier`, `kdbxweb`, `diff`).
+- [Visual Studio Extensions](VisualStudioExtensions.md) — Tooling notes for
+  GhostDoc, DocFx, the AutoDoc project, and custom MSBuild **Targets**
+  (lockfile create/remove, invalid-outputs detection) and **Tasks**
+  (`GetVersion`, `SetVersion`, `UpdateVersion`), the MSBuild Community Tasks
+  package, and MSBuild Structured Log Viewer install via Chocolatey. Still
+  contains several "TBD" sections (GhostDoc config paths, VS settings).
+- [Disaster Preparedness](Disaster%20Preparedness.md) — **Largely a skeleton.**
+  Section headers for cloud sync (Dropbox / OneDrive / GoogleDrive),
+  on-premise and off-premise backup, and validation via `Confirm-GitFSCK`
+  are present, but most content is placeholder. Preserves tool configs for
+  VS Code, Git, and SpellCheck.
+- [Attribution](Attribution.md) — **566 lines — much broader than a bibliography.**
+  Covers Flyway (§3.3.3), GitHub issue/branch workflow (§3.3.4),
+  Jenkins/ProGet integration (§3.3.5), dbatools / SqlClient (§3.3.6), VS Code
+  C# build (§3.3.7), multi-project NuGet packaging (§3.3.8), Bitwarden CLI
+  (§3.3.9), and WSL2 source list (§3.3.10). Additional sections on Copilot
+  token usage, the Copilot coding agent, Claude Code Windows install, and
+  Google AI plans (§2.4.4–2.4.7).
+
+---
+
+## Security Considerations
+
+*Teach / Tell how to create software (with two "describe" entries noted).*
+
+- [Security Shift-Left](Security%20Shift-Left.md) — **779 lines.** Framed as
+  CI/CD secret-handling principles, but the bulk is an OpenSSL + PKI tutorial:
+  Root CA creation; SSL server certs via `New-DistinguishedNameHash`,
+  `New-RandomPassPhraseToFile`, `New-EncryptedPrivateKey`, `New-CACertificate`,
+  `Create-CertificateAndSign`; `RootCACertStoreLocation` usage;
+  `SecretManagement.BitWarden` integration (`Register-SecretVault`,
+  `Unlock-SecretVault`, `Get-Secret`); direct Bitwarden CLI (`bw login`,
+  `bw unlock`, `BW_SESSION`); and Wireshark SSL-key capture.
+- [Secrets Plugin Architecture](SecretsPluginArchitecture.md) — *Describes Ace
+  Commander.* Full April-2026 specification for consolidating two existing
+  Secrets implementations (`ATAP.Utilities.Configuration.Secrets/` and
+  `ATAP.Utilities.Configuration/Secrets/Shims/`) into a new
+  `ATAP.Utilities.Secrets` family. Defines `ISecretsAbstract`,
+  `ISecretsConfigurableAbstract`, `ISecretsOptionsAbstract`,
+  `ISecretsPluginShim`, `SecretMapping` record, `SecretsRouter`,
+  `BitwardenSecretsOptions` (`SessionEnvVarName` / `BwCliPath` / `Timeout` /
+  `DefaultFieldName`), `BitwardenSecretsShim`, `BitwardenConfigurationSource`
+  and `BitwardenConfigurationProvider`, and a `SecretsPluginShim` implementing
+  `ILoadDynamicSubModules`.
+- [Developer Musings — SecSub Design](DeveloperMusings.md) — *Describes Ace
+  Commander.* Three "brainstorming" iterations of the Security Subsystem.
+  Explains PowerShell SecretManagement limitations (single-vault and
+  local-disk-only ACLs), then defines SCVP (Secure Cloud Vault Path), EMBs
+  (Encrypted Master Passwords), SMVs (Secret Management Vaults), DECs (Data
+  Encryption Certificates), the `SMEVInfo` custom type, and the AUMPs.txt
+  mapping file.
+
+---
+
+## How to Produce a Software Product — Building, Versioning, Testing, Packaging, Publishing
+
+*Teach / Tell how to create software.*
+
+- [Building](Building.md) — Solution-level build flow, `Directory.Build.props`
+  and `Directory.Build.targets`, project-type GUID
+  `{9A19103F-16F7-4668-BE54-9A1E7A4F7556}`, the `UpdateVersionIfNecessary` and
+  `PrintBuildVariables` targets, `ATAP.Utilities.BuildTooling` (Net Full and
+  .NetCore editions, Release / Debug), `NuGetLocalFeedPath`,
+  `PublishAfterBuild`, Authenticode signing, imgbot, and PowerShell module
+  packaging (Plaster / Catesta / Psake / Invoke-Build).
+- [BuildMaster/ProGet C# Package Pipeline](BuildMaster-ProGet-CSharp-Package-Pipeline.md)
+  — Comprehensive 5-stage OtterScript plan (`CSharpPackage-5Stage.otter`)
+  targeting 171 projects. Covers the five feeds `nuget-experimental /
+  nuget-development / nuget-integration / nuget-qa / nuget-stable`, NBGV
+  (`version.json`) with labels `Sprint / Alpha / Beta / QA / (empty)`, the
+  BuildMaster Application `ATAP.Utilities-CSharp`, the shared per-package
+  application with `$ProjectPath` override, the meta-package
+  `ATAP.Utilities.csproj`, Repository Monitors, and `PROGET_ADMIN_API_KEY`
+  retrieval via `$Decrypt($ProGetApiKey)`.
+- [MSBuild Binary Logging](MSBuild%20Binary%20Logging.md) — **8-line note.** Use
+  of the `-bl` switch and the MSBuildStructuredLog viewer for diagnosing
+  build issues.
+- [Plan — Fix `dotnet build` (Central Package Management)](plan-fixDotnetBuild.prompt.md)
+  — Full migration plan from 80+ legacy `<PackageReference Update>` elements
+  in `Directory.Build.targets` (lines 145–304) to a new
+  `Directory.Packages.props` with `<PackageVersion>` entries and
+  `ManagePackageVersionsCentrally`. Includes handling of framework-conditional
+  versions (`System.Text.Json`, `System.Collections.Immutable`,
+  `Newtonsoft.Json`, `McMaster.NETCore.Plugins`) and a complete 85-package
+  inventory grouped by role (security patches, core libraries, ServiceStack,
+  time, Microsoft.Extensions.\*, DI, resilience, file I/O, AOP, messaging,
+  mapping, build tools, Source Link, Serilog, process management, units of
+  measure, xUnit suite, and legacy).
+- [CS0246 Errors — Type Not Found](CS0246-Errors-TypeNotFound.md) — Catalog of
+  compile errors on branch `65-migrate-central-package-management` (dated
+  2026-03-03), grouped by missing type: `DiFixture` (16), `ISerializerOptions`
+  (14), `TestData<>` (14), `DiFixtureNInject` (4), `IPhilote<>` (4),
+  `ConfigurableFixture` (2), `Dictionary<,>` (2), `IDynamicSubModulesInfo` (2),
+  `ILoadDynamicSubModules` (2), `IModel/RabbitMQ` (2), `SerializationFixture`
+  (2), `SqlFunction` (2), `SqlFunctionAttribute` (2), with prioritized
+  resolutions.
+- [Testing Methodology](TestingMethodology.md) — **Pester-only (62 lines).**
+  Pester layout with `RegularTests` and `RequiresNewProcess` directories, the
+  `_NewProcess` suffix convention, and Pester `-Tag` / `-RunInNewProcess`
+  usage. Does not currently cover xUnit / C# test conventions.
+- [Refactoring — Phase 1 Discovery Report](Refactoring-Phase1-Discovery-Report.md)
+  — Dated 2026-02-28, branch `60-update-overall-systems-documentation`.
+  22 candidate groups (16 safe, 6 "Both"-type conflicts). Conflict resolution
+  uses `git mv` to rename conflicting parents to `*.Model`. Specific
+  conflicts listed: `ATAP.Services.GenerateProgram`, `ATAP.Utilities.Loader`,
+  `ATAP.Utilities.MessageQueue`, `ATAP.Utilities.Persistence`,
+  `ATAP.Utilities.Philote`, `ATAP.Utilities.Serializer`.
+- [Tasks ToDo — Plugin Work](Tasks%20ToDo%20For%20Plugin.md) — **702-line**
+  50-task plan across 5 agents and 6 phases (0–5), on branch
+  `94-sprint-0004-work-items`, dated 2026-04-05. Includes full dependency
+  graph, task matrix, and agent workload table: Tasks 1–5 Loader (Agent 1),
+  6–13 Secrets base (Agent 2), 14–15 Plugin tests (Agent 5), 16–19
+  PluginFamily (Agent 1), 20–28 Bitwarden shim + Secrets facade (Agents 3, 4),
+  29–37 Plugin integration + tests (Agents 4, 5), 38–46 PluginDemo +
+  integration tests (Agents 4, 5), 47–50 cleanup + PowerShell (Agents 1, 3).
+- [Plugin Creation Prompt](PLugin%20Creation%20Prompt.md) — **78 lines, an
+  authorial brief, not a specification.** The prompt the user issued to
+  generate the plugin-architecture and SecretsPluginArchitecture documents.
+  Lists the plugin-capable families (Secrets / MessageQueue / Serializer /
+  Testing), demands no-ServiceStack implementation, requires zeroing of
+  sensitive data on unload and deep-copied DTOs across the plugin boundary,
+  and calls for a PowerShell-consumable design plus a demo console app.
+- [Blog Post 001](BlogPost001.md) / [Daily Dev Log](DailyDevLog.md) — **Near
+  duplicates.** Goals and running log, including the ACE co-operative
+  non-anonymous-internet idea and automation task sketches (ski reservations,
+  photo curation). Both files share roughly the same content with minor
+  formatting differences.
+- [Example — Rule Instantiation: Hello World](Example.RuleInstantiation.HelloWorld.md)
+  — T-SQL seed showing `Rule` / `RuleInstantiation` / `RuleInstantiationBinding`
+  (with `RelativePath`, `FileName`, `FileContent` bindings) producing
+  `Program.cs`, `HelloWorld.cs`, and `HelloWorld.csproj` under
+  `Database/_generated/HelloWorld`. Also shows the Philote-seeding pattern
+  and the expected rendered contents of each generated file.
+- [DocFX TOC](toc.yml) — **12-line stub.** Lists only ReadMe, GettingStarted,
+  Building, VisualStudioExtensions, Attribution, and Contributing — badly out
+  of date with the current document set.
+
+---
+
+## Rules Compendium
+
+*Teach / Tell how to create software.* These are the authoritative
+language-scoped catalogs of Rule Primitives that power the RRSBS
+(Rules, Rule Sets, Build Sets) code-generation framework. Every primitive,
+rule, rule set, and build set in these documents carries a stable
+`IPhilote<GUID>` identifier, keyed back into the Ace Commander Instantiations
+database. Each primitive maps to a single BNF non-terminal in the target
+language's grammar; an instantiation binds primitive inputs to specific
+values and renders deterministic output text.
+
+- [Rules Compendium — C#](Rules%20Compendium.CSharp.md) — C# 14 / .NET 10 Rule
+  Primitives mapped to BNF productions; attributes, XML-doc, DI registration,
+  and project-file conventions. (~1,076 lines.)
+- [Rules Compendium — SQL](Rules%20Compendium.SQL.md) — T-SQL Rule Primitives
+  for schema objects, Flyway migrations, and stored-procedure conventions.
+  (~1,158 lines.)
+- [Rules Compendium — PowerShell](Rules%20Compendium.Powershell.md) — Rule
+  Primitives for module layout, advanced functions, PSFramework logging,
+  Pester testing, and PowerShell conventions. **Largest compendium at
+  ~1,545 lines.**
+- [Rules Compendium — MSBuild](Rules%20Compendium.MSBuild.md) — Rule Primitives
+  for `.props` / `.targets`, Directory.Build files, custom tasks, and solution
+  orchestration. (~858 lines.)
+- [Rules Compendium — Manim](Rules%20Compendium.Manim.md) — Defines the
+  `ManimScene` RulesKind and its Rule Primitives for the
+  `ATAP.Utilities.ManimVideoGenerator` subsystem and the AceCommander bolt-on
+  module. Cross-references the BNF in
+  `_Planning/Explainers/0200-manim-video-generator-overview.md`. (~345 lines.)
+- [Rules Compendium — Path](Rules%20Compendium.Path.md) — Rule Primitives for
+  Windows filesystem path syntax, including reserved names (`CON`, `PRN`,
+  `AUX`, `NUL`, `COM1–COM9`, `LPT1–LPT9`), `MAX_PATH` (260 / 32,767 with
+  `\\?\` prefix), trailing-character restrictions, and case-insensitivity
+  semantics. (~399 lines.)
+- [Rules Compendium — Snippet](Rules%20Compendium.Snippet.md) — Rule
+  Primitives for VS Code snippet JSON/JSONC: prefix / body / description
+  properties, placeholder substitution, tab stops, and language-neutral
+  metadata. (~1,147 lines.)
+
+---
+
+## Ace Commander — Application Description
+
+*Describes how Ace Commander will work (not how to build software in general).*
+
+- [Architecture Overview](architecture-overview.md) — 2026-03-15 automated
+  survey of the ATAP.Utilities repository in its role as the computational
+  and building core of Ace Commander. Inventories Core Utility Libraries
+  (Serializer, Philote, StronglyTypedId, Persistence, GraphDataStructures,
+  ComputerInventory, CryptoCoin/Miner, Configuration.Extensions,
+  GenericHost.Extensions, Logging, ETW, MessageQueue, Loader,
+  GenerateProgram, Tags, FileIO, DatabaseManagement, Gmail, FinancialAPI,
+  etc.), Service Adapters (ConsoleMonitor, FileSystemWatchers,
+  TcpWithResilience, Timers, GenerateProgram), Console apps, PowerShell
+  modules, the `ATAPUtilities` SQL Server database, MSBuild tooling, the
+  `ATAP-AiAssist` VS Code extension, and DocFX/PlantUML/Draw.io docs
+  infrastructure. (328 lines.)
+- [Module Catalog](Module%20Catalog.md) — Ace Commander module catalog v0.9
+  (2026-02-22 baseline, change-controlled). Covers CEMA Core
+  (rules/rule-sets/build-sets/instantiations with bi-temporal history),
+  Module Lifecycle & Assembly, Data Analysis & Visualization, Photos / Media
+  / Image Packages (including watermarking, Hydrus ingestion, remote photo
+  hosting, time-based media generation), Tags (upgradeable taxonomy),
+  Specialized Image Classifiers (face recognition, wildflowers), Outdoor /
+  Routes / GPX, and Inter-instance Sharing & Sync. Section 3.3 adds VS Code
+  C# build configuration, multi-project NuGet aggregator patterns, and the
+  detailed Bitwarden-CLI / PowerShell SecretManagement integration notes
+  (CI/CD headless unlock, VS Code BW_SESSION inheritance, WSL2, Docker) and
+  WSL2 runtime environment (install, drive mounting, networking, Ansible,
+  Docker). (1,175 lines.)
+- [AI on WSL2 Ansible Docker and Bitwarden](AI%20on%20WSL2%20Ansible%20Docker%20and%20Bitwarden.md) —
+  Perplexity.ai Q&A transcript (7 exchanges). Covers: WSL2 install and
+  `/mnt/{c,d,e}` DrvFs auto-mount; Windows↔WSL2 bidirectional networking;
+  Ansible install and PowerShell-driven playbook generation on Windows;
+  Docker inside WSL2 with APIs callable from .NET and PowerShell;
+  Ubuntu-24.04 as recommended distro; Bitwarden CLI (`bw`) in Ubuntu for
+  secrets access and `BW_SESSION` auto-creation at WSL login via a pwsh
+  profile; why CLIXML is unsuitable for WSL unlocking. Material overlaps
+  with Module Catalog §3.3.10; primary value is the Bitwarden
+  WSL/Docker patterns. (706 lines.)
+- [Generic Plugin Architecture](GenericPluginArchitecture.md) — **761-line
+  full specification (April 2026).** Goals (dual consumption, plugin
+  families, hot-swap and collectible unload, boundary security, observable
+  `IData`, configuration layering, PowerShell compatibility); explicit
+  non-goals (no ServiceStack, no Redis, no UI-framework mandate). Defines
+  plugin families (Secrets, Serializer, MessageQueue, Testing), the shim
+  pattern, `IPluginMetadata`, `PluginState` lifecycle, `IPluginShim<T>`,
+  `IPluginFamily<T>`, collectible `AssemblyLoadContext`, `IAssemblyLoader`,
+  `IPluginData`, `IPluginConfigStore`, the Ace legacy mapping, and the
+  PowerShell cmdlet-wrapper pattern.
+- [Library and App Package Distribution Overview](Library%20and%20App%20Package%20Distribution%20Overview.drawio)
+  — Diagram of how ATAP.Utilities packages flow from source through the
+  five-feed pipeline to consumers.
+- [Package Lifecycles Over Time](Package%20Lifecycles%20Over%20Time.drawio) —
+  Diagram of package promotion through the 5-tier feed pipeline across time.
+- [TheBigIdea](TheBigIdea.drawio) — Concept-level sketch of the Ace Commander
+  vision.
+- [Users](Users.drawio.svg) — Diagram of user roles and their interactions
+  with Ace Commander.
+- [Windows Library and App Packages for Multiple Platforms and Runtimes](Windows%20Library%20and%20App%20Packages%20for%20Multiple%20Platforms%20and%20RuntImes.drawio)
+  — Diagram mapping packages across target platforms and runtime variants.
+  (Note: the on-disk filename is `RuntImes` with a capital **I**.)
+- [Windows Packages](Windows%20Packages.drawio) — Windows-specific packaging
+  topology diagram.
+- [architecture-overview (diagram)](architecture-overview.drawio) — Visual
+  companion to the architecture-overview document.

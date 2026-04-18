@@ -6,7 +6,7 @@
 
 .DESCRIPTION
     Inter-tier movement advances a validated package upward through the
-    environment tiers: Experimental → Development → Testing → Production.
+    environment tiers: Experimental → Development → Integration → QA → Stable.
 
     The script knows the tier ordering and can automatically determine the
     destination feed from the source feed name. In Phase 1, the destination
@@ -15,7 +15,7 @@
     move it from push to pull within that tier).
 
     The tier chain is:
-        experimental → development → testing → production
+        experimental → development → integration → qa → stable
 
     The script detects the package type (nuget, powershell, chocolatey)
     from the source feed name prefix.
@@ -79,14 +79,14 @@
     Move-ProGetPackageInterTier.ps1 `
         -PackageName 'MyModule' -Version '2.0.0-dev.5' `
         -SourceFeed 'powershell-development' `
-        -DestinationFeed 'powershell-testing-push'
+        -DestinationFeed 'powershell-qa-push'
 
 .EXAMPLE
     # Dry run
     Move-ProGetPackageInterTier.ps1 `
         -PackageName 'MyPackage' -Version '1.0.0' `
-        -SourceFeed 'nuget-testing' -WhatIf
-    # Auto-destination: nuget-production
+        -SourceFeed 'nuget-qa' -WhatIf
+    # Auto-destination: nuget-stable
 
 .NOTES
     AI assisted using Powershell.instructions.md as guidelines
@@ -141,14 +141,14 @@ begin {
 
     # ── Tier definitions ─────────────────────────────────────────────────
     # Ordered list of tiers. Index determines movement direction (lower → higher).
-    $tierOrder = @('experimental', 'development', 'testing', 'production')
+    $tierOrder = @('experimental', 'development', 'integration', 'qa', 'stable')
 
     # Known package type prefixes in feed names
     $knownPrefixes = @('nuget', 'powershell', 'chocolatey')
 
     # ── Parse source feed name ───────────────────────────────────────────
     # Feed names follow the pattern: {packageType}-{tier}[-push]
-    # Examples: nuget-experimental, powershell-development-push, chocolatey-testing
+    # Examples: nuget-experimental, powershell-development-push, chocolatey-qa
 
     $parsedPrefix = $null
     $parsedTier = $null
@@ -169,7 +169,7 @@ begin {
 
     if (-not $parsedPrefix -or -not $parsedTier) {
         $errorMessage = "Cannot parse source feed name '$SourceFeed'. " +
-        'Expected format: {nuget|powershell|chocolatey}-{experimental|development|testing|production}[-push]'
+        'Expected format: {nuget|powershell|chocolatey}-{experimental|development|integration|qa|stable}[-push]'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
         throw $errorMessage
     }

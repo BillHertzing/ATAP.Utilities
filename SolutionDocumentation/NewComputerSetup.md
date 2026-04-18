@@ -468,6 +468,62 @@ Expected result: `Status = Success`, `UserCreated = True`, `SeServiceLogonRight 
 
 ---
 
+## Create Additional SQL Server Named Instances
+
+After SQL Server is installed and the `PRODUCTION` instance is verified running, create the
+`Integration` and `QA` named instances. These are required for the sprint-based development
+workflow and must exist before ProGet or BuildMaster attempt to use them.
+
+> **Why separate instances?** Each instance (`Integration`, `QA`, `PRODUCTION`) maps to a
+> promotion tier in the BuildMaster pipeline. Flyway migrations and package deployments
+> target the appropriate instance at each stage. Running them on separate named instances
+> prevents a broken migration on one tier from affecting others.
+
+### Create the Integration Instance
+
+```powershell
+Install-SqlServerInstance `
+    -DatabaseHost        'localhost' `
+    -SqlInstance         'Integration' `
+    -Version             '2022' `
+    -AuthenticationMode  Windows `
+    -SqlServerSetupPath  'D:\Temp\SQLExpr\extracted'
+```
+
+After creation, configure TCP and set memory limits as for PRODUCTION (Steps 3–4 above),
+using the port reserved for Integration in `HostSettings.ps1`
+(`SqlServerIntegrationPortConfigRootKey`).
+
+### Create the QA Instance
+
+```powershell
+Install-SqlServerInstance `
+    -DatabaseHost        'localhost' `
+    -SqlInstance         'QA' `
+    -Version             '2022' `
+    -AuthenticationMode  Windows `
+    -SqlServerSetupPath  'D:\Temp\SQLExpr\extracted'
+```
+
+After creation, configure TCP and set memory limits, using the port reserved for QA
+(`SqlServerQaPortConfigRootKey`).
+
+### Verify All Three Instances
+
+```powershell
+@('PRODUCTION', 'Integration', 'QA') | ForEach-Object {
+    sqlcmd -S "localhost\$_" -E -Q 'SELECT @@SERVERNAME' -l 5
+}
+```
+
+Expected: each command returns `<COMPUTERNAME>\<InstanceName>` with no errors.
+
+> **Sprint start reminder:** At the beginning of each sprint, run `Install-SqlServerInstance`
+> for any sprint-specific instances (e.g., `Integration`, `QA`) that do not yet exist on
+> the target machine. The `PRODUCTION` instance is permanent and only created once.
+
+---
+
 ## Install ProGet and BuildMaster (After SQL Server Setup)
 
 > **Prerequisites completed:**
@@ -803,13 +859,13 @@ Register-PSRepository `
 `C:\Program Files\ProGet\`) accepts the following verbs. Use `run` during troubleshooting
 to see live log output; use `install` / `installweb` for production.
 
-| Verb | What it does |
-|------|--------------|
-| `run` | Launches ProGet in the current console window — streams all log output to stdout. Use for debugging a service that refuses to start under Windows SCM. |
-| `install` | Registers the **background-tasks** Windows service (`INEDOPROGETSVC`). Accepts `--user`/`--password` for a dedicated service account. |
-| `installweb` | Registers the **self-hosted web server** Windows service (`INEDOPROGETWEBSRV`). Accepts `--url` for the HTTP.SYS reservation. |
-| `uninstall` / `uninstallweb` | Removes the respective Windows service(s). |
-| `resetadminpassword` | Resets the built-in directory and sets `Admin` / `Admin` credentials. Run locally or in a container only. |
+| Verb                         | What it does                                                                                                                                           |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `run`                        | Launches ProGet in the current console window — streams all log output to stdout. Use for debugging a service that refuses to start under Windows SCM. |
+| `install`                    | Registers the **background-tasks** Windows service (`INEDOPROGETSVC`). Accepts `--user`/`--password` for a dedicated service account.                  |
+| `installweb`                 | Registers the **self-hosted web server** Windows service (`INEDOPROGETWEBSRV`). Accepts `--url` for the HTTP.SYS reservation.                          |
+| `uninstall` / `uninstallweb` | Removes the respective Windows service(s).                                                                                                             |
+| `resetadminpassword`         | Resets the built-in directory and sets `Admin` / `Admin` credentials. Run locally or in a container only.                                              |
 
 **Common `run` recipes:**
 
@@ -867,12 +923,12 @@ partial install. The only reliable way to remove them is the Management REST API
 
 #### Prerequisites
 
-| Requirement | Detail |
-|---|---|
-| API key | Must have **Use/Manage Feeds** (system key) or **Overwrite/Delete** on the specific feed (feed key). |
-| Endpoint | `DELETE /api/management/feeds/delete/{feed-name}` |
-| Auth header | `X-ApiKey: <your-key>` |
-| ProGet base URL | `$global:settings[$global:configRootKeys['ProGetBaseUrlConfigRootKey']]` |
+| Requirement     | Detail                                                                                               |
+| --------------- | ---------------------------------------------------------------------------------------------------- |
+| API key         | Must have **Use/Manage Feeds** (system key) or **Overwrite/Delete** on the specific feed (feed key). |
+| Endpoint        | `DELETE /api/management/feeds/delete/{feed-name}`                                                    |
+| Auth header     | `X-ApiKey: <your-key>`                                                                               |
+| ProGet base URL | `$global:settings[$global:configRootKeys['ProGetBaseUrlConfigRootKey']]`                             |
 
 #### Step 1 — List feeds to confirm the exact name
 
@@ -910,10 +966,10 @@ catch {
 
 HTTP 200 with no body = success. Common errors:
 
-| Status | Meaning |
-|---|---|
-| 403 | API key missing, wrong, or lacks Use/Manage Feeds permission |
-| 404 | Feed name not found — verify with `feeds/list` first |
+| Status | Meaning                                                      |
+| ------ | ------------------------------------------------------------ |
+| 403    | API key missing, wrong, or lacks Use/Manage Feeds permission |
+| 404    | Feed name not found — verify with `feeds/list` first         |
 
 #### Alternative: pgutil CLI
 

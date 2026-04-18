@@ -164,6 +164,76 @@ begin {
         'X-ApiKey' = $ApiKey
     }
 
+    # Validate that source/destination follow expected Phase 2 push/pull feed pair naming.
+    # Also support legacy tier aliases (testing -> qa, production -> stable).
+    $knownPrefixes = @('nuget', 'powershell', 'chocolatey')
+    $tierOrder = @('experimental', 'development', 'integration', 'qa', 'stable')
+    $tierAliases = @{
+        testing   = 'qa'
+        production = 'stable'
+    }
+
+    $feedPattern = "^(?<prefix>$($knownPrefixes -join '|'))-(?<tier>[a-z]+?)(?<push>-push)?$"
+
+    if ($SourceFeed -match $feedPattern) {
+        $sourcePrefix = $matches['prefix'].ToLowerInvariant()
+        $sourceTier = $matches['tier'].ToLowerInvariant()
+        $sourceIsPush = -not [string]::IsNullOrWhiteSpace($matches['push'])
+        if ($tierAliases.ContainsKey($sourceTier)) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Normalizing legacy source tier '$sourceTier' to '$($tierAliases[$sourceTier])'"
+            $sourceTier = $tierAliases[$sourceTier]
+        }
+    }
+    else {
+        $errorMessage = "SourceFeed '$SourceFeed' does not match expected format '{nuget|powershell|chocolatey}-{tier}[-push]'"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+        throw $errorMessage
+    }
+
+    if ($DestinationFeed -match $feedPattern) {
+        $destinationPrefix = $matches['prefix'].ToLowerInvariant()
+        $destinationTier = $matches['tier'].ToLowerInvariant()
+        $destinationIsPush = -not [string]::IsNullOrWhiteSpace($matches['push'])
+        if ($tierAliases.ContainsKey($destinationTier)) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Normalizing legacy destination tier '$destinationTier' to '$($tierAliases[$destinationTier])'"
+            $destinationTier = $tierAliases[$destinationTier]
+        }
+    }
+    else {
+        $errorMessage = "DestinationFeed '$DestinationFeed' does not match expected format '{nuget|powershell|chocolatey}-{tier}[-push]'"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+        throw $errorMessage
+    }
+
+    if (($tierOrder -notcontains $sourceTier) -or ($tierOrder -notcontains $destinationTier)) {
+        $errorMessage = "Feed tiers must be one of: $($tierOrder -join ', '). Source '$sourceTier', destination '$destinationTier'"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+        throw $errorMessage
+    }
+
+    if (-not $ScanOnly -and ($SourceFeed -ne $DestinationFeed)) {
+        if (-not $sourceIsPush) {
+            $errorMessage = "SourceFeed '$SourceFeed' must be a push feed ('-push') in Phase 2 intra-tier movement."
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+            throw $errorMessage
+        }
+        if ($destinationIsPush) {
+            $errorMessage = "DestinationFeed '$DestinationFeed' must be a pull feed (no '-push') in Phase 2 intra-tier movement."
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+            throw $errorMessage
+        }
+        if ($sourcePrefix -ne $destinationPrefix) {
+            $errorMessage = "Feed package type must match. Source prefix '$sourcePrefix' and destination prefix '$destinationPrefix' differ."
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+            throw $errorMessage
+        }
+        if ($sourceTier -ne $destinationTier) {
+            $errorMessage = "Intra-tier movement requires the same tier. Source tier '$sourceTier' and destination tier '$destinationTier' differ."
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+            throw $errorMessage
+        }
+    }
+
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'All parameters validated successfully'
 }
 

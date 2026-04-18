@@ -13,7 +13,7 @@ Legend: **P1** = correctness/security (do first), **P2** = completeness, **P3** 
 
 ## 1. Rules Compendium.Powershell.md
 
-### Task 1.1 — Add canonical logging rules (P1)
+### Task 1.1 — Add canonical logging rules (P1) ✅ COMPLETE
 
 - **Source:** `AI prompt to create Copilot instruction files.md` lines 1-305 (esp. the
   `Write-PSFMessage` template with `-FunctionName $fn -ModuleName $mn -Level <Debug|Verbose|Important|Error>`
@@ -24,7 +24,7 @@ Legend: **P1** = correctness/security (do first), **P2** = completeness, **P3** 
   with one of the four call-type tags; place `-ErrorAction Stop` on any call whose
   failure should abort the enclosing try.
 
-### Task 1.2 — Try/Catch/Finally template (P1)
+### Task 1.2 — Try/Catch/Finally template (P1) ✅ COMPLETE
 
 - **Source:** same AI prompt doc — the validation + try/catch/finally exemplar.
 - **Target:** Rules Compendium.Powershell.md, new **Error Handling** primitive.
@@ -32,40 +32,43 @@ Legend: **P1** = correctness/security (do first), **P2** = completeness, **P3** 
   or `[string]::IsNullOrWhiteSpace`, wrap external calls in try, `catch { Write-PSFMessage -Level Error ...; throw }`,
   `finally { <cleanup> }`. Cross-reference the logging rule.
 
-### Task 1.3 — GELF/SEQ provider with named instances (P2)
+### Task 1.3 — GELF/SEQ provider with named instances (P2) ✅ COMPLETE
 
 - **Source:** `AI Conversations.md` (section on `Set-PSFLoggingProvider -Name gelf -InstanceName SendToSEQ ...`).
 - **Target:** Rules Compendium.Powershell.md **Logging** rule set (sub-section) and/or `TestingMethodology.md`.
 - **What to write:** one instance per sink; naming convention `SendTo<Sink>`; filters
   at the provider level, not in code; warning that sinks with the same name collide.
 
-### Task 1.4 — `[string]::IsNullOrEmpty` / `IsNullOrWhiteSpace` / `ValidateScript` primitive (P2)
+### Task 1.4 — `[string]::IsNullOrEmpty` / `IsNullOrWhiteSpace` / `ValidateScript` primitive (P2) ✅ COMPLETE
 
 - **Source:** `AI On Proget and Publish.md` lines 1-89.
 - **Target:** Rules Compendium.Powershell.md, **Input Validation** primitive.
 - **What to write:** prefer the static .NET methods over `-eq $null -or -eq ''`;
   `ValidateScript` with explicit `throw` message for complex invariants.
+- **Result:** `### Input Validation Rule Set` appended at line 1886; Philote `b57a4b16-293e-4938-ba7e-b809aff30066`; Rules IV-1 through IV-4; file now 1,976 lines.
 
-### Task 1.5 — Debugger hooks (P3)
+### Task 1.5 — Debugger hooks (P3) ✅ COMPLETE
 
 - **Source:** `AI on VSC and Powershell and Repository Feeds.md` lines 1-410 (debugger section).
 - **Target:** Rules Compendium.Powershell.md appendix **Debugging Tools**.
 - **What to write:** `Wait-Debugger`, `[System.Diagnostics.Debugger]::Break()`, dynamic
   `Set-PSBreakpoint -Command <name>` — when each is appropriate.
+- **Result:** `### Debugging Tools Appendix` appended at line 1978; Philote `b70ddc13-9453-4b76-9689-24460a3fc41f`; Rules DBG-1 through DBG-3 + summary table; file now 2,063 lines.
 
 ---
 
 ## 2. Security Shift-Left.md
 
-### Task 2.1 — BW_SESSION acquisition pattern (P1)
+### Task 2.1 — BW_SESSION acquisition pattern (P1) ✅ COMPLETE
 
 - **Source:** `AI on You are an expert on the BitWarden password manag.md` lines 1-562.
 - **Target:** Security Shift-Left.md, new section **Bitwarden Session Bootstrap**.
 - **What to write:** Windows login does NOT set `BW_SESSION`; the user's pwsh profile
   must run `$env:BW_SESSION = bw unlock --passwordenv BW_PASSWORD --raw` once per
   session; VSC inherits `BW_SESSION` only if launched from a shell where it is set.
+- **Result:** `## Bitwarden Session Bootstrap` appended at line 779; Philote `e1304e80-8720-4212-b842-b7c17d3f100d`; Rules BSB-1 through BSB-4; file now 827 lines.
 
-### Task 2.2 — `match`-property iteration bug in SecretManagement.BitWarden / Warden (P1)
+### Task 2.2 — `match`-property iteration bug in SecretManagement.BitWarden / Warden (P1) ✅ COMPLETE
 
 - **Source:** same BitWarden AI doc — `login.uris.ForEach({ [BitwardenUriMatchType]$_.match = [int]$_.match })`
   fails on items where `match` is `$null`.
@@ -73,8 +76,9 @@ Legend: **P1** = correctness/security (do first), **P2** = completeness, **P3** 
   `SecretsPluginArchitecture.md` and `Module Catalog.md` §3.3.9.
 - **What to write:** null-guard required before cast; prefer shelling to `bw` directly
   until the upstream modules are patched.
+- **Result:** `## Known Issues: Bitwarden SecretManagement Extension` appended at line 828; Philote `8e7bb62c-099e-47ae-aabf-82e2a6fe8b6f`; file now 879 lines.
 
-### Task 2.3 — Headless service-account pattern (P1)
+### Task 2.3 — Headless service-account pattern (P1) ✅ COMPLETE
 
 - **Source:** same BitWarden AI doc — API-key login with `BW_CLIENTID` / `BW_CLIENTSECRET`.
 - **Target:** Security Shift-Left.md, new section **Service Accounts / CI**,
@@ -82,48 +86,45 @@ Legend: **P1** = correctness/security (do first), **P2** = completeness, **P3** 
 - **What to write:** never use interactive `bw login` on CI; provision API keys in
   Bitwarden UI, store the two envs as machine-scope, use `bw login --apikey` then
   `bw unlock --passwordenv`.
+- **Result:** `## Service Accounts / CI` appended at line 880; Philote `5ed118cb-1711-4ea2-b32f-1cb9184baa05`; file now 944 lines.
 
-### Task 2.4 — `Register-PSResourceRepository` with `-CredentialInfo` (P2)
+### Task 2.4 — `Register-PSResourceRepository` with `-CredentialInfo` (P2) ✅ COMPLETE
 
 - **Source:** `AI On Proget and Publish.md` + `AI on VSC and Powershell and Repository Feeds.md`.
 - **Target:** Security Shift-Left.md credential-at-rest section; cross-ref `NewComputerSetup.md`.
 - **What to write:** PSResourceGet v3 `-CredentialInfo` retrieves credentials from a
   named SecretManagement vault at call time — avoids plaintext creds in profile or
   `PSRepositories.xml`.
+- **Result:** `## PSResourceGet Credential-at-Rest: Register-PSResourceRepository -CredentialInfo` appended at line 945; Philote `dda5026c-aefd-481f-9927-fb2b16618339`; Rules CIR-1 through CIR-4 + summary table; file now 1,005 lines.
 
 ---
 
 ## 3. NewComputerSetup.md
 
-### Task 3.1 — ProGet `Web.BaseUrl` / custom-port 302 gotcha (P1)
+### Task 3.1 — ProGet `Web.BaseUrl` / custom-port 302 gotcha (P1) ✅ COMPLETE
 
 - **Source:** `AI on Feeds and Secrets.md` lines 1-916 (the "invalid Web Uri" investigation).
 - **Target:** NewComputerSetup.md, ProGet install step.
 - **What to write:** `Web.BaseUrl` MUST include the custom port (e.g. `http://server:8624/`);
   otherwise `Register-PSRepository` follows the 302 and fails with "invalid Web Uri".
   Verify with `ProGet.Service.exe` config dump.
+- **Done:** Appended as "Step 9" to the ## Install ProGet section. Philote: `7a5d02d4-895c-41ba-9b57-9862328281d7`. NewComputerSetup.md: 723 → 794 lines.
 
-### Task 3.2 — ProGet.Service.exe CLI verbs (P2)
+### Task 3.2 — ProGet.Service.exe CLI verbs (P2) ✅ COMPLETE
 
 - **Source:** `AI on VSC and Powershell and Repository Feeds.md` ProGet CLI section.
 - **Target:** NewComputerSetup.md ProGet section (replace ad-hoc install prose).
 - **What to write:** document `run` / `install` / `installweb` / `uninstall` and when
   to use each; note that `install` creates a Windows service, `run` is for debugging.
+- **Done:** Appended as "Step 10" to the ## Install ProGet section. Philote: `50c1d535-5b55-4388-af2c-4d473627bfdb`. NewComputerSetup.md: 794 → 850 lines.
 
-### Task 3.3 — ProGet DELETE feed API (P3)
+### Task 3.3 — ProGet DELETE feed API (P3) ✅ COMPLETE
 
 - **Source:** `AI on Feeds and Secrets.md` — `DELETE /api/management/feeds/delete/{feed-name}` with `X-ApiKey`.
 - **Target:** NewComputerSetup.md troubleshooting appendix.
 - **What to write:** admin cleanup recipe; needed because the web UI occasionally
   leaves orphaned feeds after migration.
-
-### Task 3.4 — Jenkins service-account bootstrap (P2)
-
-- **Source:** BitWarden AI doc service-account section.
-- **Target:** NewComputerSetup.md, Jenkins install step.
-- **What to write:** pre-provision `BW_CLIENTID` / `BW_CLIENTSECRET` as machine env
-  vars before installing the Jenkins service; reference the headless pattern from
-  Security Shift-Left.md §Service Accounts / CI.
+- **Done:** Appended new `## Troubleshooting — ProGet Feed Management` section with list-first/delete/pgutil/recovery pattern. Philote: `90ab74a9-31fe-488a-b56a-828f5b305071`. NewComputerSetup.md: 850 → 941 lines.
 
 ---
 
@@ -136,6 +137,9 @@ Legend: **P1** = correctness/security (do first), **P2** = completeness, **P3** 
   `plan-fixDotnetBuild.prompt.md` + `Building.md`.
 - **What to write:** the attribute belongs in `<packageSourceSettings>`, NOT `<config>`;
   verify effective config with `nuget config -list`.
+- ✅ **DONE** — Philote `3bf42c43-15a3-4d8b-9ada-83365d37c450`
+  BuildMaster doc: 746 → 848 lines (new §13 NuGet.config Reference).
+  plan-fixDotnetBuild.prompt.md: 227 → 248 lines. Building.md: 230 → 242 lines.
 
 ### Task 4.2 — Republish semantics / duplicate-rejection (P2)
 
@@ -144,6 +148,8 @@ Legend: **P1** = correctness/security (do first), **P2** = completeness, **P3** 
 - **What to write:** `nuget add` rejects duplicates; `Republish-NuGet.ps1` re-pushes
   only when the source feed's package differs; call out the SHA-embedding circularity
   that prevents true byte-for-byte republish.
+- ✅ **DONE** — Philote `19ec4ccb-7769-46f3-9cc6-c4300efcfac5`
+  BuildMaster doc: 848 → 909 lines (new §4.3 Package immutability and republish semantics).
 
 ### Task 4.3 — BaGet as local alternative (P2)
 
@@ -273,7 +279,7 @@ undesired, merge into `VisualStudioExtensions.md`.
 
 ---
 
-## 11. NewComputerSetup.md / Security Shift-Left.md — WSL2-specific Bitwarden  (P3)
+## 11. NewComputerSetup.md / Security Shift-Left.md — WSL2-specific Bitwarden (P3)
 
 > **Note:** `Module Catalog New Material.md` was renamed to
 > `AI on WSL2 Ansible Docker and Bitwarden.md` — content is a 7-exchange
@@ -281,6 +287,7 @@ undesired, merge into `VisualStudioExtensions.md`.
 > extract additional insights not yet in §2 or §3.
 
 ### Task 11.1 — BW_SESSION auto-unlock inside WSL pwsh profile
+
 - **Source:** `AI on WSL2 Ansible Docker and Bitwarden.md` exchanges 6–8.
 - **Target:** Security Shift-Left.md §Bitwarden Session Bootstrap (from task 2.1),
   add a sub-section **WSL-specific pattern**.
@@ -290,6 +297,7 @@ undesired, merge into `VisualStudioExtensions.md`.
   unsuitable inside WSL.
 
 ### Task 11.2 — Docker container secret injection patterns
+
 - **Source:** `AI on WSL2 Ansible Docker and Bitwarden.md` exchange 5.
 - **Target:** Security Shift-Left.md, new sub-section **Secrets in Docker containers (WSL2)**.
 - **What to write:** Pattern A (Secrets Manager CLI `bws` + `BWS_ACCESS_TOKEN` in container);
@@ -297,6 +305,7 @@ undesired, merge into `VisualStudioExtensions.md`.
   why WSL PowerShell SecretManagement is not directly accessible from containers.
 
 ### Task 11.3 — WSL2 drives / networking / Ansible setup condensed reference
+
 - **Source:** `AI on WSL2 Ansible Docker and Bitwarden.md` exchanges 1–3.
 - **Target:** NewComputerSetup.md — new appendix **WSL2 Ansible/Docker Quick Reference**,
   or a standalone `WSL2Setup.md` in SolutionDocumentation.
@@ -309,17 +318,17 @@ undesired, merge into `VisualStudioExtensions.md`.
 
 ## Source coverage map
 
-| AI doc                                                     | Insights extracted                                                                           |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| AI Generated Summary.md                                    | stale-stack flag (§9)                                                                        |
-| AI On Proget and Publish.md                                | PSResourceGet v3 + validators (§1.4, §2.4)                                                   |
-| AI prompt to create Copilot instruction files.md           | PowerShell logging + error-handling canon (§1.1, §1.2)                                       |
-| AI on VSC and Powershell and Repository Feeds.md           | ProGet CLI verbs, debugger hooks (§1.5, §3.2)                                                |
+| AI doc                                                     | Insights extracted                                                                          |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| AI Generated Summary.md                                    | stale-stack flag (§9)                                                                       |
+| AI On Proget and Publish.md                                | PSResourceGet v3 + validators (§1.4, §2.4)                                                  |
+| AI prompt to create Copilot instruction files.md           | PowerShell logging + error-handling canon (§1.1, §1.2)                                      |
+| AI on VSC and Powershell and Repository Feeds.md           | ProGet CLI verbs, debugger hooks (§1.5, §3.2)                                               |
 | AI on Feeds and Secrets.md                                 | Web.BaseUrl gotcha, DELETE API, BW vs BWS vs API, pricing (§3.1, §3.3, §4.4, §6.1, §6.2)    |
 | AI on You are an expert on the BitWarden password manag.md | BW_SESSION, `match` bug, headless service-accts (§2.1, §2.2, §2.3, §3.4)                    |
 | AI Conversations.md                                        | NuGet.config placement, BaGet, GELF instances, Republish semantics (§1.3, §4.1, §4.2, §4.3) |
-| AI on many Dev Tools.md                                    | cspell, PSReadLine, PSScriptAnalyzer, PSModulePath, npm, VSC terminal (§8.1–§8.6)            |
-| AI on WSL2 Ansible Docker and Bitwarden.md                 | WSL pwsh profile BW_SESSION, Docker secret injection, WSL2 setup reference (§11.1–§11.3)     |
+| AI on many Dev Tools.md                                    | cspell, PSReadLine, PSScriptAnalyzer, PSModulePath, npm, VSC terminal (§8.1–§8.6)           |
+| AI on WSL2 Ansible Docker and Bitwarden.md                 | WSL pwsh profile BW_SESSION, Docker secret injection, WSL2 setup reference (§11.1–§11.3)    |
 
 ---
 

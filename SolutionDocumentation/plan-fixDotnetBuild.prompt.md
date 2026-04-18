@@ -225,3 +225,24 @@ Projects like [ATAP.Utilities.CryptoMiner.UnitTests.csproj](c:\Dropbox\whertzing
 - Microsoft.CodeAnalysis.FxCopAnalyzers 3.3.2 (deprecated)
 - Polly.Extensions.Http 3.0.0 (deprecated)
 - Microsoft.AspNetCore.Hosting.Abstractions 5.0.0 (commented)
+
+---
+
+## Note — `allowInsecureConnections` for HTTP NuGet sources
+
+When build failures mention `Unable to load the service index for source
+http://localhost:50000/...`, the root cause is usually that NuGet 6.0+ blocks
+HTTP sources unless `allowInsecureConnections = true` is declared for that source.
+
+**This setting must go inside `<packageSourceSettings>`, NOT inside `<config>`.**
+Placing it in `<config>` is silently ignored by NuGet.
+
+Full canonical schema and all five ProGet feed entries:
+see [`BuildMaster-ProGet-CSharp-Package-Pipeline.md` §13](BuildMaster-ProGet-CSharp-Package-Pipeline.md#13-nugetconfig-reference).
+
+Verify the effective merged config with:
+
+```powershell
+nuget config -list        # shows merged effective settings
+dotnet nuget list source  # shows registered sources
+```

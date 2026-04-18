@@ -14,7 +14,8 @@ notes in `Building.md` and the older `Packaging.md` drafts regarding package
 version management. The files referenced in §3 are the source of truth.
 
 **Not in this doc:**
-- How versions are generated on *produced* packages → see
+
+- How versions are generated on _produced_ packages → see
   [CSharp-Packages-Versioning.md](CSharp-Packages-Versioning.md).
 - How packages are packed and pushed → see
   [CSharp-Packages-Pack-and-Push.md](CSharp-Packages-Pack-and-Push.md).
@@ -81,19 +82,19 @@ The optional companion property is set **only** in AceCommander:
 
 This second property allows `<PackageVersion Version="0.*-*" />` in the central
 file. Without it, floating ranges in CPM raise NU1011. ATAP.Utilities does
-**not** enable floating versions because it is a *producer* — it pins every
+**not** enable floating versions because it is a _producer_ — it pins every
 dependency to a concrete version.
 
 ---
 
 ## 3. File locations
 
-| Repo                    | File                                                                   | Floating enabled |
-| ----------------------- | ---------------------------------------------------------------------- | ---------------- |
-| ATAP.Utilities          | `Directory.Packages.props` (solution root)                             | No               |
-| AceCommander            | `Directory.Packages.props` (solution root)                             | **Yes**          |
-| ATAP.IAC                | *(no CPM — PowerShell-centric repo)*                                   | n/a              |
-| SharedVSCode            | *(no CPM — no .csproj files)*                                          | n/a              |
+| Repo           | File                                       | Floating enabled |
+| -------------- | ------------------------------------------ | ---------------- |
+| ATAP.Utilities | `Directory.Packages.props` (solution root) | No               |
+| AceCommander   | `Directory.Packages.props` (solution root) | **Yes**          |
+| ATAP.IAC       | _(no CPM — PowerShell-centric repo)_       | n/a              |
+| SharedVSCode   | _(no CPM — no .csproj files)_              | n/a              |
 
 `Directory.Packages.props` is picked up automatically by MSBuild when it sits
 at or above every `.csproj` in the repo. There is intentionally no per-project
@@ -167,13 +168,14 @@ prerelease label." The first wildcard floats the numeric components; the
 second wildcard (`-*`) opts into prerelease versions.
 
 **Effect during restore:**
+
 - `dotnet restore` queries the configured ProGet feed(s).
 - The feed returns every available version of `ATAP.Utilities.Philote`.
 - NuGet picks the highest one matching `0.*-*`, which is typically the
   freshest `Sprint` prerelease built minutes ago on the developer's machine
   and pushed to the T1/Experimental feed.
 
-**Why we want this**: AceCommander is a *consumer* of the internal ATAP.Utilities
+**Why we want this**: AceCommander is a _consumer_ of the internal ATAP.Utilities
 packages. During active development we want every `dotnet build` to pull the
 latest sprint build without editing `Directory.Packages.props`.
 
@@ -196,9 +198,11 @@ The contract between ATAP.Utilities (producer) and AceCommander (consumer) is:
    `dotnet restore`.
 4. If the new version breaks AceCommander, the fix is to pin the specific
    offending package in AceCommander's `Directory.Packages.props` temporarily:
+
    ```xml
    <PackageVersion Include="ATAP.Utilities.Philote" Version="0.1.0-Sprint.42" />
    ```
+
    and file a follow-up to unpick it once the upstream issue is resolved.
 
 ---
@@ -224,6 +228,7 @@ The mapping is declared in each repo's `NuGet.config` (not in
 ```
 
 CPM does not interact directly with this — but the pairing matters:
+
 - Every `PackageVersion` Include in `Directory.Packages.props` must resolve
   to exactly **one** feed via `packageSourceMapping`.
 - The `ATAP.*` pattern claims every `ATAP.Utilities.*` name from the internal
@@ -247,6 +252,7 @@ CPM and lock files compose but are not automatic. To enable reproducible restore
 ```
 
 Current status:
+
 - **ATAP.Utilities**: lock files enabled per project — committed to git.
 - **AceCommander**: lock files **not yet enabled** (a known gap — tracked in
   `_Planning/TASKS.md`). Floating versions without lock files mean CI restores
@@ -263,7 +269,7 @@ concrete consumer version (e.g., `0.1.0-Sprint.42`) with a range expression
 like `[0.1.0, 1.0.0)`.
 
 CPM does **not** override this behavior. The consumer's resolved version feeds
-the target; the target then emits the range into the *produced* package's
+the target; the target then emits the range into the _produced_ package's
 `.nuspec`. This is how we decouple "what AceCommander restored during build"
 from "what the published ATAP.Utilities package declares as its dependency."
 
@@ -318,14 +324,14 @@ When a new `.csproj` is added to either repo:
 
 ## 12. Common failures and remedies
 
-| Error                                                 | Cause                                                       | Fix                                                                          |
-| ----------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| NU1008                                                | `<PackageReference Version="..."/>` present alongside CPM   | Remove `Version=` from the `.csproj`; add to `Directory.Packages.props`      |
-| NU1011                                                | Floating version used without `CentralPackageFloatingVersionsEnabled` | Only valid in AceCommander; pin the version in ATAP.Utilities instead |
-| NU1507                                                | Multiple sources in `NuGet.config`, no `packageSourceMapping` | Add a `packageSourceMapping` entry for every source                        |
-| NU1601                                                | Restore resolved a version outside the range declared in CPM | Update the `PackageVersion` entry in `Directory.Packages.props`             |
-| NU1603                                                | Floating reference resolved a higher version than requested | Expected when `0.*-*` is used; not an error in AceCommander                 |
-| `PackageVersion` not found                            | New `PackageReference` added to `.csproj` without CPM entry | Add matching `<PackageVersion>` in `Directory.Packages.props`               |
+| Error                      | Cause                                                                 | Fix                                                                     |
+| -------------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| NU1008                     | `<PackageReference Version="..."/>` present alongside CPM             | Remove `Version=` from the `.csproj`; add to `Directory.Packages.props` |
+| NU1011                     | Floating version used without `CentralPackageFloatingVersionsEnabled` | Only valid in AceCommander; pin the version in ATAP.Utilities instead   |
+| NU1507                     | Multiple sources in `NuGet.config`, no `packageSourceMapping`         | Add a `packageSourceMapping` entry for every source                     |
+| NU1601                     | Restore resolved a version outside the range declared in CPM          | Update the `PackageVersion` entry in `Directory.Packages.props`         |
+| NU1603                     | Floating reference resolved a higher version than requested           | Expected when `0.*-*` is used; not an error in AceCommander             |
+| `PackageVersion` not found | New `PackageReference` added to `.csproj` without CPM entry           | Add matching `<PackageVersion>` in `Directory.Packages.props`           |
 
 ---
 

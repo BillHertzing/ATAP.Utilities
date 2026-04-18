@@ -4,36 +4,12 @@
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
-    <!-- Assembly, File, and Package Information for this assembly-->
-    <!-- Build and revision are created based on date-->
-    <MajorVersion>0</MajorVersion>
-    <MinorVersion>1</MinorVersion>
-    <PatchVersion>0</PatchVersion>
-    <!-- Current Lifecycle stage for this assembly-->
-    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
-    <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
-    <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
-    <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
-
-  <!-- The System JSON Library to use -->
-  <ItemGroup>
-    <PackageReference Include="System.Text.Json" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
     <ProjectReference Include="..\..\Model\ATAP.Utilities.Serializer.Model.csproj" />
     <ProjectReference Include="..\..\..\ATAP.Utilities.Collection.Extensions\ATAP.Utilities.Collection.Extensions.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.Collections.Immutable" />
-  </ItemGroup>
-
-  <!-- Plugin Framework for .Net Core, but not.Net desktop- nor standard -->
-  <ItemGroup Condition="$(TargetFramework.Contains('netcore'))">
-    <PackageReference Include="McMaster.NETCore.Plugins" />
   </ItemGroup>
 
   <!-- Loader interfaces and classes for any Assembly that may be loaded by the dynamic Loader, only works for TargetFramework NetCore -->

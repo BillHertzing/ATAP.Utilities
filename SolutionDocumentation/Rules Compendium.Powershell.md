@@ -1667,3 +1667,397 @@ finally {
         -Level Verbose -Message "Exiting function: <functionName>"
 }
 ```
+
+### Error Handling Rule Set
+
+**Philote ID:** `"3cc57c81-2fa6-408b-af37-1098ce68d51c"`
+
+**Priority:** P1 (correctness — apply before all other Rule Sets)
+
+**Description:** This Rule Set defines the canonical input-validation and error-handling
+conventions for all PowerShell functions and cmdlets in ATAP.Utilities and Ace Commander.
+Every function boundary check, try/catch/finally template, and exception logging pattern
+derives from these rules.
+
+**Source:** `SolutionDocumentation/AI prompt to create Copilot instruction files.md` lines 167-305.
+
+**Cross-references:** Logging Rule Set (Rules L-6, L-7); Task 1.3 (GELF/SEQ provider).
+
+#### Rule EH-1 — Validate all inputs at the function boundary
+
+Prefer parameter-attribute validation over imperative checks. Use the following in order
+of preference:
+
+1. `[ValidateNotNullOrEmpty()]`, `[ValidateNotNull()]`, `[ValidateSet(...)]`,
+   `[ValidateRange(...)]`, `[ValidatePattern(...)]`, `[ValidateScript({...})]`
+   as parameter attributes — they run before the function body and produce clear errors.
+
+2. For complex invariants that attributes cannot express, use
+   `[string]::IsNullOrWhiteSpace()` or `[string]::IsNullOrEmpty()` in the `begin` block
+   immediately after the entry log (Rule L-4). Prefer the static .NET methods over
+   PowerShell idioms like `-eq $null -or -eq ''`.
+
+3. When using `ValidateScript`, always `throw` an explicit, descriptive message on
+   failure — do not rely on the default PowerShell expression-only message.
+
+```powershell
+[ValidateScript({
+    if ([string]::IsNullOrWhiteSpace($_)) {
+        throw "Parameter 'DatabaseName' must be a non-empty, non-whitespace string."
+    }
+    $true
+})]
+[string] $DatabaseName
+```
+
+#### Rule EH-2 — Wrap all external calls in try/catch/finally
+
+Any call that can fail and whose failure must abort the current operation must be
+placed inside a `try/catch/finally` block. This applies especially to the four
+instrumented call types (`Invoke-RestMethod`, `Invoke-WebRequest`, `Invoke-Expression`,
+`Invoke-Command`) per Logging Rule L-6, and also to:
+
+- calls to external executables (e.g., `flyway`, `dotnet`, `git`)
+- calls to dbaTools cmdlets and other third-party modules
+- file I/O that may fail on access permissions or missing paths
+- any operation that populates a required downstream variable
+
+Add `-ErrorAction Stop` to any cmdlet call whose failure should trigger the `catch`
+block; without it, non-terminating errors are silently swallowed.
+
+```powershell
+Invoke-RestMethod -Uri $uri -Method Get -ErrorAction Stop
+```
+
+#### Rule EH-3 — Catch block template
+
+The `catch` block must:
+
+1. Compose a descriptive error message that includes what operation was attempted.
+2. Log with `Write-PSFMessage -Level Error` (Rule L-7), including `-Exception $_.Exception`.
+3. Apply the appropriate `-Tag` for the instrumented call type (Rule L-5).
+4. Re-throw with `throw $_` to preserve the original exception and stack trace.
+
+Never swallow exceptions silently. Never log and return a success indicator when an
+exception has occurred.
+
+```powershell
+catch {
+    $errorMessage = "<description of the attempted operation>. Exception: $($_.Exception.Message)"
+    Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+        -Level Error -Message $errorMessage -Exception $_.Exception `
+        -Tag '<RestCall|WebRequestCall|InvokeExpressionCall|InvokeCommandCall>'
+    throw $_
+}
+```
+
+#### Rule EH-4 — Finally block template
+
+The `finally` block must:
+
+1. Execute any mandatory cleanup (e.g., close connections, remove temp files, release
+   locks) regardless of success or failure.
+2. Emit a `Write-PSFMessage -Level Verbose` exit message (Rule L-7). This serves as
+   the exit-trace companion to the entry message in the `begin` block (Rule L-4).
+
+```powershell
+finally {
+    Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+        -Level Verbose -Message "Exiting function: <functionName>"
+}
+```
+
+#### Rule EH-5 — Full try/catch/finally skeleton
+
+The canonical pattern combining Rules EH-2 through EH-4:
+
+```powershell
+try {
+    # Instrumentation before external call (Rule L-5)
+    Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+        -Level Debug -Message "Calling <URLOfEndpoint>" -Tag 'RestCall'
+
+    $result = Invoke-RestMethod -Uri $uri -Method Get -ErrorAction Stop
+
+    # Instrumentation after external call (Rule L-5)
+    Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+        -Level Debug -Message "Successfully returned from <URLOfEndpoint>" -Tag 'RestCall'
+}
+catch {
+    $errorMessage = "<description of attempted operation>. Exception: $($_.Exception.Message)"
+    Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+        -Level Error -Message $errorMessage -Exception $_.Exception -Tag 'RestCall'
+    throw $_
+}
+finally {
+    Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+        -Level Verbose -Message "Exiting function: <functionName>"
+}
+```
+
+### GELF/SEQ Named Logging Provider Instances
+
+**Philote:** `"e5e1529a-8a4d-4304-addb-0ca1225d6e67"`
+
+This section extends the **Logging Rule Set** with rules specific to configuring
+PSFramework logging providers that route messages to remote structured-logging
+sinks such as SEQ (via the GELF provider) or Graylog.
+
+#### Rule GELF-1: One named instance per sink
+
+Configure exactly one PSFramework logging provider instance per remote sink.
+Use the `includeinstances` PSFConfig key to bind a named provider activation to a
+single instance name. Never reuse the same instance name across two different
+provider configurations — doing so causes both providers to compete for messages
+from the same instance and can result in duplicate forwarding or dropped messages.
+
+```powershell
+# One provider → one sink
+
+# GELF provider bound to the 'SendToSEQ' instance
+Set-PSFConfig -FullName 'psframework.logging.gelf.server'           -Value '127.0.0.1'
+Set-PSFConfig -FullName 'psframework.logging.gelf.port'             -Value 12201
+Set-PSFConfig -FullName 'psframework.logging.gelf.protocol'         -Value 'udp'
+Set-PSFConfig -FullName 'psframework.logging.gelf.encrypt'          -Value $false
+Set-PSFConfig -FullName 'psframework.logging.gelf.minlevel'         -Value 3        # Information
+Set-PSFConfig -FullName 'psframework.logging.gelf.includeinstances' -Value @('SendToSEQ')
+Set-PSFLoggingProvider -Name gelf -Enable $true
+```
+
+#### Rule GELF-2: Naming convention `SendTo<Sink>`
+
+Name every logging instance using the pattern `SendTo<Sink>` where `<Sink>` matches
+the human-readable product or endpoint name (e.g. `SendToSEQ`, `SendToGraylog`,
+`SendToSplunk`). This makes routing intent immediately visible in both source code
+and log records.
+
+```powershell
+# Correct
+Write-PSFMessage -Instance 'SendToSEQ' -Level Important -Message "Structured log event"
+
+# Incorrect — ambiguous instance name that doesn't communicate routing
+Write-PSFMessage -Instance 'remote' -Level Important -Message "Structured log event"
+```
+
+#### Rule GELF-3: Configure filters at the provider level, not in application code
+
+Apply level and instance filters via `Set-PSFConfig` on the provider, not via
+`if`-guards around `Write-PSFMessage`. Provider-level filtering keeps routing
+decisions in configuration and allows them to be adjusted without code changes.
+
+```powershell
+# Correct — filter at provider level
+Set-PSFConfig -FullName 'psframework.logging.gelf.minlevel'         -Value 3  # Information and above
+Set-PSFConfig -FullName 'psframework.logging.gelf.includeinstances' -Value @('SendToSEQ')
+
+# Incorrect — gate logging in application code
+if ($VerbosePreference -eq 'Continue') {
+    Write-PSFMessage -Instance 'SendToSEQ' -Level Verbose -Message "..."
+}
+```
+
+#### Rule GELF-4: Use `Set-PSFConfig` for instance filtering, not `Set-PSFLoggingProvider` parameters
+
+The `Set-PSFLoggingProvider` cmdlet does **not** expose `-IncludeInstances` or
+`-ExcludeInstances` parameters. Passing these as parameters raises `"A parameter
+cannot be found that matches parameter name 'IncludeInstances'."`. Set all
+instance-routing filters via `Set-PSFConfig` before enabling the provider.
+
+```powershell
+# CORRECT
+Set-PSFConfig -FullName 'psframework.logging.gelf.includeinstances' -Value @('SendToSEQ')
+Set-PSFLoggingProvider -Name gelf -Enable $true
+
+# INCORRECT — parameter does not exist
+Set-PSFLoggingProvider -Name gelf -Enable $true -IncludeInstances 'SendToSEQ'
+```
+
+#### Rule GELF-5: Persist configuration with `Register-PSFConfig`
+
+Call `Register-PSFConfig -Module PSFramework` after finalising provider
+configuration to persist all `psframework.logging.*` settings across sessions.
+Without this, provider configuration is lost when the PowerShell process exits.
+
+```powershell
+Register-PSFConfig -Module PSFramework
+```
+
+
+### Input Validation Rule Set
+
+**Philote:** `"b57a4b16-293e-4938-ba7e-b809aff30066"`
+
+Rules governing how PowerShell function parameters and internal values are validated
+before use. Cross-references the **Error Handling Rule Set** for the try/catch/finally
+pattern that wraps validated inputs.
+
+#### Rule IV-1: Prefer `[string]::IsNullOrWhiteSpace` over manual null/empty comparison
+
+Use the static .NET method `[string]::IsNullOrWhiteSpace()` rather than the equivalent
+manual comparison `-eq $null -or -eq ''`. The .NET method also catches whitespace-only
+strings (e.g. `" "`), which the manual form misses and which are semantically invalid
+in almost all parameter contexts.
+
+```powershell
+# Correct
+if ([string]::IsNullOrWhiteSpace($value)) { throw "Value must not be null, empty or whitespace." }
+
+# Also acceptable when only null/empty matters (not whitespace)
+if ([string]::IsNullOrEmpty($value)) { throw "Value must not be null or empty." }
+
+# Incorrect — misses whitespace-only strings
+if ($value -eq $null -or $value -eq '') { throw "Value must not be null or empty." }
+```
+
+#### Rule IV-2: Prefer declarative `[Validate*]` parameter attributes over imperative guards
+
+Apply built-in validation attributes (`[ValidateNotNull()]`, `[ValidateNotNullOrEmpty()]`,
+`[ValidateRange()]`, `[ValidateSet()]`, `[ValidatePattern()]`) directly on parameters.
+This makes constraints visible at the function signature and produces consistent,
+framework-generated error messages without body code.
+
+```powershell
+function Get-Feed {
+    param (
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$FeedName,
+
+        [Parameter()]
+        [ValidateRange(1, 65535)]
+        [int]$Port = 8624
+    )
+    # body
+}
+```
+
+#### Rule IV-3: Use `[ValidateScript]` with an explicit `throw` for complex invariants
+
+When the built-in attributes cannot express a constraint, use `[ValidateScript()]`.
+Always include an explicit `throw` with a descriptive message inside the script block;
+without it PowerShell reports the opaque message `"The argument ... does not belong
+to the set"` and the caller cannot diagnose the failure.
+
+```powershell
+function Set-FeedUrl {
+    param (
+        [Parameter(Mandatory)]
+        [ValidateScript({
+            if ([string]::IsNullOrWhiteSpace($_)) {
+                throw "FeedUrl must not be null, empty, or whitespace."
+            }
+            if (-not ($_ -match '^https?://')) {
+                throw "FeedUrl must begin with 'http://' or 'https://'."
+            }
+            $true  # must return $true when validation passes
+        })]
+        [string]$FeedUrl
+    )
+    # body
+}
+```
+
+#### Rule IV-4: Prefer `[string]::IsNullOrWhiteSpace` inside `[ValidateScript]`
+
+When writing a `[ValidateScript]` block that checks a string parameter, use
+`[string]::IsNullOrWhiteSpace($_)` rather than a bare `-not $_` check. A whitespace-only
+string is truthy in PowerShell (`-not " "` is `$false`), so `-not $_` does not catch it.
+
+```powershell
+# Correct
+[ValidateScript({ -not [string]::IsNullOrWhiteSpace($_) })]
+
+# Incorrect — whitespace-only string passes this check
+[ValidateScript({ -not [string]::IsNullOrEmpty($_) })]
+
+# Also incorrect — whitespace-only string is truthy, so -not $_ is $false
+[ValidateScript({ $_ })]
+```
+
+
+### Debugging Tools Appendix
+
+**Philote:** `"b70ddc13-9453-4b76-9689-24460a3fc41f"`
+
+Three mechanisms for dropping into the PowerShell debugger programmatically,
+conditionally triggered at runtime. All approaches work in VS Code, the ISE,
+and non-GUI (service / CI) hosts. Guard every hook behind an environment
+variable or compile-time constant so they cannot fire in production.
+
+#### Rule DBG-1: `Wait-Debugger` — unconditional pause until a debugger attaches
+
+`Wait-Debugger` (PowerShell 6+) halts the runspace immediately and waits for a
+debugger to connect. Use this in scripts that run as services or in CI pipelines
+where you cannot attach before launch; the script appears to "hang" until you
+attach from VS Code with **Run → Attach to PowerShell Interactive Session**.
+
+```powershell
+if ($env:DEBUG_ATTACH -eq '1') {
+    Wait-Debugger   # execution halts here; attach in VS Code to continue
+}
+```
+
+- Remove or guard the call for production — an unguarded `Wait-Debugger` will
+  hang the process indefinitely.
+- PowerShell 5.1 does not have `Wait-Debugger`; use Rule DBG-3 instead.
+
+#### Rule DBG-2: `[System.Diagnostics.Debugger]::Break()` — break only when a debugger is already attached
+
+`[System.Diagnostics.Debugger]::Break()` behaves exactly like a manual breakpoint
+when a debugger is already attached (e.g. the script was launched via F5 in VS Code).
+If no debugger is attached: on Windows, the JIT-attach dialog appears; on non-Windows,
+the call is silently ignored.
+
+```powershell
+if ($SuspiciousValue -gt 1000) {
+    [System.Diagnostics.Debugger]::Break()
+}
+```
+
+Use this form when you have already launched the script under a debugger and want
+to halt at a specific condition without modifying the IDE breakpoint list.
+
+#### Rule DBG-3: `Set-PSBreakpoint` — insert a breakpoint dynamically at runtime
+
+`Set-PSBreakpoint` inserts a line, command, or variable breakpoint at runtime without
+editing source. Works in both Windows PowerShell 5.1 and PowerShell 7+. Execution
+continues past the `Set-PSBreakpoint` call; the interpreter pauses only when it
+reaches the targeted line/command.
+
+```powershell
+if ($OrderCount -gt 1000) {
+    # Set a line breakpoint on the next line; execution will pause there
+    $nextLine = $MyInvocation.ScriptLineNumber + 1
+    Set-PSBreakpoint -Script $PSCommandPath -Line $nextLine | Out-Null
+}
+
+# Debugger stops here (the line referenced above)
+Write-PSFMessage -Level Debug -Message "Entering large-batch code path."
+```
+
+Command-watch variant (pauses whenever the named cmdlet is called):
+
+```powershell
+Set-PSBreakpoint -Command 'Invoke-RestMethod' | Out-Null
+```
+
+Variable-watch variant (pauses whenever a variable is read or written):
+
+```powershell
+Set-PSBreakpoint -Variable 'OrderCount' -Mode ReadWrite | Out-Null
+```
+
+Remove all dynamic breakpoints when done to avoid stale pauses in later runs:
+
+```powershell
+Get-PSBreakpoint | Remove-PSBreakpoint
+```
+
+#### Summary — Which mechanism to choose
+
+| Need | Mechanism |
+|------|-----------|
+| Pause and wait for a debugger to attach (service / CI host) | `Wait-Debugger` (PS 6+) |
+| Break only if already running under a debugger (VS Code F5) | `[Diagnostics.Debugger]::Break()` |
+| Create breakpoints dynamically without editing source lines | `Set-PSBreakpoint` |
+

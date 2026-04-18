@@ -12,7 +12,7 @@ function ConvertTo-ProGetFeedNameAlternateForm {
     [string]$PackageType, # 'NuGet', 'PSResourceGet', or 'ChocolateyGet'
 
     [Parameter(ParameterSetName = 'FromIndividual', Mandatory = $true)]
-    [string]$ProductionQualityAssurance, # 'Production' or 'QualityAssurance'
+    [string]$ProductionQualityAssurance, # 'Production', 'QualityAssurance', or 'Integration'
 
     [Parameter(ParameterSetName = 'FromIndividual', Mandatory = $true)]
     [string]$PullPush, # 'Pull' or 'Push'
@@ -38,7 +38,7 @@ function ConvertTo-ProGetFeedNameAlternateForm {
       ExternalInternal           = @{ 'External' = 'Ext'; 'Internal' = 'Int' }
       ReleasedPrerelease         = @{ 'Released' = 'Rel'; 'Prerelease' = 'Pre' }
       PackageType                = @{ 'NuGet' = 'Nug'; 'PSResourceGet' = 'PSR'; 'ChocolateyGet' = 'Cho' }
-      ProductionQualityAssurance = @{ 'Production' = 'Prod'; 'QualityAssurance' = 'QA' }
+      ProductionQualityAssurance = @{ 'Production' = 'Prod'; 'QualityAssurance' = 'QA'; 'Integration' = 'Intg' }
       PullPush                   = @{ 'Pull' = 'Pull'; 'Push' = 'Push' }
     }
 
@@ -46,13 +46,13 @@ function ConvertTo-ProGetFeedNameAlternateForm {
       Ext = 'External'; Int = 'Internal'
       Rel = 'Released'; Pre = 'Prerelease'
       Nug = 'NuGet'; PSR = 'PSResourceGet'; Cho = 'ChocolateyGet'
-      Prod = 'Production'; QA = 'QualityAssurance'
+      Prod = 'Production'; QA = 'QualityAssurance'; Intg = 'Integration'
       Pull = 'Pull'; Push = 'Push'
     }
 
     # ToDO: Rethink this: now it uses the actual language-specific feed name - figure out how to use the universal key instead
     # ToDo: put this someplace common where it can be used by other functions
-    $regExPattern = '^PackageRepository(?<LocationType>Internal|External)(?<VersionType>Released|Prerelease)(?<PackageProviderName>PSResourceGet|ChocolateyGet|NuGet)(?<PackageType>Production|QualityAssurance)(?<PushPullType>Pull|Push)Feed$'
+    $regExPattern = '^PackageRepository(?<LocationType>Internal|External)(?<VersionType>Released|Prerelease)(?<PackageProviderName>PSResourceGet|ChocolateyGet|NuGet)(?<PackageType>Production|QualityAssurance|Integration)(?<PushPullType>Pull|Push)Feed$'
 
     $result = $null
   }

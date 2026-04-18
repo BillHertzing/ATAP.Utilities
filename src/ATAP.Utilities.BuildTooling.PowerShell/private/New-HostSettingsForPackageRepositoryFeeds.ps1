@@ -14,12 +14,12 @@ $results = [PSCustomObject]@{HostSettings = [System.Collections.ArrayList]::new(
 
 $results.ConfigRootKeys += "###################################################"
 $results.ConfigRootKeys += "## PackageRepositoryFeed keys. segment of global_ConfigRootKeys.ps1"
-$results.ConfigRootKeys += "## External/Internal, Released/Prerelease, NuGet/PSResourceGet/ChocolateyGet, Production/QualityAssurance, Pull/Push"
-# Loop through all combinations of External/Internal, Released/Prerelease, NuGet/PSResourceGet/ChocolateyGet, Production/QualityAssurance, Pull/Push
+$results.ConfigRootKeys += "## External/Internal, Released/Prerelease, NuGet/PSResourceGet/ChocolateyGet, Production/QualityAssurance/Integration, Pull/Push"
+# Loop through all combinations of External/Internal, Released/Prerelease, NuGet/PSResourceGet/ChocolateyGet, Production/QualityAssurance/Integration, Pull/Push
 ('External', 'Internal') | ForEach-Object { $EI = $_
   ('Released', 'Prerelease') | ForEach-Object { $V = $_
     ('NuGet', 'PSResourceGet', 'ChocolateyGet') | ForEach-Object { $P = $_
-      ('Production' , 'QualityAssurance') | ForEach-Object { $PQ = $_
+      ('Production' , 'QualityAssurance', 'Integration') | ForEach-Object { $PQ = $_
         ('Pull' , 'Push') | ForEach-Object { $PP = $_
           $LongFeedName = 'PackageRepository' + $EI + $V + $P + $PQ + $PP
 
@@ -45,7 +45,7 @@ $results.ConfigRootKeys | set-content -path $configRootKeysFragmentPath
 # Output the lines that set $HostsType1 entries for package repository feeds to $results object
 $results.HostSettings += "###################################################"
 $results.HostSettings += "## PackageRepositoryFeed population. A fragment of HostSettings.ps1"
-$results.HostSettings += "## External/Internal, Released/Prerelease, NuGet/PSResourceGet/ChocolateyGet, Production/QualityAssurance, Pull/Push"
+$results.HostSettings += "## External/Internal, Released/Prerelease, NuGet/PSResourceGet/ChocolateyGet, Production/QualityAssurance/Integration, Pull/Push"
 $results.HostSettings += "## External Released NuGet/PSResourceGet/ChocolateyGet Production Push Connectors for ProGet implementation are defined here as well"
 
 
@@ -55,11 +55,11 @@ $results.HostSettings += "# Add the PackageRepositories collection"
 $results.HostSettings += "`$HostsType1.Add(`$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey'] , @{})"
 
 
-# Loop through all combinations of External/Internal, Released/Prerelease, NuGet/PSResourceGet/ChocolateyGet, Production/QualityAssurance, Pull/Push
+# Loop through all combinations of External/Internal, Released/Prerelease, NuGet/PSResourceGet/ChocolateyGet, Production/QualityAssurance/Integration, Pull/Push
 ('External', 'Internal') | ForEach-Object { $EI = $_
   ('Released', 'Prerelease') | ForEach-Object { $V = $_
     ('NuGet', 'PSResourceGet', 'ChocolateyGet') | ForEach-Object { $P = $_
-      ('Production' , 'QualityAssurance') | ForEach-Object { $PQ = $_
+      ('Production' , 'QualityAssurance', 'Integration') | ForEach-Object { $PQ = $_
         ('Pull' , 'Push') | ForEach-Object { $PP = $_
           $LongFeedName = 'PackageRepository' + $EI + $V + $P + $PQ + $PP
 

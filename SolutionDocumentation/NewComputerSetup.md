@@ -721,3 +721,221 @@ See `_Planning/Explainers/0002-ProGet-Setup.md` Steps 4–8 for:
 - Registering NuGet feeds in `NuGet.config`
 - Registering PowerShell feeds with `Register-PSResourceRepository`
 - Setting up inter-tier connectors
+
+---
+
+##### Step 9 — Set `Web.BaseUrl` to include the custom port (CRITICAL)
+
+<!-- Philote: 7a5d02d4-895c-41ba-9b57-9862328281d7 -->
+
+**Symptom:** `Register-PSRepository` or `Register-PSResourceRepository` fails with:
+
+```
+... is an invalid Web Uri
+```
+
+**Root cause:** When ProGet is listening on a non-default port, it constructs all absolute
+links using its `Web.BaseUrl` setting (Administration → Advanced Settings). If `Web.BaseUrl`
+is left at the factory default (e.g. `http://localhost/` with no port), ProGet returns a
+**302 redirect** that points to the wrong port. `Register-PSRepository` follows the redirect
+and then fails because the resulting URL is unreachable.
+
+This is a **guaranteed blocker** on every new machine: the feed registers successfully in
+the ProGet UI, but every PowerShell `Register-*` call fails silently with this error.
+
+**Fix — set `Web.BaseUrl` in the ProGet Administration panel:**
+
+1. Log in to ProGet → **Administration** → **Advanced Settings**
+2. Search for `Web.BaseUrl`
+3. Set the value to `http://<hostname>:<port>` — scheme + hostname + port only, no trailing
+   path. Example: `http://utat022:50000`
+4. Click **Save**
+
+The port to use is stored in the global settings:
+
+```powershell
+$port    = $global:settings[$global:configRootKeys['ProGetAdminUriPortConfigRootKey']]
+$baseUrl = $global:settings[$global:configRootKeys['ProGetBaseUrlConfigRootKey']]
+# $baseUrl is a [UriBuilder] built from scheme + hostname + $port in HostSettings.ps1
+```
+
+**Diagnostic — verify before registering feeds:**
+
+```powershell
+$baseUrl = $global:settings[$global:configRootKeys['ProGetBaseUrlConfigRootKey']]
+$probe   = Invoke-WebRequest "$baseUrl/nuget/<feed-name>/" -UseBasicParsing -ErrorAction SilentlyContinue
+$probe.StatusCode
+# 200  → ProGet is reachable; proceed to register feeds
+# 302  → Web.BaseUrl is wrong (missing port or wrong hostname) — fix it first
+# 401/403 → URL is reachable but credentials are needed — check API key / anonymous access
+```
+
+**Post-fix feed registration (PSResourceGet v3):**
+
+```powershell
+Register-PSResourceRepository `
+    -Name    'IntPrePSRProdPullFeed' `
+    -Uri     "$baseUrl/nuget/IntPrePSRProdPullFeed/" `
+    -Trusted
+```
+
+**Legacy PowerShellGet (v2):**
+
+```powershell
+Register-PSRepository `
+    -Name              'IntPrePSRProdPullFeed' `
+    -SourceLocation    "$baseUrl/nuget/IntPrePSRProdPullFeed/" `
+    -PublishLocation   "$baseUrl/nuget/IntPrePSRProdPullFeed/" `
+    -InstallationPolicy Trusted
+```
+
+> **Note:** HostSettings.ps1 in the `ATAP.IAC` repository builds `$baseUrl` via
+> `[UriBuilder]::new(scheme, hostname, port)` and stores it under `ProGetBaseUrlConfigRootKey`.
+> Always use that value — never hard-code the port.
+
+---
+
+##### Step 10 — ProGet.Service.exe CLI verbs reference
+
+<!-- Philote: 50c1d535-5b55-4388-af2c-4d473627bfdb -->
+
+`ProGet.Service.exe` (found in the ProGet install directory, typically
+`C:\Program Files\ProGet\`) accepts the following verbs. Use `run` during troubleshooting
+to see live log output; use `install` / `installweb` for production.
+
+| Verb | What it does |
+|------|--------------|
+| `run` | Launches ProGet in the current console window — streams all log output to stdout. Use for debugging a service that refuses to start under Windows SCM. |
+| `install` | Registers the **background-tasks** Windows service (`INEDOPROGETSVC`). Accepts `--user`/`--password` for a dedicated service account. |
+| `installweb` | Registers the **self-hosted web server** Windows service (`INEDOPROGETWEBSRV`). Accepts `--url` for the HTTP.SYS reservation. |
+| `uninstall` / `uninstallweb` | Removes the respective Windows service(s). |
+| `resetadminpassword` | Resets the built-in directory and sets `Admin` / `Admin` credentials. Run locally or in a container only. |
+
+**Common `run` recipes:**
+
+```powershell
+# Background tasks only (no HTTP listener) — good for quick config verification:
+.\ProGet.Service.exe run --mode=serviceonly
+
+# Full stack on a temp port — live log + web UI:
+.\ProGet.Service.exe run --mode=both --urls=http://*:8080/
+```
+
+**Production install with dedicated service account:**
+
+```powershell
+# Create Windows service (background tasks):
+.\ProGet.Service.exe install --user "$env:COMPUTERNAME\SvcProGet" --password '<password>'
+
+# Register self-hosted web server on the configured port:
+$port = $global:settings[$global:configRootKeys['ProGetAdminUriPortConfigRootKey']]
+.\ProGet.Service.exe installweb --url="http://+:$port/"
+```
+
+**Why use `run` before `install`?**
+If `Start-Service INEDOPROGETSVC` fails silently, run the exe interactively — the full
+.NET exception stack trace is printed to the console, which is far more useful than the
+generic "service did not respond in a timely fashion" Windows error.
+
+**Logging:**
+
+- **Console** — `run` streams everything at Info level or above to stdout.
+- **Windows Event Log** — always active for the installed service; see
+  **Windows Logs → Application**, source `InedoProGet`.
+- **Rolling log files** — configure via `ProGet.config`:
+  ```xml
+  <Logging Level="Debug" Path="D:\ProGetLogs" RetentionDays="14" />
+  ```
+- Fine-grained knobs (e.g. `Diagnostics.FeedErrorLogging`) are in
+  **Administration → Advanced Settings**.
+
+---
+
+## Troubleshooting — ProGet Feed Management
+
+### Delete an orphaned feed via the Management API
+
+<!-- Philote: 90ab74a9-31fe-488a-b56a-828f5b305071 -->
+
+The ProGet web UI occasionally leaves orphaned feeds after a migration, bulk rename, or
+partial install. The only reliable way to remove them is the Management REST API.
+
+> ⚠️ **This operation is irreversible.** The call permanently deletes the feed record and
+> every package stored inside it. Deactivate the feed first (Administration → Feeds →
+> Deactivate) and verify the contents via `GET /api/management/feeds/list` before
+> proceeding. Recovery requires restoring from a SQL Server backup.
+
+#### Prerequisites
+
+| Requirement | Detail |
+|---|---|
+| API key | Must have **Use/Manage Feeds** (system key) or **Overwrite/Delete** on the specific feed (feed key). |
+| Endpoint | `DELETE /api/management/feeds/delete/{feed-name}` |
+| Auth header | `X-ApiKey: <your-key>` |
+| ProGet base URL | `$global:settings[$global:configRootKeys['ProGetBaseUrlConfigRootKey']]` |
+
+#### Step 1 — List feeds to confirm the exact name
+
+```powershell
+$baseUrl = $global:settings[$global:configRootKeys['ProGetBaseUrlConfigRootKey']]
+$apiKey  = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
+
+Invoke-RestMethod `
+    -Uri     "$baseUrl/api/management/feeds/list" `
+    -Method  Get `
+    -Headers @{ 'X-ApiKey' = $apiKey }
+```
+
+Returns a JSON array of feed objects. Locate the exact `name` value before deleting.
+
+#### Step 2 — Delete the feed
+
+```powershell
+$baseUrl  = $global:settings[$global:configRootKeys['ProGetBaseUrlConfigRootKey']]
+$apiKey   = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
+$feedName = 'IntPreNugetDevPushFeed'   # replace with the name confirmed in Step 1
+
+try {
+    Invoke-RestMethod `
+        -Uri     "$baseUrl/api/management/feeds/delete/$feedName" `
+        -Method  Delete `
+        -Headers @{ 'X-ApiKey' = $apiKey }
+    Write-PSFMessage -Level Important -Message "Feed '$feedName' deleted successfully."
+}
+catch {
+    Write-PSFMessage -Level Error -Message "Feed delete failed: $_"
+    throw
+}
+```
+
+HTTP 200 with no body = success. Common errors:
+
+| Status | Meaning |
+|---|---|
+| 403 | API key missing, wrong, or lacks Use/Manage Feeds permission |
+| 404 | Feed name not found — verify with `feeds/list` first |
+
+#### Alternative: pgutil CLI
+
+If `pgutil` is installed and reachable:
+
+```powershell
+$port = $global:settings[$global:configRootKeys['ProGetAdminUriPortConfigRootKey']]
+pgutil feed delete `
+    --feed="$feedName" `
+    --apikey="$apiKey" `
+    --url="$baseUrl"
+```
+
+`pgutil` does the HTTP call and prints a status line — convenient in CI/CD scripts.
+
+#### After deletion
+
+- The feed disappears from the ProGet UI immediately.
+- Any `NuGet.config` entries or `Register-PSResourceRepository` registrations pointing at
+  the deleted feed will return 404. Remove those references:
+  ```powershell
+  Unregister-PSResourceRepository -Name $feedName -ErrorAction SilentlyContinue
+  ```
+- If the deletion was accidental, restore from the most recent SQL Server backup of the
+  `ProGet` database on `localhost\PRODUCTION`.

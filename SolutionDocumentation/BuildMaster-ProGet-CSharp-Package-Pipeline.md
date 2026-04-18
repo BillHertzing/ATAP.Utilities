@@ -100,7 +100,7 @@ The 5-tier NuGet promotion ladder maps to five ProGet feeds. These are already p
 | `nuget-stable`       | `/nuget/nuget-stable/`       | Production — signed, stamped release         |
 
 All feeds are served from `http://localhost:50000` (Inedo Hub default).
-The ProGet admin API key is stored in Bitwarden under the env var `PROGET_ADMIN_API_KEY`.
+The ProGet admin API key is stored in Bitwarden and is used to populate the env var `PROGET_ADMIN_API_KEY`.
 
 ### 2.1 Feed Settings Checklist
 
@@ -110,7 +110,7 @@ For **each** of the five feeds, apply these settings in the ProGet admin UI
 - **Package promotion**: enabled (to allow BuildMaster to promote from tier N to N+1).
 - **Drop-older-prerelease**: enabled on `nuget-experimental` to prevent unbounded growth.
 - **Connectors**: add `nuget.org` as a connector on `nuget-experimental` (upstream packages flow down only).
-- **Require API key for push**: yes — use `PROGET_ADMIN_API_KEY` stored as a BuildMaster variable (masked).
+- **Require API key for push**: yes — use the env var `PROGET_ADMIN_API_KEY` stored as a BuildMaster variable (masked).
 - **Allow anonymous read**: yes on all feeds (matches `<packageSourceCredentials>` — no credentials block).
 
 ### 2.2 Feed Connector Topology
@@ -120,7 +120,7 @@ connectors. Configure these connector relationships in the ProGet admin UI (Mana
 
 | Restore from feed    | Resolves packages from                                                     |
 | -------------------- | -------------------------------------------------------------------------- |
-| `nuget-experimental` | `nuget-experimental` + `nuget.org` (upstream connector)                   |
+| `nuget-experimental` | `nuget-experimental` + `nuget.org` (upstream connector)                    |
 | `nuget-development`  | `nuget-development` + `nuget-experimental` + `nuget.org` (chain connector) |
 | `nuget-integration`  | `nuget-integration` + `nuget-development` (hermetic — no public fallback)  |
 | `nuget-qa`           | `nuget-qa` + `nuget-integration` (hermetic)                                |
@@ -139,8 +139,11 @@ The prerelease label in `version.json` controls which tier a package belongs to:
 
 ```json
 {
+  "$schema": "https://raw.githubusercontent.com/dotnet/Nerdbank.GitVersioning/main/src/NerdBank.GitVersioning/version.schema.json",
   "version": "0.1-Sprint.{height}",
-  "nuGetPackageVersion": { "semVer": 2 }
+  "nuGetPackageVersion": { "semVer": 2 },
+  "pathFilters": ["./"],
+  "publicReleaseRefSpec": [".*"]
 }
 ```
 
@@ -195,6 +198,68 @@ Each stage gate:
 - **Development → Integration**: requires no open blocker issues; optionally a manual approval.
 - **Integration → QA**: requires integration test results artifact present with zero failures.
 - **QA → Production**: requires manual approval from the release manager.
+
+### 4.3 Package immutability and republish semantics
+
+<!-- Philote: 19ec4ccb-7769-46f3-9cc6-c4300efcfac5 -->
+
+NuGet feeds — including local folder feeds managed with `nuget add` — treat **published packages as immutable**.
+Attempting to push the same `id@version` again will be **silently rejected** (the push exits 0 but the old package remains).
+
+**Why this matters for the promotion pipeline:**
+If you need to re-push a package from a lower feed to a higher feed with the exact same version string,
+the higher feed must not already contain that version.
+BuildMaster's promotion step should either:
+
+- skip promotion when the target feed already has the exact version, or
+- delete the older copy from the target before pushing (use the ProGet API: `DELETE /api/packages/bulk/delete`).
+
+**Safe local republish pattern** (`Republish-NuGet.ps1`):
+
+```powershell
+param (
+    [Parameter(Mandatory)] [string]$PackagePath,    # path to .nupkg
+    [Parameter(Mandatory)] [string]$LocalFeedPath   # local folder feed root
+)
+
+$packageFile = Split-Path $PackagePath -Leaf
+if ($packageFile -notmatch '^(.+)\.([0-9]+\.[0-9]+\.[0-9]+.*)\.nupkg$') {
+    throw "Filename must follow ID.Version.nupkg format"
+}
+$packageId      = $Matches[1]
+$packageVersion = $Matches[2]
+$targetDir      = Join-Path $LocalFeedPath "$packageId\$packageVersion"
+
+if (Test-Path $targetDir) {
+    Write-Host "Removing existing version at: $targetDir"
+    Remove-Item -Recurse -Force -Path $targetDir
+}
+nuget add $PackagePath -Source $LocalFeedPath
+```
+
+This pattern is suitable for **development and integration feeds only**.
+Production feeds should be treated strictly immutable; promotion to production is always a new unique version.
+
+**SHA-embedding circularity (why byte-for-byte republish is impossible):**
+
+If a build step attempts to hash the final `.nupkg` and embed that hash back into the package
+(e.g., as a metadata field or a file inside the archive), the act of embedding changes the package
+— which changes the hash — creating an infinite cycle.
+
+| Approach                                    | Circular? | Recommended use                    |
+| ------------------------------------------- | --------- | ---------------------------------- |
+| Embed SHA of `.nupkg` inside itself         | ❌ Yes    | Not practical                      |
+| SHA of folder contents **before** packing   | ✅ No     | Embed in `.nuspec` metadata        |
+| SHA of final `.nupkg` stored **externally** | ✅ No     | Integrity sidecar file (`.sha256`) |
+| NuGet package signing (`nuget sign`)        | ✅ No     | Official integrity mechanism       |
+
+Generate an external hash sidecar after building:
+
+```powershell
+Get-FileHash '.\MyPackage.1.0.0.nupkg' -Algorithm SHA256 |
+    Select-Object -ExpandProperty Hash |
+    Out-File '.\MyPackage.1.0.0.nupkg.sha256' -Encoding ascii
+```
 
 ---
 
@@ -719,15 +784,15 @@ Set `$ProjectPath` to one of these values when creating a manual build:
 
 ## 11. Key Source Files
 
-| File | Role |
-| ---- | ---- |
-| `version.json` (repo root) | NBGV configuration; sets the default prerelease label and SemVer 2 mode for all projects |
-| `{project}/version.json` | Optional per-project NBGV override; inherits from root when absent |
-| `Directory.Build.targets` | Solution-wide import of `ATAP.Utilities.BuildTooling.targets`; contains legacy `<PackageReference Update>` overrides (being migrated to `Directory.Packages.props`) |
-| `Directory.Packages.props` | Central Package Management — target state after migration; declares all `<PackageVersion>` entries with `ManagePackageVersionsCentrally=true` |
-| `src/ATAP.Utilities.BuildTooling.PowerShell/public/Publish-ATAPUtilities.ps1` | Batch script to build and push all libraries locally in dependency order; used outside of BuildMaster for developer publishing runs |
-| `Build/BuildMaster/Plans/CSharpPackage-5Stage.otter` | OtterScript plan for full-solution builds (§5) |
-| `Build/BuildMaster/Plans/CSharpPackage-PerProject.otter` | OtterScript plan for individual package builds (§9) |
+| File                                                                          | Role                                                                                                                                                                |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `version.json` (repo root)                                                    | NBGV configuration; sets the default prerelease label and SemVer 2 mode for all projects                                                                            |
+| `{project}/version.json`                                                      | Optional per-project NBGV override; inherits from root when absent                                                                                                  |
+| `Directory.Build.targets`                                                     | Solution-wide import of `ATAP.Utilities.BuildTooling.targets`; contains legacy `<PackageReference Update>` overrides (being migrated to `Directory.Packages.props`) |
+| `Directory.Packages.props`                                                    | Central Package Management — target state after migration; declares all `<PackageVersion>` entries with `ManagePackageVersionsCentrally=true`                       |
+| `src/ATAP.Utilities.BuildTooling.PowerShell/public/Publish-ATAPUtilities.ps1` | Batch script to build and push all libraries locally in dependency order; used outside of BuildMaster for developer publishing runs                                 |
+| `Build/BuildMaster/Plans/CSharpPackage-5Stage.otter`                          | OtterScript plan for full-solution builds (§5)                                                                                                                      |
+| `Build/BuildMaster/Plans/CSharpPackage-PerProject.otter`                      | OtterScript plan for individual package builds (§9)                                                                                                                 |
 
 ---
 
@@ -744,3 +809,125 @@ Set `$ProjectPath` to one of these values when creating a manual build:
 - [ ] Trigger a manual Sprint build (full solution) and verify packages land in `nuget-experimental`
 - [ ] To rebuild one package: Create Build → plan `CSharpPackage-PerProject` → override `$ProjectPath` (§9.2)
 - [ ] Promote to Alpha by changing `version.json` label to `Alpha` and pushing
+
+---
+
+## 13. NuGet.config Reference
+
+<!-- Philote: 3bf42c43-15a3-4d8b-9ada-83365d37c450 -->
+
+### 13.1 Correct schema for HTTP feeds
+
+ToDo: Figure out how to create the NuGet.config file per host - maybe have it written when a sprint starts, and re-written before it gets committed at sprint end?
+The NuGet.config file is placed at the base of the ATAP.Utilities repository
+The entries have been built from the following $global:Settings variables
+
+ProGetAdminUriHost = localhost
+ProGetAdminUriPort = 50000
+ProGetAdminUriScheme = http
+ProGetBaseUrl = http://localhost:50000
+
+ToDo: add HTTPS protocol once PKI infrastructure for the organization is in place
+All five ProGet feeds are currently served over HTTP (`http://localhost:50000`).
+NuGet 6.0+ enforces HTTPS by default and will refuse to connect to an HTTP source **unless**
+`allowInsecureConnections = true` is declared for that source.
+
+ToDo: Document PackageSourceMapping to support AceCommander packages. The example here below is for AceCommander repository. The ATAP.Utilities repository's NuGet.config file does not contain the line `<package pattern="AceCommander.*" />` under the `packageSource` property
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <!-- ProGet feeds — local dev workstation (5-tier model, sprint branch) -->
+    <!-- ProGet installed on port 50000 (configured in ProGet.config, symlinked from ATAP.IAC) -->
+    <!-- Override port in NuGet.config if ProGet moves to a different port -->
+    <!-- allowInsecureConnections is required because localhost ProGet uses HTTP, not HTTPS -->
+    <!-- ToDo: [Security Concern] make the feeds require HTTPS -->
+    <add key="nuget-experimental"
+      value="http://localhost:50000/nuget/nuget-experimental/v3/index.json"
+      allowInsecureConnections="true" />
+    <add key="nuget-development"
+      value="http://localhost:50000/nuget/nuget-development/v3/index.json"
+      allowInsecureConnections="true" />
+    <add key="nuget-integration"
+      value="http://localhost:50000/nuget/nuget-integration/v3/index.json"
+      allowInsecureConnections="true" />
+    <add key="nuget-qa"
+      value="http://localhost:50000/nuget/nuget-qa/v3/index.json"
+      allowInsecureConnections="true" />
+    <add key="nuget-stable"
+      value="http://localhost:50000/nuget/nuget-stable/v3/index.json"
+      allowInsecureConnections="true" />
+    <!-- nuget.org — primary source for all third-party packages -->
+    <add key="nuget.org"
+      value="https://api.nuget.org/v3/index.json"
+      protocolVersion="3" />
+  </packageSources>
+
+<!-- ==================== Package Source Mapping ====================
+    Required to resolve NuGet warning NU1507.
+    When Central Package Management (CPM) is enabled via Directory.Packages.props
+    (ManagePackageVersionsCentrally=true), NuGet requires that all defined package
+    sources be mapped to package name patterns. Without this, NuGet warns that
+    it cannot deterministically decide which source to use for a given package.
+
+    Rules:
+      - Every active packageSource must have at least one <package pattern="..." /> entry.
+      - The wildcard pattern "*" on nuget.org catches all third-party packages
+        not explicitly mapped to another source.
+      - The "ATAP.*" and AceCommander.* patterns on the ProGet feeds ensures internal packages are
+        resolved exclusively from the local ProGet instance and are never
+        accidentally queried from nuget.org.
+      - Packages that match a pattern on a source will ONLY be resolved from
+        that source — NuGet will not fall back to other sources.
+
+    See: https://aka.ms/nuget-package-source-mapping
+    See: https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu1507
+  -->
+  <packageSourceMapping>
+    <!-- All standard third-party packages come from nuget.org -->
+    <packageSource key="nuget.org">
+      <package pattern="*" />
+    </packageSource>
+    <!-- Internal ATAP packages: on sprint branches, resolve only from nuget-experimental.
+         Higher-tier feeds are listed for restore visibility but ATAP.* packages are only
+         pinned to nuget-experimental here. BuildMaster promotes packages up the tier chain.
+         See SC-INFRA-001 in TASKS.md for the full package migration/promotion design. -->
+    <packageSource key="nuget-experimental">
+      <package pattern="ATAP.*" />
+      <package pattern="AceCommander.*" />
+    </packageSource>
+    <!-- nuget-development through nuget-stable: required entries for NU1507 compliance.
+         All 5 feeds must have a mapping entry when listed as active sources. -->
+    <packageSource key="nuget-development">
+      <package pattern="AceCommander.*" />
+      <package pattern="ATAP.*" />
+    </packageSource>
+    <packageSource key="nuget-integration">
+      <package pattern="AceCommander.*" />
+      <package pattern="ATAP.*" />
+    </packageSource>
+    <packageSource key="nuget-qa">
+      <package pattern="AceCommander.*" />
+      <package pattern="ATAP.*" />
+    </packageSource>
+    <packageSource key="nuget-stable">
+      <package pattern="AceCommander.*" />
+      <package pattern="ATAP.*" />
+    </packageSource>
+  </packageSourceMapping>
+</configuration>
+```
+
+> Note: the ProGet base URL port `50000` corresponds to `$global:configRootKeys['ProGetAdminUriPortConfigRootKey']`
+> in `HostSettings.ps1`. If you change the port, update all six URLs here and re-run `dotnet nuget list source`.
+
+### 13.2 Verify effective config
+
+After editing, confirm NuGet picks up the settings:
+
+```Powershell
+# Lists all registered sources and their enabled/disabled state
+dotnet nuget list source
+```

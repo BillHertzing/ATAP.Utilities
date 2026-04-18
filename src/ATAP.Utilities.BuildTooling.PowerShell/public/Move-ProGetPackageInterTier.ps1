@@ -142,6 +142,10 @@ begin {
     # ── Tier definitions ─────────────────────────────────────────────────
     # Ordered list of tiers. Index determines movement direction (lower → higher).
     $tierOrder = @('experimental', 'development', 'integration', 'qa', 'stable')
+    $tierAliases = @{
+        testing   = 'qa'
+        production = 'stable'
+    }
 
     # Known package type prefixes in feed names
     $knownPrefixes = @('nuget', 'powershell', 'chocolatey')
@@ -154,12 +158,17 @@ begin {
     $parsedTier = $null
 
     foreach ($prefix in $knownPrefixes) {
-        if ($SourceFeed.StartsWith("$prefix-")) {
+        if ($SourceFeed.StartsWith("$prefix-", [System.StringComparison]::OrdinalIgnoreCase)) {
             $parsedPrefix = $prefix
             $remainder = $SourceFeed.Substring($prefix.Length + 1)  # skip "{prefix}-"
             # Strip any -push suffix (inter-tier should start from a pull feed,
             # but be lenient if user passes a push feed name)
             $remainder = $remainder -replace '-push$', ''
+            $remainder = $remainder.ToLowerInvariant()
+            if ($tierAliases.ContainsKey($remainder)) {
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Normalizing legacy tier name '$remainder' to '$($tierAliases[$remainder])'"
+                $remainder = $tierAliases[$remainder]
+            }
             if ($tierOrder -contains $remainder) {
                 $parsedTier = $remainder
             }
@@ -169,7 +178,7 @@ begin {
 
     if (-not $parsedPrefix -or -not $parsedTier) {
         $errorMessage = "Cannot parse source feed name '$SourceFeed'. " +
-        'Expected format: {nuget|powershell|chocolatey}-{experimental|development|integration|qa|stable}[-push]'
+        'Expected format: {nuget|powershell|chocolatey}-{experimental|development|integration|qa|stable}[-push]. Legacy tiers testing/production are normalized to qa/stable.'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
         throw $errorMessage
     }
@@ -263,8 +272,10 @@ process {
     }
 
     $response = $null
-    if ($PSCmdlet.ShouldProcess("'$PackageName' v$Version", "Move from '$SourceFeed' to '$DestinationFeed'")) {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Moving '$PackageName' v$Version: '$SourceFeed' → '$DestinationFeed'"
+    $targetMessage = "'{0}' v{1}" -f $PackageName, $Version
+    $actionMessage = "Move from '{0}' to '{1}'" -f $SourceFeed, $DestinationFeed
+    if ($PSCmdlet.ShouldProcess($targetMessage, $actionMessage)) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message ("Moving '{0}' v{1}: '{2}' -> '{3}'" -f $PackageName, $Version, $SourceFeed, $DestinationFeed)
         try {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling $promoteUrl" -Tag 'RestCall'
             $response = Invoke-RestMethod -Uri $promoteUrl -Method POST -Headers $headers `

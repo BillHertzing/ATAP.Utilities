@@ -228,3 +228,15 @@ Publish-Module -Path .\MyModule -Repository Demo_Nuget_Feed -NuGetApiKey 'use re
 [Build Automation in PowerShell](https://github.com/nightroman/Invoke-Build)
 
 [Catesta is a PowerShell module project generator](https://github.com/techthoughts2/Catesta)
+
+---
+
+## Note — `allowInsecureConnections` for HTTP NuGet feeds
+
+NuGet 6.0+ enforces HTTPS by default. Local ProGet feeds served over HTTP require
+`allowInsecureConnections = true` per source, but this key **must be placed inside
+`<packageSourceSettings>`, not inside `<config>`**. The `<config>` placement is silently
+ignored and the build will fail with an HTTP-blocked error.
+
+Reference: see [`BuildMaster-ProGet-CSharp-Package-Pipeline.md` §13](BuildMaster-ProGet-CSharp-Package-Pipeline.md#13-nugetconfig-reference)
+for the complete NuGet.config schema covering all five ProGet feeds.

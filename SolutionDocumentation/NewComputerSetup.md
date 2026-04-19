@@ -522,6 +522,23 @@ Expected: each command returns `<COMPUTERNAME>\<InstanceName>` with no errors.
 > for any sprint-specific instances (e.g., `Integration`, `QA`) that do not yet exist on
 > the target machine. The `PRODUCTION` instance is permanent and only created once.
 
+### Build ATAPUtilities Database on All Instances
+
+After all three instances exist and are accessible, build the `ATAPUtilities` database on
+each one in sequence using the convenience script:
+
+```powershell
+# From the ATAP.Utilities repository root:
+.\Database\Powershell\public\Rebuild-All-AllInstances.ps1
+```
+
+This script builds `ATAPUtilities` on `QA` (Testing environment), `Integration`
+(Development environment), and `Production` (Production environment) in order,
+applying all Flyway migrations with `-Force` (drop + recreate). It continues to the
+next instance if one fails, then throws at the end if any failed.
+
+See `Database\Powershell\public\Rebuild-All-AllInstances.ps1` for the full script.
+
 ---
 
 ## Install ProGet and BuildMaster (After SQL Server Setup)

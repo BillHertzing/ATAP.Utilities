@@ -15,7 +15,7 @@ PYTHON_EXE = r"C:\Python311\python.exe"
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-SCRIPT_DIR     = Path(__file__).parent.absolute()
+SCRIPT_DIR     = Path(__file__).resolve().parents[1]
 OUTPUT_DIR     = SCRIPT_DIR / "_generated"
 SCENE_FILE     = SCRIPT_DIR / "Scenes" / "stick_figure_pirouette_scene.py"
 SCENE_NAME     = "StickFigurePirouette"

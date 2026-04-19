@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 
 PYTHON_EXE     = r"C:\Python311\python.exe"
-SCRIPT_DIR     = Path(__file__).parent.absolute()
+SCRIPT_DIR     = Path(__file__).resolve().parents[1]
 OUTPUT_DIR     = SCRIPT_DIR / "_generated"
 SCENE_FILE     = SCRIPT_DIR / "Scenes" / "computer_desk_scene.py"
 SCENE_NAME     = "ComputerDesk"

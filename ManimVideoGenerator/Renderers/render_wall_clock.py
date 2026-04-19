@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 
 # Define paths
-SCRIPT_DIR = Path(__file__).parent.absolute()
+SCRIPT_DIR = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = SCRIPT_DIR / "_generated"
 MAIN_PY = SCRIPT_DIR / "main.py"
 SCENE_NAME = "WallClockSceneHD"

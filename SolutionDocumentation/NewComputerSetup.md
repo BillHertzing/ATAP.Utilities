@@ -218,6 +218,13 @@ run the program 'Everything' from a USB stick, get list to a file "01 Clean Wind
 ## Install Python for Windows for bootstrapping
 
 TBD - install python310 from an organization's internal repository
+
+## Related Reference — WSL2 Setup
+
+If this workstation will run Ansible, Docker, or related automation inside WSL2, use the
+standalone reference [WSL2Setup.md](./WSL2Setup.md) for the Ubuntu 24.04 install pattern,
+drive automount guidance, WSL2 networking notes, PowerShell-to-WSL trigger examples, and
+Docker interoperability notes.
 TBD - install python311 from a USB stick [TBD]
 Current - install Python from the internet
 

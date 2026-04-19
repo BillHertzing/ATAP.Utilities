@@ -825,7 +825,7 @@ The entries have been built from the following $global:Settings variables
 ProGetAdminUriHost = localhost
 ProGetAdminUriPort = 50000
 ProGetAdminUriScheme = http
-ProGetBaseUrl = http://localhost:50000
+ProGetBaseUrl = `http://localhost:50000`
 
 ToDo: add HTTPS protocol once PKI infrastructure for the organization is in place
 All five ProGet feeds are currently served over HTTP (`http://localhost:50000`).
@@ -931,3 +931,48 @@ After editing, confirm NuGet picks up the settings:
 # Lists all registered sources and their enabled/disabled state
 dotnet nuget list source
 ```
+
+## 14. Lightweight Local Alternative: BaGet
+
+BaGet is a viable FOSS NuGet server for developer machines, labs, and other lightweight scenarios where the goal is simply to host a NuGet v3 feed without standing up the broader ProGet feature set.
+
+### 14.1 When BaGet is useful
+
+- Single-container deployment for a local or offline development environment.
+- Simple package push and restore workflows over the NuGet v3 protocol.
+- Low-friction experimentation when a developer wants a disposable internal feed.
+
+A minimal local BaGet instance can be started with Docker:
+
+```Powershell
+docker run --name baget `
+  -p 5555:8080 `
+  -e ApiKey='local-dev-key' `
+  -v C:\BagetData:/var/baget `
+  loicsharma/baget:latest
+```
+
+Once running, the feed endpoint is typically:
+
+```text
+http://localhost:5555/v3/index.json
+```
+
+That makes BaGet a reasonable option for local package validation or isolated developer workflows.
+
+### 14.2 Why this repository chose ProGet instead
+
+BaGet was evaluated as a possible replacement for ProGet, but it is not sufficient for the repository's operational pipeline needs.
+
+Compared to ProGet, BaGet lacks many of the features required by the 5-tier package promotion model described in this document:
+
+- No built-in package promotion pipeline across Experimental, Development, Integration, QA, and Stable feeds.
+- No equivalent administrative model for feed connectors, broader governance, or richer operational controls.
+- No comparable out-of-the-box support for the release-management workflow expected by BuildMaster and the repository's promotion stages.
+
+In addition, while BaGet remains a useful FOSS project, it appears to have seen relatively limited recent development activity compared to ProGet's actively maintained commercial platform. For this repository, that raised additional risk around long-term operational fit.
+
+The result is a clear split in guidance:
+
+- Use ProGet for the authoritative repository pipeline described in this document.
+- Use BaGet only as a lightweight local alternative when you need a small, disposable, developer-focused NuGet v3 server.

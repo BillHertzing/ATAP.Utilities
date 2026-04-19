@@ -33,7 +33,7 @@ that **describes how the target application — Ace Commander — will work**
 
 ## Setup — Computer and Organization
 
-*Teach / Tell how to create software.*
+_Teach / Tell how to create software._
 
 - [New Computer Setup](NewComputerSetup.md) — **Far more than a bootstrap page.**
   The first half covers Rufus USB preparation, BIOS configuration, Windows
@@ -80,9 +80,31 @@ that **describes how the target application — Ace Commander — will work**
 
 ---
 
+## Developer Environment
+
+_Teach / Tell how to create software — per-developer tooling and shell setup._
+
+- [Developer Environment](DevEnvironment.md) — Consolidated guide for the tools
+  and behaviors that affect day-to-day development. Covers: **CSpell** custom
+  dictionary location (`%USERPROFILE%\.cspell\cspell-dict.txt`) and
+  `ignoreRegExpList` recipes for GUIDs / base64 / hex; **PSReadLine** shared
+  history with timestamp+hostname merging and commands to exclude to avoid
+  recording secrets; **PSScriptAnalyzer** `PSScriptAnalyzerDisableFormatting`
+  inline directive and the prettier `&&` autoformat workaround;
+  **PSModulePath** — distinction between
+  `C:\Program Files\PowerShell\Modules` (all versions) and
+  `C:\Program Files\PowerShell\7\Modules` (pwsh 7 only) with install-target
+  guidance; **npm global bin** path and when to prefer junctions vs symlinks
+  with UAC considerations; **VS Code integrated vs external terminal** — why
+  `$env:BW_SESSION` and other interactively set variables are visible inside
+  VS Code but not in detached agent shells.
+  (Philote `f0da7925-1a2d-454d-bf95-f8ae8d0f3e12`.)
+
+---
+
 ## Security Considerations
 
-*Teach / Tell how to create software (with two "describe" entries noted).*
+_Teach / Tell how to create software (with two "describe" entries noted)._
 
 - [Security Shift-Left](Security%20Shift-Left.md) — **779 lines.** Framed as
   CI/CD secret-handling principles, but the bulk is an OpenSSL + PKI tutorial:
@@ -92,8 +114,8 @@ that **describes how the target application — Ace Commander — will work**
   `SecretManagement.BitWarden` integration (`Register-SecretVault`,
   `Unlock-SecretVault`, `Get-Secret`); direct Bitwarden CLI (`bw login`,
   `bw unlock`, `BW_SESSION`); and Wireshark SSL-key capture.
-- [Secrets Plugin Architecture](SecretsPluginArchitecture.md) — *Describes Ace
-  Commander.* Full April-2026 specification for consolidating two existing
+- [Secrets Plugin Architecture](SecretsPluginArchitecture.md) — _Describes Ace
+  Commander._ Full April-2026 specification for consolidating two existing
   Secrets implementations (`ATAP.Utilities.Configuration.Secrets/` and
   `ATAP.Utilities.Configuration/Secrets/Shims/`) into a new
   `ATAP.Utilities.Secrets` family. Defines `ISecretsAbstract`,
@@ -103,8 +125,8 @@ that **describes how the target application — Ace Commander — will work**
   `DefaultFieldName`), `BitwardenSecretsShim`, `BitwardenConfigurationSource`
   and `BitwardenConfigurationProvider`, and a `SecretsPluginShim` implementing
   `ILoadDynamicSubModules`.
-- [Developer Musings — SecSub Design](DeveloperMusings.md) — *Describes Ace
-  Commander.* Three "brainstorming" iterations of the Security Subsystem.
+- [Developer Musings — SecSub Design](DeveloperMusings.md) — _Describes Ace
+  Commander._ Three "brainstorming" iterations of the Security Subsystem.
   Explains PowerShell SecretManagement limitations (single-vault and
   local-disk-only ACLs), then defines SCVP (Secure Cloud Vault Path), EMBs
   (Encrypted Master Passwords), SMVs (Secret Management Vaults), DECs (Data
@@ -115,7 +137,7 @@ that **describes how the target application — Ace Commander — will work**
 
 ## How to Produce a Software Product — Building, Versioning, Testing, Packaging, Publishing
 
-*Teach / Tell how to create software.*
+_Teach / Tell how to create software._
 
 - [Building](Building.md) — Solution-level build flow, `Directory.Build.props`
   and `Directory.Build.targets`, project-type GUID
@@ -127,7 +149,7 @@ that **describes how the target application — Ace Commander — will work**
 - [BuildMaster/ProGet C# Package Pipeline](BuildMaster-ProGet-CSharp-Package-Pipeline.md)
   — Comprehensive 5-stage OtterScript plan (`CSharpPackage-5Stage.otter`)
   targeting 171 projects. Covers the five feeds `nuget-experimental /
-  nuget-development / nuget-integration / nuget-qa / nuget-stable`, NBGV
+nuget-development / nuget-integration / nuget-qa / nuget-stable`, NBGV
   (`version.json`) with labels `Sprint / Alpha / Beta / QA / (empty)`, the
   BuildMaster Application `ATAP.Utilities-CSharp`, the shared per-package
   application with `$ProjectPath` override, the meta-package
@@ -200,7 +222,7 @@ that **describes how the target application — Ace Commander — will work**
 
 ## Rules Compendium
 
-*Teach / Tell how to create software.* These are the authoritative
+_Teach / Tell how to create software._ These are the authoritative
 language-scoped catalogs of Rule Primitives that power the RRSBS
 (Rules, Rule Sets, Build Sets) code-generation framework. Every primitive,
 rule, rule set, and build set in these documents carries a stable
@@ -217,8 +239,16 @@ values and renders deterministic output text.
   (~1,158 lines.)
 - [Rules Compendium — PowerShell](Rules%20Compendium.Powershell.md) — Rule
   Primitives for module layout, advanced functions, PSFramework logging,
-  Pester testing, and PowerShell conventions. **Largest compendium at
-  ~1,545 lines.**
+  Pester testing, and PowerShell conventions. Includes rule sets added in
+  sprint 0006: **Logging** (`Write-PSFMessage` canonical template, external-call
+  tags `RestCall` / `WebRequestCall` / `InvokeExpressionCall` /
+  `InvokeCommandCall`, GELF/SEQ named-instance pattern); **Error Handling**
+  (mandatory try/catch/finally template with `-ErrorAction Stop` and
+  `Write-PSFMessage -Level Error`); **Input Validation**
+  (`[string]::IsNullOrWhiteSpace` / `ValidateScript` patterns); and a
+  **Debugging Tools** appendix (`Wait-Debugger`,
+  `[System.Diagnostics.Debugger]::Break()`, `Set-PSBreakpoint -Command`).
+  **~2,063 lines.**
 - [Rules Compendium — MSBuild](Rules%20Compendium.MSBuild.md) — Rule Primitives
   for `.props` / `.targets`, Directory.Build files, custom tasks, and solution
   orchestration. (~858 lines.)
@@ -241,7 +271,7 @@ values and renders deterministic output text.
 
 ## Ace Commander — Application Description
 
-*Describes how Ace Commander will work (not how to build software in general).*
+_Describes how Ace Commander will work (not how to build software in general)._
 
 - [Architecture Overview](architecture-overview.md) — 2026-03-15 automated
   survey of the ATAP.Utilities repository in its role as the computational
@@ -304,3 +334,23 @@ values and renders deterministic output text.
   topology diagram.
 - [architecture-overview (diagram)](architecture-overview.drawio) — Visual
   companion to the architecture-overview document.
+
+---
+
+## Historical: AI-Generated Repository Snapshots
+
+_These documents are AI-generated point-in-time snapshots retained as historical
+artifacts. They are superseded by the living documents listed above and should
+not be used as references for the current codebase._
+
+- [AI Generated Summary](AI%20Generated%20Summary.md) —
+
+  > **Snapshot 2025-05-16 — superseded; current stack is C# 14 / .NET 10.**
+
+  ChatGPT-authored survey of the ATAP.Utilities repository as of mid-2025.
+  Reports C# 11 / .NET 8 targets and a dependency diagram generated from the
+  then-current `Directory.Build.props`. Superseded by
+  [Architecture Overview](architecture-overview.md) and
+  [Module Catalog](Module%20Catalog.md). Physical move to
+  `ReviewedAndArchived/` is deferred; a stale banner has been prepended to the
+  file. (~reported as ~.NET 8 era.)

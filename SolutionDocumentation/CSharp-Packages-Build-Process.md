@@ -15,7 +15,7 @@ that DLL into place, and the end-to-end data flow for one project build.
 - **BuildMaster 5-stage CI pipeline** — see [BuildMaster-ProGet-CSharp-Package-Pipeline.md](BuildMaster-ProGet-CSharp-Package-Pipeline.md).
 
 This doc **consolidates and supersedes** the build-process content previously
-scattered across [Building.md](Building.md) and [_Planning/Explainers/0013-BuildTooling-CSharp-MSBuild-interaction.md](../../_Planning-wt-12-sprint-0006-work-items/Explainers/0013-BuildTooling-CSharp-MSBuild-interaction.md).
+scattered across [Building.md](Building.md) and [\_Planning/Explainers/0013-BuildTooling-CSharp-MSBuild-interaction.md](../../_Planning-wt-12-sprint-0006-work-items/Explainers/0013-BuildTooling-CSharp-MSBuild-interaction.md).
 
 ---
 
@@ -23,12 +23,12 @@ scattered across [Building.md](Building.md) and [_Planning/Explainers/0013-Build
 
 Every project build in this solution is driven by four files working together.
 
-| File | Role | Location |
-|---|---|---|
-| `Directory.Build.props` | Solution-wide property defaults; injected **before** each `.csproj` is processed. | Solution root |
-| `Directory.Build.targets` | Solution-wide targets and item-group imports; injected **after** each `.csproj` is processed. | Solution root |
-| `ATAP.Utilities.BuildTooling.CSharp.dll` | Compiled MSBuild custom-task assembly containing `GetVersion` / `UpdateVersion` / `SetVersion`. | `Build/ATAP.Utilities.BuildTooling.<ver>/build/Release/net10.0/` |
-| `ATAP.Utilities.BuildTooling.targets` | The "wiring harness" that registers the three tasks via `UsingTask` and plugs them into the standard build pipeline. | Alongside the DLL, plus canonical source in `src/ATAP.Utilities.BuildTooling.CSharp/` |
+| File                                     | Role                                                                                                                 | Location                                                                              |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `Directory.Build.props`                  | Solution-wide property defaults; injected **before** each `.csproj` is processed.                                    | Solution root                                                                         |
+| `Directory.Build.targets`                | Solution-wide targets and item-group imports; injected **after** each `.csproj` is processed.                        | Solution root                                                                         |
+| `ATAP.Utilities.BuildTooling.CSharp.dll` | Compiled MSBuild custom-task assembly containing `GetVersion` / `UpdateVersion` / `SetVersion`.                      | `Build/ATAP.Utilities.BuildTooling.<ver>/build/Release/net10.0/`                      |
+| `ATAP.Utilities.BuildTooling.targets`    | The "wiring harness" that registers the three tasks via `UsingTask` and plugs them into the standard build pipeline. | Alongside the DLL, plus canonical source in `src/ATAP.Utilities.BuildTooling.CSharp/` |
 
 MSBuild walks **up** the directory tree from each `.csproj`, searching for
 `Directory.Build.props` and `Directory.Build.targets`. It stops at the first file
@@ -406,13 +406,13 @@ wrappers that call into `Utilities`, because MSBuild does not allow a
 `Task`-derived class to call another `Task`-derived class's `Execute()` method at
 runtime.
 
-| Method | Purpose |
-|---|---|
-| `GetVersion` | Reads `Properties/AssemblyInfo.cs` with regex; extracts Major, Minor, Patch, Build, Revision, PackageVersion. |
-| `MakeBuild` | Computes Build (days since 2000-01-01) and Revision (seconds-since-midnight ÷ 2) from current UTC time. |
-| `MakePackageVersion` | Assembles the NuGet version string (e.g. `0.1.0-Alpha-005`), incrementing the label counter. |
-| `SetVersion` | Rewrites `Properties/AssemblyInfo.cs` in place with new version values. |
-| `TryParsePackageVersion` | Parses an existing NuGet version string to determine the current label/counter. |
+| Method                   | Purpose                                                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `GetVersion`             | Reads `Properties/AssemblyInfo.cs` with regex; extracts Major, Minor, Patch, Build, Revision, PackageVersion. |
+| `MakeBuild`              | Computes Build (days since 2000-01-01) and Revision (seconds-since-midnight ÷ 2) from current UTC time.       |
+| `MakePackageVersion`     | Assembles the NuGet version string (e.g. `0.1.0-Alpha-005`), incrementing the label counter.                  |
+| `SetVersion`             | Rewrites `Properties/AssemblyInfo.cs` in place with new version values.                                       |
+| `TryParsePackageVersion` | Parses an existing NuGet version string to determine the current label/counter.                               |
 
 **`GetVersion` task.** Reads current version data from `$(VersionFile)` and exposes
 it as MSBuild output properties: `MajorVersion`, `MinorVersion`, `PatchVersion`,
@@ -434,11 +434,11 @@ when all version parts are already known (e.g. from a CI variable).
 [assembly: AssemblyInformationalVersion("0.1.0-Alpha-005")]
 ```
 
-| Attribute | Encoded data | Example |
-|---|---|---|
-| `AssemblyVersion` | `Major.Minor.Patch` | `0.1.0` |
-| `AssemblyFileVersion` | `Major.Minor.Build.Revision` | `0.1.9576.8317` |
-| `AssemblyInformationalVersion` | NuGet PackageVersion string | `0.1.0-Alpha-005` |
+| Attribute                      | Encoded data                 | Example           |
+| ------------------------------ | ---------------------------- | ----------------- |
+| `AssemblyVersion`              | `Major.Minor.Patch`          | `0.1.0`           |
+| `AssemblyFileVersion`          | `Major.Minor.Build.Revision` | `0.1.9576.8317`   |
+| `AssemblyInformationalVersion` | NuGet PackageVersion string  | `0.1.0-Alpha-005` |
 
 Build `9576` means 9576 days since 2000-01-01. Revision `8317` means 16 634 seconds
 past midnight UTC (8317 × 2).
@@ -733,22 +733,22 @@ dotnet build MyProject.csproj --configuration Release
 
 ## 8. Key Property Reference
 
-| Property | Set in | Example value | Purpose |
-|---|---|---|---|
-| `SolutionDir` | `Directory.Build.props` | `C:\...\ATAP.Utilities\` | Root of the repository. |
-| `SolutionBuildToolsBaseDir` | `Directory.Build.props` | `$(SolutionDir)Build\` | Where pre-built task tools live. |
-| `ATAPBuildToolingConfiguration` | `Directory.Build.props` | `Debug` or `Release` | Verbose-logging switch inside tasks. |
-| `ATAPBuildToolingDebugVerbosity` | `Directory.Build.props` | `Trace` | Sub-level logging verbosity. |
-| `ATAPBuildToolingVersion` | `Directory.Build.props` (sentinel file or fallback) | `0.1.0` | Deployed BuildTooling version; read from `Build\ATAP.Utilities.BuildTooling.current-version`. |
-| `ATAPUtilitiesBuildToolingTargetsPath` | `Directory.Build.props` | `$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.0.1.0\build\` | Where `ATAP.Utilities.BuildTooling.targets` is loaded from. |
-| `ATAPUtilitiesBuildToolingTasksAssembly` | `Directory.Build.props` | `...\Release\net10.0\ATAP.Utilities.BuildTooling.CSharp.dll` | The task DLL path. |
-| `VersionFile` | `Directory.Build.props` | `$(MSBuildProjectDirectory)\Properties\AssemblyInfo.cs` | Per-project version file. |
-| `UpdatePackageVersionLockFilePath` | `Directory.Build.props` | `$(MSBuildProjectDirectory)\<ProjectName>.UpdatePackageVersion.lock` | Multi-TFM deduplication lock. |
-| `MajorVersion`, `MinorVersion`, `PatchVersion` | Individual `.csproj` | `0`, `1`, `0` | Semantic version parts; read by `UpdateVersion`. |
-| `PackageLifeCycleStage` | Individual `.csproj` | `Development` | Controls whether a pre-release suffix is added. |
-| `PackageLabel` | Individual `.csproj` | `Alpha` | Pre-release label string. |
-| `ProGetExperimentalFeedUrl` | `ATAP.Utilities.BuildTooling.targets` | `http://localhost:50000/nuget/nuget-experimental/v3/index.json` | Push destination. |
-| `PROGET_ADMIN_API_KEY` | Environment variable (from Bitwarden via `LoginScript.ps1`) | (secret) | ProGet API key. |
+| Property                                       | Set in                                                      | Example value                                                          | Purpose                                                                                       |
+| ---------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `SolutionDir`                                  | `Directory.Build.props`                                     | `C:\...\ATAP.Utilities\`                                               | Root of the repository.                                                                       |
+| `SolutionBuildToolsBaseDir`                    | `Directory.Build.props`                                     | `$(SolutionDir)Build\`                                                 | Where pre-built task tools live.                                                              |
+| `ATAPBuildToolingConfiguration`                | `Directory.Build.props`                                     | `Debug` or `Release`                                                   | Verbose-logging switch inside tasks.                                                          |
+| `ATAPBuildToolingDebugVerbosity`               | `Directory.Build.props`                                     | `Trace`                                                                | Sub-level logging verbosity.                                                                  |
+| `ATAPBuildToolingVersion`                      | `Directory.Build.props` (sentinel file or fallback)         | `0.1.0`                                                                | Deployed BuildTooling version; read from `Build\ATAP.Utilities.BuildTooling.current-version`. |
+| `ATAPUtilitiesBuildToolingTargetsPath`         | `Directory.Build.props`                                     | `$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.0.1.0\build\` | Where `ATAP.Utilities.BuildTooling.targets` is loaded from.                                   |
+| `ATAPUtilitiesBuildToolingTasksAssembly`       | `Directory.Build.props`                                     | `...\Release\net10.0\ATAP.Utilities.BuildTooling.CSharp.dll`           | The task DLL path.                                                                            |
+| `VersionFile`                                  | `Directory.Build.props`                                     | `$(MSBuildProjectDirectory)\Properties\AssemblyInfo.cs`                | Per-project version file.                                                                     |
+| `UpdatePackageVersionLockFilePath`             | `Directory.Build.props`                                     | `$(MSBuildProjectDirectory)\<ProjectName>.UpdatePackageVersion.lock`   | Multi-TFM deduplication lock.                                                                 |
+| `MajorVersion`, `MinorVersion`, `PatchVersion` | Individual `.csproj`                                        | `0`, `1`, `0`                                                          | Semantic version parts; read by `UpdateVersion`.                                              |
+| `PackageLifeCycleStage`                        | Individual `.csproj`                                        | `Development`                                                          | Controls whether a pre-release suffix is added.                                               |
+| `PackageLabel`                                 | Individual `.csproj`                                        | `Alpha`                                                                | Pre-release label string.                                                                     |
+| `ProGetExperimentalFeedUrl`                    | `ATAP.Utilities.BuildTooling.targets`                       | `http://localhost:50000/nuget/nuget-experimental/v3/index.json`        | Push destination.                                                                             |
+| `PROGET_ADMIN_API_KEY`                         | Environment variable (from Bitwarden via `LoginScript.ps1`) | (secret)                                                               | ProGet API key.                                                                               |
 
 ---
 
@@ -826,17 +826,17 @@ See also [github.com/clairernovotny/DeterministicBuilds](https://github.com/clai
 
 ## 11. Common Failure Modes
 
-| Symptom | Cause | Fix |
-|---|---|---|
-| `MSB4062: The "ATAP.Utilities.BuildTooling.UpdateVersion" task could not be loaded` | DLL not at the path computed by `ATAPUtilitiesBuildToolingTasksAssembly`. | Verify the DLL exists at `Build\...\Release\net10.0\ATAP.Utilities.BuildTooling.CSharp.dll`; check `ATAPBuildToolingRelativeBasePath` in `Directory.Build.props`. |
-| `ATAP.Utilities.BuildTooling.targets` import silently skipped | `Condition="Exists(...)"` evaluated false; file not deployed. | Re-run the bootstrap (§6.1–6.2). |
-| Version not incrementing | `CallTarget` inside `BeforeCompile` is commented out. | Intentional in current state; uncomment when ready, or rely on NBGV (§9). |
-| Version incremented N times per build (N = number of TFMs) | Lock file logic not working; lock file path resolves differently per inner build. | Verify `$(UpdatePackageVersionLockFilePath)` uses `$(MSBuildProjectDirectory)`, not a relative path. |
-| `AssemblyInfo.cs` has all-zero versions after first build | File was not created with valid initial values before bootstrap. | Write valid initial content (see [CSharp-Packages-Versioning.md](CSharp-Packages-Versioning.md)). |
-| ProGet push fails with 401 | `PROGET_ADMIN_API_KEY` env var not set. | Set it from Bitwarden before building; confirm with `Write-Host $env:PROGET_ADMIN_API_KEY`. |
-| DesignTime build in Visual Studio triggers version update | `DesignTimeBuild` condition missing from `BeforeCompile` inputs. | Restore the `$(DesignTimeBuild) != true` guard inside `BeforeCompile`. |
-| `MSB4022` "result of evaluating the value … is invalid" on `UsingTask` | Sentinel file points to a nonexistent directory during bootstrap. | The `Condition="'$(ATAP…Assembly)' != ''"` guard on `UsingTask` (§5.1) normally prevents this; verify the guard is still present. |
-| Project pack writes dependency `>= resolved-version` | `ConstrainATAPPackageDependencyVersionRange` (§3.5) did not run. | Verify `IsPackable=true` on the project; confirm the target is present in `Directory.Build.targets`. |
+| Symptom                                                                             | Cause                                                                             | Fix                                                                                                                                                               |
+| ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MSB4062: The "ATAP.Utilities.BuildTooling.UpdateVersion" task could not be loaded` | DLL not at the path computed by `ATAPUtilitiesBuildToolingTasksAssembly`.         | Verify the DLL exists at `Build\...\Release\net10.0\ATAP.Utilities.BuildTooling.CSharp.dll`; check `ATAPBuildToolingRelativeBasePath` in `Directory.Build.props`. |
+| `ATAP.Utilities.BuildTooling.targets` import silently skipped                       | `Condition="Exists(...)"` evaluated false; file not deployed.                     | Re-run the bootstrap (§6.1–6.2).                                                                                                                                  |
+| Version not incrementing                                                            | `CallTarget` inside `BeforeCompile` is commented out.                             | Intentional in current state; uncomment when ready, or rely on NBGV (§9).                                                                                         |
+| Version incremented N times per build (N = number of TFMs)                          | Lock file logic not working; lock file path resolves differently per inner build. | Verify `$(UpdatePackageVersionLockFilePath)` uses `$(MSBuildProjectDirectory)`, not a relative path.                                                              |
+| `AssemblyInfo.cs` has all-zero versions after first build                           | File was not created with valid initial values before bootstrap.                  | Write valid initial content (see [CSharp-Packages-Versioning.md](CSharp-Packages-Versioning.md)).                                                                 |
+| ProGet push fails with 401                                                          | `PROGET_ADMIN_API_KEY` env var not set.                                           | Set it from Bitwarden before building; confirm with `Write-Host $env:PROGET_ADMIN_API_KEY`.                                                                       |
+| DesignTime build in Visual Studio triggers version update                           | `DesignTimeBuild` condition missing from `BeforeCompile` inputs.                  | Restore the `$(DesignTimeBuild) != true` guard inside `BeforeCompile`.                                                                                            |
+| `MSB4022` "result of evaluating the value … is invalid" on `UsingTask`              | Sentinel file points to a nonexistent directory during bootstrap.                 | The `Condition="'$(ATAP…Assembly)' != ''"` guard on `UsingTask` (§5.1) normally prevents this; verify the guard is still present.                                 |
+| Project pack writes dependency `>= resolved-version`                                | `ConstrainATAPPackageDependencyVersionRange` (§3.5) did not run.                  | Verify `IsPackable=true` on the project; confirm the target is present in `Directory.Build.targets`.                                                              |
 
 ---
 
@@ -893,13 +893,13 @@ New-Item -ItemType Directory -Path "src\ATAP.Utilities.BuildTooling.CSharp\Prope
 
 Copy from this repository verbatim and adjust only as noted:
 
-| Source | Copy to | Adjust |
-|---|---|---|
-| `Directory.Build.props` | Target repo root | Fallback `<ATAPBuildToolingVersion>`; `<Copyright>`, `<Authors>`, `<Product>`, `<RepositoryUrl>`; `<NuGetLocalFeedPath>` if different. |
-| `Directory.Build.targets` | Target repo root | Comment out `PublishAfterBuild` target if ProGet not used; remove `Microsoft.SourceLink.GitHub` reference if SourceLink not configured. |
-| `src/ATAP.Utilities.BuildTooling.CSharp/ATAP.Utilities.BuildTooling.CSharp.csproj` | Same path | `<MajorVersion>`, `<MinorVersion>`, `<PatchVersion>` for the tooling's own version. |
-| `src/ATAP.Utilities.BuildTooling.CSharp/ATAP.Utilities.BuildTooling.CSharp.cs` | Same path | No changes. |
-| `src/ATAP.Utilities.BuildTooling.CSharp/ATAP.Utilities.BuildTooling.targets` | Same path | `<ProGetExperimentalFeedUrl>` if different; uncomment `<CallTarget>` inside `BeforeCompile` when ready for auto-updates. |
+| Source                                                                             | Copy to          | Adjust                                                                                                                                  |
+| ---------------------------------------------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `Directory.Build.props`                                                            | Target repo root | Fallback `<ATAPBuildToolingVersion>`; `<Copyright>`, `<Authors>`, `<Product>`, `<RepositoryUrl>`; `<NuGetLocalFeedPath>` if different.  |
+| `Directory.Build.targets`                                                          | Target repo root | Comment out `PublishAfterBuild` target if ProGet not used; remove `Microsoft.SourceLink.GitHub` reference if SourceLink not configured. |
+| `src/ATAP.Utilities.BuildTooling.CSharp/ATAP.Utilities.BuildTooling.CSharp.csproj` | Same path        | `<MajorVersion>`, `<MinorVersion>`, `<PatchVersion>` for the tooling's own version.                                                     |
+| `src/ATAP.Utilities.BuildTooling.CSharp/ATAP.Utilities.BuildTooling.CSharp.cs`     | Same path        | No changes.                                                                                                                             |
+| `src/ATAP.Utilities.BuildTooling.CSharp/ATAP.Utilities.BuildTooling.targets`       | Same path        | `<ProGetExperimentalFeedUrl>` if different; uncomment `<CallTarget>` inside `BeforeCompile` when ready for auto-updates.                |
 
 ### 13.5 Step 4 — Create `AssemblyInfo.cs` for the tooling project
 
@@ -981,4 +981,4 @@ repository so every cloner gets a working build system immediately.
 - [CSharp-Central-Package-Management.md](CSharp-Central-Package-Management.md) — migration to `Directory.Packages.props`.
 - [BuildMaster-ProGet-CSharp-Package-Pipeline.md](BuildMaster-ProGet-CSharp-Package-Pipeline.md) — 5-stage CI pipeline (Experimental → Development → Integration → QA → Production).
 - [Rules Compendium.MSBuild.md](Rules%20Compendium.MSBuild.md) — MSBuild rule primitives (Philote-GUID-identified).
-- [_Planning/Explainers/0107-build-artifacts-trace-etw.md](../../_Planning-wt-12-sprint-0006-work-items/Explainers/0107-build-artifacts-trace-etw.md) — 13-field build metadata, TRACE config, ETW providers.
+- [\_Planning/Explainers/0107-build-artifacts-trace-etw.md](../../_Planning-wt-12-sprint-0006-work-items/Explainers/0107-build-artifacts-trace-etw.md) — 13-field build metadata, TRACE config, ETW providers.

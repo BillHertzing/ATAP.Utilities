@@ -14,6 +14,7 @@ that will go stale; treat the categorization as load-bearing, the file
 list as a snapshot.
 
 **Not in this doc:**
+
 - How modules themselves are built / tested / packed → see the four
   PowerShell module docs.
 - C# console apps that wrap PowerShell entry points → out of scope.
@@ -40,7 +41,7 @@ because:
    concatenates them — but a script that pre-dates the module conversion
    gets stranded outside.
 5. **Database helper scripts.** `Database/Powershell/public/*.ps1` is a
-   PowerShell *folder* but not a published module — Flyway invocation
+   PowerShell _folder_ but not a published module — Flyway invocation
    wrappers, schema parity checks.
 
 The consolidation problem is real but bounded — the inventory in §3
@@ -52,18 +53,18 @@ counts ~25 truly-standalone scripts across the four repos.
 
 Every `.ps1` falls into exactly one of these five buckets:
 
-| Bucket                | Definition                                                              | Lives where                                                | Versioned? |
-| --------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------- | ---------- |
-| **A. Module function** | Becomes part of `<Module>.psm1` via `Build-PSModulePsm1`              | `src/<Module>/public/`, `private/`, or `lib/`              | Yes (NBGV) |
-| **B. Module test**    | Pester test for a module function                                        | `src/<Module>/tests/`                                      | n/a        |
-| **C. Repo-root tool**  | Developer affordance scoped to one repo (publish, setup, smoke-test)   | repo root                                                   | No (git-tracked, but not packaged) |
-| **D. Generated**      | Output of a build/diagnostic step                                        | `_generated/` (per SC-0033)                                 | No         |
-| **E. Vendor**         | Imported from a third-party package's distribution                      | wherever the package put it (e.g. `bin/Debug/.playwright/`) | n/a        |
+| Bucket                 | Definition                                                           | Lives where                                                 | Versioned?                         |
+| ---------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------- |
+| **A. Module function** | Becomes part of `<Module>.psm1` via `Build-PSModulePsm1`             | `src/<Module>/public/`, `private/`, or `lib/`               | Yes (NBGV)                         |
+| **B. Module test**     | Pester test for a module function                                    | `src/<Module>/tests/`                                       | n/a                                |
+| **C. Repo-root tool**  | Developer affordance scoped to one repo (publish, setup, smoke-test) | repo root                                                   | No (git-tracked, but not packaged) |
+| **D. Generated**       | Output of a build/diagnostic step                                    | `_generated/` (per SC-0033)                                 | No                                 |
+| **E. Vendor**          | Imported from a third-party package's distribution                   | wherever the package put it (e.g. `bin/Debug/.playwright/`) | n/a                                |
 
 Bucket E is **never** consolidated — those files are restored by `dotnet
 restore` or `npm install` and editing them is futile.
 
-Bucket D is **never** consolidated *into source* — the scripts under
+Bucket D is **never** consolidated _into source_ — the scripts under
 `_generated/` may be deleted at any time. If a `_generated/` script proves
 useful, it gets promoted to bucket A or C.
 
@@ -78,38 +79,38 @@ The interesting bucket — and the focus of this doc — is **C**.
 
 ### 3.1 ATAP.Utilities
 
-| Path                                              | Bucket | Purpose                                           | Disposition                |
-| ------------------------------------------------- | ------ | ------------------------------------------------- | -------------------------- |
-| `Publish-ATAPUtilities.ps1`                       | C      | Iterate `$libraries` and publish to ProGet T1     | Keep at root                |
-| `Setup-GitHubMCP.ps1`                             | C      | One-time GitHub MCP server setup                  | Keep at root                |
-| `Test-GitHubMCP.ps1`                              | C      | Smoke-test GitHub MCP after setup                 | Keep at root                |
-| `Database/Powershell/public/Export-RuleToTextFile.ps1` | C/A | Schema rule export                              | **Promote to module** (Database utilities) |
-| `Database/Powershell/public/Rebuild-All.ps1`      | C      | Flyway rebuild orchestrator                       | Keep — not a function       |
-| `Database/Powershell/public/Example-RuleExport.ps1` | C    | Demo / docs example                                | Move to `Documentation/`    |
-| `Database/Powershell/tests/*.Tests.ps1`           | B      | Pester tests for the un-modularized DB scripts    | Move with the promotion    |
-| `OlderDBsForReference/**/*.ps1`                    | n/a   | Archive — pre-Flyway era                          | **Delete in sprint-0007**  |
-| `src/.../public/Obsolete/*.ps1`                    | n/a   | Marked obsolete years ago                         | **Delete in sprint-0007**  |
+| Path                                                   | Bucket | Purpose                                        | Disposition                                |
+| ------------------------------------------------------ | ------ | ---------------------------------------------- | ------------------------------------------ |
+| `Publish-ATAPUtilities.ps1`                            | C      | Iterate `$libraries` and publish to ProGet T1  | Keep at root                               |
+| `Setup-GitHubMCP.ps1`                                  | C      | One-time GitHub MCP server setup               | Keep at root                               |
+| `Test-GitHubMCP.ps1`                                   | C      | Smoke-test GitHub MCP after setup              | Keep at root                               |
+| `Database/Powershell/public/Export-RuleToTextFile.ps1` | C/A    | Schema rule export                             | **Promote to module** (Database utilities) |
+| `Database/Powershell/public/Rebuild-All.ps1`           | C      | Flyway rebuild orchestrator                    | Keep — not a function                      |
+| `Database/Powershell/public/Example-RuleExport.ps1`    | C      | Demo / docs example                            | Move to `Documentation/`                   |
+| `Database/Powershell/tests/*.Tests.ps1`                | B      | Pester tests for the un-modularized DB scripts | Move with the promotion                    |
+| `OlderDBsForReference/**/*.ps1`                        | n/a    | Archive — pre-Flyway era                       | **Delete in sprint-0007**                  |
+| `src/.../public/Obsolete/*.ps1`                        | n/a    | Marked obsolete years ago                      | **Delete in sprint-0007**                  |
 
 ### 3.2 AceCommander
 
-| Path                                              | Bucket | Purpose                                           | Disposition                |
-| ------------------------------------------------- | ------ | ------------------------------------------------- | -------------------------- |
-| `powershell/public/Invoke-AceCommanderTests.ps1`  | A      | Sole function in an unbuilt module folder         | **Wire into the module build** |
-| `AceCommander.Server.Tests/E2E/UserInformationAndSettings.Tests.ps1` | B | Pester E2E test                            | Keep — already in correct location |
-| `AceCommander.Server.Tests/bin/.../*.ps1`         | E      | Playwright vendor scripts                         | Ignore                      |
-| `_generated/*.ps1`                                | D      | Sprint-0006 ProGet diagnostics                    | Delete after sprint closes |
+| Path                                                                 | Bucket | Purpose                                   | Disposition                        |
+| -------------------------------------------------------------------- | ------ | ----------------------------------------- | ---------------------------------- |
+| `powershell/public/Invoke-AceCommanderTests.ps1`                     | A      | Sole function in an unbuilt module folder | **Wire into the module build**     |
+| `AceCommander.Server.Tests/E2E/UserInformationAndSettings.Tests.ps1` | B      | Pester E2E test                           | Keep — already in correct location |
+| `AceCommander.Server.Tests/bin/.../*.ps1`                            | E      | Playwright vendor scripts                 | Ignore                             |
+| `_generated/*.ps1`                                                   | D      | Sprint-0006 ProGet diagnostics            | Delete after sprint closes         |
 
-### 3.3 _Planning
+### 3.3 \_Planning
 
-| Path                                              | Bucket | Purpose                                           | Disposition                |
-| ------------------------------------------------- | ------ | ------------------------------------------------- | -------------------------- |
-| `Powershell/Public/Save-SprintWorkSession.ps1`    | A      | Sprint checkpoint helper (R-15 names this path)   | Promote to a `_Planning.PowerShell` module — pending |
-| `Powershell/Public/Start-PlanningSession.ps1`     | A      | Begin a planning session                          | Same                        |
-| `Powershell/Public/Complete-PlanningSession.ps1`  | A      | End a planning session                            | Same                        |
-| `Powershell/Public/New-BundleProjectFiles.ps1`    | A      | Bundle related project docs                       | Same                        |
-| `Powershell/Public/Add-ScopeCreepIdea.ps1`        | A      | Park an idea outside the current sprint           | Same                        |
+| Path                                             | Bucket | Purpose                                         | Disposition                                          |
+| ------------------------------------------------ | ------ | ----------------------------------------------- | ---------------------------------------------------- |
+| `Powershell/Public/Save-SprintWorkSession.ps1`   | A      | Sprint checkpoint helper (R-15 names this path) | Promote to a `_Planning.PowerShell` module — pending |
+| `Powershell/Public/Start-PlanningSession.ps1`    | A      | Begin a planning session                        | Same                                                 |
+| `Powershell/Public/Complete-PlanningSession.ps1` | A      | End a planning session                          | Same                                                 |
+| `Powershell/Public/New-BundleProjectFiles.ps1`   | A      | Bundle related project docs                     | Same                                                 |
+| `Powershell/Public/Add-ScopeCreepIdea.ps1`       | A      | Park an idea outside the current sprint         | Same                                                 |
 
-The `_Planning/Powershell/Public/` folder follows the *layout* of a
+The `_Planning/Powershell/Public/` folder follows the _layout_ of a
 PowerShell module's public directory but lacks a `.psd1`. It is a
 half-modularized state — the cleanup is to add the manifest and
 `version.json`, then run the standard build flow.
@@ -198,7 +199,7 @@ thin wrapper.
 Scripts under `_generated/` are throw-away. They:
 
 - Are produced by an investigation, prototype, or sprint-scoped fix.
-- Are not git-ignored *by default* (so the user can review and decide).
+- Are not git-ignored _by default_ (so the user can review and decide).
 - Should be deleted at sprint close as part of housekeeping.
 - Must never be referenced by import paths from anywhere outside
   `_generated/`.
@@ -242,8 +243,9 @@ The `.claude/` folder at each repo root is an NTFS junction to
 appear in every repo simultaneously.
 
 Rules:
+
 - A script under `.claude/` may invoke any module function from any
-  repo, but it should not assume the module is *imported* — it must
+  repo, but it should not assume the module is _imported_ — it must
   `Import-Module <Module> -ErrorAction Stop` first.
 - A script under `.claude/` must not write outside `_generated/` of the
   invoking repo.

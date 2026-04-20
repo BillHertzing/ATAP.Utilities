@@ -101,48 +101,44 @@ function New-ProGetFeedSet {
 
   Process {
 
-    # A RegEx Pattern that will break apart the NameKey into its components for creating the endpointURL
-    # first component is 'Internal' or 'External'
-    # second component is 'Released' or 'Prerelease'
-    # third component is 'PSResourceGet' or 'ChocolateyGet' or 'NuGet'
-    # fourth component is 'Production' or 'QualityAssurance'
-    # fifth component is 'Push' or 'Pull'
+    # Iterate over all feeds in the ProGetFeedCollection (5 NuGet + 5 PowerShellGet = 10 permanent feeds).
+    # Each entry is a hashtable with keys: FeedName, FeedType, Tier, ApiKeyName, Uri, NuGetV3Uri,
+    #   Connectors, RetentionPolicy.
+    [string[]]$feedKeys = $global:settings[$global:ConfigRootKeys['ProGetFeedCollectionConfigRootKey']].keys
 
-    # ToDO: Rethink this: now it uses the actual language-specific feed name - figure out how to use the universal key instead
-    # ToDo: put this someplace common where it can be used by other functions
-    $regExPattern = '^PackageRepository(?<LocationType>Internal|External)(?<VersionType>Released|Prerelease)(?<PackageProviderName>PSResourceGet|ChocolateyGet|NuGet)(?<PackageType>Production|QualityAssurance)(?<PushPullType>Pull|Push)?'
-    # Get all of the feed names from the global setting 'PackageRepositoriesCollection'
-    [string[]]$feedNames = $global:settings[$global:ConfigRootKeys['PackageRepositoriesCollectionConfigRootKey']].keys # | Where-Object { ($_ -match 'PackageRepositoryInternal' ) -and ($_ -notmatch 'Filesystem' ) }
-
-    for ($feedNamesIndex = 0; $feedNamesIndex -lt $feedNames.Count; $feedNamesIndex++) {
-      $feedName = $feedNames[$feedNamesIndex]
-      # use $regExPattern to pull apart the $feedName into its components
-      if ($feedName -notmatch $regExPattern) {
-        $errorMessage = "Feed name key '$feedName' does not match expected pattern."
-        Write-PSFMessage -Level Error -Message $errorMessage -Tag 'New-ProGetFeedSet', 'Trace', 'Error'
-        throw $errorMessage
-      }
-      # $locationType = $matches['LocationType'] # LocationType is ignored, because the prior where clause discarded the external and filesystem feed
-      $versionType = $matches['VersionType']
-      $packageProviderName = $matches['PackageProviderName']
-      $packageType = $matches['PackageType']
-      $proGetFeedType = Convert-ProGetFeedType $packageProviderName
-      $pushPullType = $matches['PushPullType']
-      $feed = $($global:settings[$global:ConfigRootKeys['PackageRepositoriesCollectionConfigRootKey']][$feedName])
-      # Parse the endpoint Uri of the feed, as defined in the settings, into a structured Uri object
+    for ($feedKeysIndex = 0; $feedKeysIndex -lt $feedKeys.Count; $feedKeysIndex++) {
+      $feedKey = $feedKeys[$feedKeysIndex]
+      $feed = $global:settings[$global:ConfigRootKeys['ProGetFeedCollectionConfigRootKey']][$feedKey]
       $feedApiKeyName = $feed.ApiKeyName
+      $proGetFeedType = $feed.FeedType  # already in ProGet API format: 'nuget', 'powershell', etc.
 
-      # If this feed has a connecter, it must be created before the feed is created
+      # If this feed has connectors, create them before the feed
       if ($feed.Connectors) {
         foreach ($connector in $feed.Connectors) {
-          Write-PSFMessage -Level Verbose -Message "Creating connector '$($connector.Name)' for feed '$($feed.ShortName)'" -Tag 'New-ProGetFeedSet', 'Trace'
+          Write-PSFMessage -Level Verbose -Message "Creating connector '$($connector.Name)' for feed '$($feed.FeedName)'" -Tag 'New-ProGetFeedSet', 'Trace'
           # if New-ProGetConnector fails, it will throw
           New-ProGetConnector -proGetBaseScheme $proGetBaseScheme -proGetBaseHost $proGetBaseHost -proGetBasePort $proGetBasePort -Connector $connector
         }
       }
+
+      # Build retention rules from the RetentionPolicy metadata
+      $retentionRules = @()
+      if ($feed.RetentionPolicy -and $feed.RetentionPolicy.DaysToKeep) {
+        $retentionRules = @(
+          @{
+            deleteCachedPackages    = $true
+            deleteOlderVersions     = $true
+            triggerDaysOld          = [int]$feed.RetentionPolicy.DaysToKeep
+            keepVersionsCount       = 0
+            keepLatestVersionCount  = 0
+            triggerDownloadCount    = 0
+          }
+        )
+      }
+
       $alternateNames = @()
       $body = @{
-        name                      = $feed.ShortName
+        name                      = $feed.FeedName
         alternateNames            = $alternateNames
         feedType                  = $proGetFeedType
         useApiV3                  = $true
@@ -154,7 +150,7 @@ function New-ProGetFeedSet {
         endpointUrl               = ''
         # Should be a array of already-created connector names. Force an array even if there is only one, else empty array
         connectors                = $feed.connectors.count? (, $feed.Connectors.name) : @()
-        retentionRules            = @()
+        retentionRules            = $retentionRules
         variables                 = @{}
         canPublish                = $true
         packageStatisticsEnabled  = $false
@@ -169,36 +165,36 @@ function New-ProGetFeedSet {
       $feedCreationResults = $null
       $apiKeyCreationResult = $null
 
-      if ($PSCmdlet.ShouldProcess("ProGet Feed [$($feed.ShortName)]", "Create on port $ProGetBasePort as type $packageProviderName ProgetFeedType $proGetFeedType" )) {
+      if ($PSCmdlet.ShouldProcess("ProGet Feed [$($feed.FeedName)]", "Create on port $ProGetBasePort as type $proGetFeedType" )) {
         # Make the API Call
 
         try {
-          Write-PSFMessage -Level Verbose -Message "Attempting to create feed '$($feed.ShortName)' of type '$packageProviderName' on port $ProGetBasePort" -Tag 'New-ProGetFeedSet', 'Trace'
+          Write-PSFMessage -Level Verbose -Message "Attempting to create feed '$($feed.FeedName)' of type '$proGetFeedType' on port $ProGetBasePort" -Tag 'New-ProGetFeedSet', 'Trace'
           # ToDo: accumulate the results for each feed, and pass them on down the pipeline
           $feedCreationResults = Invoke-RestMethod -Uri $apiEndPoint.AbsoluteUri -Method Post -Headers $headers -Body ($body | ConvertTo-Json -Depth 3) -ContentType 'application/json'
-          Write-PSFMessage -Level Verbose -Message "Successfully created feed '$($feed.ShortName)' on port $ProGetBasePort as type '$packageProviderName' ProgetFeedType '$proGetFeedType'" -Tag 'New-ProGetFeedSet', 'Trace'
+          Write-PSFMessage -Level Verbose -Message "Successfully created feed '$($feed.FeedName)' on port $ProGetBasePort as type '$proGetFeedType'" -Tag 'New-ProGetFeedSet', 'Trace'
         }
         catch {
-          $errorMessage = "Failed to create feed $($feed.ShortName) on port $ProGetBasePort. Exception: $($_.Exception.Message)"
+          $errorMessage = "Failed to create feed $($feed.FeedName) on port $ProGetBasePort. Exception: $($_.Exception.Message)"
           Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception -Tag 'New-ProGetFeedSet', 'Trace', 'Error'
           throw $_
         }
         try {
           # Protect the new feed by creating a new Api Key for the feed and assigning the key certain permissions
-          $APIKeyCreationResults = New-ProGetApiKey -ApiKeyName $feedApiKeyName -FeedName $feed.ShortName -PackagePermissions @('view', 'add', 'delete') -ProGetBaseScheme $proGetBaseScheme -ProGetBaseHost $ProGetBaseHost -ProGetBasePort $ProGetBasePort
+          $APIKeyCreationResults = New-ProGetApiKey -ApiKeyName $feedApiKeyName -FeedName $feed.FeedName -PackagePermissions @('view', 'add', 'delete') -ProGetBaseScheme $proGetBaseScheme -ProGetBaseHost $ProGetBaseHost -ProGetBasePort $ProGetBasePort
           # ToDo: Assign it to a process environment variable
           [Environment]::SetEnvironmentVariable( $feedApiKeyName, $APIKeyCreationResults.key, [EnvironmentVariableTarget]::User)
           # ToDo: Store it in a secrets vault
           # ToDo: Store the APIKey in a secrets vault keyed by the feed name
         }
         catch {
-          $errorMessage = "Failed to create and assign APIKey $feedApiKeyName to feed $($feed.ShortName) on port $ProGetBasePort. Exception: $($_.Exception.Message)"
+          $errorMessage = "Failed to create and assign APIKey $feedApiKeyName to feed $($feed.FeedName) on port $ProGetBasePort. Exception: $($_.Exception.Message)"
           Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception -Tag 'New-ProGetFeedSet', 'Trace', 'Error'
           throw $_
         }
       }
       [PSCustomObject]@{
-        FeedName              = $feed.ShortName
+        FeedName              = $feed.FeedName
         FeedCreationResult    = $feedCreationResults
         APIKeyCreationResults = $APIKeyCreationResults
       }

@@ -278,8 +278,8 @@ function New-SprintStage2 {
 
       # --- 3. Create branch and worktree ---
       $issueNum = $entry.issueNumber
-      $branchName = "$issueNum-sprint-$sprintNum-work-items"
-      $worktreePath = Join-Path $GitRoot "$repoName-wt-$issueNum-sprint-$sprintNum-work-items"
+      $branchName = "$issueNum-Sprint-$sprintNum-work-items"
+      $worktreePath = Join-Path $GitRoot "$repoName-wt-$issueNum-Sprint-$sprintNum-work-items"
       $entry.branchName = $branchName
       $entry.worktreePath = $worktreePath
 
@@ -344,7 +344,7 @@ function New-SprintStage2 {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
               -Message "No .code-workspace files found in $repoName worktree; skipping context initialization"
           } else {
-            $templateRef = "SharedVSCode-wt-$svIssueNum-sprint-$sprintNum-work-items"
+            $templateRef = "SharedVSCode-wt-$svIssueNum-Sprint-$sprintNum-work-items"
             Initialize-DownstreamSprintFromSharedVSCode `
               -WorkspaceFiles $workspaceFiles `
               -TemplateRef $templateRef `

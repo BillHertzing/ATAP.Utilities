@@ -57,7 +57,7 @@ function New-SprintStage1 {
     [string]$ProGetBaseUrl = 'http://localhost:50000'
   )
 
-  BEGIN {
+  begin {
     $fn = $MyInvocation.MyCommand.Name
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
@@ -95,7 +95,7 @@ function New-SprintStage1 {
     }
   }
 
-  PROCESS {
+  process {
     # ----- Build the result object -----
     $result = [PSCustomObject]@{
       nextSprintNumber     = $null
@@ -213,8 +213,8 @@ function New-SprintStage1 {
     }
 
     # 2c. Create branch and worktree
-    $svBranch = "$svIssueNum-sprint-$sprintNum-work-items"
-    $svWorktreePath = Join-Path $GitRoot "SharedVSCode-wt-$svIssueNum-sprint-$sprintNum-work-items"
+    $svBranch = "$svIssueNum-Sprint-$sprintNum-work-items"
+    $svWorktreePath = Join-Path $GitRoot "SharedVSCode-wt-$svIssueNum-Sprint-$sprintNum-work-items"
     $result.sharedVSCode.branchName = $svBranch
     $result.sharedVSCode.worktreePath = $svWorktreePath
 
@@ -295,8 +295,8 @@ function New-SprintStage1 {
     }
 
     # 3c. Create branch and worktree
-    $planBranch = "$planIssueNum-sprint-$sprintNum-work-items"
-    $planWorktreePath = Join-Path $GitRoot "_Planning-wt-$planIssueNum-sprint-$sprintNum-work-items"
+    $planBranch = "$planIssueNum-Sprint-$sprintNum-work-items"
+    $planWorktreePath = Join-Path $GitRoot "_Planning-wt-$planIssueNum-Sprint-$sprintNum-work-items"
     $result.planning.branchName = $planBranch
     $result.planning.worktreePath = $planWorktreePath
 
@@ -323,7 +323,7 @@ function New-SprintStage1 {
     # 3d. Create NTFS junctions in the _Planning worktree
     try {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-        -Message "Creating NTFS junctions in _Planning worktree pointing to SharedVSCode sprint worktree"
+        -Message 'Creating NTFS junctions in _Planning worktree pointing to SharedVSCode sprint worktree'
 
       if ($PSCmdlet.ShouldProcess($planWorktreePath, 'Set-WorktreeJunctions')) {
         $junctionResult = Set-WorktreeJunctions `
@@ -355,13 +355,13 @@ function New-SprintStage1 {
 
       if ($PSCmdlet.ShouldProcess($planWorktreePath, 'Initialize-DownstreamSprintFromSharedVSCode')) {
         $workspaceFiles = @(Get-ChildItem -Path $planWorktreePath -Filter '*.code-workspace' |
-          Select-Object -ExpandProperty FullName)
+            Select-Object -ExpandProperty FullName)
 
         if ($workspaceFiles.Count -eq 0) {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
             -Message 'No .code-workspace files found in _Planning worktree; skipping context initialization'
         } else {
-          $templateRef = "SharedVSCode-wt-$svIssueNum-sprint-$sprintNum-work-items"
+          $templateRef = "SharedVSCode-wt-$svIssueNum-Sprint-$sprintNum-work-items"
           Initialize-DownstreamSprintFromSharedVSCode `
             -WorkspaceFiles $workspaceFiles `
             -TemplateRef $templateRef `
@@ -418,7 +418,7 @@ function New-SprintStage1 {
     return $result
   }
 
-  END {
+  end {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn in module $mn"
   }
 }

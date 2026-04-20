@@ -9,12 +9,19 @@
     corresponding pull feed within one environment tier (e.g.,
     nuget-experimental-push → nuget-experimental).
 
+    The five permanent tier names (reverted naming scheme, sprint-0007 onward)
+    are: experimental, development, integration, qa, stable. There are no
+    per-sprint feeds — all tiers use these shared permanent feeds. Per-developer
+    isolation at experimental/development tiers is enforced via NBGV-derived
+    version suffixes, not via separate feeds.
+
     In Phase 1 (combined feeds), this script can be used as a validate-only
     step by passing the same feed name for both -SourceFeed and
     -DestinationFeed, or by using the -ScanOnly switch.
 
     In Phase 2 (split push/pull feeds), this script performs the actual
     movement from the push feed to the pull feed after the scan passes.
+    Example: nuget-experimental-push → nuget-experimental.
 
     The malware scan is currently a STUB that always passes. Replace the
     Invoke-MalwareScan function with a real implementation when available
@@ -169,7 +176,7 @@ begin {
     $knownPrefixes = @('nuget', 'powershell', 'chocolatey')
     $tierOrder = @('experimental', 'development', 'integration', 'qa', 'stable')
     $tierAliases = @{
-        testing   = 'qa'
+        testing    = 'qa'
         production = 'stable'
     }
 
@@ -183,8 +190,7 @@ begin {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Normalizing legacy source tier '$sourceTier' to '$($tierAliases[$sourceTier])'"
             $sourceTier = $tierAliases[$sourceTier]
         }
-    }
-    else {
+    } else {
         $errorMessage = "SourceFeed '$SourceFeed' does not match expected format '{nuget|powershell|chocolatey}-{tier}[-push]'"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
         throw $errorMessage
@@ -198,8 +204,7 @@ begin {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Normalizing legacy destination tier '$destinationTier' to '$($tierAliases[$destinationTier])'"
             $destinationTier = $tierAliases[$destinationTier]
         }
-    }
-    else {
+    } else {
         $errorMessage = "DestinationFeed '$DestinationFeed' does not match expected format '{nuget|powershell|chocolatey}-{tier}[-push]'"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
         throw $errorMessage
@@ -249,8 +254,7 @@ process {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling $packageInfoUrl" -Tag 'RestCall'
         $packageInfo = Invoke-RestMethod -Uri $packageInfoUrl -Headers $headers -Method Get -ErrorAction Stop
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from $packageInfoUrl" -Tag 'RestCall'
-    }
-    catch {
+    } catch {
         # Versions endpoint may not be available on all ProGet editions; proceed and let promotion API validate
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Versions endpoint not available — ProGet will validate during move'
     }
@@ -319,8 +323,7 @@ process {
                 -Body ($body | ConvertTo-Json -Depth 3) -ContentType 'application/json' -ErrorAction Stop
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from $promoteUrl" -Tag 'RestCall'
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Move successful'
-        }
-        catch {
+        } catch {
             $errorMessage = "Failed to move '$PackageName' v$Version from '$SourceFeed' to '$DestinationFeed'. Exception: $($_.Exception.Message)"
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
             throw

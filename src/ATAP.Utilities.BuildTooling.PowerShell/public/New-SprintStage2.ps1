@@ -3,7 +3,6 @@
 # =====================================================================
 $privateDir = Join-Path $PSScriptRoot '..' 'private'
 . (Join-Path $privateDir 'Set-ClaudeSettingsSymlink.ps1')
-. (Join-Path $privateDir 'New-SprintProGetFeeds.ps1')
 . (Join-Path $privateDir 'New-SprintBuildMasterBuilds.ps1')
 . (Join-Path $privateDir 'New-SprintDatabaseInstances.ps1')
 . (Join-Path $privateDir 'New-SprintBitwardenConnectionStrings.ps1')
@@ -16,10 +15,10 @@ function New-SprintStage2 {
   <#
   .SYNOPSIS
     Creates downstream repo sprint branches, worktrees, NTFS junctions,
-    applies SharedVSCode context, symlinks claude-settings.json, creates
-    ProGet sprint feeds, scaffolds BuildMaster sprint builds, creates
-    Bitwarden connection string secrets, and provisions sprint SQL Server
-    database instances.
+    applies SharedVSCode context, symlinks claude-settings.json, scaffolds
+    BuildMaster sprint builds, creates Bitwarden connection string secrets,
+    and provisions sprint SQL Server database instances. ProGet feeds are
+    permanent and ecosystem-wide — not created per sprint.
   .DESCRIPTION
     Reads the sprint TASKS.md file and extracts every unique repository name
     mentioned in task lines (the [RepoName] markers). Repos named '_Planning',
@@ -38,14 +37,15 @@ function New-SprintStage2 {
     After all repos are processed the cmdlet also:
       6. Creates a symlink from the SharedVSCode sprint worktree's
          claude-settings.json to ~/.claude/settings.json.
-      7. Creates ProGet NuGet feeds for the sprint environments.
-      8. Scaffolds BuildMaster sprint build configurations (DRAFT — see notes).
-      9. Creates Bitwarden secure-note items with SQL Server connection strings
+      7. Scaffolds BuildMaster sprint build configurations (DRAFT — see notes).
+      8. Creates Bitwarden secure-note items with SQL Server connection strings
          for the master, ATAPUtilities, and AceCommander databases on each
          sprint instance (UNTESTED — see notes).
-     10. Creates a single sprint SQL Server database instance
-         (Sprint{NNNN}_{username}) serving both the experimental (T1) and
-         development (T2) tiers via Install-SqlServerInstance.
+      9. Creates local Development and Experimental SQL Server instances
+         via New-SprintSqlServerInstances.
+
+    ProGet feeds are permanent and ecosystem-wide — they are NOT created per
+    sprint. See New-ProGetFeedSet for one-time feed provisioning.
 
     If a step fails for a given repo, the error is captured in that repo's
     entry and the cmdlet continues with the next repo.
@@ -381,23 +381,10 @@ function New-SprintStage2 {
     }
 
     # ===================================================================
-    # 7. Create ProGet sprint feeds
-    # ===================================================================
-    $progetResult = $null
-    $progetError = $null
-
-    try {
-      $progetResult = New-SprintProGetFeeds `
-        -SprintNumber $sprintNum `
-        -ProGetBaseUrl $ProGetBaseUrl `
-        -Username $env:USERNAME
-    } catch {
-      $progetError = "Failed to create ProGet feeds. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $progetError
-    }
-
-    # ===================================================================
-    # 8. Scaffold BuildMaster sprint builds (DRAFT — skipped at runtime)
+    # 7. Scaffold BuildMaster sprint builds (DRAFT — skipped at runtime)
+    # NOTE: ProGet feed creation (formerly Step 7) has been removed.
+    # All ProGet feeds are permanent and ecosystem-wide. Use New-ProGetFeedSet
+    # for one-time feed provisioning per ProGet host. (Area 5 — reverted scheme)
     # ===================================================================
     $buildMasterResult = $null
     $buildMasterError = $null
@@ -508,16 +495,11 @@ function New-SprintStage2 {
       infrastructure = [PSCustomObject]@{
         claudeSettingsLinked  = $claudeSettingsLinked
         claudeSettingsError   = $claudeSettingsError
-        progetFeedsCreated    = if ($progetResult) { $progetResult.createdFeeds } else { @() }
-        progetFeedErrors      = if ($progetResult) { $progetResult.errors } else { @() }
-        progetError           = $progetError
         # PLACEHOLDER: buildMaster fields are draft — values will be empty
         # until BuildMaster API integration is tested and enabled.
         buildMasterBuilds     = if ($buildMasterResult) { $buildMasterResult.createdBuilds } else { @() }
         buildMasterErrors     = if ($buildMasterResult) { $buildMasterResult.errors } else { @() }
         buildMasterError      = $buildMasterError
-        # PLACEHOLDER: ProGet ↔ BuildMaster feed mapping is not yet defined.
-        progetFeedMapping     = if ($buildMasterResult) { $buildMasterResult.progetFeedMapping } else { @{} }
         # Connection string secrets created in Bitwarden (UNTESTED)
         connectionStrings     = if ($connStringResults) { $connStringResults } else { @() }
         connectionStringError = $connStringError

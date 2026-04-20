@@ -5,7 +5,6 @@ $privateDir = Join-Path $PSScriptRoot '..' 'private'
 . (Join-Path $privateDir 'Set-ClaudeSettingsSymlink.ps1')
 # New-SprintBuildMasterBuilds.ps1 replaced by public Set-BuildMasterSprintVariables (Area 7.2-1)
 . (Join-Path $privateDir 'New-SprintDatabaseInstances.ps1')
-. (Join-Path $privateDir 'New-SprintBitwardenConnectionStrings.ps1')
 
 # =====================================================================
 # Main public cmdlet
@@ -39,8 +38,8 @@ function New-SprintStage2 {
          claude-settings.json to ~/.claude/settings.json.
       7. Scaffolds BuildMaster sprint build configurations (DRAFT — see notes).
       8. Creates Bitwarden secure-note items with SQL Server connection strings
-         for the master, ATAPUtilities, and AceCommander databases on each
-         sprint instance (UNTESTED — see notes).
+         for the ATAPUtilities and AceCommander databases across Development
+         and Experimental tiers via New-SprintBitwardenSecrets.
       9. Creates local Development and Experimental SQL Server instances
          via New-SprintSqlServerInstances.
 
@@ -411,37 +410,17 @@ function New-SprintStage2 {
     }
 
     # ===================================================================
-    # 9. Create Bitwarden connection string secrets (UNTESTED)
+    # 9. Create Bitwarden connection string secrets
     # ===================================================================
     $connStringResults = $null
     $connStringError = $null
 
     try {
-      # UNTESTED: Bitwarden CLI integration has not been validated.
-      # The DatabaseHost default is 'localhost'. If sprint instances use a
-      # different host, read it from the database settings collection.
-      $dbHost = 'localhost'
-      $databasesKey = $global:configRootKeys['DatabasesCollectionConfigRootKey']
-      if ($global:settings -and $global:settings.ContainsKey($databasesKey)) {
-        $dbCollection = $global:settings[$databasesKey]
-        $atapDbSettings = if ($dbCollection.ContainsKey('ATAPUtilities')) {
-          $dbCollection['ATAPUtilities']
-        } elseif ($dbCollection.ContainsKey('ATAPUtilities')) {
-          $dbCollection['ATAPUtilities']
-        } else {
-          @{}
-        }
-        if (-not [string]::IsNullOrWhiteSpace($atapDbSettings['DatabaseHost'])) {
-          $dbHost = $atapDbSettings['DatabaseHost']
-        }
-      }
-
-      $connStringResults = New-SprintBitwardenConnectionStrings `
+      $connStringResults = New-SprintBitwardenSecrets `
         -SprintNumber $sprintNum `
-        -DatabaseHost $dbHost `
-        -Username $env:USERNAME
+        -DeveloperUsername $env:USERNAME
     } catch {
-      $connStringError = "Failed to create Bitwarden connection strings. Exception: $($_.Exception.Message)"
+      $connStringError = "Failed to create Bitwarden connection string secrets. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $connStringError
     }
 
@@ -503,19 +482,19 @@ function New-SprintStage2 {
     $finalResult = [PSCustomObject]@{
       repoResults    = $repoResults.ToArray()
       infrastructure = [PSCustomObject]@{
-        claudeSettingsLinked  = $claudeSettingsLinked
-        claudeSettingsError   = $claudeSettingsError
+        claudeSettingsLinked       = $claudeSettingsLinked
+        claudeSettingsError        = $claudeSettingsError
         # PLACEHOLDER: buildMaster fields are draft — values will be empty
         # until BuildMaster API integration is tested and enabled.
         buildMasterVariablesSet    = if ($buildMasterResult) { $buildMasterResult.variablesSet } else { @() }
         buildMasterVariablesErrors = if ($buildMasterResult) { $buildMasterResult.errors } else { @() }
         buildMasterVariablesError  = $buildMasterError
         # Connection string secrets created in Bitwarden (UNTESTED)
-        connectionStrings     = if ($connStringResults) { $connStringResults } else { @() }
-        connectionStringError = $connStringError
+        connectionStrings          = if ($connStringResults) { $connStringResults } else { @() }
+        connectionStringError      = $connStringError
         # Sprint SQL Server database instances
-        databaseInstances     = if ($dbInstanceResults) { $dbInstanceResults } else { @() }
-        databaseInstanceError = $dbInstanceError
+        databaseInstances          = if ($dbInstanceResults) { $dbInstanceResults } else { @() }
+        databaseInstanceError      = $dbInstanceError
       }
     }
 

@@ -275,8 +275,12 @@ Rules:
    PSScriptAnalyzer custom rule could flag standalone scripts that
    define `function Verb-Noun` and recommend module promotion.
 
-6. **`_generated/` cleanup is manual.** No skill or hook deletes
-   `_generated/` contents at sprint close. Tracked.
+6. **`_generated/` cleanup is automated.** `Clear-SprintGeneratedArtifacts`
+   in `ATAP.Utilities.BuildTooling.PowerShell` is called by SprintEndAgent
+   Step 10.7 with `-SprintNumber $closedSprintNumber`. It removes all
+   contents of every sprint worktree's `_generated/` directory. Pass
+   `-WhatIf` to preview and `-Force` to suppress the confirmation prompt.
+   (Implemented in sprint-0006; SC-0033 task 7.4-2.)
 
 ---
 

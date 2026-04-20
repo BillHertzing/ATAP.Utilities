@@ -25,10 +25,10 @@ given pipeline tier.
 `dotnet pack <project>` runs the `Pack` MSBuild target and writes two files per
 packable project:
 
-| File            | Contents                                                           | When produced                          |
-| --------------- | ------------------------------------------------------------------ | -------------------------------------- |
-| `*.nupkg`       | The library DLL, transitive metadata (`.nuspec`), icons, readme.   | Always, when `IsPackable != false`.    |
-| `*.snupkg`      | PDB symbols + SourceLink metadata for debugger step-into.          | Only when `IncludeSymbols=true`.        |
+| File       | Contents                                                         | When produced                       |
+| ---------- | ---------------------------------------------------------------- | ----------------------------------- |
+| `*.nupkg`  | The library DLL, transitive metadata (`.nuspec`), icons, readme. | Always, when `IsPackable != false`. |
+| `*.snupkg` | PDB symbols + SourceLink metadata for debugger step-into.        | Only when `IncludeSymbols=true`.    |
 
 Both are zip files — renameable to `.zip` and inspectable with any archive tool.
 The `.nuspec` inside the `.nupkg` is an XML manifest generated from the
@@ -51,13 +51,13 @@ dotnet pack src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj `
 Not every project in the solution is shipped. The current inventory in
 [BuildMaster-ProGet-CSharp-Package-Pipeline.md §1.1](BuildMaster-ProGet-CSharp-Package-Pipeline.md#11-project-families) classifies them:
 
-| Category                    | Example                           | `IsPackable` | Goes to ProGet? |
-| --------------------------- | --------------------------------- | ------------ | --------------- |
-| Console apps                | `ATAP.Console.HelloWorld`         | `false`      | No              |
-| Service libraries (§1.1b)   | `ATAP.Services.ConsoleMonitor`    | `true`       | Yes             |
-| Utility libraries (§1.1c)   | `ATAP.Utilities.ETW`              | `true`       | Yes             |
-| Meta-package (§1.1d)        | `ATAP.Utilities`                  | `true`       | Yes             |
-| Unit test projects          | `ATAP.Utilities.Testing.UnitTests`| `false`      | No              |
+| Category                  | Example                            | `IsPackable` | Goes to ProGet? |
+| ------------------------- | ---------------------------------- | ------------ | --------------- |
+| Console apps              | `ATAP.Console.HelloWorld`          | `false`      | No              |
+| Service libraries (§1.1b) | `ATAP.Services.ConsoleMonitor`     | `true`       | Yes             |
+| Utility libraries (§1.1c) | `ATAP.Utilities.ETW`               | `true`       | Yes             |
+| Meta-package (§1.1d)      | `ATAP.Utilities`                   | `true`       | Yes             |
+| Unit test projects        | `ATAP.Utilities.Testing.UnitTests` | `false`      | No              |
 
 `IsPackable` defaults to `true` for SDK-style projects. Console and test
 projects set it to `false` explicitly in their `.csproj`. If a library project
@@ -70,21 +70,21 @@ is missing from ProGet after a push step, check this property first.
 These properties — most from `Directory.Build.props`, some per-project — end up
 inside the generated `.nuspec`:
 
-| MSBuild property               | Current value (in `Directory.Build.props`)         |
-| ------------------------------ | -------------------------------------------------- |
-| `Company`                      | _(empty)_                                          |
-| `Copyright`                    | `William Hertzing`                                 |
-| `Authors`                      | `William Hertzing`                                 |
-| `Product` / `ProductName`      | `ATAP.Utilities`                                   |
-| `RepositoryUrl`                | `https://github.com/BillHertzing/ATAP.Utilities`   |
-| `RepositoryType`               | `GitHub`                                           |
-| `PackageLicenseExpression`     | `MIT`                                              |
-| `PackageProjectUrl`            | `www.project.url` _(placeholder — see §10)_        |
-| `PackageIconUrl`               | `www.icon.url` _(placeholder — see §10)_           |
-| `PackageTags`                  | `Testing, experimental, alpha, ATAP, ATAP.Utilities` |
-| `PackageReleaseNotes`          | `Initial implementation/test of ATAP.Utilities Nuget packaging` |
-| `Version` / `PackageVersion`   | Computed (see `CSharp-Packages-Versioning.md`).    |
-| `PackageId`                    | Defaults to `$(AssemblyName)`.                     |
+| MSBuild property             | Current value (in `Directory.Build.props`)                      |
+| ---------------------------- | --------------------------------------------------------------- |
+| `Company`                    | _(empty)_                                                       |
+| `Copyright`                  | `William Hertzing`                                              |
+| `Authors`                    | `William Hertzing`                                              |
+| `Product` / `ProductName`    | `ATAP.Utilities`                                                |
+| `RepositoryUrl`              | `https://github.com/BillHertzing/ATAP.Utilities`                |
+| `RepositoryType`             | `GitHub`                                                        |
+| `PackageLicenseExpression`   | `MIT`                                                           |
+| `PackageProjectUrl`          | `www.project.url` _(placeholder — see §10)_                     |
+| `PackageIconUrl`             | `www.icon.url` _(placeholder — see §10)_                        |
+| `PackageTags`                | `Testing, experimental, alpha, ATAP, ATAP.Utilities`            |
+| `PackageReleaseNotes`        | `Initial implementation/test of ATAP.Utilities Nuget packaging` |
+| `Version` / `PackageVersion` | Computed (see `CSharp-Packages-Versioning.md`).                 |
+| `PackageId`                  | Defaults to `$(AssemblyName)`.                                  |
 
 **Per-project overrides:** Any `.csproj` can set `Description`, `Title`,
 `PackageId`, `PackageTags`, or `PackageReleaseNotes` in its own `PropertyGroup`
@@ -123,7 +123,7 @@ separate symbol server endpoint.
 
 ### 4.2 Debugger step-into
 
-With SourceLink in place, Visual Studio or VS Code consumers of an ATAP.*
+With SourceLink in place, Visual Studio or VS Code consumers of an ATAP.\*
 package can step into the library's source code without a local clone — the
 debugger fetches the matching source revision from GitHub using the embedded
 SourceLink URLs.
@@ -233,8 +233,8 @@ easier to debug and does not require editing the `$libraries` list.
 
 Single ProGet instance at `http://localhost:50000`. Five feeds, one per tier:
 
-| Tier | Feed name            | Push URL                                                     |
-| ---- | -------------------- | ------------------------------------------------------------ |
+| Tier | Feed name            | Push URL                                                        |
+| ---- | -------------------- | --------------------------------------------------------------- |
 | T1   | `nuget-experimental` | `http://localhost:50000/nuget/nuget-experimental/v3/index.json` |
 | T2   | `nuget-development`  | `http://localhost:50000/nuget/nuget-development/v3/index.json`  |
 | T3   | `nuget-integration`  | `http://localhost:50000/nuget/nuget-integration/v3/index.json`  |
@@ -271,11 +271,12 @@ Every repo ships a `NuGet.config` at its root. This file has **two** jobs:
 1. Tell `dotnet restore` which feeds are available for reads.
 2. Tell NuGet's package-source-mapping which packages come from which feed.
 
-### 8.1 Sprint-branch `NuGet.config`
+### 8.1 Worktree `NuGet.config`
 
-The one currently in the ATAP.Utilities sprint-0006 worktree lists **all five**
-feeds as package sources. This is convenient during development — a sprint
-worktree may need to restore a Beta or Alpha dependency while iterating.
+Every sprint worktree lists **all five permanent** feeds as package sources.
+This is intentional — a sprint worktree may need to restore a dependency
+from any tier while iterating. The feed list is static; sprint start/end
+never mutates `NuGet.config`. See [SprintInfrastructure-Naming.md](SprintInfrastructure-Naming.md) §3.
 
 **Package source mapping** (required by NuGet when CPM is active — see §8.3):
 
@@ -299,18 +300,15 @@ This pinning guarantees:
   resolved from `nuget.org`.
 - A typo in a package name can never silently fall through to a wrong source.
 
-### 8.2 Per-branch `NuGet.config` discipline
+### 8.2 Feed list is permanent across all branches
 
-- **Sprint / Experimental branch** (e.g. `34-sprint-0006-work-items`): all five
-  feeds.
-- **Integration branch**: only `nuget-integration`, `nuget-qa`, `nuget-stable`,
-  `nuget.org`.
-- **QA branch**: only `nuget-qa`, `nuget-stable`, `nuget.org`.
-- **Main branch**: only `nuget-stable`, `nuget.org`.
+All five `nuget-*` feeds are listed in `NuGet.config` on every branch. There
+are no per-sprint feeds and no per-branch feed mutations.
 
-This keeps branch-appropriate consumption hermetic. A merge to `integration`
-drops the sprint-local feeds; a merge to `main` drops everything except public
-and stable.
+Hermetic isolation at T3 (Integration) and T4 (QA) is enforced at the
+**ProGet feed level** (hermetic connectors — no `nuget.org` uplink) and at
+the **package-source-mapping level** (only `ATAP.*` packages resolve from
+local feeds), not by pruning the source list. See [SprintInfrastructure-Naming.md](SprintInfrastructure-Naming.md) §3.
 
 ### 8.3 `packageRestore` and CPM coupling
 
@@ -360,7 +358,7 @@ dotnet nuget push _generated\nuget\local\*.nupkg `
 exist at the exact same version — useful when re-running a partial publish
 where some packages already made it through.
 
-### 9.3 Via feed *name* (not URL)
+### 9.3 Via feed _name_ (not URL)
 
 If the source is already defined in `NuGet.config`, the feed name alone is
 accepted:
@@ -388,15 +386,18 @@ dotnet nuget push .\ATAP.Utilities.ETW.0.1.0-Sprint.47.snupkg `
 
 ## 10. Known Drift and Open Items
 
-The state below is specific to sprint-0006 and is recorded here so that pack
-output can be evaluated without surprises.
+> **Feed topology is canonical.** ProGet feeds are permanent (`nuget-experimental`
+> through `nuget-stable`). No per-sprint feeds exist. See
+> [SprintInfrastructure-Naming.md](SprintInfrastructure-Naming.md) §3.
+
+Remaining open items:
 
 - **`PackageProjectUrl` placeholder.** `Directory.Build.props` line 92 has
   `www.project.url`. Every `.nupkg` currently ships with this literal string.
   Real URL should be the GitHub repo page or a GitHub Pages site; fix as a
   one-line edit during a pack-cleanup task.
 - **`PackageIconUrl` placeholder.** Same issue on line 93. Also note that
-  `PackageIconUrl` has been *deprecated* in favor of `PackageIcon` (embedded
+  `PackageIconUrl` has been _deprecated_ in favor of `PackageIcon` (embedded
   file reference) since NuGet 5.3. Recommended fix: remove `PackageIconUrl`,
   embed an icon file, and reference it with `<PackageIcon>icon.png</PackageIcon>`.
 - **Release notes are generic.** `PackageReleaseNotes` is the same placeholder
@@ -404,7 +405,7 @@ output can be evaluated without surprises.
   a link to `https://github.com/.../releases/tag/{Version}`) so consumers can
   find actual release notes per-version.
 - **Tags are experimental-flavored.** `Testing, experimental, alpha, ATAP,
-  ATAP.Utilities` is accurate today but should be tightened to
+ATAP.Utilities` is accurate today but should be tightened to
   `ATAP, ATAP.Utilities, <category>` once packages hit `nuget-stable`.
 - **`PackageIcon` embedding not yet implemented.** See §4 / §10 above — ship
   an icon as `<None Include="icon.png" Pack="true" PackagePath=""/>` and
@@ -439,7 +440,7 @@ The exact `(PackageId, Version)` already exists in the target feed. Either:
 The project has no source files and no `<PackageReference>` entries. This
 applies to the meta-package (`src/ATAP.Utilities/ATAP.Utilities.csproj`) if
 all of its PackageReferences are missing — SDK-style projects rely on the
-meta-package having *something* to ship. Either add `<EnableDefaultItems>false</EnableDefaultItems>`
+meta-package having _something_ to ship. Either add `<EnableDefaultItems>false</EnableDefaultItems>`
 with real PackageReferences, or set `<IncludeBuildOutput>false</IncludeBuildOutput>`.
 
 ### 11.4 `NU5024 — The version string is not a valid SemVer 2.0 version`
@@ -458,7 +459,7 @@ never hand-write `{height}` with padding.
 ### 11.6 "The package 'X' is not listed in the package source"
 
 NuGet's package-source-mapping block rejected the lookup. Check `NuGet.config`
-§8.1 — if an `ATAP.*` package is being requested, only the ATAP.* mapping
+§8.1 — if an `ATAP.*` package is being requested, only the ATAP.\* mapping
 applies; `nuget.org` will not be consulted.
 
 ---

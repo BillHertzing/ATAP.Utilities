@@ -11,6 +11,7 @@ PowerShell publish steps.
 **Status:** Authoritative for sprint-0006.
 
 **Not in this doc:**
+
 - How the `.psm1`/`.psd1` get produced → see [PowerShell-Modules-Build-Process.md](PowerShell-Modules-Build-Process.md).
 - How the `ModuleVersion`/`Prerelease` are computed → see [PowerShell-Modules-Versioning.md](PowerShell-Modules-Versioning.md).
 - ProGet feed topology, BuildMaster orchestration → see [BuildMaster-ProGet-CSharp-Package-Pipeline.md](BuildMaster-ProGet-CSharp-Package-Pipeline.md).
@@ -41,10 +42,10 @@ The cmdlet that wraps all of this is
 
 PowerShellGet has two generations:
 
-| Generation | Repo cmdlets                  | Publish cmdlet     | Status                        |
-| ---------- | ----------------------------- | ------------------ | ----------------------------- |
-| v2 (legacy) | `Register-PSRepository`       | `Publish-Module`   | Used by `Publish-PSPackage.ps1` (legacy Jenkins flow — being retired) |
-| v3 (PSResource) | `Register-PSResourceRepository` | `Publish-PSResource` | **Current** — used by `Publish-PSModuleToProGetFeed` |
+| Generation      | Repo cmdlets                    | Publish cmdlet       | Status                                                                |
+| --------------- | ------------------------------- | -------------------- | --------------------------------------------------------------------- |
+| v2 (legacy)     | `Register-PSRepository`         | `Publish-Module`     | Used by `Publish-PSPackage.ps1` (legacy Jenkins flow — being retired) |
+| v3 (PSResource) | `Register-PSResourceRepository` | `Publish-PSResource` | **Current** — used by `Publish-PSModuleToProGetFeed`                  |
 
 PSResource v3 is faster, supports SemVer 2.0 prereleases more reliably, and
 matches the cmdlet surface used by `dotnet`'s NuGet client. The legacy
@@ -70,6 +71,7 @@ When `Publish-PSResource -Path <module-folder>` runs, it produces an internal
 ```
 
 Notes:
+
 - The package version is derived from the `.psd1` `ModuleVersion` +
   `Prerelease` (see [PowerShell-Modules-Versioning.md](PowerShell-Modules-Versioning.md)).
 - `.nuspec` is auto-generated; we do not author it.
@@ -84,13 +86,13 @@ The publish cmdlet maps the tier to a PowerShellGet feed name. The mapping is
 inlined in `Publish-PSModuleToProGetFeed.ps1` until task **T-12**
 (`Get-TierFromNBGVLabel`) is merged:
 
-| Tier name    | ProGet feed name                | Purpose                              |
-| ------------ | ------------------------------- | ------------------------------------ |
-| `Sprint`     | `PowershellGet-experimental`    | T1 — every successful build          |
-| `Alpha`      | `PowershellGet-development`     | T2 — passes unit tests               |
-| `Beta`       | `PowershellGet-integration`     | T3 — passes integration tests        |
-| `QA`         | `PowershellGet-qa`              | T4 — release candidate               |
-| `Production` | `PowershellGet-stable`          | T5 — released                        |
+| Tier name    | ProGet feed name             | Purpose                       |
+| ------------ | ---------------------------- | ----------------------------- |
+| `Sprint`     | `PowershellGet-experimental` | T1 — every successful build   |
+| `Alpha`      | `PowershellGet-development`  | T2 — passes unit tests        |
+| `Beta`       | `PowershellGet-integration`  | T3 — passes integration tests |
+| `QA`         | `PowershellGet-qa`           | T4 — release candidate        |
+| `Production` | `PowershellGet-stable`       | T5 — released                 |
 
 The `-Tier` parameter is `[ValidateSet]`-constrained to these five values.
 Any other value throws before any network call.
@@ -187,7 +189,7 @@ consumers:
 
 `-WhatIf` short-circuits before `Publish-PSResource`. The returned object
 still carries the resolved feed name + URI, so callers can verify the
-publish *plan* without contacting ProGet:
+publish _plan_ without contacting ProGet:
 
 ```powershell
 Publish-PSModuleToProGetFeed -NupkgPath ./out/Foo.0.1.0-Sprint042.nupkg `
@@ -241,9 +243,9 @@ developer's local "publish everything I just changed" loop. Behavior:
 4. For each library, runs `dotnet build` (with `ATAPBuildToolingConfiguration=Debug`
    when verbose) followed by the publish call.
 
-This script is **C#-centric** (despite living in the same repo). The
-PowerShell-module equivalent is the per-module flow in §10. A unified
-`Publish-AllPSModules.ps1` orchestrator is on the sprint-0007 backlog.
+As of sprint-0006 (Area 2.5-3), this script also iterates and publishes
+PowerShell modules by calling `Publish-PSModuleToProGetFeed` for each module
+in the repo. The PowerShell-module publish flow is documented in §10.
 
 ---
 
@@ -268,15 +270,15 @@ call from a developer's machine. The intended flow is:
 
 ## 13. Common failures and remedies
 
-| Error                                                                 | Cause                                                          | Fix                                                                  |
-| --------------------------------------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `feed URI for tier X is not configured`                               | Neither `$global:settings` nor the env var holds the URI       | `[Environment]::SetEnvironmentVariable('PROGET_POWERSHELLGET_FEED_URI_SPRINT','http://localhost:50000/nuget/PowershellGet-experimental/','User')` |
-| `Unable to resolve ProGet API key for tier X`                         | Bitwarden secret missing AND env var unset                     | Add Bitwarden item `ProGet_PowerShellGet_<Tier>_ApiKey` or set `PROGET_POWERSHELLGET_APIKEY_<TIER>` |
-| `Publish-PSResource: A NuGet feed already contains this package`     | Same `Module.Version` already published                        | Bump the height (commit something) and rebuild; ProGet rejects re-uploads |
-| `Publish-PSResource: ResourceUnauthorized`                            | API key invalid or wrong tier                                  | Verify the key in ProGet UI (Admin → API Keys) matches the tier      |
-| `NupkgPath does not exist or is not a file`                           | Build did not produce the `.nupkg` (path mismatch)             | Confirm the pack step ran; check `$meta.OutputRoot/packages-nupkg/` |
-| `NupkgPath must have a .nupkg extension`                              | A folder path was passed instead of a file                     | Pass the resolved `.nupkg`, not the module folder                    |
-| `Repository <name> already registered with different URI`             | A previous run registered a stale URI                          | The cmdlet will `Set-PSResourceRepository` to fix; if it loops, manually `Unregister-PSResourceRepository` and retry |
+| Error                                                            | Cause                                                    | Fix                                                                                                                                               |
+| ---------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `feed URI for tier X is not configured`                          | Neither `$global:settings` nor the env var holds the URI | `[Environment]::SetEnvironmentVariable('PROGET_POWERSHELLGET_FEED_URI_SPRINT','http://localhost:50000/nuget/PowershellGet-experimental/','User')` |
+| `Unable to resolve ProGet API key for tier X`                    | Bitwarden secret missing AND env var unset               | Add Bitwarden item `ProGet_PowerShellGet_<Tier>_ApiKey` or set `PROGET_POWERSHELLGET_APIKEY_<TIER>`                                               |
+| `Publish-PSResource: A NuGet feed already contains this package` | Same `Module.Version` already published                  | Bump the height (commit something) and rebuild; ProGet rejects re-uploads                                                                         |
+| `Publish-PSResource: ResourceUnauthorized`                       | API key invalid or wrong tier                            | Verify the key in ProGet UI (Admin → API Keys) matches the tier                                                                                   |
+| `NupkgPath does not exist or is not a file`                      | Build did not produce the `.nupkg` (path mismatch)       | Confirm the pack step ran; check `$meta.OutputRoot/packages-nupkg/`                                                                               |
+| `NupkgPath must have a .nupkg extension`                         | A folder path was passed instead of a file               | Pass the resolved `.nupkg`, not the module folder                                                                                                 |
+| `Repository <name> already registered with different URI`        | A previous run registered a stale URI                    | The cmdlet will `Set-PSResourceRepository` to fix; if it loops, manually `Unregister-PSResourceRepository` and retry                              |
 
 ---
 
@@ -287,19 +289,24 @@ call from a developer's machine. The intended flow is:
    developer must keep it consistent with the module's `version.json`
    prerelease label.
 
-2. **No `Get-ATAPIACConstant` integration** — task T-30. Feed URIs are
-   resolved via env vars; no central registry yet.
+2. ~~**No `Get-ATAPIACConstant` integration** — task T-30.~~ **Resolved (sprint-0006
+   §7.1-3):** `Publish-PSModuleToProGetFeed` now looks up feed names and URIs
+   via `Get-ATAPIACConstant` (`FeedConstants.psd1`). Env-var fallback retained
+   for agent shells.
 
-3. **`Publish-ATAPUtilities.ps1` does not publish PowerShell modules** —
-   it only handles C# packages. The two parallel publish helpers should be
-   unified.
+3. ~~**`Publish-ATAPUtilities.ps1` does not publish PowerShell modules.**~~
+   **Resolved (sprint-0006 §2.5-3):** `Publish-ATAPUtilities.ps1` now includes a
+   PowerShell-modules section that calls `Publish-PSModuleToProGetFeed` for
+   each module. See §11 above.
 
 4. **Repository name collisions are not detected.** If two tiers point at
    the same feed URI by accident, the second registration silently wins.
 
-5. **No retention policy enforcement** — old `Sprint` builds accumulate
-   unbounded in the T1 feed. ProGet has retention rules but they are not
-   declared in code.
+5. ~~**No retention policy enforcement.**~~ **Resolved (sprint-0006 §5.1-3):**
+   `RetentionPolicy` entries are now declared in `ProGetFeedCollection`
+   (`HostSettings.IAC.Fragment.PackageRepositories.ProGetFeeds.ps1`) and applied
+   by `New-ProGetFeedSet`: experimental = 7 days, development = 30 days,
+   integration/qa = indefinite (hermetic), stable = indefinite.
 
 6. **The legacy `Publish-PSPackage.ps1` is still exported** — see
    [PowerShell-Modules-Build-Process.md](PowerShell-Modules-Build-Process.md) §12.3.

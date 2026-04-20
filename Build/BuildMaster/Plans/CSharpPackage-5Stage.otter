@@ -39,17 +39,17 @@ Git::Checkout-Code
 );
 
 # Resolve tier from NBGV.
-# Step 1: Run nbgv and write output to a temp file
+# Step 1: Run nbgv and write output to a temp file under _generated/buildmaster/ (SC-0033)
 Exec
 (
     FileName: pwsh,
-    Arguments: >>-NoProfile -Command "nbgv get-version --variable NuGetPackageVersion | Out-File '_nbgv.tmp' -Encoding utf8 -NoNewline">>,
+    Arguments: >>-NoProfile -Command "New-Item -ItemType Directory -Path '_generated\buildmaster' -Force | Out-Null; nbgv get-version --variable NuGetPackageVersion | Out-File '_generated\buildmaster\_nbgv.tmp' -Encoding utf8 -NoNewline">>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );
 
 # Step 2: Read it into a variable using a real OtterScript function
-set $NbgvTempFile = $PathCombine($SourcePath, _nbgv.tmp);
+set $NbgvTempFile = $PathCombine($SourcePath, _generated\buildmaster\_nbgv.tmp);
 set $NbgvVersion  = $Trim($FileContents($NbgvTempFile));
 
 set $PrereleaseLabel = $RegexReplace($NbgvVersion, >>^[0-9]+\.[0-9]+\.[0-9]+-?([A-Za-z]*).*$>>, `$1`);
@@ -63,11 +63,11 @@ if $PrereleaseLabel == ""         { set $Tier = Production;   }
 # Resolve feed name via Get-ATAPIACConstant (T-31) — no hard-coded feed names.
 Exec pwsh
 (
-    Arguments: >>-NoProfile -File Build/BuildMaster/Scripts/Resolve-FeedName.ps1 -Tier $Tier -FeedType nuget -OutputFile _feedname.tmp>>,
+    Arguments: >>-NoProfile -File Build/BuildMaster/Scripts/Resolve-FeedName.ps1 -Tier $Tier -FeedType nuget -OutputFile _generated\buildmaster\_feedname.tmp>>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );
-set $FeedNameTmp = $PathCombine($SourcePath, _feedname.tmp);
+set $FeedNameTmp = $PathCombine($SourcePath, _generated\buildmaster\_feedname.tmp);
 set $FeedName = $Trim($FileContents($FeedNameTmp));
 
 Log-Debug "Resolved Tier=$Tier  Feed=$FeedName  from NuGetPackageVersion=$NbgvVersion";
@@ -99,7 +99,7 @@ Log-Debug "Resolved Tier=$Tier  Feed=$FeedName  from NuGetPackageVersion=$NbgvVe
           SuccessExitCode: 0
       );
       Exec dotnet (
-        Arguments: "nuget push _generated\nuget\$Tier\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $ProGetApiKey",
+        Arguments: "nuget push _generated\nuget\$Tier\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $ProGetApiKey --skip-duplicate",
           WorkingDirectory: $SourcePath,
           SuccessExitCode: 0
       );
@@ -134,13 +134,20 @@ Log-Debug "Resolved Tier=$Tier  Feed=$FeedName  from NuGetPackageVersion=$NbgvVe
           WorkingDirectory: $SourcePath,
           SuccessExitCode: 0
       );
+      # ---- task 7.3-2: Failure-Acknowledged gate ----
+      Exec pwsh
+      (
+          Arguments: >>-NoProfile -Command "Import-Module '$SourcePath\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1' -Force; $$r = Invoke-FailureAcknowledgedGate -ResultFile '$SourcePath\_generated\testresults\$Tier' -AcknowledgedFile '$SourcePath\FailureAcknowledged.json' -Tier '$Tier'; if (-not $$r.GatePass) { throw ('Failure-Acknowledged gate FAILED at $Tier: ' + $$r.Unacknowledged + ' unacknowledged failure(s).') }">>      ,
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
       Exec dotnet (
         Arguments: "pack ATAP.Utilities.sln --configuration $Configuration --no-build --output _generated\nuget\$Tier",
           WorkingDirectory: $SourcePath,
           SuccessExitCode: 0
       );
       Exec dotnet (
-        Arguments: "nuget push _generated\nuget\$Tier\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $ProGetApiKey",
+        Arguments: "nuget push _generated\nuget\$Tier\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $ProGetApiKey --skip-duplicate",
           WorkingDirectory: $SourcePath,
           SuccessExitCode: 0
       );
@@ -174,13 +181,20 @@ Log-Debug "Resolved Tier=$Tier  Feed=$FeedName  from NuGetPackageVersion=$NbgvVe
           WorkingDirectory: $SourcePath,
           SuccessExitCode: 0
       );
+      # ---- task 7.3-2: Failure-Acknowledged gate ----
+      Exec pwsh
+      (
+          Arguments: >>-NoProfile -Command "Import-Module '$SourcePath\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1' -Force; $$r = Invoke-FailureAcknowledgedGate -ResultFile '$SourcePath\_generated\testresults\$Tier' -AcknowledgedFile '$SourcePath\FailureAcknowledged.json' -Tier '$Tier'; if (-not $$r.GatePass) { throw ('Failure-Acknowledged gate FAILED at $Tier: ' + $$r.Unacknowledged + ' unacknowledged failure(s).') }">>      ,
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
       Exec dotnet (
         Arguments: "pack ATAP.Utilities.sln --configuration $Configuration --no-build --output _generated\nuget\$Tier",
           WorkingDirectory: $SourcePath,
           SuccessExitCode: 0
       );
       Exec dotnet (
-        Arguments: "nuget push _generated\nuget\$Tier\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $ProGetApiKey",
+        Arguments: "nuget push _generated\nuget\$Tier\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $ProGetApiKey --skip-duplicate",
           WorkingDirectory: $SourcePath,
           SuccessExitCode: 0
       );
@@ -227,6 +241,13 @@ Log-Debug "Resolved Tier=$Tier  Feed=$FeedName  from NuGetPackageVersion=$NbgvVe
           WorkingDirectory: $SourcePath,
           SuccessExitCode: 0
       );
+      # ---- task 7.3-2: Failure-Acknowledged gate ----
+      Exec pwsh
+      (
+          Arguments: >>-NoProfile -Command "Import-Module '$SourcePath\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1' -Force; $$r = Invoke-FailureAcknowledgedGate -ResultFile '$SourcePath\_generated\testresults\$Tier' -AcknowledgedFile '$SourcePath\FailureAcknowledged.json' -Tier '$Tier'; if (-not $$r.GatePass) { throw ('Failure-Acknowledged gate FAILED at $Tier: ' + $$r.Unacknowledged + ' unacknowledged failure(s).') }">>      ,
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
       # ---- task 1.6-2: Coverage gate — fail if line coverage < 70% ----
       # coverlet writes coverage.cobertura.xml into a GUID-named subfolder; discover at runtime.
       Exec pwsh
@@ -241,7 +262,7 @@ Log-Debug "Resolved Tier=$Tier  Feed=$FeedName  from NuGetPackageVersion=$NbgvVe
           SuccessExitCode: 0
       );
       Exec dotnet (
-        Arguments: "nuget push _generated\nuget\$Tier\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $ProGetApiKey",
+        Arguments: "nuget push _generated\nuget\$Tier\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $ProGetApiKey --skip-duplicate",
           WorkingDirectory: $SourcePath,
           SuccessExitCode: 0
       );
@@ -264,6 +285,13 @@ Log-Debug "Resolved Tier=$Tier  Feed=$FeedName  from NuGetPackageVersion=$NbgvVe
           WorkingDirectory: $SourcePath,
           SuccessExitCode: 0
       );
+      # ---- task 7.3-2: Failure-Acknowledged gate ----
+      Exec pwsh
+      (
+          Arguments: >>-NoProfile -Command "Import-Module '$SourcePath\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1' -Force; $$r = Invoke-FailureAcknowledgedGate -ResultFile '$SourcePath\_generated\testresults\$Tier' -AcknowledgedFile '$SourcePath\FailureAcknowledged.json' -Tier '$Tier'; if (-not $$r.GatePass) { throw ('Failure-Acknowledged gate FAILED at $Tier: ' + $$r.Unacknowledged + ' unacknowledged failure(s).') }">>      ,
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
       Exec dotnet (
         Arguments: "pack ATAP.Utilities.sln --configuration $Configuration --no-build --output _generated\nuget\$Tier",
           WorkingDirectory: $SourcePath,
@@ -272,7 +300,7 @@ Log-Debug "Resolved Tier=$Tier  Feed=$FeedName  from NuGetPackageVersion=$NbgvVe
       # Optional: sign packages before push
       # Exec ( FileName: dotnet, Arguments: `nuget sign _generated\nuget\$Tier\*.nupkg --certificate-path ... --timestamper ...` );
       Exec dotnet (
-        Arguments: "nuget push _generated\nuget\$Tier\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $ProGetApiKey",
+        Arguments: "nuget push _generated\nuget\$Tier\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $ProGetApiKey --skip-duplicate",
           WorkingDirectory: $SourcePath,
       SuccessExitCode: 0
   );

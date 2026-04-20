@@ -103,6 +103,13 @@ function Build-PSModuleManifest {
 
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Copying manifest '$SourceManifestPath' -> '$OutputManifestPath'"
       Copy-Item -Path $SourceManifestPath -Destination $OutputManifestPath -Force
+      # If the source .psd1 is a symlink, Copy-Item preserves the ReparsePoint attribute on the
+      # destination, making Update-ModuleManifest fail with a permissions error. Strip it here.
+      $copiedItem = Get-Item -LiteralPath $OutputManifestPath
+      if ($copiedItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
+        $copiedItem.Attributes = $copiedItem.Attributes -band (-bnot [System.IO.FileAttributes]::ReparsePoint)
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Stripped ReparsePoint attribute from '$OutputManifestPath'"
+      }
 
       $params = @{
         Path          = $OutputManifestPath

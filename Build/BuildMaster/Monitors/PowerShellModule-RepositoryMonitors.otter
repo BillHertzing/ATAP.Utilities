@@ -24,7 +24,8 @@
 
 # ---------------------------------------------------------------------------
 # Monitor 1 — Sprint branches (T1 / T2)
-# Triggers    : any push to a branch matching Sprint-*
+# Triggers    : any push to a branch matching *sprint-* (case-insensitive match
+#               for branches like "98-sprint-0006-work-items")
 # Stage       : resolves automatically in PowerShellModule-5Stage via NBGV tier
 # Interval    : poll every 2 minutes
 # ---------------------------------------------------------------------------
@@ -32,7 +33,7 @@ GitHub::Repository-Monitor PowerShellModules-Sprint-Monitor
 (
     Organization: ATAP,
     Repository: ATAP.Utilities,
-    BranchFilter: Sprint-*,
+    BranchFilter: *sprint-*,
     PollInterval: 120,
     PipelineName: PowerShellModule-5Stage,
     BuildVariables: %(Branch: $Branch)

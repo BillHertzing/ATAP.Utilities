@@ -55,7 +55,8 @@ Log-Debug `Resolved Tier=$Tier from NuGetPackageVersion=$NbgvVersion`;
 
 # ---------------------------------------------------------------------------
 # Stage 1 — Sprint  (T1)
-# Verify every module; no publish.
+# Build, package, publish to powershellget-experimental, and compress artifacts.
+# No quality gates or tests at Sprint tier.
 # ---------------------------------------------------------------------------
 stage Sprint
 {
@@ -63,17 +64,27 @@ stage Sprint
     {
         for each $Module in $Modules
         {
-            Log-Information `[Sprint] Verifying $Module ...`;
+            Log-Information `[Sprint] Building and publishing $Module ...`;
 
+            # Publish chains: BuildPSM1 → BuildManifest → Package → Publish
             Exec
             (
                 FileName: pwsh,
-                Arguments: `-NoProfile -File src\$Module\module.build.ps1 Short -Tier Sprint`,
+                Arguments: `-NoProfile -File src\$Module\module.build.ps1 Publish -Tier Sprint`,
                 WorkingDirectory: $SourcePath,
                 SuccessExitCode: 0
             );
 
-            # Capture lightweight artifacts (no tests at Sprint tier)
+            # Compress artifacts for BuildMaster capture
+            Exec
+            (
+                FileName: pwsh,
+                Arguments: `-NoProfile -File src\$Module\module.build.ps1 Compress -Tier Sprint`,
+                WorkingDirectory: $SourcePath,
+                SuccessExitCode: 0
+            );
+
+            # Capture package artifacts (no TestResults/Coverage at Sprint tier)
             Create-Artifact $`$Module`-Packages
             (
                 From: _generated\PSModules\$Module\artifacts,

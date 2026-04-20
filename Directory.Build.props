@@ -259,6 +259,17 @@
        consumer sites during the build. -->
   <PropertyGroup>
     <PackageLifeCycleStage>$(NBGV_PrereleaseLabel)</PackageLifeCycleStage>
+    <!-- Fallback for local/worktree builds where NBGV_PrereleaseLabel may be empty:
+         infer the lifecycle label directly from the nearest project version.json.
+         Expected version pattern examples:
+           0.1-Sprint.{height}
+           0.1-Alpha.{height}
+           0.1-Beta.{height}
+           0.1-QA.{height} -->
+    <PackageLifeCycleStage
+      Condition=" '$(PackageLifeCycleStage)' == '' And Exists('$(MSBuildProjectDirectory)\version.json') ">$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\version.json')), '&quot;version&quot;\s*:\s*&quot;[^&quot;]*-([A-Za-z]+)[\.-][^&quot;]*&quot;', System.Text.RegularExpressions.RegexOptions.IgnoreCase).Groups[1].Value)</PackageLifeCycleStage>
+    <PackageLifeCycleStage
+      Condition=" '$(PackageLifeCycleStage)' == '' And Exists('$(MSBuildProjectDirectory)\..\version.json') ">$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\..\version.json')), '&quot;version&quot;\s*:\s*&quot;[^&quot;]*-([A-Za-z]+)[\.-][^&quot;]*&quot;', System.Text.RegularExpressions.RegexOptions.IgnoreCase).Groups[1].Value)</PackageLifeCycleStage>
   </PropertyGroup>
 
   <!-- Task 1.1-4: Disallow per-project overrides of Directory.Packages.props versions.
@@ -306,9 +317,19 @@
        NBGV is already in scope; it is set to e.g. "refs/heads/main" once NBGV's
        targets have run (well before the Build target executes). -->
   <Target Name="ValidatePackageLifeCycleStage" BeforeTargets="Build">
-    <Error Condition=" '$(PackageLifeCycleStage)' == '' And '$(NBGV_BuildingRef)' != 'refs/heads/main' "
+    <!-- NBGV_BuildingRef is often empty in local builds; resolve branch via git as fallback. -->
+    <Exec Command="git rev-parse --abbrev-ref HEAD" ConsoleToMsBuild="true" IgnoreExitCode="true" Condition=" '$(NBGV_BuildingRef)' == '' ">
+      <Output TaskParameter="ConsoleOutput" PropertyName="CurrentGitBranchName" />
+    </Exec>
+    <PropertyGroup>
+      <CurrentGitBranchName>$([System.String]::Copy('$(CurrentGitBranchName)').Trim())</CurrentGitBranchName>
+      <CurrentBuildRef Condition=" '$(NBGV_BuildingRef)' != '' ">$(NBGV_BuildingRef)</CurrentBuildRef>
+      <CurrentBuildRef Condition=" '$(CurrentBuildRef)' == '' And '$(CurrentGitBranchName)' != '' ">refs/heads/$(CurrentGitBranchName)</CurrentBuildRef>
+    </PropertyGroup>
+
+    <Error Condition=" '$(PackageLifeCycleStage)' == '' And '$(CurrentBuildRef)' != 'refs/heads/main' "
            Code="ATAP5TIER001"
-           Text="PackageLifeCycleStage is empty but the current branch ($(NBGV_BuildingRef)) is not refs/heads/main. Confirm version.json exists at the project or repository root and that its 'version' field carries a prerelease label (Sprint, Alpha, Beta, or QA). Stable/empty labels are only valid on main." />
+           Text="PackageLifeCycleStage is empty but the current branch ($(CurrentBuildRef)) is not refs/heads/main. Confirm version.json exists at the project or repository root and that its 'version' field carries a prerelease label (Sprint, Alpha, Beta, or QA). Stable/empty labels are only valid on main." />
   </Target>
 
 </Project>

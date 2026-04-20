@@ -205,6 +205,44 @@ The contract between ATAP.Utilities (producer) and AceCommander (consumer) is:
 
    and file a follow-up to unpick it once the upstream issue is resolved.
 
+### 6.1 Version-pinning rule at T3 (Integration) and above
+
+**Rule:** Floating version patterns (`0.*-*`) are **only permitted** at T1
+(Experimental) and T2 (Development). At T3 (Integration), T4 (QA), and T5
+(Stable/Production), every `ATAP.*` entry in AceCommander's
+`Directory.Packages.props` **must** be pinned to a concrete version before
+`dotnet restore` is called.
+
+| Tier        | Feed                | Floating `0.*-*` allowed? |
+| ----------- | ------------------- | ------------------------- |
+| Experimental (T1) | `nuget-experimental` | Yes — default working-copy state |
+| Development (T2) | `nuget-development`  | Yes — resolves latest Alpha build |
+| Integration (T3) | `nuget-integration`  | **No** — must be pinned |
+| QA (T4)         | `nuget-qa`           | **No** — must be pinned |
+| Stable (T5)     | `nuget-stable`       | **No** — must be pinned |
+
+**Why:** Non-deterministic restores at T3+ undermine the purpose of
+integration gating. Two consecutive QA builds could consume different
+package versions, making failures unreproducible.
+
+**How (in CI):** The BuildMaster QA stage runs
+`Set-AceCommanderPackagePins.ps1` as its first step. The script resolves
+each floating entry to the highest concrete version available in the target
+feed and rewrites `Directory.Packages.props` in the agent workspace before
+`dotnet restore` / `dotnet build` are called. The working-copy file retains
+its floating patterns — only the CI agent copy is mutated.
+
+**How (manually):** A developer promoting a branch to Integration or QA
+may run:
+
+```powershell
+Set-AceCommanderPackagePins `
+    -ProGetUrl 'http://proget.local:50000' `
+    -FeedName 'nuget-integration'
+```
+
+and commit the pinned `Directory.Packages.props` to the promotion branch.
+
 ---
 
 ## 7. Package source mapping (NU1507)

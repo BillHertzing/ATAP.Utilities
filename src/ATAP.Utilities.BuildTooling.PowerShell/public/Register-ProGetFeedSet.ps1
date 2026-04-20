@@ -1,61 +1,100 @@
+<#
+.SYNOPSIS
+  Registers all five permanent powershellget-* ProGet feeds as PSResource repositories on the developer workstation.
+
+.DESCRIPTION
+  Iterates the ProGetFeedCollection (from $global:settings) and registers every feed whose
+  FeedType is 'powershell' as a trusted PSResource repository using Register-PSResourceRepository.
+  This is a one-time, per-workstation operation. Sprint start / end do NOT call this cmdlet —
+  the five permanent powershellget-* feeds (experimental, development, integration, qa, stable)
+  never change between sprints.
+
+  If a repository with the same name is already registered it is skipped (idempotent).
+
+.OUTPUTS
+  [PSCustomObject] one per registered feed with FeedName, EndpointUri, and RegistrationResult.
+
+.NOTES
+  AI assisted using ./claude/Rules/Powershell.md as guidelines
+#>
 function Register-ProGetFeedSet {
   [CmdletBinding(SupportsShouldProcess = $true)]
-  param (  )
+  param ( )
 
-  Write-PSFMessage -Level Verbose -Message 'Entering function: Register-ProGetFeedSet'
-  # ToDo: Remove this when packaging works
-  #  if (-not (Get-Command -Name 'Convert-ProGetFeedType' -CommandType Function -ErrorAction SilentlyContinue)) {
-  . "$PSScriptRoot\..\private\Convert-ProGetFeedType.ps1"
-  # }
-  #  if (-not (Get-Command -Name 'Build-ProGetFeedEndpointURL' -CommandType Function -ErrorAction SilentlyContinue)) {
-  . "$PSScriptRoot\..\private\Build-ProGetFeedEndpointURL.ps1"
-  # }
+  begin {
+    Write-PSFMessage -Level Verbose -Message 'Entering function: Register-ProGetFeedSet' -Tag 'Register-ProGetFeedSet', 'Trace'
 
-
-  # A RegEx Pattern that will break apart the NameKey into its components for creating the endpointURL
-  # first component is 'Released' or 'Prerelease'
-  # second component is 'PSResourceGet' or 'ChocolateyGet' or 'NuGet'
-  # third component is 'Production' or 'QualityAssurance'
-
-  # ToDO: Rethink this: now it uses the actual language-specific feed  name - figure out how to use the universal key instead
-  $regExPattern = '^PackageRepository(?<LocationType>Internal|External)(?<VersionType>Released|Prerelease)(?<PackageProviderName>PSResourceGet|ChocolateyGet|NuGet)(?<PackageType>Production|QualityAssurance)'
-
-  # Register all the internal non-Filesystem feeds specified in the PackageRepositoryCollection
-  $feedNames = $global:settings[$global:ConfigRootKeys['PackageRepositoriesCollectionConfigRootKey']].keys | Where-Object { ($_ -match 'PackageRepositoryInternal' ) -and ($_ -notmatch 'Filesystem' ) }
-  for ($feedNamesIndex = 0; $feedNamesIndex -lt $feedNames.Count; $feedNamesIndex++) {
-    $feedName = $feedNames[$feedNamesIndex]
-    # use $regExPattern to pull apart the $feedName into its components
-    if ($feedName -notmatch $regExPattern) {
-      $errorMessage = "Feed name key '$feedName' does not match expected pattern."
-      Write-PSFMessage -Level Error -Message $errorMessage
+    if (-not $global:settings) {
+      $errorMessage = 'global:settings is not initialised. Ensure HostSettings.ps1 has been dot-sourced before calling Register-ProGetFeedSet.'
+      Write-PSFMessage -Level Error -Message $errorMessage -Tag 'Register-ProGetFeedSet', 'Trace', 'Error'
       throw $errorMessage
     }
-    # $locationType = $matches['LocationType'] # LocationType is ignored, because the prior where clause discarded the external and filesystem feed
-    $versionType = $matches['VersionType']
-    $packageProviderName = $matches['PackageProviderName']
-    $packageType = $matches['PackageType']
-    $proGetFeedType = Convert-ProGetFeedType $packageProviderName
-    $feed = $($global:settings[$global:ConfigRootKeys['PackageRepositoriesCollectionConfigRootKey']][$feedName])
 
-    # $endpointUrl = Build-ProGetFeedEndpointURL $feed.ShortName 'http' $feed.Uri.host $feed.Uri.port $proGetFeedType $VersionType $PackageType
-    $endpointUrl = Build-ProGetFeedEndpointURL  $feed.Uri.Scheme $feed.Uri.host $feed.Uri.port "nuget/$($feed.ShortName)/v3/index.json"
-    # $endpointURL = 'http://' + 'utat022' + ':' + $feed.Uri.port + '/' + 'nuget' + '/' + $feed.ShortName + '/' # $feed.Uri.host
+    $feedCollection = $global:settings[$global:configRootKeys['ProGetFeedCollectionConfigRootKey']]
+    if (-not $feedCollection) {
+      $errorMessage = "ProGetFeedCollection not found in global:settings under key '$($global:configRootKeys['ProGetFeedCollectionConfigRootKey'])'. Ensure the ProGetFeeds HostSettings fragment has been loaded."
+      Write-PSFMessage -Level Error -Message $errorMessage -Tag 'Register-ProGetFeedSet', 'Trace', 'Error'
+      throw $errorMessage
+    }
+  }
 
-    if ($PSCmdlet.ShouldProcess("ProGet Feed [$endpointUrl]", "Register a PSRepository pull and push endpointUrl")) {
-      try {
-        Write-PSFMessage -Level Verbose -Message "Attempting to register $endpointUrl"
-        # ToDo: accumulate the results for each feed, and pass the set on down the pipeline
-        $registrationResults = Register-PSResourceRepository -Name $feed.ShortName -Uri $endpointUrl -ApiVersion 'V3' -Trusted -passthru
-        Write-PSFMessage -Level Verbose -Message "Successfully registered  $endpointUrl"
+  process {
+    # Collect all existing PSResource repository names for idempotency check
+    $existingRepos = Get-PSResourceRepository -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name
+
+    [string[]]$feedKeys = $feedCollection.Keys
+
+    for ($i = 0; $i -lt $feedKeys.Count; $i++) {
+      $feedKey = $feedKeys[$i]
+      $feed = $feedCollection[$feedKey]
+
+      # Only register powershellget-* feeds (FeedType 'powershell')
+      if ($feed.FeedType -ne 'powershell') {
+        Write-PSFMessage -Level Debug -Message "Skipping feed '$($feed.FeedName)' (FeedType '$($feed.FeedType)' is not 'powershell')" -Tag 'Register-ProGetFeedSet', 'Trace'
+        continue
       }
-      catch {
-        $errorMessage = "Failed to register $endpointUrl. Exception: $($_.Exception.Message)"
-        Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception
-        throw $_
+
+      $feedName = $feed.FeedName
+      $endpointUri = $feed.NuGetV3Uri
+
+      if ([string]::IsNullOrWhiteSpace($endpointUri)) {
+        $errorMessage = "Feed '$feedName' has no NuGetV3Uri — cannot register as a PSResource repository."
+        Write-PSFMessage -Level Error -Message $errorMessage -Tag 'Register-ProGetFeedSet', 'Trace', 'Error'
+        throw $errorMessage
+      }
+
+      if ($existingRepos -contains $feedName) {
+        Write-PSFMessage -Level Verbose -Message "PSResource repository '$feedName' is already registered — skipping." -Tag 'Register-ProGetFeedSet', 'Trace'
+        [PSCustomObject]@{
+          FeedName           = $feedName
+          EndpointUri        = $endpointUri
+          RegistrationResult = 'AlreadyRegistered'
+        }
+        continue
+      }
+
+      if ($PSCmdlet.ShouldProcess("PSResource repository '$feedName' at $endpointUri", 'Register-PSResourceRepository')) {
+        try {
+          Write-PSFMessage -Level Verbose -Message "Registering PSResource repository '$feedName' at '$endpointUri'" -Tag 'Register-ProGetFeedSet', 'Trace'
+          $result = Register-PSResourceRepository -Name $feedName -Uri $endpointUri -Trusted -PassThru
+          Write-PSFMessage -Level Verbose -Message "Successfully registered PSResource repository '$feedName'" -Tag 'Register-ProGetFeedSet', 'Trace'
+          [PSCustomObject]@{
+            FeedName           = $feedName
+            EndpointUri        = $endpointUri
+            RegistrationResult = $result
+          }
+        } catch {
+          $errorMessage = "Failed to register PSResource repository '$feedName' at '$endpointUri'. Exception: $($_.Exception.Message)"
+          Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception -Tag 'Register-ProGetFeedSet', 'Trace', 'Error'
+          throw $_
+        }
       }
     }
   }
-  Write-PSFMessage -Level Verbose -Message 'Leaving function: Register-ProGetFeedSet'
+
+  end {
+    Write-PSFMessage -Level Verbose -Message 'Leaving function: Register-ProGetFeedSet' -Tag 'Register-ProGetFeedSet', 'Trace'
+  }
 }
 
 

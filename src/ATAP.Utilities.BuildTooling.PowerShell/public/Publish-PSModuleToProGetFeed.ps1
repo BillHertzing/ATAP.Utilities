@@ -70,22 +70,30 @@ function Get-PSModuleFeedUri {
   $fn = 'Get-PSModuleFeedUri'
   $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
 
-  $settingKey = "PowerShellGetFeed_$Tier"
+  # Map old Sprint/Alpha/Beta/Production tier names to canonical Experimental/Development/.../Stable.
+  # QA maps to QA (unchanged). All others follow the standard tier rename.
+  $canonicalTierMap = @{
+    'Sprint'     = 'Experimental'
+    'Alpha'      = 'Development'
+    'Beta'       = 'Integration'
+    'QA'         = 'QA'
+    'Production' = 'Stable'
+  }
+  $canonicalTier = if ($canonicalTierMap.ContainsKey($Tier)) { $canonicalTierMap[$Tier] } else { $Tier }
 
-  # 1. $global:settings via $global:configRootKeys
-  if ($null -ne $global:configRootKeys -and $null -ne $global:settings -and
-    $global:configRootKeys.ContainsKey($settingKey)) {
-    $rootKey = $global:configRootKeys[$settingKey]
-    if ($null -ne $rootKey -and $global:settings.ContainsKey($rootKey)) {
-      $fromSettings = [string]$global:settings[$rootKey]
-      if (-not [string]::IsNullOrWhiteSpace($fromSettings)) {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved feed URI for tier '$Tier' from `$global:settings"
-        return $fromSettings
-      }
+  # 1. Resolve feed URI via Get-ATAPIACConstant (T-31).
+  try {
+    $constantName = "PowerShellGetFeedUrl_$canonicalTier"
+    $uri = Get-ATAPIACConstant -Name $constantName
+    if (-not [string]::IsNullOrWhiteSpace($uri)) {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved feed URI for tier '$Tier' (canonical '$canonicalTier') from Get-ATAPIACConstant '$constantName'"
+      return $uri
     }
+  } catch {
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Get-ATAPIACConstant lookup failed for tier '$Tier'; falling back to env var. Error: $_"
   }
 
-  # 2. User-scope environment variable
+  # 2. User-scope environment variable fallback.
   $envName = "PROGET_POWERSHELLGET_FEED_URI_$($Tier.ToUpperInvariant())"
   $fromEnv = [Environment]::GetEnvironmentVariable($envName, 'User')
   if (-not [string]::IsNullOrWhiteSpace($fromEnv)) {
@@ -93,7 +101,7 @@ function Get-PSModuleFeedUri {
     return $fromEnv
   }
 
-  $msg = "feed URI for tier $Tier is not configured; set env var $envName or wait for T-30 Get-ATAPIACConstant"
+  $msg = "feed URI for tier '$Tier' is not configured. Set ATAP.IAC constant 'PowerShellGetFeedUrl_$canonicalTier' or User env var '$envName'."
   Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
   throw $msg
 }
@@ -147,21 +155,30 @@ function Publish-PSModuleToProGetFeed {
     }
     $resolvedNupkg = (Resolve-Path -LiteralPath $NupkgPath).ProviderPath -replace '\\', '/'
 
-    # 2. Map tier -> feed name (inlined until T-12 Get-TierFromNBGVLabel lands).
-    $tierToFeedName = @{
-      'Sprint'     = 'PowershellGet-experimental'
-      'Alpha'      = 'PowershellGet-development'
-      'Beta'       = 'PowershellGet-integration'
-      'QA'         = 'PowershellGet-qa'
-      'Production' = 'PowershellGet-stable'
+    # 2. Map tier -> feed name via Get-ATAPIACConstant (T-31).
+    # Maps old Sprint/Alpha/Beta/Production tier names to canonical Experimental/Development/.../Stable.
+    $canonicalTierMap = @{
+      'Sprint'     = 'Experimental'
+      'Alpha'      = 'Development'
+      'Beta'       = 'Integration'
+      'QA'         = 'QA'
+      'Production' = 'Stable'
     }
-    $feedName = $tierToFeedName[$Tier]
-    if ([string]::IsNullOrWhiteSpace($feedName)) {
-      $msg = "No feed mapping known for tier '$Tier'."
+    $canonicalTier = if ($canonicalTierMap.ContainsKey($Tier)) { $canonicalTierMap[$Tier] } else { $Tier }
+    $constantName = "PowerShellGetFeedName_$canonicalTier"
+    try {
+      $feedName = Get-ATAPIACConstant -Name $constantName
+    } catch {
+      $msg = "Could not resolve PowerShellGet feed name for tier '$Tier' (constant '$constantName'): $_"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
       throw $msg
     }
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Mapped tier '$Tier' to feed name '$feedName'"
+    if ([string]::IsNullOrWhiteSpace($feedName)) {
+      $msg = "Get-ATAPIACConstant returned empty value for '$constantName' (tier '$Tier')."
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+      throw $msg
+    }
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved tier '$Tier' (canonical '$canonicalTier') to feed name '$feedName' via Get-ATAPIACConstant"
 
     # 3. Resolve feed URI via helper.
     $feedUri = Get-PSModuleFeedUri -FeedName $feedName -Tier $Tier

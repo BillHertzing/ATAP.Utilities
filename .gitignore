@@ -31,6 +31,12 @@ Packages/
 Releases/
 RequiredPackagesOfflineRepository/
 
+# _Planning subfolders that contain 'ephemeral' data that should not be checked in (at the repo level)
+#  Theses subfolders have a .gitkeep file and .gitignore file to ignore all other files in the subfolder,
+#  but the .gitkeep file is there to ensure that the subfolder itself is checked in to the repository,
+SprintWorkSessionMemorys/*
+SprintWorkSessionConversations/*
+
 # patterns that start with '/' are locked relative to the location of .gitignore file
 # patterns that do not start with "/" match if the pattern appears anywhere in the FullPath of the file
 # patterns that end with '/' are directories and gitignore will ignore all files and directories under that directory

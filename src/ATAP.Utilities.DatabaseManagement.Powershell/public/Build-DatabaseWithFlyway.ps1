@@ -174,6 +174,9 @@ https://github.com/whertzing/ATAP.Utilities
       if (-not (Get-Command -Name 'New-DBAConnStrBuilder' -CommandType Function -ErrorAction SilentlyContinue)) {
         . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\New-ConnectionStringBuilderFromDbaTools.ps1')
       }
+      if (-not (Get-Command -Name 'Get-DatabaseCredentialsKey' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\Get-DatabaseCredentialsKey.ps1')
+      }
       if (-not (Get-Command -Name 'DatabaseProvisioning' -CommandType Function -ErrorAction SilentlyContinue)) {
         . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\DatabaseProvisioning.ps1')
       }
@@ -198,6 +201,17 @@ https://github.com/whertzing/ATAP.Utilities
     $ConnectionMethod = Get-PVal -ParameterName 'ConnectionMethod' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ConnectionMethod" -Settings $databasesCollection -DefaultValue $ConnectionMethod -ValidValues @('tcp', 'np', 'lpc')
     $Port = Get-PVal -ParameterName 'Port' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.Port" -Settings $databasesCollection -DefaultValue $Port -AllowMissing
     $CredentialsKey = Get-PVal -ParameterName 'CredentialsKey' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.CredentialsKey" -Settings $databasesCollection -DefaultValue $CredentialsKey -AllowMissing
+    # If CredentialsKey was not found in settings or supplied as a parameter, derive it from the
+    # canonical Bitwarden naming scheme:
+    #   Permanent (Production/QA/Integration): dbConnectionString-<DB>-<Host>-<Tier>
+    #   Per-sprint (Development/Experimental): dbConnectionString-<DB>-<Host>-<Tier>-<UserName>
+    # NOTE: Integration, QA, and Production databases use dedicated ecosystem SQL Server instances
+    # on shared infrastructure hosts. Development and Experimental are per-sprint instances on
+    # the developer workstation; their secrets include the developer's UserName suffix.
+    if (-not $CredentialsKey -and $DatabaseHost -and $Environment) {
+      $CredentialsKey = Get-DatabaseCredentialsKey -DatabaseName $DatabaseName -DatabaseHost $DatabaseHost -Environment $Environment
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Derived CredentialsKey from naming scheme: $CredentialsKey"
+    }
     # endregion Database connection parameter validation
     $DatabasePath = Get-PVal -ParameterName 'DatabasePath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection -DefaultValue $DatabasePath
     $ProvisioningScriptsPath = Get-PVal -ParameterName 'ProvisioningScriptsPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisioningScriptsPath" -Settings $databasesCollection -DefaultValue $ProvisioningScriptsPath

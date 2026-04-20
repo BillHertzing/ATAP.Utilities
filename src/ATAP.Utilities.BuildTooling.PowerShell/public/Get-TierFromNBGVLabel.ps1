@@ -14,11 +14,11 @@
 
     | Label  | Tier            | Feed                         |
     |--------|-----------------|------------------------------|
-    | Sprint | T1 Experimental | PowershellGet-experimental   |
-    | Alpha  | T2 Development  | PowershellGet-development    |
-    | Beta   | T3 Integration  | PowershellGet-integration    |
-    | QA     | T4 QA           | PowershellGet-qa             |
-    | (none) | T5 Production   | PowershellGet-stable         |
+    | Sprint | T1 Experimental | powershellget-experimental   |
+    | Alpha  | T2 Development  | powershellget-development    |
+    | Beta   | T3 Integration  | powershellget-integration    |
+    | QA     | T4 QA           | powershellget-qa             |
+    | (none) | T5 Production   | powershellget-stable         |
 
   Any other value produces a clear terminating error.
 .PARAMETER PrereleaseLabel
@@ -34,7 +34,7 @@
   PS> Get-TierFromNBGVLabel -PrereleaseLabel 'Alpha'
   TierNumber TierName    FeedName
   ---------- --------    --------
-           2 Development PowershellGet-development
+           2 Development powershellget-development
 .EXAMPLE
   PS> Get-TierFromNBGVLabel -PrereleaseLabel 'Alpha.6'
   # same result — the '.6' height is stripped internally
@@ -42,7 +42,7 @@
   PS> Get-TierFromNBGVLabel -PrereleaseLabel ''
   TierNumber TierName   FeedName
   ---------- --------   --------
-           5 Production PowershellGet-stable
+           5 Production powershellget-stable
 .NOTES
   AI assisted using Powershell.instructions.md as guidelines
 .LINK
@@ -85,7 +85,7 @@ function Get-TierFromNBGVLabel {
         $result = [PSCustomObject]@{
           TierNumber = 1
           TierName   = 'Experimental'
-          FeedName   = 'PowershellGet-experimental'
+          FeedName   = 'powershellget-experimental'
         }
         break
       }
@@ -93,7 +93,7 @@ function Get-TierFromNBGVLabel {
         $result = [PSCustomObject]@{
           TierNumber = 2
           TierName   = 'Development'
-          FeedName   = 'PowershellGet-development'
+          FeedName   = 'powershellget-development'
         }
         break
       }
@@ -101,7 +101,7 @@ function Get-TierFromNBGVLabel {
         $result = [PSCustomObject]@{
           TierNumber = 3
           TierName   = 'Integration'
-          FeedName   = 'PowershellGet-integration'
+          FeedName   = 'powershellget-integration'
         }
         break
       }
@@ -109,7 +109,7 @@ function Get-TierFromNBGVLabel {
         $result = [PSCustomObject]@{
           TierNumber = 4
           TierName   = 'QA'
-          FeedName   = 'PowershellGet-qa'
+          FeedName   = 'powershellget-qa'
         }
         break
       }
@@ -117,7 +117,7 @@ function Get-TierFromNBGVLabel {
         $result = [PSCustomObject]@{
           TierNumber = 5
           TierName   = 'Production'
-          FeedName   = 'PowershellGet-stable'
+          FeedName   = 'powershellget-stable'
         }
         break
       }

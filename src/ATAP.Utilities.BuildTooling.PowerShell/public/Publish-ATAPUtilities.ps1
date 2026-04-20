@@ -33,8 +33,8 @@
 
 .NOTES
     Requires PROGET_ADMIN_API_KEY environment variable (set by LoginScript.ps1 from Bitwarden).
-    The push destination is http://localhost:50000/nuget/nuget-experimental/ by default.
-    Override with -p:ProGetExperimentalFeedUrl=<url> if needed.
+    The push destination feed name is resolved via Get-ATAPIACConstant -Name 'NuGetFeedName_Experimental'
+    (defaults to 'nuget-experimental'). Override with -p:ProGetExperimentalFeedUrl=<url> if needed.
 #>
 [CmdletBinding(SupportsShouldProcess)]
 param(
@@ -112,6 +112,9 @@ if (-not $WhatIfPreference) {
             -Message "$($failed.Count) project(s) failed to publish." -Tag 'Publish', 'Error'
         exit 1
     }
+    # Resolve feed name via Get-ATAPIACConstant (T-31) for the status message.
+    $targetFeedName = 'nuget-experimental'
+    try { $targetFeedName = Get-ATAPIACConstant -Name 'NuGetFeedName_Experimental' } catch {}
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-        -Message "All $($results.Count) libraries published to nuget-experimental." -Tag 'Publish'
+        -Message "All $($results.Count) libraries published to $targetFeedName." -Tag 'Publish'
 }

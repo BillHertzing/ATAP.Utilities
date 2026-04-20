@@ -73,11 +73,15 @@ if $PrereleaseLabel == Beta       { set $Tier = Integration;  }
 if $PrereleaseLabel == QA         { set $Tier = QA;           }
 if $PrereleaseLabel == ""         { set $Tier = Production;   }
 
-set $FeedName = nuget-experimental;
-if $Tier == Development { set $FeedName = nuget-development;  }
-if $Tier == Integration { set $FeedName = nuget-integration;  }
-if $Tier == QA          { set $FeedName = nuget-qa;           }
-if $Tier == Production  { set $FeedName = nuget-stable;       }
+# Resolve feed name via Get-ATAPIACConstant (T-31) — no hard-coded feed names.
+Exec pwsh
+(
+    Arguments: >>-NoProfile -File Build/BuildMaster/Scripts/Resolve-FeedName.ps1 -Tier $Tier -FeedType nuget -OutputFile _feedname.tmp>>,
+    WorkingDirectory: $SourcePath,
+    SuccessExitCode: 0
+);
+set $FeedNameTmp = $PathCombine($SourcePath, _feedname.tmp);
+set $FeedName = $Trim($FileContents($FeedNameTmp));
 
 # Derive a slug for artifact names (last segment of $ProjectPath, no extension)
 set $PackageSlug = $RegexReplace($ProjectPath, `^.*\\([^\\]+)\.(csproj|sln)$`, `$1`);

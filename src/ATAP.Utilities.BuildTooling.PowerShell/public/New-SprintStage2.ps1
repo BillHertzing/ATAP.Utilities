@@ -3,7 +3,7 @@
 # =====================================================================
 $privateDir = Join-Path $PSScriptRoot '..' 'private'
 . (Join-Path $privateDir 'Set-ClaudeSettingsSymlink.ps1')
-. (Join-Path $privateDir 'New-SprintBuildMasterBuilds.ps1')
+# New-SprintBuildMasterBuilds.ps1 replaced by public Set-BuildMasterSprintVariables (Area 7.2-1)
 . (Join-Path $privateDir 'New-SprintDatabaseInstances.ps1')
 . (Join-Path $privateDir 'New-SprintBitwardenConnectionStrings.ps1')
 
@@ -381,22 +381,32 @@ function New-SprintStage2 {
     }
 
     # ===================================================================
-    # 7. Scaffold BuildMaster sprint builds (DRAFT — skipped at runtime)
+    # 7. Set BuildMaster sprint application variables (Area 7.2-1)
+    # Sets SprintNumber, UserName, SprintBranchName for each application.
+    # These are consumed by the 5-Stage OtterScript plans and are cleared
+    # at sprint-end by Clear-BuildMasterSprintVariables.
     # NOTE: ProGet feed creation (formerly Step 7) has been removed.
-    # All ProGet feeds are permanent and ecosystem-wide. Use New-ProGetFeedSet
-    # for one-time feed provisioning per ProGet host. (Area 5 — reverted scheme)
+    # All ProGet feeds are permanent and ecosystem-wide. (Area 5 — reverted scheme)
     # ===================================================================
     $buildMasterResult = $null
     $buildMasterError = $null
 
     try {
-      $buildMasterResult = New-SprintBuildMasterBuilds `
+      # Build per-application sprint branch name hashtable from $repoResults
+      $sprintBranchNameMap = @{}
+      foreach ($rr in $repoResults) {
+        if (-not [string]::IsNullOrWhiteSpace($rr.repoName) -and -not [string]::IsNullOrWhiteSpace($rr.branchName)) {
+          $sprintBranchNameMap[$rr.repoName] = $rr.branchName
+        }
+      }
+
+      $buildMasterResult = Set-BuildMasterSprintVariables `
         -SprintNumber $sprintNum `
-        -GitRoot $GitRoot `
-        -BuildMasterBaseUrl $BuildMasterBaseUrl `
-        -Username $env:USERNAME
+        -Username $env:USERNAME `
+        -SprintBranchNames $sprintBranchNameMap `
+        -BuildMasterBaseUrl $BuildMasterBaseUrl
     } catch {
-      $buildMasterError = "Failed to scaffold BuildMaster builds. Exception: $($_.Exception.Message)"
+      $buildMasterError = "Failed to set BuildMaster sprint variables. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $buildMasterError
     }
 
@@ -497,9 +507,9 @@ function New-SprintStage2 {
         claudeSettingsError   = $claudeSettingsError
         # PLACEHOLDER: buildMaster fields are draft — values will be empty
         # until BuildMaster API integration is tested and enabled.
-        buildMasterBuilds     = if ($buildMasterResult) { $buildMasterResult.createdBuilds } else { @() }
-        buildMasterErrors     = if ($buildMasterResult) { $buildMasterResult.errors } else { @() }
-        buildMasterError      = $buildMasterError
+        buildMasterVariablesSet    = if ($buildMasterResult) { $buildMasterResult.variablesSet } else { @() }
+        buildMasterVariablesErrors = if ($buildMasterResult) { $buildMasterResult.errors } else { @() }
+        buildMasterVariablesError  = $buildMasterError
         # Connection string secrets created in Bitwarden (UNTESTED)
         connectionStrings     = if ($connStringResults) { $connStringResults } else { @() }
         connectionStringError = $connStringError

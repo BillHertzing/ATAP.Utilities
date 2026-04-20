@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide describes the 5-tier lifecycle flow for the ATAP.Utilities.BuildTooling.PowerShell module.
+This guide describes the 5-tier lifecycle flow for the ATAP.Utilities.VoiceRecognition.Powershell module.
 
 ## 5-Tier Flow
 

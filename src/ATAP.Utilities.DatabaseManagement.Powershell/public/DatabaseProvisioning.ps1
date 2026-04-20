@@ -158,6 +158,9 @@ function DatabaseProvisioning {
       if (-not (Get-Command -Name 'New-DbaConnectionStringBuilder' -CommandType Function -ErrorAction SilentlyContinue)) {
         install-module dbatools -Scope CurrentUser -Force -ErrorAction Stop
       }
+      if (-not (Get-Command -Name 'Get-DatabaseCredentialsKey' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\Get-DatabaseCredentialsKey.ps1')
+      }
     }
     catch {
       $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
@@ -233,6 +236,14 @@ function DatabaseProvisioning {
       $Port = Get-PVal -ParameterName "Port" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.Port" -Settings $databasesCollection -DefaultValue $Port -AllowMissing
       $DatabasePath = Get-PVal -ParameterName "DatabasePath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection -DefaultValue $DatabasePath
       $CredentialsKey = Get-PVal -ParameterName "CredentialsKey" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.CredentialsKey" -Settings $databasesCollection -DefaultValue $CredentialsKey
+      # If CredentialsKey was not found in settings or supplied as a parameter, derive it from the
+      # canonical Bitwarden naming scheme:
+      #   Permanent (Production/QA/Integration): dbConnectionString-<DB>-<Host>-<Tier>
+      #   Per-sprint (Development/Experimental): dbConnectionString-<DB>-<Host>-<Tier>-<UserName>
+      if (-not $CredentialsKey -and $DatabaseHost -and $Environment) {
+        $CredentialsKey = Get-DatabaseCredentialsKey -DatabaseName $DatabaseName -DatabaseHost $DatabaseHost -Environment $Environment
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Derived CredentialsKey from naming scheme: $CredentialsKey"
+      }
       # endregion Database connection parameters validation
 
       # Build up the connection string

@@ -61,13 +61,26 @@ function Test-FailureAcknowledgedGate {
     $gateRank = $tierRank[$Tier]
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Evaluating gate at tier '$Tier' (rank $gateRank) against result file '$ResultFile'"
+  }
+
+  process {
+    # Skipped at Sprint tier (no tests run, so no results to acknowledge)
+    if ($Tier -eq 'Sprint') {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Tier is Sprint; FailureAcknowledgedGate skipped'
+      return [PSCustomObject]@{
+        Passed         = 0
+        Failed         = 0
+        Acknowledged   = 0
+        Unacknowledged = 0
+        GatePass       = $true
+        Skipped        = $true
+      }
+    }
 
     if (-not (Test-Path -Path $ResultFile)) {
       throw "ResultFile not found: $ResultFile"
     }
-  }
 
-  process {
     try {
       [xml]$resultXml = Get-Content -Path $ResultFile -Raw
     } catch {

@@ -176,7 +176,26 @@ function Invoke-PSModulePesterTests {
   process {
     try {
       if ($Tier -eq 'Sprint') {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Tier is Sprint; skipping Pester entirely'
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Tier is Sprint; skipping Pester entirely and emitting stub JUnit XML'
+
+        # Write a stub JUnit XML so downstream pipeline steps (e.g. GateAck) can
+        # rely on the file existing — matches Invoke-PSModulePSScriptAnalyzer pattern.
+        $outDir = Split-Path -Path $OutputPath -Parent
+        if ($outDir -and -not (Test-Path -Path $outDir)) {
+          if ($PSCmdlet.ShouldProcess($outDir, 'Create output directory')) {
+            New-Item -ItemType Directory -Path $outDir -Force | Out-Null
+          }
+        }
+        $stubXml = @'
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites tests="0" failures="0" errors="0" time="0">
+  <testsuite name="Pester" tests="0" failures="0" errors="0" skipped="0" time="0" />
+</testsuites>
+'@
+        if ($PSCmdlet.ShouldProcess($OutputPath, 'Write stub Pester JUnit XML')) {
+          Set-Content -Path $OutputPath -Value $stubXml -Encoding UTF8
+        }
+
         return [PSCustomObject]@{
           Tier         = $Tier
           Passed       = 0
@@ -187,6 +206,7 @@ function Invoke-PSModulePesterTests {
           TotalCount   = 0
           Duration     = [TimeSpan]::Zero
           GatePass     = $true
+          Skipped      = $true
           OutputFile   = $OutputPath
           CoverageFile = $CoverageOutputPath
           Result       = $null

@@ -60,11 +60,15 @@ if $PrereleaseLabel == Beta       { set $Tier = Integration;  }
 if $PrereleaseLabel == QA         { set $Tier = QA;           }
 if $PrereleaseLabel == ""         { set $Tier = Production;   }
 
-set $FeedName = nuget-experimental;
-if $Tier == Development { set $FeedName = nuget-development;  }
-if $Tier == Integration { set $FeedName = nuget-integration;  }
-if $Tier == QA          { set $FeedName = nuget-qa;           }
-if $Tier == Production  { set $FeedName = nuget-stable;       }
+# Resolve feed name via Get-ATAPIACConstant (T-31) — no hard-coded feed names.
+Exec pwsh
+(
+    Arguments: >>-NoProfile -File Build/BuildMaster/Scripts/Resolve-FeedName.ps1 -Tier $Tier -FeedType nuget -OutputFile _feedname.tmp>>,
+    WorkingDirectory: $SourcePath,
+    SuccessExitCode: 0
+);
+set $FeedNameTmp = $PathCombine($SourcePath, _feedname.tmp);
+set $FeedName = $Trim($FileContents($FeedNameTmp));
 
 Log-Debug "Resolved Tier=$Tier  Feed=$FeedName  from NuGetPackageVersion=$NbgvVersion";
 
@@ -196,13 +200,13 @@ Log-Debug "Resolved Tier=$Tier  Feed=$FeedName  from NuGetPackageVersion=$NbgvVe
           WorkingDirectory: $SourcePath,
           SuccessExitCode: 0
       );
-      Log-Information "Integration smoke-test gate passed — promoting packages to nuget-qa.";
+      Log-Information "Integration smoke-test gate passed — promoting packages to QA feed.";
 
       # ---- task 1.3-2: Promote packages from nuget-integration → nuget-qa ----
       # Move-ProGetPackageInterTier auto-resolves the destination feed from -SourceFeed.
       Exec pwsh
       (
-          Arguments: >>-NoProfile -Command "Import-Module 'ATAP.Utilities.BuildTooling.PowerShell'; Move-ProGetPackageInterTier -PackageName '$MetaPackageName' -Version '$NbgvVersion' -SourceFeed 'nuget-integration' -ProGetBaseUrl '$ProGetUrl' -ApiKey '$ProGetApiKey' -Comments 'Promoted to QA after Integration smoke-test gate passed (Sprint $SprintNumber, User $UserName)'">>      ,
+          Arguments: >>-NoProfile -Command "Import-Module 'ATAP.Utilities.BuildTooling.PowerShell'; $srcFeed = Get-ATAPIACConstant -Name 'NuGetFeedName_Integration'; Move-ProGetPackageInterTier -PackageName '$MetaPackageName' -Version '$NbgvVersion' -SourceFeed $srcFeed -ProGetBaseUrl '$ProGetUrl' -ApiKey '$ProGetApiKey' -Comments 'Promoted to QA after Integration smoke-test gate passed (Sprint $SprintNumber, User $UserName)'">>      ,
           WorkingDirectory: $SourcePath,
           SuccessExitCode: 0
       );

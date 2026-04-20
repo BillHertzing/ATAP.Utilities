@@ -44,10 +44,14 @@
 
 [CmdletBinding(SupportsShouldProcess)]
 param(
-    [string] $ProjectFilter = '*'
+    [string] $ProjectFilter = '*',
+
+    # When set, also publishes all PowerShell modules found under src/ via their
+    # module.build.ps1 Publish task. The tier is resolved from NBGV at build time.
+    [switch] $IncludePowerShellModules
 )
 
-BEGIN {
+begin {
     $fn = $MyInvocation.MyCommand.Name
     $mn = 'Publish-ATAPUtilities'
 
@@ -68,11 +72,11 @@ BEGIN {
     $failed = [System.Collections.Generic.List[string]]::new()
 }
 
-PROCESS {
+process {
     try {
         $allProjects = Get-ChildItem -Path (Join-Path $repoRoot 'src') -Recurse -Filter '*.csproj' |
-        Where-Object { $_.FullName -like $ProjectFilter } |
-        Sort-Object FullName
+            Where-Object { $_.FullName -like $ProjectFilter } |
+            Sort-Object FullName
 
         if ($allProjects.Count -eq 0) {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "No .csproj files matched filter '$ProjectFilter' under src/."
@@ -89,13 +93,11 @@ PROCESS {
                     try {
                         Remove-Item $lockFile -Force
                         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Removed lock file: $lockFile"
-                    }
-                    catch {
+                    } catch {
                         $errorMessage = "Failed to remove lock file '$lockFile'. Exception: $($_.Exception.Message)"
                         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
                         throw
-                    }
-                    finally {
+                    } finally {
                         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving Function $fn in module $mn"
                     }
                 }
@@ -107,39 +109,103 @@ PROCESS {
                     if ($LASTEXITCODE -eq 0) {
                         $succeeded.Add($proj.Name)
                         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Build succeeded: $($proj.Name)"
-                    }
-                    else {
+                    } else {
                         $errorMessage = "Build failed for $($proj.Name) with exit code $LASTEXITCODE"
                         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
                         $failed.Add($proj.Name)
                     }
-                }
-                catch {
+                } catch {
                     $errorMessage = "Exception building $($proj.Name). Exception: $($_.Exception.Message)"
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
                     $failed.Add($proj.Name)
                     throw
-                }
-                finally {
+                } finally {
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving Function $fn in module $mn"
                 }
-            }
-            else {
+            } else {
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "WhatIf: would delete lock '$lockFile' then build '$($proj.FullName)'"
             }
         }
-    }
-    catch {
+
+        # -------------------------------------------------------------------
+        # PowerShell modules section
+        # Iterates every module.build.ps1 under src/, resolves the current
+        # 5-Tier tier from NBGV, and calls Invoke-Build Publish for each module.
+        # Activated only when -IncludePowerShellModules is supplied.
+        # -------------------------------------------------------------------
+        if ($IncludePowerShellModules) {
+            # Resolve NBGV prerelease label to tier name
+            $nbgvOutput = & nbgv get-version --variable NuGetPackageVersion 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                $errorMessage = "NBGV failed to resolve version (exit $LASTEXITCODE): $nbgvOutput"
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+                throw $errorMessage
+            }
+            $prereleaseLabel = if ($nbgvOutput -match '^[0-9]+\.[0-9]+\.[0-9]+-?([A-Za-z]*)') { $Matches[1] } else { '' }
+            $psModuleTier = switch ($prereleaseLabel) {
+                'Sprint' { 'Sprint' }
+                'Alpha' { 'Alpha' }
+                'Beta' { 'Beta' }
+                'QA' { 'QA' }
+                default { 'Production' }
+            }
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message `
+                "PS modules — NBGV label='$prereleaseLabel'  resolved Tier=$psModuleTier"
+
+            # Verify Invoke-Build is available
+            if (-not (Get-Command 'Invoke-Build' -ErrorAction SilentlyContinue)) {
+                $errorMessage = 'Invoke-Build is not available. Install it with: Install-Module InvokeBuild -Scope CurrentUser'
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+                throw $errorMessage
+            }
+
+            # Enumerate all module roots containing a module.build.ps1
+            $psModuleRoots = Get-ChildItem -Path (Join-Path $repoRoot 'src') -Recurse -Filter 'module.build.ps1' -File |
+                Select-Object -ExpandProperty DirectoryName |
+                Sort-Object
+
+            if ($psModuleRoots.Count -eq 0) {
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message `
+                    'No module.build.ps1 files found under src/; no PowerShell modules to publish.'
+            } else {
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message `
+                    "Found $($psModuleRoots.Count) PowerShell module(s) to publish at Tier=$psModuleTier."
+            }
+
+            foreach ($moduleRoot in $psModuleRoots) {
+                $moduleBuildScript = Join-Path $moduleRoot 'module.build.ps1'
+                $moduleName = Split-Path $moduleRoot -Leaf
+
+                if ($PSCmdlet.ShouldProcess($moduleRoot, "Invoke-Build Publish -Tier $psModuleTier")) {
+                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message `
+                        "PS modules — publishing: $moduleName"
+                    try {
+                        Invoke-Build -File $moduleBuildScript Publish -Tier $psModuleTier
+                        $succeeded.Add($moduleName)
+                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message `
+                            "PS modules — publish succeeded: $moduleName"
+                    } catch {
+                        $errorMessage = "Invoke-Build Publish failed for '$moduleName'. Exception: $($_.Exception.Message)"
+                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+                        $failed.Add($moduleName)
+                        throw
+                    }
+                } else {
+                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message `
+                        "WhatIf: would Invoke-Build Publish -Tier $psModuleTier for '$moduleRoot'"
+                }
+            }
+        }
+    } catch {
         $errorMessage = "Unhandled error in $fn. Exception: $($_.Exception.Message)"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
         throw
-    }
-    finally {
+    } finally {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving Function $fn in module $mn"
     }
 }
 
-END {
+end {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Publish complete: $($succeeded.Count) succeeded, $($failed.Count) failed."
 
     if ($failed.Count -gt 0) {

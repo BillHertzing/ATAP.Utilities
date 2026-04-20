@@ -1,0 +1,241 @@
+##########################################################################
+# CSharpPackage-5Stage — BuildMaster OtterScript Plan
+#
+# Variables (Application Variables — set in BuildMaster Application config):
+#   $ApplicationName         — "ATAP.Utilities"
+#   $Branch                  — branch being built
+#   $SourcePath              — absolute path to worktree
+#                              (BuildMaster App Variable name: ATAPUtilitiesSourcePath)
+#   $SprintNumber            — current sprint number, e.g. "0006"  (task 1.3-5)
+#   $UserName                — developer username, e.g. value of $env:USERNAME  (task 1.3-5)
+#   $Configuration           — "Release"
+#   $ProGetUrl               — e.g. "http://localhost:50000"
+#   $ProGetApiKey            — masked; from PROGET_ADMIN_API_KEY env var
+#   $MetaPackageName         — "ATAP.Utilities"
+#
+# Note (task 1.3-5): Sprint-feed Application Variables (SprintFeedName,
+#   SprintFeedUrl) are NOT used. All five tiers use the permanent
+#   nuget-* feeds only (reverted naming scheme).
+#
+# Tier names (from Explainer 602):
+#   Experimental  ← NBGV label -Sprint-   → nuget-experimental
+#   Development   ← NBGV label -Alpha-    → nuget-development
+#   Integration   ← NBGV label -Beta-     → nuget-integration
+#   QA            ← NBGV label -QA-       → nuget-qa
+#   Production    ← NBGV label (stable)   → nuget-stable
+#
+# Retention policy (task 1.3-4 — configured per-feed in ProGet UI, not here):
+#   nuget-experimental:  7 days
+#   nuget-development:   30 days
+#   nuget-integration:   indefinite (hermetic — no inbound connectors)
+#   nuget-qa:            indefinite (hermetic — no inbound connectors)
+#   nuget-stable:        indefinite (no inbound connectors)
+##########################################################################
+
+Git::Checkout-Code
+(
+    BranchOrCommit: $Branch,
+    To: $SourcePath
+);
+
+# Resolve tier from NBGV.
+# Step 1: Run nbgv and write output to a temp file
+Exec
+(
+    FileName: pwsh,
+    Arguments: >>-NoProfile -Command "nbgv get-version --variable NuGetPackageVersion | Out-File '_nbgv.tmp' -Encoding utf8 -NoNewline">>,
+    WorkingDirectory: $SourcePath,
+    SuccessExitCode: 0
+);
+
+# Step 2: Read it into a variable using a real OtterScript function
+set $NbgvTempFile = $PathCombine($SourcePath, _nbgv.tmp);
+set $NbgvVersion  = $Trim($FileContents($NbgvTempFile));
+
+set $PrereleaseLabel = $RegexReplace($NbgvVersion, >>^[0-9]+\.[0-9]+\.[0-9]+-?([A-Za-z]*).*$>>, `$1`);
+
+set $Tier = Experimental;
+if $PrereleaseLabel == Alpha      { set $Tier = Development;  }
+if $PrereleaseLabel == Beta       { set $Tier = Integration;  }
+if $PrereleaseLabel == QA         { set $Tier = QA;           }
+if $PrereleaseLabel == ""         { set $Tier = Production;   }
+
+set $FeedName = nuget-experimental;
+if $Tier == Development { set $FeedName = nuget-development;  }
+if $Tier == Integration { set $FeedName = nuget-integration;  }
+if $Tier == QA          { set $FeedName = nuget-qa;           }
+if $Tier == Production  { set $FeedName = nuget-stable;       }
+
+Log-Debug "Resolved Tier=$Tier  Feed=$FeedName  from NuGetPackageVersion=$NbgvVersion";
+
+# -------------------------------------------------------------------------
+# Stage Experimental — build + pack only; no tests; push to nuget-experimental
+# -------------------------------------------------------------------------
+  if $Tier == Experimental
+  {
+      Exec dotnet (
+        Arguments: "build ATAP.Utilities.sln --configuration $Configuration --no-incremental",
+        WorkingDirectory: $SourcePath,
+        SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: "pack ATAP.Utilities.sln --configuration $Configuration --no-build --output _generated\nuget\$Tier",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: "nuget push _generated\nuget\$Tier\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $ProGetApiKey",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Create-Artifact Packages
+      (
+          From: _generated\nuget\$Tier,
+          Include: @(*.nupkg, *.snupkg)
+      );
+  }
+# -------------------------------------------------------------------------
+# Stage Development — build + unit tests + pack + publish to nuget-development
+# -------------------------------------------------------------------------
+  if $Tier == Development
+  {
+      Exec dotnet (
+        Arguments: "build ATAP.Utilities.sln --configuration $Configuration --no-incremental",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: "test ATAP.Utilities.sln --configuration $Configuration --no-build --logger trx --results-directory _generated\testresults\$Tier",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: "pack ATAP.Utilities.sln --configuration $Configuration --no-build --output _generated\nuget\$Tier",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: "nuget push _generated\nuget\$Tier\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $ProGetApiKey",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Create-Artifact TestResults
+      (
+          From: _generated\testresults\$Tier,
+          Include: @(*.trx)
+      );
+      Create-Artifact Packages
+      (
+          From: _generated\nuget\$Tier,
+          Include: @(*.nupkg, *.snupkg)
+      );
+  }
+# -------------------------------------------------------------------------
+# Stage Integration — build + unit + integration tests + pack + publish
+# -------------------------------------------------------------------------
+  if $Tier == Integration
+  {
+      Exec dotnet (
+        Arguments: "build ATAP.Utilities.sln --configuration $Configuration --no-incremental",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+Arguments: >>test ATAP.Utilities.sln --configuration $Configuration --no-build --filter "Category=Unit|Category=Integration" --logger trx --results-directory _generated\testresults\$Tier>>,          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: "pack ATAP.Utilities.sln --configuration $Configuration --no-build --output _generated\nuget\$Tier",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: "nuget push _generated\nuget\$Tier\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $ProGetApiKey",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Create-Artifact TestResults ( From: _generated\testresults\$Tier, Include: @(*.trx) );
+      Create-Artifact Packages    ( From: _generated\nuget\$Tier,       Include: @(*.nupkg, *.snupkg) );
+
+      # ---- task 1.3-3: AceCommander smoke-test gate (manual, blocks QA promotion) ----
+      # Before promoting packages to nuget-qa a human must:
+      #   1. Build AceCommander targeting the packages just pushed to nuget-integration.
+      #   2. Perform a smoke-test of the running application.
+      #   3. Create the approval marker file at:
+      #        $SourcePath\_generated\gates\SmokeTest-Integration.approved
+      # This step fails with a clear error if the marker is absent, blocking QA promotion.
+      Exec pwsh
+      (
+          Arguments: >>-NoProfile -Command "if (-not (Test-Path '$SourcePath\_generated\gates\SmokeTest-Integration.approved')) { throw 'Integration gate not cleared. Complete the AceCommander smoke-test and create the approval marker file before promoting to QA.' }">>      ,
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Log-Information "Integration smoke-test gate passed — promoting packages to nuget-qa.";
+
+      # ---- task 1.3-2: Promote packages from nuget-integration → nuget-qa ----
+      # Move-ProGetPackageInterTier auto-resolves the destination feed from -SourceFeed.
+      Exec pwsh
+      (
+          Arguments: >>-NoProfile -Command "Import-Module 'ATAP.Utilities.BuildTooling.PowerShell'; Move-ProGetPackageInterTier -PackageName '$MetaPackageName' -Version '$NbgvVersion' -SourceFeed 'nuget-integration' -ProGetBaseUrl '$ProGetUrl' -ApiKey '$ProGetApiKey' -Comments 'Promoted to QA after Integration smoke-test gate passed (Sprint $SprintNumber, User $UserName)'">>      ,
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+  }
+# -------------------------------------------------------------------------
+# Stage QA — full suite + coverage + pack + publish
+# -------------------------------------------------------------------------
+  if $Tier == QA
+  {
+      Exec dotnet (
+        Arguments: "build ATAP.Utilities.sln --configuration $Configuration --no-incremental",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: >>test ATAP.Utilities.sln --configuration $Configuration --no-build --collect:"XPlat Code Coverage" --results-directory _generated\testresults\$Tier>>,
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: "pack ATAP.Utilities.sln --configuration $Configuration --no-build --output _generated\nuget\$Tier",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: "nuget push _generated\nuget\$Tier\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $ProGetApiKey",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Create-Artifact TestResults ( From: _generated\testresults\$Tier, Include: @(*.trx, coverage.cobertura.xml) );
+      Create-Artifact Packages    ( From: _generated\nuget\$Tier,       Include: @(*.nupkg, *.snupkg) );
+  }
+# -------------------------------------------------------------------------
+# Stage Production — signed packages + full suite + publish to nuget-stable
+# -------------------------------------------------------------------------
+  if $Tier == Production
+  {
+      Exec dotnet (
+        Arguments: "build ATAP.Utilities.sln --configuration $Configuration --no-incremental",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: >>test ATAP.Utilities.sln --configuration $Configuration --no-build --collect:"XPlat Code Coverage" --results-directory _generated\testresults\$Tier>>,
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: "pack ATAP.Utilities.sln --configuration $Configuration --no-build --output _generated\nuget\$Tier",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      # Optional: sign packages before push
+      # Exec ( FileName: dotnet, Arguments: `nuget sign _generated\nuget\$Tier\*.nupkg --certificate-path ... --timestamper ...` );
+      Exec dotnet (
+        Arguments: "nuget push _generated\nuget\$Tier\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $ProGetApiKey",
+          WorkingDirectory: $SourcePath,
+      SuccessExitCode: 0
+  );
+  Create-Artifact TestResults ( From: _generated\testresults\$Tier, Include: @(*.trx, coverage.cobertura.xml) );
+  Create-Artifact Packages    ( From: _generated\nuget\$Tier,       Include: @(*.nupkg, *.snupkg) );
+  }

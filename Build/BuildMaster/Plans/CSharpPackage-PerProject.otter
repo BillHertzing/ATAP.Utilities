@@ -1,0 +1,233 @@
+##########################################################################
+# CSharpPackage-PerProject — BuildMaster OtterScript Plan
+#
+# Purpose : Build, test, pack, and publish a *single* C# project (and its
+#           sub-projects) through the 5-Tier pipeline.  Follows the same
+#           per-tier if-block structure as CSharpPackage-5Stage.otter, with
+#           $ProjectPath substituted for ATAP.Utilities.sln and output paths
+#           scoped under $PackageSlug to avoid collision between applications.
+#
+# Variables (Application Variables or Build Variables):
+#   $ApplicationName  — e.g. "ATAP.Utilities"
+#   $Branch           — branch being built (injected by Repository Monitor)
+#   $SourcePath       — absolute path to the checked-out worktree
+#                       e.g. C:\BuildMaster\work\ATAP.Utilities\%releaseNumber%
+#   $ProjectPath      — solution-root-relative path to the .csproj  OR  a
+#                       .sln file that contains just this package family.
+#                       e.g. src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj
+#                       e.g. src\ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.sln
+#   $Configuration    — "Release"
+#   $ProGetUrl        — e.g. "http://localhost:50000"
+#   $ProGetApiKey     — masked; from PROGET_ADMIN_API_KEY env var
+#
+# Tier names (from Explainer 602):
+#   Experimental  ← NBGV label -Sprint-   → nuget-experimental
+#   Development   ← NBGV label -Alpha-    → nuget-development
+#   Integration   ← NBGV label -Beta-     → nuget-integration
+#   QA            ← NBGV label -QA-       → nuget-qa
+#   Production    ← NBGV label (stable)   → nuget-stable
+#
+# How to use:
+#   Option A — One Application per package family
+#     1. Create a BuildMaster Application named e.g. "ATAP.Utilities.Philote"
+#     2. Set $ProjectPath = src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj
+#     3. Attach this plan and add a Repository Monitor scoped to that package's
+#        path filter (see CSharpPackage-RepositoryMonitors.otter).
+#
+#   Option B — Shared application with per-build variable override
+#     1. Use the "ATAP.Utilities-CSharp" application.
+#     2. Trigger a manual build and override $ProjectPath when prompted.
+#     3. Useful for ad-hoc per-package pushes without a dedicated application.
+#
+# See: SolutionDocumentation/BuildMaster-ProGet-CSharp-Package-Pipeline.md §9
+##########################################################################
+
+# ---------------------------------------------------------------------------
+# 1. Acquire source
+# ---------------------------------------------------------------------------
+Git::Checkout-Code
+(
+    BranchOrCommit: $Branch,
+    To: $SourcePath
+);
+
+# Resolve tier from NBGV.
+# Step 1: Run nbgv and write output to a temp file
+Exec
+(
+    FileName: pwsh,
+    Arguments: >>-NoProfile -Command "nbgv get-version --variable NuGetPackageVersion | Out-File '_nbgv.tmp' -Encoding utf8 -NoNewline">>,
+    WorkingDirectory: $SourcePath,
+    SuccessExitCode: 0
+);
+
+# Step 2: Read it into a variable using a real OtterScript function
+set $NbgvTempFile = $PathCombine($SourcePath, _nbgv.tmp);
+set $NbgvVersion  = $Trim($FileContents($NbgvTempFile));
+
+set $PrereleaseLabel = $RegexReplace($NbgvVersion, >>^[0-9]+\.[0-9]+\.[0-9]+-?([A-Za-z]*).*$>>, `$1`);
+
+set $Tier = Experimental;
+if $PrereleaseLabel == Alpha      { set $Tier = Development;  }
+if $PrereleaseLabel == Beta       { set $Tier = Integration;  }
+if $PrereleaseLabel == QA         { set $Tier = QA;           }
+if $PrereleaseLabel == ""         { set $Tier = Production;   }
+
+set $FeedName = nuget-experimental;
+if $Tier == Development { set $FeedName = nuget-development;  }
+if $Tier == Integration { set $FeedName = nuget-integration;  }
+if $Tier == QA          { set $FeedName = nuget-qa;           }
+if $Tier == Production  { set $FeedName = nuget-stable;       }
+
+# Derive a slug for artifact names (last segment of $ProjectPath, no extension)
+set $PackageSlug = $RegexReplace($ProjectPath, `^.*\\([^\\]+)\.(csproj|sln)$`, `$1`);
+
+Log-Debug "Resolved Tier=$Tier  Feed=$FeedName  from NuGetPackageVersion=$NbgvVersion";
+
+# -------------------------------------------------------------------------
+# Stage Experimental — build + pack only; no tests; push to nuget-experimental
+# -------------------------------------------------------------------------
+  if $Tier == Experimental
+  {
+      Exec dotnet (
+        Arguments: "build $ProjectPath --configuration $Configuration --no-incremental",
+        WorkingDirectory: $SourcePath,
+        SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: "pack $ProjectPath --configuration $Configuration --no-build --output _generated\nuget\$Tier\$PackageSlug",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: "nuget push _generated\nuget\$Tier\$PackageSlug\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $Decrypt($ProGetApiKey) --skip-duplicate",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Create-Artifact $`$PackageSlug`-Packages
+      (
+          From: _generated\nuget\$Tier\$PackageSlug,
+          Include: @(*.nupkg, *.snupkg)
+      );
+  }
+# -------------------------------------------------------------------------
+# Stage Development — build + unit tests + pack + publish to nuget-development
+# -------------------------------------------------------------------------
+  if $Tier == Development
+  {
+      Exec dotnet (
+        Arguments: "build $ProjectPath --configuration $Configuration --no-incremental",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: "test $ProjectPath --configuration $Configuration --no-build --logger trx --results-directory _generated\testresults\$Tier\$PackageSlug",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: "pack $ProjectPath --configuration $Configuration --no-build --output _generated\nuget\$Tier\$PackageSlug",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: "nuget push _generated\nuget\$Tier\$PackageSlug\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $Decrypt($ProGetApiKey) --skip-duplicate",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Create-Artifact $`$PackageSlug`-TestResults
+      (
+          From: _generated\testresults\$Tier\$PackageSlug,
+          Include: @(*.trx)
+      );
+      Create-Artifact $`$PackageSlug`-Packages
+      (
+          From: _generated\nuget\$Tier\$PackageSlug,
+          Include: @(*.nupkg, *.snupkg)
+      );
+  }
+# -------------------------------------------------------------------------
+# Stage Integration — build + unit + integration tests + pack + publish
+# -------------------------------------------------------------------------
+  if $Tier == Integration
+  {
+      Exec dotnet (
+        Arguments: "build $ProjectPath --configuration $Configuration --no-incremental",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+Arguments: >>test $ProjectPath --configuration $Configuration --no-build --filter "Category=Unit|Category=Integration" --logger trx --results-directory _generated\testresults\$Tier\$PackageSlug>>,          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: "pack $ProjectPath --configuration $Configuration --no-build --output _generated\nuget\$Tier\$PackageSlug",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: "nuget push _generated\nuget\$Tier\$PackageSlug\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $Decrypt($ProGetApiKey) --skip-duplicate",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Create-Artifact $`$PackageSlug`-TestResults ( From: _generated\testresults\$Tier\$PackageSlug, Include: @(*.trx) );
+      Create-Artifact $`$PackageSlug`-Packages    ( From: _generated\nuget\$Tier\$PackageSlug,       Include: @(*.nupkg, *.snupkg) );
+  }
+# -------------------------------------------------------------------------
+# Stage QA — full suite + coverage + pack + publish
+# -------------------------------------------------------------------------
+  if $Tier == QA
+  {
+      Exec dotnet (
+        Arguments: "build $ProjectPath --configuration $Configuration --no-incremental",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: >>test $ProjectPath --configuration $Configuration --no-build --collect:"XPlat Code Coverage" --results-directory _generated\testresults\$Tier\$PackageSlug>>,
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: "pack $ProjectPath --configuration $Configuration --no-build --output _generated\nuget\$Tier\$PackageSlug",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: "nuget push _generated\nuget\$Tier\$PackageSlug\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $Decrypt($ProGetApiKey) --skip-duplicate",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Create-Artifact $`$PackageSlug`-TestResults ( From: _generated\testresults\$Tier\$PackageSlug, Include: @(*.trx, coverage.cobertura.xml) );
+      Create-Artifact $`$PackageSlug`-Packages    ( From: _generated\nuget\$Tier\$PackageSlug,       Include: @(*.nupkg, *.snupkg) );
+  }
+# -------------------------------------------------------------------------
+# Stage Production — signed packages + full suite + publish to nuget-stable
+# -------------------------------------------------------------------------
+  if $Tier == Production
+  {
+      Exec dotnet (
+        Arguments: "build $ProjectPath --configuration $Configuration --no-incremental",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: >>test $ProjectPath --configuration $Configuration --no-build --collect:"XPlat Code Coverage" --results-directory _generated\testresults\$Tier\$PackageSlug>>,
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Exec dotnet (
+        Arguments: "pack $ProjectPath --configuration $Configuration --no-build --output _generated\nuget\$Tier\$PackageSlug",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      # Optional: sign packages before push
+      # Exec ( FileName: dotnet, Arguments: `nuget sign _generated\nuget\$Tier\$PackageSlug\*.nupkg --certificate-path ... --timestamper ...` );
+      Exec dotnet (
+        Arguments: "nuget push _generated\nuget\$Tier\$PackageSlug\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $Decrypt($ProGetApiKey) --skip-duplicate",
+          WorkingDirectory: $SourcePath,
+          SuccessExitCode: 0
+      );
+      Create-Artifact $`$PackageSlug`-TestResults ( From: _generated\testresults\$Tier\$PackageSlug, Include: @(*.trx, coverage.cobertura.xml) );
+      Create-Artifact $`$PackageSlug`-Packages    ( From: _generated\nuget\$Tier\$PackageSlug,       Include: @(*.nupkg, *.snupkg) );
+  }

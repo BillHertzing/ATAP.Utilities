@@ -1,0 +1,100 @@
+##########################################################################
+# PowerShellModule-RepositoryMonitors.otter
+#
+# Purpose : Define BuildMaster Repository Monitors that trigger the
+#           PowerShellModule-5Stage plan when branches are pushed in the
+#           ATAP.Utilities GitHub repository.
+#
+# How to apply:
+#   1. In the BuildMaster UI, open the application for ATAP.Utilities.
+#   2. Navigate to Settings → Repository Monitors.
+#   3. Create one monitor per entry below (or use the BuildMaster API
+#      with the /api/resource-monitors endpoint).
+#   4. Confirm each monitor by performing a test push to the target branch.
+#
+# Reference: 5Tier Implementation plan.md §6.1;
+#            Explainer 14.3 (Repository Monitor configuration)
+#
+# Variables used by triggered builds:
+#   $Branch          — the branch that triggered the monitor (injected by BM)
+#   $ApplicationName — set as Application Variable: "ATAP.Utilities"
+#   $SourcePath      — set as Application Variable: working-directory path
+#   $Modules         — set as Application Variable: list of PS module names
+##########################################################################
+
+# ---------------------------------------------------------------------------
+# Monitor 1 — Sprint branches (T1 / T2)
+# Triggers    : any push to a branch matching sprint-*
+# Stage       : resolves automatically in PowerShellModule-5Stage via NBGV tier
+# Interval    : poll every 2 minutes
+# ---------------------------------------------------------------------------
+GitHub::Repository-Monitor PowerShellModules-Sprint-Monitor
+(
+    Organization: ATAP,
+    Repository: ATAP.Utilities,
+    BranchFilter: sprint-*,
+    PollInterval: 120,
+    PipelineName: PowerShellModule-5Stage,
+    BuildVariables: %(Branch: $Branch)
+);
+
+# ---------------------------------------------------------------------------
+# Monitor 2 — Integration branch (T3 Beta)
+# Triggers    : any push to the "integration" branch
+# Stage       : Beta stage in PowerShellModule-5Stage
+# Interval    : poll every 5 minutes
+# ---------------------------------------------------------------------------
+GitHub::Repository-Monitor PowerShellModules-Integration-Monitor
+(
+    Organization: ATAP,
+    Repository: ATAP.Utilities,
+    BranchFilter: integration,
+    PollInterval: 300,
+    PipelineName: PowerShellModule-5Stage,
+    BuildVariables: %(Branch: $Branch)
+);
+
+# ---------------------------------------------------------------------------
+# Monitor 3 — QA branch (T4)
+# Triggers    : any push to the "qa" branch
+# Interval    : poll every 5 minutes
+# ---------------------------------------------------------------------------
+GitHub::Repository-Monitor PowerShellModules-QA-Monitor
+(
+    Organization: ATAP,
+    Repository: ATAP.Utilities,
+    BranchFilter: qa,
+    PollInterval: 300,
+    PipelineName: PowerShellModule-5Stage,
+    BuildVariables: %(Branch: $Branch)
+);
+
+# ---------------------------------------------------------------------------
+# Monitor 4 — Main branch (T5 Production)
+# Triggers    : any push to "main"
+# Interval    : poll every 10 minutes
+# ---------------------------------------------------------------------------
+GitHub::Repository-Monitor PowerShellModules-Main-Monitor
+(
+    Organization: ATAP,
+    Repository: ATAP.Utilities,
+    BranchFilter: main,
+    PollInterval: 600,
+    PipelineName: PowerShellModule-5Stage,
+    BuildVariables: %(Branch: $Branch)
+);
+
+# ---------------------------------------------------------------------------
+# Monitor 5 — Release tags / branches (T5 Production)
+# Triggers    : any push to branches matching release/v*
+# Interval    : poll every 10 minutes
+# ---------------------------------------------------------------------------
+GitHub::Repository-Monitor PowerShellModules-Release-Monitor
+(
+    Organization: ATAP,
+    Repository: ATAP.Utilities,
+    BranchFilter: release/v*,
+    PollInterval: 600,
+    PipelineName: PowerShellModule-5Stage,
+    BuildVariables: %(Branch: $Branch)
+);

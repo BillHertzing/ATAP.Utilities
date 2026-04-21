@@ -202,13 +202,13 @@ function Invoke-Flyway {
     # Load required helper functions
     try {
       if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
+        . (Join-Path $PSScriptRoot '..\..\ATAP.Utilities.PowerShell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1')
       }
       if (-not (Get-Command -Name 'New-ConnectionStringBuilderFromDbaTools' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\New-ConnectionStringBuilderFromDbaTools.ps1'
+        . (Join-Path $PSScriptRoot 'New-ConnectionStringBuilderFromDbaTools.ps1')
       }
       if (-not (Get-Command -Name 'Get-DatabaseCredentialsKey' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Get-DatabaseCredentialsKey.ps1'
+        . (Join-Path $PSScriptRoot 'Get-DatabaseCredentialsKey.ps1')
       }
     } catch {
       $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
@@ -227,10 +227,10 @@ function Invoke-Flyway {
     $Port = Get-PVal -ParameterName 'Port' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.Port" -Settings $databasesCollection -DefaultValue $Port -AllowMissing
     $CredentialsKey = Get-PVal -ParameterName 'CredentialsKey' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.CredentialsKey" -Settings $databasesCollection -DefaultValue $CredentialsKey -AllowMissing
     # If CredentialsKey was not found in settings or supplied as a parameter, derive it from the
-    # canonical Bitwarden naming scheme:
+    # canonical Bitwarden naming scheme — but only when not using Integrated Security.
     #   Permanent (Production/QA/Integration): dbConnectionString-<DB>-<Host>-<Tier>
     #   Per-sprint (Development/Experimental): dbConnectionString-<DB>-<Host>-<Tier>-<UserName>
-    if (-not $CredentialsKey -and $DatabaseHost -and $Environment) {
+    if (-not $CredentialsKey -and -not $IntegratedSecurity -and $DatabaseHost -and $Environment) {
       $CredentialsKey = Get-DatabaseCredentialsKey -DatabaseName $DatabaseName -DatabaseHost $DatabaseHost -Environment $Environment
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Derived CredentialsKey from naming scheme: $CredentialsKey"
     }

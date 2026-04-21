@@ -6,8 +6,11 @@
     <IsPackable>true</IsPackable>
     <EnableDefaultItems>false</EnableDefaultItems>
     <Description>Aggregator package for ATAP.Utilities.StronglyTypedId libraries.</Description>
-    <!-- No source files — intentional for this aggregator facade -->
-    <NoWarn>$(NoWarn);CS2008</NoWarn>
+    <!-- No source files — intentional for this aggregator facade; IncludeBuildOutput=false
+         tells NuGet pack not to expect or include a DLL. Dependencies declared via
+         ProjectReference below become package-level dependencies in the generated .nuspec. -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <NoWarn>$(NoWarn);CS2008;NU5128</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

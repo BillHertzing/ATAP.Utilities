@@ -135,6 +135,12 @@
   -->
 
   <!-- Release Configuration compilation symbols, flags and build options -->
+  <!-- Microsoft.NET.Sdk.CSharp.props unconditionally appends TRACE to DefineConstants for C#
+       projects; DisableDiagnosticTracing=true removes it via the _DisableDiagnosticTracing
+       target so #if TRACE only fires in Debug and ReleaseWithTrace. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DisableDiagnosticTracing>true</DisableDiagnosticTracing>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DefineConstants>$(DefineConstants);RELEASE;</DefineConstants>

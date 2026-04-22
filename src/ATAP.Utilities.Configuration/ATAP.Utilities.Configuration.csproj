@@ -3,16 +3,17 @@
   <PropertyGroup>
     <EnableDefaultItems>false</EnableDefaultItems>
     <OutputType>Library</OutputType>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
     <Description>Aggregator package for ATAP.Utilities.Configuration libraries.</Description>
   </PropertyGroup>
 
-  <!-- Aggregate all Configuration child projects -->
+  <!-- Aggregate all Configuration child projects — no PrivateAssets so they flow as NuGet deps -->
   <ItemGroup>
-    <ProjectReference Include="Extensions\ATAP.Utilities.Configuration.Extensions.csproj" PrivateAssets="all"/>
-    <ProjectReference Include="Secrets\ATAP.Utilities.Configuration.Secrets.csproj" PrivateAssets="all" />
-    <ProjectReference Include="Secrets\Shims\Bitwarden\ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden.csproj" PrivateAssets="all" />
+    <ProjectReference Include="Extensions\ATAP.Utilities.Configuration.Extensions.csproj" />
+    <ProjectReference Include="Secrets\ATAP.Utilities.Configuration.Secrets.csproj" />
+    <ProjectReference Include="Secrets\Shims\Bitwarden\ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Secrets\ATAP.Utilities.Secrets.csproj" />
   </ItemGroup>
 

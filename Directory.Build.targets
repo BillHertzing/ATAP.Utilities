@@ -172,4 +172,32 @@
     <PackageReference Update="docfx" Version="2.51.2" />
   </ItemGroup>
   -->
+
+  <!-- Safety net: fail the build when the primary output assembly is 0 bytes.
+       Fody can leave a 0-byte DLL on disk when the C# language server
+       (OmniSharp/Roslyn) holds a lock on Fody.dll or MethodBoundaryAspect.dll:
+       Fody truncates the target file and then fails to rewrite it. Without
+       this guard the build reports success and NuGet packs the empty DLL
+       into a nupkg that downstream consumers cannot load. -->
+  <UsingTask TaskName="AssertNonEmptyFile"
+             TaskFactory="RoslynCodeTaskFactory"
+             AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <FilePath ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        var fi = new System.IO.FileInfo(FilePath);
+        if (fi.Exists && fi.Length == 0)
+        {
+            Log.LogError("ATAPBUILD002: Output assembly '{0}' is 0 bytes. Fody likely could not weave because the C# language server holds a lock on Fody.dll or MethodBoundaryAspect.dll. In VS Code run 'C#: Restart Language Server', delete the file, then rebuild.", FilePath);
+        }
+      ]]></Code>
+    </Task>
+  </UsingTask>
+  <Target Name="VerifyNonEmptyOutputAssembly"
+          AfterTargets="Build"
+          Condition="'$(TargetPath)' != '' And Exists('$(TargetPath)')">
+    <AssertNonEmptyFile FilePath="$(TargetPath)" />
+  </Target>
 </Project>

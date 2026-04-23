@@ -9,18 +9,17 @@ function New-SprintBitwardenSecrets {
 
     Databases:  ATAPUtilities, AceCommander
     Hosts:      $env:COMPUTERNAME and 'localhost' by default
-    Tiers:      Development, Experimental
+    Tiers:      Dev, Exp
 
     This yields 8 secrets per developer per sprint
     (2 databases × 2 hosts × 2 tiers).
 
     Secret naming convention:
-      dbConnectionString-<Database>-<Host>-<Tier>-<DeveloperUsername>
+      dbConnectionString-<Database>-<Host>-<Dev|Exp>-<DeveloperUsername>
 
     Connection string format:
-      Server=<Host>\<Tier>;Database=<Database>;Integrated Security=True;
-      MultipleActiveResultSets=True;Application Name=<Database>-Sprint-<NNNN>-<Tier>;
-      TrustServerCertificate=True;
+      Server=<Host>\Dev<DeveloperUsername> (or Exp<DeveloperUsername>);Database=<Database>;Integrated Security=True;
+      MultipleActiveResultSets=True;TrustServerCertificate=True;
 
     The BW_SESSION environment variable must be set (by the login script at
     interactive logon). In agent-spawned shells it is read from User scope.
@@ -116,78 +115,89 @@ function New-SprintBitwardenSecrets {
   }
 
   process {
-    $tiers = @('Development', 'Experimental')
+    $tiers = @('Dev', 'Exp')
     $results = [System.Collections.ArrayList]::new()
 
     foreach ($db in $Databases) {
-      foreach ($host in $HostList) {
+      foreach ($sqlHost in $HostList) {
         foreach ($tier in $tiers) {
 
-          # Canonical secret name per 5TierRemainingTasks.md §6
-          $secretName = "dbConnectionString-${db}-${host}-${tier}-${DeveloperUsername}"
+          # Canonical secret name per SprintInfrastructure-Naming.md §6
+          $secretName = "dbConnectionString-${db}-${sqlHost}-${tier}-${DeveloperUsername}"
 
-          # SQL instance name equals the tier name (Area 4 convention)
-          $instanceName = $tier
-
-          # Application Name embeds repo + sprint + tier for traceability
-          $appName = "${db}-Sprint-${SprintNumber}-${tier}"
+          # SQL instance name: 3-char prefix (Dev/Exp) + developer username
+          $instanceName = "${tier}${DeveloperUsername}"
 
           # Connection string: Integrated Security, MARS enabled (6.1-2)
-          $connStr = "Server=${host}\${instanceName};Database=${db};Integrated Security=True;" +
-          "MultipleActiveResultSets=True;Application Name=${appName};TrustServerCertificate=True;"
+          $connStr = "Server=${sqlHost}\${instanceName};Database=${db};Integrated Security=True;" +
+          'MultipleActiveResultSets=True;TrustServerCertificate=True;'
 
           $entry = [PSCustomObject]@{
-            secretName = $secretName
-            database   = $db
-            host       = $host
-            tier       = $tier
-            created    = $false
-            error      = $null
+            secretName    = $secretName
+            database      = $db
+            host          = $sqlHost
+            tier          = $tier
+            created       = $false
+            alreadyExists = $false
+            error         = $null
           }
 
           if ($PSCmdlet.ShouldProcess($secretName, 'Create Bitwarden secure note with SQL Server connection string')) {
             try {
+              # Idempotency check: skip if the item already exists
               Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
-                -Message "Creating Bitwarden item: $secretName" -Tag 'BitwardenCLI'
-
-              # Build Bitwarden item JSON (Secure Note, type = 2)
-              $bwItem = [ordered]@{
-                organizationId = $null
-                folderId       = $null
-                type           = 2
-                name           = $secretName
-                notes          = $connStr
-                secureNote     = [ordered]@{ type = 0 }
-                fields         = @()
-                reprompt       = 0
+                -Message "Checking if Bitwarden item already exists: $secretName" -Tag 'BitwardenCLI'
+              $listOutput = & bw list items --search $secretName --session $env:BW_SESSION 2>&1
+              $existingItems = $null
+              if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($listOutput)) {
+                try { $existingItems = $listOutput | ConvertFrom-Json -ErrorAction SilentlyContinue } catch { }
               }
+              if ($existingItems -and ($existingItems | Where-Object { $_.name -eq $secretName })) {
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
+                  -Message "Bitwarden item already exists, skipping: $secretName"
+                $entry.alreadyExists = $true
+              } else {
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+                  -Message "Creating Bitwarden item: $secretName" -Tag 'BitwardenCLI'
 
-              $itemJson = $bwItem | ConvertTo-Json -Depth 5 -Compress
+                # Build Bitwarden item JSON (Secure Note, type = 2)
+                $bwItem = [ordered]@{
+                  organizationId = $null
+                  folderId       = $null
+                  type           = 2
+                  name           = $secretName
+                  notes          = $connStr
+                  secureNote     = [ordered]@{ type = 0 }
+                  fields         = @()
+                  reprompt       = 0
+                }
 
-              # Encode and create via bw CLI
-              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
-                -Message "Calling bw encode | bw create item for $secretName" -Tag 'BitwardenCLI'
+                $itemJson = $bwItem | ConvertTo-Json -Depth 5 -Compress
 
-              $encoded = $itemJson | & bw encode --session $env:BW_SESSION
-              if ($LASTEXITCODE -ne 0) {
-                throw "bw encode failed (exit $LASTEXITCODE)"
+                # Encode and create via bw CLI
+                # Use .NET Base64 encoding instead of `bw encode` to avoid PowerShell
+                # piping a UTF-8 BOM (0xEF BB BF) that would corrupt the base64 payload.
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+                  -Message "Calling bw create item for $secretName" -Tag 'BitwardenCLI'
+
+                $encoded = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($itemJson))
+
+                $createOutput = $encoded | & bw create item --session $env:BW_SESSION 2>&1
+                if ($LASTEXITCODE -ne 0) {
+                  throw "bw create item failed (exit $LASTEXITCODE): $createOutput"
+                }
+
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+                  -Message "Successfully created Bitwarden item: $secretName" -Tag 'BitwardenCLI'
+
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+                  -Message "Bitwarden secret created: $secretName"
+
+                $entry.created = $true
               }
-
-              $createOutput = $encoded | & bw create item --session $env:BW_SESSION 2>&1
-              if ($LASTEXITCODE -ne 0) {
-                throw "bw create item failed (exit $LASTEXITCODE): $createOutput"
-              }
-
-              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
-                -Message "Successfully created Bitwarden item: $secretName" -Tag 'BitwardenCLI'
-
-              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-                -Message "Bitwarden secret created: $secretName"
-
-              $entry.created = $true
 
             } catch {
-              $errMsg = "Failed to create Bitwarden item '$secretName'. Exception: $($_.Exception.Message)"
+              $errMsg = "Failed to create or check Bitwarden item '$secretName'. Exception: $($_.Exception.Message)"
               Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errMsg
               $entry.error = $errMsg
             }
@@ -199,7 +209,7 @@ function New-SprintBitwardenSecrets {
     }
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-      -Message "New-SprintBitwardenSecrets complete — $($results.Where({$_.created}).Count) created, $($results.Where({$_.error}).Count) errors"
+      -Message "New-SprintBitwardenSecrets complete — $($results.Where({$_.created}).Count) created, $($results.Where({$_.alreadyExists}).Count) skipped (already existed), $($results.Where({$_.error}).Count) errors"
 
     return $results.ToArray()
   }

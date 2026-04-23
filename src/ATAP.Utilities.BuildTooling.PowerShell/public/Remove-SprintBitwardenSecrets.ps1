@@ -120,7 +120,9 @@ function Remove-SprintBitwardenSecrets {
   process {
     # High-impact gate: warn the user once before any items are deleted.
     # -Force or -Confirm:$false suppresses this prompt for pipeline use.
-    if (-not $Force -and -not $PSCmdlet.ShouldContinue(
+    # NOTE: ShouldContinue ignores -Confirm:$false; we must check the bound parameter explicitly.
+    $confirmExplicitlyFalse = $PSBoundParameters.ContainsKey('Confirm') -and ($PSBoundParameters['Confirm'] -eq $false)
+    if (-not $Force -and -not $confirmExplicitlyFalse -and -not $PSCmdlet.ShouldContinue(
         "This will permanently delete Bitwarden secure-note items for the Dev and Exp connection strings for user '$DeveloperUsername'. " +
         'Deletion is reversible only by re-running New-SprintBitwardenSecrets. Continue?',
         'Confirm Bitwarden Secret Deletion')) {
@@ -133,16 +135,16 @@ function Remove-SprintBitwardenSecrets {
     $results = [System.Collections.ArrayList]::new()
 
     foreach ($db in $Databases) {
-      foreach ($host in $HostList) {
+      foreach ($sqlHost in $HostList) {
         foreach ($tier in $tiers) {
 
           # Canonical secret name — must match New-SprintBitwardenSecrets exactly
-          $secretName = "dbConnectionString-${db}-${host}-${tier}-${DeveloperUsername}"
+          $secretName = "dbConnectionString-${db}-${sqlHost}-${tier}-${DeveloperUsername}"
 
           $entry = [PSCustomObject]@{
             secretName = $secretName
             database   = $db
-            host       = $host
+            host       = $sqlHost
             tier       = $tier
             deleted    = $false
             skipped    = $false
@@ -193,6 +195,18 @@ function Remove-SprintBitwardenSecrets {
 
           [void]$results.Add($entry)
         }
+      }
+    }
+
+    # Sync vault so all clients see the deletions immediately
+    if ($results.Where({ $_.deleted }).Count -gt 0) {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Running bw sync to propagate deletions.' -Tag 'BitwardenCLI'
+      $syncOutput = & bw sync --session $env:BW_SESSION 2>&1
+      if ($LASTEXITCODE -ne 0) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
+          -Message "bw sync failed (exit $LASTEXITCODE): $syncOutput" -Tag 'BitwardenCLI'
+      } else {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'bw sync completed successfully.' -Tag 'BitwardenCLI'
       }
     }
 

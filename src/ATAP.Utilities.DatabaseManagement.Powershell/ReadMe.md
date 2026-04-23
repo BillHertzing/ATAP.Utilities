@@ -24,7 +24,7 @@ Use the module-level getting started guide for the lifecycle workflow:
 | `New-CobianAppJobs`                       | Create Cobian Backup application jobs                                  |
 | `New-CobianSqlJobs`                       | Create Cobian Backup SQL Server jobs                                   |
 | `New-ConnectionStringBuilderFromDbaTools` | Build a connection string using dbaTools conventions                   |
-| `Remove-DeveloperDatabaseInstances`       | Remove developer-local `Dev<user>` and `Exp<user>` SQL instances       |
+| `Remove-SprintSqlServerInstances`         | Remove the per-sprint `Development` and `Experimental` SQL instances   |
 
 ### Example Scripts
 

@@ -208,6 +208,18 @@ function New-SprintBitwardenSecrets {
       }
     }
 
+    # Sync vault so all clients see the newly created items immediately
+    if ($results.Where({ $_.created }).Count -gt 0) {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Running bw sync to propagate new secrets.' -Tag 'BitwardenCLI'
+      $syncOutput = & bw sync --session $env:BW_SESSION 2>&1
+      if ($LASTEXITCODE -ne 0) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
+          -Message "bw sync failed (exit $LASTEXITCODE): $syncOutput" -Tag 'BitwardenCLI'
+      } else {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'bw sync completed successfully.' -Tag 'BitwardenCLI'
+      }
+    }
+
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
       -Message "New-SprintBitwardenSecrets complete — $($results.Where({$_.created}).Count) created, $($results.Where({$_.alreadyExists}).Count) skipped (already existed), $($results.Where({$_.error}).Count) errors"
 

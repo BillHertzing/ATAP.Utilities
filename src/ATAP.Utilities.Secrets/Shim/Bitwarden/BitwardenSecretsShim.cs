@@ -28,8 +28,7 @@ public sealed class BitwardenSecretsShim : SecretsConfigurableAbstract
       string? fieldName = null,
       CancellationToken cancellationToken = default)
   {
-    var field = fieldName
-        ?? (secretName.StartsWith("dbConnectionString", StringComparison.OrdinalIgnoreCase) ? "notes" : _options.DefaultFieldName);
+    var field = fieldName ?? _options.DefaultFieldName;
     var (json, exitCode) = await RunBwAsync(["list", "items", "--search", secretName], cancellationToken);
     if (exitCode != 0 || string.IsNullOrWhiteSpace(json))
       return null;

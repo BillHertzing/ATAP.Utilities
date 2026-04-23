@@ -9,10 +9,10 @@ function Remove-SprintBitwardenSecrets {
 
     Databases:  ATAPUtilities, AceCommander  (or -Databases override)
     Hosts:      $env:COMPUTERNAME and 'localhost'  (or -HostList override)
-    Tiers:      Development, Experimental
+    Tiers:      Dev, Exp
 
     Secret naming convention (must match what New-SprintBitwardenSecrets created):
-      dbConnectionString-<Database>-<Host>-<Tier>-<DeveloperUsername>
+      dbConnectionString-<Database>-<Host>-<Dev|Exp>-<DeveloperUsername>
 
     To locate each item, the cmdlet calls:
       bw list items --search <secretName> --session $env:BW_SESSION
@@ -121,7 +121,7 @@ function Remove-SprintBitwardenSecrets {
     # High-impact gate: warn the user once before any items are deleted.
     # -Force or -Confirm:$false suppresses this prompt for pipeline use.
     if (-not $Force -and -not $PSCmdlet.ShouldContinue(
-        "This will permanently delete Bitwarden secure-note items for the Development and Experimental connection strings for user '$DeveloperUsername'. " +
+        "This will permanently delete Bitwarden secure-note items for the Dev and Exp connection strings for user '$DeveloperUsername'. " +
         'Deletion is reversible only by re-running New-SprintBitwardenSecrets. Continue?',
         'Confirm Bitwarden Secret Deletion')) {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
@@ -129,7 +129,7 @@ function Remove-SprintBitwardenSecrets {
       return @()
     }
 
-    $tiers = @('Development', 'Experimental')
+    $tiers = @('Dev', 'Exp')
     $results = [System.Collections.ArrayList]::new()
 
     foreach ($db in $Databases) {

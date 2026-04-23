@@ -53,12 +53,12 @@
     <PackageVersion Include="TimePeriodLibrary.NET" Version="2.1.5" />
   </ItemGroup>
   <ItemGroup Label="ATAP.Utilities.Configuration Family">
-    <PackageVersion Include="ATAP.Utilities.Configuration" Version="0.1.0-Alpha-009" />
-    <PackageVersion Include="ATAP.Utilities.Configuration.Extensions" Version="0.1.0-Alpha-016" />
-    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets" Version="0.1.0-Alpha-011" />
-    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden" Version="0.1.0-Alpha-008" />
-    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims" Version="0.1.0-Alpha-011" />
-    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims.Interfaces" Version="0.1.0-Alpha-012" />
+    <PackageVersion Include="ATAP.Utilities.Configuration" Version="0.1.0-Sprint.6" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Extensions" Version="0.1.0-Sprint.6" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets" Version="0.1.0-Sprint.6" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden" Version="0.1.0-Sprint.6" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims" Version="0.1.0-Sprint.6" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims.Interfaces" Version="0.1.0-Sprint.6" />
   </ItemGroup>
   <ItemGroup Label="Microsoft.Extensions.* (Configuration, Hosting, DI, Logging)">
     <!-- Packages necessary to run the Net Core Generic Host and web server hosts -->
@@ -97,6 +97,11 @@
   </ItemGroup>
   <ItemGroup Label="Aspect-Oriented Programming">
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
+    <!-- Fody core must be pinned to 6.9.3+ for .NET 10 / MSBuildMajorVersion=18 support.
+         NuGet resolves MethodBoundaryAspect.Fody's transitive Fody dep to the minimum
+         required version (6.7.0) which produces 0-byte DLLs on .NET 10. Explicit pin here
+         forces NuGet to select 6.9.3 which added .NET 10 support. -->
+    <PackageVersion Include="Fody" Version="6.9.3" />
     <PackageVersion Include="MethodBoundaryAspect.Fody" Version="2.0.150" />
   </ItemGroup>
   <ItemGroup Label="Messaging and Dataflow">

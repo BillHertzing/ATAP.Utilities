@@ -28,7 +28,7 @@ across sprints.
 
 | Component                                         | Per-sprint?                               | Scope                   |
 | ------------------------------------------------- | ----------------------------------------- | ----------------------- |
-| SQL instances `Development` / `Experimental`      | ✅ Yes — recreated each sprint            | Developer workstation   |
+| SQL instances `Dev<username>` / `Exp<username>`   | ✅ Yes — recreated each sprint            | Developer workstation   |
 | Bitwarden secrets (Development / Experimental)    | ✅ Yes — created at start, deleted at end | Developer workstation   |
 | ProGet feeds                                      | ❌ No — permanent                         | Ecosystem ProGet host   |
 | Bitwarden secrets (Integration / QA / Production) | ❌ No — permanent, one-time onboarding    | Ecosystem               |
@@ -44,16 +44,17 @@ across sprints.
 
 Two instances are created at sprint start and removed at sprint end:
 
-| Instance name  | Tier | Host                              |
-| -------------- | ---- | --------------------------------- |
-| `Development`  | T2   | `localhost` / `$env:COMPUTERNAME` |
-| `Experimental` | T1   | `localhost` / `$env:COMPUTERNAME` |
+| Instance name   | Tier | Host                              |
+| --------------- | ---- | --------------------------------- |
+| `Dev<username>` | T2   | `localhost` / `$env:COMPUTERNAME` |
+| `Exp<username>` | T1   | `localhost` / `$env:COMPUTERNAME` |
 
 **Rules:**
 
-- Instance names are the **bare tier name only** — no sprint number, no username.
+- Instance names use a 3-character tier prefix (`Dev` / `Exp`) concatenated with `$env:USERNAME`.
+- SQL Server named-instance names have a **maximum of 16 characters**; `Development` or `Experimental` concatenated with a username exceeds this limit.
 - Both instances exist on the developer workstation; they are not shared.
-- Full SQL instance address: `<hostname>\Development` or `<hostname>\Experimental`.
+- Full SQL instance address: `<hostname>\Dev$env:USERNAME` or `<hostname>\Exp$env:USERNAME`.
 
 **Provisioning cmdlet:** `New-SprintSqlServerInstances` (BuildTooling.PowerShell)
 
@@ -255,7 +256,7 @@ per BuildMaster application (`AceCommander`, `ATAP.Utilities`).
 
 | Component               | Naming pattern                                   | Per-sprint? | Cmdlet                                  |
 | ----------------------- | ------------------------------------------------ | ----------- | --------------------------------------- |
-| SQL — sprint            | `Development` / `Experimental`                   | ✅          | `New-SprintSqlServerInstances`          |
+| SQL — sprint            | `Dev<username>` / `Exp<username>`                | ✅          | `New-SprintSqlServerInstances`          |
 | SQL — permanent         | `Integration` / `QA` / `Production` on `utat022` | ❌          | manual / IAC                            |
 | ProGet NuGet feed       | `nuget-<tier>`                                   | ❌          | `New-ProGetFeedSet`                     |
 | ProGet PS feed          | `powershellget-<tier>`                           | ❌          | `New-ProGetFeedSet`                     |

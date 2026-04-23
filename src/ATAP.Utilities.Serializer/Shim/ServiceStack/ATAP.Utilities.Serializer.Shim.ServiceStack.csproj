@@ -1,19 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
- <PropertyGroup>
+  <PropertyGroup>
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
   </PropertyGroup>
 
-  <!-- The ServiceStack JSON Library to use -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\..\Model\ATAP.Utilities.Serializer.Model.csproj" />
+    <ProjectReference Include="..\..\..\ATAP.Utilities.Collection.Extensions\ATAP.Utilities.Collection.Extensions.csproj" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="ServiceStack.Text" />
   </ItemGroup>
 
+  <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
   <ItemGroup>
-    <ProjectReference Include="..\..\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
-    <ProjectReference Include="..\..\..\ATAP.Utilities.Collection.Extensions\ATAP.Utilities.Collection.Extensions.csproj" />
+    <PackageReference Include="MethodBoundaryAspect.Fody" />
+    <ProjectReference Include="..\..\..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
 
 </Project>

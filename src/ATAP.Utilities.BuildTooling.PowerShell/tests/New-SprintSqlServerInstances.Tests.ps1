@@ -18,8 +18,8 @@ BeforeAll {
     [PSCustomObject]@{ Success = $true; Cancelled = $false }
   }
 
-  # Minimal stub for Invoke-Flyway — does nothing, simulates success
-  function script:Invoke-Flyway {
+  # Minimal stub for Build-DatabaseWithFlyway — returns success
+  function script:Build-DatabaseWithFlyway {
     param(
       [string]$DatabaseName,
       [string]$Environment,
@@ -29,14 +29,11 @@ BeforeAll {
       [string]$FlywayBasePath,
       [string]$FlywayTomlPath,
       [string]$FlywaySqlMigrationsPath,
-      [string]$FlywayCommand,
-      [switch]$IntegratedSecurity
+      [switch]$IntegratedSecurity,
+      [switch]$Force
     )
-    # no-op stub
+    [PSCustomObject]@{ Success = $true; Errors = @() }
   }
-
-  # Stub Import-Module so dbatools import check doesn't fail in unit tests
-  Mock -CommandName 'Import-Module' -MockWith { } -ParameterFilter { $Name -eq 'dbatools' }
 
   # Create a temporary directory that acts as a fake repository root with a
   # flyway.toml so the function's path checks do not throw.
@@ -56,16 +53,17 @@ BeforeAll {
     -Value "function Install-SqlServerInstance { param([string]`$SQLInstance,[string]`$DatabaseHost,[string]`$ConnectionMethod,[switch]`$Confirm) ; [PSCustomObject]@{Success=`$true;Cancelled=`$false} }" `
     -Encoding UTF8
 
-  Set-Content -Path (Join-Path $dmPub 'Invoke-Flyway.ps1') `
+  Set-Content -Path (Join-Path $dmPub 'Build-DatabaseWithFlyway.ps1') `
     -Value @'
-function Invoke-Flyway {
+function Build-DatabaseWithFlyway {
     param(
         [string]$DatabaseName, [string]$Environment, [string]$DatabaseHost,
         [string]$SqlInstance, [string]$ConnectionMethod,
         [string]$FlywayBasePath,
-        [string]$FlywayTomlPath, [string]$FlywaySqlMigrationsPath, [string]$FlywayCommand,
-        [switch]$IntegratedSecurity
+        [string]$FlywayTomlPath, [string]$FlywaySqlMigrationsPath,
+        [switch]$IntegratedSecurity, [switch]$Force
     )
+    [PSCustomObject]@{ Success = $true; Errors = @() }
 }
 '@ -Encoding UTF8
 }
@@ -91,12 +89,11 @@ Describe 'New-SprintSqlServerInstances — happy path' {
         $Name -like 'MSSQL$*'
       }
 
-      # Track Install-SqlServerInstance and Invoke-Flyway calls
+      # Track Install-SqlServerInstance and Build-DatabaseWithFlyway calls
       Mock -CommandName 'Install-SqlServerInstance' -MockWith { [PSCustomObject]@{ Success = $true; Cancelled = $false } }
+      Mock -CommandName 'Build-DatabaseWithFlyway' -MockWith { [PSCustomObject]@{ Success = $true; Errors = @() } }
+      # Databases do not yet exist — idempotency check returns nothing
       Mock -CommandName 'Get-DbaDatabase' -MockWith { $null }
-      Mock -CommandName 'New-DbaDatabase' -MockWith { [PSCustomObject]@{ Name = $Database } }
-      Mock -CommandName 'Invoke-Flyway' -MockWith { }
-      Mock -CommandName 'Import-Module' -MockWith { } -ParameterFilter { $Name -eq 'dbatools' }
     }
 
     It 'returns one result row per (instance × database) combination' {
@@ -121,7 +118,7 @@ Describe 'New-SprintSqlServerInstances — happy path' {
 
       foreach ($row in $results) {
         $row.instanceReady | Should -BeTrue -Because "instance $($row.instanceName) should be ready"
-        $row.baselined | Should -BeTrue -Because "baseline for $($row.instanceName)/$($row.database) should succeed"
+        $row.built | Should -BeTrue -Because "database build for $($row.instanceName)/$($row.database) should succeed"
         $row.error | Should -BeNullOrEmpty -Because 'no errors expected on the happy path'
       }
     }
@@ -137,7 +134,7 @@ Describe 'New-SprintSqlServerInstances — happy path' {
       Should -Invoke -CommandName 'Install-SqlServerInstance' -Times 2 -Exactly
     }
 
-    It 'calls Invoke-Flyway once per (instance × database) pair' {
+    It 'calls Build-DatabaseWithFlyway once per (instance × database) pair' {
       New-SprintSqlServerInstances `
         -InstanceNames @('Development', 'Experimental') `
         -Databases @('ATAPUtilities', 'AceCommander') `
@@ -145,25 +142,28 @@ Describe 'New-SprintSqlServerInstances — happy path' {
         -FlywayBasePath $script:flywayBase `
         -RepositoryRoot $script:tempRepoRoot
 
-      # 2 instances × 2 databases = 4 Flyway baseline calls
-      Should -Invoke -CommandName 'Invoke-Flyway' -Times 4 -Exactly
+      # 2 instances × 2 databases = 4 Build-DatabaseWithFlyway calls
+      Should -Invoke -CommandName 'Build-DatabaseWithFlyway' -Times 4 -Exactly
     }
 
-    It 'passes FlywayCommand = baseline to every Invoke-Flyway call' {
+    It 'passes the correct DatabaseName to every Build-DatabaseWithFlyway call' {
       New-SprintSqlServerInstances `
-        -InstanceNames @('Development', 'Experimental') `
+        -InstanceNames @('Development') `
         -Databases @('ATAPUtilities', 'AceCommander') `
         -DatabaseHost 'localhost' `
         -FlywayBasePath $script:flywayBase `
         -RepositoryRoot $script:tempRepoRoot
 
-      Should -Invoke -CommandName 'Invoke-Flyway' -Times 4 -ParameterFilter {
-        $FlywayCommand -eq 'baseline'
+      Should -Invoke -CommandName 'Build-DatabaseWithFlyway' -Times 1 -ParameterFilter {
+        $DatabaseName -eq 'ATAPUtilities'
+      }
+      Should -Invoke -CommandName 'Build-DatabaseWithFlyway' -Times 1 -ParameterFilter {
+        $DatabaseName -eq 'AceCommander'
       }
     }
   }
 
-  Context 'idempotency — when both instances already exist' {
+  Context 'idempotency — when both instances already exist but databases do not' {
 
     BeforeEach {
       # Mock Get-Service to report that both instances already exist
@@ -172,10 +172,9 @@ Describe 'New-SprintSqlServerInstances — happy path' {
       } -ParameterFilter { $Name -like 'MSSQL$*' }
 
       Mock -CommandName 'Install-SqlServerInstance' -MockWith { [PSCustomObject]@{ Success = $true; Cancelled = $false } }
-      Mock -CommandName 'Get-DbaDatabase' -MockWith { [PSCustomObject]@{ Name = $Database } }
-      Mock -CommandName 'New-DbaDatabase' -MockWith { [PSCustomObject]@{ Name = $Database } }
-      Mock -CommandName 'Invoke-Flyway' -MockWith { }
-      Mock -CommandName 'Import-Module' -MockWith { } -ParameterFilter { $Name -eq 'dbatools' }
+      Mock -CommandName 'Build-DatabaseWithFlyway' -MockWith { [PSCustomObject]@{ Success = $true; Errors = @() } }
+      # Databases do not yet exist — build should still run
+      Mock -CommandName 'Get-DbaDatabase' -MockWith { $null }
     }
 
     It 'does NOT call Install-SqlServerInstance when instances already exist' {
@@ -189,7 +188,7 @@ Describe 'New-SprintSqlServerInstances — happy path' {
       Should -Invoke -CommandName 'Install-SqlServerInstance' -Times 0 -Exactly
     }
 
-    It 'still baselines all databases when instances already exist' {
+    It 'still builds all databases when instances already exist' {
       $results = New-SprintSqlServerInstances `
         -InstanceNames @('Development', 'Experimental') `
         -Databases @('ATAPUtilities', 'AceCommander') `
@@ -197,11 +196,67 @@ Describe 'New-SprintSqlServerInstances — happy path' {
         -FlywayBasePath $script:flywayBase `
         -RepositoryRoot $script:tempRepoRoot
 
-      Should -Invoke -CommandName 'Invoke-Flyway' -Times 4 -Exactly
+      Should -Invoke -CommandName 'Build-DatabaseWithFlyway' -Times 4 -Exactly
 
       foreach ($row in $results) {
         $row.instanceReady | Should -BeTrue
-        $row.baselined | Should -BeTrue
+        $row.built | Should -BeTrue
+        $row.error | Should -BeNullOrEmpty
+      }
+    }
+  }
+
+  Context 'idempotency — when both instances AND databases already exist' {
+
+    BeforeEach {
+      # Both instances exist
+      Mock -CommandName 'Get-Service' -MockWith {
+        [PSCustomObject]@{ Name = $Name; Status = 'Running' }
+      } -ParameterFilter { $Name -like 'MSSQL$*' }
+
+      # Both databases already exist on each instance
+      Mock -CommandName 'Get-DbaDatabase' -MockWith {
+        [PSCustomObject]@{ Name = $Database; SqlInstance = $SqlInstance }
+      }
+
+      Mock -CommandName 'Install-SqlServerInstance' -MockWith { [PSCustomObject]@{ Success = $true; Cancelled = $false } }
+      Mock -CommandName 'Build-DatabaseWithFlyway' -MockWith { [PSCustomObject]@{ Success = $true; Errors = @() } }
+    }
+
+    It 'does NOT call Install-SqlServerInstance when instances already exist' {
+      New-SprintSqlServerInstances `
+        -InstanceNames @('Development', 'Experimental') `
+        -Databases @('ATAPUtilities', 'AceCommander') `
+        -DatabaseHost 'localhost' `
+        -FlywayBasePath $script:flywayBase `
+        -RepositoryRoot $script:tempRepoRoot
+
+      Should -Invoke -CommandName 'Install-SqlServerInstance' -Times 0 -Exactly
+    }
+
+    It 'does NOT call Build-DatabaseWithFlyway when databases already exist' {
+      New-SprintSqlServerInstances `
+        -InstanceNames @('Development', 'Experimental') `
+        -Databases @('ATAPUtilities', 'AceCommander') `
+        -DatabaseHost 'localhost' `
+        -FlywayBasePath $script:flywayBase `
+        -RepositoryRoot $script:tempRepoRoot
+
+      Should -Invoke -CommandName 'Build-DatabaseWithFlyway' -Times 0 -Exactly
+    }
+
+    It 'returns all rows with instanceReady and built = $true and no errors' {
+      $results = New-SprintSqlServerInstances `
+        -InstanceNames @('Development', 'Experimental') `
+        -Databases @('ATAPUtilities', 'AceCommander') `
+        -DatabaseHost 'localhost' `
+        -FlywayBasePath $script:flywayBase `
+        -RepositoryRoot $script:tempRepoRoot
+
+      $results.Count | Should -Be 4
+      foreach ($row in $results) {
+        $row.instanceReady | Should -BeTrue
+        $row.built | Should -BeTrue
         $row.error | Should -BeNullOrEmpty
       }
     }
@@ -212,13 +267,11 @@ Describe 'New-SprintSqlServerInstances — happy path' {
     BeforeEach {
       Mock -CommandName 'Get-Service' -MockWith { $null }
       Mock -CommandName 'Install-SqlServerInstance' -MockWith { [PSCustomObject]@{ Success = $true; Cancelled = $false } }
+      Mock -CommandName 'Build-DatabaseWithFlyway' -MockWith { [PSCustomObject]@{ Success = $true; Errors = @() } }
       Mock -CommandName 'Get-DbaDatabase' -MockWith { $null }
-      Mock -CommandName 'New-DbaDatabase' -MockWith { [PSCustomObject]@{ Name = $Database } }
-      Mock -CommandName 'Invoke-Flyway' -MockWith { }
-      Mock -CommandName 'Import-Module' -MockWith { } -ParameterFilter { $Name -eq 'dbatools' }
     }
 
-    It 'does not call Install-SqlServerInstance or Invoke-Flyway when -WhatIf is set' {
+    It 'does not call Install-SqlServerInstance or Build-DatabaseWithFlyway when -WhatIf is set' {
       New-SprintSqlServerInstances `
         -InstanceNames @('Development', 'Experimental') `
         -Databases @('ATAPUtilities', 'AceCommander') `
@@ -228,7 +281,7 @@ Describe 'New-SprintSqlServerInstances — happy path' {
         -WhatIf
 
       Should -Invoke -CommandName 'Install-SqlServerInstance' -Times 0 -Exactly
-      Should -Invoke -CommandName 'Invoke-Flyway' -Times 0 -Exactly
+      Should -Invoke -CommandName 'Build-DatabaseWithFlyway' -Times 0 -Exactly
     }
   }
 
@@ -239,21 +292,20 @@ Describe 'New-SprintSqlServerInstances — happy path' {
         [PSCustomObject]@{ Name = $Name; Status = 'Running' }
       } -ParameterFilter { $Name -like 'MSSQL$*' }
 
-      Mock -CommandName 'Get-DbaDatabase' -MockWith { [PSCustomObject]@{ Name = $Database } }
-      Mock -CommandName 'New-DbaDatabase' -MockWith { [PSCustomObject]@{ Name = $Database } }
-      Mock -CommandName 'Invoke-Flyway' -MockWith { }
-      Mock -CommandName 'Import-Module' -MockWith { } -ParameterFilter { $Name -eq 'dbatools' }
+      Mock -CommandName 'Build-DatabaseWithFlyway' -MockWith { [PSCustomObject]@{ Success = $true; Errors = @() } }
+      Mock -CommandName 'Get-DbaDatabase' -MockWith { $null }
     }
 
-    It 'uses Development and Experimental as default InstanceNames' {
+    It 'uses Dev<username> and Exp<username> as default InstanceNames' {
       $results = New-SprintSqlServerInstances `
         -Databases @('ATAPUtilities') `
         -DatabaseHost 'localhost' `
         -FlywayBasePath $script:flywayBase `
         -RepositoryRoot $script:tempRepoRoot
 
+      $expected = @("Dev$($env:USERNAME)", "Exp$($env:USERNAME)") | Sort-Object
       ($results | Select-Object -ExpandProperty instanceName | Sort-Object -Unique) |
-        Should -Be @('Development', 'Experimental')
+        Should -Be $expected
     }
 
     It 'uses ATAPUtilities and AceCommander as default Databases' {
@@ -275,13 +327,10 @@ Describe 'New-SprintSqlServerInstances — happy path' {
       Mock -CommandName 'Install-SqlServerInstance' -MockWith {
         [PSCustomObject]@{ Success = $false; Cancelled = $true }
       }
-      Mock -CommandName 'Get-DbaDatabase' -MockWith { $null }
-      Mock -CommandName 'New-DbaDatabase' -MockWith { [PSCustomObject]@{ Name = $Database } }
-      Mock -CommandName 'Invoke-Flyway' -MockWith { }
-      Mock -CommandName 'Import-Module' -MockWith { } -ParameterFilter { $Name -eq 'dbatools' }
+      Mock -CommandName 'Build-DatabaseWithFlyway' -MockWith { [PSCustomObject]@{ Success = $true; Errors = @() } }
     }
 
-    It 'marks instanceReady as $false and does not attempt Flyway baseline' {
+    It 'marks instanceReady as $false and does not attempt database build' {
       $results = New-SprintSqlServerInstances `
         -InstanceNames @('Experimental') `
         -Databases @('ATAPUtilities') `
@@ -291,10 +340,10 @@ Describe 'New-SprintSqlServerInstances — happy path' {
 
       $results.Count | Should -Be 1
       $results[0].instanceReady | Should -BeFalse
-      $results[0].baselined | Should -BeFalse
+      $results[0].built | Should -BeFalse
       $results[0].error | Should -Match 'cancelled'
 
-      Should -Invoke -CommandName 'Invoke-Flyway' -Times 0 -Exactly
+      Should -Invoke -CommandName 'Build-DatabaseWithFlyway' -Times 0 -Exactly
     }
   }
 }

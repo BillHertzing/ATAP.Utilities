@@ -5,9 +5,12 @@ function New-DeveloperDatabaseInstances {
 
   .DESCRIPTION
   At the start of each sprint, each developer needs two SQL Server named instances:
-    - Sprint{NNNN}{DeveloperName}   — sprint-scoped instance (removed at sprint end)
-    - Development{DeveloperName}    — persistent developer instance (also removed at sprint end)
+    - Dev{DeveloperName}   — T2 Development/Alpha tier (persists across sprints)
+    - Exp{DeveloperName}   — T1 Experimental/Sprint tier (removed at sprint end)
 
+  Instance names follow the authoritative naming convention: 3-char prefix (`Dev`/`Exp`)
+  concatenated directly with the developer's username — no separator, no sprint number.
+  This satisfies the 16-character SQL Server named-instance limit.
   The set of developer names is resolved (in priority order) from:
     1. The -DeveloperNames parameter if supplied
     2. $global:settings[$global:configRootKeys['SprintDeveloperNamesConfigRootKey']]
@@ -19,7 +22,8 @@ function New-DeveloperDatabaseInstances {
   (Install-SqlServerInstance, Build-DatabaseWithFlyway, and their dependencies).
 
   .PARAMETER SprintNumber
-  Four-character zero-padded sprint number, e.g. '0006'.
+  Four-character zero-padded sprint number, e.g. '0006'. No longer used in instance names;
+  retained for result-object labelling and application-name traceability.
 
   .PARAMETER DeveloperNames
   Array of developer names to create instances for.  Overrides the global-settings lookup
@@ -48,7 +52,7 @@ function New-DeveloperDatabaseInstances {
   #>
   [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
   param(
-    [Parameter(Mandatory)]
+    [Parameter(Mandatory = $false)]
     [ValidatePattern('^\d{4}$')]
     [string]$SprintNumber,
 
@@ -115,16 +119,16 @@ function New-DeveloperDatabaseInstances {
     # Two instances per developer
     $instances = @(
       [PSCustomObject]@{
-        InstanceLabel = 'Sprint'
-        SqlInstance   = "Sprint${SprintNumber}${developer}"
+        InstanceLabel = 'Dev'
+        SqlInstance   = "Dev${developer}"
         Environment   = 'Development'
-        DatabasePath  = "C:\LocalDBs\Sprint${SprintNumber}${developer}\$databaseName"
+        DatabasePath  = "C:\LocalDBs\Dev${developer}\$databaseName"
       }
       [PSCustomObject]@{
-        InstanceLabel = 'Development'
-        SqlInstance   = "Development${developer}"
-        Environment   = 'Development'
-        DatabasePath  = "C:\LocalDBs\Development${developer}\$databaseName"
+        InstanceLabel = 'Exp'
+        SqlInstance   = "Exp${developer}"
+        Environment   = 'Experimental'
+        DatabasePath  = "C:\LocalDBs\Exp${developer}\$databaseName"
       }
     )
 

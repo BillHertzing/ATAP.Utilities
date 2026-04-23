@@ -34,9 +34,12 @@
 
     <!-- Include the custom tasks from the ATAP.Utilities.BuildTooling Assembly
         The location of the Assembly has been specified in Directory.Build.props -->
+  <!-- OBSOLETE: GetVersion, UpdateVersion, and SetVersion Task classes were superseded by
+       Nerdbank.GitVersioning (NBGV). The UsingTask declarations are retained for reference only.
   <UsingTask TaskName="ATAP.Utilities.BuildTooling.GetVersion"    AssemblyFile="$(ATAPUtilitiesBuildToolingTasksAssembly)" Condition="'$(ATAPUtilitiesBuildToolingTasksAssembly)' != ''" />
   <UsingTask TaskName="ATAP.Utilities.BuildTooling.UpdateVersion" AssemblyFile="$(ATAPUtilitiesBuildToolingTasksAssembly)" Condition="'$(ATAPUtilitiesBuildToolingTasksAssembly)' != ''" />
   <UsingTask TaskName="ATAP.Utilities.BuildTooling.SetVersion"    AssemblyFile="$(ATAPUtilitiesBuildToolingTasksAssembly)" Condition="'$(ATAPUtilitiesBuildToolingTasksAssembly)' != ''" />
+  -->
 
   <!-- http://blog.casavian.eu/2014/04/23/increment-version-for-changed-assemblies-only-first-part/ -->
   <!--%Program Files (x86)%\MSBuild\12.0\Bin\Microsoft.CSharp.CurrentVersion.targets  -->
@@ -95,17 +98,17 @@
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageVersion = $(PackageVersion)"  />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageName = $(PackageId).$(PackageVersion).nupkg" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Call GetVersion" />
-    <!-- during debugging, use the GetVersion task to display to output window the values found in the Versionfile -->
+    <!-- OBSOLETE: GetVersion task superseded by Nerdbank.GitVersioning (NBGV). Retained for reference only.
     <GetVersion VersionFile = "$(VersionFile)" Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'"
       ATAPBuildToolingConfiguration="$(ATAPBuildToolingConfiguration)"
       ATAPBuildToolingDebugVerbosity="$(ATAPBuildToolingDebugVerbosity)">
       <Output TaskParameter="PackageVersion" PropertyName="PackageVersion" />
     </GetVersion>
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageVersion after GetVersion = $(PackageVersion)"  />
+    -->
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageVersion after GetVersion = $(PackageVersion) (GetVersion task obsolete; version provided by NBGV)"  />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Call UpdateVersion" />
-    <!-- During development of this .targets file, use a condition to control if the UpdateVersion task gets run, or not. Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'"-->
-    <!-- however there is strange thing happening if there is no condition, it claims the task cannot be loaded from the assembly, so instead, as a workaround, specify the task twise, once for debug and once again for release -->
-    <!-- <ATAP.Utilities.BuildTooling.UpdateVersion Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" -->
+    <!-- OBSOLETE: UpdateVersion task superseded by Nerdbank.GitVersioning (NBGV). Retained for reference only.
+         Version increment and PackageVersion are now managed automatically by NBGV at build time.
     <ATAP.Utilities.BuildTooling.UpdateVersion
       ATAPBuildToolingConfiguration="$(ATAPBuildToolingConfiguration)"
       ATAPBuildToolingDebugVerbosity="$(ATAPBuildToolingDebugVerbosity)"
@@ -119,6 +122,7 @@
       <Output TaskParameter="PackageVersion" PropertyName="PackageVersion" />
       <Output TaskParameter="Revision" PropertyName="Revision" />
     </ATAP.Utilities.BuildTooling.UpdateVersion>
+    -->
      <!-- during debugging this BuildTooling, send to the output log messages with the new values as set by UpdateVersion-->
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Values returned from UpdateVersion"  />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Build = $(Build)"  />
@@ -134,16 +138,19 @@
     <Delete Files="$(UpdatePackageVersionLockFilePath)"/>
   </Target>
 
-  <!-- Read PackageVersion from AssemblyInfo.cs into the outer-build scope so GenerateNuspec picks it up.
-       For multi-TFM projects, UpdateVersion runs only in the inner build scope; this target re-reads the
-       already-updated value back into the outer build before pack runs. Works for single-TFM too. -->
+  <!-- OBSOLETE: SetPackageVersionForPack previously used the GetVersion task to re-read PackageVersion
+       from AssemblyInfo.cs into the outer-build scope before pack. That task is now superseded by
+       Nerdbank.GitVersioning (NBGV), which sets $(PackageVersion) automatically. This target is retained
+       for reference but no longer calls GetVersion. -->
   <Target Name="SetPackageVersionForPack" BeforeTargets="GenerateNuspec">
+    <!-- OBSOLETE: GetVersion call replaced by NBGV. Retained for reference only.
     <GetVersion VersionFile="$(VersionFile)"
                 ATAPBuildToolingConfiguration="$(ATAPBuildToolingConfiguration)"
                 ATAPBuildToolingDebugVerbosity="$(ATAPBuildToolingDebugVerbosity)">
       <Output TaskParameter="PackageVersion" PropertyName="PackageVersion" />
     </GetVersion>
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="SetPackageVersionForPack: PackageVersion = $(PackageVersion)" />
+    -->
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="SetPackageVersionForPack: PackageVersion = $(PackageVersion) (version provided by NBGV)" />
   </Target>
 
   <!-- NuGet Publish target: push package to ProGet nuget-experimental feed after successful package generation -->
@@ -151,6 +158,7 @@
   <!-- API key must be set as env var PROGET_ADMIN_API_KEY (stored in Bitwarden) -->
   <PropertyGroup>
     <ProGetExperimentalFeedUrl Condition="'$(ProGetExperimentalFeedUrl)' == ''">http://localhost:50000/nuget/nuget-experimental/v3/index.json</ProGetExperimentalFeedUrl>
+    <ProGetBaseUrl Condition="'$(ProGetBaseUrl)' == ''">http://localhost:50000</ProGetBaseUrl>
   </PropertyGroup>
   <Target Name="PublishAfterBuild" AfterTargets="GenerateNuspec"
           Condition="'$(Configuration)' == 'Release'">
@@ -161,13 +169,17 @@
     <!-- Resolve nupkg directory: PackageOutputPath may be absolute (from the -output flag) or relative.
         String-concatenation with MSBuildProjectDirectory breaks when it is absolute, so we
         use IsPathRooted to pick the right base. WorkingDirectory is omitted - dotnet nuget
-        push only needs the full nupkg path, not a cwd. The -skip-duplicate flag avoids errors on
-        re-push of an already-published version. -->
+        push only needs the full nupkg path, not a cwd. -->
     <PropertyGroup>
       <_NupkgDir Condition="$([System.IO.Path]::IsPathRooted('$(PackageOutputPath)'))">$(PackageOutputPath)</_NupkgDir>
       <_NupkgDir Condition="'$(_NupkgDir)' == ''">$(MSBuildProjectDirectory)\$(PackageOutputPath)</_NupkgDir>
     </PropertyGroup>
-    <Exec Command="dotnet nuget push &quot;$(_NupkgDir)$(PackageId).$(PackageVersion).nupkg&quot; --source &quot;$(ProGetExperimentalFeedUrl)&quot; --api-key &quot;$(PROGET_ADMIN_API_KEY)&quot; --skip-duplicate" />
+    <!-- Delete any existing version from the feed before pushing so iterative rebuilds
+         on the same NBGV version (no commit between builds) always land the latest DLLs.
+         Uses the NuGet v2 DELETE endpoint; 404 (not yet published) is silently ignored. -->
+    <Exec Command="pwsh -Command &quot;try { Invoke-RestMethod -Method Delete -Uri '$(ProGetBaseUrl)/nuget/nuget-experimental/v2/package/$(PackageId)/$(PackageVersion)' -Headers @{ 'X-ApiKey' = \&quot;$env:PROGET_ADMIN_API_KEY\&quot; } -ErrorAction Stop; Write-Host 'Deleted existing $(PackageId) $(PackageVersion) from feed' } catch { if (\$_.Exception.Response.StatusCode -eq 404) { Write-Host '$(PackageId) $(PackageVersion) not on feed yet, skipping delete' } else { throw } }&quot;"
+          IgnoreExitCode="false" />
+    <Exec Command="dotnet nuget push &quot;$(_NupkgDir)$(PackageId).$(PackageVersion).nupkg&quot; --source &quot;$(ProGetExperimentalFeedUrl)&quot; --api-key &quot;$(PROGET_ADMIN_API_KEY)&quot;" />
     <!-- Keep Directory.Packages.props in sync: update the PackageVersion entry for this package -->
     <PropertyGroup>
       <_DppDir>$([MSBuild]::GetDirectoryNameOfFileAbove('$(MSBuildProjectDirectory)', 'Directory.Packages.props'))</_DppDir>

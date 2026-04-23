@@ -1,32 +1,37 @@
 function New-SprintSqlServerInstances {
   <#
   .SYNOPSIS
-    Creates the `Development` and `Experimental` SQL Server named instances for
-    the sprint environment and runs the Flyway baseline for all target databases.
+    Creates the `Dev<username>` and `Exp<username>` SQL Server named instances for
+    the sprint environment and builds all target databases from scratch using Flyway migrations.
   .DESCRIPTION
-    Idempotently creates two SQL Server named instances — `Development` and
-    `Experimental` — that serve the T2/T1 tiers respectively during the sprint.
-    Instance names contain no user or sprint suffix (§1.1 of 5TierRemainingTasks_V2.md).
+    Idempotently creates two SQL Server named instances — `Dev<username>` (T2
+    Development/Alpha tier) and `Exp<username>` (T1 Experimental/Sprint tier) —
+    using the authoritative naming convention: 3-char prefix + $env:USERNAME,
+    no separator, 16-char SQL Server instance name limit (SprintInfrastructure-Naming.md).
 
     For each instance that is successfully created (or already present), the
-    function runs `Invoke-Flyway -FlywayCommand baseline` against every database
-    in -Databases so that Flyway's schema-history table exists before
-    the first `migrate` call.
+    function calls `Build-DatabaseWithFlyway` against every database in -Databases,
+    which drops and recreates the database then applies all Flyway migrations to
+    build the complete schema from scratch.
+
+    Supersedes `New-DeveloperDatabaseInstances` (now archived to Obsolete/).
 
     Idempotency rules:
     - If the Windows service `MSSQL$<InstanceName>` already exists, instance
-      creation is skipped and a warning is logged.
-    - If the Flyway baseline exits with code 0, the result is recorded as
-      successful regardless of whether the history table already existed.
+      creation is skipped and a Verbose message is logged.
+    - If the database already exists on the instance (verified via Get-DbaDatabase),
+      the full Flyway rebuild is skipped and a Verbose message is logged.
+    - Only when the database is absent is `Build-DatabaseWithFlyway` called with
+      -Force to create it from scratch and apply all Flyway migrations.
 
     Depends on:
     - `Install-SqlServerInstance` (ATAP.Utilities.DatabaseManagement.Powershell)
-    - `Invoke-Flyway` (ATAP.Utilities.DatabaseManagement.Powershell)
+    - `Build-DatabaseWithFlyway` (ATAP.Utilities.DatabaseManagement.Powershell)
 
     Both helpers are dot-sourced from the repository root if not already loaded.
   .PARAMETER InstanceNames
     SQL Server named-instance names to create.
-    Default: @('Development', 'Experimental')
+    Default: @("Dev$($env:USERNAME)", "Exp$($env:USERNAME)")
   .PARAMETER Databases
     Database names for which Flyway baseline is run on every instance.
     Default: @('ATAPUtilities', 'AceCommander')
@@ -48,15 +53,15 @@ function New-SprintSqlServerInstances {
       instanceName  [string]  — SQL Server instance name
       database      [string]  — database name
       instanceReady [bool]    — instance existed or was created without error
-      baselined     [bool]    — Flyway baseline completed successfully
+      built         [bool]    — database schema built successfully via full Flyway migrations
       error         [string]  — error message if any step failed; $null on success
   .EXAMPLE
     $results = New-SprintSqlServerInstances
-    $results | Format-Table instanceName, database, instanceReady, baselined, error
+    $results | Format-Table instanceName, database, instanceReady, built, error
   .EXAMPLE
     New-SprintSqlServerInstances -WhatIf
   .EXAMPLE
-    New-SprintSqlServerInstances -InstanceNames @('Development') `
+    New-SprintSqlServerInstances -InstanceNames @("Dev$($env:USERNAME)") `
       -Databases @('ATAPUtilities') -Verbose
   .NOTES
     AI assisted using ./claude/Rules/Powershell.md as guidelines
@@ -65,7 +70,7 @@ function New-SprintSqlServerInstances {
   .LINK
     Remove-SprintSqlServerInstances
   .LINK
-    Invoke-Flyway
+    Build-DatabaseWithFlyway
   #>
   [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
   param(
@@ -95,7 +100,7 @@ function New-SprintSqlServerInstances {
 
     # Snippet: Check and populate simple parameter as Type - InstanceNames
     if (-not $PSBoundParameters.ContainsKey('InstanceNames') -or $null -eq $InstanceNames -or $InstanceNames.Count -eq 0) {
-      $InstanceNames = @('Development', 'Experimental')
+      $InstanceNames = @("Dev$($env:USERNAME)", "Exp$($env:USERNAME)")
     }
 
     # Snippet: Check and populate simple parameter as Type - Databases
@@ -151,24 +156,15 @@ function New-SprintSqlServerInstances {
         -Message "Loaded Install-SqlServerInstance from $installPath"
     }
 
-    # Ensure dbatools is imported — Invoke-Flyway requires [Microsoft.Data.SqlClient.SqlConnection]
-    if (-not (Get-Module -Name 'dbatools')) {
-      if (-not (Get-Module -Name 'dbatools' -ListAvailable)) {
-        throw 'dbatools module is required by Invoke-Flyway but is not installed. Run: Install-Module dbatools -Scope CurrentUser'
+    # Ensure Build-DatabaseWithFlyway is available (handles dbatools, Invoke-Flyway, and DatabaseProvisioning internally)
+    if (-not (Get-Command -Name 'Build-DatabaseWithFlyway' -CommandType Function -ErrorAction SilentlyContinue)) {
+      $buildDbPath = Join-Path $RepositoryRoot 'src' 'ATAP.Utilities.DatabaseManagement.Powershell' 'public' 'Build-DatabaseWithFlyway.ps1'
+      if (-not (Test-Path $buildDbPath)) {
+        throw "Build-DatabaseWithFlyway.ps1 not found at: $buildDbPath"
       }
-      Import-Module dbatools -ErrorAction Stop
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Imported dbatools module'
-    }
-
-    # Ensure Invoke-Flyway is available
-    if (-not (Get-Command -Name 'Invoke-Flyway' -CommandType Function -ErrorAction SilentlyContinue)) {
-      $flywayFnPath = Join-Path $RepositoryRoot 'src' 'ATAP.Utilities.DatabaseManagement.Powershell' 'public' 'Invoke-Flyway.ps1'
-      if (-not (Test-Path $flywayFnPath)) {
-        throw "Invoke-Flyway.ps1 not found at: $flywayFnPath"
-      }
-      . $flywayFnPath
+      . $buildDbPath
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
-        -Message "Loaded Invoke-Flyway from $flywayFnPath"
+        -Message "Loaded Build-DatabaseWithFlyway from $buildDbPath"
     }
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
@@ -227,51 +223,70 @@ function New-SprintSqlServerInstances {
         }
       }
 
-      # --- Flyway baseline for each database on this instance ---
+      # --- Full database build for each database on this instance ---
       foreach ($db in $Databases) {
-        $baselined = $false
-        $baselineError = $instanceError  # inherit instance error if creation failed
+        $built = $false
+        $buildError = $instanceError  # inherit instance error if creation failed
 
         if ($instanceReady) {
-          $flywayTarget = "${instanceName}/${db}"
-          if ($PSCmdlet.ShouldProcess($flywayTarget, 'Run Flyway baseline')) {
-            try {
-              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-                -Message "Running Flyway baseline: instance=$instanceName  db=$db"
+          # Derive environment tier from instance name prefix (Dev → Development, Exp → Experimental)
+          $environment = if ($instanceName.StartsWith('Dev')) { 'Development' }
+          elseif ($instanceName.StartsWith('Exp')) { 'Experimental' }
+          else { $instanceName }
 
-              # Ensure the database exists before Flyway baseline — Flyway cannot create it.
-              $sqlServerInstance = "${DatabaseHost}\${instanceName}"
-              $existingDb = Get-DbaDatabase -SqlInstance $sqlServerInstance -Database $db -ErrorAction SilentlyContinue
-              if ($null -eq $existingDb) {
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-                  -Message "Creating database '$db' on instance '$sqlServerInstance' (required before Flyway baseline)"
-                New-DbaDatabase -SqlInstance $sqlServerInstance -Name $db -ErrorAction Stop | Out-Null
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-                  -Message "Database '$db' created on '$sqlServerInstance'."
-              }
-
-              Invoke-Flyway `
-                -DatabaseName $db `
-                -Environment $instanceName `
-                -DatabaseHost $DatabaseHost `
-                -SqlInstance $instanceName `
-                -ConnectionMethod $ConnectionMethod `
-                -FlywayBasePath $FlywayBasePath `
-                -FlywayTomlPath $flywayTomlPath `
-                -FlywaySqlMigrationsPath (Join-Path $FlywayBasePath 'SQL') `
-                -FlywayCommand 'baseline' `
-                -IntegratedSecurity
-
-              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-                -Message "Flyway baseline succeeded: instance=$instanceName  db=$db"
-              $baselined = $true
-            } catch {
-              $baselineError = "Flyway baseline failed for instance='$instanceName' db='$db'. Exception: $($_.Exception.Message)"
-              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $baselineError
-            }
+          # --- Idempotency check — skip rebuild if the database already exists ---
+          $sqlServerInstance = if ([string]::IsNullOrWhiteSpace($DatabaseHost) -or $DatabaseHost -eq 'localhost') {
+            "localhost\$instanceName"
           } else {
-            # -WhatIf path
-            $baselined = $true
+            "$DatabaseHost\$instanceName"
+          }
+
+          # Ensure dbatools is available for the existence check
+          if (-not (Get-Module -Name dbatools -ErrorAction SilentlyContinue)) {
+            Import-Module dbatools -ErrorAction SilentlyContinue
+          }
+
+          $existingDb = Get-DbaDatabase -SqlInstance $sqlServerInstance -Database $db -ErrorAction SilentlyContinue
+
+          if ($null -ne $existingDb) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
+              -Message "Database '$db' already exists on instance '$instanceName'. Skipping rebuild (idempotent)."
+            $built = $true
+          } else {
+            $buildTarget = "${instanceName}/${db}"
+            if ($PSCmdlet.ShouldProcess($buildTarget, 'Build database with Flyway migrations')) {
+              try {
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+                  -Message "Building database: instance=$instanceName  db=$db  environment=$environment"
+
+                $buildResult = Build-DatabaseWithFlyway `
+                  -DatabaseName $db `
+                  -Environment $environment `
+                  -DatabaseHost $DatabaseHost `
+                  -SqlInstance $instanceName `
+                  -ConnectionMethod $ConnectionMethod `
+                  -FlywayBasePath $FlywayBasePath `
+                  -FlywayTomlPath $flywayTomlPath `
+                  -FlywaySqlMigrationsPath (Join-Path $FlywayBasePath 'SQL') `
+                  -IntegratedSecurity `
+                  -Force
+
+                if (-not $buildResult.Success) {
+                  $buildError = "Build-DatabaseWithFlyway failed for instance='$instanceName' db='$db': $($buildResult.Errors -join '; ')"
+                  Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $buildError
+                } else {
+                  Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+                    -Message "Database built successfully: instance=$instanceName  db=$db"
+                  $built = $true
+                }
+              } catch {
+                $buildError = "Build-DatabaseWithFlyway failed for instance='$instanceName' db='$db'. Exception: $($_.Exception.Message)"
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $buildError
+              }
+            } else {
+              # -WhatIf path
+              $built = $true
+            }
           }
         }
 
@@ -279,8 +294,8 @@ function New-SprintSqlServerInstances {
           instanceName  = $instanceName
           database      = $db
           instanceReady = $instanceReady
-          baselined     = $baselined
-          error         = $baselineError
+          built         = $built
+          error         = $buildError
         }
         [void]$results.Add($entry)
       }

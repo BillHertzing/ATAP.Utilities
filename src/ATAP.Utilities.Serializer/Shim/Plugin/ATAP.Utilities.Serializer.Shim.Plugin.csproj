@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -12,9 +11,15 @@
     <ProjectReference Include="..\..\..\ATAP.Utilities.Collection.Extensions\ATAP.Utilities.Collection.Extensions.csproj" />
   </ItemGroup>
 
-  <!-- Loader interfaces and classes for any Assembly that may be loaded by the dynamic Loader, only works for TargetFramework NetCore -->
+  <!-- Loader interfaces used by dynamic-plugin code; only compiled on NetCore target frameworks. -->
   <ItemGroup Condition="$(TargetFramework.Contains('netcore'))">
     <ProjectReference Include="..\..\..\ATAP.Utilities.Loader\ATAP.Utilities.Loader.csproj" />
+  </ItemGroup>
+
+  <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
+  <ItemGroup>
+    <PackageReference Include="MethodBoundaryAspect.Fody" />
+    <ProjectReference Include="..\..\..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
 
 </Project>

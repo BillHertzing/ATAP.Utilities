@@ -33,14 +33,11 @@ Each path is built once per specified configuration. Defaults to @('Debug').
 .PARAMETER MaxRetries
 Maximum number of retry attempts after a cache-related failure. Defaults to 1.
 
-.PARAMETER BinaryLog
-Switch (alias -bl). When specified, passes /bl:<path> to dotnet build to produce an MSBuild binary log.
-If -BuildLogBasePath is not also supplied the path defaults to:
-  <GeneratedRelativePath>\BuildLogs\<ProjectName>\<Configuration>\<ProjectName>.binlog
-
-.PARAMETER BuildLogBasePath
-Optional explicit path for the MSBuild binary log file produced when -BinaryLog is set.
-Accepts a string file path. Defaults to the computed path described in -BinaryLog above.
+.PARAMETER BuildLogPath
+Optional path for the MSBuild binary log file passed to dotnet build as /bl:<path>.
+When omitted the path is auto-computed as:
+  <GeneratedRelativePath>\BuildLogs\<ProjectName>\<InnerConfiguration>\<ProjectName>.binlog
+Binary logging is always enabled; supply this parameter only to override the default path.
 
 .INPUTS
 System.String, System.String[], System.IO.FileInfo, System.IO.FileInfo[]
@@ -61,12 +58,12 @@ Invoke-DotnetBuildWithRetry -SolutionOrProjectPath 'C:\Repos\MyApp\MyApp.sln' -C
 Shows what cache-clearing would occur without executing it.
 
 .EXAMPLE
-Invoke-DotnetBuildWithRetry -SolutionOrProjectPath 'C:\Repos\MyApp\MyApp.sln' -bl
+Invoke-DotnetBuildWithRetry -SolutionOrProjectPath 'C:\Repos\MyApp\MyApp.sln'
 
 Builds MyApp.sln and writes a binary log to the default generated path under BuildLogs\MyApp\Debug\.
 
 .EXAMPLE
-Invoke-DotnetBuildWithRetry -SolutionOrProjectPath 'C:\Repos\MyApp\MyApp.sln' -bl 'C:\Logs\MyApp.binlog'
+Invoke-DotnetBuildWithRetry -SolutionOrProjectPath 'C:\Repos\MyApp\MyApp.sln' -BuildLogPath 'C:\Logs\MyApp.binlog'
 
 Builds MyApp.sln and writes the binary log to the explicitly specified path.
 
@@ -105,10 +102,7 @@ function Invoke-DotnetBuildWithRetry {
 
     [Parameter(Mandatory = $false)]
     [Alias('bl')]
-    [switch] $BinaryLog,
-
-    [Parameter(Mandatory = $false)]
-    [string] $BuildLogBasePath
+    [string] $BuildLogPath
   )
 
   begin {
@@ -126,11 +120,16 @@ function Invoke-DotnetBuildWithRetry {
       throw
     }
 
+    # Snippet used: "Check and populate simple parameter as Type" (applied per repository rule to every parameter).
+    # Note: $SolutionOrProjectPath is pipeline-bound (ValueFromPipeline), so in begin{} $PSBoundParameters will
+    # not yet hold per-element pipeline values; the normalization in process{} still owns the pipeline path.
+    $SolutionOrProjectPath = Get-PVal -ParameterName 'SolutionOrProjectPath' -originalPSBoundParameters $PSBoundParameters -dottedPath 'SolutionOrProjectPath' -DefaultValue $SolutionOrProjectPath -AsType ([object[]])
+    $Configuration = Get-PVal -ParameterName 'Configuration' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Configuration' -DefaultValue $Configuration -AsType ([string[]])
+    $MaxRetries = Get-PVal -ParameterName 'MaxRetries' -originalPSBoundParameters $PSBoundParameters -dottedPath 'MaxRetries' -DefaultValue $MaxRetries -AsType ([int])
+    $BuildLogPath = Get-PVal -ParameterName 'BuildLogPath' -originalPSBoundParameters $PSBoundParameters -dottedPath 'BuildLogPath' -DefaultValue $BuildLogPath -AsType ([string])
+
     # Normalize Configuration to an array for the per-configuration build loop.
     $configurationsToProcess = @($Configuration)
-
-    # Snippet used: "Check and populate simple parameter as Type"
-    $MaxRetries = Get-PVal -ParameterName 'MaxRetries' -originalPSBoundParameters $PSBoundParameters -dottedPath 'MaxRetries' -DefaultValue $MaxRetries -AsType ([int])
 
     # Patterns that identify specific failure categories
     $nuGetNotFoundPattern = 'NU1101|NU1202'
@@ -241,16 +240,20 @@ function Invoke-DotnetBuildWithRetry {
     # Normalize input: accept [string], [string[]], [System.IO.FileInfo], [System.IO.FileInfo[]],
     # or any object with a FullName property (e.g. pipeline output from Get-ChildItem).
     # Each pipeline bind delivers one element at a time; direct array args arrive all at once.
+    # Resolve against $PWD.ProviderPath, not the single-arg GetFullPath overload:
+    # pwsh's Set-Location does not sync [Environment]::CurrentDirectory, so the
+    # single-arg form resolves relative inputs against the process start directory
+    # (often C:\Users\<user>) instead of the user's actual location.
     $resolvedPaths = @(
       $SolutionOrProjectPath | ForEach-Object {
-        if ($_ -is [System.IO.FileSystemInfo]) { $_.FullName }
-        else { [System.IO.Path]::GetFullPath([string]$_) }
+        $raw = if ($_ -is [System.IO.FileSystemInfo]) { $_.FullName } else { [string]$_ }
+        [System.IO.Path]::GetFullPath($raw, $PWD.ProviderPath)
       }
     )
 
-    foreach ($SolutionOrProjectPath in $resolvedPaths) {
+    foreach ($CurrentPath in $resolvedPaths) {
 
-      foreach ($Configuration in $configurationsToProcess) {
+      foreach ($innerConfiguration in $configurationsToProcess) {
 
         $result = [PSCustomObject]@{
           ExitCode      = -1
@@ -262,28 +265,44 @@ function Invoke-DotnetBuildWithRetry {
         # -------------------------------------------------------------------------
         # Restore phase — with HTTP-cache-only retry on NU1101/NU1202
         # -------------------------------------------------------------------------
-        # Resolve binary log path for this project/configuration pair
-        $blArgs = @()
-        if ($BinaryLog) {
-          $resolvedBuildLogPath = $BuildLogBasePath
-          if (-not $PSBoundParameters.ContainsKey('BuildLogBasePath') -or [string]::IsNullOrEmpty($resolvedBuildLogPath)) {
-            $projectName = [System.IO.Path]::GetFileNameWithoutExtension($SolutionOrProjectPath)
-            $generatedRelPath = $global:settings[$global:configRootKeys['GeneratedRelativePathConfigRootKey']]
-            $resolvedBuildLogPath = Join-Path $generatedRelPath 'BuildLogs' $projectName $Configuration ("$projectName.binlog")
+        # Resolve binary log path for this project/configuration pair.
+        # Binary logging is always enabled; -BuildLogPath overrides the default path.
+        $projectName = [System.IO.Path]::GetFileNameWithoutExtension($CurrentPath)
+        $resolvedBuildLogPath = if (-not [string]::IsNullOrEmpty($BuildLogPath)) {
+          $BuildLogPath
+        } else {
+          # Look up GeneratedRelativePath from global settings; guard every step so a
+          # missing $global:configRootKeys, missing key, or empty value does not blow
+          # up Join-Path with a null -Path argument.
+          $generatedRelPath = $null
+          if ($null -ne $global:configRootKeys -and $null -ne $global:settings) {
+            $generatedKey = $global:configRootKeys['GeneratedRelativePathConfigRootKey']
+            if (-not [string]::IsNullOrEmpty($generatedKey)) {
+              $generatedRelPath = $global:settings[$generatedKey]
+            }
           }
-          $blDir = Split-Path -Parent $resolvedBuildLogPath
-          if (-not (Test-Path $blDir)) {
-            New-Item -ItemType Directory -Path $blDir -Force | Out-Null
+          if ([string]::IsNullOrEmpty($generatedRelPath)) {
+            # Fall back to <projectDir>\_generated per SC-0033 so binlogs still land
+            # under a _generated folder even when globals are not initialized.
+            $generatedRelPath = Join-Path (Split-Path -Parent $CurrentPath) '_generated'
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message (
+              'GeneratedRelativePath is not populated in $global:settings; ' +
+              "falling back to '$generatedRelPath' for binlog output."
+            )
           }
-          $blArgs = @("/bl:$resolvedBuildLogPath")
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Binary log will be written to '$resolvedBuildLogPath'"
+          Join-Path $generatedRelPath 'BuildLogs' $projectName $innerConfiguration "$projectName.binlog"
         }
+        $blDir = Split-Path -Parent $resolvedBuildLogPath
+        if (-not [string]::IsNullOrEmpty($blDir) -and -not (Test-Path $blDir)) {
+          New-Item -ItemType Directory -Path $blDir -Force | Out-Null
+        }
+        $blArgs = @("/bl:$resolvedBuildLogPath")
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Binary log will be written to '$resolvedBuildLogPath'"
 
         if ($WhatIfPreference) {
-          $blWhatIf = if ($BinaryLog) { " Binary log: '$resolvedBuildLogPath'." } else { '' }
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message (
-            "What if: dotnet restore '$SolutionOrProjectPath'; " +
-            "dotnet build '$SolutionOrProjectPath' -c $Configuration --no-restore.$blWhatIf " +
+            "What if: dotnet restore '$CurrentPath'; " +
+            "dotnet build '$CurrentPath' -c $innerConfiguration --no-restore. Binary log: '$resolvedBuildLogPath'. " +
             "On NU1101/NU1202, would also: dotnet nuget locals http-cache --clear and retry up to $MaxRetries time(s)."
           )
           $result.ExitCode = 0
@@ -313,10 +332,10 @@ function Invoke-DotnetBuildWithRetry {
             }
           }
 
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Running dotnet restore '$SolutionOrProjectPath' (attempt $($retryCount + 1) of $($MaxRetries + 1))"
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Running dotnet restore '$CurrentPath' (attempt $($retryCount + 1) of $($MaxRetries + 1))"
 
           try {
-            $restoreOutput = & dotnet restore $SolutionOrProjectPath 2>&1
+            $restoreOutput = & dotnet restore $CurrentPath 2>&1
             $restoreExitCode = $LASTEXITCODE
             $result.RestoreOutput = $restoreOutput
             $result.RetryCount = $retryCount
@@ -366,7 +385,7 @@ function Invoke-DotnetBuildWithRetry {
         # -------------------------------------------------------------------------
         # Pre-build check: detect and repair 0-byte obj\ref\ reference assemblies
         # -------------------------------------------------------------------------
-        $projectDir = Split-Path -Parent $SolutionOrProjectPath
+        $projectDir = Split-Path -Parent $CurrentPath
         $zeroByteRefs = Find-ZeroByteRefAssemblies -RootPath $projectDir
 
         if ($zeroByteRefs.Count -gt 0) {
@@ -406,16 +425,16 @@ function Invoke-DotnetBuildWithRetry {
           if ($affectedProjects.Count -eq 0) {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message (
               'Could not determine owning project(s) for zero-byte ref assemblies. ' +
-              "Manual fix: delete the listed files and run: dotnet build '$SolutionOrProjectPath' -t:Rebuild"
+              "Manual fix: delete the listed files and run: dotnet build '$CurrentPath' -t:Rebuild"
             )
           }
 
           $rebuildFailed = [System.Collections.Generic.List[string]]::new()
           foreach ($proj in $affectedProjects) {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message (
-              "Running: dotnet build '$proj' -t:Rebuild -c $Configuration"
+              "Running: dotnet build '$proj' -t:Rebuild -c $innerConfiguration"
             )
-            $rbOut = & dotnet build $proj -t:Rebuild -c $Configuration 2>&1
+            $rbOut = & dotnet build $proj -t:Rebuild -c $innerConfiguration 2>&1
             if ($LASTEXITCODE -ne 0) {
               [void] $rebuildFailed.Add($proj)
               $rbErrors = ($rbOut | Select-String '\berror\b') -join "`n"
@@ -449,16 +468,16 @@ function Invoke-DotnetBuildWithRetry {
         # -------------------------------------------------------------------------
         # Build phase
         # -------------------------------------------------------------------------
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Running dotnet build '$SolutionOrProjectPath' -c $Configuration --no-restore$(if ($blArgs) { " $($blArgs -join ' ')" })"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Running dotnet build '$CurrentPath' -c $innerConfiguration --no-restore$(if ($blArgs) { " $($blArgs -join ' ')" })"
 
         try {
-          $buildOutput = & dotnet build $SolutionOrProjectPath -c $Configuration --no-restore @blArgs 2>&1
+          $buildOutput = & dotnet build $CurrentPath -c $innerConfiguration --no-restore @blArgs 2>&1
           $buildExitCode = $LASTEXITCODE
           $result.BuildOutput = $buildOutput
           $result.ExitCode = $buildExitCode
 
           if ($buildExitCode -eq 0) {
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "dotnet build succeeded: '$SolutionOrProjectPath' [$Configuration]"
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "dotnet build succeeded: '$currentPath' [$innerConfiguration]"
           } else {
             $buildText = $buildOutput -join "`n"
 
@@ -472,7 +491,7 @@ function Invoke-DotnetBuildWithRetry {
               Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message (
                 'dotnet build failed due to a locked tmp-webcil WebAssembly temp directory. Attempting to locate and remove it...'
               )
-              $projectDir = Split-Path -Parent $SolutionOrProjectPath
+              $projectDir = Split-Path -Parent $currentPath
               $allRemoved = Remove-WebcilTempDirectories -RootPath $projectDir
               if ($allRemoved) {
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message (
@@ -497,8 +516,8 @@ function Invoke-DotnetBuildWithRetry {
         }
 
         $result
-      } # end foreach $Configuration
-    } # end foreach $SolutionOrProjectPath
+      } # end foreach $innerConfiguration
+    } # end foreach $currentPath
   }
 
   end {

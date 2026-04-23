@@ -4,7 +4,10 @@
 $privateDir = Join-Path $PSScriptRoot '..' 'private'
 . (Join-Path $privateDir 'Set-ClaudeSettingsSymlink.ps1')
 # New-SprintBuildMasterBuilds.ps1 replaced by public Set-BuildMasterSprintVariables (Area 7.2-1)
-. (Join-Path $privateDir 'New-SprintDatabaseInstances.ps1')
+# New-SprintDatabaseInstances (private) superseded by public New-SprintSqlServerInstances
+if (-not (Get-Command -Name 'New-SprintSqlServerInstances' -CommandType Function -ErrorAction SilentlyContinue)) {
+  . (Join-Path $PSScriptRoot 'New-SprintSqlServerInstances.ps1')
+}
 
 # =====================================================================
 # Main public cmdlet
@@ -40,7 +43,8 @@ function New-SprintStage2 {
       8. Creates Bitwarden secure-note items with SQL Server connection strings
          for the ATAPUtilities and AceCommander databases across Development
          and Experimental tiers via New-SprintBitwardenSecrets.
-      9. Creates local Development and Experimental SQL Server instances
+      9. Creates local Dev<username> and Exp<username> SQL Server instances and
+         builds the ATAPUtilities and AceCommander databases using full Flyway migrations,
          via New-SprintSqlServerInstances.
 
     ProGet feeds are permanent and ecosystem-wide — they are NOT created per
@@ -456,18 +460,12 @@ function New-SprintStage2 {
     }
 
     $dbInstanceParams = @{
-      SprintNumber     = $sprintNum
-      GitRoot          = $GitRoot
-      Username         = $env:USERNAME
       DatabaseHost     = $dbInstHost
       ConnectionMethod = $dbInstConnMethod
     }
-    if (-not [string]::IsNullOrWhiteSpace($dbInstPort)) {
-      $dbInstanceParams['Port'] = $dbInstPort
-    }
 
     try {
-      $dbInstanceResults = New-SprintDatabaseInstances @dbInstanceParams
+      $dbInstanceResults = New-SprintSqlServerInstances @dbInstanceParams
     } catch {
       $dbInstanceError = "Failed to create sprint database instances. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $dbInstanceError

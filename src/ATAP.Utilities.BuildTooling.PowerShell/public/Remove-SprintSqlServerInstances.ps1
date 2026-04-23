@@ -1,7 +1,7 @@
-function Remove-DeveloperDatabaseInstances {
+function Remove-SprintSqlServerInstances {
   <#
   .SYNOPSIS
-  Removes per-developer SQL Server named instances created at sprint start.
+  Removes the per-developer SQL Server named instances created at sprint start.
 
   .DESCRIPTION
   At the end of a sprint, removes the two named instances that were created per developer:
@@ -18,6 +18,8 @@ function Remove-DeveloperDatabaseInstances {
     3. $env:USERNAME (single-developer default)
 
   Caller is responsible for pre-loading the Get-PVal helper function.
+
+  Supersedes Remove-DeveloperDatabaseInstances (now archived to Obsolete/).
 
   .PARAMETER SprintNumber
   Four-character zero-padded sprint number, e.g. '0006'. No longer used in instance names;
@@ -42,7 +44,32 @@ function Remove-DeveloperDatabaseInstances {
     DeveloperNames   string[]
     RemovalResults   PSCustomObject[]  — one entry per (developer × instance type)
     OverallSuccess   bool
+
+  .EXAMPLE
+  Remove-SprintSqlServerInstances
+  Removes Dev<username> and Exp<username> instances for the current user.
+
+  .EXAMPLE
+  Remove-SprintSqlServerInstances -WhatIf
+  Shows what would be removed without making any changes.
+
+  .EXAMPLE
+  Remove-SprintSqlServerInstances -DeveloperNames @('whertzing', 'jsmith') -SprintNumber '0006'
+  Removes sprint instances for two developers.
+
+  .NOTES
+  AI assisted using Powershell.instructions.md as guidelines
+
+  .LINK
+  New-SprintSqlServerInstances
+
+  .LINK
+  Install-SqlServerInstance
+
+  .LINK
+  New-SprintStage2
   #>
+  [Alias('Remove-DeveloperDatabaseInstances')]
   [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
   param(
     [Parameter(Mandatory = $false)]

@@ -18,7 +18,14 @@ function New-ConnectionStringBuilderFromDbaTools {
   Protocol prefix: tcp, np, lpc, or default.
 
   .PARAMETER CredentialsKey
-  Key to retrieve credentials from vault. The secret object may contain:
+  Key to retrieve credentials from vault.
+
+  If the key starts with 'dbConnectionString', the vault item's Password field must hold a
+  complete Microsoft.Data.SqlClient connection string (plain text or SecureString). The
+  function parses it via SqlConnectionStringBuilder, extracts host/instance/port/auth, and
+  uses the InitialCatalog as the effective database name.
+
+  Otherwise the secret object must contain separate fields:
   - UserName (required): SQL or Windows login
   - Password (required): Login password
   - HostName (optional): Overrides DatabaseHost parameter
@@ -119,7 +126,7 @@ function New-ConnectionStringBuilderFromDbaTools {
     [switch]$NonPooledConnection
   )
 
-  BEGIN {
+  begin {
     $fn = 'New-ConnectionStringBuilderFromDbaTools'
     $mn = 'ATAP.Utilities.DatabaseManagement.Powershell'
 
@@ -139,23 +146,21 @@ function New-ConnectionStringBuilderFromDbaTools {
         # Try to import dbatools module first
         if (Get-Module -ListAvailable -Name dbatools) {
           Import-Module dbatools -ErrorAction Stop
-        }
-        else {
+        } else {
           # Module not installed - attempt to install
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message 'dbatools module not found. Attempting to install...'
           Install-Module dbatools -Scope CurrentUser -Force -ErrorAction Stop
           Import-Module dbatools -ErrorAction Stop
         }
       }
-    }
-    catch {
+    } catch {
       $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       throw
     }
   }
 
-  PROCESS {
+  process {
     try {
       # Initialize connection properties
       $effectiveDataSource = $DatabaseHost
@@ -173,7 +178,7 @@ function New-ConnectionStringBuilderFromDbaTools {
 
           # DatabaseHost is required for IntegratedSecurity
           if ([string]::IsNullOrWhiteSpace($effectiveDataSource)) {
-            throw "DatabaseHost is required when using IntegratedSecurity"
+            throw 'DatabaseHost is required when using IntegratedSecurity'
           }
         }
 
@@ -183,48 +188,125 @@ function New-ConnectionStringBuilderFromDbaTools {
           # Retrieve secret object from vault
           $secret = Get-BitWardenSecret -SecretName $CredentialsKey
 
-          # Validate required properties
-          if (-not $secret.UserName) {
-            throw "Vault secret '$CredentialsKey' does not contain required 'UserName' property"
-          }
-          if (-not $secret.Password) {
-            throw "Vault secret '$CredentialsKey' does not contain required 'Password' property"
-          }
+          if ($CredentialsKey.StartsWith('dbConnectionString')) {
+            # ---------------------------------------------------------------
+            # The vault item holds a complete Microsoft.Data.SqlClient
+            # connection string stored in the Password field (plain text or
+            # SecureString).  Parse it, populate the effective variables, then
+            # fall through to the shared builder / JDBC construction below.
+            # ---------------------------------------------------------------
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+              -Message "CredentialsKey starts with 'dbConnectionString' — parsing full connection string from vault"
 
-          $userName = $secret.UserName
-          $password = $secret.Password
+            $rawConnStr = if ($secret -is [System.Security.SecureString]) {
+              $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secret)
+              try { [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr) }
+              finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
+            } else {
+              [string]$secret
+            }
 
-          # Resolve whether vault explicitly requests integrated security
-          if ($secret.PSObject.Properties['UseIntegratedSecurity']) {
-            $useIntegratedSecurity = [bool]$secret.UseIntegratedSecurity
-          }
-          else {
-            $useIntegratedSecurity = $false
-          }
+            if ([string]::IsNullOrWhiteSpace($rawConnStr)) {
+              throw "Vault secret '$CredentialsKey' cannot be decoded or is null or whitespace"
+            }
 
-          # Override connection properties from vault if present
-          if ($secret.HostName -and [string]::IsNullOrWhiteSpace($effectiveDataSource)) {
-            $effectiveDataSource = $secret.HostName
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Using HostName from vault as DatabaseHost: $effectiveDataSource"
-          }
+            # Parse with Microsoft.Data.SqlClient — handles all key synonyms
+            try {
+              $sqlCsb = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($rawConnStr)
+            } catch {
+              throw "Failed to parse connection string from vault secret '$CredentialsKey': $($_.Exception.Message)"
+            }
 
-          if ($secret.SqlInstance -and [string]::IsNullOrWhiteSpace($effectiveSqlInstance)) {
-            $effectiveSqlInstance = $secret.SqlInstance
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Using SqlInstance from vault: $effectiveSqlInstance"
-          }
+            # The connection string is authoritative for the database name
+            if (-not [string]::IsNullOrWhiteSpace($sqlCsb.InitialCatalog)) {
+              $DatabaseName = $sqlCsb.InitialCatalog
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+                -Message "Using InitialCatalog from connection string: $DatabaseName"
+            }
 
-          if ($secret.Port -and $effectivePort -eq 0) {
-            $effectivePort = $secret.Port
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Using Port from vault: $effectivePort"
-          }
+            # Parse DataSource: [protocol:]host[\instance][,port]
+            $rawDs = $sqlCsb.DataSource
+            if ($rawDs -match '^(tcp:|np:|lpc:)(.+)$') {
+              if ([string]::IsNullOrWhiteSpace($ConnectionMethod)) {
+                $ConnectionMethod = $Matches[1].TrimEnd(':')
+              }
+              $rawDs = $Matches[2]
+            }
+            if ($rawDs -match '^(.+),(\d+)$') {
+              $rawDs = $Matches[1]
+              if ($effectivePort -eq 0) { $effectivePort = [int]$Matches[2] }
+            }
+            if ($rawDs -match '^([^\\]+)\\(.+)$') {
+              $effectiveDataSource = $Matches[1]
+              if ([string]::IsNullOrWhiteSpace($effectiveSqlInstance)) {
+                $effectiveSqlInstance = $Matches[2]
+              }
+            } else {
+              $effectiveDataSource = $rawDs
+            }
 
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message ("Vault request UseIntegratedSecurity: $useIntegratedSecurity")
+            # Authentication
+            $useIntegratedSecurity = $sqlCsb.IntegratedSecurity
+            if (-not $useIntegratedSecurity) {
+              $userName = $sqlCsb.UserID
+              $password = $sqlCsb.Password
+            }
+
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+              -Message "Parsed: Host=$effectiveDataSource  Instance=$effectiveSqlInstance  Port=$effectivePort  IntegratedSecurity=$useIntegratedSecurity"
+
+          } else {
+            # ---------------------------------------------------------------
+            # Standard vault secret — separate UserName / Password / optional
+            # HostName / SqlInstance / Port fields.
+            # ---------------------------------------------------------------
+
+            # Validate required properties
+            if (-not $secret.UserName) {
+              throw "Vault secret '$CredentialsKey' does not contain required 'UserName' property"
+            }
+            if (-not $secret.Password) {
+              throw "Vault secret '$CredentialsKey' does not contain required 'Password' property"
+            }
+
+            $userName = $secret.UserName
+            $password = $secret.Password
+
+            # Resolve whether vault explicitly requests integrated security
+            if ($secret.PSObject.Properties['UseIntegratedSecurity']) {
+              $useIntegratedSecurity = [bool]$secret.UseIntegratedSecurity
+            } else {
+              $useIntegratedSecurity = $false
+            }
+
+            # Override connection properties from vault if present
+            if ($secret.HostName -and [string]::IsNullOrWhiteSpace($effectiveDataSource)) {
+              $effectiveDataSource = $secret.HostName
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+                -Message "Using HostName from vault as DatabaseHost: $effectiveDataSource"
+            }
+
+            if ($secret.SqlInstance -and [string]::IsNullOrWhiteSpace($effectiveSqlInstance)) {
+              $effectiveSqlInstance = $secret.SqlInstance
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+                -Message "Using SqlInstance from vault: $effectiveSqlInstance"
+            }
+
+            if ($secret.Port -and $effectivePort -eq 0) {
+              $effectivePort = $secret.Port
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+                -Message "Using Port from vault: $effectivePort"
+            }
+
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+              -Message "Vault request UseIntegratedSecurity: $useIntegratedSecurity"
+          }
         }
       }
 
       # Validate we have a data source
       if ([string]::IsNullOrWhiteSpace($effectiveDataSource)) {
-        throw "DatabaseHost must be provided either as parameter or from vault secret"
+        throw 'DatabaseHost must be provided either as parameter or from vault secret'
       }
 
       # Build the full data source string
@@ -276,13 +358,11 @@ function New-ConnectionStringBuilderFromDbaTools {
           $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
           $credential = [PSCredential]::new($userName, $securePassword)
           $dbaParams['SqlCredential'] = $credential
-        }
-        else {
+        } else {
           # Current user's Windows credentials
           $dbaParams['IntegratedSecurity'] = $true
         }
-      }
-      else {
+      } else {
         # SQL Server authentication
         $dbaParams['UserName'] = $userName
         $dbaParams['Password'] = $password
@@ -316,20 +396,17 @@ function New-ConnectionStringBuilderFromDbaTools {
         }
 
         if ($useIntegratedSecurity -and -not $userName) {
-          $jdbcStr += "integratedSecurity=true;trustServerCertificate=true;"
-        }
-        elseif ($useIntegratedSecurity -and $userName) {
+          $jdbcStr += 'integratedSecurity=true;trustServerCertificate=true;'
+        } elseif ($useIntegratedSecurity -and $userName) {
           # Windows auth with explicit creds - JDBC uses integratedSecurity
-          $jdbcStr += "integratedSecurity=true;trustServerCertificate=true;"
-        }
-        else {
+          $jdbcStr += 'integratedSecurity=true;trustServerCertificate=true;'
+        } else {
           $jdbcStr += "user=$userName;password=$password;encrypt=true;trustServerCertificate=true;"
         }
 
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Built JDBC connection string"
-      }
-      else {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Built .NET connection string"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Built JDBC connection string'
+      } else {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Built .NET connection string'
       }
 
       # Return a PSCustomObject containing the builder and connection info
@@ -348,20 +425,17 @@ function New-ConnectionStringBuilderFromDbaTools {
       $result | Add-Member -MemberType ScriptMethod -Name 'ToString' -Value {
         if ($this.IsJdbc) {
           return $this.JdbcConnectionString
-        }
-        else {
+        } else {
           return $this.Builder.ToString()
         }
       } -Force
 
       return $result
-    }
-    catch {
+    } catch {
       $errorMessage = "Failed to build connection string. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       throw
-    }
-    finally {
+    } finally {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving Function $fn"
     }
   }

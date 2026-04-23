@@ -119,6 +119,22 @@
     </PackageReference>
   </ItemGroup>
 
+  <!-- Fody IL weaving for every project.
+       Fody core (6.9.3+) is required for .NET 10 / MSBuildMajorVersion=18 support.
+       MethodBoundaryAspect.Fody weaves method-entry/exit/exception tracing on any class
+       decorated with [MethodBoundaryAspect] attributes; projects with no such attributes
+       are unaffected. Both packages are build-time tools — PrivateAssets=all ensures they
+       are not emitted as runtime dependencies in the generated nuspec. -->
+  <ItemGroup>
+    <PackageReference Include="Fody">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="MethodBoundaryAspect.Fody">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
   <!-- Include Roslyn Code Analysis for every project -->
   <!-- FxCopAnalyzers package has been deprecated in favor of 'Microsoft.CodeAnalysis.NetAnalyzers', hence this is now commented out -->
   <!--

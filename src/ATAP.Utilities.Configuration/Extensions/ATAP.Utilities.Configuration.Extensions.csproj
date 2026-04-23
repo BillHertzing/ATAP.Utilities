@@ -5,11 +5,6 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
     <Description>Extension methods and helpers for ASP.NET Core Generic Host configuration, environment variables, JSON, command-line, localization, and logging setup.</Description>
-    <!-- Fody 6.7.0 produces a 0-byte DLL on .NET 10 (MSBuildMajorVersion=18).
-         The [ETWLogAttribute] usage is already guarded with #if TRACE so Fody has
-         nothing to weave in Release. Skip weaving until a .NET 10-compatible
-         Fody is available. -->
-    <SkipFody>true</SkipFody>
   </PropertyGroup>
 
   <!-- Packages necessary to run the ASP.Net Core Generic Host and web server hosts Server -->
@@ -25,8 +20,6 @@
 
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
   <ItemGroup>
-    <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
-    <PackageReference Include="MethodBoundaryAspect.Fody" />
     <!-- Project Reference to the ETW attribute and log provider -->
     <ProjectReference Include="..\..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>

@@ -7,10 +7,5 @@
     <Description>ETW (Event Tracing for Windows) log attribute and provider using Fody MethodBoundaryAspect for automatic method entry, exit, and exception tracing.</Description>
   </PropertyGroup>
 
-  <!-- Packages for this project's use of Fody during the build process -->
-  <ItemGroup>
-    <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
-    <PackageReference Include="MethodBoundaryAspect.Fody" />
-  </ItemGroup>
 
 </Project>

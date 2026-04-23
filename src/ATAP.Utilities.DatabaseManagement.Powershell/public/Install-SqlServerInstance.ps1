@@ -72,7 +72,7 @@ function Install-SqlServerInstance {
   [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKey',
     Justification = 'CredentialsKey is a vault lookup key name, not a credential')]
   [Alias('New-SqlServerInstance')]
-  [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+  [CmdletBinding(SupportsShouldProcess = $true)]
   param(
     [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
     [ValidateNotNullOrEmpty()]

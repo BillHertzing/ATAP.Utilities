@@ -41,7 +41,7 @@
 Exec
 (
     FileName: pwsh,
-    Arguments: >>-NoProfile -Command "New-Item -ItemType Directory -Path '_generated\buildmaster' -Force | Out-Null; nbgv get-version --variable NuGetPackageVersion | Out-File '_generated\buildmaster\_nbgv.tmp' -Encoding utf8 -NoNewline">>,
+    Arguments: >>-NoProfile -Command "New-Item -ItemType Directory -Path '_generated\buildmaster' -Force | Out-Null; dotnet nbgv get-version --variable NuGetPackageVersion | Out-File '_generated\buildmaster\_nbgv.tmp' -Encoding utf8 -NoNewline">>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );
@@ -50,7 +50,7 @@ Exec
 set $NbgvTempFile = $PathCombine($SourcePath, _generated\buildmaster\_nbgv.tmp);
 set $NbgvVersion  = $Trim($FileContents($NbgvTempFile));
 
-set $PrereleaseLabel = $RegexReplace($NbgvVersion, >>^[0-9]+\.[0-9]+\.[0-9]+-?([A-Za-z]*).*$>>, `$1`);
+set $PrereleaseLabel = $RegexReplace($NbgvVersion, "^[0-9]+\.[0-9]+\.[0-9]+-?([A-Za-z]*).*$", `$1`);
 
 set $Tier = Experimental;
 if $PrereleaseLabel == Alpha      { set $Tier = Development;  }

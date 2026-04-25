@@ -10,8 +10,8 @@
 # Variables (Application Variables or Build Variables):
 #   $ApplicationName  — e.g. "ATAP.Utilities"
 #   $Branch           — branch being built (injected by Repository Monitor)
-#   $SourcePath       — absolute path to the checked-out worktree
-#                       e.g. C:\BuildMaster\work\ATAP.Utilities\%releaseNumber%
+#   $SourcePath       — absolute path to the developer worktree (Application Variable)
+#                       e.g. C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-98-sprint-0006-work-items
 #   $ProjectPath      — solution-root-relative path to the .csproj  OR  a
 #                       .sln file that contains just this package family.
 #                       e.g. src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj
@@ -43,13 +43,10 @@
 ##########################################################################
 
 # ---------------------------------------------------------------------------
-# 1. Acquire source
+# 1. Source — $SourcePath is the developer worktree (Application Variable).
+#    Git::Checkout-Code is intentionally absent: file-export checkout does not
+#    preserve the .git file that NBGV requires to compute version height.
 # ---------------------------------------------------------------------------
-Git::Checkout-Code
-(
-    BranchOrCommit: $Branch,
-    To: $SourcePath
-);
 
 # Resolve tier from NBGV.
 # Step 1: Run nbgv and write output to a temp file

@@ -285,6 +285,49 @@ function Invoke-Flyway {
     $script:errors = [System.Collections.Generic.List[string]]::new()
     $script:success = $false
 
+    $repoRootFromScript = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..'))
+    $repoFlywayBasePath = Join-Path $repoRootFromScript 'Database\Flyway'
+
+    if ([string]::IsNullOrWhiteSpace($FlywayBasePath) -or -not (Test-Path -LiteralPath $FlywayBasePath -PathType Container)) {
+      if (Test-Path -LiteralPath $repoFlywayBasePath -PathType Container) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "FlywayBasePath '$FlywayBasePath' is not valid. Falling back to '$repoFlywayBasePath'."
+        $FlywayBasePath = $repoFlywayBasePath
+      }
+    }
+
+    if ([string]::IsNullOrWhiteSpace($FlywaySqlMigrationsPath) -or -not (Test-Path -LiteralPath $FlywaySqlMigrationsPath -PathType Container)) {
+      $candidateSqlMigrationsPath = Join-Path $FlywayBasePath 'SQL'
+      if (Test-Path -LiteralPath $candidateSqlMigrationsPath -PathType Container) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "FlywaySqlMigrationsPath '$FlywaySqlMigrationsPath' is not valid. Falling back to '$candidateSqlMigrationsPath'."
+        $FlywaySqlMigrationsPath = $candidateSqlMigrationsPath
+      }
+    }
+
+    if ([string]::IsNullOrWhiteSpace($FlywayTomlPath) -or -not (Test-Path -LiteralPath $FlywayTomlPath -PathType Leaf)) {
+      $fallbackFlywayTomlPath = Join-Path $FlywayBasePath 'flyway.toml'
+      if (Test-Path -LiteralPath $fallbackFlywayTomlPath -PathType Leaf) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "FlywayTomlPath '$FlywayTomlPath' is not valid. Falling back to '$fallbackFlywayTomlPath'."
+        $FlywayTomlPath = $fallbackFlywayTomlPath
+      }
+    }
+
+    if ([string]::IsNullOrWhiteSpace($FlywayDataPath)) {
+      $FlywayDataPath = Join-Path $FlywayBasePath 'Data'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "FlywayDataPath was empty; defaulting to '$FlywayDataPath'"
+    }
+
+    if (-not (Test-Path -LiteralPath $FlywayDataPath -PathType Container)) {
+      $fallbackFlywayDataPath = Join-Path $FlywayBasePath 'Data'
+      if ((-not [string]::IsNullOrWhiteSpace($fallbackFlywayDataPath)) -and (Test-Path -LiteralPath $fallbackFlywayDataPath -PathType Container)) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Configured FlywayDataPath '$FlywayDataPath' was not found. Falling back to '$fallbackFlywayDataPath'."
+        $FlywayDataPath = $fallbackFlywayDataPath
+      }
+    }
+
+    if (-not (Test-Path -LiteralPath $FlywayDataPath -PathType Container)) {
+      throw "FlywayDataPath does not exist: '$FlywayDataPath'"
+    }
+
 
     # Git metadata
     function Get-GitMeta {
@@ -444,6 +487,7 @@ function Invoke-Flyway {
       $env:FLYWAY_PLACEHOLDERS_GITCOMMIT = $GitCommit
       $env:FLYWAY_PLACEHOLDERS_DATA_DIR = $FlywayDataPath
       $env:FLYWAY_PLACEHOLDERS_USER_PII_PASSPHRASE = $env:AceCommander_UserPii__PassphraseV1
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Flyway data directory: $FlywayDataPath"
 
       # Build flyway parameters and execute
       $flywayParams = @("-configFiles=$FlywayTomlPath", "-environment=$environmentKey", '-X')

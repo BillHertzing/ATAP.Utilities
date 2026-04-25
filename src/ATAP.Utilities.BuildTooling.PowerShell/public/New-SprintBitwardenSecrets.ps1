@@ -7,12 +7,12 @@ function New-SprintBitwardenSecrets {
     For each combination of (database, host, tier), builds a SQL Server
     connection string and stores it as a Bitwarden secure-note item.
 
-    Databases:  ATAPUtilities, AceCommander
+    Databases:  master, ATAPUtilities, AceCommander
     Hosts:      $env:COMPUTERNAME and 'localhost' by default
     Tiers:      Dev, Exp
 
-    This yields 8 secrets per developer per sprint
-    (2 databases × 2 hosts × 2 tiers).
+    This yields 12 secrets per developer per sprint
+    (3 databases × 2 hosts × 2 tiers).
 
     Secret naming convention:
       dbConnectionString-<Database>-<Host>-<Dev|Exp>-<DeveloperUsername>
@@ -36,7 +36,7 @@ function New-SprintBitwardenSecrets {
     Defaults to @($env:COMPUTERNAME, 'localhost').
   .PARAMETER Databases
     List of database names to create secrets for.
-    Defaults to @('ATAPUtilities', 'AceCommander').
+    Defaults to @('master', 'ATAPUtilities', 'AceCommander').
   .OUTPUTS
     [PSCustomObject[]] — one entry per (database, host, tier) combination with
     fields: secretName, database, host, tier, created, error.
@@ -91,7 +91,7 @@ function New-SprintBitwardenSecrets {
 
     # Snippet: Check and populate simple parameter as Type - Databases
     if (-not $PSBoundParameters.ContainsKey('Databases') -or $null -eq $Databases -or $Databases.Count -eq 0) {
-      $Databases = @('ATAPUtilities', 'AceCommander')
+      $Databases = @('master', 'ATAPUtilities', 'AceCommander')
     }
 
     # Read BW_SESSION from User scope if not present in process scope (R-10 pattern)

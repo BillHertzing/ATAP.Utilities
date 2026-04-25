@@ -32,11 +32,9 @@
 #   nuget-stable:        indefinite (no inbound connectors)
 ##########################################################################
 
-Git::Checkout-Code
-(
-    BranchOrCommit: $Branch,
-    To: $SourcePath
-);
+# Git::Checkout-Code is intentionally absent. $SourcePath is the developer worktree
+# (set as a BuildMaster Application Variable). The worktree contains a .git file so
+# NBGV can read version information. File-export checkout does not preserve .git.
 
 # Resolve tier from NBGV.
 # Step 1: Run nbgv and write output to a temp file under _generated/buildmaster/ (SC-0033)

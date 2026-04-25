@@ -220,7 +220,11 @@ function Install-SqlServerInstance {
     if ($PSCmdlet.ShouldProcess($targetInstanceName, 'Install SQL Server instance')) {
       try {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Tag 'DbaToolsCall' -Message "Calling Install-DbaInstance for target $targetInstanceName"
-        $installResult = Install-DbaInstance @installParams
+        # Install-DbaInstance has ConfirmImpact=High and will prompt even when the caller
+        # passes -Confirm:$false. Suppress by setting ConfirmPreference to None for this
+        # scope so the prompt is never raised.
+        $ConfirmPreference = 'None'
+        $installResult = Install-DbaInstance @installParams -Confirm:$false
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Tag 'DbaToolsCall' -Message "Successfully returned from Install-DbaInstance for target $targetInstanceName"
 
         [PSCustomObject]@{

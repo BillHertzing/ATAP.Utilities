@@ -265,7 +265,7 @@ Get-FileHash '.\MyPackage.1.0.0.nupkg' -Algorithm SHA256 |
 
 ## 5. OtterScript Plan — `CSharpPackage-5Stage.otter`
 
-Save this file as `Build/BuildMaster/Plans/CSharpPackage-5Stage.otter`.
+Save this file as `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/CSharpPackage-5Stage.otter`.
 
 The plan follows exactly the same shape as `PowerShellModule-5Stage.otter`:
 
@@ -546,7 +546,7 @@ stage Production
 }
 ```
 
-> **Individual project builds:** Replace `ATAP.Utilities.sln` in every `dotnet build / test / pack` call with the specific `.csproj` path (e.g. `src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj`) to build or pack a single package. The parameterized plan `Build/BuildMaster/Plans/CSharpPackage-PerProject.otter` and its matching monitors `Build/BuildMaster/Monitors/CSharpPackage-RepositoryMonitors.otter` implement this pattern — see §9 below.
+> **Individual project builds:** Replace `ATAP.Utilities.sln` in every `dotnet build / test / pack` call with the specific `.csproj` path (e.g. `src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj`) to build or pack a single package. The parameterized plan `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/CSharpPackage-PerProject.otter` and its matching monitors `src/ATAP.Utilities.BuildTooling.BuildMaster/Monitors/CSharpPackage-RepositoryMonitors.otter` implement this pattern — see §9 below.
 
 ---
 
@@ -710,7 +710,7 @@ a reference document but is not imported into BuildMaster.
 
 ### 9.1 How the plan works
 
-`CSharpPackage-PerProject.otter` (`Build/BuildMaster/Plans/CSharpPackage-PerProject.otter`)
+`CSharpPackage-PerProject.otter` (`src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/CSharpPackage-PerProject.otter`)
 accepts the following Build Variables:
 
 | Variable         | Required | Default         | Description                                                 |
@@ -791,8 +791,8 @@ Set `$ProjectPath` to one of these values when creating a manual build:
 | `Directory.Build.targets`                                                     | Solution-wide import of `ATAP.Utilities.BuildTooling.targets`; contains legacy `<PackageReference Update>` overrides (being migrated to `Directory.Packages.props`) |
 | `Directory.Packages.props`                                                    | Central Package Management — target state after migration; declares all `<PackageVersion>` entries with `ManagePackageVersionsCentrally=true`                       |
 | `src/ATAP.Utilities.BuildTooling.PowerShell/public/Publish-ATAPUtilities.ps1` | Batch script to build and push all libraries locally in dependency order; used outside of BuildMaster for developer publishing runs                                 |
-| `Build/BuildMaster/Plans/CSharpPackage-5Stage.otter`                          | OtterScript plan for full-solution builds (§5)                                                                                                                      |
-| `Build/BuildMaster/Plans/CSharpPackage-PerProject.otter`                      | OtterScript plan for individual package builds (§9)                                                                                                                 |
+| `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/CSharpPackage-5Stage.otter`     | OtterScript plan for full-solution builds (§5)                                                                                                                      |
+| `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/CSharpPackage-PerProject.otter` | OtterScript plan for individual package builds (§9)                                                                                                                 |
 
 ---
 

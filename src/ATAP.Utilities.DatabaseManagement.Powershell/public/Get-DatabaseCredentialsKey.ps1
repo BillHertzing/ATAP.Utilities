@@ -11,7 +11,7 @@ function Get-DatabaseCredentialsKey {
     Permanent tiers (Production, QA, Integration):
       dbConnectionString-<DatabaseName>-<DatabaseHost>-<Environment>
 
-    Per-sprint tiers (Development, Experimental):
+    Per-sprint tiers (Development/Dev, Experimental/Exp):
       dbConnectionString-<DatabaseName>-<DatabaseHost>-<Environment>-<UserName>
 
   The returned string is suitable for use as the -SecretName argument to
@@ -35,7 +35,7 @@ function Get-DatabaseCredentialsKey {
 
   .PARAMETER Environment
   The deployment tier. One of: Production, QA, Integration, Development,
-  Experimental.
+  Experimental, Dev, Exp.
 
   .PARAMETER UserName
   The developer's Windows username. Required for Development and
@@ -46,7 +46,7 @@ function Get-DatabaseCredentialsKey {
 
   .EXAMPLE
   Get-DatabaseCredentialsKey -DatabaseName 'ATAPUtilities' -DatabaseHost 'localhost' -Environment 'Development'
-  # Returns: dbConnectionString-ATAPUtilities-localhost-Development-<current username>
+  # Returns: dbConnectionString-ATAPUtilities-localhost-Dev-<current username>
 
   .EXAMPLE
   Get-DatabaseCredentialsKey -DatabaseName 'AceCommander' -DatabaseHost 'sqlserver01' -Environment 'Production'
@@ -54,7 +54,7 @@ function Get-DatabaseCredentialsKey {
 
   .EXAMPLE
   Get-DatabaseCredentialsKey -DatabaseName 'ATAPUtilities' -DatabaseHost 'localhost' -Environment 'Experimental' -UserName 'jsmith'
-  # Returns: dbConnectionString-ATAPUtilities-localhost-Experimental-jsmith
+  # Returns: dbConnectionString-ATAPUtilities-localhost-Exp-jsmith
 
   .NOTES
   Naming scheme defined in 5TierRemainingTasks.md §6 and §4.3.
@@ -75,7 +75,7 @@ function Get-DatabaseCredentialsKey {
     [string] $DatabaseHost,
 
     [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
-    [ValidateSet('Production', 'QA', 'Integration', 'Development', 'Experimental')]
+    [ValidateSet('Production', 'QA', 'Integration', 'Development', 'Experimental', 'Dev', 'Exp')]
     [string] $Environment,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
@@ -86,21 +86,28 @@ function Get-DatabaseCredentialsKey {
     $fn = $MyInvocation.MyCommand.Name
     $mn = $MyInvocation.MyCommand.ModuleName
 
-    $sprintTiers = @('Development', 'Experimental')
-    $isSprintTier = $Environment -in $sprintTiers
+    $tierToken = switch ($Environment) {
+      'Development' { 'Dev' }
+      'Dev' { 'Dev' }
+      'Experimental' { 'Exp' }
+      'Exp' { 'Exp' }
+      default { $Environment }
+    }
+
+    $sprintTiers = @('Dev', 'Exp')
+    $isSprintTier = $tierToken -in $sprintTiers
 
     if ($isSprintTier) {
       # Per-sprint secret: include developer username
       if ([string]::IsNullOrWhiteSpace($UserName)) {
         $UserName = $env:USERNAME
       }
-      $key = "dbConnectionString-$DatabaseName-$DatabaseHost-$Environment-$UserName"
+      $key = "dbConnectionString-$DatabaseName-$DatabaseHost-$tierToken-$UserName"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
         -Message "Computed per-sprint CredentialsKey: $key" -Tag 'ConnectionString'
-    }
-    else {
+    } else {
       # Permanent secret: no username suffix
-      $key = "dbConnectionString-$DatabaseName-$DatabaseHost-$Environment"
+      $key = "dbConnectionString-$DatabaseName-$DatabaseHost-$tierToken"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
         -Message "Computed permanent CredentialsKey: $key" -Tag 'ConnectionString'
     }

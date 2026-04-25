@@ -7,7 +7,7 @@ function Remove-SprintBitwardenSecrets {
     Mirrors the (database, host, tier) cross-product of New-SprintBitwardenSecrets
     and deletes each matching Bitwarden item by name.
 
-    Databases:  ATAPUtilities, AceCommander  (or -Databases override)
+    Databases:  master, ATAPUtilities, AceCommander  (or -Databases override)
     Hosts:      $env:COMPUTERNAME and 'localhost'  (or -HostList override)
     Tiers:      Dev, Exp
 
@@ -39,7 +39,7 @@ function Remove-SprintBitwardenSecrets {
     Defaults to @($env:COMPUTERNAME, 'localhost').
   .PARAMETER Databases
     List of database names whose secrets should be deleted.
-    Defaults to @('ATAPUtilities', 'AceCommander').
+    Defaults to @('master', 'ATAPUtilities', 'AceCommander').
   .PARAMETER Force
     Bypasses the High-impact confirmation prompt. Use for pipeline / agent invocations.
   .OUTPUTS
@@ -94,7 +94,7 @@ function Remove-SprintBitwardenSecrets {
 
     # Snippet: Check and populate simple parameter as Type - Databases
     if (-not $PSBoundParameters.ContainsKey('Databases') -or $null -eq $Databases -or $Databases.Count -eq 0) {
-      $Databases = @('ATAPUtilities', 'AceCommander')
+      $Databases = @('master', 'ATAPUtilities', 'AceCommander')
     }
 
     # Read BW_SESSION from User scope if not present in process scope (R-10 pattern)

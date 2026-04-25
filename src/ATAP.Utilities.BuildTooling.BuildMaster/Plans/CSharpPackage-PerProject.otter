@@ -73,7 +73,7 @@ if $PrereleaseLabel == ""         { set $Tier = Production;   }
 # Resolve feed name via Get-ATAPIACConstant (T-31) — no hard-coded feed names.
 Exec pwsh
 (
-    Arguments: >>-NoProfile -File src/ATAP.Utilities.BuildTooling.BuildMaster/Scripts/Resolve-FeedName.ps1 -Tier $Tier -FeedType nuget -OutputFile _feedname.tmp>>,
+    Arguments: >>-NoProfile -File src\ATAP.Utilities.BuildTooling.BuildMaster\Scripts\Resolve-FeedName.ps1 -Tier $Tier -FeedType nuget -OutputFile _feedname.tmp>>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );

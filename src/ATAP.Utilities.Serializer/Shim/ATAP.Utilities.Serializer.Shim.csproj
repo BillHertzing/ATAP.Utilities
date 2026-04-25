@@ -18,7 +18,6 @@
 
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
   <ItemGroup>
-    <PackageReference Include="MethodBoundaryAspect.Fody" />
     <ProjectReference Include="..\..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
 

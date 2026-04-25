@@ -4,16 +4,6 @@
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
-    <!-- Assembly, File, and Package Information for this assembly-->
-    <!-- Build and revision are created based on date-->
-    <MajorVersion>1</MajorVersion>
-    <MinorVersion>0</MinorVersion>
-    <PatchVersion>0</PatchVersion>
-    <!-- Current Lifecycle stage for this assembly-->
-    <PackageLifeCycleStage>Production</PackageLifeCycleStage>
-    <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
-    <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
-    <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
 
   <!-- referencing xUnit in order to extend it also causes VS 2019 to think this is a test project. and then it crashes test discovery without this added -->
@@ -74,8 +64,6 @@
   <!-- ETW is not used inTesting (yet), but ATAP libraries used by the testing package have a reference to this. UYnitl I can figure out how to include these as dependent packages in the appropriate `ATAP.Utilitiies.` librarirys, they are included specifically, here -->
   <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
   <ItemGroup>
-    <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
-    <PackageReference Include="MethodBoundaryAspect.Fody" />
     <!-- Project Reference to the ETW attribute and log provider -->
     <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>

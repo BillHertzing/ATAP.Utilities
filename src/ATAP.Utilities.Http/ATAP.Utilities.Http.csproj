@@ -19,6 +19,9 @@
   <ItemGroup>
     <PackageReference Include="Polly" />
     <PackageReference Include="ServiceStack.HttpClient" />
+    <!-- Explicit versions to override transitive vulnerabilities -->
+    <PackageReference Include="System.Drawing.Common" />
+    <PackageReference Include="System.Security.Cryptography.Xml" />
   </ItemGroup>
 
   <ItemGroup>

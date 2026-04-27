@@ -7,14 +7,14 @@
     ATAP.Utilities.PowerShell (defines Get-PVal / Get-ParameterValueFromNeoConfigurationRoot)
     and ATAP.Utilities.BuildTooling.PowerShell (Publish / Move-ProGet* / New-Sprint*).
 
-    Run this once per shell session before invoking Publish-ATAPUtilities.ps1
-    or any Move-ProGetPackage* cmdlet.
+    Run this once per shell session before invoking Invoke-DotnetBuildWithRetry,
+    Invoke-ModuleBuildWithRetry, or any Move-ProGetPackage* cmdlet.
 
 .EXAMPLE
     pwsh
     cd C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-98-sprint-0006-work-items
     . ./Initialize-5TierShell.ps1
-    ./Publish-ATAPUtilities.ps1 -ProjectFilter '*Philote.Interfaces*'
+    Invoke-DotnetBuildWithRetry -SolutionOrProjectPath 'src/ATAP.Utilities.Philote.Interfaces'
 #>
 [CmdletBinding()]
 param()
@@ -103,5 +103,5 @@ if (-not $env:PROGET_ADMIN_API_KEY) {
     Write-Host '[Init] PROGET_ADMIN_API_KEY present' -ForegroundColor Green
 }
 
-Write-Host '[Init] Ready. You can now run Publish-ATAPUtilities.ps1 or Move-ProGetPackage*' `
+Write-Host '[Init] Ready. You can now run Invoke-DotnetBuildWithRetry, Invoke-ModuleBuildWithRetry, or Move-ProGetPackage*' `
     -ForegroundColor Cyan

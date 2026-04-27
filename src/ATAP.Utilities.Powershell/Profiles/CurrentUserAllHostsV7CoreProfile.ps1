@@ -156,10 +156,10 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 chcp 65001 | Out-Null
 
 # Set environment variables for PLaywright and PCMSC project
-$env:PCMSC_CEUserID = 'admin'
-$env:PCMSC_CEPasswordVaultKey = 'PCMSC_CEPasswordVaultKey'
-$env:PW_JITTER_SEED = 0
-$env:PW_HUMANIZER_DEBUG = 'true'
+# $env:PCMSC_CEUserID = 'admin'
+# $env:PCMSC_CEPasswordVaultKey = 'PCMSC_CEPasswordVaultKey'
+# $env:PW_JITTER_SEED = 0
+# $env:PW_HUMANIZER_DEBUG = 'true'
 
 # Create an alias for Add-ScopeCreepIdea.ps1
 Set-Alias idea (Join-Path $global:settings['CloudBasePath'] $env:username 'GitHub', '_Planning', 'Powershell', 'Public', 'Add-ScopeCreepIdea.ps1')

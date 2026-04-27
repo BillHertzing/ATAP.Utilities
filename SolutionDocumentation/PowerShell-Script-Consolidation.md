@@ -81,7 +81,7 @@ The interesting bucket — and the focus of this doc — is **C**.
 
 | Path                                                   | Bucket | Purpose                                        | Disposition                                |
 | ------------------------------------------------------ | ------ | ---------------------------------------------- | ------------------------------------------ |
-| `Publish-ATAPUtilities.ps1`                            | C      | Iterate `$libraries` and publish to ProGet T1  | Keep at root                               |
+| `Publish-ATAPUtilities.ps1`                            | C      | Iterate projects and publish to ProGet feeds   | **Delete** — replace with `Invoke-DotnetBuildWithRetry` / `Invoke-ModuleBuildWithRetry` |
 | `Setup-GitHubMCP.ps1`                                  | C      | One-time GitHub MCP server setup               | Keep at root                               |
 | `Test-GitHubMCP.ps1`                                   | C      | Smoke-test GitHub MCP after setup              | Keep at root                               |
 | `Database/Powershell/public/Export-RuleToTextFile.ps1` | C/A    | Schema rule export                             | **Promote to module** (Database utilities) |
@@ -266,10 +266,14 @@ Rules:
 3. **`OlderDBsForReference/` and `*/Obsolete/` are dead weight.**
    Multiple `.ps1` files marked obsolete years ago. Slated for deletion.
 
-4. **Two copies of `Publish-ATAPUtilities.ps1`** — one at the repo root
-   (developer helper), one in `BuildTooling/public/` (module function).
-   They should converge: the module function is the implementation, the
-   repo-root script is a thin wrapper that calls it.
+4. **Both copies of `Publish-ATAPUtilities.ps1` are slated for deletion.**
+   The repo-root script (`Publish-ATAPUtilities.ps1`) and the module function
+   (`BuildTooling/public/Publish-ATAPUtilities.ps1`) will both be removed.
+   Callers that publish **C# libraries** should call `Invoke-DotnetBuildWithRetry`
+   instead. Callers that publish **PowerShell modules** should call
+   `Invoke-ModuleBuildWithRetry`, which was added in sprint-0006 and orchestrates
+   `module.build.ps1` via `Invoke-Build` with NBGV-derived tier resolution and
+   automatic retry.
 
 5. **No automated lint for "this `.ps1` should be a function".** A
    PSScriptAnalyzer custom rule could flag standalone scripts that

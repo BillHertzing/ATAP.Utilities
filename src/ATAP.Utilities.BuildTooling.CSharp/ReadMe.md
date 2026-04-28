@@ -23,7 +23,10 @@ Additional tasks and targets for MSBuild extensions
 - Tasks to Create a lockfile, and update the AssemblyInformation in Properties/AssemblyInfo.cs
 - Tasks to Delete the Lockfile \* conditional call UpdateAssemblyVersion if the lockfile does not exists
 
-* DLL with these tasks:
-  - GetVersion
-  - SetVersion
-  - UpdateVersion
+* DLL with these tasks (**OBSOLETE** — wrapped in `#if false`, not compiled):
+  > These three MSBuild Task classes have been superseded by
+  > [Nerdbank.GitVersioning (NBGV)](https://github.com/dotnet/Nerdbank.GitVersioning).
+  > The code is retained for historical reference only.
+  - ~~GetVersion~~ — read AssemblyVersion, AssemblyFileVersion, and AssemblyInformationalVersion from an `AssemblyInfo.cs` file.
+  - ~~SetVersion~~ — write updated version values back to an `AssemblyInfo.cs` file.
+  - ~~UpdateVersion~~ — combine GetVersion + MakeBuild + MakePackageVersion + SetVersion into a single build step.

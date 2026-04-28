@@ -826,3 +826,9 @@ Add-LocalGroupMember -Group "docker-users" -Member $env:USERNAME
 
 ```
 ````
+## 5-Tier Module Flow
+
+Use the module-level getting started guide for the lifecycle workflow:
+
+- [Documentation/GettingStarted.md](Documentation/GettingStarted.md)
+

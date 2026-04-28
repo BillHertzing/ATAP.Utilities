@@ -3,18 +3,13 @@
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
-    <MajorVersion>0</MajorVersion>
-    <MinorVersion>1</MinorVersion>
-    <PatchVersion>0</PatchVersion>
-    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
-    <PackageLabel>Alpha</PackageLabel>
     <EnableDefaultItems>false</EnableDefaultItems>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" />
-    <ProjectReference Include="Model\ATAP.Utilities.Loader.Model.csproj" />
-    <ProjectReference Include="StringConstants\ATAP.Utilities.Loader.StringConstants.csproj" />
+    <ProjectReference Include="Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" PrivateAssets="all" />
+    <ProjectReference Include="Model\ATAP.Utilities.Loader.Model.csproj" PrivateAssets="all" />
+    <ProjectReference Include="StringConstants\ATAP.Utilities.Loader.StringConstants.csproj" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>

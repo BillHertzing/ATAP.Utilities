@@ -28,7 +28,7 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function Get-FileIDs {
+function Get-FileIDs {
   [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSetNameReplacementPattern'  )]
   # [OutputType([int[]])] # ToDo investigate OutputType if PassThru is true
   param(
@@ -51,7 +51,7 @@ Function Get-FileIDs {
     [string[]] $computerNames
   )
 
-  BEGIN {
+  begin {
     Write-PSFMessage -Level Debug -Message 'Starting Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
     $originalPSBoundParameters = $PSBoundParameters # to allow debugging
     # ensure the function Get-ParameterValueFromNeoConfigurationRoot from the ATAP.Utilities.Powershell package is loaded
@@ -71,14 +71,13 @@ Function Get-FileIDs {
           $message = 'the HydrusSessionKey is not supplied on the command line nor in the environment'
           Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
           # toDo catch the errors, add to 'Problems'
-          Throw $message
+          throw $message
         }
       }
       $hydrusAPIProtocol = Get-PVal -ParameterName 'hydrusAPIProtocol' -originalPSBoundParameters $originalPSBoundParameters -dottedPath $global:configRootKeys['hydrusAPISchemeConfigRootKey'] -DefaultValue $hydrusAPIProtocol
       $hydrusAPIServer = Get-PVal -ParameterName 'hydrusAPIServer' -originalPSBoundParameters $originalPSBoundParameters -dottedPath $global:configRootKeys['hydrusAPIHostConfigRootKey'] -DefaultValue $hydrusAPIServer
       $hydrusAPIPort = Get-PVal -ParameterName 'hydrusAPIPort' -originalPSBoundParameters $originalPSBoundParameters -dottedPath $global:configRootKeys['hydrusAPIPortConfigRootKey'] -DefaultValue $hydrusAPIPort
-    }
-    else {
+    } else {
       $noArgumentsSupplied = $true
       $hydrusAPIProtocol = Get-PVal -ParameterName 'hydrusAPIProtocol' -originalPSBoundParameters @{} -dottedPath $global:configRootKeys['hydrusAPISchemeConfigRootKey'] -DefaultValue $hydrusAPIProtocol
       $hydrusAPIServer = Get-PVal -ParameterName 'hydrusAPIServer' -originalPSBoundParameters @{} -dottedPath $global:configRootKeys['hydrusAPIHostConfigRootKey'] -DefaultValue $hydrusAPIServer
@@ -111,7 +110,7 @@ Function Get-FileIDs {
     }
   }
 
-  PROCESS {
+  process {
     if ($noArgumentsSupplied) {
       # none of the cmdlets arguments have any values passed
       # possibly called from pipeline, either by property value, or just a standalone call expecting to use all default values
@@ -124,9 +123,8 @@ Function Get-FileIDs {
             $message = 'the HydrusSessionKey is not supplied on the command line nor in the environment'
             Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
             # toDo catch the errors, add to 'Problems'
-            Throw $message
-          }
-          elseif ($obj -is [hashtable]) {
+            throw $message
+          } elseif ($obj -is [hashtable]) {
             # assume the hashtable is a searchParamter
             $searchParameters = $obj
             InternalGetFileIDs $obj
@@ -157,16 +155,14 @@ Function Get-FileIDs {
               if ($PassThru) {
                 $obj | Add-Member -MemberType NoteProperty -Name 'FileIDs' -Value $(InternalGetFileIDs $SearchParameter)
                 Write-Output $obj
-              }
-              else {
+              } else {
                 Write-Output $(InternalGetFileIDs $SearchParameter)
               }
             }
           }
         }
       }
-    }
-    else {
+    } else {
       # Not being used in a pipeline
       # $SearchParameters is a hashtable array or a single hashtable
       for ($SearchParametersIndex = 0; $SearchParametersIndex -lt $SearchParameters.Count; $SearchParametersIndex++) {
@@ -174,20 +170,19 @@ Function Get-FileIDs {
         # ToDo: implement batching
         if ($PassThru) {
           # Create a new object to pass down the pipeline
-          $result = [pscustomobject](@{HydrusSessionKey = $hydrusSessionKey
+          $result = [PSCustomObject](@{HydrusSessionKey = $hydrusSessionKey
               SearchParameters                          = $searchParameters
               FileIDs                                   = $(InternalGetFileIDs $searchParameter)
             })
           Write-Output $result
-        }
-        else {
+        } else {
           Write-Output $(InternalGetFileIDs $searchParameter)
         }
       }
     }
   }
 
-  END {
+  end {
     Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
   }
 }

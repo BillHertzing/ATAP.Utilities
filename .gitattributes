@@ -14,3 +14,7 @@ Wsl2Ubuntu/** text eol=lf
 
 *.jpg         -text
 
+# Prevent NuGet.config merge conflicts — each branch deliberately has a different feed list
+NuGet.config  merge=ours
+
+

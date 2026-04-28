@@ -140,7 +140,7 @@ function DatabaseProvisioning {
     [switch]$Force
   )
 
-  BEGIN {
+  begin {
     $fn = 'DatbaseProvisioning'
     $mn = 'ATAP.Utilities.Powershell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn (ParameterSet: $($PSCmdlet.ParameterSetName))"
@@ -156,10 +156,12 @@ function DatabaseProvisioning {
         . (Join-Path $repositoryRoot 'src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1')
       }
       if (-not (Get-Command -Name 'New-DbaConnectionStringBuilder' -CommandType Function -ErrorAction SilentlyContinue)) {
-        install-module dbatools -Scope CurrentUser -Force -ErrorAction Stop
+        Install-Module dbatools -Scope CurrentUser -Force -ErrorAction Stop
       }
-    }
-    catch {
+      if (-not (Get-Command -Name 'Get-DatabaseCredentialsKey' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\Get-DatabaseCredentialsKey.ps1')
+      }
+    } catch {
       $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       throw
@@ -167,12 +169,38 @@ function DatabaseProvisioning {
 
     # Validate the parameters that do not depend on the database connection first, so that we can fail fast if there are issues with them
 
-    $ProvisioningScriptsPath = Get-PVal -ParameterName "ProvisioningScriptsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisioningScriptsPath" -Settings $databasesCollection -DefaultValue $ProvisioningScriptsPath
-    $DatabasePath = Get-PVal -ParameterName "DatabasePath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection -DefaultValue $DatabasePath
+    $ProvisioningScriptsPath = Get-PVal -ParameterName 'ProvisioningScriptsPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisioningScriptsPath" -Settings $databasesCollection -DefaultValue $ProvisioningScriptsPath
+    $DatabasePath = Get-PVal -ParameterName 'DatabasePath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection -DefaultValue $DatabasePath
+
+    if ([string]::IsNullOrWhiteSpace($ProvisioningScriptsPath)) {
+      $ProvisioningScriptsPath = Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement\SharedSQL'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "ProvisioningScriptsPath was empty; defaulting to '$ProvisioningScriptsPath'"
+    }
+
+    if ([string]::IsNullOrWhiteSpace($DatabasePath)) {
+      $DatabasePath = Join-Path $env:LOCALAPPDATA ("ATAP.Utilities\\SQLData\\$Environment")
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "DatabasePath was empty; defaulting to '$DatabasePath'"
+    }
+
+    $requiredProvisioningScripts = @(
+      'DropAndCreateDatabase.sql',
+      'CreateLoginAndUser.sql',
+      'AddFlywaySchemaHistoryTable.sql'
+    )
+    $missingScripts = @($requiredProvisioningScripts | Where-Object {
+        -not (Test-Path (Join-Path $ProvisioningScriptsPath $_))
+      })
+    if ($missingScripts.Count -gt 0) {
+      $fallbackProvisioningScriptsPath = Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement\SharedSQL'
+      if ($fallbackProvisioningScriptsPath -ne $ProvisioningScriptsPath) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "ProvisioningScriptsPath '$ProvisioningScriptsPath' is missing required scripts ($($missingScripts -join ', ')). Falling back to '$fallbackProvisioningScriptsPath'."
+        $ProvisioningScriptsPath = $fallbackProvisioningScriptsPath
+      }
+    }
     # Check and populate optional parameter
-    $GrantDatabaseOwner = Get-PVal -ParameterName "GrantDatabaseOwner" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.GrantDatabaseOwner" -Settings $databasesCollection -DefaultValue $GrantDatabaseOwner -AsType ([bool]) -AllowMissing
-    $GrantBulkAdmin = Get-PVal -ParameterName "GrantBulkAdmin" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.GrantBulkAdmin" -Settings $databasesCollection -DefaultValue $GrantBulkAdmin -AsType ([bool]) -AllowMissing
-    $ProvisionForFlyway = Get-PVal -ParameterName "ProvisionForFlyway" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisionForFlyway" -Settings $databasesCollection -DefaultValue $ProvisionForFlyway -AsType ([bool]) -AllowMissing
+    $GrantDatabaseOwner = Get-PVal -ParameterName 'GrantDatabaseOwner' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.GrantDatabaseOwner" -Settings $databasesCollection -DefaultValue $GrantDatabaseOwner -AsType ([bool]) -AllowMissing
+    $GrantBulkAdmin = Get-PVal -ParameterName 'GrantBulkAdmin' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.GrantBulkAdmin" -Settings $databasesCollection -DefaultValue $GrantBulkAdmin -AsType ([bool]) -AllowMissing
+    $ProvisionForFlyway = Get-PVal -ParameterName 'ProvisionForFlyway' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisionForFlyway" -Settings $databasesCollection -DefaultValue $ProvisionForFlyway -AsType ([bool]) -AllowMissing
 
 
     $errors = [System.Collections.Generic.List[string]]::new()
@@ -184,26 +212,26 @@ function DatabaseProvisioning {
 
     # Handle connection based on parameter set
     if ($PSCmdlet.ParameterSetName -eq 'ExistingConnection') {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Using existing SQL connection object"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Using existing SQL connection object'
 
       try {
         if (-not ($SqlConnection.PSObject.Properties['State'] -and $SqlConnection.PSObject.Methods['Open'])) {
-          throw "Provided SqlConnection object does not appear to be a valid SQL connection (missing State property or Open method)"
+          throw 'Provided SqlConnection object does not appear to be a valid SQL connection (missing State property or Open method)'
         }
 
         if ($SqlConnection.State -ne [System.Data.ConnectionState]::Open) {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Opening provided SQL connection"
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Opening provided SQL connection'
           $SqlConnection.Open()
         }
 
         $testCmd = $SqlConnection.CreateCommand()
-        $testCmd.CommandText = "SELECT @@VERSION AS Version, DB_NAME() AS CurrentDatabase"
+        $testCmd.CommandText = 'SELECT @@VERSION AS Version, DB_NAME() AS CurrentDatabase'
         $testCmd.CommandTimeout = 30
 
         $testReader = $testCmd.ExecuteReader()
         if ($testReader.Read()) {
-          $version = $testReader["Version"]
-          $currentDb = $testReader["CurrentDatabase"]
+          $version = $testReader['Version']
+          $currentDb = $testReader['CurrentDatabase']
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "SQL Connection verified - Server: $version, Current DB: $currentDb"
         }
         $testReader.Close()
@@ -214,25 +242,31 @@ function DatabaseProvisioning {
         $useIntegratedSecurity = ([Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($SqlConnection.ConnectionString)).IntegratedSecurity
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Using server: $serverForConnect"
 
-      }
-      catch {
+      } catch {
         $errorMessage = "Failed to validate or use provided SQL connection: $($_.Exception.Message)"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
         throw
       }
-    }
-    else {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Building SQL connection from parameters"
+    } else {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Building SQL connection from parameters'
 
       # region Database connection parameter validation
       $databasesCollection = $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
-      $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue $Environment -ValidValues @('Production', 'Testing', 'Development', 'Experimental')
-      $SqlInstance = Get-PVal -ParameterName "SqlInstance" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlInstance" -Settings $databasesCollection -DefaultValue $SqlInstance
-      $DatabaseHost = Get-PVal -ParameterName "DatabaseHost" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseHost" -Settings $databasesCollection -DefaultValue $DatabaseHost
-      $ConnectionMethod = Get-PVal -ParameterName "ConnectionMethod" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ConnectionMethod" -Settings $databasesCollection -DefaultValue $ConnectionMethod -ValidValues @('tcp', 'np', 'lpc')
-      $Port = Get-PVal -ParameterName "Port" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.Port" -Settings $databasesCollection -DefaultValue $Port -AllowMissing
-      $DatabasePath = Get-PVal -ParameterName "DatabasePath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection -DefaultValue $DatabasePath
-      $CredentialsKey = Get-PVal -ParameterName "CredentialsKey" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.CredentialsKey" -Settings $databasesCollection -DefaultValue $CredentialsKey
+      $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue $Environment -ValidValues @('Production', 'QA', 'Integration', 'Development', 'Experimental')
+      $SqlInstance = Get-PVal -ParameterName 'SqlInstance' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlInstance" -Settings $databasesCollection -DefaultValue $SqlInstance
+      $DatabaseHost = Get-PVal -ParameterName 'DatabaseHost' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseHost" -Settings $databasesCollection -DefaultValue $DatabaseHost
+      $ConnectionMethod = Get-PVal -ParameterName 'ConnectionMethod' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ConnectionMethod" -Settings $databasesCollection -DefaultValue $ConnectionMethod -ValidValues @('tcp', 'np', 'lpc')
+      $Port = Get-PVal -ParameterName 'Port' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.Port" -Settings $databasesCollection -DefaultValue $Port -AllowMissing
+      $DatabasePath = Get-PVal -ParameterName 'DatabasePath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection -DefaultValue $DatabasePath
+      $CredentialsKey = Get-PVal -ParameterName 'CredentialsKey' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.CredentialsKey" -Settings $databasesCollection -DefaultValue $CredentialsKey
+      # If CredentialsKey was not found in settings or supplied as a parameter, derive it from the
+      # canonical Bitwarden naming scheme:
+      #   Permanent (Production/QA/Integration): dbConnectionString-<DB>-<Host>-<Tier>
+      #   Per-sprint (Development/Experimental): dbConnectionString-<DB>-<Host>-<Tier>-<UserName>
+      if (-not $CredentialsKey -and $DatabaseHost -and $Environment) {
+        $CredentialsKey = Get-DatabaseCredentialsKey -DatabaseName $DatabaseName -DatabaseHost $DatabaseHost -Environment $Environment
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Derived CredentialsKey from naming scheme: $CredentialsKey"
+      }
       # endregion Database connection parameters validation
 
       # Build up the connection string
@@ -298,14 +332,19 @@ function DatabaseProvisioning {
 
     )
 
+    if ([string]::IsNullOrWhiteSpace($ProvisioningScriptsPath)) {
+      $msg = 'ProvisioningScriptsPath is empty after normalization; cannot locate SQL provisioning scripts.'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+      throw $msg
+    }
+
     foreach ($entry in $plannedScripts) {
       $full = Join-Path -Path $ProvisioningScriptsPath -ChildPath $entry.Name
       if (-not (Test-Path $full)) {
         $msg = "Planned script not found: $full"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
         $errors.Add($msg) | Out-Null
-      }
-      else {
+      } else {
         $entry.FullPath = $full
         $result.ScriptsPlanned += $full
       }
@@ -346,16 +385,13 @@ ELSE
           $errorMessage = "Database '$DatabaseName' already exists on '$serverForConnect'. Use -Force to drop and recreate."
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
           throw $errorMessage
-        }
-        else {
+        } else {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Database '$DatabaseName' already exists on '$serverForConnect'. It will be dropped and recreated because -Force is set." -Tag 'Validation', 'Warning'
         }
-      }
-      else {
+      } else {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Database '$DatabaseName' does not exist on '$serverForConnect'. Proceeding with creation." -Tag 'Validation', 'Info'
       }
-    }
-    catch {
+    } catch {
       $errorMessage = "Failed checking database existence on '$serverForConnect': $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
       $errors.Add($errorMessage) | Out-Null
@@ -387,8 +423,7 @@ END
 
         Invoke-Sqlcmd @invokeDrop
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Successfully dropped existing database '$DatabaseName' on '$serverForConnect'." -Tag 'Validation', 'Warning'
-      }
-      catch {
+      } catch {
         $errorMessage = "Failed dropping existing database '$DatabaseName' on '$serverForConnect': $($_.Exception.Message)"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
         $errors.Add($errorMessage) | Out-Null
@@ -408,8 +443,7 @@ END
         try {
           Remove-Item -Path $file -Force -ErrorAction Stop
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Deleted leftover database file '$file'." -Tag 'Validation', 'Warning'
-        }
-        catch {
+        } catch {
           $errorMessage = "Failed to delete leftover database file '$file': $($_.Exception.Message)"
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
           $errors.Add($errorMessage) | Out-Null
@@ -428,7 +462,7 @@ END
     $ProvidedSqlConnection = $SqlConnection
   }
 
-  PROCESS {
+  process {
 
     foreach ($meta in $PlannedScriptsMetadata) {
       $scriptPath = $meta.FullPath
@@ -472,22 +506,21 @@ END
               $loginPassword = $secret.Password
             }
 
-            $invokeParams.Variable = @{
-              DatabaseName       = $DatabaseName
-              DatabasePath       = $DatabasePath
-              LoginName          = $loginName
-              loginPassword      = $loginPassword
-              DBExists           = $dbExists
-              GrantDatabaseOwner = $GrantDatabaseOwner
-              GrantBulkAdmin     = $GrantBulkAdmin
-            }
+            $invokeParams.Variable = @(
+              "DatabaseName=$DatabaseName",
+              "DatabasePath=$DatabasePath",
+              "LoginName=$loginName",
+              "loginPassword=$loginPassword",
+              "DBExists=$dbExists",
+              "GrantDatabaseOwner=$GrantDatabaseOwner",
+              "GrantBulkAdmin=$GrantBulkAdmin"
+            )
 
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling Invoke-Sqlcmd $scriptLabel (DB=$targetDb)"
             Invoke-Sqlcmd @invokeParams
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from Invoke-Sqlcmd $scriptLabel"
             $scriptsRun.Add($scriptPath) | Out-Null
-          }
-          catch {
+          } catch {
             $errorMessage = "Failure executing $scriptLabel. Exception: $($_.Exception.Message)"
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
             if ($_.Exception.StackTrace) {
@@ -495,26 +528,23 @@ END
             }
             $errors.Add($errorMessage) | Out-Null
             throw
-          }
-          finally {
+          } finally {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Finished attempt for $scriptLabel"
           }
-        }
-        catch {
+        } catch {
           continue
         }
-      }
-      else {
+      } else {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Skipped script $scriptLabel due to ShouldProcess decision"
       }
     }
   }
 
-  END {
+  end {
     $result.ScriptsExecuted = $scriptsRun.ToArray()
     $result.Errors = $errors.ToArray()
     $result.Success = ($errors.Count -eq 0)
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message ("Provisioning {0}" -f ($(if ($result.Success) { 'succeeded' } else { 'failed' })))
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message ('Provisioning {0}' -f ($(if ($result.Success) { 'succeeded' } else { 'failed' })))
     if ($errors.Count -gt 0) {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message ("Errors:`n {0}" -f ($errors -join [Environment]::NewLine))
     }

@@ -14,6 +14,10 @@
     <PackageVersion Include="System.Runtime.InteropServices" Version="4.3.0" />
     <!-- Regex library (4.3.0 has a vulnerability) -->
     <PackageVersion Include="System.Text.RegularExpressions" Version="5.0.0" />
+    <!-- System.Drawing.Common (4.7.0 has critical vulnerability GHSA-rxg9-xrhp-64gj, upgrade to 8.0.2+) -->
+    <PackageVersion Include="System.Drawing.Common" Version="8.0.2" />
+    <!-- System.Security.Cryptography.Xml (4.7.0 has moderate vulnerability GHSA-vh55-786g-wjwj, 8.0.1 has high severity GHSA-37gx-xxp4-5rgx and GHSA-w3x6-4m5h-cxqf) -->
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="8.0.2" />
   </ItemGroup>
   <ItemGroup Label="Core Libraries">
     <PackageVersion Include="DotNet.Contracts" Version="1.10.20606.1" />
@@ -53,12 +57,12 @@
     <PackageVersion Include="TimePeriodLibrary.NET" Version="2.1.5" />
   </ItemGroup>
   <ItemGroup Label="ATAP.Utilities.Configuration Family">
-    <PackageVersion Include="ATAP.Utilities.Configuration" Version="0.1.0-Alpha-009" />
-    <PackageVersion Include="ATAP.Utilities.Configuration.Extensions" Version="0.1.0-Alpha-016" />
-    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets" Version="0.1.0-Alpha-011" />
-    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden" Version="0.1.0-Alpha-008" />
-    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims" Version="0.1.0-Alpha-011" />
-    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims.Interfaces" Version="0.1.0-Alpha-012" />
+    <PackageVersion Include="ATAP.Utilities.Configuration" Version="0.1.0-Sprint.6" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Extensions" Version="0.1.0-Sprint.6" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets" Version="0.1.0-Sprint.6" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden" Version="0.1.0-Sprint.6" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims" Version="0.1.0-Sprint.6" />
+    <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims.Interfaces" Version="0.1.0-Sprint.6" />
   </ItemGroup>
   <ItemGroup Label="Microsoft.Extensions.* (Configuration, Hosting, DI, Logging)">
     <!-- Packages necessary to run the Net Core Generic Host and web server hosts -->
@@ -97,6 +101,11 @@
   </ItemGroup>
   <ItemGroup Label="Aspect-Oriented Programming">
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
+    <!-- Fody core must be pinned to 6.9.3+ for .NET 10 / MSBuildMajorVersion=18 support.
+         NuGet resolves MethodBoundaryAspect.Fody's transitive Fody dep to the minimum
+         required version (6.7.0) which produces 0-byte DLLs on .NET 10. Explicit pin here
+         forces NuGet to select 6.9.3 which added .NET 10 support. -->
+    <PackageVersion Include="Fody" Version="6.9.3" />
     <PackageVersion Include="MethodBoundaryAspect.Fody" Version="2.0.150" />
   </ItemGroup>
   <ItemGroup Label="Messaging and Dataflow">
@@ -106,13 +115,15 @@
     <PackageVersion Include="System.Threading.Tasks.Dataflow" Version="9.0.0" />
   </ItemGroup>
   <ItemGroup Label="Object Mapping">
-    <!-- The Automapper Package -->
-    <PackageVersion Include="AutoMapper" Version="13.0.1" />
+    <!-- The Automapper Package (13.0.1 had high severity vulnerability GHSA-rvv3-g6hj-g44x) -->
+    <PackageVersion Include="AutoMapper" Version="13.0.2" />
   </ItemGroup>
   <ItemGroup Label="MSBuild Custom Tasks">
     <!-- Packages used for custom build tasks -->
     <PackageVersion Include="Microsoft.Build.Framework" Version="17.14.28" />
     <PackageVersion Include="Microsoft.Build.Utilities.Core" Version="17.14.28" />
+    <!-- NBGV MSBuild integration — version must match the nbgv CLI tool -->
+    <PackageVersion Include="Nerdbank.GitVersioning" Version="3.9.50" />
   </ItemGroup>
   <ItemGroup Label="Source Link">
     <!-- Microsoft Source Link -->

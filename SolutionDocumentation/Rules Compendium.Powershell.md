@@ -575,7 +575,7 @@ Description: This primitive represents a PowerShell type-constraint annotation i
 <type-identifier>    ::= <identifier>
 ```
 
-Common built-in type names: `string`, `int`, `bool`, `double`, `datetime`, `object`, `hashtable`, `array`, `scriptblock`, `pscustomobject`.
+Common built-in type names: `string`, `int`, `bool`, `double`, `datetime`, `object`, `hashtable`, `array`, `scriptblock`, `PSCustomObject`.
 
 Body: The `[<type-name>]` token.
 
@@ -892,12 +892,12 @@ Output: The rendered hashtable literal text.
 
 Processing: Each entry is rendered as `Key = Value` indented one level inside the braces. Multi-line style uses newlines; inline style uses `;` separators.
 
-### `<pscustomobject-literal>` Rule Primitive
+### `<PSCustomObject-literal>` Rule Primitive
 
 Description: This primitive represents the cast-hashtable form of a `PSCustomObject` creation: `[PSCustomObject]@{ ... }`. It is the canonical way to create a typed custom object without `New-Object`.
 
 ```bnf
-<pscustomobject-literal> ::= "[PSCustomObject]" <hashtable-literal>
+<PSCustomObject-literal> ::= "[PSCustomObject]" <hashtable-literal>
 ```
 
 Body: `[PSCustomObject]@{ ... }` with entries rendered using `<hashtable-literal>`.
@@ -1081,7 +1081,7 @@ All owners / users of Ace Commander can contribute to the ecosystem of bolt-on m
 
 This section is where the nomenclature and taxonomy of the ATAP.Utilities and Ace Commander are specified, and the individual Rules that make up each Rule Set are referenced.
 
-During the design phase of this project, this document will serve as the 'source of truth' for the nomenclature and taxonomy of the ATAP.Utilities and Ace Commander Rule Sets and this feature / module tagging. As the program / project evolves, the actual Rules and Rule Sets stored in the Ace Commander databases will slowly take over the 'source of truth' , and this document will be updated by Ace Commander to keep it in sync with the databases contents. MOdules and Rule Sets can be hierarchly decomposed into smaller functional units. The Module defintions in the following sections will demonstrate this by listing submodules under 'higher' modules.
+During the design phase of this project, this document will serve as the 'source of truth' for the nomenclature and taxonomy of the ATAP.Utilities and Ace Commander Rule Sets and this feature / module tagging. As the program / project evolves, the actual Rules and Rule Sets stored in the Ace Commander databases will slowly take over the 'source of truth' , and this document will be updated by Ace Commander to keep it in sync with the databases contents. MOdules and Rule Sets can be hierarchal decomposed into smaller functional units. The Module defintions in the following sections will demonstrate this by listing submodules under 'higher' modules.
 
 ### Ace Commander browser-based User Interface
 
@@ -1322,76 +1322,76 @@ The `<param-block>` is inside the function `<script-block>` body and precedes th
 
 **Primitive Composition Table**
 
-| #   | Primitive                                                            | Role in the file                                                                                                                                                     | Instantiation details                                                                                                                                                |
-| --- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | `<function-statement>`                                               | Outer function wrapper                                                                                                                                               | `FunctionName` = `"Build-DatabaseWithFlyway"`; `FollowsVerbNounConvention` = `true`                                                                                  |
-| 2   | `<comment-based-help-block>`                                         | `.SYNOPSIS` / `.DESCRIPTION` / `.PARAMETER` …/ `.EXAMPLE` / `.NOTES` / `.LINK` block immediately after `function` opening brace                                      | See help inputs table below                                                                                                                                          |
-| 3   | `<cmdlet-binding-attribute>`                                         | `[CmdletBinding(...)]` on the `<param-block>`                                                                                                                        | `SupportsShouldProcess` = `$true`; `DefaultParameterSetName` = `'ConnectionParameters'`                                                                              |
-| 4   | `<suppress-message-attribute>`                                       | `[Diagnostics.CodeAnalysis.SuppressMessageAttribute(...)]` on the `<param-block>`                                                                                    | `Category` = `'PSAvoidUsingPlainTextForPassword'`; `CheckId` = `'CredentialsKey'`; `Justification` = `'CredentialsKey is a vault lookup key name, not a credential'` |
-| 5   | `<param-block>`                                                      | Declares all 18 parameters in two parameter sets                                                                                                                     | `AttributeList` = [primitive 3, primitive 4]; `ParameterList` = primitives 6–23                                                                                      |
-| 6   | `<script-parameter>` × 2 (`DatabaseName`)                            | Mandatory string present in both parameter sets                                                                                                                      | Two `<parameter-attribute>` instances (one per set) + `<validate-not-null-or-empty-attribute>` + `[string]` type-literal                                             |
-| 7   | `<script-parameter>` (`Environment`)                                 | Optional string in both sets                                                                                                                                         | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
-| 8   | `<script-parameter>` (`DatabaseHost`)                                | Optional string with `Alias('HostName')`                                                                                                                             | Two `<parameter-attribute>` + `<alias-attribute>` + `[string]`                                                                                                       |
-| 9   | `<script-parameter>` (`SqlInstance`)                                 | Optional string in both sets                                                                                                                                         | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
-| 10  | `<script-parameter>` (`ConnectionMethod`)                            | Optional string in both sets                                                                                                                                         | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
-| 11  | `<script-parameter>` (`Port`)                                        | Optional int in both sets                                                                                                                                            | Two `<parameter-attribute>` + `[int]`                                                                                                                                |
-| 12  | `<script-parameter>` (`IntegratedSecurity`)                          | Optional switch in both sets                                                                                                                                         | Two `<parameter-attribute>` + `[switch]`                                                                                                                             |
-| 13  | `<script-parameter>` (`CredentialsKey`)                              | Optional string in both sets                                                                                                                                         | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
-| 14  | `<script-parameter>` (`SqlConnection`)                               | Mandatory only in `ExistingConnection` set                                                                                                                           | One `<parameter-attribute>` (Mandatory=$true) + `<validate-not-null-attribute>` + `[Microsoft.Data.SqlClient.SqlConnection]`                                         |
-| 15  | `<script-parameter>` (`DatabasePath`)                                | Optional string in both sets                                                                                                                                         | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
-| 16  | `<script-parameter>` (`ProvisioningScriptsPath`)                     | Optional string in both sets                                                                                                                                         | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
-| 17  | `<script-parameter>` (`FlywayBasePath`)                              | Optional string in both sets                                                                                                                                         | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
-| 18  | `<script-parameter>` (`flywaySqlMigrationsPath`)                     | Optional string in both sets                                                                                                                                         | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
-| 19  | `<script-parameter>` (`flywaySharedSqlMigrationsPath`)               | Optional string in both sets                                                                                                                                         | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
-| 20  | `<script-parameter>` (`FlywayDataPath`)                              | Optional string in both sets                                                                                                                                         | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
-| 21  | `<script-parameter>` (`FlywayTomlPath`)                              | Optional string in both sets                                                                                                                                         | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
-| 22  | `<script-parameter>` (`Force`)                                       | Optional switch in both sets                                                                                                                                         | Two `<parameter-attribute>` + `[switch]`                                                                                                                             |
-| 23  | `<region-block>` × 2                                                 | `# region Database connection parameters` / `# endregion` enclosing parameters 6–14 in the param block                                                               | `RegionLabel` = `"Database connection parameters"`                                                                                                                   |
-| 24  | `<named-block>` (BEGIN)                                              | `BEGIN { ... }` wrapper                                                                                                                                              | Contains primitives 25–44                                                                                                                                            |
-| 25  | `<assignment-statement>` × 2                                         | `$fn = 'Build-DatabaseWithFlyway'`; `$mn = 'ATAP.Utilities.DatabaseManagement.Powershell'`                                                                           | `[PSFramework] Write-PSFMessage` logging context variables                                                                                                           |
-| 26  | `<pipeline-statement>` (Write-PSFMessage)                            | `Write-PSFMessage … -Level Debug -Message 'Function started'`                                                                                                        | First log entry in BEGIN                                                                                                                                             |
-| 27  | `<try-catch-finally-statement>` (module-load try)                    | Outer try/catch that wraps all module-load guards and throws on failure                                                                                              | `TryBody` = primitives 28–33; `CatchClauses` = one bare catch logging and rethrowing                                                                                 |
-| 28  | `<module-load-guard>` (`dbatools` module)                            | `if (-not (Get-Module -Name dbatools -ListAvailable)) { Install-Module … }` + `Import-Module dbatools`                                                               | `GuardKind` = `Module`; `InstallIfMissing` = `$true`                                                                                                                 |
-| 29  | `<module-load-guard>` (`Get-ParameterValueFromNeoConfigurationRoot`) | `if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' …)) { . '…ps1' }`                                                                          | `GuardKind` = `Function`; `SourcePath` = hardcoded absolute path                                                                                                     |
-| 30  | `<module-load-guard>` (`Get-RepositoryRoot`)                         | Same pattern for `Get-RepositoryRoot`                                                                                                                                | `GuardKind` = `Function`                                                                                                                                             |
-| 31  | `<module-load-guard>` (`New-DBAConnStrBuilder`)                      | Same pattern for `New-DBAConnStrBuilder`                                                                                                                             | `GuardKind` = `Function`                                                                                                                                             |
-| 32  | `<module-load-guard>` (`DatabaseProvisioning`)                       | Same pattern for `DatabaseProvisioning`                                                                                                                              | `GuardKind` = `Function`                                                                                                                                             |
-| 33  | `<module-load-guard>` (`Invoke-Flyway`)                              | Same pattern for `Invoke-Flyway`                                                                                                                                     | `GuardKind` = `Function`                                                                                                                                             |
-| 34  | `<assignment-statement>` (`$usingExistingConnection`)                | `$usingExistingConnection = $PSCmdlet.ParameterSetName -eq 'ExistingConnection'`                                                                                     | Boolean sentinel tracking which parameter set is active                                                                                                              |
-| 35  | `<assignment-statement>` (`$databasesCollection`)                    | `$databasesCollection = $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]`                                                                | Pulls the per-database settings sub-tree from global settings                                                                                                        |
-| 36  | `<region-block>`                                                     | `# region Database connection parameter validation` / `# endregion`                                                                                                  | Wraps the 8 Get-PVal calls for connection parameters                                                                                                                 |
-| 37  | `<pipeline-statement>` × 14 (Get-PVal calls)                         | One `Get-PVal` invocation per parameter resolving from `$PSBoundParameters` → env → `$global:settings` dotted-path → default                                         | See parameter-validation detail table below                                                                                                                          |
-| 38  | `<if-else-statement>` (SqlInstance defaulting)                       | `if (-not $SqlInstance) { $SqlInstance = if ($Environment -eq 'Experimental') { $null } else { $Environment } }`                                                     | Derives `$SqlInstance` from `$Environment` when caller did not supply it                                                                                             |
-| 39  | `<if-else-statement>` (IntegratedSecurity defaulting)                | `if (-not $CredentialsKey -and -not $IntegratedSecurity) { $IntegratedSecurity = $true }`                                                                            | Defaults to Windows Integrated Auth when no credential key is supplied                                                                                               |
-| 40  | `<assignment-statement>` (`$result`)                                 | `$result = [PSCustomObject]@{ Success=…; DatabaseName=…; … }`                                                                                                        | Creates the output result object                                                                                                                                     |
-| 41  | `<pscustomobject-literal>`                                           | `[PSCustomObject]@{ Success=$false; DatabaseName=$DatabaseName; Environment=$Environment; SqlInstance=$SqlInstance; Errors=@(); StartTime=Get-Date; EndTime=$null }` | Entries table: see result-object entries below                                                                                                                       |
-| 42  | `<pipeline-statement>` × 2 (Set-DbatoolsConfig)                      | `Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true …`; `Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false …`                        | Configures dbatools SSL / encryption for dev environments                                                                                                            |
-| 43  | `<named-block>` (PROCESS)                                            | `PROCESS { try { … } catch { … } finally { … } }`                                                                                                                    | Contains primitive 44                                                                                                                                                |
-| 44  | `<try-catch-finally-statement>` (PROCESS outer)                      | Main PROCESS try/catch/finally                                                                                                                                       | `TryBody` = primitives 45–60; `CatchClauses` = one bare catch; `FinallyBody` = location-restore                                                                      |
-| 45  | `<if-else-statement>` (`$FlywaySQLDataPath`)                         | Sets `$env:FLYWAY_PLACEHOLDERS_DATA_DIR` when `FlywayDataPath` is provided                                                                                           | Condition: `$FlywaySQLDataPath`; body: `<env-variable-assignment>` + `<pipeline-statement>` (Write-PSFMessage)                                                       |
-| 46  | `<assignment-statement>` (`$originalLocation`)                       | `$originalLocation = Get-Location`                                                                                                                                   | Saves cwd for restoration in `finally`                                                                                                                               |
-| 47  | `<pipeline-statement>` (`Set-Location`)                              | `Set-Location $FlywayBasePath`                                                                                                                                       | Changes working directory to the Flyway root                                                                                                                         |
-| 48  | `<pipeline-statement>` × 2 (Write-PSFMessage Important)              | Log messages: `"Starting database provisioning…"` / `"Target Server: $DatabaseHost"`                                                                                 | Progress logging                                                                                                                                                     |
-| 49  | `<assignment-statement>` × 3                                         | `$sqlConnection = $null`; `$sqlConnectionOpenedHere = $false`; `$useIntegratedSecurityForFlyway = $IntegratedSecurity`                                               | Initialise connection-tracking sentinels                                                                                                                             |
-| 50  | `<if-else-statement>` (usingExistingConnection)                      | Branches on `$usingExistingConnection` — existing-connection path vs. new-connection path                                                                            | `IfBody` = primitives 51–52; `ElseBody` = primitives 53–57                                                                                                           |
-| 51  | `<try-catch-finally-statement>` (existing-connection validation)     | Validates and opens the caller-supplied `$SqlConnection`                                                                                                             | `TryBody`: open-if-not-open; `CatchClauses`: log + append to `$result.Errors` + throw                                                                                |
-| 52  | `<assignment-statement>` (`$existingConnBuilder`)                    | `$existingConnBuilder = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($SqlConnection.ConnectionString)`                                                 | Extracts `IntegratedSecurity` from the existing connection                                                                                                           |
-| 53  | `<hashtable-literal>` (`$connStrBuilderParams`)                      | `$connStrBuilderParams = @{ DatabaseName='master'; DatabaseHost=…; ConnectionMethod=…; SqlInstance=… }`                                                              | Params for `New-DBAConnStrBuilder`                                                                                                                                   |
-| 54  | `<if-else-statement>` (Port / CredentialsKey additions)              | Conditionally adds `Port` and `CredentialsKey` / `IntegratedSecurity` to `$connStrBuilderParams`                                                                     | Two nested `if` blocks                                                                                                                                               |
-| 55  | `<splat-invocation>` (`New-DBAConnStrBuilder`)                       | `$connStrBuilderResult = New-DBAConnStrBuilder @connStrBuilderParams`                                                                                                | Calls the connection-string builder with splatted params                                                                                                             |
-| 56  | `<assignment-statement>` × 3 (connectionStringBuilder modifications) | Retrieves `.Builder` from result; sets `TrustServerCertificate=$true`; `Encrypt=$false`; `Connect Timeout=30`                                                        | Configures ADO.NET connection string for dev SSL                                                                                                                     |
-| 57  | `<try-catch-finally-statement>` (open new connection)                | `try { $sqlConnection.Open(); … } catch { … log; dispose; throw }`                                                                                                   | Opens the freshly-built `SqlConnection`                                                                                                                              |
-| 58  | `<try-catch-finally-statement>` (connectivity test)                  | `try { … SELECT @@SERVERNAME … } catch { … }`                                                                                                                        | Verifies the connection with a lightweight query                                                                                                                     |
-| 59  | `<hashtable-literal>` (`$provisioningParams`)                        | Splatted args for `DatabaseProvisioning`: `DatabaseName`, `SqlConnection`, `DatabasePath`, `ProvisioningScriptsPath`, `Force`                                        |                                                                                                                                                                      |
-| 60  | `<if-else-statement>` (ShouldProcess guard)                          | `if ($PSCmdlet.ShouldProcess($DatabaseName, 'Provision database')) { … }`                                                                                            | WhatIf / Confirm support                                                                                                                                             |
-| 61  | `<try-catch-finally-statement>` (DatabaseProvisioning + Flyway)      | `try { DatabaseProvisioning @provisioningParams } finally { close connection }` then Flyway call                                                                     | Ensures connection cleanup                                                                                                                                           |
-| 62  | `<splat-invocation>` (`DatabaseProvisioning`)                        | `DatabaseProvisioning @provisioningParams`                                                                                                                           | Drops and recreates the database                                                                                                                                     |
-| 63  | `<hashtable-literal>` (`$FlywayParams`)                              | Splatted args for `Invoke-Flyway`: all Flyway path and connection parameters                                                                                         | 12-entry hashtable                                                                                                                                                   |
-| 64  | `<if-else-statement>` (CredentialsKey for Flyway)                    | `if ($CredentialsKey) { $FlywayParams['CredentialsKey'] = $CredentialsKey }`                                                                                         | Conditionally adds credential key                                                                                                                                    |
-| 65  | `<splat-invocation>` (`Invoke-Flyway`)                               | `Invoke-Flyway @FlywayParams`                                                                                                                                        | Runs the `migrate` command                                                                                                                                           |
-| 66  | `<named-block>` (END)                                                | `END { Write-PSFMessage …; return $result }`                                                                                                                         | Final named block                                                                                                                                                    |
-| 67  | `<pipeline-statement>` (Write-PSFMessage Debug)                      | `Write-PSFMessage … -Level Debug -Message 'Function completed'`                                                                                                      | Completion log entry                                                                                                                                                 |
-| 68  | `<flow-control-statement>` (return)                                  | `return $result`                                                                                                                                                     | Returns the result PSCustomObject to the caller                                                                                                                      |
+| #   | Primitive                                                            | Role in the file                                                                                                                                                                                   | Instantiation details                                                                                                                                                |
+| --- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `<function-statement>`                                               | Outer function wrapper                                                                                                                                                                             | `FunctionName` = `"Build-DatabaseWithFlyway"`; `FollowsVerbNounConvention` = `true`                                                                                  |
+| 2   | `<comment-based-help-block>`                                         | `.SYNOPSIS` / `.DESCRIPTION` / `.PARAMETER` …/ `.EXAMPLE` / `.NOTES` / `.LINK` block immediately after `function` opening brace                                                                    | See help inputs table below                                                                                                                                          |
+| 3   | `<cmdlet-binding-attribute>`                                         | `[CmdletBinding(...)]` on the `<param-block>`                                                                                                                                                      | `SupportsShouldProcess` = `$true`; `DefaultParameterSetName` = `'ConnectionParameters'`                                                                              |
+| 4   | `<suppress-message-attribute>`                                       | `[Diagnostics.CodeAnalysis.SuppressMessageAttribute(...)]` on the `<param-block>`                                                                                                                  | `Category` = `'PSAvoidUsingPlainTextForPassword'`; `CheckId` = `'CredentialsKey'`; `Justification` = `'CredentialsKey is a vault lookup key name, not a credential'` |
+| 5   | `<param-block>`                                                      | Declares all 18 parameters in two parameter sets                                                                                                                                                   | `AttributeList` = [primitive 3, primitive 4]; `ParameterList` = primitives 6–23                                                                                      |
+| 6   | `<script-parameter>` × 2 (`DatabaseName`)                            | Mandatory string present in both parameter sets                                                                                                                                                    | Two `<parameter-attribute>` instances (one per set) + `<validate-not-null-or-empty-attribute>` + `[string]` type-literal                                             |
+| 7   | `<script-parameter>` (`Environment`)                                 | Optional string in both sets                                                                                                                                                                       | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
+| 8   | `<script-parameter>` (`DatabaseHost`)                                | Optional string with `Alias('HostName')`                                                                                                                                                           | Two `<parameter-attribute>` + `<alias-attribute>` + `[string]`                                                                                                       |
+| 9   | `<script-parameter>` (`SqlInstance`)                                 | Optional string in both sets                                                                                                                                                                       | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
+| 10  | `<script-parameter>` (`ConnectionMethod`)                            | Optional string in both sets                                                                                                                                                                       | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
+| 11  | `<script-parameter>` (`Port`)                                        | Optional int in both sets                                                                                                                                                                          | Two `<parameter-attribute>` + `[int]`                                                                                                                                |
+| 12  | `<script-parameter>` (`IntegratedSecurity`)                          | Optional switch in both sets                                                                                                                                                                       | Two `<parameter-attribute>` + `[switch]`                                                                                                                             |
+| 13  | `<script-parameter>` (`CredentialsKey`)                              | Optional string in both sets                                                                                                                                                                       | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
+| 14  | `<script-parameter>` (`SqlConnection`)                               | Mandatory only in `ExistingConnection` set                                                                                                                                                         | One `<parameter-attribute>` (Mandatory=$true) + `<validate-not-null-attribute>` + `[Microsoft.Data.SqlClient.SqlConnection]`                                         |
+| 15  | `<script-parameter>` (`DatabasePath`)                                | Optional string in both sets                                                                                                                                                                       | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
+| 16  | `<script-parameter>` (`ProvisioningScriptsPath`)                     | Optional string in both sets                                                                                                                                                                       | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
+| 17  | `<script-parameter>` (`FlywayBasePath`)                              | Optional string in both sets                                                                                                                                                                       | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
+| 18  | `<script-parameter>` (`flywaySqlMigrationsPath`)                     | Optional string in both sets                                                                                                                                                                       | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
+| 19  | `<script-parameter>` (`flywaySharedSqlMigrationsPath`)               | Optional string in both sets                                                                                                                                                                       | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
+| 20  | `<script-parameter>` (`FlywayDataPath`)                              | Optional string in both sets                                                                                                                                                                       | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
+| 21  | `<script-parameter>` (`FlywayTomlPath`)                              | Optional string in both sets                                                                                                                                                                       | Two `<parameter-attribute>` + `[string]`                                                                                                                             |
+| 22  | `<script-parameter>` (`Force`)                                       | Optional switch in both sets                                                                                                                                                                       | Two `<parameter-attribute>` + `[switch]`                                                                                                                             |
+| 23  | `<region-block>` × 2                                                 | `# region Database connection parameters` / `# endregion` enclosing parameters 6–14 in the param block                                                                                             | `RegionLabel` = `"Database connection parameters"`                                                                                                                   |
+| 24  | `<named-block>` (BEGIN)                                              | `BEGIN { ... }` wrapper                                                                                                                                                                            | Contains primitives 25–44                                                                                                                                            |
+| 25  | `<assignment-statement>` × 2                                         | `$fn = 'Build-DatabaseWithFlyway'`; `$mn = 'ATAP.Utilities.DatabaseManagement.Powershell'`                                                                                                         | `[PSFramework] Write-PSFMessage` logging context variables                                                                                                           |
+| 26  | `<pipeline-statement>` (Write-PSFMessage)                            | `Write-PSFMessage … -Level Debug -Message 'Function started'`                                                                                                                                      | First log entry in BEGIN                                                                                                                                             |
+| 27  | `<try-catch-finally-statement>` (module-load try)                    | Outer try/catch that wraps all module-load guards and throws on failure                                                                                                                            | `TryBody` = primitives 28–33; `CatchClauses` = one bare catch logging and rethrowing                                                                                 |
+| 28  | `<module-load-guard>` (`dbatools` module)                            | `if (-not (Get-Module -Name dbatools -ListAvailable)) { Install-Module … }` + `Import-Module dbatools`                                                                                             | `GuardKind` = `Module`; `InstallIfMissing` = `$true`                                                                                                                 |
+| 29  | `<module-load-guard>` (`Get-ParameterValueFromNeoConfigurationRoot`) | `if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' …)) { . '…ps1' }`                                                                                                        | `GuardKind` = `Function`; `SourcePath` = hardcoded absolute path                                                                                                     |
+| 30  | `<module-load-guard>` (`Get-RepositoryRoot`)                         | Same pattern for `Get-RepositoryRoot`                                                                                                                                                              | `GuardKind` = `Function`                                                                                                                                             |
+| 31  | `<module-load-guard>` (`New-DBAConnStrBuilder`)                      | Same pattern for `New-DBAConnStrBuilder`                                                                                                                                                           | `GuardKind` = `Function`                                                                                                                                             |
+| 32  | `<module-load-guard>` (`DatabaseProvisioning`)                       | Same pattern for `DatabaseProvisioning`                                                                                                                                                            | `GuardKind` = `Function`                                                                                                                                             |
+| 33  | `<module-load-guard>` (`Invoke-Flyway`)                              | Same pattern for `Invoke-Flyway`                                                                                                                                                                   | `GuardKind` = `Function`                                                                                                                                             |
+| 34  | `<assignment-statement>` (`$usingExistingConnection`)                | `$usingExistingConnection = $PSCmdlet.ParameterSetName -eq 'ExistingConnection'`                                                                                                                   | Boolean sentinel tracking which parameter set is active                                                                                                              |
+| 35  | `<assignment-statement>` (`$databasesCollection`)                    | `$databasesCollection = $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]`                                                                                              | Pulls the per-database settings sub-tree from global settings                                                                                                        |
+| 36  | `<region-block>`                                                     | `# region Database connection parameter validation` / `# endregion`                                                                                                                                | Wraps the 8 Get-PVal calls for connection parameters                                                                                                                 |
+| 37  | `<pipeline-statement>` × 14 (Get-PVal calls)                         | One `Get-PVal` invocation per parameter resolving from `$PSBoundParameters` → env → `$global:settings` dotted-path → default                                                                       | See parameter-validation detail table below                                                                                                                          |
+| 38  | `<if-else-statement>` (SqlInstance defaulting)                       | `if (-not $SqlInstance) { $SqlInstance = if ($Environment -eq 'Experimental') { "Exp$($env:USERNAME)" } elseif ($Environment -eq 'Development') { "Dev$($env:USERNAME)" } else { $Environment } }` | Derives `$SqlInstance` from `$Environment` and `$env:USERNAME` when caller did not supply it; instance names use 3-char prefix + username, max 16 chars total        |
+| 39  | `<if-else-statement>` (IntegratedSecurity defaulting)                | `if (-not $CredentialsKey -and -not $IntegratedSecurity) { $IntegratedSecurity = $true }`                                                                                                          | Defaults to Windows Integrated Auth when no credential key is supplied                                                                                               |
+| 40  | `<assignment-statement>` (`$result`)                                 | `$result = [PSCustomObject]@{ Success=…; DatabaseName=…; … }`                                                                                                                                      | Creates the output result object                                                                                                                                     |
+| 41  | `<PSCustomObject-literal>`                                           | `[PSCustomObject]@{ Success=$false; DatabaseName=$DatabaseName; Environment=$Environment; SqlInstance=$SqlInstance; Errors=@(); StartTime=Get-Date; EndTime=$null }`                               | Entries table: see result-object entries below                                                                                                                       |
+| 42  | `<pipeline-statement>` × 2 (Set-DbatoolsConfig)                      | `Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true …`; `Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false …`                                                      | Configures dbatools SSL / encryption for dev environments                                                                                                            |
+| 43  | `<named-block>` (PROCESS)                                            | `PROCESS { try { … } catch { … } finally { … } }`                                                                                                                                                  | Contains primitive 44                                                                                                                                                |
+| 44  | `<try-catch-finally-statement>` (PROCESS outer)                      | Main PROCESS try/catch/finally                                                                                                                                                                     | `TryBody` = primitives 45–60; `CatchClauses` = one bare catch; `FinallyBody` = location-restore                                                                      |
+| 45  | `<if-else-statement>` (`$FlywaySQLDataPath`)                         | Sets `$env:FLYWAY_PLACEHOLDERS_DATA_DIR` when `FlywayDataPath` is provided                                                                                                                         | Condition: `$FlywaySQLDataPath`; body: `<env-variable-assignment>` + `<pipeline-statement>` (Write-PSFMessage)                                                       |
+| 46  | `<assignment-statement>` (`$originalLocation`)                       | `$originalLocation = Get-Location`                                                                                                                                                                 | Saves cwd for restoration in `finally`                                                                                                                               |
+| 47  | `<pipeline-statement>` (`Set-Location`)                              | `Set-Location $FlywayBasePath`                                                                                                                                                                     | Changes working directory to the Flyway root                                                                                                                         |
+| 48  | `<pipeline-statement>` × 2 (Write-PSFMessage Important)              | Log messages: `"Starting database provisioning…"` / `"Target Server: $DatabaseHost"`                                                                                                               | Progress logging                                                                                                                                                     |
+| 49  | `<assignment-statement>` × 3                                         | `$sqlConnection = $null`; `$sqlConnectionOpenedHere = $false`; `$useIntegratedSecurityForFlyway = $IntegratedSecurity`                                                                             | Initialise connection-tracking sentinels                                                                                                                             |
+| 50  | `<if-else-statement>` (usingExistingConnection)                      | Branches on `$usingExistingConnection` — existing-connection path vs. new-connection path                                                                                                          | `IfBody` = primitives 51–52; `ElseBody` = primitives 53–57                                                                                                           |
+| 51  | `<try-catch-finally-statement>` (existing-connection validation)     | Validates and opens the caller-supplied `$SqlConnection`                                                                                                                                           | `TryBody`: open-if-not-open; `CatchClauses`: log + append to `$result.Errors` + throw                                                                                |
+| 52  | `<assignment-statement>` (`$existingConnBuilder`)                    | `$existingConnBuilder = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($SqlConnection.ConnectionString)`                                                                               | Extracts `IntegratedSecurity` from the existing connection                                                                                                           |
+| 53  | `<hashtable-literal>` (`$connStrBuilderParams`)                      | `$connStrBuilderParams = @{ DatabaseName='master'; DatabaseHost=…; ConnectionMethod=…; SqlInstance=… }`                                                                                            | Params for `New-DBAConnStrBuilder`                                                                                                                                   |
+| 54  | `<if-else-statement>` (Port / CredentialsKey additions)              | Conditionally adds `Port` and `CredentialsKey` / `IntegratedSecurity` to `$connStrBuilderParams`                                                                                                   | Two nested `if` blocks                                                                                                                                               |
+| 55  | `<splat-invocation>` (`New-DBAConnStrBuilder`)                       | `$connStrBuilderResult = New-DBAConnStrBuilder @connStrBuilderParams`                                                                                                                              | Calls the connection-string builder with splatted params                                                                                                             |
+| 56  | `<assignment-statement>` × 3 (connectionStringBuilder modifications) | Retrieves `.Builder` from result; sets `TrustServerCertificate=$true`; `Encrypt=$false`; `Connect Timeout=30`                                                                                      | Configures ADO.NET connection string for dev SSL                                                                                                                     |
+| 57  | `<try-catch-finally-statement>` (open new connection)                | `try { $sqlConnection.Open(); … } catch { … log; dispose; throw }`                                                                                                                                 | Opens the freshly-built `SqlConnection`                                                                                                                              |
+| 58  | `<try-catch-finally-statement>` (connectivity test)                  | `try { … SELECT @@SERVERNAME … } catch { … }`                                                                                                                                                      | Verifies the connection with a lightweight query                                                                                                                     |
+| 59  | `<hashtable-literal>` (`$provisioningParams`)                        | Splatted args for `DatabaseProvisioning`: `DatabaseName`, `SqlConnection`, `DatabasePath`, `ProvisioningScriptsPath`, `Force`                                                                      |                                                                                                                                                                      |
+| 60  | `<if-else-statement>` (ShouldProcess guard)                          | `if ($PSCmdlet.ShouldProcess($DatabaseName, 'Provision database')) { … }`                                                                                                                          | WhatIf / Confirm support                                                                                                                                             |
+| 61  | `<try-catch-finally-statement>` (DatabaseProvisioning + Flyway)      | `try { DatabaseProvisioning @provisioningParams } finally { close connection }` then Flyway call                                                                                                   | Ensures connection cleanup                                                                                                                                           |
+| 62  | `<splat-invocation>` (`DatabaseProvisioning`)                        | `DatabaseProvisioning @provisioningParams`                                                                                                                                                         | Drops and recreates the database                                                                                                                                     |
+| 63  | `<hashtable-literal>` (`$FlywayParams`)                              | Splatted args for `Invoke-Flyway`: all Flyway path and connection parameters                                                                                                                       | 12-entry hashtable                                                                                                                                                   |
+| 64  | `<if-else-statement>` (CredentialsKey for Flyway)                    | `if ($CredentialsKey) { $FlywayParams['CredentialsKey'] = $CredentialsKey }`                                                                                                                       | Conditionally adds credential key                                                                                                                                    |
+| 65  | `<splat-invocation>` (`Invoke-Flyway`)                               | `Invoke-Flyway @FlywayParams`                                                                                                                                                                      | Runs the `migrate` command                                                                                                                                           |
+| 66  | `<named-block>` (END)                                                | `END { Write-PSFMessage …; return $result }`                                                                                                                                                       | Final named block                                                                                                                                                    |
+| 67  | `<pipeline-statement>` (Write-PSFMessage Debug)                      | `Write-PSFMessage … -Level Debug -Message 'Function completed'`                                                                                                                                    | Completion log entry                                                                                                                                                 |
+| 68  | `<flow-control-statement>` (return)                                  | `return $result`                                                                                                                                                                                   | Returns the result PSCustomObject to the caller                                                                                                                      |
 
 ---
 
@@ -1486,25 +1486,25 @@ Build-DatabaseWithFlyway -DatabaseName 'Philote' -SqlConnection $existingConn
 
 The cmdlet `Build-DatabaseWithFlyway` (located at `src/ATAP.Utilities.DatabaseManagement.Powershell/public/Build-DatabaseWithFlyway.ps1`) is invoked with the following canonical inputs:
 
-| Parameter                       | Source                                                                           | Notes                                                           |
-| ------------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| `DatabaseName`                  | Required — caller supplied or `$global:settings`                                 | Identifies the target database                                  |
-| `Environment`                   | Optional — caller supplied or `$global:settings`; defaults to key in settings    | One of `Development`, `Testing`, `Production`, `Experimental`   |
-| `DatabaseHost`                  | Optional — caller supplied or settings                                           | Defaults to `localhost`                                         |
-| `SqlInstance`                   | Optional — inferred from `Environment` if absent                                 | Blank for `Experimental`; matches `Environment` name otherwise  |
-| `ConnectionMethod`              | Optional — caller supplied or settings                                           | One of `tcp`, `np`, `lpc`                                       |
-| `Port`                          | Optional — caller supplied or settings                                           | Omitted for default port                                        |
-| `IntegratedSecurity`            | Switch — defaulted to `$true` when no `CredentialsKey` supplied                  | Windows Integrated Auth                                         |
-| `CredentialsKey`                | Optional — vault lookup key for SQL auth credentials                             | Mutually exclusive with `IntegratedSecurity`                    |
-| `SqlConnection`                 | Optional — existing open `Microsoft.Data.SqlClient.SqlConnection`                | Uses `ExistingConnection` parameter set                         |
-| `DatabasePath`                  | Optional — path for database `.mdf`/`.ldf` files                                 | Retrieved from settings if absent                               |
-| `ProvisioningScriptsPath`       | Optional — path to pre-migration T-SQL scripts                                   | Retrieved from settings if absent                               |
-| `FlywayBasePath`                | Required (resolved) — root directory of `flyway.toml`                            | Retrieved from settings if absent                               |
-| `flywaySqlMigrationsPath`       | Optional — path to database-specific SQL migrations                              | Defaults to `FlywayBasePath\SQL`                                |
-| `flywaySharedSqlMigrationsPath` | Optional — path to shared SQL migrations                                         | Retrieved from settings if absent                               |
-| `FlywayDataPath`                | Optional — path to seed data scripts; exported as `FLYWAY_PLACEHOLDERS_DATA_DIR` | Retrieved from settings if absent                               |
-| `FlywayTomlPath`                | Optional — explicit path to `flyway.toml`                                        | Retrieved from settings if absent                               |
-| `Force`                         | Switch                                                                           | Passed through to `DatabaseProvisioning`; drops DB if it exists |
+| Parameter                       | Source                                                                           | Notes                                                                                                    |
+| ------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `DatabaseName`                  | Required — caller supplied or `$global:settings`                                 | Identifies the target database                                                                           |
+| `Environment`                   | Optional — caller supplied or `$global:settings`; defaults to key in settings    | One of `Development`, `Testing`, `Production`, `Experimental`                                            |
+| `DatabaseHost`                  | Optional — caller supplied or settings                                           | Defaults to `localhost`                                                                                  |
+| `SqlInstance`                   | Optional — inferred from `Environment` if absent                                 | `Dev$env:USERNAME` for `Development`; `Exp$env:USERNAME` for `Experimental`; matches tier name otherwise |
+| `ConnectionMethod`              | Optional — caller supplied or settings                                           | One of `tcp`, `np`, `lpc`                                                                                |
+| `Port`                          | Optional — caller supplied or settings                                           | Omitted for default port                                                                                 |
+| `IntegratedSecurity`            | Switch — defaulted to `$true` when no `CredentialsKey` supplied                  | Windows Integrated Auth                                                                                  |
+| `CredentialsKey`                | Optional — vault lookup key for SQL auth credentials                             | Mutually exclusive with `IntegratedSecurity`                                                             |
+| `SqlConnection`                 | Optional — existing open `Microsoft.Data.SqlClient.SqlConnection`                | Uses `ExistingConnection` parameter set                                                                  |
+| `DatabasePath`                  | Optional — path for database `.mdf`/`.ldf` files                                 | Retrieved from settings if absent                                                                        |
+| `ProvisioningScriptsPath`       | Optional — path to pre-migration T-SQL scripts                                   | Retrieved from settings if absent                                                                        |
+| `FlywayBasePath`                | Required (resolved) — root directory of `flyway.toml`                            | Retrieved from settings if absent                                                                        |
+| `flywaySqlMigrationsPath`       | Optional — path to database-specific SQL migrations                              | Defaults to `FlywayBasePath\SQL`                                                                         |
+| `flywaySharedSqlMigrationsPath` | Optional — path to shared SQL migrations                                         | Retrieved from settings if absent                                                                        |
+| `FlywayDataPath`                | Optional — path to seed data scripts; exported as `FLYWAY_PLACEHOLDERS_DATA_DIR` | Retrieved from settings if absent                                                                        |
+| `FlywayTomlPath`                | Optional — explicit path to `flyway.toml`                                        | Retrieved from settings if absent                                                                        |
+| `Force`                         | Switch                                                                           | Passed through to `DatabaseProvisioning`; drops DB if it exists                                          |
 
 **Execution flow:**
 
@@ -1543,3 +1543,518 @@ Build-DatabaseWithFlyway -DatabaseName 'GMail' -Environment 'Development'
 # Build using an already-open SqlConnection (e.g., within a larger pipeline)
 Build-DatabaseWithFlyway -DatabaseName 'Philote' -SqlConnection $existingConn
 ```
+
+### Logging Rule Set
+
+**Philote ID:** `"9369e02d-4218-42dc-a487-4a176f9eac46"`
+
+**Priority:** P1 (correctness — apply before all other Rule Sets)
+
+**Description:** This Rule Set defines the canonical PSFramework logging conventions for
+all PowerShell functions and cmdlets in ATAP.Utilities and Ace Commander. Every logging
+call and external-call instrumentation pattern derives from these rules. Compliance is
+required for all production-grade PowerShell code in this repository.
+
+**Source:** `SolutionDocumentation/AI prompt to create Copilot instruction files.md` lines 138-292.
+
+**Cross-references:** Task 1.2 (Error Handling Rule Set), Task 1.3 (GELF/SEQ provider sub-section).
+
+#### Rule L-1 — Approved logging cmdlet
+
+Use `Write-PSFMessage` exclusively for all diagnostic and operational logging.
+
+**Forbidden alternatives:**
+
+| Forbidden       | Reason                                                            |
+| --------------- | ----------------------------------------------------------------- |
+| `Write-Host`    | Bypasses the logging pipeline; cannot be suppressed or redirected |
+| `Write-Verbose` | Ignores PSFramework level routing and tagging                     |
+| `Write-Debug`   | Same as above                                                     |
+| `Write-Output`  | Intended for pipeline output, not logging                         |
+
+**Correct form:**
+
+```powershell
+Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+    -Level Debug -Message 'Some trace message'
+```
+
+#### Rule L-2 — Approved log levels
+
+`-Level Info` is **never** a valid level with `Write-PSFMessage`.
+
+| Level       | When to use                                                                        |
+| ----------- | ---------------------------------------------------------------------------------- |
+| `Debug`     | Trace-level detail: entering/leaving functions, before/after external calls        |
+| `Verbose`   | Lifecycle events: configuration loaded, connection established, finally-block exit |
+| `Important` | Notable operational events worth surfacing to operators in non-debug runs          |
+| `Error`     | Failures caught in catch blocks                                                    |
+
+#### Rule L-3 — Mandatory `-FunctionName` and `-ModuleName`
+
+Every `Write-PSFMessage` call inside a function must include both named parameters:
+
+```powershell
+Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+    -Level Verbose -Message 'some message'
+```
+
+Where `<functionName>` and `<moduleName>` are replaced with the literal name of the
+enclosing function and the module it belongs to, respectively.
+
+#### Rule L-4 — Function entry and exit logging
+
+The **first executable line** of the `begin` block must be:
+
+```powershell
+Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+    -Level Debug -Message 'Entering Function <functionName> in module <moduleName>'
+```
+
+The **next-to-last executable line** of the `end` block (before the return value) must be:
+
+```powershell
+Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+    -Level Debug -Message 'Leaving Function <functionName> in module <moduleName>'
+```
+
+#### Rule L-5 — External call instrumentation and tags
+
+All calls to the following cmdlets must be preceded and followed by a
+`Write-PSFMessage -Level Debug` call using the corresponding `-Tag` value.
+
+| Cmdlet              | `-Tag` value             | Before-call message             | After-call message                                         |
+| ------------------- | ------------------------ | ------------------------------- | ---------------------------------------------------------- |
+| `Invoke-RestMethod` | `'RestCall'`             | `"Calling <URLOfEndpoint>"`     | `"Successfully returned from <URLOfEndpoint>"`             |
+| `Invoke-WebRequest` | `'WebRequestCall'`       | `"Calling <URLOfEndpoint>"`     | `"Successfully returned from <URLOfEndpoint>"`             |
+| `Invoke-Expression` | `'InvokeExpressionCall'` | `"Invoke-Expression <command>"` | `"Successfully returned from Invoke-Expression <command>"` |
+| `Invoke-Command`    | `'InvokeCommandCall'`    | _(see Rule L-5a)_               | same pattern                                               |
+
+**Rule L-5a — `Invoke-Command` before-call log message format:**
+
+```powershell
+Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+    -Level Debug -Message $(
+        "Calling Invoke-Command " + `
+        "-ComputerName $computername -ScriptBlock {$scriptBlockToRun} " + `
+        "-Credential $($credential.ToString()) " + `
+        "$(if ($useSSL) { ' -useSSL ' })" + `
+        "$(if ($useSelfSignedCert) { ' -SessionOption $(New-PSSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck)' })"
+    ) -Tag 'InvokeCommandCall'
+```
+
+#### Rule L-6 — Wrap all external calls in try/catch/finally
+
+All four external-call cmdlets (`Invoke-RestMethod`, `Invoke-WebRequest`,
+`Invoke-Expression`, `Invoke-Command`) must be wrapped in a `try/catch/finally` block.
+Use `-ErrorAction Stop` on any call whose failure must abort the enclosing operation.
+
+#### Rule L-7 — Catch and finally block template
+
+```powershell
+try {
+    # ... call with -ErrorAction Stop if failure must abort ...
+}
+catch {
+    $errorMessage = "<description of the attempted operation>. Exception: $($_.Exception.Message)"
+    Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+        -Level Error -Message $errorMessage -Exception $_.Exception `
+        -Tag '<RestCall|WebRequestCall|InvokeExpressionCall|InvokeCommandCall>'
+    throw $_
+}
+finally {
+    Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+        -Level Verbose -Message "Exiting function: <functionName>"
+}
+```
+
+### Error Handling Rule Set
+
+**Philote ID:** `"3cc57c81-2fa6-408b-af37-1098ce68d51c"`
+
+**Priority:** P1 (correctness — apply before all other Rule Sets)
+
+**Description:** This Rule Set defines the canonical input-validation and error-handling
+conventions for all PowerShell functions and cmdlets in ATAP.Utilities and Ace Commander.
+Every function boundary check, try/catch/finally template, and exception logging pattern
+derives from these rules.
+
+**Source:** `SolutionDocumentation/AI prompt to create Copilot instruction files.md` lines 167-305.
+
+**Cross-references:** Logging Rule Set (Rules L-6, L-7); Task 1.3 (GELF/SEQ provider).
+
+#### Rule EH-1 — Validate all inputs at the function boundary
+
+Prefer parameter-attribute validation over imperative checks. Use the following in order
+of preference:
+
+1. `[ValidateNotNullOrEmpty()]`, `[ValidateNotNull()]`, `[ValidateSet(...)]`,
+   `[ValidateRange(...)]`, `[ValidatePattern(...)]`, `[ValidateScript({...})]`
+   as parameter attributes — they run before the function body and produce clear errors.
+
+2. For complex invariants that attributes cannot express, use
+   `[string]::IsNullOrWhiteSpace()` or `[string]::IsNullOrEmpty()` in the `begin` block
+   immediately after the entry log (Rule L-4). Prefer the static .NET methods over
+   PowerShell idioms like `-eq $null -or -eq ''`.
+
+3. When using `ValidateScript`, always `throw` an explicit, descriptive message on
+   failure — do not rely on the default PowerShell expression-only message.
+
+```powershell
+[ValidateScript({
+    if ([string]::IsNullOrWhiteSpace($_)) {
+        throw "Parameter 'DatabaseName' must be a non-empty, non-whitespace string."
+    }
+    $true
+})]
+[string] $DatabaseName
+```
+
+#### Rule EH-2 — Wrap all external calls in try/catch/finally
+
+Any call that can fail and whose failure must abort the current operation must be
+placed inside a `try/catch/finally` block. This applies especially to the four
+instrumented call types (`Invoke-RestMethod`, `Invoke-WebRequest`, `Invoke-Expression`,
+`Invoke-Command`) per Logging Rule L-6, and also to:
+
+- calls to external executables (e.g., `flyway`, `dotnet`, `git`)
+- calls to dbaTools cmdlets and other third-party modules
+- file I/O that may fail on access permissions or missing paths
+- any operation that populates a required downstream variable
+
+Add `-ErrorAction Stop` to any cmdlet call whose failure should trigger the `catch`
+block; without it, non-terminating errors are silently swallowed.
+
+```powershell
+Invoke-RestMethod -Uri $uri -Method Get -ErrorAction Stop
+```
+
+#### Rule EH-3 — Catch block template
+
+The `catch` block must:
+
+1. Compose a descriptive error message that includes what operation was attempted.
+2. Log with `Write-PSFMessage -Level Error` (Rule L-7), including `-Exception $_.Exception`.
+3. Apply the appropriate `-Tag` for the instrumented call type (Rule L-5).
+4. Re-throw with `throw $_` to preserve the original exception and stack trace.
+
+Never swallow exceptions silently. Never log and return a success indicator when an
+exception has occurred.
+
+```powershell
+catch {
+    $errorMessage = "<description of the attempted operation>. Exception: $($_.Exception.Message)"
+    Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+        -Level Error -Message $errorMessage -Exception $_.Exception `
+        -Tag '<RestCall|WebRequestCall|InvokeExpressionCall|InvokeCommandCall>'
+    throw $_
+}
+```
+
+#### Rule EH-4 — Finally block template
+
+The `finally` block must:
+
+1. Execute any mandatory cleanup (e.g., close connections, remove temp files, release
+   locks) regardless of success or failure.
+2. Emit a `Write-PSFMessage -Level Verbose` exit message (Rule L-7). This serves as
+   the exit-trace companion to the entry message in the `begin` block (Rule L-4).
+
+```powershell
+finally {
+    Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+        -Level Verbose -Message "Exiting function: <functionName>"
+}
+```
+
+#### Rule EH-5 — Full try/catch/finally skeleton
+
+The canonical pattern combining Rules EH-2 through EH-4:
+
+```powershell
+try {
+    # Instrumentation before external call (Rule L-5)
+    Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+        -Level Debug -Message "Calling <URLOfEndpoint>" -Tag 'RestCall'
+
+    $result = Invoke-RestMethod -Uri $uri -Method Get -ErrorAction Stop
+
+    # Instrumentation after external call (Rule L-5)
+    Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+        -Level Debug -Message "Successfully returned from <URLOfEndpoint>" -Tag 'RestCall'
+}
+catch {
+    $errorMessage = "<description of attempted operation>. Exception: $($_.Exception.Message)"
+    Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+        -Level Error -Message $errorMessage -Exception $_.Exception -Tag 'RestCall'
+    throw $_
+}
+finally {
+    Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' `
+        -Level Verbose -Message "Exiting function: <functionName>"
+}
+```
+
+### GELF/SEQ Named Logging Provider Instances
+
+**Philote:** `"e5e1529a-8a4d-4304-addb-0ca1225d6e67"`
+
+This section extends the **Logging Rule Set** with rules specific to configuring
+PSFramework logging providers that route messages to remote structured-logging
+sinks such as SEQ (via the GELF provider) or Graylog.
+
+#### Rule GELF-1: One named instance per sink
+
+Configure exactly one PSFramework logging provider instance per remote sink.
+Use the `includeinstances` PSFConfig key to bind a named provider activation to a
+single instance name. Never reuse the same instance name across two different
+provider configurations — doing so causes both providers to compete for messages
+from the same instance and can result in duplicate forwarding or dropped messages.
+
+```powershell
+# One provider → one sink
+
+# GELF provider bound to the 'SendToSEQ' instance
+Set-PSFConfig -FullName 'psframework.logging.gelf.server'           -Value '127.0.0.1'
+Set-PSFConfig -FullName 'psframework.logging.gelf.port'             -Value 12201
+Set-PSFConfig -FullName 'psframework.logging.gelf.protocol'         -Value 'udp'
+Set-PSFConfig -FullName 'psframework.logging.gelf.encrypt'          -Value $false
+Set-PSFConfig -FullName 'psframework.logging.gelf.minlevel'         -Value 3        # Information
+Set-PSFConfig -FullName 'psframework.logging.gelf.includeinstances' -Value @('SendToSEQ')
+Set-PSFLoggingProvider -Name gelf -Enable $true
+```
+
+#### Rule GELF-2: Naming convention `SendTo<Sink>`
+
+Name every logging instance using the pattern `SendTo<Sink>` where `<Sink>` matches
+the human-readable product or endpoint name (e.g. `SendToSEQ`, `SendToGraylog`,
+`SendToSplunk`). This makes routing intent immediately visible in both source code
+and log records.
+
+```powershell
+# Correct
+Write-PSFMessage -Instance 'SendToSEQ' -Level Important -Message "Structured log event"
+
+# Incorrect — ambiguous instance name that doesn't communicate routing
+Write-PSFMessage -Instance 'remote' -Level Important -Message "Structured log event"
+```
+
+#### Rule GELF-3: Configure filters at the provider level, not in application code
+
+Apply level and instance filters via `Set-PSFConfig` on the provider, not via
+`if`-guards around `Write-PSFMessage`. Provider-level filtering keeps routing
+decisions in configuration and allows them to be adjusted without code changes.
+
+```powershell
+# Correct — filter at provider level
+Set-PSFConfig -FullName 'psframework.logging.gelf.minlevel'         -Value 3  # Information and above
+Set-PSFConfig -FullName 'psframework.logging.gelf.includeinstances' -Value @('SendToSEQ')
+
+# Incorrect — gate logging in application code
+if ($VerbosePreference -eq 'Continue') {
+    Write-PSFMessage -Instance 'SendToSEQ' -Level Verbose -Message "..."
+}
+```
+
+#### Rule GELF-4: Use `Set-PSFConfig` for instance filtering, not `Set-PSFLoggingProvider` parameters
+
+The `Set-PSFLoggingProvider` cmdlet does **not** expose `-IncludeInstances` or
+`-ExcludeInstances` parameters. Passing these as parameters raises `"A parameter
+cannot be found that matches parameter name 'IncludeInstances'."`. Set all
+instance-routing filters via `Set-PSFConfig` before enabling the provider.
+
+```powershell
+# CORRECT
+Set-PSFConfig -FullName 'psframework.logging.gelf.includeinstances' -Value @('SendToSEQ')
+Set-PSFLoggingProvider -Name gelf -Enable $true
+
+# INCORRECT — parameter does not exist
+Set-PSFLoggingProvider -Name gelf -Enable $true -IncludeInstances 'SendToSEQ'
+```
+
+#### Rule GELF-5: Persist configuration with `Register-PSFConfig`
+
+Call `Register-PSFConfig -Module PSFramework` after finalising provider
+configuration to persist all `psframework.logging.*` settings across sessions.
+Without this, provider configuration is lost when the PowerShell process exits.
+
+```powershell
+Register-PSFConfig -Module PSFramework
+```
+
+### Input Validation Rule Set
+
+**Philote:** `"b57a4b16-293e-4938-ba7e-b809aff30066"`
+
+Rules governing how PowerShell function parameters and internal values are validated
+before use. Cross-references the **Error Handling Rule Set** for the try/catch/finally
+pattern that wraps validated inputs.
+
+#### Rule IV-1: Prefer `[string]::IsNullOrWhiteSpace` over manual null/empty comparison
+
+Use the static .NET method `[string]::IsNullOrWhiteSpace()` rather than the equivalent
+manual comparison `-eq $null -or -eq ''`. The .NET method also catches whitespace-only
+strings (e.g. `" "`), which the manual form misses and which are semantically invalid
+in almost all parameter contexts.
+
+```powershell
+# Correct
+if ([string]::IsNullOrWhiteSpace($value)) { throw "Value must not be null, empty or whitespace." }
+
+# Also acceptable when only null/empty matters (not whitespace)
+if ([string]::IsNullOrEmpty($value)) { throw "Value must not be null or empty." }
+
+# Incorrect — misses whitespace-only strings
+if ($value -eq $null -or $value -eq '') { throw "Value must not be null or empty." }
+```
+
+#### Rule IV-2: Prefer declarative `[Validate*]` parameter attributes over imperative guards
+
+Apply built-in validation attributes (`[ValidateNotNull()]`, `[ValidateNotNullOrEmpty()]`,
+`[ValidateRange()]`, `[ValidateSet()]`, `[ValidatePattern()]`) directly on parameters.
+This makes constraints visible at the function signature and produces consistent,
+framework-generated error messages without body code.
+
+```powershell
+function Get-Feed {
+    param (
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$FeedName,
+
+        [Parameter()]
+        [ValidateRange(1, 65535)]
+        [int]$Port = 8624
+    )
+    # body
+}
+```
+
+#### Rule IV-3: Use `[ValidateScript]` with an explicit `throw` for complex invariants
+
+When the built-in attributes cannot express a constraint, use `[ValidateScript()]`.
+Always include an explicit `throw` with a descriptive message inside the script block;
+without it PowerShell reports the opaque message `"The argument ... does not belong
+to the set"` and the caller cannot diagnose the failure.
+
+```powershell
+function Set-FeedUrl {
+    param (
+        [Parameter(Mandatory)]
+        [ValidateScript({
+            if ([string]::IsNullOrWhiteSpace($_)) {
+                throw "FeedUrl must not be null, empty, or whitespace."
+            }
+            if (-not ($_ -match '^https?://')) {
+                throw "FeedUrl must begin with 'http://' or 'https://'."
+            }
+            $true  # must return $true when validation passes
+        })]
+        [string]$FeedUrl
+    )
+    # body
+}
+```
+
+#### Rule IV-4: Prefer `[string]::IsNullOrWhiteSpace` inside `[ValidateScript]`
+
+When writing a `[ValidateScript]` block that checks a string parameter, use
+`[string]::IsNullOrWhiteSpace($_)` rather than a bare `-not $_` check. A whitespace-only
+string is truthy in PowerShell (`-not " "` is `$false`), so `-not $_` does not catch it.
+
+```powershell
+# Correct
+[ValidateScript({ -not [string]::IsNullOrWhiteSpace($_) })]
+
+# Incorrect — whitespace-only string passes this check
+[ValidateScript({ -not [string]::IsNullOrEmpty($_) })]
+
+# Also incorrect — whitespace-only string is truthy, so -not $_ is $false
+[ValidateScript({ $_ })]
+```
+
+### Debugging Tools Appendix
+
+**Philote:** `"b70ddc13-9453-4b76-9689-24460a3fc41f"`
+
+Three mechanisms for dropping into the PowerShell debugger programmatically,
+conditionally triggered at runtime. All approaches work in VS Code, the ISE,
+and non-GUI (service / CI) hosts. Guard every hook behind an environment
+variable or compile-time constant so they cannot fire in production.
+
+#### Rule DBG-1: `Wait-Debugger` — unconditional pause until a debugger attaches
+
+`Wait-Debugger` (PowerShell 6+) halts the runspace immediately and waits for a
+debugger to connect. Use this in scripts that run as services or in CI pipelines
+where you cannot attach before launch; the script appears to "hang" until you
+attach from VS Code with **Run → Attach to PowerShell Interactive Session**.
+
+```powershell
+if ($env:DEBUG_ATTACH -eq '1') {
+    Wait-Debugger   # execution halts here; attach in VS Code to continue
+}
+```
+
+- Remove or guard the call for production — an unguarded `Wait-Debugger` will
+  hang the process indefinitely.
+- PowerShell 5.1 does not have `Wait-Debugger`; use Rule DBG-3 instead.
+
+#### Rule DBG-2: `[System.Diagnostics.Debugger]::Break()` — break only when a debugger is already attached
+
+`[System.Diagnostics.Debugger]::Break()` behaves exactly like a manual breakpoint
+when a debugger is already attached (e.g. the script was launched via F5 in VS Code).
+If no debugger is attached: on Windows, the JIT-attach dialog appears; on non-Windows,
+the call is silently ignored.
+
+```powershell
+if ($SuspiciousValue -gt 1000) {
+    [System.Diagnostics.Debugger]::Break()
+}
+```
+
+Use this form when you have already launched the script under a debugger and want
+to halt at a specific condition without modifying the IDE breakpoint list.
+
+#### Rule DBG-3: `Set-PSBreakpoint` — insert a breakpoint dynamically at runtime
+
+`Set-PSBreakpoint` inserts a line, command, or variable breakpoint at runtime without
+editing source. Works in both Windows PowerShell 5.1 and PowerShell 7+. Execution
+continues past the `Set-PSBreakpoint` call; the interpreter pauses only when it
+reaches the targeted line/command.
+
+```powershell
+if ($OrderCount -gt 1000) {
+    # Set a line breakpoint on the next line; execution will pause there
+    $nextLine = $MyInvocation.ScriptLineNumber + 1
+    Set-PSBreakpoint -Script $PSCommandPath -Line $nextLine | Out-Null
+}
+
+# Debugger stops here (the line referenced above)
+Write-PSFMessage -Level Debug -Message "Entering large-batch code path."
+```
+
+Command-watch variant (pauses whenever the named cmdlet is called):
+
+```powershell
+Set-PSBreakpoint -Command 'Invoke-RestMethod' | Out-Null
+```
+
+Variable-watch variant (pauses whenever a variable is read or written):
+
+```powershell
+Set-PSBreakpoint -Variable 'OrderCount' -Mode ReadWrite | Out-Null
+```
+
+Remove all dynamic breakpoints when done to avoid stale pauses in later runs:
+
+```powershell
+Get-PSBreakpoint | Remove-PSBreakpoint
+```
+
+#### Summary — Which mechanism to choose
+
+| Need                                                        | Mechanism                         |
+| ----------------------------------------------------------- | --------------------------------- |
+| Pause and wait for a debugger to attach (service / CI host) | `Wait-Debugger` (PS 6+)           |
+| Break only if already running under a debugger (VS Code F5) | `[Diagnostics.Debugger]::Break()` |
+| Create breakpoints dynamically without editing source lines | `Set-PSBreakpoint`                |

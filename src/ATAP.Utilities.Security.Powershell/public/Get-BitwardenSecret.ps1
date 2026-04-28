@@ -121,16 +121,30 @@ function Get-BitwardenSecret {
         $getSecretParams.AsPlainText = $true
       }
 
-      $secret = Get-Secret @getSecretParams -ErrorAction Stop
+      # Use SilentlyContinue so the SecretManagement framework's type-validation message
+      # ("Secret object returned for ... is of invalid type 'System.Boolean'") does not
+      # short-circuit execution before we can inspect the returned value ourselves.
+      $getSecretErrors = $null
+      $secret = Get-Secret @getSecretParams -ErrorAction SilentlyContinue -ErrorVariable getSecretErrors
 
-      # Check for Boolean return - indicates vault connection issue (usually locked vault)
+      # Re-throw any errors that are NOT the benign type-validation message; those are real failures.
+      if ($getSecretErrors) {
+        $realErrors = @($getSecretErrors | Where-Object {
+            $_.Exception.Message -notlike 'Secret object returned for*'
+          })
+        if ($realErrors.Count -gt 0) {
+          throw $realErrors[0].Exception
+        }
+      }
+
+      # Boolean return means the vault extension signalled failure (vault locked / session expired).
       if ($secret -is [bool]) {
-        $errorMessage = "Failed to retrieve secret '$SecretName'. The vault returned a Boolean ($secret) instead of a secret object. This typically means the vault is locked or the session has expired. Run: `$env:BW_SESSION = (bw unlock --raw)"
+        $errorMessage = "Failed to retrieve secret '$SecretName'. The vault returned a Boolean instead of a secret object. The vault is likely locked or BW_SESSION has expired. Run: `$env:BW_SESSION = (bw unlock --raw)"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
         throw $errorMessage
       }
 
-      if (-not $secret) {
+      if ($null -eq $secret) {
         $errorMessage = "Secret '$SecretName' not found in vault '$VaultName'. Verify the secret name is correct and exists in Bitwarden."
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
         throw $errorMessage

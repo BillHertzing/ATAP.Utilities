@@ -5,16 +5,6 @@
     <TargetFrameworks>netstandard2.1;net5.0</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
-    <!-- Assembly, File, and Package Information for this assembly-->
-    <!-- Build and revision are created based on date-->
-    <MajorVersion>0</MajorVersion>
-    <MinorVersion>1</MinorVersion>
-    <PatchVersion>0</PatchVersion>
-    <!-- Current Lifecycle stage for this assembly-->
-    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
-    <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
-    <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
-    <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
 
@@ -23,7 +13,7 @@
     <Folder Include="svg\" />
   </ItemGroup>
 
-    <!-- Include NuGet PackageReferenfces to the required DLLs for custom msbuild tasks-->
+    <!-- Include NuGet PackageReferences to the required DLLs for custom msbuild tasks-->
   <ItemGroup>
 
     <PackageReference Include="docfx.console" Version="2.48.1">

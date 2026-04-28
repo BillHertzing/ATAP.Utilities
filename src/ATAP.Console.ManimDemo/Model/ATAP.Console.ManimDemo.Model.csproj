@@ -6,11 +6,6 @@
     <RootNamespace>ATAP.Console.ManimDemo</RootNamespace>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IsPackable>false</IsPackable>
-    <MajorVersion>0</MajorVersion>
-    <MinorVersion>1</MinorVersion>
-    <PatchVersion>0</PatchVersion>
-    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
-    <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
   <ItemGroup>

@@ -43,3 +43,9 @@ Powershell scripts for managing an organization's computer systems' security
 - [Encrypt & Decrypt Data with PowerShell](https://medium.com/@sumindaniro/encrypt-decrypt-data-with-powershell-4a1316a0834b) by Suminda Niroshan
 - [Using SecureString in PowerShell (With SecureKey)](https://brainseed.wordpress.com/2016/03/29/using-securestring-in-powershell-with-securekey/)
 - [How to encrypt credentials & secure passwords with PowerShell pt 2](https://www.pdq.com/blog/secure-password-with-powershell-encrypting-credentials-part-2/) Kris Powell
+## 5-Tier Module Flow
+
+Use the module-level getting started guide for the lifecycle workflow:
+
+- [Documentation/GettingStarted.md](Documentation/GettingStarted.md)
+

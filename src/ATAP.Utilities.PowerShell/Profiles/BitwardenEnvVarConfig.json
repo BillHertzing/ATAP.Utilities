@@ -11,5 +11,6 @@
   { "EnvVarName": "BUILDMASTER_ADMIN_API_KEY", "BwSearchName": "BuildMaster_Admin_API_Key", "BwFieldName": "key" },
   { "EnvVarName": "PROGET_BUILDMASTER_API_KEY", "BwSearchName": "ProGet_BuildMaster_API_Key", "BwFieldName": "key" },
   { "EnvVarName": "AceCommander_UserPii__PassphraseV1", "BwSearchName": "AceCommander_UserPii__PassphraseV1", "BwFieldName": "Passphrase" },
-  { "EnvVarName": "AceCommander_UserPii__PassphraseV2", "BwSearchName": "AceCommander_UserPii__PassphraseV2", "BwFieldName": "Passphrase" }
+  { "EnvVarName": "AceCommander_UserPii__PassphraseV2", "BwSearchName": "AceCommander_UserPii__PassphraseV2", "BwFieldName": "Passphrase" },
+  { "EnvVarName": "BUILDMASTER_GH_WEBHOOK_SECRET", "BwSearchName": "BUILDMASTER_GH_WEBHOOK_SECRET", "BwFieldName": "Notes" }
 ]

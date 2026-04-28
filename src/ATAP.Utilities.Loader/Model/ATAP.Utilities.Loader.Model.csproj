@@ -4,16 +4,6 @@
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
-    <!-- Assembly, File, and Package Information for this assembly-->
-    <!-- Build and revision are created based on date-->
-    <MajorVersion>0</MajorVersion>
-    <MinorVersion>1</MinorVersion>
-    <PatchVersion>0</PatchVersion>
-    <!-- Current Lifecycle stage for this assembly-->
-    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
-    <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
-    <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
-    <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,12 +19,11 @@
   </ItemGroup>
 
   <!-- Loader interfaces and classes for any Assembly that may be loaded by the plugin Loader, only works with NetCore 3.1, Net5.0 and higher -->
-  <ItemGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '^(core|net[5-9]|net1[0-9])'))">
-    <ProjectReference Include="..\Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" />
-    <ProjectReference Include="..\StringConstants\ATAP.Utilities.Loader.StringConstants.csproj" />
+  <ItemGroup>
+    <ProjectReference Include="..\Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\StringConstants\ATAP.Utilities.Loader.StringConstants.csproj" PrivateAssets="all" />
   </ItemGroup>
 
-  <!-- McMaster.NETCore.Plugins removed: Loader now uses native AssemblyLoadContext (CollectibleAssemblyLoadContext / NativeAssemblyLoader). -->
 
   <!-- Extensions methods on File and Directory types, along with a Globbing library -->
   <ItemGroup>

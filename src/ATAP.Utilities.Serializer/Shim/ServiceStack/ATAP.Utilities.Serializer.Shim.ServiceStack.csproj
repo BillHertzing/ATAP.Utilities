@@ -1,29 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
- <PropertyGroup>
+  <PropertyGroup>
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
-    <!-- Assembly, File, and Package Information for this assembly-->
-    <!-- Build and revision are created based on date-->
-    <MajorVersion>1</MajorVersion>
-    <MinorVersion>0</MinorVersion>
-    <PatchVersion>0</PatchVersion>
-    <!-- Current Lifecycle stage for this assembly-->
-    <PackageLifeCycleStage>Production</PackageLifeCycleStage>
-    <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
-    <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
-    <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
 
-  <!-- The ServiceStack JSON Library to use -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\..\Model\ATAP.Utilities.Serializer.Model.csproj" />
+    <ProjectReference Include="..\..\..\ATAP.Utilities.Collection.Extensions\ATAP.Utilities.Collection.Extensions.csproj" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="ServiceStack.Text" />
   </ItemGroup>
 
+  <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
   <ItemGroup>
-    <ProjectReference Include="..\..\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
-    <ProjectReference Include="..\..\..\ATAP.Utilities.Collection.Extensions\ATAP.Utilities.Collection.Extensions.csproj" />
+    <ProjectReference Include="..\..\..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
 
 </Project>

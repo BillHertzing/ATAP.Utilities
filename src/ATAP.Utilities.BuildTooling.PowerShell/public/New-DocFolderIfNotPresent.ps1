@@ -1,6 +1,7 @@
 #############################################################################
-#region New-DocFolderIfNotPresent
-<#
+function New-DocFolderIfNotPresent {
+  #region New-DocFolderIfNotPresent
+  <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
 .DESCRIPTION
@@ -28,7 +29,6 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function New-DocFolderIfNotPresent {
   #region FunctionParameters
   [CmdletBinding(SupportsShouldProcess = $true)]
   param (
@@ -44,21 +44,21 @@ Function New-DocFolderIfNotPresent {
   #endregion FunctionParameters
   #region FunctionBeginBlock
   ########################################
-  BEGIN {
+  begin {
     Write-Verbose -Message "Starting $($MyInvocation.MyCommand)"
   }
   #endregion FunctionBeginBlock
 
   #region FunctionProcessBlock
   ########################################
-  PROCESS {
+  process {
     #
   }
   #endregion FunctionProcessBlock
 
   #region FunctionEndBlock
   ########################################
-  END {
+  end {
     Write-Verbose "ProjectPath is $ProjectPath, adding a DOC folder if not present"
     if ($PSCmdlet.ShouldProcess("$ProjectPath\Docs", 'Create')) {
       New-Item -Path "$ProjectPath\Docs" -ItemType Directory -Force

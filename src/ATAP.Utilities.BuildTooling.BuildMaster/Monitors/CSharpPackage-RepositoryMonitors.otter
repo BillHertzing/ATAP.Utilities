@@ -1,0 +1,97 @@
+##########################################################################
+# CSharpPackage-RepositoryMonitors.otter
+#
+# Purpose : Define BuildMaster Repository Monitors that trigger the
+#           CSharpPackage-5Stage plan when branches are pushed in the
+#           ATAP.Utilities GitHub repository.
+#
+# How to apply:
+#   1. In the BuildMaster UI, open the application for ATAP.Utilities.
+#   2. Navigate to Settings → Repository Monitors.
+#   3. Create one monitor per entry below (or use the BuildMaster API
+#      with the /api/resource-monitors endpoint).
+#   4. Confirm each monitor by performing a test push to the target branch.
+#
+# Tier resolution:
+#   NBGV prerelease label → Tier → Feed
+#   -Sprint-  → Experimental  → nuget-experimental
+#   -Alpha-   → Development   → nuget-development
+#   -Beta-    → Integration   → nuget-integration
+#   -QA-      → QA            → nuget-qa
+#   (none)    → Production    → nuget-stable
+#
+# Path filter (1.4-4):
+#   PathFilter: src/** ensures that commits touching ONLY
+#   SolutionDocumentation/ or README.md do not trigger a build.
+#
+# Webhook secret (1.4-3):
+#   WebhookSecret references env var BUILDMASTER_GH_WEBHOOK_SECRET.
+#   PREREQUISITE: Create a Bitwarden secure-note named
+#     "BUILDMASTER_GH_WEBHOOK_SECRET" and add it to LoginScript.ps1 so
+#     the env var is populated before BuildMaster starts.
+#
+# Variables used by triggered builds:
+#   $Branch          — the branch that triggered the monitor (injected by BM)
+#   $ApplicationName — set as Application Variable: "ATAP.Utilities"
+#   $SourcePath      — set as Application Variable: working-directory path
+#   $Configuration   — set as Application Variable: "Release"
+#   $ProGetUrl       — set as Application Variable: ProGet base URL
+#   $ProGetApiKey    — masked Application Variable from PROGET_ADMIN_API_KEY
+##########################################################################
+
+# ---------------------------------------------------------------------------
+# Monitor 1 — main branch (Production)  [1.4-1]
+# Triggers  : any push to "main"
+# Stage     : Production (NBGV resolves from absent prerelease label)
+# PathFilter: src/** — docs-only commits do not trigger a build
+# Interval  : poll every 10 minutes
+# ---------------------------------------------------------------------------
+GitHub::Repository-Monitor CSharpPackages-Main-Monitor
+(
+    Organization: BillHertzing,
+    Repository: ATAP.Utilities,
+    BranchFilter: main,
+    PathFilter: src/**,
+    PollInterval: 600,
+    WebhookSecret: $EnvironmentVariable(BUILDMASTER_GH_WEBHOOK_SECRET),
+    PipelineName: CSharpPackage-5Stage,
+    BuildVariables: %(Branch: $Branch)
+);
+
+# ---------------------------------------------------------------------------
+# Monitor 2 — Sprint branches (Experimental)  [1.4-2]
+# Triggers  : any push to a branch matching *-Sprint-*-work-items
+# Stage     : Experimental (NBGV resolves from -Sprint- prerelease label)
+# PathFilter: src/** — docs-only commits do not trigger a build
+# Interval  : poll every 2 minutes
+# Note      : pushes to the shared permanent nuget-experimental feed
+# ---------------------------------------------------------------------------
+GitHub::Repository-Monitor CSharpPackages-Sprint-Monitor
+(
+    Organization: BillHertzing,
+    Repository: ATAP.Utilities,
+    BranchFilter: *-Sprint-*-work-items,
+    PathFilter: src/**,
+    PollInterval: 120,
+    WebhookSecret: $EnvironmentVariable(BUILDMASTER_GH_WEBHOOK_SECRET),
+    PipelineName: CSharpPackage-5Stage,
+    BuildVariables: %(Branch: $Branch)
+);
+
+# ---------------------------------------------------------------------------
+# Template — copy and adapt if per-package monitors are ever needed
+# ---------------------------------------------------------------------------
+#
+# GitHub::Repository-Monitor CSharp-{PackageSlug}-Sprint-Monitor
+# (
+#     Organization: BillHertzing,
+#     Repository: ATAP.Utilities,
+#     BranchFilter: *-Sprint-*-work-items,
+#     PathFilter: src/ATAP.Utilities.{PackageSlug}/**,
+#     PollInterval: 120,
+#     WebhookSecret: $EnvironmentVariable(BUILDMASTER_GH_WEBHOOK_SECRET),
+#     PipelineName: CSharpPackage-PerProject,
+#     BuildVariables: %(Branch: $Branch,
+#                      ProjectPath: src\ATAP.Utilities.{PackageSlug}\ATAP.Utilities.{PackageSlug}.csproj,
+#                      RunTests: false)
+# );

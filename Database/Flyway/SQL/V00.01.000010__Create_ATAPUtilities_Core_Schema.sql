@@ -38,6 +38,11 @@ IF OBJECT_ID(N'ATAPUtilities.RuleInstantiation',         N'U') IS NOT NULL DROP 
 GO
 IF OBJECT_ID(N'ATAPUtilities.RuleSetMember',             N'U') IS NOT NULL DROP TABLE ATAPUtilities.RuleSetMember;
 GO
+-- Tables from later migrations that reference RuleSet must be dropped first
+IF OBJECT_ID(N'ATAPUtilities.BuildSetMember',            N'U') IS NOT NULL DROP TABLE ATAPUtilities.BuildSetMember;
+GO
+IF OBJECT_ID(N'ATAPUtilities.BuildSet',                  N'U') IS NOT NULL DROP TABLE ATAPUtilities.BuildSet;
+GO
 IF OBJECT_ID(N'ATAPUtilities.RuleSet',                   N'U') IS NOT NULL DROP TABLE ATAPUtilities.RuleSet;
 GO
 IF OBJECT_ID(N'ATAPUtilities.RulePrimitiveComposition',  N'U') IS NOT NULL DROP TABLE ATAPUtilities.RulePrimitiveComposition;

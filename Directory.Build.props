@@ -17,10 +17,11 @@
     <Configurations>Debug;Release;ReleaseWithTrace;</Configurations>
     <!-- When building against anything except net5.0 and higher, the c# V9 keyword 'init' throws errors. This is resolved in the AssemblyInfo.cs file for each project-->
     <!-- when targetframework is netstandard,
-    <TargetFrameworks>net47;net471;net472;net48;netcoreapp3.1;net5.0;net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
+    <TargetFrameworks>net47;net471;net472;net48;netcoreapp3.1;net5.0;net6.0;net7.0;net8.0;net9.0;>net10.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     -->
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
@@ -135,6 +136,12 @@
   -->
 
   <!-- Release Configuration compilation symbols, flags and build options -->
+  <!-- Microsoft.NET.Sdk.CSharp.props unconditionally appends TRACE to DefineConstants for C#
+       projects; DisableDiagnosticTracing=true removes it via the _DisableDiagnosticTracing
+       target so #if TRACE only fires in Debug and ReleaseWithTrace. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DisableDiagnosticTracing>true</DisableDiagnosticTracing>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DefineConstants>$(DefineConstants);RELEASE;</DefineConstants>
@@ -244,5 +251,92 @@
 
   <Import Project="..\..\packages\xunit.core.2.3.1\build\xunit.core.targets" Condition="Exists('..\..\packages\xunit.core.2.3.1\build\xunit.core.targets')" />
   -->
+
+  <!-- Inject NBGV into every project so the build uses version.json instead of the SDK default 1.0.0 -->
+  <ItemGroup>
+    <PackageReference Include="Nerdbank.GitVersioning" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- 5-Tier PackageLifeCycleStage + feed routing (tasks 1.1-1..1.1-4) -->
+  <!-- Task 1.1-1: Source the package lifecycle stage from NBGV's prerelease label.
+       Valid values: Sprint, Alpha, Beta, QA, or empty (stable/main release).
+       $(NBGV_PrereleaseLabel) is populated during restore/build by the Nerdbank.GitVersioning
+       MSBuild targets. Directory.Build.props is read early, but this property still
+       evaluates correctly because MSBuild re-evaluates property references lazily at
+       consumer sites during the build. -->
+  <PropertyGroup>
+    <PackageLifeCycleStage>$(NBGV_PrereleaseLabel)</PackageLifeCycleStage>
+    <!-- Fallback for local/worktree builds where NBGV_PrereleaseLabel may be empty:
+         infer the lifecycle label directly from the nearest project version.json.
+         Expected version pattern examples:
+           0.1-Sprint.{height}
+           0.1-Alpha.{height}
+           0.1-Beta.{height}
+           0.1-QA.{height} -->
+    <PackageLifeCycleStage
+      Condition=" '$(PackageLifeCycleStage)' == '' And Exists('$(MSBuildProjectDirectory)\version.json') ">$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\version.json')), '&quot;version&quot;\s*:\s*&quot;[^&quot;]*-([A-Za-z]+)[\.-][^&quot;]*&quot;', System.Text.RegularExpressions.RegexOptions.IgnoreCase).Groups[1].Value)</PackageLifeCycleStage>
+    <PackageLifeCycleStage
+      Condition=" '$(PackageLifeCycleStage)' == '' And Exists('$(MSBuildProjectDirectory)\..\version.json') ">$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\..\version.json')), '&quot;version&quot;\s*:\s*&quot;[^&quot;]*-([A-Za-z]+)[\.-][^&quot;]*&quot;', System.Text.RegularExpressions.RegexOptions.IgnoreCase).Groups[1].Value)</PackageLifeCycleStage>
+  </PropertyGroup>
+
+  <!-- Task 1.1-4: Disallow per-project overrides of Directory.Packages.props versions.
+       Prevents accidental package drift from Central Package Management. -->
+  <PropertyGroup>
+    <CentralPackageVersionOverridesEnabled>false</CentralPackageVersionOverridesEnabled>
+  </PropertyGroup>
+
+  <!-- Task 1.1-2: Map the lifecycle stage to a ProGet NuGet feed via Choose/When.
+       This stores the mapped feed name in $(TargetProGetFeed) for downstream
+       publish/push tasks to consume. -->
+  <Choose>
+    <When Condition=" '$(PackageLifeCycleStage)' == 'Sprint' ">
+      <PropertyGroup>
+        <TargetProGetFeed>nuget-experimental</TargetProGetFeed>
+      </PropertyGroup>
+    </When>
+    <When Condition=" '$(PackageLifeCycleStage)' == 'Alpha' ">
+      <PropertyGroup>
+        <TargetProGetFeed>nuget-development</TargetProGetFeed>
+      </PropertyGroup>
+    </When>
+    <When Condition=" '$(PackageLifeCycleStage)' == 'Beta' ">
+      <PropertyGroup>
+        <TargetProGetFeed>nuget-integration</TargetProGetFeed>
+      </PropertyGroup>
+    </When>
+    <When Condition=" '$(PackageLifeCycleStage)' == 'QA' ">
+      <PropertyGroup>
+        <TargetProGetFeed>nuget-qa</TargetProGetFeed>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <!-- Empty label => stable/main release feed. Branch enforcement is handled
+           by the ValidatePackageLifeCycleStage target below (a <Choose> cannot
+           emit <Error> tasks; errors must live inside a <Target>). -->
+      <PropertyGroup>
+        <TargetProGetFeed>nuget-stable</TargetProGetFeed>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+
+  <!-- Task 1.1-3: Build-time validation. An empty $(PackageLifeCycleStage) is only
+       permitted when building the main branch. We prefer $(NBGV_BuildingRef) since
+       NBGV is already in scope; it is set to e.g. "refs/heads/main" once NBGV's
+       targets have run (well before the Build target executes). -->
+  <Target Name="ValidatePackageLifeCycleStage" BeforeTargets="Build">
+    <!-- NBGV_BuildingRef is often empty in local builds; resolve branch via git as fallback. -->
+    <Exec Command="git rev-parse --abbrev-ref HEAD" ConsoleToMsBuild="true" IgnoreExitCode="true" Condition=" '$(NBGV_BuildingRef)' == '' ">
+      <Output TaskParameter="ConsoleOutput" PropertyName="CurrentGitBranchName" />
+    </Exec>
+    <PropertyGroup>
+      <CurrentGitBranchName>$([System.String]::Copy('$(CurrentGitBranchName)').Trim())</CurrentGitBranchName>
+      <CurrentBuildRef Condition=" '$(NBGV_BuildingRef)' != '' ">$(NBGV_BuildingRef)</CurrentBuildRef>
+      <CurrentBuildRef Condition=" '$(CurrentBuildRef)' == '' And '$(CurrentGitBranchName)' != '' ">refs/heads/$(CurrentGitBranchName)</CurrentBuildRef>
+    </PropertyGroup>
+
+    <Error Condition=" '$(PackageLifeCycleStage)' == '' And '$(CurrentBuildRef)' != 'refs/heads/main' "
+           Code="ATAP5TIER001"
+           Text="PackageLifeCycleStage is empty but the current branch ($(CurrentBuildRef)) is not refs/heads/main. Confirm version.json exists at the project or repository root and that its 'version' field carries a prerelease label (Sprint, Alpha, Beta, or QA). Stable/empty labels are only valid on main." />
+  </Target>
 
 </Project>

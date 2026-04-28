@@ -1,4 +1,6 @@
-<#
+#Requires -RunAsAdministrator
+function New-CobianSqlJobs {
+  <#
 .SYNOPSIS
     Creates four Cobian Reflector SQL backup Dummy tasks (with pre-events) by
     directly writing to MainList.lst in the exact format confirmed from utat022.
@@ -50,48 +52,47 @@
     writing to prevent ArgumentOutOfRangeException on service start.
 #>
 
-#Requires -RunAsAdministrator
 
-param(
-  [string]$ListPath            = 'C:\Program Files\Cobian Reflector\Lists\MainList.lst',
-  [string]$ScriptPath          = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-94-sprint-0004-work-items\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Invoke-SqlServerBackup.ps1',
-  #  [string]$ScriptPath       = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Invoke-SqlServerBackup.ps1',
-  [string]$BackupRoot          = 'C:\Dropbox\Backups\utat022',
-  [string]$PwshExe             = 'C:\Program Files\PowerShell\7\pwsh.exe',
-  # Start times (HH:MM) — defaults match the schedule stagger in Explainer 0021
-  [string]$ProGetFullStartTime       = '01:50',
-  [string]$ProGetDiffStartTime       = '01:50',
-  [string]$BuildMasterFullStartTime  = '02:20',
-  [string]$BuildMasterDiffStartTime  = '02:20'
-)
+  param(
+    [string]$ListPath = 'C:\Program Files\Cobian Reflector\Lists\MainList.lst',
+    [string]$ScriptPath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-94-sprint-0004-work-items\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Invoke-SqlServerBackup.ps1',
+    #  [string]$ScriptPath       = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Invoke-SqlServerBackup.ps1',
+    [string]$BackupRoot = 'C:\Dropbox\Backups\utat022',
+    [string]$PwshExe = 'C:\Program Files\PowerShell\7\pwsh.exe',
+    # Start times (HH:MM) — defaults match the schedule stagger in Explainer 0021
+    [string]$ProGetFullStartTime = '01:50',
+    [string]$ProGetDiffStartTime = '01:50',
+    [string]$BuildMasterFullStartTime = '02:20',
+    [string]$BuildMasterDiffStartTime = '02:20'
+  )
 
-Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
+  Set-StrictMode -Version Latest
+  $ErrorActionPreference = 'Stop'
 
-# Encrypted-empty constants taken verbatim from existing MainList.lst
-# (represent unused/blank credentials for required SFTP/FTP/proxy sub-sections)
-$E1 = '#Cob2#00028STtl5ohYeTQp2nUFQ5pQT0MGcTs=000010'
-$E2 = '#Cob2#0002838kVKKCUZXP8aHrszOuGULKbVrQ=000010'
-$E3 = '#Cob2#00028nQojpt8RaLw/IsmOaHreGrieGBk=000010'
-$E4 = '#Cob2#00028UJSEfJWl87+n3QYnZ9Oh+BsJb3E=000010'
-$E5 = '#Cob2#00028keVJTf7x6LatTLPJ3/iBgCY9RfQ=000010'
+  # Encrypted-empty constants taken verbatim from existing MainList.lst
+  # (represent unused/blank credentials for required SFTP/FTP/proxy sub-sections)
+  $E1 = '#Cob2#00028STtl5ohYeTQp2nUFQ5pQT0MGcTs=000010'
+  $E2 = '#Cob2#0002838kVKKCUZXP8aHrszOuGULKbVrQ=000010'
+  $E3 = '#Cob2#00028nQojpt8RaLw/IsmOaHreGrieGBk=000010'
+  $E4 = '#Cob2#00028UJSEfJWl87+n3QYnZ9Oh+BsJb3E=000010'
+  $E5 = '#Cob2#00028keVJTf7x6LatTLPJ3/iBgCY9RfQ=000010'
 
-function ng { [guid]::NewGuid().ToString().ToLower() }
+  function ng { [guid]::NewGuid().ToString().ToLower() }
 
-# Returns 'YYYY-MM-DD HH:MM:SS:' for the next occurrence of $dayOfWeek (0=Sun…6=Sat) at $startTime (HH:MM)
-function Get-NextWeekdayDateTime {
-  param([int]$DayOfWeek, [string]$StartTime)
-  $today       = [datetime]::Today
-  $daysUntil   = ($DayOfWeek - [int]$today.DayOfWeek + 7) % 7
-  if ($daysUntil -eq 0) { $daysUntil = 7 }   # always next occurrence, never today
-  $nextDate    = $today.AddDays($daysUntil).ToString('yyyy-MM-dd')
-  return "$nextDate ${StartTime}:00:"
-}
+  # Returns 'YYYY-MM-DD HH:MM:SS:' for the next occurrence of $dayOfWeek (0=Sun…6=Sat) at $startTime (HH:MM)
+  function Get-NextWeekdayDateTime {
+    param([int]$DayOfWeek, [string]$StartTime)
+    $today = [datetime]::Today
+    $daysUntil = ($DayOfWeek - [int]$today.DayOfWeek + 7) % 7
+    if ($daysUntil -eq 0) { $daysUntil = 7 }   # always next occurrence, never today
+    $nextDate = $today.AddDays($daysUntil).ToString('yyyy-MM-dd')
+    return "$nextDate ${StartTime}:00:"
+  }
 
-# ── Section builders (exact format confirmed from MainList.lst on utat022) ────
+  # ── Section builders (exact format confirmed from MainList.lst on utat022) ────
 
-function Sec-Proxy([string]$g) {
-  return @"
+  function Sec-Proxy([string]$g) {
+    return @"
 
 <§- $g -§>
 §DuplicatedKeys:False
@@ -107,10 +108,10 @@ ProxyPublicAddress=
 ProxyKindFtp=1
 <§§- $g -§§>
 "@
-}
+  }
 
-function Sec-Sftp([string]$g, [string]$p) {
-  return @"
+  function Sec-Sftp([string]$g, [string]$p) {
+    return @"
 
 <§- $g -§>
 §DuplicatedKeys:False
@@ -157,10 +158,10 @@ SftpTransferBufferSize=32700
 SftpUMask=0022
 <§§- $g -§§>
 "@
-}
+  }
 
-function Sec-Ftp([string]$g, [string]$p) {
-  return @"
+  function Sec-Ftp([string]$g, [string]$p) {
+    return @"
 
 <§- $g -§>
 §DuplicatedKeys:False
@@ -218,11 +219,11 @@ FtpUseUnencryptedCommands=False
 FtpUseUnencryptedData=False
 <§§- $g -§§>
 "@
-}
+  }
 
-function Sec-Path([string]$g, [string]$path, [string]$sftp, [string]$ftp) {
-  # SDKind=1 = local/UNC path (confirmed from existing file)
-  return @"
+  function Sec-Path([string]$g, [string]$path, [string]$sftp, [string]$ftp) {
+    # SDKind=1 = local/UNC path (confirmed from existing file)
+    return @"
 
 <§- $g -§>
 §DuplicatedKeys:False
@@ -234,16 +235,16 @@ SDSftp={ *§* $sftp *§* }
 SDFtp={ *§* $ftp *§* }
 <§§- $g -§§>
 "@
-}
+  }
 
-function Sec-Schedule([string]$g, [string]$dt, [int[]]$days) {
-  # SchSchedule=2 = Weekly (confirmed from live MainList.lst — SQL tasks updated via UI)
-  # SchDaysOfWeek encoding: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat (confirmed)
-  # SchDateAndTime format: 'YYYY-MM-DD HH:MM:SS:' (trailing colon, no ms — confirmed)
-  # §DuplicatedKeys:True is required for repeating SchDaysOfWeek entries
-  $dateOnly = ($dt -split ' ')[0]
-  $dayLines = ($days | ForEach-Object { "SchDaysOfWeek=$_" }) -join "`r`n"
-  return @"
+  function Sec-Schedule([string]$g, [string]$dt, [int[]]$days) {
+    # SchSchedule=2 = Weekly (confirmed from live MainList.lst — SQL tasks updated via UI)
+    # SchDaysOfWeek encoding: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat (confirmed)
+    # SchDateAndTime format: 'YYYY-MM-DD HH:MM:SS:' (trailing colon, no ms — confirmed)
+    # §DuplicatedKeys:True is required for repeating SchDaysOfWeek entries
+    $dateOnly = ($dt -split ' ')[0]
+    $dayLines = ($days | ForEach-Object { "SchDaysOfWeek=$_" }) -join "`r`n"
+    return @"
 
 <§- $g -§>
 §DuplicatedKeys:True
@@ -258,12 +259,12 @@ SchTimerUpperLimit=${dateOnly} 23:59:00:
 SchUseOrdinaryDaysOfWeek=False
 <§§- $g -§§>
 "@
-}
+  }
 
-function Sec-PreEvent([string]$g, [string]$exe, [string]$params) {
-  # BEEventType=2 = Execute and wait (confirmed from Cobian UI test task)
-  # BEParameter1 = executable path, BEParameter2 = argument string
-  return @"
+  function Sec-PreEvent([string]$g, [string]$exe, [string]$params) {
+    # BEEventType=2 = Execute and wait (confirmed from Cobian UI test task)
+    # BEParameter1 = executable path, BEParameter2 = argument string
+    return @"
 
 <§- $g -§>
 §DuplicatedKeys:False
@@ -276,11 +277,11 @@ BEParameter2=$params
 BEParameter3=
 <§§- $g -§§>
 "@
-}
+  }
 
-function Sec-Task([string]$g, [hashtable]$j) {
-  $tid = ng
-  return @"
+  function Sec-Task([string]$g, [hashtable]$j) {
+    $tid = ng
+    return @"
 
 <§- $g -§>
 §DuplicatedKeys:True
@@ -328,144 +329,144 @@ TaskImpersonationDomain=.
 TaskImpersonationPassword=$E4
 <§§- $g -§§>
 "@
-}
-
-# ── Job definitions ───────────────────────────────────────────────────────────
-
-$jobs = @(
-  @{ Name = 'SQL - ProGet - Full';         Group = 'SQL Server Backups'; Database = 'ProGet';      BackupType = 'Full';         DateTime = Get-NextWeekdayDateTime 0 $ProGetFullStartTime;       Days = @(0) }
-  @{ Name = 'SQL - ProGet - Differential'; Group = 'SQL Server Backups'; Database = 'ProGet';      BackupType = 'Differential'; DateTime = Get-NextWeekdayDateTime 1 $ProGetDiffStartTime;       Days = @(1,2,3,4,5,6) }
-  @{ Name = 'SQL - BuildMaster - Full';    Group = 'SQL Server Backups'; Database = 'BuildMaster'; BackupType = 'Full';         DateTime = Get-NextWeekdayDateTime 0 $BuildMasterFullStartTime;   Days = @(0) }
-  @{ Name = 'SQL - BuildMaster - Differential'; Group = 'SQL Server Backups'; Database = 'BuildMaster'; BackupType = 'Differential'; DateTime = Get-NextWeekdayDateTime 1 $BuildMasterDiffStartTime; Days = @(1,2,3,4,5,6) }
-)
-
-# ── Validate ──────────────────────────────────────────────────────────────────
-if (-not (Test-Path $ListPath)) { throw "Not found: $ListPath" }
-if (-not (Test-Path $ScriptPath)) { throw "Not found: $ScriptPath" }
-if (-not (Test-Path $PwshExe)) { Write-Warning "pwsh.exe not found at: $PwshExe — Cobian may fail to launch the pre-event" }
-
-Write-Host "`n===== New-CobianSqlJobs =====" -ForegroundColor Cyan
-Write-Host "List file  : $ListPath"
-Write-Host "Script path: $ScriptPath"
-Write-Host "Backup root: $BackupRoot"
-Write-Host "pwsh.exe   : $PwshExe"
-
-# ── Stop Cobian service ───────────────────────────────────────────────────────
-$svc = Get-Service -ErrorAction SilentlyContinue |
-  Where-Object { $_.Name -like '*Cobian*' -or $_.DisplayName -like '*Cobian*' } |
-  Select-Object -First 1
-
-if ($svc) {
-  Write-Host "`nStopping: $($svc.Name) ..."
-  Stop-Service -Name $svc.Name -Force
-  $svc.WaitForStatus('Stopped', '00:00:30')
-  Write-Host '  Stopped.' -ForegroundColor Yellow
-} else {
-  Write-Warning 'Cobian service not found. Ensure the Cobian engine is closed before continuing.'
-  $null = Read-Host 'Press ENTER to continue (or Ctrl+C to abort)'
-}
-
-# ── Backup existing file ──────────────────────────────────────────────────────
-$bak = "$ListPath.bak_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
-Copy-Item $ListPath $bak
-Write-Host "Backup        : $bak" -ForegroundColor Green
-
-# ── Read file — detect and preserve native encoding (UTF-16 LE or UTF-8) ─────
-$sr = [System.IO.StreamReader]::new($ListPath, $true)   # detectEncodingFromBom=true
-$raw = $sr.ReadToEnd()
-$fileEncoding = $sr.CurrentEncoding
-$sr.Dispose()
-Write-Host "File encoding  : $($fileEncoding.EncodingName)"
-
-# ── Find root section GUID (always the first section in the file) ─────────────
-if ($raw -notmatch '<§- ([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}) -§>') {
-  throw "Cannot find root section GUID in $ListPath"
-}
-$rootGuid = $Matches[1]
-Write-Host "Root GUID     : $rootGuid"
-
-# ── Find existing task names (idempotency) ────────────────────────────────────
-$existingNames = @(
-  [regex]::Matches($raw, '(?m)^TaskName=(.+)$') |
-    ForEach-Object { $_.Groups[1].Value.Trim() }
-)
-Write-Host "Existing tasks: $($existingNames.Count)"
-$existingNames | ForEach-Object { Write-Host "  - $_" }
-
-# ── Build new sections ────────────────────────────────────────────────────────
-$newRefs = [System.Collections.Generic.List[string]]::new()
-$newSections = [System.Text.StringBuilder]::new()
-
-foreach ($job in $jobs) {
-
-  if ($existingNames -contains $job.Name) {
-    Write-Warning "Skipping (already exists): $($job.Name)"
-    continue
   }
 
-  # Ensure backup destination folder exists
-  $destPath = Join-Path $BackupRoot $job.Database
-  if (-not (Test-Path $destPath)) {
-    New-Item -ItemType Directory -Path $destPath -Force | Out-Null
-    Write-Host "  Created folder: $destPath"
+  # ── Job definitions ───────────────────────────────────────────────────────────
+
+  $jobs = @(
+    @{ Name = 'SQL - ProGet - Full'; Group = 'SQL Server Backups'; Database = 'ProGet'; BackupType = 'Full'; DateTime = Get-NextWeekdayDateTime 0 $ProGetFullStartTime; Days = @(0) }
+    @{ Name = 'SQL - ProGet - Differential'; Group = 'SQL Server Backups'; Database = 'ProGet'; BackupType = 'Differential'; DateTime = Get-NextWeekdayDateTime 1 $ProGetDiffStartTime; Days = @(1, 2, 3, 4, 5, 6) }
+    @{ Name = 'SQL - BuildMaster - Full'; Group = 'SQL Server Backups'; Database = 'BuildMaster'; BackupType = 'Full'; DateTime = Get-NextWeekdayDateTime 0 $BuildMasterFullStartTime; Days = @(0) }
+    @{ Name = 'SQL - BuildMaster - Differential'; Group = 'SQL Server Backups'; Database = 'BuildMaster'; BackupType = 'Differential'; DateTime = Get-NextWeekdayDateTime 1 $BuildMasterDiffStartTime; Days = @(1, 2, 3, 4, 5, 6) }
+  )
+
+  # ── Validate ──────────────────────────────────────────────────────────────────
+  if (-not (Test-Path $ListPath)) { throw "Not found: $ListPath" }
+  if (-not (Test-Path $ScriptPath)) { throw "Not found: $ScriptPath" }
+  if (-not (Test-Path $PwshExe)) { Write-Warning "pwsh.exe not found at: $PwshExe — Cobian may fail to launch the pre-event" }
+
+  Write-Host "`n===== New-CobianSqlJobs =====" -ForegroundColor Cyan
+  Write-Host "List file  : $ListPath"
+  Write-Host "Script path: $ScriptPath"
+  Write-Host "Backup root: $BackupRoot"
+  Write-Host "pwsh.exe   : $PwshExe"
+
+  # ── Stop Cobian service ───────────────────────────────────────────────────────
+  $svc = Get-Service -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -like '*Cobian*' -or $_.DisplayName -like '*Cobian*' } |
+    Select-Object -First 1
+
+  if ($svc) {
+    Write-Host "`nStopping: $($svc.Name) ..."
+    Stop-Service -Name $svc.Name -Force
+    $svc.WaitForStatus('Stopped', '00:00:30')
+    Write-Host '  Stopped.' -ForegroundColor Yellow
+  } else {
+    Write-Warning 'Cobian service not found. Ensure the Cobian engine is closed before continuing.'
+    $null = Read-Host 'Press ENTER to continue (or Ctrl+C to abort)'
   }
 
-  # Generate all 8 GUIDs for this task's sections
-  $tg = ng                                                   # task section
-  $evtg = ng                                                   # pre-event section
-  $dg = ng; $dsg = ng; $dsp = ng; $dfg = ng; $dfp = ng      # dest + sftp/ftp
-  $schg = ng                                                   # schedule
+  # ── Backup existing file ──────────────────────────────────────────────────────
+  $bak = "$ListPath.bak_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+  Copy-Item $ListPath $bak
+  Write-Host "Backup        : $bak" -ForegroundColor Green
 
-  $job['EvtGuid'] = $evtg
-  $job['DstGuid'] = $dg
-  $job['SchGuid'] = $schg
+  # ── Read file — detect and preserve native encoding (UTF-16 LE or UTF-8) ─────
+  $sr = [System.IO.StreamReader]::new($ListPath, $true)   # detectEncodingFromBom=true
+  $raw = $sr.ReadToEnd()
+  $fileEncoding = $sr.CurrentEncoding
+  $sr.Dispose()
+  Write-Host "File encoding  : $($fileEncoding.EncodingName)"
 
-  # Pre-event argument string passed to pwsh.exe
-  $psArgs = "-NonInteractive -File `"$ScriptPath`" -DatabaseName $($job.Database) -BackupType $($job.BackupType) -SevenZipCompress"
+  # ── Find root section GUID (always the first section in the file) ─────────────
+  if ($raw -notmatch '<§- ([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}) -§>') {
+    throw "Cannot find root section GUID in $ListPath"
+  }
+  $rootGuid = $Matches[1]
+  Write-Host "Root GUID     : $rootGuid"
 
-  # Root index entry (injected into root section before its closing tag)
-  $newRefs.Add("BackupTask={ *§* $tg *§* }")
+  # ── Find existing task names (idempotency) ────────────────────────────────────
+  $existingNames = @(
+    [regex]::Matches($raw, '(?m)^TaskName=(.+)$') |
+      ForEach-Object { $_.Groups[1].Value.Trim() }
+  )
+  Write-Host "Existing tasks: $($existingNames.Count)"
+  $existingNames | ForEach-Object { Write-Host "  - $_" }
 
-  # Build the 8 sections for this task
-  $null = $newSections.Append((Sec-Task $tg $job))
-  $null = $newSections.Append((Sec-PreEvent $evtg $PwshExe $psArgs))
-  $null = $newSections.Append((Sec-Path $dg $destPath $dsg $dfg))
-  $null = $newSections.Append((Sec-Sftp $dsg $dsp))
-  $null = $newSections.Append((Sec-Proxy $dsp))
-  $null = $newSections.Append((Sec-Ftp $dfg $dfp))
-  $null = $newSections.Append((Sec-Proxy $dfp))
-  $null = $newSections.Append((Sec-Schedule $schg $job.DateTime $job.Days))
+  # ── Build new sections ────────────────────────────────────────────────────────
+  $newRefs = [System.Collections.Generic.List[string]]::new()
+  $newSections = [System.Text.StringBuilder]::new()
 
-  Write-Host "  [+] $($job.Name)" -ForegroundColor Green
-}
+  foreach ($job in $jobs) {
 
-# ── Inject BackupTask references into root section ────────────────────────────
-if ($newRefs.Count -gt 0) {
-  $closeTag = "<§§- $rootGuid -§§>"
-  $insertion = ($newRefs -join "`r`n") + "`r`n"
-  $raw = $raw.Replace($closeTag, $insertion + $closeTag)
-}
+    if ($existingNames -contains $job.Name) {
+      Write-Warning "Skipping (already exists): $($job.Name)"
+      continue
+    }
 
-# ── Append all new sections to end of file ────────────────────────────────────
-# Normalize to CRLF: the script file is LF-encoded (VS Code default), so heredoc
-# strings use LF only. Cobian requires CRLF in its UTF-16 file. The regex leaves
-# existing \r\n pairs untouched and converts bare \n to \r\n.
-$newContent = $newSections.ToString() -replace '(?<!\r)\n', "`r`n"
-$raw += $newContent
+    # Ensure backup destination folder exists
+    $destPath = Join-Path $BackupRoot $job.Database
+    if (-not (Test-Path $destPath)) {
+      New-Item -ItemType Directory -Path $destPath -Force | Out-Null
+      Write-Host "  Created folder: $destPath"
+    }
 
-# ── Write file back — preserve original encoding (UTF-16 LE when Cobian UI rewrites) ──
-[System.IO.File]::WriteAllText($ListPath, $raw, $fileEncoding)
-Write-Host "`nSaved: $ListPath" -ForegroundColor Cyan
+    # Generate all 8 GUIDs for this task's sections
+    $tg = ng                                                   # task section
+    $evtg = ng                                                   # pre-event section
+    $dg = ng; $dsg = ng; $dsp = ng; $dfg = ng; $dfp = ng      # dest + sftp/ftp
+    $schg = ng                                                   # schedule
 
-# ── Restart Cobian service ────────────────────────────────────────────────────
-if ($svc) {
-  Write-Host "Starting: $($svc.Name) ..."
-  Start-Service -Name $svc.Name
-  $svc.WaitForStatus('Running', '00:00:30')
-  Write-Host '  Running.' -ForegroundColor Green
-}
+    $job['EvtGuid'] = $evtg
+    $job['DstGuid'] = $dg
+    $job['SchGuid'] = $schg
 
-Write-Host @'
+    # Pre-event argument string passed to pwsh.exe
+    $psArgs = "-NonInteractive -File `"$ScriptPath`" -DatabaseName $($job.Database) -BackupType $($job.BackupType) -SevenZipCompress"
+
+    # Root index entry (injected into root section before its closing tag)
+    $newRefs.Add("BackupTask={ *§* $tg *§* }")
+
+    # Build the 8 sections for this task
+    $null = $newSections.Append((Sec-Task $tg $job))
+    $null = $newSections.Append((Sec-PreEvent $evtg $PwshExe $psArgs))
+    $null = $newSections.Append((Sec-Path $dg $destPath $dsg $dfg))
+    $null = $newSections.Append((Sec-Sftp $dsg $dsp))
+    $null = $newSections.Append((Sec-Proxy $dsp))
+    $null = $newSections.Append((Sec-Ftp $dfg $dfp))
+    $null = $newSections.Append((Sec-Proxy $dfp))
+    $null = $newSections.Append((Sec-Schedule $schg $job.DateTime $job.Days))
+
+    Write-Host "  [+] $($job.Name)" -ForegroundColor Green
+  }
+
+  # ── Inject BackupTask references into root section ────────────────────────────
+  if ($newRefs.Count -gt 0) {
+    $closeTag = "<§§- $rootGuid -§§>"
+    $insertion = ($newRefs -join "`r`n") + "`r`n"
+    $raw = $raw.Replace($closeTag, $insertion + $closeTag)
+  }
+
+  # ── Append all new sections to end of file ────────────────────────────────────
+  # Normalize to CRLF: the script file is LF-encoded (VS Code default), so heredoc
+  # strings use LF only. Cobian requires CRLF in its UTF-16 file. The regex leaves
+  # existing \r\n pairs untouched and converts bare \n to \r\n.
+  $newContent = $newSections.ToString() -replace '(?<!\r)\n', "`r`n"
+  $raw += $newContent
+
+  # ── Write file back — preserve original encoding (UTF-16 LE when Cobian UI rewrites) ──
+  [System.IO.File]::WriteAllText($ListPath, $raw, $fileEncoding)
+  Write-Host "`nSaved: $ListPath" -ForegroundColor Cyan
+
+  # ── Restart Cobian service ────────────────────────────────────────────────────
+  if ($svc) {
+    Write-Host "Starting: $($svc.Name) ..."
+    Start-Service -Name $svc.Name
+    $svc.WaitForStatus('Running', '00:00:30')
+    Write-Host '  Running.' -ForegroundColor Green
+  }
+
+  Write-Host @'
 
 ===== Done =====
 Next steps:
@@ -480,3 +481,4 @@ Verification:
 Recovery (if tasks don't appear):
   Stop service, copy the .bak_ file back to MainList.lst, restart service.
 '@ -ForegroundColor White
+}

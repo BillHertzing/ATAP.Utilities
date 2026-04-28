@@ -253,7 +253,7 @@ Sources for the GitHub issue-to-branch workflow documented in Module Catalog Sec
 
 - [Creating a branch for an issue (GitHub Docs)](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-a-branch-for-an-issue)
 - [Creating and deleting branches within your repository](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-and-deleting-branches-within-your-repository)
-- [VS Code Branches and Worktrees](https://code.visualstudio.com/docs/sourcecontrol/branches-worktrees)
+- [VS Code Branches and Worktrees](https://code.visualstudio.com/docs/sourcecontrol/branches-workTrees)
 - [GitHub changelog: Create a branch for an issue (2022)](https://github.blog/changelog/2022-03-01-create-a-branch-for-an-issue/)
 - [GitHub Docs Enterprise Server 3.11: Creating a branch for an issue](https://docs.github.com/en/enterprise-server@3.11/issues/tracking-your-work-with-issues/using-issues/creating-a-branch-for-an-issue)
 

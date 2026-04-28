@@ -52,6 +52,20 @@ Power up the machine, boot through the USB stick
 
 The following steps are run via the Windows UI,
 
+## Determine and record the computer name
+
+In many custom Windows installation images, setup asks for the computer name during OOBE. If prompted, set it there and record it immediately.
+
+Use this value consistently everywhere in this document where `<COMPUTERNAME>` appears.
+
+To verify the current computer name after first login:
+
+```powershell
+$env:COMPUTERNAME
+```
+
+If this does not match the intended name, rename the computer before continuing with infrastructure configuration.
+
 ## set Timezone
 
 - via the Windows UI, change timezone as appropriate
@@ -204,6 +218,13 @@ run the program 'Everything' from a USB stick, get list to a file "01 Clean Wind
 ## Install Python for Windows for bootstrapping
 
 TBD - install python310 from an organization's internal repository
+
+## Related Reference — WSL2 Setup
+
+If this workstation will run Ansible, Docker, or related automation inside WSL2, use the
+standalone reference [WSL2Setup.md](./WSL2Setup.md) for the Ubuntu 24.04 install pattern,
+drive automount guidance, WSL2 networking notes, PowerShell-to-WSL trigger examples, and
+Docker interoperability notes.
 TBD - install python311 from a USB stick [TBD]
 Current - install Python from the internet
 
@@ -255,11 +276,336 @@ Windows Update -> Advanced Options -> Optional Updates
 
 ### Map User Directories to dropbox
 
-### Install SQL Server XCommunity edition
+### Install SQL Server Community Edition
+
+> **CRITICAL PREREQUISITE:** SQL Server Community Edition (latest version) **must** be installed and configured before installing ProGet or BuildMaster. Both Inedo products depend on SQL Server for their databases.
+
+#### Pre-Installation: Create SvcSQLServer Service Account
+
+Before installing SQL Server, create a dedicated Windows service account for running the SQL Server Engine service. This provides better auditability and password management.
+
+> **Prerequisites:**
+>
+> 1. Ensure a Bitwarden secret named `SvcSQLServer-<COMPUTERNAME>` exists in the `ComputerLogins` folder with:
+>    - Username: `SvcSQLServer`
+>    - Password: the service account password
+> 2. Ensure `ATAP.Utilities.PowerShell` module is loaded, which provides `New-LocalServiceAccount`:
+>
+> ```powershell
+> Import-Module ATAP.Utilities.PowerShell
+> ```
+>
+> If the module is not yet available, you can create this account manually via `lusrmgr.msc` and then grant `SeServiceLogonRight` with `ntrights.exe` or Active Directory Group Policy.
+
+Create the SvcSQLServer account:
+
+```powershell
+# Retrieve password from Bitwarden secret SvcSQLServer-<COMPUTERNAME> in ComputerLogins
+$secret = Get-BitWardenSecret -Name "SvcSQLServer-<COMPUTERNAME>" -FolderName "ComputerLogins"
+$pw = ConvertTo-SecureString -String $secret.password -AsPlainText -Force
+
+New-LocalServiceAccount `
+    -AccountName              SvcSQLServer `
+    -FullName                 'SQL Server Service Identity' `
+    -Description              'Dedicated Windows service account for SQL Server Database Engine' `
+    -Password                 $pw `
+    -GrantSeServiceLogonRight
+```
+
+Expected result: `Status = Success`, `UserCreated = True`, `SeServiceLogonRight = True`.
+
+**Bitwarden record requirement:** Ensure `SvcSQLServer-<COMPUTERNAME>` remains in `ComputerLogins` so the credential can be recovered for SQL Server service maintenance.
+
+---
+
+#### Step 1 — Download and Install SQL Server Community Edition
+
+1. Navigate to [SQL Server Community Edition Downloads](https://www.microsoft.com/en-us/sql-server/sql-server-downloads) in a web browser
+2. Select **Express** edition (note: Community Edition is now called SQL Server Express Community Edition)
+3. Run the installer (`SQLEXPR_*.exe`)
+4. Choose **Custom** installation type
+5. During feature selection, ensure the following are checked:
+   - **Database Engine Services** ✓ (required)
+   - **SQL Server Agent** ✓ (required for backup jobs and scheduled maintenance)
+   - SQL Server Replication (recommended)
+   - Machine Learning Services and Language Extensions (optional, for advanced scenarios)
+6. When prompted for **Service Accounts** configuration:
+   - For **SQL Server Database Engine**, select **Use the following user account** (instead of the default virtual account)
+   - Enter the account name: `<COMPUTERNAME>\SvcSQLServer` (replace `<COMPUTERNAME>` with your actual machine name, or use `.\SvcSQLServer` for local account)
+   - Enter the password you created in the pre-installation step
+   - For **SQL Server Agent**, also specify `<COMPUTERNAME>\SvcSQLServer` with the same password
+7. Accept the default paths or customize as needed
+8. Complete the installation
+9. **Verify and Configure SQL Server Agent:**
+   - After installation completes, open **SQL Server Configuration Manager**
+   - Navigate to **SQL Server Services**
+   - Verify **SQL Server (PRODUCTION)** shows **Log On As: COMPUTERNAME\SvcSQLServer**
+   - Verify **SQL Server Agent (PRODUCTION)** shows **Log On As: COMPUTERNAME\SvcSQLServer**
+   - Ensure both services have **Startup Type** set to **Automatic**
+   - Start both services if they are not already running:
+     ```powershell
+     Start-Service -Name 'MSSQL$PRODUCTION'
+     Start-Service -Name 'SQLAGENT$PRODUCTION'
+     Get-Service -Name 'MSSQL$PRODUCTION', 'SQLAGENT$PRODUCTION' | Select-Object Name, Status
+     # Expected output: Both services show Status = Running
+     ```
+   - SQL Server Engine and Agent are now running under the SvcSQLServer dedicated account
+
+#### Step 2 — Create and Configure the PRODUCTION Named Instance
+
+> **Why a named instance?** Using a named instance (e.g., `localhost\PRODUCTION`) separates this instance from any default SQL Server instance, improves security, and allows multiple instances to coexist on the same machine.
+
+During SQL Server installation, when prompted for **Instance Configuration**:
+
+1. Select **Named Instance** (not Default Instance)
+2. Enter instance name: `PRODUCTION`
+3. Instance ID will auto-populate as `PRODUCTION`
+4. Choose appropriate installation path (default is fine)
+
+#### Step 3 — Configure SQL Server to Listen on TCP
+
+SQL Server must be configured to accept TCP/IP connections. Use **SQL Server Configuration Manager**:
+
+```powershell
+# Open SQL Server Configuration Manager
+# (Search for "SQL Server Configuration Manager" in Windows Start menu)
+# OR run via PowerShell:
+Start-Process 'C:\Program Files\Microsoft SQL Server\170\Tools\Binn\SQLMANAGER.MSC' -Wait
+```
+
+In SQL Server Configuration Manager:
+
+1. Navigate to **SQL Server Network Configuration** → **Protocols for PRODUCTION**
+2. Right-click **TCP/IP** → **Enable**
+3. Right-click **TCP/IP** → **Properties**
+4. On the **Protocol** tab, ensure **Enabled** is set to `Yes`
+5. On the **IP Addresses** tab:
+   - Scroll to **IPAll** section at the bottom
+   - Verify **TCP Port** is set to a non-default port (e.g., `1433` for default, or `50001` for custom)
+   - **Important:** Do NOT use the default port `1433` if other SQL Server instances may exist; use a port like `50001`–`59999`
+6. Click **OK** to save
+7. Restart the **SQL Server (PRODUCTION)** service:
+   ```powershell
+   Restart-Service -Name 'MSSQL$PRODUCTION' -Force
+   ```
+
+#### Step 4 — Configure SQL Server Memory Limits
+
+For **development or "all-in-one" hosts**, SQL Server memory should be limited to a safe percentage of total system RAM:
+
+```powershell
+# Example: on a system with 32 GB RAM, set max to ~3.2 GB (10%)
+# Connect to SQL Server and run:
+
+$sqlInstance = 'localhost\PRODUCTION'
+$maxMemoryMB = [int]([System.Environment]::ProcessorCount * 256 * 0.10)  # 10% of total available
+
+$query = @"
+EXEC sp_configure 'max server memory (MB)', $maxMemoryMB;
+RECONFIGURE;
+"@
+
+Invoke-Sqlcmd -ServerInstance $sqlInstance -Query $query -Encrypt Optional
+```
+
+> **Rationale:** Allowing SQL Server to consume all available RAM can starve the OS and other applications, especially on shared dev machines. 10% is a conservative limit suitable for development and all-in-one deployments.
+
+#### Step 5 — Verify SQL Server PRODUCTION Instance is Running
+
+```powershell
+# Verify the service is running
+Get-Service -Name 'MSSQL$PRODUCTION' | Select-Object Name, Status
+
+# Expected output: Status = Running
+
+# Verify TCP connectivity
+sqlcmd -S 'localhost\PRODUCTION' -E -Q 'SELECT @@SERVERNAME, @@VERSION'
+
+# Expected output: Shows <COMPUTERNAME>\PRODUCTION and SQL Server version
+```
+
+#### Step 6 — Create Service User Accounts (Before Installing ProGet/BuildMaster)
+
+Creating dedicated Windows service accounts provides better auditability and password management than default virtual service accounts.
+
+> **Prerequisite:** Ensure `ATAP.Utilities.PowerShell` module is loaded, which provides `New-LocalServiceAccount`:
+>
+> ```powershell
+> Import-Module ATAP.Utilities.PowerShell
+> ```
+>
+> If the module is not yet available, you can create these accounts manually via `lusrmgr.msc` and then grant `SeServiceLogonRight` with `ntrights.exe` or Active Directory Group Policy.
+
+##### Create SvcProGet Account
+
+Create this account **before** installing ProGet:
+
+```powershell
+# Retrieve or set the password and store it in Bitwarden
+$pw = Read-Host -Prompt 'SvcProGet password' -AsSecureString
+
+New-LocalServiceAccount `
+    -AccountName              SvcProGet `
+    -FullName                 'ProGet Service Identity' `
+    -Description              'Dedicated Windows service account for Inedo ProGet' `
+    -Password                 $pw `
+    -GrantSeServiceLogonRight
+```
+
+Expected result: `Status = Success`, `UserCreated = True`, `SeServiceLogonRight = True`.
+
+**Store the password in Bitwarden:** Use `Get-BitWardenSecret` in your `LoginScript.ps1` to retrieve this at system startup, or record it in Bitwarden for safekeeping.
+
+##### Create SvcBuildmaster Account
+
+Create this account **before** installing BuildMaster:
+
+```powershell
+$pw = Read-Host -Prompt 'SvcBuildmaster password' -AsSecureString
+
+New-LocalServiceAccount `
+    -AccountName              SvcBuildmaster `
+    -FullName                 'BuildMaster Service Identity' `
+    -Description              'Dedicated Windows service account for Inedo BuildMaster' `
+    -Password                 $pw `
+    -GrantSeServiceLogonRight
+```
+
+Expected result: `Status = Success`, `UserCreated = True`, `SeServiceLogonRight = True`.
+
+---
+
+## Create Additional SQL Server Named Instances
+
+After SQL Server is installed and the `PRODUCTION` instance is verified running, create the
+`Integration` and `QA` named instances. These are required for the sprint-based development
+workflow and must exist before ProGet or BuildMaster attempt to use them.
+
+> **Why separate instances?** Each instance (`Integration`, `QA`, `PRODUCTION`) maps to a
+> promotion tier in the BuildMaster pipeline. Flyway migrations and package deployments
+> target the appropriate instance at each stage. Running them on separate named instances
+> prevents a broken migration on one tier from affecting others.
+
+### Create the Integration Instance
+
+```powershell
+Install-SqlServerInstance `
+    -DatabaseHost        'localhost' `
+    -SqlInstance         'Integration' `
+    -Version             '2022' `
+    -AuthenticationMode  Windows `
+    -SqlServerSetupPath  'D:\Temp\SQLExpr\extracted'
+```
+
+After creation, configure TCP and set memory limits as for PRODUCTION (Steps 3–4 above),
+using the port reserved for Integration in `HostSettings.ps1`
+(`SqlServerIntegrationPortConfigRootKey`).
+
+### Create the QA Instance
+
+```powershell
+Install-SqlServerInstance `
+    -DatabaseHost        'localhost' `
+    -SqlInstance         'QA' `
+    -Version             '2022' `
+    -AuthenticationMode  Windows `
+    -SqlServerSetupPath  'D:\Temp\SQLExpr\extracted'
+```
+
+After creation, configure TCP and set memory limits, using the port reserved for QA
+(`SqlServerQaPortConfigRootKey`).
+
+### Verify All Three Instances
+
+```powershell
+@('PRODUCTION', 'Integration', 'QA') | ForEach-Object {
+    sqlcmd -S "localhost\$_" -E -Q 'SELECT @@SERVERNAME' -l 5
+}
+```
+
+Expected: each command returns `<COMPUTERNAME>\<InstanceName>` with no errors.
+
+> **Sprint start reminder:** At the beginning of each sprint, run `Install-SqlServerInstance`
+> for any sprint-specific instances (e.g., `Integration`, `QA`) that do not yet exist on
+> the target machine. The `PRODUCTION` instance is permanent and only created once.
+
+### Build ATAPUtilities Database on All Instances
+
+After all three instances exist and are accessible, build the `ATAPUtilities` database on
+each one in sequence using the convenience script:
+
+```powershell
+# From the ATAP.Utilities repository root:
+.\Database\Powershell\public\Rebuild-All-AllInstances.ps1
+```
+
+This script builds `ATAPUtilities` on `QA` (Testing environment), `Integration`
+(Development environment), and `Production` (Production environment) in order,
+applying all Flyway migrations with `-Force` (drop + recreate). It continues to the
+next instance if one fails, then throws at the end if any failed.
+
+See `Database\Powershell\public\Rebuild-All-AllInstances.ps1` for the full script.
+
+---
+
+## Install ProGet and BuildMaster (After SQL Server Setup)
+
+> **Prerequisites completed:**
+>
+> - ✅ SQL Server Community Edition installed with PRODUCTION named instance
+>   ✅ TCP enabled on the PRODUCTION instance
+>   ✅ Memory limits configured (10% of total RAM for dev hosts)
+>   ✅ Service accounts SvcProGet and SvcBuildmaster created
+>
+> Now proceed with ProGet and BuildMaster installation.
 
 #### Create PRODUCTION instance
 
-### Developer tools
+##### Step 7 — Verify Service Account Permissions on Databases (After ProGet and BuildMaster Install)
+
+After both ProGet and BuildMaster are installed, you must grant the service accounts `db_owner` rights on their respective databases.
+
+##### Grant SvcProGet db_owner on ProGet Database
+
+After ProGet is installed (see below), run:
+
+```powershell
+Initialize-SqlServiceLogin `
+    -SqlInstance              'localhost\PRODUCTION' `
+    -DatabaseName             'ProGet' `
+    -ServiceAccount           "$env:COMPUTERNAME\SvcProGet" `
+    -Encrypt                  Optional `
+    -TrustServerCertificate
+```
+
+Then reconfigure the ProGet Windows service to log on as `SvcProGet`:
+
+```powershell
+sc.exe config INEDOPROGETSVC obj= "$env:COMPUTERNAME\SvcProGet" password= '<password>'
+```
+
+##### Grant SvcBuildmaster db_owner on BuildMaster Database
+
+After BuildMaster is installed (see below), run:
+
+```powershell
+Initialize-SqlServiceLogin `
+    -SqlInstance              'localhost\PRODUCTION' `
+    -DatabaseName             'BuildMaster' `
+    -ServiceAccount           "$env:COMPUTERNAME\SvcBuildmaster" `
+    -Encrypt                  Optional `
+    -TrustServerCertificate
+```
+
+Then reconfigure the BuildMaster Windows service to log on as `SvcBuildmaster`:
+
+```powershell
+sc.exe config INEDOBUILDMASTERSVC obj= "$env:COMPUTERNAME\SvcBuildmaster" password= '<password>'
+```
+
+---
+
+## Developer tools
 
 #### Add aaronontheweb/mssql-mcp SQL MCP Server
 
@@ -302,7 +648,7 @@ dotnet build -c Release
 > sqlcmd -S 'localhost\PRODUCTION' -E -Q 'SELECT @@SERVERNAME, @@VERSION'
 > ```
 >
-> Expected: returns `<hostname>\PRODUCTION` and the SQL Server version string.
+> Expected: returns `<COMPUTERNAME>\PRODUCTION` and the SQL Server version string.
 
 ##### Step 1 — Download and run Inedo Hub
 
@@ -360,11 +706,24 @@ connection string) and a Bitwarden-sourced encryption key placeholder:
 
 ##### Step 4 — Bootstrap the SQL service login (one-time)
 
-Run this once after ProGet is installed and the service account `NT SERVICE\INEDOPROGETSVC`
-exists. Call it from the `ATAP.Utilities.BuildTooling.PowerShell` module:
+Run this once after ProGet is installed. Use one of these two approaches:
+
+**Option A — default virtual service account** (`NT SERVICE\INEDOPROGETSVC`, from
+`ATAP.Utilities.BuildTooling.PowerShell`):
 
 ```powershell
 Initialize-ProGetSqlServiceLogin -Encrypt Optional -TrustServerCertificate
+```
+
+**Option B — dedicated local account** (`SvcProGet`, created in the pre-install section above):
+
+```powershell
+Initialize-SqlServiceLogin `
+    -SqlInstance    'localhost\PRODUCTION' `
+    -DatabaseName   'ProGet' `
+    -ServiceAccount "$env:COMPUTERNAME\SvcProGet" `
+    -Encrypt        Optional `
+    -TrustServerCertificate
 ```
 
 Expected output (timestamps will differ):
@@ -438,7 +797,225 @@ Expected output: `ProGet`
 
 See `_Planning/Explainers/0002-ProGet-Setup.md` Steps 4–8 for:
 
-- Creating the `PROGET_ADMIN_API_TOKEN` API key in the ProGet UI
+- Creating the `PROGET_ADMIN_API_KEY` API key in the ProGet UI
 - Registering NuGet feeds in `NuGet.config`
 - Registering PowerShell feeds with `Register-PSResourceRepository`
 - Setting up inter-tier connectors
+
+---
+
+##### Step 9 — Set `Web.BaseUrl` to include the custom port (CRITICAL)
+
+<!-- Philote: 7a5d02d4-895c-41ba-9b57-9862328281d7 -->
+
+**Symptom:** `Register-PSRepository` or `Register-PSResourceRepository` fails with:
+
+```
+... is an invalid Web Uri
+```
+
+**Root cause:** When ProGet is listening on a non-default port, it constructs all absolute
+links using its `Web.BaseUrl` setting (Administration → Advanced Settings). If `Web.BaseUrl`
+is left at the factory default (e.g. `http://localhost/` with no port), ProGet returns a
+**302 redirect** that points to the wrong port. `Register-PSRepository` follows the redirect
+and then fails because the resulting URL is unreachable.
+
+This is a **guaranteed blocker** on every new machine: the feed registers successfully in
+the ProGet UI, but every PowerShell `Register-*` call fails silently with this error.
+
+**Fix — set `Web.BaseUrl` in the ProGet Administration panel:**
+
+1. Log in to ProGet → **Administration** → **Advanced Settings**
+2. Search for `Web.BaseUrl`
+3. Set the value to `http://<hostname>:<port>` — scheme + hostname + port only, no trailing
+   path. Example: `http://utat022:50000`
+4. Click **Save**
+
+The port to use is stored in the global settings:
+
+```powershell
+$port    = $global:settings[$global:configRootKeys['ProGetAdminUriPortConfigRootKey']]
+$baseUrl = $global:settings[$global:configRootKeys['ProGetBaseUrlConfigRootKey']]
+# $baseUrl is a [UriBuilder] built from scheme + hostname + $port in HostSettings.ps1
+```
+
+**Diagnostic — verify before registering feeds:**
+
+```powershell
+$baseUrl = $global:settings[$global:configRootKeys['ProGetBaseUrlConfigRootKey']]
+$probe   = Invoke-WebRequest "$baseUrl/nuget/<feed-name>/" -UseBasicParsing -ErrorAction SilentlyContinue
+$probe.StatusCode
+# 200  → ProGet is reachable; proceed to register feeds
+# 302  → Web.BaseUrl is wrong (missing port or wrong hostname) — fix it first
+# 401/403 → URL is reachable but credentials are needed — check API key / anonymous access
+```
+
+**Post-fix feed registration (PSResourceGet v3):**
+
+```powershell
+Register-PSResourceRepository `
+    -Name    'IntPrePSRProdPullFeed' `
+    -Uri     "$baseUrl/nuget/IntPrePSRProdPullFeed/" `
+    -Trusted
+```
+
+**Legacy PowerShellGet (v2):**
+
+```powershell
+Register-PSRepository `
+    -Name              'IntPrePSRProdPullFeed' `
+    -SourceLocation    "$baseUrl/nuget/IntPrePSRProdPullFeed/" `
+    -PublishLocation   "$baseUrl/nuget/IntPrePSRProdPullFeed/" `
+    -InstallationPolicy Trusted
+```
+
+> **Note:** HostSettings.ps1 in the `ATAP.IAC` repository builds `$baseUrl` via
+> `[UriBuilder]::new(scheme, hostname, port)` and stores it under `ProGetBaseUrlConfigRootKey`.
+> Always use that value — never hard-code the port.
+
+---
+
+##### Step 10 — ProGet.Service.exe CLI verbs reference
+
+<!-- Philote: 50c1d535-5b55-4388-af2c-4d473627bfdb -->
+
+`ProGet.Service.exe` (found in the ProGet install directory, typically
+`C:\Program Files\ProGet\`) accepts the following verbs. Use `run` during troubleshooting
+to see live log output; use `install` / `installweb` for production.
+
+| Verb                         | What it does                                                                                                                                           |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `run`                        | Launches ProGet in the current console window — streams all log output to stdout. Use for debugging a service that refuses to start under Windows SCM. |
+| `install`                    | Registers the **background-tasks** Windows service (`INEDOPROGETSVC`). Accepts `--user`/`--password` for a dedicated service account.                  |
+| `installweb`                 | Registers the **self-hosted web server** Windows service (`INEDOPROGETWEBSRV`). Accepts `--url` for the HTTP.SYS reservation.                          |
+| `uninstall` / `uninstallweb` | Removes the respective Windows service(s).                                                                                                             |
+| `resetadminpassword`         | Resets the built-in directory and sets `Admin` / `Admin` credentials. Run locally or in a container only.                                              |
+
+**Common `run` recipes:**
+
+```powershell
+# Background tasks only (no HTTP listener) — good for quick config verification:
+.\ProGet.Service.exe run --mode=serviceonly
+
+# Full stack on a temp port — live log + web UI:
+.\ProGet.Service.exe run --mode=both --urls=http://*:8080/
+```
+
+**Production install with dedicated service account:**
+
+```powershell
+# Create Windows service (background tasks):
+.\ProGet.Service.exe install --user "$env:COMPUTERNAME\SvcProGet" --password '<password>'
+
+# Register self-hosted web server on the configured port:
+$port = $global:settings[$global:configRootKeys['ProGetAdminUriPortConfigRootKey']]
+.\ProGet.Service.exe installweb --url="http://+:$port/"
+```
+
+**Why use `run` before `install`?**
+If `Start-Service INEDOPROGETSVC` fails silently, run the exe interactively — the full
+.NET exception stack trace is printed to the console, which is far more useful than the
+generic "service did not respond in a timely fashion" Windows error.
+
+**Logging:**
+
+- **Console** — `run` streams everything at Info level or above to stdout.
+- **Windows Event Log** — always active for the installed service; see
+  **Windows Logs → Application**, source `InedoProGet`.
+- **Rolling log files** — configure via `ProGet.config`:
+  ```xml
+  <Logging Level="Debug" Path="D:\ProGetLogs" RetentionDays="14" />
+  ```
+- Fine-grained knobs (e.g. `Diagnostics.FeedErrorLogging`) are in
+  **Administration → Advanced Settings**.
+
+---
+
+## Troubleshooting — ProGet Feed Management
+
+### Delete an orphaned feed via the Management API
+
+<!-- Philote: 90ab74a9-31fe-488a-b56a-828f5b305071 -->
+
+The ProGet web UI occasionally leaves orphaned feeds after a migration, bulk rename, or
+partial install. The only reliable way to remove them is the Management REST API.
+
+> ⚠️ **This operation is irreversible.** The call permanently deletes the feed record and
+> every package stored inside it. Deactivate the feed first (Administration → Feeds →
+> Deactivate) and verify the contents via `GET /api/management/feeds/list` before
+> proceeding. Recovery requires restoring from a SQL Server backup.
+
+#### Prerequisites
+
+| Requirement     | Detail                                                                                               |
+| --------------- | ---------------------------------------------------------------------------------------------------- |
+| API key         | Must have **Use/Manage Feeds** (system key) or **Overwrite/Delete** on the specific feed (feed key). |
+| Endpoint        | `DELETE /api/management/feeds/delete/{feed-name}`                                                    |
+| Auth header     | `X-ApiKey: <your-key>`                                                                               |
+| ProGet base URL | `$global:settings[$global:configRootKeys['ProGetBaseUrlConfigRootKey']]`                             |
+
+#### Step 1 — List feeds to confirm the exact name
+
+```powershell
+$baseUrl = $global:settings[$global:configRootKeys['ProGetBaseUrlConfigRootKey']]
+$apiKey  = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
+
+Invoke-RestMethod `
+    -Uri     "$baseUrl/api/management/feeds/list" `
+    -Method  Get `
+    -Headers @{ 'X-ApiKey' = $apiKey }
+```
+
+Returns a JSON array of feed objects. Locate the exact `name` value before deleting.
+
+#### Step 2 — Delete the feed
+
+```powershell
+$baseUrl  = $global:settings[$global:configRootKeys['ProGetBaseUrlConfigRootKey']]
+$apiKey   = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
+$feedName = 'IntPreNugetDevPushFeed'   # replace with the name confirmed in Step 1
+
+try {
+    Invoke-RestMethod `
+        -Uri     "$baseUrl/api/management/feeds/delete/$feedName" `
+        -Method  Delete `
+        -Headers @{ 'X-ApiKey' = $apiKey }
+    Write-PSFMessage -Level Important -Message "Feed '$feedName' deleted successfully."
+}
+catch {
+    Write-PSFMessage -Level Error -Message "Feed delete failed: $_"
+    throw
+}
+```
+
+HTTP 200 with no body = success. Common errors:
+
+| Status | Meaning                                                      |
+| ------ | ------------------------------------------------------------ |
+| 403    | API key missing, wrong, or lacks Use/Manage Feeds permission |
+| 404    | Feed name not found — verify with `feeds/list` first         |
+
+#### Alternative: pgutil CLI
+
+If `pgutil` is installed and reachable:
+
+```powershell
+$port = $global:settings[$global:configRootKeys['ProGetAdminUriPortConfigRootKey']]
+pgutil feed delete `
+    --feed="$feedName" `
+    --apikey="$apiKey" `
+    --url="$baseUrl"
+```
+
+`pgutil` does the HTTP call and prints a status line — convenient in CI/CD scripts.
+
+#### After deletion
+
+- The feed disappears from the ProGet UI immediately.
+- Any `NuGet.config` entries or `Register-PSResourceRepository` registrations pointing at
+  the deleted feed will return 404. Remove those references:
+  ```powershell
+  Unregister-PSResourceRepository -Name $feedName -ErrorAction SilentlyContinue
+  ```
+- If the deletion was accidental, restore from the most recent SQL Server backup of the
+  `ProGet` database on `localhost\PRODUCTION`.

@@ -776,3 +776,230 @@ Store the remote repository URL and credentials
 # use sparingly, because this file gets locked and won't sync with Dropbox
 [Environment]::SetEnvironmentVariable( 'SSLKEYLOGFILE', '"C:\Dropbox\Security\SSLKeyLogFile.txt"', 'Machine' )
 ````
+
+---
+
+## Bitwarden Session Bootstrap
+
+<!-- Philote: e1304e80-8720-4212-b842-b7c17d3f100d -->
+
+### Problem
+
+The Bitwarden desktop application does **not** write a `BW_SESSION` environment variable
+into the Windows session on login. `BW_SESSION` must be acquired explicitly at the start
+of each PowerShell session.
+
+### Rules
+
+**BSB-1** — Acquire `BW_SESSION` once per shell session:
+
+```powershell
+$env:BW_SESSION = bw unlock --passwordenv BW_PASSWORD --raw
+```
+
+Run this in your PowerShell profile (`Microsoft.PowerShell_profile.ps1`) so every new
+terminal automatically unlocks the vault.
+
+**BSB-2** — `BW_PASSWORD` must not be stored in plain-text files or committed to source
+control. Store it in Windows Credential Manager or in a securely permissioned startup
+script readable only by the current user.
+
+**BSB-3** — VS Code terminals inherit `BW_SESSION` **only** if VS Code was launched from
+a shell where `BW_SESSION` was already set. If you open VS Code from the Start menu after
+your profile has run, the VS Code process will have the env var; if you open it from a
+fresh shell that has not yet run the unlock, it will not.
+
+**BSB-4** — `BW_SESSION` is valid only for the lifetime of the terminal/shell session.
+Do **not** persist it to a file, write it to the registry, or export it to
+`[System.Environment]::SetEnvironmentVariable` at Machine scope. Invalidate it explicitly
+with `bw lock` when the session is done if desired.
+
+### Recommended profile pattern
+
+```powershell
+# In Microsoft.PowerShell_profile.ps1
+if ($env:BW_PASSWORD) {
+    $env:BW_SESSION = bw unlock --passwordenv BW_PASSWORD --raw
+}
+```
+
+This guard prevents the unlock attempt when `BW_PASSWORD` is absent (e.g., on CI agents
+that use the API-key flow instead — see §Service Accounts / CI below).
+
+---
+
+## Known Issues: Bitwarden SecretManagement Extension
+
+<!-- Philote: 8e7bb62c-099e-47ae-aabf-82e2a6fe8b6f -->
+
+### Issue: `match`-property null-cast error
+
+**Affected modules:** `SecretManagement.BitWarden` and `SecretManagement.Warden`
+
+**Symptom:**
+
+```
+Failed to retrieve secret from Bitwarden. Exception: Exception setting "match":
+"The property 'match' cannot be found on this object. Verify that the property
+exists and can be set."
+```
+
+**Root cause:** Inside the extension, the code iterates over every `login.uri` object
+and unconditionally casts its `match` property:
+
+```powershell
+$_.login.uris.ForEach({ [BitwardenUriMatchType]$_.match = [int]$_.match })
+```
+
+When a URI object has no `match` field (e.g., a simple string URI added without a
+match type in the Bitwarden UI, or a CLI output shape change), PowerShell throws the
+error above. The bug is in the extension code; the vault item definition is not at fault.
+
+**Workaround — null-guard patch:**
+
+Locate the offending line in the installed module and wrap it:
+
+```powershell
+$_.login.uris.ForEach({
+    if ($_.PSObject.Properties['match']) {
+        [BitwardenUriMatchType]$_.match = [int]$_.match
+    }
+})
+```
+
+**Preferred workaround (avoid the extension entirely):** Call `bw` directly:
+
+```powershell
+$secret = bw get password 'my-secret-name' --session $env:BW_SESSION
+```
+
+This bypasses the extension JSON-handling layer. Use this approach until upstream
+modules publish a patched release.
+
+**Cross-references:** `SecretsPluginArchitecture.md`, `Module Catalog.md` §3.3.9
+
+---
+
+## Service Accounts / CI
+
+<!-- Philote: 5ed118cb-1711-4ea2-b32f-1cb9184baa05 -->
+
+### Principle
+
+CI/CD pipelines must **never** use an interactive `bw login` flow. Use the Bitwarden
+API-key authentication path so the vault can be unlocked non-interactively inside a
+headless service process (Jenkins agent, Windows service, GitHub Actions runner, etc.).
+
+### Setup — Bitwarden side
+
+1. Create a **dedicated Bitwarden service account** (a separate Bitwarden account or an
+   Organisation member with collection-scoped access limited to CI secrets).
+2. In the Bitwarden web vault, navigate to **Settings → Security → API Key** and generate
+   an API key. Record `client_id` and `client_secret`.
+
+### Setup — machine / agent side
+
+Store the following as **machine-scope** (or service-account-user-scope) Windows
+environment variables — **not** as plain-text files or in source code:
+
+| Variable | Contents |
+| -------- | -------- |
+| `BW_CLIENTID` | `client_id` from Bitwarden API Key screen |
+| `BW_CLIENTSECRET` | `client_secret` from Bitwarden API Key screen |
+| `BW_PASSWORD` | Master password of the CI service account |
+
+Provision these before installing the Jenkins service (or before starting the agent).
+See `NewComputerSetup.md` § Jenkins bootstrap.
+
+### Runtime unlock sequence
+
+```powershell
+# Run once during agent/service startup, before any secret reads
+bw login --apikey   # reads BW_CLIENTID / BW_CLIENTSECRET from env
+$env:BW_SESSION = bw unlock --passwordenv BW_PASSWORD --raw
+```
+
+Check-before-login guard:
+
+```powershell
+if (-not (bw status | Select-String '"status":"unlocked"')) {
+    bw login --apikey
+}
+$env:BW_SESSION = bw unlock --passwordenv BW_PASSWORD --raw
+```
+
+Retrieve a secret in a pipeline step:
+
+```powershell
+$secret = bw get password 'my-secret-name' --session $env:BW_SESSION
+```
+
+### Security practices
+
+- **Separate vault / org:** grant the CI account access only to the collection(s) it needs.
+- **Never write `BW_SESSION` to disk:** keep it only in the process environment.
+- **Rotate API keys** on the same schedule as other CI service credentials.
+- **`BW_PASSWORD` in Jenkins credentials store:** inject it as an environment variable
+  per job; do not bake it into node configuration or service wrapper scripts.
+- At job end, call `bw lock` to invalidate the session token for the process lifetime.
+
+## PSResourceGet Credential-at-Rest: Register-PSResourceRepository -CredentialInfo
+
+<!-- Philote: dda5026c-aefd-481f-9927-fb2b16618339 -->
+
+**Rule CIR-1 — Never store credentials in plain text when registering a repository.**
+Do not embed passwords, PATs, or API keys in `$PROFILE`, in `PSRepositories.xml`, or
+as inline `-Credential` arguments. Both locations are world-readable by any process
+running as the same user.
+
+**Rule CIR-2 — Use `-CredentialInfo` with a SecretManagement vault.**
+PSResourceGet v3 (`Microsoft.PowerShell.PSResourceGet`) supports a `-CredentialInfo`
+parameter on `Register-PSResourceRepository`. A `PSCredentialInfo` object binds the
+registration to a named vault + secret name. PSResourceGet re-fetches the credential
+from the vault on each operation — no plain-text credential is stored in the repository
+registration.
+
+```powershell
+# 1. Store the PAT/password in a SecretManagement vault once
+Set-Secret -Name 'ProGetPAT' -Vault 'SecretStore' -Secret '<your-PAT>'
+
+# 2. Create a PSCredentialInfo object referencing vault + secret name
+$credInfo = [Microsoft.PowerShell.PSResourceGet.UtilClasses.PSCredentialInfo]::new(
+    'SecretStore', 'ProGetPAT'
+)
+
+# 3. Register the feed — credential is never encoded into PSRepositories.xml
+Register-PSResourceRepository `
+    -Name    'ProGet' `
+    -Uri     'http://proget.local:8624/nuget/PowerShell/v3/index.json' `
+    -Trusted `
+    -CredentialInfo $credInfo
+```
+
+**Rule CIR-3 — This replaces the legacy `-Credential` inline pattern.**
+The old `Register-PSRepository` (PowerShellGet v2) accepted `-Credential [PSCredential]`
+directly, which required the caller to resolve the secret first and pass it as a live
+object. With `-CredentialInfo`, binding is deferred to call time by the PSResourceGet
+runtime — the resolved secret is never captured in a variable in your profile.
+
+**Rule CIR-4 — Vault must be unlocked before any PSResourceGet command.**
+If the vault (e.g. `SecretStore` with a vault password) is not unlocked,
+PSResourceGet will throw a credential-resolution error. Ensure the vault is unlocked in
+the same session before calling `Find-PSResource`, `Install-PSResource`, or
+`Publish-PSResource` against a private feed.
+
+> **Cross-reference:** `NewComputerSetup.md` — ProGet feed registration step.
+> Use this pattern whenever adding a private ProGet or Azure Artifacts feed during
+> workstation setup.
+
+### Summary
+
+| Approach | Credential stored in | Safe? |
+|---|---|---|
+| `-Credential (Get-StoredCredential)` inline | memory (temporary) | risky if logged |
+| `-Credential` in `$PROFILE` | plain-text profile file | **NO** |
+| `PSRepositories.xml` XML-encoded | registry / AppData XML | **NO** |
+| `-CredentialInfo` (PSResourceGet v3) | SecretManagement vault | **YES** |
+
+**Source:** `AI on VSC and Powershell and Repository Feeds.md` §4 Private feeds
+(lines 314–321, 340).

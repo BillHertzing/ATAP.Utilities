@@ -36,7 +36,7 @@ function Install-SqlServerInstance {
 
   .PARAMETER Version
   SQL Server version value for dbatools instance creation.
-  Examples: '16.0', '2022', '15.0', '2019'.
+  Examples:  '2022', '2025''.  Default:'2022'
 
   .PARAMETER Feature
   Feature set passed to dbatools. Default: 'Default'.
@@ -47,15 +47,20 @@ function Install-SqlServerInstance {
   .PARAMETER AdminAccount
   Optional sysadmin account(s) to assign.
 
+  .PARAMETER SqlServerSetupPath
+  Path to the extracted SQL Server setup media folder containing setup.exe.
+  Required by dbatools Install-DbaInstance even when SQL Server is already installed —
+  the media is needed to add a new named instance. Default: 'D:\Temp\SQLExpr\extracted'.
+
   .OUTPUTS
   PSCustomObject containing request metadata and dbatools output.
 
   .EXAMPLE
-  Install-SqlServerInstance -DatabaseHost 'localhost' -SqlInstance 'Development' -Version '16.0' -IntegratedSecurity
+  Install-SqlServerInstance -DatabaseHost 'localhost' -SqlInstance 'Integration' -Version '2022' -IntegratedSecurity
   Creates a named instance using Windows-integrated context.
 
   .EXAMPLE
-  Install-SqlServerInstance -DatabaseHost 'utat022' -SqlInstance 'Testing' -Version '2022' -AuthenticationMode Mixed -CredentialsKey 'SQL_Testing_SA'
+  Install-SqlServerInstance -DatabaseHost 'utat022' -SqlInstance 'QA' -Version '2022' -AuthenticationMode Mixed -CredentialsKey 'SQL_Testing_SA'
   Creates a named instance in mixed mode using Bitwarden credentials.
 
   .NOTES
@@ -67,7 +72,7 @@ function Install-SqlServerInstance {
   [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKey',
     Justification = 'CredentialsKey is a vault lookup key name, not a credential')]
   [Alias('New-SqlServerInstance')]
-  [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+  [CmdletBinding(SupportsShouldProcess = $true)]
   param(
     [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
     [ValidateNotNullOrEmpty()]
@@ -85,6 +90,10 @@ function Install-SqlServerInstance {
     [ValidateRange(1, 65535)]
     [int]$Port,
 
+    [Parameter(Mandatory = $false)]
+    [ValidateSet('Windows', 'Mixed')]
+    [string]$AuthenticationMode = 'Windows',
+
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
     [switch]$IntegratedSecurity,
 
@@ -93,18 +102,18 @@ function Install-SqlServerInstance {
 
     [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
-    [string]$Version = '16.0',
+    [string]$Version = '2022',
 
     [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
     [string]$Feature = 'Default',
 
     [Parameter(Mandatory = $false)]
-    [ValidateSet('Windows', 'Mixed')]
-    [string]$AuthenticationMode = 'Windows',
+    [string[]]$AdminAccount,
 
     [Parameter(Mandatory = $false)]
-    [string[]]$AdminAccount
+    [ValidateNotNullOrEmpty()]
+    [string]$SqlServerSetupPath = 'D:\Temp\SQLExpr\extracted'
   )
 
   begin {
@@ -136,11 +145,12 @@ function Install-SqlServerInstance {
       "$DatabaseHost\$SqlInstance"
     }
 
-    $useIntegratedSecurity = $true
+    # Default: Windows integrated security unless a CredentialsKey is explicitly supplied
+    $useIntegratedSecurity = [string]::IsNullOrWhiteSpace($CredentialsKey)
     $vaultSecret = $null
     $saCredential = $null
 
-    if (-not [string]::IsNullOrWhiteSpace($CredentialsKey)) {
+    if (-not $useIntegratedSecurity) {
       try {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolving CredentialsKey '$CredentialsKey' from Bitwarden."
         $vaultSecret = Get-BitWardenSecret -SecretName $CredentialsKey
@@ -151,15 +161,17 @@ function Install-SqlServerInstance {
 
         $securePassword = ConvertTo-SecureString -String $vaultSecret.Password -AsPlainText -Force
         $saCredential = New-Object System.Management.Automation.PSCredential($vaultSecret.UserName, $securePassword)
-        $useIntegratedSecurity = $false
       } catch {
         $errorMessage = "Failed resolving credentials for key '$CredentialsKey'. Exception: $($_.Exception.Message)"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
         throw
       }
-    } elseif (-not $IntegratedSecurity.IsPresent) {
-      $IntegratedSecurity = $true
-      $useIntegratedSecurity = $true
+    }
+
+    if ($Port -and $ConnectionMethod -ne 'tcp') {
+      $errorMessage = "Port may only be specified when ConnectionMethod is 'tcp'. ConnectionMethod is '$ConnectionMethod'."
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      throw $errorMessage
     }
 
     if ($AuthenticationMode -eq 'Mixed' -and -not $saCredential) {
@@ -192,12 +204,27 @@ function Install-SqlServerInstance {
     # when CredentialsKey is supplied, IntegratedSecurity is disabled and SQL auth creds are used.
     # This cmdlet already tracks this behavior via $useIntegratedSecurity and vault-secret resolution.
 
+    # Validate setup media path and configure dbatools — required even when SQL Server is
+    # already installed; Install-DbaInstance always needs setup.exe + CAB files to add a
+    # new named instance.
+    if (-not (Test-Path -Path $SqlServerSetupPath -PathType Container)) {
+      $errorMessage = "SQL Server setup media folder not found: '$SqlServerSetupPath'. Provide the path to the extracted setup media via -SqlServerSetupPath."
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      throw $errorMessage
+    }
+    Set-DbatoolsConfig -Name 'Path.SQLServerSetup' -Value $SqlServerSetupPath
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Set dbatools Path.SQLServerSetup to '$SqlServerSetupPath'"
+
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Prepared SQL Server installation for target '$targetInstanceName' using dbatools Install-DbaInstance."
 
     if ($PSCmdlet.ShouldProcess($targetInstanceName, 'Install SQL Server instance')) {
       try {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Tag 'DbaToolsCall' -Message "Calling Install-DbaInstance for target $targetInstanceName"
-        $installResult = Install-DbaInstance @installParams
+        # Install-DbaInstance has ConfirmImpact=High and will prompt even when the caller
+        # passes -Confirm:$false. Suppress by setting ConfirmPreference to None for this
+        # scope so the prompt is never raised.
+        $ConfirmPreference = 'None'
+        $installResult = Install-DbaInstance @installParams -Confirm:$false
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Tag 'DbaToolsCall' -Message "Successfully returned from Install-DbaInstance for target $targetInstanceName"
 
         [PSCustomObject]@{
@@ -219,6 +246,24 @@ function Install-SqlServerInstance {
         $errorMessage = "Install-DbaInstance failed for '$targetInstanceName'. Exception: $($_.Exception.Message)"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
         throw
+      }
+    } else {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Installation of '$targetInstanceName' was cancelled by user."
+      [PSCustomObject]@{
+        DatabaseHost       = $DatabaseHost
+        SqlInstance        = $SqlInstance
+        TargetInstance     = $targetInstanceName
+        ConnectionMethod   = $ConnectionMethod
+        Port               = $Port
+        IntegratedSecurity = [bool]$useIntegratedSecurity
+        CredentialsKey     = $CredentialsKey
+        AuthenticationMode = $AuthenticationMode
+        Feature            = $Feature
+        Version            = $Version
+        InstallResult      = $null
+        Success            = $false
+        Cancelled          = $true
+        TimestampUtc       = (Get-Date).ToUniversalTime()
       }
     }
   }

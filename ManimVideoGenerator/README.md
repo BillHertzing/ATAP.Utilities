@@ -35,6 +35,53 @@ manim checkhealth      # all checks should pass
 
 ---
 
+## Project Structure
+
+New scenes follow a two-file pattern:
+
+| File               | Location     | Purpose                                               |
+| ------------------ | ------------ | ----------------------------------------------------- |
+| `<name>_scene.py`  | `Scenes/`    | Manim `Scene` subclass — drawing/animation logic only |
+| `render_<name>.py` | `Renderers/` | Entry-point script that invokes Manim via subprocess  |
+
+### Adding a new scene
+
+1. Create `Scenes/<name>_scene.py` with your `Scene` subclass.
+2. Create `Renderers/render_<name>.py` using the template below — note `parents[1]` so `SCRIPT_DIR` resolves to the project root regardless of where the script lives:
+
+```python
+#!/usr/bin/env python3
+"""Render script for <Name> Scene."""
+import subprocess
+from datetime import datetime
+from pathlib import Path
+
+PYTHON_EXE     = r"C:\Python311\python.exe"
+SCRIPT_DIR     = Path(__file__).resolve().parents[1]   # ManimVideoGenerator/
+OUTPUT_DIR     = SCRIPT_DIR / "_generated"
+SCENE_FILE     = SCRIPT_DIR / "Scenes" / "<name>_scene.py"
+SCENE_NAME     = "<SceneClassName>"
+RUN_OUTPUT_DIR = OUTPUT_DIR / f"_render_run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+def render(quality: str = "h") -> int:
+    RUN_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    cmd = [
+        PYTHON_EXE, "-m", "manim",
+        str(SCENE_FILE), SCENE_NAME,
+        f"-q{quality}",
+        "--media_dir", str(RUN_OUTPUT_DIR),
+    ]
+    result = subprocess.run(cmd, cwd=str(SCRIPT_DIR))
+    return result.returncode
+
+if __name__ == "__main__":
+    raise SystemExit(render())
+```
+
+---
+
 ## Creating a New Scene Project
 
 Manim provides a project scaffolding command. Run it from the root of `ManimVideoGenerator\`.

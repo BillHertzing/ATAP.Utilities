@@ -126,7 +126,7 @@ namespace ATAP.Utilities.BuildTooling {
           // ToDo: test to ensure that restore picks .10 over .9
           // removing this: {Patch.ToString(patchStringFormat)
           string str = $"{Major.ToString()}.{Minor.ToString()}.{Patch.ToString()}";
-          // LifeCycleStage is Production if this is a publicly available release package 
+          // LifeCycleStage is Production if this is a publicly available release package
           bool isPublicReleasePackage = (LifeCycleStage == lifeCycleStageProduction);
           // If not a PublicReleasePackage, then add a development label to the PackageVersion
           if(!isPublicReleasePackage) {
@@ -288,6 +288,11 @@ namespace ATAP.Utilities.BuildTooling {
           return true;
       }
   }
+
+#if false
+// OBSOLETE — GetVersion, UpdateVersion, and SetVersion MSBuild Task classes.
+// Version management is now handled by Nerdbank.GitVersioning (NBGV).
+// These classes are retained here for historical reference only and are NOT compiled.
 
   /// <summary></summary>
   public class GetVersion : Task {
@@ -630,5 +635,6 @@ namespace ATAP.Utilities.BuildTooling {
         set;
     }
     }
+#endif // end OBSOLETE MSBuild Task classes
 }
 

@@ -633,7 +633,7 @@ The repository's pattern for feature libraries (`<FeatureName>.StringConstants`,
 
 ##### Recommended Directory Structure
 
-```
+```path
 src/
 └── <FeatureName>/
     ├── <FeatureName>.StringConstants/
@@ -757,20 +757,20 @@ For pipelines where a `JenkinsClient` service (or Jenkins agent) runs on a build
 2. Store `BW_CLIENTID`, `BW_CLIENTSECRET`, and `BW_PASSWORD` as Jenkins Credentials (secret text / username+password) — **not** in scripts or files on disk.
 3. At agent startup (or in a pre-build wrapper), map those credentials into environment variables and run:
 
-```bash
-# Login (once per workspace / node image)
-bw login --apikey    # uses BW_CLIENTID / BW_CLIENTSECRET env vars
+   ```bash
+   # Login (once per workspace / node image)
+   bw login --apikey    # uses BW_CLIENTID / BW_CLIENTSECRET env vars
 
-# Unlock and capture the session token
-BW_SESSION=$(bw unlock --passwordenv BW_PASSWORD --raw)
-export BW_SESSION
-```
+   # Unlock and capture the session token
+   BW_SESSION=$(bw unlock --passwordenv BW_PASSWORD --raw)
+   export BW_SESSION
+   ```
 
-In PowerShell:
+   In PowerShell:
 
-```powershell
-$env:BW_SESSION = bw unlock --passwordenv BW_PASSWORD --raw
-```
+   ```powershell
+   $env:BW_SESSION = bw unlock --passwordenv BW_PASSWORD --raw
+   ```
 
 4. All downstream pipeline stages use `bw get password '<item-name>'` or `Get-Secret -Name '<item-name>'` without further prompts.
 5. Do **not** write `BW_SESSION` to disk; keep it in process environment scope only.
@@ -793,10 +793,10 @@ When VS Code is launched from an interactive shell that has already unlocked Bit
 
 1. In your PowerShell profile (`Microsoft.PowerShell_profile.ps1`), unlock Bitwarden and set `BW_SESSION`:
 
-```powershell
-# Profile snippet — runs automatically when the shell starts
-$env:BW_SESSION = bw unlock --raw
-```
+   ```powershell
+   # Profile snippet — runs automatically when the shell starts
+   $env:BW_SESSION = bw unlock --raw
+   ```
 
 2. Launch VS Code from **that same shell**: `code .`
    VS Code inherits the full environment, including `BW_SESSION`.
@@ -892,18 +892,18 @@ Use with the standard Bitwarden Password Manager:
 
 1. In WSL (before running Docker), ensure `BW_SESSION` is set and generate an `.env` file:
 
-```bash
-echo "DB_PASSWORD=$(bw get password db-prod)" > /tmp/app.env
-echo "API_KEY=$(bw get password my-api-key)" >> /tmp/app.env
-chmod 600 /tmp/app.env
-```
+   ```bash
+   echo "DB_PASSWORD=$(bw get password db-prod)" > /tmp/app.env
+   echo "API_KEY=$(bw get password my-api-key)" >> /tmp/app.env
+   chmod 600 /tmp/app.env
+   ```
 
 2. Mount the file into the container at run time:
 
-```bash
-docker run --env-file /tmp/app.env your-image
-# or with Docker Compose:  env_file: /tmp/app.env
-```
+   ```bash
+   docker run --env-file /tmp/app.env your-image
+   # or with Docker Compose:  env_file: /tmp/app.env
+   ```
 
 3. Delete `/tmp/app.env` after the container starts if the file should not persist.
 
@@ -911,7 +911,7 @@ docker run --env-file /tmp/app.env your-image
 
 ##### Auto-creating BW_SESSION on WSL Login (Bash / pwsh)
 
-To mirror the Windows logon-script behaviour — automatically setting `BW_SESSION` on every shell startup inside Ubuntu WSL — hook a function into the appropriate startup file.
+To mirror the Windows logon-script behavior — automatically setting `BW_SESSION` on every shell startup inside Ubuntu WSL — hook a function into the appropriate startup file.
 
 **Bash hook (`~/.bashrc` or `~/.bash_profile`):**
 

@@ -1,25 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
-    <!-- Assembly, File, and Package Information for this assembly-->
-    <!-- Build and revision are created based on date-->
-    <MajorVersion>1</MajorVersion>
-    <MinorVersion>0</MinorVersion>
-    <PatchVersion>0</PatchVersion>
-    <!-- Current Lifecycle stage for this assembly-->
-    <PackageLifeCycleStage>Production</PackageLifeCycleStage>
-    <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
-    <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
-    <PackageLabel>NA</PackageLabel>
-    <!-- Facade/Aggregator project - no source files to compile -->
-    <EnableDefaultItems>false</EnableDefaultItems>
   </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="Newtonsoft\ATAP.Utilities.Serializer.Shim.Newtonsoft.csproj" />
-    <ProjectReference Include="Plugin\ATAP.Utilities.Serializer.Shim.Plugin.csproj" />
-    <ProjectReference Include="ServiceStack\ATAP.Utilities.Serializer.Shim.ServiceStack.csproj" />
     <ProjectReference Include="SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" />
+    <!-- ServiceStack excluded: Serializer.Shim.ServiceStack.cs references the legacy ISerializerOptions interface (renamed to ISerializerOptionsAbstract) and does not implement the full ISerializerConfigurableAbstract contract. Re-enable after a code-level refactor parallel to the Newtonsoft shim. -->
+    <!-- <ProjectReference Include="ServiceStack\ATAP.Utilities.Serializer.Shim.ServiceStack.csproj" /> -->
+    <!-- Plugin excluded: depends on ATAP.Utilities.Loader and ATAP.Utilities.FileIO with unresolved types (ILoadDynamicSubModules, IDynamicSubModulesInfo). Re-enable after the Loader package is restored or the dynamic-loading code is migrated. -->
+    <!-- <ProjectReference Include="Plugin\ATAP.Utilities.Serializer.Shim.Plugin.csproj" /> -->
   </ItemGroup>
+
+  <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
+  </ItemGroup>
+
 </Project>

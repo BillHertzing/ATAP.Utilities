@@ -37,7 +37,7 @@ New-WorktreeWithJunctions -SourceRepoPath 'C:\Dropbox\whertzing\GitHub\ATAP.Util
 Creates a new worktree in the parent directory for branch 63 and recreates all junctions.
 
 .EXAMPLE
-$result = New-WorktreeWithJunctions -SourceRepoPath 'C:\repos\MyProject' -WorktreePath 'C:\worktrees\feature-branch' -BranchName 'feature/new-feature'
+$result = New-WorktreeWithJunctions -SourceRepoPath 'C:\repos\MyProject' -WorktreePath 'C:\workTrees\feature-branch' -BranchName 'feature/new-feature'
 if ($result.Success) {
     Write-Output "Created worktree with $($result.JunctionsCreated) junctions"
 }
@@ -55,7 +55,7 @@ that contains a junction. Use Remove-Item (without -Recurse) to remove a junctio
 safely — this removes the reparse point only and does not touch the junction target.
 
 SPRINT WORKTREES: By default this cmdlet recreates junctions with the same targets as
-the source repository. For sprint worktrees, the .claude, .github, and .vscode junctions
+the source repository. For sprint workTrees, the .claude, .github, and .vscode junctions
 should target the SharedVSCode sprint worktree rather than the SharedVSCode main worktree.
 Recreate the junctions in the sprint worktree afterwards with Set-WorktreeJunctions using
 -DevSourceRepoPath pointing to the SharedVSCode sprint worktree and

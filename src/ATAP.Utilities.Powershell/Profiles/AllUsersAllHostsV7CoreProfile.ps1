@@ -125,8 +125,7 @@ function Write-EnvironmentVariablesIndented {
         if ($key -eq 'path') {
           $outstr += ' ' * $initialIndent + $key + ' (' + $scope + ') = ' + [Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) + `
           $($($($envVarHashTable[$key] -split [IO.Path]::PathSeparator) | Sort-Object) -join $([Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) ) ) + [Environment]::NewLine
-        }
-        else {
+        } else {
           $outstr += ' ' * $initialIndent + $key + ' = ' + $envVarHashTable[$key] + '  [' + $scope + ']' + [Environment]::NewLine
         }
       }
@@ -177,10 +176,28 @@ $PSDefaultParameterValues = @{
 # encoding : [System.Text.Encoding]::UTF8 which results in System.Text.UTF8Encoding+UTF8EncodingSealed
 
 # Dot source the list of configuration keys
+# ToDo: active development; currently a package, eventually a DB call?
+# Load the helper script
+try {
+  if (-not (Get-Command -Name 'Set-GlobalConfigRootKeys' -CommandType Function -ErrorAction SilentlyContinue)) {
+    $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
+    $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-98-sprint-0006-work-items'
+    $projectpathRel = 'src\ATAP.Utilities.ConfigRootKeys.Powershell'
+    $cmdletPathRel = 'public\Set-GlobalConfigRootKeys.ps1'
+    . $(Join-Path $repobasepath $projectpathRel $cmdletPathRel)
+  }
+} catch {
+  $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
+  Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+  throw
+}
+Set-GlobalConfigRootKeys
+
 # Configuration root key .ps1 files should be a peer of the machine profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+
 # ToDo: have Ansible write a complete global_ConfigRootKeys.ps1 file instead of using fragments that have a hostspecific set of keys
-. $PSHOME/global_ConfigRootKeys.ps1
-. $PSHOME/global_ConfigRootKeys.IAC.Fragments/global_ConfigRootKeys.IAC.Fragment.Hosts.ps1
+# . $PSHOME/global_ConfigRootKeys.ps1
+# . $PSHOME/global_ConfigRootKeys.IAC.Fragments/global_ConfigRootKeys.IAC.Fragment.Hosts.ps1
 # Print the global:ConfigRootKeys if Debug
 # Write-PSFMessage -Level Debug -Message ('global:configRootKeys:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:configRootKeys ($indent + $indentIncrement) $indentIncrement) + '}' )
 
@@ -190,11 +207,10 @@ $PSDefaultParameterValues = @{
 # during the transition to packaging, try first the computers local machine directory
 if (Test-Path -Path "$env:ProgramFiles\Powershell\Modules\ATAP.Utilities.Powershell\Resources\HostSettings.ps1") {
   . "$env:ProgramFiles\Powershell\Modules\\ATAP.Utilities.Powershell\Resources\HostSettings.ps1"
-}
-elseif (Test-Path -Path "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\ATAP.IAC\Windows\HostSettings.ps1") {
-  . "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\ATAP.IAC\Windows\HostSettings.ps1"
-}
-else {
+} elseif (Test-Path -Path "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\ATAP.IAC\Windows\HostSettings.ps1") {
+  # . "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\ATAP.IAC\Windows\HostSettings.ps1"
+  . "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\ATAP.IAC-wt-7-sprint-0006-work-items\Windows\HostSettings.ps1"
+} else {
   Write-PSFMessage -Level Debug -Message ('HostSettings.ps1 not found')
 }
 # . $(Join-Path -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.IAC', 'Windows', 'HostSettings.ps1'))
@@ -212,14 +228,14 @@ $global:settings = Get-HostSettings $hostName
 
 # temporary - Use this structure for passwords that will eventually be stored in a vault
 # These are throwaway passwords, just for testing
-$global:VaultData = @{
-  'BuildSetsAdminProductionCredentialsKeyValue'          = 'ChangeMe_!234'
-  'BuildSetsAdminTestingCredentialsKeyValue'             = 'ChangeMe_!234'
-  'BuildSetsAdminDevelopmentCredentialsKeyValue'         = 'ChangeMe_!234'
-  'BuildSetsAdminExperimentalCredentialsKeyValue'        = 'ChangeMe_!234'
-  'PCMSCAdminExperimentalCredentialsKeyValue'            = 'ChangeMe_!234'
-  'PCMSC_CEPasswordVaultKey'                             = 'ChangeMe!'
-}
+# $global:VaultData = @{
+#   'BuildSetsAdminProductionCredentialsKeyValue'   = 'ChangeMe_!234'
+#   'BuildSetsAdminTestingCredentialsKeyValue'      = 'ChangeMe_!234'
+#   'BuildSetsAdminDevelopmentCredentialsKeyValue'  = 'ChangeMe_!234'
+#   'BuildSetsAdminExperimentalCredentialsKeyValue' = 'ChangeMe_!234'
+#   'PCMSCAdminExperimentalCredentialsKeyValue'     = 'ChangeMe_!234'
+#   'PCMSC_CEPasswordVaultKey'                      = 'ChangeMe!'
+# }
 
 
 # 'Group Vars' 'Role Vars' 'Host Vars'
@@ -244,8 +260,7 @@ $inheritedEnvironmentVariable = [System.Environment]::GetEnvironmentVariable('En
 $inProcessEnvironmentVariable = ''
 if ($inheritedEnvironmentVariable) {
   $inProcessEnvironmentVariable = $inheritedEnvironmentVariable
-}
-else {
+} else {
   $inProcessEnvironmentVariable = 'Production' # default for all machines is Production, can be overwritten on a per-process basis if needed
 }
 $global:settings[$global:configRootKeys['ENVIRONMENTConfigRootKey']] = $inProcessEnvironmentVariable
@@ -310,8 +325,7 @@ function Set-CredentialFile {
     if ($force) {
       # ToDo: check for ACL permissions to create
       New-Item -Path $SharedSecureCredentialDirectory -ItemType Container > $null
-    }
-    else {
+    } else {
       throw "$SharedSecureCredentialDirectory does not exist"
     }
     if ($(Test-Path -Path $credentialFilePath -PathType Leaf)) {

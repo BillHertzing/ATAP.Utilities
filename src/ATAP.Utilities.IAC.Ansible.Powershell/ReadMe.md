@@ -1197,3 +1197,9 @@ To install IIS via the GUI, see
 ### Add SSLServer certificate to Jenkins
 
 [How can I set up Jenkins CI to use https on Windows?](https://stackoverflow.com/questions/5313703/how-can-i-set-up-jenkins-ci-to-use-https-on-windows)
+## 5-Tier Module Flow
+
+Use the module-level getting started guide for the lifecycle workflow:
+
+- [Documentation/GettingStarted.md](Documentation/GettingStarted.md)
+

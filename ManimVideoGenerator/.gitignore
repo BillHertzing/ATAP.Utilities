@@ -8,3 +8,5 @@ __pycache__/
 
 media/
 # NOTE:media is generated output, it may soon go under _generated/media.
+
+History/

@@ -4,8 +4,9 @@
 > **Related documents:** [GenericPluginArchitecture.md](GenericPluginArchitecture.md) - [PLugin Creation Prompt.md](PLugin%20Creation%20Prompt.md)
 > **Primary source packages:** `ATAP.Utilities.Secrets`, `ATAP.Utilities.Secrets.Shim.Bitwarden`, `ATAP.Utilities.Loader`
 > **Existing implementations being consolidated:**
->   - `src/ATAP.Utilities.Configuration.Secrets/` (standalone: ISecretProvider, SecretProvidersBuilder)
->   - `src/ATAP.Utilities.Configuration/Secrets/Shims/` (shim-based: IConfigurationSecrets, IConfigurationSecretsShim, BitwardenSecretsShim)
+>
+> - `src/ATAP.Utilities.Configuration.Secrets/` (standalone: ISecretProvider, SecretProvidersBuilder)
+> - `src/ATAP.Utilities.Configuration/Secrets/Shims/` (shim-based: IConfigurationSecrets, IConfigurationSecretsShim, BitwardenSecretsShim)
 
 ---
 
@@ -26,6 +27,7 @@ ATAP.Utilities.Secrets is the first plugin family (after the reference Serialize
 ### 2.1 Implementation A: `src/ATAP.Utilities.Configuration.Secrets/`
 
 **Files:**
+
 - `ISecretProvider.cs` -- `ISecretProvider` interface with `ProviderName`, `IsAvailable()`, `GetSecretAsync()`
 - `SecretMapping.cs` -- record mapping secret name + field to configuration key
 - `SecretProvidersBuilder.cs` -- fluent builder: `AddBitwardenPasswordManager()`, `AddBitwardenSecretsManager()`
@@ -44,6 +46,7 @@ ATAP.Utilities.Secrets is the first plugin family (after the reference Serialize
 ### 2.2 Implementation B: `src/ATAP.Utilities.Configuration/Secrets/Shims/`
 
 **Files:**
+
 - `Interfaces/IConfigurationSecrets.cs` -- consumer interface with `GetSecretAsync()`, `SecretExistsAsync()`
 - `Interfaces/IConfigurationSecretsShim.cs` -- plugin shim contract with `ProviderName`, `GetSecretAsync()`, `SecretExistsAsync()`
 - `ATAP.Utilities.Configuration.Secrets.Shims.Body.cs` -- `ConfigurationSecretsShims` router: iterates all registered shims, returns first non-null
@@ -61,23 +64,23 @@ ATAP.Utilities.Secrets is the first plugin family (after the reference Serialize
 
 The new `ATAP.Utilities.Secrets` family takes the **best of both**:
 
-| Feature | Source | New Location |
-|---------|--------|-------------|
-| `ISecretsAbstract` interface | Merge of `ISecretProvider` (A) + `IConfigurationSecretsShim` (B) | `Secrets/Interfaces/ISecretsAbstract.cs` |
-| `SecretMapping` record | Implementation A | `Secrets/Model/SecretMapping.cs` |
-| Options pattern (`BwCliPath`, `Timeout`, `SessionEnvVarName`) | Implementation A's `BitwardenPasswordManagerOptions` | `Secrets/Shim/Bitwarden/BitwardenSecretsOptions.cs` |
-| Bitwarden `bw` CLI invocation | Implementation B's `BitwardenSecretsShim.RunBwAsync()` (cleaner) | `Secrets/Shim/Bitwarden/BitwardenSecretsShim.cs` |
-| Custom `IConfigurationSource`/`IConfigurationProvider` | Implementation A's `SecretProvidersConfigurationProvider` | `Secrets/Shim/Bitwarden/BitwardenConfigurationProvider.cs` |
-| Multi-provider router | Implementation B's `ConfigurationSecretsShims` | `Secrets/Model/SecretsRouter.cs` |
-| DI extensions | Implementation B's `ServiceCollectionExtensions` | `Secrets/Shim/Bitwarden/ServiceCollectionExtensions.cs` |
-| `IPluginShim<ISecretsAbstract>` | New (generic plugin architecture) | `Secrets/Interfaces/ISecretsPluginShim.cs` |
-| Dynamic loading | New (ILoadDynamicSubModules) | `Secrets/Shim/Plugin/SecretsPluginLoader.cs` |
+| Feature                                                       | Source                                                           | New Location                                               |
+| ------------------------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------- |
+| `ISecretsAbstract` interface                                  | Merge of `ISecretProvider` (A) + `IConfigurationSecretsShim` (B) | `Secrets/Interfaces/ISecretsAbstract.cs`                   |
+| `SecretMapping` record                                        | Implementation A                                                 | `Secrets/Model/SecretMapping.cs`                           |
+| Options pattern (`BwCliPath`, `Timeout`, `SessionEnvVarName`) | Implementation A's `BitwardenPasswordManagerOptions`             | `Secrets/Shim/Bitwarden/BitwardenSecretsOptions.cs`        |
+| Bitwarden `bw` CLI invocation                                 | Implementation B's `BitwardenSecretsShim.RunBwAsync()` (cleaner) | `Secrets/Shim/Bitwarden/BitwardenSecretsShim.cs`           |
+| Custom `IConfigurationSource`/`IConfigurationProvider`        | Implementation A's `SecretProvidersConfigurationProvider`        | `Secrets/Shim/Bitwarden/BitwardenConfigurationProvider.cs` |
+| Multi-provider router                                         | Implementation B's `ConfigurationSecretsShims`                   | `Secrets/Model/SecretsRouter.cs`                           |
+| DI extensions                                                 | Implementation B's `ServiceCollectionExtensions`                 | `Secrets/Shim/Bitwarden/ServiceCollectionExtensions.cs`    |
+| `IPluginShim<ISecretsAbstract>`                               | New (generic plugin architecture)                                | `Secrets/Interfaces/ISecretsPluginShim.cs`                 |
+| Dynamic loading                                               | New (ILoadDynamicSubModules)                                     | `Secrets/Shim/Plugin/SecretsPluginLoader.cs`               |
 
 ---
 
 ## 3. New Project Structure
 
-```
+```path
 src/ATAP.Utilities.Secrets/
 │
 ├── ATAP.Utilities.Secrets.csproj                          Facade (EnableDefaultItems=false)
@@ -767,6 +770,7 @@ if ($bw.IsAvailable()) {
 ## 12. Migration Plan
 
 ### Phase 1: Create New Package Structure
+
 1. Create all projects listed in Section 3
 2. Implement interfaces and model classes
 3. Implement `BitwardenSecretsShim` (consolidated from both implementations)
@@ -775,11 +779,13 @@ if ($bw.IsAvailable()) {
 6. Implement DI extension methods
 
 ### Phase 2: Test
+
 7. Unit tests for `BitwardenSecretsShim` (mock `bw` CLI process)
 8. Unit tests for `SecretsRouter` multi-provider routing
 9. Integration tests with actual Bitwarden vault
 
 ### Phase 3: Deprecate Old Implementations
+
 10. Add `[Obsolete]` attributes to classes in `src/ATAP.Utilities.Configuration.Secrets/`
 11. Add `[Obsolete]` attributes to classes in `src/ATAP.Utilities.Configuration/Secrets/Shims/`
 12. Update consuming code to reference new `ATAP.Utilities.Secrets` packages
@@ -791,18 +797,117 @@ if ($bw.IsAvailable()) {
 
 The architecture supports adding new providers by creating a new Shim subproject:
 
-| Provider | Package | Status |
-|----------|---------|--------|
-| Bitwarden Password Manager | `ATAP.Utilities.Secrets.Shim.Bitwarden` | Implementing (this document) |
-| Bitwarden Secrets Manager | `ATAP.Utilities.Secrets.Shim.BitwardenSM` | Planned (machine-to-machine via `bws` CLI) |
-| KeePass | `ATAP.Utilities.Secrets.Shim.KeePass` | Planned |
-| Azure Key Vault | `ATAP.Utilities.Secrets.Shim.AzureKeyVault` | Future |
-| HashiCorp Vault | `ATAP.Utilities.Secrets.Shim.HashiCorpVault` | Future |
-| Environment Variables | `ATAP.Utilities.Secrets.Shim.EnvironmentVariable` | Future (simple wrapper) |
+| Provider                   | Package                                           | Status                                     |
+| -------------------------- | ------------------------------------------------- | ------------------------------------------ |
+| Bitwarden Password Manager | `ATAP.Utilities.Secrets.Shim.Bitwarden`           | Implementing (this document)               |
+| Bitwarden Secrets Manager  | `ATAP.Utilities.Secrets.Shim.BitwardenSM`         | Planned (machine-to-machine via `bws` CLI) |
+| KeePass                    | `ATAP.Utilities.Secrets.Shim.KeePass`             | Planned                                    |
+| Azure Key Vault            | `ATAP.Utilities.Secrets.Shim.AzureKeyVault`       | Future                                     |
+| HashiCorp Vault            | `ATAP.Utilities.Secrets.Shim.HashiCorpVault`      | Future                                     |
+| Environment Variables      | `ATAP.Utilities.Secrets.Shim.EnvironmentVariable` | Future (simple wrapper)                    |
 
 Each provider creates:
+
 1. A `.csproj` under `Shim/{ProviderName}/`
 2. A class implementing `ISecretsConfigurableAbstract` (or `ISecretsAbstract` for simple providers)
 3. A provider-specific options class
 4. `ServiceCollectionExtensions.cs` with `Add{Provider}Secrets()`
 5. `ConfigurationBuilderExtensions.cs` with `Add{Provider}SecretsToConfiguration()`
+
+---
+
+## 14. Concrete Shims
+
+`ISecretsAbstract` is for retrieving secret values. That means only backends that can
+actually return a password, token, or field value should be modeled as Secrets-family
+shims. Bitwarden's Public API is useful for organisation administration, but because it
+cannot return vault contents it should not be treated as an `ISecretsAbstract`
+implementation.
+
+### 14.1 Backend Comparison
+
+| Backend                    | Primary tool / protocol                                 | Best fit                                                                | Planned ATAP implementation                                     | `ISecretsAbstract` mapping                      | Output shape                                         | Notes                                                                                                                              |
+| -------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Bitwarden Password Manager | `bw` CLI                                                | Developer workstations and interactive automation                       | `ATAP.Utilities.Secrets.Shim.Bitwarden`                         | Yes. This is the current concrete shim.         | JSON for `bw get item`; string for `bw get password` | Uses a human vault. Supports email plus master-password login or personal API key, but still requires vault unlock before reads.   |
+| Bitwarden Secrets Manager  | `bws` CLI or Secrets Manager REST API / SDK             | CI/CD, headless servers, Docker / Kubernetes secret injection           | `ATAP.Utilities.Secrets.Shim.BitwardenSM`                       | Yes. Planned machine-to-machine shim.           | JSON or direct secret value depending on client      | Uses scoped machine tokens and does not depend on a human vault session. This is the preferred service-account backend.            |
+| Bitwarden Public API       | HTTPS admin API                                         | Organisation administration, metadata, membership, groups, audit events | Separate admin client if needed; not part of the Secrets family | No. It should not implement `ISecretsAbstract`. | JSON metadata only                                   | Cannot return secret contents. If used at all, it belongs in an administrative abstraction rather than the secrets retrieval path. |
+| KeePass                    | `keepassxc-cli` or `kpcli` against a local `.kdbx` file | Offline laptops, air-gapped labs, zero-server environments              | `ATAP.Utilities.Secrets.Shim.KeePass`                           | Yes. Planned file-backed shim.                  | Plain text or line-based key/value output            | Local database model only. No central sync, no built-in per-secret RBAC, and no remote session service.                            |
+
+### 14.2 Session Lifecycle Differences
+
+| Backend              | Session / credential material                                                                               | Unlock step                                                                                  | Lifetime model                                                                             | Shutdown / cleanup expectation                                                                                               |
+| -------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `bw`                 | `BW_SESSION`, plus login material such as `BW_CLIENTID` / `BW_CLIENTSECRET` or interactive user credentials | Required. `bw login` authenticates and `bw unlock` decrypts the vault.                       | Session key is transient and tied to the current unlocked vault state.                     | Clear transient credential env vars and run `bw lock` or `bw logout` when work completes.                                    |
+| `bws`                | `BWS_ACCESS_TOKEN` or equivalent service-account token                                                      | Not required in the human-vault sense. Authentication is the token.                          | Token-scoped, machine-oriented, revocable server-side.                                     | Remove the token from process scope after use and rotate it through the backing platform or CI secret store.                 |
+| Bitwarden Public API | Bearer token or client credentials for admin endpoints                                                      | No vault unlock because no vault decryption occurs.                                          | Standard API-token lifetime, unrelated to personal vault sessions.                         | Revoke or rotate the admin token according to org policy.                                                                    |
+| KeePass              | Database path plus master password and/or key file                                                          | Required for each process invocation unless the calling tool caches an already-open database | Local-process lifetime only. There is no shared service session analogous to `BW_SESSION`. | Dispose the CLI process, protect the `.kdbx` file and key file, and avoid persisting plaintext credentials in shell history. |
+
+### 14.3 Routing Rules
+
+- `SecretsRouter` should aggregate only providers that can satisfy `GetSecretAsync()` and `SecretExistsAsync()`.
+- On developer machines, `bw` is the expected first-class backend because it aligns with the existing `BW_SESSION` bootstrap pattern.
+- On CI runners and other unattended hosts, prefer `bws` over `bw` because machine tokens avoid interactive unlock and keep human vault state out of service processes.
+- KeePass is a valid fallback for disconnected or air-gapped scenarios, but it should be modeled as a local file-backed provider with different operational guarantees from Bitwarden.
+- Bitwarden Public API calls should bypass `SecretsRouter` entirely and live in a separate administration-oriented client, because returning metadata is not the same contract as returning secret values.
+
+---
+
+## 15. Bitwarden Secrets Manager Adoption and Licensing Notes
+
+This section is an architecture-planning appendix rather than a runtime contract. The
+pricing snapshot below comes from the source research captured in `AI on Feeds and
+Secrets.md` and should be revalidated against Bitwarden's current commercial terms
+before purchase or renewal decisions are made.
+
+### 15.1 Pricing Snapshot and Capacity Shape
+
+| Plan       | Indicative price from source research | Included machine accounts | Operational fit                                                                 |
+| ---------- | ------------------------------------- | ------------------------- | ------------------------------------------------------------------------------- |
+| Free       | `$0`                                  | `3`                       | Two-person orgs, early CI experiments, a handful of unattended runners          |
+| Teams      | `$6` per named user per month         | `20`, then `$1` each      | Small production teams that need more machine identities, RBAC, and event logs  |
+| Enterprise | `$12` per named user per month        | `50`, then `$1` each      | SSO-first or regulated environments needing SCIM, granular admin roles, and SLA |
+
+Additional points from the source material:
+
+- Free tier was described as supporting up to two human users and three projects.
+- Pricing was presented as including Bitwarden-hosted service, with self-hosting still
+  requiring the same product tier but shifting infrastructure ownership to the user.
+- User licensing is per named human user, while machine accounts are the non-interactive
+  identities intended for CI/CD, servers, containers, and other unattended agents.
+
+### 15.2 Upgrade Path from a Free Two-Person Organisation
+
+- Start with the free two-person Password Manager organisation for shared human-facing
+  credentials and collections.
+- When unattended workloads appear, enable Secrets Manager as an additional product on
+  the same organisation rather than creating a separate Bitwarden tenant.
+- The expected activation path is organisational: an owner enables Secrets Manager under
+  the organisation's product settings, after which a new Secrets Manager area becomes
+  available alongside the existing vault features.
+- Keep human vault access and machine access conceptually separate even when both products
+  live in the same organisation. Human operators use `bw`; CI and service identities
+  should use `bws` machine tokens.
+- The free tier is sufficient only while the team stays within the small-capacity limits.
+  Once machine-account growth, additional projects, or shared operational governance is
+  needed, move to Teams or Enterprise instead of trying to overload human-vault workflows.
+
+### 15.3 Decision Criteria for Migrating from `bw` to Secrets Manager
+
+| Condition                                                                   | Recommended backend choice                          | Rationale                                                                  |
+| --------------------------------------------------------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------- |
+| Interactive developer workstation with an existing `BW_SESSION` bootstrap   | Stay on `bw`                                        | Reuses the human-vault workflow already documented in this repository      |
+| CI runner, Windows service, container, or other unattended host             | Move that workload to `bws`                         | Machine tokens remove the need for interactive unlock and human vault use  |
+| Two humans, three or fewer machine accounts, minimal governance             | Free Secrets Manager is enough for initial adoption | Lowest-friction way to add headless access without redesigning the org     |
+| More than three machine identities or more than two named operators         | Upgrade to Teams                                    | Expands machine-account capacity and adds RBAC and audit-oriented features |
+| SSO, SCIM, granular admin roles, or formal operational support are required | Upgrade to Enterprise                               | Those controls are the dividing line between Teams and Enterprise          |
+
+Architecture implications:
+
+- Adding Secrets Manager does not replace the Bitwarden Password Manager shim for
+  developer machines. It introduces an additional concrete shim aimed at unattended
+  workloads.
+- The trigger for implementing `ATAP.Utilities.Secrets.Shim.BitwardenSM` is not merely
+  price, but the moment CI/CD and service processes become first-class consumers of the
+  Secrets family.
+- When both backends are present, `SecretsRouter` should route by workload boundary:
+  `bw` for interactive user sessions, `bws` for service-account paths.

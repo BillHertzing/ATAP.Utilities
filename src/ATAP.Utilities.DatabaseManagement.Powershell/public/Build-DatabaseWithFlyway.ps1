@@ -130,7 +130,13 @@ https://github.com/whertzing/ATAP.Utilities
 
     [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParameters')]
     [Parameter(Mandatory = $false, ParameterSetName = 'ExistingConnection')]
-    [switch]$Force
+    [switch]$Force,
+
+    # When set, run DatabaseProvisioning only and skip Flyway migrations.
+    # Use for databases whose migrations live in a different repository.
+    [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParameters')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'ExistingConnection')]
+    [switch]$SkipFlyway
   )
 
   begin {
@@ -145,7 +151,7 @@ https://github.com/whertzing/ATAP.Utilities
       $originalLoc = $PathArgs[0]
       # $PathArgs[1] ($FlywayBasePath) is accepted for call-site symmetry but not needed here
       $path = $PathArgs[2]
-      if (-not $path) { return $path }
+      if ([string]::IsNullOrWhiteSpace($path)) { return $null }
       if ([System.IO.Path]::IsPathRooted($path)) { return $path }
       # Resolve relative path against the original working directory
       return [System.IO.Path]::GetFullPath((Join-Path $originalLoc $path))
@@ -174,6 +180,9 @@ https://github.com/whertzing/ATAP.Utilities
       if (-not (Get-Command -Name 'New-DBAConnStrBuilder' -CommandType Function -ErrorAction SilentlyContinue)) {
         . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\New-ConnectionStringBuilderFromDbaTools.ps1')
       }
+      if (-not (Get-Command -Name 'Get-DatabaseCredentialsKey' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\Get-DatabaseCredentialsKey.ps1')
+      }
       if (-not (Get-Command -Name 'DatabaseProvisioning' -CommandType Function -ErrorAction SilentlyContinue)) {
         . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\DatabaseProvisioning.ps1')
       }
@@ -192,12 +201,39 @@ https://github.com/whertzing/ATAP.Utilities
     # region Database connection parameter validation
     $databasesCollection = $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
     $DatabaseName = Get-PVal -ParameterName 'DatabaseName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseName" -Settings $databasesCollection -DefaultValue $DatabaseName
-    $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue $Environment -ValidValues @('Production', 'Testing', 'Development', 'Experimental')
+    $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue $Environment -ValidValues @('Production', 'QA', 'Integration', 'Development', 'Experimental')
     $DatabaseHost = Get-PVal -ParameterName 'DatabaseHost' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseHost" -Settings $databasesCollection -DefaultValue $DatabaseHost
     $SqlInstance = Get-PVal -ParameterName 'SqlInstance' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlInstance" -Settings $databasesCollection -DefaultValue $SqlInstance -AllowMissing
     $ConnectionMethod = Get-PVal -ParameterName 'ConnectionMethod' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ConnectionMethod" -Settings $databasesCollection -DefaultValue $ConnectionMethod -ValidValues @('tcp', 'np', 'lpc')
     $Port = Get-PVal -ParameterName 'Port' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.Port" -Settings $databasesCollection -DefaultValue $Port -AllowMissing
     $CredentialsKey = Get-PVal -ParameterName 'CredentialsKey' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.CredentialsKey" -Settings $databasesCollection -DefaultValue $CredentialsKey -AllowMissing
+    $flywayCredentialsKey = $null
+    $provisioningCredentialsKey = $null
+
+    # Build uses two connection intents:
+    # 1) Provisioning/open phase must connect to master
+    # 2) Flyway migration phase should connect to the target database
+    # If an explicit CredentialsKey is passed, keep it for Flyway and derive master for provisioning.
+    if ($CredentialsKey) {
+      $flywayCredentialsKey = $CredentialsKey
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Using caller-supplied CredentialsKey for Flyway: $flywayCredentialsKey"
+    }
+
+    if ($DatabaseHost -and $Environment) {
+      if (-not $flywayCredentialsKey) {
+        $flywayCredentialsKey = Get-DatabaseCredentialsKey -DatabaseName $DatabaseName -DatabaseHost $DatabaseHost -Environment $Environment
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Derived Flyway CredentialsKey from naming scheme: $flywayCredentialsKey"
+      }
+
+      $provisioningCredentialsKey = Get-DatabaseCredentialsKey -DatabaseName 'master' -DatabaseHost $DatabaseHost -Environment $Environment
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Derived provisioning CredentialsKey (master): $provisioningCredentialsKey"
+    }
+
+    if (-not $provisioningCredentialsKey) {
+      # Backward compatibility: fall back to any available key when master-key derivation
+      # is not possible (for example, incomplete config in non-sprint environments).
+      $provisioningCredentialsKey = $flywayCredentialsKey
+    }
     # endregion Database connection parameter validation
     $DatabasePath = Get-PVal -ParameterName 'DatabasePath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection -DefaultValue $DatabasePath
     $ProvisioningScriptsPath = Get-PVal -ParameterName 'ProvisioningScriptsPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisioningScriptsPath" -Settings $databasesCollection -DefaultValue $ProvisioningScriptsPath
@@ -214,7 +250,7 @@ https://github.com/whertzing/ATAP.Utilities
     }
 
     # If credentials are not supplied, default to IntegratedSecurity
-    if (-not $CredentialsKey -and -not $IntegratedSecurity) {
+    if (-not $flywayCredentialsKey -and -not $IntegratedSecurity) {
       $IntegratedSecurity = $true
     }
 
@@ -250,6 +286,69 @@ https://github.com/whertzing/ATAP.Utilities
       $flywaySharedSqlMigrationsPath = adjust-path $originalLocation, $FlywayBasePath, $flywaySharedSqlMigrationsPath
       $FlywayDataPath = adjust-path $originalLocation, $FlywayBasePath, $FlywayDataPath
       $FlywayTomlPath = adjust-path $originalLocation, $FlywayBasePath, $FlywayTomlPath
+
+      $repoFlywayBasePath = Join-Path $repositoryRoot 'Database\Flyway'
+      if ([string]::IsNullOrWhiteSpace($FlywayBasePath) -or -not (Test-Path -LiteralPath $FlywayBasePath -PathType Container)) {
+        if (Test-Path -LiteralPath $repoFlywayBasePath -PathType Container) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "FlywayBasePath '$FlywayBasePath' is not valid. Falling back to '$repoFlywayBasePath'."
+          $FlywayBasePath = $repoFlywayBasePath
+        }
+      }
+
+      if ([string]::IsNullOrWhiteSpace($flywaySqlMigrationsPath) -or -not (Test-Path -LiteralPath $flywaySqlMigrationsPath -PathType Container)) {
+        $candidateSqlMigrationsPath = Join-Path $FlywayBasePath 'SQL'
+        if (Test-Path -LiteralPath $candidateSqlMigrationsPath -PathType Container) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "FlywaySqlMigrationsPath '$flywaySqlMigrationsPath' is not valid. Falling back to '$candidateSqlMigrationsPath'."
+          $flywaySqlMigrationsPath = $candidateSqlMigrationsPath
+        }
+      }
+
+      if ([string]::IsNullOrWhiteSpace($ProvisioningScriptsPath)) {
+        $ProvisioningScriptsPath = Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement\SharedSQL'
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "ProvisioningScriptsPath was empty; defaulting to '$ProvisioningScriptsPath'"
+      }
+
+      if ([string]::IsNullOrWhiteSpace($DatabasePath)) {
+        $DatabasePath = Join-Path $env:LOCALAPPDATA ("ATAP.Utilities\\SQLData\\$Environment")
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "DatabasePath was empty; defaulting to '$DatabasePath'"
+      }
+
+      if ([string]::IsNullOrWhiteSpace($FlywayDataPath)) {
+        $FlywayDataPath = Join-Path $FlywayBasePath 'Data'
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "FlywayDataPath was empty; defaulting to '$FlywayDataPath'"
+      }
+
+      if (-not (Test-Path -LiteralPath $FlywayDataPath -PathType Container)) {
+        $fallbackFlywayDataPath = Join-Path $FlywayBasePath 'Data'
+        if ((-not [string]::IsNullOrWhiteSpace($fallbackFlywayDataPath)) -and (Test-Path -LiteralPath $fallbackFlywayDataPath -PathType Container)) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "FlywayDataPath '$FlywayDataPath' does not exist. Falling back to '$fallbackFlywayDataPath'."
+          $FlywayDataPath = $fallbackFlywayDataPath
+        }
+      }
+
+      if ([string]::IsNullOrWhiteSpace($FlywayTomlPath) -or -not (Test-Path -LiteralPath $FlywayTomlPath -PathType Leaf)) {
+        $fallbackFlywayTomlPath = Join-Path $FlywayBasePath 'flyway.toml'
+        if (Test-Path -LiteralPath $fallbackFlywayTomlPath -PathType Leaf) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "FlywayTomlPath '$FlywayTomlPath' is not valid. Falling back to '$fallbackFlywayTomlPath'."
+          $FlywayTomlPath = $fallbackFlywayTomlPath
+        }
+      }
+
+      $requiredProvisioningScripts = @(
+        'DropAndCreateDatabase.sql',
+        'CreateLoginAndUser.sql',
+        'AddFlywaySchemaHistoryTable.sql'
+      )
+      $missingScripts = @($requiredProvisioningScripts | Where-Object {
+          -not (Test-Path (Join-Path $ProvisioningScriptsPath $_))
+        })
+      if ($missingScripts.Count -gt 0) {
+        $fallbackProvisioningScriptsPath = Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement\SharedSQL'
+        if ($fallbackProvisioningScriptsPath -ne $ProvisioningScriptsPath) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "ProvisioningScriptsPath '$ProvisioningScriptsPath' is missing required scripts ($($missingScripts -join ', ')). Falling back to '$fallbackProvisioningScriptsPath'."
+          $ProvisioningScriptsPath = $fallbackProvisioningScriptsPath
+        }
+      }
 
       Set-Location $FlywayBasePath
 
@@ -294,7 +393,7 @@ https://github.com/whertzing/ATAP.Utilities
         }
 
         if ($Port) { $connStrBuilderParams['Port'] = $Port }
-        if ($CredentialsKey) { $connStrBuilderParams['CredentialsKey'] = $CredentialsKey }
+        if ($provisioningCredentialsKey) { $connStrBuilderParams['CredentialsKey'] = $provisioningCredentialsKey }
         else { $connStrBuilderParams['IntegratedSecurity'] = $true }
 
         $connStrBuilderResult = New-DBAConnStrBuilder @connStrBuilderParams
@@ -384,28 +483,32 @@ https://github.com/whertzing/ATAP.Utilities
           throw $errorMessage
         }
 
-        # Run Flyway migrations
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Running Flyway migrations...'
-        $FlywayParams = @{
-          DatabaseName                  = $DatabaseName
-          Environment                   = $Environment
-          DatabaseHost                  = $DatabaseHost
-          SqlInstance                   = $SqlInstance
-          ConnectionMethod              = $ConnectionMethod
-          Port                          = $Port
-          IntegratedSecurity            = $useIntegratedSecurityForFlyway
-          FlywayCommand                 = 'migrate'
-          FlywayBasePath                = $FlywayBasePath
-          FlywaySqlMigrationsPath       = $flywaySqlMigrationsPath
-          FlywaySharedSqlMigrationsPath = $flywaySharedSqlMigrationsPath
-          FlywayDataPath                = $flywayDataPath
-          FlywayTomlPath                = $FlywayTomlPath
-          PackageName                   = "$DatabaseName.Functions"
-          PackageVersion                = 1
-        }
+        if ($SkipFlyway) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Skipping Flyway migrations (-SkipFlyway set)'
+        } else {
+          # Run Flyway migrations
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Running Flyway migrations...'
+          $FlywayParams = @{
+            DatabaseName                  = $DatabaseName
+            Environment                   = $Environment
+            DatabaseHost                  = $DatabaseHost
+            SqlInstance                   = $SqlInstance
+            ConnectionMethod              = $ConnectionMethod
+            Port                          = $Port
+            IntegratedSecurity            = $useIntegratedSecurityForFlyway
+            FlywayCommand                 = 'migrate'
+            FlywayBasePath                = $FlywayBasePath
+            FlywaySqlMigrationsPath       = $flywaySqlMigrationsPath
+            FlywaySharedSqlMigrationsPath = $flywaySharedSqlMigrationsPath
+            FlywayDataPath                = $FlywayDataPath
+            FlywayTomlPath                = $FlywayTomlPath
+            PackageName                   = "$DatabaseName.Functions"
+            PackageVersion                = 1
+          }
 
-        if ($CredentialsKey) { $FlywayParams['CredentialsKey'] = $CredentialsKey }
-        Invoke-Flyway @FlywayParams
+          if ($flywayCredentialsKey) { $FlywayParams['CredentialsKey'] = $flywayCredentialsKey }
+          Invoke-Flyway @FlywayParams
+        }
 
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Database build completed successfully'
         $result.Success = $true

@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "FailureAcknowledged.schema.json",
+  "title": "FailureAcknowledged",
+  "description": "Schema for FailureAcknowledged.json — the list of acknowledged test failures used by the 5-Tier Failure-Acknowledged gate.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["testName", "tier"],
+    "additionalProperties": false,
+    "properties": {
+      "testName": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Full test name or 'ClassName.TestName' identifying the failing test. Must match the name or 'classname.name' produced by the test runner."
+      },
+      "tier": {
+        "type": "string",
+        "pattern": "^[Tt][1-5]$",
+        "description": "The tier up to which this failure is acknowledged. T1=Sprint/Experimental, T2=Alpha/Development, T3=Beta/Integration, T4=QA, T5=Production. Gate passes at tier T when entry.tier rank >= gate tier rank."
+      },
+      "category": {
+        "type": "string",
+        "description": "Optional test category for grouping (e.g., Unit, Integration)."
+      },
+      "issueNumber": {
+        "type": "string",
+        "description": "Optional tracking identifier (e.g., GitHub issue number) for the underlying defect."
+      },
+      "acknowledgedBy": {
+        "type": "string",
+        "description": "Optional name or username of the person who acknowledged this failure."
+      },
+      "date": {
+        "type": "string",
+        "format": "date",
+        "description": "Optional ISO 8601 date (YYYY-MM-DD) when this failure was acknowledged."
+      },
+      "notes": {
+        "type": "string",
+        "description": "Optional free-text notes explaining why this failure is acknowledged."
+      }
+    }
+  }
+}

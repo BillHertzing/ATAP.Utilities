@@ -3,21 +3,30 @@
 #  SHould only be called on a computer that has the tools needed to perform the 'PowershellBuild' role
 #  Gathers the public and private functions into a .psm1 file and updates the exported information in the .psd1 file
 
+# ---------------------------------------------------------------------------
+# DEPRECATED — sprint-0006
+# Publish-PSPackage was the Jenkins-era entry point for publishing PS modules.
+# It has NO callers in this repository; all module publish operations are now
+# performed by Publish-PSModuleToProGetFeed.ps1 via module.build.ps1 Task Publish.
+# This file is retained for history. It will be deleted in sprint-0007 once
+# the 5-Tier pipeline has been validated end-to-end.
+# See: 5TierRemainingTasks.md §2.5-1
+# ---------------------------------------------------------------------------
 #region Publish-PSPackage
 function Publish-PSPackage {
   # Packages called from Jenkins have no parameters, all parameters must be passed via environment variables
   #region BeginBlock
-  BEGIN {
+  begin {
     # $DebugPreference = 'SilentlyContinue' # Continue SilentlyContinue
     # $VerbosePreference = 'SilentlyContinue' # Continue SilentlyContinue
     Write-PSFMessage -Level Debug -Message 'Entering Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
   }
   #endregion BeginBlock
   #region ProcessBlock
-  PROCESS {}
+  process {}
   #endregion ProcessBlock
   #region EndBlock
-  END {
+  end {
     Write-PSFMessage -Level Debug -Message "Workspace = $([System.Environment]::GetEnvironmentVariable('Workspace'))" -Tag 'Jenkins', 'Publish'
     Write-PSFMessage -Level Debug -Message "Current Working Directory = $(Get-Location)" -Tag 'Jenkins', 'Publish'
     Write-PSFMessage -Level Debug -Message "Environment Variable Environment = $($global:configRootKeys['ENVIRONMENTConfigRootKey']) = $([System.Environment]::GetEnvironmentVariable($global:configRootKeys['ENVIRONMENTConfigRootKey']))" -Tag 'Jenkins', 'Publish'
@@ -94,7 +103,7 @@ function Publish-PSPackage {
           } else {
             $message = "This remote has an origin that does not match the job parameter. $line does not match " + [regex]::Escape($repoGitSubdirectoryPath)
             Write-PSFMessage -Level Error -Message $message -Tag 'Jenkins', 'Publish'
-            Throw $message
+            throw $message
           }
         }
       }
@@ -106,9 +115,9 @@ function Publish-PSPackage {
     git config core.sparsecheckout true
     # This gets a list of files that are to be included in the PS Module
     # Get all files except those excluded by the two exclusion parameters parameters
-  ((Get-ChildItem -r $sourcePathExpansion |
+    ((Get-ChildItem -r $sourcePathExpansion |
         Where-Object { -not $_.PSIsContainer } |
-        Where-Object { $_.fullname -notMatch $directoryExclusionPattern } |
+        Where-Object { $_.fullname -notmatch $directoryExclusionPattern } |
         Where-Object { $_.fullname -notmatch $fileExclusionPattern } |
         # Get the fullname of each file, then truncate the first part up through the source repro path, then fix thepath seperators, then append the results to a file
         Select-Object -expand fullname) -replace $([Regex]::Escape($localSourceReproDirectory)), '') -replace '\\', '/' >> .git/info/sparse-checkout

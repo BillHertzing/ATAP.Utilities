@@ -67,7 +67,6 @@
   <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
   <ItemGroup>
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
-    <PackageReference Include="MethodBoundaryAspect.Fody" />
     <!-- Project Reference to the ETW attribute and log provider -->
     <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
@@ -89,6 +88,11 @@
   <!-- Loader interfaces and classes for any Assembly that may be loaded by the dynamic Loader, only works for TargetFramework NetCore -->
   <ItemGroup Condition="$(TargetFramework.Contains('5.0'))">
     <ProjectReference Include="..\ATAP.Utilities.Loader\ATAP.Utilities.Loader.csproj" />
+  </ItemGroup>
+
+  <!-- Explicit version to override transitive vulnerability from ServiceStack -->
+  <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.Xml" />
   </ItemGroup>
 
 </Project>

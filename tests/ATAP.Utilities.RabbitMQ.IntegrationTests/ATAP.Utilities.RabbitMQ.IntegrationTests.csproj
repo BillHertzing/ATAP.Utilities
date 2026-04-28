@@ -49,7 +49,6 @@
   <ItemGroup>
     <!-- ETW is not used in Unit tests, but ATAP libraries used by unit tests have a reference to this. Until I can figure out how to include these as dependent packages in the appropriate `ATAP.Utilitiies.` libraries, they are included specifically, here -->
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
-    <PackageReference Include="MethodBoundaryAspect.Fody" />
   </ItemGroup>
 
   <ItemGroup>

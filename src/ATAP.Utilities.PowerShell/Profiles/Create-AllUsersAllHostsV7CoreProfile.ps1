@@ -47,6 +47,25 @@ function Create-AllUsersAllHostsV7CoreProfile {
   . $(Join-Path -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Join-PathNoResolve.ps1'))
 
 
+  # Load the helper script
+      try {
+      if (-not (Get-Command -Name 'Set-GlobalConfigRootKeys' -CommandType Function -ErrorAction SilentlyContinue)) {
+        $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
+        $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-98-sprint-0006-work-items'
+        $projectpathRel = 'src\ATAP.Utilities.ConfigRootKeys.Powershell'
+        $cmdletPathRel = 'public\Set-GlobalConfigRootKeys.ps1'
+        . $(join-path $repobasepath $projectpathRel $cmdletPathRel)
+      }
+      if (-not (Get-Command -Name 'New-ConnectionStringBuilderFromDbaTools' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\New-ConnectionStringBuilderFromDbaTools.ps1'
+      }
+    }
+    catch {
+      $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      throw
+    }
+  
   # Dot source the list of configuration keys
   # Configuration root key .ps1 files should be a peer of the machine profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
   . "$PSScriptRoot/global_ConfigRootKeys.ps1"

@@ -6,28 +6,13 @@
     <IsPackable>true</IsPackable>
     <!-- Facade project - disable default items to prevent including child project source files -->
     <EnableDefaultItems>false</EnableDefaultItems>
-    <!-- Assembly, File, and Package Information for this assembly-->
-    <!-- Build and revision are created based on date-->
-    <MajorVersion>0</MajorVersion>
-    <MinorVersion>1</MinorVersion>
-    <PatchVersion>0</PatchVersion>
-    <!-- Current Lifecycle stage for this assembly-->
-    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
-    <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
-    <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
-    <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Explicitly include only the facade's AssemblyInfo.cs -->
-    <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="DefaultConfiguration\ATAP.Utilities.Philote.DefaultConfiguration.csproj" />
-    <ProjectReference Include="Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
-    <ProjectReference Include="Models\ATAP.Utilities.Philote.Models.csproj" />
-    <ProjectReference Include="JsonConverter.Shim.SystemTextJson\ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson.csproj" />
+    <ProjectReference Include="DefaultConfiguration\ATAP.Utilities.Philote.DefaultConfiguration.csproj" PrivateAssets="all" />
+    <ProjectReference Include="Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" PrivateAssets="all" />
+    <ProjectReference Include="Models\ATAP.Utilities.Philote.Models.csproj" PrivateAssets="all" />
+    <ProjectReference Include="JsonConverter.Shim.SystemTextJson\ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson.csproj" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>

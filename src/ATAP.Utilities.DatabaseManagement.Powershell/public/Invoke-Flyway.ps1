@@ -193,7 +193,7 @@ function Invoke-Flyway {
 
   )
 
-  BEGIN {
+  begin {
     $fn = 'Invoke-Flyway'
     $mn = 'ATAP.Utilities.DatabaseManagement.Powershell'
 
@@ -202,13 +202,15 @@ function Invoke-Flyway {
     # Load required helper functions
     try {
       if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
+        . (Join-Path $PSScriptRoot '..\..\ATAP.Utilities.PowerShell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1')
       }
       if (-not (Get-Command -Name 'New-ConnectionStringBuilderFromDbaTools' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\New-ConnectionStringBuilderFromDbaTools.ps1'
+        . (Join-Path $PSScriptRoot 'New-ConnectionStringBuilderFromDbaTools.ps1')
       }
-    }
-    catch {
+      if (-not (Get-Command -Name 'Get-DatabaseCredentialsKey' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot 'Get-DatabaseCredentialsKey.ps1')
+      }
+    } catch {
       $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       throw
@@ -217,13 +219,21 @@ function Invoke-Flyway {
     # Parameter validation using Get-PVal pattern
     # region Database connection parameter validation
     $databasesCollection = $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
-    $DatabaseName = Get-PVal -ParameterName "DatabaseName" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseName" -Settings $databasesCollection -DefaultValue $DatabaseName
+    $DatabaseName = Get-PVal -ParameterName 'DatabaseName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseName" -Settings $databasesCollection -DefaultValue $DatabaseName
     $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue $Environment -ValidValues @('Production', 'Testing', 'Development', 'Experimental')
-    $DatabaseHost = Get-PVal -ParameterName "DatabaseHost" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseHost" -Settings $databasesCollection -DefaultValue $DatabaseHost
-    $SqlInstance = Get-PVal -ParameterName "SqlInstance" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlInstance" -Settings $databasesCollection -DefaultValue $SqlInstance -AllowMissing
-    $ConnectionMethod = Get-PVal -ParameterName "ConnectionMethod" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ConnectionMethod" -Settings $databasesCollection -DefaultValue $ConnectionMethod -ValidValues @('tcp', 'np', 'lpc')
-    $Port = Get-PVal -ParameterName "Port" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.Port" -Settings $databasesCollection -DefaultValue $Port -AllowMissing
-    $CredentialsKey = Get-PVal -ParameterName "CredentialsKey" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.CredentialsKey" -Settings $databasesCollection -DefaultValue $CredentialsKey -AllowMissing
+    $DatabaseHost = Get-PVal -ParameterName 'DatabaseHost' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseHost" -Settings $databasesCollection -DefaultValue $DatabaseHost
+    $SqlInstance = Get-PVal -ParameterName 'SqlInstance' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlInstance" -Settings $databasesCollection -DefaultValue $SqlInstance -AllowMissing
+    $ConnectionMethod = Get-PVal -ParameterName 'ConnectionMethod' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ConnectionMethod" -Settings $databasesCollection -DefaultValue $ConnectionMethod -ValidValues @('tcp', 'np', 'lpc')
+    $Port = Get-PVal -ParameterName 'Port' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.Port" -Settings $databasesCollection -DefaultValue $Port -AllowMissing
+    $CredentialsKey = Get-PVal -ParameterName 'CredentialsKey' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.CredentialsKey" -Settings $databasesCollection -DefaultValue $CredentialsKey -AllowMissing
+    # If CredentialsKey was not found in settings or supplied as a parameter, derive it from the
+    # canonical Bitwarden naming scheme — but only when not using Integrated Security.
+    #   Permanent (Production/QA/Integration): dbConnectionString-<DB>-<Host>-<Tier>
+    #   Per-sprint (Development/Experimental): dbConnectionString-<DB>-<Host>-<Tier>-<UserName>
+    if (-not $CredentialsKey -and -not $IntegratedSecurity -and $DatabaseHost -and $Environment) {
+      $CredentialsKey = Get-DatabaseCredentialsKey -DatabaseName $DatabaseName -DatabaseHost $DatabaseHost -Environment $Environment
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Derived CredentialsKey from naming scheme: $CredentialsKey"
+    }
     # endregion Database connection parameters validation
 
     $usingExistingConnection = $PSCmdlet.ParameterSetName -eq 'ExistingConnection'
@@ -241,13 +251,11 @@ function Invoke-Flyway {
         if ($dataSourceNoProto -match '\\') {
           $DatabaseHost = $dataSourceNoProto.Split('\\')[0]
           if (-not $SqlInstance -and $dataSourceNoProto.Split('\\').Count -gt 1) { $SqlInstance = $dataSourceNoProto.Split('\\')[1] }
-        }
-        elseif ($dataSourceNoProto -match ',') {
+        } elseif ($dataSourceNoProto -match ',') {
           $parts = $dataSourceNoProto.Split(',')
           $DatabaseHost = $parts[0]
           if (-not $Port -and $parts.Count -gt 1) { $Port = [int]$parts[1] }
-        }
-        else {
+        } else {
           $DatabaseHost = $dataSourceNoProto
         }
       }
@@ -264,18 +272,61 @@ function Invoke-Flyway {
         $IntegratedSecurity = $existingBuilder.IntegratedSecurity
       }
     }
-    $FlywayExecutablePath = Get-PVal -ParameterName "FlywayExecutablePath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayExecutablePath" -Settings $databasesCollection -DefaultValue $(if ($FlywayExecutablePath) { $FlywayExecutablePath } else { 'flyway' })
-    $FlywayBasePath = Get-PVal -ParameterName "FlywayBasePath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayBasePath" -Settings $databasesCollection -DefaultValue $FlywayBasePath
-    $FlywaySqlMigrationsPath = Get-PVal -ParameterName "FlywaySqlMigrationsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywaySqlMigrationsPath" -Settings $databasesCollection -DefaultValue $FlywaySqlMigrationsPath
-    $FlywaySharedSqlMigrationsPath = Get-PVal -ParameterName "FlywaySharedSqlMigrationsPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SharedSqlMigrationsPath" -Settings $databasesCollection -DefaultValue $FlywaySharedSqlMigrationsPath
-    $FlywayDataPath = Get-PVal -ParameterName "FlywayDataPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayDataPath" -Settings $databasesCollection -DefaultValue $FlywayDataPath
-    $FlywayTomlPath = Get-PVal -ParameterName "FlywayTomlPath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayTomlPath" -Settings $databasesCollection -DefaultValue $FlywayTomlPath
-    $FlywayAdditionalArgs = Get-PVal -ParameterName "FlywayAdditionalArgs" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayAdditionalArgs" -Settings $databasesCollection -DefaultValue $FlywayAdditionalArgs -AllowMissing
-    $PackageName = Get-PVal -ParameterName "PackageName" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.PackageName" -Settings $databasesCollection -DefaultValue $PackageName -AllowMissing
-    $PackageVersion = Get-PVal -ParameterName "PackageVersion" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.PackageVersion" -Settings $databasesCollection -DefaultValue $PackageVersion -AllowMissing
+    $FlywayExecutablePath = Get-PVal -ParameterName 'FlywayExecutablePath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayExecutablePath" -Settings $databasesCollection -DefaultValue $(if ($FlywayExecutablePath) { $FlywayExecutablePath } else { 'flyway' })
+    $FlywayBasePath = Get-PVal -ParameterName 'FlywayBasePath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayBasePath" -Settings $databasesCollection -DefaultValue $FlywayBasePath
+    $FlywaySqlMigrationsPath = Get-PVal -ParameterName 'FlywaySqlMigrationsPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywaySqlMigrationsPath" -Settings $databasesCollection -DefaultValue $FlywaySqlMigrationsPath
+    $FlywaySharedSqlMigrationsPath = Get-PVal -ParameterName 'FlywaySharedSqlMigrationsPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SharedSqlMigrationsPath" -Settings $databasesCollection -DefaultValue $FlywaySharedSqlMigrationsPath
+    $FlywayDataPath = Get-PVal -ParameterName 'FlywayDataPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayDataPath" -Settings $databasesCollection -DefaultValue $FlywayDataPath
+    $FlywayTomlPath = Get-PVal -ParameterName 'FlywayTomlPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayTomlPath" -Settings $databasesCollection -DefaultValue $FlywayTomlPath
+    $FlywayAdditionalArgs = Get-PVal -ParameterName 'FlywayAdditionalArgs' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayAdditionalArgs" -Settings $databasesCollection -DefaultValue $FlywayAdditionalArgs -AllowMissing
+    $PackageName = Get-PVal -ParameterName 'PackageName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.PackageName" -Settings $databasesCollection -DefaultValue $PackageName -AllowMissing
+    $PackageVersion = Get-PVal -ParameterName 'PackageVersion' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.PackageVersion" -Settings $databasesCollection -DefaultValue $PackageVersion -AllowMissing
 
     $script:errors = [System.Collections.Generic.List[string]]::new()
     $script:success = $false
+
+    $repoRootFromScript = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..'))
+    $repoFlywayBasePath = Join-Path $repoRootFromScript 'Database\Flyway'
+
+    if ([string]::IsNullOrWhiteSpace($FlywayBasePath) -or -not (Test-Path -LiteralPath $FlywayBasePath -PathType Container)) {
+      if (Test-Path -LiteralPath $repoFlywayBasePath -PathType Container) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "FlywayBasePath '$FlywayBasePath' is not valid. Falling back to '$repoFlywayBasePath'."
+        $FlywayBasePath = $repoFlywayBasePath
+      }
+    }
+
+    if ([string]::IsNullOrWhiteSpace($FlywaySqlMigrationsPath) -or -not (Test-Path -LiteralPath $FlywaySqlMigrationsPath -PathType Container)) {
+      $candidateSqlMigrationsPath = Join-Path $FlywayBasePath 'SQL'
+      if (Test-Path -LiteralPath $candidateSqlMigrationsPath -PathType Container) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "FlywaySqlMigrationsPath '$FlywaySqlMigrationsPath' is not valid. Falling back to '$candidateSqlMigrationsPath'."
+        $FlywaySqlMigrationsPath = $candidateSqlMigrationsPath
+      }
+    }
+
+    if ([string]::IsNullOrWhiteSpace($FlywayTomlPath) -or -not (Test-Path -LiteralPath $FlywayTomlPath -PathType Leaf)) {
+      $fallbackFlywayTomlPath = Join-Path $FlywayBasePath 'flyway.toml'
+      if (Test-Path -LiteralPath $fallbackFlywayTomlPath -PathType Leaf) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "FlywayTomlPath '$FlywayTomlPath' is not valid. Falling back to '$fallbackFlywayTomlPath'."
+        $FlywayTomlPath = $fallbackFlywayTomlPath
+      }
+    }
+
+    if ([string]::IsNullOrWhiteSpace($FlywayDataPath)) {
+      $FlywayDataPath = Join-Path $FlywayBasePath 'Data'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "FlywayDataPath was empty; defaulting to '$FlywayDataPath'"
+    }
+
+    if (-not (Test-Path -LiteralPath $FlywayDataPath -PathType Container)) {
+      $fallbackFlywayDataPath = Join-Path $FlywayBasePath 'Data'
+      if ((-not [string]::IsNullOrWhiteSpace($fallbackFlywayDataPath)) -and (Test-Path -LiteralPath $fallbackFlywayDataPath -PathType Container)) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Configured FlywayDataPath '$FlywayDataPath' was not found. Falling back to '$fallbackFlywayDataPath'."
+        $FlywayDataPath = $fallbackFlywayDataPath
+      }
+    }
+
+    if (-not (Test-Path -LiteralPath $FlywayDataPath -PathType Container)) {
+      throw "FlywayDataPath does not exist: '$FlywayDataPath'"
+    }
 
 
     # Git metadata
@@ -293,8 +344,7 @@ function Invoke-Flyway {
       $gitMeta = Get-GitMeta -StartDir (Resolve-Path .)
       if (-not $GitTag) { $GitTag = $gitMeta.Tag }
       if (-not $GitCommit) { $GitCommit = $gitMeta.Commit }
-    }
-    catch {
+    } catch {
       $msg = "Failed obtaining git metadata. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message $msg
       $script:errors.Add($msg) | Out-Null
@@ -311,8 +361,7 @@ function Invoke-Flyway {
         $fileNameSql = ($name -replace "'", "''")
         $values += "(N'$fileNameSql', '$type', N'$sha')"
       }
-    }
-    catch {
+    } catch {
       $msg = "Failed hashing files. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
       $script:errors.Add($msg) | Out-Null
@@ -323,7 +372,7 @@ function Invoke-Flyway {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'All parameters validated successfully'
   }
 
-  PROCESS {
+  process {
     try {
       $jdbcUrl = $null
       $dataSourceForLog = $DatabaseHost
@@ -340,13 +389,11 @@ function Invoke-Flyway {
         if ($useIntegratedSecurity) {
           $jdbcUrl += ';integratedSecurity=true'
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Using Windows Integrated Authentication (existing connection)'
-        }
-        else {
+        } else {
           $jdbcUrl += ";user=$($existingBuilder.UserID);password=$($existingBuilder.Password)"
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Using SQL authentication from existing connection'
         }
-      }
-      else {
+      } else {
         $connBuilderParams = @{
           DatabaseName = $DatabaseName
           AsJDBC       = $true
@@ -360,8 +407,7 @@ function Invoke-Flyway {
         if ($CredentialsKey) {
           $connBuilderParams['CredentialsKey'] = $CredentialsKey
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Using vault credentials with key: $CredentialsKey"
-        }
-        else {
+        } else {
           $connBuilderParams['IntegratedSecurity'] = $true
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Using Windows Integrated Authentication'
         }
@@ -426,8 +472,7 @@ function Invoke-Flyway {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Removed environment variable: $envVar"
           }
         }
-      }
-      else {
+      } else {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Configuring Flyway for SQL Server Authentication'
         # Credentials are embedded in the JDBC URL by New-ConnectionStringBuilderFromDbaTools
         # No need to set separate FLYWAY_USER/FLYWAY_PASSWORD environment variables
@@ -442,9 +487,10 @@ function Invoke-Flyway {
       $env:FLYWAY_PLACEHOLDERS_GITCOMMIT = $GitCommit
       $env:FLYWAY_PLACEHOLDERS_DATA_DIR = $FlywayDataPath
       $env:FLYWAY_PLACEHOLDERS_USER_PII_PASSPHRASE = $env:AceCommander_UserPii__PassphraseV1
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Flyway data directory: $FlywayDataPath"
 
       # Build flyway parameters and execute
-      $flywayParams = @("-configFiles=$FlywayTomlPath", "-environment=$environmentKey", "-X")
+      $flywayParams = @("-configFiles=$FlywayTomlPath", "-environment=$environmentKey", '-X')
       if ($FlywayAdditionalArgs) { $flywayParams += $FlywayAdditionalArgs }
       $flywayParams += $FlywayCommand
 
@@ -461,16 +507,14 @@ function Invoke-Flyway {
           & $FlywayExecutablePath @flywayParams
           $exit = $LASTEXITCODE
           if ($exit -ne 0) { throw "flyway exited with code $exit" }
-        }
-        finally {
+        } finally {
           Pop-Location
         }
 
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "flyway $FlywayCommand completed successfully"
         $script:success = $true
       }
-    }
-    catch {
+    } catch {
       $errorMessage = "Invoke-Flyway failed: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Stack trace: $($_.ScriptStackTrace)"
@@ -479,7 +523,7 @@ function Invoke-Flyway {
     }
   }
 
-  END {
+  end {
     # Build and return the summary object
     $summary = [PSCustomObject]@{
       PackageName    = $PackageName
@@ -496,7 +540,7 @@ function Invoke-Flyway {
     }
     $level = if ($summary.Success) { 'Important' } else { 'Error' }
     $statusText = if ($summary.Success) { 'succeeded' } else { 'failed' }
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level $level -Message ("Invoke-Flyway {0}" -f $statusText)
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level $level -Message ('Invoke-Flyway {0}' -f $statusText)
     if (-not $summary.Success) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message ("Errors:`n" + ($summary.Errors -join [Environment]::NewLine)) }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Leaving function Invoke-Flyway'
     return $summary

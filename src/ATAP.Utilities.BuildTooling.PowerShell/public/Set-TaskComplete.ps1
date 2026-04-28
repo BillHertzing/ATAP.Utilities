@@ -1,4 +1,5 @@
-<#
+function Set-TaskComplete {
+  <#
 .SYNOPSIS
   Marks one or more task items in TASKS.md as complete under an exclusive file lock.
 
@@ -34,92 +35,92 @@
 
 .EXAMPLE
   # Mark a task complete by fragment
-  & 'C:/Dropbox/whertzing/github/SharedVSCode/Powershell/public/Set-TaskComplete.ps1' -TaskText 'Add SignalR hub'
+  # The function is autoloaded from the installed module
+  Set-TaskComplete -TaskText 'Add SignalR hub'
 
 .EXAMPLE
   # Dry-run to preview the change
-  & './Set-TaskComplete.ps1' -TaskText 'Step 3' -DryRun
+  Set-TaskComplete -TaskText 'Step 3' -DryRun
 
 .NOTES
   AI assisted using Powershell.instructions.md as guidelines
   Calls Invoke-WithFileLock.ps1 (must be in the same Powershell/public/ directory).
 #>
-[CmdletBinding(SupportsShouldProcess)]
-param(
-  [Parameter(Mandatory)]
-  [string]$TaskText,
+  [CmdletBinding(SupportsShouldProcess)]
+  param(
+    [Parameter(Mandatory)]
+    [string]$TaskText,
 
-  [Parameter()]
-  [string]$TasksFilePath = 'C:/Dropbox/whertzing/github/_planning/TASKS.md',
+    [Parameter()]
+    [string]$TasksFilePath = 'C:/Dropbox/whertzing/github/_planning/TASKS.md',
 
-  [Parameter()]
-  [ValidateSet('Substring', 'Exact', 'Regex')]
-  [string]$MatchMode = 'Substring',
+    [Parameter()]
+    [ValidateSet('Substring', 'Exact', 'Regex')]
+    [string]$MatchMode = 'Substring',
 
-  [Parameter()]
-  [switch]$DryRun
-)
+    [Parameter()]
+    [switch]$DryRun
+  )
 
-BEGIN {
-  $fn = $MyInvocation.MyCommand.Name
-  $mn = 'SharedTools'
+  begin {
+    $fn = $MyInvocation.MyCommand.Name
+    $mn = 'SharedTools'
 
-  # Load the locking helper from the same directory as this script
-  $lockScript = Join-Path $PSScriptRoot 'Invoke-WithFileLock.ps1'
-  if (-not (Test-Path $lockScript)) {
-    throw "Set-TaskComplete: cannot find Invoke-WithFileLock.ps1 at '$lockScript'"
+    # Load the locking helper from the same directory as this script
+    $lockScript = Join-Path $PSScriptRoot 'Invoke-WithFileLock.ps1'
+    if (-not (Test-Path $lockScript)) {
+      throw "Set-TaskComplete: cannot find Invoke-WithFileLock.ps1 at '$lockScript'"
+    }
+    . $lockScript
+
+    # Verify TASKS.md exists
+    if (-not (Test-Path $TasksFilePath)) {
+      throw "Set-TaskComplete: TASKS.md not found at '$TasksFilePath'"
+    }
+
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
+      -Message "Will mark task (mode=$MatchMode): $TaskText"
   }
-  . $lockScript
 
-  # Verify TASKS.md exists
-  if (-not (Test-Path $TasksFilePath)) {
-    throw "Set-TaskComplete: TASKS.md not found at '$TasksFilePath'"
-  }
+  process {
+    $changed = 0
 
-  Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-    -Message "Will mark task (mode=$MatchMode): $TaskText"
-}
+    Invoke-WithFileLock -LockName 'TASKS.md' -Action {
 
-PROCESS {
-  $changed = 0
+      $lines = [System.IO.File]::ReadAllLines($TasksFilePath)
+      $newLines = for ($i = 0; $i -lt $lines.Count; $i++) {
+        $line = $lines[$i]
 
-  Invoke-WithFileLock -LockName 'TASKS.md' -Action {
+        # Only act on unchecked task lines
+        $isUnchecked = $line -match '^\s*-\s*\[ \]'
 
-    $lines   = [System.IO.File]::ReadAllLines($TasksFilePath)
-    $newLines = for ($i = 0; $i -lt $lines.Count; $i++) {
-      $line = $lines[$i]
+        $isMatch = switch ($MatchMode) {
+          'Substring' { $line.Contains($TaskText) }
+          'Exact' { ($line.Trim() -eq $TaskText.Trim()) }
+          'Regex' { $line -match $TaskText }
+        }
 
-      # Only act on unchecked task lines
-      $isUnchecked = $line -match '^\s*-\s*\[ \]'
-
-      $isMatch = switch ($MatchMode) {
-        'Substring' { $line.Contains($TaskText) }
-        'Exact'     { ($line.Trim() -eq $TaskText.Trim()) }
-        'Regex'     { $line -match $TaskText }
+        if ($isUnchecked -and $isMatch) {
+          $newLine = $line -replace '\[ \]', '[x]'
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+            -Message "$(if ($DryRun) {'[DRY RUN] Would mark'} else {'Marking'}) complete: $newLine"
+          $newLine
+          $script:changed++
+        } else {
+          $line
+        }
       }
 
-      if ($isUnchecked -and $isMatch) {
-        $newLine = $line -replace '\[ \]', '[x]'
+      if ($changed -gt 0 -and -not $DryRun) {
+        [System.IO.File]::WriteAllLines($TasksFilePath, $newLines, [System.Text.Encoding]::UTF8)
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-          -Message "$(if ($DryRun) {'[DRY RUN] Would mark'} else {'Marking'}) complete: $newLine"
-        $newLine
-        $script:changed++
-      }
-      else {
-        $line
+          -Message "TASKS.md updated: $changed line(s) marked complete"
+      } elseif ($changed -eq 0) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
+          -Message "No matching unchecked tasks found for: $TaskText"
       }
     }
 
-    if ($changed -gt 0 -and -not $DryRun) {
-      [System.IO.File]::WriteAllLines($TasksFilePath, $newLines, [System.Text.Encoding]::UTF8)
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-        -Message "TASKS.md updated: $changed line(s) marked complete"
-    }
-    elseif ($changed -eq 0) {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-        -Message "No matching unchecked tasks found for: $TaskText"
-    }
+    return $changed
   }
-
-  return $changed
 }

@@ -1,5 +1,6 @@
-# AI assisted using Powershell.instructions.md as guidelines
-<#
+function Initialize-ProGetSqlServiceLogin {
+  # AI assisted using Powershell.instructions.md as guidelines
+  <#
 .SYNOPSIS
 Creates and grants SQL Server access for the ProGet Windows service account.
 
@@ -26,10 +27,12 @@ When enabled, trusts the SQL Server certificate without validating its issuing C
 PSCustomObject
 
 .EXAMPLE
-./Initialize-ProGetSqlServiceLogin.ps1 -SqlInstance 'localhost\PRODUCTION' -DatabaseName 'ProGet' -ServiceAccount 'NT SERVICE\INEDOPROGETSVC' -Confirm
+# Call the autoloaded function with basic parameters and confirmation
+Initialize-ProGetSqlServiceLogin -SqlInstance 'localhost\PRODUCTION' -DatabaseName 'ProGet' -ServiceAccount 'NT SERVICE\INEDOPROGETSVC' -Confirm
 
 .EXAMPLE
-./Initialize-ProGetSqlServiceLogin.ps1 -SqlInstance 'localhost\PRODUCTION' -DatabaseName 'ProGet' -ServiceAccount 'NT SERVICE\INEDOPROGETSVC' -Encrypt Optional -TrustServerCertificate
+# Call the function with encryption settings
+Initialize-ProGetSqlServiceLogin -SqlInstance 'localhost\PRODUCTION' -DatabaseName 'ProGet' -ServiceAccount 'NT SERVICE\INEDOPROGETSVC' -Encrypt Optional -TrustServerCertificate
 
 .NOTES
 AI assisted using Powershell.instructions.md as guidelines
@@ -37,38 +40,38 @@ AI assisted using Powershell.instructions.md as guidelines
 .LINK
 https://docs.inedo.com/docs/installation/configuration-files
 #>
-[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
-param(
-  [Parameter()]
-  [ValidateNotNullOrEmpty()]
-  [string]$SqlInstance = 'localhost\PRODUCTION',
+  [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+  param(
+    [Parameter()]
+    [ValidateNotNullOrEmpty()]
+    [string]$SqlInstance = 'localhost\PRODUCTION',
 
-  [Parameter()]
-  [ValidateNotNullOrEmpty()]
-  [string]$DatabaseName = 'ProGet',
+    [Parameter()]
+    [ValidateNotNullOrEmpty()]
+    [string]$DatabaseName = 'ProGet',
 
-  [Parameter()]
-  [ValidateNotNullOrEmpty()]
-  [string]$ServiceAccount = 'NT SERVICE\INEDOPROGETSVC',
+    [Parameter()]
+    [ValidateNotNullOrEmpty()]
+    [string]$ServiceAccount = 'NT SERVICE\INEDOPROGETSVC',
 
-  [Parameter()]
-  [ValidateSet('Optional', 'Mandatory', 'Strict')]
-  [string]$Encrypt = 'Optional',
+    [Parameter()]
+    [ValidateSet('Optional', 'Mandatory', 'Strict')]
+    [string]$Encrypt = 'Optional',
 
-  [Parameter()]
-  [switch]$TrustServerCertificate
-)
+    [Parameter()]
+    [switch]$TrustServerCertificate
+  )
 
-$fn = 'Initialize-ProGetSqlServiceLogin'
-$mn = 'ATAP.IAC'
+  $fn = 'Initialize-ProGetSqlServiceLogin'
+  $mn = 'ATAP.IAC'
 
-try {
-  Import-Module -Name SqlServer -ErrorAction Stop
+  try {
+    Import-Module -Name SqlServer -ErrorAction Stop
 
-  $escapedServiceAccount = $ServiceAccount.Replace('''', '''''')
-  $escapedDatabaseName = $DatabaseName.Replace('''', '''''')
+    $escapedServiceAccount = $ServiceAccount.Replace('''', '''''')
+    $escapedDatabaseName = $DatabaseName.Replace('''', '''''')
 
-  $sql = @"
+    $sql = @"
 SET NOCOUNT ON;
 
 DECLARE @ServiceAccount sysname = N'$escapedServiceAccount';
@@ -120,21 +123,22 @@ END;';
 EXEC sp_executesql @RoleSql, N'@ServiceAccount sysname', @ServiceAccount = @ServiceAccount;
 "@
 
-  if ($PSCmdlet.ShouldProcess("$SqlInstance/$DatabaseName", "Ensure SQL login, user, and db_owner membership for $ServiceAccount")) {
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Applying SQL principal grants on $SqlInstance for database $DatabaseName and account $ServiceAccount"
+    if ($PSCmdlet.ShouldProcess("$SqlInstance/$DatabaseName", "Ensure SQL login, user, and db_owner membership for $ServiceAccount")) {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Applying SQL principal grants on $SqlInstance for database $DatabaseName and account $ServiceAccount"
 
-    Invoke-Sqlcmd -ServerInstance $SqlInstance -Database 'master' -Query $sql -Encrypt $Encrypt -TrustServerCertificate:$TrustServerCertificate.IsPresent -ErrorAction Stop | Out-Null
+      Invoke-Sqlcmd -ServerInstance $SqlInstance -Database 'master' -Query $sql -Encrypt $Encrypt -TrustServerCertificate:$TrustServerCertificate.IsPresent -ErrorAction Stop | Out-Null
 
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'SQL principal grants applied successfully'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'SQL principal grants applied successfully'
 
-    [PSCustomObject]@{
-      SqlInstance    = $SqlInstance
-      DatabaseName   = $DatabaseName
-      ServiceAccount = $ServiceAccount
-      Status         = 'Success'
+      [PSCustomObject]@{
+        SqlInstance    = $SqlInstance
+        DatabaseName   = $DatabaseName
+        ServiceAccount = $ServiceAccount
+        Status         = 'Success'
+      }
     }
+  } catch {
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Failed to grant SQL access for ProGet service account. $($_.Exception.Message)"
+    throw
   }
-} catch {
-  Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Failed to grant SQL access for ProGet service account. $($_.Exception.Message)"
-  throw
 }

@@ -57,7 +57,7 @@ Set-WorktreeJunctions -SourceRepoPath 'C:\Dropbox\whertzing\GitHub\ATAP.Utilitie
 Scans the source repository and recreates matching junctions in an existing worktree.
 
 .EXAMPLE
-$result = Set-WorktreeJunctions -SourceRepoPath 'C:\repos\MyProject' -WorktreePath 'C:\worktrees\feature-branch'
+$result = Set-WorktreeJunctions -SourceRepoPath 'C:\repos\MyProject' -WorktreePath 'C:\workTrees\feature-branch'
 if ($result.Success) {
     Write-Output "Created $($result.JunctionsCreated) junctions"
 }

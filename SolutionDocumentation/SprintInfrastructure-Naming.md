@@ -1,7 +1,7 @@
 # Sprint Infrastructure Naming — Authoritative Reference
 
 **Scope:** All sprint infrastructure components: SQL Server instances,
-ProGet feeds, Bitwarden secrets, worktrees, branches, and BuildMaster variables.
+ProGet feeds, Bitwarden secrets, workTrees, branches, and BuildMaster variables.
 
 **Audience:** Developers starting or ending sprints; SprintStartAgent /
 SprintEndAgent; anyone configuring ecosystem tooling.
@@ -200,7 +200,7 @@ containing hyphens, machine names, and usernames are handled correctly.
 
 **Example:** `ATAP.Utilities-wt-105-Sprint-0007-work-items`
 
-> **Note:** Sprint-0006 worktrees use lowercase `sprint` for historical
+> **Note:** Sprint-0006 workTrees use lowercase `sprint` for historical
 > reasons. The capital-S form applies from sprint-0007 onward.
 
 ### 5.2 Glob / regex patterns

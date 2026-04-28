@@ -2,7 +2,7 @@ function New-SprintStage1 {
   <#
   .SYNOPSIS
     Bootstraps Stage 1 of a new sprint: determines the sprint number, creates
-    SharedVSCode and _Planning branches/worktrees, creates NTFS junctions, and
+    SharedVSCode and _Planning branches/workTrees, creates NTFS junctions, and
     applies SharedVSCode context to _Planning.
   .DESCRIPTION
     Performs, in order:

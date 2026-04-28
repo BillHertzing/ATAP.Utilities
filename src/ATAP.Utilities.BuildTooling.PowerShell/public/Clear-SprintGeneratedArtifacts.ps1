@@ -35,7 +35,7 @@ function Clear-SprintGeneratedArtifacts {
     agent/pipeline invocations.
   .PARAMETER SprintNumber
     Four-digit zero-padded sprint number (e.g. '0006').  Used to locate the
-    matching set of worktrees under $GitRoot.
+    matching set of workTrees under $GitRoot.
   .PARAMETER GitRoot
     Root directory that contains all worktree folders.
     Defaults to 'C:\Dropbox\whertzing\GitHub'.
@@ -45,8 +45,8 @@ function Clear-SprintGeneratedArtifacts {
   .OUTPUTS
     [PSCustomObject] with fields:
       sprintNumber          [string]   — sprint passed in
-      worktreesScanned      [int]      — total sprint worktrees found
-      worktreesWithGenerated [int]     — worktrees that had a _generated/ dir
+      workTreesScanned      [int]      — total sprint workTrees found
+      workTreesWithGenerated [int]     — workTrees that had a _generated/ dir
       filesRemoved          [int]      — total file count deleted
       directoriesRemoved    [int]      — total sub-directory count deleted
       errors                [string[]] — per-item error messages (empty if clean)
@@ -99,18 +99,18 @@ function Clear-SprintGeneratedArtifacts {
 
   process {
     $worktreePattern = "*-wt-*-sprint-$SprintNumber-work-items"
-    $worktrees = Get-ChildItem -LiteralPath $GitRoot -Directory -Filter $worktreePattern
+    $workTrees = Get-ChildItem -LiteralPath $GitRoot -Directory -Filter $worktreePattern
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-      -Message "Found $($worktrees.Count) worktree(s) matching '$worktreePattern'"
+      -Message "Found $($workTrees.Count) worktree(s) matching '$worktreePattern'"
 
-    $worktreesScanned = $worktrees.Count
-    $worktreesWithGenerated = 0
+    $workTreesScanned = $workTrees.Count
+    $workTreesWithGenerated = 0
     $filesRemoved = 0
     $directoriesRemoved = 0
     $errors = [System.Collections.Generic.List[string]]::new()
 
-    foreach ($wt in $worktrees) {
+    foreach ($wt in $workTrees) {
       $generatedPath = Join-Path -Path $wt.FullName -ChildPath '_generated'
 
       if (-not (Test-Path -LiteralPath $generatedPath -PathType Container)) {
@@ -119,7 +119,7 @@ function Clear-SprintGeneratedArtifacts {
         continue
       }
 
-      $worktreesWithGenerated++
+      $workTreesWithGenerated++
 
       # Enumerate all items directly under _generated/ (recursive deletion
       # via Remove-Item -Recurse on each top-level entry avoids the "directory
@@ -167,8 +167,8 @@ function Clear-SprintGeneratedArtifacts {
 
     [PSCustomObject]@{
       sprintNumber           = $SprintNumber
-      worktreesScanned       = $worktreesScanned
-      worktreesWithGenerated = $worktreesWithGenerated
+      workTreesScanned       = $workTreesScanned
+      workTreesWithGenerated = $workTreesWithGenerated
       filesRemoved           = $filesRemoved
       directoriesRemoved     = $directoriesRemoved
       errors                 = $errors.ToArray()

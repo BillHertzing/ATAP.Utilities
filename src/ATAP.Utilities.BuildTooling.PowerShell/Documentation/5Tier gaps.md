@@ -87,7 +87,7 @@ The script is **not broken** — it is **misaligned**. Most gaps are structural 
 | G-30 | `module.build.ps1.ChatGPTGenerated` exists as a parallel file and is not referenced anywhere — adds confusion.                                                                                                    |
 | G-31 | `CleanAll` only aliases `Clean`; there is no task to wipe `_generated/` at the repo root.                                                                                                                         |
 | G-32 | `BuildPSM1` concatenates all `.ps1` files into one big `.psm1` without stripping `using` directives (the code has a `ToDo:` comment acknowledging this).                                                          |
-| G-33 | `BuildBasePSD1` pattern-matches file paths with `[Regex]::Escape([System.IO.Path]::DirectorySeparatorChar + 'public' + …)` — OK on Windows but fragile on POSIX worktrees and slow in large modules.              |
+| G-33 | `BuildBasePSD1` pattern-matches file paths with `[Regex]::Escape([System.IO.Path]::DirectorySeparatorChar + 'public' + …)` — OK on Windows but fragile on POSIX workTrees and slow in large modules.              |
 | G-34 | No `.gitattributes` guard on per-branch artifacts; `NuGet.config`-style `merge=ours` strategy is not replicated for PowerShell-module `version.json`.                                                             |
 | G-35 | No handling of the `Trace` configuration referenced in Section 7.5 of the Explainer — PowerShell modules only need `Release`, but the script still emits a `Debug`-flavored `.psd1` via the old lifecycle matrix. |
 

@@ -1,4 +1,5 @@
-<#
+function Complete-PlanningSession {
+  <#
 .SYNOPSIS
     Finalize a planning session: update status files, generate amendments, commit,
     push, open a PR, squash-merge, pull main, and remove the worktree.
@@ -9,7 +10,7 @@
 
     The 6-phase planning process (Status Capture, AI Conversation Analysis,
     Scope Creep Review, Cross-Phase Reconciliation, Sprint Planning, and
-    Conversation Bookmark) is performed by the facilitator. This script
+    Conversation Bookmark) is performed by the facilitator. This cmdlet
     handles the mechanical file updates and Git operations afterward:
 
       1. Reads Session, BranchName, IssueNumber, WorktreePath from the notebook header
@@ -47,225 +48,246 @@
 .PARAMETER GhRepo
     GitHub repo owner/name. Auto-detected via gh repo view if omitted.
 
+.OUTPUTS
+    [void]
+
 .EXAMPLE
-    .\Complete-PlanningSession.ps1 -SessionFile 2026-03-16-Session.md
+    Complete-PlanningSession -SessionFile 2026-03-16-Session.md
     # Full run: commit → push → PR → merge → cleanup.
 
 .EXAMPLE
-    .\Complete-PlanningSession.ps1 -SessionFile 2026-03-16-Session.md -SkipGitHub
+    Complete-PlanningSession -SessionFile 2026-03-16-Session.md -SkipGitHub
     # Commit and push only; merge PR manually in GitHub.
 
 .EXAMPLE
-    .\Complete-PlanningSession.ps1 -SessionFile 2026-03-16-Session.md -WhatIf
+    Complete-PlanningSession -SessionFile 2026-03-16-Session.md -WhatIf
     # Dry run — shows what would change.
+
+.NOTES
+    AI assisted using Powershell.instructions.md as guidelines
+
+.LINK
+    https://github.com/whertzing/ATAP.Utilities
 #>
+  function Complete-PlanningSession {
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    [OutputType([void])]
+    param(
+      [Parameter(Mandatory = $true, Position = 0)]
+      [ValidateNotNullOrEmpty()]
+      [string] $SessionFile,
 
-[CmdletBinding(SupportsShouldProcess)]
-param(
-    [Parameter(Mandatory)]
-    [string]$SessionFile,
+      [Parameter(Mandatory = $false)]
+      [string] $PlanFile,
 
-    [string]$PlanFile,
+      [Parameter(Mandatory = $false)]
+      [switch] $SkipGitHub,
 
-    [switch]$SkipGitHub,
+      [Parameter(Mandatory = $false)]
+      [switch] $SkipWorktreeRemove,
 
-    [switch]$SkipWorktreeRemove,
+      [Parameter(Mandatory = $false)]
+      [string] $GhRepo = ''
+    )
 
-    [string]$GhRepo = ''
-)
+    begin {
+      $fn = $MyInvocation.MyCommand.Name
+      $mn = $MyInvocation.MyCommand.ModuleName
 
-Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Entering function'
 
-# ════════════════════════════════════════════════════════════════════════════
-# 0.  Helpers
-# ════════════════════════════════════════════════════════════════════════════
+      # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: SessionFile)
+      $SessionFile = Get-PVal -ParameterName SessionFile -originalPSBoundParameters $PSBoundParameters -dottedPath SessionFile -DefaultValue $SessionFile
 
-function Write-Step { param([string]$Msg) Write-Host "  ► $Msg" -ForegroundColor Cyan }
-function Write-OK { param([string]$Msg) Write-Host "  ✓ $Msg" -ForegroundColor Green }
-function Write-Warn { param([string]$Msg) Write-Host "  ⚠ $Msg" -ForegroundColor Yellow }
-function Write-Info { param([string]$Msg) Write-Host "    $Msg" -ForegroundColor DarkGray }
-function Write-Rule { Write-Host ('  ' + '═' * 55) -ForegroundColor DarkCyan }
-function Write-Header([string]$T) { Write-Rule; Write-Host "   $T" -ForegroundColor Cyan; Write-Rule }
+      # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: PlanFile)
+      $PlanFile = Get-PVal -ParameterName PlanFile -originalPSBoundParameters $PSBoundParameters -dottedPath PlanFile -DefaultValue $PlanFile
 
-function Invoke-Git {
-    param([string]$WorkDir, [string[]]$GitArgs)
-    if ($WhatIfPreference) { Write-Info "[WhatIf] git -C '$WorkDir' $($GitArgs -join ' ')"; return }
-    $result = & git -C $WorkDir @GitArgs 2>&1
-    if ($LASTEXITCODE -ne 0) { throw "git $($GitArgs -join ' ') failed`n$result" }
-    return $result
-}
+      # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: GhRepo)
+      $GhRepo = Get-PVal -ParameterName GhRepo -originalPSBoundParameters $PSBoundParameters -dottedPath GhRepo -DefaultValue $GhRepo
 
-function Update-StatusInFile {
-    [CmdletBinding(SupportsShouldProcess)]
-    param([string]$FilePath, [string]$ScId, [string]$NewStatus,
-        [string]$ExtraField = '', [string]$ExtraValue = '')
-    $content = Get-Content $FilePath -Raw
-    $pattern = "(?ms)(## $([regex]::Escape($ScId))\r?\n(?:.*?\r?\n)*?)(- \*\*Status\*\*: \w+)"
-    if ($content -match $pattern) {
-        $newContent = $content -replace $pattern, "`$1- **Status**: $NewStatus"
-        if ($ExtraField -and $ExtraValue) {
+      # ── Private helpers ────────────────────────────────────────────────────────
+
+      function invokeGit {
+        param([string]$WorkDir, [string[]]$GitArgs)
+        if ($WhatIfPreference) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "[WhatIf] git -C '$WorkDir' $($GitArgs -join ' ')"
+          return
+        }
+        $result = & git -C $WorkDir @GitArgs 2>&1
+        if ($LASTEXITCODE -ne 0) { throw "git $($GitArgs -join ' ') failed`n$result" }
+        return $result
+      }
+
+      function updateStatusInFile {
+        [CmdletBinding(SupportsShouldProcess)]
+        param(
+          [string] $FilePath,
+          [string] $ScId,
+          [string] $NewStatus,
+          [string] $ExtraField = '',
+          [string] $ExtraValue = ''
+        )
+        $content = Get-Content $FilePath -Raw
+        $pattern = "(?ms)(## $([regex]::Escape($ScId))\r?\n(?:.*?\r?\n)*?)(- \*\*Status\*\*: \w+)"
+        if ($content -match $pattern) {
+          $newContent = $content -replace $pattern, "`$1- **Status**: $NewStatus"
+          if ($ExtraField -and $ExtraValue) {
             $newContent = $newContent -replace "(- \*\*Status\*\*: $NewStatus)",
             "`$1`n- **$ExtraField**: $ExtraValue"
-        }
-        if ($PSCmdlet.ShouldProcess($FilePath, "Update $ScId Status → $NewStatus")) {
+          }
+          if ($PSCmdlet.ShouldProcess($FilePath, "Update $ScId Status → $NewStatus")) {
             Set-Content -Path $FilePath -Value $newContent -Encoding UTF8
+          }
+          return $true
         }
-        return $true
-    }
-    return $false
-}
-
-Write-Host ''
-Write-Header 'COMPLETE PLANNING SESSION'
-Write-Host ''
-
-# ════════════════════════════════════════════════════════════════════════════
-# 1.  Locate the _Planning repo and resolve the session file
-# ════════════════════════════════════════════════════════════════════════════
-
-$planningRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-$sessionsDir = Join-Path $planningRoot 'ReplanningNotebooks'
-
-if (-not [System.IO.Path]::IsPathRooted($SessionFile)) {
-    foreach ($candidate in @(
-            (Join-Path $sessionsDir $SessionFile),
-            (Join-Path $planningRoot $SessionFile),
-            $SessionFile
-        )) {
-        if (Test-Path $candidate) { $SessionFile = $candidate; break }
-    }
-}
-
-if (-not (Test-Path $SessionFile)) {
-    Write-Host "  ✗ Session file not found: $SessionFile" -ForegroundColor Red
-    exit 1
-}
-
-Write-Step "Session file: $SessionFile"
-$sessionContent = Get-Content $SessionFile -Raw
-
-# ── Extract Git metadata from session doc header ─────────────────────────────
-function Get-HeaderField([string]$Field) {
-    if ($sessionContent -match "\|\s*\*\*$Field\*\*\s*\|\s*([^|`n]+)") {
-        return $Matches[1].Trim()
-    }
-    return ''
-}
-
-# Support both "SessionId" (old format) and "Session" (current notebook format)
-$sessionId = Get-HeaderField 'Session'
-if (-not $sessionId) { $sessionId = Get-HeaderField 'SessionId' }
-$sessionDate = Get-HeaderField 'Date'
-if (-not $sessionDate) {
-    $sessionDate = if ($SessionFile -match '(\d{4}-\d{2}-\d{2})') { $Matches[1] } else { Get-Date -Format 'yyyy-MM-dd' }
-}
-$branchName = Get-HeaderField 'BranchName'
-$issueNumber = [int](Get-HeaderField 'IssueNumber')
-$worktreePath = Get-HeaderField 'WorktreePath'
-$prevEnd = (Get-HeaderField 'PreviousProjectEnd') -replace '_.*_', '' | ForEach-Object { $_.Trim() }
-if (-not $prevEnd) { $prevEnd = 'Week 23' }
-
-Write-Info "SessionId   : $sessionId"
-Write-Info "Branch      : $(if ($branchName) { $branchName } else { '(not set — manual mode)' })"
-Write-Info "Issue       : $(if ($issueNumber -gt 0) { "#$issueNumber" } else { 'none' })"
-Write-Info "Worktree    : $(if ($worktreePath) { $worktreePath } else { '(not set)' })"
-
-# ── Resolve paths — prefer worktree when available ───────────────────────────
-$workDir = if ($worktreePath -and (Test-Path $worktreePath)) { $worktreePath } else { $planningRoot }
-
-$inboxPath = Join-Path $workDir 'ScopeCreepManagement' 'ScopeCreep-Inbox.md'
-$adoptedPath = Join-Path $workDir 'ScopeCreepManagement' 'ScopeCreep-Adopted.md'
-$deferredPath = Join-Path $workDir 'ScopeCreepManagement' 'ScopeCreep-Deferred.md'
-$sessionsDirWt = Join-Path $workDir 'ReplanningNotebooks'
-if (-not (Test-Path $sessionsDirWt)) { New-Item -ItemType Directory -Path $sessionsDirWt | Out-Null }
-
-# Resolve plan file (Modernization Plan — renamed from "Weekly Implementation Plan" in Sprint 3)
-if (-not $PlanFile) {
-    $found = Get-ChildItem $workDir -Filter 'AceCommander-Modernization-Plan.md' -ErrorAction SilentlyContinue |
-        Select-Object -First 1
-    $PlanFile = if ($found) { $found.FullName } else { Join-Path $workDir 'AceCommander-Modernization-Plan.md' }
-}
-
-# ════════════════════════════════════════════════════════════════════════════
-# 2.  Parse decisions from the session doc
-# ════════════════════════════════════════════════════════════════════════════
-
-Write-Step 'Parsing decisions...'
-
-$blocks = [regex]::Split($sessionContent, '(?m)(?=^### SC-\d{4})')
-$itemBlocks = $blocks | Where-Object { $_ -match '(?m)^### SC-(\d{4})' }
-
-if (-not $itemBlocks) {
-    Write-Warn 'No SC-NNNN blocks found. If this is a TASKS.md-only session, continue.'
-}
-
-$decisions = foreach ($block in @($itemBlocks)) {
-    if ($block -notmatch '(?m)^### (SC-\d{4}) — (.+?)(?:\s*🔁.*)?$') { continue }
-    $scId = $Matches[1]; $title = $Matches[2].Trim()
-
-    $F = { param([string]$P) if ($block -match $P) { $Matches[1].Trim() } else { '' } }
-
-    $decision = ''
-    if ($block -match '\[x\]\s*Adopt' -or $block -match '\[X\]\s*Adopt') { $decision = 'Adopt' }
-    elseif ($block -match '\[x\]\s*Defer' -or $block -match '\[X\]\s*Defer') { $decision = 'Defer' }
-    elseif ($block -match '\[x\]\s*Reject' -or $block -match '\[X\]\s*Reject') { $decision = 'Reject' }
-    elseif ($block -match '\*\*Decision\*\*:\s*`?([A-Za-z]+)') { $decision = $Matches[1] }
-
-    [PSCustomObject]@{
-        ScId               = $scId
-        Title              = $title
-        Decision           = $decision
-        Rationale          = & $F '\*\*Rationale\*\*:\s*(.+)'
-        InsertAt           = & $F '- InsertAt:\s*(.+)'
-        ImpactWeeks        = & $F '- ImpactWeeks:\s*(.+)'
-        MilestonesAffected = & $F '- MilestonesAffected:\s*(.+)'
-        NewProjectEnd      = & $F '- NewProjectEnd:\s*(.+)'
-        TasksAdded         = & $F '- TasksAdded:\s*(.+)'
-        Context            = & $F '- Context:\s*(.+)'
-        DeferredReason     = & $F '- DeferredReason:\s*(.+)'
-        DeferredUntil      = & $F '- DeferredUntil:\s*(.+)'
-        TriggerCondition   = & $F '- TriggerCondition:\s*(.+)'
-        SuggestedBy        = if ($block -match '\*\*SuggestedBy\*\*:\s*([^|]+)') { $Matches[1].Trim() } else { '' }
-        SuggestedDate      = if ($block -match '\*\*Date\*\*:\s*([^|]+)') { $Matches[1].Trim() } else { '' }
-        Repo               = if ($block -match '\*\*Repo\*\*:\s*([^|]+)') { $Matches[1].Trim() } else { '' }
-        InitialSize        = if ($block -match '\*\*Size\*\*:\s*([^\|`n>]+)') { $Matches[1].Trim() } else { '' }
-        AdoptedDate        = $sessionDate
-        SessionId          = $sessionId
-    }
-}
-
-$undecided = @($decisions | Where-Object { $_.Decision -notin @('Adopt', 'Defer', 'Reject') })
-$decided = @($decisions | Where-Object { $_.Decision -in @('Adopt', 'Defer', 'Reject') })
-$adopted = @($decided | Where-Object Decision -EQ 'Adopt')
-$deferred = @($decided | Where-Object Decision -EQ 'Defer')
-$rejected = @($decided | Where-Object Decision -EQ 'Reject')
-
-if ($undecided) {
-    Write-Warn "Undecided (skipped): $($undecided | ForEach-Object { $_.ScId } | Join-String ', ')"
-    Write-Warn 'Mark with [x] in the session doc and re-run if needed.'
-}
-
-Write-OK "Adopted: $($adopted.Count)  Deferred: $($deferred.Count)  Rejected: $($rejected.Count)  Skipped: $($undecided.Count)"
-
-# ════════════════════════════════════════════════════════════════════════════
-# 3.  Apply decisions to files in the worktree
-# ════════════════════════════════════════════════════════════════════════════
-
-Write-Step 'Updating status files...'
-
-$amendmentBlocks = [System.Text.StringBuilder]::new()
-$adoptedTableRows = [System.Text.StringBuilder]::new()
-$modifiedFiles = [System.Collections.Generic.List[string]]::new()
-
-foreach ($item in $adopted) {
-    Write-Host "  ✓ ADOPT  $($item.ScId) — $($item.Title)" -ForegroundColor Green
-
-    if (Update-StatusInFile -FilePath $inboxPath -ScId $item.ScId -NewStatus 'Adopted') {
-        if ($inboxPath -notin $modifiedFiles) { $modifiedFiles.Add($inboxPath) }
+        return $false
+      }
     }
 
-    $adoptedEntry = @"
+    process {
+      try {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'COMPLETE PLANNING SESSION'
+
+        # ════════════════════════════════════════════════════════════════════════
+        # 1.  Locate the _Planning repo and resolve the session file
+        # ════════════════════════════════════════════════════════════════════════
+
+        $planningRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+        $sessionsDir = Join-Path $planningRoot 'ReplanningNotebooks'
+
+        if (-not [System.IO.Path]::IsPathRooted($SessionFile)) {
+          foreach ($candidate in @(
+              (Join-Path $sessionsDir $SessionFile),
+              (Join-Path $planningRoot $SessionFile),
+              $SessionFile
+            )) {
+            if (Test-Path $candidate) { $SessionFile = $candidate; break }
+          }
+        }
+
+        if (-not (Test-Path $SessionFile)) {
+          throw "Session file not found: $SessionFile"
+        }
+
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Session file: $SessionFile"
+        $sessionContent = Get-Content $SessionFile -Raw
+
+        # ── Extract Git metadata from session doc header ────────────────────────
+        function getHeaderField([string]$Field) {
+          if ($sessionContent -match "\|\s*\*\*$Field\*\*\s*\|\s*([^|`n]+)") {
+            return $Matches[1].Trim()
+          }
+          return ''
+        }
+
+        $sessionId = getHeaderField 'Session'
+        if (-not $sessionId) { $sessionId = getHeaderField 'SessionId' }
+        $sessionDate = getHeaderField 'Date'
+        if (-not $sessionDate) {
+          $sessionDate = if ($SessionFile -match '(\d{4}-\d{2}-\d{2})') { $Matches[1] } else { Get-Date -Format 'yyyy-MM-dd' }
+        }
+        $branchName = getHeaderField 'BranchName'
+        $issueNumber = [int](getHeaderField 'IssueNumber')
+        $worktreePath = getHeaderField 'WorktreePath'
+        $prevEnd = (getHeaderField 'PreviousProjectEnd') -replace '_.*_', '' | ForEach-Object { $_.Trim() }
+        if (-not $prevEnd) { $prevEnd = 'Week 23' }
+
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "SessionId=$sessionId  Branch=$(if ($branchName) { $branchName } else { '(not set)' })  Issue=$(if ($issueNumber -gt 0) { "#$issueNumber" } else { 'none' })  Worktree=$(if ($worktreePath) { $worktreePath } else { '(not set)' })"
+
+        # ── Resolve paths — prefer worktree when available ────────────────────────
+        $workDir = if ($worktreePath -and (Test-Path $worktreePath)) { $worktreePath } else { $planningRoot }
+
+        $inboxPath = Join-Path $workDir 'ScopeCreepManagement' 'ScopeCreep-Inbox.md'
+        $adoptedPath = Join-Path $workDir 'ScopeCreepManagement' 'ScopeCreep-Adopted.md'
+        $deferredPath = Join-Path $workDir 'ScopeCreepManagement' 'ScopeCreep-Deferred.md'
+        $sessionsDirWt = Join-Path $workDir 'ReplanningNotebooks'
+        if (-not (Test-Path $sessionsDirWt)) { New-Item -ItemType Directory -Path $sessionsDirWt | Out-Null }
+
+        if (-not $PlanFile) {
+          $found = Get-ChildItem $workDir -Filter 'AceCommander-Modernization-Plan.md' -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+          $PlanFile = if ($found) { $found.FullName } else { Join-Path $workDir 'AceCommander-Modernization-Plan.md' }
+        }
+
+        # ════════════════════════════════════════════════════════════════════════
+        # 2.  Parse decisions from the session doc
+        # ════════════════════════════════════════════════════════════════════════
+
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Parsing decisions...'
+
+        $blocks = [regex]::Split($sessionContent, '(?m)(?=^### SC-\d{4})')
+        $itemBlocks = $blocks | Where-Object { $_ -match '(?m)^### SC-(\d{4})' }
+
+        if (-not $itemBlocks) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message 'No SC-NNNN blocks found. If this is a TASKS.md-only session, continue.'
+        }
+
+        $decisions = foreach ($block in @($itemBlocks)) {
+          if ($block -notmatch '(?m)^### (SC-\d{4}) — (.+?)(?:\s*🔁.*)?$') { continue }
+          $scId = $Matches[1]
+          $title = $Matches[2].Trim()
+
+          $F = { param([string]$P) if ($block -match $P) { $Matches[1].Trim() } else { '' } }
+
+          $decision = ''
+          if ($block -match '\[x\]\s*Adopt' -or $block -match '\[X\]\s*Adopt') { $decision = 'Adopt' }
+          elseif ($block -match '\[x\]\s*Defer' -or $block -match '\[X\]\s*Defer') { $decision = 'Defer' }
+          elseif ($block -match '\[x\]\s*Reject' -or $block -match '\[X\]\s*Reject') { $decision = 'Reject' }
+          elseif ($block -match '\*\*Decision\*\*:\s*`?([A-Za-z]+)') { $decision = $Matches[1] }
+
+          [PSCustomObject]@{
+            ScId               = $scId
+            Title              = $title
+            Decision           = $decision
+            Rationale          = & $F '\*\*Rationale\*\*:\s*(.+)'
+            InsertAt           = & $F '- InsertAt:\s*(.+)'
+            ImpactWeeks        = & $F '- ImpactWeeks:\s*(.+)'
+            MilestonesAffected = & $F '- MilestonesAffected:\s*(.+)'
+            NewProjectEnd      = & $F '- NewProjectEnd:\s*(.+)'
+            TasksAdded         = & $F '- TasksAdded:\s*(.+)'
+            Context            = & $F '- Context:\s*(.+)'
+            DeferredReason     = & $F '- DeferredReason:\s*(.+)'
+            DeferredUntil      = & $F '- DeferredUntil:\s*(.+)'
+            TriggerCondition   = & $F '- TriggerCondition:\s*(.+)'
+            SuggestedBy        = if ($block -match '\*\*SuggestedBy\*\*:\s*([^|]+)') { $Matches[1].Trim() } else { '' }
+            SuggestedDate      = if ($block -match '\*\*Date\*\*:\s*([^|]+)') { $Matches[1].Trim() } else { '' }
+            Repo               = if ($block -match '\*\*Repo\*\*:\s*([^|]+)') { $Matches[1].Trim() } else { '' }
+            InitialSize        = if ($block -match '\*\*Size\*\*:\s*([^\|`n>]+)') { $Matches[1].Trim() } else { '' }
+            AdoptedDate        = $sessionDate
+            SessionId          = $sessionId
+          }
+        }
+
+        $undecided = @($decisions | Where-Object { $_.Decision -notin @('Adopt', 'Defer', 'Reject') })
+        $decided = @($decisions | Where-Object { $_.Decision -in @('Adopt', 'Defer', 'Reject') })
+        $adopted = @($decided | Where-Object Decision -EQ 'Adopt')
+        $deferred = @($decided | Where-Object Decision -EQ 'Defer')
+        $rejected = @($decided | Where-Object Decision -EQ 'Reject')
+
+        if ($undecided) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "Undecided (skipped): $(($undecided | ForEach-Object { $_.ScId }) -join ', ') — mark with [x] in the session doc and re-run if needed."
+        }
+
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Adopted: $($adopted.Count)  Deferred: $($deferred.Count)  Rejected: $($rejected.Count)  Skipped: $($undecided.Count)"
+
+        # ════════════════════════════════════════════════════════════════════════
+        # 3.  Apply decisions to files in the worktree
+        # ════════════════════════════════════════════════════════════════════════
+
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Updating status files...'
+
+        $amendmentBlocks = [System.Text.StringBuilder]::new()
+        $adoptedTableRows = [System.Text.StringBuilder]::new()
+        $modifiedFiles = [System.Collections.Generic.List[string]]::new()
+
+        foreach ($item in $adopted) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Adopt' -Message "ADOPT  $($item.ScId) — $($item.Title)"
+
+          if (updateStatusInFile -FilePath $inboxPath -ScId $item.ScId -NewStatus 'Adopted') {
+            if ($inboxPath -notin $modifiedFiles) { $modifiedFiles.Add($inboxPath) }
+          }
+
+          $adoptedEntry = @"
 
 ### $($item.ScId) — $($item.Title)
 
@@ -278,24 +300,24 @@ foreach ($item in $adopted) {
 
 ---
 "@
-    if ($PSCmdlet.ShouldProcess($adoptedPath, "Append $($item.ScId)")) {
-        Add-Content -Path $adoptedPath -Value $adoptedEntry -Encoding UTF8
-    }
-    if ($adoptedPath -notin $modifiedFiles) { $modifiedFiles.Add($adoptedPath) }
+          if ($PSCmdlet.ShouldProcess($adoptedPath, "Append $($item.ScId)")) {
+            Add-Content -Path $adoptedPath -Value $adoptedEntry -Encoding UTF8
+          }
+          if ($adoptedPath -notin $modifiedFiles) { $modifiedFiles.Add($adoptedPath) }
 
-    $projectEnd = if ($item.NewProjectEnd) { $item.NewProjectEnd } else { $prevEnd }
-    $null = $adoptedTableRows.AppendLine(
-        "| $($item.ScId) | $($item.Title) | $($item.SuggestedBy) | $($item.SuggestedDate) | " +
-        "$($item.AdoptedDate) | $($item.SessionId) | $($item.InsertAt) | $($item.ImpactWeeks) | $projectEnd |")
+          $projectEnd = if ($item.NewProjectEnd) { $item.NewProjectEnd } else { $prevEnd }
+          $null = $adoptedTableRows.AppendLine(
+            "| $($item.ScId) | $($item.Title) | $($item.SuggestedBy) | $($item.SuggestedDate) | " +
+            "$($item.AdoptedDate) | $($item.SessionId) | $($item.InsertAt) | $($item.ImpactWeeks) | $projectEnd |")
 
-    $milestoneLine = if ($item.MilestonesAffected -and $item.MilestonesAffected -notmatch '^\(') {
-        "| MilestonesAffected | $($item.MilestonesAffected) |"
-    } else { '' }
-    $tasksAddedLine = if ($item.TasksAdded -and $item.TasksAdded -notmatch '^\(') {
-        "| TasksAdded | $($item.TasksAdded) |"
-    } else { '' }
+          $milestoneLine = if ($item.MilestonesAffected -and $item.MilestonesAffected -notmatch '^\(') {
+            "| MilestonesAffected | $($item.MilestonesAffected) |"
+          } else { '' }
+          $tasksAddedLine = if ($item.TasksAdded -and $item.TasksAdded -notmatch '^\(') {
+            "| TasksAdded | $($item.TasksAdded) |"
+          } else { '' }
 
-    $null = $amendmentBlocks.AppendLine(@"
+          $null = $amendmentBlocks.AppendLine(@"
 
 ### ◈ $($item.ScId) — $($item.Title)
 
@@ -318,15 +340,15 @@ _(Fill in specific task additions and week shifts after editing the plan body)_
 
 ---
 "@)
-}
+        }
 
-foreach ($item in $deferred) {
-    Write-Host "  → DEFER  $($item.ScId) — $($item.Title)" -ForegroundColor Yellow
-    Update-StatusInFile -FilePath $inboxPath -ScId $item.ScId -NewStatus 'Deferred' `
-        -ExtraField 'DeferredReason' -ExtraValue $item.DeferredReason | Out-Null
-    if ($inboxPath -notin $modifiedFiles) { $modifiedFiles.Add($inboxPath) }
+        foreach ($item in $deferred) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Defer' -Message "DEFER  $($item.ScId) — $($item.Title)"
+          updateStatusInFile -FilePath $inboxPath -ScId $item.ScId -NewStatus 'Deferred' `
+            -ExtraField 'DeferredReason' -ExtraValue $item.DeferredReason | Out-Null
+          if ($inboxPath -notin $modifiedFiles) { $modifiedFiles.Add($inboxPath) }
 
-    $deferredEntry = @"
+          $deferredEntry = @"
 
 ### $($item.ScId) — $($item.Title)
 
@@ -342,33 +364,33 @@ foreach ($item in $deferred) {
 
 ---
 "@
-    if ($PSCmdlet.ShouldProcess($deferredPath, "Append $($item.ScId)")) {
-        Add-Content -Path $deferredPath -Value $deferredEntry -Encoding UTF8
-    }
-    if ($deferredPath -notin $modifiedFiles) { $modifiedFiles.Add($deferredPath) }
-}
+          if ($PSCmdlet.ShouldProcess($deferredPath, "Append $($item.ScId)")) {
+            Add-Content -Path $deferredPath -Value $deferredEntry -Encoding UTF8
+          }
+          if ($deferredPath -notin $modifiedFiles) { $modifiedFiles.Add($deferredPath) }
+        }
 
-foreach ($item in $rejected) {
-    Write-Host "  ✗ REJECT $($item.ScId) — $($item.Title)" -ForegroundColor DarkGray
-    Update-StatusInFile -FilePath $inboxPath -ScId $item.ScId -NewStatus 'Rejected' | Out-Null
-    if ($inboxPath -notin $modifiedFiles) { $modifiedFiles.Add($inboxPath) }
-}
+        foreach ($item in $rejected) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Reject' -Message "REJECT $($item.ScId) — $($item.Title)"
+          updateStatusInFile -FilePath $inboxPath -ScId $item.ScId -NewStatus 'Rejected' | Out-Null
+          if ($inboxPath -notin $modifiedFiles) { $modifiedFiles.Add($inboxPath) }
+        }
 
-# ── Update adopted summary table ──────────────────────────────────────────────
-if ($adopted.Count -gt 0 -and $adoptedTableRows.Length -gt 0 -and $PSCmdlet.ShouldProcess($adoptedPath, 'Update adopted summary table')) {
-    $rows = $adoptedTableRows.ToString().TrimEnd()
-    $current = Get-Content $adoptedPath -Raw
-    $newContent = $current -replace '\|\s*_\(none yet\)_\s*\|[^\n]*\n', ''
-    $newContent = $newContent -replace '(<!-- Full entries appended)', "$rows`n`$1"
-    Set-Content -Path $adoptedPath -Value $newContent -Encoding UTF8
-}
+        # ── Update adopted summary table ─────────────────────────────────────────
+        if ($adopted.Count -gt 0 -and $adoptedTableRows.Length -gt 0 -and $PSCmdlet.ShouldProcess($adoptedPath, 'Update adopted summary table')) {
+          $rows = $adoptedTableRows.ToString().TrimEnd()
+          $current = Get-Content $adoptedPath -Raw
+          $newContent = $current -replace '\|\s*_\(none yet\)_\s*\|[^\n]*\n', ''
+          $newContent = $newContent -replace '(<!-- Full entries appended)', "$rows`n`$1"
+          Set-Content -Path $adoptedPath -Value $newContent -Encoding UTF8
+        }
 
-# ── Write amendments file ─────────────────────────────────────────────────────
-$amendmentsFile = Join-Path $sessionsDirWt "$sessionDate-Amendments.md"
+        # ── Write amendments file ────────────────────────────────────────────────
+        $amendmentsFile = Join-Path $sessionsDirWt "$sessionDate-Amendments.md"
 
-if ($adopted.Count -gt 0) {
-    $planLeaf = if ($PlanFile) { Split-Path $PlanFile -Leaf } else { 'AceCommander-Modernization-Plan.md' }
-    $amendHeader = @"
+        if ($adopted.Count -gt 0) {
+          $planLeaf = if ($PlanFile) { Split-Path $PlanFile -Leaf } else { 'AceCommander-Modernization-Plan.md' }
+          $amendHeader = @"
 # Plan Amendments — $sessionDate ($sessionId)
 
 Paste the blocks below into the ``## Scope-Creep Amendments`` section at the end of:
@@ -379,106 +401,100 @@ specific task additions and sprint-number shifts you made in the plan body.
 
 ---
 "@
-    $fullAmendments = $amendHeader + $amendmentBlocks.ToString()
-    if ($PSCmdlet.ShouldProcess($amendmentsFile, 'Write amendments file')) {
-        Set-Content -Path $amendmentsFile -Value $fullAmendments -Encoding UTF8
-        Write-OK "Amendments file: $amendmentsFile"
-    }
-    $modifiedFiles.Add($amendmentsFile)
-}
+          $fullAmendments = $amendHeader + $amendmentBlocks.ToString()
+          if ($PSCmdlet.ShouldProcess($amendmentsFile, 'Write amendments file')) {
+            Set-Content -Path $amendmentsFile -Value $fullAmendments -Encoding UTF8
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Amendments file: $amendmentsFile"
+          }
+          $modifiedFiles.Add($amendmentsFile)
+        }
 
-# ── Mark session Complete ─────────────────────────────────────────────────────
-$updatedSession = $sessionContent -replace '(\| \*\*Status\*\* \| )In-Progress', '${1}Complete'
-if ($PSCmdlet.ShouldProcess($SessionFile, 'Mark session Complete')) {
-    Set-Content -Path $SessionFile -Value $updatedSession -Encoding UTF8
-}
-if ($SessionFile -notin $modifiedFiles) { $modifiedFiles.Add($SessionFile) }
+        # ── Mark session Complete ────────────────────────────────────────────────
+        $updatedSession = $sessionContent -replace '(\| \*\*Status\*\* \| )In-Progress', '${1}Complete'
+        if ($PSCmdlet.ShouldProcess($SessionFile, 'Mark session Complete')) {
+          Set-Content -Path $SessionFile -Value $updatedSession -Encoding UTF8
+        }
+        if ($SessionFile -notin $modifiedFiles) { $modifiedFiles.Add($SessionFile) }
 
-# ── Include all planning artifacts that may have been updated during the session ─
-# Per Explainer 0000, the planning session produces/updates these artifacts:
-$planningArtifacts = @(
-    (Join-Path $workDir 'TASKS.md'),
-    (Join-Path $workDir 'README.md'),
-    (Join-Path $workDir 'AceCommander-Modernization-Plan.md'),
-    (Join-Path $workDir 'Sprint-Duration-Log.md')
-)
+        # ── Include all planning artifacts that may have been updated ────────────
+        $planningArtifacts = @(
+          (Join-Path $workDir 'TASKS.md'),
+          (Join-Path $workDir 'README.md'),
+          (Join-Path $workDir 'AceCommander-Modernization-Plan.md'),
+          (Join-Path $workDir 'Sprint-Duration-Log.md')
+        )
 
-# AI Conversation Analysis file (pattern: AI-ConversationAnalysis/SprintWorkSession-NNNN*.md)
-$aiAnalysisDir = Join-Path $workDir 'AI-ConversationAnalysis'
-if (Test-Path $aiAnalysisDir) {
-    Get-ChildItem $aiAnalysisDir -Filter 'SprintWorkSession-*AI Conversation Analysis.md' |
-        ForEach-Object { $planningArtifacts += $_.FullName }
-}
+        $aiAnalysisDir = Join-Path $workDir 'AI-ConversationAnalysis'
+        if (Test-Path $aiAnalysisDir) {
+          Get-ChildItem $aiAnalysisDir -Filter 'SprintWorkSession-*AI Conversation Analysis.md' |
+            ForEach-Object { $planningArtifacts += $_.FullName }
+        }
 
-# Conversation Bookmark (pattern: AceCommander_Project_State_Conversation_Bookmark_NNN.md)
-Get-ChildItem $workDir -Filter 'AceCommander_Project_State_Conversation_Bookmark_*.md' |
-    ForEach-Object { $planningArtifacts += $_.FullName }
+        Get-ChildItem $workDir -Filter 'AceCommander_Project_State_Conversation_Bookmark_*.md' |
+          ForEach-Object { $planningArtifacts += $_.FullName }
 
-foreach ($artifact in $planningArtifacts) {
-    if ((Test-Path $artifact) -and $artifact -notin $modifiedFiles) {
-        $modifiedFiles.Add($artifact)
-    }
-}
+        foreach ($artifact in $planningArtifacts) {
+          if ((Test-Path $artifact) -and $artifact -notin $modifiedFiles) {
+            $modifiedFiles.Add($artifact)
+          }
+        }
 
-Write-OK "File updates complete ($($modifiedFiles.Count) files)"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "File updates complete ($($modifiedFiles.Count) files)"
 
-# ════════════════════════════════════════════════════════════════════════════
-# 4.  Commit everything in the worktree
-# ════════════════════════════════════════════════════════════════════════════
+        # ════════════════════════════════════════════════════════════════════════
+        # 4.  Commit everything in the worktree
+        # ════════════════════════════════════════════════════════════════════════
 
-Write-Step "Committing in worktree ($workDir)..."
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Committing in worktree ($workDir)..."
 
-$adoptedIds = ($adopted | ForEach-Object { $_.ScId }) -join ', '
-$commitTitle = "plan($sessionId): adopt $($adopted.Count), defer $($deferred.Count), reject $($rejected.Count)"
-$commitBody = if ($adoptedIds) { "Adopted: $adoptedIds" } else { 'No ideas adopted this session.' }
-if ($issueNumber -gt 0) { $commitBody += "`n`nCloses #$issueNumber" }
+        $adoptedIds = ($adopted | ForEach-Object { $_.ScId }) -join ', '
+        $commitTitle = "plan($sessionId): adopt $($adopted.Count), defer $($deferred.Count), reject $($rejected.Count)"
+        $commitBody = if ($adoptedIds) { "Adopted: $adoptedIds" } else { 'No ideas adopted this session.' }
+        if ($issueNumber -gt 0) { $commitBody += "`n`nCloses #$issueNumber" }
 
-try {
-    Invoke-Git $workDir @('add', '-A')
-    Invoke-Git $workDir @('commit', '-m', $commitTitle, '-m', $commitBody)
-    Write-OK "Committed: $commitTitle"
-} catch {
-    Write-Warn "Commit failed (nothing to commit?): $_"
-}
+        try {
+          invokeGit $workDir @('add', '-A')
+          invokeGit $workDir @('commit', '-m', $commitTitle, '-m', $commitBody)
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Committed: $commitTitle"
+        } catch {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "Commit failed (nothing to commit?): $_"
+        }
 
-# ════════════════════════════════════════════════════════════════════════════
-# 5.  Push the branch
-# ════════════════════════════════════════════════════════════════════════════
+        # ════════════════════════════════════════════════════════════════════════
+        # 5.  Push the branch
+        # ════════════════════════════════════════════════════════════════════════
 
-if ($branchName) {
-    Write-Step "Pushing $branchName to origin..."
-    try {
-        Invoke-Git $workDir @('push', '-u', 'origin', $branchName)
-        Write-OK "Pushed origin/$branchName"
-    } catch {
-        Write-Warn "Push failed: $_"
-        Write-Warn "Push manually: git -C '$workDir' push -u origin $branchName"
-    }
-}
+        if ($branchName) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Pushing $branchName to origin..."
+          try {
+            invokeGit $workDir @('push', '-u', 'origin', $branchName)
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Pushed origin/$branchName"
+          } catch {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "Push failed: $_ — push manually: git -C '$workDir' push -u origin $branchName"
+          }
+        }
 
-# ════════════════════════════════════════════════════════════════════════════
-# 6.  Create and merge the PR
-# ════════════════════════════════════════════════════════════════════════════
+        # ════════════════════════════════════════════════════════════════════════
+        # 6.  Create and merge the PR
+        # ════════════════════════════════════════════════════════════════════════
 
-if (-not $SkipGitHub -and $branchName) {
-    # Auto-detect repo
-    if (-not $GhRepo) {
-        $GhRepo = (& gh repo view --json nameWithOwner -q '.nameWithOwner' 2>$null)
-    }
+        if (-not $SkipGitHub -and $branchName) {
+          if (-not $GhRepo) {
+            $GhRepo = (& gh repo view --json nameWithOwner -q '.nameWithOwner' 2>$null)
+          }
 
-    # Detect default branch early (needed for --base in PR creation)
-    $defaultBranch = (& git -C $planningRoot symbolic-ref refs/remotes/origin/HEAD 2>$null) `
-        -replace 'refs/remotes/origin/', ''
-    if (-not $defaultBranch) { $defaultBranch = 'main' }
+          $defaultBranch = (& git -C $planningRoot symbolic-ref refs/remotes/origin/HEAD 2>$null) `
+            -replace 'refs/remotes/origin/', ''
+          if (-not $defaultBranch) { $defaultBranch = 'main' }
 
-    # ── Create PR ────────────────────────────────────────────────────────────
-    Write-Step 'Creating pull request...'
+          # ── Create PR ──────────────────────────────────────────────────────────
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Creating pull request...'
 
-    $adoptedSummary = if ($adopted.Count -gt 0) {
-        ($adopted | ForEach-Object { "- ◈ $($_.ScId): $($_.Title)" }) -join "`n"
-    } else { '_(none)_' }
+          $adoptedSummary = if ($adopted.Count -gt 0) {
+            ($adopted | ForEach-Object { "- ◈ $($_.ScId): $($_.Title)" }) -join "`n"
+          } else { '_(none)_' }
 
-    $prBody = @"
+          $prBody = @"
 ## Planning Session $sessionId — $sessionDate
 
 $(if ($issueNumber -gt 0) { "Closes #$issueNumber`n" })
@@ -496,88 +512,94 @@ $adoptedSummary
 ### Files Changed
 $(($modifiedFiles | ForEach-Object { "- $(Split-Path $_ -Leaf)" }) -join "`n")
 
-_Generated by Complete-PlanningSession.ps1_
+_Generated by Complete-PlanningSession_
 "@
 
-    try {
-        if ($PSCmdlet.ShouldProcess("$GhRepo $branchName", 'Create pull request')) {
-            $prUrl = & gh pr create `
+          try {
+            if ($PSCmdlet.ShouldProcess("$GhRepo $branchName", 'Create pull request')) {
+              $prUrl = & gh pr create `
                 --title "Planning Session $sessionId ($sessionDate)" `
                 --body $prBody `
                 --base $defaultBranch `
                 --head $branchName `
                 --repo $GhRepo 2>&1
 
-            if ($LASTEXITCODE -eq 0) {
-                Write-OK "PR created: $prUrl"
-            } else {
-                Write-Warn "gh pr create returned: $prUrl"
+              if ($LASTEXITCODE -eq 0) {
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "PR created: $prUrl"
+              } else {
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "gh pr create returned: $prUrl"
+              }
             }
-        }
-    } catch { Write-Warn "PR creation failed: $_" }
+          } catch {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "PR creation failed: $_"
+          }
 
-    # ── Merge PR ──────────────────────────────────────────────────────────────
-    Write-Step 'Squash-merging PR...'
-    try {
-        if ($PSCmdlet.ShouldProcess("$GhRepo $branchName", 'Squash-merge PR and delete branch')) {
-            & gh pr merge $branchName `
+          # ── Merge PR ────────────────────────────────────────────────────────────
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Squash-merging PR...'
+          try {
+            if ($PSCmdlet.ShouldProcess("$GhRepo $branchName", 'Squash-merge PR and delete branch')) {
+              & gh pr merge $branchName `
                 --squash `
                 --delete-branch `
                 --repo $GhRepo 2>&1 | Out-Null
-            Write-OK 'PR squash-merged and branch deleted on origin'
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'PR squash-merged and branch deleted on origin'
+            }
+          } catch {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "PR merge failed: $_ — merge manually in GitHub."
+          }
+
+          # ── Pull main to get the squash commit ──────────────────────────────────
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Pulling main in _Planning repo...'
+          try {
+            invokeGit $planningRoot @('checkout', $defaultBranch)
+            invokeGit $planningRoot @('pull', 'origin', $defaultBranch)
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'main is up to date'
+          } catch {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "Could not pull main: $_"
+          }
         }
-    } catch { Write-Warn "PR merge failed: $_ — merge manually in GitHub." }
 
-    # ── Pull main to get the squash commit ───────────────────────────────────
-    Write-Step 'Pulling main in _Planning repo...'
-    try {
-        # $defaultBranch already computed above (before PR creation)
-        Invoke-Git $planningRoot @('checkout', $defaultBranch)
-        Invoke-Git $planningRoot @('pull', 'origin', $defaultBranch)
-        Write-OK 'main is up to date'
-    } catch { Write-Warn "Could not pull main: $_" }
-}
+        # ════════════════════════════════════════════════════════════════════════
+        # 7.  Remove the worktree
+        # ════════════════════════════════════════════════════════════════════════
 
-# ════════════════════════════════════════════════════════════════════════════
-# 7.  Remove the worktree
-# ════════════════════════════════════════════════════════════════════════════
-
-if ($worktreePath -and (Test-Path $worktreePath) -and -not $SkipWorktreeRemove) {
-    Write-Step 'Removing worktree...'
-    try {
-        if ($PSCmdlet.ShouldProcess($worktreePath, 'Remove worktree')) {
-            & git -C $planningRoot worktree remove $worktreePath --force 2>&1 | Out-Null
-            Write-OK "Worktree removed: $worktreePath"
+        if ($worktreePath -and (Test-Path $worktreePath) -and -not $SkipWorktreeRemove) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Removing worktree...'
+          try {
+            if ($PSCmdlet.ShouldProcess($worktreePath, 'Remove worktree')) {
+              & git -C $planningRoot worktree remove $worktreePath --force 2>&1 | Out-Null
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Worktree removed: $worktreePath"
+            }
+          } catch {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "Could not remove worktree: $_ — remove manually: git -C '$planningRoot' worktree remove '$worktreePath' --force"
+          }
         }
-    } catch { Write-Warn "Could not remove worktree: $_`nRemove manually: git -C '$planningRoot' worktree remove '$worktreePath' --force" }
+
+        # ════════════════════════════════════════════════════════════════════════
+        # 8.  Next-step instructions
+        # ════════════════════════════════════════════════════════════════════════
+
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'NEXT STEPS'
+
+        if ($adopted.Count -gt 0) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "1. Paste amendments into the plan document: $amendmentsFile — open the plan, go to '## Scope-Creep Amendments', paste each ◈ block and fill in 'What Changed in the Plan'."
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message '2. Review TASKS.md and confirm adopted tasks are present.'
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message '3. Verify Conversation Bookmark was generated: AceCommander_Project_State_Conversation_Bookmark_NNN.md'
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message '4. Commit all planning artifacts and create PR from the sprint branch.'
+        } else {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'No ideas were adopted. Check TASKS.md for any manual edits. Commit all planning artifacts and create PR from the sprint branch.'
+        }
+
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Planning session $sessionId complete."
+      } catch {
+        $errorMessage = "Complete-PlanningSession failed. Exception: $($_.Exception.Message)"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+        throw
+      }
+    }
+
+    end {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Leaving function'
+    }
+  }
 }
-
-# ════════════════════════════════════════════════════════════════════════════
-# 8.  Next-step instructions
-# ════════════════════════════════════════════════════════════════════════════
-
-Write-Host ''
-Write-Header 'NEXT STEPS'
-Write-Host ''
-
-if ($adopted.Count -gt 0) {
-    Write-Host '  1. Paste amendments into the plan document:' -ForegroundColor White
-    Write-Host "     $amendmentsFile" -ForegroundColor Yellow
-    Write-Host ''
-    Write-Host '     Open the plan, go to the end, add/find section:' -ForegroundColor DarkGray
-    Write-Host '     ## Scope-Creep Amendments' -ForegroundColor DarkGray
-    Write-Host "     Paste each ◈ block and fill in 'What Changed in the Plan'." -ForegroundColor DarkGray
-    Write-Host ''
-    Write-Host '  2. Review TASKS.md and confirm adopted tasks are present.' -ForegroundColor White
-    Write-Host ''
-    Write-Host '  3. Verify Conversation Bookmark was generated:' -ForegroundColor White
-    Write-Host '     • AceCommander_Project_State_Conversation_Bookmark_NNN.md' -ForegroundColor Yellow
-    Write-Host ''
-    Write-Host '  4. Commit all planning artifacts and create PR from the sprint branch.' -ForegroundColor White
-} else {
-    Write-Host '  No ideas were adopted. Check TASKS.md for any manual edits.' -ForegroundColor DarkGray
-    Write-Host '  Commit all planning artifacts and create PR from the sprint branch.' -ForegroundColor DarkGray
-}
-Write-Host ''
-Write-OK "Planning session $sessionId complete."
-Write-Host ''

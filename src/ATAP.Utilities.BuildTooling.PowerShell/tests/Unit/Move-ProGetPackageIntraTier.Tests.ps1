@@ -22,21 +22,8 @@ BeforeAll {
         return $DefaultValue
     }
 
-    # Wrapper function so tests can call Move-ProGetPackageIntraTier as a command
-    # (the .ps1 uses bare param() at script level, not a named function).
-    function global:Move-ProGetPackageIntraTier {
-        param(
-            [Parameter(Mandatory)][string]$PackageName,
-            [Parameter(Mandatory)][string]$Version,
-            [Parameter(Mandatory)][string]$SourceFeed,
-            [Parameter(Mandatory)][string]$DestinationFeed,
-            [switch]$ScanOnly,
-            [string]$Comments,
-            [string]$ProGetBaseUrl,
-            [string]$ApiKey
-        )
-        & $script:scriptPath @PSBoundParameters
-    }
+    # Dot-source the file to load the Move-ProGetPackageIntraTier function.
+    . $script:scriptPath
 
     $script:baseUrl = 'http://proget.test:50000'
     $script:apiKey  = 'test-api-key'

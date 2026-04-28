@@ -21,8 +21,7 @@ BeforeAll {
         return $DefaultValue
     }
 
-    # Wrapper function so tests can call Move-ProGetPackageInterTier as a command
-    # (the .ps1 uses bare param() at script level, not a named function).
+    # Dot-source the autoloaded function for testing
     function global:Move-ProGetPackageInterTier {
         param(
             [Parameter(Mandatory)][string]$PackageName,

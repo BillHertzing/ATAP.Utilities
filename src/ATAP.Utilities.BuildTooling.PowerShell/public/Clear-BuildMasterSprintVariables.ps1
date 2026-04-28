@@ -13,7 +13,7 @@ function Clear-BuildMasterSprintVariables {
       SprintBranchName
 
     Call this cmdlet during the sprint-end teardown sequence (SprintEndAgent
-    Step 10.5) after worktrees have been removed.
+    Step 10.5) after workTrees have been removed.
 
     Reads the API key from the BUILDMASTER_API_KEY environment variable
     (User scope preferred, then Process scope).

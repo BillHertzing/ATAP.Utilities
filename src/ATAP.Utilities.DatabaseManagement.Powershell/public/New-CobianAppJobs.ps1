@@ -1,3 +1,4 @@
+#Requires -RunAsAdministrator
 <#
 .SYNOPSIS
     Creates five Cobian Reflector application-data backup tasks by directly writing
@@ -6,20 +7,20 @@
 .DESCRIPTION
     Each task is a standard Cobian file-copy task (TaskBackupType 0=Full or 1=Incremental).
     Cobian copies the source directory tree directly to the destination — no script
-    invocation or pre-event is used (unlike the SQL backup Dummy tasks in New-CobianSqlJobs.ps1).
+    invocation or pre-event is used (unlike the SQL backup Dummy tasks in New-CobianSqlJobs).
 
     Tasks created (grouped under 'App Data Backups'):
-      03:00 Sun    App - ProGet - Full           Full backup of C:\ProgramData\ProGet\
-      03:00 Mon-Sat App - ProGet - Incremental   Incremental backup of C:\ProgramData\ProGet\
-      03:30 Sun    App - BuildMaster - Full      Full backup of C:\ProgramData\BuildMaster\
-      03:30 Mon-Sat App - BuildMaster - Incremental  Incremental of C:\ProgramData\BuildMaster\
-      03:50 Sun    App - Cobian Config - Full    Full backup of Cobian Lists\ (MainList.lst itself)
+      03:00 Sun     App - ProGet - Full             Full backup of C:\ProgramData\ProGet\
+      03:00 Mon-Sat App - ProGet - Incremental      Incremental backup of C:\ProgramData\ProGet\
+      03:30 Sun     App - BuildMaster - Full        Full backup of C:\ProgramData\BuildMaster\
+      03:30 Mon-Sat App - BuildMaster - Incremental Incremental of C:\ProgramData\BuildMaster\
+      03:50 Sun     App - Cobian Config - Full      Full backup of Cobian Lists\ (MainList.lst itself)
 
     All destinations are under C:\Dropbox\Backups\utat022\ so Dropbox syncs them offsite.
 
     Architecture difference from SQL tasks:
-      SQL tasks  (New-CobianSqlJobs.ps1) — Dummy (type 3) + pre-event → script invoked
-      App tasks  (this script)           — File copy (type 0/1) → no pre-event, direct copy
+      SQL tasks (New-CobianSqlJobs) — Dummy (type 3) + pre-event → script invoked
+      App tasks (this cmdlet)       — File copy (type 0/1) → no pre-event, direct copy
 
 .PARAMETER ListPath
     Path to Cobian Reflector's MainList.lst. Default: standard install location.
@@ -50,6 +51,17 @@
 .PARAMETER CobianConfigFullStartTime
     Start time (HH:MM) for the weekly Cobian Config Full backup (Sunday). Default: 03:50.
 
+.OUTPUTS
+    [void]
+
+.EXAMPLE
+    New-CobianAppJobs
+    # Create all five tasks using default paths and start times.
+
+.EXAMPLE
+    New-CobianAppJobs -ProGetFullStartTime '04:00' -WhatIf
+    # Preview changes without writing to MainList.lst.
+
 .NOTES
     AI assisted using Powershell.instructions.md as guidelines
 
@@ -66,10 +78,9 @@
     and SharedConfig\ (the latter is already under Git via ATAP.IAC).
 
     SCHEDULE NOTE:
-    The script uses Weekly schedule (SchSchedule=2) for all tasks, confirmed from
-    the live MainList.lst after the Cobian UI updated the SQL tasks to weekly.
-    Full tasks          → Weekly, Sunday only (SchDaysOfWeek=0)
-    Incremental tasks   → Weekly, Monday-Saturday (SchDaysOfWeek=1..6)
+    Uses Weekly schedule (SchSchedule=2) for all tasks, confirmed from live MainList.lst.
+    Full tasks        → Weekly, Sunday only (SchDaysOfWeek=0)
+    Incremental tasks → Weekly, Monday-Saturday (SchDaysOfWeek=1..6)
     SchDateAndTime format: 'YYYY-MM-DD HH:MM:SS:' (trailing colon, no milliseconds).
     SchDaysOfWeek repeats per selected day — requires §DuplicatedKeys:True on section.
 
@@ -79,59 +90,107 @@
     BuildMaster and Cobian sources use TaskCompression=2 (7z).
 
     INCREMENTAL RETENTION NOTE:
-    TaskDifferentialCopiesToKeep is used by Cobian to control incremental archive retention
-    (same key for both Differential SQL and Incremental file backups — confirmed from the
-    existing Hydrus Backup task in MainList.lst).
+    TaskDifferentialCopiesToKeep controls incremental archive retention
+    (same key for both Differential SQL and Incremental file backups).
 
     See also: _Planning Explainer 0021a — Application Data Backup: ProGet and BuildMaster
               _Planning Explainer 0023 — Cobian Reflector MainList.lst Format
-              New-CobianSqlJobs.ps1   — reference for SQL Dummy task creation pattern
+              New-CobianSqlJobs — reference for SQL Dummy task creation pattern
 
     SC refs: SC-0066 (application backups), TASKS.md Task 4.4
+
+.LINK
+    https://github.com/whertzing/ATAP.Utilities
 #>
+function New-CobianAppJobs {
+  [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+  [OutputType([void])]
+  param(
+    [Parameter(Mandatory = $false)]
+    [string] $ListPath = 'C:\Program Files\Cobian Reflector\Lists\MainList.lst',
 
-#Requires -RunAsAdministrator
+    [Parameter(Mandatory = $false)]
+    [string] $ProGetDataPath = 'C:\ProgramData\ProGet',
 
-param(
-  [string]$ListPath                      = 'C:\Program Files\Cobian Reflector\Lists\MainList.lst',
-  [string]$ProGetDataPath                = 'C:\ProgramData\ProGet',
-  [string]$BuildMasterDataPath           = 'C:\ProgramData\BuildMaster',
-  [string]$BackupRoot                    = 'C:\Dropbox\Backups\utat022',
-  # Start times (HH:MM) — defaults match the schedule stagger in Explainer 0021a
-  [string]$ProGetFullStartTime           = '03:00',
-  [string]$ProGetIncrementalStartTime    = '03:00',
-  [string]$BuildMasterFullStartTime      = '03:30',
-  [string]$BuildMasterIncrementalStartTime = '03:30',
-  [string]$CobianConfigFullStartTime     = '03:50'
-)
+    [Parameter(Mandatory = $false)]
+    [string] $BuildMasterDataPath = 'C:\ProgramData\BuildMaster',
 
-Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
+    [Parameter(Mandatory = $false)]
+    [string] $BackupRoot = 'C:\Dropbox\Backups\utat022',
 
-# Encrypted-empty constants taken verbatim from existing MainList.lst
-# (represent blank credentials for required SFTP/FTP/proxy sub-sections)
-$E1 = '#Cob2#00028STtl5ohYeTQp2nUFQ5pQT0MGcTs=000010'
-$E2 = '#Cob2#0002838kVKKCUZXP8aHrszOuGULKbVrQ=000010'
-$E3 = '#Cob2#00028nQojpt8RaLw/IsmOaHreGrieGBk=000010'
-$E4 = '#Cob2#00028UJSEfJWl87+n3QYnZ9Oh+BsJb3E=000010'
-$E5 = '#Cob2#00028keVJTf7x6LatTLPJ3/iBgCY9RfQ=000010'
+    [Parameter(Mandatory = $false)]
+    [string] $ProGetFullStartTime = '03:00',
 
-function ng { [guid]::NewGuid().ToString().ToLower() }
+    [Parameter(Mandatory = $false)]
+    [string] $ProGetIncrementalStartTime = '03:00',
 
-# Returns 'YYYY-MM-DD HH:MM:SS:' for the next occurrence of $dayOfWeek (0=Sun…6=Sat) at $startTime (HH:MM)
-function Get-NextWeekdayDateTime {
-  param([int]$DayOfWeek, [string]$StartTime)
-  $today       = [datetime]::Today
-  $daysUntil   = ($DayOfWeek - [int]$today.DayOfWeek + 7) % 7
-  if ($daysUntil -eq 0) { $daysUntil = 7 }   # always next occurrence, never today
-  $nextDate    = $today.AddDays($daysUntil).ToString('yyyy-MM-dd')
-  return "$nextDate ${StartTime}:00:"
-}
+    [Parameter(Mandatory = $false)]
+    [string] $BuildMasterFullStartTime = '03:30',
 
-# ── Section builders (exact format confirmed from MainList.lst on utat022) ────
+    [Parameter(Mandatory = $false)]
+    [string] $BuildMasterIncrementalStartTime = '03:30',
 
-function Sec-Proxy([string]$g) {
-  return @"
+    [Parameter(Mandatory = $false)]
+    [string] $CobianConfigFullStartTime = '03:50'
+  )
+
+  begin {
+    $fn = $MyInvocation.MyCommand.Name
+    $mn = $MyInvocation.MyCommand.ModuleName
+
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Entering function'
+
+    # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: ListPath)
+    $ListPath = Get-PVal -ParameterName ListPath -originalPSBoundParameters $PSBoundParameters -dottedPath ListPath -DefaultValue $ListPath
+
+    # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: ProGetDataPath)
+    $ProGetDataPath = Get-PVal -ParameterName ProGetDataPath -originalPSBoundParameters $PSBoundParameters -dottedPath ProGetDataPath -DefaultValue $ProGetDataPath
+
+    # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: BuildMasterDataPath)
+    $BuildMasterDataPath = Get-PVal -ParameterName BuildMasterDataPath -originalPSBoundParameters $PSBoundParameters -dottedPath BuildMasterDataPath -DefaultValue $BuildMasterDataPath
+
+    # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: BackupRoot)
+    $BackupRoot = Get-PVal -ParameterName BackupRoot -originalPSBoundParameters $PSBoundParameters -dottedPath BackupRoot -DefaultValue $BackupRoot
+
+    # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: ProGetFullStartTime)
+    $ProGetFullStartTime = Get-PVal -ParameterName ProGetFullStartTime -originalPSBoundParameters $PSBoundParameters -dottedPath ProGetFullStartTime -DefaultValue $ProGetFullStartTime
+
+    # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: ProGetIncrementalStartTime)
+    $ProGetIncrementalStartTime = Get-PVal -ParameterName ProGetIncrementalStartTime -originalPSBoundParameters $PSBoundParameters -dottedPath ProGetIncrementalStartTime -DefaultValue $ProGetIncrementalStartTime
+
+    # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: BuildMasterFullStartTime)
+    $BuildMasterFullStartTime = Get-PVal -ParameterName BuildMasterFullStartTime -originalPSBoundParameters $PSBoundParameters -dottedPath BuildMasterFullStartTime -DefaultValue $BuildMasterFullStartTime
+
+    # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: BuildMasterIncrementalStartTime)
+    $BuildMasterIncrementalStartTime = Get-PVal -ParameterName BuildMasterIncrementalStartTime -originalPSBoundParameters $PSBoundParameters -dottedPath BuildMasterIncrementalStartTime -DefaultValue $BuildMasterIncrementalStartTime
+
+    # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: CobianConfigFullStartTime)
+    $CobianConfigFullStartTime = Get-PVal -ParameterName CobianConfigFullStartTime -originalPSBoundParameters $PSBoundParameters -dottedPath CobianConfigFullStartTime -DefaultValue $CobianConfigFullStartTime
+
+    # ── Encrypted-empty constants (verbatim from existing MainList.lst) ────────────
+    # Represent blank credentials for required SFTP/FTP/proxy sub-sections.
+    $E1 = '#Cob2#00028STtl5ohYeTQp2nUFQ5pQT0MGcTs=000010'
+    $E2 = '#Cob2#0002838kVKKCUZXP8aHrszOuGULKbVrQ=000010'
+    $E3 = '#Cob2#00028nQojpt8RaLw/IsmOaHreGrieGBk=000010'
+    $E4 = '#Cob2#00028UJSEfJWl87+n3QYnZ9Oh+BsJb3E=000010'
+    $E5 = '#Cob2#00028keVJTf7x6LatTLPJ3/iBgCY9RfQ=000010'
+
+    # ── Private helpers ────────────────────────────────────────────────────────────
+
+    function ng { [guid]::NewGuid().ToString().ToLower() }
+
+    # Returns 'YYYY-MM-DD HH:MM:SS:' for the next occurrence of $DayOfWeek at $StartTime.
+    function getNextWeekdayDateTime {
+      param([int]$DayOfWeek, [string]$StartTime)
+      $today     = [datetime]::Today
+      $daysUntil = ($DayOfWeek - [int]$today.DayOfWeek + 7) % 7
+      if ($daysUntil -eq 0) { $daysUntil = 7 }   # always next occurrence, never today
+      $nextDate  = $today.AddDays($daysUntil).ToString('yyyy-MM-dd')
+      return "$nextDate ${StartTime}:00:"
+    }
+
+    function buildProxySection([string]$g) {
+      return @"
 
 <§- $g -§>
 §DuplicatedKeys:False
@@ -147,10 +206,10 @@ ProxyPublicAddress=
 ProxyKindFtp=1
 <§§- $g -§§>
 "@
-}
+    }
 
-function Sec-Sftp([string]$g, [string]$p) {
-  return @"
+    function buildSftpSection([string]$g, [string]$p) {
+      return @"
 
 <§- $g -§>
 §DuplicatedKeys:False
@@ -197,10 +256,10 @@ SftpTransferBufferSize=32700
 SftpUMask=0022
 <§§- $g -§§>
 "@
-}
+    }
 
-function Sec-Ftp([string]$g, [string]$p) {
-  return @"
+    function buildFtpSection([string]$g, [string]$p) {
+      return @"
 
 <§- $g -§>
 §DuplicatedKeys:False
@@ -258,11 +317,11 @@ FtpUseUnencryptedCommands=False
 FtpUseUnencryptedData=False
 <§§- $g -§§>
 "@
-}
+    }
 
-function Sec-Path([string]$g, [string]$path, [string]$sftp, [string]$ftp) {
-  # SDKind=1 = local/UNC path (confirmed from existing file)
-  return @"
+    function buildPathSection([string]$g, [string]$path, [string]$sftp, [string]$ftp) {
+      # SDKind=1 = local/UNC path (confirmed from existing file)
+      return @"
 
 <§- $g -§>
 §DuplicatedKeys:False
@@ -274,16 +333,15 @@ SDSftp={ *§* $sftp *§* }
 SDFtp={ *§* $ftp *§* }
 <§§- $g -§§>
 "@
-}
+    }
 
-function Sec-Schedule([string]$g, [string]$dt, [int[]]$days) {
-  # SchSchedule=2 = Weekly (confirmed from live MainList.lst — SQL tasks updated via UI)
-  # SchDaysOfWeek encoding: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat (confirmed)
-  # SchDateAndTime format: 'YYYY-MM-DD HH:MM:SS:' (trailing colon, no ms — confirmed)
-  # §DuplicatedKeys:True is required for repeating SchDaysOfWeek entries
-  $dateOnly = ($dt -split ' ')[0]
-  $dayLines = ($days | ForEach-Object { "SchDaysOfWeek=$_" }) -join "`r`n"
-  return @"
+    function buildScheduleSection([string]$g, [string]$dt, [int[]]$days) {
+      # SchSchedule=2 = Weekly (confirmed from live MainList.lst)
+      # SchDaysOfWeek: 0=Sun 1=Mon 2=Tue 3=Wed 4=Thu 5=Fri 6=Sat
+      # §DuplicatedKeys:True required for repeating SchDaysOfWeek entries
+      $dateOnly = ($dt -split ' ')[0]
+      $dayLines = ($days | ForEach-Object { "SchDaysOfWeek=$_" }) -join "`r`n"
+      return @"
 
 <§- $g -§>
 §DuplicatedKeys:True
@@ -298,18 +356,15 @@ SchTimerUpperLimit=${dateOnly} 23:59:00:
 SchUseOrdinaryDaysOfWeek=False
 <§§- $g -§§>
 "@
-}
+    }
 
-function Sec-AppTask([string]$g, [hashtable]$j) {
-  $tid = ng
-  # TaskBackupType: 0=Full, 1=Incremental (not 3=Dummy used by SQL tasks)
-  # Full  tasks: TaskFullCopiesToKeep=5, TaskDifferentialCopiesToKeep=0
-  # Incr  tasks: TaskFullCopiesToKeep=0, TaskDifferentialCopiesToKeep=6
-  $fullKeep = if ($j.BackupType -eq 0) { 5 } else { 0 }
-  $diffKeep = if ($j.BackupType -eq 0) { 0 } else { 6 }
-  # TaskCompressionLevel: only meaningful when TaskCompression != 0
-  $comprLevel = if ($j.Compression -eq 0) { 1 } else { 5 }
-  return @"
+    function buildAppTaskSection([string]$g, [hashtable]$j) {
+      $tid = ng
+      # TaskBackupType: 0=Full, 1=Incremental (not 3=Dummy used by SQL tasks)
+      $fullKeep  = if ($j.BackupType -eq 0) { 5 } else { 0 }
+      $diffKeep  = if ($j.BackupType -eq 0) { 0 } else { 6 }
+      $comprLevel = if ($j.Compression -eq 0) { 1 } else { 5 }
+      return @"
 
 <§- $g -§>
 §DuplicatedKeys:True
@@ -357,216 +412,204 @@ TaskImpersonationDomain=.
 TaskImpersonationPassword=$E4
 <§§- $g -§§>
 "@
+    }
+  }
+
+  process {
+    try {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "New-CobianAppJobs  ListPath='$ListPath'  ProGetSrc='$ProGetDataPath'  BMSrc='$BuildMasterDataPath'  BackupRoot='$BackupRoot'"
+
+      # ── Job definitions ──────────────────────────────────────────────────────────
+      # BackupType: 0=Full, 1=Incremental
+      # Compression: 0=None, 2=7z  (None for .nupkg sources — already ZIP-compressed)
+      $jobs = @(
+        @{
+          Name        = 'App - ProGet - Full'
+          Group       = 'App Data Backups'
+          SrcPath     = $ProGetDataPath
+          DstSubdir   = 'ProGet-AppData'
+          BackupType  = 0
+          Compression = 0
+          DateTime    = getNextWeekdayDateTime 0 $ProGetFullStartTime
+          Days        = @(0)
+        }
+        @{
+          Name        = 'App - ProGet - Incremental'
+          Group       = 'App Data Backups'
+          SrcPath     = $ProGetDataPath
+          DstSubdir   = 'ProGet-AppData'
+          BackupType  = 1
+          Compression = 0
+          DateTime    = getNextWeekdayDateTime 1 $ProGetIncrementalStartTime
+          Days        = @(1, 2, 3, 4, 5, 6)
+        }
+        @{
+          Name        = 'App - BuildMaster - Full'
+          Group       = 'App Data Backups'
+          SrcPath     = $BuildMasterDataPath
+          DstSubdir   = 'BuildMaster-AppData'
+          BackupType  = 0
+          Compression = 2
+          DateTime    = getNextWeekdayDateTime 0 $BuildMasterFullStartTime
+          Days        = @(0)
+        }
+        @{
+          Name        = 'App - BuildMaster - Incremental'
+          Group       = 'App Data Backups'
+          SrcPath     = $BuildMasterDataPath
+          DstSubdir   = 'BuildMaster-AppData'
+          BackupType  = 1
+          Compression = 2
+          DateTime    = getNextWeekdayDateTime 1 $BuildMasterIncrementalStartTime
+          Days        = @(1, 2, 3, 4, 5, 6)
+        }
+        @{
+          Name        = 'App - Cobian Config - Full'
+          Group       = 'App Data Backups'
+          SrcPath     = 'C:\Program Files\Cobian Reflector\Lists'
+          DstSubdir   = 'Cobian-Config'
+          BackupType  = 0
+          Compression = 2
+          DateTime    = getNextWeekdayDateTime 0 $CobianConfigFullStartTime
+          Days        = @(0)
+        }
+      )
+
+      # ── Validate ─────────────────────────────────────────────────────────────────
+      if (-not (Test-Path $ListPath)) { throw "List file not found: $ListPath" }
+
+      foreach ($j in $jobs) {
+        if (-not (Test-Path $j.SrcPath)) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "Source path not found: $($j.SrcPath)"
+          if (-not $PSCmdlet.ShouldContinue("Source path '$($j.SrcPath)' does not exist.", 'Continue anyway?')) {
+            throw "Aborted by user — source path missing: $($j.SrcPath)"
+          }
+        }
+      }
+
+      # ── Stop Cobian service ───────────────────────────────────────────────────────
+      $svc = Get-Service -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -like '*Cobian*' -or $_.DisplayName -like '*Cobian*' } |
+        Select-Object -First 1
+
+      if ($svc) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Stopping service: $($svc.Name)..."
+        if ($PSCmdlet.ShouldProcess($svc.Name, 'Stop Cobian service')) {
+          Stop-Service -Name $svc.Name -Force
+          $svc.WaitForStatus('Stopped', '00:00:30')
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Service stopped: $($svc.Name)"
+        }
+      } else {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message 'Cobian service not found. Ensure the Cobian engine is closed before continuing.'
+        if (-not $PSCmdlet.ShouldContinue('Cobian service not found.', 'Continue anyway?')) {
+          throw 'Aborted by user — Cobian service not found.'
+        }
+      }
+
+      # ── Backup existing file ──────────────────────────────────────────────────────
+      $bak = "$ListPath.bak_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+      if ($PSCmdlet.ShouldProcess($bak, "Backup MainList.lst")) {
+        Copy-Item $ListPath $bak
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Backup created: $bak"
+      }
+
+      # ── Read file — detect and preserve native encoding ───────────────────────────
+      $sr           = [System.IO.StreamReader]::new($ListPath, $true)
+      $raw          = $sr.ReadToEnd()
+      $fileEncoding = $sr.CurrentEncoding
+      $sr.Dispose()
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "File encoding: $($fileEncoding.EncodingName)"
+
+      # ── Find root section GUID ────────────────────────────────────────────────────
+      if ($raw -notmatch '<§- ([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}) -§>') {
+        throw "Cannot find root section GUID in $ListPath"
+      }
+      $rootGuid = $Matches[1]
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Root GUID: $rootGuid"
+
+      # ── Find existing task names (idempotency) ────────────────────────────────────
+      $existingNames = @(
+        [regex]::Matches($raw, '(?m)^TaskName=(.+)$') |
+          ForEach-Object { $_.Groups[1].Value.Trim() }
+      )
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Existing tasks ($($existingNames.Count)): $($existingNames -join ', ')"
+
+      # ── Build new sections ────────────────────────────────────────────────────────
+      $newRefs     = [System.Collections.Generic.List[string]]::new()
+      $newSections = [System.Text.StringBuilder]::new()
+
+      foreach ($job in $jobs) {
+        if ($existingNames -contains $job.Name) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "Skipping (already exists): $($job.Name)"
+          continue
+        }
+
+        $destPath = Join-Path $BackupRoot $job.DstSubdir
+        if (-not (Test-Path $destPath)) {
+          New-Item -ItemType Directory -Path $destPath -Force | Out-Null
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Created destination folder: $destPath"
+        }
+
+        # Generate all 12 GUIDs for this task's sections
+        $tg  = ng
+        $sg  = ng; $ssg = ng; $ssp = ng; $sfg = ng; $sfp = ng
+        $dg  = ng; $dsg = ng; $dsp = ng; $dfg = ng; $dfp = ng
+        $schg = ng
+
+        $job['SrcGuid'] = $sg
+        $job['DstGuid'] = $dg
+        $job['SchGuid'] = $schg
+
+        $newRefs.Add("BackupTask={ *§* $tg *§* }")
+
+        $null = $newSections.Append((buildAppTaskSection  $tg   $job))
+        $null = $newSections.Append((buildPathSection     $sg   $job.SrcPath $ssg $sfg))
+        $null = $newSections.Append((buildSftpSection     $ssg  $ssp))
+        $null = $newSections.Append((buildProxySection    $ssp))
+        $null = $newSections.Append((buildFtpSection      $sfg  $sfp))
+        $null = $newSections.Append((buildProxySection    $sfp))
+        $null = $newSections.Append((buildPathSection     $dg   $destPath $dsg $dfg))
+        $null = $newSections.Append((buildSftpSection     $dsg  $dsp))
+        $null = $newSections.Append((buildProxySection    $dsp))
+        $null = $newSections.Append((buildFtpSection      $dfg  $dfp))
+        $null = $newSections.Append((buildProxySection    $dfp))
+        $null = $newSections.Append((buildScheduleSection $schg $job.DateTime $job.Days))
+
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "[+] $($job.Name)"
+      }
+
+      # ── Inject BackupTask references into root section ────────────────────────────
+      if ($newRefs.Count -gt 0 -and $PSCmdlet.ShouldProcess($ListPath, 'Inject task references and append sections')) {
+        $closeTag  = "<§§- $rootGuid -§§>"
+        $insertion = ($newRefs -join "`r`n") + "`r`n"
+        $raw       = $raw.Replace($closeTag, $insertion + $closeTag)
+
+        # Normalize bare LF to CRLF before appending (Cobian requires CRLF in its file)
+        $newContent = $newSections.ToString() -replace '(?<!\r)\n', "`r`n"
+        $raw += $newContent
+
+        [System.IO.File]::WriteAllText($ListPath, $raw, $fileEncoding)
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Saved: $ListPath"
+      }
+
+      # ── Restart Cobian service ────────────────────────────────────────────────────
+      if ($svc -and $PSCmdlet.ShouldProcess($svc.Name, 'Start Cobian service')) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Starting service: $($svc.Name)..."
+        Start-Service -Name $svc.Name
+        $svc.WaitForStatus('Running', '00:00:30')
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Service running: $($svc.Name)"
+      }
+
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Done. Next steps: (1) Open Cobian UI — verify five App Data Backups tasks appear; schedules are Weekly/Sunday (Full) and Weekly/Mon-Sat (Incremental). (2) Right-click each Full task → Run Now — confirm archives appear under Dropbox. Recovery: stop service, copy the .bak_ file back to MainList.lst, restart service. See Explainer 0023.'
+    }
+    catch {
+      $errorMessage = "New-CobianAppJobs failed. Exception: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      throw
+    }
+  }
+
+  end {
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Leaving function'
+  }
 }
-
-# ── Job definitions ───────────────────────────────────────────────────────────
-# BackupType: 0=Full, 1=Incremental
-# Compression: 0=None, 2=7z  (None for .nupkg sources — already ZIP-compressed)
-
-$jobs = @(
-  @{
-    Name        = 'App - ProGet - Full'
-    Group       = 'App Data Backups'
-    SrcPath     = $ProGetDataPath
-    DstSubdir   = 'ProGet-AppData'
-    BackupType  = 0
-    Compression = 0
-    DateTime    = Get-NextWeekdayDateTime 0 $ProGetFullStartTime           # Sunday
-    Days        = @(0)
-  }
-  @{
-    Name        = 'App - ProGet - Incremental'
-    Group       = 'App Data Backups'
-    SrcPath     = $ProGetDataPath
-    DstSubdir   = 'ProGet-AppData'
-    BackupType  = 1
-    Compression = 0
-    DateTime    = Get-NextWeekdayDateTime 1 $ProGetIncrementalStartTime    # Monday (first of Mon-Sat)
-    Days        = @(1, 2, 3, 4, 5, 6)
-  }
-  @{
-    Name        = 'App - BuildMaster - Full'
-    Group       = 'App Data Backups'
-    SrcPath     = $BuildMasterDataPath
-    DstSubdir   = 'BuildMaster-AppData'
-    BackupType  = 0
-    Compression = 2
-    DateTime    = Get-NextWeekdayDateTime 0 $BuildMasterFullStartTime      # Sunday
-    Days        = @(0)
-  }
-  @{
-    Name        = 'App - BuildMaster - Incremental'
-    Group       = 'App Data Backups'
-    SrcPath     = $BuildMasterDataPath
-    DstSubdir   = 'BuildMaster-AppData'
-    BackupType  = 1
-    Compression = 2
-    DateTime    = Get-NextWeekdayDateTime 1 $BuildMasterIncrementalStartTime  # Monday
-    Days        = @(1, 2, 3, 4, 5, 6)
-  }
-  @{
-    Name        = 'App - Cobian Config - Full'
-    Group       = 'App Data Backups'
-    SrcPath     = 'C:\Program Files\Cobian Reflector\Lists'
-    DstSubdir   = 'Cobian-Config'
-    BackupType  = 0
-    Compression = 2
-    DateTime    = Get-NextWeekdayDateTime 0 $CobianConfigFullStartTime     # Sunday
-    Days        = @(0)
-  }
-)
-
-# ── Validate ──────────────────────────────────────────────────────────────────
-if (-not (Test-Path $ListPath)) { throw "Not found: $ListPath" }
-foreach ($j in $jobs) {
-  if (-not (Test-Path $j.SrcPath)) {
-    Write-Warning "Source path not found (pausing): $($j.SrcPath)"
-    $null = Read-Host '  Press ENTER to continue (or Ctrl+C to abort)'
-  }
-}
-
-Write-Host "`n===== New-CobianAppJobs =====" -ForegroundColor Cyan
-Write-Host "List file  : $ListPath"
-Write-Host "ProGet src : $ProGetDataPath"
-Write-Host "BM src     : $BuildMasterDataPath"
-Write-Host "Backup root: $BackupRoot"
-
-# ── Stop Cobian service ───────────────────────────────────────────────────────
-$svc = Get-Service -ErrorAction SilentlyContinue |
-  Where-Object { $_.Name -like '*Cobian*' -or $_.DisplayName -like '*Cobian*' } |
-  Select-Object -First 1
-
-if ($svc) {
-  Write-Host "`nStopping: $($svc.Name) ..."
-  Stop-Service -Name $svc.Name -Force
-  $svc.WaitForStatus('Stopped', '00:00:30')
-  Write-Host '  Stopped.' -ForegroundColor Yellow
-} else {
-  Write-Warning 'Cobian service not found. Ensure the Cobian engine is closed before continuing.'
-  $null = Read-Host 'Press ENTER to continue (or Ctrl+C to abort)'
-}
-
-# ── Backup existing file ──────────────────────────────────────────────────────
-$bak = "$ListPath.bak_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
-Copy-Item $ListPath $bak
-Write-Host "Backup        : $bak" -ForegroundColor Green
-
-# ── Read file — detect and preserve native encoding (UTF-16 LE or UTF-8) ─────
-$sr = [System.IO.StreamReader]::new($ListPath, $true)   # detectEncodingFromBom=true
-$raw = $sr.ReadToEnd()
-$fileEncoding = $sr.CurrentEncoding
-$sr.Dispose()
-Write-Host "File encoding  : $($fileEncoding.EncodingName)"
-
-# ── Find root section GUID (always the first section in the file) ─────────────
-if ($raw -notmatch '<§- ([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}) -§>') {
-  throw "Cannot find root section GUID in $ListPath"
-}
-$rootGuid = $Matches[1]
-Write-Host "Root GUID     : $rootGuid"
-
-# ── Find existing task names (idempotency) ────────────────────────────────────
-$existingNames = @(
-  [regex]::Matches($raw, '(?m)^TaskName=(.+)$') |
-    ForEach-Object { $_.Groups[1].Value.Trim() }
-)
-Write-Host "Existing tasks: $($existingNames.Count)"
-$existingNames | ForEach-Object { Write-Host "  - $_" }
-
-# ── Build new sections ────────────────────────────────────────────────────────
-$newRefs = [System.Collections.Generic.List[string]]::new()
-$newSections = [System.Text.StringBuilder]::new()
-
-foreach ($job in $jobs) {
-
-  if ($existingNames -contains $job.Name) {
-    Write-Warning "Skipping (already exists): $($job.Name)"
-    continue
-  }
-
-  # Ensure backup destination folder exists
-  $destPath = Join-Path $BackupRoot $job.DstSubdir
-  if (-not (Test-Path $destPath)) {
-    New-Item -ItemType Directory -Path $destPath -Force | Out-Null
-    Write-Host "  Created folder: $destPath"
-  }
-
-  # Generate all 12 GUIDs for this task's sections
-  $tg = ng                                                      # task
-  $sg = ng; $ssg = ng; $ssp = ng; $sfg = ng; $sfp = ng         # src path + sftp + proxy + ftp + proxy
-  $dg = ng; $dsg = ng; $dsp = ng; $dfg = ng; $dfp = ng         # dst path + sftp + proxy + ftp + proxy
-  $schg = ng                                                      # schedule
-
-  $job['SrcGuid'] = $sg
-  $job['DstGuid'] = $dg
-  $job['SchGuid'] = $schg
-
-  # Root index entry (injected into root section before its closing tag)
-  $newRefs.Add("BackupTask={ *§* $tg *§* }")
-
-  # Build the 12 sections for this task
-  $null = $newSections.Append((Sec-AppTask $tg $job))
-  $null = $newSections.Append((Sec-Path $sg $job.SrcPath $ssg $sfg))
-  $null = $newSections.Append((Sec-Sftp $ssg $ssp))
-  $null = $newSections.Append((Sec-Proxy $ssp))
-  $null = $newSections.Append((Sec-Ftp $sfg $sfp))
-  $null = $newSections.Append((Sec-Proxy $sfp))
-  $null = $newSections.Append((Sec-Path $dg $destPath $dsg $dfg))
-  $null = $newSections.Append((Sec-Sftp $dsg $dsp))
-  $null = $newSections.Append((Sec-Proxy $dsp))
-  $null = $newSections.Append((Sec-Ftp $dfg $dfp))
-  $null = $newSections.Append((Sec-Proxy $dfp))
-  $null = $newSections.Append((Sec-Schedule $schg $job.DateTime $job.Days))
-
-  Write-Host "  [+] $($job.Name)" -ForegroundColor Green
-}
-
-# ── Inject BackupTask references into root section ────────────────────────────
-if ($newRefs.Count -gt 0) {
-  $closeTag = "<§§- $rootGuid -§§>"
-  $insertion = ($newRefs -join "`r`n") + "`r`n"
-  $raw = $raw.Replace($closeTag, $insertion + $closeTag)
-}
-
-# ── Append all new sections to end of file ────────────────────────────────────
-# Normalize to CRLF: the script file is LF-encoded (VS Code default), so heredoc
-# strings use LF only. Cobian requires CRLF in its UTF-16 file. The regex leaves
-# existing \r\n pairs untouched and converts bare \n to \r\n.
-$newContent = $newSections.ToString() -replace '(?<!\r)\n', "`r`n"
-$raw += $newContent
-
-# ── Write file back — preserve original encoding (UTF-16 LE when Cobian UI rewrites) ──
-[System.IO.File]::WriteAllText($ListPath, $raw, $fileEncoding)
-Write-Host "`nSaved: $ListPath" -ForegroundColor Cyan
-
-# ── Restart Cobian service ────────────────────────────────────────────────────
-if ($svc) {
-  Write-Host "Starting: $($svc.Name) ..."
-  Start-Service -Name $svc.Name
-  $svc.WaitForStatus('Running', '00:00:30')
-  Write-Host '  Running.' -ForegroundColor Green
-}
-
-Write-Host @'
-
-===== Done =====
-Next steps:
-  1. Open Cobian UI — verify five 'App Data Backups' tasks appear.
-     Full tasks    → Weekly, Sunday only   (already set by script — verify in UI)
-     Incremental   → Weekly, Monday-Saturday (already set by script — verify in UI)
-  2. Right-click each Full task  → Run Now — confirm archives appear in Dropbox.
-
-Destination directories:
-  C:\Dropbox\Backups\utat022\ProGet-AppData\
-  C:\Dropbox\Backups\utat022\BuildMaster-AppData\
-  C:\Dropbox\Backups\utat022\Cobian-Config\
-
-Verification:
-  Get-ChildItem 'C:\Dropbox\Backups\utat022\ProGet-AppData' | Sort-Object LastWriteTime
-  Get-ChildItem 'C:\Dropbox\Backups\utat022\BuildMaster-AppData' | Sort-Object LastWriteTime
-  Get-ChildItem 'C:\Dropbox\Backups\utat022\Cobian-Config' | Sort-Object LastWriteTime
-
-Recovery (if tasks do not appear):
-  Stop service, copy the .bak_ file back to MainList.lst, restart service.
-  See Explainer 0023 — Recovery Procedure.
-'@ -ForegroundColor White

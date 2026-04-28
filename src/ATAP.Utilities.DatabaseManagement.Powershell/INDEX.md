@@ -60,7 +60,7 @@ backup automation, and rule-export utilities in the ATAP 5-tier ecosystem.
 | ------------------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Invoke-SqlServerBackup` | [public/Invoke-SqlServerBackup.ps1](public/Invoke-SqlServerBackup.ps1) | Backs up a SQL Server database (`localhost\Production`) to `C:\Dropbox\Backups\utat022\<DatabaseName>\`. Supports Full and Differential backup types; uses dbatools. Intended to be called from Cobian Backup pre-events. |
 | `New-CobianSqlJobs`      | [public/New-CobianSqlJobs.ps1](public/New-CobianSqlJobs.ps1)           | Creates four Cobian Reflector Dummy tasks (with pre-events) that invoke `Invoke-SqlServerBackup.ps1` for nightly ProGet and BuildMaster SQL backups. Writes directly to Cobian's `MainList.lst`.                          |
-| `New-CobianAppJobs`      | [public/New-CobianAppJobs.ps1](public/New-CobianAppJobs.ps1)           | Creates five Cobian Reflector file-copy tasks for backing up ProGet and BuildMaster application-data directories and the Cobian configuration itself.                                                                     |
+| `New-CobianAppJobs`      | [New-CobianAppJobs](public/New-CobianAppJobs.ps1)                      | Autoloaded function. Creates five Cobian Reflector file-copy tasks for backing up ProGet and BuildMaster application-data directories and the Cobian configuration itself.                                                |
 
 ### Rules and Utilities
 

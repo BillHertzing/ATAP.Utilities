@@ -1,4 +1,5 @@
-<#
+function Add-SharedFileContent {
+  <#
 .SYNOPSIS
   Appends content to, or performs a regex find-and-replace within, a shared file under
   an exclusive file lock.
@@ -38,19 +39,18 @@
 
 .EXAMPLE
   # Append a new rule to CLAUDE.md — guarded so it only appears once
+  # The function is autoloaded from the installed module
   $rule = @'
   ## Locking Protocol (added by agent)
-  Always use Set-TaskComplete.ps1 to mark tasks complete.
+  Always use Set-TaskComplete function to mark tasks complete.
   '@
-  & 'C:/Dropbox/whertzing/github/SharedVSCode/Powershell/public/Add-SharedFileContent.ps1' `
-      -FilePath  'C:/Dropbox/whertzing/github/AceCommander/CLAUDE.md' `
+  Add-SharedFileContent -FilePath 'C:\Dropbox\whertzing\GitHub\AceCommander\CLAUDE.md' `
       -Content   $rule `
       -GuardText 'Locking Protocol'
 
 .EXAMPLE
   # Replace a specific section using regex
-  & './Add-SharedFileContent.ps1' `
-      -FilePath  'C:/Dropbox/whertzing/github/AceCommander/CLAUDE.md' `
+  Add-SharedFileContent -FilePath 'C:\Dropbox\whertzing\GitHub\AceCommander\CLAUDE.md' `
       -Mode      Replace `
       -Pattern   '(?ms)^## Old Section.*?(?=^## |\Z)' `
       -Content   "## New Section`n`nupdated content`n`n"
@@ -59,109 +59,108 @@
   AI assisted using Powershell.instructions.md as guidelines
   Calls Invoke-WithFileLock.ps1 (must be in the same Powershell/public/ directory).
 #>
-[CmdletBinding(SupportsShouldProcess)]
-param(
-  [Parameter(Mandatory)]
-  [string]$FilePath,
+  [CmdletBinding(SupportsShouldProcess)]
+  param(
+    [Parameter(Mandatory)]
+    [string]$FilePath,
 
-  [Parameter(Mandatory)]
-  [string]$Content,
+    [Parameter(Mandatory)]
+    [string]$Content,
 
-  [Parameter()]
-  [string]$GuardText,
+    [Parameter()]
+    [string]$GuardText,
 
-  [Parameter()]
-  [ValidateSet('Append', 'Replace')]
-  [string]$Mode = 'Append',
+    [Parameter()]
+    [ValidateSet('Append', 'Replace')]
+    [string]$Mode = 'Append',
 
-  [Parameter()]
-  [string]$Pattern,
+    [Parameter()]
+    [string]$Pattern,
 
-  [Parameter()]
-  [switch]$DryRun
-)
+    [Parameter()]
+    [switch]$DryRun
+  )
 
-BEGIN {
-  $fn = $MyInvocation.MyCommand.Name
-  $mn = 'SharedTools'
+  begin {
+    $fn = $MyInvocation.MyCommand.Name
+    $mn = 'SharedTools'
 
-  $lockScript = Join-Path $PSScriptRoot 'Invoke-WithFileLock.ps1'
-  if (-not (Test-Path $lockScript)) {
-    throw "Add-SharedFileContent: cannot find Invoke-WithFileLock.ps1 at '$lockScript'"
+    $lockScript = Join-Path $PSScriptRoot 'Invoke-WithFileLock.ps1'
+    if (-not (Test-Path $lockScript)) {
+      throw "Add-SharedFileContent: cannot find Invoke-WithFileLock.ps1 at '$lockScript'"
+    }
+    . $lockScript
+
+    if (-not (Test-Path $FilePath)) {
+      throw "Add-SharedFileContent: target file not found at '$FilePath'"
+    }
+
+    if ($Mode -eq 'Replace' -and -not $PSBoundParameters.ContainsKey('Pattern')) {
+      throw 'Add-SharedFileContent: -Pattern is required when -Mode Replace is specified.'
+    }
+
+    # Lock name = filename only, so lock is shared across agents pointing to the same file
+    $lockName = [System.IO.Path]::GetFileName($FilePath)
+
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
+      -Message "Add-SharedFileContent: mode=$Mode file=$FilePath"
   }
-  . $lockScript
 
-  if (-not (Test-Path $FilePath)) {
-    throw "Add-SharedFileContent: target file not found at '$FilePath'"
-  }
+  process {
+    $modified = $false
 
-  if ($Mode -eq 'Replace' -and -not $PSBoundParameters.ContainsKey('Pattern')) {
-    throw "Add-SharedFileContent: -Pattern is required when -Mode Replace is specified."
-  }
+    Invoke-WithFileLock -LockName $lockName -Action {
 
-  # Lock name = filename only, so lock is shared across agents pointing to the same file
-  $lockName = [System.IO.Path]::GetFileName($FilePath)
+      $current = [System.IO.File]::ReadAllText($FilePath, [System.Text.Encoding]::UTF8)
 
-  Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-    -Message "Add-SharedFileContent: mode=$Mode file=$FilePath"
-}
+      switch ($Mode) {
 
-PROCESS {
-  $modified = $false
+        'Append' {
+          # Guard check — skip if distinctive text already present
+          if ($GuardText -and $current.Contains($GuardText)) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
+              -Message "Guard text found — skipping append to '$FilePath'"
+            return
+          }
 
-  Invoke-WithFileLock -LockName $lockName -Action {
+          $newContent = $current.TrimEnd() + "`n`n" + $Content.TrimEnd() + "`n"
 
-    $current = [System.IO.File]::ReadAllText($FilePath, [System.Text.Encoding]::UTF8)
-
-    switch ($Mode) {
-
-      'Append' {
-        # Guard check — skip if distinctive text already present
-        if ($GuardText -and $current.Contains($GuardText)) {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-            -Message "Guard text found — skipping append to '$FilePath'"
-          return
+          if ($DryRun) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+              -Message "[DRY RUN] Would append to '$FilePath':`n$Content"
+          } else {
+            [System.IO.File]::WriteAllText($FilePath, $newContent, [System.Text.Encoding]::UTF8)
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+              -Message "Appended content to '$FilePath'"
+            $script:modified = $true
+          }
         }
 
-        $newContent = $current.TrimEnd() + "`n`n" + $Content.TrimEnd() + "`n"
+        'Replace' {
+          $newContent = [System.Text.RegularExpressions.Regex]::Replace(
+            $current, $Pattern, $Content,
+            [System.Text.RegularExpressions.RegexOptions]::Multiline
+          )
 
-        if ($DryRun) {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-            -Message "[DRY RUN] Would append to '$FilePath':`n$Content"
-        }
-        else {
-          [System.IO.File]::WriteAllText($FilePath, $newContent, [System.Text.Encoding]::UTF8)
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-            -Message "Appended content to '$FilePath'"
-          $script:modified = $true
-        }
-      }
+          if ($newContent -eq $current) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
+              -Message "Pattern matched nothing — no change to '$FilePath'"
+            return
+          }
 
-      'Replace' {
-        $newContent = [System.Text.RegularExpressions.Regex]::Replace(
-          $current, $Pattern, $Content,
-          [System.Text.RegularExpressions.RegexOptions]::Multiline
-        )
-
-        if ($newContent -eq $current) {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-            -Message "Pattern matched nothing — no change to '$FilePath'"
-          return
-        }
-
-        if ($DryRun) {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-            -Message "[DRY RUN] Would replace pattern '$Pattern' in '$FilePath'"
-        }
-        else {
-          [System.IO.File]::WriteAllText($FilePath, $newContent, [System.Text.Encoding]::UTF8)
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-            -Message "Replaced pattern in '$FilePath'"
-          $script:modified = $true
+          if ($DryRun) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+              -Message "[DRY RUN] Would replace pattern '$Pattern' in '$FilePath'"
+          } else {
+            [System.IO.File]::WriteAllText($FilePath, $newContent, [System.Text.Encoding]::UTF8)
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+              -Message "Replaced pattern in '$FilePath'"
+            $script:modified = $true
+          }
         }
       }
     }
-  }
 
-  return $modified
+    return $modified
+  }
 }

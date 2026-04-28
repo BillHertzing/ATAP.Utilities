@@ -92,7 +92,7 @@ plural-form list.
 paths correct for both `dotnet build` and Visual Studio builds.
 
 > **Do not replace with a hardcoded absolute path.** The `$(MSBuildThisFileDirectory)`
-> form is the reason the same props file works across worktrees and machines.
+> form is the reason the same props file works across workTrees and machines.
 
 ### 2.4 Locate the pre-built custom-task assembly (sentinel-file pattern)
 

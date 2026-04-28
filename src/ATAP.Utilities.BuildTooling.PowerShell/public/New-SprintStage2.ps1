@@ -16,7 +16,7 @@ if (-not (Get-Command -Name 'New-SprintSqlServerInstances' -CommandType Function
 function New-SprintStage2 {
   <#
   .SYNOPSIS
-    Creates downstream repo sprint branches, worktrees, NTFS junctions,
+    Creates downstream repo sprint branches, workTrees, NTFS junctions,
     applies SharedVSCode context, symlinks claude-settings.json, scaffolds
     BuildMaster sprint builds, creates Bitwarden connection string secrets,
     and provisions sprint SQL Server database instances. ProGet feeds are

@@ -5,7 +5,7 @@ Finds and returns the repository root directory using git.
 .DESCRIPTION
 Changes to StartPath then uses 'git rev-parse --show-toplevel' to locate the
 repository root. Returns the relative path from the original working directory
-to the repository root. Supports both standard Git repositories and Git worktrees.
+to the repository root. Supports both standard Git repositories and Git workTrees.
 
 .PARAMETER StartPath
 Optional starting path for the search. Defaults to current working directory (Get-Location).
@@ -67,14 +67,12 @@ function Get-RepositoryRoot {
       $relativePath = Resolve-Path -Path $currentPath -Relative -RelativeBasePath $originalPath
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Relative path to repository root: $relativePath"
       return $relativePath
-    }
-    catch {
+    } catch {
       # If relative path calculation fails, return absolute path
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Could not calculate relative path, returning absolute path"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message 'Could not calculate relative path, returning absolute path'
       return $currentPath
     }
-  }
-  finally {
+  } finally {
     Pop-Location
   }
 }

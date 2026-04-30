@@ -5,36 +5,42 @@ Builds a SQL Server database from scratch using Flyway migrations.
 
 .DESCRIPTION
 This cmdlet orchestrates the complete build of a SQL Server database:
-1. Loads environment variables from .env files
+1. Resolves all connection and path settings from $global:settings via $global:configRootKeys
+   (reads $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']] —
+   populated by HostSettings.IAC.Fragment.Databases.*.ps1 at session startup)
 2. Configures database connection settings
 3. Drops and recreates the database using DatabaseProvisioning
 4. Runs Flyway migrations to create schema and objects
 
-This is a shared utility used by multiple database projects (PCMSC, Gmail, Tags, etc.).
-
 .PARAMETER DatabaseName
-The name of the database to build.
+The name of the database to build (e.g. 'ATAPUtilities', 'PCMSC').
 
 .PARAMETER Environment
-The target environment: 'Development', 'Testing', 'Production', or 'Experimental'.
+The target environment: 'Production', 'QA', 'Integration', 'Development', or 'Experimental'.
 
 .PARAMETER DatabaseHost
-The SQL Server host. Default is 'localhost'.
+The SQL Server host. Resolved from $global:settings if not supplied; defaults to 'localhost'.
 
 .PARAMETER SqlInstance
-The SQL Server instance name to connect to (e.g. 'localhost\SQLEXPRESS' or
-'localhost\development-whertzing'). When specified, this value overrides the
-default instance derived from DatabaseHost. Passed through to DatabaseProvisioning
-and Invoke-Flyway for all database operations.
+The SQL Server named instance (e.g. 'Production', 'Integration', 'Expwhertzing').
+Resolved from $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
+under the key path DatabaseName.Environment.SqlInstance.
+
+IMPORTANT — Experimental environment: the HostSettings fragment stores a placeholder value
+('Exp{username}') for the Experimental instance because it is an ephemeral per-sprint instance
+created by New-SprintDatabaseInstances. When calling this function directly for Experimental,
+you MUST supply -SqlInstance explicitly (e.g. -SqlInstance 'Expwhertzing'). The function will
+throw if SqlInstance cannot be resolved to a non-empty value.
 
 .PARAMETER FlywayBasePath
-Path to the Flyway directory containing flyway.toml. If not specified, attempts to auto-detect.
+Path to the Flyway directory containing flyway.toml. Resolved from $global:settings if not supplied.
 
 .PARAMETER SqlMigrationsPath
-Path to the SQL migrations directory. If not specified, defaults to FlywayBasePath\SQL.
+Path to the SQL migrations directory. Resolved from $global:settings if not supplied;
+defaults to FlywayBasePath\SQL.
 
 .PARAMETER SharedSqlMigrationsPath
-Path to the shared SQL scripts directory. Default is determined from repository structure.
+Path to the shared SQL scripts directory. Resolved from $global:settings if not supplied.
 
 .PARAMETER Force
 Force database drop even if it exists. Default is $true.
@@ -44,15 +50,16 @@ System.Object
 Returns a result object with Success (bool) and any error messages.
 
 .EXAMPLE
-Build-DatabaseWithFlyway -DatabaseName 'Tags' -Environment 'Experimental' -DatabaseHost 'localhost'
+Build-DatabaseWithFlyway -DatabaseName 'ATAPUtilities' -Environment 'Experimental' -SqlInstance 'Expwhertzing'
 
 .EXAMPLE
-Build-DatabaseWithFlyway -DatabaseName 'PCMSC' -Environment 'Development'
+Build-DatabaseWithFlyway -DatabaseName 'ATAPUtilities' -Environment 'Integration'
 
 .NOTES
 AI assisted using Powershell.instructions.md as guidelines
 Requires dbatools module for database operations.
 Requires Flyway CLI to be available in PATH or configured in environment variables.
+Connection settings are NOT read from .env files — they are read from $global:settings.
 
 .LINK
 https://github.com/whertzing/ATAP.Utilities
@@ -253,8 +260,12 @@ https://github.com/whertzing/ATAP.Utilities
 
     # Determine the SqlInstance value based on the environment if it is not yet defined.
     if (-not $SqlInstance) {
-      # Per Database Design: SqlInstance matches Environment, except 'Experimental', which uses default instance (blank)
-      $SqlInstance = if ($Environment -eq 'Experimental') { $null } else { $Environment }
+      $SqlInstance = $Environment
+    }
+    if (-not $SqlInstance) {
+      throw "SqlInstance could not be resolved for $DatabaseName/$Environment. " +
+            "For the Experimental environment the per-sprint instance (e.g. 'Expwhertzing') " +
+            "is not stored statically in HostSettings — pass -SqlInstance explicitly."
     }
 
     # If credentials are not supplied, default to IntegratedSecurity

@@ -152,33 +152,8 @@ function Invoke-ModuleBuildWithRetry {
       throw $errorMessage
     }
 
-    # Resolve Tier from NBGV once for all inputs when caller does not supply it.
-    $resolvedTierGlobal = $Tier
-    if ([string]::IsNullOrEmpty($resolvedTierGlobal)) {
-      try {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Calling nbgv get-version --variable NuGetPackageVersion' -Tag 'InvokeExpressionCall'
-        $nbgvOutput = & nbgv get-version --variable NuGetPackageVersion 2>&1
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Successfully returned from nbgv get-version --variable NuGetPackageVersion' -Tag 'InvokeExpressionCall'
-        if ($LASTEXITCODE -ne 0) {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "NBGV exited with code $LASTEXITCODE; defaulting Tier to 'Alpha'."
-          $resolvedTierGlobal = 'Alpha'
-        } else {
-          $prereleaseLabel = if ($nbgvOutput -match '^[0-9]+\.[0-9]+\.[0-9]+-?([A-Za-z]*)') { $Matches[1] } else { '' }
-          $resolvedTierGlobal = switch ($prereleaseLabel) {
-            'Sprint' { 'Sprint' }
-            'Alpha'  { 'Alpha' }
-            'Beta'   { 'Beta' }
-            'QA'     { 'QA' }
-            default  { 'Production' }
-          }
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "NBGV label='$prereleaseLabel'  resolved Tier=$resolvedTierGlobal"
-        }
-      } catch {
-        $errorMessage = "NBGV tier resolution failed. Exception: $($_.Exception.Message). Defaulting to 'Alpha'."
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $errorMessage
-        $resolvedTierGlobal = 'Alpha'
-      }
-    }
+    # Caller-supplied tier (may be empty — per-module NBGV resolution happens in process{}).
+    $callerSuppliedTier = $Tier
 
     # Patterns that identify specific retryable failure categories.
     $psResourceGetMissingPattern = 'PSResourceGet|Microsoft\.PowerShell\.PSResourceGet|Publish-PSResource.*not recognized|could not find.*PSResourceGet'
@@ -205,7 +180,7 @@ function Invoke-ModuleBuildWithRetry {
       $result = [PSCustomObject]@{
         Project     = $CurrentPath
         Task        = $Task
-        Tier        = $resolvedTierGlobal
+        Tier        = $callerSuppliedTier
         ExitCode    = -1
         BuildOutput = @()
         RetryCount  = 0
@@ -254,6 +229,45 @@ function Invoke-ModuleBuildWithRetry {
       $result.Project = $moduleRoot
 
       # -----------------------------------------------------------------------
+      # Resolve tier from module's own version.json when caller did not supply -Tier.
+      # Must run after $moduleRoot is validated so nbgv reads the right version.json.
+      # -----------------------------------------------------------------------
+      $resolvedTier = $callerSuppliedTier
+      if ([string]::IsNullOrEmpty($resolvedTier)) {
+        try {
+          $pushed = $false
+          try {
+            Push-Location -LiteralPath $moduleRoot
+            $pushed = $true
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling nbgv get-version --variable NuGetPackageVersion in '$moduleRoot'" -Tag 'InvokeExpressionCall'
+            $nbgvOutput = & nbgv get-version --variable NuGetPackageVersion 2>&1
+            $nbgvExit = $LASTEXITCODE
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Successfully returned from nbgv get-version --variable NuGetPackageVersion' -Tag 'InvokeExpressionCall'
+          } finally {
+            if ($pushed) { Pop-Location }
+          }
+          if ($nbgvExit -ne 0) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "NBGV exited with code $nbgvExit for '$moduleName'; defaulting Tier to 'Alpha'."
+            $resolvedTier = 'Alpha'
+          } else {
+            $prereleaseLabel = if ($nbgvOutput -match '^[0-9]+\.[0-9]+\.[0-9]+-?([A-Za-z]*)') { $Matches[1] } else { '' }
+            $resolvedTier = switch ($prereleaseLabel) {
+              'Sprint' { 'Sprint' }
+              'Alpha'  { 'Alpha' }
+              'Beta'   { 'Beta' }
+              'QA'     { 'QA' }
+              default  { 'Production' }
+            }
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "NBGV label='$prereleaseLabel'  resolved Tier=$resolvedTier"
+          }
+        } catch {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "NBGV tier resolution failed for '$moduleName'. Exception: $($_.Exception.Message). Defaulting to 'Alpha'."
+          $resolvedTier = 'Alpha'
+        }
+      }
+      $result.Tier = $resolvedTier
+
+      # -----------------------------------------------------------------------
       # Resolve transcript log path (SC-0033: generated artifacts under _generated/)
       # -----------------------------------------------------------------------
       $resolvedBuildLogPath = if (-not [string]::IsNullOrEmpty($BuildLogPath)) {
@@ -292,7 +306,7 @@ function Invoke-ModuleBuildWithRetry {
       if ($WhatIfPreference) {
         $skipArg = if ($SkipPublish.IsPresent) { ' -SkipPublish' } else { '' }
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message (
-          "What if: Push-Location '$moduleRoot'; Invoke-Build $Task -Tier $resolvedTierGlobal$skipArg (build script resolved by Invoke-Build walk-up). " +
+          "What if: Push-Location '$moduleRoot'; Invoke-Build $Task -Tier $resolvedTier$skipArg (build script resolved by Invoke-Build walk-up). " +
           "Transcript: '$transcriptFile'. " +
           "Would retry up to $MaxRetries time(s) on PSResourceGet/network failures."
         )
@@ -314,28 +328,28 @@ function Invoke-ModuleBuildWithRetry {
         }
 
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message (
-          "Invoke-Build $Task -Tier $resolvedTierGlobal in '$moduleRoot' " +
+          "Invoke-Build $Task -Tier $resolvedTier in '$moduleRoot' " +
           "(attempt $($retryCount + 1) of $($MaxRetries + 1))"
         )
 
         try {
           Start-Transcript -Path $transcriptFile -Append -ErrorAction SilentlyContinue | Out-Null
 
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling Invoke-Build $Task -Tier $resolvedTierGlobal in '$moduleRoot'" -Tag 'InvokeCommandCall'
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling Invoke-Build $Task -Tier $resolvedTier in '$moduleRoot'" -Tag 'InvokeCommandCall'
 
           Push-Location -LiteralPath $moduleRoot
           try {
             if ($SkipPublish.IsPresent) {
-              Invoke-Build $Task -Tier $resolvedTierGlobal -ModuleRoot $moduleRoot -SkipPublish
+              Invoke-Build $Task -Tier $resolvedTier -ModuleRoot $moduleRoot -SkipPublish
             } else {
-              Invoke-Build $Task -Tier $resolvedTierGlobal -ModuleRoot $moduleRoot
+              Invoke-Build $Task -Tier $resolvedTier -ModuleRoot $moduleRoot
             }
           } finally {
             Pop-Location
           }
 
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from Invoke-Build $Task in '$moduleRoot'" -Tag 'InvokeCommandCall'
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Invoke-Build $Task succeeded: '$moduleName' [Tier=$resolvedTierGlobal]"
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Invoke-Build $Task succeeded: '$moduleName' [Tier=$resolvedTier]"
 
           $result.ExitCode = 0
           $result.RetryCount = $retryCount

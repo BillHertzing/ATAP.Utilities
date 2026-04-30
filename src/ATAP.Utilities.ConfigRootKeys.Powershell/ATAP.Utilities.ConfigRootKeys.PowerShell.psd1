@@ -51,9 +51,7 @@ PowerShellVersion = '5.1'
 # ProcessorArchitecture = ''
 
 # Modules that must be imported into the global environment prior to importing this module
-RequiredModules = @(@{ModuleName = 'PSFramework'; ModuleVersion = '1.10.0'; }, 
-               @{ModuleName = 'powershell-yaml'; ModuleVersion = '0.4.0'; }, 
-               @{ModuleName = 'Microsoft.PowerShell.PSResourceGet'; ModuleVersion = '1.1.1'; })
+RequiredModules = @(@{ModuleName = 'PSFramework'; ModuleVersion = '1.10.0'; MaximumVersion = '1.*'; })
 
 # Assemblies that must be loaded prior to importing this module
 # RequiredAssemblies = @()

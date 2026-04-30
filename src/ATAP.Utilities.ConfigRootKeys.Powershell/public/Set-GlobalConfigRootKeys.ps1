@@ -28,7 +28,10 @@ Bootstraps $global:configRootKeys in a fixed four-phase sequence:
                Databases.Tags.ConfigRootKeys.ps1         — Tags DB name key
                RulesManagement.ConfigRootKeys.ps1        — Rules-Management key constants
 
-  Phase 4 — Explicit package repos: dot-sources and calls
+  Phase 4 — Explicit BuildMaster and RulesManagement: dot-sources settings
+             fragments that define Phase 4 automation paths and endpoints.
+
+  Phase 5 — Explicit package repos: dot-sources and calls
              Add-PackageRepositoriesConfigRootKeys.ps1 so its internal sub-fragment
              scan runs after all other keys are in place.
 
@@ -187,7 +190,21 @@ function Set-GlobalConfigRootKeys {
       #   }
       # }
 
-      # ── Phase 4: Explicit — Add-PackageRepositoriesConfigRootKeys ─────────
+      # ── Phase 4: Explicit — BuildMaster and RulesManagement fragments ─────
+      foreach ($explicitFragmentName in @('BuildMaster.ConfigRootKeys.ps1', 'RulesManagement.ConfigRootKeys.ps1')) {
+        $explicitFragment = Join-Path $Path $explicitFragmentName
+        if (Test-Path -LiteralPath $explicitFragment -PathType Leaf) {
+          if ($PSCmdlet.ShouldProcess($explicitFragment, 'Dot-source ConfigRootKeys fragment')) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Dot-sourcing '$explicitFragment'" -Tag 'ConfigRootKeys'
+            . $explicitFragment
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Loaded '$explicitFragmentName'."
+          }
+        } else {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "No '$explicitFragmentName' found in '$Path'; skipping."
+        }
+      }
+
+      # ── Phase 5: Explicit — Add-PackageRepositoriesConfigRootKeys ─────────
       $pkgRepoScript = Join-Path $Path 'Add-PackageRepositoriesConfigRootKeys.ps1'
       if (Test-Path -LiteralPath $pkgRepoScript -PathType Leaf) {
         if ($PSCmdlet.ShouldProcess($pkgRepoScript, 'Dot-source and invoke Add-PackageRepositoriesConfigRootKeys')) {

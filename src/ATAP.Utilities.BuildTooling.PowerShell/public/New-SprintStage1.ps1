@@ -31,6 +31,9 @@ function New-SprintStage1 {
   .PARAMETER JunctionFolderNames
     Folder names to junction from SharedVSCode into _Planning.
     Defaults to @('.claude', '.github', '.vscode').
+  .PARAMETER DryRun
+    Preview all sprint-start actions without creating GitHub issues, branches,
+    worktrees, junctions, SharedVSCode context, or NuGet.config files.
   .OUTPUTS
     PSCustomObject — see the return structure in the code.
   .EXAMPLE
@@ -47,14 +50,16 @@ function New-SprintStage1 {
   param(
     [string]$GitRoot = 'C:\Dropbox\whertzing\GitHub',
 
-    [string]$Owner = 'whertzing',
+    [string]$Owner,
 
     [ValidatePattern('^\d{4}$')]
     [string]$SprintNumber,
 
     [string[]]$JunctionFolderNames = @('.claude', '.github', '.vscode'),
 
-    [string]$ProGetBaseUrl = 'http://localhost:50000'
+    [string]$ProGetBaseUrl = 'http://localhost:50000',
+
+    [switch]$DryRun
   )
 
   begin {
@@ -62,18 +67,43 @@ function New-SprintStage1 {
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
-    # --- Ensure external dependencies are available ---
-    Assert-GitAvailable
+    if ($DryRun) {
+      $WhatIfPreference = $true
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'DryRun enabled — no external side effects will be performed.'
+    }
 
-    if (-not (Get-Command -Name 'gh' -ErrorAction SilentlyContinue)) {
-      throw 'The GitHub CLI (gh) is required but was not found on PATH.'
+    if ([string]::IsNullOrWhiteSpace($Owner)) {
+      $overviewPath = Join-Path $GitRoot 'OverView.code-workspace'
+      if (Test-Path -LiteralPath $overviewPath -PathType Leaf) {
+        try {
+          $workspace = Get-Content -LiteralPath $overviewPath -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+          $Owner = $workspace.githubOwner
+        } catch {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning `
+            -Message "Could not read githubOwner from $overviewPath`: $($_.Exception.Message). Falling back to `$env:USERNAME."
+        }
+      }
+      if ([string]::IsNullOrWhiteSpace($Owner)) {
+        $Owner = $env:USERNAME
+      }
+    }
+
+    # --- Ensure external dependencies are available ---
+    if (-not $DryRun) {
+      Assert-GitAvailable
+
+      if (-not (Get-Command -Name 'gh' -ErrorAction SilentlyContinue)) {
+        throw 'The GitHub CLI (gh) is required but was not found on PATH.'
+      }
     }
 
     # Dot-source Set-WorktreeJunctions if not already loaded
     $setWtJunctionsPath = Join-Path $GitRoot 'ATAP.Utilities' 'src' `
       'ATAP.Utilities.BuildTooling.PowerShell' 'public' 'Set-WorktreeJunctions.ps1'
     if (-not (Get-Command -Name 'Set-WorktreeJunctions' -CommandType Function -ErrorAction SilentlyContinue)) {
-      if (Test-Path $setWtJunctionsPath) {
+      if ($DryRun) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'DryRun: skipping Set-WorktreeJunctions dependency load.'
+      } elseif (Test-Path $setWtJunctionsPath) {
         . $setWtJunctionsPath
       } else {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
@@ -85,7 +115,9 @@ function New-SprintStage1 {
     # Ensure SharedVSCode functions are loaded (Import-SharedVSCodeFunctions)
     if (-not (Get-Command -Name 'Initialize-DownstreamSprintFromSharedVSCode' -CommandType Function -ErrorAction SilentlyContinue)) {
       $importPath = Join-Path $GitRoot 'SharedVSCode' 'Powershell' 'Import-SharedVSCodeFunctions.ps1'
-      if (Test-Path $importPath) {
+      if ($DryRun) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'DryRun: skipping SharedVSCode function dependency load.'
+      } elseif (Test-Path $importPath) {
         . $importPath
       } else {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
@@ -100,6 +132,7 @@ function New-SprintStage1 {
     $result = [PSCustomObject]@{
       nextSprintNumber     = $null
       previousSprintNumber = $null
+      dryRun               = $DryRun.IsPresent
       sharedVSCode         = @{
         issueNumber  = $null
         branchName   = $null
@@ -195,6 +228,11 @@ function New-SprintStage1 {
       return $result
     }
 
+    if ($DryRun -and $null -eq $svIssueNum) {
+      $svIssueNum = 'DRYRUN'
+      $result.sharedVSCode.issueNumber = $svIssueNum
+    }
+
     # 2b. Fetch latest main
     try {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
@@ -275,6 +313,11 @@ function New-SprintStage1 {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       $result.planning.error = $errorMessage
       return $result
+    }
+
+    if ($DryRun -and $null -eq $planIssueNum) {
+      $planIssueNum = 'DRYRUN'
+      $result.planning.issueNumber = $planIssueNum
     }
 
     # 3b. Fetch latest main

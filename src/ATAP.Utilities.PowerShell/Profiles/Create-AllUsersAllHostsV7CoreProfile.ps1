@@ -65,7 +65,7 @@ function Create-AllUsersAllHostsV7CoreProfile {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       throw
     }
-  
+
   # Dot source the list of configuration keys
   # Configuration root key .ps1 files should be a peer of the machine profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
   . "$PSScriptRoot/global_ConfigRootKeys.ps1"
@@ -425,7 +425,7 @@ Get-CollectionTraverseEvaluate -SourceCollections $sourceCollections -destinatio
 # location of the local chocolatey server per machine
 
 # The $Env:PSModulePath is process-scoped, and it's initial value is supplied by the Powershell host process/engine.
-# Powershell Core Version 7.2.5 supplies C:\Dropbox\whertzing\PowerShell\Modules;C:\Program Files\PowerShell\Modules;c:\program files\powershell\7\Modules; in the initial value (process scoped)
+# Powershell Core Version 7.2.5 supplies C:\Dropbox\whertzing\PowerShell\Modules;C:\Program Files\PowerShell\Modules;c:\program files\Modules; in the initial value (process scoped)
 
 # Installing SQL Server 2019 adds the path ;C:\Program Files (x86)\Microsoft SQL Server\150\Tools\PowerShell\Modules\ to the machine scoped $Env:PSModulePath
 

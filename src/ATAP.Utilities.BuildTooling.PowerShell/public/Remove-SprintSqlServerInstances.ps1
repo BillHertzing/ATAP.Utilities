@@ -38,6 +38,10 @@ function Remove-SprintSqlServerInstances {
   before removing the instance (SQL Server uninstall drops them automatically, but
   you may want explicit logging of the drop).
 
+  .PARAMETER Force
+  Bypasses PowerShell's high-impact ShouldProcess confirmation prompts for
+  non-interactive pipeline / agent invocations. Does not override -WhatIf.
+
   .OUTPUTS
   PSCustomObject with fields:
     SprintNumber     string
@@ -83,11 +87,18 @@ function Remove-SprintSqlServerInstances {
     [string]$SqlServerSetupPath = 'D:\Temp\SQLExpr\extracted',
 
     [Parameter(Mandatory = $false)]
-    [switch]$SkipDatabaseDrop
+    [switch]$SkipDatabaseDrop,
+
+    [Parameter(Mandatory = $false)]
+    [switch]$Force
   )
 
   $fn = $MyInvocation.MyCommand.Name
   $mn = 'ATAP.Utilities.DatabaseManagement.Powershell'
+
+  if ($Force) {
+    $ConfirmPreference = 'None'
+  }
 
   # ── Resolve developer names ──────────────────────────────────────────────
   if (-not $PSBoundParameters.ContainsKey('DeveloperNames')) {
@@ -177,7 +188,9 @@ function Remove-SprintSqlServerInstances {
             if ($db) {
               Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
                 -Message "Dropping database '$dbName' from '$($inst.SqlInstance)'..."
-              Remove-DbaDatabase -SqlInstance $instanceExists -Database $dbName -Confirm:$false
+              if ($PSCmdlet.ShouldProcess("localhost\$($inst.SqlInstance)\$dbName", 'Drop SQL Server database')) {
+                Remove-DbaDatabase -SqlInstance $instanceExists -Database $dbName -Confirm:$false
+              }
             }
           } catch {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `

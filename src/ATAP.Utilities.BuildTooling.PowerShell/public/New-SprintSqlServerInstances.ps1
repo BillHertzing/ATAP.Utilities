@@ -268,6 +268,7 @@ function New-SprintSqlServerInstances {
                   -FlywayBasePath $FlywayBasePath `
                   -FlywayTomlPath $flywayTomlPath `
                   -FlywaySqlMigrationsPath (Join-Path $FlywayBasePath 'SQL') `
+                  -RepositoryRoot $RepositoryRoot `
                   -IntegratedSecurity `
                   -Force
 

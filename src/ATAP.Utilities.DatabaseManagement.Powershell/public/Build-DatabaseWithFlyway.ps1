@@ -130,6 +130,10 @@ https://github.com/whertzing/ATAP.Utilities
 
     [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParameters')]
     [Parameter(Mandatory = $false, ParameterSetName = 'ExistingConnection')]
+    [string]$RepositoryRoot,
+
+    [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParameters')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'ExistingConnection')]
     [switch]$Force,
 
     # When set, run DatabaseProvisioning only and skip Flyway migrations.
@@ -170,10 +174,14 @@ https://github.com/whertzing/ATAP.Utilities
         Install-Module -Name dbatools -Scope CurrentUser -Force -AllowClobber
       }
       Import-Module dbatools -ErrorAction Stop
-      if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
+      if ([string]::IsNullOrWhiteSpace($RepositoryRoot)) {
+        if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+          . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
+        }
+        $repositoryRoot = Get-RepositoryRoot
+      } else {
+        $repositoryRoot = $RepositoryRoot
       }
-      $repositoryRoot = Get-RepositoryRoot
       if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
         . (Join-Path $repositoryRoot 'src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1')
       }

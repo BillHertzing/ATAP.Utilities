@@ -1,132 +1,208 @@
-# Public/Set-PesterConfiguration.ps1
-function Set-PesterConfiguration {
+function Get-MergedPesterConfigurations {
+  <#
+  .SYNOPSIS
+    Discovers and merges PesterConfiguration.psd1 files.
+  .DESCRIPTION
+    Creates a default Pester configuration, discovers PesterConfiguration.psd1 files
+    from the supplied path, merges the discovered configuration hashtables from
+    outermost to innermost, and returns the merged configuration object. No work is
+    performed at file scope; all behavior occurs only when the function is called.
+  .PARAMETER Path
+    Directory to start discovery from, or a specific PesterConfiguration.psd1 file.
+    Defaults to the module root.
+  .PARAMETER IsCICD
+    When specified, discovery uses only the module-root PesterConfiguration.psd1.
+  .OUTPUTS
+    PesterConfiguration
+  .EXAMPLE
+    Get-MergedPesterConfigurations -Path .\tests\Unit
+  .NOTES
+    AI assisted using Powershell.instructions.md as guidelines
+  .LINK
+    PesterConfiguration.psd1
+  #>
   [CmdletBinding()]
-  [OutputType([PesterConfiguration])]
   param(
-    [Parameter()]
-    [string]$ModuleRoot = (Split-Path $PSScriptRoot -Parent),
+    [ValidateNotNullOrEmpty()]
+    [string]$Path = (Split-Path -Path $PSScriptRoot -Parent),
 
-    [Parameter()]
-    [string]$TestDirectory = $PSScriptRoot,
-
-    [Parameter()]
-    [switch]$IsCICD = ($env:isCICD -eq $true)
+    [switch]$IsCICD = ($env:isCICD -ieq 'true')
   )
 
-  function Test-IsVSCode {
-    return $env:TERM_PROGRAM -eq 'vscode' -or $null -ne $env:VSCODE_PID
-  }
+  begin {
+    $fn = $MyInvocation.MyCommand.Name
+    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
-  function Get-VSCodePesterSettings {
-    param([string]$ProjectRoot)
-    $settingsPath = Join-Path $ProjectRoot '.vscode/settings.json'
-    if (-not (Test-Path $settingsPath)) { return @{} }
-    try {
-      return Get-Content $settingsPath -Raw | ConvertFrom-Json -AsHashtable
-    }
-    catch {
-      Write-Warning "Invalid VS Code settings: $_"
-      return @{}
-    }
-  }
+    function New-DefaultPesterConfiguration {
+      [CmdletBinding()]
+      param()
 
-  function Get-MergedPesterConfigurations {
-    param(
-      [hashtable]$VSCodeSettings,
-      [PesterConfiguration]$PesterConfig
-    )
-    if ($VSCodeSettings['powershell.pester.outputVerbosity']) {
-      $PesterConfig.Output.Verbosity = $VSCodeSettings['powershell.pester.outputVerbosity']
-    }
-    # Add other mappings as needed
-  }
-  # --- Detect Environment ---
-  $isCICD = $env:isCICD -ieq 'true'  # Case-insensitive check
-
-  # --- Configuration Discovery ---
-  $currentDir = $PSScriptRoot
-  $configFiles = @()
-
-  if ($isCICD) {
-    # CI/CD Mode: Only check the module root (parent of Tests directory)
-    $moduleRoot = Split-Path $currentDir -Parent
-    $configPath = Join-Path $moduleRoot 'PesterConfiguration.psd1'
-    if (Test-Path $configPath -PathType Leaf) {
-      $configFiles += $configPath
-    }
-  }
-  else {
-    # Local/VS Code Mode: Search upward until .git or filesystem root
-    do {
-      $gitPath = Join-Path $currentDir '.git'
-      $hasGit = Test-Path $gitPath -PathType Container
-
-      $configPath = Join-Path $currentDir 'PesterConfiguration.psd1'
-      if (Test-Path $configPath -PathType Leaf) {
-        $configFiles += $configPath
+      $newPesterConfigurationCommand = Get-Command -Name 'New-PesterConfiguration' -ErrorAction SilentlyContinue
+      if ($newPesterConfigurationCommand) {
+        return New-PesterConfiguration
       }
 
-      # Stop at .git or filesystem root
-      if ($hasGit) { break }
-      $parentDir = Split-Path $currentDir -Parent
-      if (-not $parentDir -or $parentDir -eq $currentDir) { break }
-      $currentDir = $parentDir
-    } while ($true)
+      $pesterConfigurationType = 'PesterConfiguration' -as [type]
+      if ($pesterConfigurationType) {
+        $defaultProperty = $pesterConfigurationType.GetProperty('Default', [System.Reflection.BindingFlags]'Public, Static')
+        if ($defaultProperty) {
+          return $defaultProperty.GetValue($null, $null)
+        }
+      }
 
-    # Reverse to prioritize higher-level configs (root first)
-    [array]::Reverse($configFiles)
+      throw 'Pester 5 is required because no PesterConfiguration type or New-PesterConfiguration command is available.'
+    }
+
+    function Set-PesterConfigurationValue {
+      [CmdletBinding()]
+      param(
+        [Parameter(Mandatory)]
+        [object]$Target,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$PropertyPath,
+
+        [AllowNull()]
+        [object]$Value
+      )
+
+      if ($null -eq $Value) { return }
+
+      $current = $Target
+      for ($index = 0; $index -lt ($PropertyPath.Count - 1); $index++) {
+        $property = $current.PSObject.Properties[$PropertyPath[$index]]
+        if (-not $property) { return }
+        $current = $property.Value
+        if ($null -eq $current) { return }
+      }
+
+      $leafName = $PropertyPath[-1]
+      $leafProperty = $current.PSObject.Properties[$leafName]
+      if ($leafProperty) {
+        try {
+          $leafProperty.Value = $Value
+        } catch {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Could not set Pester configuration property '$($PropertyPath -join '.')': $($_.Exception.Message)"
+        }
+      }
+    }
+
+    function Merge-PesterConfigurationHashtable {
+      [CmdletBinding()]
+      param(
+        [Parameter(Mandatory)]
+        [object]$Target,
+
+        [Parameter(Mandatory)]
+        [hashtable]$Source,
+
+        [string[]]$PropertyPath = @()
+      )
+
+      foreach ($key in $Source.Keys) {
+        $value = $Source[$key]
+        $nextPath = @($PropertyPath + [string]$key)
+        if ($value -is [hashtable]) {
+          Merge-PesterConfigurationHashtable -Target $Target -Source $value -PropertyPath $nextPath
+        } else {
+          Set-PesterConfigurationValue -Target $Target -PropertyPath $nextPath -Value $value
+        }
+      }
+    }
+
+    function Test-IsVSCodeHost {
+      [CmdletBinding()]
+      param()
+
+      return ($env:TERM_PROGRAM -eq 'vscode' -or $null -ne $env:VSCODE_PID)
+    }
+
+    function Get-VSCodePesterSettings {
+      [CmdletBinding()]
+      param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$ProjectRoot
+      )
+
+      $settingsPath = Join-Path -Path (Join-Path -Path $ProjectRoot -ChildPath '.vscode') -ChildPath 'settings.json'
+      if (-not (Test-Path -LiteralPath $settingsPath -PathType Leaf)) { return $null }
+
+      try {
+        return Get-Content -LiteralPath $settingsPath -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+      } catch {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Invalid VS Code settings at $settingsPath`: $($_.Exception.Message)"
+        return $null
+      }
+    }
   }
 
-  # --- Merge Configurations ---
-  $mergedConfig = [PesterConfiguration]::Default
-  foreach ($file in $configFiles) {
-    $config = . $file  # Load the config file
-    Get-MergedPesterConfigurations -MergedConfig $mergedConfig -ConfigToMerge $config
+  process {
+    $resolvedPath = (Resolve-Path -LiteralPath $Path -ErrorAction Stop).Path
+    $pathItem = Get-Item -LiteralPath $resolvedPath -ErrorAction Stop
+    $moduleRoot = Split-Path -Path $PSScriptRoot -Parent
+    $configFiles = [System.Collections.Generic.List[string]]::new()
+
+    if (-not $pathItem.PSIsContainer) {
+      [void]$configFiles.Add($pathItem.FullName)
+      $projectRoot = Split-Path -Path $pathItem.FullName -Parent
+    } elseif ($IsCICD) {
+      $configPath = Join-Path -Path $moduleRoot -ChildPath 'PesterConfiguration.psd1'
+      if (Test-Path -LiteralPath $configPath -PathType Leaf) {
+        [void]$configFiles.Add($configPath)
+      }
+      $projectRoot = $moduleRoot
+    } else {
+      $currentDir = $pathItem.FullName
+      $projectRoot = $currentDir
+      while ($true) {
+        $configPath = Join-Path -Path $currentDir -ChildPath 'PesterConfiguration.psd1'
+        if (Test-Path -LiteralPath $configPath -PathType Leaf) {
+          [void]$configFiles.Add($configPath)
+        }
+
+        if (Test-Path -LiteralPath (Join-Path -Path $currentDir -ChildPath '.git')) {
+          $projectRoot = $currentDir
+          break
+        }
+
+        $parentDir = Split-Path -Path $currentDir -Parent
+        if ([string]::IsNullOrWhiteSpace($parentDir) -or $parentDir -eq $currentDir) { break }
+        $currentDir = $parentDir
+      }
+
+      $configFilesArray = $configFiles.ToArray()
+      [array]::Reverse($configFilesArray)
+      $configFiles = [System.Collections.Generic.List[string]]::new()
+      foreach ($configFile in $configFilesArray) { [void]$configFiles.Add($configFile) }
+    }
+
+    $mergedConfig = New-DefaultPesterConfiguration
+    foreach ($configFile in $configFiles) {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Merging Pester configuration $configFile"
+      $config = . $configFile
+      if ($config -is [hashtable]) {
+        Merge-PesterConfigurationHashtable -Target $mergedConfig -Source $config
+      } elseif ($null -ne $config) {
+        foreach ($property in $config.PSObject.Properties) {
+          Set-PesterConfigurationValue -Target $mergedConfig -PropertyPath @($property.Name) -Value $property.Value
+        }
+      }
+    }
+
+    if (-not $IsCICD -and (Test-IsVSCodeHost)) {
+      $vscodeSettings = Get-VSCodePesterSettings -ProjectRoot $projectRoot
+      if ($vscodeSettings -and $vscodeSettings.PSObject.Properties['powershell.pester.outputVerbosity']) {
+        $mergedConfig.Output.Verbosity = $vscodeSettings.'powershell.pester.outputVerbosity'
+      }
+    }
+
+    return $mergedConfig
   }
 
-  # --- Apply VS Code Overrides (if applicable) ---
-  if (-not $isCICD -and (Test-IsVSCode)) {
-    $projectRoot = $currentDir  # Use the directory where .git was found
-    $vscodeSettings = Get-VSCodePesterSettings -ProjectRoot $projectRoot
-    Map-VSCodeToPesterConfig -VSCodeSettings $vscodeSettings -PesterConfig $mergedConfig
+  end {
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn in module $mn"
   }
-
-  # --- Apply Final Configuration ---
-  $PesterPreference = $mergedConfig
 }
-
-# Discover configurations based on environment
-$configFiles = if ($IsCICD) {
-  # CI/CD: Only check module root
-  $configPath = Join-Path $ModuleRoot 'PesterConfiguration.psd1'
-  if (Test-Path $configPath) { $configPath }
-}
-else {
-  # Local/VS Code: Search upward from test directory
-  $currentDir = $TestDirectory
-  $files = @()
-  do {
-    $gitPath = Join-Path $currentDir '.git'
-    $configPath = Join-Path $currentDir 'PesterConfiguration.psd1'
-    if (Test-Path $configPath) { $files += $configPath }
-    if (Test-Path $gitPath -PathType Container) { break }
-    $currentDir = Split-Path $currentDir -Parent
-  } while ($null -ne $currentDir)
-  [array]::Reverse($files)
-  $files
-}
-
-# Merge configurations
-$mergedConfig = [PesterConfiguration]::Default
-foreach ($file in $configFiles) {
-  $config = . $file
-  Get-MergedPesterConfigurations -BaseConfig $mergedConfig -OverrideConfig $config
-}
-
-# Apply VS Code overrides
-if (-not $IsCICD -and (Test-IsVSCode)) {
-  $vscodeSettings = Get-VSCodePesterSettings -ProjectRoot $currentDir
-  Map-VSCodeToPesterConfig -VSCodeSettings $vscodeSettings -PesterConfig $mergedConfig
-}
-
-return $mergedConfig

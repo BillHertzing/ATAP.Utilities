@@ -23,8 +23,10 @@ function Remove-SprintBitwardenSecrets {
     warning (it may have already been deleted). All other items continue.
 
     ConfirmImpact is set to High. PowerShell will prompt for confirmation
-    before any deletion unless -Confirm:$false or -Force is passed. Deletion
-    is reversible only by re-running New-SprintBitwardenSecrets.
+    before any deletion unless -Confirm:$false or -Force is passed. -Force
+    suppresses both the single safety prompt and PowerShell's high-impact
+    ShouldProcess confirmation, but it does not override -WhatIf. Deletion is
+    reversible only by re-running New-SprintBitwardenSecrets.
 
     The BW_SESSION environment variable must be set (by the login script at
     interactive logon). In agent-spawned shells it is read from User scope.
@@ -41,7 +43,8 @@ function Remove-SprintBitwardenSecrets {
     List of database names whose secrets should be deleted.
     Defaults to @('master', 'ATAPUtilities', 'AceCommander').
   .PARAMETER Force
-    Bypasses the High-impact confirmation prompt. Use for pipeline / agent invocations.
+    Bypasses the high-impact confirmation prompts. Use for pipeline / agent
+    invocations. Does not override -WhatIf.
   .OUTPUTS
     [PSCustomObject[]] — one entry per (database, host, tier) with fields:
     secretName, database, host, tier, deleted, skipped, error.
@@ -115,6 +118,10 @@ function Remove-SprintBitwardenSecrets {
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
       -Message "Removing Bitwarden sprint secrets for $DeveloperUsername; databases: $($Databases -join ', '); hosts: $($HostList -join ', ')"
+
+    if ($Force) {
+      $ConfirmPreference = 'None'
+    }
   }
 
   process {

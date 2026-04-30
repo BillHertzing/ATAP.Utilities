@@ -126,7 +126,7 @@ function prompt {
 $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']] = 'C:\Dropbox\whertzing\Git\.gitconfig'
 
 # Unlock the Secrets for this user
-# We use Bitwarden, and hopefully the user has already logged in interactively at least once, whihc sets the BW_Session
+# We use Bitwarden, and hopefully the user has already logged in interactively at least once, which sets the BW_Session
 # if not, use Initialize-BitwardenSession
 if (-not (Test-Path Env:BW_SESSION)) {
   # Load required helper functions
@@ -267,7 +267,7 @@ Set-Alias idea (Join-Path $global:settings['CloudBasePath'] $env:username 'GitHu
 # Get the Vaults and Master Passwords for the Secrets that belong to my roles
 
 # Currently developing database management powershell modules
-# temporaroy create in teh environment a hashtable of databasenames and their properties
+# temporaroy create in the environment a hashtable of databasenames and their properties
 <#
 # Flyway.TOML file uses
 [environments.prod_buildsets]
@@ -843,7 +843,7 @@ Set-Location -Path $storedInitialDir
 # Set the environment variables for this user
 Write-PSFMessage -FunctionName $fn -Level Debug -Message ('setting environment variables in CurrentUsersAllHostsV7CoreProfile.ps1')
 
-. (Join-Path -Path $PSHome -ChildPath 'global_EnvironmentVariables.ps1')
+. $(Join-Path $PSHome 'global_EnvironmentVariables.ps1')
 Set-EnvironmentVariablesProcess
 Write-PSFMessage -FunctionName $fn -Level Debug -Message ('finished setting environment variables in CurrentUsersAllHostsV7CoreProfile.ps1')
 

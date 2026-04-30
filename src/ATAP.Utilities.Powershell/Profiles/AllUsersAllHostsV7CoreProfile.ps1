@@ -181,7 +181,7 @@ $PSDefaultParameterValues = @{
 try {
   if (-not (Get-Command -Name 'Set-GlobalConfigRootKeys' -CommandType Function -ErrorAction SilentlyContinue)) {
     $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
-    $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-98-sprint-0006-work-items'
+    $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items'
     $projectpathRel = 'src\ATAP.Utilities.ConfigRootKeys.Powershell'
     $cmdletPathRel = 'public\Set-GlobalConfigRootKeys.ps1'
     . $(Join-Path $repobasepath $projectpathRel $cmdletPathRel)
@@ -193,23 +193,15 @@ try {
 }
 Set-GlobalConfigRootKeys
 
-# Configuration root key .ps1 files should be a peer of the machine profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
-
-# ToDo: have Ansible write a complete global_ConfigRootKeys.ps1 file instead of using fragments that have a hostspecific set of keys
-# . $PSHOME/global_ConfigRootKeys.ps1
-# . $PSHOME/global_ConfigRootKeys.IAC.Fragments/global_ConfigRootKeys.IAC.Fragment.Hosts.ps1
-# Print the global:ConfigRootKeys if Debug
-# Write-PSFMessage -Level Debug -Message ('global:configRootKeys:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:configRootKeys ($indent + $indentIncrement) $indentIncrement) + '}' )
-
 # [Ansible: Understanding variable precedence](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#understanding-variable-precedence)
 
 # Until the organizations 'infrastructure-as-code (IAC)' is stored in a vault, import the HostSettings from the organizations current IAC directory
 # during the transition to packaging, try first the computers local machine directory
 if (Test-Path -Path "$env:ProgramFiles\Powershell\Modules\ATAP.Utilities.Powershell\Resources\HostSettings.ps1") {
-  . "$env:ProgramFiles\Powershell\Modules\\ATAP.Utilities.Powershell\Resources\HostSettings.ps1"
+  . "$env:ProgramFiles\Powershell\Modules\ATAP.Utilities.Powershell\Resources\HostSettings.ps1"
 } elseif (Test-Path -Path "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\ATAP.IAC\Windows\HostSettings.ps1") {
   # . "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\ATAP.IAC\Windows\HostSettings.ps1"
-  . "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\ATAP.IAC-wt-7-sprint-0006-work-items\Windows\HostSettings.ps1"
+  . "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\ATAP.IAC\Windows\HostSettings.ps1"
 } else {
   Write-PSFMessage -Level Debug -Message ('HostSettings.ps1 not found')
 }

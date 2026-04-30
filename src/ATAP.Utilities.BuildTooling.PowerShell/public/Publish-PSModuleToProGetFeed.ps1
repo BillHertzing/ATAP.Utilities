@@ -184,14 +184,30 @@ function Publish-PSModuleToProGetFeed {
     $feedUri = Get-PSModuleFeedUri -FeedName $feedName -Tier $Tier
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved feed URI for '$feedName'"
 
-    # 4. Resolve API key: Bitwarden preferred, else User env var.
+    # 4. Resolve API key: per-tier Bitwarden preferred, then per-tier User env
+    #    var, then admin-key fallback (PROGET_ADMIN_API_KEY).
+    #
+    # SCOPE CREEP — REMOVE ADMIN-KEY FALLBACK ONCE PER-TIER KEYS EXIST
+    # ----------------------------------------------------------------
+    # The PROGET_ADMIN_API_KEY fallback below is a temporary bootstrap so local
+    # builds and early sprint pipelines can publish before per-tier ProGet API
+    # keys are minted, stored in Bitwarden, and documented. Once every tier
+    # (Sprint/Alpha/Beta/QA/Production) has its own key in Bitwarden under
+    # 'ProGet_PowerShellGet_<Tier>_ApiKey' and a documented rotation plan
+    # exists, delete the fallback block and let this function throw when the
+    # tier-specific key is missing. See scope-creep idea filed against this
+    # function for the full backlog.
     $apiKey = $null
+    $apiKeySource = $null
     $bwCmd = Get-Command -Name 'Get-BitWardenSecret' -ErrorAction SilentlyContinue
     if ($null -ne $bwCmd) {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Attempting Get-BitWardenSecret for tier '$Tier'"
       try {
         $secretName = "ProGet_PowerShellGet_${Tier}_ApiKey"
         $apiKey = Get-BitWardenSecret -SecretName $secretName
+        if (-not [string]::IsNullOrWhiteSpace([string]$apiKey)) {
+          $apiKeySource = "Bitwarden secret '$secretName'"
+        }
       } catch {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Get-BitWardenSecret threw; will fall back to env var'
         $apiKey = $null
@@ -201,13 +217,28 @@ function Publish-PSModuleToProGetFeed {
       $envName = "PROGET_POWERSHELLGET_APIKEY_$Tier"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Falling back to User env var '$envName' for API key"
       $apiKey = [Environment]::GetEnvironmentVariable($envName, 'User')
+      if (-not [string]::IsNullOrWhiteSpace([string]$apiKey)) {
+        $apiKeySource = "User env var '$envName'"
+      }
     }
     if ([string]::IsNullOrWhiteSpace([string]$apiKey)) {
-      $msg = "Unable to resolve ProGet API key for tier '$Tier'. Expected Get-BitWardenSecret -SecretName 'ProGet_PowerShellGet_${Tier}_ApiKey' or User env var 'PROGET_POWERSHELLGET_APIKEY_$Tier'."
+      # TEMPORARY admin-key fallback (see SCOPE CREEP note above).
+      $adminEnvName = 'PROGET_ADMIN_API_KEY'
+      $apiKey = [Environment]::GetEnvironmentVariable($adminEnvName, 'User')
+      if (-not [string]::IsNullOrWhiteSpace([string]$apiKey)) {
+        $apiKeySource = "User env var '$adminEnvName' (admin fallback)"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message (
+          "Using PROGET_ADMIN_API_KEY admin fallback for tier '$Tier' — provision " +
+          "'ProGet_PowerShellGet_${Tier}_ApiKey' in Bitwarden to remove this fallback."
+        )
+      }
+    }
+    if ([string]::IsNullOrWhiteSpace([string]$apiKey)) {
+      $msg = "Unable to resolve ProGet API key for tier '$Tier'. Expected Get-BitWardenSecret -SecretName 'ProGet_PowerShellGet_${Tier}_ApiKey', User env var 'PROGET_POWERSHELLGET_APIKEY_$Tier', or admin fallback 'PROGET_ADMIN_API_KEY'."
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
       throw $msg
     }
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "API key resolved for tier '$Tier' (value redacted)"
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "API key resolved for tier '$Tier' from $apiKeySource (value redacted)"
 
     # 5. Ensure the PSResourceRepository is registered with the right URI.
     $existingRepo = Get-PSResourceRepository -Name $feedName -ErrorAction SilentlyContinue

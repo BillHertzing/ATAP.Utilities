@@ -5,10 +5,13 @@
 Invokes Invoke-Build against a module.build.ps1 orchestrator with automatic retry.
 
 .DESCRIPTION
-For each ProjectPath, locates module.build.ps1 in the project folder (or uses the path
-directly if it points to module.build.ps1), resolves the 5-tier promotion tier from
-Nerdbank.GitVersioning when -Tier is not supplied, then calls Invoke-Build with the
-specified task and tier.
+For each ProjectPath, validates that the folder is a well-formed ATAP.Utilities
+PowerShell module (contains <FolderName>.psm1 and <FolderName>.psd1), resolves the
+5-tier promotion tier from Nerdbank.GitVersioning when -Tier is not supplied, then
+sets the working directory to that folder and calls Invoke-Build. Invoke-Build walks
+up the folder hierarchy until it finds the source-of-truth *.build.ps1 (typically
+module.build.ps1 at the repo root), so this function no longer locates the build
+script itself.
 
 On PSResourceGet-not-found failures, attempts to install Microsoft.PowerShell.PSResourceGet
 and retries. On transient network errors, retries up to MaxRetries times.
@@ -17,10 +20,11 @@ All build output is captured to a transcript under PSModuleBuildLogs in the gene
 artifacts folder (SC-0033).
 
 .PARAMETER ProjectPath
-One or more paths to a folder containing a module.build.ps1 file, or directly to
-module.build.ps1. Accepts a single string, an array of strings, a System.IO.FileInfo
-object (e.g. from Get-ChildItem), or any piped/bound object with a ProjectPath or
-FullName property. Pipeline-enabled.
+One or more paths to a PowerShell module folder. Each folder must contain a .psm1
+and a .psd1 file whose base names match each other and the folder name (ATAP.Utilities
+opinionated architecture). Accepts a single string, an array of strings, a
+System.IO.DirectoryInfo object (e.g. from Get-ChildItem -Directory), or any piped/bound
+object with a ProjectPath or FullName property. Pipeline-enabled.
 
 .PARAMETER Configuration
 UNUSED — reserved for future multi-configuration PowerShell module builds.
@@ -63,11 +67,10 @@ Invoke-ModuleBuildWithRetry -ProjectPath 'C:\Repos\ATAP.Utilities\src\ATAP.Utili
 Publishes the BuildTooling module at the NBGV-derived tier with default retry.
 
 .EXAMPLE
-Get-ChildItem -Path 'C:\Repos\ATAP.Utilities\src' -Recurse -Filter 'module.build.ps1' |
-    Select-Object -ExpandProperty Directory |
+Get-ChildItem -Path 'C:\Repos\ATAP.Utilities\src' -Directory -Filter 'ATAP.Utilities.*.PowerShell' |
     Invoke-ModuleBuildWithRetry -Task All -MaxRetries 2
 
-Runs the All chain for every module under src/ that has a module.build.ps1, retrying twice.
+Runs the All chain for every PowerShell module folder under src/, retrying twice.
 
 .EXAMPLE
 Invoke-ModuleBuildWithRetry -ProjectPath 'C:\Repos\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell' -Tier Alpha -SkipPublish -WhatIf
@@ -78,7 +81,9 @@ Dry run — shows what Invoke-Build call would be made without executing it.
 AI assisted using Powershell.instructions.md as guidelines
 Tier is resolved from NBGV in the working directory at call time when -Tier is not supplied.
 Only Microsoft.PowerShell.PSResourceGet installation is attempted on retry — the full
-module.build.ps1 task is re-invoked from the start, not individual sub-steps within it.
+Invoke-Build task is re-invoked from the start, not individual sub-steps within it.
+The source-of-truth *.build.ps1 (typically module.build.ps1 at the repo root) is located
+by Invoke-Build's walk-up search; this function only sets the working directory.
 
 .LINK
 https://github.com/BillHertzing/ATAP.Utilities
@@ -207,38 +212,14 @@ function Invoke-ModuleBuildWithRetry {
       }
 
       # -----------------------------------------------------------------------
-      # Locate module.build.ps1 — CurrentPath may be the directory or the file itself
+      # Validate ProjectPath folder structure (guardrail).
+      # ATAP.Utilities convention: module folder contains <FolderName>.psm1 and
+      # <FolderName>.psd1. Invoke-Build itself walks up from this folder until
+      # it finds the source-of-truth *.build.ps1 (module.build.ps1 at repo root),
+      # so this function no longer locates the build script.
       # -----------------------------------------------------------------------
-      $moduleBuildFile = $null
-      $moduleRoot = $null
-
-      if (Test-Path -LiteralPath $CurrentPath -PathType Leaf) {
-        if ([System.IO.Path]::GetFileName($CurrentPath) -eq 'module.build.ps1') {
-          $moduleBuildFile = $CurrentPath
-          $moduleRoot = Split-Path -Parent $CurrentPath
-        } else {
-          $errorMessage = "ProjectPath '$CurrentPath' is a file but is not named 'module.build.ps1'."
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-          $result.ExitCode = 1
-          $result.BuildOutput = @($errorMessage)
-          $result
-          continue
-        }
-      } elseif (Test-Path -LiteralPath $CurrentPath -PathType Container) {
-        $candidate = Join-Path $CurrentPath 'module.build.ps1'
-        if (Test-Path -LiteralPath $candidate -PathType Leaf) {
-          $moduleBuildFile = $candidate
-          $moduleRoot = $CurrentPath
-        } else {
-          $errorMessage = "No module.build.ps1 found in directory '$CurrentPath'. Ensure Set-WorktreeJunctions has been run to create the symlink."
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-          $result.ExitCode = 1
-          $result.BuildOutput = @($errorMessage)
-          $result
-          continue
-        }
-      } else {
-        $errorMessage = "ProjectPath '$CurrentPath' does not exist or is not accessible."
+      if (-not (Test-Path -LiteralPath $CurrentPath -PathType Container)) {
+        $errorMessage = "ProjectPath '$CurrentPath' does not exist or is not a directory."
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
         $result.ExitCode = 1
         $result.BuildOutput = @($errorMessage)
@@ -246,7 +227,30 @@ function Invoke-ModuleBuildWithRetry {
         continue
       }
 
+      $moduleRoot = $CurrentPath
       $moduleName = Split-Path $moduleRoot -Leaf
+
+      $expectedPsm1 = Join-Path $moduleRoot "$moduleName.psm1"
+      $expectedPsd1 = Join-Path $moduleRoot "$moduleName.psd1"
+
+      if (-not (Test-Path -LiteralPath $expectedPsm1 -PathType Leaf)) {
+        $errorMessage = "ProjectPath '$moduleRoot' is missing expected module file '$moduleName.psm1' (folder name must match module file base name)."
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+        $result.ExitCode = 1
+        $result.BuildOutput = @($errorMessage)
+        $result
+        continue
+      }
+
+      if (-not (Test-Path -LiteralPath $expectedPsd1 -PathType Leaf)) {
+        $errorMessage = "ProjectPath '$moduleRoot' is missing expected manifest file '$moduleName.psd1' (folder name must match manifest base name)."
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+        $result.ExitCode = 1
+        $result.BuildOutput = @($errorMessage)
+        $result
+        continue
+      }
+
       $result.Project = $moduleRoot
 
       # -----------------------------------------------------------------------
@@ -288,7 +292,7 @@ function Invoke-ModuleBuildWithRetry {
       if ($WhatIfPreference) {
         $skipArg = if ($SkipPublish.IsPresent) { ' -SkipPublish' } else { '' }
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message (
-          "What if: Invoke-Build $Task -File '$moduleBuildFile' -Tier $resolvedTierGlobal$skipArg. " +
+          "What if: Push-Location '$moduleRoot'; Invoke-Build $Task -Tier $resolvedTierGlobal$skipArg (build script resolved by Invoke-Build walk-up). " +
           "Transcript: '$transcriptFile'. " +
           "Would retry up to $MaxRetries time(s) on PSResourceGet/network failures."
         )
@@ -310,22 +314,27 @@ function Invoke-ModuleBuildWithRetry {
         }
 
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message (
-          "Invoke-Build $Task -File '$moduleBuildFile' -Tier $resolvedTierGlobal " +
+          "Invoke-Build $Task -Tier $resolvedTierGlobal in '$moduleRoot' " +
           "(attempt $($retryCount + 1) of $($MaxRetries + 1))"
         )
 
         try {
           Start-Transcript -Path $transcriptFile -Append -ErrorAction SilentlyContinue | Out-Null
 
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling Invoke-Build $Task -File $moduleBuildFile -Tier $resolvedTierGlobal" -Tag 'InvokeCommandCall'
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling Invoke-Build $Task -Tier $resolvedTierGlobal in '$moduleRoot'" -Tag 'InvokeCommandCall'
 
-          if ($SkipPublish.IsPresent) {
-            Invoke-Build $Task -File $moduleBuildFile -Tier $resolvedTierGlobal -SkipPublish
-          } else {
-            Invoke-Build $Task -File $moduleBuildFile -Tier $resolvedTierGlobal
+          Push-Location -LiteralPath $moduleRoot
+          try {
+            if ($SkipPublish.IsPresent) {
+              Invoke-Build $Task -Tier $resolvedTierGlobal -ModuleRoot $moduleRoot -SkipPublish
+            } else {
+              Invoke-Build $Task -Tier $resolvedTierGlobal -ModuleRoot $moduleRoot
+            }
+          } finally {
+            Pop-Location
           }
 
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from Invoke-Build $Task -File $moduleBuildFile" -Tag 'InvokeCommandCall'
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from Invoke-Build $Task in '$moduleRoot'" -Tag 'InvokeCommandCall'
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Invoke-Build $Task succeeded: '$moduleName' [Tier=$resolvedTierGlobal]"
 
           $result.ExitCode = 0

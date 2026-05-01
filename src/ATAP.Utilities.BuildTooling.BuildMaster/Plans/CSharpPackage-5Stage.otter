@@ -37,26 +37,28 @@
 # NBGV can read version information. File-export checkout does not preserve .git.
 
 # Resolve tier from NBGV.
-# Step 1: Run nbgv and write output to a temp file under _generated/buildmaster/ (SC-0033)
+# Step 1: Run nbgv and write outputs to temp files under _generated/buildmaster/ (SC-0033, SC-0135)
 Exec pwsh (
-    Arguments: >>-NoProfile -File src\ATAP.Utilities.BuildTooling.BuildMaster\Scripts\Resolve-FeedName.ps1 -Tier $Tier -FeedType nuget -OutputFile _generated\buildmaster\_feedname.tmp>>,
-
-    Arguments: >>-NoProfile -Command "New-Item -ItemType Directory -Path '_generated\buildmaster' -Force | Out-Null; dotnet nbgv get-version --variable NuGetPackageVersion | Out-File '_generated\buildmaster\_nbgv.tmp' -Encoding utf8 -NoNewline">>,
+    Arguments: >>-NoProfile -Command "New-Item -ItemType Directory -Path '_generated\buildmaster' -Force | Out-Null; dotnet nbgv get-version --variable NuGetPackageVersion | Out-File '_generated\buildmaster\_nbgv_version.tmp' -Encoding utf8 -NoNewline; dotnet nbgv get-version --variable PrereleaseVersionNoLeadingHyphen | Out-File '_generated\buildmaster\_nbgv_prerelease.tmp' -Encoding utf8 -NoNewline; dotnet nbgv get-version --variable VersionHeight | Out-File '_generated\buildmaster\_nbgv_height.tmp' -Encoding utf8 -NoNewline">>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );
 
 # Step 2: Read it into a variable using a real OtterScript function
-set $NbgvTempFile = $PathCombine($SourcePath, _generated\buildmaster\_nbgv.tmp);
-set $NbgvVersion  = $Trim($FileContents($NbgvTempFile));
+set $NbgvVersionTempFile = $PathCombine($SourcePath, _generated\buildmaster\_nbgv_version.tmp);
+set $NbgvPrereleaseTempFile = $PathCombine($SourcePath, _generated\buildmaster\_nbgv_prerelease.tmp);
+set $NbgvHeightTempFile = $PathCombine($SourcePath, _generated\buildmaster\_nbgv_height.tmp);
+set $NbgvVersion  = $Trim($FileContents($NbgvVersionTempFile));
+set $NbgvPrereleaseVersion = $Trim($FileContents($NbgvPrereleaseTempFile));
+set $NbgvVersionHeight = $Trim($FileContents($NbgvHeightTempFile));
 
-set $PrereleaseLabel = $RegexReplace($NbgvVersion, "^[0-9]+\.[0-9]+\.[0-9]+-?([A-Za-z]*).*$", `$1`);
+set $VersionLabel = $RegexReplace($NbgvPrereleaseVersion, "\.[0-9]+$", "");
 
 set $Tier = Experimental;
-if $PrereleaseLabel == Alpha      { set $Tier = Development;  }
-if $PrereleaseLabel == Beta       { set $Tier = Integration;  }
-if $PrereleaseLabel == QA         { set $Tier = QA;           }
-if $PrereleaseLabel == ""         { set $Tier = Production;   }
+if $VersionLabel == Alpha      { set $Tier = Development;  }
+if $VersionLabel == Beta       { set $Tier = Integration;  }
+if $VersionLabel == QA         { set $Tier = QA;           }
+if $VersionLabel == ""         { set $Tier = Production;   }
 
 # Resolve feed name via Get-ATAPIACConstant (T-31) — no hard-coded feed names.
 Exec pwsh (
@@ -67,7 +69,7 @@ Exec pwsh (
 set $FeedNameTmp = $PathCombine($SourcePath, _generated\buildmaster\_feedname.tmp);
 set $FeedName = $Trim($FileContents($FeedNameTmp));
 
-Log-Debug "Resolved Tier=$Tier  Feed=$FeedName  from NuGetPackageVersion=$NbgvVersion";
+Log-Debug "Resolved Tier=$Tier  Feed=$FeedName  VersionLabel=$VersionLabel  PrereleaseVersion=$NbgvPrereleaseVersion  VersionHeight=$NbgvVersionHeight  NuGetPackageVersion=$NbgvVersion";
 
 # -------------------------------------------------------------------------
 # Stage Experimental — build + unit tests (Category=Unit) + pack + push

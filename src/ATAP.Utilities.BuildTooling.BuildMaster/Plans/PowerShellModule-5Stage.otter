@@ -38,20 +38,37 @@ GitHub::Get-Source
 # ---------------------------------------------------------------------------
 set $NbgvVersion = $Exec
 (
-    FileName: nbgv,
-    Arguments: `get-version --variable NuGetPackageVersion`,
+    FileName: dotnet,
+    Arguments: `nbgv get-version --variable NuGetPackageVersion`,
     WorkingDirectory: $SourcePath
 );
 
-set $PrereleaseLabel = $RegexReplace($NbgvVersion, `^[0-9]+\.[0-9]+\.[0-9]+-?([A-Za-z]*).*$`, `$1`);
+set $NbgvPrereleaseVersion = $Exec
+(
+    FileName: dotnet,
+    Arguments: `nbgv get-version --variable PrereleaseVersionNoLeadingHyphen`,
+    WorkingDirectory: $SourcePath
+);
+
+set $NbgvVersionHeight = $Exec
+(
+    FileName: dotnet,
+    Arguments: `nbgv get-version --variable VersionHeight`,
+    WorkingDirectory: $SourcePath
+);
+
+set $NbgvVersion = $Trim($NbgvVersion);
+set $NbgvPrereleaseVersion = $Trim($NbgvPrereleaseVersion);
+set $NbgvVersionHeight = $Trim($NbgvVersionHeight);
+set $VersionLabel = $RegexReplace($NbgvPrereleaseVersion, `\.[0-9]+$`, ``);
 
 set $Tier = Sprint;
-if $PrereleaseLabel == Alpha      { set $Tier = Alpha; }
-if $PrereleaseLabel == Beta       { set $Tier = Beta;  }
-if $PrereleaseLabel == QA         { set $Tier = QA;    }
-if $PrereleaseLabel == ``         { set $Tier = Production; }
+if $VersionLabel == Alpha      { set $Tier = Alpha; }
+if $VersionLabel == Beta       { set $Tier = Beta;  }
+if $VersionLabel == QA         { set $Tier = QA;    }
+if $VersionLabel == ``         { set $Tier = Production; }
 
-Log-Debug `Resolved Tier=$Tier from NuGetPackageVersion=$NbgvVersion`;
+Log-Debug `Resolved Tier=$Tier VersionLabel=$VersionLabel PrereleaseVersion=$NbgvPrereleaseVersion VersionHeight=$NbgvVersionHeight NuGetPackageVersion=$NbgvVersion`;
 
 # ---------------------------------------------------------------------------
 # Stage 1 — Sprint  (T1)

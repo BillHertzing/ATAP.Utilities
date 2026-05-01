@@ -211,8 +211,7 @@ if (Test-Path -Path "$env:ProgramFiles\Powershell\Modules\ATAP.Utilities.Powersh
 # During the transition to packaging, see if the function exists. If it does not, then dot-source the development copy from Dropbox
 if (!(Get-Command Get-ClonedAndModifiedHashtable -ErrorAction silentlycontinue)) {
   # command not found, must be on a computer that does not have the ATAP.Utilities.Powershell module installed
-  . $(Join-PathNoResolve -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-ClonedAndModifiedHashtable.ps1'))
-  # . $(Join-PathNoResolve -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-ClonedObject.ps1'))
+  . $(Join-Path -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-ClonedAndModifiedHashtable.ps1'))
 }
 
 # Define a global settings hash based on the hostname

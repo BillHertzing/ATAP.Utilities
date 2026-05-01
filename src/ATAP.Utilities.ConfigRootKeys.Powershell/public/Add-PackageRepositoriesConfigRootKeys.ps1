@@ -5,19 +5,35 @@
 Adds ProGet / NuGet / PowerShellGet package-repository key constants to $global:configRootKeys.
 
 .DESCRIPTION
-Appends the standard set of package-repository configuration key constants to the
-$global:configRootKeys hashtable. These keys cover:
+Single source of truth for all ProGet package-repository ConfigRootKeys. Appends the
+complete set of package-repository configuration key constants to the
+$global:configRootKeys hashtable in one pass; no sub-fragment files are loaded.
 
-  - ProGet server endpoint components (scheme, host, port, base URL)
-  - ProGet API keys and connector names
-  - NuGet feed per-tier keys (Experimental / Development / Testing / Production / Integration / QA / Stable)
-  - PowerShellGet feed per-tier keys (same seven tiers)
-  - Short-form canonical aliases used by Get-ATAPIACConstant and Publish-PSModuleToProGetFeed
-    (PowerShellGetFeedName_*, PowerShellGetFeedUri_*, NuGetFeedName_*, NuGetFeedUri_*)
+The keys cover:
 
-Also scans the same directory for sub-fragment files matching the pattern
-'PackageRepositories.*.ConfigRootKeys.ps1' and dot-sources each one. Sub-fragments
-add per-feed-set or per-host key overrides.
+  - ProGet server endpoint components (scheme, host, port, base URL, service paths)
+  - ProGet API keys
+  - ProGet upstream connector names (nuget.org, PSGallery, Chocolatey)
+  - Feed Collection / Promotion Tier Order
+  - NuGet feed per-tier keys for the canonical five-tier pipeline
+      (Experimental / Development / Integration / QA / Stable)
+  - PowerShellGet feed per-tier keys for the same five tiers
+
+Per the ProGet Feed Tier Dependency Build Report (Explainer 0111), the canonical
+tier set is exactly five tiers. Earlier "Testing" and standalone "Production"
+tier constants are intentionally not defined here.
+
+The actual ProGet feed name VALUES (e.g. 'powershellget-experimental',
+'nuget-experimental') are stored later in $global:settings using the keys defined
+here. ProGet feed names are lowercase to match the actual feed names on the
+ProGet server.
+
+Tier-to-feed mapping:
+  Experimental ← NBGV label -Sprint-  → nuget-experimental / powershellget-experimental
+  Development  ← NBGV label -Alpha-   → nuget-development  / powershellget-development
+  Integration  ← NBGV label -Beta-    → nuget-integration  / powershellget-integration
+  QA           ← NBGV label -QA-      → nuget-qa           / powershellget-qa
+  Stable       ← NBGV label (stable)  → nuget-stable       / powershellget-stable
 
 Requires $global:configRootKeys to already exist (initialized by Set-CoreConfigRootKeys
 via Set-GlobalConfigRootKeys).
@@ -28,8 +44,7 @@ None. Populates $global:configRootKeys as a side effect.
 .EXAMPLE
 Add-PackageRepositoriesConfigRootKeys
 
-Adds all package-repository key constants and loads any PackageRepositories.* sub-fragments.
-found alongside this script.
+Adds all package-repository key constants to $global:configRootKeys.
 
 .EXAMPLE
 Add-PackageRepositoriesConfigRootKeys -WhatIf
@@ -59,13 +74,6 @@ function Add-PackageRepositoriesConfigRootKeys {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       throw $errorMessage
     }
-
-    $scriptFile = $MyInvocation.MyCommand.ScriptBlock.File
-    $scriptDir = if (-not [string]::IsNullOrEmpty($scriptFile)) {
-      [System.IO.Path]::GetDirectoryName($scriptFile)
-    } else {
-      $PWD.ProviderPath
-    }
   }
 
   process {
@@ -85,72 +93,153 @@ function Add-PackageRepositoriesConfigRootKeys {
         $global:configRootKeys.Add('ProGetAdminApiKeyConfigRootKey', 'PROGET_ADMIN_API_KEY')
         $global:configRootKeys.Add('ProGetBuildMasterApiKeyConfigRootKey', 'PROGET_BUILDMASTER_API_KEY')
 
-        # ── ProGet Connectors ─────────────────────────────────────────────────
+        # ── ProGet Connectors (upstream) ──────────────────────────────────────
         $global:configRootKeys.Add('ProGetConnectorNuGetOrgConfigRootKey', 'ProGetConnectorNuGetOrg')
         $global:configRootKeys.Add('ProGetConnectorPSGalleryConfigRootKey', 'ProGetConnectorPSGallery')
         $global:configRootKeys.Add('ProGetConnectorChocolateyOrgConfigRootKey', 'ProGetConnectorChocolateyOrg')
 
-        # ── Feed Collection ───────────────────────────────────────────────────
+        # ── Feed Collection / Promotion Tier Order ────────────────────────────
         $global:configRootKeys.Add('ProGetFeedCollectionConfigRootKey', 'ProGetFeedCollection')
         $global:configRootKeys.Add('ProGetPromotionTierOrderConfigRootKey', 'ProGetPromotionTierOrder')
 
-        # ── Short-form canonical aliases for Get-ATAPIACConstant ──────────────
-        # These map the canonical tier names used by Publish-PSModuleToProGetFeed and
-        # Get-ATAPIACConstant to the full settings keys defined above.
-        # Tier mapping: Sprint=Experimental, Alpha=Development, Beta=Integration, QA=QA, Stable=Stable
-        $global:configRootKeys.Add('PowerShellGetFeedName_Experimental', 'ProGetFeedPowerShellExperimentalFeedName')
-        $global:configRootKeys.Add('PowerShellGetFeedName_Development', 'ProGetFeedPowerShellDevelopmentFeedName')
-        $global:configRootKeys.Add('PowerShellGetFeedName_Integration', 'ProGetFeedPowerShellIntegrationFeedName')
-        $global:configRootKeys.Add('PowerShellGetFeedName_QA', 'ProGetFeedPowerShellQAFeedName')
-        $global:configRootKeys.Add('PowerShellGetFeedName_Stable', 'ProGetFeedPowerShellStableFeedName')
-        $global:configRootKeys.Add('PowerShellGetFeedUri_Experimental', 'ProGetFeedPowerShellExperimentalUri')
-        $global:configRootKeys.Add('PowerShellGetFeedUri_Development', 'ProGetFeedPowerShellDevelopmentUri')
-        $global:configRootKeys.Add('PowerShellGetFeedUri_Integration', 'ProGetFeedPowerShellIntegrationUri')
-        $global:configRootKeys.Add('PowerShellGetFeedUri_QA', 'ProGetFeedPowerShellQAUri')
-        $global:configRootKeys.Add('PowerShellGetFeedUri_Stable', 'ProGetFeedPowerShellStableUri')
-        $global:configRootKeys.Add('NuGetFeedName_Experimental', 'ProGetFeedNuGetExperimentalFeedName')
-        $global:configRootKeys.Add('NuGetFeedName_Development', 'ProGetFeedNuGetDevelopmentFeedName')
-        $global:configRootKeys.Add('NuGetFeedName_Integration', 'ProGetFeedNuGetIntegrationFeedName')
-        $global:configRootKeys.Add('NuGetFeedName_QA', 'ProGetFeedNuGetQAFeedName')
-        $global:configRootKeys.Add('NuGetFeedName_Stable', 'ProGetFeedNuGetStableFeedName')
-        $global:configRootKeys.Add('NuGetFeedUri_Experimental', 'ProGetFeedNuGetExperimentalUri')
-        $global:configRootKeys.Add('NuGetFeedUri_Development', 'ProGetFeedNuGetDevelopmentUri')
-        $global:configRootKeys.Add('NuGetFeedUri_Integration', 'ProGetFeedNuGetIntegrationUri')
-        $global:configRootKeys.Add('NuGetFeedUri_QA', 'ProGetFeedNuGetQAUri')
-        $global:configRootKeys.Add('NuGetFeedUri_Stable', 'ProGetFeedNuGetStableUri')
+        # ══════════════════════════════════════════════════════════════════════
+        #  NuGet feeds — five-tier canonical set
+        #  Feed name values stored in $global:settings are lowercase:
+        #    nuget-experimental, nuget-development, nuget-integration,
+        #    nuget-qa, nuget-stable
+        # ══════════════════════════════════════════════════════════════════════
+
+        # ── nuget-experimental ────────────────────────────────────────────────
+        $global:configRootKeys.Add('ProGetFeedNuGetExperimentalUriSchemeConfigRootKey', 'ProGetFeedNuGetExperimentalUriScheme')
+        $global:configRootKeys.Add('ProGetFeedNuGetExperimentalUriHostConfigRootKey', 'ProGetFeedNuGetExperimentalUriHost')
+        $global:configRootKeys.Add('ProGetFeedNuGetExperimentalUriPortConfigRootKey', 'ProGetFeedNuGetExperimentalUriPort')
+        $global:configRootKeys.Add('ProGetFeedNuGetExperimentalUriPathConfigRootKey', 'ProGetFeedNuGetExperimentalUriPath')
+        $global:configRootKeys.Add('ProGetFeedNuGetExperimentalUriQueryStringConfigRootKey', 'ProGetFeedNuGetExperimentalUriQueryString')
+        $global:configRootKeys.Add('ProGetFeedNuGetExperimentalUriConfigRootKey', 'ProGetFeedNuGetExperimentalUri')
+        $global:configRootKeys.Add('ProGetFeedNuGetExperimentalFeedNameConfigRootKey', 'ProGetFeedNuGetExperimentalFeedName')
+        $global:configRootKeys.Add('ProGetFeedNuGetExperimentalFeedTypeConfigRootKey', 'ProGetFeedNuGetExperimentalFeedType')
+        $global:configRootKeys.Add('ProGetFeedNuGetExperimentalApiKeyNameConfigRootKey', 'ProGetFeedNuGetExperimentalApiKeyName')
+        $global:configRootKeys.Add('ProGetFeedNuGetExperimentalFeedConfigRootKey', 'ProGetFeedNuGetExperimental')
+
+        # ── nuget-development ─────────────────────────────────────────────────
+        $global:configRootKeys.Add('ProGetFeedNuGetDevelopmentUriSchemeConfigRootKey', 'ProGetFeedNuGetDevelopmentUriScheme')
+        $global:configRootKeys.Add('ProGetFeedNuGetDevelopmentUriHostConfigRootKey', 'ProGetFeedNuGetDevelopmentUriHost')
+        $global:configRootKeys.Add('ProGetFeedNuGetDevelopmentUriPortConfigRootKey', 'ProGetFeedNuGetDevelopmentUriPort')
+        $global:configRootKeys.Add('ProGetFeedNuGetDevelopmentUriPathConfigRootKey', 'ProGetFeedNuGetDevelopmentUriPath')
+        $global:configRootKeys.Add('ProGetFeedNuGetDevelopmentUriQueryStringConfigRootKey', 'ProGetFeedNuGetDevelopmentUriQueryString')
+        $global:configRootKeys.Add('ProGetFeedNuGetDevelopmentUriConfigRootKey', 'ProGetFeedNuGetDevelopmentUri')
+        $global:configRootKeys.Add('ProGetFeedNuGetDevelopmentFeedNameConfigRootKey', 'ProGetFeedNuGetDevelopmentFeedName')
+        $global:configRootKeys.Add('ProGetFeedNuGetDevelopmentFeedTypeConfigRootKey', 'ProGetFeedNuGetDevelopmentFeedType')
+        $global:configRootKeys.Add('ProGetFeedNuGetDevelopmentApiKeyNameConfigRootKey', 'ProGetFeedNuGetDevelopmentApiKeyName')
+        $global:configRootKeys.Add('ProGetFeedNuGetDevelopmentFeedConfigRootKey', 'ProGetFeedNuGetDevelopment')
+
+        # ── nuget-integration ─────────────────────────────────────────────────
+        $global:configRootKeys.Add('ProGetFeedNuGetIntegrationUriSchemeConfigRootKey', 'ProGetFeedNuGetIntegrationUriScheme')
+        $global:configRootKeys.Add('ProGetFeedNuGetIntegrationUriHostConfigRootKey', 'ProGetFeedNuGetIntegrationUriHost')
+        $global:configRootKeys.Add('ProGetFeedNuGetIntegrationUriPortConfigRootKey', 'ProGetFeedNuGetIntegrationUriPort')
+        $global:configRootKeys.Add('ProGetFeedNuGetIntegrationUriPathConfigRootKey', 'ProGetFeedNuGetIntegrationUriPath')
+        $global:configRootKeys.Add('ProGetFeedNuGetIntegrationUriQueryStringConfigRootKey', 'ProGetFeedNuGetIntegrationUriQueryString')
+        $global:configRootKeys.Add('ProGetFeedNuGetIntegrationUriConfigRootKey', 'ProGetFeedNuGetIntegrationUri')
+        $global:configRootKeys.Add('ProGetFeedNuGetIntegrationFeedNameConfigRootKey', 'ProGetFeedNuGetIntegrationFeedName')
+        $global:configRootKeys.Add('ProGetFeedNuGetIntegrationFeedTypeConfigRootKey', 'ProGetFeedNuGetIntegrationFeedType')
+        $global:configRootKeys.Add('ProGetFeedNuGetIntegrationApiKeyNameConfigRootKey', 'ProGetFeedNuGetIntegrationApiKeyName')
+        $global:configRootKeys.Add('ProGetFeedNuGetIntegrationFeedConfigRootKey', 'ProGetFeedNuGetIntegration')
+
+        # ── nuget-qa ──────────────────────────────────────────────────────────
+        $global:configRootKeys.Add('ProGetFeedNuGetQAUriSchemeConfigRootKey', 'ProGetFeedNuGetQAUriScheme')
+        $global:configRootKeys.Add('ProGetFeedNuGetQAUriHostConfigRootKey', 'ProGetFeedNuGetQAUriHost')
+        $global:configRootKeys.Add('ProGetFeedNuGetQAUriPortConfigRootKey', 'ProGetFeedNuGetQAUriPort')
+        $global:configRootKeys.Add('ProGetFeedNuGetQAUriPathConfigRootKey', 'ProGetFeedNuGetQAUriPath')
+        $global:configRootKeys.Add('ProGetFeedNuGetQAUriQueryStringConfigRootKey', 'ProGetFeedNuGetQAUriQueryString')
+        $global:configRootKeys.Add('ProGetFeedNuGetQAUriConfigRootKey', 'ProGetFeedNuGetQAUri')
+        $global:configRootKeys.Add('ProGetFeedNuGetQAFeedNameConfigRootKey', 'ProGetFeedNuGetQAFeedName')
+        $global:configRootKeys.Add('ProGetFeedNuGetQAFeedTypeConfigRootKey', 'ProGetFeedNuGetQAFeedType')
+        $global:configRootKeys.Add('ProGetFeedNuGetQAApiKeyNameConfigRootKey', 'ProGetFeedNuGetQAApiKeyName')
+        $global:configRootKeys.Add('ProGetFeedNuGetQAFeedConfigRootKey', 'ProGetFeedNuGetQA')
+
+        # ── nuget-stable ──────────────────────────────────────────────────────
+        $global:configRootKeys.Add('ProGetFeedNuGetStableUriSchemeConfigRootKey', 'ProGetFeedNuGetStableUriScheme')
+        $global:configRootKeys.Add('ProGetFeedNuGetStableUriHostConfigRootKey', 'ProGetFeedNuGetStableUriHost')
+        $global:configRootKeys.Add('ProGetFeedNuGetStableUriPortConfigRootKey', 'ProGetFeedNuGetStableUriPort')
+        $global:configRootKeys.Add('ProGetFeedNuGetStableUriPathConfigRootKey', 'ProGetFeedNuGetStableUriPath')
+        $global:configRootKeys.Add('ProGetFeedNuGetStableUriQueryStringConfigRootKey', 'ProGetFeedNuGetStableUriQueryString')
+        $global:configRootKeys.Add('ProGetFeedNuGetStableUriConfigRootKey', 'ProGetFeedNuGetStableUri')
+        $global:configRootKeys.Add('ProGetFeedNuGetStableFeedNameConfigRootKey', 'ProGetFeedNuGetStableFeedName')
+        $global:configRootKeys.Add('ProGetFeedNuGetStableFeedTypeConfigRootKey', 'ProGetFeedNuGetStableFeedType')
+        $global:configRootKeys.Add('ProGetFeedNuGetStableApiKeyNameConfigRootKey', 'ProGetFeedNuGetStableApiKeyName')
+        $global:configRootKeys.Add('ProGetFeedNuGetStableFeedConfigRootKey', 'ProGetFeedNuGetStable')
+
+        # ══════════════════════════════════════════════════════════════════════
+        #  PowerShellGet feeds — five-tier canonical set
+        #  Feed name values stored in $global:settings are lowercase:
+        #    powershellget-experimental, powershellget-development,
+        #    powershellget-integration, powershellget-qa, powershellget-stable
+        # ══════════════════════════════════════════════════════════════════════
+
+        # ── powershellget-experimental ────────────────────────────────────────
+        $global:configRootKeys.Add('ProGetFeedPowerShellExperimentalUriSchemeConfigRootKey', 'ProGetFeedPowerShellExperimentalUriScheme')
+        $global:configRootKeys.Add('ProGetFeedPowerShellExperimentalUriHostConfigRootKey', 'ProGetFeedPowerShellExperimentalUriHost')
+        $global:configRootKeys.Add('ProGetFeedPowerShellExperimentalUriPortConfigRootKey', 'ProGetFeedPowerShellExperimentalUriPort')
+        $global:configRootKeys.Add('ProGetFeedPowerShellExperimentalUriPathConfigRootKey', 'ProGetFeedPowerShellExperimentalUriPath')
+        $global:configRootKeys.Add('ProGetFeedPowerShellExperimentalUriQueryStringConfigRootKey', 'ProGetFeedPowerShellExperimentalUriQueryString')
+        $global:configRootKeys.Add('ProGetFeedPowerShellExperimentalUriConfigRootKey', 'ProGetFeedPowerShellExperimentalUri')
+        $global:configRootKeys.Add('ProGetFeedPowerShellExperimentalFeedNameConfigRootKey', 'ProGetFeedPowerShellExperimentalFeedName')
+        $global:configRootKeys.Add('ProGetFeedPowerShellExperimentalFeedTypeConfigRootKey', 'ProGetFeedPowerShellExperimentalFeedType')
+        $global:configRootKeys.Add('ProGetFeedPowerShellExperimentalApiKeyNameConfigRootKey', 'ProGetFeedPowerShellExperimentalApiKeyName')
+        $global:configRootKeys.Add('ProGetFeedPowerShellExperimentalFeedConfigRootKey', 'ProGetFeedPowerShellExperimental')
+
+        # ── powershellget-development ─────────────────────────────────────────
+        $global:configRootKeys.Add('ProGetFeedPowerShellDevelopmentUriSchemeConfigRootKey', 'ProGetFeedPowerShellDevelopmentUriScheme')
+        $global:configRootKeys.Add('ProGetFeedPowerShellDevelopmentUriHostConfigRootKey', 'ProGetFeedPowerShellDevelopmentUriHost')
+        $global:configRootKeys.Add('ProGetFeedPowerShellDevelopmentUriPortConfigRootKey', 'ProGetFeedPowerShellDevelopmentUriPort')
+        $global:configRootKeys.Add('ProGetFeedPowerShellDevelopmentUriPathConfigRootKey', 'ProGetFeedPowerShellDevelopmentUriPath')
+        $global:configRootKeys.Add('ProGetFeedPowerShellDevelopmentUriQueryStringConfigRootKey', 'ProGetFeedPowerShellDevelopmentUriQueryString')
+        $global:configRootKeys.Add('ProGetFeedPowerShellDevelopmentUriConfigRootKey', 'ProGetFeedPowerShellDevelopmentUri')
+        $global:configRootKeys.Add('ProGetFeedPowerShellDevelopmentFeedNameConfigRootKey', 'ProGetFeedPowerShellDevelopmentFeedName')
+        $global:configRootKeys.Add('ProGetFeedPowerShellDevelopmentFeedTypeConfigRootKey', 'ProGetFeedPowerShellDevelopmentFeedType')
+        $global:configRootKeys.Add('ProGetFeedPowerShellDevelopmentApiKeyNameConfigRootKey', 'ProGetFeedPowerShellDevelopmentApiKeyName')
+        $global:configRootKeys.Add('ProGetFeedPowerShellDevelopmentFeedConfigRootKey', 'ProGetFeedPowerShellDevelopment')
+
+        # ── powershellget-integration ─────────────────────────────────────────
+        $global:configRootKeys.Add('ProGetFeedPowerShellIntegrationUriSchemeConfigRootKey', 'ProGetFeedPowerShellIntegrationUriScheme')
+        $global:configRootKeys.Add('ProGetFeedPowerShellIntegrationUriHostConfigRootKey', 'ProGetFeedPowerShellIntegrationUriHost')
+        $global:configRootKeys.Add('ProGetFeedPowerShellIntegrationUriPortConfigRootKey', 'ProGetFeedPowerShellIntegrationUriPort')
+        $global:configRootKeys.Add('ProGetFeedPowerShellIntegrationUriPathConfigRootKey', 'ProGetFeedPowerShellIntegrationUriPath')
+        $global:configRootKeys.Add('ProGetFeedPowerShellIntegrationUriQueryStringConfigRootKey', 'ProGetFeedPowerShellIntegrationUriQueryString')
+        $global:configRootKeys.Add('ProGetFeedPowerShellIntegrationUriConfigRootKey', 'ProGetFeedPowerShellIntegrationUri')
+        $global:configRootKeys.Add('ProGetFeedPowerShellIntegrationFeedNameConfigRootKey', 'ProGetFeedPowerShellIntegrationFeedName')
+        $global:configRootKeys.Add('ProGetFeedPowerShellIntegrationFeedTypeConfigRootKey', 'ProGetFeedPowerShellIntegrationFeedType')
+        $global:configRootKeys.Add('ProGetFeedPowerShellIntegrationApiKeyNameConfigRootKey', 'ProGetFeedPowerShellIntegrationApiKeyName')
+        $global:configRootKeys.Add('ProGetFeedPowerShellIntegrationFeedConfigRootKey', 'ProGetFeedPowerShellIntegration')
+
+        # ── powershellget-qa ──────────────────────────────────────────────────
+        $global:configRootKeys.Add('ProGetFeedPowerShellQAUriSchemeConfigRootKey', 'ProGetFeedPowerShellQAUriScheme')
+        $global:configRootKeys.Add('ProGetFeedPowerShellQAUriHostConfigRootKey', 'ProGetFeedPowerShellQAUriHost')
+        $global:configRootKeys.Add('ProGetFeedPowerShellQAUriPortConfigRootKey', 'ProGetFeedPowerShellQAUriPort')
+        $global:configRootKeys.Add('ProGetFeedPowerShellQAUriPathConfigRootKey', 'ProGetFeedPowerShellQAUriPath')
+        $global:configRootKeys.Add('ProGetFeedPowerShellQAUriQueryStringConfigRootKey', 'ProGetFeedPowerShellQAUriQueryString')
+        $global:configRootKeys.Add('ProGetFeedPowerShellQAUriConfigRootKey', 'ProGetFeedPowerShellQAUri')
+        $global:configRootKeys.Add('ProGetFeedPowerShellQAFeedNameConfigRootKey', 'ProGetFeedPowerShellQAFeedName')
+        $global:configRootKeys.Add('ProGetFeedPowerShellQAFeedTypeConfigRootKey', 'ProGetFeedPowerShellQAFeedType')
+        $global:configRootKeys.Add('ProGetFeedPowerShellQAApiKeyNameConfigRootKey', 'ProGetFeedPowerShellQAApiKeyName')
+        $global:configRootKeys.Add('ProGetFeedPowerShellQAFeedConfigRootKey', 'ProGetFeedPowerShellQA')
+
+        # ── powershellget-stable ──────────────────────────────────────────────
+        $global:configRootKeys.Add('ProGetFeedPowerShellStableUriSchemeConfigRootKey', 'ProGetFeedPowerShellStableUriScheme')
+        $global:configRootKeys.Add('ProGetFeedPowerShellStableUriHostConfigRootKey', 'ProGetFeedPowerShellStableUriHost')
+        $global:configRootKeys.Add('ProGetFeedPowerShellStableUriPortConfigRootKey', 'ProGetFeedPowerShellStableUriPort')
+        $global:configRootKeys.Add('ProGetFeedPowerShellStableUriPathConfigRootKey', 'ProGetFeedPowerShellStableUriPath')
+        $global:configRootKeys.Add('ProGetFeedPowerShellStableUriQueryStringConfigRootKey', 'ProGetFeedPowerShellStableUriQueryString')
+        $global:configRootKeys.Add('ProGetFeedPowerShellStableUriConfigRootKey', 'ProGetFeedPowerShellStableUri')
+        $global:configRootKeys.Add('ProGetFeedPowerShellStableFeedNameConfigRootKey', 'ProGetFeedPowerShellStableFeedName')
+        $global:configRootKeys.Add('ProGetFeedPowerShellStableFeedTypeConfigRootKey', 'ProGetFeedPowerShellStableFeedType')
+        $global:configRootKeys.Add('ProGetFeedPowerShellStableApiKeyNameConfigRootKey', 'ProGetFeedPowerShellStableApiKeyName')
+        $global:configRootKeys.Add('ProGetFeedPowerShellStableFeedConfigRootKey', 'ProGetFeedPowerShellStable')
+
+        # ── PackageRepositories Collection ────────────────────────────────────
+        $global:configRootKeys.Add('PackageRepositoriesCollectionConfigRootKey', 'PackageRepositoriesCollection')
 
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Added package-repository key constants.'
-      }
-
-      # Discover and load per-feed-set sub-fragment files
-      $subFragments = @(
-        Get-ChildItem -LiteralPath $scriptDir -Filter 'PackageRepositories.*.ConfigRootKeys.ps1' -File -ErrorAction SilentlyContinue |
-          Sort-Object Name
-      )
-
-      if ($subFragments.Count -eq 0) {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "No PackageRepositories.*.ConfigRootKeys.ps1 sub-fragments found in '$scriptDir'."
-      } else {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Found $($subFragments.Count) package-repository sub-fragment(s) to load."
-
-        # The collection that lists all powershell package repositories
-        if ($PSCmdlet.ShouldProcess('$global:configRootKeys', 'Add DatabasesCollection key and load sub-fragments')) {
-          $global:configRootKeys.Add('PackageRepositoriesCollectionConfigRootKey', 'PackageRepositoriesCollection')
-        }
-
-        foreach ($subFragment in $subFragments) {
-          if ($PSCmdlet.ShouldProcess($subFragment.FullName, 'Dot-source package-repository sub-fragment')) {
-            try {
-              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Dot-sourcing '$($subFragment.FullName)'" -Tag 'ConfigRootKeys'
-              . $subFragment.FullName
-              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Loaded '$($subFragment.Name)'"
-            } catch {
-              $errorMessage = "Failed to dot-source '$($subFragment.FullName)'. Exception: $($_.Exception.Message)"
-              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-              throw
-            }
-          }
-        }
       }
     } catch {
       $errorMessage = "Unhandled error in $fn. Exception: $($_.Exception.Message)"

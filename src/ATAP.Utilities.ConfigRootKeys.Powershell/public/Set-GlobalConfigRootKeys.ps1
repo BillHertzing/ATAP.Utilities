@@ -32,8 +32,9 @@ Bootstraps $global:configRootKeys in a fixed four-phase sequence:
              fragments that define Phase 4 automation paths and endpoints.
 
   Phase 5 — Explicit package repos: dot-sources and calls
-             Add-PackageRepositoriesConfigRootKeys.ps1 so its internal sub-fragment
-             scan runs after all other keys are in place.
+             Add-PackageRepositoriesConfigRootKeys.ps1, the single source of truth
+             for ProGet / NuGet / PowerShellGet feed key constants. No sub-fragment
+             scan is performed.
 
 .PARAMETER Path
 Directory to scan for *.ConfigRootKeys.ps1 fragment files. When omitted, defaults to

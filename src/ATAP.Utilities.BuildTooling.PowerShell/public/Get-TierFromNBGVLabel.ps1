@@ -18,7 +18,7 @@
     | Alpha  | T2 Development  | powershellget-development    |
     | Beta   | T3 Integration  | powershellget-integration    |
     | QA     | T4 QA           | powershellget-qa             |
-    | (none) | T5 Production   | powershellget-stable         |
+    | (none) | T5 Stable       | powershellget-stable         |
 
   Any other value produces a clear terminating error.
 .PARAMETER PrereleaseLabel
@@ -42,7 +42,7 @@
   PS> Get-TierFromNBGVLabel -PrereleaseLabel ''
   TierNumber TierName   FeedName
   ---------- --------   --------
-           5 Production powershellget-stable
+           5 Stable powershellget-stable
 .NOTES
   AI assisted using Powershell.instructions.md as guidelines
 .LINK
@@ -116,7 +116,7 @@ function Get-TierFromNBGVLabel {
       '' {
         $result = [PSCustomObject]@{
           TierNumber = 5
-          TierName   = 'Production'
+          TierName   = 'Stable'
           FeedName   = 'powershellget-stable'
         }
         break

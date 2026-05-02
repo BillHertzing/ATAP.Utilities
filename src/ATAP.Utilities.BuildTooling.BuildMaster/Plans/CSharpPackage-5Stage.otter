@@ -60,7 +60,7 @@ if $VersionLabel == Beta       { set $Tier = Integration;  }
 if $VersionLabel == QA         { set $Tier = QA;           }
 if $VersionLabel == ""         { set $Tier = Production;   }
 
-# Resolve feed name via Get-ATAPIACConstant (T-31) — no hard-coded feed names.
+# Resolve feed name via BuildTooling settings (T-31) — no hard-coded feed names.
 Exec pwsh (
     Arguments: >>-NoProfile -File src\ATAP.Utilities.BuildTooling.BuildMaster\Scripts\Resolve-FeedName.ps1 -Tier $Tier -FeedType nuget -OutputFile _generated\buildmaster\_feedname.tmp>>,
     WorkingDirectory: $SourcePath,
@@ -212,7 +212,7 @@ Log-Debug "Resolved Tier=$Tier  Feed=$FeedName  VersionLabel=$VersionLabel  Prer
       # ---- task 1.3-2: Promote packages from nuget-integration → nuget-qa ----
       # Move-ProGetPackageInterTier auto-resolves the destination feed from -SourceFeed.
       Exec pwsh (
-          Arguments: >>-NoProfile -Command "Import-Module 'ATAP.Utilities.BuildTooling.PowerShell'; $srcFeed = Get-ATAPIACConstant -Name 'NuGetFeedName_Integration'; Move-ProGetPackageInterTier -PackageName '$MetaPackageName' -Version '$NbgvVersion' -SourceFeed $srcFeed -ProGetBaseUrl '$ProGetUrl' -ApiKey '$ProGetApiKey' -Comments 'Promoted to QA after Integration smoke-test gate passed (Sprint $SprintNumber, User $UserName)'">>      ,
+          Arguments: >>-NoProfile -Command "Import-Module 'ATAP.Utilities.BuildTooling.PowerShell'; Move-ProGetPackageInterTier -PackageName '$MetaPackageName' -Version '$NbgvVersion' -SourceFeed '$FeedName' -ProGetBaseUrl '$ProGetUrl' -ApiKey '$ProGetApiKey' -Comments 'Promoted to QA after Integration smoke-test gate passed (Sprint $SprintNumber, User $UserName)'">>      ,
           WorkingDirectory: $SourcePath,
           SuccessExitCode: 0
       );

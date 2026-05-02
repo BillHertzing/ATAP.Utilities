@@ -9,8 +9,9 @@ function Get-SecureEnvVar {
   )
 
   # Check if variable already exists in current session
-  if ($env:$VarName) {
-    return $env:$VarName
+  $existingValue = [Environment]::GetEnvironmentVariable($VarName, 'Process')
+  if (-not [string]::IsNullOrWhiteSpace($existingValue)) {
+    return $existingValue
   }
 
   # Check if Bitwarden session is available
@@ -23,7 +24,7 @@ function Get-SecureEnvVar {
 
   if ($LASTEXITCODE -eq 0) {
     # Set for current process only (doesn't persist)
-    $env:$VarName = $value
+    [Environment]::SetEnvironmentVariable($VarName, $value, 'Process')
     return $value
   }
   else {

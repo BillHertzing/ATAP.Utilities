@@ -18,7 +18,7 @@ function Move-ProGetPackageInterTier {
     The tier chain is:
         experimental → development → integration → qa → stable
 
-    The script detects the package type (nuget, powershell, chocolatey)
+    The script detects the package type (nuget, powershellget, chocolatey)
     from the source feed name prefix.
 
 .PARAMETER PackageName
@@ -79,8 +79,8 @@ function Move-ProGetPackageInterTier {
     # Explicit destination override
     Move-ProGetPackageInterTier `
         -PackageName 'MyModule' -Version '2.0.0-dev.5' `
-        -SourceFeed 'powershell-development' `
-        -DestinationFeed 'powershell-qa-push'
+        -SourceFeed 'powershellget-development' `
+        -DestinationFeed 'powershellget-qa-push'
 
 .EXAMPLE
     # Dry run
@@ -148,12 +148,14 @@ function Move-ProGetPackageInterTier {
             production = 'stable'
         }
 
-        # Known package type prefixes in feed names
-        $knownPrefixes = @('nuget', 'powershell', 'chocolatey')
+        # Known package type prefixes in feed names.
+        # 'powershell' is accepted as a deprecated alias, but new feed names use
+        # canonical 'powershellget-*' per Explainer 0111.
+        $knownPrefixes = @('nuget', 'powershellget', 'powershell', 'chocolatey')
 
         # ── Parse source feed name ───────────────────────────────────────────
         # Feed names follow the pattern: {packageType}-{tier}[-push]
-        # Examples: nuget-experimental, powershell-development-push, chocolatey-qa
+        # Examples: nuget-experimental, powershellget-development-push, chocolatey-qa
 
         $parsedPrefix = $null
         $parsedTier = $null
@@ -170,6 +172,10 @@ function Move-ProGetPackageInterTier {
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Normalizing legacy tier name '$remainder' to '$($tierAliases[$remainder])'"
                     $remainder = $tierAliases[$remainder]
                 }
+                if ($parsedPrefix -eq 'powershell') {
+                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Normalizing deprecated feed prefix 'powershell' to 'powershellget'"
+                    $parsedPrefix = 'powershellget'
+                }
                 if ($tierOrder -contains $remainder) {
                     $parsedTier = $remainder
                 }
@@ -179,7 +185,7 @@ function Move-ProGetPackageInterTier {
 
         if (-not $parsedPrefix -or -not $parsedTier) {
             $errorMessage = "Cannot parse source feed name '$SourceFeed'. " +
-            'Expected format: {nuget|powershell|chocolatey}-{experimental|development|integration|qa|stable}[-push]. Legacy tiers testing/production are normalized to qa/stable.'
+            'Expected format: {nuget|powershellget|chocolatey}-{experimental|development|integration|qa|stable}[-push]. Legacy prefix powershell and tiers testing/production are normalized.'
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
             throw $errorMessage
         }
@@ -272,6 +278,7 @@ function Move-ProGetPackageInterTier {
         }
 
         $response = $null
+        $promoted = $false
         $targetMessage = "'{0}' v{1}" -f $PackageName, $Version
         $actionMessage = "Move from '{0}' to '{1}'" -f $SourceFeed, $DestinationFeed
         if ($PSCmdlet.ShouldProcess($targetMessage, $actionMessage)) {
@@ -282,6 +289,7 @@ function Move-ProGetPackageInterTier {
                     -Body ($body | ConvertTo-Json -Depth 3) -ContentType 'application/json' -ErrorAction Stop
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from $promoteUrl" -Tag 'RestCall'
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Move successful'
+                $promoted = $true
             } catch {
                 $errorMessage = "Failed to move '$PackageName' v$Version from '$SourceFeed' to '$DestinationFeed'. Exception: $($_.Exception.Message)"
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
@@ -298,7 +306,7 @@ function Move-ProGetPackageInterTier {
             DestinationTier = if ($DestinationFeed -match '-(\w+?)(-push)?$') { $matches[1] } else { '(custom)' }
             PackageType     = $parsedPrefix
             Phase2Mode      = [bool]$UsePushFeed
-            Promoted        = $true
+            Promoted        = $promoted
             Response        = $response
         }
     }

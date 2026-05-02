@@ -74,7 +74,7 @@ if $VersionLabel == Beta       { set $Tier = Integration;  }
 if $VersionLabel == QA         { set $Tier = QA;           }
 if $VersionLabel == ""         { set $Tier = Production;   }
 
-# Resolve feed name via Get-ATAPIACConstant (T-31) — no hard-coded feed names.
+# Resolve feed name via BuildTooling settings (T-31) — no hard-coded feed names.
 Exec pwsh
 (
     Arguments: >>-NoProfile -File src\ATAP.Utilities.BuildTooling.BuildMaster\Scripts\Resolve-FeedName.ps1 -Tier $Tier -FeedType nuget -OutputFile _generated\buildmaster\_feedname.tmp>>,

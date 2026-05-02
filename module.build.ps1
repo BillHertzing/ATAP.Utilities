@@ -27,7 +27,6 @@ param(
 # yet installed (e.g. when building the module itself for the first time).
 # ---------------------------------------------------------------------------
 $script:_bootstrapCmdlets = @(
-  'Get-ATAPIACConstant'
   'Resolve-PSModuleMetadata'
   'Get-PSModuleVersionFromNBGV'
   'Build-PSModuleManifest'

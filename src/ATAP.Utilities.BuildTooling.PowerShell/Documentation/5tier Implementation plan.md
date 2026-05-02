@@ -64,8 +64,8 @@ Each of the following becomes a dedicated, Pester-tested public cmdlet:
 | `Invoke-PSModulePSScriptAnalyzer` | Run PSScriptAnalyzer against the generated `.psm1` / `.psd1` at the correct severity for the tier.                                     | _(new)_                                               |
 | `Invoke-PSModulePesterTests`      | Run Pester with the tier-appropriate tag filter, emit JUnit XML and coverage.                                                          | `Task UnitTestPSModule`, `IntegrationTestPSModule`    |
 | `Test-FailureAcknowledgedGate`    | Evaluate `(passed + acknowledged) == total` against `FailureAcknowledged.json`.                                                        | _(new)_                                               |
-| `Test-CodeCoverageGate`           | Compare coverage to `PassingCodeCoveragePct` from ATAP.IAC constants.                                                                  | _(new)_                                               |
-| `Publish-PSModuleToProGetFeed`    | Select the target `PowershellGet-*` feed from the tier, authenticate via `Get-BitWardenSecret`, and call `Publish-PSResource`.         | `Task PublishPSPackage`                               |
+| `Test-CodeCoverageGate`           | Compare coverage to the configured tier threshold.                                                                                     | _(new)_                                               |
+| `Publish-PSModuleToProGetFeed`    | Select the target `powershellget-*` feed from `$global:Settings`, authenticate via `Get-BitWardenSecret` or the feed API-key env var, and call `Publish-PSResource`. | `Task PublishPSPackage`                               |
 | `Compress-PSModuleArtifacts`      | Create `TestResults.7z`, `CoverageReport.7z`, `Packages.7z` at well-known paths.                                                       | _(new)_                                               |
 
 After extraction, `module.build.ps1` reduces to a DAG of `Task` blocks that each call one cmdlet.
@@ -148,7 +148,7 @@ Every PowerShell module's folder gets a `version.json` committed to the branch, 
 
 - **Local developer runs:** NBGV resolves from `version.json` + uncommitted-files flag. Developers may pass `-Tier Sprint` for a throwaway build that does not require a clean working tree.
 - **BuildMaster runs:** NBGV runs against a clean checkout. The `$Tier` parameter is either set from the label NBGV returns, or overridden by the pipeline stage's OtterScript variable.
-- **Conflict rule:** If `$Tier` is passed explicitly AND disagrees with NBGV's label, the script **fails** unless `-AllowTierOverride` is also set. This prevents a developer accidentally publishing an `Alpha`-labeled package into `PowershellGet-stable`.
+- **Conflict rule:** If `$Tier` is passed explicitly AND disagrees with NBGV's label, the script **fails** unless `-AllowTierOverride` is also set. This prevents a developer accidentally publishing an `Alpha`-labeled package into `powershellget-stable`.
 
 ---
 
@@ -157,28 +157,46 @@ Every PowerShell module's folder gets a `version.json` committed to the branch, 
 ### 4.1 Feed Map
 
 ```text
-Sprint      -> PowershellGet-experimental
-Alpha       -> PowershellGet-development
-Beta        -> PowershellGet-integration
-QA          -> PowershellGet-qa
-(stable)    -> PowershellGet-stable
+Sprint      -> powershellget-experimental
+Alpha       -> powershellget-development
+Beta        -> powershellget-integration
+QA          -> powershellget-qa
+(stable)    -> powershellget-stable
 ```
 
-This map lives in `ATAP.IAC` as a constant (`$global:configRootKeys['PowerShellGetFeedMapByTier']`) so it can be consumed by both PowerShell and C#. The script reads it through `Get-ATAPIACConstant -Name PowerShellGetFeedMap` — a new bootstrap helper that loads ATAP.IAC constants without requiring an interactive profile.
-
-### 4.2 Authentication
-
-API keys come from Bitwarden, not environment variables:
+This map now lives in `$global:Settings` as the package-repository feed collection populated by the ConfigRootKeys and HostSettings package-repository fragments:
 
 ```powershell
-$feed   = Get-ATAPIACConstant -Name "PowerShellGetFeed_$tier"
-$apiKey = Get-BitWardenSecret -SecretName "ProGet_PowerShellGet_$($tier)_ApiKey"
-Publish-PSResource -Path $Nupkg -Repository $feed.ShortName -ApiKey $apiKey
+$global:Settings[$global:configRootKeys['ProGetFeedCollectionConfigRootKey']]
 ```
 
-If an agent shell cannot see the Bitwarden session, `Get-BitWardenSecret` itself handles the fall-back to `[Environment]::GetEnvironmentVariable($name, 'User')`.
+BuildTooling cmdlets resolve feed metadata through `Resolve-ProGetFeedFromSettings`, not through `Get-ATAPIACConstant` or direct PSD1 imports. The feed collection contains the canonical lowercase feed name, feed type, tier, endpoint URI, and API-key environment variable name for each of the five PowerShellGet feeds.
 
-### 4.3 PSResourceRepository Registration
+### 4.2 Restore-time visibility
+
+Publishing and restore visibility are separate decisions. `Publish-PSModuleToProGetFeed` publishes to the target tier feed. Dependency restore and validation must use the same-tier-or-more-stable repository set described in Explainer 0111:
+
+| Consumer tier | Allowed PowerShellGet repositories |
+| --- | --- |
+| Sprint / Experimental | experimental, development, integration, qa, stable |
+| Alpha / Development | development, integration, qa, stable |
+| Beta / Integration | integration, qa, stable |
+| QA | qa, stable |
+| Production / Stable | stable |
+
+### 4.3 Authentication
+
+API keys come from Bitwarden first. If Bitwarden is unavailable, `Publish-PSModuleToProGetFeed` uses the `ApiKeyName` value from the resolved feed entry and reads that environment variable from Process or User scope:
+
+```powershell
+$feed   = Resolve-ProGetFeedFromSettings -FeedType powershellget -Tier $tier
+$apiKey = Get-BitWardenSecret -SecretName "ProGet_PowerShellGet_$($tier)_ApiKey"
+Publish-PSResource -NupkgPath $Nupkg -Repository $feed.FeedName -ApiKey $apiKey
+```
+
+If an agent shell cannot see the Bitwarden session, the configured feed `ApiKeyName` environment variable is the fallback. The temporary `PROGET_ADMIN_API_KEY` fallback is retained only for bootstrap and should be removed once per-feed keys are fully provisioned.
+
+### 4.4 PSResourceRepository Registration
 
 `Publish-PSModuleToProGetFeed` ensures the **branch-appropriate** set of `PSResourceRepository` entries are registered before publish (mirrors Section 13 of Explainer 602 for `NuGet.config`):
 
@@ -326,7 +344,7 @@ Each step is a stand-alone PR; the script remains functional throughout.
 2. **Swap `Enter-Build` to use `Resolve-PSModuleMetadata`.** Remove the `Releases/` requirement. Move outputs to `_generated/PSModules/<name>/`.
 3. **Wire NBGV.** Add `version.json` to each PowerShell module; replace `BuildBasePSD1`'s version logic with `Get-PSModuleVersionFromNBGV`.
 4. **Collapse the CrossProduct.** Delete `packageProviderNames`, `SoftwarePackageTypes`, the provider × lifecycle matrix. Replace with a single `$Tier`-driven flow.
-5. **Replace feed routing.** Delete `PackageRepositoryInternal...` lookups. Use the ATAP.IAC feed map and `Publish-PSResource`.
+5. **Replace feed routing.** Delete `PackageRepositoryInternal...` lookups. Resolve feed metadata from `$global:Settings` and publish with `Publish-PSResource`.
 6. **Add PSScriptAnalyzer, Failure-Acknowledged, and coverage gates.** Wire them into new tasks (`Analyze`, `GateAck`, `GateCoverage`).
 7. **BuildMaster OtterScript plan.** Add `PowerShellModule-5Stage` and point it at two or three pilot modules.
 8. **Full rollout.** Delete `module.build.ps1.ChatGPTGenerated`. Update every module's `version.json`. Cut over BuildMaster monitors to the new plan.
@@ -338,4 +356,4 @@ Each step is a stand-alone PR; the script remains functional throughout.
 - **Chocolatey feeds:** deferred (Section 11.1 note). No action in this plan; `Publish-PSModuleToProGetFeed` has a `[-Chocolatey]` reserved parameter for future use.
 - **Module-level NBGV vs. repo-level NBGV:** Section 7 of the Explainer assumes repo-wide NBGV. PowerShell modules in `src/` may want per-module `pathFilters` so one module's changes don't bump the others. The plan above assumes per-module `version.json` files — confirm with release engineer before full rollout.
 - **PowerShell module dependency resolution:** When one module depends on another (`RequiredModules`), the consumer registration path in 4.3 must also inject the tier-appropriate feed list. Tracked as a follow-up task in the task file.
-- **RRSBS database migration:** When ATAP.IAC constants move into the RRSBS database, `Get-ATAPIACConstant` is swapped for a DB query. No changes to the cmdlets that depend on it.
+- **RRSBS database migration:** Feed-aware cmdlets now depend on the `$global:Settings` feed collection. A future RRSBS-backed provider should populate the same settings shape so BuildTooling cmdlets do not change.

@@ -21,22 +21,11 @@ BeforeAll {
         return $DefaultValue
     }
 
-    # Dot-source the autoloaded function for testing
-    function global:Move-ProGetPackageInterTier {
-        param(
-            [Parameter(Mandatory)][string]$PackageName,
-            [Parameter(Mandatory)][string]$Version,
-            [Parameter(Mandatory)][string]$SourceFeed,
-            [string]$DestinationFeed,
-            [switch]$UsePushFeed,
-            [string]$Comments,
-            [string]$ProGetBaseUrl,
-            [string]$ApiKey
-        )
-        & $script:scriptPath @PSBoundParameters
+    # Dot-source the autoloaded function for testing.
+    . $script:scriptPath
 
-  $script:baseUrl = 'http://proget.test:50000'
-  $script:apiKey = 'test-api-key'
+    $script:baseUrl = 'http://proget.test:50000'
+    $script:apiKey = 'test-api-key'
 }
 
 Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
@@ -48,8 +37,8 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
       @{ Source = 'nuget-development'; ExpectedDest = 'nuget-integration' }
       @{ Source = 'nuget-integration'; ExpectedDest = 'nuget-qa' }
       @{ Source = 'nuget-qa'; ExpectedDest = 'nuget-stable' }
-      @{ Source = 'powershell-experimental'; ExpectedDest = 'powershell-development' }
-      @{ Source = 'powershell-integration'; ExpectedDest = 'powershell-qa' }
+      @{ Source = 'powershellget-experimental'; ExpectedDest = 'powershellget-development' }
+      @{ Source = 'powershellget-integration'; ExpectedDest = 'powershellget-qa' }
       @{ Source = 'chocolatey-qa'; ExpectedDest = 'chocolatey-stable' }
     )
 
@@ -156,13 +145,13 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
 
   Context 'WhatIf skips REST promote call' {
 
-    It 'Does not set Promoted=true under -WhatIf' {
+    It 'Returns Promoted=false under -WhatIf' {
       $result = Move-ProGetPackageInterTier `
         -PackageName 'Test.Package' -Version '1.0.0' `
         -SourceFeed 'nuget-experimental' `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey `
         -WhatIf
-      $result | Should -BeNullOrEmpty
+      $result.Promoted | Should -BeFalse
     }
   }
 

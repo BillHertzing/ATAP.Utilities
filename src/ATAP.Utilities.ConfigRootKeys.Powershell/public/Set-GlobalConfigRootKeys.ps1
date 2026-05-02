@@ -82,8 +82,19 @@ function Set-GlobalConfigRootKeys {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Entering function $fn"
 
     try {
-      if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
+      if (-not (Test-Path -LiteralPath 'Function:\Get-ParameterValueFromNeoConfigurationRoot')) {
+        $scriptFile = $MyInvocation.MyCommand.ScriptBlock.File
+        $scriptRoot = if (-not [string]::IsNullOrWhiteSpace($scriptFile)) {
+          Split-Path -Parent $scriptFile
+        } else {
+          $PSScriptRoot
+        }
+        $repoRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $scriptRoot))
+        $helperPath = Join-Path $repoRoot 'src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
+        if (-not (Test-Path -LiteralPath $helperPath -PathType Leaf)) {
+          throw "Get-ParameterValueFromNeoConfigurationRoot helper not found at '$helperPath'."
+        }
+        . $helperPath
       }
     } catch {
       $errorMessage = "Failed to load Get-ParameterValueFromNeoConfigurationRoot function. Exception: $($_.Exception.Message)"

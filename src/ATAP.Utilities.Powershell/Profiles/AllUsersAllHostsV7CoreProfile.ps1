@@ -195,6 +195,7 @@ try {
 }
 # If we want to use a sprint worktree as the source, replace it here. One-liner (two commands) to switch between the stable worktree and the sprint worktree
 $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items'; . $(Join-Path $repobasepath $projectpathRel $cmdletPathRel)
+Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $repobasepath
 Set-GlobalConfigRootKeys
 
 # [Ansible: Understanding variable precedence](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#understanding-variable-precedence)

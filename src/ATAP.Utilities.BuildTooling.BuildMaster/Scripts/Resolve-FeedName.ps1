@@ -1,18 +1,18 @@
 <#
 .SYNOPSIS
-  Resolves a ProGet feed name for a given 5-Tier tier and feed type using
-  Get-ATAPIACConstant, then writes it to an output file for OtterScript consumption.
+  Resolves a ProGet feed name for a given 5-Tier tier and feed type from
+  BuildTooling settings, then writes it to an output file for OtterScript consumption.
 
 .DESCRIPTION
   This script is designed to be invoked from an OtterScript plan via `Exec pwsh`.
   It translates the OtterScript $Tier variable (Experimental/Development/Integration/
-  QA/Production) to the canonical ATAP.IAC constant name, resolves the value via
-  Get-ATAPIACConstant, and writes the result to -OutputFile so OtterScript can read
-  it back with $FileContents().
+  QA/Production) to the canonical ProGet feed tier, resolves the value via
+  Resolve-ProGetFeedFromSettings, and writes the result to -OutputFile so
+  OtterScript can read it back with $FileContents().
 
-  If Get-ATAPIACConstant is not available (module not loaded), the script falls back
-  to a direct file-load of the ATAP.IAC constants/*.psd1 files by walking up from
-  the current git root to the sibling ATAP.IAC repository.
+  If $global:Settings/$global:configRootKeys are not already initialized, the script
+  bootstraps the ProGet feed collection from the machine-scope compatibility export
+  written by New-HostSettingsForPackageRepositoryFeeds.
 
   Exit code 0 = success. Any other exit code = failure.
 
@@ -26,6 +26,10 @@
 .PARAMETER OutputFile
   Relative or absolute path where the resolved feed name is written (no newline).
   Defaults to '_feedname.tmp' in the current directory.
+
+.PARAMETER SettingsPath
+  Optional path to the machine-scope HostSettings.PackageRepositoryFeeds.psd1 file.
+  Defaults to $env:ProgramData\ATAP\HostSettings.PackageRepositoryFeeds.psd1.
 
 .OUTPUTS
   Writes the resolved feed name string to -OutputFile. No pipeline output.
@@ -42,7 +46,7 @@
 
 .NOTES
   AI assisted using Powershell.instructions.md as guidelines
-  Phase 3C — T-31 (7.1-3 OtterScript feed name resolution via Get-ATAPIACConstant)
+  Phase 3C — T-31 (7.1-3 OtterScript feed name resolution from BuildTooling settings)
 #>
 [CmdletBinding()]
 param(
@@ -51,56 +55,96 @@ param(
   [string] $Tier,
 
   [Parameter(Mandatory)]
-  [ValidateSet('nuget', 'powershellget')]
+  [ValidateSet('nuget', 'powershell', 'powershellget', 'psresourceget', 'chocolatey')]
   [string] $FeedType,
 
-  [string] $OutputFile = '_feedname.tmp'
+  [string] $OutputFile = '_feedname.tmp',
+
+  [string] $SettingsPath = (Join-Path $env:ProgramData 'ATAP\HostSettings.PackageRepositoryFeeds.psd1')
 )
 
 $fn = 'Resolve-FeedName.ps1'
 
-# Map 'Production' → 'Stable' (canonical tier name for the stable feed)
-$canonicalTier = if ($Tier -eq 'Production') { 'Stable' } else { $Tier }
+function Get-RepositoryRoot {
+  $current = $PSScriptRoot
+  while (-not [string]::IsNullOrWhiteSpace($current)) {
+    if (Test-Path -LiteralPath (Join-Path $current '.git')) {
+      return $current
+    }
 
-# Build the ATAP.IAC constant name
-$prefix = if ($FeedType -eq 'nuget') { 'NuGetFeedName' } else { 'PowerShellGetFeedName' }
-$constantName = "${prefix}_${canonicalTier}"
+    $parent = Split-Path -Parent $current
+    if ($parent -eq $current) {
+      break
+    }
+    $current = $parent
+  }
 
-function Resolve-ViaDirectLoad {
-  param([string]$ConstantName)
-  # Walk up from current git root to locate sibling ATAP.IAC repository
-  $gitOutput = & git rev-parse --show-toplevel 2>&1
-  if ($LASTEXITCODE -ne 0) { throw "git rev-parse --show-toplevel failed: $gitOutput" }
-  $repoRoot = $gitOutput.Trim()
-  $iacRoot = Join-Path (Split-Path -Parent $repoRoot) 'ATAP.IAC'
-  if (-not (Test-Path $iacRoot -PathType Container)) {
-    throw "ATAP.IAC repository not found at '$iacRoot'."
+  $gitOutput = & git -c safe.directory='*' rev-parse --show-toplevel 2>$null
+  if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($gitOutput)) {
+    return [string]$gitOutput.Trim()
   }
-  $constantsDir = Join-Path $iacRoot 'constants'
-  foreach ($psd1 in (Get-ChildItem -Path $constantsDir -Filter '*.psd1' -File)) {
-    $data = Import-PowerShellDataFile -Path $psd1.FullName
-    if ($data.ContainsKey($ConstantName)) { return [string]$data[$ConstantName] }
-  }
-  throw "Constant '$ConstantName' not found in any *.psd1 under '$constantsDir'."
+
+  throw "$fn : Unable to locate repository root from '$PSScriptRoot'."
 }
 
-$feedName = $null
-$cmdlet = Get-Command -Name 'Get-ATAPIACConstant' -ErrorAction SilentlyContinue
-if ($null -ne $cmdlet) {
-  try {
-    $feedName = Get-ATAPIACConstant -Name $constantName
-  } catch {
-    Write-Warning "$fn : Get-ATAPIACConstant threw for '$constantName'; trying direct file load. Error: $_"
-    $feedName = $null
+function Get-BuildToolingFeedResolverPath {
+  if (Get-Command -Name 'Resolve-ProGetFeedFromSettings' -CommandType Function -ErrorAction SilentlyContinue) {
+    return $null
   }
+
+  $repoRoot = Get-RepositoryRoot
+  $resolverPath = Join-Path $repoRoot 'src\ATAP.Utilities.BuildTooling.PowerShell\private\Resolve-ProGetFeedFromSettings.ps1'
+  if (-not (Test-Path -LiteralPath $resolverPath -PathType Leaf)) {
+    throw "$fn : Resolve-ProGetFeedFromSettings.ps1 not found at '$resolverPath'."
+  }
+
+  return $resolverPath
+}
+
+function Initialize-ProGetFeedSettings {
+  if ($null -ne $global:Settings -and $null -ne $global:configRootKeys) {
+    $feedCollectionKey = $global:configRootKeys['ProGetFeedCollectionConfigRootKey']
+    if (-not [string]::IsNullOrWhiteSpace($feedCollectionKey) -and $null -ne $global:Settings[$feedCollectionKey]) {
+      return
+    }
+  }
+
+  if (-not (Test-Path -LiteralPath $SettingsPath -PathType Leaf)) {
+    throw "$fn : BuildTooling feed settings are not initialized and '$SettingsPath' was not found. Run New-HostSettingsForPackageRepositoryFeeds or pass -SettingsPath."
+  }
+
+  $feedSettings = Import-PowerShellDataFile -LiteralPath $SettingsPath
+  if ($null -eq $feedSettings.Feeds) {
+    throw "$fn : '$SettingsPath' does not contain a Feeds hashtable."
+  }
+
+  if ($null -eq $global:configRootKeys) {
+    $global:configRootKeys = @{}
+  }
+  $global:configRootKeys['ProGetFeedCollectionConfigRootKey'] = 'ProGetFeedCollection'
+
+  if ($null -eq $global:Settings) {
+    $global:Settings = @{}
+  }
+  $global:Settings['ProGetFeedCollection'] = $feedSettings.Feeds
+}
+
+$resolverPath = Get-BuildToolingFeedResolverPath
+if ($null -ne $resolverPath) {
+  . $resolverPath
+}
+Initialize-ProGetFeedSettings
+
+try {
+  $feed = Resolve-ProGetFeedFromSettings -FeedType $FeedType -Tier $Tier
+  $feedName = $feed.FeedName
+} catch {
+  Write-Error "$fn : Failed to resolve feed for Tier='$Tier' FeedType='$FeedType'. $($_.Exception.Message)"
+  exit 1
 }
 
 if ([string]::IsNullOrWhiteSpace($feedName)) {
-  $feedName = Resolve-ViaDirectLoad -ConstantName $constantName
-}
-
-if ([string]::IsNullOrWhiteSpace($feedName)) {
-  Write-Error "$fn : Resolved feed name for constant '$constantName' is empty."
+  Write-Error "$fn : Resolved feed name for Tier='$Tier' FeedType='$FeedType' is empty."
   exit 1
 }
 
@@ -111,5 +155,5 @@ $resolvedOutput = if ([System.IO.Path]::IsPathRooted($OutputFile)) {
 }
 
 $feedName | Out-File -FilePath $resolvedOutput -Encoding utf8 -NoNewline
-Write-Host "$fn : Resolved '$constantName' → '$feedName' (written to '$resolvedOutput')"
+Write-Host "$fn : Resolved Tier='$Tier' FeedType='$FeedType' -> '$feedName' (written to '$resolvedOutput')"
 exit 0

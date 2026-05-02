@@ -38,8 +38,8 @@
 
 ### Phase 2 — ATAP.IAC Integration
 
-- [x] T-30 · Add `Get-ATAPIACConstant` bootstrap cmdlet
-- [ ] T-31 · Add PowerShellGet feed map constants to ATAP.IAC
+- [x] T-30 · Add legacy `Get-ATAPIACConstant` bootstrap cmdlet
+- [x] T-31 · Resolve PowerShellGet feed metadata from `$global:Settings`
 
 ### Phase 3 — Rewrite `module.build.ps1`
 
@@ -155,7 +155,7 @@ Each T-1x task delivers one public cmdlet in [src/ATAP.Utilities.BuildTooling.Po
 
 **Gap:** G-02, G-07
 **Inputs:** `-PrereleaseLabel`.
-**Outputs:** `[PSCustomObject]` with `TierNumber` (1-5), `TierName`, `FeedName` (one of `PowershellGet-experimental` … `-stable`).
+**Outputs:** `[PSCustomObject]` with `TierNumber` (1-5), `TierName`, `FeedName` (one of `powershellget-experimental` ... `-stable`).
 **Steps:**
 
 1. Map the label per the table in Plan §4.1.
@@ -267,12 +267,12 @@ Each T-1x task delivers one public cmdlet in [src/ATAP.Utilities.BuildTooling.Po
 **Outputs:** Publish result object.
 **Steps:**
 
-1. Resolve the target feed via `Get-TierFromNBGVLabel` or the ATAP.IAC feed map.
+1. Resolve the target feed via `$global:Settings[$global:configRootKeys['ProGetFeedCollectionConfigRootKey']]`.
 2. Ensure the repository is registered (`Register-PSResourceRepository` if missing; `Set-PSResourceRepository` if present).
-3. Fetch the API key via `Get-BitWardenSecret -SecretName "ProGet_PowerShellGet_${tier}_ApiKey"`; fall back to `[Environment]::GetEnvironmentVariable($name,'User')` if Bitwarden is unavailable.
+3. Fetch the API key via `Get-BitWardenSecret -SecretName "ProGet_PowerShellGet_${tier}_ApiKey"`; fall back to the feed entry's configured `ApiKeyName` environment variable if Bitwarden is unavailable.
 4. Call `Publish-PSResource -Path $NupkgPath -Repository $shortName -ApiKey $key`.
    **Acceptance:** Pester tests mock `Publish-PSResource` and verify the correct repository and API key name are resolved for each tier.
-   **Dependencies:** T-12, T-30 (ATAP.IAC constant loader).
+**Dependencies:** T-12, T-31.
 
 ### T-1A · `Compress-PSModuleArtifacts`
 
@@ -293,7 +293,7 @@ Each T-1x task delivers one public cmdlet in [src/ATAP.Utilities.BuildTooling.Po
 
 ## Phase 2 — ATAP.IAC Integration
 
-### T-30 · Add `Get-ATAPIACConstant` bootstrap cmdlet
+### T-30 · Add legacy `Get-ATAPIACConstant` bootstrap cmdlet
 
 - [x]
 
@@ -305,20 +305,21 @@ Each T-1x task delivers one public cmdlet in [src/ATAP.Utilities.BuildTooling.Po
 1. Look in `$global:settings[$global:configRootKeys[$Name]]` first for back-compat.
 2. If not found, load `ATAP.IAC/constants/*.psd1` directly and read the value.
 3. Throw with a helpful message if neither source has it.
-   **Acceptance:** Cmdlet works in a fresh pwsh shell with no profile loaded (simulates BuildMaster agent).
-   **Dependencies:** None (but coordinates with ATAP.IAC work).
+**Acceptance:** Cmdlet works in a fresh pwsh shell with no profile loaded (simulates BuildMaster agent).
+**Current status:** Legacy compatibility only. Current feed-aware cmdlets use `$global:Settings` through `Resolve-ProGetFeedFromSettings` instead of calling this bootstrap helper.
+**Dependencies:** None (but coordinates with ATAP.IAC work).
 
-### T-31 · Add PowerShellGet feed map constants to ATAP.IAC
+### T-31 · Resolve PowerShellGet feed metadata from `$global:Settings`
 
-- [ ]
+- [x]
 
 **Gap:** G-06
-**Repo:** `ATAP.IAC` (branch: current sprint branch)
-**Inputs:** None.
-**Outputs:** New constant keys — `PowerShellGetFeed_Sprint`, `_Alpha`, `_Beta`, `_QA`, `_Production`, plus `PassingCodeCoveragePct_PowerShell` defaulted to 70.
-**Steps:** Add to the constants file(s) that feed `$global:configRootKeys` and the C# `DefaultConfiguration`.
-**Acceptance:** Both PowerShell (`Get-ATAPIACConstant`) and C# (`IOptions<…>`) can read the new keys.
-**Dependencies:** T-30 defines the access path.
+**Repo:** `ATAP.IAC` and `ATAP.Utilities` (branch: current sprint branch)
+**Inputs:** `Add-PackageRepositoriesConfigRootKeys.ps1` and `HostSettings.IAC.Fragment.PackageRepositories.ps1`.
+**Outputs:** `$global:Settings[$global:configRootKeys['ProGetFeedCollectionConfigRootKey']]` contains all canonical feed metadata for NuGet and PowerShellGet feeds.
+**Steps:** Populate feed names, endpoint URIs, feed types, tiers, connectors, retention metadata, and API-key environment variable names in host settings. Update BuildTooling cmdlets to resolve feed metadata through `Resolve-ProGetFeedFromSettings`.
+**Acceptance:** `Publish-PSModuleToProGetFeed`, `Register-ProGetFeedSet`, and BuildMaster stable variable setup resolve lowercase `powershellget-*` feed names from `$global:Settings` without calling `Get-ATAPIACConstant`.
+**Dependencies:** ConfigRootKeys and HostSettings fragments are loaded before build tooling feed operations.
 
 ---
 
@@ -386,7 +387,7 @@ Each T-1x task delivers one public cmdlet in [src/ATAP.Utilities.BuildTooling.Po
 1. Delete the entire `PublishPSPackage` block in `module.build.ps1`.
 2. Introduce a `Publish` task that calls `Publish-PSModuleToProGetFeed`.
 3. Honor `-SkipPublish` for local dev runs.
-   **Acceptance:** `Invoke-Build Publish -Tier Alpha -SkipPublish` succeeds without touching the network; without `-SkipPublish` it pushes the package to `PowershellGet-development`.
+**Acceptance:** `Invoke-Build Publish -Tier Alpha -SkipPublish` succeeds without touching the network; without `-SkipPublish` it pushes the package to `powershellget-development`.
    **Dependencies:** T-19, T-43.
 
 ### T-45 · Replace `UnitTestPSModule` / `IntegrationTestPSModule` with `Invoke-PSModulePesterTests`
@@ -482,7 +483,7 @@ Each T-1x task delivers one public cmdlet in [src/ATAP.Utilities.BuildTooling.Po
 1. Run `Verify -Tier Alpha` locally, confirm green.
 2. Push to a sprint branch and watch the BuildMaster stage run.
 3. Promote the branch to `integration` and confirm the Beta stage runs.
-   **Acceptance:** Module reaches the `PowershellGet-integration` feed end-to-end via the new pipeline.
+**Acceptance:** Module reaches the `powershellget-integration` feed end-to-end via the new pipeline.
    **Dependencies:** T-60, T-61.
 
 ### T-63 · Roll out to the remaining PowerShell modules

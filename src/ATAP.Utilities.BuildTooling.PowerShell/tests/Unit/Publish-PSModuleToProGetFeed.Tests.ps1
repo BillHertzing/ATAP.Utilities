@@ -5,6 +5,8 @@
 BeforeAll {
   # Dot-source the function under test.
   $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
+  $privateDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'private'
+  . (Join-Path $privateDir 'Resolve-ProGetFeedFromSettings.ps1')
   . (Join-Path $publicDir 'Publish-PSModuleToProGetFeed.ps1')
 
   # Suppress PSFramework noise in tests.
@@ -26,19 +28,51 @@ BeforeAll {
   $script:fakeNupkg = Join-Path $script:tempRoot 'FakeModule.1.0.0.nupkg'
   Set-Content -LiteralPath $script:fakeNupkg -Value 'not a real nupkg' -Encoding Ascii
 
-  # Seed all tier env vars so Get-PSModuleFeedUri succeeds.
-  # Set User-scope env vars for every tier (the cmdlet reads via [Environment]::GetEnvironmentVariable(...,'User')).
-  $script:tierFeedEnvVars = @{
-    'PROGET_POWERSHELLGET_FEED_URI_SPRINT'     = 'https://proget.example.test/nuget/PowershellGet-experimental/'
-    'PROGET_POWERSHELLGET_FEED_URI_ALPHA'      = 'https://proget.example.test/nuget/PowershellGet-development/'
-    'PROGET_POWERSHELLGET_FEED_URI_BETA'       = 'https://proget.example.test/nuget/PowershellGet-integration/'
-    'PROGET_POWERSHELLGET_FEED_URI_QA'         = 'https://proget.example.test/nuget/PowershellGet-qa/'
-    'PROGET_POWERSHELLGET_FEED_URI_PRODUCTION' = 'https://proget.example.test/nuget/PowershellGet-stable/'
+  $script:oldConfigRootKeys = $global:configRootKeys
+  $script:oldSettings = $global:Settings
+  $script:savedAdminApiKey = [Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
+  [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $null, 'User')
+  $global:configRootKeys = @{
+    ProGetFeedCollectionConfigRootKey = 'ProGetFeedCollection'
   }
-  $script:savedFeedEnv = @{}
-  foreach ($k in $script:tierFeedEnvVars.Keys) {
-    $script:savedFeedEnv[$k] = [Environment]::GetEnvironmentVariable($k, 'User')
-    [Environment]::SetEnvironmentVariable($k, $script:tierFeedEnvVars[$k], 'User')
+  $global:Settings = @{
+    ProGetFeedCollection = @{
+      ProGetFeedPowerShellExperimental = @{
+        FeedName   = 'powershellget-experimental'
+        FeedType   = 'powershellget'
+        Tier       = 'experimental'
+        NuGetV3Uri = 'https://proget.example.test/nuget/powershellget-experimental/v2'
+        ApiKeyName = 'PROGET_APIKEY_POWERSHELLGET_EXPERIMENTAL'
+      }
+      ProGetFeedPowerShellDevelopment = @{
+        FeedName   = 'powershellget-development'
+        FeedType   = 'powershellget'
+        Tier       = 'development'
+        NuGetV3Uri = 'https://proget.example.test/nuget/powershellget-development/v2'
+        ApiKeyName = 'PROGET_APIKEY_POWERSHELLGET_DEVELOPMENT'
+      }
+      ProGetFeedPowerShellIntegration = @{
+        FeedName   = 'powershellget-integration'
+        FeedType   = 'powershellget'
+        Tier       = 'integration'
+        NuGetV3Uri = 'https://proget.example.test/nuget/powershellget-integration/v2'
+        ApiKeyName = 'PROGET_APIKEY_POWERSHELLGET_INTEGRATION'
+      }
+      ProGetFeedPowerShellQA = @{
+        FeedName   = 'powershellget-qa'
+        FeedType   = 'powershellget'
+        Tier       = 'qa'
+        NuGetV3Uri = 'https://proget.example.test/nuget/powershellget-qa/v2'
+        ApiKeyName = 'PROGET_APIKEY_POWERSHELLGET_QA'
+      }
+      ProGetFeedPowerShellStable = @{
+        FeedName   = 'powershellget-stable'
+        FeedType   = 'powershellget'
+        Tier       = 'stable'
+        NuGetV3Uri = 'https://proget.example.test/nuget/powershellget-stable/v2'
+        ApiKeyName = 'PROGET_APIKEY_POWERSHELLGET_STABLE'
+      }
+    }
   }
 }
 
@@ -46,11 +80,9 @@ AfterAll {
   if ($script:tempRoot -and (Test-Path -LiteralPath $script:tempRoot)) {
     Remove-Item -LiteralPath $script:tempRoot -Recurse -Force -ErrorAction SilentlyContinue
   }
-  if ($script:tierFeedEnvVars) {
-    foreach ($k in $script:tierFeedEnvVars.Keys) {
-      [Environment]::SetEnvironmentVariable($k, $script:savedFeedEnv[$k], 'User')
-    }
-  }
+  $global:configRootKeys = $script:oldConfigRootKeys
+  $global:Settings = $script:oldSettings
+  [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $script:savedAdminApiKey, 'User')
 }
 
 Describe 'Publish-PSModuleToProGetFeed' {
@@ -64,11 +96,11 @@ Describe 'Publish-PSModuleToProGetFeed' {
 
   Context 'Tier-to-feed mapping' {
     $tierCases = @(
-      @{ Tier = 'Sprint'; Expected = 'PowershellGet-experimental' }
-      @{ Tier = 'Alpha'; Expected = 'PowershellGet-development' }
-      @{ Tier = 'Beta'; Expected = 'PowershellGet-integration' }
-      @{ Tier = 'QA'; Expected = 'PowershellGet-qa' }
-      @{ Tier = 'Production'; Expected = 'PowershellGet-stable' }
+      @{ Tier = 'Sprint'; Expected = 'powershellget-experimental' }
+      @{ Tier = 'Alpha'; Expected = 'powershellget-development' }
+      @{ Tier = 'Beta'; Expected = 'powershellget-integration' }
+      @{ Tier = 'QA'; Expected = 'powershellget-qa' }
+      @{ Tier = 'Production'; Expected = 'powershellget-stable' }
     )
 
     It "Resolves tier '<Tier>' to feed name '<Expected>'" -TestCases $tierCases {
@@ -114,12 +146,12 @@ Describe 'Publish-PSModuleToProGetFeed' {
       # API key resolution by providing Get-BitWardenSecret that returns an empty string first,
       # then the cmdlet falls through to env var. To make the env var visible at User scope we
       # temporarily set it.
-      $envName = 'PROGET_POWERSHELLGET_APIKEY_Beta'
+      $envName = 'PROGET_APIKEY_POWERSHELLGET_INTEGRATION'
       [Environment]::SetEnvironmentVariable($envName, 'env-api-key', 'User')
       try {
         $result = Publish-PSModuleToProGetFeed -NupkgPath $script:fakeNupkg -Tier Beta
         $result.Published | Should -BeTrue
-        $result.FeedName | Should -Be 'PowershellGet-integration'
+        $result.FeedName | Should -Be 'powershellget-integration'
       } finally {
         [Environment]::SetEnvironmentVariable($envName, $null, 'User')
       }
@@ -127,7 +159,7 @@ Describe 'Publish-PSModuleToProGetFeed' {
 
     It 'Throws when neither Bitwarden nor env var provides a key' {
       Remove-Item Function:\Get-BitWardenSecret -ErrorAction SilentlyContinue
-      $envName = 'PROGET_POWERSHELLGET_APIKEY_QA'
+      $envName = 'PROGET_APIKEY_POWERSHELLGET_QA'
       [Environment]::SetEnvironmentVariable($envName, $null, 'User')
 
       { Publish-PSModuleToProGetFeed -NupkgPath $script:fakeNupkg -Tier QA } |
@@ -141,7 +173,7 @@ Describe 'Publish-PSModuleToProGetFeed' {
       try {
         $result = Publish-PSModuleToProGetFeed -NupkgPath $script:fakeNupkg -Tier Sprint -WhatIf
         $result.Published | Should -BeFalse
-        $result.FeedName | Should -Be 'PowershellGet-experimental'
+        $result.FeedName | Should -Be 'powershellget-experimental'
         $result.ResponseSummary | Should -Match 'WhatIf'
         Assert-MockCalled Publish-PSResource -Times 0 -Exactly -Scope It
       } finally {
@@ -165,7 +197,7 @@ Describe 'Publish-PSModuleToProGetFeed' {
 
     It 'Updates the repository when URI differs' {
       function global:Get-BitWardenSecret { param([string]$SecretName) return 'dummy' }
-      Mock Get-PSResourceRepository { [PSCustomObject]@{ Name = 'PowershellGet-development'; Uri = 'https://old.example/' } }
+      Mock Get-PSResourceRepository { [PSCustomObject]@{ Name = 'powershellget-development'; Uri = 'https://old.example/' } }
       try {
         Publish-PSModuleToProGetFeed -NupkgPath $script:fakeNupkg -Tier Alpha | Out-Null
         Assert-MockCalled Set-PSResourceRepository -Times 1 -Exactly -Scope It

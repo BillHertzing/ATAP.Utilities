@@ -5,9 +5,10 @@ for a given 5-Tier tier.
 
 .DESCRIPTION
 Maps a tier name (Sprint/Alpha/Beta/QA/Production) to a PowerShellGet feed
-name, resolves the feed URI (via $global:settings or a User-scope environment
-variable until T-30 Get-ATAPIACConstant lands), resolves the API key via
-Get-BitWardenSecret or a User-scope environment variable, ensures a matching
+name and endpoint from $global:Settings using the ProGet feed collection
+defined by ATAP.Utilities.ConfigRootKeys.PowerShell and host settings,
+resolves the API key via Get-BitWardenSecret or the feed's configured
+ApiKeyName environment variable, ensures a matching
 PSResourceRepository is registered, and invokes Publish-PSResource.
 
 All network and secret operations are mockable. The API key value is never
@@ -19,7 +20,7 @@ Absolute or relative path to the .nupkg file to publish. Must exist.
 
 .PARAMETER Tier
 One of 'Sprint','Alpha','Beta','QA','Production'. Maps to a ProGet feed name
-using the table defined in 5tier Implementation plan.md section 4.1.
+using the canonical five-tier mapping from Explainer 0111.
 
 .PARAMETER AllowTierOverride
 Reserved for a future cross-check between an explicit tier and the tier NBGV
@@ -41,7 +42,7 @@ inspect the publish plan.
 .EXAMPLE
 Publish-PSModuleToProGetFeed -NupkgPath 'C:/out/MyModule.1.2.3.nupkg' -Tier Alpha
 
-Publishes the package to the PowershellGet-development feed.
+Publishes the package to the powershellget-development feed.
 
 .EXAMPLE
 Publish-PSModuleToProGetFeed -NupkgPath 'C:/out/MyModule.1.2.3.nupkg' -Tier Sprint -WhatIf
@@ -51,10 +52,10 @@ Returns the planned publish object without contacting ProGet.
 .NOTES
 AI assisted using Powershell.instructions.md as guidelines
 
-Tier: T1 (Phase 1, task T-19). Depends on T-12 (Get-TierFromNBGVLabel) for the
-tier-to-feed mapping which is inlined here until T-12 is merged, and on T-30
-(Get-ATAPIACConstant) for feed URI resolution which is stubbed by
-Get-PSModuleFeedUri below.
+Feed names and endpoints are resolved from
+$global:Settings[$global:configRootKeys['ProGetFeedCollectionConfigRootKey']].
+This is the current Explainer 0111 path and replaces the older direct
+ATAP.IAC constant lookup.
 #>
 function Get-PSModuleFeedUri {
   [CmdletBinding()]
@@ -70,40 +71,11 @@ function Get-PSModuleFeedUri {
   $fn = 'Get-PSModuleFeedUri'
   $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
 
-  # Map old Sprint/Alpha/Beta/Production tier names to canonical Experimental/Development/.../Stable.
-  # QA maps to QA (unchanged). All others follow the standard tier rename.
-  $canonicalTierMap = @{
-    'Sprint'     = 'Experimental'
-    'Alpha'      = 'Development'
-    'Beta'       = 'Integration'
-    'QA'         = 'QA'
-    'Production' = 'Stable'
+  $feed = Resolve-ProGetFeedFromSettings -FeedType 'powershellget' -Tier $Tier
+  if ($feed.FeedName -ne $FeedName) {
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Ignoring supplied FeedName '$FeedName'; settings resolved tier '$Tier' to '$($feed.FeedName)'"
   }
-  $canonicalTier = if ($canonicalTierMap.ContainsKey($Tier)) { $canonicalTierMap[$Tier] } else { $Tier }
-
-  # 1. Resolve feed URI via Get-ATAPIACConstant (T-31).
-  try {
-    $constantName = "PowerShellGetFeedUrl_$canonicalTier"
-    $uri = Get-ATAPIACConstant -Name $constantName
-    if (-not [string]::IsNullOrWhiteSpace($uri)) {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved feed URI for tier '$Tier' (canonical '$canonicalTier') from Get-ATAPIACConstant '$constantName'"
-      return $uri
-    }
-  } catch {
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Get-ATAPIACConstant lookup failed for tier '$Tier'; falling back to env var. Error: $_"
-  }
-
-  # 2. User-scope environment variable fallback.
-  $envName = "PROGET_POWERSHELLGET_FEED_URI_$($Tier.ToUpperInvariant())"
-  $fromEnv = [Environment]::GetEnvironmentVariable($envName, 'User')
-  if (-not [string]::IsNullOrWhiteSpace($fromEnv)) {
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved feed URI for tier '$Tier' from User env var '$envName'"
-    return $fromEnv
-  }
-
-  $msg = "feed URI for tier '$Tier' is not configured. Set ATAP.IAC constant 'PowerShellGetFeedUrl_$canonicalTier' or User env var '$envName'."
-  Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
-  throw $msg
+  return $feed.EndpointUri
 }
 
 function Publish-PSModuleToProGetFeed {
@@ -139,6 +111,11 @@ function Publish-PSModuleToProGetFeed {
     }
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn with NupkgPath='$NupkgPath' Tier='$Tier'" -Tag 'Trace'
+
+    $helperPath = Join-Path $PSScriptRoot '..\private\Resolve-ProGetFeedFromSettings.ps1'
+    if (-not (Get-Command -Name 'Resolve-ProGetFeedFromSettings' -CommandType Function -ErrorAction SilentlyContinue)) {
+      . $helperPath
+    }
   }
 
   process {
@@ -155,36 +132,13 @@ function Publish-PSModuleToProGetFeed {
     }
     $resolvedNupkg = (Resolve-Path -LiteralPath $NupkgPath).ProviderPath -replace '\\', '/'
 
-    # 2. Map tier -> feed name via Get-ATAPIACConstant (T-31).
-    # Maps old Sprint/Alpha/Beta/Production tier names to canonical Experimental/Development/.../Stable.
-    $canonicalTierMap = @{
-      'Sprint'     = 'Experimental'
-      'Alpha'      = 'Development'
-      'Beta'       = 'Integration'
-      'QA'         = 'QA'
-      'Production' = 'Stable'
-    }
-    $canonicalTier = if ($canonicalTierMap.ContainsKey($Tier)) { $canonicalTierMap[$Tier] } else { $Tier }
-    $constantName = "PowerShellGetFeedName_$canonicalTier"
-    try {
-      $feedName = Get-ATAPIACConstant -Name $constantName
-    } catch {
-      $msg = "Could not resolve PowerShellGet feed name for tier '$Tier' (constant '$constantName'): $_"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
-      throw $msg
-    }
-    if ([string]::IsNullOrWhiteSpace($feedName)) {
-      $msg = "Get-ATAPIACConstant returned empty value for '$constantName' (tier '$Tier')."
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
-      throw $msg
-    }
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved tier '$Tier' (canonical '$canonicalTier') to feed name '$feedName' via Get-ATAPIACConstant"
+    # 2. Map tier -> feed metadata from $global:Settings.
+    $feed = Resolve-ProGetFeedFromSettings -FeedType 'powershellget' -Tier $Tier
+    $feedName = $feed.FeedName
+    $feedUri = $feed.EndpointUri
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved tier '$Tier' to feed '$feedName' at '$feedUri' from global settings"
 
-    # 3. Resolve feed URI via helper.
-    $feedUri = Get-PSModuleFeedUri -FeedName $feedName -Tier $Tier
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved feed URI for '$feedName'"
-
-    # 4. Resolve API key: per-tier Bitwarden preferred, then per-tier User env
+    # 3. Resolve API key: per-tier Bitwarden preferred, then configured User env
     #    var, then admin-key fallback (PROGET_ADMIN_API_KEY).
     #
     # SCOPE CREEP — REMOVE ADMIN-KEY FALLBACK ONCE PER-TIER KEYS EXIST
@@ -214,11 +168,18 @@ function Publish-PSModuleToProGetFeed {
       }
     }
     if ([string]::IsNullOrWhiteSpace([string]$apiKey)) {
-      $envName = "PROGET_POWERSHELLGET_APIKEY_$Tier"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Falling back to User env var '$envName' for API key"
-      $apiKey = [Environment]::GetEnvironmentVariable($envName, 'User')
+      $envName = if (-not [string]::IsNullOrWhiteSpace($feed.ApiKeyName)) {
+        $feed.ApiKeyName
+      } else {
+        "PROGET_POWERSHELLGET_APIKEY_$Tier"
+      }
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Falling back to configured env var '$envName' for API key"
+      $apiKey = [Environment]::GetEnvironmentVariable($envName, 'Process')
+      if ([string]::IsNullOrWhiteSpace([string]$apiKey)) {
+        $apiKey = [Environment]::GetEnvironmentVariable($envName, 'User')
+      }
       if (-not [string]::IsNullOrWhiteSpace([string]$apiKey)) {
-        $apiKeySource = "User env var '$envName'"
+        $apiKeySource = "env var '$envName'"
       }
     }
     if ([string]::IsNullOrWhiteSpace([string]$apiKey)) {
@@ -234,7 +195,7 @@ function Publish-PSModuleToProGetFeed {
       }
     }
     if ([string]::IsNullOrWhiteSpace([string]$apiKey)) {
-      $msg = "Unable to resolve ProGet API key for tier '$Tier'. Expected Get-BitWardenSecret -SecretName 'ProGet_PowerShellGet_${Tier}_ApiKey', User env var 'PROGET_POWERSHELLGET_APIKEY_$Tier', or admin fallback 'PROGET_ADMIN_API_KEY'."
+      $msg = "Unable to resolve ProGet API key for tier '$Tier'. Expected Get-BitWardenSecret -SecretName 'ProGet_PowerShellGet_${Tier}_ApiKey', configured env var '$($feed.ApiKeyName)', or admin fallback 'PROGET_ADMIN_API_KEY'."
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
       throw $msg
     }

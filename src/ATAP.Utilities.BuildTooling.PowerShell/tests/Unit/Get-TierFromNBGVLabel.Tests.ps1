@@ -20,35 +20,35 @@ BeforeAll {
 Describe 'Get-TierFromNBGVLabel' {
 
   Context 'Valid labels — bare form' {
-    It 'Sprint maps to T1 Experimental / PowershellGet-experimental' {
+    It 'Sprint maps to T1 Experimental / powershellget-experimental' {
       $r = Get-TierFromNBGVLabel -PrereleaseLabel 'Sprint'
       $r.TierNumber | Should -Be 1
       $r.TierName   | Should -BeExactly 'Experimental'
-      $r.FeedName   | Should -BeExactly 'PowershellGet-experimental'
+      $r.FeedName   | Should -BeExactly 'powershellget-experimental'
     }
-    It 'Alpha maps to T2 Development / PowershellGet-development' {
+    It 'Alpha maps to T2 Development / powershellget-development' {
       $r = Get-TierFromNBGVLabel -PrereleaseLabel 'Alpha'
       $r.TierNumber | Should -Be 2
       $r.TierName   | Should -BeExactly 'Development'
-      $r.FeedName   | Should -BeExactly 'PowershellGet-development'
+      $r.FeedName   | Should -BeExactly 'powershellget-development'
     }
-    It 'Beta maps to T3 Integration / PowershellGet-integration' {
+    It 'Beta maps to T3 Integration / powershellget-integration' {
       $r = Get-TierFromNBGVLabel -PrereleaseLabel 'Beta'
       $r.TierNumber | Should -Be 3
       $r.TierName   | Should -BeExactly 'Integration'
-      $r.FeedName   | Should -BeExactly 'PowershellGet-integration'
+      $r.FeedName   | Should -BeExactly 'powershellget-integration'
     }
-    It 'QA maps to T4 QA / PowershellGet-qa' {
+    It 'QA maps to T4 QA / powershellget-qa' {
       $r = Get-TierFromNBGVLabel -PrereleaseLabel 'QA'
       $r.TierNumber | Should -Be 4
       $r.TierName   | Should -BeExactly 'QA'
-      $r.FeedName   | Should -BeExactly 'PowershellGet-qa'
+      $r.FeedName   | Should -BeExactly 'powershellget-qa'
     }
-    It 'Empty string maps to T5 Production / PowershellGet-stable' {
+    It 'Empty string maps to T5 Stable / powershellget-stable' {
       $r = Get-TierFromNBGVLabel -PrereleaseLabel ''
       $r.TierNumber | Should -Be 5
-      $r.TierName   | Should -BeExactly 'Production'
-      $r.FeedName   | Should -BeExactly 'PowershellGet-stable'
+      $r.TierName   | Should -BeExactly 'Stable'
+      $r.FeedName   | Should -BeExactly 'powershellget-stable'
     }
   }
 

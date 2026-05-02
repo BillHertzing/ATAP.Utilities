@@ -1,8 +1,13 @@
 #region Get-ATAPIACConstant
 <#
 .SYNOPSIS
-  Bootstrap accessor for ATAP.IAC constant values.
+  Legacy bootstrap accessor for ATAP.IAC constant values.
 .DESCRIPTION
+  This cmdlet is retained for backward compatibility with older build tasks.
+  Current ProGet feed-aware cmdlets resolve feed metadata from
+  `$global:Settings[$global:configRootKeys['ProGetFeedCollectionConfigRootKey']]`
+  through `Resolve-ProGetFeedFromSettings` instead of calling this function.
+
   Returns the value of a named ATAP.IAC constant. The lookup is performed in
   two stages:
 
@@ -32,7 +37,7 @@
   stored in the constants psd1.
 .EXAMPLE
   PS> Get-ATAPIACConstant -Name 'PowerShellGetFeed_Alpha'
-  PowershellGet-development
+  powershellget-development
 .EXAMPLE
   PS> Get-ATAPIACConstant -Name 'PassingCodeCoveragePct_PowerShell'
   70

@@ -24,9 +24,9 @@ function Set-BuildMasterStableVariables {
         PowerShellGetFeedName_QA            / PowerShellGetFeedUrl_QA
         PowerShellGetFeedName_Stable        / PowerShellGetFeedUrl_Stable
 
-    Values are resolved via Get-ATAPIACConstant (falls back to direct
-    Import-PowerShellDataFile of HostConstants.psd1 / FeedConstants.psd1 in the
-    sibling ATAP.IAC repository when the cmdlet is not available).
+    Values are resolved from $global:Settings and $global:configRootKeys. ProGet
+    feed values come from the ProGetFeedCollection populated by the package
+    repository host settings fragment, matching Explainer 0111.
 
     This cmdlet is idempotent: re-running it updates all values to current
     constants, which is safe and useful after a ProGet host or SQL server change.
@@ -54,7 +54,6 @@ function Set-BuildMasterStableVariables {
     Phase 3C — T-31 (7.2-2 BuildMaster stable application variables)
   .LINK
     Set-BuildMasterSprintVariables
-    Get-ATAPIACConstant
   #>
   [CmdletBinding(SupportsShouldProcess = $true)]
   param(
@@ -81,34 +80,19 @@ function Set-BuildMasterStableVariables {
       'Content-Type' = 'text/plain'
     }
 
+    $helperPath = Join-Path $PSScriptRoot '..\private\Resolve-ProGetFeedFromSettings.ps1'
+    if (-not (Get-Command -Name 'Resolve-ProGetFeedFromSettings' -CommandType Function -ErrorAction SilentlyContinue)) {
+      . $helperPath
+    }
+
     # -----------------------------------------------------------------------
-    # Local helper: resolve a constant by name via Get-ATAPIACConstant if
-    # available, otherwise walk up to the sibling ATAP.IAC repo and load
-    # the .psd1 files directly. This mirrors the pattern in Resolve-FeedName.ps1.
+    # Local helper: resolve non-feed settings from $global:Settings. Feed
+    # variables are resolved from ProGetFeedCollection below.
     # -----------------------------------------------------------------------
     function Resolve-Constant {
       param([string]$Name)
 
-      if (Get-Command 'Get-ATAPIACConstant' -ErrorAction SilentlyContinue) {
-        return Get-ATAPIACConstant -Name $Name
-      }
-
-      # Fallback: locate ATAP.IAC sibling repo via git root
-      $gitRoot = (git rev-parse --show-toplevel 2>$null)
-      if ($gitRoot) {
-        $parentDir = Split-Path -Parent $gitRoot
-        $psd1Files = Get-ChildItem -Path $parentDir -Filter '*.psd1' -Recurse -Depth 4 `
-          -ErrorAction SilentlyContinue |
-          Where-Object { $_.FullName -match 'ATAP\.IAC.*[\\/]constants[\\/]' }
-        foreach ($f in $psd1Files) {
-          $data = Import-PowerShellDataFile -Path $f.FullName -ErrorAction SilentlyContinue
-          if ($data -and $data.ContainsKey($Name)) {
-            return $data[$Name]
-          }
-        }
-      }
-
-      throw "Cannot resolve constant '$Name' — Get-ATAPIACConstant not available and ATAP.IAC repo not found under '$parentDir'"
+      return Resolve-BuildToolingSettingValue -Name $Name
     }
   }
 
@@ -136,27 +120,27 @@ function Set-BuildMasterStableVariables {
     }
 
     # -----------------------------------------------------------------------
-    # Resolve the 10 feed name + URL pairs from FeedConstants.psd1
+    # Resolve the 10 feed name + URL pairs from $global:Settings.
+    # BuildMaster variable names remain stable for existing plans, but values
+    # now come from the canonical package-repository settings collection.
     # -----------------------------------------------------------------------
-    $feedConstantNames = @(
-      'NuGetFeedName_Experimental',  'NuGetFeedUrl_Experimental',
-      'NuGetFeedName_Development',   'NuGetFeedUrl_Development',
-      'NuGetFeedName_Integration',   'NuGetFeedUrl_Integration',
-      'NuGetFeedName_QA',            'NuGetFeedUrl_QA',
-      'NuGetFeedName_Stable',        'NuGetFeedUrl_Stable',
-      'PowerShellGetFeedName_Experimental', 'PowerShellGetFeedUrl_Experimental',
-      'PowerShellGetFeedName_Development',  'PowerShellGetFeedUrl_Development',
-      'PowerShellGetFeedName_Integration',  'PowerShellGetFeedUrl_Integration',
-      'PowerShellGetFeedName_QA',           'PowerShellGetFeedUrl_QA',
-      'PowerShellGetFeedName_Stable',       'PowerShellGetFeedUrl_Stable'
-    )
+    $tierNameMap = [ordered]@{
+      Experimental = 'Experimental'
+      Development  = 'Development'
+      Integration  = 'Integration'
+      QA           = 'QA'
+      Stable       = 'Stable'
+    }
 
-    foreach ($constName in $feedConstantNames) {
-      try {
-        $stableVarMap[$constName] = Resolve-Constant -Name $constName
-      } catch {
-        throw "Failed to resolve feed constant '$constName': $($_.Exception.Message)"
-      }
+    foreach ($tierLabel in $tierNameMap.Keys) {
+      $buildMasterTier = $tierNameMap[$tierLabel]
+      $nugetFeed = Resolve-ProGetFeedFromSettings -FeedType 'nuget' -Tier $tierLabel
+      $powerShellFeed = Resolve-ProGetFeedFromSettings -FeedType 'powershellget' -Tier $tierLabel
+
+      $stableVarMap["NuGetFeedName_$buildMasterTier"] = $nugetFeed.FeedName
+      $stableVarMap["NuGetFeedUrl_$buildMasterTier"] = $nugetFeed.EndpointUri
+      $stableVarMap["PowerShellGetFeedName_$buildMasterTier"] = $powerShellFeed.FeedName
+      $stableVarMap["PowerShellGetFeedUrl_$buildMasterTier"] = $powerShellFeed.EndpointUri
     }
 
     # -----------------------------------------------------------------------

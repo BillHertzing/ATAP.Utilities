@@ -39,7 +39,7 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
       @{ Source = 'nuget-integration-push'; Dest = 'nuget-integration' }
       @{ Source = 'nuget-qa-push'; Dest = 'nuget-qa' }
       @{ Source = 'nuget-stable-push'; Dest = 'nuget-stable' }
-      @{ Source = 'powershell-integration-push'; Dest = 'powershell-integration' }
+      @{ Source = 'powershellget-integration-push'; Dest = 'powershellget-integration' }
     )
 
     It "Phase 2: '<Source>' -> '<Dest>' succeeds" -TestCases $cases {
@@ -114,7 +114,7 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
     It 'Throws when source is a pull feed in Phase 2 mode' {
       { Move-ProGetPackageIntraTier `
           -PackageName 'Test.Package' -Version '1.0.0' `
-          -SourceFeed 'nuget-development' -DestinationFeed 'nuget-development' `
+          -SourceFeed 'nuget-development' -DestinationFeed 'nuget-qa' `
           -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       } | Should -Throw -ExpectedMessage '*push feed*'
     }
@@ -125,7 +125,7 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
     It 'Throws when destination is a push feed in Phase 2 mode' {
       { Move-ProGetPackageIntraTier `
           -PackageName 'Test.Package' -Version '1.0.0' `
-          -SourceFeed 'nuget-development-push' -DestinationFeed 'nuget-development-push' `
+          -SourceFeed 'nuget-development-push' -DestinationFeed 'nuget-qa-push' `
           -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       } | Should -Throw -ExpectedMessage '*pull feed*'
     }
@@ -133,10 +133,10 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
 
   Context 'Phase 2 validation: package type prefix must match' {
 
-    It 'Throws when source is nuget and destination is powershell' {
+    It 'Throws when source is nuget and destination is powershellget' {
       { Move-ProGetPackageIntraTier `
           -PackageName 'Test.Package' -Version '1.0.0' `
-          -SourceFeed 'nuget-development-push' -DestinationFeed 'powershell-development' `
+          -SourceFeed 'nuget-development-push' -DestinationFeed 'powershellget-development' `
           -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       } | Should -Throw -ExpectedMessage '*package type*'
     }

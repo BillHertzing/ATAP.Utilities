@@ -54,12 +54,12 @@ $storedInitialDir = Get-Location
 # Shared Powershell History
 # ChatGPT Prompt to explain: are there seperate command histories between pwsh and the powershell extension for VSC?
 ##############################
-# Location where the command history is stored. Place it in a location that is sync'd between machines $global:settings['CloudBasePath']
+# Location where the command history is stored. Place it in a location that is sync'd between machines $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']]
 # ToDo:  use a global config root key and a global settings,
 # ToDo: test for history presence and create if not present (edge case for first use on a new shared location)
 # Number of commands to keep in the commandHistory
-$global:sharedTimestampedHistoryPath = Join-Path $global:settings['CloudBasePath'] 'whertzing' 'PowerShell', 'History', 'SharedTimestampedHistory.txt'
-$global:sharedPlainHistoryPath = Join-Path $global:settings['CloudBasePath'] 'whertzing' 'PowerShell', 'History', 'SharedPlainHistory.txt'
+$global:sharedTimestampedHistoryPath = Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] 'whertzing' 'PowerShell', 'History', 'SharedTimestampedHistory.txt'
+$global:sharedPlainHistoryPath = Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] 'whertzing' 'PowerShell', 'History', 'SharedPlainHistory.txt'
 # Commands to ignore (those issued by PowershellPro when loading into VSC)
 $global:CommandBlockPatterns = @(
   'Start-PoshToolsServer',
@@ -162,7 +162,7 @@ chcp 65001 | Out-Null
 # $env:PW_HUMANIZER_DEBUG = 'true'
 
 # Create an alias for Add-ScopeCreepIdea.ps1
-Set-Alias idea (Join-Path $global:settings['CloudBasePath'] $env:username 'GitHub', '_Planning', 'Powershell', 'Public', 'Add-ScopeCreepIdea.ps1')
+Set-Alias idea (Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $env:username 'GitHub', '_Planning', 'Powershell', 'Public', 'Add-ScopeCreepIdea.ps1')
 
 
 # The following command must be run as an administrator on the machine, to install for 'AllUsers'

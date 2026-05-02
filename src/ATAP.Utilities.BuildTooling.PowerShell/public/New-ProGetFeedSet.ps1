@@ -110,7 +110,7 @@ function New-ProGetFeedSet {
       $feedKey = $feedKeys[$feedKeysIndex]
       $feed = $global:settings[$global:ConfigRootKeys['ProGetFeedCollectionConfigRootKey']][$feedKey]
       $feedApiKeyName = $feed.ApiKeyName
-      $proGetFeedType = $feed.FeedType  # already in ProGet API format: 'nuget', 'powershell', etc.
+      $proGetFeedType = Convert-ProGetFeedType -FeedType $feed.FeedType
 
       # If this feed has connectors, create them before the feed
       if ($feed.Connectors) {

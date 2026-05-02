@@ -174,7 +174,9 @@ function Move-ProGetPackageIntraTier {
 
         # Validate that source/destination follow expected Phase 2 push/pull feed pair naming.
         # Also support legacy tier aliases (testing -> qa, production -> stable).
-        $knownPrefixes = @('nuget', 'powershell', 'chocolatey')
+        # 'powershell' is accepted as a deprecated alias. Canonical ProGet
+        # PowerShell feed names use the powershellget-* prefix.
+        $knownPrefixes = @('nuget', 'powershellget', 'powershell', 'chocolatey')
         $tierOrder = @('experimental', 'development', 'integration', 'qa', 'stable')
         $tierAliases = @{
             testing    = 'qa'
@@ -185,6 +187,10 @@ function Move-ProGetPackageIntraTier {
 
         if ($SourceFeed -match $feedPattern) {
             $sourcePrefix = $matches['prefix'].ToLowerInvariant()
+            if ($sourcePrefix -eq 'powershell') {
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Normalizing deprecated source prefix 'powershell' to 'powershellget'"
+                $sourcePrefix = 'powershellget'
+            }
             $sourceTier = $matches['tier'].ToLowerInvariant()
             $sourceIsPush = -not [string]::IsNullOrWhiteSpace($matches['push'])
             if ($tierAliases.ContainsKey($sourceTier)) {
@@ -192,13 +198,17 @@ function Move-ProGetPackageIntraTier {
                 $sourceTier = $tierAliases[$sourceTier]
             }
         } else {
-            $errorMessage = "SourceFeed '$SourceFeed' does not match expected format '{nuget|powershell|chocolatey}-{tier}[-push]'"
+            $errorMessage = "SourceFeed '$SourceFeed' does not match expected format '{nuget|powershellget|chocolatey}-{tier}[-push]'"
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
             throw $errorMessage
         }
 
         if ($DestinationFeed -match $feedPattern) {
             $destinationPrefix = $matches['prefix'].ToLowerInvariant()
+            if ($destinationPrefix -eq 'powershell') {
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Normalizing deprecated destination prefix 'powershell' to 'powershellget'"
+                $destinationPrefix = 'powershellget'
+            }
             $destinationTier = $matches['tier'].ToLowerInvariant()
             $destinationIsPush = -not [string]::IsNullOrWhiteSpace($matches['push'])
             if ($tierAliases.ContainsKey($destinationTier)) {
@@ -206,7 +216,7 @@ function Move-ProGetPackageIntraTier {
                 $destinationTier = $tierAliases[$destinationTier]
             }
         } else {
-            $errorMessage = "DestinationFeed '$DestinationFeed' does not match expected format '{nuget|powershell|chocolatey}-{tier}[-push]'"
+            $errorMessage = "DestinationFeed '$DestinationFeed' does not match expected format '{nuget|powershellget|chocolatey}-{tier}[-push]'"
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
             throw $errorMessage
         }

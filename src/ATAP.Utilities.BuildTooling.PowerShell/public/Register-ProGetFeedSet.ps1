@@ -4,7 +4,7 @@
 
 .DESCRIPTION
   Iterates the ProGetFeedCollection (from $global:settings) and registers every feed whose
-  FeedType is 'powershell' as a trusted PSResource repository using Register-PSResourceRepository.
+  FeedType is 'powershellget' as a trusted PSResource repository using Register-PSResourceRepository.
   This is a one-time, per-workstation operation. Sprint start / end do NOT call this cmdlet —
   the five permanent powershellget-* feeds (experimental, development, integration, qa, stable)
   never change between sprints.
@@ -48,9 +48,9 @@ function Register-ProGetFeedSet {
       $feedKey = $feedKeys[$i]
       $feed = $feedCollection[$feedKey]
 
-      # Only register powershellget-* feeds (FeedType 'powershell')
-      if ($feed.FeedType -ne 'powershell') {
-        Write-PSFMessage -Level Debug -Message "Skipping feed '$($feed.FeedName)' (FeedType '$($feed.FeedType)' is not 'powershell')" -Tag 'Register-ProGetFeedSet', 'Trace'
+      # Only register powershellget-* feeds.
+      if ($feed.FeedType -ne 'powershellget') {
+        Write-PSFMessage -Level Debug -Message "Skipping feed '$($feed.FeedName)' (FeedType '$($feed.FeedType)' is not 'powershellget')" -Tag 'Register-ProGetFeedSet', 'Trace'
         continue
       }
 

@@ -175,15 +175,17 @@ $PSDefaultParameterValues = @{
 # encoding : New-Object System.Text.UTF8Encoding($false) # UTF8 encoded with or without a ByteOrdermark(BOM) which results in System.Text.UTF8Encoding
 # encoding : [System.Text.Encoding]::UTF8 which results in System.Text.UTF8Encoding+UTF8EncodingSealed
 
-# Dot source the list of configuration keys
-# ToDo: active development; currently a package, eventually a DB call?
+# Load the list of configuration keys into $global:ConfigRootKeys
+# May come from the Release package, from the stable worktree, or from a sprint worktree
+# Until the Powershell package is released and installed, get it from the stable worktree
 # Load the helper script
+$repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'  # Stable worktree
+$projectpathRel = 'src\ATAP.Utilities.ConfigRootKeys.Powershell'
+$cmdletPathRel = 'public\Set-GlobalConfigRootKeys.ps1'
 try {
+  # This will auto-load and return true if the Package is installed
   if (-not (Get-Command -Name 'Set-GlobalConfigRootKeys' -CommandType Function -ErrorAction SilentlyContinue)) {
-    $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
-    $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items'
-    $projectpathRel = 'src\ATAP.Utilities.ConfigRootKeys.Powershell'
-    $cmdletPathRel = 'public\Set-GlobalConfigRootKeys.ps1'
+    # Otherwise get it from the stable worktree
     . $(Join-Path $repobasepath $projectpathRel $cmdletPathRel)
   }
 } catch {
@@ -191,42 +193,25 @@ try {
   Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
   throw
 }
+# If we want to use a sprint worktree as the source, replace it here. One-liner (two commands) to switch between the stable worktree and the sprint worktree
+$repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items'; . $(Join-Path $repobasepath $projectpathRel $cmdletPathRel)
 Set-GlobalConfigRootKeys
 
 # [Ansible: Understanding variable precedence](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#understanding-variable-precedence)
 
-# Until the organizations 'infrastructure-as-code (IAC)' is stored in a vault, import the HostSettings from the organizations current IAC directory
-# during the transition to packaging, try first the computers local machine directory
-if (Test-Path -Path "$env:ProgramFiles\Powershell\Modules\ATAP.Utilities.Powershell\Resources\HostSettings.ps1") {
-  . "$env:ProgramFiles\Powershell\Modules\ATAP.Utilities.Powershell\Resources\HostSettings.ps1"
-} elseif (Test-Path -Path "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\ATAP.IAC\Windows\HostSettings.ps1") {
-  # . "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\ATAP.IAC\Windows\HostSettings.ps1"
-  . "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\ATAP.IAC\Windows\HostSettings.ps1"
-} else {
-  Write-PSFMessage -Level Debug -Message ('HostSettings.ps1 not found')
-}
-# . $(Join-Path -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.IAC', 'Windows', 'HostSettings.ps1'))
-
-# ToDo: get packaging working
-# During the transition to packaging, see if the function exists. If it does not, then dot-source the development copy from Dropbox
-if (!(Get-Command Get-ClonedAndModifiedHashtable -ErrorAction silentlycontinue)) {
-  # command not found, must be on a computer that does not have the ATAP.Utilities.Powershell module installed
-  . $(Join-Path -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-ClonedAndModifiedHashtable.ps1'))
+### This starts the area where we load the settings for this host
+# Until ATAP.Utilities.Powershell is released as an installed module, dot-source
+# Get-HostSettings.ps1 from the active worktree. The cmdlet itself locates the
+# IAC HostSettings.ps1 (sprint worktree, stable worktree, or installed module
+# Resources) and loads any helpers it needs.
+$repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items'
+$getHostSettingsPath = Join-Path $repobasepath 'src\ATAP.Utilities.Powershell\public\Get-HostSettings.ps1'
+if (-not (Get-Command -Name 'Get-HostSettings' -CommandType Function -ErrorAction SilentlyContinue)) {
+  . $getHostSettingsPath
 }
 
-# Define a global settings hash based on the hostname
 $global:settings = Get-HostSettings $hostName
-
-# temporary - Use this structure for passwords that will eventually be stored in a vault
-# These are throwaway passwords, just for testing
-# $global:VaultData = @{
-#   'BuildSetsAdminProductionCredentialsKeyValue'   = 'ChangeMe_!234'
-#   'BuildSetsAdminTestingCredentialsKeyValue'      = 'ChangeMe_!234'
-#   'BuildSetsAdminDevelopmentCredentialsKeyValue'  = 'ChangeMe_!234'
-#   'BuildSetsAdminExperimentalCredentialsKeyValue' = 'ChangeMe_!234'
-#   'PCMSCAdminExperimentalCredentialsKeyValue'     = 'ChangeMe_!234'
-#   'PCMSC_CEPasswordVaultKey'                      = 'ChangeMe!'
-# }
+### This ends the area where we load the settings for this host
 
 
 # 'Group Vars' 'Role Vars' 'Host Vars'
@@ -341,6 +326,12 @@ function Get-CredentialFile {
 }
 
 Write-PSFMessage -Level Debug -Message ('Ending AllUsersAllHostsV7CoreProfile.ps1')
+
+# PSFramework starts a background logging runspace; stop it so direct profile
+# invocations do not keep pwsh alive after the profile body has finished.
+if (Test-Path -LiteralPath 'Function:\Stop-PSFRunspace') {
+  Stop-PSFRunspace -Name 'PSFramework.logging' -ErrorAction SilentlyContinue
+}
 
 # Set DebugPreference to Continue  to see the $global:settings and Environment variables at the completion of this profile
 # Print the $global:settings if Debug

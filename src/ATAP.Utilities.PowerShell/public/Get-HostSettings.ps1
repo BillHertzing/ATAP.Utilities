@@ -82,28 +82,6 @@ function Get-HostSettings {
       }
     }
 
-    function Import-LocalPublicHelper {
-      param(
-        [Parameter(Mandatory = $true)]
-        [string] $Name
-      )
-
-      if (Get-Command -Name $Name -CommandType Function -ErrorAction SilentlyContinue) {
-        return
-      }
-
-      $helperPath = Join-Path $PSScriptRoot "$Name.ps1"
-      if (-not (Test-Path -LiteralPath $helperPath -PathType Leaf)) {
-        throw "Required helper '$Name' was not found at '$helperPath'."
-      }
-
-      Write-HostSettingsMessage -Level Debug -Message "Dot-sourcing helper '$helperPath'"
-      . $helperPath
-
-      if (-not (Get-Command -Name $Name -CommandType Function -ErrorAction SilentlyContinue)) {
-        throw "Dot-sourcing '$helperPath' did not define function '$Name'."
-      }
-    }
 
     Write-HostSettingsMessage -Level Debug -Message "Entering $fn for hostName '$hostName'"
 
@@ -114,8 +92,30 @@ function Get-HostSettings {
       Write-HostSettingsMessage -Level Error -Message $errorMessage
       throw $errorMessage
     }
+    # Load the helpers
+    # Until the Powershell package is released and installed, get it from the stable worktree
+    # Load the helper script
+    $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'  # Stable worktree
+    # May come from the Release package, from the stable worktree, or from a sprint worktree
+    $projectpathRel = 'src\ATAP.Utilities.Powershell'
+    $cmdletBaseName ='Get-ClonedAndModifiedHashtable'
+    $cmdletName =  $cmdletBaseName+'.ps1'
+    $cmdletPathRel = Join-PATH 'public' $cmdletName
+    try {
+      # This will auto-load and return true if the Package is installed
+       # This script will go into a loop and keep consuming memory unless the next 4 lines are commente dout. in fact, just $(Get-Command -Name $cmdletBaseName) will hang the script. Needs further investigation
+       #if (-not (Get-Command -Name $cmdletBaseName -CommandType Function -ErrorAction SilentlyContinue)) {
+        # # Otherwise get it from the stable worktree
+        # . $(Join-Path $repobasepath $projectpathRel $cmdletPathRel)
+       #}
+    } catch {
+      $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      throw
+    }
+    # If we want to use a sprint worktree as the source, replace it here. One-liner (two commands) to switch between the stable worktree and the sprint worktree
+    $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items'; . $(Join-Path $repobasepath $projectpathRel $cmdletPathRel)
 
-    Import-LocalPublicHelper -Name 'Get-ClonedAndModifiedHashtable'
     $getClonedAndModifiedHashtablePath = Join-Path $PSScriptRoot 'Get-ClonedAndModifiedHashtable.ps1'
 
     $candidatePaths = [System.Collections.Generic.List[string]]::new()

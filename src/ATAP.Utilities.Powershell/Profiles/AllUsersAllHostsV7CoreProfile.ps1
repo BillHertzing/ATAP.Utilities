@@ -175,17 +175,19 @@ $PSDefaultParameterValues = @{
 # encoding : New-Object System.Text.UTF8Encoding($false) # UTF8 encoded with or without a ByteOrdermark(BOM) which results in System.Text.UTF8Encoding
 # encoding : [System.Text.Encoding]::UTF8 which results in System.Text.UTF8Encoding+UTF8EncodingSealed
 
+# Decide if this machine profile will use the stable branch or sprint branch for its child functions
+$repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'  # Stable worktree StartSprrintAgent and EndSprintAgent populates these
+$repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items'; # sprint worktree
 # Load the list of configuration keys into $global:ConfigRootKeys
 # May come from the Release package, from the stable worktree, or from a sprint worktree
 # Until the Powershell package is released and installed, get it from the stable worktree
 # Load the helper script
-$repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'  # Stable worktree
 $projectpathRel = 'src\ATAP.Utilities.ConfigRootKeys.Powershell'
 $cmdletPathRel = 'public\Set-GlobalConfigRootKeys.ps1'
 try {
   # This will auto-load and return true if the Package is installed
   if (-not (Get-Command -Name 'Set-GlobalConfigRootKeys' -CommandType Function -ErrorAction SilentlyContinue)) {
-    # Otherwise get it from the stable worktree
+    # Otherwise get it from either the stable worktree or the sprint worktree
     . $(Join-Path $repobasepath $projectpathRel $cmdletPathRel)
   }
 } catch {
@@ -193,9 +195,6 @@ try {
   Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
   throw
 }
-# If we want to use a sprint worktree as the source, replace it here. One-liner (two commands) to switch between the stable worktree and the sprint worktree
-$repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items'; . $(Join-Path $repobasepath $projectpathRel $cmdletPathRel)
-Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $repobasepath
 Set-GlobalConfigRootKeys
 
 # [Ansible: Understanding variable precedence](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#understanding-variable-precedence)
@@ -205,14 +204,12 @@ Set-GlobalConfigRootKeys
 # Get-HostSettings.ps1 from the active worktree. The cmdlet itself locates the
 # IAC HostSettings.ps1 (sprint worktree, stable worktree, or installed module
 # Resources) and loads any helpers it needs.
-$repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items'
 $getHostSettingsPath = Join-Path $repobasepath 'src\ATAP.Utilities.Powershell\public\Get-HostSettings.ps1'
 if (-not (Get-Command -Name 'Get-HostSettings' -CommandType Function -ErrorAction SilentlyContinue)) {
   . $getHostSettingsPath
 }
 
-$global:settings = Get-HostSettings $hostName
-### This ends the area where we load the settings for this host
+$global:settings = Get-HostSettings  -hostName $hostName -IACBasePath $repobasepath
 
 
 # 'Group Vars' 'Role Vars' 'Host Vars'

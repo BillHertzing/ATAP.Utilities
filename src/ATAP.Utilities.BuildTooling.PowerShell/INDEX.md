@@ -6,6 +6,28 @@ maintenance utilities.
 
 ---
 
+## ProGet Feed Settings Model
+
+ProGet feed metadata is resolved from `$global:Settings`, not from direct ATAP.IAC
+PSD1 reads. The canonical collection is:
+
+```powershell
+$global:Settings[$global:configRootKeys['ProGetFeedCollectionConfigRootKey']]
+```
+
+Each feed entry contains the lowercase feed name, feed type, tier, endpoint URI,
+and API-key environment variable name. The permanent five-tier PowerShellGet
+feeds are `powershellget-experimental`, `powershellget-development`,
+`powershellget-integration`, `powershellget-qa`, and `powershellget-stable`.
+This matches the Explainer 0111 consumer-side visibility model: restore and
+dependency validation use same-tier-or-more-stable feeds; publish writes to the
+target tier feed.
+
+`Get-ATAPIACConstant` remains present as a legacy compatibility helper, but new
+BuildTooling feed cmdlets should use `Resolve-ProGetFeedFromSettings`.
+
+---
+
 ## Diagrams
 
 ### Private-to-Public Dependency Map
@@ -16,12 +38,11 @@ maintenance utilities.
 >
 > - `Build-ProGetFeedEndpointURL` ← used by ProGet feed cmdlets
 > - `Convert-ProGetFeedType` ← used by feed creation/listing cmdlets
-> - `ConvertTo-ProGetFeedNameAlternateForm` ← used by feed naming cmdlets and New-SprintProGetFeeds
-> - `New-HostSettingsForPackageRepositoryFeeds` ← used by Register-ProGetFeedSet
+> - `Resolve-ProGetFeedFromSettings` ← used by feed publish, registration, and BuildMaster variable cmdlets
+> - `ConvertTo-ProGetFeedNameAlternateForm` ← legacy feed naming utility
 > - `New-SprintBitwardenConnectionStrings` ← used by New-SprintStage2
 > - `New-SprintBuildMasterBuilds` ← used by New-SprintStage2
 > - `New-SprintDatabaseInstances` ← used by New-SprintStage2
-> - `New-SprintProGetFeeds` ← used by New-SprintStage2
 
 ---
 
@@ -65,10 +86,11 @@ maintenance utilities.
 | [Get-NuSpecFromManifest.ps1](public/Get-NuSpecFromManifest.ps1)                                           | Generates a NuGet `.nuspec` XML file from a PowerShell module manifest (`.psd1`).                               |
 | [Get-ProjectsFromSLN.ps1](public/Get-ProjectsFromSLN.ps1)                                                 | Parses a Visual Studio `.sln` file and returns the list of included project paths.                              |
 | [Get-PSModuleVersionFromNBGV.ps1](public/Get-PSModuleVersionFromNBGV.ps1)                                 | Reads the module version from Nerdbank.GitVersioning (`nbgv`) output.                                           |
+| [Get-ATAPIACConstant.ps1](public/Get-ATAPIACConstant.ps1)                                                   | Legacy compatibility helper for old ATAP.IAC constant lookups. Feed-aware cmdlets now use `$global:Settings`.   |
 | [Get-RefactoringCandidates.ps1](public/Get-RefactoringCandidates.ps1)                                     | Analyzes folder structure to identify groups of related folders that should be nested under a parent container. |
 | [Get-RepositoryRoot.ps1](public/Get-RepositoryRoot.ps1)                                                   | Returns the root path of the current git repository.                                                            |
 | [Get-SLNParts.ps1](public/Get-SLNParts.ps1)                                                               | Parses a `.sln` file into structured objects (projects, solution folders, configurations).                      |
-| [Get-TierFromNBGVLabel.ps1](public/Get-TierFromNBGVLabel.ps1)                                             | Extracts the tier identifier from an NBGV pre-release label (e.g., `alpha`, `beta`, `stable`).                  |
+| [Get-TierFromNBGVLabel.ps1](public/Get-TierFromNBGVLabel.ps1)                                             | Extracts the tier identifier and canonical lowercase `powershellget-*` feed from an NBGV pre-release label.     |
 | [Initialize-DownstreamSprintFromSharedVSCode.ps1](public/Initialize-DownstreamSprintFromSharedVSCode.ps1) | Initializes a downstream repo's sprint worktree by copying SharedVSCode configuration references.               |
 | [Initialize-ProGetSqlServiceLogin](public/Initialize-ProGetSqlServiceLogin.ps1)                           | Autoloaded function that creates the SQL Server login and database user for the ProGet Windows service account. |
 | [Invoke-BuildToolingPesterDebug.ps1](public/Invoke-BuildToolingPesterDebug.ps1)                           | Runs Pester tests for this module with verbose debug output for troubleshooting.                                |
@@ -86,10 +108,10 @@ maintenance utilities.
 | [Merge-PesterConfiguration.ps1](public/Merge-PesterConfiguration.ps1)                                     | Merges two `PesterConfiguration` objects, with the second overriding values in the first.                       |
 | [Move-ProGetPackageInterTier](public/Move-ProGetPackageInterTier.ps1)                                     | Autoloaded function that promotes a package from one tier's pull feed to the next higher tier's feed.           |
 | [Move-ProGetPackageIntraTier](public/Move-ProGetPackageIntraTier.ps1)                                     | Autoloaded function that moves a package from a push feed to its pull feed within the same tier.                |
-| [New-AssemblyInfoFiles.ps1](public/New-AssemblyInfoFiles.ps1)                                             | Generates `AssemblyInfo.cs` files for C# projects based on module/version metadata.                             |
 | [New-DocFilesIfNotPresent.ps1](public/New-DocFilesIfNotPresent.ps1)                                       | Creates stub documentation files (`.md`) for a module if they don't already exist.                              |
 | [New-DocFolderIfNotPresent.ps1](public/New-DocFolderIfNotPresent.ps1)                                     | Creates the documentation folder structure for a module if it doesn't already exist.                            |
 | [New-GitHubIssue.ps1](public/New-GitHubIssue.ps1)                                                         | Creates a new GitHub issue in a specified repository using the GitHub CLI or REST API.                          |
+| [New-HostSettingsForPackageRepositoryFeeds.ps1](public/New-HostSettingsForPackageRepositoryFeeds.ps1)     | Exports configured permanent ProGet feed metadata from `$global:Settings` to a compatibility settings file.     |
 | [New-OverviewSprintWorkspace.ps1](public/New-OverviewSprintWorkspace.ps1)                                           | Creates a sprint-specific Overview code-workspace file from the stable Overview workspace.                     |
 | [New-MockTestFileStructure.ps1](public/New-MockTestFileStructure.ps1)                                     | Creates a mock directory and file structure for use in Pester tests that require file system fixtures.          |
 | [New-PesterBasicUnitTestTemplate.ps1](public/New-PesterBasicUnitTestTemplate.ps1)                         | Generates a basic Pester unit test file template for a given function.                                          |
@@ -101,14 +123,14 @@ maintenance utilities.
 | [New-PesterTestFile.ps1](public/New-PesterTestFile.ps1)                                                   | Writes a complete Pester test file to disk from a `PesterFileModel`.                                            |
 | [New-ProGetApiKey.ps1](public/New-ProGetApiKey.ps1)                                                       | Creates a new API key in ProGet with specified permissions via the management API.                              |
 | [New-ProGetConnector.ps1](public/New-ProGetConnector.ps1)                                                 | Creates a new connector in ProGet pointing to an upstream package source.                                       |
-| [New-ProGetFeedSet.ps1](public/New-ProGetFeedSet.ps1)                                                     | Creates a complete set of ProGet feeds for a given tier (integration, testing, stable).                         |
+| [New-ProGetFeedSet.ps1](public/New-ProGetFeedSet.ps1)                                                     | Creates the configured permanent ProGet feed set from `$global:Settings`.                                       |
 | [New-SprintStage1.ps1](public/New-SprintStage1.ps1)                                                       | Stage 1 of sprint bootstrap: creates SharedVSCode and \_Planning branches and workTrees.                        |
 | [New-SprintStage2.ps1](public/New-SprintStage2.ps1)                                                       | Stage 2 of sprint bootstrap: creates downstream repo branches/workTrees, ProGet feeds, and BuildMaster builds.  |
 | [New-WorktreeWithJunctions.ps1](public/New-WorktreeWithJunctions.ps1)                                     | Creates a new git worktree for a branch and sets up required NTFS junctions within it.                          |
-| [Publish-PSModuleToProGetFeed.ps1](public/Publish-PSModuleToProGetFeed.ps1)                               | Publishes a packaged PowerShell module to a specified ProGet feed.                                              |
+| [Publish-PSModuleToProGetFeed.ps1](public/Publish-PSModuleToProGetFeed.ps1)                               | Publishes a packaged PowerShell module to the tier feed resolved from `$global:Settings`.                       |
 | [Publish-PSPackage.ps1](public/Publish-PSPackage.ps1)                                                     | Publishes a `.nupkg` package to a ProGet feed using NuGet or PowerShellGet.                                     |
 | [Read-SourceAndCreateRules.ps1](public/Read-SourceAndCreateRules.ps1)                                     | Parses source code files and creates RRSBS Rules entries by extracting metadata from code and comments.         |
-| [Register-ProGetFeedSet.ps1](public/Register-ProGetFeedSet.ps1)                                           | Registers all feeds in a ProGet feed set as PowerShell package sources in `$global:settings`.                   |
+| [Register-ProGetFeedSet.ps1](public/Register-ProGetFeedSet.ps1)                                           | Registers configured `powershellget-*` feeds as trusted PSResource repositories from `$global:Settings`.        |
 | [Remove-ObjAndBinSubDirectories.ps1](public/Remove-ObjAndBinSubDirectories.ps1)                           | Recursively deletes all `obj/` and `bin/` subdirectories under a given path.                                    |
 | [Remove-ProGetApiKeys.ps1](public/Remove-ProGetApiKeys.ps1)                                               | Deletes one or more API keys from ProGet via the management API.                                                |
 | [Remove-ProGetFeeds.ps1](public/Remove-ProGetFeeds.ps1)                                                   | Deletes one or more feeds from ProGet via the management API.                                                   |
@@ -116,6 +138,7 @@ maintenance utilities.
 | [Rename-ProGetFeed.ps1](public/Rename-ProGetFeed.ps1)                                                     | Renames an existing ProGet feed using the management API.                                                       |
 | [Reset-DownstreamToSharedVSCodeMain.ps1](public/Reset-DownstreamToSharedVSCodeMain.ps1)                   | Resets all downstream repository workTrees to track the SharedVSCode `main` branch.                             |
 | [Resolve-PSModuleMetadata.ps1](public/Resolve-PSModuleMetadata.ps1)                                       | Resolves and returns a structured metadata object for a PowerShell module from its manifest.                    |
+| [Set-BuildMasterStableVariables.ps1](public/Set-BuildMasterStableVariables.ps1)                           | Writes stable BuildMaster variables using feed values resolved from `$global:Settings`.                         |
 | [Set-DownstreamSharedVSCodeContext.ps1](public/Set-DownstreamSharedVSCodeContext.ps1)                     | Configures a downstream repository worktree to reference the correct SharedVSCode branch context.               |
 | [Set-WorktreeJunctions.ps1](public/Set-WorktreeJunctions.ps1)                                             | Creates or repairs all required NTFS junctions (e.g., `.claude`) in a worktree.                                 |
 | [Start-DebugPowerShell.ps1](public/Start-DebugPowerShell.ps1)                                             | Launches an interactive PowerShell session with the module dot-sourced for manual debugging.                    |
@@ -137,11 +160,11 @@ These are internal helpers not exported from the module.
 | [Build-ProGetFeedEndpointURL.ps1](private/Build-ProGetFeedEndpointURL.ps1)                             | Constructs the full endpoint URL for a ProGet feed from scheme, host, port, and feed name components.       |
 | [Convert-ProgetFeedType.ps1](private/Convert-ProgetFeedType.ps1)                                       | Maps ATAP feed type strings to the ProGet API's feed type identifiers (e.g., `nuget`, `powershell`).        |
 | [ConvertTo-ProGetFeedNameAlternateForm.ps1](private/ConvertTo-ProGetFeedNameAlternateForm.ps1)         | Converts feed name components (tier, type, direction) into the canonical ProGet feed name string.           |
-| [New-HostSettingsForPackageRepositoryFeeds.ps1](private/New-HostSettingsForPackageRepositoryFeeds.ps1) | Generates `$global:settings` entries for all ProGet feed endpoints for a given sprint.                      |
+| [Resolve-ProGetFeedFromSettings.ps1](private/Resolve-ProGetFeedFromSettings.ps1)                       | Resolves feed metadata, endpoint URIs, API-key names, and base URL values from `$global:Settings`.          |
+| [New-HostSettingsForPackageRepositoryFeeds.ps1](private/New-HostSettingsForPackageRepositoryFeeds.ps1) | Legacy generator for package repository host settings fragments.                                           |
 | [New-SprintBitwardenConnectionStrings.ps1](private/New-SprintBitwardenConnectionStrings.ps1)           | Creates Bitwarden secure-note items containing SQL Server connection strings for sprint database instances. |
 | [New-SprintBuildMasterBuilds.ps1](private/New-SprintBuildMasterBuilds.ps1)                             | (Draft) Creates BuildMaster build configurations for sprint environments via the BuildMaster API.           |
 | [New-SprintDatabaseInstances.ps1](private/New-SprintDatabaseInstances.ps1)                             | Creates SQL Server database instances for a sprint's Testing, Integration, and Development environments.    |
-| [New-SprintProGetFeeds.ps1](private/New-SprintProGetFeeds.ps1)                                         | Creates all ProGet NuGet and PowerShellGet feeds for a sprint's tier environments.                          |
 
 ---
 

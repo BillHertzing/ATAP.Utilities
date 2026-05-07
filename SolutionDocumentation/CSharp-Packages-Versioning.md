@@ -8,6 +8,16 @@ maintainers modifying the version toolchain.
 `Building.md`, `_Planning/Explainers/0013-BuildTooling-CSharp-MSBuild-interaction.md`,
 and `_Planning/Explainers/0109-nbgv-version-label-promotion.md`.
 
+> **Strategy update (sprint-0007 — Immutable Build).** A package's version
+> is computed **once** at the moment of build (Experimental tier) and stays
+> the same as the package promotes through the five feeds. Promotion does
+> not bump `{height}`, does not re-evaluate `version.json`, and does not
+> re-stamp any `Assembly*Version` attribute. The same `.nupkg` (with the
+> same SemVer string) lives in all five feeds simultaneously while it is
+> being promoted upward. The prerelease label declares the **intended**
+> tier; the actual tier is which feed the artifact currently lives in.
+> See [Immutable-Build-Strategy.md §6](Immutable-Build-Strategy.md#6-versioning-no-special-case-for-promotion).
+
 **Not in this doc:**
 
 - Build-graph mechanics, MSBuild file hierarchy, the `GetVersion` / `UpdateVersion` /
@@ -222,6 +232,18 @@ changed `version.json` itself or reaches the root. In practice:
 ---
 
 ## 5. Label Promotion Procedure
+
+> **Sprint-7 note (immutable build).** "Label promotion" in the sections
+> below describes the **historical** workflow where edits to `version.json`
+> were made on every branch transition and a new build was produced at each
+> tier. Under the immutable-build strategy, the label is set **once per
+> intended-tier release** in the source branch and the resulting `.nupkg`
+> moves through the feeds via `Promote-ProGetPackage`. Editing
+> `version.json` from `Sprint` to `Alpha` and rebuilding produces a *new*
+> package with a new version number — not a re-stamped one. This procedure
+> is still useful for the developer-driven case ("I'm ready to publish a
+> Sprint-labeled candidate as the Alpha-labeled candidate") but it is not
+> the per-tier-promotion mechanism. See [Immutable-Build-Strategy.md §6](Immutable-Build-Strategy.md#6-versioning-no-special-case-for-promotion).
 
 The same procedure applies at every tier transition. The example below is T1 → T2.
 Substitute labels for other transitions per the table in §3.

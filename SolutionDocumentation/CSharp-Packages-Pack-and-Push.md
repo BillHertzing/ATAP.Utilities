@@ -1,13 +1,30 @@
 # C# Packages — Pack and Push
 
 **Scope:** Producing `.nupkg` / `.snupkg` files from `ATAP.Utilities.*` and
-`AceCommander.*` C# projects and pushing them to the correct ProGet feed for a
-given pipeline tier.
+`AceCommander.*` C# projects and pushing them to the correct ProGet feed.
 **Audience:** Developers cutting packages locally; maintainers of the
 `Publish-ATAPUtilities.ps1` helper; anyone troubleshooting a failed push.
 **Status:** Authoritative. Consolidates pack/push content from
 `BuildMaster-ProGet-CSharp-Package-Pipeline.md`, `Building.md`, and
 `src/ATAP.Utilities.BuildTooling.PowerShell/public/Publish-ATAPUtilities.ps1`.
+
+> **Strategy update (sprint-0007 — Immutable Build).** A package is packed
+> and pushed **exactly once**, into the Experimental feed (`nuget-experimental`).
+> Movement into the Development, Integration, QA, and Production feeds is by
+> **promotion**, not by re-pack/re-push. This doc therefore documents:
+>
+> - The pack and push commands as they run **at Experimental** (still the
+>   authoritative reference for the commands themselves).
+> - The single-source-of-truth cmdlet `Publish-NuGetPackageToProGet` that
+>   wraps `dotnet nuget push` for use both in local dev and in the
+>   Experimental BuildMaster stage.
+> - The promotion mechanism (`Promote-ProGetPackage`) used at every stage
+>   above Experimental.
+>
+> See [Immutable-Build-Strategy.md §5](Immutable-Build-Strategy.md#5-what-promotion-is-and-is-not)
+> for what promotion is and is not. References below to "the push at tier T"
+> for T > Experimental are legacy and should be read as "the promotion at
+> tier T."
 
 **Not in this doc:**
 
@@ -233,13 +250,20 @@ easier to debug and does not require editing the `$libraries` list.
 
 Single ProGet instance at `http://localhost:50000`. Five feeds, one per tier:
 
-| Tier | Feed name            | Push URL                                                        |
+| Tier | Feed name            | Push URL (Experimental only — others reached by promotion)      |
 | ---- | -------------------- | --------------------------------------------------------------- |
 | T1   | `nuget-experimental` | `http://localhost:50000/nuget/nuget-experimental/v3/index.json` |
-| T2   | `nuget-development`  | `http://localhost:50000/nuget/nuget-development/v3/index.json`  |
-| T3   | `nuget-integration`  | `http://localhost:50000/nuget/nuget-integration/v3/index.json`  |
-| T4   | `nuget-qa`           | `http://localhost:50000/nuget/nuget-qa/v3/index.json`           |
-| T5   | `nuget-stable`       | `http://localhost:50000/nuget/nuget-stable/v3/index.json`       |
+| T2   | `nuget-development`  | (target of promotion from `nuget-experimental`)                 |
+| T3   | `nuget-integration`  | (target of promotion from `nuget-development`)                  |
+| T4   | `nuget-qa`           | (target of promotion from `nuget-integration`)                  |
+| T5   | `nuget-stable`       | (target of promotion from `nuget-qa`)                           |
+
+Under the immutable-build strategy, only `nuget-experimental` is a push
+target in the normal flow. Higher feeds are reached via
+`Promote-ProGetPackage`, which calls ProGet's promotion API and copies the
+exact same `.nupkg` bytes between feeds. The push URLs for the higher feeds
+remain valid (a release engineer can still push directly in an emergency
+override) but should not be used by automated pipelines above Experimental.
 
 The 5-tier feed names in `NuGet.config` intentionally **do not** include the
 sprint number. Per-sprint isolation is achieved through different mechanisms —
@@ -331,6 +355,37 @@ because NuGet warning `NU1507` escalates without it.
 - `dotnet nuget push` requires the ProGet admin API key, via `--api-key`. Store
   it only in Bitwarden; load it only via the `PROGET_ADMIN_API_KEY` env var;
   never commit it.
+
+---
+
+## 8.5 Promotion (the Sprint-7 mechanism for moving between feeds)
+
+Above Experimental, packages move between feeds by **promotion**, not by
+push. The single source of truth for promotion is `Promote-ProGetPackage`
+in `ATAP.Utilities.BuildTooling.PowerShell`.
+
+```powershell
+Promote-ProGetPackage `
+  -Name     'ATAP.Utilities.Philote' `
+  -Version  '0.1.0-Beta.42' `
+  -FromFeed 'nuget-development' `
+  -ToFeed   'nuget-integration' `
+  -Reason   'INT-PASS for build #4271'
+```
+
+The cmdlet:
+
+- Calls ProGet's `POST /api/promotions/promote` endpoint.
+- Is **idempotent** — re-running with `(Name, Version, ToFeed)` already
+  present is a no-op that returns success.
+- Does not touch the `.nupkg` bytes.
+- Records the promotion reason in ProGet's audit log so you can later
+  trace "why is this package in QA?" back to a specific BuildMaster
+  pipeline run.
+
+See [Immutable-Build-Strategy.md §5](Immutable-Build-Strategy.md#5-what-promotion-is-and-is-not)
+and [BuildMaster-Pipeline-Topology.md §4](BuildMaster-Pipeline-Topology.md#4-powershell-automation-surface)
+for the full automation surface.
 
 ---
 

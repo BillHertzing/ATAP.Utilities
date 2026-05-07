@@ -4,6 +4,15 @@
 and `AceCommander.*` C# projects; producing and preserving test artifacts.
 **Audience:** Developers writing new xUnit / bUnit tests; engineers configuring
 tier-appropriate test runs; maintainers of test-project conventions.
+
+> **Strategy update (sprint-0007 — Immutable Build).** Tests at every tier
+> run **against the existing `.nupkg`** that was built once at Experimental
+> and is being promoted upward. Test results are attached to the BuildMaster
+> release record for that exact `(PackageId, Version, SHA-256)` and (for
+> headline kinds) embedded into the Release Bundle's `tests/` folder.
+> Higher tiers do **not** rebuild the package before testing — they restore
+> the promoted package from the next-higher feed and run tests against it.
+> See [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md).
 **Status:** Authoritative. Consolidates the C# test portions of
 `_Planning/Explainers/0106-testing-process-and-artifacts.md`, the rules in
 `.claude/rules/xunit.md`, and the sprint-0006 test-project conventions currently
@@ -253,10 +262,23 @@ to `.gitignore`.
 
 ### 6.3 Artifacts that travel with the package
 
-At Development tier and above, BuildMaster attaches a `TestResults` artifact
-to the package being promoted. The structure is:
+> **Sprint-7 note (immutable build).** Test results from each tier are
+> attached to the **BuildMaster release record** for that exact `(PackageId,
+> Version, SHA-256)`, not embedded into the `.nupkg` itself — embedding would
+> change the package bytes and violate the build-once invariant. The Release
+> Bundle (the customer-facing installer) **does** carry headline test
+> evidence in its `tests/` folder, since the bundle is its own artifact built
+> once at release-tag time and includes results from every tier that
+> validated it. See [Release-Bundle-Pipeline.md §2](Release-Bundle-Pipeline.md#2-what-goes-into-a-bundle)
+> and [Release-Branch-and-Manifest.md §3](Release-Branch-and-Manifest.md#3-the-manifest-schema).
+
+The historical pattern below — embedding results inside the `.nupkg` — was
+correct under the build-per-tier model where each tier produced a new
+package. It does not apply under the immutable-build model and is left here
+only as historical context:
 
 ```text
+# legacy (pre-Sprint-7):
 <Package>.<Version>.nupkg
   contentFiles/tests/
     unit-results.trx
@@ -264,9 +286,9 @@ to the package being promoted. The structure is:
     coverage.cobertura.xml
 ```
 
-A consumer can audit any production `.nupkg` by inspecting the embedded
-results — the chain of passing tests back through the promotion ladder is
-preserved.
+A consumer can audit any production `.nupkg` by querying the BuildMaster
+release record for that version, which links to all the test artifacts
+collected during promotion.
 
 ---
 
@@ -405,15 +427,21 @@ every item.
 
 ## 11. Who Runs What, When
 
-| Trigger                  | Scope                            | Where it runs         |
-| ------------------------ | -------------------------------- | --------------------- |
-| Developer pre-commit     | Affected project's unit tests    | Workstation           |
-| Developer before push    | Full `dotnet test` for the repo  | Workstation           |
-| BuildMaster T1 (sprint)  | `Category=Unit` only             | BuildMaster agent     |
-| BuildMaster T2 (alpha)   | All tests                        | BuildMaster agent     |
-| BuildMaster T3 (beta)    | Unit + Integration               | BuildMaster agent     |
-| BuildMaster T4 (qa)      | Full suite with coverage         | BuildMaster agent     |
-| BuildMaster T5 (stable)  | Smoke subset only                | Release agent         |
+Under the immutable-build strategy, the **package is built once** at T1
+(Experimental). Every later tier runs tests **against the existing
+promoted package**, not against a fresh build. The "Scope" column below
+describes which test categories run; "Build vs. test" clarifies whether
+the tier rebuilds (no — only T1) or just tests.
+
+| Trigger                  | Scope                            | Build vs. test          | Where it runs         |
+| ------------------------ | -------------------------------- | ----------------------- | --------------------- |
+| Developer pre-commit     | Affected project's unit tests    | Local build + test      | Workstation           |
+| Developer before push    | Full `dotnet test` for the repo  | Local build + test      | Workstation           |
+| BuildMaster T1 (sprint)  | `Category=Unit` only             | **Build + push only**   | BuildMaster agent     |
+| BuildMaster T2 (alpha)   | All tests                        | Promote + test          | BuildMaster agent     |
+| BuildMaster T3 (beta)    | Unit + Integration               | Promote + test          | BuildMaster agent     |
+| BuildMaster T4 (qa)      | Full suite with coverage         | Promote + test          | BuildMaster agent     |
+| BuildMaster T5 (stable)  | Smoke subset only                | Promote + smoke         | Release agent         |
 
 Developer pre-commit is an informal norm, not a hard gate — the sprint
 worktree branch has no server-side push policy. CI-side gates begin at T1.
@@ -465,20 +493,28 @@ target framework.
 
 ## 13. Test Artifact Lifecycle (summary)
 
-From the [0106 Explainer][0106]:
+Adapted for the immutable-build model:
 
 1. **Create** — xUnit / Coverlet emit `.trx` and `coverage.cobertura.xml`
-   into `_generated/testresults/<tier>/`.
+   into `_generated/testresults/<tier>/` on the BuildMaster agent.
 2. **Local storage** — developer inspects in `_generated/`; never committed.
-3. **Embed** — BuildMaster attaches artifacts to the promoted `.nupkg`
-   (`contentFiles/tests/`).
-4. **Retention** — retained as long as the package version exists in ProGet.
-   Production smoke test results are archived separately with the release tag.
+3. **Attach (not embed)** — BuildMaster attaches each tier's test artifacts
+   to the **release record** for the promoted `(PackageId, Version)`. This
+   keeps the `.nupkg` byte-identical across tiers.
+4. **Bundle (Release Bundle pipeline only)** — when a Release Bundle is
+   built from a release-branch tag, the headline test evidence (TRX,
+   coverage XML, Flyway-rehearsal log) is embedded into the bundle's
+   `tests/` folder. The bundle's release manifest records the
+   `checksumSha256` of every embedded test file. See
+   [Release-Branch-and-Manifest.md §3](Release-Branch-and-Manifest.md#3-the-manifest-schema).
+5. **Retention** — release-record attachments are retained as long as the
+   package version exists in ProGet. Bundle-embedded results live for the
+   life of the release in `ReleaseBundle-Production`.
 
-The key property: **a production package contains the test results that
-validated it**, all the way back through the promotion chain. A regression
-investigation can walk the package's embedded `.trx` files without needing
-BuildMaster access.
+The key property: **a production release has the test results that
+validated it traceable back through the promotion chain** — via BuildMaster
+release records for libraries, and via the embedded `tests/` folder for
+the Release Bundle that ships to customers.
 
 ---
 

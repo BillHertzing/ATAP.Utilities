@@ -1,14 +1,28 @@
 # PowerShell Modules — Pack and Publish
 
-**Scope:** Sprint-0006. How a built PowerShell module (`.psm1` + `.psd1` under
-`_generated/psmodules/<Module>/packages/<Module>/`) becomes a `.nupkg` and is
-published to the correct ProGet PowerShellGet feed for its tier.
+**Scope:** Sprint-0006/0007. How a built PowerShell module (`.psm1` + `.psd1`
+under `_generated/psmodules/<Module>/packages/<Module>/`) becomes a `.nupkg`
+and is published to the **Experimental** ProGet PowerShellGet feed; how that
+same `.nupkg` is then **promoted** through Development → Integration → QA →
+Production via `Promote-ProGetPackage`.
 
 **Audience:** Developers running a local publish to T1, anyone setting up
 PowerShellGet repository registration, CI engineers wiring BuildMaster to
 PowerShell publish steps.
 
-**Status:** Authoritative for sprint-0006.
+**Status:** Authoritative for sprint-0006/0007.
+
+> **Strategy update (sprint-0007 — Immutable Build).** The pack and publish
+> happens **exactly once** at the Experimental tier. Movement of the same
+> `.nupkg` into the Development, Integration, QA, and Production
+> PowerShellGet feeds is by **promotion** (`Promote-ProGetPackage`) — not
+> by re-pack/re-publish. This deprecates the pattern in §4 below where each
+> tier was a separate `Publish-PSResource` call. Treat references to
+> `Publish-PSModuleToProGetFeed -Tier Alpha` (or Beta, QA, Production) as legacy. The new
+> single source of truth is `Publish-PSModuleToProGet` (drops the
+> `-FeedTier` suffix; always targets Experimental) plus
+> `Promote-ProGetPackage` for inter-feed movement. See
+> [Immutable-Build-Strategy.md §5](Immutable-Build-Strategy.md#5-what-promotion-is-and-is-not).
 
 **Not in this doc:**
 
@@ -249,22 +263,28 @@ in the repo. The PowerShell-module publish flow is documented in §10.
 
 ---
 
-## 12. Hermetic feeds at T3 / T4
+## 12. Promotion across tiers (Sprint-7 immutable-build flow)
 
-ProGet feeds at T3 (integration) and T4 (qa) are configured as **hermetic**
-— they cache packages from upstream feeds rather than requiring a separate
-publish. Promotion from T2 → T3 happens via ProGet's connector + retention
-rules, not via a re-publish.
+Under the immutable-build strategy, **every** tier above Experimental is
+reached by promotion. The `.nupkg` is published to
+`PowershellGet-experimental` exactly once and then promoted upward as gates
+pass. The full flow:
 
-Implication: `Publish-PSModuleToProGetFeed -Tier Beta` is rarely the right
-call from a developer's machine. The intended flow is:
+1. Developer (or CI) publishes the module to `PowershellGet-experimental`
+   via `Publish-PSModuleToProGet`. This is the **only** publish call.
+2. BuildMaster's PowerShell-Module-Pipeline runs Pester / PSScriptAnalyzer
+   / coverage gates against the module from `PowershellGet-experimental`.
+   On pass, `Promote-ProGetPackage` copies the same `.nupkg` to
+   `PowershellGet-development`.
+3. Each subsequent tier gate restores the module from its current feed,
+   runs tier-appropriate tests, and on pass promotes to the next feed.
+4. Production-tier promotion is gated on a manual approval from the
+   release manager — see [BuildMaster-Pipeline-Topology.md §3](BuildMaster-Pipeline-Topology.md#3-buildmaster-application-catalog).
 
-1. Developer publishes `Sprint` → T1.
-2. CI promotes to `Alpha` → T2 after unit tests.
-3. ProGet's hermetic connector promotes to T3 / T4 automatically based on
-   integration / QA test gates.
-4. Manual `Publish-PSResource -Tier Production` is the only "explicit"
-   re-publish, and only for the final release.
+ProGet's connectors / hermetic-feed configurations remain in place for
+**restore visibility** (so a developer pulling from `PowershellGet-qa`
+can resolve indirect ProGet packages from earlier tiers). They are not
+the promotion mechanism — `Promote-ProGetPackage` is.
 
 ---
 

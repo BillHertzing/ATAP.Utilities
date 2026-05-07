@@ -55,6 +55,30 @@ provisioning tooling for:
 > The single source of truth for label/feed mapping is
 > [BuildMaster-ProGet-CSharp-Package-Pipeline](BuildMaster-ProGet-CSharp-Package-Pipeline.md).
 
+> **Build-strategy note (Sprint 7).** The ecosystem has moved from the older
+> "build-per-tier" pattern to an **immutable-build, promote-the-artifact** pattern.
+> Each release unit (C# package family, PowerShell module family, or final
+> Release Bundle) is built **exactly once** from a release-branch tag and the
+> resulting artifact is promoted unchanged through the five ProGet feeds. Tier
+> gates run **tests against the existing artifact** rather than rebuilding it.
+> Sprint-7 reorganizes the docs around this pattern; cross-cutting concepts are
+> established in:
+>
+> - [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md) — the new authoritative
+>   overview of "build once, promote the artifact, never rebuild between tiers."
+> - [Release-Bundle-Pipeline.md](Release-Bundle-Pipeline.md) — the new third
+>   BuildMaster pipeline that produces the customer-facing installer (Chocolatey
+>   / WinGet) bundling app code + Flyway migrations + seed data into one package.
+> - [Database-Change-Unit-and-Flyway-Promotion.md](Database-Change-Unit-and-Flyway-Promotion.md)
+>   — how Flyway migrations and CSV seed data are grouped into versioned DB
+>   change units and tied to an application release version.
+> - [Release-Branch-and-Manifest.md](Release-Branch-and-Manifest.md) — release
+>   branches as the source of truth for what ships, plus the release-manifest
+>   schema that travels with every artifact.
+> - [BuildMaster-Pipeline-Topology.md](BuildMaster-Pipeline-Topology.md) — the
+>   three durable BuildMaster pipelines (C#, PowerShell, Release Bundle) and the
+>   PowerShell automation surface that drives them.
+
 ---
 
 ## 2. The Five Subject Areas
@@ -64,6 +88,18 @@ production and test process. Each planned doc has a one-line scope statement.
 A check-mark in the "Status" column indicates the content already exists in some
 form (see Section 4 for the specific file); an empty status means the doc is not
 yet written.
+
+### 2.0 Cross-cutting: Immutable Build & Release Bundles (Sprint 7)
+
+These docs establish the strategy that the per-area docs in §2.1–§2.5 follow.
+
+| Planned doc                                       | Scope                                                                                                                                                                | Status                                                                                                |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `Immutable-Build-Strategy.md`                     | "Build once, promote the artifact, never rebuild between tiers." Replaces the older build-per-tier pattern across C#, PowerShell, and Release Bundles.               | **written** — [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md)                              |
+| `Release-Bundle-Pipeline.md`                      | The third BuildMaster pipeline that produces the final installer bundle (app + Flyway migrations + seed data) for Chocolatey and WinGet distribution.                | **written** — [Release-Bundle-Pipeline.md](Release-Bundle-Pipeline.md)                                |
+| `Database-Change-Unit-and-Flyway-Promotion.md`    | Grouping Flyway migrations and CSV seed loaders into versioned DB change units; mapping app version ↔ DB change unit version; promotion through the five tiers.      | **written** — [Database-Change-Unit-and-Flyway-Promotion.md](Database-Change-Unit-and-Flyway-Promotion.md) |
+| `Release-Branch-and-Manifest.md`                  | Release branches as the canonical source of release artifacts; the release-manifest JSON schema that travels with each artifact and records app + DB contents.       | **written** — [Release-Branch-and-Manifest.md](Release-Branch-and-Manifest.md)                        |
+| `BuildMaster-Pipeline-Topology.md`                | The three durable BuildMaster pipelines (C#, PowerShell, Release Bundle); PowerShell automation surface; ProGet-webhook → BuildMaster integration.                   | **written** — [BuildMaster-Pipeline-Topology.md](BuildMaster-Pipeline-Topology.md)                    |
 
 ### 2.1 ATAP.Utilities C# Packages — Build, Version, Pack, Push
 

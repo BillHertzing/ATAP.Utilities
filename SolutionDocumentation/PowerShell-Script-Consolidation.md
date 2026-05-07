@@ -1,9 +1,20 @@
 # PowerShell Script Consolidation
 
-**Scope:** Sprint-0006. Inventory of standalone `.ps1` scripts that live
-outside any PowerShell module, the rationale for consolidating them into
-modules, and the rules that govern when a new standalone script is
+**Scope:** Sprint-0006/0007. Inventory of standalone `.ps1` scripts that
+live outside any PowerShell module, the rationale for consolidating them
+into modules, and the rules that govern when a new standalone script is
 acceptable vs. when it should become a module function.
+
+> **Strategy update (sprint-0007 — Immutable Build).** The build / pack /
+> publish / promote / Chocolatey / WinGet automation surface is centralized
+> in `ATAP.Utilities.BuildTooling.PowerShell` as a set of cmdlets that are
+> called by BuildMaster stages and developer workflows alike. The cmdlets
+> deliberately replace the older "one orchestrator script per repo" pattern
+> (`Publish-ATAPUtilities.ps1`) — the new functions are listed in
+> [BuildMaster-Pipeline-Topology.md §4](BuildMaster-Pipeline-Topology.md#4-powershell-automation-surface).
+> The classification rules in §2 still apply, but the new cmdlets all fall
+> into bucket A (module function) and any standalone script that duplicates
+> their behavior is now a candidate for deletion. See §10.4.
 
 **Audience:** Developers who reach for "I'll just write a quick `.ps1`",
 maintainers planning the sprint-0007 cleanup, anyone trying to discover

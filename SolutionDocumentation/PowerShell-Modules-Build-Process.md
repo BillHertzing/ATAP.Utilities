@@ -1,15 +1,26 @@
 # PowerShell Modules — Build Process
 
-**Scope:** Sprint-0006. How PowerShell modules in the ATAP.Utilities repository
-are produced from loose `.ps1` source files into a single consolidated `.psm1`
-script module plus a validated `.psd1` manifest, ready for packing.
+**Scope:** Sprint-0006/0007. How PowerShell modules in the ATAP.Utilities
+repository are produced from loose `.ps1` source files into a single
+consolidated `.psm1` script module plus a validated `.psd1` manifest, ready
+for packing.
 
 **Audience:** Developers who add/edit PowerShell cmdlets, anyone wiring a new
 module into the 5-tier pipeline, and CI engineers debugging
 `ATAP.Utilities.BuildTooling.PowerShell` build failures.
 
-**Status:** Authoritative for sprint-0006. Supersedes scattered notes in the
-legacy `Publish-PSPackage.ps1` header comments.
+**Status:** Authoritative for sprint-0006/0007. Supersedes scattered notes
+in the legacy `Publish-PSPackage.ps1` header comments.
+
+> **Strategy update (sprint-0007 — Immutable Build).** A PowerShell module
+> `.nupkg` is built and packed **exactly once** (at the Experimental tier)
+> and then promoted unchanged through Development → Integration → QA →
+> Production via `Promote-ProGetPackage`. Higher tiers do **not** rebuild;
+> they restore the existing module from the next-higher feed and run
+> Pester / PSScriptAnalyzer / coverage gates against it. This document
+> covers what happens during the single build at Experimental. See
+> [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md) for the
+> overall policy.
 
 **Not in this doc:**
 - How versions are assigned → see [PowerShell-Modules-Versioning.md](PowerShell-Modules-Versioning.md).

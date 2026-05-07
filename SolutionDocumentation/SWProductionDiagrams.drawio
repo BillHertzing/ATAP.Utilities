@@ -1,0 +1,896 @@
+<mxfile host="65bd71144e">
+    <diagram id="page-01-proget-channels" name="01 — ProGet Distribution Channels">
+        <mxGraphModel dx="640" dy="220" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title-01" value="ProGet Distribution Channels — Three Feed Families × Five Tiers" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="20" width="1620" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="subtitle-01" value="Promotion (→) is a ProGet metadata operation that copies the same byte-for-byte package between feeds. No rebuild." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="60" width="1620" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="proget-host" value="ProGet (Inedo Hub) — http://utat022:50000" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=14;verticalAlign=top;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="100" width="1620" height="930" as="geometry"/>
+                </mxCell>
+                <mxCell id="nuget-family" value="NuGet feed family (C# packages)" style="swimlane;startSize=30;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" parent="proget-host" vertex="1">
+                    <mxGeometry x="20" y="40" width="1580" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="nuget-exp" value="nuget-experimental&#xa;(T1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="nuget-family" vertex="1">
+                    <mxGeometry x="20" y="60" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="nuget-dev" value="nuget-development&#xa;(T2)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="nuget-family" vertex="1">
+                    <mxGeometry x="320" y="60" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="nuget-int" value="nuget-integration&#xa;(T3, hermetic)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="nuget-family" vertex="1">
+                    <mxGeometry x="620" y="60" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="nuget-qa" value="nuget-qa&#xa;(T4, hermetic)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="nuget-family" vertex="1">
+                    <mxGeometry x="920" y="60" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="nuget-stable" value="nuget-stable&#xa;(T5, signed)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="nuget-family" vertex="1">
+                    <mxGeometry x="1220" y="60" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="nuget-promote-1" value="Promote (DEV-PASS)" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="nuget-family" source="nuget-exp" target="nuget-dev" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="nuget-promote-2" value="Promote (INT-PASS)" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="nuget-family" source="nuget-dev" target="nuget-int" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="nuget-promote-3" value="Promote (QA-PASS)" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="nuget-family" source="nuget-int" target="nuget-qa" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="nuget-promote-4" value="Promote (Manual approval)" style="endArrow=classic;html=1;rounded=0;strokeColor=#82b366;strokeWidth=2;" parent="nuget-family" source="nuget-qa" target="nuget-stable" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ps-family" value="PowerShellGet feed family (PowerShell modules)" style="swimlane;startSize=30;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" parent="proget-host" vertex="1">
+                    <mxGeometry x="20" y="240" width="1580" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="ps-exp" value="PowershellGet-experimental&#xa;(T1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="ps-family" vertex="1">
+                    <mxGeometry x="20" y="60" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="ps-dev" value="PowershellGet-development&#xa;(T2)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="ps-family" vertex="1">
+                    <mxGeometry x="320" y="60" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="ps-int" value="PowershellGet-integration&#xa;(T3, hermetic)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="ps-family" vertex="1">
+                    <mxGeometry x="620" y="60" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="ps-qa" value="PowershellGet-qa&#xa;(T4, hermetic)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="ps-family" vertex="1">
+                    <mxGeometry x="920" y="60" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="ps-stable" value="PowershellGet-stable&#xa;(T5)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="ps-family" vertex="1">
+                    <mxGeometry x="1220" y="60" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="ps-promote-1" value="Promote" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="ps-family" source="ps-exp" target="ps-dev" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ps-promote-2" value="Promote" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="ps-family" source="ps-dev" target="ps-int" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ps-promote-3" value="Promote" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="ps-family" source="ps-int" target="ps-qa" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ps-promote-4" value="Promote (Manual approval)" style="endArrow=classic;html=1;rounded=0;strokeColor=#82b366;strokeWidth=2;" parent="ps-family" source="ps-qa" target="ps-stable" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="bundle-family" value="ReleaseBundle feed family (Universal Packages — app + DB + installer)" style="swimlane;startSize=30;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="proget-host" vertex="1">
+                    <mxGeometry x="20" y="440" width="1580" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="bundle-exp" value="ReleaseBundle-Experimental&#xa;(T1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-family" vertex="1">
+                    <mxGeometry x="20" y="60" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="bundle-dev" value="ReleaseBundle-Development&#xa;(T2)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-family" vertex="1">
+                    <mxGeometry x="320" y="60" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="bundle-int" value="ReleaseBundle-Integration&#xa;(T3, Flyway rehearsal)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-family" vertex="1">
+                    <mxGeometry x="620" y="60" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="bundle-qa" value="ReleaseBundle-QA&#xa;(T4, full E2E)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-family" vertex="1">
+                    <mxGeometry x="920" y="60" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="bundle-prod" value="ReleaseBundle-Production&#xa;(T5)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#82b366;fontColor=#ffffff;strokeColor=#006600;fontStyle=1;" parent="bundle-family" vertex="1">
+                    <mxGeometry x="1220" y="60" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="bundle-promote-1" value="Promote" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="bundle-family" source="bundle-exp" target="bundle-dev" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="bundle-promote-2" value="Promote (Flyway rehearsal pass)" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="bundle-family" source="bundle-dev" target="bundle-int" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="bundle-promote-3" value="Promote (E2E pass)" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="bundle-family" source="bundle-int" target="bundle-qa" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="bundle-promote-4" value="Promote (Release Manager approval)" style="endArrow=classic;html=1;rounded=0;strokeColor=#006600;strokeWidth=2;" parent="bundle-family" source="bundle-qa" target="bundle-prod" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="dist-zone" value="External distribution (after Production gate)" style="swimlane;startSize=30;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" parent="proget-host" vertex="1">
+                    <mxGeometry x="20" y="640" width="1580" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="choco" value="Chocolatey&#xa;community.chocolatey.org" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#3366cc;" parent="dist-zone" vertex="1">
+                    <mxGeometry x="320" y="60" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="winget" value="WinGet&#xa;microsoft/winget-pkgs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#3366cc;" parent="dist-zone" vertex="1">
+                    <mxGeometry x="620" y="60" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="psgallery" value="PowerShell Gallery (optional public mirror)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#3366cc;" parent="dist-zone" vertex="1">
+                    <mxGeometry x="920" y="60" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="bundle-to-choco" value="Publish-ChocolateyRelease" style="endArrow=classic;html=1;rounded=0;strokeColor=#3366cc;dashed=1;" parent="proget-host" source="bundle-prod" target="choco" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="bundle-to-winget" value="Update-WinGetManifestSource" style="endArrow=classic;html=1;rounded=0;strokeColor=#3366cc;dashed=1;" parent="proget-host" source="bundle-prod" target="winget" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ps-to-psgallery" value="Optional mirror" style="endArrow=classic;html=1;rounded=0;strokeColor=#3366cc;dashed=1;" parent="proget-host" source="ps-stable" target="psgallery" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend-01" value="Legend: Solid arrows = ProGet promotion API (no rebuild). Dashed arrows = external publish (Chocolatey, WinGet, PSGallery)." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=2;" parent="proget-host" vertex="1">
+                    <mxGeometry x="20" y="840" width="1580" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="srcdocs-01" value="Source documentation:&#xa;• Immutable-Build-Strategy.md (§4 feed-per-tier, §5 promotion semantics)&#xa;• BuildMaster-ProGet-CSharp-Package-Pipeline.md (§2 NuGet feed structure, §2.2 connector topology)&#xa;• PowerShell-Modules-Pack-and-Publish.md (§4 tier-to-feed mapping, §12 promotion flow)&#xa;• Release-Bundle-Pipeline.md (§3 ReleaseBundle feeds, §8 Chocolatey / WinGet distribution)&#xa;• BuildMaster-Pipeline-Topology.md (§1 three durable pipelines)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;align=left;verticalAlign=top;fontSize=10;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="1040" width="1620" height="55" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="page-02-databases" name="02 — Databases &amp; Migration Flow">
+        <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1700" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title-02" value="Databases &amp; Migration Flow — Per-Tier SQL Instances and Flyway Promotion" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="20" width="1620" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="subtitle-02" value="DB change unit (Flyway scripts + CSV seed + loaders) is bundled with app code in the Release Bundle and validated against per-tier SQL instances." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="60" width="1620" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="src-zone" value="Source content (release/x.y.z branch tag)" style="swimlane;startSize=30;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="100" width="380" height="380" as="geometry"/>
+                </mxCell>
+                <mxCell id="src-flyway" value="db/&lt;App&gt;/flyway/&#xa;V*.sql, R*.sql" style="shape=document;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="src-zone" vertex="1">
+                    <mxGeometry x="20" y="50" width="160" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="src-seed-csv" value="db/&lt;App&gt;/seed/&#xa;S*.csv" style="shape=document;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="src-zone" vertex="1">
+                    <mxGeometry x="200" y="50" width="160" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="src-seed-load" value="db/&lt;App&gt;/seed/&#xa;S*_load.sql" style="shape=document;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="src-zone" vertex="1">
+                    <mxGeometry x="20" y="160" width="160" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="src-rel-yml" value="db/&lt;App&gt;/releases/&#xa;x.y.z.yml" style="shape=document;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;" parent="src-zone" vertex="1">
+                    <mxGeometry x="200" y="160" width="160" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="src-note" value="x.y.z.yml lists exactly which migrations and seed files belong to App x.y.z" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=2;" parent="src-zone" vertex="1">
+                    <mxGeometry x="20" y="270" width="340" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="bundle-zone" value="Release Bundle (built once at Experimental tier)" style="swimlane;startSize=30;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="500" y="100" width="380" height="380" as="geometry"/>
+                </mxCell>
+                <mxCell id="bundle-app" value="app/&#xa;Application binaries" style="shape=folder;tabPosition=left;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-zone" vertex="1">
+                    <mxGeometry x="20" y="50" width="160" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="bundle-db" value="db/&#xa;Flyway + seed + loaders" style="shape=folder;tabPosition=left;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-zone" vertex="1">
+                    <mxGeometry x="200" y="50" width="160" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="bundle-installer" value="installer/&#xa;Install-Application.ps1&#xa;Update-Application.ps1" style="shape=folder;tabPosition=left;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-zone" vertex="1">
+                    <mxGeometry x="20" y="160" width="160" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="bundle-manifest" value="manifest.json&#xa;db-manifest.json&#xa;(checksums + Flyway target version)" style="shape=document;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="bundle-zone" vertex="1">
+                    <mxGeometry x="200" y="160" width="160" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="src-to-bundle" value="New-ReleaseBundle (uses x.y.z.yml as source-of-truth)" style="endArrow=classic;html=1;rounded=0;strokeColor=#82b366;strokeWidth=2;" parent="1" source="src-zone" target="bundle-zone" edge="1">
+                    <mxGeometry x="-1" y="-60" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="db-tiers-zone" value="Per-tier SQL Server validation environments (each tier rehearses the migrations against its own DB)" style="swimlane;startSize=30;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="520" width="1620" height="280" as="geometry"/>
+                </mxCell>
+                <mxCell id="db-exp" value="Experimental DB&#xa;(SQL Server LocalDB,&#xa;empty start)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="db-tiers-zone" vertex="1">
+                    <mxGeometry x="40" y="80" width="180" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="db-dev" value="Development DB&#xa;(SQL Server, dev fixture)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="db-tiers-zone" vertex="1">
+                    <mxGeometry x="280" y="80" width="180" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="db-int" value="Integration DB&#xa;(restored from prev-prod backup)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="db-tiers-zone" vertex="1">
+                    <mxGeometry x="520" y="80" width="180" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="db-qa" value="QA Gold DB&#xa;(prod-shaped,&#xa;anonymized)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="db-tiers-zone" vertex="1">
+                    <mxGeometry x="760" y="80" width="180" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="db-prod" value="Production DB&#xa;(customer)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#82b366;fontColor=#ffffff;strokeColor=#006600;fontStyle=1;" parent="db-tiers-zone" vertex="1">
+                    <mxGeometry x="1000" y="80" width="180" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="db-rehearsal-svc" value="Invoke-FlywayRehearsal&#xa;(in BuildTooling.PowerShell)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" parent="db-tiers-zone" vertex="1">
+                    <mxGeometry x="1280" y="80" width="280" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="db-step-1" value="Apply migrations" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="db-tiers-zone" source="db-exp" target="db-dev" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="db-step-2" value="Apply migrations" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="db-tiers-zone" source="db-dev" target="db-int" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="db-step-3" value="Apply migrations" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="db-tiers-zone" source="db-int" target="db-qa" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="db-step-4" value="Customer install/upgrade" style="endArrow=classic;html=1;rounded=0;strokeColor=#006600;strokeWidth=2;" parent="db-tiers-zone" source="db-qa" target="db-prod" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="db-note" value="Each tier&#39;s rehearsal log is attached to the BuildMaster release record. Headline rehearsal log (Integration) is embedded into the bundle&#39;s tests/ folder for Production audit." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=2;" parent="db-tiers-zone" vertex="1">
+                    <mxGeometry x="40" y="200" width="1540" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="bundle-to-rehearsal" value="Bundle drives the rehearsal" style="endArrow=classic;html=1;rounded=0;strokeColor=#82b366;strokeWidth=2;dashed=1;exitX=1;exitY=0.5;entryX=0.5;entryY=0;" parent="1" source="bundle-zone" target="db-rehearsal-svc" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="install-decision" value="On install/upgrade, Install-Application.ps1 detects DB state:&#xa;• DB absent      → CREATE DATABASE; apply all migrations; run seed loaders.&#xa;• DB present, Flyway absent → BASELINE at manifest baseline; then migrate.&#xa;• DB at target version       → no-op for migrations; re-run repeatable loaders only.&#xa;• DB below target version    → migrate up; run new versioned seed loaders.&#xa;• DB above target version    → ABORT (downgrade not supported)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="900" y="100" width="760" height="380" as="geometry"/>
+                </mxCell>
+                <mxCell id="install-title" value="installer/Install-Application.ps1 — DB action decision" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="900" y="80" width="760" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="srcdocs-02" value="Source documentation:&#xa;• Database-Change-Unit-and-Flyway-Promotion.md (§2 repo layout, §5 per-tier validation, §8 db-manifest schema, §9 install/upgrade decision)&#xa;• Release-Bundle-Pipeline.md (§4 bundle directory layout: app/, db/, installer/)&#xa;• Release-Branch-and-Manifest.md (§3 manifest fields: dbChangeUnit, flywayTargetVersion)&#xa;• _Planning/Explainers/0104-sql-databases-lifecycle.md (per-tier SQL instances, schemas)&#xa;• _Planning/Explainers/0021-sql-server-backup-proget-buildmaster.md (prev-prod backup → Integration rehearsal)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;align=left;verticalAlign=top;fontSize=10;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="1040" width="1620" height="55" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="page-03-psmodule-build" name="03 — PowerShell Module Production">
+        <mxGraphModel dx="1291" dy="633" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title-03" value="PowerShell Module Production — Source Files → Consolidated Module → ProGet" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="20" width="1620" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="subtitle-03" value="Build = source consolidation. ~12 first-party modules. Self-hosted: ATAP.Utilities.BuildTooling.PowerShell builds itself." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="60" width="1620" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="src-tree" value="src/&lt;ModuleName&gt;/" style="swimlane;startSize=30;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="100" width="360" height="500" as="geometry"/>
+                </mxCell>
+                <mxCell id="src-public" value="public/&#xa;Verb-Noun.ps1 (one per cmdlet)" style="shape=folder;tabPosition=left;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="src-tree" vertex="1">
+                    <mxGeometry x="20" y="50" width="320" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="src-private" value="private/&#xa;internal helpers" style="shape=folder;tabPosition=left;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="src-tree" vertex="1">
+                    <mxGeometry x="20" y="130" width="320" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="src-lib" value="lib/&#xa;optional native bits" style="shape=folder;tabPosition=left;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="src-tree" vertex="1">
+                    <mxGeometry x="20" y="210" width="320" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="src-tests" value="tests/&#xa;Pester (not shipped)" style="shape=folder;tabPosition=left;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="src-tree" vertex="1">
+                    <mxGeometry x="20" y="290" width="320" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="src-psd1" value="&lt;ModuleName&gt;.psd1&#xa;(authored template manifest)" style="shape=document;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="src-tree" vertex="1">
+                    <mxGeometry x="20" y="370" width="320" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="src-versionjson" value="version.json (NBGV)" style="shape=document;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="src-tree" vertex="1">
+                    <mxGeometry x="20" y="430" width="320" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="build-tools" value="ATAP.Utilities.BuildTooling.PowerShell&#xa;(self-hosted build cmdlets)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="480" y="100" width="320" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="cmdlet-resolve" value="Resolve-PSModuleMetadata" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="480" y="190" width="320" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="cmdlet-version" value="Get-PSModuleVersionFromNBGV&#xa;(NBGV → ModuleVersion + Prerelease&#xa;e.g. 0.1.0 + Sprint042)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="480" y="250" width="320" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="cmdlet-build-psm1" value="Build-PSModulePsm1&#xa;(concatenate public/+private/+lib/&#xa;hoist using statements)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="480" y="350" width="320" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="cmdlet-build-manifest" value="Build-PSModuleManifest&#xa;(stamp .psd1 with FunctionsToExport,&#xa;ModuleVersion, Prerelease)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="480" y="450" width="320" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="cmdlet-publish" value="Publish-PSModuleToProGet&#xa;(Publish-PSResource → Experimental feed)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="480" y="550" width="320" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="generated" value="_generated/psmodules/&lt;ModuleName&gt;/" style="swimlane;startSize=30;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="900" y="100" width="380" height="400" as="geometry"/>
+                </mxCell>
+                <mxCell id="gen-psm1" value="packages/&lt;ModuleName&gt;/&#xa;&lt;ModuleName&gt;.psm1&#xa;(consolidated)" style="shape=document;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="generated" vertex="1">
+                    <mxGeometry x="20" y="50" width="320" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="gen-psd1" value="packages/&lt;ModuleName&gt;/&#xa;&lt;ModuleName&gt;.psd1&#xa;(stamped)" style="shape=document;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="generated" vertex="1">
+                    <mxGeometry x="20" y="140" width="320" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="gen-test-results" value="test-results/&#xa;PesterResults.xml (JUnit)&#xa;PSScriptAnalyzerResults.xml" style="shape=folder;tabPosition=left;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="generated" vertex="1">
+                    <mxGeometry x="20" y="230" width="320" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="gen-coverage" value="coverage/&#xa;CoverageResults.xml (JaCoCo)" style="shape=folder;tabPosition=left;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="generated" vertex="1">
+                    <mxGeometry x="20" y="320" width="320" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="nupkg" value="&lt;ModuleName&gt;.0.1.0-Sprint042.nupkg" style="shape=document;whiteSpace=wrap;html=1;fillColor=#82b366;fontColor=#ffffff;strokeColor=#006600;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="900" y="540" width="380" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="proget-feed" value="ProGet&#xa;PowershellGet-experimental" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1380" y="540" width="280" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="src-to-tools" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="1" source="src-tree" target="build-tools" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="resolve-to-version" value="" style="endArrow=open;html=1;rounded=0;strokeColor=#6c8ebf;" parent="1" source="cmdlet-resolve" target="cmdlet-version" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="version-to-psm1" value="" style="endArrow=open;html=1;rounded=0;strokeColor=#6c8ebf;" parent="1" source="cmdlet-version" target="cmdlet-build-psm1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="psm1-to-manifest" value="" style="endArrow=open;html=1;rounded=0;strokeColor=#6c8ebf;" parent="1" source="cmdlet-build-psm1" target="cmdlet-build-manifest" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="manifest-to-publish" value="" style="endArrow=open;html=1;rounded=0;strokeColor=#6c8ebf;" parent="1" source="cmdlet-build-manifest" target="cmdlet-publish" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="psm1-out" value="emits .psm1" style="endArrow=classic;html=1;rounded=0;strokeColor=#82b366;" parent="1" source="cmdlet-build-psm1" target="gen-psm1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="psd1-out" value="emits .psd1" style="endArrow=classic;html=1;rounded=0;strokeColor=#82b366;" parent="1" source="cmdlet-build-manifest" target="gen-psd1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pkg-to-nupkg" value="Pack via Publish-PSResource" style="endArrow=classic;html=1;rounded=0;strokeColor=#82b366;strokeWidth=2;" parent="1" source="generated" target="nupkg" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="nupkg-to-feed" value="Push (single push of record)" style="endArrow=classic;html=1;rounded=0;strokeColor=#9673a6;strokeWidth=2;" parent="1" source="nupkg" target="proget-feed" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-3-note" value="From this point on, the .nupkg never changes. Promotion to PowershellGet-development → -integration → -qa → -stable happens via Promote-ProGetPackage. See diagram 01." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="900" y="660" width="760" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="srcdocs-03" value="Source documentation:&#xa;• PowerShell-Modules-Build-Process.md (§2 source layout, §4 build cmdlets, §5 _generated/ layout, §7 end-to-end flow, §8 self-hosting bootstrap)&#xa;• PowerShell-Modules-Versioning.md (§2 Get-PSModuleVersionFromNBGV, §4 height padding, §5 tier-to-label table, §6 version.json)&#xa;• PowerShell-Modules-Pack-and-Publish.md (§2 PSResource v3+, §3 .nupkg layout, §7 repo registration, §8 publish call)&#xa;• PowerShell-Script-Consolidation.md (§2 buckets, §5 promotion procedure)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;align=left;verticalAlign=top;fontSize=10;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="1040" width="1620" height="55" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="page-04-test-attach" name="04 — Tests Attach to Immutable Package">
+        <mxGraphModel dx="1291" dy="633" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title-04" value="How Testing Attaches Artifacts to the Immutable Package" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="20" width="1620" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="subtitle-04" value="The .nupkg / .upack bytes never change. Test results attach to the BuildMaster release record for that exact (Id, Version, SHA-256). Headline evidence is also embedded in the Release Bundle." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="60" width="1620" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="immutable-pkg" value="Immutable artifact (Id, Version, SHA-256)&#xa;e.g. AceCommander.1.4.0+8f4b2c1.upack" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#82b366;fontColor=#ffffff;strokeColor=#006600;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="650" y="120" width="400" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="bm-release-record" value="BuildMaster Release Record&#xa;(Application = AceCommander-ReleaseBundle, Release = 1.4.0)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="600" y="220" width="500" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="pkg-to-record" value="Attached as build-artifact" style="endArrow=classic;html=1;rounded=0;strokeColor=#6c8ebf;strokeWidth=2;" parent="1" source="immutable-pkg" target="bm-release-record" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="tier-exp" value="Experimental gate&#xa;Smoke install on clean VM" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="360" width="280" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="tier-dev" value="Development gate&#xa;Unit tests + install/uninstall" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
+                    <mxGeometry x="380" y="360" width="280" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="tier-int" value="Integration gate&#xa;Flyway rehearsal vs prev-prod snapshot" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
+                    <mxGeometry x="700" y="360" width="280" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="tier-qa" value="QA gate&#xa;Full E2E + coverage + perf" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
+                    <mxGeometry x="1020" y="360" width="280" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="tier-prod" value="Production gate&#xa;Manual approval + smoke" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1340" y="360" width="280" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="evidence-zone" value="Test evidence (TRX, JUnit XML, JaCoCo, Flyway logs, Playwright reports)" style="swimlane;startSize=30;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="500" width="1560" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="evi-exp" value="exp/&#xa;smoke.trx" style="shape=document;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="evidence-zone" vertex="1">
+                    <mxGeometry x="20" y="50" width="280" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="evi-dev" value="dev/&#xa;unit-results.trx&#xa;coverage.cobertura.xml" style="shape=document;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="evidence-zone" vertex="1">
+                    <mxGeometry x="320" y="50" width="280" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="evi-int" value="int/&#xa;integration-results.trx&#xa;flyway-rehearsal.log" style="shape=document;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="evidence-zone" vertex="1">
+                    <mxGeometry x="640" y="50" width="280" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="evi-qa" value="qa/&#xa;regression.trx&#xa;e2e-playwright.json&#xa;perf-results.csv" style="shape=document;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="evidence-zone" vertex="1">
+                    <mxGeometry x="960" y="50" width="280" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="evi-prod" value="prod/&#xa;smoke.trx&#xa;deploy-log.txt" style="shape=document;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="evidence-zone" vertex="1">
+                    <mxGeometry x="1280" y="50" width="280" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="exp-evi" value="" style="endArrow=open;html=1;rounded=0;strokeColor=#d6b656;" parent="1" source="tier-exp" target="evi-exp" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="dev-evi" value="" style="endArrow=open;html=1;rounded=0;strokeColor=#d6b656;" parent="1" source="tier-dev" target="evi-dev" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="int-evi" value="" style="endArrow=open;html=1;rounded=0;strokeColor=#d6b656;" parent="1" source="tier-int" target="evi-int" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="qa-evi" value="" style="endArrow=open;html=1;rounded=0;strokeColor=#d6b656;" parent="1" source="tier-qa" target="evi-qa" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="prod-evi" value="" style="endArrow=open;html=1;rounded=0;strokeColor=#d6b656;" parent="1" source="tier-prod" target="evi-prod" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="record-to-tier" value="Test results attach to the same release record" style="endArrow=classic;html=1;rounded=0;strokeColor=#6c8ebf;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="bm-release-record" target="evidence-zone" edge="1">
+                    <mxGeometry x="0.6371" y="-2" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="bundle-tests-folder" value="Release Bundle&#xa;tests/ folder (embedded headline evidence)&#xa;• unit-results.trx&#xa;• integration-results.trx&#xa;• coverage.cobertura.xml&#xa;• flyway-rehearsal.log" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="730" width="780" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="bundle-manifest-cks" value="manifest.json&#xa;testEvidence: [&#xa;  { kind: &quot;unit&quot;,        path: &quot;tests/unit-results.trx&quot;,        checksumSha256: ... },&#xa;  { kind: &quot;integration&quot;, path: &quot;tests/integration-results.trx&quot;, checksumSha256: ... },&#xa;  { kind: &quot;coverage&quot;,    path: &quot;tests/coverage.cobertura.xml&quot;,  checksumSha256: ... },&#xa;  { kind: &quot;flyway-rehearsal&quot;, path: &quot;tests/flyway-rehearsal.log&quot;, checksumSha256: ... }&#xa;]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;fontFamily=Courier New;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="860" y="730" width="760" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="evi-to-bundle" value="Headline evidence is also embedded in the bundle&#39;s tests/ folder, with checksums recorded in manifest.json" style="endArrow=classic;html=1;rounded=0;strokeColor=#82b366;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="evidence-zone" target="bundle-tests-folder" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="evi-to-manifest" value="" style="endArrow=open;html=1;rounded=0;strokeColor=#82b366;" parent="1" source="bundle-tests-folder" target="bundle-manifest-cks" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="srcdocs-04" value="Source documentation:&#xa;• Immutable-Build-Strategy.md (§1 build-once principle, §2 why build-once, §5 promotion semantics)&#xa;• CSharp-Packages-Test-Process.md (§6.3 attach-not-embed, §11 who runs what when, §13 test-artifact lifecycle)&#xa;• PowerShell-Modules-Test-Process.md (§3 test driver cmdlets, §4 tier-to-tag matrix, §6 coverage gate, §8 _generated/ layout)&#xa;• Release-Branch-and-Manifest.md (§3 manifest schema — testEvidence + checksums fields)&#xa;• Release-Bundle-Pipeline.md (§2 bundle contents, §4 tests/ folder)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;align=left;verticalAlign=top;fontSize=10;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="1040" width="1620" height="55" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="page-05-buildmaster" name="05 — BuildMaster Automation Catalog">
+        <mxGraphModel dx="1291" dy="633" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title-05" value="BuildMaster Automation Catalog — Applications, Pipelines, Releases, OtterScript Plans" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="20" width="1620" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="subtitle-05" value="Three durable pipelines. Many Applications route through them. No per-sprint or per-feature pipeline." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="60" width="1620" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="apps-zone" value="BuildMaster Applications" style="swimlane;startSize=30;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="100" width="500" height="660" as="geometry"/>
+                </mxCell>
+                <mxCell id="app-csharp-atap" value="ATAP.Utilities-CSharp" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="apps-zone" vertex="1">
+                    <mxGeometry x="20" y="50" width="460" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="app-csharp-acmd" value="AceCommander-CSharp" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="apps-zone" vertex="1">
+                    <mxGeometry x="20" y="120" width="460" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="app-ps-bt" value="ATAP.Utilities.BuildTooling.PowerShell-PSModule" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="apps-zone" vertex="1">
+                    <mxGeometry x="20" y="200" width="460" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="app-ps-fileio" value="ATAP.Utilities.FileIO.PowerShell-PSModule" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="apps-zone" vertex="1">
+                    <mxGeometry x="20" y="270" width="460" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="app-ps-other" value="… (one Application per first-party PS module)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=2;" parent="apps-zone" vertex="1">
+                    <mxGeometry x="20" y="340" width="460" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="app-bundle-acmd" value="AceCommander-ReleaseBundle" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="apps-zone" vertex="1">
+                    <mxGeometry x="20" y="420" width="460" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="app-bundle-atap" value="ATAP.Utilities-ReleaseBundle (future)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=2;" parent="apps-zone" vertex="1">
+                    <mxGeometry x="20" y="490" width="460" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="apps-note" value="Each Application has its own Variables (App name, repo, branch, package ID, DB-included flag) and Releases. The pipeline is shared." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=2;" parent="apps-zone" vertex="1">
+                    <mxGeometry x="20" y="560" width="460" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="pipelines-zone" value="Three durable Pipelines" style="swimlane;startSize=30;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="600" y="100" width="500" height="660" as="geometry"/>
+                </mxCell>
+                <mxCell id="pipe-csharp" value="CSharp-Package-Pipeline&#xa;5 stages: Experimental → Development → Integration → QA → Production" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" parent="pipelines-zone" vertex="1">
+                    <mxGeometry x="20" y="60" width="460" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="pipe-ps" value="PowerShell-Module-Pipeline&#xa;5 stages: Experimental → Development → Integration → QA → Production" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" parent="pipelines-zone" vertex="1">
+                    <mxGeometry x="20" y="220" width="460" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="pipe-bundle" value="Release-Bundle-Pipeline&#xa;6 stages: Experimental → Development → Integration → QA → Production → Distribution" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="pipelines-zone" vertex="1">
+                    <mxGeometry x="20" y="380" width="460" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="pipelines-note" value="Stage logic: at Experimental, build and push. At Development through Production, Promote-ProGetPackage and run tier-appropriate tests. Distribution (bundle only) calls Publish-ChocolateyRelease + Update-WinGetManifestSource." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=2;" parent="pipelines-zone" vertex="1">
+                    <mxGeometry x="20" y="540" width="460" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="plans-zone" value="OtterScript Plans (under src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/)" style="swimlane;startSize=30;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1160" y="100" width="500" height="660" as="geometry"/>
+                </mxCell>
+                <mxCell id="plan-csharp-5" value="CSharpPackage-5Stage.otter&#xa;(full-solution C# build)" style="shape=document;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="plans-zone" vertex="1">
+                    <mxGeometry x="20" y="60" width="460" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="plan-csharp-pp" value="CSharpPackage-PerProject.otter&#xa;(single-project C# build, manual trigger via $ProjectPath variable)" style="shape=document;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="plans-zone" vertex="1">
+                    <mxGeometry x="20" y="160" width="460" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="plan-psmod-5" value="PowerShellModule-5Stage.otter&#xa;(PowerShell module build + promotion)" style="shape=document;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="plans-zone" vertex="1">
+                    <mxGeometry x="20" y="260" width="460" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="plan-bundle-6" value="ReleaseBundle-6Stage.otter&#xa;(Release Bundle build + promotion + Distribution)" style="shape=document;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="plans-zone" vertex="1">
+                    <mxGeometry x="20" y="360" width="460" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="plans-note" value="Plans are short — they delegate to PowerShell cmdlets in ATAP.Utilities.BuildTooling.PowerShell (see diagram 06). Logic lives in cmdlets, not OtterScript." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=2;" parent="plans-zone" vertex="1">
+                    <mxGeometry x="20" y="460" width="460" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="app-to-csharp-pipe" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;exitX=1;exitY=0.1;entryX=0;entryY=0.5;" parent="1" source="app-csharp-atap" target="pipe-csharp" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="app2-to-csharp-pipe" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="app-csharp-acmd" target="pipe-csharp" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="app3-to-ps-pipe" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;exitX=1;exitY=0.5;entryX=0;entryY=0.3;" parent="1" source="app-ps-bt" target="pipe-ps" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="app4-to-ps-pipe" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="app-ps-fileio" target="pipe-ps" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="app5-to-ps-pipe" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;exitX=1;exitY=0.5;entryX=0;entryY=0.7;" parent="1" source="app-ps-other" target="pipe-ps" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="app6-to-bundle-pipe" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#82b366;exitX=1;exitY=0.5;entryX=0;entryY=0.4;" parent="1" source="app-bundle-acmd" target="pipe-bundle" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="app7-to-bundle-pipe" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#82b366;exitX=1;exitY=0.5;entryX=0;entryY=0.6;" parent="1" source="app-bundle-atap" target="pipe-bundle" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="csharp-pipe-uses-plans-1" value="uses" style="endArrow=open;html=1;rounded=0;strokeColor=#9673a6;dashed=1;exitX=1;exitY=0.3;entryX=0;entryY=0.5;" parent="1" source="pipe-csharp" target="plan-csharp-5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="csharp-pipe-uses-plans-2" value="uses (manual trigger)" style="endArrow=open;html=1;rounded=0;strokeColor=#9673a6;dashed=1;exitX=1;exitY=0.7;entryX=0;entryY=0.5;" parent="1" source="pipe-csharp" target="plan-csharp-pp" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ps-pipe-uses" value="uses" style="endArrow=open;html=1;rounded=0;strokeColor=#9673a6;dashed=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="pipe-ps" target="plan-psmod-5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="bundle-pipe-uses" value="uses" style="endArrow=open;html=1;rounded=0;strokeColor=#9673a6;dashed=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="pipe-bundle" target="plan-bundle-6" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="repo-monitors" value="Repository Monitors (5)&#xa;Sprint / Alpha / Beta / QA / Release&#xa;trigger Experimental builds" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="800" width="500" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="proget-webhooks" value="ProGet Webhooks&#xa;package-added → trigger pipeline run" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="600" y="800" width="500" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="releases-card" value="Releases (per Application)&#xa;e.g. AceCommander-ReleaseBundle / Release 1.4.0 / Build #4271&#xa;Releases hold artifacts, attached test results, and promotion audit log" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="1160" y="800" width="500" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="srcdocs-05" value="Source documentation:&#xa;• BuildMaster-Pipeline-Topology.md (§1 three pipelines, §3 Application catalog, §4 PowerShell automation surface, §5 plan storage, §6 webhook integration)&#xa;• BuildMaster-ProGet-CSharp-Package-Pipeline.md (§4 Application structure / variables, §5 OtterScript plan, §8 Repository Monitors, §9 per-project plan)&#xa;• Release-Bundle-Pipeline.md (§5 pipeline shape, §6 cmdlet surface, §7 trigger paths)&#xa;• PowerShell-Modules-Pack-and-Publish.md (§12 promotion flow)&#xa;• _Planning/Explainers/0004-BuildMaster-Setup.md (BuildMaster install, OtterScript plan, API key rotation)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;align=left;verticalAlign=top;fontSize=10;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="900" width="1620" height="55" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="page-06-qa-perf" name="06 — QA Testing (Pipelines + ProGet + BuildTooling)">
+        <mxGraphModel dx="1291" dy="633" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title-06" value="QA Testing Combination — ProGet + BuildMaster + ATAP.Utilities.BuildTooling.PowerShell" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="20" width="1620" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="subtitle-06" value="At the QA tier, the BuildMaster QA stage drives PowerShell cmdlets that pull the promoted artifact from ProGet and exercise it across functional, regression, perf, and bundle-install scenarios." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="60" width="1620" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="bm-qa-stage" value="BuildMaster QA stage&#xa;(of any of the 3 pipelines)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="140" width="280" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="bt-cmdlets" value="ATAP.Utilities.BuildTooling.PowerShell" style="swimlane;startSize=30;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="500" y="120" width="700" height="640" as="geometry"/>
+                </mxCell>
+                <mxCell id="cmd-promote" value="Promote-ProGetPackage&#xa;(Integration → QA)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="bt-cmdlets" vertex="1">
+                    <mxGeometry x="20" y="50" width="320" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="cmd-restore" value="Restore-ArtifactFromProGet&#xa;(downloads promoted .nupkg/.upack)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="bt-cmdlets" vertex="1">
+                    <mxGeometry x="20" y="130" width="320" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="cmd-pester" value="Invoke-PSModulePesterTests&#xa;(QA tier: full Unit+Integration+Functional+Regression+E2E+Performance)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="bt-cmdlets" vertex="1">
+                    <mxGeometry x="20" y="210" width="320" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="cmd-pssa" value="Invoke-PSModulePSScriptAnalyzer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="bt-cmdlets" vertex="1">
+                    <mxGeometry x="20" y="310" width="320" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="cmd-coverage" value="Test-CodeCoverageGate&#xa;(QA threshold default 70%)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="bt-cmdlets" vertex="1">
+                    <mxGeometry x="20" y="390" width="320" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="cmd-perf" value="Invoke-PerformanceSuite&#xa;(BenchmarkDotNet for C#,&#xa;Measure-Command for PS,&#xa;ETW trace capture)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" parent="bt-cmdlets" vertex="1">
+                    <mxGeometry x="360" y="50" width="320" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="cmd-bunit" value="Invoke-BUnitTests&#xa;(Blazor component rendering)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="bt-cmdlets" vertex="1">
+                    <mxGeometry x="360" y="170" width="320" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="cmd-playwright" value="Invoke-PlaywrightE2E&#xa;(end-to-end browser flow)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="bt-cmdlets" vertex="1">
+                    <mxGeometry x="360" y="250" width="320" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="cmd-flyway-q" value="Invoke-FlywayRehearsal&#xa;(QA Gold DB — anonymized prod-shaped data)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="bt-cmdlets" vertex="1">
+                    <mxGeometry x="360" y="330" width="320" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="cmd-bundle-install" value="Invoke-BundleInstallSmoke&#xa;(install Release Bundle on a clean QA VM)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="bt-cmdlets" vertex="1">
+                    <mxGeometry x="360" y="430" width="320" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="cmd-attach" value="Attach-TestResultsToBuildMasterRelease&#xa;(append TRX/JaCoCo/perf CSV to release record)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" parent="bt-cmdlets" vertex="1">
+                    <mxGeometry x="20" y="490" width="660" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="cmd-approve" value="Approve-BuildMasterStage&#xa;(QA→Production gate, on all-green)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" parent="bt-cmdlets" vertex="1">
+                    <mxGeometry x="20" y="570" width="660" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="proget-card" value="ProGet&#xa;nuget-qa  /  PowershellGet-qa  /  ReleaseBundle-QA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1300" y="140" width="320" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="qa-targets" value="QA targets" style="swimlane;startSize=30;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1280" y="280" width="380" height="480" as="geometry"/>
+                </mxCell>
+                <mxCell id="tg-qa-vm" value="Clean QA VM&#xa;(install Release Bundle, exercise app)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="qa-targets" vertex="1">
+                    <mxGeometry x="20" y="50" width="340" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="tg-qa-db" value="QA Gold DB&#xa;(SQL Server, prod-shaped, anonymized)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="qa-targets" vertex="1">
+                    <mxGeometry x="20" y="150" width="340" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="tg-qa-perf" value="Perf rig&#xa;(BenchmarkDotNet baseline + ETW capture)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="qa-targets" vertex="1">
+                    <mxGeometry x="20" y="250" width="340" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="tg-qa-browser" value="Headless browser pool&#xa;(Playwright)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="qa-targets" vertex="1">
+                    <mxGeometry x="20" y="350" width="340" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="bm-to-bt" value="invokes" style="endArrow=classic;html=1;rounded=0;strokeColor=#6c8ebf;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.1;" parent="1" source="bm-qa-stage" target="cmd-promote" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="cmd-promote-to-proget" value="ProGet promotion API" style="endArrow=classic;html=1;rounded=0;strokeColor=#9673a6;strokeWidth=2;" parent="1" source="cmd-promote" target="proget-card" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="cmd-restore-from-proget" value="HTTPS GET" style="endArrow=classic;html=1;rounded=0;strokeColor=#9673a6;dashed=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="cmd-restore" target="proget-card" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="bundle-install-to-vm" value="install" style="endArrow=classic;html=1;rounded=0;strokeColor=#82b366;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="cmd-bundle-install" target="tg-qa-vm" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="flyway-to-db" value="apply migrations" style="endArrow=classic;html=1;rounded=0;strokeColor=#6c8ebf;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="cmd-flyway-q" target="tg-qa-db" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="perf-to-rig" value="run benchmarks" style="endArrow=classic;html=1;rounded=0;strokeColor=#b85450;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="cmd-perf" target="tg-qa-perf" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="playwright-to-browser" value="drive" style="endArrow=classic;html=1;rounded=0;strokeColor=#82b366;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="cmd-playwright" target="tg-qa-browser" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="attach-to-bm" value="POST results" style="endArrow=classic;html=1;rounded=0;strokeColor=#6c8ebf;strokeWidth=2;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" parent="1" source="cmd-attach" target="bm-qa-stage" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="approve-back-to-bm" value="advance to Production" style="endArrow=classic;html=1;rounded=0;strokeColor=#82b366;strokeWidth=2;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" parent="1" source="cmd-approve" target="bm-qa-stage" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="srcdocs-06" value="Source documentation:&#xa;• CSharp-Packages-Test-Process.md (§4 trait taxonomy, §7 coverage, §11 who-runs-what at QA tier)&#xa;• PowerShell-Modules-Test-Process.md (§3 driver cmdlets, §4 tier-to-tag matrix QA row, §6 coverage gate)&#xa;• BuildMaster-Pipeline-Topology.md (§4 PowerShell automation surface — Promote-ProGetPackage, Approve-BuildMasterStage)&#xa;• Database-Change-Unit-and-Flyway-Promotion.md (§5 QA Gold DB rehearsal)&#xa;• Release-Bundle-Pipeline.md (§5 QA stage definition: full E2E + perf)&#xa;• _Planning/Explainers/0106-testing-process-and-artifacts.md (9 test types, per-tier mapping)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;align=left;verticalAlign=top;fontSize=10;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="800" width="1620" height="60" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="page-07-consume" name="07 — Consumers Consume / Install">
+        <mxGraphModel dx="1291" dy="633" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title-07" value="How Consumers Consume Packages or Install Modules" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="20" width="1620" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="subtitle-07" value="Three consumer categories: dev consumers of NuGet libraries, dev consumers of PowerShell modules, end users installing the Release Bundle." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="60" width="1620" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="lane-csharp" value="Dev consumer — C# library (e.g. AceCommander or downstream solution)" style="swimlane;startSize=30;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="100" width="1620" height="240" as="geometry"/>
+                </mxCell>
+                <mxCell id="csharp-dev-actor" value="Developer&#xa;workstation" style="shape=mxgraph.cisco_safe.architecture.identity_service;html=1;pointerEvents=1;dashed=0;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="lane-csharp" vertex="1">
+                    <mxGeometry x="40" y="80" width="120" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="csharp-csproj" value="MyApp.csproj&#xa;&lt;PackageReference Include=&quot;ATAP.Utilities.Philote&quot; /&gt;&#xa;(version pinned by Directory.Packages.props)" style="shape=document;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;verticalAlign=top;" parent="lane-csharp" vertex="1">
+                    <mxGeometry x="220" y="80" width="380" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="csharp-nugetcfg" value="NuGet.config&#xa;packageSourceMapping pins ATAP.* to the appropriate ProGet feed for the branch" style="shape=document;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;verticalAlign=top;" parent="lane-csharp" vertex="1">
+                    <mxGeometry x="640" y="80" width="380" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="csharp-feed" value="ProGet&#xa;nuget-experimental / -development / -integration / -qa / -stable" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" parent="lane-csharp" vertex="1">
+                    <mxGeometry x="1060" y="80" width="380" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="csharp-restore" value="dotnet restore" style="endArrow=classic;html=1;rounded=0;strokeColor=#9673a6;strokeWidth=2;" parent="lane-csharp" source="csharp-csproj" target="csharp-feed" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="lane-ps" value="Dev consumer — PowerShell module" style="swimlane;startSize=30;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="360" width="1620" height="240" as="geometry"/>
+                </mxCell>
+                <mxCell id="ps-dev-actor" value="PowerShell user&#xa;or build script" style="shape=mxgraph.cisco_safe.architecture.identity_service;html=1;pointerEvents=1;dashed=0;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="lane-ps" vertex="1">
+                    <mxGeometry x="40" y="80" width="120" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="ps-register" value="Register-PSResourceRepository&#xa;(name = PowershellGet-development)&#xa;(URI from $global:settings or PROGET_POWERSHELLGET_FEED_URI_DEV env var)" style="shape=document;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;verticalAlign=top;" parent="lane-ps" vertex="1">
+                    <mxGeometry x="220" y="80" width="380" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="ps-install" value="Install-PSResource ATAP.Utilities.FileIO.PowerShell&#xa;-Repository PowershellGet-development&#xa;-Prerelease" style="shape=document;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;verticalAlign=top;" parent="lane-ps" vertex="1">
+                    <mxGeometry x="640" y="80" width="380" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="ps-feed" value="ProGet&#xa;PowershellGet-experimental / -development / -integration / -qa / -stable" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" parent="lane-ps" vertex="1">
+                    <mxGeometry x="1060" y="80" width="380" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="ps-pull" value="Install-PSResource (HTTPS GET .nupkg)" style="endArrow=classic;html=1;rounded=0;strokeColor=#9673a6;strokeWidth=2;" parent="lane-ps" source="ps-install" target="ps-feed" edge="1">
+                    <mxGeometry y="30" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="lane-end" value="End user — Release Bundle (Chocolatey or WinGet)" style="swimlane;startSize=30;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="620" width="1620" height="380" as="geometry"/>
+                </mxCell>
+                <mxCell id="end-actor" value="End user&#xa;Windows workstation" style="shape=mxgraph.cisco_safe.architecture.identity_service;html=1;pointerEvents=1;dashed=0;fillColor=#d5e8d4;strokeColor=#82b366;" parent="lane-end" vertex="1">
+                    <mxGeometry x="40" y="80" width="160" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="end-cmd-choco" value="choco install acecommander" style="shape=document;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#3366cc;" parent="lane-end" vertex="1">
+                    <mxGeometry x="240" y="60" width="320" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="end-cmd-winget" value="winget install ATAP.AceCommander" style="shape=document;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#3366cc;" parent="lane-end" vertex="1">
+                    <mxGeometry x="240" y="140" width="320" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="end-choco-channel" value="Chocolatey community feed&#xa;(thin .nupkg with chocolateyInstall.ps1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#3366cc;" parent="lane-end" vertex="1">
+                    <mxGeometry x="600" y="60" width="320" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="end-winget-channel" value="WinGet manifest&#xa;(microsoft/winget-pkgs or private REST source)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#3366cc;" parent="lane-end" vertex="1">
+                    <mxGeometry x="600" y="160" width="320" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="end-bundle-source" value="ProGet ReleaseBundle-Production&#xa;(authoritative source of the .upack)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#82b366;fontColor=#ffffff;strokeColor=#006600;fontStyle=1;" parent="lane-end" vertex="1">
+                    <mxGeometry x="980" y="100" width="320" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="end-installer" value="installer/Install-Application.ps1&#xa;1. verify checksums in manifest.json&#xa;2. detect DB state, decide action&#xa;3. apply Flyway migrations + run seed loaders&#xa;4. deploy app/ files to install location&#xa;5. write %ProgramData%\&lt;App&gt;\manifest.json (audit copy)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;" parent="lane-end" vertex="1">
+                    <mxGeometry x="240" y="220" width="680" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="end-installed" value="Installed app + DB&#xa;%ProgramFiles%\AceCommander\&#xa;Configured DB at target Flyway version" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#82b366;fontColor=#ffffff;strokeColor=#006600;fontStyle=1;" parent="lane-end" vertex="1">
+                    <mxGeometry x="980" y="220" width="320" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="end-choco-edge" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#3366cc;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="lane-end" source="end-cmd-choco" target="end-choco-channel" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="end-winget-edge" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#3366cc;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="lane-end" source="end-cmd-winget" target="end-winget-channel" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="end-choco-pull" value="downloads .upack" style="endArrow=classic;html=1;rounded=0;strokeColor=#82b366;exitX=1;exitY=0.5;entryX=0;entryY=0.3;" parent="lane-end" source="end-choco-channel" target="end-bundle-source" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="end-winget-pull" value="downloads .upack" style="endArrow=classic;html=1;rounded=0;strokeColor=#82b366;exitX=1;exitY=0.5;entryX=0;entryY=0.7;" parent="lane-end" source="end-winget-channel" target="end-bundle-source" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="end-bundle-runs-installer" value="extract → run installer/" style="endArrow=classic;html=1;rounded=0;strokeColor=#82b366;strokeWidth=2;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" parent="lane-end" source="end-bundle-source" target="end-installer" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="end-installer-result" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#82b366;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="lane-end" source="end-installer" target="end-installed" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="srcdocs-07" value="Source documentation:&#xa;• CSharp-Central-Package-Management.md (§5 floating versions 0.*-*, §6 producer/consumer contract, §7 packageSourceMapping)&#xa;• CSharp-Packages-Pack-and-Push.md (§7 feed topology, §8 NuGet.config)&#xa;• PowerShell-Modules-Pack-and-Publish.md (§5 feed URI resolution, §7 Register-PSResourceRepository, §8 publish / install)&#xa;• Release-Bundle-Pipeline.md (§4 bundle layout, §8 Chocolatey / WinGet distribution)&#xa;• Release-Branch-and-Manifest.md (§5 verification at install time, §6 auditing a deployed environment)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;align=left;verticalAlign=top;fontSize=10;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="1040" width="1620" height="55" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="page-08-updates" name="08 — Consumer Update Ingestion">
+        <mxGraphModel dx="1291" dy="633" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title-08" value="How Consumers Ingest Updates — Code (C# / PowerShell) and DB (Schema / Data, SQL)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="20" width="1620" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="subtitle-08" value="Each release is a complete bundle. Code updates and DB updates ride together; the installer detects what to apply." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="60" width="1620" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-csharp" value="Update path — C# library consumers (downstream solutions)" style="swimlane;startSize=30;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="100" width="800" height="280" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-csharp-trigger" value="ProGet feed has a higher version&#xa;(via promotion to nuget-stable, or new prerelease in lower feed)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="upd-csharp" vertex="1">
+                    <mxGeometry x="20" y="50" width="360" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-csharp-action" value="Developer bumps version in&#xa;Directory.Packages.props (pinned)&#xa;or restore picks up floating 0.*-* automatically" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="upd-csharp" vertex="1">
+                    <mxGeometry x="420" y="50" width="360" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-csharp-build" value="dotnet restore + dotnet build of the consuming solution&#xa;new transitive deps land via packages.lock.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="upd-csharp" vertex="1">
+                    <mxGeometry x="20" y="160" width="760" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-csharp-flow1" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#d79b00;" parent="upd-csharp" source="upd-csharp-trigger" target="upd-csharp-action" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-csharp-flow2" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#d79b00;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="upd-csharp" source="upd-csharp-action" target="upd-csharp-build" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-ps" value="Update path — PowerShell module consumers" style="swimlane;startSize=30;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="860" y="100" width="800" height="280" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-ps-trigger" value="ProGet PowerShellGet feed has a higher version" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="upd-ps" vertex="1">
+                    <mxGeometry x="20" y="50" width="360" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-ps-action" value="Update-PSResource &lt;ModuleName&gt;&#xa;-Repository PowershellGet-stable&#xa;(or scheduled task wrapper for unattended runs)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="upd-ps" vertex="1">
+                    <mxGeometry x="420" y="50" width="360" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-ps-import" value="On next Import-Module / new shell:&#xa;PSResourceGet picks the highest installed version automatically" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="upd-ps" vertex="1">
+                    <mxGeometry x="20" y="160" width="760" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-ps-flow1" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#9673a6;" parent="upd-ps" source="upd-ps-trigger" target="upd-ps-action" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-ps-flow2" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#9673a6;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="upd-ps" source="upd-ps-action" target="upd-ps-import" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-app" value="Update path — End-user application (Release Bundle: app + DB ride together)" style="swimlane;startSize=30;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="400" width="1620" height="600" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-app-trigger" value="New version available&#xa;(Chocolatey / WinGet update notification, or scheduled check)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#3366cc;fontStyle=1;" parent="upd-app" vertex="1">
+                    <mxGeometry x="40" y="60" width="380" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-app-cmd-choco" value="choco upgrade acecommander" style="shape=document;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#3366cc;" parent="upd-app" vertex="1">
+                    <mxGeometry x="500" y="50" width="320" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-app-cmd-winget" value="winget upgrade ATAP.AceCommander" style="shape=document;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#3366cc;" parent="upd-app" vertex="1">
+                    <mxGeometry x="500" y="120" width="320" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-app-bundle" value="ProGet ReleaseBundle-Production&#xa;Bundle vN+1: app + Flyway migrations + seed + manifest&#xa;(complete; no &quot;DB-less&quot; releases)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#82b366;fontColor=#ffffff;strokeColor=#006600;fontStyle=1;" parent="upd-app" vertex="1">
+                    <mxGeometry x="900" y="60" width="680" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-app-flow-choco" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#3366cc;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="upd-app" source="upd-app-cmd-choco" target="upd-app-bundle" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-app-flow-winget" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#3366cc;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="upd-app" source="upd-app-cmd-winget" target="upd-app-bundle" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-installer-detect" value="installer/Update-Application.ps1&#xa;reads vN+1 manifest.json + db-manifest.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="upd-app" vertex="1">
+                    <mxGeometry x="40" y="200" width="700" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-decision" value="Detect current state&#xa;Current Flyway version vs vN+1 target?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" parent="upd-app" vertex="1">
+                    <mxGeometry x="900" y="190" width="320" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-bundle-to-installer" value="extract" style="endArrow=classic;html=1;rounded=0;strokeColor=#82b366;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="upd-app" source="upd-app-bundle" target="upd-installer-detect" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-installer-to-decision" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#82b366;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="upd-app" source="upd-installer-detect" target="upd-decision" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="case-codeonly" value="Case A — Code-only update&#xa;(DB Flyway version unchanged from vN)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;" parent="upd-app" vertex="1">
+                    <mxGeometry x="40" y="350" width="500" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="case-codeonly-action" value="• Replace app/ binaries&#xa;• Re-run repeatable Flyway scripts (R__*.sql) — usually no changes&#xa;• Restart service&#xa;• Update %ProgramData%\&lt;App&gt;\manifest.json audit copy" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;verticalAlign=top;" parent="upd-app" vertex="1">
+                    <mxGeometry x="40" y="420" width="500" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="case-schema" value="Case B — Schema and/or data update&#xa;(DB Flyway target version increased)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" parent="upd-app" vertex="1">
+                    <mxGeometry x="600" y="350" width="500" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="case-schema-action" value="• Backup current DB (recommended)&#xa;• Apply new V*.sql migrations to bring Flyway to vN+1 target&#xa;• Run any new versioned seed loaders (S*_load.sql)&#xa;• Re-run repeatable loaders (R__seed_*.sql)&#xa;• Replace app/ binaries; restart service&#xa;• Update audit manifest" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;verticalAlign=top;" parent="upd-app" vertex="1">
+                    <mxGeometry x="600" y="420" width="500" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="case-noop" value="Case C — Already at target&#xa;(re-install of same version, or current &gt; target)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" parent="upd-app" vertex="1">
+                    <mxGeometry x="1160" y="350" width="420" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="case-noop-action" value="• If current = target: re-run repeatable scripts only.&#xa;• If current &gt; target (downgrade): ABORT with clear error.&#xa;  Recovery path is backup-restore, not script reversal." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;verticalAlign=top;" parent="upd-app" vertex="1">
+                    <mxGeometry x="1160" y="420" width="420" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-decision-to-A" value="A: same Flyway target" style="endArrow=classic;html=1;rounded=0;strokeColor=#d79b00;" parent="upd-app" source="upd-decision" target="case-codeonly" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-decision-to-B" value="B: higher Flyway target" style="endArrow=classic;html=1;rounded=0;strokeColor=#6c8ebf;" parent="upd-app" source="upd-decision" target="case-schema" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="upd-decision-to-C" value="C: =target / abort if &gt;target" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="upd-app" source="upd-decision" target="case-noop" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="srcdocs-08" value="Source documentation:&#xa;• Database-Change-Unit-and-Flyway-Promotion.md (§4 code-only releases, §6 backward / forward compatibility, §9 install / upgrade behavior)&#xa;• Release-Branch-and-Manifest.md (§3 manifest schema, §5 verification, §8 patch releases)&#xa;• Release-Bundle-Pipeline.md (§9 code-only releases ship full bundle, §4 installer scripts)&#xa;• CSharp-Central-Package-Management.md (§6 producer/consumer contract, §6.1 pinning at T3+, §8 packages.lock.json)&#xa;• PowerShell-Modules-Pack-and-Publish.md (§12 promotion flow that consumers pull from)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;align=left;verticalAlign=top;fontSize=10;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="1040" width="1620" height="55" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="page-09-identity" name="09 — Package Identity Verification (placeholder)">
+        <mxGraphModel dx="1291" dy="633" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title-09" value="Package Identity Verification — PLACEHOLDER (future section)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="20" width="1620" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="placeholder-banner" value="TO BE DESIGNED — How users of consuming apps verify the identity of an initial install or update package" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=16;" parent="1" vertex="1">
+                    <mxGeometry x="100" y="100" width="1500" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="placeholder-scope" value="Scope of this future section&#xa;&#xa;• How an end user verifies that the .upack downloaded from Chocolatey / WinGet really came from this organization&#xa;  (and was not substituted, mirrored, or tampered with along the way).&#xa;• How a downstream developer verifies that a .nupkg restored from a ProGet feed is the exact bytes signed by our build pipeline.&#xa;• How an operator on a customer site verifies a deployed install (the manifest.json in %ProgramData%\&lt;App&gt;\) corresponds to a real published release.&#xa;• How an auditor follows the chain from a deployed binary back to a release tag, a release branch commit, and a BuildMaster release record." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;verticalAlign=top;" parent="1" vertex="1">
+                    <mxGeometry x="100" y="220" width="1500" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="placeholder-candidates" value="Candidate mechanisms to evaluate (none chosen yet — see TASKS.md)&#xa;&#xa;• NuGet signed packages — `dotnet nuget sign` with an Authenticode code-signing cert; `dotnet nuget verify --all`.&#xa;• ProGet built-in package signing + signature-required feeds.&#xa;• SHA-256 sidecars (.sha256) shipped alongside .nupkg / .upack downloads, served from a separate trust origin.&#xa;• Sigstore / cosign-style transparency log for ATAP-published artifacts.&#xa;• Authenticode signature on the Release Bundle&#39;s installer scripts (.ps1) and on app binaries.&#xa;• Hardware-backed code-signing key (HSM / smart card) for production-tier signatures.&#xa;• Embedded release-manifest signature (manifest.json + manifest.json.sig) checked by the installer before any DB / file action.&#xa;• Public release page listing version → SHA-256 → release-tag, served over HTTPS from a separate domain (out-of-band trust anchor)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;verticalAlign=top;" parent="1" vertex="1">
+                    <mxGeometry x="100" y="450" width="1500" height="280" as="geometry"/>
+                </mxCell>
+                <mxCell id="placeholder-decisions" value="Open decisions to make&#xa;&#xa;1. Trust anchor: which key(s), held where, rotated how?&#xa;2. What does the install script REFUSE to do when verification fails (hard abort, warn-and-continue, opt-out flag)?&#xa;3. What is the user-visible verification command?  e.g.  `Verify-AceCommanderRelease -BundlePath …`&#xa;4. How does a long-living release branch handle key rotation across patch releases?&#xa;5. Where does the &quot;public truth&quot; live (status page, GitHub release notes, signed manifest list)?&#xa;6. How do we communicate the trust anchor to first-time installers without already-trusted infrastructure?" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="100" y="760" width="1500" height="240" as="geometry"/>
+                </mxCell>
+                <mxCell id="srcdocs-09" value="Source documentation: (none yet — this section is the placeholder)&#xa;Once authored, the source-of-truth document is expected to be:  Package-Identity-Verification.md  (TBD)&#xa;Related background:&#xa;• CSharp-Packages-Pack-and-Push.md (§4 SourceLink + symbol packages, §10 PackageProjectUrl gap, §12 Security)&#xa;• Release-Branch-and-Manifest.md (§3 manifest checksums, §5 verification at install time, §6 auditing)&#xa;• Immutable-Build-Strategy.md (§2 Why build-once — hash divergence avoidance enables signature stability)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;align=left;verticalAlign=top;fontSize=10;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="1040" width="1620" height="55" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

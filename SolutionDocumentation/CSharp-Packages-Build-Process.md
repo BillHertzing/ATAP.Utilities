@@ -6,6 +6,16 @@ developer workstation or BuildMaster agent** — the MSBuild file hierarchy, the
 custom task DLL that participates in every build, the bootstrap sequence that gets
 that DLL into place, and the end-to-end data flow for one project build.
 
+> **Strategy update (sprint-0007 — Immutable Build).** Each `.nupkg` is built
+> **exactly once** (at the Experimental tier) and then **promoted unchanged**
+> through Development → Integration → QA → Production via ProGet's promotion
+> API. This document covers what happens during that single build.
+> Higher-tier stages do **not** rebuild — they restore the existing artifact,
+> run tier-appropriate tests against it, and on pass call
+> `Promote-ProGetPackage`. See [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md)
+> for the policy and [BuildMaster-Pipeline-Topology.md](BuildMaster-Pipeline-Topology.md)
+> for how this build slots into the larger pipeline catalog.
+
 **Not in this doc:**
 
 - **Versioning** (NBGV `version.json`, `AssemblyInfo.cs`, label promotion) — see [CSharp-Packages-Versioning.md](CSharp-Packages-Versioning.md).

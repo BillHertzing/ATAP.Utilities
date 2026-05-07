@@ -2,7 +2,23 @@
 
 **Repository:** ATAP.Utilities
 **Scope:** All C# / .NET projects under `src/`
-**Goal:** Build and publish every package individually _and_ as a single `ATAP.Utilities` meta-package, following the 5-tier promotion model already used for PowerShell modules.
+**Goal:** Build every package individually _and_ as a single `ATAP.Utilities` meta-package **exactly once**, then promote the resulting `.nupkg` (byte-for-byte unchanged) through the 5-tier ProGet feed chain.
+
+> **Strategy update (sprint-0007 — Immutable Build).** This pipeline now follows
+> the **build-once / promote-the-artifact** pattern. The Experimental tier runs
+> `dotnet pack` and pushes to `nuget-experimental` exactly once. Every later
+> tier (Development, Integration, QA, Production) runs **tests against the
+> existing artifact** and, on pass, calls `Promote-ProGetPackage` to copy the
+> same `.nupkg` to the next feed. **No tier above Experimental rebuilds.**
+> The full strategy is in [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md);
+> the pipeline catalog is in [BuildMaster-Pipeline-Topology.md](BuildMaster-Pipeline-Topology.md).
+>
+> Older sections of this document still illustrate per-stage `dotnet pack` /
+> `dotnet nuget push` calls because they remain accurate for the **Experimental
+> stage only** and as a single-source reference for the commands themselves.
+> When you read a non-Experimental stage that contains `dotnet pack`, treat
+> that as legacy text being replaced — the Sprint-7 pattern is to call
+> `Promote-ProGetPackage` instead.
 
 ---
 
@@ -192,12 +208,24 @@ Create one **Release** in the application with five **stages** corresponding to 
 Experimental (nuget-experimental)  →  Development (nuget-development)  →  Integration (nuget-integration)  →  QA (nuget-qa)  →  Production (nuget-stable)
 ```
 
-Each stage gate:
+> **Sprint-7 stage semantics (immutable build).** Only the Experimental stage
+> builds. Every later stage **promotes the existing artifact** via
+> `Promote-ProGetPackage` (which calls ProGet's promotion API) and then runs
+> tier-appropriate tests against that artifact. The same `(PackageId,
+> Version, SHA-256)` flows through all five feeds.
 
-- **Experimental → Development**: automatic (no gate) on passing build.
-- **Development → Integration**: requires no open blocker issues; optionally a manual approval.
-- **Integration → QA**: requires integration test results artifact present with zero failures.
-- **QA → Production**: requires manual approval from the release manager.
+Each stage:
+
+| Stage          | What runs                                                                                                  | Gate to next stage                                              |
+| -------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Experimental   | `dotnet build`, `dotnet pack`, push to `nuget-experimental` (single push of record).                       | Automatic on packaging success.                                 |
+| Development    | `Promote-ProGetPackage` (Experimental → Development); restore the promoted package; run unit tests.        | Zero failures. Optionally a manual approval.                    |
+| Integration    | `Promote-ProGetPackage` (Development → Integration); restore the promoted package; run integration tests.  | Integration test artifact present, zero failures.               |
+| QA             | `Promote-ProGetPackage` (Integration → QA); restore the promoted package; full regression + coverage.      | Coverage threshold met; full regression green.                  |
+| Production     | `Promote-ProGetPackage` (QA → Production). No new tests beyond a smoke check against the promoted package. | Manual approval from the release manager.                       |
+
+Promotion is a metadata operation in ProGet — it does not rebuild the
+`.nupkg`. See [Immutable-Build-Strategy.md §5](Immutable-Build-Strategy.md#5-what-promotion-is-and-is-not).
 
 ### 4.3 Package immutability and republish semantics
 
@@ -272,6 +300,16 @@ The plan follows exactly the same shape as `PowerShellModule-5Stage.otter`:
 1. Acquire source.
 2. Resolve tier from NBGV.
 3. Dispatch to the matching stage block.
+
+> **Sprint-7 note:** the OtterScript below is the **legacy build-per-tier
+> shape**. Each non-Experimental stage repeats `dotnet build` / `dotnet test` /
+> `dotnet pack` / `dotnet nuget push`. Under the immutable-build strategy this
+> is wrong — only the Experimental stage builds and pushes. The other stages
+> should `Promote-ProGetPackage` and then test against the restored promoted
+> package. The plan below remains here as a reference for the individual
+> command syntax (still useful for the Experimental stage) until the OtterScript
+> file itself is rewritten. See [BuildMaster-Pipeline-Topology.md §5](BuildMaster-Pipeline-Topology.md#5-pipeline-plan-storage)
+> for the target stage shape.
 
 ```otter
 ##########################################################################
@@ -676,15 +714,29 @@ dotnet nuget push _generated\nuget\local\*.nupkg `
 
 ## 8. Repository Monitors in BuildMaster
 
-Create one **Repository Monitor** per tier-branch pattern:
+> **Sprint-7 note:** under the immutable-build strategy, the **build** is
+> triggered exactly once (from the branch that produces the artifact) and the
+> tier is resolved from the NBGV prerelease label, not from the branch the
+> build came from. The monitors below remain useful as **automatic triggers**
+> for the Experimental build on each branch type, but the tier they imply is
+> only the *starting* tier — the artifact's actual journey through the five
+> feeds is driven by promotion calls, not by branch matches. Treat the
+> "Production stage" monitor as the trigger for "build the
+> release-branch artifact and start it at Experimental, then promote upward as
+> tests pass." The Production tier is reached by promotion, not by direct
+> push from a `main` build. See [Release-Branch-and-Manifest.md](Release-Branch-and-Manifest.md)
+> for release-branch flow.
 
-| Monitor name             | Git ref pattern          | Triggers build for |
-| ------------------------ | ------------------------ | ------------------ |
-| `ATAP.CSharp-Sprint`     | `refs/heads/*-sprint-*`  | Sprint stage       |
-| `ATAP.CSharp-Alpha`      | `refs/heads/*-alpha-*`   | Alpha stage        |
-| `ATAP.CSharp-Beta`       | `refs/heads/integration` | Beta stage         |
-| `ATAP.CSharp-QA`         | `refs/heads/qa`          | QA stage           |
-| `ATAP.CSharp-Production` | `refs/heads/main`        | Production stage   |
+Create one **Repository Monitor** per branch-type to **trigger the
+Experimental build**:
+
+| Monitor name             | Git ref pattern          | Triggers Experimental build for |
+| ------------------------ | ------------------------ | ------------------------------- |
+| `ATAP.CSharp-Sprint`     | `refs/heads/*-sprint-*`  | Sprint-branch commits           |
+| `ATAP.CSharp-Alpha`      | `refs/heads/*-alpha-*`   | Alpha-branch commits            |
+| `ATAP.CSharp-Beta`       | `refs/heads/integration` | Integration-branch commits      |
+| `ATAP.CSharp-QA`         | `refs/heads/qa`          | QA-branch commits               |
+| `ATAP.CSharp-Production` | `refs/heads/release/*`   | Release-branch tag commits      |
 
 Steps to create (BuildMaster UI):
 

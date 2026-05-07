@@ -1,16 +1,28 @@
 # PowerShell Modules — Versioning
 
-**Scope:** Sprint-0006. How a PowerShell module's version (the `ModuleVersion`
-and `Prerelease` fields in `.psd1`) is computed from NBGV and how the
-prerelease label maps onto the 5-tier promotion model.
+**Scope:** Sprint-0006/0007. How a PowerShell module's version (the
+`ModuleVersion` and `Prerelease` fields in `.psd1`) is computed from NBGV
+and how the prerelease label maps onto the 5-tier promotion model.
 
 **Audience:** Anyone who wonders why `Update-ModuleManifest` rejected their
 prerelease string, anyone running `nbgv get-version`, anyone promoting a
 module from one feed tier to the next.
 
-**Status:** Authoritative for sprint-0006. Mirrors the structure of
-[CSharp-Packages-Versioning.md](CSharp-Packages-Versioning.md) but documents the
-PowerShell-specific translation step.
+**Status:** Authoritative for sprint-0006/0007. Mirrors the structure of
+[CSharp-Packages-Versioning.md](CSharp-Packages-Versioning.md) but documents
+the PowerShell-specific translation step.
+
+> **Strategy update (sprint-0007 — Immutable Build).** A module's version
+> (`ModuleVersion` + `Prerelease`) is computed **once** at the moment of
+> the Experimental build and stays the same as the module promotes through
+> the five PowerShellGet feeds. Promotion does not bump `{height}`, does
+> not re-evaluate `version.json`, and does not re-stamp the `.psd1`. The
+> prerelease label declares the **intended** tier; the actual tier is which
+> feed the module currently lives in. The "promotion procedure" in §7
+> remains the right tool for cutting a *new* candidate at the next tier
+> (Sprint→Alpha) — but moving an existing `.nupkg` between feeds is now a
+> `Promote-ProGetPackage` call, not a label edit + rebuild. See
+> [Immutable-Build-Strategy.md §6](Immutable-Build-Strategy.md#6-versioning-no-special-case-for-promotion).
 
 **Not in this doc:**
 - How NBGV itself works (`version.json` schema, `{height}`, prerelease label

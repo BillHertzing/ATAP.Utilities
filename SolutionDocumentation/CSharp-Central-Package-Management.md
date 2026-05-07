@@ -1,9 +1,23 @@
 # CSharp Central Package Management (CPM)
 
-**Scope:** Sprint-0006. How the four .NET-bearing repos (ATAP.Utilities,
+**Scope:** Sprint-0006/0007. How the four .NET-bearing repos (ATAP.Utilities,
 AceCommander, ATAP.IAC, SharedVSCode) centralize NuGet package versions through
 `Directory.Packages.props`, including the floating-version strategy for internal
 ATAP.Utilities dependencies consumed by AceCommander.
+
+> **Strategy update (sprint-0007 — Immutable Build).** Under the
+> immutable-build strategy, the **package being consumed** at any tier is
+> the **promoted instance** of the same `(PackageId, Version, SHA-256)` —
+> not a tier-specific rebuild. CPM's job is therefore to express
+> "AceCommander at Integration consumes the version of `ATAP.Utilities.X`
+> that has been promoted to `nuget-integration`." The pinning rules in §6.1
+> below are exactly this: floating `0.*-*` is allowed at Experimental and
+> Development (where rapid iteration matters) and **pinned versions**
+> (resolved by `Set-AceCommanderPackagePins`) are required at Integration,
+> QA, and Production (where reproducibility matters). The pinned version is
+> the same one that was promoted into the target feed; the consumer does
+> not get a "different build" of that version. See
+> [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md).
 
 **Audience:** Developers who need to add, upgrade, or pin a NuGet dependency;
 anyone investigating NU1507 / NU1008 errors; release engineers promoting package

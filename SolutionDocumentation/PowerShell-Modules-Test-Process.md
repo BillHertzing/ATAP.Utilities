@@ -1,14 +1,25 @@
 # PowerShell Modules — Test Process
 
-**Scope:** Sprint-0006. How PowerShell modules in the ATAP.Utilities repository
-are tested with Pester 5+, statically analyzed with PSScriptAnalyzer, and
-gated for code coverage as they move through the 5-tier promotion model.
+**Scope:** Sprint-0006/0007. How PowerShell modules in the ATAP.Utilities
+repository are tested with Pester 5+, statically analyzed with
+PSScriptAnalyzer, and gated for code coverage as they move through the
+5-tier promotion model.
 
 **Audience:** Module authors writing Pester tests, anyone debugging why a
 tier promotion failed at the test gate, anyone extending the build-tooling
 test cmdlets.
 
-**Status:** Authoritative for sprint-0006.
+**Status:** Authoritative for sprint-0006/0007.
+
+> **Strategy update (sprint-0007 — Immutable Build).** Tests at every tier
+> run **against the existing promoted `.nupkg`** that was built once at
+> Experimental and is being promoted upward. The test cmdlets
+> (`Invoke-PSModulePesterTests`, `Invoke-PSModulePSScriptAnalyzer`,
+> `Test-CodeCoverageGate`) accept the promoted module's path or feed-name
+> as input; they do **not** re-pack or re-build. Test results are attached
+> to the BuildMaster release record for that exact `(ModuleId, Version)`,
+> not embedded into the `.nupkg` itself. See
+> [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md).
 
 **Not in this doc:**
 - How modules are built / packed / published → see the three sibling

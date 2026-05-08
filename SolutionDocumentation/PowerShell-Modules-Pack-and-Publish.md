@@ -401,7 +401,7 @@ Promote an Experimental `.nupkg` to the Development feed:
 ```powershell
 Promote-ProGetPackage `
     -Name     'ATAP.Utilities.FileIO.PowerShell' `
-    -Version  '0.1.0-Alpha017' `
+    -Version  '0.1.0-Alpha042' `
     -FromFeed 'PowershellGet-experimental' `
     -ToFeed   'PowershellGet-development' `
     -Reason   'DEV-PASS for build #4272'

@@ -194,7 +194,7 @@ versions of this doc conflated.
 
 ### 7.2 Promotion procedure (Experimental → Development example)
 
-The artifact `0.1.0-Alpha017` already exists in
+The artifact `0.1.0-Alpha042` already exists in
 `PowershellGet-experimental` (because the developer who built it cut their
 candidate under the `Alpha` label — see §7.3). To make it official at the
 Development tier, promote it:
@@ -202,7 +202,7 @@ Development tier, promote it:
 ```powershell
 Promote-ProGetPackage `
     -Name     'ATAP.Utilities.FileIO.PowerShell' `
-    -Version  '0.1.0-Alpha017' `
+    -Version  '0.1.0-Alpha042' `
     -FromFeed 'PowershellGet-experimental' `
     -ToFeed   'PowershellGet-development' `
     -Reason   'DEV-PASS for build #4272'

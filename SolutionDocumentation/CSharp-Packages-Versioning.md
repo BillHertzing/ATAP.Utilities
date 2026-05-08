@@ -618,7 +618,7 @@ Get-Item bin\Debug\net10.0\<Assembly>.dll |
 
 ### 11.2 Bump Minor across the whole solution
 
-For a pre-T5 bump, edit the `version` field in every `version.json` you ship:
+For a pre-Production bump, edit the `version` field in every `version.json` you ship:
 
 ```powershell
 $root = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-{NNNN}-sprint-{M}-work-items'

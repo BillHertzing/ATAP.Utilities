@@ -331,6 +331,9 @@
                 <mxCell id="nupkg-to-feed" value="Publish-PSModuleToProGet (uploads .nupkg to Experimental feed)" style="endArrow=classic;html=1;rounded=0;strokeColor=#9673a6;strokeWidth=2;" parent="1" source="nupkg" target="proget-feed" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
+                <mxCell id="nupkg-to-feed-spec" value="(spec)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=11;align=center;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="1290" y="510" width="80" height="24" as="geometry"/>
+                </mxCell>
                 <mxCell id="page-3-note" value="From this point on, the .nupkg never changes. Promotion to PowershellGet-development → -integration → -qa → -stable happens via Promote-ProGetPackage. See diagram 01." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=2;" parent="1" vertex="1">
                     <mxGeometry x="900" y="660" width="760" height="60" as="geometry"/>
                 </mxCell>

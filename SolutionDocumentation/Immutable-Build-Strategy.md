@@ -173,8 +173,12 @@ branch tag, taking the same shape as any other build.
 
 ## 6. Versioning (no special-case for promotion)
 
-Versioning is unchanged from sprint-0006: NBGV computes the prerelease label
-and `{height}` from `version.json`. The label declares the **intended** tier:
+NBGV computes the prerelease label and `{height}` from `version.json` **at
+the Experimental stage only**. The resulting version string is captured
+into a BuildMaster build variable (named `$ResolvedPackageVersion` in the
+canonical OtterScript) and **read, not recomputed**, by every later
+stage. NBGV is not invoked above Experimental. The label declares the
+**intended** tier:
 
 | Label         | Tier         | Where the artifact starts            |
 | ------------- | ------------ | ------------------------------------ |
@@ -192,6 +196,26 @@ A consequence: the **same artifact** lives in the Experimental, Development,
 Integration, QA, and Production feeds simultaneously while it is being
 promoted. Each feed's listing is independent; the package's identity is
 defined by `(PackageId, Version)`.
+
+### 6.1 Where the captured version lives
+
+| Surface | What it holds | Set by | Read by |
+| --- | --- | --- | --- |
+| BuildMaster build variable `$ResolvedPackageVersion` | full SemVer, e.g. `0.1.0-Sprint.42` | Experimental stage, after `nbgv get-version` | every later stage of the same release |
+| The artifact's filename | same SemVer minus the `+<hash>` build metadata | `dotnet pack` / `New-PSModuleNupkg` at Experimental | promotion calls; tier gates |
+| BuildMaster release record metadata | full SemVer + SHA-256 | Experimental stage's "attach package" step | audit / forensics |
+
+### 6.2 Why this matters
+
+Two pipeline runs in close succession against the same SHA can produce
+the **same** `Sprint.{height}` but with different `+<gitshorthash>` build
+metadata if the underlying tools see different working-tree states.
+Because `+<hash>` is part of the SemVer 2.0 identity, two such packages
+are different artifacts. Capturing the version once at Experimental and
+reading it everywhere downstream is what makes "promote the artifact"
+mean a single, identifiable thing. This is the rationale documented in
+§12 of `CriticalAnalysisOfImmutableBuildStrategy.md` (the
+`+<gitshorthash>` problem).
 
 ---
 

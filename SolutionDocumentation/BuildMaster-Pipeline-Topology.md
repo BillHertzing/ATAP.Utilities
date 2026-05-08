@@ -82,21 +82,23 @@ the logic lives. This is intentional — moving logic out of OtterScript
 into cmdlets makes it testable with Pester and reusable from a developer
 workstation.
 
-| Cmdlet                            | Used by                          | Role                                                                                                |
-| --------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `Get-BuildContext`                | All three pipelines              | Resolve branch type, application, version, tier from environment.                                   |
-| `New-ReleaseManifest`             | Release-Bundle pipeline          | Generate `manifest.json` for a release tag.                                                         |
-| `New-ReleaseBundle`               | Release-Bundle pipeline          | Assemble the bundle directory tree and pack to `.upack`.                                            |
-| `Publish-NuGetPackageToProGet`    | C# pipeline                      | Push a `.nupkg` to a ProGet NuGet feed (single source of truth for the push command).               |
-| `Publish-PSModuleToProGet`        | PowerShell pipeline              | Push a PowerShell `.nupkg` to a ProGet PowerShellGet feed.                                          |
-| `Publish-UniversalPackageToProGet`| Release-Bundle pipeline          | Push a `.upack` to a ProGet Universal feed.                                                         |
-| `Promote-ProGetPackage`           | All three pipelines              | Call ProGet's promotion API to copy a package between feeds. Idempotent — no-op if already promoted. |
-| `New-BuildMasterRelease`          | All three pipelines              | Create / update a BuildMaster release record for a specific version.                                |
-| `Start-BuildMasterPipeline`       | Trigger handlers                 | Trigger a release's pipeline run via BuildMaster API.                                               |
-| `Approve-BuildMasterStage`        | All three pipelines              | Mark a tier gate passed.                                                                            |
-| `Invoke-FlywayRehearsal`          | Release-Bundle pipeline          | Apply bundled migrations to a previous-prod snapshot.                                               |
-| `Publish-ChocolateyRelease`       | Release-Bundle pipeline (Distribution stage) | Push the Chocolatey wrapper package.                                                    |
-| `Update-WinGetManifestSource`     | Release-Bundle pipeline (Distribution stage) | Update the WinGet manifest set.                                                         |
+> Cmdlets marked `spec` are referenced by the strategy docs and the BuildMaster pipelines but have not yet been implemented in `ATAP.Utilities.BuildTooling.PowerShell`. The Status column below was populated by running `Get-Command` against the module from a sprint-0007 worktree; when the module fails to import, the status falls back to `spec`.
+
+| Cmdlet                            | Used by                          | Role                                                                                                | Status |
+| --------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------- | ------ |
+| `Get-BuildContext`                | All three pipelines              | Resolve branch type, application, version, tier from environment.                                   | spec   |
+| `New-ReleaseManifest`             | Release-Bundle pipeline          | Generate `manifest.json` for a release tag.                                                         | spec   |
+| `New-ReleaseBundle`               | Release-Bundle pipeline          | Assemble the bundle directory tree and pack to `.upack`.                                            | spec   |
+| `Publish-NuGetPackageToProGet`    | C# pipeline                      | Push a `.nupkg` to a ProGet NuGet feed (single source of truth for the push command).               | spec   |
+| `Publish-PSModuleToProGet`        | PowerShell pipeline              | Push a PowerShell `.nupkg` to a ProGet PowerShellGet feed.                                          | spec   |
+| `Publish-UniversalPackageToProGet`| Release-Bundle pipeline          | Push a `.upack` to a ProGet Universal feed.                                                         | spec   |
+| `Promote-ProGetPackage`           | All three pipelines              | Call ProGet's promotion API to copy a package between feeds. Idempotent — no-op if already promoted. | spec   |
+| `New-BuildMasterRelease`          | All three pipelines              | Create / update a BuildMaster release record for a specific version.                                | spec   |
+| `Start-BuildMasterPipeline`       | Trigger handlers                 | Trigger a release's pipeline run via BuildMaster API.                                               | spec   |
+| `Approve-BuildMasterStage`        | All three pipelines              | Mark a tier gate passed.                                                                            | spec   |
+| `Invoke-FlywayRehearsal`          | Release-Bundle pipeline          | Apply bundled migrations to a previous-prod snapshot.                                               | spec   |
+| `Publish-ChocolateyRelease`       | Release-Bundle pipeline (Distribution stage) | Push the Chocolatey wrapper package.                                                    | spec   |
+| `Update-WinGetManifestSource`     | Release-Bundle pipeline (Distribution stage) | Update the WinGet manifest set.                                                         | spec   |
 
 All cmdlets:
 

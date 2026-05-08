@@ -35,20 +35,27 @@ PowerShell publish steps.
 
 ## 1. Two-step model: Pack, then Publish
 
-A PowerShell module is shipped as a `.nupkg`. The lifecycle is:
+A PowerShell module is shipped as a `.nupkg`. Under immutable build, pack
+and push are two **separate** steps with the `.nupkg` as a named file on
+disk between them:
 
 ```text
 build (Build-PSModulePsm1 + Build-PSModuleManifest)
-  → pack (Publish-PSResource implicitly, or Compress-Archive for legacy)
-    → push (Publish-PSResource + Repository → ProGet PowerShellGet feed)
+  → pack (New-PSModuleNupkg, produces .nupkg on disk)
+    → push (Publish-PSModuleToProGet — uploads named .nupkg to PowershellGet-experimental)
 ```
 
-In modern PowerShellGet (PSResource v3+), pack and push are bundled in one
-`Publish-PSResource` invocation against an already-registered repository.
-We do not run a separate `nuget pack` step.
+Under immutable build, the `.nupkg` is the artifact. It must be a file on
+disk with a stable SHA-256 before any push, so that the same bytes can be
+promoted between feeds and so test evidence can be attached to a specific
+`(ModuleId, Version, SHA-256)`. `New-PSModuleNupkg` produces the file;
+`Publish-PSModuleToProGet` uploads it. Movement to higher tiers is by
+`Promote-ProGetPackage` (see §12) — never by re-running the pack/publish
+pair.
 
-The cmdlet that wraps all of this is
-`src/ATAP.Utilities.BuildTooling.PowerShell/public/Publish-PSModuleToProGetFeed.ps1`.
+`New-PSModuleNupkg` and `Publish-PSModuleToProGet` are spec — see
+[BuildMaster-Pipeline-Topology.md §4](BuildMaster-Pipeline-Topology.md#4-powershell-automation-surface)
+for status.
 
 ---
 
@@ -56,22 +63,30 @@ The cmdlet that wraps all of this is
 
 PowerShellGet has two generations:
 
-| Generation      | Repo cmdlets                    | Publish cmdlet       | Status                                                                |
-| --------------- | ------------------------------- | -------------------- | --------------------------------------------------------------------- |
-| v2 (legacy)     | `Register-PSRepository`         | `Publish-Module`     | Used by `Publish-PSPackage.ps1` (legacy Jenkins flow — being retired) |
-| v3 (PSResource) | `Register-PSResourceRepository` | `Publish-PSResource` | **Current** — used by `Publish-PSModuleToProGetFeed`                  |
+| Generation      | Repo cmdlets                    | Publish cmdlet       | Status                                                                                                  |
+| --------------- | ------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------- |
+| v2 (legacy)     | `Register-PSRepository`         | `Publish-Module`     | Used by `Publish-PSPackage.ps1` (legacy Jenkins flow — being retired)                                   |
+| v3 (PSResource) | `Register-PSResourceRepository` | `Publish-PSResource` | **What's wrapped** — `Publish-PSModuleToProGet` calls `Publish-PSResource -NupkgPath` against ProGet    |
 
 PSResource v3 is faster, supports SemVer 2.0 prereleases more reliably, and
 matches the cmdlet surface used by `dotnet`'s NuGet client. The legacy
 v2 path remains in the codebase only because `Publish-PSPackage.ps1` has not
 yet been deleted (see [PowerShell-Modules-Build-Process.md](PowerShell-Modules-Build-Process.md) §12).
 
+Under immutable build, the developer-facing entry-point is
+`Publish-PSModuleToProGet -NupkgPath <file>`. It internally calls
+`Publish-PSResource -NupkgPath` against the `PowershellGet-experimental`
+feed. Developers should not call `Publish-PSResource` directly — doing so
+obscures the artifact's file-on-disk identity and bypasses the
+`(ModuleId, Version, SHA-256)` capture that the wrapper performs for the
+BuildMaster release record.
+
 ---
 
 ## 3. The packed `.nupkg` layout
 
-When `Publish-PSResource -Path <module-folder>` runs, it produces an internal
-`.nupkg` with this layout:
+When `New-PSModuleNupkg -ModulePath <module-folder> -OutputPath <out>` runs, it
+produces a `.nupkg` on disk with this layout:
 
 ```text
 <Module>.<Major>.<Minor>.<Patch>[-<Prerelease>].nupkg
@@ -96,20 +111,25 @@ Notes:
 
 ## 4. Tier-to-feed mapping
 
-The publish cmdlet maps the tier to a PowerShellGet feed name. The mapping is
-inlined in `Publish-PSModuleToProGetFeed.ps1` until task **T-12**
-(`Get-TierFromNBGVLabel`) is merged:
+The five PowerShellGet feeds form the tier-state mechanism. Under immutable
+build, only the Experimental feed is a normal **publish** target — every
+successful Experimental build pushes a `.nupkg` there exactly once. Movement
+of that same `.nupkg` to the higher feeds is by **promotion**
+(`Promote-ProGetPackage`, see §12), not by re-publishing.
 
-| Tier name    | ProGet feed name             | Purpose                       |
-| ------------ | ---------------------------- | ----------------------------- |
-| `Sprint`     | `PowershellGet-experimental` | T1 — every successful build   |
-| `Alpha`      | `PowershellGet-development`  | T2 — passes unit tests        |
-| `Beta`       | `PowershellGet-integration`  | T3 — passes integration tests |
-| `QA`         | `PowershellGet-qa`           | T4 — release candidate        |
-| `Production` | `PowershellGet-stable`       | T5 — released                 |
+| Tier         | Label name | ProGet feed name             | How a `.nupkg` arrives                                  |
+| ------------ | ---------- | ---------------------------- | ------------------------------------------------------- |
+| Experimental | `Sprint`   | `PowershellGet-experimental` | `Publish-PSModuleToProGet` (the only publish target)    |
+| Development  | `Alpha`    | `PowershellGet-development`  | `Promote-ProGetPackage` from Experimental, after gates  |
+| Integration  | `Beta`     | `PowershellGet-integration`  | `Promote-ProGetPackage` from Development, after gates   |
+| QA           | `QA`       | `PowershellGet-qa`           | `Promote-ProGetPackage` from Integration, after gates   |
+| Production   | *(none)*   | `PowershellGet-stable`       | `Promote-ProGetPackage` from QA, after manual approval  |
 
-The `-Tier` parameter is `[ValidateSet]`-constrained to these five values.
-Any other value throws before any network call.
+There is no `-Tier` or `-FeedTier` parameter on `Publish-PSModuleToProGet`:
+the cmdlet always targets `PowershellGet-experimental`. The Label-to-tier
+correspondence is metadata on the artifact (set at pack time by NBGV) and
+must agree with the feed the artifact currently lives in — a deployment
+script asserts label↔feed consistency before installing a module.
 
 ---
 
@@ -153,7 +173,8 @@ the value.
 ## 7. Repository registration
 
 PowerShellGet v3 requires a registered `PSResourceRepository` per feed before
-publish. `Publish-PSModuleToProGetFeed` handles this idempotently:
+publish. `Publish-PSModuleToProGet` handles this idempotently for the
+`PowershellGet-experimental` feed (the only feed it publishes to):
 
 ```powershell
 $existing = Get-PSResourceRepository -Name $feedName -ErrorAction SilentlyContinue
@@ -173,18 +194,21 @@ or PSGallery.
 
 ## 8. The publish call
 
-Once the repo is registered and the API key is in hand:
+This is the call that `Publish-PSModuleToProGet` makes internally — once
+the Experimental repo is registered and the API key is in hand:
 
 ```powershell
 Publish-PSResource -NupkgPath $resolvedNupkg -Repository $feedName -ApiKey $apiKey
 ```
 
-Note we pass `-NupkgPath` (a pre-built `.nupkg` path), not `-Path` (a
-folder). Our build path produces the `.nupkg` separately so it can be
-test-uploaded with `-WhatIf` before commit.
+Note the wrapper passes `-NupkgPath` (a pre-built `.nupkg` path), not
+`-Path` (a folder). The pack step (`New-PSModuleNupkg`) produces the
+`.nupkg` separately so it can be test-uploaded with `-WhatIf`, hashed for
+the BuildMaster release record, and promoted between feeds without ever
+being rebuilt.
 
 `Publish-PSResource` returns `$null` on success in many versions; the
-cmdlet wraps the result in a structured `PSCustomObject` for downstream
+wrapper wraps the result in a structured `PSCustomObject` for downstream
 consumers:
 
 ```powershell
@@ -203,11 +227,10 @@ consumers:
 
 `-WhatIf` short-circuits before `Publish-PSResource`. The returned object
 still carries the resolved feed name + URI, so callers can verify the
-publish _plan_ without contacting ProGet:
+publish *plan* without contacting ProGet:
 
 ```powershell
-Publish-PSModuleToProGetFeed -NupkgPath ./out/Foo.0.1.0-Sprint042.nupkg `
-                              -Tier Sprint -WhatIf
+Publish-PSModuleToProGet -NupkgPath ./out/Foo.0.1.0-Sprint042.nupkg -WhatIf
 # Returns Published = $false, ResponseSummary = "WhatIf: planned publish ..."
 ```
 
@@ -218,26 +241,25 @@ provisioning the API key.
 
 ## 10. End-to-end developer publish
 
-Full sequence to publish one module to T1:
+Full sequence to build, pack, and publish one module to the Experimental
+PowerShellGet feed. Pack and push are two distinct steps with the
+`.nupkg` as a named file between them:
 
 ```powershell
-# 1. Build (see Build-Process doc §7)
+# 1. Build (see Build-Process doc §7) — produces .psm1 + .psd1 in
+#    _generated/psmodules/<Module>/packages/<Module>/
 $meta = Resolve-PSModuleMetadata -StartPath ./src/ATAP.Utilities.FileIO.PowerShell
 $v    = Get-PSModuleVersionFromNBGV -ModuleRoot $meta.ModuleRoot
-$pkgFolder = "$($meta.OutputRoot)/packages/$($meta.ModuleName)"
 # ...Build-PSModulePsm1 + Build-PSModuleManifest...
 
-# 2. Pack into .nupkg
-$nupkgFolder = "$($meta.OutputRoot)/packages-nupkg"
-New-Item -ItemType Directory -Path $nupkgFolder -Force | Out-Null
-Publish-PSResource -Path $pkgFolder -Repository (Get-PSResourceRepository -Name PowershellGet-experimental).Uri `
-                   -SkipDependenciesCheck -OutputDirectory $nupkgFolder
-# (or use the legacy nuget pack path if PSResource produces a .nupkg in-place)
+# 2. Pack: produce a .nupkg on disk
+$nupkg = New-PSModuleNupkg -ModulePath "$($meta.OutputRoot)/packages/$($meta.ModuleName)" `
+                           -OutputPath "$($meta.OutputRoot)/packages-nupkg"
 
-$nupkg = Get-ChildItem -Path $nupkgFolder -Filter "*.nupkg" | Select-Object -First 1
+# 3. Push: upload the .nupkg to the Experimental feed
+Publish-PSModuleToProGet -NupkgPath $nupkg.FullName
 
-# 3. Publish to T1 (Sprint)
-Publish-PSModuleToProGetFeed -NupkgPath $nupkg.FullName -Tier Sprint
+# 4. Higher tiers: promote via Promote-ProGetPackage (see §12)
 ```
 
 In practice steps 1–3 are wrapped by the per-module `Publish-ATAPUtilities.ps1`
@@ -258,8 +280,12 @@ developer's local "publish everything I just changed" loop. Behavior:
    when verbose) followed by the publish call.
 
 As of sprint-0006 (Area 2.5-3), this script also iterates and publishes
-PowerShell modules by calling `Publish-PSModuleToProGetFeed` for each module
-in the repo. The PowerShell-module publish flow is documented in §10.
+PowerShell modules. Under the sprint-0007 immutable-build update, each
+iteration calls `New-PSModuleNupkg` to produce a `.nupkg` and then
+`Publish-PSModuleToProGet` to push it to `PowershellGet-experimental`. The
+PowerShell-module publish flow is documented in §10. (Older revisions of
+this script called the legacy `Publish-PSModuleToProGetFeed -Tier <X>`
+cmdlet — that cmdlet is deprecated in favor of the pack/push pair.)
 
 ---
 
@@ -290,45 +316,58 @@ the promotion mechanism — `Promote-ProGetPackage` is.
 
 ## 13. Common failures and remedies
 
-| Error                                                            | Cause                                                    | Fix                                                                                                                                               |
-| ---------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `feed URI for tier X is not configured`                          | Neither `$global:settings` nor the env var holds the URI | `[Environment]::SetEnvironmentVariable('PROGET_POWERSHELLGET_FEED_URI_SPRINT','http://localhost:50000/nuget/PowershellGet-experimental/','User')` |
-| `Unable to resolve ProGet API key for tier X`                    | Bitwarden secret missing AND env var unset               | Add Bitwarden item `ProGet_PowerShellGet_<Tier>_ApiKey` or set `PROGET_POWERSHELLGET_APIKEY_<TIER>`                                               |
-| `Publish-PSResource: A NuGet feed already contains this package` | Same `Module.Version` already published                  | Bump the height (commit something) and rebuild; ProGet rejects re-uploads                                                                         |
-| `Publish-PSResource: ResourceUnauthorized`                       | API key invalid or wrong tier                            | Verify the key in ProGet UI (Admin → API Keys) matches the tier                                                                                   |
-| `NupkgPath does not exist or is not a file`                      | Build did not produce the `.nupkg` (path mismatch)       | Confirm the pack step ran; check `$meta.OutputRoot/packages-nupkg/`                                                                               |
-| `NupkgPath must have a .nupkg extension`                         | A folder path was passed instead of a file               | Pass the resolved `.nupkg`, not the module folder                                                                                                 |
-| `Repository <name> already registered with different URI`        | A previous run registered a stale URI                    | The cmdlet will `Set-PSResourceRepository` to fix; if it loops, manually `Unregister-PSResourceRepository` and retry                              |
+| Error | Cause | Fix |
+| ----- | ----- | --- |
+| `feed URI for tier X is not configured` (raised inside `Promote-ProGetPackage`) | Neither `$global:settings` nor the env var holds the URI for the **target** feed of a promotion. `Publish-PSModuleToProGet` itself only needs the Experimental URI. | `[Environment]::SetEnvironmentVariable('PROGET_POWERSHELLGET_FEED_URI_DEVELOPMENT','http://localhost:50000/nuget/PowershellGet-development/','User')` (substitute the target tier) |
+| `Unable to resolve ProGet API key for tier X` | Bitwarden secret missing AND env var unset | Add Bitwarden item `ProGet_PowerShellGet_<Tier>_ApiKey` or set `PROGET_POWERSHELLGET_APIKEY_<TIER>` |
+| `Publish-PSResource: A NuGet feed already contains this package` | Same `Module.Version` already published | Bump the height (commit something) and rebuild; ProGet rejects re-uploads |
+| `Publish-PSResource: ResourceUnauthorized` | API key invalid or wrong tier | Verify the key in ProGet UI (Admin → API Keys) matches the tier |
+| `NupkgPath does not exist or is not a file` | Build did not produce the `.nupkg` (path mismatch) | Confirm the pack step ran; check `$meta.OutputRoot/packages-nupkg/` |
+| `NupkgPath must have a .nupkg extension` | A folder path was passed instead of a file | Pass the resolved `.nupkg`, not the module folder |
+| `Repository <name> already registered with different URI` | A previous run registered a stale URI | The cmdlet will `Set-PSResourceRepository` to fix; if it loops, manually `Unregister-PSResourceRepository` and retry |
 
 ---
 
-## 14. Known drift and gaps (sprint-0006)
+## 14. Known drift and gaps (sprint-0006/0007)
 
-1. **No `Get-TierFromNBGVLabel` helper** — task T-12 is unmerged. Until
-   then, the tier is passed explicitly as a `-Tier` parameter and the
-   developer must keep it consistent with the module's `version.json`
-   prerelease label.
+1. **`New-PSModuleNupkg` and `Publish-PSModuleToProGet` are spec.** Both
+   cmdlets are referenced by this doc and by the BuildMaster pipelines but
+   have not yet been implemented in `ATAP.Utilities.BuildTooling.PowerShell`.
+   Their stub status is tracked in
+   [BuildMaster-Pipeline-Topology.md §4](BuildMaster-Pipeline-Topology.md#4-powershell-automation-surface).
+   The legacy `Publish-PSModuleToProGetFeed -Tier <X>` cmdlet exists in the
+   module today but is **deprecated** under the immutable-build strategy
+   (it conflated pack and push and assumed publish-per-tier). Replace any
+   call to `Publish-PSModuleToProGetFeed -Tier <X>` with the
+   pack/push/promote sequence in §10.
 
-2. ~~**No `Get-ATAPIACConstant` integration** — task T-30.~~ **Resolved (sprint-0006
-   §7.1-3):** `Publish-PSModuleToProGetFeed` now looks up feed names and URIs
-   via `Get-ATAPIACConstant` (`FeedConstants.psd1`). Env-var fallback retained
+2. **No `Get-TierFromNBGVLabel` helper** — task T-12 is unmerged. Under
+   immutable build this matters less (only the Experimental publish needs
+   to know it is Experimental, and `Publish-PSModuleToProGet` hard-codes
+   that target), but it is still needed by `Promote-ProGetPackage` callers
+   that derive the source feed from the artifact's prerelease label.
+
+3. ~~**No `Get-ATAPIACConstant` integration** — task T-30.~~ **Resolved (sprint-0006
+   §7.1-3):** the publish helper now looks up feed names and URIs via
+   `Get-ATAPIACConstant` (`FeedConstants.psd1`). Env-var fallback retained
    for agent shells.
 
-3. ~~**`Publish-ATAPUtilities.ps1` does not publish PowerShell modules.**~~
+4. ~~**`Publish-ATAPUtilities.ps1` does not publish PowerShell modules.**~~
    **Resolved (sprint-0006 §2.5-3):** `Publish-ATAPUtilities.ps1` now includes a
-   PowerShell-modules section that calls `Publish-PSModuleToProGetFeed` for
-   each module. See §11 above.
+   PowerShell-modules section. Sprint-0007 update: that section calls
+   `New-PSModuleNupkg` followed by `Publish-PSModuleToProGet` for each
+   module. See §11 above.
 
-4. **Repository name collisions are not detected.** If two tiers point at
+5. **Repository name collisions are not detected.** If two tiers point at
    the same feed URI by accident, the second registration silently wins.
 
-5. ~~**No retention policy enforcement.**~~ **Resolved (sprint-0006 §5.1-3):**
+6. ~~**No retention policy enforcement.**~~ **Resolved (sprint-0006 §5.1-3):**
    `RetentionPolicy` entries are now declared in `ProGetFeedCollection`
    (`HostSettings.IAC.Fragment.PackageRepositories.ProGetFeeds.ps1`) and applied
    by `New-ProGetFeedSet`: experimental = 7 days, development = 30 days,
    integration/qa = indefinite (hermetic), stable = indefinite.
 
-6. **The legacy `Publish-PSPackage.ps1` is still exported** — see
+7. **The legacy `Publish-PSPackage.ps1` is still exported** — see
    [PowerShell-Modules-Build-Process.md](PowerShell-Modules-Build-Process.md) §12.3.
    It will silently fail in any environment that does not have the
    ancient `\\utat022\FS\...` UNC share mounted.
@@ -337,18 +376,35 @@ the promotion mechanism — `Promote-ProGetPackage` is.
 
 ## 15. Quick reference
 
-Publish one module to Sprint (T1):
+Pack a module folder into a `.nupkg` on disk:
 
 ```powershell
-Publish-PSModuleToProGetFeed `
-  -NupkgPath ./out/ATAP.Utilities.FileIO.PowerShell.0.1.0-Sprint042.nupkg `
-  -Tier Sprint
+$nupkg = New-PSModuleNupkg `
+    -ModulePath ./_generated/psmodules/ATAP.Utilities.FileIO.PowerShell/packages/ATAP.Utilities.FileIO.PowerShell `
+    -OutputPath ./_generated/psmodules/ATAP.Utilities.FileIO.PowerShell/packages-nupkg
+```
+
+Publish that `.nupkg` to the Experimental PowerShellGet feed:
+
+```powershell
+Publish-PSModuleToProGet -NupkgPath $nupkg.FullName
 ```
 
 Dry-run check (no upload):
 
 ```powershell
-Publish-PSModuleToProGetFeed -NupkgPath ./out/Foo.0.1.0-Sprint042.nupkg -Tier Sprint -WhatIf
+Publish-PSModuleToProGet -NupkgPath ./out/Foo.0.1.0-Sprint042.nupkg -WhatIf
+```
+
+Promote an Experimental `.nupkg` to the Development feed:
+
+```powershell
+Promote-ProGetPackage `
+    -Name     'ATAP.Utilities.FileIO.PowerShell' `
+    -Version  '0.1.0-Alpha017' `
+    -FromFeed 'PowershellGet-experimental' `
+    -ToFeed   'PowershellGet-development' `
+    -Reason   'DEV-PASS for build #4272'
 ```
 
 List currently registered repositories:

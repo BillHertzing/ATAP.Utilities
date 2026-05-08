@@ -124,18 +124,20 @@ modules. See
 [CSharp-Packages-Versioning.md](CSharp-Packages-Versioning.md) §3 for the
 authoritative table; reproduced here for convenience:
 
-| Tier | Label name | NBGV `version.json` `prerelease` | Generated `Prerelease` |
-| ---- | ---------- | -------------------------------- | ---------------------- |
-| T1   | Sprint     | `Sprint`                         | `SprintNNN`            |
-| T2   | Alpha      | `Alpha`                          | `AlphaNNN`             |
-| T3   | Beta       | `Beta`                           | `BetaNNN`              |
-| T4   | QA         | `QA`                             | `QANNN`                |
-| T5   | Production | *(empty — no prerelease)*        | *(empty)*              |
+| Tier         | Label name | NBGV `version.json` `prerelease` | Generated `Prerelease` |
+| ------------ | ---------- | -------------------------------- | ---------------------- |
+| Experimental | Sprint     | `Sprint`                         | `SprintNNN`            |
+| Development  | Alpha      | `Alpha`                          | `AlphaNNN`             |
+| Integration  | Beta       | `Beta`                           | `BetaNNN`              |
+| QA           | QA         | `QA`                             | `QANNN`                |
+| Production   | Production | *(empty — no prerelease)*        | *(empty)*              |
 
 The tier label is **not** stored anywhere PowerShell-specific. It is read
 from the module's `version.json` (the same NBGV file used by the C# build).
-Promoting a module to the next tier means editing
-`<ModuleRoot>/version.json` and committing the change.
+Editing `<ModuleRoot>/version.json` and committing the change cuts a **new
+candidate** at the next tier (it produces a new artifact with a new version
+number). Moving an **existing** `.nupkg` between PowerShellGet feeds is a
+separate operation — `Promote-ProGetPackage` — and is documented in §7.
 
 ---
 
@@ -164,19 +166,76 @@ Notes:
 
 ---
 
-## 7. Promotion procedure (T1 → T2 example)
+## 7. Promotion mechanics for PowerShell modules
 
-To promote a single module from Sprint (T1) to Alpha (T2):
+Under immutable build, the version-label embedded in a published module
+`.nupkg` declares the **intended tier** the module is heading toward. The
+**actual** tier is which PowerShellGet feed the `.nupkg` currently lives in.
+Movement between feeds is a `Promote-ProGetPackage` call — a ProGet API
+operation that copies the existing bytes (or moves a feed-membership pointer)
+from one feed to another. The `.psd1` is not re-stamped, NBGV is not
+re-invoked, and `version.json` is not re-edited during a promotion.
+
+This section is structured around the two distinct operations that earlier
+versions of this doc conflated.
+
+### 7.1 The two operations are different
+
+- **Cutting a new candidate at the next tier** = edit `<ModuleRoot>/version.json`,
+  commit, and let the next pipeline run produce a fresh `.nupkg`. This
+  produces a **new artifact** with a **new version number** (e.g. moving
+  from `Sprint` to `Alpha` makes the next build land at
+  `0.1.0-Alpha.{newheight}`). Use this when you want a fresh build under
+  a different label. Procedure: §7.3.
+- **Promoting an existing candidate** = call `Promote-ProGetPackage`. The
+  `.nupkg`'s bytes are unchanged. The version number is unchanged. Only
+  the feed membership changes. Use this when an artifact has passed its
+  tier gate and is ready for the next feed. Procedure: §7.2.
+
+### 7.2 Promotion procedure (Experimental → Development example)
+
+The artifact `0.1.0-Alpha017` already exists in
+`PowershellGet-experimental` (because the developer who built it cut their
+candidate under the `Alpha` label — see §7.3). To make it official at the
+Development tier, promote it:
+
+```powershell
+Promote-ProGetPackage `
+    -Name     'ATAP.Utilities.FileIO.PowerShell' `
+    -Version  '0.1.0-Alpha017' `
+    -FromFeed 'PowershellGet-experimental' `
+    -ToFeed   'PowershellGet-development' `
+    -Reason   'DEV-PASS for build #4272'
+```
+
+`Promote-ProGetPackage` is the **only** mechanism for moving a
+PowerShell-module `.nupkg` between PowerShellGet feeds under the immutable
+build strategy. Promotion is not a re-pack, not a re-publish, and not a
+re-evaluation of `version.json`. See
+[Immutable-Build-Strategy.md §5](Immutable-Build-Strategy.md#5-what-promotion-is-and-is-not).
+
+`Promote-ProGetPackage` is currently spec — see
+[BuildMaster-Pipeline-Topology.md §4](BuildMaster-Pipeline-Topology.md#4-powershell-automation-surface)
+for status.
+
+### 7.3 Cutting a new candidate (formerly the "label promotion procedure")
+
+Run this procedure when you want to **change the label on a fresh build** —
+e.g. you've been building `Sprint` candidates and now want to start
+producing `Alpha` candidates. It produces a new artifact with a new
+version number. It does **not** move an existing artifact between feeds.
+
+To cut a new candidate for a single module under the next label:
 
 ```powershell
 $file = "src/ATAP.Utilities.FileIO.PowerShell/version.json"
 (Get-Content $file -Raw) -replace '"version":\s*"0\.1-Sprint\.\{height\}"', '"version": "0.1-Alpha.{height}"' |
     Set-Content $file -Encoding utf8
 git add $file
-git commit -m "promote(ps): ATAP.Utilities.FileIO.PowerShell to Alpha"
+git commit -m "version(ps): ATAP.Utilities.FileIO.PowerShell cut new Alpha candidate"
 ```
 
-To promote *every* PowerShell module at once:
+To cut *every* PowerShell module under the next label at once:
 
 ```powershell
 Get-ChildItem ./src -Directory -Filter '*Powershell*','*PowerShell*','FinancialAPI' |
@@ -187,12 +246,21 @@ Get-ChildItem ./src -Directory -Filter '*Powershell*','*PowerShell*','FinancialA
         }
     }
 git add src/*/version.json
-git commit -m "promote(ps): bulk promote PowerShell modules T1->T2"
+git commit -m "version(ps): bulk cut new Alpha candidates for PowerShell modules"
 ```
 
 After commit, the next `nbgv get-version` invocation in any of those module
 roots returns `0.1.0-Alpha.{newheight}`. The build/pack/publish pipeline
-then resolves to the T2 PowerShellGet feed (see Pack-and-Publish doc §4).
+then publishes the resulting `.nupkg` to `PowershellGet-experimental` (the
+**only** publish target — see Pack-and-Publish doc §4). Movement of that
+new `.nupkg` to higher feeds happens by `Promote-ProGetPackage` per §7.2.
+
+### 7.4 Two operations, two procedures
+
+| Operation                                  | When                                                      | Procedure |
+| ------------------------------------------ | --------------------------------------------------------- | --------- |
+| Cut a new candidate at the next tier       | when you want a new artifact built under a new label      | §7.3      |
+| Promote an existing artifact between feeds | when an artifact has passed its tier gate                 | §7.2      |
 
 ---
 

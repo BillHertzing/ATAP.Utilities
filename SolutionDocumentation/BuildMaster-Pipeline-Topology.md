@@ -82,7 +82,7 @@ the logic lives. This is intentional — moving logic out of OtterScript
 into cmdlets makes it testable with Pester and reusable from a developer
 workstation.
 
-> Cmdlets marked `spec` are referenced by the strategy docs and the BuildMaster pipelines but have not yet been implemented in `ATAP.Utilities.BuildTooling.PowerShell`. The Status column below was populated by running `Get-Command` against the module from a sprint-0007 worktree; when the module fails to import, the status falls back to `spec`.
+> Cmdlets marked `spec` are referenced by the strategy docs and the BuildMaster pipelines but have not yet been implemented in `ATAP.Utilities.BuildTooling.PowerShell`. The Status column below was populated on 2026-05-08 by enumerating `*.ps1` files in the module's `public/` and `private/` folders and dot-sourcing matching candidates (the module itself does not import cleanly via `Import-Module` from an agent shell — see the parent module's build status). All 13 documented cmdlets are currently `spec`.
 
 | Cmdlet                            | Used by                          | Role                                                                                                | Status |
 | --------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------- | ------ |
@@ -92,13 +92,15 @@ workstation.
 | `Publish-NuGetPackageToProGet`    | C# pipeline                      | Push a `.nupkg` to a ProGet NuGet feed (single source of truth for the push command).               | spec   |
 | `Publish-PSModuleToProGet`        | PowerShell pipeline              | Push a PowerShell `.nupkg` to a ProGet PowerShellGet feed.                                          | spec   |
 | `Publish-UniversalPackageToProGet`| Release-Bundle pipeline          | Push a `.upack` to a ProGet Universal feed.                                                         | spec   |
-| `Promote-ProGetPackage`           | All three pipelines              | Call ProGet's promotion API to copy a package between feeds. Idempotent — no-op if already promoted. | spec   |
+| `Promote-ProGetPackage`           | All three pipelines              | Call ProGet's promotion API to copy a package between feeds. Idempotent — no-op if already promoted. | spec (related: `Move-ProGetPackageInterTier` and `Move-ProGetPackageIntraTier` exist and implement the underlying ProGet API calls; `Promote-ProGetPackage` is intended to be a thin wrapper or rename) |
 | `New-BuildMasterRelease`          | All three pipelines              | Create / update a BuildMaster release record for a specific version.                                | spec   |
 | `Start-BuildMasterPipeline`       | Trigger handlers                 | Trigger a release's pipeline run via BuildMaster API.                                               | spec   |
 | `Approve-BuildMasterStage`        | All three pipelines              | Mark a tier gate passed.                                                                            | spec   |
 | `Invoke-FlywayRehearsal`          | Release-Bundle pipeline          | Apply bundled migrations to a previous-prod snapshot.                                               | spec   |
 | `Publish-ChocolateyRelease`       | Release-Bundle pipeline (Distribution stage) | Push the Chocolatey wrapper package.                                                    | spec   |
 | `Update-WinGetManifestSource`     | Release-Bundle pipeline (Distribution stage) | Update the WinGet manifest set.                                                         | spec   |
+
+> **Audit-defect found (2026-05-08).** `public/Publish-PSModuleToProGetFeed.ps1` (the legacy cmdlet that the Sprint-7 docs deprecate) defines a function named `Get-PSModuleFeedUri`, not `Publish-PSModuleToProGetFeed`. This violates the repo's "filename equals function name" convention and is a cleanup ticket independent of this plan.
 
 All cmdlets:
 

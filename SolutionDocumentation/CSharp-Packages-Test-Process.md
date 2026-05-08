@@ -272,23 +272,15 @@ to `.gitignore`.
 > validated it. See [Release-Bundle-Pipeline.md §2](Release-Bundle-Pipeline.md#2-what-goes-into-a-bundle)
 > and [Release-Branch-and-Manifest.md §3](Release-Branch-and-Manifest.md#3-the-manifest-schema).
 
-The historical pattern below — embedding results inside the `.nupkg` — was
-correct under the build-per-tier model where each tier produced a new
-package. It does not apply under the immutable-build model and is left here
-only as historical context:
-
-```text
-# legacy (pre-Sprint-7):
-<Package>.<Version>.nupkg
-  contentFiles/tests/
-    unit-results.trx
-    integration-results.trx
-    coverage.cobertura.xml
-```
-
-A consumer can audit any production `.nupkg` by querying the BuildMaster
-release record for that version, which links to all the test artifacts
-collected during promotion.
+Under immutable build, test results are attached to the BuildMaster release
+record for the exact `(PackageId, Version, SHA-256)`. Headline test evidence
+is also embedded into the Release Bundle's `tests/` folder when a Release
+Bundle is built; bundles are their own artifact built once at release-tag
+time and so do not violate the immutability of the library `.nupkg`. See
+[Release-Branch-and-Manifest.md §3 manifest schema](Release-Branch-and-Manifest.md#3-the-manifest-schema)
+for the manifest field that records this evidence. A consumer can audit any
+production `.nupkg` by querying the BuildMaster release record for that
+version, which links to all the test artifacts collected during promotion.
 
 ---
 

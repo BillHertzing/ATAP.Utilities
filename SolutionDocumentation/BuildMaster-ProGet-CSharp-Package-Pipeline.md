@@ -301,15 +301,14 @@ The plan follows exactly the same shape as `PowerShellModule-5Stage.otter`:
 2. Resolve tier from NBGV.
 3. Dispatch to the matching stage block.
 
-> **Sprint-7 note:** the OtterScript below is the **legacy build-per-tier
-> shape**. Each non-Experimental stage repeats `dotnet build` / `dotnet test` /
-> `dotnet pack` / `dotnet nuget push`. Under the immutable-build strategy this
-> is wrong — only the Experimental stage builds and pushes. The other stages
-> should `Promote-ProGetPackage` and then test against the restored promoted
-> package. The plan below remains here as a reference for the individual
-> command syntax (still useful for the Experimental stage) until the OtterScript
-> file itself is rewritten. See [BuildMaster-Pipeline-Topology.md §5](BuildMaster-Pipeline-Topology.md#5-pipeline-plan-storage)
-> for the target stage shape.
+> **Sprint-7 note:** the OtterScript below follows the **immutable-build
+> shape**. Only the Experimental stage builds and pushes the artifact. Each
+> non-Experimental stage calls `Promote-ProGetPackage` to copy the existing
+> artifact between feeds, then runs tier-appropriate tests **against the
+> promoted package** (no rebuild).
+> See [BuildMaster-Pipeline-Topology.md §5](BuildMaster-Pipeline-Topology.md#5-pipeline-plan-storage)
+> for the canonical stage shape and [Immutable-Build-Strategy.md §5](Immutable-Build-Strategy.md#5-what-promotion-is-and-is-not)
+> for what promotion is (and is not).
 
 ```otter
 ##########################################################################
@@ -397,194 +396,138 @@ stage Experimental
 }
 
 # -------------------------------------------------------------------------
-# Stage Development — build + unit tests + pack + publish to nuget-development
+# Stage Development — promote artifact + run unit tests against it
 # -------------------------------------------------------------------------
 stage Development
 {
     if $Tier == Development
     {
+        # Promote the existing artifact (no rebuild).
         Exec
         (
-            FileName: dotnet,
-            Arguments: `build ATAP.Utilities.sln --configuration $Configuration --no-incremental`,
+            FileName: pwsh,
+            Arguments: `-Command "Promote-ProGetPackage -Name $PackageName -Version $ResolvedPackageVersion -FromFeed nuget-experimental -ToFeed nuget-development -Reason 'DEV-PASS for build $BuildId'"`,
             WorkingDirectory: $SourcePath,
             SuccessExitCode: 0
         );
 
+        # Restore the promoted package and run tier-appropriate tests against it.
+        # (Tests use the package as a build dependency; they do NOT rebuild it.)
         Exec
         (
-            FileName: dotnet,
-            Arguments: `test ATAP.Utilities.sln --configuration $Configuration --no-build --logger trx --results-directory _generated\testresults\$Tier`,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Exec
-        (
-            FileName: dotnet,
-            Arguments: `pack ATAP.Utilities.sln --configuration $Configuration --no-build --output _generated\nuget\$Tier`,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Exec
-        (
-            FileName: dotnet,
-            Arguments: `nuget push _generated\nuget\$Tier\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $Decrypt($ProGetApiKey)`,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Create-Artifact TestResults
-        (
-            From: _generated\testresults\$Tier,
-            Include: @(*.trx)
-        );
-        Create-Artifact Packages
-        (
-            From: _generated\nuget\$Tier,
-            Include: @(*.nupkg, *.snupkg)
-        );
-    }
-}
-
-# -------------------------------------------------------------------------
-# Stage Integration — build + unit + integration tests + pack + publish
-# -------------------------------------------------------------------------
-stage Integration
-{
-    if $Tier == Integration
-    {
-        Exec
-        (
-            FileName: dotnet,
-            Arguments: `build ATAP.Utilities.sln --configuration $Configuration --no-incremental`,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Exec
-        (
-            FileName: dotnet,
-            Arguments: `test ATAP.Utilities.sln --configuration $Configuration --no-build --filter "Category=Unit|Category=Integration" --logger trx --results-directory _generated\testresults\$Tier`,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Exec
-        (
-            FileName: dotnet,
-            Arguments: `pack ATAP.Utilities.sln --configuration $Configuration --no-build --output _generated\nuget\$Tier`,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Exec
-        (
-            FileName: dotnet,
-            Arguments: `nuget push _generated\nuget\$Tier\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $Decrypt($ProGetApiKey)`,
+            FileName: pwsh,
+            Arguments: `-Command "Invoke-PromotedPackageTests -Name $PackageName -Version $ResolvedPackageVersion -Feed nuget-development -ResultsPath _generated\testresults\$Tier"`,
             WorkingDirectory: $SourcePath,
             SuccessExitCode: 0
         );
 
         Create-Artifact TestResults ( From: _generated\testresults\$Tier, Include: @(*.trx) );
-        Create-Artifact Packages    ( From: _generated\nuget\$Tier,       Include: @(*.nupkg, *.snupkg) );
     }
 }
 
 # -------------------------------------------------------------------------
-# Stage QA — full suite + coverage + pack + publish
+# Stage Integration — promote artifact + run unit + integration tests against it
+# -------------------------------------------------------------------------
+stage Integration
+{
+    if $Tier == Integration
+    {
+        # Promote the existing artifact (no rebuild).
+        Exec
+        (
+            FileName: pwsh,
+            Arguments: `-Command "Promote-ProGetPackage -Name $PackageName -Version $ResolvedPackageVersion -FromFeed nuget-development -ToFeed nuget-integration -Reason 'INT-PASS for build $BuildId'"`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
+
+        # Restore the promoted package and run tier-appropriate tests against it.
+        # (Tests use the package as a build dependency; they do NOT rebuild it.)
+        Exec
+        (
+            FileName: pwsh,
+            Arguments: `-Command "Invoke-PromotedPackageTests -Name $PackageName -Version $ResolvedPackageVersion -Feed nuget-integration -TestFilter 'Category=Unit|Category=Integration' -ResultsPath _generated\testresults\$Tier"`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
+
+        Create-Artifact TestResults ( From: _generated\testresults\$Tier, Include: @(*.trx) );
+    }
+}
+
+# -------------------------------------------------------------------------
+# Stage QA — promote artifact + run full regression suite with coverage
 # -------------------------------------------------------------------------
 stage QA
 {
     if $Tier == QA
     {
+        # Promote the existing artifact (no rebuild).
         Exec
         (
-            FileName: dotnet,
-            Arguments: `build ATAP.Utilities.sln --configuration $Configuration --no-incremental`,
+            FileName: pwsh,
+            Arguments: `-Command "Promote-ProGetPackage -Name $PackageName -Version $ResolvedPackageVersion -FromFeed nuget-integration -ToFeed nuget-qa -Reason 'QA-PASS for build $BuildId'"`,
             WorkingDirectory: $SourcePath,
             SuccessExitCode: 0
         );
 
+        # Restore the promoted package and run the full regression suite with coverage.
+        # (Tests use the package as a build dependency; they do NOT rebuild it.)
         Exec
         (
-            FileName: dotnet,
-            Arguments: `test ATAP.Utilities.sln --configuration $Configuration --no-build --collect:"XPlat Code Coverage" --results-directory _generated\testresults\$Tier`,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Exec
-        (
-            FileName: dotnet,
-            Arguments: `pack ATAP.Utilities.sln --configuration $Configuration --no-build --output _generated\nuget\$Tier`,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Exec
-        (
-            FileName: dotnet,
-            Arguments: `nuget push _generated\nuget\$Tier\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $Decrypt($ProGetApiKey)`,
+            FileName: pwsh,
+            Arguments: `-Command "Invoke-PromotedPackageTests -Name $PackageName -Version $ResolvedPackageVersion -Feed nuget-qa -CollectCoverage -ResultsPath _generated\testresults\$Tier"`,
             WorkingDirectory: $SourcePath,
             SuccessExitCode: 0
         );
 
         Create-Artifact TestResults ( From: _generated\testresults\$Tier, Include: @(*.trx, coverage.cobertura.xml) );
-        Create-Artifact Packages    ( From: _generated\nuget\$Tier,       Include: @(*.nupkg, *.snupkg) );
     }
 }
 
 # -------------------------------------------------------------------------
-# Stage Production — signed packages + full suite + publish to nuget-stable
+# Stage Production — promote artifact to nuget-stable + smoke test
 # -------------------------------------------------------------------------
 stage Production
 {
     if $Tier == Production
     {
+        # Promote the existing artifact (no rebuild).
         Exec
         (
-            FileName: dotnet,
-            Arguments: `build ATAP.Utilities.sln --configuration $Configuration --no-incremental`,
+            FileName: pwsh,
+            Arguments: `-Command "Promote-ProGetPackage -Name $PackageName -Version $ResolvedPackageVersion -FromFeed nuget-qa -ToFeed nuget-stable -Reason 'PROD-APPROVAL for build $BuildId'"`,
             WorkingDirectory: $SourcePath,
             SuccessExitCode: 0
         );
 
+        # Smoke check against the promoted package on the production feed.
+        # (Tests use the package as a build dependency; they do NOT rebuild it.)
         Exec
         (
-            FileName: dotnet,
-            Arguments: `test ATAP.Utilities.sln --configuration $Configuration --no-build --collect:"XPlat Code Coverage" --results-directory _generated\testresults\$Tier`,
+            FileName: pwsh,
+            Arguments: `-Command "Invoke-PromotedPackageTests -Name $PackageName -Version $ResolvedPackageVersion -Feed nuget-stable -TestFilter 'Category=Smoke' -ResultsPath _generated\testresults\$Tier"`,
             WorkingDirectory: $SourcePath,
             SuccessExitCode: 0
         );
 
-        Exec
-        (
-            FileName: dotnet,
-            Arguments: `pack ATAP.Utilities.sln --configuration $Configuration --no-build --output _generated\nuget\$Tier`,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        # Optional: sign packages before push
-        # Exec ( FileName: dotnet, Arguments: `nuget sign _generated\nuget\$Tier\*.nupkg --certificate-path ... --timestamper ...` );
-
-        Exec
-        (
-            FileName: dotnet,
-            Arguments: `nuget push _generated\nuget\$Tier\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $Decrypt($ProGetApiKey)`,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Create-Artifact TestResults ( From: _generated\testresults\$Tier, Include: @(*.trx, coverage.cobertura.xml) );
-        Create-Artifact Packages    ( From: _generated\nuget\$Tier,       Include: @(*.nupkg, *.snupkg) );
+        Create-Artifact TestResults ( From: _generated\testresults\$Tier, Include: @(*.trx) );
     }
 }
 ```
 
-> **Individual project builds:** Replace `ATAP.Utilities.sln` in every `dotnet build / test / pack` call with the specific `.csproj` path (e.g. `src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj`) to build or pack a single package. The parameterized plan `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/CSharpPackage-PerProject.otter` and its matching monitors `src/ATAP.Utilities.BuildTooling.BuildMaster/Monitors/CSharpPackage-RepositoryMonitors.otter` implement this pattern — see §9 below.
+> _Both `Promote-ProGetPackage` and `Invoke-PromotedPackageTests` are
+> currently spec — see [BuildMaster-Pipeline-Topology.md §4](BuildMaster-Pipeline-Topology.md#4-powershell-automation-surface) for status._
+
+**Individual project builds:** the per-project plan
+`src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/CSharpPackage-PerProject.otter`
+follows exactly the same shape as the solution-level plan above — the
+Experimental stage builds and pushes a single `.csproj` (with `$ProjectPath`
+overridden), and every non-Experimental stage calls `Promote-ProGetPackage`
+against that one package and then runs `Invoke-PromotedPackageTests` against
+the promoted artifact. The artifact is built once at Experimental and promoted
+thereafter; no non-Experimental stage rebuilds. See §9 below for the
+per-project plan inputs and how to trigger a manual build.
 
 ---
 

@@ -2,8 +2,8 @@
 
 **Scope:** How version numbers for `ATAP.Utilities.*` and `AceCommander.*` C# assemblies
 and NuGet packages are computed, encoded, promoted through pipeline tiers, and retired.
-**Audience:** Developers cutting packages; release engineers running T1 → T5 promotions;
-maintainers modifying the version toolchain.
+**Audience:** Developers cutting packages; release engineers running
+Experimental → Stable promotions; maintainers modifying the version toolchain.
 **Status:** Authoritative. Consolidates and supersedes the versioning portions of
 `Building.md`, `_Planning/Explainers/0013-BuildTooling-CSharp-MSBuild-interaction.md`,
 and `_Planning/Explainers/0109-nbgv-version-label-promotion.md`.
@@ -123,13 +123,13 @@ NuGet prerelease label, and its own branch discipline. The label is what NBGV
 writes into `AssemblyInformationalVersion` for packages built on that tier's
 branch.
 
-| Tier | Name         | ProGet feed                    | `version.json` label | Example NuGet version | Git branch             |
-| ---- | ------------ | ------------------------------ | -------------------- | --------------------- | ---------------------- |
-| T1   | Experimental | `nuget-Sprint{N}-experimental` | `Sprint`             | `0.1.0-Sprint.3`      | `{issue}-sprint-{N}-*` |
-| T2   | Development  | `nuget-Sprint{N}-development`  | `Alpha`              | `0.1.0-Alpha.1`       | `integration`          |
-| T3   | Integration  | `nuget-integration`            | `Beta`               | `0.1.0-Beta.2`        | `integration` (promoted) |
-| T4   | QA           | `nuget-qa`                     | `QA`                 | `0.1.0-QA.1`          | `qa`                   |
-| T5   | Stable       | `nuget-stable`                 | _(none)_             | `0.1.0`               | `main`                 |
+| Tier         | ProGet feed                    | `version.json` label | Example NuGet version | Git branch               |
+| ------------ | ------------------------------ | -------------------- | --------------------- | ------------------------ |
+| Experimental | `nuget-Sprint{N}-experimental` | `Sprint`             | `0.1.0-Sprint.3`      | `{issue}-sprint-{N}-*`   |
+| Development  | `nuget-Sprint{N}-development`  | `Alpha`              | `0.1.0-Alpha.1`       | `integration`            |
+| Integration  | `nuget-integration`            | `Beta`               | `0.1.0-Beta.2`        | `integration` (promoted) |
+| QA           | `nuget-qa`                     | `QA`                 | `0.1.0-QA.1`          | `qa`                     |
+| Stable       | `nuget-stable`                 | _(none)_             | `0.1.0`               | `main`                   |
 
 - `{N}` is the sprint number (for sprint-0006 it is `6` or `0006` depending on the
   feed naming convention in BuildMaster).
@@ -231,31 +231,67 @@ changed `version.json` itself or reaches the root. In practice:
 
 ---
 
-## 5. Label Promotion Procedure
+## 5. Promotion mechanics under immutable build
 
-> **Sprint-7 note (immutable build).** "Label promotion" in the sections
-> below describes the **historical** workflow where edits to `version.json`
-> were made on every branch transition and a new build was produced at each
-> tier. Under the immutable-build strategy, the label is set **once per
-> intended-tier release** in the source branch and the resulting `.nupkg`
-> moves through the feeds via `Promote-ProGetPackage`. Editing
-> `version.json` from `Sprint` to `Alpha` and rebuilding produces a *new*
-> package with a new version number — not a re-stamped one. This procedure
-> is still useful for the developer-driven case ("I'm ready to publish a
-> Sprint-labeled candidate as the Alpha-labeled candidate") but it is not
-> the per-tier-promotion mechanism. See [Immutable-Build-Strategy.md §6](Immutable-Build-Strategy.md#6-versioning-no-special-case-for-promotion).
+Under immutable build, the version-label embedded in the `.nupkg` declares
+the **intended tier** the artifact is heading toward. The actual tier is
+which feed the artifact currently lives in. Movement between feeds is by
+`Promote-ProGetPackage` (a ProGet API call), **not** by editing
+`version.json` and rebuilding. The latter produces a _new_ artifact with a
+new version number; promotion leaves the bytes (and the version number)
+unchanged.
 
-The same procedure applies at every tier transition. The example below is T1 → T2.
-Substitute labels for other transitions per the table in §3.
+### 5.1 The two operations are different
 
-### 5.1 Prerequisites
+- **Cutting a new candidate at the next tier** = edit `version.json`,
+  commit, build a new artifact. Produces a new version number. (See §5.3.)
+- **Promoting an existing candidate** = call `Promote-ProGetPackage`.
+  Bytes of the artifact unchanged. Version number unchanged. (See §5.2.)
+
+A common failure mode for new contributors is to assume the two are the
+same procedure with different inputs. They are different procedures with
+different effects: only one preserves the artifact's `(PackageId, Version,
+SHA-256)` identity across feeds.
+
+### 5.2 Promotion procedure (Experimental → Development example)
+
+The artifact `0.1.0-Alpha.7` already exists in `nuget-experimental` (because
+the developer who built it used the Alpha label). To make it official at
+the Development tier, promote it:
+
+```powershell
+# The artifact 0.1.0-Alpha.7 already exists in nuget-experimental
+# (because the developer who built it used the Alpha label).
+# To make it official at the Development tier, promote it:
+
+Promote-ProGetPackage `
+    -Name     'ATAP.Utilities.Philote' `
+    -Version  '0.1.0-Alpha.7' `
+    -FromFeed 'nuget-experimental' `
+    -ToFeed   'nuget-development' `
+    -Reason   'DEV-PASS for build #4271'
+```
+
+The same shape applies for every higher-tier transition — substitute the
+`-FromFeed` / `-ToFeed` names per the §3 table. The cmdlet is currently
+spec; see [BuildMaster-Pipeline-Topology.md §4](BuildMaster-Pipeline-Topology.md#4-powershell-automation-surface)
+for status.
+
+### 5.3 Cutting a new candidate (formerly the "label promotion procedure")
+
+This procedure is what you run when you want to **change the label on a
+fresh build** — for example, you've been building `Sprint` candidates from
+a sprint worktree and now want to start building `Alpha` candidates as a
+prelude to a Development-tier release. It produces a new artifact with a
+new version number; it does **not** move an existing artifact between
+feeds.
+
+**Prerequisites.**
 
 - Sprint branch fully committed and pushed.
 - All unit tests pass on the sprint branch.
 - `nbgv` global tool installed: `dotnet tool install -g nbgv`.
 - A clean working tree (`git status` is empty).
-
-### 5.2 Step-by-step — T1 → T2 (`Sprint` → `Alpha`)
 
 **Step 1. Change the label in every `version.json`.**
 
@@ -296,12 +332,12 @@ nbgv get-version
 
 ```powershell
 git add '**/version.json'
-git commit -m "chore(version): promote prerelease label Sprint -> Alpha (T1 -> T2)"
+git commit -m "chore(version): cut new Alpha candidate (was Sprint)"
 ```
 
 Keep this as a **dedicated commit** — don't bundle code changes into it. A
-lone version-bump commit is easy to revert if the promotion needs to be rolled
-back.
+lone version-bump commit is easy to revert if the candidate cut needs to be
+rolled back.
 
 **Step 4. Verify a real `.nupkg`.**
 
@@ -318,16 +354,10 @@ If the filename still shows `-Sprint`, either (a) that project has its own
 `version.json` and Legacy `AssemblyInfo.cs` is authoritative — update the
 `AssemblyInfo.cs` file or add a `version.json` (see §7.4).
 
-**Step 5. Open / update the pull request.**
+**Reversing a candidate cut.**
 
-Target branch is `integration`. The `integration` branch's `NuGet.config` is
-scoped to the T2/T3/T4/T5 feeds only — the per-sprint T1 feed is deliberately
-absent, so a merge to `integration` cannot accidentally pull experimental
-packages.
-
-### 5.3 Reversing a promotion
-
-If work needs to go back to the sprint branch after labeling `Alpha`:
+If you want to go back to the previous label (e.g., revert from `Alpha` to
+`Sprint`) before further work:
 
 ```powershell
 Get-ChildItem $root -Filter 'version.json' -Recurse | ForEach-Object {
@@ -337,32 +367,30 @@ Get-ChildItem $root -Filter 'version.json' -Recurse | ForEach-Object {
     if ($n -ne $c) { Set-Content $_.FullName -Value $n -NoNewline }
 }
 git add '**/version.json'
-git commit -m "chore(version): revert label Alpha -> Sprint (T2 -> T1)"
+git commit -m "chore(version): revert candidate label Alpha -> Sprint"
 ```
 
-The promotion is fully symmetric — the height likewise resets.
+The label change is fully symmetric — the height likewise resets.
 
-### 5.4 Full promotion chain
-
-| Transition  | Label change      | Branch topology                                  |
-| ----------- | ----------------- | ------------------------------------------------ |
-| T1 → T2     | `Sprint` → `Alpha`| sprint worktree → PR into `integration`          |
-| T2 → T3     | `Alpha` → `Beta`  | after integration soak passes on `integration`   |
-| T3 → T4     | `Beta` → `QA`     | merge `integration` → `qa`                       |
-| T4 → T5     | `QA` → _(none)_   | merge `qa` → `main`; delete the prerelease label |
-
-The T4 → T5 transition is the only one where the `version.json` **removes** the
-prerelease segment entirely:
+**Stable cut.** When cutting from `QA` to a Stable (Production) candidate,
+the `version.json` **removes** the prerelease segment entirely:
 
 ```jsonc
-// before (T4)
+// before (QA candidate)
 "version": "0.1-QA.{height}"
-// after (T5)
+// after (Stable candidate)
 "version": "0.1"
 ```
 
 Height is no longer relevant on `main` for publicly released packages; it's
 replaced by explicit `Major.Minor.Patch` bumps (see §6).
+
+### 5.4 Two operations, two procedures
+
+| Operation | When | Procedure |
+| --- | --- | --- |
+| Cut a new candidate at the next tier | when you want a new artifact built under a new label | §5.3 |
+| Promote an existing artifact between feeds | when an artifact has passed its tier gate | §5.2 |
 
 ---
 

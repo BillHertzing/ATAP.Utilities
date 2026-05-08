@@ -209,7 +209,7 @@ if (-not (Get-Command -Name 'Get-HostSettings' -CommandType Function -ErrorActio
   . $getHostSettingsPath
 }
 
-$global:settings = Get-HostSettings  -hostName $hostName -IACBasePath $repobasepath
+$global:settings = Get-HostSettings -hostName $hostName -IACBasePath $repobasepath
 
 
 # 'Group Vars' 'Role Vars' 'Host Vars'
@@ -258,15 +258,18 @@ $modifiedPSModulePath = $Env:PSModulePath
 # Add the Desktop module path to the end of the string
 # $modifiedPSModulePath += ';C:\Program Files\WindowsPowerShell\Modules;C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules'
 # Set the environment variable to the new value
+
+# In your $PROFILE, reorder PSModulePath
+$ordered = @(
+  'C:\Program Files\PowerShell\Modules',          # PS7 AllUsers  (25)
+  'c:\program files\powershell\7\Modules',         # PS7 built-in  (24)
+  'C:\Dropbox\whertzing\PowerShell\Modules',       # your personal (16)
+  'C:\Program Files (x86)\Microsoft SQL Server\160\Tools\PowerShell\Modules',  # SQL (1)
+  'C:\Program Files\WindowsPowerShell\Modules',    # WPS legacy   (132) - push to end
+  'C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules'  # WPS system  (120) - push to end
+)
+$env:PSModulePath = $ordered -join ';'
 $Env:PSModulePath = $modifiedPSModulePath
-# Load the JenkinsRoleSettings for this machine into the $global:settings
-# ($global:MachineAndNodeSettings[$hostname])[$global:configRootKeys['JenkinsNodeRolesConfigRootKey']] | ForEach-Object {
-#   $nodeName = $_
-#   $global:settings[$nodeName] = @{}
-#   ($global:JenkinsRoles)[$nodename] | ForEach-Object {
-#     $global:settings[$nodename][$_] = $($global:MachineAndNodeSettings[$hostname][$_])
-#   }
-# }
 
 
 # If the computer is behind a proxy, configure the default proxy settings in the machine powershell profile.

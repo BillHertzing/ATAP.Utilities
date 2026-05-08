@@ -63,6 +63,7 @@ function New-LocalServiceAccount {
         Must run in an elevated (Administrator) session.
         To verify the right was granted after the call:
             Get-AccountsWithUserRight -Right SeServiceLogonRight
+        AI assisted using Powershell.instructions.md as guidelines
     #>
 
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
@@ -87,6 +88,146 @@ function New-LocalServiceAccount {
     $fn = $MyInvocation.MyCommand.Name
     $mn = 'ATAP.Utilities.PowerShell'
 
+    function ConvertTo-PlainTextFromSecureString {
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory)]
+            [SecureString] $SecureValue
+        )
+
+        $bstr = [IntPtr]::Zero
+        try {
+            $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecureValue)
+            [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+        }
+        finally {
+            if ($bstr -ne [IntPtr]::Zero) {
+                [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+            }
+        }
+    }
+
+    function Get-LocalUserCompat {
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory)]
+            [string] $Name
+        )
+
+        $getLocalUserCommand = Get-Command -Name Get-LocalUser -ErrorAction SilentlyContinue
+        if ($null -ne $getLocalUserCommand) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+                -Message "[$Name] Using LocalAccounts cmdlet path for lookup (Get-LocalUser)"
+            return Get-LocalUser -Name $Name -ErrorAction SilentlyContinue
+        }
+
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+            -Message "[$Name] Using ADSI fallback path for lookup (WinNT provider)"
+
+        try {
+            $computer = [ADSI]("WinNT://{0},computer" -f $env:COMPUTERNAME)
+            $user = $computer.psbase.Children.Find($Name, 'user')
+            if ($null -ne $user) {
+                return [PSCustomObject]@{ Name = $Name }
+            }
+        }
+        catch {
+            return $null
+        }
+
+        return $null
+    }
+
+    function New-LocalUserCompat {
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory)]
+            [string] $Name,
+
+            [Parameter(Mandatory)]
+            [SecureString] $SecurePassword,
+
+            [string] $DisplayName,
+
+            [string] $AccountDescription
+        )
+
+        $newLocalUserCommand = Get-Command -Name New-LocalUser -ErrorAction SilentlyContinue
+        if ($null -ne $newLocalUserCommand) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+                -Message "[$Name] Using LocalAccounts cmdlet path for create (New-LocalUser)"
+            New-LocalUser `
+                -Name                     $Name `
+                -Password                 $SecurePassword `
+                -FullName                 $DisplayName `
+                -Description              $AccountDescription `
+                -PasswordNeverExpires `
+                -UserMayNotChangePassword `
+                -AccountNeverExpires `
+                -ErrorAction Stop | Out-Null
+            return
+        }
+
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+            -Message "[$Name] Using ADSI fallback path for create (WinNT provider)"
+
+        $plainPassword = ConvertTo-PlainTextFromSecureString -SecureValue $SecurePassword
+        $computer = [ADSI]("WinNT://{0},computer" -f $env:COMPUTERNAME)
+        $newUser = $computer.Create('user', $Name)
+        try {
+            $newUser.SetPassword($plainPassword)
+            if (-not [string]::IsNullOrWhiteSpace($DisplayName)) {
+                $null = $newUser.Put('FullName', $DisplayName)
+            }
+            if (-not [string]::IsNullOrWhiteSpace($AccountDescription)) {
+                $null = $newUser.Put('Description', $AccountDescription)
+            }
+
+            # Set account flags equivalent to non-expiring password and user cannot change password.
+            $ADS_UF_DONT_EXPIRE_PASSWD = 0x10000
+            $ADS_UF_PASSWD_CANT_CHANGE = 0x40
+            $newUser.UserFlags = ($ADS_UF_DONT_EXPIRE_PASSWD -bor $ADS_UF_PASSWD_CANT_CHANGE)
+            $newUser.SetInfo()
+        }
+        finally {
+            if ($null -ne $newUser -and [System.Runtime.InteropServices.Marshal]::IsComObject($newUser)) {
+                [void][Runtime.InteropServices.Marshal]::ReleaseComObject($newUser)
+            }
+            if ($null -ne $computer -and [System.Runtime.InteropServices.Marshal]::IsComObject($computer)) {
+                [void][Runtime.InteropServices.Marshal]::ReleaseComObject($computer)
+            }
+        }
+    }
+
+    function Remove-LocalUserCompat {
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory)]
+            [string] $Name
+        )
+
+        $removeLocalUserCommand = Get-Command -Name Remove-LocalUser -ErrorAction SilentlyContinue
+        if ($null -ne $removeLocalUserCommand) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+                -Message "[$Name] Using LocalAccounts cmdlet path for remove (Remove-LocalUser)"
+            Remove-LocalUser -Name $Name -ErrorAction Stop
+            return
+        }
+
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+            -Message "[$Name] Using ADSI fallback path for remove (WinNT provider)"
+
+        $computer = [ADSI]("WinNT://{0},computer" -f $env:COMPUTERNAME)
+        try {
+            $computer.Delete('user', $Name)
+        }
+        finally {
+            if ($null -ne $computer -and [System.Runtime.InteropServices.Marshal]::IsComObject($computer)) {
+                [void][Runtime.InteropServices.Marshal]::ReleaseComObject($computer)
+            }
+        }
+    }
+
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
         -Message "[$AccountName] Start: State=$State GrantSeServiceLogonRight=$($GrantSeServiceLogonRight.IsPresent)"
 
@@ -96,7 +237,7 @@ function New-LocalServiceAccount {
         $typeScript = Join-Path $PSScriptRoot 'Type-PSLSA.ps1'
         if (-not (Test-Path $typeScript)) {
             throw "PS_LSA type is not loaded and Type-PSLSA.ps1 was not found at '$typeScript'. " +
-                  "Load the full ATAP.Utilities.PowerShell module or dot-source Type-PSLSA.ps1 first."
+            "Load the full ATAP.Utilities.PowerShell module or dot-source Type-PSLSA.ps1 first."
         }
         . $typeScript
     }
@@ -112,7 +253,7 @@ function New-LocalServiceAccount {
     }
 
     try {
-        $existingUser = Get-LocalUser -Name $AccountName -ErrorAction SilentlyContinue
+        $existingUser = Get-LocalUserCompat -Name $AccountName
 
         if ($State -eq 'Present') {
 
@@ -122,15 +263,11 @@ function New-LocalServiceAccount {
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
                         -Message "[$AccountName] Creating local user account (FullName='$FullName')"
 
-                    New-LocalUser `
-                        -Name                     $AccountName `
-                        -Password                 $Password `
-                        -FullName                 $FullName `
-                        -Description              $Description `
-                        -PasswordNeverExpires `
-                        -UserMayNotChangePassword `
-                        -AccountNeverExpires `
-                        -ErrorAction Stop | Out-Null
+                    New-LocalUserCompat `
+                        -Name               $AccountName `
+                        -SecurePassword     $Password `
+                        -DisplayName        $FullName `
+                        -AccountDescription $Description
 
                     $result.UserCreated = $true
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
@@ -173,7 +310,7 @@ function New-LocalServiceAccount {
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
                         -Message "[$AccountName] Removing local user account"
 
-                    Remove-LocalUser -Name $AccountName -ErrorAction Stop
+                    Remove-LocalUserCompat -Name $AccountName
 
                     $result.UserRemoved = $true
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `

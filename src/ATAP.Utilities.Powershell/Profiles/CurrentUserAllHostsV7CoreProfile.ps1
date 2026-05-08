@@ -22,8 +22,7 @@ ToDo: Need attribution for Console Settings
 .SCM
 <Configuration Management Keywords>
 #>
-
-# Set these for debugging the profile
+#  Set these for debugging the profile
 # Don't Print any debug messages to the console
 $DebugPreference = 'SilentlyContinue'
 # Don't Print any verbose messages to the console
@@ -33,6 +32,8 @@ Write-PSFMessage -FunctionName $fn -Level Verbose -Message ('Starting CurrentUse
 #ToDo: document expected values when run under profile, Module cmdlet/function, script.
 Write-PSFMessage -FunctionName $fn -Level Debug -Message ("WorkingDirectory = $pwd")
 Write-PSFMessage -FunctionName $fn -Level Debug -Message ("PSScriptRoot = $PSScriptRoot")
+
+Write-PSFMessage -FunctionName $fn -Level Debug -Message ("PSModulePath = $env:PSModulePath")
 
 ########################################################
 # Individual PowerShell Profile
@@ -134,7 +135,8 @@ if (-not (Test-Path Env:BW_SESSION)) {
     if (-not (Get-Command -Name 'Initialize-BitwardenSession' -CommandType Function -ErrorAction SilentlyContinue)) {
       . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\Profiles\LoginScript.ps1'
     }
-  } catch {
+  }
+  catch {
     $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
     throw
@@ -144,7 +146,8 @@ if (-not (Test-Path Env:BW_SESSION)) {
 }
 if (-not (Test-Path Env:BW_SESSION)) {
   Write-PSFMessage -FunctionName $fn -Level Warning -Message 'Bitwarden session could not be initialized, secrets will not be available'
-} else {
+}
+else {
   Write-PSFMessage -FunctionName $fn -Level Verbose -Message 'Bitwarden session initialized, secrets are available'
 }
 
@@ -154,12 +157,6 @@ if (-not (Test-Path Env:BW_SESSION)) {
 $OutputEncoding = [System.Text.Encoding]::UTF8
 # Set console code page to UTF-8 (65001)
 chcp 65001 | Out-Null
-
-# Set environment variables for PLaywright and PCMSC project
-# $env:PCMSC_CEUserID = 'admin'
-# $env:PCMSC_CEPasswordVaultKey = 'PCMSC_CEPasswordVaultKey'
-# $env:PW_JITTER_SEED = 0
-# $env:PW_HUMANIZER_DEBUG = 'true'
 
 # Create an alias for Add-ScopeCreepIdea.ps1
 Set-Alias idea (Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $env:username 'GitHub', '_Planning', 'Powershell', 'Public', 'Add-ScopeCreepIdea.ps1')
@@ -474,7 +471,8 @@ function Get-Attributions {
           }
         }
       }
-    } finally {
+    }
+    finally {
       $reader.Close()
       $FileStream.Close()
     }
@@ -504,7 +502,8 @@ function Get-LinksFromDrafts {
       if ($matchResult.Success) {
         $Subject = $matchResult.captures.groups['Subject'].value
         Write-PSFMessage -FunctionName $fn -Level Debug -Message "Subject = $Subject"
-      } else {
+      }
+      else {
         $matchResult = [RegEx]::Matches($line, $findRegex2)
         if ($matchResult.Success) {
           $URL = $matchResult.captures.groups['URL'].value
@@ -522,7 +521,8 @@ function Get-LinksFromDrafts {
         $URL = ''
       }
     }
-  } finally {
+  }
+  finally {
     $reader.Close()
     $Stream.Close()
   }
@@ -623,7 +623,8 @@ function Open-BookmarksInBrave {
         foreach ($bookmark in $input) {
           $urlList += $bookmark.url
         }
-      } else {
+      }
+      else {
         $urlList = $URLs
       }
     }
@@ -745,7 +746,8 @@ function WatchFile {
       Write-Host '.' -NoNewline
 
     } while ($true)
-  } finally {
+  }
+  finally {
     # this gets executed when user presses CTRL+C:
 
     # stop monitoring

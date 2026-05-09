@@ -156,13 +156,28 @@ scratch.
 
 ---
 
-## 5. Promotion through the five tiers
+## 5. DB instances by tier and developer scope
 
 A DB change unit is **not** a separately-promoted artifact. It is an
 intrinsic part of the Release Bundle, and the bundle is what gets promoted
 through `ReleaseBundle-Experimental → … → ReleaseBundle-Production`.
 
-Tier-specific DB validation:
+The model is **not** one DB per tier. A real team has multiple developers,
+parallel feature branches, and parallel pipeline runs, each of which needs
+its own isolated DB instance to avoid stepping on the others. The full
+inventory of DB instance types is:
+
+| Instance type          | Naming pattern                                     | Lifetime                          | Cardinality             | Tiers supported              |
+| ---------------------- | -------------------------------------------------- | --------------------------------- | ----------------------- | ---------------------------- |
+| Per-developer scratch  | `<App>-dev-<GitHandle>` (≤64 chars total)          | Ephemeral — created at SprintStart, destroyed at SprintEnd | 1 per developer × repo × sprint | Experimental |
+| Per-feature-sprint     | `<App>-<FeatureSlug>-<GitHandle>` (≤64 chars)      | Ephemeral — created at FeatureStart or sprint-slice start, destroyed when slice is abandoned or merged | 1 per feature × sprint × developer | Experimental |
+| Per-feature shared     | `<App>-<FeatureSlug>-shared`                       | Persistent for life of feature branch | 1 per active feature branch | Development |
+| Trunk Development      | `<App>-dev`                                        | Persistent                        | 1 per repo              | Development                  |
+| Trunk Integration      | `<App>-integration`                                | Rotating snapshot (restored before each Integration pipeline run) | 1 per repo | Integration |
+| Trunk QA Gold          | `<App>-qa`                                         | Persistent, anonymised prod-shaped data | 1 per repo        | QA                           |
+| Customer Production    | `<App>` (or customer-specific name)                | Permanent                         | N — one per customer    | Production                   |
+
+Tier-specific DB validation (regardless of instance type):
 
 | Tier         | DB-related action in the pipeline                                                                                          |
 | ------------ | -------------------------------------------------------------------------------------------------------------------------- |
@@ -181,6 +196,56 @@ historical data.
 `Invoke-FlywayRehearsal` (in `ATAP.Utilities.BuildTooling.PowerShell`) is
 the cmdlet the BuildMaster stages call to run these rehearsals. It records
 the Flyway log as an artifact attached to the BuildMaster release record.
+
+### 5.1 Naming convention and length limits
+
+- **Total DB name length: ≤64 characters.** SQL Server permits 128, but the
+  64-character cap leaves headroom for environment prefixes (e.g., a host
+  qualifier or a backup-set tag) and avoids truncation in tooling output
+  windows.
+- **`<FeatureSlug>`** is the same slug computed by BuildMaster per the
+  feature-branch versioning rule (PascalCase, ≤16 characters). See
+  [Long-Developing-Features.md §2](Long-Developing-Features.md) for the
+  authoritative slug derivation.
+- **`<GitHandle>`** is the developer's GitHub handle, truncated to 12
+  characters if longer. Lower-case is preferred for consistency, but the
+  comparison is case-insensitive.
+- **Delimiters: hyphens only.** No underscores, no dots. SQL Server accepts
+  more, but the simpler set keeps names readable in URLs, log lines, and
+  PowerShell output.
+
+Examples:
+
+| Scenario                                               | DB name                              |
+| ------------------------------------------------------ | ------------------------------------ |
+| Dev scratch, app `AceCommander`, handle `wh`           | `AceCommander-dev-wh`                |
+| Feature sprint, feature `PaymentRefactor`, handle `wh` | `AceCommander-PaymentRefactor-wh`    |
+| Feature shared, feature `PaymentRefactor`              | `AceCommander-PaymentRefactor-shared`|
+| Trunk Development                                      | `AceCommander-dev`                   |
+
+### 5.2 Lifecycle hooks
+
+Per-developer and per-feature DB instances are created and destroyed at
+specific lifecycle events. The four cmdlets that own these transitions are:
+
+| Event              | Action                                                                                                       | Cmdlet                       |
+| ------------------ | ------------------------------------------------------------------------------------------------------------ | ---------------------------- |
+| `SprintStart`      | Provision a per-developer scratch DB for each active developer.                                              | `New-DeveloperScratchDb`     |
+| `FeatureStart`     | Provision the per-feature shared DB.                                                                         | `New-FeatureSharedDb`        |
+| `SprintEnd`        | Destroy per-developer scratch DBs for the closing sprint. Data is **not** backed up — scratch DBs are disposable by definition. Any migration under test must be committed to source before the sprint ends. | `Remove-DeveloperScratchDb` |
+| `FeatureEnd` (feature merged to stable) | Destroy the per-feature shared DB and any per-feature-sprint DBs for that feature.              | `Remove-FeatureSharedDb`, `Remove-DeveloperScratchDb -Feature <slug>` |
+
+**Trigger mechanism.** The hooks are currently **manual PowerShell calls**
+made by the developer or release engineer at the listed events. There is
+no automation today. A future implementation ticket (`IMPL-7-07`) will
+wire them to BuildMaster pipeline events (`SprintStart` / `SprintEnd`
+release-record transitions) so the transitions happen without operator
+action.
+
+**Module home.** All four cmdlets live in
+`ATAP.Utilities.DatabaseManagement.PowerShell`. They are siblings of the
+existing `Invoke-FlywayRehearsal` and `Invoke-SqlServerBackup` family
+in the same module's public API surface.
 
 ---
 
@@ -203,6 +268,18 @@ schema-bumping migrations), DB changes follow these rules:
   every Flyway invocation; versioned seed loaders (`V*` or `S*`) run once
   per environment and must be idempotent (use `MERGE` or `IF NOT EXISTS`
   patterns).
+
+**Additive-only rule for feature branches.** Feature branches with DB
+changes must use **additive-only migrations** until merged to trunk: no
+`ALTER COLUMN`, no `DROP COLUMN`, no `DROP TABLE` against existing
+trunk-schema objects. The rationale is that feature branches share the
+Production DB shape with trunk, so additive migrations are safe to apply
+independently of trunk's own migration sequence. This rule is **policy,
+not yet enforced by tooling**; a future Flyway dry-run check at the
+feature Experimental stage (validating against the trunk Integration DB
+snapshot) is tracked. See
+[Long-Developing-Features.md §5](Long-Developing-Features.md) for the
+full feature-branch DB-change policy.
 
 The compatibility rules are enforced by code review, not by a static check.
 A future automated check (linting `V*.sql` files for `DROP COLUMN`) is
@@ -322,10 +399,13 @@ around `dbatools` / SQL Server's `Generate Scripts` task). Stored in
 1. **Per-app `db/<App>/releases/*.yml` files are not yet authored.** The
    format is defined; the files need to be created at the start of each
    app's release-bundle work.
-2. **`Invoke-FlywayRehearsal` does not yet rotate the rehearsal DB.** It
-   currently restores into a fixed name and re-uses it across runs;
-   needs to create a uniquely-named DB per build to allow parallel
-   pipeline runs.
+2. **`Invoke-FlywayRehearsal` does not yet rotate the rehearsal DB.** The
+   rehearsal DB is conceptually a **per-pipeline-run ephemeral instance**
+   under the per-developer-scratch naming convention from §5.1 (e.g.,
+   `<App>-rehearsal-<BuildId>`), not a fixed shared name. The current
+   implementation restores into a fixed name and re-uses it across runs,
+   which prevents parallel pipeline runs and obscures the ephemeral
+   contract; tracked as `IMPL-7-06`.
 3. **No automated `DROP COLUMN` linter on `V*.sql`.** Tracked.
 4. **No checksum verification at install time.** The script reads
    checksums from the manifest but does not yet recompute and compare

@@ -183,7 +183,7 @@
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="db-tiers-zone" value="Per-tier SQL Server validation environments (each tier rehearses the migrations against its own DB)" style="swimlane;startSize=30;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" parent="1" vertex="1">
-                    <mxGeometry x="40" y="520" width="1620" height="280" as="geometry"/>
+                    <mxGeometry x="40" y="520" width="1620" height="430" as="geometry"/>
                 </mxCell>
                 <mxCell id="db-exp" value="Experimental DB&#xa;(SQL Server LocalDB,&#xa;empty start)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="db-tiers-zone" vertex="1">
                     <mxGeometry x="40" y="80" width="180" height="100" as="geometry"/>
@@ -215,8 +215,23 @@
                 <mxCell id="db-step-4" value="Customer install/upgrade" style="endArrow=classic;html=1;rounded=0;strokeColor=#006600;strokeWidth=2;" parent="db-tiers-zone" source="db-qa" target="db-prod" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
+                <mxCell id="page-02-feature-db-row-label" value="Per-developer / per-feature DB instances (added 2026-05-09 per E-DEC-01..E-DEC-05; see Long-Developing-Features.md §2 and Database-Change-Unit-and-Flyway-Promotion.md §5.1)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=2;" parent="db-tiers-zone" vertex="1">
+                    <mxGeometry x="40" y="200" width="1540" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-02-feature-db-dev-scratch" value="Per-developer scratch DB&#xa;&lt;App&gt;-dev-&lt;GitHandle&gt;&#xa;e.g. AceCommander-dev-wh&#xa;(Experimental tier; ephemeral)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" parent="db-tiers-zone" vertex="1">
+                    <mxGeometry x="40" y="240" width="200" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-02-feature-db-feature-shared" value="Per-feature shared DB&#xa;&lt;App&gt;-&lt;FeatureSlug&gt;-shared&#xa;e.g. AceCommander-PaymentRefactor-shared&#xa;(Development tier; persistent for life of feature branch)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" parent="db-tiers-zone" vertex="1">
+                    <mxGeometry x="280" y="240" width="220" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-02-feature-db-feature-sprint" value="Per-feature-sprint DB&#xa;&lt;App&gt;-&lt;FeatureSlug&gt;-&lt;GitHandle&gt;&#xa;e.g. AceCommander-PaymentRefactor-wh&#xa;(Experimental tier; ephemeral per sprint slice)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" parent="db-tiers-zone" vertex="1">
+                    <mxGeometry x="540" y="240" width="220" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-02-feature-db-callout" value="Trunk DBs (above) are singletons. Per-developer scratch and per-feature DBs (this row) are provisioned by SprintStart / FeatureStart hooks and destroyed by SprintEnd / FeatureEnd hooks. Naming cap: total DB name ≤64 chars; FeatureSlug ≤16 chars (PascalCase); GitHandle ≤12 chars." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;align=left;verticalAlign=top;fontSize=10;fontStyle=2;" parent="db-tiers-zone" vertex="1">
+                    <mxGeometry x="800" y="240" width="780" height="110" as="geometry"/>
+                </mxCell>
                 <mxCell id="db-note" value="Each tier&#39;s rehearsal log is attached to the BuildMaster release record. Headline rehearsal log (Integration) is embedded into the bundle&#39;s tests/ folder for Production audit." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=2;" parent="db-tiers-zone" vertex="1">
-                    <mxGeometry x="40" y="200" width="1540" height="50" as="geometry"/>
+                    <mxGeometry x="40" y="370" width="1540" height="50" as="geometry"/>
                 </mxCell>
                 <mxCell id="bundle-to-rehearsal" value="Bundle drives the rehearsal" style="endArrow=classic;html=1;rounded=0;strokeColor=#82b366;strokeWidth=2;dashed=1;exitX=1;exitY=0.5;entryX=0.5;entryY=0;" parent="1" source="bundle-zone" target="db-rehearsal-svc" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
@@ -895,6 +910,101 @@
                 </mxCell>
                 <mxCell id="srcdocs-09" value="Source documentation: (none yet — this section is the placeholder)&#xa;Once authored, the source-of-truth document is expected to be:  Package-Identity-Verification.md  (TBD)&#xa;Related background:&#xa;• CSharp-Packages-Pack-and-Push.md (§4 SourceLink + symbol packages, §10 PackageProjectUrl gap, §12 Security)&#xa;• Release-Branch-and-Manifest.md (§3 manifest checksums, §5 verification at install time, §6 auditing)&#xa;• Immutable-Build-Strategy.md (§2 Why build-once — hash divergence avoidance enables signature stability)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;align=left;verticalAlign=top;fontSize=10;fontStyle=2;" parent="1" vertex="1">
                     <mxGeometry x="40" y="1040" width="1620" height="55" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="page-10-feature-lifecycle" name="10 — Long-Developing Feature Lifecycle">
+        <mxGraphModel dx="1291" dy="633" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="page-10-feature-lifecycle-title" value="Long-Developing Feature Lifecycle — Trunk and Feature Lanes, Promotion, and Merge" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="20" width="1620" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-subtitle" value="Trunk artifacts (Sprint.NNN) and feature artifacts (&lt;FeatureSlug&gt;.NNN) share the same five-tier promotion ladder. Merge is gated at the feature-lane QA box. See Long-Developing-Features.md and Database-Change-Unit-and-Flyway-Promotion.md §5." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="60" width="1620" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-trunk-lane" value="Trunk lane — Sprint.NNN artifacts (NBGV height computed from trunk HEAD)" style="swimlane;startSize=30;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="120" width="1620" height="240" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-trunk-exp" value="Experimental&#xa;Sprint.NNN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;" parent="page-10-feature-lifecycle-trunk-lane" vertex="1">
+                    <mxGeometry x="40" y="80" width="220" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-trunk-dev" value="Development&#xa;Sprint.NNN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" parent="page-10-feature-lifecycle-trunk-lane" vertex="1">
+                    <mxGeometry x="340" y="80" width="220" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-trunk-int" value="Integration&#xa;Sprint.NNN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" parent="page-10-feature-lifecycle-trunk-lane" vertex="1">
+                    <mxGeometry x="640" y="80" width="220" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-trunk-qa" value="QA&#xa;Sprint.NNN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" parent="page-10-feature-lifecycle-trunk-lane" vertex="1">
+                    <mxGeometry x="940" y="80" width="220" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-trunk-prod" value="Production&#xa;Sprint.NNN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#82b366;fontColor=#ffffff;strokeColor=#006600;fontStyle=1;" parent="page-10-feature-lifecycle-trunk-lane" vertex="1">
+                    <mxGeometry x="1240" y="80" width="220" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-trunk-arrow-1" value="Promote" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="page-10-feature-lifecycle-trunk-lane" source="page-10-feature-lifecycle-trunk-exp" target="page-10-feature-lifecycle-trunk-dev" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-trunk-arrow-2" value="Promote" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="page-10-feature-lifecycle-trunk-lane" source="page-10-feature-lifecycle-trunk-dev" target="page-10-feature-lifecycle-trunk-int" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-trunk-arrow-3" value="Promote" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="page-10-feature-lifecycle-trunk-lane" source="page-10-feature-lifecycle-trunk-int" target="page-10-feature-lifecycle-trunk-qa" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-trunk-arrow-4" value="Promote (manual approval)" style="endArrow=classic;html=1;rounded=0;strokeColor=#82b366;strokeWidth=2;" parent="page-10-feature-lifecycle-trunk-lane" source="page-10-feature-lifecycle-trunk-qa" target="page-10-feature-lifecycle-trunk-prod" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-feature-lane" value="Feature lane — &lt;FeatureSlug&gt;.NNN artifacts (NBGV height computed from feature branch HEAD; same ProGet feeds, suffix isolates)" style="swimlane;startSize=30;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="540" width="1620" height="240" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-feat-exp" value="Experimental&#xa;&lt;FeatureSlug&gt;.NNN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;" parent="page-10-feature-lifecycle-feature-lane" vertex="1">
+                    <mxGeometry x="40" y="80" width="220" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-feat-dev" value="Development&#xa;&lt;FeatureSlug&gt;.NNN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" parent="page-10-feature-lifecycle-feature-lane" vertex="1">
+                    <mxGeometry x="340" y="80" width="220" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-feat-int" value="Integration&#xa;&lt;FeatureSlug&gt;.NNN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" parent="page-10-feature-lifecycle-feature-lane" vertex="1">
+                    <mxGeometry x="640" y="80" width="220" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-feat-qa" value="QA — merge gate&#xa;&#x1f512; &lt;FeatureSlug&gt;.NNN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=3;fontStyle=1;" parent="page-10-feature-lifecycle-feature-lane" vertex="1">
+                    <mxGeometry x="940" y="80" width="220" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-feat-gate-badge" value="MERGE GATE&#xa;(QA-PASS required before merge to trunk)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=11;" parent="page-10-feature-lifecycle-feature-lane" vertex="1">
+                    <mxGeometry x="940" y="190" width="220" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-feat-arrow-1" value="Promote" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="page-10-feature-lifecycle-feature-lane" source="page-10-feature-lifecycle-feat-exp" target="page-10-feature-lifecycle-feat-dev" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-feat-arrow-2" value="Promote" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="page-10-feature-lifecycle-feature-lane" source="page-10-feature-lifecycle-feat-dev" target="page-10-feature-lifecycle-feat-int" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-feat-arrow-3" value="Promote" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="page-10-feature-lifecycle-feature-lane" source="page-10-feature-lifecycle-feat-int" target="page-10-feature-lifecycle-feat-qa" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-merge-arrow" value="Merge to trunk (after QA-PASS)&#xa;1. Squash DB migrations&#xa;2. Re-sequence migration numbers&#xa;3. Set trunk version.json label → Sprint" style="endArrow=classic;html=1;rounded=0;strokeColor=#b85450;strokeWidth=3;dashed=0;exitX=0.25;exitY=0;entryX=0.25;entryY=1;" parent="1" source="page-10-feature-lifecycle-feat-qa" target="page-10-feature-lifecycle-trunk-exp" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-lane-divider" value="Lane divider — feature lane below; trunk lane above. Merge arrow crosses upward from feature QA to trunk Experimental." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="380" width="1620" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-merge-pre-steps-note" value="Pre-merge sequence (E-DEC-04)&#xa;1. Confirm QA gate passed for the feature&#39;s latest artifact (&lt;FeatureSlug&gt;.NNN at QA tier).&#xa;2. Squash DB migrations on the feature branch (feature owner, manual).&#xa;3. Re-sequence migration version numbers to follow trunk&#39;s highest existing migration number.&#xa;4. Update version.json on trunk: prerelease label → Sprint (if not already).&#xa;5. Merge the feature branch to trunk via PR (normal review process).&#xa;6. Trigger trunk Experimental pipeline run; new artifact is Sprint.NNN where NNN is from trunk HEAD." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="410" width="780" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-post-merge-note" value="Post-merge artifact retention&#xa;&#xa;Feature artifacts remain in feeds under &lt;FeatureSlug&gt; suffix after merge. They are not deleted. They simply receive no further promotion. The trunk continues with Sprint.NNN artifacts; the feature branch&#39;s Release in BuildMaster is archived." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;fontSize=11;fontStyle=0;" parent="1" vertex="1">
+                    <mxGeometry x="860" y="410" width="800" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-feed-note" value="Feed strategy (E-DEC-03): feature artifacts use the same ProGet feeds as trunk. The prerelease suffix (e.g. -PaymentRefactor.NNN) keeps them isolated from Sprint.NNN within the same feed. No per-feature feed is created." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="800" width="1620" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-version-shape-note" value="Version-shape examples (E-DEC-01): full version string ≤64 chars; FeatureSlug ≤16 chars (PascalCase from branch suffix).&#xa;• feature/payment-refactor → 0.1.0-PaymentRefactor.42&#xa;• feature/long-running-auth-overhaul → 0.1.0-LongRunningAuth.7&#xa;• feature/db-schema-v2 → 0.1.0-DbSchemaV2.13" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;align=left;verticalAlign=top;fontSize=11;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="850" width="1620" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-additive-rule-note" value="DB compatibility (E-DEC-05): feature branches with DB changes must follow an additive-only rule until merge — no ALTER COLUMN, no DROP COLUMN, no DROP TABLE against existing trunk-schema objects. Currently policy, not yet tooling-enforced. See Database-Change-Unit-and-Flyway-Promotion.md §5 and Long-Developing-Features.md §5." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;fontSize=11;fontStyle=0;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="940" width="1620" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="page-10-feature-lifecycle-srcdocs" value="Source documentation:&#xa;• Long-Developing-Features.md (whole file — §1 scope, §2 version shape, §3 sprint-slice interaction, §4 feed targets, §5 DB additive-only, §6 merge mechanics, §7 BuildMaster Release scoping)&#xa;• Database-Change-Unit-and-Flyway-Promotion.md §5 (per-developer / per-feature DB instance table, naming convention, lifecycle hooks)&#xa;• Immutable-Build-Strategy.md §8 (branch behavior at sprint/feature boundaries)&#xa;• BuildMaster-Pipeline-Topology.md §8 (feature-branch row in branch-behavior table)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;align=left;verticalAlign=top;fontSize=10;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="1015" width="1620" height="75" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>

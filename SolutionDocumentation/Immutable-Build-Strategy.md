@@ -238,14 +238,16 @@ Pipelines are durable. They are **not** created or deleted per sprint or per
 feature. What changes per sprint is metadata: prerelease suffixes, release
 records in BuildMaster, and the worktree the build agent runs in.
 
-| Boundary       | Action on pipelines | Action on releases / metadata                                                  |
-| -------------- | ------------------- | ------------------------------------------------------------------------------ |
-| Feature start  | None                | Create prerelease suffix (e.g. `0.1.0-featureA.3`); experimental feed only.    |
-| Sprint start   | None                | Create a sprint release-train naming context; package versions inherit it.    |
-| During sprint  | None                | Each push triggers an Experimental build via the durable pipeline.            |
-| Feature end    | None                | Stop emitting that feature's prerelease suffix; archive the BuildMaster release record. |
-| Sprint end     | None                | Cut a `release/*` branch from stable; build artifacts from the tag.           |
-| Release cut    | None                | Build the Release Bundle once from the release-branch tag; promote the same artifact through the five tiers. |
+| Boundary                          | Action on pipelines | Action on releases / metadata                                                  |
+| --------------------------------- | ------------------- | ------------------------------------------------------------------------------ |
+| Feature start                     | None                | BuildMaster creates a **new Release scoped to `$FeatureSlug`** (distinct from the trunk Release). `$FeatureSlug` is computed from the branch name per E-DEC-01 (PascalCase, ≤16 chars, derived from the `feature/` suffix). The first Experimental build produces `0.1.0-<FeatureSlug>.1`. Feature artifacts share the trunk feeds; the prerelease suffix provides isolation. |
+| Feature in progress (each sprint) | None                | Feature artifacts are promoted through **all five tiers** under the feature suffix (`0.1.0-<FeatureSlug>.NNN`) using `Promote-ProGetPackage`. The **QA gate is required before merge to stable** — feature artifacts may be promoted to QA, but **no Production promotion** of feature artifacts is permitted until merge. DB migrations on the feature branch must be **additive-only** (no `ALTER COLUMN`, no `DROP`). |
+| Sprint start                      | None                | Create a sprint release-train naming context; package versions inherit it.    |
+| During sprint                     | None                | Each push triggers an Experimental build via the durable pipeline.            |
+| Feature end / merge to stable     | None                | Before merge: **DB migrations are squashed and re-sequenced** to follow trunk's highest existing migration number (no gaps). `version.json` on trunk is updated so the prerelease label is **`Sprint`** (manual step, must precede the pipeline run). After merge, a **trunk Experimental build is triggered**; the first trunk artifact is `Sprint.NNN` where `NNN` resets to trunk's HEAD height. The **feature BuildMaster Release is archived**. The feature's `<FeatureSlug>.NNN` artifacts remain in feeds under their suffix but receive no further promotion. |
+| Sprint end                        | None                | Cut a `release/*` branch from stable; build artifacts from the tag.           |
+| Release cut                       | None                | Build the Release Bundle once from the release-branch tag; promote the same artifact through the five tiers. |
+| _Full lifecycle details_          | _—_                 | _See [`Long-Developing-Features.md`](Long-Developing-Features.md) for the complete feature-branch lifecycle, version-string rules (E-DEC-01), sprint-slice interaction (E-DEC-02), feed targets (E-DEC-03), merge mechanics (E-DEC-04), and DB-compatibility rule (E-DEC-05)._ |
 
 The single exception is the **first time** a new BuildMaster Application is
 introduced (e.g., a brand-new component getting its own release-bundle

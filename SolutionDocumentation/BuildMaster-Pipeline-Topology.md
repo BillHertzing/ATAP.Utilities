@@ -86,16 +86,16 @@ workstation.
 
 | Cmdlet                            | Used by                          | Role                                                                                                | Status |
 | --------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------- | ------ |
-| `Get-BuildContext`                | All three pipelines              | Resolve branch type, application, version, tier from environment.                                   | spec   |
+| `Get-BuildContext`                | All three pipelines              | Resolve branch type, application, version, tier from environment.                                   | implemented |
 | `New-ReleaseManifest`             | Release-Bundle pipeline          | Generate `manifest.json` for a release tag.                                                         | spec   |
 | `New-ReleaseBundle`               | Release-Bundle pipeline          | Assemble the bundle directory tree and pack to `.upack`.                                            | spec   |
 | `Publish-NuGetPackageToProGet`    | C# pipeline                      | Push a `.nupkg` to a ProGet NuGet feed (single source of truth for the push command).               | spec   |
 | `Publish-PSModuleToProGet`        | PowerShell pipeline              | Push a PowerShell `.nupkg` to a ProGet PowerShellGet feed.                                          | partial (legacy `Publish-PSModuleToProGetFeed.ps1` is fully implemented at 230 lines and exported by the manifest; sprint-0007 docs deprecate the legacy name in favor of `Publish-PSModuleToProGet`. Rename or thin-wrapper required.) |
 | `Publish-UniversalPackageToProGet`| Release-Bundle pipeline          | Push a `.upack` to a ProGet Universal feed.                                                         | spec   |
 | `Promote-ProGetPackage`           | All three pipelines              | Call ProGet's promotion API to copy a package between feeds. Idempotent — no-op if already promoted. | partial (`Move-ProGetPackageInterTier.ps1` (277 lines) and `Move-ProGetPackageIntraTier.ps1` (366 lines) are fully implemented and exported, calling `/api/promotions/promote` with the documented parameter shape. `Promote-ProGetPackage` is intended as a thin wrapper or rename over these.) |
-| `New-BuildMasterRelease`          | All three pipelines              | Create / update a BuildMaster release record for a specific version.                                | spec   |
-| `Start-BuildMasterPipeline`       | Trigger handlers                 | Trigger a release's pipeline run via BuildMaster API.                                               | spec   |
-| `Approve-BuildMasterStage`        | All three pipelines              | Mark a tier gate passed.                                                                            | spec   |
+| `New-BuildMasterRelease`          | All three pipelines              | Create / update a BuildMaster release record for a specific version.                                | implemented |
+| `Start-BuildMasterPipeline`       | Trigger handlers                 | Trigger a release's pipeline run via BuildMaster API.                                               | implemented |
+| `Approve-BuildMasterStage`        | All three pipelines              | Mark a tier gate passed.                                                                            | implemented |
 | `Invoke-FlywayRehearsal`          | Release-Bundle pipeline          | Apply bundled migrations to a previous-prod snapshot.                                               | spec   |
 | `Publish-ChocolateyRelease`       | Release-Bundle pipeline (Distribution stage) | Push the Chocolatey wrapper package.                                                    | spec   |
 | `Update-WinGetManifestSource`     | Release-Bundle pipeline (Distribution stage) | Update the WinGet manifest set.                                                         | spec   |

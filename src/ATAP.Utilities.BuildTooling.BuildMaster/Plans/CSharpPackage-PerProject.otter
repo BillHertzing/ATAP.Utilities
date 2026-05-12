@@ -1,238 +1,220 @@
 ##########################################################################
-# CSharpPackage-PerProject — BuildMaster OtterScript Plan
+# CSharpPackage-PerProject - BuildMaster OtterScript Plan
 #
-# Purpose : Build, test, pack, and publish a *single* C# project (and its
-#           sub-projects) through the 5-Tier pipeline.  Follows the same
-#           per-tier if-block structure as CSharpPackage-5Stage.otter, with
-#           $ProjectPath substituted for ATAP.Utilities.sln and output paths
-#           scoped under $PackageSlug to avoid collision between applications.
+# Source of truth:
+#   Plan-DocsUpdateForImmutablePackages_V3.md Section K
+#   SolutionDocumentation/BuildMaster-ProGet-CSharp-Package-Pipeline.md section 9
 #
-# Variables (Application Variables or Build Variables):
-#   $ApplicationName  — e.g. "ATAP.Utilities"
-#   $Branch           — branch being built (injected by Repository Monitor)
-#   $SourcePath       — absolute path to the developer worktree (Application Variable)
-#                       e.g. C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-98-sprint-0006-work-items
-#   $ProjectPath      — solution-root-relative path to the .csproj  OR  a
-#                       .sln file that contains just this package family.
-#                       e.g. src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj
-#                       e.g. src\ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.sln
-#   $Configuration    — "Release"
-#   $ProGetUrl        — e.g. "http://localhost:50000"
-#   $ProGetApiKey     — masked; from PROGET_ADMIN_API_KEY env var
+# Variables (Application or Build Variables):
+#   $ApplicationName          Repository/application name, e.g. ATAP.Utilities
+#   $Branch                   Branch being built
+#   $SourcePath               Absolute path to the developer worktree
+#   $ProjectPath              Repo-root-relative path to one .csproj
+#   $Configuration            MSBuild configuration, e.g. Release
+#   $ProGetApiKey             Masked BuildMaster variable for ProGet API calls
 #
-# Tier names (from Explainer 602):
-#   Experimental  ← NBGV label -Sprint-   → nuget-experimental
-#   Development   ← NBGV label -Alpha-    → nuget-development
-#   Integration   ← NBGV label -Beta-     → nuget-integration
-#   QA            ← NBGV label -QA-       → nuget-qa
-#   Production    ← NBGV label (stable)   → nuget-stable
-#
-# How to use:
-#   Option A — One Application per package family
-#     1. Create a BuildMaster Application named e.g. "ATAP.Utilities.Philote"
-#     2. Set $ProjectPath = src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj
-#     3. Attach this plan and add a Repository Monitor scoped to that package's
-#        path filter (see CSharpPackage-RepositoryMonitors.otter).
-#
-#   Option B — Shared application with per-build variable override
-#     1. Use the "ATAP.Utilities-CSharp" application.
-#     2. Trigger a manual build and override $ProjectPath when prompted.
-#     3. Useful for ad-hoc per-package pushes without a dedicated application.
-#
-# See: SolutionDocumentation/BuildMaster-ProGet-CSharp-Package-Pipeline.md §9
+# This is the single-project sibling of CSharpPackage-5Stage.otter. Only
+# Experimental builds and publishes; later stages move the same package
+# version through the feed chain and run tests against the promoted artifact.
 ##########################################################################
 
-# ---------------------------------------------------------------------------
-# 1. Source — $SourcePath is the developer worktree (Application Variable).
-#    Git::Checkout-Code is intentionally absent: file-export checkout does not
-#    preserve the .git file that NBGV requires to compute version height.
-# ---------------------------------------------------------------------------
+# The source is the BuildMaster-provided developer worktree. Do not replace it
+# with file-export checkout; the .git file is required by version resolution.
 
-# Resolve tier from NBGV.
-# Step 1: Run nbgv and write outputs to temp files
+set $BuildToolingModulePath = $PathCombine($SourcePath, src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1);
+
+set $ExperimentalFeedName = nuget-experimental;
+set $DevelopmentFeedName  = nuget-development;
+set $IntegrationFeedName  = nuget-integration;
+set $QaFeedName           = nuget-qa;
+set $ProductionFeedName   = nuget-stable;
+
+set $PackageSlug = $RegexReplace($ProjectPath, `^.*[\\/]([^\\/]+)\.csproj$`, `$1`);
+set $PackageName = $PackageSlug;
+
 Exec
 (
     FileName: pwsh,
-    Arguments: >>-NoProfile -Command "New-Item -ItemType Directory -Path '_generated\buildmaster' -Force | Out-Null; dotnet nbgv get-version --variable NuGetPackageVersion | Out-File '_generated\buildmaster\_nbgv_version.tmp' -Encoding utf8 -NoNewline; dotnet nbgv get-version --variable PrereleaseVersionNoLeadingHyphen | Out-File '_generated\buildmaster\_nbgv_prerelease.tmp' -Encoding utf8 -NoNewline; dotnet nbgv get-version --variable VersionHeight | Out-File '_generated\buildmaster\_nbgv_height.tmp' -Encoding utf8 -NoNewline">>,
+    Arguments: `-NoProfile -Command "Import-Module '$BuildToolingModulePath' -Force; New-Item -ItemType Directory -Path '_generated\buildmaster' -Force | Out-Null; $$context = Get-BuildContext -Application '$ApplicationName' -Branch '$Branch'; $$context.Tier | Set-Content -Path '_generated\buildmaster\_tier.tmp' -NoNewline; $$context.ResolvedPackageVersion | Set-Content -Path '_generated\buildmaster\_resolved_version.tmp' -NoNewline; $$context.PrereleaseLabel | Set-Content -Path '_generated\buildmaster\_prerelease_label.tmp' -NoNewline"`,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );
 
-# Step 2: Read it into a variable using a real OtterScript function
-set $NbgvVersionTempFile = $PathCombine($SourcePath, _generated\buildmaster\_nbgv_version.tmp);
-set $NbgvPrereleaseTempFile = $PathCombine($SourcePath, _generated\buildmaster\_nbgv_prerelease.tmp);
-set $NbgvHeightTempFile = $PathCombine($SourcePath, _generated\buildmaster\_nbgv_height.tmp);
-set $NbgvVersion  = $Trim($FileContents($NbgvVersionTempFile));
-set $NbgvPrereleaseVersion = $Trim($FileContents($NbgvPrereleaseTempFile));
-set $NbgvVersionHeight = $Trim($FileContents($NbgvHeightTempFile));
+set $TierTempFile = $PathCombine($SourcePath, _generated\buildmaster\_tier.tmp);
+set $ResolvedPackageVersionTempFile = $PathCombine($SourcePath, _generated\buildmaster\_resolved_version.tmp);
+set $PrereleaseLabelTempFile = $PathCombine($SourcePath, _generated\buildmaster\_prerelease_label.tmp);
 
-set $VersionLabel = $RegexReplace($NbgvPrereleaseVersion, "\.[0-9]+$", "");
+set $Tier = $Trim($FileContents($TierTempFile));
+set $ResolvedPackageVersion = $Trim($FileContents($ResolvedPackageVersionTempFile));
+set $PrereleaseLabel = $Trim($FileContents($PrereleaseLabelTempFile));
 
-set $Tier = Experimental;
-if $VersionLabel == Alpha      { set $Tier = Development;  }
-if $VersionLabel == Beta       { set $Tier = Integration;  }
-if $VersionLabel == QA         { set $Tier = QA;           }
-if $VersionLabel == ""         { set $Tier = Production;   }
+set $FeedName = $ExperimentalFeedName;
+if $Tier == Development { set $FeedName = $DevelopmentFeedName;  }
+if $Tier == Integration { set $FeedName = $IntegrationFeedName;  }
+if $Tier == QA          { set $FeedName = $QaFeedName;           }
+if $Tier == Production  { set $FeedName = $ProductionFeedName;   }
 
-# Resolve feed name via BuildTooling settings (T-31) — no hard-coded feed names.
-Exec pwsh
-(
-    Arguments: >>-NoProfile -File src\ATAP.Utilities.BuildTooling.BuildMaster\Scripts\Resolve-FeedName.ps1 -Tier $Tier -FeedType nuget -OutputFile _generated\buildmaster\_feedname.tmp>>,
-    WorkingDirectory: $SourcePath,
-    SuccessExitCode: 0
-);
-set $FeedNameTmp = $PathCombine($SourcePath, _generated\buildmaster\_feedname.tmp);
-set $FeedName = $Trim($FileContents($FeedNameTmp));
-
-# Derive a slug for artifact names (last segment of $ProjectPath, no extension)
-set $PackageSlug = $RegexReplace($ProjectPath, `^.*\\([^\\]+)\.(csproj|sln)$`, `$1`);
-
-Log-Debug "Resolved Tier=$Tier  Feed=$FeedName  VersionLabel=$VersionLabel  PrereleaseVersion=$NbgvPrereleaseVersion  VersionHeight=$NbgvVersionHeight  NuGetPackageVersion=$NbgvVersion";
+Log-Debug `Resolved Tier=$Tier Feed=$FeedName Project=$ProjectPath Package=$PackageName Version=$ResolvedPackageVersion PrereleaseLabel=$PrereleaseLabel`;
 
 # -------------------------------------------------------------------------
-# Stage Experimental — build + pack only; no tests; push to nuget-experimental
+# Stage Experimental - build, pack, publish to the first feed
 # -------------------------------------------------------------------------
-  if $Tier == Experimental
-  {
-      Exec dotnet (
-        Arguments: "build $ProjectPath --configuration $Configuration --no-incremental",
-        WorkingDirectory: $SourcePath,
-        SuccessExitCode: 0
-      );
-      Exec dotnet (
-        Arguments: "pack $ProjectPath --configuration $Configuration --no-build --output _generated\nuget\$Tier\$PackageSlug",
-          WorkingDirectory: $SourcePath,
-          SuccessExitCode: 0
-      );
-      Exec dotnet (
-        Arguments: "nuget push _generated\nuget\$Tier\$PackageSlug\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $Decrypt($ProGetApiKey) --skip-duplicate",
-          WorkingDirectory: $SourcePath,
-          SuccessExitCode: 0
-      );
-      Create-Artifact $`$PackageSlug`-Packages
-      (
-          From: _generated\nuget\$Tier\$PackageSlug,
-          Include: @(*.nupkg, *.snupkg)
-      );
-  }
+stage Experimental
+{
+    if $Tier == Experimental
+    {
+        Exec
+        (
+            FileName: dotnet,
+            Arguments: `build $ProjectPath --configuration $Configuration --no-incremental`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
+
+        Exec
+        (
+            FileName: dotnet,
+            Arguments: `pack $ProjectPath --configuration $Configuration --no-build --output _generated\nuget\$Tier\$PackageSlug`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
+
+        Exec
+        (
+            FileName: pwsh,
+            Arguments: `-NoProfile -Command "$$env:PROGET_ADMIN_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModulePath' -Force; Get-ChildItem -Path '_generated\nuget\$Tier\$PackageSlug' -Filter '*.nupkg' -File | ForEach-Object { Publish-NuGetPackageToProGet -NupkgPath $$_.FullName -Feed '$FeedName' | Out-Null }"`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
+
+        Create-Artifact ProjectPackages
+        (
+            From: _generated\nuget\$Tier\$PackageSlug,
+            Include: @(*.nupkg, *.snupkg)
+        );
+    }
+}
+
 # -------------------------------------------------------------------------
-# Stage Development — build + unit tests + pack + publish to nuget-development
+# Stage Development - promote from Experimental, then run unit tests
 # -------------------------------------------------------------------------
-  if $Tier == Development
-  {
-      Exec dotnet (
-        Arguments: "build $ProjectPath --configuration $Configuration --no-incremental",
-          WorkingDirectory: $SourcePath,
-          SuccessExitCode: 0
-      );
-      Exec dotnet (
-        Arguments: "test $ProjectPath --configuration $Configuration --no-build --logger trx --results-directory _generated\testresults\$Tier\$PackageSlug",
-          WorkingDirectory: $SourcePath,
-          SuccessExitCode: 0
-      );
-      Exec dotnet (
-        Arguments: "pack $ProjectPath --configuration $Configuration --no-build --output _generated\nuget\$Tier\$PackageSlug",
-          WorkingDirectory: $SourcePath,
-          SuccessExitCode: 0
-      );
-      Exec dotnet (
-        Arguments: "nuget push _generated\nuget\$Tier\$PackageSlug\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $Decrypt($ProGetApiKey) --skip-duplicate",
-          WorkingDirectory: $SourcePath,
-          SuccessExitCode: 0
-      );
-      Create-Artifact $`$PackageSlug`-TestResults
-      (
-          From: _generated\testresults\$Tier\$PackageSlug,
-          Include: @(*.trx)
-      );
-      Create-Artifact $`$PackageSlug`-Packages
-      (
-          From: _generated\nuget\$Tier\$PackageSlug,
-          Include: @(*.nupkg, *.snupkg)
-      );
-  }
+stage Development
+{
+    if $Tier == Development
+    {
+        Exec
+        (
+            FileName: pwsh,
+            Arguments: `-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$ExperimentalFeedName' -ToFeed '$DevelopmentFeedName' -Reason 'Development gate for $ApplicationName $ResolvedPackageVersion on $Branch'"`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
+
+        Exec
+        (
+            FileName: pwsh,
+            Arguments: `-NoProfile -Command "Import-Module '$BuildToolingModulePath' -Force; Invoke-PromotedPackageTests -Name '$PackageName' -Version '$ResolvedPackageVersion' -Feed '$DevelopmentFeedName' -TestFilter 'Category=Unit' -ResultsPath '_generated\testresults\$Tier\$PackageSlug'"`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
+
+        Create-Artifact ProjectTestResults
+        (
+            From: _generated\testresults\$Tier\$PackageSlug,
+            Include: @(*.trx)
+        );
+    }
+}
+
 # -------------------------------------------------------------------------
-# Stage Integration — build + unit + integration tests + pack + publish
+# Stage Integration - promote from Development, then run integration tests
 # -------------------------------------------------------------------------
-  if $Tier == Integration
-  {
-      Exec dotnet (
-        Arguments: "build $ProjectPath --configuration $Configuration --no-incremental",
-          WorkingDirectory: $SourcePath,
-          SuccessExitCode: 0
-      );
-      Exec dotnet (
-Arguments: >>test $ProjectPath --configuration $Configuration --no-build --filter "Category=Unit|Category=Integration" --logger trx --results-directory _generated\testresults\$Tier\$PackageSlug>>,          WorkingDirectory: $SourcePath,
-          SuccessExitCode: 0
-      );
-      Exec dotnet (
-        Arguments: "pack $ProjectPath --configuration $Configuration --no-build --output _generated\nuget\$Tier\$PackageSlug",
-          WorkingDirectory: $SourcePath,
-          SuccessExitCode: 0
-      );
-      Exec dotnet (
-        Arguments: "nuget push _generated\nuget\$Tier\$PackageSlug\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $Decrypt($ProGetApiKey) --skip-duplicate",
-          WorkingDirectory: $SourcePath,
-          SuccessExitCode: 0
-      );
-      Create-Artifact $`$PackageSlug`-TestResults ( From: _generated\testresults\$Tier\$PackageSlug, Include: @(*.trx) );
-      Create-Artifact $`$PackageSlug`-Packages    ( From: _generated\nuget\$Tier\$PackageSlug,       Include: @(*.nupkg, *.snupkg) );
-  }
+stage Integration
+{
+    if $Tier == Integration
+    {
+        Exec
+        (
+            FileName: pwsh,
+            Arguments: `-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$DevelopmentFeedName' -ToFeed '$IntegrationFeedName' -Reason 'Integration gate for $ApplicationName $ResolvedPackageVersion on $Branch'"`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
+
+        Exec
+        (
+            FileName: pwsh,
+            Arguments: `-NoProfile -Command "Import-Module '$BuildToolingModulePath' -Force; Invoke-PromotedPackageTests -Name '$PackageName' -Version '$ResolvedPackageVersion' -Feed '$IntegrationFeedName' -TestFilter 'Category=Unit|Category=Integration' -ResultsPath '_generated\testresults\$Tier\$PackageSlug'"`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
+
+        Create-Artifact ProjectTestResults
+        (
+            From: _generated\testresults\$Tier\$PackageSlug,
+            Include: @(*.trx)
+        );
+    }
+}
+
 # -------------------------------------------------------------------------
-# Stage QA — full suite + coverage + pack + publish
+# Stage QA - promote from Integration, then run regression tests with coverage
 # -------------------------------------------------------------------------
-  if $Tier == QA
-  {
-      Exec dotnet (
-        Arguments: "build $ProjectPath --configuration $Configuration --no-incremental",
-          WorkingDirectory: $SourcePath,
-          SuccessExitCode: 0
-      );
-      Exec dotnet (
-        Arguments: >>test $ProjectPath --configuration $Configuration --no-build --collect:"XPlat Code Coverage" --results-directory _generated\testresults\$Tier\$PackageSlug>>,
-          WorkingDirectory: $SourcePath,
-          SuccessExitCode: 0
-      );
-      Exec dotnet (
-        Arguments: "pack $ProjectPath --configuration $Configuration --no-build --output _generated\nuget\$Tier\$PackageSlug",
-          WorkingDirectory: $SourcePath,
-          SuccessExitCode: 0
-      );
-      Exec dotnet (
-        Arguments: "nuget push _generated\nuget\$Tier\$PackageSlug\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $Decrypt($ProGetApiKey) --skip-duplicate",
-          WorkingDirectory: $SourcePath,
-          SuccessExitCode: 0
-      );
-      Create-Artifact $`$PackageSlug`-TestResults ( From: _generated\testresults\$Tier\$PackageSlug, Include: @(*.trx, coverage.cobertura.xml) );
-      Create-Artifact $`$PackageSlug`-Packages    ( From: _generated\nuget\$Tier\$PackageSlug,       Include: @(*.nupkg, *.snupkg) );
-  }
+stage QA
+{
+    if $Tier == QA
+    {
+        Exec
+        (
+            FileName: pwsh,
+            Arguments: `-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$IntegrationFeedName' -ToFeed '$QaFeedName' -Reason 'QA gate for $ApplicationName $ResolvedPackageVersion on $Branch'"`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
+
+        Exec
+        (
+            FileName: pwsh,
+            Arguments: `-NoProfile -Command "Import-Module '$BuildToolingModulePath' -Force; Invoke-PromotedPackageTests -Name '$PackageName' -Version '$ResolvedPackageVersion' -Feed '$QaFeedName' -CollectCoverage -ResultsPath '_generated\testresults\$Tier\$PackageSlug'"`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
+
+        Create-Artifact ProjectTestResults
+        (
+            From: _generated\testresults\$Tier\$PackageSlug,
+            Include: @(*.trx, coverage.cobertura.xml)
+        );
+    }
+}
+
 # -------------------------------------------------------------------------
-# Stage Production — signed packages + full suite + publish to nuget-stable
+# Stage Production - promote from QA, then run smoke tests
 # -------------------------------------------------------------------------
-  if $Tier == Production
-  {
-      Exec dotnet (
-        Arguments: "build $ProjectPath --configuration $Configuration --no-incremental",
-          WorkingDirectory: $SourcePath,
-          SuccessExitCode: 0
-      );
-      Exec dotnet (
-        Arguments: >>test $ProjectPath --configuration $Configuration --no-build --collect:"XPlat Code Coverage" --results-directory _generated\testresults\$Tier\$PackageSlug>>,
-          WorkingDirectory: $SourcePath,
-          SuccessExitCode: 0
-      );
-      Exec dotnet (
-        Arguments: "pack $ProjectPath --configuration $Configuration --no-build --output _generated\nuget\$Tier\$PackageSlug",
-          WorkingDirectory: $SourcePath,
-          SuccessExitCode: 0
-      );
-      # Optional: sign packages before push
-      # Exec ( FileName: dotnet, Arguments: `nuget sign _generated\nuget\$Tier\$PackageSlug\*.nupkg --certificate-path ... --timestamper ...` );
-      Exec dotnet (
-        Arguments: "nuget push _generated\nuget\$Tier\$PackageSlug\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $Decrypt($ProGetApiKey) --skip-duplicate",
-          WorkingDirectory: $SourcePath,
-          SuccessExitCode: 0
-      );
-      Create-Artifact $`$PackageSlug`-TestResults ( From: _generated\testresults\$Tier\$PackageSlug, Include: @(*.trx, coverage.cobertura.xml) );
-      Create-Artifact $`$PackageSlug`-Packages    ( From: _generated\nuget\$Tier\$PackageSlug,       Include: @(*.nupkg, *.snupkg) );
-  }
+stage Production
+{
+    if $Tier == Production
+    {
+        Exec
+        (
+            FileName: pwsh,
+            Arguments: `-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$QaFeedName' -ToFeed '$ProductionFeedName' -Reason 'Production gate for $ApplicationName $ResolvedPackageVersion on $Branch'"`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
+
+        Exec
+        (
+            FileName: pwsh,
+            Arguments: `-NoProfile -Command "Import-Module '$BuildToolingModulePath' -Force; Invoke-PromotedPackageTests -Name '$PackageName' -Version '$ResolvedPackageVersion' -Feed '$ProductionFeedName' -TestFilter 'Category=Smoke' -ResultsPath '_generated\testresults\$Tier\$PackageSlug'"`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
+
+        Create-Artifact ProjectTestResults
+        (
+            From: _generated\testresults\$Tier\$PackageSlug,
+            Include: @(*.trx)
+        );
+    }
+}

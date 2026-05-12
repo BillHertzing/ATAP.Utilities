@@ -501,7 +501,7 @@ Adapted for the immutable-build model:
    [Release-Branch-and-Manifest.md §3](Release-Branch-and-Manifest.md#3-the-manifest-schema).
 5. **Retention** — release-record attachments are retained as long as the
    package version exists in ProGet. Bundle-embedded results live for the
-   life of the release in `ReleaseBundle-Production`.
+   life of the release in `releasebundle-production`.
 
 The key property: **a production release has the test results that
 validated it traceable back through the promotion chain** — via BuildMaster

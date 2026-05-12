@@ -57,27 +57,6 @@ $global:Settings[$global:configRootKeys['ProGetFeedCollectionConfigRootKey']].
 This is the current Explainer 0111 path and replaces the older direct
 ATAP.IAC constant lookup.
 #>
-function Get-PSModuleFeedUri {
-  [CmdletBinding()]
-  [OutputType([string])]
-  param(
-    [Parameter(Mandatory)]
-    [string]$FeedName,
-
-    [Parameter(Mandatory)]
-    [string]$Tier
-  )
-
-  $fn = 'Get-PSModuleFeedUri'
-  $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
-
-  $feed = Resolve-ProGetFeedFromSettings -FeedType 'powershellget' -Tier $Tier
-  if ($feed.FeedName -ne $FeedName) {
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Ignoring supplied FeedName '$FeedName'; settings resolved tier '$Tier' to '$($feed.FeedName)'"
-  }
-  return $feed.EndpointUri
-}
-
 function Publish-PSModuleToProGetFeed {
   [CmdletBinding(SupportsShouldProcess = $true)]
   [OutputType([PSCustomObject])]

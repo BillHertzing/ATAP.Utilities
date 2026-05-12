@@ -1,355 +1,198 @@
 ##########################################################################
-# PowerShellModule-5Stage — BuildMaster OtterScript Plan
+# PowerShellModule-5Stage - BuildMaster OtterScript Plan
 #
-# Purpose : Build, test, gate, package, and publish every PowerShell
-#           module in ATAP.Utilities through the 5-Tier pipeline.
+# Variables (Application Variables - set in BuildMaster Application config):
+#   $ApplicationName  - BuildMaster application name, e.g. "ATAP.Utilities.PowerShell"
+#   $SourcePath       - absolute path to the developer/build worktree
+#   $ModuleName       - module folder under src/, e.g. "ATAP.Utilities.BuildTooling.PowerShell"
+#   $PackageName      - ProGet package/module ID, normally the same as $ModuleName
+#   $PackageVersion   - exact package version to promote/test
+#   $ProGetApiKey     - masked BuildMaster variable for ProGet API calls
+#   $Tier             - current BuildMaster tier/stage
 #
-# Variables (must be defined in BuildMaster Application Variables):
-#   $ApplicationName  — e.g. "ATAP.Utilities"
-#   $Branch           — branch being built (e.g. "98-sprint-0006-work-items")
-#   $SourcePath       — absolute path to the checked-out worktree
-#   $Modules          — list of module subfolder names under src/
-#                       e.g. @(ATAP.Utilities.BuildTooling.PowerShell, ...)
-#
-# Behaviour:
-#   Stage 1  (Sprint)      — triggered by pushes to sprint-* branches
-#   Stage 2  (Alpha)       — triggered by pushes to sprint-* branches (T2 label)
-#   Stage 3  (Beta)        — triggered on integration branch
-#   Stage 4  (QA)          — triggered on qa branch
-#   Stage 5  (Production)  — triggered on main / release/v* branch
-#
-# See: src/ATAP.Utilities.BuildTooling.PowerShell/Documentation/
-#       5tier Implementation plan.md §6.1
+# Experimental builds the PowerShell module nupkg once and publishes it to
+# powershellget-experimental. Later stages promote that same immutable nupkg
+# and run tests against the promoted module; they do not rebuild or repack.
 ##########################################################################
 
-# ---------------------------------------------------------------------------
-# Source acquisition (shared by all stages)
-# ---------------------------------------------------------------------------
-GitHub::Get-Source
-(
-    Organization: ATAP,
-    Repository: $ApplicationName,
-    Branch: $Branch,
-    OutputDirectory: $SourcePath
-);
+# BuildTooling module used by every stage command.
+set $BuildToolingModuleManifest = $PathCombine($SourcePath, src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1);
 
-# ---------------------------------------------------------------------------
-# Determine tier from NBGV prerelease label
-# ---------------------------------------------------------------------------
-set $NbgvVersion = $Exec
-(
-    FileName: dotnet,
-    Arguments: `nbgv get-version --variable NuGetPackageVersion`,
-    WorkingDirectory: $SourcePath
-);
+# Module source/package paths.
+set $ModulePath = $PathCombine($SourcePath, src\$ModuleName);
+set $PackageOutputPath = $PathCombine($SourcePath, _generated\psmodules\$ModuleName\packages-nupkg);
+set $NupkgPathFile = $PathCombine($SourcePath, _generated\buildmaster\$ModuleName.nupkg-path.tmp);
 
-set $NbgvPrereleaseVersion = $Exec
-(
-    FileName: dotnet,
-    Arguments: `nbgv get-version --variable PrereleaseVersionNoLeadingHyphen`,
-    WorkingDirectory: $SourcePath
-);
+# Canonical PowerShellGet feed names.
+set $ExperimentalFeed = powershellget-experimental;
+set $DevelopmentFeed = powershellget-development;
+set $IntegrationFeed = powershellget-integration;
+set $QAFeed = powershellget-qa;
+set $ProductionFeed = powershellget-stable;
 
-set $NbgvVersionHeight = $Exec
-(
-    FileName: dotnet,
-    Arguments: `nbgv get-version --variable VersionHeight`,
-    WorkingDirectory: $SourcePath
-);
-
-set $NbgvVersion = $Trim($NbgvVersion);
-set $NbgvPrereleaseVersion = $Trim($NbgvPrereleaseVersion);
-set $NbgvVersionHeight = $Trim($NbgvVersionHeight);
-set $VersionLabel = $RegexReplace($NbgvPrereleaseVersion, `\.[0-9]+$`, ``);
-
-set $Tier = Sprint;
-if $VersionLabel == Alpha      { set $Tier = Alpha; }
-if $VersionLabel == Beta       { set $Tier = Beta;  }
-if $VersionLabel == QA         { set $Tier = QA;    }
-if $VersionLabel == ``         { set $Tier = Production; }
-
-Log-Debug `Resolved Tier=$Tier VersionLabel=$VersionLabel PrereleaseVersion=$NbgvPrereleaseVersion VersionHeight=$NbgvVersionHeight NuGetPackageVersion=$NbgvVersion`;
-
-# ---------------------------------------------------------------------------
-# Stage 1 — Sprint  (T1)
-# Build, package, publish to powershellget-experimental, and compress artifacts.
-# No quality gates or tests at Sprint tier.
-# ---------------------------------------------------------------------------
-stage Sprint
+# -------------------------------------------------------------------------
+# Stage Experimental - pack once and publish to powershellget-experimental
+# -------------------------------------------------------------------------
+stage Experimental
 {
-    if $Tier == Sprint
+    if $Tier == Experimental
     {
-        for each $Module in $Modules
-        {
-            Log-Information `[Sprint] Building and publishing $Module ...`;
+        Exec
+        (
+            FileName: pwsh,
+            Arguments: `-NoProfile -Command "Import-Module '$BuildToolingModuleManifest' -Force; New-Item -ItemType Directory -Path (Split-Path -Parent '$NupkgPathFile') -Force | Out-Null; $$nupkg = New-PSModuleNupkg -ModulePath '$ModulePath' -OutputPath '$PackageOutputPath' -Force; $$nupkg.FullName | Set-Content -LiteralPath '$NupkgPathFile' -Encoding utf8 -NoNewline"`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
 
-            # Publish chains: BuildPSM1 → BuildManifest → Package → Publish
-            Exec
-            (
-                FileName: pwsh,
-                Arguments: `-NoProfile -File src\$Module\module.build.ps1 Publish -Tier Sprint`,
-                WorkingDirectory: $SourcePath,
-                SuccessExitCode: 0
-            );
+        Exec
+        (
+            FileName: pwsh,
+            Arguments: `-NoProfile -Command "$$env:PROGET_APIKEY_POWERSHELLGET_EXPERIMENTAL = '$Decrypt($ProGetApiKey)'; $$env:PROGET_ADMIN_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModuleManifest' -Force; $$nupkgPath = (Get-Content -LiteralPath '$NupkgPathFile' -Raw).Trim(); Publish-PSModuleToProGet -NupkgPath $$nupkgPath"`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
 
-            # Compress artifacts for BuildMaster capture
-            Exec
-            (
-                FileName: pwsh,
-                Arguments: `-NoProfile -File src\$Module\module.build.ps1 Compress -Tier Sprint`,
-                WorkingDirectory: $SourcePath,
-                SuccessExitCode: 0
-            );
-
-            # Capture package artifacts (no TestResults/Coverage at Sprint tier)
-            Create-Artifact $`$Module`-Packages
-            (
-                From: _generated\PSModules\$Module\artifacts,
-                Include: @(Packages.7z)
-            );
-        }
+        Create-Artifact Packages
+        (
+            From: _generated\psmodules\$ModuleName\packages-nupkg,
+            Include: @(*.nupkg)
+        );
     }
 }
 
-# ---------------------------------------------------------------------------
-# Stage 2 — Alpha  (T2)
-# Full Verify (PSScriptAnalyzer + unit tests) for every module, then Compress.
-# Publishing is done by a separate Publish step after all modules pass Verify.
-# ---------------------------------------------------------------------------
-stage Alpha
+# -------------------------------------------------------------------------
+# Stage Development - promote artifact + run module tests against it
+# -------------------------------------------------------------------------
+stage Development
 {
-    if $Tier == Alpha
+    if $Tier == Development
     {
-        for each $Module in $Modules
-        {
-            Log-Information `[Alpha] Verifying $Module ...`;
+        set $FromFeed = $ExperimentalFeed;
+        set $ToFeed = $DevelopmentFeed;
 
-            Exec
-            (
-                FileName: pwsh,
-                Arguments: `-NoProfile -File src\$Module\module.build.ps1 Verify -Tier Alpha`,
-                WorkingDirectory: $SourcePath,
-                SuccessExitCode: 0
-            );
+        Exec
+        (
+            FileName: pwsh,
+            Arguments: `-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModuleManifest' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$PackageVersion' -FromFeed '$FromFeed' -ToFeed '$ToFeed' -Reason 'DEV-PASS for $ApplicationName $PackageVersion'"`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
 
-            # Compress artifacts for BuildMaster capture
-            Exec
-            (
-                FileName: pwsh,
-                Arguments: `-NoProfile -File src\$Module\module.build.ps1 Compress -Tier Alpha`,
-                WorkingDirectory: $SourcePath,
-                SuccessExitCode: 0
-            );
+        Exec
+        (
+            FileName: pwsh,
+            Arguments: `-NoProfile -Command "Import-Module '$BuildToolingModuleManifest' -Force; Invoke-PromotedModuleTests -Name '$PackageName' -Version '$PackageVersion' -Feed '$ToFeed' -Tier '$Tier' -ResultsPath '_generated\testresults\$Tier'"`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
 
-            Create-Artifact $`$Module`-TestResults
-            (
-                From: _generated\PSModules\$Module\artifacts,
-                Include: @(TestResults.7z)
-            );
-            Create-Artifact $`$Module`-CoverageReport
-            (
-                From: _generated\PSModules\$Module\artifacts,
-                Include: @(CoverageReport.7z)
-            );
-            Create-Artifact $`$Module`-Packages
-            (
-                From: _generated\PSModules\$Module\artifacts,
-                Include: @(Packages.7z)
-            );
-        }
-
-        # Publish all modules only after every module passes Verify
-        for each $Module in $Modules
-        {
-            Log-Information `[Alpha] Publishing $Module ...`;
-
-            Exec
-            (
-                FileName: pwsh,
-                Arguments: `-NoProfile -File src\$Module\module.build.ps1 Publish -Tier Alpha`,
-                WorkingDirectory: $SourcePath,
-                SuccessExitCode: 0
-            );
-        }
+        Create-Artifact TestResults
+        (
+            From: _generated\testresults\$Tier,
+            Include: @(*.xml, *.trx)
+        );
     }
 }
 
-# ---------------------------------------------------------------------------
-# Stage 3 — Beta  (T3)
-# Full Verify (unit + integration tests) for every module, then Publish.
-# ---------------------------------------------------------------------------
-stage Beta
+# -------------------------------------------------------------------------
+# Stage Integration - promote artifact + run module tests against it
+# -------------------------------------------------------------------------
+stage Integration
 {
-    if $Tier == Beta
+    if $Tier == Integration
     {
-        for each $Module in $Modules
-        {
-            Log-Information `[Beta] Verifying $Module ...`;
+        set $FromFeed = $DevelopmentFeed;
+        set $ToFeed = $IntegrationFeed;
 
-            Exec
-            (
-                FileName: pwsh,
-                Arguments: `-NoProfile -File src\$Module\module.build.ps1 Verify -Tier Beta`,
-                WorkingDirectory: $SourcePath,
-                SuccessExitCode: 0
-            );
+        Exec
+        (
+            FileName: pwsh,
+            Arguments: `-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModuleManifest' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$PackageVersion' -FromFeed '$FromFeed' -ToFeed '$ToFeed' -Reason 'INT-PASS for $ApplicationName $PackageVersion'"`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
 
-            Exec
-            (
-                FileName: pwsh,
-                Arguments: `-NoProfile -File src\$Module\module.build.ps1 Compress -Tier Beta`,
-                WorkingDirectory: $SourcePath,
-                SuccessExitCode: 0
-            );
+        Exec
+        (
+            FileName: pwsh,
+            Arguments: `-NoProfile -Command "Import-Module '$BuildToolingModuleManifest' -Force; Invoke-PromotedModuleTests -Name '$PackageName' -Version '$PackageVersion' -Feed '$ToFeed' -Tier '$Tier' -ResultsPath '_generated\testresults\$Tier'"`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
 
-            Create-Artifact $`$Module`-TestResults
-            (
-                From: _generated\PSModules\$Module\artifacts,
-                Include: @(TestResults.7z)
-            );
-            Create-Artifact $`$Module`-CoverageReport
-            (
-                From: _generated\PSModules\$Module\artifacts,
-                Include: @(CoverageReport.7z)
-            );
-            Create-Artifact $`$Module`-Packages
-            (
-                From: _generated\PSModules\$Module\artifacts,
-                Include: @(Packages.7z)
-            );
-        }
-
-        for each $Module in $Modules
-        {
-            Log-Information `[Beta] Publishing $Module ...`;
-
-            Exec
-            (
-                FileName: pwsh,
-                Arguments: `-NoProfile -File src\$Module\module.build.ps1 Publish -Tier Beta`,
-                WorkingDirectory: $SourcePath,
-                SuccessExitCode: 0
-            );
-        }
+        Create-Artifact TestResults
+        (
+            From: _generated\testresults\$Tier,
+            Include: @(*.xml, *.trx)
+        );
     }
 }
 
-# ---------------------------------------------------------------------------
-# Stage 4 — QA  (T4)
-# Full test suite including functional/regression/E2E + coverage gate.
-# ---------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# Stage QA - promote artifact + run module tests against it
+# -------------------------------------------------------------------------
 stage QA
 {
     if $Tier == QA
     {
-        for each $Module in $Modules
-        {
-            Log-Information `[QA] Verifying $Module ...`;
+        set $FromFeed = $IntegrationFeed;
+        set $ToFeed = $QAFeed;
 
-            Exec
-            (
-                FileName: pwsh,
-                Arguments: `-NoProfile -File src\$Module\module.build.ps1 Verify -Tier QA`,
-                WorkingDirectory: $SourcePath,
-                SuccessExitCode: 0
-            );
+        Exec
+        (
+            FileName: pwsh,
+            Arguments: `-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModuleManifest' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$PackageVersion' -FromFeed '$FromFeed' -ToFeed '$ToFeed' -Reason 'QA-PASS for $ApplicationName $PackageVersion'"`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
 
-            Exec
-            (
-                FileName: pwsh,
-                Arguments: `-NoProfile -File src\$Module\module.build.ps1 Compress -Tier QA`,
-                WorkingDirectory: $SourcePath,
-                SuccessExitCode: 0
-            );
+        Exec
+        (
+            FileName: pwsh,
+            Arguments: `-NoProfile -Command "Import-Module '$BuildToolingModuleManifest' -Force; Invoke-PromotedModuleTests -Name '$PackageName' -Version '$PackageVersion' -Feed '$ToFeed' -Tier '$Tier' -ResultsPath '_generated\testresults\$Tier'"`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
 
-            Create-Artifact $`$Module`-TestResults
-            (
-                From: _generated\PSModules\$Module\artifacts,
-                Include: @(TestResults.7z)
-            );
-            Create-Artifact $`$Module`-CoverageReport
-            (
-                From: _generated\PSModules\$Module\artifacts,
-                Include: @(CoverageReport.7z)
-            );
-            Create-Artifact $`$Module`-Packages
-            (
-                From: _generated\PSModules\$Module\artifacts,
-                Include: @(Packages.7z)
-            );
-        }
-
-        for each $Module in $Modules
-        {
-            Log-Information `[QA] Publishing $Module ...`;
-
-            Exec
-            (
-                FileName: pwsh,
-                Arguments: `-NoProfile -File src\$Module\module.build.ps1 Publish -Tier QA`,
-                WorkingDirectory: $SourcePath,
-                SuccessExitCode: 0
-            );
-        }
+        Create-Artifact TestResults
+        (
+            From: _generated\testresults\$Tier,
+            Include: @(*.xml, *.trx, coverage.cobertura.xml)
+        );
     }
 }
 
-# ---------------------------------------------------------------------------
-# Stage 5 — Production  (T5)
-# Full test suite + smoke tests + coverage gate + publish to stable feed.
-# ---------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# Stage Production - promote artifact + smoke test against stable feed
+# -------------------------------------------------------------------------
 stage Production
 {
     if $Tier == Production
     {
-        for each $Module in $Modules
-        {
-            Log-Information `[Production] Verifying $Module ...`;
+        set $FromFeed = $QAFeed;
+        set $ToFeed = $ProductionFeed;
 
-            Exec
-            (
-                FileName: pwsh,
-                Arguments: `-NoProfile -File src\$Module\module.build.ps1 Verify -Tier Production`,
-                WorkingDirectory: $SourcePath,
-                SuccessExitCode: 0
-            );
+        Exec
+        (
+            FileName: pwsh,
+            Arguments: `-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModuleManifest' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$PackageVersion' -FromFeed '$FromFeed' -ToFeed '$ToFeed' -Reason 'PROD-APPROVAL for $ApplicationName $PackageVersion'"`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
 
-            Exec
-            (
-                FileName: pwsh,
-                Arguments: `-NoProfile -File src\$Module\module.build.ps1 Compress -Tier Production`,
-                WorkingDirectory: $SourcePath,
-                SuccessExitCode: 0
-            );
+        Exec
+        (
+            FileName: pwsh,
+            Arguments: `-NoProfile -Command "Import-Module '$BuildToolingModuleManifest' -Force; Invoke-PromotedModuleTests -Name '$PackageName' -Version '$PackageVersion' -Feed '$ToFeed' -Tier '$Tier' -ResultsPath '_generated\testresults\$Tier'"`,
+            WorkingDirectory: $SourcePath,
+            SuccessExitCode: 0
+        );
 
-            Create-Artifact $`$Module`-TestResults
-            (
-                From: _generated\PSModules\$Module\artifacts,
-                Include: @(TestResults.7z)
-            );
-            Create-Artifact $`$Module`-CoverageReport
-            (
-                From: _generated\PSModules\$Module\artifacts,
-                Include: @(CoverageReport.7z)
-            );
-            Create-Artifact $`$Module`-Packages
-            (
-                From: _generated\PSModules\$Module\artifacts,
-                Include: @(Packages.7z)
-            );
-        }
-
-        for each $Module in $Modules
-        {
-            Log-Information `[Production] Publishing $Module ...`;
-
-            Exec
-            (
-                FileName: pwsh,
-                Arguments: `-NoProfile -File src\$Module\module.build.ps1 Publish -Tier Production`,
-                WorkingDirectory: $SourcePath,
-                SuccessExitCode: 0
-            );
-        }
+        Create-Artifact TestResults
+        (
+            From: _generated\testresults\$Tier,
+            Include: @(*.xml, *.trx)
+        );
     }
 }

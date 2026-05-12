@@ -26,7 +26,7 @@ diagrams scattered across the C# and PowerShell pipeline docs.
 | ------------------------- | ---------------------------- | -------------------------------------------- | ----------------------------------------- |
 | `CSharp-Package-Pipeline` | C# NuGet packages            | `nuget-experimental` → `nuget-stable`        | ProGet webhook on `nuget-experimental`; manual create-build. |
 | `PowerShell-Module-Pipeline` | PowerShellGet modules     | `PowershellGet-experimental` → `PowershellGet-stable` | ProGet webhook on `PowershellGet-experimental`; manual create-build. |
-| `Release-Bundle-Pipeline` | Release Bundles (Universal Packages) | `ReleaseBundle-Experimental` → `ReleaseBundle-Production` + Distribution | ProGet webhook on `ReleaseBundle-Experimental`; manual create-build at release-tag time. |
+| `Release-Bundle-Pipeline` | Release Bundles (Universal Packages) | `releasebundle-experimental` → `releasebundle-production` + Distribution | ProGet webhook on `releasebundle-experimental`; manual create-build at release-tag time. |
 
 These are the **only** pipelines. There is no per-project pipeline, no
 per-sprint pipeline, no per-feature pipeline. New components reuse the
@@ -82,17 +82,20 @@ the logic lives. This is intentional — moving logic out of OtterScript
 into cmdlets makes it testable with Pester and reusable from a developer
 workstation.
 
-> Cmdlets marked `spec` are referenced by the strategy docs and the BuildMaster pipelines but have not yet been implemented in `ATAP.Utilities.BuildTooling.PowerShell`. Cmdlets marked `partial` have a sibling implementation under a different (legacy or decomposed) name. The Status column below was populated on 2026-05-08 by enumerating `*.ps1` files in the module's `public/` and `private/` folders, then **refined on 2026-05-09** from a developer workstation by reading the module manifest's `FunctionsToExport` list and inspecting the body of every candidate sibling file. Result: 0 implemented, 2 partial, 11 spec.
+> Cmdlets marked `spec` are referenced by the strategy docs and the BuildMaster pipelines but have not yet been implemented in `ATAP.Utilities.BuildTooling.PowerShell`. Cmdlets marked `partial` have a sibling implementation under a different (legacy or decomposed) name. The Status column below was populated on 2026-05-08 by enumerating `*.ps1` files in the module's `public/` and `private/` folders, then **refined on 2026-05-09** from a developer workstation by reading the module manifest's `FunctionsToExport` list and inspecting the body of every candidate sibling file. It was updated on 2026-05-11 for the Stream I Release Bundle cmdlets.
 
 | Cmdlet                            | Used by                          | Role                                                                                                | Status |
 | --------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------- | ------ |
 | `Get-BuildContext`                | All three pipelines              | Resolve branch type, application, version, tier from environment.                                   | implemented |
-| `New-ReleaseManifest`             | Release-Bundle pipeline          | Generate `manifest.json` for a release tag.                                                         | spec   |
-| `New-ReleaseBundle`               | Release-Bundle pipeline          | Assemble the bundle directory tree and pack to `.upack`.                                            | spec   |
-| `Publish-NuGetPackageToProGet`    | C# pipeline                      | Push a `.nupkg` to a ProGet NuGet feed (single source of truth for the push command).               | spec   |
-| `Publish-PSModuleToProGet`        | PowerShell pipeline              | Push a PowerShell `.nupkg` to a ProGet PowerShellGet feed.                                          | partial (legacy `Publish-PSModuleToProGetFeed.ps1` is fully implemented at 230 lines and exported by the manifest; sprint-0007 docs deprecate the legacy name in favor of `Publish-PSModuleToProGet`. Rename or thin-wrapper required.) |
-| `Publish-UniversalPackageToProGet`| Release-Bundle pipeline          | Push a `.upack` to a ProGet Universal feed.                                                         | spec   |
-| `Promote-ProGetPackage`           | All three pipelines              | Call ProGet's promotion API to copy a package between feeds. Idempotent — no-op if already promoted. | partial (`Move-ProGetPackageInterTier.ps1` (277 lines) and `Move-ProGetPackageIntraTier.ps1` (366 lines) are fully implemented and exported, calling `/api/promotions/promote` with the documented parameter shape. `Promote-ProGetPackage` is intended as a thin wrapper or rename over these.) |
+| `New-ReleaseManifest`             | Release-Bundle pipeline          | Generate `manifest.json` for a release tag.                                                         | implemented |
+| `New-ReleaseBundle`               | Release-Bundle pipeline          | Assemble the bundle directory tree and pack to `.upack`.                                            | implemented |
+| `Get-DeployedReleaseManifest`     | Release-Bundle support           | Read and validate a deployed bundle's `manifest.json`.                                              | implemented |
+| `Compare-ReleaseManifest`         | Release-Bundle support           | Summarize package, migration, and checksum differences between two manifests.                        | implemented |
+| `Publish-NuGetPackageToProGet`    | C# pipeline                      | Push a `.nupkg` to a ProGet NuGet feed (single source of truth for the push command).               | implemented |
+| `New-PSModuleNupkg`               | PowerShell pipeline              | Pack a PowerShell module folder into a `.nupkg` without publishing it.                              | implemented |
+| `Publish-PSModuleToProGet`        | PowerShell pipeline              | Push a PowerShell `.nupkg` to a ProGet PowerShellGet feed.                                          | implemented |
+| `Publish-UniversalPackageToProGet`| Release-Bundle pipeline          | Push a `.upack` to a ProGet Universal feed.                                                         | implemented |
+| `Promote-ProGetPackage`           | All three pipelines              | Call ProGet's promotion API to copy a package between feeds. Idempotent — no-op if already promoted. | implemented |
 | `New-BuildMasterRelease`          | All three pipelines              | Create / update a BuildMaster release record for a specific version.                                | implemented |
 | `Start-BuildMasterPipeline`       | Trigger handlers                 | Trigger a release's pipeline run via BuildMaster API.                                               | implemented |
 | `Approve-BuildMasterStage`        | All three pipelines              | Mark a tier gate passed.                                                                            | implemented |
@@ -100,7 +103,7 @@ workstation.
 | `Publish-ChocolateyRelease`       | Release-Bundle pipeline (Distribution stage) | Push the Chocolatey wrapper package.                                                    | spec   |
 | `Update-WinGetManifestSource`     | Release-Bundle pipeline (Distribution stage) | Update the WinGet manifest set.                                                         | spec   |
 
-> **Audit-defect found (2026-05-08).** `public/Publish-PSModuleToProGetFeed.ps1` (the legacy cmdlet that the Sprint-7 docs deprecate) defines a function named `Get-PSModuleFeedUri`, not `Publish-PSModuleToProGetFeed`. This violates the repo's "filename equals function name" convention and is a cleanup ticket independent of this plan.
+> **Audit-defect resolved (2026-05-11).** `public/Publish-PSModuleToProGetFeed.ps1` now defines `Publish-PSModuleToProGetFeed`; the unused public `Get-PSModuleFeedUri` helper was removed while Stream G introduced the new `Publish-PSModuleToProGet` wrapper.
 
 All cmdlets:
 
@@ -171,7 +174,7 @@ BuildMaster API endpoint when a configured event fires. Configured events:
 
 - `package-added` on `nuget-experimental` → triggers C# pipeline.
 - `package-added` on `PowershellGet-experimental` → triggers PowerShell pipeline.
-- `package-added` on `ReleaseBundle-Experimental` → triggers Release Bundle pipeline.
+- `package-added` on `releasebundle-experimental` → triggers Release Bundle pipeline.
 - `package-promoted` on any feed → updates BuildMaster release-record metadata
   (no new pipeline run).
 

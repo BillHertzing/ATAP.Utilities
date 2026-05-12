@@ -236,6 +236,77 @@ function Add-PackageRepositoriesConfigRootKeys {
         $global:configRootKeys.Add('ProGetFeedPowerShellStableApiKeyNameConfigRootKey', 'ProGetFeedPowerShellStableApiKeyName')
         $global:configRootKeys.Add('ProGetFeedPowerShellStableFeedConfigRootKey', 'ProGetFeedPowerShellStable')
 
+        # ══════════════════════════════════════════════════════════════════════
+        #  ReleaseBundle Universal feeds — five-tier customer-facing release set
+        #  Feed name values stored in $global:settings are PascalCase to match
+        #  the ProGet Universal feed convention:
+        #    releasebundle-experimental, releasebundle-development,
+        #    releasebundle-integration, releasebundle-qa, releasebundle-production
+        #  These feeds store .upack Release Bundles produced by AceCommander.
+        #  Universal feeds do not use ProGet connector chains — packages arrive
+        #  via explicit promotion through the immutable-build pipeline.
+        # ══════════════════════════════════════════════════════════════════════
+
+        # ── releasebundle-experimental ────────────────────────────────────────
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleExperimentalUriSchemeConfigRootKey', 'ProGetFeedReleaseBundleExperimentalUriScheme')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleExperimentalUriHostConfigRootKey', 'ProGetFeedReleaseBundleExperimentalUriHost')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleExperimentalUriPortConfigRootKey', 'ProGetFeedReleaseBundleExperimentalUriPort')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleExperimentalUriPathConfigRootKey', 'ProGetFeedReleaseBundleExperimentalUriPath')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleExperimentalUriQueryStringConfigRootKey', 'ProGetFeedReleaseBundleExperimentalUriQueryString')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleExperimentalUriConfigRootKey', 'ProGetFeedReleaseBundleExperimentalUri')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleExperimentalFeedNameConfigRootKey', 'ProGetFeedReleaseBundleExperimentalFeedName')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleExperimentalFeedTypeConfigRootKey', 'ProGetFeedReleaseBundleExperimentalFeedType')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleExperimentalApiKeyNameConfigRootKey', 'ProGetFeedReleaseBundleExperimentalApiKeyName')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleExperimentalFeedConfigRootKey', 'ProGetFeedReleaseBundleExperimental')
+
+        # ── releasebundle-development ─────────────────────────────────────────
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleDevelopmentUriSchemeConfigRootKey', 'ProGetFeedReleaseBundleDevelopmentUriScheme')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleDevelopmentUriHostConfigRootKey', 'ProGetFeedReleaseBundleDevelopmentUriHost')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleDevelopmentUriPortConfigRootKey', 'ProGetFeedReleaseBundleDevelopmentUriPort')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleDevelopmentUriPathConfigRootKey', 'ProGetFeedReleaseBundleDevelopmentUriPath')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleDevelopmentUriQueryStringConfigRootKey', 'ProGetFeedReleaseBundleDevelopmentUriQueryString')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleDevelopmentUriConfigRootKey', 'ProGetFeedReleaseBundleDevelopmentUri')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleDevelopmentFeedNameConfigRootKey', 'ProGetFeedReleaseBundleDevelopmentFeedName')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleDevelopmentFeedTypeConfigRootKey', 'ProGetFeedReleaseBundleDevelopmentFeedType')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleDevelopmentApiKeyNameConfigRootKey', 'ProGetFeedReleaseBundleDevelopmentApiKeyName')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleDevelopmentFeedConfigRootKey', 'ProGetFeedReleaseBundleDevelopment')
+
+        # ── releasebundle-integration ─────────────────────────────────────────
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleIntegrationUriSchemeConfigRootKey', 'ProGetFeedReleaseBundleIntegrationUriScheme')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleIntegrationUriHostConfigRootKey', 'ProGetFeedReleaseBundleIntegrationUriHost')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleIntegrationUriPortConfigRootKey', 'ProGetFeedReleaseBundleIntegrationUriPort')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleIntegrationUriPathConfigRootKey', 'ProGetFeedReleaseBundleIntegrationUriPath')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleIntegrationUriQueryStringConfigRootKey', 'ProGetFeedReleaseBundleIntegrationUriQueryString')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleIntegrationUriConfigRootKey', 'ProGetFeedReleaseBundleIntegrationUri')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleIntegrationFeedNameConfigRootKey', 'ProGetFeedReleaseBundleIntegrationFeedName')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleIntegrationFeedTypeConfigRootKey', 'ProGetFeedReleaseBundleIntegrationFeedType')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleIntegrationApiKeyNameConfigRootKey', 'ProGetFeedReleaseBundleIntegrationApiKeyName')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleIntegrationFeedConfigRootKey', 'ProGetFeedReleaseBundleIntegration')
+
+        # ── releasebundle-qa ──────────────────────────────────────────────────
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleQAUriSchemeConfigRootKey', 'ProGetFeedReleaseBundleQAUriScheme')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleQAUriHostConfigRootKey', 'ProGetFeedReleaseBundleQAUriHost')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleQAUriPortConfigRootKey', 'ProGetFeedReleaseBundleQAUriPort')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleQAUriPathConfigRootKey', 'ProGetFeedReleaseBundleQAUriPath')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleQAUriQueryStringConfigRootKey', 'ProGetFeedReleaseBundleQAUriQueryString')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleQAUriConfigRootKey', 'ProGetFeedReleaseBundleQAUri')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleQAFeedNameConfigRootKey', 'ProGetFeedReleaseBundleQAFeedName')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleQAFeedTypeConfigRootKey', 'ProGetFeedReleaseBundleQAFeedType')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleQAApiKeyNameConfigRootKey', 'ProGetFeedReleaseBundleQAApiKeyName')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleQAFeedConfigRootKey', 'ProGetFeedReleaseBundleQA')
+
+        # ── releasebundle-production ──────────────────────────────────────────
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleProductionUriSchemeConfigRootKey', 'ProGetFeedReleaseBundleProductionUriScheme')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleProductionUriHostConfigRootKey', 'ProGetFeedReleaseBundleProductionUriHost')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleProductionUriPortConfigRootKey', 'ProGetFeedReleaseBundleProductionUriPort')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleProductionUriPathConfigRootKey', 'ProGetFeedReleaseBundleProductionUriPath')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleProductionUriQueryStringConfigRootKey', 'ProGetFeedReleaseBundleProductionUriQueryString')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleProductionUriConfigRootKey', 'ProGetFeedReleaseBundleProductionUri')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleProductionFeedNameConfigRootKey', 'ProGetFeedReleaseBundleProductionFeedName')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleProductionFeedTypeConfigRootKey', 'ProGetFeedReleaseBundleProductionFeedType')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleProductionApiKeyNameConfigRootKey', 'ProGetFeedReleaseBundleProductionApiKeyName')
+        $global:configRootKeys.Add('ProGetFeedReleaseBundleProductionFeedConfigRootKey', 'ProGetFeedReleaseBundleProduction')
+
         # ── PackageRepositories Collection ────────────────────────────────────
         $global:configRootKeys.Add('PackageRepositoriesCollectionConfigRootKey', 'PackageRepositoriesCollection')
 

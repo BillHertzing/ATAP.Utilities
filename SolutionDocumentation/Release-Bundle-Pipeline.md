@@ -6,7 +6,7 @@ migrations, CSV seed data, seed loaders, install/upgrade scripts, and the
 release manifest. Targets Chocolatey and WinGet for distribution.
 **Audience:** Release engineers cutting a release; anyone wiring a new
 component to ship via Chocolatey/WinGet; CI authors maintaining the
-`ReleaseBundle-*` ProGet feeds.
+`releasebundle-*` ProGet feeds.
 **Status:** Authoritative for sprint-0007.
 
 **Companion docs:**
@@ -38,7 +38,7 @@ referenced by a WinGet manifest.
 Treating this as a separate pipeline (rather than a fourth stage of the C#
 pipeline) gives it:
 
-- Its own ProGet feed family (`ReleaseBundle-*`).
+- Its own ProGet feed family (`releasebundle-*`).
 - Its own approval gates (Chocolatey publish, WinGet manifest update).
 - Its own metadata schema (the release manifest, see §5).
 - Its own immutable build identity, decoupled from any one library version.
@@ -93,11 +93,11 @@ binaries simultaneously).
 
 | Feed name                    | Tier         | Purpose                                                       |
 | ---------------------------- | ------------ | ------------------------------------------------------------- |
-| `ReleaseBundle-Experimental` | Experimental | First push from any release-bundle pipeline run.              |
-| `ReleaseBundle-Development`  | Development  | Promoted after smoke + packaging validation.                  |
-| `ReleaseBundle-Integration`  | Integration  | Promoted after Flyway-migration rehearsal on a "prev-prod" snapshot. |
-| `ReleaseBundle-QA`           | QA           | Promoted after full E2E suite.                                |
-| `ReleaseBundle-Production`   | Production   | Source feed for Chocolatey / WinGet publication.              |
+| `releasebundle-experimental` | Experimental | First push from any release-bundle pipeline run.              |
+| `releasebundle-development`  | Development  | Promoted after smoke + packaging validation.                  |
+| `releasebundle-integration`  | Integration  | Promoted after Flyway-migration rehearsal on a "prev-prod" snapshot. |
+| `releasebundle-qa`           | QA           | Promoted after full E2E suite.                                |
+| `releasebundle-production`   | Production   | Source feed for Chocolatey / WinGet publication.              |
 
 The bundle's Universal Package identifier is
 `<ProductName>.<SemVer>+<gitshorthash>` — for example
@@ -170,11 +170,11 @@ to point at the new installer URL.
 
 | Stage         | Action                                                                                                                    |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Experimental  | Build bundle from release-branch tag. Push to `ReleaseBundle-Experimental`. Smoke install on a clean VM.                  |
-| Development   | Promote bundle to `ReleaseBundle-Development`. Run install + uninstall on a clean VM.                                     |
-| Integration   | Promote to `ReleaseBundle-Integration`. Apply DB migrations against a snapshot of the previous-prod database.             |
-| QA            | Promote to `ReleaseBundle-QA`. Run full E2E suite (Playwright, etc.) against the installed product.                       |
-| Production    | Promote to `ReleaseBundle-Production`. Manual approval gate from the release manager.                                     |
+| Experimental  | Build bundle from release-branch tag. Push to `releasebundle-experimental`. Smoke install on a clean VM.                  |
+| Development   | Promote bundle to `releasebundle-development`. Run install + uninstall on a clean VM.                                     |
+| Integration   | Promote to `releasebundle-integration`. Apply DB migrations against a snapshot of the previous-prod database.             |
+| QA            | Promote to `releasebundle-qa`. Run full E2E suite (Playwright, etc.) against the installed product.                       |
+| Production    | Promote to `releasebundle-production`. Manual approval gate from the release manager.                                     |
 | Distribution  | Publish to Chocolatey (`Publish-ChocolateyRelease`); update WinGet manifest source (`Update-WinGetManifestSource`).       |
 
 Promotion calls (Experimental → Development → … → Production) are
@@ -191,9 +191,9 @@ BuildMaster stages call. The Release Bundle pipeline uses:
 | Cmdlet                          | Role                                                                                                |
 | ------------------------------- | --------------------------------------------------------------------------------------------------- |
 | `Get-BuildContext`              | Resolve branch type, application, release version, included DB assets.                              |
-| `New-ReleaseManifest`           | Generate the `manifest.json` (schema in [Release-Branch-and-Manifest.md §3](Release-Branch-and-Manifest.md#3-the-manifest-schema)). |
-| `New-ReleaseBundle`             | Assemble the directory tree under `_generated/release-bundle/<Version>/` and pack to `.upack`.      |
-| `Publish-UniversalPackageToProGet` | Push the `.upack` to `ReleaseBundle-Experimental`.                                                |
+| `New-ReleaseManifest`           | Generate `manifest.json` and the `db-manifest.json` sidecar from the release context and DB release unit. |
+| `New-ReleaseBundle`             | Assemble the directory tree under `_generated/release-bundle/<Version>/`, place `db/db-manifest.json`, require every manifest-referenced asset to exist, and pack to `.upack`. |
+| `Publish-UniversalPackageToProGet` | Push the `.upack` to `releasebundle-experimental`.                                                |
 | `Promote-ProGetPackage`         | Promote the same bundle between feeds via ProGet promotion API.                                     |
 | `Invoke-FlywayRehearsal`        | Apply the bundled Flyway migrations to a clone of the previous-prod DB; capture log.                |
 | `New-BuildMasterRelease`        | Create / update the BuildMaster release record for the bundle.                                      |
@@ -211,7 +211,7 @@ plus User-scope environment variables — never from hard-coded constants.
 
 Three trigger paths, in order of normal-day frequency:
 
-1. **ProGet webhook on `package-added` to `ReleaseBundle-Experimental`.**
+1. **ProGet webhook on `package-added` to `releasebundle-experimental`.**
    When a developer pushes a candidate bundle (typically via
    `New-ReleaseBundle` + `Publish-UniversalPackageToProGet`), ProGet fires
    a webhook to a BuildMaster API endpoint. The webhook payload includes
@@ -289,17 +289,19 @@ is worth it.
 
 ## 10. Known drift and gaps (sprint-0007)
 
-1. **Universal Package feeds not yet provisioned.** ProGet has the five
-   `ReleaseBundle-*` feed names reserved but the feeds themselves need to
-   be created via SprintStartAgent at the start of sprint-0007.
-2. **`Publish-ChocolateyRelease` is a stub.** Returns `Published=$false`
+1. **`Publish-ChocolateyRelease` is a stub.** Returns `Published=$false`
    with reason "not yet implemented." Tracked in TASKS.md.
-3. **`Update-WinGetManifestSource` is a stub.** Same as above.
-4. **No automated rollback for Chocolatey publication.** If a production
+2. **`Update-WinGetManifestSource` is a stub.** Same as above.
+3. **No automated rollback for Chocolatey publication.** If a production
    bundle is found to be defective after Chocolatey publication, the
    recovery path today is "publish a higher version that is functionally
    equivalent to the prior good version." There is no `unpublish`
    operation.
+
+Resolved during Stream I/F: `New-ReleaseManifest`, `New-ReleaseBundle`,
+`Get-DeployedReleaseManifest`, and `Compare-ReleaseManifest` are implemented
+and tested; the five lowercase `releasebundle-*` Universal feeds are present
+in ProGet and reachable over `/upack/releasebundle-<tier>`.
 
 ---
 
@@ -311,15 +313,15 @@ Build a release bundle from a release-branch tag:
 $ctx = Get-BuildContext -ReleaseTag 'v1.4.0' -Application AceCommander
 $mfst = New-ReleaseManifest -Context $ctx
 $bundle = New-ReleaseBundle -Manifest $mfst -OutputPath ./_generated/release-bundle/
-Publish-UniversalPackageToProGet -Path $bundle.Path -Feed ReleaseBundle-Experimental
+Publish-UniversalPackageToProGet -Path $bundle.Path -Feed releasebundle-experimental
 ```
 
 Promote across tiers (idempotent — no-op if already in the target feed):
 
 ```powershell
 Promote-ProGetPackage -Name AceCommander -Version 1.4.0+8f4b2c1 `
-                      -FromFeed ReleaseBundle-Experimental `
-                      -ToFeed   ReleaseBundle-Development `
+                      -FromFeed releasebundle-experimental `
+                      -ToFeed   releasebundle-development `
                       -Reason   'INT-PASS for build #4271'
 ```
 

@@ -12,6 +12,8 @@ function Convert-ProGetFeedType {
     'powershell' { return 'powershell' }
     'powershellget' { return 'powershell' }
     'psresourceget' { return 'powershell' }
+    'universal' { return 'universal' }
+    'upack' { return 'universal' }
     default {
       $errorMessage = "Unknown feed type: $FeedType"
       Write-PSFMessage -Level Error -Message $errorMessage

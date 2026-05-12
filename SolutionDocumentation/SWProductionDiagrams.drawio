@@ -76,19 +76,19 @@
                 <mxCell id="bundle-family" value="ReleaseBundle feed family (Universal Packages — app + DB + installer)" style="swimlane;startSize=30;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="proget-host" vertex="1">
                     <mxGeometry x="20" y="440" width="1580" height="180" as="geometry"/>
                 </mxCell>
-                <mxCell id="bundle-exp" value="ReleaseBundle-Experimental&#xa;(T1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-family" vertex="1">
+                <mxCell id="bundle-exp" value="releasebundle-experimental&#xa;(T1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-family" vertex="1">
                     <mxGeometry x="20" y="60" width="240" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="bundle-dev" value="ReleaseBundle-Development&#xa;(T2)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-family" vertex="1">
+                <mxCell id="bundle-dev" value="releasebundle-development&#xa;(T2)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-family" vertex="1">
                     <mxGeometry x="320" y="60" width="240" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="bundle-int" value="ReleaseBundle-Integration&#xa;(T3, Flyway rehearsal)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-family" vertex="1">
+                <mxCell id="bundle-int" value="releasebundle-integration&#xa;(T3, Flyway rehearsal)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-family" vertex="1">
                     <mxGeometry x="620" y="60" width="240" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="bundle-qa" value="ReleaseBundle-QA&#xa;(T4, full E2E)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-family" vertex="1">
+                <mxCell id="bundle-qa" value="releasebundle-qa&#xa;(T4, full E2E)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-family" vertex="1">
                     <mxGeometry x="920" y="60" width="240" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="bundle-prod" value="ReleaseBundle-Production&#xa;(T5)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#82b366;fontColor=#ffffff;strokeColor=#006600;fontStyle=1;" parent="bundle-family" vertex="1">
+                <mxCell id="bundle-prod" value="releasebundle-production&#xa;(T5)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#82b366;fontColor=#ffffff;strokeColor=#006600;fontStyle=1;" parent="bundle-family" vertex="1">
                     <mxGeometry x="1220" y="60" width="240" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="bundle-promote-1" value="Promote" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="bundle-family" source="bundle-exp" target="bundle-dev" edge="1">
@@ -621,7 +621,7 @@
                 <mxCell id="cmd-approve" value="Approve-BuildMasterStage&#xa;(QA→Production gate, on all-green)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" parent="bt-cmdlets" vertex="1">
                     <mxGeometry x="20" y="570" width="660" height="50" as="geometry"/>
                 </mxCell>
-                <mxCell id="proget-card" value="ProGet&#xa;nuget-qa  /  PowershellGet-qa  /  ReleaseBundle-QA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" parent="1" vertex="1">
+                <mxCell id="proget-card" value="ProGet&#xa;nuget-qa  /  PowershellGet-qa  /  releasebundle-qa" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" parent="1" vertex="1">
                     <mxGeometry x="1300" y="140" width="320" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="qa-targets" value="QA targets" style="swimlane;startSize=30;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" parent="1" vertex="1">
@@ -739,7 +739,7 @@
                 <mxCell id="end-winget-channel" value="WinGet manifest&#xa;(microsoft/winget-pkgs or private REST source)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#3366cc;" parent="lane-end" vertex="1">
                     <mxGeometry x="600" y="160" width="320" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="end-bundle-source" value="ProGet ReleaseBundle-Production&#xa;(authoritative source of the .upack)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#82b366;fontColor=#ffffff;strokeColor=#006600;fontStyle=1;" parent="lane-end" vertex="1">
+                <mxCell id="end-bundle-source" value="ProGet releasebundle-production&#xa;(authoritative source of the .upack)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#82b366;fontColor=#ffffff;strokeColor=#006600;fontStyle=1;" parent="lane-end" vertex="1">
                     <mxGeometry x="980" y="100" width="320" height="100" as="geometry"/>
                 </mxCell>
                 <mxCell id="end-installer" value="installer/Install-Application.ps1&#xa;1. verify checksums in manifest.json&#xa;2. detect DB state, decide action&#xa;3. apply Flyway migrations + run seed loaders&#xa;4. deploy app/ files to install location&#xa;5. write %ProgramData%\&lt;App&gt;\manifest.json (audit copy)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;" parent="lane-end" vertex="1">
@@ -831,7 +831,7 @@
                 <mxCell id="upd-app-cmd-winget" value="winget upgrade ATAP.AceCommander" style="shape=document;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#3366cc;" parent="upd-app" vertex="1">
                     <mxGeometry x="500" y="120" width="320" height="50" as="geometry"/>
                 </mxCell>
-                <mxCell id="upd-app-bundle" value="ProGet ReleaseBundle-Production&#xa;Bundle vN+1: app + Flyway migrations + seed + manifest&#xa;(complete; no &quot;DB-less&quot; releases)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#82b366;fontColor=#ffffff;strokeColor=#006600;fontStyle=1;" parent="upd-app" vertex="1">
+                <mxCell id="upd-app-bundle" value="ProGet releasebundle-production&#xa;Bundle vN+1: app + Flyway migrations + seed + manifest&#xa;(complete; no &quot;DB-less&quot; releases)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#82b366;fontColor=#ffffff;strokeColor=#006600;fontStyle=1;" parent="upd-app" vertex="1">
                     <mxGeometry x="900" y="60" width="680" height="100" as="geometry"/>
                 </mxCell>
                 <mxCell id="upd-app-flow-choco" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#3366cc;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="upd-app" source="upd-app-cmd-choco" target="upd-app-bundle" edge="1">

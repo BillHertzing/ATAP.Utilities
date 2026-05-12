@@ -125,11 +125,11 @@ authoritative tier-state mechanism — branch names do not imply feed names.
 | `PowershellGet-integration`  | Integration  |                                                       |
 | `PowershellGet-qa`           | QA           |                                                       |
 | `PowershellGet-stable`       | Production   |                                                       |
-| `ReleaseBundle-Experimental` | Experimental | Final installer bundles (app + DB + installer scripts).|
-| `ReleaseBundle-Development`  | Development  |                                                       |
-| `ReleaseBundle-Integration`  | Integration  |                                                       |
-| `ReleaseBundle-QA`           | QA           |                                                       |
-| `ReleaseBundle-Production`   | Production   | Source feed for Chocolatey / WinGet publication.      |
+| `releasebundle-experimental` | Experimental | Final installer bundles (app + DB + installer scripts).|
+| `releasebundle-development`  | Development  |                                                       |
+| `releasebundle-integration`  | Integration  |                                                       |
+| `releasebundle-qa`           | QA           |                                                       |
+| `releasebundle-production`   | Production   | Source feed for Chocolatey / WinGet publication.      |
 
 Release Bundles are stored as ProGet **Universal Packages** rather than NuGet
 packages, because they carry mixed content (DLLs + SQL + CSV + PowerShell)

@@ -129,7 +129,8 @@ the version is supported.
 
 ## 3. The manifest schema
 
-Every Release Bundle contains a top-level `manifest.json`:
+Every Release Bundle contains a top-level `manifest.json`. The machine-readable schema lives at
+[SolutionDocumentation/schemas/manifest.schema.json](schemas/manifest.schema.json):
 
 ```json
 {
@@ -257,9 +258,12 @@ Inputs:
   pinned to exact versions in the release-branch's `Directory.Packages.props`
   / module pin files.
 
-`New-ReleaseManifest` writes the JSON to
-`_generated/release-manifest/<Version>/manifest.json`. `New-ReleaseBundle`
-then copies it into the bundle root.
+`New-ReleaseManifest` writes the top-level JSON to
+`_generated/release-manifest/<Version>/manifest.json` and writes the DB
+sub-manifest sidecar to
+`_generated/release-manifest/<Version>/db-manifest.json`. `New-ReleaseBundle`
+then copies `manifest.json` into the bundle root and places the sidecar at
+`db/db-manifest.json` inside the `.upack`.
 
 ---
 
@@ -338,17 +342,16 @@ patch propagates a fix from a library.
 
 ## 9. Known drift and gaps (sprint-0007)
 
-1. **`New-ReleaseManifest` is a stub.** Schema is defined; cmdlet
-   implementation is tracked in TASKS.md.
-2. **`Get-DeployedReleaseManifest` is not yet written.** Trivial to add
-   once the manifest path convention is final.
-3. **No JSON schema (`manifest.schema.json`) is published.** Should be
-   added under `SolutionDocumentation/schemas/` so editors can offer
-   IntelliSense and CI can validate.
-4. **No tooling to diff two manifests.** `Compare-ReleaseManifest`
-   would be a useful support tool for "what changed between `1.4.0` and
-   `1.4.1`?"
-5. **Release-branch retention policy is informal.** Need an explicit
+1. **Stream I manifest tooling is implemented.** `New-ReleaseManifest`,
+   `New-ReleaseBundle`, `Get-DeployedReleaseManifest`, and
+   `Compare-ReleaseManifest` are exported from
+   `ATAP.Utilities.BuildTooling.PowerShell` and covered by focused Pester
+   tests.
+2. **CI schema validation is not yet wired globally.** The
+   `manifest.schema.json` and `db-manifest.schema.json` contracts are
+   published under `SolutionDocumentation/schemas/`; CI still needs to run
+   the schema test corpus automatically.
+3. **Release-branch retention policy is informal.** Need an explicit
    "release branches are kept indefinitely" rule documented and enforced
    in the GitHub branch-protection settings.
 
@@ -379,7 +382,7 @@ Generate the manifest and build the bundle:
 $ctx  = Get-BuildContext     -ReleaseTag v1.4.0 -Application AceCommander
 $mfst = New-ReleaseManifest  -Context $ctx
 $pkg  = New-ReleaseBundle    -Manifest $mfst -OutputPath ./_generated/release-bundle/
-Publish-UniversalPackageToProGet -Path $pkg.Path -Feed ReleaseBundle-Experimental
+Publish-UniversalPackageToProGet -Path $pkg.Path -Feed releasebundle-experimental
 ```
 
 Audit a deployed bundle's manifest:

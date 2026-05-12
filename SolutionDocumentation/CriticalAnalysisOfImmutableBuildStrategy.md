@@ -478,16 +478,27 @@ the callout into a one-line "see Immutable-Build-Strategy.md" pointer.
 
 ### 8.3 `Production-and-Tooling-Overview.md` claims the new docs are "written"
 
+> 2026-05-11 update: this finding is partially resolved. Stream I implemented
+> `New-ReleaseManifest`, `New-ReleaseBundle`, `Get-DeployedReleaseManifest`,
+> and `Compare-ReleaseManifest`; `Production-and-Tooling-Overview.md` now calls
+> out the mixed implementation state instead of treating those Stream I cmdlets
+> as stubs. The Chocolatey and WinGet distribution cmdlets remain spec work.
+
 The §2.0 row I added says all 5 new strategic docs are "written" with a
-checkmark. They are written, but they describe behavior that the code does
-not yet implement (per §3.4 of `Release-Bundle-Pipeline.md`,
-`Publish-ChocolateyRelease` is a stub; per §3.4 of
-`Release-Branch-and-Manifest.md`, `New-ReleaseManifest` is a stub; etc.).
+checkmark. They are written, but several areas described behavior that the code
+did not yet implement at the time of the analysis. As of the 2026-05-11
+Stream I pass, release manifest and bundle assembly tooling is implemented;
+the remaining clear examples are distribution hooks such as
+`Publish-ChocolateyRelease` and `Update-WinGetManifestSource`.
 **A junior dev reading the index will assume the system works as
 described.** The status column needs a third value: "spec — not
 implemented."
 
 ### 8.4 The PowerShell automation surface in `BuildMaster-Pipeline-Topology.md §4` lists ~12 cmdlets
+
+> 2026-05-11 update: this finding is partially resolved. The topology doc now
+> has a current cmdlet inventory, and the four Stream I release-bundle cmdlets
+> are exported from `ATAP.Utilities.BuildTooling.PowerShell`.
 
 Of those, by my count, **at least 8 are not yet implemented**. Diagram 06
 shows them being called. There is no master tracking doc that says which
@@ -569,8 +580,8 @@ Cut from the findings above. Each is sized for a single dev × 1–3 days.
 | IMPL-7-01 | Implement `New-PSModuleNupkg` cmdlet (split out from `Publish-PSResource`). | §3.3 | M |
 | IMPL-7-02 | Refactor `Publish-PSModuleToProGet` to take only `-NupkgPath`. | §3.3 | S |
 | IMPL-7-03 | Implement `Promote-ProGetPackage` cmdlet (idempotent ProGet promotion API call). | §1.3, §2.3 | M |
-| IMPL-7-04 | Implement `New-ReleaseManifest` cmdlet (currently a stub per Release-Branch-and-Manifest.md §9). | §8.3 | L |
-| IMPL-7-05 | Implement `New-ReleaseBundle` cmdlet (currently a stub per Release-Bundle-Pipeline.md §10). | §8.3 | L |
+| IMPL-7-04 | Implement `New-ReleaseManifest` cmdlet. Completed 2026-05-11; it now emits `manifest.json` plus the DB sub-manifest sidecar. | §8.3 | done |
+| IMPL-7-05 | Implement `New-ReleaseBundle` cmdlet. Completed 2026-05-11; it now stages `db/db-manifest.json`, requires manifest-referenced assets, and packs `.upack`. | §8.3 | done |
 | IMPL-7-06 | Implement `Invoke-FlywayRehearsal` rotation so each pipeline run uses a uniquely-named rehearsal DB. | §6.3 | M |
 | IMPL-7-07 | Implement `New-DeveloperScratchDb` / `New-FeatureSharedDb` / removal counterparts in `ATAP.Utilities.DatabaseManagement.Powershell` (after design per §6.5). | §6.4 | L |
 | IMPL-7-08 | Capture-and-propagate version through BuildMaster build variable (proposed `$ResolvedPackageVersion`). | §1.3 | M |

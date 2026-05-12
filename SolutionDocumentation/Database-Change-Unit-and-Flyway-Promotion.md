@@ -66,7 +66,8 @@ db/<App>/
 ```
 
 The per-release YAML manifest is the authoritative declaration of what
-constitutes a DB change unit:
+constitutes a DB change unit. The machine-readable schema lives at
+[SolutionDocumentation/schemas/db-release-unit.schema.yaml](schemas/db-release-unit.schema.yaml):
 
 ```yaml
 # db/AceCommander/releases/1.4.0.yml
@@ -94,9 +95,11 @@ notes: |
   Backwards compatible — old rows get a NULL backfill.
 ```
 
-`New-ReleaseManifest` reads this file and copies the named scripts into the
-Release Bundle's `db/` folder, also writing `db/db-manifest.json` with the
-same data plus computed SHA-256 checksums for every file.
+`New-ReleaseManifest` reads this file, computes SHA-256 checksums for every
+named DB file, and writes both the top-level `manifest.json` and a
+`db-manifest.json` sidecar. `New-ReleaseBundle` copies the named scripts into
+the Release Bundle's `db/` folder and places the sidecar at
+`db/db-manifest.json`.
 
 ---
 
@@ -160,7 +163,7 @@ scratch.
 
 A DB change unit is **not** a separately-promoted artifact. It is an
 intrinsic part of the Release Bundle, and the bundle is what gets promoted
-through `ReleaseBundle-Experimental → … → ReleaseBundle-Production`.
+through `releasebundle-experimental → … → releasebundle-production`.
 
 The model is **not** one DB per tier. A real team has multiple developers,
 parallel feature branches, and parallel pipeline runs, each of which needs
@@ -310,7 +313,8 @@ because:
 
 ## 8. The DB sub-manifest format
 
-`db/db-manifest.json` inside the Release Bundle:
+`db/db-manifest.json` inside the Release Bundle. The machine-readable schema
+lives at [SolutionDocumentation/schemas/db-manifest.schema.json](schemas/db-manifest.schema.json):
 
 ```json
 {

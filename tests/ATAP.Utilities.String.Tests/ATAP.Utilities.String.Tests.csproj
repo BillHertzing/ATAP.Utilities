@@ -8,11 +8,6 @@
     <MajorVersion>0</MajorVersion>
     <MinorVersion>1</MinorVersion>
     <PatchVersion>0</PatchVersion>
-    <!-- Current Lifecycle stage for this assembly-->
-    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
-    <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
-    <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
-    <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
   <!-- Packages to add xUnit Testing providers and extensions -->

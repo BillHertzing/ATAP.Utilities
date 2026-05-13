@@ -13,10 +13,20 @@ tier-appropriate test runs; maintainers of test-project conventions.
 > Higher tiers do **not** rebuild the package before testing — they restore
 > the promoted package from the next-higher feed and run tests against it.
 > See [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md).
-**Status:** Authoritative. Consolidates the C# test portions of
-`_Planning/Explainers/0106-testing-process-and-artifacts.md`, the rules in
-`.claude/rules/xunit.md`, and the sprint-0006 test-project conventions currently
-in the tree.
+>
+> **Strategy update (sprint-NNNN — Conditional SUT Reference).** Each test
+> project uses a single-project, conditional-reference model: a
+> `UsePackageReferenceForSUT` MSBuild property switches the SUT dependency
+> between `<ProjectReference>` (developer/experimental tier, the default)
+> and `<PackageReference>` (all promotion tiers T2–T5). This eliminates
+> duplicate test projects while satisfying the immutable-build requirement
+> that higher tiers validate the promoted artifact, not a local rebuild.
+> See §3.1 and §11 for mechanics.
+
+> **Status:** Authoritative. Consolidates the C# test portions of
+> `_Planning/Explainers/0106-testing-process-and-artifacts.md`, the rules in
+> `.claude/rules/xunit.md`, and the sprint-0006 test-project conventions currently
+> in the tree.
 
 **Not in this doc:**
 
@@ -35,12 +45,12 @@ in the tree.
 ~28 test projects, one per shipping library. Naming convention is
 `{Library}.UnitTests` adjacent to `src/{Library}/`:
 
-| Category      | Example                                                  |
-| ------------- | -------------------------------------------------------- |
-| Unit          | `tests/ATAP.Utilities.Philote.UnitTests/…UnitTests.csproj` |
-| Integration   | `tests/ATAP.Utilities.RabbitMQ.IntegrationTests/…`       |
-| Data-providers| `tests/ATAP.Utilities.Serializer.DataForTests/…`         |
-| Excluded      | `tests/ATAP.Services.TcpWithResilience.UnitTests.Exclude.csproj` (name-suffix `.Exclude` — kept out of solution-level `dotnet test`) |
+| Category       | Example                                                                                                                              |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Unit           | `tests/ATAP.Utilities.Philote.UnitTests/…UnitTests.csproj`                                                                           |
+| Integration    | `tests/ATAP.Utilities.RabbitMQ.IntegrationTests/…`                                                                                   |
+| Data-providers | `tests/ATAP.Utilities.Serializer.DataForTests/…`                                                                                     |
+| Excluded       | `tests/ATAP.Services.TcpWithResilience.UnitTests.Exclude.csproj` (name-suffix `.Exclude` — kept out of solution-level `dotnet test`) |
 
 The `.Exclude.csproj` rename is the current mechanism for quarantining a
 broken test project without deleting it. A better long-term fix is to put it
@@ -51,11 +61,11 @@ because `dotnet sln` doesn't auto-add files with that suffix.
 
 Three test projects, colocated with the projects they test:
 
-| Project                        | Tests                                     |
-| ------------------------------ | ----------------------------------------- |
-| `AceCommander.Client.Tests`    | Blazor WASM client (includes bUnit).      |
-| `AceCommander.Server.Tests`    | ASP.NET Core server, SignalR, services.   |
-| `AceCommander.Shared.Tests`    | Plain library shared between client/server.|
+| Project                     | Tests                                       |
+| --------------------------- | ------------------------------------------- |
+| `AceCommander.Client.Tests` | Blazor WASM client (includes bUnit).        |
+| `AceCommander.Server.Tests` | ASP.NET Core server, SignalR, services.     |
+| `AceCommander.Shared.Tests` | Plain library shared between client/server. |
 
 AceCommander keeps each test project adjacent to the project under test,
 rather than in a top-level `tests/` folder. Either layout is valid; the ATAP
@@ -90,15 +100,15 @@ from [ATAP.Utilities.Philote.UnitTests.csproj](../tests/ATAP.Utilities.Philote.U
 </ItemGroup>
 ```
 
-| Package                    | Role                                                           |
-| -------------------------- | -------------------------------------------------------------- |
-| `Microsoft.NET.Test.SDK`   | MSBuild integration for `dotnet test`.                          |
-| `xunit`                    | Test framework.                                                 |
-| `xunit.runner.visualstudio`| IDE Test Explorer integration.                                  |
-| `xunit.runner.console`     | Command-line runner (used by some CI configurations).           |
-| `FluentAssertions`         | Assertion library. `.Should().Be(...)` style.                   |
-| `Moq`                      | Mocking library for unit tests.                                 |
-| `coverlet.collector`       | Code-coverage collector integrated with `dotnet test`.          |
+| Package                     | Role                                                   |
+| --------------------------- | ------------------------------------------------------ |
+| `Microsoft.NET.Test.SDK`    | MSBuild integration for `dotnet test`.                 |
+| `xunit`                     | Test framework.                                        |
+| `xunit.runner.visualstudio` | IDE Test Explorer integration.                         |
+| `xunit.runner.console`      | Command-line runner (used by some CI configurations).  |
+| `FluentAssertions`          | Assertion library. `.Should().Be(...)` style.          |
+| `Moq`                       | Mocking library for unit tests.                        |
+| `coverlet.collector`        | Code-coverage collector integrated with `dotnet test`. |
 
 **Additional, per-need:**
 
@@ -135,6 +145,58 @@ Every C# test project sets these properties in its `.csproj`:
 - The `PackageLabel` / `PackageLifeCycleStage` entries are legacy from the
   pre-NBGV era and are harmless. They will go away in the retirement sweep
   (see Versioning doc §9).
+
+### 3.1 Conditional SUT Reference (ProjectReference vs PackageReference)
+
+Each test project references its library under test (the SUT) using a
+**conditional reference block** controlled by the `UsePackageReferenceForSUT`
+MSBuild property. The default (`false`) uses `<ProjectReference>` for the
+developer inner-loop. Promotion tiers pass `UsePackageReferenceForSUT=true`
+and `SUTVersion=<promoted-version>` to switch to `<PackageReference>` against
+the exact artifact restored from the tier's feed.
+
+**Canonical `.csproj` pattern** (using `ATAP.Utilities.Philote.UnitTests` as
+the example):
+
+```xml
+<PropertyGroup>
+  <!-- Default: false → ProjectReference mode (developer / Experimental tier).
+       Set to true in CI promotion tiers (T2–T5) to test the promoted package. -->
+  <UsePackageReferenceForSUT
+      Condition="'$(UsePackageReferenceForSUT)' == ''">false</UsePackageReferenceForSUT>
+</PropertyGroup>
+
+<!-- Developer / Experimental (T1): reference local source -->
+<ItemGroup Condition="'$(UsePackageReferenceForSUT)' == 'false'">
+  <ProjectReference Include="..\..\src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
+</ItemGroup>
+
+<!-- Promotion tiers (T2–T5): reference the promoted NuGet package -->
+<ItemGroup Condition="'$(UsePackageReferenceForSUT)' == 'true'">
+  <PackageReference Include="ATAP.Utilities.Philote" Version="$(SUTVersion)" />
+</ItemGroup>
+```
+
+> **Important:** `SUTVersion` must be supplied by the pipeline at invocation
+> time (see §11). Never hard-code a version in the `.csproj`.
+
+**`ATAP.Utilities.Testing` reference** follows the same pattern when the
+library itself is part of the promotion chain. When it is promoted as a
+package, switch its reference alongside the primary SUT:
+
+```xml
+<!-- Developer / Experimental -->
+<ItemGroup Condition="'$(UsePackageReferenceForSUT)' == 'false'">
+  <ProjectReference Include="..\..\src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
+  <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
+</ItemGroup>
+
+<!-- Promotion tiers -->
+<ItemGroup Condition="'$(UsePackageReferenceForSUT)' == 'true'">
+  <PackageReference Include="ATAP.Utilities.Philote"  Version="$(SUTVersion)" />
+  <PackageReference Include="ATAP.Utilities.Testing"  Version="$(SUTVersion)" />
+</ItemGroup>
+```
 
 ---
 
@@ -182,13 +244,13 @@ dotnet test --filter "Category!=Performance"
 
 The tier-to-filter mapping in BuildMaster:
 
-| Tier          | `--filter` argument used                              |
-| ------------- | ----------------------------------------------------- |
-| Experimental  | `Category=Unit`                                       |
-| Development   | _(unset — all tests)_                                 |
-| Integration   | `Category=Unit\|Category=Integration`                 |
-| QA            | _(unset — full suite with coverage)_                  |
-| Production    | `Category=Smoke` _(minimal subset for release gate)_  |
+| Tier         | `--filter` argument used                             |
+| ------------ | ---------------------------------------------------- |
+| Experimental | `Category=Unit`                                      |
+| Development  | _(unset — all tests)_                                |
+| Integration  | `Category=Unit\|Category=Integration`                |
+| QA           | _(unset — full suite with coverage)_                 |
+| Production   | `Category=Smoke` _(minimal subset for release gate)_ |
 
 [0106]: ../../_Planning-wt-12-sprint-0006-work-items/Explainers/0106-testing-process-and-artifacts.md
 
@@ -196,13 +258,16 @@ The tier-to-filter mapping in BuildMaster:
 
 ## 5. Running Tests Locally
 
+In developer tiers, `UsePackageReferenceForSUT` defaults to `false`, so
+`dotnet test` uses `<ProjectReference>` and no extra flags are required.
+
 ### 5.1 The whole solution
 
 ```powershell
-# ATAP.Utilities
+# ATAP.Utilities — ProjectReference mode (default)
 dotnet test ATAP.Utilities.sln -c Release
 
-# AceCommander
+# AceCommander — ProjectReference mode (default)
 dotnet test AceCommander.sln -c Release
 ```
 
@@ -235,6 +300,23 @@ dotnet test ... -c Release --logger "console;verbosity=detailed"
 Verbose output shows each test's assertion failure message in the terminal —
 useful when a CI log omits details.
 
+### 5.5 Simulating a promotion-tier run locally
+
+To reproduce exactly what BuildMaster does at T2–T5, ensure the promoted
+package is available from your local ProGet feed, then pass the two extra
+MSBuild properties:
+
+```powershell
+dotnet test tests\ATAP.Utilities.Philote.UnitTests\ATAP.Utilities.Philote.UnitTests.csproj `
+    -c Release `
+    /p:UsePackageReferenceForSUT=true `
+    /p:SUTVersion=1.2.3
+```
+
+This restores `ATAP.Utilities.Philote` 1.2.3 from the feed and runs the
+same test suite against it, rather than the local source. Useful for
+debugging a promotion failure without waiting for a full BuildMaster run.
+
 ---
 
 ## 6. Test Results (TRX) and Artifacts
@@ -264,7 +346,7 @@ to `.gitignore`.
 
 > **Sprint-7 note (immutable build).** Test results from each tier are
 > attached to the **BuildMaster release record** for that exact `(PackageId,
-> Version, SHA-256)`, not embedded into the `.nupkg` itself — embedding would
+Version, SHA-256)`, not embedded into the `.nupkg` itself — embedding would
 > change the package bytes and violate the build-once invariant. The Release
 > Bundle (the customer-facing installer) **does** carry headline test
 > evidence in its `tests/` folder, since the bundle is its own artifact built
@@ -317,10 +399,10 @@ Open `_generated/coverage-html/index.html` in a browser.
 
 From the [0106 Explainer][0106]:
 
-| Component type                                           | Target     |
-| -------------------------------------------------------- | ---------- |
-| Critical libraries (serialization, security, persistence) | 100%       |
-| Standard libraries                                        | 80%+       |
+| Component type                                            | Target              |
+| --------------------------------------------------------- | ------------------- |
+| Critical libraries (serialization, security, persistence) | 100%                |
+| Standard libraries                                        | 80%+                |
 | UI components (Blazor)                                    | Best effort (bUnit) |
 
 These are aspirational today; most ATAP.Utilities libraries have less. The
@@ -356,10 +438,9 @@ The `ATAP.Utilities.Testing` library ships reusable xUnit fixtures:
 - `DI` / `DI.Fixture.Serialization` — `IServiceCollection` helpers for the
   Options pattern.
 
-Reference `ATAP.Utilities.Testing` via `ProjectReference` (during development)
-or `PackageReference` (when consuming as a library). The project-level
-fixtures have their own unit-test projects in `tests/` to keep them honest
-(`ATAP.Utilities.Testing.Fixture.Serialization.Shim.*.UnitTests`).
+Reference `ATAP.Utilities.Testing` via the conditional SUT reference pattern
+(§3.1). In developer / Experimental tiers it resolves as a `<ProjectReference>`;
+in promotion tiers it resolves as a `<PackageReference>` to the promoted package.
 
 ---
 
@@ -420,20 +501,73 @@ every item.
 ## 11. Who Runs What, When
 
 Under the immutable-build strategy, the **package is built once** at T1
-(Experimental). Every later tier runs tests **against the existing
-promoted package**, not against a fresh build. The "Scope" column below
-describes which test categories run; "Build vs. test" clarifies whether
-the tier rebuilds (no — only T1) or just tests.
+(Experimental). Every later tier runs tests **against the existing promoted
+package**, not against a fresh build. The `UsePackageReferenceForSUT` property
+(§3.1) is the mechanism: T1 and developer runs leave it at the default
+(`false` → `<ProjectReference>`); T2–T5 promotion runs set it to `true` and
+supply `SUTVersion` matching the exact package version being promoted.
 
-| Trigger                  | Scope                            | Build vs. test          | Where it runs         |
-| ------------------------ | -------------------------------- | ----------------------- | --------------------- |
-| Developer pre-commit     | Affected project's unit tests    | Local build + test      | Workstation           |
-| Developer before push    | Full `dotnet test` for the repo  | Local build + test      | Workstation           |
-| BuildMaster T1 (sprint)  | `Category=Unit` only             | **Build + push only**   | BuildMaster agent     |
-| BuildMaster T2 (alpha)   | All tests                        | Promote + test          | BuildMaster agent     |
-| BuildMaster T3 (beta)    | Unit + Integration               | Promote + test          | BuildMaster agent     |
-| BuildMaster T4 (qa)      | Full suite with coverage         | Promote + test          | BuildMaster agent     |
-| BuildMaster T5 (stable)  | Smoke subset only                | Promote + smoke         | Release agent         |
+### 11.1 Developer and T1 — ProjectReference mode
+
+No special flags required. Tests reference the SUT via `<ProjectReference>`:
+
+```powershell
+# Developer inner-loop or T1 CI
+dotnet test ATAP.Utilities.sln -c Release `
+    --logger trx `
+    --results-directory _generated\testresults\experimental
+```
+
+T1 (Experimental) builds and pushes the package to the Experimental feed,
+but also runs `Category=Unit` tests in ProjectReference mode as a fast
+pre-push gate. The artifact produced here is the package that travels
+unchanged through all subsequent tiers.
+
+### 11.2 T2–T5 — PackageReference mode (promoted artifact)
+
+The BuildMaster pipeline for each promotion tier must:
+
+1. Restore the promoted package from the tier's ProGet feed — it does
+   **not** rebuild from source.
+2. Run `dotnet test` with `UsePackageReferenceForSUT=true` and
+   `SUTVersion` set to the package version under promotion.
+3. Pass `--no-build` only if the test project binaries were already
+   produced in the same pipeline step; otherwise omit it.
+
+Example BuildMaster PowerShell step (T2 alpha, unit tests only as
+an illustration; adjust `--filter` per the tier table in §4):
+
+```powershell
+# Variables supplied by BuildMaster release plan
+$version   = $ReleaseNumber          # e.g. "1.2.3"
+$tierLabel = "alpha"
+
+dotnet test ATAP.Utilities.sln `
+    -c Release `
+    /p:UsePackageReferenceForSUT=true `
+    /p:SUTVersion=$version `
+    --filter "Category=Unit" `
+    --logger trx `
+    --results-directory "_generated\testresults\$tierLabel"
+```
+
+> **Note on `--no-build`:** Because the project file's `<ItemGroup>` switches
+> from `<ProjectReference>` to `<PackageReference>` when
+> `UsePackageReferenceForSUT=true`, a rebuild **is** required the first time
+> this flag changes. Do not pass `--no-build` unless the test assemblies were
+> already compiled against the promoted package in the same agent session.
+
+### 11.3 Tier summary
+
+| Trigger                 | `UsePackageReferenceForSUT` | `SUTVersion`          | Scope                           | Where it runs     |
+| ----------------------- | --------------------------- | --------------------- | ------------------------------- | ----------------- |
+| Developer pre-commit    | `false` (default)           | N/A                   | Affected project's unit tests   | Workstation       |
+| Developer before push   | `false` (default)           | N/A                   | Full `dotnet test` for the repo | Workstation       |
+| BuildMaster T1 (sprint) | `false` (default)           | N/A                   | `Category=Unit` — **build + push only** | BuildMaster agent |
+| BuildMaster T2 (alpha)  | `true`                      | promoted version      | All tests                       | BuildMaster agent |
+| BuildMaster T3 (beta)   | `true`                      | promoted version      | Unit + Integration              | BuildMaster agent |
+| BuildMaster T4 (qa)     | `true`                      | promoted version      | Full suite with coverage        | BuildMaster agent |
+| BuildMaster T5 (stable) | `true`                      | promoted version      | Smoke subset only               | Release agent     |
 
 Developer pre-commit is an informal norm, not a hard gate — the sprint
 worktree branch has no server-side push policy. CI-side gates begin at T1.
@@ -480,6 +614,27 @@ worktree branch has no server-side push policy. CI-side gates begin at T1.
 Usually a dotnet SDK mismatch between the test project's TFM and the
 installed SDK. Run `dotnet --info` and confirm the SDK version includes the
 target framework.
+
+### 12.6 `Unable to find package 'ATAP.Utilities.Foo' version 'x.y.z'`
+
+Applies only when `UsePackageReferenceForSUT=true`.
+
+- `SUTVersion` was not passed to `dotnet test` or was set incorrectly. Verify
+  the BuildMaster variable binding.
+- The package has not yet been pushed to the tier's feed. Check the ProGet
+  feed for that version and confirm the promotion step completed before the
+  test step.
+- The NuGet feed is not registered in `nuget.config` or the agent's
+  `NuGetSources` variable. Add the tier's ProGet feed URL.
+
+### 12.7 Wrong SUT loaded (ProjectReference vs PackageReference mismatch)
+
+If a promotion-tier test unexpectedly resolves from source (e.g., IntelliSense
+shows the wrong assembly path), confirm that `UsePackageReferenceForSUT` was
+passed as an MSBuild property (`/p:UsePackageReferenceForSUT=true`), not as an
+environment variable. MSBuild properties and environment variables are distinct
+in the `dotnet test` invocation; the conditional `<ItemGroup>` in the
+`.csproj` only evaluates MSBuild properties.
 
 ---
 

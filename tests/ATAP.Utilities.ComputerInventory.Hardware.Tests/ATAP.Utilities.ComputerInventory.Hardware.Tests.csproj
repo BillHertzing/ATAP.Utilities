@@ -1,0 +1,61 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IsPackable>false</IsPackable>
+    <!-- Assembly, File, and Package Information for this assembly-->
+    <!-- Build and revision are created based on date-->
+    <MajorVersion>0</MajorVersion>
+    <MinorVersion>1</MinorVersion>
+    <PatchVersion>0</PatchVersion>
+    <!-- Current Lifecycle stage for this assembly-->
+    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
+    <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
+    <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
+    <PackageLabel>Alpha</PackageLabel>
+  </PropertyGroup>
+
+  <!-- Packages to add xUnit Testing providers and extensions -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.console">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- Packages to add xUnit Testing dotnet tool -->
+  <ItemGroup>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Persistence\Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Persistence\Model\ATAP.Utilities.Persistence.Model.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory\Hardware\Extensions\ATAP.Utilities.ComputerInventory.Hardware.Extensions.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory\Hardware\Enumerations\ATAP.Utilities.ComputerInventory.Hardware.Enumerations.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory\Hardware\Interfaces\ATAP.Utilities.ComputerInventory.Hardware.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory\Hardware\Models\ATAP.Utilities.ComputerInventory.Hardware.Models.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Persistence\Extensions\ATAP.Utilities.Persistence.Extensions.csproj" />
+    <PackageReference Include="UnitsNet" />
+</ItemGroup>
+
+</Project>

@@ -55,9 +55,9 @@ function New-SprintBuildMasterBuilds {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
     # Read API key from User scope (never hard-code)
-    $apiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_API_KEY', 'User')
+    $apiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
     if ([string]::IsNullOrWhiteSpace($apiKey)) {
-      throw 'BUILDMASTER_API_KEY is not set at User scope. Cannot create BuildMaster builds.'
+      throw 'BUILDMASTER_ADMIN_API_KEY is not set at User scope. Cannot create BuildMaster builds.'
     }
   }
 

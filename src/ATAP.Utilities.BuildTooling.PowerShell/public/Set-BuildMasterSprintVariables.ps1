@@ -15,7 +15,7 @@ function Set-BuildMasterSprintVariables {
     identify which source branch to check out and which sprint context applies.
     They are cleared at sprint-end by Clear-BuildMasterSprintVariables.
 
-    Reads the API key from the BUILDMASTER_API_KEY environment variable
+    Reads the API key from the BUILDMASTER_ADMIN_API_KEY environment variable
     (User scope preferred, then Process scope).
 
   .PARAMETER SprintNumber
@@ -74,12 +74,12 @@ function Set-BuildMasterSprintVariables {
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
-    $apiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_API_KEY', 'User')
+    $apiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
     if ([string]::IsNullOrWhiteSpace($apiKey)) {
-      $apiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_API_KEY', 'Process')
+      $apiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'Process')
     }
     if ([string]::IsNullOrWhiteSpace($apiKey)) {
-      throw 'BUILDMASTER_API_KEY is not set at User or Process scope. Cannot set BuildMaster variables.'
+      throw 'BUILDMASTER_ADMIN_API_KEY is not set at User or Process scope. Cannot set BuildMaster variables.'
     }
 
     $headers = @{

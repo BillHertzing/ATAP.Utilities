@@ -179,53 +179,53 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.StronglyType
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{984B3A90-8771-486E-9BC3-66D2F35963C2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Configuration.UnitTests", "tests\ATAP.Utilities.ComputerInventory.Configuration.UnitTests\ATAP.Utilities.ComputerInventory.Configuration.UnitTests.csproj", "{1708871D-1637-45B9-B445-EF33C0D0E797}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Configuration.Tests", "tests\ATAP.Utilities.ComputerInventory.Configuration.Tests\ATAP.Utilities.ComputerInventory.Configuration.Tests.csproj", "{1708871D-1637-45B9-B445-EF33C0D0E797}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden.UnitTests", "tests\ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden.UnitTests\ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden.UnitTests.csproj", "{C9378E61-659F-4B37-9072-C1E42A34A637}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden.Tests", "tests\ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden.Tests\ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden.Tests.csproj", "{C9378E61-659F-4B37-9072-C1E42A34A637}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.UnitTests", "tests\ATAP.Utilities.ComputerInventory.UnitTests\ATAP.Utilities.ComputerInventory.UnitTests.csproj", "{8B279210-31CE-465E-AC71-9CD0DA6022AF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Tests", "tests\ATAP.Utilities.ComputerInventory.Tests\ATAP.Utilities.ComputerInventory.Tests.csproj", "{8B279210-31CE-465E-AC71-9CD0DA6022AF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.ProcessInfo.UnitTests", "tests\ATAP.Utilities.ComputerInventory.ProcessInfo.UnitTests\ATAP.Utilities.ComputerInventory.ProcessInfo.UnitTests.csproj", "{8A63A936-C8E4-4F9D-9947-8250C1B6C89A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.ProcessInfo.Tests", "tests\ATAP.Utilities.ComputerInventory.ProcessInfo.Tests\ATAP.Utilities.ComputerInventory.ProcessInfo.Tests.csproj", "{8A63A936-C8E4-4F9D-9947-8250C1B6C89A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Software.UnitTests", "tests\ATAP.Utilities.ComputerInventory.Software.UnitTests\ATAP.Utilities.ComputerInventory.Software.UnitTests.csproj", "{00FCB3BE-0952-49EB-BA52-085FF40AA916}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Software.Tests", "tests\ATAP.Utilities.ComputerInventory.Software.Tests\ATAP.Utilities.ComputerInventory.Software.Tests.csproj", "{00FCB3BE-0952-49EB-BA52-085FF40AA916}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Hardware.UnitTests", "tests\ATAP.Utilities.ComputerInventory.Hardware.UnitTests\ATAP.Utilities.ComputerInventory.Hardware.UnitTests.csproj", "{84AAB1CA-DCF2-40A3-B82B-1A8721A831E4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Hardware.Tests", "tests\ATAP.Utilities.ComputerInventory.Hardware.Tests\ATAP.Utilities.ComputerInventory.Hardware.Tests.csproj", "{84AAB1CA-DCF2-40A3-B82B-1A8721A831E4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ConcurrentObservableCollections.UnitTests", "tests\ATAP.Utilities.ConcurrentObservableCollections.UnitTests\ATAP.Utilities.ConcurrentObservableCollections.UnitTests.csproj", "{7F0F5CA7-50E1-4E9F-8F55-EBE82652E520}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ConcurrentObservableCollections.Tests", "tests\ATAP.Utilities.ConcurrentObservableCollections.Tests\ATAP.Utilities.ConcurrentObservableCollections.Tests.csproj", "{7F0F5CA7-50E1-4E9F-8F55-EBE82652E520}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoCoin.UnitTests", "tests\ATAP.Utilities.CryptoCoin.UnitTests\ATAP.Utilities.CryptoCoin.UnitTests.csproj", "{8182B668-322F-4EAE-871B-6B94C042F01C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoCoin.Tests", "tests\ATAP.Utilities.CryptoCoin.Tests\ATAP.Utilities.CryptoCoin.Tests.csproj", "{8182B668-322F-4EAE-871B-6B94C042F01C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoMiner.UnitTests", "tests\ATAP.Utilities.CryptoMiner.UnitTests\ATAP.Utilities.CryptoMiner.UnitTests.csproj", "{BC39C377-C9A5-43BF-A07C-E8D3462BDDAC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoMiner.Tests", "tests\ATAP.Utilities.CryptoMiner.Tests\ATAP.Utilities.CryptoMiner.Tests.csproj", "{BC39C377-C9A5-43BF-A07C-E8D3462BDDAC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DateTime", "DateTime", "{94DCC3C0-340C-11EB-B0F3-8BBCA7824458}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.DateTime.UnitTests", "tests\ATAP.Utilities.DateTime.UnitTests\ATAP.Utilities.DateTime.UnitTests.csproj", "{9BCADBFA-9F96-475A-A134-F17C34AEBF6C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.DateTime.Tests", "tests\ATAP.Utilities.DateTime.Tests\ATAP.Utilities.DateTime.Tests.csproj", "{9BCADBFA-9F96-475A-A134-F17C34AEBF6C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Enumeration.UnitTests", "tests\ATAP.Utilities.Enumeration.UnitTests\ATAP.Utilities.Enumeration.UnitTests.csproj", "{CFAD03DD-277D-417E-95CC-57D98E2C2EBF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Enumeration.Tests", "tests\ATAP.Utilities.Enumeration.Tests\ATAP.Utilities.Enumeration.Tests.csproj", "{CFAD03DD-277D-417E-95CC-57D98E2C2EBF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.GraphDataStructures.UnitTests", "tests\ATAP.Utilities.GraphDataStructures.UnitTests\ATAP.Utilities.GraphDataStructures.UnitTests.csproj", "{30343D72-3E63-43ED-AB2B-822489629DA2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.GraphDataStructures.Tests", "tests\ATAP.Utilities.GraphDataStructures.Tests\ATAP.Utilities.GraphDataStructures.Tests.csproj", "{30343D72-3E63-43ED-AB2B-822489629DA2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Http.UnitTests", "tests\ATAP.Utilities.Http.UnitTests\ATAP.Utilities.Http.UnitTests.csproj", "{FC73DB9F-64DD-4D44-B68C-F3767AA6A337}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Http.Tests", "tests\ATAP.Utilities.Http.Tests\ATAP.Utilities.Http.Tests.csproj", "{FC73DB9F-64DD-4D44-B68C-F3767AA6A337}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Logging.UnitTests", "tests\ATAP.Utilities.Logging.UnitTests\ATAP.Utilities.Logging.UnitTests.csproj", "{37605D6E-FF53-4E67-84EF-C4A02EE322AF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Logging.Tests", "tests\ATAP.Utilities.Logging.Tests\ATAP.Utilities.Logging.Tests.csproj", "{37605D6E-FF53-4E67-84EF-C4A02EE322AF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Philote", "Philote", "{CA9D2400-340C-11EB-B0F3-8BBCA7824458}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Philote.UnitTests", "tests\ATAP.Utilities.Philote.UnitTests\ATAP.Utilities.Philote.UnitTests.csproj", "{97867737-350F-45A2-9888-AAE28086D3A2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Philote.Tests", "tests\ATAP.Utilities.Philote.Tests\ATAP.Utilities.Philote.Tests.csproj", "{97867737-350F-45A2-9888-AAE28086D3A2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.RealEstate.UnitTests", "tests\ATAP.Utilities.RealEstate.UnitTests\ATAP.Utilities.RealEstate.UnitTests.csproj", "{188F4E57-4E95-429E-A844-A3655200A393}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.RealEstate.Tests", "tests\ATAP.Utilities.RealEstate.Tests\ATAP.Utilities.RealEstate.Tests.csproj", "{188F4E57-4E95-429E-A844-A3655200A393}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.UnitTests", "tests\ATAP.Utilities.Serializer.UnitTests\ATAP.Utilities.Serializer.UnitTests.csproj", "{D27ADDC5-684F-46D3-BE9E-5488559A53A3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Tests", "tests\ATAP.Utilities.Serializer.Tests\ATAP.Utilities.Serializer.Tests.csproj", "{D27ADDC5-684F-46D3-BE9E-5488559A53A3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.String.UnitTests", "tests\ATAP.Utilities.String.UnitTests\ATAP.Utilities.String.UnitTests.csproj", "{D0E1AD43-554A-40F9-8F35-324A1A1612B7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.String.Tests", "tests\ATAP.Utilities.String.Tests\ATAP.Utilities.String.Tests.csproj", "{D0E1AD43-554A-40F9-8F35-324A1A1612B7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Testing.UnitTests", "tests\ATAP.Utilities.Testing.UnitTests\ATAP.Utilities.Testing.UnitTests.csproj", "{2AAC7546-88A5-4F9D-B0C8-FBA851E6A50E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Testing.Tests", "tests\ATAP.Utilities.Testing.Tests\ATAP.Utilities.Testing.Tests.csproj", "{2AAC7546-88A5-4F9D-B0C8-FBA851E6A50E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.StronglyTypedIDs.UnitTests", "tests\ATAP.Utilities.StronglyTypedIDs.UnitTests\ATAP.Utilities.StronglyTypedIDs.UnitTests.csproj", "{D925C274-C957-4781-B549-C120AA1D9DBD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.StronglyTypedIDs.Tests", "tests\ATAP.Utilities.StronglyTypedIDs.Tests\ATAP.Utilities.StronglyTypedIDs.Tests.csproj", "{D925C274-C957-4781-B549-C120AA1D9DBD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ZSandbox.UnitTests", "tests\ATAP.Utilities.ZSandbox.UnitTests\ATAP.Utilities.ZSandbox.UnitTests.csproj", "{0A301C4A-9886-48E9-AA39-085D07E66482}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ZSandbox.Tests", "tests\ATAP.Utilities.ZSandbox.Tests\ATAP.Utilities.ZSandbox.Tests.csproj", "{0A301C4A-9886-48E9-AA39-085D07E66482}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Persistence.UnitTests", "tests\ATAP.Utilities.Persistence.UnitTests\ATAP.Utilities.Persistence.UnitTests.csproj", "{E3B52A78-D799-4C07-80E2-F7E06D6D3377}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Persistence.Tests", "tests\ATAP.Utilities.Persistence.Tests\ATAP.Utilities.Persistence.Tests.csproj", "{E3B52A78-D799-4C07-80E2-F7E06D6D3377}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Reactive.Extensions", "src\ATAP.Utilities.Reactive.Extensions\ATAP.Utilities.Reactive.Extensions.csproj", "{B5DD19D5-1496-4207-A693-A73595B1B930}"
 EndProject
@@ -383,9 +383,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Testing.Fixt
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Shim.Plugin", "src\ATAP.Utilities.Serializer\Shim\Plugin\ATAP.Utilities.Serializer.Shim.Plugin.csproj", "{FE14BF06-FE19-4B51-85EB-7394ACE1B282}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Testing.Fixture.Serialization.Shim.Newtonsoft.UnitTests", "tests\ATAP.Utilities.Testing.Fixture.Serialization.Shim.Newtonsoft.UnitTests\ATAP.Utilities.Testing.Fixture.Serialization.Shim.Newtonsoft.UnitTests.csproj", "{A8F7131B-96FF-4CBD-B2C7-F11D58F442B4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Testing.Fixture.Serialization.Shim.Newtonsoft.Tests", "tests\ATAP.Utilities.Testing.Fixture.Serialization.Shim.Newtonsoft.Tests\ATAP.Utilities.Testing.Fixture.Serialization.Shim.Newtonsoft.Tests.csproj", "{A8F7131B-96FF-4CBD-B2C7-F11D58F442B4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson.UnitTests", "tests\ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson.UnitTests\ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson.UnitTests.csproj", "{49B2A69E-A0E8-4B7E-9673-970AF287BC0A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson.Tests", "tests\ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson.Tests\ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson.Tests.csproj", "{49B2A69E-A0E8-4B7E-9673-970AF287BC0A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Timers", "Timers", "{A628FDCB-50CB-415D-A2A5-C65DBF85669A}"
 EndProject
@@ -487,13 +487,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Testing.DI",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Testing.Fixture.Serialization.Shim.ServiceStack", "src\ATAP.Utilities.Testing.Fixture.Serialization.Shim.ServiceStack\ATAP.Utilities.Testing.Fixture.Serialization.Shim.ServiceStack.csproj", "{B1000012-0012-4012-A012-000000000012}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Collections.UnitTests", "tests\ATAP.Utilities.Collections.UnitTests\ATAP.Utilities.Collections.UnitTests.csproj", "{B1000013-0013-4013-A013-000000000013}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Collections.Tests", "tests\ATAP.Utilities.Collections.Tests\ATAP.Utilities.Collections.Tests.csproj", "{B1000013-0013-4013-A013-000000000013}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Images.Enumerations.UnitTests", "tests\ATAP.Utilities.Images.Enumerations.Tests\UnitTests\ATAP.Utilities.Images.Enumerations.UnitTests.csproj", "{B1000014-0014-4014-A014-000000000014}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Images.Enumerations.Tests", "tests\ATAP.Utilities.Images.Enumerations.Tests\ATAP.Utilities.Images.Enumerations.Tests.csproj", "{B1000014-0014-4014-A014-000000000014}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.RabbitMQ.IntegrationTests", "tests\ATAP.Utilities.RabbitMQ.IntegrationTests\ATAP.Utilities.RabbitMQ.IntegrationTests.csproj", "{B1000015-0015-4015-A015-000000000015}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.RabbitMQ.Tests", "tests\ATAP.Utilities.RabbitMQ.Tests\ATAP.Utilities.RabbitMQ.Tests.csproj", "{B1000015-0015-4015-A015-000000000015}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Testing.Fixture.Serialization.Shim.ServiceStack.UnitTests", "tests\ATAP.Utilities.Testing.Fixture.Serialization.Shim.ServiceStack.UnitTests\ATAP.Utilities.Testing.Fixture.Serialization.Shim.ServiceStack.UnitTests.csproj", "{B1000016-0016-4016-A016-000000000016}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Testing.Fixture.Serialization.Shim.ServiceStack.Tests", "tests\ATAP.Utilities.Testing.Fixture.Serialization.Shim.ServiceStack.Tests\ATAP.Utilities.Testing.Fixture.Serialization.Shim.ServiceStack.Tests.csproj", "{B1000016-0016-4016-A016-000000000016}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenerateProgram.Tests", "tests\GenerateProgram.Tests\GenerateProgram.Tests.csproj", "{B1000017-0017-4017-A017-000000000017}"
 EndProject

@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IsPackable>false</IsPackable>
+    <!-- Assembly, File, and Package Information for this assembly-->
+    <!-- Build and revision are created based on date-->
+    <MajorVersion>0</MajorVersion>
+    <MinorVersion>1</MinorVersion>
+    <PatchVersion>0</PatchVersion>
+    <!-- Current Lifecycle stage for this assembly-->
+    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
+    <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
+    <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
+    <PackageLabel>Alpha</PackageLabel>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ATAP.Services.TcpWithResilience\ATAP.Services.TcpWithResilience.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory\Enumerations\ATAP.Utilities.ComputerInventory.Enumerations.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory\Extensions\ATAP.Utilities.ComputerInventory.Extensions.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory.Models.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ConcurrentObservableCollections.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoCoin.Extensions.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoCoin.Models.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoMiner.Enumerations.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoMiner.Extensions.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoMiner.Models.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.DateTime.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Enumeration.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Http.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.String.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Services.TcpWithResilience.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ZSandbox.csproj" />
+    -->
+  </ItemGroup>
+
+</Project>

@@ -15,7 +15,7 @@ function Clear-BuildMasterSprintVariables {
     Call this cmdlet during the sprint-end teardown sequence (SprintEndAgent
     Step 10.5) after workTrees have been removed.
 
-    Reads the API key from the BUILDMASTER_API_KEY environment variable
+    Reads the API key from the BUILDMASTER_ADMIN_API_KEY environment variable
     (User scope preferred, then Process scope).
 
     Deletion is idempotent — if a variable does not exist the API returns 404,
@@ -54,12 +54,12 @@ function Clear-BuildMasterSprintVariables {
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
-    $apiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_API_KEY', 'User')
+    $apiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
     if ([string]::IsNullOrWhiteSpace($apiKey)) {
-      $apiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_API_KEY', 'Process')
+      $apiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'Process')
     }
     if ([string]::IsNullOrWhiteSpace($apiKey)) {
-      throw 'BUILDMASTER_API_KEY is not set at User or Process scope. Cannot clear BuildMaster variables.'
+      throw 'BUILDMASTER_ADMIN_API_KEY is not set at User or Process scope. Cannot clear BuildMaster variables.'
     }
 
     $headers = @{ 'X-ApiKey' = $apiKey }

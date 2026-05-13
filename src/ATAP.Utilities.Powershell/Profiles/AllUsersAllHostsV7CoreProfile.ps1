@@ -187,7 +187,13 @@ $cmdletPathRel = 'public\Set-GlobalConfigRootKeys.ps1'
 try {
   # This will auto-load and return true if the Package is installed
   if (-not (Get-Command -Name 'Set-GlobalConfigRootKeys' -CommandType Function -ErrorAction SilentlyContinue)) {
-    # Otherwise get it from either the stable worktree or the sprint worktree
+    # SprintEndAgent uncomments the following line
+    # SprintStartAgent comments the following line
+    #$repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
+    # sprintstartagent insert a line similar to this, sprintendagent removes this line
+    $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items'
+    $projectpathRel = 'src\ATAP.Utilities.ConfigRootKeys.Powershell'
+    $cmdletPathRel = 'public\Set-GlobalConfigRootKeys.ps1'
     . $(Join-Path $repobasepath $projectpathRel $cmdletPathRel)
   }
 } catch {

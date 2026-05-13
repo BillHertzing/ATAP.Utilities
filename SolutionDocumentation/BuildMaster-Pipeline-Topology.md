@@ -99,7 +99,7 @@ workstation.
 | `New-BuildMasterRelease`          | All three pipelines              | Create / update a BuildMaster release record for a specific version.                                | implemented |
 | `Start-BuildMasterPipeline`       | Trigger handlers                 | Trigger a release's pipeline run via BuildMaster API.                                               | implemented |
 | `Approve-BuildMasterStage`        | All three pipelines              | Mark a tier gate passed.                                                                            | implemented |
-| `Invoke-FlywayRehearsal`          | Release-Bundle pipeline          | Apply bundled migrations to a previous-prod snapshot.                                               | spec   |
+| `Invoke-FlywayRehearsal`          | Release-Bundle pipeline          | Apply bundled migrations in a per-run ephemeral rehearsal DB and capture the log.                    | implemented |
 | `Publish-ChocolateyRelease`       | Release-Bundle pipeline (Distribution stage) | Push the Chocolatey wrapper package.                                                    | spec   |
 | `Update-WinGetManifestSource`     | Release-Bundle pipeline (Distribution stage) | Update the WinGet manifest set.                                                         | spec   |
 

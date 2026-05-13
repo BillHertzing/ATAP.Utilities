@@ -184,7 +184,7 @@ Tier-specific DB validation (regardless of instance type):
 
 | Tier         | DB-related action in the pipeline                                                                                          |
 | ------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| Experimental | Apply migrations against an empty SQL Server LocalDB; assert no errors; assert seed loaders complete.                      |
+| Experimental | Apply migrations against the empty Experimental SQL Server instance (`localhost\EXPWHERTZING` in this worktree); assert no errors; assert seed loaders complete. |
 | Development  | Apply against a small dev fixture DB.                                                                                      |
 | Integration  | Apply against a snapshot of the **previous-prod** DB (taken at the last Production release). Assert no data corruption.    |
 | QA           | Apply against a "QA gold" DB (production-shaped, anonymized customer data). Run integration test suite against the result. |
@@ -196,9 +196,13 @@ release. This is the most important DB validation step — it catches
 migrations that work on an empty schema but break when applied to real
 historical data.
 
-`Invoke-FlywayRehearsal` (in `ATAP.Utilities.BuildTooling.PowerShell`) is
-the cmdlet the BuildMaster stages call to run these rehearsals. It records
-the Flyway log as an artifact attached to the BuildMaster release record.
+`Invoke-FlywayRehearsal` (in `ATAP.Utilities.DatabaseManagement.Powershell`) is
+the cmdlet the BuildMaster stages call to run these rehearsals. It creates a
+per-run ephemeral rehearsal database, invokes Flyway, drops the database in a
+`finally` block, and records the Flyway log as an artifact attached to the
+BuildMaster release record. The `-BackupPath` value is recorded for
+traceability; restoring the previous-production backup remains
+environment-specific.
 
 ### 5.1 Naming convention and length limits
 
@@ -239,14 +243,13 @@ specific lifecycle events. The four cmdlets that own these transitions are:
 | `FeatureEnd` (feature merged to stable) | Destroy the per-feature shared DB and any per-feature-sprint DBs for that feature.              | `Remove-FeatureSharedDb`, `Remove-DeveloperScratchDb -Feature <slug>` |
 
 **Trigger mechanism.** The hooks are currently **manual PowerShell calls**
-made by the developer or release engineer at the listed events. There is
-no automation today. A future implementation ticket (`IMPL-7-07`) will
-wire them to BuildMaster pipeline events (`SprintStart` / `SprintEnd`
-release-record transitions) so the transitions happen without operator
-action.
+made by the developer or release engineer at the listed events. The Stream J
+cmdlets are implemented and idempotent; wiring them to BuildMaster pipeline
+events (`SprintStart` / `SprintEnd` release-record transitions) is still future
+automation work.
 
 **Module home.** All four cmdlets live in
-`ATAP.Utilities.DatabaseManagement.PowerShell`. They are siblings of the
+`ATAP.Utilities.DatabaseManagement.Powershell`. They are siblings of the
 existing `Invoke-FlywayRehearsal` and `Invoke-SqlServerBackup` family
 in the same module's public API surface.
 
@@ -403,19 +406,17 @@ around `dbatools` / SQL Server's `Generate Scripts` task). Stored in
 1. **Per-app `db/<App>/releases/*.yml` files are not yet authored.** The
    format is defined; the files need to be created at the start of each
    app's release-bundle work.
-2. **`Invoke-FlywayRehearsal` does not yet rotate the rehearsal DB.** The
-   rehearsal DB is conceptually a **per-pipeline-run ephemeral instance**
-   under the per-developer-scratch naming convention from §5.1 (e.g.,
-   `<App>-rehearsal-<BuildId>`), not a fixed shared name. The current
-   implementation restores into a fixed name and re-uses it across runs,
-   which prevents parallel pipeline runs and obscures the ephemeral
-   contract; tracked as `IMPL-7-06`.
-3. **No automated `DROP COLUMN` linter on `V*.sql`.** Tracked.
-4. **No checksum verification at install time.** The script reads
+2. **No automated `DROP COLUMN` linter on `V*.sql`.** Tracked.
+3. **No checksum verification at install time.** The script reads
    checksums from the manifest but does not yet recompute and compare
    them. Tracked.
-5. **No schema-snapshot drift detection.** The snapshot is captured but
+4. **No schema-snapshot drift detection.** The snapshot is captured but
    not yet automatically diffed against the prior release. Tracked.
+
+Resolved in Stream J on 2026-05-12: `Invoke-FlywayRehearsal` now uses
+`<App>-rehearsal-<BuildId>` by default, honors explicit `-RehearsalDb`
+overrides, creates the ephemeral DB at the start of the run, and drops it in a
+`finally` block.
 
 ---
 
@@ -437,9 +438,10 @@ Rehearse Flyway migrations against the previous-prod snapshot:
 
 ```powershell
 Invoke-FlywayRehearsal `
+  -Application AceCommander `
+  -BuildId     1-4-0 `
   -BundlePath  ./_generated/release-bundle/AceCommander.1.4.0.upack `
   -BackupPath  C:\Dropbox\Backups\utat022\Production\AceCommander\latest.bak `
-  -RehearsalDb AceCommander_Rehearsal_1_4_0 `
   -LogPath     ./_generated/flyway-rehearsal-1.4.0.log
 ```
 

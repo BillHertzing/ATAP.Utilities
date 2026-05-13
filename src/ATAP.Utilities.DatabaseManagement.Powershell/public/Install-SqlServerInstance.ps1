@@ -7,6 +7,12 @@ function Install-SqlServerInstance {
   Uses dbatools Install-DbaInstance to create/configure a SQL Server instance on a host
   where SQL Server software is already present.
 
+  This cmdlet is intentionally not converted to Resolve-DatabaseSqlConnection for the
+  target instance. The target SQL Server instance may not exist until Install-DbaInstance
+  completes, so requiring an already-open SqlConnection would make instance creation
+  impossible. Use the shared database connection resolver only if a future change adds
+  a separate preflight check against an already-existing SQL Server instance.
+
   Authentication behavior:
   - Without CredentialsKey: uses IntegratedSecurity context.
   - With CredentialsKey: resolves UserName/Password from Bitwarden and prepares

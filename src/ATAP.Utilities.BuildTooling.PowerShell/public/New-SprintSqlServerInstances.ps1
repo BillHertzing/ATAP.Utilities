@@ -87,6 +87,21 @@ function New-SprintSqlServerInstances {
     [string]$ConnectionMethod,
 
     [Parameter(Mandatory = $false)]
+    [string]$CredentialsKey,
+
+    [Parameter(Mandatory = $false)]
+    [string]$ApplicationName,
+
+    [Parameter(Mandatory = $false)]
+    [switch]$UseTrustedConnection,
+
+    [Parameter(Mandatory = $false)]
+    [switch]$IntegratedSecurity,
+
+    [Parameter(Mandatory = $false)]
+    [hashtable]$Settings,
+
+    [Parameter(Mandatory = $false)]
     [string]$FlywayBasePath,
 
     [Parameter(Mandatory = $false)]
@@ -166,6 +181,8 @@ function New-SprintSqlServerInstances {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
         -Message "Loaded Build-DatabaseWithFlyway from $buildDbPath"
     }
+
+    $buildDatabaseWithFlywayParameters = (Get-Command -Name 'Build-DatabaseWithFlyway' -CommandType Function).Parameters.Keys
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
       -Message "Instances: $($InstanceNames -join ', ') | Databases: $($Databases -join ', ') | Host: $DatabaseHost | FlywayBase: $FlywayBasePath"
@@ -259,18 +276,42 @@ function New-SprintSqlServerInstances {
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
                   -Message "Building database: instance=$instanceName  db=$db  environment=$environment"
 
-                $buildResult = Build-DatabaseWithFlyway `
-                  -DatabaseName $db `
-                  -Environment $environment `
-                  -DatabaseHost $DatabaseHost `
-                  -SqlInstance $instanceName `
-                  -ConnectionMethod $ConnectionMethod `
-                  -FlywayBasePath $FlywayBasePath `
-                  -FlywayTomlPath $flywayTomlPath `
-                  -FlywaySqlMigrationsPath (Join-Path $FlywayBasePath 'SQL') `
-                  -RepositoryRoot $RepositoryRoot `
-                  -IntegratedSecurity `
-                  -Force
+                $buildParams = @{
+                  DatabaseName            = $db
+                  Environment             = $environment
+                  DatabaseHost            = $DatabaseHost
+                  ConnectionMethod        = $ConnectionMethod
+                  FlywayBasePath          = $FlywayBasePath
+                  FlywayTomlPath          = $flywayTomlPath
+                  FlywaySqlMigrationsPath = (Join-Path $FlywayBasePath 'SQL')
+                  RepositoryRoot          = $RepositoryRoot
+                  Force                   = $true
+                }
+
+                if ($buildDatabaseWithFlywayParameters -contains 'InstanceName') {
+                  $buildParams['InstanceName'] = $instanceName
+                } else {
+                  $buildParams['SqlInstance'] = $instanceName
+                }
+
+                if ($CredentialsKey -and $buildDatabaseWithFlywayParameters -contains 'CredentialsKey') {
+                  $buildParams['CredentialsKey'] = $CredentialsKey
+                }
+                elseif ($buildDatabaseWithFlywayParameters -contains 'IntegratedSecurity') {
+                  $buildParams['IntegratedSecurity'] = $true
+                }
+
+                if ($ApplicationName -and $buildDatabaseWithFlywayParameters -contains 'ApplicationName') {
+                  $buildParams['ApplicationName'] = $ApplicationName
+                }
+                if ($UseTrustedConnection -and $buildDatabaseWithFlywayParameters -contains 'UseTrustedConnection') {
+                  $buildParams['UseTrustedConnection'] = $true
+                }
+                if ($PSBoundParameters.ContainsKey('Settings') -and $buildDatabaseWithFlywayParameters -contains 'Settings') {
+                  $buildParams['Settings'] = $Settings
+                }
+
+                $buildResult = Build-DatabaseWithFlyway @buildParams
 
                 if (-not $buildResult.Success) {
                   $buildError = "Build-DatabaseWithFlyway failed for instance='$instanceName' db='$db': $($buildResult.Errors -join '; ')"

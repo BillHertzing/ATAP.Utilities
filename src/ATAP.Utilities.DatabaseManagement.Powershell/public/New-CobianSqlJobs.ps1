@@ -1,4 +1,3 @@
-#Requires -RunAsAdministrator
 function New-CobianSqlJobs {
   <#
 .SYNOPSIS
@@ -68,6 +67,11 @@ function New-CobianSqlJobs {
 
   Set-StrictMode -Version Latest
   $ErrorActionPreference = 'Stop'
+
+  $principal = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+  if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    throw "$($MyInvocation.MyCommand.Name) must be run from an elevated PowerShell session because it updates Cobian Reflector task files."
+  }
 
   # Encrypted-empty constants taken verbatim from existing MainList.lst
   # (represent unused/blank credentials for required SFTP/FTP/proxy sub-sections)

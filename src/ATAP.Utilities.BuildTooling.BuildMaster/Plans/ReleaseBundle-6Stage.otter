@@ -20,6 +20,8 @@
 #   $ReleaseBundleProductionFeedName       - from the application's variable set
 #   $PreviousProductionBackupPath          - .bak used by Invoke-FlywayRehearsal
 #   $RehearsalDatabaseName                 - ephemeral DB name for Integration rehearsal
+#   $RehearsalDatabaseHost                 - SQL host for Integration rehearsal (default localhost)
+#   $RehearsalSqlInstance                  - SQL named instance for Integration rehearsal (default EXPWHERTZING)
 #
 # This plan intentionally keeps OtterScript as dumb glue. Release logic lives
 # in ATAP.Utilities.BuildTooling.PowerShell cmdlets documented by
@@ -88,7 +90,7 @@ stage Integration
     Exec
     (
         FileName: pwsh,
-        Arguments: >>-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$SourcePath\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1' -Force; New-Item -ItemType Directory -Path '_generated\flyway' -Force | Out-Null; $$bundlePath = Get-Content -LiteralPath '_generated\buildmaster\releasebundle_path.tmp' -Raw; Invoke-FlywayRehearsal -BundlePath $$bundlePath.Trim() -BackupPath '$PreviousProductionBackupPath' -RehearsalDb '$RehearsalDatabaseName' -LogPath '_generated\flyway\flyway-rehearsal.log'">>,
+        Arguments: >>-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$SourcePath\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1' -Force; Import-Module '$SourcePath\src\ATAP.Utilities.DatabaseManagement.Powershell\ATAP.Utilities.DatabaseManagement.Powershell.psd1' -Force; New-Item -ItemType Directory -Path '_generated\flyway' -Force | Out-Null; $$bundlePath = Get-Content -LiteralPath '_generated\buildmaster\releasebundle_path.tmp' -Raw; $$databaseHost = if ([string]::IsNullOrWhiteSpace('$RehearsalDatabaseHost')) { 'localhost' } else { '$RehearsalDatabaseHost' }; $$sqlInstance = if ([string]::IsNullOrWhiteSpace('$RehearsalSqlInstance')) { 'EXPWHERTZING' } else { '$RehearsalSqlInstance' }; Invoke-FlywayRehearsal -BundlePath $$bundlePath.Trim() -BackupPath '$PreviousProductionBackupPath' -RehearsalDb '$RehearsalDatabaseName' -DatabaseHost $$databaseHost -SqlInstance $$sqlInstance -LogPath '_generated\flyway\flyway-rehearsal.log'">>,
         WorkingDirectory: $SourcePath,
         SuccessExitCode: 0
     );

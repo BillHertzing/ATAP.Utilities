@@ -72,9 +72,11 @@ PowerShellVersion = '5.1'
 FunctionsToExport = 'Build-DatabaseWithFlyway', 'DatabaseBuildAndMigrateTasks',
                'DatabaseProvisioning', 'Example-RuleExport', 'Export-RuleToTextFile',
                'Get-DatabaseCredentialsKey', 'Get-InstalledDatabaseInformation',
-               'Install-SqlServerInstance', 'Invoke-Flyway',
+               'Install-SqlServerInstance', 'Invoke-Flyway', 'Invoke-FlywayRehearsal',
                'Invoke-SqlServerBackup', 'New-CobianAppJobs', 'New-CobianSqlJobs',
-               'New-ConnectionStringBuilderFromDbaTools',
+               'New-ConnectionStringBuilderFromDbaTools', 'New-DeveloperScratchDb',
+               'New-FeatureSharedDb', 'Remove-DeveloperScratchDb',
+               'Remove-FeatureSharedDb', 'Resolve-DatabaseSqlConnection',
                'Resolve-DbInstanceName'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.

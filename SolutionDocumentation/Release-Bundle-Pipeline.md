@@ -185,7 +185,8 @@ ProGet API operations — never rebuilds. See
 
 ## 6. PowerShell automation surface
 
-`ATAP.Utilities.BuildTooling.PowerShell` exposes the cmdlets that the
+`ATAP.Utilities.BuildTooling.PowerShell` and
+`ATAP.Utilities.DatabaseManagement.Powershell` expose the cmdlets that the
 BuildMaster stages call. The Release Bundle pipeline uses:
 
 | Cmdlet                          | Role                                                                                                |
@@ -195,7 +196,7 @@ BuildMaster stages call. The Release Bundle pipeline uses:
 | `New-ReleaseBundle`             | Assemble the directory tree under `_generated/release-bundle/<Version>/`, place `db/db-manifest.json`, require every manifest-referenced asset to exist, and pack to `.upack`. |
 | `Publish-UniversalPackageToProGet` | Push the `.upack` to `releasebundle-experimental`.                                                |
 | `Promote-ProGetPackage`         | Promote the same bundle between feeds via ProGet promotion API.                                     |
-| `Invoke-FlywayRehearsal`        | Apply the bundled Flyway migrations to a clone of the previous-prod DB; capture log.                |
+| `Invoke-FlywayRehearsal`        | Create a per-run rehearsal DB, apply bundled Flyway migrations, drop the DB, and capture the log.   |
 | `New-BuildMasterRelease`        | Create / update the BuildMaster release record for the bundle.                                      |
 | `Approve-BuildMasterStage`      | Mark a tier gate passed (script-driven; manual approval is also supported).                         |
 | `Publish-ChocolateyRelease`     | Push the `.nupkg` Chocolatey wrapper that references the bundle's installer URL.                    |

@@ -3,6 +3,16 @@
 
 <#
 
+Database access rewrite note:
+
+This file is a legacy Flyway task-script collection rather than a normal exported cmdlet
+with a single parameter block. It still contains direct sqlcmd/bcp invocations that are
+intentionally retained until each task scriptblock is replaced by the modern public
+cmdlets (`DatabaseProvisioning`, `Build-DatabaseWithFlyway`, and `Invoke-Flyway`) or is
+given its own supported function boundary. Do not add Resolve-DatabaseSqlConnection to
+this file as a top-level validation step; many scriptblocks are not database-accessing
+entry points and several external command calls are data import/export tasks.
+
 These are a collection of script blocks that are designed to run with Flyway
 - either in the community edition or with Teams. They allow you to maintain
 backups or scripts for each version and make a Flyway a full participant

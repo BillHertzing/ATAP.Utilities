@@ -332,7 +332,7 @@ implies one DB instance per tier:
 
 | Tier | DB |
 | ---- | --- |
-| Experimental | empty SQL Server LocalDB |
+| Experimental | empty Experimental SQL Server instance (`localhost\EXPWHERTZING` in this worktree) |
 | Development | small dev fixture DB |
 | Integration | snapshot of previous-prod DB |
 | QA | QA Gold DB |
@@ -378,7 +378,7 @@ the day-to-day database surface area.
 | Doc | Defect |
 | --- | --- |
 | `Database-Change-Unit-and-Flyway-Promotion.md` §5 | Treats Experimental and Development as having one DB each. Breaks in real teams. |
-| `Database-Change-Unit-and-Flyway-Promotion.md` §11 | Acknowledges that `Invoke-FlywayRehearsal` "does not yet rotate the rehearsal DB. It currently restores into a fixed name and re-uses it across runs." This is a known bug; under the proposed model, every rehearsal must have a uniquely-named DB created per pipeline run. |
+| `Database-Change-Unit-and-Flyway-Promotion.md` §11 | Resolved 2026-05-12: `Invoke-FlywayRehearsal` now creates a uniquely named per-run rehearsal DB and drops it in `finally`. |
 | `Release-Bundle-Pipeline.md` §5 | Tier-stage table implies single DB per tier ("Apply DB migrations against a snapshot of the previous-prod database"). Singular. Should be plural. |
 | `SWProductionDiagrams.drawio` page 02 | Five DB cylinders, one per tier. Same defect, visually. |
 | Docs in general | No mention of provisioning, naming convention, or lifecycle for the per-developer / per-feature DB instances. |
@@ -393,7 +393,8 @@ This is a multi-step deliverable, not a one-doc fix:
    `<App>_<branch-or-feature>_<sprint-or-tag>_<developer>` — needs to be
    short enough for SQL Server's 128-char DB name limit.
 3. Provisioning script: `New-DeveloperScratchDb`, `New-FeatureSharedDb`,
-   `Remove-DeveloperScratchDb`. Lives in
+   `Remove-DeveloperScratchDb`, and `Remove-FeatureSharedDb`. Implemented
+   2026-05-12 in
    `ATAP.Utilities.DatabaseManagement.Powershell` (already exists per
    PowerShell-Modules-Build-Process.md).
 4. Lifecycle hooks: SprintStartAgent / SprintEndAgent / FeatureStart /
@@ -582,8 +583,8 @@ Cut from the findings above. Each is sized for a single dev × 1–3 days.
 | IMPL-7-03 | Implement `Promote-ProGetPackage` cmdlet (idempotent ProGet promotion API call). | §1.3, §2.3 | M |
 | IMPL-7-04 | Implement `New-ReleaseManifest` cmdlet. Completed 2026-05-11; it now emits `manifest.json` plus the DB sub-manifest sidecar. | §8.3 | done |
 | IMPL-7-05 | Implement `New-ReleaseBundle` cmdlet. Completed 2026-05-11; it now stages `db/db-manifest.json`, requires manifest-referenced assets, and packs `.upack`. | §8.3 | done |
-| IMPL-7-06 | Implement `Invoke-FlywayRehearsal` rotation so each pipeline run uses a uniquely-named rehearsal DB. | §6.3 | M |
-| IMPL-7-07 | Implement `New-DeveloperScratchDb` / `New-FeatureSharedDb` / removal counterparts in `ATAP.Utilities.DatabaseManagement.Powershell` (after design per §6.5). | §6.4 | L |
+| IMPL-7-06 | Implement `Invoke-FlywayRehearsal` rotation so each pipeline run uses a uniquely-named rehearsal DB. Completed 2026-05-12. | §6.3 | done |
+| IMPL-7-07 | Implement `New-DeveloperScratchDb` / `New-FeatureSharedDb` / removal counterparts in `ATAP.Utilities.DatabaseManagement.Powershell` (after design per §6.5). Completed 2026-05-12. | §6.4 | done |
 | IMPL-7-08 | Capture-and-propagate version through BuildMaster build variable (proposed `$ResolvedPackageVersion`). | §1.3 | M |
 
 ### Source-of-truth tickets

@@ -59,6 +59,10 @@ function New-SprintDatabaseInstances {
     [ValidateNotNullOrEmpty()]
     [string]$ConnectionMethod,
 
+    [string]$CredentialsKey,
+
+    [switch]$IntegratedSecurity,
+
     [string]$Port
   )
 
@@ -93,6 +97,8 @@ function New-SprintDatabaseInstances {
         throw 'Install-SqlServerInstance.ps1 not found. Cannot create sprint database instances.'
       }
     }
+
+    $installSqlServerInstanceParameters = (Get-Command -Name 'Install-SqlServerInstance' -CommandType Function).Parameters.Keys
   }
 
   process {
@@ -122,6 +128,12 @@ function New-SprintDatabaseInstances {
 
       if (-not [string]::IsNullOrWhiteSpace($Port)) {
         $installParams['Port'] = $Port
+      }
+      if (-not [string]::IsNullOrWhiteSpace($CredentialsKey) -and $installSqlServerInstanceParameters -contains 'CredentialsKey') {
+        $installParams['CredentialsKey'] = $CredentialsKey
+      }
+      if ($IntegratedSecurity -and $installSqlServerInstanceParameters -contains 'IntegratedSecurity') {
+        $installParams['IntegratedSecurity'] = $true
       }
 
       if ($PSCmdlet.ShouldProcess($instanceName, 'Install SQL Server instance')) {

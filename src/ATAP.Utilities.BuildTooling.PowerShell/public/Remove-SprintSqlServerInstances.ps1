@@ -84,6 +84,12 @@ function Remove-SprintSqlServerInstances {
     [string[]]$DeveloperNames,
 
     [Parameter(Mandatory = $false)]
+    [string]$DatabaseHost = 'localhost',
+
+    [Parameter(Mandatory = $false)]
+    [string[]]$Databases = @('ATAPUtilities', 'AceCommander'),
+
+    [Parameter(Mandatory = $false)]
     [string]$SqlServerSetupPath = 'D:\Temp\SQLExpr\extracted',
 
     [Parameter(Mandatory = $false)]
@@ -165,30 +171,35 @@ function Remove-SprintSqlServerInstances {
         -Message "Removing SQL Server instance '$($inst.SqlInstance)'..."
 
       # ── Verify instance exists before attempting removal ──────────────────
+      $sqlServerInstance = if ([string]::IsNullOrWhiteSpace($DatabaseHost) -or $DatabaseHost -eq 'localhost') {
+        "localhost\$($inst.SqlInstance)"
+      } else {
+        "$DatabaseHost\$($inst.SqlInstance)"
+      }
+
       $existingInstance = Get-DbaRegisteredServer -ErrorAction SilentlyContinue |
-        Where-Object { $_.Name -eq "localhost\$($inst.SqlInstance)" }
+        Where-Object { $_.Name -eq $sqlServerInstance }
       # Simpler check: try to connect
       $instanceExists = $null
       try {
-        $instanceExists = Connect-DbaInstance -SqlInstance "localhost\$($inst.SqlInstance)" `
+        $instanceExists = Connect-DbaInstance -SqlInstance $sqlServerInstance `
           -TrustServerCertificate -ConnectTimeout 5 -ErrorAction Stop
       } catch {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-          -Message "Instance 'localhost\$($inst.SqlInstance)' is not reachable — it may not exist or may already be removed. Skipping."
+          -Message "Instance '$sqlServerInstance' is not reachable - it may not exist or may already be removed. Skipping."
         $entry.Skipped = $true
         $removalResults.Add($entry)
         continue
       }
 
       if (-not $SkipDatabaseDrop -and $null -ne $instanceExists) {
-        # Explicitly drop ATAPUtilities and AceCommander before instance removal
-        foreach ($dbName in @('ATAPUtilities', 'AceCommander')) {
+        foreach ($dbName in $Databases) {
           try {
             $db = Get-DbaDatabase -SqlInstance $instanceExists -Database $dbName -ErrorAction SilentlyContinue
             if ($db) {
               Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
                 -Message "Dropping database '$dbName' from '$($inst.SqlInstance)'..."
-              if ($PSCmdlet.ShouldProcess("localhost\$($inst.SqlInstance)\$dbName", 'Drop SQL Server database')) {
+              if ($PSCmdlet.ShouldProcess("$sqlServerInstance\$dbName", 'Drop SQL Server database')) {
                 Remove-DbaDatabase -SqlInstance $instanceExists -Database $dbName -Confirm:$false
               }
             }

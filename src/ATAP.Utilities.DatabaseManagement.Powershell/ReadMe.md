@@ -20,11 +20,16 @@ Use the module-level getting started guide for the lifecycle workflow:
 | `Get-InstalledDatabaseInformation`        | Return metadata about installed SQL Server instances                   |
 | `Install-SqlServerInstance`               | Install and configure a SQL Server Express instance                    |
 | `Invoke-Flyway`                           | Invoke a Flyway command against a configured database                  |
+| `Invoke-FlywayRehearsal`                  | Run Flyway against a per-run ephemeral rehearsal database              |
 | `Invoke-SqlServerBackup`                  | Back up a SQL Server database                                          |
 | `New-CobianAppJobs`                       | Create Cobian Backup application jobs                                  |
 | `New-CobianSqlJobs`                       | Create Cobian Backup SQL Server jobs                                   |
 | `New-ConnectionStringBuilderFromDbaTools` | Build a connection string using dbaTools conventions                   |
-| `Remove-SprintSqlServerInstances`         | Remove the per-sprint `Development` and `Experimental` SQL instances   |
+| `New-DeveloperScratchDb`                  | Idempotently create a per-developer scratch database                   |
+| `New-FeatureSharedDb`                     | Idempotently create a per-feature shared database                      |
+| `Remove-DeveloperScratchDb`               | Drop disposable developer scratch or per-feature-sprint databases      |
+| `Remove-FeatureSharedDb`                  | Drop disposable per-feature shared databases                           |
+| `Resolve-DbInstanceName`                  | Resolve canonical Stream J database names                              |
 
 ### Example Scripts
 

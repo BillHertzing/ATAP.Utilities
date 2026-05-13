@@ -108,19 +108,49 @@
 .LINK
     https://docs.dbatools.io/Backup-DbaDatabase
 #>
-[CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'NoCompression')]
+function Invoke-SqlServerBackup {
+[CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ConnectionParts')]
 param(
-    [Parameter(Mandatory)]
-    [ValidateNotNullOrEmpty()]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
     [string] $DatabaseName,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [Alias('HostName', 'ServerInstance')]
+    [string] $DatabaseHost,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [Alias('InstanceName')]
+    [string] $SqlInstance = 'localhost\Production',
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [string] $ConnectionMethod,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [string] $CredentialsKey,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [string] $ApplicationName,
+
+    [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParts')]
+    [switch] $UseTrustedConnection,
+
+    [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParts')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'BitwardenSecretName')]
+    [switch] $IntegratedSecurity,
+
+    [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'SqlConnection')]
+    [Microsoft.Data.SqlClient.SqlConnection] $SqlConnection,
+
+    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'BitwardenSecretName')]
+    [Alias('BitwardenSecret', 'SecretName')]
+    [string] $BitwardenSecretName,
+
+    [Parameter()]
+    [hashtable] $Settings,
 
     [Parameter()]
     [ValidateSet('Full', 'Differential')]
     [string] $BackupType = 'Full',
-
-    [Parameter()]
-    [ValidateNotNullOrEmpty()]
-    [string] $SqlInstance = 'localhost\Production',
 
     [Parameter()]
     [ValidateNotNullOrEmpty()]
@@ -129,10 +159,10 @@ param(
     [Parameter()]
     [string] $TemporaryDirectory = $(Join-Path $global:Settings[$global:ConfigRootKeys['FastTempBasePathConfigRootKey']] 'CobianReflectorBackup'),
 
-    [Parameter(ParameterSetName = 'SqlCompression')]
+    [Parameter()]
     [switch] $CompressBackup,
 
-    [Parameter(ParameterSetName = 'SevenZipCompression')]
+    [Parameter()]
     [switch] $SevenZipCompress
 
     # SCAFFOLD: multi-machine (Explainer 0022, section 4B)
@@ -149,9 +179,8 @@ begin {
     $fn = $MyInvocation.MyCommand.Name
     $mn = 'ATAP.IAC.BackupManagement'
 
-    # Check and populate DatabaseName parameter
-    if ([string]::IsNullOrWhiteSpace($DatabaseName)) {
-        $msg = 'DatabaseName parameter is required and cannot be empty.'
+    if ($CompressBackup.IsPresent -and $SevenZipCompress.IsPresent) {
+        $msg = 'CompressBackup and SevenZipCompress are mutually exclusive.'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
         throw $msg
     }
@@ -160,12 +189,6 @@ begin {
     if ([string]::IsNullOrWhiteSpace($BackupType)) {
         $BackupType = 'Full'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'BackupType not specified — defaulting to Full.'
-    }
-
-    # Check and populate SqlInstance parameter
-    if ([string]::IsNullOrWhiteSpace($SqlInstance)) {
-        $SqlInstance = 'localhost\Production'
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'SqlInstance not specified — defaulting to localhost\Production.'
     }
 
     # Check and populate BackupRoot parameter
@@ -189,6 +212,52 @@ begin {
         throw $msg
     }
     Import-Module dbatools -ErrorAction Stop
+
+    if (-not (Get-Command -Name 'Resolve-DatabaseSqlConnection' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot 'Resolve-DatabaseSqlConnection.ps1')
+    }
+
+    if ($PSCmdlet.ParameterSetName -eq 'ConnectionParts' -and [string]::IsNullOrWhiteSpace($DatabaseHost) -and -not [string]::IsNullOrWhiteSpace($SqlInstance)) {
+        $instanceParts = $SqlInstance -split '\\', 2
+        $DatabaseHost = $instanceParts[0]
+        if ($instanceParts.Count -gt 1) {
+            $SqlInstance = $instanceParts[1]
+        } else {
+            $SqlInstance = $null
+        }
+    }
+
+    $resolvedSqlConnection = Resolve-DatabaseSqlConnection `
+        -OriginalPSBoundParameters $PSBoundParameters `
+        -SqlConnection $SqlConnection `
+        -BitwardenSecretName $BitwardenSecretName `
+        -DatabaseHost $DatabaseHost `
+        -InstanceName $SqlInstance `
+        -DatabaseName $DatabaseName `
+        -ConnectionMethod $ConnectionMethod `
+        -CredentialsKey $CredentialsKey `
+        -ApplicationName $ApplicationName `
+        -UseTrustedConnection:$UseTrustedConnection `
+        -IntegratedSecurity:$IntegratedSecurity `
+        -Settings $Settings
+
+    $resolvedConnectionStringBuilder = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($resolvedSqlConnection.ConnectionString)
+    $SqlInstance = $resolvedConnectionStringBuilder.DataSource
+    if ([string]::IsNullOrWhiteSpace($DatabaseName)) {
+        $DatabaseName = if (-not [string]::IsNullOrWhiteSpace($resolvedConnectionStringBuilder.InitialCatalog)) {
+            $resolvedConnectionStringBuilder.InitialCatalog
+        } else {
+            $resolvedSqlConnection.Database
+        }
+    }
+
+    if ([string]::IsNullOrWhiteSpace($DatabaseName)) {
+        $msg = 'DatabaseName is required, either as a parameter or as Initial Catalog in the resolved connection string.'
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+        throw $msg
+    }
+
+    $resolvedConnectionOwnedByFunction = $PSCmdlet.ParameterSetName -ne 'SqlConnection'
 
     # Locate 7-Zip when requested
     if ($SevenZipCompress.IsPresent) {
@@ -325,6 +394,10 @@ process {
         }
         throw
     } finally {
+        if ($resolvedConnectionOwnedByFunction -and $null -ne $resolvedSqlConnection) {
+            $resolvedSqlConnection.Dispose()
+        }
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Invoke-SqlServerBackup finished for [$DatabaseName] ($BackupType)."
     }
+}
 }

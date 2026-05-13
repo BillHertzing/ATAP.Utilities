@@ -35,8 +35,17 @@ backup automation, and rule-export utilities in the ATAP 5-tier ecosystem.
 | Cmdlet                             | File                                                                                       | Synopsis                                                                                                                                                                                         |
 | ---------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `Install-SqlServerInstance`        | [public/Install-SqlServerInstance.ps1](public/Install-SqlServerInstance.ps1)               | Creates a SQL Server named instance on a host where SQL Server software is already present; uses dbatools `Install-DbaInstance`.                                                                 |
-| `Remove-SprintSqlServerInstances`  | [public/Remove-SprintSqlServerInstances.ps1](public/Remove-SprintSqlServerInstances.ps1)   | Sprint end: removes the two per-developer named instances (`Dev<username>`, `Exp<username>`). Supersedes `Remove-DeveloperDatabaseInstances`. Use `New-SprintSqlServerInstances` to create them. |
 | `Get-InstalledDatabaseInformation` | [public/Get-InstalledDatabaseInformation.ps1](public/Get-InstalledDatabaseInformation.ps1) | Returns metadata about running database server processes (SQL Server, MySQL, PostgreSQL) on the local machine.                                                                                   |
+
+### Stream J Database Lifecycle
+
+| Cmdlet                       | File                                                                           | Synopsis                                                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `Resolve-DbInstanceName`     | [public/Resolve-DbInstanceName.ps1](public/Resolve-DbInstanceName.ps1)         | Resolves canonical database names for developer scratch, feature sprint, feature shared, trunk, QA, and production tiers.     |
+| `New-DeveloperScratchDb`     | [public/New-DeveloperScratchDb.ps1](public/New-DeveloperScratchDb.ps1)         | Idempotently creates `<App>-dev-<GitHandle>` on the requested SQL Server instance.                                            |
+| `New-FeatureSharedDb`        | [public/New-FeatureSharedDb.ps1](public/New-FeatureSharedDb.ps1)               | Idempotently creates `<App>-<FeatureSlug>-shared` on the requested SQL Server instance.                                       |
+| `Remove-DeveloperScratchDb`  | [public/Remove-DeveloperScratchDb.ps1](public/Remove-DeveloperScratchDb.ps1)   | Drops disposable developer scratch or per-feature-sprint databases; `-WhatIf` lists targets and `-Force` skips confirmation.  |
+| `Remove-FeatureSharedDb`     | [public/Remove-FeatureSharedDb.ps1](public/Remove-FeatureSharedDb.ps1)         | Drops disposable feature shared databases; `-WhatIf` lists targets and `-Force` skips confirmation.                          |
 
 ### Database Build and Migration
 
@@ -45,12 +54,14 @@ backup automation, and rule-export utilities in the ATAP 5-tier ecosystem.
 | `Build-DatabaseWithFlyway`     | [public/Build-DatabaseWithFlyway.ps1](public/Build-DatabaseWithFlyway.ps1)         | Orchestrates a complete database build: drops and recreates the database via `DatabaseProvisioning`, then applies all Flyway migrations. Accepts `-SqlInstance` directly (e.g. `Devwhertzing`, `Expwhertzing`). Primary cmdlet for creating ATAPUtilities and AceCommander databases. |
 | `DatabaseProvisioning`         | [public/DatabaseProvisioning.ps1](public/DatabaseProvisioning.ps1)                 | Creates (or recreates) a database and associated login/user objects by executing a sequence of SQL provisioning scripts. Called internally by `Build-DatabaseWithFlyway`.                                                                                                             |
 | `Invoke-Flyway`                | [public/Invoke-Flyway.ps1](public/Invoke-Flyway.ps1)                               | Builds a JDBC connection string, exports Flyway placeholder environment variables (including SHA256 migration-file hashes), and invokes a Flyway command (`migrate`, `baseline`, `info`, etc.).                                                                                       |
+| `Invoke-FlywayRehearsal`       | [public/Invoke-FlywayRehearsal.ps1](public/Invoke-FlywayRehearsal.ps1)             | Creates a per-run ephemeral rehearsal database, runs `Invoke-Flyway -FlywayCommand migrate`, drops the DB in `finally`, and optionally writes a JSON log.                                                                                                                            |
 | `DatabaseBuildAndMigrateTasks` | [public/DatabaseBuildAndMigrateTasks.ps1](public/DatabaseBuildAndMigrateTasks.ps1) | Collection of script-block tasks (Phil Factor / PubsAndFlyway pattern) that can be composed into a pipeline for version-aware database builds and Flyway integration.                                                                                                                 |
 
 ### Connection and Credentials
 
 | Cmdlet                                    | File                                                                                                     | Synopsis                                                                                                                                                                                                                        |
 | ----------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Resolve-DatabaseSqlConnection`           | [public/Resolve-DatabaseSqlConnection.ps1](public/Resolve-DatabaseSqlConnection.ps1)                     | Resolves the three supported database connection inputs to one open `Microsoft.Data.SqlClient.SqlConnection`: existing connection, Bitwarden connection-string secret, or `Get-PVal`-resolved connection parts.                 |
 | `New-ConnectionStringBuilderFromDbaTools` | [public/New-ConnectionStringBuilderFromDbaTools.ps1](public/New-ConnectionStringBuilderFromDbaTools.ps1) | Wraps `New-DbaConnectionStringBuilder` with Bitwarden vault integration and JDBC output support. Supports `IntegratedSecurity` and `CredentialsFromVault` parameter sets.                                                       |
 | `Get-DatabaseCredentialsKey`              | [public/Get-DatabaseCredentialsKey.ps1](public/Get-DatabaseCredentialsKey.ps1)                           | Constructs the canonical Bitwarden secret name for a database connection string given `DatabaseName`, `DatabaseHost`, and `Environment`. For per-sprint tiers (`Development`, `Experimental`) the key includes `$env:USERNAME`. |
 
@@ -91,6 +102,8 @@ Scripts superseded by newer cmdlets; retained for reference.
 | File                                                             | Purpose                                             |
 | ---------------------------------------------------------------- | --------------------------------------------------- |
 | [tests/PesterConfiguration.psd1](tests/PesterConfiguration.psd1) | Pester 5 configuration for this module's test suite |
+| [tests/Unit](tests/Unit)                                         | Unit tests for naming, lifecycle cmdlets, and Flyway rehearsal behavior |
+| [tests/Integration](tests/Integration)                           | Opt-in `EXPWHERTZING`/Flyway rehearsal test; set `ATAP_RUN_DB_INTEGRATION_TESTS=1` to run |
 
 ---
 

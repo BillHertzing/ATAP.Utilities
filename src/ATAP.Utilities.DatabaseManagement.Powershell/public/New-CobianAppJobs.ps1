@@ -1,4 +1,3 @@
-#Requires -RunAsAdministrator
 <#
 .SYNOPSIS
     Creates five Cobian Reflector application-data backup tasks by directly writing
@@ -139,6 +138,11 @@ function New-CobianAppJobs {
     $mn = $MyInvocation.MyCommand.ModuleName
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Entering function'
+
+    $principal = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+      throw "$fn must be run from an elevated PowerShell session because it updates Cobian Reflector task files."
+    }
 
     # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: ListPath)
     $ListPath = Get-PVal -ParameterName ListPath -originalPSBoundParameters $PSBoundParameters -dottedPath ListPath -DefaultValue $ListPath

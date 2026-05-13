@@ -13,6 +13,8 @@ BeforeAll {
   function global:Get-DbaDatabase { param($SqlInstance, $Database) [PSCustomObject]@{ Name = $Database; SqlInstance = $SqlInstance } }
   function global:Remove-DbaDatabase { param($SqlInstance, $Database, [switch]$Confirm) }
   function global:Start-Process { [PSCustomObject]@{ ExitCode = 0 } }
+  function Resolve-BuildToolingDatabaseSqlConnection { throw 'Resolve-BuildToolingDatabaseSqlConnection should not be called by Remove-SprintSqlServerInstances.' }
+  function Invoke-BuildToolingSqlQuery { throw 'Invoke-BuildToolingSqlQuery should not be called by Remove-SprintSqlServerInstances.' }
 
   . "$PSScriptRoot\..\..\public\Remove-SprintSqlServerInstances.ps1"
 }
@@ -34,6 +36,12 @@ Describe 'Remove-SprintSqlServerInstances [public]' {
     }
     Mock -CommandName Remove-DbaDatabase -MockWith {}
     Mock -CommandName Start-Process -MockWith { [PSCustomObject]@{ ExitCode = 0 } }
+    Mock -CommandName Resolve-BuildToolingDatabaseSqlConnection -MockWith {
+      throw 'Resolve-BuildToolingDatabaseSqlConnection should not be called by Remove-SprintSqlServerInstances.'
+    }
+    Mock -CommandName Invoke-BuildToolingSqlQuery -MockWith {
+      throw 'Invoke-BuildToolingSqlQuery should not be called by Remove-SprintSqlServerInstances.'
+    }
   }
 
   AfterEach {
@@ -59,5 +67,17 @@ Describe 'Remove-SprintSqlServerInstances [public]' {
     Should -Invoke -CommandName Remove-DbaDatabase -Times 4 -Exactly
     Should -Invoke -CommandName Remove-DbaDatabase -Times 2 -ParameterFilter { $Database -eq 'ATAPUtilities' }
     Should -Invoke -CommandName Remove-DbaDatabase -Times 2 -ParameterFilter { $Database -eq 'AceCommander' }
+  }
+
+  It 'does not require a BuildTooling SqlConnection for instance removal' {
+    Remove-SprintSqlServerInstances `
+      -DeveloperNames @('tester') `
+      -SqlServerSetupPath $script:setupDir `
+      -Confirm:$false | Out-Null
+
+    Should -Invoke -CommandName Resolve-BuildToolingDatabaseSqlConnection -Times 0 -Exactly
+    Should -Invoke -CommandName Invoke-BuildToolingSqlQuery -Times 0 -Exactly
+    Should -Invoke -CommandName Connect-DbaInstance -Times 2 -Exactly
+    Should -Invoke -CommandName Start-Process -Times 2 -Exactly
   }
 }

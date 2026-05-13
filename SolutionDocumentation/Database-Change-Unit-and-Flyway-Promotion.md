@@ -200,9 +200,15 @@ historical data.
 the cmdlet the BuildMaster stages call to run these rehearsals. It creates a
 per-run ephemeral rehearsal database, invokes Flyway, drops the database in a
 `finally` block, and records the Flyway log as an artifact attached to the
-BuildMaster release record. The `-BackupPath` value is recorded for
-traceability; restoring the previous-production backup remains
-environment-specific.
+BuildMaster release record. The ReleaseBundle BuildMaster plan uses one DB
+connection mode for the Integration rehearsal:
+`-BitwardenSecretName $IntegrationDatabaseBitwardenSecretName`. That BuildMaster
+Application variable stores the permanent Integration-tier Bitwarden item name
+from [SprintInfrastructure-Naming.md §4](SprintInfrastructure-Naming.md#4-bitwarden-connection-string-secret-naming),
+for example `dbConnectionString-AceCommander-utat022-Integration`; the plan does
+not pass `-DatabaseHost` / `-SqlInstance` for this rehearsal. The `-BackupPath`
+value is recorded for traceability; restoring the previous-production backup
+remains environment-specific.
 
 ### 5.1 Naming convention and length limits
 
@@ -440,6 +446,7 @@ Rehearse Flyway migrations against the previous-prod snapshot:
 Invoke-FlywayRehearsal `
   -Application AceCommander `
   -BuildId     1-4-0 `
+  -BitwardenSecretName dbConnectionString-AceCommander-utat022-Integration `
   -BundlePath  ./_generated/release-bundle/AceCommander.1.4.0.upack `
   -BackupPath  C:\Dropbox\Backups\utat022\Production\AceCommander\latest.bak `
   -LogPath     ./_generated/flyway-rehearsal-1.4.0.log

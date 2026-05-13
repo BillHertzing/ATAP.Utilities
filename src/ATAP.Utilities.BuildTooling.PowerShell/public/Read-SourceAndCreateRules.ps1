@@ -210,7 +210,8 @@ https://github.com/whertzing/ATAP.Utilities
     }
 
     if ($WriteToDatabase) {
-      if (-not (Get-Command -Name 'Resolve-BuildToolingDatabaseSqlConnection' -CommandType Function -ErrorAction SilentlyContinue)) {
+      if (-not (Get-Command -Name 'Resolve-BuildToolingDatabaseSqlConnection' -CommandType Function -ErrorAction SilentlyContinue) -or
+        -not (Get-Command -Name 'Invoke-BuildToolingSqlQuery' -CommandType Function -ErrorAction SilentlyContinue)) {
         $helperPath = Join-Path (Split-Path -Parent $PSScriptRoot) 'private\BuildToolingSql.Helpers.ps1'
         if (Test-Path -LiteralPath $helperPath -PathType Leaf) {
           . $helperPath
@@ -239,8 +240,13 @@ https://github.com/whertzing/ATAP.Utilities
     try {
       $repoRootRelative = Get-RepositoryRoot -StartPath $scriptRoot
       if ($repoRootRelative) {
-        # Convert relative path to absolute path
-        $script:repoRoot = Resolve-Path -Path (Join-Path $scriptRoot $repoRootRelative) | Select-Object -ExpandProperty Path
+        $repoRootCandidate = if ([System.IO.Path]::IsPathRooted($repoRootRelative)) {
+          $repoRootRelative
+        }
+        else {
+          Join-Path $scriptRoot $repoRootRelative
+        }
+        $script:repoRoot = Resolve-Path -Path $repoRootCandidate | Select-Object -ExpandProperty Path
       }
       else {
         $script:repoRoot = (Get-Location).Path

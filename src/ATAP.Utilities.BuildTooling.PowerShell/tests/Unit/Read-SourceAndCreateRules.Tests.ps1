@@ -3,25 +3,6 @@ BeforeAll {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
 
-  function global:Resolve-DatabaseSqlConnection {
-    param(
-      $OriginalPSBoundParameters,
-      $SqlConnection,
-      $BitwardenSecretName,
-      $DatabaseHost,
-      $InstanceName,
-      $DatabaseName,
-      $ConnectionMethod,
-      $CredentialsKey,
-      $ApplicationName,
-      [switch]$UseTrustedConnection,
-      [switch]$IntegratedSecurity,
-      $Settings
-    )
-  }
-  function global:Invoke-BuildToolingSqlQuery {
-    param($SqlConnection, $Query, $Parameters, $As)
-  }
   function global:Get-RepositoryRoot { param([string]$StartPath) (Get-Location).Path }
 
   . "$PSScriptRoot\..\..\private\BuildToolingSql.Helpers.ps1"
@@ -43,7 +24,7 @@ Returns an example value.
 }
 '@ | Set-Content -LiteralPath $script:sourceFile -Encoding UTF8
 
-    Mock -CommandName Resolve-DatabaseSqlConnection -MockWith {
+    Mock -CommandName Resolve-BuildToolingDatabaseSqlConnection -MockWith {
       [PSCustomObject]@{
         DataSource = 'mock-sql'
         Database   = 'ATAPUtilities'
@@ -62,7 +43,7 @@ Returns an example value.
 
     $result.Success | Should -BeTrue
     $result.ExtractedRules | Should -Be 1
-    Should -Invoke -CommandName Resolve-DatabaseSqlConnection -Times 0 -Exactly
+    Should -Invoke -CommandName Resolve-BuildToolingDatabaseSqlConnection -Times 0 -Exactly
     Should -Invoke -CommandName Invoke-BuildToolingSqlQuery -Times 0 -Exactly
   }
 
@@ -74,7 +55,7 @@ Returns an example value.
       -BitwardenSecretName 'rules-db'
 
     $result.Success | Should -BeTrue
-    Should -Invoke -CommandName Resolve-DatabaseSqlConnection -Times 1 -Exactly -ParameterFilter {
+    Should -Invoke -CommandName Resolve-BuildToolingDatabaseSqlConnection -Times 1 -Exactly -ParameterFilter {
       $BitwardenSecretName -eq 'rules-db'
     }
     Should -Invoke -CommandName Invoke-BuildToolingSqlQuery -Times 2 -Exactly

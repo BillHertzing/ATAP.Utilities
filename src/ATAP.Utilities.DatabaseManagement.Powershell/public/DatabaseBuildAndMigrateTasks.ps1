@@ -199,7 +199,9 @@ contents of the previous version.#>
 
 
 #>
-#we always use SQLCMD to access SQL Server
+# Legacy/deferred: this task collection intentionally keeps its original sqlcmd/bcp
+# CLI access pattern until each database-accessing scriptblock is promoted to a
+# supported cmdlet that can use Resolve-DatabaseSqlConnection and ADO.NET helpers.
 # ToDo: add test and poteitially return error if sqlcmd.exe is not found
 $SQLCmdAlias = (Get-Command bcp.exe).source
 #We use SQL Code Guard just for code analysis.
@@ -212,7 +214,7 @@ $ReportLocation = 'Documents\GitHub\'# part of path from user area to project ar
 #This must be separate from the flyway project
 Set-Alias SQLCmd $SQLCmdAlias -Scope local
 
-#This is a utility scriptblock used by the task scriptblocks
+# Legacy/deferred sqlcmd shim used only by this task-script collection.
 $GetdataFromSQLCMD = { <# a Scriptblock way of accessing SQL Server via a CLI to get JSON results without having to explicitly open a connection. it will take SQL files and queries #>
 	param ($Theargs,
 		$query, $fileBasedQuery = $null)  # $GetdataFromSQLCMD: (Don't delete this)
@@ -1413,6 +1415,9 @@ BCP must have been previously installed in the path
 Unlike many other tasks, you are unlikely to want to do this more than once for any
 database.If you did, you'd need to clear out the existing data first! It is intended
 for static scripts AKA baseline migrations.
+
+Legacy/deferred: retained bcp.exe import task. Convert this to a supported public
+cmdlet before replacing its connection behavior.
 #>
 $BulkCopyIn = {
 	param ($param1) # $BulkCopyIn (Don't delete this)
@@ -1490,6 +1495,9 @@ This script performs a bulk copy operation to get data out of a database, and
 into a suitable directory. At the moment it assumes that you wish to use a
 DATA directory at the same level as the scripts directory.
 BCP must have been previously installed in the path.
+
+Legacy/deferred: retained bcp.exe export task. Convert this to a supported public
+cmdlet before replacing its connection behavior.
 #>
 $BulkCopyOut = {
 	param ($param1) # $BulkCopyOut (Don't delete this)

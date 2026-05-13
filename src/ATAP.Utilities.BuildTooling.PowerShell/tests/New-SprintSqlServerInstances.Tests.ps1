@@ -2,6 +2,12 @@
 # Pester 5+ happy-path tests for New-SprintSqlServerInstances
 
 BeforeAll {
+  if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
+    function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
+  }
+  function Resolve-BuildToolingDatabaseSqlConnection { throw 'Resolve-BuildToolingDatabaseSqlConnection should not be called by New-SprintSqlServerInstances.' }
+  function Invoke-BuildToolingSqlQuery { throw 'Invoke-BuildToolingSqlQuery should not be called by New-SprintSqlServerInstances.' }
+
   $functionName = 'New-SprintSqlServerInstances'
   if (-not (Get-Command -Name $functionName -CommandType Function -ErrorAction SilentlyContinue)) {
     $functionPath = Join-Path $PSScriptRoot -ChildPath "../public/$functionName.ps1"
@@ -75,6 +81,14 @@ AfterAll {
 }
 
 Describe 'New-SprintSqlServerInstances — happy path' {
+  BeforeEach {
+    Mock -CommandName 'Resolve-BuildToolingDatabaseSqlConnection' -MockWith {
+      throw 'Resolve-BuildToolingDatabaseSqlConnection should not be called by New-SprintSqlServerInstances.'
+    }
+    Mock -CommandName 'Invoke-BuildToolingSqlQuery' -MockWith {
+      throw 'Invoke-BuildToolingSqlQuery should not be called by New-SprintSqlServerInstances.'
+    }
+  }
 
   It 'function exists and is loaded' {
     Get-Command -Name 'New-SprintSqlServerInstances' -CommandType Function |
@@ -144,6 +158,20 @@ Describe 'New-SprintSqlServerInstances — happy path' {
 
       # 2 instances × 2 databases = 4 Build-DatabaseWithFlyway calls
       Should -Invoke -CommandName 'Build-DatabaseWithFlyway' -Times 4 -Exactly
+    }
+
+    It 'does not require a BuildTooling SqlConnection for instance creation or Flyway build orchestration' {
+      New-SprintSqlServerInstances `
+        -InstanceNames @('Development') `
+        -Databases @('ATAPUtilities') `
+        -DatabaseHost 'localhost' `
+        -FlywayBasePath $script:flywayBase `
+        -RepositoryRoot $script:tempRepoRoot | Out-Null
+
+      Should -Invoke -CommandName 'Resolve-BuildToolingDatabaseSqlConnection' -Times 0 -Exactly
+      Should -Invoke -CommandName 'Invoke-BuildToolingSqlQuery' -Times 0 -Exactly
+      Should -Invoke -CommandName 'Install-SqlServerInstance' -Times 1 -Exactly
+      Should -Invoke -CommandName 'Build-DatabaseWithFlyway' -Times 1 -Exactly
     }
 
     It 'passes the correct DatabaseName to every Build-DatabaseWithFlyway call' {

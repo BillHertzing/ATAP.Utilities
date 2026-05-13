@@ -240,15 +240,27 @@ SprintStartAgent / SprintEndAgent PowerShell glob:
 | `IntegrationSqlInstance`                           | `utat022\Integration`                                           |
 | `QASqlInstance`                                    | `utat022\QA`                                                    |
 | `ProductionSqlInstance`                            | `utat022\Production`                                            |
+| `IntegrationDatabaseBitwardenSecretName`           | `dbConnectionString-AceCommander-utat022-Integration`           |
 | `NuGetFeedName_Experimental`                       | `nuget-experimental`                                            |
 | `NuGetFeedUrl_Experimental`                        | `http://localhost:50000/nuget/nuget-experimental/v3/index.json` |
 | `PowerShellGetFeedName_Experimental`               | `powershellget-experimental`                                    |
 | _(and one URL + one name pair per remaining tier)_ |                                                                 |
 
-20 feed name/URL variables + 3 SQL instance variables = 23 stable variables
-per BuildMaster application (`AceCommander`, `ATAP.Utilities`).
+The `IntegrationDatabaseBitwardenSecretName` value follows §4.2 and is the
+ReleaseBundle Integration-stage Flyway rehearsal connection contract. BuildMaster
+passes this name to `Invoke-FlywayRehearsal -BitwardenSecretName`; it does not
+pass `DatabaseHost` / `SqlInstance` for that rehearsal.
 
-**Set cmdlet:** `Set-BuildMasterStableVariables`
+20 feed name/URL variables + 3 SQL instance variables + 1 ReleaseBundle
+Integration DB secret-name variable = 24 stable variables per BuildMaster
+application that runs the ReleaseBundle plan (`AceCommander-ReleaseBundle`,
+`ATAP.Utilities-ReleaseBundle`). Non-ReleaseBundle applications may omit the DB
+secret-name variable.
+
+**Set cmdlet:** `Set-BuildMasterStableVariables` for feed and SQL-instance
+variables; set `IntegrationDatabaseBitwardenSecretName` during ReleaseBundle
+application onboarding until that onboarding automation owns the secret-name
+variable too.
 
 ---
 
@@ -264,4 +276,4 @@ per BuildMaster application (`AceCommander`, `ATAP.Utilities`).
 | Bitwarden — permanent   | `dbConnectionString-<DB>-<Host>-<Tier>`          | ❌          | `New-PermanentBitwardenSecrets`         |
 | Worktree / branch       | `<repo>-wt-<N>-Sprint-<NNNN>-work-items`         | ✅          | `New-SprintStage1` / `New-SprintStage2` |
 | BuildMaster sprint vars | `SprintNumber`, `UserName`, `SprintBranchName`   | ✅          | `Set-BuildMasterSprintVariables`        |
-| BuildMaster stable vars | feed names/URLs, SQL instances                   | ❌          | `Set-BuildMasterStableVariables`        |
+| BuildMaster stable vars | feed names/URLs, SQL instances, ReleaseBundle Integration DB secret name | ❌          | `Set-BuildMasterStableVariables` + ReleaseBundle app onboarding |

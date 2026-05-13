@@ -153,7 +153,8 @@ function Sync-RulesToCSV {
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
-    if (-not (Get-Command -Name 'Resolve-BuildToolingDatabaseSqlConnection' -CommandType Function -ErrorAction SilentlyContinue)) {
+    if (-not (Get-Command -Name 'Resolve-BuildToolingDatabaseSqlConnection' -CommandType Function -ErrorAction SilentlyContinue) -or
+      -not (Get-Command -Name 'Invoke-BuildToolingSqlQuery' -CommandType Function -ErrorAction SilentlyContinue)) {
       $helperPath = Join-Path (Split-Path -Parent $PSScriptRoot) 'private\BuildToolingSql.Helpers.ps1'
       if (Test-Path -LiteralPath $helperPath -PathType Leaf) {
         . $helperPath

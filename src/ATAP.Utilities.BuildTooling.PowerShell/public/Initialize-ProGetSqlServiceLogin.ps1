@@ -18,7 +18,7 @@ Database name to grant access to.
 Windows service account to grant access for.
 
 .PARAMETER Encrypt
-Encryption mode used by Invoke-Sqlcmd.
+Encryption mode passed through the shared SQL connection resolver.
 
 .PARAMETER TrustServerCertificate
 When enabled, trusts the SQL Server certificate without validating its issuing CA.
@@ -98,7 +98,8 @@ https://docs.inedo.com/docs/installation/configuration-files
   $mn = 'ATAP.IAC'
 
   try {
-    if (-not (Get-Command -Name 'Resolve-BuildToolingDatabaseSqlConnection' -CommandType Function -ErrorAction SilentlyContinue)) {
+    if (-not (Get-Command -Name 'Resolve-BuildToolingDatabaseSqlConnection' -CommandType Function -ErrorAction SilentlyContinue) -or
+      -not (Get-Command -Name 'Invoke-BuildToolingSqlQuery' -CommandType Function -ErrorAction SilentlyContinue)) {
       $helperPath = Join-Path (Split-Path -Parent $PSScriptRoot) 'private\BuildToolingSql.Helpers.ps1'
       if (Test-Path -LiteralPath $helperPath -PathType Leaf) {
         . $helperPath

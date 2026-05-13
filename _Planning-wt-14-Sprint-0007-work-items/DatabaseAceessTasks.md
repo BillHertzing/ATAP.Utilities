@@ -79,10 +79,12 @@ These files directly access databases or SQL Server, but they live under `public
 | --- | --- | --- |
 | `src/ATAP.Utilities.DatabaseManagement.Powershell/public/Resolve-DbInstanceName.ps1` | Name helper | Resolves instance names only |
 | `src/ATAP.Utilities.DatabaseManagement.Powershell/public/Resolve-DatabaseSqlConnection.ps1` | New resolver | This is the shared validation implementation |
+| `src/ATAP.Utilities.DatabaseManagement.Powershell/private/DatabaseSqlCommand.Helpers.ps1` | Supported SQL command helper | Executes ADO.NET commands only after a caller supplies a resolved `SqlConnection` |
 | `src/ATAP.Utilities.DatabaseManagement.Powershell/public/New-ConnectionStringBuilderFromDbaTools.ps1` | Connection string helper | Builds connection string builders and retrieves secrets, but does not open SQL connections |
 | `src/ATAP.Utilities.DatabaseManagement.Powershell/public/New-CobianSqlJobs.ps1` | Job config helper | Creates Cobian backup jobs, but does not connect to SQL Server itself |
 | `src/ATAP.Utilities.DatabaseManagement.Powershell/public/Get-DatabaseCredentialsKey.ps1` | Secret-name helper | Computes/fetches credential key names |
 | `src/ATAP.Utilities.DatabaseManagement.Powershell/public/Example-RuleExport.ps1` | Example wrapper | Demonstrates export usage; refresh only if examples are updated |
+| `src/ATAP.Utilities.BuildTooling.PowerShell/private/BuildToolingSql.Helpers.ps1` | Supported BuildTooling SQL helper | Delegates connection validation to `Resolve-DatabaseSqlConnection` and wraps query execution |
 | `src/ATAP.Utilities.BuildTooling.PowerShell/public/New-OverviewSprintWorkspace.ps1` | Workspace helper | No SQL Server access |
 | `src/ATAP.Utilities.BuildTooling.PowerShell/public/New-SprintBitwardenSecrets.ps1` | Bitwarden helper | Creates secrets only |
 | `src/ATAP.Utilities.BuildTooling.PowerShell/public/New-SprintStage2.ps1` | Orchestrator | Calls child helpers; no direct SQL call in this file |
@@ -104,6 +106,8 @@ Files:
 
 - `src/ATAP.Utilities.DatabaseManagement.Powershell/public/Resolve-DatabaseSqlConnection.ps1`
 - `src/ATAP.Utilities.DatabaseManagement.Powershell/private/DatabaseSqlConnection.Helpers.ps1`
+- `src/ATAP.Utilities.DatabaseManagement.Powershell/private/DatabaseSqlCommand.Helpers.ps1`
+- `src/ATAP.Utilities.BuildTooling.PowerShell/private/BuildToolingSql.Helpers.ps1`
 - `_Planning-wt-14-Sprint-0007-work-items/powershellscriptsaccessingdatabases.md`
 
 Steps:
@@ -112,11 +116,13 @@ Steps:
 2. Confirm `Resolve-DatabaseSqlConnection` is exported by `ATAP.Utilities.DatabaseManagement.Powershell.psd1`.
 3. Run or inspect the existing unit tests for `Resolve-DatabaseSqlConnection`.
 4. Publish a short note to the swarm with the exact parameter-set names to use.
+5. Confirm shared SQL command helpers are loaded by their owning modules or consuming entry points; callers should not manually dot-source private helper files.
 
 Acceptance criteria:
 
 - Everyone uses the same parameter names and parameter-set names.
 - No per-cmdlet copy of Bitwarden or connection-string validation is introduced.
+- Shared helper files are treated as supported helper surfaces, not standalone user-facing rewrite targets.
 
 ### Task 1 - Simple Create Database Cmdlets
 
@@ -496,14 +502,16 @@ Batch 3 is cleanup and governance:
 
 ## Do Not Rewrite In This Pass
 
-These files were mentioned in the source planning document but do not directly open SQL Server connections or access database data:
+These files were mentioned in the source planning document or in the Stream P changed-file list, but they are not standalone user-facing rewrite targets. They either do not directly open SQL Server connections or they are shared helpers already covered by Task 0/P2:
 
 - `src/ATAP.Utilities.DatabaseManagement.Powershell/public/Resolve-DbInstanceName.ps1`
 - `src/ATAP.Utilities.DatabaseManagement.Powershell/public/Resolve-DatabaseSqlConnection.ps1`
+- `src/ATAP.Utilities.DatabaseManagement.Powershell/private/DatabaseSqlCommand.Helpers.ps1`
 - `src/ATAP.Utilities.DatabaseManagement.Powershell/public/New-ConnectionStringBuilderFromDbaTools.ps1`
 - `src/ATAP.Utilities.DatabaseManagement.Powershell/public/New-CobianSqlJobs.ps1`
 - `src/ATAP.Utilities.DatabaseManagement.Powershell/public/Get-DatabaseCredentialsKey.ps1`
 - `src/ATAP.Utilities.DatabaseManagement.Powershell/public/Example-RuleExport.ps1`
+- `src/ATAP.Utilities.BuildTooling.PowerShell/private/BuildToolingSql.Helpers.ps1`
 - `src/ATAP.Utilities.BuildTooling.PowerShell/public/New-OverviewSprintWorkspace.ps1`
 - `src/ATAP.Utilities.BuildTooling.PowerShell/public/New-SprintBitwardenSecrets.ps1`
 - `src/ATAP.Utilities.BuildTooling.PowerShell/public/New-SprintStage2.ps1`
@@ -512,6 +520,22 @@ These files were mentioned in the source planning document but do not directly o
 - `src/ATAP.Utilities.BuildTooling.PowerShell/public/New-PermanentBitwardenSecrets.ps1`
 - `src/ATAP.Utilities.BuildTooling.PowerShell/private/New-SprintBitwardenConnectionStrings.ps1`
 - `src/ATAP.Utilities.BuildTooling.PowerShell/private/Find-SqlServerSetupExe.ps1`
+
+## Stream P P1 Frozen Changed-File Inventory
+
+This table freezes the files changed in the "Add database connection mode" conversation. It is inventory only; the V3 plan status remains owned by the lead.
+
+| Changed file | Frozen status | DatabaseAceess task | V3 Stream P row |
+| --- | --- | --- | --- |
+| `src/ATAP.Utilities.DatabaseManagement.Powershell/private/DatabaseSqlCommand.Helpers.ps1` | Supported helper | Task 0 - Shared Preparation | P2 - Verify shared helper and module boundaries |
+| `src/ATAP.Utilities.BuildTooling.PowerShell/private/BuildToolingSql.Helpers.ps1` | Supported helper | Task 0 - Shared Preparation | P2 - Verify shared helper and module boundaries |
+| `src/ATAP.Utilities.BuildTooling.PowerShell/tests/Unit/Sync-RulesToCSV.Tests.ps1` | Supported unit test | Task 7 - Rule Export And CSV Sync | P4 - Close BuildTooling database call sites |
+| `src/ATAP.Utilities.DatabaseManagement.Powershell/public/DatabaseBuildAndMigrateTasks.ps1` | Intentionally legacy task collection | Task 12 - DatabaseBuildAndMigrateTasks Special Handling | P3 - Close supported DatabaseManagement entry points |
+| `src/ATAP.Utilities.DatabaseManagement.Powershell/public/Install-SqlServerInstance.ps1` | Intentionally server-lifecycle-only | Task 11 - Install-SqlServerInstance Special Handling | P3 - Close supported DatabaseManagement entry points |
+| `src/ATAP.Utilities.DatabaseManagement.Powershell/public/Invoke-SqlServerBackup.ps1` | Supported entry point with intentional dbatools backup behavior | Task 9 - Backup And ProGet Login | P3 - Close supported DatabaseManagement entry points |
+| `src/ATAP.Utilities.DatabaseManagement.Powershell/public/Export-RuleToTextFile.ps1` | Supported entry point | Task 7 - Rule Export And CSV Sync | P3 - Close supported DatabaseManagement entry points |
+| `src/ATAP.Utilities.DatabaseManagement.Powershell/tests/Unit/Export-RuleToTextFile.Tests.ps1` | Supported unit test | Task 7 - Rule Export And CSV Sync | P3 - Close supported DatabaseManagement entry points |
+| `_Planning-wt-14-Sprint-0007-work-items/DatabaseAceessTasks.md` | P1 inventory document | P1 inventory freeze in this section | P1 - Freeze the affected-task inventory |
 
 ## Implementation Status
 
@@ -528,3 +552,10 @@ Intentional exceptions:
 - `DatabaseBuildAndMigrateTasks.ps1` remains a legacy Flyway task-script collection with direct `sqlcmd`/`bcp` calls documented at the top of the file. It should be replaced task-by-task with modern public cmdlets before any deeper rewrite.
 - `Invoke-SqlServerBackup.ps1` still calls `Backup-DbaDatabase` after validating connection input through `Resolve-DatabaseSqlConnection`, because the task explicitly preserved dbatools backup behavior.
 - Sprint instance orchestration still uses dbatools for multi-instance discovery/removal because a single open `SqlConnection` does not model creating/removing several SQL Server instances.
+
+Final Stream P verification on 2026-05-13:
+
+- Focused Pester verification passed: `Invoke-Pester -Path @("src/ATAP.Utilities.DatabaseManagement.Powershell/tests/Unit","src/ATAP.Utilities.BuildTooling.PowerShell/tests/Unit/Initialize-ProGetSqlServiceLogin.Tests.ps1","src/ATAP.Utilities.BuildTooling.PowerShell/tests/Unit/Read-SourceAndCreateRules.Tests.ps1","src/ATAP.Utilities.BuildTooling.PowerShell/tests/Unit/Sync-RulesToCSV.Tests.ps1","src/ATAP.Utilities.BuildTooling.PowerShell/tests/Unit/Remove-SprintSqlServerInstances.Tests.ps1","src/ATAP.Utilities.BuildTooling.PowerShell/tests/New-SprintSqlServerInstances.Tests.ps1") -Output Detailed` reported 78 passed, 0 failed.
+- Both affected modules import successfully and expose the resolver/rehearsal/rule-export and BuildTooling DB call-site commands.
+- Remaining direct-call search hits are intentional: `.Open()` lives inside `DatabaseSqlConnection.Helpers.ps1`; `DatabaseBuildAndMigrateTasks.ps1` is a documented legacy/deferred task collection; `Invoke-SqlServerBackup.ps1` intentionally keeps dbatools `Backup-DbaDatabase`; `New-SprintSqlServerInstances.ps1` and `Remove-SprintSqlServerInstances.ps1` intentionally keep dbatools server-lifecycle discovery/removal; `Example-RuleExport.ps1` is an ancillary example wrapper; `public/Obsolete/*` remains deferred.
+- Live SQL integration checks were not run in this pass; the done declaration covers unit-testable behavior, module import, plan/doc consistency, and intentional exception documentation.

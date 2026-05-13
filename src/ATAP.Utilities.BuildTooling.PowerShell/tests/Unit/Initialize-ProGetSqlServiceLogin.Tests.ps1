@@ -3,33 +3,13 @@ BeforeAll {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
 
-  function global:Resolve-DatabaseSqlConnection {
-    param(
-      $OriginalPSBoundParameters,
-      $SqlConnection,
-      $BitwardenSecretName,
-      $DatabaseHost,
-      $InstanceName,
-      $DatabaseName,
-      $ConnectionMethod,
-      $CredentialsKey,
-      $ApplicationName,
-      [switch]$UseTrustedConnection,
-      [switch]$IntegratedSecurity,
-      $Settings
-    )
-  }
-  function global:Invoke-BuildToolingSqlQuery {
-    param($SqlConnection, $Query, $Parameters, $As)
-  }
-
   . "$PSScriptRoot\..\..\private\BuildToolingSql.Helpers.ps1"
   . "$PSScriptRoot\..\..\public\Initialize-ProGetSqlServiceLogin.ps1"
 }
 
 Describe 'Initialize-ProGetSqlServiceLogin [public]' {
   BeforeEach {
-    Mock -CommandName Resolve-DatabaseSqlConnection -MockWith {
+    Mock -CommandName Resolve-BuildToolingDatabaseSqlConnection -MockWith {
       [PSCustomObject]@{
         DataSource = 'mock-sql'
         Database   = 'master'
@@ -46,7 +26,7 @@ Describe 'Initialize-ProGetSqlServiceLogin [public]' {
       -ServiceAccount 'NT SERVICE\INEDOPROGETSVC' `
       -Confirm:$false | Out-Null
 
-    Should -Invoke -CommandName Resolve-DatabaseSqlConnection -Times 1 -Exactly -ParameterFilter {
+    Should -Invoke -CommandName Resolve-BuildToolingDatabaseSqlConnection -Times 1 -Exactly -ParameterFilter {
       $BitwardenSecretName -eq 'proget-sql' -and
       $DatabaseName -eq 'master'
     }
@@ -64,7 +44,7 @@ Describe 'Initialize-ProGetSqlServiceLogin [public]' {
       -DatabaseName 'ProGet' `
       -WhatIf | Out-Null
 
-    Should -Invoke -CommandName Resolve-DatabaseSqlConnection -Times 1 -Exactly
+    Should -Invoke -CommandName Resolve-BuildToolingDatabaseSqlConnection -Times 1 -Exactly
     Should -Invoke -CommandName Invoke-BuildToolingSqlQuery -Times 0 -Exactly
   }
 }

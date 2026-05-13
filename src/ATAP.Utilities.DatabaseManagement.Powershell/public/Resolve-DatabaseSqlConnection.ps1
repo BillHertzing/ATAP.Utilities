@@ -92,6 +92,13 @@ function Resolve-DatabaseSqlConnection {
     [string] $UseTrustedConnectionDottedPath = 'UseTrustedConnection'
   )
 
+  begin {
+    if (-not (Get-Command -Name 'New-DatabaseConnectionParameterMap' -CommandType Function -ErrorAction SilentlyContinue)) {
+      $privateDir = Join-Path -Path (Split-Path -Parent $PSScriptRoot) -ChildPath 'private'
+      . (Join-Path -Path $privateDir -ChildPath 'DatabaseSqlConnection.Helpers.ps1')
+    }
+  }
+
   process {
     $sourceBoundParameters = if ($OriginalPSBoundParameters -and $OriginalPSBoundParameters.Count -gt 0) {
       $OriginalPSBoundParameters

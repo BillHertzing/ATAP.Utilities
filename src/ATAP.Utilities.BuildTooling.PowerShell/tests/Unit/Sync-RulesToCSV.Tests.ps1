@@ -3,25 +3,6 @@ BeforeAll {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
 
-  function global:Resolve-DatabaseSqlConnection {
-    param(
-      $OriginalPSBoundParameters,
-      $SqlConnection,
-      $BitwardenSecretName,
-      $DatabaseHost,
-      $InstanceName,
-      $DatabaseName,
-      $ConnectionMethod,
-      $CredentialsKey,
-      $ApplicationName,
-      [switch]$UseTrustedConnection,
-      [switch]$IntegratedSecurity,
-      $Settings
-    )
-  }
-  function global:Invoke-BuildToolingSqlQuery {
-    param($SqlConnection, $Query, $Parameters, $As)
-  }
   function global:Get-RepositoryRoot { param([string]$StartPath) (Get-Location).Path }
 
   function New-TestDataTable {
@@ -56,7 +37,7 @@ Describe 'Sync-RulesToCSV [public]' {
     New-Item -ItemType Directory -Path $script:outputPath -Force | Out-Null
     $script:dataTableCall = 0
 
-    Mock -CommandName Resolve-DatabaseSqlConnection -MockWith {
+    Mock -CommandName Resolve-BuildToolingDatabaseSqlConnection -MockWith {
       [PSCustomObject]@{
         DataSource = 'mock-sql'
         Database   = 'ATAPUtilities'
@@ -106,7 +87,7 @@ Describe 'Sync-RulesToCSV [public]' {
       -Force `
       -Confirm:$false
 
-    Should -Invoke -CommandName Resolve-DatabaseSqlConnection -Times 1 -Exactly -ParameterFilter {
+    Should -Invoke -CommandName Resolve-BuildToolingDatabaseSqlConnection -Times 1 -Exactly -ParameterFilter {
       $BitwardenSecretName -eq 'rules-db'
     }
 

@@ -2,7 +2,7 @@
 
 **Scope:** The catalog of durable BuildMaster pipelines, their relationship to
 ProGet feeds, the PowerShell automation surface that drives them, and the
-ProGet-webhook integration that triggers them.
+ProGet polling integration that triggers them.
 **Audience:** CI engineers maintaining BuildMaster; anyone who needs to
 understand which pipeline runs in which scenario; anyone wiring a new
 component into the ecosystem.
@@ -22,11 +22,11 @@ diagrams scattered across the C# and PowerShell pipeline docs.
 
 ## 1. Three durable pipelines
 
-| Pipeline name             | Artifact family              | Tier feeds                                   | Trigger                                   |
-| ------------------------- | ---------------------------- | -------------------------------------------- | ----------------------------------------- |
-| `CSharp-Package-Pipeline` | C# NuGet packages            | `nuget-experimental` → `nuget-stable`        | ProGet webhook on `nuget-experimental`; manual create-build. |
-| `PowerShell-Module-Pipeline` | PowerShellGet modules     | `PowershellGet-experimental` → `PowershellGet-stable` | ProGet webhook on `PowershellGet-experimental`; manual create-build. |
-| `Release-Bundle-Pipeline` | Release Bundles (Universal Packages) | `releasebundle-experimental` → `releasebundle-production` + Distribution | ProGet webhook on `releasebundle-experimental`; manual create-build at release-tag time. |
+| Pipeline name                | Artifact family                      | Tier feeds                                                               | Trigger                                                                                  |
+| ---------------------------- | ------------------------------------ | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| `CSharp-Package-Pipeline`    | C# NuGet packages                    | `nuget-experimental` → `nuget-stable`                                    | ProGet polling on `nuget-experimental`; manual create-build.                             |
+| `PowerShell-Module-Pipeline` | PowerShellGet modules                | `PowershellGet-experimental` → `PowershellGet-stable`                    | ProGet polling on `PowershellGet-experimental`; manual create-build.                     |
+| `Release-Bundle-Pipeline`    | Release Bundles (Universal Packages) | `releasebundle-experimental` → `releasebundle-production` + Distribution | ProGet polling on `releasebundle-experimental`; manual create-build at release-tag time. |
 
 These are the **only** pipelines. There is no per-project pipeline, no
 per-sprint pipeline, no per-feature pipeline. New components reuse the
@@ -58,14 +58,14 @@ Each shipping component has a BuildMaster Application that **routes
 through one of the three pipelines**. Variables on the Application
 parameterize the pipeline.
 
-| Application                          | Routes through                | Notes                                                       |
-| ------------------------------------ | ----------------------------- | ----------------------------------------------------------- |
-| `ATAP.Utilities-CSharp`              | `CSharp-Package-Pipeline`     | All ATAP.Utilities NuGet packages.                          |
-| `AceCommander-CSharp`                | `CSharp-Package-Pipeline`     | AceCommander's library packages (excluding the bundle).     |
-| `ATAP.Utilities.BuildTooling.PowerShell-PSModule` | `PowerShell-Module-Pipeline` | The build-tooling module itself.                  |
-| `ATAP.Utilities.FileIO.PowerShell-PSModule`       | `PowerShell-Module-Pipeline` | One application per first-party module.                    |
-| `…` (one app per PowerShell module)  | `PowerShell-Module-Pipeline`  |                                                             |
-| `AceCommander-ReleaseBundle`         | `Release-Bundle-Pipeline`     | The customer-facing AceCommander installer.                 |
+| Application                                       | Routes through               | Notes                                                   |
+| ------------------------------------------------- | ---------------------------- | ------------------------------------------------------- |
+| `ATAP.Utilities-CSharp`                           | `CSharp-Package-Pipeline`    | All ATAP.Utilities NuGet packages.                      |
+| `AceCommander-CSharp`                             | `CSharp-Package-Pipeline`    | AceCommander's library packages (excluding the bundle). |
+| `ATAP.Utilities.BuildTooling.PowerShell-PSModule` | `PowerShell-Module-Pipeline` | The build-tooling module itself.                        |
+| `ATAP.Utilities.FileIO.PowerShell-PSModule`       | `PowerShell-Module-Pipeline` | One application per first-party module.                 |
+| `…` (one app per PowerShell module)               | `PowerShell-Module-Pipeline` |                                                         |
+| `AceCommander-ReleaseBundle`                      | `Release-Bundle-Pipeline`    | The customer-facing AceCommander installer.             |
 
 The "one app per module" rule for PowerShell is a convenience for
 BuildMaster's UI (each app shows the latest build of its module on its own
@@ -84,24 +84,24 @@ workstation.
 
 > Cmdlets marked `spec` are referenced by the strategy docs and the BuildMaster pipelines but have not yet been implemented in `ATAP.Utilities.BuildTooling.PowerShell`. Cmdlets marked `partial` have a sibling implementation under a different (legacy or decomposed) name. The Status column below was populated on 2026-05-08 by enumerating `*.ps1` files in the module's `public/` and `private/` folders, then **refined on 2026-05-09** from a developer workstation by reading the module manifest's `FunctionsToExport` list and inspecting the body of every candidate sibling file. It was updated on 2026-05-11 for the Stream I Release Bundle cmdlets.
 
-| Cmdlet                            | Used by                          | Role                                                                                                | Status |
-| --------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------- | ------ |
-| `Get-BuildContext`                | All three pipelines              | Resolve branch type, application, version, tier from environment.                                   | implemented |
-| `New-ReleaseManifest`             | Release-Bundle pipeline          | Generate `manifest.json` for a release tag.                                                         | implemented |
-| `New-ReleaseBundle`               | Release-Bundle pipeline          | Assemble the bundle directory tree and pack to `.upack`.                                            | implemented |
-| `Get-DeployedReleaseManifest`     | Release-Bundle support           | Read and validate a deployed bundle's `manifest.json`.                                              | implemented |
-| `Compare-ReleaseManifest`         | Release-Bundle support           | Summarize package, migration, and checksum differences between two manifests.                        | implemented |
-| `Publish-NuGetPackageToProGet`    | C# pipeline                      | Push a `.nupkg` to a ProGet NuGet feed (single source of truth for the push command).               | implemented |
-| `New-PSModuleNupkg`               | PowerShell pipeline              | Pack a PowerShell module folder into a `.nupkg` without publishing it.                              | implemented |
-| `Publish-PSModuleToProGet`        | PowerShell pipeline              | Push a PowerShell `.nupkg` to a ProGet PowerShellGet feed.                                          | implemented |
-| `Publish-UniversalPackageToProGet`| Release-Bundle pipeline          | Push a `.upack` to a ProGet Universal feed.                                                         | implemented |
-| `Promote-ProGetPackage`           | All three pipelines              | Call ProGet's promotion API to copy a package between feeds. Idempotent — no-op if already promoted. | implemented |
-| `New-BuildMasterRelease`          | All three pipelines              | Create / update a BuildMaster release record for a specific version.                                | implemented |
-| `Start-BuildMasterPipeline`       | Trigger handlers                 | Trigger a release's pipeline run via BuildMaster API.                                               | implemented |
-| `Approve-BuildMasterStage`        | All three pipelines              | Mark a tier gate passed.                                                                            | implemented |
-| `Invoke-FlywayRehearsal`          | Release-Bundle pipeline          | Apply bundled migrations in a per-run ephemeral rehearsal DB and capture the log.                    | implemented |
-| `Publish-ChocolateyRelease`       | Release-Bundle pipeline (Distribution stage) | Push the Chocolatey wrapper package.                                                    | spec   |
-| `Update-WinGetManifestSource`     | Release-Bundle pipeline (Distribution stage) | Update the WinGet manifest set.                                                         | spec   |
+| Cmdlet                             | Used by                                      | Role                                                                                                 | Status      |
+| ---------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ----------- |
+| `Get-BuildContext`                 | All three pipelines                          | Resolve branch type, application, version, tier from environment.                                    | implemented |
+| `New-ReleaseManifest`              | Release-Bundle pipeline                      | Generate `manifest.json` for a release tag.                                                          | implemented |
+| `New-ReleaseBundle`                | Release-Bundle pipeline                      | Assemble the bundle directory tree and pack to `.upack`.                                             | implemented |
+| `Get-DeployedReleaseManifest`      | Release-Bundle support                       | Read and validate a deployed bundle's `manifest.json`.                                               | implemented |
+| `Compare-ReleaseManifest`          | Release-Bundle support                       | Summarize package, migration, and checksum differences between two manifests.                        | implemented |
+| `Publish-NuGetPackageToProGet`     | C# pipeline                                  | Push a `.nupkg` to a ProGet NuGet feed (single source of truth for the push command).                | implemented |
+| `New-PSModuleNupkg`                | PowerShell pipeline                          | Pack a PowerShell module folder into a `.nupkg` without publishing it.                               | implemented |
+| `Publish-PSModuleToProGet`         | PowerShell pipeline                          | Push a PowerShell `.nupkg` to a ProGet PowerShellGet feed.                                           | implemented |
+| `Publish-UniversalPackageToProGet` | Release-Bundle pipeline                      | Push a `.upack` to a ProGet Universal feed.                                                          | implemented |
+| `Promote-ProGetPackage`            | All three pipelines                          | Call ProGet's promotion API to copy a package between feeds. Idempotent — no-op if already promoted. | implemented |
+| `New-BuildMasterRelease`           | All three pipelines                          | Create / update a BuildMaster release record for a specific version.                                 | implemented |
+| `Start-BuildMasterPipeline`        | Polling task                                 | Trigger a release's pipeline run via BuildMaster API.                                                | implemented |
+| `Approve-BuildMasterStage`         | All three pipelines                          | Mark a tier gate passed.                                                                             | implemented |
+| `Invoke-FlywayRehearsal`           | Release-Bundle pipeline                      | Apply bundled migrations in a per-run ephemeral rehearsal DB and capture the log.                    | implemented |
+| `Publish-ChocolateyRelease`        | Release-Bundle pipeline (Distribution stage) | Push the Chocolatey wrapper package.                                                                 | spec        |
+| `Update-WinGetManifestSource`      | Release-Bundle pipeline (Distribution stage) | Update the WinGet manifest set.                                                                      | spec        |
 
 > **Audit-defect resolved (2026-05-11).** `public/Publish-PSModuleToProGetFeed.ps1` now defines `Publish-PSModuleToProGetFeed`; the unused public `Get-PSModuleFeedUri` helper was removed while Stream G introduced the new `Publish-PSModuleToProGet` wrapper.
 
@@ -162,64 +162,87 @@ and promote**, not to rebuild.
 
 ---
 
-## 6. ProGet webhook integration
+## 6. ProGet polling integration
 
-ProGet is the event source. BuildMaster is the automation engine.
-Webhooks are the bridge.
+ProGet is the package source. A polling task is the event detector.
+BuildMaster is the automation engine.
 
-### 6.1 What ProGet sends
+Polling is the baseline integration because ProGet Free does not provide
+custom package-event callbacks. The poller runs on a controlled host,
+queries ProGet at a fixed interval, normalizes newly detected packages,
+and calls BuildMaster APIs to create or start the matching release.
 
-ProGet's "Notifications & Webhooks" feature sends a custom HTTP POST to a
-BuildMaster API endpoint when a configured event fires. Configured events:
+### 6.1 What the poller queries
 
-- `package-added` on `nuget-experimental` → triggers C# pipeline.
-- `package-added` on `PowershellGet-experimental` → triggers PowerShell pipeline.
-- `package-added` on `releasebundle-experimental` → triggers Release Bundle pipeline.
-- `package-promoted` on any feed → updates BuildMaster release-record metadata
-  (no new pipeline run).
+The poller checks the Experimental feed for each durable pipeline:
 
-### 6.2 Webhook payload
+- `nuget-experimental` → triggers C# pipeline.
+- `PowershellGet-experimental` → triggers PowerShell pipeline.
+- `releasebundle-experimental` → triggers Release Bundle pipeline.
 
-ProGet supports OtterScript variable substitution in the webhook payload:
+Promotions between later feeds are not new-build triggers. Promotion
+metadata can be reconciled by the poller or by the pipeline stage that
+performs the promotion, but it must not create a second BuildMaster run.
+
+### 6.2 Polling event record
+
+For each package version not yet handed to BuildMaster, the poller
+normalizes the ProGet response into a stable event record:
 
 ```json
 {
-  "applicationName":  "$PackageName",
-  "releaseNumber":    "$PackageVersion",
-  "feedName":         "$FeedName",
-  "reason":           "$PackageName $PackageVersion pushed to $FeedName"
+  "source": "ProGetPolling",
+  "applicationName": "ATAP.Utilities-CSharp",
+  "packageName": "ATAP.Utilities",
+  "packageVersion": "0.1.0-Sprint.142",
+  "feedName": "nuget-experimental",
+  "packageType": "nuget",
+  "detectedUtc": "2026-05-12T14:30:00Z",
+  "reason": "ATAP.Utilities 0.1.0-Sprint.142 detected in nuget-experimental"
 }
 ```
 
-`$PackageName`, `$PackageVersion`, `$FeedName` are ProGet-side variables
-resolved at fire time.
+`feedName`, `packageName`, and `packageVersion` come from ProGet.
+`applicationName` is resolved from the feed/package-to-Application map
+recorded in the BuildMaster configuration runbook.
 
-### 6.3 What BuildMaster does
+### 6.3 What the poller does
 
-BuildMaster receives the POST at
-`https://buildmaster.example.com/api/releases/builds/import` (or an
-equivalent CI endpoint). It:
+The poller:
 
-1. Parses the JSON.
-2. Looks up which Application matches `applicationName`.
-3. Either:
-   - Creates a new release/build for that application + version, or
-   - Attaches the package to an existing release as an artifact.
-4. Triggers the appropriate pipeline (C#, PowerShell, or Release Bundle)
-   based on the `feedName` prefix.
+1. Reads the configured ProGet base URL, API key, BuildMaster base URL,
+   BuildMaster API key, feed list, feed/package-to-Application map, and
+   state-file path.
+2. Queries ProGet package-list APIs for each Experimental feed.
+3. Compares each `(feedName, packageName, packageVersion)` tuple against
+   durable polling state.
+4. Calls `New-BuildMasterRelease` for the mapped Application and version.
+5. Calls `Start-BuildMasterPipeline` for the same Application and version.
+6. Marks the tuple consumed only after the BuildMaster calls succeed.
 
-If no Application matches `applicationName` exactly, BuildMaster routes
-the webhook to a "proxy" application whose first plan inspects the
-payload and decides how to handle it.
+The state file must be durable across restarts and protected from casual
+edits; use a host-local operations path such as
+`C:\ProgramData\ATAP.Utilities\BuildMaster\proget-polling-state.json` or a
+runbook-approved equivalent. If a BuildMaster call fails, the tuple stays
+unconsumed so the next poll can retry.
 
-### 6.4 Edition note
+### 6.4 Scheduling, idempotency, and security
 
-ProGet Free has limitations around custom webhooks (it's a licensed
-feature in some configurations). Confirm the running ProGet edition
-supports custom-webhook payloads before relying on this integration. If
-custom webhooks aren't available, fall back to a PowerShell scheduled
-task that polls ProGet's `/api/packages/list` endpoint and calls
-`Start-BuildMasterPipeline` on new arrivals.
+The default polling interval is 60 seconds unless the operations runbook
+chooses a slower interval for the host. The polling task can be a Windows
+Scheduled Task, a BuildMaster recurring job, or another controlled
+operations runner, but it must have exactly one active writer for the
+state file.
+
+The integration is idempotent at the `(feedName, packageName,
+packageVersion)` level. Existing BuildMaster release records are updated
+or reused; a package version that has already triggered a run is not
+started again unless the state entry is intentionally removed during a
+documented replay.
+
+No inbound endpoint is required. API keys are stored in the task runner's
+credential store or environment and are not written to the polling state
+file, package metadata, or runbook examples.
 
 ---
 
@@ -246,16 +269,16 @@ tier."
 
 (Reproduced from [Immutable-Build-Strategy.md §8](Immutable-Build-Strategy.md#8-branch-behavior-at-sprint--feature-boundaries) for convenience.)
 
-| Boundary                          | Pipelines | Releases / metadata                                                          |
-| --------------------------------- | --------- | ---------------------------------------------------------------------------- |
-| Feature start                     | None      | BuildMaster creates a **new Release scoped to `$FeatureSlug`** (distinct from the trunk Release). `$FeatureSlug` is computed from the branch name per E-DEC-01 (PascalCase, ≤16 chars, derived from the `feature/` suffix). The first Experimental build produces `0.1.0-<FeatureSlug>.1`. Feature artifacts share the trunk feeds; the prerelease suffix provides isolation. |
-| Feature in progress (each sprint) | None      | Feature artifacts are promoted through **all five tiers** under the feature suffix (`0.1.0-<FeatureSlug>.NNN`) using `Promote-ProGetPackage`. The **QA gate is required before merge to stable** — feature artifacts may be promoted to QA, but **no Production promotion** of feature artifacts is permitted until merge. DB migrations on the feature branch must be **additive-only** (no `ALTER COLUMN`, no `DROP`). |
-| Sprint start                      | None      | Create release-train naming context; package versions inherit it.            |
-| During sprint                     | None      | Each push triggers an Experimental build via the durable pipeline.           |
+| Boundary                          | Pipelines | Releases / metadata                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Feature start                     | None      | BuildMaster creates a **new Release scoped to `$FeatureSlug`** (distinct from the trunk Release). `$FeatureSlug` is computed from the branch name per E-DEC-01 (PascalCase, ≤16 chars, derived from the `feature/` suffix). The first Experimental build produces `0.1.0-<FeatureSlug>.1`. Feature artifacts share the trunk feeds; the prerelease suffix provides isolation.                                                                                                                                                                                         |
+| Feature in progress (each sprint) | None      | Feature artifacts are promoted through **all five tiers** under the feature suffix (`0.1.0-<FeatureSlug>.NNN`) using `Promote-ProGetPackage`. The **QA gate is required before merge to stable** — feature artifacts may be promoted to QA, but **no Production promotion** of feature artifacts is permitted until merge. DB migrations on the feature branch must be **additive-only** (no `ALTER COLUMN`, no `DROP`).                                                                                                                                              |
+| Sprint start                      | None      | Create release-train naming context; package versions inherit it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| During sprint                     | None      | Each push triggers an Experimental build via the durable pipeline.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | Feature end / merge to stable     | None      | Before merge: **DB migrations are squashed and re-sequenced** to follow trunk's highest existing migration number (no gaps). `version.json` on trunk is updated so the prerelease label is **`Sprint`** (manual step, must precede the pipeline run). After merge, a **trunk Experimental build is triggered**; the first trunk artifact is `Sprint.NNN` where `NNN` resets to trunk's HEAD height. The **feature BuildMaster Release is archived**. The feature's `<FeatureSlug>.NNN` artifacts remain in feeds under their suffix but receive no further promotion. |
-| Sprint end                        | None      | Cut a `release/*` branch from stable; build artifacts from the tag.          |
-| Release cut                       | None      | Build the Release Bundle once from the release-branch tag; promote the same artifact through five tiers; publish to Chocolatey / WinGet. |
-| _Full lifecycle details_          | _—_       | _See [`Long-Developing-Features.md`](Long-Developing-Features.md) for the complete feature-branch lifecycle, version-string rules (E-DEC-01), sprint-slice interaction (E-DEC-02), feed targets (E-DEC-03), merge mechanics (E-DEC-04), and DB-compatibility rule (E-DEC-05)._ |
+| Sprint end                        | None      | Cut a `release/*` branch from stable; build artifacts from the tag.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Release cut                       | None      | Build the Release Bundle once from the release-branch tag; promote the same artifact through five tiers; publish to Chocolatey / WinGet.                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| _Full lifecycle details_          | _—_       | _See [`Long-Developing-Features.md`](Long-Developing-Features.md) for the complete feature-branch lifecycle, version-string rules (E-DEC-01), sprint-slice interaction (E-DEC-02), feed targets (E-DEC-03), merge mechanics (E-DEC-04), and DB-compatibility rule (E-DEC-05)._                                                                                                                                                                                                                                                                                        |
 
 The first time a brand-new component is added (one that needs its own
 BuildMaster Application identity) is the only sprint-cadence change to
@@ -266,12 +289,12 @@ new pipeline.
 
 ## 9. Pipeline failure semantics
 
-| Failure                                       | Action                                                                                                  |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Build (Experimental) fails                    | No artifact pushed. BuildMaster marks the release `failed`. No promotion possible.                      |
-| Test gate at any later tier fails             | The artifact stays in its current feed. BuildMaster marks the gate `failed`. The artifact is not promoted, but is also not destroyed (developers can investigate). |
-| Promotion API call fails (transient)          | The cmdlet retries with exponential backoff. Persistent failures abort the stage and require manual ProGet investigation. |
-| Distribution (Chocolatey / WinGet) fails      | The Production-tier promotion still succeeded. Distribution is retried manually after fixing the issue.  |
+| Failure                                  | Action                                                                                                                                                             |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Build (Experimental) fails               | No artifact pushed. BuildMaster marks the release `failed`. No promotion possible.                                                                                 |
+| Test gate at any later tier fails        | The artifact stays in its current feed. BuildMaster marks the gate `failed`. The artifact is not promoted, but is also not destroyed (developers can investigate). |
+| Promotion API call fails (transient)     | The cmdlet retries with exponential backoff. Persistent failures abort the stage and require manual ProGet investigation.                                          |
+| Distribution (Chocolatey / WinGet) fails | The Production-tier promotion still succeeded. Distribution is retried manually after fixing the issue.                                                            |
 
 A failed gate **never** rebuilds the artifact in an attempt to "make it
 work this time." If the fix requires a new artifact, the source must
@@ -291,11 +314,12 @@ a new commit), and the new artifact starts from Experimental again.
 3. **`Publish-NuGetPackageToProGet` consolidation is incomplete.** The
    single-source-of-truth cmdlet exists but legacy scripts still call
    `dotnet nuget push` directly in some places.
-4. **ProGet-webhook `$FeedName` routing is not yet wired.** Currently
-   webhooks land on a single endpoint regardless of source feed.
-5. **BuildMaster API endpoint URL is host-specific** (`utat022:81` vs.
-   `localhost:81` vs. eventual production hostname). Centralize in a
-   single `*.psd1` config file consumed by all webhook payloads.
+4. **ProGet polling trigger is not yet wired.** The polling task, schedule,
+   state-file path, and feed/package-to-Application map still need to be
+   implemented and recorded in the BuildMaster configuration runbook.
+5. **BuildMaster API base URL is host-specific** (`utat022:81` vs.
+   `localhost:81` vs. eventual production hostname). Centralize it in the
+   same configuration consumed by the polling task.
 
 ---
 

@@ -19,7 +19,7 @@ Below is a review of the PowerShell scripts and functions in the specified folde
 | `Invoke-Flyway.ps1`                           | _No corresponding test file found_                                                                             |
 | `Install-SqlServerInstance.ps1`               | _No corresponding test file found_                                                                             |
 | `Get-DatabaseCredentialsKey.ps1`              | _No corresponding test file found_                                                                             |
-| `Export-RuleToTextFile.ps1`                   | `tests\Unit\Export-RuleToTextFile.Tests.ps1`                                                                  |
+| `Export-RuleToTextFile.ps1`                   | `tests\Unit\Export-RuleToTextFile.Tests.ps1`                                                                   |
 | `Example-RuleExport.ps1`                      | _No corresponding test file found_                                                                             |
 | `DatabaseProvisioning.ps1`                    | _No corresponding test file found_                                                                             |
 | `DatabaseBuildAndMigrateTasks.ps1`            | _No corresponding test file found_                                                                             |
@@ -38,19 +38,19 @@ Below is a review of the PowerShell scripts and functions in the specified folde
 
 ### ATAP.Utilities.BuildTooling.PowerShell (Public)
 
-| PowerShell Script / Function           | Associated Test File (`*.test.ps1` or `*.Tests.ps1`)   |
-| -------------------------------------- | ------------------------------------------------------ |
+| PowerShell Script / Function           | Associated Test File (`*.test.ps1` or `*.Tests.ps1`)    |
+| -------------------------------------- | ------------------------------------------------------- |
 | `Initialize-ProGetSqlServiceLogin.ps1` | `tests\Unit\Initialize-ProGetSqlServiceLogin.Tests.ps1` |
-| `New-OverviewSprintWorkspace.ps1`      | `tests\Unit\New-OverviewSprintWorkspace.Tests.ps1`     |
-| `New-SprintBitwardenSecrets.ps1`       | _No corresponding test file found_                     |
-| `New-SprintStage2.ps1`                 | _No corresponding test file found_                     |
-| `Read-SourceAndCreateRules.ps1`        | `tests\Unit\Read-SourceAndCreateRules.Tests.ps1`      |
-| `Remove-SprintBitwardenSecrets.ps1`    | `tests\Unit\Remove-SprintBitwardenSecrets.Tests.ps1`   |
-| `Remove-SprintSqlServerInstances.ps1`  | `tests\Unit\Remove-SprintSqlServerInstances.Tests.ps1` |
-| `Set-BuildMasterStableVariables.ps1`   | _No corresponding test file found_                     |
-| `Sync-RulesToCSV.ps1`                  | `tests\Unit\Sync-RulesToCSV.Tests.ps1`                |
-| `New-SprintSqlServerInstances.ps1`     | `tests\Unit\New-SprintSqlServerInstances.Tests.ps1`    |
-| `New-PermanentBitwardenSecrets.ps1`    | _No corresponding test file found_                     |
+| `New-OverviewSprintWorkspace.ps1`      | `tests\Unit\New-OverviewSprintWorkspace.Tests.ps1`      |
+| `New-SprintBitwardenSecrets.ps1`       | _No corresponding test file found_                      |
+| `New-SprintStage2.ps1`                 | _No corresponding test file found_                      |
+| `Read-SourceAndCreateRules.ps1`        | `tests\Unit\Read-SourceAndCreateRules.Tests.ps1`        |
+| `Remove-SprintBitwardenSecrets.ps1`    | `tests\Unit\Remove-SprintBitwardenSecrets.Tests.ps1`    |
+| `Remove-SprintSqlServerInstances.ps1`  | `tests\Unit\Remove-SprintSqlServerInstances.Tests.ps1`  |
+| `Set-BuildMasterStableVariables.ps1`   | _No corresponding test file found_                      |
+| `Sync-RulesToCSV.ps1`                  | `tests\Unit\Sync-RulesToCSV.Tests.ps1`                  |
+| `New-SprintSqlServerInstances.ps1`     | `tests\Unit\New-SprintSqlServerInstances.Tests.ps1`     |
+| `New-PermanentBitwardenSecrets.ps1`    | _No corresponding test file found_                      |
 
 ### ATAP.Utilities.BuildTooling.PowerShell (Private)
 
@@ -71,17 +71,17 @@ Below is a review of the PowerShell scripts and functions in the specified folde
 
 This table freezes the files changed in the "Add database connection mode" conversation so this inventory agrees with `DatabaseAceessTasks.md`. It is inventory only; the V3 plan status remains owned by the lead.
 
-| Changed file | Frozen status | Test availability / note | DatabaseAceess task | V3 Stream P row |
-| --- | --- | --- | --- | --- |
-| `src/ATAP.Utilities.DatabaseManagement.Powershell/private/DatabaseSqlCommand.Helpers.ps1` | Supported helper | Helper has no standalone test file; covered through supported entry-point tests | Task 0 - Shared Preparation | P2 - Verify shared helper and module boundaries |
-| `src/ATAP.Utilities.BuildTooling.PowerShell/private/BuildToolingSql.Helpers.ps1` | Supported helper | Helper has no standalone test file; covered through BuildTooling DB entry-point tests | Task 0 - Shared Preparation | P2 - Verify shared helper and module boundaries |
-| `src/ATAP.Utilities.BuildTooling.PowerShell/tests/Unit/Sync-RulesToCSV.Tests.ps1` | Supported unit test | Present | Task 7 - Rule Export And CSV Sync | P4 - Close BuildTooling database call sites |
-| `src/ATAP.Utilities.DatabaseManagement.Powershell/public/DatabaseBuildAndMigrateTasks.ps1` | Intentionally legacy task collection | No corresponding test file found | Task 12 - DatabaseBuildAndMigrateTasks Special Handling | P3 - Close supported DatabaseManagement entry points |
-| `src/ATAP.Utilities.DatabaseManagement.Powershell/public/Install-SqlServerInstance.ps1` | Intentionally server-lifecycle-only | No corresponding test file found | Task 11 - Install-SqlServerInstance Special Handling | P3 - Close supported DatabaseManagement entry points |
-| `src/ATAP.Utilities.DatabaseManagement.Powershell/public/Invoke-SqlServerBackup.ps1` | Supported entry point with intentional dbatools backup behavior | No corresponding test file found | Task 9 - Backup And ProGet Login | P3 - Close supported DatabaseManagement entry points |
-| `src/ATAP.Utilities.DatabaseManagement.Powershell/public/Export-RuleToTextFile.ps1` | Supported entry point | `tests\Unit\Export-RuleToTextFile.Tests.ps1` | Task 7 - Rule Export And CSV Sync | P3 - Close supported DatabaseManagement entry points |
-| `src/ATAP.Utilities.DatabaseManagement.Powershell/tests/Unit/Export-RuleToTextFile.Tests.ps1` | Supported unit test | Present | Task 7 - Rule Export And CSV Sync | P3 - Close supported DatabaseManagement entry points |
-| `_Planning-wt-14-Sprint-0007-work-items/DatabaseAceessTasks.md` | P1 inventory document | N/A | P1 inventory freeze in `DatabaseAceessTasks.md` | P1 - Freeze the affected-task inventory |
+| Changed file                                                                                  | Frozen status                                                   | Test availability / note                                                              | DatabaseAceess task                                     | V3 Stream P row                                      |
+| --------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------- | ---------------------------------------------------- |
+| `src/ATAP.Utilities.DatabaseManagement.Powershell/private/DatabaseSqlCommand.Helpers.ps1`     | Supported helper                                                | Helper has no standalone test file; covered through supported entry-point tests       | Task 0 - Shared Preparation                             | P2 - Verify shared helper and module boundaries      |
+| `src/ATAP.Utilities.BuildTooling.PowerShell/private/BuildToolingSql.Helpers.ps1`              | Supported helper                                                | Helper has no standalone test file; covered through BuildTooling DB entry-point tests | Task 0 - Shared Preparation                             | P2 - Verify shared helper and module boundaries      |
+| `src/ATAP.Utilities.BuildTooling.PowerShell/tests/Unit/Sync-RulesToCSV.Tests.ps1`             | Supported unit test                                             | Present                                                                               | Task 7 - Rule Export And CSV Sync                       | P4 - Close BuildTooling database call sites          |
+| `src/ATAP.Utilities.DatabaseManagement.Powershell/public/DatabaseBuildAndMigrateTasks.ps1`    | Intentionally legacy task collection                            | No corresponding test file found                                                      | Task 12 - DatabaseBuildAndMigrateTasks Special Handling | P3 - Close supported DatabaseManagement entry points |
+| `src/ATAP.Utilities.DatabaseManagement.Powershell/public/Install-SqlServerInstance.ps1`       | Intentionally server-lifecycle-only                             | No corresponding test file found                                                      | Task 11 - Install-SqlServerInstance Special Handling    | P3 - Close supported DatabaseManagement entry points |
+| `src/ATAP.Utilities.DatabaseManagement.Powershell/public/Invoke-SqlServerBackup.ps1`          | Supported entry point with intentional dbatools backup behavior | No corresponding test file found                                                      | Task 9 - Backup And ProGet Login                        | P3 - Close supported DatabaseManagement entry points |
+| `src/ATAP.Utilities.DatabaseManagement.Powershell/public/Export-RuleToTextFile.ps1`           | Supported entry point                                           | `tests\Unit\Export-RuleToTextFile.Tests.ps1`                                          | Task 7 - Rule Export And CSV Sync                       | P3 - Close supported DatabaseManagement entry points |
+| `src/ATAP.Utilities.DatabaseManagement.Powershell/tests/Unit/Export-RuleToTextFile.Tests.ps1` | Supported unit test                                             | Present                                                                               | Task 7 - Rule Export And CSV Sync                       | P3 - Close supported DatabaseManagement entry points |
+| `_Planning-wt-14-Sprint-0007-work-items/DatabaseAceessTasks.md`                               | P1 inventory document                                           | N/A                                                                                   | P1 inventory freeze in `DatabaseAceessTasks.md`         | P1 - Freeze the affected-task inventory              |
 
 ## SampleParameterBlock
 

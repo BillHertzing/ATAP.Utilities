@@ -531,6 +531,9 @@ stage Production
         Create-Artifact TestResults ( From: _generated\testresults\$Tier, Include: @(*.trx) );
     }
 }
+
+# Source of truth: src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/CSharpPackage-5Stage.otter
+# This Markdown copy is illustrative; the .otter file is what BuildMaster loads.
 ```
 
 > _`Promote-ProGetPackage` is implemented; `Invoke-PromotedPackageTests`

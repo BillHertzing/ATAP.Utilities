@@ -156,6 +156,9 @@ stage Development
         Create-Artifact TestResults ( From: _generated\testresults\development, Include: @(*.trx) );
     }
 }
+
+# Source of truth: src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/*.otter
+# This Markdown snippet is illustrative; the .otter files are what BuildMaster loads.
 ```
 
 Note the absence of `dotnet pack` in the Development stage — that ran

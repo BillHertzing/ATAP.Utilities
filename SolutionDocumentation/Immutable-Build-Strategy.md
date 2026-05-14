@@ -217,6 +217,21 @@ mean a single, identifiable thing. This is the rationale documented in
 §12 of `CriticalAnalysisOfImmutableBuildStrategy.md` (the
 `+<gitshorthash>` problem).
 
+### 6.3 Resolving "latest in feed X"
+
+Because the same artifact is promoted into multiple feeds (§5), a
+floating reference resolved against any one feed sees promoted versions
+alongside versions originally pushed there. The resolution rule:
+
+> Under immutable build, "latest in feed X" means "highest version
+> visible through feed X's resolution chain." A floating `0.*-*`
+> reference will always pick up the highest version, regardless of
+> whether that version was originally pushed to feed X or promoted into
+> it. This is intentional — once promoted, the artifact has feed-X
+> identity. Consumers who want "the latest version that has not yet been
+> promoted out of feed X" must filter by prerelease label (e.g.
+> `0.*-Sprint*`).
+
 ---
 
 ## 7. What changes in the Build/Pack/Push docs

@@ -257,6 +257,24 @@ Set-AceCommanderPackagePins `
 
 and commit the pinned `Directory.Packages.props` to the promotion branch.
 
+### 6.2 Resolving "latest in feed X" under immutable build
+
+Under the immutable-build strategy a promoted artifact is visible in
+every feed it has reached, so a floating reference does not distinguish
+"pushed here" from "promoted here":
+
+> Under immutable build, "latest in feed X" means "highest version
+> visible through feed X's resolution chain." A floating `0.*-*`
+> reference will always pick up the highest version, regardless of
+> whether that version was originally pushed to feed X or promoted into
+> it. This is intentional — once promoted, the artifact has feed-X
+> identity. Consumers who want "the latest version that has not yet been
+> promoted out of feed X" must filter by prerelease label (e.g.
+> `0.*-Sprint*`).
+
+See [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md) §6.3 for
+the producer-side statement of the same rule.
+
 ---
 
 ## 7. Package source mapping (NU1507)

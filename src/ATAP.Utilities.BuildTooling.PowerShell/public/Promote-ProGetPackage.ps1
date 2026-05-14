@@ -13,10 +13,12 @@
 
     It is a thin wrapper over Move-ProGetPackageInterTier and exists so
     every caller in Streams F-N uses the same parameter vocabulary that
-    matches BuildMaster-Pipeline-Topology.md S4. Promote-ProGetPackage
-    accepts the canonical -Name / -Version / -FromFeed / -ToFeed / -Reason
-    parameter set and forwards to the inner cmdlet's parameter names
-    (-PackageName / -Version / -SourceFeed / -DestinationFeed / -Comments).
+    matches BuildMaster-Pipeline-Topology.md S4. As of the C2.3 naming
+    alignment, Move-ProGetPackageInterTier exposes the same canonical
+    -Name / -Version / -FromFeed / -ToFeed / -Reason parameter set
+    (with the legacy -PackageName / -SourceFeed / -DestinationFeed /
+    -Comments names retained as aliases for backward compatibility), so
+    this wrapper forwards each parameter under its canonical name.
 
     The wrapper is idempotent. If the inner cmdlet reports the package is
     already in the destination feed (or the move call returns "already
@@ -29,24 +31,24 @@
     inspect the promotion plan.
 
 .PARAMETER Name
-    The package ID, e.g. 'ATAP.Utilities.Configuration.Extensions'. Maps to
-    the inner cmdlet's -PackageName.
+    The package ID, e.g. 'ATAP.Utilities.Configuration.Extensions'.
+    Forwarded to the inner cmdlet's -Name.
 
 .PARAMETER Version
     The exact package version to promote, e.g. '1.2.0-experimental.42'.
     Forwarded as-is.
 
 .PARAMETER FromFeed
-    The source feed name (e.g. 'nuget-experimental'). Maps to the inner
-    cmdlet's -SourceFeed.
+    The source feed name (e.g. 'nuget-experimental'). Forwarded to the
+    inner cmdlet's -FromFeed.
 
 .PARAMETER ToFeed
-    The destination feed name (e.g. 'nuget-development'). Maps to the
-    inner cmdlet's -DestinationFeed.
+    The destination feed name (e.g. 'nuget-development'). Forwarded to
+    the inner cmdlet's -ToFeed.
 
 .PARAMETER Reason
-    A short human-readable reason recorded in ProGet's audit log. Maps to
-    the inner cmdlet's -Comments.
+    A short human-readable reason recorded in ProGet's audit log.
+    Forwarded to the inner cmdlet's -Reason.
 
 .OUTPUTS
     [PSCustomObject] with at least these properties (per V3 plan S2.1):
@@ -142,11 +144,11 @@ function Promote-ProGetPackage {
         $summary = $null
         try {
             $innerResult = Move-ProGetPackageInterTier `
-                -PackageName $Name `
+                -Name $Name `
                 -Version $Version `
-                -SourceFeed $FromFeed `
-                -DestinationFeed $ToFeed `
-                -Comments $Reason `
+                -FromFeed $FromFeed `
+                -ToFeed $ToFeed `
+                -Reason $Reason `
                 -ErrorAction Stop
 
             # Inner cmdlet returns a PSCustomObject with a Promoted property.

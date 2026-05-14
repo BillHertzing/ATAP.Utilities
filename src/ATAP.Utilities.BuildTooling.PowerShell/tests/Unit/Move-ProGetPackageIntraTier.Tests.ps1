@@ -45,8 +45,8 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
     It "Phase 2: '<Source>' -> '<Dest>' succeeds" -TestCases $cases {
       param($Source, $Dest)
       $result = Move-ProGetPackageIntraTier `
-        -PackageName 'Test.Package' -Version '1.0.0' `
-        -SourceFeed $Source -DestinationFeed $Dest `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed $Source -ToFeed $Dest `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       $result.Promoted | Should -BeTrue
       $result.ScanPassed | Should -BeTrue
@@ -59,8 +59,8 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
 
     It 'Returns Promoted=$false, ScanPassed=$true with -ScanOnly' {
       $result = Move-ProGetPackageIntraTier `
-        -PackageName 'Test.Package' -Version '1.0.0' `
-        -SourceFeed 'nuget-experimental' -DestinationFeed 'nuget-experimental' `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed 'nuget-experimental' -ToFeed 'nuget-experimental' `
         -ScanOnly `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       $result.Promoted | Should -BeFalse
@@ -70,8 +70,8 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
 
     It 'Returns Promoted=$false, ScanPassed=$true when source=dest (Phase 1 same-feed)' {
       $result = Move-ProGetPackageIntraTier `
-        -PackageName 'Test.Package' -Version '1.0.0' `
-        -SourceFeed 'nuget-experimental' -DestinationFeed 'nuget-experimental' `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed 'nuget-experimental' -ToFeed 'nuget-experimental' `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       $result.Promoted | Should -BeFalse
       $result.Reason | Should -Be 'Same feed (Phase 1)'
@@ -83,16 +83,16 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
     It 'Accepts source=nuget-testing-push and dest=nuget-testing (normalized to qa)' {
       # Both normalize to qa, same tier, push->pull: valid
       $result = Move-ProGetPackageIntraTier `
-        -PackageName 'Test.Package' -Version '1.0.0' `
-        -SourceFeed 'nuget-testing-push' -DestinationFeed 'nuget-testing' `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed 'nuget-testing-push' -ToFeed 'nuget-testing' `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       $result.Promoted | Should -BeTrue
     }
 
     It 'Accepts source=nuget-production-push and dest=nuget-production (normalized to stable)' {
       $result = Move-ProGetPackageIntraTier `
-        -PackageName 'Test.Package' -Version '1.0.0' `
-        -SourceFeed 'nuget-production-push' -DestinationFeed 'nuget-production' `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed 'nuget-production-push' -ToFeed 'nuget-production' `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       $result.Promoted | Should -BeTrue
     }
@@ -102,8 +102,8 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
 
     It 'Throws when source and destination belong to different tiers' {
       { Move-ProGetPackageIntraTier `
-          -PackageName 'Test.Package' -Version '1.0.0' `
-          -SourceFeed 'nuget-experimental-push' -DestinationFeed 'nuget-development' `
+          -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'nuget-experimental-push' -ToFeed 'nuget-development' `
           -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       } | Should -Throw -ExpectedMessage '*same tier*'
     }
@@ -113,8 +113,8 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
 
     It 'Throws when source is a pull feed in Phase 2 mode' {
       { Move-ProGetPackageIntraTier `
-          -PackageName 'Test.Package' -Version '1.0.0' `
-          -SourceFeed 'nuget-development' -DestinationFeed 'nuget-qa' `
+          -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'nuget-development' -ToFeed 'nuget-qa' `
           -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       } | Should -Throw -ExpectedMessage '*push feed*'
     }
@@ -124,8 +124,8 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
 
     It 'Throws when destination is a push feed in Phase 2 mode' {
       { Move-ProGetPackageIntraTier `
-          -PackageName 'Test.Package' -Version '1.0.0' `
-          -SourceFeed 'nuget-development-push' -DestinationFeed 'nuget-qa-push' `
+          -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'nuget-development-push' -ToFeed 'nuget-qa-push' `
           -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       } | Should -Throw -ExpectedMessage '*pull feed*'
     }
@@ -135,8 +135,8 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
 
     It 'Throws when source is nuget and destination is powershellget' {
       { Move-ProGetPackageIntraTier `
-          -PackageName 'Test.Package' -Version '1.0.0' `
-          -SourceFeed 'nuget-development-push' -DestinationFeed 'powershellget-development' `
+          -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'nuget-development-push' -ToFeed 'powershellget-development' `
           -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       } | Should -Throw -ExpectedMessage '*package type*'
     }
@@ -146,8 +146,8 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
 
     It 'Throws on an unknown tier in SourceFeed' {
       { Move-ProGetPackageIntraTier `
-          -PackageName 'Test.Package' -Version '1.0.0' `
-          -SourceFeed 'nuget-staging-push' -DestinationFeed 'nuget-staging' `
+          -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'nuget-staging-push' -ToFeed 'nuget-staging' `
           -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       } | Should -Throw -ExpectedMessage '*tiers must be one of*'
     }
@@ -157,14 +157,27 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
 
     It 'Returns PSCustomObject with expected properties' {
       $result = Move-ProGetPackageIntraTier `
-        -PackageName 'Test.Package' -Version '2.0.0' `
-        -SourceFeed 'nuget-integration-push' -DestinationFeed 'nuget-integration' `
+        -Name 'Test.Package' -Version '2.0.0' `
+        -FromFeed 'nuget-integration-push' -ToFeed 'nuget-integration' `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       $result.PSObject.Properties.Name | Should -Contain 'ScanPassed'
       $result.PSObject.Properties.Name | Should -Contain 'Promoted'
       $result.PSObject.Properties.Name | Should -Contain 'Reason'
       $result.PackageName | Should -Be 'Test.Package'
       $result.Version | Should -Be '2.0.0'
+    }
+  }
+
+  Context 'Legacy parameter-name aliases (C2.3 backward compatibility)' {
+
+    It 'Accepts -PackageName / -SourceFeed / -DestinationFeed / -Comments aliases' {
+      $result = Move-ProGetPackageIntraTier `
+        -PackageName 'Test.Package' -Version '1.0.0' `
+        -SourceFeed 'nuget-integration-push' -DestinationFeed 'nuget-integration' `
+        -Comments 'legacy alias call' `
+        -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
+      $result.Promoted | Should -BeTrue
+      $result.ScanPassed | Should -BeTrue
     }
   }
 }

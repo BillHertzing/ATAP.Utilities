@@ -21,20 +21,24 @@ function Move-ProGetPackageInterTier {
     The script detects the package type (nuget, powershellget, chocolatey)
     from the source feed name prefix.
 
-.PARAMETER PackageName
+.PARAMETER Name
     The package ID (e.g., 'ATAP.Utilities.Configuration.Extensions').
+    Alias: PackageName (legacy).
 
 .PARAMETER Version
     The exact package version to move (e.g., '1.2.0-experimental.42').
+    Alias: PackageVersion (legacy).
 
-.PARAMETER SourceFeed
+.PARAMETER FromFeed
     The current tier's pull feed (e.g., 'nuget-experimental').
     The script parses this to determine the package type and current tier.
+    Alias: SourceFeed (legacy).
 
-.PARAMETER DestinationFeed
+.PARAMETER ToFeed
     Optional. Override the automatic destination. If not specified, the
     script computes the next tier's feed based on the source feed name
     and the -UsePushFeed switch.
+    Alias: DestinationFeed (legacy).
 
 .PARAMETER UsePushFeed
     If set, the auto-computed destination targets the next tier's push feed
@@ -42,8 +46,9 @@ function Move-ProGetPackageInterTier {
     If not set, the destination targets the next tier's combined feed
     (e.g., 'nuget-development'). This is the Phase 1 behavior.
 
-.PARAMETER Comments
+.PARAMETER Reason
     Optional movement comment recorded in ProGet's audit log.
+    Alias: Comments (legacy).
 
 .PARAMETER ProGetBaseUrl
     The ProGet base URL. Falls back to $global:settings via configRootKeys →
@@ -61,32 +66,32 @@ function Move-ProGetPackageInterTier {
 .EXAMPLE
     # Phase 1: Move from experimental to development (combined feeds)
     Move-ProGetPackageInterTier `
-        -PackageName 'ATAP.Utilities.Configuration.Extensions' `
+        -Name 'ATAP.Utilities.Configuration.Extensions' `
         -Version '1.2.0-experimental.42' `
-        -SourceFeed 'nuget-experimental'
+        -FromFeed 'nuget-experimental'
     # Auto-destination: nuget-development
 
 .EXAMPLE
     # Phase 2: Move from experimental pull to development push
     Move-ProGetPackageInterTier `
-        -PackageName 'ATAP.Utilities.Configuration.Extensions' `
+        -Name 'ATAP.Utilities.Configuration.Extensions' `
         -Version '1.2.0-experimental.42' `
-        -SourceFeed 'nuget-experimental' `
+        -FromFeed 'nuget-experimental' `
         -UsePushFeed
     # Auto-destination: nuget-development-push
 
 .EXAMPLE
     # Explicit destination override
     Move-ProGetPackageInterTier `
-        -PackageName 'MyModule' -Version '2.0.0-dev.5' `
-        -SourceFeed 'powershellget-development' `
-        -DestinationFeed 'powershellget-qa-push'
+        -Name 'MyModule' -Version '2.0.0-dev.5' `
+        -FromFeed 'powershellget-development' `
+        -ToFeed 'powershellget-qa-push'
 
 .EXAMPLE
     # Dry run
     Move-ProGetPackageInterTier `
-        -PackageName 'MyPackage' -Version '1.0.0' `
-        -SourceFeed 'nuget-qa' -WhatIf
+        -Name 'MyPackage' -Version '1.0.0' `
+        -FromFeed 'nuget-qa' -WhatIf
     # Auto-destination: nuget-stable
 
 .NOTES
@@ -99,20 +104,25 @@ function Move-ProGetPackageInterTier {
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [Parameter(Mandatory)]
-        [string]$PackageName,
+        [Alias('PackageName')]
+        [string]$Name,
 
         [Parameter(Mandatory)]
+        [Alias('PackageVersion')]
         [string]$Version,
 
         [Parameter(Mandatory)]
-        [string]$SourceFeed,
+        [Alias('SourceFeed')]
+        [string]$FromFeed,
 
         [Parameter(Mandatory = $false)]
-        [string]$DestinationFeed,
+        [Alias('DestinationFeed')]
+        [string]$ToFeed,
 
         [switch]$UsePushFeed,
 
-        [string]$Comments,
+        [Alias('Comments')]
+        [string]$Reason,
 
         [string]$ProGetBaseUrl,
 
@@ -124,21 +134,21 @@ function Move-ProGetPackageInterTier {
         $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
-        # Check and populate simple parameter: PackageName
-        $PackageName = Get-PVal -ParameterName 'PackageName' -originalPSBoundParameters $PSBoundParameters -dottedPath 'PackageName' -DefaultValue $PackageName
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "PackageName is $PackageName"
+        # Check and populate simple parameter: Name
+        $Name = Get-PVal -ParameterName 'Name' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Name' -DefaultValue $Name
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Name is $Name"
 
         # Check and populate simple parameter: Version
         $Version = Get-PVal -ParameterName 'Version' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Version' -DefaultValue $Version
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Version is $Version"
 
-        # Check and populate simple parameter: SourceFeed
-        $SourceFeed = Get-PVal -ParameterName 'SourceFeed' -originalPSBoundParameters $PSBoundParameters -dottedPath 'SourceFeed' -DefaultValue $SourceFeed
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "SourceFeed is $SourceFeed"
+        # Check and populate simple parameter: FromFeed
+        $FromFeed = Get-PVal -ParameterName 'FromFeed' -originalPSBoundParameters $PSBoundParameters -dottedPath 'FromFeed' -DefaultValue $FromFeed
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "FromFeed is $FromFeed"
 
-        # Check and populate simple parameter: DestinationFeed
-        $DestinationFeed = Get-PVal -ParameterName 'DestinationFeed' -originalPSBoundParameters $PSBoundParameters -dottedPath 'DestinationFeed' -DefaultValue $DestinationFeed
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "DestinationFeed is $DestinationFeed"
+        # Check and populate simple parameter: ToFeed
+        $ToFeed = Get-PVal -ParameterName 'ToFeed' -originalPSBoundParameters $PSBoundParameters -dottedPath 'ToFeed' -DefaultValue $ToFeed
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "ToFeed is $ToFeed"
 
         # ── Tier definitions ─────────────────────────────────────────────────
         # Ordered list of tiers. Index determines movement direction (lower → higher).
@@ -161,9 +171,9 @@ function Move-ProGetPackageInterTier {
         $parsedTier = $null
 
         foreach ($prefix in $knownPrefixes) {
-            if ($SourceFeed.StartsWith("$prefix-", [System.StringComparison]::OrdinalIgnoreCase)) {
+            if ($FromFeed.StartsWith("$prefix-", [System.StringComparison]::OrdinalIgnoreCase)) {
                 $parsedPrefix = $prefix
-                $remainder = $SourceFeed.Substring($prefix.Length + 1)  # skip "{prefix}-"
+                $remainder = $FromFeed.Substring($prefix.Length + 1)  # skip "{prefix}-"
                 # Strip any -push suffix (inter-tier should start from a pull feed,
                 # but be lenient if user passes a push feed name)
                 $remainder = $remainder -replace '-push$', ''
@@ -184,7 +194,7 @@ function Move-ProGetPackageInterTier {
         }
 
         if (-not $parsedPrefix -or -not $parsedTier) {
-            $errorMessage = "Cannot parse source feed name '$SourceFeed'. " +
+            $errorMessage = "Cannot parse source feed name '$FromFeed'. " +
             'Expected format: {nuget|powershellget|chocolatey}-{experimental|development|integration|qa|stable}[-push]. Legacy prefix powershell and tiers testing/production are normalized.'
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
             throw $errorMessage
@@ -193,24 +203,24 @@ function Move-ProGetPackageInterTier {
         $currentTierIndex = $tierOrder.IndexOf($parsedTier)
 
         # ── Determine destination feed ───────────────────────────────────────
-        if ([string]::IsNullOrWhiteSpace($DestinationFeed)) {
+        if ([string]::IsNullOrWhiteSpace($ToFeed)) {
             if ($currentTierIndex -ge ($tierOrder.Count - 1)) {
-                $errorMessage = "Source feed '$SourceFeed' is already at the highest tier ('$parsedTier'). Cannot move further."
+                $errorMessage = "Source feed '$FromFeed' is already at the highest tier ('$parsedTier'). Cannot move further."
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
                 throw $errorMessage
             }
 
             $nextTier = $tierOrder[$currentTierIndex + 1]
             $pushSuffix = if ($UsePushFeed) { '-push' } else { '' }
-            $DestinationFeed = "$parsedPrefix-$nextTier$pushSuffix"
+            $ToFeed = "$parsedPrefix-$nextTier$pushSuffix"
         }
 
-        # Check and populate simple parameter: Comments (with computed default)
-        $Comments = Get-PVal -ParameterName 'Comments' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Comments' -DefaultValue $Comments
-        if ([string]::IsNullOrWhiteSpace($Comments)) {
-            $Comments = "Inter-tier move: $parsedTier → next tier ($(Get-Date -Format 'yyyy-MM-dd HH:mm'))"
+        # Check and populate simple parameter: Reason (with computed default)
+        $Reason = Get-PVal -ParameterName 'Reason' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Reason' -DefaultValue $Reason
+        if ([string]::IsNullOrWhiteSpace($Reason)) {
+            $Reason = "Inter-tier move: $parsedTier → next tier ($(Get-Date -Format 'yyyy-MM-dd HH:mm'))"
         }
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Comments is $Comments"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Reason is $Reason"
 
         # Check and populate simple parameter: ProGetBaseUrl
         $ProGetBaseUrl = Get-PVal -ParameterName 'ProGetBaseUrl' -originalPSBoundParameters $PSBoundParameters -dottedPath 'ProGetBaseUrl' -DefaultValue $ProGetBaseUrl
@@ -241,20 +251,20 @@ function Move-ProGetPackageInterTier {
             'X-ApiKey' = $ApiKey
         }
 
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Package:     $PackageName"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Package:     $Name"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Version:     $Version"
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Source:      $SourceFeed (tier: $parsedTier)"
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Destination: $DestinationFeed"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Source:      $FromFeed (tier: $parsedTier)"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Destination: $ToFeed"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Push feed:   $($UsePushFeed ? 'Yes (Phase 2)' : 'No (Phase 1 / combined)')"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'All parameters validated successfully'
     }
 
     process {
         # ── Step 1: Verify package exists in source feed ─────────────────────
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Verifying '$PackageName' v$Version exists in '$SourceFeed'"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Verifying '$Name' v$Version exists in '$FromFeed'"
 
-        $checkUrl = "$ProGetBaseUrl/api/packages/$SourceFeed/versions" +
-        "?name=$([uri]::EscapeDataString($PackageName))&version=$([uri]::EscapeDataString($Version))"
+        $checkUrl = "$ProGetBaseUrl/api/packages/$FromFeed/versions" +
+        "?name=$([uri]::EscapeDataString($Name))&version=$([uri]::EscapeDataString($Version))"
 
         try {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling $checkUrl" -Tag 'RestCall'
@@ -270,19 +280,19 @@ function Move-ProGetPackageInterTier {
         # ── Step 2: Move to next tier ─────────────────────────────────────────
         $promoteUrl = "$ProGetBaseUrl/api/promotions/promote"
         $body = @{
-            packageName = $PackageName
+            packageName = $Name
             version     = $Version
-            fromFeed    = $SourceFeed
-            toFeed      = $DestinationFeed
-            comments    = $Comments
+            fromFeed    = $FromFeed
+            toFeed      = $ToFeed
+            comments    = $Reason
         }
 
         $response = $null
         $promoted = $false
-        $targetMessage = "'{0}' v{1}" -f $PackageName, $Version
-        $actionMessage = "Move from '{0}' to '{1}'" -f $SourceFeed, $DestinationFeed
+        $targetMessage = "'{0}' v{1}" -f $Name, $Version
+        $actionMessage = "Move from '{0}' to '{1}'" -f $FromFeed, $ToFeed
         if ($PSCmdlet.ShouldProcess($targetMessage, $actionMessage)) {
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message ("Moving '{0}' v{1}: '{2}' -> '{3}'" -f $PackageName, $Version, $SourceFeed, $DestinationFeed)
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message ("Moving '{0}' v{1}: '{2}' -> '{3}'" -f $Name, $Version, $FromFeed, $ToFeed)
             try {
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling $promoteUrl" -Tag 'RestCall'
                 $response = Invoke-RestMethod -Uri $promoteUrl -Method POST -Headers $headers `
@@ -291,19 +301,19 @@ function Move-ProGetPackageInterTier {
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Move successful'
                 $promoted = $true
             } catch {
-                $errorMessage = "Failed to move '$PackageName' v$Version from '$SourceFeed' to '$DestinationFeed'. Exception: $($_.Exception.Message)"
+                $errorMessage = "Failed to move '$Name' v$Version from '$FromFeed' to '$ToFeed'. Exception: $($_.Exception.Message)"
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
                 throw
             }
         }
 
         [PSCustomObject]@{
-            PackageName     = $PackageName
+            PackageName     = $Name
             Version         = $Version
-            SourceFeed      = $SourceFeed
+            SourceFeed      = $FromFeed
             SourceTier      = $parsedTier
-            DestinationFeed = $DestinationFeed
-            DestinationTier = if ($DestinationFeed -match '-(\w+?)(-push)?$') { $matches[1] } else { '(custom)' }
+            DestinationFeed = $ToFeed
+            DestinationTier = if ($ToFeed -match '-(\w+?)(-push)?$') { $matches[1] } else { '(custom)' }
             PackageType     = $parsedPrefix
             Phase2Mode      = [bool]$UsePushFeed
             Promoted        = $promoted
@@ -314,13 +324,13 @@ function Move-ProGetPackageInterTier {
     end {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Done. Next step:'
         if ($UsePushFeed) {
-            $pullFeedName = $DestinationFeed -replace '-push$', ''
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "  Run Move-ProGetPackageIntraTier to scan and move from '$DestinationFeed' to '$pullFeedName'"
+            $pullFeedName = $ToFeed -replace '-push$', ''
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "  Run Move-ProGetPackageIntraTier to scan and move from '$ToFeed' to '$pullFeedName'"
         } else {
             $nextTierIndex = $currentTierIndex + 1
             if ($nextTierIndex -lt ($tierOrder.Count - 1)) {
                 $nextNextTier = $tierOrder[$nextTierIndex + 1]
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "  When ready, run this script again with -SourceFeed '$DestinationFeed' to move to '$parsedPrefix-$nextNextTier'"
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "  When ready, run this script again with -FromFeed '$ToFeed' to move to '$parsedPrefix-$nextNextTier'"
             } else {
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "  Package is now in the '$($tierOrder[$nextTierIndex])' tier. No further movement available."
             }

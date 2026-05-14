@@ -45,8 +45,8 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
     It "Routes '<Source>' -> '<ExpectedDest>' (Phase 1)" -TestCases $cases {
       param($Source, $ExpectedDest)
       $result = Move-ProGetPackageInterTier `
-        -PackageName 'Test.Package' -Version '1.0.0' `
-        -SourceFeed $Source `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed $Source `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       $result.DestinationFeed | Should -Be $ExpectedDest
       $result.Promoted | Should -BeTrue
@@ -63,8 +63,8 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
     It "Routes '<Source>' -> '<ExpectedDest>' (Phase 2 / -UsePushFeed)" -TestCases $cases {
       param($Source, $ExpectedDest)
       $result = Move-ProGetPackageInterTier `
-        -PackageName 'Test.Package' -Version '1.0.0' `
-        -SourceFeed $Source -UsePushFeed `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed $Source -UsePushFeed `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       $result.DestinationFeed | Should -Be $ExpectedDest
     }
@@ -74,8 +74,8 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
 
     It "Normalizes 'testing' -> 'qa' tier and routes to nuget-stable" {
       $result = Move-ProGetPackageInterTier `
-        -PackageName 'Test.Package' -Version '1.0.0' `
-        -SourceFeed 'nuget-testing' `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed 'nuget-testing' `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       $result.SourceTier | Should -Be 'qa'
       $result.DestinationFeed | Should -Be 'nuget-stable'
@@ -83,8 +83,8 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
 
     It "Normalizes 'production' -> 'stable' tier and throws (already at top)" {
       { Move-ProGetPackageInterTier `
-          -PackageName 'Test.Package' -Version '1.0.0' `
-          -SourceFeed 'nuget-production' `
+          -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'nuget-production' `
           -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       } | Should -Throw -ExpectedMessage '*highest tier*'
     }
@@ -94,8 +94,8 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
 
     It 'Accepts nuget-experimental-push and routes to nuget-development' {
       $result = Move-ProGetPackageInterTier `
-        -PackageName 'Test.Package' -Version '1.0.0' `
-        -SourceFeed 'nuget-experimental-push' `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed 'nuget-experimental-push' `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       $result.SourceTier | Should -Be 'experimental'
       $result.DestinationFeed | Should -Be 'nuget-development'
@@ -104,12 +104,25 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
 
   Context 'Explicit destination override' {
 
-    It 'Uses supplied -DestinationFeed and does not auto-compute' {
+    It 'Uses supplied -ToFeed and does not auto-compute' {
+      $result = Move-ProGetPackageInterTier `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed 'nuget-experimental' -ToFeed 'nuget-qa' `
+        -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
+      $result.DestinationFeed | Should -Be 'nuget-qa'
+    }
+  }
+
+  Context 'Legacy parameter-name aliases (C2.3 backward compatibility)' {
+
+    It 'Accepts -PackageName / -SourceFeed / -DestinationFeed / -Comments aliases' {
       $result = Move-ProGetPackageInterTier `
         -PackageName 'Test.Package' -Version '1.0.0' `
         -SourceFeed 'nuget-experimental' -DestinationFeed 'nuget-qa' `
+        -Comments 'legacy alias call' `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       $result.DestinationFeed | Should -Be 'nuget-qa'
+      $result.Promoted | Should -BeTrue
     }
   }
 
@@ -117,8 +130,8 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
 
     It 'Throws when SourceFeed is nuget-stable' {
       { Move-ProGetPackageInterTier `
-          -PackageName 'Test.Package' -Version '1.0.0' `
-          -SourceFeed 'nuget-stable' `
+          -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'nuget-stable' `
           -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       } | Should -Throw -ExpectedMessage '*highest tier*'
     }
@@ -128,16 +141,16 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
 
     It 'Throws on an unrecognised feed prefix' {
       { Move-ProGetPackageInterTier `
-          -PackageName 'Test.Package' -Version '1.0.0' `
-          -SourceFeed 'helm-experimental' `
+          -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'helm-experimental' `
           -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       } | Should -Throw -ExpectedMessage '*Cannot parse source feed name*'
     }
 
     It 'Throws on an unknown tier name' {
       { Move-ProGetPackageInterTier `
-          -PackageName 'Test.Package' -Version '1.0.0' `
-          -SourceFeed 'nuget-staging' `
+          -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'nuget-staging' `
           -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       } | Should -Throw -ExpectedMessage '*Cannot parse source feed name*'
     }
@@ -147,8 +160,8 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
 
     It 'Returns Promoted=false under -WhatIf' {
       $result = Move-ProGetPackageInterTier `
-        -PackageName 'Test.Package' -Version '1.0.0' `
-        -SourceFeed 'nuget-experimental' `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed 'nuget-experimental' `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey `
         -WhatIf
       $result.Promoted | Should -BeFalse
@@ -159,8 +172,8 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
 
     It 'Returns PSCustomObject with all expected properties' {
       $result = Move-ProGetPackageInterTier `
-        -PackageName 'Test.Package' -Version '1.0.0' `
-        -SourceFeed 'nuget-development' `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed 'nuget-development' `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       $result.PSObject.Properties.Name | Should -Contain 'PackageName'
       $result.PSObject.Properties.Name | Should -Contain 'SourceTier'

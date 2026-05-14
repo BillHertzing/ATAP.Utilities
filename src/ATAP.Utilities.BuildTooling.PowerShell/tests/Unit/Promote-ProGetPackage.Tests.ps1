@@ -12,14 +12,20 @@ BeforeAll {
     }
 
     # Provide a stand-in definition of the inner cmdlet so Pester's Mock can replace it.
+    # Mirrors the post-C2.3 canonical parameter set, with the legacy names kept as aliases.
     if (-not (Get-Command Move-ProGetPackageInterTier -ErrorAction SilentlyContinue)) {
         function global:Move-ProGetPackageInterTier {
             param(
-                [string]$PackageName,
+                [Alias('PackageName')]
+                [string]$Name,
+                [Alias('PackageVersion')]
                 [string]$Version,
-                [string]$SourceFeed,
-                [string]$DestinationFeed,
-                [string]$Comments,
+                [Alias('SourceFeed')]
+                [string]$FromFeed,
+                [Alias('DestinationFeed')]
+                [string]$ToFeed,
+                [Alias('Comments')]
+                [string]$Reason,
                 [System.Management.Automation.ActionPreference]$ErrorAction
             )
         }
@@ -31,10 +37,10 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit' {
     BeforeEach {
         Mock Move-ProGetPackageInterTier {
             [PSCustomObject]@{
-                PackageName     = $PackageName
+                PackageName     = $Name
                 Version         = $Version
-                SourceFeed      = $SourceFeed
-                DestinationFeed = $DestinationFeed
+                SourceFeed      = $FromFeed
+                DestinationFeed = $ToFeed
                 Promoted        = $true
                 Response        = 'OK'
             }
@@ -98,20 +104,20 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit' {
             $result.InnerResult     | Should -Not -BeNullOrEmpty
 
             Assert-MockCalled Move-ProGetPackageInterTier -Times 1 -Exactly -Scope It -ParameterFilter {
-                $PackageName -eq 'ATAP.Utilities.Foo' -and
+                $Name -eq 'ATAP.Utilities.Foo' -and
                 $Version -eq '1.2.0-experimental.42' -and
-                $SourceFeed -eq 'nuget-experimental' -and
-                $DestinationFeed -eq 'nuget-development' -and
-                $Comments -eq 'sprint-0007 promotion'
+                $FromFeed -eq 'nuget-experimental' -and
+                $ToFeed -eq 'nuget-development' -and
+                $Reason -eq 'sprint-0007 promotion'
             }
         }
 
-        It 'Maps -Name to inner -PackageName and -Reason to inner -Comments' {
+        It 'Forwards -Name and -Reason to the inner cmdlet under their canonical names' {
             Promote-ProGetPackage -Name 'pkg' -Version '1.0.0' `
                 -FromFeed 'nuget-development' -ToFeed 'nuget-integration' -Reason 'why' | Out-Null
 
             Assert-MockCalled Move-ProGetPackageInterTier -Times 1 -Exactly -Scope It -ParameterFilter {
-                $PackageName -eq 'pkg' -and $Comments -eq 'why'
+                $Name -eq 'pkg' -and $Reason -eq 'why'
             }
         }
     }
@@ -120,9 +126,9 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit' {
         It 'Surfaces "already promoted" as no-op when inner Response indicates already' {
             Mock Move-ProGetPackageInterTier {
                 [PSCustomObject]@{
-                    PackageName = $PackageName
+                    PackageName = $Name
                     Version     = $Version
-                    SourceFeed  = $SourceFeed
+                    SourceFeed  = $FromFeed
                     Promoted    = $true
                     Response    = 'Package already exists in destination feed'
                 }

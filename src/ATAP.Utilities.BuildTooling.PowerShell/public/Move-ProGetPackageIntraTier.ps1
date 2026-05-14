@@ -17,8 +17,8 @@ function Move-ProGetPackageIntraTier {
     version suffixes, not via separate feeds.
 
     In Phase 1 (combined feeds), this script can be used as a validate-only
-    step by passing the same feed name for both -SourceFeed and
-    -DestinationFeed, or by using the -ScanOnly switch.
+    step by passing the same feed name for both -FromFeed and
+    -ToFeed, or by using the -ScanOnly switch.
 
     In Phase 2 (split push/pull feeds), this script performs the actual
     movement from the push feed to the pull feed after the scan passes.
@@ -28,26 +28,31 @@ function Move-ProGetPackageIntraTier {
     Invoke-MalwareScan function with a real implementation when available
     (e.g., ProGet vulnerability scanning, ClamAV, or a commercial scanner).
 
-.PARAMETER PackageName
+.PARAMETER Name
     The package ID (e.g., 'ATAP.Utilities.Configuration.Extensions').
+    Alias: PackageName (legacy).
 
 .PARAMETER Version
     The exact package version to move (e.g., '1.2.0-experimental.42').
+    Alias: PackageVersion (legacy).
 
-.PARAMETER SourceFeed
+.PARAMETER FromFeed
     The push feed name (e.g., 'nuget-experimental-push').
     In Phase 1, this is the combined feed name (e.g., 'nuget-experimental').
+    Alias: SourceFeed (legacy).
 
-.PARAMETER DestinationFeed
+.PARAMETER ToFeed
     The pull feed name (e.g., 'nuget-experimental').
-    In Phase 1, pass the same name as SourceFeed, or use -ScanOnly.
+    In Phase 1, pass the same name as FromFeed, or use -ScanOnly.
+    Alias: DestinationFeed (legacy).
 
 .PARAMETER ScanOnly
     If set, only runs the malware scan without moving. Useful in Phase 1
     where push and pull are the same feed.
 
-.PARAMETER Comments
+.PARAMETER Reason
     Optional movement comment recorded in ProGet's audit log.
+    Alias: Comments (legacy).
 
 .PARAMETER ProGetBaseUrl
     The ProGet base URL (e.g., 'http://localhost:50000').
@@ -64,26 +69,26 @@ function Move-ProGetPackageIntraTier {
 .EXAMPLE
     # Phase 2: Move from push to pull within experimental tier
     Move-ProGetPackageIntraTier `
-        -PackageName 'ATAP.Utilities.Configuration.Extensions' `
+        -Name 'ATAP.Utilities.Configuration.Extensions' `
         -Version '1.2.0-experimental.42' `
-        -SourceFeed 'nuget-experimental-push' `
-        -DestinationFeed 'nuget-experimental'
+        -FromFeed 'nuget-experimental-push' `
+        -ToFeed 'nuget-experimental'
 
 .EXAMPLE
     # Phase 1: Scan only (push and pull are the same feed)
     Move-ProGetPackageIntraTier `
-        -PackageName 'ATAP.Utilities.Configuration.Extensions' `
+        -Name 'ATAP.Utilities.Configuration.Extensions' `
         -Version '1.2.0-experimental.42' `
-        -SourceFeed 'nuget-experimental' `
-        -DestinationFeed 'nuget-experimental' `
+        -FromFeed 'nuget-experimental' `
+        -ToFeed 'nuget-experimental' `
         -ScanOnly
 
 .EXAMPLE
     # Dry run
     Move-ProGetPackageIntraTier `
-        -PackageName 'MyPackage' -Version '1.0.0' `
-        -SourceFeed 'nuget-experimental-push' `
-        -DestinationFeed 'nuget-experimental' -WhatIf
+        -Name 'MyPackage' -Version '1.0.0' `
+        -FromFeed 'nuget-experimental-push' `
+        -ToFeed 'nuget-experimental' -WhatIf
 
 .NOTES
     AI assisted using Powershell.instructions.md as guidelines
@@ -95,20 +100,25 @@ function Move-ProGetPackageIntraTier {
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [Parameter(Mandatory)]
-        [string]$PackageName,
+        [Alias('PackageName')]
+        [string]$Name,
 
         [Parameter(Mandatory)]
+        [Alias('PackageVersion')]
         [string]$Version,
 
         [Parameter(Mandatory)]
-        [string]$SourceFeed,
+        [Alias('SourceFeed')]
+        [string]$FromFeed,
 
         [Parameter(Mandatory)]
-        [string]$DestinationFeed,
+        [Alias('DestinationFeed')]
+        [string]$ToFeed,
 
         [switch]$ScanOnly,
 
-        [string]$Comments,
+        [Alias('Comments')]
+        [string]$Reason,
 
         [string]$ProGetBaseUrl,
 
@@ -120,28 +130,28 @@ function Move-ProGetPackageIntraTier {
         $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
-        # Check and populate simple parameter: PackageName
-        $PackageName = Get-PVal -ParameterName 'PackageName' -originalPSBoundParameters $PSBoundParameters -dottedPath 'PackageName' -DefaultValue $PackageName
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "PackageName is $PackageName"
+        # Check and populate simple parameter: Name
+        $Name = Get-PVal -ParameterName 'Name' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Name' -DefaultValue $Name
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Name is $Name"
 
         # Check and populate simple parameter: Version
         $Version = Get-PVal -ParameterName 'Version' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Version' -DefaultValue $Version
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Version is $Version"
 
-        # Check and populate simple parameter: SourceFeed
-        $SourceFeed = Get-PVal -ParameterName 'SourceFeed' -originalPSBoundParameters $PSBoundParameters -dottedPath 'SourceFeed' -DefaultValue $SourceFeed
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "SourceFeed is $SourceFeed"
+        # Check and populate simple parameter: FromFeed
+        $FromFeed = Get-PVal -ParameterName 'FromFeed' -originalPSBoundParameters $PSBoundParameters -dottedPath 'FromFeed' -DefaultValue $FromFeed
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "FromFeed is $FromFeed"
 
-        # Check and populate simple parameter: DestinationFeed
-        $DestinationFeed = Get-PVal -ParameterName 'DestinationFeed' -originalPSBoundParameters $PSBoundParameters -dottedPath 'DestinationFeed' -DefaultValue $DestinationFeed
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "DestinationFeed is $DestinationFeed"
+        # Check and populate simple parameter: ToFeed
+        $ToFeed = Get-PVal -ParameterName 'ToFeed' -originalPSBoundParameters $PSBoundParameters -dottedPath 'ToFeed' -DefaultValue $ToFeed
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "ToFeed is $ToFeed"
 
-        # Check and populate simple parameter: Comments (with computed default)
-        $Comments = Get-PVal -ParameterName 'Comments' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Comments' -DefaultValue $Comments
-        if ([string]::IsNullOrWhiteSpace($Comments)) {
-            $Comments = "Intra-tier move after scan ($(Get-Date -Format 'yyyy-MM-dd HH:mm'))"
+        # Check and populate simple parameter: Reason (with computed default)
+        $Reason = Get-PVal -ParameterName 'Reason' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Reason' -DefaultValue $Reason
+        if ([string]::IsNullOrWhiteSpace($Reason)) {
+            $Reason = "Intra-tier move after scan ($(Get-Date -Format 'yyyy-MM-dd HH:mm'))"
         }
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Comments is $Comments"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Reason is $Reason"
 
         # Check and populate simple parameter: ProGetBaseUrl
         $ProGetBaseUrl = Get-PVal -ParameterName 'ProGetBaseUrl' -originalPSBoundParameters $PSBoundParameters -dottedPath 'ProGetBaseUrl' -DefaultValue $ProGetBaseUrl
@@ -185,7 +195,7 @@ function Move-ProGetPackageIntraTier {
 
         $feedPattern = "^(?<prefix>$($knownPrefixes -join '|'))-(?<tier>[a-z]+?)(?<push>-push)?$"
 
-        if ($SourceFeed -match $feedPattern) {
+        if ($FromFeed -match $feedPattern) {
             $sourcePrefix = $matches['prefix'].ToLowerInvariant()
             if ($sourcePrefix -eq 'powershell') {
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Normalizing deprecated source prefix 'powershell' to 'powershellget'"
@@ -198,12 +208,12 @@ function Move-ProGetPackageIntraTier {
                 $sourceTier = $tierAliases[$sourceTier]
             }
         } else {
-            $errorMessage = "SourceFeed '$SourceFeed' does not match expected format '{nuget|powershellget|chocolatey}-{tier}[-push]'"
+            $errorMessage = "FromFeed '$FromFeed' does not match expected format '{nuget|powershellget|chocolatey}-{tier}[-push]'"
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
             throw $errorMessage
         }
 
-        if ($DestinationFeed -match $feedPattern) {
+        if ($ToFeed -match $feedPattern) {
             $destinationPrefix = $matches['prefix'].ToLowerInvariant()
             if ($destinationPrefix -eq 'powershell') {
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Normalizing deprecated destination prefix 'powershell' to 'powershellget'"
@@ -216,7 +226,7 @@ function Move-ProGetPackageIntraTier {
                 $destinationTier = $tierAliases[$destinationTier]
             }
         } else {
-            $errorMessage = "DestinationFeed '$DestinationFeed' does not match expected format '{nuget|powershellget|chocolatey}-{tier}[-push]'"
+            $errorMessage = "ToFeed '$ToFeed' does not match expected format '{nuget|powershellget|chocolatey}-{tier}[-push]'"
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
             throw $errorMessage
         }
@@ -227,14 +237,14 @@ function Move-ProGetPackageIntraTier {
             throw $errorMessage
         }
 
-        if (-not $ScanOnly -and ($SourceFeed -ne $DestinationFeed)) {
+        if (-not $ScanOnly -and ($FromFeed -ne $ToFeed)) {
             if (-not $sourceIsPush) {
-                $errorMessage = "SourceFeed '$SourceFeed' must be a push feed ('-push') in Phase 2 intra-tier movement."
+                $errorMessage = "FromFeed '$FromFeed' must be a push feed ('-push') in Phase 2 intra-tier movement."
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
                 throw $errorMessage
             }
             if ($destinationIsPush) {
-                $errorMessage = "DestinationFeed '$DestinationFeed' must be a pull feed (no '-push') in Phase 2 intra-tier movement."
+                $errorMessage = "ToFeed '$ToFeed' must be a pull feed (no '-push') in Phase 2 intra-tier movement."
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
                 throw $errorMessage
             }
@@ -255,10 +265,10 @@ function Move-ProGetPackageIntraTier {
 
     process {
         # ── Step 1: Verify package exists in source feed ─────────────────────
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Verifying '$PackageName' v$Version exists in feed '$SourceFeed'"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Verifying '$Name' v$Version exists in feed '$FromFeed'"
 
-        $packageInfoUrl = "$ProGetBaseUrl/api/packages/$SourceFeed/versions" +
-        "?name=$([uri]::EscapeDataString($PackageName))&version=$([uri]::EscapeDataString($Version))"
+        $packageInfoUrl = "$ProGetBaseUrl/api/packages/$FromFeed/versions" +
+        "?name=$([uri]::EscapeDataString($Name))&version=$([uri]::EscapeDataString($Version))"
 
         $packageInfo = $null
         try {
@@ -270,16 +280,16 @@ function Move-ProGetPackageIntraTier {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Versions endpoint not available — ProGet will validate during move'
         }
 
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Package found in '$SourceFeed'"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Package found in '$FromFeed'"
 
         # ── Step 2: Malware / quality scan ───────────────────────────────────
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Running malware scan on '$PackageName' v$Version"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Running malware scan on '$Name' v$Version"
 
-        $scanResult = Invoke-MalwareScan -PackageName $PackageName -Version $Version `
-            -FeedName $SourceFeed -ProGetBaseUrl $ProGetBaseUrl
+        $scanResult = Invoke-MalwareScan -PackageName $Name -Version $Version `
+            -FeedName $FromFeed -ProGetBaseUrl $ProGetBaseUrl
 
         if (-not $scanResult.Passed) {
-            $errorMessage = "MALWARE SCAN FAILED for '$PackageName' v$Version in '$SourceFeed'. " +
+            $errorMessage = "MALWARE SCAN FAILED for '$Name' v$Version in '$FromFeed'. " +
             "Reason: $($scanResult.Reason). Move aborted."
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
             throw $errorMessage
@@ -291,10 +301,10 @@ function Move-ProGetPackageIntraTier {
         if ($ScanOnly) {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'ScanOnly mode — skipping move'
             [PSCustomObject]@{
-                PackageName     = $PackageName
+                PackageName     = $Name
                 Version         = $Version
-                SourceFeed      = $SourceFeed
-                DestinationFeed = $DestinationFeed
+                SourceFeed      = $FromFeed
+                DestinationFeed = $ToFeed
                 ScanPassed      = $true
                 Promoted        = $false
                 Reason          = 'ScanOnly mode'
@@ -302,13 +312,13 @@ function Move-ProGetPackageIntraTier {
             return
         }
 
-        if ($SourceFeed -eq $DestinationFeed) {
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Source and destination are the same feed ('$SourceFeed'). Scan completed, no move needed (Phase 1 mode)"
+        if ($FromFeed -eq $ToFeed) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Source and destination are the same feed ('$FromFeed'). Scan completed, no move needed (Phase 1 mode)"
             [PSCustomObject]@{
-                PackageName     = $PackageName
+                PackageName     = $Name
                 Version         = $Version
-                SourceFeed      = $SourceFeed
-                DestinationFeed = $DestinationFeed
+                SourceFeed      = $FromFeed
+                DestinationFeed = $ToFeed
                 ScanPassed      = $true
                 Promoted        = $false
                 Reason          = 'Same feed (Phase 1)'
@@ -318,16 +328,16 @@ function Move-ProGetPackageIntraTier {
 
         $promoteUrl = "$ProGetBaseUrl/api/promotions/promote"
         $body = @{
-            packageName = $PackageName
+            packageName = $Name
             version     = $Version
-            fromFeed    = $SourceFeed
-            toFeed      = $DestinationFeed
-            comments    = $Comments
+            fromFeed    = $FromFeed
+            toFeed      = $ToFeed
+            comments    = $Reason
         }
 
         $response = $null
-        if ($PSCmdlet.ShouldProcess("'$PackageName' v$Version", "Move from '$SourceFeed' to '$DestinationFeed'")) {
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Moving '$PackageName' v$Version : '$SourceFeed' → '$DestinationFeed'"
+        if ($PSCmdlet.ShouldProcess("'$Name' v$Version", "Move from '$FromFeed' to '$ToFeed'")) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Moving '$Name' v$Version : '$FromFeed' → '$ToFeed'"
             try {
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling $promoteUrl" -Tag 'RestCall'
                 $response = Invoke-RestMethod -Uri $promoteUrl -Method POST -Headers $headers `
@@ -335,17 +345,17 @@ function Move-ProGetPackageIntraTier {
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from $promoteUrl" -Tag 'RestCall'
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Move successful'
             } catch {
-                $errorMessage = "Failed to move '$PackageName' v$Version from '$SourceFeed' to '$DestinationFeed'. Exception: $($_.Exception.Message)"
+                $errorMessage = "Failed to move '$Name' v$Version from '$FromFeed' to '$ToFeed'. Exception: $($_.Exception.Message)"
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
                 throw
             }
         }
 
         [PSCustomObject]@{
-            PackageName     = $PackageName
+            PackageName     = $Name
             Version         = $Version
-            SourceFeed      = $SourceFeed
-            DestinationFeed = $DestinationFeed
+            SourceFeed      = $FromFeed
+            DestinationFeed = $ToFeed
             ScanPassed      = $true
             Promoted        = $true
             Reason          = 'Intra-tier move after scan'

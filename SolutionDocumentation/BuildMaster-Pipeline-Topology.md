@@ -62,7 +62,7 @@ parameterize the pipeline.
 | ------------------------------------------------- | ---------------------------- | ------------------------------------------------------- |
 | `ATAP.Utilities-CSharp`                           | `CSharp-Package-Pipeline`    | All ATAP.Utilities NuGet packages.                      |
 | `AceCommander-CSharp`                             | `CSharp-Package-Pipeline`    | AceCommander's library packages (excluding the bundle). |
-| `ATAP.Utilities.BuildTooling.PowerShell-PSModule` | `PowerShell-Module-Pipeline` | The build-tooling module itself.                        |
+| `ATAP.Utilities-PowerShell` | `PowerShell-Module-Pipeline` | The build-tooling module itself.                        |
 | `ATAP.Utilities.FileIO.PowerShell-PSModule`       | `PowerShell-Module-Pipeline` | One application per first-party module.                 |
 | `…` (one app per PowerShell module)               | `PowerShell-Module-Pipeline` |                                                         |
 | `AceCommander-ReleaseBundle`                      | `Release-Bundle-Pipeline`    | The customer-facing AceCommander installer.             |
@@ -84,26 +84,26 @@ workstation.
 
 > Cmdlets marked `spec` are referenced by the strategy docs and the BuildMaster pipelines but have not yet been implemented in `ATAP.Utilities.BuildTooling.PowerShell`. Cmdlets marked `partial` have a sibling implementation under a different (legacy or decomposed) name. The Status column below was populated on 2026-05-08 by enumerating `*.ps1` files in the module's `public/` and `private/` folders, then **refined on 2026-05-09** from a developer workstation by reading the module manifest's `FunctionsToExport` list and inspecting the body of every candidate sibling file. It was updated on 2026-05-11 for the Stream I Release Bundle cmdlets.
 
-| Cmdlet                             | Used by                                      | Role                                                                                                                                                                                                       | Status      |
-| ---------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| `Get-BuildContext`                 | All three pipelines                          | Resolve branch type, application, version, tier from environment.                                                                                                                                          | implemented |
-| `New-ReleaseManifest`              | Release-Bundle pipeline                      | Generate `manifest.json` for a release tag.                                                                                                                                                                | implemented |
-| `New-ReleaseBundle`                | Release-Bundle pipeline                      | Assemble the bundle directory tree and pack to `.upack`.                                                                                                                                                   | implemented |
-| `Get-DeployedReleaseManifest`      | Release-Bundle support                       | Read and validate a deployed bundle's `manifest.json`.                                                                                                                                                     | implemented |
-| `Compare-ReleaseManifest`          | Release-Bundle support                       | Summarize package, migration, and checksum differences between two manifests.                                                                                                                              | implemented |
-| `Publish-NuGetPackageToProGet`     | C# pipeline                                  | Push a `.nupkg` to a ProGet NuGet feed (single source of truth for the push command).                                                                                                                      | implemented |
-| `New-PSModuleNupkg`                | PowerShell pipeline                          | Pack a PowerShell module folder into a `.nupkg` without publishing it.                                                                                                                                     | implemented |
-| `Publish-PSModuleToProGet`         | PowerShell pipeline                          | Push a PowerShell `.nupkg` to a ProGet PowerShellGet feed.                                                                                                                                                 | implemented |
-| `Publish-UniversalPackageToProGet` | Release-Bundle pipeline                      | Push a `.upack` to a ProGet Universal feed.                                                                                                                                                                | implemented |
-| `Promote-ProGetPackage`            | All three pipelines                          | Call ProGet's promotion API to copy a package between feeds. Idempotent — no-op if already promoted.                                                                                                       | implemented |
-| `New-BuildMasterRelease`           | All three pipelines                          | Create / update a BuildMaster release record for a specific version.                                                                                                                                       | implemented |
-| `Start-BuildMasterPipeline`        | Polling task                                 | Trigger a release's pipeline run via BuildMaster API.                                                                                                                                                      | implemented |
-| `Approve-BuildMasterStage`         | All three pipelines                          | Mark a tier gate passed.                                                                                                                                                                                   | implemented |
-| `Invoke-FlywayRehearsal`           | Release-Bundle pipeline                      | Apply bundled migrations in a per-run ephemeral rehearsal DB and capture the log.                                                                                                                          | implemented |
-| `Publish-ChocolateyRelease`        | Release-Bundle pipeline (Distribution stage) | Push the Chocolatey wrapper package.                                                                                                                                                                       | spec        |
-| `Update-WinGetManifestSource`      | Release-Bundle pipeline (Distribution stage) | Update the WinGet manifest set.                                                                                                                                                                            | spec        |
-| `Invoke-PromotedPackageTests`      | C# pipeline (Development–Production tiers)    | Run `dotnet test` against the `.Tests.csproj` project with `UsePackageReferenceForSUT=true` and `SUTVersion` set to the promoted version; accepts `-TestFilter` for tier-appropriate `--filter` arguments. | spec        |
-| `Invoke-PromotedModuleTests`       | PowerShell pipeline (Development–Production tiers) | Run Pester against the installed promoted PowerShell module version from the tier's feed.                                                                                                             | spec        |
+| Cmdlet                             | Used by                                            | Role                                                                                                                                                                                                       | Status      |
+| ---------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| `Get-BuildContext`                 | All three pipelines                                | Resolve branch type, application, version, tier from environment.                                                                                                                                          | implemented |
+| `New-ReleaseManifest`              | Release-Bundle pipeline                            | Generate `manifest.json` for a release tag.                                                                                                                                                                | implemented |
+| `New-ReleaseBundle`                | Release-Bundle pipeline                            | Assemble the bundle directory tree and pack to `.upack`.                                                                                                                                                   | implemented |
+| `Get-DeployedReleaseManifest`      | Release-Bundle support                             | Read and validate a deployed bundle's `manifest.json`.                                                                                                                                                     | implemented |
+| `Compare-ReleaseManifest`          | Release-Bundle support                             | Summarize package, migration, and checksum differences between two manifests.                                                                                                                              | implemented |
+| `Publish-NuGetPackageToProGet`     | C# pipeline                                        | Push a `.nupkg` to a ProGet NuGet feed (single source of truth for the push command).                                                                                                                      | implemented |
+| `New-PSModuleNupkg`                | PowerShell pipeline                                | Pack a PowerShell module folder into a `.nupkg` without publishing it.                                                                                                                                     | implemented |
+| `Publish-PSModuleToProGet`         | PowerShell pipeline                                | Push a PowerShell `.nupkg` to a ProGet PowerShellGet feed.                                                                                                                                                 | implemented |
+| `Publish-UniversalPackageToProGet` | Release-Bundle pipeline                            | Push a `.upack` to a ProGet Universal feed.                                                                                                                                                                | implemented |
+| `Promote-ProGetPackage`            | All three pipelines                                | Call ProGet's promotion API to copy a package between feeds. Idempotent — no-op if already promoted.                                                                                                       | implemented |
+| `New-BuildMasterRelease`           | All three pipelines                                | Create / update a BuildMaster release record for a specific version.                                                                                                                                       | implemented |
+| `Start-BuildMasterPipeline`        | Polling task                                       | Trigger a release's pipeline run via BuildMaster API.                                                                                                                                                      | implemented |
+| `Approve-BuildMasterStage`         | All three pipelines                                | Mark a tier gate passed.                                                                                                                                                                                   | implemented |
+| `Invoke-FlywayRehearsal`           | Release-Bundle pipeline                            | Apply bundled migrations in a per-run ephemeral rehearsal DB and capture the log.                                                                                                                          | implemented |
+| `Publish-ChocolateyRelease`        | Release-Bundle pipeline (Distribution stage)       | Push the Chocolatey wrapper package.                                                                                                                                                                       | spec        |
+| `Update-WinGetManifestSource`      | Release-Bundle pipeline (Distribution stage)       | Update the WinGet manifest set.                                                                                                                                                                            | spec        |
+| `Invoke-PromotedPackageTests`      | C# pipeline (Development–Production tiers)         | Run `dotnet test` against the `.Tests.csproj` project with `UsePackageReferenceForSUT=true` and `SUTVersion` set to the promoted version; accepts `-TestFilter` for tier-appropriate `--filter` arguments. | spec        |
+| `Invoke-PromotedModuleTests`       | PowerShell pipeline (Development–Production tiers) | Run Pester against the installed promoted PowerShell module version from the tier's feed.                                                                                                                  | spec        |
 
 > **Audit-defect resolved (2026-05-11).** `public/Publish-PSModuleToProGetFeed.ps1` now defines `Publish-PSModuleToProGetFeed`; the unused public `Get-PSModuleFeedUri` helper was removed while Stream G introduced the new `Publish-PSModuleToProGet` wrapper.
 
@@ -215,9 +215,9 @@ recorded in the BuildMaster configuration runbook.
 
 The poller:
 
-1. Reads the configured ProGet base URL, API key, BuildMaster base URL,
-   BuildMaster API key, feed list, feed/package-to-Application map, and
-   state-file path.
+1. Reads the configured ProGet base URL, BuildMaster base URL, feed list,
+   feed/package-to-Application map, and state-file path, and retrieves the
+   ProGet and BuildMaster API keys from Bitwarden (see §6.4).
 2. Queries ProGet package-list APIs for each Experimental feed.
 3. Compares each `(feedName, packageName, packageVersion)` tuple against
    durable polling state.
@@ -245,9 +245,26 @@ or reused; a package version that has already triggered a run is not
 started again unless the state entry is intentionally removed during a
 documented replay.
 
-No inbound endpoint is required. API keys are stored in the task runner's
-credential store or environment and are not written to the polling state
-file, package metadata, or runbook examples.
+No inbound endpoint is required.
+
+**Credential source.** The poller needs two API keys — a ProGet key (feed
+read) and a BuildMaster key (release create / build start). Both are stored
+in Bitwarden and retrieved at poller startup with `Get-BitWardenSecret`; the
+resolved values exist only in the running poller process and are never
+written to the polling state file, package metadata, the scheduled-task
+definition, or runbook examples. The exact Bitwarden item names, and the
+minimum scope each key carries (ProGet: read on the three Experimental feeds
+only — not promote or delete; BuildMaster: release-create and build-start on
+the three durable Applications only), are recorded in the BuildMaster
+configuration runbook. Do not reuse the broad `PROGET_ADMIN_API_KEY` for the
+poller.
+
+**Runner identity and state-file ACL.** The single active runner executes
+under a dedicated operations service account — not a developer's interactive
+account — and that account is the only writer of the state file. The state
+file is ACL'd so that only the runner's service account and local
+administrators can read or write it; it holds `(feedName, packageName,
+packageVersion)` tuples and timestamps only, never a credential.
 
 ---
 
@@ -320,7 +337,8 @@ a new commit), and the new artifact starts from Experimental again.
    single-source-of-truth cmdlet exists but legacy scripts still call
    `dotnet nuget push` directly in some places.
 4. **ProGet polling trigger is not yet wired.** The polling task, schedule,
-   state-file path, and feed/package-to-Application map still need to be
+   state-file path, feed/package-to-Application map, credential source
+   (Bitwarden), runner service account, and state-file ACL still need to be
    implemented and recorded in the BuildMaster configuration runbook.
 5. **BuildMaster API base URL is host-specific** (`utat022:81` vs.
    `localhost:81` vs. eventual production hostname). Centralize it in the

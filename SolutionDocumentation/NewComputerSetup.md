@@ -134,7 +134,31 @@ New-Item -ItemType SymbolicLink `
   -Target (Join-Path $profileSource 'CurrentUserAllHostsV7CoreProfile.ps1') | Out-Null
 ```
 
-### 4.3 Register the Bitwarden login script at startup
+### 4.3 Install required PowerShell Gallery modules
+
+Install the PowerShell Gallery dependencies before later steps import
+`ATAP.Utilities.BuildTooling.PowerShell`.
+
+```powershell
+$requiredModules = @('PSFramework', 'powershell-yaml')
+
+foreach ($moduleName in $requiredModules) {
+  if (-not (Get-Module -ListAvailable -Name $moduleName)) {
+    Install-Module -Name $moduleName -Repository PSGallery -Scope CurrentUser -Force
+  }
+}
+
+Get-Module -ListAvailable PSFramework, powershell-yaml |
+  Select-Object Name, Version, ModuleBase
+```
+
+If `PSGallery` is not already trusted on the workstation, run this once first:
+
+```powershell
+Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+```
+
+### 4.4 Register the Bitwarden login script at startup
 
 ```powershell
 Import-Module ATAP.Utilities.PowerShell

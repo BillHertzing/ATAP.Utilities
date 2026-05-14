@@ -232,6 +232,26 @@ alongside versions originally pushed there. The resolution rule:
 > promoted out of feed X" must filter by prerelease label (e.g.
 > `0.*-Sprint*`).
 
+### 6.4 Binary determinism is required, not just version capture
+
+Capturing `$ResolvedPackageVersion` (§6.1, §6.2) fixes the **version
+identity** of an artifact, but it does not by itself guarantee that two
+pipeline runs of the same source produce the **same bytes**. The
+`+<gitshorthash>` build metadata is stripped from the `.nupkg` filename,
+so two runs against the same SHA can produce packages with identical
+filenames whose inner DLLs differ. ProGet rejects a re-push as a
+duplicate, but a `--skip-duplicate` accept would silently diverge the
+inner DLL SHA-256 from the recorded one.
+
+> The Experimental build MUST use `ContinuousIntegrationBuild=true` (set
+> automatically on BuildMaster agents) to ensure binary determinism.
+> Without this, two pipeline runs of the same source can produce DLLs
+> with different bytes and the same package version, which would
+> silently corrupt the immutability invariant.
+
+See `CSharp-Packages-Build-Process.md §10.4` for the mechanics of the
+`ContinuousIntegrationBuild` property.
+
 ---
 
 ## 7. What changes in the Build/Pack/Push docs

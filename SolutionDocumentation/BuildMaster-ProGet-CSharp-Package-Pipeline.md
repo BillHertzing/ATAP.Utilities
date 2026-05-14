@@ -219,7 +219,7 @@ Each stage:
 | Stage          | What runs                                                                                                  | Gate to next stage                                              |
 | -------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
 | Experimental   | `dotnet build`, `dotnet pack`, push to `nuget-experimental` (single push of record).                       | Automatic on packaging success.                                 |
-| Development    | `Promote-ProGetPackage` (Experimental → Development); restore the promoted package; run unit tests.        | Zero failures. Optionally a manual approval.                    |
+| Development    | `Promote-ProGetPackage` (Experimental → Development); restore the promoted package; run integration tests (`--filter Category=Integration`). Unit tests already gated at Experimental tier. | Zero failures. Optionally a manual approval.                    |
 | Integration    | `Promote-ProGetPackage` (Development → Integration); restore the promoted package; run integration tests.  | Integration test artifact present, zero failures.               |
 | QA             | `Promote-ProGetPackage` (Integration → QA); restore the promoted package; full regression + coverage.      | Coverage threshold met; full regression green.                  |
 | Production     | `Promote-ProGetPackage` (QA → Production). No new tests beyond a smoke check against the promoted package. | Manual approval from the release manager.                       |
@@ -309,6 +309,22 @@ The plan follows exactly the same shape as `PowerShellModule-5Stage.otter`:
 > See [BuildMaster-Pipeline-Topology.md §5](BuildMaster-Pipeline-Topology.md#5-pipeline-plan-storage)
 > for the canonical stage shape and [Immutable-Build-Strategy.md §5](Immutable-Build-Strategy.md#5-what-promotion-is-and-is-not)
 > for what promotion is (and is not).
+>
+> **`UsePackageReferenceForSUT` / `SUTVersion` (T2–T5).** Every non-Experimental
+> stage tests against the _promoted package_, not source. `Invoke-PromotedPackageTests`
+> passes `/p:UsePackageReferenceForSUT=true /p:SUTVersion=$ResolvedPackageVersion`
+> to the underlying `dotnet test` invocation. The `-Version` parameter on
+> `Invoke-PromotedPackageTests` is the `SUTVersion` value. See
+> [CSharp-Packages-Test-Process.md §11.2](CSharp-Packages-Test-Process.md#112-t2t5--packagereference-mode-promoted-artifact)
+> for the raw `dotnet test` equivalent.
+>
+> **TestSlice (`.slnf`) status.** As of Sprint-7, no `*.slnf` solution-filter
+> files have been created in this repository. The `Invoke-PromotedPackageTests`
+> cmdlet currently invokes `dotnet test` against the full `ATAP.Utilities.sln`.
+> When TestSlice files are introduced, update the `-ProjectPath` parameter of
+> `Invoke-PromotedPackageTests` to reference the appropriate `.slnf` filter
+> and replace any bare `.sln` references in this document with `.slnf` paths.
+> Tier-to-filter mapping is in [CSharp-Packages-Test-Process.md §4](CSharp-Packages-Test-Process.md#4-organizing-tests-with-categories-traits).
 
 ```otter
 ##########################################################################
@@ -416,7 +432,7 @@ stage Development
         Exec
         (
             FileName: pwsh,
-            Arguments: `-Command "Invoke-PromotedPackageTests -Name $PackageName -Version $ResolvedPackageVersion -Feed nuget-development -ResultsPath _generated\testresults\$Tier"`,
+            Arguments: `-Command "Invoke-PromotedPackageTests -Name $PackageName -Version $ResolvedPackageVersion -Feed nuget-development -TestFilter 'Category=Integration' -ResultsPath _generated\testresults\$Tier"`,
             WorkingDirectory: $SourcePath,
             SuccessExitCode: 0
         );

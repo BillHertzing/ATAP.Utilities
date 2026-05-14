@@ -46,6 +46,15 @@ found. Because both files live at the solution root, every project in `src/` and
 `tests/` inherits them automatically — no explicit `<Import>` is needed in any
 individual `.csproj`.
 
+Test projects follow the unified post-sprint-0007 `.Tests` naming convention in
+both folder and project-file names, for example
+`tests/ATAP.Utilities.Philote.Tests/ATAP.Utilities.Philote.Tests.csproj`.
+Unit, integration, and performance distinctions now live in source-file suffixes
+and xUnit traits rather than tier-specific project-name suffixes. Test projects
+still participate in normal build property inheritance, but they set
+`IsPackable=false` and `GeneratePackageOnBuild=false` so they do not produce
+NuGet packages.
+
 **Load order for one project build:**
 
 ```text

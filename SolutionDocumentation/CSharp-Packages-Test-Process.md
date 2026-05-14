@@ -575,6 +575,47 @@ Developer pre-commit is an informal norm, not a hard gate — the sprint
 worktree branch has no server-side push policy. CI-side gates begin at the
 Experimental tier.
 
+### 11.4 DB-backed integration tests against a promoted package
+
+The promoted `.nupkg` carries the system-under-test assemblies **only** — it
+holds no connection string and no knowledge of which database tier it is
+being exercised against. The `UsePackageReferenceForSUT` swap (§3.1) changes
+*where the SUT assembly is resolved from*; it does **not** change *how a test
+obtains its database connection*. DB-backed integration tests therefore get
+their connection input the same way in ProjectReference mode and in
+PackageReference mode:
+
+1. A test never hard-codes a connection string and never reads one out of
+   the package.
+2. The connection string lives in a Bitwarden Secure Note whose name follows
+   [SprintInfrastructure-Naming.md §4](SprintInfrastructure-Naming.md#4-bitwarden-connection-string-secret-naming).
+3. The pipeline (or the developer, locally) passes the **secret name** — not
+   the secret value — to the test step in the `ATAPUTILITIES_DB_SECRET_NAME`
+   environment variable. The `Fixture.Database` fixture from
+   `ATAP.Utilities.Testing` (§8.1) reads that variable and resolves the name
+   to a live connection string at run time.
+4. If `ATAPUTILITIES_DB_SECRET_NAME` is unset, DB-backed integration tests
+   **skip** (they do not fail) — matching the "no live dependency → skip"
+   convention used for other integration dependencies.
+
+| Tier                     | Bitwarden secret-name form                                    | SQL instance            |
+| ------------------------ | ------------------------------------------------------------- | ----------------------- |
+| Developer / Experimental | `dbConnectionString-ATAPUtilities-<Host>-Experimental-<User>` | `<Host>\Exp<username>`  |
+| Development (alpha)      | `dbConnectionString-ATAPUtilities-<Host>-Development-<User>`  | `<Host>\Dev<username>`  |
+| Integration (beta)       | `dbConnectionString-ATAPUtilities-utat022-Integration`        | `utat022\Integration`   |
+| QA                       | `dbConnectionString-ATAPUtilities-utat022-QA`                 | `utat022\QA`            |
+| Production (smoke)       | `dbConnectionString-ATAPUtilities-utat022-Production`         | `utat022\Production`    |
+
+The BuildMaster release plan holds the name in its per-tier variable (for the
+Integration tier this is the existing `IntegrationDatabaseBitwardenSecretName`
+stable variable; see [SprintInfrastructure-Naming.md §6.2](SprintInfrastructure-Naming.md#62-stable-variables-set-once-during-ecosystem-onboarding))
+and exports it into the agent process as `ATAPUTILITIES_DB_SECRET_NAME` for
+the test step. Locally a developer points the same variable at the
+per-sprint, username-suffixed secret created by `New-SprintBitwardenSecrets`.
+Either way the value crossing the process boundary is a *name*; the
+credential itself is fetched at run time from Bitwarden and never appears in
+a build log, package, or test artifact.
+
 ---
 
 ## 12. Common Failures

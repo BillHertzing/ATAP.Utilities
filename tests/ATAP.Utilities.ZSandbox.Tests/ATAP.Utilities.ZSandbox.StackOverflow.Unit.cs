@@ -4,6 +4,7 @@
     using YamlDotNet.Serialization;
 
     namespace Utilities.ComputerInventory {
+        [Trait("Category", "Unit")]
         public class CPU {
             private CPUMaker cPUMaker;
         public CPU()         {        }

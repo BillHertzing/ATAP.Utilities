@@ -6,6 +6,7 @@ using ATAP.Utilities.ConcurrentObservableCollections;
 
 namespace ATAP.Utilities.ConcurrentObservableCollections.Tests
 {
+  [Trait("Category", "Unit")]
   public class Fixture
   {
 

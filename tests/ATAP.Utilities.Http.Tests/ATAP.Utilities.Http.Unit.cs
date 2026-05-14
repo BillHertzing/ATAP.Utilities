@@ -5,6 +5,7 @@ using Xunit.Abstractions;
 namespace ATAP.Utilities.Http.Tests
 {
   
+        [Trait("Category", "Unit")]
         public class Fixture
         {
             private string hello;

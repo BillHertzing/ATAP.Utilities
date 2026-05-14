@@ -18,6 +18,7 @@ using ATAP.Utilities.Testing;
 namespace ATAP.Utilities.ComputerInventory.ProcessInfo.Tests
 {
 
+  [Trait("Category", "Unit")]
   public class Fixture : DiFixture
   {
     public Fixture() : base()

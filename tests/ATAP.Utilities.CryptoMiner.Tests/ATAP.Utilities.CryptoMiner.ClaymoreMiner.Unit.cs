@@ -25,6 +25,7 @@ using UnitsNet;
 
 namespace ATAP.Utilities.CryptoMiner.Tests
 {
+    [Trait("Category", "Unit")]
     public class ClaymoreETHDualMinerFixture
     {
         public ClaymoreETHDualMinerProcess claymoreETHDualMinerProcess;

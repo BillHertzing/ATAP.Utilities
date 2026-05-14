@@ -20,6 +20,7 @@ using ATAP.Utilities.ComputerInventory.Hardware.Models;
 
 namespace ATAP.Utilities.CryptoMiner.Tests
 {
+  [Trait("Category", "Unit")]
   public class Fixture
   {
     public ComputerProcesses computerProcesses;

@@ -20,6 +20,7 @@ using ATAP.Utilities.ComputerInventory.Models;
 
 namespace ATAP.Utilities.ZSandbox.Tests
 {
+    [Trait("Category", "Unit")]
     public class AAMinerTest
     {
         /*

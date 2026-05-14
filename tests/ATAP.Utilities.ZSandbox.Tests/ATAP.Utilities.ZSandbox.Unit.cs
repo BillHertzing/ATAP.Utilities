@@ -12,6 +12,7 @@ using YamlDotNet.Serialization;
 
 namespace ATAP.Utilities.ZSandbox.Tests
 {
+    [Trait("Category", "Unit")]
     public class Fixture
     {
         public Fixture()

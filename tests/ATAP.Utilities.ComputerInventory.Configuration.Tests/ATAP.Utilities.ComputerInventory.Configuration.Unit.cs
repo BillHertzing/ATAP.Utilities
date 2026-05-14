@@ -8,6 +8,7 @@ using ATAP.Utilities.Testing;
 namespace ATAP.Utilities.ComputerInventory.Configuration.Tests
 {
 
+  [Trait("Category", "Unit")]
   public partial class ComputerInventoryConfigurationUnitTests001 : IClassFixture<Fixture>
   {
 

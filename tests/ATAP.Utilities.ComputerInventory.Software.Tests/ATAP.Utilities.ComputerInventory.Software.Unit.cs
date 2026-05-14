@@ -7,6 +7,7 @@ namespace ATAP.Utilities.ComputerInventory.Software.Tests
 {
 
 
+  [Trait("Category", "Unit")]
   public partial class ComputerInventorySoftwareUnitTests001 : IClassFixture<Fixture>
   {
 

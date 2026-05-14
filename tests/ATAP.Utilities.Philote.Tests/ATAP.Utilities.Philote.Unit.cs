@@ -18,6 +18,7 @@ namespace ATAP.Utilities.Philote.Tests
   // Covariance test classes
   //======================================
   public interface IXId<T> { }
+  [Trait("Category", "Unit")]
   public class XId<T> :  IXId<T>
   {
     Guid Guid { get; set; }

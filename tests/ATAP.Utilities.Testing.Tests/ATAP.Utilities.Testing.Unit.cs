@@ -11,6 +11,7 @@ using ATAP.Utilities.Serializer;
 namespace ATAP.Utilities.Testing.Tests
 {
 
+    [Trait("Category", "Unit")]
     public partial class TestingUnitTests001 : IClassFixture<Fixture>
     {
     [Fact]

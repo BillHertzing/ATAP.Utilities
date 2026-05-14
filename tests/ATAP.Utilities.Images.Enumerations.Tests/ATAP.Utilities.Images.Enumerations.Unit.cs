@@ -8,6 +8,7 @@ using ATAP.Utilities.Testing;
 namespace ATAP.Utilities.Images.Enumerations.Tests
 {
 
+  [Trait("Category", "Unit")]
   public partial class EnumerationsUnitTests001 : IClassFixture<Fixture>
   {
 

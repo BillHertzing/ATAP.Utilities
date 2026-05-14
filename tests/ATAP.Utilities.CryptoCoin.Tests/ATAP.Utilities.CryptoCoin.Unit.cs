@@ -11,6 +11,7 @@ namespace ATAP.Utilities.CryptoCoin.Tests
 {
 
 
+  [Trait("Category", "Unit")]
   public class CryptoCoinUnitTests001 : IClassFixture<DiFixture>
   {
     readonly ITestOutputHelper output;

@@ -5,6 +5,7 @@ using ATAP.Utilities.Testing;
 namespace ATAP.Utilities.Logging.Tests {
 
 
+    [Trait("Category", "Unit")]
     public class LoggingUnitTests001 : IClassFixture<DiFixture> {
         DiFixture diFixture;
 

@@ -16,6 +16,7 @@ using System.Text.Json;
 
 namespace ATAP.Utilities.StronglyTypedID.Tests {
 
+  [Trait("Category", "Unit")]
   public partial class StronglyTypedIDTypeConverterUnitTests001 : IClassFixture<Fixture> {
 
     [Fact]

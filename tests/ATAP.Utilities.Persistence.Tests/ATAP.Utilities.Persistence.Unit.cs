@@ -17,6 +17,7 @@ using Xunit.Abstractions;
 
 namespace ATAP.Utilities.Persistence.Tests
 {
+  [Trait("Category", "Unit")]
   public partial class PersistenceUnitTests001 : IClassFixture<Fixture>
   {
 

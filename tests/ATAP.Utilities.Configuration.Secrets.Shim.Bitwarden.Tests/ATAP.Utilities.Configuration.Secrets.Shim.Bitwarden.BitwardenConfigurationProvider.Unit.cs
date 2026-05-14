@@ -8,6 +8,7 @@ using Xunit;
 
 namespace ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden.Tests;
 
+[Trait("Category", "Unit")]
 public sealed class BitwardenSecretMappingTests
 {
     [Fact]

@@ -12,6 +12,7 @@ using Xunit.Abstractions;
 namespace ATAP.Utilities.StronglyTypedID.Tests
 {
 
+  [Trait("Category", "Unit")]
   public partial class IntIdUnitTests001 : IClassFixture<Fixture>
   {
 

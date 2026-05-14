@@ -8,6 +8,7 @@ using Xunit.Abstractions;
 
 namespace ATAP.Utilities.GraphDataStructures.Tests
 {
+  [Trait("Category", "Unit")]
   public partial class GraphDataStructuresUnitTests001 : IClassFixture<Fixture>
   {
     [Theory]

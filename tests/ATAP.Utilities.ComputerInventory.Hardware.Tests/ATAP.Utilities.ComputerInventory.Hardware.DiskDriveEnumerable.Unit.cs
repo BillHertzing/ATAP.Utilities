@@ -12,6 +12,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
 {
 
 
+  [Trait("Category", "Unit")]
   public partial class ComputerInventoryHardwareUnitTests001 : IClassFixture<Fixture>
   {
     [Theory]

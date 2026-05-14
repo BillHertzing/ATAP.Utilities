@@ -10,6 +10,7 @@ namespace ATAP.Utilities.Serializer.Tests
 {
 
 
+  [Trait("Category", "Unit")]
   public partial class UnitTests001 : IClassFixture<Fixture>
   {
     [Theory]

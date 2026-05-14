@@ -10,6 +10,7 @@ using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.Testing.Fixture.Serialization.Shim.Newtonsoft.Tests {
 
+  [Trait("Category", "Unit")]
   public partial class UnitTests001 : IClassFixture<Fixture> {
     [Fact]
     void PassingTest() {

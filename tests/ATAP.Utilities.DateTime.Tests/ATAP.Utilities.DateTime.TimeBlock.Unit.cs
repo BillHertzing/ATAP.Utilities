@@ -11,6 +11,7 @@ namespace ATAP.Utilities.DateTime.Tests
 {
 
 
+  [Trait("Category", "Unit")]
   public partial class DateTimeUnitTests001 : IClassFixture<Fixture>
   {
     [Theory]

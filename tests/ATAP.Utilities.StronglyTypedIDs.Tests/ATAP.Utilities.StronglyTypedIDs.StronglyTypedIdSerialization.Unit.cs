@@ -22,6 +22,7 @@ namespace ATAP.Utilities.StronglyTypedID.Tests {
   // Attribution: https://github.com/xunit/xunit/issues/2007, however, we only need a class fixture not a collectionfixtire, so, commentedout below
   //  [CollectionDefinition(nameof(StronglyTypedIDSerializationSystemTextJsonUnitTests001), DisableParallelization = true)]
   //  [Collection(nameof(StronglyTypedIDSerializationSystemTextJsonUnitTests001))]
+  [Trait("Category", "Unit")]
   public partial class StronglyTypedIDSerializationUnitTests001 : IClassFixture<Fixture> {
 
     [Theory]

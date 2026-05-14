@@ -11,6 +11,7 @@ using ATAP.Utilities.Serializer.DataForTests;
 
 namespace ATAP.Utilities.Testing.Fixture.Serialization.Shim.ServiceStack.Tests {
 
+  [Trait("Category", "Unit")]
   public partial class UnitTests001 : IClassFixture<Fixture> {
     [Fact]
     void PassingTest() {

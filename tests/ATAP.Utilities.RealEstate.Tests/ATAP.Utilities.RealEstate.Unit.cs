@@ -9,6 +9,7 @@ using ATAP.Utilities.Testing;
 
 namespace ATAP.Utilities.RealEstate.Enumerations.Tests
 {
+  [Trait("Category", "Unit")]
   public class Fixture : DiFixture
   {
     // The correct answer to the test OperationEnumerationCountIsAsExpected

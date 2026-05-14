@@ -532,8 +532,10 @@ stage Production
 }
 ```
 
-> _Both `Promote-ProGetPackage` and `Invoke-PromotedPackageTests` are
-> currently spec — see [BuildMaster-Pipeline-Topology.md §4](BuildMaster-Pipeline-Topology.md#4-powershell-automation-surface) for status._
+> _`Promote-ProGetPackage` is implemented; `Invoke-PromotedPackageTests`
+> is currently spec — see [BuildMaster-Pipeline-Topology.md §4](BuildMaster-Pipeline-Topology.md#4-powershell-automation-surface)
+> for status. Both `Invoke-PromotedPackageTests` and
+> `Invoke-PromotedModuleTests` now appear in the §4 cmdlet inventory._
 
 **Individual project builds:** the per-project plan
 `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/CSharpPackage-PerProject.otter`

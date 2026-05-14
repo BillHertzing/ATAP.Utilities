@@ -68,13 +68,13 @@ dotnet pack src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj `
 Not every project in the solution is shipped. The current inventory in
 [BuildMaster-ProGet-CSharp-Package-Pipeline.md §1.1](BuildMaster-ProGet-CSharp-Package-Pipeline.md#11-project-families) classifies them:
 
-| Category                  | Example                            | `IsPackable` | Goes to ProGet? |
-| ------------------------- | ---------------------------------- | ------------ | --------------- |
-| Console apps              | `ATAP.Console.HelloWorld`          | `false`      | No              |
-| Service libraries (§1.1b) | `ATAP.Services.ConsoleMonitor`     | `true`       | Yes             |
-| Utility libraries (§1.1c) | `ATAP.Utilities.ETW`               | `true`       | Yes             |
-| Meta-package (§1.1d)      | `ATAP.Utilities`                   | `true`       | Yes             |
-| Unit test projects        | `ATAP.Utilities.Testing.UnitTests` | `false`      | No              |
+| Category                  | Example                        | `IsPackable` | Goes to ProGet? |
+| ------------------------- | ------------------------------ | ------------ | --------------- |
+| Console apps              | `ATAP.Console.HelloWorld`      | `false`      | No              |
+| Service libraries (§1.1b) | `ATAP.Services.ConsoleMonitor` | `true`       | Yes             |
+| Utility libraries (§1.1c) | `ATAP.Utilities.ETW`           | `true`       | Yes             |
+| Meta-package (§1.1d)      | `ATAP.Utilities`               | `true`       | Yes             |
+| Unit test projects        | `ATAP.Utilities.Testing.Tests` | `false`      | No              |
 
 `IsPackable` defaults to `true` for SDK-style projects. Console and test
 projects set it to `false` explicitly in their `.csproj`. If a library project

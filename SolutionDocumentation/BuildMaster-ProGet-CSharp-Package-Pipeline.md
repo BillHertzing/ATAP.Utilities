@@ -212,17 +212,17 @@ Experimental (nuget-experimental)  →  Development (nuget-development)  →  In
 > builds. Every later stage **promotes the existing artifact** via
 > `Promote-ProGetPackage` (which calls ProGet's promotion API) and then runs
 > tier-appropriate tests against that artifact. The same `(PackageId,
-> Version, SHA-256)` flows through all five feeds.
+Version, SHA-256)` flows through all five feeds.
 
 Each stage:
 
-| Stage          | What runs                                                                                                  | Gate to next stage                                              |
-| -------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| Experimental   | `dotnet build`, `dotnet pack`, push to `nuget-experimental` (single push of record).                       | Automatic on packaging success.                                 |
-| Development    | `Promote-ProGetPackage` (Experimental → Development); restore the promoted package; run integration tests (`--filter Category=Integration`). Unit tests already gated at Experimental tier. | Zero failures. Optionally a manual approval.                    |
-| Integration    | `Promote-ProGetPackage` (Development → Integration); restore the promoted package; run integration tests.  | Integration test artifact present, zero failures.               |
-| QA             | `Promote-ProGetPackage` (Integration → QA); restore the promoted package; full regression + coverage.      | Coverage threshold met; full regression green.                  |
-| Production     | `Promote-ProGetPackage` (QA → Production). No new tests beyond a smoke check against the promoted package. | Manual approval from the release manager.                       |
+| Stage        | What runs                                                                                                                                                                                   | Gate to next stage                                |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| Experimental | `dotnet build`, `dotnet pack`, push to `nuget-experimental` (single push of record).                                                                                                        | Automatic on packaging success.                   |
+| Development  | `Promote-ProGetPackage` (Experimental → Development); restore the promoted package; run integration tests (`--filter Category=Integration`). Unit tests already gated at Experimental tier. | Zero failures. Optionally a manual approval.      |
+| Integration  | `Promote-ProGetPackage` (Development → Integration); restore the promoted package; run integration tests.                                                                                   | Integration test artifact present, zero failures. |
+| QA           | `Promote-ProGetPackage` (Integration → QA); restore the promoted package; full regression + coverage.                                                                                       | Coverage threshold met; full regression green.    |
+| Production   | `Promote-ProGetPackage` (QA → Production). No new tests beyond a smoke check against the promoted package.                                                                                  | Manual approval from the release manager.         |
 
 Promotion is a metadata operation in ProGet — it does not rebuild the
 `.nupkg`. See [Immutable-Build-Strategy.md §5](Immutable-Build-Strategy.md#5-what-promotion-is-and-is-not).
@@ -678,7 +678,7 @@ dotnet nuget push _generated\nuget\local\*.nupkg `
 > tier is resolved from the NBGV prerelease label, not from the branch the
 > build came from. The monitors below remain useful as **automatic triggers**
 > for the Experimental build on each branch type, but the tier they imply is
-> only the *starting* tier — the artifact's actual journey through the five
+> only the _starting_ tier — the artifact's actual journey through the five
 > feeds is driven by promotion calls, not by branch matches. Treat the
 > "Production stage" monitor as the trigger for "build the
 > release-branch artifact and start it at Experimental, then promote upward as
@@ -795,13 +795,13 @@ Set `$ProjectPath` to one of these values when creating a manual build:
 
 ## 11. Key Source Files
 
-| File                                                                          | Role                                                                                                                                                                |
-| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `version.json` (repo root)                                                    | NBGV configuration; sets the default prerelease label and SemVer 2 mode for all projects                                                                            |
-| `{project}/version.json`                                                      | Optional per-project NBGV override; inherits from root when absent                                                                                                  |
-| `Directory.Build.targets`                                                     | Solution-wide import of `ATAP.Utilities.BuildTooling.targets`; contains legacy `<PackageReference Update>` overrides (being migrated to `Directory.Packages.props`) |
-| `Directory.Packages.props`                                                    | Central Package Management — target state after migration; declares all `<PackageVersion>` entries with `ManagePackageVersionsCentrally=true`                       |
-| `src/ATAP.Utilities.BuildTooling.PowerShell/public/Publish-ATAPUtilities.ps1` | Batch script to build and push all libraries locally in dependency order; used outside of BuildMaster for developer publishing runs                                 |
+| File                                                                               | Role                                                                                                                                                                |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `version.json` (repo root)                                                         | NBGV configuration; sets the default prerelease label and SemVer 2 mode for all projects                                                                            |
+| `{project}/version.json`                                                           | Optional per-project NBGV override; inherits from root when absent                                                                                                  |
+| `Directory.Build.targets`                                                          | Solution-wide import of `ATAP.Utilities.BuildTooling.targets`; contains legacy `<PackageReference Update>` overrides (being migrated to `Directory.Packages.props`) |
+| `Directory.Packages.props`                                                         | Central Package Management — target state after migration; declares all `<PackageVersion>` entries with `ManagePackageVersionsCentrally=true`                       |
+| `src/ATAP.Utilities.BuildTooling.PowerShell/public/Publish-ATAPUtilities.ps1`      | Batch script to build and push all libraries locally in dependency order; used outside of BuildMaster for developer publishing runs                                 |
 | `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/CSharpPackage-5Stage.otter`     | OtterScript plan for full-solution builds (§5)                                                                                                                      |
 | `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/CSharpPackage-PerProject.otter` | OtterScript plan for individual package builds (§9)                                                                                                                 |
 

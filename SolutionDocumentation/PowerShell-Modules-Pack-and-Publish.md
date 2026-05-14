@@ -6,7 +6,7 @@ and is published to the **Experimental** ProGet PowerShellGet feed; how that
 same `.nupkg` is then **promoted** through Development → Integration → QA →
 Production via `Promote-ProGetPackage`.
 
-**Audience:** Developers running a local publish to T1, anyone setting up
+**Audience:** Developers running a local publish to the Experimental tier, anyone setting up
 PowerShellGet repository registration, CI engineers wiring BuildMaster to
 PowerShell publish steps.
 

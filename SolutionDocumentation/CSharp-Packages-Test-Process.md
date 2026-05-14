@@ -18,7 +18,8 @@ tier-appropriate test runs; maintainers of test-project conventions.
 > project uses a single-project, conditional-reference model: a
 > `UsePackageReferenceForSUT` MSBuild property switches the SUT dependency
 > between `<ProjectReference>` (developer/experimental tier, the default)
-> and `<PackageReference>` (all promotion tiers T2–T5). This eliminates
+> and `<PackageReference>` (all promotion tiers — Development through
+> Production). This eliminates
 > duplicate test projects while satisfying the immutable-build requirement
 > that higher tiers validate the promoted artifact, not a local rebuild.
 > See §3.1 and §11 for mechanics.
@@ -161,17 +162,17 @@ the example):
 ```xml
 <PropertyGroup>
   <!-- Default: false → ProjectReference mode (developer / Experimental tier).
-       Set to true in CI promotion tiers (T2–T5) to test the promoted package. -->
+       Set to true in CI promotion tiers (Development–Production) to test the promoted package. -->
   <UsePackageReferenceForSUT
       Condition="'$(UsePackageReferenceForSUT)' == ''">false</UsePackageReferenceForSUT>
 </PropertyGroup>
 
-<!-- Developer / Experimental (T1): reference local source -->
+<!-- Developer / Experimental tier: reference local source -->
 <ItemGroup Condition="'$(UsePackageReferenceForSUT)' == 'false'">
   <ProjectReference Include="..\..\src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
 </ItemGroup>
 
-<!-- Promotion tiers (T2–T5): reference the promoted NuGet package -->
+<!-- Promotion tiers (Development–Production): reference the promoted NuGet package -->
 <ItemGroup Condition="'$(UsePackageReferenceForSUT)' == 'true'">
   <PackageReference Include="ATAP.Utilities.Philote" Version="$(SUTVersion)" />
 </ItemGroup>
@@ -302,9 +303,9 @@ useful when a CI log omits details.
 
 ### 5.5 Simulating a promotion-tier run locally
 
-To reproduce exactly what BuildMaster does at T2–T5, ensure the promoted
-package is available from your local ProGet feed, then pass the two extra
-MSBuild properties:
+To reproduce exactly what BuildMaster does at the Development through
+Production tiers, ensure the promoted package is available from your local
+ProGet feed, then pass the two extra MSBuild properties:
 
 ```powershell
 dotnet test tests\ATAP.Utilities.Philote.UnitTests\ATAP.Utilities.Philote.UnitTests.csproj `
@@ -500,30 +501,31 @@ every item.
 
 ## 11. Who Runs What, When
 
-Under the immutable-build strategy, the **package is built once** at T1
-(Experimental). Every later tier runs tests **against the existing promoted
+Under the immutable-build strategy, the **package is built once** at the
+Experimental tier. Every later tier runs tests **against the existing promoted
 package**, not against a fresh build. The `UsePackageReferenceForSUT` property
-(§3.1) is the mechanism: T1 and developer runs leave it at the default
-(`false` → `<ProjectReference>`); T2–T5 promotion runs set it to `true` and
-supply `SUTVersion` matching the exact package version being promoted.
+(§3.1) is the mechanism: Experimental-tier and developer runs leave it at the
+default (`false` → `<ProjectReference>`); the Development through Production
+promotion runs set it to `true` and supply `SUTVersion` matching the exact
+package version being promoted.
 
-### 11.1 Developer and T1 — ProjectReference mode
+### 11.1 Developer and Experimental tier — ProjectReference mode
 
 No special flags required. Tests reference the SUT via `<ProjectReference>`:
 
 ```powershell
-# Developer inner-loop or T1 CI
+# Developer inner-loop or Experimental-tier CI
 dotnet test ATAP.Utilities.sln -c Release `
     --logger trx `
     --results-directory _generated\testresults\experimental
 ```
 
-T1 (Experimental) builds and pushes the package to the Experimental feed,
+The Experimental tier builds and pushes the package to the Experimental feed,
 but also runs `Category=Unit` tests in ProjectReference mode as a fast
 pre-push gate. The artifact produced here is the package that travels
 unchanged through all subsequent tiers.
 
-### 11.2 T2–T5 — PackageReference mode (promoted artifact)
+### 11.2 Development–Production tiers — PackageReference mode (promoted artifact)
 
 The BuildMaster pipeline for each promotion tier must:
 
@@ -534,8 +536,8 @@ The BuildMaster pipeline for each promotion tier must:
 3. Pass `--no-build` only if the test project binaries were already
    produced in the same pipeline step; otherwise omit it.
 
-Example BuildMaster PowerShell step (T2 alpha, unit tests only as
-an illustration; adjust `--filter` per the tier table in §4):
+Example BuildMaster PowerShell step (Development tier / alpha, unit tests
+only as an illustration; adjust `--filter` per the tier table in §4):
 
 ```powershell
 # Variables supplied by BuildMaster release plan
@@ -559,18 +561,19 @@ dotnet test ATAP.Utilities.sln `
 
 ### 11.3 Tier summary
 
-| Trigger                 | `UsePackageReferenceForSUT` | `SUTVersion`          | Scope                           | Where it runs     |
-| ----------------------- | --------------------------- | --------------------- | ------------------------------- | ----------------- |
-| Developer pre-commit    | `false` (default)           | N/A                   | Affected project's unit tests   | Workstation       |
-| Developer before push   | `false` (default)           | N/A                   | Full `dotnet test` for the repo | Workstation       |
-| BuildMaster T1 (sprint) | `false` (default)           | N/A                   | `Category=Unit` — **build + push only** | BuildMaster agent |
-| BuildMaster T2 (alpha)  | `true`                      | promoted version      | All tests                       | BuildMaster agent |
-| BuildMaster T3 (beta)   | `true`                      | promoted version      | Unit + Integration              | BuildMaster agent |
-| BuildMaster T4 (qa)     | `true`                      | promoted version      | Full suite with coverage        | BuildMaster agent |
-| BuildMaster T5 (stable) | `true`                      | promoted version      | Smoke subset only               | Release agent     |
+| Trigger                            | `UsePackageReferenceForSUT` | `SUTVersion`     | Scope                                   | Where it runs     |
+| ---------------------------------- | --------------------------- | ---------------- | --------------------------------------- | ----------------- |
+| Developer pre-commit               | `false` (default)           | N/A              | Affected project's unit tests           | Workstation       |
+| Developer before push              | `false` (default)           | N/A              | Full `dotnet test` for the repo         | Workstation       |
+| BuildMaster Experimental (sprint)  | `false` (default)           | N/A              | `Category=Unit` — **build + push only** | BuildMaster agent |
+| BuildMaster Development (alpha)    | `true`                      | promoted version | All tests                               | BuildMaster agent |
+| BuildMaster Integration (beta)     | `true`                      | promoted version | Unit + Integration                      | BuildMaster agent |
+| BuildMaster QA (qa)                | `true`                      | promoted version | Full suite with coverage                | BuildMaster agent |
+| BuildMaster Production (stable)    | `true`                      | promoted version | Smoke subset only                       | Release agent     |
 
 Developer pre-commit is an informal norm, not a hard gate — the sprint
-worktree branch has no server-side push policy. CI-side gates begin at T1.
+worktree branch has no server-side push policy. CI-side gates begin at the
+Experimental tier.
 
 ---
 

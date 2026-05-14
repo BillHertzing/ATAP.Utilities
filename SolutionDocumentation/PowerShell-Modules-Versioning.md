@@ -73,7 +73,7 @@ the gallery joins them as `<ModuleVersion>-<Prerelease>` (e.g.
 5. Parse with the regex
    `^(?<Major>\d+)\.(?<Minor>\d+)\.(?<Patch>\d+)(?:-(?<Label>[A-Za-z][A-Za-z0-9]*)(?:\.(?<Height>\d+))?(?:\.g[0-9a-f]+)?)?$`.
 6. Build the `[Version]` from `Major.Minor.Patch`.
-7. If `Label` is empty → stable / T5 → `Prerelease = ''`.
+7. If `Label` is empty → stable / Production tier → `Prerelease = ''`.
 8. Otherwise concatenate `'{0}{1:D3}' -f $Label, $Height` —
    e.g. `Sprint042`, `Alpha009`, `Beta015`.
 9. Validate the result matches `^[A-Za-z0-9]+$` and throw otherwise.
@@ -264,7 +264,7 @@ new `.nupkg` to higher feeds happens by `Promote-ProGetPackage` per §7.2.
 
 ---
 
-## 8. Stable (T5) special case
+## 8. Stable (Production tier) special case
 
 When `version.json` has no `prerelease` segment in `version`:
 
@@ -282,7 +282,8 @@ hyphen, no label). The translation cmdlet:
 `Build-PSModuleManifest` always passes `-Prerelease` to
 `Update-ModuleManifest` regardless of value — passing the empty string
 **clears** any pre-existing prerelease in the source manifest. This is
-intentional: it keeps the same code path for tier promotion to T5.
+intentional: it keeps the same code path for tier promotion to the
+Production tier.
 
 ---
 

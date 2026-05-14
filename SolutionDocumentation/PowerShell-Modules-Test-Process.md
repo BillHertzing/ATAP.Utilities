@@ -93,7 +93,7 @@ Conventions:
 
 **Behavior**
 1. **Sprint tier**: skip Pester entirely; return `GatePass = $true` with
-   zero counts. The build still succeeds — fast feedback at T1.
+   zero counts. The build still succeeds — fast feedback at the Experimental tier.
 2. **Alpha+**: confirm Pester 5+ is installed; throw with install hint
    otherwise.
 3. Build a `[PesterConfiguration]` via `New-PSModulePesterConfiguration`
@@ -179,7 +179,7 @@ Describe 'Get-PSModuleVersionFromNBGV' -Tag 'Unit' {
 }
 
 Describe 'Publish-PSModuleToProGetFeed integration' -Tag 'Integration' {
-    It 'publishes to a real ProGet T1 feed' -Tag 'Integration' {
+    It 'publishes to a real ProGet Experimental feed' -Tag 'Integration' {
         # ...
     }
 }

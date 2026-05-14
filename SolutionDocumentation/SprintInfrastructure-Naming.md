@@ -44,10 +44,10 @@ across sprints.
 
 Two instances are created at sprint start and removed at sprint end:
 
-| Instance name   | Tier | Host                              |
-| --------------- | ---- | --------------------------------- |
-| `Dev<username>` | T2   | `localhost` / `$env:COMPUTERNAME` |
-| `Exp<username>` | T1   | `localhost` / `$env:COMPUTERNAME` |
+| Instance name   | Tier         | Host                              |
+| --------------- | ------------ | --------------------------------- |
+| `Dev<username>` | Development  | `localhost` / `$env:COMPUTERNAME` |
+| `Exp<username>` | Experimental | `localhost` / `$env:COMPUTERNAME` |
 
 **Rules:**
 
@@ -62,11 +62,11 @@ Two instances are created at sprint start and removed at sprint end:
 
 ### 2.2 Permanent ecosystem instances
 
-| Instance name | Tier | Host      |
-| ------------- | ---- | --------- |
-| `Integration` | T3   | `utat022` |
-| `QA`          | T4   | `utat022` |
-| `Production`  | T5   | `utat022` |
+| Instance name | Tier        | Host      |
+| ------------- | ----------- | --------- |
+| `Integration` | Integration | `utat022` |
+| `QA`          | QA          | `utat022` |
+| `Production`  | Production  | `utat022` |
 
 These are provisioned once during ecosystem onboarding. Sprint start/end
 never touches them.
@@ -80,23 +80,23 @@ family. **No per-sprint feeds.**
 
 ### 3.1 NuGet feeds (C# packages)
 
-| Feed name            | Tier | Hermetic                                       |
-| -------------------- | ---- | ---------------------------------------------- |
-| `nuget-experimental` | T1   | No (has `nuget.org` connector)                 |
-| `nuget-development`  | T2   | No (has `nuget.org` + experimental connectors) |
-| `nuget-integration`  | T3   | ✅ Yes (no public connector)                   |
-| `nuget-qa`           | T4   | ✅ Yes                                         |
-| `nuget-stable`       | T5   | No (has `nuget.org` connector)                 |
+| Feed name            | Tier         | Hermetic                                       |
+| -------------------- | ------------ | ---------------------------------------------- |
+| `nuget-experimental` | Experimental | No (has `nuget.org` connector)                 |
+| `nuget-development`  | Development  | No (has `nuget.org` + experimental connectors) |
+| `nuget-integration`  | Integration  | ✅ Yes (no public connector)                   |
+| `nuget-qa`           | QA           | ✅ Yes                                         |
+| `nuget-stable`       | Production   | No (has `nuget.org` connector)                 |
 
 ### 3.2 PowerShellGet feeds (PowerShell modules)
 
-| Feed name                    | Tier |
-| ---------------------------- | ---- |
-| `powershellget-experimental` | T1   |
-| `powershellget-development`  | T2   |
-| `powershellget-integration`  | T3   |
-| `powershellget-qa`           | T4   |
-| `powershellget-stable`       | T5   |
+| Feed name                    | Tier         |
+| ---------------------------- | ------------ |
+| `powershellget-experimental` | Experimental |
+| `powershellget-development`  | Development  |
+| `powershellget-integration`  | Integration  |
+| `powershellget-qa`           | QA           |
+| `powershellget-stable`       | Production   |
 
 ### 3.3 Connector chain
 

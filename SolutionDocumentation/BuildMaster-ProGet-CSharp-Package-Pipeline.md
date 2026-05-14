@@ -310,7 +310,8 @@ The plan follows exactly the same shape as `PowerShellModule-5Stage.otter`:
 > for the canonical stage shape and [Immutable-Build-Strategy.md §5](Immutable-Build-Strategy.md#5-what-promotion-is-and-is-not)
 > for what promotion is (and is not).
 >
-> **`UsePackageReferenceForSUT` / `SUTVersion` (T2–T5).** Every non-Experimental
+> **`UsePackageReferenceForSUT` / `SUTVersion` (Development–Production tiers).**
+> Every non-Experimental
 > stage tests against the _promoted package_, not source. `Invoke-PromotedPackageTests`
 > passes `/p:UsePackageReferenceForSUT=true /p:SUTVersion=$ResolvedPackageVersion`
 > to the underlying `dotnet test` invocation. The `-Version` parameter on

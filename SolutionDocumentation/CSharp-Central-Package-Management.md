@@ -187,7 +187,7 @@ second wildcard (`-*`) opts into prerelease versions.
 - The feed returns every available version of `ATAP.Utilities.Philote`.
 - NuGet picks the highest one matching `0.*-*`, which is typically the
   freshest `Sprint` prerelease built minutes ago on the developer's machine
-  and pushed to the T1/Experimental feed.
+  and pushed to the Experimental feed.
 
 **Why we want this**: AceCommander is a _consumer_ of the internal ATAP.Utilities
 packages. During active development we want every `dotnet build` to pull the
@@ -206,7 +206,7 @@ The contract between ATAP.Utilities (producer) and AceCommander (consumer) is:
 1. ATAP.Utilities builds a set of packages with version
    `0.{major}.{minor}-Sprint.{height}` (see
    [CSharp-Packages-Versioning.md](CSharp-Packages-Versioning.md) §4).
-2. The packages are pushed to ProGet's T1 feed (see
+2. The packages are pushed to ProGet's Experimental feed (see
    [CSharp-Packages-Pack-and-Push.md](CSharp-Packages-Pack-and-Push.md) §7).
 3. AceCommander's floating `0.*-*` restore picks up the new version on next
    `dotnet restore`.
@@ -219,25 +219,25 @@ The contract between ATAP.Utilities (producer) and AceCommander (consumer) is:
 
    and file a follow-up to unpick it once the upstream issue is resolved.
 
-### 6.1 Version-pinning rule at T3 (Integration) and above
+### 6.1 Version-pinning rule at the Integration tier and above
 
-**Rule:** Floating version patterns (`0.*-*`) are **only permitted** at T1
-(Experimental) and T2 (Development). At T3 (Integration), T4 (QA), and T5
-(Stable/Production), every `ATAP.*` entry in AceCommander's
+**Rule:** Floating version patterns (`0.*-*`) are **only permitted** at the
+Experimental and Development tiers. At the Integration, QA, and
+Stable/Production tiers, every `ATAP.*` entry in AceCommander's
 `Directory.Packages.props` **must** be pinned to a concrete version before
 `dotnet restore` is called.
 
 | Tier        | Feed                | Floating `0.*-*` allowed? |
 | ----------- | ------------------- | ------------------------- |
-| Experimental (T1) | `nuget-experimental` | Yes — default working-copy state |
-| Development (T2) | `nuget-development`  | Yes — resolves latest Alpha build |
-| Integration (T3) | `nuget-integration`  | **No** — must be pinned |
-| QA (T4)         | `nuget-qa`           | **No** — must be pinned |
-| Stable (T5)     | `nuget-stable`       | **No** — must be pinned |
+| Experimental | `nuget-experimental` | Yes — default working-copy state |
+| Development | `nuget-development`  | Yes — resolves latest Alpha build |
+| Integration | `nuget-integration`  | **No** — must be pinned |
+| QA          | `nuget-qa`           | **No** — must be pinned |
+| Stable      | `nuget-stable`       | **No** — must be pinned |
 
-**Why:** Non-deterministic restores at T3+ undermine the purpose of
-integration gating. Two consecutive QA builds could consume different
-package versions, making failures unreproducible.
+**Why:** Non-deterministic restores at the Integration tier and above
+undermine the purpose of integration gating. Two consecutive QA builds
+could consume different package versions, making failures unreproducible.
 
 **How (in CI):** The BuildMaster QA stage runs
 `Set-AceCommanderPackagePins.ps1` as its first step. The script resolves

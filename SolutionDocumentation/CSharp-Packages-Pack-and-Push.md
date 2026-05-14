@@ -250,13 +250,13 @@ easier to debug and does not require editing the `$libraries` list.
 
 Single ProGet instance at `http://localhost:50000`. Five feeds, one per tier:
 
-| Tier | Feed name            | Push URL (Experimental only — others reached by promotion)      |
-| ---- | -------------------- | --------------------------------------------------------------- |
-| T1   | `nuget-experimental` | `http://localhost:50000/nuget/nuget-experimental/v3/index.json` |
-| T2   | `nuget-development`  | (target of promotion from `nuget-experimental`)                 |
-| T3   | `nuget-integration`  | (target of promotion from `nuget-development`)                  |
-| T4   | `nuget-qa`           | (target of promotion from `nuget-integration`)                  |
-| T5   | `nuget-stable`       | (target of promotion from `nuget-qa`)                           |
+| Tier         | Feed name            | Push URL (Experimental only — others reached by promotion)      |
+| ------------ | -------------------- | --------------------------------------------------------------- |
+| Experimental | `nuget-experimental` | `http://localhost:50000/nuget/nuget-experimental/v3/index.json` |
+| Development  | `nuget-development`  | (target of promotion from `nuget-experimental`)                 |
+| Integration  | `nuget-integration`  | (target of promotion from `nuget-development`)                  |
+| QA           | `nuget-qa`           | (target of promotion from `nuget-integration`)                  |
+| Production   | `nuget-stable`       | (target of promotion from `nuget-qa`)                           |
 
 Under the immutable-build strategy, only `nuget-experimental` is a push
 target in the normal flow. Higher feeds are reached via
@@ -329,7 +329,7 @@ This pinning guarantees:
 All five `nuget-*` feeds are listed in `NuGet.config` on every branch. There
 are no per-sprint feeds and no per-branch feed mutations.
 
-Hermetic isolation at T3 (Integration) and T4 (QA) is enforced at the
+Hermetic isolation at the Integration and QA tiers is enforced at the
 **ProGet feed level** (hermetic connectors — no `nuget.org` uplink) and at
 the **package-source-mapping level** (only `ATAP.*` packages resolve from
 local feeds), not by pruning the source list. See [SprintInfrastructure-Naming.md](SprintInfrastructure-Naming.md) §3.

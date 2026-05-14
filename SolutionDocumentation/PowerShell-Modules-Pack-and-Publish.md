@@ -207,6 +207,18 @@ Note the wrapper passes `-NupkgPath` (a pre-built `.nupkg` path), not
 the BuildMaster release record, and promoted between feeds without ever
 being rebuilt.
 
+**Why `-NupkgPath` and not `-Path` (do not "simplify" this).**
+`Publish-PSResource` accepts both forms, so it is tempting to collapse
+the pack-then-publish steps by passing `-Path <folder>`. Do not. With
+`-Path`, `Publish-PSResource` builds the `.nupkg` in a temp directory and
+pushes it in a single step, so the exact bytes that land in ProGet are
+never inspectable on disk. That breaks the immutable-build invariant:
+the `(ModuleId, Version, SHA-256)` triple must be captured from a stable
+file before push, and the same file must be the one promoted upward
+through every tier. `-NupkgPath` is the only form that lets the pack
+output be hashed, recorded, and re-used unchanged — `-Path` would
+produce a fresh, unrecorded artifact on every call.
+
 `Publish-PSResource` returns `$null` on success in many versions; the
 wrapper wraps the result in a structured `PSCustomObject` for downstream
 consumers:

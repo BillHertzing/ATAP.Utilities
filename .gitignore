@@ -455,3 +455,7 @@ ASALocalRun/
 
 
 src/ATAP.Utilities.AutoDoc/log.txt
+
+# Editor local-history / save-backup snapshots
+*.bak
+*.bak[0-9]*

@@ -1,11 +1,14 @@
 ###################################################
-## BuildMaster.ConfigRootKeys.ps1
+## ConfigRootKeys.ps1
 ## Defines BuildMaster pipeline and OtterScript plan settings keys.
 ###################################################
 
-$global:configRootKeys.Add('BuildMasterBaseUrlConfigRootKey', 'BuildMaster.BaseUrl')
-$global:configRootKeys.Add('BuildMasterAdminApiKeySecretNameConfigRootKey', 'BuildMaster.AdminApiKeySecretName')
-$global:configRootKeys.Add('BuildMasterPlansDirectoryConfigRootKey', 'BuildMaster.PlansDirectory')
-$global:configRootKeys.Add('BuildMasterCSharpPerProjectPlanPathConfigRootKey', 'BuildMaster.CSharpPerProjectPlanPath')
-$global:configRootKeys.Add('BuildMasterDefaultRaftIdConfigRootKey', 'BuildMaster.DefaultRaftId')
-$global:configRootKeys.Add('BuildMasterDefaultRaftItemTypeCodeConfigRootKey', 'BuildMaster.DefaultRaftItemTypeCode')
+$global:configRootKeys.Add('BuildMasterBaseUrlConfigRootKey', 'BuildMasterBaseUrl')
+$global:configRootKeys.Add('BuildMasterAdminApiKeySecretNameConfigRootKey', 'BuildMasterAdminApiKeySecretName')
+$global:configRootKeys.Add('BuildMasterDefaultRaftIdConfigRootKey', 'BuildMasterDefaultRaftId')
+$global:configRootKeys.Add('BuildMasterDefaultRaftItemTypeCodeConfigRootKey', 'BuildMasterDefaultRaftItemTypeCode')
+# these folders are relative to the repo root
+$global:configRootKeys.Add('BuildMasterFilesFolderRelativePathConfigRootKey', 'BuildMasterFilesFolderRelativePath')
+$global:configRootKeys.Add('BuildMasterPlansFolderRelativePathConfigRootKey', 'BuildMasterPlansFolderRelativePath')
+$global:configRootKeys.Add('BuildMasterPipelinesFolderRelativePathConfigRootKey', 'BuildMasterPipelinesFolderRelativePath')
+$global:configRootKeys.Add('BuildMasterScriptsFolderRelativePathConfigRootKey', 'BuildMasterScriptsFolderRelativePath')

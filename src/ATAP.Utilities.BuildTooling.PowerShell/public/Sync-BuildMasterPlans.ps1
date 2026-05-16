@@ -87,6 +87,19 @@ function Sync-BuildMasterPlans {
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
+    # Load Helpers
+    try {
+      # ToDo: Remove this when packaging works
+      if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1"
+      }
+    }
+    catch {
+      $errorMessage = "Failed to load Get-ParameterValueFromNeoConfigurationRoot function. Exception: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      throw
+    }
+
     if ([string]::IsNullOrWhiteSpace($Path) -and $global:configRootKeys -and $global:settings) {
       $plansDirectoryKey = $global:configRootKeys['BuildMasterPlansDirectoryConfigRootKey']
       if ($plansDirectoryKey -and $global:settings.ContainsKey($plansDirectoryKey)) {
@@ -97,18 +110,7 @@ function Sync-BuildMasterPlans {
       throw 'Path was not supplied and BuildMaster.PlansDirectory was not found in $global:settings.'
     }
 
-    if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl) -and $global:configRootKeys -and $global:settings) {
-      $buildMasterBaseUrlKey = $global:configRootKeys['BuildMasterBaseUrlConfigRootKey']
-      if ($buildMasterBaseUrlKey -and $global:settings.ContainsKey($buildMasterBaseUrlKey)) {
-        $BuildMasterBaseUrl = $global:settings[$buildMasterBaseUrlKey]
-      }
-    }
-    if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl) -and $env:BUILDMASTER_BASE_URL) {
-      $BuildMasterBaseUrl = $env:BUILDMASTER_BASE_URL
-    }
-    if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {
-      $BuildMasterBaseUrl = 'http://localhost:50001'
-    }
+    $BuildMasterBaseUrl = Get-PVal -ParameterName 'BuildMasterBaseUrl' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterBaseUrl
 
     if ([string]::IsNullOrWhiteSpace($ApiKey)) {
       $ApiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
@@ -261,13 +263,13 @@ function Sync-BuildMasterPlans {
         }
 
         [void]$uploaded.Add([PSCustomObject]@{
-          Name             = $raftItemName
-          Path             = $file.FullName
-          RaftId           = $RaftId
-          RaftItemTypeCode = $RaftItemTypeCode
-          ApplicationId    = if ($resolvedApplicationId -gt 0) { $resolvedApplicationId } else { $null }
-          Uploaded         = -not $WhatIfPreference
-        })
+            Name             = $raftItemName
+            Path             = $file.FullName
+            RaftId           = $RaftId
+            RaftItemTypeCode = $RaftItemTypeCode
+            ApplicationId    = if ($resolvedApplicationId -gt 0) { $resolvedApplicationId } else { $null }
+            Uploaded         = -not $WhatIfPreference
+          })
       } catch {
         $errMsg = "Failed to sync BuildMaster plan '$raftItemName'. Exception: $($_.Exception.Message)"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errMsg

@@ -58,18 +58,20 @@ Each shipping component has a BuildMaster Application that **routes
 through one of the three pipelines**. Variables on the Application
 parameterize the pipeline.
 
-| Application                                       | Routes through               | Notes                                                   |
-| ------------------------------------------------- | ---------------------------- | ------------------------------------------------------- |
-| `ATAP.Utilities-CSharp`                           | `CSharp-Package-Pipeline`    | All ATAP.Utilities NuGet packages.                      |
-| `AceCommander-CSharp`                             | `CSharp-Package-Pipeline`    | AceCommander's library packages (excluding the bundle). |
-| `ATAP.Utilities-PowerShell` | `PowerShell-Module-Pipeline` | The build-tooling module itself.                        |
+| Application                                       | Routes through               | Notes                                                         |
+| ------------------------------------------------- | ---------------------------- | ------------------------------------------------------------- |
+| `ATAP.Utilities-CSharp`                           | `CSharp-Package-Pipeline`    | All ATAP.Utilities NuGet packages.                            |
+| `AceCommander-CSharp`                             | `CSharp-Package-Pipeline`    | AceCommander's library packages (excluding the bundle).       |
+| `ATAP.Utilities-PowerShell`                       | `PowerShell-Module-Pipeline` | The build-tooling module itself.                              |
 | _(all modules share `ATAP.Utilities-PowerShell`)_ | `PowerShell-Module-Pipeline` | `$ModuleName` build variable identifies the module per build. |
-| `AceCommander-ReleaseBundle`                      | `Release-Bundle-Pipeline`    | The customer-facing AceCommander installer.             |
+| `AceCommander-ReleaseBundle`                      | `Release-Bundle-Pipeline`    | The customer-facing AceCommander installer.                   |
 
-The "one app per module" rule for PowerShell is a convenience for
-BuildMaster's UI (each app shows the latest build of its module on its own
-page). It does not multiply pipelines — all PowerShell apps share the same
-plan and the same pipeline definition.
+All PowerShell modules share a single BuildMaster application,
+`ATAP.Utilities-PowerShell`. The module identity is injected at build time
+via the `$ModuleName` build variable (with `$PackageName` and
+`$PackageVersion`), mirroring the way `$ProjectPath` parameterizes the
+`ATAP.Utilities-CSharp` application. No new BuildMaster application is
+required when adding a new PowerShell module.
 
 ---
 

@@ -24,12 +24,14 @@ function Set-BuildMasterStableVariables {
         PowerShellGetFeedName_QA            / PowerShellGetFeedUrl_QA
         PowerShellGetFeedName_Stable        / PowerShellGetFeedUrl_Stable
 
-    Values are resolved via Get-ATAPIACConstant (falls back to direct
-    Import-PowerShellDataFile of HostConstants.psd1 / FeedConstants.psd1 in the
-    sibling ATAP.IAC repository when the cmdlet is not available).
+    ProGet feed metadata is resolved via Resolve-ProGetFeedFromSettings, which
+    reads the ProGetFeedCollection from $global:Settings per Explainer 0111.
+    SQL Server host/instance values are resolved via Resolve-BuildToolingSettingValue,
+    which also reads from $global:Settings. The previous dependency on
+    Get-ATAPIACConstant and ATAP.IAC PSD1 fallbacks has been removed.
 
     This cmdlet is idempotent: re-running it updates all values to current
-    constants, which is safe and useful after a ProGet host or SQL server change.
+    settings, which is safe and useful after a ProGet host or SQL server change.
 
     Reads the API key from the BUILDMASTER_ADMIN_API_KEY environment variable
     (User scope preferred, then Process scope).
@@ -52,21 +54,39 @@ function Set-BuildMasterStableVariables {
   .NOTES
     AI assisted using Powershell.instructions.md as guidelines
     Phase 3C — T-31 (7.2-2 BuildMaster stable application variables)
+    Migrated off deprecated Get-ATAPIACConstant in favor of
+    Resolve-ProGetFeedFromSettings and Resolve-BuildToolingSettingValue.
   .LINK
     Set-BuildMasterSprintVariables
-    Get-ATAPIACConstant
+    Resolve-ProGetFeedFromSettings
+    Resolve-BuildToolingSettingValue
   #>
   [CmdletBinding(SupportsShouldProcess = $true)]
   param(
     [string[]]$Applications = @('AceCommander', 'ATAP.Utilities'),
 
-    [string]$BuildMasterBaseUrl = 'http://localhost:50001'
+    [string]$BuildMasterBaseUrl
   )
 
   begin {
     $fn = $MyInvocation.MyCommand.Name
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
+
+    # Load Helpers
+    try {
+      # ToDo: Remove this when packaging works
+      if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1"
+      }
+    }
+    catch {
+      $errorMessage = "Failed to load Get-ParameterValueFromNeoConfigurationRoot function. Exception: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      throw
+    }
+
+    $BuildMasterBaseUrl = Get-PVal -ParameterName 'BuildMasterBaseUrl' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterBaseUrl
 
     $apiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
     if ([string]::IsNullOrWhiteSpace($apiKey)) {
@@ -80,82 +100,59 @@ function Set-BuildMasterStableVariables {
       'X-ApiKey'     = $apiKey
       'Content-Type' = 'text/plain'
     }
-
-    # -----------------------------------------------------------------------
-    # Local helper: resolve a constant by name via Get-ATAPIACConstant if
-    # available, otherwise walk up to the sibling ATAP.IAC repo and load
-    # the .psd1 files directly. This mirrors the pattern in Resolve-FeedName.ps1.
-    # -----------------------------------------------------------------------
-    function Resolve-Constant {
-      param([string]$Name)
-
-      if (Get-Command 'Get-ATAPIACConstant' -ErrorAction SilentlyContinue) {
-        return Get-ATAPIACConstant -Name $Name
-      }
-
-      # Fallback: locate ATAP.IAC sibling repo via git root
-      $gitRoot = (git rev-parse --show-toplevel 2>$null)
-      if ($gitRoot) {
-        $parentDir = Split-Path -Parent $gitRoot
-        $psd1Files = Get-ChildItem -Path $parentDir -Filter '*.psd1' -Recurse -Depth 4 `
-          -ErrorAction SilentlyContinue |
-          Where-Object { $_.FullName -match 'ATAP\.IAC.*[\\/]constants[\\/]' }
-        foreach ($f in $psd1Files) {
-          $data = Import-PowerShellDataFile -Path $f.FullName -ErrorAction SilentlyContinue
-          if ($data -and $data.ContainsKey($Name)) {
-            return $data[$Name]
-          }
-        }
-      }
-
-      throw "Cannot resolve constant '$Name' — Get-ATAPIACConstant not available and ATAP.IAC repo not found under '$parentDir'"
-    }
   }
 
   process {
-    # -----------------------------------------------------------------------
-    # Resolve SQL instance variable values:
-    # Combine host + '\' + instance name → e.g. 'utat022\Integration'
-    # -----------------------------------------------------------------------
     $stableVarMap = [ordered]@{}
 
+    # -----------------------------------------------------------------------
+    # Resolve SQL instance variable values from $global:Settings via
+    # Resolve-BuildToolingSettingValue.
+    # Combine host + '\' + instance name → e.g. 'utat022\Integration'
+    # -----------------------------------------------------------------------
     try {
-      $intHost = Resolve-Constant -Name 'IntegrationDBHost'
-      $intInst = Resolve-Constant -Name 'IntegrationSQLInstance'
+      $intHost = Resolve-BuildToolingSettingValue -Name 'IntegrationDBHost'
+      $intInst = Resolve-BuildToolingSettingValue -Name 'IntegrationSQLInstance'
       $stableVarMap['IntegrationSqlInstance'] = "$intHost\$intInst"
 
-      $qaHost = Resolve-Constant -Name 'QADBHost'
-      $qaInst = Resolve-Constant -Name 'QASQLInstance'
+      $qaHost = Resolve-BuildToolingSettingValue -Name 'QADBHost'
+      $qaInst = Resolve-BuildToolingSettingValue -Name 'QASQLInstance'
       $stableVarMap['QASqlInstance'] = "$qaHost\$qaInst"
 
-      $prodHost = Resolve-Constant -Name 'ProductionDBHost'
-      $prodInst = Resolve-Constant -Name 'ProductionSQLInstance'
+      $prodHost = Resolve-BuildToolingSettingValue -Name 'ProductionDBHost'
+      $prodInst = Resolve-BuildToolingSettingValue -Name 'ProductionSQLInstance'
       $stableVarMap['ProductionSqlInstance'] = "$prodHost\$prodInst"
     } catch {
-      throw "Failed to resolve SQL instance constants: $($_.Exception.Message)"
+      throw "Failed to resolve SQL instance settings: $($_.Exception.Message)"
     }
 
     # -----------------------------------------------------------------------
-    # Resolve the 10 feed name + URL pairs from FeedConstants.psd1
+    # Resolve the 10 feed name + URL pairs from $global:Settings via
+    # Resolve-ProGetFeedFromSettings. The BuildMaster variable names preserve
+    # PascalCase tier suffixes; the resolver accepts canonical lowercase tiers.
     # -----------------------------------------------------------------------
-    $feedConstantNames = @(
-      'NuGetFeedName_Experimental', 'NuGetFeedUrl_Experimental',
-      'NuGetFeedName_Development', 'NuGetFeedUrl_Development',
-      'NuGetFeedName_Integration', 'NuGetFeedUrl_Integration',
-      'NuGetFeedName_QA', 'NuGetFeedUrl_QA',
-      'NuGetFeedName_Stable', 'NuGetFeedUrl_Stable',
-      'PowerShellGetFeedName_Experimental', 'PowerShellGetFeedUrl_Experimental',
-      'PowerShellGetFeedName_Development', 'PowerShellGetFeedUrl_Development',
-      'PowerShellGetFeedName_Integration', 'PowerShellGetFeedUrl_Integration',
-      'PowerShellGetFeedName_QA', 'PowerShellGetFeedUrl_QA',
-      'PowerShellGetFeedName_Stable', 'PowerShellGetFeedUrl_Stable'
-    )
+    $feedTypeMap = [ordered]@{
+      'NuGet'         = 'nuget'
+      'PowerShellGet' = 'powershellget'
+    }
+    $tierMap = [ordered]@{
+      'Experimental' = 'experimental'
+      'Development'  = 'development'
+      'Integration'  = 'integration'
+      'QA'           = 'qa'
+      'Stable'       = 'stable'
+    }
 
-    foreach ($constName in $feedConstantNames) {
-      try {
-        $stableVarMap[$constName] = Resolve-Constant -Name $constName
-      } catch {
-        throw "Failed to resolve feed constant '$constName': $($_.Exception.Message)"
+    foreach ($feedTypeKvp in $feedTypeMap.GetEnumerator()) {
+      foreach ($tierKvp in $tierMap.GetEnumerator()) {
+        $varSuffix = "$($feedTypeKvp.Key)_$($tierKvp.Key)"
+        try {
+          $feed = Resolve-ProGetFeedFromSettings -FeedType $feedTypeKvp.Value -Tier $tierKvp.Value
+          $stableVarMap["$($feedTypeKvp.Key)FeedName_$($tierKvp.Key)"] = $feed.FeedName
+          $stableVarMap["$($feedTypeKvp.Key)FeedUrl_$($tierKvp.Key)"] = $feed.EndpointUri
+        } catch {
+          throw "Failed to resolve ProGet feed for '$varSuffix': $($_.Exception.Message)"
+        }
       }
     }
 
@@ -174,12 +171,16 @@ function Set-BuildMasterStableVariables {
 
         try {
           if ($PSCmdlet.ShouldProcess("$appName/$varName", "Set BuildMaster application variable to '$varValue'")) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+              -Message "Calling $uri" -Tag 'RestCall'
             Invoke-RestMethod `
               -Uri $uri `
               -Method Post `
               -Headers $headers `
               -Body $varValue `
               -ErrorAction Stop | Out-Null
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+              -Message "Successfully returned from $uri" -Tag 'RestCall'
 
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
               -Message "Set $appName/$varName = '$varValue'"

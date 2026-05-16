@@ -40,8 +40,6 @@ function New-SprintBuildMasterBuilds {
     [ValidateNotNullOrEmpty()]
     [string]$GitRoot,
 
-    [Parameter(Mandatory)]
-    [ValidateNotNullOrEmpty()]
     [string]$BuildMasterBaseUrl,
 
     [Parameter(Mandatory)]
@@ -53,6 +51,21 @@ function New-SprintBuildMasterBuilds {
     $fn = $MyInvocation.MyCommand.Name
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
+
+    # Load Helpers
+    try {
+      # ToDo: Remove this when packaging works
+      if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1"
+      }
+    }
+    catch {
+      $errorMessage = "Failed to load Get-ParameterValueFromNeoConfigurationRoot function. Exception: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      throw
+    }
+
+    $BuildMasterBaseUrl = Get-PVal -ParameterName 'BuildMasterBaseUrl' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterBaseUrl
 
     # Read API key from User scope (never hard-code)
     $apiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')

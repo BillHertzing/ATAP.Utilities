@@ -104,38 +104,30 @@ function New-BuildMasterRelease {
     $fn = 'New-BuildMasterRelease'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn (Application='$Application' ReleaseNumber='$ReleaseNumber' PipelineName='$PipelineName')" -Tag 'Trace'
+
+    # Load Helpers
+    try {
+      # ToDo: Remove this when packaging works
+      if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1"
+      }
+    }
+    catch {
+      $errorMessage = "Failed to load Get-ParameterValueFromNeoConfigurationRoot function. Exception: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      throw
+    }
+
+    $BuildMasterBaseUrl = Get-PVal -ParameterName 'BuildMasterBaseUrl' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterBaseUrl
+    if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {
+      throw "Unable to resolve BuildMaster base URL. Pass -BuildMasterBaseUrl or set BuildMasterBaseUrl in `$global:settings."
+    }
+    $BuildMasterBaseUrl = $BuildMasterBaseUrl.TrimEnd('/')
   }
 
   process {
     # ---------------------------------------------------------------------
-    # 1. Resolve BaseUrl: parameter -> $global:settings -> env var.
-    # ---------------------------------------------------------------------
-    $resolvedBaseUrl = $BuildMasterBaseUrl
-    if ([string]::IsNullOrWhiteSpace($resolvedBaseUrl)) {
-      if ($null -ne $global:settings) {
-        $key = $null
-        if ($null -ne $global:configRootKeys) {
-          $key = $global:configRootKeys['BuildMasterBaseUrlConfigRootKey']
-        }
-        if ([string]::IsNullOrWhiteSpace($key)) { $key = 'BuildMasterBaseUrl' }
-        $resolvedBaseUrl = [string]$global:settings[$key]
-      }
-    }
-    if ([string]::IsNullOrWhiteSpace($resolvedBaseUrl)) {
-      $resolvedBaseUrl = [Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'Process')
-      if ([string]::IsNullOrWhiteSpace($resolvedBaseUrl)) {
-        $resolvedBaseUrl = [Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'User')
-      }
-    }
-    if ([string]::IsNullOrWhiteSpace($resolvedBaseUrl)) {
-      $msg = "Unable to resolve BuildMaster base URL. Pass -BuildMasterBaseUrl, set `$global:settings.BuildMasterBaseUrl, or define the BUILDMASTER_BASE_URL User env var."
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
-      throw $msg
-    }
-    $resolvedBaseUrl = $resolvedBaseUrl.TrimEnd('/')
-
-    # ---------------------------------------------------------------------
-    # 2. Resolve API key: parameter -> $global:settings -> env var.
+    # 1. Resolve API key: parameter -> $global:settings -> env var.
     #    Never log the key value. Mask with '***' in surface logging.
     # ---------------------------------------------------------------------
     $resolvedApiKey = $ApiKey
@@ -161,8 +153,8 @@ function New-BuildMasterRelease {
       throw $msg
     }
 
-    $createUri = '{0}/api/releases/create' -f $resolvedBaseUrl
-    $getUri = '{0}/api/releases?applicationName={1}&releaseNumber={2}' -f $resolvedBaseUrl, [Uri]::EscapeDataString($Application), [Uri]::EscapeDataString($ReleaseNumber)
+    $createUri = '{0}/api/releases/create' -f $BuildMasterBaseUrl
+    $getUri = '{0}/api/releases?applicationName={1}&releaseNumber={2}' -f $BuildMasterBaseUrl, [Uri]::EscapeDataString($Application), [Uri]::EscapeDataString($ReleaseNumber)
     $headers = @{ 'X-ApiKey' = $resolvedApiKey }
     $body = @{
       ApplicationName = $Application
@@ -173,7 +165,7 @@ function New-BuildMasterRelease {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "POST $createUri (ApiKey='***')" -Tag 'RestCall'
 
     # ---------------------------------------------------------------------
-    # 3. -WhatIf short-circuit before any side effect.
+    # 2. -WhatIf short-circuit before any side effect.
     # ---------------------------------------------------------------------
     $target = "BuildMaster release '$Application' / '$ReleaseNumber' on pipeline '$PipelineName'"
     if (-not $PSCmdlet.ShouldProcess($target, 'Create')) {
@@ -190,7 +182,7 @@ function New-BuildMasterRelease {
     }
 
     # ---------------------------------------------------------------------
-    # 4. Create the release; fall through to idempotent fetch on conflict.
+    # 3. Create the release; fall through to idempotent fetch on conflict.
     # ---------------------------------------------------------------------
     $releaseId = $null
     $summary = $null
@@ -236,9 +228,9 @@ function New-BuildMasterRelease {
           $record = $existing
         }
         if ($null -ne $record) {
-          if ($null -ne $record.id)             { $releaseId = [string]$record.id }
-          elseif ($null -ne $record.releaseId)  { $releaseId = [string]$record.releaseId }
-          elseif ($null -ne $record.ReleaseId)  { $releaseId = [string]$record.ReleaseId }
+          if ($null -ne $record.id) { $releaseId = [string]$record.id }
+          elseif ($null -ne $record.releaseId) { $releaseId = [string]$record.releaseId }
+          elseif ($null -ne $record.ReleaseId) { $releaseId = [string]$record.ReleaseId }
         }
         $summary = 'idempotent: release already exists'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Returned existing BuildMaster release id '$releaseId' for '$Application'/'$ReleaseNumber'" -Tag 'RestCall'

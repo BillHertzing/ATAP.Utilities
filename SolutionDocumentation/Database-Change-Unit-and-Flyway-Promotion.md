@@ -109,17 +109,17 @@ Every release manifest (the JSON one at the bundle root) carries:
 
 ```json
 {
-  "appPackageId":      "AceCommander",
+  "appPackageId": "AceCommander",
   "appPackageVersion": "1.4.0",
   "databasePackageIncluded": true,
-  "dbChangeUnit":      "AceCommander-db-1.4.0",
+  "dbChangeUnit": "AceCommander-db-1.4.0",
   "flywayTargetVersion": "1.4.2",
-  "migrationFiles":    [ "...", "..." ],
-  "seedFiles":         [ "...", "..." ],
-  "seedLoaderScripts": [ "...", "..." ],
+  "migrationFiles": ["...", "..."],
+  "seedFiles": ["...", "..."],
+  "seedLoaderScripts": ["...", "..."],
   "checksums": {
     "V1.4.0__baseline_schema.sql": "sha256:...",
-    "S1_4_0_roles.csv":            "sha256:..."
+    "S1_4_0_roles.csv": "sha256:..."
   }
 }
 ```
@@ -170,25 +170,25 @@ parallel feature branches, and parallel pipeline runs, each of which needs
 its own isolated DB instance to avoid stepping on the others. The full
 inventory of DB instance types is:
 
-| Instance type          | Naming pattern                                     | Lifetime                          | Cardinality             | Tiers supported              |
-| ---------------------- | -------------------------------------------------- | --------------------------------- | ----------------------- | ---------------------------- |
-| Per-developer scratch  | `<App>-dev-<GitHandle>` (≤64 chars total)          | Ephemeral — created at SprintStart, destroyed at SprintEnd | 1 per developer × repo × sprint | Experimental |
-| Per-feature-sprint     | `<App>-<FeatureSlug>-<GitHandle>` (≤64 chars)      | Ephemeral — created at FeatureStart or sprint-slice start, destroyed when slice is abandoned or merged | 1 per feature × sprint × developer | Experimental |
-| Per-feature shared     | `<App>-<FeatureSlug>-shared`                       | Persistent for life of feature branch | 1 per active feature branch | Development |
-| Trunk Development      | `<App>-dev`                                        | Persistent                        | 1 per repo              | Development                  |
-| Trunk Integration      | `<App>-integration`                                | Rotating snapshot (restored before each Integration pipeline run) | 1 per repo | Integration |
-| Trunk QA Gold          | `<App>-qa`                                         | Persistent, anonymised prod-shaped data | 1 per repo        | QA                           |
-| Customer Production    | `<App>` (or customer-specific name)                | Permanent                         | N — one per customer    | Production                   |
+| Instance type         | Naming pattern                                | Lifetime                                                                                               | Cardinality                        | Tiers supported |
+| --------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------- | --------------- |
+| Per-developer scratch | `<App>-dev-<GitHandle>` (≤64 chars total)     | Ephemeral — created at SprintStart, destroyed at SprintEnd                                             | 1 per developer × repo × sprint    | Experimental    |
+| Per-feature-sprint    | `<App>-<FeatureSlug>-<GitHandle>` (≤64 chars) | Ephemeral — created at FeatureStart or sprint-slice start, destroyed when slice is abandoned or merged | 1 per feature × sprint × developer | Experimental    |
+| Per-feature shared    | `<App>-<FeatureSlug>-shared`                  | Persistent for life of feature branch                                                                  | 1 per active feature branch        | Development     |
+| Trunk Development     | `<App>-dev`                                   | Persistent                                                                                             | 1 per repo                         | Development     |
+| Trunk Integration     | `<App>-integration`                           | Rotating snapshot (restored before each Integration pipeline run)                                      | 1 per repo                         | Integration     |
+| Trunk QA Gold         | `<App>-qa`                                    | Persistent, anonymised prod-shaped data                                                                | 1 per repo                         | QA              |
+| Customer Production   | `<App>` (or customer-specific name)           | Permanent                                                                                              | N — one per customer               | Production      |
 
 Tier-specific DB validation (regardless of instance type):
 
-| Tier         | DB-related action in the pipeline                                                                                          |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| Tier         | DB-related action in the pipeline                                                                                                                                |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Experimental | Apply migrations against the empty Experimental SQL Server instance (`localhost\EXPWHERTZING` in this worktree); assert no errors; assert seed loaders complete. |
-| Development  | Apply against a small dev fixture DB.                                                                                      |
-| Integration  | Apply against a snapshot of the **previous-prod** DB (taken at the last Production release). Assert no data corruption.    |
-| QA           | Apply against a "QA gold" DB (production-shaped, anonymized customer data). Run integration test suite against the result. |
-| Production   | The artifact is promoted, not re-tested. The Production gate is a manual approval based on the QA evidence.                |
+| Development  | Apply against a small dev fixture DB.                                                                                                                            |
+| Integration  | Apply against a snapshot of the **previous-prod** DB (taken at the last Production release). Assert no data corruption.                                          |
+| QA           | Apply against a "QA gold" DB (production-shaped, anonymized customer data). Run integration test suite against the result.                                       |
+| Production   | The artifact is promoted, not re-tested. The Production gate is a manual approval based on the QA evidence.                                                      |
 
 The "previous-prod snapshot" used at Integration is restored from the
 backup that `Invoke-SqlServerBackup.ps1` makes for the last Production
@@ -229,24 +229,24 @@ remains environment-specific.
 
 Examples:
 
-| Scenario                                               | DB name                              |
-| ------------------------------------------------------ | ------------------------------------ |
-| Dev scratch, app `AceCommander`, handle `wh`           | `AceCommander-dev-wh`                |
-| Feature sprint, feature `PaymentRefactor`, handle `wh` | `AceCommander-PaymentRefactor-wh`    |
-| Feature shared, feature `PaymentRefactor`              | `AceCommander-PaymentRefactor-shared`|
-| Trunk Development                                      | `AceCommander-dev`                   |
+| Scenario                                               | DB name                               |
+| ------------------------------------------------------ | ------------------------------------- |
+| Dev scratch, app `AceCommander`, handle `wh`           | `AceCommander-dev-wh`                 |
+| Feature sprint, feature `PaymentRefactor`, handle `wh` | `AceCommander-PaymentRefactor-wh`     |
+| Feature shared, feature `PaymentRefactor`              | `AceCommander-PaymentRefactor-shared` |
+| Trunk Development                                      | `AceCommander-dev`                    |
 
 ### 5.2 Lifecycle hooks
 
 Per-developer and per-feature DB instances are created and destroyed at
 specific lifecycle events. The four cmdlets that own these transitions are:
 
-| Event              | Action                                                                                                       | Cmdlet                       |
-| ------------------ | ------------------------------------------------------------------------------------------------------------ | ---------------------------- |
-| `SprintStart`      | Provision a per-developer scratch DB for each active developer.                                              | `New-DeveloperScratchDb`     |
-| `FeatureStart`     | Provision the per-feature shared DB.                                                                         | `New-FeatureSharedDb`        |
-| `SprintEnd`        | Destroy per-developer scratch DBs for the closing sprint. Data is **not** backed up — scratch DBs are disposable by definition. Any migration under test must be committed to source before the sprint ends. | `Remove-DeveloperScratchDb` |
-| `FeatureEnd` (feature merged to stable) | Destroy the per-feature shared DB and any per-feature-sprint DBs for that feature.              | `Remove-FeatureSharedDb`, `Remove-DeveloperScratchDb -Feature <slug>` |
+| Event                                   | Action                                                                                                                                                                                                       | Cmdlet                                                                |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| `SprintStart`                           | Provision a per-developer scratch DB for each active developer.                                                                                                                                              | `New-DeveloperScratchDb`                                              |
+| `FeatureStart`                          | Provision the per-feature shared DB.                                                                                                                                                                         | `New-FeatureSharedDb`                                                 |
+| `SprintEnd`                             | Destroy per-developer scratch DBs for the closing sprint. Data is **not** backed up — scratch DBs are disposable by definition. Any migration under test must be committed to source before the sprint ends. | `Remove-DeveloperScratchDb`                                           |
+| `FeatureEnd` (feature merged to stable) | Destroy the per-feature shared DB and any per-feature-sprint DBs for that feature.                                                                                                                           | `Remove-FeatureSharedDb`, `Remove-DeveloperScratchDb -Feature <slug>` |
 
 **Trigger mechanism.** The hooks are currently **manual PowerShell calls**
 made by the developer or release engineer at the listed events. The Stream J
@@ -303,11 +303,11 @@ tracked in TASKS.md.
 
 Seed data is divided into three categories, each handled differently:
 
-| Category               | Example                                              | Where it lives                  | Loaded by                                |
-| ---------------------- | ---------------------------------------------------- | ------------------------------- | ---------------------------------------- |
-| **Static reference**   | Country codes, currency codes, RRSBS rule primitives | Inline in versioned `V*.sql`    | Flyway, once per environment             |
-| **Slowly-changing**    | Roles, permissions, feature flags                    | CSV + `S*` loader (`MERGE`)     | Flyway, once per release that adds rows  |
-| **Repeatable lookup**  | View definitions, stored procs, lookup tables that should always reflect source-of-truth | CSV + `R__*` loader | Flyway, every invocation |
+| Category              | Example                                                                                  | Where it lives               | Loaded by                               |
+| --------------------- | ---------------------------------------------------------------------------------------- | ---------------------------- | --------------------------------------- |
+| **Static reference**  | Country codes, currency codes, RRSBS rule primitives                                     | Inline in versioned `V*.sql` | Flyway, once per environment            |
+| **Slowly-changing**   | Roles, permissions, feature flags                                                        | CSV + `S*` loader (`MERGE`)  | Flyway, once per release that adds rows |
+| **Repeatable lookup** | View definitions, stored procs, lookup tables that should always reflect source-of-truth | CSV + `R__*` loader          | Flyway, every invocation                |
 
 The CSV-plus-loader pattern is preferred for anything more than ~20 rows
 because:

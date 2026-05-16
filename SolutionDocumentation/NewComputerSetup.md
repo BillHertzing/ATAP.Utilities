@@ -445,6 +445,16 @@ either Inedo product starts.
 Use the IAC repo copies of `ProGet.config` and `BuildMaster.config` and link them into
 `C:\ProgramData\Inedo\SharedConfig` when that machine is the authoritative host.
 
+### 9.5 Assign the Git raft to each BuildMaster application
+
+When configuring each BuildMaster application to read plans/monitors/scripts from Git,
+the raft is assigned in this UI location:
+
+- **Application → Settings → Advanced → Artifact & Component Hosting**
+
+In that dialog, choose the intended raft in the **Raft** dropdown and save the
+application settings.
+
 ## Step 10: Create Cobian Backup Jobs for the Tooling Databases
 
 Create separate Cobian jobs for `ProGet` and `BuildMaster`. Each Cobian job should call

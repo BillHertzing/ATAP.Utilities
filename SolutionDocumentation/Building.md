@@ -18,6 +18,8 @@ see also "Project Type GUIDs in the article https://github.com/dotnet/project-sy
 it includes the NuGet packaging and pusking properties and tasks
 Versioning is very difficult problem, the ATAP.Utilities.BuildTools projects contains files that extend the build process and include tasks and functions that perform versioning andpackaging
 
+For the full mechanism — how `Directory.Build.props`, `Directory.Build.targets`, the custom `ATAP.Utilities.BuildTooling.CSharp` task DLL, and the shipped `ATAP.Utilities.BuildTooling.targets` cooperate to give every project automatic version management, JSON-settings copying, multi-RID publishing, and NuGet push-to-ProGet — see [BuildTooling-MSBuild-Internals.md](BuildTooling-MSBuild-Internals.md).
+
 ## Visual Studio Extensions
 
 CodeRush for Roslyn
@@ -228,6 +230,93 @@ Publish-Module -Path .\MyModule -Repository Demo_Nuget_Feed -NuGetApiKey 'use re
 [Build Automation in PowerShell](https://github.com/nightroman/Invoke-Build)
 
 [Catesta is a PowerShell module project generator](https://github.com/techthoughts2/Catesta)
+
+---
+
+## Known Build Pitfalls
+
+### Zero-Byte `ref\` Reference Assembly
+
+**Symptom:** During development of `ATAP.Utilities.ETW`, a build error
+introduced a 0-byte `ref\` assembly. Subsequent builds with the corrected
+source did **not** overwrite it. The result was a corrupted intermediate
+artifact that silently caused failures downstream.
+
+#### Background: The Four DLL Locations
+
+The .NET SDK incremental build produces up to four copies of each DLL per
+target framework:
+
+| Path                                       | Type                          | Purpose                                                   |
+| ------------------------------------------ | ----------------------------- | --------------------------------------------------------- |
+| `bin\{Config}\{TFM}\{Assembly}.dll`        | Implementation assembly       | Final runtime output; what consuming apps execute         |
+| `obj\{Config}\{TFM}\{Assembly}.dll`        | Intermediate implementation   | Compiler's working copy during compilation                |
+| `obj\{Config}\{TFM}\refint\{Assembly}.dll` | Intermediate ref assembly     | Freshly generated ref assembly before comparison          |
+| `obj\{Config}\{TFM}\ref\{Assembly}.dll`    | **Stable** reference assembly | Used by downstream projects to detect API surface changes |
+
+The `ref\` copy is intentionally **not overwritten** unless the public API
+surface changed. MSBuild compares the freshly-generated `refint\` DLL
+against the existing `ref\` DLL; if they match, the `ref\` timestamp is left
+unchanged to prevent unnecessary downstream rebuilds. This is the
+**incremental reference assembly stabilization** optimization.
+
+#### Why the 0-Byte Is Dangerous
+
+When the `ref\` DLL is 0 bytes (corrupt from a prior failed build), the
+API-surface comparison may silently "pass" because there is no valid PE
+header to compare against. MSBuild skips overwriting the file and the
+corrupt artifact persists.
+
+**Downstream `<ProjectReference>` consumers** compile against `obj\ref\` —
+not `bin\` — at build time. They receive the 0-byte stub, which causes
+compile errors or corrupt metadata in the consuming project. At runtime the
+correct `bin\` DLL is used, creating an asymmetry: compilation fails or
+produces bad output while the runtime binary is fine.
+
+**`dotnet pack`** takes the implementation assembly from `bin\` for the
+`lib/` folder of the `.nupkg`, so the packed DLL itself is correct. However,
+if the package includes a split `ref/` folder (explicit ref assembly
+publishing), the 0-byte file would end up in the package's `ref/` folder and
+break compile-time resolution for any NuGet consumer.
+
+#### Fix
+
+Do not rely on a normal incremental `dotnet build` to self-heal a 0-byte
+`ref\` assembly. Use one of these approaches, in order of preference:
+
+1. **Delete `obj\` and rebuild** — forces full regeneration of all
+   intermediate outputs:
+
+   ```powershell
+   Remove-Item -Recurse -Force obj\
+   dotnet build src\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj
+   ```
+
+2. **Use `dotnet build --no-incremental`** — disables timestamp/content
+   comparison; all outputs are rewritten regardless.
+
+3. **Use `dotnet build -t:Rebuild`** — equivalent to clean + build; removes
+   stale `obj\` artifacts first.
+
+Options 1 or 3 are most reliable for a corrupted (0-byte) file because
+MSBuild's normal comparison logic cannot handle an invalid PE header.
+
+#### Prevention
+
+- If a build errors mid-flight (compiler crash, OOM, disk full), always run
+  `dotnet build -t:Rebuild` or delete `obj\` before the next build.
+- CI pipelines should start from a clean `obj\` on the first build of each
+  branch to avoid inheriting corrupt intermediates from a prior run.
+- A quick sanity check after any suspicious build:
+
+  ```powershell
+  Get-ChildItem -Path obj -Recurse -Filter '*.dll' |
+    Where-Object { $_.Length -eq 0 } |
+    Select-Object FullName, LastWriteTime
+  ```
+
+  Any 0-byte DLL found in `obj\` should be treated as corrupted and the
+  project rebuilt with `-t:Rebuild`.
 
 ---
 

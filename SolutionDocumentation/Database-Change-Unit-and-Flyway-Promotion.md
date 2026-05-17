@@ -454,7 +454,241 @@ Invoke-FlywayRehearsal `
 
 ---
 
-## 13. Related documents
+## 14. SQL Server Instance Naming
+
+> Migrated from `_Planning/Explainers/0104-sql-databases-lifecycle.md` §2.2-§2.3 and §4.3.
+
+SQL Server supports one **default instance** and multiple **named instances**
+per host. ATAP uses named instances to isolate databases by tier. Each tier,
+each sprint, and each developer gets isolated database instances.
+
+### 14.1 Instance name constraints
+
+- SQL Server instance names may not contain hyphens (`-`) or dots (`.`).
+- The **16-character limit** applies to the instance name.
+- Per-sprint instances follow the pattern `{Prefix}{user}`: a 3-char prefix
+  (`Dev` or `Exp`) directly concatenated with the developer's Windows
+  `$env:USERNAME` (≤12 chars) — **no separator character**.
+- The authoritative username-to-host mapping is in
+  `Overview.code-workspace`.
+- Isolation between sprints is achieved by destroying and recreating the
+  instances at sprint boundaries.
+
+`Dev{user}` hosts active feature-development work (Development tier,
+`-Alpha` label packages). `Exp{user}` hosts throwaway prototypes and spikes
+(Experimental tier, `-Sprint` label packages).
+
+The `New-SprintSqlServerInstances.ps1` cmdlet creates both instances in a
+single call at sprint start. `Remove-SprintSqlServerInstances.ps1` destroys
+both at sprint end.
+
+### 14.2 Per-sprint instances
+
+| Instance Name      | Tier         | Lifetime                                                   | Created By                         |
+| ------------------ | ------------ | ---------------------------------------------------------- | ---------------------------------- |
+| `Dev{user}`        | Development  | Created at sprint start; destroyed at sprint close         | `New-SprintSqlServerInstances.ps1` |
+| `Exp{user}`        | Experimental | Created at sprint start; destroyed at sprint close         | `New-SprintSqlServerInstances.ps1` |
+| `Release_{SemVer}` | Production   | Created for release validation; persisted with the release | Manual / SprintEndAgent            |
+| `Hotfix_{issue}`   | Emergency    | Created for hotfix work; destroyed after merge             | Manual                             |
+
+### 14.3 SemVer normalization in instance names
+
+SQL Server instance names cannot contain dots (`.`) or hyphens (`-`). Both
+are replaced with underscores (`_`). When a SemVer version appears in an
+instance name, all dots and hyphens are replaced with underscores:
+
+| SemVer  | Instance Name   |
+| ------- | --------------- |
+| `1.0.0` | `Release_1_0_0` |
+| `2.1.3` | `Release_2_1_3` |
+
+Branch names _may_ contain dots and hyphens (`Release-1.0.0`), but the
+corresponding SQL instance name _must_ use underscores (`Release_1_0_0`).
+This normalization is applied by the sprint lifecycle automation.
+
+### 14.4 Host configuration
+
+Current hosts:
+
+| Host        | Role                        | Instances                                                                                                |
+| ----------- | --------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **utat022** | Primary development machine | PRODUCTION, Dev, `Dev{user}`, `Exp{user}`, Testing, `Testing_Perf`, SQLEXPRESS, Integration, `Release_*` |
+| **ncat016** | Secondary/remote machine    | Dev, `Dev{user}`, `Exp{user}` (for second developer remote access)                                       |
+
+Connection uses TCP/IP on the default port with a self-signed certificate.
+Admin accounts on the host have SQL Server admin rights. Integrated
+Security is used (no SQL users/passwords required).
+
+---
+
+## 15. Flyway Migration Immutability Rules
+
+> Migrated from `_Planning/Explainers/0104-sql-databases-lifecycle.md` §6.4-§6.6.
+
+Once a versioned migration has been **shared** with another developer or
+**pushed to an integration branch**, it becomes immutable:
+
+| Migration State                                        | May Modify?        | Rationale                                                                  |
+| ------------------------------------------------------ | ------------------ | -------------------------------------------------------------------------- |
+| Local only (developer's own sprint branch, not pushed) | Yes                | Developer's sandbox; no downstream consumers                               |
+| Pushed to remote sprint branch but not consumed        | Yes (with caution) | No other developer has applied it yet                                      |
+| Consumed by another developer (merge/cherry-pick)      | **No**             | Other developer has applied it; modifying would break their Flyway history |
+| Merged to integration branch                           | **No**             | Integration database has applied it; immutable from this point             |
+| Merged to main                                         | **No**             | Development and downstream instances have applied it                       |
+
+**If a shared migration needs correction:** create a new versioned
+migration that applies the corrective change. Never modify a migration that
+another developer or integration instance has already applied.
+
+**Repeatable migrations** (`R__`) are exempt from this rule — they are
+designed to be modified and re-applied. Use repeatable migrations for
+functions, views, and other objects that should reflect the latest
+definition.
+
+### 15.1 Sprint database sharing rules
+
+Developers do not share a live sprint database instance. When developers
+exchange partial implementations during a sprint:
+
+1. Developer A takes Developer B's code changes by merge or cherry-pick.
+2. Developer A also takes the corresponding Flyway migration commits.
+3. Developer A applies those migrations to Developer A's own sprint
+   database instances (`Dev_{username}` and `Exp_{username}`).
+4. The sprint integration database (`Integration_{NNNN}`) validates the
+   combined migration graph before changes move toward the Development
+   tier.
+
+### 15.2 Hotfix database rules
+
+Hotfix database validation starts from the **release-tag baseline**, not
+from active sprint databases:
+
+1. Create a hotfix database instance from the release tag's migration state
+   (e.g., `Hotfix_42`).
+2. The regression test must reproduce the production bug on this release
+   baseline before the fix is applied.
+3. Apply the hotfix migration to the hotfix instance and verify the fix.
+4. If multiple developers collaborate on the hotfix, each gets a
+   per-developer hotfix instance (`Hotfix_42_alice`, `Hotfix_42_bob`) and
+   a shared hotfix integration instance (`Hotfix_42_itg`) validates the
+   combined fix.
+5. After acceptance, the validated migration is merged back to `main`.
+
+---
+
+## 16. Interim Catalog/Schema Decision (Sprint 0007)
+
+> Migrated from `_Planning/Explainers/0111-acecommander-database-interim-architecture.md` (Executive Recommendation).
+> Reflects locked decision **D-07** from `ExplainerEliminationPlan_V1.md` §0a.
+
+For Sprint 0007, keep the server-side AceCommander data model in **one SQL
+Server catalog named `ATAPUtilities`**, with separate schemas:
+
+| Logical area               | SQL Server catalog | Schema                                  | Role                                                                  |
+| -------------------------- | ------------------ | --------------------------------------- | --------------------------------------------------------------------- |
+| Reference data             | `ATAPUtilities`    | `ATAPUtilities` or `MinimalTableSet`    | Immutable between database revisions; read-only to AceCommander       |
+| AceCommander writable data | `ATAPUtilities`    | `AceCommander`                          | User/app extensions, scheduled tasks, mutable application data        |
+
+This matches the current Flyway implementation, fixes the immediate
+confusion that caused AceCommander to look for a database catalog named
+`AceCommander`, and preserves the two-DbContext shape already in the
+application.
+
+### 16.1 Both DbContexts point at the `ATAPUtilities` catalog
+
+AceCommander uses two EF Core contexts:
+
+| Context                  | Connection string config key                    | Schema behavior                                                          | Access intent |
+| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------ | ------------- |
+| `ReferenceDbContext`     | `Database:ReferenceDatabase:ConnectionString`   | Configurable schema, allowed values `ATAPUtilities` and `MinimalTableSet` | Read-only     |
+| `AceCommanderDbContext`  | `Database:AceCommander:ConnectionString`        | Fixed default schema `AceCommander`                                       | Read/write    |
+
+**Both contexts should connect to the same `ATAPUtilities` catalog** for
+Sprint 0007 unless/until a future task formalizes separate catalogs.
+
+### 16.2 Why this fixes the startup error
+
+The scheduled-task startup failure:
+
+```text
+Cannot open database "AceCommander" requested by the login.
+```
+
+is consistent with the runtime using a connection string whose
+`Initial Catalog` / `Database` is `AceCommander`. For the current database
+definition, that connection string should target the `ATAPUtilities`
+catalog and let EF select the `AceCommander` schema.
+
+The implemented database is already a **one-catalog, multi-schema** design:
+
+- `V00.01.000010__Create_ATAPUtilities_Core_Schema.sql` starts with
+  `USE ATAPUtilities;` and creates schema `ATAPUtilities`.
+- `V00.01.000040__Create_AceCommander_Schema.sql` also starts with
+  `USE ATAPUtilities;` and creates schema `AceCommander`.
+- `V00.01.000050__Populate_AceCommander_User_Tables.sql` copies user-related
+  data from `ATAPUtilities` to `AceCommander` inside the same catalog.
+- `V00.02.000010__CreateScheduledTaskTables.sql` creates
+  `AceCommander.ScheduledTask` and `AceCommander.ScheduledTaskRun`.
+
+Pointing both DbContexts at the `ATAPUtilities` catalog aligns the
+application with the database that already exists.
+
+### 16.3 Deferred architectural deep dive
+
+The deeper questions around database packaging, offline sync, tenant
+isolation, SQLCipher data modeling, and release-channel ownership are
+deliberately deferred for Sprint 0007. They need to be decided together,
+not piecemeal. See [`DeveloperMusings.md`](DeveloperMusings.md) for:
+
+- "Database Packaging Options A-D" — the option matrix (one catalog
+  multi-schema, separate databases, dedicated DB-definition repository,
+  SQLCipher local encrypted database).
+- "Deferred Database Deep-Dive Questions" — the eight open architectural
+  questions that the deep dive must resolve.
+
+---
+
+## 17. Promotion Failure Recovery
+
+> Migrated from `_Planning/Explainers/602 - 5Tier Software Production process Revision 2.md` §16.3.1.
+
+Database migrations during promotion (especially to `Integration`, `QA`, or
+`PRODUCTION`) can fail due to schema conflicts, data integrity violations,
+or migration script errors. To mitigate the risk of a failed promotion
+leaving a higher-tier database in an inconsistent state:
+
+### 17.1 Pre-promotion snapshot
+
+Before applying Flyway migrations to a higher-tier database, take a
+**database snapshot** (or full backup) of the target instance. This
+provides a rollback point if the migration fails partway through.
+
+```powershell
+# Before promoting migrations to QA
+Backup-SqlDatabase -ServerInstance "utat022\QA" -Database "ATAPUtilities" `
+    -BackupFile "C:\Dropbox\Backups\utat022\QA\ATAPUtilities_pre-promotion_$(Get-Date -Format 'yyyyMMdd_HHmmss').bak"
+```
+
+### 17.2 Recovery procedures
+
+| Failure Type                          | Recovery Action                                                                                                                    |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Schema migration fails mid-run**    | Restore from pre-promotion backup. Fix the migration script on the source branch, re-test at the lower tier, then retry promotion. |
+| **Data migration fails**              | Restore from pre-promotion backup. Investigate data incompatibility; add corrective migration or fix data on the source branch.    |
+| **Migration succeeds but tests fail** | Do NOT roll back the database (the schema is correct). Fix the code or tests on the source branch and promote again.               |
+| **Production promotion fails**        | Restore from pre-promotion backup. This is a critical incident — halt the release, investigate, and re-validate from QA.           |
+
+### 17.3 Automation
+
+The `Invoke-Flyway` wrapper (or a higher-level promotion cmdlet) should
+automatically create a backup before running `migrate` against permanent
+instances (`Integration`, `QA`, `QAPerf`, `PRODUCTION`). Ephemeral sprint
+instances do not require pre-migration backups because they can be
+recreated from scratch.
+
+---
+
+## 18. Related documents
 
 - [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md) — DB change units follow the build-once policy.
 - [Release-Bundle-Pipeline.md](Release-Bundle-Pipeline.md) — what wraps the DB change unit.

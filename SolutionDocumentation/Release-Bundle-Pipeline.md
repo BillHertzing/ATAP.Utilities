@@ -231,6 +231,16 @@ The pipeline never creates or deletes itself per sprint or per feature.
 
 ## 8. Distribution to Chocolatey and WinGet
 
+> **🚧 On Hold (Sprint 0007):** Per `ExplainerEliminationPlan_V1.md` Section 0a
+> **D-06**, Chocolatey/WinGet publication is **deferred**. The Release Bundle
+> pipeline terminates at the `releasebundle-production` ProGet feed for Sprint
+> 0007. The content below describes the future design; the corresponding
+> `Distribution` stage in `ReleaseBundle-6Stage.otter` exists but is
+> intentionally **not** wired into the AceCommander BuildMaster Pipeline
+> (which defines only the first 5 stages, Experimental through Production).
+> This section is preserved verbatim so that when Chocolatey/WinGet come off
+> hold in a future sprint, the design is ready to execute.
+
 ### 8.1 Chocolatey
 
 `Publish-ChocolateyRelease` builds a thin Chocolatey `.nupkg` whose

@@ -377,6 +377,83 @@ $file = './src/ATAP.Utilities.FileIO.PowerShell/version.json'
 
 ---
 
+## 14. Manifest Prerelease vs FullNuGetVersion
+
+**Source:** Migrated from
+`Explainers/0111-proget-feed-tier-dependency-build-report.md` section
+"NBGV version files and tier selection".
+
+`Get-PSModuleVersionFromNBGV.ps1` derives three related-but-different values
+from a single NBGV invocation. The split exists because the PowerShell
+module manifest's prerelease format is **stricter** than the NuGet SemVer
+prerelease format that NBGV emits.
+
+### 14.1 The three derived values
+
+| Value              | Example           | Used for                                 |
+| ------------------ | ----------------- | ---------------------------------------- |
+| `FullNuGetVersion` | `0.1.0-Sprint.42` | NuGet package identity / version         |
+| `ModuleVersion`    | `0.1.0`           | PowerShell manifest stable version field |
+| `Prerelease`       | `Sprint042`       | PowerShell manifest prerelease field     |
+
+### 14.2 Concrete example
+
+Starting from a module `version.json`:
+
+```json
+{
+  "version": "0.1-Sprint.{height}",
+  "nuGetPackageVersion": { "semVer": 2 },
+  "pathFilters": ["./"],
+  "publicReleaseRefSpec": [".*"]
+}
+```
+
+NBGV (`nbgv get-version --variable NuGetPackageVersion`) emits a package
+version such as `0.1.0-Sprint.42`. `Get-PSModuleVersionFromNBGV` then
+derives:
+
+| Field              | Value             | Origin                                                                |
+| ------------------ | ----------------- | --------------------------------------------------------------------- |
+| `FullNuGetVersion` | `0.1.0-Sprint.42` | Raw NBGV output — used as the `.nupkg` identity on ProGet             |
+| `ModuleVersion`    | `0.1.0`           | The `Major.Minor.Patch` triple — used as `.psd1` `ModuleVersion` field |
+| `Prerelease`       | `Sprint042`       | Label + zero-padded height — used as `.psd1` `Prerelease` field       |
+
+The `Prerelease` value is produced by `'{0}{1:D3}' -f $Label, $Height` —
+i.e. concatenate the label with the height zero-padded to 3 digits, and
+strip the dot separator. This is the only piece of "translation" the cmdlet
+performs; everything else is direct parsing.
+
+When the gallery / ProGet republishes the package, it joins the two manifest
+fields as `<ModuleVersion>-<Prerelease>` → `0.1.0-Sprint042`. This is **not
+the same string** as `FullNuGetVersion` (`0.1.0-Sprint.42`), but both
+identify the same artifact.
+
+### 14.3 Why the split exists
+
+NuGet SemVer prerelease labels can include dot-separated identifiers
+(`Sprint.42` is valid SemVer 2.0). PowerShell module manifests use a
+stricter prerelease value: `Update-ModuleManifest -Prerelease` enforces
+`^[A-Za-z0-9]+$` (alphanumeric only — no `.`, no `-`, no underscores). So
+the code normalizes the NBGV label and height into an alphanumeric
+PowerShell prerelease string while preserving the original NBGV string for
+NuGet-side identity.
+
+The split therefore reflects two different downstream consumers with two
+different rules, both fed from the same NBGV source of truth:
+
+- **`FullNuGetVersion`** travels with the `.nupkg` (NuGet's identity
+  format).
+- **`ModuleVersion` + `Prerelease`** travel inside the `.psd1` (PowerShell's
+  stricter manifest format).
+
+See §1 ("The two-format gap") and §3 ("Why the prerelease must be
+alphanumeric") for the rule details, and §4 ("Why height is zero-padded to
+3 digits") for why the height transformation is necessary even when the
+label format itself would have been legal.
+
+---
+
 ## Related Documents
 
 - [Production-and-Tooling-Overview.md](Production-and-Tooling-Overview.md) — index.

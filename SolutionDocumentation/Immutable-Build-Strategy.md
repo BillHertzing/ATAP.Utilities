@@ -24,8 +24,8 @@ build-per-tier ("buildpertier") pattern referenced in earlier sprint-0006 docs.
 
 ## 1. The principle
 
-> **Build a release unit exactly once. Promote that exact artifact, byte for
-> byte, through the five tiers. Never rebuild between tiers.**
+> **Build a release unit exactly once. Promote that exact artifact, with the
+> same SHA-256, through the five tiers. Never rebuild between tiers.**
 
 A "release unit" is one of three things:
 
@@ -36,8 +36,9 @@ A "release unit" is one of three things:
    release manifest. This is the unit that ships to Chocolatey and WinGet.
 
 Each release unit is built once on the lowest tier (Experimental) and then
-promoted through the ProGet feed chain as quality gates pass. The bytes that
-land in the Production feed are the bytes that were originally built.
+promoted through the ProGet feed chain as quality gates pass. The SHA-256
+recorded for the package in the Production feed is the SHA-256 recorded when
+the package was originally built.
 
 ---
 
@@ -155,7 +156,8 @@ POST /api/promotions/promote
 
 ProGet copies the package bytes (or moves a feed-membership pointer,
 depending on storage configuration) from the source feed to the target.
-The package's SHA-256 is unchanged.
+The package's SHA-256 is unchanged. Configure ProGet for vault storage when
+the stronger "one stored byte-stream across feeds" guarantee is required.
 
 **Promotion is not** any of these:
 
@@ -168,6 +170,18 @@ The package's SHA-256 is unchanged.
 If a higher-tier feed needs a "different" build, that is a **new release
 unit** with a new version number — built from a new (or amended) release
 branch tag, taking the same shape as any other build.
+
+### 5.1 Idempotence semantics
+
+Promotion is idempotent only for the same package identity and the same
+content hash. If the target feed already contains `(PackageId, Version)` with
+the same SHA-256 as the source feed package, `Promote-ProGetPackage` returns
+success and reports `ResponseSummary` as `already promoted (idempotent no-op)`.
+
+If the target feed already contains `(PackageId, Version)` with a different
+SHA-256, the promotion must fail with a clear error. That state means the
+immutable pipeline has been bypassed or corrupted, not that the promotion was
+already completed.
 
 ---
 
@@ -308,7 +322,81 @@ call (or a no-op, if the artifact is already in the target feed).
 
 ---
 
-## 10. Related documents
+## 11. Dependency Restoration Invariant
+
+A package or module build has two feed decisions.
+
+The **target publish feed** is the feed that receives the package produced by
+the build. It is selected from the package's NBGV prerelease label: Sprint
+publishes to Experimental, Alpha to Development, Beta to Integration, QA to
+QA, and stable releases to Stable.
+
+The **allowed restore feed set** controls where the build may obtain direct
+and transitive dependencies. A build may restore internal packages **only
+from its own tier or from a more stable tier**. It may never restore an
+internal package from a less stable tier.
+
+This rule is enforced by generated tier-specific NuGet configuration for
+NuGet packages and by tier-specific PSResourceRepository visibility for
+PowerShell modules.
+
+### 11.1 Required C# restore policy
+
+The build should generate or select a tier-specific NuGet configuration
+before restore:
+
+| Consumer tier | Enabled internal sources for restore                                                       |
+| ------------- | ------------------------------------------------------------------------------------------ |
+| Experimental  | `nuget-experimental`, `nuget-development`, `nuget-integration`, `nuget-qa`, `nuget-stable` |
+| Development   | `nuget-development`, `nuget-integration`, `nuget-qa`, `nuget-stable`                       |
+| Integration   | `nuget-integration`, `nuget-qa`, `nuget-stable`                                            |
+| QA            | `nuget-qa`, `nuget-stable`                                                                 |
+| Stable        | `nuget-stable`                                                                             |
+
+`nuget.org` remains enabled for external packages, but internal package ID
+patterns should be mapped only to internal ProGet sources. For this repo the
+internal pattern is currently `ATAP.*`. For AceCommander or other consumers,
+the mapping probably also needs their internal prefixes, for example
+`AceCommander.*`.
+
+### 11.2 Required PowerShell repository policy
+
+The PowerShell build should register or enable only the tier-appropriate
+PSResource repositories during dependency restore/test/package validation:
+
+| Consumer tier         | Enabled PowerShellGet repositories for restore/validation                                                                          |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Sprint / Experimental | `powershellget-experimental`, `powershellget-development`, `powershellget-integration`, `powershellget-qa`, `powershellget-stable` |
+| Alpha / Development   | `powershellget-development`, `powershellget-integration`, `powershellget-qa`, `powershellget-stable`                               |
+| Beta / Integration    | `powershellget-integration`, `powershellget-qa`, `powershellget-stable`                                                            |
+| QA                    | `powershellget-qa`, `powershellget-stable`                                                                                         |
+| Production / Stable   | `powershellget-stable`                                                                                                             |
+
+The build should then validate `RequiredModules` and any other package
+dependency metadata using that repository view. If dependency checks must be
+skipped for a special bootstrap scenario, the skip should be explicit,
+logged, and gated.
+
+### 11.3 Direct and transitive dependency behavior
+
+If a consumer C has a direct `PackageReference` to a supplier S, NuGet
+chooses a version of S according to the requested version range, central
+package management, lock file, and enabled sources. If S depends on T, NuGet
+recursively resolves T using the same source configuration and source
+mapping. Therefore the tier policy must apply to both direct and transitive
+dependencies. The effective policy is:
+
+```text
+Allowed package source set = source mapping(package ID) intersect tier view(consumer tier)
+Resolved package = best version satisfying the requested range in the allowed set
+```
+
+If C uses `ProjectReference` to S in the same checkout, feeds are bypassed
+for that edge because S is built from source.
+
+---
+
+## 12. Related documents
 
 - [BuildMaster-ProGet-CSharp-Package-Pipeline.md](BuildMaster-ProGet-CSharp-Package-Pipeline.md)
   — the canonical C# pipeline (now expressed as immutable build + promotion).

@@ -1003,3 +1003,122 @@ the same session before calling `Find-PSResource`, `Install-PSResource`, or
 
 **Source:** `AI on VSC and Powershell and Repository Feeds.md` §4 Private feeds
 (lines 314–321, 340).
+
+---
+
+## API Key Rotation Incidents
+
+_Migrated from `_Planning/Explainers/0004-BuildMaster-Setup.md` lines 26-80. Each incident establishes a precedent / mandate for future API key handling._
+
+### INC-001 — BuildMaster API Key Rotation (2026-03-25, SC-0044 + SEC-01)
+
+**Severity:** High — API key value was exposed in BuildMaster debug execution logs and
+potentially visible to anyone with access to the BuildMaster web UI.
+
+**Root cause:** The OtterScript Build plan passed the ProGet API key directly as a
+`dotnet nuget push --api-key` argument without masking. BuildMaster's Debug log level
+captures full command arguments, so the key value appeared in plaintext in every build's
+execution log.
+
+**Contributing factor:** The Bitwarden entry was named `ProGet-BuildMaster-API-Key`
+(hyphen-separated), inconsistent with the convention used by all other secrets
+(`PROGET_ADMIN_API_KEY`, etc.). The env var was `PROGET_BUILDMASTER_KEY`, also
+inconsistent — it lacked the `_API_` infix that indicates an API key.
+
+**Actions taken:**
+
+1. Generated a new BuildMaster API key in **Administration → API Keys & Access Logs**
+2. Disabled the compromised key in the same UI
+3. Renamed the Bitwarden entry to `ProGet_BuildMaster_API_Key` and updated the stored key value
+4. Renamed the environment variable to `PROGET_BUILDMASTER_API_KEY` throughout all repos
+5. Updated the OtterScript Build plan to wrap the key with `$Obscure(...)`:
+
+   ```otterscript
+   set $MaskedApiKey = $Obscure($EnvironmentVariable(PROGET_BUILDMASTER_API_KEY));
+   ```
+
+   `$Obscure()` redacts the value in **all** BuildMaster log levels including Debug,
+   before it reaches the `dotnet nuget push` argument string.
+
+6. Eliminated hardcoded sprint-branch paths in the script via an Application Variable.
+
+**Verification:** New key works for pushes to `nuget-experimental`; debug logs no longer
+contain the key value; old key disabled (returns 403).
+
+### Precedents / Mandates From INC-001
+
+These rules are now project policy, derived from the actions above:
+
+1. **API-key Bitwarden entries** use underscore separators and the `_API_KEY` or
+   `_API_TOKEN` suffix to match the environment-variable naming convention.
+2. **All OtterScript plans MUST** use `$Obscure(...)` when reading secrets from
+   environment variables before passing them as command arguments. Forgetting `$Obscure()`
+   is a recurrence of INC-001.
+
+---
+
+## Secret Naming Convention
+
+_Migrated from `_Planning/Explainers/0020-bitwarden-naming-convention.md`. Authoritative for `New-SprintBitwardenSecrets`, `Remove-SprintBitwardenSecrets`, `New-PermanentBitwardenSecrets`, and `Get-BitWardenSecret`._
+
+### Per-Sprint Secrets
+
+```text
+dbConnectionString-<Database>-<Host>-<Tier>-<DeveloperUsername>
+```
+
+| Field                 | Values                                          |
+|-----------------------|-------------------------------------------------|
+| `<Database>`          | `master`, `ATAPUtilities`, `AceCommander`       |
+| `<Host>`              | `$env:COMPUTERNAME` or `localhost`              |
+| `<Tier>`              | `Dev` or `Exp`                                  |
+| `<DeveloperUsername>` | Windows username (e.g. `whertzing`)             |
+
+**12 secrets per developer per sprint** (3 databases × 2 hosts × 2 tiers).
+
+Example: `dbConnectionString-ATAPUtilities-UTAT022-Dev-whertzing`,
+`dbConnectionString-AceCommander-localhost-Exp-whertzing`, etc.
+
+### Permanent Secrets
+
+```text
+dbConnectionString-<Database>-<Host>-<Tier>
+```
+
+No `<DeveloperUsername>` suffix.
+
+| Field        | Values                                         |
+|--------------|------------------------------------------------|
+| `<Database>` | `ATAPUtilities`, `AceCommander`                |
+| `<Host>`     | Dedicated ecosystem server (default `utat022`) |
+| `<Tier>`     | `Integration`, `QA`, `Production`              |
+
+**6 secrets per workstation** (2 databases × 3 tiers).
+
+Examples: `dbConnectionString-ATAPUtilities-utat022-Production`,
+`dbConnectionString-AceCommander-utat022-Integration`.
+
+### Connection String Format
+
+Per-sprint:
+
+```text
+Server=<Host>\<Tier><DeveloperUsername>;Database=<Database>;Integrated Security=True;MultipleActiveResultSets=True;TrustServerCertificate=True;
+```
+
+Permanent:
+
+```text
+Server=<Host>\<Tier>;Database=<Database>;Integrated Security=True;MultipleActiveResultSets=True;Application Name=<Database>-<Tier>;TrustServerCertificate=True;
+```
+
+### Lifecycle Cmdlets
+
+| Category   | Created by                      | Removed by                        | When                           |
+|------------|---------------------------------|-----------------------------------|--------------------------------|
+| Per-sprint | `New-SprintBitwardenSecrets`    | `Remove-SprintBitwardenSecrets`   | Sprint start / sprint end      |
+| Permanent  | `New-PermanentBitwardenSecrets` | Manual (never automatically)      | Developer onboarding (once)    |
+
+Both creation/deletion cmdlets run `bw sync` automatically to flush the CLI cache.
+`Get-BitWardenSecret` reads `BW_SESSION` from User-scope registry if process-scope
+is absent (R-10 pattern).

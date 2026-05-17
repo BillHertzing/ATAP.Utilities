@@ -12,8 +12,8 @@ The end state is:
 2. PowerShell 7 profiles and login automation are installed from `ATAP.Utilities.PowerShell`.
 3. Third-party software is installed and configured:
    - SQL Server with the base instances `Production`, `QA`, and `Integration`
-   - ProGet using the `Production` SQL instance
-   - BuildMaster using the `Production` SQL instance
+   - ProGet using the `Production` SQL instance — full step-by-step procedure: see [ProGet-Install-Runbook.md](ProGet-Install-Runbook.md)
+   - BuildMaster using the `Production` SQL instance — full step-by-step procedure: see [BuildMaster-Install-Runbook.md](BuildMaster-Install-Runbook.md)
 4. The local service accounts and Bitwarden secrets required by SQL Server, ProGet, and
    BuildMaster exist and are wired up.
 5. Backup jobs exist for the ProGet and BuildMaster databases.

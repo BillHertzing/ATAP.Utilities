@@ -1,5 +1,21 @@
 # BuildMaster + ProGet: C# Package Build and Publish Pipeline
 
+> ## SUPERSEDED — Historical Reference Only
+>
+> **Status:** Superseded by [`Immutable-Build-Strategy.md`](Immutable-Build-Strategy.md) (sprint-0007).
+> **Retained for:** historical reference of the rebuild/relabel pipeline shape and the
+> per-stage `dotnet pack` / `dotnet nuget push` command surface.
+> **No longer authoritative.** The immutable **promote-bytes** model has replaced the
+> rebuild/relabel pattern: a package is built exactly once at the Experimental stage and
+> the same `.nupkg` bytes are promoted through the higher-tier feeds via
+> `Promote-ProGetPackage`. Any text in this document that implies a rebuild at a tier
+> above Experimental is legacy and must be read through the lens of
+> [`Immutable-Build-Strategy.md`](Immutable-Build-Strategy.md).
+>
+> For new work, treat [`Immutable-Build-Strategy.md`](Immutable-Build-Strategy.md) as
+> the single source of truth; consult this file only for the per-command reference and
+> for the historical OtterScript stage layout.
+
 **Repository:** ATAP.Utilities
 **Scope:** All C# / .NET projects under `src/`
 **Goal:** Build every package individually _and_ as a single `ATAP.Utilities` meta-package **exactly once**, then promote the resulting `.nupkg` (byte-for-byte unchanged) through the 5-tier ProGet feed chain.

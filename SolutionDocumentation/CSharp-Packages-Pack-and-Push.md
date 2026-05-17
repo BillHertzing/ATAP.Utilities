@@ -111,6 +111,37 @@ to override the solution-wide defaults. The meta-package
 
 ---
 
+## Embedded Provenance Metadata
+
+Every NuGet package (`.nupkg`) carries the following metadata in its
+`.nuspec` and assembly attributes. This metadata records the package's
+provenance — who built it, when, from which commit, and what runtime/tier
+context produced it — and is the load-bearing evidence trail behind the
+immutable promote-bytes model.
+
+| Metadata Field                   | Source                                   | Example                                                |
+| -------------------------------- | ---------------------------------------- | ------------------------------------------------------ |
+| **PackageId**                    | .csproj `<PackageId>` or assembly name   | `ATAP.Utilities.Serialization`                         |
+| **Version**                      | Computed by `UpdateVersion` MSBuild task | `0.1.0-Alpha-007`                                      |
+| **AssemblyVersion**              | `Properties/AssemblyInfo.cs`             | `0.1.0.0`                                              |
+| **AssemblyFileVersion**          | `Properties/AssemblyInfo.cs`             | `0.1.0.20260329`                                       |
+| **AssemblyInformationalVersion** | `Properties/AssemblyInfo.cs` + Git info  | `0.1.0-Alpha-007+abc1234`                              |
+| **Commit Hash**                  | Git `HEAD` at build time                 | `abc1234def5678`                                       |
+| **Branch**                       | `git branch --show-current`              | `91-sprint-0003-work-items`                            |
+| **Build Timestamp**              | MSBuild `$(BuildTimestamp)`              | `2026-03-29T14:30:00Z`                                 |
+| **Build Configuration**          | MSBuild `$(Configuration)`               | `Release`, `Debug`, or `Trace`                         |
+| **Target Frameworks**            | .csproj `<TargetFrameworks>`             | `net8.0;net9.0;net10.0`                                |
+| **PackageLifeCycleStage**        | .csproj property                         | `Experimental`, `Development`, `Testing`, `Production` |
+| **Authors**                      | .csproj `<Authors>`                      | `ATAPUtilities Foundation`                             |
+| **Description**                  | .csproj `<Description>`                  | Component description                                  |
+
+Because the same artifact is promoted byte-for-byte through the five tiers
+under the immutable strategy, this metadata is fixed at Experimental-stage
+pack time and is the authoritative provenance record for every later tier
+appearance of the same `(PackageId, Version)`.
+
+---
+
 ## 4. Symbols and SourceLink
 
 SourceLink is enabled via `Microsoft.SourceLink.GitHub` in `Directory.Build.targets`

@@ -53,7 +53,7 @@ PowerShellVersion = '5.1'
 # Modules that must be imported into the global environment prior to importing this module
 RequiredModules = @(
 @{ModuleName = 'PSFramework'; ModuleVersion = '1.10.0'; MaximumVersion = '1.999.999'; },
-@{ModuleName = 'powershell-yaml'; }
+'powershell-yaml'
 )
 
 # Assemblies that must be loaded prior to importing this module
@@ -104,6 +104,7 @@ FunctionsToExport = 'Add-ScopeCreepIdea', 'Add-SharedFileContent',
                'Invoke-WithFileLock', 'List-ProGetApiKeys', 'List-ProGetConnectors',
                'List-ProGetFeeds', 'Merge-PesterConfiguration', 
                'Move-ProGetPackageInterTier', 'Move-ProGetPackageIntraTier', 
+               'New-BuildMasterApplication', 'New-BuildMasterScript',
                'New-BundleProjectFiles', 'New-PSModuleNupkg', 'New-ReleaseBundle',
                'New-DocFilesIfNotPresent', 'New-DocFolderIfNotPresent', 
                'New-GitHubIssue', 'New-HostSettingsForPackageRepositoryFeeds', 
@@ -119,12 +120,13 @@ FunctionsToExport = 'Add-ScopeCreepIdea', 'Add-SharedFileContent',
                'Publish-PSModuleToProGet', 'Publish-PSModuleToProGetFeed', 'Publish-PSPackage',
                'Publish-UniversalPackageToProGet',
                'Read-SourceAndCreateRules', 'Register-ProGetFeedSet', 
-               'Remove-ObjAndBinSubDirectories', 'Remove-ProGetApiKeys', 
+               'Remove-BuildMasterApplication', 'Remove-BuildMasterApplicationVariable',
+               'Remove-BuildMasterScript', 'Remove-ObjAndBinSubDirectories', 'Remove-ProGetApiKeys', 
                'Remove-ProGetFeeds', 'Remove-SprintBitwardenSecrets', 
                'Remove-SprintSqlServerInstances', 'Remove-VSComponentCache', 
                'Rename-ProGetFeed', 'Reset-DownstreamToSharedVSCodeMain', 
                'Resolve-PSModuleMetadata', 'Save-SprintWorkSession', 
-               'Set-BuildMasterSprintVariables', 'Set-BuildMasterStableVariables', 
+               'Set-BuildMasterApplicationVariables', 'Set-BuildMasterSprintVariables', 'Set-BuildMasterStableVariables', 
                'Set-DownstreamSharedVSCodeContext', 'Set-TaskComplete', 
                'Set-WorkspaceSharedVSCodeReference', 'Set-WorktreeJunctions', 
                'Start-BuildMasterPipeline', 'Start-DebugPowerShell', 'Start-PlanningSession',

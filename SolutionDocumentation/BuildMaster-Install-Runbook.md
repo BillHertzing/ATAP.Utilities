@@ -239,7 +239,7 @@ default raft.
 
 API implementation target:
 
-- `GET /api/applications/list` or the Application Management list endpoint to
+- `POST /api/applications/list` or the Application Management list endpoint to
   detect existing apps.
 - `POST /api/applications/create` to create missing apps.
 - `POST /api/applications/update` to set fields such as description,

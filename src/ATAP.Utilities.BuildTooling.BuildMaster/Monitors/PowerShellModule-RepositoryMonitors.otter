@@ -5,6 +5,12 @@
 #           PowerShellModule-5Stage plan when branches are pushed in the
 #           ATAP.Utilities GitHub repository.
 #
+# Immutable build note:
+#   Under the immutable build strategy, only sprint-branch and main pushes
+#   trigger pipeline runs. Tier promotion happens via BuildMaster pipeline
+#   stage progression and `Promote-ProGetPackage` API calls, not branch
+#   pushes to integration/qa/release branches.
+#
 # How to apply:
 #   1. In the BuildMaster UI, open the application for ATAP.Utilities.
 #   2. Navigate to Settings → Repository Monitors.
@@ -12,8 +18,23 @@
 #      with the /api/resource-monitors endpoint).
 #   4. Confirm each monitor by performing a test push to the target branch.
 #
-# Reference: 5Tier Implementation plan.md §6.1;
-#            Explainer 14.3 (Repository Monitor configuration)
+# Tier resolution:
+#   NBGV prerelease label → Tier → Feed
+#   -Sprint-  → Experimental  → powershellget-experimental
+#   -Alpha-   → Development   → powershellget-development
+#   -Beta-    → Integration   → powershellget-integration
+#   -QA-      → QA            → powershellget-qa
+#   (none)    → Production    → powershellget-stable
+#
+# Path filter:
+#   PathFilter: src/** ensures that commits touching ONLY
+#   SolutionDocumentation/ or README.md do not trigger a build.
+#
+# Webhook secret:
+#   WebhookSecret references env var BUILDMASTER_GH_WEBHOOK_SECRET.
+#   PREREQUISITE: Create a Bitwarden secure-note named
+#     "BUILDMASTER_GH_WEBHOOK_SECRET" and add it to LoginScript.ps1 so
+#     the env var is populated before BuildMaster starts.
 #
 # Variables used by triggered builds:
 #   $Branch          — the branch that triggered the monitor (injected by BM)
@@ -23,79 +44,40 @@
 ##########################################################################
 
 # ---------------------------------------------------------------------------
-# Monitor 1 — Sprint branches (T1 / T2)
-# Triggers    : any push to a branch matching *Sprint-* (capital-S convention
-#               adopted from sprint-0007 onward, e.g. "98-Sprint-0007-work-items")
-# Stage       : resolves automatically in PowerShellModule-5Stage via NBGV tier
-# Interval    : poll every 2 minutes
-# ---------------------------------------------------------------------------
-GitHub::Repository-Monitor PowerShellModules-Sprint-Monitor
-(
-    Organization: ATAP,
-    Repository: ATAP.Utilities,
-    BranchFilter: *Sprint-*,
-    PollInterval: 120,
-    PipelineName: PowerShellModule-5Stage,
-    BuildVariables: %(Branch: $Branch)
-);
-
-# ---------------------------------------------------------------------------
-# Monitor 2 — Integration branch (T3 Beta)
-# Triggers    : any push to the "integration" branch
-# Stage       : Beta stage in PowerShellModule-5Stage
-# Interval    : poll every 5 minutes
-# ---------------------------------------------------------------------------
-GitHub::Repository-Monitor PowerShellModules-Integration-Monitor
-(
-    Organization: ATAP,
-    Repository: ATAP.Utilities,
-    BranchFilter: integration,
-    PollInterval: 300,
-    PipelineName: PowerShellModule-5Stage,
-    BuildVariables: %(Branch: $Branch)
-);
-
-# ---------------------------------------------------------------------------
-# Monitor 3 — QA branch (T4)
-# Triggers    : any push to the "qa" branch
-# Interval    : poll every 5 minutes
-# ---------------------------------------------------------------------------
-GitHub::Repository-Monitor PowerShellModules-QA-Monitor
-(
-    Organization: ATAP,
-    Repository: ATAP.Utilities,
-    BranchFilter: qa,
-    PollInterval: 300,
-    PipelineName: PowerShellModule-5Stage,
-    BuildVariables: %(Branch: $Branch)
-);
-
-# ---------------------------------------------------------------------------
-# Monitor 4 — Main branch (T5 Production)
-# Triggers    : any push to "main"
-# Interval    : poll every 10 minutes
+# Monitor 1 — main branch (Production)
+# Triggers  : any push to "main"
+# Stage     : Production (NBGV resolves from absent prerelease label)
+# PathFilter: src/** — docs-only commits do not trigger a build
+# Interval  : poll every 10 minutes
 # ---------------------------------------------------------------------------
 GitHub::Repository-Monitor PowerShellModules-Main-Monitor
 (
-    Organization: ATAP,
+    Organization: BillHertzing,
     Repository: ATAP.Utilities,
     BranchFilter: main,
+    PathFilter: src/**,
     PollInterval: 600,
+    WebhookSecret: $EnvironmentVariable(BUILDMASTER_GH_WEBHOOK_SECRET),
     PipelineName: PowerShellModule-5Stage,
     BuildVariables: %(Branch: $Branch)
 );
 
 # ---------------------------------------------------------------------------
-# Monitor 5 — Release tags / branches (T5 Production)
-# Triggers    : any push to branches matching release/v*
-# Interval    : poll every 10 minutes
+# Monitor 2 — Sprint branches (Experimental)
+# Triggers  : any push to a branch matching *-Sprint-*-work-items
+# Stage     : Experimental (NBGV resolves from -Sprint- prerelease label)
+# PathFilter: src/** — docs-only commits do not trigger a build
+# Interval  : poll every 2 minutes
+# Note      : pushes to the shared permanent powershellget-experimental feed
 # ---------------------------------------------------------------------------
-GitHub::Repository-Monitor PowerShellModules-Release-Monitor
+GitHub::Repository-Monitor PowerShellModules-Sprint-Monitor
 (
-    Organization: ATAP,
+    Organization: BillHertzing,
     Repository: ATAP.Utilities,
-    BranchFilter: release/v*,
-    PollInterval: 600,
+    BranchFilter: *-Sprint-*-work-items,
+    PathFilter: src/**,
+    PollInterval: 120,
+    WebhookSecret: $EnvironmentVariable(BUILDMASTER_GH_WEBHOOK_SECRET),
     PipelineName: PowerShellModule-5Stage,
     BuildVariables: %(Branch: $Branch)
 );

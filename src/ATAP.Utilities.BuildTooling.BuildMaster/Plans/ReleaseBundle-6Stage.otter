@@ -25,6 +25,20 @@
 # This plan intentionally keeps OtterScript as dumb glue. Release logic lives
 # in ATAP.Utilities.BuildTooling.PowerShell cmdlets documented by
 # SolutionDocumentation/Release-Bundle-Pipeline.md sections 5 and 6.
+#
+# Immutable build strategy:
+#   Adheres to the immutable build strategy: build occurs only in the
+#   Experimental stage; later stages promote the same bytes via
+#   Promote-ProGetPackage.
+#   Topology doc: SolutionDocumentation/BuildMaster-Pipeline-Topology.md
+#
+# NOTE — Distribution stage out of scope for Sprint 0007:
+#   Per ExplainerEliminationPlan_V1.md Section 0a D-06, Chocolatey/WinGet
+#   publication is deferred. The AceCommander BuildMaster Pipeline that
+#   invokes this plan must NOT define a Distribution stage; wire only the
+#   first 5 stages (Experimental, Development, Integration, QA, Production).
+#   The Distribution stage block at the bottom of this file is preserved
+#   for the future sprint that takes Chocolatey/WinGet off hold.
 ##########################################################################
 
 # BuildMaster stages:

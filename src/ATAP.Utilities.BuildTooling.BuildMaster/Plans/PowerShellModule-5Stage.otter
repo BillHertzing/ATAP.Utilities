@@ -13,6 +13,12 @@
 # Experimental builds the PowerShell module nupkg once and publishes it to
 # powershellget-experimental. Later stages promote that same immutable nupkg
 # and run tests against the promoted module; they do not rebuild or repack.
+#
+# Immutable build strategy:
+#   Adheres to the immutable build strategy: build occurs only in the
+#   Experimental stage; later stages promote the same bytes via
+#   Promote-ProGetPackage.
+#   Topology doc: SolutionDocumentation/BuildMaster-Pipeline-Topology.md
 ##########################################################################
 
 # BuildTooling module used by every stage command.

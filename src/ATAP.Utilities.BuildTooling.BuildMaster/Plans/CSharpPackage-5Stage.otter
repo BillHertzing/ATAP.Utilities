@@ -1,9 +1,16 @@
 ##########################################################################
 # CSharpPackage-5Stage - BuildMaster OtterScript Plan
 #
+# IMMUTABLE BUILD STRATEGY (banner):
+#   Adheres to the immutable build strategy: build occurs only in the
+#   Experimental stage; later stages promote the same bytes via
+#   `Promote-ProGetPackage`. See `Immutable-Build-Strategy.md` section 6.4
+#   for the binary-determinism requirement.
+#
 # Source of truth:
 #   Plan-DocsUpdateForImmutablePackages_V3.md Section K
 #   SolutionDocumentation/BuildMaster-ProGet-CSharp-Package-Pipeline.md section 5
+#   Topology doc: SolutionDocumentation/BuildMaster-Pipeline-Topology.md
 #
 # Variables (Application Variables):
 #   $ApplicationName          Repository/application name, e.g. ATAP.Utilities
@@ -12,6 +19,8 @@
 #   $Configuration            MSBuild configuration, e.g. Release
 #   $ProGetApiKey             Masked BuildMaster variable for ProGet API calls
 #   $MetaPackageName          Roll-up NuGet package id, e.g. ATAP.Utilities
+#   $SolutionPath             Path to the solution file (e.g. ATAP.Utilities.sln for
+#                             ATAP.Utilities-CSharp, AceCommander.sln for AceCommander)
 #
 # Only Experimental builds and publishes. Later stages move the same package
 # version through the feed chain and run tests against the promoted artifact.
@@ -60,10 +69,16 @@ stage Experimental
 {
     if $Tier == Experimental
     {
+        # ContinuousIntegrationBuild=true enforces binary-determinism
+        # (deterministic source paths, embedded PDB metadata, no machine-
+        # specific build outputs) as required by Immutable-Build-Strategy.md
+        # section 6.4. Must be set on BOTH `dotnet build` and `dotnet pack`
+        # so the binaries produced here are bit-identical to any later rebuild
+        # from the same commit, satisfying the immutable-promotion contract.
         Exec
         (
             FileName: dotnet,
-            Arguments: `build ATAP.Utilities.sln --configuration $Configuration --no-incremental`,
+            Arguments: `build $SolutionPath --configuration $Configuration --no-incremental -p:ContinuousIntegrationBuild=true`,
             WorkingDirectory: $SourcePath,
             SuccessExitCode: 0
         );
@@ -71,7 +86,7 @@ stage Experimental
         Exec
         (
             FileName: dotnet,
-            Arguments: `pack ATAP.Utilities.sln --configuration $Configuration --no-build --output _generated\nuget\$Tier`,
+            Arguments: `pack $SolutionPath --configuration $Configuration --no-build --output _generated\nuget\$Tier -p:ContinuousIntegrationBuild=true`,
             WorkingDirectory: $SourcePath,
             SuccessExitCode: 0
         );

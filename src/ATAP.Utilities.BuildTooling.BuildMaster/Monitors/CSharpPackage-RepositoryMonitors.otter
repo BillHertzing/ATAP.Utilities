@@ -5,6 +5,12 @@
 #           CSharpPackage-5Stage plan when branches are pushed in the
 #           ATAP.Utilities GitHub repository.
 #
+# Immutable build note:
+#   Under the immutable build strategy, only sprint-branch and main pushes
+#   trigger pipeline runs. Tier promotion happens via BuildMaster pipeline
+#   stage progression and `Promote-ProGetPackage` API calls, not branch
+#   pushes to integration/qa/release branches.
+#
 # How to apply:
 #   1. In the BuildMaster UI, open the application for ATAP.Utilities.
 #   2. Navigate to Settings → Repository Monitors.

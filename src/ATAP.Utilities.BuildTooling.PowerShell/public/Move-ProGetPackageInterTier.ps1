@@ -2,18 +2,15 @@
 function Move-ProGetPackageInterTier {
     <#
 .SYNOPSIS
-    Moves a package from a lower tier's pull feed to the next higher tier's
-    push feed (Phase 2) or combined feed (Phase 1).
+    Moves a package between permanent ProGet feeds per the immutable promotion
+    model. See `BuildMaster-Pipeline-Topology.md`.
 
 .DESCRIPTION
     Inter-tier movement advances a validated package upward through the
     environment tiers: Experimental → Development → Integration → QA → Stable.
 
     The script knows the tier ordering and can automatically determine the
-    destination feed from the source feed name. In Phase 1, the destination
-    is the next tier's combined feed. In Phase 2, the destination is the
-    next tier's push feed (the caller then runs the intra-tier script to
-    move it from push to pull within that tier).
+    destination feed from the source feed name.
 
     The tier chain is:
         experimental → development → integration → qa → stable
@@ -42,9 +39,10 @@ function Move-ProGetPackageInterTier {
 
 .PARAMETER UsePushFeed
     If set, the auto-computed destination targets the next tier's push feed
-    (e.g., 'nuget-development-push'). This is the Phase 2 behavior.
+    (e.g., 'nuget-development-push'). Used when the destination tier
+    separates push and pull feeds.
     If not set, the destination targets the next tier's combined feed
-    (e.g., 'nuget-development'). This is the Phase 1 behavior.
+    (e.g., 'nuget-development').
 
 .PARAMETER Reason
     Optional movement comment recorded in ProGet's audit log.

@@ -100,10 +100,35 @@ function Remove-SprintSqlServerInstances {
   )
 
   $fn = $MyInvocation.MyCommand.Name
-  $mn = 'ATAP.Utilities.DatabaseManagement.Powershell'
+  $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
 
   if ($Force) {
     $ConfirmPreference = 'None'
+  }
+
+  # Load Helpers — ToDo: Remove this when packaging works
+  # Mirrors the resolution pattern used in New-SprintSqlServerInstances: locate the
+  # repository root from $PSScriptRoot and dot-source the helper from the in-repo path.
+  # Failures are non-fatal — the Get-PVal call below is itself guarded so the cmdlet
+  # gracefully falls back to $env:USERNAME if the helper cannot be loaded.
+  if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+    try {
+      $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..') -ErrorAction SilentlyContinue)?.Path
+      if ($repositoryRoot) {
+        $helperPath = Join-Path $repositoryRoot 'src' 'ATAP.Utilities.Powershell' 'public' 'Get-ParameterValueFromNeoConfigurationRoot.ps1'
+        if (Test-Path -LiteralPath $helperPath -PathType Leaf) {
+          . $helperPath
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+            -Message "Loaded Get-ParameterValueFromNeoConfigurationRoot from $helperPath"
+        } else {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
+            -Message "Get-ParameterValueFromNeoConfigurationRoot helper not found at $helperPath; will fall back to defaults."
+        }
+      }
+    } catch {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
+        -Message "Failed to auto-load Get-ParameterValueFromNeoConfigurationRoot helper: $($_.Exception.Message). Will fall back to defaults."
+    }
   }
 
   # ── Resolve developer names ──────────────────────────────────────────────
@@ -113,12 +138,14 @@ function Remove-SprintSqlServerInstances {
     } else {
       'Sprint.DeveloperNames'
     }
-    $DeveloperNames = Get-PVal `
-      -ParameterName 'DeveloperNames' `
-      -originalPSBoundParameters $PSBoundParameters `
-      -dottedPath $settingsKey `
-      -DefaultValue @($env:USERNAME) `
-      -AllowMissing
+    if (Get-Command -Name 'Get-PVal' -ErrorAction SilentlyContinue) {
+      $DeveloperNames = Get-PVal `
+        -ParameterName 'DeveloperNames' `
+        -originalPSBoundParameters $PSBoundParameters `
+        -dottedPath $settingsKey `
+        -DefaultValue @($env:USERNAME) `
+        -AllowMissing
+    }
     if (-not $DeveloperNames) {
       $DeveloperNames = @($env:USERNAME)
     }

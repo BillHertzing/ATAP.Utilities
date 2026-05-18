@@ -79,6 +79,13 @@ provisioning tooling for:
 >   three durable BuildMaster pipelines (C#, PowerShell, Release Bundle) and the
 >   PowerShell automation surface that drives them.
 
+> **BuildMaster run-state note (Sprint 7).** Inter-stage state is now
+> build-id scoped under `_generated/buildmaster/<BuildMasterBuildId>/`, where
+> `<BuildMasterBuildId>` is `$BuildMasterId(build)`. This keeps concurrent
+> BuildMaster runs from reading each other's ceiling, resolved-version, or
+> ReleaseBundle state; see [BuildMaster-Pipeline-Topology.md](BuildMaster-Pipeline-Topology.md)
+> for the full Option A contract.
+
 ---
 
 ## 2. The Five Subject Areas

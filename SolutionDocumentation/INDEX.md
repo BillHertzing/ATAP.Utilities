@@ -180,6 +180,9 @@ nuget-development / nuget-integration / nuget-qa / nuget-stable`, NBGV
 - [BuildMaster Pipeline Topology](BuildMaster-Pipeline-Topology.md) —
   Current BuildMaster topology and trigger strategy (including polling-based
   feed checks).
+- [BuildMaster Run-State Runbook](BuildMaster-Run-State-Runbook.md) —
+  Operational guide for the build-id scoped `_generated/buildmaster/<BuildMasterBuildId>/`
+  inter-stage state channel.
 - [Release Bundle Pipeline](Release-Bundle-Pipeline.md) —
   Multi-stage release bundle execution model.
 - [Release Branch and Manifest](Release-Branch-and-Manifest.md) —

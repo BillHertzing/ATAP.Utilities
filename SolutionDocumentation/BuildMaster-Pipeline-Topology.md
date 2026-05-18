@@ -66,7 +66,7 @@ Each BuildMaster Application supplies its own values for the variables its
 | `$ProjectPath`                               | project directory or `.csproj` for NBGV  | project directory or `.csproj` for NBGV       | _(not used)_                              | _(not used)_                              |
 | `$ModuleName`                                | _(not used)_                             | _(not used)_                                  | module folder under `src/`                | _(not used)_                              |
 | `$PackageName`                               | _(not used)_                             | _(not used)_                                  | normally same as `$ModuleName`            | _(not used)_                              |
-| `$PackageVersion`                            | _(derived via Get-BuildContext)_         | _(derived via Get-BuildContext)_              | exact package version to promote/test     | _(not used directly)_                     |
+| `$PackageVersion`                            | _(not used; derived as `$ResolvedPackageVersion`)_ | _(not used; derived as `$ResolvedPackageVersion`)_ | _(not used; plan reads captured `$ResolvedPackageVersion`)_ | _(not used directly)_                     |
 | `$Tier`                                      | BuildMaster stage context                | BuildMaster stage context                     | BuildMaster stage context                 | BuildMaster stage context                 |
 | `$CeilingTier`                               | preamble-set from `version.json`         | preamble-set from `version.json`              | preamble-set from `version.json`          | preamble-set from `version.json`          |
 | `$ProductName`                               | _(not used)_                             | _(not used)_                                  | _(not used)_                              | `AceCommander`                            |
@@ -80,10 +80,55 @@ Each BuildMaster Application supplies its own values for the variables its
 | `$PreviousProductionBackupPath`              | _(not used)_                             | _(not used)_                                  | _(not used)_                              | path to prior production `.bak` (Flyway rehearsal) |
 | `$IntegrationDatabaseBitwardenSecretName`    | _(not used)_                             | _(not used)_                                  | _(not used)_                              | `dbConnectionString-AceCommander-utat022-Integration` |
 
-`$Tier` is the current BuildMaster stage. `$CeilingTier` is not configured on
-the Application; each plan preamble computes it with `Get-BuildContext` from
-the NBGV prerelease label and uses `Test-PromotionWithinCeiling` to skip stages
-above that ceiling.
+`$Tier` is the current BuildMaster stage. `$BuildMasterBuildId` is derived in
+each plan with `$BuildMasterId(build)` and is used only for generated run-state
+isolation. `$CeilingTier` is not configured on the Application; each plan
+preamble computes it with `Get-BuildContext` from the NBGV prerelease label,
+writes it to the build-id scoped context folder, and uses
+`Test-PromotionWithinCeiling` to skip stages above that ceiling.
+
+### Build-id scoped run-state contract
+
+Sprint 0007 selected the file-based Option A state channel:
+
+```text
+_generated/buildmaster/<BuildMasterBuildId>/
+```
+
+BuildMaster runtime/build variables are not the selected propagation mechanism.
+The preamble scripts under
+`src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/` initialize this folder at
+the start of every stage, using `$BuildMasterId(build)` as the isolation key.
+The folder is generated state, not source, and contains the stage's temp files
+plus `build-context.json` evidence.
+
+The state folder holds these facts as applicable to the plan: current tier,
+ceiling tier, resolved package/module/bundle version, prerelease label,
+allow/skip decisions, module nupkg path, ReleaseBundle manifest path, bundle
+path, and bundle identity. Later stages read these files from their own build-id
+folder; no stage reads flat `_generated/buildmaster/*.tmp` files.
+
+Variable categories are deliberately separate:
+
+- Application/configuration variables are static BuildMaster inputs such as
+  `$SourcePath`, `$ModuleName`, and feed names.
+- Stage context variables are BuildMaster-provided values such as `$Tier`,
+  `$BuildNumber`, `$ExecutionId`, and `$BuildMasterId(build)`.
+- Preamble-derived run state is generated from `Get-BuildContext` and stored
+  under `_generated/buildmaster/<BuildMasterBuildId>/`.
+- Per-build evidence files are generated JSON/temp files retained for
+  diagnostics.
+
+Retry semantics: the preamble refreshes recomputable state, but fails if an
+existing `build-context.json` in the same build-id folder captured a different
+resolved version. Cleanup semantics: helper scripts remove old build-id folders
+after 14 days and never delete the active build-id folder.
+
+Operational assumption: every stage in a BuildMaster run must see the same
+`$SourcePath` workspace or an equivalent artifact/shared-storage transfer of
+`_generated/buildmaster/<BuildMasterBuildId>/`. If stages move across isolated
+agents with clean workspaces, add artifact transfer before relying on this
+state channel.
 
 ---
 
@@ -171,9 +216,9 @@ All cmdlets:
 - Never hard-code feed URLs, API keys, or pipeline IDs.
 
 Ceiling observability: publish and promotion wrappers echo `CeilingTier` in
-their returned objects and the Otter preamble writes the build context to the
-BuildMaster-generated evidence files. ProGet package metadata is not mutated by
-this implementation; the documented
+their returned objects and the Otter preamble writes `build-context.json` plus
+temp evidence under `_generated/buildmaster/<BuildMasterBuildId>/`. ProGet
+package metadata is not mutated by this implementation; the documented
 [ProGet Packages API](https://docs.inedo.com/docs/proget/api/packages)
 exposes upload, promote, status, and metadata-read surfaces, but no general
 package-metadata write endpoint. If ProGet adds or exposes such a write
@@ -190,6 +235,11 @@ repo. The plans are short — they delegate to PowerShell cmdlets:
 
 ```text
 Plans/
+├── BuildMasterRunContext.Common.ps1       # shared run-state helper
+├── Initialize-CSharpPackageBuildContext.ps1
+├── Initialize-PowerShellModuleBuildContext.ps1
+├── Initialize-ReleaseBundleBuildContext.ps1
+├── New-ReleaseBundleBuildMasterPackage.ps1
 ├── CSharpPackage-5Stage.otter             # full-solution C# pipeline
 ├── CSharpPackage-PerProject.otter         # single-project C# pipeline (manual trigger)
 ├── PowerShellModule-5Stage.otter          # PowerShell module pipeline
@@ -209,14 +259,14 @@ stage Development
             Exec
             (
                 FileName: pwsh,
-                Arguments: `-Command "Promote-ProGetPackage -Name $PackageName -Version $PackageVersion -FromFeed nuget-experimental -ToFeed nuget-development -Reason 'Pipeline gate DEV-PASS for build $BuildId' -CeilingTier $CeilingTier"`
+                Arguments: `-Command "Promote-ProGetPackage -Name $PackageName -Version $ResolvedPackageVersion -FromFeed nuget-experimental -ToFeed nuget-development -Reason 'Pipeline gate DEV-PASS for build $BuildMasterBuildId' -CeilingTier $CeilingTier"`
             );
 
             # Run integration tests against the existing package.
             Exec
             (
                 FileName: pwsh,
-                Arguments: `-Command "Invoke-PromotedPackageTests -Name $PackageName -Version $PackageVersion -TestFilter 'Category=Integration' -ResultsPath _generated/testresults/development"`,
+                Arguments: `-Command "Invoke-PromotedPackageTests -Name $PackageName -Version $ResolvedPackageVersion -TestFilter 'Category=Integration' -ResultsPath _generated/testresults/development"`,
                 SuccessExitCode: 0
             );
 
@@ -229,7 +279,8 @@ stage Development
 # This Markdown snippet is illustrative; the .otter files are what BuildMaster loads.
 ```
 
-The plan preamble writes `$AllowDevelopment` by calling
+The plan preamble writes `$AllowDevelopment` by calling the plan-specific
+`Initialize-*BuildContext.ps1` script, which in turn calls
 `Test-PromotionWithinCeiling -CurrentTier Development -CeilingTier $CeilingTier -AsBoolean`.
 Note the absence of `dotnet pack` in the Development stage; that
 ran exactly once at Experimental. The Development stage's job is to **test and
@@ -400,9 +451,11 @@ a new commit), and the new artifact starts from Experimental again.
 1. **Old per-project experimental C# pipelines may still exist in
    BuildMaster.** Audit task: list all pipelines, delete any that are not
    one of the three durable ones.
-2. **OtterScript plans still reference per-tier `dotnet pack` calls.**
-   Plans need to be rewritten to call `Promote-ProGetPackage` at all tiers
-   except Experimental. Tracked.
+2. **Historical per-tier `dotnet pack` drift is resolved in the canonical
+   plans.** `CSharpPackage-5Stage.otter` and `PowerShellModule-5Stage.otter`
+   now build/package only at Experimental and promote the captured version in
+   later tiers. Remaining risk is stale Markdown snippets or archived plans
+   outside `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/`.
 3. **`Publish-NuGetPackageToProGet` consolidation is incomplete.** The
    single-source-of-truth cmdlet exists but legacy scripts still call
    `dotnet nuget push` directly in some places.

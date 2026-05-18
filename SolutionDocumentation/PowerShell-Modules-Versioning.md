@@ -192,6 +192,23 @@ it cuts a fresh Integration-ceiling candidate. The next run builds and
 publishes the `.nupkg` once in Experimental, promotes the same bytes to
 Development and Integration, and then skips QA and Production.
 
+### 7.0.1 BuildMaster run state for PowerShell module promotion
+
+`PowerShellModule-5Stage.otter` derives the current BuildMaster build id with
+`$BuildMasterId(build)` and stores generated inter-stage state here:
+
+```text
+_generated/buildmaster/<BuildMasterBuildId>/
+```
+
+The Experimental preamble captures the module's resolved package version and
+the Experimental stage writes the generated `.nupkg` path in that build-id
+folder. Later tiers use the captured `$ResolvedPackageVersion` from
+`<ModuleName>.resolved-version.tmp`; `$PackageVersion` is no longer an
+externally injected promotion input. Module build outputs remain under
+`_generated/psmodules/<ModuleName>/`; the buildmaster folder is only per-run
+state and diagnostic evidence.
+
 This section is structured around the two distinct operations that earlier
 versions of this doc conflated.
 

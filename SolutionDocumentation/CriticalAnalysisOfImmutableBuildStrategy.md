@@ -77,10 +77,10 @@ clean and identical**. In a BuildMaster pipeline:
 ### 1.3 Fix direction (do not implement; this is for the dev tasks)
 
 - Add a section to `Immutable-Build-Strategy.md` (probably §6) titled
-  **"Version capture and propagation"** that names the BuildMaster
-  application variable (proposed: `$ResolvedPackageVersion`) and states
-  that NBGV is invoked exactly once, in the Experimental stage, and the
-  result is written to that variable for the rest of the release.
+  **"Version capture and propagation"** that names the selected Option A
+  per-build state folder (`_generated/buildmaster/<BuildMasterBuildId>/`) and
+  states that the Experimental stage captures the resolved version there for
+  later stages.
 - Rewrite `CSharp-Packages-Versioning.md §5` and
   `PowerShell-Modules-Versioning.md §7` so the "promotion procedure" is
   **promote-the-artifact** (call `Promote-ProGetPackage`), not edit-and-rebuild.
@@ -249,11 +249,17 @@ table form:
 | `db/<App>/<flyway,seed>/*` | `db/<App>/` | dev | new schema/seed change | per migration | (copied into bundle's `db/`) |
 | `db/<App>/releases/<x.y.z>.yml` | `db/<App>/releases/` | release engineer | release-branch cut | rare (corrections) | drives `db-manifest.json` generation |
 | OtterScript plan files | `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/` | build-tooling owner | new pipeline | rare | (loaded into BuildMaster) |
+| BuildMaster per-run state | `_generated/buildmaster/<BuildMasterBuildId>/` | BuildMaster preamble scripts | generated per BuildMaster build | generated / cleaned by retention policy | temp files plus `build-context.json`; never source-controlled |
 | `manifest.json` | (none in source — bundle root) | `New-ReleaseManifest` | (generated) | (generated) | THIS IS the generated artifact |
 | `db-manifest.json` | (none in source — bundle's `db/`) | `New-ReleaseManifest` | (generated) | (generated) | generated artifact |
 
 Then the per-area docs link to this inventory rather than each repeating
 their slice.
+
+Risk note for the BuildMaster per-run state row: Option A assumes every stage
+in the same BuildMaster build sees the same `_generated/buildmaster/<BuildMasterBuildId>/`
+folder. If stages use clean workspaces or different agents, the pipeline must
+transfer that folder as an artifact or move the state channel to shared storage.
 
 ### 4.4 Source-of-truth gap
 
@@ -585,7 +591,7 @@ Cut from the findings above. Each is sized for a single dev × 1–3 days.
 | IMPL-7-05 | Implement `New-ReleaseBundle` cmdlet. Completed 2026-05-11; it now stages `db/db-manifest.json`, requires manifest-referenced assets, and packs `.upack`. | §8.3 | done |
 | IMPL-7-06 | Implement `Invoke-FlywayRehearsal` rotation so each pipeline run uses a uniquely-named rehearsal DB. Completed 2026-05-12. | §6.3 | done |
 | IMPL-7-07 | Implement `New-DeveloperScratchDb` / `New-FeatureSharedDb` / removal counterparts in `ATAP.Utilities.DatabaseManagement.Powershell` (after design per §6.5). Completed 2026-05-12. | §6.4 | done |
-| IMPL-7-08 | Capture-and-propagate version through BuildMaster build variable (proposed `$ResolvedPackageVersion`). | §1.3 | M |
+| IMPL-7-08 | Capture-and-propagate version through Option A per-build state folder (`_generated/buildmaster/<BuildMasterBuildId>/`). | §1.3 | M |
 
 ### Source-of-truth tickets
 

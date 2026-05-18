@@ -209,12 +209,19 @@ already completed.
 
 ## 6. Versioning (no special-case for promotion)
 
-NBGV computes the prerelease label and `{height}` from `version.json` **at
-the Experimental stage only**. The resulting version string is captured
-into a BuildMaster build variable (named `$ResolvedPackageVersion` in the
-canonical OtterScript) and **read, not recomputed**, by every later
-stage. NBGV is not invoked above Experimental. The label declares the
-**ceiling** tier:
+NBGV computes the prerelease label and `{height}` from `version.json` in the
+Experimental preamble and the resulting version string is captured under the
+build-id scoped run-state folder. Later preambles may validate that the current
+workspace still resolves to the same version, but promotion/test arguments
+**read the captured value, not a flat temp file or BuildMaster build
+variable**. The canonical path is:
+
+```text
+_generated/buildmaster/<BuildMasterBuildId>/
+```
+
+`<BuildMasterBuildId>` is the value returned by `$BuildMasterId(build)` in
+BuildMaster. The label declares the **ceiling** tier:
 
 | Label         | Ceiling tier | Where the artifact starts            |
 | ------------- | ------------ | ------------------------------------ |
@@ -239,9 +246,24 @@ defined by `(PackageId, Version)`.
 
 | Surface | What it holds | Set by | Read by |
 | --- | --- | --- | --- |
-| BuildMaster build variable `$ResolvedPackageVersion` | full SemVer, e.g. `0.1.0-Sprint.42` | Experimental stage, after `nbgv get-version` | every later stage of the same release |
+| `_generated/buildmaster/<BuildMasterBuildId>/_resolved_version.tmp` or `<ModuleName>.resolved-version.tmp` | full SemVer, e.g. `0.1.0-Sprint.42` | plan preamble script after `Get-BuildContext` | every later stage of the same BuildMaster build |
+| `_generated/buildmaster/<BuildMasterBuildId>/build-context.json` | build id, BuildMaster build/execution numbers, branch, source path, current tier, ceiling tier, resolved version, prerelease label, allow/skip decisions, and relevant bundle/module paths | plan preamble script | operators, diagnostics, later stage scripts |
 | The artifact's filename | same SemVer minus the `+<hash>` build metadata | `dotnet pack` / `New-PSModuleNupkg` at Experimental | promotion calls; tier gates |
 | BuildMaster release record metadata | full SemVer + SHA-256 | Experimental stage's "attach package" step | audit / forensics |
+
+Captured generated state by plan family:
+
+| Plan | Captured generated state |
+| --- | --- |
+| C# package | current tier, ceiling tier, resolved version, prerelease label, allow/skip flags |
+| PowerShell module | current tier, ceiling tier, resolved version, prerelease label, module nupkg path, allow/skip flags |
+| Release Bundle | current tier, ceiling tier, resolved version, prerelease label, ReleaseBundle context JSON, bundle name, bundle version, bundle path, manifest path, allow/skip flags |
+
+The build-id folder is generated run state and is not committed. It prevents
+stale/cross-run state because two concurrent BuildMaster builds write to
+different folders. A retry of the same BuildMaster build id may refresh
+recomputable state, but the helper fails if an existing context captured a
+different resolved version.
 
 ### 6.2 Why this matters
 

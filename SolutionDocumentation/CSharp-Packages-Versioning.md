@@ -260,6 +260,22 @@ Integration, then skips QA and Production. `Get-BuildContext.CeilingTier`
 contains `Integration`; `Get-BuildContext.CurrentTier` changes as each
 BuildMaster stage runs.
 
+### 5.0.1 BuildMaster run state for C# package promotion
+
+`CSharpPackage-5Stage.otter` derives the current BuildMaster build id with
+`$BuildMasterId(build)` and stores generated inter-stage state here:
+
+```text
+_generated/buildmaster/<BuildMasterBuildId>/
+```
+
+The Experimental preamble captures the resolved NuGet package version once in
+`_resolved_version.tmp` and `build-context.json`. Later tiers promote that
+captured version with `Promote-ProGetPackage`; they do not rebuild, repack, or
+read flat `_generated/buildmaster/*.tmp` files. Package outputs remain in
+`_generated/nuget/<Tier>/`; the buildmaster folder is only per-run state and
+diagnostic evidence.
+
 ### 5.1 The two operations are different
 
 - **Cutting a new candidate at the next tier** = edit `version.json`,

@@ -46,6 +46,19 @@ Example: a package built from `0.1-Beta.{height}` starts in Experimental,
 promotes to Development, promotes to Integration, runs the Integration gate,
 and skips QA and Production. No later stage rebuilds or re-evaluates NBGV.
 
+During BuildMaster execution, the computed ceiling and resolved version are
+persisted under the selected Option A run-state channel:
+
+```text
+_generated/buildmaster/<BuildMasterBuildId>/
+```
+
+`<BuildMasterBuildId>` comes from `$BuildMasterId(build)`. The plan-specific
+preamble scripts write `build-context.json` plus temp files for current tier,
+ceiling tier, resolved version, prerelease label, and allow/skip decisions.
+Later stages read this build-id scoped state instead of flat
+`_generated/buildmaster/*.tmp` files or BuildMaster runtime variables.
+
 ## Cmdlet Contract
 
 `Get-BuildContext` returns:

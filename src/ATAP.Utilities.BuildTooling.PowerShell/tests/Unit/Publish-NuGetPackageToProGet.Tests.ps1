@@ -127,6 +127,32 @@ Describe 'Publish-NuGetPackageToProGet' -Tag 'Unit' {
             $result.FeedName | Should -Be 'nuget-experimental'
         }
 
+        It 'Requires CeilingTier when publishing directly above Experimental' {
+            { Publish-NuGetPackageToProGet -NupkgPath $script:fakeNupkg -Feed 'nuget-development' } |
+                Should -Throw -ExpectedMessage '*CeilingTier is required*'
+
+            Assert-MockCalled Invoke-DotnetNuGetPush -Times 0 -Exactly -Scope It
+        }
+
+        It 'Blocks direct publish above the ceiling before dotnet runs' {
+            { Publish-NuGetPackageToProGet -NupkgPath $script:fakeNupkg -Feed 'nuget-development' -CeilingTier 'Experimental' } |
+                Should -Throw -ExpectedMessage '*Promotion ceiling exceeded*'
+
+            Assert-MockCalled Invoke-DotnetNuGetPush -Times 0 -Exactly -Scope It
+        }
+
+        It 'Allows direct publish above Experimental when within CeilingTier' {
+            $result = Publish-NuGetPackageToProGet -NupkgPath $script:fakeNupkg -Feed 'nuget-development' -CeilingTier 'Development'
+            $result.FeedName | Should -Be 'nuget-development'
+            $result.Published | Should -BeTrue
+        }
+
+        It 'Allows an explicit Force bypass for direct publish above Experimental' {
+            $result = Publish-NuGetPackageToProGet -NupkgPath $script:fakeNupkg -Feed 'nuget-development' -Force
+            $result.FeedName | Should -Be 'nuget-development'
+            $result.Published | Should -BeTrue
+        }
+
         It 'Always passes --skip-duplicate to the dotnet helper' {
             $capturedArgs = $null
             Mock Invoke-DotnetNuGetPush {

@@ -16,33 +16,52 @@ function Import-BuildToolingDatabaseResolver {
     }
   }
   catch {
-    # Fall through to repo-local dot-sourcing below.
+    # Fall through to source/package-layout imports below.
   }
 
-  $candidateRoots = @()
+  $candidateModuleRoots = @()
   if (-not [string]::IsNullOrWhiteSpace($RepositoryRoot)) {
-    $candidateRoots += $RepositoryRoot
+    $candidateModuleRoots += Join-Path $RepositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell'
   }
   if (-not [string]::IsNullOrWhiteSpace($PSScriptRoot)) {
-    $candidateRoots += (Resolve-Path -Path (Join-Path $PSScriptRoot '..\..\..') -ErrorAction SilentlyContinue).Path
-  }
-  $candidateRoots += 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items'
-  $candidateRoots += 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
+    $moduleRoot = Split-Path -Parent $PSScriptRoot
+    $sourceRoot = Split-Path -Parent $moduleRoot
+    if (-not [string]::IsNullOrWhiteSpace($sourceRoot)) {
+      $candidateModuleRoots += Join-Path $sourceRoot 'ATAP.Utilities.DatabaseManagement.Powershell'
+    }
 
-  foreach ($root in ($candidateRoots | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)) {
-    $databaseModuleRoot = Join-Path $root 'src\ATAP.Utilities.DatabaseManagement.Powershell'
-    $privateHelperPath = Join-Path $databaseModuleRoot 'private\DatabaseSqlConnection.Helpers.ps1'
-    $resolverPath = Join-Path $databaseModuleRoot 'public\Resolve-DatabaseSqlConnection.ps1'
-
-    if ((Test-Path -LiteralPath $privateHelperPath -PathType Leaf) -and
-      (Test-Path -LiteralPath $resolverPath -PathType Leaf)) {
-      . $privateHelperPath
-      . $resolverPath
-      return
+    $resolvedRepositoryRoot = (Resolve-Path -Path (Join-Path $moduleRoot '..\..') -ErrorAction SilentlyContinue).Path
+    if (-not [string]::IsNullOrWhiteSpace($resolvedRepositoryRoot)) {
+      $candidateModuleRoots += Join-Path $resolvedRepositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell'
     }
   }
 
-  throw 'Resolve-DatabaseSqlConnection is not available. Import ATAP.Utilities.DatabaseManagement.Powershell or provide a repository root containing that module.'
+  $lastImportError = $null
+  foreach ($databaseModuleRoot in ($candidateModuleRoots | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)) {
+    $candidateModulePaths = @(
+      (Join-Path $databaseModuleRoot 'ATAP.Utilities.DatabaseManagement.Powershell.psd1'),
+      (Join-Path $databaseModuleRoot 'ATAP.Utilities.DatabaseManagement.Powershell.psm1')
+    )
+
+    foreach ($modulePath in ($candidateModulePaths | Select-Object -Unique)) {
+      if (-not (Test-Path -LiteralPath $modulePath -PathType Leaf)) {
+        continue
+      }
+
+      try {
+        Import-Module -Name $modulePath -ErrorAction Stop
+        if (Get-Command -Name 'Resolve-DatabaseSqlConnection' -CommandType Function -ErrorAction SilentlyContinue) {
+          return
+        }
+      }
+      catch {
+        $lastImportError = $_
+      }
+    }
+  }
+
+  $errorSuffix = if ($null -ne $lastImportError) { " Last import error: $($lastImportError.Exception.Message)" } else { '' }
+  throw "Resolve-DatabaseSqlConnection is not available. Import ATAP.Utilities.DatabaseManagement.Powershell, install it beside this module, or provide a repository root containing src\ATAP.Utilities.DatabaseManagement.Powershell.$errorSuffix"
 }
 
 function Split-BuildToolingSqlInstanceName {

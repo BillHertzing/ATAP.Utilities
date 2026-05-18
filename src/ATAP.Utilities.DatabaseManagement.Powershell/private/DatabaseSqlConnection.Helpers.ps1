@@ -150,17 +150,94 @@ function Import-DatabaseConnectionHelperFunctions {
   param()
 
   if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-    try {
-      Import-Module ATAP.Utilities.PowerShell -ErrorAction Stop
+    $powerShellModuleRoots = @()
+    if (-not [string]::IsNullOrWhiteSpace($PSScriptRoot)) {
+      $databaseModuleRoot = Split-Path -Parent $PSScriptRoot
+      $sourceRoot = Split-Path -Parent $databaseModuleRoot
+      if (-not [string]::IsNullOrWhiteSpace($sourceRoot)) {
+        $powerShellModuleRoots += Join-Path $sourceRoot 'ATAP.Utilities.PowerShell'
+        $powerShellModuleRoots += Join-Path $sourceRoot 'ATAP.Utilities.Powershell'
+      }
     }
-    catch {
-      . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.PowerShell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
-    }
+
+    Import-DatabaseScriptCommand `
+      -CommandName 'Get-ParameterValueFromNeoConfigurationRoot' `
+      -ModuleNames @('ATAP.Utilities.PowerShell', 'ATAP.Utilities.Powershell') `
+      -ModuleRoots $powerShellModuleRoots `
+      -RelativeScriptPath 'public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
   }
 
   if (-not (Get-Command -Name 'New-ConnectionStringBuilderFromDbaTools' -CommandType Function -ErrorAction SilentlyContinue)) {
-    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\ATAP.Utilities.DatabaseManagement.Powershell\public\New-ConnectionStringBuilderFromDbaTools.ps1'
+    $databaseModuleRoots = @()
+    if (-not [string]::IsNullOrWhiteSpace($PSScriptRoot)) {
+      $databaseModuleRoots += Split-Path -Parent $PSScriptRoot
+    }
+
+    Import-DatabaseScriptCommand `
+      -CommandName 'New-ConnectionStringBuilderFromDbaTools' `
+      -ModuleNames @('ATAP.Utilities.DatabaseManagement.Powershell') `
+      -ModuleRoots $databaseModuleRoots `
+      -RelativeScriptPath 'public\New-ConnectionStringBuilderFromDbaTools.ps1'
   }
+}
+
+function Import-DatabaseScriptCommand {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
+    [string] $CommandName,
+
+    [Parameter(Mandatory = $false)]
+    [string[]] $ModuleNames,
+
+    [Parameter(Mandatory = $false)]
+    [string[]] $ModuleRoots,
+
+    [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
+    [string] $RelativeScriptPath
+  )
+
+  if (Get-Command -Name $CommandName -CommandType Function -ErrorAction SilentlyContinue) {
+    return
+  }
+
+  $candidateScriptPaths = @()
+
+  foreach ($moduleName in ($ModuleNames | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)) {
+    foreach ($moduleInfo in (Get-Module -ListAvailable -Name $moduleName -ErrorAction SilentlyContinue)) {
+      if (-not [string]::IsNullOrWhiteSpace($moduleInfo.ModuleBase)) {
+        $candidateScriptPaths += Join-Path $moduleInfo.ModuleBase $RelativeScriptPath
+      }
+    }
+  }
+
+  foreach ($moduleRoot in ($ModuleRoots | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)) {
+    $candidateScriptPaths += Join-Path $moduleRoot $RelativeScriptPath
+  }
+
+  $lastImportError = $null
+  foreach ($scriptPath in ($candidateScriptPaths | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)) {
+    if (-not (Test-Path -LiteralPath $scriptPath -PathType Leaf)) {
+      continue
+    }
+
+    try {
+      . $scriptPath
+      $command = Get-Command -Name $CommandName -CommandType Function -ErrorAction SilentlyContinue
+      if ($command) {
+        Set-Item -Path "Function:script:$CommandName" -Value $command.ScriptBlock -Force
+        return
+      }
+    }
+    catch {
+      $lastImportError = $_
+    }
+  }
+
+  $errorSuffix = if ($null -ne $lastImportError) { " Last import error: $($lastImportError.Exception.Message)" } else { '' }
+  throw "$CommandName is not available. Install the required ATAP.Utilities module or keep the dependent modules beside this module in the source/package layout.$errorSuffix"
 }
 
 function New-DatabaseConnectionParameterMap {

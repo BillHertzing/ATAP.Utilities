@@ -34,9 +34,14 @@
     'releasebundle-experimental'.
 
 .PARAMETER CeilingTier
-    Optional promotion ceiling recorded in the returned object for BuildMaster
-    evidence. Later stages enforce the ceiling with
-    Promote-ProGetPackage -CeilingTier.
+    Promotion ceiling for direct publishes to feeds above Experimental. When
+    -Feed targets Development or higher, this cmdlet calls
+    Test-PromotionWithinCeiling before invoking the Universal Feed API.
+
+.PARAMETER Force
+    Emergency/manual bypass for direct publishes to feeds above Experimental
+    without a ceiling check. This is intended for disaster recovery only and is
+    logged as a warning.
 
 .OUTPUTS
     [PSCustomObject] with at least:
@@ -55,7 +60,7 @@
 
 .EXAMPLE
     Publish-UniversalPackageToProGet `
-        -Path ./bundle.upack -Feed 'releasebundle-development' -WhatIf
+        -Path ./bundle.upack -Feed 'releasebundle-development' -CeilingTier 'Development' -WhatIf
 
 .NOTES
     AI assisted using Powershell.instructions.md as guidelines.
@@ -78,7 +83,10 @@ function Publish-UniversalPackageToProGet {
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$CeilingTier
+        [string]$CeilingTier,
+
+        [Parameter(Mandatory = $false)]
+        [switch]$Force
     )
 
     begin {
@@ -148,6 +156,37 @@ function Publish-UniversalPackageToProGet {
             $feedUriSource = 'local default (http://localhost:50000/upack/<feed>/)'
         }
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved feed URI '$feedUri' from $feedUriSource"
+
+        if (-not [string]::IsNullOrWhiteSpace($tier)) {
+            if (-not (Get-Command -Name 'ConvertTo-BuildPromotionTierName' -CommandType Function -ErrorAction SilentlyContinue)) {
+                $ceilingHelperPath = Join-Path $PSScriptRoot 'Test-PromotionWithinCeiling.ps1'
+                if (Test-Path -LiteralPath $ceilingHelperPath -PathType Leaf) {
+                    . $ceilingHelperPath
+                } else {
+                    throw "Required helper Test-PromotionWithinCeiling was not found at '$ceilingHelperPath'."
+                }
+            }
+            $destinationTier = ConvertTo-BuildPromotionTierName -Tier $tier
+            if ($destinationTier -ne 'Experimental') {
+                if ($Force) {
+                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Promotion ceiling check bypassed explicitly for direct Universal publish to '$Feed'." -Tag 'CeilingBypass'
+                } else {
+                    if ([string]::IsNullOrWhiteSpace($CeilingTier)) {
+                        throw "CeilingTier is required when publishing directly to feed '$Feed'. Use -Force only for an audited emergency/manual bypass."
+                    }
+                    if (-not (Get-Command -Name 'Test-PromotionWithinCeiling' -CommandType Function -ErrorAction SilentlyContinue)) {
+                        $ceilingHelperPath = Join-Path $PSScriptRoot 'Test-PromotionWithinCeiling.ps1'
+                        if (Test-Path -LiteralPath $ceilingHelperPath -PathType Leaf) {
+                            . $ceilingHelperPath
+                        } else {
+                            throw "Required helper Test-PromotionWithinCeiling was not found at '$ceilingHelperPath'."
+                        }
+                    }
+                    Test-PromotionWithinCeiling -CurrentTier $destinationTier -CeilingTier $CeilingTier -ErrorAction Stop | Out-Null
+                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Direct Universal publish ceiling accepted: destination tier '$destinationTier' is within ceiling '$CeilingTier'"
+                }
+            }
+        }
 
         # 4. Resolve API key from PROGET_ADMIN_API_KEY (User scope per R-10).
         $apiKey = [Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')

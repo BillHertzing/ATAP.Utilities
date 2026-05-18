@@ -102,11 +102,31 @@ Describe 'Publish-UniversalPackageToProGet' -Tag 'Unit' {
         It 'Uses env var PROGET_RELEASEBUNDLE_<TIER>_URI when present' {
             [Environment]::SetEnvironmentVariable('PROGET_RELEASEBUNDLE_DEVELOPMENT_URI', 'https://proget.example.test/upack/releasebundle-development', 'Process')
             try {
-                $result = Publish-UniversalPackageToProGet -Path $script:fakeUpack -Feed 'releasebundle-development'
+                $result = Publish-UniversalPackageToProGet -Path $script:fakeUpack -Feed 'releasebundle-development' -CeilingTier 'Development'
                 $result.FeedUri | Should -Match 'proget\.example\.test/upack/releasebundle-development/?$'
             } finally {
                 [Environment]::SetEnvironmentVariable('PROGET_RELEASEBUNDLE_DEVELOPMENT_URI', $null, 'Process')
             }
+        }
+
+        It 'Requires CeilingTier when publishing directly above Experimental' {
+            { Publish-UniversalPackageToProGet -Path $script:fakeUpack -Feed 'releasebundle-development' } |
+                Should -Throw -ExpectedMessage '*CeilingTier is required*'
+
+            Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It
+        }
+
+        It 'Blocks direct publish above the ceiling before REST call' {
+            { Publish-UniversalPackageToProGet -Path $script:fakeUpack -Feed 'releasebundle-development' -CeilingTier 'Experimental' } |
+                Should -Throw -ExpectedMessage '*Promotion ceiling exceeded*'
+
+            Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It
+        }
+
+        It 'Allows an explicit Force bypass for direct publish above Experimental' {
+            $result = Publish-UniversalPackageToProGet -Path $script:fakeUpack -Feed 'releasebundle-development' -Force
+            $result.FeedName | Should -Be 'releasebundle-development'
+            $result.Published | Should -BeTrue
         }
 
         It 'Calls Invoke-RestMethod with Method=Put and the resolved feed URI' {

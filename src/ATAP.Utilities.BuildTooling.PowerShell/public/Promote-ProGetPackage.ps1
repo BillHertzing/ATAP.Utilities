@@ -51,11 +51,15 @@
     Forwarded to the inner cmdlet's -Reason.
 
 .PARAMETER CeilingTier
-    Optional highest tier this pipeline run may reach. When supplied,
-    Promote-ProGetPackage parses the destination tier from -ToFeed and calls
-    Test-PromotionWithinCeiling before invoking any ProGet API wrapper. If the
-    destination tier is above the ceiling, the promotion aborts with
-    PromotionCeilingExceededException.
+    Highest tier this pipeline run may reach. Promote-ProGetPackage parses the
+    destination tier from -ToFeed and calls Test-PromotionWithinCeiling before
+    invoking any ProGet API wrapper. If the destination tier is above the
+    ceiling, the promotion aborts with PromotionCeilingExceededException.
+
+.PARAMETER NoCeilingCheck
+    Emergency/manual bypass for promotion calls that intentionally run outside
+    the version.json-as-ceiling policy. This switch is mutually exclusive with
+    -CeilingTier so bypasses are visible at the call site.
 
 .OUTPUTS
     [PSCustomObject] with at least these properties (per V3 plan S2.1):
@@ -76,6 +80,7 @@
         -Version '1.2.0-experimental.42' `
         -FromFeed 'nuget-experimental' `
         -ToFeed 'nuget-development' `
+        -CeilingTier 'Development' `
         -Reason 'sprint-0007 promotion'
 
 .EXAMPLE
@@ -83,6 +88,7 @@
         -Version '1.2.0-experimental.42' `
         -FromFeed 'nuget-experimental' `
         -ToFeed 'nuget-development' `
+        -CeilingTier 'Development' `
         -Reason 'plan check' -WhatIf
 
     Returns the planned promotion object without calling
@@ -119,7 +125,7 @@ function Resolve-PromotionTierFromFeedName {
 }
 
 function Promote-ProGetPackage {
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'WithCeiling')]
     [OutputType([PSCustomObject])]
     param(
         [Parameter(Mandatory)]
@@ -142,9 +148,12 @@ function Promote-ProGetPackage {
         [ValidateNotNullOrEmpty()]
         [string]$Reason,
 
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory, ParameterSetName = 'WithCeiling')]
         [ValidateNotNullOrEmpty()]
-        [string]$CeilingTier
+        [string]$CeilingTier,
+
+        [Parameter(Mandatory, ParameterSetName = 'NoCeilingCheck')]
+        [switch]$NoCeilingCheck
     )
 
     begin {
@@ -154,7 +163,7 @@ function Promote-ProGetPackage {
     }
 
     process {
-        if ($PSBoundParameters.ContainsKey('CeilingTier')) {
+        if ($PSCmdlet.ParameterSetName -eq 'WithCeiling') {
             if (-not (Get-Command -Name 'Test-PromotionWithinCeiling' -CommandType Function -ErrorAction SilentlyContinue)) {
                 $ceilingHelperPath = Join-Path $PSScriptRoot 'Test-PromotionWithinCeiling.ps1'
                 if (Test-Path -LiteralPath $ceilingHelperPath -PathType Leaf) {
@@ -167,6 +176,8 @@ function Promote-ProGetPackage {
             $destinationTier = Resolve-PromotionTierFromFeedName -FeedName $ToFeed
             Test-PromotionWithinCeiling -CurrentTier $destinationTier -CeilingTier $CeilingTier -ErrorAction Stop | Out-Null
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Promotion ceiling accepted: destination tier '$destinationTier' is within ceiling '$CeilingTier'"
+        } elseif ($NoCeilingCheck) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Promotion ceiling check bypassed explicitly for '$Name' version '$Version' from '$FromFeed' to '$ToFeed'." -Tag 'CeilingBypass'
         }
 
         # WhatIf short-circuit BEFORE invoking the inner cmdlet, per V3 S2.1 rule 2.

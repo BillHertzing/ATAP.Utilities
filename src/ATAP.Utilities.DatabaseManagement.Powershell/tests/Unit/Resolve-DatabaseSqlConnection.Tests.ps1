@@ -91,4 +91,24 @@ Describe 'Resolve-DatabaseSqlConnection' -Tag 'Unit' {
       $SecretName -eq 'db-secret'
     }
   }
+
+  Context 'helper loading fallbacks' {
+    It 'does not contain hard-coded Dropbox fallback paths' {
+      $helperText = Get-Content -LiteralPath (Join-Path $privateDir 'DatabaseSqlConnection.Helpers.ps1') -Raw
+      $helperText | Should -Not -Match 'C:\\Dropbox'
+      $helperText | Should -Not -Match 'ATAP\.Utilities-wt-\d+'
+    }
+
+    It 'loads helper commands from module-relative script paths when dot-sourced standalone' {
+      Remove-Item Function:\Get-ParameterValueFromNeoConfigurationRoot -ErrorAction SilentlyContinue
+      Remove-Item Function:\New-ConnectionStringBuilderFromDbaTools -ErrorAction SilentlyContinue
+
+      Import-DatabaseConnectionHelperFunctions
+
+      Get-Command -Name Get-ParameterValueFromNeoConfigurationRoot -CommandType Function -ErrorAction Stop |
+        Should -Not -BeNullOrEmpty
+      Get-Command -Name New-ConnectionStringBuilderFromDbaTools -CommandType Function -ErrorAction Stop |
+        Should -Not -BeNullOrEmpty
+    }
+  }
 }

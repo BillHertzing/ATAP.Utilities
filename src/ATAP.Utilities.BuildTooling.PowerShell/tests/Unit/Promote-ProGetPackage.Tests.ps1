@@ -51,28 +51,33 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit' {
 
     Context 'Parameter validation' {
         It 'Throws when Name is empty' {
-            { Promote-ProGetPackage -Name '' -Version '1.0.0' -FromFeed 'nuget-experimental' -ToFeed 'nuget-development' -Reason 'r' } |
+            { Promote-ProGetPackage -Name '' -Version '1.0.0' -FromFeed 'nuget-experimental' -ToFeed 'nuget-development' -Reason 'r' -CeilingTier 'Development' } |
                 Should -Throw
         }
 
         It 'Throws when Version is empty' {
-            { Promote-ProGetPackage -Name 'pkg' -Version '' -FromFeed 'nuget-experimental' -ToFeed 'nuget-development' -Reason 'r' } |
+            { Promote-ProGetPackage -Name 'pkg' -Version '' -FromFeed 'nuget-experimental' -ToFeed 'nuget-development' -Reason 'r' -CeilingTier 'Development' } |
                 Should -Throw
         }
 
         It 'Throws when FromFeed is empty' {
-            { Promote-ProGetPackage -Name 'pkg' -Version '1.0.0' -FromFeed '' -ToFeed 'nuget-development' -Reason 'r' } |
+            { Promote-ProGetPackage -Name 'pkg' -Version '1.0.0' -FromFeed '' -ToFeed 'nuget-development' -Reason 'r' -CeilingTier 'Development' } |
                 Should -Throw
         }
 
         It 'Throws when ToFeed is empty' {
-            { Promote-ProGetPackage -Name 'pkg' -Version '1.0.0' -FromFeed 'nuget-experimental' -ToFeed '' -Reason 'r' } |
+            { Promote-ProGetPackage -Name 'pkg' -Version '1.0.0' -FromFeed 'nuget-experimental' -ToFeed '' -Reason 'r' -CeilingTier 'Development' } |
                 Should -Throw
         }
 
         It 'Throws when Reason is empty' {
-            { Promote-ProGetPackage -Name 'pkg' -Version '1.0.0' -FromFeed 'nuget-experimental' -ToFeed 'nuget-development' -Reason '' } |
+            { Promote-ProGetPackage -Name 'pkg' -Version '1.0.0' -FromFeed 'nuget-experimental' -ToFeed 'nuget-development' -Reason '' -CeilingTier 'Development' } |
                 Should -Throw
+        }
+
+        It 'Requires CeilingTier unless NoCeilingCheck is supplied' {
+            { Promote-ProGetPackage -Name 'pkg' -Version '1.0.0' -FromFeed 'nuget-experimental' -ToFeed 'nuget-development' -Reason 'r' } |
+                Should -Throw -ExpectedMessage '*CeilingTier*'
         }
     }
 
@@ -80,7 +85,7 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit' {
         It 'Does not invoke Move-ProGetPackageInterTier when -WhatIf is supplied' {
             $result = Promote-ProGetPackage -Name 'pkg' -Version '1.0.0' `
                 -FromFeed 'nuget-experimental' -ToFeed 'nuget-development' `
-                -Reason 'plan' -WhatIf
+                -Reason 'plan' -CeilingTier 'Development' -WhatIf
 
             $result.OperationName   | Should -Be 'Promote-ProGetPackage'
             $result.Succeeded       | Should -BeTrue
@@ -94,7 +99,7 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit' {
         It 'Promotes a package and forwards parameters to the inner cmdlet' {
             $result = Promote-ProGetPackage -Name 'ATAP.Utilities.Foo' -Version '1.2.0-experimental.42' `
                 -FromFeed 'nuget-experimental' -ToFeed 'nuget-development' `
-                -Reason 'sprint-0007 promotion'
+                -Reason 'sprint-0007 promotion' -CeilingTier 'Development'
 
             $result.OperationName   | Should -Be 'Promote-ProGetPackage'
             $result.Succeeded       | Should -BeTrue
@@ -116,7 +121,7 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit' {
 
         It 'Forwards -Name and -Reason to the inner cmdlet under their canonical names' {
             Promote-ProGetPackage -Name 'pkg' -Version '1.0.0' `
-                -FromFeed 'nuget-development' -ToFeed 'nuget-integration' -Reason 'why' | Out-Null
+                -FromFeed 'nuget-development' -ToFeed 'nuget-integration' -Reason 'why' -CeilingTier 'Integration' | Out-Null
 
             Assert-MockCalled Move-ProGetPackageInterTier -Times 1 -Exactly -Scope It -ParameterFilter {
                 $Name -eq 'pkg' -and $Reason -eq 'why'
@@ -142,6 +147,15 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit' {
 
             Assert-MockCalled Move-ProGetPackageInterTier -Times 0 -Exactly -Scope It
         }
+
+        It 'Allows an explicit NoCeilingCheck bypass' {
+            $result = Promote-ProGetPackage -Name 'pkg' -Version '1.0.0' `
+                -FromFeed 'nuget-experimental' -ToFeed 'nuget-development' `
+                -Reason 'manual emergency promotion' -NoCeilingCheck
+
+            $result.Succeeded | Should -BeTrue
+            Assert-MockCalled Move-ProGetPackageInterTier -Times 1 -Exactly -Scope It
+        }
     }
 
     Context 'Idempotent re-run' {
@@ -157,7 +171,7 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit' {
             }
 
             $result = Promote-ProGetPackage -Name 'pkg' -Version '1.0.0' `
-                -FromFeed 'nuget-experimental' -ToFeed 'nuget-development' -Reason 'retry'
+                -FromFeed 'nuget-experimental' -ToFeed 'nuget-development' -Reason 'retry' -CeilingTier 'Development'
 
             $result.Succeeded       | Should -BeTrue
             $result.ResponseSummary | Should -Match 'No-op'
@@ -169,7 +183,7 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit' {
             }
 
             $result = Promote-ProGetPackage -Name 'pkg' -Version '1.0.0' `
-                -FromFeed 'nuget-experimental' -ToFeed 'nuget-development' -Reason 'retry'
+                -FromFeed 'nuget-experimental' -ToFeed 'nuget-development' -Reason 'retry' -CeilingTier 'Development'
 
             $result.Succeeded       | Should -BeTrue
             $result.ResponseSummary | Should -Match 'No-op'
@@ -179,7 +193,7 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit' {
             Mock Move-ProGetPackageInterTier { throw 'ProGet 500 Internal Server Error' }
 
             { Promote-ProGetPackage -Name 'pkg' -Version '1.0.0' `
-                -FromFeed 'nuget-experimental' -ToFeed 'nuget-development' -Reason 'r' } |
+                -FromFeed 'nuget-experimental' -ToFeed 'nuget-development' -Reason 'r' -CeilingTier 'Development' } |
                 Should -Throw -ExpectedMessage '*500*'
         }
     }
@@ -187,7 +201,7 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit' {
     Context 'Output shape' {
         It 'Returns an object with OperationName, Succeeded, ResponseSummary, and echoed inputs' {
             $result = Promote-ProGetPackage -Name 'pkg' -Version '1.0.0' `
-                -FromFeed 'nuget-experimental' -ToFeed 'nuget-development' -Reason 'r'
+                -FromFeed 'nuget-experimental' -ToFeed 'nuget-development' -Reason 'r' -CeilingTier 'Development'
 
             $result | Should -Not -BeNullOrEmpty
             $result.PSObject.Properties.Name | Should -Contain 'OperationName'

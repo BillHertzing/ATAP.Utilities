@@ -111,4 +111,39 @@ Describe 'New-SprintStage dry-run support' {
     $result.infrastructure.databaseInstances.Count | Should -Be 0
     $script:externalCalls.Count | Should -Be 0
   }
+
+  It 'throws an actionable setup command before side effects when config globals are missing' {
+    $tasksPath = Join-Path $script:tempGitRoot 'TASKS.md'
+    Set-Content -LiteralPath $tasksPath -Encoding UTF8 -Value @(
+      '- [ ] **Task 7.99** [ATAP.Utilities] [Junior] - Test no-profile guard'
+    )
+
+    $stage1 = [PSCustomObject]@{
+      nextSprintNumber = '0007'
+      sharedVSCode     = @{
+        issueNumber  = '123'
+        branchName   = '123-Sprint-0007-work-items'
+        worktreePath = (Join-Path $script:tempGitRoot 'SharedVSCode-wt-123-Sprint-0007-work-items')
+      }
+      planning         = @{
+        worktreePath = (Join-Path $script:tempGitRoot '_Planning-wt-456-Sprint-0007-work-items')
+      }
+    }
+
+    $oldConfigRootKeys = $global:configRootKeys
+    $oldSettings = $global:settings
+    try {
+      $global:configRootKeys = $null
+      $global:settings = $null
+
+      {
+        New-SprintStage2 -Stage1Result $stage1 -TasksFilePath $tasksPath -GitRoot $script:tempGitRoot -Owner 'owner'
+      } | Should -Throw -ExpectedMessage '*Set-GlobalConfigRootKeys*Get-HostSettings*'
+
+      $script:externalCalls.Count | Should -Be 0
+    } finally {
+      $global:configRootKeys = $oldConfigRootKeys
+      $global:settings = $oldSettings
+    }
+  }
 }

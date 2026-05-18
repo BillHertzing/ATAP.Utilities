@@ -167,6 +167,29 @@ function New-SprintStage2 {
       throw "TASKS.md not found at $TasksFilePath"
     }
 
+    # Stage 2 reads host-specific database and package settings. Fail early so
+    # agent/no-profile shells do not create partial sprint infrastructure.
+    if (-not $DryRun) {
+      $missingGlobalConfig = [System.Collections.Generic.List[string]]::new()
+
+      if ($null -eq $global:configRootKeys -or
+        -not ($global:configRootKeys -is [hashtable]) -or
+        $global:configRootKeys.Count -eq 0) {
+        [void]$missingGlobalConfig.Add('$global:configRootKeys')
+      }
+
+      if ($null -eq $global:settings -or
+        -not ($global:settings -is [hashtable]) -or
+        $global:settings.Count -eq 0) {
+        [void]$missingGlobalConfig.Add('$global:settings')
+      }
+
+      if ($missingGlobalConfig.Count -gt 0) {
+        $setupCommand = 'Set-GlobalConfigRootKeys; $global:settings = Get-HostSettings -hostName $env:COMPUTERNAME'
+        throw "New-SprintStage2 requires $($missingGlobalConfig -join ' and ') before it can run. Run the ATAP configuration setup command first: $setupCommand"
+      }
+    }
+
     # --- Ensure external dependencies ---
     if (-not $DryRun) {
       Assert-GitAvailable

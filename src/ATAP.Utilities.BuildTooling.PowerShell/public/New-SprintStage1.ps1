@@ -434,13 +434,144 @@ function New-SprintStage1 {
 <configuration>
   <packageSources>
     <clear />
-    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
-    <add key="nuget-Sprint$($sprintNum)-experimental" value="$ProGetBaseUrl/nuget/nuget-Sprint$($sprintNum)-experimental/index.json" />
-    <add key="nuget-Sprint$($sprintNum)-development" value="$ProGetBaseUrl/nuget/nuget-Sprint$($sprintNum)-development/index.json" />
-    <add key="nuget-integration" value="$ProGetBaseUrl/nuget/nuget-integration/index.json" />
-    <add key="nuget-qa" value="$ProGetBaseUrl/nuget/nuget-qa/index.json" />
-    <add key="nuget-stable" value="$ProGetBaseUrl/nuget/nuget-stable/index.json" />
+    <!-- ProGet feeds - local dev workstation (5-tier model, sprint branch) -->
+    <!-- ProGet installed on port 50000 (configured in ProGet.config, symlinked from ATAP.IAC) -->
+    <!-- Override port in NuGet.config if ProGet moves to a different port -->
+    <!-- allowInsecureConnections is required because localhost ProGet uses HTTP, not HTTPS -->
+    <!-- ToDo: [Security Concern] make the feeds require HTTPS -->
+    <add key="nuget-experimental"
+      value="$ProGetBaseUrl/nuget/nuget-experimental/v3/index.json"
+      allowInsecureConnections="true" />
+    <add key="nuget-development"
+      value="$ProGetBaseUrl/nuget/nuget-development/v3/index.json"
+      allowInsecureConnections="true" />
+    <add key="nuget-integration"
+      value="$ProGetBaseUrl/nuget/nuget-integration/v3/index.json"
+      allowInsecureConnections="true" />
+    <add key="nuget-qa"
+      value="$ProGetBaseUrl/nuget/nuget-qa/v3/index.json"
+      allowInsecureConnections="true" />
+    <add key="nuget-stable"
+      value="$ProGetBaseUrl/nuget/nuget-stable/v3/index.json"
+      allowInsecureConnections="true" />
+    <!-- nuget.org - primary source for all third-party packages -->
+    <add key="nuget.org"
+      value="https://api.nuget.org/v3/index.json"
+      protocolVersion="3" />
   </packageSources>
+  <packageSourceCredentials>
+    <!-- ToDo: [Security Improvement] original design protected the Proget Feeds with individual keys,
+      current design allows anonymous reads Security Improvement would be to make an API key required for each feed-->
+    <!-- No credentials needed - anonymous read is enabled for all feeds -->
+    <!-- ProGet admin API key is stored in Bitwarden as env var PROGET_ADMIN_API_KEY -->
+    <!-- NuGet CLI usage: dotnet nuget push with -api-key flag using PROGET_ADMIN_API_KEY env var -->
+    <!-- No credentials block needed for anonymous read access on the experimental feed and maybe production -->
+  </packageSourceCredentials>
+
+  <packageRestore>
+    <!-- The <packageRestore> section in nuget.config controls whether NuGet is allowed to restore missing packages -->
+    <!--and those two settings are the defaults.-->
+    <!-- These settings respect NuGet's config hierarchy - a nuget.config at the solution/repo level overrides -->
+    <!-- the machine-level config at %ProgramData%\NuGet\Config. So explicitly setting both to True -->
+    <!-- in the repo-level config ensures restore works consistently even if a CI server's -->
+    <!-- machine-level config has them disabled.-->
+    <!-- Explicitly set defaults so CI machines with a restrictive machine-level config are overridden -->
+    <add key="enabled" value="True" />
+    <add key="automatic" value="True" />
+  </packageRestore>
+
+  <disabledPackageSources>
+    <!-- Promotion feeds - not used for restore, only for publish/promote via BuildMaster -->
+    <!-- Uncomment to enable additional feeds for restore if needed -->
+    <!--
+    <add key="ProGet-Development" value="false" />
+    <add key="ProGet-Testing"     value="false" />
+    <add key="ProGet-Production"  value="false" />
+    -->
+  </disabledPackageSources>
+
+<!-- ==================== Package Source Mapping ====================
+    Required to resolve NuGet warning NU1507.
+    When Central Package Management (CPM) is enabled via Directory.Packages.props
+    (ManagePackageVersionsCentrally=true), NuGet requires that all defined package
+    sources be mapped to package name patterns. Without this, NuGet warns that
+    it cannot deterministically decide which source to use for a given package.
+
+    Rules:
+      - Every active packageSource must have at least one <package pattern="..." /> entry.
+      - The wildcard pattern "*" on nuget.org catches all third-party packages
+        not explicitly mapped to another source.
+      - The "ATAP.*" and AceCommander.* patterns on the ProGet feeds ensures internal packages are
+        resolved exclusively from the local ProGet instance and are never
+        accidentally queried from nuget.org.
+      - Packages that match a pattern on a source will ONLY be resolved from
+        that source - NuGet will not fall back to other sources.
+
+    See: https://aka.ms/nuget-package-source-mapping
+    See: https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu1507
+  -->
+  <packageSourceMapping>
+    <!-- All standard third-party packages come from nuget.org -->
+    <packageSource key="nuget.org">
+      <package pattern="*" />
+    </packageSource>
+    <!-- Internal ATAP packages: on sprint branches, resolve only from nuget-experimental.
+         Higher-tier feeds are listed for restore visibility but ATAP.* packages are only
+         pinned to nuget-experimental here. BuildMaster promotes packages up the tier chain.
+         See SC-INFRA-001 in TASKS.md for the full package migration/promotion design. -->
+    <packageSource key="nuget-experimental">
+      <package pattern="ATAP.*" />
+      <package pattern="AceCommander.*" />
+    </packageSource>
+    <!-- nuget-development through nuget-stable: required entries for NU1507 compliance.
+         All 5 feeds must have a mapping entry when listed as active sources. -->
+    <packageSource key="nuget-development">
+      <package pattern="AceCommander.*" />
+      <package pattern="ATAP.*" />
+    </packageSource>
+    <packageSource key="nuget-integration">
+      <package pattern="AceCommander.*" />
+      <package pattern="ATAP.*" />
+    </packageSource>
+    <packageSource key="nuget-qa">
+      <package pattern="AceCommander.*" />
+      <package pattern="ATAP.*" />
+    </packageSource>
+    <packageSource key="nuget-stable">
+      <package pattern="AceCommander.*" />
+      <package pattern="ATAP.*" />
+    </packageSource>
+  </packageSourceMapping>
+  <auditSources>
+    <clear />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+  </auditSources>
+
+  <!-- ==================== Legacy / Archived Package Sources ====================
+    These feeds were used historically and are retained for reference.
+    They are NOT active - do not remove the enclosing XML comment.
+    To re-enable a feed: move its <add> element into the active <packageSources>
+    block above and add a corresponding <packageSource> entry in <packageSourceMapping>.
+
+    <packageSources>
+      <add key="MyGet ATAP Utilities Feed"
+        value="https://www.myget.org/F/atap-utilities/api/v3/index.json" />
+      <add key="ServiceStack MyGet feed"
+        value="https://www.myget.org/F/servicestack" />
+      <add key="dotnet-public"
+        value="https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-public/nuget/v3/index.json" />
+      <add key="dotnet-tools"
+        value="https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json" />
+      <add key="Telerik Packages"
+        value="https://nuget.telerik.com/nuget" />
+      <add key="Microsoft Visual Studio Offline Packages"
+        value="C:\Program Files (x86)\Microsoft SDKs\NuGetPackages\" />
+      <add key="LocalBaGet"
+        value="http://localhost:50040/v3/index.json"
+        allowInsecureConnections="true" />
+    </packageSources>
+  -->
+
 </configuration>
 "@
 

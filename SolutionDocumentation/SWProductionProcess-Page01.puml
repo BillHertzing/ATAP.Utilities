@@ -1,0 +1,215 @@
+@startuml SWProductionProcess-Page01
+
+' ─────────────────────────────────────────────────────────────
+' Diagram: Sprint Start and Environment Provisioning
+' Page 01 of SWProductionProcess-SprintLifecycle
+' Source: SWProductionProcess-Page01-Instructions.md
+' ─────────────────────────────────────────────────────────────
+
+title <b><size:18>Sprint Start and Environment Provisioning</size></b>\n<i><size:12>One developer creates Sprint NNNN from stable worktrees and provisions local sprint infrastructure.</size></i>
+
+left to right direction
+
+' ─────────────────────────────────────────────────────────────
+' Skin / palette
+' ─────────────────────────────────────────────────────────────
+skinparam swimlane {
+  BorderColor #444444
+  TitleFontStyle bold
+}
+
+skinparam activity {
+  BackgroundColor #e1d5e7
+  BorderColor #9673a6
+  FontSize 11
+}
+
+skinparam note {
+  BackgroundColor #f5f5f5
+  BorderColor #666666
+  FontSize 10
+}
+
+skinparam ArrowColor #666666
+skinparam ArrowThickness 1.2
+
+' ─────────────────────────────────────────────────────────────
+' Swimlane 1 — Stable Inputs
+' Style: stable/source  fillColor=#dae8fc strokeColor=#6c8ebf
+' ─────────────────────────────────────────────────────────────
+|"Stable Inputs"|
+
+start
+
+#dae8fc: <b>Stable worktrees</b>
+under C:\Dropbox\whertzing\GitHub
+<i>(ATAP.Utilities, _Planning, SharedVSCode,
+and other repos discovered from TASKS.md)</i> ;
+
+#dae8fc: <b>Overview.code-workspace</b>
+Stable multi-root workspace
+and branch/worktree matrix ;
+
+#dae8fc: <b>TASKS.md</b>
+in _Planning sprint worktree
+<i>Repository markers drive downstream repo discovery</i> ;
+
+' ─────────────────────────────────────────────────────────────
+' Swimlane 2 — Stage 1: Planning and SharedVSCode
+' Automation nodes: fillColor=#e1d5e7  Manual: fillColor=#fff2cc
+' ─────────────────────────────────────────────────────────────
+|"Stage 1: Planning and SharedVSCode"|
+
+#e1d5e7: <b>Run New-SprintStage1</b> ;
+
+#fff2cc: <b>Determine SprintNumber</b>
+<i>Explicit parameter or latest retrospective</i> ;
+
+#e1d5e7: <b>Create SharedVSCode issue, branch, worktree</b>
+Pattern: SharedVSCode-wt-&lt;issue&gt;-Sprint-&lt;NNNN&gt;-work-items ;
+
+#e1d5e7: <b>Create _Planning issue, branch, worktree</b>
+Pattern: _Planning-wt-&lt;issue&gt;-Sprint-&lt;NNNN&gt;-work-items ;
+
+#e1d5e7: <b>Set-WorktreeJunctions for _Planning</b>
+.claude, .github, .vscode
+→ SharedVSCode sprint worktree ;
+
+#e1d5e7: <b>Initialize _Planning from SharedVSCode sprint context</b>
+Updates templateRef, hooksPath, commitTemplate ;
+
+#e1d5e7: <b>Create sprint NuGet.config in SharedVSCode</b>
+References all five ProGet feeds plus nuget.org ;
+
+' ─────────────────────────────────────────────────────────────
+' Swimlane 3 — Stage 2: Repo Worktrees and Shared Context
+' ─────────────────────────────────────────────────────────────
+|"Stage 2: Repo Worktrees and Shared Context"|
+
+#e1d5e7: <b>Run New-SprintStage2</b> ;
+
+#e1d5e7: <b>Parse TASKS.md for repo markers</b>
+Exclude _Planning, SharedVSCode, and Cross-Repo ;
+
+#f5f5f5: <b>For each downstream repo (loop)</b> ;
+
+note right
+  Loop iterates once per downstream repo
+  identified in TASKS.md.
+end note
+
+#e1d5e7: <b>Create GitHub issue</b> ;
+
+#e1d5e7: <b>Fetch/pull stable branch</b> ;
+
+#e1d5e7: <b>Create sprint branch and worktree</b>
+Pattern: &lt;repo&gt;-wt-&lt;issue&gt;-Sprint-&lt;NNNN&gt;-work-items
+<i>Example: ATAP.Utilities-wt-100-Sprint-0007-work-items</i> ;
+
+#e1d5e7: <b>Set-WorktreeJunctions for repo</b>
+.claude, .github, .vscode
+→ SharedVSCode sprint worktree ;
+
+note right
+  Junctions are NTFS reparse points.
+  Distinguish from plain file symlinks
+  in audit and cleanup steps.
+end note
+
+#e1d5e7: <b>Initialize-DownstreamSprintFromSharedVSCode</b>
+Updates workspace/shared context
+in downstream repo ;
+
+#e1d5e7: <b>Set claude-settings.json symlink</b>
+SharedVSCode sprint claude-settings.json
+→ ~/.claude/settings.json ;
+
+' ─────────────────────────────────────────────────────────────
+' After Stage 2 the workspace-metadata and secrets/infra
+' provisioning steps run in parallel (fork).
+' ─────────────────────────────────────────────────────────────
+
+fork
+
+' ─────────────────────────────────────────────────────────────
+' Swimlane 4 — Sprint Workspace Metadata
+' ─────────────────────────────────────────────────────────────
+|"Sprint Workspace Metadata"|
+
+#e1d5e7: <b>Run New-OverviewSprintWorkspace</b> ;
+
+#e1d5e7: <b>Read Overview.code-workspace</b> ;
+
+#e1d5e7: <b>Rewrite folders to sprint worktrees when present</b> ;
+
+#e1d5e7: <b>Set powershell.cwd to _Planning sprint worktree</b> ;
+
+#d5e8d4: <b>Write OverviewSprintNNNN.code-workspace</b> ;
+
+note right #f5f5f5
+  Current cmdlet default.
+  Rename label if approved convention becomes
+  Overview-<SprintNNN>.code-workspace.
+end note
+
+#e1d5e7: <b>Add sprintEphemeral metadata</b>
+sprintNumber, developerUsername,
+BuildMaster base URL, ProGet base URL,
+feed list, SQL instances,
+Bitwarden secret names ;
+
+fork again
+
+' ─────────────────────────────────────────────────────────────
+' Swimlane 5 — Secrets, SQL Server, BuildMaster
+' ─────────────────────────────────────────────────────────────
+|"Secrets, SQL Server, BuildMaster"|
+
+#e1d5e7: <b>Set-BuildMasterSprintVariables</b>
+SprintNumber, UserName,
+SprintBranchName per BuildMaster application ;
+
+#f8cecc: <b>New-SprintBitwardenSecrets</b>
+Creates 12 secure notes:
+master, ATAPUtilities, AceCommander
+x host/computer + localhost x Dev and Exp
+Name form:
+dbConnectionString-&lt;DB&gt;-&lt;Host&gt;-&lt;Dev|Exp&gt;-&lt;User&gt; ;
+
+note right #f8cecc
+  ⚠ Naming drift:
+  Authoritative doc uses "Development" and "Experimental";
+  implementation uses "Dev" and "Exp".
+  Resolve before final diagram approval.
+  (Doc says 8 secrets; implementation creates 12.)
+end note
+
+#e1d5e7: <b>New-SprintSqlServerInstances</b>
+Creates Dev&lt;username&gt; and Exp&lt;username&gt;
+(16-char SQL Server instance-name limit) ;
+
+note right #f5f5f5
+  Only Dev&lt;username&gt; and Exp&lt;username&gt;
+  SQL instances are sprint-scoped.
+end note
+
+#e1d5e7: <b>Build-DatabaseWithFlyway</b>
+Rebuilds ATAPUtilities and AceCommander
+from scratch on each sprint instance ;
+
+#dae8fc: <b>Permanent infrastructure reused</b>
+ProGet feeds: permanent (no per-sprint feeds)
+Permanent SQL: utat022\Integration,
+  utat022\QA, utat022\Production
+Permanent Bitwarden secrets for
+  Integration/QA/Production (onboarding only) ;
+
+note right #f8cecc
+  No per-sprint ProGet feeds. Feeds are permanent.
+end note
+
+end fork
+
+stop
+
+@enduml

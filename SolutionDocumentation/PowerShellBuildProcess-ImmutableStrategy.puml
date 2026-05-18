@@ -1,0 +1,169 @@
+@startuml PowerShellBuildProcess-ImmutableStrategy
+' PowerShell Module Build Pipeline (5-Stage, Immutable Build Strategy)
+' Authority: SolutionDocumentation/Immutable-Build-Strategy.md §3 + §6
+' Authority: SolutionDocumentation/VersionJsonAsCeiling.md
+' Source: src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/PowerShellModule-5Stage.otter
+
+title <b><size:18>PowerShell Module Pipeline</b>\n<i><size:12>Immutable Build Strategy: Pack Once, Promote Without Rebuild</i>
+
+left to right direction
+skinparam activity {
+  BackgroundColor #e1d5e7
+  BorderColor #9673a6
+  FontSize 11
+}
+skinparam swimlane {
+  BorderColor #444444
+  TitleFontStyle bold
+}
+skinparam note {
+  BackgroundColor #fffacd
+  BorderColor #daa520
+  FontSize 10
+}
+skinparam ArrowColor #666666
+
+' Color definitions for tiers
+!define EXPERIMENTAL #ffd6d6
+!define DEVELOPMENT #ffe6d6
+!define INTEGRATION #ffffe6
+!define QA #e6e6ff
+!define PRODUCTION #d6f5d6
+
+|Inputs and Context|
+:Module's version.json
+  prerelease label;
+note right
+  Determines CeilingTier
+  (promotion ceiling)
+end note
+:$Tier from BuildMaster;
+note right
+  Current stage (CurrentTier)
+  Experimental/Development/Integration/QA/Production
+end note
+:$ModuleName injected
+  at build time;
+note right
+  Multiple PowerShell modules
+  share one BuildMaster
+  Application
+end note
+
+|Stage Decision|
+:Get-BuildContext
+  -ProjectPath $ModulePath
+  -Stage $Tier;
+note right
+  Resolves:
+  • CurrentTier from $Tier
+  • CeilingTier from prerelease
+  • ResolvedPackageVersion
+  • IsAtCeiling flag
+end note
+
+:Test-PromotionWithinCeiling;
+note right
+  Determines which stages
+  are allowed to run
+  (anything ≥ ceiling skips)
+end note
+
+|Experimental Stage|
+#EXPERIMENTAL
+:New-PSModuleNupkg
+  -ModulePath $ModulePath
+  -OutputPath $PackageOutputPath;
+note right
+  • Run Pester tests
+  • Lint with PSScriptAnalyzer
+  • Validate manifest
+  • Consolidate sources to .psm1
+  • Pack as .nupkg
+end note
+:Publish-PSModuleToProGet
+  → powershellget-experimental
+  -CeilingTier $CeilingTier;
+
+|Development Stage|
+#DEVELOPMENT
+:Test-PromotionWithinCeiling
+  -CurrentTier Development
+  -CeilingTier $CeilingTier;
+note right
+  If false: stage skips
+  (ceiling prevents promotion)
+end note
+:Promote-ProGetPackage
+  powershellget-experimental → powershellget-development;
+note right
+  ProGet API: copy bytes
+  Same package hash
+  No rebuild/repack
+end note
+:Invoke-PromotedModuleTests
+  -Feed powershellget-development
+  against installed module;
+
+|Integration Stage|
+#INTEGRATION
+:Test-PromotionWithinCeiling
+  -CurrentTier Integration
+  -CeilingTier $CeilingTier;
+:Promote-ProGetPackage
+  powershellget-development → powershellget-integration;
+:Invoke-PromotedModuleTests
+  -Feed powershellget-integration
+  against installed module;
+
+|QA Stage|
+#QA
+:Test-PromotionWithinCeiling
+  -CurrentTier QA
+  -CeilingTier $CeilingTier;
+:Promote-ProGetPackage
+  powershellget-integration → powershellget-qa;
+:Full module validation
+  against promoted module;
+
+|Production Stage|
+#PRODUCTION
+:Test-PromotionWithinCeiling
+  -CurrentTier Production
+  -CeilingTier $CeilingTier;
+:Promote-ProGetPackage
+  powershellget-qa → powershellget-stable;
+note right
+  Requires manual approval
+  from release engineer
+end note
+
+|Output|
+:Release record in BuildMaster;
+note right
+  Package version, hash,
+  test results, promotion log
+end note
+
+legend right
+  | <#EXPERIMENTAL>   | Experimental (first pack+push) |
+  | <#DEVELOPMENT>    | Development (promoted) |
+  | <#INTEGRATION>    | Integration (promoted) |
+  | <#QA>             | QA (promoted) |
+  | <#PRODUCTION>     | Production (promoted) |
+  --
+  **Ceiling Table (version.json prerelease label):**
+  | Sprint.N, Feature.N → Experimental |
+  | Alpha → Development |
+  | Beta → Integration |
+  | QA → QA |
+  | (none) → Production |
+  --
+  **Key Facts:**
+  • Single .nupkg created once at Experimental
+  • Binary/file content unchanged through promotions
+  • Same module version in all feeds simultaneously
+  • Tests run against promoted module, not rebuilt source
+endlegend
+
+@enduml

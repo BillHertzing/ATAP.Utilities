@@ -1,0 +1,152 @@
+@startuml CSharpBuildProcess-ImmutableStrategy
+' C# NuGet Package Build Pipeline (5-Stage, Immutable Build Strategy)
+' Authority: SolutionDocumentation/Immutable-Build-Strategy.md §3 + §6
+' Authority: SolutionDocumentation/VersionJsonAsCeiling.md
+' Source: src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/CSharpPackage-5Stage.otter
+
+title <b><size:18>C# NuGet Package Pipeline</b>\n<i><size:12>Immutable Build Strategy: Build Once, Promote Without Rebuild</i>
+
+left to right direction
+skinparam activity {
+  BackgroundColor #e1d5e7
+  BorderColor #9673a6
+  FontSize 11
+}
+skinparam swimlane {
+  BorderColor #444444
+  TitleFontStyle bold
+}
+skinparam note {
+  BackgroundColor #fffacd
+  BorderColor #daa520
+  FontSize 10
+}
+skinparam ArrowColor #666666
+
+' Color definitions for tiers
+!define EXPERIMENTAL #ffd6d6
+!define DEVELOPMENT #ffe6d6
+!define INTEGRATION #ffffe6
+!define QA #e6e6ff
+!define PRODUCTION #d6f5d6
+
+|Inputs and Context|
+:version.json prerelease label;
+note right
+  Determines CeilingTier
+  (promotion ceiling)
+end note
+:$Tier from BuildMaster;
+note right
+  Current stage (CurrentTier)
+  Experimental/Development/Integration/QA/Production
+end note
+
+|Stage Decision|
+:Get-BuildContext;
+note right
+  Resolves:
+  • CurrentTier from $Tier
+  • CeilingTier from prerelease
+  • ResolvedPackageVersion
+  • IsAtCeiling flag
+end note
+
+:Test-PromotionWithinCeiling;
+note right
+  Determines which stages
+  are allowed to run
+  (anything ≥ ceiling skips)
+end note
+
+|Experimental Stage|
+#EXPERIMENTAL
+:dotnet build
+  --configuration Release;
+:dotnet pack
+  --no-build
+  ContinuousIntegrationBuild=true;
+note right
+  Binary determinism:
+  Same bytes on each rebuild
+  of same commit
+end note
+:Publish-NuGetPackageToProGet
+  → nuget-experimental;
+
+|Development Stage|
+#DEVELOPMENT
+:Test-PromotionWithinCeiling
+  -CurrentTier Development
+  -CeilingTier $CeilingTier;
+note right
+  If false: stage skips
+  (ceiling prevents promotion)
+end note
+:Promote-ProGetPackage
+  nuget-experimental → nuget-development;
+note right
+  ProGet API: copy bytes
+  Same package hash
+  No rebuild/repack
+end note
+:Invoke-PromotedPackageTests
+  -TestFilter 'Category=Unit'
+  against promoted package;
+
+|Integration Stage|
+#INTEGRATION
+:Test-PromotionWithinCeiling
+  -CurrentTier Integration
+  -CeilingTier $CeilingTier;
+:Promote-ProGetPackage
+  nuget-development → nuget-integration;
+:Invoke-PromotedPackageTests
+  -TestFilter 'Category=Integration'
+  against promoted package;
+
+|QA Stage|
+#QA
+:Test-PromotionWithinCeiling
+  -CurrentTier QA
+  -CeilingTier $CeilingTier;
+:Promote-ProGetPackage
+  nuget-integration → nuget-qa;
+:Run full regression test suite
+  against promoted package;
+
+|Production Stage|
+#PRODUCTION
+:Test-PromotionWithinCeiling
+  -CurrentTier Production
+  -CeilingTier $CeilingTier;
+:Promote-ProGetPackage
+  nuget-qa → nuget-stable;
+note right
+  Requires manual approval
+  from release engineer
+end note
+
+|Output|
+:Release record in BuildMaster;
+note right
+  Package hash, version,
+  test results, promotion log
+end note
+
+legend right
+  | <#EXPERIMENTAL>   | Experimental (first push) |
+  | <#DEVELOPMENT>    | Development (promoted) |
+  | <#INTEGRATION>    | Integration (promoted) |
+  | <#QA>             | QA (promoted) |
+  | <#PRODUCTION>     | Production (promoted) |
+  --
+  **Ceiling Table (version.json prerelease label):**
+  | Sprint.N, Feature.N → Experimental |
+  | Alpha → Development |
+  | Beta → Integration |
+  | QA → QA |
+  | (none) → Production |
+endlegend
+
+@enduml

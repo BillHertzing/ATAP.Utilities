@@ -13,7 +13,6 @@ Use the module-level getting started guide for the lifecycle workflow:
 | Cmdlet                                    | Description                                                            |
 | ----------------------------------------- | ---------------------------------------------------------------------- |
 | `Build-DatabaseWithFlyway`                | Run Flyway migrations against a target database instance               |
-| `DatabaseBuildAndMigrateTasks`            | Orchestrate database build and migration task sequences                |
 | `DatabaseProvisioning`                    | Provision a new database instance                                      |
 | `Export-RuleToTextFile`                   | Export a Rule from the ATAPUtilities database to a formatted text file |
 | `Get-DatabaseCredentialsKey`              | Resolve the Bitwarden credentials key for a given database/tier/host   |

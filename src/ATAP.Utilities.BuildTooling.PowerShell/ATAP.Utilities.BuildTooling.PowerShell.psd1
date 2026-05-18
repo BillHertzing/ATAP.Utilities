@@ -74,7 +74,7 @@ RequiredModules = @(
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
 FunctionsToExport = @('Add-ScopeCreepIdea', 'Add-SharedFileContent',
                'Approve-BuildMasterStage',
-               'Assert-MainBranchTemplateRef', 'Build-CLAUDEPerRepository', 
+               'Assert-BuildMasterReady', 'Assert-MainBranchTemplateRef', 'Build-CLAUDEPerRepository',
                'Build-ImageFromPlantUML', 'Build-PSModuleManifest', 
                'Build-PSModulePsm1', 'Clear-BuildMasterSprintVariables', 
                'Clear-NuGetCaches', 'Clear-SprintGeneratedArtifacts', 
@@ -131,7 +131,7 @@ FunctionsToExport = @('Add-ScopeCreepIdea', 'Add-SharedFileContent',
                'Set-WorkspaceSharedVSCodeReference', 'Set-WorktreeJunctions', 
                'Start-BuildMasterPipeline', 'Start-DebugPowerShell', 'Start-PlanningSession',
                'Sync-BuildMasterPlans', 'Sync-RulesToCSV', 'Test-CodeCoverageGate', 
-               'Test-FailureAcknowledgedGate', 'Test-PromotionWithinCeiling', 'Test-PowerShellSyntax',
+               'Test-FailureAcknowledgedGate', 'Test-PromotionWithinCeiling', 'Test-PowerShellSyntax', 'Test-SprintPrerequisites',
                'Update-BlocksInCsproj', 'Update-PackageVersion', 
                'Validate-ProGetFeeds'
 )

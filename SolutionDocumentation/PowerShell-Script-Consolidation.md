@@ -42,8 +42,10 @@ because:
 1. **No bootstrap cost.** `Foo.ps1` is one file; a module is a folder
    with a manifest, public/private split, tests, and a `version.json`.
 2. **Per-repo entry points.** Each repo has a few "developer affordances"
-   that are not really cmdlets — `Publish-ATAPUtilities.ps1`,
-   `Setup-GitHubMCP.ps1`, `Test-GitHubMCP.ps1` at repo root.
+   that are not really cmdlets — `Publish-ATAPUtilities.ps1` at repo root,
+   plus workstation setup tools such as
+   `src/ATAP.Utilities.BuildTooling.PowerShell/tools/Setup-GitHubMCP.ps1`
+   and `src/ATAP.Utilities.BuildTooling.PowerShell/tools/Test-GitHubMCP.ps1`.
 3. **CI hook scripts.** `_generated/Check-ProGetFeeds.ps1`,
    `_generated/Fix-PowershellGetFeedNames.ps1` get dropped during sprint
    investigations and never relocated.
@@ -68,7 +70,7 @@ Every `.ps1` falls into exactly one of these five buckets:
 | ---------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------- |
 | **A. Module function** | Becomes part of `<Module>.psm1` via `Build-PSModulePsm1`             | `src/<Module>/public/`, `private/`, or `lib/`               | Yes (NBGV)                         |
 | **B. Module test**     | Pester test for a module function                                    | `src/<Module>/tests/`                                       | n/a                                |
-| **C. Repo-root tool**  | Developer affordance scoped to one repo (publish, setup, smoke-test) | repo root                                                   | No (git-tracked, but not packaged) |
+| **C. Loose tool**      | Developer affordance scoped to one repo/workstation (publish, setup, smoke-test) | repo root or `src/ATAP.Utilities.BuildTooling.PowerShell/tools/` for shared build/tooling setup | No (git-tracked, but not packaged) |
 | **D. Generated**       | Output of a build/diagnostic step                                    | `_generated/` (per SC-0033)                                 | No                                 |
 | **E. Vendor**          | Imported from a third-party package's distribution                   | wherever the package put it (e.g. `bin/Debug/.playwright/`) | n/a                                |
 
@@ -93,8 +95,8 @@ The interesting bucket — and the focus of this doc — is **C**.
 | Path                                                   | Bucket | Purpose                                        | Disposition                                |
 | ------------------------------------------------------ | ------ | ---------------------------------------------- | ------------------------------------------ |
 | `Publish-ATAPUtilities.ps1`                            | C      | Iterate projects and publish to ProGet feeds   | **Delete** — replace with `Invoke-DotnetBuildWithRetry` / `Invoke-ModuleBuildWithRetry` |
-| `Setup-GitHubMCP.ps1`                                  | C      | One-time GitHub MCP server setup               | Keep at root                               |
-| `Test-GitHubMCP.ps1`                                   | C      | Smoke-test GitHub MCP after setup              | Keep at root                               |
+| `src/ATAP.Utilities.BuildTooling.PowerShell/tools/Setup-GitHubMCP.ps1` | C | One-time GitHub MCP server setup               | Keep as BuildTooling setup tool            |
+| `src/ATAP.Utilities.BuildTooling.PowerShell/tools/Test-GitHubMCP.ps1`  | C | Smoke-test GitHub MCP after setup              | Keep as BuildTooling setup tool            |
 | `Database/Powershell/public/Export-RuleToTextFile.ps1` | C/A    | Schema rule export                             | **Promote to module** (Database utilities) |
 | `Database/Powershell/public/Rebuild-All.ps1`           | C      | Flyway rebuild orchestrator                    | Keep — not a function                      |
 | `Database/Powershell/public/Example-RuleExport.ps1`    | C      | Demo / docs example                            | Move to `Documentation/`                   |
@@ -153,8 +155,8 @@ Is it a verb-noun cmdlet that takes parameters?
 │       ├── Yes → create the new module (folder, .psd1, version.json)
 │       └── No  → write it as a standalone in the appropriate bucket
 └── No (it's a procedural orchestrator: "do these N steps in order")
-    ├── Is it the entry point for a developer workflow? → bucket C, repo root
-    ├── Is it a CI/CD step? → bucket C, repo root or under `build/`
+    ├── Is it the entry point for a developer workflow? → bucket C, repo root or tooling folder
+    ├── Is it a CI/CD step? → bucket C, repo root, tooling folder, or under `build/`
     └── Is it a one-time fix? → bucket D, `_generated/`, then delete
 ```
 
@@ -182,7 +184,7 @@ The cleanup commit message convention is
 
 ---
 
-## 6. Why repo-root scripts (bucket C) stay loose
+## 6. Why loose scripts (bucket C) stay loose
 
 It is tempting to consolidate every script into a module. Resist this
 for bucket C because:
@@ -190,11 +192,12 @@ for bucket C because:
 1. **No version semantics.** `Publish-ATAPUtilities.ps1` is a developer
    convenience, not an API. Versioning it makes the next ProGet pipeline
    weirder, not safer.
-2. **`git rev-parse --show-toplevel` works from the repo root** — many
-   bucket-C scripts depend on this and would break if relocated.
-3. **Developer discoverability.** A new contributor running `ls` at the
-   repo root immediately sees the publish/setup/smoke scripts. Burying
-   them in `src/.../public/` defeats this.
+2. **Repository context must be explicit.** Many bucket-C scripts depend on
+   `git rev-parse --show-toplevel`; if relocated into a tooling folder, they
+   must resolve the repository root from their own path or from Git.
+3. **Developer discoverability.** Repo-specific entry points can stay at the
+   repo root. Shared workstation/build setup helpers should live in the
+   BuildTooling `tools/` folder and be linked from the setup runbooks.
 4. **Breakage radius is local.** A bug in `Setup-GitHubMCP.ps1` affects
    one developer's workstation; a bug in a cmdlet that gets imported
    everywhere causes wider damage.

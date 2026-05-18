@@ -6,13 +6,30 @@
     Verifies that the GitHub MCP server is properly configured and can connect to GitHub APIs
 
 .EXAMPLE
-    .\Test-GitHubMCP.ps1
+    .\src\ATAP.Utilities.BuildTooling.PowerShell\tools\Test-GitHubMCP.ps1
 
     Tests the MCP server configuration
 #>
 
 Write-Host "`n=== GitHub MCP Connection Test ===" -ForegroundColor Cyan
 Write-Host ""
+
+$repoRoot = $null
+try {
+  $gitRoot = & git -C $PSScriptRoot rev-parse --show-toplevel 2>$null
+  if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($gitRoot)) {
+    $repoRoot = ([string]$gitRoot).Trim()
+  }
+}
+catch {
+  $repoRoot = $null
+}
+
+if ([string]::IsNullOrWhiteSpace($repoRoot)) {
+  $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..'))
+}
+
+$setupScriptPath = Join-Path $PSScriptRoot 'Setup-GitHubMCP.ps1'
 
 # Check if GITHUB_TOKEN is set
 Write-Host "1. Checking GITHUB_TOKEN environment variable..." -ForegroundColor Yellow
@@ -26,7 +43,7 @@ if ($token) {
 }
 else {
   Write-Host "   ✗ GITHUB_TOKEN is not set" -ForegroundColor Red
-  Write-Host "`n   Run: .\Setup-GitHubMCP.ps1 -Token 'your_token_here'" -ForegroundColor Yellow
+  Write-Host "`n   Run: & '$setupScriptPath' -Token 'your_token_here'" -ForegroundColor Yellow
   Write-Host ""
   exit 1
 }
@@ -46,11 +63,12 @@ else {
 
 # Check VS Code settings
 Write-Host "`n3. Checking VS Code settings..." -ForegroundColor Yellow
-$settingsPath = ".vscode\settings.json"
+$settingsPath = Join-Path $repoRoot '.vscode\settings.json'
 if (Test-Path $settingsPath) {
   $settings = Get-Content $settingsPath -Raw | ConvertFrom-Json
   if ($settings.'mcp.servers'.github) {
     Write-Host "   ✓ MCP server configured in VS Code settings" -ForegroundColor Green
+    Write-Host "     Settings: $settingsPath" -ForegroundColor Gray
     Write-Host "     Command: $($settings.'mcp.servers'.github.command)" -ForegroundColor Gray
     Write-Host "     Args: $($settings.'mcp.servers'.github.args -join ' ')" -ForegroundColor Gray
   }
@@ -59,7 +77,7 @@ if (Test-Path $settingsPath) {
   }
 }
 else {
-  Write-Host "   ⚠ VS Code settings.json not found" -ForegroundColor Yellow
+  Write-Host "   ⚠ VS Code settings.json not found at: $settingsPath" -ForegroundColor Yellow
 }
 
 # Test GitHub API access
@@ -98,5 +116,5 @@ Write-Host "1. Restart VS Code (if not already done)"
 Write-Host "2. Open GitHub Copilot Chat"
 Write-Host "3. Try asking: 'What are my GitHub repositories?'"
 Write-Host ""
-Write-Host "For more help, see: Documentation/GitHub-MCP-Setup.md"
+Write-Host "For more help, see: SolutionDocumentation/NewComputerSetup.md"
 Write-Host ""

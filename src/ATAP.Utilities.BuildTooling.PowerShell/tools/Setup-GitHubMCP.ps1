@@ -14,12 +14,12 @@
     Default: 'User' (persistent across sessions)
 
 .EXAMPLE
-    .\Setup-GitHubMCP.ps1 -Token "ghp_yourtokenhere"
+    .\src\ATAP.Utilities.BuildTooling.PowerShell\tools\Setup-GitHubMCP.ps1 -Token "ghp_yourtokenhere"
 
     Sets the GITHUB_TOKEN environment variable for the current user
 
 .EXAMPLE
-    .\Setup-GitHubMCP.ps1 -Token "ghp_yourtokenhere" -Scope Process
+    .\src\ATAP.Utilities.BuildTooling.PowerShell\tools\Setup-GitHubMCP.ps1 -Token "ghp_yourtokenhere" -Scope Process
 
     Sets the GITHUB_TOKEN for the current PowerShell session only
 
@@ -134,7 +134,7 @@ else {
 # Next steps
 Write-Host "`n=== Next Steps ===" -ForegroundColor Cyan
 Write-Host "1. Restart VS Code to load the new environment variable"
-Write-Host "2. Open GitHub Copilot Chat"
-Write-Host "3. Try asking: 'List my GitHub repositories'"
-Write-Host "`nFor more information, see: Documentation/GitHub-MCP-Setup.md"
+Write-Host "2. Run the sibling Test-GitHubMCP.ps1 script from this tools folder"
+Write-Host "3. Open GitHub Copilot Chat and try asking: 'List my GitHub repositories'"
+Write-Host "`nFor more information, see: SolutionDocumentation/NewComputerSetup.md"
 Write-Host ""

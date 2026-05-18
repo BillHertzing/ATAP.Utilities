@@ -531,6 +531,27 @@ Invoke-WebRequest 'http://localhost:50000/' -UseBasicParsing | Select-Object Sta
 Invoke-WebRequest 'http://localhost:8622/' -UseBasicParsing | Select-Object StatusCode
 ```
 
+### 11.4 GitHub MCP access validation
+
+Configure and test the GitHub MCP token before using Copilot or MCP-driven GitHub
+automation from the new workstation.
+
+```powershell
+$toolRoot = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\tools'
+
+& (Join-Path $toolRoot 'Setup-GitHubMCP.ps1') -Token '<GitHub PAT>' -Scope User
+& (Join-Path $toolRoot 'Test-GitHubMCP.ps1')
+```
+
+`Setup-GitHubMCP.ps1` validates the token shape, stores it as `GITHUB_TOKEN`, and
+checks that `mcp-server-github` is available on `PATH`. Use `-Scope Process` when
+testing a token without persisting it.
+
+`Test-GitHubMCP.ps1` verifies that `GITHUB_TOKEN` is visible, confirms the MCP
+server command is installed, checks the repository `.vscode\settings.json` MCP
+server entry, and performs a GitHub API identity/rate-limit check with the token.
+Restart VS Code after setting the token at user scope.
+
 ## Ready State
 
 The new computer is ready for a developer when all of the following are true:
@@ -546,5 +567,6 @@ The new computer is ready for a developer when all of the following are true:
    `MSSQL$PRODUCTION`.
 7. Cobian backup jobs exist for both tooling databases.
 8. Stable-branch builds and tests pass.
+9. GitHub MCP token, server, VS Code settings, and API access validation pass.
 
 At that point the workstation can serve as a fully functional developer machine.

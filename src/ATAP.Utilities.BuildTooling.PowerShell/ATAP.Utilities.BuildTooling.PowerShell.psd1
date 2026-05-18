@@ -53,7 +53,7 @@ PowerShellVersion = '5.1'
 # Modules that must be imported into the global environment prior to importing this module
 RequiredModules = @(
 @{ModuleName = 'PSFramework'; ModuleVersion = '1.10.0'; MaximumVersion = '1.999.999'; },
-'powershell-yaml'
+@{ModuleName = 'powershell-yaml'; ModuleVersion = '0.4.7'; MaximumVersion = '0.999.999'; }
 )
 
 # Assemblies that must be loaded prior to importing this module
@@ -72,7 +72,7 @@ RequiredModules = @(
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = 'Add-ScopeCreepIdea', 'Add-SharedFileContent',
+FunctionsToExport = @('Add-ScopeCreepIdea', 'Add-SharedFileContent',
                'Approve-BuildMasterStage',
                'Assert-MainBranchTemplateRef', 'Build-CLAUDEPerRepository', 
                'Build-ImageFromPlantUML', 'Build-PSModuleManifest', 
@@ -134,6 +134,7 @@ FunctionsToExport = 'Add-ScopeCreepIdea', 'Add-SharedFileContent',
                'Test-FailureAcknowledgedGate', 'Test-PromotionWithinCeiling', 'Test-PowerShellSyntax',
                'Update-BlocksInCsproj', 'Update-PackageVersion', 
                'Validate-ProGetFeeds'
+)
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = '*'

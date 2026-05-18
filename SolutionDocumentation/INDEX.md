@@ -192,6 +192,8 @@ nuget-development / nuget-integration / nuget-qa / nuget-stable`, NBGV
   Cross-cut overview of production-facing flows and supporting tooling.
 - [Immutable Build Strategy](Immutable-Build-Strategy.md) —
   Primary strategy document for immutable build and promotion flows.
+- [version.json as Promotion Ceiling](VersionJsonAsCeiling.md) —
+  Explains `CurrentTier` versus `CeilingTier` and the stage-skip guard.
 - [Critical Analysis of Immutable Build Strategy](CriticalAnalysisOfImmutableBuildStrategy.md)
   — Risk and trade-off analysis of the immutable strategy.
 - [PowerShell Script Consolidation](PowerShell-Script-Consolidation.md) —

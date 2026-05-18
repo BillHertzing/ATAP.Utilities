@@ -398,7 +398,7 @@ BuildMaster OtterScript Plan
          |
          +-- Resolve-PSModuleMetadata
          +-- Get-PSModuleVersionFromNBGV
-         +-- Get-TierFromNBGVLabel
+         +-- Get-TierFromNBGVLabel     (legacy ceiling/feed helper)
          +-- Invoke-PSModuleBuild
          +-- Test-PSModule              (Pester wrapper)
          +-- Assert-PSModuleQualityGate
@@ -459,7 +459,7 @@ testable with Pester and reusable across build scripts.
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | `Resolve-PSModuleMetadata`            | Reads `.psd1` + `version.json`, returns a module metadata hashtable                                    |
 | `Get-PSModuleVersionFromNBGV`         | Calls `nbgv get-version`, parses and returns version components (label, height, full SemVer)           |
-| `Get-TierFromNBGVLabel`               | Maps NBGV prerelease label (Sprint / Alpha / Beta / QA / empty) to tier name                           |
+| `Get-TierFromNBGVLabel`               | Legacy helper that maps NBGV prerelease label (Sprint / feature / Alpha / Beta / QA / empty) to ceiling tier name and PowerShellGet feed |
 | `Invoke-PSModuleBuild`                | Wraps `dotnet publish` or `Build-Module`, writes staged output to a named output directory             |
 | `Publish-PSModuleToProGetFeed`        | Calls `Publish-PSResource`, reading the ProGet API key from Bitwarden via `-BitWardenSecretName`       |
 | `Test-PSModule`                       | Pester 5+ wrapper that applies the tier-appropriate tag filter (`-Tag Unit`, `-Tag Integration`, etc.) |

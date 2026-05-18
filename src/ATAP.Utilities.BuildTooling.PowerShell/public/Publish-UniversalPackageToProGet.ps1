@@ -33,6 +33,11 @@
     The ProGet Universal feed name to push to. Defaults to
     'releasebundle-experimental'.
 
+.PARAMETER CeilingTier
+    Optional promotion ceiling recorded in the returned object for BuildMaster
+    evidence. Later stages enforce the ceiling with
+    Promote-ProGetPackage -CeilingTier.
+
 .OUTPUTS
     [PSCustomObject] with at least:
       - NupkgPath        : Absolute path to the .upack (named NupkgPath
@@ -41,6 +46,7 @@
       - FeedName         : Feed name pushed to.
       - FeedUri          : Resolved feed URI.
       - Published        : $true on HTTP 200/201/202.
+      - CeilingTier      : Optional promotion ceiling supplied by caller.
       - ResponseSummary  : Short string summary of the upload result.
 
 .EXAMPLE
@@ -68,7 +74,11 @@ function Publish-UniversalPackageToProGet {
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$Feed = 'releasebundle-experimental'
+        [string]$Feed = 'releasebundle-experimental',
+
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string]$CeilingTier
     )
 
     begin {
@@ -162,6 +172,7 @@ function Publish-UniversalPackageToProGet {
                 FeedName        = $Feed
                 FeedUri         = $feedUri
                 Published       = $false
+                CeilingTier     = $CeilingTier
                 ResponseSummary = "WhatIf: planned upload of '$resolvedUpack' to '$Feed'"
             }
         }
@@ -213,6 +224,7 @@ function Publish-UniversalPackageToProGet {
             FeedName        = $Feed
             FeedUri         = $feedUri
             Published       = $published
+            CeilingTier     = $CeilingTier
             ResponseSummary = $summary
         }
     }

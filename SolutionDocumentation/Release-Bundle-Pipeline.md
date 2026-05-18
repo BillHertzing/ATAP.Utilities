@@ -191,7 +191,7 @@ BuildMaster stages call. The Release Bundle pipeline uses:
 
 | Cmdlet                          | Role                                                                                                |
 | ------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `Get-BuildContext`              | Resolve branch type, application, release version, included DB assets.                              |
+| `Get-BuildContext`              | Resolve branch type, application, release version, included DB assets, `CurrentTier`, and `CeilingTier`. `.Tier` is a deprecated alias for `CeilingTier`. |
 | `New-ReleaseManifest`           | Generate `manifest.json` and the `db-manifest.json` sidecar from the release context and DB release unit. |
 | `New-ReleaseBundle`             | Assemble the directory tree under `_generated/release-bundle/<Version>/`, place `db/db-manifest.json`, require every manifest-referenced asset to exist, and pack to `.upack`. |
 | `Publish-UniversalPackageToProGet` | Push the `.upack` to `releasebundle-experimental`.                                                |
@@ -321,7 +321,7 @@ in ProGet and reachable over `/upack/releasebundle-<tier>`.
 Build a release bundle from a release-branch tag:
 
 ```powershell
-$ctx = Get-BuildContext -ReleaseTag 'v1.4.0' -Application AceCommander
+$ctx = Get-BuildContext -ReleaseTag 'v1.4.0' -Application AceCommander -ProjectPath .
 $mfst = New-ReleaseManifest -Context $ctx
 $bundle = New-ReleaseBundle -Manifest $mfst -OutputPath ./_generated/release-bundle/
 Publish-UniversalPackageToProGet -Path $bundle.Path -Feed releasebundle-experimental
@@ -331,8 +331,9 @@ Promote across tiers (idempotent — no-op if already in the target feed):
 
 ```powershell
 Promote-ProGetPackage -Name AceCommander -Version 1.4.0+8f4b2c1 `
-                      -FromFeed releasebundle-experimental `
-                      -ToFeed   releasebundle-development `
+                       -FromFeed releasebundle-experimental `
+                       -ToFeed   releasebundle-development `
+                       -CeilingTier Development `
                       -Reason   'INT-PASS for build #4271'
 ```
 

@@ -21,6 +21,8 @@
 #   $PreviousProductionBackupPath          - .bak recorded for Integration Flyway rehearsal traceability
 #   $IntegrationDatabaseBitwardenSecretName - Bitwarden item name for the Integration-tier DB connection string,
 #                                            e.g. dbConnectionString-AceCommander-utat022-Integration
+#   $Tier                                  - current BuildMaster tier/stage (CurrentTier)
+#   $CeilingTier                           - runtime variable computed from version.json
 #
 # This plan intentionally keeps OtterScript as dumb glue. Release logic lives
 # in ATAP.Utilities.BuildTooling.PowerShell cmdlets documented by
@@ -30,6 +32,9 @@
 #   Adheres to the immutable build strategy: build occurs only in the
 #   Experimental stage; later stages promote the same bytes via
 #   Promote-ProGetPackage.
+#   version.json is interpreted as a promotion ceiling, not as the current
+#   stage. See SolutionDocumentation/Immutable-Build-Strategy.md §3 and
+#   SolutionDocumentation/VersionJsonAsCeiling.md.
 #   Topology doc: SolutionDocumentation/BuildMaster-Pipeline-Topology.md
 #
 # NOTE — Distribution stage out of scope for Sprint 0007:
@@ -47,14 +52,46 @@
 # Build once in Experimental. Every later stage promotes the same bundle
 # identity captured in _generated\buildmaster\releasebundle_*.tmp.
 
+set $BuildToolingModuleManifest = $PathCombine($SourcePath, src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1);
+set $BuildContextDir = $PathCombine($SourcePath, _generated\buildmaster);
+set $CurrentTierFile = $PathCombine($BuildContextDir, releasebundle_current_tier.tmp);
+set $CeilingTierFile = $PathCombine($BuildContextDir, releasebundle_ceiling_tier.tmp);
+set $AllowExperimentalFile = $PathCombine($BuildContextDir, releasebundle_allow_experimental.tmp);
+set $AllowDevelopmentFile = $PathCombine($BuildContextDir, releasebundle_allow_development.tmp);
+set $AllowIntegrationFile = $PathCombine($BuildContextDir, releasebundle_allow_integration.tmp);
+set $AllowQAFile = $PathCombine($BuildContextDir, releasebundle_allow_qa.tmp);
+set $AllowProductionFile = $PathCombine($BuildContextDir, releasebundle_allow_production.tmp);
+
+Exec
+(
+    FileName: pwsh,
+    Arguments: >>-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$BuildToolingModuleManifest' -Force; New-Item -ItemType Directory -Path '$BuildContextDir' -Force | Out-Null; if ([string]::IsNullOrWhiteSpace('$ReleaseTag')) { $$ctx = Get-BuildContext -Application '$ProductName' -ProjectPath '$SourcePath' -Branch '$Branch' -Stage '$Tier' } else { $$ctx = Get-BuildContext -Application '$ProductName' -ProjectPath '$SourcePath' -ReleaseTag '$ReleaseTag' -Stage '$Tier' }; $$ctx.CurrentTier | Set-Content -LiteralPath '$CurrentTierFile' -Encoding utf8 -NoNewline; $$ctx.CeilingTier | Set-Content -LiteralPath '$CeilingTierFile' -Encoding utf8 -NoNewline; (Test-PromotionWithinCeiling -CurrentTier 'Experimental' -CeilingTier $$ctx.CeilingTier -AsBoolean).ToString().ToLowerInvariant() | Set-Content -LiteralPath '$AllowExperimentalFile' -Encoding utf8 -NoNewline; (Test-PromotionWithinCeiling -CurrentTier 'Development' -CeilingTier $$ctx.CeilingTier -AsBoolean).ToString().ToLowerInvariant() | Set-Content -LiteralPath '$AllowDevelopmentFile' -Encoding utf8 -NoNewline; (Test-PromotionWithinCeiling -CurrentTier 'Integration' -CeilingTier $$ctx.CeilingTier -AsBoolean).ToString().ToLowerInvariant() | Set-Content -LiteralPath '$AllowIntegrationFile' -Encoding utf8 -NoNewline; (Test-PromotionWithinCeiling -CurrentTier 'QA' -CeilingTier $$ctx.CeilingTier -AsBoolean).ToString().ToLowerInvariant() | Set-Content -LiteralPath '$AllowQAFile' -Encoding utf8 -NoNewline; (Test-PromotionWithinCeiling -CurrentTier 'Production' -CeilingTier $$ctx.CeilingTier -AsBoolean).ToString().ToLowerInvariant() | Set-Content -LiteralPath '$AllowProductionFile' -Encoding utf8 -NoNewline">>,
+    WorkingDirectory: $SourcePath,
+    SuccessExitCode: 0
+);
+
+set $CurrentTier = $Trim($FileContents($CurrentTierFile));
+set $CeilingTier = $Trim($FileContents($CeilingTierFile));
+set $AllowExperimental = $Trim($FileContents($AllowExperimentalFile));
+set $AllowDevelopment = $Trim($FileContents($AllowDevelopmentFile));
+set $AllowIntegration = $Trim($FileContents($AllowIntegrationFile));
+set $AllowQA = $Trim($FileContents($AllowQAFile));
+set $AllowProduction = $Trim($FileContents($AllowProductionFile));
+
+Log-Debug `Resolved CurrentTier=$CurrentTier CeilingTier=$CeilingTier Product=$ProductName`;
+
 stage Experimental
 {
+    if $Tier == Experimental
+    {
+    if $AllowExperimental == true
+    {
     # Build bundle from release-branch tag, create manifest, pack .upack, and
     # push to the Experimental Universal feed.
     Exec
     (
         FileName: pwsh,
-        Arguments: >>-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$SourcePath\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1' -Force; New-Item -ItemType Directory -Path '_generated\buildmaster' -Force | Out-Null; $$env:PROGET_ADMIN_API_KEY = '$Decrypt($ProGetApiKey)'; $$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; $$global:ProGetBaseUrl = '$ProGetUrl'; if ([string]::IsNullOrWhiteSpace('$ReleaseTag')) { $$ctx = Get-BuildContext -Application '$ProductName' -Branch '$Branch' } else { $$ctx = Get-BuildContext -Application '$ProductName' -ReleaseTag '$ReleaseTag' }; $$ctx | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath '_generated\buildmaster\releasebundle_context.json' -Encoding UTF8; $$manifest = New-ReleaseManifest -Context $$ctx -OutputPath '_generated\release-manifest\manifest.json'; $$bundle = New-ReleaseBundle -Manifest $$manifest -OutputPath '_generated\release-bundle' -SourceRoot '$SourcePath'; Publish-UniversalPackageToProGet -Path $$bundle.Path.FullName -Feed '$ReleaseBundleExperimentalFeedName'; $$ctx.Application | Out-File '_generated\buildmaster\releasebundle_name.tmp' -Encoding utf8 -NoNewline; $$ctx.ResolvedPackageVersion | Out-File '_generated\buildmaster\releasebundle_resolved_version.tmp' -Encoding utf8 -NoNewline; $$bundle.BundleVersion | Out-File '_generated\buildmaster\releasebundle_bundle_version.tmp' -Encoding utf8 -NoNewline; $$bundle.Path.FullName | Out-File '_generated\buildmaster\releasebundle_path.tmp' -Encoding utf8 -NoNewline; $$manifest.FullName | Out-File '_generated\buildmaster\releasebundle_manifest_path.tmp' -Encoding utf8 -NoNewline">>,
+        Arguments: >>-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$BuildToolingModuleManifest' -Force; New-Item -ItemType Directory -Path '_generated\buildmaster' -Force | Out-Null; $$env:PROGET_ADMIN_API_KEY = '$Decrypt($ProGetApiKey)'; $$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; $$global:ProGetBaseUrl = '$ProGetUrl'; if ([string]::IsNullOrWhiteSpace('$ReleaseTag')) { $$ctx = Get-BuildContext -Application '$ProductName' -ProjectPath '$SourcePath' -Branch '$Branch' -Stage '$Tier' } else { $$ctx = Get-BuildContext -Application '$ProductName' -ProjectPath '$SourcePath' -ReleaseTag '$ReleaseTag' -Stage '$Tier' }; $$ctx | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath '_generated\buildmaster\releasebundle_context.json' -Encoding UTF8; $$manifest = New-ReleaseManifest -Context $$ctx -OutputPath '_generated\release-manifest\manifest.json'; $$bundle = New-ReleaseBundle -Manifest $$manifest -OutputPath '_generated\release-bundle' -SourceRoot '$SourcePath'; Publish-UniversalPackageToProGet -Path $$bundle.Path.FullName -Feed '$ReleaseBundleExperimentalFeedName' -CeilingTier '$CeilingTier'; $$ctx.Application | Out-File '_generated\buildmaster\releasebundle_name.tmp' -Encoding utf8 -NoNewline; $$ctx.ResolvedPackageVersion | Out-File '_generated\buildmaster\releasebundle_resolved_version.tmp' -Encoding utf8 -NoNewline; $$bundle.BundleVersion | Out-File '_generated\buildmaster\releasebundle_bundle_version.tmp' -Encoding utf8 -NoNewline; $$bundle.Path.FullName | Out-File '_generated\buildmaster\releasebundle_path.tmp' -Encoding utf8 -NoNewline; $$manifest.FullName | Out-File '_generated\buildmaster\releasebundle_manifest_path.tmp' -Encoding utf8 -NoNewline">>,
         WorkingDirectory: $SourcePath,
         SuccessExitCode: 0
     );
@@ -70,15 +107,21 @@ stage Experimental
         From: _generated\release-bundle,
         Include: @(*.upack)
     );
+    }
+    }
 }
 
 stage Development
 {
+    if $Tier == Development
+    {
+    if $AllowDevelopment == true
+    {
     # Promote the immutable bundle to Development.
     Exec
     (
         FileName: pwsh,
-        Arguments: >>-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$SourcePath\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1' -Force; $$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; $$global:ProGetBaseUrl = '$ProGetUrl'; $$name = Get-Content -LiteralPath '_generated\buildmaster\releasebundle_name.tmp' -Raw; $$version = Get-Content -LiteralPath '_generated\buildmaster\releasebundle_bundle_version.tmp' -Raw; Promote-ProGetPackage -Name $$name.Trim() -Version $$version.Trim() -FromFeed '$ReleaseBundleExperimentalFeedName' -ToFeed '$ReleaseBundleDevelopmentFeedName' -Reason 'Release Bundle Development promotion'">>,
+        Arguments: >>-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$BuildToolingModuleManifest' -Force; $$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; $$global:ProGetBaseUrl = '$ProGetUrl'; $$name = Get-Content -LiteralPath '_generated\buildmaster\releasebundle_name.tmp' -Raw; $$version = Get-Content -LiteralPath '_generated\buildmaster\releasebundle_bundle_version.tmp' -Raw; Promote-ProGetPackage -Name $$name.Trim() -Version $$version.Trim() -FromFeed '$ReleaseBundleExperimentalFeedName' -ToFeed '$ReleaseBundleDevelopmentFeedName' -Reason 'Release Bundle Development promotion' -CeilingTier '$CeilingTier'">>,
         WorkingDirectory: $SourcePath,
         SuccessExitCode: 0
     );
@@ -86,15 +129,21 @@ stage Development
     # Placeholder: Release-Bundle-Pipeline.md section 5 documents clean-VM
     # install/uninstall validation here, but section 6 does not yet name a
     # cmdlet for it. Add that Exec when the future validation stream lands.
+    }
+    }
 }
 
 stage Integration
 {
+    if $Tier == Integration
+    {
+    if $AllowIntegration == true
+    {
     # Promote the immutable bundle to Integration.
     Exec
     (
         FileName: pwsh,
-        Arguments: >>-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$SourcePath\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1' -Force; $$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; $$global:ProGetBaseUrl = '$ProGetUrl'; $$name = Get-Content -LiteralPath '_generated\buildmaster\releasebundle_name.tmp' -Raw; $$version = Get-Content -LiteralPath '_generated\buildmaster\releasebundle_bundle_version.tmp' -Raw; Promote-ProGetPackage -Name $$name.Trim() -Version $$version.Trim() -FromFeed '$ReleaseBundleDevelopmentFeedName' -ToFeed '$ReleaseBundleIntegrationFeedName' -Reason 'Release Bundle Integration promotion'">>,
+        Arguments: >>-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$BuildToolingModuleManifest' -Force; $$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; $$global:ProGetBaseUrl = '$ProGetUrl'; $$name = Get-Content -LiteralPath '_generated\buildmaster\releasebundle_name.tmp' -Raw; $$version = Get-Content -LiteralPath '_generated\buildmaster\releasebundle_bundle_version.tmp' -Raw; Promote-ProGetPackage -Name $$name.Trim() -Version $$version.Trim() -FromFeed '$ReleaseBundleDevelopmentFeedName' -ToFeed '$ReleaseBundleIntegrationFeedName' -Reason 'Release Bundle Integration promotion' -CeilingTier '$CeilingTier'">>,
         WorkingDirectory: $SourcePath,
         SuccessExitCode: 0
     );
@@ -103,7 +152,7 @@ stage Integration
     Exec
     (
         FileName: pwsh,
-        Arguments: >>-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$SourcePath\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1' -Force; Import-Module '$SourcePath\src\ATAP.Utilities.DatabaseManagement.Powershell\ATAP.Utilities.DatabaseManagement.Powershell.psd1' -Force; New-Item -ItemType Directory -Path '_generated\flyway' -Force | Out-Null; $$bundlePath = Get-Content -LiteralPath '_generated\buildmaster\releasebundle_path.tmp' -Raw; if ([string]::IsNullOrWhiteSpace('$IntegrationDatabaseBitwardenSecretName')) { throw 'BuildMaster Application variable IntegrationDatabaseBitwardenSecretName is required for Integration Flyway rehearsal.' }; Invoke-FlywayRehearsal -Application '$ProductName' -BundlePath $$bundlePath.Trim() -BackupPath '$PreviousProductionBackupPath' -BitwardenSecretName '$IntegrationDatabaseBitwardenSecretName' -LogPath '_generated\flyway\flyway-rehearsal.log'">>,
+        Arguments: >>-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$BuildToolingModuleManifest' -Force; Import-Module '$SourcePath\src\ATAP.Utilities.DatabaseManagement.Powershell\ATAP.Utilities.DatabaseManagement.Powershell.psd1' -Force; New-Item -ItemType Directory -Path '_generated\flyway' -Force | Out-Null; $$bundlePath = Get-Content -LiteralPath '_generated\buildmaster\releasebundle_path.tmp' -Raw; if ([string]::IsNullOrWhiteSpace('$IntegrationDatabaseBitwardenSecretName')) { throw 'BuildMaster Application variable IntegrationDatabaseBitwardenSecretName is required for Integration Flyway rehearsal.' }; Invoke-FlywayRehearsal -Application '$ProductName' -BundlePath $$bundlePath.Trim() -BackupPath '$PreviousProductionBackupPath' -BitwardenSecretName '$IntegrationDatabaseBitwardenSecretName' -LogPath '_generated\flyway\flyway-rehearsal.log'">>,
         WorkingDirectory: $SourcePath,
         SuccessExitCode: 0
     );
@@ -113,30 +162,42 @@ stage Integration
         From: _generated\flyway,
         Include: @(flyway-rehearsal.log)
     );
+    }
+    }
 }
 
 stage QA
 {
+    if $Tier == QA
+    {
+    if $AllowQA == true
+    {
     # Promote the immutable bundle to QA.
     Exec
     (
         FileName: pwsh,
-        Arguments: >>-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$SourcePath\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1' -Force; $$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; $$global:ProGetBaseUrl = '$ProGetUrl'; $$name = Get-Content -LiteralPath '_generated\buildmaster\releasebundle_name.tmp' -Raw; $$version = Get-Content -LiteralPath '_generated\buildmaster\releasebundle_bundle_version.tmp' -Raw; Promote-ProGetPackage -Name $$name.Trim() -Version $$version.Trim() -FromFeed '$ReleaseBundleIntegrationFeedName' -ToFeed '$ReleaseBundleQAFeedName' -Reason 'Release Bundle QA promotion'">>,
+        Arguments: >>-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$BuildToolingModuleManifest' -Force; $$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; $$global:ProGetBaseUrl = '$ProGetUrl'; $$name = Get-Content -LiteralPath '_generated\buildmaster\releasebundle_name.tmp' -Raw; $$version = Get-Content -LiteralPath '_generated\buildmaster\releasebundle_bundle_version.tmp' -Raw; Promote-ProGetPackage -Name $$name.Trim() -Version $$version.Trim() -FromFeed '$ReleaseBundleIntegrationFeedName' -ToFeed '$ReleaseBundleQAFeedName' -Reason 'Release Bundle QA promotion' -CeilingTier '$CeilingTier'">>,
         WorkingDirectory: $SourcePath,
         SuccessExitCode: 0
     );
 
     # Placeholder: Release-Bundle-Pipeline.md section 5 documents the full
     # E2E suite here. Section 6 has no named release-bundle QA test cmdlet yet.
+    }
+    }
 }
 
 stage Production
 {
+    if $Tier == Production
+    {
+    if $AllowProduction == true
+    {
     # Promote the immutable bundle to Production.
     Exec
     (
         FileName: pwsh,
-        Arguments: >>-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$SourcePath\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1' -Force; $$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; $$global:ProGetBaseUrl = '$ProGetUrl'; $$name = Get-Content -LiteralPath '_generated\buildmaster\releasebundle_name.tmp' -Raw; $$version = Get-Content -LiteralPath '_generated\buildmaster\releasebundle_bundle_version.tmp' -Raw; Promote-ProGetPackage -Name $$name.Trim() -Version $$version.Trim() -FromFeed '$ReleaseBundleQAFeedName' -ToFeed '$ReleaseBundleProductionFeedName' -Reason 'Release Bundle Production promotion'">>,
+        Arguments: >>-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$BuildToolingModuleManifest' -Force; $$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; $$global:ProGetBaseUrl = '$ProGetUrl'; $$name = Get-Content -LiteralPath '_generated\buildmaster\releasebundle_name.tmp' -Raw; $$version = Get-Content -LiteralPath '_generated\buildmaster\releasebundle_bundle_version.tmp' -Raw; Promote-ProGetPackage -Name $$name.Trim() -Version $$version.Trim() -FromFeed '$ReleaseBundleQAFeedName' -ToFeed '$ReleaseBundleProductionFeedName' -Reason 'Release Bundle Production promotion' -CeilingTier '$CeilingTier'">>,
         WorkingDirectory: $SourcePath,
         SuccessExitCode: 0
     );
@@ -144,6 +205,8 @@ stage Production
     # Placeholder: Production validation is the release-manager manual approval
     # gate documented in Release-Bundle-Pipeline.md section 5. Add an
     # Approve-BuildMasterStage Exec when that spec cmdlet is implemented.
+    }
+    }
 }
 
 stage Distribution

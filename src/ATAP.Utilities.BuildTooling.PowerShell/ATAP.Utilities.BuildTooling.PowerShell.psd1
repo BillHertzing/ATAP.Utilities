@@ -12,7 +12,7 @@
 RootModule = 'ATAP.Utilities.BuildTooling.Powershell.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.1.0'
+ModuleVersion = '0.2.0'
 
 # Supported PSEditions
 CompatiblePSEditions = 'Desktop', 'Core'
@@ -92,7 +92,7 @@ FunctionsToExport = 'Add-ScopeCreepIdea', 'Add-SharedFileContent',
                'Get-NuSpecFromManifest', 'Get-ProjectsByActivity', 
                'Get-ProjectsFromSLN', 'Get-PSModuleVersionFromNBGV', 
                'Get-RefactoringCandidates', 'Get-RepositoryRoot', 
-               'Get-SharedVSCodeContext', 'Get-SLNParts', 'Get-TierFromNBGVLabel', 
+               'Get-SharedVSCodeContext', 'Get-SLNParts', 'Get-TierFromNBGVLabel', 'Get-TierOrder',
                'Initialize-DownstreamSprintFromSharedVSCode', 
                'Initialize-ProGetSqlServiceLogin', 
                'Invoke-BuildToolingPesterDebug', 'Invoke-DotnetBuildWithRetry', 
@@ -131,7 +131,7 @@ FunctionsToExport = 'Add-ScopeCreepIdea', 'Add-SharedFileContent',
                'Set-WorkspaceSharedVSCodeReference', 'Set-WorktreeJunctions', 
                'Start-BuildMasterPipeline', 'Start-DebugPowerShell', 'Start-PlanningSession',
                'Sync-BuildMasterPlans', 'Sync-RulesToCSV', 'Test-CodeCoverageGate', 
-               'Test-FailureAcknowledgedGate', 'Test-PowerShellSyntax', 
+               'Test-FailureAcknowledgedGate', 'Test-PromotionWithinCeiling', 'Test-PowerShellSyntax',
                'Update-BlocksInCsproj', 'Update-PackageVersion', 
                'Validate-ProGetFeeds'
 

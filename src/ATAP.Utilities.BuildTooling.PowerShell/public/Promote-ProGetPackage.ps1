@@ -50,6 +50,13 @@
     A short human-readable reason recorded in ProGet's audit log.
     Forwarded to the inner cmdlet's -Reason.
 
+.PARAMETER CeilingTier
+    Optional highest tier this pipeline run may reach. When supplied,
+    Promote-ProGetPackage parses the destination tier from -ToFeed and calls
+    Test-PromotionWithinCeiling before invoking any ProGet API wrapper. If the
+    destination tier is above the ceiling, the promotion aborts with
+    PromotionCeilingExceededException.
+
 .OUTPUTS
     [PSCustomObject] with at least these properties (per V3 plan S2.1):
       - OperationName   : Always 'Promote-ProGetPackage'.
@@ -58,6 +65,7 @@
       - Version         : The package version (echoed input).
       - FromFeed        : Source feed (echoed input).
       - ToFeed          : Destination feed (echoed input).
+      - CeilingTier     : Promotion ceiling supplied by the caller, if any.
       - ResponseSummary : Short string summary of the operation, the
                           no-op detection, or the WhatIf plan.
       - InnerResult     : The full PSCustomObject returned by
@@ -87,6 +95,29 @@
 .LINK
     https://github.com/whertzing/ATAP.Utilities
 #>
+function Resolve-PromotionTierFromFeedName {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$FeedName
+    )
+
+    if ($FeedName -match '(?i)-(experimental|development|integration|qa|stable|production)(-push)?$') {
+        switch ($Matches[1].ToLowerInvariant()) {
+            'experimental' { return 'Experimental' }
+            'development'  { return 'Development' }
+            'integration'  { return 'Integration' }
+            'qa'           { return 'QA' }
+            'stable'       { return 'Production' }
+            'production'   { return 'Production' }
+        }
+    }
+
+    throw "Cannot parse promotion tier from feed name '$FeedName'. Expected a feed ending in -experimental, -development, -integration, -qa, -stable, or -production."
+}
+
 function Promote-ProGetPackage {
     [CmdletBinding(SupportsShouldProcess = $true)]
     [OutputType([PSCustomObject])]
@@ -109,7 +140,11 @@ function Promote-ProGetPackage {
 
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [string]$Reason
+        [string]$Reason,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string]$CeilingTier
     )
 
     begin {
@@ -119,6 +154,21 @@ function Promote-ProGetPackage {
     }
 
     process {
+        if ($PSBoundParameters.ContainsKey('CeilingTier')) {
+            if (-not (Get-Command -Name 'Test-PromotionWithinCeiling' -CommandType Function -ErrorAction SilentlyContinue)) {
+                $ceilingHelperPath = Join-Path $PSScriptRoot 'Test-PromotionWithinCeiling.ps1'
+                if (Test-Path -LiteralPath $ceilingHelperPath -PathType Leaf) {
+                    . $ceilingHelperPath
+                } else {
+                    throw "Required helper Test-PromotionWithinCeiling was not found at '$ceilingHelperPath'."
+                }
+            }
+
+            $destinationTier = Resolve-PromotionTierFromFeedName -FeedName $ToFeed
+            Test-PromotionWithinCeiling -CurrentTier $destinationTier -CeilingTier $CeilingTier -ErrorAction Stop | Out-Null
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Promotion ceiling accepted: destination tier '$destinationTier' is within ceiling '$CeilingTier'"
+        }
+
         # WhatIf short-circuit BEFORE invoking the inner cmdlet, per V3 S2.1 rule 2.
         $target = "$Name $Version"
         $action = "Promote from '$FromFeed' to '$ToFeed'"
@@ -131,6 +181,7 @@ function Promote-ProGetPackage {
                 Version         = $Version
                 FromFeed        = $FromFeed
                 ToFeed          = $ToFeed
+                CeilingTier     = $CeilingTier
                 ResponseSummary = "WhatIf: would promote $target from '$FromFeed' to '$ToFeed'"
                 InnerResult     = $null
             }
@@ -201,6 +252,7 @@ function Promote-ProGetPackage {
             Version         = $Version
             FromFeed        = $FromFeed
             ToFeed          = $ToFeed
+            CeilingTier     = $CeilingTier
             ResponseSummary = $summary
             InnerResult     = $innerResult
         }

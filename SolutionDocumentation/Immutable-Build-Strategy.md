@@ -107,6 +107,28 @@ For any release unit, the BuildMaster pipeline does this:
 12. **Record promotion, deployment, and provenance** back into BuildMaster
     release metadata for auditability.
 
+### 3.1 `version.json` is the promotion ceiling
+
+The pipeline carries two tier-valued facts:
+
+| Concept | Source | Used for |
+| --- | --- | --- |
+| `CurrentTier` | BuildMaster stage context (`$Tier`, `-Stage`, or the stage environment variable) | Which stage is executing, which gate to run, and which feed transition is being attempted |
+| `CeilingTier` | NBGV prerelease label in `version.json` | The highest tier this immutable artifact may reach in the current run |
+
+The prerelease label is therefore a **promotion ceiling**, not the current
+stage. A `Beta` package is built once in Experimental, may promote through
+Development and Integration, and then stops before QA. See
+[VersionJsonAsCeiling.md](VersionJsonAsCeiling.md) for the focused rule set.
+
+| `version.json` prerelease label | `CeilingTier` |
+| --- | --- |
+| `Sprint.N` or feature labels such as `PaymentRefactor.N` | Experimental |
+| `Alpha` | Development |
+| `Beta` | Integration |
+| `QA` | QA |
+| none | Production |
+
 ---
 
 ## 4. ProGet feed-per-tier per package family
@@ -192,9 +214,9 @@ the Experimental stage only**. The resulting version string is captured
 into a BuildMaster build variable (named `$ResolvedPackageVersion` in the
 canonical OtterScript) and **read, not recomputed**, by every later
 stage. NBGV is not invoked above Experimental. The label declares the
-**intended** tier:
+**ceiling** tier:
 
-| Label         | Tier         | Where the artifact starts            |
+| Label         | Ceiling tier | Where the artifact starts            |
 | ------------- | ------------ | ------------------------------------ |
 | `Sprint`      | Experimental | First push lands in `*-experimental` |
 | `Alpha`       | Development  | Promoted from Experimental           |
@@ -202,9 +224,11 @@ stage. NBGV is not invoked above Experimental. The label declares the
 | `QA`          | QA           | Promoted from Integration            |
 | _(none)_      | Production   | Promoted from QA                     |
 
-The label is metadata on the artifact; the actual tier is the feed it
-currently lives in. Both must agree before a deployment runs (the deployment
-script asserts label↔feed consistency).
+The label is metadata on the artifact; the current tier is the feed and
+BuildMaster stage it currently lives in. Promotion guards compare
+`CurrentTier` to `CeilingTier` before moving the artifact. The deprecated
+`Get-BuildContext.Tier` property aliases `CeilingTier`; new callers should use
+the explicit property names.
 
 A consequence: the **same artifact** lives in the Experimental, Development,
 Integration, QA, and Production feeds simultaneously while it is being

@@ -14,8 +14,9 @@ and `_Planning/Explainers/0109-nbgv-version-label-promotion.md`.
 > not bump `{height}`, does not re-evaluate `version.json`, and does not
 > re-stamp any `Assembly*Version` attribute. The same `.nupkg` (with the
 > same SemVer string) lives in all five feeds simultaneously while it is
-> being promoted upward. The prerelease label declares the **intended**
-> tier; the actual tier is which feed the artifact currently lives in.
+> being promoted upward. The prerelease label declares the **ceiling**
+> tier; the current tier is which feed and BuildMaster stage the artifact
+> currently lives in.
 > See [Immutable-Build-Strategy.md §6](Immutable-Build-Strategy.md#6-versioning-no-special-case-for-promotion).
 
 **Not in this doc:**
@@ -118,12 +119,11 @@ The package version on the filename is the `AssemblyInformationalVersion` minus 
 
 ## 3. The Five-Tier Promotion Model
 
-Packages progress through five tiers. Each tier has its own ProGet feed, its own
-NuGet prerelease label, and its own branch discipline. The label is what NBGV
-writes into `AssemblyInformationalVersion` for packages built on that tier's
-branch.
+Packages progress through five tiers. Each tier has its own ProGet feed and
+gate discipline. The label NBGV writes into `AssemblyInformationalVersion` is
+the promotion ceiling for one immutable pipeline run, not the current stage.
 
-| Tier         | ProGet feed                    | `version.json` label | Example NuGet version | Git branch               |
+| Ceiling tier | ProGet feed reached at or below ceiling | `version.json` label | Example NuGet version | Git branch               |
 | ------------ | ------------------------------ | -------------------- | --------------------- | ------------------------ |
 | Experimental | `nuget-Sprint{N}-experimental` | `Sprint`             | `0.1.0-Sprint.3`      | `{issue}-sprint-{N}-*`   |
 | Development  | `nuget-Sprint{N}-development`  | `Alpha`              | `0.1.0-Alpha.1`       | `integration`            |
@@ -136,16 +136,17 @@ branch.
 - A package with no prerelease label (`0.1.0` exactly) is a Production / Stable
   release. NuGet treats any `-*` suffix as prerelease.
 - The `Sprint` label lives on the developer's sprint worktree branch. Packages
-  pushed from there land only in that sprint's experimental feed — they cannot
-  leak into integration, qa, or stable because the feed names diverge.
+  pushed from there land only in that sprint's experimental feed and are skipped
+  by higher stages because their `CeilingTier` is Experimental.
 
 ### 3.1 Why `Sprint` before `Alpha`?
 
 `Sprint` is a newer addition specific to this ecosystem's branch topology. A
 developer working inside a sprint worktree (`-wt-{issueNumber}-sprint-{N}-*`)
 produces `-Sprint.{height}` packages that coexist per-sprint without colliding.
-When the work is ready to merge to `integration`, the label flips to `Alpha`,
-height resets, and the package re-publishes into the development feed.
+When the work is ready to raise the ceiling, the label flips to `Alpha`,
+height resets, and the next package still publishes first to Experimental.
+That immutable package may then promote to Development and stops there.
 
 This avoids the older problem where every developer's alpha-labeled prereleases
 on their own branches shared a single version-space and clobbered each other in
@@ -234,12 +235,30 @@ changed `version.json` itself or reaches the root. In practice:
 ## 5. Promotion mechanics under immutable build
 
 Under immutable build, the version-label embedded in the `.nupkg` declares
-the **intended tier** the artifact is heading toward. The actual tier is
-which feed the artifact currently lives in. Movement between feeds is by
+the **ceiling tier** the artifact may reach during this run. The current tier
+is which feed and BuildMaster stage the artifact currently lives in. Movement
+between feeds is by
 `Promote-ProGetPackage` (a ProGet API call), **not** by editing
 `version.json` and rebuilding. The latter produces a _new_ artifact with a
 new version number; promotion leaves the bytes (and the version number)
 unchanged.
+
+### 5.0 Ceiling semantics of the prerelease label
+
+| `version.json` label | `CeilingTier` | Stages allowed for the same artifact |
+| --- | --- | --- |
+| `Sprint` or feature label | Experimental | Experimental only |
+| `Alpha` | Development | Experimental, Development |
+| `Beta` | Integration | Experimental, Development, Integration |
+| `QA` | QA | Experimental, Development, Integration, QA |
+| none | Production | Experimental through Production |
+
+Example: changing a project to `"version": "0.1-Beta.{height}"` and
+committing it cuts a fresh Integration-ceiling candidate. The next run builds
+the `.nupkg` once in Experimental, promotes the same bytes to Development and
+Integration, then skips QA and Production. `Get-BuildContext.CeilingTier`
+contains `Integration`; `Get-BuildContext.CurrentTier` changes as each
+BuildMaster stage runs.
 
 ### 5.1 The two operations are different
 
@@ -272,10 +291,9 @@ Promote-ProGetPackage `
     -Reason   'DEV-PASS for build #4271'
 ```
 
-The same shape applies for every higher-tier transition — substitute the
-`-FromFeed` / `-ToFeed` names per the §3 table. The cmdlet is currently
-spec; see [BuildMaster-Pipeline-Topology.md §4](BuildMaster-Pipeline-Topology.md#4-powershell-automation-surface)
-for status.
+The same shape applies for every higher-tier transition. BuildMaster passes
+`-CeilingTier` so the cmdlet aborts before the ProGet API if the destination
+feed is above the ceiling.
 
 ### 5.3 Cutting a new candidate (formerly the "label promotion procedure")
 

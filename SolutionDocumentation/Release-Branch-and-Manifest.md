@@ -103,7 +103,9 @@ The Release Bundle pipeline (see
 either by ProGet webhook (a developer's local
 `Publish-UniversalPackageToProGet` push) or manually from the BuildMaster
 UI. Either way the build's first step is `Get-BuildContext -ReleaseTag
-v1.4.0`, which establishes that everything from here on is for that tag.
+v1.4.0 -ProjectPath <repo-root>`, which establishes that everything from here
+on is for that tag and captures `CeilingTier` from the repo-root
+`version.json`.
 
 ### 2.5 Promotion
 
@@ -379,7 +381,7 @@ git push origin v1.4.0
 Generate the manifest and build the bundle:
 
 ```powershell
-$ctx  = Get-BuildContext     -ReleaseTag v1.4.0 -Application AceCommander
+$ctx  = Get-BuildContext     -ReleaseTag v1.4.0 -Application AceCommander -ProjectPath .
 $mfst = New-ReleaseManifest  -Context $ctx
 $pkg  = New-ReleaseBundle    -Manifest $mfst -OutputPath ./_generated/release-bundle/
 Publish-UniversalPackageToProGet -Path $pkg.Path -Feed releasebundle-experimental

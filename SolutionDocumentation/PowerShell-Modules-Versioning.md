@@ -17,8 +17,8 @@ the PowerShell-specific translation step.
 > the Experimental build and stays the same as the module promotes through
 > the five PowerShellGet feeds. Promotion does not bump `{height}`, does
 > not re-evaluate `version.json`, and does not re-stamp the `.psd1`. The
-> prerelease label declares the **intended** tier; the actual tier is which
-> feed the module currently lives in. The "promotion procedure" in §7
+> prerelease label declares the **ceiling** tier; the current tier is which
+> feed and BuildMaster stage the module currently lives in. The "promotion procedure" in §7
 > remains the right tool for cutting a *new* candidate at the next tier
 > (Sprint→Alpha) — but moving an existing `.nupkg` between feeds is now a
 > `Promote-ProGetPackage` call, not a label edit + rebuild. See
@@ -117,14 +117,14 @@ compliant gallery).
 
 ---
 
-## 5. Tier-to-label mapping
+## 5. Ceiling-tier-to-label mapping
 
 The same five labels used for C# packages apply unchanged to PowerShell
 modules. See
 [CSharp-Packages-Versioning.md](CSharp-Packages-Versioning.md) §3 for the
 authoritative table; reproduced here for convenience:
 
-| Tier         | Label name | NBGV `version.json` `prerelease` | Generated `Prerelease` |
+| Ceiling tier | Label name | NBGV `version.json` `prerelease` | Generated `Prerelease` |
 | ------------ | ---------- | -------------------------------- | ---------------------- |
 | Experimental | Sprint     | `Sprint`                         | `SprintNNN`            |
 | Development  | Alpha      | `Alpha`                          | `AlphaNNN`             |
@@ -132,12 +132,12 @@ authoritative table; reproduced here for convenience:
 | QA           | QA         | `QA`                             | `QANNN`                |
 | Production   | Production | *(empty — no prerelease)*        | *(empty)*              |
 
-The tier label is **not** stored anywhere PowerShell-specific. It is read
-from the module's `version.json` (the same NBGV file used by the C# build).
-Editing `<ModuleRoot>/version.json` and committing the change cuts a **new
-candidate** at the next tier (it produces a new artifact with a new version
-number). Moving an **existing** `.nupkg` between PowerShellGet feeds is a
-separate operation — `Promote-ProGetPackage` — and is documented in §7.
+The tier label is **not** stored anywhere PowerShell-specific. It is read from
+the module's `version.json` (the same NBGV file used by the C# build). Editing
+`<ModuleRoot>/version.json` and committing the change cuts a **new candidate**
+with a new ceiling (it produces a new artifact with a new version number).
+Moving an **existing** `.nupkg` between PowerShellGet feeds is a separate
+operation: `Promote-ProGetPackage`. That operation is documented in §7.
 
 ---
 
@@ -169,12 +169,28 @@ Notes:
 ## 7. Promotion mechanics for PowerShell modules
 
 Under immutable build, the version-label embedded in a published module
-`.nupkg` declares the **intended tier** the module is heading toward. The
-**actual** tier is which PowerShellGet feed the `.nupkg` currently lives in.
+`.nupkg` declares the **ceiling tier** the module may reach during this run.
+The **current** tier is which PowerShellGet feed and BuildMaster stage the
+`.nupkg` currently lives in.
 Movement between feeds is a `Promote-ProGetPackage` call — a ProGet API
 operation that copies the existing bytes (or moves a feed-membership pointer)
 from one feed to another. The `.psd1` is not re-stamped, NBGV is not
 re-invoked, and `version.json` is not re-edited during a promotion.
+
+### 7.0 Ceiling semantics of the prerelease label
+
+| `version.json` label | `CeilingTier` | Stages allowed for the same module package |
+| --- | --- | --- |
+| `Sprint` or feature label | Experimental | Experimental only |
+| `Alpha` | Development | Experimental, Development |
+| `Beta` | Integration | Experimental, Development, Integration |
+| `QA` | QA | Experimental, Development, Integration, QA |
+| none | Production | Experimental through Production |
+
+Example: changing a module to `"version": "0.1-Beta.{height}"` and committing
+it cuts a fresh Integration-ceiling candidate. The next run builds and
+publishes the `.nupkg` once in Experimental, promotes the same bytes to
+Development and Integration, and then skips QA and Production.
 
 This section is structured around the two distinct operations that earlier
 versions of this doc conflated.
@@ -214,9 +230,8 @@ build strategy. Promotion is not a re-pack, not a re-publish, and not a
 re-evaluation of `version.json`. See
 [Immutable-Build-Strategy.md §5](Immutable-Build-Strategy.md#5-what-promotion-is-and-is-not).
 
-`Promote-ProGetPackage` is currently spec — see
-[BuildMaster-Pipeline-Topology.md §4](BuildMaster-Pipeline-Topology.md#4-powershell-automation-surface)
-for status.
+BuildMaster passes `-CeilingTier` to `Promote-ProGetPackage`, so attempting to
+promote beyond the label-derived ceiling fails before any ProGet API call.
 
 ### 7.3 Cutting a new candidate (formerly the "label promotion procedure")
 

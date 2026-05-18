@@ -21,9 +21,17 @@
 #   $MetaPackageName          Roll-up NuGet package id, e.g. ATAP.Utilities
 #   $SolutionPath             Path to the solution file (e.g. ATAP.Utilities.sln for
 #                             ATAP.Utilities-CSharp, AceCommander.sln for AceCommander)
+#   $ProjectPath              Repo-root-relative .csproj path used for
+#                             project-adjacent version.json / NBGV resolution
+#   $Tier                     Current BuildMaster tier/stage (CurrentTier)
+#   $CeilingTier              Runtime variable computed from version.json in
+#                             the preamble
 #
 # Only Experimental builds and publishes. Later stages move the same package
-# version through the feed chain and run tests against the promoted artifact.
+# version through the feed chain up to $CeilingTier and run tests against the
+# promoted artifact. version.json is a promotion ceiling, not the current stage.
+# See SolutionDocumentation/Immutable-Build-Strategy.md §3 and
+# SolutionDocumentation/VersionJsonAsCeiling.md.
 ##########################################################################
 
 # The source is the BuildMaster-provided developer worktree. Do not replace it
@@ -37,30 +45,38 @@ set $IntegrationFeedName  = nuget-integration;
 set $QaFeedName           = nuget-qa;
 set $ProductionFeedName   = nuget-stable;
 set $PackageName          = $MetaPackageName;
+set $BuildContextDir = $PathCombine($SourcePath, _generated\buildmaster);
+set $CurrentTierTempFile = $PathCombine($BuildContextDir, _current_tier.tmp);
+set $CeilingTierTempFile = $PathCombine($BuildContextDir, _ceiling_tier.tmp);
+set $ResolvedPackageVersionTempFile = $PathCombine($BuildContextDir, _resolved_version.tmp);
+set $PrereleaseLabelTempFile = $PathCombine($BuildContextDir, _prerelease_label.tmp);
+set $AllowExperimentalFile = $PathCombine($BuildContextDir, _allow_experimental.tmp);
+set $AllowDevelopmentFile = $PathCombine($BuildContextDir, _allow_development.tmp);
+set $AllowIntegrationFile = $PathCombine($BuildContextDir, _allow_integration.tmp);
+set $AllowQAFile = $PathCombine($BuildContextDir, _allow_qa.tmp);
+set $AllowProductionFile = $PathCombine($BuildContextDir, _allow_production.tmp);
 
 Exec
 (
     FileName: pwsh,
-    Arguments: `-NoProfile -Command "Import-Module '$BuildToolingModulePath' -Force; New-Item -ItemType Directory -Path '_generated\buildmaster' -Force | Out-Null; $$context = Get-BuildContext -Application '$ApplicationName' -Branch '$Branch'; $$context.Tier | Set-Content -Path '_generated\buildmaster\_tier.tmp' -NoNewline; $$context.ResolvedPackageVersion | Set-Content -Path '_generated\buildmaster\_resolved_version.tmp' -NoNewline; $$context.PrereleaseLabel | Set-Content -Path '_generated\buildmaster\_prerelease_label.tmp' -NoNewline"`,
+    Arguments: `-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$BuildToolingModulePath' -Force; New-Item -ItemType Directory -Path '$BuildContextDir' -Force | Out-Null; $$context = Get-BuildContext -Application '$ApplicationName' -ProjectPath '$ProjectPath' -Branch '$Branch' -Stage '$Tier'; $$context.CurrentTier | Set-Content -LiteralPath '$CurrentTierTempFile' -Encoding utf8 -NoNewline; $$context.CeilingTier | Set-Content -LiteralPath '$CeilingTierTempFile' -Encoding utf8 -NoNewline; $$context.ResolvedPackageVersion | Set-Content -LiteralPath '$ResolvedPackageVersionTempFile' -Encoding utf8 -NoNewline; $$context.PrereleaseLabel | Set-Content -LiteralPath '$PrereleaseLabelTempFile' -Encoding utf8 -NoNewline; (Test-PromotionWithinCeiling -CurrentTier 'Experimental' -CeilingTier $$context.CeilingTier -AsBoolean).ToString().ToLowerInvariant() | Set-Content -LiteralPath '$AllowExperimentalFile' -Encoding utf8 -NoNewline; (Test-PromotionWithinCeiling -CurrentTier 'Development' -CeilingTier $$context.CeilingTier -AsBoolean).ToString().ToLowerInvariant() | Set-Content -LiteralPath '$AllowDevelopmentFile' -Encoding utf8 -NoNewline; (Test-PromotionWithinCeiling -CurrentTier 'Integration' -CeilingTier $$context.CeilingTier -AsBoolean).ToString().ToLowerInvariant() | Set-Content -LiteralPath '$AllowIntegrationFile' -Encoding utf8 -NoNewline; (Test-PromotionWithinCeiling -CurrentTier 'QA' -CeilingTier $$context.CeilingTier -AsBoolean).ToString().ToLowerInvariant() | Set-Content -LiteralPath '$AllowQAFile' -Encoding utf8 -NoNewline; (Test-PromotionWithinCeiling -CurrentTier 'Production' -CeilingTier $$context.CeilingTier -AsBoolean).ToString().ToLowerInvariant() | Set-Content -LiteralPath '$AllowProductionFile' -Encoding utf8 -NoNewline"`,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );
 
-set $TierTempFile = $PathCombine($SourcePath, _generated\buildmaster\_tier.tmp);
-set $ResolvedPackageVersionTempFile = $PathCombine($SourcePath, _generated\buildmaster\_resolved_version.tmp);
-set $PrereleaseLabelTempFile = $PathCombine($SourcePath, _generated\buildmaster\_prerelease_label.tmp);
-
-set $Tier = $Trim($FileContents($TierTempFile));
+set $CurrentTier = $Trim($FileContents($CurrentTierTempFile));
+set $CeilingTier = $Trim($FileContents($CeilingTierTempFile));
 set $ResolvedPackageVersion = $Trim($FileContents($ResolvedPackageVersionTempFile));
 set $PrereleaseLabel = $Trim($FileContents($PrereleaseLabelTempFile));
+set $AllowExperimental = $Trim($FileContents($AllowExperimentalFile));
+set $AllowDevelopment = $Trim($FileContents($AllowDevelopmentFile));
+set $AllowIntegration = $Trim($FileContents($AllowIntegrationFile));
+set $AllowQA = $Trim($FileContents($AllowQAFile));
+set $AllowProduction = $Trim($FileContents($AllowProductionFile));
 
 set $FeedName = $ExperimentalFeedName;
-if $Tier == Development { set $FeedName = $DevelopmentFeedName;  }
-if $Tier == Integration { set $FeedName = $IntegrationFeedName;  }
-if $Tier == QA          { set $FeedName = $QaFeedName;           }
-if $Tier == Production  { set $FeedName = $ProductionFeedName;   }
 
-Log-Debug `Resolved Tier=$Tier Feed=$FeedName Package=$PackageName Version=$ResolvedPackageVersion PrereleaseLabel=$PrereleaseLabel`;
+Log-Debug `Resolved CurrentTier=$CurrentTier CeilingTier=$CeilingTier Feed=$FeedName Package=$PackageName Version=$ResolvedPackageVersion PrereleaseLabel=$PrereleaseLabel`;
 
 # -------------------------------------------------------------------------
 # Stage Experimental - build, pack, publish to the first feed
@@ -69,6 +85,8 @@ stage Experimental
 {
     if $Tier == Experimental
     {
+        if $AllowExperimental == true
+        {
         # ContinuousIntegrationBuild=true enforces binary-determinism
         # (deterministic source paths, embedded PDB metadata, no machine-
         # specific build outputs) as required by Immutable-Build-Strategy.md
@@ -94,7 +112,7 @@ stage Experimental
         Exec
         (
             FileName: pwsh,
-            Arguments: `-NoProfile -Command "$$env:PROGET_ADMIN_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModulePath' -Force; Get-ChildItem -Path '_generated\nuget\$Tier' -Filter '*.nupkg' -File | ForEach-Object { Publish-NuGetPackageToProGet -NupkgPath $$_.FullName -Feed '$FeedName' | Out-Null }"`,
+            Arguments: `-NoProfile -Command "$$env:PROGET_ADMIN_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModulePath' -Force; Get-ChildItem -Path '_generated\nuget\$Tier' -Filter '*.nupkg' -File | ForEach-Object { Publish-NuGetPackageToProGet -NupkgPath $$_.FullName -Feed '$FeedName' -CeilingTier '$CeilingTier' | Out-Null }"`,
             WorkingDirectory: $SourcePath,
             SuccessExitCode: 0
         );
@@ -104,6 +122,7 @@ stage Experimental
             From: _generated\nuget\$Tier,
             Include: @(*.nupkg, *.snupkg)
         );
+        }
     }
 }
 
@@ -114,10 +133,12 @@ stage Development
 {
     if $Tier == Development
     {
+        if $AllowDevelopment == true
+        {
         Exec
         (
             FileName: pwsh,
-            Arguments: `-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$ExperimentalFeedName' -ToFeed '$DevelopmentFeedName' -Reason 'Development gate for $ApplicationName $ResolvedPackageVersion on $Branch'"`,
+            Arguments: `-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$ExperimentalFeedName' -ToFeed '$DevelopmentFeedName' -Reason 'Development gate for $ApplicationName $ResolvedPackageVersion on $Branch' -CeilingTier '$CeilingTier'"`,
             WorkingDirectory: $SourcePath,
             SuccessExitCode: 0
         );
@@ -135,6 +156,7 @@ stage Development
             From: _generated\testresults\$Tier,
             Include: @(*.trx)
         );
+        }
     }
 }
 
@@ -145,10 +167,12 @@ stage Integration
 {
     if $Tier == Integration
     {
+        if $AllowIntegration == true
+        {
         Exec
         (
             FileName: pwsh,
-            Arguments: `-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$DevelopmentFeedName' -ToFeed '$IntegrationFeedName' -Reason 'Integration gate for $ApplicationName $ResolvedPackageVersion on $Branch'"`,
+            Arguments: `-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$DevelopmentFeedName' -ToFeed '$IntegrationFeedName' -Reason 'Integration gate for $ApplicationName $ResolvedPackageVersion on $Branch' -CeilingTier '$CeilingTier'"`,
             WorkingDirectory: $SourcePath,
             SuccessExitCode: 0
         );
@@ -166,6 +190,7 @@ stage Integration
             From: _generated\testresults\$Tier,
             Include: @(*.trx)
         );
+        }
     }
 }
 
@@ -176,10 +201,12 @@ stage QA
 {
     if $Tier == QA
     {
+        if $AllowQA == true
+        {
         Exec
         (
             FileName: pwsh,
-            Arguments: `-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$IntegrationFeedName' -ToFeed '$QaFeedName' -Reason 'QA gate for $ApplicationName $ResolvedPackageVersion on $Branch'"`,
+            Arguments: `-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$IntegrationFeedName' -ToFeed '$QaFeedName' -Reason 'QA gate for $ApplicationName $ResolvedPackageVersion on $Branch' -CeilingTier '$CeilingTier'"`,
             WorkingDirectory: $SourcePath,
             SuccessExitCode: 0
         );
@@ -197,6 +224,7 @@ stage QA
             From: _generated\testresults\$Tier,
             Include: @(*.trx, coverage.cobertura.xml)
         );
+        }
     }
 }
 
@@ -207,10 +235,12 @@ stage Production
 {
     if $Tier == Production
     {
+        if $AllowProduction == true
+        {
         Exec
         (
             FileName: pwsh,
-            Arguments: `-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$QaFeedName' -ToFeed '$ProductionFeedName' -Reason 'Production gate for $ApplicationName $ResolvedPackageVersion on $Branch'"`,
+            Arguments: `-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$QaFeedName' -ToFeed '$ProductionFeedName' -Reason 'Production gate for $ApplicationName $ResolvedPackageVersion on $Branch' -CeilingTier '$CeilingTier'"`,
             WorkingDirectory: $SourcePath,
             SuccessExitCode: 0
         );
@@ -228,5 +258,6 @@ stage Production
             From: _generated\testresults\$Tier,
             Include: @(*.trx)
         );
+        }
     }
 }

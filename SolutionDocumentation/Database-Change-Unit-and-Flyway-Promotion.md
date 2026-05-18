@@ -435,7 +435,7 @@ Author a new DB change unit for app version `1.4.0`:
 # 2. Author db/AceCommander/releases/1.4.0.yml listing them
 # 3. Build the release bundle (which copies them into the bundle and
 #    generates db-manifest.json with checksums)
-$ctx  = Get-BuildContext -ReleaseTag 'v1.4.0' -Application AceCommander
+$ctx  = Get-BuildContext -ReleaseTag 'v1.4.0' -Application AceCommander -ProjectPath .
 $mfst = New-ReleaseManifest -Context $ctx
 New-ReleaseBundle -Manifest $mfst -OutputPath ./_generated/release-bundle/
 ```

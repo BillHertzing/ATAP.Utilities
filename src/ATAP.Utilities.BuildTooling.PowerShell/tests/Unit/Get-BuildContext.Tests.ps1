@@ -28,6 +28,14 @@ BeforeAll {
 
   $script:fakeRepoRoot = (Join-Path ([System.IO.Path]::GetTempPath()) ('GetBuildContextTest_' + [Guid]::NewGuid().ToString('N')))
   New-Item -ItemType Directory -Path $script:fakeRepoRoot -Force | Out-Null
+
+  # Get-BuildContext now requires a -ProjectPath that contains a project-adjacent
+  # version.json. Stand up a fake project under the fake repo root so the BEGIN-
+  # block validation succeeds without mocking Resolve-Path / Test-Path.
+  $script:fakeProjectPath = Join-Path $script:fakeRepoRoot 'src/FakeProject'
+  New-Item -ItemType Directory -Path $script:fakeProjectPath -Force | Out-Null
+  Set-Content -LiteralPath (Join-Path $script:fakeProjectPath 'version.json') `
+    -Value '{"version":"0.1-Sprint.{height}"}' -NoNewline
 }
 
 AfterAll {
@@ -62,19 +70,38 @@ Describe 'Get-BuildContext' -Tag 'Unit' {
 
   Context 'Parameter set enforcement (-ReleaseTag vs -Branch mutex)' {
     It 'Throws when neither -ReleaseTag nor -Branch is supplied' {
-      { Get-BuildContext -Application 'ATAP.Utilities' } | Should -Throw
+      { Get-BuildContext -Application 'ATAP.Utilities' -ProjectPath $script:fakeProjectPath } | Should -Throw
     }
 
     It 'Throws when both -ReleaseTag and -Branch are supplied' {
-      { Get-BuildContext -Application 'ATAP.Utilities' -ReleaseTag 'v1.0.0' -Branch 'main' } | Should -Throw
+      { Get-BuildContext -Application 'ATAP.Utilities' -ProjectPath $script:fakeProjectPath -ReleaseTag 'v1.0.0' -Branch 'main' } | Should -Throw
     }
 
     It 'Accepts -Branch alone' {
-      { Get-BuildContext -Application 'ATAP.Utilities' -Branch 'main' } | Should -Not -Throw
+      { Get-BuildContext -Application 'ATAP.Utilities' -ProjectPath $script:fakeProjectPath -Branch 'main' } | Should -Not -Throw
     }
 
     It 'Accepts -ReleaseTag alone (resolves Branch from HEAD)' {
-      { Get-BuildContext -Application 'ATAP.Utilities' -ReleaseTag 'v1.0.0' } | Should -Not -Throw
+      { Get-BuildContext -Application 'ATAP.Utilities' -ProjectPath $script:fakeProjectPath -ReleaseTag 'v1.0.0' } | Should -Not -Throw
+    }
+  }
+
+  Context '-ProjectPath validation' {
+    It 'Throws when -ProjectPath does not exist' {
+      $missing = Join-Path $script:fakeRepoRoot 'src/DoesNotExist'
+      { Get-BuildContext -Application 'ATAP.Utilities' -ProjectPath $missing -Branch 'main' } |
+        Should -Throw -ExpectedMessage "*could not be resolved*"
+    }
+
+    It 'Throws when -ProjectPath lacks a project-adjacent version.json' {
+      $noVersion = Join-Path $script:fakeRepoRoot 'src/NoVersionJson'
+      New-Item -ItemType Directory -Path $noVersion -Force | Out-Null
+      try {
+        { Get-BuildContext -Application 'ATAP.Utilities' -ProjectPath $noVersion -Branch 'main' } |
+          Should -Throw -ExpectedMessage "*does not contain a project-adjacent 'version.json'*"
+      } finally {
+        Remove-Item -LiteralPath $noVersion -Recurse -Force -ErrorAction SilentlyContinue
+      }
     }
   }
 
@@ -90,7 +117,7 @@ Describe 'Get-BuildContext' -Tag 'Unit' {
 
     It "Maps branch '<Branch>' to BranchType '<Expected>'" -TestCases $branchCases {
       param($Branch, $Expected)
-      $ctx = Get-BuildContext -Application 'ATAP.Utilities' -Branch $Branch
+      $ctx = Get-BuildContext -Application 'ATAP.Utilities' -ProjectPath $script:fakeProjectPath -Branch $Branch
       $ctx.BranchType | Should -Be $Expected
     }
   }
@@ -108,7 +135,7 @@ Describe 'Get-BuildContext' -Tag 'Unit' {
     It "Maps version '<Version>' to Tier '<ExpectedTier>' (label '<ExpectedLabel>')" -TestCases $tierCases {
       param($Version, $ExpectedTier, $ExpectedLabel)
       Mock nbgv { $global:LASTEXITCODE = 0; return $Version }
-      $ctx = Get-BuildContext -Application 'ATAP.Utilities' -Branch 'main'
+      $ctx = Get-BuildContext -Application 'ATAP.Utilities' -ProjectPath $script:fakeProjectPath -Branch 'main'
       $ctx.Tier | Should -Be $ExpectedTier
       $ctx.PrereleaseLabel | Should -Be $ExpectedLabel
     }
@@ -116,12 +143,12 @@ Describe 'Get-BuildContext' -Tag 'Unit' {
 
   Context 'FeatureSlug derivation' {
     It 'Sets FeatureSlug for feature branches' {
-      $ctx = Get-BuildContext -Application 'ATAP.Utilities' -Branch 'feature/payment-refactor'
+      $ctx = Get-BuildContext -Application 'ATAP.Utilities' -ProjectPath $script:fakeProjectPath -Branch 'feature/payment-refactor'
       $ctx.FeatureSlug | Should -Be 'PaymentRefactor'
     }
 
     It 'Sets FeatureSlug to $null for non-feature branches' {
-      $ctx = Get-BuildContext -Application 'ATAP.Utilities' -Branch 'main'
+      $ctx = Get-BuildContext -Application 'ATAP.Utilities' -ProjectPath $script:fakeProjectPath -Branch 'main'
       $ctx.FeatureSlug | Should -BeNullOrEmpty
     }
   }
@@ -130,7 +157,7 @@ Describe 'Get-BuildContext' -Tag 'Unit' {
     It 'Reports DbAssetsIncluded=$false when the YAML is absent' {
       # No Mock — the real Test-Path returns $false because the path under the
       # fake repo root does not exist.
-      $ctx = Get-BuildContext -Application 'ATAP.Utilities' -Branch 'main'
+      $ctx = Get-BuildContext -Application 'ATAP.Utilities' -ProjectPath $script:fakeProjectPath -Branch 'main'
       $ctx.DbAssetsIncluded | Should -BeFalse
     }
 
@@ -138,7 +165,7 @@ Describe 'Get-BuildContext' -Tag 'Unit' {
       # Join-Path on Windows converts the child-path slashes to backslashes, so
       # match either separator with a regex rather than a forward-slash glob.
       Mock Test-Path -ParameterFilter { $LiteralPath -and $LiteralPath -match '[\\/]db[\\/].+[\\/]releases[\\/].+\.yml$' } -MockWith { $true }
-      $ctx = Get-BuildContext -Application 'ATAP.Utilities' -Branch 'main'
+      $ctx = Get-BuildContext -Application 'ATAP.Utilities' -ProjectPath $script:fakeProjectPath -Branch 'main'
       $ctx.DbAssetsIncluded | Should -BeTrue
     }
   }
@@ -146,13 +173,13 @@ Describe 'Get-BuildContext' -Tag 'Unit' {
   Context 'MajorMinorPatch parsing' {
     It 'Extracts the X.Y.Z core from a labelled version' {
       Mock nbgv { $global:LASTEXITCODE = 0; return '2.3.4-Alpha.9' }
-      $ctx = Get-BuildContext -Application 'ATAP.Utilities' -Branch 'main'
+      $ctx = Get-BuildContext -Application 'ATAP.Utilities' -ProjectPath $script:fakeProjectPath -Branch 'main'
       $ctx.MajorMinorPatch | Should -Be '2.3.4'
     }
 
     It 'Extracts the X.Y.Z core from a bare production version' {
       Mock nbgv { $global:LASTEXITCODE = 0; return '5.0.0' }
-      $ctx = Get-BuildContext -Application 'ATAP.Utilities' -Branch 'main'
+      $ctx = Get-BuildContext -Application 'ATAP.Utilities' -ProjectPath $script:fakeProjectPath -Branch 'main'
       $ctx.MajorMinorPatch | Should -Be '5.0.0'
     }
   }
@@ -167,7 +194,7 @@ Describe 'Get-BuildContext' -Tag 'Unit' {
           'rev-parse HEAD'            { return 'fedcba9876543210fedcba9876543210fedcba98' }
         }
       }
-      $ctx = Get-BuildContext -Application 'AceCommander' -ReleaseTag 'v1.4.0'
+      $ctx = Get-BuildContext -Application 'AceCommander' -ProjectPath $script:fakeProjectPath -ReleaseTag 'v1.4.0'
       $ctx.Branch | Should -Be 'release/1.4.0'
       $ctx.BranchType | Should -Be 'release'
       $ctx.SourceTag | Should -Be 'v1.4.0'
@@ -177,25 +204,26 @@ Describe 'Get-BuildContext' -Tag 'Unit' {
   Context 'nbgv missing-on-PATH guard' {
     It 'Throws with the documented install hint when nbgv is not available' {
       Mock Get-Command -ParameterFilter { $Name -eq 'nbgv' } -MockWith { $null }
-      { Get-BuildContext -Application 'ATAP.Utilities' -Branch 'main' } |
+      { Get-BuildContext -Application 'ATAP.Utilities' -ProjectPath $script:fakeProjectPath -Branch 'main' } |
         Should -Throw -ExpectedMessage '*dotnet tool install -g nbgv*'
     }
   }
 
   Context 'Required-field surface' {
     It 'Returns an object with every documented field' {
-      $ctx = Get-BuildContext -Application 'ATAP.Utilities' -Branch 'main'
+      $ctx = Get-BuildContext -Application 'ATAP.Utilities' -ProjectPath $script:fakeProjectPath -Branch 'main'
       foreach ($field in @(
-          'Application', 'Branch', 'BranchType', 'FeatureSlug', 'RepoRoot',
-          'SourceTag', 'SourceCommit', 'ResolvedPackageVersion',
-          'MajorMinorPatch', 'PrereleaseLabel', 'Tier', 'DbAssetsIncluded'
+          'Application', 'ProjectPath', 'Branch', 'BranchType', 'FeatureSlug',
+          'RepoRoot', 'SourceTag', 'SourceCommit', 'ResolvedPackageVersion',
+          'MajorMinorPatch', 'PrereleaseLabel', 'CurrentTier', 'CeilingTier',
+          'Tier', 'IsAtCeiling', 'DbAssetsIncluded'
         )) {
         $ctx.PSObject.Properties.Name | Should -Contain $field
       }
     }
 
     It 'Pass-through Application is preserved' {
-      $ctx = Get-BuildContext -Application 'MyApp.Custom' -Branch 'main'
+      $ctx = Get-BuildContext -Application 'MyApp.Custom' -ProjectPath $script:fakeProjectPath -Branch 'main'
       $ctx.Application | Should -Be 'MyApp.Custom'
     }
   }

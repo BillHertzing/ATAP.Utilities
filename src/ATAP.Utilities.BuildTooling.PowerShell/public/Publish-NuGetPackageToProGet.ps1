@@ -34,12 +34,18 @@
 .PARAMETER Feed
     The ProGet NuGet feed name to push to. Defaults to 'nuget-experimental'.
 
+.PARAMETER CeilingTier
+    Optional promotion ceiling recorded in the returned object for BuildMaster
+    evidence. Later stages enforce the ceiling with
+    Promote-ProGetPackage -CeilingTier.
+
 .OUTPUTS
     [PSCustomObject] with at least:
       - NupkgPath        : Absolute path to the .nupkg.
       - FeedName         : Feed name pushed to.
       - FeedUri          : Resolved feed URI.
       - Published        : $true when `dotnet nuget push` exited 0.
+      - CeilingTier      : Optional promotion ceiling supplied by caller.
       - ResponseSummary  : Short string summary of the push result.
 
 .EXAMPLE
@@ -105,7 +111,11 @@ function Publish-NuGetPackageToProGet {
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$Feed = 'nuget-experimental'
+        [string]$Feed = 'nuget-experimental',
+
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string]$CeilingTier
     )
 
     begin {
@@ -176,6 +186,7 @@ function Publish-NuGetPackageToProGet {
                 FeedName        = $feedName
                 FeedUri         = $feedUri
                 Published       = $false
+                CeilingTier     = $CeilingTier
                 ResponseSummary = "WhatIf: planned push of '$resolvedNupkg' to '$feedName' with --skip-duplicate"
             }
         }
@@ -226,6 +237,7 @@ function Publish-NuGetPackageToProGet {
             FeedName        = $feedName
             FeedUri         = $feedUri
             Published       = $published
+            CeilingTier     = $CeilingTier
             ResponseSummary = $summary
         }
     }

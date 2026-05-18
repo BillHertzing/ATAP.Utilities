@@ -34,6 +34,11 @@
     Absolute or relative path to the .nupkg file to publish. Must exist
     and have a .nupkg extension.
 
+.PARAMETER CeilingTier
+    Optional promotion ceiling recorded in the returned object for BuildMaster
+    evidence. The publish target remains Experimental; later stages enforce
+    the ceiling with Promote-ProGetPackage -CeilingTier.
+
 .OUTPUTS
     [PSCustomObject] per PowerShell-Modules-Pack-and-Publish.md S8:
       - NupkgPath        : Absolute path to the .nupkg.
@@ -42,6 +47,7 @@
       - FeedUri          : Resolved feed URI.
       - Published        : $true only if Publish-PSResource was invoked
                            and returned without throwing.
+      - CeilingTier      : Optional promotion ceiling supplied by caller.
       - ResponseSummary  : Short string summary of the publish result, the
                            idempotent no-op detection, or the WhatIf plan.
 
@@ -65,7 +71,11 @@ function Publish-PSModuleToProGet {
     param(
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [string]$NupkgPath
+        [string]$NupkgPath,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string]$CeilingTier
     )
 
     begin {
@@ -170,6 +180,7 @@ function Publish-PSModuleToProGet {
                 FeedName        = $feedName
                 FeedUri         = $feedUri
                 Published       = $false
+                CeilingTier     = $CeilingTier
                 ResponseSummary = "WhatIf: planned publish of '$resolvedNupkg' to '$feedName'"
             }
         }
@@ -207,6 +218,7 @@ function Publish-PSModuleToProGet {
             FeedName        = $feedName
             FeedUri         = $feedUri
             Published       = $published
+            CeilingTier     = $CeilingTier
             ResponseSummary = $summary
         }
     }

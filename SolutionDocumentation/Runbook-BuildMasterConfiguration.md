@@ -97,6 +97,7 @@ Source: `SolutionDocumentation/BuildMaster-ProGet-CSharp-Package-Pipeline.md`
 | `ProGetApiKey`    | Paste from approved secret source                   | Yes        | Retrieve from the approved `PROGET_ADMIN_API_KEY` secret source. Do not write the value here.                                      |
 | `Configuration`   | `Release`                                           | No         | MSBuild configuration.                                                                                                             |
 | `MetaPackageName` | `ATAP.Utilities`                                    | No         | Roll-up NuGet package ID used by the plan.                                                                                         |
+| `ProjectPath`     | project directory or `.csproj` path                 | No         | Passed to `Get-BuildContext -ProjectPath`; source of the project-adjacent `version.json` promotion ceiling.                        |
 
 Execution notes (final state, verified 2026-05-14):
 
@@ -118,6 +119,7 @@ Execution notes (final state, verified 2026-05-14):
   | `$SourcePath`      | `C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber`        |
 
 - Open design note (not blocking L1): `$ProjectPath` currently pins one `.csproj` at Application scope. The durable design moves this to a Build-scope variable supplied per build (mirrors the PS app's `$ModuleName` pattern). Defer to a later stream.
+- Ceiling note: `$Tier` is the BuildMaster stage context. `$CeilingTier` is preamble-set from `version.json`; do not configure it as an Application variable.
 
 ### 2.4 `ATAP.Utilities-PowerShell` Variables
 
@@ -165,6 +167,7 @@ Execution notes (final state, verified 2026-05-14):
   | `$SourcePath`      | `C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber` |
 
 - The PowerShell plan derives the module location at runtime via `$ModulePath = $PathCombine($SourcePath, src\$ModuleName)`, so no `$ProjectPath` variable is needed on this app.
+- The PowerShell plan computes `$CeilingTier` from `$ModulePath\version.json` in its preamble. `$Tier` remains the BuildMaster stage context.
 - Until Stream L2 lands, manual builds via the Placeholder release's **Create Build** button will fail because `$ModuleName` is unset. Wait for the ProGet poller before triggering a build.
 
 ### 2.5 `AceCommander-ReleaseBundle` Variables
@@ -179,7 +182,7 @@ Source: `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/ReleaseBundle-6Stage.
 | `ProductName`                            | `AceCommander`                                        | No         | Product name passed to `Get-BuildContext`.                                                               |
 | `ReleaseTag`                             | `<blank until release cut>`                           | No         | Use for release-tag builds, for example `v1.4.0`.                                                        |
 | `Branch`                                 | `<current release or sprint branch>`                  | No         | Branch fallback when `ReleaseTag` is blank.                                                              |
-| `SourcePath`                             | `C:\BuildMaster\work\AceCommander\$ReleaseNumber`     | No         | Confirm actual product worktree path during UI session.                                                  |
+| `SourcePath`                             | `C:\BuildMaster\work\AceCommander\$ReleaseNumber`     | No         | Confirm actual product worktree path during UI session; also passed as `Get-BuildContext -ProjectPath` for the repo-root `version.json`. |
 | `ProGetUrl`                              | `http://localhost:50000`                              | No         | Confirm host-specific ProGet URL.                                                                        |
 | `ProGetApiKey`                           | Paste from approved secret source                     | Yes        | Retrieve from the approved ProGet secret source. Do not write the value here.                            |
 | `ReleaseBundleExperimentalFeedName`      | `releasebundle-experimental`                          | No         | Universal Package feed.                                                                                  |

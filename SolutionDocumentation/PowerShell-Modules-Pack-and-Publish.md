@@ -53,9 +53,10 @@ promoted between feeds and so test evidence can be attached to a specific
 `Promote-ProGetPackage` (see §12) — never by re-running the pack/publish
 pair.
 
-`New-PSModuleNupkg` and `Publish-PSModuleToProGet` are spec — see
+`New-PSModuleNupkg` and `Publish-PSModuleToProGet` are implemented in
+`ATAP.Utilities.BuildTooling.PowerShell`; see
 [BuildMaster-Pipeline-Topology.md §4](BuildMaster-Pipeline-Topology.md#4-powershell-automation-surface)
-for status.
+for the current automation surface.
 
 ---
 
@@ -342,22 +343,20 @@ the promotion mechanism — `Promote-ProGetPackage` is.
 
 ## 14. Known drift and gaps (sprint-0006/0007)
 
-1. **`New-PSModuleNupkg` and `Publish-PSModuleToProGet` are spec.** Both
-   cmdlets are referenced by this doc and by the BuildMaster pipelines but
-   have not yet been implemented in `ATAP.Utilities.BuildTooling.PowerShell`.
-   Their stub status is tracked in
-   [BuildMaster-Pipeline-Topology.md §4](BuildMaster-Pipeline-Topology.md#4-powershell-automation-surface).
+1. **`New-PSModuleNupkg` and `Publish-PSModuleToProGet` implementation gap.**
+   **Resolved (sprint-0007):** both cmdlets are implemented in
+   `ATAP.Utilities.BuildTooling.PowerShell` and used by the BuildMaster
+   PowerShell-module plan.
    The legacy `Publish-PSModuleToProGetFeed -Tier <X>` cmdlet exists in the
    module today but is **deprecated** under the immutable-build strategy
    (it conflated pack and push and assumed publish-per-tier). Replace any
    call to `Publish-PSModuleToProGetFeed -Tier <X>` with the
    pack/push/promote sequence in §10.
 
-2. **No `Get-TierFromNBGVLabel` helper** — task T-12 is unmerged. Under
-   immutable build this matters less (only the Experimental publish needs
-   to know it is Experimental, and `Publish-PSModuleToProGet` hard-codes
-   that target), but it is still needed by `Promote-ProGetPackage` callers
-   that derive the source feed from the artifact's prerelease label.
+2. ~~**No `Get-TierFromNBGVLabel` helper** — task T-12 is unmerged.~~
+   **Resolved (sprint-0007):** the helper exists as a compatibility surface,
+   but new pipeline logic uses `Get-BuildContext.CeilingTier` and
+   `Test-PromotionWithinCeiling`.
 
 3. ~~**No `Get-ATAPIACConstant` integration** — task T-30.~~ **Resolved (sprint-0006
    §7.1-3):** the publish helper now looks up feed names and URIs via

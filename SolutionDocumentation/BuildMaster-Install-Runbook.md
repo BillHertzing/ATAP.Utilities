@@ -291,6 +291,7 @@ without clearing the flag, but cannot mark a newly created variable sensitive.
 | `Configuration` | `Release` | No | MSBuild configuration. |
 | `MetaPackageName` | `ATAP.Utilities` | No | Roll-up package ID. |
 | `SolutionPath` | `ATAP.Utilities.sln` | No | Required by `CSharpPackage-5Stage.otter`. |
+| `ProjectPath` | Project directory or `.csproj` path | No | Passed to `Get-BuildContext -ProjectPath` so NBGV reads the project-adjacent `version.json`. |
 | `ProGetApiKey` | From approved ProGet secret | Yes | Never paste into this document. |
 
 ### 8.3 `ATAP.Utilities-PowerShell`
@@ -311,7 +312,7 @@ Build-scope variables supplied when creating a build:
 | `$ModuleName` | `ATAP.Utilities.BuildTooling.PowerShell` | Module folder under `src\`. |
 | `$PackageName` | `ATAP.Utilities.BuildTooling.PowerShell` | Usually equals `ModuleName`. |
 | `$PackageVersion` | `0.1.0-Sprint.42` | Exact version detected in ProGet. |
-| `$Tier` | `Experimental` | Required by the current plan unless replaced by a BuildMaster stage variable. Validate before first PS build. |
+| `$Tier` | `Experimental` | Current BuildMaster stage context. The plan computes `$CeilingTier` from the module's `version.json`; do not configure `$CeilingTier` manually. |
 
 ### 8.4 `AceCommander-ReleaseBundle`
 
@@ -321,7 +322,7 @@ Build-scope variables supplied when creating a build:
 | `ProductName` | `AceCommander` | No | Passed to `Get-BuildContext`. |
 | `ReleaseTag` | Empty until release cut | No | Example: `v1.4.0`. |
 | `Branch` | Current release or sprint branch | No | Fallback when `ReleaseTag` is empty. |
-| `SourcePath` | `C:\BuildMaster\work\AceCommander\$ReleaseNumber` | No | Durable product work path. |
+| `SourcePath` | `C:\BuildMaster\work\AceCommander\$ReleaseNumber` | No | Durable product work path; also passed as `Get-BuildContext -ProjectPath` because the bundle uses the repo-root `version.json`. |
 | `ProGetUrl` | `http://localhost:50000` | No | Host-specific ProGet URL. |
 | `ProGetApiKey` | From approved ProGet secret | Yes | Never paste into this document. |
 | `ReleaseBundleExperimentalFeedName` | `releasebundle-experimental` | No | Universal Package feed. |

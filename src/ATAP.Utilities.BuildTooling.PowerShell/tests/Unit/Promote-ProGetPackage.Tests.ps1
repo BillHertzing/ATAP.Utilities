@@ -4,6 +4,8 @@
 
 BeforeAll {
     $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
+    . (Join-Path $publicDir 'Get-TierOrder.ps1')
+    . (Join-Path $publicDir 'Test-PromotionWithinCeiling.ps1')
     . (Join-Path $publicDir 'Promote-ProGetPackage.ps1')
 
     # Suppress PSFramework noise in tests when the module is not loaded.
@@ -120,6 +122,26 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit' {
                 $Name -eq 'pkg' -and $Reason -eq 'why'
             }
         }
+
+        It 'Allows promotion when the destination tier is within CeilingTier' {
+            $result = Promote-ProGetPackage -Name 'pkg' -Version '1.0.0' `
+                -FromFeed 'nuget-experimental' -ToFeed 'nuget-development' `
+                -Reason 'within ceiling' -CeilingTier 'Development'
+
+            $result.Succeeded   | Should -BeTrue
+            $result.CeilingTier | Should -Be 'Development'
+
+            Assert-MockCalled Move-ProGetPackageInterTier -Times 1 -Exactly -Scope It
+        }
+
+        It 'Aborts before the inner cmdlet when destination tier exceeds CeilingTier' {
+            { Promote-ProGetPackage -Name 'pkg' -Version '1.0.0' `
+                -FromFeed 'nuget-experimental' -ToFeed 'nuget-development' `
+                -Reason 'blocked' -CeilingTier 'Experimental' } |
+                Should -Throw -ExpectedMessage '*Promotion ceiling exceeded*'
+
+            Assert-MockCalled Move-ProGetPackageInterTier -Times 0 -Exactly -Scope It
+        }
     }
 
     Context 'Idempotent re-run' {
@@ -175,6 +197,7 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit' {
             $result.PSObject.Properties.Name | Should -Contain 'Version'
             $result.PSObject.Properties.Name | Should -Contain 'FromFeed'
             $result.PSObject.Properties.Name | Should -Contain 'ToFeed'
+            $result.PSObject.Properties.Name | Should -Contain 'CeilingTier'
             $result.PSObject.Properties.Name | Should -Contain 'InnerResult'
         }
     }

@@ -2,28 +2,27 @@
 <#
 .SYNOPSIS
   Translate an NBGV prerelease label (or a full prerelease segment) into the
-  corresponding 5-Tier tier number, tier name, and target ProGet feed.
+  corresponding promotion ceiling number, tier name, and target ProGet feed.
 .DESCRIPTION
   Accepts the bare label (`Alpha`), the combined label+height form
-  (`Alpha6`), or the dotted form (`Alpha.6`). An empty string or `$null`
-  is interpreted as a stable / T5 Production build.
+  (`Alpha6`), or the dotted form (`Alpha.6`). Feature labels and other
+  non-reserved prerelease labels are interpreted as an Experimental ceiling.
+  An empty string or `$null` is interpreted as a T5 Production build.
 
-  The mapping is authoritative per
-  `src/ATAP.Utilities.BuildTooling.PowerShell/Documentation/5tier Implementation plan.md`
-  sections 3.2 and 4.1:
+  This cmdlet is retained for existing callers. New pipeline code should use
+  `Get-BuildContext.CeilingTier` and `Test-PromotionWithinCeiling`.
 
     | Label  | Tier            | Feed                         |
     |--------|-----------------|------------------------------|
     | Sprint | T1 Experimental | powershellget-experimental   |
+    | other  | T1 Experimental | powershellget-experimental   |
     | Alpha  | T2 Development  | powershellget-development    |
     | Beta   | T3 Integration  | powershellget-integration    |
     | QA     | T4 QA           | powershellget-qa             |
-    | (none) | T5 Stable       | powershellget-stable         |
-
-  Any other value produces a clear terminating error.
+    | (none) | T5 Production   | powershellget-stable         |
 .PARAMETER PrereleaseLabel
-  The label to translate. One of `Sprint`, `Alpha`, `Beta`, `QA`, or an empty
-  string / `$null` for stable. Case-insensitive. May also be supplied as the
+  The label to translate. Reserved labels are `Sprint`, `Alpha`, `Beta`, `QA`,
+  or an empty string / `$null` for Production. Case-insensitive. May also be supplied as the
   full prerelease segment (e.g. `Alpha6`, `Alpha.6`) — the trailing numeric
   height is stripped before lookup.
 .INPUTS
@@ -42,7 +41,7 @@
   PS> Get-TierFromNBGVLabel -PrereleaseLabel ''
   TierNumber TierName   FeedName
   ---------- --------   --------
-           5 Stable powershellget-stable
+           5 Production powershellget-stable
 .NOTES
   AI assisted using Powershell.instructions.md as guidelines
 .LINK
@@ -63,8 +62,9 @@ function Get-TierFromNBGVLabel {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn with PrereleaseLabel='$PrereleaseLabel'" -Tag 'Trace'
   }
   process {
-    # Normalize: empty / null -> stable
-    if ($null -eq $PrereleaseLabel -or [string]::IsNullOrWhiteSpace($PrereleaseLabel)) {
+    # Normalize: empty / null -> production
+    $labelWasEmpty = $null -eq $PrereleaseLabel -or [string]::IsNullOrWhiteSpace($PrereleaseLabel)
+    if ($labelWasEmpty) {
       $normalized = ''
     } else {
       # Accept 'Alpha', 'Alpha6', 'Alpha.6' — strip leading '-' and trailing height
@@ -73,6 +73,9 @@ function Get-TierFromNBGVLabel {
       $trimmed = ($trimmed -split '\.')[0]
       # Remove trailing digits: 'Alpha6' -> 'Alpha'
       $normalized = ($trimmed -replace '\d+$', '')
+      if ([string]::IsNullOrWhiteSpace($normalized)) {
+        $normalized = '__unknown__'
+      }
     }
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Normalized label to '$normalized'" -Tag 'Tier'
@@ -116,15 +119,18 @@ function Get-TierFromNBGVLabel {
       '' {
         $result = [PSCustomObject]@{
           TierNumber = 5
-          TierName   = 'Stable'
+          TierName   = 'Production'
           FeedName   = 'powershellget-stable'
         }
         break
       }
       default {
-        $message = "Unrecognized NBGV prerelease label '$PrereleaseLabel' (normalized to '$normalized'). Expected one of: Sprint, Alpha, Beta, QA, or empty for stable."
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $message -Tag 'Tier'
-        throw $message
+        $result = [PSCustomObject]@{
+          TierNumber = 1
+          TierName   = 'Experimental'
+          FeedName   = 'powershellget-experimental'
+        }
+        break
       }
     }
 

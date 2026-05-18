@@ -3,7 +3,8 @@ function Get-BuildContext {
   <#
 .SYNOPSIS
     Resolves the full build context for a BuildMaster pipeline run from
-    either a release tag or a branch name.
+    either a release tag or a branch name, separating current stage tier from
+    version-label promotion ceiling.
 
 .DESCRIPTION
     `Get-BuildContext` is the entry point for every BuildMaster pipeline
@@ -24,14 +25,30 @@ function Get-BuildContext {
       - The source commit via `git rev-parse HEAD`.
       - The full NuGet/SemVer package version via
         `nbgv get-version --variable NuGetPackageVersion`, run inside the
-        repository root.
+        directory passed as `-ProjectPath`. In this repository every
+        shipping C# or PowerShell project owns a project-adjacent
+        `version.json` that resets the NBGV height origin to that
+        project (see `SolutionDocumentation/CSharp-Packages-Versioning.md`
+        §4.5). The repository root does not necessarily carry a
+        `version.json`, so nbgv MUST be invoked from the per-project
+        directory to obtain the correct package version.
       - The major.minor.patch core and the prerelease label, parsed from
         the NBGV output.
-      - The intended tier (`Production` / `Development` / `Integration` /
-        `QA` / `Experimental`) per the table in
-        `Immutable-Build-Strategy.md §6`.
+      - The current tier from the BuildMaster stage context (`-Stage`,
+        `$env:INEDOSTAGE_NAME`, `$env:BUILDMASTER_STAGE_NAME`, or local
+        default `Experimental`).
+      - The ceiling tier from the NBGV prerelease label on `version.json`,
+        per `Immutable-Build-Strategy.md §3` and
+        `SolutionDocumentation/VersionJsonAsCeiling.md`.
       - Whether DB assets are included, by testing for the existence of
-        `db/<Application>/releases/<MajorMinorPatch>.yml`.
+        `db/<Application>/releases/<MajorMinorPatch>.yml`. The layout of
+        that folder, the per-release YAML manifest schema, and the
+        promotion rules for DB change units are documented in
+        `SolutionDocumentation/Database-Change-Unit-and-Flyway-Promotion.md`.
+        The machine-readable schema for the YAML file lives at
+        `SolutionDocumentation/schemas/db-release-unit.schema.yaml`.
+        See also `SolutionDocumentation/Immutable-Build-Strategy.md` for
+        the broader release-unit promotion model.
 
     The cmdlet performs no write operations and is therefore not marked
     `SupportsShouldProcess`. All external calls (`git`, `nbgv`) are
@@ -41,6 +58,21 @@ function Get-BuildContext {
     The BuildMaster application name (e.g., `ATAP.Utilities`,
     `AceCommander`). Required. Pass-through to the returned context object
     and used to compose the DB-asset path.
+
+.PARAMETER ProjectPath
+    The directory of the shipping project, or the path to that project's
+    `.csproj`. `nbgv get-version` is invoked from the directory that contains
+    the project-adjacent `version.json` so the NBGV height origin matches the
+    package being built. The path may be absolute or relative to the current
+    working directory; it is resolved to an absolute path on entry. An error
+    is thrown if the directory does not exist or does not contain a
+    `version.json` file.
+
+.PARAMETER Stage
+    Optional BuildMaster stage name. When supplied, it is mapped to
+    `CurrentTier`. When omitted, the cmdlet reads `$env:INEDOSTAGE_NAME`,
+    then `$env:BUILDMASTER_STAGE_NAME`, and finally falls back to
+    `Experimental` for local development and unit tests.
 
 .PARAMETER ReleaseTag
     A release tag (e.g., `v1.4.0`). Mutually exclusive with `-Branch`.
@@ -57,6 +89,8 @@ function Get-BuildContext {
 .OUTPUTS
     [PSCustomObject] with the following fields:
       - `Application`
+      - `ProjectPath` — the absolute, resolved project directory used for
+        the nbgv invocation.
       - `Branch`
       - `BranchType` — one of `stable`, `feature`, `sprint`, `release`.
       - `FeatureSlug` — `$null` for non-feature branches.
@@ -66,23 +100,49 @@ function Get-BuildContext {
       - `ResolvedPackageVersion`
       - `MajorMinorPatch`
       - `PrereleaseLabel`
-      - `Tier` — one of `Production`, `Development`, `Integration`, `QA`,
-        `Experimental`.
+      - `CurrentTier` — one of `Production`, `Development`, `Integration`,
+        `QA`, `Experimental`; derived from BuildMaster stage context.
+      - `CeilingTier` — one of `Production`, `Development`, `Integration`,
+        `QA`, `Experimental`; derived from `version.json` prerelease label.
+      - `Tier` — deprecated script-property alias for `CeilingTier`.
+      - `IsAtCeiling` — `[bool]`, true when `CurrentTier -eq CeilingTier`.
       - `DbAssetsIncluded` — `[bool]`.
 
 .EXAMPLE
-    PS> Get-BuildContext -Application 'ATAP.Utilities' -Branch 'main'
+    PS> Get-BuildContext -Application 'ATAP.Utilities' `
+                         -ProjectPath  'src/ATAP.Utilities.ETW' `
+                         -Branch       'main' `
+                         -Stage        'Development'
 
-    Returns the build context for the trunk pipeline run.
+    Returns the build context for the trunk pipeline run of the
+    ATAP.Utilities.ETW package. `CurrentTier` is `Development`; `CeilingTier`
+    is computed from that project's `version.json`.
 
 .EXAMPLE
-    PS> Get-BuildContext -Application 'AceCommander' -ReleaseTag 'v1.4.0'
+    PS> Get-BuildContext -Application 'AceCommander' `
+                         -ProjectPath  'src/AceCommander.Server' `
+                         -ReleaseTag   'v1.4.0'
 
-    Returns the build context for a release-tag-driven pipeline run.
+    Returns the build context for a release-tag-driven pipeline run of the
+    AceCommander.Server package.
+
+.EXAMPLE
+    PS> $ctx = Get-BuildContext -Application 'ATAP.Utilities' `
+                                -ProjectPath 'src/ATAP.Utilities.ETW' `
+                                -Branch 'sprint/0007'
+    PS> $ctx.CurrentTier
+    Experimental
+    PS> $ctx.CeilingTier
+    Experimental
+
+    Omitting `-Stage` uses the BuildMaster stage environment variable when
+    present, or `Experimental` in a standalone shell.
 
 .NOTES
     AI assisted using Powershell.instructions.md as guidelines.
     Implements task H1 of Plan-DocsUpdateForImmutablePackages_V3.md.
+    Implements the version.json-as-ceiling model from
+    Plan-VersionJsonAsCeiling.md.
 
 .LINK
     https://github.com/whertzing/ATAP.Utilities
@@ -93,6 +153,14 @@ function Get-BuildContext {
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
     [string]$Application,
+
+    [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
+    [string]$ProjectPath,
+
+    [Parameter(Mandatory = $false)]
+    [ValidateNotNullOrEmpty()]
+    [string]$Stage,
 
     [Parameter(Mandatory = $true, ParameterSetName = 'ByReleaseTag')]
     [ValidateNotNullOrEmpty()]
@@ -106,7 +174,65 @@ function Get-BuildContext {
   begin {
     $fn = 'Get-BuildContext'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn with Application='$Application' ParameterSetName='$($PSCmdlet.ParameterSetName)'" -Tag 'Trace'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn with Application='$Application' ProjectPath='$ProjectPath' Stage='$Stage' ParameterSetName='$($PSCmdlet.ParameterSetName)'" -Tag 'Trace'
+
+    foreach ($helperName in @('Get-CeilingFromPrereleaseLabel', 'Get-CurrentTierFromStage')) {
+      if (-not (Get-Command -Name $helperName -CommandType Function -ErrorAction SilentlyContinue)) {
+        $helperPath = Join-Path $PSScriptRoot "..\private\$helperName.ps1"
+        if (Test-Path -LiteralPath $helperPath -PathType Leaf) {
+          . $helperPath
+        } else {
+          $msg = "Required helper '$helperName' was not found at '$helperPath'."
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+          throw $msg
+        }
+      }
+    }
+
+    $stageSource = 'default'
+    $stageName = 'Experimental'
+    if ($PSBoundParameters.ContainsKey('Stage')) {
+      $stageName = $Stage
+      $stageSource = '-Stage'
+    } elseif (-not [string]::IsNullOrWhiteSpace($env:INEDOSTAGE_NAME)) {
+      $stageName = $env:INEDOSTAGE_NAME
+      $stageSource = '$env:INEDOSTAGE_NAME'
+    } elseif (-not [string]::IsNullOrWhiteSpace($env:BUILDMASTER_STAGE_NAME)) {
+      $stageName = $env:BUILDMASTER_STAGE_NAME
+      $stageSource = '$env:BUILDMASTER_STAGE_NAME'
+    }
+    $currentTier = Get-CurrentTierFromStage -Stage $stageName
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "CurrentTier='$currentTier' from $stageSource ('$stageName')"
+
+    # Resolve ProjectPath to an absolute directory and validate that it
+    # carries a project-adjacent version.json. nbgv silently walks up the
+    # directory tree, so a missing version.json here would otherwise cause
+    # this cmdlet to return a parent (e.g. solution-level) version.
+    $resolvedProjectPath = $null
+    try {
+      $resolvedProjectPathRaw = (Resolve-Path -LiteralPath $ProjectPath -ErrorAction Stop).ProviderPath
+    } catch {
+      $msg = "ProjectPath '$ProjectPath' could not be resolved: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+      throw $msg
+    }
+
+    if (Test-Path -LiteralPath $resolvedProjectPathRaw -PathType Leaf) {
+      $resolvedProjectPath = Split-Path -Parent $resolvedProjectPathRaw
+    } elseif (Test-Path -LiteralPath $resolvedProjectPathRaw -PathType Container) {
+      $resolvedProjectPath = $resolvedProjectPathRaw
+    } else {
+      $msg = "ProjectPath '$resolvedProjectPathRaw' is neither a file nor a directory."
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+      throw $msg
+    }
+    $projectVersionJson = Join-Path -Path $resolvedProjectPath -ChildPath 'version.json'
+    if (-not (Test-Path -LiteralPath $projectVersionJson -PathType Leaf)) {
+      $msg = "ProjectPath '$resolvedProjectPath' does not contain a project-adjacent 'version.json'. See SolutionDocumentation/CSharp-Packages-Versioning.md section 4.5."
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+      throw $msg
+    }
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "ProjectPath resolved to '$resolvedProjectPath' (version.json verified)"
   }
 
   process {
@@ -192,10 +318,10 @@ function Get-BuildContext {
       throw $msg
     }
 
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Invoking 'nbgv get-version --variable NuGetPackageVersion' in '$repoRoot'" -Tag 'NBGV'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Invoking 'nbgv get-version --variable NuGetPackageVersion' in '$resolvedProjectPath'" -Tag 'NBGV'
     $pushed = $false
     try {
-      Push-Location -LiteralPath $repoRoot
+      Push-Location -LiteralPath $resolvedProjectPath
       $pushed = $true
       $nbgvRaw = & nbgv get-version --variable NuGetPackageVersion 2>&1
       $nbgvExit = $LASTEXITCODE
@@ -209,7 +335,7 @@ function Get-BuildContext {
     }
     $resolvedPackageVersion = ([string]$nbgvRaw).Trim()
     if ([string]::IsNullOrWhiteSpace($resolvedPackageVersion)) {
-      $msg = "nbgv returned an empty version string for '$repoRoot'."
+      $msg = "nbgv returned an empty version string for '$resolvedProjectPath'."
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'NBGV'
       throw $msg
     }
@@ -230,21 +356,11 @@ function Get-BuildContext {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "MajorMinorPatch='$majorMinorPatch' PrereleaseLabel='$prereleaseLabel'"
 
     # ---------------------------------------------------------------------
-    # 8. Map prerelease label -> Tier per Immutable-Build-Strategy.md §6.
+    # 8. Map prerelease label -> CeilingTier per version.json-as-ceiling.
     # ---------------------------------------------------------------------
-    $tier = if ([string]::IsNullOrEmpty($prereleaseLabel)) {
-      'Production'
-    } elseif ($prereleaseLabel -ieq 'Alpha') {
-      'Development'
-    } elseif ($prereleaseLabel -ieq 'Beta') {
-      'Integration'
-    } elseif ($prereleaseLabel -ieq 'QA') {
-      'QA'
-    } else {
-      # Sprint, a FeatureSlug, anything else -> Experimental.
-      'Experimental'
-    }
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Tier='$tier'"
+    $ceilingTier = Get-CeilingFromPrereleaseLabel -PrereleaseLabel $prereleaseLabel
+    $isAtCeiling = $currentTier -eq $ceilingTier
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "CeilingTier='$ceilingTier' CurrentTier='$currentTier' IsAtCeiling=$isAtCeiling"
 
     # ---------------------------------------------------------------------
     # 9. Test for DB assets at the standard path.
@@ -258,6 +374,7 @@ function Get-BuildContext {
     # ---------------------------------------------------------------------
     $context = [PSCustomObject]@{
       Application            = $Application
+      ProjectPath            = $resolvedProjectPath
       Branch                 = $resolvedBranch
       BranchType             = $branchType
       FeatureSlug            = $featureSlug
@@ -267,10 +384,21 @@ function Get-BuildContext {
       ResolvedPackageVersion = $resolvedPackageVersion
       MajorMinorPatch        = $majorMinorPatch
       PrereleaseLabel        = $prereleaseLabel
-      Tier                   = $tier
+      CurrentTier            = $currentTier
+      CeilingTier            = $ceilingTier
+      IsAtCeiling            = $isAtCeiling
       DbAssetsIncluded       = $dbAssetsIncluded
     }
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Get-BuildContext succeeded: Branch='$resolvedBranch' Tier='$tier' Version='$resolvedPackageVersion'"
+
+    $context | Add-Member -MemberType ScriptProperty -Name 'Tier' -Value {
+      if (-not $script:GetBuildContextTierAliasWarningEmitted) {
+        $script:GetBuildContextTierAliasWarningEmitted = $true
+        Write-PSFMessage -FunctionName 'Get-BuildContext' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Warning -Message "Get-BuildContext.Tier is deprecated and aliases CeilingTier. Use .CeilingTier for version-label ceiling or .CurrentTier for BuildMaster stage context."
+      }
+      return $this.CeilingTier
+    }
+
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Get-BuildContext succeeded: Branch='$resolvedBranch' CurrentTier='$currentTier' CeilingTier='$ceilingTier' Version='$resolvedPackageVersion'"
     return $context
   }
 

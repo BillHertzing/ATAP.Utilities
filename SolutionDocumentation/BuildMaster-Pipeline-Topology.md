@@ -63,10 +63,12 @@ Each BuildMaster Application supplies its own values for the variables its
 | `$ProGetApiKey`                              | masked, from `PROGET_ADMIN_API_KEY`      | masked, from `PROGET_ADMIN_API_KEY`           | masked, from `PROGET_ADMIN_API_KEY`       | masked, from `PROGET_ADMIN_API_KEY`       |
 | `$MetaPackageName`                           | `ATAP.Utilities`                         | `AceCommander`                                | _(not used)_                              | _(not used)_                              |
 | `$SolutionPath` _(new per BD-10)_            | `ATAP.Utilities.sln`                     | `AceCommander.sln`                            | _(not used)_                              | _(not used)_                              |
+| `$ProjectPath`                               | project directory or `.csproj` for NBGV  | project directory or `.csproj` for NBGV       | _(not used)_                              | _(not used)_                              |
 | `$ModuleName`                                | _(not used)_                             | _(not used)_                                  | module folder under `src/`                | _(not used)_                              |
 | `$PackageName`                               | _(not used)_                             | _(not used)_                                  | normally same as `$ModuleName`            | _(not used)_                              |
 | `$PackageVersion`                            | _(derived via Get-BuildContext)_         | _(derived via Get-BuildContext)_              | exact package version to promote/test     | _(not used directly)_                     |
-| `$Tier`                                      | _(derived via Get-BuildContext)_         | _(derived via Get-BuildContext)_              | current tier (BD-14 may align)            | _(derived via Get-BuildContext)_          |
+| `$Tier`                                      | BuildMaster stage context                | BuildMaster stage context                     | BuildMaster stage context                 | BuildMaster stage context                 |
+| `$CeilingTier`                               | preamble-set from `version.json`         | preamble-set from `version.json`              | preamble-set from `version.json`          | preamble-set from `version.json`          |
 | `$ProductName`                               | _(not used)_                             | _(not used)_                                  | _(not used)_                              | `AceCommander`                            |
 | `$ReleaseTag`                                | _(not used)_                             | _(not used)_                                  | _(not used)_                              | e.g. `v1.4.0` (or empty → use `$Branch`)  |
 | `$ProGetUrl`                                 | _(not used directly)_                    | _(not used directly)_                         | _(not used directly)_                     | `http://localhost:50000`                  |
@@ -78,10 +80,10 @@ Each BuildMaster Application supplies its own values for the variables its
 | `$PreviousProductionBackupPath`              | _(not used)_                             | _(not used)_                                  | _(not used)_                              | path to prior production `.bak` (Flyway rehearsal) |
 | `$IntegrationDatabaseBitwardenSecretName`    | _(not used)_                             | _(not used)_                                  | _(not used)_                              | `dbConnectionString-AceCommander-utat022-Integration` |
 
-> **BD-13 follow-up:** The `$Tier` field is currently derived via
-> `Get-BuildContext` in the C# and ReleaseBundle plans, but its resolution
-> semantics (NBGV label vs BuildMaster pipeline stage context) need
-> verification. See `ExplainerEliminationPlan_V1.md` Section 0c.
+`$Tier` is the current BuildMaster stage. `$CeilingTier` is not configured on
+the Application; each plan preamble computes it with `Get-BuildContext` from
+the NBGV prerelease label and uses `Test-PromotionWithinCeiling` to skip stages
+above that ceiling.
 
 ---
 
@@ -137,7 +139,9 @@ workstation.
 
 | Cmdlet                             | Used by                                            | Role                                                                                                                                                                                                       | Status      |
 | ---------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| `Get-BuildContext`                 | All three pipelines                                | Resolve branch type, application, version, tier from environment.                                                                                                                                          | implemented |
+| `Get-BuildContext`                 | All three pipelines                                | Resolve branch type, application, version, `CurrentTier`, and `CeilingTier`. `.Tier` is a deprecated alias for `CeilingTier` until the next removal release.                                                | implemented |
+| `Get-TierOrder`                    | All three pipelines / promotion guards             | Return the canonical tier ordering used for ceiling checks.                                                                                                                                                 | implemented |
+| `Test-PromotionWithinCeiling`      | All three pipelines / `Promote-ProGetPackage`      | Stop stage execution or promotion before ProGet is called when the destination/current tier is above `CeilingTier`.                                                                                         | implemented |
 | `New-ReleaseManifest`              | Release-Bundle pipeline                            | Generate `manifest.json` for a release tag.                                                                                                                                                                | implemented |
 | `New-ReleaseBundle`                | Release-Bundle pipeline                            | Assemble the bundle directory tree and pack to `.upack`.                                                                                                                                                   | implemented |
 | `Get-DeployedReleaseManifest`      | Release-Bundle support                             | Read and validate a deployed bundle's `manifest.json`.                                                                                                                                                     | implemented |
@@ -166,6 +170,16 @@ All cmdlets:
   version-controlled `*.psd1` files plus User-scope environment variables.
 - Never hard-code feed URLs, API keys, or pipeline IDs.
 
+Ceiling observability: publish and promotion wrappers echo `CeilingTier` in
+their returned objects and the Otter preamble writes the build context to the
+BuildMaster-generated evidence files. ProGet package metadata is not mutated by
+this implementation; the documented
+[ProGet Packages API](https://docs.inedo.com/docs/proget/api/packages)
+exposes upload, promote, status, and metadata-read surfaces, but no general
+package-metadata write endpoint. If ProGet adds or exposes such a write
+surface, the wrappers can attach the same `CeilingTier` value there without
+changing the stage guard contract.
+
 ---
 
 ## 5. Pipeline plan storage
@@ -189,22 +203,25 @@ stage Development
 {
     if $Tier == Development
     {
-        # No build. Promote the existing artifact.
-        Exec
-        (
-            FileName: pwsh,
-            Arguments: `-Command "Promote-ProGetPackage -Name $PackageName -Version $PackageVersion -FromFeed nuget-experimental -ToFeed nuget-development -Reason 'Pipeline gate DEV-PASS for build $BuildId'"`
-        );
+        if $AllowDevelopment == true
+        {
+            # No build. Promote the existing artifact, guarded by CeilingTier.
+            Exec
+            (
+                FileName: pwsh,
+                Arguments: `-Command "Promote-ProGetPackage -Name $PackageName -Version $PackageVersion -FromFeed nuget-experimental -ToFeed nuget-development -Reason 'Pipeline gate DEV-PASS for build $BuildId' -CeilingTier $CeilingTier"`
+            );
 
-        # Run integration tests against the existing package.
-        Exec
-        (
-            FileName: pwsh,
-            Arguments: `-Command "Invoke-PromotedPackageTests -Name $PackageName -Version $PackageVersion -TestFilter 'Category=Integration' -ResultsPath _generated/testresults/development"`,
-            SuccessExitCode: 0
-        );
+            # Run integration tests against the existing package.
+            Exec
+            (
+                FileName: pwsh,
+                Arguments: `-Command "Invoke-PromotedPackageTests -Name $PackageName -Version $PackageVersion -TestFilter 'Category=Integration' -ResultsPath _generated/testresults/development"`,
+                SuccessExitCode: 0
+            );
 
-        Create-Artifact TestResults ( From: _generated\testresults\development, Include: @(*.trx) );
+            Create-Artifact TestResults ( From: _generated\testresults\development, Include: @(*.trx) );
+        }
     }
 }
 
@@ -212,9 +229,11 @@ stage Development
 # This Markdown snippet is illustrative; the .otter files are what BuildMaster loads.
 ```
 
-Note the absence of `dotnet pack` in the Development stage — that ran
-exactly once at Experimental. The Development stage's job is to **test
-and promote**, not to rebuild.
+The plan preamble writes `$AllowDevelopment` by calling
+`Test-PromotionWithinCeiling -CurrentTier Development -CeilingTier $CeilingTier -AsBoolean`.
+Note the absence of `dotnet pack` in the Development stage; that
+ran exactly once at Experimental. The Development stage's job is to **test and
+promote**, not to rebuild.
 
 ---
 

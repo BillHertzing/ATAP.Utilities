@@ -162,11 +162,11 @@ function Get-BuildContext {
     [ValidateNotNullOrEmpty()]
     [string]$Stage,
 
-    [Parameter(Mandatory = $true, ParameterSetName = 'ByReleaseTag')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'ByReleaseTag')]
     [ValidateNotNullOrEmpty()]
     [string]$ReleaseTag,
 
-    [Parameter(Mandatory = $true, ParameterSetName = 'ByBranch')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'ByBranch')]
     [ValidateNotNullOrEmpty()]
     [string]$Branch
   )
@@ -175,6 +175,12 @@ function Get-BuildContext {
     $fn = 'Get-BuildContext'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn with Application='$Application' ProjectPath='$ProjectPath' Stage='$Stage' ParameterSetName='$($PSCmdlet.ParameterSetName)'" -Tag 'Trace'
+
+    if (-not $PSBoundParameters.ContainsKey('Branch') -and -not $PSBoundParameters.ContainsKey('ReleaseTag')) {
+      $msg = "Either -Branch or -ReleaseTag is required."
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+      throw $msg
+    }
 
     foreach ($helperName in @('Get-CeilingFromPrereleaseLabel', 'Get-CurrentTierFromStage')) {
       if (-not (Get-Command -Name $helperName -CommandType Function -ErrorAction SilentlyContinue)) {

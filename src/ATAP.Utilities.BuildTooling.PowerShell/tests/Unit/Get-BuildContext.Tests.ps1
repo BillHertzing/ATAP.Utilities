@@ -70,7 +70,8 @@ Describe 'Get-BuildContext' -Tag 'Unit' {
 
   Context 'Parameter set enforcement (-ReleaseTag vs -Branch mutex)' {
     It 'Throws when neither -ReleaseTag nor -Branch is supplied' {
-      { Get-BuildContext -Application 'ATAP.Utilities' -ProjectPath $script:fakeProjectPath } | Should -Throw
+      { Get-BuildContext -Application 'ATAP.Utilities' -ProjectPath $script:fakeProjectPath } |
+        Should -Throw -ExpectedMessage '*Either -Branch or -ReleaseTag is required*'
     }
 
     It 'Throws when both -ReleaseTag and -Branch are supplied' {

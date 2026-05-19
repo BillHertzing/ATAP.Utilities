@@ -36,10 +36,10 @@ and `_Planning/Explainers/0109-nbgv-version-label-promotion.md`.
 Sprint-0006 is a transition sprint. Two versioning systems are active **simultaneously**
 across the `ATAP.Utilities` and `AceCommander` solutions:
 
-| System                                           | Source of truth                                | Status        |
-| ------------------------------------------------ | ---------------------------------------------- | ------------- |
-| **Legacy** — custom MSBuild tasks                | Per-project `Properties/AssemblyInfo.cs`       | Being retired |
-| **NBGV** — [Nerdbank.GitVersioning][nbgv]        | Per-project `version.json` + git height        | Target system |
+| System                                    | Source of truth                          | Status        |
+| ----------------------------------------- | ---------------------------------------- | ------------- |
+| **Legacy** — custom MSBuild tasks         | Per-project `Properties/AssemblyInfo.cs` | Being retired |
+| **NBGV** — [Nerdbank.GitVersioning][nbgv] | Per-project `version.json` + git height  | Target system |
 
 Both are wired into the build today. NBGV is intended to become the only system.
 The retirement plan is in §9.
@@ -63,11 +63,11 @@ NBGV computes those same attributes from a git commit-height count scoped by
 Every .NET assembly carries three distinct version attributes. All three are surfaced
 both in the compiled DLL and in the generated `.nupkg`:
 
-| Attribute                       | Format                | Consumer               | Purpose                                                          |
-| ------------------------------- | --------------------- | ---------------------- | ---------------------------------------------------------------- |
-| `AssemblyVersion`               | `Major.Minor.Patch.0` | CLR assembly binder    | Binding / strong-name identity. Breaking-change contract.        |
-| `AssemblyFileVersion`           | `Major.Minor.B.R`     | Windows file-properties| Build forensics. B = days since 2000-01-01 UTC; R = seconds/2.   |
-| `AssemblyInformationalVersion`  | SemVer-2 string       | Humans, NuGet, tools   | The "real" package version — includes prerelease label and hash. |
+| Attribute                      | Format                | Consumer                | Purpose                                                          |
+| ------------------------------ | --------------------- | ----------------------- | ---------------------------------------------------------------- |
+| `AssemblyVersion`              | `Major.Minor.Patch.0` | CLR assembly binder     | Binding / strong-name identity. Breaking-change contract.        |
+| `AssemblyFileVersion`          | `Major.Minor.B.R`     | Windows file-properties | Build forensics. B = days since 2000-01-01 UTC; R = seconds/2.   |
+| `AssemblyInformationalVersion` | SemVer-2 string       | Humans, NuGet, tools    | The "real" package version — includes prerelease label and hash. |
 
 `AssemblyInformationalVersion` is also used verbatim as the **NuGet package version**
 (`<Version>` / `<PackageVersion>`). This is what appears in the `.nupkg` filename and
@@ -123,21 +123,35 @@ Packages progress through five tiers. Each tier has its own ProGet feed and
 gate discipline. The label NBGV writes into `AssemblyInformationalVersion` is
 the promotion ceiling for one immutable pipeline run, not the current stage.
 
-| Ceiling tier | ProGet feed reached at or below ceiling | `version.json` label | Example NuGet version | Git branch               |
-| ------------ | ------------------------------ | -------------------- | --------------------- | ------------------------ |
-| Experimental | `nuget-Sprint{N}-experimental` | `Sprint`             | `0.1.0-Sprint.3`      | `{issue}-sprint-{N}-*`   |
-| Development  | `nuget-Sprint{N}-development`  | `Alpha`              | `0.1.0-Alpha.1`       | `integration`            |
-| Integration  | `nuget-integration`            | `Beta`               | `0.1.0-Beta.2`        | `integration` (promoted) |
-| QA           | `nuget-qa`                     | `QA`                 | `0.1.0-QA.1`          | `qa`                     |
-| Stable       | `nuget-stable`                 | _(none)_             | `0.1.0`               | `main`                   |
+| Ceiling tier         | ProGet feed reached at or below ceiling | `version.json` label | Example NuGet version | Git branch               |
+| -------------------- | --------------------------------------- | -------------------- | --------------------- | ------------------------ |
+| Experimental         | `nuget-experimental`                    | `Sprint`             | `0.1.0-Sprint.3`      | `{issue}-sprint-{N}-*`   |
+| Development          | `nuget-development`                     | `Alpha`              | `0.1.0-Alpha.1`       | `integration`            |
+| Integration          | `nuget-integration`                     | `Beta`               | `0.1.0-Beta.2`        | `integration` (promoted) |
+| QA                   | `nuget-qa`                              | `QA`                 | `0.1.0-QA.1`          | `qa`                     |
+| Production (=Stable) | `nuget-stable`                          | _(none)_             | `0.1.0`               | `main`                   |
 
-- `{N}` is the sprint number (for sprint-0006 it is `6` or `0006` depending on the
-  feed naming convention in BuildMaster).
-- A package with no prerelease label (`0.1.0` exactly) is a Production / Stable
+- The five NuGet feeds are **permanent** topology — `nuget-experimental`,
+  `nuget-development`, `nuget-integration`, `nuget-qa`, `nuget-stable` — and are
+  not created or torn down per sprint. Sprint-scoped feed names (`nuget-Sprint{N}-*`)
+  from earlier drafts are obsolete and were retired by A09. See
+  [BuildMaster-Pipeline-Topology.md](BuildMaster-Pipeline-Topology.md).
+- **Production vs Stable naming.** The canonical tier name in pipeline,
+  cmdlet, and run-state vocabulary is **Production**; the feed it publishes
+  to is named `nuget-stable`. The two names refer to the same tier — "Stable"
+  is feed-side history, "Production" is pipeline-side canonical. A package
+  with no prerelease label (`0.1.0` exactly) is a Production / Stable
   release. NuGet treats any `-*` suffix as prerelease.
 - The `Sprint` label lives on the developer's sprint worktree branch. Packages
-  pushed from there land only in that sprint's experimental feed and are skipped
+  pushed from there land only in `nuget-experimental` and are skipped
   by higher stages because their `CeilingTier` is Experimental.
+
+> **Ceiling semantics** — the `version.json` label is the promotion ceiling for
+> one immutable pipeline run. For the complete label-to-tier mapping and the
+> Stage × Ceiling matrix showing which stages execute or skip, see
+> [§5.0 Ceiling semantics of the prerelease label](#50-ceiling-semantics-of-the-prerelease-label).
+> The canonical narrative for ceiling semantics across both ecosystems lives
+> in [VersionJsonAsCeiling.md](VersionJsonAsCeiling.md).
 
 ### 3.1 Why `Sprint` before `Alpha`?
 
@@ -188,12 +202,12 @@ does not — this should be brought into alignment (see §10, Known Drift).
 
 ### 4.2 Field-by-field
 
-| Field                          | Meaning                                                                 |
-| ------------------------------ | ----------------------------------------------------------------------- |
-| `$schema`                      | Enables JSON IntelliSense in editors. Never edit.                        |
-| `version`                      | Base version + prerelease template. `{height}` is replaced at build time. |
-| `pathFilters`                  | Restricts height counting to commits that touched these paths.           |
-| `nuGetPackageVersion.semVer`   | `2` enables dot-separated prerelease (`Sprint.47`) per SemVer 2.0.       |
+| Field                        | Meaning                                                                   |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| `$schema`                    | Enables JSON IntelliSense in editors. Never edit.                         |
+| `version`                    | Base version + prerelease template. `{height}` is replaced at build time. |
+| `pathFilters`                | Restricts height counting to commits that touched these paths.            |
+| `nuGetPackageVersion.semVer` | `2` enables dot-separated prerelease (`Sprint.47`) per SemVer 2.0.        |
 
 ### 4.3 `{height}` — what it actually counts
 
@@ -211,7 +225,7 @@ changed `version.json` itself or reaches the root. In practice:
 ### 4.4 `pathFilters` gotchas
 
 - `"./"` alone means **all files under this `version.json`'s directory bump
-  height**, which for a root-level `version.json` means *every* commit to the repo.
+  height**, which for a root-level `version.json` means _every_ commit to the repo.
   This is fine for a single-project repo but noisy for a solution with 170 projects
   where a change to project A should not bump project B's version.
 - Per-project `version.json` files solve this — each project becomes its own
@@ -245,13 +259,13 @@ unchanged.
 
 ### 5.0 Ceiling semantics of the prerelease label
 
-| `version.json` label | `CeilingTier` | Stages allowed for the same artifact |
-| --- | --- | --- |
-| `Sprint` or feature label | Experimental | Experimental only |
-| `Alpha` | Development | Experimental, Development |
-| `Beta` | Integration | Experimental, Development, Integration |
-| `QA` | QA | Experimental, Development, Integration, QA |
-| none | Production | Experimental through Production |
+| `version.json` label      | `CeilingTier` | Stages allowed for the same artifact       |
+| ------------------------- | ------------- | ------------------------------------------ |
+| `Sprint` or feature label | Experimental  | Experimental only                          |
+| `Alpha`                   | Development   | Experimental, Development                  |
+| `Beta`                    | Integration   | Experimental, Development, Integration     |
+| `QA`                      | QA            | Experimental, Development, Integration, QA |
+| none                      | Production    | Experimental through Production            |
 
 Example: changing a project to `"version": "0.1-Beta.{height}"` and
 committing it cuts a fresh Integration-ceiling candidate. The next run builds
@@ -421,10 +435,10 @@ replaced by explicit `Major.Minor.Patch` bumps (see §6).
 
 ### 5.4 Two operations, two procedures
 
-| Operation | When | Procedure |
-| --- | --- | --- |
-| Cut a new candidate at the next tier | when you want a new artifact built under a new label | §5.3 |
-| Promote an existing artifact between feeds | when an artifact has passed its tier gate | §5.2 |
+| Operation                                  | When                                                 | Procedure |
+| ------------------------------------------ | ---------------------------------------------------- | --------- |
+| Cut a new candidate at the next tier       | when you want a new artifact built under a new label | §5.3      |
+| Promote an existing artifact between feeds | when an artifact has passed its tier gate            | §5.2      |
 
 ---
 
@@ -434,14 +448,14 @@ The ATAP ecosystem uses SemVer 2.0 on `AssemblyInformationalVersion` / NuGet
 package version, but uses **time-based** encoding for `AssemblyFileVersion`.
 Keeping the two straight avoids a class of confusion:
 
-| Component                       | Who chooses the value              | When does it change |
-| ------------------------------- | ---------------------------------- | ------------------- |
-| `Major` (SemVer)                | Human. Breaking API change.        | Rarely.             |
-| `Minor` (SemVer)                | Human. Additive feature.           | Per feature.        |
-| `Patch` (SemVer)                | Human. Bugfix only.                | Per fix.            |
-| Prerelease label (`Sprint`/`Alpha`/…) | Pipeline tier promotion.     | At tier transitions. |
-| `{height}` counter              | NBGV, derived from git.            | Every filtered commit. |
-| `AssemblyFileVersion` B.R       | Build machine clock.               | Every build.        |
+| Component                             | Who chooses the value       | When does it change    |
+| ------------------------------------- | --------------------------- | ---------------------- |
+| `Major` (SemVer)                      | Human. Breaking API change. | Rarely.                |
+| `Minor` (SemVer)                      | Human. Additive feature.    | Per feature.           |
+| `Patch` (SemVer)                      | Human. Bugfix only.         | Per fix.               |
+| Prerelease label (`Sprint`/`Alpha`/…) | Pipeline tier promotion.    | At tier transitions.   |
+| `{height}` counter                    | NBGV, derived from git.     | Every filtered commit. |
+| `AssemblyFileVersion` B.R             | Build machine clock.        | Every build.           |
 
 **Guideline:** Never hand-edit the 3rd or 4th component of `AssemblyFileVersion`
 — it is machine-generated and carries no semantic contract. Edit Major/Minor/Patch
@@ -467,14 +481,14 @@ in place on every build.
 The task reads these properties from `Directory.Build.props` and the project's
 own `.csproj`:
 
-| Property                    | Typical value          | Role                                             |
-| --------------------------- | ---------------------- | ------------------------------------------------ |
-| `MajorVersion`              | `0`                    | Human-maintained.                                |
-| `MinorVersion`              | `1`                    | Human-maintained.                                |
-| `PatchVersion`              | `1`                    | Human-maintained.                                |
-| `PackageLabel`              | `Alpha` / `Beta` / `QA`| Per-tier label, parallel to NBGV's label.        |
-| `PackageLifeCycleStage`     | `Production` / other   | If `Production`, label is dropped (stable build). |
-| `ATAPBuildToolingConfiguration` | `Debug`            | Verbosity switch for the task.                   |
+| Property                        | Typical value           | Role                                              |
+| ------------------------------- | ----------------------- | ------------------------------------------------- |
+| `MajorVersion`                  | `0`                     | Human-maintained.                                 |
+| `MinorVersion`                  | `1`                     | Human-maintained.                                 |
+| `PatchVersion`                  | `1`                     | Human-maintained.                                 |
+| `PackageLabel`                  | `Alpha` / `Beta` / `QA` | Per-tier label, parallel to NBGV's label.         |
+| `PackageLifeCycleStage`         | `Production` / other    | If `Production`, label is dropped (stable build). |
+| `ATAPBuildToolingConfiguration` | `Debug`                 | Verbosity switch for the task.                    |
 
 ### 7.3 The build-revision encoding
 
@@ -618,11 +632,14 @@ source of confusion for developers reading a stale `AssemblyInfo.cs`.
   `obj`. If a code generator writes into `_generated` in AceCommander, that
   commit will bump `{height}` unnecessarily. Recommended fix: align the
   filter list across both repos.
-- **Sprint-number interpolation in feed names.** The ProGet feeds
-  `nuget-Sprint{N}-experimental` / `-development` require the sprint number
-  at BuildMaster time. Sprint-0006 BuildMaster templates use `6`; older
-  conventions sometimes use `0006`. This is a BuildMaster concern (→ that
-  doc), noted here only because it intersects with version-label choice.
+- **Sprint-number interpolation in feed names. (RESOLVED — A09, sprint-0007.)**
+  Earlier drafts used sprint-scoped feeds (`nuget-Sprint{N}-experimental` /
+  `-development`) that required sprint-number interpolation in BuildMaster
+  templates. A09 retired those feeds in favor of the five permanent feeds
+  (`nuget-experimental`, `nuget-development`, `nuget-integration`,
+  `nuget-qa`, `nuget-stable`). No sprint-number interpolation is required
+  anywhere in the feed-naming path. Left here as a resolved-drift entry so
+  readers of older docs can confirm the change.
 - **Legacy `MakePackageVersion` logic bug.** See §7.5. Safe to ignore while
   retiring the system; do not invest in fixing it.
 - **Two `version.json` shapes in tree.** ATAP.Utilities uses

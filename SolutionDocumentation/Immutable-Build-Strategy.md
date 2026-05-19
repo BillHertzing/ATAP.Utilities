@@ -109,25 +109,39 @@ For any release unit, the BuildMaster pipeline does this:
 
 ### 3.1 `version.json` is the promotion ceiling
 
-The pipeline carries two tier-valued facts:
+The pipeline carries two distinct tier-valued facts. Confusing them is the
+single most common authoring mistake in OtterScript preambles and promotion
+helpers, so the vocabulary is fixed here:
 
-| Concept | Source | Used for |
-| --- | --- | --- |
+| Concept       | Source                                                                           | Used for                                                                                  |
+| ------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | `CurrentTier` | BuildMaster stage context (`$Tier`, `-Stage`, or the stage environment variable) | Which stage is executing, which gate to run, and which feed transition is being attempted |
-| `CeilingTier` | NBGV prerelease label in `version.json` | The highest tier this immutable artifact may reach in the current run |
+| `CeilingTier` | NBGV prerelease label in `version.json`                                          | The highest tier this immutable artifact may reach in the current run                     |
 
 The prerelease label is therefore a **promotion ceiling**, not the current
 stage. A `Beta` package is built once in Experimental, may promote through
-Development and Integration, and then stops before QA. See
-[VersionJsonAsCeiling.md](VersionJsonAsCeiling.md) for the focused rule set.
+Development and Integration, and then stops before QA. The full Stage ×
+Ceiling decision matrix, edge cases, and vocabulary map live in the focused
+companion doc: **[VersionJsonAsCeiling.md](VersionJsonAsCeiling.md)**. That
+file is the single source of truth for the ceiling rule set; the table below
+is reproduced here only for quick reference while reading this strategy doc.
 
-| `version.json` prerelease label | `CeilingTier` |
-| --- | --- |
-| `Sprint.N` or feature labels such as `PaymentRefactor.N` | Experimental |
-| `Alpha` | Development |
-| `Beta` | Integration |
-| `QA` | QA |
-| none | Production |
+| `version.json` prerelease label                          | `CeilingTier` |
+| -------------------------------------------------------- | ------------- |
+| `Sprint.N` or feature labels such as `PaymentRefactor.N` | Experimental  |
+| `Alpha`                                                  | Development   |
+| `Beta`                                                   | Integration   |
+| `QA`                                                     | QA            |
+| none                                                     | Production    |
+
+The ceiling is enforced **fail-closed** at the cmdlet boundary. As of
+2026-05-18 (BLOCKER-2 resolution), `Promote-ProGetPackage` requires an
+explicit `-CeilingTier` parameter on every call; the only way to bypass it
+is the audited emergency switch `-NoCeilingCheck`. Direct-publish cmdlets
+(`Publish-NuGetPackageToProGet`, `Publish-UniversalPackageToProGet`) reject
+publishes above Experimental unless `-CeilingTier` permits the destination
+feed, with `-Force` as the disaster-recovery bypass. `Publish-PSModuleToProGet`
+remains Experimental-only by construction.
 
 ---
 
@@ -136,23 +150,23 @@ Development and Integration, and then stops before QA. See
 Each release unit family has its own five ProGet feeds. Promotion is the
 authoritative tier-state mechanism — branch names do not imply feed names.
 
-| Feed family       | Tier         | Purpose                                                    |
-| ----------------- | ------------ | ---------------------------------------------------------- |
-| `nuget-experimental`     | Experimental | First push from any pipeline run.                          |
-| `nuget-development`      | Development  | Promoted after unit-test gate.                             |
-| `nuget-integration`      | Integration  | Promoted after integration-test gate (hermetic feed).      |
-| `nuget-qa`               | QA           | Promoted after full regression (hermetic feed).            |
-| `nuget-stable`           | Production   | Promoted after manual release-engineer approval.           |
-| `PowershellGet-experimental` | Experimental | Mirrors NuGet feed semantics for PowerShell modules.   |
-| `PowershellGet-development`  | Development  |                                                       |
-| `PowershellGet-integration`  | Integration  |                                                       |
-| `PowershellGet-qa`           | QA           |                                                       |
-| `PowershellGet-stable`       | Production   |                                                       |
-| `releasebundle-experimental` | Experimental | Final installer bundles (app + DB + installer scripts).|
-| `releasebundle-development`  | Development  |                                                       |
-| `releasebundle-integration`  | Integration  |                                                       |
-| `releasebundle-qa`           | QA           |                                                       |
-| `releasebundle-production`   | Production   | Source feed for Chocolatey / WinGet publication.      |
+| Feed family                  | Tier         | Purpose                                                 |
+| ---------------------------- | ------------ | ------------------------------------------------------- |
+| `nuget-experimental`         | Experimental | First push from any pipeline run.                       |
+| `nuget-development`          | Development  | Promoted after unit-test gate.                          |
+| `nuget-integration`          | Integration  | Promoted after integration-test gate (hermetic feed).   |
+| `nuget-qa`                   | QA           | Promoted after full regression (hermetic feed).         |
+| `nuget-stable`               | Production   | Promoted after manual release-engineer approval.        |
+| `PowershellGet-experimental` | Experimental | Mirrors NuGet feed semantics for PowerShell modules.    |
+| `PowershellGet-development`  | Development  |                                                         |
+| `PowershellGet-integration`  | Integration  |                                                         |
+| `PowershellGet-qa`           | QA           |                                                         |
+| `PowershellGet-stable`       | Production   |                                                         |
+| `releasebundle-experimental` | Experimental | Final installer bundles (app + DB + installer scripts). |
+| `releasebundle-development`  | Development  |                                                         |
+| `releasebundle-integration`  | Integration  |                                                         |
+| `releasebundle-qa`           | QA           |                                                         |
+| `releasebundle-production`   | Production   | Source feed for Chocolatey / WinGet publication.        |
 
 Release Bundles are stored as ProGet **Universal Packages** rather than NuGet
 packages, because they carry mixed content (DLLs + SQL + CSV + PowerShell)
@@ -205,6 +219,22 @@ SHA-256, the promotion must fail with a clear error. That state means the
 immutable pipeline has been bypassed or corrupted, not that the promotion was
 already completed.
 
+### 5.2 Ceiling enforcement at the promotion call site
+
+Before the ProGet REST call shown in §5 is issued, `Promote-ProGetPackage`
+calls `Test-PromotionWithinCeiling` with the resolved `CurrentTier` (the
+stage attempting the promotion's destination feed) and the artifact's
+`CeilingTier` (read from the captured run state in
+`_generated/buildmaster/<BuildMasterBuildId>/`, see §6.1). The promotion
+proceeds only when `CurrentTier <= CeilingTier` in the canonical tier order
+`Experimental < Development < Integration < QA < Production`. A ceiling
+violation raises a structured terminating error carrying `PackageName`,
+`PackageVersion`, `FromFeed`, `ToFeed`, `CurrentTier`, `CeilingTier`,
+`BuildId`, `Branch`, and `CommitSha`, so the BuildMaster log records exactly
+why the promotion was refused. See
+[VersionJsonAsCeiling.md](VersionJsonAsCeiling.md) for the full Stage ×
+Ceiling decision matrix and the runbook for handling a refused promotion.
+
 ---
 
 ## 6. Versioning (no special-case for promotion)
@@ -223,13 +253,13 @@ _generated/buildmaster/<BuildMasterBuildId>/
 `<BuildMasterBuildId>` is the value returned by `$BuildMasterId(build)` in
 BuildMaster. The label declares the **ceiling** tier:
 
-| Label         | Ceiling tier | Where the artifact starts            |
-| ------------- | ------------ | ------------------------------------ |
-| `Sprint`      | Experimental | First push lands in `*-experimental` |
-| `Alpha`       | Development  | Promoted from Experimental           |
-| `Beta`        | Integration  | Promoted from Development            |
-| `QA`          | QA           | Promoted from Integration            |
-| _(none)_      | Production   | Promoted from QA                     |
+| Label    | Ceiling tier | Where the artifact starts            |
+| -------- | ------------ | ------------------------------------ |
+| `Sprint` | Experimental | First push lands in `*-experimental` |
+| `Alpha`  | Development  | Promoted from Experimental           |
+| `Beta`   | Integration  | Promoted from Development            |
+| `QA`     | QA           | Promoted from Integration            |
+| _(none)_ | Production   | Promoted from QA                     |
 
 The label is metadata on the artifact; the current tier is the feed and
 BuildMaster stage it currently lives in. Promotion guards compare
@@ -244,20 +274,20 @@ defined by `(PackageId, Version)`.
 
 ### 6.1 Where the captured version lives
 
-| Surface | What it holds | Set by | Read by |
-| --- | --- | --- | --- |
-| `_generated/buildmaster/<BuildMasterBuildId>/_resolved_version.tmp` or `<ModuleName>.resolved-version.tmp` | full SemVer, e.g. `0.1.0-Sprint.42` | plan preamble script after `Get-BuildContext` | every later stage of the same BuildMaster build |
-| `_generated/buildmaster/<BuildMasterBuildId>/build-context.json` | build id, BuildMaster build/execution numbers, branch, source path, current tier, ceiling tier, resolved version, prerelease label, allow/skip decisions, and relevant bundle/module paths | plan preamble script | operators, diagnostics, later stage scripts |
-| The artifact's filename | same SemVer minus the `+<hash>` build metadata | `dotnet pack` / `New-PSModuleNupkg` at Experimental | promotion calls; tier gates |
-| BuildMaster release record metadata | full SemVer + SHA-256 | Experimental stage's "attach package" step | audit / forensics |
+| Surface                                                                                                    | What it holds                                                                                                                                                                              | Set by                                              | Read by                                         |
+| ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------- | ----------------------------------------------- |
+| `_generated/buildmaster/<BuildMasterBuildId>/_resolved_version.tmp` or `<ModuleName>.resolved-version.tmp` | full SemVer, e.g. `0.1.0-Sprint.42`                                                                                                                                                        | plan preamble script after `Get-BuildContext`       | every later stage of the same BuildMaster build |
+| `_generated/buildmaster/<BuildMasterBuildId>/build-context.json`                                           | build id, BuildMaster build/execution numbers, branch, source path, current tier, ceiling tier, resolved version, prerelease label, allow/skip decisions, and relevant bundle/module paths | plan preamble script                                | operators, diagnostics, later stage scripts     |
+| The artifact's filename                                                                                    | same SemVer minus the `+<hash>` build metadata                                                                                                                                             | `dotnet pack` / `New-PSModuleNupkg` at Experimental | promotion calls; tier gates                     |
+| BuildMaster release record metadata                                                                        | full SemVer + SHA-256                                                                                                                                                                      | Experimental stage's "attach package" step          | audit / forensics                               |
 
 Captured generated state by plan family:
 
-| Plan | Captured generated state |
-| --- | --- |
-| C# package | current tier, ceiling tier, resolved version, prerelease label, allow/skip flags |
-| PowerShell module | current tier, ceiling tier, resolved version, prerelease label, module nupkg path, allow/skip flags |
-| Release Bundle | current tier, ceiling tier, resolved version, prerelease label, ReleaseBundle context JSON, bundle name, bundle version, bundle path, manifest path, allow/skip flags |
+| Plan              | Captured generated state                                                                                                                                              |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C# package        | current tier, ceiling tier, resolved version, prerelease label, allow/skip flags                                                                                      |
+| PowerShell module | current tier, ceiling tier, resolved version, prerelease label, module nupkg path, allow/skip flags                                                                   |
+| Release Bundle    | current tier, ceiling tier, resolved version, prerelease label, ReleaseBundle context JSON, bundle name, bundle version, bundle path, manifest path, allow/skip flags |
 
 The build-id folder is generated run state and is not committed. It prevents
 stale/cross-run state because two concurrent BuildMaster builds write to
@@ -333,16 +363,16 @@ Pipelines are durable. They are **not** created or deleted per sprint or per
 feature. What changes per sprint is metadata: prerelease suffixes, release
 records in BuildMaster, and the worktree the build agent runs in.
 
-| Boundary                          | Action on pipelines | Action on releases / metadata                                                  |
-| --------------------------------- | ------------------- | ------------------------------------------------------------------------------ |
-| Feature start                     | None                | BuildMaster creates a **new Release scoped to `$FeatureSlug`** (distinct from the trunk Release). `$FeatureSlug` is computed from the branch name per E-DEC-01 (PascalCase, ≤16 chars, derived from the `feature/` suffix). The first Experimental build produces `0.1.0-<FeatureSlug>.1`. Feature artifacts share the trunk feeds; the prerelease suffix provides isolation. |
-| Feature in progress (each sprint) | None                | Feature artifacts are promoted through **all five tiers** under the feature suffix (`0.1.0-<FeatureSlug>.NNN`) using `Promote-ProGetPackage`. The **QA gate is required before merge to stable** — feature artifacts may be promoted to QA, but **no Production promotion** of feature artifacts is permitted until merge. DB migrations on the feature branch must be **additive-only** (no `ALTER COLUMN`, no `DROP`). |
-| Sprint start                      | None                | Create a sprint release-train naming context; package versions inherit it.    |
-| During sprint                     | None                | Each push triggers an Experimental build via the durable pipeline.            |
+| Boundary                          | Action on pipelines | Action on releases / metadata                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| --------------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Feature start                     | None                | BuildMaster creates a **new Release scoped to `$FeatureSlug`** (distinct from the trunk Release). `$FeatureSlug` is computed from the branch name per E-DEC-01 (PascalCase, ≤16 chars, derived from the `feature/` suffix). The first Experimental build produces `0.1.0-<FeatureSlug>.1`. Feature artifacts share the trunk feeds; the prerelease suffix provides isolation.                                                                                                                                                                                         |
+| Feature in progress (each sprint) | None                | Feature artifacts are promoted through **all five tiers** under the feature suffix (`0.1.0-<FeatureSlug>.NNN`) using `Promote-ProGetPackage`. The **QA gate is required before merge to stable** — feature artifacts may be promoted to QA, but **no Production promotion** of feature artifacts is permitted until merge. DB migrations on the feature branch must be **additive-only** (no `ALTER COLUMN`, no `DROP`).                                                                                                                                              |
+| Sprint start                      | None                | Create a sprint release-train naming context; package versions inherit it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| During sprint                     | None                | Each push triggers an Experimental build via the durable pipeline.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | Feature end / merge to stable     | None                | Before merge: **DB migrations are squashed and re-sequenced** to follow trunk's highest existing migration number (no gaps). `version.json` on trunk is updated so the prerelease label is **`Sprint`** (manual step, must precede the pipeline run). After merge, a **trunk Experimental build is triggered**; the first trunk artifact is `Sprint.NNN` where `NNN` resets to trunk's HEAD height. The **feature BuildMaster Release is archived**. The feature's `<FeatureSlug>.NNN` artifacts remain in feeds under their suffix but receive no further promotion. |
-| Sprint end                        | None                | Cut a `release/*` branch from stable; build artifacts from the tag.           |
-| Release cut                       | None                | Build the Release Bundle once from the release-branch tag; promote the same artifact through the five tiers. |
-| _Full lifecycle details_          | _—_                 | _See [`Long-Developing-Features.md`](Long-Developing-Features.md) for the complete feature-branch lifecycle, version-string rules (E-DEC-01), sprint-slice interaction (E-DEC-02), feed targets (E-DEC-03), merge mechanics (E-DEC-04), and DB-compatibility rule (E-DEC-05)._ |
+| Sprint end                        | None                | Cut a `release/*` branch from stable; build artifacts from the tag.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Release cut                       | None                | Build the Release Bundle once from the release-branch tag; promote the same artifact through the five tiers.                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| _Full lifecycle details_          | _—_                 | _See [`Long-Developing-Features.md`](Long-Developing-Features.md) for the complete feature-branch lifecycle, version-string rules (E-DEC-01), sprint-slice interaction (E-DEC-02), feed targets (E-DEC-03), merge mechanics (E-DEC-04), and DB-compatibility rule (E-DEC-05)._                                                                                                                                                                                                                                                                                        |
 
 The single exception is the **first time** a new BuildMaster Application is
 introduced (e.g., a brand-new component getting its own release-bundle

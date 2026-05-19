@@ -22,10 +22,10 @@ diagrams scattered across the C# and PowerShell pipeline docs.
 
 ## 1. Three durable pipelines
 
-| Pipeline name                | Artifact family                      | Tier feeds                                                               | Trigger                                                                                  |
-| ---------------------------- | ------------------------------------ | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| `CSharp-Package-Pipeline`    | C# NuGet packages                    | `nuget-experimental` → `nuget-stable`                                    | ProGet polling on `nuget-experimental`; manual create-build.                             |
-| `PowerShell-Module-Pipeline` | PowerShellGet modules                | `PowershellGet-experimental` → `PowershellGet-stable`                    | ProGet polling on `PowershellGet-experimental`; manual create-build.                     |
+| Pipeline name                | Artifact family                      | Tier feeds                                                                                      | Trigger                                                                                  |
+| ---------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `CSharp-Package-Pipeline`    | C# NuGet packages                    | `nuget-experimental` → `nuget-stable`                                                           | ProGet polling on `nuget-experimental`; manual create-build.                             |
+| `PowerShell-Module-Pipeline` | PowerShellGet modules                | `PowershellGet-experimental` → `PowershellGet-stable`                                           | ProGet polling on `PowershellGet-experimental`; manual create-build.                     |
 | `Release-Bundle-Pipeline`    | Release Bundles (Universal Packages) | `releasebundle-experimental` → `releasebundle-production` (Distribution stage on hold per D-06) | ProGet polling on `releasebundle-experimental`; manual create-build at release-tag time. |
 
 These are the **only** pipelines. There is no per-project pipeline, no
@@ -40,11 +40,11 @@ plans, multiple Applications) and **D-06** (Release Bundle terminates at
 `releasebundle-production`; Chocolatey/WinGet on hold), the durable
 pipelines map to canonical `.otter` files and BuildMaster Applications as:
 
-| Pipeline           | OtterScript Plan (canonical)        | BuildMaster Application(s)                       | Final ProGet Feed         | Notes                                                                                            |
-| ------------------ | ----------------------------------- | ------------------------------------------------ | ------------------------- | ------------------------------------------------------------------------------------------------ |
-| C# Package         | `CSharpPackage-5Stage.otter`        | `ATAP.Utilities-CSharp`, `AceCommander`          | `nuget-stable`            | Shared plan; two Applications per D-05. `$SolutionPath` Application Variable selects the `.sln`. |
-| PowerShell Module  | `PowerShellModule-5Stage.otter`     | `ATAP.Utilities`                                 | `powershellget-stable`    | PowerShell modules live only in ATAP.Utilities.                                                  |
-| Release Bundle     | `ReleaseBundle-6Stage.otter`        | `AceCommander-ReleaseBundle`                     | `releasebundle-production`| Per D-06, BuildMaster Pipeline must NOT include the `Distribution` stage; terminates at Production. Chocolatey/WinGet deferred. |
+| Pipeline          | OtterScript Plan (canonical)    | BuildMaster Application(s)              | Final ProGet Feed          | Notes                                                                                                                           |
+| ----------------- | ------------------------------- | --------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| C# Package        | `CSharpPackage-5Stage.otter`    | `ATAP.Utilities-CSharp`, `AceCommander` | `nuget-stable`             | Shared plan; two Applications per D-05. `$SolutionPath` Application Variable selects the `.sln`.                                |
+| PowerShell Module | `PowerShellModule-5Stage.otter` | `ATAP.Utilities`                        | `powershellget-stable`     | PowerShell modules live only in ATAP.Utilities.                                                                                 |
+| Release Bundle    | `ReleaseBundle-6Stage.otter`    | `AceCommander-ReleaseBundle`            | `releasebundle-production` | Per D-06, BuildMaster Pipeline must NOT include the `Distribution` stage; terminates at Production. Chocolatey/WinGet deferred. |
 
 All plan files live in `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/`
 and carry header banners documenting the immutable build strategy.
@@ -54,31 +54,31 @@ and carry header banners documenting the immutable build strategy.
 Each BuildMaster Application supplies its own values for the variables its
 `.otter` plan reads. Concrete values:
 
-| Variable Name                                | `ATAP.Utilities-CSharp`                  | `AceCommander`                                | `ATAP.Utilities` (PowerShell)             | `AceCommander-ReleaseBundle`              |
-| -------------------------------------------- | ---------------------------------------- | --------------------------------------------- | ----------------------------------------- | ----------------------------------------- |
-| `$ApplicationName`                           | `ATAP.Utilities-CSharp`                  | `AceCommander`                                | `ATAP.Utilities`                          | `AceCommander-ReleaseBundle`              |
-| `$Branch`                                    | injected by Repository Monitor           | injected by Repository Monitor                | injected by Repository Monitor            | injected by Repository Monitor            |
-| `$SourcePath`                                | path to ATAP.Utilities worktree          | path to AceCommander worktree                 | path to ATAP.Utilities worktree           | path to AceCommander worktree             |
-| `$Configuration`                             | `Release`                                | `Release`                                     | _(not used)_                              | _(not used)_                              |
-| `$ProGetApiKey`                              | masked, from `PROGET_ADMIN_API_KEY`      | masked, from `PROGET_ADMIN_API_KEY`           | masked, from `PROGET_ADMIN_API_KEY`       | masked, from `PROGET_ADMIN_API_KEY`       |
-| `$MetaPackageName`                           | `ATAP.Utilities`                         | `AceCommander`                                | _(not used)_                              | _(not used)_                              |
-| `$SolutionPath` _(new per BD-10)_            | `ATAP.Utilities.sln`                     | `AceCommander.sln`                            | _(not used)_                              | _(not used)_                              |
-| `$ProjectPath`                               | project directory or `.csproj` for NBGV  | project directory or `.csproj` for NBGV       | _(not used)_                              | _(not used)_                              |
-| `$ModuleName`                                | _(not used)_                             | _(not used)_                                  | module folder under `src/`                | _(not used)_                              |
-| `$PackageName`                               | _(not used)_                             | _(not used)_                                  | normally same as `$ModuleName`            | _(not used)_                              |
-| `$PackageVersion`                            | _(not used; derived as `$ResolvedPackageVersion`)_ | _(not used; derived as `$ResolvedPackageVersion`)_ | _(not used; plan reads captured `$ResolvedPackageVersion`)_ | _(not used directly)_                     |
-| `$Tier`                                      | BuildMaster stage context                | BuildMaster stage context                     | BuildMaster stage context                 | BuildMaster stage context                 |
-| `$CeilingTier`                               | preamble-set from `version.json`         | preamble-set from `version.json`              | preamble-set from `version.json`          | preamble-set from `version.json`          |
-| `$ProductName`                               | _(not used)_                             | _(not used)_                                  | _(not used)_                              | `AceCommander`                            |
-| `$ReleaseTag`                                | _(not used)_                             | _(not used)_                                  | _(not used)_                              | e.g. `v1.4.0` (or empty → use `$Branch`)  |
-| `$ProGetUrl`                                 | _(not used directly)_                    | _(not used directly)_                         | _(not used directly)_                     | `http://localhost:50000`                  |
-| `$ReleaseBundleExperimentalFeedName`         | _(not used)_                             | _(not used)_                                  | _(not used)_                              | `releasebundle-experimental`              |
-| `$ReleaseBundleDevelopmentFeedName`          | _(not used)_                             | _(not used)_                                  | _(not used)_                              | `releasebundle-development`               |
-| `$ReleaseBundleIntegrationFeedName`          | _(not used)_                             | _(not used)_                                  | _(not used)_                              | `releasebundle-integration`               |
-| `$ReleaseBundleQAFeedName`                   | _(not used)_                             | _(not used)_                                  | _(not used)_                              | `releasebundle-qa`                        |
-| `$ReleaseBundleProductionFeedName`           | _(not used)_                             | _(not used)_                                  | _(not used)_                              | `releasebundle-production`                |
-| `$PreviousProductionBackupPath`              | _(not used)_                             | _(not used)_                                  | _(not used)_                              | path to prior production `.bak` (Flyway rehearsal) |
-| `$IntegrationDatabaseBitwardenSecretName`    | _(not used)_                             | _(not used)_                                  | _(not used)_                              | `dbConnectionString-AceCommander-utat022-Integration` |
+| Variable Name                             | `ATAP.Utilities-CSharp`                            | `AceCommander`                                     | `ATAP.Utilities` (PowerShell)                               | `AceCommander-ReleaseBundle`                          |
+| ----------------------------------------- | -------------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------- |
+| `$ApplicationName`                        | `ATAP.Utilities-CSharp`                            | `AceCommander`                                     | `ATAP.Utilities`                                            | `AceCommander-ReleaseBundle`                          |
+| `$Branch`                                 | injected by Repository Monitor                     | injected by Repository Monitor                     | injected by Repository Monitor                              | injected by Repository Monitor                        |
+| `$SourcePath`                             | path to ATAP.Utilities worktree                    | path to AceCommander worktree                      | path to ATAP.Utilities worktree                             | path to AceCommander worktree                         |
+| `$Configuration`                          | `Release`                                          | `Release`                                          | _(not used)_                                                | _(not used)_                                          |
+| `$ProGetApiKey`                           | masked, from `PROGET_ADMIN_API_KEY`                | masked, from `PROGET_ADMIN_API_KEY`                | masked, from `PROGET_ADMIN_API_KEY`                         | masked, from `PROGET_ADMIN_API_KEY`                   |
+| `$MetaPackageName`                        | `ATAP.Utilities`                                   | `AceCommander`                                     | _(not used)_                                                | _(not used)_                                          |
+| `$SolutionPath` _(new per BD-10)_         | `ATAP.Utilities.sln`                               | `AceCommander.sln`                                 | _(not used)_                                                | _(not used)_                                          |
+| `$ProjectPath`                            | project directory or `.csproj` for NBGV            | project directory or `.csproj` for NBGV            | _(not used)_                                                | _(not used)_                                          |
+| `$ModuleName`                             | _(not used)_                                       | _(not used)_                                       | module folder under `src/`                                  | _(not used)_                                          |
+| `$PackageName`                            | _(not used)_                                       | _(not used)_                                       | normally same as `$ModuleName`                              | _(not used)_                                          |
+| `$PackageVersion`                         | _(not used; derived as `$ResolvedPackageVersion`)_ | _(not used; derived as `$ResolvedPackageVersion`)_ | _(not used; plan reads captured `$ResolvedPackageVersion`)_ | _(not used directly)_                                 |
+| `$Tier`                                   | BuildMaster stage context                          | BuildMaster stage context                          | BuildMaster stage context                                   | BuildMaster stage context                             |
+| `$CeilingTier`                            | preamble-set from `version.json`                   | preamble-set from `version.json`                   | preamble-set from `version.json`                            | preamble-set from `version.json`                      |
+| `$ProductName`                            | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | `AceCommander`                                        |
+| `$ReleaseTag`                             | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | e.g. `v1.4.0` (or empty → use `$Branch`)              |
+| `$ProGetUrl`                              | _(not used directly)_                              | _(not used directly)_                              | _(not used directly)_                                       | `http://localhost:50000`                              |
+| `$ReleaseBundleExperimentalFeedName`      | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | `releasebundle-experimental`                          |
+| `$ReleaseBundleDevelopmentFeedName`       | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | `releasebundle-development`                           |
+| `$ReleaseBundleIntegrationFeedName`       | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | `releasebundle-integration`                           |
+| `$ReleaseBundleQAFeedName`                | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | `releasebundle-qa`                                    |
+| `$ReleaseBundleProductionFeedName`        | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | `releasebundle-production`                            |
+| `$PreviousProductionBackupPath`           | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | path to prior production `.bak` (Flyway rehearsal)    |
+| `$IntegrationDatabaseBitwardenSecretName` | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | `dbConnectionString-AceCommander-utat022-Integration` |
 
 `$Tier` is the current BuildMaster stage. `$BuildMasterBuildId` is derived in
 each plan with `$BuildMasterId(build)` and is used only for generated run-state
@@ -86,6 +86,19 @@ isolation. `$CeilingTier` is not configured on the Application; each plan
 preamble computes it with `Get-BuildContext` from the NBGV prerelease label,
 writes it to the build-id scoped context folder, and uses
 `Test-PromotionWithinCeiling` to skip stages above that ceiling.
+
+> **Do not configure `$CeilingTier` as a BuildMaster Application Variable or
+> Pipeline Variable.** It is **preamble-derived runtime state**, not a static
+> input. If you find a BuildMaster Application with `$CeilingTier` listed
+> under Variables in the UI, delete it — a stale static value will silently
+> override the preamble's computed value and either block legitimate
+> promotions or allow ones that violate the ceiling. The only correct sources
+> for `$CeilingTier` are: (a) the value computed by `Get-BuildContext` in the
+> stage preamble, and (b) the captured value re-read from
+> `_generated/buildmaster/<BuildMasterBuildId>/build-context.json` by later
+> stages of the same build. The same prohibition applies to
+> `$ResolvedPackageVersion`, `$AllowDevelopment`, `$AllowIntegration`,
+> `$AllowQA`, and `$AllowProduction` — all are preamble-derived.
 
 ### Build-id scoped run-state contract
 
@@ -184,9 +197,9 @@ workstation.
 
 | Cmdlet                             | Used by                                            | Role                                                                                                                                                                                                       | Status      |
 | ---------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| `Get-BuildContext`                 | All three pipelines                                | Resolve branch type, application, version, `CurrentTier`, and `CeilingTier`. `.Tier` is a deprecated alias for `CeilingTier` until the next removal release.                                                | implemented |
-| `Get-TierOrder`                    | All three pipelines / promotion guards             | Return the canonical tier ordering used for ceiling checks.                                                                                                                                                 | implemented |
-| `Test-PromotionWithinCeiling`      | All three pipelines / `Promote-ProGetPackage`      | Stop stage execution or promotion before ProGet is called when the destination/current tier is above `CeilingTier`.                                                                                         | implemented |
+| `Get-BuildContext`                 | All three pipelines                                | Resolve branch type, application, version, `CurrentTier`, and `CeilingTier`. `.Tier` is a deprecated alias for `CeilingTier` until the next removal release.                                               | implemented |
+| `Get-TierOrder`                    | All three pipelines / promotion guards             | Return the canonical tier ordering used for ceiling checks.                                                                                                                                                | implemented |
+| `Test-PromotionWithinCeiling`      | All three pipelines / `Promote-ProGetPackage`      | Stop stage execution or promotion before ProGet is called when the destination/current tier is above `CeilingTier`.                                                                                        | implemented |
 | `New-ReleaseManifest`              | Release-Bundle pipeline                            | Generate `manifest.json` for a release tag.                                                                                                                                                                | implemented |
 | `New-ReleaseBundle`                | Release-Bundle pipeline                            | Assemble the bundle directory tree and pack to `.upack`.                                                                                                                                                   | implemented |
 | `Get-DeployedReleaseManifest`      | Release-Bundle support                             | Read and validate a deployed bundle's `manifest.json`.                                                                                                                                                     | implemented |
@@ -285,6 +298,66 @@ The plan preamble writes `$AllowDevelopment` by calling the plan-specific
 Note the absence of `dotnet pack` in the Development stage; that
 ran exactly once at Experimental. The Development stage's job is to **test and
 promote**, not to rebuild.
+
+### 5.1 Preamble scripts (C10 deliverable)
+
+The OtterScript plans no longer embed multi-line `pwsh -Command` preambles.
+Each plan calls a single preamble script via `pwsh -File` with explicit
+arguments. The scripts live alongside the `.otter` files in
+`src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/` and share state through
+the build-id scoped folder described above.
+
+| Preamble script                               | Called from                                               | Computes / captures                                                                                                                                        |
+| --------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BuildMasterRunContext.Common.ps1`            | dot-sourced by the three `Initialize-*` scripts           | Build-id folder resolution (`_generated/buildmaster/<BuildMasterBuildId>/`), `build-context.json` read/write, retention cleanup, conflicting-version guard |
+| `Initialize-CSharpPackageBuildContext.ps1`    | `CSharpPackage-5Stage.otter` Experimental preamble        | `CurrentTier`, `CeilingTier`, `ResolvedPackageVersion`, prerelease label, `AllowDevelopment`/`AllowIntegration`/`AllowQA`/`AllowProduction` flags          |
+| `Initialize-PowerShellModuleBuildContext.ps1` | `PowerShellModule-5Stage.otter` Experimental preamble     | Same as C# plus module nupkg path                                                                                                                          |
+| `Initialize-ReleaseBundleBuildContext.ps1`    | `ReleaseBundle-6Stage.otter` Experimental preamble        | Same as C# plus bundle name, bundle version, bundle path, manifest path                                                                                    |
+| `New-ReleaseBundleBuildMasterPackage.ps1`     | `ReleaseBundle-6Stage.otter` Experimental capture/publish | Assembles and publishes the `.upack`; emits state for later stages                                                                                         |
+
+Each `Initialize-*` script is idempotent within a single BuildMaster build id:
+re-invocation refreshes recomputable fields but fails if a previously written
+`build-context.json` recorded a different resolved version (retry safety —
+see §1 "Build-id scoped run-state contract"). Later stages of the same build
+**do not re-invoke** the preamble; they read `build-context.json` from the
+shared build-id folder. This is the single mechanism by which `$CeilingTier`,
+`$ResolvedPackageVersion`, and the four `$Allow*` flags propagate.
+
+The OtterScript invocation pattern is:
+
+```otter
+Exec
+(
+    FileName: pwsh,
+    Arguments: `-File "$SourcePath\src\ATAP.Utilities.BuildTooling.BuildMaster\Plans\Initialize-CSharpPackageBuildContext.ps1" -SourcePath "$SourcePath" -ProjectPath "$ProjectPath" -BuildMasterBuildId "$BuildMasterId(build)" -Tier "$Tier"`
+);
+```
+
+`pwsh -Command` one-liners are no longer used for preambles. See task C10 in
+`_Planning-wt-14-Sprint-0007-work-items\TASKS_V3GPT5.5.md` for the migration
+record.
+
+### 5.2 Ceiling-skip markers (pending C12)
+
+When a stage's `$Allow<Tier>` flag is `false` — meaning `Test-PromotionWithinCeiling`
+reported `CurrentTier > CeilingTier` — the stage body is skipped entirely.
+For audit, every skip must emit a **ceiling-skip marker** so a reader of the
+BuildMaster build log can answer "why didn't QA run?" without re-deriving the
+ceiling math.
+
+The contract (to be implemented in task **C12**, currently open):
+
+| Element               | Value                                                                                                                        |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Marker type           | BuildMaster artifact named `CeilingSkipMarkers`                                                                              |
+| One marker per        | skipped stage in a single build                                                                                              |
+| Marker payload (JSON) | `{ stage, currentTier, ceilingTier, resolvedVersion, prereleaseLabel, buildMasterBuildId, reason }`                          |
+| Storage location      | `_generated/buildmaster/<BuildMasterBuildId>/ceiling-skip-<Stage>.json`, then attached as the `CeilingSkipMarkers` artifact  |
+| Log line              | `Stage <Stage> skipped: CurrentTier=<X> exceeds CeilingTier=<Y> for <PackageName> <Version>` (PSFramework `Important` level) |
+
+Until C12 lands, the plans skip stages cleanly but do not emit the structured
+marker. A Sprint 0007 ceiling smoke run (task C02) will be re-verified against
+this contract once C12 ships.
 
 ---
 

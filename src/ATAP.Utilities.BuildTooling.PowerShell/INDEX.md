@@ -9,6 +9,43 @@ This index lists every file currently in the BuildTooling PowerShell project and
 - `tools/` contains loose workstation or development setup scripts that are not exported cmdlets.
 - `tests/` contains Pester coverage and fixtures.
 - `Resources/`, `Documentation/`, and `Obsolete/` hold support files, docs, and retained historical scripts.
+- `Obsolete/private/` retains retired internal helpers (e.g. the per-sprint ProGet feed and per-sprint database/BuildMaster scaffolding) for provenance only; no current cmdlet dot-sources them.
+
+## Sprint Lifecycle Flow
+
+The public sprint helpers are driven by two runbooks in the SharedVSCode `.claude/agents/` folder. Use this section as the index back into the per-cmdlet entries below.
+
+**Runbooks:**
+
+- [SprintStartAgent](../../../../SharedVSCode/.claude/agents/SprintStartAgent.md) — opens a new sprint: SharedVSCode + downstream worktrees, junctions, sprint secrets, sprint SQL instances, BuildMaster sprint variables, sprint overview workspace.
+- [SprintEndAgent](../../../../SharedVSCode/.claude/agents/SprintEndAgent.md) — closes a sprint: retrospective snapshot, downstream reset to main, sprint secret/instance/variable cleanup, sprint workspace archival, generated-artifact purge.
+
+**Sprint start sequence (public cmdlets, in execution order):**
+
+1. [Test-SprintPrerequisites.ps1](public/Test-SprintPrerequisites.ps1) — Step 0 preflight (pwsh, gh auth, Bitwarden, BuildTooling import, ProGet/BuildMaster reachability).
+2. [Assert-BuildMasterReady.ps1](public/Assert-BuildMasterReady.ps1) — Step 0 preflight (BuildMaster apps, pipelines, required application variables, API key).
+3. [New-SprintStage1.ps1](public/New-SprintStage1.ps1) — SharedVSCode + _Planning sprint branches/worktrees + permanent-feed NuGet.config.
+4. [New-SprintStage2.ps1](public/New-SprintStage2.ps1) — downstream sprint branches/worktrees, NTFS junctions, claude-settings symlinks.
+5. [New-SprintSqlServerInstances.ps1](public/New-SprintSqlServerInstances.ps1) — `Dev<user>` and `Exp<user>` SQL instances + Flyway database build.
+6. [New-SprintBitwardenSecrets.ps1](public/New-SprintBitwardenSecrets.ps1) — per-sprint Bitwarden secure-note connection strings for Dev/Exp.
+7. [Set-BuildMasterSprintVariables.ps1](public/Set-BuildMasterSprintVariables.ps1) — sprint-scoped BuildMaster Application Variables.
+8. [New-OverviewSprintWorkspace.ps1](public/New-OverviewSprintWorkspace.ps1) — `OverviewSprint<NNNN>.code-workspace` for the active sprint.
+9. [Build-CLAUDEPerRepository.ps1](public/Build-CLAUDEPerRepository.ps1) — combined `CLAUDE.md` per repo worktree.
+
+**Sprint end sequence (public cmdlets, in execution order):**
+
+1. [Test-SprintPrerequisites.ps1](public/Test-SprintPrerequisites.ps1) — Step 1 preflight (re-run before any side effects).
+2. [Save-SprintRetrospectiveSnapshot.ps1](public/Save-SprintRetrospectiveSnapshot.ps1) — sprint metrics snapshot to `_Planning/SprintRetrospective/Snapshots/<NNNN>/`.
+3. [Reset-DownstreamToSharedVSCodeMain.ps1](public/Reset-DownstreamToSharedVSCodeMain.ps1) — workspace templateRef back to `main`, profile back to `default`, re-apply downstream context.
+4. [Assert-MainBranchTemplateRef.ps1](public/Assert-MainBranchTemplateRef.ps1) — guard rail: confirm all workspace files now point to `main`.
+5. [Remove-SprintBitwardenSecrets.ps1](public/Remove-SprintBitwardenSecrets.ps1) — delete per-sprint Bitwarden secure notes.
+6. [Remove-SprintSqlServerInstances.ps1](public/Remove-SprintSqlServerInstances.ps1) — drop databases and uninstall `Dev<user>`/`Exp<user>` instances.
+7. [Clear-BuildMasterSprintVariables.ps1](public/Clear-BuildMasterSprintVariables.ps1) — drop sprint-scoped BuildMaster Application Variables.
+8. [Clear-SprintGeneratedArtifacts.ps1](public/Clear-SprintGeneratedArtifacts.ps1) — purge `_generated/` folders across sprint worktrees.
+
+**Permanent (ecosystem-wide) sprint infrastructure, not per-sprint:**
+
+- ProGet feeds are permanent: `nuget-experimental`, `nuget-development`, `nuget-integration`, `nuget-qa`, `nuget-stable`, plus the parallel `powershellget-*` and `universal-*` feed families. See [New-PermanentBitwardenSecrets.ps1](public/New-PermanentBitwardenSecrets.ps1) and [Set-BuildMasterStableVariables.ps1](public/Set-BuildMasterStableVariables.ps1) for permanent provisioning. The old per-sprint ProGet feed helpers were retired in Sprint 0007 (task B08) and live under `Obsolete/private/`.
 
 ## .
 
@@ -88,6 +125,17 @@ This index lists every file currently in the BuildTooling PowerShell project and
 | [.gitkeep](Obsolete/tests/.gitkeep) | Placeholder that keeps the directory in source control. |
 | [Set-ProGetServiceConfigPath.Tests.ps1](Obsolete/tests/Set-ProGetServiceConfigPath.Tests.ps1) | Pester tests for set pro get service config path. |
 
+## Obsolete/private
+
+Retired in Sprint 0007 task B08. Retained for provenance only — no active cmdlet dot-sources these files.
+
+| File | Purpose |
+| --- | --- |
+| [New-SprintBitwardenConnectionStrings.ps1](Obsolete/private/New-SprintBitwardenConnectionStrings.ps1) | Retired — superseded by public `New-SprintBitwardenSecrets.ps1` (per-sprint Dev/Exp secure notes). |
+| [New-SprintBuildMasterBuilds.ps1](Obsolete/private/New-SprintBuildMasterBuilds.ps1) | Retired — replaced by public `Set-BuildMasterSprintVariables.ps1` for sprint-scoped Application Variables. |
+| [New-SprintDatabaseInstances.ps1](Obsolete/private/New-SprintDatabaseInstances.ps1) | Retired — superseded by public `New-SprintSqlServerInstances.ps1` (per-developer Dev/Exp named instances). |
+| [Remove-SprintProGetFeeds.ps1](Obsolete/private/Remove-SprintProGetFeeds.ps1) | Retired — permanent-feed topology (A09) eliminates per-sprint ProGet feeds; `Reset-DownstreamToSharedVSCodeMain.ps1` no longer calls it. |
+
 ## private
 
 | File | Purpose |
@@ -106,10 +154,6 @@ This index lists every file currently in the BuildTooling PowerShell project and
 | [Get-WorkspaceJson.ps1](private/Get-WorkspaceJson.ps1) | Reads a .code-workspace file and returns its parsed JSON object. |
 | [New-GeneratedFileContent.ps1](private/New-GeneratedFileContent.ps1) | Wraps source file content with a generated-file header. |
 | [New-HostSettingsForPackageRepositoryFeeds.ps1](private/New-HostSettingsForPackageRepositoryFeeds.ps1) | Creates new host settings for package repository feeds resources or scaffolding. |
-| [New-SprintBitwardenConnectionStrings.ps1](private/New-SprintBitwardenConnectionStrings.ps1) | Creates Bitwarden secure-note items containing SQL Server connection strings for the sprint database instances. |
-| [New-SprintBuildMasterBuilds.ps1](private/New-SprintBuildMasterBuilds.ps1) | Creates BuildMaster build configurations for sprint environments. |
-| [New-SprintDatabaseInstances.ps1](private/New-SprintDatabaseInstances.ps1) | Creates the SQL Server database instance for the sprint's ephemeral experimental/development environment. |
-| [Remove-SprintProGetFeeds.ps1](private/Remove-SprintProGetFeeds.ps1) | Deletes the per-sprint ProGet NuGet feeds created by New-SprintProGetFeeds. |
 | [Resolve-ProGetFeedFromSettings.ps1](private/Resolve-ProGetFeedFromSettings.ps1) | Resolves canonical ProGet feed metadata from $global:Settings. |
 | [Resolve-WorkspaceFiles.ps1](private/Resolve-WorkspaceFiles.ps1) | Resolves an array of workspace file paths to their full provider paths. |
 | [Save-WorkspaceJson.ps1](private/Save-WorkspaceJson.ps1) | Serializes a PSCustomObject back to a .code-workspace file as JSON. |
@@ -257,6 +301,7 @@ This index lists every file currently in the BuildTooling PowerShell project and
 | [Test-PowerShellSyntax.ps1](public/Test-PowerShellSyntax.ps1) | Parses a PowerShell script file and reports syntax errors. |
 | [Test-PromotionWithinCeiling.ps1](public/Test-PromotionWithinCeiling.ps1) | Tests whether a stage or destination tier is within a promotion ceiling. |
 | [Update-BlocksInCsproj.ps1](public/Update-BlocksInCsproj.ps1) | Updates blocks in csproj content or metadata. |
+| [Update-OverviewWorkspaceStableInfo.ps1](public/Update-OverviewWorkspaceStableInfo.ps1) | Idempotently merges stable-branch folder list, ProGet feeds, and settings from the current sprint workspace back into root `Overview.code-workspace`. Called from SprintEndAgent. |
 | [Update-PackageVersion.ps1](public/Update-PackageVersion.ps1) | ToDo: write Help SYNOPSIS For this function |
 | [Validate-ProGetFeeds.ps1](public/Validate-ProGetFeeds.ps1) | Validates pro get feeds configuration or state. |
 
@@ -433,6 +478,7 @@ This index lists every file currently in the BuildTooling PowerShell project and
 | [Test-ModuleManifest.NotRight.ps1](tests/Unit/Test-ModuleManifest.NotRight.ps1) | ToDo: write Help SYNOPSIS For this function |
 | [Test-MSBuildPropertyPropagation.Tests.ps1](tests/Unit/Test-MSBuildPropertyPropagation.Tests.ps1) | Pester tests for test msbuild property propagation. |
 | [Test-PromotionWithinCeiling.Tests.ps1](tests/Unit/Test-PromotionWithinCeiling.Tests.ps1) | Pester tests for test promotion within ceiling. |
+| [Update-OverviewWorkspaceStableInfo.Tests.ps1](tests/Unit/Update-OverviewWorkspaceStableInfo.Tests.ps1) | `Update-OverviewWorkspaceStableInfo` — stable-folder derivation, ProGet-feed refresh, settings preservation, sprint-ephemeral strip, idempotency, `-WhatIf` no-write, `-KeepMissing` retention, auto source discovery. |
 
 ## tools
 

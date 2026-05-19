@@ -8,10 +8,10 @@ artifact be promoted?" The current stage comes from BuildMaster.
 
 ## Two Tier Concepts
 
-| Concept | Source | Changes during one run? | Used for |
-| --- | --- | --- | --- |
-| `CurrentTier` | BuildMaster stage context (`$Tier`, `-Stage`, or stage environment variable) | Yes | Stage gating, test selection, source and destination feed choices |
-| `CeilingTier` | NBGV prerelease label in `version.json` | No | Skipping stages above the allowed promotion ceiling |
+| Concept       | Source                                                                       | Changes during one run? | Used for                                                          |
+| ------------- | ---------------------------------------------------------------------------- | ----------------------- | ----------------------------------------------------------------- |
+| `CurrentTier` | BuildMaster stage context (`$Tier`, `-Stage`, or stage environment variable) | Yes                     | Stage gating, test selection, source and destination feed choices |
+| `CeilingTier` | NBGV prerelease label in `version.json`                                      | No                      | Skipping stages above the allowed promotion ceiling               |
 
 `Get-BuildContext` now returns both values. Its legacy `.Tier` property is a
 deprecated alias for `.CeilingTier` for the release that introduces this change;
@@ -19,17 +19,59 @@ callers should move to `.CeilingTier` or `.CurrentTier` explicitly.
 
 ## Ceiling Table
 
-| `version.json` prerelease label | `CeilingTier` |
-| --- | --- |
+| `version.json` prerelease label                          | `CeilingTier`  |
+| -------------------------------------------------------- | -------------- |
 | `Sprint.N` or feature labels such as `PaymentRefactor.N` | `Experimental` |
-| `Alpha` | `Development` |
-| `Beta` | `Integration` |
-| `QA` | `QA` |
-| none | `Production` |
+| `Alpha`                                                  | `Development`  |
+| `Beta`                                                   | `Integration`  |
+| `QA`                                                     | `QA`           |
+| none                                                     | `Production`   |
 
 The documentation may still call the final public feed "stable" when referring
 to ProGet feed names such as `nuget-stable`. The canonical BuildMaster tier name
 in code is `Production`; `Stable` is accepted as an alias by promotion guards.
+
+## Stage × Ceiling Matrix
+
+Each row is a `version.json` prerelease label (which sets the ceiling tier).
+Each column is a BuildMaster execution stage.
+`✓` = stage executes; `–` = stage is skipped because it exceeds the ceiling.
+
+| `version.json` label     | `CeilingTier` | Experimental | Development | Integration | QA  | Production |
+| ------------------------ | ------------- | :----------: | :---------: | :---------: | :-: | :--------: |
+| `Sprint` / feature label | Experimental  |      ✓       |      –      |      –      |  –  |     –      |
+| `Alpha`                  | Development   |      ✓       |      ✓      |      –      |  –  |     –      |
+| `Beta`                   | Integration   |      ✓       |      ✓      |      ✓      |  –  |     –      |
+| `QA`                     | QA            |      ✓       |      ✓      |      ✓      |  ✓  |     –      |
+| _(empty)_                | Production    |      ✓       |      ✓      |      ✓      |  ✓  |     ✓      |
+
+The Experimental stage always executes; no ceiling ever skips it.
+`IsAtCeiling` is `$true` in the rightmost ✓ column for each row.
+
+## Edge Cases
+
+| Scenario                                 | Behavior                                                                                                                                                                               |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unknown label (e.g. `Canary`, `Sprnit`)  | `Get-CeilingFromPrereleaseLabel` returns `Experimental` — only the Experimental stage runs; the pipeline does not error.                                                               |
+| Feature label (e.g. `PaymentRefactor.7`) | Treated as unknown → ceiling is `Experimental`. The numeric suffix is stripped before the switch.                                                                                      |
+| `Stable` stage alias                     | `Get-CurrentTierFromStage` normalizes `Stable` → `Production`. `Test-PromotionWithinCeiling` accepts `Stable` as a synonym for `Production` in both `‑CurrentTier` and `‑CeilingTier`. |
+| Empty / null prerelease label            | Ceiling is `Production`. All five stages execute. This is the requirement for a production-grade release candidate.                                                                    |
+| Height-0 label-change commit             | NBGV emits `.g{shorthash}` (e.g. `Alpha.0.g1a2b3c4`). `Get-CeilingFromPrereleaseLabel` strips trailing `.g*` and height digits; ceiling resolves correctly.                            |
+| Label case mismatch (`alpha` vs `Alpha`) | `Get-CeilingFromPrereleaseLabel` lower-cases before the `switch` — both are accepted identically.                                                                                      |
+| Concurrent BuildMaster runs              | Each run uses a unique `$BuildMasterId(build)` subdirectory under `_generated/buildmaster/`; no cross-run clobbering.                                                                  |
+
+## Vocabulary Map
+
+| Term                        | Where it appears                                                | Meaning                                                                                                                                          |
+| --------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **CeilingTier**             | `version.json` prerelease label; `Get-BuildContext` output      | The highest tier this artifact may reach in one pipeline run. Set by the developer; resolved by `Get-CeilingFromPrereleaseLabel`.                |
+| **CurrentTier**             | BuildMaster stage context; `Get-BuildContext` output            | The tier executing now. Comes from the stage's `-Stage` parameter or OtterScript `$Tier`. Resolved by `Get-CurrentTierFromStage`.                |
+| **IsAtCeiling**             | `Get-BuildContext` output property                              | `$true` when `CurrentTier == CeilingTier`. Stages at the ceiling run their full logic; stages above the ceiling are skipped.                     |
+| **ceiling label**           | `version.json` `"version"` field prerelease segment             | The prerelease portion of the NBGV version string (e.g. `Alpha`, `Beta`, `QA`, or empty). Does not change during a run.                          |
+| **skip marker**             | `_generated/buildmaster/<id>/ceiling_skip_markers/<Stage>.skip` | A file written when a stage is skipped due to the ceiling. Aggregated into the `CeilingSkipMarkers` BuildMaster artifact for post-run diagnosis. |
+| **immutable artifact**      | The `.nupkg` or universal package produced once in Experimental | Bytes never change across promotions. The same file (same SHA-256) is copied from feed to feed.                                                  |
+| **promotion**               | `Promote-ProGetPackage` call                                    | Moving the immutable artifact from one feed to the next tier. Does not rebuild, re-stamp, or re-invoke NBGV.                                     |
+| **cutting a new candidate** | Editing `version.json` + committing + triggering a new run      | Produces a new artifact with a new version number. Use this when you need to raise or change the ceiling.                                        |
 
 ## Developer Workflow
 

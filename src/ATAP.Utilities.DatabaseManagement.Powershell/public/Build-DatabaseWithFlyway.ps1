@@ -28,7 +28,7 @@ under the key path DatabaseName.Environment.SqlInstance.
 
 IMPORTANT — Experimental environment: the HostSettings fragment stores a placeholder value
 ('Exp{username}') for the Experimental instance because it is an ephemeral per-sprint instance
-created by New-SprintDatabaseInstances. When calling this function directly for Experimental,
+created by New-SprintSqlServerInstances. When calling this function directly for Experimental,
 you MUST supply -SqlInstance explicitly (e.g. -SqlInstance 'Expwhertzing'). The function will
 throw if SqlInstance cannot be resolved to a non-empty value.
 
@@ -168,6 +168,19 @@ https://github.com/whertzing/ATAP.Utilities
     $mn = 'ATAP.Utilities.DatabaseManagement.Powershell'
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
+
+    # Load Helpers
+    try {
+      # ToDo: Remove this when packaging works
+      if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1"
+      }
+    }
+    catch {
+      $errorMessage = "Failed to load Get-ParameterValueFromNeoConfigurationRoot function. Exception: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      throw
+    }
 
     # Load required helper functions
     try {

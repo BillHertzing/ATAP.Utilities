@@ -313,8 +313,14 @@ function New-SprintSqlServerInstances {
 
                 $buildResult = Build-DatabaseWithFlyway @buildParams
 
-                if (-not $buildResult.Success) {
-                  $buildError = "Build-DatabaseWithFlyway failed for instance='$instanceName' db='$db': $($buildResult.Errors -join '; ')"
+                $resultSuccess = $null -ne $buildResult -and $buildResult.PSObject.Properties['Success'] -and $buildResult.Success
+                if (-not $resultSuccess) {
+                  $errorsDetail = if ($null -ne $buildResult -and $buildResult.PSObject.Properties['Errors'] -and $buildResult.Errors) {
+                    ($buildResult.Errors -join '; ')
+                  } else {
+                    'Build-DatabaseWithFlyway returned no Success=$true and no Errors collection (likely a precondition failure inside the cmdlet).'
+                  }
+                  $buildError = "Build-DatabaseWithFlyway failed for instance='$instanceName' db='$db': $errorsDetail"
                   Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $buildError
                 } else {
                   Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `

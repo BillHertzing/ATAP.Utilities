@@ -47,6 +47,13 @@
 #   first 5 stages (Experimental, Development, Integration, QA, Production).
 #   The Distribution stage block at the bottom of this file is preserved
 #   for the future sprint that takes Chocolatey/WinGet off hold.
+#
+# String quoting convention:
+#   ALL Exec Arguments: values use >>...>> literal blocks, never backtick strings.
+#   Backtick ( `...` ) is reserved for standalone OtterScript expressions
+#   such as Log-Debug and set-value statements.  This avoids escaping
+#   ambiguity when argument strings contain dollar signs, quotes, or
+#   variable references that BuildMaster must not expand prematurely.
 ##########################################################################
 
 # BuildMaster stages:

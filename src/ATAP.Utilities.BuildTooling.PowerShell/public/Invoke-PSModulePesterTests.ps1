@@ -97,7 +97,8 @@ function New-PSModulePesterConfiguration {
     [Parameter(Mandatory)] [string[]]$ExcludeTag,
     [Parameter(Mandatory)] [string]$OutputPath,
     [Parameter(Mandatory)] [string]$CoverageOutputPath,
-    [string[]]$CoveragePaths
+    [string[]]$CoveragePaths,
+    [switch]$SkipCodeCoverage
   )
 
   $cfg = [PesterConfiguration]::Default
@@ -116,12 +117,16 @@ function New-PSModulePesterConfiguration {
   $cfg.TestResult.OutputFormat = 'JUnitXml'
   $cfg.TestResult.OutputPath = $OutputPath
 
-  $cfg.CodeCoverage.Enabled = $true
-  $cfg.CodeCoverage.OutputFormat = 'JaCoCo'
-  $cfg.CodeCoverage.OutputPath = $CoverageOutputPath
-  $cfg.CodeCoverage.CoveragePercentTarget = 0
-  if ($CoveragePaths -and $CoveragePaths.Count -gt 0) {
-    $cfg.CodeCoverage.Path = $CoveragePaths
+  if ($SkipCodeCoverage) {
+    $cfg.CodeCoverage.Enabled = $false
+  } else {
+    $cfg.CodeCoverage.Enabled = $true
+    $cfg.CodeCoverage.OutputFormat = 'JaCoCo'
+    $cfg.CodeCoverage.OutputPath = $CoverageOutputPath
+    $cfg.CodeCoverage.CoveragePercentTarget = 0
+    if ($CoveragePaths -and $CoveragePaths.Count -gt 0) {
+      $cfg.CodeCoverage.Path = $CoveragePaths
+    }
   }
 
   $cfg.Output.Verbosity = 'Detailed'
@@ -144,7 +149,9 @@ function Invoke-PSModulePesterTests {
     [Parameter(Mandatory)]
     [string]$CoverageOutputPath,
 
-    [string[]]$TestPaths
+    [string[]]$TestPaths,
+
+    [switch]$SkipCodeCoverage
   )
 
   begin {
@@ -250,7 +257,8 @@ function Invoke-PSModulePesterTests {
         -ExcludeTag $filter.ExcludeTag `
         -OutputPath $OutputPath `
         -CoverageOutputPath $CoverageOutputPath `
-        -CoveragePaths $coveragePaths
+        -CoveragePaths $coveragePaths `
+        -SkipCodeCoverage:$SkipCodeCoverage
 
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Running Invoke-Pester for tier $Tier (IncludeTag=$($filter.IncludeTag -join ',') ExcludeTag=$($filter.ExcludeTag -join ','))"
 

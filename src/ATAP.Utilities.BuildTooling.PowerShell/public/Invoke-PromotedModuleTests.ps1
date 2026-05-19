@@ -279,6 +279,7 @@ function Invoke-PromotedModuleTests {
                 -Tier $pesterTier `
                 -OutputPath $outputFile `
                 -CoverageOutputPath $coverageFile `
+                -SkipCodeCoverage `
                 -ErrorAction Stop
 
             $passed = if ($null -ne $innerResult) { [int]$innerResult.Passed } else { 0 }

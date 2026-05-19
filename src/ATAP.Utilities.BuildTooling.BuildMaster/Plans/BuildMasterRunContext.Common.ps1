@@ -259,7 +259,7 @@ function Write-BuildMasterRunStateFiles {
   )
 
   foreach ($key in $Values.Keys) {
-    if (-not $StateFiles.ContainsKey($key)) {
+    if (-not $StateFiles.Contains($key)) {
       throw "State file map does not define key '$key'."
     }
 

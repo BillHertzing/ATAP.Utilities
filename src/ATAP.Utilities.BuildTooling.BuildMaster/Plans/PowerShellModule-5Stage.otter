@@ -8,7 +8,8 @@
 #   $ModuleName       - module folder under src/, e.g. "ATAP.Utilities.BuildTooling.PowerShell"
 #   $PackageName      - ProGet package/module ID, normally the same as $ModuleName
 #   $ProGetApiKey     - masked BuildMaster variable for ProGet API calls
-#   $Tier             - current BuildMaster tier/stage (CurrentTier)
+#   BuildMaster stage - resolved by the PowerShell runner from BuildMaster
+#                       environment variables, defaulting to Experimental
 #   $BuildMasterBuildId - runtime value from $BuildMasterId(build), used to
 #                       isolate generated inter-stage state
 #   $CeilingTier      - runtime variable computed from the module's
@@ -28,236 +29,26 @@
 #   stage. See SolutionDocumentation/Immutable-Build-Strategy.md §3 and
 #   SolutionDocumentation/VersionJsonAsCeiling.md.
 #   Topology doc: SolutionDocumentation/BuildMaster-Pipeline-Topology.md
+#
+# This script is assigned as a per-stage deployment step in the BuildMaster UI.
+# Keep the OtterScript surface tiny; the PowerShell runner owns stage/context
+# branching because BuildMaster's stage-step parser is stricter than full plans.
 ##########################################################################
 
 # BuildTooling module used by every stage command.
 set $BuildToolingModuleManifest = $PathCombine($SourcePath, src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1);
 set $BuildMasterPlanScriptDir = $PathCombine($SourcePath, src\ATAP.Utilities.BuildTooling.BuildMaster\Plans);
-set $InitializeBuildContextScript = $PathCombine($BuildMasterPlanScriptDir, Initialize-PowerShellModuleBuildContext.ps1);
+set $InvokePowerShellModuleStageScript = $PathCombine($BuildMasterPlanScriptDir, Invoke-PowerShellModuleBuildMasterStage.ps1);
 
-# Module source/package paths.
 set $ModulePath = $PathCombine($SourcePath, src\$ModuleName);
-set $PackageOutputPath = $PathCombine($SourcePath, _generated\psmodules\$ModuleName\packages-nupkg);
 set $BuildMasterBuildId = $BuildMasterId(build);
 set $BuildMasterBuildNumber = $BuildNumber;
 set $BuildMasterExecutionId = $ExecutionId;
-set $BuildContextDir = $PathCombine($SourcePath, _generated\buildmaster\$BuildMasterBuildId);
-set $NupkgPathFile = $PathCombine($BuildContextDir, $ModuleName.nupkg-path.tmp);
-set $CeilingTierFile = $PathCombine($BuildContextDir, $ModuleName.ceiling-tier.tmp);
-set $CurrentTierFile = $PathCombine($BuildContextDir, $ModuleName.current-tier.tmp);
-set $ResolvedPackageVersionFile = $PathCombine($BuildContextDir, $ModuleName.resolved-version.tmp);
-set $PrereleaseLabelFile = $PathCombine($BuildContextDir, $ModuleName.prerelease-label.tmp);
-set $AllowExperimentalFile = $PathCombine($BuildContextDir, $ModuleName.allow-experimental.tmp);
-set $AllowDevelopmentFile = $PathCombine($BuildContextDir, $ModuleName.allow-development.tmp);
-set $AllowIntegrationFile = $PathCombine($BuildContextDir, $ModuleName.allow-integration.tmp);
-set $AllowQAFile = $PathCombine($BuildContextDir, $ModuleName.allow-qa.tmp);
-set $AllowProductionFile = $PathCombine($BuildContextDir, $ModuleName.allow-production.tmp);
-
-# Canonical PowerShellGet feed names.
-set $ExperimentalFeed = powershellget-experimental;
-set $DevelopmentFeed = powershellget-development;
-set $IntegrationFeed = powershellget-integration;
-set $QAFeed = powershellget-qa;
-set $ProductionFeed = powershellget-stable;
 
 Exec
 (
     FileName: pwsh,
-    Arguments: >>-NoProfile -File "$InitializeBuildContextScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -ModuleName "$ModuleName" -PackageName "$PackageName" -ModulePath "$ModulePath" -Branch "$Branch" -Stage "$Tier">>,
+    Arguments: >>-NoProfile -File "$InvokePowerShellModuleStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -ModuleName "$ModuleName" -PackageName "$PackageName" -ModulePath "$ModulePath" -Branch "$Branch" -ProGetUrl "$ProGetUrl" -ProGetApiKey "$ProGetApiKey">>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );
-
-set $CeilingTier = $Trim($FileContents($CeilingTierFile));
-set $CurrentTier = $Trim($FileContents($CurrentTierFile));
-set $ResolvedPackageVersion = $Trim($FileContents($ResolvedPackageVersionFile));
-set $PrereleaseLabel = $Trim($FileContents($PrereleaseLabelFile));
-set $AllowExperimental = $Trim($FileContents($AllowExperimentalFile));
-set $AllowDevelopment = $Trim($FileContents($AllowDevelopmentFile));
-set $AllowIntegration = $Trim($FileContents($AllowIntegrationFile));
-set $AllowQA = $Trim($FileContents($AllowQAFile));
-set $AllowProduction = $Trim($FileContents($AllowProductionFile));
-
-Log-Debug `BuildId=$BuildMasterBuildId ContextDirectory=$BuildContextDir CurrentTier=$CurrentTier CeilingTier=$CeilingTier Package=$PackageName Version=$ResolvedPackageVersion PrereleaseLabel=$PrereleaseLabel`;
-
-# -------------------------------------------------------------------------
-# Stage Experimental - pack once and publish to powershellget-experimental
-# -------------------------------------------------------------------------
-stage Experimental
-{
-    if $Tier == Experimental
-    {
-        if $AllowExperimental == true
-        {
-        Exec
-        (
-            FileName: pwsh,
-            Arguments: `-NoProfile -Command "Import-Module '$BuildToolingModuleManifest' -Force; New-Item -ItemType Directory -Path (Split-Path -Parent '$NupkgPathFile') -Force | Out-Null; $$nupkg = New-PSModuleNupkg -ModulePath '$ModulePath' -OutputPath '$PackageOutputPath' -Force; $$nupkg.FullName | Set-Content -LiteralPath '$NupkgPathFile' -Encoding utf8 -NoNewline"`,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Exec
-        (
-            FileName: pwsh,
-            Arguments: `-NoProfile -Command "$$env:PROGET_APIKEY_POWERSHELLGET_EXPERIMENTAL = '$Decrypt($ProGetApiKey)'; $$env:PROGET_ADMIN_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModuleManifest' -Force; $$nupkgPath = (Get-Content -LiteralPath '$NupkgPathFile' -Raw).Trim(); Publish-PSModuleToProGet -NupkgPath $$nupkgPath -CeilingTier '$CeilingTier'"`,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Create-Artifact Packages
-        (
-            From: _generated\psmodules\$ModuleName\packages-nupkg,
-            Include: @(*.nupkg)
-        );
-        }
-    }
-}
-
-# -------------------------------------------------------------------------
-# Stage Development - promote artifact + run module tests against it
-# -------------------------------------------------------------------------
-stage Development
-{
-    if $Tier == Development
-    {
-        if $AllowDevelopment == true
-        {
-        set $FromFeed = $ExperimentalFeed;
-        set $ToFeed = $DevelopmentFeed;
-
-        Exec
-        (
-            FileName: pwsh,
-            Arguments: `-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModuleManifest' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$FromFeed' -ToFeed '$ToFeed' -Reason 'DEV-PASS for $ApplicationName $ResolvedPackageVersion' -CeilingTier '$CeilingTier'"`,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Exec
-        (
-            FileName: pwsh,
-            Arguments: `-NoProfile -Command "Import-Module '$BuildToolingModuleManifest' -Force; Invoke-PromotedModuleTests -Name '$PackageName' -Version '$ResolvedPackageVersion' -Feed '$ToFeed' -Tier '$Tier' -ResultsPath '_generated\testresults\$Tier'"`,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Create-Artifact TestResults
-        (
-            From: _generated\testresults\$Tier,
-            Include: @(*.xml, *.trx)
-        );
-        }
-    }
-}
-
-# -------------------------------------------------------------------------
-# Stage Integration - promote artifact + run module tests against it
-# -------------------------------------------------------------------------
-stage Integration
-{
-    if $Tier == Integration
-    {
-        if $AllowIntegration == true
-        {
-        set $FromFeed = $DevelopmentFeed;
-        set $ToFeed = $IntegrationFeed;
-
-        Exec
-        (
-            FileName: pwsh,
-            Arguments: `-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModuleManifest' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$FromFeed' -ToFeed '$ToFeed' -Reason 'INT-PASS for $ApplicationName $ResolvedPackageVersion' -CeilingTier '$CeilingTier'"`,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Exec
-        (
-            FileName: pwsh,
-            Arguments: `-NoProfile -Command "Import-Module '$BuildToolingModuleManifest' -Force; Invoke-PromotedModuleTests -Name '$PackageName' -Version '$ResolvedPackageVersion' -Feed '$ToFeed' -Tier '$Tier' -ResultsPath '_generated\testresults\$Tier'"`,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Create-Artifact TestResults
-        (
-            From: _generated\testresults\$Tier,
-            Include: @(*.xml, *.trx)
-        );
-        }
-    }
-}
-
-# -------------------------------------------------------------------------
-# Stage QA - promote artifact + run module tests against it
-# -------------------------------------------------------------------------
-stage QA
-{
-    if $Tier == QA
-    {
-        if $AllowQA == true
-        {
-        set $FromFeed = $IntegrationFeed;
-        set $ToFeed = $QAFeed;
-
-        Exec
-        (
-            FileName: pwsh,
-            Arguments: `-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModuleManifest' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$FromFeed' -ToFeed '$ToFeed' -Reason 'QA-PASS for $ApplicationName $ResolvedPackageVersion' -CeilingTier '$CeilingTier'"`,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Exec
-        (
-            FileName: pwsh,
-            Arguments: `-NoProfile -Command "Import-Module '$BuildToolingModuleManifest' -Force; Invoke-PromotedModuleTests -Name '$PackageName' -Version '$ResolvedPackageVersion' -Feed '$ToFeed' -Tier '$Tier' -ResultsPath '_generated\testresults\$Tier'"`,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Create-Artifact TestResults
-        (
-            From: _generated\testresults\$Tier,
-            Include: @(*.xml, *.trx, coverage.cobertura.xml)
-        );
-        }
-    }
-}
-
-# -------------------------------------------------------------------------
-# Stage Production - promote artifact + smoke test against stable feed
-# -------------------------------------------------------------------------
-stage Production
-{
-    if $Tier == Production
-    {
-        if $AllowProduction == true
-        {
-        set $FromFeed = $QAFeed;
-        set $ToFeed = $ProductionFeed;
-
-        Exec
-        (
-            FileName: pwsh,
-            Arguments: `-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModuleManifest' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$FromFeed' -ToFeed '$ToFeed' -Reason 'PROD-APPROVAL for $ApplicationName $ResolvedPackageVersion' -CeilingTier '$CeilingTier'"`,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Exec
-        (
-            FileName: pwsh,
-            Arguments: `-NoProfile -Command "Import-Module '$BuildToolingModuleManifest' -Force; Invoke-PromotedModuleTests -Name '$PackageName' -Version '$ResolvedPackageVersion' -Feed '$ToFeed' -Tier '$Tier' -ResultsPath '_generated\testresults\$Tier'"`,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Create-Artifact TestResults
-        (
-            From: _generated\testresults\$Tier,
-            Include: @(*.xml, *.trx)
-        );
-        }
-    }
-}

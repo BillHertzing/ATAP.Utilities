@@ -31,8 +31,8 @@ param(
   [AllowEmptyString()]
   [string]$Branch = '',
 
-  [Parameter(Mandatory)]
-  [string]$Stage,
+  [AllowEmptyString()]
+  [string]$Stage = '',
 
   [int]$RetentionDays = 14
 )
@@ -43,7 +43,16 @@ $ErrorActionPreference = 'Stop'
 Import-Module $BuildToolingModulePath -Force
 
 $contextDirectory = Initialize-BuildMasterRunContextDirectory -SourcePath $SourcePath -BuildMasterBuildId $BuildMasterBuildId -RetentionDays $RetentionDays
-$context = Get-BuildContext -Application $ApplicationName -ProjectPath $ModulePath -Branch $Branch -Stage $Stage
+$contextParameters = @{
+  Application = $ApplicationName
+  ProjectPath = $ModulePath
+  Branch      = $Branch
+}
+if (-not [string]::IsNullOrWhiteSpace($Stage)) {
+  $contextParameters['Stage'] = $Stage
+}
+
+$context = Get-BuildContext @contextParameters
 $allowDecisions = Get-BuildMasterAllowDecisions -CeilingTier $context.CeilingTier
 $existingContext = Read-BuildMasterRunContextJson -ContextDirectory $contextDirectory
 $capturedResolvedVersion = [string]$context.ResolvedPackageVersion

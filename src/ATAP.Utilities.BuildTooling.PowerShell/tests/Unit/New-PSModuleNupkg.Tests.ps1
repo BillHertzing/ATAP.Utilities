@@ -54,7 +54,7 @@ Describe 'New-PSModuleNupkg' -Tag 'Unit' {
             $script:stagingRepoName = [string]$Name
         }
         Mock Publish-PSResource {
-            param($Path, $Repository, [Parameter(ValueFromRemainingArguments = $true)]$rest)
+            param($Path, $Repository, [string]$NupkgPath, [switch]$SkipDependenciesCheck, [Parameter(ValueFromRemainingArguments = $true)]$rest)
             # Discover the staging path that was captured during Register-PSResourceRepository.
             $stagingUri = $script:stagingUri
             if ([string]::IsNullOrWhiteSpace($stagingUri)) {
@@ -102,11 +102,13 @@ Describe 'New-PSModuleNupkg' -Tag 'Unit' {
             Assert-MockCalled Unregister-PSResourceRepository -Times 1 -Exactly -Scope It
         }
 
-        It 'Calls Publish-PSResource with -Path (folder), not -NupkgPath' {
+        It 'Calls Publish-PSResource with -Path and skips dependency resolution for the empty staging repository' {
             New-PSModuleNupkg -ModulePath $script:modulePath -OutputPath $script:outputPath | Out-Null
             Assert-MockCalled Publish-PSResource -Times 1 -Exactly -Scope It -ParameterFilter {
                 # Mock parameter binding: $Path is the bound parameter name from the mock signature.
-                $Path -eq (Resolve-Path -LiteralPath $script:modulePath).ProviderPath
+                $Path -eq (Resolve-Path -LiteralPath $script:modulePath).ProviderPath -and
+                [string]::IsNullOrWhiteSpace($NupkgPath) -and
+                $SkipDependenciesCheck
             }
         }
     }

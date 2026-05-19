@@ -211,7 +211,7 @@ Task BuildPSM1 {
 }
 
 # ---------------------------------------------------------------------------
-# T-42  BuildManifest — copy source .psd1 and stamp NBGV version + exports
+# T-42  BuildManifest — copy source .psd1 to package staging and stamp NBGV version + exports
 # ---------------------------------------------------------------------------
 Task BuildManifest {
   $publicDir = Join-Path $script:ModuleRoot 'public'
@@ -219,19 +219,6 @@ Task BuildManifest {
     Get-ChildItem -Path $publicDir -Filter '*.ps1' -File |
       Select-Object -ExpandProperty BaseName
   } else { @() }
-
-  # Stamp the NBGV-derived Prerelease (and FunctionsToExport) back into the source .psd1
-  # so the working copy always reflects the current version.json-derived label.
-  # An empty $script:verInfo.Prerelease clears the field for stable (non-prerelease) builds.
-  $sourceManifestParams = @{
-    Path              = $script:meta.ManifestPath
-    ModuleVersion     = $script:verInfo.ModuleVersion
-    Prerelease        = $script:verInfo.Prerelease
-    FunctionsToExport = $publicFunctions
-  }
-  Update-ModuleManifest @sourceManifestParams
-  Write-PSFMessage -Level Important -Message `
-    "BuildManifest — updated source '$($script:meta.ManifestPath)' Prerelease='$($script:verInfo.Prerelease)'"
 
   Build-PSModuleManifest `
     -SourceManifestPath $script:meta.ManifestPath `

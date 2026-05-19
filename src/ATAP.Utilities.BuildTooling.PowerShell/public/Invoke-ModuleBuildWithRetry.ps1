@@ -14,7 +14,8 @@ module.build.ps1 at the repo root), so this function no longer locates the build
 script itself.
 
 On PSResourceGet-not-found failures, attempts to install Microsoft.PowerShell.PSResourceGet
-and retries. On transient network errors, retries up to MaxRetries times.
+and retries. On transient network errors and transient file-lock errors, retries up to
+MaxRetries times.
 
 All build output is captured to a transcript under PSModuleBuildLogs in the generated
 artifacts folder (SC-0033).
@@ -45,7 +46,8 @@ When set, passes -SkipPublish to module.build.ps1, suppressing the final push to
 the ProGet PowerShellGet feed. Useful for local verification runs.
 
 .PARAMETER MaxRetries
-Maximum number of retry attempts after a PSResourceGet or network failure. Defaults to 1.
+Maximum number of retry attempts after a PSResourceGet, network, or file-lock failure.
+Defaults to 1.
 
 .PARAMETER BuildLogPath
 Optional path for the transcript log directory. Transcript files are written as
@@ -80,8 +82,9 @@ Dry run — shows what Invoke-Build call would be made without executing it.
 .NOTES
 AI assisted using Powershell.instructions.md as guidelines
 Tier is resolved from NBGV in the working directory at call time when -Tier is not supplied.
-Only Microsoft.PowerShell.PSResourceGet installation is attempted on retry — the full
-Invoke-Build task is re-invoked from the start, not individual sub-steps within it.
+Only Microsoft.PowerShell.PSResourceGet installation is attempted on retry; transient
+network/file-lock retries wait briefly and re-run the full Invoke-Build task from the
+start, not individual sub-steps within it.
 The source-of-truth *.build.ps1 (typically module.build.ps1 at the repo root) is located
 by Invoke-Build's walk-up search; this function only sets the working directory.
 
@@ -158,6 +161,7 @@ function Invoke-ModuleBuildWithRetry {
     # Patterns that identify specific retryable failure categories.
     $psResourceGetMissingPattern = 'PSResourceGet|Microsoft\.PowerShell\.PSResourceGet|Publish-PSResource.*not recognized|could not find.*PSResourceGet'
     $networkErrorPattern = 'Unable to connect|The remote name could not be resolved|SocketException|TimeoutException|503 Service Unavailable|502 Bad Gateway'
+    $fileLockErrorPattern = 'process cannot access the file|being used by another process|sharing violation|IOException'
   }
 
   process {
@@ -308,7 +312,7 @@ function Invoke-ModuleBuildWithRetry {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message (
           "What if: Push-Location '$moduleRoot'; Invoke-Build $Task -Tier $resolvedTier$skipArg (build script resolved by Invoke-Build walk-up). " +
           "Transcript: '$transcriptFile'. " +
-          "Would retry up to $MaxRetries time(s) on PSResourceGet/network failures."
+          "Would retry up to $MaxRetries time(s) on PSResourceGet/network/file-lock failures."
         )
         $result.ExitCode = 0
         $result
@@ -378,6 +382,13 @@ function Invoke-ModuleBuildWithRetry {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message (
               "Invoke-Build failed due to a transient network error; will retry. Error: $errorText"
             )
+            Start-Sleep -Seconds 2
+            $retryCount++
+          } elseif ($errorText -match $fileLockErrorPattern -and $retryCount -lt $MaxRetries) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message (
+              "Invoke-Build failed due to a transient file lock; will retry. Error: $errorText"
+            )
+            Start-Sleep -Seconds 2
             $retryCount++
           } else {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message (

@@ -163,7 +163,7 @@ function New-PSModuleNupkg {
             $registered = $true
 
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling Publish-PSResource for module '$moduleName' into staging repo '$tempRepoName'" -Tag 'RestCall'
-            Publish-PSResource -Path $resolvedModulePath -Repository $tempRepoName
+            Publish-PSResource -Path $resolvedModulePath -Repository $tempRepoName -SkipDependenciesCheck
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Publish-PSResource returned successfully' -Tag 'RestCall'
 
             # 6. Locate the produced .nupkg in the staging folder.

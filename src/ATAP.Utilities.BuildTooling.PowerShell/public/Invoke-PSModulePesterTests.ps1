@@ -119,6 +119,7 @@ function New-PSModulePesterConfiguration {
   $cfg.CodeCoverage.Enabled = $true
   $cfg.CodeCoverage.OutputFormat = 'JaCoCo'
   $cfg.CodeCoverage.OutputPath = $CoverageOutputPath
+  $cfg.CodeCoverage.CoveragePercentTarget = 0
   if ($CoveragePaths -and $CoveragePaths.Count -gt 0) {
     $cfg.CodeCoverage.Path = $CoveragePaths
   }

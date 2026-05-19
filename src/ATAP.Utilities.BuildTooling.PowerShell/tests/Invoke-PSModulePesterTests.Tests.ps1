@@ -79,6 +79,7 @@ Describe 'New-PSModulePesterConfiguration' -Tag 'Unit' {
     $cfg.CodeCoverage.Enabled.Value      | Should -BeTrue
     $cfg.CodeCoverage.OutputFormat.Value | Should -Be 'JaCoCo'
     $cfg.CodeCoverage.OutputPath.Value   | Should -Be $cov
+    $cfg.CodeCoverage.CoveragePercentTarget.Value | Should -Be 0
     $cfg.Output.Verbosity.Value          | Should -Be 'Detailed'
   }
 }

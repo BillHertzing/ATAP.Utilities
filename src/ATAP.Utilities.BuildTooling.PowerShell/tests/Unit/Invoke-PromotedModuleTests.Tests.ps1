@@ -30,6 +30,8 @@ BeforeAll {
             param(
                 [string]$ModuleRoot, [string]$Tier, [string]$OutputPath,
                 [string]$CoverageOutputPath, [string[]]$TestPaths,
+                [switch]$SkipTestResult,
+                [switch]$SkipCodeCoverage,
                 [System.Management.Automation.ActionPreference]$ErrorAction
             )
         }
@@ -180,7 +182,7 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             Assert-MockCalled Invoke-WebRequest -Times 0 -Exactly -Scope It
             Assert-MockCalled Import-Module -Times 1 -Exactly -Scope It -ParameterFilter { $Name -match 'Mod\.psd1' }
             Assert-MockCalled Invoke-PSModulePesterTests -Times 1 -Exactly -Scope It -ParameterFilter {
-                $ModuleRoot -eq 'C:\fake\src\Mod' -and $Tier -eq 'Alpha'
+                $ModuleRoot -eq 'C:\fake\src\Mod' -and $Tier -eq 'Alpha' -and $SkipTestResult -and $SkipCodeCoverage
             }
         }
 

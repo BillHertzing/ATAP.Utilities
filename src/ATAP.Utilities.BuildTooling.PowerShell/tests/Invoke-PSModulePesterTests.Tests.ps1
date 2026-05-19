@@ -73,6 +73,7 @@ Describe 'New-PSModulePesterConfiguration' -Tag 'Unit' {
 
     $cfg.Filter.Tag.Value        | Should -Be @('Unit', 'Integration')
     $cfg.Filter.ExcludeTag.Value | Should -Be @('Slow', 'Disabled')
+    $cfg.Run.PassThru.Value      | Should -BeTrue
     $cfg.TestResult.Enabled.Value      | Should -BeTrue
     $cfg.TestResult.OutputFormat.Value | Should -Be 'JUnitXml'
     $cfg.TestResult.OutputPath.Value   | Should -Be $out
@@ -81,6 +82,39 @@ Describe 'New-PSModulePesterConfiguration' -Tag 'Unit' {
     $cfg.CodeCoverage.OutputPath.Value   | Should -Be $cov
     $cfg.CodeCoverage.CoveragePercentTarget.Value | Should -Be 0
     $cfg.Output.Verbosity.Value          | Should -Be 'Detailed'
+  }
+
+  It 'can disable code coverage while preserving the test-result settings' {
+    $out = Join-Path $script:tempRoot 'Results-no-coverage.xml'
+    $cov = Join-Path $script:tempRoot 'Coverage-no-coverage.xml'
+    $cfg = New-PSModulePesterConfiguration `
+      -TestPaths @('C:\nonexistent\tests') `
+      -IncludeTag @('Unit') `
+      -ExcludeTag @('Slow', 'Disabled') `
+      -OutputPath $out `
+      -CoverageOutputPath $cov `
+      -SkipCodeCoverage
+
+    $cfg.TestResult.Enabled.Value | Should -BeTrue
+    $cfg.TestResult.OutputPath.Value | Should -Be $out
+    $cfg.CodeCoverage.Enabled.Value | Should -BeFalse
+  }
+
+  It 'can disable JUnit test-result output while preserving the run filters' {
+    $out = Join-Path $script:tempRoot 'Results-no-junit.xml'
+    $cov = Join-Path $script:tempRoot 'Coverage-no-junit.xml'
+    $cfg = New-PSModulePesterConfiguration `
+      -TestPaths @('C:\nonexistent\tests') `
+      -IncludeTag @('Unit') `
+      -ExcludeTag @('Slow', 'Disabled') `
+      -OutputPath $out `
+      -CoverageOutputPath $cov `
+      -SkipTestResult
+
+    $cfg.Filter.Tag.Value | Should -Be @('Unit')
+    $cfg.Filter.ExcludeTag.Value | Should -Be @('Slow', 'Disabled')
+    $cfg.TestResult.Enabled.Value | Should -BeFalse
+    $cfg.CodeCoverage.Enabled.Value | Should -BeTrue
   }
 }
 

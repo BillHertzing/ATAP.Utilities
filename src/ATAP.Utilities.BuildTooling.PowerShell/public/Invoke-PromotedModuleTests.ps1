@@ -279,6 +279,7 @@ function Invoke-PromotedModuleTests {
                 -Tier $pesterTier `
                 -OutputPath $outputFile `
                 -CoverageOutputPath $coverageFile `
+                -SkipTestResult `
                 -SkipCodeCoverage `
                 -ErrorAction Stop
 

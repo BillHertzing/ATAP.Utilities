@@ -237,6 +237,7 @@ This index lists every file currently in the BuildTooling PowerShell project and
 | [Reset-DownstreamToSharedVSCodeMain.ps1](public/Reset-DownstreamToSharedVSCodeMain.ps1) | Resets downstream workspace files back to SharedVSCode main, re-applies context, and removes the sprint ProGet feeds for the completed sprint. |
 | [Resolve-FeatureSlug.ps1](public/Resolve-FeatureSlug.ps1) | Resolves a Git feature-branch name into the PascalCase `$FeatureSlug` used by the BuildMaster pipeline. |
 | [Resolve-PSModuleMetadata.ps1](public/Resolve-PSModuleMetadata.ps1) | Resolves metadata for a PowerShell module located at a given start path. |
+| [Save-SprintRetrospectiveSnapshot.ps1](public/Save-SprintRetrospectiveSnapshot.ps1) | Captures PR count, package promotions, test stats, elapsed duration, infra changes, and optional impressions as a JSON snapshot under `_Planning/SprintRetrospective/Snapshots/<NNNN>/`. Called from SprintEndAgent. |
 | [Save-SprintWorkSession.ps1](public/Save-SprintWorkSession.ps1) | Archives the current Claude Code conversation JSONL and copies memory files for the current sprint work session. |
 | [Set-BuildMasterApplicationVariables.ps1](public/Set-BuildMasterApplicationVariables.ps1) | Creates or updates BuildMaster application variables from a hashtable. |
 | [Set-BuildMasterSprintVariables.ps1](public/Set-BuildMasterSprintVariables.ps1) | Sets BuildMaster Application Variables for a new sprint. |
@@ -420,6 +421,7 @@ This index lists every file currently in the BuildTooling PowerShell project and
 | [Resolve-FeatureSlug.Tests.ps1](tests/Unit/Resolve-FeatureSlug.Tests.ps1) | Pester tests for resolve feature slug. |
 | [Resolve-PSModuleMetadata.Tests.ps1](tests/Unit/Resolve-PSModuleMetadata.Tests.ps1) | Pester tests for resolve psmodule metadata. |
 | [Resolve-WorkspaceFiles.Tests.ps1](tests/Unit/Resolve-WorkspaceFiles.Tests.ps1) | Pester tests for resolve workspace files. |
+| [Save-SprintRetrospectiveSnapshot.Tests.ps1](tests/Unit/Save-SprintRetrospectiveSnapshot.Tests.ps1) | `Save-SprintRetrospectiveSnapshot` — snapshot capture, JSON persistence, structured output, `-WhatIf` no-write. |
 | [Save-WorkspaceJson.Tests.ps1](tests/Unit/Save-WorkspaceJson.Tests.ps1) | Pester tests for save workspace json. |
 | [Set-DownstreamSharedVSCodeContext.Tests.ps1](tests/Unit/Set-DownstreamSharedVSCodeContext.Tests.ps1) | Pester tests for set downstream shared vscode context. |
 | [Set-ProGetServiceDependency.Tests.ps1](tests/Unit/Set-ProGetServiceDependency.Tests.ps1) | Pester tests for set pro get service dependency. |

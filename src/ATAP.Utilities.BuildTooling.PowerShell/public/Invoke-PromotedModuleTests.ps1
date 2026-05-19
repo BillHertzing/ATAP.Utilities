@@ -53,6 +53,8 @@
     'powershellget-development'. The feed must be registered as a
     PSResourceRepository of the same name (the build pipeline registers
     the tier feeds); Save-PSResource restores from it by `-Repository`.
+    When ProGetBaseUrl is supplied, the package is restored from ProGet's
+    direct package endpoint instead of PSResourceGet's OData query path.
 
 .PARAMETER Tier
     The current BuildMaster tier:
@@ -73,6 +75,14 @@
     Directory paths are resolved against and the restore folder is
     created under. Defaults to the current location (the repository
     worktree root in pipeline use).
+
+.PARAMETER ProGetBaseUrl
+    Optional ProGet base URL. When supplied, restore the promoted .nupkg
+    directly from /nuget/<feed>/package/<name>/<version>.
+
+.PARAMETER ApiKey
+    Optional ProGet API key to send as X-ApiKey when restoring directly
+    from ProGet.
 
 .OUTPUTS
     [PSCustomObject] with:
@@ -145,7 +155,15 @@ function Invoke-PromotedModuleTests {
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
-        [string]$WorkingDirectory = (Get-Location).Path
+        [string]$WorkingDirectory = (Get-Location).Path,
+
+        [Parameter()]
+        [AllowEmptyString()]
+        [string]$ProGetBaseUrl = $global:ProGetBaseUrl,
+
+        [Parameter()]
+        [AllowEmptyString()]
+        [string]$ApiKey = $env:PROGET_BUILDMASTER_API_KEY
     )
 
     begin {
@@ -214,7 +232,27 @@ function Invoke-PromotedModuleTests {
             }
 
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Restoring promoted module $target from feed '$Feed' to '$restorePath'"
-            Save-PSResource -Name $Name -Version $Version -Repository $Feed -Path $restorePath -TrustRepository -ErrorAction Stop
+            if (-not [string]::IsNullOrWhiteSpace($ProGetBaseUrl)) {
+                $trimmedBaseUrl = $ProGetBaseUrl.TrimEnd('/')
+                $packageUri = '{0}/nuget/{1}/package/{2}/{3}' -f $trimmedBaseUrl, $Feed, [uri]::EscapeDataString($Name), [uri]::EscapeDataString($Version)
+                $nupkgPath = Join-Path $restorePath "$Name.$Version.nupkg"
+                $extractPath = Join-Path $restorePath 'package'
+                $headers = @{
+                    Accept = 'application/zip'
+                }
+                if (-not [string]::IsNullOrWhiteSpace($ApiKey)) {
+                    $headers['X-ApiKey'] = $ApiKey
+                }
+
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Downloading promoted module package from '$packageUri'"
+                Invoke-WebRequest -Uri $packageUri -Headers $headers -OutFile $nupkgPath -UseBasicParsing -ErrorAction Stop | Out-Null
+                if (Test-Path -LiteralPath $extractPath) {
+                    Remove-Item -LiteralPath $extractPath -Recurse -Force
+                }
+                Expand-Archive -LiteralPath $nupkgPath -DestinationPath $extractPath -Force
+            } else {
+                Save-PSResource -Name $Name -Version $Version -Repository $Feed -Path $restorePath -TrustRepository -ErrorAction Stop
+            }
 
             $savedManifest = Get-ChildItem -Path $restorePath -Recurse -Filter "$Name.psd1" -ErrorAction SilentlyContinue |
                 Sort-Object -Property FullName -Descending |

@@ -49,7 +49,10 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
         Mock Pop-Location { }
         Mock New-Item { }
         Mock Test-Path { $true }
+        Mock Remove-Item { }
         Mock Save-PSResource { }
+        Mock Invoke-WebRequest { }
+        Mock Expand-Archive { }
         Mock Import-Module { }
         Mock Get-ChildItem {
             [PSCustomObject]@{
@@ -174,9 +177,29 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             Assert-MockCalled Save-PSResource -Times 1 -Exactly -Scope It -ParameterFilter {
                 $Name -eq 'Mod' -and $Version -eq '1.0.0' -and $Repository -eq 'powershellget-development'
             }
+            Assert-MockCalled Invoke-WebRequest -Times 0 -Exactly -Scope It
             Assert-MockCalled Import-Module -Times 1 -Exactly -Scope It -ParameterFilter { $Name -match 'Mod\.psd1' }
             Assert-MockCalled Invoke-PSModulePesterTests -Times 1 -Exactly -Scope It -ParameterFilter {
                 $ModuleRoot -eq 'C:\fake\src\Mod' -and $Tier -eq 'Alpha'
+            }
+        }
+
+        It 'Restores from the direct ProGet package endpoint when ProGetBaseUrl is supplied' {
+            $result = Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0-Alpha001' `
+                -Feed 'powershellget-development' -Tier 'Development' -ResultsPath 'r' `
+                -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake' `
+                -ProGetBaseUrl 'http://localhost:50000/' -ApiKey 'secret'
+
+            $result.GatePass | Should -BeTrue
+            Assert-MockCalled Save-PSResource -Times 0 -Exactly -Scope It
+            Assert-MockCalled Invoke-WebRequest -Times 1 -Exactly -Scope It -ParameterFilter {
+                $Uri -eq 'http://localhost:50000/nuget/powershellget-development/package/Mod/1.0.0-Alpha001' -and
+                $OutFile -eq 'C:\fake\_generated\_promoted-modules\Mod.1.0.0-Alpha001\Mod.1.0.0-Alpha001.nupkg' -and
+                $Headers['X-ApiKey'] -eq 'secret'
+            }
+            Assert-MockCalled Expand-Archive -Times 1 -Exactly -Scope It -ParameterFilter {
+                $LiteralPath -eq 'C:\fake\_generated\_promoted-modules\Mod.1.0.0-Alpha001\Mod.1.0.0-Alpha001.nupkg' -and
+                $DestinationPath -eq 'C:\fake\_generated\_promoted-modules\Mod.1.0.0-Alpha001\package'
             }
         }
 

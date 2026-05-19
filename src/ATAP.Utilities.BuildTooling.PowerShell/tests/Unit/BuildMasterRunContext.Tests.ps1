@@ -187,6 +187,7 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
       $text | Should -Not -Match 'Get-BuildContext'
       if ((Split-Path -Leaf $planPath) -eq 'PowerShellModule-5Stage.otter') {
         $text | Should -Match '-File "\$InvokePowerShellModuleStageScript"'
+        $text | Should -Match '-Stage "\$PipelineStageName"'
       }
       else {
         $text | Should -Match '-File "\$InitializeBuildContextScript"'
@@ -207,7 +208,8 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
   It 'uses the captured module resolved version instead of an injected package version' {
     $text = Get-Content -LiteralPath $script:powerShellRunnerPath -Raw
 
-    $text | Should -Not -Match '\$PackageVersion'
+    $text | Should -Not -Match '\[string\]\$PackageVersion'
+    $text | Should -Not -Match '-PackageVersion\s+\$PackageVersion'
     $text | Should -Match '\$capturedResolvedVersion'
   }
 
@@ -237,6 +239,13 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
     $text | Should -Match 'Add-BuildMasterPublishTrace'
   }
 
+  It 'registers ProGet PowerShellGet repositories as NuGet v2 PSResourceGet repositories' {
+    $text = Get-Content -LiteralPath $script:powerShellRunnerPath -Raw
+
+    $text | Should -Match 'Register-PSResourceRepository -Name \$Name -Uri \$Uri -Trusted -ApiVersion V2'
+    $text | Should -Match 'Set-PSResourceRepository -Name \$Name -Uri \$Uri -Trusted -ApiVersion V2'
+  }
+
   It 'translates BuildMaster stage names to the current module.build.ps1 tier names' {
     $text = Get-Content -LiteralPath $script:powerShellRunnerPath -Raw
 
@@ -245,5 +254,38 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
     $text | Should -Match "'integration'\s+\{ return 'Beta' \}"
     $text | Should -Match "'qa'\s+\{ return 'QA' \}"
     $text | Should -Match "'production'\s+\{ return 'Production' \}"
+  }
+
+  It 'implements Development as promote then test of the Experimental package' {
+    $text = Get-Content -LiteralPath $script:powerShellRunnerPath -Raw
+
+    $text | Should -Match "'Development' \{"
+    $text | Should -Match 'Promote-ProGetPackage'
+    $text | Should -Match '-FromFeed \$ExperimentalFeed'
+    $text | Should -Match '-ToFeed \$DevelopmentFeed'
+    $text | Should -Match '-CeilingTier \$ceilingTier'
+    $text | Should -Match 'Invoke-PromotedModuleTests'
+    $text | Should -Match '-Feed \$DevelopmentFeed'
+    $text | Should -Match 'DevelopmentTestResults'
+    $text | Should -Match '-ProGetBaseUrl \$ProGetUrl'
+    $text | Should -Match '-ApiKey \$ProGetApiKey'
+  }
+
+  It 'uses the package version from the captured nupkg path for PowerShell promotion' {
+    $text = Get-Content -LiteralPath $script:powerShellRunnerPath -Raw
+
+    $text | Should -Match 'Get-PowerShellModulePackageVersionFromNupkgPath'
+    $text | Should -Match '\$packageVersion = Get-PowerShellModulePackageVersionFromNupkgPath'
+    $text | Should -Match '-Version \$packageVersion'
+    $text | Should -Match 'Captured resolved version'
+  }
+
+  It 'skips Development promotion when the package is already in the Development feed' {
+    $text = Get-Content -LiteralPath $script:powerShellRunnerPath -Raw
+
+    $text | Should -Match 'Test-ProGetPackageVersionInFeed'
+    $text | Should -Match '-FeedName \$DevelopmentFeed'
+    $text | Should -Match 'already exists in'
+    $text | Should -Match 'No-op:'
   }
 }

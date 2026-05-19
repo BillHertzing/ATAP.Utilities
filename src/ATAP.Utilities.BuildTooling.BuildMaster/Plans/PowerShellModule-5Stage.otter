@@ -8,8 +8,8 @@
 #   $ModuleName       - module folder under src/, e.g. "ATAP.Utilities.BuildTooling.PowerShell"
 #   $PackageName      - ProGet package/module ID, normally the same as $ModuleName
 #   $ProGetApiKey     - masked BuildMaster variable for ProGet API calls
-#   BuildMaster stage - resolved by the PowerShell runner from BuildMaster
-#                       environment variables, defaulting to Experimental
+#   BuildMaster stage - passed explicitly from $PipelineStageName so deployment
+#                       targets do not depend on agent environment variables
 #   $BuildMasterBuildId - runtime value from $BuildMasterId(build), used to
 #                       isolate generated inter-stage state
 #   $CeilingTier      - runtime variable computed from the module's
@@ -48,7 +48,7 @@ set $BuildMasterExecutionId = $ExecutionId;
 Exec
 (
     FileName: pwsh,
-    Arguments: >>-NoProfile -File "$InvokePowerShellModuleStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -ModuleName "$ModuleName" -PackageName "$PackageName" -ModulePath "$ModulePath" -Branch "$Branch" -ProGetUrl "$ProGetUrl" -ProGetApiKey "$ProGetApiKey">>,
+    Arguments: >>-NoProfile -File "$InvokePowerShellModuleStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -ModuleName "$ModuleName" -PackageName "$PackageName" -ModulePath "$ModulePath" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetUrl" -ProGetApiKey "$ProGetApiKey">>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );

@@ -117,7 +117,34 @@ Expected:
 On first login, use `Admin/Admin` only long enough to change the admin
 password.
 
-### 4.3 Create the BuildMaster admin API key
+### 4.3 Service-account bootstrap (git `safe.directory` and machine-wide NBGV)
+
+Two service-account prerequisites must be in place before the first
+BuildMaster build is triggered. Both are owned by
+[NewComputerSetup.md](NewComputerSetup.md) — this runbook only points at the
+canonical sections so a divergent copy cannot drift here:
+
+- **Git `safe.directory` for `SvcBuildmaster`** — see
+  [NewComputerSetup.md § 9.4](NewComputerSetup.md). Without this, NBGV
+  height computation and `Get-BuildContext` fail with `fatal: detected
+  dubious ownership in repository`. Must be run **as `SvcBuildmaster`**, not
+  as the interactive developer login.
+- **Machine-wide NBGV install** — see
+  [NewComputerSetup.md § 4.4](NewComputerSetup.md). A per-user
+  `dotnet tool install --global nbgv` is invisible to `SvcBuildmaster`;
+  install to `C:\ProgramData\dotnet\tools` and confirm the machine
+  PowerShell profile prepends that path. Failure mode:
+  `The 'nbgv' CLI was not found on PATH` during the Experimental stage.
+
+Confirm both are in place before continuing:
+
+```powershell
+# As SvcBuildmaster
+git config --global --get-all safe.directory   # must include C:/Dropbox/whertzing/GitHub
+pwsh -NoProfile -Command "Get-Command nbgv"    # must resolve from machine PATH
+```
+
+### 4.4 Create the BuildMaster admin API key
 
 In the UI:
 

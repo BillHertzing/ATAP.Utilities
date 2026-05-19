@@ -235,6 +235,20 @@ $global:settings[$global:configRootKeys['IsElevatedConfigRootKey']] = (New-Objec
 # Opt Out of the dotnet telemetry
 [Environment]::SetEnvironmentVariable('DOTNET_CLI_TELEMETRY_OPTOUT', 1, 'Process')
 
+# Ensure machine-wide dotnet tools (notably nbgv) are resolvable for every
+# local account, including service accounts such as SvcBuildmaster that do
+# not have a per-user dotnet tool path. The canonical location is
+# C:\ProgramData\dotnet\tools (populated by
+# `dotnet tool install --tool-path 'C:\ProgramData\dotnet\tools' nbgv`,
+# per NewComputerSetup.md section 4.4).
+$machineDotnetTools = 'C:\ProgramData\dotnet\tools'
+if (Test-Path -LiteralPath $machineDotnetTools) {
+  $pathParts = $env:Path -split [IO.Path]::PathSeparator
+  if ($pathParts -notcontains $machineDotnetTools) {
+    $env:Path = $machineDotnetTools + [IO.Path]::PathSeparator + $env:Path
+  }
+}
+
 # only set the value of the Environment Environment variable if it has not been set by a calling process
 $inheritedEnvironmentVariable = [System.Environment]::GetEnvironmentVariable('Environment')
 $inProcessEnvironmentVariable = ''

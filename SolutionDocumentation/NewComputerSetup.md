@@ -137,14 +137,22 @@ New-Item -ItemType SymbolicLink `
 ### 4.3 Install required PowerShell Gallery modules
 
 Install the PowerShell Gallery dependencies before later steps import
-`ATAP.Utilities.BuildTooling.PowerShell`.
+`ATAP.Utilities.BuildTooling.PowerShell`. Use `-Scope AllUsers` (not
+`CurrentUser`) so the BuildMaster service account (`SvcBuildmaster` on
+`utat022`) and any other local service identity can resolve these modules.
+A `CurrentUser` install only writes under the interactive developer profile
+and is invisible to service accounts — BuildMaster packing will fail
+validating the module manifest when it cannot resolve `powershell-yaml`.
+
+This step must be run from an **elevated** PowerShell 7 session so the
+machine-scoped `Program Files\PowerShell\Modules` write succeeds.
 
 ```powershell
 $requiredModules = @('PSFramework', 'powershell-yaml')
 
 foreach ($moduleName in $requiredModules) {
   if (-not (Get-Module -ListAvailable -Name $moduleName)) {
-    Install-Module -Name $moduleName -Repository PSGallery -Scope CurrentUser -Force
+    Install-Module -Name $moduleName -Repository PSGallery -Scope AllUsers -Force
   }
 }
 
@@ -152,13 +160,64 @@ Get-Module -ListAvailable PSFramework, powershell-yaml |
   Select-Object Name, Version, ModuleBase
 ```
 
+The `ModuleBase` column should report a path under
+`C:\Program Files\PowerShell\Modules\...`, not under
+`$env:USERPROFILE\Documents\PowerShell\Modules`. If it reports a per-user
+path, the install ran un-elevated or with the wrong scope — uninstall the
+per-user copy and re-run elevated with `-Scope AllUsers`.
+
 If `PSGallery` is not already trusted on the workstation, run this once first:
 
 ```powershell
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 ```
 
-### 4.4 Register the Bitwarden login script at startup
+### 4.4 Install NBGV (Nerdbank.GitVersioning) machine-wide
+
+BuildMaster runs as a service account (`SvcBuildmaster` on `utat022`) and
+shells out to the `nbgv` CLI through `Get-BuildContext` during the
+Experimental stage. If `nbgv` is installed only as a per-user dotnet tool
+(for example, at `C:\Users\<dev>\.dotnet\tools\nbgv.exe`), the service
+account cannot see it — even when `pwsh` is launched without `-NoProfile` —
+and BuildMaster fails with:
+
+```text
+The 'nbgv' CLI was not found on PATH
+```
+
+Install `nbgv` to a **machine-wide** dotnet tool location so every local
+account (developer logins and service accounts) can resolve it. The
+convention used by the ATAP profile is `C:\ProgramData\dotnet\tools`.
+
+```powershell
+# Elevated PowerShell 7
+$machineToolPath = 'C:\ProgramData\dotnet\tools'
+New-Item -ItemType Directory -Path $machineToolPath -Force | Out-Null
+
+dotnet tool install --tool-path $machineToolPath nbgv
+
+# Verify
+& (Join-Path $machineToolPath 'nbgv.exe') --version
+```
+
+`AllUsersAllHostsV7CoreProfile.ps1` (installed at
+`$PSHome\profile.ps1` in step 4.1) prepends `C:\ProgramData\dotnet\tools`
+to the process-scope `PATH` for every PowerShell 7 session — including the
+non-interactive session BuildMaster spawns under `SvcBuildmaster`. After
+opening a new `pwsh` window, both of these must succeed:
+
+```powershell
+pwsh -NoProfile -Command "Get-Command nbgv -ErrorAction SilentlyContinue"   # machine PATH only
+pwsh -Command            "Get-Command nbgv -ErrorAction SilentlyContinue"   # machine PATH + profile
+```
+
+Upgrade later with:
+
+```powershell
+dotnet tool update --tool-path 'C:\ProgramData\dotnet\tools' nbgv
+```
+
+### 4.5 Register the Bitwarden login script at startup
 
 ```powershell
 Import-Module ATAP.Utilities.PowerShell
@@ -440,12 +499,75 @@ Get-Service INEDOPROGETSVC, INEDOBMSVC | Select-Object Name, Status, StartType
 Both services must depend on `MSSQL$PRODUCTION` so SQL Server is fully available before
 either Inedo product starts.
 
-### 9.4 Keep the config files under source control
+### 9.4 Bootstrap git `safe.directory` for the BuildMaster service account
+
+When a BuildMaster build agent runs as the BuildMaster service account
+(`SvcBuildmaster` on `utat022`) against a worktree under
+`C:\Dropbox\whertzing\GitHub\`, git refuses to operate on the directory
+because it was created by a different user (the interactive developer
+account that owns the Dropbox sync). Symptom:
+
+```text
+fatal: detected dubious ownership in repository at 'C:/Dropbox/whertzing/GitHub/...'
+```
+
+This breaks NBGV height computation, sourcelink commit-id resolution, and
+every `Get-BuildContext` call that shells out to `git`. It typically
+surfaces first during `dotnet restore` because of the
+`<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>` block at
+`Directory.Build.props:36`, which triggers an NBGV evaluation that needs
+git.
+
+Run **once**, as `SvcBuildmaster` itself (not as your interactive login),
+in an elevated `pwsh` session opened with that account's credentials:
+
+```powershell
+# Elevated pwsh, running as SvcBuildmaster
+git config --global --add safe.directory C:/Dropbox/whertzing/GitHub
+```
+
+Verify:
+
+```powershell
+git config --global --get-all safe.directory
+```
+
+Critical notes:
+
+1. **Run as `SvcBuildmaster`, not as your interactive login.** This entry
+   lives in the running user's `~/.gitconfig`. Running it from your
+   developer account writes to the wrong user's gitconfig and the dubious
+   ownership error persists.
+2. **The trailing path is the parent** that contains every repo worktree
+   (`ATAP.Utilities`, `AceCommander`, `ATAP.IAC`, `SharedVSCode`,
+   `_Planning`, and all `*-wt-*-Sprint-*-work-items` siblings). Using the
+   parent path lets one entry cover every current and future worktree
+   under that root.
+3. **Wildcards are not supported.** If a future repo root moves outside
+   `C:\Dropbox\whertzing\GitHub\`, add a second `safe.directory` entry.
+
+A common way to obtain a `SvcBuildmaster` shell from an admin login:
+
+```powershell
+$bmSecret = Get-BitWardenSecret -Name "$env:COMPUTERNAME-BuildMasterSrvAcct-Production" -FolderName 'ComputerLogins'
+$bmCred = New-Object System.Management.Automation.PSCredential(
+  "$env:COMPUTERNAME\SvcBuildmaster",
+  (ConvertTo-SecureString $bmSecret.password -AsPlainText -Force)
+)
+Start-Process pwsh -Credential $bmCred -ArgumentList '-NoExit', '-Command',
+  'git config --global --add safe.directory C:/Dropbox/whertzing/GitHub; git config --global --get-all safe.directory'
+```
+
+Acceptance: a fresh BuildMaster build under `SvcBuildmaster` against any
+worktree under `C:\Dropbox\whertzing\GitHub\` completes `dotnet restore`
+and `Get-BuildContext` without a `dubious ownership` error.
+
+### 9.5 Keep the config files under source control
 
 Use the IAC repo copies of `ProGet.config` and `BuildMaster.config` and link them into
 `C:\ProgramData\Inedo\SharedConfig` when that machine is the authoritative host.
 
-### 9.5 Assign the Git raft to each BuildMaster application
+### 9.6 Assign the Git raft to each BuildMaster application
 
 When configuring each BuildMaster application to read plans/monitors/scripts from Git,
 the raft is assigned in this UI location:

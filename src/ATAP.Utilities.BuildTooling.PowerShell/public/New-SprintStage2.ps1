@@ -2,10 +2,15 @@
 # Dot-source private helper functions
 # =====================================================================
 $privateDir = Join-Path $PSScriptRoot '..' 'private'
-. (Join-Path $privateDir 'Set-ClaudeSettingsSymlink.ps1')
-. (Join-Path $privateDir 'Get-SprintTaskRepositoryNames.ps1')
-# New-SprintBuildMasterBuilds.ps1 replaced by public Set-BuildMasterSprintVariables (Area 7.2-1)
-# New-SprintDatabaseInstances (private) superseded by public New-SprintSqlServerInstances
+foreach ($privateHelperName in @('Set-ClaudeSettingsSymlink.ps1', 'Get-SprintTaskRepositoryNames.ps1')) {
+  $privateHelperPath = Join-Path $privateDir $privateHelperName
+  if (Test-Path -LiteralPath $privateHelperPath -PathType Leaf) {
+    . $privateHelperPath
+  }
+}
+# Retired in Sprint 0007 task B08 (now under Obsolete/private/):
+#   - New-SprintBuildMasterBuilds.ps1   replaced by public Set-BuildMasterSprintVariables (Area 7.2-1)
+#   - New-SprintDatabaseInstances.ps1   superseded by public New-SprintSqlServerInstances
 if (-not (Get-Command -Name 'New-SprintSqlServerInstances' -CommandType Function -ErrorAction SilentlyContinue)) {
   . (Join-Path $PSScriptRoot 'New-SprintSqlServerInstances.ps1')
 }

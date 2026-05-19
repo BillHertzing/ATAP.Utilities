@@ -119,6 +119,10 @@ function Resolve-BuildToolingFunctionFile {
 . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Test-PromotionWithinCeiling.ps1')
 . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Get-BuildContext.ps1')
 . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Invoke-ModuleBuildWithRetry.ps1')
+. (Resolve-BuildToolingFunctionFile -RelativePath 'public/Move-ProGetPackageInterTier.ps1')
+. (Resolve-BuildToolingFunctionFile -RelativePath 'public/Promote-ProGetPackage.ps1')
+. (Resolve-BuildToolingFunctionFile -RelativePath 'public/Invoke-PSModulePesterTests.ps1')
+. (Resolve-BuildToolingFunctionFile -RelativePath 'public/Invoke-PromotedModuleTests.ps1')
 
 function Add-GitSafeDirectoryForCurrentProcess {
   param(
@@ -189,6 +193,91 @@ function Find-LatestPowerShellModulePackage {
   return $package
 }
 
+function Get-PowerShellModulePackageVersionFromNupkgPath {
+  param(
+    [Parameter(Mandatory)]
+    [string]$NupkgPath,
+
+    [Parameter(Mandatory)]
+    [string]$PackageName
+  )
+
+  if ([string]::IsNullOrWhiteSpace($NupkgPath)) {
+    throw 'PowerShell module package path is empty; run the Experimental stage first.'
+  }
+
+  $leaf = [System.IO.Path]::GetFileNameWithoutExtension($NupkgPath.Trim())
+  $prefix = "$PackageName."
+  if (-not $leaf.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw "PowerShell module package '$NupkgPath' does not match expected package name '$PackageName'."
+  }
+
+  $version = $leaf.Substring($prefix.Length)
+  if ([string]::IsNullOrWhiteSpace($version)) {
+    throw "Could not derive package version from '$NupkgPath'."
+  }
+
+  return $version
+}
+
+function Test-ProGetPackageVersionInFeed {
+  param(
+    [Parameter(Mandatory)]
+    [string]$BaseUrl,
+
+    [Parameter(Mandatory)]
+    [string]$FeedName,
+
+    [Parameter(Mandatory)]
+    [string]$PackageName,
+
+    [Parameter(Mandatory)]
+    [string]$Version,
+
+    [Parameter(Mandatory)]
+    [string]$ApiKey
+  )
+
+  $trimmedBaseUrl = $BaseUrl.TrimEnd('/')
+  $checkUrl = "$trimmedBaseUrl/api/packages/$FeedName/versions" +
+    "?name=$([uri]::EscapeDataString($PackageName))&version=$([uri]::EscapeDataString($Version))"
+  $headers = @{
+    'Accept'   = 'application/json'
+    'X-ApiKey' = $ApiKey
+  }
+
+  try {
+    $response = Invoke-RestMethod -Uri $checkUrl -Headers $headers -Method Get -ErrorAction Stop
+  } catch {
+    return $false
+  }
+
+  $items = @($response)
+  if ($items.Count -eq 0) {
+    return $false
+  }
+
+  foreach ($item in $items) {
+    if ($item -is [string]) {
+      if ($item -eq $Version) {
+        return $true
+      }
+      continue
+    }
+
+    if ($item.PSObject.Properties.Name -contains 'version') {
+      if ([string]$item.version -eq $Version) {
+        return $true
+      }
+      continue
+    }
+
+    return $true
+  }
+
+  return $false
+}
+
 function Publish-PowerShellModulePackageToExperimental {
   param(
     [Parameter(Mandatory)]
@@ -240,6 +329,28 @@ function Select-ModuleBuildRetryResult {
   }
 }
 
+function Assert-BuildMasterOperationSucceeded {
+  param(
+    [Parameter(Mandatory)]
+    [object]$Result,
+
+    [Parameter(Mandatory)]
+    [string]$OperationName
+  )
+
+  if ($null -eq $Result) {
+    throw "$OperationName did not return a result object."
+  }
+
+  if ($Result.PSObject.Properties.Name -contains 'Succeeded' -and -not [bool]$Result.Succeeded) {
+    throw "$OperationName reported Succeeded=false. $($Result.ResponseSummary)"
+  }
+
+  if ($Result.PSObject.Properties.Name -contains 'GatePass' -and -not [bool]$Result.GatePass) {
+    throw "$OperationName reported GatePass=false. $($Result.ResponseSummary)"
+  }
+}
+
 function Ensure-PSResourceRepository {
   param(
     [Parameter(Mandatory)]
@@ -251,13 +362,11 @@ function Ensure-PSResourceRepository {
 
   $existing = Get-PSResourceRepository -Name $Name -ErrorAction SilentlyContinue
   if ($null -eq $existing) {
-    Register-PSResourceRepository -Name $Name -Uri $Uri -Trusted
+    Register-PSResourceRepository -Name $Name -Uri $Uri -Trusted -ApiVersion V2
     return
   }
 
-  if ([string]$existing.Uri -ne $Uri) {
-    Set-PSResourceRepository -Name $Name -Uri $Uri -Trusted
-  }
+  Set-PSResourceRepository -Name $Name -Uri $Uri -Trusted -ApiVersion V2
 }
 
 if ([string]::IsNullOrWhiteSpace($PackageName)) {
@@ -430,6 +539,61 @@ try {
         throw
       }
       Write-Host "$publishSummary Ceiling='$ceilingTier'. module.build.ps1 tier='$moduleBuildTier'."
+    }
+
+    'Development' {
+      if (-not (Test-Path -LiteralPath $NupkgPathFile -PathType Leaf)) {
+        throw "PowerShell module package path file '$NupkgPathFile' is missing; run the Experimental stage first."
+      }
+
+      $nupkgPath = (Get-Content -LiteralPath $NupkgPathFile -Raw).Trim()
+      if (-not (Test-Path -LiteralPath $nupkgPath -PathType Leaf)) {
+        throw "PowerShell module package '$nupkgPath' recorded by '$NupkgPathFile' does not exist."
+      }
+
+      $packageVersion = Get-PowerShellModulePackageVersionFromNupkgPath -NupkgPath $nupkgPath -PackageName $PackageName
+      $promotionTracePath = Join-Path -Path $contextDirectory -ChildPath "$ModuleName.development.log"
+      Add-BuildMasterPublishTrace -Path $promotionTracePath -Message "Promoting '$PackageName' version '$packageVersion' from '$ExperimentalFeed' to '$DevelopmentFeed'. Captured resolved version is '$capturedResolvedVersion'."
+
+      $env:PROGET_BUILDMASTER_API_KEY = $ProGetApiKey
+      $global:ProGetBaseUrl = $ProGetUrl
+
+      $developmentFeedUri = Get-PowerShellGetFeedUri -BaseUrl $ProGetUrl -FeedName $DevelopmentFeed
+      Ensure-PSResourceRepository -Name $DevelopmentFeed -Uri $developmentFeedUri
+      Add-BuildMasterPublishTrace -Path $promotionTracePath -Message "PSResourceRepository '$DevelopmentFeed' is registered at '$developmentFeedUri'."
+
+      if (Test-ProGetPackageVersionInFeed -BaseUrl $ProGetUrl -FeedName $DevelopmentFeed -PackageName $PackageName -Version $packageVersion -ApiKey $ProGetApiKey) {
+        $promotionResult = [pscustomobject]@{
+          Succeeded       = $true
+          ResponseSummary = "No-op: '$PackageName' version '$packageVersion' already exists in '$DevelopmentFeed'."
+        }
+      } else {
+        $promotionResult = Promote-ProGetPackage `
+          -Name $PackageName `
+          -Version $packageVersion `
+          -FromFeed $ExperimentalFeed `
+          -ToFeed $DevelopmentFeed `
+          -Reason "Development gate for $ApplicationName $packageVersion on $Branch" `
+          -CeilingTier $ceilingTier
+      }
+      Assert-BuildMasterOperationSucceeded -Result $promotionResult -OperationName 'Promote-ProGetPackage'
+      Add-BuildMasterPublishTrace -Path $promotionTracePath -Message $promotionResult.ResponseSummary
+
+      $resultsPath = Join-Path -Path $contextDirectory -ChildPath 'DevelopmentTestResults'
+      $testResult = Invoke-PromotedModuleTests `
+        -Name $PackageName `
+        -Version $packageVersion `
+        -Feed $DevelopmentFeed `
+        -Tier $tier `
+        -ResultsPath $resultsPath `
+        -ModuleSourceRoot $ModulePath `
+        -WorkingDirectory $SourcePath `
+        -ProGetBaseUrl $ProGetUrl `
+        -ApiKey $ProGetApiKey
+      Assert-BuildMasterOperationSucceeded -Result $testResult -OperationName 'Invoke-PromotedModuleTests'
+      Add-BuildMasterPublishTrace -Path $promotionTracePath -Message $testResult.ResponseSummary
+
+      Write-Host "Promoted '$PackageName' version '$packageVersion' to '$DevelopmentFeed' and passed Development tests. Ceiling='$ceilingTier'."
     }
 
     default {

@@ -1,5 +1,21 @@
 # Setup a new computer
 
+> **Status (2026-05-19):** This document is retained for its deeper
+> BIOS / OS-install / Ansible-bootstrap notes that
+> [NewComputerSetup.md](NewComputerSetup.md) deliberately omits. For any
+> overlap (PowerShell profile install, SQL Server instance creation,
+> ProGet/BuildMaster install, service accounts, NBGV, git
+> `safe.directory`), prefer [NewComputerSetup.md](NewComputerSetup.md) —
+> it is the maintained canonical source. In particular:
+>
+> - Git `safe.directory` bootstrap for `SvcBuildmaster` —
+>   [NewComputerSetup.md § 9.4](NewComputerSetup.md).
+> - Machine-wide NBGV install (so `SvcBuildmaster` can resolve `nbgv`) —
+>   [NewComputerSetup.md § 4.4](NewComputerSetup.md).
+> - PowerShell Gallery modules installed with `-Scope AllUsers` so
+>   `SvcBuildmaster` can resolve `PSFramework` and `powershell-yaml` —
+>   [NewComputerSetup.md § 4.3](NewComputerSetup.md).
+
 ## Introduction
 
 Setting up a new computer can be a daunting task when there are hundreds of customizations needed to make the computer a productive element of an organization's infrastructure. Infrastructure As Code (IAC) is the discipline that is concerned with formalizing how to codify the customizations, and executing on the configuration to make a computer conform to the customizations desired.

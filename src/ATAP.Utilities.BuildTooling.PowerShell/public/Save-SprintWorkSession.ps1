@@ -63,7 +63,13 @@ function Save-SprintWorkSession {
         [string] $PlanningRoot = '',
 
         [Parameter(Mandatory = $false)]
-        [string] $ClaudeProjectsRoot = (Join-Path $env:USERPROFILE '.claude\projects')
+        [string] $ClaudeProjectsRoot = (Join-Path $env:USERPROFILE '.claude\projects'),
+
+        [Parameter(Mandatory = $false)]
+        [string] $GitHubRoot = 'C:\Dropbox\whertzing\GitHub',
+
+        [Parameter(Mandatory = $false)]
+        [switch] $AllowMainFallback
     )
 
     begin {
@@ -80,6 +86,9 @@ function Save-SprintWorkSession {
 
         # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: ClaudeProjectsRoot)
         $ClaudeProjectsRoot = Get-PVal -ParameterName ClaudeProjectsRoot -originalPSBoundParameters $PSBoundParameters -dottedPath ClaudeProjectsRoot -DefaultValue $ClaudeProjectsRoot
+
+        # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: GitHubRoot)
+        $GitHubRoot = Get-PVal -ParameterName GitHubRoot -originalPSBoundParameters $PSBoundParameters -dottedPath GitHubRoot -DefaultValue $GitHubRoot
     }
 
     process {
@@ -97,11 +106,27 @@ function Save-SprintWorkSession {
                 }
             }
 
-            # ── Auto-resolve _Planning worktree from siblings ──────────────────────
+            # ── Auto-resolve _Planning worktree (SC-0096 fix) ──────────────────────
+            # Resolution order:
+            #   1. Caller-supplied -PlanningRoot wins.
+            #   2. Scan $GitHubRoot for ^_Planning-wt-\d+-sprint-$SprintN-.*
+            #   3. Scan the parent of the current cwd (legacy sibling-scan path)
+            #      in case cwd lives outside $GitHubRoot.
+            #   4. Refuse to fall back to main _Planning unless -AllowMainFallback
+            #      is set, so sprint artifacts never silently land in the main
+            #      planning repo.
             if (-not $PlanningRoot) {
-                $parentDir = Split-Path -Parent (Get-Location).Path
-                $planningWTs = @(Get-ChildItem $parentDir -Directory -ErrorAction SilentlyContinue |
-                        Where-Object { $_.Name -match "^_Planning-wt-\d+-sprint-$SprintN" })
+                $mainPlanning = Join-Path $GitHubRoot '_Planning'
+                $searchRoots = @($GitHubRoot, (Split-Path -Parent (Get-Location).Path)) |
+                    Where-Object { $_ -and (Test-Path $_) } |
+                    Select-Object -Unique
+
+                $planningWTs = @()
+                foreach ($root in $searchRoots) {
+                    $planningWTs += @(Get-ChildItem $root -Directory -ErrorAction SilentlyContinue |
+                            Where-Object { $_.Name -match "^_Planning-wt-\d+-sprint-$SprintN(-|$)" })
+                }
+                $planningWTs = $planningWTs | Sort-Object FullName -Unique
 
                 if ($planningWTs.Count -eq 1) {
                     $PlanningRoot = $planningWTs[0].FullName
@@ -109,9 +134,11 @@ function Save-SprintWorkSession {
                 } elseif ($planningWTs.Count -gt 1) {
                     $candidates = ($planningWTs | ForEach-Object { $_.FullName }) -join ', '
                     throw "Multiple _Planning sprint worktrees match sprint $SprintN. Pass -PlanningRoot to disambiguate: $candidates"
+                } elseif ($AllowMainFallback) {
+                    $PlanningRoot = $mainPlanning
+                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "No _Planning sprint worktree found for sprint $SprintN. -AllowMainFallback set; using main _Planning: $PlanningRoot"
                 } else {
-                    $PlanningRoot = 'C:\Dropbox\whertzing\GitHub\_Planning'
-                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "No _Planning sprint worktree found for sprint $SprintN. Falling back to main _Planning: $PlanningRoot"
+                    throw "No _Planning sprint worktree matched ^_Planning-wt-\\d+-sprint-$SprintN under: $($searchRoots -join '; '). Sprint artifacts must not land in main _Planning silently. Create the sprint worktree, pass -PlanningRoot explicitly, or re-run with -AllowMainFallback."
                 }
             }
 

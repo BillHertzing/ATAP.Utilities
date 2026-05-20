@@ -20,4 +20,13 @@ Describe 'module.build.ps1 package staging contract' {
     $text | Should -Match '\$script:GeneratedPsm1Path = Join-Path \$script:PackageSrcDir'
     $text | Should -Match 'Publish-PSResource\s+`\s+\r?\n\s+-Path \$script:PackageSrcDir'
   }
+
+  It 'supports a caller-supplied OutputRoot override for isolated package staging' {
+    $text = Get-Content -LiteralPath $script:moduleBuildPath -Raw
+
+    $text | Should -Match '\[string\] \$OutputRoot'
+    $text | Should -Match '\[string\]::IsNullOrWhiteSpace\(\$OutputRoot\)'
+    $text | Should -Match '\$script:OutputRoot = \$script:meta.OutputRoot'
+    $text | Should -Match '\$script:OutputRoot = \(\$resolvedOutputRoot'
+  }
 }

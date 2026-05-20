@@ -219,7 +219,17 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
     $text | Should -Match 'Invoke-ModuleBuildWithRetry'
     $text | Should -Match '-Task CI'
     $text | Should -Match '-SkipPublish'
+    $text | Should -Match '-OutputRoot \$moduleBuildOutputRoot'
     $text | Should -Not -Match 'New-PSModuleNupkg'
+  }
+
+  It 'uses a build-id scoped PowerShell module output root for BuildMaster package staging' {
+    $text = Get-Content -LiteralPath $script:powerShellRunnerPath -Raw
+
+    $text | Should -Match '\$moduleBuildOutputRoot = Join-Path -Path \$contextDirectory'
+    $text | Should -Match '\$moduleBuildPackageOutputPath = Join-Path -Path \$moduleBuildOutputRoot'
+    $text | Should -Match 'build-scoped package output'
+    $text | Should -Not -Match '_generated/psmodules/\$ModuleName/packages'
   }
 
   It 'filters Invoke-ModuleBuildWithRetry success-stream noise before evaluating ExitCode' {

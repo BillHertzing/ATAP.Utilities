@@ -55,6 +55,11 @@ Optional path for the transcript log directory. Transcript files are written as
 When omitted the path is auto-computed as:
   <GeneratedRelativePath>\PSModuleBuildLogs\<ProjectName>
 
+.PARAMETER OutputRoot
+Optional generated output root passed through to module.build.ps1. BuildMaster
+uses this to isolate package staging by build id and avoid sharing
+_generated/psmodules/<ModuleName> across concurrent runs.
+
 .INPUTS
 System.String, System.String[], System.IO.FileInfo, System.IO.FileInfo[]
 Pipeline objects with a ProjectPath or FullName property are also accepted.
@@ -119,7 +124,10 @@ function Invoke-ModuleBuildWithRetry {
     [int] $MaxRetries = 1,
 
     [Parameter(Mandatory = $false)]
-    [string] $BuildLogPath
+    [string] $BuildLogPath,
+
+    [Parameter(Mandatory = $false)]
+    [string] $OutputRoot
   )
 
   begin {
@@ -147,6 +155,7 @@ function Invoke-ModuleBuildWithRetry {
     $Configuration = Get-PVal -ParameterName 'Configuration' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Configuration' -DefaultValue $Configuration -AsType ([string[]])
     $MaxRetries = Get-PVal -ParameterName 'MaxRetries' -originalPSBoundParameters $PSBoundParameters -dottedPath 'MaxRetries' -DefaultValue $MaxRetries -AsType ([int])
     $BuildLogPath = Get-PVal -ParameterName 'BuildLogPath' -originalPSBoundParameters $PSBoundParameters -dottedPath 'BuildLogPath' -DefaultValue $BuildLogPath -AsType ([string])
+    $OutputRoot = Get-PVal -ParameterName 'OutputRoot' -originalPSBoundParameters $PSBoundParameters -dottedPath 'OutputRoot' -DefaultValue $OutputRoot -AsType ([string])
 
     # Verify Invoke-Build is available once for all pipeline inputs.
     if (-not (Get-Command -Name 'Invoke-Build' -ErrorAction SilentlyContinue)) {
@@ -309,8 +318,9 @@ function Invoke-ModuleBuildWithRetry {
       # -----------------------------------------------------------------------
       if ($WhatIfPreference) {
         $skipArg = if ($SkipPublish.IsPresent) { ' -SkipPublish' } else { '' }
+        $outputRootArg = if ([string]::IsNullOrWhiteSpace($OutputRoot)) { '' } else { " -OutputRoot '$OutputRoot'" }
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message (
-          "What if: Push-Location '$moduleRoot'; Invoke-Build $Task -Tier $resolvedTier$skipArg (build script resolved by Invoke-Build walk-up). " +
+          "What if: Push-Location '$moduleRoot'; Invoke-Build $Task -Tier $resolvedTier -ModuleRoot '$moduleRoot'$outputRootArg$skipArg (build script resolved by Invoke-Build walk-up). " +
           "Transcript: '$transcriptFile'. " +
           "Would retry up to $MaxRetries time(s) on PSResourceGet/network/file-lock failures."
         )
@@ -343,11 +353,18 @@ function Invoke-ModuleBuildWithRetry {
 
           Push-Location -LiteralPath $moduleRoot
           try {
-            if ($SkipPublish.IsPresent) {
-              Invoke-Build $Task -Tier $resolvedTier -ModuleRoot $moduleRoot -SkipPublish
-            } else {
-              Invoke-Build $Task -Tier $resolvedTier -ModuleRoot $moduleRoot
+            $invokeBuildParameters = @{
+              Tier       = $resolvedTier
+              ModuleRoot = $moduleRoot
             }
+            if ($SkipPublish.IsPresent) {
+              $invokeBuildParameters['SkipPublish'] = $true
+            }
+            if (-not [string]::IsNullOrWhiteSpace($OutputRoot)) {
+              $invokeBuildParameters['OutputRoot'] = $OutputRoot
+            }
+
+            Invoke-Build $Task @invokeBuildParameters
           } finally {
             Pop-Location
           }

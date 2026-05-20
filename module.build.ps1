@@ -19,7 +19,13 @@ param(
   # folder. Modern callers (Invoke-ModuleBuildWithRetry) pass this explicitly so
   # the source-of-truth module.build.ps1 at the repo root can resolve the right
   # module per invocation.
-  [string] $ModuleRoot
+  [string] $ModuleRoot,
+
+  # Optional generated output root override. When omitted, Resolve-PSModuleMetadata
+  # supplies the legacy shared '<RepoRoot>/_generated/psmodules/<ModuleName>/' path.
+  # BuildMaster passes a build-id scoped path to avoid concurrent runs sharing a
+  # package staging directory.
+  [string] $OutputRoot
 )
 
 # ---------------------------------------------------------------------------
@@ -78,7 +84,16 @@ Enter-Build {
   $script:ModuleName = $script:meta.ModuleName
   $script:ModuleRoot = $script:meta.ModuleRoot
   $script:RepoRoot = $script:meta.RepoRoot
-  $script:OutputRoot = $script:meta.OutputRoot
+  if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
+    $script:OutputRoot = $script:meta.OutputRoot
+  } else {
+    $resolvedOutputRoot = if ([System.IO.Path]::IsPathRooted($OutputRoot)) {
+      [System.IO.Path]::GetFullPath($OutputRoot)
+    } else {
+      [System.IO.Path]::GetFullPath($OutputRoot, $script:RepoRoot)
+    }
+    $script:OutputRoot = ($resolvedOutputRoot -replace '\\', '/').TrimEnd('/')
+  }
 
   # T-42: Resolve NBGV-derived version once per build
   $script:verInfo = Get-PSModuleVersionFromNBGV -ModuleRoot $script:ModuleRoot

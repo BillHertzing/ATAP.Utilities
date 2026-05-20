@@ -461,11 +461,12 @@ Write-BuildMasterRunContextJson `
   -StateFiles $stateFiles `
   -AdditionalData @{ PipelineKind = 'PowerShellModule'; ModuleName = $ModuleName; PackageName = $PackageName } | Out-Null
 
-$moduleBuildPackageOutputPath = Join-Path -Path $SourcePath -ChildPath "_generated/psmodules/$ModuleName/packages"
+$moduleBuildOutputRoot = Join-Path -Path $contextDirectory -ChildPath "psmodules/$ModuleName"
+$moduleBuildPackageOutputPath = Join-Path -Path $moduleBuildOutputRoot -ChildPath 'packages'
 if ([string]::IsNullOrWhiteSpace($PackageOutputPath)) {
   $PackageOutputPath = $moduleBuildPackageOutputPath
 } elseif ([System.IO.Path]::GetFullPath($PackageOutputPath) -ne [System.IO.Path]::GetFullPath($moduleBuildPackageOutputPath)) {
-  Write-Host "Ignoring PackageOutputPath '$PackageOutputPath' because module.build.ps1 writes packages to '$moduleBuildPackageOutputPath'."
+  Write-Host "Ignoring PackageOutputPath '$PackageOutputPath' because BuildMaster runs module.build.ps1 with build-scoped package output '$moduleBuildPackageOutputPath'."
   $PackageOutputPath = $moduleBuildPackageOutputPath
 }
 
@@ -506,7 +507,8 @@ try {
           -Task CI `
           -SkipPublish `
           -MaxRetries 1 `
-          -BuildLogPath $buildLogPath
+          -BuildLogPath $buildLogPath `
+          -OutputRoot $moduleBuildOutputRoot
       )
       $moduleBuildRetryResults = @($buildResults | Select-ModuleBuildRetryResult)
       if ($moduleBuildRetryResults.Count -eq 0) {

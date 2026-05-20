@@ -20,4 +20,12 @@ Describe 'Invoke-ModuleBuildWithRetry retry policy' {
     $text | Should -Match 'PSResourceGet/network/file-lock failures'
     $text | Should -Match 'PSResourceGet, network, or file-lock failure'
   }
+
+  It 'passes OutputRoot through to module.build.ps1 when supplied' {
+    $text = Get-Content -LiteralPath $script:functionPath -Raw
+
+    $text | Should -Match '\[string\] \$OutputRoot'
+    $text | Should -Match '\$invokeBuildParameters\[''OutputRoot''\] = \$OutputRoot'
+    $text | Should -Match 'Invoke-Build \$Task @invokeBuildParameters'
+  }
 }

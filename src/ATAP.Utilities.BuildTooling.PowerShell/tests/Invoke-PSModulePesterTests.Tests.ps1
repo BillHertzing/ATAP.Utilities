@@ -9,6 +9,10 @@ BeforeAll {
 
   Import-Module Pester -MinimumVersion 5.0.0 -ErrorAction Stop
 
+  if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
+    function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
+  }
+
   $script:tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("psp_" + [guid]::NewGuid().ToString('N'))
   New-Item -ItemType Directory -Path $script:tempRoot -Force | Out-Null
 }
@@ -155,5 +159,48 @@ Describe 'Invoke-PSModulePesterTests (Sprint short-circuit)' -Tag 'Unit' {
     $result.FailedCount | Should -Be 0
 
     Should -Invoke -CommandName Invoke-Pester -Times 0
+  }
+}
+
+Describe 'Invoke-PSModulePesterTests (quiet output)' -Tag 'Unit' {
+
+  BeforeEach {
+    Mock Write-PSFMessage { }
+  }
+
+  It 'suppresses incidental Pester streams when output verbosity is None' {
+    Mock -CommandName Invoke-Pester -MockWith {
+      Write-Error 'expected negative-path error noise' -ErrorAction Continue
+      Write-Warning 'expected negative-path warning noise'
+      Write-Verbose 'expected verbose noise' -Verbose
+      Write-Debug 'expected debug noise' -Debug
+      Write-Information 'expected information noise' -InformationAction Continue
+
+      [PSCustomObject]@{
+        PassedCount  = 1
+        FailedCount  = 0
+        SkippedCount = 0
+        TotalCount   = 1
+        Duration     = [TimeSpan]::Zero
+      }
+    }
+
+    $moduleRoot = Join-Path $script:tempRoot 'quiet-module'
+    New-Item -ItemType Directory -Path $moduleRoot -Force | Out-Null
+
+    $out = Join-Path $script:tempRoot 'quiet-out.xml'
+    $cov = Join-Path $script:tempRoot 'quiet-cov.xml'
+
+    $output = Invoke-PSModulePesterTests `
+      -ModuleRoot $moduleRoot `
+      -Tier 'Alpha' `
+      -OutputPath $out `
+      -CoverageOutputPath $cov `
+      -PesterOutputVerbosity 'None' 2>&1 3>&1 4>&1 5>&1 6>&1
+
+    @($output).Count | Should -Be 1
+    $output.GatePass | Should -BeTrue
+    $output.Passed | Should -Be 1
+    Should -Invoke -CommandName Invoke-Pester -Times 1 -Exactly
   }
 }

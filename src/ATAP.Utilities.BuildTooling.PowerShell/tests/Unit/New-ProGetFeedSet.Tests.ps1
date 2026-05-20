@@ -29,6 +29,8 @@ AfterAll {
 Describe 'New-ProGetFeedSet' -Tag 'Unit' {
 
   BeforeEach {
+    Mock Write-PSFMessage { }
+
     $global:configRootKeys = @{
       ProGetAdminUriSchemeConfigRootKey = 'PROGET_ADMIN_URI_SCHEME'
       ProGetAdminUriHostConfigRootKey   = 'PROGET_ADMIN_URI_HOST'

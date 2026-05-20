@@ -40,6 +40,8 @@ AfterAll {
 Describe 'New-PSModuleNupkg' -Tag 'Unit' {
 
     BeforeEach {
+        Mock Write-PSFMessage { }
+
         # Wipe output folder between tests.
         if (Test-Path -LiteralPath $script:outputPath) {
             Remove-Item -LiteralPath $script:outputPath -Recurse -Force -ErrorAction SilentlyContinue

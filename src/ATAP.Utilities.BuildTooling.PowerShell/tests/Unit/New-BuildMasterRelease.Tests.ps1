@@ -27,6 +27,8 @@ AfterAll {
 Describe 'New-BuildMasterRelease' -Tag 'Unit' {
 
   BeforeEach {
+    Mock Write-PSFMessage { }
+
     $global:configRootKeys = @{
       BuildMasterBaseUrlConfigRootKey      = 'BuildMasterBaseUrl'
       BuildMasterAdminApiKeyConfigRootKey  = 'BuildMasterAdminApiKey'

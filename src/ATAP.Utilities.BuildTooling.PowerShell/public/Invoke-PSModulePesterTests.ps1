@@ -287,7 +287,14 @@ function Invoke-PSModulePesterTests {
 
       $result = $null
       if ($PSCmdlet.ShouldProcess("$TestPaths", 'Invoke-Pester')) {
-        $result = Invoke-Pester -Configuration $cfg
+        if ($PesterOutputVerbosity -eq 'None') {
+          # BuildMaster summary logging comes from this wrapper. When Pester's
+          # own output is disabled, suppress incidental streams emitted by
+          # tests that intentionally exercise warning/error paths.
+          $result = Invoke-Pester -Configuration $cfg 2>$null 3>$null 4>$null 5>$null 6>$null
+        } else {
+          $result = Invoke-Pester -Configuration $cfg
+        }
       }
 
       $passed = if ($result) { [int]$result.PassedCount } else { 0 }

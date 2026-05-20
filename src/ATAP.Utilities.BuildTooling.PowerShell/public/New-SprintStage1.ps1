@@ -1,3 +1,5 @@
+# Load contract: dot-source this file to define New-SprintStage1. No top-level
+# code executes on load — all side effects occur only when the function is called.
 function New-SprintStage1 {
   <#
   .SYNOPSIS

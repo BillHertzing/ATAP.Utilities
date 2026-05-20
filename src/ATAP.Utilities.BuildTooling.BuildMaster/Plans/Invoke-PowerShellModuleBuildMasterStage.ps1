@@ -591,7 +591,8 @@ try {
         -ModuleSourceRoot $ModulePath `
         -WorkingDirectory $SourcePath `
         -ProGetBaseUrl $ProGetUrl `
-        -ApiKey $ProGetApiKey
+        -ApiKey $ProGetApiKey `
+        -PesterOutputVerbosity None
       Assert-BuildMasterOperationSucceeded -Result $testResult -OperationName 'Invoke-PromotedModuleTests'
       Add-BuildMasterPublishTrace -Path $promotionTracePath -Message $testResult.ResponseSummary
 

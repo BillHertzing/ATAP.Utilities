@@ -30,6 +30,9 @@ BeforeAll {
 }
 
 Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
+  BeforeEach {
+    Mock Write-PSFMessage { }
+  }
 
   Context 'Phase 2: valid push -> pull moves' {
 

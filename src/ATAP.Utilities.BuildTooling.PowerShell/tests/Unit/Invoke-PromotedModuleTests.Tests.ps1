@@ -7,6 +7,9 @@ BeforeAll {
     $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
     . (Join-Path $publicDir 'Invoke-PromotedModuleTests.ps1')
 
+    $script:hadGlobalProGetBaseUrl = Test-Path -Path 'Variable:\global:ProGetBaseUrl'
+    $script:originalGlobalProGetBaseUrl = if ($script:hadGlobalProGetBaseUrl) { $global:ProGetBaseUrl } else { $null }
+
     # Suppress PSFramework noise when the module is not loaded.
     if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
         function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
@@ -40,6 +43,12 @@ BeforeAll {
 }
 
 AfterAll {
+    if ($script:hadGlobalProGetBaseUrl) {
+        $global:ProGetBaseUrl = $script:originalGlobalProGetBaseUrl
+    } else {
+        Remove-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
+    }
+
     Remove-Item function:global:Save-PSResource -ErrorAction SilentlyContinue
     Remove-Item function:global:Invoke-PSModulePesterTests -ErrorAction SilentlyContinue
 }
@@ -47,7 +56,13 @@ AfterAll {
 Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
 
     BeforeEach {
+        # BuildMaster sets this global before invoking the promoted-module gate.
+        # Keep unit tests deterministic and opt into the direct ProGet path only
+        # in the test that explicitly supplies -ProGetBaseUrl.
+        $global:ProGetBaseUrl = ''
+
         # Keep the cmdlet off the real filesystem / feed.
+        Mock Write-PSFMessage { }
         Mock Push-Location { }
         Mock Pop-Location { }
         Mock New-Item { }

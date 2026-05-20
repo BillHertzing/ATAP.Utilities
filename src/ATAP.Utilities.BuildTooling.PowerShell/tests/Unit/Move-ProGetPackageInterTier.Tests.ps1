@@ -29,6 +29,9 @@ BeforeAll {
 }
 
 Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
+  BeforeEach {
+    Mock Write-PSFMessage { }
+  }
 
   Context 'Auto-destination: Phase 1 (combined feeds)' {
 
@@ -163,7 +166,7 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
         -Name 'Test.Package' -Version '1.0.0' `
         -FromFeed 'nuget-experimental' `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey `
-        -WhatIf
+        -WhatIf 6>$null
       $result.Promoted | Should -BeFalse
     }
   }

@@ -21,9 +21,16 @@ BeforeAll {
   . (Join-Path $publicDir 'New-PesterTestFile.ps1')
   . (Join-Path $publicDir 'New-PesterBasicUnitTestTemplate.ps1')
   . (Join-Path $publicDir 'New-PesterDataDrivenTestTemplate.ps1')
+
+  if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
+    function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
+  }
 }
 
 Describe 'New-PesterBasicUnitTestTemplate' -Tag 'Unit', 'PesterKind' {
+  BeforeEach {
+    Mock Write-PSFMessage { }
+  }
 
   BeforeAll {
     $script:sampleScenarios = @(
@@ -143,6 +150,9 @@ Describe 'New-PesterBasicUnitTestTemplate' -Tag 'Unit', 'PesterKind' {
 }
 
 Describe 'New-PesterDataDrivenTestTemplate' -Tag 'Unit', 'PesterKind' {
+  BeforeEach {
+    Mock Write-PSFMessage { }
+  }
 
   Context 'When called with required parameters and no OutputPath' {
     It 'New-PesterDataDrivenTestTemplate_RequiredParams_ReturnsHashtable' {

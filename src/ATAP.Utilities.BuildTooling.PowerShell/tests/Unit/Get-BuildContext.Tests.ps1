@@ -47,6 +47,8 @@ AfterAll {
 Describe 'Get-BuildContext' -Tag 'Unit' {
 
   BeforeEach {
+    Mock Write-PSFMessage { }
+
     # Default mocks: succeed with a sprint-trunk-style version.
     Mock git {
       $global:LASTEXITCODE = 0

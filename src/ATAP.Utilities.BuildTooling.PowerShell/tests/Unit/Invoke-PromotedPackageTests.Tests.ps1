@@ -29,6 +29,7 @@ Describe 'Invoke-PromotedPackageTests' -Tag 'Unit' {
 
     BeforeEach {
         # Keep the cmdlet off the real filesystem.
+        Mock Write-PSFMessage { }
         Mock Push-Location { }
         Mock Pop-Location { }
         Mock New-Item { }

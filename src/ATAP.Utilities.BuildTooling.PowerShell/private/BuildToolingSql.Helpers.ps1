@@ -10,7 +10,7 @@ function Import-BuildToolingDatabaseResolver {
   }
 
   try {
-    Import-Module ATAP.Utilities.DatabaseManagement.Powershell -ErrorAction Stop
+    Import-Module ATAP.Utilities.DatabaseManagement.Powershell -DisableNameChecking -ErrorAction Stop
     if (Get-Command -Name 'Resolve-DatabaseSqlConnection' -CommandType Function -ErrorAction SilentlyContinue) {
       return
     }
@@ -49,7 +49,7 @@ function Import-BuildToolingDatabaseResolver {
       }
 
       try {
-        Import-Module -Name $modulePath -ErrorAction Stop
+        Import-Module -Name $modulePath -DisableNameChecking -ErrorAction Stop
         if (Get-Command -Name 'Resolve-DatabaseSqlConnection' -CommandType Function -ErrorAction SilentlyContinue) {
           return
         }

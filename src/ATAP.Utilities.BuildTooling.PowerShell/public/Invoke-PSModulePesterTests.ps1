@@ -265,6 +265,13 @@ function Invoke-PSModulePesterTests {
       }
 
       $filter = Get-PSModulePesterTierFilter -Tier $Tier
+      $excludeTag = @($filter.ExcludeTag)
+      if ($PesterOutputVerbosity -eq 'None') {
+        # Some unit tests intentionally exercise SupportsShouldProcess with
+        # -WhatIf. PowerShell writes those host messages outside the normal
+        # streams, so skip them only in transcript-quiet BuildMaster runs.
+        $excludeTag += 'BuildTranscriptNoise'
+      }
 
       $coveragePaths = @()
       $publicDir = Join-Path $ModuleRoot 'public'
@@ -275,7 +282,7 @@ function Invoke-PSModulePesterTests {
       $cfg = New-PSModulePesterConfiguration `
         -TestPaths $TestPaths `
         -IncludeTag $filter.IncludeTag `
-        -ExcludeTag $filter.ExcludeTag `
+        -ExcludeTag $excludeTag `
         -OutputPath $OutputPath `
         -CoverageOutputPath $CoverageOutputPath `
         -CoveragePaths $coveragePaths `

@@ -67,7 +67,7 @@ Describe 'Invoke-PromotedPackageTests' -Tag 'Unit' {
         }
     }
 
-    Context 'WhatIf short-circuit' {
+    Context 'WhatIf short-circuit' -Tag 'BuildTranscriptNoise' {
         It 'Does not invoke dotnet when -WhatIf is supplied' {
             $result = Invoke-PromotedPackageTests -Name 'ATAP.Utilities' -Version '0.1.0-Sprint.142' `
                 -Feed 'nuget-development' -ResultsPath '_generated\testresults\development' -WhatIf

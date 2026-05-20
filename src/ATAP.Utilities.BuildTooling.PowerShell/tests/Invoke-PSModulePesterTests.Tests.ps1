@@ -169,7 +169,11 @@ Describe 'Invoke-PSModulePesterTests (quiet output)' -Tag 'Unit' {
   }
 
   It 'suppresses incidental Pester streams when output verbosity is None' {
+    $script:capturedPesterConfiguration = $null
     Mock -CommandName Invoke-Pester -MockWith {
+      param($Configuration)
+      $script:capturedPesterConfiguration = $Configuration
+
       Write-Error 'expected negative-path error noise' -ErrorAction Continue
       Write-Warning 'expected negative-path warning noise'
       Write-Verbose 'expected verbose noise' -Verbose
@@ -201,6 +205,7 @@ Describe 'Invoke-PSModulePesterTests (quiet output)' -Tag 'Unit' {
     @($output).Count | Should -Be 1
     $output.GatePass | Should -BeTrue
     $output.Passed | Should -Be 1
+    $script:capturedPesterConfiguration.Filter.ExcludeTag.Value | Should -Contain 'BuildTranscriptNoise'
     Should -Invoke -CommandName Invoke-Pester -Times 1 -Exactly
   }
 }

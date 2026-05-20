@@ -12,8 +12,12 @@ BeforeAll {
         function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
     }
 
-    # Stub out REST calls.
-    function global:Invoke-RestMethod { param([Parameter(ValueFromRemainingArguments = $true)]$rest) return @{} }
+    $script:hadGlobalGetPValFunction = Test-Path -Path 'Function:\global:Get-PVal'
+    $script:originalGlobalGetPValFunction = if ($script:hadGlobalGetPValFunction) {
+        (Get-Item -Path 'Function:\global:Get-PVal').ScriptBlock
+    } else {
+        $null
+    }
 
     # Stub Get-PVal to pass through values unchanged.
     function global:Get-PVal {
@@ -28,9 +32,18 @@ BeforeAll {
     $script:apiKey = 'test-api-key'
 }
 
+AfterAll {
+    if ($script:hadGlobalGetPValFunction) {
+        Set-Item -Path 'Function:\global:Get-PVal' -Value $script:originalGlobalGetPValFunction
+    } else {
+        Remove-Item -Path 'Function:\global:Get-PVal' -ErrorAction SilentlyContinue
+    }
+}
+
 Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
   BeforeEach {
     Mock Write-PSFMessage { }
+    Mock Invoke-RestMethod { @{} }
   }
 
   Context 'Auto-destination: Phase 1 (combined feeds)' {
@@ -159,7 +172,7 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
     }
   }
 
-  Context 'WhatIf skips REST promote call' {
+  Context 'WhatIf skips REST promote call' -Tag 'BuildTranscriptNoise' {
 
     It 'Returns Promoted=false under -WhatIf' {
       $result = Move-ProGetPackageInterTier `

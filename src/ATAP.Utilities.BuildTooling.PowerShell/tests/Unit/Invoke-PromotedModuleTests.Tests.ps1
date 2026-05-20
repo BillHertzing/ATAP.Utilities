@@ -123,7 +123,7 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
         }
     }
 
-    Context 'WhatIf short-circuit' {
+    Context 'WhatIf short-circuit' -Tag 'BuildTranscriptNoise' {
         It 'Does not restore or test when -WhatIf is supplied' {
             $result = Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0' `
                 -Feed 'powershellget-development' -Tier 'Development' -ResultsPath 'r' `

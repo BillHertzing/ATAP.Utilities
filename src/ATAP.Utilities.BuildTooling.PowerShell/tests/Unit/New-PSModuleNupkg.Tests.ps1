@@ -140,7 +140,7 @@ Describe 'New-PSModuleNupkg' -Tag 'Unit' {
         }
     }
 
-    Context 'WhatIf' {
+    Context 'WhatIf' -Tag 'BuildTranscriptNoise' {
         It 'Does not invoke Publish-PSResource under -WhatIf' {
             New-PSModuleNupkg -ModulePath $script:modulePath -OutputPath $script:outputPath -WhatIf | Out-Null
             Assert-MockCalled Publish-PSResource -Times 0 -Exactly -Scope It

@@ -161,7 +161,7 @@ Describe 'New-BuildMasterRelease' -Tag 'Unit' {
     }
   }
 
-  Context 'WhatIf short-circuit' {
+  Context 'WhatIf short-circuit' -Tag 'BuildTranscriptNoise' {
     It 'Does not call Invoke-RestMethod when -WhatIf is supplied' {
       Mock Invoke-RestMethod { throw 'Should not be called under -WhatIf' }
       $result = New-BuildMasterRelease -Application 'A' -ReleaseNumber '1.0.0' -PipelineName 'P' -WhatIf

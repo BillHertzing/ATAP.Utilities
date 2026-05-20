@@ -210,12 +210,22 @@ function New-PSModulePesterProgressPlugin {
   }
 
   $state = [PSCustomObject]@{
+    Started   = 0
     Completed = 0
     Interval  = $Interval
     Total     = 0
     Stopwatch = [Diagnostics.Stopwatch]::StartNew()
   }
   $countBlockTests = ${function:Get-PSModulePesterBlockTestCount}
+  $getTestName = {
+    param($Test)
+
+    if ($Test -and -not [string]::IsNullOrWhiteSpace($Test.Name)) {
+      return (([string]$Test.Name) -replace '\s+', ' ')
+    }
+
+    return '<unknown>'
+  }
 
   $writeProgressLine = {
     param([string]$Message)
@@ -249,6 +259,19 @@ function New-PSModulePesterProgressPlugin {
       $elapsedText = $duration.ToString('hh\:mm\:ss')
       & $writeProgressLine "Pester discovery completed: $total test(s) discovered in $elapsedText; reporting every $($state.Interval) completed test(s)."
     }.GetNewClosure()
+    EachTestSetupStart      = {
+      param($Context)
+
+      $state.Started++
+      if ((($state.Started - 1) % $Interval) -ne 0) {
+        return
+      }
+
+      $testName = & $getTestName $Context.Test
+      $totalText = if ($state.Total -gt 0) { "/$($state.Total)" } else { '' }
+      $elapsedText = $state.Stopwatch.Elapsed.ToString('hh\:mm\:ss')
+      & $writeProgressLine "Pester current test: $($state.Started)$totalText started after $elapsedText ($testName)."
+    }.GetNewClosure()
     EachTestTeardownEnd     = {
       param($Context)
 
@@ -257,11 +280,7 @@ function New-PSModulePesterProgressPlugin {
         return
       }
 
-      $lastTestName = if ($Context.Test -and -not [string]::IsNullOrWhiteSpace($Context.Test.Name)) {
-        ([string]$Context.Test.Name) -replace '\s+', ' '
-      } else {
-        '<unknown>'
-      }
+      $lastTestName = & $getTestName $Context.Test
 
       $totalText = if ($state.Total -gt 0) { "/$($state.Total)" } else { '' }
       $elapsedText = $state.Stopwatch.Elapsed.ToString('hh\:mm\:ss')

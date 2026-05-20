@@ -162,14 +162,18 @@ Describe 'New-PSModulePesterProgressPlugin' -Tag 'Unit' {
 
     & $plugin.DiscoveryStart @{ BlockContainers = @('a.tests.ps1') }
     & $plugin.DiscoveryEnd @{ BlockContainers = @($rootBlock); Duration = [TimeSpan]::FromSeconds(1) }
+    & $plugin.EachTestSetupStart @{ Test = $testA }
     & $plugin.EachTestTeardownEnd @{ Test = $testA }
+    & $plugin.EachTestSetupStart @{ Test = $testB }
     & $plugin.EachTestTeardownEnd @{ Test = $testB }
 
-    $messages.Count | Should -Be 3
+    $messages.Count | Should -Be 4
     $messages[0] | Should -Be 'Important [TestFn] Pester discovery started for 1 test container(s).'
     $messages[1] | Should -Match 'Pester discovery completed: 2 test\(s\) discovered'
-    $messages[2] | Should -Match 'Pester progress: 2/2 test\(s\) completed'
-    $messages[2] | Should -Match 'last: second'
+    $messages[2] | Should -Match 'Pester current test: 1/2 started'
+    $messages[2] | Should -Match 'first'
+    $messages[3] | Should -Match 'Pester progress: 2/2 test\(s\) completed'
+    $messages[3] | Should -Match 'last: second'
   }
 }
 

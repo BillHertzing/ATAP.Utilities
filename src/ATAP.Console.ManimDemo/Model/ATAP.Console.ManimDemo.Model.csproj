@@ -6,6 +6,7 @@
     <RootNamespace>ATAP.Console.ManimDemo</RootNamespace>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IsPackable>false</IsPackable>
+    <IsPublishable>false</IsPublishable>
   </PropertyGroup>
 
   <ItemGroup>

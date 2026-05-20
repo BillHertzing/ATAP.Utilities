@@ -5,6 +5,7 @@
     <RootNamespace>ATAP.Console.ManimDemo</RootNamespace>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IsPackable>false</IsPackable>
+    <IsPublishable>false</IsPublishable>
     <MajorVersion>0</MajorVersion>
     <MinorVersion>1</MinorVersion>
     <PatchVersion>0</PatchVersion>

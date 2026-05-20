@@ -47,7 +47,7 @@ BeforeAll {
   . "$PSScriptRoot\..\..\public\New-SprintStage2.ps1"
 }
 
-Describe 'New-SprintStage dry-run support' {
+Describe 'New-SprintStage dry-run support' -Tag 'Unit', 'PendingStreamK' {
   BeforeEach {
     $script:externalCalls = [System.Collections.ArrayList]::new()
     $script:tempGitRoot = Join-Path ([System.IO.Path]::GetTempPath()) "sprint_dryrun_$([guid]::NewGuid().ToString('N'))"

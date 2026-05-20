@@ -84,6 +84,11 @@
     Optional ProGet API key to send as X-ApiKey when restoring directly
     from ProGet.
 
+.PARAMETER PesterOutputVerbosity
+    Controls the delegated Pester console output. Defaults to Normal to keep
+    BuildMaster deployment logs concise while retaining test totals. Use
+    Detailed or Diagnostic for live troubleshooting.
+
 .OUTPUTS
     [PSCustomObject] with:
       - OperationName    : Always 'Invoke-PromotedModuleTests'.
@@ -163,7 +168,11 @@ function Invoke-PromotedModuleTests {
 
         [Parameter()]
         [AllowEmptyString()]
-        [string]$ApiKey = $env:PROGET_BUILDMASTER_API_KEY
+        [string]$ApiKey = $env:PROGET_BUILDMASTER_API_KEY,
+
+        [Parameter()]
+        [ValidateSet('None', 'Normal', 'Detailed', 'Diagnostic')]
+        [string]$PesterOutputVerbosity = 'Normal'
     )
 
     begin {
@@ -281,6 +290,7 @@ function Invoke-PromotedModuleTests {
                 -CoverageOutputPath $coverageFile `
                 -SkipTestResult `
                 -SkipCodeCoverage `
+                -PesterOutputVerbosity $PesterOutputVerbosity `
                 -ErrorAction Stop
 
             $passed = if ($null -ne $innerResult) { [int]$innerResult.Passed } else { 0 }

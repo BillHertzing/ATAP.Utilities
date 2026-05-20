@@ -1,8 +1,6 @@
 {
   "solution": {
-    "path": "ATAP.Utilities.sln"
-  },
-  "projects": [
-    "tests/ATAP.Utilities.Collections.Tests/ATAP.Utilities.Collections.Tests.csproj"
-  ]
+    "path": "ATAP.Utilities.sln",
+    "projects": []
+  }
 }

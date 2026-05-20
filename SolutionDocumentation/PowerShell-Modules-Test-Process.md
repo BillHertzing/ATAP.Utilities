@@ -90,6 +90,7 @@ Conventions:
 - `-OutputPath`         — JUnit XML destination.
 - `-CoverageOutputPath` — JaCoCo XML destination.
 - `-TestPaths`          — optional override; defaults to `$ModuleRoot/tests`.
+- `-PesterOutputVerbosity` — optional Pester console verbosity; defaults to `Normal`.
 
 **Behavior**
 1. **Sprint tier**: skip Pester entirely; return `GatePass = $true` with
@@ -103,6 +104,8 @@ Conventions:
    - `TestResult.OutputFormat = 'JUnitXml'`, written to `$OutputPath`
    - `CodeCoverage.OutputFormat = 'JaCoCo'`, written to `$CoverageOutputPath`
    - `CodeCoverage.Path` = `public/` and `private/` if they exist
+   - `Output.Verbosity = $PesterOutputVerbosity`; BuildMaster should normally
+     keep the `Normal` default and use `Detailed`/`Diagnostic` only while debugging.
 4. Run `Invoke-Pester -Configuration $cfg`.
 5. Return a structured object including `GatePass = ($FailedCount -eq 0)`.
 

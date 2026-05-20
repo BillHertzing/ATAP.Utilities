@@ -28,34 +28,36 @@ Describe 'Get-PSModulePesterTierFilter' -Tag 'Unit' {
     $f.ExcludeTag | Should -Contain 'Disabled'
   }
 
-  It 'Alpha includes only Unit and excludes Slow,Disabled' {
+  It 'Alpha includes only Unit and excludes Slow,Disabled,PendingStreamK' {
     $f = Get-PSModulePesterTierFilter -Tier 'Alpha'
     $f.Skip       | Should -BeFalse
     $f.IncludeTag | Should -Be @('Unit')
     $f.ExcludeTag | Should -Contain 'Slow'
     $f.ExcludeTag | Should -Contain 'Disabled'
+    $f.ExcludeTag | Should -Contain 'PendingStreamK'
   }
 
-  It 'Beta includes Unit,Integration and excludes Slow,Disabled' {
+  It 'Beta includes Unit,Integration and excludes Slow,Disabled,PendingStreamK' {
     $f = Get-PSModulePesterTierFilter -Tier 'Beta'
     $f.IncludeTag | Should -Be @('Unit', 'Integration')
     $f.ExcludeTag | Should -Contain 'Slow'
     $f.ExcludeTag | Should -Contain 'Disabled'
+    $f.ExcludeTag | Should -Contain 'PendingStreamK'
   }
 
-  It 'QA includes the full functional suite and excludes only Disabled' {
+  It 'QA includes the full functional suite and excludes Disabled,PendingStreamK' {
     $f = Get-PSModulePesterTierFilter -Tier 'QA'
     $f.IncludeTag | Should -Be @('Unit', 'Integration', 'Functional', 'Regression', 'E2E', 'Performance')
-    $f.ExcludeTag | Should -Be @('Disabled')
+    $f.ExcludeTag | Should -Be @('Disabled', 'PendingStreamK')
     $f.ExcludeTag | Should -Not -Contain 'Slow'
   }
 
-  It 'Production includes Smoke on top of QA and excludes only Disabled' {
+  It 'Production includes Smoke on top of QA and excludes Disabled,PendingStreamK' {
     $f = Get-PSModulePesterTierFilter -Tier 'Production'
     $f.IncludeTag | Should -Contain 'Smoke'
     $f.IncludeTag | Should -Contain 'Unit'
     $f.IncludeTag | Should -Contain 'Performance'
-    $f.ExcludeTag | Should -Be @('Disabled')
+    $f.ExcludeTag | Should -Be @('Disabled', 'PendingStreamK')
   }
 }
 
@@ -81,7 +83,21 @@ Describe 'New-PSModulePesterConfiguration' -Tag 'Unit' {
     $cfg.CodeCoverage.OutputFormat.Value | Should -Be 'JaCoCo'
     $cfg.CodeCoverage.OutputPath.Value   | Should -Be $cov
     $cfg.CodeCoverage.CoveragePercentTarget.Value | Should -Be 0
-    $cfg.Output.Verbosity.Value          | Should -Be 'Detailed'
+    $cfg.Output.Verbosity.Value          | Should -Be 'Normal'
+  }
+
+  It 'honors an explicit Pester output verbosity' {
+    $out = Join-Path $script:tempRoot 'Results-detailed.xml'
+    $cov = Join-Path $script:tempRoot 'Coverage-detailed.xml'
+    $cfg = New-PSModulePesterConfiguration `
+      -TestPaths @('C:\nonexistent\tests') `
+      -IncludeTag @('Unit') `
+      -ExcludeTag @('Slow', 'Disabled') `
+      -OutputPath $out `
+      -CoverageOutputPath $cov `
+      -PesterOutputVerbosity 'Detailed'
+
+    $cfg.Output.Verbosity.Value | Should -Be 'Detailed'
   }
 
   It 'can disable code coverage while preserving the test-result settings' {

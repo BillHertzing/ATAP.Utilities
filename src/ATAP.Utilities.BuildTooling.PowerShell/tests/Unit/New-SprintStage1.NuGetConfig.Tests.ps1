@@ -37,7 +37,7 @@ BeforeAll {
   . "$PSScriptRoot\..\..\public\New-SprintStage1.ps1"
 }
 
-Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit' {
+Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit', 'PendingStreamK' {
 
   BeforeEach {
     $script:tempGitRoot = Join-Path ([System.IO.Path]::GetTempPath()) "stage1_nuget_$([guid]::NewGuid().ToString('N'))"

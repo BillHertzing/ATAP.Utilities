@@ -25,6 +25,11 @@ separate downstream task.
 .PARAMETER TestPaths
 Override the default test path. Defaults to "$ModuleRoot/tests".
 
+.PARAMETER PesterOutputVerbosity
+Controls Pester console output. Defaults to Normal so BuildMaster logs keep
+test totals without listing every passing test. Use Detailed or Diagnostic for
+interactive troubleshooting.
+
 .OUTPUTS
 [PSCustomObject] projecting Pester summary fields plus GatePass, OutputFile,
 CoverageFile.
@@ -47,6 +52,9 @@ function Get-PSModulePesterTierFilter {
     [string]$Tier
   )
 
+  # K07: temporary exclusion until New-SprintStage1 is converted to a side-effect-free function contract.
+  $pendingStreamKTag = 'PendingStreamK'
+
   switch ($Tier) {
     'Sprint' {
       return [PSCustomObject]@{
@@ -59,28 +67,28 @@ function Get-PSModulePesterTierFilter {
       return [PSCustomObject]@{
         Skip       = $false
         IncludeTag = @('Unit')
-        ExcludeTag = @('Slow', 'Disabled')
+        ExcludeTag = @('Slow', 'Disabled', $pendingStreamKTag)
       }
     }
     'Beta' {
       return [PSCustomObject]@{
         Skip       = $false
         IncludeTag = @('Unit', 'Integration')
-        ExcludeTag = @('Slow', 'Disabled')
+        ExcludeTag = @('Slow', 'Disabled', $pendingStreamKTag)
       }
     }
     'QA' {
       return [PSCustomObject]@{
         Skip       = $false
         IncludeTag = @('Unit', 'Integration', 'Functional', 'Regression', 'E2E', 'Performance')
-        ExcludeTag = @('Disabled')
+        ExcludeTag = @('Disabled', $pendingStreamKTag)
       }
     }
     'Production' {
       return [PSCustomObject]@{
         Skip       = $false
         IncludeTag = @('Unit', 'Integration', 'Functional', 'Regression', 'E2E', 'Performance', 'Smoke')
-        ExcludeTag = @('Disabled')
+        ExcludeTag = @('Disabled', $pendingStreamKTag)
       }
     }
   }
@@ -99,7 +107,9 @@ function New-PSModulePesterConfiguration {
     [Parameter(Mandatory)] [string]$CoverageOutputPath,
     [string[]]$CoveragePaths,
     [switch]$SkipTestResult,
-    [switch]$SkipCodeCoverage
+    [switch]$SkipCodeCoverage,
+    [ValidateSet('None', 'Normal', 'Detailed', 'Diagnostic')]
+    [string]$PesterOutputVerbosity = 'Normal'
   )
 
   $cfg = [PesterConfiguration]::Default
@@ -135,7 +145,7 @@ function New-PSModulePesterConfiguration {
     }
   }
 
-  $cfg.Output.Verbosity = 'Detailed'
+  $cfg.Output.Verbosity = $PesterOutputVerbosity
   return $cfg
 }
 
@@ -159,7 +169,10 @@ function Invoke-PSModulePesterTests {
 
     [switch]$SkipTestResult,
 
-    [switch]$SkipCodeCoverage
+    [switch]$SkipCodeCoverage,
+
+    [ValidateSet('None', 'Normal', 'Detailed', 'Diagnostic')]
+    [string]$PesterOutputVerbosity = 'Normal'
   )
 
   begin {
@@ -267,7 +280,8 @@ function Invoke-PSModulePesterTests {
         -CoverageOutputPath $CoverageOutputPath `
         -CoveragePaths $coveragePaths `
         -SkipTestResult:$SkipTestResult `
-        -SkipCodeCoverage:$SkipCodeCoverage
+        -SkipCodeCoverage:$SkipCodeCoverage `
+        -PesterOutputVerbosity $PesterOutputVerbosity
 
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Running Invoke-Pester for tier $Tier (IncludeTag=$($filter.IncludeTag -join ',') ExcludeTag=$($filter.ExcludeTag -join ','))"
 

@@ -11,7 +11,10 @@ BeforeAll {
   }
 
   if (-not (Get-Command ConvertFrom-Yaml -ErrorAction SilentlyContinue)) {
-    function global:ConvertFrom-Yaml { param([Parameter(ValueFromRemainingArguments = $true)]$args) }
+    function global:ConvertFrom-Yaml {
+      param([Parameter(ValueFromRemainingArguments = $true)]$args)
+      throw 'ConvertFrom-Yaml test stub must be mocked before use.'
+    }
     $script:createdConvertFromYamlStub = $true
   }
 
@@ -70,6 +73,7 @@ Describe 'New-ReleaseManifest' -Tag 'Unit' {
     }
 
     Mock Get-Command -ParameterFilter { $Name -eq 'ConvertFrom-Yaml' } -MockWith { $null }
+    Mock ConvertFrom-Yaml -MockWith { throw 'ConvertFrom-Yaml should not be used by simple-parser tests.' }
     Mock Get-Content -ParameterFilter { $LiteralPath -eq $script:ymlPath -and $Raw } -MockWith { $script:yaml }
     Mock Test-Path -ParameterFilter { $LiteralPath -eq $script:ymlPath -and $PathType -eq 'Leaf' } -MockWith { $true }
     Mock Test-Path -ParameterFilter { [string]$LiteralPath -like '*SolutionDocumentation*manifest.schema.json' -and $PathType -eq 'Leaf' } -MockWith { $false }
@@ -90,7 +94,7 @@ Describe 'New-ReleaseManifest' -Tag 'Unit' {
   }
 
   It 'Writes manifest.json to the default generated path and returns FileInfo' {
-    $result = New-ReleaseManifest -Context $script:baseContext
+    $result = New-ReleaseManifest -Context $script:baseContext -YamlParserMode Simple
 
     $result | Should -BeOfType ([System.IO.FileInfo])
     $result.FullName | Should -Be (Join-Path $script:repoRoot '_generated/release-manifest/0.0.1/manifest.json')
@@ -98,7 +102,7 @@ Describe 'New-ReleaseManifest' -Tag 'Unit' {
   }
 
   It 'Parses the documented simple YAML shape without ConvertFrom-Yaml and emits required fields' {
-    $result = New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot
+    $result = New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot -YamlParserMode Simple
     $manifest = Get-Content -LiteralPath $result.FullName -Raw | ConvertFrom-Json
 
     $manifest.schemaVersion | Should -Be 1
@@ -121,7 +125,7 @@ Describe 'New-ReleaseManifest' -Tag 'Unit' {
   }
 
   It 'Computes sha256-prefixed checksums for every referenced DB file' {
-    $result = New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot
+    $result = New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot -YamlParserMode Simple
     $manifest = Get-Content -LiteralPath $result.FullName -Raw | ConvertFrom-Json
 
     $manifest.checksums.'db/flyway/V0.0.1__baseline.sql' | Should -Be ('sha256:' + ('a' * 64))
@@ -133,7 +137,7 @@ Describe 'New-ReleaseManifest' -Tag 'Unit' {
   }
 
   It 'Writes a DB sub-manifest sidecar for bundle assembly' {
-    $result = New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot
+    $result = New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot -YamlParserMode Simple
     $dbManifestPath = Join-Path (Split-Path -Parent $result.FullName) 'db-manifest.json'
     $dbManifest = Get-Content -LiteralPath $dbManifestPath -Raw | ConvertFrom-Json
 
@@ -150,7 +154,7 @@ Describe 'New-ReleaseManifest' -Tag 'Unit' {
   It 'Throws clearly when the DB release YAML is absent' {
     Mock Test-Path -ParameterFilter { $LiteralPath -eq $script:ymlPath -and $PathType -eq 'Leaf' } -MockWith { $false }
 
-    { New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot } |
+    { New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot -YamlParserMode Simple } |
       Should -Throw -ExpectedMessage '*DB release YAML not found*Database-Change-Unit-and-Flyway-Promotion.md section 2*'
   }
 
@@ -159,7 +163,7 @@ Describe 'New-ReleaseManifest' -Tag 'Unit' {
       $script:yaml -replace 'flywayTargetVersion: 0\.0\.2\r?\n', ''
     }
 
-    { New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot } |
+    { New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot -YamlParserMode Simple } |
       Should -Throw -ExpectedMessage "*missing required field 'flywayTargetVersion'*"
   }
 
@@ -179,7 +183,7 @@ Describe 'New-ReleaseManifest' -Tag 'Unit' {
       }
     }
 
-    New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot | Out-Null
+    New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot -YamlParserMode Command | Out-Null
 
     Assert-MockCalled ConvertFrom-Yaml -Times 1 -Exactly -Scope It
   }
@@ -201,7 +205,7 @@ Describe 'New-ReleaseManifest' -Tag 'Unit' {
         notes     = 'Custom rollback path is documented.'
       })
 
-    $result = New-ReleaseManifest -Context $ctx -OutputPath $script:outputRoot
+    $result = New-ReleaseManifest -Context $ctx -OutputPath $script:outputRoot -YamlParserMode Simple
     $manifest = Get-Content -LiteralPath $result.FullName -Raw | ConvertFrom-Json
 
     $manifest.includedLibraryPackages[0].id | Should -Be 'ATAP.Utilities.Philote'
@@ -219,7 +223,7 @@ Describe 'New-ReleaseManifest' -Tag 'Unit' {
     Mock Test-Path -ParameterFilter { $LiteralPath -eq $schemaPath -and $PathType -eq 'Leaf' } -MockWith { $true }
     Mock Test-Json -ParameterFilter { $SchemaFile -eq $schemaPath } -MockWith { $true }
 
-    New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot | Out-Null
+    New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot -YamlParserMode Simple | Out-Null
 
     Assert-MockCalled Test-Json -Times 1 -Exactly -Scope It -ParameterFilter { $SchemaFile -eq $schemaPath }
   }
@@ -229,7 +233,7 @@ Describe 'New-ReleaseManifest' -Tag 'Unit' {
     Mock Test-Path -ParameterFilter { $LiteralPath -eq $schemaPath -and $PathType -eq 'Leaf' } -MockWith { $true }
     Mock Test-Json -ParameterFilter { $SchemaFile -eq $schemaPath } -MockWith { $false }
 
-    { New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot } |
+    { New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot -YamlParserMode Simple } |
       Should -Throw -ExpectedMessage '*does not validate against schema*'
   }
 }

@@ -14,7 +14,8 @@ function New-ReleaseManifest {
 
     YAML parsing uses ConvertFrom-Yaml when it is available. When it is not,
     the cmdlet supports the simple documented db/<App>/releases/<version>.yml
-    shape from Database-Change-Unit-and-Flyway-Promotion.md section 2.
+    shape from Database-Change-Unit-and-Flyway-Promotion.md section 2. Use
+    YamlParserMode to force deterministic parser selection when needed.
 
 .PARAMETER Context
     PSCustomObject build context, normally returned by Get-BuildContext.
@@ -22,6 +23,11 @@ function New-ReleaseManifest {
 .PARAMETER OutputPath
     Optional output directory, or an explicit manifest.json path. Defaults to
     _generated/release-manifest/<Version>/manifest.json under Context.RepoRoot.
+
+.PARAMETER YamlParserMode
+    Controls DB release YAML parsing. Auto uses ConvertFrom-Yaml when available
+    and falls back to the built-in simple parser. Simple always uses the built-in
+    parser. Command requires ConvertFrom-Yaml.
 
 .OUTPUTS
     [System.IO.FileInfo] for the generated manifest.json.
@@ -35,7 +41,11 @@ function New-ReleaseManifest {
 
     [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
-    [string]$OutputPath
+    [string]$OutputPath,
+
+    [Parameter(Mandatory = $false)]
+    [ValidateSet('Auto', 'Simple', 'Command')]
+    [string]$YamlParserMode = 'Auto'
   )
 
   begin {
@@ -210,7 +220,16 @@ function New-ReleaseManifest {
         throw "DB release YAML is empty: '$YamlPath'."
       }
 
-      if (Get-Command -Name 'ConvertFrom-Yaml' -ErrorAction SilentlyContinue) {
+      $convertFromYaml = $null
+      if ($YamlParserMode -ne 'Simple') {
+        $convertFromYaml = Get-Command -Name 'ConvertFrom-Yaml' -ErrorAction SilentlyContinue
+      }
+
+      if ($YamlParserMode -eq 'Command' -and $null -eq $convertFromYaml) {
+        throw "YamlParserMode 'Command' requires ConvertFrom-Yaml, but ConvertFrom-Yaml was not found."
+      }
+
+      if ($null -ne $convertFromYaml) {
         return (ConvertFrom-Yaml -Yaml $yamlText)
       }
 

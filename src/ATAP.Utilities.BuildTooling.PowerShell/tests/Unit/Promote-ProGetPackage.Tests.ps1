@@ -34,7 +34,7 @@ BeforeAll {
     }
 }
 
-Describe 'Promote-ProGetPackage' -Tag 'Unit' {
+Describe 'Promote-ProGetPackage' -Tag 'Unit', 'PromotedModuleHostSensitive' {
 
     BeforeEach {
         Mock Move-ProGetPackageInterTier {

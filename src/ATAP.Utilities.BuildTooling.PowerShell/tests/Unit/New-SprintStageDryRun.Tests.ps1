@@ -3,59 +3,79 @@ BeforeAll {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
 
+  # K04: single tracking list for every external command the dry-run stubs
+  # receive. Created before the dot-source so any load-time side effect would be
+  # recorded; the stubs also throw, since none of them may run during DryRun.
+  $global:dryRunExternalCalls = [System.Collections.Generic.List[string]]::new()
+
   function global:Assert-GitAvailable {
-    $script:externalCalls.Add('Assert-GitAvailable') | Out-Null
+    $global:dryRunExternalCalls.Add('Assert-GitAvailable') | Out-Null
     throw 'Assert-GitAvailable should not be called during DryRun.'
   }
 
   function global:gh {
-    $script:externalCalls.Add('gh') | Out-Null
+    $global:dryRunExternalCalls.Add('gh') | Out-Null
     throw 'gh should not be called during DryRun.'
   }
 
   function global:git {
-    $script:externalCalls.Add('git') | Out-Null
+    $global:dryRunExternalCalls.Add('git') | Out-Null
     throw 'git should not be called during DryRun.'
   }
 
   function global:Set-WorktreeJunctions {
-    $script:externalCalls.Add('Set-WorktreeJunctions') | Out-Null
+    $global:dryRunExternalCalls.Add('Set-WorktreeJunctions') | Out-Null
     throw 'Set-WorktreeJunctions should not be called during DryRun.'
   }
 
   function global:Initialize-DownstreamSprintFromSharedVSCode {
-    $script:externalCalls.Add('Initialize-DownstreamSprintFromSharedVSCode') | Out-Null
+    $global:dryRunExternalCalls.Add('Initialize-DownstreamSprintFromSharedVSCode') | Out-Null
     throw 'Initialize-DownstreamSprintFromSharedVSCode should not be called during DryRun.'
   }
 
   function global:New-SprintSqlServerInstances {
-    $script:externalCalls.Add('New-SprintSqlServerInstances') | Out-Null
+    $global:dryRunExternalCalls.Add('New-SprintSqlServerInstances') | Out-Null
     throw 'New-SprintSqlServerInstances should not be called during DryRun.'
   }
 
   function global:Set-BuildMasterSprintVariables {
-    $script:externalCalls.Add('Set-BuildMasterSprintVariables') | Out-Null
+    $global:dryRunExternalCalls.Add('Set-BuildMasterSprintVariables') | Out-Null
     throw 'Set-BuildMasterSprintVariables should not be called during DryRun.'
   }
 
   function global:New-SprintBitwardenSecrets {
-    $script:externalCalls.Add('New-SprintBitwardenSecrets') | Out-Null
+    $global:dryRunExternalCalls.Add('New-SprintBitwardenSecrets') | Out-Null
     throw 'New-SprintBitwardenSecrets should not be called during DryRun.'
   }
 
+  # Dot-source the function definitions. Defining the functions must not execute
+  # any Stage 1 / Stage 2 work.
   . "$PSScriptRoot\..\..\public\New-SprintStage1.ps1"
   . "$PSScriptRoot\..\..\public\New-SprintStage2.ps1"
+
+  # K04: freeze the set of external calls observed up to and including the
+  # dot-source. The first test below asserts this stayed empty.
+  $script:callsObservedAtLoad = @($global:dryRunExternalCalls)
 }
 
 Describe 'New-SprintStage dry-run support' -Tag 'Unit', 'PendingStreamK' {
   BeforeEach {
-    $script:externalCalls = [System.Collections.ArrayList]::new()
+    $global:dryRunExternalCalls.Clear()
     $script:tempGitRoot = Join-Path ([System.IO.Path]::GetTempPath()) "sprint_dryrun_$([guid]::NewGuid().ToString('N'))"
     New-Item -ItemType Directory -Path $script:tempGitRoot -Force | Out-Null
   }
 
   AfterEach {
     Remove-Item -LiteralPath $script:tempGitRoot -Recurse -Force -ErrorAction SilentlyContinue
+  }
+
+  It 'dot-sourcing the Stage scripts triggers no external commands at load time (K04)' {
+    Get-Command New-SprintStage1 -CommandType Function -ErrorAction SilentlyContinue |
+      Should -Not -BeNullOrEmpty
+    $script:callsObservedAtLoad | Should -BeNullOrEmpty -Because (
+      'loading the function files must only define the functions. ' +
+      "Commands observed during dot-source: $($script:callsObservedAtLoad -join ', ')"
+    )
   }
 
   It 'previews Stage 1 without external side effects' {
@@ -73,7 +93,7 @@ Describe 'New-SprintStage dry-run support' -Tag 'Unit', 'PendingStreamK' {
     $result.planning.worktreePath | Should -Be (Join-Path $script:tempGitRoot '_Planning-wt-DRYRUN-Sprint-0007-work-items')
     $result.planning.created | Should -BeFalse
     $result.planning.junctionsCreated | Should -BeFalse
-    $script:externalCalls.Count | Should -Be 0
+    $global:dryRunExternalCalls.Count | Should -Be 0
   }
 
   It 'previews Stage 2 without downstream side effects' {
@@ -109,7 +129,7 @@ Describe 'New-SprintStage dry-run support' -Tag 'Unit', 'PendingStreamK' {
     $result.infrastructure.buildMasterVariablesSet.Count | Should -Be 0
     $result.infrastructure.connectionStrings.Count | Should -Be 0
     $result.infrastructure.databaseInstances.Count | Should -Be 0
-    $script:externalCalls.Count | Should -Be 0
+    $global:dryRunExternalCalls.Count | Should -Be 0
   }
 
   It 'throws an actionable setup command before side effects when config globals are missing' {
@@ -140,7 +160,7 @@ Describe 'New-SprintStage dry-run support' -Tag 'Unit', 'PendingStreamK' {
         New-SprintStage2 -Stage1Result $stage1 -TasksFilePath $tasksPath -GitRoot $script:tempGitRoot -Owner 'owner'
       } | Should -Throw -ExpectedMessage '*Set-GlobalConfigRootKeys*Get-HostSettings*'
 
-      $script:externalCalls.Count | Should -Be 0
+      $global:dryRunExternalCalls.Count | Should -Be 0
     } finally {
       $global:configRootKeys = $oldConfigRootKeys
       $global:settings = $oldSettings

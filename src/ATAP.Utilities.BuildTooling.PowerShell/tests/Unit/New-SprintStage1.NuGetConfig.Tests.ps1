@@ -12,19 +12,30 @@ BeforeAll {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
 
-  function global:Assert-GitAvailable { }
+  # K04: track every external command this suite's stubs receive. Per Stream K,
+  # dot-sourcing New-SprintStage1.ps1 must trigger nothing — only an explicit
+  # call to New-SprintStage1 may. The list is created before the dot-source so
+  # any load-time side effect would be recorded.
+  $global:stage1ExternalCalls = [System.Collections.Generic.List[string]]::new()
+
+  function global:Assert-GitAvailable {
+    $global:stage1ExternalCalls.Add('Assert-GitAvailable') | Out-Null
+  }
 
   function global:gh {
+    $global:stage1ExternalCalls.Add('gh') | Out-Null
     return 'https://github.com/owner/repo/issues/999'
   }
   $global:LASTEXITCODE = 0
 
   function global:git {
+    $global:stage1ExternalCalls.Add('git') | Out-Null
     $global:LASTEXITCODE = 0
     return ''
   }
 
   function global:Set-WorktreeJunctions {
+    $global:stage1ExternalCalls.Add('Set-WorktreeJunctions') | Out-Null
     [PSCustomObject]@{
       Success           = $true
       JunctionsCreated  = 3
@@ -32,12 +43,31 @@ BeforeAll {
     }
   }
 
-  function global:Initialize-DownstreamSprintFromSharedVSCode { }
+  function global:Initialize-DownstreamSprintFromSharedVSCode {
+    $global:stage1ExternalCalls.Add('Initialize-DownstreamSprintFromSharedVSCode') | Out-Null
+  }
 
+  # Dot-source the function definition. This defines New-SprintStage1 and must
+  # not execute any Stage 1 work.
   . "$PSScriptRoot\..\..\public\New-SprintStage1.ps1"
+
+  # K04: freeze the set of external calls observed up to and including the
+  # dot-source. The 'Load contract' context below asserts this stayed empty.
+  $script:callsObservedAtLoad = @($global:stage1ExternalCalls)
 }
 
 Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit', 'PendingStreamK' {
+
+  Context 'Load contract (K04)' {
+    It 'dot-sourcing New-SprintStage1.ps1 defines the function without triggering Stage 1 actions' {
+      Get-Command New-SprintStage1 -CommandType Function -ErrorAction SilentlyContinue |
+        Should -Not -BeNullOrEmpty
+      $script:callsObservedAtLoad | Should -BeNullOrEmpty -Because (
+        'loading the function file must only define the function. ' +
+        "Commands observed during dot-source: $($script:callsObservedAtLoad -join ', ')"
+      )
+    }
+  }
 
   BeforeEach {
     $script:tempGitRoot = Join-Path ([System.IO.Path]::GetTempPath()) "stage1_nuget_$([guid]::NewGuid().ToString('N'))"

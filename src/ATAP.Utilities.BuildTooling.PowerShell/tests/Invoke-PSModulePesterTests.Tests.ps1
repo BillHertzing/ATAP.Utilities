@@ -138,6 +138,41 @@ Describe 'New-PSModulePesterConfiguration' -Tag 'Unit' {
   }
 }
 
+Describe 'New-PSModulePesterProgressPlugin' -Tag 'Unit' {
+
+  It 'reports discovery and every configured completed-test interval' {
+    $messages = [System.Collections.Generic.List[string]]::new()
+    $plugin = New-PSModulePesterProgressPlugin -Interval 2 -FunctionName 'TestFn' -WriteLine {
+      param([string]$Line)
+      $messages.Add($Line)
+    }
+
+    $testA = [PSCustomObject]@{ Name = 'first'; ShouldRun = $true }
+    $testB = [PSCustomObject]@{ Name = 'second'; ShouldRun = $true }
+    $innerBlock = [PSCustomObject]@{
+      ShouldRun = $true
+      Tests     = @($testA, $testB)
+      Blocks    = @()
+    }
+    $rootBlock = [PSCustomObject]@{
+      ShouldRun = $true
+      Tests     = @()
+      Blocks    = @($innerBlock)
+    }
+
+    & $plugin.DiscoveryStart @{ BlockContainers = @('a.tests.ps1') }
+    & $plugin.DiscoveryEnd @{ BlockContainers = @($rootBlock); Duration = [TimeSpan]::FromSeconds(1) }
+    & $plugin.EachTestTeardownEnd @{ Test = $testA }
+    & $plugin.EachTestTeardownEnd @{ Test = $testB }
+
+    $messages.Count | Should -Be 3
+    $messages[0] | Should -Be 'Important [TestFn] Pester discovery started for 1 test container(s).'
+    $messages[1] | Should -Match 'Pester discovery completed: 2 test\(s\) discovered'
+    $messages[2] | Should -Match 'Pester progress: 2/2 test\(s\) completed'
+    $messages[2] | Should -Match 'last: second'
+  }
+}
+
 Describe 'Invoke-PSModulePesterTests (Sprint short-circuit)' -Tag 'Unit' {
 
   It 'returns GatePass=$true without invoking Pester when Tier=Sprint' {

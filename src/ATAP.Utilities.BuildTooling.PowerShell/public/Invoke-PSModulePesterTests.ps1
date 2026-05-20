@@ -30,6 +30,10 @@ Controls Pester console output. Defaults to Normal so BuildMaster logs keep
 test totals without listing every passing test. Use Detailed or Diagnostic for
 interactive troubleshooting.
 
+.PARAMETER PesterProgressInterval
+When PesterOutputVerbosity is None, writes a compact progress heartbeat after
+this many completed tests. Defaults to 20; set to 0 to disable.
+
 .OUTPUTS
 [PSCustomObject] projecting Pester summary fields plus GatePass, OutputFile,
 CoverageFile.
@@ -149,6 +153,176 @@ function New-PSModulePesterConfiguration {
   return $cfg
 }
 
+function Get-PSModulePesterBlockTestCount {
+  [CmdletBinding()]
+  param(
+    [Parameter(ValueFromPipeline)]
+    $Block
+  )
+
+  process {
+    if ($null -eq $Block) {
+      return 0
+    }
+
+    if ($Block.PSObject.Properties.Name -contains 'ShouldRun' -and -not $Block.ShouldRun) {
+      return 0
+    }
+
+    $count = 0
+    foreach ($test in @($Block.Tests)) {
+      if ($null -eq $test) {
+        continue
+      }
+
+      if ($test.PSObject.Properties.Name -contains 'ShouldRun' -and -not $test.ShouldRun) {
+        continue
+      }
+
+      $count++
+    }
+
+    foreach ($child in @($Block.Blocks)) {
+      $count += Get-PSModulePesterBlockTestCount -Block $child
+    }
+
+    return $count
+  }
+}
+
+function New-PSModulePesterProgressPlugin {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory)]
+    [ValidateRange(1, [int]::MaxValue)]
+    [int]$Interval,
+
+    [string]$FunctionName = 'Invoke-PSModulePesterTests',
+
+    [scriptblock]$WriteLine
+  )
+
+  if (-not $WriteLine) {
+    $WriteLine = {
+      param([string]$Line)
+      [Console]::Out.WriteLine($Line)
+    }
+  }
+
+  $state = [PSCustomObject]@{
+    Completed = 0
+    Interval  = $Interval
+    Total     = 0
+    Stopwatch = [Diagnostics.Stopwatch]::StartNew()
+  }
+  $countBlockTests = ${function:Get-PSModulePesterBlockTestCount}
+
+  $writeProgressLine = {
+    param([string]$Message)
+
+    try {
+      & $WriteLine "Important [$FunctionName] $Message"
+    } catch {
+      # Progress logging must never affect the test gate.
+    }
+  }.GetNewClosure()
+
+  [PSCustomObject]@{
+    Name                    = 'ATAP.Utilities.BuildTooling.PowerShell.PesterProgress'
+    DiscoveryStart          = {
+      param($Context)
+
+      $state.Stopwatch.Restart()
+      $containerCount = @($Context.BlockContainers).Count
+      & $writeProgressLine "Pester discovery started for $containerCount test container(s)."
+    }.GetNewClosure()
+    DiscoveryEnd            = {
+      param($Context)
+
+      $total = 0
+      foreach ($block in @($Context.BlockContainers)) {
+        $total += & $countBlockTests -Block $block
+      }
+
+      $state.Total = $total
+      $duration = if ($Context.Duration) { $Context.Duration } else { $state.Stopwatch.Elapsed }
+      $elapsedText = $duration.ToString('hh\:mm\:ss')
+      & $writeProgressLine "Pester discovery completed: $total test(s) discovered in $elapsedText; reporting every $($state.Interval) completed test(s)."
+    }.GetNewClosure()
+    EachTestTeardownEnd     = {
+      param($Context)
+
+      $state.Completed++
+      if (($state.Completed % $Interval) -ne 0) {
+        return
+      }
+
+      $lastTestName = if ($Context.Test -and -not [string]::IsNullOrWhiteSpace($Context.Test.Name)) {
+        ([string]$Context.Test.Name) -replace '\s+', ' '
+      } else {
+        '<unknown>'
+      }
+
+      $totalText = if ($state.Total -gt 0) { "/$($state.Total)" } else { '' }
+      $elapsedText = $state.Stopwatch.Elapsed.ToString('hh\:mm\:ss')
+      & $writeProgressLine "Pester progress: $($state.Completed)$totalText test(s) completed in $elapsedText (last: $lastTestName)."
+    }.GetNewClosure()
+    PSTypeName              = 'Plugin'
+  }
+}
+
+function Push-PSModulePesterAdditionalPlugin {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory)]
+    $Plugin
+  )
+
+  $pesterModule = Get-Module Pester | Select-Object -First 1
+  if (-not $pesterModule) {
+    return $null
+  }
+
+  $snapshot = & $pesterModule {
+    $variable = Get-Variable -Name additionalPlugins -Scope Script -ErrorAction SilentlyContinue
+    [PSCustomObject]@{
+      Exists = $null -ne $variable
+      Value  = if ($null -ne $variable) { @($script:additionalPlugins) } else { @() }
+    }
+  }
+
+  & $pesterModule {
+    param($Plugin)
+    $script:additionalPlugins = @($script:additionalPlugins) + $Plugin
+  } $Plugin
+
+  [PSCustomObject]@{
+    Module   = $pesterModule
+    Snapshot = $snapshot
+  }
+}
+
+function Restore-PSModulePesterAdditionalPlugin {
+  [CmdletBinding()]
+  param(
+    $State
+  )
+
+  if (-not $State -or -not $State.Module -or -not $State.Snapshot) {
+    return
+  }
+
+  & $State.Module {
+    param($Snapshot)
+
+    if ($Snapshot.Exists) {
+      $script:additionalPlugins = @($Snapshot.Value)
+    } else {
+      Remove-Variable -Name additionalPlugins -Scope Script -ErrorAction SilentlyContinue
+    }
+  } $State.Snapshot
+}
+
 function Invoke-PSModulePesterTests {
   [CmdletBinding(SupportsShouldProcess = $true)]
   param(
@@ -172,7 +346,10 @@ function Invoke-PSModulePesterTests {
     [switch]$SkipCodeCoverage,
 
     [ValidateSet('None', 'Normal', 'Detailed', 'Diagnostic')]
-    [string]$PesterOutputVerbosity = 'Normal'
+    [string]$PesterOutputVerbosity = 'Normal',
+
+    [ValidateRange(0, [int]::MaxValue)]
+    [int]$PesterProgressInterval = 20
   )
 
   begin {
@@ -294,11 +471,21 @@ function Invoke-PSModulePesterTests {
 
       $result = $null
       if ($PSCmdlet.ShouldProcess("$TestPaths", 'Invoke-Pester')) {
+        $progressPluginState = $null
         if ($PesterOutputVerbosity -eq 'None') {
           # BuildMaster summary logging comes from this wrapper. When Pester's
           # own output is disabled, suppress incidental streams emitted by
           # tests that intentionally exercise warning/error paths.
-          $result = Invoke-Pester -Configuration $cfg 2>$null 3>$null 4>$null 5>$null 6>$null
+          if ($PesterProgressInterval -gt 0) {
+            $progressPlugin = New-PSModulePesterProgressPlugin -Interval $PesterProgressInterval -FunctionName $fn
+            $progressPluginState = Push-PSModulePesterAdditionalPlugin -Plugin $progressPlugin
+          }
+
+          try {
+            $result = Invoke-Pester -Configuration $cfg 2>$null 3>$null 4>$null 5>$null 6>$null
+          } finally {
+            Restore-PSModulePesterAdditionalPlugin -State $progressPluginState
+          }
         } else {
           $result = Invoke-Pester -Configuration $cfg
         }

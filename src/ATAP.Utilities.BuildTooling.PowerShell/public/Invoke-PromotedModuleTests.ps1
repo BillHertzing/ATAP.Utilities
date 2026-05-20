@@ -89,6 +89,10 @@
     BuildMaster deployment logs concise while retaining test totals. Use
     Detailed or Diagnostic for live troubleshooting.
 
+.PARAMETER PesterProgressInterval
+    When delegated Pester output is quiet, emits a compact progress heartbeat
+    after this many completed tests. Defaults to 20; set to 0 to disable.
+
 .OUTPUTS
     [PSCustomObject] with:
       - OperationName    : Always 'Invoke-PromotedModuleTests'.
@@ -172,7 +176,11 @@ function Invoke-PromotedModuleTests {
 
         [Parameter()]
         [ValidateSet('None', 'Normal', 'Detailed', 'Diagnostic')]
-        [string]$PesterOutputVerbosity = 'Normal'
+        [string]$PesterOutputVerbosity = 'Normal',
+
+        [Parameter()]
+        [ValidateRange(0, [int]::MaxValue)]
+        [int]$PesterProgressInterval = 20
     )
 
     begin {
@@ -194,11 +202,12 @@ function Invoke-PromotedModuleTests {
     process {
         $target = "$Name $Version"
         $pesterTier = $pesterTierMap[$Tier]
-        $action = "Restore from feed '$Feed' and run $pesterTier-tier Pester tests"
+        $testDescription = "$Tier-tier promoted-module tests using $pesterTier Pester filter"
+        $action = "Restore from feed '$Feed' and run $testDescription"
 
         # WhatIf short-circuit BEFORE restoring or testing.
         if (-not $PSCmdlet.ShouldProcess($target, $action)) {
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "WhatIf: would restore $target from feed '$Feed' and run $pesterTier-tier Pester tests"
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "WhatIf: would restore $target from feed '$Feed' and run $testDescription"
             return [PSCustomObject]@{
                 OperationName   = 'Invoke-PromotedModuleTests'
                 GatePass        = $true
@@ -215,7 +224,7 @@ function Invoke-PromotedModuleTests {
                 Failed          = 0
                 SkippedCount    = 0
                 TotalCount      = 0
-                ResponseSummary = "WhatIf: would restore $target from feed '$Feed' and run $pesterTier-tier Pester tests"
+                ResponseSummary = "WhatIf: would restore $target from feed '$Feed' and run $testDescription"
                 InnerResult     = $null
             }
         }
@@ -282,7 +291,7 @@ function Invoke-PromotedModuleTests {
             $outputFile = Join-Path $ResultsPath 'PesterResults.xml'
             $coverageFile = Join-Path $ResultsPath 'CoverageResults.xml'
 
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Running $pesterTier-tier Pester tests for $target (tests from '$ModuleSourceRoot', module from '$savedModulePath')"
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Running $testDescription for $target (tests from '$ModuleSourceRoot', module from '$savedModulePath')"
             $innerResult = Invoke-PSModulePesterTests `
                 -ModuleRoot $ModuleSourceRoot `
                 -Tier $pesterTier `
@@ -291,6 +300,7 @@ function Invoke-PromotedModuleTests {
                 -SkipTestResult `
                 -SkipCodeCoverage `
                 -PesterOutputVerbosity $PesterOutputVerbosity `
+                -PesterProgressInterval $PesterProgressInterval `
                 -ErrorAction Stop
 
             $passed = if ($null -ne $innerResult) { [int]$innerResult.Passed } else { 0 }
@@ -300,9 +310,9 @@ function Invoke-PromotedModuleTests {
             $gatePass = if ($null -ne $innerResult) { [bool]$innerResult.GatePass } else { $false }
 
             if ($gatePass) {
-                $summary = "Promoted module $target passed $pesterTier-tier tests ($passed passed, $failed failed, $skipped skipped of $total)."
+                $summary = "Promoted module $target passed $testDescription ($passed passed, $failed failed, $skipped skipped of $total)."
             } else {
-                $summary = "Promoted module $target FAILED $pesterTier-tier tests ($passed passed, $failed failed, $skipped skipped of $total)."
+                $summary = "Promoted module $target FAILED $testDescription ($passed passed, $failed failed, $skipped skipped of $total)."
             }
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $summary
 

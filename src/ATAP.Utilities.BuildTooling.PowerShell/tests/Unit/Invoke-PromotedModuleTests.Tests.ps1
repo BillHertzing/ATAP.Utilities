@@ -36,6 +36,7 @@ BeforeAll {
                 [switch]$SkipTestResult,
                 [switch]$SkipCodeCoverage,
                 [string]$PesterOutputVerbosity,
+                [int]$PesterProgressInterval,
                 [System.Management.Automation.ActionPreference]$ErrorAction
             )
         }
@@ -190,6 +191,7 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             $result.TotalCount      | Should -Be 13
             $result.SavedModulePath | Should -Match 'Mod\.psd1'
             $result.ResponseSummary | Should -Match 'passed'
+            $result.ResponseSummary | Should -Match 'Development-tier promoted-module tests using Alpha Pester filter'
             $result.InnerResult     | Should -Not -BeNullOrEmpty
 
             Assert-MockCalled Save-PSResource -Times 1 -Exactly -Scope It -ParameterFilter {
@@ -199,18 +201,19 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             Assert-MockCalled Import-Module -Times 1 -Exactly -Scope It -ParameterFilter { $Name -match 'Mod\.psd1' }
             Assert-MockCalled Invoke-PSModulePesterTests -Times 1 -Exactly -Scope It -ParameterFilter {
                 $ModuleRoot -eq 'C:\fake\src\Mod' -and $Tier -eq 'Alpha' -and $SkipTestResult -and $SkipCodeCoverage -and
-                $PesterOutputVerbosity -eq 'Normal'
+                $PesterOutputVerbosity -eq 'Normal' -and $PesterProgressInterval -eq 20
             }
         }
 
-        It 'Passes an explicit Pester output verbosity to the delegated test runner' {
+        It 'Passes explicit Pester output settings to the delegated test runner' {
             Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0' `
                 -Feed 'powershellget-development' -Tier 'Development' -ResultsPath 'r' `
                 -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake' `
-                -PesterOutputVerbosity 'Diagnostic' | Out-Null
+                -PesterOutputVerbosity 'Diagnostic' `
+                -PesterProgressInterval 10 | Out-Null
 
             Assert-MockCalled Invoke-PSModulePesterTests -Times 1 -Exactly -Scope It -ParameterFilter {
-                $PesterOutputVerbosity -eq 'Diagnostic'
+                $PesterOutputVerbosity -eq 'Diagnostic' -and $PesterProgressInterval -eq 10
             }
         }
 

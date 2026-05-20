@@ -245,6 +245,7 @@ Describe 'Invoke-PSModulePesterTests (quiet output)' -Tag 'Unit' {
     $output.GatePass | Should -BeTrue
     $output.Passed | Should -Be 1
     $script:capturedPesterConfiguration.Filter.ExcludeTag.Value | Should -Contain 'BuildTranscriptNoise'
+    $script:capturedPesterConfiguration.Filter.ExcludeTag.Value | Should -Contain 'PromotedModuleHostSensitive'
     Should -Invoke -CommandName Invoke-Pester -Times 1 -Exactly
   }
 }

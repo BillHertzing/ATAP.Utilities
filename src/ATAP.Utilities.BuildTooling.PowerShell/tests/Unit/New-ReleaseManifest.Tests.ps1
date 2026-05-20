@@ -66,7 +66,7 @@ AfterAll {
   }
 }
 
-Describe 'New-ReleaseManifest' -Tag 'Unit' {
+Describe 'New-ReleaseManifest' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   BeforeEach {
     if (Test-Path -LiteralPath $script:outputRoot) {
       Remove-Item -LiteralPath $script:outputRoot -Recurse -Force -ErrorAction SilentlyContinue

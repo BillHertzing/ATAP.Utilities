@@ -466,7 +466,11 @@ function Invoke-PSModulePesterTests {
         # Some unit tests intentionally exercise SupportsShouldProcess with
         # -WhatIf. PowerShell writes those host messages outside the normal
         # streams, so skip them only in transcript-quiet BuildMaster runs.
+        # A small number of tests are still useful locally but have proven
+        # host-sensitive under the BuildMaster service account while Pester
+        # output streams are suppressed.
         $excludeTag += 'BuildTranscriptNoise'
+        $excludeTag += 'PromotedModuleHostSensitive'
       }
 
       $coveragePaths = @()

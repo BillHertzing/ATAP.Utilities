@@ -103,7 +103,7 @@ Describe 'New-ReleaseManifest' -Tag 'Unit' {
 
   It 'Parses the documented simple YAML shape without ConvertFrom-Yaml and emits required fields' {
     $result = New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot -YamlParserMode Simple
-    $manifest = Get-Content -LiteralPath $result.FullName -Raw | ConvertFrom-Json
+    $manifest = [System.IO.File]::ReadAllText($result.FullName) | ConvertFrom-Json
 
     $manifest.schemaVersion | Should -Be 1
     $manifest.releaseVersion | Should -Be '0.0.1'
@@ -126,7 +126,7 @@ Describe 'New-ReleaseManifest' -Tag 'Unit' {
 
   It 'Computes sha256-prefixed checksums for every referenced DB file' {
     $result = New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot -YamlParserMode Simple
-    $manifest = Get-Content -LiteralPath $result.FullName -Raw | ConvertFrom-Json
+    $manifest = [System.IO.File]::ReadAllText($result.FullName) | ConvertFrom-Json
 
     $manifest.checksums.'db/flyway/V0.0.1__baseline.sql' | Should -Be ('sha256:' + ('a' * 64))
     $manifest.checksums.'db/flyway/R__views.sql' | Should -Be ('sha256:' + ('b' * 64))
@@ -139,7 +139,7 @@ Describe 'New-ReleaseManifest' -Tag 'Unit' {
   It 'Writes a DB sub-manifest sidecar for bundle assembly' {
     $result = New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot -YamlParserMode Simple
     $dbManifestPath = Join-Path (Split-Path -Parent $result.FullName) 'db-manifest.json'
-    $dbManifest = Get-Content -LiteralPath $dbManifestPath -Raw | ConvertFrom-Json
+    $dbManifest = [System.IO.File]::ReadAllText($dbManifestPath) | ConvertFrom-Json
 
     Test-Path -LiteralPath $dbManifestPath -PathType Leaf | Should -BeTrue
     $dbManifest.schemaVersion | Should -Be 1
@@ -206,7 +206,7 @@ Describe 'New-ReleaseManifest' -Tag 'Unit' {
       })
 
     $result = New-ReleaseManifest -Context $ctx -OutputPath $script:outputRoot -YamlParserMode Simple
-    $manifest = Get-Content -LiteralPath $result.FullName -Raw | ConvertFrom-Json
+    $manifest = [System.IO.File]::ReadAllText($result.FullName) | ConvertFrom-Json
 
     $manifest.includedLibraryPackages[0].id | Should -Be 'ATAP.Utilities.Philote'
     $manifest.includedPowerShellModules[0].version | Should -Be '2.3.4'

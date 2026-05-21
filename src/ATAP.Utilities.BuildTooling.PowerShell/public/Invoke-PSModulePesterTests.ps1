@@ -31,8 +31,8 @@ test totals without listing every passing test. Use Detailed or Diagnostic for
 interactive troubleshooting.
 
 .PARAMETER PesterProgressInterval
-When PesterOutputVerbosity is None, writes a compact time-based heartbeat every
-this many seconds while Pester is running. Defaults to 20; set to 0 to disable.
+When PesterOutputVerbosity is None, writes compact progress lines after this
+many completed tests. Defaults to 20; set to 0 to disable.
 
 .OUTPUTS
 [PSCustomObject] projecting Pester summary fields plus GatePass, OutputFile,
@@ -742,28 +742,10 @@ function Invoke-PSModulePesterTests {
           # BuildMaster summary logging comes from this wrapper. When Pester's
           # own output is disabled, suppress incidental streams emitted by
           # tests that intentionally exercise warning/error paths.
-          $heartbeatTimer = $null
-          $heartbeatStopwatch = [Diagnostics.Stopwatch]::StartNew()
+          $progressPluginState = $null
           if ($PesterProgressInterval -gt 0) {
-            $heartbeatState = [PSCustomObject]@{
-              FunctionName = $fn
-              Stopwatch    = $heartbeatStopwatch
-            }
-            $heartbeatCallback = [System.Threading.TimerCallback] {
-              param($State)
-
-              try {
-                $elapsedText = $State.Stopwatch.Elapsed.ToString('hh\:mm\:ss')
-                [Console]::Out.WriteLine("Important [$($State.FunctionName)] Pester heartbeat: still running after $elapsedText.")
-              } catch {
-                # Heartbeat logging must never affect the test gate.
-              }
-            }
-            $heartbeatTimer = [System.Threading.Timer]::new(
-              $heartbeatCallback,
-              $heartbeatState,
-              [TimeSpan]::FromSeconds($PesterProgressInterval),
-              [TimeSpan]::FromSeconds($PesterProgressInterval))
+            $progressPlugin = New-PSModulePesterProgressPlugin -Interval $PesterProgressInterval -FunctionName $fn
+            $progressPluginState = Push-PSModulePesterAdditionalPlugin -Plugin $progressPlugin
           }
 
           try {
@@ -773,9 +755,7 @@ function Invoke-PSModulePesterTests {
               }
             }
           } finally {
-            if ($heartbeatTimer) {
-              $heartbeatTimer.Dispose()
-            }
+            Restore-PSModulePesterAdditionalPlugin -State $progressPluginState
           }
         } else {
           Invoke-Pester -Configuration $cfg | ForEach-Object {

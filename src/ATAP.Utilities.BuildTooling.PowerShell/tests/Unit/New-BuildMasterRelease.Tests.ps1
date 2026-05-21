@@ -24,7 +24,7 @@ AfterAll {
   [Environment]::SetEnvironmentVariable('BUILDMASTER_BASE_URL', $script:savedBaseUrl, 'User')
 }
 
-Describe 'New-BuildMasterRelease' -Tag 'Unit' {
+Describe 'New-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {
 
   BeforeEach {
     Mock Write-PSFMessage { }

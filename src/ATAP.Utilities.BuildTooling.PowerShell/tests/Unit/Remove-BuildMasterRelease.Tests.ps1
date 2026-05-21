@@ -6,15 +6,48 @@ BeforeAll {
   $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
   . (Join-Path $publicDir 'Remove-BuildMasterRelease.ps1')
 
-  # Load Get-ParameterValueFromNeoConfigurationRoot helper (mocked below)
-  if (-not (Get-Command Get-ParameterValueFromNeoConfigurationRoot -ErrorAction SilentlyContinue)) {
-    function global:Get-ParameterValueFromNeoConfigurationRoot {
-      param($ParameterName, $originalPSBoundParameters, $DefaultValue)
-      if ($originalPSBoundParameters.ContainsKey($ParameterName)) {
-        return $originalPSBoundParameters[$ParameterName]
-      }
-      return $DefaultValue
+  # Provide a deterministic settings resolver for this test file. The real
+  # helper can be loaded by earlier tests in aggregate runs, so preserve and
+  # restore any existing global definition instead of depending on load order.
+  $script:hadGlobalGetPValFunction = Test-Path -Path 'Function:\global:Get-ParameterValueFromNeoConfigurationRoot'
+  if ($script:hadGlobalGetPValFunction) {
+    $script:originalGlobalGetPValFunction = (Get-Item -Path 'Function:\global:Get-ParameterValueFromNeoConfigurationRoot').ScriptBlock
+  }
+  $script:hadGlobalGetPValAlias = Test-Path -Path 'Alias:\Get-PVal'
+  if ($script:hadGlobalGetPValAlias) {
+    $script:originalGlobalGetPValAlias = (Get-Alias -Name Get-PVal).Definition
+  }
+
+  function global:Get-ParameterValueFromNeoConfigurationRoot {
+    param(
+      [string]$ParameterName,
+      $originalPSBoundParameters,
+      [AllowNull()]$DefaultValue = $null,
+      [string]$dottedPath,
+      [hashtable]$Settings
+    )
+
+    if ($originalPSBoundParameters -and $originalPSBoundParameters.ContainsKey($ParameterName)) {
+      return $originalPSBoundParameters[$ParameterName]
     }
+
+    $settingsRoot = if ($Settings) { $Settings } elseif ($global:settings) { $global:settings } else { @{} }
+    $settingsKey = if (-not [string]::IsNullOrWhiteSpace($dottedPath)) { $dottedPath } else { $ParameterName }
+    if ($settingsRoot -is [System.Collections.IDictionary] -and $settingsRoot.Contains($settingsKey)) {
+      return $settingsRoot[$settingsKey]
+    }
+
+    $processEnvValue = [Environment]::GetEnvironmentVariable($ParameterName, 'Process')
+    if (-not [string]::IsNullOrWhiteSpace($processEnvValue)) {
+      return $processEnvValue
+    }
+
+    $userEnvValue = [Environment]::GetEnvironmentVariable($ParameterName, 'User')
+    if (-not [string]::IsNullOrWhiteSpace($userEnvValue)) {
+      return $userEnvValue
+    }
+
+    return $DefaultValue
   }
   Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Global -Force
 
@@ -34,9 +67,20 @@ AfterAll {
   $global:settings = $script:oldSettings
   [Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', $script:savedApiKey, 'User')
   [Environment]::SetEnvironmentVariable('BUILDMASTER_BASE_URL', $script:savedBaseUrl, 'User')
+
+  if ($script:hadGlobalGetPValFunction) {
+    Set-Item -Path 'Function:\global:Get-ParameterValueFromNeoConfigurationRoot' -Value $script:originalGlobalGetPValFunction
+  } else {
+    Remove-Item -Path 'Function:\global:Get-ParameterValueFromNeoConfigurationRoot' -ErrorAction SilentlyContinue
+  }
+  if ($script:hadGlobalGetPValAlias) {
+    Set-Alias -Name Get-PVal -Value $script:originalGlobalGetPValAlias -Scope Global -Force
+  } else {
+    Remove-Item -Path 'Alias:\Get-PVal' -ErrorAction SilentlyContinue
+  }
 }
 
-Describe 'Remove-BuildMasterRelease' -Tag 'Unit' {
+Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {
 
   BeforeEach {
     $global:configRootKeys = @{

@@ -31,8 +31,8 @@ test totals without listing every passing test. Use Detailed or Diagnostic for
 interactive troubleshooting.
 
 .PARAMETER PesterProgressInterval
-When PesterOutputVerbosity is None, writes a compact progress heartbeat after
-this many completed tests. Defaults to 20; set to 0 to disable.
+When PesterOutputVerbosity is None, writes a compact time-based heartbeat every
+this many seconds while Pester is running. Defaults to 20; set to 0 to disable.
 
 .OUTPUTS
 [PSCustomObject] projecting Pester summary fields plus GatePass, OutputFile,
@@ -242,49 +242,57 @@ function New-PSModulePesterProgressPlugin {
     DiscoveryStart          = {
       param($Context)
 
-      $state.Stopwatch.Restart()
-      $containerCount = @($Context.BlockContainers).Count
-      & $writeProgressLine "Pester discovery started for $containerCount test container(s)."
+      $null = & {
+        $state.Stopwatch.Restart()
+        $containerCount = @($Context.BlockContainers).Count
+        & $writeProgressLine "Pester discovery started for $containerCount test container(s)."
+      }
     }.GetNewClosure()
     DiscoveryEnd            = {
       param($Context)
 
-      $total = 0
-      foreach ($block in @($Context.BlockContainers)) {
-        $total += & $countBlockTests -Block $block
-      }
+      $null = & {
+        $total = 0
+        foreach ($block in @($Context.BlockContainers)) {
+          $total += & $countBlockTests -Block $block
+        }
 
-      $state.Total = $total
-      $duration = if ($Context.Duration) { $Context.Duration } else { $state.Stopwatch.Elapsed }
-      $elapsedText = $duration.ToString('hh\:mm\:ss')
-      & $writeProgressLine "Pester discovery completed: $total test(s) discovered in $elapsedText; reporting every $($state.Interval) completed test(s)."
+        $state.Total = $total
+        $duration = if ($Context.Duration) { $Context.Duration } else { $state.Stopwatch.Elapsed }
+        $elapsedText = $duration.ToString('hh\:mm\:ss')
+        & $writeProgressLine "Pester discovery completed: $total test(s) discovered in $elapsedText; reporting every $($state.Interval) completed test(s)."
+      }
     }.GetNewClosure()
     EachTestSetupStart      = {
       param($Context)
 
-      $state.Started++
-      if ((($state.Started - 1) % $Interval) -ne 0) {
-        return
-      }
+      $null = & {
+        $null = $state.Started++
+        if ((($state.Started - 1) % $Interval) -ne 0) {
+          return
+        }
 
-      $testName = & $getTestName $Context.Test
-      $totalText = if ($state.Total -gt 0) { "/$($state.Total)" } else { '' }
-      $elapsedText = $state.Stopwatch.Elapsed.ToString('hh\:mm\:ss')
-      & $writeProgressLine "Pester current test: $($state.Started)$totalText started after $elapsedText ($testName)."
+        $testName = & $getTestName $Context.Test
+        $totalText = if ($state.Total -gt 0) { "/$($state.Total)" } else { '' }
+        $elapsedText = $state.Stopwatch.Elapsed.ToString('hh\:mm\:ss')
+        & $writeProgressLine "Pester current test: $($state.Started)$totalText started after $elapsedText ($testName)."
+      }
     }.GetNewClosure()
     EachTestTeardownEnd     = {
       param($Context)
 
-      $state.Completed++
-      if (($state.Completed % $Interval) -ne 0) {
-        return
+      $null = & {
+        $null = $state.Completed++
+        if (($state.Completed % $Interval) -ne 0) {
+          return
+        }
+
+        $lastTestName = & $getTestName $Context.Test
+
+        $totalText = if ($state.Total -gt 0) { "/$($state.Total)" } else { '' }
+        $elapsedText = $state.Stopwatch.Elapsed.ToString('hh\:mm\:ss')
+        & $writeProgressLine "Pester progress: $($state.Completed)$totalText test(s) completed in $elapsedText (last: $lastTestName)."
       }
-
-      $lastTestName = & $getTestName $Context.Test
-
-      $totalText = if ($state.Total -gt 0) { "/$($state.Total)" } else { '' }
-      $elapsedText = $state.Stopwatch.Elapsed.ToString('hh\:mm\:ss')
-      & $writeProgressLine "Pester progress: $($state.Completed)$totalText test(s) completed in $elapsedText (last: $lastTestName)."
     }.GetNewClosure()
     PSTypeName              = 'Plugin'
   }
@@ -340,6 +348,237 @@ function Restore-PSModulePesterAdditionalPlugin {
       Remove-Variable -Name additionalPlugins -Scope Script -ErrorAction SilentlyContinue
     }
   } $State.Snapshot
+}
+
+function Get-PSModulePesterTestName {
+  [CmdletBinding()]
+  param($Test)
+
+  foreach ($propertyName in @('ExpandedName', 'Name')) {
+    if ($Test -and $Test.PSObject.Properties.Name -contains $propertyName) {
+      $value = [string]$Test.$propertyName
+      if (-not [string]::IsNullOrWhiteSpace($value)) {
+        return ($value -replace '\s+', ' ').Trim()
+      }
+    }
+  }
+
+  return '<unknown>'
+}
+
+function Get-PSModulePesterFailureMessage {
+  [CmdletBinding()]
+  param($Test)
+
+  if (-not $Test -or -not ($Test.PSObject.Properties.Name -contains 'ErrorRecord') -or -not $Test.ErrorRecord) {
+    return ''
+  }
+
+  $messages = foreach ($errorRecord in @($Test.ErrorRecord)) {
+    if ($errorRecord -and $errorRecord.Exception -and -not [string]::IsNullOrWhiteSpace($errorRecord.Exception.Message)) {
+      ([string]$errorRecord.Exception.Message -replace '\r?\n', ' ').Trim()
+    }
+  }
+
+  return (($messages | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }) -join ' | ')
+}
+
+function Get-PSModulePesterTestContainer {
+  [CmdletBinding()]
+  param($Test)
+
+  if ($Test -and ($Test.PSObject.Properties.Name -contains 'Block') -and $Test.Block -and
+    ($Test.Block.PSObject.Properties.Name -contains 'Container') -and $Test.Block.Container -and
+    ($Test.Block.Container.PSObject.Properties.Name -contains 'Item') -and $Test.Block.Container.Item) {
+    try {
+      return Split-Path -Leaf ([string]$Test.Block.Container.Item)
+    } catch {
+      return [string]$Test.Block.Container.Item
+    }
+  }
+
+  if ($Test -and ($Test.PSObject.Properties.Name -contains 'Path') -and $Test.Path) {
+    return ([string](@($Test.Path)[0]) -replace '\s+', ' ').Trim()
+  }
+
+  return '<unknown>'
+}
+
+function Get-PSModulePesterFailedTestSummary {
+  [CmdletBinding()]
+  param(
+    $PesterResult,
+
+    [ValidateRange(1, [int]::MaxValue)]
+    [int]$Maximum = 50
+  )
+
+  if ($PesterResult -and ($PesterResult.PSObject.Properties.Name -contains 'Failed') -and $PesterResult.Failed) {
+    return @(
+      foreach ($test in @($PesterResult.Failed | Select-Object -First $Maximum)) {
+        [PSCustomObject]@{
+          Container = Get-PSModulePesterTestContainer -Test $test
+          Name      = Get-PSModulePesterTestName -Test $test
+          Message   = Get-PSModulePesterFailureMessage -Test $test
+        }
+      }
+    )
+  }
+
+  $failures = [System.Collections.Generic.List[object]]::new()
+  $walkBlock = {
+    param($Block, [string]$Container)
+
+    if ($null -eq $Block -or $failures.Count -ge $Maximum) {
+      return
+    }
+
+    foreach ($test in @($Block.Tests)) {
+      if ($failures.Count -ge $Maximum) {
+        return
+      }
+
+      if ($test -and ($test.PSObject.Properties.Name -contains 'Result') -and $test.Result -eq 'Failed') {
+        $failures.Add([PSCustomObject]@{
+            Container = $Container
+            Name      = Get-PSModulePesterTestName -Test $test
+            Message   = Get-PSModulePesterFailureMessage -Test $test
+          }) | Out-Null
+      }
+    }
+
+    foreach ($child in @($Block.Blocks)) {
+      & $walkBlock $child $Container
+    }
+  }
+
+  foreach ($container in @($PesterResult.Containers)) {
+    $containerName = '<unknown>'
+    if ($container -and $container.PSObject.Properties.Name -contains 'Item' -and $container.Item) {
+      try {
+        $containerName = Split-Path -Leaf ([string]$container.Item)
+      } catch {
+        $containerName = [string]$container.Item
+      }
+    }
+
+    foreach ($block in @($container.Blocks)) {
+      & $walkBlock $block $containerName
+    }
+  }
+
+  return $failures.ToArray()
+}
+
+function Set-PSModulePesterXmlAttribute {
+  param(
+    [Parameter(Mandatory)] [System.Xml.XmlElement]$Element,
+    [Parameter(Mandatory)] [string]$Name,
+    [AllowNull()] $Value
+  )
+
+  $Element.SetAttribute($Name, [string]$Value)
+}
+
+function Write-PSModulePesterJUnitResult {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory)]
+    $PesterResult,
+
+    [Parameter(Mandatory)]
+    [string]$OutputPath
+  )
+
+  $tests = @($PesterResult.Tests)
+  $total = [int]$PesterResult.TotalCount
+  $failed = [int]$PesterResult.FailedCount
+  $skipped = [int]$PesterResult.SkippedCount
+  $duration = if ($PesterResult.Duration) { [double]$PesterResult.Duration.TotalSeconds } else { 0 }
+
+  $doc = [System.Xml.XmlDocument]::new()
+  $null = $doc.AppendChild($doc.CreateXmlDeclaration('1.0', 'utf-8', $null))
+  $root = $doc.CreateElement('testsuites')
+  Set-PSModulePesterXmlAttribute -Element $root -Name 'name' -Value 'Pester'
+  Set-PSModulePesterXmlAttribute -Element $root -Name 'tests' -Value $total
+  Set-PSModulePesterXmlAttribute -Element $root -Name 'failures' -Value $failed
+  Set-PSModulePesterXmlAttribute -Element $root -Name 'errors' -Value 0
+  Set-PSModulePesterXmlAttribute -Element $root -Name 'skipped' -Value $skipped
+  Set-PSModulePesterXmlAttribute -Element $root -Name 'time' -Value ('{0:n3}' -f $duration)
+  $null = $doc.AppendChild($root)
+
+  $suite = $doc.CreateElement('testsuite')
+  Set-PSModulePesterXmlAttribute -Element $suite -Name 'name' -Value 'Pester'
+  Set-PSModulePesterXmlAttribute -Element $suite -Name 'tests' -Value $total
+  Set-PSModulePesterXmlAttribute -Element $suite -Name 'failures' -Value $failed
+  Set-PSModulePesterXmlAttribute -Element $suite -Name 'errors' -Value 0
+  Set-PSModulePesterXmlAttribute -Element $suite -Name 'skipped' -Value $skipped
+  Set-PSModulePesterXmlAttribute -Element $suite -Name 'time' -Value ('{0:n3}' -f $duration)
+  $null = $root.AppendChild($suite)
+
+  foreach ($test in $tests) {
+    $case = $doc.CreateElement('testcase')
+    $testName = Get-PSModulePesterTestName -Test $test
+    $container = Get-PSModulePesterTestContainer -Test $test
+    $testDuration = if ($test.Duration) { [double]$test.Duration.TotalSeconds } else { 0 }
+
+    Set-PSModulePesterXmlAttribute -Element $case -Name 'name' -Value $testName
+    Set-PSModulePesterXmlAttribute -Element $case -Name 'classname' -Value $container
+    Set-PSModulePesterXmlAttribute -Element $case -Name 'status' -Value $test.Result
+    Set-PSModulePesterXmlAttribute -Element $case -Name 'time' -Value ('{0:n3}' -f $testDuration)
+
+    if ($test.Result -eq 'Failed') {
+      $failure = $doc.CreateElement('failure')
+      $message = Get-PSModulePesterFailureMessage -Test $test
+      Set-PSModulePesterXmlAttribute -Element $failure -Name 'message' -Value $message
+      $failure.InnerText = $message
+      $null = $case.AppendChild($failure)
+    } elseif ($test.Result -in @('Skipped', 'NotRun')) {
+      $skippedElement = $doc.CreateElement('skipped')
+      $null = $case.AppendChild($skippedElement)
+    }
+
+    $null = $suite.AppendChild($case)
+  }
+
+  $outputDirectory = Split-Path -Path $OutputPath -Parent
+  if ($outputDirectory -and -not (Test-Path -LiteralPath $outputDirectory)) {
+    New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
+  }
+  $doc.Save($OutputPath)
+}
+
+function Select-PSModulePesterRunResult {
+  [CmdletBinding()]
+  param(
+    [AllowNull()]
+    [object[]]$InvocationOutput
+  )
+
+  $items = @($InvocationOutput)
+  for ($i = $items.Count - 1; $i -ge 0; $i--) {
+    $item = $items[$i]
+    if (Test-PSModulePesterRunResult -InputObject $item) {
+      return $item
+    }
+  }
+
+  return $null
+}
+
+function Test-PSModulePesterRunResult {
+  [CmdletBinding()]
+  param(
+    [AllowNull()]
+    [object]$InputObject
+  )
+
+  if ($null -eq $InputObject) {
+    return $false
+  }
+
+  $properties = @($InputObject.PSObject.Properties.Name)
+  return ($properties -contains 'PassedCount' -and $properties -contains 'FailedCount' -and $properties -contains 'TotalCount')
 }
 
 function Invoke-PSModulePesterTests {
@@ -479,6 +718,11 @@ function Invoke-PSModulePesterTests {
       if (Test-Path -Path $publicDir) { $coveragePaths += $publicDir }
       if (Test-Path -Path $privateDir) { $coveragePaths += $privateDir }
 
+      # Pester's native XML export can query host runtime data that is not
+      # available under the BuildMaster service account. Keep PassThru as the
+      # source of truth and write the JUnit-style artifact ourselves below.
+      $delegateSkipTestResult = $true
+
       $cfg = New-PSModulePesterConfiguration `
         -TestPaths $TestPaths `
         -IncludeTag $filter.IncludeTag `
@@ -486,7 +730,7 @@ function Invoke-PSModulePesterTests {
         -OutputPath $OutputPath `
         -CoverageOutputPath $CoverageOutputPath `
         -CoveragePaths $coveragePaths `
-        -SkipTestResult:$SkipTestResult `
+        -SkipTestResult:$delegateSkipTestResult `
         -SkipCodeCoverage:$SkipCodeCoverage `
         -PesterOutputVerbosity $PesterOutputVerbosity
 
@@ -494,23 +738,51 @@ function Invoke-PSModulePesterTests {
 
       $result = $null
       if ($PSCmdlet.ShouldProcess("$TestPaths", 'Invoke-Pester')) {
-        $progressPluginState = $null
         if ($PesterOutputVerbosity -eq 'None') {
           # BuildMaster summary logging comes from this wrapper. When Pester's
           # own output is disabled, suppress incidental streams emitted by
           # tests that intentionally exercise warning/error paths.
+          $heartbeatTimer = $null
+          $heartbeatStopwatch = [Diagnostics.Stopwatch]::StartNew()
           if ($PesterProgressInterval -gt 0) {
-            $progressPlugin = New-PSModulePesterProgressPlugin -Interval $PesterProgressInterval -FunctionName $fn
-            $progressPluginState = Push-PSModulePesterAdditionalPlugin -Plugin $progressPlugin
+            $heartbeatState = [PSCustomObject]@{
+              FunctionName = $fn
+              Stopwatch    = $heartbeatStopwatch
+            }
+            $heartbeatCallback = [System.Threading.TimerCallback] {
+              param($State)
+
+              try {
+                $elapsedText = $State.Stopwatch.Elapsed.ToString('hh\:mm\:ss')
+                [Console]::Out.WriteLine("Important [$($State.FunctionName)] Pester heartbeat: still running after $elapsedText.")
+              } catch {
+                # Heartbeat logging must never affect the test gate.
+              }
+            }
+            $heartbeatTimer = [System.Threading.Timer]::new(
+              $heartbeatCallback,
+              $heartbeatState,
+              [TimeSpan]::FromSeconds($PesterProgressInterval),
+              [TimeSpan]::FromSeconds($PesterProgressInterval))
           }
 
           try {
-            $result = Invoke-Pester -Configuration $cfg 2>$null 3>$null 4>$null 5>$null 6>$null
+            Invoke-Pester -Configuration $cfg 2>$null 3>$null 4>$null 5>$null 6>$null | ForEach-Object {
+              if (Test-PSModulePesterRunResult -InputObject $_) {
+                $result = $_
+              }
+            }
           } finally {
-            Restore-PSModulePesterAdditionalPlugin -State $progressPluginState
+            if ($heartbeatTimer) {
+              $heartbeatTimer.Dispose()
+            }
           }
         } else {
-          $result = Invoke-Pester -Configuration $cfg
+          Invoke-Pester -Configuration $cfg | ForEach-Object {
+            if (Test-PSModulePesterRunResult -InputObject $_) {
+              $result = $_
+            }
+          }
         }
       }
 
@@ -521,8 +793,24 @@ function Invoke-PSModulePesterTests {
       $duration = if ($result -and $result.Duration) { $result.Duration } else { [TimeSpan]::Zero }
 
       $gatePass = ($failed -eq 0)
+      if (-not $SkipTestResult -and $result) {
+        Write-PSModulePesterJUnitResult -PesterResult $result -OutputPath $OutputPath
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Pester test result artifact: '$OutputPath'"
+      }
+
       if (-not $gatePass) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Pester gate FAILED: $failed failing test(s) of $total"
+        $failedTests = Get-PSModulePesterFailedTestSummary -PesterResult $result -Maximum 50
+        foreach ($failedTest in @($failedTests)) {
+          $messageSuffix = if (-not [string]::IsNullOrWhiteSpace($failedTest.Message)) { " -- $($failedTest.Message)" } else { '' }
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Failing test: $($failedTest.Container) :: $($failedTest.Name)$messageSuffix"
+        }
+
+        if ($failed -gt @($failedTests).Count -and @($failedTests).Count -gt 0) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Failing test list truncated at $(@($failedTests).Count) of $failed; see '$OutputPath' for the complete per-test results."
+        } elseif (-not $SkipTestResult -and @($failedTests).Count -eq 0) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "No failing-test detail was available from the Pester result object; see '$OutputPath' for the complete per-test results."
+        }
       } else {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Pester gate passed ($passed passed)"
       }

@@ -26,7 +26,7 @@ AfterAll {
   Remove-Item Function:\Write-PSFMessage -ErrorAction SilentlyContinue
 }
 
-Describe 'New-ProGetFeedSet' -Tag 'Unit' {
+Describe 'New-ProGetFeedSet' -Tag 'Unit', 'PromotedModuleHostSensitive' {
 
   BeforeEach {
     Mock Write-PSFMessage { }

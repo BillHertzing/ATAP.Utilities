@@ -62,7 +62,7 @@ AfterAll {
     Remove-Item Function:\Write-PSFMessage -ErrorAction SilentlyContinue
 }
 
-Describe 'Publish-UniversalPackageToProGet' -Tag 'Unit' {
+Describe 'Publish-UniversalPackageToProGet' -Tag 'Unit', 'PromotedModuleHostSensitive' {
 
     BeforeEach {
         $global:WritePSFMessageCalls.Clear()

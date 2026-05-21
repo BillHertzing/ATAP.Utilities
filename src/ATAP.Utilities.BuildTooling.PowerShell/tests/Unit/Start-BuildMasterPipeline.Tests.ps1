@@ -23,7 +23,7 @@ AfterAll {
   [Environment]::SetEnvironmentVariable('BUILDMASTER_BASE_URL', $script:savedBaseUrl, 'User')
 }
 
-Describe 'Start-BuildMasterPipeline' -Tag 'Unit' {
+Describe 'Start-BuildMasterPipeline' -Tag 'Unit', 'PromotedModuleHostSensitive' {
 
   BeforeEach {
     $global:configRootKeys = @{

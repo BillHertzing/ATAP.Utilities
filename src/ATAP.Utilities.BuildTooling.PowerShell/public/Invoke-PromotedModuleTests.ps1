@@ -90,8 +90,9 @@
     Detailed or Diagnostic for live troubleshooting.
 
 .PARAMETER PesterProgressInterval
-    When delegated Pester output is quiet, emits a compact progress heartbeat
-    after this many completed tests. Defaults to 20; set to 0 to disable.
+    When delegated Pester output is quiet, emits a compact time-based heartbeat
+    every this many seconds while Pester is running. Defaults to 20; set to 0
+    to disable.
 
 .OUTPUTS
     [PSCustomObject] with:
@@ -297,7 +298,6 @@ function Invoke-PromotedModuleTests {
                 -Tier $pesterTier `
                 -OutputPath $outputFile `
                 -CoverageOutputPath $coverageFile `
-                -SkipTestResult `
                 -SkipCodeCoverage `
                 -PesterOutputVerbosity $PesterOutputVerbosity `
                 -PesterProgressInterval $PesterProgressInterval `

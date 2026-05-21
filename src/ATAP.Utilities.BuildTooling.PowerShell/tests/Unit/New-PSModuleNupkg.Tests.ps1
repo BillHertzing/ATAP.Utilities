@@ -110,7 +110,7 @@ Describe 'New-PSModuleNupkg' -Tag 'Unit' {
             Assert-MockCalled Unregister-PSResourceRepository -Times 1 -Exactly -Scope It
         }
 
-        It 'Calls Publish-PSResource with -Path and skips dependency resolution for the empty staging repository' {
+        It 'Calls Publish-PSResource with -Path and skips dependency resolution for the empty staging repository' -Tag 'PromotedModuleHostSensitive' {
             New-PSModuleNupkg -ModulePath $script:modulePath -OutputPath $script:outputPath | Out-Null
             Assert-MockCalled Publish-PSResource -Times 1 -Exactly -Scope It -ParameterFilter {
                 # Mock parameter binding: $Path is the bound parameter name from the mock signature.

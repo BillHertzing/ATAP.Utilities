@@ -208,9 +208,10 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
 
   It 'uses the captured module resolved version instead of an injected package version' {
     $text = Get-Content -LiteralPath $script:powerShellRunnerPath -Raw
+    $scriptParamBlock = $text.Substring(0, $text.IndexOf('$ErrorActionPreference'))
 
-    $text | Should -Not -Match '\[string\]\$PackageVersion'
-    $text | Should -Not -Match '-PackageVersion\s+\$PackageVersion'
+    $scriptParamBlock | Should -Not -Match '\[string\]\$PackageVersion'
+    $text | Should -Not -Match '-PackageVersion\s+\$ResolvedPackageVersion'
     $text | Should -Match '\$capturedResolvedVersion'
   }
 
@@ -279,35 +280,52 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
     $text | Should -Match "'production'\s+\{ return 'Production' \}"
   }
 
-  It 'implements Development as promote then test of the Experimental package' {
+  It 'auto-advances promoted PowerShell module stages through the version ceiling' {
     $text = Get-Content -LiteralPath $script:powerShellRunnerPath -Raw
 
-    $text | Should -Match "'Development' \{"
+    $text | Should -Match 'PowerShell module runner will execute tier\(s\):'
+    $text | Should -Match '\$tierIndex -le \$ceilingTierIndex'
+    $text | Should -Match 'Invoke-PowerShellModulePromotionAndTests -Tier \$tierToRun'
+    $text | Should -Match 'Get-PreviousBuildMasterTier -Tier \$Tier'
+    $text | Should -Match '\$feedByTier\[\$previousTier\]'
+    $text | Should -Match '\$feedByTier\[\$Tier\]'
     $text | Should -Match 'Promote-ProGetPackage'
-    $text | Should -Match '-FromFeed \$ExperimentalFeed'
-    $text | Should -Match '-ToFeed \$DevelopmentFeed'
+    $text | Should -Match '-FromFeed \$sourceFeed'
+    $text | Should -Match '-ToFeed \$destinationFeed'
     $text | Should -Match '-CeilingTier \$ceilingTier'
     $text | Should -Match 'Invoke-PromotedModuleTests'
-    $text | Should -Match '-Feed \$DevelopmentFeed'
-    $text | Should -Match 'DevelopmentTestResults'
+    $text | Should -Match '-Feed \$destinationFeed'
+    $text | Should -Match '\$\(\$Tier\)TestResults'
     $text | Should -Match '-ProGetBaseUrl \$ProGetUrl'
     $text | Should -Match '-ApiKey \$ProGetApiKey'
+    $text | Should -Match 'next stage gate'
+    $text | Should -Not -Match 'promotion/test execution.*not implemented yet'
+  }
+
+  It 'records completed PowerShell module tiers to make auto-advance idempotent' {
+    $text = Get-Content -LiteralPath $script:powerShellRunnerPath -Raw
+
+    $text | Should -Match 'Get-PowerShellModuleStageCompletionMarkerPath'
+    $text | Should -Match 'Test-PowerShellModuleStageCompleted'
+    $text | Should -Match 'Set-PowerShellModuleStageCompleted'
+    $text | Should -Match 'already completed for build'
   }
 
   It 'uses the package version from the captured nupkg path for PowerShell promotion' {
     $text = Get-Content -LiteralPath $script:powerShellRunnerPath -Raw
 
     $text | Should -Match 'Get-PowerShellModulePackageVersionFromNupkgPath'
-    $text | Should -Match '\$packageVersion = Get-PowerShellModulePackageVersionFromNupkgPath'
-    $text | Should -Match '-Version \$packageVersion'
+    $text | Should -Match '\$packageVersionForRun = Get-PowerShellModulePackageVersionFromNupkgPath'
+    $text | Should -Match '-Version \$PromotedPackageVersion'
+    $text | Should -Match 'PackageVersion'
     $text | Should -Match 'Captured resolved version'
   }
 
-  It 'skips Development promotion when the package is already in the Development feed' {
+  It 'skips promotion when the package is already in the destination feed' {
     $text = Get-Content -LiteralPath $script:powerShellRunnerPath -Raw
 
     $text | Should -Match 'Test-ProGetPackageVersionInFeed'
-    $text | Should -Match '-FeedName \$DevelopmentFeed'
+    $text | Should -Match '-FeedName \$destinationFeed'
     $text | Should -Match 'already exists in'
     $text | Should -Match 'No-op:'
   }

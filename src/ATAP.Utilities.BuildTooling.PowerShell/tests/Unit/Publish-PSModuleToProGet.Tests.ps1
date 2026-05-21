@@ -28,7 +28,14 @@ BeforeAll {
 
     $script:oldConfigRootKeys = $global:configRootKeys
     $script:oldSettings = $global:Settings
-    $script:savedAdminApiKey = [Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
+    $script:experimentalApiKeyEnvName = 'PROGET_APIKEY_POWERSHELLGET_EXPERIMENTAL'
+    $script:savedExperimentalApiKeyProcess = [Environment]::GetEnvironmentVariable($script:experimentalApiKeyEnvName, 'Process')
+    $script:savedExperimentalApiKeyUser = [Environment]::GetEnvironmentVariable($script:experimentalApiKeyEnvName, 'User')
+    $script:savedAdminApiKeyProcess = [Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'Process')
+    $script:savedAdminApiKeyUser = [Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
+    [Environment]::SetEnvironmentVariable($script:experimentalApiKeyEnvName, $null, 'Process')
+    [Environment]::SetEnvironmentVariable($script:experimentalApiKeyEnvName, $null, 'User')
+    [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $null, 'Process')
     [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $null, 'User')
     $global:configRootKeys = @{
         ProGetFeedCollectionConfigRootKey = 'ProGetFeedCollection'
@@ -52,7 +59,10 @@ AfterAll {
     }
     $global:configRootKeys = $script:oldConfigRootKeys
     $global:Settings = $script:oldSettings
-    [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $script:savedAdminApiKey, 'User')
+    [Environment]::SetEnvironmentVariable($script:experimentalApiKeyEnvName, $script:savedExperimentalApiKeyProcess, 'Process')
+    [Environment]::SetEnvironmentVariable($script:experimentalApiKeyEnvName, $script:savedExperimentalApiKeyUser, 'User')
+    [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $script:savedAdminApiKeyProcess, 'Process')
+    [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $script:savedAdminApiKeyUser, 'User')
 }
 
 Describe 'Publish-PSModuleToProGet' -Tag 'Unit' {
@@ -198,8 +208,9 @@ Describe 'Publish-PSModuleToProGet' -Tag 'Unit' {
     Context 'API key sourcing' {
         It 'Throws when neither Bitwarden nor env var provides a key' {
             Remove-Item Function:\Get-BitWardenSecret -ErrorAction SilentlyContinue
-            $envName = 'PROGET_APIKEY_POWERSHELLGET_EXPERIMENTAL'
-            [Environment]::SetEnvironmentVariable($envName, $null, 'User')
+            [Environment]::SetEnvironmentVariable($script:experimentalApiKeyEnvName, $null, 'Process')
+            [Environment]::SetEnvironmentVariable($script:experimentalApiKeyEnvName, $null, 'User')
+            [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $null, 'Process')
             [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $null, 'User')
 
             { Publish-PSModuleToProGet -NupkgPath $script:fakeNupkg } |

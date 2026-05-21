@@ -156,9 +156,9 @@ function Save-SprintWorkSession {
 
             # ── Derive project slug from cwd ───────────────────────────────────────
             # Claude Code slugs the project path by lowercasing the drive letter
-            # and replacing ':', '\', '_' with '-'.
+            # and replacing ':', '\', '_', '.' with '-'.
             $cwd = (Get-Location).Path
-            $slug = ($cwd.Substring(0, 1).ToLower() + $cwd.Substring(1)) -replace '[:\\._]', '-' -replace '^-', ''
+            $slug = ($cwd.Substring(0, 1).ToLower() + $cwd.Substring(1)) -replace ':', '-' -replace '\\', '-' -replace '_', '-' -replace '\.', '-' -replace '^-', ''
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Slug derived from cwd '$cwd': $slug"
 
             # ── Find most-recent session JSONL ─────────────────────────────────────

@@ -369,6 +369,106 @@ function Ensure-PSResourceRepository {
   Set-PSResourceRepository -Name $Name -Uri $Uri -Trusted -ApiVersion V2
 }
 
+function Get-PowerShellModuleStageCompletionMarkerPath {
+  param(
+    [Parameter(Mandatory)]
+    [string]$ContextDirectory,
+
+    [Parameter(Mandatory)]
+    [string]$ModuleName,
+
+    [Parameter(Mandatory)]
+    [string]$Tier
+  )
+
+  return (Join-Path -Path $ContextDirectory -ChildPath "$ModuleName.$Tier.completed.tmp")
+}
+
+function Set-PowerShellModuleStageCompleted {
+  param(
+    [Parameter(Mandatory)]
+    [string]$ContextDirectory,
+
+    [Parameter(Mandatory)]
+    [string]$ModuleName,
+
+    [Parameter(Mandatory)]
+    [string]$Tier,
+
+    [Parameter(Mandatory)]
+    [string]$PackageVersion
+  )
+
+  $markerPath = Get-PowerShellModuleStageCompletionMarkerPath -ContextDirectory $ContextDirectory -ModuleName $ModuleName -Tier $Tier
+  $payload = [ordered]@{
+    Tier           = $Tier
+    PackageVersion = $PackageVersion
+    CompletedUtc   = [datetime]::UtcNow.ToString('o')
+  }
+  $payload | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $markerPath -Encoding utf8
+}
+
+function Test-PowerShellModuleStageCompleted {
+  param(
+    [Parameter(Mandatory)]
+    [string]$ContextDirectory,
+
+    [Parameter(Mandatory)]
+    [string]$ModuleName,
+
+    [Parameter(Mandatory)]
+    [string]$Tier
+  )
+
+  $markerPath = Get-PowerShellModuleStageCompletionMarkerPath -ContextDirectory $ContextDirectory -ModuleName $ModuleName -Tier $Tier
+  return (Test-Path -LiteralPath $markerPath -PathType Leaf)
+}
+
+function Get-PreviousBuildMasterTier {
+  param(
+    [Parameter(Mandatory)]
+    [string]$Tier
+  )
+
+  $tierOrder = @(Get-TierOrder)
+  $tierIndex = $tierOrder.IndexOf($Tier)
+  if ($tierIndex -le 0) {
+    throw "Tier '$Tier' does not have a previous promotion tier."
+  }
+
+  return $tierOrder[$tierIndex - 1]
+}
+
+function Get-PowerShellModulePackageVersionForRun {
+  param(
+    [Parameter(Mandatory)]
+    [string]$ContextDirectory,
+
+    [Parameter(Mandatory)]
+    [string]$NupkgPathFile,
+
+    [Parameter(Mandatory)]
+    [string]$PackageName
+  )
+
+  if (Test-Path -LiteralPath $NupkgPathFile -PathType Leaf) {
+    $nupkgPath = (Get-Content -LiteralPath $NupkgPathFile -Raw).Trim()
+    if (-not [string]::IsNullOrWhiteSpace($nupkgPath) -and (Test-Path -LiteralPath $nupkgPath -PathType Leaf)) {
+      return (Get-PowerShellModulePackageVersionFromNupkgPath -NupkgPath $nupkgPath -PackageName $PackageName)
+    }
+  }
+
+  $runContext = Read-BuildMasterRunContextJson -ContextDirectory $ContextDirectory
+  if ($null -ne $runContext -and $runContext.PSObject.Properties.Name -contains 'PackageVersion') {
+    $packageVersion = [string]$runContext.PackageVersion
+    if (-not [string]::IsNullOrWhiteSpace($packageVersion)) {
+      return $packageVersion
+    }
+  }
+
+  throw "PowerShell module package version is not captured for build context '$ContextDirectory'; run the Experimental stage first."
+}
+
 if ([string]::IsNullOrWhiteSpace($PackageName)) {
   $PackageName = $ModuleName
 }
@@ -467,6 +567,43 @@ Write-BuildMasterRunContextJson `
   -StateFiles $stateFiles `
   -AdditionalData @{ PipelineKind = 'PowerShellModule'; ModuleName = $ModuleName; PackageName = $PackageName } | Out-Null
 
+function Update-PowerShellModulePackageContext {
+  param(
+    [Parameter(Mandatory)]
+    [string]$PackageVersion,
+
+    [AllowEmptyString()]
+    [string]$NupkgPath = ''
+  )
+
+  $additionalData = @{
+    PipelineKind   = 'PowerShellModule'
+    ModuleName     = $ModuleName
+    PackageName    = $PackageName
+    PackageVersion = $PackageVersion
+  }
+  if (-not [string]::IsNullOrWhiteSpace($NupkgPath)) {
+    $additionalData['NupkgPath'] = $NupkgPath
+  }
+
+  Write-BuildMasterRunContextJson `
+    -ContextDirectory $contextDirectory `
+    -BuildMasterBuildId $BuildMasterBuildId `
+    -BuildNumber $BuildNumber `
+    -ExecutionId $ExecutionId `
+    -ApplicationName $ApplicationName `
+    -Branch $Branch `
+    -SourcePath $SourcePath `
+    -ProjectPath $ModulePath `
+    -CurrentTier $context.CurrentTier `
+    -CeilingTier $ceilingTier `
+    -ResolvedVersion $capturedResolvedVersion `
+    -PrereleaseLabel $capturedPrereleaseLabel `
+    -AllowDecisions $allowDecisions `
+    -StateFiles $stateFiles `
+    -AdditionalData $additionalData | Out-Null
+}
+
 $moduleBuildOutputRoot = Join-Path -Path $contextDirectory -ChildPath "psmodules/$ModuleName"
 $moduleBuildPackageOutputPath = Join-Path -Path $moduleBuildOutputRoot -ChildPath 'packages'
 if ([string]::IsNullOrWhiteSpace($PackageOutputPath)) {
@@ -489,6 +626,74 @@ $allowByTier = @{
   QA           = [bool]$allowDecisions['QA']
   Production   = [bool]$allowDecisions['Production']
 }
+$feedByTier = @{
+  Experimental = $ExperimentalFeed
+  Development  = $DevelopmentFeed
+  Integration  = $IntegrationFeed
+  QA           = $QAFeed
+  Production   = $ProductionFeed
+}
+
+function Invoke-PowerShellModulePromotionAndTests {
+  param(
+    [Parameter(Mandatory)]
+    [string]$Tier,
+
+    [Parameter(Mandatory)]
+    [string]$PromotedPackageVersion
+  )
+
+  $previousTier = Get-PreviousBuildMasterTier -Tier $Tier
+  $sourceFeed = $feedByTier[$previousTier]
+  $destinationFeed = $feedByTier[$Tier]
+  if ([string]::IsNullOrWhiteSpace($sourceFeed) -or [string]::IsNullOrWhiteSpace($destinationFeed)) {
+    throw "Cannot resolve PowerShellGet promotion feeds for '$previousTier' -> '$Tier'."
+  }
+
+  $promotionTracePath = Join-Path -Path $contextDirectory -ChildPath "$ModuleName.$($Tier.ToLowerInvariant()).log"
+  Add-BuildMasterPublishTrace -Path $promotionTracePath -Message "Promoting '$PackageName' version '$PromotedPackageVersion' from '$sourceFeed' to '$destinationFeed'. Captured resolved version is '$capturedResolvedVersion'."
+
+  $env:PROGET_BUILDMASTER_API_KEY = $ProGetApiKey
+  $global:ProGetBaseUrl = $ProGetUrl
+
+  $destinationFeedUri = Get-PowerShellGetFeedUri -BaseUrl $ProGetUrl -FeedName $destinationFeed
+  Ensure-PSResourceRepository -Name $destinationFeed -Uri $destinationFeedUri
+  Add-BuildMasterPublishTrace -Path $promotionTracePath -Message "PSResourceRepository '$destinationFeed' is registered at '$destinationFeedUri'."
+
+  if (Test-ProGetPackageVersionInFeed -BaseUrl $ProGetUrl -FeedName $destinationFeed -PackageName $PackageName -Version $PromotedPackageVersion -ApiKey $ProGetApiKey) {
+    $promotionResult = [pscustomobject]@{
+      Succeeded       = $true
+      ResponseSummary = "No-op: '$PackageName' version '$PromotedPackageVersion' already exists in '$destinationFeed'."
+    }
+  } else {
+    $promotionResult = Promote-ProGetPackage `
+      -Name $PackageName `
+      -Version $PromotedPackageVersion `
+      -FromFeed $sourceFeed `
+      -ToFeed $destinationFeed `
+      -Reason "$Tier gate for $ApplicationName $PromotedPackageVersion on $Branch" `
+      -CeilingTier $ceilingTier
+  }
+  Assert-BuildMasterOperationSucceeded -Result $promotionResult -OperationName 'Promote-ProGetPackage'
+  Add-BuildMasterPublishTrace -Path $promotionTracePath -Message $promotionResult.ResponseSummary
+
+  $resultsPath = Join-Path -Path $contextDirectory -ChildPath "$($Tier)TestResults"
+  $testResult = Invoke-PromotedModuleTests `
+    -Name $PackageName `
+    -Version $PromotedPackageVersion `
+    -Feed $destinationFeed `
+    -Tier $Tier `
+    -ResultsPath $resultsPath `
+    -ModuleSourceRoot $ModulePath `
+    -WorkingDirectory $SourcePath `
+    -ProGetBaseUrl $ProGetUrl `
+    -ApiKey $ProGetApiKey `
+    -PesterOutputVerbosity None
+  Assert-BuildMasterOperationSucceeded -Result $testResult -OperationName 'Invoke-PromotedModuleTests'
+  Add-BuildMasterPublishTrace -Path $promotionTracePath -Message $testResult.ResponseSummary
+
+  Write-Host "Promoted '$PackageName' version '$PromotedPackageVersion' to '$destinationFeed' and passed $Tier tests. Ceiling='$ceilingTier'."
+}
 
 if (-not $allowByTier.ContainsKey($tier)) {
   throw "Unsupported BuildMaster tier '$($context.CurrentTier)'."
@@ -499,114 +704,110 @@ if (-not $allowByTier[$tier]) {
   return
 }
 
+$tierOrder = @(Get-TierOrder)
+$currentTierIndex = $tierOrder.IndexOf($tier)
+$ceilingTierIndex = $tierOrder.IndexOf($ceilingTier)
+if ($currentTierIndex -lt 0) {
+  throw "Unsupported BuildMaster tier '$tier'."
+}
+if ($ceilingTierIndex -lt 0) {
+  throw "Unsupported BuildMaster ceiling tier '$ceilingTier'."
+}
+
+$tiersToRun = @()
+for ($tierIndex = $currentTierIndex; $tierIndex -le $ceilingTierIndex; $tierIndex++) {
+  $tiersToRun += $tierOrder[$tierIndex]
+}
+Write-Host "PowerShell module runner will execute tier(s): $($tiersToRun -join ', ') (current='$tier'; ceiling='$ceilingTier')."
+
+$packageVersionForRun = $null
+
 Push-Location -LiteralPath $SourcePath
 try {
-  switch ($tier) {
-    'Experimental' {
-      New-Item -ItemType Directory -Path (Split-Path -Parent $NupkgPathFile) -Force | Out-Null
-      $moduleBuildTier = Convert-BuildMasterTierToModuleBuildTier -Tier $tier
-      $buildLogPath = Join-Path -Path $contextDirectory -ChildPath 'PSModuleBuildLogs'
-      $buildResults = @(
-        Invoke-ModuleBuildWithRetry `
-          -ProjectPath $ModulePath `
-          -Tier $moduleBuildTier `
-          -Task CI `
-          -SkipPublish `
-          -MaxRetries 1 `
-          -BuildLogPath $buildLogPath `
-          -OutputRoot $moduleBuildOutputRoot
-      )
-      $moduleBuildRetryResults = @($buildResults | Select-ModuleBuildRetryResult)
-      if ($moduleBuildRetryResults.Count -eq 0) {
-        throw "Invoke-ModuleBuildWithRetry did not return a result object for '$ModuleName'."
-      }
-
-      $failedBuildResults = @($moduleBuildRetryResults | Where-Object { [int]$_.ExitCode -ne 0 })
-      if ($failedBuildResults.Count -gt 0) {
-        $failureSummary = ($failedBuildResults | ForEach-Object { $_.BuildOutput -join [Environment]::NewLine }) -join [Environment]::NewLine
-        throw "module.build.ps1 failed for '$ModuleName' at BuildMaster tier '$tier' (module.build tier '$moduleBuildTier'). $failureSummary"
-      }
-
-      $nupkg = Find-LatestPowerShellModulePackage -PackageDirectory $PackageOutputPath
-      $nupkg.FullName | Set-Content -LiteralPath $NupkgPathFile -Encoding utf8 -NoNewline
-
-      $publishTracePath = Join-Path -Path $contextDirectory -ChildPath "$ModuleName.publish.log"
-      $feedUri = Get-PowerShellGetFeedUri -BaseUrl $ProGetUrl -FeedName $ExperimentalFeed
-      Add-BuildMasterPublishTrace -Path $publishTracePath -Message "Using PowerShellGet feed '$ExperimentalFeed' at '$feedUri'."
-      Ensure-PSResourceRepository -Name $ExperimentalFeed -Uri $feedUri
-      Add-BuildMasterPublishTrace -Path $publishTracePath -Message "PSResourceRepository '$ExperimentalFeed' is registered."
-
-      $env:PROGET_APIKEY_POWERSHELLGET_EXPERIMENTAL = $ProGetApiKey
-      $env:PROGET_ADMIN_API_KEY = $ProGetApiKey
-
-      try {
-        $publishSummary = Publish-PowerShellModulePackageToExperimental -NupkgPath $nupkg.FullName -FeedName $ExperimentalFeed -ApiKey $ProGetApiKey
-        Add-BuildMasterPublishTrace -Path $publishTracePath -Message $publishSummary
-      } catch {
-        Add-BuildMasterPublishTrace -Path $publishTracePath -Message "ERROR: $($_.Exception.GetType().FullName): $($_.Exception.Message)"
-        throw
-      }
-      Write-Host "$publishSummary Ceiling='$ceilingTier'. module.build.ps1 tier='$moduleBuildTier'."
+  foreach ($tierToRun in $tiersToRun) {
+    if (-not $allowByTier[$tierToRun]) {
+      Write-Host "Stopping PowerShell module auto-advance before '$tierToRun' because ceiling '$ceilingTier' does not allow it."
+      break
     }
 
-    'Development' {
-      if (-not (Test-Path -LiteralPath $NupkgPathFile -PathType Leaf)) {
-        throw "PowerShell module package path file '$NupkgPathFile' is missing; run the Experimental stage first."
-      }
+    if (Test-PowerShellModuleStageCompleted -ContextDirectory $contextDirectory -ModuleName $ModuleName -Tier $tierToRun) {
+      Write-Host "PowerShell module stage '$tierToRun' already completed for build '$BuildMasterBuildId'; skipping re-execution."
+      continue
+    }
 
-      $nupkgPath = (Get-Content -LiteralPath $NupkgPathFile -Raw).Trim()
-      if (-not (Test-Path -LiteralPath $nupkgPath -PathType Leaf)) {
-        throw "PowerShell module package '$nupkgPath' recorded by '$NupkgPathFile' does not exist."
-      }
-
-      $packageVersion = Get-PowerShellModulePackageVersionFromNupkgPath -NupkgPath $nupkgPath -PackageName $PackageName
-      $promotionTracePath = Join-Path -Path $contextDirectory -ChildPath "$ModuleName.development.log"
-      Add-BuildMasterPublishTrace -Path $promotionTracePath -Message "Promoting '$PackageName' version '$packageVersion' from '$ExperimentalFeed' to '$DevelopmentFeed'. Captured resolved version is '$capturedResolvedVersion'."
-
-      $env:PROGET_BUILDMASTER_API_KEY = $ProGetApiKey
-      $global:ProGetBaseUrl = $ProGetUrl
-
-      $developmentFeedUri = Get-PowerShellGetFeedUri -BaseUrl $ProGetUrl -FeedName $DevelopmentFeed
-      Ensure-PSResourceRepository -Name $DevelopmentFeed -Uri $developmentFeedUri
-      Add-BuildMasterPublishTrace -Path $promotionTracePath -Message "PSResourceRepository '$DevelopmentFeed' is registered at '$developmentFeedUri'."
-
-      if (Test-ProGetPackageVersionInFeed -BaseUrl $ProGetUrl -FeedName $DevelopmentFeed -PackageName $PackageName -Version $packageVersion -ApiKey $ProGetApiKey) {
-        $promotionResult = [pscustomobject]@{
-          Succeeded       = $true
-          ResponseSummary = "No-op: '$PackageName' version '$packageVersion' already exists in '$DevelopmentFeed'."
+    switch ($tierToRun) {
+      'Experimental' {
+        New-Item -ItemType Directory -Path (Split-Path -Parent $NupkgPathFile) -Force | Out-Null
+        $moduleBuildTier = Convert-BuildMasterTierToModuleBuildTier -Tier $tierToRun
+        $buildLogPath = Join-Path -Path $contextDirectory -ChildPath 'PSModuleBuildLogs'
+        $buildResults = @(
+          Invoke-ModuleBuildWithRetry `
+            -ProjectPath $ModulePath `
+            -Tier $moduleBuildTier `
+            -Task CI `
+            -SkipPublish `
+            -MaxRetries 1 `
+            -BuildLogPath $buildLogPath `
+            -OutputRoot $moduleBuildOutputRoot
+        )
+        $moduleBuildRetryResults = @($buildResults | Select-ModuleBuildRetryResult)
+        if ($moduleBuildRetryResults.Count -eq 0) {
+          throw "Invoke-ModuleBuildWithRetry did not return a result object for '$ModuleName'."
         }
-      } else {
-        $promotionResult = Promote-ProGetPackage `
-          -Name $PackageName `
-          -Version $packageVersion `
-          -FromFeed $ExperimentalFeed `
-          -ToFeed $DevelopmentFeed `
-          -Reason "Development gate for $ApplicationName $packageVersion on $Branch" `
-          -CeilingTier $ceilingTier
+
+        $failedBuildResults = @($moduleBuildRetryResults | Where-Object { [int]$_.ExitCode -ne 0 })
+        if ($failedBuildResults.Count -gt 0) {
+          $failureSummary = ($failedBuildResults | ForEach-Object { $_.BuildOutput -join [Environment]::NewLine }) -join [Environment]::NewLine
+          throw "module.build.ps1 failed for '$ModuleName' at BuildMaster tier '$tierToRun' (module.build tier '$moduleBuildTier'). $failureSummary"
+        }
+
+        $nupkg = Find-LatestPowerShellModulePackage -PackageDirectory $PackageOutputPath
+        $nupkg.FullName | Set-Content -LiteralPath $NupkgPathFile -Encoding utf8 -NoNewline
+        $packageVersionForRun = Get-PowerShellModulePackageVersionFromNupkgPath -NupkgPath $nupkg.FullName -PackageName $PackageName
+        Update-PowerShellModulePackageContext -PackageVersion $packageVersionForRun -NupkgPath $nupkg.FullName
+
+        $publishTracePath = Join-Path -Path $contextDirectory -ChildPath "$ModuleName.publish.log"
+        $feedUri = Get-PowerShellGetFeedUri -BaseUrl $ProGetUrl -FeedName $ExperimentalFeed
+        Add-BuildMasterPublishTrace -Path $publishTracePath -Message "Using PowerShellGet feed '$ExperimentalFeed' at '$feedUri'."
+        Ensure-PSResourceRepository -Name $ExperimentalFeed -Uri $feedUri
+        Add-BuildMasterPublishTrace -Path $publishTracePath -Message "PSResourceRepository '$ExperimentalFeed' is registered."
+
+        $env:PROGET_APIKEY_POWERSHELLGET_EXPERIMENTAL = $ProGetApiKey
+        $env:PROGET_ADMIN_API_KEY = $ProGetApiKey
+
+        try {
+          $publishSummary = Publish-PowerShellModulePackageToExperimental -NupkgPath $nupkg.FullName -FeedName $ExperimentalFeed -ApiKey $ProGetApiKey
+          Add-BuildMasterPublishTrace -Path $publishTracePath -Message $publishSummary
+        } catch {
+          Add-BuildMasterPublishTrace -Path $publishTracePath -Message "ERROR: $($_.Exception.GetType().FullName): $($_.Exception.Message)"
+          throw
+        }
+        Write-Host "$publishSummary Ceiling='$ceilingTier'. module.build.ps1 tier='$moduleBuildTier'."
       }
-      Assert-BuildMasterOperationSucceeded -Result $promotionResult -OperationName 'Promote-ProGetPackage'
-      Add-BuildMasterPublishTrace -Path $promotionTracePath -Message $promotionResult.ResponseSummary
 
-      $resultsPath = Join-Path -Path $contextDirectory -ChildPath 'DevelopmentTestResults'
-      $testResult = Invoke-PromotedModuleTests `
-        -Name $PackageName `
-        -Version $packageVersion `
-        -Feed $DevelopmentFeed `
-        -Tier $tier `
-        -ResultsPath $resultsPath `
-        -ModuleSourceRoot $ModulePath `
-        -WorkingDirectory $SourcePath `
-        -ProGetBaseUrl $ProGetUrl `
-        -ApiKey $ProGetApiKey `
-        -PesterOutputVerbosity None
-      Assert-BuildMasterOperationSucceeded -Result $testResult -OperationName 'Invoke-PromotedModuleTests'
-      Add-BuildMasterPublishTrace -Path $promotionTracePath -Message $testResult.ResponseSummary
-
-      Write-Host "Promoted '$PackageName' version '$packageVersion' to '$DevelopmentFeed' and passed Development tests. Ceiling='$ceilingTier'."
+      default {
+        if ([string]::IsNullOrWhiteSpace($packageVersionForRun)) {
+          $packageVersionForRun = Get-PowerShellModulePackageVersionForRun -ContextDirectory $contextDirectory -NupkgPathFile $NupkgPathFile -PackageName $PackageName
+          Update-PowerShellModulePackageContext -PackageVersion $packageVersionForRun
+        }
+        Invoke-PowerShellModulePromotionAndTests -Tier $tierToRun -PromotedPackageVersion $packageVersionForRun
+      }
     }
 
-    default {
-      throw "PowerShell module BuildMaster runner reached '$tier', but promotion/test execution for this step-compatible runner is not implemented yet."
+    if ([string]::IsNullOrWhiteSpace($packageVersionForRun)) {
+      $packageVersionForRun = Get-PowerShellModulePackageVersionForRun -ContextDirectory $contextDirectory -NupkgPathFile $NupkgPathFile -PackageName $PackageName
+    }
+    Set-PowerShellModuleStageCompleted -ContextDirectory $contextDirectory -ModuleName $ModuleName -Tier $tierToRun -PackageVersion $packageVersionForRun
+
+    $completedTierIndex = $tierOrder.IndexOf($tierToRun)
+    if ($completedTierIndex -lt $ceilingTierIndex) {
+      $nextTier = $tierOrder[$completedTierIndex + 1]
+      Write-Host "PowerShell module stage '$tierToRun' completed; next stage gate '$nextTier' is within ceiling '$ceilingTier', continuing."
+    } elseif ($completedTierIndex + 1 -lt $tierOrder.Count) {
+      $nextTier = $tierOrder[$completedTierIndex + 1]
+      Write-Host "PowerShell module stage '$tierToRun' completed; next stage '$nextTier' exceeds ceiling '$ceilingTier', stopping."
+    } else {
+      Write-Host "PowerShell module stage '$tierToRun' completed at final tier '$ceilingTier'."
     }
   }
 } finally {

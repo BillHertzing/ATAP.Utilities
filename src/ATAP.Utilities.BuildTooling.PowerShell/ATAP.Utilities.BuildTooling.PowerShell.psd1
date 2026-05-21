@@ -131,7 +131,7 @@
     'Save-CopilotCheckpoint', 'Save-SprintRetrospectiveSnapshot', 'Save-SprintWorkSession',
     'Set-BuildMasterApplicationVariables',
     'Set-BuildMasterSprintVariables', 'Set-BuildMasterStableVariables',
-    'Set-DownstreamSharedVSCodeContext', 'Set-TaskComplete',
+    'Set-BuildMasterPipelineStageDeploymentStep', 'Set-DownstreamSharedVSCodeContext', 'Set-TaskComplete',
     'Set-WorkspaceSharedVSCodeReference', 'Set-WorktreeJunctions',
     'Start-BuildMasterPipeline', 'Start-DebugPowerShell',
     'Start-PlanningSession', 'Sync-BuildMasterPlans', 'Sync-RulesToCSV',

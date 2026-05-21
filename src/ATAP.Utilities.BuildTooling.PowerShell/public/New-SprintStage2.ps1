@@ -2,7 +2,7 @@
 # Dot-source private helper functions
 # =====================================================================
 $privateDir = Join-Path $PSScriptRoot '..' 'private'
-foreach ($privateHelperName in @('Set-ClaudeSettingsSymlink.ps1', 'Get-SprintTaskRepositoryNames.ps1')) {
+foreach ($privateHelperName in @('Set-ClaudeSettingsSymlink.ps1', 'Set-UserSettingsSymlink.ps1', 'Get-SprintTaskRepositoryNames.ps1')) {
   $privateHelperPath = Join-Path $privateDir $privateHelperName
   if (Test-Path -LiteralPath $privateHelperPath -PathType Leaf) {
     . $privateHelperPath
@@ -45,6 +45,9 @@ function New-SprintStage2 {
     After all repos are processed the cmdlet also:
       6. Creates a symlink from the SharedVSCode sprint worktree's
          claude-settings.json to ~/.claude/settings.json.
+      6b. Retargets the VS Code user settings symlink
+          ($env:APPDATA\Code\User\settings.json) to point at UserSettings.jsonc
+          in the SharedVSCode sprint worktree via Set-UserSettingsSymlink.
       7. Scaffolds BuildMaster sprint build configurations (DRAFT — see notes).
       8. Creates Bitwarden secure-note items with SQL Server connection strings
          for the ATAPUtilities and AceCommander databases across Development
@@ -440,6 +443,22 @@ function New-SprintStage2 {
     }
 
     # ===================================================================
+    # 6b. Retarget VS Code UserSettings symlink to sprint worktree
+    # ===================================================================
+    $userSettingsLinked = $false
+    $userSettingsError = $null
+
+    try {
+      if ($PSCmdlet.ShouldProcess($svWorktreePath, 'Retarget VS Code UserSettings.jsonc symlink')) {
+        Set-UserSettingsSymlink -SharedVSCodeWorktreePath $svWorktreePath
+        $userSettingsLinked = $true
+      }
+    } catch {
+      $userSettingsError = "Failed to retarget VS Code UserSettings symlink. Exception: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $userSettingsError
+    }
+
+    # ===================================================================
     # 7. Set BuildMaster sprint application variables (Area 7.2-1)
     # Sets SprintNumber, UserName, SprintBranchName for each application.
     # These are consumed by the 5-Stage OtterScript plans and are cleared
@@ -547,6 +566,8 @@ function New-SprintStage2 {
       infrastructure = [PSCustomObject]@{
         claudeSettingsLinked       = $claudeSettingsLinked
         claudeSettingsError        = $claudeSettingsError
+        userSettingsLinked         = $userSettingsLinked
+        userSettingsError          = $userSettingsError
         # PLACEHOLDER: buildMaster fields are draft — values will be empty
         # until BuildMaster API integration is tested and enabled.
         buildMasterVariablesSet    = if ($buildMasterResult) { $buildMasterResult.variablesSet } else { @() }

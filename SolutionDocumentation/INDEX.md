@@ -100,6 +100,16 @@ _Teach / Tell how to create software — per-developer tooling and shell setup._
   `$env:BW_SESSION` and other interactively set variables are visible inside
   VS Code but not in detached agent shells.
   (Philote `f0da7925-1a2d-454d-bf95-f8ae8d0f3e12`.)
+- [ConfigRootKeys and Host Settings](ConfigRootKeys-and-HostSettings.md) —
+  How the PowerShell two-tier global-settings pattern works:
+  `$global:configRootKeys` (the host-invariant vocabulary of settings-key name
+  constants, built by the `ATAP.Utilities.ConfigRootKeys.PowerShell` module via
+  `Set-GlobalConfigRootKeys`) and `$global:settings` (the host/user-specific
+  values, built by `Get-HostSettings` from the ATAP.IAC `HostSettings.ps1`).
+  Covers the three-level value chain, the profile bootstrap order, the canonical
+  `$global:settings[$global:configRootKeys[...]]` access expression, defensive
+  loading in non-interactive agent shells, and the checklist for adding a new
+  setting.
 
 ---
 

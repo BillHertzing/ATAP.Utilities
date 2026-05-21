@@ -294,6 +294,6 @@ variable too.
 | ProGet PS feed          | `powershellget-<tier>`                                                  | ❌          | `New-ProGetFeedSet`                                              |
 | Bitwarden — sprint      | `dbConnectionString-<DB>-<Host>-<Tier>-<User>`                          | ✅          | `New-SprintBitwardenSecrets` (see §4.1)                          |
 | Bitwarden — permanent   | `dbConnectionString-<DB>-<Host>-<Tier>`                                 | ❌          | `New-PermanentBitwardenSecrets`                                  |
-| Worktree / branch       | `<repo>-wt-<N>-Sprint-<NNNN>-work-items`                               | ✅          | `New-SprintStage1` / `New-SprintStage2`                          |
+| Worktree / branch       | `<repo>-wt-<N>-Sprint-<NNNN>-work-items`                               | ✅          | `New-SprintStage1` / `New-SprintStage2` (function definition files; callers must `Import-Module ATAP.Utilities.BuildTooling.PowerShell -Force` or dot-source before invoking) |
 | BuildMaster sprint vars | `SprintNumber`, `UserName`, `SprintBranchName`                          | ✅          | `Set-BuildMasterSprintVariables`                                 |
 | BuildMaster stable vars | feed names/URLs, SQL instances, ReleaseBundle Integration DB secret name | ❌          | `Set-BuildMasterStableVariables` + ReleaseBundle app onboarding  |

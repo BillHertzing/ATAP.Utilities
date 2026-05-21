@@ -47,7 +47,7 @@ The public sprint helpers are driven by two runbooks in the SharedVSCode `.claud
 
 - ProGet feeds are permanent: `nuget-experimental`, `nuget-development`, `nuget-integration`, `nuget-qa`, `nuget-stable`, plus the parallel `powershellget-*` and `universal-*` feed families. See [New-PermanentBitwardenSecrets.ps1](public/New-PermanentBitwardenSecrets.ps1) and [Set-BuildMasterStableVariables.ps1](public/Set-BuildMasterStableVariables.ps1) for permanent provisioning. The old per-sprint ProGet feed helpers were retired in Sprint 0007 (task B08) and live under `Obsolete/private/`.
 
-## .
+## Module Root Files
 
 | File | Purpose |
 | --- | --- |
@@ -257,7 +257,7 @@ Retired in Sprint 0007 task B08. Retained for provenance only — no active cmdl
 | [New-ReleaseManifest.ps1](public/New-ReleaseManifest.ps1) | Generates the Release Bundle manifest.json from a build context and DB release-unit YAML. |
 | [New-SprintBitwardenSecrets.ps1](public/New-SprintBitwardenSecrets.ps1) | Creates per-sprint Bitwarden secure-note items containing SQL Server connection strings for the Development and Experimental instances. |
 | [New-SprintSqlServerInstances.ps1](public/New-SprintSqlServerInstances.ps1) | Creates the `Dev<username>` and `Exp<username>` SQL Server named instances for the sprint environment and builds all target databases from scratch using Flyway migrations. |
-| [New-SprintStage1.ps1](public/New-SprintStage1.ps1) | Bootstraps Stage 1 of a new sprint: determines the sprint number, creates SharedVSCode and _Planning branches/workTrees, creates NTFS junctions, and applies SharedVSCode context... |
+| [New-SprintStage1.ps1](public/New-SprintStage1.ps1) | **Function definition file** — dot-source or `Import-Module` before calling. Bootstraps Stage 1 of a new sprint: determines the sprint number, creates SharedVSCode and _Planning branches/workTrees, creates NTFS junctions, and applies SharedVSCode context... |
 | [New-SprintStage2.ps1](public/New-SprintStage2.ps1) | Creates downstream repo sprint branches, workTrees, NTFS junctions, applies SharedVSCode context, symlinks claude-settings.json, scaffolds BuildMaster sprint builds, creates Bit... |
 | [New-WorktreeWithJunctions.ps1](public/New-WorktreeWithJunctions.ps1) | Creates a git worktree and recreates all junction points from the source repository. |
 | [Promote-ProGetPackage.ps1](public/Promote-ProGetPackage.ps1) | Promotes a package from one ProGet feed to another by wrapping Move-ProGetPackageInterTier with the canonical immutable-pipeline parameter names (Name, Version, FromFeed, ToFeed... |

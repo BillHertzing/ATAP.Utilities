@@ -60,7 +60,8 @@ in _Planning sprint worktree
 ' ─────────────────────────────────────────────────────────────
 |"Stage 1: Planning and SharedVSCode"|
 
-#e1d5e7: <b>Run New-SprintStage1</b> ;
+#e1d5e7: <b>Run New-SprintStage1</b>
+<i>Import-Module first; function definition file — no top-level execution on load</i> ;
 
 #fff2cc: <b>Determine SprintNumber</b>
 <i>Explicit parameter or latest retrospective</i> ;

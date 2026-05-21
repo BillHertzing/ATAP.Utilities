@@ -692,3 +692,128 @@ The new computer is ready for a developer when all of the following are true:
 9. GitHub MCP token, server, VS Code settings, and API access validation pass.
 
 At that point the workstation can serve as a fully functional developer machine.
+
+## Google Antigravity setup on a new Windows 11 computer
+
+Use the steps in this section to install Google Antigravity on a new workstation and connect it to the current sprint's local repositories.
+
+### Install prerequisites
+
+1. Install Google Antigravity using the vendor-supported installer or package source used by the team.
+2. Sign in with the account used for development work.
+3. Verify Git is installed and available on `PATH`.
+4. Verify Visual Studio Code is installed and available on `PATH`.
+5. Verify PowerShell 7 is installed and available on `PATH`.
+
+### Repo discovery model
+
+Antigravity should not be configured with a hard-coded list of repository paths because the workspace file changes every sprint.
+
+Instead, the local configuration should be generated from the current sprint's `.code-workspace` file, for example:
+
+```text
+C:\Dropbox\whertzing\GitHub\OverviewSprint0007.code-workspace
+```
+
+Each new sprint creates a new workspace file, so the authoritative source for the repo list is the active sprint workspace file, not a static Antigravity configuration checked in once.
+
+### Recommended configuration approach
+
+Configure Antigravity so its list of connected repositories is rebuilt from the current workspace file whenever `SprintStartAgent` creates a new sprint workspace and whenever `SprintEndAgent` closes out a sprint.
+
+Recommended pattern:
+
+1. Keep a small generated Antigravity config file outside the repo or in a machine-local ignored path.
+2. Have `SprintStartAgent` determine the active workspace file for the new sprint.
+3. Parse the `folders` collection in that `.code-workspace` file.
+4. Resolve each folder path to an absolute local path.
+5. Rewrite the Antigravity repo connection file or invoke the Antigravity CLI/API to register those repos.
+6. Optionally remove repos no longer present in the active sprint workspace.
+7. Have `SprintEndAgent` either clear the repo list or switch Antigravity to the next active workspace, depending on the sprint workflow.
+
+### PowerShell implementation guidance
+
+Add or maintain a PowerShell helper that accepts the current workspace path and emits the repo list in the format expected by Antigravity.
+
+Suggested contract:
+
+```powershell
+Set-AntigravityWorkspaceRepos `
+  -WorkspacePath 'C:\Dropbox\whertzing\GitHub\OverviewSprint0007.code-workspace' `
+  -AntigravityConfigPath "$env:LOCALAPPDATA\Google\Antigravity\repos.json"
+```
+
+Suggested behavior:
+
+- Read the workspace file as JSON.
+- Expand every entry under `folders`.
+- Normalize relative paths against the workspace file directory.
+- Preserve only paths that currently exist.
+- Write the resolved repo list to the Antigravity configuration store.
+- Make the script idempotent so `SprintStartAgent` and `SprintEndAgent` can run it repeatedly without duplicating entries.
+
+### Example PowerShell sketch
+
+```powershell
+function Set-AntigravityWorkspaceRepos {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory)]
+    [string] $WorkspacePath,
+
+    [Parameter(Mandatory)]
+    [string] $AntigravityConfigPath
+  )
+
+  $workspace = Get-Content -Raw -Path $WorkspacePath | ConvertFrom-Json
+  $workspaceDirectory = Split-Path -Parent $WorkspacePath
+
+  $repoPaths = foreach ($folder in $workspace.folders) {
+    $candidate = if ($folder.path -match '^[A-Za-z]:\\') {
+      $folder.path
+    }
+    else {
+      [System.IO.Path]::GetFullPath((Join-Path $workspaceDirectory $folder.path))
+    }
+
+    if (Test-Path -LiteralPath $candidate) {
+      $candidate
+    }
+  }
+
+  $repoPaths = $repoPaths | Sort-Object -Unique
+
+  $payload = [ordered]@{
+    generatedFromWorkspace = $WorkspacePath
+    generatedOn = (Get-Date).ToString('s')
+    repositories = @($repoPaths | ForEach-Object {
+      [ordered]@{ path = $_ }
+    })
+  }
+
+  $parent = Split-Path -Parent $AntigravityConfigPath
+  if (-not (Test-Path -LiteralPath $parent)) {
+    New-Item -ItemType Directory -Path $parent -Force | Out-Null
+  }
+
+  $payload | ConvertTo-Json -Depth 5 | Set-Content -Path $AntigravityConfigPath -Encoding utf8
+}
+```
+
+### Agent integration points
+
+`SprintStartAgent` should:
+
+- Create the new sprint workspace file.
+- Call `Set-AntigravityWorkspaceRepos` with that workspace file.
+- Launch or refresh Antigravity if needed so it reloads the updated repo list.
+
+`SprintEndAgent` should:
+
+- Determine whether the sprint is being archived, replaced, or rolled forward.
+- Either clear Antigravity's repo list, or repoint it to the next workspace file.
+- Call the same helper so there is only one code path for repo synchronization.
+
+### Maintenance note
+
+Document the Antigravity integration in terms of an active workspace file and a generated local config, rather than naming a specific sprint file such as `OverviewSprint0007.code-workspace`, because that filename changes every sprint.

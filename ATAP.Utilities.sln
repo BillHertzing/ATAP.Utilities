@@ -259,7 +259,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Timers.Interfaces", "src\AT
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Timers", "src\ATAP.Services.Timers\Timers.csproj", "{478E5417-F7A3-44B6-8180-FAE6D2CD9C62}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Service.Service01", "src\ATAP.Service.Service01\ATAP.Service.Service01.csproj", "{0FFAA494-929F-465D-A39D-229AF32914DA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Service.Service01", "samples\ATAP.Service.Service01\ATAP.Service.Service01.csproj", "{0FFAA494-929F-465D-A39D-229AF32914DA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.FileIO", "src\ATAP.Utilities.FIleIO\ATAP.Utilities.FileIO.csproj", "{981D1A7A-DC30-4F93-8247-F2AD6D09E4EC}"
 EndProject
@@ -451,7 +451,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Images", "Images", "{A1B2C3
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Loader", "Loader", "{A1B2C3D4-0004-4004-8004-000000000004}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Service.Service02", "src\ATAP.Service.Service02\ATAP.Service.Service02.csproj", "{B1000001-0001-4001-A001-000000000001}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Service.Service02", "samples\ATAP.Service.Service02\ATAP.Service.Service02.csproj", "{B1000001-0001-4001-A001-000000000001}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.BuildTooling.Jenkins", "src\ATAP.Utilities.BuildTooling.Jenkins\ATAP.Utilities.BuildTooling.Jenkins.csproj", "{B1000002-0002-4002-A002-000000000002}"
 EndProject
@@ -499,29 +499,29 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenerateProgram.Tests", "te
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Console", "Console", "{1A8F5890-3F69-11EB-9FD8-913B36525608}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.CodeAnalysis", "src\ATAP.Console.CodeAnalysis\ATAP.Console.CodeAnalysis.csproj", "{93A62826-F6BD-435D-87B4-E413AFFF5D74}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.CodeAnalysis", "samples\ATAP.Console.CodeAnalysis\ATAP.Console.CodeAnalysis.csproj", "{93A62826-F6BD-435D-87B4-E413AFFF5D74}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console01", "src\ATAP.Console.Console01\ATAP.Console.Console01.csproj", "{6ED198E7-653B-4454-BBC3-E341593F6065}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console01", "samples\ATAP.Console.Console01\ATAP.Console.Console01.csproj", "{6ED198E7-653B-4454-BBC3-E341593F6065}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console01.StringConstants", "src\ATAP.Console.Console01.StringConstants\ATAP.Console.Console01.StringConstants.csproj", "{1A921845-35F7-454E-99BE-573326CB5D31}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console01.StringConstants", "samples\ATAP.Console.Console01.StringConstants\ATAP.Console.Console01.StringConstants.csproj", "{1A921845-35F7-454E-99BE-573326CB5D31}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console02", "src\ATAP.Console.Console02\ATAP.Console.Console02.csproj", "{3C4064F2-FCB3-4638-886D-49E3099C4299}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console02", "samples\ATAP.Console.Console02\ATAP.Console.Console02.csproj", "{3C4064F2-FCB3-4638-886D-49E3099C4299}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console02.StringConstants", "src\ATAP.Console.Console02.StringConstants\ATAP.Console.Console02.StringConstants.csproj", "{7E9D3E08-B004-4DEB-804A-DC54533AB06E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console02.StringConstants", "samples\ATAP.Console.Console02.StringConstants\ATAP.Console.Console02.StringConstants.csproj", "{7E9D3E08-B004-4DEB-804A-DC54533AB06E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console03", "src\ATAP.Console.Console03\ATAP.Console.Console03.csproj", "{5E48407C-9D88-486E-BB30-21195F5C94D4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console03", "samples\ATAP.Console.Console03\ATAP.Console.Console03.csproj", "{5E48407C-9D88-486E-BB30-21195F5C94D4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console03.StringConstants", "src\ATAP.Console.Console03.StringConstants\ATAP.Console.Console03.StringConstants.csproj", "{280F901A-B248-4E1C-8137-B03AB2121870}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console03.StringConstants", "samples\ATAP.Console.Console03.StringConstants\ATAP.Console.Console03.StringConstants.csproj", "{280F901A-B248-4E1C-8137-B03AB2121870}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Console.HelloWorld", "src\ATAP.Console.HelloWorld\ATAP.Console.HelloWorld.csproj", "{CC824EFD-F00E-4236-9FF5-904EF5175712}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Console.HelloWorld", "samples\ATAP.Console.HelloWorld\ATAP.Console.HelloWorld.csproj", "{CC824EFD-F00E-4236-9FF5-904EF5175712}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.ManimDemo", "src\ATAP.Console.ManimDemo\ATAP.Console.ManimDemo.csproj", "{CD3EBDE3-4449-4C44-BA04-5C92574FE501}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.ManimDemo", "samples\ATAP.Console.ManimDemo\ATAP.Console.ManimDemo.csproj", "{CD3EBDE3-4449-4C44-BA04-5C92574FE501}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.ManimDemo.Model", "src\ATAP.Console.ManimDemo\Model\ATAP.Console.ManimDemo.Model.csproj", "{C9C7D326-4760-4A8B-A7F8-9400CEE8769B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.ManimDemo.Model", "samples\ATAP.Console.ManimDemo\Model\ATAP.Console.ManimDemo.Model.csproj", "{C9C7D326-4760-4A8B-A7F8-9400CEE8769B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.ManimDemo.StringConstants", "src\ATAP.Console.ManimDemo\StringConstants\ATAP.Console.ManimDemo.StringConstants.csproj", "{0AC4351B-2E20-4263-9DE4-9884A3C74D57}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.ManimDemo.StringConstants", "samples\ATAP.Console.ManimDemo\StringConstants\ATAP.Console.ManimDemo.StringConstants.csproj", "{0AC4351B-2E20-4263-9DE4-9884A3C74D57}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.ManimDemo.DefaultConfiguration", "src\ATAP.Console.ManimDemo\DefaultConfiguration\ATAP.Console.ManimDemo.DefaultConfiguration.csproj", "{4D3D7614-F2BB-482B-8559-3ECC43EBFE9D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.ManimDemo.DefaultConfiguration", "samples\ATAP.Console.ManimDemo\DefaultConfiguration\ATAP.Console.ManimDemo.DefaultConfiguration.csproj", "{4D3D7614-F2BB-482B-8559-3ECC43EBFE9D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

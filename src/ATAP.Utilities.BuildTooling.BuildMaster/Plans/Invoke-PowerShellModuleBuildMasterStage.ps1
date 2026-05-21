@@ -400,10 +400,10 @@ if (-not [string]::IsNullOrWhiteSpace($Stage)) {
 }
 
 $context = Get-BuildContext @contextParameters
-$allowDecisions = Get-BuildMasterAllowDecisions -CeilingTier $context.CeilingTier
 $existingContext = Read-BuildMasterRunContextJson -ContextDirectory $contextDirectory
 $capturedResolvedVersion = [string]$context.ResolvedPackageVersion
 $capturedPrereleaseLabel = [string]$context.PrereleaseLabel
+$effectiveCeilingTier = [string]$context.CeilingTier
 
 if ($context.CurrentTier -ne 'Experimental') {
   if ($null -eq $existingContext -or [string]::IsNullOrWhiteSpace([string]$existingContext.ResolvedVersion)) {
@@ -411,14 +411,20 @@ if ($context.CurrentTier -ne 'Experimental') {
   }
 
   if ([string]$existingContext.ResolvedVersion -ne [string]$context.ResolvedPackageVersion) {
-    throw "BuildMaster run context '$contextDirectory' captured version '$($existingContext.ResolvedVersion)', but this stage resolved '$($context.ResolvedPackageVersion)'."
+    Write-Host "BuildMaster run context '$contextDirectory' captured version '$($existingContext.ResolvedVersion)' while this stage resolved '$($context.ResolvedPackageVersion)'; continuing with captured immutable package version."
   }
 
   $capturedResolvedVersion = [string]$existingContext.ResolvedVersion
   if (-not [string]::IsNullOrWhiteSpace([string]$existingContext.PrereleaseLabel)) {
     $capturedPrereleaseLabel = [string]$existingContext.PrereleaseLabel
   }
+
+  if (-not [string]::IsNullOrWhiteSpace([string]$existingContext.CeilingTier)) {
+    $effectiveCeilingTier = [string]$existingContext.CeilingTier
+  }
 }
+
+$allowDecisions = Get-BuildMasterAllowDecisions -CeilingTier $effectiveCeilingTier
 
 $stateFiles = [ordered]@{
   CeilingTier       = Join-Path -Path $contextDirectory -ChildPath "$ModuleName.ceiling-tier.tmp"
@@ -433,7 +439,7 @@ $stateFiles = [ordered]@{
 }
 
 Write-BuildMasterRunStateFiles -StateFiles $stateFiles -Values @{
-  CeilingTier       = $context.CeilingTier
+  CeilingTier       = $effectiveCeilingTier
   CurrentTier       = $context.CurrentTier
   ResolvedVersion   = $capturedResolvedVersion
   PrereleaseLabel   = $capturedPrereleaseLabel
@@ -454,7 +460,7 @@ Write-BuildMasterRunContextJson `
   -SourcePath $SourcePath `
   -ProjectPath $ModulePath `
   -CurrentTier $context.CurrentTier `
-  -CeilingTier $context.CeilingTier `
+  -CeilingTier $effectiveCeilingTier `
   -ResolvedVersion $capturedResolvedVersion `
   -PrereleaseLabel $capturedPrereleaseLabel `
   -AllowDecisions $allowDecisions `
@@ -475,7 +481,7 @@ if ([string]::IsNullOrWhiteSpace($NupkgPathFile)) {
 }
 
 $tier = $context.CurrentTier.Trim()
-$ceilingTier = [string]$context.CeilingTier
+$ceilingTier = $effectiveCeilingTier
 $allowByTier = @{
   Experimental = [bool]$allowDecisions['Experimental']
   Development  = [bool]$allowDecisions['Development']

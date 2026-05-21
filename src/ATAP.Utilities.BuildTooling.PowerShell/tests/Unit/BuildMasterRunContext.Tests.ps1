@@ -162,6 +162,7 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
       Join-Path $script:plansDir 'ReleaseBundle-6Stage.otter'
     )
     $script:powerShellRunnerPath = Join-Path $script:plansDir 'Invoke-PowerShellModuleBuildMasterStage.ps1'
+    $script:powerShellContextInitializerPath = Join-Path $script:plansDir 'Initialize-PowerShellModuleBuildContext.ps1'
   }
 
   It 'derives every plan context directory from $BuildMasterId(build)' {
@@ -211,6 +212,18 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
     $text | Should -Not -Match '\[string\]\$PackageVersion'
     $text | Should -Not -Match '-PackageVersion\s+\$PackageVersion'
     $text | Should -Match '\$capturedResolvedVersion'
+  }
+
+  It 'trusts captured PowerShell module package metadata after Experimental when Get-BuildContext drifts' {
+    foreach ($scriptPath in @($script:powerShellRunnerPath, $script:powerShellContextInitializerPath)) {
+      $text = Get-Content -LiteralPath $scriptPath -Raw
+
+      $text | Should -Match 'continuing with captured immutable package version'
+      $text | Should -Match '\$effectiveCeilingTier'
+      $text | Should -Match 'Get-BuildMasterAllowDecisions -CeilingTier \$effectiveCeilingTier'
+      $text | Should -Match '-CeilingTier \$effectiveCeilingTier'
+      $text | Should -Not -Match 'but this stage resolved'
+    }
   }
 
   It 'delegates PowerShell module build/test/pack semantics to Invoke-ModuleBuildWithRetry' {

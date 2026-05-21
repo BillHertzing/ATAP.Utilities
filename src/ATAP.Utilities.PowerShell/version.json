@@ -3,6 +3,6 @@
   "version": "0.1-Alpha.{height}",
   "nuGetPackageVersion": { "semVer": 2 },
   "pathFilters": ["./"],
-  "publicReleaseRefSpec": [".*"]
+  "publicReleaseRefSpec": [".*"],
   "dummybumper": "1"
 }

@@ -133,7 +133,7 @@ function Resolve-BuildMasterPackageModuleName {
     return (Split-Path -Leaf $currentDirectory)
   }
 
-  $defaultModuleName = 'ATAP.Utilities.BuildTooling.PowerShell'
+  $defaultModuleName = 'ATAP.Utilities.PowerShell'
   $defaultProjectPath = Join-Path -Path $currentDirectory -ChildPath "src/$defaultModuleName"
   if (Test-Path -LiteralPath (Join-Path -Path $defaultProjectPath -ChildPath 'version.json') -PathType Leaf) {
     return $defaultModuleName
@@ -178,6 +178,8 @@ function Start-BuildMasterPackagePipeline {
 
 .PARAMETER ModuleName
     Module or package display identity used in the BuildMaster release name.
+    Defaults to `ATAP.Utilities.PowerShell` when it cannot be inferred from
+    `ProjectPath` or the current directory.
 
 .PARAMETER PackageName
     ProGet package ID. Defaults to `ModuleName`.

@@ -299,6 +299,7 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
     $text | Should -Match '-ProGetBaseUrl \$ProGetUrl'
     $text | Should -Match '-ApiKey \$ProGetApiKey'
     $text | Should -Match 'next stage gate'
+    $text | Should -Match "starting promotion/test"
     $text | Should -Not -Match 'promotion/test execution.*not implemented yet'
   }
 
@@ -328,6 +329,7 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
     $text | Should -Match 'Test-ProGetPackageVersionMatch'
     $text | Should -Match 'ExpectedVersion'
     $text | Should -Match 'return \(Test-ProGetPackageVersionMatch -Value \$response -ExpectedVersion \$Version\)'
+    $text | Should -Match '-TimeoutSec 15'
     $text | Should -Match '-FeedName \$destinationFeed'
     $text | Should -Match 'already exists in'
     $text | Should -Match 'No-op:'

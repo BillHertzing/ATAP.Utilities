@@ -294,7 +294,7 @@ function Test-ProGetPackageVersionInFeed {
   }
 
   try {
-    $response = Invoke-RestMethod -Uri $checkUrl -Headers $headers -Method Get -ErrorAction Stop
+    $response = Invoke-RestMethod -Uri $checkUrl -Headers $headers -Method Get -TimeoutSec 15 -ErrorAction Stop
   } catch {
     return $false
   }
@@ -674,6 +674,7 @@ function Invoke-PowerShellModulePromotionAndTests {
     throw "Cannot resolve PowerShellGet promotion feeds for '$previousTier' -> '$Tier'."
   }
 
+  Write-Host "PowerShell module stage '$Tier' starting promotion/test for '$PackageName' version '$PromotedPackageVersion' from '$sourceFeed' to '$destinationFeed'."
   $promotionTracePath = Join-Path -Path $contextDirectory -ChildPath "$ModuleName.$($Tier.ToLowerInvariant()).log"
   Add-BuildMasterPublishTrace -Path $promotionTracePath -Message "Promoting '$PackageName' version '$PromotedPackageVersion' from '$sourceFeed' to '$destinationFeed'. Captured resolved version is '$capturedResolvedVersion'."
 
@@ -684,12 +685,15 @@ function Invoke-PowerShellModulePromotionAndTests {
   Ensure-PSResourceRepository -Name $destinationFeed -Uri $destinationFeedUri
   Add-BuildMasterPublishTrace -Path $promotionTracePath -Message "PSResourceRepository '$destinationFeed' is registered at '$destinationFeedUri'."
 
+  Write-Host "Checking whether '$PackageName' version '$PromotedPackageVersion' already exists in '$destinationFeed' before promotion."
   if (Test-ProGetPackageVersionInFeed -BaseUrl $ProGetUrl -FeedName $destinationFeed -PackageName $PackageName -Version $PromotedPackageVersion -ApiKey $ProGetApiKey) {
+    Write-Host "'$PackageName' version '$PromotedPackageVersion' already exists in '$destinationFeed'; skipping promotion and running $Tier tests."
     $promotionResult = [pscustomobject]@{
       Succeeded       = $true
       ResponseSummary = "No-op: '$PackageName' version '$PromotedPackageVersion' already exists in '$destinationFeed'."
     }
   } else {
+    Write-Host "Promoting '$PackageName' version '$PromotedPackageVersion' from '$sourceFeed' to '$destinationFeed'."
     $promotionResult = Promote-ProGetPackage `
       -Name $PackageName `
       -Version $PromotedPackageVersion `

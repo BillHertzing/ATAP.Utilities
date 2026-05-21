@@ -28,7 +28,7 @@ BeforeAll {
     # cmdlet only uses the file name to derive the module name.
     Set-Content -LiteralPath $psd1Path -Value "@{ ModuleVersion = '1.0.0' }" -Encoding UTF8
 
-    $script:outputPath = Join-Path $script:tempRoot 'out'
+    $script:outputRoot = Join-Path $script:tempRoot 'out'
 }
 
 AfterAll {
@@ -42,7 +42,13 @@ Describe 'New-PSModuleNupkg' -Tag 'Unit' {
     BeforeEach {
         Mock Write-PSFMessage { }
 
-        # Wipe output folder between tests.
+        # Use a fresh output folder for each test. BuildMaster runs under a
+        # service account where transient file handles can make cleanup lag; a
+        # unique directory keeps idempotency checks from seeing prior test
+        # artifacts.
+        $script:outputPath = Join-Path $script:outputRoot ([Guid]::NewGuid().ToString('N'))
+
+        # Wipe output folder between tests if it somehow already exists.
         if (Test-Path -LiteralPath $script:outputPath) {
             Remove-Item -LiteralPath $script:outputPath -Recurse -Force -ErrorAction SilentlyContinue
         }

@@ -7,9 +7,9 @@ function New-BuildMasterRelease {
 
 .DESCRIPTION
     Calls BuildMaster's Native API `POST /api/releases/create` with a JSON
-    body of `ApplicationName`, `ReleaseNumber`, and `PipelineName`, using
-    the `X-ApiKey` header for authentication. The API key value is read
-    in this order:
+    body of `ApplicationName`, `ReleaseNumber`, and `PipelineName`, plus
+    optional `ReleaseName`, using the `X-ApiKey` header for authentication.
+    The API key value is read in this order:
 
       1. `-ApiKey` parameter (explicit).
       2. `$global:settings[$global:configRootKeys['BuildMasterAdminApiKey']]`
@@ -43,6 +43,12 @@ function New-BuildMasterRelease {
     `CSharp-Package-Pipeline`, `PowerShell-Module-Pipeline`,
     `Release-Bundle-Pipeline`).
 
+.PARAMETER ReleaseName
+    Optional display name for the release. For package-triggered builds,
+    pass a human-readable package identity such as
+    `ATAP.Utilities.BuildTooling.PowerShell 0.1.0-Alpha025` so BuildMaster
+    build lists do not show a generic placeholder release.
+
 .PARAMETER BuildMasterBaseUrl
     The BuildMaster base URL (e.g., `https://buildmaster.example/`).
     Falls back to `$global:settings` then to the
@@ -61,6 +67,7 @@ function New-BuildMasterRelease {
       - `Succeeded`         — `[bool]`.
       - `Application`       — pass-through.
       - `ReleaseNumber`     — pass-through.
+      - `ReleaseName`       — pass-through.
       - `PipelineName`      — pass-through.
       - `ReleaseId`         — the BuildMaster release ID (new or existing).
       - `ResponseSummary`   — short human-readable summary; for the
@@ -94,6 +101,9 @@ function New-BuildMasterRelease {
     [string]$PipelineName,
 
     [Parameter(Mandatory = $false)]
+    [string]$ReleaseName,
+
+    [Parameter(Mandatory = $false)]
     [string]$BuildMasterBaseUrl,
 
     [Parameter(Mandatory = $false)]
@@ -103,7 +113,7 @@ function New-BuildMasterRelease {
   begin {
     $fn = 'New-BuildMasterRelease'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn (Application='$Application' ReleaseNumber='$ReleaseNumber' PipelineName='$PipelineName')" -Tag 'Trace'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn (Application='$Application' ReleaseNumber='$ReleaseNumber' ReleaseName='$ReleaseName' PipelineName='$PipelineName')" -Tag 'Trace'
 
     # Load Helpers
     try {
@@ -160,7 +170,11 @@ function New-BuildMasterRelease {
       ApplicationName = $Application
       ReleaseNumber   = $ReleaseNumber
       PipelineName    = $PipelineName
-    } | ConvertTo-Json -Depth 5
+    }
+    if (-not [string]::IsNullOrWhiteSpace($ReleaseName)) {
+      $body['ReleaseName'] = $ReleaseName
+    }
+    $body = $body | ConvertTo-Json -Depth 5
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "POST $createUri (ApiKey='***')" -Tag 'RestCall'
 
@@ -175,6 +189,7 @@ function New-BuildMasterRelease {
         Succeeded       = $false
         Application     = $Application
         ReleaseNumber   = $ReleaseNumber
+        ReleaseName     = $ReleaseName
         PipelineName    = $PipelineName
         ReleaseId       = $null
         ResponseSummary = "WhatIf: planned create of $target"
@@ -246,6 +261,7 @@ function New-BuildMasterRelease {
       Succeeded       = $true
       Application     = $Application
       ReleaseNumber   = $ReleaseNumber
+      ReleaseName     = $ReleaseName
       PipelineName    = $PipelineName
       ReleaseId       = $releaseId
       ResponseSummary = $summary

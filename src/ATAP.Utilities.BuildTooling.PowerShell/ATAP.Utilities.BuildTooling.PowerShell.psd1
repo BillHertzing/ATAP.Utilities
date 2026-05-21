@@ -133,7 +133,7 @@
     'Set-BuildMasterSprintVariables', 'Set-BuildMasterStableVariables',
     'Set-BuildMasterPipelineStageDeploymentStep', 'Set-DownstreamSharedVSCodeContext', 'Set-TaskComplete',
     'Set-WorkspaceSharedVSCodeReference', 'Set-WorktreeJunctions',
-    'Start-BuildMasterPipeline', 'Start-DebugPowerShell',
+    'Start-BuildMasterPackagePipeline', 'Start-BuildMasterPipeline', 'Start-DebugPowerShell',
     'Start-PlanningSession', 'Sync-BuildMasterPlans', 'Sync-RulesToCSV',
     'Test-CodeCoverageGate', 'Test-FailureAcknowledgedGate',
     'Test-PowerShellSyntax', 'Test-PromotionWithinCeiling',

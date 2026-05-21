@@ -290,6 +290,7 @@ Retired in Sprint 0007 task B08. Retained for provenance only — no active cmdl
 | [Set-TaskComplete.ps1](public/Set-TaskComplete.ps1) | Marks one or more task items in TASKS.md as complete under an exclusive file lock. |
 | [Set-WorkspaceSharedVSCodeReference.ps1](public/Set-WorkspaceSharedVSCodeReference.ps1) | Updates the atap.sharedVSCode.templateRef and profile in workspace files. |
 | [Set-WorktreeJunctions.ps1](public/Set-WorktreeJunctions.ps1) | Gets junctions from a source repository and recreates matching junctions in an existing worktree. |
+| [Start-BuildMasterPackagePipeline.ps1](public/Start-BuildMasterPackagePipeline.ps1) | Creates a named BuildMaster release and queues its package build. |
 | [Start-BuildMasterPipeline.ps1](public/Start-BuildMasterPipeline.ps1) | Triggers a BuildMaster build for an existing Application + Release. |
 | [Start-DebugPowerShell.ps1](public/Start-DebugPowerShell.ps1) | Starts the debug power shell workflow. |
 | [Start-PlanningSession.ps1](public/Start-PlanningSession.ps1) | Begin a planning session: pull main, create a GitHub issue, open a worktree branch, generate the session document, and open VS Code — all in one command. |
@@ -471,6 +472,7 @@ Retired in Sprint 0007 task B08. Retained for provenance only — no active cmdl
 | [Set-DownstreamSharedVSCodeContext.Tests.ps1](tests/Unit/Set-DownstreamSharedVSCodeContext.Tests.ps1) | Pester tests for set downstream shared vscode context. |
 | [Set-ProGetServiceDependency.Tests.ps1](tests/Unit/Set-ProGetServiceDependency.Tests.ps1) | Pester tests for set pro get service dependency. |
 | [Set-WorkspaceSharedVSCodeReference.Tests.ps1](tests/Unit/Set-WorkspaceSharedVSCodeReference.Tests.ps1) | Pester tests for set workspace shared vscode reference. |
+| [Start-BuildMasterPackagePipeline.Tests.ps1](tests/Unit/Start-BuildMasterPackagePipeline.Tests.ps1) | Pester tests for start build master package pipeline. |
 | [Start-BuildMasterPipeline.Tests.ps1](tests/Unit/Start-BuildMasterPipeline.Tests.ps1) | Pester tests for start build master pipeline. |
 | [Sync-BuildMasterPlans.Tests.ps1](tests/Unit/Sync-BuildMasterPlans.Tests.ps1) | Pester tests for sync build master plans. |
 | [Sync-RulesToCSV.Tests.ps1](tests/Unit/Sync-RulesToCSV.Tests.ps1) | Pester tests for sync rules to csv. |

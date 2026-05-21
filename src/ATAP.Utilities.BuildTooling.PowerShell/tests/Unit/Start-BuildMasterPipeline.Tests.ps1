@@ -85,6 +85,37 @@ Describe 'Start-BuildMasterPipeline' -Tag 'Unit', 'PromotedModuleHostSensitive' 
       $parsed.PSObject.Properties.Name | Should -Not -Contain 'PipelineName'
       $parsed.PSObject.Properties.Name | Should -Not -Contain 'Reason'
     }
+
+    It 'Includes build-scope variables and normalizes missing dollar prefixes' {
+      $script:capturedBody = $null
+      Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' } -MockWith {
+        $script:capturedBody = $Body
+        [PSCustomObject]@{ id = 1 }
+      }
+      Start-BuildMasterPipeline `
+        -Application 'ATAP.Utilities-PowerShell' `
+        -ReleaseNumber '0.1.0-Alpha025' `
+        -Variables @{
+          '$ModuleName' = 'ATAP.Utilities.BuildTooling.PowerShell'
+          PackageName = 'ATAP.Utilities.BuildTooling.PowerShell'
+          PackageVersion = '0.1.0-Alpha025'
+        } | Out-Null
+
+      $parsed = $script:capturedBody | ConvertFrom-Json
+      $parsed.'$ModuleName' | Should -Be 'ATAP.Utilities.BuildTooling.PowerShell'
+      $parsed.'$PackageName' | Should -Be 'ATAP.Utilities.BuildTooling.PowerShell'
+      $parsed.'$PackageVersion' | Should -Be '0.1.0-Alpha025'
+    }
+  }
+
+  Context 'Variable validation' {
+    It 'Throws when a build variable name is empty' {
+      Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' } -MockWith {
+        [PSCustomObject]@{ id = 1 }
+      }
+      { Start-BuildMasterPipeline -Application 'A' -ReleaseNumber '1.0.0' -Variables @{ '' = 'bad' } } |
+        Should -Throw -ExpectedMessage '*variable names must not be empty*'
+    }
   }
 
   Context 'Auth failure' {

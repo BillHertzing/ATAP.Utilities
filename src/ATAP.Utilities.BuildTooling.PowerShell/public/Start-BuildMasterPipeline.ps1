@@ -10,7 +10,9 @@ function Start-BuildMasterPipeline {
     pair. The pipeline used for the build is the release's currently
     configured pipeline unless `-Pipeline` overrides it. `-Reason` is
     forwarded to BuildMaster as the build's `Reason` field for audit
-    purposes.
+    purposes. Optional `-Variables` entries are forwarded as build-scope
+    variables; keys are normalized to BuildMaster's `$VariableName` body
+    shape.
 
     The base URL and API key are resolved with the same precedence as
     `New-BuildMasterRelease`:
@@ -36,6 +38,11 @@ function Start-BuildMasterPipeline {
 .PARAMETER Reason
     Optional human-readable reason. Forwarded as the build's `Reason`
     field.
+
+.PARAMETER Variables
+    Optional build-scope variables to include in the create-build request.
+    Keys may be provided as `ModuleName` or `$ModuleName`; they are sent as
+    `$ModuleName`.
 
 .PARAMETER BuildMasterBaseUrl
     The BuildMaster base URL. Falls back to `$global:settings` then to
@@ -87,6 +94,9 @@ function Start-BuildMasterPipeline {
 
     [Parameter(Mandatory = $false)]
     [string]$Reason,
+
+    [Parameter(Mandatory = $false)]
+    [hashtable]$Variables,
 
     [Parameter(Mandatory = $false)]
     [string]$BuildMasterBaseUrl,
@@ -158,6 +168,18 @@ function Start-BuildMasterPipeline {
     }
     if (-not [string]::IsNullOrWhiteSpace($Reason)) {
       $payload['Reason'] = $Reason
+    }
+    if ($null -ne $Variables) {
+      foreach ($key in $Variables.Keys) {
+        $variableName = [string]$key
+        if ([string]::IsNullOrWhiteSpace($variableName)) {
+          throw 'BuildMaster build variable names must not be empty.'
+        }
+        if (-not $variableName.StartsWith('$')) {
+          $variableName = '$' + $variableName
+        }
+        $payload[$variableName] = $Variables[$key]
+      }
     }
     $body = $payload | ConvertTo-Json -Depth 5
 

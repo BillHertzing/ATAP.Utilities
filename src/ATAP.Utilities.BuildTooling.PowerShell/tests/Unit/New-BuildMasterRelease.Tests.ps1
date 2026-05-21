@@ -83,6 +83,23 @@ Describe 'New-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {
       $parsed.ReleaseNumber | Should -Be '1.2.3'
       $parsed.PipelineName | Should -Be 'MyPipe'
     }
+
+    It 'Includes ReleaseName in the JSON body when supplied' {
+      $script:capturedBody = $null
+      Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' } -MockWith {
+        $script:capturedBody = $Body
+        [PSCustomObject]@{ id = 3 }
+      }
+      $result = New-BuildMasterRelease `
+        -Application 'ATAP.Utilities-PowerShell' `
+        -ReleaseNumber '0.1.0-Alpha025' `
+        -ReleaseName 'ATAP.Utilities.BuildTooling.PowerShell 0.1.0-Alpha025' `
+        -PipelineName 'global::PowerShellModule-5Stage'
+
+      $parsed = $script:capturedBody | ConvertFrom-Json
+      $parsed.ReleaseName | Should -Be 'ATAP.Utilities.BuildTooling.PowerShell 0.1.0-Alpha025'
+      $result.ReleaseName | Should -Be 'ATAP.Utilities.BuildTooling.PowerShell 0.1.0-Alpha025'
+    }
   }
 
   Context 'Idempotent path: release already exists' {

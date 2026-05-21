@@ -106,6 +106,18 @@ Describe 'Start-BuildMasterPipeline' -Tag 'Unit', 'PromotedModuleHostSensitive' 
       $parsed.'$PackageName' | Should -Be 'ATAP.Utilities.BuildTooling.PowerShell'
       $parsed.'$PackageVersion' | Should -Be '0.1.0-Alpha025'
     }
+
+    It 'Applies a finite timeout to the create-build call' {
+      Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' } -MockWith {
+        [PSCustomObject]@{ id = 1; buildNumber = '1' }
+      }
+
+      Start-BuildMasterPipeline -Application 'A' -ReleaseNumber '1.0.0' | Out-Null
+
+      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter {
+        $Method -eq 'Post' -and $TimeoutSec -eq 30
+      }
+    }
   }
 
   Context 'Variable validation' {

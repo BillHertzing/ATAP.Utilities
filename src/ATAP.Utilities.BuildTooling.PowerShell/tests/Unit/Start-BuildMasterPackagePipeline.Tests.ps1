@@ -89,7 +89,32 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
       $Object -eq "Queueing BuildMaster build for release '0.1.0-Alpha025'."
     }
     Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter {
+      $Object -eq 'Calling BuildMaster release API (timeout 30s).'
+    }
+    Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter {
+      $Object -eq 'Calling BuildMaster build API (timeout 30s).'
+    }
+    Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter {
       $Object -eq "Queued BuildMaster build '23' for release 'ATAP.Utilities.BuildTooling.PowerShell 0.1.0-Alpha025'."
+    }
+  }
+
+  It 'Runs with operator-friendly defaults when invoked without required identity parameters' {
+    Mock Resolve-BuildMasterPackageModuleName { 'ATAP.Utilities.BuildTooling.PowerShell' }
+    Mock Resolve-BuildMasterPackageProjectPath { 'C:\fake\src\ATAP.Utilities.BuildTooling.PowerShell' }
+    Mock Resolve-BuildMasterPackageVersionFromProjectPath { '0.1.0-Beta008' }
+
+    $result = Start-BuildMasterPackagePipeline
+
+    $script:releaseCall['Application'] | Should -Be 'ATAP.Utilities-PowerShell'
+    $script:releaseCall['PipelineName'] | Should -Be 'global::PowerShellModule-5Stage'
+    $script:releaseCall['ReleaseNumber'] | Should -Be '0.1.0-Beta008'
+    $script:releaseCall['ReleaseName'] | Should -Be 'ATAP.Utilities.BuildTooling.PowerShell 0.1.0-Beta008'
+    $script:buildCall['Variables']['$ModuleName'] | Should -Be 'ATAP.Utilities.BuildTooling.PowerShell'
+    $result.Succeeded | Should -BeTrue
+
+    Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter {
+      $Object -eq "ModuleName was not supplied; using 'ATAP.Utilities.BuildTooling.PowerShell'."
     }
   }
 

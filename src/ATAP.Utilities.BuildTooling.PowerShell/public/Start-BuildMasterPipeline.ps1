@@ -209,7 +209,7 @@ function Start-BuildMasterPipeline {
     $buildId = $null
     $buildNumber = $null
     try {
-      $response = Invoke-RestMethod -Method Post -Uri $uri -Headers $headers -ContentType 'application/json' -Body $body
+      $response = Invoke-RestMethod -Method Post -Uri $uri -Headers $headers -ContentType 'application/json' -Body $body -TimeoutSec 30
       if ($null -ne $response) {
         if ($null -ne $response.id)               { $buildId = [string]$response.id }
         elseif ($null -ne $response.buildId)      { $buildId = [string]$response.buildId }

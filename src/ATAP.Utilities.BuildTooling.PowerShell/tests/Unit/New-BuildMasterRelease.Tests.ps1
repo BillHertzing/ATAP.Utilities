@@ -100,6 +100,18 @@ Describe 'New-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {
       $parsed.ReleaseName | Should -Be 'ATAP.Utilities.BuildTooling.PowerShell 0.1.0-Alpha025'
       $result.ReleaseName | Should -Be 'ATAP.Utilities.BuildTooling.PowerShell 0.1.0-Alpha025'
     }
+
+    It 'Applies a finite timeout to the create call' {
+      Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' } -MockWith {
+        [PSCustomObject]@{ id = 4 }
+      }
+
+      New-BuildMasterRelease -Application 'A' -ReleaseNumber '1.0.0' -PipelineName 'P' | Out-Null
+
+      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter {
+        $Method -eq 'Post' -and $TimeoutSec -eq 30
+      }
+    }
   }
 
   Context 'Idempotent path: release already exists' {
@@ -119,6 +131,9 @@ Describe 'New-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {
       $result.Succeeded | Should -BeTrue
       $result.ReleaseId | Should -Be '999'
       $result.ResponseSummary | Should -Be 'idempotent: release already exists'
+      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter {
+        $Method -eq 'Get' -and $TimeoutSec -eq 30
+      }
     }
 
     It 'Falls back to GET when error message contains "already exists" regardless of status code' {

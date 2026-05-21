@@ -100,6 +100,56 @@ function Resolve-BuildMasterPackageVersionFromProjectPath {
   return ('{0}-{1}' -f $moduleVersion, $prerelease)
 }
 
+function Resolve-BuildMasterPackageModuleName {
+  [CmdletBinding()]
+  [OutputType([string])]
+  param(
+    [Parameter(Mandatory = $false)]
+    [string]$ModuleName,
+
+    [Parameter(Mandatory = $false)]
+    [string]$ProjectPath
+  )
+
+  if (-not [string]::IsNullOrWhiteSpace($ModuleName)) {
+    return $ModuleName
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace($ProjectPath)) {
+    $resolvedRaw = (Resolve-Path -LiteralPath $ProjectPath -ErrorAction Stop).ProviderPath
+    $resolvedDirectory = if (Test-Path -LiteralPath $resolvedRaw -PathType Leaf) {
+      Split-Path -Parent $resolvedRaw
+    } else {
+      $resolvedRaw
+    }
+    if (-not (Test-Path -LiteralPath (Join-Path -Path $resolvedDirectory -ChildPath 'version.json') -PathType Leaf)) {
+      throw "ProjectPath '$resolvedDirectory' does not contain a project-adjacent 'version.json'."
+    }
+    return (Split-Path -Leaf $resolvedDirectory)
+  }
+
+  $currentDirectory = (Get-Location).ProviderPath
+  if (Test-Path -LiteralPath (Join-Path -Path $currentDirectory -ChildPath 'version.json') -PathType Leaf) {
+    return (Split-Path -Leaf $currentDirectory)
+  }
+
+  $defaultModuleName = 'ATAP.Utilities.BuildTooling.PowerShell'
+  $defaultProjectPath = Join-Path -Path $currentDirectory -ChildPath "src/$defaultModuleName"
+  if (Test-Path -LiteralPath (Join-Path -Path $defaultProjectPath -ChildPath 'version.json') -PathType Leaf) {
+    return $defaultModuleName
+  }
+
+  $repoRootRaw = & git rev-parse --show-toplevel 2>$null
+  if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace([string]$repoRootRaw)) {
+    $repoDefaultProjectPath = Join-Path -Path ([string]$repoRootRaw).Trim() -ChildPath "src/$defaultModuleName"
+    if (Test-Path -LiteralPath (Join-Path -Path $repoDefaultProjectPath -ChildPath 'version.json') -PathType Leaf) {
+      return $defaultModuleName
+    }
+  }
+
+  throw "ModuleName was not supplied and no default module project could be inferred. Run from a module project folder, pass -ProjectPath, or pass -ModuleName."
+}
+
 function Start-BuildMasterPackagePipeline {
   <#
 .SYNOPSIS
@@ -163,17 +213,14 @@ function Start-BuildMasterPackagePipeline {
   [CmdletBinding(SupportsShouldProcess = $true)]
   [OutputType([PSCustomObject])]
   param(
-    [Parameter(Mandatory = $true)]
-    [ValidateNotNullOrEmpty()]
-    [string]$Application,
+    [Parameter(Mandatory = $false)]
+    [string]$Application = 'ATAP.Utilities-PowerShell',
 
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory = $false)]
     [Alias('Pipeline')]
-    [ValidateNotNullOrEmpty()]
-    [string]$PipelineName,
+    [string]$PipelineName = 'global::PowerShellModule-5Stage',
 
-    [Parameter(Mandatory = $true)]
-    [ValidateNotNullOrEmpty()]
+    [Parameter(Mandatory = $false)]
     [string]$ModuleName,
 
     [Parameter(Mandatory = $false)]
@@ -218,6 +265,17 @@ function Start-BuildMasterPackagePipeline {
   }
 
   process {
+    if ([string]::IsNullOrWhiteSpace($Application)) {
+      throw "Application was empty. Pass -Application or omit it to use the default 'ATAP.Utilities-PowerShell'."
+    }
+    if ([string]::IsNullOrWhiteSpace($PipelineName)) {
+      throw "PipelineName was empty. Pass -PipelineName or omit it to use the default 'global::PowerShellModule-5Stage'."
+    }
+    if ([string]::IsNullOrWhiteSpace($ModuleName)) {
+      $ModuleName = Resolve-BuildMasterPackageModuleName -ModuleName $ModuleName -ProjectPath $ProjectPath
+      Write-Host "ModuleName was not supplied; using '$ModuleName'."
+    }
+
     Write-Host "Starting BuildMaster package pipeline for module '$ModuleName' in application '$Application'."
     $effectivePackageName = if ([string]::IsNullOrWhiteSpace($PackageName)) { $ModuleName } else { $PackageName }
     if ([string]::IsNullOrWhiteSpace($ResolvedPackageVersion)) {
@@ -287,6 +345,7 @@ function Start-BuildMasterPackagePipeline {
     if (-not [string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) { $releaseParams['BuildMasterBaseUrl'] = $BuildMasterBaseUrl }
     if (-not [string]::IsNullOrWhiteSpace($ApiKey)) { $releaseParams['ApiKey'] = $ApiKey }
 
+    Write-Host "Calling BuildMaster release API (timeout 30s)."
     $releaseResult = New-BuildMasterRelease @releaseParams
     Write-Host "Created or confirmed BuildMaster release '$releaseName'."
 
@@ -301,6 +360,7 @@ function Start-BuildMasterPackagePipeline {
     if (-not [string]::IsNullOrWhiteSpace($ApiKey)) { $buildParams['ApiKey'] = $ApiKey }
 
     Write-Host "Queueing BuildMaster build for release '$releaseNumber'."
+    Write-Host "Calling BuildMaster build API (timeout 30s)."
     $buildResult = Start-BuildMasterPipeline @buildParams
     $succeeded = [bool]$releaseResult.Succeeded -and [bool]$buildResult.Succeeded
     $buildNumber = if ($null -ne $buildResult -and $buildResult.PSObject.Properties.Name -contains 'BuildNumber') { [string]$buildResult.BuildNumber } else { '<unknown>' }

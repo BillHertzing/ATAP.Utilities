@@ -202,7 +202,7 @@ function New-BuildMasterRelease {
     $releaseId = $null
     $summary = $null
     try {
-      $response = Invoke-RestMethod -Method Post -Uri $createUri -Headers $headers -ContentType 'application/json' -Body $body
+      $response = Invoke-RestMethod -Method Post -Uri $createUri -Headers $headers -ContentType 'application/json' -Body $body -TimeoutSec 30
       $releaseId = [string]$response.id
       if ([string]::IsNullOrWhiteSpace($releaseId)) {
         # Some BuildMaster responses use 'releaseId' or 'ReleaseId'.
@@ -230,7 +230,7 @@ function New-BuildMasterRelease {
       } elseif ($looksLikeConflict) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Release already exists (HTTP $statusCode). Falling back to GET $getUri" -Tag 'RestCall'
         try {
-          $existing = Invoke-RestMethod -Method Get -Uri $getUri -Headers $headers
+          $existing = Invoke-RestMethod -Method Get -Uri $getUri -Headers $headers -TimeoutSec 30
         } catch {
           $msg = "BuildMaster reported the release already exists but the lookup GET also failed: $($_.Exception.Message)"
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'RestCall'

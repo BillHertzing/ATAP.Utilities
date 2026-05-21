@@ -218,11 +218,16 @@ function Start-BuildMasterPackagePipeline {
   }
 
   process {
+    Write-Host "Starting BuildMaster package pipeline for module '$ModuleName' in application '$Application'."
     $effectivePackageName = if ([string]::IsNullOrWhiteSpace($PackageName)) { $ModuleName } else { $PackageName }
     if ([string]::IsNullOrWhiteSpace($ResolvedPackageVersion)) {
+      Write-Host "Resolving package version from project-adjacent version.json for '$ModuleName'."
       $resolvedProjectPath = Resolve-BuildMasterPackageProjectPath -ModuleName $ModuleName -ProjectPath $ProjectPath
       $ResolvedPackageVersion = Resolve-BuildMasterPackageVersionFromProjectPath -ProjectPath $resolvedProjectPath
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Resolved package version '$ResolvedPackageVersion' from '$resolvedProjectPath'."
+      Write-Host "Resolved package version '$ResolvedPackageVersion' from '$resolvedProjectPath'."
+    } else {
+      Write-Host "Using supplied package version '$ResolvedPackageVersion'."
     }
 
     $releaseName = '{0} {1}' -f $ModuleName, $ResolvedPackageVersion
@@ -253,8 +258,10 @@ function Start-BuildMasterPackagePipeline {
     }
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Creating BuildMaster release '$releaseName' ($Application/$releaseNumber) on '$PipelineName'."
+    Write-Host "Creating BuildMaster release '$releaseName' ($Application/$releaseNumber) on '$PipelineName'."
     $target = "BuildMaster release '$releaseName' and build for '$Application'"
     if (-not $PSCmdlet.ShouldProcess($target, 'Create release and queue build')) {
+      Write-Host "WhatIf: would create release '$releaseName' and queue a build."
       return [PSCustomObject]@{
         OperationName          = 'Start-BuildMasterPackagePipeline'
         Succeeded              = $false
@@ -281,6 +288,7 @@ function Start-BuildMasterPackagePipeline {
     if (-not [string]::IsNullOrWhiteSpace($ApiKey)) { $releaseParams['ApiKey'] = $ApiKey }
 
     $releaseResult = New-BuildMasterRelease @releaseParams
+    Write-Host "Created or confirmed BuildMaster release '$releaseName'."
 
     $buildParams = @{
       Application  = $Application
@@ -292,8 +300,11 @@ function Start-BuildMasterPackagePipeline {
     if (-not [string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) { $buildParams['BuildMasterBaseUrl'] = $BuildMasterBaseUrl }
     if (-not [string]::IsNullOrWhiteSpace($ApiKey)) { $buildParams['ApiKey'] = $ApiKey }
 
+    Write-Host "Queueing BuildMaster build for release '$releaseNumber'."
     $buildResult = Start-BuildMasterPipeline @buildParams
     $succeeded = [bool]$releaseResult.Succeeded -and [bool]$buildResult.Succeeded
+    $buildNumber = if ($null -ne $buildResult -and $buildResult.PSObject.Properties.Name -contains 'BuildNumber') { [string]$buildResult.BuildNumber } else { '<unknown>' }
+    Write-Host "Queued BuildMaster build '$buildNumber' for release '$releaseName'."
 
     return [PSCustomObject]@{
       OperationName          = 'Start-BuildMasterPackagePipeline'

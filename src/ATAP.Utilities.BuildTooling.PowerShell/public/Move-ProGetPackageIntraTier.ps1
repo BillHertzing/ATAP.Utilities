@@ -328,11 +328,12 @@ function Move-ProGetPackageIntraTier {
 
         $promoteUrl = "$ProGetBaseUrl/api/promotions/promote"
         $body = @{
-            packageName = $Name
-            version     = $Version
-            fromFeed    = $FromFeed
-            toFeed      = $ToFeed
-            comments    = $Reason
+            # ProGet's PromotePackageInput JSON contract uses "name".
+            name     = $Name
+            version  = $Version
+            fromFeed = $FromFeed
+            toFeed   = $ToFeed
+            comments = $Reason
         }
 
         $response = $null

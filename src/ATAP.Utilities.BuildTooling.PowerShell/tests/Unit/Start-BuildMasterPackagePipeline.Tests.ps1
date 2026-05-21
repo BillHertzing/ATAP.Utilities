@@ -17,6 +17,7 @@ BeforeAll {
 Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   BeforeEach {
     Mock Write-PSFMessage { }
+    Mock Write-Host { }
     $script:releaseCall = $null
     $script:buildCall = $null
 
@@ -66,6 +67,30 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
     $script:releaseCall['ReleaseName'] | Should -Be 'ATAP.Utilities.BuildTooling.PowerShell 0.1.0-Alpha025'
     $script:releaseCall['PipelineName'] | Should -Be 'global::PowerShellModule-5Stage'
     $result.ReleaseName | Should -Be 'ATAP.Utilities.BuildTooling.PowerShell 0.1.0-Alpha025'
+  }
+
+  It 'Writes operator-facing progress to the console' {
+    Start-BuildMasterPackagePipeline `
+      -Application 'ATAP.Utilities-PowerShell' `
+      -PipelineName 'global::PowerShellModule-5Stage' `
+      -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' `
+      -ResolvedPackageVersion '0.1.0-Alpha025' | Out-Null
+
+    Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter {
+      $Object -eq "Starting BuildMaster package pipeline for module 'ATAP.Utilities.BuildTooling.PowerShell' in application 'ATAP.Utilities-PowerShell'."
+    }
+    Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter {
+      $Object -eq "Using supplied package version '0.1.0-Alpha025'."
+    }
+    Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter {
+      $Object -eq "Creating BuildMaster release 'ATAP.Utilities.BuildTooling.PowerShell 0.1.0-Alpha025' (ATAP.Utilities-PowerShell/0.1.0-Alpha025) on 'global::PowerShellModule-5Stage'."
+    }
+    Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter {
+      $Object -eq "Queueing BuildMaster build for release '0.1.0-Alpha025'."
+    }
+    Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter {
+      $Object -eq "Queued BuildMaster build '23' for release 'ATAP.Utilities.BuildTooling.PowerShell 0.1.0-Alpha025'."
+    }
   }
 
   It 'Derives the package version from the inferred module project version.json when no version is supplied' {

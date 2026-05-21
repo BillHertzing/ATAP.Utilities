@@ -278,11 +278,15 @@ function Move-ProGetPackageInterTier {
         # ── Step 2: Move to next tier ─────────────────────────────────────────
         $promoteUrl = "$ProGetBaseUrl/api/promotions/promote"
         $body = @{
-            packageName = $Name
-            version     = $Version
-            fromFeed    = $FromFeed
-            toFeed      = $ToFeed
-            comments    = $Reason
+            # ProGet's PromotePackageInput JSON contract uses "name".
+            # The form-encoded repackage API uses "packageName"; using that
+            # here can produce success-shaped responses without materializing
+            # the package in the target feed on some ProGet versions.
+            name     = $Name
+            version  = $Version
+            fromFeed = $FromFeed
+            toFeed   = $ToFeed
+            comments = $Reason
         }
 
         $response = $null

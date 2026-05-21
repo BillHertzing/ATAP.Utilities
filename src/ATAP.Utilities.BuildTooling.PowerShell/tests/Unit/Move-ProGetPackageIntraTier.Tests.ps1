@@ -13,8 +13,27 @@ BeforeAll {
         function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
     }
 
-    # Stub REST calls globally.
-    function global:Invoke-RestMethod { param([Parameter(ValueFromRemainingArguments = $true)]$rest) return @{} }
+    # Stub REST calls globally and optionally capture calls for payload assertions.
+    function global:Invoke-RestMethod {
+        param(
+            [string]$Uri,
+            [object]$Headers,
+            [string]$Method,
+            [object]$Body,
+            [string]$ContentType,
+            [Parameter(ValueFromRemainingArguments = $true)]$rest
+        )
+        if ($null -ne $global:MoveProGetIntraTierRestCalls) {
+            $global:MoveProGetIntraTierRestCalls.Add([PSCustomObject]@{
+                Uri         = $Uri
+                Headers     = $Headers
+                Method      = $Method
+                Body        = $Body
+                ContentType = $ContentType
+            }) | Out-Null
+        }
+        return @{}
+    }
 
     # Stub Get-PVal.
     function global:Get-PVal {
@@ -32,6 +51,7 @@ BeforeAll {
 Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
   BeforeEach {
     Mock Write-PSFMessage { }
+    $global:MoveProGetIntraTierRestCalls = [System.Collections.Generic.List[object]]::new()
   }
 
   Context 'Phase 2: valid push -> pull moves' {
@@ -181,6 +201,29 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       $result.Promoted | Should -BeTrue
       $result.ScanPassed | Should -BeTrue
+    }
+  }
+
+  Context 'Promotion API payload' {
+    It 'Sends the current ProGet promote JSON contract' {
+      Move-ProGetPackageIntraTier `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed 'powershellget-integration-push' -ToFeed 'powershellget-integration' `
+        -Reason 'unit intra-tier promotion' `
+        -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey | Out-Null
+
+      $postCall = @($global:MoveProGetIntraTierRestCalls | Where-Object { $_.Method -eq 'POST' })[0]
+      $postCall | Should -Not -BeNullOrEmpty
+
+      $payload = $postCall.Body | ConvertFrom-Json
+      $propertyNames = @($payload.PSObject.Properties.Name)
+      $propertyNames | Should -Contain 'name'
+      $propertyNames | Should -Not -Contain 'packageName'
+      $payload.name | Should -Be 'Test.Package'
+      $payload.version | Should -Be '1.0.0'
+      $payload.fromFeed | Should -Be 'powershellget-integration-push'
+      $payload.toFeed | Should -Be 'powershellget-integration'
+      $payload.comments | Should -Be 'unit intra-tier promotion'
     }
   }
 }

@@ -215,5 +215,27 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
         $Method -eq 'POST' -and $TimeoutSec -eq 60
       }
     }
+
+    It 'Sends the current ProGet promote JSON contract' {
+      Move-ProGetPackageInterTier `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed 'powershellget-development' -ToFeed 'powershellget-integration' `
+        -Reason 'unit promotion' `
+        -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey | Out-Null
+
+      Should -Invoke Invoke-RestMethod -Times 1 -Exactly -ParameterFilter {
+        if ($Method -ne 'POST') { return $false }
+
+        $payload = $Body | ConvertFrom-Json
+        $propertyNames = @($payload.PSObject.Properties.Name)
+        $propertyNames -contains 'name' -and
+          $propertyNames -notcontains 'packageName' -and
+          $payload.name -eq 'Test.Package' -and
+          $payload.version -eq '1.0.0' -and
+          $payload.fromFeed -eq 'powershellget-development' -and
+          $payload.toFeed -eq 'powershellget-integration' -and
+          $payload.comments -eq 'unit promotion'
+      }
+    }
   }
 }

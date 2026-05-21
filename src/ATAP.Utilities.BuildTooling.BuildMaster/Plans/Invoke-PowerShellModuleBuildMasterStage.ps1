@@ -685,23 +685,14 @@ function Invoke-PowerShellModulePromotionAndTests {
   Ensure-PSResourceRepository -Name $destinationFeed -Uri $destinationFeedUri
   Add-BuildMasterPublishTrace -Path $promotionTracePath -Message "PSResourceRepository '$destinationFeed' is registered at '$destinationFeedUri'."
 
-  Write-Host "Checking whether '$PackageName' version '$PromotedPackageVersion' already exists in '$destinationFeed' before promotion."
-  if (Test-ProGetPackageVersionInFeed -BaseUrl $ProGetUrl -FeedName $destinationFeed -PackageName $PackageName -Version $PromotedPackageVersion -ApiKey $ProGetApiKey) {
-    Write-Host "'$PackageName' version '$PromotedPackageVersion' already exists in '$destinationFeed'; skipping promotion and running $Tier tests."
-    $promotionResult = [pscustomobject]@{
-      Succeeded       = $true
-      ResponseSummary = "No-op: '$PackageName' version '$PromotedPackageVersion' already exists in '$destinationFeed'."
-    }
-  } else {
-    Write-Host "Promoting '$PackageName' version '$PromotedPackageVersion' from '$sourceFeed' to '$destinationFeed'."
-    $promotionResult = Promote-ProGetPackage `
-      -Name $PackageName `
-      -Version $PromotedPackageVersion `
-      -FromFeed $sourceFeed `
-      -ToFeed $destinationFeed `
-      -Reason "$Tier gate for $ApplicationName $PromotedPackageVersion on $Branch" `
-      -CeilingTier $ceilingTier
-  }
+  Write-Host "Promoting '$PackageName' version '$PromotedPackageVersion' from '$sourceFeed' to '$destinationFeed'."
+  $promotionResult = Promote-ProGetPackage `
+    -Name $PackageName `
+    -Version $PromotedPackageVersion `
+    -FromFeed $sourceFeed `
+    -ToFeed $destinationFeed `
+    -Reason "$Tier gate for $ApplicationName $PromotedPackageVersion on $Branch" `
+    -CeilingTier $ceilingTier
   Assert-BuildMasterOperationSucceeded -Result $promotionResult -OperationName 'Promote-ProGetPackage'
   Add-BuildMasterPublishTrace -Path $promotionTracePath -Message $promotionResult.ResponseSummary
 

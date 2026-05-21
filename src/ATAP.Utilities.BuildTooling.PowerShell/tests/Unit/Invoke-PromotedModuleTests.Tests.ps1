@@ -71,6 +71,7 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
         Mock Remove-Item { }
         Mock Save-PSResource { }
         Mock Invoke-WebRequest { }
+        Mock Start-Sleep { }
         Mock Expand-Archive { }
         Mock Import-Module { }
         Mock Get-ChildItem {
@@ -228,12 +229,34 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             Assert-MockCalled Invoke-WebRequest -Times 1 -Exactly -Scope It -ParameterFilter {
                 $Uri -eq 'http://localhost:50000/nuget/powershellget-development/package/Mod/1.0.0-Alpha001' -and
                 $OutFile -eq 'C:\fake\_generated\_promoted-modules\Mod.1.0.0-Alpha001\Mod.1.0.0-Alpha001.nupkg' -and
-                $Headers['X-ApiKey'] -eq 'secret'
+                $Headers['X-ApiKey'] -eq 'secret' -and
+                $TimeoutSec -eq 30
             }
             Assert-MockCalled Expand-Archive -Times 1 -Exactly -Scope It -ParameterFilter {
                 $LiteralPath -eq 'C:\fake\_generated\_promoted-modules\Mod.1.0.0-Alpha001\Mod.1.0.0-Alpha001.nupkg' -and
                 $DestinationPath -eq 'C:\fake\_generated\_promoted-modules\Mod.1.0.0-Alpha001\package'
             }
+        }
+
+        It 'Retries direct ProGet package download while the promoted package becomes available' {
+            $script:downloadAttempts = 0
+            Mock Invoke-WebRequest {
+                $script:downloadAttempts++
+                if ($script:downloadAttempts -eq 1) {
+                    throw '404 Not Found'
+                }
+            }
+
+            $result = Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0-Beta006' `
+                -Feed 'powershellget-integration' -Tier 'Integration' -ResultsPath 'r' `
+                -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake' `
+                -ProGetBaseUrl 'http://localhost:50000/' -ApiKey 'secret' `
+                -RestoreRetryCount 2 -RestoreRetryDelaySeconds 1
+
+            $result.GatePass | Should -BeTrue
+            $script:downloadAttempts | Should -Be 2
+            Assert-MockCalled Invoke-WebRequest -Times 2 -Exactly -Scope It
+            Assert-MockCalled Start-Sleep -Times 1 -Exactly -Scope It -ParameterFilter { $Seconds -eq 1 }
         }
 
         It 'Throws when Save-PSResource produced no manifest' {

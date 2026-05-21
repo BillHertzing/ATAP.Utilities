@@ -200,4 +200,20 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
       $result.Phase2Mode | Should -BeFalse
     }
   }
+
+  Context 'REST call bounds' {
+    It 'Applies finite timeouts to ProGet verification and promotion calls' {
+      Move-ProGetPackageInterTier `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed 'nuget-development' `
+        -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey | Out-Null
+
+      Should -Invoke Invoke-RestMethod -Times 1 -Exactly -ParameterFilter {
+        $Method -eq 'Get' -and $TimeoutSec -eq 15
+      }
+      Should -Invoke Invoke-RestMethod -Times 1 -Exactly -ParameterFilter {
+        $Method -eq 'POST' -and $TimeoutSec -eq 60
+      }
+    }
+  }
 }

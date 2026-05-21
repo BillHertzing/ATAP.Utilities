@@ -322,16 +322,12 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
     $text | Should -Match 'Captured resolved version'
   }
 
-  It 'skips promotion when the package is already in the destination feed' {
+  It 'lets Promote-ProGetPackage own promotion idempotency without a destination preflight' {
     $text = Get-Content -LiteralPath $script:powerShellRunnerPath -Raw
 
-    $text | Should -Match 'Test-ProGetPackageVersionInFeed'
-    $text | Should -Match 'Test-ProGetPackageVersionMatch'
-    $text | Should -Match 'ExpectedVersion'
-    $text | Should -Match 'return \(Test-ProGetPackageVersionMatch -Value \$response -ExpectedVersion \$Version\)'
-    $text | Should -Match '-TimeoutSec 15'
-    $text | Should -Match '-FeedName \$destinationFeed'
-    $text | Should -Match 'already exists in'
-    $text | Should -Match 'No-op:'
+    $text | Should -Match 'Promoting ''\$PackageName'' version ''\$PromotedPackageVersion'' from ''\$sourceFeed'' to ''\$destinationFeed'''
+    $text | Should -Match 'Promote-ProGetPackage `'
+    $text | Should -Not -Match 'Test-ProGetPackageVersionInFeed -BaseUrl \$ProGetUrl -FeedName \$destinationFeed'
+    $text | Should -Not -Match 'Checking whether .* already exists in .* before promotion'
   }
 }

@@ -94,6 +94,14 @@
     every this many seconds while Pester is running. Defaults to 20; set to 0
     to disable.
 
+.PARAMETER RestoreRetryCount
+    Number of attempts to restore/download the promoted module package. This
+    covers short ProGet feed/index availability delays immediately after a
+    successful promotion. Defaults to 12.
+
+.PARAMETER RestoreRetryDelaySeconds
+    Delay between restore/download attempts. Defaults to 5 seconds.
+
 .OUTPUTS
     [PSCustomObject] with:
       - OperationName    : Always 'Invoke-PromotedModuleTests'.
@@ -181,7 +189,15 @@ function Invoke-PromotedModuleTests {
 
         [Parameter()]
         [ValidateRange(0, [int]::MaxValue)]
-        [int]$PesterProgressInterval = 20
+        [int]$PesterProgressInterval = 20,
+
+        [Parameter()]
+        [ValidateRange(1, 60)]
+        [int]$RestoreRetryCount = 12,
+
+        [Parameter()]
+        [ValidateRange(0, 300)]
+        [int]$RestoreRetryDelaySeconds = 5
     )
 
     begin {
@@ -264,13 +280,41 @@ function Invoke-PromotedModuleTests {
                 }
 
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Downloading promoted module package from '$packageUri'"
-                Invoke-WebRequest -Uri $packageUri -Headers $headers -OutFile $nupkgPath -UseBasicParsing -ErrorAction Stop | Out-Null
+                for ($attempt = 1; $attempt -le $RestoreRetryCount; $attempt++) {
+                    try {
+                        Invoke-WebRequest -Uri $packageUri -Headers $headers -OutFile $nupkgPath -UseBasicParsing -TimeoutSec 30 -ErrorAction Stop | Out-Null
+                        break
+                    } catch {
+                        if ($attempt -ge $RestoreRetryCount) {
+                            throw
+                        }
+
+                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "Promoted module package download attempt $attempt/$RestoreRetryCount failed for '$packageUri': $($_.Exception.Message). Retrying in $RestoreRetryDelaySeconds second(s)."
+                        if ($RestoreRetryDelaySeconds -gt 0) {
+                            Start-Sleep -Seconds $RestoreRetryDelaySeconds
+                        }
+                    }
+                }
                 if (Test-Path -LiteralPath $extractPath) {
                     Remove-Item -LiteralPath $extractPath -Recurse -Force
                 }
                 Expand-Archive -LiteralPath $nupkgPath -DestinationPath $extractPath -Force
             } else {
-                Save-PSResource -Name $Name -Version $Version -Repository $Feed -Path $restorePath -TrustRepository -ErrorAction Stop
+                for ($attempt = 1; $attempt -le $RestoreRetryCount; $attempt++) {
+                    try {
+                        Save-PSResource -Name $Name -Version $Version -Repository $Feed -Path $restorePath -TrustRepository -ErrorAction Stop
+                        break
+                    } catch {
+                        if ($attempt -ge $RestoreRetryCount) {
+                            throw
+                        }
+
+                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "Promoted module Save-PSResource attempt $attempt/$RestoreRetryCount failed for $target from '$Feed': $($_.Exception.Message). Retrying in $RestoreRetryDelaySeconds second(s)."
+                        if ($RestoreRetryDelaySeconds -gt 0) {
+                            Start-Sleep -Seconds $RestoreRetryDelaySeconds
+                        }
+                    }
+                }
             }
 
             $savedManifest = Get-ChildItem -Path $restorePath -Recurse -Filter "$Name.psd1" -ErrorAction SilentlyContinue |

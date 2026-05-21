@@ -325,6 +325,9 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
     $text = Get-Content -LiteralPath $script:powerShellRunnerPath -Raw
 
     $text | Should -Match 'Test-ProGetPackageVersionInFeed'
+    $text | Should -Match 'Test-ProGetPackageVersionMatch'
+    $text | Should -Match 'ExpectedVersion'
+    $text | Should -Match 'return \(Test-ProGetPackageVersionMatch -Value \$response -ExpectedVersion \$Version\)'
     $text | Should -Match '-FeedName \$destinationFeed'
     $text | Should -Match 'already exists in'
     $text | Should -Match 'No-op:'

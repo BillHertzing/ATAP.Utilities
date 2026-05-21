@@ -238,6 +238,53 @@ function Test-ProGetPackageVersionInFeed {
     [string]$ApiKey
   )
 
+  function Test-ProGetPackageVersionMatch {
+    param(
+      [Parameter(Mandatory = $false)]
+      [AllowNull()]
+      [object]$Value,
+
+      [Parameter(Mandatory)]
+      [string]$ExpectedVersion
+    )
+
+    if ($null -eq $Value) {
+      return $false
+    }
+
+    if ($Value -is [string]) {
+      return ([string]$Value -eq $ExpectedVersion)
+    }
+
+    if ($Value -is [System.Collections.IEnumerable]) {
+      foreach ($entry in $Value) {
+        if (Test-ProGetPackageVersionMatch -Value $entry -ExpectedVersion $ExpectedVersion) {
+          return $true
+        }
+      }
+      return $false
+    }
+
+    $propertyNames = @($Value.PSObject.Properties.Name)
+    foreach ($versionProperty in @('version', 'Version', 'packageVersion', 'PackageVersion', 'versionNumber', 'VersionNumber')) {
+      if ($propertyNames -contains $versionProperty) {
+        if ([string]$Value.$versionProperty -eq $ExpectedVersion) {
+          return $true
+        }
+      }
+    }
+
+    foreach ($collectionProperty in @('versions', 'Versions', 'items', 'Items', 'data', 'Data')) {
+      if ($propertyNames -contains $collectionProperty) {
+        if (Test-ProGetPackageVersionMatch -Value $Value.$collectionProperty -ExpectedVersion $ExpectedVersion) {
+          return $true
+        }
+      }
+    }
+
+    return $false
+  }
+
   $trimmedBaseUrl = $BaseUrl.TrimEnd('/')
   $checkUrl = "$trimmedBaseUrl/api/packages/$FeedName/versions" +
     "?name=$([uri]::EscapeDataString($PackageName))&version=$([uri]::EscapeDataString($Version))"
@@ -252,30 +299,7 @@ function Test-ProGetPackageVersionInFeed {
     return $false
   }
 
-  $items = @($response)
-  if ($items.Count -eq 0) {
-    return $false
-  }
-
-  foreach ($item in $items) {
-    if ($item -is [string]) {
-      if ($item -eq $Version) {
-        return $true
-      }
-      continue
-    }
-
-    if ($item.PSObject.Properties.Name -contains 'version') {
-      if ([string]$item.version -eq $Version) {
-        return $true
-      }
-      continue
-    }
-
-    return $true
-  }
-
-  return $false
+  return (Test-ProGetPackageVersionMatch -Value $response -ExpectedVersion $Version)
 }
 
 function Publish-PowerShellModulePackageToExperimental {

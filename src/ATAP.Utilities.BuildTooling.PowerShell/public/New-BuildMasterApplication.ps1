@@ -155,7 +155,7 @@ function New-BuildMasterApplication {
         $resolvedBaseUrl = [Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'User')
       }
       if ([string]::IsNullOrWhiteSpace($resolvedBaseUrl)) {
-        $resolvedBaseUrl = 'http://localhost:8622'
+        $resolvedBaseUrl = 'http://localhost:50017'
       }
 
       $resolvedApiKey = $Key
@@ -215,24 +215,24 @@ function New-BuildMasterApplication {
 
   process {
     $desired = [ordered]@{
-      name                    = $Name
-      description             = $Description
-      groupName               = $GroupName
-      active                  = $Active
-      setupTemplate           = $SetupTemplate
-      buildNumberScheme       = $BuildNumberScheme
-      releaseUsage            = $ReleaseUsage
-      defaultReleaseTemplate  = $DefaultReleaseTemplate
-      allowIssues             = $AllowIssues
-      displayIssues           = $DisplayIssues
-      displayPipelines        = $DisplayPipelines
-      displayScripts          = $DisplayScripts
-      displayConfiguration    = $DisplayConfiguration
-      displayDatabase         = $DisplayDatabase
-      buildPageDescription    = $BuildPageDescription
-      artifactUsage           = $ArtifactUsage
-      artifactAssetDirectory  = $ArtifactAssetDirectory
-      raft                    = if ([string]::IsNullOrWhiteSpace($Raft)) { $null } else { $Raft }
+      name                   = $Name
+      description            = $Description
+      groupName              = $GroupName
+      active                 = $Active
+      setupTemplate          = $SetupTemplate
+      buildNumberScheme      = $BuildNumberScheme
+      releaseUsage           = $ReleaseUsage
+      defaultReleaseTemplate = $DefaultReleaseTemplate
+      allowIssues            = $AllowIssues
+      displayIssues          = $DisplayIssues
+      displayPipelines       = $DisplayPipelines
+      displayScripts         = $DisplayScripts
+      displayConfiguration   = $DisplayConfiguration
+      displayDatabase        = $DisplayDatabase
+      buildPageDescription   = $BuildPageDescription
+      artifactUsage          = $ArtifactUsage
+      artifactAssetDirectory = $ArtifactAssetDirectory
+      raft                   = if ([string]::IsNullOrWhiteSpace($Raft)) { $null } else { $Raft }
     }
 
     try {

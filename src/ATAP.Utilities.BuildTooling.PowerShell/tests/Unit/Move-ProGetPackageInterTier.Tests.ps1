@@ -43,7 +43,12 @@ AfterAll {
 Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
   BeforeEach {
     Mock Write-PSFMessage { }
-    Mock Invoke-RestMethod { @{} }
+    Mock Invoke-RestMethod {
+      if ($Method -eq 'Get') {
+        return , [PSCustomObject]@{ name = 'Test.Package'; version = '1.0.0' }
+      }
+      return ''
+    }
   }
 
   Context 'Auto-destination: Phase 1 (combined feeds)' {
@@ -202,13 +207,13 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
   }
 
   Context 'REST call bounds' {
-    It 'Applies finite timeouts to ProGet verification and promotion calls' {
+    It 'Applies finite timeouts to ProGet verification, promotion, and destination verification calls' {
       Move-ProGetPackageInterTier `
         -Name 'Test.Package' -Version '1.0.0' `
         -FromFeed 'nuget-development' `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey | Out-Null
 
-      Should -Invoke Invoke-RestMethod -Times 1 -Exactly -ParameterFilter {
+      Should -Invoke Invoke-RestMethod -Times 2 -Exactly -ParameterFilter {
         $Method -eq 'Get' -and $TimeoutSec -eq 15
       }
       Should -Invoke Invoke-RestMethod -Times 1 -Exactly -ParameterFilter {
@@ -216,7 +221,7 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
       }
     }
 
-    It 'Sends the current ProGet promote JSON contract' {
+    It 'Sends the current ProGet promote form contract' {
       Move-ProGetPackageInterTier `
         -Name 'Test.Package' -Version '1.0.0' `
         -FromFeed 'powershellget-development' -ToFeed 'powershellget-integration' `
@@ -226,16 +231,53 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
       Should -Invoke Invoke-RestMethod -Times 1 -Exactly -ParameterFilter {
         if ($Method -ne 'POST') { return $false }
 
-        $payload = $Body | ConvertFrom-Json
-        $propertyNames = @($payload.PSObject.Properties.Name)
-        $propertyNames -contains 'name' -and
-          $propertyNames -notcontains 'packageName' -and
-          $payload.name -eq 'Test.Package' -and
-          $payload.version -eq '1.0.0' -and
-          $payload.fromFeed -eq 'powershellget-development' -and
-          $payload.toFeed -eq 'powershellget-integration' -and
-          $payload.comments -eq 'unit promotion'
+        $ContentType -eq 'application/x-www-form-urlencoded' -and
+          $Body.ContainsKey('name') -and
+          -not $Body.ContainsKey('packageName') -and
+          $Body['name'] -eq 'Test.Package' -and
+          $Body['version'] -eq '1.0.0' -and
+          $Body['fromFeed'] -eq 'powershellget-development' -and
+          $Body['toFeed'] -eq 'powershellget-integration' -and
+          $Body['comments'] -eq 'unit promotion'
       }
+    }
+
+    It 'Throws when source verification returns no package rows' {
+      Mock Invoke-RestMethod {
+        if ($Method -eq 'Get') {
+          return @()
+        }
+        return ''
+      }
+
+      {
+        Move-ProGetPackageInterTier `
+          -Name 'Missing.Package' -Version '1.0.0' `
+          -FromFeed 'powershellget-development' -ToFeed 'powershellget-integration' `
+          -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
+      } | Should -Throw -ExpectedMessage "*was not found in source feed 'powershellget-development'*"
+    }
+
+    It 'Throws when promotion returns but the destination feed never exposes the package' {
+      $script:verificationCall = 0
+      Mock Start-Sleep { }
+      Mock Invoke-RestMethod {
+        if ($Method -eq 'Get') {
+          $script:verificationCall++
+          if ($script:verificationCall -eq 1) {
+            return , [PSCustomObject]@{ name = 'Test.Package'; version = '1.0.0' }
+          }
+          return @()
+        }
+        return ''
+      }
+
+      {
+        Move-ProGetPackageInterTier `
+          -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'powershellget-development' -ToFeed 'powershellget-integration' `
+          -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
+      } | Should -Throw -ExpectedMessage "*was not visible in destination feed 'powershellget-integration'*"
     }
   }
 }

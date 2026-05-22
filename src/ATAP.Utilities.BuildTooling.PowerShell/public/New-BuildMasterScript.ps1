@@ -93,7 +93,7 @@ function New-BuildMasterScript {
         $resolvedBaseUrl = [Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'User')
       }
       if ([string]::IsNullOrWhiteSpace($resolvedBaseUrl)) {
-        $resolvedBaseUrl = 'http://localhost:8622'
+        $resolvedBaseUrl = 'http://localhost:50017'
       }
 
       $resolvedApiKey = $Key

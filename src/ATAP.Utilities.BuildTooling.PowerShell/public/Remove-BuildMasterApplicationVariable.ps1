@@ -56,7 +56,7 @@ function Remove-BuildMasterApplicationVariable {
       }
       if ([string]::IsNullOrWhiteSpace($resolvedBaseUrl)) { $resolvedBaseUrl = [Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'Process') }
       if ([string]::IsNullOrWhiteSpace($resolvedBaseUrl)) { $resolvedBaseUrl = [Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'User') }
-      if ([string]::IsNullOrWhiteSpace($resolvedBaseUrl)) { $resolvedBaseUrl = 'http://localhost:8622' }
+      if ([string]::IsNullOrWhiteSpace($resolvedBaseUrl)) { $resolvedBaseUrl = 'http://localhost:50017' }
 
       $resolvedApiKey = $Key
       if ([string]::IsNullOrWhiteSpace($resolvedApiKey) -and $null -ne $global:settings) {

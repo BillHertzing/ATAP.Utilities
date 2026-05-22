@@ -96,6 +96,40 @@ if (-not (Get-Command -Name Write-PSFMessage -CommandType Function -ErrorAction 
   }
 }
 
+# Load Helpers
+try {
+  # ToDo: Remove this when packaging works
+  $temporaryPowerShellHelperRootCandidates = @(
+    (Join-Path -Path $SourcePath -ChildPath 'src/ATAP.Utilities.PowerShell/public'),
+    'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public'
+  )
+
+  foreach ($helperName in @(
+      'Get-ParameterValueFromNeoConfigurationRoot',
+      'Get-ClonedAndModifiedHashtable'
+    )) {
+    if (-not (Get-Command -Name $helperName -CommandType Function -ErrorAction SilentlyContinue)) {
+      $helperPath = $temporaryPowerShellHelperRootCandidates |
+        ForEach-Object { Join-Path -Path $_ -ChildPath "$helperName.ps1" } |
+        Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } |
+        Select-Object -First 1
+
+      if ([string]::IsNullOrWhiteSpace($helperPath)) {
+        throw "Required helper function '$helperName' could not be found under: $($temporaryPowerShellHelperRootCandidates -join '; ')"
+      }
+
+      . $helperPath
+    }
+  }
+
+  Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Global -Force
+}
+catch {
+  $errorMessage = "Failed to load temporary PowerShell helper functions. Exception: $($_.Exception.Message)"
+  Write-PSFMessage -FunctionName 'Invoke-PowerShellModuleBuildMasterStage' -ModuleName 'ATAP.Utilities.BuildTooling.BuildMaster' -Level Error -Message $errorMessage
+  throw
+}
+
 $buildToolingRoot = Split-Path -Parent $BuildToolingModulePath
 
 function Resolve-BuildToolingFunctionFile {
@@ -719,8 +753,7 @@ if (-not $allowByTier.ContainsKey($tier)) {
 }
 
 if (-not $allowByTier[$tier]) {
-  Write-Host "Skipping PowerShell module stage '$tier' because ceiling '$ceilingTier' does not allow it."
-  return
+  throw "PowerShell module stage '$tier' exceeds version ceiling '$ceilingTier' for build '$BuildMasterBuildId'. Refusing deployment so BuildMaster does not advance stages above the package ceiling."
 }
 
 $tierOrder = @(Get-TierOrder)
@@ -750,6 +783,10 @@ try {
     }
 
     if (Test-PowerShellModuleStageCompleted -ContextDirectory $contextDirectory -ModuleName $ModuleName -Tier $tierToRun) {
+      $completedTierIndex = $tierOrder.IndexOf($tierToRun)
+      if ($tierToRun -eq $tier -and $completedTierIndex -ge $ceilingTierIndex) {
+        throw "PowerShell module stage '$tierToRun' already completed for build '$BuildMasterBuildId' and ceiling '$ceilingTier' has been reached. Refusing a successful no-op deployment because BuildMaster would advance the next stage above the ceiling."
+      }
       Write-Host "PowerShell module stage '$tierToRun' already completed for build '$BuildMasterBuildId'; skipping re-execution."
       continue
     }

@@ -26,11 +26,11 @@ through ProGet and run tests against the promoted artifact.
 This document combines the reliable parts of the original installation runbook
 with the later discoveries captured in `Runbook-BuildMasterConfiguration.md`.
 
-| Source | Keep | Replace |
-| --- | --- | --- |
-| `BuildMaster-Install-Runbook.md` | Inedo Hub install steps, SQL/service verification, admin API key bootstrap, service-account notes, first-build troubleshooting. | UI-only pipeline/script setup, stale application catalog, direct script paste instructions. |
-| `Runbook-BuildMasterConfiguration.md` | Three-application target, shared global pipeline names, application variables, Git credential/raft discovery, ProGet poller shape, UI paths observed on 2026-05-14. | Its status as an executable runbook. It is now historical/deprecated. |
-| `ProGet-Install-Runbook.md` | ProGet URL/port, API-key constraints, current feed architecture. | Feed-name drift must be resolved before the PowerShell pipeline is used. See section 10. |
+| Source                                | Keep                                                                                                                                                                | Replace                                                                                     |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `BuildMaster-Install-Runbook.md`      | Inedo Hub install steps, SQL/service verification, admin API key bootstrap, service-account notes, first-build troubleshooting.                                     | UI-only pipeline/script setup, stale application catalog, direct script paste instructions. |
+| `Runbook-BuildMasterConfiguration.md` | Three-application target, shared global pipeline names, application variables, Git credential/raft discovery, ProGet poller shape, UI paths observed on 2026-05-14. | Its status as an executable runbook. It is now historical/deprecated.                       |
+| `ProGet-Install-Runbook.md`           | ProGet URL/port, API-key constraints, current feed architecture.                                                                                                    | Feed-name drift must be resolved before the PowerShell pipeline is used. See section 10.    |
 
 ---
 
@@ -39,16 +39,16 @@ with the later discoveries captured in `Runbook-BuildMasterConfiguration.md`.
 BuildMaster has enough API surface to automate most of the L1 work, but not all
 of it should be generated from scratch on the first pass.
 
-| Question | Answer | Automation stance |
-| --- | --- | --- |
-| Can applications be created via API? | Yes. The Application Management API exposes `POST /api/applications/create`, `clone`, `update`, `purge`, and `list`. ApplicationInfo includes a `raft` property. | Implemented with `New-BuildMasterApplication`; removal/deactivation is implemented with `Remove-BuildMasterApplication`. Omit `-Raft` so BuildMaster uses the default raft. |
-| Can application variables be created via API? | Yes. Variables Management supports entity variables at `/api/variables/application/{app}` and scoped variable objects. Single-variable set cannot create the sensitive flag; bulk/scoped/native calls can carry sensitivity. | Implemented with idempotent `Set-BuildMasterApplicationVariables`; removal is implemented with `Remove-BuildMasterApplicationVariable`. Use sensitive support for `ProGetApiKey`. |
-| Can builds and build variables be created via API? | Yes. `POST /api/releases/builds/create` creates builds and accepts variables as body keys prefixed with `$`. | Extend `Start-BuildMasterPipeline` to accept `-Variables @{ '$ModuleName' = ... }`. |
-| Can releases be created via API? | Yes. The Release & Build Deployment API and Native API both support release creation/update with a pipeline name. | Existing `New-BuildMasterRelease` is the right base function. |
-| Can deployment scripts be created via API? | Yes. Scripts are raft items; the Native API exposes `Rafts_CreateOrUpdateRaftItem` for database rafts. | Implemented with `New-BuildMasterScript` and `Remove-BuildMasterScript`, using default raft `Raft_Id = 1`. |
-| Can pipelines be created via API? | Partially. In BuildMaster 6.2+, pipelines are stored in rafts and no longer have a native pipeline ID. Public docs describe UI creation and raft storage, not a stable high-level pipeline CRUD endpoint. | Bootstrap one known-good global pipeline in the UI, then capture the default-raft item before automating updates. Avoid reverse-engineering pipeline JSON blindly. |
-| Can scripts be assigned to pipeline stages via API? | Partially. The stage-to-script mapping lives inside the pipeline raft item. There is no high-level documented "assign script to stage" REST endpoint in the public docs. | Manage this through a source-controlled pipeline raft file after the local schema is captured; otherwise use the UI for the first pipeline pass. |
-| Can resource monitors be created via API? | Yes, through Native API methods such as `ResourceMonitors_CreateOrUpdateResourceMonitor`, but the configuration payload is extension-specific. | Capture a UI-created monitor payload first, then automate from a manifest. |
+| Question                                            | Answer                                                                                                                                                                                                                       | Automation stance                                                                                                                                                                 |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Can applications be created via API?                | Yes. The Application Management API exposes `POST /api/applications/create`, `clone`, `update`, `purge`, and `list`. ApplicationInfo includes a `raft` property.                                                             | Implemented with `New-BuildMasterApplication`; removal/deactivation is implemented with `Remove-BuildMasterApplication`. Omit `-Raft` so BuildMaster uses the default raft.       |
+| Can application variables be created via API?       | Yes. Variables Management supports entity variables at `/api/variables/application/{app}` and scoped variable objects. Single-variable set cannot create the sensitive flag; bulk/scoped/native calls can carry sensitivity. | Implemented with idempotent `Set-BuildMasterApplicationVariables`; removal is implemented with `Remove-BuildMasterApplicationVariable`. Use sensitive support for `ProGetApiKey`. |
+| Can builds and build variables be created via API?  | Yes. `POST /api/releases/builds/create` creates builds and accepts variables as body keys prefixed with `$`.                                                                                                                 | Extend `Start-BuildMasterPipeline` to accept `-Variables @{ '$ModuleName' = ... }`.                                                                                               |
+| Can releases be created via API?                    | Yes. The Release & Build Deployment API and Native API both support release creation/update with a pipeline name.                                                                                                            | Existing `New-BuildMasterRelease` is the right base function.                                                                                                                     |
+| Can deployment scripts be created via API?          | Yes. Scripts are raft items; the Native API exposes `Rafts_CreateOrUpdateRaftItem` for database rafts.                                                                                                                       | Implemented with `New-BuildMasterScript` and `Remove-BuildMasterScript`, using default raft `Raft_Id = 1`.                                                                        |
+| Can pipelines be created via API?                   | Partially. In BuildMaster 6.2+, pipelines are stored in rafts and no longer have a native pipeline ID. Public docs describe UI creation and raft storage, not a stable high-level pipeline CRUD endpoint.                    | Bootstrap one known-good global pipeline in the UI, then capture the default-raft item before automating updates. Avoid reverse-engineering pipeline JSON blindly.                |
+| Can scripts be assigned to pipeline stages via API? | Partially. The stage-to-script mapping lives inside the pipeline raft item. There is no high-level documented "assign script to stage" REST endpoint in the public docs.                                                     | Manage this through a source-controlled pipeline raft file after the local schema is captured; otherwise use the UI for the first pipeline pass.                                  |
+| Can resource monitors be created via API?           | Yes, through Native API methods such as `ResourceMonitors_CreateOrUpdateResourceMonitor`, but the configuration payload is extension-specific.                                                                               | Capture a UI-created monitor payload first, then automate from a manifest.                                                                                                        |
 
 **Practical conclusion:** Automate applications, application variables,
 default-raft script upload/removal, releases, builds, and build-scope
@@ -60,25 +60,25 @@ captured and can be safely replayed by PowerShell.
 
 ## 3. Target BuildMaster state
 
-| Field | Value |
-| --- | --- |
-| Host | `utat022` |
-| BuildMaster URL | `http://localhost:8622` |
-| SQL Server | `localhost\PRODUCTION` |
-| BuildMaster database | `BuildMaster` |
-| Windows service | `INEDOBMSVC` |
-| Service account | `NetworkService` until a dedicated service account is required |
-| Admin API key env var | `BUILDMASTER_ADMIN_API_KEY` |
-| ProGet URL | `http://localhost:50000` |
+| Field                    | Value                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------ |
+| Host                     | `utat022`                                                                            |
+| BuildMaster URL          | `http://localhost:8622`                                                              |
+| SQL Server               | `localhost\PRODUCTION`                                                               |
+| BuildMaster database     | `BuildMaster`                                                                        |
+| Windows service          | `INEDOBMSVC`                                                                         |
+| Service account          | `NetworkService` until a dedicated service account is required                       |
+| Admin API key env var    | `BUILDMASTER_ADMIN_API_KEY`                                                          |
+| ProGet URL               | `http://localhost:50000`                                                             |
 | ProGet key used by plans | BuildMaster variable `ProGetApiKey`, sourced from the approved ProGet API key secret |
 
 ### Target applications
 
-| BuildMaster Application | Pipeline / plan | Purpose |
-| --- | --- | --- |
-| `ATAP.Utilities-CSharp` | `global::CSharpPackage-5Stage` | Build and promote ATAP.Utilities C# NuGet packages. |
-| `ATAP.Utilities-PowerShell` | `global::PowerShellModule-5Stage` | Build and promote all ATAP.Utilities PowerShell modules through one parameterized application. |
-| `AceCommander-ReleaseBundle` | `global::ReleaseBundle-6Stage` | Build and promote the AceCommander Release Bundle. The Distribution stage remains deferred in Sprint 0007. |
+| BuildMaster Application      | Pipeline / plan                   | Purpose                                                                                                    |
+| ---------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `ATAP.Utilities-CSharp`      | `global::CSharpPackage-5Stage`    | Build and promote ATAP.Utilities C# NuGet packages.                                                        |
+| `ATAP.Utilities-PowerShell`  | `global::PowerShellModule-5Stage` | Build and promote all ATAP.Utilities PowerShell modules through one parameterized application.             |
+| `AceCommander-ReleaseBundle` | `global::ReleaseBundle-6Stage`    | Build and promote the AceCommander Release Bundle. The Distribution stage remains deferred in Sprint 0007. |
 
 `AceCommander-CSharp` may be added later if AceCommander library packages need
 their own C# package application. It is not required for the Stream L target.
@@ -127,7 +127,7 @@ canonical sections so a divergent copy cannot drift here:
 - **Git `safe.directory` for `SvcBuildmaster`** — see
   [NewComputerSetup.md § 9.4](NewComputerSetup.md). Without this, NBGV
   height computation and `Get-BuildContext` fail with `fatal: detected
-  dubious ownership in repository`. Must be run **as `SvcBuildmaster`**, not
+dubious ownership in repository`. Must be run **as `SvcBuildmaster`**, not
   as the interactive developer login.
 - **Machine-wide NBGV install** — see
   [NewComputerSetup.md § 4.4](NewComputerSetup.md). A per-user
@@ -173,7 +173,7 @@ Keep the API key out of runbooks, screenshots, logs, and Git history.
 Use this PowerShell shape for every API-backed step.
 
 ```powershell
-$BuildMasterBaseUrl = 'http://localhost:8622'
+$BuildMasterBaseUrl = 'http://localhost:50017'
 $BuildMasterApiKey = $env:BUILDMASTER_ADMIN_API_KEY
 
 Import-Module 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1' -Force
@@ -301,7 +301,7 @@ because the API's set-all endpoint deletes variables not included in the body.
 For sensitive values, use either:
 
 - the scoped variable endpoint with `{ "name", "value", "application",
-  "sensitive": true }`, or
+"sensitive": true }`, or
 - the Native API `Variables_CreateOrUpdateVariable` with
   `Sensitive_Indicator = Y`.
 
@@ -310,55 +310,55 @@ without clearing the flag, but cannot mark a newly created variable sensitive.
 
 ### 8.2 `ATAP.Utilities-CSharp`
 
-| Variable | Value | Sensitive | Notes |
-| --- | --- | --- | --- |
-| `ApplicationName` | `ATAP.Utilities` | No | Passed to `Get-BuildContext`. |
-| `Branch` | `100-Sprint-0007-work-items` | No | Update each sprint or supply by monitor/poller. |
-| `SourcePath` | `C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber` | No | Durable BuildMaster work path. |
-| `Configuration` | `Release` | No | MSBuild configuration. |
-| `MetaPackageName` | `ATAP.Utilities` | No | Roll-up package ID. |
-| `SolutionPath` | `ATAP.Utilities.sln` | No | Required by `CSharpPackage-5Stage.otter`. |
-| `ProjectPath` | Project directory or `.csproj` path | No | Passed to `Get-BuildContext -ProjectPath` so NBGV reads the project-adjacent `version.json`. |
-| `ProGetApiKey` | From approved ProGet secret | Yes | Never paste into this document. |
+| Variable          | Value                                               | Sensitive | Notes                                                                                        |
+| ----------------- | --------------------------------------------------- | --------- | -------------------------------------------------------------------------------------------- |
+| `ApplicationName` | `ATAP.Utilities`                                    | No        | Passed to `Get-BuildContext`.                                                                |
+| `Branch`          | `100-Sprint-0007-work-items`                        | No        | Update each sprint or supply by monitor/poller.                                              |
+| `SourcePath`      | `C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber` | No        | Durable BuildMaster work path.                                                               |
+| `Configuration`   | `Release`                                           | No        | MSBuild configuration.                                                                       |
+| `MetaPackageName` | `ATAP.Utilities`                                    | No        | Roll-up package ID.                                                                          |
+| `SolutionPath`    | `ATAP.Utilities.sln`                                | No        | Required by `CSharpPackage-5Stage.otter`.                                                    |
+| `ProjectPath`     | Project directory or `.csproj` path                 | No        | Passed to `Get-BuildContext -ProjectPath` so NBGV reads the project-adjacent `version.json`. |
+| `ProGetApiKey`    | From approved ProGet secret                         | Yes       | Never paste into this document.                                                              |
 
 ### 8.3 `ATAP.Utilities-PowerShell`
 
 Application-scope variables:
 
-| Variable | Value | Sensitive | Notes |
-| --- | --- | --- | --- |
-| `ApplicationName` | `ATAP.Utilities-PowerShell` | No | BuildMaster application identity. |
-| `Branch` | `100-Sprint-0007-work-items` | No | Update each sprint or supply by monitor/poller. |
-| `SourcePath` | `C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber` | No | Durable BuildMaster work path. |
-| `ProGetApiKey` | From approved ProGet secret | Yes | Never paste into this document. |
+| Variable          | Value                                               | Sensitive | Notes                                           |
+| ----------------- | --------------------------------------------------- | --------- | ----------------------------------------------- |
+| `ApplicationName` | `ATAP.Utilities-PowerShell`                         | No        | BuildMaster application identity.               |
+| `Branch`          | `100-Sprint-0007-work-items`                        | No        | Update each sprint or supply by monitor/poller. |
+| `SourcePath`      | `C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber` | No        | Durable BuildMaster work path.                  |
+| `ProGetApiKey`    | From approved ProGet secret                         | Yes       | Never paste into this document.                 |
 
 Build-scope variables supplied when creating a build:
 
-| Variable | Example | Notes |
-| --- | --- | --- |
-| `$ModuleName` | `ATAP.Utilities.BuildTooling.PowerShell` | Module folder under `src\`. |
-| `$PackageName` | `ATAP.Utilities.BuildTooling.PowerShell` | Usually equals `ModuleName`. |
-| `$PackageVersion` | `0.1.0-Sprint.42` | Exact version detected in ProGet. |
-| `$Tier` | `Experimental` | Current BuildMaster stage context. The plan computes `$CeilingTier` from the module's `version.json`; do not configure `$CeilingTier` manually. |
+| Variable          | Example                                  | Notes                                                                                                                                           |
+| ----------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `$ModuleName`     | `ATAP.Utilities.BuildTooling.PowerShell` | Module folder under `src\`.                                                                                                                     |
+| `$PackageName`    | `ATAP.Utilities.BuildTooling.PowerShell` | Usually equals `ModuleName`.                                                                                                                    |
+| `$PackageVersion` | `0.1.0-Sprint.42`                        | Exact version detected in ProGet.                                                                                                               |
+| `$Tier`           | `Experimental`                           | Current BuildMaster stage context. The plan computes `$CeilingTier` from the module's `version.json`; do not configure `$CeilingTier` manually. |
 
 ### 8.4 `AceCommander-ReleaseBundle`
 
-| Variable | Value | Sensitive | Notes |
-| --- | --- | --- | --- |
-| `ApplicationName` | `AceCommander-ReleaseBundle` | No | BuildMaster application identity. |
-| `ProductName` | `AceCommander` | No | Passed to `Get-BuildContext`. |
-| `ReleaseTag` | Empty until release cut | No | Example: `v1.4.0`. |
-| `Branch` | Current release or sprint branch | No | Fallback when `ReleaseTag` is empty. |
-| `SourcePath` | `C:\BuildMaster\work\AceCommander\$ReleaseNumber` | No | Durable product work path; also passed as `Get-BuildContext -ProjectPath` because the bundle uses the repo-root `version.json`. |
-| `ProGetUrl` | `http://localhost:50000` | No | Host-specific ProGet URL. |
-| `ProGetApiKey` | From approved ProGet secret | Yes | Never paste into this document. |
-| `ReleaseBundleExperimentalFeedName` | `releasebundle-experimental` | No | Universal Package feed. |
-| `ReleaseBundleDevelopmentFeedName` | `releasebundle-development` | No | Universal Package feed. |
-| `ReleaseBundleIntegrationFeedName` | `releasebundle-integration` | No | Universal Package feed. |
-| `ReleaseBundleQAFeedName` | `releasebundle-qa` | No | Universal Package feed. |
-| `ReleaseBundleProductionFeedName` | `releasebundle-production` | No | Universal Package feed. |
-| `PreviousProductionBackupPath` | Approved `.bak` path | No | Required for Integration Flyway rehearsal. |
-| `IntegrationDatabaseBitwardenSecretName` | `dbConnectionString-AceCommander-utat022-Integration` | No | Used by `Invoke-FlywayRehearsal`. |
+| Variable                                 | Value                                                 | Sensitive | Notes                                                                                                                           |
+| ---------------------------------------- | ----------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `ApplicationName`                        | `AceCommander-ReleaseBundle`                          | No        | BuildMaster application identity.                                                                                               |
+| `ProductName`                            | `AceCommander`                                        | No        | Passed to `Get-BuildContext`.                                                                                                   |
+| `ReleaseTag`                             | Empty until release cut                               | No        | Example: `v1.4.0`.                                                                                                              |
+| `Branch`                                 | Current release or sprint branch                      | No        | Fallback when `ReleaseTag` is empty.                                                                                            |
+| `SourcePath`                             | `C:\BuildMaster\work\AceCommander\$ReleaseNumber`     | No        | Durable product work path; also passed as `Get-BuildContext -ProjectPath` because the bundle uses the repo-root `version.json`. |
+| `ProGetUrl`                              | `http://localhost:50000`                              | No        | Host-specific ProGet URL.                                                                                                       |
+| `ProGetApiKey`                           | From approved ProGet secret                           | Yes       | Never paste into this document.                                                                                                 |
+| `ReleaseBundleExperimentalFeedName`      | `releasebundle-experimental`                          | No        | Universal Package feed.                                                                                                         |
+| `ReleaseBundleDevelopmentFeedName`       | `releasebundle-development`                           | No        | Universal Package feed.                                                                                                         |
+| `ReleaseBundleIntegrationFeedName`       | `releasebundle-integration`                           | No        | Universal Package feed.                                                                                                         |
+| `ReleaseBundleQAFeedName`                | `releasebundle-qa`                                    | No        | Universal Package feed.                                                                                                         |
+| `ReleaseBundleProductionFeedName`        | `releasebundle-production`                            | No        | Universal Package feed.                                                                                                         |
+| `PreviousProductionBackupPath`           | Approved `.bak` path                                  | No        | Required for Integration Flyway rehearsal.                                                                                      |
+| `IntegrationDatabaseBitwardenSecretName` | `dbConnectionString-AceCommander-utat022-Integration` | No        | Used by `Invoke-FlywayRehearsal`.                                                                                               |
 
 ### 8.5 Automation call
 
@@ -411,12 +411,12 @@ The implemented script functions target Native API raft item storage with
 
 Canonical authored files:
 
-| File | Role |
-| --- | --- |
-| `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/CSharpPackage-5Stage.otter` | C# package immutable deployment script. |
-| `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/PowerShellModule-5Stage.otter` | PowerShell module immutable deployment script. |
-| `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/ReleaseBundle-6Stage.otter` | Release bundle immutable deployment script; Distribution block deferred. |
-| `src/ATAP.Utilities.BuildTooling.BuildMaster/Scripts/Resolve-FeedName.ps1` | Supporting script. |
+| File                                                                              | Role                                                                     |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/CSharpPackage-5Stage.otter`    | C# package immutable deployment script.                                  |
+| `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/PowerShellModule-5Stage.otter` | PowerShell module immutable deployment script.                           |
+| `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/ReleaseBundle-6Stage.otter`    | Release bundle immutable deployment script; Distribution block deferred. |
+| `src/ATAP.Utilities.BuildTooling.BuildMaster/Scripts/Resolve-FeedName.ps1`        | Supporting script.                                                       |
 
 Upload the three stage scripts into the default raft:
 
@@ -461,11 +461,11 @@ UI verification:
 
 The desired global pipelines are:
 
-| Pipeline | Stages | Script/plan |
-| --- | --- | --- |
-| `global::CSharpPackage-5Stage` | Experimental, Development, Integration, QA, Production | `CSharpPackage-5Stage.otter` |
-| `global::PowerShellModule-5Stage` | Experimental, Development, Integration, QA, Production | `PowerShellModule-5Stage.otter` |
-| `global::ReleaseBundle-6Stage` | Experimental, Development, Integration, QA, Production | `ReleaseBundle-6Stage.otter`; do not wire Distribution in Sprint 0007 |
+| Pipeline                          | Stages                                                 | Script/plan                                                           |
+| --------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------- |
+| `global::CSharpPackage-5Stage`    | Experimental, Development, Integration, QA, Production | `CSharpPackage-5Stage.otter`                                          |
+| `global::PowerShellModule-5Stage` | Experimental, Development, Integration, QA, Production | `PowerShellModule-5Stage.otter`                                       |
+| `global::ReleaseBundle-6Stage`    | Experimental, Development, Integration, QA, Production | `ReleaseBundle-6Stage.otter`; do not wire Distribution in Sprint 0007 |
 
 Pipeline creation and stage-to-script assignment remain UI steps for this
 iteration because the public API documentation does not expose a stable
@@ -589,23 +589,23 @@ Implemented functions live in
 mock `Invoke-RestMethod` and verify URI, method, body, idempotency, and default
 raft behavior.
 
-| Function | API surface | Status | Notes |
-| --- | --- | --- | --- |
-| `New-BuildMasterApplication` | Application Management `list`, `create`, `update` | Implemented | Fully parameterized ApplicationInfo wrapper. Omit `-Raft` for default raft. |
-| `Set-BuildMasterApplicationVariables` | Variables Management entity and scoped endpoints | Implemented | Accepts a hashtable; simple values are idempotent; sensitive/evaluate values use scoped variable objects. |
-| `New-BuildMasterScript` | Native `Rafts_GetRaftItems`, `Rafts_CreateOrUpdateRaftItem` | Implemented | Accepts `-ScriptContent` or `-Path`; uses default raft `Raft_Id = 1`. |
-| `Remove-BuildMasterScript` | Native `Rafts_GetRaftItems`, `Rafts_DeleteRaftItem` | Implemented | Removes default-raft script items by name and optional application scope. |
-| `Remove-BuildMasterApplicationVariable` | Variables Management entity delete | Implemented | Deletes one or more application variables; missing variables are no-ops. |
-| `Remove-BuildMasterApplication` | Application Management `list`, `update`, `purge` | Implemented | Purges by default; `-DeactivateOnly` preserves history. |
-| `Sync-BuildMasterPlans` | Native raft item upload | Implemented | Existing bulk upload fallback for `.otter` plan files. Prefer `New-BuildMasterScript` for explicit runbook steps. |
-| `New-BuildMasterRelease` | Release API | Implemented | Validate pipeline-name handling with `global::` names. |
-| `Start-BuildMasterPipeline` | Build create API | Implemented, needs extension | Add `-Variables` hashtable for build-scope variables. |
-| `Approve-BuildMasterStage` | Manual approval API | Implemented | Keep for manual-gate automation. |
-| `New-BuildMasterEnvironment` | Infrastructure Management or Native API | Planned | Idempotently create tier environments after endpoint shape is verified. |
-| `Sync-BuildMasterPipeline` | Default-raft pipeline item replay | Planned after pipeline capture | Do not invent schema; consume captured/exported pipeline files from a working local pipeline. |
-| `Set-BuildMasterResourceMonitor` | Native `ResourceMonitors_CreateOrUpdateResourceMonitor` | Planned after UI capture | Requires extension-specific configuration payload. |
-| `Test-BuildMasterConfiguration` | Read-only API checks | Planned | Assert apps, variables, pipelines, releases, environments, and raft references. |
-| `Start-ProGetBuildMasterPoller` | ProGet API + BuildMaster API | Planned | Poll Experimental feeds, maintain durable state, call release/build functions. |
+| Function                                | API surface                                                 | Status                         | Notes                                                                                                             |
+| --------------------------------------- | ----------------------------------------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| `New-BuildMasterApplication`            | Application Management `list`, `create`, `update`           | Implemented                    | Fully parameterized ApplicationInfo wrapper. Omit `-Raft` for default raft.                                       |
+| `Set-BuildMasterApplicationVariables`   | Variables Management entity and scoped endpoints            | Implemented                    | Accepts a hashtable; simple values are idempotent; sensitive/evaluate values use scoped variable objects.         |
+| `New-BuildMasterScript`                 | Native `Rafts_GetRaftItems`, `Rafts_CreateOrUpdateRaftItem` | Implemented                    | Accepts `-ScriptContent` or `-Path`; uses default raft `Raft_Id = 1`.                                             |
+| `Remove-BuildMasterScript`              | Native `Rafts_GetRaftItems`, `Rafts_DeleteRaftItem`         | Implemented                    | Removes default-raft script items by name and optional application scope.                                         |
+| `Remove-BuildMasterApplicationVariable` | Variables Management entity delete                          | Implemented                    | Deletes one or more application variables; missing variables are no-ops.                                          |
+| `Remove-BuildMasterApplication`         | Application Management `list`, `update`, `purge`            | Implemented                    | Purges by default; `-DeactivateOnly` preserves history.                                                           |
+| `Sync-BuildMasterPlans`                 | Native raft item upload                                     | Implemented                    | Existing bulk upload fallback for `.otter` plan files. Prefer `New-BuildMasterScript` for explicit runbook steps. |
+| `New-BuildMasterRelease`                | Release API                                                 | Implemented                    | Validate pipeline-name handling with `global::` names.                                                            |
+| `Start-BuildMasterPipeline`             | Build create API                                            | Implemented, needs extension   | Add `-Variables` hashtable for build-scope variables.                                                             |
+| `Approve-BuildMasterStage`              | Manual approval API                                         | Implemented                    | Keep for manual-gate automation.                                                                                  |
+| `New-BuildMasterEnvironment`            | Infrastructure Management or Native API                     | Planned                        | Idempotently create tier environments after endpoint shape is verified.                                           |
+| `Sync-BuildMasterPipeline`              | Default-raft pipeline item replay                           | Planned after pipeline capture | Do not invent schema; consume captured/exported pipeline files from a working local pipeline.                     |
+| `Set-BuildMasterResourceMonitor`        | Native `ResourceMonitors_CreateOrUpdateResourceMonitor`     | Planned after UI capture       | Requires extension-specific configuration payload.                                                                |
+| `Test-BuildMasterConfiguration`         | Read-only API checks                                        | Planned                        | Assert apps, variables, pipelines, releases, environments, and raft references.                                   |
+| `Start-ProGetBuildMasterPoller`         | ProGet API + BuildMaster API                                | Planned                        | Poll Experimental feeds, maintain durable state, call release/build functions.                                    |
 
 Next implementation order:
 

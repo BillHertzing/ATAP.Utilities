@@ -264,24 +264,34 @@ function Move-ProGetPackageInterTier {
         $checkUrl = "$ProGetBaseUrl/api/packages/$FromFeed/versions" +
         "?name=$([uri]::EscapeDataString($Name))&version=$([uri]::EscapeDataString($Version))"
 
+        $packageCheck = $null
+        $sourceCheckAvailable = $false
         try {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling $checkUrl" -Tag 'RestCall'
             $packageCheck = Invoke-RestMethod -Uri $checkUrl -Headers $headers -Method Get -TimeoutSec 15 -ErrorAction Stop
+            $sourceCheckAvailable = $true
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from $checkUrl" -Tag 'RestCall'
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Package verified in source feed'
         } catch {
             # ProGet versions endpoint may not be available on all editions;
             # proceed anyway and let the promotion API validate
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Could not verify via API — ProGet will validate during move'
         }
+        if ($sourceCheckAvailable) {
+            if (@($packageCheck).Count -lt 1) {
+                $errorMessage = "Package '$Name' v$Version was not found in source feed '$FromFeed'; promotion cannot continue."
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+                throw $errorMessage
+            }
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Package verified in source feed'
+        }
 
         # ── Step 2: Move to next tier ─────────────────────────────────────────
         $promoteUrl = "$ProGetBaseUrl/api/promotions/promote"
         $body = @{
-            # ProGet's PromotePackageInput JSON contract uses "name".
-            # The form-encoded repackage API uses "packageName"; using that
-            # here can produce success-shaped responses without materializing
-            # the package in the target feed on some ProGet versions.
+            # ProGet's documented promotion endpoint accepts form-encoded
+            # PromotePackageInput fields. In practice, JSON bodies can return
+            # a success-shaped response without materializing the package in
+            # the target feed on some ProGet versions.
             name     = $Name
             version  = $Version
             fromFeed = $FromFeed
@@ -298,7 +308,7 @@ function Move-ProGetPackageInterTier {
             try {
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling $promoteUrl" -Tag 'RestCall'
                 $response = Invoke-RestMethod -Uri $promoteUrl -Method POST -Headers $headers -TimeoutSec 60 `
-                    -Body ($body | ConvertTo-Json -Depth 3) -ContentType 'application/json' -ErrorAction Stop
+                    -Body $body -ContentType 'application/x-www-form-urlencoded' -ErrorAction Stop
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from $promoteUrl" -Tag 'RestCall'
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Move successful'
                 $promoted = $true
@@ -306,6 +316,33 @@ function Move-ProGetPackageInterTier {
                 $errorMessage = "Failed to move '$Name' v$Version from '$FromFeed' to '$ToFeed'. Exception: $($_.Exception.Message)"
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
                 throw
+            }
+
+            $destinationCheckUrl = "$ProGetBaseUrl/api/packages/$ToFeed/versions" +
+            "?name=$([uri]::EscapeDataString($Name))&version=$([uri]::EscapeDataString($Version))"
+            $destinationVerified = $false
+            for ($attempt = 1; $attempt -le 6; $attempt++) {
+                try {
+                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling $destinationCheckUrl" -Tag 'RestCall'
+                    $destinationCheck = Invoke-RestMethod -Uri $destinationCheckUrl -Headers $headers -Method Get -TimeoutSec 15 -ErrorAction Stop
+                    if (@($destinationCheck).Count -gt 0) {
+                        $destinationVerified = $true
+                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Package verified in destination feed'
+                        break
+                    }
+                } catch {
+                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Could not verify destination feed on attempt $attempt/6: $($_.Exception.Message)"
+                }
+
+                if ($attempt -lt 6) {
+                    Start-Sleep -Seconds 2
+                }
+            }
+
+            if (-not $destinationVerified) {
+                $errorMessage = "Promotion API returned successfully, but '$Name' v$Version was not visible in destination feed '$ToFeed' after verification. Check ProGet promotion permissions/feed configuration."
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+                throw $errorMessage
             }
         }
 

@@ -28,6 +28,39 @@ param(
   [string] $OutputRoot
 )
 
+# Load Helpers
+try {
+  # ToDo: Remove this when packaging works
+  $temporaryPowerShellHelperRootCandidates = @(
+    (Join-Path -Path $PSScriptRoot -ChildPath 'src/ATAP.Utilities.PowerShell/public'),
+    'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public'
+  )
+
+  foreach ($helperName in @(
+      'Get-ParameterValueFromNeoConfigurationRoot'
+    )) {
+    if (-not (Get-Command -Name $helperName -CommandType Function -ErrorAction SilentlyContinue)) {
+      $helperPath = $temporaryPowerShellHelperRootCandidates |
+        ForEach-Object { Join-Path -Path $_ -ChildPath "$helperName.ps1" } |
+        Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } |
+        Select-Object -First 1
+
+      if ([string]::IsNullOrWhiteSpace($helperPath)) {
+        throw "Required helper function '$helperName' could not be found under: $($temporaryPowerShellHelperRootCandidates -join '; ')"
+      }
+
+      . $helperPath
+    }
+  }
+
+  Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Global -Force
+}
+catch {
+  $errorMessage = "Failed to load Get-ParameterValueFromNeoConfigurationRoot function. Exception: $($_.Exception.Message)"
+  Write-Error $errorMessage
+  throw
+}
+
 # ---------------------------------------------------------------------------
 # Bootstrap — dot-source required cmdlets when the BuildTooling module is not
 # yet installed (e.g. when building the module itself for the first time).

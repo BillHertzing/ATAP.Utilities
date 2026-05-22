@@ -6,6 +6,7 @@ BeforeAll {
   $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
   . (Join-Path $publicDir 'New-BuildMasterRelease.ps1')
   . (Join-Path $publicDir 'Start-BuildMasterPipeline.ps1')
+  . (Join-Path $publicDir 'Start-BuildMasterDeployment.ps1')
   . (Join-Path $publicDir 'Get-PSModuleVersionFromNBGV.ps1')
   . (Join-Path $publicDir 'Start-BuildMasterPackagePipeline.ps1')
 
@@ -20,6 +21,7 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
     Mock Write-Host { }
     $script:releaseCall = $null
     $script:buildCall = $null
+    $script:deploymentCall = $null
 
     Mock New-BuildMasterRelease -MockWith {
       $script:releaseCall = @{
@@ -51,6 +53,21 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
         Succeeded   = $true
         BuildId     = '2002'
         BuildNumber = '23'
+      }
+    }
+    Mock Start-BuildMasterDeployment -MockWith {
+      $script:deploymentCall = @{
+        Application        = $Application
+        ReleaseNumber      = $ReleaseNumber
+        BuildNumber        = $BuildNumber
+        ToStage            = $ToStage
+        BuildMasterBaseUrl = $BuildMasterBaseUrl
+        ApiKey             = $ApiKey
+      }
+      [PSCustomObject]@{
+        Succeeded       = $true
+        DeploymentId    = '3003'
+        DeploymentState = 'pending'
       }
     }
   }
@@ -97,6 +114,15 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
     Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter {
       $Object -eq "Queued BuildMaster build '23' for release 'ATAP.Utilities.PowerShell 0.1.0-Alpha025'."
     }
+    Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter {
+      $Object -eq "Starting BuildMaster deployment for build '23' to stage 'Experimental'."
+    }
+    Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter {
+      $Object -eq 'Calling BuildMaster deploy API (timeout 30s).'
+    }
+    Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter {
+      $Object -eq "Started BuildMaster deployment for build '23' to stage 'Experimental'."
+    }
   }
 
   It 'Runs with operator-friendly defaults when invoked without required identity parameters' {
@@ -111,6 +137,7 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
     $script:releaseCall['ReleaseNumber'] | Should -Be '0.1.0-Beta008'
     $script:releaseCall['ReleaseName'] | Should -Be 'ATAP.Utilities.PowerShell 0.1.0-Beta008'
     $script:buildCall['Variables']['$ModuleName'] | Should -Be 'ATAP.Utilities.PowerShell'
+    $script:deploymentCall['ToStage'] | Should -Be 'Experimental'
     $result.Succeeded | Should -BeTrue
 
     Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter {
@@ -172,5 +199,38 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
     $variables['$FeedName'] | Should -Be 'powershellget-experimental'
     $variables['$Branch'] | Should -Be '100-Sprint-0007-work-items'
     $variables['$CustomFlag'] | Should -Be 'yes'
+  }
+
+  It 'Starts deployment for the queued build at the starting stage by default' {
+    $result = Start-BuildMasterPackagePipeline `
+      -Application 'ATAP.Utilities-PowerShell' `
+      -PipelineName 'global::PowerShellModule-5Stage' `
+      -ModuleName 'ATAP.Utilities.PowerShell' `
+      -ResolvedPackageVersion '0.1.0-Beta001' `
+      -BuildMasterBaseUrl 'http://localhost:50017' `
+      -ApiKey 'unit-test-key'
+
+    $script:deploymentCall['Application'] | Should -Be 'ATAP.Utilities-PowerShell'
+    $script:deploymentCall['ReleaseNumber'] | Should -Be '0.1.0-Beta001'
+    $script:deploymentCall['BuildNumber'] | Should -Be '23'
+    $script:deploymentCall['ToStage'] | Should -Be 'Experimental'
+    $script:deploymentCall['BuildMasterBaseUrl'] | Should -Be 'http://localhost:50017'
+    $script:deploymentCall['ApiKey'] | Should -Be 'unit-test-key'
+    $result.DeploymentResult.DeploymentId | Should -Be '3003'
+    $result.ResponseSummary | Should -Match 'deployment started'
+  }
+
+  It 'Allows callers to create the release/build without starting deployment' {
+    $result = Start-BuildMasterPackagePipeline `
+      -Application 'ATAP.Utilities-PowerShell' `
+      -PipelineName 'global::PowerShellModule-5Stage' `
+      -ModuleName 'ATAP.Utilities.PowerShell' `
+      -ResolvedPackageVersion '0.1.0-Beta001' `
+      -SkipDeployment
+
+    Should -Invoke Start-BuildMasterDeployment -Times 0 -Exactly -Scope It
+    $script:deploymentCall | Should -BeNullOrEmpty
+    $result.Succeeded | Should -BeTrue
+    $result.ResponseSummary | Should -Match 'deployment skipped'
   }
 }

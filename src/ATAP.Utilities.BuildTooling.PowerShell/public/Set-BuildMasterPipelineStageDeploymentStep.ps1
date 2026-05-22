@@ -169,7 +169,7 @@ function Set-BuildMasterPipelineStageDeploymentStep {
     # Resolve BuildMaster base URL
     $BuildMasterBaseUrl = Get-PVal -ParameterName 'BuildMasterBaseUrl' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterBaseUrl
     if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {
-      $BuildMasterBaseUrl = 'http://localhost:8622'
+      $BuildMasterBaseUrl = 'http://localhost:50017'
     }
     $BuildMasterBaseUrl = $BuildMasterBaseUrl.TrimEnd('/')
     $nativeApiBaseUrl = "$BuildMasterBaseUrl/api/json"
@@ -239,11 +239,11 @@ function Set-BuildMasterPipelineStageDeploymentStep {
 
       try {
         $pipelines = Invoke-RestMethod -Uri $pipelinesUri -Method Post -Body @{
-          API_Key       = $ApiKey
+          API_Key        = $ApiKey
           Application_Id = $ApplicationId
         } -ErrorAction Stop
 
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Pipelines endpoint returned data" -Tag 'RestCall'
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Pipelines endpoint returned data' -Tag 'RestCall'
         $pipeline = $pipelines | Where-Object { $_.Pipeline_Name -eq $PipelineNameToFind }
         if ($pipeline) {
           return @{
@@ -295,7 +295,7 @@ function Set-BuildMasterPipelineStageDeploymentStep {
       } else {
         # API endpoint not available; provide guidance on manual configuration
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Pipeline discovery via API unavailable: $($pipelineInfo.Reason)"
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "No stable BuildMaster API available for pipeline stage deployment-step assignment (Sprint 0007 finding)."
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'No stable BuildMaster API available for pipeline stage deployment-step assignment (Sprint 0007 finding).'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Manual configuration required. See runbook: $manualRunbook"
 
         # Provide guidance on manual steps
@@ -308,9 +308,9 @@ function Set-BuildMasterPipelineStageDeploymentStep {
       # If -WhatIf is set, report what would be done
       if ($WhatIfPreference) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "WhatIf: Would configure deployment steps for $($Stages.Count) stages (see verbose output)"
-      } elseif ($PSCmdlet.ShouldProcess("$ApplicationName/$PipelineName", "Configure deployment steps for stages")) {
+      } elseif ($PSCmdlet.ShouldProcess("$ApplicationName/$PipelineName", 'Configure deployment steps for stages')) {
         # In a future version with a stable API, actual assignment would occur here
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "No automated API available; manual configuration via UI runbook required."
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'No automated API available; manual configuration via UI runbook required.'
       }
     } catch {
       $errMsg = "Error: $($_.Exception.Message)"
@@ -320,18 +320,18 @@ function Set-BuildMasterPipelineStageDeploymentStep {
 
     # Build result object
     $result = [PSCustomObject]@{
-      OperationName      = 'Set-BuildMasterPipelineStageDeploymentStep'
-      Succeeded          = ($failures.Count -eq 0)
-      Application        = $ApplicationName
-      Pipeline           = $PipelineName
-      DeploymentStep     = $DeploymentStepName
-      Stages             = $Stages
-      ConfiguredStages   = $configuredStages.ToArray()
-      SkippedStages      = $skippedStages.ToArray()
-      Failures           = $failures.ToArray()
-      ApiAvailable       = $apiAvailable
-      ManualRunbook      = $manualRunbook
-      ResponseSummary    = if ($failures.Count -eq 0) {
+      OperationName    = 'Set-BuildMasterPipelineStageDeploymentStep'
+      Succeeded        = ($failures.Count -eq 0)
+      Application      = $ApplicationName
+      Pipeline         = $PipelineName
+      DeploymentStep   = $DeploymentStepName
+      Stages           = $Stages
+      ConfiguredStages = $configuredStages.ToArray()
+      SkippedStages    = $skippedStages.ToArray()
+      Failures         = $failures.ToArray()
+      ApiAvailable     = $apiAvailable
+      ManualRunbook    = $manualRunbook
+      ResponseSummary  = if ($failures.Count -eq 0) {
         "Configured $($configuredStages.Count) stages; $($skippedStages.Count) stages require manual UI configuration via runbook."
       } else {
         "Operation failed: $($failures -join '; ')"

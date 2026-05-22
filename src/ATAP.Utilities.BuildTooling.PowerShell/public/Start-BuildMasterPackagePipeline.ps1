@@ -153,7 +153,7 @@ function Resolve-BuildMasterPackageModuleName {
 function Start-BuildMasterPackagePipeline {
   <#
 .SYNOPSIS
-    Creates a named BuildMaster release and queues its package build.
+    Creates a named BuildMaster release, queues its package build, and starts deployment.
 
 .DESCRIPTION
     Orchestrates the BuildMaster release/build handoff after a package event
@@ -165,7 +165,9 @@ function Start-BuildMasterPackagePipeline {
     `"<ModuleName> <ResolvedPackageVersion>"`, creates the release with
     `New-BuildMasterRelease -ReleaseName`, and queues the build with
     package identity as build-scope variables through
-    `Start-BuildMasterPipeline -Variables`.
+    `Start-BuildMasterPipeline -Variables`. By default it then calls
+    `Start-BuildMasterDeployment` for the queued build so the first pipeline
+    stage starts immediately.
 
     This is the narrow orchestration entry point used by a ProGet poller or manual
     trigger once the package tuple is known; it does not query ProGet itself.
@@ -208,6 +210,13 @@ function Start-BuildMasterPackagePipeline {
 .PARAMETER Variables
     Additional build-scope variables. Required package identity variables are
     written after these values so the build matches the release identity.
+
+.PARAMETER DeploymentStage
+    Optional BuildMaster stage to deploy after queuing the build. Defaults to
+    `Tier`, which should be `Experimental` for package-event starts.
+
+.PARAMETER SkipDeployment
+    Creates the release/build but does not call the BuildMaster deploy API.
 
 .OUTPUTS
     [PSCustomObject] summarizing the release and build API results.
@@ -254,6 +263,12 @@ function Start-BuildMasterPackagePipeline {
     [hashtable]$Variables,
 
     [Parameter(Mandatory = $false)]
+    [string]$DeploymentStage,
+
+    [Parameter(Mandatory = $false)]
+    [switch]$SkipDeployment,
+
+    [Parameter(Mandatory = $false)]
     [string]$BuildMasterBaseUrl,
 
     [Parameter(Mandatory = $false)]
@@ -276,6 +291,9 @@ function Start-BuildMasterPackagePipeline {
     if ([string]::IsNullOrWhiteSpace($ModuleName)) {
       $ModuleName = Resolve-BuildMasterPackageModuleName -ModuleName $ModuleName -ProjectPath $ProjectPath
       Write-Host "ModuleName was not supplied; using '$ModuleName'."
+    }
+    if ([string]::IsNullOrWhiteSpace($DeploymentStage)) {
+      $DeploymentStage = $Tier
     }
 
     Write-Host "Starting BuildMaster package pipeline for module '$ModuleName' in application '$Application'."
@@ -334,6 +352,7 @@ function Start-BuildMasterPackagePipeline {
         ResolvedPackageVersion = $ResolvedPackageVersion
         ReleaseResult          = $null
         BuildResult            = $null
+        DeploymentResult       = $null
         ResponseSummary        = "WhatIf: planned create of $target"
       }
     }
@@ -364,9 +383,33 @@ function Start-BuildMasterPackagePipeline {
     Write-Host "Queueing BuildMaster build for release '$releaseNumber'."
     Write-Host "Calling BuildMaster build API (timeout 30s)."
     $buildResult = Start-BuildMasterPipeline @buildParams
-    $succeeded = [bool]$releaseResult.Succeeded -and [bool]$buildResult.Succeeded
     $buildNumber = if ($null -ne $buildResult -and $buildResult.PSObject.Properties.Name -contains 'BuildNumber') { [string]$buildResult.BuildNumber } else { '<unknown>' }
     Write-Host "Queued BuildMaster build '$buildNumber' for release '$releaseName'."
+
+    $deploymentResult = $null
+    if ($SkipDeployment.IsPresent) {
+      Write-Host "Skipping BuildMaster deployment start because -SkipDeployment was supplied."
+    } else {
+      if ([string]::IsNullOrWhiteSpace($buildNumber) -or $buildNumber -eq '<unknown>') {
+        throw "BuildMaster create-build response did not include a BuildNumber; cannot start deployment for '$Application' release '$releaseNumber'."
+      }
+
+      $deploymentParams = @{
+        Application  = $Application
+        ReleaseNumber = $releaseNumber
+        BuildNumber  = $buildNumber
+        ToStage      = $DeploymentStage
+      }
+      if (-not [string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) { $deploymentParams['BuildMasterBaseUrl'] = $BuildMasterBaseUrl }
+      if (-not [string]::IsNullOrWhiteSpace($ApiKey)) { $deploymentParams['ApiKey'] = $ApiKey }
+
+      Write-Host "Starting BuildMaster deployment for build '$buildNumber' to stage '$DeploymentStage'."
+      Write-Host "Calling BuildMaster deploy API (timeout 30s)."
+      $deploymentResult = Start-BuildMasterDeployment @deploymentParams
+      Write-Host "Started BuildMaster deployment for build '$buildNumber' to stage '$DeploymentStage'."
+    }
+
+    $succeeded = [bool]$releaseResult.Succeeded -and [bool]$buildResult.Succeeded -and ($SkipDeployment.IsPresent -or [bool]$deploymentResult.Succeeded)
 
     return [PSCustomObject]@{
       OperationName          = 'Start-BuildMasterPackagePipeline'
@@ -380,7 +423,12 @@ function Start-BuildMasterPackagePipeline {
       ResolvedPackageVersion = $ResolvedPackageVersion
       ReleaseResult          = $releaseResult
       BuildResult            = $buildResult
-      ResponseSummary        = "release '$releaseName' queued as BuildMaster build $($buildResult.BuildNumber)"
+      DeploymentResult       = $deploymentResult
+      ResponseSummary        = if ($SkipDeployment.IsPresent) {
+        "release '$releaseName' queued as BuildMaster build $($buildResult.BuildNumber); deployment skipped"
+      } else {
+        "release '$releaseName' queued as BuildMaster build $($buildResult.BuildNumber) and deployment started"
+      }
     }
   }
 

@@ -92,31 +92,12 @@ function Get-HostSettings {
       Write-HostSettingsMessage -Level Error -Message $errorMessage
       throw $errorMessage
     }
-    # Load the helpers
-    # Until the Powershell package is released and installed, get it from the stable worktree
-    # Load the helper script
-    $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'  # Stable worktree
-    # May come from the Release package, from the stable worktree, or from a sprint worktree
-    $projectpathRel = 'src\ATAP.Utilities.Powershell'
-    $cmdletBaseName ='Get-ClonedAndModifiedHashtable'
-    $cmdletName =  $cmdletBaseName+'.ps1'
-    $cmdletPathRel = Join-PATH 'public' $cmdletName
-    try {
-      # This will auto-load and return true if the Package is installed
-       # This script will go into a loop and keep consuming memory unless the next 4 lines are commente dout. in fact, just $(Get-Command -Name $cmdletBaseName) will hang the script. Needs further investigation
-       #if (-not (Get-Command -Name $cmdletBaseName -CommandType Function -ErrorAction SilentlyContinue)) {
-        # # Otherwise get it from the stable worktree
-        # . $(Join-Path $repobasepath $projectpathRel $cmdletPathRel)
-       #}
-    } catch {
-      $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-      throw
-    }
-    # If we want to use a sprint worktree as the source, replace it here. One-liner (two commands) to switch between the stable worktree and the sprint worktree
-    $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items'; . $(Join-Path $repobasepath $projectpathRel $cmdletPathRel)
-
     $getClonedAndModifiedHashtablePath = Join-Path $PSScriptRoot 'Get-ClonedAndModifiedHashtable.ps1'
+    if (-not (Test-Path -LiteralPath $getClonedAndModifiedHashtablePath -PathType Leaf)) {
+      $errorMessage = "Required helper 'Get-ClonedAndModifiedHashtable' was not found at '$getClonedAndModifiedHashtablePath'."
+      Write-HostSettingsMessage -Level Error -Message $errorMessage
+      throw $errorMessage
+    }
 
     $candidatePaths = [System.Collections.Generic.List[string]]::new()
     Add-CandidatePath -CandidatePaths $candidatePaths -Path $IACBasePath

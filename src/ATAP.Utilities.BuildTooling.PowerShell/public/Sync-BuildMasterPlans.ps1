@@ -48,7 +48,7 @@ function Sync-BuildMasterPlans {
   .EXAMPLE
     Sync-BuildMasterPlans -Path .\BuildMasterPlans -ApplicationName 'ATAP.Utilities'
   .EXAMPLE
-    Sync-BuildMasterPlans -Path .\Build.otter -BuildMasterBaseUrl 'http://localhost:50010' -WhatIf
+    Sync-BuildMasterPlans -Path .\Build.otter -BuildMasterBaseUrl 'http://localhost:50017' -WhatIf
   .LINK
     https://docs.inedo.com/docs/buildmaster/reference/api/native
   #>
@@ -91,10 +91,9 @@ function Sync-BuildMasterPlans {
     try {
       # ToDo: Remove this when packaging works
       if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1"
+        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
       }
-    }
-    catch {
+    } catch {
       $errorMessage = "Failed to load Get-ParameterValueFromNeoConfigurationRoot function. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       throw

@@ -47,7 +47,7 @@ function New-OverviewSprintWorkspace {
     [string]$DeveloperUsername = $env:USERNAME,
 
     [ValidateNotNullOrEmpty()]
-    [string]$BuildMasterBaseUrl = 'http://localhost:50001',
+    [string]$BuildMasterBaseUrl = 'http://localhost:50017',
 
     [ValidateNotNullOrEmpty()]
     [string]$ProGetBaseUrl = 'http://localhost:50000'

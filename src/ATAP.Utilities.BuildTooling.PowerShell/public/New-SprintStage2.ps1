@@ -83,7 +83,7 @@ function New-SprintStage2 {
     Defaults to 'http://localhost:50000'.
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server.
-    Defaults to 'http://localhost:50001'.
+    Defaults to 'http://localhost:50017'.
   .PARAMETER DryRun
     Preview all sprint-start downstream actions without creating GitHub issues,
     branches, worktrees, junctions, SharedVSCode context, secrets, SQL Server
@@ -119,7 +119,7 @@ function New-SprintStage2 {
 
     [string]$ProGetBaseUrl = 'http://localhost:50000',
 
-    [string]$BuildMasterBaseUrl = 'http://localhost:50001',
+    [string]$BuildMasterBaseUrl = 'http://localhost:50017',
 
     [switch]$DryRun
   )

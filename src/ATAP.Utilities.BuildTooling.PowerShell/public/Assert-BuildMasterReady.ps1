@@ -47,7 +47,7 @@ function Assert-BuildMasterReady {
 .PARAMETER BuildMasterBaseUrl
     Base URL for BuildMaster. Defaults to
     $global:settings[$global:configRootKeys['BuildMasterBaseUrlConfigRootKey']],
-    then $env:BUILDMASTER_BASE_URL, then 'http://localhost:50001'.
+    then $env:BUILDMASTER_BASE_URL, then 'http://localhost:50017'.
 
 .PARAMETER ApiKey
     BuildMaster admin API key. Defaults to BUILDMASTER_ADMIN_API_KEY at User
@@ -127,12 +127,12 @@ function Assert-BuildMasterReady {
         $BuildMasterBaseUrl = $env:BUILDMASTER_BASE_URL
       }
       if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {
-        $BuildMasterBaseUrl = 'http://localhost:50001'
+        $BuildMasterBaseUrl = 'http://localhost:50017'
       }
     }
     $BuildMasterBaseUrl = $BuildMasterBaseUrl.TrimEnd('/')
     $nativeBase = "$BuildMasterBaseUrl/api/json"
-    $restBase   = "$BuildMasterBaseUrl/api/variables/application"
+    $restBase = "$BuildMasterBaseUrl/api/variables/application"
 
     $apiKeyOk = $false
     $apiKeySource = $null
@@ -320,8 +320,8 @@ function Assert-BuildMasterReady {
         try {
           $uri = "$restBase/$([uri]::EscapeDataString($appName))"
           $headers = @{
-            'X-ApiKey'     = $ApiKey
-            'Accept'       = 'application/json'
+            'X-ApiKey' = $ApiKey
+            'Accept'   = 'application/json'
           }
           $resp = Invoke-RestMethod -Uri $uri -Method Get -Headers $headers -TimeoutSec $TimeoutSeconds -ErrorAction Stop
           $variableNames = @()

@@ -26,7 +26,7 @@ function Clear-BuildMasterSprintVariables {
     Defaults to @('AceCommander', 'ATAP.Utilities').
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server.
-    Defaults to 'http://localhost:50001'.
+    Defaults to 'http://localhost:50017'.
   .OUTPUTS
     PSCustomObject with variablesCleared (array of 'appName/varName' strings)
     and errors (array of error message strings) fields.
@@ -46,7 +46,7 @@ function Clear-BuildMasterSprintVariables {
   param(
     [string[]]$Applications = @('AceCommander', 'ATAP.Utilities'),
 
-    [string]$BuildMasterBaseUrl = 'http://localhost:50001'
+    [string]$BuildMasterBaseUrl = 'http://localhost:50017'
   )
 
   begin {

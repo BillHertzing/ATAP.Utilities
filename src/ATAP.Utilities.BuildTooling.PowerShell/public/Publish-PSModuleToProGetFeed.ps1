@@ -7,7 +7,7 @@ for a given 5-Tier tier.
 Maps a tier name (Sprint/Alpha/Beta/QA/Production) to a PowerShellGet feed
 name and endpoint from $global:Settings using the ProGet feed collection
 defined by ATAP.Utilities.ConfigRootKeys.PowerShell and host settings,
-resolves the API key via Get-BitWardenSecret or the feed's configured
+resolves the API key via Get-BitwardenSecret or the feed's configured
 ApiKeyName environment variable, ensures a matching
 PSResourceRepository is registered, and invokes Publish-PSResource.
 
@@ -132,17 +132,17 @@ function Publish-PSModuleToProGetFeed {
     # function for the full backlog.
     $apiKey = $null
     $apiKeySource = $null
-    $bwCmd = Get-Command -Name 'Get-BitWardenSecret' -ErrorAction SilentlyContinue
+    $bwCmd = Get-Command -Name 'Get-BitwardenSecret' -ErrorAction SilentlyContinue
     if ($null -ne $bwCmd) {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Attempting Get-BitWardenSecret for tier '$Tier'"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Attempting Get-BitwardenSecret for tier '$Tier'"
       try {
         $secretName = "ProGet_PowerShellGet_${Tier}_ApiKey"
-        $apiKey = Get-BitWardenSecret -SecretName $secretName
+        $apiKey = Get-BitwardenSecret -SecretName $secretName
         if (-not [string]::IsNullOrWhiteSpace([string]$apiKey)) {
           $apiKeySource = "Bitwarden secret '$secretName'"
         }
       } catch {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Get-BitWardenSecret threw; will fall back to env var'
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Get-BitwardenSecret threw; will fall back to env var'
         $apiKey = $null
       }
     }
@@ -174,7 +174,7 @@ function Publish-PSModuleToProGetFeed {
       }
     }
     if ([string]::IsNullOrWhiteSpace([string]$apiKey)) {
-      $msg = "Unable to resolve ProGet API key for tier '$Tier'. Expected Get-BitWardenSecret -SecretName 'ProGet_PowerShellGet_${Tier}_ApiKey', configured env var '$($feed.ApiKeyName)', or admin fallback 'PROGET_ADMIN_API_KEY'."
+      $msg = "Unable to resolve ProGet API key for tier '$Tier'. Expected Get-BitwardenSecret -SecretName 'ProGet_PowerShellGet_${Tier}_ApiKey', configured env var '$($feed.ApiKeyName)', or admin fallback 'PROGET_ADMIN_API_KEY'."
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
       throw $msg
     }

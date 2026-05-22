@@ -151,9 +151,9 @@ function New-ConnectionStringBuilderFromDbaTools {
       if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
         . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
       }
-      if (-not (Get-Command -Name 'Get-BitWardenSecret' -CommandType Function -ErrorAction SilentlyContinue)) {
+      if (-not (Get-Command -Name 'Get-BitwardenSecret' -CommandType Function -ErrorAction SilentlyContinue)) {
         # ToDo create Get-VaultSecret which is a shim that calls the specific vault implementation
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\Get-BitWardenSecret.ps1'
+        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\Get-BitwardenSecret.ps1'
       }
       if (-not (Get-Command -Name 'New-DbaConnectionStringBuilder' -CommandType Function -ErrorAction SilentlyContinue)) {
         # Try to import dbatools module first
@@ -199,7 +199,7 @@ function New-ConnectionStringBuilderFromDbaTools {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Retrieving credentials from vault using key: $CredentialsKey"
 
           # Retrieve secret object from vault
-          $secret = Get-BitWardenSecret -SecretName $CredentialsKey
+          $secret = Get-BitwardenSecret -SecretName $CredentialsKey
 
           if ($CredentialsKey.StartsWith('dbConnectionString')) {
             # ---------------------------------------------------------------

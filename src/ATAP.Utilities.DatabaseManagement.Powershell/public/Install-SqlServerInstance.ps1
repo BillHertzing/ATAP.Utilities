@@ -134,8 +134,8 @@ function Install-SqlServerInstance {
       }
       Import-Module dbatools -ErrorAction Stop
 
-      if (-not (Get-Command -Name 'Get-BitWardenSecret' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\Get-BitWardenSecret.ps1'
+      if (-not (Get-Command -Name 'Get-BitwardenSecret' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\Get-BitwardenSecret.ps1'
       }
     } catch {
       $errorMessage = "Failed loading dependencies. Exception: $($_.Exception.Message)"
@@ -159,7 +159,7 @@ function Install-SqlServerInstance {
     if (-not $useIntegratedSecurity) {
       try {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolving CredentialsKey '$CredentialsKey' from Bitwarden."
-        $vaultSecret = Get-BitWardenSecret -SecretName $CredentialsKey
+        $vaultSecret = Get-BitwardenSecret -SecretName $CredentialsKey
 
         if (-not $vaultSecret.UserName -or -not $vaultSecret.Password) {
           throw "Secret '$CredentialsKey' must contain UserName and Password properties."

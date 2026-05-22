@@ -107,22 +107,22 @@ Describe 'Publish-PSModuleToProGetFeed' {
       param($Tier, $Expected)
 
       # Inject API key via Bitwarden helper override (function-scope; visible through Get-Command).
-      function global:Get-BitWardenSecret { param([string]$SecretName) return 'dummy-key' }
+      function global:Get-BitwardenSecret { param([string]$SecretName) return 'dummy-key' }
       try {
         $result = Publish-PSModuleToProGetFeed -NupkgPath $script:fakeNupkg -Tier $Tier
         $result.FeedName | Should -Be $Expected
         $result.Published | Should -BeTrue
         Assert-MockCalled Publish-PSResource -Times 1 -Exactly -Scope It
       } finally {
-        Remove-Item Function:\Get-BitWardenSecret -ErrorAction SilentlyContinue
+        Remove-Item Function:\Get-BitwardenSecret -ErrorAction SilentlyContinue
       }
     }
   }
 
   Context 'API key sourcing' {
-    It 'Uses Get-BitWardenSecret when available' {
+    It 'Uses Get-BitwardenSecret when available' {
       $script:bwCalls = 0
-      function global:Get-BitWardenSecret {
+      function global:Get-BitwardenSecret {
         param([string]$SecretName)
         $script:bwCalls++
         return 'bw-secret-value'
@@ -132,18 +132,18 @@ Describe 'Publish-PSModuleToProGetFeed' {
         $result.Published | Should -BeTrue
         $script:bwCalls | Should -BeGreaterOrEqual 1
       } finally {
-        Remove-Item Function:\Get-BitWardenSecret -ErrorAction SilentlyContinue
+        Remove-Item Function:\Get-BitwardenSecret -ErrorAction SilentlyContinue
       }
     }
 
-    It 'Falls back to env var when Get-BitWardenSecret is absent' {
-      # Ensure Get-BitWardenSecret is not defined.
-      Remove-Item Function:\Get-BitWardenSecret -ErrorAction SilentlyContinue
+    It 'Falls back to env var when Get-BitwardenSecret is absent' {
+      # Ensure Get-BitwardenSecret is not defined.
+      Remove-Item Function:\Get-BitwardenSecret -ErrorAction SilentlyContinue
 
       # Monkey-patch [Environment]::GetEnvironmentVariable via a wrapper function isn't possible,
       # so instead override Get-Command so the cmdlet skips the BW path, and seed a Process env var
       # that the User-scope getter won't see. That means we need another shim: override the whole
-      # API key resolution by providing Get-BitWardenSecret that returns an empty string first,
+      # API key resolution by providing Get-BitwardenSecret that returns an empty string first,
       # then the cmdlet falls through to env var. To make the env var visible at User scope we
       # temporarily set it.
       $envName = 'PROGET_APIKEY_POWERSHELLGET_INTEGRATION'
@@ -158,7 +158,7 @@ Describe 'Publish-PSModuleToProGetFeed' {
     }
 
     It 'Throws when neither Bitwarden nor env var provides a key' {
-      Remove-Item Function:\Get-BitWardenSecret -ErrorAction SilentlyContinue
+      Remove-Item Function:\Get-BitwardenSecret -ErrorAction SilentlyContinue
       $envName = 'PROGET_APIKEY_POWERSHELLGET_QA'
       [Environment]::SetEnvironmentVariable($envName, $null, 'User')
 
@@ -169,7 +169,7 @@ Describe 'Publish-PSModuleToProGetFeed' {
 
   Context 'WhatIf short-circuit' {
     It 'Does not call Publish-PSResource when -WhatIf is supplied' {
-      function global:Get-BitWardenSecret { param([string]$SecretName) return 'dummy' }
+      function global:Get-BitwardenSecret { param([string]$SecretName) return 'dummy' }
       try {
         $result = Publish-PSModuleToProGetFeed -NupkgPath $script:fakeNupkg -Tier Sprint -WhatIf
         $result.Published | Should -BeFalse
@@ -177,57 +177,57 @@ Describe 'Publish-PSModuleToProGetFeed' {
         $result.ResponseSummary | Should -Match 'WhatIf'
         Assert-MockCalled Publish-PSResource -Times 0 -Exactly -Scope It
       } finally {
-        Remove-Item Function:\Get-BitWardenSecret -ErrorAction SilentlyContinue
+        Remove-Item Function:\Get-BitwardenSecret -ErrorAction SilentlyContinue
       }
     }
   }
 
   Context 'PSResourceRepository registration' {
     It 'Registers the repository when missing' {
-      function global:Get-BitWardenSecret { param([string]$SecretName) return 'dummy' }
+      function global:Get-BitwardenSecret { param([string]$SecretName) return 'dummy' }
       Mock Get-PSResourceRepository { $null }
       try {
         Publish-PSModuleToProGetFeed -NupkgPath $script:fakeNupkg -Tier Alpha | Out-Null
         Assert-MockCalled Register-PSResourceRepository -Times 1 -Exactly -Scope It
         Assert-MockCalled Set-PSResourceRepository -Times 0 -Exactly -Scope It
       } finally {
-        Remove-Item Function:\Get-BitWardenSecret -ErrorAction SilentlyContinue
+        Remove-Item Function:\Get-BitwardenSecret -ErrorAction SilentlyContinue
       }
     }
 
     It 'Updates the repository when URI differs' {
-      function global:Get-BitWardenSecret { param([string]$SecretName) return 'dummy' }
+      function global:Get-BitwardenSecret { param([string]$SecretName) return 'dummy' }
       Mock Get-PSResourceRepository { [PSCustomObject]@{ Name = 'powershellget-development'; Uri = 'https://old.example/' } }
       try {
         Publish-PSModuleToProGetFeed -NupkgPath $script:fakeNupkg -Tier Alpha | Out-Null
         Assert-MockCalled Set-PSResourceRepository -Times 1 -Exactly -Scope It
         Assert-MockCalled Register-PSResourceRepository -Times 0 -Exactly -Scope It
       } finally {
-        Remove-Item Function:\Get-BitWardenSecret -ErrorAction SilentlyContinue
+        Remove-Item Function:\Get-BitwardenSecret -ErrorAction SilentlyContinue
       }
     }
   }
 
   Context 'Validation' {
     It 'Throws when NupkgPath does not exist' {
-      function global:Get-BitWardenSecret { param([string]$SecretName) return 'dummy' }
+      function global:Get-BitwardenSecret { param([string]$SecretName) return 'dummy' }
       try {
         { Publish-PSModuleToProGetFeed -NupkgPath 'C:/does/not/exist.nupkg' -Tier Alpha } |
           Should -Throw -ExpectedMessage '*does not exist*'
       } finally {
-        Remove-Item Function:\Get-BitWardenSecret -ErrorAction SilentlyContinue
+        Remove-Item Function:\Get-BitwardenSecret -ErrorAction SilentlyContinue
       }
     }
 
     It 'Throws when NupkgPath is not a .nupkg' {
-      function global:Get-BitWardenSecret { param([string]$SecretName) return 'dummy' }
+      function global:Get-BitwardenSecret { param([string]$SecretName) return 'dummy' }
       $wrongExt = Join-Path $script:tempRoot 'NotANupkg.zip'
       Set-Content -LiteralPath $wrongExt -Value 'x' -Encoding Ascii
       try {
         { Publish-PSModuleToProGetFeed -NupkgPath $wrongExt -Tier Alpha } |
           Should -Throw -ExpectedMessage '*.nupkg extension*'
       } finally {
-        Remove-Item Function:\Get-BitWardenSecret -ErrorAction SilentlyContinue
+        Remove-Item Function:\Get-BitwardenSecret -ErrorAction SilentlyContinue
         Remove-Item -LiteralPath $wrongExt -Force -ErrorAction SilentlyContinue
       }
     }

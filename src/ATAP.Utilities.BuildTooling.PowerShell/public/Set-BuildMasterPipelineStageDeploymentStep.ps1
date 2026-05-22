@@ -183,13 +183,13 @@ function Set-BuildMasterPipelineStageDeploymentStep {
     }
     if ([string]::IsNullOrWhiteSpace($ApiKey)) {
       try {
-        $ApiKey = Get-BitWardenSecret -Name 'buildmaster-admin-api-key' -AsPlainText -ErrorAction SilentlyContinue
+        $ApiKey = Get-BitwardenSecret -SecretName 'BuildMaster_Admin_API_Key' -AsPlainText -ErrorAction SilentlyContinue
       } catch {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Bitwarden lookup failed (not critical): $($_.Exception.Message)"
       }
     }
     if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-      throw 'BUILDMASTER_ADMIN_API_KEY is not set at User/Process scope or in Bitwarden (secret: buildmaster-admin-api-key). Cannot proceed.'
+      throw 'BUILDMASTER_ADMIN_API_KEY is not set at User/Process scope or in Bitwarden (secret: BuildMaster_Admin_API_Key). Cannot proceed.'
     }
 
     # Helper function to resolve application ID from name

@@ -117,16 +117,16 @@ function Publish-PSModuleToProGet {
         # 3. Resolve API key: Bitwarden -> configured env var -> admin fallback.
         $apiKey = $null
         $apiKeySource = $null
-        $bwCmd = Get-Command -Name 'Get-BitWardenSecret' -ErrorAction SilentlyContinue
+        $bwCmd = Get-Command -Name 'Get-BitwardenSecret' -ErrorAction SilentlyContinue
         if ($null -ne $bwCmd) {
             try {
                 $secretName = 'ProGet_PowerShellGet_Experimental_ApiKey'
-                $apiKey = Get-BitWardenSecret -SecretName $secretName
+                $apiKey = Get-BitwardenSecret -SecretName $secretName
                 if (-not [string]::IsNullOrWhiteSpace([string]$apiKey)) {
                     $apiKeySource = "Bitwarden secret '$secretName'"
                 }
             } catch {
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Get-BitWardenSecret threw; will fall back to env var'
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Get-BitwardenSecret threw; will fall back to env var'
                 $apiKey = $null
             }
         }
@@ -150,7 +150,7 @@ function Publish-PSModuleToProGet {
             }
         }
         if ([string]::IsNullOrWhiteSpace([string]$apiKey)) {
-            $msg = "Unable to resolve ProGet API key for Experimental feed. Expected Get-BitWardenSecret -SecretName 'ProGet_PowerShellGet_Experimental_ApiKey', configured env var '$($feed.ApiKeyName)', or admin fallback 'PROGET_ADMIN_API_KEY'."
+            $msg = "Unable to resolve ProGet API key for Experimental feed. Expected Get-BitwardenSecret -SecretName 'ProGet_PowerShellGet_Experimental_ApiKey', configured env var '$($feed.ApiKeyName)', or admin fallback 'PROGET_ADMIN_API_KEY'."
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
             throw $msg
         }

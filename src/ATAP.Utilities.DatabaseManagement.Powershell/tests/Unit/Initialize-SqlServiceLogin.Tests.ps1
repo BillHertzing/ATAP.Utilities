@@ -1,21 +1,12 @@
 # Initialize-SqlServiceLogin.Tests.ps1
 # Unit tests for Initialize-SqlServiceLogin
 
-# Derive function name from test filename and dot-source if not already loaded
-$functionName = ($MyInvocation.MyCommand.Name -replace '\.Tests\.ps1$', '')
-
-if (-not (Get-Command -Name $functionName -CommandType Function -ErrorAction SilentlyContinue)) {
-  $functionPath = Join-Path $PSScriptRoot '..\..\public\Initialize-SqlServiceLogin.ps1'
-  if (Test-Path $functionPath) {
-    . $functionPath
-  } else {
-    throw "Function file not found: $functionPath"
-  }
-}
-
-Describe 'Initialize-SqlServiceLogin' {
+Describe 'Initialize-SqlServiceLogin' -Tag 'Unit' {
 
   BeforeAll {
+    $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
+    . (Join-Path $publicDir 'Initialize-SqlServiceLogin.ps1')
+
     Write-PSFMessage -Level Debug -Message 'Starting Initialize-SqlServiceLogin tests' -Tag 'Trace', 'Tests'
 
     $script:instance = 'localhost\PRODUCTION'
@@ -167,7 +158,7 @@ Describe 'Initialize-SqlServiceLogin' {
         -DatabaseName $script:database `
         -ServiceAccount $script:account | Out-Null
 
-      $script:capturedLoginQuery | Should -Match [regex]::Escape($script:account)
+      $script:capturedLoginQuery | Should -Match ([regex]::Escape($script:account))
     }
 
     It 'login query contains CREATE LOGIN' {

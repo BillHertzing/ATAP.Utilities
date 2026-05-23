@@ -36,6 +36,7 @@ backup automation, and rule-export utilities in the ATAP 5-tier ecosystem.
 | ---------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `Install-SqlServerInstance`        | [public/Install-SqlServerInstance.ps1](public/Install-SqlServerInstance.ps1)               | Creates a SQL Server named instance on a host where SQL Server software is already present; uses dbatools `Install-DbaInstance`.                                                                 |
 | `Get-InstalledDatabaseInformation` | [public/Get-InstalledDatabaseInformation.ps1](public/Get-InstalledDatabaseInformation.ps1) | Returns metadata about running database server processes (SQL Server, MySQL, PostgreSQL) on the local machine.                                                                                   |
+| `Initialize-SqlServiceLogin`      | [public/Initialize-SqlServiceLogin.ps1](public/Initialize-SqlServiceLogin.ps1)             | Idempotently creates a Windows server login, database user, and `db_owner` role grant on a SQL Server instance for a service account. Generalizes the ProGet-specific `Initialize-ProGetSqlServiceLogin`; supports `-WhatIf`.                       |
 
 ### Stream J Database Lifecycle
 

@@ -12,9 +12,11 @@ function Invoke-ProvisionInedoServiceAccounts {
       3. Creates the SvcBuildmaster Windows local service account (password via clipboard).
       4. Grants SvcProGet db_owner on the ProGet PRODUCTION database.
       5. Grants SvcBuildmaster db_owner on the BuildMaster PRODUCTION database.
-    Must be run as Administrator. When loaded as part of the module the dependent
-    functions (New-LocalServiceAccount, Initialize-SqlServiceLogin) are already in
-    scope; when run standalone, they are dot-sourced from $PSScriptRoot.
+    Must be run as Administrator. The same-module dependencies (Type-PSLSA,
+    New-LocalServiceAccount) are in scope when loaded via the module and are
+    dot-sourced from $PSScriptRoot when run standalone. Initialize-SqlServiceLogin
+    lives in the ATAP.Utilities.DatabaseManagement.Powershell module and is imported
+    on demand.
   .PARAMETER SqlInstance
     SQL Server instance for the PRODUCTION database grants. Default: localhost\PRODUCTION.
   .OUTPUTS
@@ -46,8 +48,8 @@ function Invoke-ProvisionInedoServiceAccounts {
       throw $errMsg
     }
 
-    # Load dependencies when running standalone (already in scope when loaded via module)
-    foreach ($dep in @('Type-PSLSA', 'New-LocalServiceAccount', 'Initialize-SqlServiceLogin')) {
+    # Load same-module dependencies when running standalone (already in scope when loaded via module)
+    foreach ($dep in @('Type-PSLSA', 'New-LocalServiceAccount')) {
       if (-not (Get-Command -Name $dep -CommandType Function -ErrorAction SilentlyContinue)) {
         $depPath = Join-Path $PSScriptRoot "$dep.ps1"
         if (Test-Path $depPath) {
@@ -58,6 +60,19 @@ function Invoke-ProvisionInedoServiceAccounts {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Dependency '$dep' not found at '$depPath'."
           throw "Required function '$dep' could not be loaded."
         }
+      }
+    }
+
+    # Initialize-SqlServiceLogin lives in the ATAP.Utilities.DatabaseManagement.Powershell module
+    if (-not (Get-Command -Name 'Initialize-SqlServiceLogin' -CommandType Function -ErrorAction SilentlyContinue)) {
+      $dbMgmtModule = 'ATAP.Utilities.DatabaseManagement.Powershell'
+      try {
+        Import-Module $dbMgmtModule -ErrorAction Stop
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Imported '$dbMgmtModule' for Initialize-SqlServiceLogin."
+      }
+      catch {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Could not import '$dbMgmtModule': $($_.Exception.Message)"
+        throw "Required function 'Initialize-SqlServiceLogin' could not be loaded from '$dbMgmtModule'."
       }
     }
   }

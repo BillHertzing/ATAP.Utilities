@@ -137,7 +137,8 @@
     'Start-PlanningSession', 'Sync-BuildMasterPlans', 'Sync-RulesToCSV',
     'Test-CodeCoverageGate', 'Test-FailureAcknowledgedGate',
     'Test-PowerShellSyntax', 'Test-PromotionWithinCeiling',
-    'Test-SprintPrerequisites', 'Update-BlocksInCsproj',
+    'Test-SprintInfrastructureHealth', 'Test-SprintPrerequisites',
+    'Update-BlocksInCsproj',
     'Update-OverviewWorkspaceStableInfo', 'Update-PackageVersion',
     'Validate-ProGetFeeds'
 

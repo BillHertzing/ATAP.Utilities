@@ -292,6 +292,7 @@ function Start-BuildMasterPackagePipeline {
       $ModuleName = Resolve-BuildMasterPackageModuleName -ModuleName $ModuleName -ProjectPath $ProjectPath
       Write-Host "ModuleName was not supplied; using '$ModuleName'."
     }
+    $deploymentStageWasSupplied = $PSBoundParameters.ContainsKey('DeploymentStage') -and -not [string]::IsNullOrWhiteSpace($DeploymentStage)
     if ([string]::IsNullOrWhiteSpace($DeploymentStage)) {
       $DeploymentStage = $Tier
     }
@@ -398,15 +399,16 @@ function Start-BuildMasterPackagePipeline {
         Application  = $Application
         ReleaseNumber = $releaseNumber
         BuildNumber  = $buildNumber
-        ToStage      = $DeploymentStage
       }
+      if ($deploymentStageWasSupplied) { $deploymentParams['ToStage'] = $DeploymentStage }
       if (-not [string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) { $deploymentParams['BuildMasterBaseUrl'] = $BuildMasterBaseUrl }
       if (-not [string]::IsNullOrWhiteSpace($ApiKey)) { $deploymentParams['ApiKey'] = $ApiKey }
 
-      Write-Host "Starting BuildMaster deployment for build '$buildNumber' to stage '$DeploymentStage'."
+      $deploymentTargetText = if ($deploymentStageWasSupplied) { "stage '$DeploymentStage'" } else { 'the next pipeline stage' }
+      Write-Host "Starting BuildMaster deployment for build '$buildNumber' to $deploymentTargetText."
       Write-Host "Calling BuildMaster deploy API (timeout 30s)."
       $deploymentResult = Start-BuildMasterDeployment @deploymentParams
-      Write-Host "Started BuildMaster deployment for build '$buildNumber' to stage '$DeploymentStage'."
+      Write-Host "Started BuildMaster deployment for build '$buildNumber' to $deploymentTargetText."
     }
 
     $succeeded = [bool]$releaseResult.Succeeded -and [bool]$buildResult.Succeeded -and ($SkipDeployment.IsPresent -or [bool]$deploymentResult.Succeeded)

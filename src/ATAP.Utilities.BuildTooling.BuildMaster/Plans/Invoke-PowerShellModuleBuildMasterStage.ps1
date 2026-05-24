@@ -1164,6 +1164,15 @@ function Invoke-PowerShellModuleBuildMasterStage {
         Add-BuildMasterPublishTrace -Path $promotionTracePath -Message $promotionResult.ResponseSummary
 
         $resultsPath = Join-Path -Path $contextDirectory -ChildPath "$($Tier)TestResults"
+        $pesterOutputVerbosity = 'None'
+        if (-not [string]::IsNullOrWhiteSpace($env:ATAP_BUILDTOOLING_PESTER_OUTPUT_VERBOSITY)) {
+          $requestedVerbosity = $env:ATAP_BUILDTOOLING_PESTER_OUTPUT_VERBOSITY.Trim()
+          if ($requestedVerbosity -in @('None', 'Normal', 'Detailed', 'Diagnostic')) {
+            $pesterOutputVerbosity = $requestedVerbosity
+          } else {
+            Write-PSFMessage -FunctionName $f -ModuleName $m -Level Warning -Message "Ignoring unsupported ATAP_BUILDTOOLING_PESTER_OUTPUT_VERBOSITY '$requestedVerbosity'."
+          }
+        }
         try {
           $testResult = Invoke-PromotedModuleTests `
             -Name $PackageName `
@@ -1175,7 +1184,7 @@ function Invoke-PowerShellModuleBuildMasterStage {
             -WorkingDirectory $SourcePath `
             -ProGetBaseUrl $ProGetUrl `
             -ApiKey $script:resolvedProGetApiKey `
-            -PesterOutputVerbosity None
+            -PesterOutputVerbosity $pesterOutputVerbosity
         }
         catch {
           Write-PSFMessage -FunctionName $f -ModuleName $m -Level Error -Message "Invoke-PromotedModuleTests threw for '$PackageName' '$PromotedPackageVersion'. Exception: $($_.Exception.Message)"

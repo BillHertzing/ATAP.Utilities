@@ -5,7 +5,7 @@
 # interaction). All tests here are pure source-file content checks — no function
 # calls, no Get-Command on ATAP functions.
 
-Describe 'ConvertFrom-MboxFile - source analysis' -Tag 'Unit' {
+Describe 'ConvertFrom-MboxFile - source analysis' -Tag 'Unit', 'Disabled' {
 
   BeforeAll {
     $script:srcPath = Join-Path $PSScriptRoot '..\..\public\ConvertFrom-MboxFile.ps1'

@@ -115,13 +115,13 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
       $Object -eq "Queued BuildMaster build '23' for release 'ATAP.Utilities.PowerShell 0.1.0-Alpha025'."
     }
     Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter {
-      $Object -eq "Starting BuildMaster deployment for build '23' to stage 'Experimental'."
+      $Object -eq "Starting BuildMaster deployment for build '23' to the next pipeline stage."
     }
     Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter {
       $Object -eq 'Calling BuildMaster deploy API (timeout 30s).'
     }
     Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter {
-      $Object -eq "Started BuildMaster deployment for build '23' to stage 'Experimental'."
+      $Object -eq "Started BuildMaster deployment for build '23' to the next pipeline stage."
     }
   }
 
@@ -137,7 +137,7 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
     $script:releaseCall['ReleaseNumber'] | Should -Be '0.1.0-Beta008'
     $script:releaseCall['ReleaseName'] | Should -Be 'ATAP.Utilities.PowerShell 0.1.0-Beta008'
     $script:buildCall['Variables']['$ModuleName'] | Should -Be 'ATAP.Utilities.PowerShell'
-    $script:deploymentCall['ToStage'] | Should -Be 'Experimental'
+    $script:deploymentCall['ToStage'] | Should -BeNullOrEmpty
     $result.Succeeded | Should -BeTrue
 
     Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter {
@@ -201,7 +201,7 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
     $variables['$CustomFlag'] | Should -Be 'yes'
   }
 
-  It 'Starts deployment for the queued build at the starting stage by default' {
+  It 'Starts deployment for the queued build at the next stage by default' {
     $result = Start-BuildMasterPackagePipeline `
       -Application 'ATAP.Utilities-PowerShell' `
       -PipelineName 'global::PowerShellModule-5Stage' `
@@ -213,11 +213,22 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
     $script:deploymentCall['Application'] | Should -Be 'ATAP.Utilities-PowerShell'
     $script:deploymentCall['ReleaseNumber'] | Should -Be '0.1.0-Beta001'
     $script:deploymentCall['BuildNumber'] | Should -Be '23'
-    $script:deploymentCall['ToStage'] | Should -Be 'Experimental'
+    $script:deploymentCall['ToStage'] | Should -BeNullOrEmpty
     $script:deploymentCall['BuildMasterBaseUrl'] | Should -Be 'http://localhost:50017'
     $script:deploymentCall['ApiKey'] | Should -Be 'unit-test-key'
     $result.DeploymentResult.DeploymentId | Should -Be '3003'
     $result.ResponseSummary | Should -Match 'deployment started'
+  }
+
+  It 'Honors an explicit deployment stage when supplied' {
+    Start-BuildMasterPackagePipeline `
+      -Application 'ATAP.Utilities-PowerShell' `
+      -PipelineName 'global::PowerShellModule-5Stage' `
+      -ModuleName 'ATAP.Utilities.PowerShell' `
+      -ResolvedPackageVersion '0.1.0-Beta001' `
+      -DeploymentStage 'Experimental' | Out-Null
+
+    $script:deploymentCall['ToStage'] | Should -Be 'Experimental'
   }
 
   It 'Allows callers to create the release/build without starting deployment' {

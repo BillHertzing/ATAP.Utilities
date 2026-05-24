@@ -1,5 +1,14 @@
 # BuildMaster Install and Configuration Runbook
 
+> **SEC-T1 / BLOCKER-8 (resolved 2026-05-23):** The ProGet API key must
+> **never** appear in BuildMaster process arguments or execution transcripts.
+> All OtterScript plans (`CSharpPackage-5Stage.otter`, `ReleaseBundle-6Stage.otter`,
+> `PowerShellModule-5Stage.otter`) read the key from the machine/service-account
+> environment variables `PROGET_ADMIN_API_KEY` and `PROGET_BUILDMASTER_API_KEY`,
+> provisioned by `LoginScript.ps1` / Bitwarden. Do **not** introduce
+> `$Decrypt($ProGetApiKey)` in any `Arguments:` block. Use the Pester regression
+> in `Plans/tests/Test-SecretExposureRegression.Tests.ps1` to enforce this.
+
 **Status:** Sprint 0007 runbook. Replaces
 `Runbook-BuildMasterConfiguration.md`.
 

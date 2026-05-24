@@ -155,7 +155,7 @@ function ConvertFrom-CopilotChatHistory {
       param([string]$md, [int]$maxChars, [int]$MaxCodeFenceLines, [switch]$KeepAllCode)
       try {
         if ($maxChars -le 0) { return $md }
-        $blocks = _Split-CodeAndText $md
+        $blocks = Split-CodeAndText $md
         $builder = New-Object System.Text.StringBuilder
         foreach ($b in $blocks) {
           if ($b.type -eq 'code') {
@@ -172,7 +172,7 @@ function ConvertFrom-CopilotChatHistory {
           }
           if ($builder.Length -ge $maxChars) { break }
         }
-        $out = _Collapse-BlankLines ($builder.ToString().Substring(0, [Math]::Min($builder.Length, $maxChars)))
+        $out = Collapse-BlankLines ($builder.ToString().Substring(0, [Math]::Min($builder.Length, $maxChars)))
         $out.Trim()
       }
       catch {
@@ -187,7 +187,7 @@ function ConvertFrom-CopilotChatHistory {
     function _Clean-JsoncText {
       param([string]$text)
       try {
-        $t = _Convert-Newline $text
+        $t = Convert-Newline $text
         # Keep only from first "{" to last "}"
         $first = $t.IndexOf('{'); $last = $t.LastIndexOf('}')
         if ($first -lt 0 -or $last -lt 0 -or $last -lt $first) { throw "Could not locate JSON object boundaries." }
@@ -321,7 +321,7 @@ function ConvertFrom-CopilotChatHistory {
     function Get-PairsFromText {
       param([string]$text)
       try {
-        $t = _Convert-Newline $text
+        $t = Convert-Newline $text
         $lines = $t -split "`n"
         $currentRole = $null; $buffers = @(); $buf = New-Object System.Text.StringBuilder
         function Clear-Buffer {
@@ -375,11 +375,11 @@ function ConvertFrom-CopilotChatHistory {
 
         $text =
         if ($PSCmdlet.ParameterSetName -eq 'ByText' -and $PSBoundParameters.ContainsKey('RawText')) {
-          _Convert-Newline $RawText
+          Convert-Newline $RawText
         }
         elseif ($PSCmdlet.ParameterSetName -eq 'ByPath' -and $PSBoundParameters.ContainsKey('Path')) {
           $raw = [System.IO.File]::ReadAllText((Resolve-Path $Path))
-          _Convert-Newline $raw
+          Convert-Newline $raw
         }
         else { throw "You must provide either -Path or -RawText." }
 
@@ -409,6 +409,9 @@ function ConvertFrom-CopilotChatHistory {
           else {
             $pairs = Get-PairsFromText -text $text
           }
+        }
+        if (-not $pairs -or $pairs.Count -eq 0) {
+          throw 'No conversation pairs were found in the supplied chat history.'
         }
 
         # Clean + condense assistant responses

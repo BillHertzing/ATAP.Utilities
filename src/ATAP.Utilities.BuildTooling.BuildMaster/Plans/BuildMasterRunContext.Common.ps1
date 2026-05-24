@@ -1,4 +1,5 @@
 
+<#
 .SYNOPSIS
 Shared helper functions for BuildMaster run-context plan scripts.
 

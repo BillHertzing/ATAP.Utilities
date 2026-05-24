@@ -736,3 +736,67 @@ icacls "C:\Dropbox\whertzing\GitHub\AceCommander" /grant "NETWORK SERVICE:(OI)(C
 - [BuildMaster pipelines](https://docs.inedo.com/docs/buildmaster/deployment-continuous-delivery/buildmaster-pipelines)
 - [Rafts & Git Storage](https://docs.inedo.com/docs/otter/scripting-in-otter/otter-rafts-and-git-storage)
 - [BuildMaster Native API reference](https://buildmaster.inedo.com/reference/api)
+
+---
+
+## 16. Repository Monitor Setup (Manual Gate) — V4-A06
+
+Source-controlled monitor definitions live in:
+
+- `src/ATAP.Utilities.BuildTooling.BuildMaster/Monitors/PowerShellModule-RepositoryMonitors.otter`
+- `src/ATAP.Utilities.BuildTooling.BuildMaster/Monitors/CSharpPackage-RepositoryMonitors.otter`
+
+Each file defines two monitors per application: one for the `main` branch (Production tier,
+poll every 10 minutes) and one for sprint branches matching `*-Sprint-*-work-items`
+(Experimental tier, poll every 2 minutes). Both use `PathFilter: src/**` so docs-only
+commits do not trigger a build.
+
+### Prerequisites
+
+The `BUILDMASTER_GH_WEBHOOK_SECRET` environment variable must be populated by
+`LoginScript.ps1` before BuildMaster starts. Create a Bitwarden secure note named
+`BUILDMASTER_GH_WEBHOOK_SECRET` and add it to the login script.
+
+### Verify monitors exist via API (interactive session)
+
+Run in an interactive PowerShell session where `LoginScript.ps1` has loaded the API key:
+
+```powershell
+$apiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
+$headers = @{ 'X-ApiKey' = $apiKey }
+
+# Attempt high-level endpoint (may return 404 depending on BM version)
+try {
+  Invoke-RestMethod -Uri 'http://localhost:50017/api/resource-monitors' -Method Get -Headers $headers | ConvertTo-Json -Depth 5
+} catch { Write-Host "Endpoint unavailable: $($_.Exception.Message)" }
+
+# Attempt Native API
+$body = @{ API_Key = $apiKey } | ConvertTo-Json
+try {
+  Invoke-RestMethod -Uri 'http://localhost:50017/api/json/ResourceMonitors_GetResourceMonitors' -Method Post -Body $body -ContentType 'application/json' | ConvertTo-Json -Depth 5
+} catch { Write-Host "Native endpoint unavailable: $($_.Exception.Message)" }
+```
+
+### Create monitors via BuildMaster UI (if not already present)
+
+1. Open **`http://localhost:50017`**.
+2. Navigate to **Applications → ATAP.Utilities-PowerShell → Settings → Repository Monitors**.
+3. Click **Add Monitor**. For each of the two entries in `PowerShellModule-RepositoryMonitors.otter`,
+   fill in: Organization = `BillHertzing`, Repository = `ATAP.Utilities`, BranchFilter, PathFilter,
+   PollInterval, PipelineName = `PowerShellModule-5Stage`, WebhookSecret env var name.
+4. Repeat for **Applications → ATAP.Utilities-CSharp** using `CSharpPackage-RepositoryMonitors.otter`
+   and PipelineName = `CSharpPackage-5Stage`.
+
+### Trigger test
+
+Push a commit touching a file under `src/` to the sprint branch
+`100-Sprint-0007-work-items` and confirm builds start in both BuildMaster applications.
+Record the build IDs in the evidence file:
+`_generated/audit/v4-current-state/V4-A06-buildmaster-monitors-evidence-20260523.md`
+
+### API automation note
+
+The BuildMaster Native API exposes `ResourceMonitors_CreateOrUpdateResourceMonitor`
+but the configuration payload is extension-specific. Capture a UI-created monitor
+JSON payload first, then automate future monitor provisioning from that manifest.
+This is tracked as a follow-up in V4-A06 (trigger proof pending interactive session).

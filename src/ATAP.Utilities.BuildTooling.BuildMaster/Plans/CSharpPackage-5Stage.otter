@@ -1,282 +1,70 @@
 ##########################################################################
-# CSharpPackage-5Stage - BuildMaster OtterScript Plan
+# CSharpPackage-5Stage - BuildMaster OtterScript Plan (thin-runner shape)
 #
-# IMMUTABLE BUILD STRATEGY (banner):
+# Variables (Application Variables - set in BuildMaster Application config):
+#   $ApplicationName  - BuildMaster application name, e.g. "ATAP.Utilities"
+#   $Branch           - source branch name supplied by monitor/poller
+#   $SourcePath       - absolute path to the developer/build worktree
+#   $MetaPackageName  - roll-up NuGet package id, e.g. "ATAP.Utilities.StronglyTypedId"
+#   $PackageName      - ProGet package id used for promotion / test; defaults to $MetaPackageName
+#   $ProjectPath      - path (relative to $SourcePath or absolute) to the .csproj
+#                       being packed; its parent directory must contain version.json
+#                       so Get-BuildContext can resolve the immutable package version
+#                       via nbgv from that location
+#   $SolutionPath     - solution / .slnf passed to Invoke-PromotedPackageTests
+#                       (e.g. "ATAP.Utilities.Production.slnf"); defaults to
+#                       "ATAP.Utilities.sln" inside the runner
+#   $Configuration    - MSBuild configuration, defaults to Release
+#   ProGet API key    - supplied to the runner through process environment
+#                       variable PROGET_BUILDMASTER_API_KEY or
+#                       PROGET_ADMIN_API_KEY; do NOT pass secrets in Arguments
+#                       (SEC-T1 / BLOCKER-8). The runner resolves the key and
+#                       Publish-NuGetPackageToProGet / Promote-ProGetPackage
+#                       use it without it ever appearing in command-line args.
+#   BuildMaster stage - passed explicitly from $PipelineStageName so deployment
+#                       targets do not depend on agent environment variables
+#   $BuildMasterBuildId - runtime value from $BuildMasterId(build), used to
+#                       isolate generated inter-stage state
+#   $CeilingTier      - runtime variable computed from the project's
+#                       version.json prerelease label and stored under the
+#                       build-id context (owned by the runner script)
+#
+# Experimental builds and packs the C# package once and publishes it (and any
+# sibling roll-up .nupkg files dotnet pack emits) to nuget-experimental. Later
+# stages promote that same immutable .nupkg and run Invoke-PromotedPackageTests
+# against the promoted package through $CeilingTier; they do not rebuild or
+# repack above Experimental.
+#
+# Immutable build strategy:
 #   Adheres to the immutable build strategy: build occurs only in the
 #   Experimental stage; later stages promote the same bytes via
-#   `Promote-ProGetPackage`. See `Immutable-Build-Strategy.md` section 6.4
-#   for the binary-determinism requirement.
-#
-# Source of truth:
-#   Plan-DocsUpdateForImmutablePackages_V3.md Section K
-#   SolutionDocumentation/BuildMaster-ProGet-CSharp-Package-Pipeline.md section 5
+#   Promote-ProGetPackage. ContinuousIntegrationBuild=true is forced on both
+#   dotnet build and dotnet pack inside the runner to enforce binary-
+#   determinism per Immutable-Build-Strategy.md S6.4.
+#   version.json is interpreted as a promotion ceiling, not as the current
+#   stage. See SolutionDocumentation/Immutable-Build-Strategy.md S3 and
+#   SolutionDocumentation/VersionJsonAsCeiling.md.
 #   Topology doc: SolutionDocumentation/BuildMaster-Pipeline-Topology.md
 #
-# Variables (Application Variables):
-#   $ApplicationName          Repository/application name, e.g. ATAP.Utilities
-#   $Branch                   Branch being built
-#   $SourcePath               Absolute path to the developer worktree
-#   $Configuration            MSBuild configuration, e.g. Release
-#   ProGet API key    - NOT passed in Arguments. Scripts read it from the
-#                       machine/service-account environment variable
-#                       PROGET_ADMIN_API_KEY (for publish) or
-#                       PROGET_BUILDMASTER_API_KEY (for promote), provisioned
-#                       by LoginScript.ps1 / Bitwarden (SEC-T1 / BLOCKER-8).
-#   $MetaPackageName          Roll-up NuGet package id, e.g. ATAP.Utilities
-#   $SolutionPath             Path to the solution file (e.g. ATAP.Utilities.sln for
-#                             ATAP.Utilities-CSharp, AceCommander.sln for AceCommander)
-#   $ProjectPath              Repo-root-relative .csproj path used for
-#                             project-adjacent version.json / NBGV resolution
-#   $Tier                     Current BuildMaster tier/stage (CurrentTier)
-#   $BuildMasterBuildId       Runtime value from $BuildMasterId(build), used
-#                             to isolate generated inter-stage state
-#   $CeilingTier              Runtime variable computed from version.json in
-#                             the preamble and stored under the build-id context
-#
-# Only Experimental builds and publishes. Later stages move the same package
-# version through the feed chain up to $CeilingTier and run tests against the
-# promoted artifact. version.json is a promotion ceiling, not the current stage.
-# See SolutionDocumentation/Immutable-Build-Strategy.md §3 and
-# SolutionDocumentation/VersionJsonAsCeiling.md.
-##########################################################################
-#
-# OtterScript string-quoting convention:
-#   ALL Exec Arguments: values use >>...>> literal blocks, never backtick strings.
-#   Backtick ( `...` ) is reserved for standalone OtterScript expressions
-#   such as Log-Debug and set-value statements.  This avoids escaping
-#   ambiguity when argument strings contain dollar signs, quotes, or
-#   variable references that BuildMaster must not expand prematurely.
+# This plan is assigned as a per-stage deployment step in the BuildMaster UI.
+# Keep the OtterScript surface tiny; the PowerShell runner owns stage/context
+# branching, ceiling-clamp enforcement, per-tier completion markers, run-
+# context JSON, and secret-safe ProGet publish/promote/test invocations.
 ##########################################################################
 
-# The source is the BuildMaster-provided developer worktree. Do not replace it
-# with file-export checkout; the .git file is required by version resolution.
-
-set $BuildToolingModulePath = $PathCombine($SourcePath, src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1);
+# BuildTooling module used by every stage command.
+set $BuildToolingModuleManifest = $PathCombine($SourcePath, src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1);
 set $BuildMasterPlanScriptDir = $PathCombine($SourcePath, src\ATAP.Utilities.BuildTooling.BuildMaster\Plans);
-set $InitializeBuildContextScript = $PathCombine($BuildMasterPlanScriptDir, Initialize-CSharpPackageBuildContext.ps1);
+set $InvokeCSharpPackageStageScript = $PathCombine($BuildMasterPlanScriptDir, Invoke-CSharpPackageBuildMasterStage.ps1);
 
-set $ExperimentalFeedName = nuget-experimental;
-set $DevelopmentFeedName  = nuget-development;
-set $IntegrationFeedName  = nuget-integration;
-set $QaFeedName           = nuget-qa;
-set $ProductionFeedName   = nuget-stable;
-set $PackageName          = $MetaPackageName;
 set $BuildMasterBuildId = $BuildMasterId(build);
 set $BuildMasterBuildNumber = $BuildNumber;
 set $BuildMasterExecutionId = $ExecutionId;
-set $BuildContextDir = $PathCombine($SourcePath, _generated\buildmaster\$BuildMasterBuildId);
-set $CurrentTierTempFile = $PathCombine($BuildContextDir, _current_tier.tmp);
-set $CeilingTierTempFile = $PathCombine($BuildContextDir, _ceiling_tier.tmp);
-set $ResolvedPackageVersionTempFile = $PathCombine($BuildContextDir, _resolved_version.tmp);
-set $PrereleaseLabelTempFile = $PathCombine($BuildContextDir, _prerelease_label.tmp);
-set $AllowExperimentalFile = $PathCombine($BuildContextDir, _allow_experimental.tmp);
-set $AllowDevelopmentFile = $PathCombine($BuildContextDir, _allow_development.tmp);
-set $AllowIntegrationFile = $PathCombine($BuildContextDir, _allow_integration.tmp);
-set $AllowQAFile = $PathCombine($BuildContextDir, _allow_qa.tmp);
-set $AllowProductionFile = $PathCombine($BuildContextDir, _allow_production.tmp);
 
 Exec
 (
     FileName: pwsh,
-    Arguments: >>-NoProfile -File "$InitializeBuildContextScript" -BuildToolingModulePath "$BuildToolingModulePath" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -PackageName "$PackageName" -ProjectPath "$ProjectPath" -Branch "$Branch" -Stage "$Tier">>,
+    Arguments: >>-NoProfile -File "$InvokeCSharpPackageStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -MetaPackageName "$MetaPackageName" -PackageName "$PackageName" -ProjectPath "$ProjectPath" -SolutionPath "$SolutionPath" -Configuration "$Configuration" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetUrl">>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );
-
-set $CurrentTier = $Trim($FileContents($CurrentTierTempFile));
-set $CeilingTier = $Trim($FileContents($CeilingTierTempFile));
-set $ResolvedPackageVersion = $Trim($FileContents($ResolvedPackageVersionTempFile));
-set $PrereleaseLabel = $Trim($FileContents($PrereleaseLabelTempFile));
-set $AllowExperimental = $Trim($FileContents($AllowExperimentalFile));
-set $AllowDevelopment = $Trim($FileContents($AllowDevelopmentFile));
-set $AllowIntegration = $Trim($FileContents($AllowIntegrationFile));
-set $AllowQA = $Trim($FileContents($AllowQAFile));
-set $AllowProduction = $Trim($FileContents($AllowProductionFile));
-
-set $FeedName = $ExperimentalFeedName;
-
-Log-Debug `BuildId=$BuildMasterBuildId ContextDirectory=$BuildContextDir CurrentTier=$CurrentTier CeilingTier=$CeilingTier Feed=$FeedName Package=$PackageName Version=$ResolvedPackageVersion PrereleaseLabel=$PrereleaseLabel`;
-
-# -------------------------------------------------------------------------
-# Stage Experimental - build, pack, publish to the first feed
-# -------------------------------------------------------------------------
-stage Experimental
-{
-    if $Tier == Experimental
-    {
-        if $AllowExperimental == true
-        {
-        # ContinuousIntegrationBuild=true enforces binary-determinism
-        # (deterministic source paths, embedded PDB metadata, no machine-
-        # specific build outputs) as required by Immutable-Build-Strategy.md
-        # section 6.4. Must be set on BOTH `dotnet build` and `dotnet pack`
-        # so the binaries produced here are bit-identical to any later rebuild
-        # from the same commit, satisfying the immutable-promotion contract.
-        Exec
-        (
-            FileName: dotnet,
-            Arguments: >>build $SolutionPath --configuration $Configuration --no-incremental -p:ContinuousIntegrationBuild=true>>,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Exec
-        (
-            FileName: dotnet,
-            Arguments: >>pack $SolutionPath --configuration $Configuration --no-build --output _generated\nuget\$Tier -p:ContinuousIntegrationBuild=true>>,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Exec
-        (
-            FileName: pwsh,
-            Arguments: >>-NoProfile -Command "Import-Module '$BuildToolingModulePath' -Force; Get-ChildItem -Path '_generated\nuget\$Tier' -Filter '*.nupkg' -File | ForEach-Object { Publish-NuGetPackageToProGet -NupkgPath $$_.FullName -Feed '$FeedName' -CeilingTier '$CeilingTier' | Out-Null }" >>,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Create-Artifact Packages
-        (
-            From: _generated\nuget\$Tier,
-            Include: @(*.nupkg, *.snupkg)
-        );
-        }
-    }
-}
-
-# -------------------------------------------------------------------------
-# Stage Development - promote from Experimental, then run unit tests
-# -------------------------------------------------------------------------
-stage Development
-{
-    if $Tier == Development
-    {
-        if $AllowDevelopment == true
-        {
-        Exec
-        (
-            FileName: pwsh,
-            Arguments: >>-NoProfile -Command "Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$ExperimentalFeedName' -ToFeed '$DevelopmentFeedName' -Reason 'Development gate for $ApplicationName $ResolvedPackageVersion on $Branch' -CeilingTier '$CeilingTier'">>,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Exec
-        (
-            FileName: pwsh,
-            Arguments: >>-NoProfile -Command "Import-Module '$BuildToolingModulePath' -Force; Invoke-PromotedPackageTests -Name '$PackageName' -Version '$ResolvedPackageVersion' -Feed '$DevelopmentFeedName' -TestFilter 'Category=Unit' -ResultsPath '_generated\testresults\$Tier'">>,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Create-Artifact TestResults
-        (
-            From: _generated\testresults\$Tier,
-            Include: @(*.trx)
-        );
-        }
-    }
-}
-
-# -------------------------------------------------------------------------
-# Stage Integration - promote from Development, then run integration tests
-# -------------------------------------------------------------------------
-stage Integration
-{
-    if $Tier == Integration
-    {
-        if $AllowIntegration == true
-        {
-        Exec
-        (
-            FileName: pwsh,
-            Arguments: >>-NoProfile -Command "Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$DevelopmentFeedName' -ToFeed '$IntegrationFeedName' -Reason 'Integration gate for $ApplicationName $ResolvedPackageVersion on $Branch' -CeilingTier '$CeilingTier'">>,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Exec
-        (
-            FileName: pwsh,
-            Arguments: >>-NoProfile -Command "Import-Module '$BuildToolingModulePath' -Force; Invoke-PromotedPackageTests -Name '$PackageName' -Version '$ResolvedPackageVersion' -Feed '$IntegrationFeedName' -TestFilter 'Category=Unit|Category=Integration' -ResultsPath '_generated\testresults\$Tier'">>,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Create-Artifact TestResults
-        (
-            From: _generated\testresults\$Tier,
-            Include: @(*.trx)
-        );
-        }
-    }
-}
-
-# -------------------------------------------------------------------------
-# Stage QA - promote from Integration, then run regression tests with coverage
-# -------------------------------------------------------------------------
-stage QA
-{
-    if $Tier == QA
-    {
-        if $AllowQA == true
-        {
-        Exec
-        (
-            FileName: pwsh,
-            Arguments: >>-NoProfile -Command "Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$IntegrationFeedName' -ToFeed '$QaFeedName' -Reason 'QA gate for $ApplicationName $ResolvedPackageVersion on $Branch' -CeilingTier '$CeilingTier'">>,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Exec
-        (
-            FileName: pwsh,
-            Arguments: >>-NoProfile -Command "Import-Module '$BuildToolingModulePath' -Force; Invoke-PromotedPackageTests -Name '$PackageName' -Version '$ResolvedPackageVersion' -Feed '$QaFeedName' -CollectCoverage -ResultsPath '_generated\testresults\$Tier'">>,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Create-Artifact TestResults
-        (
-            From: _generated\testresults\$Tier,
-            Include: @(*.trx, coverage.cobertura.xml)
-        );
-        }
-    }
-}
-
-# -------------------------------------------------------------------------
-# Stage Production - promote from QA, then run smoke tests
-# -------------------------------------------------------------------------
-stage Production
-{
-    if $Tier == Production
-    {
-        if $AllowProduction == true
-        {
-        Exec
-        (
-            FileName: pwsh,
-            Arguments: >>-NoProfile -Command "Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$QaFeedName' -ToFeed '$ProductionFeedName' -Reason 'Production gate for $ApplicationName $ResolvedPackageVersion on $Branch' -CeilingTier '$CeilingTier'">>,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Exec
-        (
-            FileName: pwsh,
-            Arguments: >>-NoProfile -Command "Import-Module '$BuildToolingModulePath' -Force; Invoke-PromotedPackageTests -Name '$PackageName' -Version '$ResolvedPackageVersion' -Feed '$ProductionFeedName' -TestFilter 'Category=Smoke' -ResultsPath '_generated\testresults\$Tier'">>,
-            WorkingDirectory: $SourcePath,
-            SuccessExitCode: 0
-        );
-
-        Create-Artifact TestResults
-        (
-            From: _generated\testresults\$Tier,
-            Include: @(*.trx)
-        );
-        }
-    }
-}

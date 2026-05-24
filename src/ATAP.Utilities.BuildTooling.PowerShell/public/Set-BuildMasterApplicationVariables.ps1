@@ -20,7 +20,7 @@ function Set-BuildMasterApplicationVariables {
     hashtables like @{ Value = 'secret'; Sensitive = $true }.
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server. Defaults to $global:settings,
-    BUILDMASTER_BASE_URL, then http://localhost:8622.
+    BUILDMASTER_BASE_URL, then http://localhost:50017.
   .PARAMETER ApiKey
     BuildMaster API key with Variables Management permission.
   .OUTPUTS

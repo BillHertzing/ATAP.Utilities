@@ -34,7 +34,7 @@ function Clear-BuildMasterSprintVariables {
     Clear-BuildMasterSprintVariables
   .EXAMPLE
     # Target a different BuildMaster instance
-    Clear-BuildMasterSprintVariables -BuildMasterBaseUrl 'http://buildmaster.corp:8622'
+    Clear-BuildMasterSprintVariables -BuildMasterBaseUrl 'http://buildmaster.corp:50017'
   .NOTES
     AI assisted using Powershell.instructions.md as guidelines
     Phase 3C — T-31 (7.2-1 BuildMaster sprint application variables teardown)

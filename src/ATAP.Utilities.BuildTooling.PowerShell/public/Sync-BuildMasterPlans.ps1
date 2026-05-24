@@ -23,7 +23,7 @@ function Sync-BuildMasterPlans {
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server. Defaults to BuildMaster.BaseUrl from
     $global:settings, then BUILDMASTER_BASE_URL from the process environment,
-    then http://localhost:50001.
+    then http://localhost:50017.
   .PARAMETER ApiKey
     BuildMaster Native API key. Defaults to BUILDMASTER_ADMIN_API_KEY from User
     scope, then Process scope.

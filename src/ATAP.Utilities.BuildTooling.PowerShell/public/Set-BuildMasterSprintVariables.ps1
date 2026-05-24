@@ -1,7 +1,9 @@
 function Set-BuildMasterSprintVariables {
   <#
   .SYNOPSIS
-    Sets BuildMaster Application Variables for a new sprint.
+    DEPRECATED. Sets BuildMaster Application Variables for a new sprint.
+    Use Set-BuildMasterApplicationVariables instead.
+    This cmdlet will be removed in Sprint 0008.
   .DESCRIPTION
     Uses the BuildMaster Variables REST API
     (POST /api/variables/application/{app}/{var}) to set three sprint-scoped
@@ -18,6 +20,9 @@ function Set-BuildMasterSprintVariables {
     Reads the API key from the BUILDMASTER_ADMIN_API_KEY environment variable
     (User scope preferred, then Process scope).
 
+    ** DEPRECATED ** Use Set-BuildMasterApplicationVariables instead.
+    This cmdlet will be removed in Sprint 0008.
+
   .PARAMETER SprintNumber
     The zero-padded four-character sprint number, e.g. '0006'.
   .PARAMETER Username
@@ -33,7 +38,7 @@ function Set-BuildMasterSprintVariables {
     Defaults to @('AceCommander', 'ATAP.Utilities').
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server.
-    Defaults to 'http://localhost:50001'.
+    Defaults to 'http://localhost:50017'.
   .OUTPUTS
     PSCustomObject with variablesSet (array of 'appName/varName' strings) and
     errors (array of error message strings) fields.
@@ -49,7 +54,10 @@ function Set-BuildMasterSprintVariables {
   .NOTES
     AI assisted using Powershell.instructions.md as guidelines
     Phase 3C — T-31 (7.2-1 BuildMaster sprint application variables)
+    DEPRECATED: Use Set-BuildMasterApplicationVariables instead.
+    This cmdlet will be removed in Sprint 0008.
   .LINK
+    Set-BuildMasterApplicationVariables
     New-SprintStage2
     Clear-BuildMasterSprintVariables
     Set-BuildMasterStableVariables
@@ -73,6 +81,9 @@ function Set-BuildMasterSprintVariables {
     $fn = $MyInvocation.MyCommand.Name
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
+
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+      -Message 'DEPRECATED: Use Set-BuildMasterApplicationVariables instead. This cmdlet will be removed in Sprint 0008.'
 
     # Load Helpers
     try {

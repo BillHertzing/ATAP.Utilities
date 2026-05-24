@@ -41,7 +41,7 @@ function Set-BuildMasterStableVariables {
     Defaults to @('AceCommander', 'ATAP.Utilities').
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server.
-    Defaults to 'http://localhost:50001'.
+    Defaults to 'http://localhost:50017'.
   .OUTPUTS
     PSCustomObject with variablesSet (array of 'appName/varName' strings) and
     errors (array of error message strings) fields.
@@ -50,7 +50,7 @@ function Set-BuildMasterStableVariables {
     Set-BuildMasterStableVariables
   .EXAMPLE
     # Update after changing the ProGet host address
-    Set-BuildMasterStableVariables -BuildMasterBaseUrl 'http://buildmaster.corp:8622'
+    Set-BuildMasterStableVariables -BuildMasterBaseUrl 'http://buildmaster.corp:50017'
   .NOTES
     AI assisted using Powershell.instructions.md as guidelines
     Phase 3C — T-31 (7.2-2 BuildMaster stable application variables)

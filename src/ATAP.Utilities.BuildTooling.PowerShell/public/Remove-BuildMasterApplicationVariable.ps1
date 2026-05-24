@@ -12,7 +12,7 @@ function Remove-BuildMasterApplicationVariable {
     One or more variable names to remove.
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server. Defaults to $global:settings,
-    BUILDMASTER_BASE_URL, then http://localhost:8622.
+    BUILDMASTER_BASE_URL, then http://localhost:50017.
   .PARAMETER ApiKey
     BuildMaster API key with Variables Management permission.
   .OUTPUTS

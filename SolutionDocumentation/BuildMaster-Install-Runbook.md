@@ -63,7 +63,7 @@ captured and can be safely replayed by PowerShell.
 | Field                    | Value                                                                                |
 | ------------------------ | ------------------------------------------------------------------------------------ |
 | Host                     | `utat022`                                                                            |
-| BuildMaster URL          | `http://localhost:8622`                                                              |
+| BuildMaster URL          | `http://localhost:50017`                                                             |
 | SQL Server               | `localhost\PRODUCTION`                                                               |
 | BuildMaster database     | `BuildMaster`                                                                        |
 | Windows service          | `INEDOBMSVC`                                                                         |
@@ -112,7 +112,7 @@ Expected:
 
 - `INEDOBMSVC` is `Running`.
 - The SQL query returns `BuildMaster`.
-- `http://localhost:8622` opens the BuildMaster UI.
+- `http://localhost:50017` opens the BuildMaster UI.
 
 On first login, use `Admin/Admin` only long enough to change the admin
 password.
@@ -407,6 +407,18 @@ copies into BuildMaster's default raft with API calls.
 The implemented script functions target Native API raft item storage with
 `Raft_Id = 1`.
 
+### 9.1.1 Raft strategy decision (Sprint 0007)
+
+- Decision: use the default database raft, `Raft_Id = 1`, for all `.otter`
+  upload via `New-BuildMasterScript` and `Sync-BuildMasterPlans` during
+  Sprint 0007.
+- The Git raft path is deferred until either BuildMaster supports a
+  subfolder field, or repo-root `Plans/`, `Monitors/`, `Scripts/` mirror
+  folders are restored.
+- This matches `BuildMasterDefaultRaftId = 1` in `$global:settings` and the
+  helper cmdlet defaults in `New-BuildMasterScript`,
+  `Remove-BuildMasterScript`, and `Sync-BuildMasterPlans`.
+
 ### 9.2 Upload deployment scripts
 
 Canonical authored files:
@@ -622,7 +634,7 @@ Next implementation order:
 ## 13. Verification checklist
 
 - [ ] BuildMaster service `INEDOBMSVC` is running.
-- [ ] BuildMaster UI is reachable at `http://localhost:8622`.
+- [ ] BuildMaster UI is reachable at `http://localhost:50017`.
 - [ ] `BUILDMASTER_ADMIN_API_KEY` is present in the operator PowerShell process.
 - [ ] Environments exist: Experimental, Development, Integration, QA, Production.
 - [ ] Applications exist: `ATAP.Utilities-CSharp`,

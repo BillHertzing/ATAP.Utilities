@@ -15,7 +15,7 @@ function Remove-BuildMasterApplication {
     Deactivate the application instead of purging it.
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server. Defaults to $global:settings,
-    BUILDMASTER_BASE_URL, then http://localhost:8622.
+    BUILDMASTER_BASE_URL, then http://localhost:50017.
   .PARAMETER ApiKey
     BuildMaster API key with Application Management permission.
   .OUTPUTS

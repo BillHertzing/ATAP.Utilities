@@ -650,7 +650,7 @@ Example reachability checks:
 
 ```powershell
 Invoke-WebRequest 'http://localhost:50000/' -UseBasicParsing | Select-Object StatusCode
-Invoke-WebRequest 'http://localhost:8622/' -UseBasicParsing | Select-Object StatusCode
+Invoke-WebRequest 'http://localhost:50017/' -UseBasicParsing | Select-Object StatusCode
 ```
 
 ### 11.4 GitHub MCP access validation

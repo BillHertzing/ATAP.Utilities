@@ -18,7 +18,7 @@ function Remove-BuildMasterScript {
     Purges history for the raft item instead of deleting only the current item.
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server. Defaults to $global:settings,
-    BUILDMASTER_BASE_URL, then http://localhost:8622.
+    BUILDMASTER_BASE_URL, then http://localhost:50017.
   .PARAMETER ApiKey
     BuildMaster API key with Native API access.
   .OUTPUTS

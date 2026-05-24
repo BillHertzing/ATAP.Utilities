@@ -256,6 +256,13 @@ Durable pipelines created in `Global (Shared)`:
 
 ### 2.9 Source Control Credentials and Rafts
 
+> **Status (Sprint 0007 — deferred):** Sprint 0007 operates on the default database
+> raft (`Raft_Id = 1`) for all `.otter` uploads via `New-BuildMasterScript` and
+> `Sync-BuildMasterPlans`. The Git raft path captured below remains historical until
+> BuildMaster supports a subfolder field or repo-root `Plans/`, `Monitors/`,
+> `Scripts/` mirror folders are restored. See `BuildMaster-Install-Runbook.md`
+> section 9.1 for the operational path.
+
 BuildMaster ingests `.otter` plans/pipelines from a Git **Raft** rather than via copy/paste into the UI. The OtterScript `stage X { ... }` grammar is pipeline-as-code and cannot be pasted into a Plan's Text Editor (parser rejects it with `Expected ( or ;` at the first `stage` line).
 
 **Canonical Git credential:**

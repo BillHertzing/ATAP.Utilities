@@ -261,7 +261,8 @@ function Invoke-PromotedModuleTests {
             }
 
             # ---- Step 1: restore the promoted module from the tier feed ----
-            $restorePath = Join-Path $WorkingDirectory (Join-Path '_generated' (Join-Path '_promoted-modules' "$Name.$Version"))
+            $restoreKey = ("$Name.$Version.$Feed" -replace '[^A-Za-z0-9._-]', '-')
+            $restorePath = Join-Path $WorkingDirectory (Join-Path '_generated' (Join-Path '_promoted-modules' $restoreKey))
             if (-not (Test-Path -Path $restorePath)) {
                 New-Item -ItemType Directory -Path $restorePath -Force | Out-Null
             }

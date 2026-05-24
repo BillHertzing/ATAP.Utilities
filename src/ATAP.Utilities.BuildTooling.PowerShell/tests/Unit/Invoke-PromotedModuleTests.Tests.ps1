@@ -76,7 +76,7 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
         Mock Import-Module { }
         Mock Get-ChildItem {
             [PSCustomObject]@{
-                FullName = 'C:\fake\_generated\_promoted-modules\Mod.1.0.0\Mod\1.0.0\Mod.psd1'
+                FullName = 'C:\fake\_generated\_promoted-modules\Mod.1.0.0.powershellget-development\Mod\1.0.0\Mod.psd1'
             }
         }
         # Default: the delegated Pester run passes.
@@ -228,13 +228,13 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             Assert-MockCalled Save-PSResource -Times 0 -Exactly -Scope It
             Assert-MockCalled Invoke-WebRequest -Times 1 -Exactly -Scope It -ParameterFilter {
                 $Uri -eq 'http://localhost:50000/nuget/powershellget-development/package/Mod/1.0.0-Alpha001' -and
-                $OutFile -eq 'C:\fake\_generated\_promoted-modules\Mod.1.0.0-Alpha001\Mod.1.0.0-Alpha001.nupkg' -and
+                $OutFile -eq 'C:\fake\_generated\_promoted-modules\Mod.1.0.0-Alpha001.powershellget-development\Mod.1.0.0-Alpha001.nupkg' -and
                 $Headers['X-ApiKey'] -eq 'secret' -and
                 $TimeoutSec -eq 30
             }
             Assert-MockCalled Expand-Archive -Times 1 -Exactly -Scope It -ParameterFilter {
-                $LiteralPath -eq 'C:\fake\_generated\_promoted-modules\Mod.1.0.0-Alpha001\Mod.1.0.0-Alpha001.nupkg' -and
-                $DestinationPath -eq 'C:\fake\_generated\_promoted-modules\Mod.1.0.0-Alpha001\package'
+                $LiteralPath -eq 'C:\fake\_generated\_promoted-modules\Mod.1.0.0-Alpha001.powershellget-development\Mod.1.0.0-Alpha001.nupkg' -and
+                $DestinationPath -eq 'C:\fake\_generated\_promoted-modules\Mod.1.0.0-Alpha001.powershellget-development\package'
             }
         }
 

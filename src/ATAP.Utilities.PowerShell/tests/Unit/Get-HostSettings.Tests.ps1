@@ -9,7 +9,9 @@ BeforeAll {
 
 Describe 'Get-HostSettings' -Tag 'Unit' {
   BeforeEach {
-    $script:previousConfigRootKeys = $global:configRootKeys
+    $existingConfigRootKeys = Get-Variable -Name 'configRootKeys' -Scope Global -ErrorAction SilentlyContinue
+    $script:hadPreviousConfigRootKeys = $null -ne $existingConfigRootKeys
+    $script:previousConfigRootKeys = if ($script:hadPreviousConfigRootKeys) { $existingConfigRootKeys.Value } else { $null }
     $global:configRootKeys = @{
       ExampleConfigRootKey = 'ExampleConfig'
     }
@@ -42,7 +44,7 @@ function Get-HostSettings {
   }
 
   AfterEach {
-    if ($null -eq $script:previousConfigRootKeys) {
+    if (-not $script:hadPreviousConfigRootKeys) {
       Remove-Variable -Name 'configRootKeys' -Scope Global -ErrorAction SilentlyContinue
     } else {
       $global:configRootKeys = $script:previousConfigRootKeys

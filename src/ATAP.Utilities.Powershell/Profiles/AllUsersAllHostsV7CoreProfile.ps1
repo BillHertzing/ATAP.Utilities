@@ -174,9 +174,8 @@ $PSDefaultParameterValues = @{
 }
 # encoding : New-Object System.Text.UTF8Encoding($false) # UTF8 encoded with or without a ByteOrdermark(BOM) which results in System.Text.UTF8Encoding
 # encoding : [System.Text.Encoding]::UTF8 which results in System.Text.UTF8Encoding+UTF8EncodingSealed
-
 # Decide if this machine profile will use the stable branch or sprint branch for its child functions
-$repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'  # Stable worktree StartSprrintAgent and EndSprintAgent populates these
+$repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'  # Stable worktree StartSprintAgent and EndSprintAgent populates these
 $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items'; # sprint worktree
 # Load the list of configuration keys into $global:ConfigRootKeys
 # May come from the Release package, from the stable worktree, or from a sprint worktree
@@ -201,6 +200,7 @@ try {
   Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
   throw
 }
+
 Set-GlobalConfigRootKeys
 
 # [Ansible: Understanding variable precedence](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#understanding-variable-precedence)
@@ -348,6 +348,7 @@ function Get-CredentialFile {
 
 Write-PSFMessage -Level Debug -Message ('Ending AllUsersAllHostsV7CoreProfile.ps1')
 
+# This block was inserted during development of the build master build pipeline
 # PSFramework starts a background logging runspace; stop it so direct profile
 # invocations do not keep pwsh alive after the profile body has finished.
 if (Test-Path -LiteralPath 'Function:\Stop-PSFRunspace') {

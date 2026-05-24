@@ -81,30 +81,23 @@ function Set-GlobalConfigRootKeys {
     $mn = 'ATAP.Utilities.ConfigRootKeys.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Entering function $fn"
 
+    # Load Helpers
     try {
-      if (-not (Test-Path -LiteralPath 'Function:\Get-ParameterValueFromNeoConfigurationRoot')) {
-        $scriptFile = $MyInvocation.MyCommand.ScriptBlock.File
-        $scriptRoot = if (-not [string]::IsNullOrWhiteSpace($scriptFile)) {
-          Split-Path -Parent $scriptFile
-        } else {
-          $PSScriptRoot
-        }
-        $repoRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $scriptRoot))
-        $helperPath = Join-Path $repoRoot 'src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
-        if (-not (Test-Path -LiteralPath $helperPath -PathType Leaf)) {
-          throw "Get-ParameterValueFromNeoConfigurationRoot helper not found at '$helperPath'."
-        }
-        . $helperPath
+      # ToDo: Remove this when packaging works
+      if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
       }
+      # Add more helper functions here that need to be loaded, before packaging is working
     } catch {
       $errorMessage = "Failed to load Get-ParameterValueFromNeoConfigurationRoot function. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       throw
     }
 
+
     # Snippet: "Check and populate simple parameter as Type"
-    # running Get-PVal on a parameterr called $Path results is the parameter being set to the $env:Path value., not what we want
-    #$Path = Get-PVal -ParameterName 'Path' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Path' -DefaultValue $Path -AsType ([string])
+    # running Get-Pval on a parameterr called $Path results is the parameter being set to the $env:Path value., not what we want
+    #$Path = Get-Pval -ParameterName 'Path' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Path' -DefaultValue $Path -AsType ([string])
 
     # Default Path to the directory containing this script file.
     # $MyInvocation.MyCommand.ScriptBlock.File is reliable regardless of how the

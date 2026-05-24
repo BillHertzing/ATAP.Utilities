@@ -7,7 +7,7 @@ BeforeAll {
   . $functionFile
 }
 
-Describe 'Get-HostSettings' {
+Describe 'Get-HostSettings' -Tag 'Unit' {
   BeforeEach {
     $script:previousConfigRootKeys = $global:configRootKeys
     $global:configRootKeys = @{

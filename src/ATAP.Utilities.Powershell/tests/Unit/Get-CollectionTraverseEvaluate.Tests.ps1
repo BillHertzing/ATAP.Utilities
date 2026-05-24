@@ -38,7 +38,7 @@ BeforeAll {
 }
 
 
-Describe "ScriptOrModuleUnderTest" -ForEach @( # ToDo: figure out how to use the $sUTFileName
+Describe "ScriptOrModuleUnderTest" -Tag 'Unit' -ForEach @( # ToDo: figure out how to use the $sUTFileName
   @{Name                          = 'EmptyHash'
     SourceCollections             = @(,
       @{}

@@ -17,7 +17,11 @@
 #   $Branch                   Branch being built
 #   $SourcePath               Absolute path to the developer worktree
 #   $Configuration            MSBuild configuration, e.g. Release
-#   $ProGetApiKey             Masked BuildMaster variable for ProGet API calls
+#   ProGet API key    - NOT passed in Arguments. Scripts read it from the
+#                       machine/service-account environment variable
+#                       PROGET_ADMIN_API_KEY (for publish) or
+#                       PROGET_BUILDMASTER_API_KEY (for promote), provisioned
+#                       by LoginScript.ps1 / Bitwarden (SEC-T1 / BLOCKER-8).
 #   $MetaPackageName          Roll-up NuGet package id, e.g. ATAP.Utilities
 #   $SolutionPath             Path to the solution file (e.g. ATAP.Utilities.sln for
 #                             ATAP.Utilities-CSharp, AceCommander.sln for AceCommander)
@@ -127,7 +131,7 @@ stage Experimental
         Exec
         (
             FileName: pwsh,
-            Arguments: >>-NoProfile -Command "$$env:PROGET_ADMIN_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModulePath' -Force; Get-ChildItem -Path '_generated\nuget\$Tier' -Filter '*.nupkg' -File | ForEach-Object { Publish-NuGetPackageToProGet -NupkgPath $$_.FullName -Feed '$FeedName' -CeilingTier '$CeilingTier' | Out-Null }" >>,
+            Arguments: >>-NoProfile -Command "Import-Module '$BuildToolingModulePath' -Force; Get-ChildItem -Path '_generated\nuget\$Tier' -Filter '*.nupkg' -File | ForEach-Object { Publish-NuGetPackageToProGet -NupkgPath $$_.FullName -Feed '$FeedName' -CeilingTier '$CeilingTier' | Out-Null }" >>,
             WorkingDirectory: $SourcePath,
             SuccessExitCode: 0
         );
@@ -153,7 +157,7 @@ stage Development
         Exec
         (
             FileName: pwsh,
-            Arguments: >>-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$ExperimentalFeedName' -ToFeed '$DevelopmentFeedName' -Reason 'Development gate for $ApplicationName $ResolvedPackageVersion on $Branch' -CeilingTier '$CeilingTier'">>,
+            Arguments: >>-NoProfile -Command "Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$ExperimentalFeedName' -ToFeed '$DevelopmentFeedName' -Reason 'Development gate for $ApplicationName $ResolvedPackageVersion on $Branch' -CeilingTier '$CeilingTier'">>,
             WorkingDirectory: $SourcePath,
             SuccessExitCode: 0
         );
@@ -187,7 +191,7 @@ stage Integration
         Exec
         (
             FileName: pwsh,
-            Arguments: >>-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$DevelopmentFeedName' -ToFeed '$IntegrationFeedName' -Reason 'Integration gate for $ApplicationName $ResolvedPackageVersion on $Branch' -CeilingTier '$CeilingTier'">>,
+            Arguments: >>-NoProfile -Command "Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$DevelopmentFeedName' -ToFeed '$IntegrationFeedName' -Reason 'Integration gate for $ApplicationName $ResolvedPackageVersion on $Branch' -CeilingTier '$CeilingTier'">>,
             WorkingDirectory: $SourcePath,
             SuccessExitCode: 0
         );
@@ -221,7 +225,7 @@ stage QA
         Exec
         (
             FileName: pwsh,
-            Arguments: >>-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$IntegrationFeedName' -ToFeed '$QaFeedName' -Reason 'QA gate for $ApplicationName $ResolvedPackageVersion on $Branch' -CeilingTier '$CeilingTier'">>,
+            Arguments: >>-NoProfile -Command "Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$IntegrationFeedName' -ToFeed '$QaFeedName' -Reason 'QA gate for $ApplicationName $ResolvedPackageVersion on $Branch' -CeilingTier '$CeilingTier'">>,
             WorkingDirectory: $SourcePath,
             SuccessExitCode: 0
         );
@@ -255,7 +259,7 @@ stage Production
         Exec
         (
             FileName: pwsh,
-            Arguments: >>-NoProfile -Command "$$env:PROGET_BUILDMASTER_API_KEY = '$Decrypt($ProGetApiKey)'; Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$QaFeedName' -ToFeed '$ProductionFeedName' -Reason 'Production gate for $ApplicationName $ResolvedPackageVersion on $Branch' -CeilingTier '$CeilingTier'">>,
+            Arguments: >>-NoProfile -Command "Import-Module '$BuildToolingModulePath' -Force; Promote-ProGetPackage -Name '$PackageName' -Version '$ResolvedPackageVersion' -FromFeed '$QaFeedName' -ToFeed '$ProductionFeedName' -Reason 'Production gate for $ApplicationName $ResolvedPackageVersion on $Branch' -CeilingTier '$CeilingTier'">>,
             WorkingDirectory: $SourcePath,
             SuccessExitCode: 0
         );

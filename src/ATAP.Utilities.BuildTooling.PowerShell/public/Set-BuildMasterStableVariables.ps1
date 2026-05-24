@@ -1,7 +1,9 @@
 function Set-BuildMasterStableVariables {
   <#
   .SYNOPSIS
-    Sets the permanent (stable) BuildMaster Application Variables for all apps.
+    DEPRECATED. Sets the permanent (stable) BuildMaster Application Variables for all apps.
+    Use Set-BuildMasterApplicationVariables instead.
+    This cmdlet will be removed in Sprint 0008.
   .DESCRIPTION
     One-time-per-environment setup cmdlet. Uses the BuildMaster Variables REST
     API (POST /api/variables/application/{app}/{var}) to set 13 stable
@@ -36,6 +38,9 @@ function Set-BuildMasterStableVariables {
     Reads the API key from the BUILDMASTER_ADMIN_API_KEY environment variable
     (User scope preferred, then Process scope).
 
+    ** DEPRECATED ** Use Set-BuildMasterApplicationVariables instead.
+    This cmdlet will be removed in Sprint 0008.
+
   .PARAMETER Applications
     List of BuildMaster application names to update.
     Defaults to @('AceCommander', 'ATAP.Utilities').
@@ -56,7 +61,10 @@ function Set-BuildMasterStableVariables {
     Phase 3C — T-31 (7.2-2 BuildMaster stable application variables)
     Migrated off deprecated Get-ATAPIACConstant in favor of
     Resolve-ProGetFeedFromSettings and Resolve-BuildToolingSettingValue.
+    DEPRECATED: Use Set-BuildMasterApplicationVariables instead.
+    This cmdlet will be removed in Sprint 0008.
   .LINK
+    Set-BuildMasterApplicationVariables
     Set-BuildMasterSprintVariables
     Resolve-ProGetFeedFromSettings
     Resolve-BuildToolingSettingValue
@@ -72,6 +80,9 @@ function Set-BuildMasterStableVariables {
     $fn = $MyInvocation.MyCommand.Name
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
+
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+      -Message 'DEPRECATED: Use Set-BuildMasterApplicationVariables instead. This cmdlet will be removed in Sprint 0008.'
 
     # Load Helpers
     try {

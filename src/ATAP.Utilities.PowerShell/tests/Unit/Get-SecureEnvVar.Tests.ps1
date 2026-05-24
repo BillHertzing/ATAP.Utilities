@@ -5,7 +5,7 @@
 # interaction). All tests here are pure source-file content checks — no function
 # calls, no Get-Command on ATAP functions.
 
-Describe 'Get-SecureEnvVar - source analysis' {
+Describe 'Get-SecureEnvVar - source analysis' -Tag 'Unit' {
 
   BeforeAll {
     $script:srcPath = Join-Path $PSScriptRoot '..\..\public\Get-SecureEnvVar.ps1'

@@ -190,6 +190,9 @@ nuget-development / nuget-integration / nuget-qa / nuget-stable`, NBGV
 - [BuildMaster Pipeline Topology](BuildMaster-Pipeline-Topology.md) —
   Current BuildMaster topology and trigger strategy (including polling-based
   feed checks).
+  **[DEPRECATED cmdlets]** `Set-BuildMasterSprintVariables` and
+  `Set-BuildMasterStableVariables` are deprecated as of Sprint 0007 and will be
+  removed in Sprint 0008. Use `Set-BuildMasterApplicationVariables` instead.
 - [BuildMaster Run-State Runbook](BuildMaster-Run-State-Runbook.md) —
   Operational guide for the build-id scoped `_generated/buildmaster/<BuildMasterBuildId>/`
   inter-stage state channel.

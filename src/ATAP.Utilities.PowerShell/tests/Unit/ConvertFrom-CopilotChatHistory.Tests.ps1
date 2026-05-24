@@ -1,4 +1,4 @@
-Describe 'ConvertFrom-CopilotChatHistory' {
+Describe 'ConvertFrom-CopilotChatHistory' -Tag 'Unit' {
   Context 'When provided with valid JSON input' {
     It 'Should parse the input and return paired objects' {
       $jsonInput = @"

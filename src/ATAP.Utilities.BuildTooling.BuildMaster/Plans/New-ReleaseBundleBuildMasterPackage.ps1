@@ -128,9 +128,8 @@ param(
   [ValidateNotNullOrEmpty()]
   [string]$ProGetUrl,
 
-  [Parameter(Mandatory)]
-  [ValidateNotNullOrEmpty()]
-  [string]$ProGetApiKey,
+  [AllowEmptyString()]
+  [string]$ProGetApiKey = '',
 
   [ValidateRange(0, 365)]
   [int]$RetentionDays = 14
@@ -169,7 +168,7 @@ function New-ReleaseBundleBuildMasterPackage {
     [Parameter(Mandatory)][string]$ReleaseBundleExperimentalFeedName,
     [Parameter(Mandatory)][string]$CeilingTier,
     [Parameter(Mandatory)][string]$ProGetUrl,
-    [Parameter(Mandatory)][string]$ProGetApiKey,
+    [AllowEmptyString()][string]$ProGetApiKey = '',
     [int]$RetentionDays = 14
   )
 
@@ -200,8 +199,25 @@ function New-ReleaseBundleBuildMasterPackage {
 
       $context = Get-Content -LiteralPath $ReleaseBundleContextFile -Raw | ConvertFrom-Json -ErrorAction Stop
 
-      $env:PROGET_ADMIN_API_KEY = $ProGetApiKey
-      $env:PROGET_BUILDMASTER_API_KEY = $ProGetApiKey
+      # Resolve the API key: prefer the explicit parameter, fall back to env vars
+      # provisioned by LoginScript.ps1 / Bitwarden (SEC-T1 / BLOCKER-8).
+      $resolvedApiKey = $ProGetApiKey
+      if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
+        $resolvedApiKey = $env:PROGET_BUILDMASTER_API_KEY
+      }
+      if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
+        $resolvedApiKey = $env:PROGET_ADMIN_API_KEY
+      }
+      if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
+        $resolvedApiKey = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
+      }
+      if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
+        $errorMessage = 'Unable to resolve ProGet API key. Set PROGET_BUILDMASTER_API_KEY or PROGET_ADMIN_API_KEY in the service-account environment.'
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+        throw $errorMessage
+      }
+      $env:PROGET_ADMIN_API_KEY = $resolvedApiKey
+      $env:PROGET_BUILDMASTER_API_KEY = $resolvedApiKey
       $global:ProGetBaseUrl = $ProGetUrl
 
       $manifestOutputPath = Join-Path -Path $SourcePath -ChildPath '_generated/release-manifest/manifest.json'

@@ -15,7 +15,7 @@ BeforeAll {
   }
 }
 
-Describe 'Get-ParameterValueFromNeoConfigurationRoot' {
+Describe 'Get-ParameterValueFromNeoConfigurationRoot' -Tag 'Unit' {
 
   Context 'Function availability' {
     It 'Function is defined' {

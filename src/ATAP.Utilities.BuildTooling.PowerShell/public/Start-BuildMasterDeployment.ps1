@@ -106,7 +106,13 @@ function Start-BuildMasterDeployment {
 
     $BuildMasterBaseUrl = Get-PVal -ParameterName 'BuildMasterBaseUrl' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterBaseUrl
     if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {
-      throw "Unable to resolve BuildMaster base URL. Pass -BuildMasterBaseUrl or set BuildMasterBaseUrl in `$global:settings."
+      $BuildMasterBaseUrl = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'Process')
+    }
+    if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {
+      $BuildMasterBaseUrl = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'User')
+    }
+    if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {
+      $BuildMasterBaseUrl = 'http://localhost:50017'
     }
     $BuildMasterBaseUrl = $BuildMasterBaseUrl.TrimEnd('/')
   }

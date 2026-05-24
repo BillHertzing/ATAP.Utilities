@@ -4,6 +4,8 @@ BeforeAll {
   $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
   . (Join-Path $publicDir 'New-BuildMasterApplication.ps1')
   . (Join-Path $publicDir 'Set-BuildMasterApplicationVariables.ps1')
+  . (Join-Path $publicDir 'Set-BuildMasterSprintVariables.ps1')
+  . (Join-Path $publicDir 'Set-BuildMasterStableVariables.ps1')
   . (Join-Path $publicDir 'New-BuildMasterScript.ps1')
   . (Join-Path $publicDir 'Remove-BuildMasterScript.ps1')
   . (Join-Path $publicDir 'Remove-BuildMasterApplicationVariable.ps1')
@@ -241,5 +243,221 @@ Describe 'BuildMaster configuration API functions' -Tag 'Unit' {
     $purgeCall = @($script:restCalls | Where-Object { $_.Uri -like '*/api/applications/purge*' })[0]
     $purgeCall.Uri | Should -Be 'https://buildmaster.example.test/api/applications/purge?application=Old-App'
     $purgeCall.Method | Should -Be 'Post'
+  }
+}
+
+Describe 'Set-BuildMasterApplicationVariables' -Tag 'Unit' {
+  BeforeEach {
+    $global:configRootKeys = @{
+      BuildMasterBaseUrlConfigRootKey     = 'BuildMasterBaseUrl'
+      BuildMasterAdminApiKeyConfigRootKey = 'BuildMasterAdminApiKey'
+    }
+    $global:settings = @{
+      BuildMasterBaseUrl     = 'https://buildmaster.example.test'
+      BuildMasterAdminApiKey = 'unit-test-key'
+    }
+    $script:restCalls = [System.Collections.ArrayList]::new()
+  }
+
+  It 'sets a simple variable via the single-variable endpoint' {
+    Mock Invoke-RestMethod -MockWith {
+      param($Uri, $Method, $Headers, $ContentType, $Body)
+
+      [void]$script:restCalls.Add([PSCustomObject]@{
+        Uri         = $Uri
+        Method      = $Method
+        Headers     = $Headers
+        ContentType = $ContentType
+        Body        = $Body
+      })
+
+      # GET returns 404 (variable does not exist yet)
+      if ($Uri -like '*/api/variables/application/TestApp/Branch' -and $Method -eq 'Get') {
+        throw [System.Net.WebException]::new('404 not found')
+      }
+      # POST succeeds
+      if ($Uri -like '*/api/variables/application/TestApp/Branch' -and $Method -eq 'Post') {
+        return @{}
+      }
+
+      throw "Unexpected REST call: $Method $Uri"
+    }
+
+    $result = Set-BuildMasterApplicationVariables `
+      -ApplicationName 'TestApp' `
+      -Variables @{ Branch = 'test-branch' }
+
+    $result.Succeeded | Should -BeTrue
+    $result.Changed | Should -Contain 'TestApp/Branch'
+
+    $postCall = @($script:restCalls | Where-Object { $_.Method -eq 'Post' -and $_.Uri -like '*/api/variables/application/TestApp/Branch' })[0]
+    $postCall | Should -Not -BeNullOrEmpty
+    $postCall.Body | Should -Be 'test-branch'
+    $postCall.ContentType | Should -Be 'text/plain'
+  }
+
+  It 'skips a simple variable that already matches' {
+    Mock Invoke-RestMethod -MockWith {
+      param($Uri, $Method, $Headers, $ContentType, $Body)
+
+      [void]$script:restCalls.Add([PSCustomObject]@{
+        Uri         = $Uri
+        Method      = $Method
+        Headers     = $Headers
+        ContentType = $ContentType
+        Body        = $Body
+      })
+
+      # GET returns the current matching value
+      if ($Uri -like '*/api/variables/application/TestApp/Branch' -and $Method -eq 'Get') {
+        return 'existing-branch'
+      }
+
+      throw "Unexpected REST call: $Method $Uri"
+    }
+
+    $result = Set-BuildMasterApplicationVariables `
+      -ApplicationName 'TestApp' `
+      -Variables @{ Branch = 'existing-branch' }
+
+    $result.Succeeded | Should -BeTrue
+    $result.Unchanged | Should -Contain 'TestApp/Branch'
+    $result.Changed | Should -BeNullOrEmpty
+
+    # No POST call should have been made
+    $postCalls = @($script:restCalls | Where-Object { $_.Method -eq 'Post' })
+    $postCalls.Count | Should -Be 0
+  }
+
+  It 'sets a sensitive variable via the scoped endpoint without using the plain-value endpoint' {
+    Mock Invoke-RestMethod -MockWith {
+      param($Uri, $Method, $Headers, $ContentType, $Body)
+
+      [void]$script:restCalls.Add([PSCustomObject]@{
+        Uri         = $Uri
+        Method      = $Method
+        Headers     = $Headers
+        ContentType = $ContentType
+        Body        = $Body
+      })
+
+      # Only the scoped endpoint should be called
+      if ($Uri -like '*/api/variables/scoped/single' -and $Method -eq 'Post') {
+        return @{}
+      }
+
+      throw "Unexpected REST call: $Method $Uri"
+    }
+
+    $result = Set-BuildMasterApplicationVariables `
+      -ApplicationName 'TestApp' `
+      -Variables @{ ProGetApiKey = @{ Value = 'secret-sentinel'; Sensitive = $true } }
+
+    $result.Succeeded | Should -BeTrue
+    $result.Changed | Should -Contain 'TestApp/ProGetApiKey'
+
+    # The scoped endpoint must have been called
+    $scopedCall = @($script:restCalls | Where-Object { $_.Uri -like '*/api/variables/scoped/single' })[0]
+    $scopedCall | Should -Not -BeNullOrEmpty
+
+    # Verify JSON body carries sensitive=true and the correct variable name
+    $scopedBody = $scopedCall.Body | ConvertFrom-Json
+    $scopedBody.name | Should -Be 'ProGetApiKey'
+    $scopedBody.application | Should -Be 'TestApp'
+    $scopedBody.sensitive | Should -BeTrue
+
+    # The single-variable (entity) endpoint must NOT have been called — sensitive
+    # values never travel through the plain GET+POST path
+    $singleCalls = @($script:restCalls | Where-Object { $_.Uri -like '*/api/variables/application/*' })
+    $singleCalls.Count | Should -Be 0
+  }
+
+  It 'throws an informative error when the API key is not resolvable' {
+    # Ensure all resolution paths are empty
+    $global:configRootKeys = $null
+    $global:settings = $null
+    [Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', $null, 'Process')
+    [Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', $null, 'User')
+
+    { Set-BuildMasterApplicationVariables `
+        -ApplicationName 'TestApp' `
+        -Variables @{ Branch = 'any' } `
+    } | Should -Throw -ExpectedMessage '*BUILDMASTER_ADMIN_API_KEY*'
+  }
+}
+
+Describe 'Deprecated BuildMaster variable cmdlets emit deprecation warnings' -Tag 'Unit' {
+  BeforeEach {
+    $global:configRootKeys = @{
+      BuildMasterBaseUrlConfigRootKey     = 'BuildMasterBaseUrl'
+      BuildMasterAdminApiKeyConfigRootKey = 'BuildMasterAdminApiKey'
+    }
+    $global:settings = @{
+      BuildMasterBaseUrl     = 'https://buildmaster.example.test'
+      BuildMasterAdminApiKey = 'unit-test-key'
+    }
+    $script:deprecationMessages = [System.Collections.ArrayList]::new()
+    # Capture Write-PSFMessage calls so we can assert on level and message without
+    # needing a live PSFramework installation.
+    function global:Write-PSFMessage {
+      param(
+        [string]$FunctionName,
+        [string]$ModuleName,
+        [string]$Level,
+        [string]$Message,
+        [string[]]$Tag
+      )
+      [void]$script:deprecationMessages.Add([PSCustomObject]@{
+        Level   = $Level
+        Message = $Message
+      })
+    }
+    # Stub helpers that the deprecated cmdlets call so they do not fail due to
+    # missing modules or environment variables before the deprecation warning fires.
+    function global:Get-PVal { param([string]$ParameterName, $originalPSBoundParameters, $DefaultValue) return 'https://buildmaster.example.test' }
+    function global:Resolve-BuildToolingSettingValue { param([string]$Name) return 'stub' }
+    function global:Resolve-ProGetFeedFromSettings {
+      param([string]$FeedType, [string]$Tier)
+      return [PSCustomObject]@{ FeedName = 'stub-feed'; EndpointUri = 'https://proget.example.test/nuget/stub' }
+    }
+    # Stub Get-ParameterValueFromNeoConfigurationRoot so the helper-load block
+    # in the deprecated cmdlets does not try to dot-source a real file path.
+    function global:Get-ParameterValueFromNeoConfigurationRoot { param([Parameter(ValueFromRemainingArguments=$true)]$Rest) }
+    [Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'unit-test-key', 'Process')
+  }
+
+  AfterEach {
+    [Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', $null, 'Process')
+    Remove-Item -Path 'Function:\Get-PVal' -ErrorAction SilentlyContinue
+    Remove-Item -Path 'Function:\Resolve-BuildToolingSettingValue' -ErrorAction SilentlyContinue
+    Remove-Item -Path 'Function:\Resolve-ProGetFeedFromSettings' -ErrorAction SilentlyContinue
+    Remove-Item -Path 'Function:\Get-ParameterValueFromNeoConfigurationRoot' -ErrorAction SilentlyContinue
+    Remove-Item -Path 'Function:\Write-PSFMessage' -ErrorAction SilentlyContinue
+  }
+
+  It 'Set-BuildMasterSprintVariables emits an Important-level deprecation warning' {
+    Mock Invoke-RestMethod { return @{} }
+
+    Set-BuildMasterSprintVariables -SprintNumber '0007' -WhatIf
+
+    $deprecationWarning = $script:deprecationMessages |
+      Where-Object { $_.Level -eq 'Important' -and $_.Message -like '*DEPRECATED*Set-BuildMasterApplicationVariables*' } |
+      Select-Object -First 1
+
+    $deprecationWarning | Should -Not -BeNullOrEmpty
+    $deprecationWarning.Message | Should -BeLike '*Sprint 0008*'
+  }
+
+  It 'Set-BuildMasterStableVariables emits an Important-level deprecation warning' {
+    Mock Invoke-RestMethod { return @{} }
+
+    Set-BuildMasterStableVariables -WhatIf
+
+    $deprecationWarning = $script:deprecationMessages |
+      Where-Object { $_.Level -eq 'Important' -and $_.Message -like '*DEPRECATED*Set-BuildMasterApplicationVariables*' } |
+      Select-Object -First 1
+
+    $deprecationWarning | Should -Not -BeNullOrEmpty
+    $deprecationWarning.Message | Should -BeLike '*Sprint 0008*'
   }
 }

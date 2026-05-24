@@ -28,38 +28,36 @@ param(
   [string] $OutputRoot
 )
 
-# Load Helpers
-try {
-  # ToDo: Remove this when packaging works
-  $temporaryPowerShellHelperRootCandidates = @(
-    (Join-Path -Path $PSScriptRoot -ChildPath 'src/ATAP.Utilities.PowerShell/public'),
-    'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public'
-  )
-
-  foreach ($helperName in @(
-      'Get-ParameterValueFromNeoConfigurationRoot'
-    )) {
-    if (-not (Get-Command -Name $helperName -CommandType Function -ErrorAction SilentlyContinue)) {
-      $helperPath = $temporaryPowerShellHelperRootCandidates |
-        ForEach-Object { Join-Path -Path $_ -ChildPath "$helperName.ps1" } |
-        Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } |
-        Select-Object -First 1
-
-      if ([string]::IsNullOrWhiteSpace($helperPath)) {
-        throw "Required helper function '$helperName' could not be found under: $($temporaryPowerShellHelperRootCandidates -join '; ')"
-      }
-
-      . $helperPath
+# Load helper functions
+# None of this is needed once the modules are built and installed into the psmodulepath, but while we are still running from source code, we need to dot source the helper functions that are not yet in a module. Once the modules are built and installed, all of the helper functions will be available as cmdlets and this block can be removed.
+$helpfunctionsneeded = @(
+  @{FunctionName = 'Get-RepositoryRoot'; ModuleName = 'ATAP.Utilities.BuildTooling.PowerShell' },
+  @{FunctionName = 'Get-ParameterValueFromNeoConfigurationRoot'; ModuleName = 'ATAP.Utilities.PowerShell' }
+  #  @{FunctionName = 'Get-ClonedAndModifiedHashtable'; ModuleName = 'ATAP.Utilities.PowerShell' },
+)
+$repoRootParentPath = 'C:\Dropbox\whertzing\GitHub'
+$stablePath = 'ATAP.Utilities'
+# if we are in a sprint branch, use the sprint branch version of the helper functions, otherwise use the stable branch version.
+#  This allows us to use the helper functions that are in progress in the sprint branch without having to merge them
+#  into the stable branch first, which is important because some of the helper functions we need are still in progress
+#  and not yet merged into stable.
+$wtFolder = $PWD.Path.Split([IO.Path]::DirectorySeparatorChar) |
+  Where-Object { $_ -like '*-wt-*' } |
+  Select-Object -First 1
+$resolvedModulePath = $wtFolder ? $(Join-Path $repoRootParentPath $wtFolder 'src') : $(Join-Path $repoRootParentPath $stablePath 'src')
+foreach ($helpfunction in $helpfunctionsneeded) {
+  try {
+    if (-not (Test-Path -LiteralPath "Function:\$($helpfunction.FunctionName)")) {
+      . (Join-Path $resolvedModulePath $($helpfunction.ModuleName), 'public', "$($helpfunction.FunctionName).ps1")
     }
+  } catch {
+    $errorMessage = "Failed to load $($helpfunction.FunctionName) function from module path $(Join-Path $resolvedModulePath $($helpfunction.ModuleName), 'public', "$($helpfunction.FunctionName).ps1"). Exception: $($_.Exception.Message)"
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+    throw
   }
+}
+# This is the end of the help loading block, this and all above can be removed once module autoloading is working and the helper functions are available as cmdlets in the psmodulepath
 
-  Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Global -Force
-}
-catch {
-  $errorMessage = "Failed to load Get-ParameterValueFromNeoConfigurationRoot function. Exception: $($_.Exception.Message)"
-  Write-Error $errorMessage
-  throw
-}
 
 # ---------------------------------------------------------------------------
 # Bootstrap — dot-source required cmdlets when the BuildTooling module is not

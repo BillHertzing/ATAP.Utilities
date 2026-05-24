@@ -393,6 +393,33 @@ UI fallback:
 3. Mark `ProGetApiKey` sensitive/obscured.
 4. Reopen the page and confirm the key displays as hidden.
 
+### 8.6 Safe operator path for ProGet API key
+
+To set `ProGetApiKey` as a sensitive variable without exposing it in transcripts
+or plain-text URL parameters, always use the hashtable form with `Sensitive = $true`:
+
+```powershell
+Set-BuildMasterApplicationVariables `
+  -ApplicationName 'ATAP.Utilities-CSharp' `
+  -Variables @{ ProGetApiKey = @{ Value = $env:PROGET_ADMIN_API_KEY; Sensitive = $true } } `
+  -ApiKey $env:BUILDMASTER_ADMIN_API_KEY
+```
+
+This routes the variable through the `/api/variables/scoped/single` endpoint, which
+carries the `sensitive` flag in the JSON body. Because the value is in the JSON body
+(not in the URL), it does not appear in network logs or `Invoke-RestMethod` URI traces.
+The value is never written to `$changed` or `$unchanged` output fields; only the key
+name `TestApp/ProGetApiKey` is recorded there.
+
+> **Important:** Do not use the simple string form `@{ ProGetApiKey = $env:PROGET_ADMIN_API_KEY }`.
+> The simple path uses the single-variable entity endpoint (`/api/variables/application/{app}/{var}`)
+> with a plain-text `GET` then `POST`. That path cannot mark a newly created variable sensitive
+> and will expose the value in the `POST` body without the sensitivity flag.
+
+The `PROGET_ADMIN_API_KEY` environment variable must be loaded from Bitwarden by the login
+profile before calling this function. Never paste the key value into this runbook or into any
+source file.
+
 ---
 
 ## 9. Configure default raft scripts and pipelines

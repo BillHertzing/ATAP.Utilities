@@ -8,8 +8,10 @@ function Sync-BuildMasterPlans {
     plans in source control while still publishing the current version into
     BuildMaster for execution.
 
-    The cmdlet uses BUILDMASTER_ADMIN_API_KEY from User scope by default. An
-    explicit -ApiKey value may be supplied for tests or controlled automation.
+    The API key is resolved in this order: the -ApiKey parameter, then
+    $global:settings[$global:configRootKeys['BuildMasterAdminApiKeyConfigRootKey']],
+    then BUILDMASTER_ADMIN_API_KEY at Process or User scope. An explicit -ApiKey
+    value may be supplied for tests or controlled automation.
 
     BuildMaster stores scripts and plans in rafts. The default raft item type
     is DeploymentScript (6), which is appropriate for .otter deployment plans.
@@ -25,8 +27,8 @@ function Sync-BuildMasterPlans {
     $global:settings, then BUILDMASTER_BASE_URL from the process environment,
     then http://localhost:50017.
   .PARAMETER ApiKey
-    BuildMaster Native API key. Defaults to BUILDMASTER_ADMIN_API_KEY from User
-    scope, then Process scope.
+    BuildMaster Native API key. Resolved from -ApiKey, then $global:settings,
+    then BUILDMASTER_ADMIN_API_KEY at Process or User scope.
   .PARAMETER RaftId
     Target BuildMaster raft id. Defaults to 1, the default database raft.
   .PARAMETER RaftItemTypeCode
@@ -110,22 +112,32 @@ function Sync-BuildMasterPlans {
     }
 
     $BuildMasterBaseUrl = Get-PVal -ParameterName 'BuildMasterBaseUrl' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterBaseUrl
+    if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {
+      $BuildMasterBaseUrl = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'Process')
+    }
+    if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {
+      $BuildMasterBaseUrl = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'User')
+    }
+    if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {
+      $BuildMasterBaseUrl = 'http://localhost:50017'
+    }
 
-    if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-      $ApiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
+    if ([string]::IsNullOrWhiteSpace($ApiKey) -and $null -ne $global:settings) {
+      $apiKeySettingsKey = if ($null -ne $global:configRootKeys -and $global:configRootKeys['BuildMasterAdminApiKeyConfigRootKey']) {
+        $global:configRootKeys['BuildMasterAdminApiKeyConfigRootKey']
+      } else { 'BuildMasterAdminApiKey' }
+      if ($global:settings.ContainsKey($apiKeySettingsKey)) {
+        $ApiKey = [string]$global:settings[$apiKeySettingsKey]
+      }
     }
     if ([string]::IsNullOrWhiteSpace($ApiKey)) {
       $ApiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'Process')
     }
     if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-      try {
-        $ApiKey = Get-BitwardenSecret -SecretName 'BuildMaster_Admin_API_Key' -AsPlainText -ErrorAction SilentlyContinue
-      } catch {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Bitwarden lookup failed (not critical): $($_.Exception.Message)"
-      }
+      $ApiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
     }
     if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-      throw 'BUILDMASTER_ADMIN_API_KEY is not set at User/Process scope or in Bitwarden (secret: BuildMaster_Admin_API_Key). Cannot sync BuildMaster plans.'
+      throw 'BUILDMASTER_ADMIN_API_KEY is not set in $global:settings, Process scope, or User scope. Cannot sync BuildMaster plans.'
     }
 
     $BuildMasterBaseUrl = $BuildMasterBaseUrl.TrimEnd('/')

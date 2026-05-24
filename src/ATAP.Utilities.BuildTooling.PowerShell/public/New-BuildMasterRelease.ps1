@@ -182,6 +182,45 @@ function New-BuildMasterRelease {
     }
     $body = $body | ConvertTo-Json -Depth 5
 
+    function Select-BuildMasterReleaseRecord {
+      param(
+        [Parameter(Mandatory = $false)][AllowNull()][object]$InputObject,
+        [Parameter(Mandatory = $true)][string]$ExpectedReleaseNumber
+      )
+
+      if ($null -eq $InputObject) { return $null }
+      $records = if ($InputObject -is [System.Collections.IEnumerable] -and -not ($InputObject -is [string])) {
+        @($InputObject)
+      } else {
+        @($InputObject)
+      }
+
+      $matched = @(
+        $records | Where-Object {
+          $propertyNames = @($_.PSObject.Properties.Name)
+          ($propertyNames -contains 'Release_Name' -and [string]$_.Release_Name -eq $ExpectedReleaseNumber) -or
+          ($propertyNames -contains 'Release_Number' -and [string]$_.Release_Number -eq $ExpectedReleaseNumber) -or
+          ($propertyNames -contains 'releaseNumber' -and [string]$_.releaseNumber -eq $ExpectedReleaseNumber) -or
+          ($propertyNames -contains 'ReleaseNumber' -and [string]$_.ReleaseNumber -eq $ExpectedReleaseNumber)
+        }
+      )
+      if ($matched.Count -gt 0) { return $matched[0] }
+      return ($records | Select-Object -First 1)
+    }
+
+    function Resolve-BuildMasterReleaseId {
+      param(
+        [Parameter(Mandatory = $false)][AllowNull()][object]$Record
+      )
+
+      if ($null -eq $Record) { return $null }
+      if ($null -ne $Record.id) { return [string]$Record.id }
+      if ($null -ne $Record.releaseId) { return [string]$Record.releaseId }
+      if ($null -ne $Record.ReleaseId) { return [string]$Record.ReleaseId }
+      if ($null -ne $Record.Release_Id) { return [string]$Record.Release_Id }
+      return $null
+    }
+
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "POST $createUri (ApiKey='***')" -Tag 'RestCall'
 
     # ---------------------------------------------------------------------
@@ -228,30 +267,46 @@ function New-BuildMasterRelease {
       }
       $errMsg = [string]$_.Exception.Message
       $looksLikeConflict = ($statusCode -eq 409) -or ($statusCode -eq 400 -and ($errMsg -match 'already\s*exists')) -or ($errMsg -match 'already\s*exists')
+      $shouldProbeExistingRelease = $looksLikeConflict -or ($statusCode -eq 400)
 
       if ($statusCode -eq 401 -or $statusCode -eq 403) {
         $msg = "BuildMaster authentication failed (HTTP $statusCode) for $createUri. Check BUILDMASTER_ADMIN_API_KEY."
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'RestCall'
         throw $msg
-      } elseif ($looksLikeConflict) {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Release already exists (HTTP $statusCode). Falling back to GET $getUri" -Tag 'RestCall'
+      } elseif ($shouldProbeExistingRelease) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Release create failed with HTTP $statusCode. Probing existing release with GET $getUri" -Tag 'RestCall'
+        $lookupErrors = [System.Collections.Generic.List[string]]::new()
+        $record = $null
         try {
           $existing = Invoke-RestMethod -Method Get -Uri $getUri -Headers $headers -TimeoutSec 30
+          $record = Select-BuildMasterReleaseRecord -InputObject $existing -ExpectedReleaseNumber $ReleaseNumber
         } catch {
-          $msg = "BuildMaster reported the release already exists but the lookup GET also failed: $($_.Exception.Message)"
+          $lookupErrors.Add("REST lookup failed: $($_.Exception.Message)") | Out-Null
+        }
+
+        if ($null -eq $record) {
+          $getAppsUri = '{0}/api/json/Applications_GetApplications' -f $BuildMasterBaseUrl
+          $getReleasesUri = '{0}/api/json/Releases_GetReleases' -f $BuildMasterBaseUrl
+          try {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Falling back to native release lookup via $getAppsUri and $getReleasesUri" -Tag 'RestCall'
+            $appsResponse = Invoke-RestMethod -Method Post -Uri $getAppsUri -Headers $headers -ContentType 'application/json' -Body '{}' -TimeoutSec 30
+            $matchedApp = $appsResponse | Where-Object { $_.Application_Name -eq $Application } | Select-Object -First 1
+            if ($null -ne $matchedApp) {
+              $releasesBody = @{ Application_Id = $matchedApp.Application_Id } | ConvertTo-Json -Depth 5
+              $releasesResponse = Invoke-RestMethod -Method Post -Uri $getReleasesUri -Headers $headers -ContentType 'application/json' -Body $releasesBody -TimeoutSec 30
+              $record = Select-BuildMasterReleaseRecord -InputObject $releasesResponse -ExpectedReleaseNumber $ReleaseNumber
+            }
+          } catch {
+            $lookupErrors.Add("native lookup failed: $($_.Exception.Message)") | Out-Null
+          }
+        }
+
+        $releaseId = Resolve-BuildMasterReleaseId -Record $record
+        if ($null -eq $record -or [string]::IsNullOrWhiteSpace($releaseId)) {
+          $lookupSummary = if ($lookupErrors.Count -gt 0) { '; ' + ($lookupErrors -join '; ') } else { '' }
+          $msg = "POST $createUri failed: $errMsg$lookupSummary"
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'RestCall'
           throw $msg
-        }
-        $record = $null
-        if ($existing -is [System.Collections.IEnumerable] -and -not ($existing -is [string])) {
-          $record = $existing | Select-Object -First 1
-        } else {
-          $record = $existing
-        }
-        if ($null -ne $record) {
-          if ($null -ne $record.id) { $releaseId = [string]$record.id }
-          elseif ($null -ne $record.releaseId) { $releaseId = [string]$record.releaseId }
-          elseif ($null -ne $record.ReleaseId) { $releaseId = [string]$record.ReleaseId }
         }
         $summary = 'idempotent: release already exists'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Returned existing BuildMaster release id '$releaseId' for '$Application'/'$ReleaseNumber'" -Tag 'RestCall'

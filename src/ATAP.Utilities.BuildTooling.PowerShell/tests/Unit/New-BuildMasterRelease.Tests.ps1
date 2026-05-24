@@ -149,6 +149,48 @@ Describe 'New-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {
       $result.ReleaseId | Should -Be '777'
       $result.ResponseSummary | Should -Be 'idempotent: release already exists'
     }
+
+    It 'Falls back to GET when POST returns a generic HTTP 400 and the release is already present' {
+      Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' } -MockWith {
+        $resp = [PSCustomObject]@{ StatusCode = 400 }
+        $ex = [System.Net.WebException]::new('Response status code does not indicate success: 400 (Bad Request).')
+        $errRec = [System.Management.Automation.ErrorRecord]::new($ex, 'BMBadRequest', 'InvalidOperation', $null)
+        $errRec.Exception | Add-Member -NotePropertyName 'Response' -NotePropertyValue $resp -Force
+        throw $errRec
+      }
+      Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Get' } -MockWith {
+        [PSCustomObject]@{ id = 1013 }
+      }
+
+      $result = New-BuildMasterRelease -Application 'A' -ReleaseNumber '1.0.0' -PipelineName 'P'
+      $result.Succeeded | Should -BeTrue
+      $result.ReleaseId | Should -Be '1013'
+      $result.ResponseSummary | Should -Be 'idempotent: release already exists'
+    }
+
+    It 'Falls back to the native release list when generic HTTP 400 is followed by REST lookup failure' {
+      Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' -and $Uri -like '*/api/releases/create' } -MockWith {
+        $resp = [PSCustomObject]@{ StatusCode = 400 }
+        $ex = [System.Net.WebException]::new('Response status code does not indicate success: 400 (Bad Request).')
+        $errRec = [System.Management.Automation.ErrorRecord]::new($ex, 'BMBadRequest', 'InvalidOperation', $null)
+        $errRec.Exception | Add-Member -NotePropertyName 'Response' -NotePropertyValue $resp -Force
+        throw $errRec
+      }
+      Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Get' } -MockWith {
+        throw 'Response status code does not indicate success: 500 (Internal Server Error).'
+      }
+      Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' -and $Uri -like '*/api/json/Applications_GetApplications' } -MockWith {
+        [PSCustomObject]@{ Application_Id = 42; Application_Name = 'A' }
+      }
+      Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' -and $Uri -like '*/api/json/Releases_GetReleases' } -MockWith {
+        [PSCustomObject]@{ Release_Id = 1013; Release_Name = '1.0.0' }
+      }
+
+      $result = New-BuildMasterRelease -Application 'A' -ReleaseNumber '1.0.0' -PipelineName 'P'
+      $result.Succeeded | Should -BeTrue
+      $result.ReleaseId | Should -Be '1013'
+      $result.ResponseSummary | Should -Be 'idempotent: release already exists'
+    }
   }
 
   Context 'Auth failure' {
@@ -184,12 +226,19 @@ Describe 'New-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {
         Should -Throw -ExpectedMessage '*BUILDMASTER_ADMIN_API_KEY*'
     }
 
-    It 'Throws when no base URL is configured' {
+    It 'Uses the localhost BuildMaster default when no base URL is configured' {
       $global:settings = @{ BuildMasterAdminApiKey = 'k' }
       [Environment]::SetEnvironmentVariable('BUILDMASTER_BASE_URL', $null, 'Process')
       [Environment]::SetEnvironmentVariable('BUILDMASTER_BASE_URL', $null, 'User')
-      { New-BuildMasterRelease -Application 'A' -ReleaseNumber '1.0.0' -PipelineName 'P' } |
-        Should -Throw -ExpectedMessage '*base URL*'
+      Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' } -MockWith {
+        [PSCustomObject]@{ id = 6 }
+      }
+
+      New-BuildMasterRelease -Application 'A' -ReleaseNumber '1.0.0' -PipelineName 'P' | Out-Null
+
+      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter {
+        $Method -eq 'Post' -and $Uri -eq 'http://localhost:50017/api/releases/create'
+      }
     }
   }
 

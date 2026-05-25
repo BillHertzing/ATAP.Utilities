@@ -201,6 +201,97 @@ if (-not (Get-Command -Name Write-PSFMessage -CommandType Function, Cmdlet -Erro
 
 . (Join-Path -Path $PSScriptRoot -ChildPath 'BuildMasterRunContext.Common.ps1')
 
+function Set-NoProfileProGetFeedSettings {
+  <#
+  .SYNOPSIS
+    Bootstraps minimal $global:Settings and $global:configRootKeys so that
+    Publish-NuGetPackageToProGet -> Resolve-ProGetFeedFromSettings works
+    under -NoProfile.
+  .DESCRIPTION
+    Publish-NuGetPackageToProGet resolves feed URIs through
+    Resolve-ProGetFeedFromSettings, which reads $global:Settings and
+    $global:configRootKeys. Under -NoProfile (BuildMaster's invocation
+    pattern, and ours) the user profile that populates those globals never
+    loaded. We populate exactly the keys the resolver needs: the canonical
+    five NuGet feed entries derived from ProGetUrl + feed names. Existing
+    globals are left untouched if they are already populated (so a
+    profile-loaded host wins over this fallback).
+  .NOTES
+    AI assisted using Powershell.instructions.md as guidelines.
+    Tracked by V4-B02 (no-profile audit) and V4-G05 for a structural fix in
+    Resolve-ProGetFeedFromSettings.
+  #>
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ProGetUrl,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ExperimentalFeed,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$DevelopmentFeed,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$IntegrationFeed,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$QAFeed,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ProductionFeed
+  )
+
+  BEGIN {
+    $fn = 'Set-NoProfileProGetFeedSettings'
+    $mn = 'ATAP.Utilities.BuildTooling.BuildMaster'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Starting $fn"
+  }
+
+  PROCESS {
+    # Set-StrictMode -Version Latest is active in BuildMasterRunContext.Common.ps1.
+    # Reading an undeclared global throws under strict mode, so check via Get-Variable
+    # before dereferencing.
+    $collectionKey = 'ProGetFeedCollection'
+
+    $configRootKeysVar = Get-Variable -Name 'configRootKeys' -Scope Global -ErrorAction SilentlyContinue
+    $existingConfigRootKeys = if ($null -ne $configRootKeysVar) { $configRootKeysVar.Value } else { $null }
+    if ($null -eq $existingConfigRootKeys -or -not ($existingConfigRootKeys -is [System.Collections.IDictionary])) {
+      $global:configRootKeys = @{}
+    }
+    if (-not $global:configRootKeys.Contains('ProGetFeedCollectionConfigRootKey')) {
+      $global:configRootKeys['ProGetFeedCollectionConfigRootKey'] = $collectionKey
+    } else {
+      $collectionKey = [string]$global:configRootKeys['ProGetFeedCollectionConfigRootKey']
+    }
+
+    $settingsVar = Get-Variable -Name 'Settings' -Scope Global -ErrorAction SilentlyContinue
+    $existingSettings = if ($null -ne $settingsVar) { $settingsVar.Value } else { $null }
+    if ($null -eq $existingSettings -or -not ($existingSettings -is [System.Collections.IDictionary])) {
+      $global:Settings = @{}
+    }
+    if (-not $global:Settings.Contains($collectionKey) -or $null -eq $global:Settings[$collectionKey]) {
+      $trimmed = $ProGetUrl.TrimEnd('/')
+      $tierByFeed = [ordered]@{
+        $ExperimentalFeed = 'experimental'
+        $DevelopmentFeed  = 'development'
+        $IntegrationFeed  = 'integration'
+        $QAFeed           = 'qa'
+        $ProductionFeed   = 'stable'
+      }
+      $feedCollection = @{}
+      foreach ($feedName in $tierByFeed.Keys) {
+        $tier = $tierByFeed[$feedName]
+        $feedCollection[$feedName] = @{
+          FeedType    = 'nuget'
+          Tier        = $tier
+          FeedName    = $feedName
+          Uri         = "$trimmed/nuget/$feedName/"
+          NuGetV3Uri  = "$trimmed/nuget/$feedName/v3/index.json"
+          ApiKeyName  = 'PROGET_ADMIN_API_KEY'
+        }
+      }
+      $global:Settings[$collectionKey] = $feedCollection
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Bootstrapped no-profile ProGet feed settings ($($feedCollection.Keys.Count) feeds) from ProGetUrl='$ProGetUrl'."
+    } else {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Existing ProGet feed settings under '$collectionKey' preserved; no-profile bootstrap skipped."
+    }
+  }
+
+  END {
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Finished $fn"
+  }
+}
+
 function Add-GitSafeDirectoryForCurrentProcess {
   <#
   .SYNOPSIS
@@ -661,6 +752,14 @@ function Invoke-CSharpPackageBuildMasterStage {
     }
     $env:PROGET_BUILDMASTER_API_KEY = $script:resolvedProGetApiKey
     $env:PROGET_ADMIN_API_KEY = $script:resolvedProGetApiKey
+
+    Set-NoProfileProGetFeedSettings `
+      -ProGetUrl $ProGetUrl `
+      -ExperimentalFeed $ExperimentalFeed `
+      -DevelopmentFeed $DevelopmentFeed `
+      -IntegrationFeed $IntegrationFeed `
+      -QAFeed $QAFeed `
+      -ProductionFeed $ProductionFeed
 
     $script:buildToolingRoot = Split-Path -Parent $BuildToolingModulePath
   }

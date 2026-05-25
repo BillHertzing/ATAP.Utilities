@@ -111,6 +111,28 @@ Describe 'Invoke-PromotedPackageTests' -Tag 'Unit' {
             }
         }
 
+        It 'Adds --locked-mode to the restore call when -LockedRestore is supplied' {
+            $result = Invoke-PromotedPackageTests -Name 'ATAP.Utilities' -Version '0.1.0-Sprint.142' `
+                -Feed 'nuget-integration' -ResultsPath '_generated\testresults\integration' -LockedRestore
+
+            $result.LockedRestore | Should -BeTrue
+            Assert-MockCalled dotnet -Times 1 -Exactly -Scope It -ParameterFilter {
+                $rest[0] -eq 'restore' -and
+                ($rest -contains '--locked-mode')
+            }
+        }
+
+        It 'Does not add --locked-mode to the restore call by default' {
+            $result = Invoke-PromotedPackageTests -Name 'ATAP.Utilities' -Version '0.1.0-Sprint.142' `
+                -Feed 'nuget-development' -ResultsPath '_generated\testresults\development'
+
+            $result.LockedRestore | Should -BeFalse
+            Assert-MockCalled dotnet -Times 1 -Exactly -Scope It -ParameterFilter {
+                $rest[0] -eq 'restore' -and
+                -not ($rest -contains '--locked-mode')
+            }
+        }
+
         It 'Passes UsePackageReferenceForSUT, SUTVersion, trx logger and --no-restore to the test call' {
             Invoke-PromotedPackageTests -Name 'ATAP.Utilities' -Version '0.1.0-Sprint.142' `
                 -Feed 'nuget-development' -ResultsPath '_generated\testresults\development' | Out-Null
@@ -194,7 +216,7 @@ Describe 'Invoke-PromotedPackageTests' -Tag 'Unit' {
             $result | Should -Not -BeNullOrEmpty
             foreach ($prop in @('OperationName', 'GatePass', 'Name', 'Version', 'Feed',
                     'ProjectPath', 'TestFilter', 'ResultsPath', 'TrxPath',
-                    'FailingTestCount', 'RestoreExitCode', 'TestExitCode', 'ResponseSummary')) {
+                    'FailingTestCount', 'LockedRestore', 'RestoreExitCode', 'TestExitCode', 'ResponseSummary')) {
                 $result.PSObject.Properties.Name | Should -Contain $prop
             }
         }

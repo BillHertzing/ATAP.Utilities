@@ -78,6 +78,11 @@
     Directory the dotnet commands run in. Defaults to the current
     location (the repository worktree root in pipeline use).
 
+.PARAMETER LockedRestore
+    Adds `--locked-mode` to the restore step. BuildMaster uses this for
+    Integration, QA, and Production after Development has restored the promoted
+    package once and materialized the per-build `SUTVersion` lock state.
+
 .OUTPUTS
     [PSCustomObject] with:
       - OperationName    : Always 'Invoke-PromotedPackageTests'.
@@ -91,6 +96,7 @@
       - TrxPath          : Path to the generated .trx, or $null.
       - FailingTestCount : Failing count parsed from the TRX, or $null
                            if the TRX could not be located/parsed.
+      - LockedRestore    : $true when restore used `--locked-mode`.
       - RestoreExitCode  : `dotnet restore` exit code, or $null on WhatIf.
       - TestExitCode     : `dotnet test` exit code, or $null on WhatIf
                            or when restore failed.
@@ -158,7 +164,10 @@ function Invoke-PromotedPackageTests {
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
-        [string]$WorkingDirectory = (Get-Location).Path
+        [string]$WorkingDirectory = (Get-Location).Path,
+
+        [Parameter()]
+        [switch]$LockedRestore
     )
 
     begin {
@@ -185,6 +194,7 @@ function Invoke-PromotedPackageTests {
                 ResultsPath      = $ResultsPath
                 TrxPath          = $null
                 FailingTestCount = $null
+                LockedRestore    = [bool]$LockedRestore
                 RestoreExitCode  = $null
                 TestExitCode     = $null
                 ResponseSummary  = "WhatIf: would restore and test $target from feed '$Feed' (project: $ProjectPath)"
@@ -211,6 +221,9 @@ function Invoke-PromotedPackageTests {
                 '/p:UsePackageReferenceForSUT=true'
                 "/p:SUTVersion=$Version"
             )
+            if ($LockedRestore) {
+                $restoreArgs += '--locked-mode'
+            }
             if (-not [string]::IsNullOrWhiteSpace($ProGetUrl)) {
                 $feedSource = "$($ProGetUrl.TrimEnd('/'))/nuget/$Feed/v3/index.json"
                 $restoreArgs += @('--source', $feedSource)
@@ -236,6 +249,7 @@ function Invoke-PromotedPackageTests {
                     ResultsPath      = $ResultsPath
                     TrxPath          = $null
                     FailingTestCount = $null
+                    LockedRestore    = [bool]$LockedRestore
                     RestoreExitCode  = $restoreExitCode
                     TestExitCode     = $null
                     ResponseSummary  = $summary
@@ -311,6 +325,7 @@ function Invoke-PromotedPackageTests {
                 ResultsPath      = $ResultsPath
                 TrxPath          = $trxPath
                 FailingTestCount = $failingTestCount
+                LockedRestore    = [bool]$LockedRestore
                 RestoreExitCode  = $restoreExitCode
                 TestExitCode     = $testExitCode
                 ResponseSummary  = $summary

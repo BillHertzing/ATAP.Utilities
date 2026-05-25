@@ -110,6 +110,11 @@ Describe 'V4-C02 runner shape: Invoke-CSharpPackageBuildMasterStage.ps1 contract
         $script:RunnerText | Should -Match 'Invoke-PromotedPackageTests'
     }
 
+    It 'runner enables locked restore only for Integration, QA, and Production promoted-package tests' {
+        $script:RunnerText | Should -Match 'if\s*\(\s*\$Tier\s+-in\s+@\(''Integration'', ''QA'', ''Production''\)\s*\)'
+        $script:RunnerText | Should -Match '\$testParameters\[''LockedRestore''\]\s*=\s*\$true'
+    }
+
     It 'runner forces ContinuousIntegrationBuild=true on both build and pack' {
         $ciMatches = [regex]::Matches($script:RunnerText, 'ContinuousIntegrationBuild=true')
         $ciMatches.Count | Should -BeGreaterOrEqual 2

@@ -22,7 +22,10 @@
   For Development/Integration/QA/Production it promotes the captured immutable
   version from the previous tier's feed to the destination feed via
   Promote-ProGetPackage, then runs Invoke-PromotedPackageTests against the
-  destination feed with a tier-appropriate filter. Completion markers make
+  destination feed with a tier-appropriate filter. Development restore is
+  intentionally unlocked so the promoted-package SUTVersion can be written into
+  the build workspace's lock-file state; Integration, QA, and Production pass
+  -LockedRestore so dotnet restore uses --locked-mode. Completion markers make
   reruns within a single BuildMaster build id idempotent.
 
   Designed to be invoked from an OtterScript plan via 'Exec pwsh -File'.
@@ -1033,6 +1036,9 @@ function Invoke-CSharpPackageBuildMasterStage {
         }
         if ($Tier -eq 'QA') {
           $testParameters['CollectCoverage'] = $true
+        }
+        if ($Tier -in @('Integration', 'QA', 'Production')) {
+          $testParameters['LockedRestore'] = $true
         }
         try {
           # `dotnet restore` + `dotnet test` inside Invoke-PromotedPackageTests

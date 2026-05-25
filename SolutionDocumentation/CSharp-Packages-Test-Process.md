@@ -536,6 +536,17 @@ The BuildMaster pipeline for each promotion tier must:
 3. Pass `--no-build` only if the test project binaries were already
    produced in the same pipeline step; otherwise omit it.
 
+Locked restore policy:
+
+- Development restore is intentionally unlocked. It is the first promotion tier
+  that switches the test project from source `<ProjectReference>` mode to
+  promoted-package `<PackageReference>` mode, so the build workspace must be
+  allowed to materialize the exact per-build `SUTVersion` in `packages.lock.json`.
+- Integration, QA, and Production restore with `--locked-mode` through
+  `Invoke-PromotedPackageTests -LockedRestore`. Those tiers must consume the
+  same promoted-package lock state and fail instead of silently changing package
+  resolution.
+
 Example BuildMaster PowerShell step (Development tier / alpha, unit tests
 only as an illustration; adjust `--filter` per the tier table in §4):
 
@@ -561,15 +572,15 @@ dotnet test ATAP.Utilities.sln `
 
 ### 11.3 Tier summary
 
-| Trigger                            | `UsePackageReferenceForSUT` | `SUTVersion`     | Scope                                   | Where it runs     |
-| ---------------------------------- | --------------------------- | ---------------- | --------------------------------------- | ----------------- |
-| Developer pre-commit               | `false` (default)           | N/A              | Affected project's unit tests           | Workstation       |
-| Developer before push              | `false` (default)           | N/A              | Full `dotnet test` for the repo         | Workstation       |
-| BuildMaster Experimental (sprint)  | `false` (default)           | N/A              | `Category=Unit` — **build + push only** | BuildMaster agent |
-| BuildMaster Development (alpha)    | `true`                      | promoted version | All tests                               | BuildMaster agent |
-| BuildMaster Integration (beta)     | `true`                      | promoted version | Unit + Integration                      | BuildMaster agent |
-| BuildMaster QA (qa)                | `true`                      | promoted version | Full suite with coverage                | BuildMaster agent |
-| BuildMaster Production (stable)    | `true`                      | promoted version | Smoke subset only                       | Release agent     |
+| Trigger                            | `UsePackageReferenceForSUT` | `SUTVersion`     | Locked restore | Scope                                   | Where it runs     |
+| ---------------------------------- | --------------------------- | ---------------- | -------------- | --------------------------------------- | ----------------- |
+| Developer pre-commit               | `false` (default)           | N/A              | No             | Affected project's unit tests           | Workstation       |
+| Developer before push              | `false` (default)           | N/A              | No             | Full `dotnet test` for the repo         | Workstation       |
+| BuildMaster Experimental (sprint)  | `false` (default)           | N/A              | No             | `Category=Unit` — **build + push only** | BuildMaster agent |
+| BuildMaster Development (alpha)    | `true`                      | promoted version | No             | All tests                               | BuildMaster agent |
+| BuildMaster Integration (beta)     | `true`                      | promoted version | Yes            | Unit + Integration                      | BuildMaster agent |
+| BuildMaster QA (qa)                | `true`                      | promoted version | Yes            | Full suite with coverage                | BuildMaster agent |
+| BuildMaster Production (stable)    | `true`                      | promoted version | Yes            | Smoke subset only                       | BuildMaster/Release agent |
 
 Developer pre-commit is an informal norm, not a hard gate — the sprint
 worktree branch has no server-side push policy. CI-side gates begin at the

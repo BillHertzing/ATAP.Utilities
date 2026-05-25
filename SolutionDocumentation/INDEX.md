@@ -209,6 +209,10 @@ nuget-development / nuget-integration / nuget-qa / nuget-stable`, NBGV
   `-stable`); package-id convention `<App>.Database`; version labels match
   the existing `Sprint` / `Alpha` / `Beta` / `QA` / _(stable)_ pattern;
   Universal Packages considered and rejected for pipeline consistency.
+- [Database Package Ceiling File](Database-Package-Ceiling-File.md)
+  — Defines `database-package-ceiling.json`, the source-controlled
+  consumer-side ceiling file that caps the highest `database-*` feed a sprint,
+  feature, integration, QA, release, or hotfix lane may consume.
 - [Legacy DatabaseBuildAndMigrateTasks Support Boundary](../src/ATAP.Utilities.DatabaseManagement.Powershell/Documentation/Legacy-DatabaseBuildAndMigrateTasks-Support-Boundary.md)
   — Closes the support-boundary story for the legacy Redgate / Phil Factor
   `DatabaseBuildAndMigrateTasks.ps1` task-script bundle. Lists every legacy

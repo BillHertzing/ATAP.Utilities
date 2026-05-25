@@ -331,6 +331,9 @@ implementation tasks build to.
   the PowerShell sibling pattern this decision mirrors.
 - [VersionJsonAsCeiling.md](VersionJsonAsCeiling.md) — the canonical
   cross-ecosystem ceiling narrative.
+- [Database-Package-Ceiling-File.md](Database-Package-Ceiling-File.md) —
+  defines `database-package-ceiling.json`, the consumer-side file that caps the
+  highest `database-*` feed a branch or release lane may resolve from.
 - [ProGet-Install-Runbook.md](ProGet-Install-Runbook.md) — the operational
   runbook that provisions the five `database-*` feeds.
 - [Release-Bundle-Pipeline.md](Release-Bundle-Pipeline.md) — the pipeline

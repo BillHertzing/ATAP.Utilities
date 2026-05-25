@@ -2,6 +2,21 @@
   "version": 2,
   "dependencies": {
     "net10.0": {
+      "ATAP.Utilities.StronglyTypedId.Interfaces": {
+        "type": "Direct",
+        "requested": "[0.1.0-QA.0, )",
+        "resolved": "0.1.0-Sprint.1",
+        "contentHash": "mZBv3aZZfSq/Ftj5MkrtgSdwEntGcQUOM7ARh3vDa7GWsVhccmsz8WWcaX9FZbxWqQ9vK3zIg9j6SmfTAVP96Q=="
+      },
+      "ATAP.Utilities.StronglyTypedId.Models": {
+        "type": "Direct",
+        "requested": "[0.1.0-QA.0, )",
+        "resolved": "0.1.0-Sprint.1",
+        "contentHash": "dAlRghB55Lq7opXf3lNDKPTw/7SmkQpdaMBpZjKATtyNR1Mxo8QvM2uLre1LMClTWh0fBi8KB8ZxZLz4M1ZpGg==",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.0.0-alpha-000, 2.0.0)"
+        }
+      },
       "coverlet.collector": {
         "type": "Direct",
         "requested": "[3.1.0, )",
@@ -486,15 +501,6 @@
           "ATAP.Utilities.ETW": "[1.0.0, )"
         }
       },
-      "atap.utilities.stronglytypedid.interfaces": {
-        "type": "Project"
-      },
-      "atap.utilities.stronglytypedid.models": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
-        }
-      },
       "atap.utilities.testing": {
         "type": "Project",
         "dependencies": {
@@ -710,6 +716,18 @@
       }
     },
     "net8.0": {
+      "ATAP.Utilities.StronglyTypedId.Interfaces": {
+        "type": "Direct",
+        "requested": "[0.1.0-QA.0, )",
+        "resolved": "0.1.0-Sprint.1",
+        "contentHash": "mZBv3aZZfSq/Ftj5MkrtgSdwEntGcQUOM7ARh3vDa7GWsVhccmsz8WWcaX9FZbxWqQ9vK3zIg9j6SmfTAVP96Q=="
+      },
+      "ATAP.Utilities.StronglyTypedId.Models": {
+        "type": "Direct",
+        "requested": "[0.1.0-QA.0, )",
+        "resolved": "0.1.0-Sprint.1",
+        "contentHash": "dAlRghB55Lq7opXf3lNDKPTw/7SmkQpdaMBpZjKATtyNR1Mxo8QvM2uLre1LMClTWh0fBi8KB8ZxZLz4M1ZpGg=="
+      },
       "coverlet.collector": {
         "type": "Direct",
         "requested": "[3.1.0, )",
@@ -1212,15 +1230,6 @@
           "ATAP.Utilities.ETW": "[1.0.0, )"
         }
       },
-      "atap.utilities.stronglytypedid.interfaces": {
-        "type": "Project"
-      },
-      "atap.utilities.stronglytypedid.models": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
-        }
-      },
       "atap.utilities.testing": {
         "type": "Project",
         "dependencies": {
@@ -1458,6 +1467,18 @@
       }
     },
     "net9.0": {
+      "ATAP.Utilities.StronglyTypedId.Interfaces": {
+        "type": "Direct",
+        "requested": "[0.1.0-QA.0, )",
+        "resolved": "0.1.0-Sprint.1",
+        "contentHash": "mZBv3aZZfSq/Ftj5MkrtgSdwEntGcQUOM7ARh3vDa7GWsVhccmsz8WWcaX9FZbxWqQ9vK3zIg9j6SmfTAVP96Q=="
+      },
+      "ATAP.Utilities.StronglyTypedId.Models": {
+        "type": "Direct",
+        "requested": "[0.1.0-QA.0, )",
+        "resolved": "0.1.0-Sprint.1",
+        "contentHash": "dAlRghB55Lq7opXf3lNDKPTw/7SmkQpdaMBpZjKATtyNR1Mxo8QvM2uLre1LMClTWh0fBi8KB8ZxZLz4M1ZpGg=="
+      },
       "coverlet.collector": {
         "type": "Direct",
         "requested": "[3.1.0, )",
@@ -1940,15 +1961,6 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ETW": "[1.0.0, )"
-        }
-      },
-      "atap.utilities.stronglytypedid.interfaces": {
-        "type": "Project"
-      },
-      "atap.utilities.stronglytypedid.models": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
       },
       "atap.utilities.testing": {

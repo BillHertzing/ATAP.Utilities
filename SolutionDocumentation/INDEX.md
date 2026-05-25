@@ -202,6 +202,19 @@ nuget-development / nuget-integration / nuget-qa / nuget-stable`, NBGV
   Rules for release branch creation and manifest generation.
 - [Database Change Unit and Flyway Promotion](Database-Change-Unit-and-Flyway-Promotion.md)
   — Database change-unit lifecycle and promotion mechanics.
+- [Database Package Artifact and Feed Decision](Database-Package-Artifact-And-Feed-Decision.md)
+  — Sprint-0007 sprint-owner decision record: database change units ship as
+  NuGet content packages through the five-feed `database-*` family
+  (`database-experimental` / `-development` / `-integration` / `-qa` /
+  `-stable`); package-id convention `<App>.Database`; version labels match
+  the existing `Sprint` / `Alpha` / `Beta` / `QA` / _(stable)_ pattern;
+  Universal Packages considered and rejected for pipeline consistency.
+- [Legacy DatabaseBuildAndMigrateTasks Support Boundary](../src/ATAP.Utilities.DatabaseManagement.Powershell/Documentation/Legacy-DatabaseBuildAndMigrateTasks-Support-Boundary.md)
+  — Closes the support-boundary story for the legacy Redgate / Phil Factor
+  `DatabaseBuildAndMigrateTasks.ps1` task-script bundle. Lists every legacy
+  capability as supported (covered by current cmdlets), deferred (named
+  replacement planned, priority P1-P4), or retired (will not be rebuilt),
+  and documents the reactivation procedure.
 - [Sprint Infrastructure Naming](SprintInfrastructure-Naming.md) —
   Naming conventions for sprint-scoped infrastructure resources.
 - [Production and Tooling Overview](Production-and-Tooling-Overview.md) —

@@ -41,6 +41,33 @@ Both designs use **identical feed names** for the consumer-facing (pull) feeds, 
 future migration to a split-feed design will not require changes to `NuGet.config` or to
 `Register-PSResourceRepository` registrations.
 
+## Database content feeds (database-*)
+
+In sprint 0007 a third package family was added alongside the `nuget-*` and
+`powershellget-*` feeds: a five-feed family for per-application database
+change units. The artifact type is a **NuGet content package** (a regular
+`.nupkg` with payload in `contentFiles`), pushed and promoted through the
+same immutable-build pipeline that already governs C# and PowerShell
+packages. The five feeds are NuGet-type feeds in ProGet, follow the same
+push+pull / anonymous-read / `X-ApiKey`-on-write access policy as the
+existing `nuget-*` feeds, and do **not** carry a public connector
+(there is no upstream public source of these packages).
+
+The five feeds are:
+
+- `database-experimental`
+- `database-development`
+- `database-integration`
+- `database-qa`
+- `database-stable`
+
+The full decision record — package-id convention (`<App>.Database`),
+package-version convention (SemVer 2.0 with the existing
+`Sprint` / `Alpha` / `Beta` / `QA` / _(stable)_ labels), package contents,
+promotion direction, and rejected alternatives (Universal Packages) — is
+in
+[Database-Package-Artifact-And-Feed-Decision.md](Database-Package-Artifact-And-Feed-Decision.md).
+
 > **pgutil not used — replaced by BW CLI + PowerShell REST calls:**
 > `pgutil` (Inedo's ProGet CLI tool) is not installed on this host. It was evaluated but
 > superseded because it adds an extra dependency: every operation pgutil performs (feed

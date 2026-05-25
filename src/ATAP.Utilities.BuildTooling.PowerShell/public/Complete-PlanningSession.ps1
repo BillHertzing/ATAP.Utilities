@@ -45,6 +45,11 @@ function Complete-PlanningSession {
 .PARAMETER SkipWorktreeRemove
     Leave the worktree in place after the PR merges (useful for post-session review).
 
+.PARAMETER SkipLockFileGuard
+    Explicitly bypasses Assert-LockFilesClean before commit/PR creation. Use
+    only when packages.lock.json drift has been separately reviewed and the
+    bypass reason is recorded in the session notes.
+
 .PARAMETER GhRepo
     GitHub repo owner/name. Auto-detected via gh repo view if omitted.
 
@@ -85,6 +90,9 @@ function Complete-PlanningSession {
 
       [Parameter(Mandatory = $false)]
       [switch] $SkipWorktreeRemove,
+
+      [Parameter(Mandatory = $false)]
+      [switch] $SkipLockFileGuard,
 
       [Parameter(Mandatory = $false)]
       [string] $GhRepo = ''
@@ -453,6 +461,11 @@ specific task additions and sprint-number shifts you made in the plan body.
         if ($issueNumber -gt 0) { $commitBody += "`n`nCloses #$issueNumber" }
 
         try {
+          if (-not $SkipLockFileGuard) {
+            Assert-LockFilesClean -RepoPath $workDir -ThrowOnFailure | Out-Null
+          } else {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message 'Skipping Assert-LockFilesClean before planning commit/PR by explicit caller request.'
+          }
           invokeGit $workDir @('add', '-A')
           invokeGit $workDir @('commit', '-m', $commitTitle, '-m', $commitBody)
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Committed: $commitTitle"

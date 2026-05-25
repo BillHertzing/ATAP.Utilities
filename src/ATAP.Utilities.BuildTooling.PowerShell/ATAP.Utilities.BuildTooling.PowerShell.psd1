@@ -72,7 +72,7 @@
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
     FunctionsToExport    = 'Add-ScopeCreepIdea', 'Add-SharedFileContent',
     'Approve-BuildMasterStage', 'Assert-BuildMasterReady',
-    'Assert-MainBranchTemplateRef', 'Build-CLAUDEPerRepository',
+    'Assert-LockFilesClean', 'Assert-MainBranchTemplateRef', 'Build-CLAUDEPerRepository',
     'Build-ImageFromPlantUML', 'Build-PSModuleManifest',
     'Build-PSModulePsm1', 'Clear-BuildMasterSprintVariables',
     'Clear-NuGetCaches', 'Clear-SprintGeneratedArtifacts',

@@ -66,6 +66,8 @@ function Test-SprintPrerequisites {
     Bitwarden CLI session, git working state of each required sprint worktree
     (no in-progress merge/rebase/cherry-pick/revert/bisect), BuildTooling module
     importability, and HEAD reachability of the ProGet and BuildMaster base URLs.
+    Each discovered worktree is also checked with Assert-LockFilesClean unless
+    -SkipLockFileGuard is supplied.
 
     Every check runs to completion regardless of earlier failures so the
     structured result captures the full diagnostic picture. The cmdlet always
@@ -95,6 +97,11 @@ function Test-SprintPrerequisites {
 
 .PARAMETER ThrowOnFailure
     If supplied, throw a terminating error when AllOk is $false.
+
+.PARAMETER SkipLockFileGuard
+    Explicitly bypasses Assert-LockFilesClean for sprint-start/sprint-end
+    preflight. Use only when lock-file drift has been separately reviewed and
+    the reason is recorded in sprint notes.
 
 .OUTPUTS
     [PSCustomObject] with AllOk [bool], Checks [PSCustomObject], Failures [string[]],
@@ -130,7 +137,10 @@ function Test-SprintPrerequisites {
     [int]$ReachabilityTimeoutSeconds = 5,
 
     [Parameter()]
-    [switch]$ThrowOnFailure
+    [switch]$ThrowOnFailure,
+
+    [Parameter()]
+    [switch]$SkipLockFileGuard
   )
 
   begin {
@@ -283,6 +293,54 @@ function Test-SprintPrerequisites {
       PerRepo = $perRepo
     }
     if (-not $gitOk) { [void]$failures.Add('GitRepoState') }
+
+    if ($SkipLockFileGuard) {
+      $checks['LockFilesClean'] = [PSCustomObject]@{
+        Ok      = $true
+        Skipped = $true
+        Detail  = 'Assert-LockFilesClean skipped by explicit caller request'
+        PerRepo = @()
+      }
+    } else {
+      $lockPerRepo = @()
+      $lockOk = $true
+      foreach ($repoPath in $resolvedRepos) {
+        $entry = [PSCustomObject]@{
+          Path                    = $repoPath
+          Ok                      = $false
+          Detail                  = ''
+          DirtyLockFiles          = @()
+          MissingTrackedLockFiles = @()
+          Failures                = @()
+        }
+        try {
+          if (-not (Test-Path $repoPath -PathType Container)) {
+            $entry.Detail = 'Path does not exist'
+          } else {
+            $lockResult = Assert-LockFilesClean -RepoPath $repoPath
+            $entry.Ok = [bool]$lockResult.AllOk
+            $entry.Detail = if ($entry.Ok) { 'Lock files clean' } else { "Lock-file guard failed: $($lockResult.Failures -join ', ')" }
+            $entry.DirtyLockFiles = @($lockResult.Checks.GitStatus.DirtyLockFiles)
+            $entry.MissingTrackedLockFiles = @($lockResult.Checks.GitStatus.MissingTrackedLockFiles)
+            $entry.Failures = @($lockResult.Failures)
+          }
+        } catch {
+          $entry.Detail = "Lock-file inspection failed: $($_.Exception.Message)"
+        }
+        if (-not $entry.Ok) { $lockOk = $false }
+        $lockPerRepo += $entry
+      }
+
+      $checks['LockFilesClean'] = [PSCustomObject]@{
+        Ok      = $lockOk
+        Skipped = $false
+        Detail  = if ($lockOk) {
+          if ($resolvedRepos.Count -eq 0) { 'No sprint worktrees found to inspect' } else { "$($resolvedRepos.Count) worktree(s) have clean lock files" }
+        } else { 'One or more worktrees have dirty or missing packages.lock.json files' }
+        PerRepo = $lockPerRepo
+      }
+      if (-not $lockOk) { [void]$failures.Add('LockFilesClean') }
+    }
 
     $btOk = $false
     $btDetail = ''

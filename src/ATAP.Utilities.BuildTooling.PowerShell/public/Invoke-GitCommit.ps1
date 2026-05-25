@@ -23,6 +23,10 @@ function Invoke-GitCommit {
 .PARAMETER RepoPath
     Path to the git working tree.  Defaults to the current directory.
 
+.PARAMETER SkipLockFileGuard
+    Explicitly bypasses Assert-LockFilesClean. Use only when the caller has
+    separately reviewed packages.lock.json drift and recorded the reason.
+
 .OUTPUTS
     [void]  Writes confirmation lines to the host.
 
@@ -44,7 +48,10 @@ function Invoke-GitCommit {
         [string] $Message = '',
 
         [Parameter(Mandatory = $false)]
-        [string] $RepoPath = (Get-Location).Path
+        [string] $RepoPath = (Get-Location).Path,
+
+        [Parameter(Mandatory = $false)]
+        [switch] $SkipLockFileGuard
     )
 
     begin {
@@ -100,6 +107,12 @@ function Invoke-GitCommit {
                 Write-Host 'BLOCKED — sensitive files detected. Review before committing:' -ForegroundColor Red
                 $sensitiveFound | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
                 throw "Commit blocked: sensitive or generated files detected. Remove them from staging or add to .gitignore."
+            }
+
+            if (-not $SkipLockFileGuard) {
+                Assert-LockFilesClean -RepoPath $RepoPath -ThrowOnFailure | Out-Null
+            } else {
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message 'Skipping Assert-LockFilesClean by explicit caller request.'
             }
 
             # ── Step 3: Stage all changes ─────────────────────────────────────────

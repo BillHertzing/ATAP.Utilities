@@ -328,6 +328,23 @@ Current status:
   `_Planning/TASKS.md`). Floating versions without lock files mean CI restores
   are non-deterministic.
 
+Local automation guard:
+
+- `Assert-LockFilesClean` in `ATAP.Utilities.BuildTooling.PowerShell` is the
+  reusable preflight for `packages.lock.json` drift.
+- `Invoke-GitCommit` calls it before staging changes. The explicit bypass is
+  `-SkipLockFileGuard`, and the caller must record why lock drift is safe.
+- `Complete-PlanningSession` calls it before the commit/PR step. The explicit
+  bypass is also `-SkipLockFileGuard`.
+- `Test-SprintPrerequisites` calls it for every discovered sprint worktree so
+  SprintStartAgent and SprintEndAgent preflight can fail before dirty or missing
+  lock files are carried across sprint boundaries. Use `-SkipLockFileGuard` only
+  when the sprint notes document the reason.
+- For production-filter validation, call `Assert-LockFilesClean
+  -CheckSolutionFilter -SolutionFilterPath .\ATAP.Utilities.Production.slnf`
+  and pass any documented facade/aggregator exceptions through
+  `-AllowedMissingLockFileProjectPaths`.
+
 ---
 
 ## 9. Interaction with `ConstrainATAPPackageDependencyVersionRange`

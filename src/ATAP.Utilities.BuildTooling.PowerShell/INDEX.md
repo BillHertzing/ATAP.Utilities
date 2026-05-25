@@ -167,6 +167,7 @@ Retired in Sprint 0007 task B08. Retained for provenance only — no active cmdl
 | [Add-ScopeCreepIdea.ps1](public/Add-ScopeCreepIdea.ps1) | Capture a new scope-creep idea into ScopeCreep-Inbox.md. |
 | [Add-SharedFileContent.ps1](public/Add-SharedFileContent.ps1) | Appends content to, or performs a regex find-and-replace within, a shared file under an exclusive file lock. |
 | [Approve-BuildMasterStage.ps1](public/Approve-BuildMasterStage.ps1) | Approves a BuildMaster manual gate for a specific stage of a specific build. |
+| [Assert-LockFilesClean.ps1](public/Assert-LockFilesClean.ps1) | Verifies that `packages.lock.json` files are not dirty or missing before commit, PR, sprint-start, or sprint-end automation proceeds. |
 | [Assert-MainBranchTemplateRef.ps1](public/Assert-MainBranchTemplateRef.ps1) | Validates that all workspace files point to SharedVSCode "main". |
 | [Build-CLAUDEPerRepository.ps1](public/Build-CLAUDEPerRepository.ps1) | Builds a combined CLAUDE.md file for each repository worktree in the current sprint. |
 | [Build-ImageFromPlantUML.ps1](public/Build-ImageFromPlantUML.ps1) | Walk a directory and generate PlantUML images for supported files. |
@@ -415,6 +416,7 @@ Retired in Sprint 0007 task B08. Retained for provenance only — no active cmdl
 | --- | --- |
 | [Approve-BuildMasterStage.Tests.ps1](tests/Unit/Approve-BuildMasterStage.Tests.ps1) | Pester tests for approve build master stage. |
 | [Assert-GitAvailable.Tests.ps1](tests/Unit/Assert-GitAvailable.Tests.ps1) | Pester tests for assert git available. |
+| [Assert-LockFilesClean.Tests.ps1](tests/Unit/Assert-LockFilesClean.Tests.ps1) | Pester tests for assert lock files clean. |
 | [Assert-MainBranchTemplateRef.Tests.ps1](tests/Unit/Assert-MainBranchTemplateRef.Tests.ps1) | Pester tests for assert main branch template ref. |
 | [ATAP.Utilities.BuildTooling.PowerShell.Tests.ps1](tests/Unit/ATAP.Utilities.BuildTooling.PowerShell.Tests.ps1) | Pester tests for atap utilities build tooling. |
 | [BuildMasterConfigurationApi.Tests.ps1](tests/Unit/BuildMasterConfigurationApi.Tests.ps1) | Pester tests for build master configuration api. |

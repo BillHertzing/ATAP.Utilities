@@ -1,27 +1,31 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://atap.example.com/schemas/db-manifest/v1.json",
-  "title": "ATAP DB sub-manifest",
-  "description": "Schema for db/db-manifest.json inside a Release Bundle.",
+  "$id": "https://atap.example.com/schemas/db-manifest/v2.json",
+  "title": "ATAP DB sub-manifest v2",
+  "description": "Schema for db/db-manifest.json inside a database change package. Supports schema-only, data-only, and schema+data packages.",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "schemaVersion",
     "dbChangeUnit",
     "appVersion",
+    "changeKind",
     "flywayTargetVersion",
     "createdUtc",
     "createdFromGitTag",
     "createdFromGitSha",
     "files",
     "expectedRowCounts",
+    "compatibleAppPackageRanges",
+    "requiresPreviousProductionSnapshot",
     "rollbackSupported",
-    "rollbackNotes"
+    "rollbackNotes",
+    "evidenceRequirements"
   ],
   "properties": {
     "schemaVersion": {
       "type": "integer",
-      "const": 1,
+      "const": 2,
       "description": "Format version of this DB sub-manifest schema."
     },
     "dbChangeUnit": {
@@ -31,6 +35,16 @@
     "appVersion": {
       "$ref": "#/$defs/semVerString",
       "description": "Application version associated with this DB change unit."
+    },
+    "changeKind": {
+      "type": "string",
+      "enum": ["schema", "data", "schemaAndData"],
+      "description": "Declares whether this package contains schema migrations, seed/reference data, or both."
+    },
+    "dataKind": {
+      "type": "string",
+      "enum": ["staticReference", "slowlyChangingSeed", "repeatableLookup", "fixture", "migrationData"],
+      "description": "Sub-classification of data content. Required when changeKind is 'data' or 'schemaAndData'."
     },
     "flywayTargetVersion": {
       "$ref": "#/$defs/flywayVersion",
@@ -57,11 +71,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "path",
-          "kind",
-          "checksumSha256"
-        ],
+        "required": ["path", "kind", "checksumSha256"],
         "properties": {
           "path": {
             "$ref": "#/$defs/relativePath",
@@ -69,12 +79,7 @@
           },
           "kind": {
             "type": "string",
-            "enum": [
-              "migration",
-              "repeatable",
-              "seed",
-              "seedLoader"
-            ],
+            "enum": ["migration", "repeatable", "seed", "seedLoader"],
             "description": "Role of the file in the DB change unit."
           },
           "checksumSha256": {
@@ -85,6 +90,11 @@
             "type": "integer",
             "minimum": 0,
             "description": "Expected row count after loading this seed file."
+          },
+          "destructiveChangeKind": {
+            "type": "string",
+            "enum": ["none", "columnDrop", "tableDrop", "columnTypeNarrow", "dataDelete", "indexDrop", "constraintDrop"],
+            "description": "For migration files: the most destructive operation present."
           }
         }
       },
@@ -101,6 +111,18 @@
       },
       "description": "Expected table row counts after loading seed data."
     },
+    "compatibleAppPackageRanges": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "SemVer ranges of application package versions compatible with this DB change unit."
+    },
+    "requiresPreviousProductionSnapshot": {
+      "type": "boolean",
+      "description": "When true, rehearsal gate must restore a production snapshot before Flyway runs."
+    },
     "rollbackSupported": {
       "type": "boolean",
       "description": "Whether downgrade from this DB change unit is supported."
@@ -108,7 +130,29 @@
     "rollbackNotes": {
       "$ref": "#/$defs/nonEmptyString",
       "description": "Operational rollback guidance."
+    },
+    "evidenceRequirements": {
+      "type": "object",
+      "description": "Per-tier evidence gates required before promotion.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "flywayRehearsalRequired": { "type": "boolean" },
+          "rowCountValidationRequired": { "type": "boolean" },
+          "snapshotBackupRequired": { "type": "boolean" },
+          "approvalRequired": { "type": "boolean" }
+        }
+      }
     }
+  },
+  "if": {
+    "properties": {
+      "changeKind": { "enum": ["data", "schemaAndData"] }
+    }
+  },
+  "then": {
+    "required": ["dataKind"]
   },
   "$defs": {
     "nonEmptyString": {

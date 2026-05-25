@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "dbChangeUnit": "ATAPUtilities-db",
+  "appVersion": "2.0.0",
+  "changeKind": "schemaAndData",
+  "dataKind": "migrationData",
+  "flywayTargetVersion": "5",
+  "createdUtc": "2026-06-01T00:00:00Z",
+  "createdFromGitTag": "ATAPUtilities/2.0.0",
+  "createdFromGitSha": "c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4",
+  "files": [
+    {
+      "path": "flyway/V4__rename_tag_table.sql",
+      "kind": "migration",
+      "checksumSha256": "44b452a5aff2b2ccfb58421ef1c53e615f5ca2ca249d26219ccb9e8950e1cf6b",
+      "destructiveChangeKind": "tableDrop",
+      "notes": "Renames Tags to TagCatalog; drops old Tags view."
+    },
+    {
+      "path": "flyway/V5__add_tag_hierarchy.sql",
+      "kind": "migration",
+      "checksumSha256": "66a69bda51e46f9cf4fd99d4b1f596b3d47d8cb9bc8c6850415f1d84f3beb4c7",
+      "destructiveChangeKind": "none"
+    },
+    {
+      "path": "flyway/R__refresh_tag_view.sql",
+      "kind": "repeatable",
+      "checksumSha256": "77a69bda51e46f9cf4fd99d4b1f596b3d47d8cb9bc8c6850415f1d84f3beb5d9"
+    },
+    {
+      "path": "seed/tag_hierarchy__initial.csv",
+      "kind": "seed",
+      "checksumSha256": "88a69bda51e46f9cf4fd99d4b1f596b3d47d8cb9bc8c6850415f1d84f3beb6e1",
+      "expectedRowCount": 120
+    },
+    {
+      "path": "seed/tag_hierarchy__loader.ps1",
+      "kind": "seedLoader",
+      "checksumSha256": "99a69bda51e46f9cf4fd99d4b1f596b3d47d8cb9bc8c6850415f1d84f3beb7f3"
+    }
+  ],
+  "expectedRowCounts": {
+    "TagCatalog": 120
+  },
+  "compatibleAppPackageRanges": [">=2.0.0 <3.0.0"],
+  "requiresPreviousProductionSnapshot": true,
+  "rollbackSupported": false,
+  "rollbackNotes": "V4 drops the Tags view. Rollback requires restoring from the pre-apply snapshot. No automated downgrade path is defined.",
+  "evidenceRequirements": {
+    "experimental": {
+      "flywayRehearsalRequired": true,
+      "rowCountValidationRequired": true,
+      "snapshotBackupRequired": false,
+      "approvalRequired": false
+    },
+    "development": {
+      "flywayRehearsalRequired": true,
+      "rowCountValidationRequired": true,
+      "snapshotBackupRequired": true,
+      "approvalRequired": false
+    },
+    "integration": {
+      "flywayRehearsalRequired": true,
+      "rowCountValidationRequired": true,
+      "snapshotBackupRequired": true,
+      "approvalRequired": true
+    },
+    "qa": {
+      "flywayRehearsalRequired": true,
+      "rowCountValidationRequired": true,
+      "snapshotBackupRequired": true,
+      "approvalRequired": true
+    },
+    "stable": {
+      "flywayRehearsalRequired": true,
+      "rowCountValidationRequired": true,
+      "snapshotBackupRequired": true,
+      "approvalRequired": true
+    }
+  }
+}

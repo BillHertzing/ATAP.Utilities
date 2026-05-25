@@ -320,11 +320,12 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
     $text | Should -Not -Match 'Skipping PowerShell module stage ''\$tier'' because ceiling'
   }
 
-  It 'refuses successful no-op deployments once the ceiling tier has already completed' {
+  It 'refuses successful no-op deployments once a non-final ceiling tier has already completed' {
     $text = Get-Content -LiteralPath $script:powerShellRunnerPath -Raw
 
     $text | Should -Match 'already completed for build ''\$BuildMasterBuildId'' and ceiling ''\$ceilingTier'' has been reached'
     $text | Should -Match 'Refusing a successful no-op deployment because BuildMaster would advance the next stage above the ceiling'
+    $text | Should -Match 'final stage ''\$tierToRun'' already completed for build ''\$BuildMasterBuildId''; accepting no-op deployment'
   }
 
   It 'uses the package version from the captured nupkg path for PowerShell promotion' {

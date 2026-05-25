@@ -1233,6 +1233,10 @@ function Invoke-PowerShellModuleBuildMasterStage {
         if (Test-PowerShellModuleStageCompleted -ContextDirectory $contextDirectory -ModuleName $ModuleName -Tier $tierToRun) {
           $completedTierIndex = $tierOrder.IndexOf($tierToRun)
           if ($tierToRun -eq $tier -and $completedTierIndex -ge $ceilingTierIndex) {
+            if (($completedTierIndex + 1) -ge $tierOrder.Count) {
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "PowerShell module final stage '$tierToRun' already completed for build '$BuildMasterBuildId'; accepting no-op deployment."
+              continue
+            }
             throw "PowerShell module stage '$tierToRun' already completed for build '$BuildMasterBuildId' and ceiling '$ceilingTier' has been reached. Refusing a successful no-op deployment because BuildMaster would advance the next stage above the ceiling."
           }
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "PowerShell module stage '$tierToRun' already completed for build '$BuildMasterBuildId'; skipping re-execution."

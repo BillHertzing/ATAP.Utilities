@@ -71,10 +71,27 @@
     </None>
   </ItemGroup>
 
-<!-- Specific libraries under test-->
-  <ItemGroup>
+<!-- Specific libraries under test -->
+  <!-- Conditional-SUT pattern per CSharp-Packages-Test-Process.md S3.1:
+       Default UsePackageReferenceForSUT=false uses local ProjectReference for the
+       developer/Experimental inner loop. Promotion tiers (Development+) pass
+       UsePackageReferenceForSUT=true and SUTVersion=<promoted-version> at restore
+       time to switch to PackageReference against the promoted artifact. The
+       conditional CPM-safe pattern uses VersionOverride to honor the per-restore
+       SUTVersion while keeping placeholder PackageVersion entries in
+       Directory.Packages.props. -->
+  <PropertyGroup>
+    <UsePackageReferenceForSUT Condition="'$(UsePackageReferenceForSUT)' == ''">false</UsePackageReferenceForSUT>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(UsePackageReferenceForSUT)' == 'false'">
     <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedId\Models\ATAP.Utilities.StronglyTypedId.Models.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedId\Interfaces\ATAP.Utilities.StronglyTypedId.Interfaces.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UsePackageReferenceForSUT)' == 'true'">
+    <PackageReference Include="ATAP.Utilities.StronglyTypedId.Models" VersionOverride="$(SUTVersion)" />
+    <PackageReference Include="ATAP.Utilities.StronglyTypedId.Interfaces" VersionOverride="$(SUTVersion)" />
   </ItemGroup>
 
 

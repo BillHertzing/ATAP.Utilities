@@ -64,6 +64,15 @@
     <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims" Version="0.1.0-Sprint.6" />
     <PackageVersion Include="ATAP.Utilities.Configuration.Secrets.Shims.Interfaces" Version="0.1.0-Sprint.6" />
   </ItemGroup>
+  <ItemGroup Label="ATAP.Utilities.StronglyTypedId Family (promoted-package test SUTs; VersionOverride wins per-restore)">
+    <!-- Placeholder versions satisfy CPM (NU1008) so test projects can declare conditional
+         PackageReferences for the SUT. The real version comes from the test-restore
+         MSBuild property SUTVersion via VersionOverride="$(SUTVersion)" in the test csproj. -->
+    <PackageVersion Include="ATAP.Utilities.StronglyTypedId" Version="0.0.0-placeholder" />
+    <PackageVersion Include="ATAP.Utilities.StronglyTypedId.Interfaces" Version="0.0.0-placeholder" />
+    <PackageVersion Include="ATAP.Utilities.StronglyTypedId.Models" Version="0.0.0-placeholder" />
+    <PackageVersion Include="ATAP.Utilities.StronglyTypedId.JsonConverter.Shim.SystemTextJson" Version="0.0.0-placeholder" />
+  </ItemGroup>
   <ItemGroup Label="Microsoft.Extensions.* (Configuration, Hosting, DI, Logging)">
     <!-- Packages necessary to run the Net Core Generic Host and web server hosts -->
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.0" />

@@ -472,11 +472,17 @@ function Assert-BuildMasterOperationSucceeded {
     if ($null -eq $Result) {
       throw "$OperationName did not return a result object."
     }
-    if ($Result.PSObject.Properties.Name -contains 'Succeeded' -and -not [bool]$Result.Succeeded) {
-      throw "$OperationName reported Succeeded=false. $($Result.ResponseSummary)"
+    $propertyNames = @($Result.PSObject.Properties.Name)
+    $responseSummary = if ($propertyNames -contains 'ResponseSummary') {
+      [string]$Result.ResponseSummary
+    } else {
+      ''
     }
-    if ($Result.PSObject.Properties.Name -contains 'GatePass' -and -not [bool]$Result.GatePass) {
-      throw "$OperationName reported GatePass=false. $($Result.ResponseSummary)"
+    if ($propertyNames -contains 'Succeeded' -and -not [bool]$Result.Succeeded) {
+      throw "$OperationName reported Succeeded=false. $responseSummary"
+    }
+    if ($propertyNames -contains 'GatePass' -and -not [bool]$Result.GatePass) {
+      throw "$OperationName reported GatePass=false. $responseSummary"
     }
   }
 
@@ -792,6 +798,19 @@ function Invoke-CSharpPackageBuildMasterStage {
     . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Publish-NuGetPackageToProGet.ps1')
     . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Invoke-PromotedPackageTests.ps1')
 
+    # Move-ProGetPackageInterTier references the Get-PVal alias for
+    # Get-ParameterValueFromNeoConfigurationRoot. Mirror the PowerShell-module
+    # runner: dot-source the helper from ATAP.Utilities.PowerShell if it is
+    # not already loaded, then register the alias at global scope.
+    $neoConfigurationPath = Join-Path -Path $SourcePath -ChildPath 'src/ATAP.Utilities.PowerShell/public/Get-ParameterValueFromNeoConfigurationRoot.ps1'
+    if (-not (Get-Command -Name Get-ParameterValueFromNeoConfigurationRoot -CommandType Function -ErrorAction SilentlyContinue)) {
+      if (-not (Test-Path -LiteralPath $neoConfigurationPath -PathType Leaf)) {
+        throw "Required NeoConfigurationRoot helper not found: $neoConfigurationPath"
+      }
+      . $neoConfigurationPath
+    }
+    Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Global -Force
+
     if ([string]::IsNullOrWhiteSpace($PackageName)) { $PackageName = $MetaPackageName }
     if ([string]::IsNullOrWhiteSpace($SolutionPath)) { $SolutionPath = 'ATAP.Utilities.sln' }
 
@@ -1016,7 +1035,20 @@ function Invoke-CSharpPackageBuildMasterStage {
           $testParameters['CollectCoverage'] = $true
         }
         try {
-          $testResult = Invoke-PromotedPackageTests @testParameters
+          # `dotnet restore` + `dotnet test` inside Invoke-PromotedPackageTests
+          # write to the success stream, so the caller receives an array of
+          # console strings plus the PSCustomObject result. Capture the full
+          # pipeline and filter to the canonical result by OperationName so
+          # downstream property access works under StrictMode. Mirrors
+          # Select-ModuleBuildRetryResult used by the PowerShell-module runner.
+          $testRawResults = @(Invoke-PromotedPackageTests @testParameters)
+          $testResult = $testRawResults |
+            Where-Object {
+              $_ -is [System.Management.Automation.PSCustomObject] -and
+              $_.PSObject.Properties.Name -contains 'OperationName' -and
+              [string]$_.OperationName -eq 'Invoke-PromotedPackageTests'
+            } |
+            Select-Object -Last 1
         }
         catch {
           Write-PSFMessage -FunctionName $f -ModuleName $m -Level Error -Message "Invoke-PromotedPackageTests threw for '$PackageName' '$PromotedPackageVersion'. Exception: $($_.Exception.Message)"
@@ -1025,8 +1057,12 @@ function Invoke-CSharpPackageBuildMasterStage {
         finally {
           Write-PSFMessage -FunctionName $f -ModuleName $m -Level Debug -Message "Invoke-PromotedPackageTests call complete."
         }
+        if ($null -eq $testResult) {
+          throw "Invoke-PromotedPackageTests did not return a recognizable result object for '$PackageName' '$PromotedPackageVersion'."
+        }
         Assert-BuildMasterOperationSucceeded -Result $testResult -OperationName 'Invoke-PromotedPackageTests'
-        Add-BuildMasterPublishTrace -Path $promotionTracePath -Message $testResult.ResponseSummary
+        $testSummary = if ($testResult.PSObject.Properties.Name -contains 'ResponseSummary') { [string]$testResult.ResponseSummary } else { "$($testResult.OperationName) GatePass=$($testResult.GatePass)" }
+        Add-BuildMasterPublishTrace -Path $promotionTracePath -Message $testSummary
 
         Write-PSFMessage -FunctionName $f -ModuleName $m -Level Important -Message "Promoted '$PackageName' version '$PromotedPackageVersion' to '$destinationFeed' and passed $Tier tests. Ceiling='$ceilingTier'."
       }
@@ -1085,16 +1121,33 @@ function Invoke-CSharpPackageBuildMasterStage {
               '--no-incremental',
               '-p:ContinuousIntegrationBuild=true'
             )
-            try {
-              dotnet @buildArgs
-              $buildExit = $LASTEXITCODE
-            }
-            catch {
-              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "dotnet build threw for '$resolvedProjectPath'. Exception: $($_.Exception.Message)"
-              throw
+            # Retry dotnet build up to 3 times. Mirrors Invoke-ModuleBuildWithRetry
+            # from the PowerShell-module runner; specifically catches transient
+            # post-compile file-lock races (e.g. Fody writing the .pdb while a
+            # parallel watcher or sync agent has a read handle on it) that
+            # surface on workstations and CI agents alike.
+            $maxBuildAttempts = 3
+            $buildExit = $null
+            for ($attempt = 1; $attempt -le $maxBuildAttempts; $attempt++) {
+              try {
+                dotnet @buildArgs
+                $buildExit = $LASTEXITCODE
+              }
+              catch {
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "dotnet build threw for '$resolvedProjectPath' on attempt $attempt. Exception: $($_.Exception.Message)"
+                if ($attempt -eq $maxBuildAttempts) { throw }
+                $buildExit = -1
+              }
+              if ($buildExit -eq 0) { break }
+              if ($attempt -lt $maxBuildAttempts) {
+                $waitSeconds = 3 * $attempt
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "dotnet build exit=$buildExit on attempt $attempt for '$resolvedProjectPath'; retrying after ${waitSeconds}s."
+                Add-BuildMasterPublishTrace -Path $publishTracePath -Message "dotnet build exit=$buildExit on attempt $attempt; retry in ${waitSeconds}s."
+                Start-Sleep -Seconds $waitSeconds
+              }
             }
             if ($buildExit -ne 0) {
-              throw "dotnet build failed for '$resolvedProjectPath' with exit code $buildExit."
+              throw "dotnet build failed for '$resolvedProjectPath' after $maxBuildAttempts attempt(s); last exit code $buildExit."
             }
 
             $packArgs = @(

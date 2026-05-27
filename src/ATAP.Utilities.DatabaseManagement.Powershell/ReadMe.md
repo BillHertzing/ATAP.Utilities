@@ -1,6 +1,39 @@
 # ATAP.Utilities.DatabaseManagement.Powershell
 
-Flyway migration helpers, SQL Server lifecycle management, and rule-export utilities for the ATAP ecosystem.
+`ATAP.Utilities.DatabaseManagement.PowerShell` is a PowerShell module that provides
+database lifecycle management for the ATAP ecosystem. It covers:
+
+- **Database change packaging** — deterministic `.nupkg` creation, manifest validation,
+  and checksum verification for Flyway-managed databases.
+- **Flyway safety gates** — rehearsal runs, migration safety analysis, seed idempotency
+  checks, and schema-version queries before committing a migration to a shared environment.
+- **Rollback and snapshot automation** — pre-migration SQL Server backups, post-restore
+  verification, and rollback-readiness checks.
+- **SQL Server lifecycle helpers** — instance installation, developer scratch databases,
+  feature shared databases, backup jobs, and connection string resolution.
+- **Rule export utilities** — export Rules from the ATAPUtilities database for review
+  or archiving.
+
+## Importing the Module
+
+```powershell
+# From a repo worktree (development):
+Import-Module (Resolve-Path './src/ATAP.Utilities.DatabaseManagement.Powershell/ATAP.Utilities.DatabaseManagement.Powershell.psd1') -Force
+
+# After the module is promoted to a ProGet feed:
+Install-Module -Name ATAP.Utilities.DatabaseManagement.Powershell -Repository <FeedName> -Force
+Import-Module ATAP.Utilities.DatabaseManagement.Powershell
+```
+
+## Full Cmdlet Reference
+
+See **[INDEX.md](INDEX.md)** for the complete, categorized list of every public cmdlet,
+its synopsis, required environment variables, and Bitwarden secret names.
+
+## Deep Reference Documentation
+
+See **[Documentation/](Documentation/)** for implementation details, required
+configuration keys, example invocations, and integration notes for each cmdlet family.
 
 ## 5-Tier Module Flow
 
@@ -8,27 +41,40 @@ Use the module-level getting started guide for the lifecycle workflow:
 
 - [Documentation/GettingStarted.md](Documentation/GettingStarted.md)
 
-## Public Cmdlets
+## Public Cmdlets (Summary)
 
-| Cmdlet                                    | Description                                                            |
-| ----------------------------------------- | ---------------------------------------------------------------------- |
-| `Build-DatabaseWithFlyway`                | Run Flyway migrations against a target database instance               |
-| `DatabaseProvisioning`                    | Provision a new database instance                                      |
-| `Export-RuleToTextFile`                   | Export a Rule from the ATAPUtilities database to a formatted text file |
-| `Get-DatabaseCredentialsKey`              | Resolve the Bitwarden credentials key for a given database/tier/host   |
-| `Get-InstalledDatabaseInformation`        | Return metadata about installed SQL Server instances                   |
-| `Install-SqlServerInstance`               | Install and configure a SQL Server Express instance                    |
-| `Invoke-Flyway`                           | Invoke a Flyway command against a configured database                  |
-| `Invoke-FlywayRehearsal`                  | Run Flyway against a per-run ephemeral rehearsal database              |
-| `Invoke-SqlServerBackup`                  | Back up a SQL Server database                                          |
-| `New-CobianAppJobs`                       | Create Cobian Backup application jobs                                  |
-| `New-CobianSqlJobs`                       | Create Cobian Backup SQL Server jobs                                   |
-| `New-ConnectionStringBuilderFromDbaTools` | Build a connection string using dbaTools conventions                   |
-| `New-DeveloperScratchDb`                  | Idempotently create a per-developer scratch database                   |
-| `New-FeatureSharedDb`                     | Idempotently create a per-feature shared database                      |
-| `Remove-DeveloperScratchDb`               | Drop disposable developer scratch or per-feature-sprint databases      |
-| `Remove-FeatureSharedDb`                  | Drop disposable per-feature shared databases                           |
-| `Resolve-DbInstanceName`                  | Resolve canonical Stream J database names                              |
+| Cmdlet                                    | Category            | Description                                                                                                                |
+| ----------------------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `New-DatabaseChangePackage`               | Change Packages     | Packages migrations, repeatables, seeds, and loaders into a deterministic `.nupkg` with SHA-256 checksums and v2 manifest. |
+| `Get-DatabasePackageManifest`             | Change Packages     | Reads and parses `db-release-unit-manifest.json` from a folder or `.nupkg`.                                                |
+| `Test-DatabasePackageManifest`            | Change Packages     | Validates a manifest against the v2 schema; returns `IsValid` + `Errors`.                                                  |
+| `Test-DatabaseChangePackage`              | Change Packages     | Full package validation: manifest, per-file SHA-256, and ceiling policy check.                                             |
+| `Expand-DatabaseChangePackage`            | Change Packages     | Extracts a `.nupkg` to a folder for inspection or deployment.                                                              |
+| `Invoke-DatabasePackageRehearsal`         | Flyway Safety Gates | Expands a package and runs `Invoke-FlywayRehearsal`; returns rehearsal output and elapsed time.                            |
+| `Test-FlywayMigrationSafety`              | Flyway Safety Gates | Classifies migrations by destructive-change kind; blocks promotion if evidence files are missing.                          |
+| `Test-DatabaseSeedIdempotency`            | Flyway Safety Gates | Runs seed/loader scripts twice and compares row counts and content hashes.                                                 |
+| `Get-FlywaySchemaVersion`                 | Flyway Safety Gates | Queries `flyway_schema_history` and returns the version history ordered by `installed_rank DESC`.                          |
+| `New-DatabasePreMigrationSnapshot`        | Rollback / Snapshot | Takes a Full backup before migration; captures Flyway version; writes evidence JSON.                                       |
+| `Restore-DatabaseFromSnapshot`            | Rollback / Snapshot | Restores from a pre-migration `.bak` via dbatools; verifies post-restore Flyway version.                                   |
+| `Test-DatabaseRollbackReadiness`          | Rollback / Snapshot | Checks evidence file age, backup file presence, and timestamp — no SQL connection required.                                |
+| `Build-DatabaseWithFlyway`                | Flyway Helpers      | Run Flyway migrations against a target database instance.                                                                  |
+| `Get-DatabaseCredentialsKey`              | Connection Helpers  | Resolve the Bitwarden credentials key for a given database / tier / host.                                                  |
+| `Get-InstalledDatabaseInformation`        | Instance Management | Return metadata about installed SQL Server instances.                                                                      |
+| `Initialize-SqlServiceLogin`              | Instance Management | Initialise SQL Server service logins.                                                                                      |
+| `Install-SqlServerInstance`               | Instance Management | Install and configure a SQL Server Express instance.                                                                       |
+| `Invoke-Flyway`                           | Flyway Helpers      | Invoke a Flyway command against a configured database.                                                                     |
+| `Invoke-FlywayRehearsal`                  | Flyway Helpers      | Run Flyway against a per-run ephemeral rehearsal database.                                                                 |
+| `Invoke-SqlServerBackup`                  | Backup              | Back up a SQL Server database using dbatools.                                                                              |
+| `New-CobianAppJobs`                       | Backup              | Create Cobian Backup application jobs.                                                                                     |
+| `New-CobianSqlJobs`                       | Backup              | Create Cobian Backup SQL Server jobs.                                                                                      |
+| `New-ConnectionStringBuilderFromDbaTools` | Connection Helpers  | Build a connection string using dbatools conventions.                                                                      |
+| `New-DeveloperScratchDb`                  | Developer Databases | Idempotently create a per-developer scratch database.                                                                      |
+| `New-FeatureSharedDb`                     | Developer Databases | Idempotently create a per-feature shared database.                                                                         |
+| `Remove-DeveloperScratchDb`               | Developer Databases | Drop disposable developer scratch databases.                                                                               |
+| `Remove-FeatureSharedDb`                  | Developer Databases | Drop disposable per-feature shared databases.                                                                              |
+| `Resolve-DatabaseSqlConnection`           | Connection Helpers  | Resolve a SqlConnection from three connection-method parameter sets.                                                       |
+| `Resolve-DbInstanceName`                  | Instance Management | Resolve canonical Stream J database names.                                                                                 |
+| `Export-RuleToTextFile`                   | Rules               | Export a Rule from the ATAPUtilities database to a formatted text file.                                                    |
 
 ### Example Scripts
 

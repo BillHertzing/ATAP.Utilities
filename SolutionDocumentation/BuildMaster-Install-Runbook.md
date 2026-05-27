@@ -800,3 +800,114 @@ The BuildMaster Native API exposes `ResourceMonitors_CreateOrUpdateResourceMonit
 but the configuration payload is extension-specific. Capture a UI-created monitor
 JSON payload first, then automate future monitor provisioning from that manifest.
 This is tracked as a follow-up in V4-A06 (trigger proof pending interactive session).
+
+---
+
+## Database package applications
+
+This section documents the BuildMaster configuration required for the
+`DatabaseChangePackage-5Stage` pipeline (see
+`src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/DatabaseChangePackage-5Stage.otter`).
+Owned by V4-E09 / DBA2-T04.
+
+### Application naming convention
+
+Each database-bearing product gets a dedicated BuildMaster application whose
+name is the product name with the `Database` suffix:
+
+| Product | BuildMaster application name |
+| --- | --- |
+| `ATAPUtilities` | `ATAPUtilitiesDatabase` |
+| `AceCommander` | `AceCommanderDatabase` |
+
+This keeps the database pipeline separate from the C# (`ATAP.Utilities-CSharp`)
+and PowerShell-module (`ATAP.Utilities-PowerShell`) applications so each can
+have its own ceiling and per-stage approvals.
+
+### Required Application Variables
+
+Set the following Application Variables on each `*Database` application before
+the pipeline can run. Set them through **Applications → `<App>Database` →
+Settings → Variables**:
+
+| Variable name | Type | Purpose | Example value |
+| --- | --- | --- | --- |
+| `ApplicationName` | string | BuildMaster application identifier echoed into run-context JSON. | `ATAPUtilitiesDatabase` |
+| `DatabaseApplication` | string | Source-tree application name used to locate `Database/<DatabaseApplication>/`. **Must not be empty.** | `ATAPUtilities` |
+| `DatabaseStream` | string | Optional database stream sub-folder. Empty selects single-stream; non-empty resolves the package id to `<DatabaseApplication>.<DatabaseStream>.Database`. | `` (empty) |
+| `Branch` | string | Source branch supplied by the repository monitor. | `main` |
+| `SourcePath` | string | Absolute path to the BuildMaster working directory for the active sprint or stable branch. | `C:\\BuildMaster\\ATAP.Utilities` |
+| `ProGetBaseUrl` | string | ProGet base URL hosting the canonical five `database-*` feeds. | `http://localhost:50000` |
+
+The plan passes every one of these to the runner as a `-NAME "$VAR"`
+argument. No secret values appear in Application Variables or in `Arguments:`
+blocks.
+
+### Required environment variables on the BuildMaster service account
+
+The runner resolves the ProGet API key from User-scope environment variables
+on the BuildMaster Windows service account. Provision one of the following
+(BuildMaster-scoped takes precedence over admin-scoped):
+
+| Environment variable | Scope | Purpose |
+| --- | --- | --- |
+| `PROGET_BUILDMASTER_API_KEY` | User | Preferred. BuildMaster-only API key with `database-*` push/promote rights. |
+| `PROGET_ADMIN_API_KEY` | User | Fallback. Broader rights; used only when the BuildMaster-only key is absent. |
+
+Both variables are provisioned from Bitwarden by the workstation `LoginScript.ps1`
+on the service account at session start. Do not export them at machine scope
+and do not store them in BuildMaster `$Decrypt(...)` secrets — the runner
+reads them with `[System.Environment]::GetEnvironmentVariable(..., 'User')`
+so they never appear on a command line.
+
+If neither variable resolves, the runner throws with an explicit message
+referencing both variable names. No fallback to plaintext or argument-passing
+is allowed.
+
+### Required ProGet feeds
+
+The pipeline writes only to the canonical five database feeds. All five must
+exist in ProGet before the plan can run, and they are permanent (not per-
+sprint). The feed naming convention and per-tier purpose is documented in
+[`Database-Package-Artifact-And-Feed-Decision.md`](Database-Package-Artifact-And-Feed-Decision.md):
+
+| Tier | Feed name | Pipeline stage that writes here |
+| --- | --- | --- |
+| Experimental | `database-experimental` | `Experimental` (publish from `New-DatabaseChangePackage`) |
+| Development | `database-development` | `Development` (promote from `database-experimental`) |
+| Integration | `database-integration` | `Integration` (promote from `database-development`) |
+| QA | `database-qa` | `QA` (promote from `database-integration`) |
+| Production / Stable | `database-stable` | `Production` (promote from `database-qa`) |
+
+The procedure for creating these feeds (one-time, per ProGet host) is in
+[`ProGet-Install-Runbook.md`](ProGet-Install-Runbook.md) under
+**Database content feeds** (V4-E02). Do not duplicate that procedure here.
+
+### Pipeline assignment
+
+The OtterScript plan
+`src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/DatabaseChangePackage-5Stage.otter`
+is assigned as the per-stage deployment step for the
+`DatabaseChangePackage-5Stage` pipeline. Each of the five stages — `Experimental`,
+`Development`, `Integration`, `QA`, `Production` — runs the same plan; the
+runner branches internally on `$PipelineStageName` (passed as `-Stage`).
+
+### Secrets and audit notes
+
+- Do **not** add any database connection string, SQL credential, or ProGet
+  API key value to this document.
+- Do **not** add `$Decrypt(...)` calls to `DatabaseChangePackage-5Stage.otter`;
+  the static contract test
+  `Plans/tests/DatabasePackage-5Stage.Tests.ps1` enforces this.
+- Database connection strings used by Flyway during rehearsal stages are
+  resolved by name from Bitwarden at runtime via `Get-BitWardenSecret`. The
+  Bitwarden item naming convention for permanent and ephemeral database
+  instances is documented in `.claude/Rules/Bitwarden.md`.
+
+### Evidence
+
+The provisioning evidence for the `*Database` applications is written to
+`_generated/audit/v4-e/V4-E09-buildmaster-database-variables-<date>.md` in
+the active sprint worktree. The evidence file records whether each
+application has been created in BuildMaster yet and, if not, the exact
+commands or UI steps that will create it.

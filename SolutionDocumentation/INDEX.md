@@ -213,6 +213,50 @@ nuget-development / nuget-integration / nuget-qa / nuget-stable`, NBGV
   — Defines `database-package-ceiling.json`, the source-controlled
   consumer-side ceiling file that caps the highest `database-*` feed a sprint,
   feature, integration, QA, release, or hotfix lane may consume.
+- [Database Package Consumer Resolution](Database-Package-Consumer-Resolution.md)
+  — How a consumer selects the correct `database-*` feed for an environment
+  tier, respects `database-package-ceiling.json`, narrows by
+  `compatibleAppPackageRanges`, and resolves a specific package version via
+  `Install-Package` or `dotnet restore`. DBA2-T05 / V4-E11.
+- [Database Package Compatibility](Database-Package-Compatibility.md)
+  — How `compatibleAppPackageRanges` in the database package manifest
+  constrains compatible application versions, how release bundles record
+  the expected pairing, and how `Test-DatabasePackageCompatibility`
+  validates it at promotion/deploy time. DBA2-T06 / V4-E12.
+- [Database MultiDB Future Requirements](Database-MultiDB-Future-Requirements.md)
+  — Forward-looking notes for multi-database scope deferred from
+  Sprint 0007: AceCommander per-user database evolution, multi-stream
+  databases, tenant-fanout migration orchestration, and tenant-level
+  ceiling/rollback work. DBA2-T08 / V4-E16.
+
+### Database/Documentation (implementation deep-reference)
+
+- [`Database/Documentation/ReadMe.md`](../Database/Documentation/ReadMe.md)
+  — Purpose and scope of the in-repo `Database/Documentation/` folder;
+  links to the cross-cutting `SolutionDocumentation/` documents
+  rather than restating them. DBA2-T09 / V4-E17.
+- [`Database/Documentation/Index.md`](../Database/Documentation/Index.md)
+  — In-folder inventory plus deep-link pointers into the
+  `SolutionDocumentation/` documents the database pipeline depends on.
+  Includes settings-key and Bitwarden secret-name conventions used by
+  the database cmdlets. DBA2-T09 / V4-E17.
+
+### DatabaseManagement.PowerShell/Documentation (per-cmdlet deep-reference)
+
+- [`src/ATAP.Utilities.DatabaseManagement.Powershell/Documentation/ReadMe.md`](../src/ATAP.Utilities.DatabaseManagement.Powershell/Documentation/ReadMe.md)
+  — Purpose and scope of the module's `Documentation/` sub-folder,
+  summary of required env vars and Bitwarden secret-name patterns.
+  Module root `ReadMe.md` and `INDEX.md` remain DBA1-owned. DBA2-T10 / V4-E18.
+- [`src/ATAP.Utilities.DatabaseManagement.Powershell/Documentation/INDEX.md`](../src/ATAP.Utilities.DatabaseManagement.Powershell/Documentation/INDEX.md)
+  — Per-cmdlet deep references (description, required env vars,
+  Bitwarden secret names, example invocation) for the database-pipeline
+  cmdlets in the module. Placeholder rows are included for
+  `New-DatabasePreMigrationSnapshot`, `Restore-DatabaseFromSnapshot`,
+  and `Test-DatabaseRollbackReadiness` until DBA1 lands them.
+  DBA2-T10 / V4-E18.
+  — Defines the `compatibleAppPackageRanges` field, NuGet range notation, release
+  bundle pairing, the DB-C-01 deployment-block rule, and the
+  `Test-DatabasePackageCompatibility` cmdlet. DBA2-T06 / V4-E12.
 - [Legacy DatabaseBuildAndMigrateTasks Support Boundary](../src/ATAP.Utilities.DatabaseManagement.Powershell/Documentation/Legacy-DatabaseBuildAndMigrateTasks-Support-Boundary.md)
   — Closes the support-boundary story for the legacy Redgate / Phil Factor
   `DatabaseBuildAndMigrateTasks.ps1` task-script bundle. Lists every legacy

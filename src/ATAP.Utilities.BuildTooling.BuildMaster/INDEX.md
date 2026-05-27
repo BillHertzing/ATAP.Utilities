@@ -1,10 +1,12 @@
 # BuildMaster — File Index
 
 This folder holds the OtterScript pipeline plans and the PowerShell entry-point
-scripts that BuildMaster executes for the three ATAP.Utilities build pipelines:
+scripts that BuildMaster executes for the four ATAP.Utilities build pipelines:
 
 - **CSharpPackage** — single NuGet meta-package, 5-tier promotion.
 - **PowerShellModule** — single PowerShell module nupkg, 5-tier promotion.
+- **DatabaseChangePackage** — single database change package nupkg, 5-tier
+  promotion across `database-*` feeds.
 - **ReleaseBundle** — product Universal Package, 6 stages including manifest
   generation and Chocolatey / WinGet publication.
 
@@ -23,6 +25,7 @@ OtterScript plans are intentionally thin glue; non-trivial logic lives in the
 | ---------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [Plans/CSharpPackage-5Stage.otter](Plans/CSharpPackage-5Stage.otter)                                 | Plan     | 5-stage BuildMaster pipeline for the ATAP.Utilities C# meta-package: Experimental builds + publishes the .nupkg; Development → Integration → QA → Production stages promote that immutable nupkg through `nuget-experimental … nuget-stable` and run tier tests.  |
 | [Plans/PowerShellModule-5Stage.otter](Plans/PowerShellModule-5Stage.otter)                           | Plan     | 5-stage BuildMaster pipeline for a single PowerShell module: Experimental builds + publishes the module nupkg to `powershellget-experimental`; later tiers call `Invoke-PowerShellModuleBuildMasterStage.ps1` to promote + test the same artifact up the feed chain. |
+| [Plans/DatabaseChangePackage-5Stage.otter](Plans/DatabaseChangePackage-5Stage.otter)                 | Plan     | 5-stage BuildMaster pipeline for a database change package: Experimental builds the .nupkg via `New-DatabaseChangePackage` and pushes to `database-experimental`; Development → Integration → QA → Production promote the immutable nupkg through the canonical `database-*` feeds. DBA2-T03 / V4-E08. |
 | [Plans/ReleaseBundle-6Stage.otter](Plans/ReleaseBundle-6Stage.otter)                                 | Plan     | 6-stage BuildMaster pipeline for a product Release Bundle (Universal Package): Experimental builds the manifest + bundle, later stages promote across `releasebundle-*` feeds, Integration runs Flyway rehearsal, Production publishes to Chocolatey and WinGet.    |
 | [Monitors/CSharpPackage-RepositoryMonitors.otter](Monitors/CSharpPackage-RepositoryMonitors.otter)   | Monitors | Declarative definition of BuildMaster Repository Monitors that fire `CSharpPackage-5Stage` when sprint-branch or main pushes land in the `ATAP.Utilities` GitHub repository (filtered to `src/**`).                                                                |
 | [Monitors/PowerShellModule-RepositoryMonitors.otter](Monitors/PowerShellModule-RepositoryMonitors.otter) | Monitors | Declarative definition of BuildMaster Repository Monitors that fire `PowerShellModule-5Stage` when sprint-branch or main pushes land in the `ATAP.Utilities` GitHub repository (filtered to `src/**`).                                                              |
@@ -47,6 +50,7 @@ operations.
 | [Plans/Initialize-PowerShellModuleBuildContext.ps1](Plans/Initialize-PowerShellModuleBuildContext.ps1)                     | `Initialize-PowerShellModuleBuildContext`| Same workflow as the C# variant but state-file names are prefixed with `$ModuleName` so two modules can share a single run-context directory. Drift between captured and current `ResolvedPackageVersion` is reported via `Write-PSFMessage -Level Important`, not thrown.                              |
 | [Plans/Initialize-ReleaseBundleBuildContext.ps1](Plans/Initialize-ReleaseBundleBuildContext.ps1)                           | `Initialize-ReleaseBundleBuildContext`   | Resolves `Get-BuildContext` for a product (by `ReleaseTag` when present, otherwise by `Branch`), emits the `releasebundle_*.tmp` markers, serialises the build context to `releasebundle_context.json`, and persists `build-context.json`.                                                              |
 | [Plans/Invoke-PowerShellModuleBuildMasterStage.ps1](Plans/Invoke-PowerShellModuleBuildMasterStage.ps1)                     | `Invoke-PowerShellModuleBuildMasterStage`| Drives one BuildMaster stage of the PowerShellModule pipeline. Experimental: invokes `Invoke-ModuleBuildWithRetry`, locates the produced nupkg, publishes to `powershellget-experimental`. Other tiers: `Promote-ProGetPackage` + `Invoke-PromotedModuleTests`. Stage completion markers make reruns idempotent. |
+| [Plans/Invoke-DatabasePackageBuildMasterStage.ps1](Plans/Invoke-DatabasePackageBuildMasterStage.ps1)                       | `Invoke-DatabasePackageBuildMasterStage` | Drives one BuildMaster stage of the DatabaseChangePackage pipeline. Experimental: invokes `New-DatabaseChangePackage`, then `Publish-DatabaseChangePackageToProGet` against `database-experimental`. Other tiers: `Promote-DatabaseChangePackage` with feed-direction and ceiling enforcement. Stage completion markers make reruns idempotent. DBA2-T03 / V4-E08. |
 | [Plans/New-ReleaseBundleBuildMasterPackage.ps1](Plans/New-ReleaseBundleBuildMasterPackage.ps1)                             | `New-ReleaseBundleBuildMasterPackage`    | Loads the release-bundle context JSON, calls `New-ReleaseManifest` and `New-ReleaseBundle`, publishes the Universal Package to the configured ProGet Experimental feed, drops per-bundle markers, and updates `build-context.json`.                                                                     |
 
 ### Scripts

@@ -1,0 +1,245 @@
+@startuml DB-StablePackageBuildOnce
+' ============================================================
+' Diagram: Build-Once Stable Package — Full Lifecycle
+' Purpose: Detailed step-by-step process for a database
+'          package whose version.json has NO pre-release
+'          label (i.e. it will produce a stable NuGet
+'          package). Covers the complete path from the
+'          developer's first schema change through all
+'          BuildMaster promotion stages, final merge back
+'          into the stable branch, and cleanup.
+' Author:  Generated for Sprint-0007
+' ============================================================
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 11
+skinparam ArrowColor #444444
+skinparam NoteBackgroundColor #FFFDE7
+skinparam NoteBorderColor #F9A825
+skinparam ActivityBorderColor #888888
+skinparam SequenceBoxBorderColor #888888
+skinparam swimlaneBorderThickness 2
+
+title "Build-Once Stable DB Package: Full Lifecycle\n(No pre-release label → eventual production merge)"
+
+' ============================================================
+' PHASE 1 — Developer sets stable version and writes migration
+' ============================================================
+
+|Developer Workstation|
+
+start
+
+:Checkout sprint worktree\n(branch: <N>-Sprint-NNNN-work-items);
+
+:Edit Database/Flyway/SQL/\nV00.01.NNNNNN__<description>.sql;
+note right
+  New versioned Flyway migration.
+  File name encodes the migration order.
+  NEVER edit an already-applied migration.
+end note
+
+:Set version.json to stable version\n(no "-alpha", "-beta", or\n"-pre" label):
+\n{
+\n  "version": "1.5.0"
+\n}
+;
+note right
+  Nerdbank.GitVersioning (NBGV) uses
+  version.json to compute the NuGet
+  package version.
+  A version with NO pre-release segment
+  signals "this is a production-ready build."
+  NBGV appends a build-height suffix only
+  in CI; the base semver is clean (e.g. 1.5.0).
+  Contrast with sprint-internal work that uses
+  "version": "1.5.0-sprint0007" which always
+  stays pre-release.
+end note
+
+:Test migration locally\nagainst Experimental DB\n(Rebuild-All.ps1 or manual Flyway migrate);
+
+if (Local tests pass?) then (yes)
+else (no)
+  :Fix migration SQL;
+  backward :Re-run local test;
+endif
+
+:git add version.json + migration SQL file(s)\ngit commit -m "feat(db): stable migration 1.5.0 – <description>"\ngit push origin <sprint-branch>;
+
+' ============================================================
+' PHASE 2 — BuildMaster detects commit and starts pipeline
+' ============================================================
+
+|BuildMaster (CI Trigger)|
+
+:Git webhook / polling detects\npush to sprint branch;
+
+:Start pipeline:\n"ATAPUtilities-Database-Stable"\nfor commit <sha>;
+note right
+  BuildMaster identifies the pipeline
+  to use based on the branch pattern
+  and the version.json having no
+  pre-release label.
+  A separate pipeline handles sprint/alpha builds.
+end note
+
+' ============================================================
+' PHASE 3 — Experimental stage
+' ============================================================
+
+|BM Stage: Experimental|
+
+:Checkout source\n(repo + version.json);
+
+:nbgv get-version → 1.5.0.<build-height>
+\n(stable semver with CI build height);
+note right
+  NBGV computes: 1.5.0.42
+  NuGet package version: 1.5.0.42
+  (no pre-release segment)
+end note
+
+:Build NuGet package\n(nuget pack or dotnet pack)\nOutput: ATAPUtilities.Database.1.5.0.42.nupkg;
+
+:Push .nupkg to ProGet\nfeed: atap-db-experimental;
+
+:Provision Experimental DB from scratch\n(Rebuild-All.ps1 Experimental);
+
+:Apply migration via Flyway\n(flyway migrate on Experimental instance);
+
+:Run smoke tests\n(Verify/ folder SQL scripts);
+
+if (Experimental tests pass?) then (yes)
+  :Promote package to Development feed\n(ProGet: atap-db-experimental → atap-db-development);
+  note right: Single .nupkg artifact is promoted;
+else (fail)
+  :BuildMaster marks stage FAILED;
+  :Notify developer;
+  stop
+endif
+
+' ============================================================
+' PHASE 4 — Development stage
+' ============================================================
+
+|BM Stage: Development|
+
+:Install .nupkg from ProGet\natap-db-development feed\n(same artifact, new feed);
+
+:Apply Flyway migrations to\nDevelopment DB instance;
+
+:Run development-level tests\n(Queries/ folder assertions);
+
+if (Development tests pass?) then (yes)
+  :Promote to Integration feed\n(ProGet: atap-db-development → atap-db-integration);
+else (fail)
+  :BuildMaster marks stage FAILED;
+  :Notify developer;
+  stop
+endif
+
+' ============================================================
+' PHASE 5 — Integration stage
+' ============================================================
+
+|BM Stage: Integration|
+
+:Integration DB was seeded from\nProduction backup at sprint start\n(Export-ProductionDatabaseForSprintInit.ps1);
+
+:Install .nupkg from\nProGet: atap-db-integration;
+
+:Apply Flyway migrations on top of\nproduction-seeded Integration DB\n(Incremental — only new V__ scripts);
+
+:Run full integration test suite\n(Flyway + stored-proc assertions\nfrom StoredProcedures/);
+
+if (Integration tests pass?) then (yes)
+  :Promote to QA feed\n(ProGet: atap-db-integration → atap-db-qa);
+else (fail)
+  :BuildMaster marks stage FAILED;
+  :Notify developer for remediation;
+  stop
+endif
+
+' ============================================================
+' PHASE 6 — QA stage (requires human approval gate)
+' ============================================================
+
+|BM Stage: QA|
+
+:Install .nupkg from\nProGet: atap-db-qa;
+
+:Apply Flyway migrations on\nQA DB (production snapshot);
+
+:Run QA acceptance tests\n(manual or automated regression suite);
+
+:Human approval gate:\nRelease Manager reviews migration and\ntest results before proceeding;
+
+if (QA approved?) then (yes)
+  :Promote to Production feed\n(ProGet: atap-db-qa → atap-db-production);
+else (rejected)
+  :Stage blocked — developer notified;
+  :Create follow-up issue;
+  stop
+endif
+
+' ============================================================
+' PHASE 7 — Production deployment
+' ============================================================
+
+|BM Stage: Production|
+
+:Install .nupkg from\nProGet: atap-db-production;
+
+:Take pre-migration backup\nof Production DB\n(Backup-DbaDatabase via OtterScript);
+
+:Apply Flyway migrations to\nProduction DB\n(flyway migrate -url=<prod>);
+
+:Run production smoke tests\n(Verify/ folder scripts);
+
+if (Production deployment succeeds?) then (yes)
+  :Mark BuildMaster release\nas Deployed;
+  :Tag Git commit with stable version\n(git tag v1.5.0.42);
+else (fail)
+  :Rollback: Restore-DbaDatabase\nfrom pre-migration backup;
+  :Notify release manager + developer;
+  stop
+endif
+
+' ============================================================
+' PHASE 8 — Merge back to stable branch
+' ============================================================
+
+|Developer Workstation|
+
+:Create Pull Request:\nsprint-branch → main\n(includes version.json + all migration SQL);
+
+:PR review and merge via GitHub;
+note right
+  Squash-merge or regular merge depending
+  on branch policy.
+  The stable version tag (v1.5.0.42) is
+  already on the merged commit SHA.
+end note
+
+:Delete sprint worktree\n(SprintEndAgent cleanup);
+
+:main branch now contains\nstable migration 1.5.0\nfor next sprint baseline;
+
+stop
+
+' ============================================================
+' Legend
+' ============================================================
+legend right
+  |= Artifact |= Description |
+  | version.json (no pre-release) | Signals a stable package build |
+  | .nupkg (1.5.0.42) | Single immutable artifact promoted through feeds |
+  | ProGet Feeds | atap-db-experimental → development → integration → qa → production |
+  | Flyway | Incremental schema migration applied at each stage |
+  | Human gate | QA approval required before Production promotion |
+  | Rollback | Pre-migration production backup taken before deploy |
+endlegend
+
+@enduml

@@ -1,0 +1,126 @@
+@startuml DB-ProductionBackup-SprintInit
+' ============================================================
+' Diagram: Production Database Backup for Sprint Initialization
+' Purpose: Shows the process of backing up the Production DB
+'          so that Integration and QA databases can be seeded
+'          from a known-good production baseline at sprint start.
+'          Covers Export-ProductionDatabaseForSprintInit.ps1.
+' Author:  Generated for Sprint-0007
+' ============================================================
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 11
+skinparam ArrowColor #444444
+skinparam NoteBackgroundColor #FFFDE7
+skinparam NoteBorderColor #F9A825
+skinparam ActivityBorderColor #888888
+
+title "Production DB Backup → Integration + QA Sprint Seeding\n(Export-ProductionDatabaseForSprintInit.ps1)"
+
+|Sprint Lead / Admin|
+start
+
+:Sprint N starts\n(SprintStartAgent executes);
+
+:Run Export-ProductionDatabaseForSprintInit\n-SprintNumber N\n-DatabaseName ATAPUtilities\n-BackupRootPath <path>;
+note right
+  Typically run once per sprint,
+  before any developer changes
+  are applied to Integration or QA.
+  Requires dbatools module.
+  Requires DBA or admin role on SQL instance.
+end note
+
+|Export-ProductionDatabaseForSprintInit.ps1|
+:Resolve SQL instance name\nfrom $global:settings\n(DatabaseHost + SqlInstance);
+
+:Resolve backup output path:\n<BackupRootPath>\Sprint-<N>\<timestamp>\;
+note right
+  Example:
+  C:\ProgramData\ATAP\DatabaseBackups\
+    Sprint-0007\
+      ATAPUtilities_Production_2026-05-26_10-00-00.bak
+end note
+
+:Verify Production DB is online\n(dbatools: Test-DbaConnection);
+
+if (Production DB accessible?) then (yes)
+  :Write-PSFMessage -Level Important\n"Starting Production backup for Sprint N";
+else (no)
+  :Write-PSFMessage -Level Error\n"Cannot reach Production DB";
+  :Throw terminating error;
+  stop
+endif
+
+:Backup-DbaDatabase\n-SqlInstance <prod-instance>\n-Database ATAPUtilities\n-BackupDirectory <output-path>\n-Type Full\n-CompressBackup;
+note right
+  Uses dbatools Backup-DbaDatabase.
+  Full backup only (not differential).
+  Compression enabled to reduce backup size.
+  BAK file name: <DB>_<timestamp>.bak
+end note
+
+if (Backup succeeds?) then (yes)
+  :Write-PSFMessage -Level Important\n"Backup complete: <bak-path>\nSize: <MB>";\
+  :Return backup file path\n(for use in seed steps below);
+else (fail)
+  :Write-PSFMessage -Level Error\n"Backup failed: <error>";
+  :Throw terminating error;
+  stop
+endif
+
+|Sprint Lead / Admin|
+:Seed Integration DB from backup;
+
+|Export-ProductionDatabaseForSprintInit.ps1|
+:Restore-DbaDatabase\n-SqlInstance <integration-instance>\n-Database ATAPUtilities\n-Path <bak-path>\n-WithReplace;
+note right
+  -WithReplace drops and restores
+  even if an existing DB is present
+  (idempotent: safe to re-run).
+  Integration DB is fully replaced
+  with production snapshot.
+end note
+
+if (Integration restore succeeds?) then (yes)
+  :Write-PSFMessage -Level Important\n"Integration DB seeded from Sprint-N backup";
+else (fail)
+  :Write-PSFMessage -Level Error;
+  :Throw terminating error;
+  stop
+endif
+
+|Sprint Lead / Admin|
+:Seed QA DB from same backup;
+
+|Export-ProductionDatabaseForSprintInit.ps1|
+:Restore-DbaDatabase\n-SqlInstance <qa-instance>\n-Database ATAPUtilities\n-Path <bak-path>\n-WithReplace;
+
+if (QA restore succeeds?) then (yes)
+  :Write-PSFMessage -Level Important\n"QA DB seeded from Sprint-N backup";
+else (fail)
+  :Write-PSFMessage -Level Error;
+  :Throw terminating error;
+  stop
+endif
+
+|Export-ProductionDatabaseForSprintInit.ps1|
+:Write summary object to pipeline:\n[PSCustomObject]@{\n  Sprint      = N\n  BackupFile  = <path>\n  BackupSizeMB = <n>\n  IntegrationSeeded = $true\n  QASeeded    = $true\n  Timestamp   = <datetime>\n};
+
+|Sprint Lead / Admin|
+:Sprint N databases ready:\n- Integration DB = Production snapshot\n- QA DB          = Production snapshot\n- Experimental DB = rebuilt from migrations\n- Development DB  = rebuilt from migrations;
+
+note right
+  Experimental and Development DBs
+  are rebuilt from scratch (Rebuild-All.ps1)
+  at sprint start, not from backup,
+  because developers apply new migrations
+  immediately.
+end note
+
+:Developers may now begin\napplying sprint migrations\nto Experimental / Development;
+
+stop
+
+@enduml

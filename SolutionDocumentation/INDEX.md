@@ -45,7 +45,7 @@ _Teach / Tell how to create software._
   including `Initialize-ProGetSqlServiceLogin`, `Initialize-SqlServiceLogin`,
   ProGet.config symlinking, EncryptionKey retrieval from Bitwarden, API-key
   registration; and a build of the `aaronontheweb/mssql-mcp` MCP server.
-- [New Computer Setup (alternate draft)](NewComputerSetupAnotherVersion.md) —
+- [New Computer Setup Using Ansible](NewComputerSetupUsingAnsible.md) —
   Alternate draft of workstation and build-host bootstrap guidance.
 - [WSL2 Setup](WSL2Setup.md) — WSL2 provisioning notes for development and
   automation workflows.

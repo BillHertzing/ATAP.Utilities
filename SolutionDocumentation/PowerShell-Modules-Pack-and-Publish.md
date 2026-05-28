@@ -438,4 +438,4 @@ Unregister-PSResourceRepository -Name PowershellGet-experimental
 - [PowerShell-Modules-Build-Process.md](PowerShell-Modules-Build-Process.md) — generates the inputs to pack.
 - [PowerShell-Modules-Versioning.md](PowerShell-Modules-Versioning.md) — produces the `Prerelease` that selects the tier.
 - [PowerShell-Modules-Test-Process.md](PowerShell-Modules-Test-Process.md) — gating tests between tiers.
-- [BuildMaster-ProGet-CSharp-Package-Pipeline.md](BuildMaster-ProGet-CSharp-Package-Pipeline.md) — feed topology and CI orchestration.
+- [BuildMaster-Pipeline-Topology.md](BuildMaster-Pipeline-Topology.md) — feed topology and CI orchestration.

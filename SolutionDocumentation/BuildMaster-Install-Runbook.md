@@ -83,11 +83,13 @@ captured and can be safely replayed by PowerShell.
 
 ### Target applications
 
-| BuildMaster Application      | Pipeline / plan                   | Purpose                                                                                                    |
-| ---------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `ATAP.Utilities-CSharp`      | `global::CSharpPackage-5Stage`    | Build and promote ATAP.Utilities C# NuGet packages.                                                        |
-| `ATAP.Utilities-PowerShell`  | `global::PowerShellModule-5Stage` | Build and promote all ATAP.Utilities PowerShell modules through one parameterized application.             |
-| `AceCommander-ReleaseBundle` | `global::ReleaseBundle-6Stage`    | Build and promote the AceCommander Release Bundle. The Distribution stage remains deferred in Sprint 0007. |
+| BuildMaster Application      | Pipeline / plan                        | Purpose                                                                                                    |
+| ---------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `ATAP.Utilities-CSharp`      | `global::CSharpPackage-5Stage`         | Build and promote ATAP.Utilities C# NuGet packages.                                                        |
+| `ATAP.Utilities-PowerShell`  | `global::PowerShellModule-5Stage`      | Build and promote all ATAP.Utilities PowerShell modules through one parameterized application.             |
+| `AceCommander-ReleaseBundle` | `global::ReleaseBundle-6Stage`         | Build and promote the AceCommander Release Bundle. The Distribution stage remains deferred in Sprint 0007. |
+| `ATAPUtilitiesDatabase`      | `global::DatabaseChangePackage-5Stage` | Build and promote ATAP.Utilities database change packages. See §15 for application variables.              |
+| `AceCommanderDatabase`       | `global::DatabaseChangePackage-5Stage` | Build and promote AceCommander database change packages. See §15 for application variables.                |
 
 `AceCommander-CSharp` may be added later if AceCommander library packages need
 their own C# package application. It is not required for the Stream L target.
@@ -367,7 +369,7 @@ Build-scope variables supplied when creating a build:
 | `ReleaseBundleQAFeedName`                | `releasebundle-qa`                                    | No        | Universal Package feed.                                                                                                         |
 | `ReleaseBundleProductionFeedName`        | `releasebundle-production`                            | No        | Universal Package feed.                                                                                                         |
 | `PreviousProductionBackupPath`           | Approved `.bak` path                                  | No        | Required for Integration Flyway rehearsal.                                                                                      |
-| `IntegrationDatabaseBitwardenSecretName` | `dbConnectionString-AceCommander-utat022-Integration` | No        | Used by `Invoke-FlywayRehearsal`.                                                                                               |
+| `IntegrationDatabaseDBConnectionStringSecretName` | `dbConnectionString-AceCommander-utat022-Integration` | No        | Used by `Invoke-FlywayRehearsal`.                                                                                               |
 
 ### 8.5 Automation call
 
@@ -684,6 +686,13 @@ Next implementation order:
       files.
 - [ ] Placeholder/current releases are bound to the global pipelines.
 - [ ] A dry-run or test package can create a BuildMaster build through the API.
+- [ ] Database applications exist: `ATAPUtilitiesDatabase`, `AceCommanderDatabase`.
+- [ ] Each database application has the variables listed in section 15.
+- [ ] `DatabaseChangePackage-5Stage.otter` plan is visible in the default raft.
+- [ ] Five canonical `database-*` ProGet feeds exist (see §15 and
+      `ProGet-Install-Runbook.md`).
+- [ ] `PROGET_BUILDMASTER_API_KEY` or `PROGET_ADMIN_API_KEY` is set at User
+      scope on the BuildMaster service account.
 
 ---
 

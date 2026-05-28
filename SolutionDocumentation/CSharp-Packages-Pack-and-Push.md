@@ -257,14 +257,18 @@ root for convenience.)
 ### 6.4 The curated library list
 
 The script's `$libraries` array is the source of truth for which packages are
-ready to publish via this path. Currently (sprint-0006):
+ready to publish via this path. As of sprint-0007, the list is maintained
+directly inside
+`src/ATAP.Utilities.BuildTooling.PowerShell/public/Publish-ATAPUtilities.ps1`.
+Example entries:
 
 ```text
 src\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj
 src\ATAP.Utilities.Configuration.Extensions\ATAP.Utilities.Configuration.Extensions.csproj
 ```
 
-This list grows as libraries are onboarded. The order matters — a library must
+This list grows as libraries are onboarded. Consult the script directly for
+the current set — the above is illustrative only. The order matters — a library must
 appear after any library it `ProjectReference`s, because pushing to
 nuget-experimental makes the upstream package visible for the downstream
 project's subsequent pack. Add new entries at the end of the chain.
@@ -572,6 +576,6 @@ applies; `nuget.org` will not be consulted.
 - [CSharp-Packages-Build-Process.md](CSharp-Packages-Build-Process.md) — MSBuild targets feeding into `Pack`.
 - [CSharp-Packages-Versioning.md](CSharp-Packages-Versioning.md) — how the version in the `.nupkg` filename is computed.
 - [CSharp-Central-Package-Management.md](CSharp-Central-Package-Management.md) — the consumer-side `Directory.Packages.props`.
-- [BuildMaster-ProGet-CSharp-Package-Pipeline.md](BuildMaster-ProGet-CSharp-Package-Pipeline.md) — CI-side orchestration of this pipeline.
+- [BuildMaster-Pipeline-Topology.md](BuildMaster-Pipeline-Topology.md) — CI-side orchestration of this pipeline and full application variable tables.
 - [Production-and-Tooling-Overview.md](Production-and-Tooling-Overview.md) — the index this doc belongs to.
 - `Publish-ATAPUtilities.ps1` — the developer publish helper.

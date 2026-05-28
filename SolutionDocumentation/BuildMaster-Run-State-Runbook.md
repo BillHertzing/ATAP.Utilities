@@ -3,6 +3,14 @@
 **Scope:** Operational notes for the Sprint 0007 Option A inter-stage state
 channel used by the BuildMaster Otter plans.
 
+**Cross-references:**
+
+- BuildMaster URL, raft strategy, application catalog, application variables,
+  secret handling, and smoke-evidence checklist →
+  [BuildMaster-Install-Runbook.md](BuildMaster-Install-Runbook.md)
+- Pipeline topology and feed-to-pipeline mapping →
+  [BuildMaster-Pipeline-Topology.md](BuildMaster-Pipeline-Topology.md)
+
 ## State location
 
 Each BuildMaster build writes generated state under:
@@ -29,6 +37,11 @@ the resolved context directory for correlation with BuildMaster UI records.
   `releasebundle_name.tmp`, `releasebundle_bundle_version.tmp`,
   `releasebundle_path.tmp`, `releasebundle_manifest_path.tmp`, and
   `releasebundle_allow_*.tmp`.
+- Database change package state — `db_context.json`,
+  `db_package_id.tmp`, `db_package_version.tmp`,
+  `db_nupkg_path.tmp`, `db_allow_*.tmp`, and
+  `pre-migration-snapshot-evidence.json` (produced by
+  `New-DatabasePreMigrationSnapshot` at the start of each migrating stage).
 
 ## Diagnosing skipped stages
 

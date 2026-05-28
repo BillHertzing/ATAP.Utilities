@@ -13,8 +13,8 @@ diagrams scattered across the C# and PowerShell pipeline docs.
 
 - [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md) — the policy the
   pipelines enforce.
-- [BuildMaster-ProGet-CSharp-Package-Pipeline.md](BuildMaster-ProGet-CSharp-Package-Pipeline.md)
-  — detailed C# pipeline reference.
+- [BuildMaster-Install-Runbook.md](BuildMaster-Install-Runbook.md)
+  — detailed C# and database pipeline reference; install and verify checklist.
 - [Release-Bundle-Pipeline.md](Release-Bundle-Pipeline.md) — detailed
   Release Bundle pipeline reference.
 
@@ -78,7 +78,7 @@ Each BuildMaster Application supplies its own values for the variables its
 | `$ReleaseBundleQAFeedName`                | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | `releasebundle-qa`                                    |
 | `$ReleaseBundleProductionFeedName`        | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | `releasebundle-production`                            |
 | `$PreviousProductionBackupPath`           | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | path to prior production `.bak` (Flyway rehearsal)    |
-| `$IntegrationDatabaseBitwardenSecretName` | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | `dbConnectionString-AceCommander-utat022-Integration` |
+| `$IntegrationDatabaseDBConnectionStringSecretName` | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | `dbConnectionString-AceCommander-utat022-Integration` |
 
 `$Tier` is the current BuildMaster stage. `$BuildMasterBuildId` is derived in
 each plan with `$BuildMasterId(build)` and is used only for generated run-state

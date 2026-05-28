@@ -67,9 +67,13 @@
 # identity captured in _generated\buildmaster\<BuildMasterBuildId>\releasebundle_*.tmp.
 
 set $BuildToolingModuleManifest = $PathCombine($SourcePath, src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1);
+set $DatabaseManagementModuleManifest = $PathCombine($SourcePath, src\ATAP.Utilities.DatabaseManagement.Powershell\ATAP.Utilities.DatabaseManagement.Powershell.psd1);
 set $BuildMasterPlanScriptDir = $PathCombine($SourcePath, src\ATAP.Utilities.BuildTooling.BuildMaster\Plans);
 set $InitializeBuildContextScript = $PathCombine($BuildMasterPlanScriptDir, Initialize-ReleaseBundleBuildContext.ps1);
 set $NewReleaseBundleBuildMasterPackageScript = $PathCombine($BuildMasterPlanScriptDir, New-ReleaseBundleBuildMasterPackage.ps1);
+set $PromoteReleaseBundleScript = $PathCombine($BuildMasterPlanScriptDir, Promote-ReleaseBundleBuildMasterPackage.ps1);
+set $InvokeReleaseBundleFlywayRehearsalScript = $PathCombine($BuildMasterPlanScriptDir, Invoke-ReleaseBundleFlywayRehearsal.ps1);
+set $PublishReleaseBundleDistributionScript = $PathCombine($BuildMasterPlanScriptDir, Publish-ReleaseBundleDistribution.ps1);
 set $BuildMasterBuildId = $BuildMasterId(build);
 set $BuildMasterBuildNumber = $BuildNumber;
 set $BuildMasterExecutionId = $ExecutionId;
@@ -146,11 +150,12 @@ stage Development
     {
     if $AllowDevelopment == true
     {
-    # Promote the immutable bundle to Development.
+    # Promote the immutable bundle to Development via dedicated runner
+    # (no inline pwsh -Command; SEC-T1 / BLOCKER-8).
     Exec
     (
         FileName: pwsh,
-        Arguments: >>-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$BuildToolingModuleManifest' -Force; $$global:ProGetBaseUrl = '$ProGetUrl'; $$name = Get-Content -LiteralPath '$ReleaseBundleNameFile' -Raw; $$version = Get-Content -LiteralPath '$ReleaseBundleBundleVersionFile' -Raw; Promote-ProGetPackage -Name $$name.Trim() -Version $$version.Trim() -FromFeed '$ReleaseBundleExperimentalFeedName' -ToFeed '$ReleaseBundleDevelopmentFeedName' -Reason 'Release Bundle Development promotion' -CeilingTier '$CeilingTier'">>,
+        Arguments: >>-NoProfile -File "$PromoteReleaseBundleScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -Stage Development -ReleaseBundleNameFile "$ReleaseBundleNameFile" -ReleaseBundleBundleVersionFile "$ReleaseBundleBundleVersionFile" -FromFeed "$ReleaseBundleExperimentalFeedName" -ToFeed "$ReleaseBundleDevelopmentFeedName" -CeilingTier "$CeilingTier" -ProGetUrl "$ProGetUrl">>,
         WorkingDirectory: $SourcePath,
         SuccessExitCode: 0
     );
@@ -168,20 +173,25 @@ stage Integration
     {
     if $AllowIntegration == true
     {
-    # Promote the immutable bundle to Integration.
+    # Promote the immutable bundle to Integration via dedicated runner
+    # (no inline pwsh -Command; SEC-T1 / BLOCKER-8).
     Exec
     (
         FileName: pwsh,
-        Arguments: >>-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$BuildToolingModuleManifest' -Force; $$global:ProGetBaseUrl = '$ProGetUrl'; $$name = Get-Content -LiteralPath '$ReleaseBundleNameFile' -Raw; $$version = Get-Content -LiteralPath '$ReleaseBundleBundleVersionFile' -Raw; Promote-ProGetPackage -Name $$name.Trim() -Version $$version.Trim() -FromFeed '$ReleaseBundleDevelopmentFeedName' -ToFeed '$ReleaseBundleIntegrationFeedName' -Reason 'Release Bundle Integration promotion' -CeilingTier '$CeilingTier'">>,
+        Arguments: >>-NoProfile -File "$PromoteReleaseBundleScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -Stage Integration -ReleaseBundleNameFile "$ReleaseBundleNameFile" -ReleaseBundleBundleVersionFile "$ReleaseBundleBundleVersionFile" -FromFeed "$ReleaseBundleDevelopmentFeedName" -ToFeed "$ReleaseBundleIntegrationFeedName" -CeilingTier "$CeilingTier" -ProGetUrl "$ProGetUrl">>,
         WorkingDirectory: $SourcePath,
         SuccessExitCode: 0
     );
 
-    # Rehearse bundled Flyway migrations against the previous-production DB snapshot.
+    # Rehearse bundled Flyway migrations against the previous-production DB
+    # snapshot via dedicated runner (no inline pwsh -Command). The connection
+    # string is resolved by Invoke-FlywayRehearsal from Bitwarden using the
+    # IntegrationDatabaseBitwardenSecretName Application variable; the secret
+    # value never appears in process arguments.
     Exec
     (
         FileName: pwsh,
-        Arguments: >>-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$BuildToolingModuleManifest' -Force; Import-Module '$SourcePath\src\ATAP.Utilities.DatabaseManagement.Powershell\ATAP.Utilities.DatabaseManagement.Powershell.psd1' -Force; New-Item -ItemType Directory -Path '_generated\flyway' -Force | Out-Null; $$bundlePath = Get-Content -LiteralPath '$ReleaseBundlePathFile' -Raw; if ([string]::IsNullOrWhiteSpace('$IntegrationDatabaseBitwardenSecretName')) { throw 'BuildMaster Application variable IntegrationDatabaseBitwardenSecretName is required for Integration Flyway rehearsal.' }; Invoke-FlywayRehearsal -Application '$ProductName' -BundlePath $$bundlePath.Trim() -BackupPath '$PreviousProductionBackupPath' -BitwardenSecretName '$IntegrationDatabaseBitwardenSecretName' -LogPath '_generated\flyway\flyway-rehearsal.log'">>,
+        Arguments: >>-NoProfile -File "$InvokeReleaseBundleFlywayRehearsalScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -DatabaseManagementModulePath "$DatabaseManagementModuleManifest" -SourcePath "$SourcePath" -ProductName "$ProductName" -ReleaseBundlePathFile "$ReleaseBundlePathFile" -BackupPath "$PreviousProductionBackupPath" -IntegrationDatabaseBitwardenSecretName "$IntegrationDatabaseBitwardenSecretName">>,
         WorkingDirectory: $SourcePath,
         SuccessExitCode: 0
     );
@@ -201,11 +211,12 @@ stage QA
     {
     if $AllowQA == true
     {
-    # Promote the immutable bundle to QA.
+    # Promote the immutable bundle to QA via dedicated runner
+    # (no inline pwsh -Command; SEC-T1 / BLOCKER-8).
     Exec
     (
         FileName: pwsh,
-        Arguments: >>-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$BuildToolingModuleManifest' -Force; $$global:ProGetBaseUrl = '$ProGetUrl'; $$name = Get-Content -LiteralPath '$ReleaseBundleNameFile' -Raw; $$version = Get-Content -LiteralPath '$ReleaseBundleBundleVersionFile' -Raw; Promote-ProGetPackage -Name $$name.Trim() -Version $$version.Trim() -FromFeed '$ReleaseBundleIntegrationFeedName' -ToFeed '$ReleaseBundleQAFeedName' -Reason 'Release Bundle QA promotion' -CeilingTier '$CeilingTier'">>,
+        Arguments: >>-NoProfile -File "$PromoteReleaseBundleScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -Stage QA -ReleaseBundleNameFile "$ReleaseBundleNameFile" -ReleaseBundleBundleVersionFile "$ReleaseBundleBundleVersionFile" -FromFeed "$ReleaseBundleIntegrationFeedName" -ToFeed "$ReleaseBundleQAFeedName" -CeilingTier "$CeilingTier" -ProGetUrl "$ProGetUrl">>,
         WorkingDirectory: $SourcePath,
         SuccessExitCode: 0
     );
@@ -222,11 +233,12 @@ stage Production
     {
     if $AllowProduction == true
     {
-    # Promote the immutable bundle to Production.
+    # Promote the immutable bundle to Production via dedicated runner
+    # (no inline pwsh -Command; SEC-T1 / BLOCKER-8).
     Exec
     (
         FileName: pwsh,
-        Arguments: >>-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$BuildToolingModuleManifest' -Force; $$global:ProGetBaseUrl = '$ProGetUrl'; $$name = Get-Content -LiteralPath '$ReleaseBundleNameFile' -Raw; $$version = Get-Content -LiteralPath '$ReleaseBundleBundleVersionFile' -Raw; Promote-ProGetPackage -Name $$name.Trim() -Version $$version.Trim() -FromFeed '$ReleaseBundleQAFeedName' -ToFeed '$ReleaseBundleProductionFeedName' -Reason 'Release Bundle Production promotion' -CeilingTier '$CeilingTier'">>,
+        Arguments: >>-NoProfile -File "$PromoteReleaseBundleScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -Stage Production -ReleaseBundleNameFile "$ReleaseBundleNameFile" -ReleaseBundleBundleVersionFile "$ReleaseBundleBundleVersionFile" -FromFeed "$ReleaseBundleQAFeedName" -ToFeed "$ReleaseBundleProductionFeedName" -CeilingTier "$CeilingTier" -ProGetUrl "$ProGetUrl">>,
         WorkingDirectory: $SourcePath,
         SuccessExitCode: 0
     );
@@ -240,13 +252,14 @@ stage Production
 
 stage Distribution
 {
-    # Publish the production-tier bundle to Chocolatey and update WinGet.
-    # Both cmdlets are documented in Release-Bundle-Pipeline.md section 6 and
-    # may remain future stubs until Stream N implements their full behavior.
+    # Publish the production-tier bundle to Chocolatey and update WinGet via
+    # dedicated runner (no inline pwsh -Command; SEC-T1 / BLOCKER-8). Both
+    # cmdlets are documented in Release-Bundle-Pipeline.md section 6 and may
+    # remain future stubs until Stream N implements their full behavior.
     Exec
     (
         FileName: pwsh,
-        Arguments: >>-NoProfile -Command "$$ErrorActionPreference = 'Stop'; Import-Module '$SourcePath\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1' -Force; $$version = Get-Content -LiteralPath '$ReleaseBundleBundleVersionFile' -Raw; Publish-ChocolateyRelease -BundleVersion $$version.Trim(); Update-WinGetManifestSource -BundleVersion $$version.Trim()">>,
+        Arguments: >>-NoProfile -File "$PublishReleaseBundleDistributionScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -ReleaseBundleBundleVersionFile "$ReleaseBundleBundleVersionFile">>,
         WorkingDirectory: $SourcePath,
         SuccessExitCode: 0
     );

@@ -45,6 +45,94 @@ Describe 'SEC-T1 — OtterScript plans must not expose secrets in Arguments' {
             $content | Should -Not -Match '\$\$env:PROGET_[A-Z_]+\s*=\s*[''"]'
         }
     }
+
+    It 'No .otter plan uses pwsh -Command anywhere (runner pattern required; V4-A07)' {
+        foreach ($file in $script:OtterFiles) {
+            $content = Get-Content -LiteralPath $file.FullName -Raw
+            $content | Should -Not -Match '(?i)-NoProfile\s+-Command\b' `
+                -Because "$($file.Name) must use 'pwsh -File' runner scripts, not inline 'pwsh -Command' blocks (V4-A07 / SEC-T1)."
+        }
+    }
+
+    It 'No .otter plan inlines a ProGet promote/publish cmdlet call in Arguments (V4-A07)' {
+        foreach ($file in $script:OtterFiles) {
+            $content = Get-Content -LiteralPath $file.FullName -Raw
+            foreach ($cmdlet in @('Promote-ProGetPackage', 'Publish-NuGetPackageToProGet', 'Publish-UniversalPackageToProGet')) {
+                $content | Should -Not -Match "Arguments:[^\r\n]*$cmdlet" `
+                    -Because "$($file.Name) must not invoke '$cmdlet' inline in an Arguments block (V4-A07 / SEC-T1)."
+            }
+        }
+    }
+}
+
+Describe 'SEC-T1 — V4-A07 ReleaseBundle runner contracts' {
+
+    BeforeAll {
+        $script:PromoteScriptPath          = Join-Path $script:PlansDir 'Promote-ReleaseBundleBuildMasterPackage.ps1'
+        $script:FlywayRehearsalScriptPath  = Join-Path $script:PlansDir 'Invoke-ReleaseBundleFlywayRehearsal.ps1'
+        $script:DistributionScriptPath     = Join-Path $script:PlansDir 'Publish-ReleaseBundleDistribution.ps1'
+    }
+
+    It 'Promote-ReleaseBundleBuildMasterPackage.ps1 exists' {
+        $script:PromoteScriptPath | Should -Exist
+    }
+
+    It 'Promote-ReleaseBundleBuildMasterPackage.ps1 does NOT declare -ProGetApiKey as a parameter' {
+        $content = Get-Content -LiteralPath $script:PromoteScriptPath -Raw
+        $content | Should -Not -Match '\[string\]\s*\$ProGetApiKey'
+    }
+
+    It 'Promote-ReleaseBundleBuildMasterPackage.ps1 resolves API key from PROGET_BUILDMASTER_API_KEY or PROGET_ADMIN_API_KEY' {
+        $content = Get-Content -LiteralPath $script:PromoteScriptPath -Raw
+        $content | Should -Match 'PROGET_BUILDMASTER_API_KEY'
+        $content | Should -Match 'PROGET_ADMIN_API_KEY'
+    }
+
+    It 'Promote-ReleaseBundleBuildMasterPackage.ps1 calls Promote-ProGetPackage' {
+        $content = Get-Content -LiteralPath $script:PromoteScriptPath -Raw
+        $content | Should -Match 'Promote-ProGetPackage'
+    }
+
+    It 'Invoke-ReleaseBundleFlywayRehearsal.ps1 exists' {
+        $script:FlywayRehearsalScriptPath | Should -Exist
+    }
+
+    It 'Invoke-ReleaseBundleFlywayRehearsal.ps1 requires -IntegrationDatabaseBitwardenSecretName and rejects empty values' {
+        $content = Get-Content -LiteralPath $script:FlywayRehearsalScriptPath -Raw
+        $content | Should -Match 'IntegrationDatabaseBitwardenSecretName'
+        $content | Should -Match '(?s)\[Parameter\s*\(\s*Mandatory\s*\)\][^\]]*\[ValidateNotNullOrEmpty\(\)\][^\]]*\[string\]\$IntegrationDatabaseBitwardenSecretName'
+    }
+
+    It 'Invoke-ReleaseBundleFlywayRehearsal.ps1 does NOT accept a raw connection string parameter' {
+        $content = Get-Content -LiteralPath $script:FlywayRehearsalScriptPath -Raw
+        $content | Should -Not -Match '\[string\]\s*\$SqlConnectionString'
+        $content | Should -Not -Match '\[string\]\s*\$ConnectionString'
+    }
+
+    It 'Publish-ReleaseBundleDistribution.ps1 exists' {
+        $script:DistributionScriptPath | Should -Exist
+    }
+
+    It 'Publish-ReleaseBundleDistribution.ps1 does NOT declare -ProGetApiKey or raw secret params' {
+        $content = Get-Content -LiteralPath $script:DistributionScriptPath -Raw
+        $content | Should -Not -Match '\[string\]\s*\$ProGetApiKey'
+        $content | Should -Not -Match '\[string\]\s*\$ChocolateyApiKey'
+        $content | Should -Not -Match '\[string\]\s*\$WinGetApiKey'
+    }
+
+    It 'All three V4-A07 runner scripts parse without errors' {
+        foreach ($path in @(
+            $script:PromoteScriptPath,
+            $script:FlywayRehearsalScriptPath,
+            $script:DistributionScriptPath
+        )) {
+            $tokens = $null
+            $parseErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+                $path, [ref]$tokens, [ref]$parseErrors) | Out-Null
+            $parseErrors | Should -BeNullOrEmpty -Because "$path must parse cleanly."
+        }
+    }
 }
 
 Describe 'SEC-T1 — New-ReleaseBundleBuildMasterPackage.ps1 must not require ProGetApiKey' {

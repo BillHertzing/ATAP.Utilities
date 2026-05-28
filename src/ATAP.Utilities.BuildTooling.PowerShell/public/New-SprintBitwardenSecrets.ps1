@@ -45,7 +45,7 @@ function New-SprintBitwardenSecrets {
     $secrets | Format-Table secretName, created, error
   .EXAMPLE
     New-SprintBitwardenSecrets -SprintNumber '0006' -DeveloperUsername 'jsmith' `
-      -HostList @('devbox01', 'localhost') -WhatIf
+      -HostList @('utat022', 'localhost') -WhatIf
   .NOTES
     AI assisted using ./claude/Rules/Powershell.md as guidelines
   .LINK

@@ -398,25 +398,11 @@ This model is inherently session-based:
 
 #### Bitwarden Secrets Manager (Machine Accounts / Access Tokens)
 
-Bitwarden Secrets Manager is a separate product specifically designed for CI/CD and
-service accounts:
-
-- Uses **machine accounts** with **access tokens** — no user vault, no `bw unlock`.
-- Access tokens are long-lived (configurable expiry) and do not require periodic
-  interactive renewal.
-- The `bws` CLI (Bitwarden Secrets Manager CLI) retrieves secrets using:
-  ```powershell
-  $env:BWS_ACCESS_TOKEN = '<machine-account-token>'
-  bws secret get <secret-id>
-  ```
-- Available on **Bitwarden Teams and Enterprise plans**. Not available on Free or
-  Families plans.
-- Secrets are stored in **Secrets Manager projects**, separate from the personal Password
-  Manager vault. Teams must decide which secrets to migrate to Secrets Manager.
-
-**License implication (Open Question 1):** The ATAP ecosystem must confirm whether the
-current Bitwarden organization plan includes Secrets Manager. If yes, this is the
-architecturally cleanest solution for service accounts.
+Bitwarden Secrets Manager is the architecturally cleaner option for service accounts but
+is **not available on the current Bitwarden Free tier** and is therefore deferred. The
+full description of the Secrets Manager model, official Bitwarden guidance, pros/cons,
+and the revisit trigger are recorded in
+[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md#bitwarden-secrets-manager).
 
 ### Service-Specific Secret Injection Patterns
 
@@ -486,6 +472,11 @@ Ansible Tower / AWX has a **Credentials** framework:
 
 **Completed:** 2026-05-25
 
+**Note:** Detailed evaluations of the discarded and deferred patterns have moved to
+[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md).
+The selected pattern (Pattern 1: DPAPI + startup unlock) is documented in full below.
+Patterns 2–6 retain a short verdict line and a link to their full evaluation.
+
 ### Pattern Comparison Matrix
 
 | Pattern                                  | Complexity | Security  | Non-Interactive           | Requires License Upgrade    | Recommended                            |
@@ -532,125 +523,46 @@ D-01 through D-03 and I-01 through I-02.
 
 #### Pattern 2: Windows Credential Manager
 
-**How it works:** The Bitwarden master password is stored in the Windows Credential
-Manager under the service account via `cmdkey /add:BitwardenMasterPwd /user:<svc> /pass:<pwd>`
-or the `CredentialManager` PowerShell module. At runtime, `Get-StoredCredential` retrieves
-the password and calls `bw unlock`.
-
-**Pros:**
-
-- No credential files on disk to manage.
-- Windows Credential Manager ACLs restrict access to the owning account.
-- Well-supported by PowerShell (`Get-StoredCredential` from `CredentialManager` module).
-
-**Cons:**
-
-- Credentials stored in Credential Manager are also DPAPI-protected — same
-  provisioning complexity as Pattern 1.
-- Session refresh still required (same TTL problem).
-- Less transparent to operators (not file-visible like `.xml` files).
-- Requires the `CredentialManager` PowerShell module.
-
-**Verdict:** Viable alternative to Pattern 1 but offers no significant advantage.
-Could serve as a secondary option for services where file-based credentials are
-inconvenient.
+**Verdict:** Discarded — offers no material advantage over Pattern 1. See
+[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md#windows-credential-manager)
+for the full evaluation.
 
 #### Pattern 3: Bitwarden Secrets Manager
 
-**How it works:** A machine account is created in Bitwarden Secrets Manager. An access
-token is provisioned for each service account. The service uses `bws secret get <id>`
-with `$env:BWS_ACCESS_TOKEN` set — no `bw unlock` required.
-
-**Pros:**
-
-- Purpose-built for service accounts and CI/CD.
-- No session expiry / refresh complexity.
-- Access tokens have configurable expiry and can be rotated without DPAPI re-provisioning.
-- Granular machine account permissions (access only the secrets it needs).
-- Clean separation from personal Password Manager vaults.
-
-**Cons:**
-
-- Requires Bitwarden Teams or Enterprise plan.
-- Secrets must be migrated from the personal vault to Secrets Manager projects.
-- Access token must still be provisioned securely on each host (same bootstrap
-  problem, but simpler — just set a single env var).
-- Introduces a new CLI tool (`bws` vs. `bw`).
-
-**Verdict:** Architecturally superior. Should be adopted if the current org plan
-includes or can be upgraded to Teams tier.
+**Verdict:** Architecturally superior; deferred because the current Bitwarden
+organization is on the Free tier. See
+[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md#bitwarden-secrets-manager)
+for the full evaluation and revisit trigger.
 
 #### Pattern 4: HashiCorp Vault
 
-**How it works:** A separate HashiCorp Vault server provides secrets via AppRole or
-machine-certificate authentication. Services authenticate without interactive credentials.
-
-**Pros:**
-
-- Enterprise-grade secret management purpose-built for automation.
-- No session expiry in the same sense — authentication is via rotating AppRole secret IDs.
-- Rich audit log, dynamic secrets, lease revocation.
-
-**Cons:**
-
-- Significant operational overhead: Vault server must be deployed, HA-configured, unsealed,
-  and maintained.
-- All secrets must be migrated from Bitwarden to Vault.
-- Adds a new system dependency that is critical for every service on every host.
-
-**Verdict:** Over-engineered for current ATAP scale. Keep as a long-term migration
-target if secret volume and compliance requirements grow.
+**Verdict:** Rejected — disproportionate operational overhead for current ATAP scale.
+See
+[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md#hashicorp-vault)
+for the full evaluation.
 
 #### Pattern 5: Per-Service Env-Var Injection at Startup
 
-**How it works:** A privileged Task Scheduler job (running as SYSTEM or a dedicated
-admin account) runs `bw unlock` at boot using stored credentials, then calls
-`[System.Environment]::SetEnvironmentVariable('BW_SESSION', ...)` in Machine scope.
-All service accounts inherit the Machine-scope `BW_SESSION`.
-
-**Pros:**
-
-- Simple: one `BW_SESSION` to manage.
-- No per-service-account provisioning.
-
-**Cons:**
-
-- Machine-scope `BW_SESSION` is visible to **all** processes on the machine — severe
-  blast radius if any process is compromised.
-- Token expiry still requires a refresh mechanism.
-- Uses a single Bitwarden identity for all services — no per-service access control.
-
-**Verdict:** Acceptable only for single-tenant development machines. Not recommended
-for production multi-service hosts.
+**Verdict:** Rejected — machine-scope `BW_SESSION` has unacceptable blast radius for
+production multi-service hosts. See
+[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md#machine-scope-bw_session)
+for the full evaluation.
 
 #### Pattern 6: Named Pipe / Local HTTPS Proxy
 
-**How it works:** A small Windows service (or sidecar) running as the interactive user
-(or a trusted account) holds the `BW_SESSION`. Other services request secrets via a
-loopback named pipe or local HTTPS endpoint.
-
-**Pros:**
-
-- `BW_SESSION` is never exposed to service accounts.
-- Central audit log of secret retrievals.
-- Token managed in one place.
-
-**Cons:**
-
-- Requires building and maintaining a custom secrets proxy service.
-- Single point of failure for all secret access on the host.
-- Named pipe / loopback security must be carefully ACL-controlled.
-
-**Verdict:** Over-engineered. Bitwarden Secrets Manager (Pattern 3) achieves the same
-architectural cleanliness without a custom proxy.
+**Verdict:** Rejected — adds custom infrastructure and a new single point of failure
+without enough benefit. See
+[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md#named-pipe-local-https-proxy)
+for the full evaluation.
 
 ### R-04 Findings Summary
 
-**Primary recommendation:** Pattern 3 (Bitwarden Secrets Manager) if the org plan
-permits. Pattern 1 (DPAPI + startup unlock) as the fallback.
+**Selected pattern:** Pattern 1 (DPAPI + startup unlock) is the current baseline. Open
+Question 1 has been resolved — the current Bitwarden organization is on the Free tier
+and does not support Secrets Manager machine accounts.
 
-**Architecture decision will be finalized once Open Question 1 (license tier) is
-resolved.**
+**Deferred pattern:** Pattern 3 (Bitwarden Secrets Manager) remains the preferred future
+direction if the organization upgrades to a Teams or Enterprise plan.
 
 ---
 
@@ -905,6 +817,11 @@ Set-Acl -Path $credentialDirectory -AclObject $acl
 
 ### Step 2: Launch PowerShell as the service account
 
+This is the PowerShell-7 equivalent of `runas.exe /user:<service-account> pwsh`; both
+launch a process under the service account's security context. `Start-Process
+-Credential` is preferred in PowerShell 7 because it integrates with the credential
+object and does not require entering the password in a separate `runas` prompt.
+
 ```powershell
 $serviceCredential = Get-Credential -UserName ".\$serviceAccount" -Message 'Enter the Windows password for the service account'
 
@@ -917,7 +834,9 @@ Start-Process pwsh `
 ### Step 3: In that service-account session, create the DPAPI files
 
 Run the following **inside the PowerShell window that is running as the service
-account**:
+account**. The `Read-Host` prompts are interactive by design; do not adapt this snippet
+for unattended CI use. The Ansible bootstrap path (R-02 ansibleAdmin model) is the
+correct choice for any automated, non-interactive provisioning workflow.
 
 ```powershell
 Import-Module ATAP.Utilities.Security.Powershell
@@ -996,6 +915,65 @@ emit a short-lived clear-text temp file in the protected folder, pass that path 
 2. Which repository and module should own the refresh/rotation orchestration functions
    listed above: `ATAP.Utilities.Security.Powershell`, `ATAP.Utilities.PowerShell`, or a
    new build-tooling wrapper layer?
+
+---
+
+## Future-Looking Possibilities
+
+The current baseline is sized for the present ATAP environment (standalone Windows
+hosts, local service accounts, Bitwarden Free tier). Several improvements become
+available once the environment grows or shifts toward managed/domain operation. They
+are not part of the current implementation but should be re-evaluated when the relevant
+trigger condition is met.
+
+### Object Access Auditing on Credential Files
+
+In a domain or otherwise managed Windows environment, Windows Security Auditing can log
+every successful and failed access to the DPAPI credential files and to the protected
+folder. This gives operators a tripwire for unexpected reads — for example, an account
+other than the owning service account attempting to open the credential file.
+
+How it would work:
+
+- Enable the `Audit Object Access` policy at the domain or local Group Policy level.
+- Set SACL entries on `C:\ProgramData\ATAP\BitwardenCredentials\<ServiceAccount>\` so
+  that read/write operations by accounts other than the owner generate Security log
+  events.
+- Forward those events to SEQ (or the central SIEM) and alert on unexpected principals.
+
+**Why this is deferred:** The current ATAP hosts are standalone and do not run a domain
+controller or a central audit-log aggregator scaled for Security-channel volume. The
+benefit is small until a domain and a SIEM are in place.
+
+**Revisit trigger:** ATAP adopts Active Directory or another centralized audit
+aggregator, or compliance requirements demand per-file access auditing.
+
+### Group Managed Service Accounts (gMSA) after Active Directory Adoption
+
+If ATAP migrates from local-only Windows service accounts to Active Directory, the
+service accounts should move to **group managed service accounts (gMSA)**. gMSA accounts:
+
+- Have passwords managed and rotated automatically by AD (typically every 30 days).
+- Cannot be used for interactive logon.
+- Are scoped to specific hosts via the `PrincipalsAllowedToRetrieveManagedPassword` list.
+
+This eliminates the human-managed "service account password rotation" workflow described
+in R-05 above. DPAPI credential files would still be re-keyed when the gMSA password
+rotates, so the Bitwarden credential-file re-provisioning step must run on each rotation
+— ideally triggered by the same scheduled task that performs the gMSA-aware Bitwarden
+session refresh.
+
+Combined with object access auditing, the (gMSA + DPAPI + auditing) model gives:
+
+- AD-managed Windows credentials (no human-managed service passwords).
+- Per-(host, service-account) DPAPI scoping for Bitwarden material.
+- Per-access logging for unexpected reads.
+
+**Why this is deferred:** ATAP does not currently operate Active Directory. Adopting AD
+is a much larger decision than the secrets-management work in this document.
+
+**Revisit trigger:** ATAP adopts Active Directory, or a compliance/audit requirement
+mandates managed service account credentials.
 
 ---
 

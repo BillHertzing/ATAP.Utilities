@@ -1059,7 +1059,7 @@ These rules are now project policy, derived from the actions above:
 
 ## Secret Naming Convention
 
-_Migrated from `_Planning/Explainers/0020-bitwarden-naming-convention.md`. Authoritative for `New-SprintBitwardenSecrets`, `Remove-SprintBitwardenSecrets`, `New-PermanentBitwardenSecrets`, and `Get-BitWardenSecret`._
+_Migrated from `_Planning/Explainers/0020-bitwarden-naming-convention.md`. Authoritative for `New-SprintBitwardenSecrets`, `Remove-SprintBitwardenSecrets`, `New-PermanentBitwardenSecrets`, and `Get-BitwardenSecret`._
 
 ### Per-Sprint Secrets
 
@@ -1120,5 +1120,5 @@ Server=<Host>\<Tier>;Database=<Database>;Integrated Security=True;MultipleActive
 | Permanent  | `New-PermanentBitwardenSecrets` | Manual (never automatically)      | Developer onboarding (once)    |
 
 Both creation/deletion cmdlets run `bw sync` automatically to flush the CLI cache.
-`Get-BitWardenSecret` reads `BW_SESSION` from User-scope registry if process-scope
+`Get-BitwardenSecret` reads `BW_SESSION` from User-scope registry if process-scope
 is absent (R-10 pattern).

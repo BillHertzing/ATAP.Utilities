@@ -1,7 +1,7 @@
 # Service Accounts and Bitwarden
 
 **Created:** 2026-05-25
-**Status:** In Progress — Research Phase
+**Status:** Decision Draft — current baseline selected, follow-up automation still to be implemented
 **Sprint:** Sprint-0007
 **Source Plan:** `_Planning/Plan_AccessingBitwardenFromServiceAccounts.md`
 
@@ -47,6 +47,26 @@ Two PowerShell cmdlets exist in `ATAP.Utilities.Security.Powershell`:
 - **`Initialize-BitwardenSession`** (`LoginScript.ps1`) — Called at interactive user logon.
   Reads DPAPI credential files, logs in with `bw login`, unlocks with `bw unlock --raw`,
   and stores the resulting session token.
+
+## Current Baseline Decisions
+
+- **Bitwarden Password Manager CLI is the selected implementation baseline** for now.
+  The current Bitwarden organization is on the Free tier, so Bitwarden Secrets Manager
+  machine accounts are not available today.
+- **`BW_SESSION` for service accounts will be written only to the service account's User
+  scope**, not Machine scope. This keeps the token scoped to processes started as that
+  service account.
+- **Credential material for service accounts lives under**
+  `C:\ProgramData\ATAP\BitwardenCredentials\<ServiceAccount>\`.
+- **Expired sessions fail the current build step immediately with a structured error**.
+  The build should not silently attempt to repair the session in-line. The primary
+  recovery path is the scheduled refresh task; a second ad-hoc refresh task remains a
+  follow-up item to evaluate.
+- **Alternatives are retained for future reference** in
+  [ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md).
+
+These choices move the document from open-ended research toward an implementation-ready
+decision record while preserving the discarded and deferred options.
 
 ---
 
@@ -703,18 +723,84 @@ Checks against current codebase:
   for the Bitwarden CLI but is a brief exposure window.
 
 **Gap identified:** The `--passwordenv` pattern requires the password to exist as a
-plain-text environment variable for a brief moment. In high-security environments,
-`--passwordfile` pointing to a DPAPI-protected temp file is safer, as environment
-variables can be read by other processes on the same account.
+plain-text environment variable for a brief moment.
 
-### Rotation Strategy
+**Important clarification:** `bw unlock --passwordfile` expects the **first line of the
+file to contain the clear-text password**. A DPAPI-encrypted `.xml` credential file
+cannot be passed directly to the Bitwarden CLI and will not be understood by `bw`.
 
-| Pattern                        | Rotation Procedure                                                           | Automation Potential                  |
-| ------------------------------ | ---------------------------------------------------------------------------- | ------------------------------------- |
-| DPAPI credential files         | Re-run `Provision-ServiceAccountBWCredential.ps1 -Replace`                   | Ansible playbook with `-Replace` flag |
-| Windows Credential Manager     | Update entry via `cmdkey /add:..` (overwrites) or `CredentialManager` module | Scriptable                            |
-| Bitwarden Secrets Manager      | Generate new access token in BW console; update env var on each host         | Ansible playbook                      |
-| Session refresh (all patterns) | `Refresh-BWSession.ps1` handles session rotation automatically               | Task Scheduler / watchdog             |
+For high-security environments, the safer pattern is therefore:
+
+1. Read the DPAPI-protected credential in memory while running as the owning service account.
+2. Write the required password to a **short-lived clear-text temp file** inside the
+   ACL-protected `C:\ProgramData\ATAP\BitwardenCredentials\<ServiceAccount>\` folder.
+3. Call `bw unlock --passwordfile <temp-file>`.
+4. Delete the temp file immediately in a `finally` block.
+
+This still creates a brief clear-text window on disk, but only inside a directory already
+locked to the owning service account, `SYSTEM`, and local Administrators. It removes the
+need to expose the password through process environment variables.
+
+### Rotation and Refresh Strategy
+
+#### Session Refresh Behavior
+
+- Each service account gets a scheduled refresh task that runs at boot and at a regular
+  interval appropriate for the Bitwarden session timeout.
+- If a build or automation step discovers that `BW_SESSION` has expired, that step must
+  **fail immediately** with a structured error message that points the operator at the
+  refresh path.
+- The failure message should explicitly say that the scheduled task did not refresh the
+  session in time and that the operator should investigate the scheduled-task failure.
+- A second, operator-invoked ad-hoc scheduled task is worth evaluating, but it is not
+  part of the current baseline decision.
+
+#### Rotation Triggers
+
+| Trigger                                  | Required Action                                                                                         | Automation Target                         |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| Bitwarden login password changes         | Recreate the DPAPI login credential file for each affected service account                              | Manual wrapper + scheduled/on-demand task |
+| Bitwarden unlock/master password changes | Recreate the DPAPI unlock credential file for each affected service account                             | Manual wrapper + scheduled/on-demand task |
+| Windows service account password changes | Update Windows service logon credentials, scheduled tasks, and then recreate all DPAPI credential files | Orchestrated rotation workflow            |
+| Host rebuild or service migration        | Re-provision the entire credential directory on the new host                                            | Ansible or manual bootstrap               |
+| Session timeout only                     | Refresh `BW_SESSION`; no DPAPI file regeneration required                                               | Scheduled task                            |
+
+#### PowerShell Functions Needed
+
+The following capability set is needed to support both manual and scheduled rotation.
+Some pieces already exist; others still need to be written or wrapped.
+
+| Function / Script Name                         | Status               | Purpose                                                                                                                        |
+| ---------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `Get-BitWardenCredential`                      | Exists               | Create or load the DPAPI-backed login and unlock credential files                                                              |
+| `Get-BitwardenSecret`                          | Exists               | Retrieve a named secret once a valid Bitwarden session is present                                                              |
+| `Refresh-BWSession.ps1` or `Refresh-BWSession` | Needs implementation | Validate `BW_SESSION`, perform `bw login`/`bw unlock`, update the service account User-scope token, and emit structured errors |
+| `Test-BWSession`                               | Needs implementation | Return a simple health signal for scheduled tasks, build steps, and monitoring                                                 |
+| `New-BitwardenPasswordFile`                    | Needs implementation | Materialize a short-lived clear-text password file in the protected credentials folder for `bw --passwordfile`                 |
+| `Remove-BitwardenPasswordFile`                 | Needs implementation | Best-effort deletion/cleanup of transient password files                                                                       |
+| `Provision-ServiceAccountBWCredential`         | Needs implementation | Wrapper/orchestrator for first-time creation and `-Replace` rotation of service-account Bitwarden credential files             |
+| `Update-WindowsServiceCredential`              | Needs implementation | Update the logon password for all Windows services using the rotated account                                                   |
+| `Update-ScheduledTaskCredential`               | Needs implementation | Update all scheduled tasks that run as the rotated service account                                                             |
+| `Test-ServiceAccountBitwardenAccess`           | Needs implementation | Smoke-test secret access after provisioning or rotation                                                                        |
+| `Invoke-ServiceAccountPasswordRotation`        | Needs implementation | End-to-end workflow: rotate service password, update dependencies, regenerate DPAPI files, validate access                     |
+
+#### Places That Must Be Updated When a Service Password Rotates
+
+When the **Windows service account password** changes, all of the following need to be
+reviewed or updated together:
+
+- The local Windows account password itself.
+- Every Windows service configured to log on as that account.
+- Every scheduled task configured to run as that account, including the Bitwarden session
+  refresh task.
+- The stored source of truth for the service account password, such as Bitwarden items,
+  Ansible Vault variables, host vars, or any other provisioning store.
+- The DPAPI-backed Bitwarden login/unlock credential files for that service account,
+  because the old files are no longer usable after the Windows password change.
+- Any startup scripts, wrapper scripts, or service-install runbooks that embed or
+  re-apply the service identity.
+- Validation and monitoring hooks that confirm the service can still refresh
+  `BW_SESSION` and retrieve the expected secrets.
 
 ### R-05 Findings Summary
 
@@ -742,7 +828,10 @@ Based on the research findings, the key factors driving the architecture decisio
 
 ## Considered Alternatives
 
-See [R-04](#r-04-alternative-patterns-evaluation) for the full comparison matrix.
+See [R-04](#r-04-alternative-patterns-evaluation) for the in-document research matrix,
+or use the decision companion file
+[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md)
+for the condensed list of discarded and deferred alternatives.
 
 **Short list:**
 
@@ -755,27 +844,120 @@ See [R-04](#r-04-alternative-patterns-evaluation) for the full comparison matrix
 | 5   | Machine-scope env injection | No                      | Unacceptable blast radius in production                |
 | 6   | Named pipe proxy            | No                      | Over-engineered                                        |
 
-## Decision Outcome (Pending)
+## Decision Outcome (Current Baseline)
 
-**Decision is pending resolution of Open Question 1 (license tier).**
+The current ATAP baseline is now defined as follows:
 
-Interim decision:
+- **Implement Pattern 1 (DPAPI + startup unlock)** using the Bitwarden Password Manager
+  CLI and the per-(host, service-account) credential model.
+- **Defer Bitwarden Secrets Manager** for now because the current Bitwarden organization
+  is on the Free tier and does not support Secrets Manager machine accounts.
+- **Write `BW_SESSION` only to the service account User scope**, never Machine scope.
+- **Store credential files and transient password files under**
+  `C:\ProgramData\ATAP\BitwardenCredentials\<ServiceAccount>\`.
+- **Use `ansibleAdmin` first-boot provisioning** when Ansible is available.
+- **Support a manual local-admin bootstrap path** for hosts that must be brought up
+  before an Ansible controller exists.
+- **Fail fast on expired sessions** with a structured error that tells the operator to
+  investigate the scheduled refresh task; do not hide the failure by attempting a silent
+  repair inside the build step itself.
 
-- **Implement Pattern 1 (DPAPI + startup unlock)** using the **`ansibleAdmin`
-  first-boot provisioning model** as the host-onboarding mechanism. This gives
-  per-(host, service-account) blast radius — the tightest achievable with the
-  Bitwarden Password Manager CLI. The provisioning step is incorporated into the
-  existing host-onboarding Ansible playbook; no human interactive logon is required
-  after initial host setup.
-- **`ansibleAdmin`** retrieves Bitwarden credentials at provisioning time from the
-  central Ansible controller's Ansible Vault (`group_vars/all/vault.yml`). Credentials
-  are passed as extra-vars and are never written to disk on the provisioned host.
-- **Session refresh** for each service account is handled by a per-account Task
-  Scheduler job (running as that service account) that calls `Refresh-BWSession.ps1`
-  at boot and on a configurable interval.
-- **Evaluate Pattern 3 (Bitwarden Secrets Manager)** once the org plan is confirmed;
-  design D-01 so the provisioning flow can be extended to support machine tokens
-  without rewriting the session refresh infrastructure.
+Bitwarden Secrets Manager remains a future improvement path, not the current design.
+
+## Setting Up Credentials for Services without Ansible
+
+Some hosts need to be brought online before the Ansible controller exists or before the
+host has been enrolled into the normal onboarding flow. In that case a human with local
+administrator rights can create the service-account DPAPI files manually.
+
+### Preconditions
+
+- The local Windows service account already exists.
+- The operator knows the **Windows password** for that service account.
+- The operator knows the Bitwarden username plus the Bitwarden login and unlock/master
+  passwords that should be bound to that service account.
+- The operator is working from an elevated PowerShell 7 session.
+
+### Step 1: Create and ACL the credentials folder
+
+```powershell
+$serviceAccount = 'SvcBuildmaster'
+$credentialDirectory = "C:\ProgramData\ATAP\BitwardenCredentials\$serviceAccount"
+
+New-Item -ItemType Directory -Path $credentialDirectory -Force | Out-Null
+
+$acl = Get-Acl $credentialDirectory
+$acl.SetAccessRuleProtection($true, $false)
+$acl.Access | ForEach-Object { [void]$acl.RemoveAccessRule($_) }
+
+$rules = @(
+  New-Object System.Security.AccessControl.FileSystemAccessRule($serviceAccount, 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow'),
+  New-Object System.Security.AccessControl.FileSystemAccessRule('SYSTEM', 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow'),
+  New-Object System.Security.AccessControl.FileSystemAccessRule('Administrators', 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow')
+)
+
+foreach ($rule in $rules) {
+  $acl.AddAccessRule($rule)
+}
+
+Set-Acl -Path $credentialDirectory -AclObject $acl
+```
+
+### Step 2: Launch PowerShell as the service account
+
+```powershell
+$serviceCredential = Get-Credential -UserName ".\$serviceAccount" -Message 'Enter the Windows password for the service account'
+
+Start-Process pwsh `
+  -Credential $serviceCredential `
+  -WorkingDirectory $credentialDirectory `
+  -ArgumentList '-NoExit', '-Command', "Set-Location '$credentialDirectory'"
+```
+
+### Step 3: In that service-account session, create the DPAPI files
+
+Run the following **inside the PowerShell window that is running as the service
+account**:
+
+```powershell
+Import-Module ATAP.Utilities.Security.Powershell
+
+$credentialDirectory = 'C:\ProgramData\ATAP\BitwardenCredentials\SvcBuildmaster'
+$bitwardenUserName = 'svcbuildmaster@example.com'
+
+$loginSecure = Read-Host 'Bitwarden login password' -AsSecureString
+$unlockSecure = Read-Host 'Bitwarden unlock/master password' -AsSecureString
+
+$loginPlain = [System.Net.NetworkCredential]::new('', $loginSecure).Password
+$unlockPlain = [System.Net.NetworkCredential]::new('', $unlockSecure).Password
+
+try {
+  Get-BitWardenCredential `
+    -CredentialDirectory $credentialDirectory `
+    -BitWardenUserName $bitwardenUserName `
+    -BitWardenLoginPassword $loginPlain `
+    -BitWardenUnlockPassword $unlockPlain `
+    -Replace
+}
+finally {
+  Remove-Variable loginPlain, unlockPlain, loginSecure, unlockSecure -ErrorAction SilentlyContinue
+}
+```
+
+### Step 4: Validate and register refresh
+
+- Validate that the two DPAPI `.xml` files were created in the service-account folder.
+- Register the scheduled refresh task for that same service account.
+- Run a smoke test that confirms the service account can establish `BW_SESSION` and
+  read at least one known Bitwarden item.
+
+### Important Note about `--passwordfile`
+
+Do **not** point `bw --passwordfile` at the DPAPI `.xml` files created by
+`Get-BitWardenCredential`. Those files are encrypted containers for PowerShell and are
+not readable by the Bitwarden CLI. The refresh logic must instead decrypt in memory,
+emit a short-lived clear-text temp file in the protected folder, pass that path to
+`bw`, and then delete the temp file immediately.
 
 ## Consequences and Trade-offs
 
@@ -784,34 +966,36 @@ Interim decision:
 | Provisioning complexity           | DPAPI credential files require the provisioning script to run in the service account's security context. Resolved by the `ansibleAdmin` first-boot provisioning model — the step is embedded in the existing host-onboarding Ansible playbook. |
 | Session refresh overhead          | Task Scheduler jobs must be created and maintained per service account. Use Ansible for fleet-wide management.                                                                                                                                 |
 | Dropbox path unsuitable           | All service account credential paths must override the default to `C:\ProgramData\ATAP\BitwardenCredentials\`.                                                                                                                                 |
-| License-gated improvement         | The cleanest solution (Bitwarden Secrets Manager) is blocked on a licensing decision. Track this as Open Question 1.                                                                                                                           |
+| License-gated improvement         | The cleanest solution (Bitwarden Secrets Manager) is deferred until the organization upgrades beyond the Bitwarden Free tier.                                                                                                                  |
 | Brief plaintext password exposure | The `--passwordenv` pattern briefly exposes the master password as a process env var. Accepted risk for current environment.                                                                                                                   |
 | Minimal blast radius achieved     | The `ansibleAdmin` + per-(host, service-account) DPAPI model gives the smallest possible blast radius for a Password Manager CLI-based approach. A compromised `SvcProGet` credential exposes only `SvcProGet`'s secrets on that one host.     |
 | Ansible Vault dependency          | The central Ansible controller must securely manage Bitwarden credentials in its own Ansible Vault. The controller's vault key is a critical secret that must be backed up and protected separately.                                           |
+| Manual bootstrap still needed     | A small number of hosts may need a local-admin, no-Ansible bootstrap path. That procedure is documented above and referenced from `NewComputerSetup.md`.                                                                                       |
 
 ---
 
-## Open Questions
+## Resolved Decisions
 
-1. **License tier**: Does the current Bitwarden organization plan support Secrets Manager
-   machine accounts?
-2. **Session token scope**: Should `BW_SESSION` for service accounts be written to
-   Machine scope or to the service account's User scope? (Recommendation from R-05:
-   User scope — narrows blast radius to that service account's processes only.)
-3. **Credential file location**: Is `C:\Dropbox\Security\Credentials\` appropriate for
-   service account profiles? Dropbox sync likely does not run under service accounts.
-   (Resolved in R-02: use `C:\ProgramData\ATAP\BitwardenCredentials\<ServiceAccount>\`.)
-4. **Ansible bootstrap problem**: ~~Ansible needs Bitwarden access to provision other
-   services. How is Ansible's own credential bootstrapped the first time?~~
-   **Partially resolved:** `ansibleAdmin` retrieves Bitwarden credentials at provisioning
-   time from the central Ansible controller's Ansible Vault (`group_vars/all/vault.yml`).
-   Credentials are passed as extra-vars to the provisioning playbook. They exist in
-   memory only during the playbook run and are never written to disk on the provisioned
-   host. The controller's own Ansible Vault key must be managed separately (out of scope
-   for this document).
-5. **Token expiry behavior**: If `BW_SESSION` expires mid-build, what is the desired
-   failure mode? (Recommendation: fail the build step immediately with a structured error
-   message; the Task Scheduler refresh job should prevent expiry under normal operation.)
+1. **License tier**: The current Bitwarden organization uses the Free tier, so Secrets
+   Manager machine accounts are not available in the current implementation window.
+2. **Session token scope**: `BW_SESSION` for service accounts will be written to the
+   service account User scope.
+3. **Credential file location**: Use
+   `C:\ProgramData\ATAP\BitwardenCredentials\<ServiceAccount>\`.
+4. **Ansible bootstrap problem**: `ansibleAdmin` retrieves provisioning-time credentials
+   from the Ansible controller's vault. For hosts without Ansible, the local-admin
+   manual bootstrap path in this document is the approved fallback.
+5. **Token expiry behavior**: Fail the build step immediately with a structured error
+   message, direct the operator to investigate the scheduled refresh task, and evaluate
+   a separate ad-hoc refresh task as a follow-up enhancement.
+
+## Remaining Follow-up Questions
+
+1. Should ATAP implement a second, operator-invoked scheduled task specifically for
+   ad-hoc session refresh after an expiry-related build failure?
+2. Which repository and module should own the refresh/rotation orchestration functions
+   listed above: `ATAP.Utilities.Security.Powershell`, `ATAP.Utilities.PowerShell`, or a
+   new build-tooling wrapper layer?
 
 ---
 
@@ -822,4 +1006,5 @@ Interim decision:
 - [src/ATAP.Utilities.PowerShell/Profiles/LoginScript.ps1](../src/ATAP.Utilities.PowerShell/Profiles/LoginScript.ps1)
 - [Bitwarden CLI Documentation](https://bitwarden.com/help/cli/)
 - [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/)
+- [ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md)
 - `.github/instructions/Bitwarden.instructions.md`

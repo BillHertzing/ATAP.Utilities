@@ -252,6 +252,12 @@ third-party service. Each item must contain a username and password field.
 | `<COMPUTERNAME>-ProGetSrvAcct-Production`      | `ProGetSrvAcct`       | ProGet service                                  |
 | `<COMPUTERNAME>-BuildMasterSrvAcct-Production` | `BuildMasterSrvAcct`  | BuildMaster service                             |
 
+If this workstation must be brought online **before** an Ansible controller exists,
+use the manual bootstrap procedure in
+[ServiceAccountsAndBitwarden.md](ServiceAccountsAndBitwarden.md) under
+`Setting Up Credentials for Services without Ansible` after the local service accounts
+are created and before installing services that need Bitwarden access.
+
 Then provision the local accounts:
 
 ```powershell

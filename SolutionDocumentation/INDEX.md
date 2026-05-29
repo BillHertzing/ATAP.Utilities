@@ -22,8 +22,9 @@ that **describes how the target application — Ace Commander — will work**
 >
 > - **Tier-label vocabulary conflict — RESOLVED.** `Versioning.md` (stale 4-tier
 >   labels) has been deleted; its non-obsolete content was merged into
->   [BuildMaster-ProGet-CSharp-Package-Pipeline](BuildMaster-ProGet-CSharp-Package-Pipeline.md),
->   which is now the single source of truth for the 5-tier label/feed mapping.
+>   [BuildMaster Pipeline Topology](BuildMaster-Pipeline-Topology.md),
+>   which is the single source of truth for all pipeline, feed, and tier-label
+>   definitions as of Sprint 0007.
 > - **"Module Catalog New Material.md"** was mis-titled (Perplexity.ai WSL2 content,
 >   not catalog additions). The file now lives under
 >   **`ReviewedAndArchived/AI on WSL2 Ansible Docker and Bitwarden.md`**.
@@ -143,6 +144,15 @@ _Teach / Tell how to create software (with two "describe" entries noted)._
   (Encrypted Master Passwords), SMVs (Secret Management Vaults), DECs (Data
   Encryption Certificates), the `SMEVInfo` custom type, and the AUMPs.txt
   mapping file.
+- [Service Accounts and Bitwarden](ServiceAccountsAndBitwarden.md) —
+  Sprint-0007 design and implementation guide for service accounts used by
+  BuildMaster, ProGet, and other automation processes to access Bitwarden
+  secrets. Covers `SvcBuildmaster` and `SvcProGet` service account setup,
+  Bitwarden API key provisioning, and the `Get-BitWardenSecret` integration
+  pattern for non-interactive service contexts.
+- [Service Accounts and Bitwarden — Alternatives Considered](ServiceAccountsAndBitwarden.-AlternativesConsidered.md) —
+  Design alternatives and trade-off analysis for service account Bitwarden
+  access patterns evaluated in Sprint 0007.
 
 ---
 
@@ -157,15 +167,10 @@ _Teach / Tell how to create software._
   .NetCore editions, Release / Debug), `NuGetLocalFeedPath`,
   `PublishAfterBuild`, Authenticode signing, imgbot, and PowerShell module
   packaging (Plaster / Catesta / Psake / Invoke-Build).
-- [BuildMaster/ProGet C# Package Pipeline](BuildMaster-ProGet-CSharp-Package-Pipeline.md)
-  — Comprehensive 5-stage OtterScript plan (`CSharpPackage-5Stage.otter`)
-  targeting 171 projects. Covers the five feeds `nuget-experimental /
-nuget-development / nuget-integration / nuget-qa / nuget-stable`, NBGV
-  (`version.json`) with labels `Sprint / Alpha / Beta / QA / (empty)`, the
-  BuildMaster Application `ATAP.Utilities-CSharp`, the shared per-package
-  application with `$ProjectPath` override, the meta-package
-  `ATAP.Utilities.csproj`, Repository Monitors, and `PROGET_ADMIN_API_KEY`
-  retrieval via `$Decrypt($ProGetApiKey)`.
+- **[HISTORICAL — file removed]** `BuildMaster-ProGet-CSharp-Package-Pipeline.md`
+  — Superseded by [BuildMaster Pipeline Topology](BuildMaster-Pipeline-Topology.md).
+  Covered the 5-stage OtterScript plan, five `nuget-*` feeds, NBGV labels, and
+  `PROGET_ADMIN_API_KEY` retrieval. Content merged into the Topology doc in Sprint 0007.
 - [MSBuild Binary Logging](MSBuild%20Binary%20Logging.md) — **8-line note.** Use
   of the `-bl` switch and the MSBuildStructuredLog viewer for diagnosing
   build issues.
@@ -189,15 +194,27 @@ nuget-development / nuget-integration / nuget-qa / nuget-stable`, NBGV
   Versioning strategy for PowerShell modules.
 - [BuildMaster Pipeline Topology](BuildMaster-Pipeline-Topology.md) —
   Current BuildMaster topology and trigger strategy (including polling-based
-  feed checks).
+  feed checks). Covers all four durable pipelines (C#, PowerShell, Release Bundle,
+  Database), the ProGet feed family per pipeline, the full PowerShell automation
+  surface, and the ProGet-polling integration.
   **[DEPRECATED cmdlets]** `Set-BuildMasterSprintVariables` and
   `Set-BuildMasterStableVariables` are deprecated as of Sprint 0007 and will be
   removed in Sprint 0008. Use `Set-BuildMasterApplicationVariables` instead.
+- [BuildMaster Install Runbook](BuildMaster-Install-Runbook.md) —
+  Comprehensive installation, verification, and ongoing-configuration guide for
+  the BuildMaster server. Covers application setup, raft strategy, application
+  variables, ProGet API keys, and per-component smoke checklists. Updated in
+  V4-G01 and V4-E09 for database pipeline applications
+  (`ATAPUtilitiesDatabase`, `AceCommanderDatabase`).
 - [BuildMaster Run-State Runbook](BuildMaster-Run-State-Runbook.md) —
   Operational guide for the build-id scoped `_generated/buildmaster/<BuildMasterBuildId>/`
   inter-stage state channel.
 - [Release Bundle Pipeline](Release-Bundle-Pipeline.md) —
   Multi-stage release bundle execution model.
+- [ReleaseBundle vs Database Package Architecture](ReleaseBundle-vs-DatabasePackage-Architecture.md) —
+  Sprint-0007 decision record: database change packages promote through the
+  `database-*` feed family independently of the Release Bundle; the Release
+  Bundle consumes compatible database packages at deploy time. Authored V4-F01.
 - [Release Branch and Manifest](Release-Branch-and-Manifest.md) —
   Rules for release branch creation and manifest generation.
 - [Database Change Unit and Flyway Promotion](Database-Change-Unit-and-Flyway-Promotion.md)

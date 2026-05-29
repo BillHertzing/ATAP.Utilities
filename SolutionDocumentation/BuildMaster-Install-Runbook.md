@@ -354,21 +354,21 @@ Build-scope variables supplied when creating a build:
 
 ### 8.4 `AceCommander-ReleaseBundle`
 
-| Variable                                 | Value                                                 | Sensitive | Notes                                                                                                                           |
-| ---------------------------------------- | ----------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `ApplicationName`                        | `AceCommander-ReleaseBundle`                          | No        | BuildMaster application identity.                                                                                               |
-| `ProductName`                            | `AceCommander`                                        | No        | Passed to `Get-BuildContext`.                                                                                                   |
-| `ReleaseTag`                             | Empty until release cut                               | No        | Example: `v1.4.0`.                                                                                                              |
-| `Branch`                                 | Current release or sprint branch                      | No        | Fallback when `ReleaseTag` is empty.                                                                                            |
-| `SourcePath`                             | `C:\BuildMaster\work\AceCommander\$ReleaseNumber`     | No        | Durable product work path; also passed as `Get-BuildContext -ProjectPath` because the bundle uses the repo-root `version.json`. |
-| `ProGetUrl`                              | `http://localhost:50000`                              | No        | Host-specific ProGet URL.                                                                                                       |
-| `ProGetApiKey`                           | From approved ProGet secret                           | Yes       | Never paste into this document.                                                                                                 |
-| `ReleaseBundleExperimentalFeedName`      | `releasebundle-experimental`                          | No        | Universal Package feed.                                                                                                         |
-| `ReleaseBundleDevelopmentFeedName`       | `releasebundle-development`                           | No        | Universal Package feed.                                                                                                         |
-| `ReleaseBundleIntegrationFeedName`       | `releasebundle-integration`                           | No        | Universal Package feed.                                                                                                         |
-| `ReleaseBundleQAFeedName`                | `releasebundle-qa`                                    | No        | Universal Package feed.                                                                                                         |
-| `ReleaseBundleProductionFeedName`        | `releasebundle-production`                            | No        | Universal Package feed.                                                                                                         |
-| `PreviousProductionBackupPath`           | Approved `.bak` path                                  | No        | Required for Integration Flyway rehearsal.                                                                                      |
+| Variable                                          | Value                                                 | Sensitive | Notes                                                                                                                           |
+| ------------------------------------------------- | ----------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `ApplicationName`                                 | `AceCommander-ReleaseBundle`                          | No        | BuildMaster application identity.                                                                                               |
+| `ProductName`                                     | `AceCommander`                                        | No        | Passed to `Get-BuildContext`.                                                                                                   |
+| `ReleaseTag`                                      | Empty until release cut                               | No        | Example: `v1.4.0`.                                                                                                              |
+| `Branch`                                          | Current release or sprint branch                      | No        | Fallback when `ReleaseTag` is empty.                                                                                            |
+| `SourcePath`                                      | `C:\BuildMaster\work\AceCommander\$ReleaseNumber`     | No        | Durable product work path; also passed as `Get-BuildContext -ProjectPath` because the bundle uses the repo-root `version.json`. |
+| `ProGetUrl`                                       | `http://localhost:50000`                              | No        | Host-specific ProGet URL.                                                                                                       |
+| `ProGetApiKey`                                    | From approved ProGet secret                           | Yes       | Never paste into this document.                                                                                                 |
+| `ReleaseBundleExperimentalFeedName`               | `releasebundle-experimental`                          | No        | Universal Package feed.                                                                                                         |
+| `ReleaseBundleDevelopmentFeedName`                | `releasebundle-development`                           | No        | Universal Package feed.                                                                                                         |
+| `ReleaseBundleIntegrationFeedName`                | `releasebundle-integration`                           | No        | Universal Package feed.                                                                                                         |
+| `ReleaseBundleQAFeedName`                         | `releasebundle-qa`                                    | No        | Universal Package feed.                                                                                                         |
+| `ReleaseBundleProductionFeedName`                 | `releasebundle-production`                            | No        | Universal Package feed.                                                                                                         |
+| `PreviousProductionBackupPath`                    | Approved `.bak` path                                  | No        | Required for Integration Flyway rehearsal.                                                                                      |
 | `IntegrationDatabaseDBConnectionStringSecretName` | `dbConnectionString-AceCommander-utat022-Integration` | No        | Used by `Invoke-FlywayRehearsal`.                                                                                               |
 
 ### 8.5 Automation call
@@ -445,17 +445,43 @@ copies into BuildMaster's default raft with API calls.
 The implemented script functions target Native API raft item storage with
 `Raft_Id = 1`.
 
-### 9.1.1 Raft strategy decision (Sprint 0007)
+### 9.1.1 Raft strategy decision (V4-A08 — authoritative)
 
-- Decision: use the default database raft, `Raft_Id = 1`, for all `.otter`
-  upload via `New-BuildMasterScript` and `Sync-BuildMasterPlans` during
-  Sprint 0007.
-- The Git raft path is deferred until either BuildMaster supports a
-  subfolder field, or repo-root `Plans/`, `Monitors/`, `Scripts/` mirror
-  folders are restored.
+**Chosen path: default database raft (`Raft_Id = 1`).**
+
+- Decision (Sprint 0007): use the default database raft for all `.otter`
+  upload via `New-BuildMasterScript` and `Sync-BuildMasterPlans`.
 - This matches `BuildMasterDefaultRaftId = 1` in `$global:settings` and the
-  helper cmdlet defaults in `New-BuildMasterScript`,
-  `Remove-BuildMasterScript`, and `Sync-BuildMasterPlans`.
+  `-RaftId 1` defaults in `New-BuildMasterScript`, `Remove-BuildMasterScript`,
+  and `Sync-BuildMasterPlans`.
+
+**Rationale:**
+
+- BuildMaster's Git raft has no Path/subfolder field; it reads `Plans/`,
+  `Monitors/`, and `Scripts/` from the **repo root** only.
+- Files were relocated to the repo root on 2026-05-14 to satisfy that
+  convention, but this breaks CI isolation between sprint branches and makes
+  file layout confusing for contributors.
+- The default database raft keeps BuildMaster-managed plan state inside
+  BuildMaster, where it is version-tracked by the BuildMaster audit log.
+  Source-of-truth edits remain in Git; API push (`Sync-BuildMasterPlans`)
+  propagates them.
+- Database-raft uploads are idempotent and scriptable; no UI raft
+  configuration is required per sprint.
+
+**Git raft — deferred (historical reference only):**
+
+> The Git raft setup steps documented in
+> `Runbook-BuildMasterConfiguration.md` §2.9 are **deferred** for Sprint 0007
+> and should be treated as historical reference. Do not create or depend on
+> the Git raft until either:
+>
+> - BuildMaster adds a Path/subfolder field to the Git raft dialog, **or**
+> - A future sprint decision explicitly adopts the Git raft path and updates
+>   this section.
+>
+> At that time, revert this section to choose the Git raft and mark the
+> database raft path historical.
 
 ### 9.2 Upload deployment scripts
 
@@ -824,10 +850,10 @@ Owned by V4-E09 / DBA2-T04.
 Each database-bearing product gets a dedicated BuildMaster application whose
 name is the product name with the `Database` suffix:
 
-| Product | BuildMaster application name |
-| --- | --- |
-| `ATAPUtilities` | `ATAPUtilitiesDatabase` |
-| `AceCommander` | `AceCommanderDatabase` |
+| Product         | BuildMaster application name |
+| --------------- | ---------------------------- |
+| `ATAPUtilities` | `ATAPUtilitiesDatabase`      |
+| `AceCommander`  | `AceCommanderDatabase`       |
 
 This keeps the database pipeline separate from the C# (`ATAP.Utilities-CSharp`)
 and PowerShell-module (`ATAP.Utilities-PowerShell`) applications so each can
@@ -839,14 +865,14 @@ Set the following Application Variables on each `*Database` application before
 the pipeline can run. Set them through **Applications → `<App>Database` →
 Settings → Variables**:
 
-| Variable name | Type | Purpose | Example value |
-| --- | --- | --- | --- |
-| `ApplicationName` | string | BuildMaster application identifier echoed into run-context JSON. | `ATAPUtilitiesDatabase` |
-| `DatabaseApplication` | string | Source-tree application name used to locate `Database/<DatabaseApplication>/`. **Must not be empty.** | `ATAPUtilities` |
-| `DatabaseStream` | string | Optional database stream sub-folder. Empty selects single-stream; non-empty resolves the package id to `<DatabaseApplication>.<DatabaseStream>.Database`. | `` (empty) |
-| `Branch` | string | Source branch supplied by the repository monitor. | `main` |
-| `SourcePath` | string | Absolute path to the BuildMaster working directory for the active sprint or stable branch. | `C:\\BuildMaster\\ATAP.Utilities` |
-| `ProGetBaseUrl` | string | ProGet base URL hosting the canonical five `database-*` feeds. | `http://localhost:50000` |
+| Variable name         | Type   | Purpose                                                                                                                                                   | Example value                     |
+| --------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `ApplicationName`     | string | BuildMaster application identifier echoed into run-context JSON.                                                                                          | `ATAPUtilitiesDatabase`           |
+| `DatabaseApplication` | string | Source-tree application name used to locate `Database/<DatabaseApplication>/`. **Must not be empty.**                                                     | `ATAPUtilities`                   |
+| `DatabaseStream`      | string | Optional database stream sub-folder. Empty selects single-stream; non-empty resolves the package id to `<DatabaseApplication>.<DatabaseStream>.Database`. | `` (empty)                        |
+| `Branch`              | string | Source branch supplied by the repository monitor.                                                                                                         | `main`                            |
+| `SourcePath`          | string | Absolute path to the BuildMaster working directory for the active sprint or stable branch.                                                                | `C:\\BuildMaster\\ATAP.Utilities` |
+| `ProGetBaseUrl`       | string | ProGet base URL hosting the canonical five `database-*` feeds.                                                                                            | `http://localhost:50000`          |
 
 The plan passes every one of these to the runner as a `-NAME "$VAR"`
 argument. No secret values appear in Application Variables or in `Arguments:`
@@ -858,10 +884,10 @@ The runner resolves the ProGet API key from User-scope environment variables
 on the BuildMaster Windows service account. Provision one of the following
 (BuildMaster-scoped takes precedence over admin-scoped):
 
-| Environment variable | Scope | Purpose |
-| --- | --- | --- |
-| `PROGET_BUILDMASTER_API_KEY` | User | Preferred. BuildMaster-only API key with `database-*` push/promote rights. |
-| `PROGET_ADMIN_API_KEY` | User | Fallback. Broader rights; used only when the BuildMaster-only key is absent. |
+| Environment variable         | Scope | Purpose                                                                      |
+| ---------------------------- | ----- | ---------------------------------------------------------------------------- |
+| `PROGET_BUILDMASTER_API_KEY` | User  | Preferred. BuildMaster-only API key with `database-*` push/promote rights.   |
+| `PROGET_ADMIN_API_KEY`       | User  | Fallback. Broader rights; used only when the BuildMaster-only key is absent. |
 
 Both variables are provisioned from Bitwarden by the workstation `LoginScript.ps1`
 on the service account at session start. Do not export them at machine scope
@@ -880,13 +906,13 @@ exist in ProGet before the plan can run, and they are permanent (not per-
 sprint). The feed naming convention and per-tier purpose is documented in
 [`Database-Package-Artifact-And-Feed-Decision.md`](Database-Package-Artifact-And-Feed-Decision.md):
 
-| Tier | Feed name | Pipeline stage that writes here |
-| --- | --- | --- |
-| Experimental | `database-experimental` | `Experimental` (publish from `New-DatabaseChangePackage`) |
-| Development | `database-development` | `Development` (promote from `database-experimental`) |
-| Integration | `database-integration` | `Integration` (promote from `database-development`) |
-| QA | `database-qa` | `QA` (promote from `database-integration`) |
-| Production / Stable | `database-stable` | `Production` (promote from `database-qa`) |
+| Tier                | Feed name               | Pipeline stage that writes here                           |
+| ------------------- | ----------------------- | --------------------------------------------------------- |
+| Experimental        | `database-experimental` | `Experimental` (publish from `New-DatabaseChangePackage`) |
+| Development         | `database-development`  | `Development` (promote from `database-experimental`)      |
+| Integration         | `database-integration`  | `Integration` (promote from `database-development`)       |
+| QA                  | `database-qa`           | `QA` (promote from `database-integration`)                |
+| Production / Stable | `database-stable`       | `Production` (promote from `database-qa`)                 |
 
 The procedure for creating these feeds (one-time, per ProGet host) is in
 [`ProGet-Install-Runbook.md`](ProGet-Install-Runbook.md) under

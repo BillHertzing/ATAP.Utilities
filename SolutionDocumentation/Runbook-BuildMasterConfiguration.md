@@ -200,7 +200,7 @@ Source: `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/ReleaseBundle-6Stage.
 | `ReleaseBundleQAFeedName`                | `releasebundle-qa`                                    | No         | Universal Package feed.                                                                                  |
 | `ReleaseBundleProductionFeedName`        | `releasebundle-production`                            | No         | Universal Package feed.                                                                                  |
 | `PreviousProductionBackupPath`           | `<approved .bak path>`                                | No         | Required for Integration Flyway rehearsal traceability.                                                  |
-| `IntegrationDatabaseBitwardenSecretName` | `dbConnectionString-AceCommander-utat022-Integration` | No         | Follows `SprintInfrastructure-Naming.md`; pass-through to `Invoke-FlywayRehearsal -BitwardenSecretName`. |
+| `IntegrationDatabaseDBConnectionStringSecretName` | `dbConnectionString-AceCommander-utat022-Integration` | No         | Follows `SprintInfrastructure-Naming.md`; pass-through to `Invoke-FlywayRehearsal -DBConnectionStringSecretName`. |
 
 Execution notes:
 
@@ -254,16 +254,19 @@ Durable pipelines created in `Global (Shared)`:
   - Event listeners carried over from the source pipeline.
   - Serves the single `ATAP.Utilities-PowerShell` application; all PS module builds route through this pipeline regardless of which module is building.
 
-### 2.9 Source Control Credentials and Rafts
+### 2.9 Source Control Credentials and Rafts [HISTORICAL — Git raft deferred]
 
-> **Status (Sprint 0007 — deferred):** Sprint 0007 operates on the default database
-> raft (`Raft_Id = 1`) for all `.otter` uploads via `New-BuildMasterScript` and
-> `Sync-BuildMasterPlans`. The Git raft path captured below remains historical until
-> BuildMaster supports a subfolder field or repo-root `Plans/`, `Monitors/`,
-> `Scripts/` mirror folders are restored. See `BuildMaster-Install-Runbook.md`
-> section 9.1 for the operational path.
+> **⚠ HISTORICAL — NOT THE ACTIVE PATH (Sprint 0007 and later).**
+> Sprint 0007 uses the default database raft (`Raft_Id = 1`) for all `.otter`
+> uploads via `New-BuildMasterScript` and `Sync-BuildMasterPlans`.
+> The Git raft design and credential details captured below are preserved as
+> historical reference. **Do not configure a Git raft unless a future sprint
+> decision explicitly adopts it and updates `BuildMaster-Install-Runbook.md`
+> §9.1.1.**
+> See `BuildMaster-Install-Runbook.md` §9.1.1 for the authoritative raft
+> strategy decision (V4-A08).
 
-BuildMaster ingests `.otter` plans/pipelines from a Git **Raft** rather than via copy/paste into the UI. The OtterScript `stage X { ... }` grammar is pipeline-as-code and cannot be pasted into a Plan's Text Editor (parser rejects it with `Expected ( or ;` at the first `stage` line).
+BuildMaster can ingest `.otter` plans/pipelines from a Git **Raft** rather than via copy/paste into the UI. The OtterScript `stage X { ... }` grammar is pipeline-as-code and cannot be pasted into a Plan's Text Editor (parser rejects it with `Expected ( or ;` at the first `stage` line).
 
 **Canonical Git credential:**
 

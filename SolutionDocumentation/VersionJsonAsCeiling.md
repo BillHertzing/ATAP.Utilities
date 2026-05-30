@@ -6,6 +6,41 @@
 BuildMaster run, the prerelease label answers "how high may this immutable
 artifact be promoted?" The current stage comes from BuildMaster.
 
+## Placement Policy — Per-Project `version.json`
+
+**Decision (V4-D07, 2026-05-29):** every shippable unit owns a
+project-adjacent `version.json` that resets the NBGV height origin to that
+unit's directory. There is **no reliance on a repo-root `version.json`** for
+ceiling resolution. `Get-BuildContext` invokes `nbgv` from the per-unit
+directory and **throws** if that directory has no `version.json`, so the
+ceiling for each artifact is always read from its own file rather than a
+parent or root file (see [`Get-BuildContext.ps1`](../src/ATAP.Utilities.BuildTooling.PowerShell/public/Get-BuildContext.ps1)
+and the "Throws when -ProjectPath lacks a project-adjacent version.json"
+case in [`Get-BuildContext.Tests.ps1`](../src/ATAP.Utilities.BuildTooling.PowerShell/tests/Unit/Get-BuildContext.Tests.ps1)).
+
+This table is the single source of truth for **where each kind of ceiling
+lives**. All other versioning docs defer to it.
+
+| Artifact kind          | `version.json` location                                              | Cmdlet that reads it            | Reference doc                                                  |
+| ---------------------- | -------------------------------------------------------------------- | ------------------------------- | ------------------------------------------------------------- |
+| C# package             | `src/<Project>/version.json` (adjacent to the `.csproj`)             | `Get-BuildContext`              | [CSharp-Packages-Versioning.md](CSharp-Packages-Versioning.md) §4.5 |
+| PowerShell module      | `<ModuleRoot>/version.json` (adjacent to the `.psd1`)               | `Get-BuildContext`              | [PowerShell-Modules-Versioning.md](PowerShell-Modules-Versioning.md) §6 |
+| Database change package | `Database/<App>/version.json` (or `Database/<App>.<Stream>/version.json`) | `Get-DatabasePackageBuildContext` | `DatabaseVersioning.md` §1                                    |
+| AceCommander packages  | `src/<Project>/version.json` per shipping project (same rule as ATAP.Utilities C#) | `Get-BuildContext`              | [CSharp-Packages-Versioning.md](CSharp-Packages-Versioning.md) §9–§10 |
+
+Notes:
+
+- **ATAP.Utilities** carries only per-project files; it has no repo-root
+  `version.json`. This is the target state for every repo.
+- **AceCommander** still carries a redundant repo-root `version.json`
+  alongside its per-project files. The per-project file wins, so the ceiling
+  is correct today, but the root file is slated for removal (tracked under
+  CSharp-Packages-Versioning.md §10 "Known Drift"). Do not add new reliance
+  on it.
+- A repo-root `version.json` is permitted only as a transitional NBGV default
+  for not-yet-migrated projects; it is never the authority for any artifact a
+  pipeline actually builds.
+
 ## Two Tier Concepts
 
 | Concept       | Source                                                                       | Changes during one run? | Used for                                                          |

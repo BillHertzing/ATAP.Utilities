@@ -235,14 +235,21 @@ changed `version.json` itself or reaches the root. In practice:
 
 ### 4.5 Placement rules
 
-- **Repo-root `version.json`**: sets the default for every project without its own.
-- **Project-adjacent `version.json`** (next to `.csproj`): overrides the root for
-  that project and **resets the height origin** to the directory containing the
-  override. This is the preferred pattern — each shipping project owns its version
-  line.
-- The ATAP.Utilities sprint-0006 tree currently has both a root file **and** ~170
-  per-project files. The per-project files take precedence; the root file only
-  matters for projects not yet migrated.
+**Policy (V4-D07): per-project `version.json` is authoritative.** Every shipping
+project owns a `version.json` adjacent to its `.csproj`, which **resets the height
+origin** to that project's directory and is the only file consulted for that
+project's promotion ceiling. `Get-BuildContext` invokes `nbgv` from the project
+directory and throws if no project-adjacent `version.json` exists, so a parent or
+repo-root file is never silently used for a built artifact. The authoritative
+placement table for C#, PowerShell, database, and AceCommander ceilings lives in
+[`VersionJsonAsCeiling.md`](VersionJsonAsCeiling.md) ("Placement Policy").
+
+- **Project-adjacent `version.json`** (next to `.csproj`): the required form for
+  every shipping project.
+- **Repo-root `version.json`**: permitted only as a transitional NBGV default for
+  not-yet-migrated projects; it is never the authority for a project that ships a
+  package. ATAP.Utilities carries no root file (all ~170 projects are per-project).
+  AceCommander still has a redundant root file slated for removal (§10).
 
 ---
 
@@ -646,9 +653,12 @@ source of confusion for developers reading a stale `AssemblyInfo.cs`.
   `"version": "0.1-Sprint.{height}"` (no explicit patch). NBGV treats a
   missing patch as `0`. Both produce `0.1.0-Sprint.N` at build time. Keep
   whichever shape the repo has already committed; don't churn.
-- **Repo-root `version.json` coexisting with project-level files.** Not a bug —
-  the project-level file wins — but it is redundant. Can be removed as part
-  of step 4 in §9.
+- **Repo-root `version.json` coexisting with project-level files (AceCommander).**
+  Under the V4-D07 per-project policy ([`VersionJsonAsCeiling.md`](VersionJsonAsCeiling.md)
+  "Placement Policy") the per-project file is authoritative and wins, so the ceiling
+  is correct today; the root file is redundant. ATAP.Utilities has already removed its
+  root file. AceCommander's root `version.json` should be deleted as part of step 4 in
+  §9 (tracked in the AceCommander repo, not this one).
 
 ---
 

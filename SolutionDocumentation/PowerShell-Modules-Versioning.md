@@ -153,6 +153,12 @@ operation: `Promote-ProGetPackage`. That operation is documented in §7.
 
 ## 6. The `version.json` per module
 
+Per the V4-D07 per-project placement policy
+([`VersionJsonAsCeiling.md`](VersionJsonAsCeiling.md) "Placement Policy"), each
+module folder owns its own `version.json` adjacent to the `.psd1`; there is no
+reliance on a repo-root file for a module's ceiling. `Get-BuildContext` reads the
+ceiling from this file and throws if it is absent.
+
 Each module folder owns its own `version.json`:
 
 ```json

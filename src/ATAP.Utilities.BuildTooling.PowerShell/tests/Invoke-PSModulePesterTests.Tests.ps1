@@ -32,36 +32,38 @@ Describe 'Get-PSModulePesterTierFilter' -Tag 'Unit' {
     $f.ExcludeTag | Should -Contain 'Disabled'
   }
 
-  It 'Alpha includes only Unit and excludes Slow,Disabled,PendingStreamK' {
+  It 'Alpha includes only Unit and excludes Slow,Disabled (PendingStreamK no longer excluded — V4-B06)' {
     $f = Get-PSModulePesterTierFilter -Tier 'Alpha'
     $f.Skip       | Should -BeFalse
     $f.IncludeTag | Should -Be @('Unit')
     $f.ExcludeTag | Should -Contain 'Slow'
     $f.ExcludeTag | Should -Contain 'Disabled'
-    $f.ExcludeTag | Should -Contain 'PendingStreamK'
+    $f.ExcludeTag | Should -Not -Contain 'PendingStreamK'
   }
 
-  It 'Beta includes Unit,Integration and excludes Slow,Disabled,PendingStreamK' {
+  It 'Beta includes Unit,Integration and excludes Slow,Disabled (PendingStreamK no longer excluded — V4-B06)' {
     $f = Get-PSModulePesterTierFilter -Tier 'Beta'
     $f.IncludeTag | Should -Be @('Unit', 'Integration')
     $f.ExcludeTag | Should -Contain 'Slow'
     $f.ExcludeTag | Should -Contain 'Disabled'
-    $f.ExcludeTag | Should -Contain 'PendingStreamK'
+    $f.ExcludeTag | Should -Not -Contain 'PendingStreamK'
   }
 
-  It 'QA includes the full functional suite and excludes Disabled,PendingStreamK' {
+  It 'QA includes the full functional suite and excludes only Disabled (V4-B06)' {
     $f = Get-PSModulePesterTierFilter -Tier 'QA'
     $f.IncludeTag | Should -Be @('Unit', 'Integration', 'Functional', 'Regression', 'E2E', 'Performance')
-    $f.ExcludeTag | Should -Be @('Disabled', 'PendingStreamK')
+    $f.ExcludeTag | Should -Be @('Disabled')
     $f.ExcludeTag | Should -Not -Contain 'Slow'
+    $f.ExcludeTag | Should -Not -Contain 'PendingStreamK'
   }
 
-  It 'Production includes Smoke on top of QA and excludes Disabled,PendingStreamK' {
+  It 'Production includes Smoke on top of QA and excludes only Disabled (V4-B06)' {
     $f = Get-PSModulePesterTierFilter -Tier 'Production'
     $f.IncludeTag | Should -Contain 'Smoke'
     $f.IncludeTag | Should -Contain 'Unit'
     $f.IncludeTag | Should -Contain 'Performance'
-    $f.ExcludeTag | Should -Be @('Disabled', 'PendingStreamK')
+    $f.ExcludeTag | Should -Be @('Disabled')
+    $f.ExcludeTag | Should -Not -Contain 'PendingStreamK'
   }
 }
 

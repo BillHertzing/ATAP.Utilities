@@ -69,13 +69,14 @@ PowerShellVersion = '5.1'
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = 'Get-BitWardenCredential', 'Get-BitwardenSecret', 
-               'Get-DistinguishedNameQualifiedFilePath', 
+FunctionsToExport = 'Get-BitWardenCredential',
+               'Get-DistinguishedNameQualifiedFilePath',
                'Get-UsersSecretVaultInfo', 'Install-CACertificate', 
                'Install-CodeSigningCertificate', 
                'Install-DataEncryptionCertificate', 'Install-ModulesPerComputer', 
                'Install-SecretStoreVault', 'Install-SSLCertificate', 
-               'List-CodeSigningCertificates', 'New-CACertificate', 
+               'List-BitwardenSecrets', 'List-CodeSigningCertificates', 'New-BitwardenBackup',
+               'New-CACertificate', 
                'New-CertificateRequest', 'New-DataEncryptionCertificateRequest', 
                'New-DistinguishedNameHash', 'New-EncryptedPasswordFile', 
                'New-EncryptedPrivateKey', 'New-RandomEncryptionKeyToFile', 

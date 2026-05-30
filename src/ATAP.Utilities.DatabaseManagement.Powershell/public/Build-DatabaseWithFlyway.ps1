@@ -90,7 +90,7 @@ https://github.com/whertzing/ATAP.Utilities
     [int]$Port,
 
     [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParts')]
-    [Parameter(Mandatory = $false, ParameterSetName = 'BitwardenSecretName')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'DBConnectionStringSecretName')]
     [switch]$IntegratedSecurity,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
@@ -105,9 +105,9 @@ https://github.com/whertzing/ATAP.Utilities
     [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'SqlConnection')]
     [Microsoft.Data.SqlClient.SqlConnection]$SqlConnection,
 
-    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'BitwardenSecretName')]
-    [Alias('BitwardenSecret', 'SecretName')]
-    [string]$BitwardenSecretName,
+    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'DBConnectionStringSecretName')]
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string]$DBConnectionStringSecretName,
 
     [Parameter(Mandatory = $false)]
     [hashtable]$Settings,
@@ -243,10 +243,10 @@ https://github.com/whertzing/ATAP.Utilities
     }
     $resolverBoundParameters['DatabaseName'] = 'master'
 
-    $resolvedSqlConnection = Resolve-DatabaseSqlConnection `
+    $resolution = Resolve-DatabaseSqlConnection `
       -OriginalPSBoundParameters $resolverBoundParameters `
       -SqlConnection $SqlConnection `
-      -BitwardenSecretName $BitwardenSecretName `
+      -DBConnectionStringSecretName $DBConnectionStringSecretName `
       -DatabaseHost $DatabaseHost `
       -InstanceName $SqlInstance `
       -DatabaseName 'master' `
@@ -262,11 +262,13 @@ https://github.com/whertzing/ATAP.Utilities
       -CredentialsKeyDottedPath "$databaseName.$Environment.CredentialsKey" `
       -ApplicationNameDottedPath "$databaseName.$Environment.ApplicationName"
 
+    $resolvedSqlConnection = $resolution.Connection
+    $resolvedConnectionOwnedByFunction = -not [bool]$resolution.IsCallerOwned
+
     $resolvedConnectionStringBuilder = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($resolvedSqlConnection.ConnectionString)
     $DatabaseHost = $resolvedSqlConnection.DataSource
     $SqlInstance = $resolvedSqlConnection.DataSource
     $useIntegratedSecurityForFlyway = [bool]($resolvedConnectionStringBuilder.IntegratedSecurity -or $IntegratedSecurity -or $UseTrustedConnection)
-    $resolvedConnectionOwnedByFunction = $PSCmdlet.ParameterSetName -ne 'SqlConnection'
 
     # Initialize result object
     $result = [PSCustomObject]@{

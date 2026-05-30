@@ -148,8 +148,8 @@ _Teach / Tell how to create software (with two "describe" entries noted)._
   Sprint-0007 design and implementation guide for service accounts used by
   BuildMaster, ProGet, and other automation processes to access Bitwarden
   secrets. Covers `SvcBuildmaster` and `SvcProGet` service account setup,
-  Bitwarden API key provisioning, and the `Get-BitWardenSecret` integration
-  pattern for non-interactive service contexts.
+  Bitwarden API key provisioning, and the `Get-SecretATAP` integration pattern
+  for non-interactive service contexts.
 - [Service Accounts and Bitwarden — Alternatives Considered](ServiceAccountsAndBitwarden.-AlternativesConsidered.md) —
   Design alternatives and trade-off analysis for service account Bitwarden
   access patterns evaluated in Sprint 0007.

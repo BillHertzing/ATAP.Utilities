@@ -317,7 +317,7 @@ Create the SvcSQLServer account:
 
 ```powershell
 # Retrieve password from Bitwarden secret SvcSQLServer-<COMPUTERNAME> in ComputerLogins
-$secret = Get-BitWardenSecret -Name "SvcSQLServer-<COMPUTERNAME>" -FolderName "ComputerLogins"
+$secret = Get-SecretATAP -SecretName "SvcSQLServer-<COMPUTERNAME>"
 $pw = ConvertTo-SecureString -String $secret.password -AsPlainText -Force
 
 New-LocalServiceAccount `
@@ -470,7 +470,7 @@ New-LocalServiceAccount `
 
 Expected result: `Status = Success`, `UserCreated = True`, `SeServiceLogonRight = True`.
 
-**Store the password in Bitwarden:** Use `Get-BitWardenSecret` in your `LoginScript.ps1` to retrieve this at system startup, or record it in Bitwarden for safekeeping.
+**Store the password in Bitwarden:** Use `Get-SecretATAP` in your `LoginScript.ps1` to retrieve this at system startup, or record it in Bitwarden for safekeeping.
 
 ##### Create SvcBuildmaster Account
 

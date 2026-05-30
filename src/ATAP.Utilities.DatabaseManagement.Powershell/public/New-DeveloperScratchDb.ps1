@@ -35,9 +35,9 @@ function New-DeveloperScratchDb {
     [Parameter(
       Mandatory = $true,
       ValueFromPipelineByPropertyName = $true,
-      ParameterSetName = 'BitwardenSecretName')]
-    [Alias('BitwardenSecret', 'SecretName')]
-    [string]$BitwardenSecretName,
+      ParameterSetName = 'DBConnectionStringSecretName')]
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string]$DBConnectionStringSecretName,
 
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
@@ -99,6 +99,7 @@ function New-DeveloperScratchDb {
     }
 
     $resolvedSqlConnection = $null
+    $resolvedConnectionOwnedByFunction = $false
     $connectionResolvedInBegin = $false
     $connectionDisplayName = $null
 
@@ -128,7 +129,7 @@ function New-DeveloperScratchDb {
       Resolve-DatabaseSqlConnection `
         -OriginalPSBoundParameters $connectionBoundParameters `
         -SqlConnection $SqlConnection `
-        -BitwardenSecretName $BitwardenSecretName `
+        -DBConnectionStringSecretName $DBConnectionStringSecretName `
         -DatabaseHost $effectiveDatabaseHost `
         -InstanceName $effectiveInstanceName `
         -DatabaseName 'master' `
@@ -161,8 +162,10 @@ function New-DeveloperScratchDb {
 
     if (-not $MyInvocation.ExpectingInput -or
       $PSBoundParameters.ContainsKey('SqlConnection') -or
-      $PSBoundParameters.ContainsKey('BitwardenSecretName')) {
-      $resolvedSqlConnection = & $resolveMasterConnection
+      $PSBoundParameters.ContainsKey('DBConnectionStringSecretName')) {
+      $resolution = & $resolveMasterConnection
+      $resolvedSqlConnection = $resolution.Connection
+      $resolvedConnectionOwnedByFunction = -not [bool]$resolution.IsCallerOwned
       $connectionDisplayName = & $getConnectionDisplayName $resolvedSqlConnection
       $connectionResolvedInBegin = $true
     }
@@ -170,7 +173,9 @@ function New-DeveloperScratchDb {
 
   process {
     if (-not $connectionResolvedInBegin) {
-      $resolvedSqlConnection = & $resolveMasterConnection
+      $resolution = & $resolveMasterConnection
+      $resolvedSqlConnection = $resolution.Connection
+      $resolvedConnectionOwnedByFunction = -not [bool]$resolution.IsCallerOwned
       $connectionDisplayName = & $getConnectionDisplayName $resolvedSqlConnection
     }
 
@@ -223,6 +228,11 @@ ELSE
   }
 
   end {
+    if ($resolvedConnectionOwnedByFunction -and $null -ne $resolvedSqlConnection) {
+      try { $resolvedSqlConnection.Close() } catch { }
+      try { $resolvedSqlConnection.Dispose() } catch { }
+      $resolvedSqlConnection = $null
+    }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving $fn" -Tag 'Trace'
   }
 }

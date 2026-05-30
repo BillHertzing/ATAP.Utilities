@@ -135,15 +135,15 @@ param(
     [switch] $UseTrustedConnection,
 
     [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParts')]
-    [Parameter(Mandatory = $false, ParameterSetName = 'BitwardenSecretName')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'DBConnectionStringSecretName')]
     [switch] $IntegratedSecurity,
 
     [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'SqlConnection')]
     [Microsoft.Data.SqlClient.SqlConnection] $SqlConnection,
 
-    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'BitwardenSecretName')]
-    [Alias('BitwardenSecret', 'SecretName')]
-    [string] $BitwardenSecretName,
+    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'DBConnectionStringSecretName')]
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string] $DBConnectionStringSecretName,
 
     [Parameter()]
     [hashtable] $Settings,
@@ -227,10 +227,10 @@ begin {
         }
     }
 
-    $resolvedSqlConnection = Resolve-DatabaseSqlConnection `
+    $resolution = Resolve-DatabaseSqlConnection `
         -OriginalPSBoundParameters $PSBoundParameters `
         -SqlConnection $SqlConnection `
-        -BitwardenSecretName $BitwardenSecretName `
+        -DBConnectionStringSecretName $DBConnectionStringSecretName `
         -DatabaseHost $DatabaseHost `
         -InstanceName $SqlInstance `
         -DatabaseName $DatabaseName `
@@ -240,6 +240,9 @@ begin {
         -UseTrustedConnection:$UseTrustedConnection `
         -IntegratedSecurity:$IntegratedSecurity `
         -Settings $Settings
+
+    $resolvedSqlConnection = $resolution.Connection
+    $resolvedConnectionOwnedByFunction = -not [bool]$resolution.IsCallerOwned
 
     $resolvedConnectionStringBuilder = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($resolvedSqlConnection.ConnectionString)
     $SqlInstance = $resolvedConnectionStringBuilder.DataSource
@@ -256,8 +259,6 @@ begin {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
         throw $msg
     }
-
-    $resolvedConnectionOwnedByFunction = $PSCmdlet.ParameterSetName -ne 'SqlConnection'
 
     # Locate 7-Zip when requested
     if ($SevenZipCompress.IsPresent) {

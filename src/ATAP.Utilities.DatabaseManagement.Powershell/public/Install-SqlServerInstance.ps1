@@ -134,8 +134,9 @@ function Install-SqlServerInstance {
       }
       Import-Module dbatools -ErrorAction Stop
 
-      if (-not (Get-Command -Name 'Get-BitwardenSecret' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\Get-BitwardenSecret.ps1'
+      if (-not (Get-Command -Name 'Get-SecretATAP' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-SecretATAPBitwarden.ps1'
+        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-SecretATAP.ps1'
       }
     } catch {
       $errorMessage = "Failed loading dependencies. Exception: $($_.Exception.Message)"
@@ -158,15 +159,16 @@ function Install-SqlServerInstance {
 
     if (-not $useIntegratedSecurity) {
       try {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolving CredentialsKey '$CredentialsKey' from Bitwarden."
-        $vaultSecret = Get-BitwardenSecret -SecretName $CredentialsKey
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolving CredentialsKey '$CredentialsKey' from ATAP secret store."
+        $saUserName = Get-SecretATAP -SecretName $CredentialsKey -SecretField 'username'
+        $saPassword = Get-SecretATAP -SecretName $CredentialsKey -SecretField 'password'
 
-        if (-not $vaultSecret.UserName -or -not $vaultSecret.Password) {
-          throw "Secret '$CredentialsKey' must contain UserName and Password properties."
+        if ([string]::IsNullOrWhiteSpace($saUserName) -or [string]::IsNullOrWhiteSpace($saPassword)) {
+          throw "Secret '$CredentialsKey' must expose both 'username' and 'password' fields."
         }
 
-        $securePassword = ConvertTo-SecureString -String $vaultSecret.Password -AsPlainText -Force
-        $saCredential = New-Object System.Management.Automation.PSCredential($vaultSecret.UserName, $securePassword)
+        $securePassword = ConvertTo-SecureString -String $saPassword -AsPlainText -Force
+        $saCredential = New-Object System.Management.Automation.PSCredential($saUserName, $securePassword)
       } catch {
         $errorMessage = "Failed resolving credentials for key '$CredentialsKey'. Exception: $($_.Exception.Message)"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage

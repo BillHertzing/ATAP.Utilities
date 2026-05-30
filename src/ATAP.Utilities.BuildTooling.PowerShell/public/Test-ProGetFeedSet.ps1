@@ -1,15 +1,15 @@
-function Validate-ProgetFeedSet {
+function Test-ProGetFeedSet {
   [CmdletBinding()]
   param (
   )
 
-  Write-PSFMessage -Level Verbose -Message 'Entering function: Validate-ProGetFeedSet' -Tag 'Validate-ProGetFeedSet', 'Trace'
+  Write-PSFMessage -Level Verbose -Message 'Entering function: Test-ProGetFeedSet' -Tag 'Test-ProGetFeedSet', 'Trace'
 
   # call List-ProGetFeeds to get the feeds
   $proGetFeeds = List-ProGetFeeds -ErrorAction Stop
   if ($proGetFeeds.count -eq 0) {
     $errorMessage = 'No feeds found in ProGet.'
-    Write-PSFMessage -Level Error -Message $errorMessage -Tag 'Validate-ProGetFeedSet', 'Trace', 'Error'
+    Write-PSFMessage -Level Error -Message $errorMessage -Tag 'Test-ProGetFeedSet', 'Trace', 'Error'
     throw $errorMessage
   }
 
@@ -30,13 +30,13 @@ function Validate-ProgetFeedSet {
   }
   if ($missingFeeds.Count -gt 0) {
     $errorMessage = "The following expected feeds are missing from ProGet: $($missingFeeds -join ', ')"
-    Write-PSFMessage -Level Verbose -Message $errorMessage -Tag 'Validate-ProGetFeedSet', 'Trace', 'Error'
+    Write-PSFMessage -Level Verbose -Message $errorMessage -Tag 'Test-ProGetFeedSet', 'Trace', 'Error'
   }
   $results = [PSCustomObject]@{
     Success      = $missingFeeds.Count -eq 0
     MissingFeeds = $missingFeeds
     ProGetFeeds  = $proGetFeeds
   }
-  Write-PSFMessage -Level Verbose -Message 'Leaving function: Validate-ProGetFeedSet' -Tag 'Validate-ProGetFeedSet', 'Trace'
+  Write-PSFMessage -Level Verbose -Message 'Leaving function: Test-ProGetFeedSet' -Tag 'Test-ProGetFeedSet', 'Trace'
   return $results
 }

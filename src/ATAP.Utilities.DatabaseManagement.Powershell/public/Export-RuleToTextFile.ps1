@@ -23,7 +23,7 @@
 .PARAMETER SqlConnection
     An already-open Microsoft.Data.SqlClient.SqlConnection.
 
-.PARAMETER BitwardenSecretName
+.PARAMETER DBConnectionStringSecretName
     Bitwarden secret name whose value is a complete SQL Server connection string.
 
 .PARAMETER DatabaseHost
@@ -79,9 +79,9 @@ function Export-RuleToTextFile {
     [AllowNull()]
     [object]$SqlConnection,
 
-    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'BitwardenSecretName')]
-    [Alias('BitwardenSecret', 'SecretName')]
-    [string]$BitwardenSecretName,
+    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'DBConnectionStringSecretName')]
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string]$DBConnectionStringSecretName,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [Alias('HostName', 'ServerInstance')]
@@ -129,13 +129,13 @@ function Export-RuleToTextFile {
     }
 
     if ($PSBoundParameters.ContainsKey('Username') -or $PSBoundParameters.ContainsKey('Password')) {
-      Write-Warning 'Username and Password are retained for backward compatibility but are not used by the shared connection resolver. Use CredentialsKey, BitwardenSecretName, or SqlConnection for SQL authentication.'
+      Write-Warning 'Username and Password are retained for backward compatibility but are not used by the shared connection resolver. Use CredentialsKey, DBConnectionStringSecretName, or SqlConnection for SQL authentication.'
     }
 
-    $resolvedSqlConnection = Resolve-DatabaseSqlConnection `
+    $resolution = Resolve-DatabaseSqlConnection `
       -OriginalPSBoundParameters $PSBoundParameters `
       -SqlConnection $SqlConnection `
-      -BitwardenSecretName $BitwardenSecretName `
+      -DBConnectionStringSecretName $DBConnectionStringSecretName `
       -DatabaseHost $DatabaseHost `
       -InstanceName $InstanceName `
       -DatabaseName $DatabaseName `
@@ -146,7 +146,8 @@ function Export-RuleToTextFile {
       -IntegratedSecurity:$IntegratedSecurity `
       -Settings $Settings
 
-    $resolvedConnectionOwnedByFunction = $PSCmdlet.ParameterSetName -ne 'SqlConnection'
+    $resolvedSqlConnection = $resolution.Connection
+    $resolvedConnectionOwnedByFunction = -not [bool]$resolution.IsCallerOwned
 
     # Generate output path if not provided
     if ([string]::IsNullOrEmpty($OutputPath)) {

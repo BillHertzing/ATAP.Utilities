@@ -46,7 +46,7 @@ function Invoke-DatabasePackageRehearsal {
 .PARAMETER DatabaseHost
     SQL Server host.  Defaults to localhost.
 
-.PARAMETER BitwardenSecretName
+.PARAMETER DBConnectionStringSecretName
     Bitwarden secure-note name whose password is a SQL connection string.
     Passed directly to Invoke-FlywayRehearsal.
 
@@ -106,8 +106,8 @@ function Invoke-DatabasePackageRehearsal {
     [string]$DatabaseHost = 'localhost',
 
     [Parameter(Mandatory = $false)]
-    [Alias('BitwardenSecret', 'SecretName')]
-    [string]$BitwardenSecretName,
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string]$DBConnectionStringSecretName,
 
     [Parameter(Mandatory = $false)]
     [string]$LogPath
@@ -168,7 +168,7 @@ function Invoke-DatabasePackageRehearsal {
           BundlePath   = $expandedPath
         }
         if (-not [string]::IsNullOrWhiteSpace($RehearsalDb))        { $rehearsalParams['RehearsalDb']        = $RehearsalDb }
-        if (-not [string]::IsNullOrWhiteSpace($BitwardenSecretName)) { $rehearsalParams['BitwardenSecretName'] = $BitwardenSecretName }
+        if (-not [string]::IsNullOrWhiteSpace($DBConnectionStringSecretName)) { $rehearsalParams['DBConnectionStringSecretName'] = $DBConnectionStringSecretName }
         if (-not [string]::IsNullOrWhiteSpace($LogPath))             { $rehearsalParams['LogPath']             = $LogPath }
 
         $result = Invoke-FlywayRehearsal @rehearsalParams

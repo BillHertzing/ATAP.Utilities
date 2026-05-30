@@ -30,7 +30,7 @@ AI assisted using Powershell.instructions.md as guidelines
 .LINK
 https://github.com/whertzing/ATAP.Utilities
 #>
-function New-MCPServerJunction {
+function Create-MCPJunction {
   [CmdletBinding(SupportsShouldProcess)]
   param(
     [Parameter(Mandatory = $true)]
@@ -41,7 +41,7 @@ function New-MCPServerJunction {
   )
 
   BEGIN {
-    $fn = 'New-MCPServerJunction'
+    $fn = 'Create-MCPJunction'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
@@ -146,5 +146,5 @@ function New-MCPServerJunction {
 
 # Execute if run as script
 # if ($MyInvocation.InvocationName -ne '.') {
-#   New-MCPServerJunction
+#   Create-MCPJunction
 # }

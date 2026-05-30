@@ -170,13 +170,22 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
       $text = Get-Content -LiteralPath $planPath -Raw
 
       $text | Should -Match '\$BuildMasterBuildId = \$BuildMasterId\(build\)'
-      if ((Split-Path -Leaf $planPath) -eq 'PowerShellModule-5Stage.otter') {
-        $text | Should -Match '-BuildMasterBuildId "\$BuildMasterBuildId"'
-        $runnerText = Get-Content -LiteralPath $script:powerShellRunnerPath -Raw
-        $runnerText | Should -Match 'Initialize-BuildMasterRunContextDirectory -SourcePath \$SourcePath -BuildMasterBuildId \$BuildMasterBuildId'
-      }
-      else {
-        $text | Should -Match '_generated\\buildmaster\\\$BuildMasterBuildId'
+      switch (Split-Path -Leaf $planPath) {
+        'PowerShellModule-5Stage.otter' {
+          $text | Should -Match '-BuildMasterBuildId "\$BuildMasterBuildId"'
+          $runnerText = Get-Content -LiteralPath $script:powerShellRunnerPath -Raw
+          $runnerText | Should -Match 'Initialize-BuildMasterRunContextDirectory -SourcePath \$SourcePath -BuildMasterBuildId \$BuildMasterBuildId'
+        }
+        'CSharpPackage-5Stage.otter' {
+          # The C# plan delegates context-directory derivation to its stage
+          # runner; it threads the build id through rather than composing the
+          # _generated\buildmaster\<id> path inline in OtterScript.
+          $text | Should -Match '-BuildMasterBuildId "\$BuildMasterBuildId"'
+        }
+        default {
+          # ReleaseBundle composes the build-id-scoped context dir inline.
+          $text | Should -Match '_generated\\buildmaster\\\$BuildMasterBuildId'
+        }
       }
     }
   }
@@ -185,13 +194,25 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
     foreach ($planPath in $script:planPaths) {
       $text = Get-Content -LiteralPath $planPath -Raw
 
-      $text | Should -Not -Match 'Get-BuildContext'
-      if ((Split-Path -Leaf $planPath) -eq 'PowerShellModule-5Stage.otter') {
-        $text | Should -Match '-File "\$InvokePowerShellModuleStageScript"'
-        $text | Should -Match '-Stage "\$PipelineStageName"'
-      }
-      else {
-        $text | Should -Match '-File "\$InitializeBuildContextScript"'
+      # Get-BuildContext must not be INVOKED inline in OtterScript; the preamble
+      # moved to -File runner scripts. A descriptive comment that merely names it
+      # (e.g. "so Get-BuildContext can resolve ...") is not a violation.
+      $nonCommentText = (($text -split "\r?\n") | Where-Object { $_ -notmatch '^\s*#' }) -join "`n"
+      $nonCommentText | Should -Not -Match 'Get-BuildContext'
+      switch (Split-Path -Leaf $planPath) {
+        'PowerShellModule-5Stage.otter' {
+          $text | Should -Match '-File "\$InvokePowerShellModuleStageScript"'
+          $text | Should -Match '-Stage "\$PipelineStageName"'
+        }
+        'CSharpPackage-5Stage.otter' {
+          # C# invokes its stage runner directly (the context preamble lives in
+          # the runner), so it has no separate Initialize-BuildContext step.
+          $text | Should -Match '-File "\$InvokeCSharpPackageStageScript"'
+        }
+        default {
+          # ReleaseBundle runs a dedicated Initialize-BuildContext step first.
+          $text | Should -Match '-File "\$InitializeBuildContextScript"'
+        }
       }
     }
   }
@@ -297,7 +318,7 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
     $text | Should -Match '-Feed \$destinationFeed'
     $text | Should -Match '\$\(\$Tier\)TestResults'
     $text | Should -Match '-ProGetBaseUrl \$ProGetUrl'
-    $text | Should -Match '-ApiKey \$ProGetApiKey'
+    $text | Should -Match '-ApiKey \$script:resolvedProGetApiKey'
     $text | Should -Match 'next stage gate'
     $text | Should -Match "starting promotion/test"
     $text | Should -Not -Match 'promotion/test execution.*not implemented yet'

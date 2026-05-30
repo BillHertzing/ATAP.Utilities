@@ -65,7 +65,7 @@ Each of the following becomes a dedicated, Pester-tested public cmdlet:
 | `Invoke-PSModulePesterTests`      | Run Pester with the tier-appropriate tag filter, emit JUnit XML and coverage.                                                          | `Task UnitTestPSModule`, `IntegrationTestPSModule`    |
 | `Test-FailureAcknowledgedGate`    | Evaluate `(passed + acknowledged) == total` against `FailureAcknowledged.json`.                                                        | _(new)_                                               |
 | `Test-CodeCoverageGate`           | Compare coverage to the configured tier threshold.                                                                                     | _(new)_                                               |
-| `Publish-PSModuleToProGetFeed`    | Select the target `powershellget-*` feed from `$global:Settings`, authenticate via `Get-BitWardenSecret` or the feed API-key env var, and call `Publish-PSResource`. | `Task PublishPSPackage`                               |
+| `Publish-PSModuleToProGetFeed`    | Select the target `powershellget-*` feed from `$global:Settings`, authenticate via `Get-SecretATAP` or the feed API-key env var, and call `Publish-PSResource`. | `Task PublishPSPackage`                               |
 | `Compress-PSModuleArtifacts`      | Create `TestResults.7z`, `CoverageReport.7z`, `Packages.7z` at well-known paths.                                                       | _(new)_                                               |
 
 After extraction, `module.build.ps1` reduces to a DAG of `Task` blocks that each call one cmdlet.
@@ -190,7 +190,7 @@ API keys come from Bitwarden first. If Bitwarden is unavailable, `Publish-PSModu
 
 ```powershell
 $feed   = Resolve-ProGetFeedFromSettings -FeedType powershellget -Tier $tier
-$apiKey = Get-BitWardenSecret -SecretName "ProGet_PowerShellGet_$($tier)_ApiKey"
+$apiKey = Get-SecretATAP -SecretName "ProGet_PowerShellGet_$($tier)_ApiKey"
 Publish-PSResource -NupkgPath $Nupkg -Repository $feed.FeedName -ApiKey $apiKey
 ```
 

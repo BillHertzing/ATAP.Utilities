@@ -98,7 +98,7 @@ function DatabaseProvisioning {
     [int]$Port,
 
     [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParts')]
-    [Parameter(Mandatory = $false, ParameterSetName = 'BitwardenSecretName')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'DBConnectionStringSecretName')]
     [switch]$IntegratedSecurity,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
@@ -113,9 +113,9 @@ function DatabaseProvisioning {
     [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'SqlConnection')]
     [Microsoft.Data.SqlClient.SqlConnection]$SqlConnection,
 
-    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'BitwardenSecretName')]
-    [Alias('BitwardenSecret', 'SecretName')]
-    [string]$BitwardenSecretName,
+    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'DBConnectionStringSecretName')]
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string]$DBConnectionStringSecretName,
 
     [Parameter(Mandatory = $false)]
     [hashtable]$Settings,
@@ -301,10 +301,10 @@ function DatabaseProvisioning {
     }
     $resolverBoundParameters['DatabaseName'] = 'master'
 
-    $resolvedSqlConnection = Resolve-DatabaseSqlConnection `
+    $resolution = Resolve-DatabaseSqlConnection `
       -OriginalPSBoundParameters $resolverBoundParameters `
       -SqlConnection $SqlConnection `
-      -BitwardenSecretName $BitwardenSecretName `
+      -DBConnectionStringSecretName $DBConnectionStringSecretName `
       -DatabaseHost $DatabaseHost `
       -InstanceName $SqlInstance `
       -DatabaseName 'master' `
@@ -320,8 +320,11 @@ function DatabaseProvisioning {
       -CredentialsKeyDottedPath "$databaseName.$Environment.CredentialsKey" `
       -ApplicationNameDottedPath "$databaseName.$Environment.ApplicationName"
 
-    $connectionStringBuilder = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($resolvedSqlConnection.ConnectionString)
-    $serverForConnect = $resolvedSqlConnection.DataSource
+    $openSQLConnection = $resolution.Connection
+    $isCallerOwnedConnection = [bool]$resolution.IsCallerOwned
+
+    $connectionStringBuilder = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($openSQLConnection.ConnectionString)
+    $serverForConnect = $openSQLConnection.DataSource
     $useIntegratedSecurity = [bool]($connectionStringBuilder.IntegratedSecurity -or $IntegratedSecurity -or $UseTrustedConnection)
     $usingExistingConnection = $PSCmdlet.ParameterSetName -eq 'SqlConnection'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Using resolved SQL connection for server: $serverForConnect"
@@ -401,7 +404,7 @@ ELSE
 "@
 
       $dbExists = [bool](Invoke-DatabaseSqlScalar `
-          -SqlConnection $resolvedSqlConnection `
+          -SqlConnection $openSQLConnection `
           -CommandText $existsQuery `
           -CommandTimeout 30)
 
@@ -438,7 +441,7 @@ END
 "@
 
         [void](Invoke-DatabaseSqlNonQuery `
-            -SqlConnection $resolvedSqlConnection `
+            -SqlConnection $openSQLConnection `
             -CommandText $dropQuery `
             -CommandTimeout 0)
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Successfully dropped existing database '$DatabaseName' on '$serverForConnect'." -Tag 'Validation', 'Warning'
@@ -476,7 +479,6 @@ END
     $PlannedScriptsMetadata = $plannedScripts
     $dbExists = $dbExists
     $ServerForConnect = $serverForConnect
-    $ResolvedSqlConnection = $resolvedSqlConnection
     $ResolvedConnectionStringBuilder = $connectionStringBuilder
   }
 
@@ -515,7 +517,7 @@ END
 
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Executing provisioning SQL $scriptLabel (DB=$targetDb)"
             Invoke-DatabaseProvisioningSqlFile `
-              -Connection $ResolvedSqlConnection `
+              -Connection $openSQLConnection `
               -Path $scriptPath `
               -TargetDatabase $targetDb `
               -Variables $sqlVariables
@@ -548,6 +550,11 @@ END
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message ('Provisioning {0}' -f ($(if ($result.Success) { 'succeeded' } else { 'failed' })))
     if ($errors.Count -gt 0) {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message ("Errors:`n {0}" -f ($errors -join [Environment]::NewLine))
+    }
+    if (-not $isCallerOwnedConnection -and $null -ne $openSQLConnection) {
+      try { $openSQLConnection.Close() } catch { }
+      try { $openSQLConnection.Dispose() } catch { }
+      $openSQLConnection = $null
     }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Leaving script DatabaseProvisioning'
     [PSCustomObject]$result

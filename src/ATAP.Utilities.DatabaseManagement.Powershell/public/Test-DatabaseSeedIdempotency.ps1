@@ -34,9 +34,9 @@ function Test-DatabaseSeedIdempotency {
     An open Microsoft.Data.SqlClient.SqlConnection.
     Mandatory for the SqlConnection parameter set.
 
-.PARAMETER BitwardenSecretName
+.PARAMETER DBConnectionStringSecretName
     Bitwarden secure-note name whose password is a SQL connection string.
-    Mandatory for the BitwardenSecretName parameter set.
+    Mandatory for the DBConnectionStringSecretName parameter set.
 
 .PARAMETER DatabaseHost
     SQL Server host.  Used with ConnectionParts parameter set.
@@ -84,9 +84,9 @@ function Test-DatabaseSeedIdempotency {
     [Parameter(Mandatory = $true, ParameterSetName = 'SqlConnection', ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
     [object]$SqlConnection,
 
-    [Parameter(Mandatory = $true, ParameterSetName = 'BitwardenSecretName', ValueFromPipelineByPropertyName = $true)]
-    [Alias('BitwardenSecret', 'SecretName')]
-    [string]$BitwardenSecretName,
+    [Parameter(Mandatory = $true, ParameterSetName = 'DBConnectionStringSecretName', ValueFromPipelineByPropertyName = $true)]
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string]$DBConnectionStringSecretName,
 
     [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParts', ValueFromPipelineByPropertyName = $true)]
     [Alias('HostName', 'ServerInstance')]
@@ -168,16 +168,19 @@ function Test-DatabaseSeedIdempotency {
       }
     }
 
-    $resolvedConnection = Resolve-DatabaseSqlConnection `
+    $resolution = Resolve-DatabaseSqlConnection `
       -OriginalPSBoundParameters $PSBoundParameters `
       -SqlConnection $SqlConnection `
-      -BitwardenSecretName $BitwardenSecretName `
+      -DBConnectionStringSecretName $DBConnectionStringSecretName `
       -DatabaseHost $DatabaseHost `
       -InstanceName $SqlInstance `
       -DatabaseName $DatabaseName `
       -ConnectionMethod $ConnectionMethod `
       -CredentialsKey $CredentialsKey `
       -IntegratedSecurity:$IntegratedSecurity
+
+    $resolvedConnection = $resolution.Connection
+    $resolvedConnectionOwnedByFunction = -not [bool]$resolution.IsCallerOwned
 
     $manifest = Get-DatabasePackageManifest -PackagePath $PackagePath
 
@@ -246,6 +249,11 @@ function Test-DatabaseSeedIdempotency {
   }
 
   end {
+    if ($resolvedConnectionOwnedByFunction -and $null -ne $resolvedConnection) {
+      try { $resolvedConnection.Close() } catch { }
+      try { $resolvedConnection.Dispose() } catch { }
+      $resolvedConnection = $null
+    }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Exiting $fn" -Tag 'Trace'
   }
 }

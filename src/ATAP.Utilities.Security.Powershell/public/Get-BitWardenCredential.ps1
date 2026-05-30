@@ -86,7 +86,10 @@ function Get-BitWardenCredential {
     # Load required helper functions
     try {
       if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
+        # Resolve sibling module path relative to this script so the function works in
+        # both the active sprint worktree and the stable repo without hardcoding.
+        $siblingGetPVal = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1') -ErrorAction Stop
+        . $siblingGetPVal.ProviderPath
       }
     }
     catch {
@@ -111,9 +114,17 @@ function Get-BitWardenCredential {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Using provided CredentialDirectory: $CredentialDirectory"
     }
 
-    # Build credential file paths (user-specific and host-specific)
-    $loginCredFileName = "$env:COMPUTERNAME`_$env:USERNAME`_BW_Login_Credential.xml"
-    $unlockCredFileName = "$env:COMPUTERNAME`_$env:USERNAME`_BW_Unlock_Credential.xml"
+    # Build credential file paths (user-specific and host-specific).
+    # Derive the username token from [WindowsIdentity]::GetCurrent() rather than
+    # $env:USERNAME because $env:USERNAME is inherited from the launching process
+    # and is NOT refreshed when Start-Process -Credential switches the security
+    # token (especially under -NoProfile). Using $env:USERNAME here produces
+    # filenames tagged with the launcher account even though DPAPI correctly
+    # encrypts under the spawned identity, which breaks subsequent lookups by
+    # Refresh-BWSession running as the service account at boot/refresh time.
+    $currentSamName = ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name -split '\\') | Select-Object -Last 1
+    $loginCredFileName = "$env:COMPUTERNAME`_$currentSamName`_BW_Login_Credential.xml"
+    $unlockCredFileName = "$env:COMPUTERNAME`_$currentSamName`_BW_Unlock_Credential.xml"
     $loginCredPath = Join-Path $CredentialDirectory $loginCredFileName
     $unlockCredPath = Join-Path $CredentialDirectory $unlockCredFileName
 

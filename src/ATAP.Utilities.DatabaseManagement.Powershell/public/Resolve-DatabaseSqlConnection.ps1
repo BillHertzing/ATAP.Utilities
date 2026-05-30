@@ -1,39 +1,53 @@
 function Resolve-DatabaseSqlConnection {
   <#
   .SYNOPSIS
-  Resolves the supported ATAP database connection inputs to one open SqlConnection.
+  Resolves the supported ATAP database connection inputs to one open SqlConnection plus an ownership flag.
 
   .DESCRIPTION
   Centralizes database connection validation for PowerShell functions that access SQL Server.
-  The resolver accepts the three supported connection methods:
+  The resolver evaluates the three supported connection methods in this priority order:
 
-  - An existing Microsoft.Data.SqlClient.SqlConnection object.
-  - A Bitwarden secret name whose password value is a complete SQL connection string.
-  - Structured connection parts resolved through Get-ParameterValueFromNeoConfigurationRoot / Get-PVal.
+  1. SqlConnection         : highest priority. An already-open Microsoft.Data.SqlClient.SqlConnection.
+                             The caller owns the connection lifecycle (IsCallerOwned = $true).
+  2. DBConnectionStringSecretName : second priority. Names an ATAP secret whose 'notes' field is a
+                             complete SQL connection string. The resolver reads it via
+                             Get-SecretATAP -SecretField 'notes' and opens a new connection.
+                             The function owns the lifecycle (IsCallerOwned = $false).
+  3. ConnectionParts       : lowest priority (default). Structured host/instance/database parts
+                             resolved through Get-ParameterValueFromNeoConfigurationRoot / Get-PVal,
+                             with defaults from $global:settings. The resolver opens a new
+                             connection. The function owns the lifecycle (IsCallerOwned = $false).
 
-  Existing open SqlConnection objects take precedence over Bitwarden secret names. Bitwarden
-  secret names take precedence over structured connection parts.
+  Existing open SqlConnection objects take precedence over DBConnectionStringSecretName.
+  DBConnectionStringSecretName takes precedence over ConnectionParts.
 
   .PARAMETER OriginalPSBoundParameters
   The caller's $PSBoundParameters hashtable. Pass this from database-accessing cmdlets so
   Get-PVal can distinguish values supplied by the caller from defaults passed to this helper.
 
   .OUTPUTS
-  Microsoft.Data.SqlClient.SqlConnection
+  [pscustomobject] with properties:
+    Connection    : the open Microsoft.Data.SqlClient.SqlConnection
+    IsCallerOwned : [bool] true only when SqlConnection parameter set was used
 
   .EXAMPLE
-  $sqlConnection = Resolve-DatabaseSqlConnection -OriginalPSBoundParameters $PSBoundParameters -SqlConnection $SqlConnection -BitwardenSecretName $BitwardenSecretName -DatabaseHost $DatabaseHost -InstanceName $InstanceName -DatabaseName $DatabaseName -ConnectionMethod $ConnectionMethod -CredentialsKey $CredentialsKey -ApplicationName $ApplicationName -IntegratedSecurity:$IntegratedSecurity -UseTrustedConnection:$UseTrustedConnection -Settings $Settings
+  $resolution = Resolve-DatabaseSqlConnection -OriginalPSBoundParameters $PSBoundParameters -SqlConnection $SqlConnection -DBConnectionStringSecretName $DBConnectionStringSecretName -DatabaseHost $DatabaseHost -InstanceName $InstanceName -DatabaseName $DatabaseName -ConnectionMethod $ConnectionMethod -CredentialsKey $CredentialsKey -ApplicationName $ApplicationName -IntegratedSecurity:$IntegratedSecurity -UseTrustedConnection:$UseTrustedConnection -Settings $Settings
+  $openSQLConnection      = $resolution.Connection
+  $isCallerOwnedConnection = [bool]$resolution.IsCallerOwned
+
+  .NOTES
+  AI assisted using Powershell.instructions.md as guidelines
   #>
   [CmdletBinding()]
-  [OutputType([object])]
+  [OutputType([pscustomobject])]
   param(
     [Parameter(Mandatory = $false, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
     [AllowNull()]
     [object] $SqlConnection,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
-    [Alias('BitwardenSecret', 'SecretName')]
-    [string] $BitwardenSecretName,
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string] $DBConnectionStringSecretName,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
     [Alias('HostName', 'ServerInstance')]
@@ -109,24 +123,36 @@ function Resolve-DatabaseSqlConnection {
 
     $normalizedBoundParameters = New-DatabaseConnectionParameterMap -BoundParameters $sourceBoundParameters
 
+    # Priority 1: SqlConnection (caller-owned).
     $effectiveSqlConnection = $SqlConnection
     if ($null -eq $effectiveSqlConnection -and $normalizedBoundParameters.ContainsKey('SqlConnection')) {
       $effectiveSqlConnection = $normalizedBoundParameters['SqlConnection']
     }
     if ($null -ne $effectiveSqlConnection) {
-      return Assert-DatabaseSqlConnectionIsOpen `
+      $verifiedConnection = Assert-DatabaseSqlConnectionIsOpen `
         -Connection $effectiveSqlConnection `
         -Source 'SqlConnection parameter'
+      return [pscustomobject]@{
+        Connection    = $verifiedConnection
+        IsCallerOwned = $true
+      }
     }
 
-    $effectiveBitwardenSecretName = $BitwardenSecretName
-    if ([string]::IsNullOrWhiteSpace($effectiveBitwardenSecretName) -and $normalizedBoundParameters.ContainsKey('BitwardenSecretName')) {
-      $effectiveBitwardenSecretName = [string] $normalizedBoundParameters['BitwardenSecretName']
+    # Priority 2: DBConnectionStringSecretName (function-owned).
+    $effectiveSecretName = $DBConnectionStringSecretName
+    if ([string]::IsNullOrWhiteSpace($effectiveSecretName) -and $normalizedBoundParameters.ContainsKey('DBConnectionStringSecretName')) {
+      $effectiveSecretName = [string] $normalizedBoundParameters['DBConnectionStringSecretName']
     }
-    if (-not [string]::IsNullOrWhiteSpace($effectiveBitwardenSecretName)) {
-      return Resolve-DatabaseSqlConnectionFromBitwardenSecretName -SecretName $effectiveBitwardenSecretName
+    if (-not [string]::IsNullOrWhiteSpace($effectiveSecretName)) {
+      $openedConnection = Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName `
+        -SecretName $effectiveSecretName
+      return [pscustomobject]@{
+        Connection    = $openedConnection
+        IsCallerOwned = $false
+      }
     }
 
+    # Priority 3: ConnectionParts (function-owned).
     if ([string]::IsNullOrWhiteSpace($DatabaseHost) -and $normalizedBoundParameters.ContainsKey('DatabaseHost')) {
       $DatabaseHost = [string] $normalizedBoundParameters['DatabaseHost']
     }
@@ -156,7 +182,7 @@ function Resolve-DatabaseSqlConnection {
       $useTrustedConnectionValue = [bool] $normalizedBoundParameters['UseTrustedConnection']
     }
 
-    return Resolve-DatabaseSqlConnectionFromConnectionParts `
+    $partsConnection = Resolve-DatabaseSqlConnectionFromConnectionParts `
       -BoundParameters $normalizedBoundParameters `
       -Settings $Settings `
       -DatabaseHost $DatabaseHost `
@@ -175,5 +201,10 @@ function Resolve-DatabaseSqlConnection {
       -InstanceNameDottedPath $InstanceNameDottedPath `
       -IntegratedSecurityDottedPath $IntegratedSecurityDottedPath `
       -UseTrustedConnectionDottedPath $UseTrustedConnectionDottedPath
+
+    return [pscustomobject]@{
+      Connection    = $partsConnection
+      IsCallerOwned = $false
+    }
   }
 }

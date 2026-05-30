@@ -80,7 +80,7 @@ Describe 'Sync-RulesToCSV [public]' {
 
   It 'uses the shared resolver and exports rule CSV files from mocked data' {
     $result = Sync-RulesToCSV `
-      -BitwardenSecretName 'rules-db' `
+      -DBConnectionStringSecretName 'rules-db' `
       -LanguageKind 'CSharp' `
       -TableType 'Rules' `
       -OutputPath $script:outputPath `
@@ -88,7 +88,7 @@ Describe 'Sync-RulesToCSV [public]' {
       -Confirm:$false
 
     Should -Invoke -CommandName Resolve-BuildToolingDatabaseSqlConnection -Times 1 -Exactly -ParameterFilter {
-      $BitwardenSecretName -eq 'rules-db'
+      $DBConnectionStringSecretName -eq 'rules-db'
     }
 
     Should -Invoke -CommandName Invoke-BuildToolingSqlQuery -Times 3 -Exactly

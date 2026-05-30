@@ -15,13 +15,24 @@ Use the main document, [ServiceAccountsAndBitwarden.md](ServiceAccountsAndBitwar
 for the current baseline decision. Use this file when re-evaluating the architecture in
 the future.
 
+### Sprint-0007 implementation note
+
+The selected baseline was implemented in Sprint-0007 with a vendor-agnostic wrapper
+(`Get-SecretATAP`) over a Bitwarden-specific provider (`Get-SecretATAPBitwarden`). The
+provider shells out to the `bw` CLI directly and does **not** use
+`Microsoft.PowerShell.SecretManagement` or any Bitwarden vault extension. Future
+secret-store providers (for example a Bitwarden Secrets Manager provider once the
+licensing tier supports it) plug into the wrapper switch in
+[Get-SecretATAP.ps1](../src/ATAP.Utilities.BuildTooling.PowerShell/public/Get-SecretATAP.ps1)
+without any caller-site changes.
+
 ---
 
 ## Summary Table
 
 | Alternative                                      | Current Disposition        | Reason                                                                                                                          |
 | ------------------------------------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| DPAPI credential files + startup/session refresh | Selected baseline          | Works on the current Bitwarden Free tier, uses existing ATAP infrastructure, and gives per-(host, service-account) blast radius |
+| DPAPI credential files + startup/session refresh | Selected baseline (implemented Sprint-0007) | Works on the current Bitwarden Free tier, uses existing ATAP infrastructure, gives per-(host, service-account) blast radius, fronted by `Get-SecretATAP` vendor-agnostic wrapper for future provider swaps |
 | Windows Credential Manager                       | Discarded for now          | Similar provisioning complexity to DPAPI files, but no material operational advantage                                           |
 | Bitwarden Secrets Manager                        | Deferred                   | Architecturally cleaner, but unavailable on the current Bitwarden Free tier                                                     |
 | Machine-scope `BW_SESSION`                       | Rejected                   | Blast radius is too wide because every process on the host can read the token                                                   |

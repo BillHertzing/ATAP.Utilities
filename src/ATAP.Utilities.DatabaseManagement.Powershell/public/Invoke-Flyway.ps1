@@ -4,7 +4,7 @@ function Invoke-Flyway {
   Builds a JDBC connection string from a validated SQL connection, sets Flyway environment variables, and runs a Flyway command.
 
   .DESCRIPTION
-  Uses Resolve-DatabaseSqlConnection to validate SqlConnection, BitwardenSecretName, or
+  Uses Resolve-DatabaseSqlConnection to validate SqlConnection, DBConnectionStringSecretName, or
   structured connection parts before deriving the Flyway JDBC URL.
 
   Computes SHA256 hashes for specified migration/repeatable SQL files under -SqlMigrationsPath, builds a
@@ -130,7 +130,7 @@ function Invoke-Flyway {
     [int]$Port,
 
     [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParts')]
-    [Parameter(Mandatory = $false, ParameterSetName = 'BitwardenSecretName')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'DBConnectionStringSecretName')]
     [switch]$IntegratedSecurity,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
@@ -145,9 +145,9 @@ function Invoke-Flyway {
     [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'SqlConnection')]
     [Microsoft.Data.SqlClient.SqlConnection]$SqlConnection,
 
-    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'BitwardenSecretName')]
-    [Alias('BitwardenSecret', 'SecretName')]
-    [string]$BitwardenSecretName,
+    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'DBConnectionStringSecretName')]
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string]$DBConnectionStringSecretName,
 
     [Parameter(Mandatory = $false)]
     [hashtable]$Settings,
@@ -245,10 +245,10 @@ function Invoke-Flyway {
     $DatabaseName = Get-PVal -ParameterName 'DatabaseName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseName" -Settings $databasesCollection -DefaultValue $DatabaseName
     $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue $Environment -ValidValues @('Production', 'Testing', 'Development', 'Experimental') -AllowMissing
 
-    $resolvedSqlConnection = Resolve-DatabaseSqlConnection `
+    $resolution = Resolve-DatabaseSqlConnection `
       -OriginalPSBoundParameters $PSBoundParameters `
       -SqlConnection $SqlConnection `
-      -BitwardenSecretName $BitwardenSecretName `
+      -DBConnectionStringSecretName $DBConnectionStringSecretName `
       -DatabaseHost $DatabaseHost `
       -InstanceName $SqlInstance `
       -DatabaseName $DatabaseName `
@@ -264,9 +264,11 @@ function Invoke-Flyway {
       -CredentialsKeyDottedPath "$databaseName.$Environment.CredentialsKey" `
       -ApplicationNameDottedPath "$databaseName.$Environment.ApplicationName"
 
+    $resolvedSqlConnection = $resolution.Connection
+    $resolvedConnectionOwnedByFunction = -not [bool]$resolution.IsCallerOwned
+
     $resolvedConnectionStringBuilder = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($resolvedSqlConnection.ConnectionString)
     $DatabaseHost = $resolvedSqlConnection.DataSource
-    $resolvedConnectionOwnedByFunction = $PSCmdlet.ParameterSetName -ne 'SqlConnection'
     $FlywayExecutablePath = Get-PVal -ParameterName 'FlywayExecutablePath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayExecutablePath" -Settings $databasesCollection -DefaultValue $(if ($FlywayExecutablePath) { $FlywayExecutablePath } else { 'flyway' })
     $FlywayBasePath = Get-PVal -ParameterName 'FlywayBasePath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayBasePath" -Settings $databasesCollection -DefaultValue $FlywayBasePath
     $FlywaySqlMigrationsPath = Get-PVal -ParameterName 'FlywaySqlMigrationsPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywaySqlMigrationsPath" -Settings $databasesCollection -DefaultValue $FlywaySqlMigrationsPath

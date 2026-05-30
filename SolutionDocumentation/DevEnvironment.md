@@ -121,7 +121,7 @@ Set-PSReadLineOption -HistorySavePath $null
 Then handle `PSReadLine.OnCommandExecuted` yourself and skip commands that match patterns such as:
 
 - `bw unlock`
-- `Get-BitWardenSecret`
+- `Get-SecretATAP`
 - commands that contain `token`, `secret`, or `password`
 - commands that assign secret-bearing environment variables
 

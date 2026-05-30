@@ -91,10 +91,14 @@
     'Get-NumberOfFailingTestsFromTRX', 'Get-NuSpecFromManifest',
     'Get-ProjectsByActivity', 'Get-ProjectsFromSLN',
     'Get-PSModuleVersionFromNBGV', 'Get-RefactoringCandidates',
-    'Get-RepositoryRoot', 'Get-SharedVSCodeContext', 'Get-SLNParts',
+    'Get-RepositoryRoot', 'Get-SecretATAP', 'Get-SecretATAPBitwarden',
+    'Get-SecretATAPBitwardenSecretsManager', 'Get-ServiceAccountBWSAccessToken',
+    'Initialize-ServiceAccountBWSAccessToken',
+    'Get-SharedVSCodeContext', 'Get-SLNParts',
     'Get-TierFromNBGVLabel', 'Get-TierOrder',
     'Initialize-DownstreamSprintFromSharedVSCode',
     'Initialize-ProGetSqlServiceLogin',
+    'Initialize-ServiceAccountBitwardenSession',
     'Invoke-BuildToolingPesterDebug', 'Invoke-DotnetBuildWithRetry',
     'Invoke-FailureAcknowledgedGate', 'Invoke-GitCommit',
     'Invoke-GitPostCheckoutHook', 'Invoke-GitPostCommitHook', 'Invoke-GitPreCommitHook',
@@ -121,7 +125,8 @@
     'Publish-DatabaseChangePackageToProGet', 'Publish-NuGetPackageToProGet',
     'Publish-PSModuleToProGet', 'Publish-PSModuleToProGetFeed',
     'Publish-PSPackage', 'Publish-UniversalPackageToProGet',
-    'Read-SourceAndCreateRules', 'Register-ProGetFeedSet',
+    'Read-SourceAndCreateRules', 'Refresh-BWSession',
+    'Register-ProGetFeedSet',
     'Remove-BuildMasterApplication',
     'Remove-BuildMasterApplicationVariable',
     'Remove-BuildMasterRelease', 'Remove-BuildMasterScript',
@@ -143,7 +148,8 @@
     'Test-SprintInfrastructureHealth', 'Test-SprintPrerequisites',
     'Update-BlocksInCsproj',
     'Update-OverviewWorkspaceStableInfo', 'Update-PackageVersion',
-    'Validate-ProGetFeeds'
+    'Test-ProGetFeedSet',
+    'Update-ServiceAccountBWCredentialFile'
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport      = '*'

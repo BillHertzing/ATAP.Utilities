@@ -14,7 +14,7 @@ BeforeAll {
 Describe 'Resolve-DatabaseSqlConnection' -Tag 'Unit' {
   BeforeEach {
     Mock Assert-DatabaseSqlConnectionIsOpen { 'existing-connection' }
-    Mock Resolve-DatabaseSqlConnectionFromBitwardenSecretName { "bitwarden:$SecretName" }
+    Mock Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName { "bitwarden:$SecretName" }
     Mock Resolve-DatabaseSqlConnectionFromConnectionParts {
       [PSCustomObject]@{
         DatabaseHost         = $DatabaseHost
@@ -30,31 +30,33 @@ Describe 'Resolve-DatabaseSqlConnection' -Tag 'Unit' {
     }
   }
 
-  It 'prefers an existing SqlConnection input over Bitwarden and connection parts' {
+  It 'prefers an existing SqlConnection input over the secret and connection parts and marks IsCallerOwned' {
     $fakeConnection = [PSCustomObject]@{ State = 'Open' }
 
     $result = Resolve-DatabaseSqlConnection `
       -SqlConnection $fakeConnection `
-      -BitwardenSecretName 'db-secret' `
+      -DBConnectionStringSecretName 'db-secret' `
       -DatabaseHost 'localhost' `
       -DatabaseName 'ATAPUtilities' `
       -IntegratedSecurity
 
-    $result | Should -Be 'existing-connection'
+    $result.Connection | Should -Be 'existing-connection'
+    $result.IsCallerOwned | Should -BeTrue
     Assert-MockCalled Assert-DatabaseSqlConnectionIsOpen -Times 1 -Exactly -Scope It
-    Assert-MockCalled Resolve-DatabaseSqlConnectionFromBitwardenSecretName -Times 0 -Exactly -Scope It
+    Assert-MockCalled Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName -Times 0 -Exactly -Scope It
     Assert-MockCalled Resolve-DatabaseSqlConnectionFromConnectionParts -Times 0 -Exactly -Scope It
   }
 
-  It 'uses BitwardenSecretName before connection parts' {
+  It 'uses DBConnectionStringSecretName before connection parts and marks IsCallerOwned false' {
     $result = Resolve-DatabaseSqlConnection `
-      -BitwardenSecretName 'db-secret' `
+      -DBConnectionStringSecretName 'db-secret' `
       -DatabaseHost 'localhost' `
       -DatabaseName 'ATAPUtilities' `
       -IntegratedSecurity
 
-    $result | Should -Be 'bitwarden:db-secret'
-    Assert-MockCalled Resolve-DatabaseSqlConnectionFromBitwardenSecretName -Times 1 -Exactly -Scope It -ParameterFilter {
+    $result.Connection | Should -Be 'bitwarden:db-secret'
+    $result.IsCallerOwned | Should -BeFalse
+    Assert-MockCalled Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName -Times 1 -Exactly -Scope It -ParameterFilter {
       $SecretName -eq 'db-secret'
     }
     Assert-MockCalled Resolve-DatabaseSqlConnectionFromConnectionParts -Times 0 -Exactly -Scope It
@@ -70,14 +72,15 @@ Describe 'Resolve-DatabaseSqlConnection' -Tag 'Unit' {
 
     $result = Resolve-DatabaseSqlConnection -OriginalPSBoundParameters $callerBoundParameters
 
-    $result.DatabaseHost | Should -Be 'localhost'
-    $result.DatabaseName | Should -Be 'ATAPUtilities'
-    $result.InstanceName | Should -Be 'DEVWHERTZING'
-    $result.IntegratedSecurity | Should -BeTrue
-    $result.BoundParameters.ContainsKey('InstanceName') | Should -BeTrue
+    $result.IsCallerOwned | Should -BeFalse
+    $result.Connection.DatabaseHost | Should -Be 'localhost'
+    $result.Connection.DatabaseName | Should -Be 'ATAPUtilities'
+    $result.Connection.InstanceName | Should -Be 'DEVWHERTZING'
+    $result.Connection.IntegratedSecurity | Should -BeTrue
+    $result.Connection.BoundParameters.ContainsKey('InstanceName') | Should -BeTrue
   }
 
-  It 'normalizes SecretName from the caller bound-parameter map to BitwardenSecretName' {
+  It 'normalizes SecretName from the caller bound-parameter map to DBConnectionStringSecretName' {
     $callerBoundParameters = @{
       SecretName   = 'db-secret'
       DatabaseHost = 'localhost'
@@ -86,8 +89,9 @@ Describe 'Resolve-DatabaseSqlConnection' -Tag 'Unit' {
 
     $result = Resolve-DatabaseSqlConnection -OriginalPSBoundParameters $callerBoundParameters
 
-    $result | Should -Be 'bitwarden:db-secret'
-    Assert-MockCalled Resolve-DatabaseSqlConnectionFromBitwardenSecretName -Times 1 -Exactly -Scope It -ParameterFilter {
+    $result.Connection | Should -Be 'bitwarden:db-secret'
+    $result.IsCallerOwned | Should -BeFalse
+    Assert-MockCalled Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName -Times 1 -Exactly -Scope It -ParameterFilter {
       $SecretName -eq 'db-secret'
     }
   }

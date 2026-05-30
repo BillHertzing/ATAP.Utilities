@@ -269,7 +269,7 @@ Each T-1x task delivers one public cmdlet in [src/ATAP.Utilities.BuildTooling.Po
 
 1. Resolve the target feed via `$global:Settings[$global:configRootKeys['ProGetFeedCollectionConfigRootKey']]`.
 2. Ensure the repository is registered (`Register-PSResourceRepository` if missing; `Set-PSResourceRepository` if present).
-3. Fetch the API key via `Get-BitWardenSecret -SecretName "ProGet_PowerShellGet_${tier}_ApiKey"`; fall back to the feed entry's configured `ApiKeyName` environment variable if Bitwarden is unavailable.
+3. Fetch the API key via `Get-SecretATAP -SecretName "ProGet_PowerShellGet_${tier}_ApiKey"`; fall back to the feed entry's configured `ApiKeyName` environment variable if Bitwarden is unavailable.
 4. Call `Publish-PSResource -Path $NupkgPath -Repository $shortName -ApiKey $key`.
    **Acceptance:** Pester tests mock `Publish-PSResource` and verify the correct repository and API key name are resolved for each tier.
 **Dependencies:** T-12, T-31.

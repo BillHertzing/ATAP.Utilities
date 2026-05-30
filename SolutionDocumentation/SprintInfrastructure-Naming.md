@@ -195,8 +195,8 @@ ecosystem during initial setup. NOT called by SprintStartAgent.
 
 ### 4.3 Retrieval
 
-All secrets are retrieved via `Get-BitwardenSecret -SecretName <name>` from
-`ATAP.Utilities.Security.Powershell`. The cmdlet passes the name unchanged
+All secrets are retrieved via `Get-SecretATAP -SecretName <name>` from
+`ATAP.Utilities.BuildTooling.PowerShell`. The cmdlet passes the name unchanged
 to `Get-Secret` (SecretManagement) — no character filtering occurs, so names
 containing hyphens, machine names, and usernames are handled correctly.
 
@@ -259,15 +259,15 @@ SprintStartAgent / SprintEndAgent PowerShell glob:
 | `IntegrationSqlInstance`                           | `utat022\Integration`                                           |
 | `QASqlInstance`                                    | `utat022\QA`                                                    |
 | `ProductionSqlInstance`                            | `utat022\Production`                                            |
-| `IntegrationDatabaseBitwardenSecretName`           | `dbConnectionString-AceCommander-utat022-Integration`           |
+| `IntegrationDatabaseDBConnectionStringSecretName`           | `dbConnectionString-AceCommander-utat022-Integration`           |
 | `NuGetFeedName_Experimental`                       | `nuget-experimental`                                            |
 | `NuGetFeedUrl_Experimental`                        | `http://localhost:50000/nuget/nuget-experimental/v3/index.json` |
 | `PowerShellGetFeedName_Experimental`               | `powershellget-experimental`                                    |
 | _(and one URL + one name pair per remaining tier)_ |                                                                 |
 
-The `IntegrationDatabaseBitwardenSecretName` value follows §4.2 and is the
+The `IntegrationDatabaseDBConnectionStringSecretName` value follows §4.2 and is the
 ReleaseBundle Integration-stage Flyway rehearsal connection contract. BuildMaster
-passes this name to `Invoke-FlywayRehearsal -BitwardenSecretName`; it does not
+passes this name to `Invoke-FlywayRehearsal -DBConnectionStringSecretName`; it does not
 pass `DatabaseHost` / `SqlInstance` for that rehearsal.
 
 20 feed name/URL variables + 3 SQL instance variables + 1 ReleaseBundle
@@ -277,7 +277,7 @@ application that runs the ReleaseBundle plan (`AceCommander-ReleaseBundle`,
 secret-name variable.
 
 **Set cmdlet:** `Set-BuildMasterStableVariables` for feed and SQL-instance
-variables; set `IntegrationDatabaseBitwardenSecretName` during ReleaseBundle
+variables; set `IntegrationDatabaseDBConnectionStringSecretName` during ReleaseBundle
 application onboarding until that onboarding automation owns the secret-name
 variable too.
 

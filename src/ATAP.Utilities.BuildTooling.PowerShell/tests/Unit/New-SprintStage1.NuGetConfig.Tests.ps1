@@ -56,7 +56,7 @@ BeforeAll {
   $script:callsObservedAtLoad = @($global:stage1ExternalCalls)
 }
 
-Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit', 'PendingStreamK' {
+Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit' {
 
   Context 'Load contract (K04)' {
     It 'dot-sourcing New-SprintStage1.ps1 defines the function without triggering Stage 1 actions' {

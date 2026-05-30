@@ -101,9 +101,9 @@ Describe 'V4-A07 plan shape: ReleaseBundle-6Stage.otter is a thin runner plan' {
     }
 
     It 'plan passes the Flyway rehearsal connection contract by Bitwarden secret name only' {
-        # Integration stage must pass -IntegrationDatabaseBitwardenSecretName but
+        # Integration stage must pass -IntegrationDatabaseDBConnectionStringSecretName but
         # never a raw connection string in Arguments.
-        $script:PlanText | Should -Match '-IntegrationDatabaseBitwardenSecretName\s+"\$IntegrationDatabaseBitwardenSecretName"'
+        $script:PlanText | Should -Match '-IntegrationDatabaseDBConnectionStringSecretName\s+"\$IntegrationDatabaseDBConnectionStringSecretName"'
         $script:PlanText | Should -Not -Match 'Arguments:[^\r\n]*Server\s*='
         $script:PlanText | Should -Not -Match 'Arguments:[^\r\n]*User\s+Id\s*='
     }
@@ -200,15 +200,15 @@ Describe 'V4-A07 Flyway-rehearsal runner contract: Invoke-ReleaseBundleFlywayReh
             'ProductName',
             'ReleaseBundlePathFile',
             'BackupPath',
-            'IntegrationDatabaseBitwardenSecretName',
+            'IntegrationDatabaseDBConnectionStringSecretName',
             'LogPath'
         )) {
             $script:RunnerText | Should -Match "\[string\]\$\b$param\b"
         }
     }
 
-    It 'requires -IntegrationDatabaseBitwardenSecretName as Mandatory + ValidateNotNullOrEmpty' {
-        $script:RunnerText | Should -Match '(?s)\[Parameter\s*\(\s*Mandatory\s*\)\][^\]]*\[ValidateNotNullOrEmpty\(\)\][^\]]*\[string\]\$IntegrationDatabaseBitwardenSecretName'
+    It 'requires -IntegrationDatabaseDBConnectionStringSecretName as Mandatory + ValidateNotNullOrEmpty' {
+        $script:RunnerText | Should -Match '(?s)\[Parameter\s*\(\s*Mandatory\s*\)\][^\]]*\[ValidateNotNullOrEmpty\(\)\][^\]]*\[string\]\$IntegrationDatabaseDBConnectionStringSecretName'
     }
 
     It 'never accepts a raw connection string parameter' {
@@ -221,10 +221,10 @@ Describe 'V4-A07 Flyway-rehearsal runner contract: Invoke-ReleaseBundleFlywayReh
         $script:RunnerText | Should -Match 'Get-Content[^\r\n]*\$ReleaseBundlePathFile'
     }
 
-    It 'invokes Invoke-FlywayRehearsal and passes BitwardenSecretName' {
+    It 'invokes Invoke-FlywayRehearsal and passes DBConnectionStringSecretName' {
         $script:RunnerText | Should -Match 'Invoke-FlywayRehearsal'
         # Use single-quoted pattern so the regex stays literal under PowerShell expansion.
-        $script:RunnerText | Should -Match 'BitwardenSecretName\s*=\s*\$IntegrationDatabaseBitwardenSecretName'
+        $script:RunnerText | Should -Match 'DBConnectionStringSecretName\s*=\s*\$IntegrationDatabaseDBConnectionStringSecretName'
     }
 }
 

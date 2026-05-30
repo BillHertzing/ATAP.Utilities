@@ -51,9 +51,9 @@ function Invoke-FlywayRehearsal {
     [Parameter(
       Mandatory = $true,
       ValueFromPipelineByPropertyName = $true,
-      ParameterSetName = 'BitwardenSecretName')]
-    [Alias('BitwardenSecret', 'SecretName')]
-    [string]$BitwardenSecretName,
+      ParameterSetName = 'DBConnectionStringSecretName')]
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string]$DBConnectionStringSecretName,
 
     [Parameter(Mandatory = $false)]
     [string]$Application,
@@ -171,6 +171,7 @@ function Invoke-FlywayRehearsal {
     }
 
     $resolvedSqlConnection = $null
+    $resolvedConnectionOwnedByFunction = $false
     $connectionResolvedInBegin = $false
     $connectionDisplayName = $null
 
@@ -184,7 +185,7 @@ function Invoke-FlywayRehearsal {
       Resolve-DatabaseSqlConnection `
         -OriginalPSBoundParameters $connectionBoundParameters `
         -SqlConnection $SqlConnection `
-        -BitwardenSecretName $BitwardenSecretName `
+        -DBConnectionStringSecretName $DBConnectionStringSecretName `
         -DatabaseHost $DatabaseHost `
         -InstanceName $SqlInstance `
         -DatabaseName 'master' `
@@ -211,8 +212,10 @@ function Invoke-FlywayRehearsal {
 
     if (-not $MyInvocation.ExpectingInput -or
       $PSBoundParameters.ContainsKey('SqlConnection') -or
-      $PSBoundParameters.ContainsKey('BitwardenSecretName')) {
-      $resolvedSqlConnection = & $resolveMasterConnection
+      $PSBoundParameters.ContainsKey('DBConnectionStringSecretName')) {
+      $resolution = & $resolveMasterConnection
+      $resolvedSqlConnection = $resolution.Connection
+      $resolvedConnectionOwnedByFunction = -not [bool]$resolution.IsCallerOwned
       $connectionDisplayName = & $getConnectionDisplayName $resolvedSqlConnection
       $connectionResolvedInBegin = $true
     }
@@ -220,7 +223,9 @@ function Invoke-FlywayRehearsal {
 
   process {
     if (-not $connectionResolvedInBegin) {
-      $resolvedSqlConnection = & $resolveMasterConnection
+      $resolution = & $resolveMasterConnection
+      $resolvedSqlConnection = $resolution.Connection
+      $resolvedConnectionOwnedByFunction = -not [bool]$resolution.IsCallerOwned
       $connectionDisplayName = & $getConnectionDisplayName $resolvedSqlConnection
     }
 
@@ -271,8 +276,8 @@ CREATE DATABASE [$safeIdentifier];
         'SqlConnection' {
           $flywayParams.SqlConnection = $resolvedSqlConnection
         }
-        'BitwardenSecretName' {
-          $flywayParams.BitwardenSecretName = $BitwardenSecretName
+        'DBConnectionStringSecretName' {
+          $flywayParams.DBConnectionStringSecretName = $DBConnectionStringSecretName
         }
         default {
           $flywayParams.DatabaseHost = $DatabaseHost
@@ -363,6 +368,11 @@ END
   }
 
   end {
+    if ($resolvedConnectionOwnedByFunction -and $null -ne $resolvedSqlConnection) {
+      try { $resolvedSqlConnection.Close() } catch { }
+      try { $resolvedSqlConnection.Dispose() } catch { }
+      $resolvedSqlConnection = $null
+    }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving $fn" -Tag 'Trace'
   }
 }

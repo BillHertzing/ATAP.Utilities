@@ -200,7 +200,7 @@ The same rule that applies in C# (see
 applies here:
 
 - **Unit tests** mock every external dependency: file system writes, network
-  calls, `git`, `nbgv`, `Get-BitWardenSecret`, `Publish-PSResource`. They
+  calls, `git`, `nbgv`, `Get-SecretATAP`, `Publish-PSResource`. They
   must run identically with no network and no Bitwarden vault.
 - **Integration tests** hit the real thing: a real ProGet feed (often a
   developer's local instance), a real `nbgv` invocation against a real
@@ -213,7 +213,7 @@ Describe 'Publish-PSModuleToProGetFeed' -Tag 'Unit' {
     BeforeAll {
         Mock -CommandName 'Publish-PSResource'         -MockWith { } -ModuleName ATAP.Utilities.BuildTooling.PowerShell
         Mock -CommandName 'Register-PSResourceRepository' -MockWith { } -ModuleName ATAP.Utilities.BuildTooling.PowerShell
-        Mock -CommandName 'Get-BitWardenSecret'        -MockWith { 'fake-key' } -ModuleName ATAP.Utilities.BuildTooling.PowerShell
+        Mock -CommandName 'Get-SecretATAP'             -MockWith { 'fake-key' } -ModuleName ATAP.Utilities.BuildTooling.PowerShell
     }
 
     It 'maps Sprint tier to PowershellGet-experimental' {
@@ -243,8 +243,8 @@ source tree or from a promoted feed:
 3. The pipeline (or the developer, locally) passes the **secret name** — not
    the secret value — to the test step in the `ATAPUTILITIES_DB_SECRET_NAME`
    environment variable. The integration test reads that variable and calls
-   `Get-BitwardenSecret -SecretName $env:ATAPUTILITIES_DB_SECRET_NAME` (from
-   `ATAP.Utilities.Security.Powershell`) to resolve a live connection string
+   `Get-SecretATAP -SecretName $env:ATAPUTILITIES_DB_SECRET_NAME` (from
+   `ATAP.Utilities.BuildTooling.PowerShell`) to resolve a live connection string
    at run time.
 4. If `ATAPUTILITIES_DB_SECRET_NAME` is unset, DB-backed integration tests
    **skip** (`It ... -Skip` with an `# acknowledged:` reason, per §7) rather
@@ -260,7 +260,7 @@ source tree or from a promoted feed:
 | Production               | `dbConnectionString-ATAPUtilities-utat022-Production`         | `utat022\Production`    |
 
 The BuildMaster release plan holds the name in its per-tier variable (for the
-Integration tier this is the existing `IntegrationDatabaseBitwardenSecretName`
+Integration tier this is the existing `IntegrationDatabaseDBConnectionStringSecretName`
 stable variable; see [SprintInfrastructure-Naming.md §6.2](SprintInfrastructure-Naming.md#62-stable-variables-set-once-during-ecosystem-onboarding))
 and exports it into the agent process as `ATAPUTILITIES_DB_SECRET_NAME` for
 the test step. Locally a developer points the same variable at the

@@ -33,20 +33,45 @@ database connection credentials, API keys, and inter-service authentication toke
 
 ### Existing Infrastructure
 
-Two PowerShell cmdlets exist in `ATAP.Utilities.Security.Powershell`:
+The following cmdlets are involved:
 
-- **`Get-BitWardenCredential`** — Loads or creates DPAPI-encrypted credential files on disk.
-  File paths follow the pattern `<CredentialDirectory>\<COMPUTERNAME>_<USERNAME>_BW_Login_Credential.xml`
-  and `<CredentialDirectory>\<COMPUTERNAME>_<USERNAME>_BW_Unlock_Credential.xml`.
-  Uses `Export-Clixml` / `Import-Clixml` (Windows DPAPI at rest).
+- **`Get-BitWardenCredential`** (in `ATAP.Utilities.Security.Powershell`) — Loads or
+  creates DPAPI-encrypted credential files on disk. File paths follow the pattern
+  `<CredentialDirectory>\<COMPUTERNAME>_<USERNAME>_BW_Login_Credential.xml` and
+  `<CredentialDirectory>\<COMPUTERNAME>_<USERNAME>_BW_Unlock_Credential.xml`. Uses
+  `Export-Clixml` / `Import-Clixml` (Windows DPAPI at rest).
 
-- **`Get-BitwardenSecret`** — Retrieves a named secret from the Bitwarden vault using
-  the `Microsoft.PowerShell.SecretManagement` module and a registered `Bitwarden` vault.
-  Requires `BW_SESSION` to be set and valid.
+- **`Get-SecretATAP`** (in `ATAP.Utilities.BuildTooling.PowerShell`) — The
+  vendor-agnostic wrapper used by all ATAP code to read secrets. Mandatory
+  `-SecretName`, optional `-SecretField` (defaults to `password`). The wrapper
+  resolves the active secret-store provider from `$global:settings` and dispatches.
+  Only the Bitwarden provider is implemented today.
 
-- **`Initialize-BitwardenSession`** (`LoginScript.ps1`) — Called at interactive user logon.
-  Reads DPAPI credential files, logs in with `bw login`, unlocks with `bw unlock --raw`,
-  and stores the resulting session token.
+- **`Get-SecretATAPBitwarden`** (in `ATAP.Utilities.BuildTooling.PowerShell`) — The
+  Bitwarden provider implementation. Shells out to the `bw` CLI directly and parses
+  the resulting JSON. Does **not** use `Microsoft.PowerShell.SecretManagement` or any
+  Bitwarden vault extension. Reads `BW_SESSION` from process scope, then User scope,
+  and verifies the session via `bw status` before retrieving the item.
+
+- **`Initialize-BitwardenSession`** (`LoginScript.ps1`) — Called at interactive user
+  logon. Reads DPAPI credential files, logs in with `bw login`, unlocks with
+  `bw unlock --raw`, and stores the resulting session token.
+
+- **`Initialize-ServiceAccountBitwardenSession`** (in
+  `ATAP.Utilities.BuildTooling.PowerShell`) — The service-account analogue. Registered
+  as a per-service-account `At Startup` scheduled task, runs as the owning service
+  account, decrypts that account's DPAPI files, calls `bw login` + `bw unlock --raw`,
+  and writes `BW_SESSION` to the User scope for that service account.
+
+- **`Refresh-BWSession`** (in `ATAP.Utilities.BuildTooling.PowerShell`) — Called on a
+  recurring scheduled-task trigger. Calls `bw unlock --check`; if locked or expired,
+  re-runs the login/unlock sequence and rewrites the User-scope `BW_SESSION`.
+
+- **`Update-ServiceAccountBWCredentialFile`** (in
+  `ATAP.Utilities.BuildTooling.PowerShell`) — Replaces the DPAPI credential files for a
+  service account when the Bitwarden master password, the service-account Windows
+  password, or the host changes. Wraps `Get-BitWardenCredential -Replace` and runs in
+  the service account's security context.
 
 ## Current Baseline Decisions
 
@@ -415,7 +440,7 @@ BuildMaster has a built-in **Credentials and Secrets** store (accessible via
 - **Native plugin:** No official Bitwarden plugin exists for BuildMaster.
 - **Environment variable injection:** A pre-build OtterScript step can call
   `Refresh-BWSession.ps1` to set `BW_SESSION`, then subsequent PowerShell operations
-  can call `Get-BitwardenSecret`.
+  can call `Get-SecretATAP`.
 - **BuildMaster Variables:** Store non-secret configuration in BuildMaster variables;
   use Bitwarden only for credentials. This limits the Bitwarden session requirement to
   build steps that explicitly need secrets.
@@ -499,7 +524,8 @@ writes the token to the service account's User-scope environment variable.
 
 **Pros:**
 
-- Uses existing `Get-BitWardenCredential` and `Get-BitwardenSecret` infrastructure.
+- Uses existing `Get-BitWardenCredential` (Security module) and
+  `Get-SecretATAP` / `Get-SecretATAPBitwarden` (BuildTooling module) infrastructure.
 - No additional software or licenses needed.
 - DPAPI provides strong at-rest encryption tied to the service account identity.
 - Credential files are portable across the existing provisioning/Ansible workflow.
@@ -628,8 +654,9 @@ Checks against current codebase:
 - `Get-BitWardenCredential`: Passwords received as plain-text string parameters and
   immediately converted to `SecureString` via `ConvertTo-SecureString`. Plain-text
   strings are **not** written to disk or logged.
-- `Get-BitwardenSecret`: Returns `SecureString` by default; `AsPlainText` switch is
-  available for callers that explicitly need it. The value is never logged.
+- `Get-SecretATAPBitwarden`: Returns a plain `[string]` for the requested field.
+  Callers that need a `SecureString` wrap the result with `ConvertTo-SecureString`. The
+  value is never logged; only the secret name and chosen field are logged.
 - `LoginScript.ps1`: Sets `$env:BW_PASSWORD` as a plain-text env var for the duration
   of the `bw unlock` call, then immediately removes it. This is the standard pattern
   for the Bitwarden CLI but is a brief exposure window.
@@ -685,12 +712,12 @@ Some pieces already exist; others still need to be written or wrapped.
 | Function / Script Name                         | Status               | Purpose                                                                                                                        |
 | ---------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `Get-BitWardenCredential`                      | Exists               | Create or load the DPAPI-backed login and unlock credential files                                                              |
-| `Get-BitwardenSecret`                          | Exists               | Retrieve a named secret once a valid Bitwarden session is present                                                              |
-| `Refresh-BWSession.ps1` or `Refresh-BWSession` | Needs implementation | Validate `BW_SESSION`, perform `bw login`/`bw unlock`, update the service account User-scope token, and emit structured errors |
+| `Get-SecretATAP`                               | Exists (Sprint-0007) | Vendor-agnostic wrapper that dispatches to the provider chosen by `$global:settings`                                           |
+| `Get-SecretATAPBitwarden`                      | Exists (Sprint-0007) | Bitwarden provider implementation; shells out to `bw` CLI directly (no SecretManagement)                                       |
+| `Initialize-ServiceAccountBitwardenSession`    | Exists (Sprint-0007) | Per-service-account `At Startup` script: login + unlock + write User-scope `BW_SESSION`                                        |
+| `Refresh-BWSession`                            | Exists (Sprint-0007) | Validate `BW_SESSION`, re-unlock if needed, update the service-account User-scope token, emit structured errors                |
+| `Update-ServiceAccountBWCredentialFile`        | Exists (Sprint-0007) | Replace the per-(host, service-account) DPAPI credential files (wraps `Get-BitWardenCredential -Replace`)                      |
 | `Test-BWSession`                               | Needs implementation | Return a simple health signal for scheduled tasks, build steps, and monitoring                                                 |
-| `New-BitwardenPasswordFile`                    | Needs implementation | Materialize a short-lived clear-text password file in the protected credentials folder for `bw --passwordfile`                 |
-| `Remove-BitwardenPasswordFile`                 | Needs implementation | Best-effort deletion/cleanup of transient password files                                                                       |
-| `Provision-ServiceAccountBWCredential`         | Needs implementation | Wrapper/orchestrator for first-time creation and `-Replace` rotation of service-account Bitwarden credential files             |
 | `Update-WindowsServiceCredential`              | Needs implementation | Update the logon password for all Windows services using the rotated account                                                   |
 | `Update-ScheduledTaskCredential`               | Needs implementation | Update all scheduled tasks that run as the rotated service account                                                             |
 | `Test-ServiceAccountBitwardenAccess`           | Needs implementation | Smoke-test secret access after provisioning or rotation                                                                        |
@@ -778,105 +805,36 @@ Bitwarden Secrets Manager remains a future improvement path, not the current des
 
 ## Setting Up Credentials for Services without Ansible
 
-Some hosts need to be brought online before the Ansible controller exists or before the
-host has been enrolled into the normal onboarding flow. In that case a human with local
-administrator rights can create the service-account DPAPI files manually.
+The manual (no-Ansible) provisioning runbook for `SvcBuildmaster` and
+`SvcProGet` lives in the new-computer setup document so the workstation onboarding
+flow has a single linear sequence:
 
-### Preconditions
+→ See [NewComputerSetup.md §9.4 — Manually provision DPAPI Bitwarden credentials for
+the service accounts](NewComputerSetup.md#94-manually-provision-dpapi-bitwarden-credentials-for-the-service-accounts).
 
-- The local Windows service account already exists.
-- The operator knows the **Windows password** for that service account.
-- The operator knows the Bitwarden username plus the Bitwarden login and unlock/master
-  passwords that should be bound to that service account.
-- The operator is working from an elevated PowerShell 7 session.
+That section is the authoritative checklist (9.4.1 → 9.4.9) and covers:
 
-### Step 1: Create and ACL the credentials folder
+1. Creating and ACL-ing `C:\ProgramData\ATAP\BitwardenCredentials\<ServiceAccount>\`
+2. Launching a PowerShell session as the service account
+3. Generating the `BW_Login_Credential.xml` and `BW_Unlock_Credential.xml` DPAPI files
+4. Validating the resulting files
+5. Registering the per-service-account `Initialize-ServiceAccountBitwardenSession`
+   startup task
+6. Registering the per-service-account `Refresh-BWSession` recurring task
+7. Smoke-testing secret retrieval via `Get-SecretATAP`
 
-```powershell
-$serviceAccount = 'SvcBuildmaster'
-$credentialDirectory = "C:\ProgramData\ATAP\BitwardenCredentials\$serviceAccount"
-
-New-Item -ItemType Directory -Path $credentialDirectory -Force | Out-Null
-
-$acl = Get-Acl $credentialDirectory
-$acl.SetAccessRuleProtection($true, $false)
-$acl.Access | ForEach-Object { [void]$acl.RemoveAccessRule($_) }
-
-$rules = @(
-  New-Object System.Security.AccessControl.FileSystemAccessRule($serviceAccount, 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow'),
-  New-Object System.Security.AccessControl.FileSystemAccessRule('SYSTEM', 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow'),
-  New-Object System.Security.AccessControl.FileSystemAccessRule('Administrators', 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow')
-)
-
-foreach ($rule in $rules) {
-  $acl.AddAccessRule($rule)
-}
-
-Set-Acl -Path $credentialDirectory -AclObject $acl
-```
-
-### Step 2: Launch PowerShell as the service account
-
-This is the PowerShell-7 equivalent of `runas.exe /user:<service-account> pwsh`; both
-launch a process under the service account's security context. `Start-Process
--Credential` is preferred in PowerShell 7 because it integrates with the credential
-object and does not require entering the password in a separate `runas` prompt.
-
-```powershell
-$serviceCredential = Get-Credential -UserName ".\$serviceAccount" -Message 'Enter the Windows password for the service account'
-
-Start-Process pwsh `
-  -Credential $serviceCredential `
-  -WorkingDirectory $credentialDirectory `
-  -ArgumentList '-NoExit', '-Command', "Set-Location '$credentialDirectory'"
-```
-
-### Step 3: In that service-account session, create the DPAPI files
-
-Run the following **inside the PowerShell window that is running as the service
-account**. The `Read-Host` prompts are interactive by design; do not adapt this snippet
-for unattended CI use. The Ansible bootstrap path (R-02 ansibleAdmin model) is the
-correct choice for any automated, non-interactive provisioning workflow.
-
-```powershell
-Import-Module ATAP.Utilities.Security.Powershell
-
-$credentialDirectory = 'C:\ProgramData\ATAP\BitwardenCredentials\SvcBuildmaster'
-$bitwardenUserName = 'svcbuildmaster@example.com'
-
-$loginSecure = Read-Host 'Bitwarden login password' -AsSecureString
-$unlockSecure = Read-Host 'Bitwarden unlock/master password' -AsSecureString
-
-$loginPlain = [System.Net.NetworkCredential]::new('', $loginSecure).Password
-$unlockPlain = [System.Net.NetworkCredential]::new('', $unlockSecure).Password
-
-try {
-  Get-BitWardenCredential `
-    -CredentialDirectory $credentialDirectory `
-    -BitWardenUserName $bitwardenUserName `
-    -BitWardenLoginPassword $loginPlain `
-    -BitWardenUnlockPassword $unlockPlain `
-    -Replace
-}
-finally {
-  Remove-Variable loginPlain, unlockPlain, loginSecure, unlockSecure -ErrorAction SilentlyContinue
-}
-```
-
-### Step 4: Validate and register refresh
-
-- Validate that the two DPAPI `.xml` files were created in the service-account folder.
-- Register the scheduled refresh task for that same service account.
-- Run a smoke test that confirms the service account can establish `BW_SESSION` and
-  read at least one known Bitwarden item.
+When the Ansible controller does exist, the same outcome is produced by the
+`ansibleAdmin` first-boot provisioning model described in
+[R-02](#r-02-dpapi-credential-file-approach-for-service-accounts-evaluation).
 
 ### Important Note about `--passwordfile`
 
 Do **not** point `bw --passwordfile` at the DPAPI `.xml` files created by
 `Get-BitWardenCredential`. Those files are encrypted containers for PowerShell and are
-not readable by the Bitwarden CLI. The refresh logic must instead decrypt in memory,
-emit a short-lived clear-text temp file in the protected folder, pass that path to
-`bw`, and then delete the temp file immediately.
+not readable by the Bitwarden CLI. The refresh logic in
+`Initialize-ServiceAccountBitwardenSession` and `Refresh-BWSession` instead decrypts in
+memory, emits a short-lived clear-text temp file in the protected folder, passes that
+path to `bw`, and then deletes the temp file immediately in a `finally` block.
 
 ## Consequences and Trade-offs
 
@@ -980,7 +938,11 @@ mandates managed service account credentials.
 ## References
 
 - [src/ATAP.Utilities.Security.Powershell/public/Get-BitWardenCredential.ps1](../src/ATAP.Utilities.Security.Powershell/public/Get-BitWardenCredential.ps1)
-- [src/ATAP.Utilities.Security.Powershell/public/Get-BitwardenSecret.ps1](../src/ATAP.Utilities.Security.Powershell/public/Get-BitwardenSecret.ps1)
+- [src/ATAP.Utilities.BuildTooling.PowerShell/public/Get-SecretATAP.ps1](../src/ATAP.Utilities.BuildTooling.PowerShell/public/Get-SecretATAP.ps1)
+- [src/ATAP.Utilities.BuildTooling.PowerShell/public/Get-SecretATAPBitwarden.ps1](../src/ATAP.Utilities.BuildTooling.PowerShell/public/Get-SecretATAPBitwarden.ps1)
+- [src/ATAP.Utilities.BuildTooling.PowerShell/public/Initialize-ServiceAccountBitwardenSession.ps1](../src/ATAP.Utilities.BuildTooling.PowerShell/public/Initialize-ServiceAccountBitwardenSession.ps1)
+- [src/ATAP.Utilities.BuildTooling.PowerShell/public/Refresh-BWSession.ps1](../src/ATAP.Utilities.BuildTooling.PowerShell/public/Refresh-BWSession.ps1)
+- [src/ATAP.Utilities.BuildTooling.PowerShell/public/Update-ServiceAccountBWCredentialFile.ps1](../src/ATAP.Utilities.BuildTooling.PowerShell/public/Update-ServiceAccountBWCredentialFile.ps1)
 - [src/ATAP.Utilities.PowerShell/Profiles/LoginScript.ps1](../src/ATAP.Utilities.PowerShell/Profiles/LoginScript.ps1)
 - [Bitwarden CLI Documentation](https://bitwarden.com/help/cli/)
 - [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/)

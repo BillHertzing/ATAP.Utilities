@@ -57,7 +57,8 @@ Describe 'Export-RuleToTextFile' -Tag 'Unit' {
         ConnectionString  = 'Server=mock-sql;Database=ATAPUtilities;Integrated Security=True;'
       }
       $connection | Add-Member -MemberType ScriptMethod -Name Dispose -Value { }
-      $connection
+      $connection | Add-Member -MemberType ScriptMethod -Name Close -Value { }
+      [pscustomobject]@{ Connection = $connection; IsCallerOwned = $false }
     }
 
     Mock Invoke-DatabaseSqlDataSet {
@@ -73,7 +74,7 @@ Describe 'Export-RuleToTextFile' -Tag 'Unit' {
     $result = Export-RuleToTextFile `
       -RuleName 'RuleOne' `
       -LanguageKind 'CSharp' `
-      -BitwardenSecretName 'rules-db' `
+      -DBConnectionStringSecretName 'rules-db' `
       -OutputPath $script:outputFile
 
     $result | Should -Be $script:outputFile
@@ -81,7 +82,7 @@ Describe 'Export-RuleToTextFile' -Tag 'Unit' {
     Get-Content -LiteralPath $script:outputFile -Raw | Should -Match 'RuleOne'
 
     Should -Invoke -CommandName Resolve-DatabaseSqlConnection -Times 1 -Exactly -ParameterFilter {
-      $BitwardenSecretName -eq 'rules-db'
+      $DBConnectionStringSecretName -eq 'rules-db'
     }
     Should -Invoke -CommandName Invoke-DatabaseSqlDataSet -Times 1 -Exactly -ParameterFilter {
       $CommandText -eq 'dbo.GetRuleByName' -and

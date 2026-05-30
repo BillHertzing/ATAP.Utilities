@@ -52,11 +52,11 @@ Returns an example value.
       -SourceFiles $script:sourceFile `
       -WriteToDatabase `
       -SkipCSV `
-      -BitwardenSecretName 'rules-db'
+      -DBConnectionStringSecretName 'rules-db'
 
     $result.Success | Should -BeTrue
     Should -Invoke -CommandName Resolve-BuildToolingDatabaseSqlConnection -Times 1 -Exactly -ParameterFilter {
-      $BitwardenSecretName -eq 'rules-db'
+      $DBConnectionStringSecretName -eq 'rules-db'
     }
     Should -Invoke -CommandName Invoke-BuildToolingSqlQuery -Times 2 -Exactly
     Should -Invoke -CommandName Invoke-BuildToolingSqlQuery -Times 1 -ParameterFilter {

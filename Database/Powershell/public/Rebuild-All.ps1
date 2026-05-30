@@ -54,7 +54,8 @@ try {
   $helperScripts = @(
     'src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1',
     'src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1',
-    'src\ATAP.Utilities.Security.Powershell\public\Get-BitwardenSecret.ps1',
+    'src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-SecretATAPBitwarden.ps1',
+    'src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-SecretATAP.ps1',
     'src\ATAP.Utilities.DatabaseManagement.Powershell\public\New-ConnectionStringBuilderFromDbaTools.ps1',
     'src\ATAP.Utilities.DatabaseManagement.Powershell\public\Get-DatabaseCredentialsKey.ps1',
     'src\ATAP.Utilities.DatabaseManagement.Powershell\public\DatabaseProvisioning.ps1',
@@ -98,8 +99,8 @@ function get-tierAbbrev ([string]$envName) {
   }
 }
 
-# Retrieve the master connection string for an environment from Bitwarden and parse out
-# DatabaseHost and SqlInstance. Secret name pattern:
+# Retrieve the master connection string for an environment from the ATAP secret
+# store and parse out DatabaseHost and SqlInstance. Secret name pattern:
 #   dbConnectionString-master-localhost-<Dev|Exp>-<username>
 function get-connectionInfoFromVault ([string]$envName) {
   $tierAbbrev = get-tierAbbrev -envName $envName
@@ -107,14 +108,7 @@ function get-connectionInfoFromVault ([string]$envName) {
 
   Write-PSFMessage -Level Verbose -Message "Retrieving connection info for '$envName' from secret '$secretName'"
 
-  $secret = Get-BitwardenSecret -SecretName $secretName
-  $rawConnStr = if ($secret -is [System.Security.SecureString]) {
-    $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secret)
-    try { [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr) }
-    finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
-  } else {
-    [string]$secret
-  }
+  $rawConnStr = Get-SecretATAP -SecretName $secretName -SecretField 'password'
 
   if ([string]::IsNullOrWhiteSpace($rawConnStr)) {
     throw "Secret '$secretName' returned an empty connection string"

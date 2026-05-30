@@ -14,7 +14,7 @@ BeforeAll {
       param(
         [hashtable]$OriginalPSBoundParameters,
         [object]$SqlConnection,
-        [string]$BitwardenSecretName,
+        [string]$DBConnectionStringSecretName,
         [string]$DatabaseHost,
         [string]$InstanceName,
         [string]$DatabaseName,
@@ -57,7 +57,7 @@ AfterAll {
 Describe 'New-DeveloperScratchDb' -Tag 'Unit' {
   BeforeEach {
     $script:fakeConnection = [PSCustomObject]@{ State = 'Open' }
-    Mock Resolve-DatabaseSqlConnection { $script:fakeConnection }
+    Mock Resolve-DatabaseSqlConnection { [pscustomobject]@{ Connection = $script:fakeConnection; IsCallerOwned = $false } }
     Mock Invoke-DatabaseSqlScalar { $false }
     Mock Invoke-DatabaseSqlNonQuery { 0 }
   }
@@ -87,11 +87,11 @@ Describe 'New-DeveloperScratchDb' -Tag 'Unit' {
     Assert-MockCalled Invoke-DatabaseSqlNonQuery -Times 0 -Exactly -Scope It
   }
 
-  It 'accepts BitwardenSecretName as its own parameter set' {
-    New-DeveloperScratchDb -Application 'AceCommander' -GitHandle 'wh' -BitwardenSecretName 'db-secret' | Out-Null
+  It 'accepts DBConnectionStringSecretName as its own parameter set' {
+    New-DeveloperScratchDb -Application 'AceCommander' -GitHandle 'wh' -DBConnectionStringSecretName 'db-secret' | Out-Null
 
     Assert-MockCalled Resolve-DatabaseSqlConnection -Times 1 -Exactly -Scope It -ParameterFilter {
-      $BitwardenSecretName -eq 'db-secret'
+      $DBConnectionStringSecretName -eq 'db-secret'
     }
   }
 

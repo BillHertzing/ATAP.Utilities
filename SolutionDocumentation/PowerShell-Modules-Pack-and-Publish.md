@@ -64,10 +64,10 @@ for the current automation surface.
 
 PowerShellGet has two generations:
 
-| Generation      | Repo cmdlets                    | Publish cmdlet       | Status                                                                                                  |
-| --------------- | ------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------- |
-| v2 (legacy)     | `Register-PSRepository`         | `Publish-Module`     | Used by `Publish-PSPackage.ps1` (legacy Jenkins flow — being retired)                                   |
-| v3 (PSResource) | `Register-PSResourceRepository` | `Publish-PSResource` | **What's wrapped** — `Publish-PSModuleToProGet` calls `Publish-PSResource -NupkgPath` against ProGet    |
+| Generation      | Repo cmdlets                    | Publish cmdlet       | Status                                                                                               |
+| --------------- | ------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------- |
+| v2 (legacy)     | `Register-PSRepository`         | `Publish-Module`     | Used by `Publish-PSPackage.ps1` (legacy Jenkins flow — being retired)                                |
+| v3 (PSResource) | `Register-PSResourceRepository` | `Publish-PSResource` | **What's wrapped** — `Publish-PSModuleToProGet` calls `Publish-PSResource -NupkgPath` against ProGet |
 
 PSResource v3 is faster, supports SemVer 2.0 prereleases more reliably, and
 matches the cmdlet surface used by `dotnet`'s NuGet client. The legacy
@@ -118,13 +118,13 @@ successful Experimental build pushes a `.nupkg` there exactly once. Movement
 of that same `.nupkg` to the higher feeds is by **promotion**
 (`Promote-ProGetPackage`, see §12), not by re-publishing.
 
-| Tier         | Label name | ProGet feed name             | How a `.nupkg` arrives                                  |
-| ------------ | ---------- | ---------------------------- | ------------------------------------------------------- |
-| Experimental | `Sprint`   | `PowershellGet-experimental` | `Publish-PSModuleToProGet` (the only publish target)    |
-| Development  | `Alpha`    | `PowershellGet-development`  | `Promote-ProGetPackage` from Experimental, after gates  |
-| Integration  | `Beta`     | `PowershellGet-integration`  | `Promote-ProGetPackage` from Development, after gates   |
-| QA           | `QA`       | `PowershellGet-qa`           | `Promote-ProGetPackage` from Integration, after gates   |
-| Production   | *(none)*   | `PowershellGet-stable`       | `Promote-ProGetPackage` from QA, after manual approval  |
+| Tier         | Label name | ProGet feed name             | How a `.nupkg` arrives                                 |
+| ------------ | ---------- | ---------------------------- | ------------------------------------------------------ |
+| Experimental | `Sprint`   | `PowershellGet-experimental` | `Publish-PSModuleToProGet` (the only publish target)   |
+| Development  | `Alpha`    | `PowershellGet-development`  | `Promote-ProGetPackage` from Experimental, after gates |
+| Integration  | `Beta`     | `PowershellGet-integration`  | `Promote-ProGetPackage` from Development, after gates  |
+| QA           | `QA`       | `PowershellGet-qa`           | `Promote-ProGetPackage` from Integration, after gates  |
+| Production   | _(none)_   | `PowershellGet-stable`       | `Promote-ProGetPackage` from QA, after manual approval |
 
 There is no `-Tier` or `-FeedTier` parameter on `Publish-PSModuleToProGet`:
 the cmdlet always targets `PowershellGet-experimental`. The Label-to-tier
@@ -159,8 +159,9 @@ See [BuildMaster-ProGet-CSharp-Package-Pipeline.md](BuildMaster-ProGet-CSharp-Pa
 
 ProGet requires an API key for write operations. Resolution order:
 
-1. **Bitwarden** — call `Get-BitWardenSecret -SecretName "ProGet_PowerShellGet_${Tier}_ApiKey"`.
-   Wrapped in `try/catch`; failure falls through to env var.
+1. **Bitwarden** — call `Get-SecretATAP -SecretName "ProGet_PowerShellGet_${Tier}_ApiKey"`.
+   The configured provider may be Password Manager (`bw`) or Secrets Manager
+   (`bws`). Wrapped in `try/catch`; failure falls through to env var.
 2. **User-scope environment variable** `PROGET_POWERSHELLGET_APIKEY_<TIER>`
    (e.g. `PROGET_POWERSHELLGET_APIKEY_SPRINT`).
 3. If neither resolves → throw with both lookup names included in the
@@ -240,7 +241,7 @@ consumers:
 
 `-WhatIf` short-circuits before `Publish-PSResource`. The returned object
 still carries the resolved feed name + URI, so callers can verify the
-publish *plan* without contacting ProGet:
+publish _plan_ without contacting ProGet:
 
 ```powershell
 Publish-PSModuleToProGet -NupkgPath ./out/Foo.0.1.0-Sprint042.nupkg -WhatIf
@@ -329,15 +330,15 @@ the promotion mechanism — `Promote-ProGetPackage` is.
 
 ## 13. Common failures and remedies
 
-| Error | Cause | Fix |
-| ----- | ----- | --- |
+| Error                                                                           | Cause                                                                                                                                                               | Fix                                                                                                                                                                                |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `feed URI for tier X is not configured` (raised inside `Promote-ProGetPackage`) | Neither `$global:settings` nor the env var holds the URI for the **target** feed of a promotion. `Publish-PSModuleToProGet` itself only needs the Experimental URI. | `[Environment]::SetEnvironmentVariable('PROGET_POWERSHELLGET_FEED_URI_DEVELOPMENT','http://localhost:50000/nuget/PowershellGet-development/','User')` (substitute the target tier) |
-| `Unable to resolve ProGet API key for tier X` | Bitwarden secret missing AND env var unset | Add Bitwarden item `ProGet_PowerShellGet_<Tier>_ApiKey` or set `PROGET_POWERSHELLGET_APIKEY_<TIER>` |
-| `Publish-PSResource: A NuGet feed already contains this package` | Same `Module.Version` already published | Bump the height (commit something) and rebuild; ProGet rejects re-uploads |
-| `Publish-PSResource: ResourceUnauthorized` | API key invalid or wrong tier | Verify the key in ProGet UI (Admin → API Keys) matches the tier |
-| `NupkgPath does not exist or is not a file` | Build did not produce the `.nupkg` (path mismatch) | Confirm the pack step ran; check `$meta.OutputRoot/packages-nupkg/` |
-| `NupkgPath must have a .nupkg extension` | A folder path was passed instead of a file | Pass the resolved `.nupkg`, not the module folder |
-| `Repository <name> already registered with different URI` | A previous run registered a stale URI | The cmdlet will `Set-PSResourceRepository` to fix; if it loops, manually `Unregister-PSResourceRepository` and retry |
+| `Unable to resolve ProGet API key for tier X`                                   | Bitwarden secret missing AND env var unset                                                                                                                          | Add Bitwarden item `ProGet_PowerShellGet_<Tier>_ApiKey` or set `PROGET_POWERSHELLGET_APIKEY_<TIER>`                                                                                |
+| `Publish-PSResource: A NuGet feed already contains this package`                | Same `Module.Version` already published                                                                                                                             | Bump the height (commit something) and rebuild; ProGet rejects re-uploads                                                                                                          |
+| `Publish-PSResource: ResourceUnauthorized`                                      | API key invalid or wrong tier                                                                                                                                       | Verify the key in ProGet UI (Admin → API Keys) matches the tier                                                                                                                    |
+| `NupkgPath does not exist or is not a file`                                     | Build did not produce the `.nupkg` (path mismatch)                                                                                                                  | Confirm the pack step ran; check `$meta.OutputRoot/packages-nupkg/`                                                                                                                |
+| `NupkgPath must have a .nupkg extension`                                        | A folder path was passed instead of a file                                                                                                                          | Pass the resolved `.nupkg`, not the module folder                                                                                                                                  |
+| `Repository <name> already registered with different URI`                       | A previous run registered a stale URI                                                                                                                               | The cmdlet will `Set-PSResourceRepository` to fix; if it loops, manually `Unregister-PSResourceRepository` and retry                                                               |
 
 ---
 

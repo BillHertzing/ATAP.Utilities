@@ -102,7 +102,8 @@ function Resolve-BuildToolingDatabaseSqlConnection {
     [object] $SqlConnection,
 
     [Parameter(Mandatory = $false)]
-    [string] $BitwardenSecretName,
+    [Alias('BitwardenSecretName', 'BitwardenSecret', 'SecretName')]
+    [string] $DBConnectionStringSecretName,
 
     [Parameter(Mandatory = $false)]
     [string] $DatabaseHost,
@@ -198,7 +199,7 @@ function Resolve-BuildToolingDatabaseSqlConnection {
   return Resolve-DatabaseSqlConnection `
     -OriginalPSBoundParameters $effectiveBoundParameters `
     -SqlConnection $SqlConnection `
-    -BitwardenSecretName $BitwardenSecretName `
+    -DBConnectionStringSecretName $DBConnectionStringSecretName `
     -DatabaseHost $effectiveDatabaseHost `
     -InstanceName $effectiveInstanceName `
     -DatabaseName $effectiveDatabaseName `

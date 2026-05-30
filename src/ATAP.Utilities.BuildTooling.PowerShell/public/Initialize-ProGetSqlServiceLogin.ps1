@@ -46,9 +46,9 @@ https://docs.inedo.com/docs/installation/configuration-files
     [AllowNull()]
     [object]$SqlConnection,
 
-    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'BitwardenSecretName')]
-    [Alias('BitwardenSecret', 'SecretName')]
-    [string]$BitwardenSecretName,
+    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'DBConnectionStringSecretName')]
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string]$DBConnectionStringSecretName,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [Alias('HostName', 'ServerInstance')]
@@ -61,7 +61,7 @@ https://docs.inedo.com/docs/installation/configuration-files
     [string]$SqlInstance,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'SqlConnection')]
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'BitwardenSecretName')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'DBConnectionStringSecretName')]
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [string]$DatabaseName = 'ProGet',
 
@@ -97,6 +97,9 @@ https://docs.inedo.com/docs/installation/configuration-files
   $fn = 'Initialize-ProGetSqlServiceLogin'
   $mn = 'ATAP.IAC'
 
+  $openSQLConnection = $null
+  $isCallerOwnedConnection = $false
+
   try {
     if (-not (Get-Command -Name 'Resolve-BuildToolingDatabaseSqlConnection' -CommandType Function -ErrorAction SilentlyContinue) -or
       -not (Get-Command -Name 'Invoke-BuildToolingSqlQuery' -CommandType Function -ErrorAction SilentlyContinue)) {
@@ -106,10 +109,10 @@ https://docs.inedo.com/docs/installation/configuration-files
       }
     }
 
-    $resolvedSqlConnection = Resolve-BuildToolingDatabaseSqlConnection `
+    $resolution = Resolve-BuildToolingDatabaseSqlConnection `
       -OriginalPSBoundParameters $PSBoundParameters `
       -SqlConnection $SqlConnection `
-      -BitwardenSecretName $BitwardenSecretName `
+      -DBConnectionStringSecretName $DBConnectionStringSecretName `
       -DatabaseHost $DatabaseHost `
       -SqlInstance $SqlInstance `
       -InstanceName $InstanceName `
@@ -122,6 +125,9 @@ https://docs.inedo.com/docs/installation/configuration-files
       -Settings $Settings `
       -DefaultDatabaseHost 'localhost' `
       -DefaultDatabaseName 'master'
+
+    $openSQLConnection = $resolution.Connection
+    $isCallerOwnedConnection = [bool]$resolution.IsCallerOwned
 
     $escapedServiceAccount = $ServiceAccount.Replace('''', '''''')
     $escapedDatabaseName = $DatabaseName.Replace('''', '''''')
@@ -178,16 +184,16 @@ END;';
 EXEC sp_executesql @RoleSql, N'@ServiceAccount sysname', @ServiceAccount = @ServiceAccount;
 "@
 
-    $targetDescription = "$($resolvedSqlConnection.DataSource)/$DatabaseName"
+    $targetDescription = "$($openSQLConnection.DataSource)/$DatabaseName"
     if ($PSCmdlet.ShouldProcess($targetDescription, "Ensure SQL login, user, and db_owner membership for $ServiceAccount")) {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Applying SQL principal grants on $targetDescription for account $ServiceAccount"
 
-      Invoke-BuildToolingSqlQuery -SqlConnection $resolvedSqlConnection -Query $sql -As NonQuery | Out-Null
+      Invoke-BuildToolingSqlQuery -SqlConnection $openSQLConnection -Query $sql -As NonQuery | Out-Null
 
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'SQL principal grants applied successfully'
 
       [PSCustomObject]@{
-        SqlInstance    = $resolvedSqlConnection.DataSource
+        SqlInstance    = $openSQLConnection.DataSource
         DatabaseName   = $DatabaseName
         ServiceAccount = $ServiceAccount
         Status         = 'Success'
@@ -195,6 +201,17 @@ EXEC sp_executesql @RoleSql, N'@ServiceAccount sysname', @ServiceAccount = @Serv
     }
   } catch {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Failed to grant SQL access for ProGet service account. $($_.Exception.Message)"
+    if ($null -ne $openSQLConnection) {
+      try { $openSQLConnection.Close() } catch { }
+      try { $openSQLConnection.Dispose() } catch { }
+      $openSQLConnection = $null
+    }
     throw
+  } finally {
+    if (-not $isCallerOwnedConnection -and $null -ne $openSQLConnection) {
+      try { $openSQLConnection.Close() } catch { }
+      try { $openSQLConnection.Dispose() } catch { }
+      $openSQLConnection = $null
+    }
   }
 }

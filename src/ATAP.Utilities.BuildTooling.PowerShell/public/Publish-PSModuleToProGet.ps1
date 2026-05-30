@@ -114,19 +114,19 @@ function Publish-PSModuleToProGet {
         $feedUri = $feed.EndpointUri
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved experimental feed '$feedName' at '$feedUri' from global settings"
 
-        # 3. Resolve API key: Bitwarden -> configured env var -> admin fallback.
+        # 3. Resolve API key: ATAP secret store -> configured env var -> admin fallback.
         $apiKey = $null
         $apiKeySource = $null
-        $bwCmd = Get-Command -Name 'Get-BitwardenSecret' -ErrorAction SilentlyContinue
-        if ($null -ne $bwCmd) {
+        $secretCmd = Get-Command -Name 'Get-SecretATAP' -ErrorAction SilentlyContinue
+        if ($null -ne $secretCmd) {
             try {
                 $secretName = 'ProGet_PowerShellGet_Experimental_ApiKey'
-                $apiKey = Get-BitwardenSecret -SecretName $secretName
+                $apiKey = Get-SecretATAP -SecretName $secretName
                 if (-not [string]::IsNullOrWhiteSpace([string]$apiKey)) {
-                    $apiKeySource = "Bitwarden secret '$secretName'"
+                    $apiKeySource = "ATAP secret store item '$secretName'"
                 }
             } catch {
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Get-BitwardenSecret threw; will fall back to env var'
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Get-SecretATAP threw; will fall back to env var'
                 $apiKey = $null
             }
         }
@@ -150,7 +150,7 @@ function Publish-PSModuleToProGet {
             }
         }
         if ([string]::IsNullOrWhiteSpace([string]$apiKey)) {
-            $msg = "Unable to resolve ProGet API key for Experimental feed. Expected Get-BitwardenSecret -SecretName 'ProGet_PowerShellGet_Experimental_ApiKey', configured env var '$($feed.ApiKeyName)', or admin fallback 'PROGET_ADMIN_API_KEY'."
+            $msg = "Unable to resolve ProGet API key for Experimental feed. Expected Get-SecretATAP -SecretName 'ProGet_PowerShellGet_Experimental_ApiKey', configured env var '$($feed.ApiKeyName)', or admin fallback 'PROGET_ADMIN_API_KEY'."
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
             throw $msg
         }

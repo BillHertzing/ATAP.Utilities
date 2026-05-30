@@ -182,24 +182,24 @@ Describe 'V4-E08 skip-marker logic: completion marker prevents double-execution'
         )
         New-Item -ItemType Directory -Path $script:TempContextDir -Force | Out-Null
 
-        # Dot-source the runner so the helper functions are available in scope.
-        # The runner ends with a call to Invoke-DatabasePackageBuildMasterStage,
-        # so we cannot dot-source the file as-is. Read the file, strip the
-        # final invocation, and execute the helper-function definitions only.
-        $runnerLines = Get-Content -LiteralPath $script:RunnerPath
-        # Find the last call to the public worker and cut there.
-        $lastInvokeIndex = -1
-        for ($i = $runnerLines.Count - 1; $i -ge 0; $i--) {
-            if ($runnerLines[$i] -match '^\s*Invoke-DatabasePackageBuildMasterStage\b') {
-                $lastInvokeIndex = $i
-                break
-            }
+        # Load only the runner's function definitions. Dot-sourcing the whole
+        # file would evaluate the mandatory script param block.
+        $parseTokens = $null
+        $parseErrors = $null
+        $runnerAst = [System.Management.Automation.Language.Parser]::ParseFile(
+            $script:RunnerPath,
+            [ref] $parseTokens,
+            [ref] $parseErrors
+        )
+        if ($parseErrors.Count -gt 0) {
+            throw "Failed to parse runner: $($parseErrors[0].Message)"
         }
-        $helperScript = if ($lastInvokeIndex -gt 0) {
-            ($runnerLines[0..($lastInvokeIndex - 1)] -join [Environment]::NewLine)
-        } else {
-            $script:RunnerText
-        }
+        $helperScript = (
+            $runnerAst.FindAll({
+                param($node)
+                $node -is [System.Management.Automation.Language.FunctionDefinitionAst]
+            }, $true) | ForEach-Object { $_.Extent.Text }
+        ) -join [Environment]::NewLine
 
         # Stub Write-PSFMessage so dot-sourcing in a profile-less Pester run
         # does not depend on PSFramework.

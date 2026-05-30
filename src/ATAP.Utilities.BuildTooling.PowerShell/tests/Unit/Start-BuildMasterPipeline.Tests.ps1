@@ -10,6 +10,36 @@ BeforeAll {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
   }
 
+  # Hermetic Get-PVal: the cmdlet's begin-block loader dot-sources the
+  # stable-branch Get-ParameterValueFromNeoConfigurationRoot.ps1, whose
+  # [Alias('Get-PVal')] does not propagate into the Pester test scope. Provide a
+  # local stub + Script-scope alias so the test never depends on the stable
+  # worktree being present (mirrors Start-BuildMasterDeployment.Tests.ps1).
+  function Get-ParameterValueFromNeoConfigurationRoot {
+    param(
+      [string]$ParameterName,
+      [hashtable]$originalPSBoundParameters,
+      $DefaultValue
+    )
+
+    if ($null -ne $originalPSBoundParameters -and $originalPSBoundParameters.ContainsKey($ParameterName)) {
+      $boundValue = $originalPSBoundParameters[$ParameterName]
+      if (-not [string]::IsNullOrWhiteSpace([string]$boundValue)) {
+        return $boundValue
+      }
+    }
+    if (-not [string]::IsNullOrWhiteSpace([string]$DefaultValue)) {
+      return $DefaultValue
+    }
+    $key = if ($null -ne $global:configRootKeys) { $global:configRootKeys["${ParameterName}ConfigRootKey"] } else { $null }
+    if ([string]::IsNullOrWhiteSpace($key)) { $key = $ParameterName }
+    if ($null -ne $global:settings) {
+      return [string]$global:settings[$key]
+    }
+    return $null
+  }
+  Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Script -Force
+
   $script:oldConfigRootKeys = $global:configRootKeys
   $script:oldSettings = $global:settings
   $script:savedApiKey = [Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')

@@ -7,7 +7,7 @@ for a given 5-Tier tier.
 Maps a tier name (Sprint/Alpha/Beta/QA/Production) to a PowerShellGet feed
 name and endpoint from $global:Settings using the ProGet feed collection
 defined by ATAP.Utilities.ConfigRootKeys.PowerShell and host settings,
-resolves the API key via Get-BitwardenSecret or the feed's configured
+resolves the API key via Get-SecretATAP or the feed's configured
 ApiKeyName environment variable, ensures a matching
 PSResourceRepository is registered, and invokes Publish-PSResource.
 
@@ -117,32 +117,31 @@ function Publish-PSModuleToProGetFeed {
     $feedUri = $feed.EndpointUri
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved tier '$Tier' to feed '$feedName' at '$feedUri' from global settings"
 
-    # 3. Resolve API key: per-tier Bitwarden preferred, then configured User env
-    #    var, then admin-key fallback (PROGET_ADMIN_API_KEY).
+    # 3. Resolve API key: per-tier ATAP secret store preferred, then configured
+    #    User env var, then admin-key fallback (PROGET_ADMIN_API_KEY).
     #
     # SCOPE CREEP — REMOVE ADMIN-KEY FALLBACK ONCE PER-TIER KEYS EXIST
     # ----------------------------------------------------------------
     # The PROGET_ADMIN_API_KEY fallback below is a temporary bootstrap so local
     # builds and early sprint pipelines can publish before per-tier ProGet API
-    # keys are minted, stored in Bitwarden, and documented. Once every tier
-    # (Sprint/Alpha/Beta/QA/Production) has its own key in Bitwarden under
-    # 'ProGet_PowerShellGet_<Tier>_ApiKey' and a documented rotation plan
-    # exists, delete the fallback block and let this function throw when the
-    # tier-specific key is missing. See scope-creep idea filed against this
-    # function for the full backlog.
+    # keys are minted, stored in the ATAP secret store, and documented. Once
+    # every tier (Sprint/Alpha/Beta/QA/Production) has its own key in the
+    # secret store under 'ProGet_PowerShellGet_<Tier>_ApiKey' and a documented
+    # rotation plan exists, delete the fallback block and let this function
+    # throw when the tier-specific key is missing.
     $apiKey = $null
     $apiKeySource = $null
-    $bwCmd = Get-Command -Name 'Get-BitwardenSecret' -ErrorAction SilentlyContinue
-    if ($null -ne $bwCmd) {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Attempting Get-BitwardenSecret for tier '$Tier'"
+    $secretCmd = Get-Command -Name 'Get-SecretATAP' -ErrorAction SilentlyContinue
+    if ($null -ne $secretCmd) {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Attempting Get-SecretATAP for tier '$Tier'"
       try {
         $secretName = "ProGet_PowerShellGet_${Tier}_ApiKey"
-        $apiKey = Get-BitwardenSecret -SecretName $secretName
+        $apiKey = Get-SecretATAP -SecretName $secretName
         if (-not [string]::IsNullOrWhiteSpace([string]$apiKey)) {
-          $apiKeySource = "Bitwarden secret '$secretName'"
+          $apiKeySource = "ATAP secret store item '$secretName'"
         }
       } catch {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Get-BitwardenSecret threw; will fall back to env var'
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Get-SecretATAP threw; will fall back to env var'
         $apiKey = $null
       }
     }
@@ -169,12 +168,12 @@ function Publish-PSModuleToProGetFeed {
         $apiKeySource = "User env var '$adminEnvName' (admin fallback)"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message (
           "Using PROGET_ADMIN_API_KEY admin fallback for tier '$Tier' — provision " +
-          "'ProGet_PowerShellGet_${Tier}_ApiKey' in Bitwarden to remove this fallback."
+          "'ProGet_PowerShellGet_${Tier}_ApiKey' in the ATAP secret store to remove this fallback."
         )
       }
     }
     if ([string]::IsNullOrWhiteSpace([string]$apiKey)) {
-      $msg = "Unable to resolve ProGet API key for tier '$Tier'. Expected Get-BitwardenSecret -SecretName 'ProGet_PowerShellGet_${Tier}_ApiKey', configured env var '$($feed.ApiKeyName)', or admin fallback 'PROGET_ADMIN_API_KEY'."
+      $msg = "Unable to resolve ProGet API key for tier '$Tier'. Expected Get-SecretATAP -SecretName 'ProGet_PowerShellGet_${Tier}_ApiKey', configured env var '$($feed.ApiKeyName)', or admin fallback 'PROGET_ADMIN_API_KEY'."
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
       throw $msg
     }

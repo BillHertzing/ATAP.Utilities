@@ -76,24 +76,24 @@ Describe 'Publish-PSModuleToProGet' -Tag 'Unit' {
 
     Context 'Input validation' {
         It 'Throws when NupkgPath does not exist' {
-            function global:Get-BitwardenSecret { param([string]$SecretName) return 'dummy' }
+            function global:Get-SecretATAP { param([string]$SecretName) return 'dummy' }
             try {
                 { Publish-PSModuleToProGet -NupkgPath 'C:/does/not/exist.nupkg' } |
                     Should -Throw -ExpectedMessage '*does not exist*'
             } finally {
-                Remove-Item Function:\Get-BitwardenSecret -ErrorAction SilentlyContinue
+                Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
             }
         }
 
         It 'Throws when NupkgPath is not a .nupkg' {
-            function global:Get-BitwardenSecret { param([string]$SecretName) return 'dummy' }
+            function global:Get-SecretATAP { param([string]$SecretName) return 'dummy' }
             $wrongExt = Join-Path $script:tempRoot 'NotANupkg.zip'
             Set-Content -LiteralPath $wrongExt -Value 'x' -Encoding Ascii
             try {
                 { Publish-PSModuleToProGet -NupkgPath $wrongExt } |
                     Should -Throw -ExpectedMessage '*.nupkg extension*'
             } finally {
-                Remove-Item Function:\Get-BitwardenSecret -ErrorAction SilentlyContinue
+                Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
                 Remove-Item -LiteralPath $wrongExt -Force -ErrorAction SilentlyContinue
             }
         }
@@ -105,7 +105,7 @@ Describe 'Publish-PSModuleToProGet' -Tag 'Unit' {
 
     Context 'Experimental-only feed targeting' {
         It 'Always targets the powershellget-experimental feed (no -Tier parameter)' {
-            function global:Get-BitwardenSecret { param([string]$SecretName) return 'dummy' }
+            function global:Get-SecretATAP { param([string]$SecretName) return 'dummy' }
             try {
                 $result = Publish-PSModuleToProGet -NupkgPath $script:fakeNupkg
                 $result.FeedName | Should -Be 'powershellget-experimental'
@@ -113,7 +113,7 @@ Describe 'Publish-PSModuleToProGet' -Tag 'Unit' {
                 $result.Published | Should -BeTrue
                 Assert-MockCalled Publish-PSResource -Times 1 -Exactly -Scope It
             } finally {
-                Remove-Item Function:\Get-BitwardenSecret -ErrorAction SilentlyContinue
+                Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
             }
         }
 
@@ -125,7 +125,7 @@ Describe 'Publish-PSModuleToProGet' -Tag 'Unit' {
 
     Context 'WhatIf short-circuit' {
         It 'Does not invoke Publish-PSResource when -WhatIf is supplied' {
-            function global:Get-BitwardenSecret { param([string]$SecretName) return 'dummy' }
+            function global:Get-SecretATAP { param([string]$SecretName) return 'dummy' }
             try {
                 $result = Publish-PSModuleToProGet -NupkgPath $script:fakeNupkg -WhatIf
                 $result.Published       | Should -BeFalse
@@ -133,14 +133,14 @@ Describe 'Publish-PSModuleToProGet' -Tag 'Unit' {
                 $result.ResponseSummary | Should -Match 'WhatIf'
                 Assert-MockCalled Publish-PSResource -Times 0 -Exactly -Scope It
             } finally {
-                Remove-Item Function:\Get-BitwardenSecret -ErrorAction SilentlyContinue
+                Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
             }
         }
     }
 
     Context 'Output shape' {
         It 'Returns documented PSCustomObject (S8 of Pack-and-Publish doc)' {
-            function global:Get-BitwardenSecret { param([string]$SecretName) return 'dummy' }
+            function global:Get-SecretATAP { param([string]$SecretName) return 'dummy' }
             try {
                 $result = Publish-PSModuleToProGet -NupkgPath $script:fakeNupkg
                 $result.PSObject.Properties.Name | Should -Contain 'NupkgPath'
@@ -149,65 +149,65 @@ Describe 'Publish-PSModuleToProGet' -Tag 'Unit' {
                 $result.PSObject.Properties.Name | Should -Contain 'Published'
                 $result.PSObject.Properties.Name | Should -Contain 'ResponseSummary'
             } finally {
-                Remove-Item Function:\Get-BitwardenSecret -ErrorAction SilentlyContinue
+                Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
             }
         }
     }
 
     Context 'Idempotent re-push' {
         It 'Treats "already exists" from Publish-PSResource as no-op success' {
-            function global:Get-BitwardenSecret { param([string]$SecretName) return 'dummy' }
+            function global:Get-SecretATAP { param([string]$SecretName) return 'dummy' }
             Mock Publish-PSResource { throw 'Package version already exists in feed.' }
             try {
                 $result = Publish-PSModuleToProGet -NupkgPath $script:fakeNupkg
                 $result.Published       | Should -BeTrue
                 $result.ResponseSummary | Should -Match 'already present'
             } finally {
-                Remove-Item Function:\Get-BitwardenSecret -ErrorAction SilentlyContinue
+                Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
             }
         }
 
         It 'Re-throws non-idempotent Publish-PSResource failures' {
-            function global:Get-BitwardenSecret { param([string]$SecretName) return 'dummy' }
+            function global:Get-SecretATAP { param([string]$SecretName) return 'dummy' }
             Mock Publish-PSResource { throw 'ProGet 500 Internal Server Error' }
             try {
                 { Publish-PSModuleToProGet -NupkgPath $script:fakeNupkg } |
                     Should -Throw -ExpectedMessage '*500*'
             } finally {
-                Remove-Item Function:\Get-BitwardenSecret -ErrorAction SilentlyContinue
+                Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
             }
         }
     }
 
     Context 'PSResourceRepository registration' {
         It 'Registers the repository when missing' {
-            function global:Get-BitwardenSecret { param([string]$SecretName) return 'dummy' }
+            function global:Get-SecretATAP { param([string]$SecretName) return 'dummy' }
             Mock Get-PSResourceRepository { $null }
             try {
                 Publish-PSModuleToProGet -NupkgPath $script:fakeNupkg | Out-Null
                 Assert-MockCalled Register-PSResourceRepository -Times 1 -Exactly -Scope It
                 Assert-MockCalled Set-PSResourceRepository -Times 0 -Exactly -Scope It
             } finally {
-                Remove-Item Function:\Get-BitwardenSecret -ErrorAction SilentlyContinue
+                Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
             }
         }
 
         It 'Updates the repository when URI differs' {
-            function global:Get-BitwardenSecret { param([string]$SecretName) return 'dummy' }
+            function global:Get-SecretATAP { param([string]$SecretName) return 'dummy' }
             Mock Get-PSResourceRepository { [PSCustomObject]@{ Name = 'powershellget-experimental'; Uri = 'https://old.example/' } }
             try {
                 Publish-PSModuleToProGet -NupkgPath $script:fakeNupkg | Out-Null
                 Assert-MockCalled Set-PSResourceRepository -Times 1 -Exactly -Scope It
                 Assert-MockCalled Register-PSResourceRepository -Times 0 -Exactly -Scope It
             } finally {
-                Remove-Item Function:\Get-BitwardenSecret -ErrorAction SilentlyContinue
+                Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
             }
         }
     }
 
     Context 'API key sourcing' {
         It 'Throws when neither Bitwarden nor env var provides a key' {
-            Remove-Item Function:\Get-BitwardenSecret -ErrorAction SilentlyContinue
+            Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
             [Environment]::SetEnvironmentVariable($script:experimentalApiKeyEnvName, $null, 'Process')
             [Environment]::SetEnvironmentVariable($script:experimentalApiKeyEnvName, $null, 'User')
             [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $null, 'Process')

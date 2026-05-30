@@ -57,7 +57,7 @@ The script is **not broken** — it is **misaligned**. Most gaps are structural 
 | #    | Gap                                                                                                       | Current State                                                                                                                                   | 5-Tier Requirement                                                                                                                                                  |
 | ---- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | G-17 | Feed configuration path was unclear                                         | Older scripts mixed process globals, ATAP.IAC PSD1 constants, and local environment-variable fallbacks | Feed metadata must come from `$global:Settings[$global:configRootKeys['ProGetFeedCollectionConfigRootKey']]`, loaded from the ConfigRootKeys and HostSettings fragments before build or BuildMaster execution |
-| G-18 | Secrets read via `[Environment]::GetEnvironmentVariable($PSRepositoryFeed.ApiKeyName)` with process scope | Process-scope env vars are empty in agent-spawned shells (see CLAUDE.md R-10)                                                                   | Must read with User scope: `[Environment]::GetEnvironmentVariable($name, 'User')`, or via `Get-BitWardenSecret`                                                     |
+| G-18 | Secrets read via `[Environment]::GetEnvironmentVariable($PSRepositoryFeed.ApiKeyName)` with process scope | Process-scope env vars are empty in agent-spawned shells (see CLAUDE.md R-10)                                                                   | Must read with User scope: `[Environment]::GetEnvironmentVariable($name, 'User')`, or via `Get-SecretATAP`                                                     |
 
 ### 2.6 Quality Gate Gaps (Sections 8 and 9 of Explainer 602)
 
@@ -149,7 +149,7 @@ note in `SolutionDocumentation/Sprint-0006-5Tier-Retrospective.md`).
 | G-10 | Single `powershellget-*` feed per tier; no Chocolatey/Filesystem/NuGet fan-out.                                                          |
 | G-12 | All generated output (nupkg, test results, coverage) routed to `_generated/psmodules/<Module>/` by `Resolve-PSModuleMetadata`.           |
 | G-14 | Bootstrap in `module.build.ps1` is a generic loop over `$script:_bootstrapCmdlets`; no hardcoded module name.                            |
-| G-18 | API key resolved via `Get-BitWardenSecret` then `[Environment]::GetEnvironmentVariable($name, 'User')` — User scope, not process scope.  |
+| G-18 | API key resolved via `Get-SecretATAP` then `[Environment]::GetEnvironmentVariable($name, 'User')` — User scope, not process scope.  |
 | G-20 | `Test-FailureAcknowledgedGate` cross-references failures against `FailureAcknowledged.json`; gate passes when all failures acknowledged. |
 | G-21 | `Invoke-PSModulePSScriptAnalyzer` skips at Sprint, enforces Error+Warning-clean at Alpha and above.                                      |
 | G-22 | `Test-CodeCoverageGate` skips at Sprint/Alpha/Beta, enforces 70% threshold at QA/Production.                                             |

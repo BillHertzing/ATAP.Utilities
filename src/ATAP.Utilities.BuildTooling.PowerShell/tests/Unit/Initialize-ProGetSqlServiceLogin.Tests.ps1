@@ -21,13 +21,13 @@ Describe 'Initialize-ProGetSqlServiceLogin [public]' {
 
   It 'resolves Bitwarden connection input and executes the idempotent login script' {
     Initialize-ProGetSqlServiceLogin `
-      -BitwardenSecretName 'proget-sql' `
+      -DBConnectionStringSecretName 'proget-sql' `
       -DatabaseName 'ProGet' `
       -ServiceAccount 'NT SERVICE\INEDOPROGETSVC' `
       -Confirm:$false | Out-Null
 
     Should -Invoke -CommandName Resolve-BuildToolingDatabaseSqlConnection -Times 1 -Exactly -ParameterFilter {
-      $BitwardenSecretName -eq 'proget-sql' -and
+      $DBConnectionStringSecretName -eq 'proget-sql' -and
       $DatabaseName -eq 'master'
     }
 
@@ -40,7 +40,7 @@ Describe 'Initialize-ProGetSqlServiceLogin [public]' {
 
   It 'honors WhatIf by resolving the connection but not executing SQL' {
     Initialize-ProGetSqlServiceLogin `
-      -BitwardenSecretName 'proget-sql' `
+      -DBConnectionStringSecretName 'proget-sql' `
       -DatabaseName 'ProGet' `
       -WhatIf | Out-Null
 

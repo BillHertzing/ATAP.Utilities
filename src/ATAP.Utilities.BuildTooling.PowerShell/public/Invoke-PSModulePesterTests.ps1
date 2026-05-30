@@ -56,9 +56,6 @@ function Get-PSModulePesterTierFilter {
     [string]$Tier
   )
 
-  # K07: temporary exclusion until New-SprintStage1 is converted to a side-effect-free function contract.
-  $pendingStreamKTag = 'PendingStreamK'
-
   switch ($Tier) {
     'Sprint' {
       return [PSCustomObject]@{
@@ -71,28 +68,28 @@ function Get-PSModulePesterTierFilter {
       return [PSCustomObject]@{
         Skip       = $false
         IncludeTag = @('Unit')
-        ExcludeTag = @('Slow', 'Disabled', $pendingStreamKTag)
+        ExcludeTag = @('Slow', 'Disabled')
       }
     }
     'Beta' {
       return [PSCustomObject]@{
         Skip       = $false
         IncludeTag = @('Unit', 'Integration')
-        ExcludeTag = @('Slow', 'Disabled', $pendingStreamKTag)
+        ExcludeTag = @('Slow', 'Disabled')
       }
     }
     'QA' {
       return [PSCustomObject]@{
         Skip       = $false
         IncludeTag = @('Unit', 'Integration', 'Functional', 'Regression', 'E2E', 'Performance')
-        ExcludeTag = @('Disabled', $pendingStreamKTag)
+        ExcludeTag = @('Disabled')
       }
     }
     'Production' {
       return [PSCustomObject]@{
         Skip       = $false
         IncludeTag = @('Unit', 'Integration', 'Functional', 'Regression', 'E2E', 'Performance', 'Smoke')
-        ExcludeTag = @('Disabled', $pendingStreamKTag)
+        ExcludeTag = @('Disabled')
       }
     }
   }

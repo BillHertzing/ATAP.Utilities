@@ -618,7 +618,7 @@ PackageReference mode:
 | Production (smoke)       | `dbConnectionString-ATAPUtilities-utat022-Production`         | `utat022\Production`    |
 
 The BuildMaster release plan holds the name in its per-tier variable (for the
-Integration tier this is the existing `IntegrationDatabaseBitwardenSecretName`
+Integration tier this is the existing `IntegrationDatabaseDBConnectionStringSecretName`
 stable variable; see [SprintInfrastructure-Naming.md §6.2](SprintInfrastructure-Naming.md#62-stable-variables-set-once-during-ecosystem-onboarding))
 and exports it into the agent process as `ATAPUTILITIES_DB_SECRET_NAME` for
 the test step. Locally a developer points the same variable at the

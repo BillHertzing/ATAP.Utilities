@@ -44,7 +44,7 @@
         'PSUseDeclaredVarsMoreThanAssignments'
 
         # The repo deliberately uses non-approved verbs for several domain cmdlets
-        # (e.g. Create-ServiceAccount, List-ProGetApiKeys, Validate-ProGetFeeds, Sync-*).
+        # (e.g. Create-ServiceAccount, Create-MCPJunction, List-ProGetApiKeys, Sync-*).
         'PSUseApprovedVerbs'
     )
 }

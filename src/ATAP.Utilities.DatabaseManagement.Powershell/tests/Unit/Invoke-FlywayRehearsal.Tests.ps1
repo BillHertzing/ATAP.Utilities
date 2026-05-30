@@ -13,7 +13,7 @@ BeforeAll {
       param(
         [hashtable]$OriginalPSBoundParameters,
         [object]$SqlConnection,
-        [string]$BitwardenSecretName,
+        [string]$DBConnectionStringSecretName,
         [string]$DatabaseHost,
         [string]$InstanceName,
         [string]$DatabaseName,
@@ -37,7 +37,7 @@ BeforeAll {
     function global:Invoke-Flyway {
       param(
         [object]$SqlConnection,
-        [string]$BitwardenSecretName,
+        [string]$DBConnectionStringSecretName,
         [string]$DatabaseName,
         [string]$Environment,
         [string]$DatabaseHost,
@@ -80,7 +80,7 @@ AfterAll {
 Describe 'Invoke-FlywayRehearsal' -Tag 'Unit' {
   BeforeEach {
     $script:fakeConnection = [PSCustomObject]@{ State = 'Open' }
-    Mock Resolve-DatabaseSqlConnection { $script:fakeConnection }
+    Mock Resolve-DatabaseSqlConnection { [pscustomobject]@{ Connection = $script:fakeConnection; IsCallerOwned = $false } }
     Mock Invoke-DatabaseSqlNonQuery { 0 }
     Mock Invoke-Flyway { [PSCustomObject]@{ Success = $true; FlywayCommand = 'migrate' } }
   }
@@ -139,14 +139,14 @@ Describe 'Invoke-FlywayRehearsal' -Tag 'Unit' {
     }
   }
 
-  It 'passes BitwardenSecretName through to Invoke-Flyway' {
-    Invoke-FlywayRehearsal -Application 'AceCommander' -BuildId '4271' -BitwardenSecretName 'db-secret' | Out-Null
+  It 'passes DBConnectionStringSecretName through to Invoke-Flyway' {
+    Invoke-FlywayRehearsal -Application 'AceCommander' -BuildId '4271' -DBConnectionStringSecretName 'db-secret' | Out-Null
 
     Assert-MockCalled Resolve-DatabaseSqlConnection -Times 1 -Exactly -Scope It -ParameterFilter {
-      $BitwardenSecretName -eq 'db-secret'
+      $DBConnectionStringSecretName -eq 'db-secret'
     }
     Assert-MockCalled Invoke-Flyway -Times 1 -Exactly -Scope It -ParameterFilter {
-      $BitwardenSecretName -eq 'db-secret' -and $DatabaseName -eq 'AceCommander-rehearsal-4271'
+      $DBConnectionStringSecretName -eq 'db-secret' -and $DatabaseName -eq 'AceCommander-rehearsal-4271'
     }
   }
 

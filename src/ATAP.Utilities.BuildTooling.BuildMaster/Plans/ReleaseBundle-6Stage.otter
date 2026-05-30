@@ -23,7 +23,7 @@
 #   $ReleaseBundleQAFeedName               - from the application's variable set
 #   $ReleaseBundleProductionFeedName       - from the application's variable set
 #   $PreviousProductionBackupPath          - .bak recorded for Integration Flyway rehearsal traceability
-#   $IntegrationDatabaseBitwardenSecretName - Bitwarden item name for the Integration-tier DB connection string,
+#   $IntegrationDatabaseDBConnectionStringSecretName - Bitwarden item name for the Integration-tier DB connection string,
 #                                            e.g. dbConnectionString-AceCommander-utat022-Integration
 #   $Tier                                  - current BuildMaster tier/stage (CurrentTier)
 #   $BuildMasterBuildId                    - runtime value from $BuildMasterId(build), used to
@@ -186,12 +186,12 @@ stage Integration
     # Rehearse bundled Flyway migrations against the previous-production DB
     # snapshot via dedicated runner (no inline pwsh -Command). The connection
     # string is resolved by Invoke-FlywayRehearsal from Bitwarden using the
-    # IntegrationDatabaseBitwardenSecretName Application variable; the secret
+    # IntegrationDatabaseDBConnectionStringSecretName Application variable; the secret
     # value never appears in process arguments.
     Exec
     (
         FileName: pwsh,
-        Arguments: >>-NoProfile -File "$InvokeReleaseBundleFlywayRehearsalScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -DatabaseManagementModulePath "$DatabaseManagementModuleManifest" -SourcePath "$SourcePath" -ProductName "$ProductName" -ReleaseBundlePathFile "$ReleaseBundlePathFile" -BackupPath "$PreviousProductionBackupPath" -IntegrationDatabaseBitwardenSecretName "$IntegrationDatabaseBitwardenSecretName">>,
+        Arguments: >>-NoProfile -File "$InvokeReleaseBundleFlywayRehearsalScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -DatabaseManagementModulePath "$DatabaseManagementModuleManifest" -SourcePath "$SourcePath" -ProductName "$ProductName" -ReleaseBundlePathFile "$ReleaseBundlePathFile" -BackupPath "$PreviousProductionBackupPath" -IntegrationDatabaseDBConnectionStringSecretName "$IntegrationDatabaseDBConnectionStringSecretName">>,
         WorkingDirectory: $SourcePath,
         SuccessExitCode: 0
     );

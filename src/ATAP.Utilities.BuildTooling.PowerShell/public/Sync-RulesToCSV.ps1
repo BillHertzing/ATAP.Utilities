@@ -88,9 +88,9 @@ function Sync-RulesToCSV {
     [AllowNull()]
     [object]$SqlConnection,
 
-    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'BitwardenSecretName')]
-    [Alias('BitwardenSecret', 'SecretName')]
-    [string]$BitwardenSecretName,
+    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'DBConnectionStringSecretName')]
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string]$DBConnectionStringSecretName,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [Alias('HostName', 'ServerInstance')]
@@ -103,7 +103,7 @@ function Sync-RulesToCSV {
     [string]$SqlInstance,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'SqlConnection')]
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'BitwardenSecretName')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'DBConnectionStringSecretName')]
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [string]$DatabaseName = 'ATAPUtilities',
 
@@ -162,10 +162,10 @@ function Sync-RulesToCSV {
     }
 
     $integratedSecurityValue = if ($PSBoundParameters.ContainsKey('IntegratedSecurity')) { [bool]$IntegratedSecurity } else { $true }
-    $resolvedSqlConnection = Resolve-BuildToolingDatabaseSqlConnection `
+    $resolution = Resolve-BuildToolingDatabaseSqlConnection `
       -OriginalPSBoundParameters $PSBoundParameters `
       -SqlConnection $SqlConnection `
-      -BitwardenSecretName $BitwardenSecretName `
+      -DBConnectionStringSecretName $DBConnectionStringSecretName `
       -DatabaseHost $DatabaseHost `
       -SqlInstance $SqlInstance `
       -InstanceName $InstanceName `
@@ -178,6 +178,8 @@ function Sync-RulesToCSV {
       -Settings $Settings `
       -DefaultDatabaseHost 'localhost' `
       -DefaultDatabaseName 'ATAPUtilities'
+    $openSQLConnection = $resolution.Connection
+    $isCallerOwnedConnection = [bool]$resolution.IsCallerOwned
 
     # Load Get-RepositoryRoot if needed
     if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
@@ -211,7 +213,7 @@ function Sync-RulesToCSV {
     }
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Database: $DatabaseName"
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "SQL Instance: $($resolvedSqlConnection.DataSource)"
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "SQL Instance: $($openSQLConnection.DataSource)"
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Output Path: $OutputPath"
 
     # Define language kinds to export
@@ -236,7 +238,7 @@ function Sync-RulesToCSV {
 
         # Get PrimitiveLanguageKindId for this language
         $langIdQuery = "SELECT PrimitiveLanguageKindId FROM dbo.PrimitiveLanguageKind WHERE Name = '$lang'"
-        $langId = Invoke-BuildToolingSqlQuery -SqlConnection $resolvedSqlConnection -Query $langIdQuery -As Scalar
+        $langId = Invoke-BuildToolingSqlQuery -SqlConnection $openSQLConnection -Query $langIdQuery -As Scalar
 
         if ($null -eq $langId -or [DBNull]::Value -eq $langId) {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Language kind '$lang' not found in database. Skipping."
@@ -266,7 +268,7 @@ ORDER BY Name
 "@
 
           if ($PSCmdlet.ShouldProcess($philotePrimFile, 'Export Philote Primitives')) {
-            $philotePrimData = Invoke-BuildToolingSqlQuery -SqlConnection $resolvedSqlConnection -Query $philotePrimQuery -As DataTable
+            $philotePrimData = Invoke-BuildToolingSqlQuery -SqlConnection $openSQLConnection -Query $philotePrimQuery -As DataTable
             if ($philotePrimData.Rows.Count -gt 0) {
               $philotePrimData.Rows | Export-Csv -Path $philotePrimFile -NoTypeInformation -Encoding UTF8 -Force:$Force
               $stats.ExportedFiles += $philotePrimFile
@@ -280,7 +282,7 @@ ORDER BY Name
           }
 
           if ($PSCmdlet.ShouldProcess($rulePrimFile, 'Export RulePrimitives')) {
-            $rulePrimData = Invoke-BuildToolingSqlQuery -SqlConnection $resolvedSqlConnection -Query $rulePrimQuery -As DataTable
+            $rulePrimData = Invoke-BuildToolingSqlQuery -SqlConnection $openSQLConnection -Query $rulePrimQuery -As DataTable
             if ($rulePrimData.Rows.Count -gt 0) {
               $rulePrimData.Rows | Export-Csv -Path $rulePrimFile -NoTypeInformation -Encoding UTF8 -Force:$Force
               $stats.ExportedFiles += $rulePrimFile
@@ -317,7 +319,7 @@ ORDER BY Name
 "@
 
           if ($PSCmdlet.ShouldProcess($philoteRuleFile, 'Export Philote Rules')) {
-            $philoteRuleData = Invoke-BuildToolingSqlQuery -SqlConnection $resolvedSqlConnection -Query $philoteRuleQuery -As DataTable
+            $philoteRuleData = Invoke-BuildToolingSqlQuery -SqlConnection $openSQLConnection -Query $philoteRuleQuery -As DataTable
             if ($philoteRuleData.Rows.Count -gt 0) {
               $philoteRuleData.Rows | Export-Csv -Path $philoteRuleFile -NoTypeInformation -Encoding UTF8 -Force:$Force
               $stats.ExportedFiles += $philoteRuleFile
@@ -331,7 +333,7 @@ ORDER BY Name
           }
 
           if ($PSCmdlet.ShouldProcess($ruleFile, 'Export Rules')) {
-            $ruleData = Invoke-BuildToolingSqlQuery -SqlConnection $resolvedSqlConnection -Query $ruleQuery -As DataTable
+            $ruleData = Invoke-BuildToolingSqlQuery -SqlConnection $openSQLConnection -Query $ruleQuery -As DataTable
             if ($ruleData.Rows.Count -gt 0) {
               $ruleData.Rows | Export-Csv -Path $ruleFile -NoTypeInformation -Encoding UTF8 -Force:$Force
               $stats.ExportedFiles += $ruleFile
@@ -366,7 +368,7 @@ ORDER BY Name
 "@
 
           if ($PSCmdlet.ShouldProcess($philoteRuleSetFile, 'Export Philote RuleSets')) {
-            $philoteRuleSetData = Invoke-BuildToolingSqlQuery -SqlConnection $resolvedSqlConnection -Query $philoteRuleSetQuery -As DataTable
+            $philoteRuleSetData = Invoke-BuildToolingSqlQuery -SqlConnection $openSQLConnection -Query $philoteRuleSetQuery -As DataTable
             if ($philoteRuleSetData.Rows.Count -gt 0) {
               $philoteRuleSetData.Rows | Export-Csv -Path $philoteRuleSetFile -NoTypeInformation -Encoding UTF8 -Force:$Force
               $stats.ExportedFiles += $philoteRuleSetFile
@@ -376,7 +378,7 @@ ORDER BY Name
           }
 
           if ($PSCmdlet.ShouldProcess($ruleSetFile, 'Export RuleSets')) {
-            $ruleSetData = Invoke-BuildToolingSqlQuery -SqlConnection $resolvedSqlConnection -Query $ruleSetQuery -As DataTable
+            $ruleSetData = Invoke-BuildToolingSqlQuery -SqlConnection $openSQLConnection -Query $ruleSetQuery -As DataTable
             if ($ruleSetData.Rows.Count -gt 0) {
               $ruleSetData.Rows | Export-Csv -Path $ruleSetFile -NoTypeInformation -Encoding UTF8 -Force:$Force
               $stats.ExportedFiles += $ruleSetFile
@@ -415,7 +417,7 @@ ORDER BY InstantiationPhiloteId, InputName
 "@
 
           if ($PSCmdlet.ShouldProcess($philoteInstFile, 'Export Philote Instantiations')) {
-            $philoteInstData = Invoke-BuildToolingSqlQuery -SqlConnection $resolvedSqlConnection -Query $philoteInstQuery -As DataTable
+            $philoteInstData = Invoke-BuildToolingSqlQuery -SqlConnection $openSQLConnection -Query $philoteInstQuery -As DataTable
             if ($philoteInstData.Rows.Count -gt 0) {
               $philoteInstData.Rows | Export-Csv -Path $philoteInstFile -NoTypeInformation -Encoding UTF8 -Force:$Force
               $stats.ExportedFiles += $philoteInstFile
@@ -425,7 +427,7 @@ ORDER BY InstantiationPhiloteId, InputName
           }
 
           if ($PSCmdlet.ShouldProcess($instFile, 'Export Instantiations')) {
-            $instData = Invoke-BuildToolingSqlQuery -SqlConnection $resolvedSqlConnection -Query $instQuery -As DataTable
+            $instData = Invoke-BuildToolingSqlQuery -SqlConnection $openSQLConnection -Query $instQuery -As DataTable
             if ($instData.Rows.Count -gt 0) {
               $instData.Rows | Export-Csv -Path $instFile -NoTypeInformation -Encoding UTF8 -Force:$Force
               $stats.ExportedFiles += $instFile
@@ -435,7 +437,7 @@ ORDER BY InstantiationPhiloteId, InputName
           }
 
           if ($PSCmdlet.ShouldProcess($bindFile, 'Export Instantiation Bindings')) {
-            $bindData = Invoke-BuildToolingSqlQuery -SqlConnection $resolvedSqlConnection -Query $bindQuery -As DataTable
+            $bindData = Invoke-BuildToolingSqlQuery -SqlConnection $openSQLConnection -Query $bindQuery -As DataTable
             if ($bindData.Rows.Count -gt 0) {
               $bindData.Rows | Export-Csv -Path $bindFile -NoTypeInformation -Encoding UTF8 -Force:$Force
               $stats.ExportedFiles += $bindFile
@@ -456,9 +458,19 @@ ORDER BY InstantiationPhiloteId, InputName
       $errorMessage = "Export failed. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       $stats.Errors += $errorMessage
+      if ($null -ne $openSQLConnection) {
+        try { $openSQLConnection.Close() } catch { }
+        try { $openSQLConnection.Dispose() } catch { }
+        $openSQLConnection = $null
+      }
       throw
     }
     finally {
+      if (-not $isCallerOwnedConnection -and $null -ne $openSQLConnection) {
+        try { $openSQLConnection.Close() } catch { }
+        try { $openSQLConnection.Dispose() } catch { }
+        $openSQLConnection = $null
+      }
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function completed'
     }
   }

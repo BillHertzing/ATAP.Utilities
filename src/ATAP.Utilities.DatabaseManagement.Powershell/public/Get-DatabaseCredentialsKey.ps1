@@ -15,7 +15,7 @@ function Get-DatabaseCredentialsKey {
       dbConnectionString-<DatabaseName>-<DatabaseHost>-<Environment>-<UserName>
 
   The returned string is suitable for use as the -SecretName argument to
-  Get-BitwardenSecret, or as the CredentialsKey setting value in
+  Get-SecretATAP, or as the CredentialsKey setting value in
   $global:settings['DatabasesCollection'].
 
   NOTE: Integration, QA, and Production databases reside on dedicated

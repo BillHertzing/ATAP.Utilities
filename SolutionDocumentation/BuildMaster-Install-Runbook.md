@@ -384,7 +384,7 @@ Set-BuildMasterApplicationVariables `
     MetaPackageName = 'ATAP.Utilities'
     SolutionPath = 'ATAP.Utilities.sln'
     ProGetApiKey = @{
-      Value = (Get-BitWardenSecret -SearchName 'PROGET_ADMIN_API_KEY' -FieldName 'token')
+      Value = (Get-SecretATAP -SecretName 'PROGET_ADMIN_API_KEY' -SecretField 'token')
       Sensitive = $true
     }
   } `
@@ -935,7 +935,7 @@ runner branches internally on `$PipelineStageName` (passed as `-Stage`).
   the static contract test
   `Plans/tests/DatabasePackage-5Stage.Tests.ps1` enforces this.
 - Database connection strings used by Flyway during rehearsal stages are
-  resolved by name from Bitwarden at runtime via `Get-BitWardenSecret`. The
+  resolved by name from Bitwarden at runtime via `Get-SecretATAP`. The
   Bitwarden item naming convention for permanent and ephemeral database
   instances is documented in `.claude/Rules/Bitwarden.md`.
 

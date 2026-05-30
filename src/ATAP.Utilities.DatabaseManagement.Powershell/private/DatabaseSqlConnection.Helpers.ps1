@@ -101,7 +101,7 @@ function New-DatabaseSqlConnectionFromConnectionString {
   return Assert-DatabaseSqlConnectionIsOpen -Connection $connection -Source $Source
 }
 
-function Resolve-DatabaseSqlConnectionFromBitwardenSecretName {
+function Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName {
   [CmdletBinding()]
   param(
     [Parameter(Mandatory = $true)]
@@ -109,41 +109,37 @@ function Resolve-DatabaseSqlConnectionFromBitwardenSecretName {
   )
 
   if ([string]::IsNullOrWhiteSpace($SecretName)) {
-    throw 'BitwardenSecretName cannot be null, empty, or whitespace.'
+    throw 'DBConnectionStringSecretName cannot be null, empty, or whitespace.'
   }
 
-  $bwCommand = Get-Command -Name 'bw.exe' -ErrorAction SilentlyContinue
-  if (-not $bwCommand) {
-    $bwCommand = Get-Command -Name 'bw' -ErrorAction SilentlyContinue
-  }
-  if (-not $bwCommand) {
-    throw 'Bitwarden CLI executable bw.exe was not found on PATH.'
+  if (-not (Get-Command -Name 'Get-SecretATAP' -ErrorAction SilentlyContinue)) {
+    throw "Get-SecretATAP is not available. Import ATAP.Utilities.BuildTooling.PowerShell or ensure Get-SecretATAP is on the function path."
   }
 
-  $secretValue = & $bwCommand.Source get password $SecretName
-  if ($LASTEXITCODE -ne 0) {
-    throw "bw.exe failed while retrieving Bitwarden secret '$SecretName'."
-  }
+  $DBConnectionString = Get-SecretATAP -SecretName $SecretName -SecretField 'notes'
 
-  if ($secretValue -is [array]) {
-    if ($secretValue.Count -ne 1) {
-      throw "Bitwarden secret '$SecretName' returned multiple values. Expected exactly one connection string."
+  if ($DBConnectionString -is [array]) {
+    if ($DBConnectionString.Count -ne 1) {
+      throw "ATAP secret '$SecretName' notes field returned multiple values. Expected exactly one connection string."
     }
-    $secretValue = $secretValue[0]
+    $DBConnectionString = $DBConnectionString[0]
   }
 
-  if ($null -eq $secretValue) {
-    throw "Bitwarden secret '$SecretName' returned null. Expected a string."
+  if ($null -eq $DBConnectionString) {
+    throw "ATAP secret '$SecretName' notes field returned null. Expected a connection-string value."
   }
 
-  if ($secretValue -isnot [string]) {
-    throw "Bitwarden secret '$SecretName' returned '$($secretValue.GetType().FullName)'. Expected a string."
+  if ($DBConnectionString -isnot [string]) {
+    throw "ATAP secret '$SecretName' notes field returned '$($DBConnectionString.GetType().FullName)'. Expected a string."
   }
 
   return New-DatabaseSqlConnectionFromConnectionString `
-    -ConnectionString $secretValue `
-    -Source "Bitwarden secret '$SecretName'"
+    -ConnectionString $DBConnectionString `
+    -Source "ATAP secret '$SecretName' (notes field)"
 }
+
+# Back-compat alias for any code that has not yet renamed its helper reference.
+Set-Alias -Name Resolve-DatabaseSqlConnectionFromBitwardenSecretName -Value Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName -Scope Script -ErrorAction SilentlyContinue
 
 function Import-DatabaseConnectionHelperFunctions {
   [CmdletBinding()]
@@ -255,9 +251,9 @@ function New-DatabaseConnectionParameterMap {
   }
 
   $aliasesByCanonicalName = @{
-    BitwardenSecretName = @('BitwardenSecret', 'SecretName')
-    DatabaseHost        = @('HostName', 'ServerInstance')
-    InstanceName        = @('SqlInstance')
+    DBConnectionStringSecretName = @('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')
+    DatabaseHost                 = @('HostName', 'ServerInstance')
+    InstanceName                 = @('SqlInstance')
   }
 
   foreach ($canonicalName in $aliasesByCanonicalName.Keys) {

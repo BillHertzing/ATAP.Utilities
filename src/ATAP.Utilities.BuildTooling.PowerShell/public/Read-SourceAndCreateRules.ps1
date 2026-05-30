@@ -121,9 +121,9 @@ https://github.com/whertzing/ATAP.Utilities
     [AllowNull()]
     [object]$SqlConnection,
 
-    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'BitwardenSecretName')]
-    [Alias('BitwardenSecret', 'SecretName')]
-    [string]$BitwardenSecretName,
+    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'DBConnectionStringSecretName')]
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string]$DBConnectionStringSecretName,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [Alias('HostName', 'ServerInstance')]
@@ -136,7 +136,7 @@ https://github.com/whertzing/ATAP.Utilities
     [string]$SqlInstance,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'SqlConnection')]
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'BitwardenSecretName')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'DBConnectionStringSecretName')]
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [string]$DatabaseName = 'ATAPUtilities',
 
@@ -219,10 +219,10 @@ https://github.com/whertzing/ATAP.Utilities
       }
 
       $integratedSecurityValue = if ($PSBoundParameters.ContainsKey('IntegratedSecurity')) { [bool]$IntegratedSecurity } else { $true }
-      $resolvedSqlConnection = Resolve-BuildToolingDatabaseSqlConnection `
+      $resolution = Resolve-BuildToolingDatabaseSqlConnection `
         -OriginalPSBoundParameters $PSBoundParameters `
         -SqlConnection $SqlConnection `
-        -BitwardenSecretName $BitwardenSecretName `
+        -DBConnectionStringSecretName $DBConnectionStringSecretName `
         -DatabaseHost $DatabaseHost `
         -SqlInstance $SqlInstance `
         -InstanceName $InstanceName `
@@ -235,6 +235,12 @@ https://github.com/whertzing/ATAP.Utilities
         -Settings $Settings `
         -DefaultDatabaseHost 'localhost' `
         -DefaultDatabaseName 'ATAPUtilities'
+      $openSQLConnection = $resolution.Connection
+      $isCallerOwnedConnection = [bool]$resolution.IsCallerOwned
+    }
+    else {
+      $openSQLConnection = $null
+      $isCallerOwnedConnection = $false
     }
     # Get repository root for relative paths
     try {
@@ -514,7 +520,7 @@ BEGIN
 END
 "@
           Invoke-BuildToolingSqlQuery `
-            -SqlConnection $resolvedSqlConnection `
+            -SqlConnection $openSQLConnection `
             -Query $insertPhiloteQuery `
             -Parameters @{
               PhiloteId = $philote.PhiloteId
@@ -532,7 +538,7 @@ BEGIN
 END
 "@
           Invoke-BuildToolingSqlQuery `
-            -SqlConnection $resolvedSqlConnection `
+            -SqlConnection $openSQLConnection `
             -Query $insertRuleQuery `
             -Parameters @{
               PhiloteId               = $rule.PhiloteId
@@ -557,8 +563,18 @@ END
       $errorMessage = "Error in END block: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       $stats.Errors += $errorMessage
+      if ($null -ne $openSQLConnection) {
+        try { $openSQLConnection.Close() } catch { }
+        try { $openSQLConnection.Dispose() } catch { }
+        $openSQLConnection = $null
+      }
     }
     finally {
+      if (-not $isCallerOwnedConnection -and $null -ne $openSQLConnection) {
+        try { $openSQLConnection.Close() } catch { }
+        try { $openSQLConnection.Dispose() } catch { }
+        $openSQLConnection = $null
+      }
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function completed'
     }
 

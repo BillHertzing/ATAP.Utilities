@@ -14,7 +14,7 @@ BeforeAll {
   }
 }
 
-Describe 'New-SprintStage1 load-contract (K03)' -Tag 'Unit', 'PendingStreamK' {
+Describe 'New-SprintStage1 load-contract (K03)' -Tag 'Unit' {
 
   BeforeEach {
     # Remove any prior definition so each test starts with a known-absent function.

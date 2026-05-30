@@ -300,12 +300,29 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
         Should -Throw -ExpectedMessage '*BUILDMASTER_ADMIN_API_KEY*'
     }
 
-    It 'Throws when no base URL is configured' {
+    It 'Falls back to the local BuildMaster base URL when none is configured' {
+      # All BuildMaster cmdlets share a documented http://localhost:50017
+      # fallback when no base URL is supplied via parameter, settings, or env
+      # var (mirrors Start-BuildMasterPipeline / Start-BuildMasterDeployment).
       $global:settings = @{ BuildMasterAdminApiKey = 'k' }
       [Environment]::SetEnvironmentVariable('BUILDMASTER_BASE_URL', $null, 'Process')
       [Environment]::SetEnvironmentVariable('BUILDMASTER_BASE_URL', $null, 'User')
+      $script:capturedUris = @()
+      Mock Invoke-RestMethod -MockWith {
+        $script:capturedUris += $Uri
+        if ($Uri -match 'Applications_GetApplications') {
+          return , @([PSCustomObject]@{ Application_Id = 42; Application_Name = 'A' })
+        }
+        if ($Uri -match 'Releases_GetReleases') {
+          return , @([PSCustomObject]@{ Release_Id = 1004; Release_Name = '1.0.0' })
+        }
+        return [PSCustomObject]@{ success = $true }
+      }
+
       { Remove-BuildMasterRelease -Application 'A' -ReleaseNumber '1.0.0' -Confirm:$false } |
-        Should -Throw -ExpectedMessage '*base URL*'
+        Should -Not -Throw
+      $script:capturedUris | Should -Not -BeNullOrEmpty
+      $script:capturedUris[0] | Should -Match '^http://localhost:50017/'
     }
   }
 

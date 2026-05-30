@@ -58,7 +58,7 @@ BeforeAll {
   $script:callsObservedAtLoad = @($global:dryRunExternalCalls)
 }
 
-Describe 'New-SprintStage dry-run support' -Tag 'Unit', 'PendingStreamK' {
+Describe 'New-SprintStage dry-run support' -Tag 'Unit' {
   BeforeEach {
     $global:dryRunExternalCalls.Clear()
     $script:tempGitRoot = Join-Path ([System.IO.Path]::GetTempPath()) "sprint_dryrun_$([guid]::NewGuid().ToString('N'))"

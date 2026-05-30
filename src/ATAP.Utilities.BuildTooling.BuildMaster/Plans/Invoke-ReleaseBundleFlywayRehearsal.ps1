@@ -8,7 +8,7 @@
   step of ReleaseBundle-6Stage.otter. Reads the per-build bundle path
   marker written by New-ReleaseBundleBuildMasterPackage.ps1, validates
   that the BuildMaster application supplied an
-  IntegrationDatabaseBitwardenSecretName, ensures the rehearsal log
+  IntegrationDatabaseDBConnectionStringSecretName, ensures the rehearsal log
   directory exists, and calls Invoke-FlywayRehearsal from
   ATAP.Utilities.DatabaseManagement.PowerShell. The connection string is
   resolved by Invoke-FlywayRehearsal from Bitwarden using the supplied
@@ -36,7 +36,7 @@
 .PARAMETER BackupPath
   Absolute path to the previous-production .bak captured for traceability.
 
-.PARAMETER IntegrationDatabaseBitwardenSecretName
+.PARAMETER IntegrationDatabaseDBConnectionStringSecretName
   Bitwarden item name for the Integration-tier database connection string.
 
 .PARAMETER LogPath
@@ -54,7 +54,7 @@
     -ProductName AceCommander `
     -ReleaseBundlePathFile C:\src\repo\_generated\buildmaster\12345\releasebundle_path.tmp `
     -BackupPath D:\backups\AceCommander-Production-2026-05-23.bak `
-    -IntegrationDatabaseBitwardenSecretName dbConnectionString-AceCommander-utat022-Integration
+    -IntegrationDatabaseDBConnectionStringSecretName dbConnectionString-AceCommander-utat022-Integration
 
 .NOTES
   AI assisted using Powershell.instructions.md as guidelines
@@ -91,7 +91,7 @@ param(
 
   [Parameter(Mandatory)]
   [ValidateNotNullOrEmpty()]
-  [string]$IntegrationDatabaseBitwardenSecretName,
+  [string]$IntegrationDatabaseDBConnectionStringSecretName,
 
   [AllowEmptyString()]
   [string]$LogPath = ''
@@ -131,7 +131,7 @@ function Invoke-ReleaseBundleFlywayRehearsal {
     [Parameter(Mandatory)][string]$ProductName,
     [Parameter(Mandatory)][string]$ReleaseBundlePathFile,
     [AllowEmptyString()][string]$BackupPath = '',
-    [Parameter(Mandatory)][string]$IntegrationDatabaseBitwardenSecretName,
+    [Parameter(Mandatory)][string]$IntegrationDatabaseDBConnectionStringSecretName,
     [AllowEmptyString()][string]$LogPath = ''
   )
 
@@ -165,8 +165,8 @@ function Invoke-ReleaseBundleFlywayRehearsal {
 
   PROCESS {
     try {
-      if ([string]::IsNullOrWhiteSpace($IntegrationDatabaseBitwardenSecretName)) {
-        throw 'BuildMaster Application variable IntegrationDatabaseBitwardenSecretName is required for Integration Flyway rehearsal.'
+      if ([string]::IsNullOrWhiteSpace($IntegrationDatabaseDBConnectionStringSecretName)) {
+        throw 'BuildMaster Application variable IntegrationDatabaseDBConnectionStringSecretName is required for Integration Flyway rehearsal.'
       }
 
       if (-not (Test-Path -LiteralPath $ReleaseBundlePathFile -PathType Leaf)) {
@@ -188,7 +188,7 @@ function Invoke-ReleaseBundleFlywayRehearsal {
       $rehearsalParameters = @{
         Application          = $ProductName
         BundlePath           = $bundlePath
-        BitwardenSecretName  = $IntegrationDatabaseBitwardenSecretName
+        DBConnectionStringSecretName  = $IntegrationDatabaseDBConnectionStringSecretName
         LogPath              = $LogPath
       }
       if (-not [string]::IsNullOrWhiteSpace($BackupPath)) {
@@ -228,5 +228,5 @@ Invoke-ReleaseBundleFlywayRehearsal `
   -ProductName $ProductName `
   -ReleaseBundlePathFile $ReleaseBundlePathFile `
   -BackupPath $BackupPath `
-  -IntegrationDatabaseBitwardenSecretName $IntegrationDatabaseBitwardenSecretName `
+  -IntegrationDatabaseDBConnectionStringSecretName $IntegrationDatabaseDBConnectionStringSecretName `
   -LogPath $LogPath | Out-Null

@@ -16,9 +16,9 @@ function Get-FlywaySchemaVersion {
     An open Microsoft.Data.SqlClient.SqlConnection object.
     Mandatory for the SqlConnection parameter set.
 
-.PARAMETER BitwardenSecretName
+.PARAMETER DBConnectionStringSecretName
     Name of a Bitwarden secure note whose password is a complete SQL connection
-    string.  Mandatory for the BitwardenSecretName parameter set.
+    string.  Mandatory for the DBConnectionStringSecretName parameter set.
 
 .PARAMETER DatabaseHost
     SQL Server host name.  Used with the ConnectionParts parameter set.
@@ -62,9 +62,9 @@ function Get-FlywaySchemaVersion {
     [Parameter(Mandatory = $true, ParameterSetName = 'SqlConnection', ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
     [object]$SqlConnection,
 
-    [Parameter(Mandatory = $true, ParameterSetName = 'BitwardenSecretName', ValueFromPipelineByPropertyName = $true)]
-    [Alias('BitwardenSecret', 'SecretName')]
-    [string]$BitwardenSecretName,
+    [Parameter(Mandatory = $true, ParameterSetName = 'DBConnectionStringSecretName', ValueFromPipelineByPropertyName = $true)]
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string]$DBConnectionStringSecretName,
 
     [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParts', ValueFromPipelineByPropertyName = $true)]
     [Alias('HostName', 'ServerInstance')]
@@ -95,16 +95,19 @@ function Get-FlywaySchemaVersion {
 
   process {
     # Resolve connection
-    $resolvedConnection = Resolve-DatabaseSqlConnection `
+    $resolution = Resolve-DatabaseSqlConnection `
       -OriginalPSBoundParameters $PSBoundParameters `
       -SqlConnection $SqlConnection `
-      -BitwardenSecretName $BitwardenSecretName `
+      -DBConnectionStringSecretName $DBConnectionStringSecretName `
       -DatabaseHost $DatabaseHost `
       -InstanceName $SqlInstance `
       -DatabaseName $DatabaseName `
       -ConnectionMethod $ConnectionMethod `
       -CredentialsKey $CredentialsKey `
       -IntegratedSecurity:$IntegratedSecurity
+
+    $resolvedConnection = $resolution.Connection
+    $resolvedConnectionOwnedByFunction = -not [bool]$resolution.IsCallerOwned
 
     $query = @'
 SELECT
@@ -159,6 +162,11 @@ ORDER BY installed_rank DESC;
   }
 
   end {
+    if ($resolvedConnectionOwnedByFunction -and $null -ne $resolvedConnection) {
+      try { $resolvedConnection.Close() } catch { }
+      try { $resolvedConnection.Dispose() } catch { }
+      $resolvedConnection = $null
+    }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Exiting $fn" -Tag 'Trace'
   }
 }

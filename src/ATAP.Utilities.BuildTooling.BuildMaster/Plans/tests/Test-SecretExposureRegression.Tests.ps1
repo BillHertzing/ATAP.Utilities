@@ -97,10 +97,10 @@ Describe 'SEC-T1 — V4-A07 ReleaseBundle runner contracts' {
         $script:FlywayRehearsalScriptPath | Should -Exist
     }
 
-    It 'Invoke-ReleaseBundleFlywayRehearsal.ps1 requires -IntegrationDatabaseBitwardenSecretName and rejects empty values' {
+    It 'Invoke-ReleaseBundleFlywayRehearsal.ps1 requires -IntegrationDatabaseDBConnectionStringSecretName and rejects empty values' {
         $content = Get-Content -LiteralPath $script:FlywayRehearsalScriptPath -Raw
-        $content | Should -Match 'IntegrationDatabaseBitwardenSecretName'
-        $content | Should -Match '(?s)\[Parameter\s*\(\s*Mandatory\s*\)\][^\]]*\[ValidateNotNullOrEmpty\(\)\][^\]]*\[string\]\$IntegrationDatabaseBitwardenSecretName'
+        $content | Should -Match 'IntegrationDatabaseDBConnectionStringSecretName'
+        $content | Should -Match '(?s)\[Parameter\s*\(\s*Mandatory\s*\)\][^\]]*\[ValidateNotNullOrEmpty\(\)\][^\]]*\[string\]\$IntegrationDatabaseDBConnectionStringSecretName'
     }
 
     It 'Invoke-ReleaseBundleFlywayRehearsal.ps1 does NOT accept a raw connection string parameter' {

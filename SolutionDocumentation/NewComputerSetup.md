@@ -301,7 +301,7 @@ if ($entries -notcontains $installDir) {
 A Machine `PATH` change is composed into a process's environment only at process
 creation, and a child process inherits its **parent's** in-memory environment block —
 not a freshly rebuilt one. The elevated session you just ran the install in still holds
-the old `PATH`, and any `pwsh` you launch *from it* (including the verification lines
+the old `PATH`, and any `pwsh` you launch _from it_ (including the verification lines
 below) inherits that stale block and will report `bws` as missing. **Open a brand-new
 `pwsh` window from the Start menu / Explorer** (not from the install session), then
 verify that `bws` resolves both with and without a profile:
@@ -333,7 +333,7 @@ A **Machine** `PATH` entry is account-independent, so the `-NoProfile` check abo
 already proves the binary is resolvable for every account that starts after the change —
 including `SvcBuildmaster` and `SvcProGet` once their services are restarted. The
 following is an **optional** belt-and-suspenders confirmation that opens a one-shot
-`-NoProfile` shell *as* the service account and prints the resolved path.
+`-NoProfile` shell _as_ the service account and prints the resolved path.
 
 This check is only possible after the service accounts exist (Step 5); if you are
 running Step 4.6 in document order, the accounts do not exist yet — skip this and rely
@@ -657,12 +657,12 @@ either Inedo product starts.
 > runtime secrets from **Bitwarden Secrets Manager** (`bws`) using machine-account access
 > tokens instead — see **§9.4.10** below. Identity map for this host:
 >
-> | Identity | Bitwarden identity | Provisioning path |
-> | --- | --- | --- |
-> | Windows interactive user `DeveloperTwo` | PM User 2 | `bw` login/unlock — **9.4.1–9.4.9 pattern** |
-> | `SvcBuildmaster` (service) | BWS machine `SvcBuildMaster` | `bws` access token — **§9.4.10** |
-> | `SvcProGet` (service) | BWS machine `SvcInfraShared` | `bws` access token — **§9.4.10** |
-> | AceCommander service / IIS | BWS machine `AceCommander` | `bws` access token — **§9.4.10** |
+> | Identity                                | Bitwarden identity           | Provisioning path                           |
+> | --------------------------------------- | ---------------------------- | ------------------------------------------- |
+> | Windows interactive user `DeveloperTwo` | PM User 2                    | `bw` login/unlock — **9.4.1–9.4.9 pattern** |
+> | `SvcBuildmaster` (service)              | BWS machine `SvcBuildMaster` | `bws` access token — **§9.4.10**            |
+> | `SvcProGet` (service)                   | BWS machine `SvcInfraShared` | `bws` access token — **§9.4.10**            |
+> | AceCommander service / IIS              | BWS machine `AceCommander`   | `bws` access token — **§9.4.10**            |
 
 This section is the manual (no-Ansible) provisioning runbook for the per-service-account
 DPAPI credential files described in
@@ -1322,10 +1322,10 @@ Preconditions:
 
 Host mapping:
 
-| Windows service account | BWS machine account | Projects | DPAPI token file |
-| --- | --- | --- | --- |
-| `SvcBuildmaster` | `SvcBuildMaster` | `BuildMaster-Core`, `CI-Shared` | `…\SvcBuildmaster\<HOST>_SvcBuildmaster_BWS_AccessToken.xml` |
-| `SvcProGet` | `SvcInfraShared` | `ProGet-Core`, `CI-Shared` | `…\SvcProGet\<HOST>_SvcProGet_BWS_AccessToken.xml` |
+| Windows service account | BWS machine account | Projects                        | DPAPI token file                                             |
+| ----------------------- | ------------------- | ------------------------------- | ------------------------------------------------------------ |
+| `SvcBuildmaster`        | `SvcBuildMaster`    | `BuildMaster-Core`, `CI-Shared` | `…\SvcBuildmaster\<HOST>_SvcBuildmaster_BWS_AccessToken.xml` |
+| `SvcProGet`             | `SvcInfraShared`    | `ProGet-Core`, `CI-Shared`      | `…\SvcProGet\<HOST>_SvcProGet_BWS_AccessToken.xml`           |
 
 ##### 9.4.10.1 Confirm the `bws` CLI is installed machine-wide
 
@@ -1461,6 +1461,74 @@ the raft is assigned in this UI location:
 In that dialog, choose the intended raft in the **Raft** dropdown and save the
 application settings.
 
+### 9.8 Register the ProGet `powershellget-stable` feed and install ATAP modules
+
+ProGet is now running with the `powershellget-stable` NuGetV2 feed provisioned. This
+step registers that feed as a trusted PSRepository **before** PSGallery in the
+repository priority list, then installs `ATAP.Utilities.PowerShell` and
+`ATAP.Utilities.BuildTooling.PowerShell` globally (`-Scope AllUsers`).
+
+> **Why ordering matters.** `Get-PSRepository` returns repositories in registration
+> order and `Find-Module` (without `-Repository`) searches them in that order. If
+> `PSGallery` appears before `powershellget-stable`, PowerShell will resolve the public
+> registry first and may pick up a stale or wrong version. The step below ensures the
+> internal feed is consulted first by re-registering PSGallery after `powershellget-stable`
+> when necessary, or by always passing `-Repository powershellget-stable` explicitly.
+
+Run from an **elevated** PowerShell 7 session. The script is already in the sprint
+worktree.
+
+```powershell
+# Dot-source the function and invoke it
+. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\_AdminRequiresHoldingPen\ATAP.Utilities.PowerShell\public\Install-ATAPModulesFromProGet.ps1'
+
+Install-ATAPModulesFromProGet
+```
+
+Expected output (module base paths confirm `-Scope AllUsers`):
+
+```text
+[HH:mm:ss][Install-ATAPModulesFromProGet] Feed URI: http://localhost:50000/nuget/powershellget-stable/
+[HH:mm:ss][Install-ATAPModulesFromProGet] Feed 'powershellget-stable' is reachable at http://localhost:50000/nuget/powershellget-stable/
+[HH:mm:ss][Install-ATAPModulesFromProGet] Installed 'ATAP.Utilities.PowerShell' v0.1.0 to 'C:\Program Files\PowerShell\Modules\ATAP.Utilities.Powershell\0.1.0'
+[HH:mm:ss][Install-ATAPModulesFromProGet] Installed 'ATAP.Utilities.BuildTooling.PowerShell' v0.1.0 to 'C:\Program Files\PowerShell\Modules\ATAP.Utilities.BuildTooling.PowerShell\0.1.0'
+
+ModuleName                             VersionInstalled InstallResult
+----------                             ---------------- -------------
+ATAP.Utilities.PowerShell              0.1.0            Installed
+ATAP.Utilities.BuildTooling.PowerShell 0.1.0            Installed
+```
+
+Verify the `ModuleBase` column shows `C:\Program Files\PowerShell\Modules\...`, not a
+per-user path. If it shows a per-user path, the shell was not elevated — uninstall the
+per-user copy and re-run elevated.
+
+If `powershellget-stable` appears after `PSGallery` in the repository list, the script
+logs a warning but still succeeds because it passes `-Repository powershellget-stable`
+explicitly. To fix the ordering permanently, unregister and re-register the repositories
+so the internal feed is first:
+
+```powershell
+# Fix repository ordering: internal feed first, PSGallery second.
+# Run elevated.
+Unregister-PSRepository -Name PSGallery -ErrorAction SilentlyContinue
+Unregister-PSRepository -Name powershellget-stable -ErrorAction SilentlyContinue
+
+Register-PSRepository `
+  -Name              'powershellget-stable' `
+  -SourceLocation    'http://localhost:50000/nuget/powershellget-stable/' `
+  -PublishLocation   'http://localhost:50000/nuget/powershellget-stable/' `
+  -InstallationPolicy Trusted
+
+Register-PSRepository `
+  -Default `
+  -InstallationPolicy Trusted
+
+Get-PSRepository | Select-Object Name, SourceLocation, InstallationPolicy
+```
+
+After re-ordering, `Get-PSRepository` should list `powershellget-stable` first.
+
 ## Step 10: Create Cobian Backup Jobs for the Tooling Databases
 
 Create separate Cobian jobs for `ProGet` and `BuildMaster`. Each Cobian job should call
@@ -1564,7 +1632,7 @@ The new computer is ready for a developer when all of the following are true:
 
 1. The expected stable and sprint worktrees exist and are synchronized.
 2. PowerShell 7 profiles load without manual fixes.
-3. `BW_SESSION`, `PROGET_ADMIN_API_KEY`, and `BUILDMASTER_ADMIN_API_KEY` are populated
+3. `BW_SESSION`, .ADMIN.API.KEY`, and `BUILDMASTER.ADMIN.API.KEY` are populated
    at user scope after sign-in.
 4. SQL Server `Production`, `QA`, and `Integration` are running.
 5. The required `Dev...` and `Exp...` instances exist for the active sprint or feature

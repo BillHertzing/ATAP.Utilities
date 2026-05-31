@@ -235,6 +235,10 @@ function New-BitwardenBackup {
       $summaryItems = List-BitwardenSecrets @listParams
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "List-BitwardenSecrets returned $($summaryItems.Count) item(s)"
 
+      # Build a lookup by ItemId so we can enrich each full item without extra bw calls.
+      $summaryLookup = @{}
+      foreach ($s in $summaryItems) { $summaryLookup[$s.ItemId] = $s }
+
       if ($summaryItems.Count -eq 0) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'No items matched the requested scope — nothing to back up'
         return $null
@@ -245,7 +249,13 @@ function New-BitwardenBackup {
       $fullItems = foreach ($summary in $summaryItems) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Fetching item: $($summary.Name) ($($summary.ItemId))"
         $result = & $invokeBw -ArgumentList @('get', 'item', $summary.ItemId, '--session', $bwSession) -Timeout $TimeoutSeconds
-        $result.StdOut | ConvertFrom-Json
+        $fullItem = $result.StdOut | ConvertFrom-Json
+        # Enrich with human-readable names not present in the raw bw JSON.
+        $s = $summaryLookup[$summary.ItemId]
+        $fullItem | Add-Member -NotePropertyName 'organizationName' -NotePropertyValue $s.Organization -Force
+        $fullItem | Add-Member -NotePropertyName 'folderName' -NotePropertyValue $s.FolderName -Force
+        $fullItem | Add-Member -NotePropertyName 'typeName' -NotePropertyValue $s.Type -Force
+        $fullItem
       }
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Fetched $($fullItems.Count) full item(s)"
 

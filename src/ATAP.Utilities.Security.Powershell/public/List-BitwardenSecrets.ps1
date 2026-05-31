@@ -26,8 +26,8 @@ Per-command timeout in seconds for each `bw` invocation. Defaults to 120 seconds
 
 .OUTPUTS
 System.Management.Automation.PSCustomObject[]
-Returns the array of matching item descriptors (Name, Folder, Type, TypeId, ItemId, RevisionDate)
-and writes the same data to `_generated/bitwarden-atap-utilities-items.json` and `.csv`.
+Returns the array of matching item descriptors (Name, FolderName, Folder, Organization, Type, TypeId, ItemId, RevisionDate)
+and writes the same data to the `_generated/` output files.
 
 .EXAMPLE
 List-BitwardenSecrets
@@ -260,6 +260,7 @@ function List-BitwardenSecrets {
           ($TargetOrganizationName.Count -gt 0 -and $TargetOrganizationName -contains $orgName)) {
           [pscustomobject]@{
             Name         = $item.name
+            FolderName   = $folderName
             Folder       = if ($folderName) { $folderName } else { $orgName }
             Organization = $orgName
             Type         = & $getBwTypeName ([int]$item.type)

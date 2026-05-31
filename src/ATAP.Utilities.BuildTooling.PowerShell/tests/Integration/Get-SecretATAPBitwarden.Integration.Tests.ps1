@@ -48,7 +48,9 @@ BeforeAll {
 AfterAll {
   if (-not [string]::IsNullOrWhiteSpace($script:createdItemId) -and $script:hasBwSession -and $script:hasBwCli) {
     $env:BW_SESSION = $script:bwSession
-    & bw delete item $script:createdItemId --session $env:BW_SESSION 2>&1 | Out-Null
+    Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName 'Get-SecretATAPBitwarden.Integration.Tests' {
+      & bw delete item $script:createdItemId --session $env:BW_SESSION 2>&1
+    } | Out-Null
   }
 }
 
@@ -73,10 +75,14 @@ Describe 'Get-SecretATAPBitwarden — long-name round-trip' -Tag 'Integration' {
       }
       $itemJson = $bwItem | ConvertTo-Json -Depth 5 -Compress
 
-      $encoded = $itemJson | & bw encode --session $env:BW_SESSION
+      $encoded = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName 'Get-SecretATAPBitwarden.Integration.Tests' {
+        $itemJson | & bw encode --session $env:BW_SESSION
+      }
       $encodeExit = $LASTEXITCODE
 
-      $createOutput = $encoded | & bw create item --session $env:BW_SESSION 2>&1
+      $createOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName 'Get-SecretATAPBitwarden.Integration.Tests' {
+        $encoded | & bw create item --session $env:BW_SESSION 2>&1
+      }
       $createExit = $LASTEXITCODE
 
       $encodeExit | Should -Be 0 -Because 'bw encode must succeed'
@@ -123,14 +129,18 @@ Describe 'Get-SecretATAPBitwarden — long-name round-trip' -Tag 'Integration' {
 
       $idToDelete = $script:createdItemId
 
-      $deleteOutput = & bw delete item $idToDelete --session $env:BW_SESSION 2>&1
+      $null = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName 'Get-SecretATAPBitwarden.Integration.Tests' {
+        & bw delete item $idToDelete --session $env:BW_SESSION 2>&1
+      }
       $deleteExit = $LASTEXITCODE
 
       $script:createdItemId = $null
 
       $deleteExit | Should -Be 0 -Because 'bw delete item must succeed'
 
-      $listOutput = & bw list items --search $script:testSecretName --session $env:BW_SESSION 2>&1
+      $listOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName 'Get-SecretATAPBitwarden.Integration.Tests' {
+        & bw list items --search $script:testSecretName --session $env:BW_SESSION 2>&1
+      }
       $remaining = $listOutput | ConvertFrom-Json -ErrorAction SilentlyContinue
       $stillPresent = @($remaining | Where-Object { $_.name -eq $script:testSecretName })
       $stillPresent.Count | Should -Be 0 -Because 'the deleted item must no longer appear in bw list output'

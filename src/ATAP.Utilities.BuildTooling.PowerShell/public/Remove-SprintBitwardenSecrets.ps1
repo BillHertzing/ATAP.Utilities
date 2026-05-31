@@ -1,3 +1,10 @@
+if (-not (Get-Command -Name 'Invoke-BitwardenCliWithCleanTlsEnvironment' -ErrorAction SilentlyContinue)) {
+  $bitwardenTlsHelperPath = Join-Path -Path $PSScriptRoot -ChildPath '..\private\Invoke-BitwardenCliWithCleanTlsEnvironment.ps1'
+  if (Test-Path -LiteralPath $bitwardenTlsHelperPath -PathType Leaf) {
+    . $bitwardenTlsHelperPath
+  }
+}
+
 function Remove-SprintBitwardenSecrets {
   <#
   .SYNOPSIS
@@ -164,7 +171,9 @@ function Remove-SprintBitwardenSecrets {
                 -Message "Searching Bitwarden for item: $secretName" -Tag 'BitwardenCLI'
 
               # bw list returns an array; --search does substring match so we filter for exact name
-              $listOutput = & bw list items --search $secretName --session $env:BW_SESSION 2>&1
+              $listOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+                & bw list items --search $secretName --session $env:BW_SESSION 2>&1
+              }
               if ($LASTEXITCODE -ne 0) {
                 throw "bw list items failed (exit $LASTEXITCODE): $listOutput"
               }
@@ -184,7 +193,9 @@ function Remove-SprintBitwardenSecrets {
               Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
                 -Message "Deleting Bitwarden item $itemId ($secretName)" -Tag 'BitwardenCLI'
 
-              $deleteOutput = & bw delete item $itemId --session $env:BW_SESSION 2>&1
+              $deleteOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+                & bw delete item $itemId --session $env:BW_SESSION 2>&1
+              }
               if ($LASTEXITCODE -ne 0) {
                 throw "bw delete item failed (exit $LASTEXITCODE): $deleteOutput"
               }
@@ -208,7 +219,9 @@ function Remove-SprintBitwardenSecrets {
     # Sync vault so all clients see the deletions immediately
     if ($results.Where({ $_.deleted }).Count -gt 0) {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Running bw sync to propagate deletions.' -Tag 'BitwardenCLI'
-      $syncOutput = & bw sync --session $env:BW_SESSION 2>&1
+      $syncOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+        & bw sync --session $env:BW_SESSION 2>&1
+      }
       if ($LASTEXITCODE -ne 0) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
           -Message "bw sync failed (exit $LASTEXITCODE): $syncOutput" -Tag 'BitwardenCLI'

@@ -1,5 +1,12 @@
 #Requires -Version 7.0
 
+if (-not (Get-Command -Name 'Invoke-BitwardenCliWithCleanTlsEnvironment' -ErrorAction SilentlyContinue)) {
+  $bitwardenTlsHelperPath = Join-Path -Path $PSScriptRoot -ChildPath '..\private\Invoke-BitwardenCliWithCleanTlsEnvironment.ps1'
+  if (Test-Path -LiteralPath $bitwardenTlsHelperPath -PathType Leaf) {
+    . $bitwardenTlsHelperPath
+  }
+}
+
 function Test-SprintUrlReachable {
   [CmdletBinding()]
   [OutputType([PSCustomObject])]
@@ -186,7 +193,9 @@ function Test-SprintPrerequisites {
     $bwDetail = ''
     try {
       $bwCmd = Get-Command -Name bw -CommandType Application -ErrorAction Stop
-      $statusJson = & $bwCmd status 2>$null
+      $statusJson = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName 'Test-SprintPrerequisites' {
+        & $bwCmd status 2>$null
+      }
       if ($LASTEXITCODE -eq 0 -and $statusJson) {
         try {
           $status = ($statusJson | ConvertFrom-Json).status

@@ -69,6 +69,8 @@ $OpenSSLConfigurationPath = 'C:\Dropbox\Security\CARoot\openssl.cnf'
 Invoke-WebRequest 'http://web.mit.edu/crypto/openssl.cnf' -OutFile $OpenSSLConfigurationPath
 ```
 
+Note: `OPENSSL_HOME`, `OPENSSL_CONF`, and `RANDFILE` were removed from the global HostSettings/profile environment. Exporting them globally breaks tools that inherit the process environment but bundle their own TLS runtime, including the Bitwarden `bw` CLI. When the self-signing and internal CA work resumes, set these values explicitly in the script or shell immediately before calling OpenSSL utilities, then clear or restore them afterward.
+
 Add a machine-wide environment variable (windows only)
 
 ```Powershell

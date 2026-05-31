@@ -1,3 +1,10 @@
+if (-not (Get-Command -Name 'Invoke-BitwardenCliWithCleanTlsEnvironment' -ErrorAction SilentlyContinue)) {
+  $bitwardenTlsHelperPath = Join-Path -Path $PSScriptRoot -ChildPath '..\private\Invoke-BitwardenCliWithCleanTlsEnvironment.ps1'
+  if (Test-Path -LiteralPath $bitwardenTlsHelperPath -PathType Leaf) {
+    . $bitwardenTlsHelperPath
+  }
+}
+
 function New-SprintBitwardenSecrets {
   <#
   .SYNOPSIS
@@ -147,7 +154,9 @@ function New-SprintBitwardenSecrets {
               # Idempotency check: skip if the item already exists
               Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
                 -Message "Checking if Bitwarden item already exists: $secretName" -Tag 'BitwardenCLI'
-              $listOutput = & bw list items --search $secretName --session $env:BW_SESSION 2>&1
+              $listOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+                & bw list items --search $secretName --session $env:BW_SESSION 2>&1
+              }
               $existingItems = $null
               if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($listOutput)) {
                 try { $existingItems = $listOutput | ConvertFrom-Json -ErrorAction SilentlyContinue } catch { }
@@ -182,7 +191,9 @@ function New-SprintBitwardenSecrets {
 
                 $encoded = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($itemJson))
 
-                $createOutput = $encoded | & bw create item --session $env:BW_SESSION 2>&1
+                $createOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+                  $encoded | & bw create item --session $env:BW_SESSION 2>&1
+                }
                 if ($LASTEXITCODE -ne 0) {
                   throw "bw create item failed (exit $LASTEXITCODE): $createOutput"
                 }
@@ -211,7 +222,9 @@ function New-SprintBitwardenSecrets {
     # Sync vault so all clients see the newly created items immediately
     if ($results.Where({ $_.created }).Count -gt 0) {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Running bw sync to propagate new secrets.' -Tag 'BitwardenCLI'
-      $syncOutput = & bw sync --session $env:BW_SESSION 2>&1
+      $syncOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+        & bw sync --session $env:BW_SESSION 2>&1
+      }
       if ($LASTEXITCODE -ne 0) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
           -Message "bw sync failed (exit $LASTEXITCODE): $syncOutput" -Tag 'BitwardenCLI'

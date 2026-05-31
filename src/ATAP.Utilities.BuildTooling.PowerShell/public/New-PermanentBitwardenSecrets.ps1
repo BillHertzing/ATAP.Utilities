@@ -1,3 +1,10 @@
+if (-not (Get-Command -Name 'Invoke-BitwardenCliWithCleanTlsEnvironment' -ErrorAction SilentlyContinue)) {
+  $bitwardenTlsHelperPath = Join-Path -Path $PSScriptRoot -ChildPath '..\private\Invoke-BitwardenCliWithCleanTlsEnvironment.ps1'
+  if (Test-Path -LiteralPath $bitwardenTlsHelperPath -PathType Leaf) {
+    . $bitwardenTlsHelperPath
+  }
+}
+
 function New-PermanentBitwardenSecrets {
   <#
   .SYNOPSIS
@@ -184,7 +191,9 @@ function New-PermanentBitwardenSecrets {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
               -Message "Checking for existing Bitwarden item: $secretName" -Tag 'BitwardenCLI'
 
-            $listOutput = & bw list items --search $secretName --session $env:BW_SESSION 2>&1
+            $listOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+              & bw list items --search $secretName --session $env:BW_SESSION 2>&1
+            }
             if ($LASTEXITCODE -ne 0) {
               throw "bw list items failed (exit $LASTEXITCODE): $listOutput"
             }
@@ -205,7 +214,9 @@ function New-PermanentBitwardenSecrets {
               $existingId = $existingMatch[0].id
               Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
                 -Message "-Force specified — deleting existing item $existingId before re-creating $secretName" -Tag 'BitwardenCLI'
-              $deleteOutput = & bw delete item $existingId --session $env:BW_SESSION 2>&1
+              $deleteOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+                & bw delete item $existingId --session $env:BW_SESSION 2>&1
+              }
               if ($LASTEXITCODE -ne 0) {
                 throw "bw delete item (pre-Force overwrite) failed (exit $LASTEXITCODE): $deleteOutput"
               }
@@ -228,12 +239,16 @@ function New-PermanentBitwardenSecrets {
 
             $itemJson = $bwItem | ConvertTo-Json -Depth 5 -Compress
 
-            $encoded = $itemJson | & bw encode --session $env:BW_SESSION
+            $encoded = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+              $itemJson | & bw encode --session $env:BW_SESSION
+            }
             if ($LASTEXITCODE -ne 0) {
               throw "bw encode failed (exit $LASTEXITCODE)"
             }
 
-            $createOutput = $encoded | & bw create item --session $env:BW_SESSION 2>&1
+            $createOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+              $encoded | & bw create item --session $env:BW_SESSION 2>&1
+            }
             if ($LASTEXITCODE -ne 0) {
               throw "bw create item failed (exit $LASTEXITCODE): $createOutput"
             }

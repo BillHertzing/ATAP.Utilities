@@ -61,6 +61,13 @@ https://bitwarden.com/help/cli/
 .LINK
 https://github.com/whertzing/ATAP.Utilities
 #>
+if (-not (Get-Command -Name 'Invoke-BitwardenCliWithCleanTlsEnvironment' -ErrorAction SilentlyContinue)) {
+  $bitwardenTlsHelperPath = Join-Path -Path $PSScriptRoot -ChildPath '..\private\Invoke-BitwardenCliWithCleanTlsEnvironment.ps1'
+  if (Test-Path -LiteralPath $bitwardenTlsHelperPath -PathType Leaf) {
+    . $bitwardenTlsHelperPath
+  }
+}
+
 function Get-SecretATAPBitwarden {
   [CmdletBinding()]
   [OutputType([string])]
@@ -109,7 +116,9 @@ function Get-SecretATAPBitwarden {
 
       # 3. Verify the vault is unlocked.
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Calling bw status to verify session validity' -Tag 'BWCall'
-      $statusOutput = & bw status --session $bwSession 2>&1
+      $statusOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+        & bw status --session $bwSession 2>&1
+      }
       $statusExit = $LASTEXITCODE
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "bw status exit code: $statusExit" -Tag 'BWCall'
       if ($statusExit -ne 0) {
@@ -127,7 +136,9 @@ function Get-SecretATAPBitwarden {
 
       # 4. Retrieve the item JSON.
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling bw get item '$SecretName'" -Tag 'BWCall'
-      $itemOutput = & bw get item $SecretName --session $bwSession 2>&1
+      $itemOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+        & bw get item $SecretName --session $bwSession 2>&1
+      }
       $itemExit = $LASTEXITCODE
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "bw get item exit code: $itemExit" -Tag 'BWCall'
       if ($itemExit -ne 0) {

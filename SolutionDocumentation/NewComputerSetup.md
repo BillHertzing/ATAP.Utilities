@@ -55,7 +55,8 @@ Install and verify these tools before continuing:
 2. Git
 3. Visual Studio Code
 4. Dropbox
-5. Bitwarden desktop and `bw`
+5. Bitwarden desktop and the `bw` Password-Manager CLI (the Secrets Manager CLI `bws`
+   is installed machine-wide separately in Step 4.6)
 6. .NET SDKs required by the repos
 7. Python if the workstation will run Manim or Copilot code execution
 
@@ -238,6 +239,146 @@ Open a fresh PowerShell 7 console and verify that the profile and login script a
 $PROFILE | Format-List *
 [System.Environment]::GetEnvironmentVariable('BW_SESSION', 'User')
 ```
+
+### 4.6 Install the Bitwarden Secrets Manager CLI (`bws`) machine-wide
+
+`Get-SecretATAP` with the `BitwardenSecretsManager` provider shells out to the `bws`
+CLI to read runtime secrets (Step 9.4.10). The Inedo products run as `SvcBuildmaster`
+and `SvcProGet`, and those service / scheduled-task processes start with `-NoProfile`,
+so `bws` must resolve from the **machine** `PATH` — not from a per-user `winget` install
+under one developer's AppData, and not only from the ATAP profile's injected PATH (which
+`-NoProfile` sessions and Windows services never load).
+
+This is the same machine-wide-resolution requirement Step 4.4 documents for `nbgv`.
+Install `bws.exe` into a shared `Program Files` location and add that folder to the
+system `PATH` so every local account — `SvcBuildmaster`, `SvcProGet`, and every
+interactive developer — resolves the same binary.
+
+The `bws` CLI ships from the `bitwarden/sdk-sm` repository (it is **not** the same
+package as the `bw` Password-Manager CLI, and there is no reliable machine-scope winget
+package for it). Releases are tagged `bws-v<version>`.
+
+Run from an **elevated** PowerShell 7 session.
+
+```powershell
+# Pin the bws release. Bump these lines to upgrade.
+$bwsVersion = '2.1.0'
+$bwsAsset   = "bws-x86_64-pc-windows-msvc-$bwsVersion.zip"
+$bwsUrl     = "https://github.com/bitwarden/sdk-sm/releases/download/bws-v$bwsVersion/$bwsAsset"
+
+$installDir = 'C:\Program Files\Bitwarden\bws'
+New-Item -ItemType Directory -Path $installDir -Force | Out-Null
+
+$zipPath = Join-Path $env:TEMP $bwsAsset
+Invoke-WebRequest -Uri $bwsUrl -OutFile $zipPath
+
+# The zip contains bws.exe at its root; extract it into the machine-wide install dir.
+Expand-Archive -LiteralPath $zipPath -DestinationPath $installDir -Force
+Remove-Item $zipPath -ErrorAction SilentlyContinue
+
+# Confirm the binary landed.
+& (Join-Path $installDir 'bws.exe') --version
+```
+
+Add the install dir to the **Machine** `PATH` (idempotent — only appends if missing). A
+machine-scope `PATH` entry is inherited by Windows services and by scheduled tasks
+launched with `-NoProfile`, which is why it is used here instead of the profile PATH
+injection used for `nbgv`:
+
+```powershell
+$installDir = 'C:\Program Files\Bitwarden\bws'
+$machinePath = [Environment]::GetEnvironmentVariable('Path', 'Machine')
+$entries = $machinePath -split ';' | Where-Object { $_ }
+if ($entries -notcontains $installDir) {
+  $newPath = ($entries + $installDir) -join ';'
+  [Environment]::SetEnvironmentVariable('Path', $newPath, 'Machine')
+  Write-Host "Added $installDir to Machine PATH."
+} else {
+  Write-Host "$installDir already on Machine PATH."
+}
+```
+
+A Machine `PATH` change is composed into a process's environment only at process
+creation, and a child process inherits its **parent's** in-memory environment block —
+not a freshly rebuilt one. The elevated session you just ran the install in still holds
+the old `PATH`, and any `pwsh` you launch *from it* (including the verification lines
+below) inherits that stale block and will report `bws` as missing. **Open a brand-new
+`pwsh` window from the Start menu / Explorer** (not from the install session), then
+verify that `bws` resolves both with and without a profile:
+
+```powershell
+pwsh -NoProfile -Command "(Get-Command bws -ErrorAction SilentlyContinue).Source"   # machine PATH only
+pwsh -Command            "(Get-Command bws -ErrorAction SilentlyContinue).Source"   # machine PATH + profile
+bws --version
+```
+
+If you must verify without opening a new window, refresh the current session's `PATH`
+from the registry first (this is what a fresh window does automatically):
+
+```powershell
+$env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' +
+            [Environment]::GetEnvironmentVariable('Path','User')
+(Get-Command bws).Source
+```
+
+Windows **services** and scheduled tasks likewise inherit the new `PATH` only after a
+service restart (or a reboot).
+
+Both must print a path under `C:\Program Files\Bitwarden\bws` and the version. The
+`-NoProfile` line is the important one: it proves the binary is visible to the
+`-NoProfile` service-account contexts described in Step 9.4.10, independent of any
+PowerShell profile.
+
+A **Machine** `PATH` entry is account-independent, so the `-NoProfile` check above
+already proves the binary is resolvable for every account that starts after the change —
+including `SvcBuildmaster` and `SvcProGet` once their services are restarted. The
+following is an **optional** belt-and-suspenders confirmation that opens a one-shot
+`-NoProfile` shell *as* the service account and prints the resolved path.
+
+This check is only possible after the service accounts exist (Step 5); if you are
+running Step 4.6 in document order, the accounts do not exist yet — skip this and rely
+on the `-NoProfile` check above, or return here after Step 5.
+
+Prompt for the service account's Windows password with `Get-Credential` rather than
+fetching it through `Get-SecretATAP`. The verification's only goal is to prove `bws` is
+on the service account's `PATH`; routing it through the Password-Manager `bw` CLI would
+couple this check to an unrelated dependency (a live `BW_SESSION` and `bw`'s network/TLS
+state) that can fail for reasons having nothing to do with `bws`.
+
+```powershell
+$svc = 'SvcBuildmaster'   # repeat with 'SvcProGet'
+$cred = Get-Credential -UserName "$env:COMPUTERNAME\$svc" `
+  -Message "Windows password for $svc (PATH check only)"
+
+# Write the captured output somewhere the service account can also reach. Do NOT use
+# your own $env:TEMP (under your profile) — the spawned service-account process cannot
+# use another user's profile Temp as its working directory and emits a harmless
+# "drive root ... does not exist" warning. C:\Windows\Temp is readable by all accounts.
+$out = "C:\Windows\Temp\bws-pathcheck-$svc.txt"
+
+# Keep the Start-Process call on one physical line. A backtick continuation here breaks
+# when the block is pasted into an interactive console line-by-line (the -ArgumentList
+# arguments end up on a separate, separately-evaluated line). -WorkingDirectory points the
+# child at a path the service account can access.
+$argList = @('-NoProfile', '-Command', '(Get-Command bws -ErrorAction SilentlyContinue).Source; bws --version')
+Start-Process pwsh -Credential $cred -Wait -WorkingDirectory 'C:\Windows\Temp' -RedirectStandardOutput $out -ArgumentList $argList
+
+Get-Content $out
+Remove-Item $out -ErrorAction SilentlyContinue
+```
+
+Expected — the resolved path under `C:\Program Files\Bitwarden\bws` and the `bws`
+version, printed from the service account's own `-NoProfile` context.
+
+> **Upgrading.** Bump `$bwsVersion` and re-run the download/extract block; the PATH and
+> verification steps are idempotent and do not need to change. Overwriting `bws.exe` in
+> place is safe because every account shares the one binary by path rather than copying
+> it per profile.
+
+> **Why not `winget install Bitwarden.SecretsManager`?** A `winget` per-user install
+> places `bws` under the installing developer's profile, where service accounts cannot
+> see it. If a verified machine-scope package becomes available you may use it, but you
+> must still pass the `-NoProfile` and service-account resolution checks above.
 
 ## Phase 2: Third-Party Software
 
@@ -1186,14 +1327,20 @@ Host mapping:
 | `SvcBuildmaster` | `SvcBuildMaster` | `BuildMaster-Core`, `CI-Shared` | `…\SvcBuildmaster\<HOST>_SvcBuildmaster_BWS_AccessToken.xml` |
 | `SvcProGet` | `SvcInfraShared` | `ProGet-Core`, `CI-Shared` | `…\SvcProGet\<HOST>_SvcProGet_BWS_AccessToken.xml` |
 
-##### 9.4.10.1 Install the `bws` CLI (once per host)
+##### 9.4.10.1 Confirm the `bws` CLI is installed machine-wide
 
-Install the Bitwarden Secrets Manager CLI (`bws`) and confirm it is on `PATH`:
+`bws` is installed machine-wide in **Step 4.6**, so `SvcBuildmaster`, `SvcProGet`, and
+every interactive account resolve the same binary from the system `PATH`. Confirm it is
+visible from a `-NoProfile` shell (the context the service accounts actually run in) and
+continue:
 
 ```powershell
-winget install Bitwarden.SecretsManager   # or download the bws release and add to PATH
+pwsh -NoProfile -Command "(Get-Command bws -ErrorAction SilentlyContinue).Source"
 bws --version
 ```
+
+If `bws` does not resolve, complete Step 4.6 (machine-wide `bws` install) before
+continuing.
 
 ##### 9.4.10.2 DPAPI-store each access token (run AS the service account)
 

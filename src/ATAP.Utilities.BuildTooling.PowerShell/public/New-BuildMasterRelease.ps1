@@ -9,13 +9,16 @@ function New-BuildMasterRelease {
     Calls BuildMaster's Native API `POST /api/releases/create` with a JSON
     body of `ApplicationName`, `ReleaseNumber`, and `PipelineName`, plus
     optional `ReleaseName`, using the `X-ApiKey` header for authentication.
-    The API key value is read in this order:
+    The BuildMaster admin API key secret name is read in this order:
 
-      1. `-ApiKey` parameter (explicit).
-      2. `$global:settings[$global:configRootKeys['BuildMasterAdminApiKey']]`
+      1. `-BuildMasterAdminApiKeySecretName` parameter (explicit).
+      2. Environment variable `BuildMasterAdminApiKeySecretName`
+         (Process, then User).
+      3. `$global:settings[$global:configRootKeys['BuildMasterAdminApiKeySecretNameConfigRootKey']]`
          (Explainer-0111 settings model).
-      3. The Process or User-scope env var `BUILDMASTER_ADMIN_API_KEY`
-         (per R-27 in `CLAUDE.md`: `ALL_UPPERCASE_WITH_UNDERSCORES`).
+
+    The actual API key value is then retrieved through `Get-SecretATAP` using
+    that secret name.
 
     The base URL is resolved in the same order from `-BuildMasterBaseUrl`
     → `$global:settings['BuildMasterBaseUrl']` → env var
@@ -54,9 +57,10 @@ function New-BuildMasterRelease {
     Falls back to `$global:settings` then to the
     `BUILDMASTER_BASE_URL` User env var.
 
-.PARAMETER ApiKey
-    The BuildMaster admin API key. Falls back to `$global:settings`
-    then to the `BUILDMASTER_ADMIN_API_KEY` User env var.
+.PARAMETER BuildMasterAdminApiKeySecretName
+    The ATAP secret name containing the BuildMaster admin API key. Falls back
+    to the `BuildMasterAdminApiKeySecretName` environment variable, then to
+    `$global:settings`.
 
 .INPUTS
     None.
@@ -107,7 +111,7 @@ function New-BuildMasterRelease {
     [string]$BuildMasterBaseUrl,
 
     [Parameter(Mandatory = $false)]
-    [string]$ApiKey
+    [string]$BuildMasterAdminApiKeySecretName
   )
 
   begin {
@@ -143,28 +147,59 @@ function New-BuildMasterRelease {
 
   process {
     # ---------------------------------------------------------------------
-    # 1. Resolve API key: parameter -> $global:settings -> env var.
+    # 1. Resolve API key secret name, then retrieve the API key value.
     #    Never log the key value. Mask with '***' in surface logging.
     # ---------------------------------------------------------------------
-    $resolvedApiKey = $ApiKey
-    if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-      if ($null -ne $global:settings) {
-        $key = $null
-        if ($null -ne $global:configRootKeys) {
-          $key = $global:configRootKeys['BuildMasterAdminApiKeyConfigRootKey']
+    $resolvedSecretName = $BuildMasterAdminApiKeySecretName
+    if ([string]::IsNullOrWhiteSpace($resolvedSecretName)) {
+      $resolvedSecretName = [Environment]::GetEnvironmentVariable('BuildMasterAdminApiKeySecretName', 'Process')
+      if ([string]::IsNullOrWhiteSpace($resolvedSecretName)) {
+        $resolvedSecretName = [Environment]::GetEnvironmentVariable('BuildMasterAdminApiKeySecretName', 'User')
+      }
+    }
+    if ([string]::IsNullOrWhiteSpace($resolvedSecretName) -and $null -ne $global:settings) {
+      $settingsKey = $null
+      if ($null -ne $global:configRootKeys) {
+        $settingsKey = $global:configRootKeys['BuildMasterAdminApiKeySecretNameConfigRootKey']
+      }
+      if ([string]::IsNullOrWhiteSpace($settingsKey)) { $settingsKey = 'BuildMasterAdminApiKeySecretName' }
+      $resolvedSecretName = [string]$global:settings[$settingsKey]
+    }
+    if ([string]::IsNullOrWhiteSpace($resolvedSecretName)) {
+      $msg = "Unable to resolve BuildMaster admin API key secret name. Pass -BuildMasterAdminApiKeySecretName, set the BuildMasterAdminApiKeySecretName environment variable, or set `$global:settings.BuildMasterAdminApiKeySecretName."
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+      throw $msg
+    }
+
+    if (-not (Get-Command -Name 'Get-SecretATAP' -CommandType Function -ErrorAction SilentlyContinue)) {
+      $secretHelperPath = Join-Path -Path $PSScriptRoot -ChildPath 'Get-SecretATAP.ps1'
+      if (-not (Test-Path -LiteralPath $secretHelperPath -PathType Leaf)) {
+        throw "Required helper 'Get-SecretATAP' was not found at '$secretHelperPath'."
+      }
+      . $secretHelperPath
+    }
+
+    $resolvedApiKey = $null
+    $secretErrors = [System.Collections.Generic.List[string]]::new()
+    foreach ($fieldName in @($null, 'token', 'key', 'password')) {
+      try {
+        $candidate = if ($null -eq $fieldName) {
+          Get-SecretATAP -BuildMasterAdminApiKeySecretName $resolvedSecretName -ErrorAction Stop
+        } else {
+          Get-SecretATAP -BuildMasterAdminApiKeySecretName $resolvedSecretName -SecretField $fieldName -ErrorAction Stop
         }
-        if ([string]::IsNullOrWhiteSpace($key)) { $key = 'BuildMasterAdminApiKey' }
-        $resolvedApiKey = [string]$global:settings[$key]
+        if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) {
+          $resolvedApiKey = [string]$candidate
+          break
+        }
+      } catch {
+        $fieldLabel = if ($null -eq $fieldName) { '<default>' } else { $fieldName }
+        $secretErrors.Add("${fieldLabel}: $($_.Exception.Message)") | Out-Null
       }
     }
     if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-      $resolvedApiKey = [Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'Process')
-      if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-        $resolvedApiKey = [Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
-      }
-    }
-    if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-      $msg = "Unable to resolve BuildMaster admin API key. Pass -ApiKey, set `$global:settings.BuildMasterAdminApiKey, or define the BUILDMASTER_ADMIN_API_KEY User env var."
+      $detail = if ($secretErrors.Count -gt 0) { " Last error: $($secretErrors[$secretErrors.Count - 1])" } else { '' }
+      $msg = "Unable to resolve BuildMaster admin API key value from secret '$resolvedSecretName' via Get-SecretATAP.$detail"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
       throw $msg
     }
@@ -270,7 +305,7 @@ function New-BuildMasterRelease {
       $shouldProbeExistingRelease = $looksLikeConflict -or ($statusCode -eq 400)
 
       if ($statusCode -eq 401 -or $statusCode -eq 403) {
-        $msg = "BuildMaster authentication failed (HTTP $statusCode) for $createUri. Check BUILDMASTER_ADMIN_API_KEY."
+        $msg = "BuildMaster authentication failed (HTTP $statusCode) for $createUri. Check the secret named by BuildMasterAdminApiKeySecretName."
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'RestCall'
         throw $msg
       } elseif ($shouldProbeExistingRelease) {

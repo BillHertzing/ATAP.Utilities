@@ -7,6 +7,23 @@ BeforeAll {
   # receive. Created before the dot-source so any load-time side effect would be
   # recorded; the stubs also throw, since none of them may run during DryRun.
   $global:dryRunExternalCalls = [System.Collections.Generic.List[string]]::new()
+  $script:dryRunStubbedFunctionNames = @(
+    'Assert-GitAvailable'
+    'gh'
+    'git'
+    'Set-WorktreeJunctions'
+    'Initialize-DownstreamSprintFromSharedVSCode'
+    'New-SprintSqlServerInstances'
+    'Set-BuildMasterSprintVariables'
+    'New-SprintBitwardenSecrets'
+  )
+  $script:dryRunOriginalFunctions = @{}
+  foreach ($name in $script:dryRunStubbedFunctionNames) {
+    $existing = Get-Command -Name $name -CommandType Function -ErrorAction SilentlyContinue
+    if ($existing) {
+      $script:dryRunOriginalFunctions[$name] = $existing.ScriptBlock
+    }
+  }
 
   function global:Assert-GitAvailable {
     $global:dryRunExternalCalls.Add('Assert-GitAvailable') | Out-Null
@@ -56,6 +73,13 @@ BeforeAll {
   # K04: freeze the set of external calls observed up to and including the
   # dot-source. The first test below asserts this stayed empty.
   $script:callsObservedAtLoad = @($global:dryRunExternalCalls)
+}
+
+AfterAll {
+  foreach ($name in $script:dryRunStubbedFunctionNames) {
+    Remove-Item -Path "Function:\$name" -Force -ErrorAction SilentlyContinue
+  }
+  Remove-Variable -Name dryRunExternalCalls -Scope Global -Force -ErrorAction SilentlyContinue
 }
 
 Describe 'New-SprintStage dry-run support' -Tag 'Unit' {

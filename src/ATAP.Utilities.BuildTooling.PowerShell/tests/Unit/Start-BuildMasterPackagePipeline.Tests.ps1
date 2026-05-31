@@ -30,7 +30,7 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
         ReleaseName        = $ReleaseName
         PipelineName       = $PipelineName
         BuildMasterBaseUrl = $BuildMasterBaseUrl
-        ApiKey             = $ApiKey
+        BuildMasterAdminApiKeySecretName = $BuildMasterAdminApiKeySecretName
       }
       [PSCustomObject]@{
         Succeeded     = $true
@@ -47,7 +47,7 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
         Variables          = $Variables
         Reason             = $Reason
         BuildMasterBaseUrl = $BuildMasterBaseUrl
-        ApiKey             = $ApiKey
+        BuildMasterAdminApiKeySecretName = $BuildMasterAdminApiKeySecretName
       }
       [PSCustomObject]@{
         Succeeded   = $true
@@ -62,7 +62,7 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
         BuildNumber        = $BuildNumber
         ToStage            = $ToStage
         BuildMasterBaseUrl = $BuildMasterBaseUrl
-        ApiKey             = $ApiKey
+        BuildMasterAdminApiKeySecretName = $BuildMasterAdminApiKeySecretName
       }
       [PSCustomObject]@{
         Succeeded       = $true
@@ -208,14 +208,14 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
       -ModuleName 'ATAP.Utilities.PowerShell' `
       -ResolvedPackageVersion '0.1.0-Beta001' `
       -BuildMasterBaseUrl 'http://localhost:50017' `
-      -ApiKey 'unit-test-key'
+      -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
 
     $script:deploymentCall['Application'] | Should -Be 'ATAP.Utilities-PowerShell'
     $script:deploymentCall['ReleaseNumber'] | Should -Be '0.1.0-Beta001'
     $script:deploymentCall['BuildNumber'] | Should -Be '23'
     $script:deploymentCall['ToStage'] | Should -BeNullOrEmpty
     $script:deploymentCall['BuildMasterBaseUrl'] | Should -Be 'http://localhost:50017'
-    $script:deploymentCall['ApiKey'] | Should -Be 'unit-test-key'
+    $script:deploymentCall['BuildMasterAdminApiKeySecretName'] | Should -Be 'BuildMaster.Admin.API.Key'
     $result.DeploymentResult.DeploymentId | Should -Be '3003'
     $result.ResponseSummary | Should -Match 'deployment started'
   }

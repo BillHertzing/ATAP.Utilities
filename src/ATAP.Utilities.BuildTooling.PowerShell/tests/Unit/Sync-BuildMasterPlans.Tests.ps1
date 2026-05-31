@@ -18,6 +18,10 @@ BeforeAll {
   . "$PSScriptRoot\..\..\public\Sync-BuildMasterPlans.ps1"
 }
 
+AfterAll {
+  Remove-Item -Path 'Function:\Invoke-RestMethod' -Force -ErrorAction SilentlyContinue
+}
+
 Describe 'Sync-BuildMasterPlans [public]' {
   BeforeEach {
     $script:tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "bm_plans_$([guid]::NewGuid().ToString('N'))"

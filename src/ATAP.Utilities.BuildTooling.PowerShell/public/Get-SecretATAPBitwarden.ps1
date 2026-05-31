@@ -29,7 +29,8 @@ are logged.
 
 .PARAMETER SecretName
 The Bitwarden item name. Hyphens, dots, and arbitrary username segments are
-passed through unchanged. Required.
+passed through unchanged. Required. Also accepts
+`-BuildMasterAdminApiKeySecretName` as an alias for BuildMaster helper calls.
 
 .PARAMETER SecretField
 The named field inside the Bitwarden item to return. Defaults to 'password'.
@@ -66,6 +67,7 @@ function Get-SecretATAPBitwarden {
   param(
     [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
     [ValidateNotNullOrWhiteSpace()]
+    [Alias('BuildMasterAdminApiKeySecretName')]
     [string]$SecretName,
 
     [Parameter(Mandatory = $false, Position = 1, ValueFromPipelineByPropertyName = $true)]

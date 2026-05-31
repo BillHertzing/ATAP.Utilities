@@ -218,6 +218,14 @@ function Start-BuildMasterPackagePipeline {
 .PARAMETER SkipDeployment
     Creates the release/build but does not call the BuildMaster deploy API.
 
+.PARAMETER BuildMasterBaseUrl
+    Optional BuildMaster base URL passed to the release, build, and deployment
+    helper functions.
+
+.PARAMETER BuildMasterAdminApiKeySecretName
+    Optional ATAP secret name containing the BuildMaster admin API key. Passed
+    through to the release, build, and deployment helper functions.
+
 .OUTPUTS
     [PSCustomObject] summarizing the release and build API results.
 #>
@@ -272,7 +280,7 @@ function Start-BuildMasterPackagePipeline {
     [string]$BuildMasterBaseUrl,
 
     [Parameter(Mandatory = $false)]
-    [string]$ApiKey
+    [string]$BuildMasterAdminApiKeySecretName
   )
 
   begin {
@@ -365,7 +373,7 @@ function Start-BuildMasterPackagePipeline {
       PipelineName = $PipelineName
     }
     if (-not [string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) { $releaseParams['BuildMasterBaseUrl'] = $BuildMasterBaseUrl }
-    if (-not [string]::IsNullOrWhiteSpace($ApiKey)) { $releaseParams['ApiKey'] = $ApiKey }
+    if (-not [string]::IsNullOrWhiteSpace($BuildMasterAdminApiKeySecretName)) { $releaseParams['BuildMasterAdminApiKeySecretName'] = $BuildMasterAdminApiKeySecretName }
 
     Write-Host "Calling BuildMaster release API (timeout 30s)."
     $releaseResult = New-BuildMasterRelease @releaseParams
@@ -379,7 +387,7 @@ function Start-BuildMasterPackagePipeline {
       Reason       = $effectiveReason
     }
     if (-not [string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) { $buildParams['BuildMasterBaseUrl'] = $BuildMasterBaseUrl }
-    if (-not [string]::IsNullOrWhiteSpace($ApiKey)) { $buildParams['ApiKey'] = $ApiKey }
+    if (-not [string]::IsNullOrWhiteSpace($BuildMasterAdminApiKeySecretName)) { $buildParams['BuildMasterAdminApiKeySecretName'] = $BuildMasterAdminApiKeySecretName }
 
     Write-Host "Queueing BuildMaster build for release '$releaseNumber'."
     Write-Host "Calling BuildMaster build API (timeout 30s)."
@@ -402,7 +410,7 @@ function Start-BuildMasterPackagePipeline {
       }
       if ($deploymentStageWasSupplied) { $deploymentParams['ToStage'] = $DeploymentStage }
       if (-not [string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) { $deploymentParams['BuildMasterBaseUrl'] = $BuildMasterBaseUrl }
-      if (-not [string]::IsNullOrWhiteSpace($ApiKey)) { $deploymentParams['ApiKey'] = $ApiKey }
+      if (-not [string]::IsNullOrWhiteSpace($BuildMasterAdminApiKeySecretName)) { $deploymentParams['BuildMasterAdminApiKeySecretName'] = $BuildMasterAdminApiKeySecretName }
 
       $deploymentTargetText = if ($deploymentStageWasSupplied) { "stage '$DeploymentStage'" } else { 'the next pipeline stage' }
       Write-Host "Starting BuildMaster deployment for build '$buildNumber' to $deploymentTargetText."

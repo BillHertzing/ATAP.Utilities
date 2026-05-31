@@ -48,6 +48,12 @@ BeforeAll {
     $script:apiKey  = 'test-api-key'
 }
 
+AfterAll {
+    Remove-Item -Path 'Function:\Invoke-RestMethod' -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path 'Function:\Get-PVal' -Force -ErrorAction SilentlyContinue
+    Remove-Variable -Name MoveProGetIntraTierRestCalls -Scope Global -Force -ErrorAction SilentlyContinue
+}
+
 Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
   BeforeEach {
     Mock Write-PSFMessage { }

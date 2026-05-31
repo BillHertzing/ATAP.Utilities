@@ -25,7 +25,8 @@ Field extraction:
 The function never logs secret values; only the secret name and chosen field are logged.
 
 .PARAMETER SecretName
-The Bitwarden Secrets Manager secret key. Required.
+The Bitwarden Secrets Manager secret key. Required. Also accepts
+`-BuildMasterAdminApiKeySecretName` as an alias for BuildMaster helper calls.
 
 .PARAMETER SecretField
 Optional field name to extract from a JSON-structured value. Defaults to 'password'.
@@ -35,7 +36,7 @@ Ignored when the value is not JSON or has no matching property.
 [string] The plain-text secret value (or extracted field).
 
 .EXAMPLE
-Get-SecretATAPBitwardenSecretsManager -SecretName 'BuildMaster.Admin.ApiKey'
+Get-SecretATAPBitwardenSecretsManager -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
 
 .EXAMPLE
 Get-SecretATAPBitwardenSecretsManager -SecretName 'Windows.ServiceAccount.BuildMaster' -SecretField 'password'
@@ -55,6 +56,7 @@ function Get-SecretATAPBitwardenSecretsManager {
   param(
     [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
     [ValidateNotNullOrWhiteSpace()]
+    [Alias('BuildMasterAdminApiKeySecretName')]
     [string]$SecretName,
 
     [Parameter(Mandatory = $false, Position = 1, ValueFromPipelineByPropertyName = $true)]

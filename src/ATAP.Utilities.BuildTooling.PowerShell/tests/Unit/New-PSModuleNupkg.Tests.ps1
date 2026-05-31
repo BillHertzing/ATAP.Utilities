@@ -55,6 +55,7 @@ Describe 'New-PSModuleNupkg' -Tag 'Unit' {
 
         # The mock Publish-PSResource creates an empty .nupkg file in the
         # staging Repository folder. The cmdlet later locates and moves it.
+        $script:publishPSResourceCalls = [System.Collections.Generic.List[hashtable]]::new()
         Mock Register-PSResourceRepository {
             param($Name, $Uri, [switch]$Trusted)
             # Capture Uri to use in the Publish-PSResource mock.
@@ -63,6 +64,12 @@ Describe 'New-PSModuleNupkg' -Tag 'Unit' {
         }
         Mock Publish-PSResource {
             param($Path, $Repository, [string]$NupkgPath, [switch]$SkipDependenciesCheck, [Parameter(ValueFromRemainingArguments = $true)]$rest)
+            $script:publishPSResourceCalls.Add(@{
+                Path                  = $Path
+                Repository            = $Repository
+                NupkgPath             = $NupkgPath
+                SkipDependenciesCheck = $SkipDependenciesCheck.IsPresent
+            }) | Out-Null
             # Discover the staging path that was captured during Register-PSResourceRepository.
             $stagingUri = $script:stagingUri
             if ([string]::IsNullOrWhiteSpace($stagingUri)) {
@@ -112,12 +119,10 @@ Describe 'New-PSModuleNupkg' -Tag 'Unit' {
 
         It 'Calls Publish-PSResource with -Path and skips dependency resolution for the empty staging repository' -Tag 'PromotedModuleHostSensitive' {
             New-PSModuleNupkg -ModulePath $script:modulePath -OutputPath $script:outputPath | Out-Null
-            Assert-MockCalled Publish-PSResource -Times 1 -Exactly -Scope It -ParameterFilter {
-                # Mock parameter binding: $Path is the bound parameter name from the mock signature.
-                $Path -eq (Resolve-Path -LiteralPath $script:modulePath).ProviderPath -and
-                [string]::IsNullOrWhiteSpace($NupkgPath) -and
-                $SkipDependenciesCheck
-            }
+            $script:publishPSResourceCalls.Count | Should -Be 1
+            $script:publishPSResourceCalls[0]['Path'] | Should -Be (Resolve-Path -LiteralPath $script:modulePath).ProviderPath
+            [string]::IsNullOrWhiteSpace($script:publishPSResourceCalls[0]['NupkgPath']) | Should -BeTrue
+            $script:publishPSResourceCalls[0]['SkipDependenciesCheck'] | Should -BeTrue
         }
     }
 

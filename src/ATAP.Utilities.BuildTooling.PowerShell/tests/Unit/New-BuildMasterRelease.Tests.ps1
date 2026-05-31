@@ -10,17 +10,25 @@ BeforeAll {
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
   }
+  function Get-SecretATAP {
+    param(
+      [Alias('BuildMasterAdminApiKeySecretName')]
+      [string]$SecretName,
+      [string]$SecretField
+    )
+    'unit-test-key'
+  }
 
   $script:oldConfigRootKeys = $global:configRootKeys
   $script:oldSettings = $global:settings
-  $script:savedApiKey = [Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
+  $script:savedSecretName = [Environment]::GetEnvironmentVariable('BuildMasterAdminApiKeySecretName', 'User')
   $script:savedBaseUrl = [Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'User')
 }
 
 AfterAll {
   $global:configRootKeys = $script:oldConfigRootKeys
   $global:settings = $script:oldSettings
-  [Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', $script:savedApiKey, 'User')
+  [Environment]::SetEnvironmentVariable('BuildMasterAdminApiKeySecretName', $script:savedSecretName, 'User')
   [Environment]::SetEnvironmentVariable('BUILDMASTER_BASE_URL', $script:savedBaseUrl, 'User')
 }
 
@@ -28,14 +36,15 @@ Describe 'New-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {
 
   BeforeEach {
     Mock Write-PSFMessage { }
+    Mock Get-SecretATAP { 'unit-test-key' }
 
     $global:configRootKeys = @{
-      BuildMasterBaseUrlConfigRootKey      = 'BuildMasterBaseUrl'
-      BuildMasterAdminApiKeyConfigRootKey  = 'BuildMasterAdminApiKey'
+      BuildMasterBaseUrlConfigRootKey                 = 'BuildMasterBaseUrl'
+      BuildMasterAdminApiKeySecretNameConfigRootKey   = 'BuildMasterAdminApiKeySecretName'
     }
     $global:settings = @{
-      BuildMasterBaseUrl     = 'https://buildmaster.example.test'
-      BuildMasterAdminApiKey = 'unit-test-key'
+      BuildMasterBaseUrl                   = 'https://buildmaster.example.test'
+      BuildMasterAdminApiKeySecretName     = 'BuildMaster.Admin.API.Key'
     }
   }
 
@@ -102,20 +111,25 @@ Describe 'New-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {
     }
 
     It 'Applies a finite timeout to the create call' {
+      $script:createCalledWithFiniteTimeout = $false
       Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' } -MockWith {
+        throw 'POST was called without -TimeoutSec 30.'
+      }
+      Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' -and $TimeoutSec -eq 30 } -MockWith {
+        $script:createCalledWithFiniteTimeout = $true
         [PSCustomObject]@{ id = 4 }
       }
 
       New-BuildMasterRelease -Application 'A' -ReleaseNumber '1.0.0' -PipelineName 'P' | Out-Null
 
-      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter {
-        $Method -eq 'Post' -and $TimeoutSec -eq 30
-      }
+      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' }
+      $script:createCalledWithFiniteTimeout | Should -BeTrue
     }
   }
 
   Context 'Idempotent path: release already exists' {
     It 'Falls back to GET when POST returns HTTP 409' {
+      $script:getCalledWithFiniteTimeout = $false
       Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' } -MockWith {
         $resp = [PSCustomObject]@{ StatusCode = 409 }
         $ex = [System.Net.WebException]::new('Release already exists')
@@ -124,6 +138,10 @@ Describe 'New-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {
         throw $errRec
       }
       Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Get' } -MockWith {
+        throw 'GET was called without -TimeoutSec 30.'
+      }
+      Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Get' -and $TimeoutSec -eq 30 } -MockWith {
+        $script:getCalledWithFiniteTimeout = $true
         [PSCustomObject]@{ id = 999 }
       }
 
@@ -131,9 +149,8 @@ Describe 'New-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {
       $result.Succeeded | Should -BeTrue
       $result.ReleaseId | Should -Be '999'
       $result.ResponseSummary | Should -Be 'idempotent: release already exists'
-      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter {
-        $Method -eq 'Get' -and $TimeoutSec -eq 30
-      }
+      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Get' }
+      $script:getCalledWithFiniteTimeout | Should -BeTrue
     }
 
     It 'Falls back to GET when error message contains "already exists" regardless of status code' {
@@ -208,26 +225,32 @@ Describe 'New-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   }
 
   Context 'Config resolution' {
-    It 'Uses -ApiKey parameter when supplied (overrides $global:settings)' {
+    It 'Uses -BuildMasterAdminApiKeySecretName parameter when supplied (overrides $global:settings)' {
       $script:capturedHeaders = $null
+      $script:capturedSecretName = $null
+      Mock Get-SecretATAP -MockWith {
+        $script:capturedSecretName = $SecretName
+        'explicit-key-value'
+      }
       Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' } -MockWith {
         $script:capturedHeaders = $Headers
         [PSCustomObject]@{ id = 5 }
       }
-      New-BuildMasterRelease -Application 'A' -ReleaseNumber '1.0.0' -PipelineName 'P' -ApiKey 'explicit-key' | Out-Null
-      $script:capturedHeaders['X-ApiKey'] | Should -Be 'explicit-key'
+      New-BuildMasterRelease -Application 'A' -ReleaseNumber '1.0.0' -PipelineName 'P' -BuildMasterAdminApiKeySecretName 'Explicit.Secret.Name' | Out-Null
+      $script:capturedSecretName | Should -Be 'Explicit.Secret.Name'
+      $script:capturedHeaders['X-ApiKey'] | Should -Be 'explicit-key-value'
     }
 
-    It 'Throws when neither setting nor env var nor parameter provides an API key' {
+    It 'Throws when neither setting nor env var nor parameter provides an API key secret name' {
       $global:settings = @{ BuildMasterBaseUrl = 'https://x.example' }
-      [Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', $null, 'Process')
-      [Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', $null, 'User')
+      [Environment]::SetEnvironmentVariable('BuildMasterAdminApiKeySecretName', $null, 'Process')
+      [Environment]::SetEnvironmentVariable('BuildMasterAdminApiKeySecretName', $null, 'User')
       { New-BuildMasterRelease -Application 'A' -ReleaseNumber '1.0.0' -PipelineName 'P' } |
-        Should -Throw -ExpectedMessage '*BUILDMASTER_ADMIN_API_KEY*'
+        Should -Throw -ExpectedMessage '*BuildMasterAdminApiKeySecretName*'
     }
 
     It 'Uses the localhost BuildMaster default when no base URL is configured' {
-      $global:settings = @{ BuildMasterAdminApiKey = 'k' }
+      $global:settings = @{ BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key' }
       [Environment]::SetEnvironmentVariable('BUILDMASTER_BASE_URL', $null, 'Process')
       [Environment]::SetEnvironmentVariable('BUILDMASTER_BASE_URL', $null, 'User')
       Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' } -MockWith {

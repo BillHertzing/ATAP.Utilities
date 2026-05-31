@@ -35,13 +35,13 @@ AfterAll {
 Describe 'Get-SecretATAPBitwardenSecretsManager' {
 
   It 'returns the raw value for a non-JSON secret' {
-    $script:bwsJson = '[{"id":"1","key":"BuildMaster.Admin.ApiKey","value":"abc123","projectId":"p1"}]'
-    Get-SecretATAPBitwardenSecretsManager -SecretName 'BuildMaster.Admin.ApiKey' | Should -BeExactly 'abc123'
+    $script:bwsJson = '[{"id":"1","key":"BuildMaster.Admin.API.Key","value":"abc123","projectId":"p1"}]'
+    Get-SecretATAPBitwardenSecretsManager -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key' | Should -BeExactly 'abc123'
   }
 
   It 'matches the key case-insensitively' {
-    $script:bwsJson = '[{"id":"1","key":"BuildMaster.Admin.ApiKey","value":"abc123","projectId":"p1"}]'
-    Get-SecretATAPBitwardenSecretsManager -SecretName 'buildmaster.admin.apikey' | Should -BeExactly 'abc123'
+    $script:bwsJson = '[{"id":"1","key":"BuildMaster.Admin.API.Key","value":"abc123","projectId":"p1"}]'
+    Get-SecretATAPBitwardenSecretsManager -SecretName 'buildmaster.admin.api.key' | Should -BeExactly 'abc123'
   }
 
   It 'extracts a field from a JSON-structured value' {

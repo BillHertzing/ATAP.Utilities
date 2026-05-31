@@ -9,6 +9,14 @@ BeforeAll {
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
   }
+  function Get-SecretATAP {
+    param(
+      [Alias('BuildMasterAdminApiKeySecretName')]
+      [string]$SecretName,
+      [string]$SecretField
+    )
+    'unit-test-key'
+  }
 
   function Get-ParameterValueFromNeoConfigurationRoot {
     param(
@@ -39,14 +47,14 @@ BeforeAll {
 
   $script:oldConfigRootKeys = $global:configRootKeys
   $script:oldSettings = $global:settings
-  $script:savedApiKey = [Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
+  $script:savedSecretName = [Environment]::GetEnvironmentVariable('BuildMasterAdminApiKeySecretName', 'User')
   $script:savedBaseUrl = [Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'User')
 }
 
 AfterAll {
   $global:configRootKeys = $script:oldConfigRootKeys
   $global:settings = $script:oldSettings
-  [Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', $script:savedApiKey, 'User')
+  [Environment]::SetEnvironmentVariable('BuildMasterAdminApiKeySecretName', $script:savedSecretName, 'User')
   [Environment]::SetEnvironmentVariable('BUILDMASTER_BASE_URL', $script:savedBaseUrl, 'User')
 }
 
@@ -54,14 +62,15 @@ Describe 'Start-BuildMasterDeployment' -Tag 'Unit', 'PromotedModuleHostSensitive
 
   BeforeEach {
     Mock Write-PSFMessage { }
+    Mock Get-SecretATAP { 'unit-test-key' }
 
     $global:configRootKeys = @{
-      BuildMasterBaseUrlConfigRootKey     = 'BuildMasterBaseUrl'
-      BuildMasterAdminApiKeyConfigRootKey = 'BuildMasterAdminApiKey'
+      BuildMasterBaseUrlConfigRootKey                = 'BuildMasterBaseUrl'
+      BuildMasterAdminApiKeySecretNameConfigRootKey  = 'BuildMasterAdminApiKeySecretName'
     }
     $global:settings = @{
-      BuildMasterBaseUrl     = 'https://buildmaster.example.test'
-      BuildMasterAdminApiKey = 'unit-test-key'
+      BuildMasterBaseUrl                  = 'https://buildmaster.example.test'
+      BuildMasterAdminApiKeySecretName    = 'BuildMaster.Admin.API.Key'
     }
   }
 
@@ -152,15 +161,19 @@ Describe 'Start-BuildMasterDeployment' -Tag 'Unit', 'PromotedModuleHostSensitive
     }
 
     It 'Applies a finite timeout to the deploy call' {
+      $script:deployCalledWithFiniteTimeout = $false
       Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' } -MockWith {
+        throw 'POST was called without -TimeoutSec 30.'
+      }
+      Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' -and $TimeoutSec -eq 30 } -MockWith {
+        $script:deployCalledWithFiniteTimeout = $true
         [PSCustomObject]@{ id = 1 }
       }
 
       Start-BuildMasterDeployment -Application 'A' -ReleaseNumber '1.0.0' -BuildNumber '2' | Out-Null
 
-      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter {
-        $Method -eq 'Post' -and $TimeoutSec -eq 30
-      }
+      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' }
+      $script:deployCalledWithFiniteTimeout | Should -BeTrue
     }
   }
 
@@ -191,13 +204,13 @@ Describe 'Start-BuildMasterDeployment' -Tag 'Unit', 'PromotedModuleHostSensitive
   }
 
   Context 'Config resolution' {
-    It 'Throws when no API key is configured' {
+    It 'Throws when no API key secret name is configured' {
       $global:settings = @{ BuildMasterBaseUrl = 'https://x.example' }
-      [Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', $null, 'Process')
-      [Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', $null, 'User')
+      [Environment]::SetEnvironmentVariable('BuildMasterAdminApiKeySecretName', $null, 'Process')
+      [Environment]::SetEnvironmentVariable('BuildMasterAdminApiKeySecretName', $null, 'User')
 
       { Start-BuildMasterDeployment -Application 'A' -ReleaseNumber '1.0.0' -BuildNumber '2' } |
-        Should -Throw -ExpectedMessage '*BUILDMASTER_ADMIN_API_KEY*'
+        Should -Throw -ExpectedMessage '*BuildMasterAdminApiKeySecretName*'
     }
   }
 

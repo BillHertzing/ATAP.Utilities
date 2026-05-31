@@ -152,11 +152,11 @@ function New-PermanentBitwardenSecrets {
     foreach ($db in $Databases) {
       foreach ($tierEntry in $tierHostMap.GetEnumerator()) {
         $tier = $tierEntry.Key
-        $host = $tierEntry.Value
+        $sqlHost = $tierEntry.Value
 
         # Canonical secret name — no username suffix for permanent tiers
         # (per Get-DatabaseCredentialsKey naming scheme)
-        $secretName = "dbConnectionString-${db}-${host}-${tier}"
+        $secretName = "dbConnectionString-${db}-${sqlHost}-${tier}"
 
         # SQL Server instance name = <host>\<tier>
         $instanceName = $tier
@@ -165,14 +165,14 @@ function New-PermanentBitwardenSecrets {
         $appName = "${db}-${tier}"
 
         # Connection string: Integrated Security, MARS enabled
-        $connStr = "Server=${host}\${instanceName};Database=${db};Integrated Security=True;" +
+        $connStr = "Server=${sqlHost}\${instanceName};Database=${db};Integrated Security=True;" +
         "MultipleActiveResultSets=True;Application Name=${appName};TrustServerCertificate=True;"
 
         $entry = [PSCustomObject]@{
           secretName = $secretName
           database   = $db
           tier       = $tier
-          host       = $host
+          host       = $sqlHost
           created    = $false
           skipped    = $false
           error      = $null

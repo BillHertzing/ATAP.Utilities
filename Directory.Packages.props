@@ -73,6 +73,13 @@
     <PackageVersion Include="ATAP.Utilities.StronglyTypedId.Models" Version="0.0.0-placeholder" />
     <PackageVersion Include="ATAP.Utilities.StronglyTypedId.JsonConverter.Shim.SystemTextJson" Version="0.0.0-placeholder" />
   </ItemGroup>
+  <ItemGroup Label="ATAP.Utilities.Philote Family (promoted-package test SUTs; VersionOverride wins per-restore)">
+    <PackageVersion Include="ATAP.Utilities.Philote" Version="0.0.0-placeholder" />
+    <PackageVersion Include="ATAP.Utilities.Philote.DefaultConfiguration" Version="0.0.0-placeholder" />
+    <PackageVersion Include="ATAP.Utilities.Philote.Interfaces" Version="0.0.0-placeholder" />
+    <PackageVersion Include="ATAP.Utilities.Philote.Models" Version="0.0.0-placeholder" />
+    <PackageVersion Include="ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson" Version="0.0.0-placeholder" />
+  </ItemGroup>
   <ItemGroup Label="Microsoft.Extensions.* (Configuration, Hosting, DI, Logging)">
     <!-- Packages necessary to run the Net Core Generic Host and web server hosts -->
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.0" />

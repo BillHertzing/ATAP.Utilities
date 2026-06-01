@@ -4,17 +4,17 @@
     "net10.0": {
       "ATAP.Utilities.StronglyTypedId.Interfaces": {
         "type": "Direct",
-        "requested": "[0.1.0-QA.0, )",
-        "resolved": "0.1.0-Sprint.1",
-        "contentHash": "mZBv3aZZfSq/Ftj5MkrtgSdwEntGcQUOM7ARh3vDa7GWsVhccmsz8WWcaX9FZbxWqQ9vK3zIg9j6SmfTAVP96Q=="
+        "requested": "[1.0.0, )",
+        "resolved": "1.0.0",
+        "contentHash": "5jz+0Vg2YGi2AOrnokJj1RoQc0orDfmTESOfPeBJroKQ+WemCDVpZjJuFNtA49TLXZzgtgcjV1WG/2iyCHyKkQ=="
       },
       "ATAP.Utilities.StronglyTypedId.Models": {
         "type": "Direct",
-        "requested": "[0.1.0-QA.0, )",
-        "resolved": "0.1.0-Sprint.1",
-        "contentHash": "dAlRghB55Lq7opXf3lNDKPTw/7SmkQpdaMBpZjKATtyNR1Mxo8QvM2uLre1LMClTWh0fBi8KB8ZxZLz4M1ZpGg==",
+        "requested": "[1.0.0, )",
+        "resolved": "1.0.0",
+        "contentHash": "u+ojvNCKhxEV8Dss1ioBkIpcTI20tf637HK32BbW7K345VMYL7DkAlRaKu/0I9mkUC4nLKNPkxvIBowSWty/ng==",
         "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.0.0-alpha-000, 2.0.0)"
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "1.0.0"
         }
       },
       "coverlet.collector": {
@@ -718,15 +718,18 @@
     "net8.0": {
       "ATAP.Utilities.StronglyTypedId.Interfaces": {
         "type": "Direct",
-        "requested": "[0.1.0-QA.0, )",
-        "resolved": "0.1.0-Sprint.1",
-        "contentHash": "mZBv3aZZfSq/Ftj5MkrtgSdwEntGcQUOM7ARh3vDa7GWsVhccmsz8WWcaX9FZbxWqQ9vK3zIg9j6SmfTAVP96Q=="
+        "requested": "[1.0.0, )",
+        "resolved": "1.0.0",
+        "contentHash": "5jz+0Vg2YGi2AOrnokJj1RoQc0orDfmTESOfPeBJroKQ+WemCDVpZjJuFNtA49TLXZzgtgcjV1WG/2iyCHyKkQ=="
       },
       "ATAP.Utilities.StronglyTypedId.Models": {
         "type": "Direct",
-        "requested": "[0.1.0-QA.0, )",
-        "resolved": "0.1.0-Sprint.1",
-        "contentHash": "dAlRghB55Lq7opXf3lNDKPTw/7SmkQpdaMBpZjKATtyNR1Mxo8QvM2uLre1LMClTWh0fBi8KB8ZxZLz4M1ZpGg=="
+        "requested": "[1.0.0, )",
+        "resolved": "1.0.0",
+        "contentHash": "u+ojvNCKhxEV8Dss1ioBkIpcTI20tf637HK32BbW7K345VMYL7DkAlRaKu/0I9mkUC4nLKNPkxvIBowSWty/ng==",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "1.0.0"
+        }
       },
       "coverlet.collector": {
         "type": "Direct",
@@ -1469,15 +1472,18 @@
     "net9.0": {
       "ATAP.Utilities.StronglyTypedId.Interfaces": {
         "type": "Direct",
-        "requested": "[0.1.0-QA.0, )",
-        "resolved": "0.1.0-Sprint.1",
-        "contentHash": "mZBv3aZZfSq/Ftj5MkrtgSdwEntGcQUOM7ARh3vDa7GWsVhccmsz8WWcaX9FZbxWqQ9vK3zIg9j6SmfTAVP96Q=="
+        "requested": "[1.0.0, )",
+        "resolved": "1.0.0",
+        "contentHash": "5jz+0Vg2YGi2AOrnokJj1RoQc0orDfmTESOfPeBJroKQ+WemCDVpZjJuFNtA49TLXZzgtgcjV1WG/2iyCHyKkQ=="
       },
       "ATAP.Utilities.StronglyTypedId.Models": {
         "type": "Direct",
-        "requested": "[0.1.0-QA.0, )",
-        "resolved": "0.1.0-Sprint.1",
-        "contentHash": "dAlRghB55Lq7opXf3lNDKPTw/7SmkQpdaMBpZjKATtyNR1Mxo8QvM2uLre1LMClTWh0fBi8KB8ZxZLz4M1ZpGg=="
+        "requested": "[1.0.0, )",
+        "resolved": "1.0.0",
+        "contentHash": "u+ojvNCKhxEV8Dss1ioBkIpcTI20tf637HK32BbW7K345VMYL7DkAlRaKu/0I9mkUC4nLKNPkxvIBowSWty/ng==",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "1.0.0"
+        }
       },
       "coverlet.collector": {
         "type": "Direct",

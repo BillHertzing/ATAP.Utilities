@@ -33,14 +33,16 @@ The orchestration order is fixed and enforced by `Set-GlobalConfigRootKeys`.
 
 ## Deprecated / Unreachable Files
 
-The following files are **no longer loaded** by `Add-PackageRepositoriesConfigRootKeys`.
-They remain on disk so their content can be diffed against the consolidated
-single-source-of-truth file before they are deleted in a later step.
+The following files were superseded by `Add-PackageRepositoriesConfigRootKeys`
+(the single source of truth) and were **removed** during the PF
+(PowerShell Feed Constants Migration) cleanup, Sprint 0007. They used the old
+four-tier scheme (Experimental/Development/Testing/Production) and were never
+loaded by `Set-GlobalConfigRootKeys` (Phase 3 discovery is disabled).
 
 | File                                                       | Status                                                                  |
 | ---------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `public/PackageRepositories.Nuget.ConfigRootKeys.ps1`      | **Unreachable — pending removal.** Consolidated into `Add-PackageRepositoriesConfigRootKeys.ps1`. |
-| `public/PackageRepositories.PowershellGet.ConfigRootKeys.ps1` | **Unreachable — pending removal.** Consolidated into `Add-PackageRepositoriesConfigRootKeys.ps1`. |
+| `public/PackageRepositories.Nuget.ConfigRootKeys.ps1`      | **Removed (PF cleanup).** Consolidated into `Add-PackageRepositoriesConfigRootKeys.ps1`. |
+| `public/PackageRepositories.PowershellGet.ConfigRootKeys.ps1` | **Removed (PF cleanup).** Consolidated into `Add-PackageRepositoriesConfigRootKeys.ps1`. |
 
 ## Key Naming Conventions
 

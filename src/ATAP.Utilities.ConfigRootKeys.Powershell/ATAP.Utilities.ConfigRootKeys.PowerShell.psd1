@@ -72,10 +72,8 @@ RequiredModules = @(@{ModuleName = 'PSFramework'; ModuleVersion = '1.10.0'; Maxi
 FunctionsToExport = 'Add-DatabasesConfigRootKeys', 
                'Add-PackageRepositoriesConfigRootKeys', 
                'BuildMaster.ConfigRootKeys', 
-               'Databases.ATAPUtilities.ConfigRootKeys', 
-               'PackageRepositories.Nuget.ConfigRootKeys', 
-               'PackageRepositories.PowershellGet.ConfigRootKeys', 
-               'RulesManagement.ConfigRootKeys', 'Set-CoreConfigRootKeys', 
+               'Databases.ATAPUtilities.ConfigRootKeys',
+               'RulesManagement.ConfigRootKeys', 'Set-CoreConfigRootKeys',
                'Set-GlobalConfigRootKeys'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.

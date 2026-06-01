@@ -1,5 +1,27 @@
 ###################################################
 ## GlobalConfigRootKeys.ps1 — ProGet Section (Phase 1)
+##
+## OBSOLETE — SUPERSEDED — DO NOT EDIT, DO NOT LOAD
+##
+## The single source of truth for ProGet / NuGet / PowerShellGet feed key
+## constants is now:
+##   src/ATAP.Utilities.ConfigRootKeys.Powershell/public/Add-PackageRepositoriesConfigRootKeys.ps1
+## loaded by Set-GlobalConfigRootKeys (Phase 5). That file defines the canonical
+## FIVE-tier set (Experimental / Development / Integration / QA / Stable) and the
+## feed-name VALUES are assigned in ATAP.IAC
+##   Windows/HostSettings.IAC.Fragments/HostSettings.IAC.Fragment.PackageRepositories.ps1
+## using lowercase canonical names (powershellget-experimental … powershellget-stable).
+##
+## This fragment is no longer dot-sourced by any loader; it is retained on disk
+## for diff/reference only and uses the OLD four-tier scheme
+## (Experimental/Development/Testing/Production). It will be deleted in a future
+## cleanup step.
+##
+## NOTE: An earlier comment below claimed the live feeds use a 'PowershellGallery-'
+## prefix. That claim is INCORRECT and has been corrected — the canonical ProGet
+## PowerShellGet feed names are lowercase 'powershellget-<tier>'.
+##
+## ──── ORIGINAL HEADER (kept for reference) ───────────────────────────────
 ## Drop-in replacement for the ProGet-related keys.
 ## This section defines string constants used as dictionary keys
 ## throughout the settings system. Values are assigned in HostSettings.ps1
@@ -101,12 +123,13 @@ $global:configRootKeys['ProGetFeedNuGetProductionFeedConfigRootKey'] = 'ProGetFe
 
 # ══════════════════════════════════════════════════════════════════════════
 #  PowerShell Feeds — Phase 1 (combined push/pull per tier)
-#  NOTE: Actual feed names on utat022 use 'PowershellGallery-' prefix
-#  (e.g. PowershellGallery-experimental), not 'powershell-'. These keys
-#  hold the feed name as a value set in HostSettings (ATAP.IAC).
+#  CORRECTED: the canonical ProGet PowerShellGet feed names are lowercase
+#  'powershellget-<tier>' (e.g. powershellget-experimental). These keys hold
+#  the feed name as a value set in HostSettings (ATAP.IAC). The earlier
+#  'PowershellGallery-' claim was wrong and caused Install-PSResource 404s.
 # ══════════════════════════════════════════════════════════════════════════
 
-# ── PowershellGallery-experimental ───────────────────────────────────────
+# ── powershellget-experimental ───────────────────────────────────────────
 $global:configRootKeys['ProGetFeedPowerShellExperimentalUriSchemeConfigRootKey'] = 'ProGetFeedPowerShellExperimentalUriScheme'
 $global:configRootKeys['ProGetFeedPowerShellExperimentalUriHostConfigRootKey'] = 'ProGetFeedPowerShellExperimentalUriHost'
 $global:configRootKeys['ProGetFeedPowerShellExperimentalUriPortConfigRootKey'] = 'ProGetFeedPowerShellExperimentalUriPort'
@@ -118,7 +141,7 @@ $global:configRootKeys['ProGetFeedPowerShellExperimentalFeedTypeConfigRootKey'] 
 $global:configRootKeys['ProGetFeedPowerShellExperimentalApiKeyNameConfigRootKey'] = 'ProGetFeedPowerShellExperimentalApiKeyName'
 $global:configRootKeys['ProGetFeedPowerShellExperimentalFeedConfigRootKey'] = 'ProGetFeedPowerShellExperimental'
 
-# ── PowershellGallery-development ────────────────────────────────────────
+# ── powershellget-development ─────────────────────────────────────────────
 $global:configRootKeys['ProGetFeedPowerShellDevelopmentUriSchemeConfigRootKey'] = 'ProGetFeedPowerShellDevelopmentUriScheme'
 $global:configRootKeys['ProGetFeedPowerShellDevelopmentUriHostConfigRootKey'] = 'ProGetFeedPowerShellDevelopmentUriHost'
 $global:configRootKeys['ProGetFeedPowerShellDevelopmentUriPortConfigRootKey'] = 'ProGetFeedPowerShellDevelopmentUriPort'
@@ -130,7 +153,7 @@ $global:configRootKeys['ProGetFeedPowerShellDevelopmentFeedTypeConfigRootKey'] =
 $global:configRootKeys['ProGetFeedPowerShellDevelopmentApiKeyNameConfigRootKey'] = 'ProGetFeedPowerShellDevelopmentApiKeyName'
 $global:configRootKeys['ProGetFeedPowerShellDevelopmentFeedConfigRootKey'] = 'ProGetFeedPowerShellDevelopment'
 
-# ── PowershellGallery-testing ────────────────────────────────────────────
+# ── powershellget-testing (legacy 4-tier; superseded by integration/qa) ───
 $global:configRootKeys['ProGetFeedPowerShellTestingUriSchemeConfigRootKey'] = 'ProGetFeedPowerShellTestingUriScheme'
 $global:configRootKeys['ProGetFeedPowerShellTestingUriHostConfigRootKey'] = 'ProGetFeedPowerShellTestingUriHost'
 $global:configRootKeys['ProGetFeedPowerShellTestingUriPortConfigRootKey'] = 'ProGetFeedPowerShellTestingUriPort'
@@ -142,7 +165,7 @@ $global:configRootKeys['ProGetFeedPowerShellTestingFeedTypeConfigRootKey'] = 'Pr
 $global:configRootKeys['ProGetFeedPowerShellTestingApiKeyNameConfigRootKey'] = 'ProGetFeedPowerShellTestingApiKeyName'
 $global:configRootKeys['ProGetFeedPowerShellTestingFeedConfigRootKey'] = 'ProGetFeedPowerShellTesting'
 
-# ── PowershellGallery-production ─────────────────────────────────────────
+# ── powershellget-production (legacy 4-tier; superseded by stable) ────────
 $global:configRootKeys['ProGetFeedPowerShellProductionUriSchemeConfigRootKey'] = 'ProGetFeedPowerShellProductionUriScheme'
 $global:configRootKeys['ProGetFeedPowerShellProductionUriHostConfigRootKey'] = 'ProGetFeedPowerShellProductionUriHost'
 $global:configRootKeys['ProGetFeedPowerShellProductionUriPortConfigRootKey'] = 'ProGetFeedPowerShellProductionUriPort'

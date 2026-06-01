@@ -5,8 +5,6 @@
 - C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\ATAP.Utilities.ConfigRootKeys.Powershell\public\BuildMaster.ConfigRootKeys.ps1
 - C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\ATAP.Utilities.ConfigRootKeys.Powershell\public\Databases.AceCommander.ConfigRootKeys.ps1
 - C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\ATAP.Utilities.ConfigRootKeys.Powershell\public\Databases.ATAPUtilities.ConfigRootKeys.ps1
-- C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\ATAP.Utilities.ConfigRootKeys.Powershell\public\PackageRepositories.Nuget.ConfigRootKeys.ps1
-- C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\ATAP.Utilities.ConfigRootKeys.Powershell\public\PackageRepositories.PowershellGet.ConfigRootKeys.ps1
 - C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\ATAP.Utilities.ConfigRootKeys.Powershell\public\RulesManagement.ConfigRootKeys.ps1
 - C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Obsolete\afterVersioned\_\_ImportData.ps1
 - C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Obsolete\ATAPUtilities_Database_BackupDropAndRecreate.ps1

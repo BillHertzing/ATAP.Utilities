@@ -79,24 +79,6 @@
     https://github.com/whertzing/ATAP.Utilities
 #>
 
-# Canonical set of valid database feed names for the 5-tier topology.
-$script:DatabaseFeedNames = @(
-    'database-experimental',
-    'database-development',
-    'database-integration',
-    'database-qa',
-    'database-stable'
-)
-
-# Tier order for direction enforcement (lower index = closer to Experimental).
-$script:DatabaseFeedTierOrder = @{
-    'database-experimental' = 1
-    'database-development'  = 2
-    'database-integration'  = 3
-    'database-qa'           = 4
-    'database-stable'       = 5
-}
-
 # Private helper to wrap the actual `dotnet nuget push` invocation.
 # Pester tests Mock this function so they never spawn a real process.
 # Not exported; dot-sourced into the same scope as the public cmdlet.
@@ -158,6 +140,17 @@ function Publish-DatabaseChangePackageToProGet {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
             -Message "Entering $fn with NupkgPath='$NupkgPath' Feed='$Feed'" `
             -Tag 'Trace'
+
+        # Canonical set of valid database feed names for the 5-tier topology.
+        # Defined function-local (not at script scope) so loading/dot-sourcing this
+        # file only DEFINES functions and runs no top-level code.
+        $databaseFeedNames = @(
+            'database-experimental',
+            'database-development',
+            'database-integration',
+            'database-qa',
+            'database-stable'
+        )
     }
 
     process {
@@ -175,8 +168,8 @@ function Publish-DatabaseChangePackageToProGet {
         $resolvedNupkg = (Resolve-Path -LiteralPath $NupkgPath).ProviderPath
 
         # 2. Validate feed name against the canonical database feed list.
-        if ($Feed -notin $script:DatabaseFeedNames) {
-            $msg = "Feed '$Feed' is not a canonical database feed. Valid names: $($script:DatabaseFeedNames -join ', ')."
+        if ($Feed -notin $databaseFeedNames) {
+            $msg = "Feed '$Feed' is not a canonical database feed. Valid names: $($databaseFeedNames -join ', ')."
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
             throw $msg
         }

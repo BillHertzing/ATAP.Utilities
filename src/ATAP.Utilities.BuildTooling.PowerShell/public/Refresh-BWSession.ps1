@@ -64,9 +64,7 @@ function Refresh-BWSession {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started' -Tag 'serviceaccount-bw'
 
     if (-not (Get-Command -Name 'Get-BitWardenCredential' -CommandType Function -ErrorAction SilentlyContinue)) {
-      # Resolve sibling module path relative to this script (works in worktree + stable).
-      $siblingGetBWCred = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..\ATAP.Utilities.Security.Powershell\public\Get-BitWardenCredential.ps1') -ErrorAction Stop
-      . $siblingGetBWCred.ProviderPath
+      Import-ATAPModuleFromProGet -ModuleName 'ATAP.Utilities.Security.Powershell' -RequiredCommand 'Get-BitWardenCredential'
     }
     if (-not (Get-Command -Name 'Initialize-ServiceAccountBitwardenSession' -CommandType Function -ErrorAction SilentlyContinue)) {
       . (Join-Path $PSScriptRoot 'Initialize-ServiceAccountBitwardenSession.ps1')
@@ -145,10 +143,13 @@ function Refresh-BWSession {
 }
 
 # ============================================================================
-# Script execution block — fires when invoked via `pwsh -File`
+# Script execution block — fires ONLY when this file is run as the top-level
+# script (e.g. `pwsh -File`, the scheduled-task invocation). It is skipped on
+# dot-source ('.'), module import, and the call operator ('&'), so merely
+# loading or dot-sourcing this file never executes the function.
 # ============================================================================
 
-if ($MyInvocation.InvocationName -ne '.') {
+if ($MyInvocation.InvocationName -ne '.' -and $MyInvocation.InvocationName -ne '&') {
   if (-not [System.Diagnostics.EventLog]::SourceExists('ATAPServiceAccountBW')) {
     try { New-EventLog -LogName Application -Source 'ATAPServiceAccountBW' } catch { }
   }

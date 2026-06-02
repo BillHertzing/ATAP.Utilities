@@ -102,15 +102,6 @@
     https://github.com/whertzing/ATAP.Utilities
 #>
 
-# Canonical ordered tier list for the database feed topology.
-$script:DbFeedTierOrder = [ordered]@{
-    'database-experimental' = 1
-    'database-development'  = 2
-    'database-integration'  = 3
-    'database-qa'           = 4
-    'database-stable'       = 5
-}
-
 # Helper: resolve a tier ordinal from a database feed name.
 # Throws if the feed name is not canonical.
 function Resolve-DatabaseFeedTier {
@@ -122,11 +113,22 @@ function Resolve-DatabaseFeedTier {
         [string]$FeedName
     )
 
-    if ($script:DbFeedTierOrder.Contains($FeedName)) {
-        return $script:DbFeedTierOrder[$FeedName]
+    # Canonical ordered tier list for the database feed topology. Defined
+    # function-local (not at script scope) so loading/dot-sourcing this file only
+    # DEFINES functions and runs no top-level code.
+    $dbFeedTierOrder = [ordered]@{
+        'database-experimental' = 1
+        'database-development'  = 2
+        'database-integration'  = 3
+        'database-qa'           = 4
+        'database-stable'       = 5
     }
 
-    $valid = $script:DbFeedTierOrder.Keys -join ', '
+    if ($dbFeedTierOrder.Contains($FeedName)) {
+        return $dbFeedTierOrder[$FeedName]
+    }
+
+    $valid = $dbFeedTierOrder.Keys -join ', '
     throw "Feed '$FeedName' is not a canonical database feed. Valid names: $valid."
 }
 
@@ -214,8 +216,8 @@ function Promote-DatabaseChangePackage {
                             $effectiveCeiling = $ceilingData.ceiling
                         } else {
                             # The lower of the two ceilings wins.
-                            $fileTierOrd   = $script:DbFeedTierOrder["database-$($ceilingData.ceiling.ToLowerInvariant())"]
-                            $callerTierOrd = $script:DbFeedTierOrder["database-$($CeilingTier.ToLowerInvariant())"]
+                            $fileTierOrd   = Resolve-DatabaseFeedTier -FeedName "database-$($ceilingData.ceiling.ToLowerInvariant())"
+                            $callerTierOrd = Resolve-DatabaseFeedTier -FeedName "database-$($CeilingTier.ToLowerInvariant())"
                             $effectiveCeiling = if ($fileTierOrd -le $callerTierOrd) { $ceilingData.ceiling } else { $CeilingTier }
                         }
                     }

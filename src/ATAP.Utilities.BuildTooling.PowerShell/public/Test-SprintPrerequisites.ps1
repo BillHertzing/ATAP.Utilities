@@ -1,12 +1,5 @@
 #Requires -Version 7.0
 
-if (-not (Get-Command -Name 'Invoke-BitwardenCliWithCleanTlsEnvironment' -ErrorAction SilentlyContinue)) {
-  $bitwardenTlsHelperPath = Join-Path -Path $PSScriptRoot -ChildPath '..\private\Invoke-BitwardenCliWithCleanTlsEnvironment.ps1'
-  if (Test-Path -LiteralPath $bitwardenTlsHelperPath -PathType Leaf) {
-    . $bitwardenTlsHelperPath
-  }
-}
-
 function Test-SprintUrlReachable {
   [CmdletBinding()]
   [OutputType([PSCustomObject])]
@@ -154,6 +147,17 @@ function Test-SprintPrerequisites {
     $fn = 'Test-SprintPrerequisites'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
+
+    # Load helper functions. Fallback for running this file from source without
+    # importing the module; a normal Import-Module already dot-sources the private
+    # helper. Kept inside BEGIN so loading/dot-sourcing this file only DEFINES the
+    # function and never executes anything at load time.
+    if (-not (Get-Command -Name 'Invoke-BitwardenCliWithCleanTlsEnvironment' -ErrorAction SilentlyContinue)) {
+      $bitwardenTlsHelperPath = Join-Path -Path $PSScriptRoot -ChildPath '..\private\Invoke-BitwardenCliWithCleanTlsEnvironment.ps1'
+      if (Test-Path -LiteralPath $bitwardenTlsHelperPath -PathType Leaf) {
+        . $bitwardenTlsHelperPath
+      }
+    }
   }
 
   process {

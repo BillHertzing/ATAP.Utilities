@@ -1,24 +1,3 @@
-# =====================================================================
-# Dot-source private helper functions
-# =====================================================================
-$privateDir = Join-Path $PSScriptRoot '..' 'private'
-foreach ($privateHelperName in @('Set-ClaudeSettingsSymlink.ps1', 'Set-UserSettingsSymlink.ps1', 'Get-SprintTaskRepositoryNames.ps1')) {
-  $privateHelperPath = Join-Path $privateDir $privateHelperName
-  if (Test-Path -LiteralPath $privateHelperPath -PathType Leaf) {
-    . $privateHelperPath
-  }
-}
-# Retired in Sprint 0007 task B08 (now under Obsolete/private/):
-#   - New-SprintBuildMasterBuilds.ps1   replaced by public Set-BuildMasterSprintVariables (Area 7.2-1)
-#   - New-SprintDatabaseInstances.ps1   superseded by public New-SprintSqlServerInstances
-if (-not (Get-Command -Name 'New-SprintSqlServerInstances' -CommandType Function -ErrorAction SilentlyContinue)) {
-  . (Join-Path $PSScriptRoot 'New-SprintSqlServerInstances.ps1')
-}
-
-# =====================================================================
-# Main public cmdlet
-# =====================================================================
-
 function New-SprintStage2 {
   <#
   .SYNOPSIS
@@ -31,7 +10,10 @@ function New-SprintStage2 {
     Reads the sprint TASKS.md file and extracts every unique repository name
     mentioned in task lines (the [RepoName] markers). Repos named '_Planning',
     'SharedVSCode', and 'Cross-Repo' are excluded — Step 1 already handled the
-    first two, and Cross-Repo is not an actual repository.
+    first two, and Cross-Repo is not an actual repository. The active HTML task
+    board for humans is `TASKS.html` or the highest `TASKS_V*.html`; keep
+    `TASKS.md` synchronized with that board until Stage 2 no longer depends on
+    markdown parsing.
 
     For each discovered repo the cmdlet:
       1. Creates a GitHub issue via 'gh issue create'.
@@ -64,7 +46,8 @@ function New-SprintStage2 {
   .PARAMETER TasksFilePath
     Path to the TASKS.md file produced by sprint planning (Step 2).
     Defaults to the TASKS.md inside the _Planning sprint worktree whose
-    path is provided via Stage1Result.
+    path is provided via Stage1Result. This remains the legacy automation input;
+    keep it synchronized with the active HTML board and companion task files.
   .PARAMETER Stage1Result
     The PSCustomObject returned by New-SprintStage1. Supplies the sprint
     number, SharedVSCode worktree path, and _Planning worktree path.
@@ -129,6 +112,24 @@ function New-SprintStage2 {
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
+    # Load helper functions. Fallback for running this file from source without
+    # importing the module; a normal Import-Module already dot-sources these
+    # private helpers. Kept inside BEGIN so loading/dot-sourcing this file only
+    # DEFINES the function and never executes anything at load time.
+    $privateDir = Join-Path $PSScriptRoot '..' 'private'
+    foreach ($privateHelperName in @('Set-ClaudeSettingsSymlink.ps1', 'Set-UserSettingsSymlink.ps1', 'Get-SprintTaskRepositoryNames.ps1')) {
+      $privateHelperPath = Join-Path $privateDir $privateHelperName
+      if (Test-Path -LiteralPath $privateHelperPath -PathType Leaf) {
+        . $privateHelperPath
+      }
+    }
+    # Retired in Sprint 0007 task B08 (now under Obsolete/private/):
+    #   - New-SprintBuildMasterBuilds.ps1   replaced by public Set-BuildMasterSprintVariables (Area 7.2-1)
+    #   - New-SprintDatabaseInstances.ps1   superseded by public New-SprintSqlServerInstances
+    if (-not (Get-Command -Name 'New-SprintSqlServerInstances' -CommandType Function -ErrorAction SilentlyContinue)) {
+      . (Join-Path $PSScriptRoot 'New-SprintSqlServerInstances.ps1')
+    }
+
     if ($DryRun) {
       $WhatIfPreference = $true
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'DryRun enabled — no external side effects will be performed.'
@@ -174,6 +175,19 @@ function New-SprintStage2 {
     if (-not (Test-Path $TasksFilePath)) {
       throw "TASKS.md not found at $TasksFilePath"
     }
+
+    $planningWorktreePath = Split-Path -Path $TasksFilePath -Parent
+    $activeTaskBoardPath = Join-Path $planningWorktreePath 'TASKS.html'
+    $versionedTaskBoards = @(Get-ChildItem -LiteralPath $planningWorktreePath -Filter 'TASKS_V*.html' -File -ErrorAction SilentlyContinue |
+        Sort-Object Name -Descending)
+    if ($versionedTaskBoards.Count -gt 0) {
+      $activeTaskBoardPath = $versionedTaskBoards[0].FullName
+    }
+    $accomplishedPath = Join-Path $planningWorktreePath 'Tasks.Accomplished.html'
+    $proceduralDetailsPath = Join-Path $planningWorktreePath 'Tasks.ProceduralDetails.html'
+
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+      -Message "Stage 2 repository discovery reads TASKS.md at '$TasksFilePath'. Keep it synchronized with the active task board '$activeTaskBoardPath' and companion files '$accomplishedPath' / '$proceduralDetailsPath'."
 
     # Stage 2 reads host-specific database and package settings. Fail early so
     # agent/no-profile shells do not create partial sprint infrastructure.

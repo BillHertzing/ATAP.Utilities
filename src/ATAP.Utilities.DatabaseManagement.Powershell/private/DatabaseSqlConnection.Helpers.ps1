@@ -138,8 +138,6 @@ function Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName {
     -Source "ATAP secret '$SecretName' (notes field)"
 }
 
-# Back-compat alias for any code that has not yet renamed its helper reference.
-Set-Alias -Name Resolve-DatabaseSqlConnectionFromBitwardenSecretName -Value Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName -Scope Script -ErrorAction SilentlyContinue
 
 function Import-DatabaseConnectionHelperFunctions {
   [CmdletBinding()]

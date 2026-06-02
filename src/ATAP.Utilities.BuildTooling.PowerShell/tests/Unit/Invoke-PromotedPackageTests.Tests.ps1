@@ -174,6 +174,31 @@ Describe 'Invoke-PromotedPackageTests' -Tag 'Unit' {
                 ($rest -contains 'http://localhost:50000/nuget/nuget-development/v3/index.json')
             }
         }
+
+        It 'Passes NBGV_BuildingRef to restore and test when the environment variable is set' {
+            $previousBuildRef = $env:NBGV_BuildingRef
+            try {
+                $env:NBGV_BuildingRef = 'refs/heads/main'
+
+                Invoke-PromotedPackageTests -Name 'pkg' -Version '1.0.0' -Feed 'nuget-stable' `
+                    -ResultsPath 'r' | Out-Null
+
+                Assert-MockCalled dotnet -Times 1 -Exactly -Scope It -ParameterFilter {
+                    $rest[0] -eq 'restore' -and
+                    ($rest -contains '/p:NBGV_BuildingRef=refs/heads/main')
+                }
+                Assert-MockCalled dotnet -Times 1 -Exactly -Scope It -ParameterFilter {
+                    $rest[0] -eq 'test' -and
+                    ($rest -contains '/p:NBGV_BuildingRef=refs/heads/main')
+                }
+            } finally {
+                if ($null -eq $previousBuildRef) {
+                    Remove-Item Env:\NBGV_BuildingRef -ErrorAction SilentlyContinue
+                } else {
+                    $env:NBGV_BuildingRef = $previousBuildRef
+                }
+            }
+        }
     }
 
     Context 'Test failure' {

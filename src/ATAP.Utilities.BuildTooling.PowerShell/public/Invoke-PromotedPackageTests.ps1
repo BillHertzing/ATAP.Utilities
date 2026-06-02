@@ -221,6 +221,9 @@ function Invoke-PromotedPackageTests {
                 '/p:UsePackageReferenceForSUT=true'
                 "/p:SUTVersion=$Version"
             )
+            if (-not [string]::IsNullOrWhiteSpace($env:NBGV_BuildingRef)) {
+                $restoreArgs += "/p:NBGV_BuildingRef=$env:NBGV_BuildingRef"
+            }
             if ($LockedRestore) {
                 $restoreArgs += '--locked-mode'
             }
@@ -273,6 +276,9 @@ function Invoke-PromotedPackageTests {
                 '--results-directory'
                 $ResultsPath
             )
+            if (-not [string]::IsNullOrWhiteSpace($env:NBGV_BuildingRef)) {
+                $testArgs += "/p:NBGV_BuildingRef=$env:NBGV_BuildingRef"
+            }
             if (-not [string]::IsNullOrWhiteSpace($TestFilter)) {
                 $testArgs += @('--filter', $TestFilter)
             }

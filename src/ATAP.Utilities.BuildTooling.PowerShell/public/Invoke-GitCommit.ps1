@@ -59,6 +59,28 @@ function Invoke-GitCommit {
         $mn = $MyInvocation.MyCommand.ModuleName
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Entering function'
 
+        # Load helper functions
+        $helpfunctionsneeded = @(
+            @{FunctionName = 'Assert-LockFilesClean'; ModuleName = 'ATAP.Utilities.BuildTooling.PowerShell'}
+        )
+        $repoRootParentPath = 'C:\Dropbox\whertzing\GitHub'
+        $stablePath = 'ATAP.Utilities.BuildTooling.PowerShell'
+        $wtFolder = $PWD.Path.Split([IO.Path]::DirectorySeparatorChar) |
+            Where-Object { $_ -like '*-wt-*' } |
+            Select-Object -First 1
+        $resolvedModulePath = $wtFolder ? $(Join-Path $repoRootParentPath $wtFolder 'src') : $(Join-Path $repoRootParentPath $stablePath 'src')
+        foreach ($helpfunction in $helpfunctionsneeded) {
+            try {
+                if (-not (Test-Path -LiteralPath "Function:\$($helpfunction.FunctionName)")) {
+                    . (Join-Path $resolvedModulePath $($helpfunction.ModuleName) 'public' "$($helpfunction.FunctionName).ps1")
+                }
+            } catch {
+                $errorMessage = "Failed to load $($helpfunction.FunctionName) function from module path $(Join-Path $resolvedModulePath $($helpfunction.ModuleName) 'public' "$($helpfunction.FunctionName).ps1"). Exception: $($_.Exception.Message)"
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+                throw
+            }
+        }
+
         $blocked = @('.env', '*.secret', '*.key', 'node_modules', 'bin', 'obj')
     }
 

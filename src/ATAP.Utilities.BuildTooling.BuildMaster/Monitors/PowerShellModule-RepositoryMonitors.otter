@@ -2,8 +2,9 @@
 # PowerShellModule-RepositoryMonitors.otter
 #
 # Purpose : Define BuildMaster Repository Monitors that trigger the
-#           PowerShellModule-5Stage plan when branches are pushed in the
-#           ATAP.Utilities GitHub repository.
+#           PowerShellModule-5Stage plan for the
+#           ATAP.Utilities.BuildTooling.PowerShell pilot module when matching
+#           branches are pushed in the ATAP.Utilities GitHub repository.
 #
 # Immutable build note:
 #   Under the immutable build strategy, only sprint-branch and main pushes
@@ -12,11 +13,18 @@
 #   pushes to integration/qa/release branches.
 #
 # How to apply:
-#   1. In the BuildMaster UI, open the application for ATAP.Utilities.
+#   1. In the BuildMaster UI, open the ATAP.Utilities-PowerShell application.
 #   2. Navigate to Settings → Repository Monitors.
 #   3. Create one monitor per entry below (or use the BuildMaster API
 #      with the /api/resource-monitors endpoint).
 #   4. Confirm each monitor by performing a test push to the target branch.
+#
+# Scaling beyond the pilot module:
+#   The PowerShell BuildMaster application is intentionally shared by all
+#   modules. Each repository monitor must therefore provide ModuleName and
+#   PackageName as build variables. To onboard another module, copy these two
+#   monitor entries, change the monitor names, PathFilter, ModuleName, and
+#   PackageName to that module's src/<ModuleName>/ folder.
 #
 # Tier resolution:
 #   NBGV prerelease label → Tier → Feed
@@ -27,8 +35,8 @@
 #   (none)    → Production    → powershellget-stable
 #
 # Path filter:
-#   PathFilter: src/** ensures that commits touching ONLY
-#   SolutionDocumentation/ or README.md do not trigger a build.
+#   PathFilter scopes the pilot monitors to the BuildTooling module so a
+#   source push supplies a single unambiguous ModuleName/PackageName pair.
 #
 # Webhook secret:
 #   WebhookSecret references env var BUILDMASTER_GH_WEBHOOK_SECRET.
@@ -38,46 +46,56 @@
 #
 # Variables used by triggered builds:
 #   $Branch          — the branch that triggered the monitor (injected by BM)
-#   $ApplicationName — set as Application Variable: "ATAP.Utilities"
+#   $ModuleName      — supplied by these monitor definitions
+#   $PackageName     — supplied by these monitor definitions
+#   $ApplicationName — set as Application Variable: "ATAP.Utilities-PowerShell"
 #   $SourcePath      — set as Application Variable: working-directory path
-#   $Modules         — set as Application Variable: list of PS module names
 ##########################################################################
 
 # ---------------------------------------------------------------------------
-# Monitor 1 — main branch (Production)
+# Pilot module values
+#   ModuleName  : ATAP.Utilities.BuildTooling.PowerShell
+#   PackageName : ATAP.Utilities.BuildTooling.PowerShell
+
+# ---------------------------------------------------------------------------
+# Monitor 1 — main branch (Production ceiling)
 # Triggers  : any push to "main"
-# Stage     : Production (NBGV resolves from absent prerelease label)
-# PathFilter: src/** — docs-only commits do not trigger a build
+# Ceiling   : Production (NBGV resolves from absent prerelease label)
+# PathFilter: BuildTooling module source only
 # Interval  : poll every 10 minutes
 # ---------------------------------------------------------------------------
-GitHub::Repository-Monitor PowerShellModules-Main-Monitor
+GitHub::Repository-Monitor PowerShellModule-BuildTooling-Main-Monitor
 (
     Organization: BillHertzing,
     Repository: ATAP.Utilities,
     BranchFilter: main,
-    PathFilter: src/**,
+    PathFilter: src/ATAP.Utilities.BuildTooling.PowerShell/**,
     PollInterval: 600,
     WebhookSecret: $EnvironmentVariable(BUILDMASTER_GH_WEBHOOK_SECRET),
     PipelineName: PowerShellModule-5Stage,
-    BuildVariables: %(Branch: $Branch)
+    BuildVariables: %(Branch: $Branch,
+                     ModuleName: ATAP.Utilities.BuildTooling.PowerShell,
+                     PackageName: ATAP.Utilities.BuildTooling.PowerShell)
 );
 
 # ---------------------------------------------------------------------------
-# Monitor 2 — Sprint branches (Experimental)
+# Monitor 2 — Sprint branches (Experimental ceiling)
 # Triggers  : any push to a branch matching *-Sprint-*-work-items
-# Stage     : Experimental (NBGV resolves from -Sprint- prerelease label)
-# PathFilter: src/** — docs-only commits do not trigger a build
+# Ceiling   : Experimental (NBGV resolves from -Sprint- prerelease label)
+# PathFilter: BuildTooling module source only
 # Interval  : poll every 2 minutes
 # Note      : pushes to the shared permanent powershellget-experimental feed
 # ---------------------------------------------------------------------------
-GitHub::Repository-Monitor PowerShellModules-Sprint-Monitor
+GitHub::Repository-Monitor PowerShellModule-BuildTooling-Sprint-Monitor
 (
     Organization: BillHertzing,
     Repository: ATAP.Utilities,
     BranchFilter: *-Sprint-*-work-items,
-    PathFilter: src/**,
+    PathFilter: src/ATAP.Utilities.BuildTooling.PowerShell/**,
     PollInterval: 120,
     WebhookSecret: $EnvironmentVariable(BUILDMASTER_GH_WEBHOOK_SECRET),
     PipelineName: PowerShellModule-5Stage,
-    BuildVariables: %(Branch: $Branch)
+    BuildVariables: %(Branch: $Branch,
+                     ModuleName: ATAP.Utilities.BuildTooling.PowerShell,
+                     PackageName: ATAP.Utilities.BuildTooling.PowerShell)
 );

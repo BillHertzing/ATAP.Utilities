@@ -4,11 +4,15 @@
 # preserve the contracts the plan depends on.
 
 BeforeAll {
-    $script:PlansDir   = Join-Path $PSScriptRoot '..'
-    $script:PlanPath   = Join-Path $script:PlansDir 'CSharpPackage-5Stage.otter'
-    $script:RunnerPath = Join-Path $script:PlansDir 'Invoke-CSharpPackageBuildMasterStage.ps1'
-    $script:PlanText   = Get-Content -LiteralPath $script:PlanPath -Raw
-    $script:RunnerText = Get-Content -LiteralPath $script:RunnerPath -Raw
+    $script:PlansDir       = Join-Path $PSScriptRoot '..'
+    $script:BuildMasterDir = Resolve-Path -LiteralPath (Join-Path $script:PlansDir '..')
+    $script:RepoRoot       = Resolve-Path -LiteralPath (Join-Path $script:BuildMasterDir '..\..')
+    $script:PlanPath       = Join-Path $script:PlansDir 'CSharpPackage-5Stage.otter'
+    $script:RunnerPath     = Join-Path $script:PlansDir 'Invoke-CSharpPackageBuildMasterStage.ps1'
+    $script:MonitorPath    = Join-Path $script:BuildMasterDir 'Monitors/CSharpPackage-RepositoryMonitors.otter'
+    $script:PlanText       = Get-Content -LiteralPath $script:PlanPath -Raw
+    $script:RunnerText     = Get-Content -LiteralPath $script:RunnerPath -Raw
+    $script:MonitorText    = Get-Content -LiteralPath $script:MonitorPath -Raw
 }
 
 Describe 'V4-C02 plan shape: CSharpPackage-5Stage.otter is a thin runner plan' {
@@ -65,6 +69,85 @@ Describe 'V4-C02 plan shape: CSharpPackage-5Stage.otter is a thin runner plan' {
     It 'plan references the runner script via $BuildMasterPlanScriptDir + Invoke-CSharpPackageBuildMasterStage.ps1' {
         $script:PlanText | Should -Match 'set\s+\$BuildMasterPlanScriptDir\s*=\s*\$PathCombine'
         $script:PlanText | Should -Match 'Invoke-CSharpPackageBuildMasterStage\.ps1'
+    }
+}
+
+Describe 'V4-C02 monitor shape: CSharpPackage repository monitors are concrete for the pilot package' {
+
+    It 'monitor file exists beside the BuildMaster plans' {
+        $script:MonitorPath | Should -Exist
+    }
+
+    It 'declares exactly the two live StronglyTypedId monitors' {
+        $matches = [regex]::Matches(
+            $script:MonitorText,
+            '(?im)^\s*GitHub::Repository-Monitor\s+CSharpPackage-StronglyTypedId-(Main|Sprint)-Monitor\b')
+
+        $matches.Count | Should -Be 2
+        $script:MonitorText | Should -Not -Match '(?im)^\s*GitHub::Repository-Monitor\s+CSharpPackages-'
+    }
+
+    It 'routes main and sprint branch pushes to CSharpPackage-5Stage' {
+        $mainPattern = '(?ms)^GitHub::Repository-Monitor\s+CSharpPackage-StronglyTypedId-Main-Monitor\b.*?^\);'
+        $sprintPattern = '(?ms)^GitHub::Repository-Monitor\s+CSharpPackage-StronglyTypedId-Sprint-Monitor\b.*?^\);'
+        $mainBlock = [regex]::Match($script:MonitorText, $mainPattern).Value
+        $sprintBlock = [regex]::Match($script:MonitorText, $sprintPattern).Value
+
+        $mainBlock | Should -Match 'BranchFilter:\s*main'
+        $mainBlock | Should -Match 'PollInterval:\s*600'
+        $mainBlock | Should -Match 'PipelineName:\s*CSharpPackage-5Stage'
+
+        $sprintBlock | Should -Match 'BranchFilter:\s*\*-Sprint-\*-work-items'
+        $sprintBlock | Should -Match 'PollInterval:\s*120'
+        $sprintBlock | Should -Match 'PipelineName:\s*CSharpPackage-5Stage'
+    }
+
+    It 'filters live monitors to the StronglyTypedId source tree' {
+        $matches = [regex]::Matches(
+            $script:MonitorText,
+            '(?im)^\s*PathFilter:\s*src/ATAP\.Utilities\.StronglyTypedId/\*\*')
+
+        $matches.Count | Should -Be 2
+        $script:MonitorText | Should -Not -Match '(?im)^\s*PathFilter:\s*src/\*\*\s*,'
+    }
+
+    It 'supplies the C# package tuple the thin runner requires' {
+        $monitorNames = @(
+            'CSharpPackage-StronglyTypedId-Main-Monitor',
+            'CSharpPackage-StronglyTypedId-Sprint-Monitor'
+        )
+
+        $expectedBuildVariables = @(
+            'Branch: $Branch',
+            'ApplicationName: ATAP.Utilities',
+            'MetaPackageName: ATAP.Utilities.StronglyTypedId',
+            'PackageName: ATAP.Utilities.StronglyTypedId',
+            'ProjectPath: src/ATAP.Utilities.StronglyTypedId/ATAP.Utilities.StronglyTypedId.csproj',
+            'SolutionPath: ATAP.Utilities.Production.slnf',
+            'Configuration: Release'
+        )
+
+        foreach ($monitorName in $monitorNames) {
+            $pattern = '(?ms)^GitHub::Repository-Monitor\s+' + [regex]::Escape($monitorName) + '\b.*?^\);'
+            $block = [regex]::Match($script:MonitorText, $pattern).Value
+            $block | Should -Not -BeNullOrEmpty
+
+            foreach ($expectedBuildVariable in $expectedBuildVariables) {
+                $block | Should -Match ([regex]::Escape($expectedBuildVariable))
+            }
+        }
+    }
+
+    It 'points to existing pilot package and solution-filter paths' {
+        Join-Path $script:RepoRoot 'src/ATAP.Utilities.StronglyTypedId/ATAP.Utilities.StronglyTypedId.csproj' | Should -Exist
+        Join-Path $script:RepoRoot 'ATAP.Utilities.Production.slnf' | Should -Exist
+    }
+
+    It 'does not pass ProGet secrets as monitor build variables' {
+        $script:MonitorText | Should -Match 'BUILDMASTER_GH_WEBHOOK_SECRET'
+        $script:MonitorText | Should -Not -Match '(?im)^\s*ProGetApiKey\s*:'
+        $script:MonitorText | Should -Not -Match '(?im)^\s*ApiKey\s*:'
+        $script:MonitorText | Should -Not -Match 'PROGET_ADMIN_API_KEY'
     }
 }
 

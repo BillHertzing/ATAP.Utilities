@@ -57,7 +57,7 @@
 ### Phase 4 — BuildMaster Plan
 
 - [ ] T-60 · Create `PowerShellModule-5Stage` OtterScript plan
-- [ ] T-61 · Add Repository Monitors for PowerShell-module branches
+- [x] T-61 · Add Repository Monitors for PowerShell-module branches
 - [ ] T-62 · Pilot the new plan on `ATAP.Utilities.BuildTooling.PowerShell`
 - [ ] T-63 · Roll out to the remaining PowerShell modules
 
@@ -466,12 +466,22 @@ Each T-1x task delivers one public cmdlet in [src/ATAP.Utilities.BuildTooling.Po
 
 ### T-61 · Add Repository Monitors for PowerShell-module branches
 
-- [ ]
+- [x]
 
 **Gap:** G-26
 **Steps:** Point BuildMaster monitors at each `sprint-*`, `integration`, `qa`, `main`, and `release/v*` branch for this repo (see Explainer 14.3).
 **Acceptance:** A push to any monitored branch triggers the correct stage within the configured interval.
 **Dependencies:** T-60.
+
+**Status:** Complete for the `ATAP.Utilities.BuildTooling.PowerShell` pilot
+module. `PowerShellModule-RepositoryMonitors.otter` defines `main` and
+`*-Sprint-*-work-items` monitors scoped to
+`src/ATAP.Utilities.BuildTooling.PowerShell/**` and passes `Branch`,
+`ModuleName`, and `PackageName` into the shared `ATAP.Utilities-PowerShell`
+application. The archived `integration`/`qa`/`release/v*` branch-monitor list
+is superseded by the immutable-build model: only sprint and `main` source
+pushes start builds; later tiers are promotion stages. Follow-on module rollout
+remains owned by T-63.
 
 ### T-62 · Pilot the new plan on `ATAP.Utilities.BuildTooling.PowerShell`
 

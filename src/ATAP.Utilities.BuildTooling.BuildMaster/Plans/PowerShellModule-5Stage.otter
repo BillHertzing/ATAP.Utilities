@@ -2,7 +2,7 @@
 # PowerShellModule-5Stage - BuildMaster OtterScript Plan
 #
 # Variables (Application Variables - set in BuildMaster Application config):
-#   $ApplicationName  - BuildMaster application name, e.g. "ATAP.Utilities.PowerShell"
+#   $ApplicationName  - BuildMaster application name, e.g. "ATAP.Utilities-PowerShell"
 #   $Branch           - source branch name supplied by monitor/poller
 #   $SourcePath       - absolute path to the developer/build worktree
 #   $ModuleName       - module folder under src/, e.g. "ATAP.Utilities.PowerShell"

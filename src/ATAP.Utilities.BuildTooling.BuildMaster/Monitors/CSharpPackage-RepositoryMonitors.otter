@@ -2,7 +2,8 @@
 # CSharpPackage-RepositoryMonitors.otter
 #
 # Purpose : Define BuildMaster Repository Monitors that trigger the
-#           CSharpPackage-5Stage plan when branches are pushed in the
+#           CSharpPackage-5Stage plan for the ATAP.Utilities.StronglyTypedId
+#           pilot package when matching branches are pushed in the
 #           ATAP.Utilities GitHub repository.
 #
 # Immutable build note:
@@ -12,11 +13,18 @@
 #   pushes to integration/qa/release branches.
 #
 # How to apply:
-#   1. In the BuildMaster UI, open the application for ATAP.Utilities.
+#   1. In the BuildMaster UI, open the ATAP.Utilities-CSharp application.
 #   2. Navigate to Settings → Repository Monitors.
 #   3. Create one monitor per entry below (or use the BuildMaster API
 #      with the /api/resource-monitors endpoint).
 #   4. Confirm each monitor by performing a test push to the target branch.
+#
+# Scaling beyond the pilot package:
+#   The C# BuildMaster application is intentionally shared by package. Each
+#   repository monitor must therefore provide the concrete package tuple as
+#   build variables. To onboard another package, copy these two monitor entries,
+#   change the monitor names, PathFilter, MetaPackageName, PackageName,
+#   ProjectPath, and SolutionPath to that package.
 #
 # Tier resolution:
 #   NBGV prerelease label → Tier → Feed
@@ -26,9 +34,9 @@
 #   -QA-      → QA            → nuget-qa
 #   (none)    → Production    → nuget-stable
 #
-# Path filter (1.4-4):
-#   PathFilter: src/** ensures that commits touching ONLY
-#   SolutionDocumentation/ or README.md do not trigger a build.
+# Path filter:
+#   PathFilter scopes the pilot monitors to the StronglyTypedId source tree so
+#   a source push supplies one unambiguous C# package tuple.
 #
 # Webhook secret (1.4-3):
 #   WebhookSecret references env var BUILDMASTER_GH_WEBHOOK_SECRET.
@@ -38,50 +46,75 @@
 #
 # Variables used by triggered builds:
 #   $Branch          — the branch that triggered the monitor (injected by BM)
-#   $ApplicationName — set as Application Variable: "ATAP.Utilities"
+#   $ApplicationName — supplied by these monitor definitions
+#   $MetaPackageName — supplied by these monitor definitions
+#   $PackageName     — supplied by these monitor definitions
+#   $ProjectPath     — supplied by these monitor definitions
+#   $SolutionPath    — supplied by these monitor definitions
+#   $Configuration   — supplied by these monitor definitions
 #   $SourcePath      — set as Application Variable: working-directory path
-#   $Configuration   — set as Application Variable: "Release"
 #   $ProGetUrl       — set as Application Variable: ProGet base URL
-#   $ProGetApiKey    — masked Application Variable from PROGET_ADMIN_API_KEY
+#   $ProGetApiKey    — resolved from environment by the runner
 ##########################################################################
 
 # ---------------------------------------------------------------------------
-# Monitor 1 — main branch (Production)  [1.4-1]
+# Pilot package values
+#   ApplicationName : ATAP.Utilities
+#   MetaPackageName : ATAP.Utilities.StronglyTypedId
+#   PackageName     : ATAP.Utilities.StronglyTypedId
+#   ProjectPath     : src/ATAP.Utilities.StronglyTypedId/ATAP.Utilities.StronglyTypedId.csproj
+#   SolutionPath    : ATAP.Utilities.Production.slnf
+#   Configuration   : Release
+
+# ---------------------------------------------------------------------------
+# Monitor 1 — main branch
 # Triggers  : any push to "main"
-# Stage     : Production (NBGV resolves from absent prerelease label)
-# PathFilter: src/** — docs-only commits do not trigger a build
+# Ceiling   : resolved from the package's version.json prerelease label
+# PathFilter: StronglyTypedId package source only
 # Interval  : poll every 10 minutes
 # ---------------------------------------------------------------------------
-GitHub::Repository-Monitor CSharpPackages-Main-Monitor
+GitHub::Repository-Monitor CSharpPackage-StronglyTypedId-Main-Monitor
 (
     Organization: BillHertzing,
     Repository: ATAP.Utilities,
     BranchFilter: main,
-    PathFilter: src/**,
+    PathFilter: src/ATAP.Utilities.StronglyTypedId/**,
     PollInterval: 600,
     WebhookSecret: $EnvironmentVariable(BUILDMASTER_GH_WEBHOOK_SECRET),
     PipelineName: CSharpPackage-5Stage,
-    BuildVariables: %(Branch: $Branch)
+    BuildVariables: %(Branch: $Branch,
+                     ApplicationName: ATAP.Utilities,
+                     MetaPackageName: ATAP.Utilities.StronglyTypedId,
+                     PackageName: ATAP.Utilities.StronglyTypedId,
+                     ProjectPath: src/ATAP.Utilities.StronglyTypedId/ATAP.Utilities.StronglyTypedId.csproj,
+                     SolutionPath: ATAP.Utilities.Production.slnf,
+                     Configuration: Release)
 );
 
 # ---------------------------------------------------------------------------
-# Monitor 2 — Sprint branches (Experimental)  [1.4-2]
+# Monitor 2 — Sprint branches
 # Triggers  : any push to a branch matching *-Sprint-*-work-items
-# Stage     : Experimental (NBGV resolves from -Sprint- prerelease label)
-# PathFilter: src/** — docs-only commits do not trigger a build
+# Starts    : Experimental deployment; ceiling still comes from version.json
+# PathFilter: StronglyTypedId package source only
 # Interval  : poll every 2 minutes
 # Note      : pushes to the shared permanent nuget-experimental feed
 # ---------------------------------------------------------------------------
-GitHub::Repository-Monitor CSharpPackages-Sprint-Monitor
+GitHub::Repository-Monitor CSharpPackage-StronglyTypedId-Sprint-Monitor
 (
     Organization: BillHertzing,
     Repository: ATAP.Utilities,
     BranchFilter: *-Sprint-*-work-items,
-    PathFilter: src/**,
+    PathFilter: src/ATAP.Utilities.StronglyTypedId/**,
     PollInterval: 120,
     WebhookSecret: $EnvironmentVariable(BUILDMASTER_GH_WEBHOOK_SECRET),
     PipelineName: CSharpPackage-5Stage,
-    BuildVariables: %(Branch: $Branch)
+    BuildVariables: %(Branch: $Branch,
+                     ApplicationName: ATAP.Utilities,
+                     MetaPackageName: ATAP.Utilities.StronglyTypedId,
+                     PackageName: ATAP.Utilities.StronglyTypedId,
+                     ProjectPath: src/ATAP.Utilities.StronglyTypedId/ATAP.Utilities.StronglyTypedId.csproj,
+                     SolutionPath: ATAP.Utilities.Production.slnf,
+                     Configuration: Release)
 );
 
 # ---------------------------------------------------------------------------
@@ -96,8 +129,12 @@ GitHub::Repository-Monitor CSharpPackages-Sprint-Monitor
 #     PathFilter: src/ATAP.Utilities.{PackageSlug}/**,
 #     PollInterval: 120,
 #     WebhookSecret: $EnvironmentVariable(BUILDMASTER_GH_WEBHOOK_SECRET),
-#     PipelineName: CSharpPackage-PerProject,
+#     PipelineName: CSharpPackage-5Stage,
 #     BuildVariables: %(Branch: $Branch,
-#                      ProjectPath: src\ATAP.Utilities.{PackageSlug}\ATAP.Utilities.{PackageSlug}.csproj,
-#                      RunTests: false)
+#                      ApplicationName: ATAP.Utilities,
+#                      MetaPackageName: ATAP.Utilities.{PackageSlug},
+#                      PackageName: ATAP.Utilities.{PackageSlug},
+#                      ProjectPath: src/ATAP.Utilities.{PackageSlug}/ATAP.Utilities.{PackageSlug}.csproj,
+#                      SolutionPath: ATAP.Utilities.Production.slnf,
+#                      Configuration: Release)
 # );

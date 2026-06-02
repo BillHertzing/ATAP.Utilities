@@ -32,6 +32,26 @@ The end state is:
   files at `C:\Dropbox\whertzing\GitHub` as the current branch/worktree matrix when
   they are present.
 
+## OS Image Sources
+
+Before beginning, decide which OS image you are starting from:
+
+**Option A — Direct from Microsoft (OEM image)**
+The PC ships with a manufacturer-specific Windows image that includes OEM additions
+(drivers, utilities, bloatware). This is the most common starting point for a new machine.
+OOBE runs from this image. Bloatware should be removed during or after setup.
+
+**Option B — Custom organization image**
+A pre-configured Windows image built and maintained in the `ATAP.IAC` repository. It skips
+or automates much of the manual setup described in this document.
+
+> **See:** `ATAP.IAC` for details on the custom image pipeline. A dedicated explainer —
+> _Creating a Custom Windows 11 Organization Image_ — is **not yet written**. When
+> available it will be linked here.
+
+The steps below assume **Option A** (OEM image). Where a custom image eliminates a step, a
+note says so.
+
 ## Phase 1: Windows and Developer Baseline
 
 ## Step 1: Install Windows and Record Machine Identity
@@ -46,6 +66,97 @@ Verify the final machine name:
 ```powershell
 $env:COMPUTERNAME
 ```
+
+### 1.1 First login — create a local user account
+
+This setup uses a **local account** rather than a Microsoft account because:
+
+- These machines are domain-less workstations on a private LAN.
+- Services (SQL Server, ProGet, BuildMaster, Cobian) run under local service accounts.
+- A Microsoft account ties the local profile to cloud sync in ways that can interfere with
+  predictable configuration management.
+
+> **TBD:** Whether to document a Microsoft Live account as the primary user (for Windows
+> Hello, OneDrive, or AAD/Intune policy) is still under consideration. This document covers
+> the local-account path only until that decision is made.
+
+**Windows 11 Pro path (local account during OOBE):**
+
+1. Power on the PC and complete the **Language**, **Region**, and **Keyboard layout** screens.
+2. On the **"Let's connect you to a network"** screen, click **"I don't have internet"**
+   (bottom-left) → **"Continue with limited setup"**. If that option is not visible, use the
+   workaround below.
+
+**Fallback workaround (Home, or if the option is not visible on Pro):**
+
+1. On the network screen, press **Shift + F10** to open a command prompt.
+2. Run:
+
+   ```cmd
+   oobe\bypassnro
+   ```
+
+3. The PC reboots and re-enters OOBE. **"I don't have internet"** now appears — click it →
+   **"Continue with limited setup"**.
+
+> **Note:** `oobe\bypassnro` is an official Microsoft-supported bypass. It sets a registry
+> flag that skips the network requirement for the current OOBE session.
+
+After choosing limited/offline setup, enter the account details:
+
+1. **Who's going to use this PC?** — Enter the local username. Use the same username as on
+   other machines in the environment (e.g., `whertzing`) to keep paths, profile directories,
+   and scripts consistent.
+2. **Create a super memorable password** — Enter a strong password. Store it in Bitwarden
+   under the entry for this machine (Bitwarden is installed in Step 2 / Step 5). Until then,
+   record it securely offline.
+3. **Security questions** — Windows 11 requires three for local accounts. Use memorably
+   wrong answers and store them in Bitwarden alongside the password.
+
+> Turn off all optional telemetry and advertising features on the privacy/diagnostics
+> consent screens.
+
+### 1.2 Verify the account is an Administrator
+
+When OOBE creates the **first** local account, Windows automatically adds it to the local
+**Administrators** group. Verify after the desktop appears:
+
+```powershell
+# Confirm current user's group membership
+whoami /groups | Select-String Administrators
+
+# Or list the Administrators group members explicitly
+net localgroup Administrators
+```
+
+If the account lacks Administrator privileges — or you are adding a second admin account —
+run (as Administrator):
+
+```powershell
+# Replace 'whertzing' with the actual username
+Add-LocalGroupMember -Group 'Administrators' -Member 'whertzing'
+Get-LocalGroupMember -Group 'Administrators'
+```
+
+### 1.3 (Optional) Enable the built-in Administrator account
+
+The built-in `Administrator` account is **disabled** by default. For emergency console
+access (recovery when the main account is locked out) it can be enabled:
+
+```powershell
+Enable-LocalUser -Name 'Administrator'
+# Leave blank for console-only access (the default when the account has no password)
+Set-LocalUser -Name 'Administrator' -Password ([System.Security.SecureString]::new())
+```
+
+> **Security note:** If this machine is reachable from a network, set a strong password on
+> the built-in `Administrator` account and store it in Bitwarden.
+
+### 1.4 Windows Update
+
+Run Windows Update immediately after first login to reach the current patch level **before**
+installing any software. This may require several reboot cycles. Ensure the machine reaches
+Windows 11 24H2 build 26200 or later before proceeding to Step 2.
 
 ## Step 2: Install Core Tools
 
@@ -69,6 +180,135 @@ code --version
 dotnet --list-sdks
 bw --version
 ```
+
+Install **Dropbox first and manually** (download from
+[dropbox.com/install](https://www.dropbox.com/install)). Chocolatey is not yet available at
+this stage, and organization scripts, PowerShell modules, and the Chocolatey package
+manifest all live under `C:\Dropbox\whertzing\` once Dropbox syncs (Step 3). The remaining
+tools are installed with Chocolatey below.
+
+### 2.1 Install Chocolatey
+
+Chocolatey is the organization's standard Windows package manager and a prerequisite for
+installing most tools in the approved package list.
+
+> **Custom image note:** If the machine was provisioned from the `ATAP.IAC` custom image,
+> Chocolatey may already be installed. Run `choco --version` to check before proceeding.
+
+Open PowerShell 7 (or Windows PowerShell) **as Administrator** and run:
+
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process -Force
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+# Verify
+choco --version            # Expected: 2.x or later
+
+# Enable confirmation bypass for non-interactive installs and list sources
+choco feature enable -n allowGlobalConfirmation
+choco source list
+```
+
+> If the organization runs a local Chocolatey feed through ProGet (Step 9), add it as a
+> source once ProGet is up:
+>
+> ```powershell
+> choco source add --name='proget-choco' --source='http://<proget-host>/nuget/chocolatey/'
+> ```
+
+### 2.2 Approved Chocolatey packages
+
+The authoritative list of approved packages is maintained in the `ATAP.IAC` repository under
+the Infrastructure-as-Code data for this machine class.
+
+> **See:** `ATAP.IAC` → organization IAC data → Chocolatey package manifest for
+> `utat022`-class workstations. _(Exact file path TBD — link here once the IAC data is
+> formalized.)_
+
+The following categories are expected; exact package names and versions are in `ATAP.IAC`:
+
+| Category            | Key Packages                                                            |
+| ------------------- | ----------------------------------------------------------------------- |
+| Shell & terminal    | `pwsh` (PowerShell 7), `git`, `git-credential-manager`                  |
+| Editor & IDE        | `vscode`                                                                |
+| Compression         | `7zip`                                                                  |
+| File sync           | `dropbox` (installed manually above; Chocolatey manages future updates) |
+| Password management | `bitwarden`                                                             |
+| Package management  | `nuget.commandline`                                                     |
+| Diff / merge        | `winmerge` or similar                                                   |
+| Database tools      | `ssms` (SQL Server Management Studio)                                   |
+| Runtimes            | `dotnet-sdk` (.NET 8+), `nodejs` (if needed)                            |
+
+Once the approved list exists as a `packages.config` file in `ATAP.IAC`:
+
+```powershell
+choco install .\packages.config --yes
+```
+
+Or install individually as needed during setup. After installing VS Code, open a new
+terminal so the `code` command is on `PATH`, then verify with `code --version`. (The `nbgv`
+.NET global tool is installed machine-wide separately in Step 4.4.)
+
+### 2.3 Install Python (for Manim or Copilot code execution)
+
+Install Python only if the workstation will run Manim (see the optional Manim section near
+the end of this document) or Copilot code execution.
+
+> **⚠ Python version constraint — use 3.11, not 3.14 (as of 2026-04-04)**
+>
+> Python 3.14 is too new for several Manim Community dependencies. Pre-built binary wheels
+> for `pycairo`, `manimpango`, and `scipy` are not yet published for `cp314` on Windows, so
+> `pip` falls back to building from source (requires a full C/C++ toolchain and often
+> fails). This was observed during setup of `utat022`. Use **Python 3.11** until the Manim
+> dependency ecosystem catches up.
+
+```powershell
+# Install Python 3.11 explicitly — adds python.exe and pip to PATH automatically
+choco install python311 --yes
+```
+
+Chocolatey installs Python to `C:\Python311\` and adds both the install root and its
+`Scripts\` subfolder to the **system** `PATH`. Verify:
+
+```powershell
+# Reload PATH in the current shell
+$env:Path = [System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' +
+            [System.Environment]::GetEnvironmentVariable('Path','User')
+
+python --version     # Expected: Python 3.11.x
+pip --version        # Expected: pip 24.x from C:\Python311\...
+```
+
+> If multiple versions are installed, the `py.exe` launcher (`C:\Windows\py.exe`) lets you
+> target one explicitly: `py -3.11`, `py -3.14`. Confirm which version the bare `python`
+> command resolves to after the PATH reload and adjust if needed.
+
+**Disable the Windows Store Python stub.** Windows 11 ships a `python.exe` stub in
+`%LOCALAPPDATA%\Microsoft\WindowsApps\` that redirects to the Microsoft Store and can
+silently shadow the real installation. Disable it via **Settings → Apps → Advanced app
+settings → App execution aliases** (toggle off `python.exe` and `python3.exe`), or:
+
+```powershell
+$aliasPath = "$env:LOCALAPPDATA\Microsoft\WindowsApps"
+Remove-Item "$aliasPath\python.exe"  -ErrorAction SilentlyContinue
+Remove-Item "$aliasPath\python3.exe" -ErrorAction SilentlyContinue
+```
+
+**VS Code Python extensions:**
+
+```powershell
+choco install vscode-python --yes
+choco install vscode-pylance --yes
+```
+
+| Chocolatey Package | Extension ID        | Purpose                                                        |
+| ------------------ | ------------------- | -------------------------------------------------------------- |
+| `vscode-python`    | `ms-python.python`  | Core Python language support: IntelliSense, linting, debugging |
+| `vscode-pylance`   | `ms-python.pylance` | Fast type-checking language server                             |
+
+After installing, choose `C:\Python311\python.exe` when VS Code prompts to select an
+interpreter.
 
 ## Step 3: Sync the Repository Tree
 
@@ -94,6 +334,38 @@ If the current sprint already exists, verify the sprint worktrees are present as
 Get-ChildItem $gitHubRoot -Directory -Filter '*-wt-*-Sprint-*-work-items' |
   Select-Object FullName
 ```
+
+Also confirm the shell-folder mapping script is present on disk before running it below:
+
+```text
+C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.IAC.Ansible.Powershell\public\MapUserShellFoldersToDropBox.ps1
+```
+
+### 3.1 Map user shell folders to Dropbox
+
+Once sync is complete, redirect the Windows shell folders (Documents, Downloads, Favorites,
+Music, Photos, Videos) to Dropbox-backed locations so all user data is backed up and
+consistent across machines. Run **as Administrator**:
+
+```powershell
+& 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.IAC.Ansible.Powershell\public\MapUserShellFoldersToDropBox.ps1'
+```
+
+The script sets the following registry paths under
+`HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders`:
+
+| Shell Folder | Registry Key                             | Target Path                      |
+| ------------ | ---------------------------------------- | -------------------------------- |
+| Documents    | `Personal`                               | `C:\Dropbox\whertzing\`          |
+| Favorites    | `Favorites`                              | `C:\Dropbox\whertzing Favorites` |
+| Music        | `My Music`                               | `C:\Dropbox\Music`               |
+| Photos       | `My Pictures`                            | `C:\Dropbox\Photos`              |
+| Videos       | `My Video`                               | `C:\Dropbox\Videos`              |
+| Downloads    | `{374DE290-123F-4565-9164-39C4925E467B}` | `C:\Dropbox\Downloads`           |
+
+The script first displays the current vs. desired value for each folder and only applies
+changes where a difference is detected. After running it, **sign out and sign back in** (or
+reboot) so Windows Explorer picks up the changed shell-folder locations.
 
 ## Step 4: Install PowerShell Profiles and the Login Script
 
@@ -645,6 +917,28 @@ Get-Service INEDOPROGETSVC, INEDOBMSVC | Select-Object Name, Status, StartType
 
 Both services must depend on `MSSQL$PRODUCTION` so SQL Server is fully available before
 either Inedo product starts.
+
+### 9.3.1 Grant SvcProGet full control over the ProGet package store
+
+When ProGet runs as the custom local service account `SvcProGet` (rather than the default
+`NetworkService` identity), the Inedo Hub installer does **not** automatically grant that
+account write access to `C:\ProgramData\ProGet\Packages\`. ProGet UI operations that delete
+or write package files (e.g., bulk feed delete) then return HTTP 500 with:
+
+```text
+Access to the path 'C:\ProgramData\ProGet\Packages\...' is denied.
+```
+
+Grant `SvcProGet` Full Control (object-inherit + container-inherit) over the package
+directory. **Run in an elevated shell:**
+
+```powershell
+icacls "C:\ProgramData\ProGet\Packages" /grant "SvcProGet:(OI)(CI)F" /T
+```
+
+> **Automation:** `Invoke-ProvisionInedoServiceAccounts.ps1` performs this step
+> automatically after creating the `SvcProGet` account. Run it instead of the manual
+> command when provisioning a new machine.
 
 ### 9.4 Manually provision DPAPI Bitwarden credentials for the service accounts
 
@@ -1529,6 +1823,86 @@ Get-PSRepository | Select-Object Name, SourceLocation, InstallationPolicy
 
 After re-ordering, `Get-PSRepository` should list `powershellget-stable` first.
 
+### 9.9 Register all ProGet PowerShell feeds for the current user
+
+Step 9.8 registers only the `powershellget-stable` feed needed to install the ATAP modules.
+Registering the **full** set of tiered feeds is a **one-time per Windows user profile per
+machine** consumer setup step. Re-run it only when:
+
+- setting up a new workstation or a new Windows user profile;
+- changing the ProGet host, port, or feed names;
+- repairing a profile where PowerShellGet/PSResourceGet repository state was reset.
+
+.NET/NuGet feed sources are normally checked into repo-level `NuGet.Config` files, but
+PowerShell module installation keeps repository registrations in the current user's
+package-provider state. Register both PowerShell repository stores so either
+`Install-Module` (PowerShellGet v2) or `Install-PSResource`
+(Microsoft.PowerShell.PSResourceGet) can consume the same ProGet feeds.
+
+Run in a normal PowerShell 7 session for the user who will install modules:
+
+```powershell
+$feeds = @(
+  @{ Name = 'powershellget-experimental'; Uri = 'http://localhost:50000/nuget/powershellget-experimental/' },
+  @{ Name = 'powershellget-development';  Uri = 'http://localhost:50000/nuget/powershellget-development/' },
+  @{ Name = 'powershellget-integration';  Uri = 'http://localhost:50000/nuget/powershellget-integration/' },
+  @{ Name = 'powershellget-qa';           Uri = 'http://localhost:50000/nuget/powershellget-qa/' },
+  @{ Name = 'powershellget-stable';       Uri = 'http://localhost:50000/nuget/powershellget-stable/' }
+)
+
+foreach ($feed in $feeds) {
+  $repo = Get-PSRepository -Name $feed.Name -ErrorAction SilentlyContinue
+  if ($null -eq $repo) {
+    Register-PSRepository `
+      -Name $feed.Name `
+      -SourceLocation $feed.Uri `
+      -PublishLocation $feed.Uri `
+      -InstallationPolicy Trusted
+  }
+  else {
+    Set-PSRepository `
+      -Name $feed.Name `
+      -SourceLocation $feed.Uri `
+      -PublishLocation $feed.Uri `
+      -InstallationPolicy Trusted
+  }
+
+  $resourceUri = "$($feed.Uri.TrimEnd('/'))/v2"
+  $resourceRepo = Get-PSResourceRepository -Name $feed.Name -ErrorAction SilentlyContinue
+  if ($null -eq $resourceRepo) {
+    Register-PSResourceRepository -Name $feed.Name -Uri $resourceUri -Trusted
+  }
+  else {
+    Set-PSResourceRepository -Name $feed.Name -Uri $resourceUri -Trusted
+  }
+}
+```
+
+Verify:
+
+```powershell
+Get-PSRepository |
+  Where-Object Name -like 'powershellget-*' |
+  Sort-Object Name |
+  Select-Object Name, SourceLocation, InstallationPolicy
+
+Get-PSResourceRepository |
+  Where-Object Name -like 'powershellget-*' |
+  Sort-Object Name |
+  Select-Object Name, Uri, Trusted
+```
+
+Expected PowerShell feeds: `powershellget-experimental`, `powershellget-development`,
+`powershellget-integration`, `powershellget-qa`, `powershellget-stable`.
+
+The matching NuGet package feeds for .NET restore (`nuget-experimental`,
+`nuget-development`, `nuget-integration`, `nuget-qa`, `nuget-stable`) should already appear
+in the repo `NuGet.Config` files. Confirm from a repo root with:
+
+```powershell
+dotnet nuget list source
+```
+
 ## Step 10: Create Cobian Backup Jobs for the Tooling Databases
 
 Create separate Cobian jobs for `ProGet` and `BuildMaster`. Each Cobian job should call
@@ -1644,6 +2018,255 @@ The new computer is ready for a developer when all of the following are true:
 9. GitHub MCP token, server, VS Code settings, and API access validation pass.
 
 At that point the workstation can serve as a fully functional developer machine.
+
+## (Optional) Manim Community Animation Tooling
+
+Manim Community is a Python animation engine used to create precise mathematical and
+technical animations programmatically. Install it only on workstations that render Manim
+scenes. It depends on Python (Step 2.3), ffmpeg, and optionally MiKTeX for LaTeX-rendered
+equations.
+
+### Install ffmpeg
+
+```powershell
+choco install ffmpeg --yes
+ffmpeg -version            # Expected: ffmpeg version N-xxxxx ...
+```
+
+### Install MiKTeX (optional — for LaTeX equations)
+
+MiKTeX provides the LaTeX distribution Manim uses for `MathTex`/`Tex` objects. Skip if you
+do not need equation rendering.
+
+```powershell
+choco install miktex --yes
+```
+
+After installation, open the **MiKTeX Console** and run **Check for updates → Update now**.
+Manim downloads additional LaTeX packages on first use.
+
+### Create the project folder and virtual environment
+
+The Manim work lives **inside the ATAP.Utilities repository** rather than in a separate repo,
+keeping Python scene scripts, C# host code, and shared ATAP.Utilities libraries under one
+version-control root.
+
+```text
+ATAP.Utilities/
+├── ManimVideoGenerator/          ← Python project root (its own .gitignore)
+│   ├── .gitignore                  ← excludes .venv/, __pycache__/ (NOT media/)
+│   ├── .venv/                      ← Python virtual environment (gitignored)
+│   ├── scenes/                     ← Manim scene .py scripts
+│   ├── media/                      ← rendered MP4/GIF output (tracked in git)
+│   └── requirements.txt            ← pinned Python dependencies
+└── src/
+    └── ATAP.Utilities.ManimVideoGenerator/         ← C# facade (.csproj)
+        ├── ATAP.Utilities.ManimVideoGenerator.Interfaces/
+        ├── ATAP.Utilities.ManimVideoGenerator.StringConstants/
+        ├── ATAP.Utilities.ManimVideoGenerator.DefaultSettings/
+        └── ATAP.Utilities.ManimVideoGenerator.Models/
+```
+
+Rendered output under `media/` is **tracked in git** so it merges into main when the sprint
+PR lands and can be consumed by other projects over time.
+
+```powershell
+Set-Location C:\Dropbox\whertzing\GitHub\ATAP.Utilities
+New-Item -ItemType Directory -Path ManimVideoGenerator
+Set-Location ManimVideoGenerator
+python -m venv .venv
+.\.venv\Scripts\Activate
+```
+
+The shell prompt shows `(.venv)` when the environment is active. Create
+`ManimVideoGenerator\.gitignore` with at minimum:
+
+```gitignore
+# Python virtual environment
+.venv/
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+
+# NOTE: media/ is intentionally NOT ignored — rendered output is tracked in git
+#       so it can be merged into main and reused by other projects.
+```
+
+> **Virtual environment path for C# `Process.Start()`:**
+> `C:\Dropbox\whertzing\GitHub\ATAP.Utilities\ManimVideoGenerator\.venv\Scripts\manim.exe`
+> — passed as `ProcessStartInfo.FileName`, or read from a configuration value bound to
+> `IOptions<ManimVideoGeneratorOptions>`.
+
+You must **activate the virtual environment** each time you open a new terminal to work on
+Manim scripts directly. VS Code activates it automatically (see the Manim Sideview
+subsection below).
+
+### Sprint worktree and venv lifecycle
+
+Git worktrees give every sprint branch its own directory. There are two sprint types:
+
+| Sprint type       | Examples                                                                 | Venv action needed?                         | `MANIM_EXE_PATH` changes?                        |
+| ----------------- | ------------------------------------------------------------------------ | ------------------------------------------- | ------------------------------------------------ |
+| **Scene-only**    | Write or edit `.py` scene files, add rendering output to `media/`        | None — reuse the main worktree venv         | **No** — keep pointing at the main worktree venv |
+| **Manim-upgrade** | Install a new Manim version, change `requirements.txt`, modify C# facade | Create a new `.venv` in the sprint worktree | **Yes** — point at the sprint worktree venv      |
+
+For the common scene-only case, the `.venv` in the main worktree is fully reusable; only the
+sprint worktree's `scenes/` folder changes, tracked normally by git. Because `.venv/` is
+gitignored, a newly-created sprint worktree contains no virtual environment — irrelevant for
+scene-only sprints. Only Manim-upgrade sprints require a fresh venv in the sprint worktree.
+
+| Context         | Root path                                                                  |
+| --------------- | -------------------------------------------------------------------------- |
+| Main worktree   | `C:\Dropbox\whertzing\GitHub\ATAP.Utilities\`                              |
+| Sprint worktree | `C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-{N}-Sprint-NNN-work-items\` |
+
+**Items holding an absolute path to `manim.exe`/`python.exe`** that must track the active
+worktree (updated when a Manim-affecting sprint starts, reverted when it ends):
+
+| Item                                                       | Storage location                                               | Scene-only sprint                             | Manim-upgrade sprint                |
+| ---------------------------------------------------------- | -------------------------------------------------------------- | --------------------------------------------- | ----------------------------------- |
+| `manim.exe` path in `IOptions<ManimVideoGeneratorOptions>` | `DefaultSettings` config override or `MANIM_EXE_PATH` env var  | **No change** — reuse main worktree venv path | Update to sprint worktree venv path |
+| VS Code **Manim Sideview: Default Manim Path**             | VS Code user settings (or workspace override)                  | **No change**                                 | Update to sprint worktree venv path |
+| VS Code **Python: Select Interpreter**                     | Workspace settings or command palette selection                | **No change**                                 | Update to sprint worktree venv      |
+| `scenes/` content (`.py` files)                            | Tracked in git on the sprint branch                            | Normal git workflow                           | Normal git workflow                 |
+| `requirements.txt`                                         | Tracked in git on the sprint branch                            | Normal git workflow                           | Update, then `pip install -r requirements.txt` |
+| `media/` rendered output                                   | **Tracked in git** on the sprint branch                        | Committed and merged into main with the PR    | Committed and merged into main with the PR |
+
+**Recommended pattern — `MANIM_EXE_PATH` environment variable.** For scene-only sprints this
+variable never changes. For Manim-upgrade sprints, storing the path in a **User-scope**
+environment variable means only that one variable needs updating — no source files are
+touched. The C# binding reads it at startup:
+
+```csharp
+options.ManimExecutablePath =
+    configuration["ManimVideoGenerator:ManimExecutablePath"]
+    ?? Environment.GetEnvironmentVariable("MANIM_EXE_PATH")
+    ?? @"C:\Dropbox\whertzing\GitHub\ATAP.Utilities\ManimVideoGenerator\.venv\Scripts\manim.exe";
+```
+
+**Sprint-start agent steps (Manim-affecting sprints only):**
+
+```powershell
+$sprintWorktreeRoot = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-{N}-Sprint-NNN-work-items'
+$venvManimExe = "$sprintWorktreeRoot\ManimVideoGenerator\.venv\Scripts\manim.exe"
+
+New-Item -ItemType Directory -Path "$sprintWorktreeRoot\ManimVideoGenerator" -Force
+Set-Location "$sprintWorktreeRoot\ManimVideoGenerator"
+python -m venv .venv
+.\.venv\Scripts\Activate
+pip install manim
+
+# Point MANIM_EXE_PATH at the sprint worktree venv (User scope — survives shell restart)
+[System.Environment]::SetEnvironmentVariable('MANIM_EXE_PATH', $venvManimExe, 'User')
+
+# Update the VS Code workspace Python interpreter as well (see UserSettings.jsonc below).
+```
+
+> **Symlink alternative:** the sprint-start agent can instead create an NTFS junction
+> `ManimVideoGenerator-active` in a fixed location that always points to the active
+> worktree's `ManimVideoGenerator\` folder; configuration then references the fixed junction
+> path and only the junction target changes.
+
+**Sprint-end agent steps (after PR merge):**
+
+- **Scene-only sprint:** No venv action. Ensure `media/` rendered output is staged and
+  committed before the PR merges — it then lands in main automatically.
+- **Manim-upgrade sprint only:** revert `MANIM_EXE_PATH` to the main-branch venv; the sprint
+  worktree's gitignored `.venv\` is deleted with the worktree (no git cleanup).
+
+```powershell
+[System.Environment]::SetEnvironmentVariable(
+    'MANIM_EXE_PATH',
+    'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\ManimVideoGenerator\.venv\Scripts\manim.exe',
+    'User')
+```
+
+### Install Manim
+
+With the virtual environment active:
+
+```powershell
+pip install manim                  # 2–5 minutes on first install
+manim --version                    # Expected: Manim Community v0.19.x
+manim checkhealth                  # cairo / ffmpeg / latex / manimpango should PASS
+```
+
+If LaTeX reports FAIL and you did not install MiKTeX, that is expected and acceptable as
+long as you do not use `MathTex` or `Tex` objects.
+
+### VS Code extension — Manim Sideview
+
+> **Note:** `Rickaym.manim-sideview` is not available as a Chocolatey package (confirmed
+> 2026-04-04). Prefer installing from the Extensions panel (`Ctrl+Shift+X`) → search
+> `Manim Sideview` → Install, because running `code --install-extension` while VS Code is
+> open launches additional GUI windows. The CLI command is preserved for automation:
+
+```powershell
+code --install-extension Rickaym.manim-sideview
+```
+
+Then configure the extension and interpreter:
+
+1. **Settings** (`Ctrl+,`) → search `manim sideview` → set **Manim Sideview: Default Manim
+   Path** to
+   `C:\Dropbox\whertzing\GitHub\ATAP.Utilities\ManimVideoGenerator\.venv\Scripts\manim.exe`.
+2. Command Palette (`Ctrl+Shift+P`) → **Python: Select Interpreter** → **Enter interpreter
+   path** →
+   `C:\Dropbox\whertzing\GitHub\ATAP.Utilities\ManimVideoGenerator\.venv\Scripts\python.exe`.
+
+**Sprint-branch adjustments for `UserSettings.jsonc`.** On a Manim-affecting sprint branch,
+both keys must point to the **sprint worktree venv**. These settings live in
+`SharedVSCode/UserSettings.jsonc` (the canonical source — there is no per-repo
+`.vscode/settings.json`).
+
+| Setting key                       | Purpose                                                |
+| --------------------------------- | ------------------------------------------------------ |
+| `manim-sideview.defaultManimPath` | Path to the `manim.exe` the Sideview extension invokes |
+| `python.defaultInterpreterPath`   | Python interpreter VS Code uses for the workspace      |
+
+Sprint-start — set to the sprint worktree venv (example sprint `94-sprint-0004-work-items`):
+
+```jsonc
+// In SharedVSCode/UserSettings.jsonc
+"manim-sideview.defaultManimPath": "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities-wt-94-sprint-0004-work-items\\ManimVideoGenerator\\.venv\\Scripts\\manim.exe",
+"python.defaultInterpreterPath": "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities-wt-94-sprint-0004-work-items\\ManimVideoGenerator\\.venv\\Scripts\\python.exe",
+```
+
+Sprint-end — revert to the main-branch venv after the PR merges and the worktree is removed:
+
+```jsonc
+// In SharedVSCode/UserSettings.jsonc
+"manim-sideview.defaultManimPath": "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities\\ManimVideoGenerator\\.venv\\Scripts\\manim.exe",
+"python.defaultInterpreterPath": "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities\\ManimVideoGenerator\\.venv\\Scripts\\python.exe",
+```
+
+> **Agent reminder:** these two keys must be in the sprint-start and sprint-end checklists
+> for any sprint that creates or upgrades a Manim venv. Scene-only sprints that reuse the
+> main-branch venv do **not** need these changes.
+
+### Render a verification scene
+
+```python
+# test_manim.py
+from manim import *
+
+class HelloManim(Scene):
+    def construct(self):
+        text = Text("Hello, Manim!")
+        self.play(Write(text))
+        self.wait(1)
+```
+
+```powershell
+manim -pql test_manim.py HelloManim
+```
+
+`-p` opens the video after rendering; `-q l` renders at low quality (fast). Output is saved
+to `media\videos\test_manim\480p15\HelloManim.mp4` relative to the project folder. If MiKTeX
+was installed, optionally verify equation rendering with a `MathTex(r"e^{i\pi} + 1 = 0")`
+scene — MiKTeX downloads required LaTeX packages automatically on first run.
 
 ## Google Antigravity setup on a new Windows 11 computer
 

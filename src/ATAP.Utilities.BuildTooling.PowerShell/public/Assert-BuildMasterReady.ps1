@@ -16,8 +16,9 @@ function Assert-BuildMasterReady {
         marked Skipped if the endpoint is not available.
       - Each required application variable (e.g. ApplicationName, SolutionPath)
         is set on its application via /api/variables/application/{app}.
-      - Repository-monitor verification: currently Skipped with a TODO marker;
-        Native API does not expose a stable monitor-listing endpoint.
+      - Repository-monitor verification: currently Skipped for live BuildMaster
+        because the Native API does not expose a stable monitor-listing
+        endpoint; source-controlled monitor definitions are validated by tests.
 
     Every check runs to completion regardless of earlier failures so the
     structured result captures the full diagnostic picture. With -ThrowOnFailure
@@ -361,7 +362,7 @@ function Assert-BuildMasterReady {
 
     $checks['MonitorsDeployed'] = [PSCustomObject]@{
       Ok      = $true
-      Detail  = 'Not implemented; BuildMaster Native API does not expose a stable monitor-listing endpoint. TODO: verify CSharpPackage-RepositoryMonitors.otter and PowerShellModule-RepositoryMonitors.otter are deployed.'
+      Detail  = 'Skipped for live BuildMaster: the Native API does not expose a stable monitor-listing endpoint. Source definitions are validated in BuildMasterRunContext.Tests; deploy/trigger confirmation remains an interactive runbook gate.'
       Skipped = $true
     }
 

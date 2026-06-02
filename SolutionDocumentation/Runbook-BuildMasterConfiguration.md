@@ -97,16 +97,25 @@ The exact UI labels must be verified during execution. Expected flow:
 Source: `SolutionDocumentation/BuildMaster-ProGet-CSharp-Package-Pipeline.md`
 §4.1 and `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/CSharpPackage-5Stage.otter`.
 
-| Variable name     | Initial value                                       | Sensitive? | Notes                                                                                                                              |
-| ----------------- | --------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `ApplicationName` | `ATAP.Utilities`                                    | No         | Repository/application name passed to `Get-BuildContext`.                                                                          |
-| `SourcePath`      | `C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber` | No         | Confirm actual BuildMaster worktree path during UI session.                                                                        |
-| `Branch`          | `98-sprint-0006-work-items`                         | No         | Placeholder from current docs; update to the current sprint/source branch or let repository monitor/poller supply it if supported. |
-| `ProGetUrl`       | `http://localhost:50000`                            | No         | Confirm host-specific ProGet URL.                                                                                                  |
-| `ProGetApiKey`    | Paste from approved secret source                   | Yes        | Retrieve from the approved `PROGET_ADMIN_API_KEY` secret source. Do not write the value here.                                      |
-| `Configuration`   | `Release`                                           | No         | MSBuild configuration.                                                                                                             |
-| `MetaPackageName` | `ATAP.Utilities`                                    | No         | Roll-up NuGet package ID used by the plan.                                                                                         |
-| `ProjectPath`     | project directory or `.csproj` path                 | No         | Passed to `Get-BuildContext -ProjectPath`; source of the project-adjacent `version.json` promotion ceiling.                        |
+**Application-scope variables** (set once, stable across package builds):
+
+| Variable name  | Initial value                                       | Sensitive? | Notes                                                                                |
+| -------------- | --------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------ |
+| `SourcePath`   | `C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber` | No         | Confirm actual BuildMaster worktree path during UI session.                          |
+| `Branch`       | `100-Sprint-0007-work-items`                        | No         | Default only; the Repository Monitor supplies the triggering branch at build scope.   |
+| `ProGetUrl`    | `http://localhost:50000`                            | No         | Confirm host-specific ProGet URL.                                                    |
+| `ProGetApiKey` | Paste from approved secret source                   | Yes        | Retrieve from the approved `PROGET_ADMIN_API_KEY` secret source. Do not write it here. |
+
+**Build-scope variables** (supplied by the concrete C# Repository Monitor or manual build):
+
+| Variable name      | StronglyTypedId pilot value                                                 | Notes                                                                                                       |
+| ------------------ | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `$ApplicationName` | `ATAP.Utilities`                                                             | Repository/application name passed to `Get-BuildContext`.                                                   |
+| `$MetaPackageName` | `ATAP.Utilities.StronglyTypedId`                                             | Roll-up NuGet package ID used by the plan.                                                                  |
+| `$PackageName`     | `ATAP.Utilities.StronglyTypedId`                                             | Package ID promoted and tested after Experimental.                                                          |
+| `$ProjectPath`     | `src/ATAP.Utilities.StronglyTypedId/ATAP.Utilities.StronglyTypedId.csproj`   | Passed to `Get-BuildContext -ProjectPath`; source of the project-adjacent `version.json` promotion ceiling. |
+| `$SolutionPath`    | `ATAP.Utilities.Production.slnf`                                             | Solution filter used by promoted-package tests after Experimental.                                          |
+| `$Configuration`   | `Release`                                                                    | MSBuild configuration.                                                                                      |
 
 Execution notes (final state, verified 2026-05-14):
 
@@ -127,7 +136,8 @@ Execution notes (final state, verified 2026-05-14):
   | `$ProjectPath`     | `src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj` |
   | `$SourcePath`      | `C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber`        |
 
-- Open design note (not blocking L1): `$ProjectPath` currently pins one `.csproj` at Application scope. The durable design moves this to a Build-scope variable supplied per build (mirrors the PS app's `$ModuleName` pattern). Defer to a later stream.
+- Current monitor pilot: `CSharpPackage-RepositoryMonitors.otter` overrides the historical app-scope package defaults with the StronglyTypedId build-scope variables above.
+- Version caveat (2026-06-01): `src/ATAP.Utilities.StronglyTypedId/version.json` currently resolves as `0.1.0-QA.{height}`. The monitor starts the pipeline at Experimental, but the runner will allow promotion up to the QA ceiling unless that version label is lowered or a Sprint-ceiling package such as `ATAP.Utilities.ETW` is used for the smoke.
 - Ceiling note: `$Tier` is the BuildMaster stage context. `$CeilingTier` is preamble-set from `version.json`; do not configure it as an Application variable.
 
 ### 2.4 `ATAP.Utilities-PowerShell` Variables
@@ -164,7 +174,12 @@ Execution notes (final state, verified 2026-05-14):
 - Pipeline selection: `global::PowerShellModule-5Stage`, bound via the `Placeholder` release (Release number `0.0.0`) on the Overview tab.
 - Create New Release dialog has **no Branch field** — branch is supplied via the Application-scope `$Branch` variable (same pattern as the CSharp app).
 - Git connection: `BillHertzing/ATAP.Utilities`.
-- Resource Monitor: **none** — by design. PS builds are triggered by the ProGet poller (Stream L2), not by a Git Resource Monitor, because the plan requires Build-scope `$ModuleName`/`$PackageName`/`$PackageVersion` that only a ProGet event can supply.
+- Resource Monitor: **historical L1 state was none**. Superseding guidance lives
+  in [BuildMaster-Install-Runbook.md §16](BuildMaster-Install-Runbook.md):
+  the pilot `ATAP.Utilities.BuildTooling.PowerShell` repository monitors are
+  valid because they provide Build-scope `$ModuleName` and `$PackageName`.
+  Generic PowerShell Git monitors remain invalid unless they supply those
+  variables; the ProGet poller/manual trigger path may also supply them.
 - Application-scope variables as configured:
 
   | Variable           | Value                                               |
@@ -230,7 +245,7 @@ After the three Applications are created:
 | Application                  | Created?           | Variables entered? | Plan selected?                                                          | Verified by | Verified date | Notes                                                                                                                                                                                                                      |
 | ---------------------------- | ------------------ | ------------------ | ----------------------------------------------------------------------- | ----------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ATAP.Utilities-CSharp`      | Yes (pre-existing) | Yes ✓              | `global::CSharpPackage-5Stage` (Placeholder release + Resource Monitor) | User        | 2026-05-14    | L1 accepted. Git Resource Monitor on `BillHertzing/ATAP.Utilities` triggers builds via the durable plan. `$ProjectPath` remains as legacy per-project pinning; deferred to durable Build-scope migration, not blocking L1. |
-| `ATAP.Utilities-PowerShell`  | Yes                | Yes ✓              | `global::PowerShellModule-5Stage` (Placeholder release `0.0.0`)         | User        | 2026-05-14    | L1 accepted. Single parameterized app for all PS modules — `ModuleName`/`PackageName`/`PackageVersion` are Build-scope, supplied per build by the ProGet poller (Stream L2). No Resource Monitor by design.                |
+| `ATAP.Utilities-PowerShell`  | Yes                | Yes ✓              | `global::PowerShellModule-5Stage` (Placeholder release `0.0.0`)         | User        | 2026-05-14    | L1 accepted. Single parameterized app for all PS modules. Historical L1 had no Resource Monitor; current setup uses pilot BuildTooling monitors only when `ModuleName`/`PackageName` are supplied as build variables.       |
 | `AceCommander-ReleaseBundle` | Pending            | Pending            | Pending                                                                 |             |               |                                                                                                                                                                                                                            |
 
 ### 2.8 L1 UI Corrections Captured During Execution
@@ -309,7 +324,7 @@ Initial map:
 | ProGet feed                  | Package family                           | BuildMaster Application      | BuildMaster plan          |
 | ---------------------------- | ---------------------------------------- | ---------------------------- | ------------------------- |
 | `nuget-experimental`         | `ATAP.Utilities` NuGet packages          | `ATAP.Utilities-CSharp`      | `CSharpPackage-5Stage`    |
-| `PowershellGet-experimental` | Any `ATAP.Utilities.*` PowerShell module | `ATAP.Utilities-PowerShell`  | `PowerShellModule-5Stage` |
+| `powershellget-experimental` | Any `ATAP.Utilities.*` PowerShell module | `ATAP.Utilities-PowerShell`  | `PowerShellModule-5Stage` |
 | `releasebundle-experimental` | `AceCommander` Release Bundle            | `AceCommander-ReleaseBundle` | `ReleaseBundle-6Stage`    |
 
 Placeholder steps:

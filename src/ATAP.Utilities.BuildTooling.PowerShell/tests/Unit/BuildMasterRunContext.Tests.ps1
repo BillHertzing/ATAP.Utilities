@@ -3,6 +3,7 @@
 BeforeAll {
   $script:repoRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)))
   $script:plansDir = Join-Path $script:repoRoot 'src/ATAP.Utilities.BuildTooling.BuildMaster/Plans'
+  $script:monitorsDir = Join-Path $script:repoRoot 'src/ATAP.Utilities.BuildTooling.BuildMaster/Monitors'
   . (Join-Path $script:plansDir 'BuildMasterRunContext.Common.ps1')
 
   if (-not (Get-Command Test-PromotionWithinCeiling -CommandType Function -ErrorAction SilentlyContinue)) {
@@ -151,6 +152,22 @@ Describe 'BuildMaster run context helper' -Tag 'Unit' {
 
     Test-Path -LiteralPath $active | Should -BeTrue
     Test-Path -LiteralPath $old | Should -BeFalse
+  }
+}
+
+Describe 'BuildMaster repository monitor wiring' -Tag 'Unit' {
+  BeforeAll {
+    $script:powerShellMonitorPath = Join-Path $script:monitorsDir 'PowerShellModule-RepositoryMonitors.otter'
+  }
+
+  It 'passes PowerShell module identity into the shared PowerShellModule pipeline' {
+    $text = Get-Content -LiteralPath $script:powerShellMonitorPath -Raw
+
+    $text | Should -Match 'GitHub::Repository-Monitor PowerShellModule-BuildTooling-Main-Monitor'
+    $text | Should -Match 'GitHub::Repository-Monitor PowerShellModule-BuildTooling-Sprint-Monitor'
+    ([regex]::Matches($text, 'PathFilter:\s*src/ATAP\.Utilities\.BuildTooling\.PowerShell/\*\*')).Count | Should -Be 2
+    ([regex]::Matches($text, 'BuildVariables:\s*%\(Branch:\s*\$Branch,\s*ModuleName:\s*ATAP\.Utilities\.BuildTooling\.PowerShell,\s*PackageName:\s*ATAP\.Utilities\.BuildTooling\.PowerShell\)')).Count | Should -Be 2
+    $text | Should -Not -Match 'BuildVariables:\s*%\(Branch:\s*\$Branch\)'
   }
 }
 

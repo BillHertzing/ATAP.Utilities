@@ -25,7 +25,7 @@ diagrams scattered across the C# and PowerShell pipeline docs.
 | Pipeline name                | Artifact family                      | Tier feeds                                                                                      | Trigger                                                                                  |
 | ---------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | `CSharp-Package-Pipeline`    | C# NuGet packages                    | `nuget-experimental` → `nuget-stable`                                                           | ProGet polling on `nuget-experimental`; manual create-build.                             |
-| `PowerShell-Module-Pipeline` | PowerShellGet modules                | `PowershellGet-experimental` → `PowershellGet-stable`                                           | ProGet polling on `PowershellGet-experimental`; manual create-build.                     |
+| `PowerShell-Module-Pipeline` | PowerShellGet modules                | `powershellget-experimental` → `powershellget-stable`                                           | Pilot Git repository monitor for `ATAP.Utilities.BuildTooling.PowerShell`; ProGet polling/manual create-build when the trigger supplies module variables. |
 | `Release-Bundle-Pipeline`    | Release Bundles (Universal Packages) | `releasebundle-experimental` → `releasebundle-production` (Distribution stage on hold per D-06) | ProGet polling on `releasebundle-experimental`; manual create-build at release-tag time. |
 | `Database-Package-Pipeline`  | Database change-unit NuGet packages  | `database-experimental` → `database-stable`                                                     | ProGet polling on `database-experimental`; manual create-build.                          |
 
@@ -43,8 +43,8 @@ pipelines map to canonical `.otter` files and BuildMaster Applications as:
 
 | Pipeline          | OtterScript Plan (canonical)         | BuildMaster Application(s)                      | Final ProGet Feed          | Notes                                                                                                                           |
 | ----------------- | ------------------------------------ | ----------------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| C# Package        | `CSharpPackage-5Stage.otter`         | `ATAP.Utilities-CSharp`, `AceCommander`         | `nuget-stable`             | Shared plan; two Applications per D-05. `$SolutionPath` Application Variable selects the `.sln`.                                |
-| PowerShell Module | `PowerShellModule-5Stage.otter`      | `ATAP.Utilities`                                | `powershellget-stable`     | PowerShell modules live only in ATAP.Utilities.                                                                                 |
+| C# Package        | `CSharpPackage-5Stage.otter`         | `ATAP.Utilities-CSharp`, `AceCommander`         | `nuget-stable`             | Shared plan; package identity is supplied per build by repository monitors or manual build variables.                           |
+| PowerShell Module | `PowerShellModule-5Stage.otter`      | `ATAP.Utilities-PowerShell`                     | `powershellget-stable`     | Shared application for ATAP.Utilities PowerShell modules; `$ModuleName`/`$PackageName` identify the module per build.           |
 | Release Bundle    | `ReleaseBundle-6Stage.otter`         | `AceCommander-ReleaseBundle`                    | `releasebundle-production` | Per D-06, BuildMaster Pipeline must NOT include the `Distribution` stage; terminates at Production. Chocolatey/WinGet deferred. |
 | Database Package  | `DatabaseChangePackage-5Stage.otter` | `ATAPUtilitiesDatabase`, `AceCommanderDatabase` | `database-stable`          | Shared plan per V4-E. `$DatabaseApplication` and `$DatabaseStream` Application Variables identify the app and stream.           |
 
@@ -58,22 +58,22 @@ Each BuildMaster Application supplies its own values for the variables its
 
 | Variable Name                                      | `ATAP.Utilities-CSharp`                            | `AceCommander`                                     | `ATAP.Utilities` (PowerShell)                               | `AceCommander-ReleaseBundle`                          |
 | -------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------- |
-| `$ApplicationName`                                 | `ATAP.Utilities-CSharp`                            | `AceCommander`                                     | `ATAP.Utilities`                                            | `AceCommander-ReleaseBundle`                          |
-| `$Branch`                                          | injected by Repository Monitor                     | injected by Repository Monitor                     | injected by Repository Monitor                              | injected by Repository Monitor                        |
+| `$ApplicationName`                                 | `ATAP.Utilities`                                   | `AceCommander`                                     | `ATAP.Utilities-PowerShell`                                 | `AceCommander-ReleaseBundle`                          |
+| `$Branch`                                          | injected by Repository Monitor                     | injected by Repository Monitor                     | injected by Repository Monitor or build-trigger script       | injected by Repository Monitor                        |
 | `$SourcePath`                                      | path to ATAP.Utilities worktree                    | path to AceCommander worktree                      | path to ATAP.Utilities worktree                             | path to AceCommander worktree                         |
 | `$Configuration`                                   | `Release`                                          | `Release`                                          | _(not used)_                                                | _(not used)_                                          |
 | `$ProGetApiKey`                                    | masked, from `PROGET_ADMIN_API_KEY`                | masked, from `PROGET_ADMIN_API_KEY`                | masked, from `PROGET_ADMIN_API_KEY`                         | masked, from `PROGET_ADMIN_API_KEY`                   |
-| `$MetaPackageName`                                 | `ATAP.Utilities`                                   | `AceCommander`                                     | _(not used)_                                                | _(not used)_                                          |
-| `$SolutionPath` _(new per BD-10)_                  | `ATAP.Utilities.sln`                               | `AceCommander.sln`                                 | _(not used)_                                                | _(not used)_                                          |
-| `$ProjectPath`                                     | project directory or `.csproj` for NBGV            | project directory or `.csproj` for NBGV            | _(not used)_                                                | _(not used)_                                          |
-| `$ModuleName`                                      | _(not used)_                                       | _(not used)_                                       | module folder under `src/`                                  | _(not used)_                                          |
-| `$PackageName`                                     | _(not used)_                                       | _(not used)_                                       | normally same as `$ModuleName`                              | _(not used)_                                          |
+| `$MetaPackageName`                                 | `ATAP.Utilities.StronglyTypedId` (pilot monitor)   | `AceCommander`                                     | _(not used)_                                                | _(not used)_                                          |
+| `$SolutionPath` _(new per BD-10)_                  | `ATAP.Utilities.Production.slnf` (pilot monitor)   | `AceCommander.sln`                                 | _(not used)_                                                | _(not used)_                                          |
+| `$ProjectPath`                                     | `src/ATAP.Utilities.StronglyTypedId/ATAP.Utilities.StronglyTypedId.csproj` (pilot monitor) | project directory or `.csproj` for NBGV | _(not used)_                                                | _(not used)_                                          |
+| `$ModuleName`                                      | _(not used)_                                       | _(not used)_                                       | module folder under `src/`; supplied by monitor or trigger   | _(not used)_                                          |
+| `$PackageName`                                     | `ATAP.Utilities.StronglyTypedId` (pilot monitor)   | _(not used)_                                       | normally same as `$ModuleName`; supplied by monitor or trigger | _(not used)_                                        |
 | `$PackageVersion`                                  | _(not used; derived as `$ResolvedPackageVersion`)_ | _(not used; derived as `$ResolvedPackageVersion`)_ | _(not used; plan reads captured `$ResolvedPackageVersion`)_ | _(not used directly)_                                 |
 | `$Tier`                                            | BuildMaster stage context                          | BuildMaster stage context                          | BuildMaster stage context                                   | BuildMaster stage context                             |
 | `$CeilingTier`                                     | preamble-set from `version.json`                   | preamble-set from `version.json`                   | preamble-set from `version.json`                            | preamble-set from `version.json`                      |
 | `$ProductName`                                     | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | `AceCommander`                                        |
 | `$ReleaseTag`                                      | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | e.g. `v1.4.0` (or empty → use `$Branch`)              |
-| `$ProGetUrl`                                       | _(not used directly)_                              | _(not used directly)_                              | _(not used directly)_                                       | `http://localhost:50000`                              |
+| `$ProGetUrl`                                       | `http://localhost:50000`                           | `http://localhost:50000`                           | `http://localhost:50000`                                    | `http://localhost:50000`                              |
 | `$ReleaseBundleExperimentalFeedName`               | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | `releasebundle-experimental`                          |
 | `$ReleaseBundleDevelopmentFeedName`                | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | `releasebundle-development`                           |
 | `$ReleaseBundleIntegrationFeedName`                | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | `releasebundle-integration`                           |
@@ -186,6 +186,14 @@ via the `$ModuleName` build variable (with `$PackageName` and
 `$PackageVersion`), mirroring the way `$ProjectPath` parameterizes the
 `ATAP.Utilities-CSharp` application. No new BuildMaster application is
 required when adding a new PowerShell module.
+
+The BuildMaster-native path remains the GitHub repository monitor in
+`src/ATAP.Utilities.BuildTooling.BuildMaster/Monitors/PowerShellModule-RepositoryMonitors.otter`.
+For local comparison, `Start-LocalPowerShellModuleBuildMasterPoller` performs a
+single committed-HEAD poll against `src/ATAP.Utilities.BuildTooling.PowerShell/`,
+persists the last seen SHA under `_generated/buildmaster/local-poller/`, and
+uses the same `Start-BuildMasterPackagePipeline` handoff when a matching local
+commit is detected.
 
 ---
 
@@ -399,7 +407,7 @@ and calls BuildMaster APIs to create or start the matching release.
 The poller checks the Experimental feed for each durable pipeline:
 
 - `nuget-experimental` → triggers C# pipeline.
-- `PowershellGet-experimental` → triggers PowerShell pipeline.
+- `powershellget-experimental` → triggers PowerShell pipeline.
 - `releasebundle-experimental` → triggers Release Bundle pipeline.
 
 Promotions between later feeds are not new-build triggers. Promotion

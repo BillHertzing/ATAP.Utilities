@@ -321,16 +321,25 @@ without clearing the flag, but cannot mark a newly created variable sensitive.
 
 ### 8.2 `ATAP.Utilities-CSharp`
 
-| Variable          | Value                                               | Sensitive | Notes                                                                                        |
-| ----------------- | --------------------------------------------------- | --------- | -------------------------------------------------------------------------------------------- |
-| `ApplicationName` | `ATAP.Utilities`                                    | No        | Passed to `Get-BuildContext`.                                                                |
-| `Branch`          | `100-Sprint-0007-work-items`                        | No        | Update each sprint or supply by monitor/poller.                                              |
-| `SourcePath`      | `C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber` | No        | Durable BuildMaster work path.                                                               |
-| `Configuration`   | `Release`                                           | No        | MSBuild configuration.                                                                       |
-| `MetaPackageName` | `ATAP.Utilities`                                    | No        | Roll-up package ID.                                                                          |
-| `SolutionPath`    | `ATAP.Utilities.sln`                                | No        | Required by `CSharpPackage-5Stage.otter`.                                                    |
-| `ProjectPath`     | Project directory or `.csproj` path                 | No        | Passed to `Get-BuildContext -ProjectPath` so NBGV reads the project-adjacent `version.json`. |
-| `ProGetApiKey`    | From approved ProGet secret                         | Yes       | Never paste into this document.                                                              |
+Application-scope variables:
+
+| Variable       | Value                                               | Sensitive | Notes                                           |
+| -------------- | --------------------------------------------------- | --------- | ----------------------------------------------- |
+| `Branch`       | `100-Sprint-0007-work-items`                        | No        | Default only; repository monitors supply it.    |
+| `SourcePath`   | `C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber` | No        | Durable BuildMaster work path.                  |
+| `ProGetUrl`    | `http://localhost:50000`                            | No        | Host-specific ProGet URL.                       |
+| `ProGetApiKey` | From approved ProGet secret                         | Yes       | Never paste into this document.                 |
+
+Build-scope variables supplied by the concrete C# Repository Monitor:
+
+| Variable          | StronglyTypedId pilot value                                                    | Notes                                                                                        |
+| ----------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `$ApplicationName` | `ATAP.Utilities`                                                              | Passed to `Get-BuildContext`.                                                                |
+| `$MetaPackageName` | `ATAP.Utilities.StronglyTypedId`                                              | Roll-up package ID.                                                                          |
+| `$PackageName`     | `ATAP.Utilities.StronglyTypedId`                                              | Package ID promoted through ProGet.                                                          |
+| `$ProjectPath`     | `src/ATAP.Utilities.StronglyTypedId/ATAP.Utilities.StronglyTypedId.csproj`    | Passed to `Get-BuildContext -ProjectPath` so NBGV reads the project-adjacent `version.json`. |
+| `$SolutionPath`    | `ATAP.Utilities.Production.slnf`                                              | Used by promoted-package tests after Experimental.                                           |
+| `$Configuration`   | `Release`                                                                     | MSBuild configuration.                                                                       |
 
 ### 8.3 `ATAP.Utilities-PowerShell`
 
@@ -377,12 +386,9 @@ Build-scope variables supplied when creating a build:
 Set-BuildMasterApplicationVariables `
   -ApplicationName 'ATAP.Utilities-CSharp' `
   -Variables @{
-    ApplicationName = 'ATAP.Utilities'
     Branch = '100-Sprint-0007-work-items'
     SourcePath = 'C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber'
-    Configuration = 'Release'
-    MetaPackageName = 'ATAP.Utilities'
-    SolutionPath = 'ATAP.Utilities.sln'
+    ProGetUrl = 'http://localhost:50000'
     ProGetApiKey = @{
       Value = (Get-SecretATAP -SecretName 'PROGET_ADMIN_API_KEY' -SecretField 'token')
       Sensitive = $true
@@ -781,10 +787,42 @@ Source-controlled monitor definitions live in:
 - `src/ATAP.Utilities.BuildTooling.BuildMaster/Monitors/PowerShellModule-RepositoryMonitors.otter`
 - `src/ATAP.Utilities.BuildTooling.BuildMaster/Monitors/CSharpPackage-RepositoryMonitors.otter`
 
-Each file defines two monitors per application: one for the `main` branch (Production tier,
-poll every 10 minutes) and one for sprint branches matching `*-Sprint-*-work-items`
-(Experimental tier, poll every 2 minutes). Both use `PathFilter: src/**` so docs-only
-commits do not trigger a build.
+`CSharpPackage-RepositoryMonitors.otter` defines the two pilot monitors for
+`ATAP.Utilities.StronglyTypedId`: one for the `main` branch (poll every 10
+minutes) and one for sprint branches matching `*-Sprint-*-work-items` (poll
+every 2 minutes). Both use
+`PathFilter: src/ATAP.Utilities.StronglyTypedId/**` and pass `Branch`,
+`ApplicationName`, `MetaPackageName`, `PackageName`, `ProjectPath`,
+`SolutionPath`, and `Configuration` as build variables because
+`ATAP.Utilities-CSharp` is a shared application. The runner derives the ceiling
+from the package's `version.json`, not from the branch filter.
+
+`PowerShellModule-RepositoryMonitors.otter` defines the two pilot monitors for
+`ATAP.Utilities.BuildTooling.PowerShell`. These are scoped to
+`PathFilter: src/ATAP.Utilities.BuildTooling.PowerShell/**` and must pass
+`Branch`, `ModuleName`, and `PackageName` as build variables because
+`ATAP.Utilities-PowerShell` is a single shared application for every module.
+To onboard another PowerShell module, copy the two monitor entries and change
+the monitor names, `PathFilter`, `ModuleName`, and `PackageName`.
+
+The local comparison path is `Start-LocalPowerShellModuleBuildMasterPoller`.
+It is intentionally a pilot, not a replacement for BuildMaster's native GitHub
+monitor. It compares the current local repository `HEAD` against a state file
+and calls `Start-BuildMasterPackagePipeline` when committed files under
+`src/ATAP.Utilities.BuildTooling.PowerShell/` changed:
+
+```powershell
+Start-LocalPowerShellModuleBuildMasterPoller `
+  -RepoRoot 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items' `
+  -UsePreviousCommitWhenStateMissing `
+  -BuildMasterBaseUrl 'http://localhost:8622' `
+  -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
+```
+
+By default it stores state at
+`_generated/buildmaster/local-poller/ATAP.Utilities.BuildTooling.PowerShell.json`.
+Run it manually or from Task Scheduler to compare local committed-HEAD polling
+against the BuildMaster-native GitHub monitor.
 
 ### Prerequisites
 
@@ -818,14 +856,20 @@ try {
 2. Navigate to **Applications → ATAP.Utilities-PowerShell → Settings → Repository Monitors**.
 3. Click **Add Monitor**. For each of the two entries in `PowerShellModule-RepositoryMonitors.otter`,
    fill in: Organization = `BillHertzing`, Repository = `ATAP.Utilities`, BranchFilter, PathFilter,
-   PollInterval, PipelineName = `PowerShellModule-5Stage`, WebhookSecret env var name.
+   PollInterval, PipelineName = `PowerShellModule-5Stage`, WebhookSecret env var name,
+   and BuildVariables (`Branch`, `ModuleName`, `PackageName`) exactly as shown.
 4. Repeat for **Applications → ATAP.Utilities-CSharp** using `CSharpPackage-RepositoryMonitors.otter`
-   and PipelineName = `CSharpPackage-5Stage`.
+   with PipelineName = `CSharpPackage-5Stage` and the C# BuildVariables exactly as shown.
 
 ### Trigger test
 
-Push a commit touching a file under `src/` to the sprint branch
-`100-Sprint-0007-work-items` and confirm builds start in both BuildMaster applications.
+Push a commit touching `src/ATAP.Utilities.BuildTooling.PowerShell/**` to the
+sprint branch `100-Sprint-0007-work-items` and confirm the
+`ATAP.Utilities-PowerShell` build starts with `ModuleName` and `PackageName`
+set to `ATAP.Utilities.BuildTooling.PowerShell`. For C#, push a commit touching
+`src/ATAP.Utilities.StronglyTypedId/**` and confirm the `ATAP.Utilities-CSharp`
+build starts with `MetaPackageName`, `PackageName`, `ProjectPath`,
+`SolutionPath`, and `Configuration` set to the StronglyTypedId pilot values.
 Record the build IDs in the evidence file:
 `_generated/audit/v4-current-state/V4-A06-buildmaster-monitors-evidence-20260523.md`
 

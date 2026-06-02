@@ -93,7 +93,8 @@ function Get-HostSettings {
       throw $errorMessage
     }
     $getClonedAndModifiedHashtablePath = Join-Path $PSScriptRoot 'Get-ClonedAndModifiedHashtable.ps1'
-    if (-not (Test-Path -LiteralPath $getClonedAndModifiedHashtablePath -PathType Leaf)) {
+    if (-not (Get-Command -Name 'Get-ClonedAndModifiedHashtable' -CommandType Function -ErrorAction SilentlyContinue) -and
+        -not (Test-Path -LiteralPath $getClonedAndModifiedHashtablePath -PathType Leaf)) {
       $errorMessage = "Required helper 'Get-ClonedAndModifiedHashtable' was not found at '$getClonedAndModifiedHashtablePath'."
       Write-HostSettingsMessage -Level Error -Message $errorMessage
       throw $errorMessage

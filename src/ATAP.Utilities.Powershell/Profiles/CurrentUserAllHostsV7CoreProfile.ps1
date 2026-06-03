@@ -897,6 +897,20 @@ function Start-ExplorerWindowSet {
 
 Write-PSFMessage -FunctionName $fn -Level Debug -Message ('line 764 in CurrentUsersAllHostsV7CoreProfile.ps1')
 
+##############################
+# Headroom Context Compression Proxy
+##############################
+
+# Wrapper function for Headroom CLI with full venv path
+function headroom {
+  & "C:\Users\whertzing\.venvs\headroom\Scripts\headroom.exe" @args
+}
+
+# Startup check: warn if Headroom proxy port 8787 is not listening
+if (-not (netstat -ano 2>$null | Select-String ":8787.*LISTENING")) {
+  Write-Warning "Headroom proxy is NOT running on port 8787. Start with: headroom proxy --port 8787"
+}
+
 <# To Be Moved Somewhere else #>
 
 <#

@@ -2392,3 +2392,290 @@ function Set-AntigravityWorkspaceRepos {
 ### Maintenance note
 
 Document the Antigravity integration in terms of an active workspace file and a generated local config, rather than naming a specific sprint file such as `OverviewSprint0007.code-workspace`, because that filename changes every sprint.
+
+## (Optional) Headroom — AI Agent Context Compression
+
+Headroom (`headroom-ai`, Apache-2.0, [chopratejas/headroom](https://github.com/chopratejas/headroom))
+is a context-optimization layer for LLM agents. It compresses large tool outputs, logs,
+search results, and traces so coding agents (Claude Code, Codex, Copilot) consume fewer
+context tokens. It is delivered three ways, all of which this section installs/enables:
+
+1. **MCP server** — exposes on-demand tools `headroom_compress`, `headroom_retrieve`,
+   `headroom_stats` to Claude Code and Codex. **This is the primary, recommended mode.**
+2. **Proxy** — a local server on port `8787` that transparently compresses provider
+   traffic when an agent is launched through it (`headroom wrap claude|codex`).
+3. **Library** — the Python compress API the MCP server calls internally.
+
+Install Headroom only on workstations doing heavy agentic development. It is independent of
+the SQL/ProGet/BuildMaster pipeline and can be skipped without affecting builds.
+
+> **Compression engine note.** Headroom's semantic compression loads two ML models on first
+> use — an `answerdotai/ModernBERT-base` embedding model (via `torch` / `sentence-transformers`)
+> and a quantized `kompress-int8.onnx` model (via `onnxruntime`). **On CPU the first
+> compression incurs a multi-minute cold model-load**, and steady-state compress latency is
+> CPU-bound. A machine with an NVIDIA GPU should follow **Path B** below to run these models
+> on the GPU. Choose exactly one path in §H.3.
+
+### H.0 Decision: which path?
+
+| | **Path A — CPU-only** | **Path B — GPU-accelerated** |
+| --- | --- | --- |
+| **Requires** | Any x64 CPU | NVIDIA GPU (e.g. RTX 3080) + recent driver (CUDA 12.x class) |
+| **Packages** | `torch` (cpu build), `onnxruntime` | CUDA `torch` (`+cuXXX`), `onnxruntime-gpu` |
+| **First compress** | Multi-minute cold model load | Seconds (after one-time model download) |
+| **Steady-state compress** | CPU-bound (slow on large payloads) | GPU-accelerated |
+| **Proxy wrap overhead** | ~550ms+/request (observed on CPU) | Lower |
+| **Use when** | No NVIDIA GPU present | NVIDIA GPU present — **preferred** |
+
+Verify GPU presence before choosing:
+
+```powershell
+# Path B is available only if this prints a GPU. Otherwise use Path A.
+nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
+```
+
+### H.1 Prerequisites (both paths)
+
+These were required to build `headroom-ai[all]` from source on Windows + Python 3.11 (the
+package builds native wheels for itself and `hnswlib`):
+
+1. **Python 3.11** — already installed in Step 2.3 at `C:\Python311\` (do **not** use 3.14).
+2. **Rust toolchain** — Headroom's native extension bootstraps Rust if absent; install it
+   explicitly first to avoid a mid-install cert failure:
+
+   ```powershell
+   winget install Rustlang.Rustup --source winget
+   # New shell, then verify:
+   rustup --version; rustc --version; cargo --version
+   ```
+
+3. **Visual Studio Build Tools 2022 with the C++ workload** — provides `link.exe` / `cl.exe`
+   needed to compile native wheels:
+
+   ```powershell
+   winget install Microsoft.VisualStudio.2022.BuildTools `
+     --override "--quiet --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+   ```
+
+### H.2 Create the dedicated virtual environment (both paths)
+
+Headroom is cross-workflow tooling, so it gets its **own reusable venv** — not `pipx`, and
+not a project-scoped venv (e.g. the ManimVideoGenerator venv is intentionally left alone).
+
+```powershell
+& 'C:\Python311\python.exe' -m venv 'C:\Users\whertzing\.venvs\headroom'
+$venvPy = 'C:\Users\whertzing\.venvs\headroom\Scripts\python.exe'
+
+# truststore lets pip use the Windows certificate store (required on this network)
+& $venvPy -m pip install --upgrade --use-feature=truststore pip setuptools wheel
+```
+
+### H.3 Install Headroom — choose ONE path
+
+The native build needs the Visual C++ environment loaded and two network workarounds. This
+helper loads `VsDevCmd.bat`, puts Cargo on `PATH`, and sets the cert workarounds for the
+current shell — run it **before** the pip install in either path:
+
+```powershell
+$vsdev = 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat'
+cmd.exe /d /s /c "call `"$vsdev`" -arch=x64 -host_arch=x64 && set" | ForEach-Object {
+  if ($_ -match '^(.*?)=(.*)$') { Set-Item -Path ('Env:' + $matches[1]) -Value $matches[2] }
+}
+$env:PATH = 'C:\Users\whertzing\.cargo\bin;' + $env:PATH
+$env:CARGO_HTTP_CHECK_REVOKE = 'false'   # Cargo hits CRYPT_E_NO_REVOCATION_CHECK against crates.io without this
+$venvPy = 'C:\Users\whertzing\.venvs\headroom\Scripts\python.exe'
+```
+
+#### Path A — CPU-only
+
+```powershell
+& $venvPy -m pip install --use-feature=truststore 'headroom-ai[all]'
+
+# Verify
+& 'C:\Users\whertzing\.venvs\headroom\Scripts\headroom.exe' --help
+& $venvPy -c "import headroom; print('headroom', headroom.__version__)"
+```
+
+This installs CPU builds (`torch ...+cpu`, CPU `onnxruntime`). Compression works but is
+CPU-bound — expect a multi-minute first-compress while models load.
+
+#### Path B — GPU-accelerated (NVIDIA)
+
+Install Headroom the same way, then **replace** the two CPU ML packages with CUDA builds.
+The default `headroom-ai[all]` pulls `torch ...+cpu` and CPU-only `onnxruntime`; neither
+touches the GPU until swapped.
+
+```powershell
+# 1. Base install (same as Path A)
+& $venvPy -m pip install --use-feature=truststore 'headroom-ai[all]'
+
+# 2. Replace CPU torch with a CUDA build (cu124 shown — match your driver's CUDA level).
+#    This is a large (~2.5 GB) download.
+& $venvPy -m pip uninstall -y torch
+& $venvPy -m pip install --use-feature=truststore torch --index-url https://download.pytorch.org/whl/cu124
+
+# 3. Replace CPU onnxruntime with the GPU build so the kompress ONNX model can use CUDA.
+& $venvPy -m pip uninstall -y onnxruntime
+& $venvPy -m pip install --use-feature=truststore onnxruntime-gpu
+
+# 4. Verify both ML stacks see the GPU
+& $venvPy -c "import torch; print('torch', torch.__version__, 'cuda_available', torch.cuda.is_available(), 'device', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'N/A')"
+& $venvPy -c "import onnxruntime as ort; print('ORT', ort.__version__, 'providers', ort.get_available_providers())"
+```
+
+Path B is correct when:
+- `torch.cuda.is_available()` prints **`True`** and names your GPU, **and**
+- `onnxruntime.get_available_providers()` includes **`CUDAExecutionProvider`**.
+
+If either still reports CPU-only, the CUDA `torch` wheel or `onnxruntime-gpu` did not match
+the installed CUDA runtime — re-check the driver's CUDA level (`nvidia-smi`) and pick the
+matching `cuXXX` wheel index. There is **no Headroom CLI switch for the GPU**; GPU use is
+entirely determined by which `torch` / `onnxruntime` packages are installed.
+
+### H.3.1 ⚠ REQUIRED: pin the onnxruntime DLL (both paths) — prevents a fatal hang
+
+**Symptom if skipped:** any Headroom compression hangs indefinitely (observed: a single
+compression ran **24.8 minutes without completing**). It looks like a CPU/GPU/model
+problem but is not.
+
+**Root cause:** Headroom's Rust extension `headroom._core.detect_content_type` (the magika
+content-type detector that the compression pipeline calls *first*, before any model) uses
+the Rust `ort` crate, which by default tries to **locate/download its own onnxruntime**.
+On this environment that probe blocks forever — the process sits at 0% CPU, 1 thread, no
+completed network connection. It hangs on **every** input, even an 11-character string.
+(Diagnosed with Python `faulthandler`, which pinpointed `content_router.py` →
+`_detect_content` → the Rust call.)
+
+**Fix:** point the `ort` crate at the onnxruntime DLL already installed in the venv via the
+`ORT_DYLIB_PATH` environment variable. Set it **User-scope** so every Headroom process
+inherits it — the logon proxy task, the MCP servers Claude Code / Codex spawn, and
+interactive shells:
+
+```powershell
+$ortDll = 'C:\Users\whertzing\.venvs\headroom\Lib\site-packages\onnxruntime\capi\onnxruntime.dll'
+[Environment]::SetEnvironmentVariable('ORT_DYLIB_PATH', $ortDll, 'User')
+$env:ORT_DYLIB_PATH = $ortDll   # current shell too
+
+# Verify the Rust detector now returns instantly instead of hanging
+& 'C:\Users\whertzing\.venvs\headroom\Scripts\python.exe' -c "import time; from headroom._core import detect_content_type as d; t=time.time(); r=d('hello world'); print(f'{time.time()-t:.2f}s', r.content_type)"
+# Expected: ~0.1s text   (NOT a hang)
+```
+
+After this fix, a 4,162-token build log compresses in **~0.5s cold / ~0s warm** (≈86% token
+reduction) with all critical evidence preserved — versus the 24.8-minute hang without it.
+
+> The §H.5 proxy task and §H.6 profile also set `ORT_DYLIB_PATH` explicitly as
+> belt-and-suspenders for `-NoProfile` / service contexts. Setting it User-scope here is
+> what makes it apply everywhere.
+
+### H.4 Configure the Headroom MCP server (both paths) — primary mode
+
+Register the **absolute venv path** (not a bare `headroom`, which is PATH-dependent and
+fails to connect) as a user-scope stdio MCP server in both agents:
+
+```powershell
+$hrExe = 'C:\Users\whertzing\.venvs\headroom\Scripts\headroom.exe'
+
+# Claude Code (user scope = all projects)
+claude mcp add headroom -s user -- $hrExe mcp serve
+claude mcp get headroom      # expect: Status: Connected
+
+# Codex (global config: C:\Users\whertzing\.codex\config.toml)
+& 'C:\Users\whertzing\AppData\Local\OpenAI\Codex\bin\<build-id>\codex.exe' mcp add headroom -- $hrExe mcp serve
+```
+
+Restart any running Claude Code / Codex session so the new server is picked up, then run
+`/mcp` in each to confirm `headroom_compress`, `headroom_retrieve`, `headroom_stats` appear.
+
+### H.5 Proxy autostart at logon (both paths) — optional wrap mode
+
+The proxy backs `headroom wrap claude|codex`. Run it as a **hidden, telemetry-disabled**
+logon scheduled task that logs to `C:\Users\whertzing\.headroom\proxy.log`.
+
+Headroom writes nothing to a log file on its own — a bare Scheduled Task would silently
+discard its stdout/stderr — so the task must redirect output explicitly. A `cscript`/VBScript
+wrapper launches it with **no visible console window** (a plain `cmd`/`pwsh` action flashes
+and steals foreground focus). The VBScript writes a one-line batch that sets
+`HEADROOM_TELEMETRY=off` and passes `--no-telemetry`:
+
+```powershell
+$headroomDir = 'C:\Users\whertzing\.headroom'
+New-Item -ItemType Directory -Path $headroomDir -Force | Out-Null
+$vbs = Join-Path $headroomDir 'Start-HeadroomProxy.vbs'
+
+@'
+Set objShell = CreateObject("WScript.Shell")
+Set objFSO = CreateObject("Scripting.FileSystemObject")
+batchPath = "C:\Users\whertzing\.headroom\headroom_proxy_run.bat"
+Set objFile = objFSO.CreateTextFile(batchPath, True)
+objFile.WriteLine("@echo off")
+objFile.WriteLine("set HEADROOM_TELEMETRY=off")
+objFile.WriteLine("C:\Users\whertzing\.venvs\headroom\Scripts\headroom.exe proxy --port 8787 --no-telemetry >> ""C:\Users\whertzing\.headroom\proxy.log"" 2>&1")
+objFile.Close()
+objShell.Run batchPath, 0, False   ' 0 = hidden window
+'@ | Set-Content -LiteralPath $vbs -Encoding ASCII
+
+$action  = New-ScheduledTaskAction -Execute 'cscript.exe' -Argument "`"$vbs`""
+$trigger = New-ScheduledTaskTrigger -AtLogOn
+$settings = New-ScheduledTaskSettingsSet `
+  -ExecutionTimeLimit (New-TimeSpan -Hours 0) `
+  -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) -DontStopOnIdleEnd
+
+Register-ScheduledTask -TaskName 'Headroom Proxy' -Action $action -Trigger $trigger `
+  -Settings $settings -RunLevel Highest `
+  -Description 'Headroom context compression proxy on port 8787 (hidden, telemetry off)'
+
+# Start now and confirm
+Start-ScheduledTask -TaskName 'Headroom Proxy'
+Start-Sleep -Seconds 5
+if (netstat -ano | Select-String ':8787.*LISTENING') { 'Proxy listening on 8787' }
+
+# Confirm telemetry is disabled
+(curl http://127.0.0.1:8787/stats | ConvertFrom-Json).telemetry.enabled   # expect: False
+```
+
+> **Why not a direct `headroom.exe proxy` task action?** The proxy runs in the foreground
+> until killed; a Scheduled Task whose action is the proxy never reports "completed" and can
+> trip the execution-time limit. The VBScript launches it detached and exits immediately, so
+> the task completes while the proxy keeps running.
+>
+> **Scope-creep (SC-0171):** the inline VBScript + task registration above should be
+> replaced by a reusable `Register-HeadroomProxyTask.ps1` function in
+> `ATAP.Utilities.BuildTooling.PowerShell/public/`; this doc will then call that function.
+
+### H.6 PowerShell profile additions (both paths)
+
+`CurrentUserAllHostsV7CoreProfile.ps1` adds a `headroom` function (so the venv CLI resolves
+from any shell) and a startup warning when the proxy is not listening:
+
+```powershell
+function headroom { & "C:\Users\whertzing\.venvs\headroom\Scripts\headroom.exe" @args }
+
+if (-not (netstat -ano 2>$null | Select-String ":8787.*LISTENING")) {
+  Write-Warning "Headroom proxy is NOT running on port 8787. Start with: headroom proxy --port 8787"
+}
+```
+
+### H.7 Daily usage and verification
+
+- **MCP (default):** in Claude Code / Codex, run `/mcp`, then ask the agent to compress a
+  large log or search result; retrieve the original with `headroom_retrieve <hash>` when
+  exact line-level evidence is needed. Compress for triage/summary; **retrieve originals
+  before exact edits or claims** — do not compress source files you are about to edit.
+- **Wrap (optional):** `headroom wrap claude` / `headroom wrap codex` routes all provider
+  traffic through the proxy for automatic compression.
+- **Metrics:** `headroom perf --hours 1`, or the proxy endpoints `GET /stats` and
+  `GET /stats-history` on `http://127.0.0.1:8787`.
+
+### H.8 Troubleshooting
+
+| Symptom | Cause / Fix |
+| --- | --- |
+| MCP server shows "failed to connect" | Registered as bare `headroom` (PATH-dependent). Re-add with the absolute `...\.venvs\headroom\Scripts\headroom.exe` path. |
+| First compression hangs for minutes | CPU model cold-load (Path A). Expected once per process; switch to **Path B** for GPU. |
+| `headroom_retrieve` returns nothing | Local/proxy retention window expired — reacquire the original content. |
+| `pip` cert errors during install | Add `--use-feature=truststore` (Windows cert store). |
+| Cargo `CRYPT_E_NO_REVOCATION_CHECK` | Set `CARGO_HTTP_CHECK_REVOKE=false` before the install (see §H.3). |
+| `link.exe` / `cl.exe` not found | Load `VsDevCmd.bat` (§H.3) so the MSVC toolchain is on PATH. |
+| Path B still CPU-only | CUDA `torch` / `onnxruntime-gpu` mismatch with driver CUDA level; reinstall the matching `cuXXX` wheel. |
+| Proxy window flashes / steals focus | Use the `cscript` VBScript wrapper (§H.5), not a `cmd`/`pwsh` task action. |

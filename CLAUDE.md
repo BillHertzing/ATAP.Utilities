@@ -12,9 +12,9 @@ Entity Framework Core abstractions, Flyway migration helpers
 
 | Source File    | Last Modified            |
 | -------------- | ------------------------ |
-| CLAUDE-base.md | 2026-05-18 08:22:58 |
-| CLAUDE-local.md | 2026-04-28 23:12:28 |
-| CLAUDE.md (combined) | 2026-05-30 23:17:27 |
+| CLAUDE-base.md | 2026-06-02 16:13:54 |
+| CLAUDE-local.md | 2026-06-02 16:11:15 |
+| CLAUDE.md (combined) | 2026-06-02 16:13:59 |
 
 ---
 
@@ -72,6 +72,33 @@ C:/Dropbox/whertzing/github/_Planning/TASKS.md
   to **this repo**, mark it partial, and note which repo handles the remainder.
 - Never reorder or delete items in TASKS.md without being explicitly asked to.
 
+## Sprint Task Artifacts
+
+In the sprint `_Planning` worktree, treat the task files as a set:
+
+- `TASKS.html` is the sprint board. If any `TASKS_V*.html` files exist, the
+  highest `V` file is the active board and lower versions are history.
+- `Tasks.Accomplished.html` starts empty and accumulates concrete work/evidence
+  as tasks progress.
+- `Tasks.ProceduralDetails.html` carries forward reusable procedure/runbook
+  detail needed by later agents or the next sprint.
+- Sprint start/planning must create or refresh all three; seed
+  `Tasks.ProceduralDetails.html` with carried-forward procedures.
+- When working a task, read the active board first, then update
+  `Tasks.Accomplished.html` and `Tasks.ProceduralDetails.html` whenever work or
+  procedure knowledge changed.
+- If the board is rebaselined mid-sprint, copy the current board to the next
+  `TASKS_Vx.html` and continue from the highest version.
+- Until downstream automation is migrated, keep `TASKS.md` synchronized with the
+  active HTML board.
+
+## Headroom Workflow
+
+- Use Headroom MCP tools before reasoning over large build/test logs, long search results, large JSON arrays, or long generated traces.
+- Start with `headroom_compress` when the task is triage, summarization, or pattern-finding across bulky output.
+- Use `headroom_retrieve` when exact line-level evidence, full raw output, or literal values are needed.
+- Do not compress source files before editing unless the task is broad exploration or summarization; exact edits still require exact file reads.
+- If `headroom_retrieve` fails, assume the local or proxy retention window may have expired and reacquire the original content.
 ---
 
 ## .claude Folder — Agents, Skills, and Rules
@@ -284,6 +311,61 @@ The BitWarden session identifier environment variable is always present (set by 
 - if a new secret is needed, stop and tell the user. Give a suggested Environment variable name for the secret.
   Thereafter expect the environment variable with the secret value will be present
 - Never write connection strings, API keys, or credentials into source files
+
+---
+
+## PowerShell Module Loading Standards
+
+**Module .ps1 files MUST define only functions — no top-level executable code.**
+
+Every module `.psm1` dot-sources `public\*.ps1` and `private\*.ps1` files at import time via:
+
+```powershell
+foreach ($import in $allFunctions) { . $import.FullName }
+```
+
+This means **any top-level statement in a .ps1 file runs on every `Import-Module`** — not just function definition.
+Loading a module must define functions and execute nothing else.
+
+**Compliant patterns:**
+
+- **Helper-load fallback blocks** (dot-sourcing a sibling private helper): move into the function's **BEGIN block**. `$PSScriptRoot` still resolves correctly inside BEGIN. Use when running the file from source without module import.
+
+  ```powershell
+  function My-Function {
+    begin {
+      if (-not (Get-Command -Name 'Helper' -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot '..\private\Helper.ps1')
+      }
+    }
+    # ... rest of function
+  }
+  ```
+
+- **Module-scope constants** (`$script:Map`, `$script:Config`): relocate to **function-local scope**. The constant is computed/defined inside the function that uses it, not at module load.
+
+- **Command aliases** (`Set-Alias`): move to the **`.psm1`** (module-level code is legitimate there). Keep AliasesToExport controlled by the `.psd1` manifest.
+
+- **Dual-purpose scripts** that must self-run via `pwsh -File` (e.g., scheduled-task scripts): use the **`&`-proof guard**:
+
+  ```powershell
+  if ($MyInvocation.InvocationName -ne '.' -and $MyInvocation.InvocationName -ne '&') {
+    # This block fires ONLY under: pwsh -File <script>
+    # Skipped on: dot-source (.), module import, call operator (&)
+    Invoke-MyFunction @args
+  }
+  ```
+
+**Non-compliant (incorrect):**
+
+```powershell
+# ❌ Top-level code runs on every Import-Module
+if (-not (Get-Command 'Helper')) { . '...\Helper.ps1' }
+$script:Tier = @{ 'exp' = 1; 'dev' = 2 }
+Set-Alias -Name alias -Value Actual-Function
+
+function My-Function { }
+```
 
 ---
 

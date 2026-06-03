@@ -17,8 +17,11 @@ function New-SprintStage1 {
       5. Applies SharedVSCode context (templateRef, hooksPath, commitTemplate)
          to the _Planning worktree.
       6. Creates a sprint NuGet.config in the SharedVSCode worktree referencing
-         all five ProGet feeds (experimental, development, integration, qa, stable)
-         plus nuget.org.
+          all five ProGet feeds (experimental, development, integration, qa, stable)
+          plus nuget.org.
+      7. Leaves the `_Planning` sprint worktree ready for Step 2 to create the
+         sprint task artifact set: `TASKS.html`, `Tasks.Accomplished.html`,
+         `Tasks.ProceduralDetails.html`, and the synchronized `TASKS.md`.
 
     If any step fails the function captures the error into the appropriate field
     of the return object and stops further processing for that repo while still
@@ -590,6 +593,8 @@ function New-SprintStage1 {
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
       -Message "Sprint Stage 1 complete for sprint $sprintNum"
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+      -Message 'Step 2 planning must create or refresh the sprint task artifact set in the _Planning worktree: active board (`TASKS.html` or later `TASKS_V*.html`), `Tasks.Accomplished.html`, `Tasks.ProceduralDetails.html`, and a synchronized `TASKS.md`.'
 
     return $result
   }

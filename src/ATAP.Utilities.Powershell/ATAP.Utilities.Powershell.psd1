@@ -8,150 +8,150 @@
 
 @{
 
-# Script module or binary module file associated with this manifest.
-RootModule = 'ATAP.Utilities.Powershell.psm1'
+    # Script module or binary module file associated with this manifest.
+    RootModule           = 'ATAP.Utilities.Powershell.psm1'
 
-# Version number of this module.
-ModuleVersion = '0.1.0'
+    # Version number of this module.
+    ModuleVersion        = '0.1.1'
 
-# Supported PSEditions
-CompatiblePSEditions = 'Desktop', 'Core'
+    # Supported PSEditions
+    CompatiblePSEditions = 'Desktop', 'Core'
 
-# ID used to uniquely identify this module
-GUID = '83ba6c26-a2d6-437d-b1b5-e4169afa4187'
+    # ID used to uniquely identify this module
+    GUID                 = '83ba6c26-a2d6-437d-b1b5-e4169afa4187'
 
-# Author of this module
-Author = 'Bill Hertzing for ATAPUtilities.org'
+    # Author of this module
+    Author               = 'Bill Hertzing for ATAPUtilities.org'
 
-# Company or vendor of this module
-CompanyName = 'ATAPUtilities.org'
+    # Company or vendor of this module
+    CompanyName          = 'ATAPUtilities.org'
 
-# Copyright statement for this module
-Copyright = '(c) 2018 - 2025  Bill Hertzing . All rights reserved. All code is under the MIT license'
+    # Copyright statement for this module
+    Copyright            = '(c) 2018 - 2025  Bill Hertzing . All rights reserved. All code is under the MIT license'
 
-# Description of the functionality provided by this module
-Description = 'Collection of tools to support the ATAP Utilities project. Includes profiles'
+    # Description of the functionality provided by this module
+    Description          = 'Collection of tools to support the ATAP Utilities project. Includes profiles'
 
-# Minimum version of the PowerShell engine required by this module
-PowerShellVersion = '5.1'
+    # Minimum version of the PowerShell engine required by this module
+    PowerShellVersion    = '5.1'
 
-# Name of the PowerShell host required by this module
-# PowerShellHostName = ''
+    # Name of the PowerShell host required by this module
+    # PowerShellHostName = ''
 
-# Minimum version of the PowerShell host required by this module
-# PowerShellHostVersion = ''
+    # Minimum version of the PowerShell host required by this module
+    # PowerShellHostVersion = ''
 
-# Minimum version of Microsoft .NET Framework required by this module. This prerequisite is valid for the PowerShell Desktop edition only.
-# DotNetFrameworkVersion = ''
+    # Minimum version of Microsoft .NET Framework required by this module. This prerequisite is valid for the PowerShell Desktop edition only.
+    # DotNetFrameworkVersion = ''
 
-# Minimum version of the common language runtime (CLR) required by this module. This prerequisite is valid for the PowerShell Desktop edition only.
-# ClrVersion = ''
+    # Minimum version of the common language runtime (CLR) required by this module. This prerequisite is valid for the PowerShell Desktop edition only.
+    # ClrVersion = ''
 
-# Processor architecture (None, X86, Amd64) required by this module
-# ProcessorArchitecture = ''
+    # Processor architecture (None, X86, Amd64) required by this module
+    # ProcessorArchitecture = ''
 
-# Modules that must be imported into the global environment prior to importing this module
-# RequiredModules = @()
+    # Modules that must be imported into the global environment prior to importing this module
+    # RequiredModules = @()
 
-# Assemblies that must be loaded prior to importing this module
-# RequiredAssemblies = @()
+    # Assemblies that must be loaded prior to importing this module
+    # RequiredAssemblies = @()
 
-# Script files (.ps1) that are run in the caller's environment prior to importing this module.
-# ScriptsToProcess = @()
+    # Script files (.ps1) that are run in the caller's environment prior to importing this module.
+    # ScriptsToProcess = @()
 
-# Type files (.ps1xml) to be loaded when importing this module
-# TypesToProcess = @()
+    # Type files (.ps1xml) to be loaded when importing this module
+    # TypesToProcess = @()
 
-# Format files (.ps1xml) to be loaded when importing this module
-# FormatsToProcess = @()
+    # Format files (.ps1xml) to be loaded when importing this module
+    # FormatsToProcess = @()
 
-# Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-# NestedModules = @()
+    # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
+    # NestedModules = @()
 
-# Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = 'Add-BlogPostImages', 'ConvertFrom-CopilotChatHistory', 
-               'ConvertFrom-MboxFile', 'ConvertTo-PDF', 'Format-GroupLikeLines', 
-               'Get-AccountsWithUserRight', 'Get-AllWindowsShortcutHotKeys', 
-               'Get-ArrayCombinations', 'Get-BookMarksToTagged', 
-               'Get-BrowserBookmarks', 'Get-ChocolatyPackagesFromProgramsList', 
-               'Get-ClonedAndModifiedHashtable', 'Get-ClonedObject', 
-               'Get-CollectionTraverseEvaluate', 'Get-CoreInfo', 
-               'Get-FilesWithContent', 'Get-HostSettings',
-               'Get-LargestLeafFolders', 'Get-MediaQueryEmbeddedLink',
-               'Get-ParameterValueFromNeoConfigurationRoot', 'Get-Patterns', 
-               'Get-ScheduledTasks', 'Get-SecureEnvVar', 'Get-SIDfromAccountName', 
-               'Get-TopologicalSort', 'Get-UniqueFileBaseNames', 
-               'Get-ViewOfProfiles', 'Import-EnvFile',
-               'Invoke-ProvisionInedoServiceAccounts',
-               'Invoke-SetInedoServiceLogonAccounts', 
-               'Invoke-StartupTaskRegistrationTest', 'Invoke-Webserver', 
-               'New-SymbolicLink', 
-               'PracticeKeyboardSkills', 'Register-StartupScheduledTask', 
-               'Resolve-ParameterValueToList', 'Search-Registry', 
-               'Search-WindowsIndexs', 'Set-EnvVarsFromBitWarden', 
-               'Set-InedoServicesDependency', 
-               'Set-PerceivedTypeInRegistryForPreviewPane', 
-               'Set-RepositoryPackageSources', 'Set-ScreenReaderOff', 
-               'Set-ServiceLogonAccount', 'SomethingDebugUtilities', 'Test-Copilot', 
-               'Test-StartupScheduledTaskPresence', 'Test-WinRM', 'testIcomparer', 
-               'Type-PSLSA', 'Unregister-StartupScheduledTask', 'Watch-ETWEvents'
+    # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
+    FunctionsToExport    = 'Add-BlogPostImages', 'ConvertFrom-CopilotChatHistory',
+    'ConvertFrom-MboxFile', 'ConvertTo-PDF', 'Format-GroupLikeLines',
+    'Get-AccountsWithUserRight', 'Get-AllWindowsShortcutHotKeys',
+    'Get-ArrayCombinations', 'Get-BookMarksToTagged',
+    'Get-BrowserBookmarks', 'Get-ChocolatyPackagesFromProgramsList',
+    'Get-ClonedAndModifiedHashtable', 'Get-ClonedObject',
+    'Get-CollectionTraverseEvaluate', 'Get-CoreInfo',
+    'Get-FilesWithContent', 'Get-HostSettings',
+    'Get-LargestLeafFolders', 'Get-MediaQueryEmbeddedLink',
+    'Get-ParameterValueFromNeoConfigurationRoot', 'Get-Patterns',
+    'Get-ScheduledTasks', 'Get-SecureEnvVar', 'Get-SIDfromAccountName',
+    'Get-TopologicalSort', 'Get-UniqueFileBaseNames',
+    'Get-ViewOfProfiles', 'Import-EnvFile',
+    'Invoke-ProvisionInedoServiceAccounts',
+    'Invoke-SetInedoServiceLogonAccounts',
+    'Invoke-StartupTaskRegistrationTest', 'Invoke-Webserver',
+    'New-SymbolicLink',
+    'PracticeKeyboardSkills', 'Register-StartupScheduledTask',
+    'Resolve-ParameterValueToList', 'Search-Registry',
+    'Search-WindowsIndexs', 'Set-EnvVarsFromBitWarden',
+    'Set-InedoServicesDependency',
+    'Set-PerceivedTypeInRegistryForPreviewPane',
+    'Set-RepositoryPackageSources', 'Set-ScreenReaderOff',
+    'Set-ServiceLogonAccount', 'SomethingDebugUtilities', 'Test-Copilot',
+    'Test-StartupScheduledTaskPresence', 'Test-WinRM', 'testIcomparer',
+    'Type-PSLSA', 'Unregister-StartupScheduledTask', 'Watch-ETWEvents'
 
-# Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-CmdletsToExport = '*'
+    # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
+    CmdletsToExport      = '*'
 
-# Variables to export from this module
-VariablesToExport = '*'
+    # Variables to export from this module
+    VariablesToExport    = '*'
 
-# Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-AliasesToExport = 'OutDir', 'ITypes', 'InObj', 'StillExtensions', 'MovingExtensions', 'Pattern', 'Include', 'Content', 'ResponseTimeLimit'
+    # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
+    AliasesToExport      = 'Get-PVal', 'Resolve-PVal'
 
-# DSC resources to export from this module
-# DscResourcesToExport = @()
+    # DSC resources to export from this module
+    # DscResourcesToExport = @()
 
-# List of all modules packaged with this module
-# ModuleList = @()
+    # List of all modules packaged with this module
+    # ModuleList = @()
 
-# List of all files packaged with this module
-# FileList = @()
+    # List of all files packaged with this module
+    # FileList = @()
 
-# Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
-PrivateData = @{
+    # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
+    PrivateData          = @{
 
-    PSData = @{
+        PSData = @{
 
-        # Tags applied to this module. These help with module discovery in online galleries.
-        # Tags = @()
+            # Tags applied to this module. These help with module discovery in online galleries.
+            # Tags = @()
 
-        # A URL to the license for this module.
-        # LicenseUri = ''
+            # A URL to the license for this module.
+            # LicenseUri = ''
 
-        # A URL to the main website for this project.
-        # ProjectUri = ''
+            # A URL to the main website for this project.
+            # ProjectUri = ''
 
-        # A URL to an icon representing this module.
-        # IconUri = ''
+            # A URL to an icon representing this module.
+            # IconUri = ''
 
-        # ReleaseNotes of this module
-        # ReleaseNotes = ''
+            # ReleaseNotes of this module
+            # ReleaseNotes = ''
 
-        # Prerelease string of this module
-        Prerelease = 'Alpha002'
+            # Prerelease string of this module
+            Prerelease = ''
 
-        # Flag to indicate whether the module requires explicit user acceptance for install/update/save
-        # RequireLicenseAcceptance = $false
+            # Flag to indicate whether the module requires explicit user acceptance for install/update/save
+            # RequireLicenseAcceptance = $false
 
-        # External dependent modules of this module
-        # ExternalModuleDependencies = @()
+            # External dependent modules of this module
+            # ExternalModuleDependencies = @()
 
-    } # End of PSData hashtable
+        } # End of PSData hashtable
 
- } # End of PrivateData hashtable
+    } # End of PrivateData hashtable
 
-# HelpInfo URI of this module
-# HelpInfoURI = ''
+    # HelpInfo URI of this module
+    # HelpInfoURI = ''
 
-# Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
-# DefaultCommandPrefix = ''
+    # Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
+    # DefaultCommandPrefix = ''
 
 }
 

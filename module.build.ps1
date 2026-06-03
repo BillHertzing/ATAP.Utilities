@@ -266,12 +266,65 @@ Task BuildManifest {
       Select-Object -ExpandProperty BaseName
   } else { @() }
 
+  # Collect function-level aliases from public .ps1 files via PowerShell AST.
+  # Two sources are included:
+  #   1. Set-Alias / New-Alias call-sites   (CommandAst)
+  #   2. [Alias()] on a function declaration (AttributeAst whose Parent is ParamBlockAst)
+  # [Alias()] on a parameter               (AttributeAst whose Parent is ParameterAst)
+  # is intentionally excluded.
+  [string[]] $functionAliases = if (Test-Path $publicDir) {
+    $collected = foreach ($ps1 in (Get-ChildItem -Path $publicDir -Filter '*.ps1' -File)) {
+      $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+        $ps1.FullName, [ref]$null, [ref]$null)
+
+      # 1. Set-Alias / New-Alias calls
+      $aliasCmds = $ast.FindAll({
+        param($node)
+        $node -is [System.Management.Automation.Language.CommandAst] -and
+        $node.GetCommandName() -in @('Set-Alias', 'New-Alias')
+      }, $true)
+      foreach ($cmd in $aliasCmds) {
+        $els = $cmd.CommandElements
+        $nameVal = $null
+        for ($i = 1; $i -lt $els.Count; $i++) {
+          if ($els[$i] -is [System.Management.Automation.Language.CommandParameterAst] -and
+              $els[$i].ParameterName -eq 'Name' -and ($i + 1) -lt $els.Count) {
+            $nameVal = $els[$i + 1].Value
+            break
+          }
+        }
+        if ($null -eq $nameVal -and $els.Count -gt 1 -and
+            $els[1] -isnot [System.Management.Automation.Language.CommandParameterAst]) {
+          $nameVal = $els[1].Value
+        }
+        if (-not [string]::IsNullOrWhiteSpace($nameVal)) { $nameVal }
+      }
+
+      # 2. [Alias()] attributes on function declarations
+      $aliasAttrs = $ast.FindAll({
+        param($node)
+        $node -is [System.Management.Automation.Language.AttributeAst] -and
+        $node.TypeName.Name -eq 'Alias' -and
+        $node.Parent -is [System.Management.Automation.Language.ParamBlockAst]
+      }, $true)
+      foreach ($attr in $aliasAttrs) {
+        foreach ($arg in $attr.PositionalArguments) {
+          if ($arg.Value -and -not [string]::IsNullOrWhiteSpace($arg.Value)) {
+            $arg.Value
+          }
+        }
+      }
+    }
+    @($collected | Where-Object { $_ } | Select-Object -Unique)
+  } else { @() }
+
   Build-PSModuleManifest `
     -SourceManifestPath $script:meta.ManifestPath `
     -OutputManifestPath $script:GeneratedManifestPath `
     -ModuleVersion $script:verInfo.ModuleVersion `
     -Prerelease $script:verInfo.Prerelease `
-    -PublicFunctions $publicFunctions
+    -PublicFunctions $publicFunctions `
+    -Aliases $functionAliases
 
   Write-PSFMessage -Level Important -Message `
     "BuildManifest — wrote '$($script:GeneratedManifestPath)'  v$($script:verInfo.FullNuGetVersion)"

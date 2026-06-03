@@ -101,10 +101,7 @@ function Update-ServiceAccountBWCredentialFile {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
     if (-not (Get-Command -Name 'Get-BitWardenCredential' -CommandType Function -ErrorAction SilentlyContinue)) {
-      # Resolve sibling module path relative to this script so the function works in
-      # both the active sprint worktree and the stable repo without hardcoding.
-      $siblingGetBWCred = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..\ATAP.Utilities.Security.Powershell\public\Get-BitWardenCredential.ps1') -ErrorAction Stop
-      . $siblingGetBWCred.ProviderPath
+      Import-ATAPModuleFromProGet -ModuleName 'ATAP.Utilities.Security.Powershell' -RequiredCommand 'Get-BitWardenCredential'
     }
     if (-not (Get-Command -Name 'Refresh-BWSession' -CommandType Function -ErrorAction SilentlyContinue)) {
       . (Join-Path $PSScriptRoot 'Refresh-BWSession.ps1')

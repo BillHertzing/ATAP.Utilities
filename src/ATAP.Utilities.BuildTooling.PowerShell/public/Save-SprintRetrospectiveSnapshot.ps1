@@ -6,7 +6,11 @@ function Save-SprintRetrospectiveSnapshot {
   .DESCRIPTION
     Called from SprintEndAgent during the retrospective step. Gathers the
     sprint-close metrics the retrospective notebook relies on and emits both
-    an on-disk JSON artifact and a structured PSCustomObject:
+    an on-disk JSON artifact and a structured PSCustomObject. Use it alongside
+    the closing sprint task artifact set in `_Planning` — active board
+    (`TASKS.html` or highest `TASKS_V*.html`), `Tasks.Accomplished.html`, and
+    `Tasks.ProceduralDetails.html`; this snapshot supplements those files, not
+    replaces them:
 
       - Merged-PR count for the sprint window across the configured worktree set.
       - Package promotions recorded in `_generated/audit/` (Promote-ProGetPackage

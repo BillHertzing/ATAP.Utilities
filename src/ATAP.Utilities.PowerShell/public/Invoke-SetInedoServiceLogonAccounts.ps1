@@ -20,6 +20,8 @@ function Invoke-SetInedoServiceLogonAccounts {
     https://github.com/BillHertzing/ATAP.Utilities
   #>
   [CmdletBinding(SupportsShouldProcess)]
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingConvertToSecureStringWithPlainText', '',
+    Justification = 'Password is read interactively from the clipboard; plaintext exposure is intentional and ephemeral.')]
   param()
 
   BEGIN {

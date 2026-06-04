@@ -435,8 +435,10 @@ When asked to create or modify a Rule, Rule Set, or Build Set:
    commands sequentially. Do not put speculative calls in parallel when one syntax failure
    would invalidate the rest of the batch.
 9. **Environment variable names (R-27):** API-key and token environment variables use
-   `ALL_UPPERCASE_WITH_UNDERSCORES` names. Prefer names like `BUILDMASTER_ADMIN_API_KEY`
+   `ALL_UPPERCASE_WITH_UNDERSCORES` names. Prefer names like `PROGET_BUILDMASTER_API_KEY`
    and `PROGET_ADMIN_API_KEY`; do not invent mixed-case secret environment variables.
+   (Note: the BuildMaster admin API key is no longer an environment variable — it is the
+   Bitwarden Secrets Manager secret `BuildMaster.Admin.API.Key`, read via `Get-SecretATAP`.)
 10. **Wait for upload completion (R-28):** When the user says they will upload multiple
     files before giving instructions, wait for all uploads and the explicit "go" signal
     before analyzing or acting.

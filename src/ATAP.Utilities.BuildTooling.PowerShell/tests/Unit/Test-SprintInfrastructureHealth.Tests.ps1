@@ -4,6 +4,13 @@ BeforeAll {
   Import-Module PSFramework -ErrorAction SilentlyContinue
   $script:publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
   . (Join-Path $script:publicDir 'Test-SprintInfrastructureHealth.ps1')
+
+  # Stub the secret store so the health check resolves the BuildMaster admin API
+  # key without contacting Bitwarden.
+  function global:Get-SecretATAP {
+    param([Parameter(ValueFromPipelineByPropertyName = $true)][Alias('BuildMasterAdminApiKeySecretName')][string]$SecretName, [string]$SecretField = 'password')
+    'unit-test-key'
+  }
 }
 
 Describe 'Test-SprintInfrastructureHealth' -Tag 'Unit' {
@@ -26,8 +33,8 @@ Describe 'Test-SprintInfrastructureHealth' -Tag 'Unit' {
 
     It 'Populates every documented check key' {
       $expected = @(
-        'BitwardenEnvVars', 'SqlInstances', 'FlywayAvailable', 'NbgvAvailable',
-        'GitSafeDirectory', 'BuildMasterApps', 'ProGetReachable', 'BuildMasterReachable'
+        'BitwardenEnvVars', 'BuildMasterAdminApiKeyResolvable', 'SqlInstances', 'FlywayAvailable',
+        'NbgvAvailable', 'GitSafeDirectory', 'BuildMasterApps', 'ProGetReachable', 'BuildMasterReachable'
       )
       foreach ($key in $expected) {
         $script:result.Checks.PSObject.Properties.Name | Should -Contain $key -Because "check key '$key' must always be present"
@@ -73,21 +80,20 @@ Describe 'Test-SprintInfrastructureHealth' -Tag 'Unit' {
 
   Context 'BitwardenEnvVars — missing variable detection' {
     BeforeAll {
-      # Save and clear the known pipeline env vars for the duration of this context
-      $script:savedVars = @{}
-      foreach ($name in @('BUILDMASTER_ADMIN_API_KEY', 'PROGET_ADMIN_API_KEY', 'BW_SESSION', 'BUILDMASTER_GH_WEBHOOK_SECRET')) {
-        $script:savedVars[$name] = [System.Environment]::GetEnvironmentVariable($name, 'Process')
-        [System.Environment]::SetEnvironmentVariable($name, $null, 'Process')
-      }
+      # Clear one required var at BOTH User and Process scope (the check reads
+      # User then Process) to deterministically trigger a BitwardenEnvVars
+      # failure without disturbing the active BW_SESSION.
+      $script:savedWebhookUser = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_GH_WEBHOOK_SECRET', 'User')
+      $script:savedWebhookProc = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_GH_WEBHOOK_SECRET', 'Process')
+      [System.Environment]::SetEnvironmentVariable('BUILDMASTER_GH_WEBHOOK_SECRET', $null, 'User')
+      [System.Environment]::SetEnvironmentVariable('BUILDMASTER_GH_WEBHOOK_SECRET', $null, 'Process')
     }
     AfterAll {
-      foreach ($name in $script:savedVars.Keys) {
-        [System.Environment]::SetEnvironmentVariable($name, $script:savedVars[$name], 'Process')
-      }
+      [System.Environment]::SetEnvironmentVariable('BUILDMASTER_GH_WEBHOOK_SECRET', $script:savedWebhookUser, 'User')
+      [System.Environment]::SetEnvironmentVariable('BUILDMASTER_GH_WEBHOOK_SECRET', $script:savedWebhookProc, 'Process')
     }
 
-    It 'Fails BitwardenEnvVars when all pipeline env vars are absent at Process scope' {
-      # Also ensure User-scope is empty for the test
+    It 'Fails BitwardenEnvVars when a required env var is absent at both scopes' {
       $r = Test-SprintInfrastructureHealth -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SqlInstancePaths @()
       # Only assert on BitwardenEnvVars check — other checks may pass or fail independently
       $r.Checks.BitwardenEnvVars.Ok | Should -BeFalse
@@ -105,8 +111,6 @@ Describe 'Test-SprintInfrastructureHealth' -Tag 'Unit' {
   Context '-ThrowOnFailure switch' {
     BeforeAll {
       # Ensure at least one env var is absent to guarantee a failure
-      $script:savedKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'Process')
-      [System.Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', $null, 'Process')
       $script:savedProGet = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'Process')
       [System.Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $null, 'Process')
       $script:savedBwSession = [System.Environment]::GetEnvironmentVariable('BW_SESSION', 'Process')
@@ -115,7 +119,6 @@ Describe 'Test-SprintInfrastructureHealth' -Tag 'Unit' {
       [System.Environment]::SetEnvironmentVariable('BUILDMASTER_GH_WEBHOOK_SECRET', $null, 'Process')
     }
     AfterAll {
-      [System.Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', $script:savedKey, 'Process')
       [System.Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $script:savedProGet, 'Process')
       [System.Environment]::SetEnvironmentVariable('BW_SESSION', $script:savedBwSession, 'Process')
       [System.Environment]::SetEnvironmentVariable('BUILDMASTER_GH_WEBHOOK_SECRET', $script:savedWebhook, 'Process')

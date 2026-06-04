@@ -34,7 +34,7 @@ variable names (values are never stored in this folder):
 | `BW_SESSION` | Set by `LoginScript.ps1` at User scope | Bitwarden CLI session token used by `Get-BitWardenSecret`. |
 | `PROGET_BUILDMASTER_API_KEY` (preferred) | Set by `LoginScript.ps1` at User scope | ProGet API key used by the publish/promote cmdlets in `ATAP.Utilities.BuildTooling.PowerShell` that this module's pipeline triggers. |
 | `PROGET_ADMIN_API_KEY` (fallback) | Set by `LoginScript.ps1` at User scope | Fallback ProGet API key when the BuildMaster-only key is absent. |
-| `BUILDMASTER_ADMIN_API_KEY` | Set by `LoginScript.ps1` at User scope | BuildMaster API key, used when this module's cmdlets interact with the BuildMaster REST API. |
+| `BuildMaster.Admin.API.Key` (secret) | Stored in Bitwarden Secrets Manager; read via `Get-SecretATAP` | BuildMaster API key, used when this module's cmdlets interact with the BuildMaster REST API. |
 | `BUILDMASTER_BUILD_ID` | Set by BuildMaster at run-time | Build identifier propagated into evidence bundles produced by this module's rehearsal cmdlets. |
 
 ## Required Bitwarden secret names

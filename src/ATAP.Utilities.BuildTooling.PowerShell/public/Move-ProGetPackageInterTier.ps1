@@ -145,7 +145,6 @@ function Move-ProGetPackageInterTier {
             }
             . $helperPath
         }
-        Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Local -Force
 
         # Check and populate simple parameter: Name
         $Name = Get-PVal -ParameterName 'Name' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Name' -DefaultValue $Name

@@ -19,8 +19,8 @@ infrastructure, and cross-cutting utilities used by developer and CI workflows.
 > - `Get-TopologicalSort` ← used by `Get-CollectionTraverseEvaluate`
 > - `Get-ClonedObject` / `Get-ClonedAndModifiedHashtable` ← dependency helpers
 > - `Get-SIDfromAccountName` ← used by `Get-AccountsWithUserRight` and `Type-PSLSA`
-> - `Get-SecureEnvVar` ← used by secrets-aware cmdlets
-> - `Set-EnvVarsFromBitWarden` + `Get-SecureEnvVar` ← Bitwarden integration chain
+> - `Get-SecureEnvVar` *(Pending — held under `Pending/`, not yet exported)* ← intended for secrets-aware cmdlets
+> - `Set-EnvVarsFromBitWarden` + `Get-SecureEnvVar` *(Get-SecureEnvVar still Pending)* ← Bitwarden integration chain
 > - `Register-StartupScheduledTask` / `Unregister-StartupScheduledTask` / `Test-StartupScheduledTaskPresence` ← scheduled task trio
 > - `Get-UniqueFileBaseNames` ← used by `Add-BlogPostImages`
 
@@ -60,7 +60,7 @@ infrastructure, and cross-cutting utilities used by developer and CI workflows.
 | [Get-ParameterValueFromNeoConfigurationRoot.ps1](public/Get-ParameterValueFromNeoConfigurationRoot.ps1) | Resolves parameter values from `$global:settings` via a dotted path; alias `Get-PVal`; falls back to `$PSBoundParameters` or a default value.                                                                                                  |
 | [Get-Patterns.ps1](public/Get-Patterns.ps1)                                                             | Returns a hashtable of regex pattern collections (Date, Name, email, Category, Location) filtered by specified pattern tags.                                                                                                                   |
 | [Get-ScheduledTasks.ps1](public/Get-ScheduledTasks.ps1)                                                 | Inline script: queries `schtasks.exe /Query /FO LIST /V` and parses the verbose output into `PSCustomObject` per task.                                                                                                                         |
-| [Get-SecureEnvVar.ps1](public/Get-SecureEnvVar.ps1)                                                     | Retrieves a secure environment variable value, checking the session cache first, then reading from Bitwarden using `$env:BW_SESSION`.                                                                                                          |
+| [Get-SecureEnvVar.ps1](Pending/public/Get-SecureEnvVar.ps1) *(Pending — not exported)* | Retrieves a secure environment variable value, checking the session cache first, then reading from Bitwarden using `$env:BW_SESSION`. **Held under `Pending/`; not in `FunctionsToExport` during the bw→bws Secrets Manager migration (V4-B08).** |
 | [Get-SIDfromAccountName.ps1](public/Get-SIDfromAccountName.ps1)                                         | Converts a Windows account name to its SID using a `Win32_UserAccount` CIM query; supports remote computers.                                                                                                                                   |
 | [Get-TopologicalSort.ps1](public/Get-TopologicalSort.ps1)                                               | Performs topological sort of a dependency graph expressed as a hashtable of `ID → [DependedOnIDs]`; deep-clones input before modifying.                                                                                                        |
 | [Get-UniqueFileBaseNames.ps1](public/Get-UniqueFileBaseNames.ps1)                                       | Extracts unique base filenames from a collection of `FileInfo` objects by stripping media query filename fragments; used by `Add-BlogPostImages`.                                                                                              |
@@ -162,11 +162,34 @@ The following public scripts have no corresponding `*.Tests.ps1` file in `tests/
 
 ---
 
+## Module Manifest and Exports
+
+### Function Aliases
+
+The module exports two function-level aliases for convenience:
+
+- **`Get-PVal`** — alias for `Get-ParameterValueFromNeoConfigurationRoot` (used throughout ATAP to resolve `$global:settings` values via dotted paths)
+- **`Resolve-PVal`** — alias for `Resolve-ParameterValueToList` (validates parameter values against allowed lists)
+
+**Note:** Parameter-level `[Alias()]` attributes (e.g., `-ComputerName` → `-CN`) are NOT exported via `AliasesToExport`; they are internal to function signatures and are used as shorthand for direct parameter binding.
+
+### Export Discovery
+
+The `module.build.ps1` `BuildManifest` task automatically scans public .ps1 files to populate `AliasesToExport`:
+
+1. Finds `Set-Alias`/`New-Alias` CommandAst call-sites
+2. Finds `[Alias()]` attributes on function declarations (ParamBlockAst-level, not ParameterAst-level)
+3. Deduplicates and passes to `Build-PSModuleManifest` for manifest generation
+
+This ensures the generated `.psd1` remains in sync with actual code-level alias definitions without manual maintenance.
+
+---
+
 ## Module Root Files
 
 | File                                                                         | Description                                                                                                |
 | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| [ATAP.Utilities.Powershell.psd1](ATAP.Utilities.Powershell.psd1)             | PowerShell module manifest.                                                                                |
+| [ATAP.Utilities.Powershell.psd1](ATAP.Utilities.Powershell.psd1)             | PowerShell module manifest (generated during build).                                                       |
 | [ATAP.Utilities.Powershell.psm1](ATAP.Utilities.Powershell.psm1)             | Module root script — dot-sources public and private scripts.                                               |
 | [ATAP.Utilities.Powershell.pssproj](ATAP.Utilities.Powershell.pssproj)       | PowerShell Studio project file.                                                                            |
 | [CommentBasedHelpFunctionTemplate.ps1](CommentBasedHelpFunctionTemplate.ps1) | Template for new public function files; establishes the standard comment-based help and function skeleton. |
@@ -174,4 +197,4 @@ The following public scripts have no corresponding `*.Tests.ps1` file in `tests/
 | [ReadMe.md](ReadMe.md)                                                       | Module-level readme.                                                                                       |
 | [ReleaseNotes.md](ReleaseNotes.md)                                           | Changelog and release notes.                                                                               |
 | [toc.yml](toc.yml)                                                           | Table of contents for module documentation.                                                                |
-| [version.json](version.json)                                                 | Module version metadata.                                                                                   |
+| [version.json](version.json)                                                 | Module version metadata (used by Nerdbank.GitVersioning).                                                  |

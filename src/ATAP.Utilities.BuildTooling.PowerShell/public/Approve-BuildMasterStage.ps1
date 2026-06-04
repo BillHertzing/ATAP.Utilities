@@ -17,13 +17,13 @@ function Approve-BuildMasterStage {
     rather than throwing. BuildMaster typically returns HTTP 409 or a
     "already approved" error body in that case; both are handled.
 
-    The base URL and API key are resolved with the same precedence as
-    the other Stream-H BuildMaster cmdlets:
+    The base URL is resolved from `-BuildMasterBaseUrl` →
+    `$global:settings['BuildMasterBaseUrl']` → env var `BUILDMASTER_BASE_URL`.
 
-      1. Explicit parameter.
-      2. `$global:settings[$global:configRootKeys['…ConfigRootKey']]`.
-      3. Process / User-scope env var (`BUILDMASTER_BASE_URL`,
-         `BUILDMASTER_ADMIN_API_KEY`).
+    The BuildMaster admin API key secret name is resolved via `Get-PVal`
+    (`-BuildMasterAdminApiKeySecretName` → env var → `$global:settings` →
+    default `BuildMaster.Admin.API.Key`). The actual key value is then
+    retrieved through `Get-SecretATAP` using that secret name.
 
     The API key value is never logged. Every external call is logged
     via PSFramework at the `Debug` level.
@@ -48,9 +48,10 @@ function Approve-BuildMasterStage {
     The BuildMaster base URL. Falls back to `$global:settings` then to
     the `BUILDMASTER_BASE_URL` User env var.
 
-.PARAMETER ApiKey
-    The BuildMaster admin API key. Falls back to `$global:settings` then
-    to the `BUILDMASTER_ADMIN_API_KEY` User env var.
+.PARAMETER BuildMasterAdminApiKeySecretName
+    The ATAP secret name containing the BuildMaster admin API key. Resolved
+    via `Get-PVal` (parameter → env var → `$global:settings` → default
+    `BuildMaster.Admin.API.Key`); the value is read with `Get-SecretATAP`.
 
 .INPUTS
     None.
@@ -106,13 +107,15 @@ function Approve-BuildMasterStage {
     [string]$BuildMasterBaseUrl,
 
     [Parameter(Mandatory = $false)]
-    [string]$ApiKey
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key'
   )
 
   begin {
     $fn = 'Approve-BuildMasterStage'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn (Application='$Application' Release='$ReleaseNumber' Build='$BuildNumber' Stage='$Stage')" -Tag 'Trace'
+
+    $BuildMasterAdminApiKeySecretName = Get-PVal -ParameterName 'BuildMasterAdminApiKeySecretName' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterAdminApiKeySecretName
   }
 
   process {
@@ -144,27 +147,30 @@ function Approve-BuildMasterStage {
     $resolvedBaseUrl = $resolvedBaseUrl.TrimEnd('/')
 
     # ---------------------------------------------------------------------
-    # 2. Resolve API key.
+    # 2. Retrieve the API key value via Get-SecretATAP, using the resolved
+    #    secret name. The key value is never logged.
     # ---------------------------------------------------------------------
-    $resolvedApiKey = $ApiKey
-    if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-      if ($null -ne $global:settings) {
-        $key = $null
-        if ($null -ne $global:configRootKeys) {
-          $key = $global:configRootKeys['BuildMasterAdminApiKeyConfigRootKey']
+    $resolvedApiKey = $null
+    $secretErrors = [System.Collections.Generic.List[string]]::new()
+    foreach ($fieldName in @($null, 'token', 'key', 'password')) {
+      try {
+        $candidate = if ($null -eq $fieldName) {
+          Get-SecretATAP -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName -ErrorAction Stop
+        } else {
+          Get-SecretATAP -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName -SecretField $fieldName -ErrorAction Stop
         }
-        if ([string]::IsNullOrWhiteSpace($key)) { $key = 'BuildMasterAdminApiKey' }
-        $resolvedApiKey = [string]$global:settings[$key]
+        if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) {
+          $resolvedApiKey = [string]$candidate
+          break
+        }
+      } catch {
+        $fieldLabel = if ($null -eq $fieldName) { '<default>' } else { $fieldName }
+        $secretErrors.Add("${fieldLabel}: $($_.Exception.Message)") | Out-Null
       }
     }
     if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-      $resolvedApiKey = [Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'Process')
-      if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-        $resolvedApiKey = [Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
-      }
-    }
-    if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-      $msg = "Unable to resolve BuildMaster admin API key. Pass -ApiKey, set `$global:settings.BuildMasterAdminApiKey, or define the BUILDMASTER_ADMIN_API_KEY User env var."
+      $detail = if ($secretErrors.Count -gt 0) { " Last error: $($secretErrors[$secretErrors.Count - 1])" } else { '' }
+      $msg = "Unable to resolve the BuildMaster admin API key value from secret '$BuildMasterAdminApiKeySecretName' via Get-SecretATAP.$detail"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
       throw $msg
     }
@@ -222,7 +228,7 @@ function Approve-BuildMasterStage {
       $looksAlreadyApproved = ($statusCode -eq 409) -or ($errMsg -match 'already\s*approved')
 
       if ($statusCode -eq 401 -or $statusCode -eq 403) {
-        $msg = "BuildMaster authentication failed (HTTP $statusCode) for $uri. Check BUILDMASTER_ADMIN_API_KEY."
+        $msg = "BuildMaster authentication failed (HTTP $statusCode) for $uri. Check the secret named by BuildMasterAdminApiKeySecretName ('$BuildMasterAdminApiKeySecretName')."
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'RestCall'
         throw $msg
       } elseif ($looksAlreadyApproved) {

@@ -22,12 +22,10 @@ function Remove-BuildMasterRelease {
 
   Missing releases are treated as successful no-ops so the cmdlet is safe to re-run.
 
-  The API key value is read in this order:
-    1. `-ApiKey` parameter (explicit).
-    2. `$global:settings[$global:configRootKeys['BuildMasterAdminApiKey']]`
-       (Explainer-0111 settings model).
-    3. The Process or User-scope env var `BUILDMASTER_ADMIN_API_KEY`
-       (per R-27 in `CLAUDE.md`: `ALL_UPPERCASE_WITH_UNDERSCORES`).
+  The BuildMaster admin API key secret name is resolved via `Get-PVal`
+  (`-BuildMasterAdminApiKeySecretName` → env var → `$global:settings` →
+  default `BuildMaster.Admin.API.Key`). The actual key value is then retrieved
+  through `Get-SecretATAP` using that secret name.
 
   The base URL is resolved in the same order from `-BuildMasterBaseUrl`
   → `$global:settings['BuildMasterBaseUrl']` → env var `BUILDMASTER_BASE_URL`.
@@ -51,9 +49,10 @@ function Remove-BuildMasterRelease {
   The BuildMaster base URL (e.g., `https://buildmaster.example/`). Falls back
   to `$global:settings` then to the `BUILDMASTER_BASE_URL` User env var.
 
-.PARAMETER ApiKey
-  The BuildMaster admin API key. Falls back to `$global:settings` then to the
-  `BUILDMASTER_ADMIN_API_KEY` User env var.
+.PARAMETER BuildMasterAdminApiKeySecretName
+  The ATAP secret name containing the BuildMaster admin API key. Resolved via
+  `Get-PVal` (parameter → env var → `$global:settings` → default
+  `BuildMaster.Admin.API.Key`); the value is read with `Get-SecretATAP`.
 
 .INPUTS
   None.
@@ -111,26 +110,13 @@ function Remove-BuildMasterRelease {
     [string]$BuildMasterBaseUrl,
 
     [Parameter(Mandatory = $false)]
-    [string]$ApiKey
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key'
   )
 
   begin {
     $fn = 'Remove-BuildMasterRelease'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn (Application='$Application' ReleaseNumber='$ReleaseNumber' Purge=$Purge)" -Tag 'Trace'
-
-    # Load Helpers
-    try {
-      # ToDo: Remove this when packaging works
-      if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1"
-      }
-    }
-    catch {
-      $errorMessage = "Failed to load Get-ParameterValueFromNeoConfigurationRoot function. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-      throw
-    }
 
     $BuildMasterBaseUrl = Get-PVal -ParameterName 'BuildMasterBaseUrl' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterBaseUrl
     if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {
@@ -143,32 +129,36 @@ function Remove-BuildMasterRelease {
       $BuildMasterBaseUrl = 'http://localhost:50017'
     }
     $BuildMasterBaseUrl = $BuildMasterBaseUrl.TrimEnd('/')
+
+    $BuildMasterAdminApiKeySecretName = Get-PVal -ParameterName 'BuildMasterAdminApiKeySecretName' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterAdminApiKeySecretName
   }
 
   process {
     # ---------------------------------------------------------------------
-    # 1. Resolve API key: parameter -> $global:settings -> env var.
-    #    Never log the key value. Mask with '***' in surface logging.
+    # 1. Retrieve the API key value via Get-SecretATAP, using the resolved
+    #    secret name. Never log the key value. Mask with '***' in surface logging.
     # ---------------------------------------------------------------------
-    $resolvedApiKey = $ApiKey
-    if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-      if ($null -ne $global:settings) {
-        $key = $null
-        if ($null -ne $global:configRootKeys) {
-          $key = $global:configRootKeys['BuildMasterAdminApiKeyConfigRootKey']
+    $resolvedApiKey = $null
+    $secretErrors = [System.Collections.Generic.List[string]]::new()
+    foreach ($fieldName in @($null, 'token', 'key', 'password')) {
+      try {
+        $candidate = if ($null -eq $fieldName) {
+          Get-SecretATAP -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName -ErrorAction Stop
+        } else {
+          Get-SecretATAP -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName -SecretField $fieldName -ErrorAction Stop
         }
-        if ([string]::IsNullOrWhiteSpace($key)) { $key = 'BuildMasterAdminApiKey' }
-        $resolvedApiKey = [string]$global:settings[$key]
+        if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) {
+          $resolvedApiKey = [string]$candidate
+          break
+        }
+      } catch {
+        $fieldLabel = if ($null -eq $fieldName) { '<default>' } else { $fieldName }
+        $secretErrors.Add("${fieldLabel}: $($_.Exception.Message)") | Out-Null
       }
     }
     if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-      $resolvedApiKey = [Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'Process')
-      if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-        $resolvedApiKey = [Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
-      }
-    }
-    if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-      $msg = "Unable to resolve BuildMaster admin API key. Pass -ApiKey, set `$global:settings.BuildMasterAdminApiKey, or define the BUILDMASTER_ADMIN_API_KEY User env var."
+      $detail = if ($secretErrors.Count -gt 0) { " Last error: $($secretErrors[$secretErrors.Count - 1])" } else { '' }
+      $msg = "Unable to resolve the BuildMaster admin API key value from secret '$BuildMasterAdminApiKeySecretName' via Get-SecretATAP.$detail"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
       throw $msg
     }

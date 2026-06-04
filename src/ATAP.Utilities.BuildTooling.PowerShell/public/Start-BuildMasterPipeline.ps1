@@ -113,19 +113,6 @@ function Start-BuildMasterPipeline {
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn (Application='$Application' ReleaseNumber='$ReleaseNumber' Pipeline='$Pipeline')" -Tag 'Trace'
 
-    # Load Helpers
-    try {
-      # ToDo: Remove this when packaging works
-      if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1"
-      }
-    }
-    catch {
-      $errorMessage = "Failed to load Get-ParameterValueFromNeoConfigurationRoot function. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-      throw
-    }
-
     $BuildMasterBaseUrl = Get-PVal -ParameterName 'BuildMasterBaseUrl' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterBaseUrl
     if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {
       $BuildMasterBaseUrl = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'Process')
@@ -162,14 +149,6 @@ function Start-BuildMasterPipeline {
       $msg = "Unable to resolve BuildMaster admin API key secret name. Pass -BuildMasterAdminApiKeySecretName, set the BuildMasterAdminApiKeySecretName environment variable, or set `$global:settings.BuildMasterAdminApiKeySecretName."
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
       throw $msg
-    }
-
-    if (-not (Get-Command -Name 'Get-SecretATAP' -CommandType Function -ErrorAction SilentlyContinue)) {
-      $secretHelperPath = Join-Path -Path $PSScriptRoot -ChildPath 'Get-SecretATAP.ps1'
-      if (-not (Test-Path -LiteralPath $secretHelperPath -PathType Leaf)) {
-        throw "Required helper 'Get-SecretATAP' was not found at '$secretHelperPath'."
-      }
-      . $secretHelperPath
     }
 
     $resolvedApiKey = $null

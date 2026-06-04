@@ -26,8 +26,9 @@ function New-BuildMasterScript {
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server. Defaults to $global:settings,
     BUILDMASTER_BASE_URL, then http://localhost:50017.
-  .PARAMETER ApiKey
-    BuildMaster API key with Native API access.
+  .PARAMETER BuildMasterAdminApiKeySecretName
+    ATAP secret name for the BuildMaster admin API key (Native API access).
+    Resolved via Get-PVal; value read with Get-SecretATAP.
   .OUTPUTS
     PSCustomObject describing the uploaded script.
   .EXAMPLE
@@ -65,7 +66,7 @@ function New-BuildMasterScript {
 
     [string]$BuildMasterBaseUrl,
 
-    [string]$ApiKey
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key'
   )
 
   begin {
@@ -73,8 +74,10 @@ function New-BuildMasterScript {
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
+    $BuildMasterAdminApiKeySecretName = Get-PVal -ParameterName 'BuildMasterAdminApiKeySecretName' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterAdminApiKeySecretName
+
     function Resolve-BuildMasterApiSettings {
-      param([string]$BaseUrl, [string]$Key)
+      param([string]$BaseUrl, [string]$AdminApiKeySecretName)
 
       $resolvedBaseUrl = $BaseUrl
       if ([string]::IsNullOrWhiteSpace($resolvedBaseUrl) -and $null -ne $global:settings) {
@@ -96,24 +99,26 @@ function New-BuildMasterScript {
         $resolvedBaseUrl = 'http://localhost:50017'
       }
 
-      $resolvedApiKey = $Key
-      if ([string]::IsNullOrWhiteSpace($resolvedApiKey) -and $null -ne $global:settings) {
-        $settingsKey = 'BuildMasterAdminApiKey'
-        if ($null -ne $global:configRootKeys -and $global:configRootKeys['BuildMasterAdminApiKeyConfigRootKey']) {
-          $settingsKey = $global:configRootKeys['BuildMasterAdminApiKeyConfigRootKey']
+      # Retrieve the BuildMaster admin API key value via Get-SecretATAP using
+      # the resolved secret name. The key value is never logged.
+      $resolvedApiKey = $null
+      $secretErrors = [System.Collections.Generic.List[string]]::new()
+      foreach ($fieldName in @($null, 'token', 'key', 'password')) {
+        try {
+          $candidate = if ($null -eq $fieldName) {
+            Get-SecretATAP -BuildMasterAdminApiKeySecretName $AdminApiKeySecretName -ErrorAction Stop
+          } else {
+            Get-SecretATAP -BuildMasterAdminApiKeySecretName $AdminApiKeySecretName -SecretField $fieldName -ErrorAction Stop
+          }
+          if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) { $resolvedApiKey = [string]$candidate; break }
+        } catch {
+          $fieldLabel = if ($null -eq $fieldName) { '<default>' } else { $fieldName }
+          $secretErrors.Add("${fieldLabel}: $($_.Exception.Message)") | Out-Null
         }
-        if ($global:settings.ContainsKey($settingsKey)) {
-          $resolvedApiKey = [string]$global:settings[$settingsKey]
-        }
       }
       if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-        $resolvedApiKey = [Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'Process')
-      }
-      if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-        $resolvedApiKey = [Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
-      }
-      if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-        throw 'Unable to resolve BuildMaster API key. Pass -ApiKey, set $global:settings.BuildMasterAdminApiKey, or define BUILDMASTER_ADMIN_API_KEY.'
+        $detail = if ($secretErrors.Count -gt 0) { " Last error: $($secretErrors[$secretErrors.Count - 1])" } else { '' }
+        throw "Unable to resolve the BuildMaster admin API key value from secret '$AdminApiKeySecretName' via Get-SecretATAP.$detail"
       }
 
       return [PSCustomObject]@{ BaseUrl = $resolvedBaseUrl.TrimEnd('/'); ApiKey = $resolvedApiKey }
@@ -186,7 +191,7 @@ function New-BuildMasterScript {
       return [int]$existing[0].RaftItem_Id
     }
 
-    $settings = Resolve-BuildMasterApiSettings -BaseUrl $BuildMasterBaseUrl -Key $ApiKey
+    $settings = Resolve-BuildMasterApiSettings -BaseUrl $BuildMasterBaseUrl -AdminApiKeySecretName $BuildMasterAdminApiKeySecretName
     $nativeApiBaseUrl = '{0}/api/json' -f $settings.BaseUrl
   }
 

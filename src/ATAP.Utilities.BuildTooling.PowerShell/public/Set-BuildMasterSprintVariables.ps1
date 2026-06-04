@@ -17,8 +17,8 @@ function Set-BuildMasterSprintVariables {
     identify which source branch to check out and which sprint context applies.
     They are cleared at sprint-end by Clear-BuildMasterSprintVariables.
 
-    Reads the API key from the BUILDMASTER_ADMIN_API_KEY environment variable
-    (User scope preferred, then Process scope).
+    Resolves the API key secret name via Get-PVal (default
+    'BuildMaster.Admin.API.Key') and reads the key value with Get-SecretATAP.
 
     ** DEPRECATED ** Use Set-BuildMasterApplicationVariables instead.
     This cmdlet will be removed in Sprint 0008.
@@ -74,7 +74,9 @@ function Set-BuildMasterSprintVariables {
 
     [string[]]$Applications = @('AceCommander', 'ATAP.Utilities'),
 
-    [string]$BuildMasterBaseUrl
+    [string]$BuildMasterBaseUrl,
+
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key'
   )
 
   begin {
@@ -85,27 +87,29 @@ function Set-BuildMasterSprintVariables {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
       -Message 'DEPRECATED: Use Set-BuildMasterApplicationVariables instead. This cmdlet will be removed in Sprint 0008.'
 
-    # Load Helpers
-    try {
-      # ToDo: Remove this when packaging works
-      if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1"
-      }
-    }
-    catch {
-      $errorMessage = "Failed to load Get-ParameterValueFromNeoConfigurationRoot function. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-      throw
-    }
-
     $BuildMasterBaseUrl = Get-PVal -ParameterName 'BuildMasterBaseUrl' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterBaseUrl
 
-    $apiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
-    if ([string]::IsNullOrWhiteSpace($apiKey)) {
-      $apiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'Process')
+    $BuildMasterAdminApiKeySecretName = Get-PVal -ParameterName 'BuildMasterAdminApiKeySecretName' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterAdminApiKeySecretName
+    # Retrieve the BuildMaster admin API key value via Get-SecretATAP using the
+    # resolved secret name. The key value is never logged.
+    $apiKey = $null
+    $secretErrors = [System.Collections.Generic.List[string]]::new()
+    foreach ($fieldName in @($null, 'token', 'key', 'password')) {
+      try {
+        $candidate = if ($null -eq $fieldName) {
+          Get-SecretATAP -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName -ErrorAction Stop
+        } else {
+          Get-SecretATAP -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName -SecretField $fieldName -ErrorAction Stop
+        }
+        if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) { $apiKey = [string]$candidate; break }
+      } catch {
+        $fieldLabel = if ($null -eq $fieldName) { '<default>' } else { $fieldName }
+        $secretErrors.Add("${fieldLabel}: $($_.Exception.Message)") | Out-Null
+      }
     }
     if ([string]::IsNullOrWhiteSpace($apiKey)) {
-      throw 'BUILDMASTER_ADMIN_API_KEY is not set at User or Process scope. Cannot set BuildMaster variables.'
+      $detail = if ($secretErrors.Count -gt 0) { " Last error: $($secretErrors[$secretErrors.Count - 1])" } else { '' }
+      throw "Unable to resolve the BuildMaster admin API key from secret '$BuildMasterAdminApiKeySecretName' via Get-SecretATAP. Cannot set BuildMaster variables.$detail"
     }
 
     $headers = @{

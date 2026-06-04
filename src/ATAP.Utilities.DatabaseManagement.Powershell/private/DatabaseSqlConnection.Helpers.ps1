@@ -143,24 +143,6 @@ function Import-DatabaseConnectionHelperFunctions {
   [CmdletBinding()]
   param()
 
-  if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-    $powerShellModuleRoots = @()
-    if (-not [string]::IsNullOrWhiteSpace($PSScriptRoot)) {
-      $databaseModuleRoot = Split-Path -Parent $PSScriptRoot
-      $sourceRoot = Split-Path -Parent $databaseModuleRoot
-      if (-not [string]::IsNullOrWhiteSpace($sourceRoot)) {
-        $powerShellModuleRoots += Join-Path $sourceRoot 'ATAP.Utilities.PowerShell'
-        $powerShellModuleRoots += Join-Path $sourceRoot 'ATAP.Utilities.Powershell'
-      }
-    }
-
-    Import-DatabaseScriptCommand `
-      -CommandName 'Get-ParameterValueFromNeoConfigurationRoot' `
-      -ModuleNames @('ATAP.Utilities.PowerShell', 'ATAP.Utilities.Powershell') `
-      -ModuleRoots $powerShellModuleRoots `
-      -RelativeScriptPath 'public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
-  }
-
   if (-not (Get-Command -Name 'New-ConnectionStringBuilderFromDbaTools' -CommandType Function -ErrorAction SilentlyContinue)) {
     $databaseModuleRoots = @()
     if (-not [string]::IsNullOrWhiteSpace($PSScriptRoot)) {

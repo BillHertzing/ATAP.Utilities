@@ -1,4 +1,5 @@
-<#
+<
+#
 .SYNOPSIS
 PowerShell V7 profile template for individual users
 .DESCRIPTION

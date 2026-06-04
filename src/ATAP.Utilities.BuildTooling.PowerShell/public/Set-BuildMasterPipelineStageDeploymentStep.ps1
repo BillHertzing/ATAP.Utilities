@@ -59,9 +59,10 @@ function Set-BuildMasterPipelineStageDeploymentStep {
     The BuildMaster base URL (e.g., `https://buildmaster.example/`). Falls back
     to `$global:settings` then to the `BUILDMASTER_BASE_URL` User env var.
 
-  .PARAMETER ApiKey
-    The BuildMaster admin API key. Falls back to `$global:settings` then to the
-    `BUILDMASTER_ADMIN_API_KEY` User env var.
+  .PARAMETER BuildMasterAdminApiKeySecretName
+    The ATAP secret name containing the BuildMaster admin API key. Resolved via
+    `Get-PVal` (parameter → env var → `$global:settings` → default
+    `BuildMaster.Admin.API.Key`); the value is read with `Get-SecretATAP`.
 
   .INPUTS
     None.
@@ -134,37 +135,13 @@ function Set-BuildMasterPipelineStageDeploymentStep {
 
     [string]$BuildMasterBaseUrl,
 
-    [string]$ApiKey
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key'
   )
 
   begin {
     $fn = $MyInvocation.MyCommand.Name
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
-
-    # Helper function stub for parameter resolution (alternative to Get-ParameterValueFromNeoConfigurationRoot)
-    function Get-PVal {
-      param(
-        [string]$ParameterName,
-        [hashtable]$originalPSBoundParameters,
-        [string]$DefaultValue
-      )
-      if ($originalPSBoundParameters.ContainsKey($ParameterName) -and -not [string]::IsNullOrWhiteSpace($originalPSBoundParameters[$ParameterName])) {
-        return $originalPSBoundParameters[$ParameterName]
-      }
-      if ($global:settings -and $global:configRootKeys) {
-        $key = $global:configRootKeys["BuildMaster${ParameterName}ConfigRootKey"]
-        if ($key -and $global:settings.ContainsKey($key)) {
-          return $global:settings[$key]
-        }
-      }
-      $envVarName = "BUILDMASTER_${ParameterName}_URL".ToUpperInvariant()
-      $envValue = [System.Environment]::GetEnvironmentVariable($envVarName, 'User') -or [System.Environment]::GetEnvironmentVariable($envVarName, 'Process')
-      if ($envValue) {
-        return $envValue
-      }
-      return $DefaultValue
-    }
 
     # Resolve BuildMaster base URL
     $BuildMasterBaseUrl = Get-PVal -ParameterName 'BuildMasterBaseUrl' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterBaseUrl
@@ -174,22 +151,27 @@ function Set-BuildMasterPipelineStageDeploymentStep {
     $BuildMasterBaseUrl = $BuildMasterBaseUrl.TrimEnd('/')
     $nativeApiBaseUrl = "$BuildMasterBaseUrl/api/json"
 
-    # Resolve API key
-    if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-      $ApiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
-    }
-    if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-      $ApiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'Process')
-    }
-    if ([string]::IsNullOrWhiteSpace($ApiKey)) {
+    # Resolve the BuildMaster admin API key secret name, then retrieve the key
+    # value via Get-SecretATAP. The key value is never logged.
+    $BuildMasterAdminApiKeySecretName = Get-PVal -ParameterName 'BuildMasterAdminApiKeySecretName' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterAdminApiKeySecretName
+    $ApiKey = $null
+    $secretErrors = [System.Collections.Generic.List[string]]::new()
+    foreach ($fieldName in @($null, 'token', 'key', 'password')) {
       try {
-        $ApiKey = Get-SecretATAP -SecretName 'BuildMaster_Admin_API_Key' -ErrorAction SilentlyContinue
+        $candidate = if ($null -eq $fieldName) {
+          Get-SecretATAP -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName -ErrorAction Stop
+        } else {
+          Get-SecretATAP -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName -SecretField $fieldName -ErrorAction Stop
+        }
+        if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) { $ApiKey = [string]$candidate; break }
       } catch {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Secret store lookup failed (not critical): $($_.Exception.Message)"
+        $fieldLabel = if ($null -eq $fieldName) { '<default>' } else { $fieldName }
+        $secretErrors.Add("${fieldLabel}: $($_.Exception.Message)") | Out-Null
       }
     }
     if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-      throw 'BUILDMASTER_ADMIN_API_KEY is not set at User/Process scope or in the configured ATAP secret store (secret: BuildMaster_Admin_API_Key). Cannot proceed.'
+      $detail = if ($secretErrors.Count -gt 0) { " Last error: $($secretErrors[$secretErrors.Count - 1])" } else { '' }
+      throw "Unable to resolve the BuildMaster admin API key value from secret '$BuildMasterAdminApiKeySecretName' via Get-SecretATAP. Cannot proceed.$detail"
     }
 
     # Helper function to resolve application ID from name

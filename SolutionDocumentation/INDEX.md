@@ -209,6 +209,12 @@ _Teach / Tell how to create software._
 - [BuildMaster Run-State Runbook](BuildMaster-Run-State-Runbook.md) —
   Operational guide for the build-id scoped `_generated/buildmaster/<BuildMasterBuildId>/`
   inter-stage state channel.
+- [PowerShell-Module Pipeline -NoProfile Runbook](PowerShellModule-Pipeline-NoProfile-Runbook.md) —
+  V4-B02 audit + policy of record: every settings lookup in the PowerShell-module
+  plan/runner resolves under `-NoProfile` via explicit parameter, env var, or
+  null-guarded default; the runner never calls `Resolve-ProGetFeedFromSettings` so it
+  needs no `Set-NoProfileProGetFeedSettings` bootstrap. Pinned by
+  `Plans/tests/PowerShellModule-5Stage.Tests.ps1`.
 - [Release Bundle Pipeline](Release-Bundle-Pipeline.md) —
   Multi-stage release bundle execution model.
 - [ReleaseBundle vs Database Package Architecture](ReleaseBundle-vs-DatabasePackage-Architecture.md) —

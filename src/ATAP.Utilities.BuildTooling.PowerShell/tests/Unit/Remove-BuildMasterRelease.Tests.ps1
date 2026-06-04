@@ -56,16 +56,21 @@ BeforeAll {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
   }
 
+  # Stub the secret store so the cmdlet resolves the BuildMaster admin API key
+  # without contacting Bitwarden.
+  function global:Get-SecretATAP {
+    param([Parameter(ValueFromPipelineByPropertyName = $true)][Alias('BuildMasterAdminApiKeySecretName')][string]$SecretName, [string]$SecretField = 'password')
+    'unit-test-key'
+  }
+
   $script:oldConfigRootKeys = $global:configRootKeys
   $script:oldSettings = $global:settings
-  $script:savedApiKey = [Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
   $script:savedBaseUrl = [Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'User')
 }
 
 AfterAll {
   $global:configRootKeys = $script:oldConfigRootKeys
   $global:settings = $script:oldSettings
-  [Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', $script:savedApiKey, 'User')
   [Environment]::SetEnvironmentVariable('BUILDMASTER_BASE_URL', $script:savedBaseUrl, 'User')
 
   if ($script:hadGlobalGetPValFunction) {
@@ -272,8 +277,9 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
   }
 
   Context 'Config resolution' {
-    It 'Uses -ApiKey parameter when supplied (overrides $global:settings)' {
+    It 'Resolves the API key value via Get-SecretATAP for the X-ApiKey header' {
       $script:capturedHeaders = $null
+      Mock Get-SecretATAP { 'explicit-key' }
       Mock Invoke-RestMethod -MockWith {
         $script:capturedHeaders = $Headers
         if ($Uri -match 'Applications_GetApplications') {
@@ -288,16 +294,15 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
         throw "Unexpected URI: $Uri"
       }
 
-      Remove-BuildMasterRelease -Application 'A' -ReleaseNumber 'R' -ApiKey 'explicit-key' -Confirm:$false | Out-Null
+      Remove-BuildMasterRelease -Application 'A' -ReleaseNumber 'R' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key' -Confirm:$false | Out-Null
       $script:capturedHeaders['X-ApiKey'] | Should -Be 'explicit-key'
     }
 
-    It 'Throws when neither setting nor env var nor parameter provides an API key' {
+    It 'Throws when the API key is not resolvable via Get-SecretATAP' {
       $global:settings = @{ BuildMasterBaseUrl = 'https://x.example' }
-      [Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', $null, 'Process')
-      [Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', $null, 'User')
+      Mock Get-SecretATAP { throw 'secret store unavailable' }
       { Remove-BuildMasterRelease -Application 'A' -ReleaseNumber '1.0.0' -Confirm:$false } |
-        Should -Throw -ExpectedMessage '*BUILDMASTER_ADMIN_API_KEY*'
+        Should -Throw -ExpectedMessage '*Get-SecretATAP*'
     }
 
     It 'Falls back to the local BuildMaster base URL when none is configured' {

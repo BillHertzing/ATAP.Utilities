@@ -2568,6 +2568,22 @@ reduction) with all critical evidence preserved — versus the 24.8-minute hang 
 > belt-and-suspenders for `-NoProfile` / service contexts. Setting it User-scope here is
 > what makes it apply everywhere.
 
+### H.3.2 Disable Headroom telemetry at user scope
+
+Disable Headroom telemetry once at **User** scope so the setting is inherited by normal
+PowerShell sessions, `headroom wrap ...` launches, MCP server processes, Claude Code,
+Codex, and VS Code sessions started after the setting is applied:
+
+```powershell
+[Environment]::SetEnvironmentVariable('HEADROOM_TELEMETRY', 'off', 'User')
+$env:HEADROOM_TELEMETRY = 'off'   # current shell too
+```
+
+`headroom proxy --no-telemetry` still appears in the scheduled task below as a
+belt-and-suspenders guard. The user-scope environment variable is the setting that prevents
+`headroom wrap codex` / `headroom wrap claude` from reporting telemetry as enabled when the
+wrapper is launched from a fresh shell.
+
 ### H.4 Configure the Headroom MCP server (both paths) — primary mode
 
 Register the **absolute venv path** (not a bare `headroom`, which is PATH-dependent and
@@ -2589,8 +2605,10 @@ Restart any running Claude Code / Codex session so the new server is picked up, 
 
 ### H.5 Proxy autostart at logon (both paths) — optional wrap mode
 
-The proxy backs `headroom wrap claude|codex`. Run it as a **hidden, telemetry-disabled**
-logon scheduled task that logs to `C:\Users\whertzing\.headroom\proxy.log`.
+The proxy backs `headroom wrap claude|codex|copilot` and any editor/app that can be pointed
+at an OpenAI-compatible or Anthropic-compatible base URL. Run it as a **hidden,
+telemetry-disabled** logon scheduled task that logs to
+`C:\Users\whertzing\.headroom\proxy.log`.
 
 Headroom writes nothing to a log file on its own — a bare Scheduled Task would silently
 discard its stdout/stderr — so the task must redirect output explicitly. A `cscript`/VBScript
@@ -2621,6 +2639,8 @@ $settings = New-ScheduledTaskSettingsSet `
   -ExecutionTimeLimit (New-TimeSpan -Hours 0) `
   -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) -DontStopOnIdleEnd
 
+# Replace any old task with the current hidden/telemetry-off definition.
+Unregister-ScheduledTask -TaskName 'Headroom Proxy' -Confirm:$false -ErrorAction SilentlyContinue
 Register-ScheduledTask -TaskName 'Headroom Proxy' -Action $action -Trigger $trigger `
   -Settings $settings -RunLevel Highest `
   -Description 'Headroom context compression proxy on port 8787 (hidden, telemetry off)'
@@ -2656,22 +2676,138 @@ if (-not (netstat -ano 2>$null | Select-String ":8787.*LISTENING")) {
 }
 ```
 
-### H.7 Daily usage and verification
+### H.7 Automatically use Headroom with agent CLIs, apps, and VS Code extensions
+
+Headroom can fully auto-wrap **CLI processes** because the wrapper controls their launch
+environment. Desktop apps and VS Code extensions are different: they usually run in their
+own host process and often ignore `OPENAI_BASE_URL` / `ANTHROPIC_BASE_URL`. For those,
+Headroom works only when the app/extension exposes a custom base URL, BYOK provider, or
+compatible local-proxy setting.
+
+Recommended baseline:
+
+```powershell
+# Run once per user profile.
+$codexBin = "$env:LOCALAPPDATA\OpenAI\Codex\bin"
+$headroomBin = "$env:USERPROFILE\.venvs\headroom\Scripts"
+$userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+$wanted = @($headroomBin, $codexBin)
+$entries = @($userPath -split ';' | Where-Object { $_ })
+foreach ($entry in $wanted) {
+  if ($entries -notcontains $entry) { $userPath = "$entry;$userPath" }
+}
+[Environment]::SetEnvironmentVariable('Path', $userPath, 'User')
+
+[Environment]::SetEnvironmentVariable('HEADROOM_TELEMETRY', 'off', 'User')
+[Environment]::SetEnvironmentVariable('OPENAI_BASE_URL', 'http://127.0.0.1:8787/v1', 'User')
+[Environment]::SetEnvironmentVariable('ANTHROPIC_BASE_URL', 'http://127.0.0.1:8787', 'User')
+```
+
+Open a new PowerShell after setting PATH/environment variables, then verify:
+
+```powershell
+Get-Command headroom
+Get-Command codex
+curl http://127.0.0.1:8787/stats
+```
+
+CLI launch commands:
+
+```powershell
+# Claude Code CLI
+headroom wrap claude --no-serena --no-mcp --no-proxy
+
+# Codex CLI
+headroom wrap codex --no-serena --no-mcp --no-proxy
+
+# GitHub Copilot CLI
+headroom wrap copilot --no-proxy -- --model claude-sonnet-4-20250514
+```
+
+Use `--no-proxy` only when the `Headroom Proxy` scheduled task is already listening on
+`127.0.0.1:8787`. Use `--no-mcp` for Claude Code / Codex after §H.4 has registered MCP with
+the absolute venv path. Use `--no-serena` unless `uvx` has been installed and Serena MCP is
+intentionally enabled.
+
+Desktop app / VS Code extension handling:
+
+| Client surface | Headroom approach |
+| --- | --- |
+| Claude Code CLI | Fully auto-wrap with `headroom wrap claude ...`. |
+| Codex CLI | Fully auto-wrap with `headroom wrap codex ...`; ensure `C:\Users\whertzing\AppData\Local\OpenAI\Codex\bin` is on `PATH`. |
+| GitHub Copilot CLI | Fully auto-wrap with `headroom wrap copilot ...`; requires the `copilot` CLI on `PATH` and a model/provider supported by Copilot CLI BYOK mode. |
+| Codex desktop app | Prefer MCP tools only. Do **not** keep a global Headroom provider/base URL override in `C:\Users\whertzing\.codex\config.toml`; it can make the app show only conversations created under `model_provider = headroom`. Use the wrapped Codex CLI for guaranteed proxy routing. |
+| Claude desktop app | Only route through Headroom if the app exposes a custom Anthropic base URL or inherits `ANTHROPIC_BASE_URL`; otherwise use Claude Code CLI for guaranteed routing. |
+| VS Code launched from shell | Launch from a shell that has `OPENAI_BASE_URL`, `ANTHROPIC_BASE_URL`, and `HEADROOM_TELEMETRY=off`: `code <workspace>`. This only helps extensions that actually inherit and honor those variables. |
+| GitHub Copilot VS Code extension | Do **not** assume it is wrapped. The first-party extension may use GitHub-hosted Copilot endpoints and may ignore OpenAI/Anthropic base URL variables. Use Copilot CLI through `headroom wrap copilot` for guaranteed Headroom routing, or configure BYOK/custom-model base URL only if the installed extension version exposes that setting. |
+| Cline VS Code extension | Run `headroom wrap cline --no-proxy`, then configure Cline's API Base URL in VS Code settings to `http://127.0.0.1:8787/v1` for OpenAI-compatible mode or the matching Anthropic-compatible URL if using Anthropic mode. |
+| Continue VS Code / JetBrains extension | Run `headroom wrap continue --no-proxy`, then set each model's `apiBase` in `.continue/config.json` / `.continue/config.yaml` to the Headroom proxy URL. |
+| Cursor app | Run `headroom wrap cursor --no-proxy`, then set Cursor's OpenAI override base URL to `http://127.0.0.1:8787/v1`. |
+
+For app/extension surfaces, the acceptance test is not "the app launched" - it is "the proxy
+saw traffic":
+
+```powershell
+curl http://127.0.0.1:8787/stats
+headroom perf --hours 1
+```
+
+If the request counters do not change while using a surface, that surface is not routed
+through Headroom yet. Prefer the wrapped CLI for guaranteed savings.
+
+#### H.7.1 Codex desktop conversation visibility incident
+
+On 2026-06-03, after `headroom wrap codex` was made to work for the Codex CLI, the Codex
+desktop app showed `No Chats` for projects that still had conversation history. The
+conversations were not deleted. They were still present in
+`C:\Users\whertzing\.codex\state_5.sqlite` under the normal `openai` provider. The new
+desktop sessions were being created under `model_provider = headroom`, so the app sidebar
+was effectively showing the wrong provider slice.
+
+The risky config injected by the wrapper was at the top of
+`C:\Users\whertzing\.codex\config.toml`:
+
+```toml
+# --- Headroom proxy (auto-injected by headroom wrap codex) ---
+model_provider = "headroom"
+openai_base_url = "http://127.0.0.1:8787/v1"
+# --- end Headroom ---
+```
+
+The repair was:
+
+1. Confirm the old conversations existed in `state_5.sqlite`, grouped mostly under
+   `model_provider = openai`.
+2. Back up `C:\Users\whertzing\.codex\config.toml`.
+3. Remove only the global Headroom provider/base URL override shown above.
+4. Keep `[mcp_servers.headroom]` intact so the MCP tools still load.
+5. Fully quit and restart the Codex desktop app.
+
+Do not use the Codex desktop app as the primary Headroom proxy surface until Codex exposes a
+provider override that does not partition or hide existing conversation history. Use
+`headroom wrap codex` for the CLI and MCP tools for the desktop app.
+
+### H.8 Daily usage and verification
 
 - **MCP (default):** in Claude Code / Codex, run `/mcp`, then ask the agent to compress a
   large log or search result; retrieve the original with `headroom_retrieve <hash>` when
   exact line-level evidence is needed. Compress for triage/summary; **retrieve originals
   before exact edits or claims** — do not compress source files you are about to edit.
-- **Wrap (optional):** `headroom wrap claude` / `headroom wrap codex` routes all provider
-  traffic through the proxy for automatic compression.
+- **Wrap (optional):** `headroom wrap claude` / `headroom wrap codex` /
+  `headroom wrap copilot` routes supported CLI provider traffic through the proxy for
+  automatic compression.
 - **Metrics:** `headroom perf --hours 1`, or the proxy endpoints `GET /stats` and
   `GET /stats-history` on `http://127.0.0.1:8787`.
 
-### H.8 Troubleshooting
+### H.9 Troubleshooting
 
 | Symptom | Cause / Fix |
 | --- | --- |
 | MCP server shows "failed to connect" | Registered as bare `headroom` (PATH-dependent). Re-add with the absolute `...\.venvs\headroom\Scripts\headroom.exe` path. |
+| Codex desktop shows `No Chats` after `headroom wrap codex` | Check `C:\Users\whertzing\.codex\config.toml` for a global `model_provider = "headroom"` / `openai_base_url = "http://127.0.0.1:8787/v1"` override. Back up the file, remove only that override, keep `[mcp_servers.headroom]`, then fully restart Codex. Confirm history still exists with Python's built-in `sqlite3` module by querying `C:\Users\whertzing\.codex\state_5.sqlite` and grouping `threads` by `model_provider` and `cwd`. |
+| `headroom wrap codex` reports telemetry enabled | Set `[Environment]::SetEnvironmentVariable('HEADROOM_TELEMETRY', 'off', 'User')`, open a fresh shell, and relaunch. |
+| `headroom wrap codex` says `codex` not found | Add `C:\Users\whertzing\AppData\Local\OpenAI\Codex\bin` to user `PATH`, open a fresh shell, and verify `Get-Command codex`. |
+| App or VS Code extension shows no proxy traffic | It is not inheriting or honoring the proxy base URL. Configure the extension's custom base URL/BYOK setting if available; otherwise use the wrapped CLI. |
 | First compression hangs for minutes | CPU model cold-load (Path A). Expected once per process; switch to **Path B** for GPU. |
 | `headroom_retrieve` returns nothing | Local/proxy retention window expired — reacquire the original content. |
 | `pip` cert errors during install | Add `--use-feature=truststore` (Windows cert store). |

@@ -78,33 +78,6 @@ function Start-BuildMasterDeployment {
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn (Application='$Application' ReleaseNumber='$ReleaseNumber' BuildNumber='$BuildNumber' ToStage='$ToStage')" -Tag 'Trace'
 
-    try {
-      if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        $srcRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-        $helperCandidates = @(
-          (Join-Path -Path $PSScriptRoot -ChildPath 'Get-ParameterValueFromNeoConfigurationRoot.ps1'),
-          (Join-Path -Path $srcRoot -ChildPath 'ATAP.Utilities.PowerShell/public/Get-ParameterValueFromNeoConfigurationRoot.ps1'),
-          (Join-Path -Path $srcRoot -ChildPath 'ATAP.Utilities.Powershell/public/Get-ParameterValueFromNeoConfigurationRoot.ps1'),
-          'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
-        )
-        $loadedHelper = $false
-        foreach ($helperPath in $helperCandidates) {
-          if (Test-Path -LiteralPath $helperPath -PathType Leaf) {
-            . $helperPath
-            $loadedHelper = $true
-            break
-          }
-        }
-        if (-not $loadedHelper) {
-          throw "Could not locate Get-ParameterValueFromNeoConfigurationRoot.ps1. Checked: $($helperCandidates -join ', ')"
-        }
-      }
-    } catch {
-      $errorMessage = "Failed to load Get-ParameterValueFromNeoConfigurationRoot function. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-      throw
-    }
-
     $BuildMasterBaseUrl = Get-PVal -ParameterName 'BuildMasterBaseUrl' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterBaseUrl
     if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {
       $BuildMasterBaseUrl = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'Process')
@@ -138,14 +111,6 @@ function Start-BuildMasterDeployment {
       $msg = "Unable to resolve BuildMaster admin API key secret name. Pass -BuildMasterAdminApiKeySecretName, set the BuildMasterAdminApiKeySecretName environment variable, or set `$global:settings.BuildMasterAdminApiKeySecretName."
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
       throw $msg
-    }
-
-    if (-not (Get-Command -Name 'Get-SecretATAP' -CommandType Function -ErrorAction SilentlyContinue)) {
-      $secretHelperPath = Join-Path -Path $PSScriptRoot -ChildPath 'Get-SecretATAP.ps1'
-      if (-not (Test-Path -LiteralPath $secretHelperPath -PathType Leaf)) {
-        throw "Required helper 'Get-SecretATAP' was not found at '$secretHelperPath'."
-      }
-      . $secretHelperPath
     }
 
     $resolvedApiKey = $null

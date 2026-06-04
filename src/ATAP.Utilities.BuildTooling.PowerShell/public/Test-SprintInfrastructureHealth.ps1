@@ -85,9 +85,11 @@ function Test-SprintInfrastructureHealth {
     $global:settings[$global:configRootKeys['BuildMasterBaseUrlConfigRootKey']],
     then $env:BUILDMASTER_BASE_URL, then 'http://localhost:50017'.
 
-.PARAMETER ApiKey
-    BuildMaster admin API key. Defaults to BUILDMASTER_ADMIN_API_KEY at User
-    scope, then Process scope.
+.PARAMETER BuildMasterAdminApiKeySecretName
+    The ATAP secret name containing the BuildMaster admin API key. Resolved via
+    Get-PVal (parameter → env var → $global:settings → default
+    'BuildMaster.Admin.API.Key'); the value is read with Get-SecretATAP. An
+    unresolved key is reported by the BuildMasterApps check rather than thrown.
 
 .PARAMETER ProGetBaseUrl
     Base URL for ProGet. Defaults to
@@ -127,7 +129,7 @@ function Test-SprintInfrastructureHealth {
     [string]$BuildMasterBaseUrl,
 
     [Parameter()]
-    [string]$ApiKey,
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key',
 
     [Parameter()]
     [string]$ProGetBaseUrl,
@@ -147,33 +149,6 @@ function Test-SprintInfrastructureHealth {
     $fn = 'Test-SprintInfrastructureHealth'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
-
-    # Load helper functions
-    # None of this is needed once the modules are built and installed into the PSModulePath, but while we are still running from source code, we need to dot source the helper functions that are not yet in a module. Once the modules are built and installed, all of the helper functions will be available as cmdlets and this block can be removed.
-    $helpfunctionsneeded = @(
-      @{FunctionName = 'Get-ParameterValueFromNeoConfigurationRoot'; ModuleName = 'ATAP.Utilities.PowerShell'}
-      @{FunctionName = 'Get-RepositoryRoot'; ModuleName = 'ATAP.Utilities.BuildTooling.PowerShell'}
-    )
-    # These are three hardcoded values which we use until we get packaging working
-    $repoRootParentPath = 'C:\Dropbox\whertzing\GitHub'
-    $stablePath = 'ATAP.Utilities'
-    $wtFolder = $PWD.Path.Split([IO.Path]::DirectorySeparatorChar) |
-      Where-Object { $_ -like '*-wt-*' } |
-      Select-Object -First 1
-    $resolvedModulePath = $wtFolder ? $(Join-Path $repoRootParentPath $wtFolder 'src') : $(Join-Path $repoRootParentPath $stablePath 'src')
-    foreach ($helpfunction in $helpfunctionsneeded) {
-      try {
-        if (-not (Test-Path -LiteralPath "Function:\$($helpfunction.FunctionName)")) {
-          $helperPath = Join-Path -Path (Join-Path -Path $resolvedModulePath -ChildPath $helpfunction.ModuleName) -ChildPath (Join-Path -Path 'public' -ChildPath "$($helpfunction.FunctionName).ps1")
-          . $helperPath
-        }
-      } catch {
-        $errorMessage = "Failed to load $($helpfunction.FunctionName) function from module path '$helperPath'. Exception: $($_.Exception.Message)"
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-        throw
-      }
-    }
-    # This is the end of the help loading block, this and all above can be removed once module autoloading is working and the helper functions are available as cmdlets in the PSModulePath
 
     # Resolve BuildMasterBaseUrl
     if (-not $PSBoundParameters.ContainsKey('BuildMasterBaseUrl')) {
@@ -199,14 +174,20 @@ function Test-SprintInfrastructureHealth {
       $BuildMasterBaseUrl = $BuildMasterBaseUrl.TrimEnd('/')
     }
 
-    # Resolve ApiKey
-    if (-not $PSBoundParameters.ContainsKey('ApiKey') -or [string]::IsNullOrWhiteSpace($ApiKey)) {
-      $resolvedKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
-      if ([string]::IsNullOrWhiteSpace($resolvedKey)) {
-        $resolvedKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'Process')
-      }
-      if (-not [string]::IsNullOrWhiteSpace($resolvedKey)) {
-        $ApiKey = $resolvedKey
+    # Resolve the BuildMaster admin API key secret name, then retrieve the key
+    # value via Get-SecretATAP. Non-fatal: an unresolved key is reported by the
+    # BuildMasterApps check rather than thrown. The key value is never logged.
+    $BuildMasterAdminApiKeySecretName = Get-PVal -ParameterName 'BuildMasterAdminApiKeySecretName' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterAdminApiKeySecretName
+    $ApiKey = $null
+    foreach ($fieldName in @($null, 'token', 'key', 'password')) {
+      try {
+        $candidate = if ($null -eq $fieldName) {
+          Get-SecretATAP -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName -ErrorAction Stop
+        } else {
+          Get-SecretATAP -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName -SecretField $fieldName -ErrorAction Stop
+        }
+        if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) { $ApiKey = [string]$candidate; break }
+      } catch {
       }
     }
 
@@ -249,7 +230,7 @@ function Test-SprintInfrastructureHealth {
     $failures = [System.Collections.Generic.List[string]]::new()
 
     # ── BitwardenEnvVars ──────────────────────────────────────────────────────
-    $requiredEnvVars = @('BUILDMASTER_ADMIN_API_KEY', 'PROGET_ADMIN_API_KEY', 'BW_SESSION', 'BUILDMASTER_GH_WEBHOOK_SECRET')
+    $requiredEnvVars = @('PROGET_ADMIN_API_KEY', 'BW_SESSION', 'BUILDMASTER_GH_WEBHOOK_SECRET')
     $missingVars = [System.Collections.Generic.List[string]]::new()
     foreach ($varName in $requiredEnvVars) {
       $val = [System.Environment]::GetEnvironmentVariable($varName, 'User')
@@ -273,6 +254,20 @@ function Test-SprintInfrastructureHealth {
     }
     if (-not $bwVarsOk) { [void]$failures.Add('BitwardenEnvVars') }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "BitwardenEnvVars: $bwVarsDetail"
+
+    # ── BuildMasterAdminApiKeyResolvable ──────────────────────────────────────
+    $bmKeyOk = -not [string]::IsNullOrWhiteSpace($ApiKey)
+    $checks['BuildMasterAdminApiKeyResolvable'] = [PSCustomObject]@{
+      Ok         = $bmKeyOk
+      Detail     = if ($bmKeyOk) {
+        "BuildMaster admin API key resolved from secret '$BuildMasterAdminApiKeySecretName' via Get-SecretATAP"
+      } else {
+        "BuildMaster admin API key NOT resolvable from secret '$BuildMasterAdminApiKeySecretName' via Get-SecretATAP"
+      }
+      SecretName = $BuildMasterAdminApiKeySecretName
+    }
+    if (-not $bmKeyOk) { [void]$failures.Add('BuildMasterAdminApiKeyResolvable') }
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "BuildMasterAdminApiKeyResolvable: $($checks['BuildMasterAdminApiKeyResolvable'].Detail)"
 
     # ── SqlInstances ─────────────────────────────────────────────────────────
     if ($null -eq $SqlInstancePaths -or $SqlInstancePaths.Count -eq 0) {
@@ -446,7 +441,7 @@ function Test-SprintInfrastructureHealth {
     } elseif ([string]::IsNullOrWhiteSpace($ApiKey)) {
       $checks['BuildMasterApps'] = [PSCustomObject]@{
         Ok      = $false
-        Detail  = 'BUILDMASTER_ADMIN_API_KEY not available; cannot check app existence'
+        Detail  = 'BuildMaster admin API key not resolvable via Get-SecretATAP; cannot check app existence'
         Skipped = $false
         PerApp  = @()
       }

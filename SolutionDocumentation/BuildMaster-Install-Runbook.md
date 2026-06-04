@@ -77,7 +77,7 @@ captured and can be safely replayed by PowerShell.
 | BuildMaster database     | `BuildMaster`                                                                        |
 | Windows service          | `INEDOBMSVC`                                                                         |
 | Service account          | `NetworkService` until a dedicated service account is required                       |
-| Admin API key env var    | `BUILDMASTER_ADMIN_API_KEY`                                                          |
+| Admin API key secret     | `BuildMaster.Admin.API.Key` (Bitwarden Secrets Manager; read via `Get-SecretATAP`)   |
 | ProGet URL               | `http://localhost:50000`                                                             |
 | ProGet key used by plans | BuildMaster variable `ProGetApiKey`, sourced from the approved ProGet API key secret |
 
@@ -168,11 +168,12 @@ In the UI:
    - Release & Build Deployment
    - Infrastructure Management
    - CI Badge, if badge checks are used
-4. Store the generated key in Bitwarden.
-5. Ensure the login profile loads it into:
+4. Store the generated key in Bitwarden Secrets Manager under the secret name
+   `BuildMaster.Admin.API.Key`.
+5. Code and runbooks read it through `Get-SecretATAP`:
 
 ```powershell
-$env:BUILDMASTER_ADMIN_API_KEY
+$BuildMasterApiKey = Get-SecretATAP -SecretName 'BuildMaster.Admin.API.Key'
 ```
 
 Keep the API key out of runbooks, screenshots, logs, and Git history.
@@ -185,7 +186,7 @@ Use this PowerShell shape for every API-backed step.
 
 ```powershell
 $BuildMasterBaseUrl = 'http://localhost:50017'
-$BuildMasterApiKey = $env:BUILDMASTER_ADMIN_API_KEY
+$BuildMasterApiKey = Get-SecretATAP -SecretName 'BuildMaster.Admin.API.Key'
 
 Import-Module 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1' -Force
 ```
@@ -419,7 +420,7 @@ or plain-text URL parameters, always use the hashtable form with `Sensitive = $t
 Set-BuildMasterApplicationVariables `
   -ApplicationName 'ATAP.Utilities-CSharp' `
   -Variables @{ ProGetApiKey = @{ Value = $env:PROGET_ADMIN_API_KEY; Sensitive = $true } } `
-  -ApiKey $env:BUILDMASTER_ADMIN_API_KEY
+  -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
 ```
 
 This routes the variable through the `/api/variables/scoped/single` endpoint, which
@@ -705,7 +706,7 @@ Next implementation order:
 
 - [ ] BuildMaster service `INEDOBMSVC` is running.
 - [ ] BuildMaster UI is reachable at `http://localhost:50017`.
-- [ ] `BUILDMASTER_ADMIN_API_KEY` is present in the operator PowerShell process.
+- [ ] The `BuildMaster.Admin.API.Key` secret resolves via `Get-SecretATAP`.
 - [ ] Environments exist: Experimental, Development, Integration, QA, Production.
 - [ ] Applications exist: `ATAP.Utilities-CSharp`,
       `ATAP.Utilities-PowerShell`, `AceCommander-ReleaseBundle`.
@@ -832,10 +833,11 @@ The `BUILDMASTER_GH_WEBHOOK_SECRET` environment variable must be populated by
 
 ### Verify monitors exist via API (interactive session)
 
-Run in an interactive PowerShell session where `LoginScript.ps1` has loaded the API key:
+Run in an interactive PowerShell session where `LoginScript.ps1` has loaded the
+Bitwarden session so `Get-SecretATAP` can resolve the key:
 
 ```powershell
-$apiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
+$apiKey = Get-SecretATAP -SecretName 'BuildMaster.Admin.API.Key'
 $headers = @{ 'X-ApiKey' = $apiKey }
 
 # Attempt high-level endpoint (may return 404 depending on BM version)

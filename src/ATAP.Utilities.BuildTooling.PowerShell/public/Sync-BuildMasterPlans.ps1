@@ -8,10 +8,10 @@ function Sync-BuildMasterPlans {
     plans in source control while still publishing the current version into
     BuildMaster for execution.
 
-    The API key is resolved in this order: the -ApiKey parameter, then
-    $global:settings[$global:configRootKeys['BuildMasterAdminApiKeyConfigRootKey']],
-    then BUILDMASTER_ADMIN_API_KEY at Process or User scope. An explicit -ApiKey
-    value may be supplied for tests or controlled automation.
+    The API key secret name is resolved via Get-PVal
+    (-BuildMasterAdminApiKeySecretName, then env var, then $global:settings,
+    then default 'BuildMaster.Admin.API.Key'); the key value is then retrieved
+    through Get-SecretATAP.
 
     BuildMaster stores scripts and plans in rafts. The default raft item type
     is DeploymentScript (6), which is appropriate for .otter deployment plans.
@@ -26,9 +26,9 @@ function Sync-BuildMasterPlans {
     Base URL for the BuildMaster server. Defaults to BuildMaster.BaseUrl from
     $global:settings, then BUILDMASTER_BASE_URL from the process environment,
     then http://localhost:50017.
-  .PARAMETER ApiKey
-    BuildMaster Native API key. Resolved from -ApiKey, then $global:settings,
-    then BUILDMASTER_ADMIN_API_KEY at Process or User scope.
+  .PARAMETER BuildMasterAdminApiKeySecretName
+    ATAP secret name for the BuildMaster admin (Native API) key. Resolved via
+    Get-PVal; value read with Get-SecretATAP.
   .PARAMETER RaftId
     Target BuildMaster raft id. Defaults to 1, the default database raft.
   .PARAMETER RaftItemTypeCode
@@ -63,7 +63,7 @@ function Sync-BuildMasterPlans {
 
     [string]$BuildMasterBaseUrl,
 
-    [string]$ApiKey,
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key',
 
     [ValidateRange(1, [int]::MaxValue)]
     [int]$RaftId = 1,
@@ -89,18 +89,6 @@ function Sync-BuildMasterPlans {
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
-    # Load Helpers
-    try {
-      # ToDo: Remove this when packaging works
-      if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
-      }
-    } catch {
-      $errorMessage = "Failed to load Get-ParameterValueFromNeoConfigurationRoot function. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-      throw
-    }
-
     if ([string]::IsNullOrWhiteSpace($Path) -and $global:configRootKeys -and $global:settings) {
       $plansDirectoryKey = $global:configRootKeys['BuildMasterPlansDirectoryConfigRootKey']
       if ($plansDirectoryKey -and $global:settings.ContainsKey($plansDirectoryKey)) {
@@ -122,22 +110,27 @@ function Sync-BuildMasterPlans {
       $BuildMasterBaseUrl = 'http://localhost:50017'
     }
 
-    if ([string]::IsNullOrWhiteSpace($ApiKey) -and $null -ne $global:settings) {
-      $apiKeySettingsKey = if ($null -ne $global:configRootKeys -and $global:configRootKeys['BuildMasterAdminApiKeyConfigRootKey']) {
-        $global:configRootKeys['BuildMasterAdminApiKeyConfigRootKey']
-      } else { 'BuildMasterAdminApiKey' }
-      if ($global:settings.ContainsKey($apiKeySettingsKey)) {
-        $ApiKey = [string]$global:settings[$apiKeySettingsKey]
+    $BuildMasterAdminApiKeySecretName = Get-PVal -ParameterName 'BuildMasterAdminApiKeySecretName' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterAdminApiKeySecretName
+    # Retrieve the BuildMaster admin API key value via Get-SecretATAP using the
+    # resolved secret name. The key value is never logged.
+    $ApiKey = $null
+    $secretErrors = [System.Collections.Generic.List[string]]::new()
+    foreach ($fieldName in @($null, 'token', 'key', 'password')) {
+      try {
+        $candidate = if ($null -eq $fieldName) {
+          Get-SecretATAP -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName -ErrorAction Stop
+        } else {
+          Get-SecretATAP -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName -SecretField $fieldName -ErrorAction Stop
+        }
+        if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) { $ApiKey = [string]$candidate; break }
+      } catch {
+        $fieldLabel = if ($null -eq $fieldName) { '<default>' } else { $fieldName }
+        $secretErrors.Add("${fieldLabel}: $($_.Exception.Message)") | Out-Null
       }
     }
     if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-      $ApiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'Process')
-    }
-    if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-      $ApiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
-    }
-    if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-      throw 'BUILDMASTER_ADMIN_API_KEY is not set in $global:settings, Process scope, or User scope. Cannot sync BuildMaster plans.'
+      $detail = if ($secretErrors.Count -gt 0) { " Last error: $($secretErrors[$secretErrors.Count - 1])" } else { '' }
+      throw "Unable to resolve the BuildMaster admin API key value from secret '$BuildMasterAdminApiKeySecretName' via Get-SecretATAP. Cannot sync BuildMaster plans.$detail"
     }
 
     $BuildMasterBaseUrl = $BuildMasterBaseUrl.TrimEnd('/')

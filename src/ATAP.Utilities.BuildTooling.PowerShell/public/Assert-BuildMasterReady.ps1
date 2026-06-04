@@ -7,7 +7,8 @@ function Assert-BuildMasterReady {
 
 .DESCRIPTION
     Runs a read-only preflight against the BuildMaster Native + Variables APIs:
-      - BUILDMASTER_ADMIN_API_KEY is resolvable.
+      - The BuildMaster admin API key is resolvable via Get-SecretATAP using
+        the secret named by -BuildMasterAdminApiKeySecretName.
       - The Native API base URL responds to Applications_GetApplications.
       - Each expected application (default: ATAP.Utilities-CSharp and
         ATAP.Utilities-PowerShell) exists in BuildMaster.
@@ -50,9 +51,10 @@ function Assert-BuildMasterReady {
     $global:settings[$global:configRootKeys['BuildMasterBaseUrlConfigRootKey']],
     then $env:BUILDMASTER_BASE_URL, then 'http://localhost:50017'.
 
-.PARAMETER ApiKey
-    BuildMaster admin API key. Defaults to BUILDMASTER_ADMIN_API_KEY at User
-    scope, then Process scope.
+.PARAMETER BuildMasterAdminApiKeySecretName
+    The ATAP secret name containing the BuildMaster admin API key. Resolved via
+    Get-PVal (parameter → env var → $global:settings → default
+    'BuildMaster.Admin.API.Key'); the value is read with Get-SecretATAP.
 
 .PARAMETER TimeoutSeconds
     HTTP timeout per API call. Default 10.
@@ -95,7 +97,7 @@ function Assert-BuildMasterReady {
     [string]$BuildMasterBaseUrl,
 
     [Parameter()]
-    [string]$ApiKey,
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key',
 
     [Parameter()]
     [ValidateRange(1, 60)]
@@ -109,6 +111,8 @@ function Assert-BuildMasterReady {
     $fn = 'Assert-BuildMasterReady'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
+
+    $BuildMasterAdminApiKeySecretName = Get-PVal -ParameterName 'BuildMasterAdminApiKeySecretName' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterAdminApiKeySecretName
   }
 
   process {
@@ -135,31 +139,35 @@ function Assert-BuildMasterReady {
     $nativeBase = "$BuildMasterBaseUrl/api/json"
     $restBase = "$BuildMasterBaseUrl/api/variables/application"
 
+    # Resolve the BuildMaster admin API key value via Get-SecretATAP using the
+    # resolved secret name. The key value is never logged.
     $apiKeyOk = $false
     $apiKeySource = $null
     $apiKeyDetail = ''
-    if ($PSBoundParameters.ContainsKey('ApiKey') -and -not [string]::IsNullOrWhiteSpace($ApiKey)) {
-      $apiKeyOk = $true
-      $apiKeySource = 'Parameter'
-      $apiKeyDetail = 'API key supplied via -ApiKey'
-    } else {
-      $userScopeKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
-      if (-not [string]::IsNullOrWhiteSpace($userScopeKey)) {
-        $ApiKey = $userScopeKey
-        $apiKeyOk = $true
-        $apiKeySource = 'EnvUser'
-        $apiKeyDetail = 'BUILDMASTER_ADMIN_API_KEY resolved from User scope'
-      } else {
-        $procScopeKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'Process')
-        if (-not [string]::IsNullOrWhiteSpace($procScopeKey)) {
-          $ApiKey = $procScopeKey
-          $apiKeyOk = $true
-          $apiKeySource = 'EnvProcess'
-          $apiKeyDetail = 'BUILDMASTER_ADMIN_API_KEY resolved from Process scope'
+    $ApiKey = $null
+    $secretErrors = [System.Collections.Generic.List[string]]::new()
+    foreach ($fieldName in @($null, 'token', 'key', 'password')) {
+      try {
+        $candidate = if ($null -eq $fieldName) {
+          Get-SecretATAP -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName -ErrorAction Stop
         } else {
-          $apiKeyDetail = 'BUILDMASTER_ADMIN_API_KEY not found at User or Process scope and no -ApiKey supplied'
+          Get-SecretATAP -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName -SecretField $fieldName -ErrorAction Stop
         }
+        if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) {
+          $ApiKey = [string]$candidate
+          $apiKeyOk = $true
+          $apiKeySource = 'Get-SecretATAP'
+          $apiKeyDetail = "Resolved BuildMaster admin API key from secret '$BuildMasterAdminApiKeySecretName' via Get-SecretATAP"
+          break
+        }
+      } catch {
+        $fieldLabel = if ($null -eq $fieldName) { '<default>' } else { $fieldName }
+        $secretErrors.Add("${fieldLabel}: $($_.Exception.Message)") | Out-Null
       }
+    }
+    if (-not $apiKeyOk) {
+      $detail = if ($secretErrors.Count -gt 0) { " Last error: $($secretErrors[$secretErrors.Count - 1])" } else { '' }
+      $apiKeyDetail = "Unable to resolve BuildMaster admin API key from secret '$BuildMasterAdminApiKeySecretName' via Get-SecretATAP.$detail"
     }
     $checks['ApiKeyResolvable'] = [PSCustomObject]@{
       Ok     = $apiKeyOk

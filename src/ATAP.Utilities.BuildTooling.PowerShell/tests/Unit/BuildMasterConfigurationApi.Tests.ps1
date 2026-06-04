@@ -15,16 +15,30 @@ BeforeAll {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
 
+  # Stub the secret-name resolver and the secret store so the cmdlets resolve
+  # the BuildMaster admin API key without contacting Bitwarden.
+  function global:Get-ParameterValueFromNeoConfigurationRoot {
+    param([string]$ParameterName, $originalPSBoundParameters, [AllowNull()]$DefaultValue = $null, [string]$dottedPath, [hashtable]$Settings)
+    if ($originalPSBoundParameters -and $originalPSBoundParameters.ContainsKey($ParameterName)) { return $originalPSBoundParameters[$ParameterName] }
+    $settingsRoot = if ($Settings) { $Settings } elseif ($global:settings) { $global:settings } else { @{} }
+    $key = if (-not [string]::IsNullOrWhiteSpace($dottedPath)) { $dottedPath } else { $ParameterName }
+    if ($settingsRoot -is [System.Collections.IDictionary] -and $settingsRoot.Contains($key)) { return $settingsRoot[$key] }
+    return $DefaultValue
+  }
+  Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Global -Force
+  function global:Get-SecretATAP {
+    param([Parameter(ValueFromPipelineByPropertyName = $true)][Alias('BuildMasterAdminApiKeySecretName')][string]$SecretName, [string]$SecretField = 'password')
+    'unit-test-key'
+  }
+
   $script:oldConfigRootKeys = $global:configRootKeys
   $script:oldSettings = $global:settings
-  $script:savedApiKey = [Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'User')
   $script:savedBaseUrl = [Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'User')
 }
 
 AfterAll {
   $global:configRootKeys = $script:oldConfigRootKeys
   $global:settings = $script:oldSettings
-  [Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', $script:savedApiKey, 'User')
   [Environment]::SetEnvironmentVariable('BUILDMASTER_BASE_URL', $script:savedBaseUrl, 'User')
 }
 
@@ -372,17 +386,13 @@ Describe 'Set-BuildMasterApplicationVariables' -Tag 'Unit' {
     $singleCalls.Count | Should -Be 0
   }
 
-  It 'throws an informative error when the API key is not resolvable' {
-    # Ensure all resolution paths are empty
-    $global:configRootKeys = $null
-    $global:settings = $null
-    [Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', $null, 'Process')
-    [Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', $null, 'User')
+  It 'throws an informative error when the API key is not resolvable via Get-SecretATAP' {
+    Mock Get-SecretATAP { throw 'secret store unavailable' }
 
     { Set-BuildMasterApplicationVariables `
         -ApplicationName 'TestApp' `
         -Variables @{ Branch = 'any' } `
-    } | Should -Throw -ExpectedMessage '*BUILDMASTER_ADMIN_API_KEY*'
+    } | Should -Throw -ExpectedMessage '*Get-SecretATAP*'
   }
 }
 
@@ -423,11 +433,9 @@ Describe 'Deprecated BuildMaster variable cmdlets emit deprecation warnings' -Ta
     # Stub Get-ParameterValueFromNeoConfigurationRoot so the helper-load block
     # in the deprecated cmdlets does not try to dot-source a real file path.
     function global:Get-ParameterValueFromNeoConfigurationRoot { param([Parameter(ValueFromRemainingArguments=$true)]$Rest) }
-    [Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'unit-test-key', 'Process')
   }
 
   AfterEach {
-    [Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', $null, 'Process')
     Remove-Item -Path 'Function:\Get-PVal' -ErrorAction SilentlyContinue
     Remove-Item -Path 'Function:\Resolve-BuildToolingSettingValue' -ErrorAction SilentlyContinue
     Remove-Item -Path 'Function:\Resolve-ProGetFeedFromSettings' -ErrorAction SilentlyContinue

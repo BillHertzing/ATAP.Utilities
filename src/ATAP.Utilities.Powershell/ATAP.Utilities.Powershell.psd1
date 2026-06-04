@@ -79,7 +79,7 @@
     'Get-FilesWithContent', 'Get-HostSettings',
     'Get-LargestLeafFolders', 'Get-MediaQueryEmbeddedLink',
     'Get-ParameterValueFromNeoConfigurationRoot', 'Get-Patterns',
-    'Get-ScheduledTasks', 'Get-SecureEnvVar', 'Get-SIDfromAccountName',
+    'Get-ScheduledTasks', 'Get-SIDfromAccountName',
     'Get-TopologicalSort', 'Get-UniqueFileBaseNames',
     'Get-ViewOfProfiles', 'Import-EnvFile',
     'Invoke-ProvisionInedoServiceAccounts',
@@ -92,9 +92,9 @@
     'Set-InedoServicesDependency',
     'Set-PerceivedTypeInRegistryForPreviewPane',
     'Set-RepositoryPackageSources', 'Set-ScreenReaderOff',
-    'Set-ServiceLogonAccount', 'SomethingDebugUtilities', 'Test-Copilot',
-    'Test-StartupScheduledTaskPresence', 'Test-WinRM', 'testIcomparer',
-    'Type-PSLSA', 'Unregister-StartupScheduledTask', 'Watch-ETWEvents'
+    'Set-ServiceLogonAccount',
+    'Test-StartupScheduledTaskPresence', 'Test-WinRM',
+    'Unregister-StartupScheduledTask', 'Watch-ETWEvents'
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport      = '*'

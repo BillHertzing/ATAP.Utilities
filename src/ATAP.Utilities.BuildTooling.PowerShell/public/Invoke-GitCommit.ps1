@@ -59,27 +59,9 @@ function Invoke-GitCommit {
         $mn = $MyInvocation.MyCommand.ModuleName
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Entering function'
 
-        # Load helper functions
-        $helpfunctionsneeded = @(
-            @{FunctionName = 'Assert-LockFilesClean'; ModuleName = 'ATAP.Utilities.BuildTooling.PowerShell'}
-        )
-        $repoRootParentPath = 'C:\Dropbox\whertzing\GitHub'
-        $stablePath = 'ATAP.Utilities.BuildTooling.PowerShell'
-        $wtFolder = $PWD.Path.Split([IO.Path]::DirectorySeparatorChar) |
-            Where-Object { $_ -like '*-wt-*' } |
-            Select-Object -First 1
-        $resolvedModulePath = $wtFolder ? $(Join-Path $repoRootParentPath $wtFolder 'src') : $(Join-Path $repoRootParentPath $stablePath 'src')
-        foreach ($helpfunction in $helpfunctionsneeded) {
-            try {
-                if (-not (Test-Path -LiteralPath "Function:\$($helpfunction.FunctionName)")) {
-                    . (Join-Path $resolvedModulePath $($helpfunction.ModuleName) 'public' "$($helpfunction.FunctionName).ps1")
-                }
-            } catch {
-                $errorMessage = "Failed to load $($helpfunction.FunctionName) function from module path $(Join-Path $resolvedModulePath $($helpfunction.ModuleName) 'public' "$($helpfunction.FunctionName).ps1"). Exception: $($_.Exception.Message)"
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-                throw
-            }
-        }
+        # Assert-LockFilesClean is resolved via module autoload (it ships in
+        # ATAP.Utilities.BuildTooling.PowerShell and is on the PSModulePath), so
+        # no explicit dot-source helper-load block is needed here.
 
         $blocked = @('.env', '*.secret', '*.key', 'node_modules', 'bin', 'obj')
     }
@@ -128,13 +110,13 @@ function Invoke-GitCommit {
             if ($sensitiveFound) {
                 Write-Host 'BLOCKED — sensitive files detected. Review before committing:' -ForegroundColor Red
                 $sensitiveFound | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
-                throw "Commit blocked: sensitive or generated files detected. Remove them from staging or add to .gitignore."
+                throw 'Commit blocked: sensitive or generated files detected. Remove them from staging or add to .gitignore.'
             }
 
             if (-not $SkipLockFileGuard) {
                 Assert-LockFilesClean -RepoPath $RepoPath -ThrowOnFailure | Out-Null
             } else {
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message 'Skipping Assert-LockFilesClean by explicit caller request.'
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Skipping Assert-LockFilesClean by explicit caller request.'
             }
 
             # ── Step 3: Stage all changes ─────────────────────────────────────────

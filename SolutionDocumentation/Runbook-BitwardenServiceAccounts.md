@@ -2,7 +2,7 @@
 
 **Status:** Sprint-0007 operational runbook
 **Related decision record:** [ServiceAccountsAndBitwarden.md](ServiceAccountsAndBitwarden.md)
-**Primary Sprint tasks:** SA-02, SA-03
+**Primary Sprint tasks:** SA-02, SA-03, SA-04
 
 ## Scope
 
@@ -93,7 +93,16 @@ The command should return the secret value and emit no plaintext to logs. Record
 
 ## Current Finding
 
-As of the SA-02/SA-03 repository pass, `bws` is not on PATH in the current automation shell. The repo-side helpers and unit-tested BWS provider exist, but SA-03 live validation remains blocked until the CLI is installed and the commands above are run as `SvcBuildmaster`.
+## SA-04 validation attempt
+
+As of the 2026-06-05 SA-04 pass:
+
+- Current automation identity was `UTAT022\whertzing`, not `UTAT022\SvcBuildmaster`.
+- `Get-Command bws -ErrorAction SilentlyContinue` returned no command in the current automation shell.
+- The expected `SvcBuildmaster` DPAPI token file exists at `C:\ProgramData\ATAP\BitwardenCredentials\SvcBuildmaster\utat022_SvcBuildmaster_BWS_AccessToken.xml`; contents were not read or logged.
+- Focused mocked-provider Pester coverage passed: `Get-SecretATAP.Tests.ps1` and `Get-SecretATAPBitwardenSecretsManager.Tests.ps1` passed 8/8 tests.
+
+The repo-side helpers and unit-tested BWS provider exist, and a service-account DPAPI token file is present, but SA-04 live validation remains blocked until the commands above are run from a no-profile shell as `SvcBuildmaster` with `bws` visible on PATH. Record only secret key names, project IDs/names, host, identity, timestamps, and value lengths/presence; do not record secret values.
 
 ## Rotation
 

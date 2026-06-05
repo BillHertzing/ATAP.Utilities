@@ -589,6 +589,7 @@ function Invoke-DatabasePackageBuildMasterStage {
       $newPackageParameters = @{
         Application    = $DatabaseApplication
         RepositoryRoot = $SourcePath
+        PackageVersion = $resolvedVersion
       }
       if (-not [string]::IsNullOrWhiteSpace($DatabaseStream)) {
         $newPackageParameters['Stream'] = $DatabaseStream

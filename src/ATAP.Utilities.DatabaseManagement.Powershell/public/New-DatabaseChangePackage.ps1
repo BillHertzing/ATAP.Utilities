@@ -26,6 +26,10 @@ function New-DatabaseChangePackage {
     Root of the repository. Defaults to the parent of the module's src/ folder,
     resolved from $PSScriptRoot at runtime.
 
+.PARAMETER PackageVersion
+    Optional resolved NuGet package version. BuildMaster supplies this from the
+    NBGV build context when version.json contains height tokens.
+
 .OUTPUTS
     [string] Absolute path of the produced .nupkg file.
 
@@ -46,7 +50,11 @@ function New-DatabaseChangePackage {
     [string]$Stream = '',
 
     [Parameter(Mandatory = $false)]
-    [string]$RepositoryRoot
+    [string]$RepositoryRoot,
+
+    [Parameter(Mandatory = $false)]
+    [ValidateNotNullOrEmpty()]
+    [string]$PackageVersion
   )
 
   begin {
@@ -82,13 +90,21 @@ function New-DatabaseChangePackage {
       throw $msg
     }
     $versionObj = Get-Content $DatabaseVersionJsonPath -Raw | ConvertFrom-Json
-    $packageVersion = $versionObj.version
-    if (-not $packageVersion) {
+    if (-not $PackageVersion) {
+      $PackageVersion = $versionObj.version
+    }
+    if (-not $PackageVersion) {
       $msg = "version field not found in '$DatabaseVersionJsonPath'."
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'Error'
       throw $msg
     }
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "PackageVersion=$packageVersion" -Tag 'Config'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "PackageVersion=$PackageVersion" -Tag 'Config'
+
+    $packageLifeCycleStage = 'Production'
+    if ($PackageVersion -match '-(?<label>[A-Za-z]+)') {
+      $packageLifeCycleStage = $Matches['label']
+    }
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "PackageLifeCycleStage=$packageLifeCycleStage" -Tag 'Config'
 
     # ── 3. Locate source DB folders ──────────────────────────────────────────
     $migrationsFolder = Join-Path $DatabasePackageSourcePath 'db' 'migrations'
@@ -104,11 +120,13 @@ function New-DatabaseChangePackage {
 
     # ── 4. Staging folder ────────────────────────────────────────────────────
     $stagingRoot = Join-Path $RepositoryRoot '_generated' 'database-packages'
-    $stagingFolder = Join-Path $stagingRoot "$DatabasePackageId.$packageVersion"
+    $stagingFolder = Join-Path $stagingRoot "$DatabasePackageId.$PackageVersion"
     $dbFolder = Join-Path $stagingFolder 'db'
 
     if ($PSCmdlet.ShouldProcess($stagingFolder, 'Create staging folder')) {
       New-Item -ItemType Directory -Path $dbFolder -Force | Out-Null
+      '<Project />' | Set-Content -LiteralPath (Join-Path $stagingFolder 'Directory.Build.props') -Encoding UTF8
+      '<Project />' | Set-Content -LiteralPath (Join-Path $stagingFolder 'Directory.Build.targets') -Encoding UTF8
     }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Staging=$stagingFolder" -Tag 'Config'
 
@@ -176,8 +194,8 @@ function New-DatabaseChangePackage {
     $gitTag = ''
     try {
       $gitTag = (& git -C $RepositoryRoot describe --tags --exact-match HEAD 2>&1).Trim()
-      if ($LASTEXITCODE -ne 0) { $gitTag = "$Application/$packageVersion" }
-    } catch { $gitTag = "$Application/$packageVersion" }
+      if ($LASTEXITCODE -ne 0) { $gitTag = "$Application/$PackageVersion" }
+    } catch { $gitTag = "$Application/$PackageVersion" }
 
     $gitSha = ''
     try {
@@ -200,7 +218,7 @@ function New-DatabaseChangePackage {
     $manifest = [ordered]@{
       schemaVersion                      = 2
       dbChangeUnit                       = $DatabasePackageId
-      appVersion                         = $packageVersion
+      appVersion                         = $PackageVersion
       changeKind                         = $changeKind
       flywayTargetVersion                = '1'
       createdUtc                         = $gitCommitDate
@@ -220,6 +238,9 @@ function New-DatabaseChangePackage {
         stable       = @{ flywayRehearsalRequired = $true; rowCountValidationRequired = $true; snapshotBackupRequired = $true; approvalRequired = $true }
       }
     }
+    if ($hasSeeds) {
+      $manifest['dataKind'] = 'fixture'
+    }
 
     $manifestPath = Join-Path $stagingFolder 'db-release-unit-manifest.json'
     if ($PSCmdlet.ShouldProcess($manifestPath, 'Write db-release-unit-manifest.json')) {
@@ -237,7 +258,7 @@ function New-DatabaseChangePackage {
     }
     $evidenceObj = [ordered]@{
       packageId      = $DatabasePackageId
-      packageVersion = $packageVersion
+      packageVersion = $PackageVersion
       createdUtc     = $gitCommitDate
       fileCount      = $sortedFiles.Count
       files          = @($evidenceEntries)
@@ -259,8 +280,11 @@ function New-DatabaseChangePackage {
       $csprojContent = @"
 <Project Sdk="Microsoft.Build.NoTargets/3.7.0">
   <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>$DatabasePackageId</PackageId>
-    <Version>$packageVersion</Version>
+    <Version>$PackageVersion</Version>
+    <PackageVersion>$PackageVersion</PackageVersion>
+    <PackageLifeCycleStage>$packageLifeCycleStage</PackageLifeCycleStage>
     <Description>Database change package for $Application</Description>
     <NoWarn>NU5128</NoWarn>
   </PropertyGroup>
@@ -278,10 +302,12 @@ function New-DatabaseChangePackage {
 
     $nupkgOutputDir = Join-Path $stagingFolder 'nupkg'
     New-Item -ItemType Directory -Path $nupkgOutputDir -Force | Out-Null
+    Get-ChildItem -Path $nupkgOutputDir -Filter '*.nupkg' -File -ErrorAction SilentlyContinue |
+      Remove-Item -Force
 
     if ($PSCmdlet.ShouldProcess("dotnet pack $csprojStagingPath", 'Pack database NuGet package')) {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Running: dotnet pack $csprojStagingPath -o $nupkgOutputDir" -Tag 'Pack'
-      $packOutput = & dotnet pack $csprojStagingPath -o $nupkgOutputDir --nologo 2>&1
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Running: dotnet pack $csprojStagingPath -o $nupkgOutputDir -p:PackageVersion=$PackageVersion -p:PackageLifeCycleStage=$packageLifeCycleStage" -Tag 'Pack'
+      $packOutput = & dotnet pack $csprojStagingPath -o $nupkgOutputDir --nologo "-p:PackageVersion=$PackageVersion" "-p:PackageLifeCycleStage=$packageLifeCycleStage" 2>&1
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "dotnet pack output: $($packOutput -join ' | ')" -Tag 'Pack'
       if ($LASTEXITCODE -ne 0) {
         $msg = "dotnet pack failed (exit $LASTEXITCODE). Output: $($packOutput -join [System.Environment]::NewLine)"

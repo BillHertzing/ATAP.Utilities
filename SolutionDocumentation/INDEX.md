@@ -200,6 +200,10 @@ _Teach / Tell how to create software._
   **[DEPRECATED cmdlets]** `Set-BuildMasterSprintVariables` and
   `Set-BuildMasterStableVariables` are deprecated as of Sprint 0007 and will be
   removed in Sprint 0008. Use `Set-BuildMasterApplicationVariables` instead.
+- [Generated Diagram Pipeline](Generated-Diagram-Pipeline.md) —
+  Runbook for rendering editable PlantUML, UML, and Draw.io sources into
+  checked-in `_generated/diagrams` images with `Convert-DiagramsToImages`.
+  Also records the PlantUML MCP relationship for interactive clients.
 - [BuildMaster Install Runbook](BuildMaster-Install-Runbook.md) —
   Comprehensive installation, verification, and ongoing-configuration guide for
   the BuildMaster server. Covers application setup, raft strategy, application

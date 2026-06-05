@@ -40,11 +40,7 @@ note right
   NEVER edit an already-applied migration.
 end note
 
-:Set version.json to stable version\n(no "-alpha", "-beta", or\n"-pre" label):
-\n{
-\n  "version": "1.5.0"
-\n}
-;
+:Set version.json to stable version\n(no "-alpha", "-beta", or\n"-pre" label)\nversion = 1.5.0;
 note right
   Nerdbank.GitVersioning (NBGV) uses
   version.json to compute the NuGet
@@ -63,7 +59,7 @@ end note
 if (Local tests pass?) then (yes)
 else (no)
   :Fix migration SQL;
-  backward :Re-run local test;
+  :Re-run local test;
 endif
 
 :git add version.json + migration SQL file(s)\ngit commit -m "feat(db): stable migration 1.5.0 – <description>"\ngit push origin <sprint-branch>;
@@ -93,8 +89,7 @@ end note
 
 :Checkout source\n(repo + version.json);
 
-:nbgv get-version → 1.5.0.<build-height>
-\n(stable semver with CI build height);
+:nbgv get-version -> 1.5.0.<build-height>\n(stable semver with CI build height);
 note right
   NBGV computes: 1.5.0.42
   NuGet package version: 1.5.0.42

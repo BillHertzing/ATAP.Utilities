@@ -6,9 +6,19 @@ PowerShell module for generating and managing Ansible IAC artifacts: directory s
 
 ## Diagrams
 
-<!-- PLACEHOLDER: Architecture diagram — module structure and data flow (Draw.io / PlantUML) -->
+Editable diagram sources live under `Documentation/`. Generated images are
+written under
+`_generated/diagrams/src/ATAP.Utilities.IAC.Ansible.Powershell/Documentation`.
+Regenerate them from the repository root with `Convert-DiagramsToImages`; see
+[`SolutionDocumentation/Generated-Diagram-Pipeline.md`](../../SolutionDocumentation/Generated-Diagram-Pipeline.md)
+for the exact command and renderer prerequisites.
 
-<!-- PLACEHOLDER: Sequence diagram — Ansible directory generation lifecycle -->
+- [`Documentation/Overview.drawio`](Documentation/Overview.drawio) — module
+  structure and data flow.
+- [`Documentation/GenerateAnsibleDirectory.drawio`](Documentation/GenerateAnsibleDirectory.drawio)
+  — Ansible directory generation lifecycle.
+- [`Documentation/UML/Proget Feeds.uml`](Documentation/UML/Proget%20Feeds.uml)
+  — ProGet feed relationships.
 
 ---
 

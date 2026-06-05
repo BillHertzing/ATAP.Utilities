@@ -110,6 +110,11 @@ This file lists all documentation artifacts in the `Database/Documentation/` fol
 
 These diagrams describe the ATAPUtilities database schema.
 
+Rendered images are generated under `_generated/diagrams/Database/Documentation`.
+See
+[`SolutionDocumentation/Generated-Diagram-Pipeline.md`](../../SolutionDocumentation/Generated-Diagram-Pipeline.md)
+for the `Convert-DiagramsToImages` command and renderer prerequisites.
+
 - [CoreSchema_Overview.puml](CoreSchema_Overview.puml) — Entity-relationship overview of the full ATAPUtilities schema, showing all major tables and their relationships.
 - [CoreSchema_Rules.puml](CoreSchema_Rules.puml) — Detailed ER diagram for the Rules subsystem: `PrimitiveLanguageKind`, `RulePrimitive`, `RulePrimitiveInput`, `RulePrimitiveComposition`.
 - [CoreSchema_Philote.puml](CoreSchema_Philote.puml) — ER diagram for the Philote identity tables, showing GUID-based entity identity across all objects.

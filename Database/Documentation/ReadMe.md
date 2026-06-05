@@ -41,6 +41,14 @@ pipeline. This folder links to them; it does **not** restate them:
 - [Database MultiDB Future Requirements](../../SolutionDocumentation/Database-MultiDB-Future-Requirements.md)
 - [BuildMaster Install Runbook §Database package applications](../../SolutionDocumentation/BuildMaster-Install-Runbook.md)
 
+## Generated diagrams
+
+Generated diagram images are written under
+`_generated/diagrams/Database/Documentation`. Regenerate them from the
+repository root with `Convert-DiagramsToImages`; see
+[`SolutionDocumentation/Generated-Diagram-Pipeline.md`](../../SolutionDocumentation/Generated-Diagram-Pipeline.md)
+for the exact command and renderer prerequisites.
+
 ## Where to find specific implementation details
 
 | You need… | Look in… |

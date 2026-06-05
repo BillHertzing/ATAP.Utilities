@@ -1,194 +1,245 @@
 function Convert-DiagramsToImages {
   <#
-        .SYNOPSIS
-            Converts PlantUML / DrawIO include‑tags inside a Markdown file to static PNGs and
-            ensures a following `![diagram]()` reference.
+  .SYNOPSIS
+  Renders PlantUML and Draw.io diagram sources into image files.
 
-        .DESCRIPTION
-            • Accepts Markdown file paths **from the pipeline** or via the -Path parameter.
-            • Renders each `<!-- plantuml: … -->` or `<!-- drawio: … -->` tag to PNG (only when the
-              source diagram is newer than the PNG).
-            • Adds or updates the following `![diagram](Images/xxx.png)` line.
-            • Optional `-ToDocx` turns the updated .md into a .docx via Pandoc.
-            • Supports `-WhatIf` / `-Confirm` thanks to `SupportsShouldProcess`.
+  .DESCRIPTION
+  Convert-DiagramsToImages accepts diagram files or directories, finds supported
+  source diagrams, and mirrors their repository-relative paths under the output
+  root. The default output location is the repository-level
+  _generated/diagrams directory, which keeps generated documentation artifacts
+  out of editable source documentation folders.
 
-        .EXAMPLE
-            Get-ChildItem *.md | Convert-DiagramsToImages -Verbose -WhatIf
+  PlantUML files are rendered by invoking Java with a PlantUML jar. Draw.io
+  files are exported by invoking the Draw.io desktop command line.
 
-        .NOTES
-            AI assisted using Powershell.instructions.md as guidelines
-    #>
+  .PARAMETER Path
+  One or more diagram files or directories. Directories are searched
+  recursively.
+
+  .PARAMETER OutputRoot
+  Directory where rendered images are written. Defaults to _generated/diagrams
+  under the repository root.
+
+  .PARAMETER PlantUmlJar
+  Path to plantuml.jar.
+
+  .PARAMETER DrawioExe
+  Path to draw.io.exe.
+
+  .PARAMETER Format
+  Image format to emit. PlantUML and Draw.io both support PNG and SVG.
+
+  .OUTPUTS
+  PSCustomObject for each rendered or skipped diagram.
+
+  .EXAMPLE
+  Convert-DiagramsToImages -Path .\Database\Documentation
+
+  .EXAMPLE
+  Convert-DiagramsToImages -Path .\Database\Documentation, .\src\ATAP.Utilities.IAC.Ansible.Powershell\Documentation -Format SVG
+
+  .NOTES
+  Requires Java for PlantUML rendering and Draw.io desktop for Draw.io exports.
+  Supports -WhatIf and -Confirm through ShouldProcess.
+
+  .LINK
+  https://plantuml.com/command-line
+  #>
   [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+  [OutputType([pscustomobject])]
   param(
-    # Accept paths from the pipeline **or** -Path parameter
-    [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
+    [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
     [Alias('FullName')]
-    [ValidateScript({ Test-Path $_ -PathType Leaf })]
-    [string] $Path,
+    [ValidateNotNullOrEmpty()]
+    [string[]] $Path,
 
-    # Rendering / output settings
-    [string] $ImageDir = 'Images',
-    [ValidateScript({ Test-Path $_ -PathType Leaf })]
+    [Parameter(Mandatory = $false)]
+    [ValidateNotNullOrEmpty()]
+    [string] $OutputRoot,
+
+    [Parameter(Mandatory = $false)]
+    [ValidateNotNullOrEmpty()]
     [string] $PlantUmlJar = 'C:\ProgramData\chocolatey\lib\plantuml\tools\plantuml.jar',
-    [ValidateScript({ Test-Path $_ -PathType Leaf })]
+
+    [Parameter(Mandatory = $false)]
+    [ValidateNotNullOrEmpty()]
     [string] $DrawioExe = 'C:\Program Files\draw.io\draw.io.exe',
 
-    # DOCX generation
-    [switch] $ToDocx,
-    [ValidateScript({ Test-Path $_ -PathType Leaf })]
-    [string] $PandocExe = 'C:\ProgramData\chocolatey\bin\pandoc.exe',
-    [string] $ReferenceDoc = ''
+    [Parameter(Mandatory = $false)]
+    [ValidateSet('PNG', 'SVG')]
+    [string] $Format = 'PNG'
   )
 
-  BEGIN {
-    Write-PSFMessage -FunctionName 'Convert-DiagramsToImages' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Debug -Message "Entering function Convert-DiagramsToImages"
+  begin {
+    $fn = 'Convert-DiagramsToImages'
+    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
 
-    function Invoke-PngUpdate {
+    function Write-DiagramMessage {
       param(
-        [ValidateSet('plantuml', 'drawio')][string] $Type,
-        [string] $SourceAbs,
-        [string] $PngAbs,
-        [string] $PngDir,
-        [System.Management.Automation.PSCmdlet] $PSCmdlet
+        [Parameter(Mandatory = $true)]
+        [string] $Message,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateSet('Debug', 'Verbose', 'Warning', 'Error')]
+        [string] $Level = 'Verbose'
       )
 
-      # Only proceed if ShouldProcess approves
-      if (-not $PSCmdlet.ShouldProcess($PngAbs, 'Render diagram to PNG')) { return }
-
-      $needsRender = -not (Test-Path $PngAbs) -or ((Get-Item $PngAbs).LastWriteTime -lt (Get-Item $SourceAbs).LastWriteTime)
-      if (-not $needsRender) { return }
-
-      try {
-        switch ($Type) {
-          'plantuml' {
-            Write-PSFMessage -FunctionName 'Invoke-PngUpdate' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Debug -Message "Rendering PlantUML → $PngAbs"
-            java -jar $PlantUmlJar -tpng $SourceAbs -o $PngDir | Out-Null
-            Write-PSFMessage -FunctionName 'Invoke-PngUpdate' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Debug -Message "Successfully rendered PlantUML → $PngAbs"
-          }
-          'drawio' {
-            Write-PSFMessage -FunctionName 'Invoke-PngUpdate' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Debug -Message "Exporting DrawIO → $PngAbs"
-            & $DrawioExe --export --output "$PngAbs" --format png "$SourceAbs" | Out-Null
-            Write-PSFMessage -FunctionName 'Invoke-PngUpdate' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Debug -Message "Successfully exported DrawIO → $PngAbs"
-          }
-        }
+      if (Get-Command -Name Write-PSFMessage -ErrorAction SilentlyContinue) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level $Level -Message $Message
+        return
       }
-      catch {
-        $errorMessage = "Failed to render diagram. Exception: $($_.Exception.Message)"
-        Write-PSFMessage -FunctionName 'Invoke-PngUpdate' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Error -Message $errorMessage
-        throw
-      }
-      finally {
-        Write-PSFMessage -FunctionName 'Invoke-PngUpdate' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Debug -Message "Exiting Invoke-PngUpdate function"
+
+      switch ($Level) {
+        'Debug' { Write-Verbose $Message }
+        'Verbose' { Write-Verbose $Message }
+        'Warning' { Write-Warning $Message }
+        'Error' { Write-Error $Message }
       }
     }
 
-    # Regex to capture the tag and an optional existing diagram line
-    $TagPattern = @'
-<!--\s*
- (?<type>plantuml|drawio)\s*:\s*
- (["']?)                 # optional opening quote  → $2
- (?<path>[^"'>]+?)       # diagram path
- \2\s*-->               # closing quote if present
- (?:\s*\r?\n)*          # optional blank lines
- (?<diagram>\s*!\[diagram\]\([^)]*\))?  # an existing diagram line (optional)
-'@ -replace '\s+#.*', ''  # strip inline comments so the pattern compiles cleanly
+    function Get-RepositoryRoot {
+      $current = (Get-Location).ProviderPath
+      while ($current) {
+        if (Test-Path -LiteralPath (Join-Path $current '.git')) {
+          return $current
+        }
 
-    $tagPattern = "(?<FirstLine><!--\s*(?<type>plantuml|drawio)\s*:\s*([""']){0,1}(?<path>[^>]+?)\1\s*-->)(?<blankLines>:\s*\r?\n)*(?<diagram>\s*!\[diagram\]\([^\)]*\))?"
+        $parent = Split-Path -Path $current -Parent
+        if ($parent -eq $current) {
+          break
+        }
 
+        $current = $parent
+      }
+
+      return (Get-Location).ProviderPath
+    }
+
+    function Get-DiagramKind {
+      param(
+        [Parameter(Mandatory = $true)]
+        [string] $FilePath
+      )
+
+      $extension = [System.IO.Path]::GetExtension($FilePath).ToLowerInvariant()
+      switch ($extension) {
+        '.drawio' { return 'DrawIO' }
+        '.dio' { return 'DrawIO' }
+        '.puml' { return 'PlantUML' }
+        '.plantuml' { return 'PlantUML' }
+        '.pu' { return 'PlantUML' }
+        '.uml' { return 'PlantUML' }
+        default { return $null }
+      }
+    }
+
+    function Resolve-DiagramFiles {
+      param(
+        [Parameter(Mandatory = $true)]
+        [string] $InputPath
+      )
+
+      $resolved = Resolve-Path -LiteralPath $InputPath -ErrorAction Stop
+      foreach ($item in $resolved) {
+        $pathItem = Get-Item -LiteralPath $item.ProviderPath -ErrorAction Stop
+        if ($pathItem.PSIsContainer) {
+          Get-ChildItem -LiteralPath $pathItem.FullName -Recurse -File |
+            Where-Object { Get-DiagramKind -FilePath $_.FullName }
+        }
+        elseif (Get-DiagramKind -FilePath $pathItem.FullName) {
+          $pathItem
+        }
+      }
+    }
+
+    $repoRoot = Get-RepositoryRoot
+    if (-not $OutputRoot) {
+      $OutputRoot = Join-Path $repoRoot '_generated\diagrams'
+    }
+
+    $outputRootFull = [System.IO.Path]::GetFullPath($OutputRoot)
+    $extension = $Format.ToLowerInvariant()
+
+    Write-DiagramMessage -Level Debug -Message "Starting $fn with output root '$outputRootFull'."
   }
 
-  PROCESS {
-    # Resolve & validate the Markdown file
-    $File = Get-Item -LiteralPath $Path -ErrorAction Stop
-    if ($File.Extension -ne '.md') {
-      Write-PSFMessage -FunctionName 'Convert-DiagramsToImages' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Warning -Message "Skipping non-markdown file: $($File.FullName)"
-      return
-    }
-
-    $MarkdownRoot = $File.Directory.FullName
-    $Content = Get-Content $File.FullName -Raw -Encoding UTF8
-    $state = @{ changed = $false } # track whether we actually modify the file
-
-    $Content = [regex]::Replace(
-      $Content, $TagPattern,
-      {
-        param($m)
-
-        $type = $m.Groups['type'].Value.Trim()
-        $srcRel = $m.Groups['path'].Value.Trim()
-        $srcAbs = Resolve-Path -LiteralPath (Join-Path $MarkdownRoot $srcRel)
-
-        # Construct output paths
-        $pngName = ([IO.Path]::GetFileNameWithoutExtension($srcAbs)) + '.png'
-        $pngDir = Join-Path $MarkdownRoot $ImageDir
-        $null = if (-not (Test-Path $pngDir) -and $PSCmdlet.ShouldProcess($pngDir, 'Create image directory')) {
-          New-Item -ItemType Directory -Path $pngDir | Out-Null
-        }
-
-        $pngAbs = Join-Path $pngDir $pngName
-        $pngRel = "$ImageDir/$pngName" -replace ' ', '%20'
-
-        Invoke-PngUpdate -Type $type -SourceAbs $srcAbs -PngAbs $pngAbs -PngDir $pngDir -PSCmdlet $PSCmdlet
-
-        # Decide whether to add or update the ![diagram] line
-        $diagramLine = "![diagram]($pngRel)"
-        $hasDiagramLine = $m.Groups['diagram'].Success
-
-        if ($hasDiagramLine -and $m.Groups['diagram'].Value -eq $diagramLine) {
-          # Already correct – leave untouched
-          return $m.Value
-        }
-
-        $state.changed = $true   # flag for later write‑back
-
-        if ($hasDiagramLine) {
-          # Replace existing diagram line
-          return ($m.Value -replace [regex]::Escape($m.Groups['diagram'].Value), "`n$diagramLine")
+  process {
+    foreach ($inputPath in $Path) {
+      foreach ($diagram in Resolve-DiagramFiles -InputPath $inputPath) {
+        $kind = Get-DiagramKind -FilePath $diagram.FullName
+        $relativeSource = [System.IO.Path]::GetRelativePath($repoRoot, $diagram.FullName)
+        $relativeDirectory = Split-Path -Path $relativeSource -Parent
+        $destinationDirectory = if ($relativeDirectory) {
+          Join-Path $outputRootFull $relativeDirectory
         }
         else {
-          # Append a fresh diagram line
-          return "$($m.Value)`n$diagramLine"
+          $outputRootFull
         }
-      },
-      'IgnoreCase, Multiline, IgnorePatternWhitespace'
-    )
+        $destinationFileName = '{0}.{1}' -f [System.IO.Path]::GetFileNameWithoutExtension($diagram.Name), $extension
+        $destinationPath = Join-Path $destinationDirectory $destinationFileName
 
-    # Write the Markdown back if modified
-    if ($state.changed -and $PSCmdlet.ShouldProcess($File.FullName, 'Update Markdown file')) {
-      Write-PSFMessage -FunctionName 'Convert-DiagramsToImages' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Debug -Message "Updating $($File.FullName)"
-      Set-Content -LiteralPath $File.FullName -Value $Content -Encoding UTF8
-    }
+        $needsRender = -not (Test-Path -LiteralPath $destinationPath) -or
+          ((Get-Item -LiteralPath $destinationPath).LastWriteTimeUtc -lt $diagram.LastWriteTimeUtc)
 
-    # Optional DOCX export
-    if ($ToDocx) {
-      $docxOut = [IO.Path]::ChangeExtension($File.FullName, '.docx')
-      if ($PSCmdlet.ShouldProcess($docxOut, 'Generate DOCX via Pandoc')) {
-        try {
-          $pandocArgs = @(
-            "`"$($File.FullName)`"",
-            '--from', 'gfm',
-            '--to', 'docx',
-            '--wrap', 'none',
-            '--resource-path', "`"$(Join-Path $MarkdownRoot $ImageDir)`"",
-            '--embed-resources',
-            '-o', "`"$docxOut`""
-          )
-          if ($ReferenceDoc) { $pandocArgs += @('--reference-doc', $ReferenceDoc) }
-          & $PandocExe @pandocArgs
-          Write-PSFMessage -FunctionName 'Convert-DiagramsToImages' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Debug -Message "Successfully generated DOCX: $docxOut"
+        if (-not $needsRender) {
+          [pscustomobject]@{
+            Source = $diagram.FullName
+            Output = $destinationPath
+            Kind = $kind
+            Format = $Format
+            Status = 'Current'
+          }
+          continue
         }
-        catch {
-          $errorMessage = "Failed to generate DOCX. Exception: $($_.Exception.Message)"
-          Write-PSFMessage -FunctionName 'Convert-DiagramsToImages' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Error -Message $errorMessage
-          throw
+
+        if ($kind -eq 'PlantUML' -and -not (Test-Path -LiteralPath $PlantUmlJar -PathType Leaf)) {
+          throw "PlantUML jar was not found at '$PlantUmlJar'."
+        }
+
+        if ($kind -eq 'DrawIO' -and -not (Test-Path -LiteralPath $DrawioExe -PathType Leaf)) {
+          throw "Draw.io executable was not found at '$DrawioExe'."
+        }
+
+        if ($PSCmdlet.ShouldProcess($destinationPath, "Render $kind diagram")) {
+          if (-not (Test-Path -LiteralPath $destinationDirectory -PathType Container)) {
+            $null = New-Item -Path $destinationDirectory -ItemType Directory -Force
+          }
+
+          try {
+            if ($kind -eq 'PlantUML') {
+              Write-DiagramMessage -Level Debug -Message "Rendering PlantUML '$($diagram.FullName)' to '$destinationPath'."
+              $plantUmlFormat = "-t$extension"
+              $plantUmlOutputDirectory = Split-Path -Path $destinationPath -Parent
+              & java -jar $PlantUmlJar $plantUmlFormat -o $plantUmlOutputDirectory $diagram.FullName
+            }
+            else {
+              Write-DiagramMessage -Level Debug -Message "Exporting Draw.io '$($diagram.FullName)' to '$destinationPath'."
+              & $DrawioExe --export --output $destinationPath --format $extension $diagram.FullName
+            }
+
+            if ($LASTEXITCODE -ne 0) {
+              throw "$kind renderer exited with code $LASTEXITCODE."
+            }
+          }
+          catch {
+            Write-DiagramMessage -Level Error -Message "Failed to render '$($diagram.FullName)': $($_.Exception.Message)"
+            throw
+          }
+        }
+
+        [pscustomobject]@{
+          Source = $diagram.FullName
+          Output = $destinationPath
+          Kind = $kind
+          Format = $Format
+          Status = 'Rendered'
         }
       }
     }
   }
 
-  END {
-    Write-PSFMessage -FunctionName 'Convert-DiagramsToImages' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Debug -Message "Leaving function Convert-DiagramsToImages"
+  end {
+    Write-DiagramMessage -Level Debug -Message "Completed $fn."
   }
 }
-
-

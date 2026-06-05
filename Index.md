@@ -10,3 +10,11 @@ The duplication is intentional:
 - `.vscode/mcp.json` is the Visual Studio Code–specific MCP configuration that VS Code itself (and extensions that rely on VS Code’s MCP integration) can read. Keeping this file allows other tools such as Copilot Chat or future MCP‑enabled extensions to reuse the same server definitions without additional setup.
 
 For now, both files intentionally mirror each other so that different MCP clients (Claude Code and VS Code–native integrations) can share the same local MCP servers. If the ecosystem converges on a single configuration location in the future, we can remove this duplication and point everything at one source of truth.
+
+### Generated diagram pipeline
+
+The PlantUML MCP server is for interactive client rendering. Checked-in diagram
+images are generated with the PowerShell command documented in
+[`SolutionDocumentation/Generated-Diagram-Pipeline.md`](SolutionDocumentation/Generated-Diagram-Pipeline.md).
+Editable `.puml`, `.uml`, and `.drawio` sources stay in their documentation
+folders; rendered images are written under `_generated/diagrams`.

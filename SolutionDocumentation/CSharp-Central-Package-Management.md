@@ -239,20 +239,44 @@ Stable/Production tiers, every `ATAP.*` entry in AceCommander's
 undermine the purpose of integration gating. Two consecutive QA builds
 could consume different package versions, making failures unreproducible.
 
-**How (in CI):** The BuildMaster QA stage runs
-`Set-AceCommanderPackagePins.ps1` as its first step. The script resolves
-each floating entry to the highest concrete version available in the target
-feed and rewrites `Directory.Packages.props` in the agent workspace before
-`dotnet restore` / `dotnet build` are called. The working-copy file retains
-its floating patterns — only the CI agent copy is mutated.
+**Ownership:** The pin-the-floating-versions mechanic is owned by
+`ATAP.Utilities.BuildTooling.PowerShell` via the generic, repository-agnostic
+cmdlet **`Set-FloatingPackagePins`** (`-PackageIdPrefix` selects the package
+family to pin; defaults to `ATAP.`). Consumers keep a **thin wrapper** that
+supplies their own defaults and delegates to the engine — they do not
+re-implement the resolution/rewrite logic. AceCommander's
+`Set-AceCommanderPackagePins.ps1` is that consumer wrapper (it passes
+`-PackageIdPrefix 'ATAP.'`). See
+[Package-Pinning-Ownership-Decision.md](Package-Pinning-Ownership-Decision.md)
+for the decision and rationale (task V4-D06).
 
-**How (manually):** A developer promoting a branch to Integration or QA
-may run:
+**How (in CI):** The BuildMaster QA stage runs
+`Set-AceCommanderPackagePins.ps1` as its first step. The wrapper delegates to
+`Set-FloatingPackagePins`, which resolves each floating `ATAP.*` entry to the
+highest concrete version available in the target feed and rewrites
+`Directory.Packages.props` in the agent workspace before `dotnet restore` /
+`dotnet build` are called. The working-copy file retains its floating
+patterns — only the CI agent copy is mutated. (The AceCommander plan already
+imports `ATAP.Utilities.BuildTooling.PowerShell`, so the engine is on the
+agent's module path.)
+
+**How (manually):** A developer promoting a branch to Integration or QA may
+run the consumer wrapper:
 
 ```powershell
 Set-AceCommanderPackagePins `
     -ProGetUrl 'http://proget.local:50000' `
     -FeedName 'nuget-integration'
+```
+
+or call the engine directly for any repo / package family:
+
+```powershell
+Set-FloatingPackagePins `
+    -PackagePropsPath 'C:\src\AceCommander\Directory.Packages.props' `
+    -ProGetUrl 'http://proget.local:50000' `
+    -FeedName 'nuget-integration' `
+    -PackageIdPrefix 'ATAP.'
 ```
 
 and commit the pinned `Directory.Packages.props` to the promotion branch.

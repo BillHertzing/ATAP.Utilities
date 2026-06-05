@@ -2,11 +2,10 @@
 
 **Scope:** Producing `.nupkg` / `.snupkg` files from `ATAP.Utilities.*` and
 `AceCommander.*` C# projects and pushing them to the correct ProGet feed.
-**Audience:** Developers cutting packages locally; maintainers of the
-`Publish-ATAPUtilities.ps1` helper; anyone troubleshooting a failed push.
+**Audience:** Developers cutting packages locally; anyone troubleshooting a failed push.
 **Status:** Authoritative. Consolidates pack/push content from
-`BuildMaster-ProGet-CSharp-Package-Pipeline.md`, `Building.md`, and
-`src/ATAP.Utilities.BuildTooling.PowerShell/public/Publish-ATAPUtilities.ps1`.
+`BuildMaster-ProGet-CSharp-Package-Pipeline.md` and `Building.md`.
+`Publish-ATAPUtilities.ps1` was deleted in sprint-0007 (V4-G10); see §6 for the migration note.
 
 > **Strategy update (sprint-0007 — Immutable Build).** A package is packed
 > and pushed **exactly once**, into the Experimental feed (`nuget-experimental`).
@@ -216,68 +215,30 @@ command.
 
 ---
 
-## 6. The `Publish-ATAPUtilities.ps1` Helper
+## 6. ~~`Publish-ATAPUtilities.ps1` Helper~~ — **Deleted (V4-G10, sprint-0007)**
 
-Location: `src/ATAP.Utilities.BuildTooling.PowerShell/public/Publish-ATAPUtilities.ps1`.
-(A top-level symlink / copy exists at `Publish-ATAPUtilities.ps1` in the repo
-root for convenience.)
+> **`Publish-ATAPUtilities.ps1` no longer exists.** Both the repo-root copy and
+> the `BuildTooling/public/` copy were deleted as part of sprint-0007 cleanup
+> (task V4-G10 / `PowerShell-Script-Consolidation.md` §10.4).
+>
+> **Migration:**
+>
+> - For C# libraries: use `Invoke-DotnetBuildWithRetry` from
+>   `ATAP.Utilities.BuildTooling.PowerShell`, or the `Publish-NuGetPackageToProGet`
+>   cmdlet after a `dotnet pack` run (see §5 above).
+> - For PowerShell modules: use `Invoke-ModuleBuildWithRetry`, which orchestrates
+>   `module.build.ps1` via `Invoke-Build` with NBGV-derived tier resolution and
+>   automatic retry.
+> - For the CI path: packages are published to `nuget-experimental` by the
+>   BuildMaster `CSharpPackage-5Stage` plan via `Invoke-CSharpPackageBuildMasterStage.ps1`;
+>   no standalone script is involved.
 
-### 6.1 What it does
-
-- Builds a curated list of library `.csproj` files in **dependency order**
-  (dependencies first).
-- Uses the MSBuild pipeline's `PublishAfterBuild` target, which chains
-  `Build → Pack → Push` in one `dotnet build` invocation, driven by
-  `GeneratePackageOnBuild=true`.
-- Pushes to `nuget-experimental` by default. The destination URL is override-able
-  via `-p:ProGetExperimentalFeedUrl=<url>`.
-
-### 6.2 Prerequisites
-
-- `PROGET_ADMIN_API_KEY` must be set at **User** scope in Windows environment
-  variables. `LoginScript.ps1` provisions it from Bitwarden during normal
-  shell startup.
-- ProGet Inedo Hub running at `http://localhost:50000` (or the override URL).
-- A clean working tree with all `version.json` files reflecting the intended
-  tier label (see Versioning doc).
-
-### 6.3 Usage
+The historical documentation for this script (what it did, its parameter set, the
+dependency-ordered library list) can be recovered from git history if needed:
 
 ```powershell
-# Standard: publish all libraries in the list to nuget-experimental
-.\src\ATAP.Utilities.BuildTooling.PowerShell\public\Publish-ATAPUtilities.ps1
-
-# Verbose custom-task logging
-.\...\Publish-ATAPUtilities.ps1 -DebugVerbosity Debug
-
-# Dry run — show what would be built, don't execute
-.\...\Publish-ATAPUtilities.ps1 -WhatIf
+git log --all --oneline -- 'src/ATAP.Utilities.BuildTooling.PowerShell/public/Publish-ATAPUtilities.ps1'
 ```
-
-### 6.4 The curated library list
-
-The script's `$libraries` array is the source of truth for which packages are
-ready to publish via this path. As of sprint-0007, the list is maintained
-directly inside
-`src/ATAP.Utilities.BuildTooling.PowerShell/public/Publish-ATAPUtilities.ps1`.
-Example entries:
-
-```text
-src\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj
-src\ATAP.Utilities.Configuration.Extensions\ATAP.Utilities.Configuration.Extensions.csproj
-```
-
-This list grows as libraries are onboarded. Consult the script directly for
-the current set — the above is illustrative only. The order matters — a library must
-appear after any library it `ProjectReference`s, because pushing to
-nuget-experimental makes the upstream package visible for the downstream
-project's subsequent pack. Add new entries at the end of the chain.
-
-### 6.5 When to prefer `dotnet nuget push` directly
-
-The helper script is optimized for the **full local publish** loop. For a
-single package or a one-off push, the explicit `pack` + `push` sequence in §5 is
-easier to debug and does not require editing the `$libraries` list.
 
 ---
 
@@ -578,4 +539,4 @@ applies; `nuget.org` will not be consulted.
 - [CSharp-Central-Package-Management.md](CSharp-Central-Package-Management.md) — the consumer-side `Directory.Packages.props`.
 - [BuildMaster-Pipeline-Topology.md](BuildMaster-Pipeline-Topology.md) — CI-side orchestration of this pipeline and full application variable tables.
 - [Production-and-Tooling-Overview.md](Production-and-Tooling-Overview.md) — the index this doc belongs to.
-- `Publish-ATAPUtilities.ps1` — the developer publish helper.
+- ~~`Publish-ATAPUtilities.ps1`~~ — deleted in sprint-0007 (V4-G10); see §6.

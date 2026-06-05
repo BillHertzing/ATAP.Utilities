@@ -365,10 +365,10 @@ the promotion mechanism — `Promote-ProGetPackage` is.
    for agent shells.
 
 4. ~~**`Publish-ATAPUtilities.ps1` does not publish PowerShell modules.**~~
-   **Resolved (sprint-0006 §2.5-3):** `Publish-ATAPUtilities.ps1` now includes a
-   PowerShell-modules section. Sprint-0007 update: that section calls
-   `New-PSModuleNupkg` followed by `Publish-PSModuleToProGet` for each
-   module. See §11 above.
+   **Resolved and deleted (sprint-0007 V4-G10):** `Publish-ATAPUtilities.ps1`
+   was removed from the repo. The replacement is `Invoke-ModuleBuildWithRetry`
+   (see §11). The legacy `Publish-PSModuleToProGetFeed -Tier <X>` is also
+   deprecated; use the pack/push/promote sequence in §10.
 
 5. **Repository name collisions are not detected.** If two tiers point at
    the same feed URI by accident, the second registration silently wins.

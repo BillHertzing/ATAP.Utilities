@@ -1,5 +1,10 @@
 BeforeAll {
-  . "$PSScriptRoot\..\Import-SharedVSCodeFunctions.ps1"
+  $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+  . (Join-Path $moduleRoot 'private\Get-WorkspaceJson.ps1')
+  . (Join-Path $moduleRoot 'private\Save-WorkspaceJson.ps1')
+  . (Join-Path $moduleRoot 'private\Resolve-WorkspaceFiles.ps1')
+  . (Join-Path $moduleRoot 'public\Set-WorkspaceSharedVSCodeReference.ps1')
+  . (Join-Path $moduleRoot 'public\Initialize-DownstreamSprintFromSharedVSCode.ps1')
 }
 
 Describe 'Initialize-DownstreamSprintFromSharedVSCode [public]' {

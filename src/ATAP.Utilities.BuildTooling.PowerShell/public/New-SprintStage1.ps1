@@ -117,17 +117,18 @@ function New-SprintStage1 {
       }
     }
 
-    # Ensure SharedVSCode functions are loaded (Import-SharedVSCodeFunctions)
+    # Dot-source Initialize-DownstreamSprintFromSharedVSCode if not already loaded
     if (-not (Get-Command -Name 'Initialize-DownstreamSprintFromSharedVSCode' -CommandType Function -ErrorAction SilentlyContinue)) {
-      $importPath = Join-Path $GitRoot 'SharedVSCode' 'Powershell' 'Import-SharedVSCodeFunctions.ps1'
+      $initializeDownstreamPath = Join-Path $GitRoot 'ATAP.Utilities' 'src' `
+        'ATAP.Utilities.BuildTooling.PowerShell' 'public' 'Initialize-DownstreamSprintFromSharedVSCode.ps1'
       if ($DryRun) {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'DryRun: skipping SharedVSCode function dependency load.'
-      } elseif (Test-Path $importPath) {
-        . $importPath
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'DryRun: skipping Initialize-DownstreamSprintFromSharedVSCode dependency load.'
+      } elseif (Test-Path $initializeDownstreamPath) {
+        . $initializeDownstreamPath
       } else {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
-          -Message "Import-SharedVSCodeFunctions.ps1 not found at $importPath"
-        throw "Import-SharedVSCodeFunctions.ps1 not found at $importPath"
+          -Message "Initialize-DownstreamSprintFromSharedVSCode.ps1 not found at $initializeDownstreamPath"
+        throw "Initialize-DownstreamSprintFromSharedVSCode.ps1 not found at $initializeDownstreamPath"
       }
     }
   }

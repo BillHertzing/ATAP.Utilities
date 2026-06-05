@@ -1,5 +1,7 @@
 BeforeAll {
-  . "$PSScriptRoot\..\Import-SharedVSCodeFunctions.ps1"
+  $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+  . (Join-Path $moduleRoot 'private\Assert-GitAvailable.ps1')
+  . (Join-Path $moduleRoot 'private\Get-RepoRoot.ps1')
 }
 
 Describe 'Get-RepoRoot [private]' {

@@ -4,7 +4,8 @@ Publishes a PowerShell module .nupkg to the correct ProGet PowerShellGet feed
 for a given 5-Tier tier.
 
 .DESCRIPTION
-Maps a tier name (Sprint/Alpha/Beta/QA/Production) to a PowerShellGet feed
+Maps a canonical tier name (Experimental/Development/Integration/QA/Production)
+to a PowerShellGet feed
 name and endpoint from $global:Settings using the ProGet feed collection
 defined by ATAP.Utilities.ConfigRootKeys.PowerShell and host settings,
 resolves the API key via Get-SecretATAP or the feed's configured
@@ -19,7 +20,8 @@ Published = $false and does not call Publish-PSResource.
 Absolute or relative path to the .nupkg file to publish. Must exist.
 
 .PARAMETER Tier
-One of 'Sprint','Alpha','Beta','QA','Production'. Maps to a ProGet feed name
+One of 'Experimental','Development','Integration','QA','Production'. Legacy
+aliases 'Sprint','Alpha','Beta' are still accepted for compatibility.
 using the canonical five-tier mapping from Explainer 0111.
 
 .PARAMETER AllowTierOverride
@@ -40,12 +42,12 @@ inspect the publish plan.
   - ResponseSummary  : Short string summary of the publish result or plan.
 
 .EXAMPLE
-Publish-PSModuleToProGetFeed -NupkgPath 'C:/out/MyModule.1.2.3.nupkg' -Tier Alpha
+Publish-PSModuleToProGetFeed -NupkgPath 'C:/out/MyModule.1.2.3.nupkg' -Tier Development
 
 Publishes the package to the powershellget-development feed.
 
 .EXAMPLE
-Publish-PSModuleToProGetFeed -NupkgPath 'C:/out/MyModule.1.2.3.nupkg' -Tier Sprint -WhatIf
+Publish-PSModuleToProGetFeed -NupkgPath 'C:/out/MyModule.1.2.3.nupkg' -Tier Experimental -WhatIf
 
 Returns the planned publish object without contacting ProGet.
 
@@ -65,7 +67,7 @@ function Publish-PSModuleToProGetFeed {
     [string]$NupkgPath,
 
     [Parameter(Mandatory)]
-    [ValidateSet('Sprint', 'Alpha', 'Beta', 'QA', 'Production')]
+  [ValidateSet('Experimental', 'Development', 'Integration', 'QA', 'Production', 'Sprint', 'Alpha', 'Beta')]
     [string]$Tier,
 
     [switch]$AllowTierOverride
@@ -83,13 +85,20 @@ function Publish-PSModuleToProGetFeed {
     }
 
     # Check and populate simple parameter: Tier (validated by ValidateSet)
-    if ([string]::IsNullOrWhiteSpace($Tier)) {
-      $msg = "Parameter 'Tier' is null or empty."
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
-      throw $msg
-    }
+  if ([string]::IsNullOrWhiteSpace($Tier)) {
+    $msg = "Parameter 'Tier' is null or empty."
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+    throw $msg
+  }
 
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn with NupkgPath='$NupkgPath' Tier='$Tier'" -Tag 'Trace'
+  $canonicalTier = switch ($Tier) {
+    'Sprint' { 'Experimental' }
+    'Alpha' { 'Development' }
+    'Beta' { 'Integration' }
+    default { $Tier }
+  }
+
+  Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn with NupkgPath='$NupkgPath' Tier='$Tier'" -Tag 'Trace'
 
     $helperPath = Join-Path $PSScriptRoot '..\private\Resolve-ProGetFeedFromSettings.ps1'
     if (-not (Get-Command -Name 'Resolve-ProGetFeedFromSettings' -CommandType Function -ErrorAction SilentlyContinue)) {
@@ -112,7 +121,7 @@ function Publish-PSModuleToProGetFeed {
     $resolvedNupkg = (Resolve-Path -LiteralPath $NupkgPath).ProviderPath -replace '\\', '/'
 
     # 2. Map tier -> feed metadata from $global:Settings.
-    $feed = Resolve-ProGetFeedFromSettings -FeedType 'powershellget' -Tier $Tier
+  $feed = Resolve-ProGetFeedFromSettings -FeedType 'powershellget' -Tier $canonicalTier
     $feedName = $feed.FeedName
     $feedUri = $feed.EndpointUri
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved tier '$Tier' to feed '$feedName' at '$feedUri' from global settings"
@@ -125,7 +134,7 @@ function Publish-PSModuleToProGetFeed {
     # The PROGET_ADMIN_API_KEY fallback below is a temporary bootstrap so local
     # builds and early sprint pipelines can publish before per-tier ProGet API
     # keys are minted, stored in the ATAP secret store, and documented. Once
-    # every tier (Sprint/Alpha/Beta/QA/Production) has its own key in the
+    # every tier (Experimental/Development/Integration/QA/Production) has its own key in the
     # secret store under 'ProGet_PowerShellGet_<Tier>_ApiKey' and a documented
     # rotation plan exists, delete the fallback block and let this function
     # throw when the tier-specific key is missing.
@@ -135,7 +144,7 @@ function Publish-PSModuleToProGetFeed {
     if ($null -ne $secretCmd) {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Attempting Get-SecretATAP for tier '$Tier'"
       try {
-        $secretName = "ProGet_PowerShellGet_${Tier}_ApiKey"
+      $secretName = "ProGet_PowerShellGet_${canonicalTier}_ApiKey"
         $apiKey = Get-SecretATAP -SecretName $secretName
         if (-not [string]::IsNullOrWhiteSpace([string]$apiKey)) {
           $apiKeySource = "ATAP secret store item '$secretName'"

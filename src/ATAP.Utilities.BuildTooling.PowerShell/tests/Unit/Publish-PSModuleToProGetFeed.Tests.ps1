@@ -96,11 +96,14 @@ Describe 'Publish-PSModuleToProGetFeed' {
 
   Context 'Tier-to-feed mapping' {
     $tierCases = @(
+      @{ Tier = 'Experimental'; Expected = 'powershellget-experimental' }
+      @{ Tier = 'Development'; Expected = 'powershellget-development' }
+      @{ Tier = 'Integration'; Expected = 'powershellget-integration' }
+      @{ Tier = 'QA'; Expected = 'powershellget-qa' }
+      @{ Tier = 'Production'; Expected = 'powershellget-stable' }
       @{ Tier = 'Sprint'; Expected = 'powershellget-experimental' }
       @{ Tier = 'Alpha'; Expected = 'powershellget-development' }
       @{ Tier = 'Beta'; Expected = 'powershellget-integration' }
-      @{ Tier = 'QA'; Expected = 'powershellget-qa' }
-      @{ Tier = 'Production'; Expected = 'powershellget-stable' }
     )
 
     It "Resolves tier '<Tier>' to feed name '<Expected>'" -TestCases $tierCases {

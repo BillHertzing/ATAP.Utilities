@@ -288,7 +288,7 @@ The mapping is declared in each repo's `NuGet.config` (not in
 
 ```xml
 <packageSourceMapping>
-  <packageSource key="ProGet-T1-Experimental">
+  <packageSource key="nuget-experimental">
     <package pattern="ATAP.*" />
   </packageSource>
   <packageSource key="nuget.org">

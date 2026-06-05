@@ -16,19 +16,19 @@
                 <mxCell id="nuget-family" value="NuGet feed family (C# packages)" style="swimlane;startSize=30;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" parent="proget-host" vertex="1">
                     <mxGeometry x="20" y="40" width="1580" height="180" as="geometry"/>
                 </mxCell>
-                <mxCell id="nuget-exp" value="nuget-experimental&#xa;(T1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="nuget-family" vertex="1">
+                <mxCell id="nuget-exp" value="nuget-experimental&#xa;(Experimental)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="nuget-family" vertex="1">
                     <mxGeometry x="20" y="60" width="240" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="nuget-dev" value="nuget-development&#xa;(T2)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="nuget-family" vertex="1">
+                <mxCell id="nuget-dev" value="nuget-development&#xa;(Development)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="nuget-family" vertex="1">
                     <mxGeometry x="320" y="60" width="240" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="nuget-int" value="nuget-integration&#xa;(T3, hermetic)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="nuget-family" vertex="1">
+                <mxCell id="nuget-int" value="nuget-integration&#xa;(Integration, hermetic)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="nuget-family" vertex="1">
                     <mxGeometry x="620" y="60" width="240" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="nuget-qa" value="nuget-qa&#xa;(T4, hermetic)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="nuget-family" vertex="1">
+                <mxCell id="nuget-qa" value="nuget-qa&#xa;(QA, hermetic)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="nuget-family" vertex="1">
                     <mxGeometry x="920" y="60" width="240" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="nuget-stable" value="nuget-stable&#xa;(T5, signed)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="nuget-family" vertex="1">
+                <mxCell id="nuget-stable" value="nuget-stable&#xa;(Production, signed)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="nuget-family" vertex="1">
                     <mxGeometry x="1220" y="60" width="240" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="nuget-promote-1" value="Promote (DEV-PASS)" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="nuget-family" source="nuget-exp" target="nuget-dev" edge="1">
@@ -46,19 +46,19 @@
                 <mxCell id="ps-family" value="PowerShellGet feed family (PowerShell modules)" style="swimlane;startSize=30;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" parent="proget-host" vertex="1">
                     <mxGeometry x="20" y="240" width="1580" height="180" as="geometry"/>
                 </mxCell>
-                <mxCell id="ps-exp" value="PowershellGet-experimental&#xa;(T1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="ps-family" vertex="1">
+                <mxCell id="ps-exp" value="PowershellGet-experimental&#xa;(Experimental)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="ps-family" vertex="1">
                     <mxGeometry x="20" y="60" width="240" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="ps-dev" value="PowershellGet-development&#xa;(T2)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="ps-family" vertex="1">
+                <mxCell id="ps-dev" value="PowershellGet-development&#xa;(Development)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="ps-family" vertex="1">
                     <mxGeometry x="320" y="60" width="240" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="ps-int" value="PowershellGet-integration&#xa;(T3, hermetic)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="ps-family" vertex="1">
+                <mxCell id="ps-int" value="PowershellGet-integration&#xa;(Integration, hermetic)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="ps-family" vertex="1">
                     <mxGeometry x="620" y="60" width="240" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="ps-qa" value="PowershellGet-qa&#xa;(T4, hermetic)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="ps-family" vertex="1">
+                <mxCell id="ps-qa" value="PowershellGet-qa&#xa;(QA, hermetic)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="ps-family" vertex="1">
                     <mxGeometry x="920" y="60" width="240" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="ps-stable" value="PowershellGet-stable&#xa;(T5)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="ps-family" vertex="1">
+                <mxCell id="ps-stable" value="PowershellGet-stable&#xa;(Production)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="ps-family" vertex="1">
                     <mxGeometry x="1220" y="60" width="240" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="ps-promote-1" value="Promote" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="ps-family" source="ps-exp" target="ps-dev" edge="1">
@@ -76,19 +76,19 @@
                 <mxCell id="bundle-family" value="ReleaseBundle feed family (Universal Packages — app + DB + installer)" style="swimlane;startSize=30;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="proget-host" vertex="1">
                     <mxGeometry x="20" y="440" width="1580" height="180" as="geometry"/>
                 </mxCell>
-                <mxCell id="bundle-exp" value="releasebundle-experimental&#xa;(T1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-family" vertex="1">
+                <mxCell id="bundle-exp" value="releasebundle-experimental&#xa;(Experimental)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-family" vertex="1">
                     <mxGeometry x="20" y="60" width="240" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="bundle-dev" value="releasebundle-development&#xa;(T2)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-family" vertex="1">
+                <mxCell id="bundle-dev" value="releasebundle-development&#xa;(Development)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-family" vertex="1">
                     <mxGeometry x="320" y="60" width="240" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="bundle-int" value="releasebundle-integration&#xa;(T3, Flyway rehearsal)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-family" vertex="1">
+                <mxCell id="bundle-int" value="releasebundle-integration&#xa;(Integration, Flyway rehearsal)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-family" vertex="1">
                     <mxGeometry x="620" y="60" width="240" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="bundle-qa" value="releasebundle-qa&#xa;(T4, full E2E)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-family" vertex="1">
+                <mxCell id="bundle-qa" value="releasebundle-qa&#xa;(QA, full E2E)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="bundle-family" vertex="1">
                     <mxGeometry x="920" y="60" width="240" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="bundle-prod" value="releasebundle-production&#xa;(T5)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#82b366;fontColor=#ffffff;strokeColor=#006600;fontStyle=1;" parent="bundle-family" vertex="1">
+                <mxCell id="bundle-prod" value="releasebundle-production&#xa;(Production)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#82b366;fontColor=#ffffff;strokeColor=#006600;fontStyle=1;" parent="bundle-family" vertex="1">
                     <mxGeometry x="1220" y="60" width="240" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="bundle-promote-1" value="Promote" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="bundle-family" source="bundle-exp" target="bundle-dev" edge="1">
@@ -879,7 +879,7 @@
                 <mxCell id="upd-decision-to-C" value="C: =target / abort if &gt;target" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;" parent="upd-app" source="upd-decision" target="case-noop" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="srcdocs-08" value="Source documentation:&#xa;• Database-Change-Unit-and-Flyway-Promotion.md (§4 code-only releases, §6 backward / forward compatibility, §9 install / upgrade behavior)&#xa;• Release-Branch-and-Manifest.md (§3 manifest schema, §5 verification, §8 patch releases)&#xa;• Release-Bundle-Pipeline.md (§9 code-only releases ship full bundle, §4 installer scripts)&#xa;• CSharp-Central-Package-Management.md (§6 producer/consumer contract, §6.1 pinning at T3+, §8 packages.lock.json)&#xa;• PowerShell-Modules-Pack-and-Publish.md (§12 promotion flow that consumers pull from)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;align=left;verticalAlign=top;fontSize=10;fontStyle=2;" parent="1" vertex="1">
+                <mxCell id="srcdocs-08" value="Source documentation:&#xa;• Database-Change-Unit-and-Flyway-Promotion.md (§4 code-only releases, §6 backward / forward compatibility, §9 install / upgrade behavior)&#xa;• Release-Branch-and-Manifest.md (§3 manifest schema, §5 verification, §8 patch releases)&#xa;• Release-Bundle-Pipeline.md (§9 code-only releases ship full bundle, §4 installer scripts)&#xa;• CSharp-Central-Package-Management.md (§6 producer/consumer contract, §6.1 pinning at Integration+, §8 packages.lock.json)&#xa;• PowerShell-Modules-Pack-and-Publish.md (§12 promotion flow that consumers pull from)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;align=left;verticalAlign=top;fontSize=10;fontStyle=2;" parent="1" vertex="1">
                     <mxGeometry x="40" y="1040" width="1620" height="55" as="geometry"/>
                 </mxCell>
             </root>

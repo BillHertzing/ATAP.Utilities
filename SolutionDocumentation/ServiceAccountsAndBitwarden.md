@@ -4,6 +4,7 @@
 **Status:** Decision Draft — current baseline selected, follow-up automation still to be implemented
 **Sprint:** Sprint-0007
 **Source Plan:** `_Planning/Plan_AccessingBitwardenFromServiceAccounts.md`
+**Operations Runbook:** [Runbook-BitwardenServiceAccounts.md](Runbook-BitwardenServiceAccounts.md)
 
 ---
 

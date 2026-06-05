@@ -276,8 +276,10 @@ Publish-PSModuleToProGet -NupkgPath $nupkg.FullName
 # 4. Higher tiers: promote via Promote-ProGetPackage (see §12)
 ```
 
-In practice steps 1–3 are wrapped by the per-module `Publish-ATAPUtilities.ps1`
-helper at the repo root.
+In practice steps 1–3 are wrapped by `Invoke-ModuleBuildWithRetry` (run by the
+BuildMaster PowerShell-module pipeline). The legacy repo-root
+`Publish-ATAPUtilities.ps1` helper that previously wrapped them was deleted in
+sprint-0007 (V4-G10) — see §11.
 
 ---
 

@@ -325,9 +325,12 @@ BuildMaster uploads as the "promotable" artifact bundle (see
    Marked for removal in sprint-0007.
 
 4. **No `Build.ps1` orchestrator at the repo root.** The end-to-end flow in
-   §7 is documented but not scripted. Each developer currently invokes the
-   cmdlets manually or via `Publish-ATAPUtilities.ps1` (see Pack-and-Publish
-   doc).
+   §7 is documented but not scripted. Each developer invokes the cmdlets
+   manually (`New-PSModuleNupkg` → `Publish-PSModuleToProGet`), or the
+   BuildMaster PowerShell-module pipeline runs them via
+   `Invoke-ModuleBuildWithRetry`. (The legacy repo-root
+   `Publish-ATAPUtilities.ps1` orchestrator was deleted in sprint-0007
+   (V4-G10); see Pack-and-Publish doc §11.)
 
 5. **`ATAP.Utilities.PowerShell.psd1` is UTF-16 encoded.** This is a legacy
    byproduct of Windows PowerShell ISE. `Update-ModuleManifest` normalizes

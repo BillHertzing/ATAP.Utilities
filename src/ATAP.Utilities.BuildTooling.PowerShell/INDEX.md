@@ -30,7 +30,8 @@ The public sprint helpers are driven by two runbooks in the SharedVSCode `.claud
 6. [New-SprintBitwardenSecrets.ps1](public/New-SprintBitwardenSecrets.ps1) — per-sprint Bitwarden secure-note connection strings for Dev/Exp.
 7. [Set-BuildMasterSprintVariables.ps1](public/Set-BuildMasterSprintVariables.ps1) — sprint-scoped BuildMaster Application Variables.
 8. [New-OverviewSprintWorkspace.ps1](public/New-OverviewSprintWorkspace.ps1) — `OverviewSprint<NNNN>.code-workspace` for the active sprint.
-9. [Build-CLAUDEPerRepository.ps1](public/Build-CLAUDEPerRepository.ps1) — combined `CLAUDE.md` per repo worktree.
+9. [Remove-OverviewSprintWorkspace.ps1](public/Remove-OverviewSprintWorkspace.ps1) — archive `OverviewSprint<NNNN>.code-workspace` into `_Planning/SprintRetrospective/WorkspaceArchive/`.
+10. [Build-CLAUDEPerRepository.ps1](public/Build-CLAUDEPerRepository.ps1) — combined `CLAUDE.md` per repo worktree.
 
 **Sprint end sequence (public cmdlets, in execution order):**
 

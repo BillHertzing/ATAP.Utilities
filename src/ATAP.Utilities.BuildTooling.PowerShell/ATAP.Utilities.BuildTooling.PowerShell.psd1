@@ -130,7 +130,7 @@
     'Remove-BuildMasterApplication',
     'Remove-BuildMasterApplicationVariable',
     'Remove-BuildMasterRelease', 'Remove-BuildMasterScript',
-    'Remove-ObjAndBinSubDirectories', 'Remove-ProGetApiKeys',
+    'Remove-ObjAndBinSubDirectories', 'Remove-OverviewSprintWorkspace', 'Remove-ProGetApiKeys',
     'Remove-ProGetFeeds', 'Remove-SprintBitwardenSecrets',
     'Remove-SprintSqlServerInstances', 'Remove-VSComponentCache',
     'Rename-ProGetFeed', 'Reset-DownstreamToSharedVSCodeMain',

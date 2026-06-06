@@ -1,0 +1,210 @@
+# AI assisted using Powershell.instructions.md as guidelines
+# Pester 5+ tests for Save-SprintWorkSession — V4-H05 hardening
+# Verifies that direct import without full dependency stack (no global:settings,
+# no Get-PVal) does NOT emit noisy non-terminating errors when defaults are usable.
+
+BeforeAll {
+  $functionName = 'Save-SprintWorkSession'
+
+  # Always dot-source from the source tree to ensure we test the actual file.
+  $functionPath = Join-Path $PSScriptRoot '..\..\public\Save-SprintWorkSession.ps1'
+  if (-not (Test-Path $functionPath)) {
+    throw "Function file not found: $functionPath"
+  }
+
+  # PSFramework must be importable so Write-PSFMessage no-ops cleanly in a
+  # sparse environment; if it isn't available the test still runs without it.
+  if (-not (Get-Module -Name PSFramework -ErrorAction SilentlyContinue)) {
+    Import-Module PSFramework -ErrorAction SilentlyContinue
+  }
+
+  # Build an isolated temp tree that mimics a real sprint layout:
+  #   <gitRoot>/
+  #     ATAP.Utilities-wt-100-sprint-0007-work-items/   <- git repo
+  #     _Planning-wt-14-sprint-0007-work-items/          <- planning root
+  $script:gitRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-test-' + [guid]::NewGuid().ToString('N'))
+  New-Item -ItemType Directory -Path $script:gitRoot -Force | Out-Null
+
+  $script:sprintNumber = '0007'
+  $script:atapWt = Join-Path $script:gitRoot "ATAP.Utilities-wt-100-sprint-$($script:sprintNumber)-work-items"
+  $script:planningWt = Join-Path $script:gitRoot "_Planning-wt-14-sprint-$($script:sprintNumber)-work-items"
+  New-Item -ItemType Directory -Path $script:atapWt, $script:planningWt -Force | Out-Null
+
+  # Initialise a git repo in the ATAP worktree so branch detection works.
+  $branchName = "100-sprint-$($script:sprintNumber)-work-items"
+  & git -C $script:atapWt init --quiet --initial-branch=$branchName 2>$null
+  & git -C $script:atapWt config user.email 'test@example.com'
+  & git -C $script:atapWt config user.name 'Pester Tester'
+  Set-Content -LiteralPath (Join-Path $script:atapWt 'README.md') -Value 'seed' -Encoding UTF8
+  & git -C $script:atapWt add . 2>$null | Out-Null
+  & git -C $script:atapWt commit --quiet -m 'seed' 2>$null | Out-Null
+
+  # Create a fake Claude projects dir with a JSONL session file for the slug
+  # that corresponds to $script:atapWt.
+  $slug = ($script:atapWt.Substring(0, 1).ToLower() + $script:atapWt.Substring(1)) `
+    -replace ':', '-' -replace '\\', '-' -replace '_', '-' -replace '\.', '-' -replace '^-', ''
+  $script:claudeProjectsRoot = Join-Path $script:gitRoot '.claude-projects'
+  $sessionDir = Join-Path $script:claudeProjectsRoot $slug
+  New-Item -ItemType Directory -Path $sessionDir -Force | Out-Null
+  $jsonlPath = Join-Path $sessionDir 'fake-session.jsonl'
+  Set-Content -LiteralPath $jsonlPath -Value '{"role":"user","content":"test"}' -Encoding UTF8
+
+  # Re-dot-source after the temp tree is ready.
+  . $functionPath
+}
+
+AfterAll {
+  if (Test-Path $script:gitRoot) {
+    Remove-Item -Recurse -Force $script:gitRoot -ErrorAction SilentlyContinue
+  }
+}
+
+Describe 'Save-SprintWorkSession' {
+
+  It 'function is loaded after dot-sourcing' {
+    Get-Command -Name 'Save-SprintWorkSession' -CommandType Function |
+      Should -Not -BeNullOrEmpty
+  }
+
+  Context 'sparse environment — no global:settings, default parameter values' {
+
+    It 'does NOT emit non-terminating errors when called with explicit parameters' {
+      # Save-SprintWorkSession computes the session slug from (Get-Location).Path so we must
+      # cd into the fake atap worktree to match the JSONL we seeded there.
+      $savedLocation = Get-Location
+      Set-Location $script:atapWt
+      try {
+        $savedSettings = $global:settings
+        try {
+          $global:settings = $null
+
+          $errorMessages = @()
+          Save-SprintWorkSession `
+            -SprintN $script:sprintNumber `
+            -PlanningRoot $script:planningWt `
+            -ClaudeProjectsRoot $script:claudeProjectsRoot `
+            -GitHubRoot $script:gitRoot `
+            -WhatIf `
+            -ErrorVariable ev `
+            -ErrorAction SilentlyContinue
+
+          $ev | ForEach-Object { $errorMessages += $_.Exception.Message }
+          $errorMessages | Should -BeNullOrEmpty -Because 'defaults are usable; no errors expected'
+        } finally {
+          $global:settings = $savedSettings
+        }
+      } finally {
+        Set-Location $savedLocation
+      }
+    }
+
+    It 'does NOT emit non-terminating errors when Get-PVal helper is unavailable' {
+      # Simulate a sparse import: remove Get-PVal from session scope and verify
+      # the function still runs cleanly using its parameter-declaration defaults.
+      $savedLocation = Get-Location
+      Set-Location $script:atapWt
+      try {
+        $savedSettings = $global:settings
+        $getPValWasAvailable = $false
+        try {
+          $global:settings = $null
+
+          if (Test-Path -LiteralPath 'Function:\Get-PVal') {
+            Remove-Item -LiteralPath 'Function:\Get-PVal' -ErrorAction SilentlyContinue
+            $getPValWasAvailable = $true
+          }
+          if (Test-Path -LiteralPath 'Function:\Get-ParameterValueFromNeoConfigurationRoot') {
+            Remove-Item -LiteralPath 'Function:\Get-ParameterValueFromNeoConfigurationRoot' -ErrorAction SilentlyContinue
+          }
+
+          $errorMessages = @()
+          Save-SprintWorkSession `
+            -SprintN $script:sprintNumber `
+            -PlanningRoot $script:planningWt `
+            -ClaudeProjectsRoot $script:claudeProjectsRoot `
+            -GitHubRoot $script:gitRoot `
+            -WhatIf `
+            -ErrorVariable ev `
+            -ErrorAction SilentlyContinue
+
+          $ev | ForEach-Object { $errorMessages += $_.Exception.Message }
+          $errorMessages | Should -BeNullOrEmpty -Because 'parameter defaults are usable; Get-PVal absence must not cause errors'
+        } finally {
+          $global:settings = $savedSettings
+          # Re-load Get-PVal if it was available before this test
+          if ($getPValWasAvailable) {
+            $getPValPath = Join-Path $PSScriptRoot '..\..\..\..\ATAP.Utilities.PowerShell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
+            if (Test-Path $getPValPath) { . $getPValPath }
+          }
+        }
+      } finally {
+        Set-Location $savedLocation
+      }
+    }
+  }
+
+  Context 'auto-detection — branch name and planning worktree resolution' {
+
+    It 'auto-detects sprint number from branch name matching ^\d+-sprint-(\d{4})' {
+      # cd into the fake ATAP worktree so git rev-parse reads the fake branch and
+      # slug computation points to our seeded JSONL.
+      $savedLocation = Get-Location
+      Set-Location $script:atapWt
+      try {
+        $savedSettings = $global:settings
+        try {
+          $global:settings = $null
+
+          $errorMessages = @()
+          # Do not pass -SprintN; rely on auto-detection from git branch
+          Save-SprintWorkSession `
+            -PlanningRoot $script:planningWt `
+            -ClaudeProjectsRoot $script:claudeProjectsRoot `
+            -GitHubRoot $script:gitRoot `
+            -WhatIf `
+            -ErrorVariable ev `
+            -ErrorAction SilentlyContinue
+
+          $ev | ForEach-Object { $errorMessages += $_.Exception.Message }
+          $errorMessages | Should -BeNullOrEmpty -Because 'branch name carries a valid sprint number'
+        } finally {
+          $global:settings = $savedSettings
+        }
+      } finally {
+        Set-Location $savedLocation
+      }
+    }
+
+    It 'auto-resolves _Planning sprint worktree from GitHubRoot' {
+      # cd into the fake ATAP worktree so (Split-Path -Parent (Get-Location).Path)
+      # resolves to $script:gitRoot (not the real GitHub folder), keeping the
+      # planning-search results isolated to our temp tree.
+      $savedLocation = Get-Location
+      Set-Location $script:atapWt
+      try {
+        $savedSettings = $global:settings
+        try {
+          $global:settings = $null
+
+          # Passing GitHubRoot=$script:gitRoot; the function should find
+          # _Planning-wt-14-sprint-0007-work-items automatically.
+          $errorMessages = @()
+          Save-SprintWorkSession `
+            -SprintN $script:sprintNumber `
+            -ClaudeProjectsRoot $script:claudeProjectsRoot `
+            -GitHubRoot $script:gitRoot `
+            -WhatIf `
+            -ErrorVariable ev `
+            -ErrorAction SilentlyContinue
+
+          $ev | ForEach-Object { $errorMessages += $_.Exception.Message }
+          $errorMessages | Should -BeNullOrEmpty -Because 'GitHubRoot contains a matching _Planning worktree'
+        } finally {
+          $global:settings = $savedSettings
+        }
+      } finally {
+        Set-Location $savedLocation
+      }
+    }
+  }
+}

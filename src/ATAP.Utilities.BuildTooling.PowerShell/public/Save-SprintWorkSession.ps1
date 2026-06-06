@@ -78,29 +78,57 @@ function Save-SprintWorkSession {
 
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Entering function'
 
-        # Load Helpers
-        try {
-            # ToDo: Remove this when packaging works
-            if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-                . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
+        # Load helper functions
+        # None of this is needed once the modules are built and installed into the PSModulePath, but while we are
+        # still running from source code, we need to dot source the helper functions that are not yet in a module.
+        # Once the modules are built and installed, all of the helper functions will be available as cmdlets and
+        # this block can be removed.
+        $helpfunctionsneeded = @(
+            # Get-PVal is an alias for Get-ParameterValueFromNeoConfigurationRoot, used to populate parameters.
+            @{FunctionName = 'Get-ParameterValueFromNeoConfigurationRoot'; ModuleName = 'ATAP.Utilities.PowerShell' }
+        )
+        # These are three hardcoded values which we use until we get packaging working
+        $repoRootParentPath = 'C:\Dropbox\whertzing\GitHub'
+        $stablePath = 'ATAP.Utilities'
+        # If we are in a sprint branch, use the sprint branch version of the helper functions, otherwise use the
+        # stable branch version.  This allows us to use helper functions that are in progress in the sprint branch
+        # without having to merge them into the stable branch first.
+        $wtFolder = $PWD.Path.Split([IO.Path]::DirectorySeparatorChar) |
+            Where-Object { $_ -like '*-wt-*' } |
+            Select-Object -First 1
+        $resolvedModulePath = $wtFolder ? (Join-Path $repoRootParentPath $wtFolder 'src') : (Join-Path $repoRootParentPath $stablePath 'src')
+        foreach ($helpfunction in $helpfunctionsneeded) {
+            try {
+                if (-not (Test-Path -LiteralPath "Function:\$($helpfunction.FunctionName)")) {
+                    $helperPath = Join-Path $resolvedModulePath $helpfunction.ModuleName 'public' "$($helpfunction.FunctionName).ps1"
+                    . $helperPath
+                }
+            } catch {
+                # Non-fatal: if the helper cannot be loaded, log a debug message and continue without Get-PVal.
+                # Parameters already carry usable defaults so settings-resolution is not strictly required.
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+                    -Message "Helper '$($helpfunction.FunctionName)' not loaded from module '$($helpfunction.ModuleName)' at '$helperPath': $($_.Exception.Message). Continuing with parameter declaration defaults."
             }
-        } catch {
-            $errorMessage = "Failed to load Get-ParameterValueFromNeoConfigurationRoot function. Exception: $($_.Exception.Message)"
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-            throw
         }
+        # This is the end of the help loading block; it and all above can be removed once module autoloading is
+        # working and the helper functions are available as cmdlets in the PSModulePath.
 
-        # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: SprintN)
-        $SprintN = Get-PVal -ParameterName SprintN -originalPSBoundParameters $PSBoundParameters -dottedPath SprintN -DefaultValue $SprintN
+        # Populate parameters from settings only when Get-PVal is available.
+        # When the helper is absent (sparse environment / direct import), the parameter-declaration
+        # defaults are already usable and no non-terminating error should be emitted.
+        if (Test-Path -LiteralPath 'Function:\Get-PVal') {
+            # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: SprintN)
+            $SprintN = Get-PVal -ParameterName SprintN -originalPSBoundParameters $PSBoundParameters -dottedPath SprintN -DefaultValue $SprintN
 
-        # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: PlanningRoot)
-        $PlanningRoot = Get-PVal -ParameterName PlanningRoot -originalPSBoundParameters $PSBoundParameters -dottedPath PlanningRoot -DefaultValue $PlanningRoot
+            # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: PlanningRoot)
+            $PlanningRoot = Get-PVal -ParameterName PlanningRoot -originalPSBoundParameters $PSBoundParameters -dottedPath PlanningRoot -DefaultValue $PlanningRoot
 
-        # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: ClaudeProjectsRoot)
-        $ClaudeProjectsRoot = Get-PVal -ParameterName ClaudeProjectsRoot -originalPSBoundParameters $PSBoundParameters -dottedPath ClaudeProjectsRoot -DefaultValue $ClaudeProjectsRoot
+            # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: ClaudeProjectsRoot)
+            $ClaudeProjectsRoot = Get-PVal -ParameterName ClaudeProjectsRoot -originalPSBoundParameters $PSBoundParameters -dottedPath ClaudeProjectsRoot -DefaultValue $ClaudeProjectsRoot
 
-        # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: GitHubRoot)
-        $GitHubRoot = Get-PVal -ParameterName GitHubRoot -originalPSBoundParameters $PSBoundParameters -dottedPath GitHubRoot -DefaultValue $GitHubRoot
+            # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: GitHubRoot)
+            $GitHubRoot = Get-PVal -ParameterName GitHubRoot -originalPSBoundParameters $PSBoundParameters -dottedPath GitHubRoot -DefaultValue $GitHubRoot
+        }
     }
 
     process {

@@ -140,7 +140,7 @@
     'Set-BuildMasterApplicationVariables',
     'Set-BuildMasterSprintVariables', 'Set-BuildMasterStableVariables',
     'Set-BuildMasterPipelineStageDeploymentStep', 'Set-DownstreamSharedVSCodeContext',
-    'Set-FloatingPackagePins', 'Set-TaskComplete',
+    'Set-FloatingPackagePins', 'Set-SprintBoundaryContext', 'Set-TaskComplete',
     'Set-WorkspaceSharedVSCodeReference', 'Set-WorktreeJunctions',
     'Start-BuildMasterDeployment', 'Start-BuildMasterPackagePipeline', 'Start-BuildMasterPipeline', 'Start-DebugPowerShell',
     'Start-LocalPowerShellModuleBuildMasterPoller',

@@ -48,6 +48,11 @@ _Teach / Tell how to create software._
   registration; and a build of the `aaronontheweb/mssql-mcp` MCP server.
 - [New Computer Setup Using Ansible](NewComputerSetupUsingAnsible.md) —
   Alternate draft of workstation and build-host bootstrap guidance.
+- [Sprint-Boundary Retargeting](Sprint-Boundary-Retargeting.md) — V4-H03 source of
+  truth for the `Set-SprintBoundaryContext` orchestrator: which concern (machine
+  links, SharedVSCode settings, downstream contexts) retargets at sprint start/end
+  via which worker, and why PowerShell profiles and ConfigRootKeys are
+  stable-by-design no-ops.
 - [WSL2 Setup](WSL2Setup.md) — WSL2 provisioning notes for development and
   automation workflows.
 - [ReadMe](ReadMe.md) — Repository overview, prerequisites, and pointers to the

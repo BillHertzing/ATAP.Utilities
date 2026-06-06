@@ -120,14 +120,14 @@ try {
   $tokenCredentialResult = Get-BwsProbeAccessTokenCredential -CredentialDirectory $CredentialDirectory
   $env:BWS_ACCESS_TOKEN = $tokenCredentialResult.Credential.GetNetworkCredential().Password
 
-  $versionOutput = & $bwsCommand.Source --version
+  $versionOutput = & $bwsCommand.Source --version 2>&1
   if ($LASTEXITCODE -ne 0) {
-    throw "bws --version failed with exit code $LASTEXITCODE."
+    throw "bws --version failed with exit code $LASTEXITCODE. Output: $($versionOutput -join [Environment]::NewLine)"
   }
 
-  $secretListOutput = & $bwsCommand.Source secret list --output json
+  $secretListOutput = & $bwsCommand.Source secret list --output json 2>&1
   if ($LASTEXITCODE -ne 0) {
-    throw "bws secret list failed with exit code $LASTEXITCODE."
+    throw "bws secret list failed with exit code $LASTEXITCODE. Output: $($secretListOutput -join [Environment]::NewLine)"
   }
 
   $secrets = @($secretListOutput | ConvertFrom-Json -ErrorAction Stop)

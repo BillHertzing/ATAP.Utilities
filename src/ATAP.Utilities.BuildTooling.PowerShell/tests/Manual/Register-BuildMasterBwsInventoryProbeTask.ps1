@@ -76,9 +76,9 @@ function Register-BuildMasterBwsInventoryProbeTask {
         throw 'Credential is required when -LogonType Password is used.'
       }
 
-      Register-ScheduledTask -TaskName $TaskName -InputObject $task -User $Credential.UserName -Password $Credential.GetNetworkCredential().Password -Force | Out-Null
+      Register-ScheduledTask -TaskName $TaskName -InputObject $task -User $Credential.UserName -Password $Credential.GetNetworkCredential().Password -Force -ErrorAction Stop | Out-Null
     } else {
-      Register-ScheduledTask -TaskName $TaskName -InputObject $task -Force | Out-Null
+      Register-ScheduledTask -TaskName $TaskName -InputObject $task -Force -ErrorAction Stop | Out-Null
     }
 
     $registered = $true

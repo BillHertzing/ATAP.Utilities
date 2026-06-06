@@ -15,7 +15,7 @@ function Move-ProGetPackageInterTier {
     The tier chain is:
         experimental → development → integration → qa → stable
 
-    The script detects the package type (nuget, powershellget, chocolatey)
+    The script detects the package type (nuget, powershellget, database, chocolatey)
     from the source feed name prefix.
 
 .PARAMETER Name
@@ -173,11 +173,11 @@ function Move-ProGetPackageInterTier {
         # Known package type prefixes in feed names.
         # 'powershell' is accepted as a deprecated alias, but new feed names use
         # canonical 'powershellget-*' per Explainer 0111.
-        $knownPrefixes = @('nuget', 'powershellget', 'powershell', 'chocolatey')
+        $knownPrefixes = @('nuget', 'powershellget', 'powershell', 'database', 'chocolatey')
 
         # ── Parse source feed name ───────────────────────────────────────────
         # Feed names follow the pattern: {packageType}-{tier}[-push]
-        # Examples: nuget-experimental, powershellget-development-push, chocolatey-qa
+        # Examples: nuget-experimental, powershellget-development-push, database-qa, chocolatey-qa
 
         $parsedPrefix = $null
         $parsedTier = $null
@@ -207,7 +207,7 @@ function Move-ProGetPackageInterTier {
 
         if (-not $parsedPrefix -or -not $parsedTier) {
             $errorMessage = "Cannot parse source feed name '$FromFeed'. " +
-            'Expected format: {nuget|powershellget|chocolatey}-{experimental|development|integration|qa|stable}[-push]. Legacy prefix powershell and tiers testing/production are normalized.'
+            'Expected format: {nuget|powershellget|database|chocolatey}-{experimental|development|integration|qa|stable}[-push]. Legacy prefix powershell and tiers testing/production are normalized.'
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
             throw $errorMessage
         }

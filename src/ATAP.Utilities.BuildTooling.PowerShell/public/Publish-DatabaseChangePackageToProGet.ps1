@@ -24,7 +24,9 @@
           different feed-type query).
         - Resolves the API key from PROGET_BUILDMASTER_API_KEY first, then
           falls back to PROGET_ADMIN_API_KEY, both at User scope per R-10.
-        - Invokes `dotnet nuget push` with --skip-duplicate (idempotent).
+        - Invokes `dotnet nuget push` with --skip-duplicate (idempotent)
+          and allows HTTP sources only when the resolved ProGet feed URI is
+          explicitly HTTP.
         - Wraps the dotnet call in a private helper
           Invoke-DotnetDatabaseNuGetPush so the call can be mocked in
           Pester without spawning a real process.
@@ -101,8 +103,13 @@ function Invoke-DotnetDatabaseNuGetPush {
         '--skip-duplicate'
     )
 
+    if ($FeedUri.StartsWith('http://', [System.StringComparison]::OrdinalIgnoreCase)) {
+        $pushArgs += '--allow-insecure-connections'
+    }
+
+    $allowInsecureFlag = if ($pushArgs -contains '--allow-insecure-connections') { ' --allow-insecure-connections' } else { '' }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
-        -Message "Invoking: dotnet nuget push '$NupkgPath' --source '$FeedUri' --api-key '***' --skip-duplicate" `
+        -Message "Invoking: dotnet nuget push '$NupkgPath' --source '$FeedUri' --api-key '***' --skip-duplicate$allowInsecureFlag" `
         -Tag 'RestCall'
 
     $stdout = & dotnet @pushArgs 2>&1
@@ -177,7 +184,31 @@ function Publish-DatabaseChangePackageToProGet {
         # 3. Parse the tier suffix from the feed name.
         $tierSuffix = $Feed -replace '^database-', ''  # e.g. 'experimental'
 
-        # 4. Load Resolve-ProGetFeedFromSettings helper if not already loaded.
+        # 4. Ceiling check for non-Experimental direct publishes.
+        $tierPascal = (Get-Culture).TextInfo.ToTitleCase($tierSuffix)
+        if ($tierPascal -ne 'Experimental') {
+            if ($Force) {
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning `
+                    -Message "Promotion ceiling check bypassed (-Force) for direct database publish to '$Feed'." `
+                    -Tag 'CeilingBypass'
+            } else {
+                if ([string]::IsNullOrWhiteSpace($CeilingTier)) {
+                    $msg = "CeilingTier is required when publishing directly to feed '$Feed'. Use -Force only for an audited emergency/manual bypass."
+                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+                    throw $msg
+                }
+                if (-not (Get-Command -Name 'Test-PromotionWithinCeiling' -CommandType Function -ErrorAction SilentlyContinue)) {
+                    $ceilingPath = Join-Path $PSScriptRoot 'Test-PromotionWithinCeiling.ps1'
+                    if (Test-Path -LiteralPath $ceilingPath -PathType Leaf) { . $ceilingPath }
+                    else { throw "Required helper Test-PromotionWithinCeiling not found at '$ceilingPath'." }
+                }
+                Test-PromotionWithinCeiling -CurrentTier $tierPascal -CeilingTier $CeilingTier -ErrorAction Stop | Out-Null
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+                    -Message "Database ceiling accepted: destination tier '$tierPascal' is within ceiling '$CeilingTier'"
+            }
+        }
+
+        # 5. Load Resolve-ProGetFeedFromSettings helper if not already loaded.
         $helperPath = Join-Path $PSScriptRoot '..\private\Resolve-ProGetFeedFromSettings.ps1'
         if (-not (Get-Command -Name 'Resolve-ProGetFeedFromSettings' -CommandType Function -ErrorAction SilentlyContinue)) {
             if (Test-Path -LiteralPath $helperPath -PathType Leaf) {
@@ -206,30 +237,6 @@ function Publish-DatabaseChangePackageToProGet {
         }
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
             -Message "Resolved database feed '$feedName' at '$feedUri'"
-
-        # 5. Ceiling check for non-Experimental direct publishes.
-        $tierPascal = (Get-Culture).TextInfo.ToTitleCase($tierSuffix)
-        if ($tierPascal -ne 'Experimental') {
-            if ($Force) {
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning `
-                    -Message "Promotion ceiling check bypassed (-Force) for direct database publish to '$feedName'." `
-                    -Tag 'CeilingBypass'
-            } else {
-                if ([string]::IsNullOrWhiteSpace($CeilingTier)) {
-                    $msg = "CeilingTier is required when publishing directly to feed '$feedName'. Use -Force only for an audited emergency/manual bypass."
-                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
-                    throw $msg
-                }
-                if (-not (Get-Command -Name 'Test-PromotionWithinCeiling' -CommandType Function -ErrorAction SilentlyContinue)) {
-                    $ceilingPath = Join-Path $PSScriptRoot 'Test-PromotionWithinCeiling.ps1'
-                    if (Test-Path -LiteralPath $ceilingPath -PathType Leaf) { . $ceilingPath }
-                    else { throw "Required helper Test-PromotionWithinCeiling not found at '$ceilingPath'." }
-                }
-                Test-PromotionWithinCeiling -CurrentTier $tierPascal -CeilingTier $CeilingTier -ErrorAction Stop | Out-Null
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
-                    -Message "Database ceiling accepted: destination tier '$tierPascal' is within ceiling '$CeilingTier'"
-            }
-        }
 
         # 6. Resolve API key: PROGET_BUILDMASTER_API_KEY first, then PROGET_ADMIN_API_KEY (User scope).
         $apiKey = [System.Environment]::GetEnvironmentVariable('PROGET_BUILDMASTER_API_KEY', 'User')

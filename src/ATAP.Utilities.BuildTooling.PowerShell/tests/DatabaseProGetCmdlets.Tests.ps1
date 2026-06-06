@@ -33,12 +33,71 @@ BeforeAll {
         # Mock this to throw.
     }
 
+    function global:Resolve-ProGetFeedFromSettings {
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory)]
+            [string]$FeedType,
+            [Parameter(Mandatory)]
+            [string]$Tier
+        )
+        $canonicalTier = switch ($Tier.ToLowerInvariant()) {
+            'experimental' { 'experimental' }
+            'development' { 'development' }
+            'integration' { 'integration' }
+            'qa' { 'qa' }
+            'stable' { 'stable' }
+            default { throw "Unexpected tier '$Tier'." }
+        }
+        return [PSCustomObject]@{
+            FeedName    = "$FeedType-$canonicalTier"
+            EndpointUri = "http://proget.local/nuget/$FeedType-$canonicalTier"
+        }
+    }
+
     # Create a temp .nupkg for publish tests.
     $script:TempNupkg = Join-Path $TestDrive 'test-package.1.0.0-experimental.1.nupkg'
     New-Item -ItemType File -Path $script:TempNupkg -Force | Out-Null
 }
 
 Describe 'Publish-DatabaseChangePackageToProGet' {
+
+    Context 'dotnet push invocation' {
+
+        BeforeEach {
+            $script:DotnetArgs = $null
+            function global:dotnet {
+                $script:DotnetArgs = $args
+                $global:LASTEXITCODE = 0
+                return 'pushed'
+            }
+        }
+
+        AfterEach {
+            Remove-Item -LiteralPath Function:\dotnet -ErrorAction SilentlyContinue
+            $global:LASTEXITCODE = 0
+        }
+
+        It 'Adds allow-insecure-connections for HTTP ProGet sources' {
+            $result = Invoke-DotnetDatabaseNuGetPush `
+                -NupkgPath $script:TempNupkg `
+                -FeedUri 'http://proget.local/nuget/database-experimental/v3/index.json' `
+                -ApiKey 'test-key'
+
+            $result.ExitCode | Should -Be 0
+            $script:DotnetArgs | Should -Contain '--allow-insecure-connections'
+        }
+
+        It 'Does not add allow-insecure-connections for HTTPS ProGet sources' {
+            $result = Invoke-DotnetDatabaseNuGetPush `
+                -NupkgPath $script:TempNupkg `
+                -FeedUri 'https://proget.local/nuget/database-experimental/v3/index.json' `
+                -ApiKey 'test-key'
+
+            $result.ExitCode | Should -Be 0
+            $script:DotnetArgs | Should -Not -Contain '--allow-insecure-connections'
+        }
+    }
 
     Context 'Parameter validation' {
 
@@ -90,8 +149,8 @@ Describe 'Publish-DatabaseChangePackageToProGet' {
             # Resolve-ProGetFeedFromSettings may not exist; stub it.
             Mock 'Resolve-ProGetFeedFromSettings' {
                 return [PSCustomObject]@{
-                    FeedName    = $Feed
-                    EndpointUri = "http://proget.local/nuget/$FeedName"
+                    FeedName    = "$FeedType-experimental"
+                    EndpointUri = "http://proget.local/nuget/$FeedType-experimental"
                 }
             } -ParameterFilter { $FeedType -eq 'database' }
 

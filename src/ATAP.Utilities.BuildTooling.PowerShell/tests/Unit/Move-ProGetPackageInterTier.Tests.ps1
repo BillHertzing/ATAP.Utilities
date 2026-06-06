@@ -60,6 +60,10 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
       @{ Source = 'nuget-qa'; ExpectedDest = 'nuget-stable' }
       @{ Source = 'powershellget-experimental'; ExpectedDest = 'powershellget-development' }
       @{ Source = 'powershellget-integration'; ExpectedDest = 'powershellget-qa' }
+      @{ Source = 'database-experimental'; ExpectedDest = 'database-development' }
+      @{ Source = 'database-development'; ExpectedDest = 'database-integration' }
+      @{ Source = 'database-integration'; ExpectedDest = 'database-qa' }
+      @{ Source = 'database-qa'; ExpectedDest = 'database-stable' }
       @{ Source = 'chocolatey-qa'; ExpectedDest = 'chocolatey-stable' }
     )
 
@@ -79,6 +83,7 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
     $cases = @(
       @{ Source = 'nuget-experimental'; ExpectedDest = 'nuget-development-push' }
       @{ Source = 'nuget-integration'; ExpectedDest = 'nuget-qa-push' }
+      @{ Source = 'database-experimental'; ExpectedDest = 'database-development-push' }
     )
 
     It "Routes '<Source>' -> '<ExpectedDest>' (Phase 2 / -UsePushFeed)" -TestCases $cases {
@@ -203,6 +208,15 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
       $result.PSObject.Properties.Name | Should -Contain 'Phase2Mode'
       $result.PackageType | Should -Be 'nuget'
       $result.Phase2Mode | Should -BeFalse
+    }
+
+    It 'Returns database as PackageType for database feed family moves' {
+      $result = Move-ProGetPackageInterTier `
+        -Name 'ATAPUtilities.Database' -Version '1.0.0' `
+        -FromFeed 'database-experimental' `
+        -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
+      $result.PackageType | Should -Be 'database'
+      $result.DestinationFeed | Should -Be 'database-development'
     }
   }
 

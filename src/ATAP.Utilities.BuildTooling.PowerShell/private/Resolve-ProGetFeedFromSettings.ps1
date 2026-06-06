@@ -40,6 +40,7 @@ function Resolve-ProGetFeedTypeName {
     'powershell'    = 'powershellget'
     'powershellget' = 'powershellget'
     'psresourceget' = 'powershellget'
+    'database'      = 'database'
     'chocolatey'    = 'chocolatey'
     'universal'     = 'universal'
     'upack'         = 'universal'
@@ -47,7 +48,7 @@ function Resolve-ProGetFeedTypeName {
 
   $normalizedFeedType = $FeedType.Trim().ToLowerInvariant()
   if (-not $feedTypeMap.ContainsKey($normalizedFeedType)) {
-    throw "Unknown ProGet feed type '$FeedType'. Expected nuget, powershellget, chocolatey, or universal."
+    throw "Unknown ProGet feed type '$FeedType'. Expected nuget, powershellget, database, chocolatey, or universal."
   }
 
   return $feedTypeMap[$normalizedFeedType]

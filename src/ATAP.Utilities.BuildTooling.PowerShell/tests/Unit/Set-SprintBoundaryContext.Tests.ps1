@@ -44,8 +44,8 @@ Describe 'Set-SprintBoundaryContext [public]' {
         Should -Throw
     }
 
-    It 'Requires SharedVSCodeWorktreePath' {
-      { Set-SprintBoundaryContext -Boundary 'Start' } | Should -Throw
+    It 'Requires a non-empty SharedVSCodeWorktreePath' {
+      { Set-SprintBoundaryContext -Boundary 'Start' -SharedVSCodeWorktreePath '' } | Should -Throw
     }
   }
 

@@ -235,8 +235,8 @@ function New-PSModulePesterProgressPlugin {
   }.GetNewClosure()
 
   [PSCustomObject]@{
-    Name                    = 'ATAP.Utilities.BuildTooling.PowerShell.PesterProgress'
-    DiscoveryStart          = {
+    Name                = 'ATAP.Utilities.BuildTooling.PowerShell.PesterProgress'
+    DiscoveryStart      = {
       param($Context)
 
       $null = & {
@@ -245,7 +245,7 @@ function New-PSModulePesterProgressPlugin {
         & $writeProgressLine "Pester discovery started for $containerCount test container(s)."
       }
     }.GetNewClosure()
-    DiscoveryEnd            = {
+    DiscoveryEnd        = {
       param($Context)
 
       $null = & {
@@ -260,7 +260,7 @@ function New-PSModulePesterProgressPlugin {
         & $writeProgressLine "Pester discovery completed: $total test(s) discovered in $elapsedText; reporting every $($state.Interval) completed test(s)."
       }
     }.GetNewClosure()
-    EachTestSetupStart      = {
+    EachTestSetupStart  = {
       param($Context)
 
       $null = & {
@@ -275,7 +275,7 @@ function New-PSModulePesterProgressPlugin {
         & $writeProgressLine "Pester current test: $($state.Started)$totalText started after $elapsedText ($testName)."
       }
     }.GetNewClosure()
-    EachTestTeardownEnd     = {
+    EachTestTeardownEnd = {
       param($Context)
 
       $null = & {
@@ -291,7 +291,7 @@ function New-PSModulePesterProgressPlugin {
         & $writeProgressLine "Pester progress: $($state.Completed)$totalText test(s) completed in $elapsedText (last: $lastTestName)."
       }
     }.GetNewClosure()
-    PSTypeName              = 'Plugin'
+    PSTypeName          = 'Plugin'
   }
 }
 
@@ -778,6 +778,21 @@ function Invoke-PSModulePesterTests {
       if (-not $gatePass) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Pester gate FAILED: $failed failing test(s) of $total"
         $failedTests = Get-PSModulePesterFailedTestSummary -PesterResult $result -Maximum 50
+        $failureArtifactPath = [System.IO.Path]::ChangeExtension($OutputPath, '.Failures.json')
+        $failureArtifactDirectory = Split-Path -Path $failureArtifactPath -Parent
+        if ($failureArtifactDirectory -and -not (Test-Path -LiteralPath $failureArtifactDirectory)) {
+          New-Item -ItemType Directory -Path $failureArtifactDirectory -Force | Out-Null
+        }
+        [PSCustomObject]@{
+          Tier       = $Tier
+          Passed     = $passed
+          Failed     = $failed
+          Skipped    = $skipped
+          Total      = $total
+          OutputFile = $OutputPath
+          Failures   = @($failedTests)
+        } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $failureArtifactPath -Encoding UTF8
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Pester failure detail artifact: '$failureArtifactPath'"
         foreach ($failedTest in @($failedTests)) {
           $messageSuffix = if (-not [string]::IsNullOrWhiteSpace($failedTest.Message)) { " -- $($failedTest.Message)" } else { '' }
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Failing test: $($failedTest.Container) :: $($failedTest.Name)$messageSuffix"

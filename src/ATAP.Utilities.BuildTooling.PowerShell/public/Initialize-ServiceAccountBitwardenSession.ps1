@@ -58,7 +58,7 @@ function Initialize-ServiceAccountBitwardenSession {
     [string]$BitwardenUserName
   )
 
-  BEGIN {
+  begin {
     $fn = 'Initialize-ServiceAccountBitwardenSession'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
 
@@ -74,7 +74,7 @@ function Initialize-ServiceAccountBitwardenSession {
     }
   }
 
-  PROCESS {
+  process {
     $tempPasswordFile = $null
     try {
       # 0. Defensively clear OPENSSL_CONF / OPENSSL_HOME / RANDFILE from the
@@ -83,7 +83,7 @@ function Initialize-ServiceAccountBitwardenSession {
       #    accounts cannot read, which causes bw.exe's bundled OpenSSL to fail
       #    during init (BIO_new_file Input/output error). With these unset,
       #    bw.exe uses its internal defaults and works under any account.
-      foreach ($v in @('OPENSSL_CONF','OPENSSL_HOME','RANDFILE')) {
+      foreach ($v in @('OPENSSL_CONF', 'OPENSSL_HOME', 'RANDFILE')) {
         if (Test-Path -LiteralPath "Env:$v") {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Clearing inherited Process env '$v' before bw invocation" -Tag 'serviceaccount-bw'
           Remove-Item -LiteralPath "Env:$v" -Force -ErrorAction SilentlyContinue
@@ -155,20 +155,17 @@ function Initialize-ServiceAccountBitwardenSession {
           [System.Environment]::SetEnvironmentVariable('BW_SESSION', $sessionKeyStr, 'User')
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Bitwarden vault unlocked and BW_SESSION stored in User scope' -Tag 'serviceaccount-bw'
           return [PSCustomObject]@{ Success = $true; Message = 'BW_SESSION established for service account' }
-        }
-        else {
+        } else {
           $msg = "bw unlock failed (exit $unlockExit). Output: $sessionKeyStr"
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'serviceaccount-bw'
           return [PSCustomObject]@{ Success = $false; Message = $msg }
         }
       }
-    }
-    catch {
+    } catch {
       $errorMessage = "Initialize-ServiceAccountBitwardenSession failed. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'serviceaccount-bw'
       throw
-    }
-    finally {
+    } finally {
       if ($tempPasswordFile -and (Test-Path -LiteralPath $tempPasswordFile)) {
         Remove-Item -LiteralPath $tempPasswordFile -Force -ErrorAction SilentlyContinue
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Removed temporary password file: $tempPasswordFile" -Tag 'serviceaccount-bw'
@@ -177,7 +174,7 @@ function Initialize-ServiceAccountBitwardenSession {
     }
   }
 
-  END {
+  end {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function completed' -Tag 'serviceaccount-bw'
   }
 }
@@ -189,7 +186,9 @@ function Initialize-ServiceAccountBitwardenSession {
 # loading or dot-sourcing this file never executes the function.
 # ============================================================================
 
-if ($MyInvocation.InvocationName -ne '.' -and $MyInvocation.InvocationName -ne '&') {
+if (-not $MyInvocation.MyCommand.ScriptBlock.Module -and
+  $MyInvocation.InvocationName -ne '.' -and
+  $MyInvocation.InvocationName -ne '&') {
   $execFn = 'Initialize-ServiceAccountBitwardenSession-ExecutionBlock'
   $execMn = 'ATAP.Utilities.BuildTooling.PowerShell'
 
@@ -219,8 +218,7 @@ if ($MyInvocation.InvocationName -ne '.' -and $MyInvocation.InvocationName -ne '
       Write-EventLog -LogName Application -Source 'ATAPServiceAccountBW' -EntryType $entryType `
         -EventId $eventId -Message "Initialize-ServiceAccountBitwardenSession result: $($result.Message)"
     } catch { }
-  }
-  catch {
+  } catch {
     Write-PSFMessage -FunctionName $execFn -ModuleName $execMn -Level Error -Message "Critical error: $($_.Exception.Message)" -Tag 'serviceaccount-bw'
     try {
       Write-EventLog -LogName Application -Source 'ATAPServiceAccountBW' -EntryType Error `

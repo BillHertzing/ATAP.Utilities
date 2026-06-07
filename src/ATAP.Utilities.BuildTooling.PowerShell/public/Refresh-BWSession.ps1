@@ -52,7 +52,7 @@ function Refresh-BWSession {
     [switch]$ForceReunlock
   )
 
-  BEGIN {
+  begin {
     $fn = 'Refresh-BWSession'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
 
@@ -71,12 +71,12 @@ function Refresh-BWSession {
     }
   }
 
-  PROCESS {
+  process {
     try {
       # 0. Defensively clear OPENSSL_CONF / OPENSSL_HOME / RANDFILE from the
       #    process environment before invoking bw.exe — see the same block in
       #    Initialize-ServiceAccountBitwardenSession.ps1 for full rationale.
-      foreach ($v in @('OPENSSL_CONF','OPENSSL_HOME','RANDFILE')) {
+      foreach ($v in @('OPENSSL_CONF', 'OPENSSL_HOME', 'RANDFILE')) {
         if (Test-Path -LiteralPath "Env:$v") {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Clearing inherited Process env '$v' before bw invocation" -Tag 'serviceaccount-bw'
           Remove-Item -LiteralPath "Env:$v" -Force -ErrorAction SilentlyContinue
@@ -117,8 +117,7 @@ function Refresh-BWSession {
             RefreshPerformed = $true
             Message          = "Refresh succeeded: $($initResult.Message)"
           }
-        }
-        else {
+        } else {
           return [PSCustomObject]@{
             Success          = $false
             RefreshPerformed = $true
@@ -126,18 +125,16 @@ function Refresh-BWSession {
           }
         }
       }
-    }
-    catch {
+    } catch {
       $errorMessage = "Refresh-BWSession failed. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'serviceaccount-bw'
       throw
-    }
-    finally {
+    } finally {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving Function $fn in module $mn" -Tag 'serviceaccount-bw'
     }
   }
 
-  END {
+  end {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function completed' -Tag 'serviceaccount-bw'
   }
 }
@@ -149,7 +146,9 @@ function Refresh-BWSession {
 # loading or dot-sourcing this file never executes the function.
 # ============================================================================
 
-if ($MyInvocation.InvocationName -ne '.' -and $MyInvocation.InvocationName -ne '&') {
+if (-not $MyInvocation.MyCommand.ScriptBlock.Module -and
+  $MyInvocation.InvocationName -ne '.' -and
+  $MyInvocation.InvocationName -ne '&') {
   if (-not [System.Diagnostics.EventLog]::SourceExists('ATAPServiceAccountBW')) {
     try { New-EventLog -LogName Application -Source 'ATAPServiceAccountBW' } catch { }
   }
@@ -171,8 +170,7 @@ if ($MyInvocation.InvocationName -ne '.' -and $MyInvocation.InvocationName -ne '
       Write-EventLog -LogName Application -Source 'ATAPServiceAccountBW' -EntryType $entryType `
         -EventId $eventId -Message "Refresh-BWSession (refreshed=$($result.RefreshPerformed)): $($result.Message)"
     } catch { }
-  }
-  catch {
+  } catch {
     try {
       Write-EventLog -LogName Application -Source 'ATAPServiceAccountBW' -EntryType Error `
         -EventId 3013 -Message "Refresh-BWSession crashed: $($_.Exception.Message)"

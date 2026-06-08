@@ -76,6 +76,8 @@ function New-ConnectionStringBuilderFromDbaTools {
   #>
   [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKey',
     Justification = 'CredentialsKey is a vault lookup key name, not a credential')]
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingConvertToSecureStringWithPlainText', '',
+    Justification = 'Password retrieved from Bitwarden vault at runtime; not hardcoded plaintext')]
   [Alias('New-DBAConnStrBuilder')]
   [CmdletBinding(DefaultParameterSetName = 'IntegratedSecurity')]
   param(

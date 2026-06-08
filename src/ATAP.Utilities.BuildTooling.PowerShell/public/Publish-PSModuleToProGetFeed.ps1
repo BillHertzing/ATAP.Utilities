@@ -181,6 +181,24 @@ function Publish-PSModuleToProGetFeed {
         )
       }
     }
+    if ([string]::IsNullOrWhiteSpace([string]$apiKey) -and $null -ne $secretCmd) {
+      # Bitwarden admin-key fallback: 'ProGet.Admin.API.Key' is the canonical Secrets Manager
+      # item name when no tier-specific key exists yet.
+      try {
+        $adminSecretName = 'ProGet.Admin.API.Key'
+        $apiKey = Get-SecretATAP -SecretName $adminSecretName
+        if (-not [string]::IsNullOrWhiteSpace([string]$apiKey)) {
+          $apiKeySource = "ATAP secret store item '$adminSecretName' (admin fallback)"
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message (
+            "Using Bitwarden '$adminSecretName' admin fallback for tier '$Tier' — provision " +
+            "'ProGet_PowerShellGet_${canonicalTier}_ApiKey' in the ATAP secret store to remove this fallback."
+          )
+        }
+      } catch {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Get-SecretATAP threw for 'ProGet.Admin.API.Key'; no admin key available."
+        $apiKey = $null
+      }
+    }
     if ([string]::IsNullOrWhiteSpace([string]$apiKey)) {
       $msg = "Unable to resolve ProGet API key for tier '$Tier'. Expected Get-SecretATAP -SecretName 'ProGet_PowerShellGet_${Tier}_ApiKey', configured env var '$($feed.ApiKeyName)', or admin fallback 'PROGET_ADMIN_API_KEY'."
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg

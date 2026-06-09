@@ -172,11 +172,13 @@ https://github.com/whertzing/ATAP.Utilities
     # Load required helper functions
     try {
       # Import dbatools module for database operations
-      if (-not (Get-Module -Name dbatools -ListAvailable)) {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message 'dbatools module not found. Installing...'
-        Install-Module -Name dbatools -Scope CurrentUser -Force -AllowClobber
+      if (-not (Get-Module -Name dbatools)) {
+        if (-not (Get-Module -Name dbatools -ListAvailable)) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message 'dbatools module not found. Installing...'
+          Install-Module -Name dbatools -Scope CurrentUser -Force -AllowClobber
+        }
+        Import-Module dbatools -ErrorAction SilentlyContinue
       }
-      Import-Module dbatools -ErrorAction Stop
       if ([string]::IsNullOrWhiteSpace($RepositoryRoot)) {
         $repositoryRoot = Get-RepositoryRoot
       } else {
@@ -194,7 +196,6 @@ https://github.com/whertzing/ATAP.Utilities
     } catch {
       $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-      $result.Errors += $errorMessage
       throw
     }
 

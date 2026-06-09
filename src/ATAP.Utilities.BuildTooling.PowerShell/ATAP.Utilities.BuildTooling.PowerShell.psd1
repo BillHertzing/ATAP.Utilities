@@ -92,11 +92,11 @@
     'Get-ProjectsByActivity', 'Get-ProjectsFromSLN',
     'Get-PSModuleVersionFromNBGV', 'Get-RefactoringCandidates',
     'Get-RepositoryRoot', 'Get-SecretATAP', 'Get-SecretATAPBitwarden',
-    'Get-SecretATAPBitwardenSecretsManager', 'Get-ServiceAccountBWSAccessToken',
-    'Initialize-ServiceAccountBWSAccessToken',
+    'Get-SecretATAPBitwardenSecretsManager', 'Get-BWSAccessToken',
     'Get-SharedVSCodeContext', 'Get-SLNParts',
     'Get-TierFromNBGVLabel', 'Get-TierOrder',
     'Initialize-DownstreamSprintFromSharedVSCode',
+    'Initialize-BWSAccessToken', 'Initialize-BWSCredentialDirectory',
     'Initialize-ProGetSqlServiceLogin',
     'Initialize-ServiceAccountBitwardenSession',
     'Invoke-BuildToolingPesterDebug', 'Invoke-DotnetBuildWithRetry',
@@ -160,7 +160,7 @@
     VariablesToExport    = '*'
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport      = @()
+    AliasesToExport      = 'Get-ServiceAccountBWSAccessToken', 'Initialize-ServiceAccountBWSAccessToken'
 
     # DSC resources to export from this module
     # DscResourcesToExport = @()

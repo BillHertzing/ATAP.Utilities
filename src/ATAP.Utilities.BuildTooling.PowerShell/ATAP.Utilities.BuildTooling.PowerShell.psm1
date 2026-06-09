@@ -20,3 +20,7 @@ foreach ($import in $allFunctions) {
 # only DEFINES the function and executes nothing at load time). Created in module
 # scope at import, exactly as the dot-sourced Set-Alias did before.
 Set-Alias -Name sdp -Value Start-DebugPowerShell
+
+# Backward-compatible aliases for the Sprint-0007 service-account BWS token cmdlet names.
+Set-Alias -Name Get-ServiceAccountBWSAccessToken -Value Get-BWSAccessToken
+Set-Alias -Name Initialize-ServiceAccountBWSAccessToken -Value Initialize-BWSAccessToken

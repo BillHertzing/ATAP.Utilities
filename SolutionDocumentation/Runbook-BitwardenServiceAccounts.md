@@ -1,4 +1,4 @@
-# Runbook: Bitwarden Service Account Secrets
+# Runbook: Bitwarden Secrets Manager Access Tokens
 
 **Status:** Sprint-0007 operational runbook
 **Related decision record:** [ServiceAccountsAndBitwarden.md](ServiceAccountsAndBitwarden.md)
@@ -6,12 +6,14 @@
 
 ## Scope
 
-This runbook covers non-interactive Bitwarden Secrets Manager access for Windows service accounts, starting with `SvcBuildmaster`. The supported runtime pattern is:
+This runbook covers Bitwarden Secrets Manager access for Windows service accounts and
+interactive users. The supported runtime pattern is:
 
-1. Grant a Bitwarden Secrets Manager machine account access to the required projects.
-2. Install the `bws` CLI on the BuildMaster host and make it visible in the service account PATH.
-3. Store the machine-account access token as a DPAPI-protected CLIXML file by running `Initialize-ServiceAccountBWSAccessToken` as the service account.
-4. Read secrets at runtime through `Get-SecretATAP` with the `BitwardenSecretsManager` provider.
+1. Grant a Bitwarden Secrets Manager access token to the required projects.
+2. Install the `bws` CLI on the host and make it visible in the target account's PATH.
+3. Create and ACL `C:\ProgramData\ATAP\BitwardenCredentials\<SamAccountName>` with `Initialize-BWSCredentialDirectory`.
+4. Store the BWS access token as a DPAPI-protected CLIXML file by running `Initialize-BWSAccessToken` as the owning Windows account.
+5. Read secrets at runtime through `Get-SecretATAP` with the `BitwardenSecretsManager` provider.
 
 Do not persist `BWS_ACCESS_TOKEN` as a long-lived Machine/User environment variable. It may exist only in Process scope while `bws` is being called.
 
@@ -42,7 +44,10 @@ Example value shape:
 
 ## SA-03 Provisioning
 
-Run these commands from a shell started as the target service account. For `SvcBuildmaster`, use an elevated local-admin provisioning session that launches PowerShell under that identity.
+Run the folder-ACL step from an elevated administrative shell, then run the DPAPI write
+step from a shell started as the target Windows account. For `SvcBuildmaster`, use an
+elevated local-admin provisioning session that launches PowerShell under that identity.
+For the current interactive user, the DPAPI write can run in the user's own shell.
 
 1. Confirm `bws` is available:
 
@@ -51,17 +56,26 @@ Get-Command bws -ErrorAction Stop
 bws --version
 ```
 
-2. Import the BuildTooling module:
+2. Create and ACL the BWS credential directory:
 
 ```powershell
 Import-Module .\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1 -Force
+Initialize-BWSCredentialDirectory
 ```
 
-3. Store the BWS machine-account token as a DPAPI file:
+For a service account:
 
 ```powershell
-$token = Read-Host 'BWS machine-account access token' -AsSecureString
-Initialize-ServiceAccountBWSAccessToken -AccessToken $token
+Import-Module .\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1 -Force
+Initialize-BWSCredentialDirectory -AccountName '.\SvcBuildmaster'
+```
+
+3. Store the BWS access token as a DPAPI file while running as the owning account:
+
+```powershell
+Import-Module .\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1 -Force
+$token = Read-Host 'BWS access token' -AsSecureString
+Initialize-BWSAccessToken -AccessToken $token
 ```
 
 Expected file:
@@ -70,10 +84,16 @@ Expected file:
 C:\ProgramData\ATAP\BitwardenCredentials\SvcBuildmaster\<HOST>_SvcBuildmaster_BWS_AccessToken.xml
 ```
 
+For the current interactive user, the expected file is:
+
+```text
+C:\ProgramData\ATAP\BitwardenCredentials\<USERNAME>\<HOST>_<USERNAME>_BWS_AccessToken.xml
+```
+
 4. Validate token decryption and project access without leaving plaintext behind:
 
 ```powershell
-$cred = Get-ServiceAccountBWSAccessToken
+$cred = Get-BWSAccessToken
 $env:BWS_ACCESS_TOKEN = $cred.GetNetworkCredential().Password
 try {
   bws secret list --output json | ConvertFrom-Json | Select-Object key, projectId
@@ -89,7 +109,13 @@ finally {
 Get-SecretATAP -SecretName 'BuildMaster.Admin.API.Key' -SecretField 'token'
 ```
 
-The command should return the secret value and emit no plaintext to logs. Record only the secret key name, project, service-account identity, host name, and timestamp.
+The command should return the secret value and emit no plaintext to logs. Record only the
+secret key name, project, Windows account identity, host name, and timestamp.
+
+The canonical cmdlets are `Initialize-BWSCredentialDirectory`,
+`Initialize-BWSAccessToken`, and `Get-BWSAccessToken`. The old
+`Initialize-ServiceAccountBWSAccessToken` and `Get-ServiceAccountBWSAccessToken` names
+remain exported aliases for existing automation.
 
 ## Current Finding
 
@@ -107,7 +133,7 @@ The repo-side helpers and unit-tested BWS provider exist, and a service-account 
 ## Rotation
 
 1. Create or rotate the BWS machine-account access token in Bitwarden Secrets Manager.
-2. Run `Initialize-ServiceAccountBWSAccessToken -AccessToken <secure token>` as the service account.
+2. Run `Initialize-BWSAccessToken -AccessToken <secure token>` as the owning Windows account.
 3. Confirm the previous CLIXML file was backed up and the new file decrypts under the same identity.
 4. Run the validation commands above.
 5. Delete obsolete backup files after the new token is proven and any retention requirement is satisfied.
@@ -118,6 +144,6 @@ The repo-side helpers and unit-tested BWS provider exist, and a service-account 
 | --- | --- | --- |
 | `bws` not found | CLI not installed or not visible to service-account PATH | `Get-Command bws` from the service-account shell |
 | DPAPI file missing | Token was never provisioned for this identity/host | Confirm the path under `C:\ProgramData\ATAP\BitwardenCredentials\<SamAccountName>` |
-| DPAPI decrypt fails | File was created by a different identity or copied from another host | Re-run `Initialize-ServiceAccountBWSAccessToken` as the target service account |
+| DPAPI decrypt fails | File was created by a different identity or copied from another host | Re-run `Initialize-BWSAccessToken` as the target account |
 | Secret key not found | Machine account lacks project access or the key name differs | Compare BWS project assignments and the SA-02 inventory |
 | `-SecretField` returns raw JSON | Field name is absent or value is not JSON | Confirm the BWS secret value shape |

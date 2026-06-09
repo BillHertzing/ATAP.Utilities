@@ -155,10 +155,10 @@ _Teach / Tell how to create software (with two "describe" entries noted)._
   secrets. Covers `SvcBuildmaster` and `SvcProGet` service account setup,
   Bitwarden API key provisioning, and the `Get-SecretATAP` integration pattern
   for non-interactive service contexts.
-- [Bitwarden Service Account Runbook](Runbook-BitwardenServiceAccounts.md) —
-  Operational checklist for SA-02/SA-03 BWS project/key inventory, `bws`
-  installation validation, DPAPI access-token provisioning, runtime validation,
-  rotation, and troubleshooting.
+- [Bitwarden Secrets Manager Access Token Runbook](Runbook-BitwardenServiceAccounts.md) —
+  Operational checklist for service-account and interactive-user BWS project/key
+  inventory, `bws` installation validation, ACL-protected DPAPI access-token
+  provisioning, runtime validation, rotation, and troubleshooting.
 - [Service Accounts and Bitwarden — Alternatives Considered](ServiceAccountsAndBitwarden.-AlternativesConsidered.md) —
   Design alternatives and trade-off analysis for service account Bitwarden
   access patterns evaluated in Sprint 0007.

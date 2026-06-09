@@ -1597,22 +1597,27 @@ that service account is complete.
 > [ServiceAccountsAndBitwarden.md](ServiceAccountsAndBitwarden.md#rotation-and-refresh-strategy)
 > for the rotation runbook.
 
-#### 9.4.10 Provision Secrets Manager (`bws`) access tokens for the service accounts
+#### 9.4.10 Provision Secrets Manager (`bws`) access tokens for Windows accounts
 
-Under the current architecture the **service accounts** read runtime secrets from
-**Bitwarden Secrets Manager** with a machine-account **access token** — there is no
-`bw login`, no `unlock`, no `BW_SESSION`, and no startup/refresh task. The DPAPI-protected
-access token is the entire credential. (The `bw`/Password-Manager steps 9.4.1–9.4.9 are
-the separate path for the interactive user `DeveloperTwo`; see the banner at the top of
-§9.4.)
+Under the current architecture, runtime/project secrets live in **Bitwarden Secrets
+Manager** and are read with a BWS **access token** - there is no `bw login`, no `unlock`,
+no `BW_SESSION`, and no startup/refresh task. The DPAPI-protected access token is the
+entire runtime credential.
+
+This applies to both service accounts and interactive users. Service accounts such as
+`SvcBuildmaster` use project-scoped machine-account tokens. Interactive users can be
+given their own project-scoped BWS token so they can call the same `Get-SecretATAP`
+Secrets Manager path without duplicating project secrets into Password Manager. User-only
+secrets remain in Password Manager and continue to use the login-time `BW_SESSION`
+pattern.
 
 Preconditions:
 
 1. The Bitwarden org, projects, machine accounts, and **access tokens** exist
    ([NewOrganizationSetup.md](NewOrganizationSetup.md) Phase 2).
-2. `SvcBuildmaster` / `SvcProGet` exist on this host and their credential folders are
-   ACL'd (9.4.1 / 9.4.4).
-3. You are elevated and have each machine account's access token to hand.
+2. Any service accounts being provisioned exist on this host.
+3. You are elevated for the credential-folder ACL step.
+4. You have each target account's BWS access token to hand.
 
 Host mapping:
 
@@ -1620,6 +1625,12 @@ Host mapping:
 | ----------------------- | ------------------- | ------------------------------- | ------------------------------------------------------------ |
 | `SvcBuildmaster`        | `SvcBuildMaster`    | `BuildMaster-Core`, `CI-Shared` | `…\SvcBuildmaster\<HOST>_SvcBuildmaster_BWS_AccessToken.xml` |
 | `SvcProGet`             | `SvcInfraShared`    | `ProGet-Core`, `CI-Shared`      | `…\SvcProGet\<HOST>_SvcProGet_BWS_AccessToken.xml`           |
+
+Interactive-user mapping:
+
+| Windows interactive user | BWS access-token scope | DPAPI token file                                  |
+| ------------------------ | ---------------------- | ------------------------------------------------- |
+| `$env:USERNAME`          | Project-specific token, typically `CI-Shared` plus any required project | `…\<USERNAME>\<HOST>_<USERNAME>_BWS_AccessToken.xml` |
 
 ##### 9.4.10.1 Confirm the `bws` CLI is installed machine-wide
 
@@ -1636,31 +1647,49 @@ bws --version
 If `bws` does not resolve, complete Step 4.6 (machine-wide `bws` install) before
 continuing.
 
-##### 9.4.10.2 DPAPI-store each access token (run AS the service account)
+##### 9.4.10.2 Create and ACL the BWS credential directory
 
-DPAPI binds to the running user, so the token file must be written by a process running as
-the owning service account. From the elevated admin session, for each service account,
-open a shell as that account and store its token. The helper cmdlet
-`Initialize-ServiceAccountBWSAccessToken` (added in `ATAP.Utilities.BuildTooling.PowerShell`)
-encapsulates the write; the equivalent inline form is:
+Create the protected directory before writing the DPAPI token file. This can be run from
+an elevated administrative shell. For the current interactive user:
 
 ```powershell
-# Runs AS the service account (Start-Process pwsh -Credential), elevated.
-$credDir = "C:\ProgramData\ATAP\BitwardenCredentials\$env:USERNAME"
-$sam     = ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name -split '\\')[-1]
-$tokPath = Join-Path $credDir "$env:COMPUTERNAME`_${sam}_BWS_AccessToken.xml"
-$token   = Read-Host 'BWS machine-account access token' -AsSecureString
-(New-Object System.Management.Automation.PSCredential('BWS_ACCESS_TOKEN', $token)) |
-  Export-Clixml -LiteralPath $tokPath
+Import-Module .\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1 -Force
+Initialize-BWSCredentialDirectory
 ```
 
-##### 9.4.10.3 Validate (as the service account)
-
-Decrypt the token in memory and confirm the machine account can read its projects:
+For a service account, pass the account name:
 
 ```powershell
-$tokPath = "C:\ProgramData\ATAP\BitwardenCredentials\$env:USERNAME\$env:COMPUTERNAME`_$($env:USERNAME)_BWS_AccessToken.xml"
-$cred    = Import-Clixml -LiteralPath $tokPath
+Import-Module .\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1 -Force
+Initialize-BWSCredentialDirectory -AccountName '.\SvcBuildmaster'
+```
+
+The helper creates `C:\ProgramData\ATAP\BitwardenCredentials\<SamAccountName>` and grants
+FullControl only to the owning account, `SYSTEM`, and local `Administrators`.
+
+##### 9.4.10.3 DPAPI-store each access token (run AS the owning account)
+
+DPAPI binds to the running user, so the token file must be written by a process running as
+the account that will later read it. For an interactive user, run the command from that
+user's own shell. For a service account, open a shell as that account and store its token.
+The helper cmdlet `Initialize-BWSAccessToken` encapsulates the DPAPI write:
+
+```powershell
+$token = Read-Host 'BWS access token' -AsSecureString
+Initialize-BWSAccessToken -AccessToken $token
+```
+
+The token is stored in a PSCredential whose UserName is the literal
+`BWS_ACCESS_TOKEN`; the password is the BWS access token. The canonical helper names are
+`Initialize-BWSAccessToken` and `Get-BWSAccessToken`. The older service-account names
+remain module aliases for compatibility.
+
+##### 9.4.10.4 Validate (as the owning account)
+
+Decrypt the token in memory and confirm the BWS token can read only its intended projects:
+
+```powershell
+$cred = Get-BWSAccessToken
 $env:BWS_ACCESS_TOKEN = $cred.GetNetworkCredential().Password
 try {
   bws secret list --output json | ConvertFrom-Json | Select-Object key, projectId
@@ -1669,13 +1698,13 @@ try {
 }
 ```
 
-Expected — the listed secret `key`s match the projects granted to that machine account.
+Expected — the listed secret `key`s match the projects granted to that BWS token.
 Runtime secret reads go through `Get-SecretATAP` with the
 `BitwardenSecretsManager` provider (set `SecretStoreType='BitwardenSecretsManager'` in
 `$global:settings`), which resolves the token from this DPAPI file.
 
-> **Rotation:** regenerating the machine-account token in the web vault invalidates the
-> old one; re-run 9.4.10.2 on every host that uses that machine account.
+> **Rotation:** regenerating the BWS access token in the web vault invalidates the
+> old one; re-run 9.4.10.3 on every host/account that uses that token.
 
 ### 9.5 Bootstrap git `safe.directory` for the BuildMaster service account
 

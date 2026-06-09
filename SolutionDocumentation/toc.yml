@@ -40,7 +40,7 @@
   href: Database-Package-Artifact-And-Feed-Decision.md
 - name: Service Accounts and Bitwarden
   href: ServiceAccountsAndBitwarden.md
-- name: Bitwarden Service Account Runbook
+- name: Bitwarden Secrets Manager Access Token Runbook
   href: Runbook-BitwardenServiceAccounts.md
 - name: C# Packages Versioning
   href: CSharp-Packages-Versioning.md

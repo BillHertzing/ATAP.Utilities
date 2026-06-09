@@ -34,6 +34,12 @@ Services authenticate to BWS with a machine-account **access token** via the `bw
 task**. The DPAPI-protected access token *is* the entire runtime credential. Password
 Manager is used by humans (interactive `bw`) and to hold break-glass copies.
 
+Interactive users who need project secrets should use their own scoped BWS access token
+with the same DPAPI file pattern as service accounts. Do not duplicate the same
+secret-name/value pairs in both Password Manager and Secrets Manager: project/runtime
+secrets live once in Secrets Manager, while Password Manager remains for user-unique
+secrets and login-time `BW_SESSION` access.
+
 > **Free-tier limits (verify current values at signup):** PM free org ≈ **2 users / 2
 > collections**; BWS free ≈ **2 users / 3 machine accounts**. The design below uses all 3
 > machine-account slots and maps any additional Windows services onto them. A Windows
@@ -130,6 +136,8 @@ Machine accounts → the account → Access tokens). The token is shown **once**
 immediately. These tokens are the only runtime credentials.
 
 - Drop a **break-glass copy** of each token into PM collection `Infra – Admin & Breakglass`.
+- Create a project-scoped BWS access token for each interactive user that needs to read
+  shared project secrets from Secrets Manager instead of from Password Manager.
 - The per-host DPAPI storage of these tokens happens in
   [NewComputerSetup.md §9.4](NewComputerSetup.md#94-manually-provision-dpapi-bitwarden-credentials-for-the-service-accounts).
 

@@ -9,10 +9,10 @@ token and returns a single secret value by its key.
 
 Token resolution (in order):
 1. Process-scope `$env:BWS_ACCESS_TOKEN`.
-2. The DPAPI access-token file for the running account (Get-ServiceAccountBWSAccessToken).
+2. The DPAPI access-token file for the running account (Get-BWSAccessToken).
 
 Unlike the Password-Manager provider there is no login, unlock, master password, or
-BW_SESSION; the access token alone authorizes reads of the machine account's projects.
+BW_SESSION; the access token alone authorizes reads of the granted projects.
 
 Lookup: `bws secret list --output json` is parsed and the entry whose `key` matches
 SecretName (case-insensitive) is selected.
@@ -71,8 +71,8 @@ function Get-SecretATAPBitwardenSecretsManager {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Retrieving field '$SecretField' from BWS secret '$SecretName'"
 
     # Load the sibling token-reader from source when not already available as a cmdlet.
-    if (-not (Get-Command -Name 'Get-ServiceAccountBWSAccessToken' -CommandType Function -ErrorAction SilentlyContinue)) {
-      $sibling = Join-Path $PSScriptRoot 'Get-ServiceAccountBWSAccessToken.ps1'
+    if (-not (Get-Command -Name 'Get-BWSAccessToken' -CommandType Function -ErrorAction SilentlyContinue)) {
+      $sibling = Join-Path $PSScriptRoot 'Get-BWSAccessToken.ps1'
       if (Test-Path -LiteralPath $sibling) { . $sibling }
     }
   }
@@ -90,14 +90,14 @@ function Get-SecretATAPBitwardenSecretsManager {
       # 2. Resolve the access token: process scope first, then the DPAPI file.
       $token = $env:BWS_ACCESS_TOKEN
       if ([string]::IsNullOrWhiteSpace($token)) {
-        $cred = Get-ServiceAccountBWSAccessToken -ErrorAction Stop
+        $cred = Get-BWSAccessToken -ErrorAction Stop
         $token = $cred.GetNetworkCredential().Password
         $env:BWS_ACCESS_TOKEN = $token
         $tokenWasSetHere = $true
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'BWS access token resolved from DPAPI file'
       }
       if ([string]::IsNullOrWhiteSpace($token)) {
-        $msg = 'No BWS access token in $env:BWS_ACCESS_TOKEN or the DPAPI token file. Provision it with Initialize-ServiceAccountBWSAccessToken (see NewComputerSetup.md section 9.4.10).'
+        $msg = 'No BWS access token in $env:BWS_ACCESS_TOKEN or the DPAPI token file. Provision it with Initialize-BWSAccessToken (see NewComputerSetup.md section 9.4.10).'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
         throw $msg
       }
@@ -123,7 +123,7 @@ function Get-SecretATAPBitwardenSecretsManager {
       # 4. Match by key (case-insensitive).
       $match = @($secrets | Where-Object { $_.key -and ($_.key.ToLowerInvariant() -eq $SecretName.ToLowerInvariant()) })
       if ($match.Count -eq 0) {
-        $msg = "No Bitwarden Secrets Manager secret found with key '$SecretName' in the machine account's projects."
+        $msg = "No Bitwarden Secrets Manager secret found with key '$SecretName' in the BWS token's granted projects."
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
         throw $msg
       }

@@ -98,7 +98,7 @@ function Test-DatabasePackageManifest {
     }
 
     # ── schemaVersion must be 2 ────────────────────────────────────────────────
-    if ($manifest.schemaVersion -ne $null -and $manifest.schemaVersion -ne 2) {
+    if ($null -ne $manifest.schemaVersion -and $manifest.schemaVersion -ne 2) {
       $errors.Add("schemaVersion must be 2; got $($manifest.schemaVersion)")
     }
 
@@ -120,7 +120,7 @@ function Test-DatabasePackageManifest {
     }
 
     # ── files array ────────────────────────────────────────────────────────────
-    if ($manifest.files -ne $null) {
+    if ($null -ne $manifest.files) {
       $validKinds = @('migration', 'repeatable', 'seed', 'seedLoader')
       $validDestructive = @('none', 'columnDrop', 'tableDrop', 'columnTypeNarrow', 'dataDelete', 'indexDrop', 'constraintDrop')
       $idx = 0

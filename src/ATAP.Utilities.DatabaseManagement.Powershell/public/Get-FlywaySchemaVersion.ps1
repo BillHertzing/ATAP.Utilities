@@ -56,6 +56,8 @@ function Get-FlywaySchemaVersion {
     AI assisted using Powershell.instructions.md as guidelines.
     Task: TASKS_V4-DBA1.md DBA1-T04 / V4-E07.
 #>
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKey',
+    Justification = 'CredentialsKey is a vault lookup key name, not a credential')]
   [CmdletBinding(DefaultParameterSetName = 'ConnectionParts')]
   [OutputType([PSCustomObject[]])]
   param(
@@ -163,8 +165,8 @@ ORDER BY installed_rank DESC;
 
   end {
     if ($resolvedConnectionOwnedByFunction -and $null -ne $resolvedConnection) {
-      try { $resolvedConnection.Close() } catch { }
-      try { $resolvedConnection.Dispose() } catch { }
+      try { $resolvedConnection.Close() } catch { $null = $_ }
+      try { $resolvedConnection.Dispose() } catch { $null = $_ }
       $resolvedConnection = $null
     }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Exiting $fn" -Tag 'Trace'

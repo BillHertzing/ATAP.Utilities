@@ -315,7 +315,7 @@ function Invoke-Flyway {
       param([string]$StartDir)
       $git = Get-Command git -ErrorAction SilentlyContinue
       if (-not $git) { return @{ Tag = '(no-git)'; Commit = '(no-git)' } }
-      $tag = $null; try { $tag = (git -C $StartDir describe --tags --abbrev=0 2>$null).Trim() } catch {}
+      $tag = $null; try { $tag = (git -C $StartDir describe --tags --abbrev=0 2>$null).Trim() } catch { $null = $_ }
       if (-not $tag) { $tag = '(untagged)' }
       $commit = (git -C $StartDir rev-parse --short HEAD 2>$null).Trim(); if (-not $commit) { $commit = '(no-commit)' }
       @{ Tag = $tag; Commit = $commit }

@@ -38,6 +38,10 @@ function Invoke-FlywayRehearsal {
 .PARAMETER LogPath
     Optional path where the rehearsal result summary is written as JSON.
 #>
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKey',
+    Justification = 'CredentialsKey is a vault lookup key name, not a credential')]
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidDefaultValueSwitchParameter', '',
+    Justification = 'IntegratedSecurity defaults to $true for a secure-by-default posture')]
   [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ConnectionParts')]
   [OutputType([PSCustomObject])]
   param(
@@ -369,8 +373,8 @@ END
 
   end {
     if ($resolvedConnectionOwnedByFunction -and $null -ne $resolvedSqlConnection) {
-      try { $resolvedSqlConnection.Close() } catch { }
-      try { $resolvedSqlConnection.Dispose() } catch { }
+      try { $resolvedSqlConnection.Close() } catch { $null = $_ }
+      try { $resolvedSqlConnection.Dispose() } catch { $null = $_ }
       $resolvedSqlConnection = $null
     }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving $fn" -Tag 'Trace'

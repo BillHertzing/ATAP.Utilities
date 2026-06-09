@@ -177,7 +177,7 @@ function New-DatabaseChangePackage {
       if ($LASTEXITCODE -eq 0 -and $gitDate -match '^\d{4}') {
         $gitCommitDate = [System.DateTimeOffset]::Parse($gitDate).UtcDateTime.ToString('yyyy-MM-ddTHH:mm:ssZ')
       }
-    } catch { }
+    } catch { $null = $_ }
     if (-not $gitCommitDate) {
       $gitCommitDate = '1970-01-01T00:00:00Z'
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message 'Could not retrieve git commit date; using epoch timestamp for determinism.' -Tag 'Warning'

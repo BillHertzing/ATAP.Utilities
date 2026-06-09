@@ -13,6 +13,7 @@ function Import-DatabaseSqlClientAssembly {
   }
   catch {
     # dbatools ships and loads Microsoft.Data.SqlClient in many installed environments.
+    $null = $_
   }
 
   $connectionType = $connectionTypeName -as [type]
@@ -27,6 +28,7 @@ function Import-DatabaseSqlClientAssembly {
   }
   catch {
     # Throw the clearer error below if the type is still unavailable.
+    $null = $_
   }
 
   $connectionType = $connectionTypeName -as [type]
@@ -65,7 +67,7 @@ function Assert-DatabaseSqlConnectionIsOpen {
 }
 
 function New-DatabaseSqlConnectionFromConnectionString {
-  [CmdletBinding()]
+  [CmdletBinding(SupportsShouldProcess = $true)]
   param(
     [Parameter(Mandatory = $true)]
     [string] $ConnectionString,
@@ -217,7 +219,7 @@ function Import-DatabaseScriptCommand {
 }
 
 function New-DatabaseConnectionParameterMap {
-  [CmdletBinding()]
+  [CmdletBinding(SupportsShouldProcess = $true)]
   param(
     [Parameter(Mandatory = $false)]
     [hashtable] $BoundParameters
@@ -307,6 +309,10 @@ function Invoke-DatabaseConnectionGetPVal {
 }
 
 function Resolve-DatabaseSqlConnectionFromConnectionParts {
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKey',
+    Justification = 'CredentialsKey is a vault lookup key name, not a credential')]
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKeyDottedPath',
+    Justification = 'CredentialsKeyDottedPath is a configuration path string, not a credential')]
   [CmdletBinding()]
   param(
     [Parameter(Mandatory = $true)]

@@ -38,6 +38,10 @@ function Resolve-DatabaseSqlConnection {
   .NOTES
   AI assisted using Powershell.instructions.md as guidelines
   #>
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKey',
+    Justification = 'CredentialsKey is a vault lookup key name, not a credential')]
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKeyDottedPath',
+    Justification = 'CredentialsKeyDottedPath is a configuration path string, not a credential')]
   [CmdletBinding()]
   [OutputType([pscustomobject])]
   param(

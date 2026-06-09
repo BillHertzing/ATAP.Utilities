@@ -533,8 +533,8 @@ END
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message ("Errors:`n {0}" -f ($errors -join [Environment]::NewLine))
     }
     if (-not $isCallerOwnedConnection -and $null -ne $openSQLConnection) {
-      try { $openSQLConnection.Close() } catch { }
-      try { $openSQLConnection.Dispose() } catch { }
+      try { $openSQLConnection.Close() } catch { $null = $_ }
+      try { $openSQLConnection.Dispose() } catch { $null = $_ }
       $openSQLConnection = $null
     }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Leaving script DatabaseProvisioning'

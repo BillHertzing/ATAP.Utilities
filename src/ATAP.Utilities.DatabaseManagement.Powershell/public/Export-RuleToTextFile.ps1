@@ -62,6 +62,8 @@
 #>
 
 function Export-RuleToTextFile {
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKey',
+    Justification = 'CredentialsKey is a vault lookup key name, not a credential')]
   [CmdletBinding(DefaultParameterSetName = 'ConnectionParts')]
   param (
     [Parameter(Mandatory = $true, Position = 0)]

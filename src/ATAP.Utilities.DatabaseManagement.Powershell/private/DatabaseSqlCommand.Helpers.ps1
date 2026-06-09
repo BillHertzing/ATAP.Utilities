@@ -1,5 +1,5 @@
 function New-DatabaseSqlCommand {
-  [CmdletBinding()]
+  [CmdletBinding(SupportsShouldProcess = $true)]
   param(
     [Parameter(Mandatory = $true)]
     [object] $SqlConnection,

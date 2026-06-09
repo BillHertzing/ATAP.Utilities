@@ -51,7 +51,7 @@ function New-CobianSqlJobs {
     writing to prevent ArgumentOutOfRangeException on service start.
 #>
 
-
+  [CmdletBinding(SupportsShouldProcess = $true)]
   param(
     [string]$ListPath = 'C:\Program Files\Cobian Reflector\Lists\MainList.lst',
     [string]$ScriptPath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-94-sprint-0004-work-items\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Invoke-SqlServerBackup.ps1',

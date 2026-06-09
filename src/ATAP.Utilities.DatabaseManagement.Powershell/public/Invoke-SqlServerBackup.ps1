@@ -109,8 +109,10 @@
     https://docs.dbatools.io/Backup-DbaDatabase
 #>
 function Invoke-SqlServerBackup {
-[CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ConnectionParts')]
-param(
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKey',
+    Justification = 'CredentialsKey is a vault lookup key name, not a credential')]
+  [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ConnectionParts')]
+  param(
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
     [string] $DatabaseName,
 

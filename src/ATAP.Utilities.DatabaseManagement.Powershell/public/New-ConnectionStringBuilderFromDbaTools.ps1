@@ -79,7 +79,7 @@ function New-ConnectionStringBuilderFromDbaTools {
   [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingConvertToSecureStringWithPlainText', '',
     Justification = 'Password retrieved from Bitwarden vault at runtime; not hardcoded plaintext')]
   [Alias('New-DBAConnStrBuilder')]
-  [CmdletBinding(DefaultParameterSetName = 'IntegratedSecurity')]
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'IntegratedSecurity')]
   param(
     # region Database connection parameters
     [Parameter(Mandatory = $true, Position = 0, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'IntegratedSecurity')]

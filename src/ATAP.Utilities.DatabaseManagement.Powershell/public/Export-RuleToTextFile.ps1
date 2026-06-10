@@ -20,8 +20,17 @@
 .PARAMETER DatabaseName
     The name of the database to query. Default: 'ATAPUtilities'.
 
-.PARAMETER SqlInstance
-    The SQL Server instance to connect to. Default: 'localhost'.
+.PARAMETER SqlConnection
+    An already-open Microsoft.Data.SqlClient.SqlConnection.
+
+.PARAMETER DBConnectionStringSecretName
+    Bitwarden secret name whose value is a complete SQL Server connection string.
+
+.PARAMETER DatabaseHost
+    SQL Server host used by the ConnectionParts parameter set. Default: 'localhost'.
+
+.PARAMETER InstanceName
+    SQL Server instance name used by the ConnectionParts parameter set. Accepts -SqlInstance as an alias.
 
 .PARAMETER UseIntegratedSecurity
     Use Windows Integrated Security for authentication. Default: $true.
@@ -47,13 +56,15 @@
     Returns the path to the created text file.
 
 .NOTES
-    Requires the dbatools PowerShell module.
+    Uses Resolve-DatabaseSqlConnection for connection validation.
     Author: ATAP.Utilities Database Team
     Version: 1.0.0
 #>
 
 function Export-RuleToTextFile {
-  [CmdletBinding()]
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKey',
+    Justification = 'CredentialsKey is a vault lookup key name, not a credential')]
+  [CmdletBinding(DefaultParameterSetName = 'ConnectionParts')]
   param (
     [Parameter(Mandatory = $true, Position = 0)]
     [ValidateNotNullOrEmpty()]
@@ -66,14 +77,43 @@ function Export-RuleToTextFile {
     [Parameter(Mandatory = $false)]
     [string]$OutputPath,
 
+    [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'SqlConnection')]
+    [AllowNull()]
+    [object]$SqlConnection,
+
+    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'DBConnectionStringSecretName')]
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string]$DBConnectionStringSecretName,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [Alias('HostName', 'ServerInstance')]
+    [string]$DatabaseHost = 'localhost',
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [Alias('SqlInstance')]
+    [string]$InstanceName,
+
     [Parameter(Mandatory = $false)]
     [string]$DatabaseName = 'ATAPUtilities',
 
-    [Parameter(Mandatory = $false)]
-    [string]$SqlInstance = 'localhost',
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [string]$ConnectionMethod,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [string]$CredentialsKey,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [string]$ApplicationName,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [Alias('UseIntegratedSecurity')]
+    [bool]$IntegratedSecurity = $true,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [switch]$UseTrustedConnection,
 
     [Parameter(Mandatory = $false)]
-    [bool]$UseIntegratedSecurity = $true,
+    [hashtable]$Settings,
 
     [Parameter(Mandatory = $false)]
     [string]$Username,
@@ -83,16 +123,33 @@ function Export-RuleToTextFile {
   )
 
   begin {
-    # Import required modules
-    if (-not (Get-Module -Name dbatools -ListAvailable)) {
-      Write-Error "dbatools module not found. Please install it using: Install-Module -Name dbatools"
-      return
+    if (-not (Get-Command -Name 'Resolve-DatabaseSqlConnection' -CommandType Function -ErrorAction SilentlyContinue)) {
+      . (Join-Path $PSScriptRoot 'Resolve-DatabaseSqlConnection.ps1')
     }
-    Import-Module dbatools -ErrorAction Stop
+    if (-not (Get-Command -Name 'Invoke-DatabaseSqlDataSet' -CommandType Function -ErrorAction SilentlyContinue)) {
+      . (Join-Path (Split-Path -Parent $PSScriptRoot) 'private\DatabaseSqlCommand.Helpers.ps1')
+    }
 
-    # Configure dbatools SSL/encryption settings
-    Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -PassThru | Register-DbatoolsConfig
-    Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -PassThru | Register-DbatoolsConfig
+    if ($PSBoundParameters.ContainsKey('Username') -or $PSBoundParameters.ContainsKey('Password')) {
+      Write-Warning 'Username and Password are retained for backward compatibility but are not used by the shared connection resolver. Use CredentialsKey, DBConnectionStringSecretName, or SqlConnection for SQL authentication.'
+    }
+
+    $resolution = Resolve-DatabaseSqlConnection `
+      -OriginalPSBoundParameters $PSBoundParameters `
+      -SqlConnection $SqlConnection `
+      -DBConnectionStringSecretName $DBConnectionStringSecretName `
+      -DatabaseHost $DatabaseHost `
+      -InstanceName $InstanceName `
+      -DatabaseName $DatabaseName `
+      -ConnectionMethod $ConnectionMethod `
+      -CredentialsKey $CredentialsKey `
+      -ApplicationName $ApplicationName `
+      -UseTrustedConnection:$UseTrustedConnection `
+      -IntegratedSecurity:$IntegratedSecurity `
+      -Settings $Settings
+
+    $resolvedSqlConnection = $resolution.Connection
+    $resolvedConnectionOwnedByFunction = -not [bool]$resolution.IsCallerOwned
 
     # Generate output path if not provided
     if ([string]::IsNullOrEmpty($OutputPath)) {
@@ -106,24 +163,7 @@ function Export-RuleToTextFile {
 
   process {
     try {
-      # Build connection parameters
-      $connectionParams = @{
-        SqlInstance = $SqlInstance
-        Database    = $DatabaseName
-      }
-
-      if ($UseIntegratedSecurity) {
-        Write-Verbose "Using Integrated Security"
-      }
-      else {
-        if ([string]::IsNullOrEmpty($Username) -or $null -eq $Password) {
-          Write-Error "Username and Password are required when not using Integrated Security"
-          return
-        }
-        $connectionParams['SqlCredential'] = New-Object System.Management.Automation.PSCredential($Username, $Password)
-      }
-
-      Write-Verbose "Connecting to $SqlInstance.$DatabaseName"
+      Write-Verbose "Using SQL connection $($resolvedSqlConnection.DataSource).$($resolvedSqlConnection.Database)"
 
       # Build query parameters
       $sqlParams = @{
@@ -136,11 +176,11 @@ function Export-RuleToTextFile {
       # Execute stored procedure to retrieve Rule data
       Write-Verbose "Executing stored procedure: dbo.GetRuleByName with RuleName='$RuleName'"
 
-      $results = Invoke-DbaQuery @connectionParams `
+      $results = Invoke-DatabaseSqlDataSet `
+        -SqlConnection $resolvedSqlConnection `
+        -CommandText 'dbo.GetRuleByName' `
         -CommandType StoredProcedure `
-        -Query "dbo.GetRuleByName" `
-        -SqlParameter $sqlParams `
-        -As DataSet
+        -Parameters $sqlParams
 
       # Check if we got any results
       if ($null -eq $results -or $results.Tables.Count -eq 0 -or $results.Tables[0].Rows.Count -eq 0) {
@@ -272,7 +312,12 @@ function Export-RuleToTextFile {
       throw
     }
   }
+
+  end {
+    if ($resolvedConnectionOwnedByFunction -and $null -ne $resolvedSqlConnection) {
+      $resolvedSqlConnection.Dispose()
+    }
+  }
 }
 
 # Export the function if this script is dot-sourced
-Export-ModuleMember -Function Export-RuleToTextFile

@@ -1,6 +1,20 @@
-
 <meta http-equiv="refresh" content="0; URL=ReadMe.html"/>
-# ATAP Utilities Documentation Site Root Home Page
+# ATAP Utilities Repository Root Index
+This file contains a bried description of every file and folder located in the repository root## This note applies to teh .mcp.json file### MCP configuration files in this repo
 
-You should be redirected to this repository's ReadMe.html page. If it doesn't happen automatically, please click on the link [ReadMe.html](./ReadMe.html)
+This repository includes an `.mcp.json` file at the root alongside a `.vscode/mcp.json` file. Both describe the same set of MCP servers (for example, the local PlantUML MCP server) and may look redundant at first glance.
 
+The duplication is intentional:
+
+- `.mcp.json` is the primary, tool-agnostic configuration used by Claude Code and other MCP‑aware clients that look for a project‑level MCP definition in the repo root. It ensures the project’s MCP setup is explicit, versioned, and portable across editors and machines.
+- `.vscode/mcp.json` is the Visual Studio Code–specific MCP configuration that VS Code itself (and extensions that rely on VS Code’s MCP integration) can read. Keeping this file allows other tools such as Copilot Chat or future MCP‑enabled extensions to reuse the same server definitions without additional setup.
+
+For now, both files intentionally mirror each other so that different MCP clients (Claude Code and VS Code–native integrations) can share the same local MCP servers. If the ecosystem converges on a single configuration location in the future, we can remove this duplication and point everything at one source of truth.
+
+### Generated diagram pipeline
+
+The PlantUML MCP server is for interactive client rendering. Checked-in diagram
+images are generated with the PowerShell command documented in
+[`SolutionDocumentation/Generated-Diagram-Pipeline.md`](SolutionDocumentation/Generated-Diagram-Pipeline.md).
+Editable `.puml`, `.uml`, and `.drawio` sources stay in their documentation
+folders; rendered images are written under `_generated/diagrams`.

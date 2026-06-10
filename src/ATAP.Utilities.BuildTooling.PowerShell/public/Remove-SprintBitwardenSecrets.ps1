@@ -23,8 +23,10 @@ function Remove-SprintBitwardenSecrets {
     warning (it may have already been deleted). All other items continue.
 
     ConfirmImpact is set to High. PowerShell will prompt for confirmation
-    before any deletion unless -Confirm:$false or -Force is passed. Deletion
-    is reversible only by re-running New-SprintBitwardenSecrets.
+    before any deletion unless -Confirm:$false or -Force is passed. -Force
+    suppresses both the single safety prompt and PowerShell's high-impact
+    ShouldProcess confirmation, but it does not override -WhatIf. Deletion is
+    reversible only by re-running New-SprintBitwardenSecrets.
 
     The BW_SESSION environment variable must be set (by the login script at
     interactive logon). In agent-spawned shells it is read from User scope.
@@ -41,7 +43,8 @@ function Remove-SprintBitwardenSecrets {
     List of database names whose secrets should be deleted.
     Defaults to @('master', 'ATAPUtilities', 'AceCommander').
   .PARAMETER Force
-    Bypasses the High-impact confirmation prompt. Use for pipeline / agent invocations.
+    Bypasses the high-impact confirmation prompts. Use for pipeline / agent
+    invocations. Does not override -WhatIf.
   .OUTPUTS
     [PSCustomObject[]] — one entry per (database, host, tier) with fields:
     secretName, database, host, tier, deleted, skipped, error.
@@ -79,6 +82,17 @@ function Remove-SprintBitwardenSecrets {
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
+    # Load helper functions. Fallback for running this file from source without
+    # importing the module; a normal Import-Module already dot-sources the private
+    # helper. Kept inside BEGIN so loading/dot-sourcing this file only DEFINES the
+    # function and never executes anything at load time.
+    if (-not (Get-Command -Name 'Invoke-BitwardenCliWithCleanTlsEnvironment' -ErrorAction SilentlyContinue)) {
+      $bitwardenTlsHelperPath = Join-Path -Path $PSScriptRoot -ChildPath '..\private\Invoke-BitwardenCliWithCleanTlsEnvironment.ps1'
+      if (Test-Path -LiteralPath $bitwardenTlsHelperPath -PathType Leaf) {
+        . $bitwardenTlsHelperPath
+      }
+    }
+
     # Snippet: Check and populate simple parameter - DeveloperUsername
     if ([string]::IsNullOrWhiteSpace($DeveloperUsername)) {
       $DeveloperUsername = $env:USERNAME
@@ -115,6 +129,10 @@ function Remove-SprintBitwardenSecrets {
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
       -Message "Removing Bitwarden sprint secrets for $DeveloperUsername; databases: $($Databases -join ', '); hosts: $($HostList -join ', ')"
+
+    if ($Force) {
+      $ConfirmPreference = 'None'
+    }
   }
 
   process {
@@ -157,7 +175,9 @@ function Remove-SprintBitwardenSecrets {
                 -Message "Searching Bitwarden for item: $secretName" -Tag 'BitwardenCLI'
 
               # bw list returns an array; --search does substring match so we filter for exact name
-              $listOutput = & bw list items --search $secretName --session $env:BW_SESSION 2>&1
+              $listOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+                & bw list items --search $secretName --session $env:BW_SESSION 2>&1
+              }
               if ($LASTEXITCODE -ne 0) {
                 throw "bw list items failed (exit $LASTEXITCODE): $listOutput"
               }
@@ -177,7 +197,9 @@ function Remove-SprintBitwardenSecrets {
               Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
                 -Message "Deleting Bitwarden item $itemId ($secretName)" -Tag 'BitwardenCLI'
 
-              $deleteOutput = & bw delete item $itemId --session $env:BW_SESSION 2>&1
+              $deleteOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+                & bw delete item $itemId --session $env:BW_SESSION 2>&1
+              }
               if ($LASTEXITCODE -ne 0) {
                 throw "bw delete item failed (exit $LASTEXITCODE): $deleteOutput"
               }
@@ -201,7 +223,9 @@ function Remove-SprintBitwardenSecrets {
     # Sync vault so all clients see the deletions immediately
     if ($results.Where({ $_.deleted }).Count -gt 0) {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Running bw sync to propagate deletions.' -Tag 'BitwardenCLI'
-      $syncOutput = & bw sync --session $env:BW_SESSION 2>&1
+      $syncOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+        & bw sync --session $env:BW_SESSION 2>&1
+      }
       if ($LASTEXITCODE -ne 0) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
           -Message "bw sync failed (exit $LASTEXITCODE): $syncOutput" -Tag 'BitwardenCLI'

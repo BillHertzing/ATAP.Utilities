@@ -1,13 +1,29 @@
 # C# Packages — Pack and Push
 
 **Scope:** Producing `.nupkg` / `.snupkg` files from `ATAP.Utilities.*` and
-`AceCommander.*` C# projects and pushing them to the correct ProGet feed for a
-given pipeline tier.
-**Audience:** Developers cutting packages locally; maintainers of the
-`Publish-ATAPUtilities.ps1` helper; anyone troubleshooting a failed push.
+`AceCommander.*` C# projects and pushing them to the correct ProGet feed.
+**Audience:** Developers cutting packages locally; anyone troubleshooting a failed push.
 **Status:** Authoritative. Consolidates pack/push content from
-`BuildMaster-ProGet-CSharp-Package-Pipeline.md`, `Building.md`, and
-`src/ATAP.Utilities.BuildTooling.PowerShell/public/Publish-ATAPUtilities.ps1`.
+`BuildMaster-ProGet-CSharp-Package-Pipeline.md` and `Building.md`.
+`Publish-ATAPUtilities.ps1` was deleted in sprint-0007 (V4-G10); see §6 for the migration note.
+
+> **Strategy update (sprint-0007 — Immutable Build).** A package is packed
+> and pushed **exactly once**, into the Experimental feed (`nuget-experimental`).
+> Movement into the Development, Integration, QA, and Production feeds is by
+> **promotion**, not by re-pack/re-push. This doc therefore documents:
+>
+> - The pack and push commands as they run **at Experimental** (still the
+>   authoritative reference for the commands themselves).
+> - The single-source-of-truth cmdlet `Publish-NuGetPackageToProGet` that
+>   wraps `dotnet nuget push` for use both in local dev and in the
+>   Experimental BuildMaster stage.
+> - The promotion mechanism (`Promote-ProGetPackage`) used at every stage
+>   above Experimental.
+>
+> See [Immutable-Build-Strategy.md §5](Immutable-Build-Strategy.md#5-what-promotion-is-and-is-not)
+> for what promotion is and is not. References below to "the push at tier T"
+> for T > Experimental are legacy and should be read as "the promotion at
+> tier T."
 
 **Not in this doc:**
 
@@ -51,13 +67,13 @@ dotnet pack src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj `
 Not every project in the solution is shipped. The current inventory in
 [BuildMaster-ProGet-CSharp-Package-Pipeline.md §1.1](BuildMaster-ProGet-CSharp-Package-Pipeline.md#11-project-families) classifies them:
 
-| Category                  | Example                            | `IsPackable` | Goes to ProGet? |
-| ------------------------- | ---------------------------------- | ------------ | --------------- |
-| Console apps              | `ATAP.Console.HelloWorld`          | `false`      | No              |
-| Service libraries (§1.1b) | `ATAP.Services.ConsoleMonitor`     | `true`       | Yes             |
-| Utility libraries (§1.1c) | `ATAP.Utilities.ETW`               | `true`       | Yes             |
-| Meta-package (§1.1d)      | `ATAP.Utilities`                   | `true`       | Yes             |
-| Unit test projects        | `ATAP.Utilities.Testing.UnitTests` | `false`      | No              |
+| Category                  | Example                        | `IsPackable` | Goes to ProGet? |
+| ------------------------- | ------------------------------ | ------------ | --------------- |
+| Console apps              | `ATAP.Console.HelloWorld`      | `false`      | No              |
+| Service libraries (§1.1b) | `ATAP.Services.ConsoleMonitor` | `true`       | Yes             |
+| Utility libraries (§1.1c) | `ATAP.Utilities.ETW`           | `true`       | Yes             |
+| Meta-package (§1.1d)      | `ATAP.Utilities`               | `true`       | Yes             |
+| Unit test projects        | `ATAP.Utilities.Testing.Tests` | `false`      | No              |
 
 `IsPackable` defaults to `true` for SDK-style projects. Console and test
 projects set it to `false` explicitly in their `.csproj`. If a library project
@@ -91,6 +107,37 @@ inside the generated `.nuspec`:
 to override the solution-wide defaults. The meta-package
 (`src/ATAP.Utilities/ATAP.Utilities.csproj`) is an example — it sets its own
 `Description` explaining the roll-up purpose.
+
+---
+
+## Embedded Provenance Metadata
+
+Every NuGet package (`.nupkg`) carries the following metadata in its
+`.nuspec` and assembly attributes. This metadata records the package's
+provenance — who built it, when, from which commit, and what runtime/tier
+context produced it — and is the load-bearing evidence trail behind the
+immutable promote-bytes model.
+
+| Metadata Field                   | Source                                   | Example                                                |
+| -------------------------------- | ---------------------------------------- | ------------------------------------------------------ |
+| **PackageId**                    | .csproj `<PackageId>` or assembly name   | `ATAP.Utilities.Serialization`                         |
+| **Version**                      | Computed by `UpdateVersion` MSBuild task | `0.1.0-Alpha-007`                                      |
+| **AssemblyVersion**              | `Properties/AssemblyInfo.cs`             | `0.1.0.0`                                              |
+| **AssemblyFileVersion**          | `Properties/AssemblyInfo.cs`             | `0.1.0.20260329`                                       |
+| **AssemblyInformationalVersion** | `Properties/AssemblyInfo.cs` + Git info  | `0.1.0-Alpha-007+abc1234`                              |
+| **Commit Hash**                  | Git `HEAD` at build time                 | `abc1234def5678`                                       |
+| **Branch**                       | `git branch --show-current`              | `91-sprint-0003-work-items`                            |
+| **Build Timestamp**              | MSBuild `$(BuildTimestamp)`              | `2026-03-29T14:30:00Z`                                 |
+| **Build Configuration**          | MSBuild `$(Configuration)`               | `Release`, `Debug`, or `Trace`                         |
+| **Target Frameworks**            | .csproj `<TargetFrameworks>`             | `net8.0;net9.0;net10.0`                                |
+| **PackageLifeCycleStage**        | .csproj property                         | `Experimental`, `Development`, `Testing`, `Production` |
+| **Authors**                      | .csproj `<Authors>`                      | `ATAPUtilities Foundation`                             |
+| **Description**                  | .csproj `<Description>`                  | Component description                                  |
+
+Because the same artifact is promoted byte-for-byte through the five tiers
+under the immutable strategy, this metadata is fixed at Experimental-stage
+pack time and is the authoritative provenance record for every later tier
+appearance of the same `(PackageId, Version)`.
 
 ---
 
@@ -168,64 +215,30 @@ command.
 
 ---
 
-## 6. The `Publish-ATAPUtilities.ps1` Helper
+## 6. ~~`Publish-ATAPUtilities.ps1` Helper~~ — **Deleted (V4-G10, sprint-0007)**
 
-Location: `src/ATAP.Utilities.BuildTooling.PowerShell/public/Publish-ATAPUtilities.ps1`.
-(A top-level symlink / copy exists at `Publish-ATAPUtilities.ps1` in the repo
-root for convenience.)
+> **`Publish-ATAPUtilities.ps1` no longer exists.** Both the repo-root copy and
+> the `BuildTooling/public/` copy were deleted as part of sprint-0007 cleanup
+> (task V4-G10 / `PowerShell-Script-Consolidation.md` §10.4).
+>
+> **Migration:**
+>
+> - For C# libraries: use `Invoke-DotnetBuildWithRetry` from
+>   `ATAP.Utilities.BuildTooling.PowerShell`, or the `Publish-NuGetPackageToProGet`
+>   cmdlet after a `dotnet pack` run (see §5 above).
+> - For PowerShell modules: use `Invoke-ModuleBuildWithRetry`, which orchestrates
+>   `module.build.ps1` via `Invoke-Build` with NBGV-derived tier resolution and
+>   automatic retry.
+> - For the CI path: packages are published to `nuget-experimental` by the
+>   BuildMaster `CSharpPackage-5Stage` plan via `Invoke-CSharpPackageBuildMasterStage.ps1`;
+>   no standalone script is involved.
 
-### 6.1 What it does
-
-- Builds a curated list of library `.csproj` files in **dependency order**
-  (dependencies first).
-- Uses the MSBuild pipeline's `PublishAfterBuild` target, which chains
-  `Build → Pack → Push` in one `dotnet build` invocation, driven by
-  `GeneratePackageOnBuild=true`.
-- Pushes to `nuget-experimental` by default. The destination URL is override-able
-  via `-p:ProGetExperimentalFeedUrl=<url>`.
-
-### 6.2 Prerequisites
-
-- `PROGET_ADMIN_API_KEY` must be set at **User** scope in Windows environment
-  variables. `LoginScript.ps1` provisions it from Bitwarden during normal
-  shell startup.
-- ProGet Inedo Hub running at `http://localhost:50000` (or the override URL).
-- A clean working tree with all `version.json` files reflecting the intended
-  tier label (see Versioning doc).
-
-### 6.3 Usage
+The historical documentation for this script (what it did, its parameter set, the
+dependency-ordered library list) can be recovered from git history if needed:
 
 ```powershell
-# Standard: publish all libraries in the list to nuget-experimental
-.\src\ATAP.Utilities.BuildTooling.PowerShell\public\Publish-ATAPUtilities.ps1
-
-# Verbose custom-task logging
-.\...\Publish-ATAPUtilities.ps1 -DebugVerbosity Debug
-
-# Dry run — show what would be built, don't execute
-.\...\Publish-ATAPUtilities.ps1 -WhatIf
+git log --all --oneline -- 'src/ATAP.Utilities.BuildTooling.PowerShell/public/Publish-ATAPUtilities.ps1'
 ```
-
-### 6.4 The curated library list
-
-The script's `$libraries` array is the source of truth for which packages are
-ready to publish via this path. Currently (sprint-0006):
-
-```text
-src\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj
-src\ATAP.Utilities.Configuration.Extensions\ATAP.Utilities.Configuration.Extensions.csproj
-```
-
-This list grows as libraries are onboarded. The order matters — a library must
-appear after any library it `ProjectReference`s, because pushing to
-nuget-experimental makes the upstream package visible for the downstream
-project's subsequent pack. Add new entries at the end of the chain.
-
-### 6.5 When to prefer `dotnet nuget push` directly
-
-The helper script is optimized for the **full local publish** loop. For a
-single package or a one-off push, the explicit `pack` + `push` sequence in §5 is
-easier to debug and does not require editing the `$libraries` list.
 
 ---
 
@@ -233,13 +246,20 @@ easier to debug and does not require editing the `$libraries` list.
 
 Single ProGet instance at `http://localhost:50000`. Five feeds, one per tier:
 
-| Tier | Feed name            | Push URL                                                        |
-| ---- | -------------------- | --------------------------------------------------------------- |
-| T1   | `nuget-experimental` | `http://localhost:50000/nuget/nuget-experimental/v3/index.json` |
-| T2   | `nuget-development`  | `http://localhost:50000/nuget/nuget-development/v3/index.json`  |
-| T3   | `nuget-integration`  | `http://localhost:50000/nuget/nuget-integration/v3/index.json`  |
-| T4   | `nuget-qa`           | `http://localhost:50000/nuget/nuget-qa/v3/index.json`           |
-| T5   | `nuget-stable`       | `http://localhost:50000/nuget/nuget-stable/v3/index.json`       |
+| Tier         | Feed name            | Push URL (Experimental only — others reached by promotion)      |
+| ------------ | -------------------- | --------------------------------------------------------------- |
+| Experimental | `nuget-experimental` | `http://localhost:50000/nuget/nuget-experimental/v3/index.json` |
+| Development  | `nuget-development`  | (target of promotion from `nuget-experimental`)                 |
+| Integration  | `nuget-integration`  | (target of promotion from `nuget-development`)                  |
+| QA           | `nuget-qa`           | (target of promotion from `nuget-integration`)                  |
+| Production   | `nuget-stable`       | (target of promotion from `nuget-qa`)                           |
+
+Under the immutable-build strategy, only `nuget-experimental` is a push
+target in the normal flow. Higher feeds are reached via
+`Promote-ProGetPackage`, which calls ProGet's promotion API and copies the
+exact same `.nupkg` bytes between feeds. The push URLs for the higher feeds
+remain valid (a release engineer can still push directly in an emergency
+override) but should not be used by automated pipelines above Experimental.
 
 The 5-tier feed names in `NuGet.config` intentionally **do not** include the
 sprint number. Per-sprint isolation is achieved through different mechanisms —
@@ -305,7 +325,7 @@ This pinning guarantees:
 All five `nuget-*` feeds are listed in `NuGet.config` on every branch. There
 are no per-sprint feeds and no per-branch feed mutations.
 
-Hermetic isolation at T3 (Integration) and T4 (QA) is enforced at the
+Hermetic isolation at the Integration and QA tiers is enforced at the
 **ProGet feed level** (hermetic connectors — no `nuget.org` uplink) and at
 the **package-source-mapping level** (only `ATAP.*` packages resolve from
 local feeds), not by pruning the source list. See [SprintInfrastructure-Naming.md](SprintInfrastructure-Naming.md) §3.
@@ -331,6 +351,37 @@ because NuGet warning `NU1507` escalates without it.
 - `dotnet nuget push` requires the ProGet admin API key, via `--api-key`. Store
   it only in Bitwarden; load it only via the `PROGET_ADMIN_API_KEY` env var;
   never commit it.
+
+---
+
+## 8.5 Promotion (the Sprint-7 mechanism for moving between feeds)
+
+Above Experimental, packages move between feeds by **promotion**, not by
+push. The single source of truth for promotion is `Promote-ProGetPackage`
+in `ATAP.Utilities.BuildTooling.PowerShell`.
+
+```powershell
+Promote-ProGetPackage `
+  -Name     'ATAP.Utilities.Philote' `
+  -Version  '0.1.0-Beta.42' `
+  -FromFeed 'nuget-development' `
+  -ToFeed   'nuget-integration' `
+  -Reason   'INT-PASS for build #4271'
+```
+
+The cmdlet:
+
+- Calls ProGet's `POST /api/promotions/promote` endpoint.
+- Is **idempotent** — re-running with `(Name, Version, ToFeed)` already
+  present is a no-op that returns success.
+- Does not touch the `.nupkg` bytes.
+- Records the promotion reason in ProGet's audit log so you can later
+  trace "why is this package in QA?" back to a specific BuildMaster
+  pipeline run.
+
+See [Immutable-Build-Strategy.md §5](Immutable-Build-Strategy.md#5-what-promotion-is-and-is-not)
+and [BuildMaster-Pipeline-Topology.md §4](BuildMaster-Pipeline-Topology.md#4-powershell-automation-surface)
+for the full automation surface.
 
 ---
 
@@ -486,6 +537,6 @@ applies; `nuget.org` will not be consulted.
 - [CSharp-Packages-Build-Process.md](CSharp-Packages-Build-Process.md) — MSBuild targets feeding into `Pack`.
 - [CSharp-Packages-Versioning.md](CSharp-Packages-Versioning.md) — how the version in the `.nupkg` filename is computed.
 - [CSharp-Central-Package-Management.md](CSharp-Central-Package-Management.md) — the consumer-side `Directory.Packages.props`.
-- [BuildMaster-ProGet-CSharp-Package-Pipeline.md](BuildMaster-ProGet-CSharp-Package-Pipeline.md) — CI-side orchestration of this pipeline.
+- [BuildMaster-Pipeline-Topology.md](BuildMaster-Pipeline-Topology.md) — CI-side orchestration of this pipeline and full application variable tables.
 - [Production-and-Tooling-Overview.md](Production-and-Tooling-Overview.md) — the index this doc belongs to.
-- `Publish-ATAPUtilities.ps1` — the developer publish helper.
+- ~~`Publish-ATAPUtilities.ps1`~~ — deleted in sprint-0007 (V4-G10); see §6.

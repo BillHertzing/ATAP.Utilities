@@ -7,6 +7,12 @@ function Install-SqlServerInstance {
   Uses dbatools Install-DbaInstance to create/configure a SQL Server instance on a host
   where SQL Server software is already present.
 
+  This cmdlet is intentionally not converted to Resolve-DatabaseSqlConnection for the
+  target instance. The target SQL Server instance may not exist until Install-DbaInstance
+  completes, so requiring an already-open SqlConnection would make instance creation
+  impossible. Use the shared database connection resolver only if a future change adds
+  a separate preflight check against an already-existing SQL Server instance.
+
   Authentication behavior:
   - Without CredentialsKey: uses IntegratedSecurity context.
   - With CredentialsKey: resolves UserName/Password from Bitwarden and prepares
@@ -71,6 +77,8 @@ function Install-SqlServerInstance {
   #>
   [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKey',
     Justification = 'CredentialsKey is a vault lookup key name, not a credential')]
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingConvertToSecureStringWithPlainText', '',
+    Justification = 'Password retrieved from Bitwarden vault at runtime; not hardcoded plaintext')]
   [Alias('New-SqlServerInstance')]
   [CmdletBinding(SupportsShouldProcess = $true)]
   param(
@@ -128,8 +136,9 @@ function Install-SqlServerInstance {
       }
       Import-Module dbatools -ErrorAction Stop
 
-      if (-not (Get-Command -Name 'Get-BitWardenSecret' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\Get-BitWardenSecret.ps1'
+      if (-not (Get-Command -Name 'Get-SecretATAP' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-SecretATAPBitwarden.ps1'
+        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-SecretATAP.ps1'
       }
     } catch {
       $errorMessage = "Failed loading dependencies. Exception: $($_.Exception.Message)"
@@ -152,15 +161,16 @@ function Install-SqlServerInstance {
 
     if (-not $useIntegratedSecurity) {
       try {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolving CredentialsKey '$CredentialsKey' from Bitwarden."
-        $vaultSecret = Get-BitWardenSecret -SecretName $CredentialsKey
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolving CredentialsKey '$CredentialsKey' from ATAP secret store."
+        $saUserName = Get-SecretATAP -SecretName $CredentialsKey -SecretField 'username'
+        $saPassword = Get-SecretATAP -SecretName $CredentialsKey -SecretField 'password'
 
-        if (-not $vaultSecret.UserName -or -not $vaultSecret.Password) {
-          throw "Secret '$CredentialsKey' must contain UserName and Password properties."
+        if ([string]::IsNullOrWhiteSpace($saUserName) -or [string]::IsNullOrWhiteSpace($saPassword)) {
+          throw "Secret '$CredentialsKey' must expose both 'username' and 'password' fields."
         }
 
-        $securePassword = ConvertTo-SecureString -String $vaultSecret.Password -AsPlainText -Force
-        $saCredential = New-Object System.Management.Automation.PSCredential($vaultSecret.UserName, $securePassword)
+        $securePassword = ConvertTo-SecureString -String $saPassword -AsPlainText -Force
+        $saCredential = New-Object System.Management.Automation.PSCredential($saUserName, $securePassword)
       } catch {
         $errorMessage = "Failed resolving credentials for key '$CredentialsKey'. Exception: $($_.Exception.Message)"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage

@@ -7,4 +7,3 @@ function Start-DebugPowerShell {
     }
   }
 }
-Set-Alias -Name sdp -Value Start-DebugPowerShell

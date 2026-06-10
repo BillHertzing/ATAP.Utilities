@@ -18,6 +18,10 @@ BeforeAll {
   . (Join-Path $publicDir 'New-PesterDescribeBlock.ps1')
   . (Join-Path $publicDir 'New-PesterFileModel.ps1')
   . (Join-Path $publicDir 'New-PesterTestFile.ps1')
+
+  if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
+    function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
+  }
 }
 
 # ── Shared helpers (BeforeDiscovery-safe) ────────────────────────────────────
@@ -43,6 +47,9 @@ BeforeDiscovery {
 }
 
 Describe 'New-PesterTestFile' -Tag 'Unit', 'PesterKind' {
+  BeforeEach {
+    Mock Write-PSFMessage { }
+  }
 
   BeforeAll {
     # Build a minimal model used in multiple tests

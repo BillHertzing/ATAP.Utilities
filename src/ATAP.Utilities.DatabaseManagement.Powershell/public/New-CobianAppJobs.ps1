@@ -1,4 +1,3 @@
-#Requires -RunAsAdministrator
 <#
 .SYNOPSIS
     Creates five Cobian Reflector application-data backup tasks by directly writing
@@ -131,7 +130,10 @@ function New-CobianAppJobs {
     [string] $BuildMasterIncrementalStartTime = '03:30',
 
     [Parameter(Mandatory = $false)]
-    [string] $CobianConfigFullStartTime = '03:50'
+    [string] $CobianConfigFullStartTime = '03:50',
+
+    [Parameter(Mandatory = $false)]
+    [switch] $Force
   )
 
   begin {
@@ -139,6 +141,11 @@ function New-CobianAppJobs {
     $mn = $MyInvocation.MyCommand.ModuleName
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Entering function'
+
+    $principal = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+      throw "$fn must be run from an elevated PowerShell session because it updates Cobian Reflector task files."
+    }
 
     # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: ListPath)
     $ListPath = Get-PVal -ParameterName ListPath -originalPSBoundParameters $PSBoundParameters -dottedPath ListPath -DefaultValue $ListPath
@@ -481,7 +488,7 @@ TaskImpersonationPassword=$E4
       foreach ($j in $jobs) {
         if (-not (Test-Path $j.SrcPath)) {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "Source path not found: $($j.SrcPath)"
-          if (-not $PSCmdlet.ShouldContinue("Source path '$($j.SrcPath)' does not exist.", 'Continue anyway?')) {
+          if (-not $Force -and -not $PSCmdlet.ShouldContinue("Source path '$($j.SrcPath)' does not exist.", 'Continue anyway?')) {
             throw "Aborted by user — source path missing: $($j.SrcPath)"
           }
         }
@@ -501,7 +508,7 @@ TaskImpersonationPassword=$E4
         }
       } else {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message 'Cobian service not found. Ensure the Cobian engine is closed before continuing.'
-        if (-not $PSCmdlet.ShouldContinue('Cobian service not found.', 'Continue anyway?')) {
+        if (-not $Force -and -not $PSCmdlet.ShouldContinue('Cobian service not found.', 'Continue anyway?')) {
           throw 'Aborted by user — Cobian service not found.'
         }
       }

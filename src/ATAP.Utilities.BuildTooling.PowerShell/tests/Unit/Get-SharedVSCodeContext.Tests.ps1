@@ -1,5 +1,9 @@
 BeforeAll {
-  . "$PSScriptRoot\..\Import-SharedVSCodeFunctions.ps1"
+  $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+  . (Join-Path $moduleRoot 'private\Get-WorkspaceJson.ps1')
+  . (Join-Path $moduleRoot 'private\Resolve-WorkspaceFiles.ps1')
+  . (Join-Path $moduleRoot 'private\Get-SharedVSCodeRootFromTemplateRef.ps1')
+  . (Join-Path $moduleRoot 'public\Get-SharedVSCodeContext.ps1')
 }
 
 # Helper: builds a fake SharedVSCode tree and returns its paths
@@ -27,7 +31,23 @@ function New-FakeSharedVSCodeTree {
 
 Describe 'Get-SharedVSCodeContext [public]' {
   BeforeAll {
-    $script:tree = New-FakeSharedVSCodeTree
+    $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "gsvc_$([guid]::NewGuid().ToString('N'))"
+    $gitRoot = $tempDir
+    $sharedRoot = Join-Path $gitRoot 'SharedVSCode'
+
+    New-Item -ItemType Directory -Path $sharedRoot -Force | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $sharedRoot '.githooks') -Force | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $sharedRoot 'GitTemplates') -Force | Out-Null
+
+    Set-Content -Path (Join-Path $sharedRoot '.gitconfig') -Value '[core]' -Encoding UTF8
+    Set-Content -Path (Join-Path $sharedRoot '.gitattributes') -Value '* text=auto' -Encoding UTF8
+    Set-Content -Path (Join-Path $sharedRoot 'GitTemplates\git.commit.template.txt') -Value 'template' -Encoding UTF8
+
+    $script:tree = @{
+      TempDir    = $tempDir
+      GitRoot    = $gitRoot
+      SharedRoot = $sharedRoot
+    }
   }
 
   AfterAll {

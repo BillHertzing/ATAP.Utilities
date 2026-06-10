@@ -1,0 +1,35 @@
+{
+  "PackageName": "ATAP.Utilities.BuildTooling.PowerShell",
+  "Version": "0.1.0-Alpha025",
+  "CheckedAt": "2026-05-24T21:33:47.4726023-06:00",
+  "Rows": [
+    {
+      "Feed": "powershellget-experimental",
+      "ApiUri": "http://localhost:50000/api/packages/powershellget-experimental/versions?name=ATAP.Utilities.BuildTooling.PowerShell&version=0.1.0-Alpha025",
+      "PackageUri": "http://localhost:50000/nuget/powershellget-experimental/package/ATAP.Utilities.BuildTooling.PowerShell/0.1.0-Alpha025",
+      "Name": "ATAP.Utilities.BuildTooling.PowerShell",
+      "Version": "0.1.0-Alpha025",
+      "Published": "2026-05-21T13:18:59.433Z",
+      "Size": 295067,
+      "ApiSha256": "ada9c327297514d6eb16545a5f5859d05a4db2a0e28ed090b5b5bd82a2bdcc05",
+      "DownloadPath": "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities-wt-100-Sprint-0007-work-items\\_generated\\audit\\v4-current-state\\V4-B04-powershell-digest-equality-20260524\\powershellget-experimental.ATAP.Utilities.BuildTooling.PowerShell.0.1.0-Alpha025.nupkg",
+      "DownloadSha256": "ada9c327297514d6eb16545a5f5859d05a4db2a0e28ed090b5b5bd82a2bdcc05",
+      "ApiSha512": "a9a9e746485ea9354edce307f81eb015d9d99953145c3ba2fd819fe0f28e3bab594320bd4c133adc12aeced404beec32f5559ed115d6909f9ee15801d2a0af3e"
+    },
+    {
+      "Feed": "powershellget-development",
+      "ApiUri": "http://localhost:50000/api/packages/powershellget-development/versions?name=ATAP.Utilities.BuildTooling.PowerShell&version=0.1.0-Alpha025",
+      "PackageUri": "http://localhost:50000/nuget/powershellget-development/package/ATAP.Utilities.BuildTooling.PowerShell/0.1.0-Alpha025",
+      "Name": "ATAP.Utilities.BuildTooling.PowerShell",
+      "Version": "0.1.0-Alpha025",
+      "Published": "2026-05-21T13:19:34.717Z",
+      "Size": 295067,
+      "ApiSha256": "ada9c327297514d6eb16545a5f5859d05a4db2a0e28ed090b5b5bd82a2bdcc05",
+      "DownloadPath": "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities-wt-100-Sprint-0007-work-items\\_generated\\audit\\v4-current-state\\V4-B04-powershell-digest-equality-20260524\\powershellget-development.ATAP.Utilities.BuildTooling.PowerShell.0.1.0-Alpha025.nupkg",
+      "DownloadSha256": "ada9c327297514d6eb16545a5f5859d05a4db2a0e28ed090b5b5bd82a2bdcc05",
+      "ApiSha512": "a9a9e746485ea9354edce307f81eb015d9d99953145c3ba2fd819fe0f28e3bab594320bd4c133adc12aeced404beec32f5559ed115d6909f9ee15801d2a0af3e"
+    }
+  ],
+  "Sha256Equal": true,
+  "SizeEqual": true
+}

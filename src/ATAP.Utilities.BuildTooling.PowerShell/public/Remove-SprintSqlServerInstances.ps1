@@ -38,6 +38,10 @@ function Remove-SprintSqlServerInstances {
   before removing the instance (SQL Server uninstall drops them automatically, but
   you may want explicit logging of the drop).
 
+  .PARAMETER Force
+  Bypasses PowerShell's high-impact ShouldProcess confirmation prompts for
+  non-interactive pipeline / agent invocations. Does not override -WhatIf.
+
   .OUTPUTS
   PSCustomObject with fields:
     SprintNumber     string
@@ -80,14 +84,52 @@ function Remove-SprintSqlServerInstances {
     [string[]]$DeveloperNames,
 
     [Parameter(Mandatory = $false)]
+    [string]$DatabaseHost = 'localhost',
+
+    [Parameter(Mandatory = $false)]
+    [string[]]$Databases = @('ATAPUtilities', 'AceCommander'),
+
+    [Parameter(Mandatory = $false)]
     [string]$SqlServerSetupPath = 'D:\Temp\SQLExpr\extracted',
 
     [Parameter(Mandatory = $false)]
-    [switch]$SkipDatabaseDrop
+    [switch]$SkipDatabaseDrop,
+
+    [Parameter(Mandatory = $false)]
+    [switch]$Force
   )
 
   $fn = $MyInvocation.MyCommand.Name
-  $mn = 'ATAP.Utilities.DatabaseManagement.Powershell'
+  $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+
+  if ($Force) {
+    $ConfirmPreference = 'None'
+  }
+
+  # Load Helpers — ToDo: Remove this when packaging works
+  # Mirrors the resolution pattern used in New-SprintSqlServerInstances: locate the
+  # repository root from $PSScriptRoot and dot-source the helper from the in-repo path.
+  # Failures are non-fatal — the Get-PVal call below is itself guarded so the cmdlet
+  # gracefully falls back to $env:USERNAME if the helper cannot be loaded.
+  if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+    try {
+      $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..') -ErrorAction SilentlyContinue)?.Path
+      if ($repositoryRoot) {
+        $helperPath = Join-Path $repositoryRoot 'src' 'ATAP.Utilities.Powershell' 'public' 'Get-ParameterValueFromNeoConfigurationRoot.ps1'
+        if (Test-Path -LiteralPath $helperPath -PathType Leaf) {
+          . $helperPath
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+            -Message "Loaded Get-ParameterValueFromNeoConfigurationRoot from $helperPath"
+        } else {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
+            -Message "Get-ParameterValueFromNeoConfigurationRoot helper not found at $helperPath; will fall back to defaults."
+        }
+      }
+    } catch {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
+        -Message "Failed to auto-load Get-ParameterValueFromNeoConfigurationRoot helper: $($_.Exception.Message). Will fall back to defaults."
+    }
+  }
 
   # ── Resolve developer names ──────────────────────────────────────────────
   if (-not $PSBoundParameters.ContainsKey('DeveloperNames')) {
@@ -96,12 +138,14 @@ function Remove-SprintSqlServerInstances {
     } else {
       'Sprint.DeveloperNames'
     }
-    $DeveloperNames = Get-PVal `
-      -ParameterName 'DeveloperNames' `
-      -originalPSBoundParameters $PSBoundParameters `
-      -dottedPath $settingsKey `
-      -DefaultValue @($env:USERNAME) `
-      -AllowMissing
+    if (Get-Command -Name 'Get-PVal' -ErrorAction SilentlyContinue) {
+      $DeveloperNames = Get-PVal `
+        -ParameterName 'DeveloperNames' `
+        -originalPSBoundParameters $PSBoundParameters `
+        -dottedPath $settingsKey `
+        -DefaultValue @($env:USERNAME) `
+        -AllowMissing
+    }
     if (-not $DeveloperNames) {
       $DeveloperNames = @($env:USERNAME)
     }
@@ -154,30 +198,37 @@ function Remove-SprintSqlServerInstances {
         -Message "Removing SQL Server instance '$($inst.SqlInstance)'..."
 
       # ── Verify instance exists before attempting removal ──────────────────
+      $sqlServerInstance = if ([string]::IsNullOrWhiteSpace($DatabaseHost) -or $DatabaseHost -eq 'localhost') {
+        "localhost\$($inst.SqlInstance)"
+      } else {
+        "$DatabaseHost\$($inst.SqlInstance)"
+      }
+
       $existingInstance = Get-DbaRegisteredServer -ErrorAction SilentlyContinue |
-        Where-Object { $_.Name -eq "localhost\$($inst.SqlInstance)" }
+        Where-Object { $_.Name -eq $sqlServerInstance }
       # Simpler check: try to connect
       $instanceExists = $null
       try {
-        $instanceExists = Connect-DbaInstance -SqlInstance "localhost\$($inst.SqlInstance)" `
+        $instanceExists = Connect-DbaInstance -SqlInstance $sqlServerInstance `
           -TrustServerCertificate -ConnectTimeout 5 -ErrorAction Stop
       } catch {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-          -Message "Instance 'localhost\$($inst.SqlInstance)' is not reachable — it may not exist or may already be removed. Skipping."
+          -Message "Instance '$sqlServerInstance' is not reachable - it may not exist or may already be removed. Skipping."
         $entry.Skipped = $true
         $removalResults.Add($entry)
         continue
       }
 
       if (-not $SkipDatabaseDrop -and $null -ne $instanceExists) {
-        # Explicitly drop ATAPUtilities and AceCommander before instance removal
-        foreach ($dbName in @('ATAPUtilities', 'AceCommander')) {
+        foreach ($dbName in $Databases) {
           try {
             $db = Get-DbaDatabase -SqlInstance $instanceExists -Database $dbName -ErrorAction SilentlyContinue
             if ($db) {
               Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
                 -Message "Dropping database '$dbName' from '$($inst.SqlInstance)'..."
-              Remove-DbaDatabase -SqlInstance $instanceExists -Database $dbName -Confirm:$false
+              if ($PSCmdlet.ShouldProcess("$sqlServerInstance\$dbName", 'Drop SQL Server database')) {
+                Remove-DbaDatabase -SqlInstance $instanceExists -Database $dbName -Confirm:$false
+              }
             }
           } catch {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `

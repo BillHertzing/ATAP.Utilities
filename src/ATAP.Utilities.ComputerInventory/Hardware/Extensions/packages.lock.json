@@ -1,0 +1,819 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "Fody": {
+        "type": "Direct",
+        "requested": "[6.9.3, )",
+        "resolved": "6.9.3",
+        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
+      },
+      "MethodBoundaryAspect.Fody": {
+        "type": "Direct",
+        "requested": "[2.0.150, )",
+        "resolved": "2.0.150",
+        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
+        "dependencies": {
+          "Fody": "6.7.0"
+        }
+      },
+      "Microsoft.SourceLink.GitHub": {
+        "type": "Direct",
+        "requested": "[8.0.0, )",
+        "resolved": "8.0.0",
+        "contentHash": "G5q7OqtwIyGTkeIOAc3u2ZuV/kicQaec5EaRnc0pIeSnh9LUjj+PYQrJYBURvDt7twGl2PKA7nSN0kz1Zw5bnQ==",
+        "dependencies": {
+          "Microsoft.Build.Tasks.Git": "8.0.0",
+          "Microsoft.SourceLink.Common": "8.0.0"
+        }
+      },
+      "Nerdbank.GitVersioning": {
+        "type": "Direct",
+        "requested": "[3.9.50, )",
+        "resolved": "3.9.50",
+        "contentHash": "HtOgGF6jZ+WYbXnCUCYPT8Y2d6mIJo9ozjK/FINTRsXdm4Zgv9GehUMa7EFoGQkqrMcDJNOIDwCmENnvXg4UbA=="
+      },
+      "Microsoft.Bcl.AsyncInterfaces": {
+        "type": "Transitive",
+        "resolved": "1.1.1",
+        "contentHash": "yuvf07qFWFqtK3P/MRkEKLhn5r2UbSpVueRziSqj0yJQIKFwG1pq9mOayK3zE5qZCTs0CbrwL9M6R8VwqyGy2w=="
+      },
+      "Microsoft.Build.Tasks.Git": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "bZKfSIKJRXLTuSzLudMFte/8CempWjVamNUR5eHJizsy+iuOuO/k2gnh7W0dHJmYY0tBf+gUErfluCv5mySAOQ=="
+      },
+      "Microsoft.SourceLink.Common": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
+      },
+      "runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.7.0",
+        "contentHash": "9kyFSIdN3T0qjDQ2R0HRXYIhS3l5psBzQi6qqhdLz+SzFyEy4sVxNOke+yyYv8Cu8rPER12c3RDjLT8wF3WBYQ==",
+        "dependencies": {
+          "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": "4.4.0",
+          "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": "4.4.0",
+          "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": "4.4.0"
+        }
+      },
+      "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "LbrynESTp3bm5O/+jGL8v0Qg5SJlTV08lpIpFesXjF6uGNMWqFnUQbYBJwZTeua6E/Y7FIM1C54Ey1btLWupdg=="
+      },
+      "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "38ugOfkYJqJoX9g6EYRlZB5U2ZJH51UP8ptxZgdpS07FgOEToV+lS11ouNK2PM12Pr6X/PpT5jK82G3DwH/SxQ=="
+      },
+      "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "YhEdSQUsTx+C8m8Bw7ar5/VesXvCFMItyZF7G1AUY+OM0VPZUOeAVpJ4Wl6fydBGUYZxojTDR3I6Bj/+BPkJNA=="
+      },
+      "ServiceStack.Common": {
+        "type": "Transitive",
+        "resolved": "5.12.0",
+        "contentHash": "iBKaQ6BfqZGbBFCHotH/+M6XAPHbCziE31ATXMMSB7X/56x5bhveQRDwFo7EKSeNX0/X4CCV+7Uq+5MWuCkwtQ==",
+        "dependencies": {
+          "ServiceStack.Interfaces": "5.12.0",
+          "ServiceStack.Text": "5.12.0",
+          "System.Reflection.TypeExtensions": "4.7.0"
+        }
+      },
+      "ServiceStack.Interfaces": {
+        "type": "Transitive",
+        "resolved": "5.12.0",
+        "contentHash": "cHPEPCzr9j63oJAuv+RaubJlYj1qtbEIU30Nx4w6DMKCKLbciFc4UlRIf9/Hg8oSPkuEEFq0RETRZ/9iTKbx8A==",
+        "dependencies": {
+          "Microsoft.Bcl.AsyncInterfaces": "1.1.1"
+        }
+      },
+      "System.ComponentModel.Annotations": {
+        "type": "Transitive",
+        "resolved": "4.7.0",
+        "contentHash": "0YFqjhp/mYkDGpU0Ye1GjE53HMp9UVfGN7seGpAMttAC0C40v5gw598jCgpbBLMmCo0E5YRLBv5Z2doypO49ZQ=="
+      },
+      "System.Data.SqlClient": {
+        "type": "Transitive",
+        "resolved": "4.8.2",
+        "contentHash": "80vGtW6uLB4AkyrdVuKTXYUyuXDPAsSKbTVfvjndZaRAYxzFzWhJbvUfeAKrN+128ycWZjLIAl61dFUwWHOOTw==",
+        "dependencies": {
+          "runtime.native.System.Data.SqlClient.sni": "4.7.0"
+        }
+      },
+      "System.Reflection.TypeExtensions": {
+        "type": "Transitive",
+        "resolved": "4.7.0",
+        "contentHash": "VybpaOQQhqE6siHppMktjfGBw1GCwvCqiufqmP8F1nj7fTUNtW35LOEt3UZTEsECfo+ELAl/9o9nJx3U91i7vA=="
+      },
+      "atap.utilities.computerinventory.hardware.enumerations": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Enumeration": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.hardware.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
+          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
+          "TimePeriodLibrary.NET": "[2.1.5, )",
+          "UnitsNet": "[5.60.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.hardware.models": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Philote": "[1.0.0, )",
+          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
+          "MedallionShell": "[1.6.2, )",
+          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
+          "TimePeriodLibrary.NET": "[2.1.5, )",
+          "UnitsNet": "[5.60.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.hardware.stringconstants": {
+        "type": "Project"
+      },
+      "atap.utilities.concurrentobservablecollections": {
+        "type": "Project"
+      },
+      "atap.utilities.enumeration": {
+        "type": "Project"
+      },
+      "atap.utilities.etw": {
+        "type": "Project"
+      },
+      "atap.utilities.persistence.interfaces": {
+        "type": "Project"
+      },
+      "atap.utilities.persistence.model": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Persistence.Interfaces": "[0.1.0-Alpha, )",
+          "ServiceStack.OrmLite": "[5.12.0, )",
+          "ServiceStack.OrmLite.SqlServer": "[5.12.0, )"
+        }
+      },
+      "atap.utilities.philote": {
+        "type": "Project"
+      },
+      "atap.utilities.philote.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
+          "TimePeriodLibrary.NET": "[2.1.5, )"
+        }
+      },
+      "atap.utilities.stronglytypedid.interfaces": {
+        "type": "Project"
+      },
+      "MedallionShell": {
+        "type": "CentralTransitive",
+        "requested": "[1.6.2, )",
+        "resolved": "1.6.2",
+        "contentHash": "fk0FLxBt6pRgrEo69IdzMqV51Wha7iK0ZTkNZyhsEZ2n67gooF8GgGE2ag85w5ewUuHVIu+v97c0YRDn448riA=="
+      },
+      "ServiceStack.OrmLite": {
+        "type": "CentralTransitive",
+        "requested": "[5.12.0, )",
+        "resolved": "5.12.0",
+        "contentHash": "0pGs/Mc32SKaFeC7JBSnM1LWmG2lI4k/v0bFpAPxvo8jzuEWryxLc9JS2MBLq17J8Eqy4eb1KZ/VqHfB14NW7Q==",
+        "dependencies": {
+          "ServiceStack.Common": "5.12.0",
+          "System.ComponentModel.Annotations": "4.7.0",
+          "System.Reflection.TypeExtensions": "4.7.0"
+        }
+      },
+      "ServiceStack.OrmLite.SqlServer": {
+        "type": "CentralTransitive",
+        "requested": "[5.12.0, )",
+        "resolved": "5.12.0",
+        "contentHash": "8OzCjTyaDtyaxkcgmld6ZfZNEN1gS+Xz4Ng3RPSw2zZhcyIB+sMUBTo3Jb6lPdVP9qVmTTmBaMurA4C3hLODPg==",
+        "dependencies": {
+          "ServiceStack.Common": "5.12.0",
+          "ServiceStack.OrmLite": "5.12.0",
+          "System.Data.SqlClient": "4.8.2"
+        }
+      },
+      "ServiceStack.Text": {
+        "type": "CentralTransitive",
+        "requested": "[5.12.0, )",
+        "resolved": "5.12.0",
+        "contentHash": "KBbHZ73I9suf1DSYeEJSXPmgobyJikB9fhfhJFaeBPw22Es1taeuSQsuXtgH8qjQI7MWhug63D9l8xarGxG03A=="
+      },
+      "ServiceStack.Text.EnumMemberSerializer": {
+        "type": "CentralTransitive",
+        "requested": "[3.0.0.50044, )",
+        "resolved": "3.0.0.50044",
+        "contentHash": "SFyMaslYh5C8Dbp7v9ItB/3lvBxLIaeT5m9tCnKhmoX8hm8QuC0P+CD+Xzjeu/S62qzaA+DFYRklxFJ5Cw6uHw==",
+        "dependencies": {
+          "ServiceStack.Text": "5.0.0"
+        }
+      },
+      "TimePeriodLibrary.NET": {
+        "type": "CentralTransitive",
+        "requested": "[2.1.5, )",
+        "resolved": "2.1.5",
+        "contentHash": "2QFqfYDl7/4wQd6Bsi1Z4fZlOurnJ2OQln5YK+TlIS6c5R0AM2Tn1EEfpWob/sOe0c0luUR01r0kZE4vruX8mw=="
+      },
+      "UnitsNet": {
+        "type": "CentralTransitive",
+        "requested": "[5.60.0, )",
+        "resolved": "5.60.0",
+        "contentHash": "y+EtFw5cSgEaerlrZMr8QhBT2f4GtbyNhDPNdjVZHntqCAevC8TyvQV3dyEHOM8sR4DuiUcFAZ/McyNyewFcMw=="
+      }
+    },
+    "net10.0/linux-x64": {
+      "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "LbrynESTp3bm5O/+jGL8v0Qg5SJlTV08lpIpFesXjF6uGNMWqFnUQbYBJwZTeua6E/Y7FIM1C54Ey1btLWupdg=="
+      },
+      "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "38ugOfkYJqJoX9g6EYRlZB5U2ZJH51UP8ptxZgdpS07FgOEToV+lS11ouNK2PM12Pr6X/PpT5jK82G3DwH/SxQ=="
+      },
+      "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "YhEdSQUsTx+C8m8Bw7ar5/VesXvCFMItyZF7G1AUY+OM0VPZUOeAVpJ4Wl6fydBGUYZxojTDR3I6Bj/+BPkJNA=="
+      },
+      "System.Data.SqlClient": {
+        "type": "Transitive",
+        "resolved": "4.8.2",
+        "contentHash": "80vGtW6uLB4AkyrdVuKTXYUyuXDPAsSKbTVfvjndZaRAYxzFzWhJbvUfeAKrN+128ycWZjLIAl61dFUwWHOOTw==",
+        "dependencies": {
+          "runtime.native.System.Data.SqlClient.sni": "4.7.0"
+        }
+      }
+    },
+    "net10.0/win-x64": {
+      "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "LbrynESTp3bm5O/+jGL8v0Qg5SJlTV08lpIpFesXjF6uGNMWqFnUQbYBJwZTeua6E/Y7FIM1C54Ey1btLWupdg=="
+      },
+      "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "38ugOfkYJqJoX9g6EYRlZB5U2ZJH51UP8ptxZgdpS07FgOEToV+lS11ouNK2PM12Pr6X/PpT5jK82G3DwH/SxQ=="
+      },
+      "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "YhEdSQUsTx+C8m8Bw7ar5/VesXvCFMItyZF7G1AUY+OM0VPZUOeAVpJ4Wl6fydBGUYZxojTDR3I6Bj/+BPkJNA=="
+      },
+      "System.Data.SqlClient": {
+        "type": "Transitive",
+        "resolved": "4.8.2",
+        "contentHash": "80vGtW6uLB4AkyrdVuKTXYUyuXDPAsSKbTVfvjndZaRAYxzFzWhJbvUfeAKrN+128ycWZjLIAl61dFUwWHOOTw==",
+        "dependencies": {
+          "runtime.native.System.Data.SqlClient.sni": "4.7.0"
+        }
+      }
+    },
+    "net8.0": {
+      "Fody": {
+        "type": "Direct",
+        "requested": "[6.9.3, )",
+        "resolved": "6.9.3",
+        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
+      },
+      "MethodBoundaryAspect.Fody": {
+        "type": "Direct",
+        "requested": "[2.0.150, )",
+        "resolved": "2.0.150",
+        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
+        "dependencies": {
+          "Fody": "6.7.0"
+        }
+      },
+      "Microsoft.SourceLink.GitHub": {
+        "type": "Direct",
+        "requested": "[8.0.0, )",
+        "resolved": "8.0.0",
+        "contentHash": "G5q7OqtwIyGTkeIOAc3u2ZuV/kicQaec5EaRnc0pIeSnh9LUjj+PYQrJYBURvDt7twGl2PKA7nSN0kz1Zw5bnQ==",
+        "dependencies": {
+          "Microsoft.Build.Tasks.Git": "8.0.0",
+          "Microsoft.SourceLink.Common": "8.0.0"
+        }
+      },
+      "Nerdbank.GitVersioning": {
+        "type": "Direct",
+        "requested": "[3.9.50, )",
+        "resolved": "3.9.50",
+        "contentHash": "HtOgGF6jZ+WYbXnCUCYPT8Y2d6mIJo9ozjK/FINTRsXdm4Zgv9GehUMa7EFoGQkqrMcDJNOIDwCmENnvXg4UbA=="
+      },
+      "Microsoft.Bcl.AsyncInterfaces": {
+        "type": "Transitive",
+        "resolved": "1.1.1",
+        "contentHash": "yuvf07qFWFqtK3P/MRkEKLhn5r2UbSpVueRziSqj0yJQIKFwG1pq9mOayK3zE5qZCTs0CbrwL9M6R8VwqyGy2w=="
+      },
+      "Microsoft.Build.Tasks.Git": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "bZKfSIKJRXLTuSzLudMFte/8CempWjVamNUR5eHJizsy+iuOuO/k2gnh7W0dHJmYY0tBf+gUErfluCv5mySAOQ=="
+      },
+      "Microsoft.SourceLink.Common": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
+      },
+      "runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.7.0",
+        "contentHash": "9kyFSIdN3T0qjDQ2R0HRXYIhS3l5psBzQi6qqhdLz+SzFyEy4sVxNOke+yyYv8Cu8rPER12c3RDjLT8wF3WBYQ==",
+        "dependencies": {
+          "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": "4.4.0",
+          "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": "4.4.0",
+          "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": "4.4.0"
+        }
+      },
+      "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "LbrynESTp3bm5O/+jGL8v0Qg5SJlTV08lpIpFesXjF6uGNMWqFnUQbYBJwZTeua6E/Y7FIM1C54Ey1btLWupdg=="
+      },
+      "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "38ugOfkYJqJoX9g6EYRlZB5U2ZJH51UP8ptxZgdpS07FgOEToV+lS11ouNK2PM12Pr6X/PpT5jK82G3DwH/SxQ=="
+      },
+      "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "YhEdSQUsTx+C8m8Bw7ar5/VesXvCFMItyZF7G1AUY+OM0VPZUOeAVpJ4Wl6fydBGUYZxojTDR3I6Bj/+BPkJNA=="
+      },
+      "ServiceStack.Common": {
+        "type": "Transitive",
+        "resolved": "5.12.0",
+        "contentHash": "iBKaQ6BfqZGbBFCHotH/+M6XAPHbCziE31ATXMMSB7X/56x5bhveQRDwFo7EKSeNX0/X4CCV+7Uq+5MWuCkwtQ==",
+        "dependencies": {
+          "ServiceStack.Interfaces": "5.12.0",
+          "ServiceStack.Text": "5.12.0"
+        }
+      },
+      "ServiceStack.Interfaces": {
+        "type": "Transitive",
+        "resolved": "5.12.0",
+        "contentHash": "cHPEPCzr9j63oJAuv+RaubJlYj1qtbEIU30Nx4w6DMKCKLbciFc4UlRIf9/Hg8oSPkuEEFq0RETRZ/9iTKbx8A==",
+        "dependencies": {
+          "Microsoft.Bcl.AsyncInterfaces": "1.1.1"
+        }
+      },
+      "System.Data.SqlClient": {
+        "type": "Transitive",
+        "resolved": "4.8.2",
+        "contentHash": "80vGtW6uLB4AkyrdVuKTXYUyuXDPAsSKbTVfvjndZaRAYxzFzWhJbvUfeAKrN+128ycWZjLIAl61dFUwWHOOTw==",
+        "dependencies": {
+          "runtime.native.System.Data.SqlClient.sni": "4.7.0"
+        }
+      },
+      "atap.utilities.computerinventory.hardware.enumerations": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Enumeration": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.hardware.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
+          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
+          "TimePeriodLibrary.NET": "[2.1.5, )",
+          "UnitsNet": "[5.60.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.hardware.models": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Philote": "[1.0.0, )",
+          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
+          "MedallionShell": "[1.6.2, )",
+          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
+          "TimePeriodLibrary.NET": "[2.1.5, )",
+          "UnitsNet": "[5.60.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.hardware.stringconstants": {
+        "type": "Project"
+      },
+      "atap.utilities.concurrentobservablecollections": {
+        "type": "Project"
+      },
+      "atap.utilities.enumeration": {
+        "type": "Project"
+      },
+      "atap.utilities.etw": {
+        "type": "Project"
+      },
+      "atap.utilities.persistence.interfaces": {
+        "type": "Project"
+      },
+      "atap.utilities.persistence.model": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Persistence.Interfaces": "[0.1.0-Alpha, )",
+          "ServiceStack.OrmLite": "[5.12.0, )",
+          "ServiceStack.OrmLite.SqlServer": "[5.12.0, )"
+        }
+      },
+      "atap.utilities.philote": {
+        "type": "Project"
+      },
+      "atap.utilities.philote.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
+          "TimePeriodLibrary.NET": "[2.1.5, )"
+        }
+      },
+      "atap.utilities.stronglytypedid.interfaces": {
+        "type": "Project"
+      },
+      "MedallionShell": {
+        "type": "CentralTransitive",
+        "requested": "[1.6.2, )",
+        "resolved": "1.6.2",
+        "contentHash": "fk0FLxBt6pRgrEo69IdzMqV51Wha7iK0ZTkNZyhsEZ2n67gooF8GgGE2ag85w5ewUuHVIu+v97c0YRDn448riA=="
+      },
+      "ServiceStack.OrmLite": {
+        "type": "CentralTransitive",
+        "requested": "[5.12.0, )",
+        "resolved": "5.12.0",
+        "contentHash": "0pGs/Mc32SKaFeC7JBSnM1LWmG2lI4k/v0bFpAPxvo8jzuEWryxLc9JS2MBLq17J8Eqy4eb1KZ/VqHfB14NW7Q==",
+        "dependencies": {
+          "ServiceStack.Common": "5.12.0"
+        }
+      },
+      "ServiceStack.OrmLite.SqlServer": {
+        "type": "CentralTransitive",
+        "requested": "[5.12.0, )",
+        "resolved": "5.12.0",
+        "contentHash": "8OzCjTyaDtyaxkcgmld6ZfZNEN1gS+Xz4Ng3RPSw2zZhcyIB+sMUBTo3Jb6lPdVP9qVmTTmBaMurA4C3hLODPg==",
+        "dependencies": {
+          "ServiceStack.Common": "5.12.0",
+          "ServiceStack.OrmLite": "5.12.0",
+          "System.Data.SqlClient": "4.8.2"
+        }
+      },
+      "ServiceStack.Text": {
+        "type": "CentralTransitive",
+        "requested": "[5.12.0, )",
+        "resolved": "5.12.0",
+        "contentHash": "KBbHZ73I9suf1DSYeEJSXPmgobyJikB9fhfhJFaeBPw22Es1taeuSQsuXtgH8qjQI7MWhug63D9l8xarGxG03A=="
+      },
+      "ServiceStack.Text.EnumMemberSerializer": {
+        "type": "CentralTransitive",
+        "requested": "[3.0.0.50044, )",
+        "resolved": "3.0.0.50044",
+        "contentHash": "SFyMaslYh5C8Dbp7v9ItB/3lvBxLIaeT5m9tCnKhmoX8hm8QuC0P+CD+Xzjeu/S62qzaA+DFYRklxFJ5Cw6uHw==",
+        "dependencies": {
+          "ServiceStack.Text": "5.0.0"
+        }
+      },
+      "TimePeriodLibrary.NET": {
+        "type": "CentralTransitive",
+        "requested": "[2.1.5, )",
+        "resolved": "2.1.5",
+        "contentHash": "2QFqfYDl7/4wQd6Bsi1Z4fZlOurnJ2OQln5YK+TlIS6c5R0AM2Tn1EEfpWob/sOe0c0luUR01r0kZE4vruX8mw=="
+      },
+      "UnitsNet": {
+        "type": "CentralTransitive",
+        "requested": "[5.60.0, )",
+        "resolved": "5.60.0",
+        "contentHash": "y+EtFw5cSgEaerlrZMr8QhBT2f4GtbyNhDPNdjVZHntqCAevC8TyvQV3dyEHOM8sR4DuiUcFAZ/McyNyewFcMw=="
+      }
+    },
+    "net8.0/linux-x64": {
+      "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "LbrynESTp3bm5O/+jGL8v0Qg5SJlTV08lpIpFesXjF6uGNMWqFnUQbYBJwZTeua6E/Y7FIM1C54Ey1btLWupdg=="
+      },
+      "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "38ugOfkYJqJoX9g6EYRlZB5U2ZJH51UP8ptxZgdpS07FgOEToV+lS11ouNK2PM12Pr6X/PpT5jK82G3DwH/SxQ=="
+      },
+      "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "YhEdSQUsTx+C8m8Bw7ar5/VesXvCFMItyZF7G1AUY+OM0VPZUOeAVpJ4Wl6fydBGUYZxojTDR3I6Bj/+BPkJNA=="
+      },
+      "System.Data.SqlClient": {
+        "type": "Transitive",
+        "resolved": "4.8.2",
+        "contentHash": "80vGtW6uLB4AkyrdVuKTXYUyuXDPAsSKbTVfvjndZaRAYxzFzWhJbvUfeAKrN+128ycWZjLIAl61dFUwWHOOTw==",
+        "dependencies": {
+          "runtime.native.System.Data.SqlClient.sni": "4.7.0"
+        }
+      }
+    },
+    "net8.0/win-x64": {
+      "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "LbrynESTp3bm5O/+jGL8v0Qg5SJlTV08lpIpFesXjF6uGNMWqFnUQbYBJwZTeua6E/Y7FIM1C54Ey1btLWupdg=="
+      },
+      "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "38ugOfkYJqJoX9g6EYRlZB5U2ZJH51UP8ptxZgdpS07FgOEToV+lS11ouNK2PM12Pr6X/PpT5jK82G3DwH/SxQ=="
+      },
+      "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "YhEdSQUsTx+C8m8Bw7ar5/VesXvCFMItyZF7G1AUY+OM0VPZUOeAVpJ4Wl6fydBGUYZxojTDR3I6Bj/+BPkJNA=="
+      },
+      "System.Data.SqlClient": {
+        "type": "Transitive",
+        "resolved": "4.8.2",
+        "contentHash": "80vGtW6uLB4AkyrdVuKTXYUyuXDPAsSKbTVfvjndZaRAYxzFzWhJbvUfeAKrN+128ycWZjLIAl61dFUwWHOOTw==",
+        "dependencies": {
+          "runtime.native.System.Data.SqlClient.sni": "4.7.0"
+        }
+      }
+    },
+    "net9.0": {
+      "Fody": {
+        "type": "Direct",
+        "requested": "[6.9.3, )",
+        "resolved": "6.9.3",
+        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
+      },
+      "MethodBoundaryAspect.Fody": {
+        "type": "Direct",
+        "requested": "[2.0.150, )",
+        "resolved": "2.0.150",
+        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
+        "dependencies": {
+          "Fody": "6.7.0"
+        }
+      },
+      "Microsoft.SourceLink.GitHub": {
+        "type": "Direct",
+        "requested": "[8.0.0, )",
+        "resolved": "8.0.0",
+        "contentHash": "G5q7OqtwIyGTkeIOAc3u2ZuV/kicQaec5EaRnc0pIeSnh9LUjj+PYQrJYBURvDt7twGl2PKA7nSN0kz1Zw5bnQ==",
+        "dependencies": {
+          "Microsoft.Build.Tasks.Git": "8.0.0",
+          "Microsoft.SourceLink.Common": "8.0.0"
+        }
+      },
+      "Nerdbank.GitVersioning": {
+        "type": "Direct",
+        "requested": "[3.9.50, )",
+        "resolved": "3.9.50",
+        "contentHash": "HtOgGF6jZ+WYbXnCUCYPT8Y2d6mIJo9ozjK/FINTRsXdm4Zgv9GehUMa7EFoGQkqrMcDJNOIDwCmENnvXg4UbA=="
+      },
+      "Microsoft.Bcl.AsyncInterfaces": {
+        "type": "Transitive",
+        "resolved": "1.1.1",
+        "contentHash": "yuvf07qFWFqtK3P/MRkEKLhn5r2UbSpVueRziSqj0yJQIKFwG1pq9mOayK3zE5qZCTs0CbrwL9M6R8VwqyGy2w=="
+      },
+      "Microsoft.Build.Tasks.Git": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "bZKfSIKJRXLTuSzLudMFte/8CempWjVamNUR5eHJizsy+iuOuO/k2gnh7W0dHJmYY0tBf+gUErfluCv5mySAOQ=="
+      },
+      "Microsoft.SourceLink.Common": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
+      },
+      "runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.7.0",
+        "contentHash": "9kyFSIdN3T0qjDQ2R0HRXYIhS3l5psBzQi6qqhdLz+SzFyEy4sVxNOke+yyYv8Cu8rPER12c3RDjLT8wF3WBYQ==",
+        "dependencies": {
+          "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": "4.4.0",
+          "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": "4.4.0",
+          "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": "4.4.0"
+        }
+      },
+      "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "LbrynESTp3bm5O/+jGL8v0Qg5SJlTV08lpIpFesXjF6uGNMWqFnUQbYBJwZTeua6E/Y7FIM1C54Ey1btLWupdg=="
+      },
+      "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "38ugOfkYJqJoX9g6EYRlZB5U2ZJH51UP8ptxZgdpS07FgOEToV+lS11ouNK2PM12Pr6X/PpT5jK82G3DwH/SxQ=="
+      },
+      "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "YhEdSQUsTx+C8m8Bw7ar5/VesXvCFMItyZF7G1AUY+OM0VPZUOeAVpJ4Wl6fydBGUYZxojTDR3I6Bj/+BPkJNA=="
+      },
+      "ServiceStack.Common": {
+        "type": "Transitive",
+        "resolved": "5.12.0",
+        "contentHash": "iBKaQ6BfqZGbBFCHotH/+M6XAPHbCziE31ATXMMSB7X/56x5bhveQRDwFo7EKSeNX0/X4CCV+7Uq+5MWuCkwtQ==",
+        "dependencies": {
+          "ServiceStack.Interfaces": "5.12.0",
+          "ServiceStack.Text": "5.12.0"
+        }
+      },
+      "ServiceStack.Interfaces": {
+        "type": "Transitive",
+        "resolved": "5.12.0",
+        "contentHash": "cHPEPCzr9j63oJAuv+RaubJlYj1qtbEIU30Nx4w6DMKCKLbciFc4UlRIf9/Hg8oSPkuEEFq0RETRZ/9iTKbx8A==",
+        "dependencies": {
+          "Microsoft.Bcl.AsyncInterfaces": "1.1.1"
+        }
+      },
+      "System.Data.SqlClient": {
+        "type": "Transitive",
+        "resolved": "4.8.2",
+        "contentHash": "80vGtW6uLB4AkyrdVuKTXYUyuXDPAsSKbTVfvjndZaRAYxzFzWhJbvUfeAKrN+128ycWZjLIAl61dFUwWHOOTw==",
+        "dependencies": {
+          "runtime.native.System.Data.SqlClient.sni": "4.7.0"
+        }
+      },
+      "atap.utilities.computerinventory.hardware.enumerations": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Enumeration": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.hardware.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
+          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
+          "TimePeriodLibrary.NET": "[2.1.5, )",
+          "UnitsNet": "[5.60.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.hardware.models": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Philote": "[1.0.0, )",
+          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
+          "MedallionShell": "[1.6.2, )",
+          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
+          "TimePeriodLibrary.NET": "[2.1.5, )",
+          "UnitsNet": "[5.60.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.hardware.stringconstants": {
+        "type": "Project"
+      },
+      "atap.utilities.concurrentobservablecollections": {
+        "type": "Project"
+      },
+      "atap.utilities.enumeration": {
+        "type": "Project"
+      },
+      "atap.utilities.etw": {
+        "type": "Project"
+      },
+      "atap.utilities.persistence.interfaces": {
+        "type": "Project"
+      },
+      "atap.utilities.persistence.model": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Persistence.Interfaces": "[0.1.0-Alpha, )",
+          "ServiceStack.OrmLite": "[5.12.0, )",
+          "ServiceStack.OrmLite.SqlServer": "[5.12.0, )"
+        }
+      },
+      "atap.utilities.philote": {
+        "type": "Project"
+      },
+      "atap.utilities.philote.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
+          "TimePeriodLibrary.NET": "[2.1.5, )"
+        }
+      },
+      "atap.utilities.stronglytypedid.interfaces": {
+        "type": "Project"
+      },
+      "MedallionShell": {
+        "type": "CentralTransitive",
+        "requested": "[1.6.2, )",
+        "resolved": "1.6.2",
+        "contentHash": "fk0FLxBt6pRgrEo69IdzMqV51Wha7iK0ZTkNZyhsEZ2n67gooF8GgGE2ag85w5ewUuHVIu+v97c0YRDn448riA=="
+      },
+      "ServiceStack.OrmLite": {
+        "type": "CentralTransitive",
+        "requested": "[5.12.0, )",
+        "resolved": "5.12.0",
+        "contentHash": "0pGs/Mc32SKaFeC7JBSnM1LWmG2lI4k/v0bFpAPxvo8jzuEWryxLc9JS2MBLq17J8Eqy4eb1KZ/VqHfB14NW7Q==",
+        "dependencies": {
+          "ServiceStack.Common": "5.12.0"
+        }
+      },
+      "ServiceStack.OrmLite.SqlServer": {
+        "type": "CentralTransitive",
+        "requested": "[5.12.0, )",
+        "resolved": "5.12.0",
+        "contentHash": "8OzCjTyaDtyaxkcgmld6ZfZNEN1gS+Xz4Ng3RPSw2zZhcyIB+sMUBTo3Jb6lPdVP9qVmTTmBaMurA4C3hLODPg==",
+        "dependencies": {
+          "ServiceStack.Common": "5.12.0",
+          "ServiceStack.OrmLite": "5.12.0",
+          "System.Data.SqlClient": "4.8.2"
+        }
+      },
+      "ServiceStack.Text": {
+        "type": "CentralTransitive",
+        "requested": "[5.12.0, )",
+        "resolved": "5.12.0",
+        "contentHash": "KBbHZ73I9suf1DSYeEJSXPmgobyJikB9fhfhJFaeBPw22Es1taeuSQsuXtgH8qjQI7MWhug63D9l8xarGxG03A=="
+      },
+      "ServiceStack.Text.EnumMemberSerializer": {
+        "type": "CentralTransitive",
+        "requested": "[3.0.0.50044, )",
+        "resolved": "3.0.0.50044",
+        "contentHash": "SFyMaslYh5C8Dbp7v9ItB/3lvBxLIaeT5m9tCnKhmoX8hm8QuC0P+CD+Xzjeu/S62qzaA+DFYRklxFJ5Cw6uHw==",
+        "dependencies": {
+          "ServiceStack.Text": "5.0.0"
+        }
+      },
+      "TimePeriodLibrary.NET": {
+        "type": "CentralTransitive",
+        "requested": "[2.1.5, )",
+        "resolved": "2.1.5",
+        "contentHash": "2QFqfYDl7/4wQd6Bsi1Z4fZlOurnJ2OQln5YK+TlIS6c5R0AM2Tn1EEfpWob/sOe0c0luUR01r0kZE4vruX8mw=="
+      },
+      "UnitsNet": {
+        "type": "CentralTransitive",
+        "requested": "[5.60.0, )",
+        "resolved": "5.60.0",
+        "contentHash": "y+EtFw5cSgEaerlrZMr8QhBT2f4GtbyNhDPNdjVZHntqCAevC8TyvQV3dyEHOM8sR4DuiUcFAZ/McyNyewFcMw=="
+      }
+    },
+    "net9.0/linux-x64": {
+      "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "LbrynESTp3bm5O/+jGL8v0Qg5SJlTV08lpIpFesXjF6uGNMWqFnUQbYBJwZTeua6E/Y7FIM1C54Ey1btLWupdg=="
+      },
+      "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "38ugOfkYJqJoX9g6EYRlZB5U2ZJH51UP8ptxZgdpS07FgOEToV+lS11ouNK2PM12Pr6X/PpT5jK82G3DwH/SxQ=="
+      },
+      "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "YhEdSQUsTx+C8m8Bw7ar5/VesXvCFMItyZF7G1AUY+OM0VPZUOeAVpJ4Wl6fydBGUYZxojTDR3I6Bj/+BPkJNA=="
+      },
+      "System.Data.SqlClient": {
+        "type": "Transitive",
+        "resolved": "4.8.2",
+        "contentHash": "80vGtW6uLB4AkyrdVuKTXYUyuXDPAsSKbTVfvjndZaRAYxzFzWhJbvUfeAKrN+128ycWZjLIAl61dFUwWHOOTw==",
+        "dependencies": {
+          "runtime.native.System.Data.SqlClient.sni": "4.7.0"
+        }
+      }
+    },
+    "net9.0/win-x64": {
+      "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "LbrynESTp3bm5O/+jGL8v0Qg5SJlTV08lpIpFesXjF6uGNMWqFnUQbYBJwZTeua6E/Y7FIM1C54Ey1btLWupdg=="
+      },
+      "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "38ugOfkYJqJoX9g6EYRlZB5U2ZJH51UP8ptxZgdpS07FgOEToV+lS11ouNK2PM12Pr6X/PpT5jK82G3DwH/SxQ=="
+      },
+      "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "YhEdSQUsTx+C8m8Bw7ar5/VesXvCFMItyZF7G1AUY+OM0VPZUOeAVpJ4Wl6fydBGUYZxojTDR3I6Bj/+BPkJNA=="
+      },
+      "System.Data.SqlClient": {
+        "type": "Transitive",
+        "resolved": "4.8.2",
+        "contentHash": "80vGtW6uLB4AkyrdVuKTXYUyuXDPAsSKbTVfvjndZaRAYxzFzWhJbvUfeAKrN+128ycWZjLIAl61dFUwWHOOTw==",
+        "dependencies": {
+          "runtime.native.System.Data.SqlClient.sni": "4.7.0"
+        }
+      }
+    }
+  }
+}

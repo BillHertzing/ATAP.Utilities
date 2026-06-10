@@ -62,11 +62,27 @@ function ConvertTo-ProGetFeedNameAlternateForm {
 
       'FromIndividual' {
         try {
-          $ShortExternalInternal = $longToShort.ExternalInternal[$ExternalInternal] ?? (throw "Invalid ExternalInternal: $ExternalInternal")
-          $ShortReleasedPrerelease = $longToShort.ReleasedPrerelease[$ReleasedPrerelease] ?? (throw "Invalid ReleasedPrerelease: $ReleasedPrerelease")
-          $ShortPackageType = $longToShort.PackageType[$PackageType] ?? (throw "Invalid PackageType: $PackageType")
-          $ShortProdQA = $longToShort.ProductionQualityAssurance[$ProductionQualityAssurance] ?? (throw "Invalid ProductionQualityAssurance: $ProductionQualityAssurance")
-          $ShortPullPush = $longToShort.PullPush[$PullPush] ?? (throw "Invalid PullPush: $PullPush")
+          if (-not $longToShort.ExternalInternal.ContainsKey($ExternalInternal)) {
+            throw "Invalid ExternalInternal: $ExternalInternal"
+          }
+          if (-not $longToShort.ReleasedPrerelease.ContainsKey($ReleasedPrerelease)) {
+            throw "Invalid ReleasedPrerelease: $ReleasedPrerelease"
+          }
+          if (-not $longToShort.PackageType.ContainsKey($PackageType)) {
+            throw "Invalid PackageType: $PackageType"
+          }
+          if (-not $longToShort.ProductionQualityAssurance.ContainsKey($ProductionQualityAssurance)) {
+            throw "Invalid ProductionQualityAssurance: $ProductionQualityAssurance"
+          }
+          if (-not $longToShort.PullPush.ContainsKey($PullPush)) {
+            throw "Invalid PullPush: $PullPush"
+          }
+
+          $ShortExternalInternal = $longToShort.ExternalInternal[$ExternalInternal]
+          $ShortReleasedPrerelease = $longToShort.ReleasedPrerelease[$ReleasedPrerelease]
+          $ShortPackageType = $longToShort.PackageType[$PackageType]
+          $ShortProdQA = $longToShort.ProductionQualityAssurance[$ProductionQualityAssurance]
+          $ShortPullPush = $longToShort.PullPush[$PullPush]
         }
         catch {
           $errorMessage = "One of the individual values is invalid. Exception: $($_.Exception.Message)"

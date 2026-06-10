@@ -16,6 +16,10 @@ timestamps of the base file, the local file, and the newly written combined file
 Optional path to the current worktree root. Defaults to the git toplevel of the
 current working directory.
 
+.PARAMETER WorkspacePath
+Optional explicit path to the sprint Overview code-workspace file. When supplied,
+the cmdlet uses this file instead of filename-based discovery in the parent folder.
+
 .OUTPUTS
 System.Management.Automation.PSCustomObject
 Returns a result object containing:
@@ -46,7 +50,12 @@ function Build-CLAUDEPerRepository {
     [Parameter(Mandatory = $false, Position = 0,
       HelpMessage = 'Path to the current worktree root')]
     [ValidateNotNullOrEmpty()]
-    [string]$WorktreeRoot
+    [string]$WorktreeRoot,
+
+    [Parameter(Mandatory = $false, Position = 1,
+      HelpMessage = 'Path to the sprint Overview code-workspace file')]
+    [ValidateNotNullOrEmpty()]
+    [string]$WorkspacePath
   )
 
   begin {
@@ -94,22 +103,36 @@ function Build-CLAUDEPerRepository {
 
   process {
     try {
-      # Step 1: Go up one level from worktree root to find the workspace file
+      # Step 1: Resolve the sprint workspace file. Prefer an explicit path so new
+      # Overview naming styles do not break propagation.
       $parentDir = Split-Path $WorktreeRoot -Parent
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Searching for workspace file in: $parentDir"
+      if ($PSBoundParameters.ContainsKey('WorkspacePath') -and -not [string]::IsNullOrWhiteSpace($WorkspacePath)) {
+        try {
+          $workspaceFile = Get-Item -LiteralPath $WorkspacePath -ErrorAction Stop
+        } catch {
+          throw "WorkspacePath does not exist: $WorkspacePath"
+        }
+      } else {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Searching for workspace file in: $parentDir"
 
-      $workspaceFiles = Get-ChildItem -Path $parentDir -Filter 'Overview-wt-sprint????.code-workspace' -File -ErrorAction Stop
-      if (-not $workspaceFiles -or $workspaceFiles.Count -eq 0) {
-        throw "No Overview-wt-sprintNNNN.code-workspace file found in '$parentDir'"
+        $workspaceFiles = @()
+        $workspaceFiles += Get-ChildItem -Path $parentDir -Filter 'Overview-wt-sprint????.code-workspace' -File -ErrorAction SilentlyContinue
+        $workspaceFiles += Get-ChildItem -Path $parentDir -Filter 'OverviewSprint????.code-workspace' -File -ErrorAction SilentlyContinue
+
+        if (-not $workspaceFiles -or $workspaceFiles.Count -eq 0) {
+          throw "No Overview sprint code-workspace file found in '$parentDir'"
+        }
+        if ($workspaceFiles.Count -gt 1) {
+          # Use the most recently updated workspace if more than one naming style exists.
+          $workspaceFiles = $workspaceFiles | Sort-Object LastWriteTime, Name -Descending
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Multiple workspace files found; using latest: $($workspaceFiles[0].Name)"
+        }
+        $workspaceFile = $workspaceFiles[0]
       }
-      if ($workspaceFiles.Count -gt 1) {
-        # Use the one with the highest sprint number
-        $workspaceFiles = $workspaceFiles | Sort-Object Name -Descending
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Multiple workspace files found; using latest: $($workspaceFiles[0].Name)"
-      }
-      $workspaceFile = $workspaceFiles[0]
+
+      $workspaceFile = Get-Item -LiteralPath $workspaceFile.FullName -ErrorAction Stop
       $result.WorkspacePath = $workspaceFile.FullName
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Found workspace file: $($workspaceFile.FullName)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Using workspace file: $($workspaceFile.FullName)"
 
       # Step 2: Read the workspace file and extract folder paths
       try {

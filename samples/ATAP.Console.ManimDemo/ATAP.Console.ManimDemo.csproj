@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <!-- NO TargetFramework/TargetFrameworks here — inherited from Directory.Build.props -->
+    <RootNamespace>ATAP.Console.ManimDemo</RootNamespace>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IsPackable>false</IsPackable>
+    <IsPublishable>false</IsPublishable>
+    <MajorVersion>0</MajorVersion>
+    <MinorVersion>1</MinorVersion>
+    <PatchVersion>0</PatchVersion>
+    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
+    <PackageLabel>Alpha</PackageLabel>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <NoWarn>$(NoWarn);2008</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- ReferenceOutputAssembly=false prevents NETSDK1150:
+        the facade doesn't try to link the Exe's output assembly -->
+    <ProjectReference Include="Model\ATAP.Console.ManimDemo.Model.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="StringConstants\ATAP.Console.ManimDemo.StringConstants.csproj" />
+    <ProjectReference Include="DefaultConfiguration\ATAP.Console.ManimDemo.DefaultConfiguration.csproj" />
+  </ItemGroup>
+</Project>

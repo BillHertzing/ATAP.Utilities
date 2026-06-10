@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "fileKind": "database-package-ceiling",
+  "branchKind": "feature",
+  "branchName": "feature/PaymentRefactor",
+  "packageId": "AceCommander.Database",
+  "maxConsumableTier": "Experimental",
+  "maxConsumableFeed": "database-experimental",
+  "versionJsonPrereleaseLabel": "PaymentRefactor",
+  "reason": "Feature branches keep database packages at Experimental until the feature is merged and re-cut for higher tiers.",
+  "owner": "AceCommander feature owner"
+}
+

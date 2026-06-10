@@ -17,6 +17,9 @@ function New-ProGetConnector {
     #  if (-not (Get-Command -Name 'List-ProGetConnectors' -CommandType Function -ErrorAction SilentlyContinue)) {
     . "$PSScriptRoot\List-ProGetConnectors.ps1"
     # }
+    if (-not (Get-Command -Name 'Convert-ProGetFeedType' -CommandType Function -ErrorAction SilentlyContinue)) {
+      . "$PSScriptRoot\..\private\Convert-ProGetFeedType.ps1"
+    }
 
     # if not passed, get from the environment variable. If not an environment variable fall back to the $global: value
     if ([string]::IsNullOrWhiteSpace($proGetBaseScheme)) {
@@ -48,7 +51,7 @@ function New-ProGetConnector {
         }
       }
       else {
-        $proGetBaseHost = [Environment]::GetEnvironmentVariable($global:configRootKeys['ProGetAdminUriSchemeConfigRootKey'], 'Process')
+        $proGetBaseHost = [Environment]::GetEnvironmentVariable($global:configRootKeys['ProGetAdminUriHostConfigRootKey'], 'Process')
       }
     }
 
@@ -109,15 +112,15 @@ function New-ProGetConnector {
 
     $body = @{
       name        = $connector.name
-      feedType    = $connector.feedType
+      feedType    = Convert-ProGetFeedType -FeedType $connector.feedType
       Url         = $connector.url
       enabled     = $connector.enabled
       description = $connector.description
     }
 
-    if ($PSCmdlet.ShouldProcess("ProGet Connector [$($connector.name)]", "Create Connector $($connector.name) of feedType $($connector.feedType) with URL $($connector.url)" )) {
+    if ($PSCmdlet.ShouldProcess("ProGet Connector [$($connector.name)]", "Create Connector $($connector.name) of feedType $($body.feedType) with URL $($connector.url)" )) {
       try {
-        Write-PSFMessage -Level Verbose -Message "Attempting to Create Connector $($connector.name) of feedType $($connector.feedType) with URL $($connector.url)" -Tag 'New-ProGetConnector', 'Trace'
+        Write-PSFMessage -Level Verbose -Message "Attempting to Create Connector $($connector.name) of feedType $($body.feedType) with URL $($connector.url)" -Tag 'New-ProGetConnector', 'Trace'
         # ToDo: accumulate the results for each feed, and pass them on down the pipeline
         $connectorCreationResults = Invoke-RestMethod -Uri $apiEndPoint.AbsoluteUri -Method Post -Headers $headers -Body ($body | ConvertTo-Json -Depth 3) -ContentType 'application/json'
         Write-PSFMessage -Level Verbose -Message "Successfully created Connector $($connector.name)" -Tag 'New-ProGetConnector', 'Trace'

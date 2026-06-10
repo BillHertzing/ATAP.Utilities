@@ -18,6 +18,10 @@ BeforeAll {
   . (Join-Path $publicDir 'New-PesterContextBlock.ps1')
   . (Join-Path $publicDir 'New-PesterDescribeBlock.ps1')
   . (Join-Path $publicDir 'New-PesterFileModel.ps1')
+
+  if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
+    function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
+  }
 }
 
 Describe 'New-PesterItBlock' -Tag 'Unit', 'PesterKind' {
@@ -164,6 +168,10 @@ Describe 'New-PesterFileModel' -Tag 'Unit', 'PesterKind' {
   BeforeAll {
     $script:sampleIt = New-PesterItBlock -Name 'FileModelIt' -Body 'true | Should -BeTrue'
     $script:sampleDescribe = New-PesterDescribeBlock -Name 'FileModel Describe' -Its @($script:sampleIt)
+  }
+
+  BeforeEach {
+    Mock Write-PSFMessage { }
   }
 
   Context 'When called with required parameters' {

@@ -20,35 +20,35 @@ BeforeAll {
 Describe 'Get-TierFromNBGVLabel' {
 
   Context 'Valid labels — bare form' {
-    It 'Sprint maps to T1 Experimental / PowershellGet-experimental' {
+    It 'Sprint maps to T1 Experimental / powershellget-experimental' {
       $r = Get-TierFromNBGVLabel -PrereleaseLabel 'Sprint'
       $r.TierNumber | Should -Be 1
       $r.TierName   | Should -BeExactly 'Experimental'
-      $r.FeedName   | Should -BeExactly 'PowershellGet-experimental'
+      $r.FeedName   | Should -BeExactly 'powershellget-experimental'
     }
-    It 'Alpha maps to T2 Development / PowershellGet-development' {
+    It 'Alpha maps to T2 Development / powershellget-development' {
       $r = Get-TierFromNBGVLabel -PrereleaseLabel 'Alpha'
       $r.TierNumber | Should -Be 2
       $r.TierName   | Should -BeExactly 'Development'
-      $r.FeedName   | Should -BeExactly 'PowershellGet-development'
+      $r.FeedName   | Should -BeExactly 'powershellget-development'
     }
-    It 'Beta maps to T3 Integration / PowershellGet-integration' {
+    It 'Beta maps to T3 Integration / powershellget-integration' {
       $r = Get-TierFromNBGVLabel -PrereleaseLabel 'Beta'
       $r.TierNumber | Should -Be 3
       $r.TierName   | Should -BeExactly 'Integration'
-      $r.FeedName   | Should -BeExactly 'PowershellGet-integration'
+      $r.FeedName   | Should -BeExactly 'powershellget-integration'
     }
-    It 'QA maps to T4 QA / PowershellGet-qa' {
+    It 'QA maps to T4 QA / powershellget-qa' {
       $r = Get-TierFromNBGVLabel -PrereleaseLabel 'QA'
       $r.TierNumber | Should -Be 4
       $r.TierName   | Should -BeExactly 'QA'
-      $r.FeedName   | Should -BeExactly 'PowershellGet-qa'
+      $r.FeedName   | Should -BeExactly 'powershellget-qa'
     }
-    It 'Empty string maps to T5 Production / PowershellGet-stable' {
+    It 'Empty string maps to T5 Production / powershellget-stable' {
       $r = Get-TierFromNBGVLabel -PrereleaseLabel ''
       $r.TierNumber | Should -Be 5
       $r.TierName   | Should -BeExactly 'Production'
-      $r.FeedName   | Should -BeExactly 'PowershellGet-stable'
+      $r.FeedName   | Should -BeExactly 'powershellget-stable'
     }
   }
 
@@ -76,19 +76,20 @@ Describe 'Get-TierFromNBGVLabel' {
     }
   }
 
-  Context 'Invalid labels' {
-    It 'Throws on unrecognized label "Gamma"' {
-      { Get-TierFromNBGVLabel -PrereleaseLabel 'Gamma' } |
-        Should -Throw -ExpectedMessage '*Unrecognized NBGV prerelease label*'
+  Context 'Feature and unknown labels' {
+    It 'Maps a feature label to T1 Experimental' {
+      $r = Get-TierFromNBGVLabel -PrereleaseLabel 'PaymentRefactor.17'
+      $r.TierNumber | Should -Be 1
+      $r.TierName   | Should -BeExactly 'Experimental'
+      $r.FeedName   | Should -BeExactly 'powershellget-experimental'
     }
-    It 'Throws on unrecognized label "RC"' {
-      { Get-TierFromNBGVLabel -PrereleaseLabel 'RC' } |
-        Should -Throw -ExpectedMessage '*Unrecognized NBGV prerelease label*'
+
+    It 'Maps unknown labels to T1 Experimental' {
+      (Get-TierFromNBGVLabel -PrereleaseLabel 'RC').TierNumber | Should -Be 1
     }
-    It 'Throws on nonsense value "12345"' {
-      # '12345' strips to empty via \d+$ regex -> normalizes to ''; empty means stable.
-      # So this ACTUALLY resolves to T5. Assert that explicitly.
-      (Get-TierFromNBGVLabel -PrereleaseLabel '12345').TierNumber | Should -Be 5
+
+    It 'Maps numeric-only nonsense to T1 Experimental rather than Production' {
+      (Get-TierFromNBGVLabel -PrereleaseLabel '12345').TierNumber | Should -Be 1
     }
   }
 }

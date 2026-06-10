@@ -43,29 +43,24 @@ function Create-AllUsersAllHostsV7CoreProfile {
 
   }
 
-  # Until ATAP.Utilities.Powershell is a module in the $PSModulePath, import the function
-  . $(Join-Path -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Join-PathNoResolve.ps1'))
-
-
   # Load the helper script
-      try {
-      if (-not (Get-Command -Name 'Set-GlobalConfigRootKeys' -CommandType Function -ErrorAction SilentlyContinue)) {
-        $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
-        $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-98-sprint-0006-work-items'
-        $projectpathRel = 'src\ATAP.Utilities.ConfigRootKeys.Powershell'
-        $cmdletPathRel = 'public\Set-GlobalConfigRootKeys.ps1'
-        . $(join-path $repobasepath $projectpathRel $cmdletPathRel)
-      }
-      if (-not (Get-Command -Name 'New-ConnectionStringBuilderFromDbaTools' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\New-ConnectionStringBuilderFromDbaTools.ps1'
-      }
+  try {
+    if (-not (Get-Command -Name 'Set-GlobalConfigRootKeys' -CommandType Function -ErrorAction SilentlyContinue)) {
+      $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
+      $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-98-sprint-0006-work-items'
+      $projectpathRel = 'src\ATAP.Utilities.ConfigRootKeys.Powershell'
+      $cmdletPathRel = 'public\Set-GlobalConfigRootKeys.ps1'
+      . $(Join-Path $repobasepath $projectpathRel $cmdletPathRel)
     }
-    catch {
-      $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-      throw
+    if (-not (Get-Command -Name 'New-ConnectionStringBuilderFromDbaTools' -CommandType Function -ErrorAction SilentlyContinue)) {
+      . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\New-ConnectionStringBuilderFromDbaTools.ps1'
     }
-  
+  } catch {
+    $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+    throw
+  }
+
   # Dot source the list of configuration keys
   # Configuration root key .ps1 files should be a peer of the machine profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
   . "$PSScriptRoot/global_ConfigRootKeys.ps1"
@@ -149,40 +144,6 @@ $VerbosePreference = 'SilentlyContinue' # SilentlyContinue Continue
 ########################################################
 
 #region Functions needed by the machine profile, must be defined in the profile, or dot-sourced
-# ToDo: move to a fileio package, improve error and OperatingSystem handling
-function Join-PathNoResolve {
-  param(
-    [ValidateNotNullorEmpty()][string] $Path
-    , [ValidateNotNullorEmpty()][string] $ChildPath
-    , [string[]] $AdditionalPaths
-    , [char] $DirectorySeparatorChar = [IO.Path]::DirectorySeparatorChar
-  )
-  $result = ''
-  $numCharacters = $(Measure-Object -InputObject $Path -Character).Characters
-  if ($numCharacters -eq 1) {
-    # if Path has just 1 character, use Join-Path
-    $result = Join-Path $Path $ChildPath $AdditionalPaths
-  }
-  elseif ($Path.Substring(1, 1) -ne ':') {
-    # if Path doesn't start with a Drive letter, then use Join-Path
-    $result = Join-Path $Path $ChildPath $AdditionalPaths
-  }
-  else {
-    # Path starts with a drive letter (because it has ':' as second character) so we can't use join-path for the $Path portion, have to emulate it's behaviour
-    # The $DirectorySeparatorChar to use depends on the parameter
-    if ($Path.Substring($numCharacters - 1, 1) -eq $DirectorySeparatorChar) {
-      # However, we can use join-path for the second and remainder arguments
-      $result = "$($Path)$($DirectorySeparatorChar)$(Join-Path $ChildPath $AdditionalPaths)"
-      # ToDo: replace $DirectorySeparatorChar used by Join-Path if there is a parameter $DirectorySeparatorChar and it differes from the current OS's DirectorySeparatorChar
-    }
-    else {
-      # second character in $Path is not ':' so we can use join-path
-      $result = "$($Path)$(Join-Path $ChildPath $AdditionalPaths)"
-    }
-  }
-  $result
-}
-
 function Write-ArrayIndented {
   param ($a, $indent, $indentIncrement)
   $outstr = ' ' * $indent
@@ -213,7 +174,7 @@ function Write-ArrayIndented {
   $outstr += $a -join [Environment]::NewLine
 }
 
-Function Write-HashIndented {
+function Write-HashIndented {
   param($hash
     , [int] $initialIndent = 0
     , [int] $indentIncrement = 2
@@ -253,19 +214,18 @@ function Write-KVPIndented {
   $outstr
 }
 
-Function Write-EnvironmentVariablesIndented {
+function Write-EnvironmentVariablesIndented {
   param(
     [int] $initialIndent = 0
     , [int] $indentIncrement = 2
   )
-  ('Machine', 'User', 'Process') | ForEach-Object { $scope = $_;
-    [System.Environment]::GetEnvironmentVariables($scope) | ForEach-Object { $envVarHashTable = $_;
+  ('Machine', 'User', 'Process') | ForEach-Object { $scope = $_
+    [System.Environment]::GetEnvironmentVariables($scope) | ForEach-Object { $envVarHashTable = $_
       $envVarHashTable.Keys | Sort-Object | ForEach-Object { $key = $_
         if ($key -eq 'path') {
           $outstr += ' ' * $initialIndent + $key + ' (' + $scope + ') = ' + [Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) + `
           $($($($envVarHashTable[$key] -split [IO.Path]::PathSeparator) | Sort-Object) -join $([Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) ) )
-        }
-        else {
+        } else {
           $outstr += ' ' * $initialIndent + $key + ' = ' + $envVarHashTable[$key] + '  [' + $scope + ']' + [Environment]::NewLine
         }
       }
@@ -277,7 +237,7 @@ Function Write-EnvironmentVariablesIndented {
 #endregion Functions needed by the machine profile, must be defined in the profile
 ##################################################################################
 
-Function ValidateTools {
+function ValidateTools {
   # validate dotnet
   # validate dotnet build
   # validate java
@@ -425,7 +385,7 @@ Get-CollectionTraverseEvaluate -SourceCollections $sourceCollections -destinatio
 # location of the local chocolatey server per machine
 
 # The $Env:PSModulePath is process-scoped, and it's initial value is supplied by the Powershell host process/engine.
-# Powershell Core Version 7.2.5 supplies C:\Dropbox\whertzing\PowerShell\Modules;C:\Program Files\PowerShell\Modules;c:\program files\powershell\7\Modules; in the initial value (process scoped)
+# Powershell Core Version 7.2.5 supplies C:\Dropbox\whertzing\PowerShell\Modules;C:\Program Files\PowerShell\Modules;c:\program files\Modules; in the initial value (process scoped)
 
 # Installing SQL Server 2019 adds the path ;C:\Program Files (x86)\Microsoft SQL Server\150\Tools\PowerShell\Modules\ to the machine scoped $Env:PSModulePath
 

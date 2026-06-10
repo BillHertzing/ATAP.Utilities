@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "releaseVersion": "1.4.0",
+  "sourceTag": "v1.4.0",
+  "sourceCommit": "1111111111111111111111111111111111111111",
+  "sourceBranch": "release/1.4.0",
+  "buildUtc": "2026-05-06T14:32:11Z",
+  "buildAgent": "utat022",
+  "appPackageId": "AceCommander",
+  "appPackageVersion": "1.4.0",
+  "includedLibraryPackages": [
+    { "id": "ATAP.Utilities.Philote", "version": "0.1.0-Beta.42" },
+    { "id": "ATAP.Utilities.ETW", "version": "0.1.0-Beta.42" },
+    { "id": "ATAP.Utilities.Legacy", "version": "0.9.0" }
+  ],
+  "includedPowerShellModules": [
+    { "id": "ATAP.Utilities.FileIO.PowerShell", "version": "0.1.0-Beta.17" }
+  ],
+  "databasePackageIncluded": true,
+  "dbChangeUnit": "AceCommander-db-1.4.0",
+  "flywayTargetVersion": "1.4.1",
+  "migrationFiles": [
+    "db/flyway/V1.4.0__baseline_schema.sql",
+    "db/flyway/V1.4.1__old_feature_tables.sql",
+    "db/flyway/R__views_and_procs.sql"
+  ],
+  "seedFiles": [
+    "db/seed/S1_4_0_roles.csv"
+  ],
+  "seedLoaderScripts": [
+    "db/seed/S1_4_0_roles_load.sql"
+  ],
+  "installerScripts": [
+    "installer/Install-Application.ps1"
+  ],
+  "testEvidence": [
+    {
+      "kind": "unit",
+      "path": "tests/unit-results.trx",
+      "checksumSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ],
+  "checksums": {
+    "app/bin/AceCommander.dll": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "db/flyway/V1.4.0__baseline_schema.sql": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "db/flyway/V1.4.1__old_feature_tables.sql": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "compatibility": {
+    "minDbVersion": "1.4.0",
+    "maxDbVersion": "1.4.1",
+    "supportedOs": [
+      "Windows 11"
+    ],
+    "requiredDotnet": "10.0"
+  },
+  "rollback": {
+    "supported": false,
+    "notes": "Forward-only fixture release."
+  }
+}

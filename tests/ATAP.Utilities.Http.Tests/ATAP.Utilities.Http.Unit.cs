@@ -1,0 +1,31 @@
+using System;
+using Xunit;
+using Xunit.Abstractions;
+
+namespace ATAP.Utilities.Http.Tests
+{
+  
+        [Trait("Category", "Unit")]
+        public class Fixture
+        {
+            private string hello;
+
+            public Fixture()
+            {
+                Hello = "Hello";
+            }
+
+            public string Hello { get => hello; set => hello = value; }
+        }
+        public class HttpUnitTests : IClassFixture<Fixture>
+        {
+            protected Fixture fixture;
+            readonly ITestOutputHelper output;
+
+            public HttpUnitTests(ITestOutputHelper output, Fixture fixture)
+            {
+                this.output = output;
+                this.fixture = fixture;
+            }
+        }
+}

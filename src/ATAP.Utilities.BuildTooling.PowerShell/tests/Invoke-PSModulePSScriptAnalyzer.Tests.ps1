@@ -5,6 +5,10 @@ BeforeAll {
   $functionPath = Join-Path $PSScriptRoot '../public/Invoke-PSModulePSScriptAnalyzer.ps1'
   . $functionPath
 
+  if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
+    function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
+  }
+
   # Create a throwaway root under TEMP for per-test fixtures.
   $script:tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("psa_" + [guid]::NewGuid().ToString('N'))
   New-Item -ItemType Directory -Path $script:tempRoot -Force | Out-Null
@@ -17,6 +21,9 @@ AfterAll {
 }
 
 Describe 'Invoke-PSModulePSScriptAnalyzer' -Tag 'Unit' {
+  BeforeEach {
+    Mock Write-PSFMessage { }
+  }
 
   Context 'Sprint tier short-circuit' {
     It 'returns GatePass=$true and does not invoke the analyzer' {

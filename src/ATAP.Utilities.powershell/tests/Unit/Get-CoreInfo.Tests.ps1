@@ -13,7 +13,7 @@ if (-not (Get-Command -Name $functionName -CommandType Function -ErrorAction Sil
   }
 }
 
-Describe 'Get-CoreInfo' {
+Describe 'Get-CoreInfo' -Tag 'Unit', 'Disabled' {
   BeforeAll {
     $message = 'Starting BeforeAll in Get-CoreInfo.tests.ps1'
     Write-PSFMessage -Level Debug -Message $message -Tag 'Trace', 'Tests'

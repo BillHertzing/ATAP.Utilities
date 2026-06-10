@@ -69,7 +69,7 @@ function Get-RepositoryRoot {
       return $relativePath
     } catch {
       # If relative path calculation fails, return absolute path
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message 'Could not calculate relative path, returning absolute path'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Could not calculate relative path, returning absolute path: $($_.Exception.Message)"
       return $currentPath
     }
   } finally {

@@ -37,6 +37,8 @@ Other detailed documentation you might be interested are
 
 - [Using ATAP BuildTooling PowerShell scripts with Visual studio]()
 
+- [Provisioning Bitwarden Secrets Manager access tokens for service accounts and users](./SolutionDocumentation/Runbook-BitwardenServiceAccounts.md)
+
 - [Using DocFx to build the ATAP.Utilities documentation website]()
 
 - [Detailed API Information for the packages in this repository](./API/ReadMe.html)

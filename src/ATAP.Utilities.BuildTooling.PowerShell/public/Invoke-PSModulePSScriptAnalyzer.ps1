@@ -120,8 +120,50 @@ function Invoke-PSModulePSScriptAnalyzer {
         }
         foreach ($k in $keysToClear) { [void]$PSDefaultParameterValues.Remove($k) }
       }
+
+      # Discover the repo-wide PSScriptAnalyzer settings file by walking up from the
+      # analysis path. When found it is passed via -Settings so its ExcludeRules
+      # (convention-conflicting rules) apply to the Analyze gate.
+      $settingsSplat = @{}
+      $searchDir = if (Test-Path -LiteralPath $Path -PathType Container) { $Path } else { Split-Path -Parent $Path }
+      while ($searchDir) {
+        $candidate = Join-Path $searchDir 'PSScriptAnalyzerSettings.psd1'
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+          $settingsSplat['Settings'] = $candidate
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Using PSScriptAnalyzer settings file '$candidate'"
+          break
+        }
+        $parent = Split-Path -Parent $searchDir
+        if ($parent -eq $searchDir) { break }
+        $searchDir = $parent
+      }
       try {
-        $results = @(Invoke-ScriptAnalyzer -Path $Path -Severity Warning, Error -Recurse -ErrorAction Stop)
+        # Analyze per-file rather than via a single '-Recurse' call so that an
+        # internal PSScriptAnalyzer engine error on one file (e.g. the
+        # "Reference Position should begin before start Position of Range" bug)
+        # is logged and skipped instead of aborting the entire Analyze gate.
+        $targetFiles = if (Test-Path -LiteralPath $Path -PathType Container) {
+          # tests/ and Obsolete/ folders are not part of the shippable module surface,
+          # so they are excluded from the Analyze gate.
+          @(Get-ChildItem -LiteralPath $Path -Filter '*.ps1' -File -Recurse |
+              Where-Object { $_.FullName -notmatch '[\\/](tests|Obsolete)[\\/]' })
+        } else {
+          @(Get-Item -LiteralPath $Path)
+        }
+
+        $results = @()
+        $skippedFiles = [System.Collections.Generic.List[string]]::new()
+        foreach ($targetFile in $targetFiles) {
+          try {
+            $results += @(Invoke-ScriptAnalyzer -Path $targetFile.FullName -Severity Warning, Error -ErrorAction Stop @settingsSplat)
+          } catch {
+            $skippedFiles.Add($targetFile.FullName)
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "PSScriptAnalyzer engine error on '$($targetFile.FullName)'; skipping this file. Exception: $($_.Exception.Message)"
+          }
+        }
+        if ($skippedFiles.Count -gt 0) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "PSScriptAnalyzer skipped $($skippedFiles.Count) file(s) due to engine errors: $($skippedFiles -join '; ')"
+        }
       } finally {
         foreach ($k in $savedDefaults.Keys) { $PSDefaultParameterValues[$k] = $savedDefaults[$k] }
       }

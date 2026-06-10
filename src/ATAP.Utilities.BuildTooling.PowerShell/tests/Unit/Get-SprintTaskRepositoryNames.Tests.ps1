@@ -1,0 +1,25 @@
+BeforeAll {
+  . "$PSScriptRoot\..\..\private\Get-SprintTaskRepositoryNames.ps1"
+}
+
+Describe 'Get-SprintTaskRepositoryNames [private]' {
+  It 'extracts only repo markers immediately after the task token' {
+    $tasksContent = @(
+      '- [ ] **Task 7.49** [ATAP.Utilities] Tighten parser; mentions [Swarm], [Junior], and [switch] later.'
+      '- [ ] **Task 7.50** [SharedVSCode] Excluded repo marker.'
+      '- [ ] **Task 7.51** [AceCommander] Real downstream task.'
+      '  [NotARepo] prose-only bracket should not match.'
+      '- [ ] **Task 7.52** Description before [ATAP.IAC] should not match.'
+    )
+
+    $result = Get-SprintTaskRepositoryNames -TasksContent $tasksContent -ExcludeRepos @('SharedVSCode')
+
+    $result | Should -Contain 'ATAP.Utilities'
+    $result | Should -Contain 'AceCommander'
+    $result | Should -Not -Contain 'Swarm'
+    $result | Should -Not -Contain 'Junior'
+    $result | Should -Not -Contain 'switch'
+    $result | Should -Not -Contain 'ATAP.IAC'
+    $result.Count | Should -Be 2
+  }
+}

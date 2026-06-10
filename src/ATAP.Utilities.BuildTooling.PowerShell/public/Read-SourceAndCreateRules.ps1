@@ -91,19 +91,19 @@ https://github.com/whertzing/ATAP.Utilities
 
 #>
 
-  [CmdletBinding(DefaultParameterSetName = 'Files', SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+  [CmdletBinding(DefaultParameterSetName = 'ConnectionParts', SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
   [OutputType([PSCustomObject])]
   param(
-    [Parameter(Mandatory = $true, ParameterSetName = 'Files', Position = 0, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+    [Parameter(Mandatory = $false, Position = 0, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
     [Alias('Path', 'FullName')]
     [ValidateNotNullOrEmpty()]
     [string[]]$SourceFiles,
 
-    [Parameter(Mandatory = $true, ParameterSetName = 'Directory')]
+    [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
     [string]$SourceDirectory,
 
-    [Parameter(Mandatory = $false, ParameterSetName = 'Directory')]
+    [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
     [string[]]$FileExtension = @('.ps1', '.cs', '.csproj', '.sql'),
 
@@ -117,11 +117,47 @@ https://github.com/whertzing/ATAP.Utilities
     [Parameter(Mandatory = $false)]
     [switch]$WriteToDatabase,
 
-    [Parameter(Mandatory = $false)]
+    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'SqlConnection')]
+    [AllowNull()]
+    [object]$SqlConnection,
+
+    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'DBConnectionStringSecretName')]
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string]$DBConnectionStringSecretName,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [Alias('HostName', 'ServerInstance')]
+    [string]$DatabaseHost = 'localhost',
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [string]$InstanceName,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [string]$SqlInstance,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'SqlConnection')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'DBConnectionStringSecretName')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [string]$DatabaseName = 'ATAPUtilities',
 
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [string]$ConnectionMethod,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [string]$CredentialsKey,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [string]$ApplicationName,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [Alias('UseIntegratedSecurity')]
+    [switch]$IntegratedSecurity,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [switch]$UseTrustedConnection,
+
     [Parameter(Mandatory = $false)]
-    [string]$SqlInstance = 'localhost',
+    [hashtable]$Settings,
 
     [Parameter(Mandatory = $false)]
     [switch]$Interactive,
@@ -143,6 +179,13 @@ https://github.com/whertzing/ATAP.Utilities
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
     try {
+      if ($SourceFiles -and $SourceDirectory) {
+        throw 'Specify SourceFiles or SourceDirectory, not both.'
+      }
+
+      if (-not $SourceFiles -and [string]::IsNullOrWhiteSpace($SourceDirectory) -and -not $MyInvocation.ExpectingInput) {
+        throw 'Specify SourceFiles, SourceDirectory, or provide source files through the pipeline.'
+      }
 
       # Load Get-RepositoryRoot if needed
       if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
@@ -166,31 +209,50 @@ https://github.com/whertzing/ATAP.Utilities
       $PSScriptRoot
     }
 
-    # Import required modules
     if ($WriteToDatabase) {
-      try {
-        if (-not (Get-Module -Name dbatools -ListAvailable)) {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message 'dbatools module not found. Installing...'
-          Install-Module -Name dbatools -Scope CurrentUser -Force -AllowClobber
+      if (-not (Get-Command -Name 'Resolve-BuildToolingDatabaseSqlConnection' -CommandType Function -ErrorAction SilentlyContinue) -or
+        -not (Get-Command -Name 'Invoke-BuildToolingSqlQuery' -CommandType Function -ErrorAction SilentlyContinue)) {
+        $helperPath = Join-Path (Split-Path -Parent $PSScriptRoot) 'private\BuildToolingSql.Helpers.ps1'
+        if (Test-Path -LiteralPath $helperPath -PathType Leaf) {
+          . $helperPath
         }
-        Import-Module dbatools -ErrorAction Stop
+      }
 
-        # Configure dbatools SSL/encryption settings
-        Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -PassThru | Register-DbatoolsConfig
-        Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -PassThru | Register-DbatoolsConfig
-      }
-      catch {
-        $errorMessage = "Failed to load dbatools module. Exception: $($_.Exception.Message)"
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-        throw
-      }
+      $integratedSecurityValue = if ($PSBoundParameters.ContainsKey('IntegratedSecurity')) { [bool]$IntegratedSecurity } else { $true }
+      $resolution = Resolve-BuildToolingDatabaseSqlConnection `
+        -OriginalPSBoundParameters $PSBoundParameters `
+        -SqlConnection $SqlConnection `
+        -DBConnectionStringSecretName $DBConnectionStringSecretName `
+        -DatabaseHost $DatabaseHost `
+        -SqlInstance $SqlInstance `
+        -InstanceName $InstanceName `
+        -DatabaseName $DatabaseName `
+        -ConnectionMethod $ConnectionMethod `
+        -CredentialsKey $CredentialsKey `
+        -ApplicationName $ApplicationName `
+        -UseTrustedConnection:$UseTrustedConnection `
+        -IntegratedSecurity:$integratedSecurityValue `
+        -Settings $Settings `
+        -DefaultDatabaseHost 'localhost' `
+        -DefaultDatabaseName 'ATAPUtilities'
+      $openSQLConnection = $resolution.Connection
+      $isCallerOwnedConnection = [bool]$resolution.IsCallerOwned
+    }
+    else {
+      $openSQLConnection = $null
+      $isCallerOwnedConnection = $false
     }
     # Get repository root for relative paths
     try {
       $repoRootRelative = Get-RepositoryRoot -StartPath $scriptRoot
       if ($repoRootRelative) {
-        # Convert relative path to absolute path
-        $script:repoRoot = Resolve-Path -Path (Join-Path $scriptRoot $repoRootRelative) | Select-Object -ExpandProperty Path
+        $repoRootCandidate = if ([System.IO.Path]::IsPathRooted($repoRootRelative)) {
+          $repoRootRelative
+        }
+        else {
+          Join-Path $scriptRoot $repoRootRelative
+        }
+        $script:repoRoot = Resolve-Path -Path $repoRootCandidate | Select-Object -ExpandProperty Path
       }
       else {
         $script:repoRoot = (Get-Location).Path
@@ -213,7 +275,7 @@ https://github.com/whertzing/ATAP.Utilities
     }
 
     # Get files from directory if specified
-    if ($PSCmdlet.ParameterSetName -eq 'Directory') {
+    if (-not [string]::IsNullOrWhiteSpace($SourceDirectory)) {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Scanning directory: $SourceDirectory"
       $SourceFiles = Get-ChildItem -Path $SourceDirectory -Recurse -Include $FileExtension | Select-Object -ExpandProperty FullName
 
@@ -449,31 +511,43 @@ https://github.com/whertzing/ATAP.Utilities
       if ($WriteToDatabase -and $script:extractedRules.Count -gt 0) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Writing $($script:extractedRules.Count) rules to database..."
 
-        $connParams = @{
-          SqlInstance = $SqlInstance
-          Database    = $DatabaseName
-        }
-
         foreach ($philote in $script:extractedPhilotes) {
           $insertPhiloteQuery = @"
-IF NOT EXISTS (SELECT 1 FROM dbo.Philote WHERE PhiloteId = '$($philote.PhiloteId)')
+IF NOT EXISTS (SELECT 1 FROM dbo.Philote WHERE PhiloteId = @PhiloteId)
 BEGIN
   INSERT INTO dbo.Philote (PhiloteId, Comment)
-  VALUES ('$($philote.PhiloteId)', '$($philote.Comment.Replace("'", "''"))')
+  VALUES (@PhiloteId, @Comment)
 END
 "@
-          Invoke-DbaQuery @connParams -Query $insertPhiloteQuery -ErrorAction Continue
+          Invoke-BuildToolingSqlQuery `
+            -SqlConnection $openSQLConnection `
+            -Query $insertPhiloteQuery `
+            -Parameters @{
+              PhiloteId = $philote.PhiloteId
+              Comment   = $philote.Comment
+            } `
+            -As NonQuery | Out-Null
         }
 
         foreach ($rule in $script:extractedRules) {
           $insertRuleQuery = @"
-IF NOT EXISTS (SELECT 1 FROM dbo.[Rule] WHERE PhiloteId = '$($rule.PhiloteId)')
+IF NOT EXISTS (SELECT 1 FROM dbo.[Rule] WHERE PhiloteId = @PhiloteId)
 BEGIN
   INSERT INTO dbo.[Rule] (PhiloteId, PrimitiveLanguageKindId, Name, Purpose, SourceFileReference)
-  VALUES ('$($rule.PhiloteId)', $($rule.PrimitiveLanguageKindId), '$($rule.Name.Replace("'", "''"))', '$($rule.Purpose.Replace("'", "''"))', '$($rule.SourceFileReference.Replace("'", "''"))')
+  VALUES (@PhiloteId, @PrimitiveLanguageKindId, @Name, @Purpose, @SourceFileReference)
 END
 "@
-          Invoke-DbaQuery @connParams -Query $insertRuleQuery -ErrorAction Continue
+          Invoke-BuildToolingSqlQuery `
+            -SqlConnection $openSQLConnection `
+            -Query $insertRuleQuery `
+            -Parameters @{
+              PhiloteId               = $rule.PhiloteId
+              PrimitiveLanguageKindId = $rule.PrimitiveLanguageKindId
+              Name                    = $rule.Name
+              Purpose                 = $rule.Purpose
+              SourceFileReference     = $rule.SourceFileReference
+            } `
+            -As NonQuery | Out-Null
         }
 
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Database write completed"
@@ -489,8 +563,18 @@ END
       $errorMessage = "Error in END block: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       $stats.Errors += $errorMessage
+      if ($null -ne $openSQLConnection) {
+        try { $openSQLConnection.Close() } catch { }
+        try { $openSQLConnection.Dispose() } catch { }
+        $openSQLConnection = $null
+      }
     }
     finally {
+      if (-not $isCallerOwnedConnection -and $null -ne $openSQLConnection) {
+        try { $openSQLConnection.Close() } catch { }
+        try { $openSQLConnection.Dispose() } catch { }
+        $openSQLConnection = $null
+      }
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function completed'
     }
 

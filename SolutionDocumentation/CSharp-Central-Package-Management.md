@@ -1,9 +1,23 @@
 # CSharp Central Package Management (CPM)
 
-**Scope:** Sprint-0006. How the four .NET-bearing repos (ATAP.Utilities,
+**Scope:** Sprint-0006/0007. How the four .NET-bearing repos (ATAP.Utilities,
 AceCommander, ATAP.IAC, SharedVSCode) centralize NuGet package versions through
 `Directory.Packages.props`, including the floating-version strategy for internal
 ATAP.Utilities dependencies consumed by AceCommander.
+
+> **Strategy update (sprint-0007 — Immutable Build).** Under the
+> immutable-build strategy, the **package being consumed** at any tier is
+> the **promoted instance** of the same `(PackageId, Version, SHA-256)` —
+> not a tier-specific rebuild. CPM's job is therefore to express
+> "AceCommander at Integration consumes the version of `ATAP.Utilities.X`
+> that has been promoted to `nuget-integration`." The pinning rules in §6.1
+> below are exactly this: floating `0.*-*` is allowed at Experimental and
+> Development (where rapid iteration matters) and **pinned versions**
+> (resolved by `Set-AceCommanderPackagePins`) are required at Integration,
+> QA, and Production (where reproducibility matters). The pinned version is
+> the same one that was promoted into the target feed; the consumer does
+> not get a "different build" of that version. See
+> [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md).
 
 **Audience:** Developers who need to add, upgrade, or pin a NuGet dependency;
 anyone investigating NU1507 / NU1008 errors; release engineers promoting package
@@ -173,7 +187,7 @@ second wildcard (`-*`) opts into prerelease versions.
 - The feed returns every available version of `ATAP.Utilities.Philote`.
 - NuGet picks the highest one matching `0.*-*`, which is typically the
   freshest `Sprint` prerelease built minutes ago on the developer's machine
-  and pushed to the T1/Experimental feed.
+  and pushed to the Experimental feed.
 
 **Why we want this**: AceCommander is a _consumer_ of the internal ATAP.Utilities
 packages. During active development we want every `dotnet build` to pull the
@@ -192,7 +206,7 @@ The contract between ATAP.Utilities (producer) and AceCommander (consumer) is:
 1. ATAP.Utilities builds a set of packages with version
    `0.{major}.{minor}-Sprint.{height}` (see
    [CSharp-Packages-Versioning.md](CSharp-Packages-Versioning.md) §4).
-2. The packages are pushed to ProGet's T1 feed (see
+2. The packages are pushed to ProGet's Experimental feed (see
    [CSharp-Packages-Pack-and-Push.md](CSharp-Packages-Pack-and-Push.md) §7).
 3. AceCommander's floating `0.*-*` restore picks up the new version on next
    `dotnet restore`.
@@ -205,35 +219,49 @@ The contract between ATAP.Utilities (producer) and AceCommander (consumer) is:
 
    and file a follow-up to unpick it once the upstream issue is resolved.
 
-### 6.1 Version-pinning rule at T3 (Integration) and above
+### 6.1 Version-pinning rule at the Integration tier and above
 
-**Rule:** Floating version patterns (`0.*-*`) are **only permitted** at T1
-(Experimental) and T2 (Development). At T3 (Integration), T4 (QA), and T5
-(Stable/Production), every `ATAP.*` entry in AceCommander's
+**Rule:** Floating version patterns (`0.*-*`) are **only permitted** at the
+Experimental and Development tiers. At the Integration, QA, and
+Stable/Production tiers, every `ATAP.*` entry in AceCommander's
 `Directory.Packages.props` **must** be pinned to a concrete version before
 `dotnet restore` is called.
 
 | Tier        | Feed                | Floating `0.*-*` allowed? |
 | ----------- | ------------------- | ------------------------- |
-| Experimental (T1) | `nuget-experimental` | Yes — default working-copy state |
-| Development (T2) | `nuget-development`  | Yes — resolves latest Alpha build |
-| Integration (T3) | `nuget-integration`  | **No** — must be pinned |
-| QA (T4)         | `nuget-qa`           | **No** — must be pinned |
-| Stable (T5)     | `nuget-stable`       | **No** — must be pinned |
+| Experimental | `nuget-experimental` | Yes — default working-copy state |
+| Development | `nuget-development`  | Yes — resolves latest Alpha build |
+| Integration | `nuget-integration`  | **No** — must be pinned |
+| QA          | `nuget-qa`           | **No** — must be pinned |
+| Stable      | `nuget-stable`       | **No** — must be pinned |
 
-**Why:** Non-deterministic restores at T3+ undermine the purpose of
-integration gating. Two consecutive QA builds could consume different
-package versions, making failures unreproducible.
+**Why:** Non-deterministic restores at the Integration tier and above
+undermine the purpose of integration gating. Two consecutive QA builds
+could consume different package versions, making failures unreproducible.
+
+**Ownership:** The pin-the-floating-versions mechanic is owned by
+`ATAP.Utilities.BuildTooling.PowerShell` via the generic, repository-agnostic
+cmdlet **`Set-FloatingPackagePins`** (`-PackageIdPrefix` selects the package
+family to pin; defaults to `ATAP.`). Consumers keep a **thin wrapper** that
+supplies their own defaults and delegates to the engine — they do not
+re-implement the resolution/rewrite logic. AceCommander's
+`Set-AceCommanderPackagePins.ps1` is that consumer wrapper (it passes
+`-PackageIdPrefix 'ATAP.'`). See
+[Package-Pinning-Ownership-Decision.md](Package-Pinning-Ownership-Decision.md)
+for the decision and rationale (task V4-D06).
 
 **How (in CI):** The BuildMaster QA stage runs
-`Set-AceCommanderPackagePins.ps1` as its first step. The script resolves
-each floating entry to the highest concrete version available in the target
-feed and rewrites `Directory.Packages.props` in the agent workspace before
-`dotnet restore` / `dotnet build` are called. The working-copy file retains
-its floating patterns — only the CI agent copy is mutated.
+`Set-AceCommanderPackagePins.ps1` as its first step. The wrapper delegates to
+`Set-FloatingPackagePins`, which resolves each floating `ATAP.*` entry to the
+highest concrete version available in the target feed and rewrites
+`Directory.Packages.props` in the agent workspace before `dotnet restore` /
+`dotnet build` are called. The working-copy file retains its floating
+patterns — only the CI agent copy is mutated. (The AceCommander plan already
+imports `ATAP.Utilities.BuildTooling.PowerShell`, so the engine is on the
+agent's module path.)
 
-**How (manually):** A developer promoting a branch to Integration or QA
-may run:
+**How (manually):** A developer promoting a branch to Integration or QA may
+run the consumer wrapper:
 
 ```powershell
 Set-AceCommanderPackagePins `
@@ -241,7 +269,35 @@ Set-AceCommanderPackagePins `
     -FeedName 'nuget-integration'
 ```
 
+or call the engine directly for any repo / package family:
+
+```powershell
+Set-FloatingPackagePins `
+    -PackagePropsPath 'C:\src\AceCommander\Directory.Packages.props' `
+    -ProGetUrl 'http://proget.local:50000' `
+    -FeedName 'nuget-integration' `
+    -PackageIdPrefix 'ATAP.'
+```
+
 and commit the pinned `Directory.Packages.props` to the promotion branch.
+
+### 6.2 Resolving "latest in feed X" under immutable build
+
+Under the immutable-build strategy a promoted artifact is visible in
+every feed it has reached, so a floating reference does not distinguish
+"pushed here" from "promoted here":
+
+> Under immutable build, "latest in feed X" means "highest version
+> visible through feed X's resolution chain." A floating `0.*-*`
+> reference will always pick up the highest version, regardless of
+> whether that version was originally pushed to feed X or promoted into
+> it. This is intentional — once promoted, the artifact has feed-X
+> identity. Consumers who want "the latest version that has not yet been
+> promoted out of feed X" must filter by prerelease label (e.g.
+> `0.*-Sprint*`).
+
+See [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md) §6.3 for
+the producer-side statement of the same rule.
 
 ---
 
@@ -256,7 +312,7 @@ The mapping is declared in each repo's `NuGet.config` (not in
 
 ```xml
 <packageSourceMapping>
-  <packageSource key="ProGet-T1-Experimental">
+  <packageSource key="nuget-experimental">
     <package pattern="ATAP.*" />
   </packageSource>
   <packageSource key="nuget.org">
@@ -295,6 +351,23 @@ Current status:
 - **AceCommander**: lock files **not yet enabled** (a known gap — tracked in
   `_Planning/TASKS.md`). Floating versions without lock files mean CI restores
   are non-deterministic.
+
+Local automation guard:
+
+- `Assert-LockFilesClean` in `ATAP.Utilities.BuildTooling.PowerShell` is the
+  reusable preflight for `packages.lock.json` drift.
+- `Invoke-GitCommit` calls it before staging changes. The explicit bypass is
+  `-SkipLockFileGuard`, and the caller must record why lock drift is safe.
+- `Complete-PlanningSession` calls it before the commit/PR step. The explicit
+  bypass is also `-SkipLockFileGuard`.
+- `Test-SprintPrerequisites` calls it for every discovered sprint worktree so
+  SprintStartAgent and SprintEndAgent preflight can fail before dirty or missing
+  lock files are carried across sprint boundaries. Use `-SkipLockFileGuard` only
+  when the sprint notes document the reason.
+- For production-filter validation, call `Assert-LockFilesClean
+  -CheckSolutionFilter -SolutionFilterPath .\ATAP.Utilities.Production.slnf`
+  and pass any documented facade/aggregator exceptions through
+  `-AllowedMissingLockFileProjectPaths`.
 
 ---
 

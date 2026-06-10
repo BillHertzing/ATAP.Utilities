@@ -35,7 +35,8 @@ try {
   $helperScripts = @(
     'src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1',
     'src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1',
-    'src\ATAP.Utilities.Security.Powershell\public\Get-BitWardenSecret.ps1',
+    'src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-SecretATAPBitwarden.ps1',
+    'src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-SecretATAP.ps1',
     'src\ATAP.Utilities.DatabaseManagement.Powershell\public\New-ConnectionStringBuilderFromDbaTools.ps1',
     'src\ATAP.Utilities.DatabaseManagement.Powershell\public\DatabaseProvisioning.ps1',
     'src\ATAP.Utilities.DatabaseManagement.Powershell\public\Invoke-Flyway.ps1',

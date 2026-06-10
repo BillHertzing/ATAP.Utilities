@@ -1,0 +1,266 @@
+##########################################################################
+# ReleaseBundle-6Stage - BuildMaster OtterScript Plan
+#
+# Purpose: Build a Release Bundle once, promote that same Universal Package
+#          through the immutable releasebundle-* ProGet feeds, then publish
+#          the Production bundle to Chocolatey and WinGet.
+#
+# Variables (Application Variables - set in BuildMaster Application config):
+#   $ApplicationName                       - e.g. "AceCommander-ReleaseBundle"
+#   $ProductName                           - e.g. "AceCommander"
+#   $ReleaseTag                            - e.g. "v1.4.0" for release cuts
+#   $Branch                                - branch fallback when ReleaseTag is empty
+#   $SourcePath                            - absolute path to the product worktree
+#   $ProGetUrl                             - e.g. "http://localhost:50000"
+#   ProGet API key    - NOT passed in Arguments. Scripts read it from the
+#                       machine/service-account environment variable
+#                       PROGET_ADMIN_API_KEY (for publish) or
+#                       PROGET_BUILDMASTER_API_KEY (for promote), provisioned
+#                       by LoginScript.ps1 / Bitwarden (SEC-T1 / BLOCKER-8).
+#   $ReleaseBundleExperimentalFeedName     - from the application's variable set
+#   $ReleaseBundleDevelopmentFeedName      - from the application's variable set
+#   $ReleaseBundleIntegrationFeedName      - from the application's variable set
+#   $ReleaseBundleQAFeedName               - from the application's variable set
+#   $ReleaseBundleProductionFeedName       - from the application's variable set
+#   $PreviousProductionBackupPath          - .bak recorded for Integration Flyway rehearsal traceability
+#   $IntegrationDatabaseDBConnectionStringSecretName - Bitwarden item name for the Integration-tier DB connection string,
+#                                            e.g. dbConnectionString-AceCommander-utat022-Integration
+#   $Tier                                  - current BuildMaster tier/stage (CurrentTier)
+#   $BuildMasterBuildId                    - runtime value from $BuildMasterId(build), used to
+#                                            isolate generated inter-stage state
+#   $CeilingTier                           - runtime variable computed from version.json and
+#                                            stored under the build-id context
+#
+# This plan intentionally keeps OtterScript as dumb glue. Release logic lives
+# in ATAP.Utilities.BuildTooling.PowerShell cmdlets documented by
+# SolutionDocumentation/Release-Bundle-Pipeline.md sections 5 and 6.
+#
+# Immutable build strategy:
+#   Adheres to the immutable build strategy: build occurs only in the
+#   Experimental stage; later stages promote the same bytes via
+#   Promote-ProGetPackage.
+#   version.json is interpreted as a promotion ceiling, not as the current
+#   stage. See SolutionDocumentation/Immutable-Build-Strategy.md §3 and
+#   SolutionDocumentation/VersionJsonAsCeiling.md.
+#   Topology doc: SolutionDocumentation/BuildMaster-Pipeline-Topology.md
+#
+# NOTE — Distribution stage out of scope for Sprint 0007:
+#   Per ExplainerEliminationPlan_V1.md Section 0a D-06, Chocolatey/WinGet
+#   publication is deferred. The AceCommander BuildMaster Pipeline that
+#   invokes this plan must NOT define a Distribution stage; wire only the
+#   first 5 stages (Experimental, Development, Integration, QA, Production).
+#   The Distribution stage block at the bottom of this file is preserved
+#   for the future sprint that takes Chocolatey/WinGet off hold.
+#
+# String quoting convention:
+#   ALL Exec Arguments: values use >>...>> literal blocks, never backtick strings.
+#   Backtick ( `...` ) is reserved for standalone OtterScript expressions
+#   such as Log-Debug and set-value statements.  This avoids escaping
+#   ambiguity when argument strings contain dollar signs, quotes, or
+#   variable references that BuildMaster must not expand prematurely.
+##########################################################################
+
+# BuildMaster stages:
+#   Experimental -> Development -> Integration -> QA -> Production -> Distribution
+#
+# Build once in Experimental. Every later stage promotes the same bundle
+# identity captured in _generated\buildmaster\<BuildMasterBuildId>\releasebundle_*.tmp.
+
+set $BuildToolingModuleManifest = $PathCombine($SourcePath, src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1);
+set $DatabaseManagementModuleManifest = $PathCombine($SourcePath, src\ATAP.Utilities.DatabaseManagement.Powershell\ATAP.Utilities.DatabaseManagement.Powershell.psd1);
+set $BuildMasterPlanScriptDir = $PathCombine($SourcePath, src\ATAP.Utilities.BuildTooling.BuildMaster\Plans);
+set $InitializeBuildContextScript = $PathCombine($BuildMasterPlanScriptDir, Initialize-ReleaseBundleBuildContext.ps1);
+set $NewReleaseBundleBuildMasterPackageScript = $PathCombine($BuildMasterPlanScriptDir, New-ReleaseBundleBuildMasterPackage.ps1);
+set $PromoteReleaseBundleScript = $PathCombine($BuildMasterPlanScriptDir, Promote-ReleaseBundleBuildMasterPackage.ps1);
+set $InvokeReleaseBundleFlywayRehearsalScript = $PathCombine($BuildMasterPlanScriptDir, Invoke-ReleaseBundleFlywayRehearsal.ps1);
+set $PublishReleaseBundleDistributionScript = $PathCombine($BuildMasterPlanScriptDir, Publish-ReleaseBundleDistribution.ps1);
+set $BuildMasterBuildId = $BuildMasterId(build);
+set $BuildMasterBuildNumber = $BuildNumber;
+set $BuildMasterExecutionId = $ExecutionId;
+set $BuildContextDir = $PathCombine($SourcePath, _generated\buildmaster\$BuildMasterBuildId);
+set $CurrentTierFile = $PathCombine($BuildContextDir, releasebundle_current_tier.tmp);
+set $CeilingTierFile = $PathCombine($BuildContextDir, releasebundle_ceiling_tier.tmp);
+set $ResolvedPackageVersionFile = $PathCombine($BuildContextDir, releasebundle_resolved_version.tmp);
+set $PrereleaseLabelFile = $PathCombine($BuildContextDir, releasebundle_prerelease_label.tmp);
+set $ReleaseBundleContextFile = $PathCombine($BuildContextDir, releasebundle_context.json);
+set $ReleaseBundleNameFile = $PathCombine($BuildContextDir, releasebundle_name.tmp);
+set $ReleaseBundleBundleVersionFile = $PathCombine($BuildContextDir, releasebundle_bundle_version.tmp);
+set $ReleaseBundlePathFile = $PathCombine($BuildContextDir, releasebundle_path.tmp);
+set $ReleaseBundleManifestPathFile = $PathCombine($BuildContextDir, releasebundle_manifest_path.tmp);
+set $AllowExperimentalFile = $PathCombine($BuildContextDir, releasebundle_allow_experimental.tmp);
+set $AllowDevelopmentFile = $PathCombine($BuildContextDir, releasebundle_allow_development.tmp);
+set $AllowIntegrationFile = $PathCombine($BuildContextDir, releasebundle_allow_integration.tmp);
+set $AllowQAFile = $PathCombine($BuildContextDir, releasebundle_allow_qa.tmp);
+set $AllowProductionFile = $PathCombine($BuildContextDir, releasebundle_allow_production.tmp);
+
+Exec
+(
+    FileName: pwsh,
+    Arguments: >>-NoProfile -File "$InitializeBuildContextScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ProductName "$ProductName" -ReleaseTag "$ReleaseTag" -Branch "$Branch" -Stage "$Tier">>,
+    WorkingDirectory: $SourcePath,
+    SuccessExitCode: 0
+);
+
+set $CurrentTier = $Trim($FileContents($CurrentTierFile));
+set $CeilingTier = $Trim($FileContents($CeilingTierFile));
+set $ResolvedPackageVersion = $Trim($FileContents($ResolvedPackageVersionFile));
+set $PrereleaseLabel = $Trim($FileContents($PrereleaseLabelFile));
+set $AllowExperimental = $Trim($FileContents($AllowExperimentalFile));
+set $AllowDevelopment = $Trim($FileContents($AllowDevelopmentFile));
+set $AllowIntegration = $Trim($FileContents($AllowIntegrationFile));
+set $AllowQA = $Trim($FileContents($AllowQAFile));
+set $AllowProduction = $Trim($FileContents($AllowProductionFile));
+
+Log-Debug `BuildId=$BuildMasterBuildId ContextDirectory=$BuildContextDir CurrentTier=$CurrentTier CeilingTier=$CeilingTier Product=$ProductName Version=$ResolvedPackageVersion PrereleaseLabel=$PrereleaseLabel`;
+
+stage Experimental
+{
+    if $Tier == Experimental
+    {
+    if $AllowExperimental == true
+    {
+    # Build bundle from release-branch tag, create manifest, pack .upack, and
+    # push to the Experimental Universal feed.
+    Exec
+    (
+        FileName: pwsh,
+        Arguments: >>-NoProfile -File "$NewReleaseBundleBuildMasterPackageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ContextDirectory "$BuildContextDir" -ReleaseBundleContextFile "$ReleaseBundleContextFile" -ReleaseBundleNameFile "$ReleaseBundleNameFile" -ReleaseBundleResolvedVersionFile "$ResolvedPackageVersionFile" -ReleaseBundleBundleVersionFile "$ReleaseBundleBundleVersionFile" -ReleaseBundlePathFile "$ReleaseBundlePathFile" -ReleaseBundleManifestPathFile "$ReleaseBundleManifestPathFile" -ReleaseBundleExperimentalFeedName "$ReleaseBundleExperimentalFeedName" -CeilingTier "$CeilingTier" -ProGetUrl "$ProGetUrl">>,
+        WorkingDirectory: $SourcePath,
+        SuccessExitCode: 0
+    );
+
+    Create-Artifact ReleaseManifest
+    (
+        From: _generated\release-manifest,
+        Include: @(manifest.json)
+    );
+
+    Create-Artifact ReleaseBundle
+    (
+        From: _generated\release-bundle,
+        Include: @(*.upack)
+    );
+    }
+    }
+}
+
+stage Development
+{
+    if $Tier == Development
+    {
+    if $AllowDevelopment == true
+    {
+    # Promote the immutable bundle to Development via dedicated runner
+    # (no inline pwsh -Command; SEC-T1 / BLOCKER-8).
+    Exec
+    (
+        FileName: pwsh,
+        Arguments: >>-NoProfile -File "$PromoteReleaseBundleScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -Stage Development -ReleaseBundleNameFile "$ReleaseBundleNameFile" -ReleaseBundleBundleVersionFile "$ReleaseBundleBundleVersionFile" -FromFeed "$ReleaseBundleExperimentalFeedName" -ToFeed "$ReleaseBundleDevelopmentFeedName" -CeilingTier "$CeilingTier" -ProGetUrl "$ProGetUrl">>,
+        WorkingDirectory: $SourcePath,
+        SuccessExitCode: 0
+    );
+
+    # Placeholder: Release-Bundle-Pipeline.md section 5 documents clean-VM
+    # install/uninstall validation here, but section 6 does not yet name a
+    # cmdlet for it. Add that Exec when the future validation stream lands.
+    }
+    }
+}
+
+stage Integration
+{
+    if $Tier == Integration
+    {
+    if $AllowIntegration == true
+    {
+    # Promote the immutable bundle to Integration via dedicated runner
+    # (no inline pwsh -Command; SEC-T1 / BLOCKER-8).
+    Exec
+    (
+        FileName: pwsh,
+        Arguments: >>-NoProfile -File "$PromoteReleaseBundleScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -Stage Integration -ReleaseBundleNameFile "$ReleaseBundleNameFile" -ReleaseBundleBundleVersionFile "$ReleaseBundleBundleVersionFile" -FromFeed "$ReleaseBundleDevelopmentFeedName" -ToFeed "$ReleaseBundleIntegrationFeedName" -CeilingTier "$CeilingTier" -ProGetUrl "$ProGetUrl">>,
+        WorkingDirectory: $SourcePath,
+        SuccessExitCode: 0
+    );
+
+    # Rehearse bundled Flyway migrations against the previous-production DB
+    # snapshot via dedicated runner (no inline pwsh -Command). The connection
+    # string is resolved by Invoke-FlywayRehearsal from Bitwarden using the
+    # IntegrationDatabaseDBConnectionStringSecretName Application variable; the secret
+    # value never appears in process arguments.
+    Exec
+    (
+        FileName: pwsh,
+        Arguments: >>-NoProfile -File "$InvokeReleaseBundleFlywayRehearsalScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -DatabaseManagementModulePath "$DatabaseManagementModuleManifest" -SourcePath "$SourcePath" -ProductName "$ProductName" -ReleaseBundlePathFile "$ReleaseBundlePathFile" -BackupPath "$PreviousProductionBackupPath" -IntegrationDatabaseDBConnectionStringSecretName "$IntegrationDatabaseDBConnectionStringSecretName">>,
+        WorkingDirectory: $SourcePath,
+        SuccessExitCode: 0
+    );
+
+    Create-Artifact FlywayRehearsal
+    (
+        From: _generated\flyway,
+        Include: @(flyway-rehearsal.log)
+    );
+    }
+    }
+}
+
+stage QA
+{
+    if $Tier == QA
+    {
+    if $AllowQA == true
+    {
+    # Promote the immutable bundle to QA via dedicated runner
+    # (no inline pwsh -Command; SEC-T1 / BLOCKER-8).
+    Exec
+    (
+        FileName: pwsh,
+        Arguments: >>-NoProfile -File "$PromoteReleaseBundleScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -Stage QA -ReleaseBundleNameFile "$ReleaseBundleNameFile" -ReleaseBundleBundleVersionFile "$ReleaseBundleBundleVersionFile" -FromFeed "$ReleaseBundleIntegrationFeedName" -ToFeed "$ReleaseBundleQAFeedName" -CeilingTier "$CeilingTier" -ProGetUrl "$ProGetUrl">>,
+        WorkingDirectory: $SourcePath,
+        SuccessExitCode: 0
+    );
+
+    # Placeholder: Release-Bundle-Pipeline.md section 5 documents the full
+    # E2E suite here. Section 6 has no named release-bundle QA test cmdlet yet.
+    }
+    }
+}
+
+stage Production
+{
+    if $Tier == Production
+    {
+    if $AllowProduction == true
+    {
+    # Promote the immutable bundle to Production via dedicated runner
+    # (no inline pwsh -Command; SEC-T1 / BLOCKER-8).
+    Exec
+    (
+        FileName: pwsh,
+        Arguments: >>-NoProfile -File "$PromoteReleaseBundleScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -Stage Production -ReleaseBundleNameFile "$ReleaseBundleNameFile" -ReleaseBundleBundleVersionFile "$ReleaseBundleBundleVersionFile" -FromFeed "$ReleaseBundleQAFeedName" -ToFeed "$ReleaseBundleProductionFeedName" -CeilingTier "$CeilingTier" -ProGetUrl "$ProGetUrl">>,
+        WorkingDirectory: $SourcePath,
+        SuccessExitCode: 0
+    );
+
+    # Placeholder: Production validation is the release-manager manual approval
+    # gate documented in Release-Bundle-Pipeline.md section 5. Add an
+    # Approve-BuildMasterStage Exec when that spec cmdlet is implemented.
+    }
+    }
+}
+
+stage Distribution
+{
+    # Publish the production-tier bundle to Chocolatey and update WinGet via
+    # dedicated runner (no inline pwsh -Command; SEC-T1 / BLOCKER-8). Both
+    # cmdlets are documented in Release-Bundle-Pipeline.md section 6 and may
+    # remain future stubs until Stream N implements their full behavior.
+    Exec
+    (
+        FileName: pwsh,
+        Arguments: >>-NoProfile -File "$PublishReleaseBundleDistributionScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -ReleaseBundleBundleVersionFile "$ReleaseBundleBundleVersionFile">>,
+        WorkingDirectory: $SourcePath,
+        SuccessExitCode: 0
+    );
+}

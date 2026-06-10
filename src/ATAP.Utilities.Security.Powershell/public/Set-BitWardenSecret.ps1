@@ -288,6 +288,3 @@ function Set-BitWardenSecret {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function completed'
   }
 }
-
-Set-Alias -Name New-BWSecret -Value Set-BitWardenSecret
-Set-Alias -Name Add-BitWardenLogin -Value Set-BitWardenSecret

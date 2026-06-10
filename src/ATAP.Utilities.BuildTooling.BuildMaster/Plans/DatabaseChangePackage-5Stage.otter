@@ -1,0 +1,62 @@
+##########################################################################
+# DatabaseChangePackage-5Stage - BuildMaster OtterScript Plan (thin-runner shape)
+#
+# Variables (Application Variables - set in BuildMaster Application config):
+#   $ApplicationName    - BuildMaster application name, e.g. "ATAPUtilitiesDatabase"
+#   $DatabaseApplication - Source application name used to locate
+#                         Database/<DatabaseApplication>/, e.g. "ATAPUtilities"
+#   $DatabaseStream     - Optional stream name; empty for single-stream.
+#                         Resolves package id <App>.Database vs
+#                         <App>.<Stream>.Database.
+#   $Branch             - source branch name supplied by monitor/poller
+#   $SourcePath         - absolute path to the developer/build worktree
+#   $ProGetBaseUrl      - Base URL of the ProGet server hosting the feeds
+#   ProGet API key      - supplied to the runner through process environment
+#                         variable PROGET_BUILDMASTER_API_KEY or
+#                         PROGET_ADMIN_API_KEY; do NOT pass secrets in Arguments.
+#                         The runner resolves the key and the database
+#                         publish/promote cmdlets use it without it ever
+#                         appearing in command-line args.
+#   BuildMaster stage   - passed explicitly from $PipelineStageName so
+#                         deployment targets do not depend on agent env vars
+#   $BuildMasterBuildId - runtime value from $BuildMasterId(build), used to
+#                         isolate generated inter-stage state under
+#                         _generated/buildmaster/<BuildMasterBuildId>/.
+#
+# Five stages map to five canonical database feeds:
+#   Experimental -> database-experimental (build .nupkg + publish)
+#   Development  -> database-development  (promote)
+#   Integration  -> database-integration  (promote)
+#   QA           -> database-qa           (promote)
+#   Production   -> database-stable       (promote)
+#
+# Immutable build strategy:
+#   Adheres to the immutable build strategy: the package is produced only in
+#   the Experimental stage by New-DatabaseChangePackage; later stages promote
+#   that same immutable .nupkg via Promote-DatabaseChangePackage. The
+#   version.json prerelease label is interpreted as a promotion ceiling.
+#   See SolutionDocumentation/Immutable-Build-Strategy.md and
+#   SolutionDocumentation/Database-Package-Artifact-And-Feed-Decision.md.
+#
+# This plan is assigned as a per-stage deployment step in the BuildMaster UI.
+# Keep the OtterScript surface tiny; the PowerShell runner owns stage/context
+# branching, ceiling-clamp enforcement, per-tier completion markers, run-
+# context JSON, and secret-safe ProGet publish/promote invocations.
+##########################################################################
+
+# BuildTooling module used by every stage command.
+set $BuildToolingModuleManifest = $PathCombine($SourcePath, src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1);
+set $BuildMasterPlanScriptDir = $PathCombine($SourcePath, src\ATAP.Utilities.BuildTooling.BuildMaster\Plans);
+set $InvokeDatabasePackageStageScript = $PathCombine($BuildMasterPlanScriptDir, Invoke-DatabasePackageBuildMasterStage.ps1);
+
+set $BuildMasterBuildId = $BuildMasterId(build);
+set $BuildMasterBuildNumber = $BuildNumber;
+set $BuildMasterExecutionId = $ExecutionId;
+
+Exec
+(
+    FileName: pwsh,
+    Arguments: >>-NoProfile -File "$InvokeDatabasePackageStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -DatabaseApplication "$DatabaseApplication" -DatabaseStream "$DatabaseStream" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetBaseUrl">>,
+    WorkingDirectory: $SourcePath,
+    SuccessExitCode: 0
+);

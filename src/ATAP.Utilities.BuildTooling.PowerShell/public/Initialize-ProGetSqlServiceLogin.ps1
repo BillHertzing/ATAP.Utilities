@@ -18,7 +18,7 @@ Database name to grant access to.
 Windows service account to grant access for.
 
 .PARAMETER Encrypt
-Encryption mode used by Invoke-Sqlcmd.
+Encryption mode passed through the shared SQL connection resolver.
 
 .PARAMETER TrustServerCertificate
 When enabled, trusts the SQL Server certificate without validating its issuing CA.
@@ -40,22 +40,54 @@ AI assisted using Powershell.instructions.md as guidelines
 .LINK
 https://docs.inedo.com/docs/installation/configuration-files
 #>
-  [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+  [CmdletBinding(DefaultParameterSetName = 'ConnectionParts', SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
   param(
-    [Parameter()]
-    [ValidateNotNullOrEmpty()]
-    [string]$SqlInstance = 'localhost\PRODUCTION',
+    [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'SqlConnection')]
+    [AllowNull()]
+    [object]$SqlConnection,
 
-    [Parameter()]
-    [ValidateNotNullOrEmpty()]
+    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'DBConnectionStringSecretName')]
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string]$DBConnectionStringSecretName,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [Alias('HostName', 'ServerInstance')]
+    [string]$DatabaseHost = 'localhost',
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [string]$InstanceName = 'PRODUCTION',
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [string]$SqlInstance,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'SqlConnection')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'DBConnectionStringSecretName')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [string]$DatabaseName = 'ProGet',
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [string]$ConnectionMethod,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [string]$CredentialsKey,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [string]$ApplicationName,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [switch]$UseTrustedConnection,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [switch]$IntegratedSecurity,
+
+    [Parameter(Mandatory = $false)]
+    [hashtable]$Settings,
 
     [Parameter()]
     [ValidateNotNullOrEmpty()]
     [string]$ServiceAccount = 'NT SERVICE\INEDOPROGETSVC',
 
     [Parameter()]
-    [ValidateSet('Optional', 'Mandatory', 'Strict')]
     [string]$Encrypt = 'Optional',
 
     [Parameter()]
@@ -65,8 +97,37 @@ https://docs.inedo.com/docs/installation/configuration-files
   $fn = 'Initialize-ProGetSqlServiceLogin'
   $mn = 'ATAP.IAC'
 
+  $openSQLConnection = $null
+  $isCallerOwnedConnection = $false
+
   try {
-    Import-Module -Name SqlServer -ErrorAction Stop
+    if (-not (Get-Command -Name 'Resolve-BuildToolingDatabaseSqlConnection' -CommandType Function -ErrorAction SilentlyContinue) -or
+      -not (Get-Command -Name 'Invoke-BuildToolingSqlQuery' -CommandType Function -ErrorAction SilentlyContinue)) {
+      $helperPath = Join-Path (Split-Path -Parent $PSScriptRoot) 'private\BuildToolingSql.Helpers.ps1'
+      if (Test-Path -LiteralPath $helperPath -PathType Leaf) {
+        . $helperPath
+      }
+    }
+
+    $resolution = Resolve-BuildToolingDatabaseSqlConnection `
+      -OriginalPSBoundParameters $PSBoundParameters `
+      -SqlConnection $SqlConnection `
+      -DBConnectionStringSecretName $DBConnectionStringSecretName `
+      -DatabaseHost $DatabaseHost `
+      -SqlInstance $SqlInstance `
+      -InstanceName $InstanceName `
+      -DatabaseName 'master' `
+      -ConnectionMethod $ConnectionMethod `
+      -CredentialsKey $CredentialsKey `
+      -ApplicationName $ApplicationName `
+      -UseTrustedConnection:$UseTrustedConnection `
+      -IntegratedSecurity:$IntegratedSecurity `
+      -Settings $Settings `
+      -DefaultDatabaseHost 'localhost' `
+      -DefaultDatabaseName 'master'
+
+    $openSQLConnection = $resolution.Connection
+    $isCallerOwnedConnection = [bool]$resolution.IsCallerOwned
 
     $escapedServiceAccount = $ServiceAccount.Replace('''', '''''')
     $escapedDatabaseName = $DatabaseName.Replace('''', '''''')
@@ -123,15 +184,16 @@ END;';
 EXEC sp_executesql @RoleSql, N'@ServiceAccount sysname', @ServiceAccount = @ServiceAccount;
 "@
 
-    if ($PSCmdlet.ShouldProcess("$SqlInstance/$DatabaseName", "Ensure SQL login, user, and db_owner membership for $ServiceAccount")) {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Applying SQL principal grants on $SqlInstance for database $DatabaseName and account $ServiceAccount"
+    $targetDescription = "$($openSQLConnection.DataSource)/$DatabaseName"
+    if ($PSCmdlet.ShouldProcess($targetDescription, "Ensure SQL login, user, and db_owner membership for $ServiceAccount")) {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Applying SQL principal grants on $targetDescription for account $ServiceAccount"
 
-      Invoke-Sqlcmd -ServerInstance $SqlInstance -Database 'master' -Query $sql -Encrypt $Encrypt -TrustServerCertificate:$TrustServerCertificate.IsPresent -ErrorAction Stop | Out-Null
+      Invoke-BuildToolingSqlQuery -SqlConnection $openSQLConnection -Query $sql -As NonQuery | Out-Null
 
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'SQL principal grants applied successfully'
 
       [PSCustomObject]@{
-        SqlInstance    = $SqlInstance
+        SqlInstance    = $openSQLConnection.DataSource
         DatabaseName   = $DatabaseName
         ServiceAccount = $ServiceAccount
         Status         = 'Success'
@@ -139,6 +201,17 @@ EXEC sp_executesql @RoleSql, N'@ServiceAccount sysname', @ServiceAccount = @Serv
     }
   } catch {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Failed to grant SQL access for ProGet service account. $($_.Exception.Message)"
+    if ($null -ne $openSQLConnection) {
+      try { $openSQLConnection.Close() } catch { }
+      try { $openSQLConnection.Dispose() } catch { }
+      $openSQLConnection = $null
+    }
     throw
+  } finally {
+    if (-not $isCallerOwnedConnection -and $null -ne $openSQLConnection) {
+      try { $openSQLConnection.Close() } catch { }
+      try { $openSQLConnection.Dispose() } catch { }
+      $openSQLConnection = $null
+    }
   }
 }

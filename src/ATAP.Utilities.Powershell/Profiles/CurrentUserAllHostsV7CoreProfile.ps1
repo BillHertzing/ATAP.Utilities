@@ -22,8 +22,7 @@ ToDo: Need attribution for Console Settings
 .SCM
 <Configuration Management Keywords>
 #>
-
-# Set these for debugging the profile
+#  Set these for debugging the profile
 # Don't Print any debug messages to the console
 $DebugPreference = 'SilentlyContinue'
 # Don't Print any verbose messages to the console
@@ -33,6 +32,8 @@ Write-PSFMessage -FunctionName $fn -Level Verbose -Message ('Starting CurrentUse
 #ToDo: document expected values when run under profile, Module cmdlet/function, script.
 Write-PSFMessage -FunctionName $fn -Level Debug -Message ("WorkingDirectory = $pwd")
 Write-PSFMessage -FunctionName $fn -Level Debug -Message ("PSScriptRoot = $PSScriptRoot")
+
+Write-PSFMessage -FunctionName $fn -Level Debug -Message ("PSModulePath = $env:PSModulePath")
 
 ########################################################
 # Individual PowerShell Profile
@@ -54,12 +55,12 @@ $storedInitialDir = Get-Location
 # Shared Powershell History
 # ChatGPT Prompt to explain: are there seperate command histories between pwsh and the powershell extension for VSC?
 ##############################
-# Location where the command history is stored. Place it in a location that is sync'd between machines $global:settings['CloudBasePath']
+# Location where the command history is stored. Place it in a location that is sync'd between machines $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']]
 # ToDo:  use a global config root key and a global settings,
 # ToDo: test for history presence and create if not present (edge case for first use on a new shared location)
 # Number of commands to keep in the commandHistory
-$global:sharedTimestampedHistoryPath = Join-Path $global:settings['CloudBasePath'] 'whertzing' 'PowerShell', 'History', 'SharedTimestampedHistory.txt'
-$global:sharedPlainHistoryPath = Join-Path $global:settings['CloudBasePath'] 'whertzing' 'PowerShell', 'History', 'SharedPlainHistory.txt'
+$global:sharedTimestampedHistoryPath = Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] 'whertzing' 'PowerShell', 'History', 'SharedTimestampedHistory.txt'
+$global:sharedPlainHistoryPath = Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] 'whertzing' 'PowerShell', 'History', 'SharedPlainHistory.txt'
 # Commands to ignore (those issued by PowershellPro when loading into VSC)
 $global:CommandBlockPatterns = @(
   'Start-PoshToolsServer',
@@ -126,7 +127,7 @@ function prompt {
 $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']] = 'C:\Dropbox\whertzing\Git\.gitconfig'
 
 # Unlock the Secrets for this user
-# We use Bitwarden, and hopefully the user has already logged in interactively at least once, whihc sets the BW_Session
+# We use Bitwarden, and hopefully the user has already logged in interactively at least once, which sets the BW_Session
 # if not, use Initialize-BitwardenSession
 if (-not (Test-Path Env:BW_SESSION)) {
   # Load required helper functions
@@ -134,7 +135,8 @@ if (-not (Test-Path Env:BW_SESSION)) {
     if (-not (Get-Command -Name 'Initialize-BitwardenSession' -CommandType Function -ErrorAction SilentlyContinue)) {
       . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\Profiles\LoginScript.ps1'
     }
-  } catch {
+  }
+  catch {
     $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
     throw
@@ -144,7 +146,8 @@ if (-not (Test-Path Env:BW_SESSION)) {
 }
 if (-not (Test-Path Env:BW_SESSION)) {
   Write-PSFMessage -FunctionName $fn -Level Warning -Message 'Bitwarden session could not be initialized, secrets will not be available'
-} else {
+}
+else {
   Write-PSFMessage -FunctionName $fn -Level Verbose -Message 'Bitwarden session initialized, secrets are available'
 }
 
@@ -155,14 +158,8 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 # Set console code page to UTF-8 (65001)
 chcp 65001 | Out-Null
 
-# Set environment variables for PLaywright and PCMSC project
-# $env:PCMSC_CEUserID = 'admin'
-# $env:PCMSC_CEPasswordVaultKey = 'PCMSC_CEPasswordVaultKey'
-# $env:PW_JITTER_SEED = 0
-# $env:PW_HUMANIZER_DEBUG = 'true'
-
 # Create an alias for Add-ScopeCreepIdea.ps1
-Set-Alias idea (Join-Path $global:settings['CloudBasePath'] $env:username 'GitHub', '_Planning', 'Powershell', 'Public', 'Add-ScopeCreepIdea.ps1')
+Set-Alias idea (Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $env:username 'GitHub', '_Planning', 'Powershell', 'Public', 'Add-ScopeCreepIdea.ps1')
 
 
 # The following command must be run as an administrator on the machine, to install for 'AllUsers'
@@ -267,7 +264,7 @@ Set-Alias idea (Join-Path $global:settings['CloudBasePath'] $env:username 'GitHu
 # Get the Vaults and Master Passwords for the Secrets that belong to my roles
 
 # Currently developing database management powershell modules
-# temporaroy create in teh environment a hashtable of databasenames and their properties
+# temporaroy create in the environment a hashtable of databasenames and their properties
 <#
 # Flyway.TOML file uses
 [environments.prod_buildsets]
@@ -474,7 +471,8 @@ function Get-Attributions {
           }
         }
       }
-    } finally {
+    }
+    finally {
       $reader.Close()
       $FileStream.Close()
     }
@@ -504,7 +502,8 @@ function Get-LinksFromDrafts {
       if ($matchResult.Success) {
         $Subject = $matchResult.captures.groups['Subject'].value
         Write-PSFMessage -FunctionName $fn -Level Debug -Message "Subject = $Subject"
-      } else {
+      }
+      else {
         $matchResult = [RegEx]::Matches($line, $findRegex2)
         if ($matchResult.Success) {
           $URL = $matchResult.captures.groups['URL'].value
@@ -522,7 +521,8 @@ function Get-LinksFromDrafts {
         $URL = ''
       }
     }
-  } finally {
+  }
+  finally {
     $reader.Close()
     $Stream.Close()
   }
@@ -623,7 +623,8 @@ function Open-BookmarksInBrave {
         foreach ($bookmark in $input) {
           $urlList += $bookmark.url
         }
-      } else {
+      }
+      else {
         $urlList = $URLs
       }
     }
@@ -745,7 +746,8 @@ function WatchFile {
       Write-Host '.' -NoNewline
 
     } while ($true)
-  } finally {
+  }
+  finally {
     # this gets executed when user presses CTRL+C:
 
     # stop monitoring
@@ -843,7 +845,7 @@ Set-Location -Path $storedInitialDir
 # Set the environment variables for this user
 Write-PSFMessage -FunctionName $fn -Level Debug -Message ('setting environment variables in CurrentUsersAllHostsV7CoreProfile.ps1')
 
-. (Join-Path -Path $PSHome -ChildPath 'global_EnvironmentVariables.ps1')
+. $(Join-Path $PSHome 'global_EnvironmentVariables.ps1')
 Set-EnvironmentVariablesProcess
 Write-PSFMessage -FunctionName $fn -Level Debug -Message ('finished setting environment variables in CurrentUsersAllHostsV7CoreProfile.ps1')
 
@@ -894,6 +896,20 @@ function Start-ExplorerWindowSet {
 }
 
 Write-PSFMessage -FunctionName $fn -Level Debug -Message ('line 764 in CurrentUsersAllHostsV7CoreProfile.ps1')
+
+##############################
+# Headroom Context Compression Proxy
+##############################
+
+# Wrapper function for Headroom CLI with full venv path
+function headroom {
+  & "C:\Users\whertzing\.venvs\headroom\Scripts\headroom.exe" @args
+}
+
+# Startup check: warn if Headroom proxy port 8787 is not listening
+if (-not (netstat -ano 2>$null | Select-String ":8787.*LISTENING")) {
+  Write-Warning "Headroom proxy is NOT running on port 8787. Start with: headroom proxy --port 8787"
+}
 
 <# To Be Moved Somewhere else #>
 

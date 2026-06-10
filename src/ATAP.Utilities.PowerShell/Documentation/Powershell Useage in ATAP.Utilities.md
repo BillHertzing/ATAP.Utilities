@@ -99,7 +99,7 @@ use the gelf logging provider configured as follows:
 
 ```Powershell
 # ToDo: adding protocol = 'udp'; produces the error "A parameter cannot be found that matches parameter name 'protocol'."
-# ToDo:   since UDP is the default protocol this is not an issue. But both of these command swork correctly
+# ToDo:   since UDP is the default protocol this is not an issue. But both of these command work correctly
 # ToDo:     Set-PSFConfig 'PSFramework.logging.gelf.protocol' 'udp'
 # ToDo:     Get-PSFConfig 'PSFramework.logging.gelf.protocol'  - return 'udp'
 $gelfLoggingProviderConfiguration =  @{Name='gelf'; instanceName = 'default'; GelfServer = '127.0.0.1'; port = 12201; Encrypt=$false; minlevel=1; maxlevel=9; Enabled=$true;Verbose=$true}
@@ -167,4 +167,5 @@ Set-PSFLoggingProvider -Name logfile `
   -FilePath 'C:\Temp\PSFramework\Logs\startup.log' `
   -IncludeTags 'startup'
 ```
+
 # ToDo:

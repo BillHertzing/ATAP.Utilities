@@ -1,4 +1,67 @@
 
+<#
+.SYNOPSIS
+  Resolves a parameter value using a priority chain: PSBoundParameters → environment variable → NeoConfigurationRoot settings → DefaultValue.
+
+.DESCRIPTION
+  Implements the NeoConfigurationRoot resolution pattern. For a given ParameterName, the function
+  tries each source in priority order and returns the first non-null result:
+    1. originalPSBoundParameters (caller's $PSBoundParameters)
+    2. Environment variable whose name matches ParameterName
+    3. Settings hashtable/object at the path specified by -dottedPath (defaults to ParameterName)
+    4. -DefaultValue
+
+  If -AsType is supplied, coercion is applied to the final resolved value regardless of which
+  priority source produced it. Boolean coercion understands 'yes/no', 'true/false', '1/0', 'on/off'.
+
+  ⚠ IMPORTANT — Environment Variable Collision:
+    Priority 2 checks for an environment variable named exactly like ParameterName. If the caller
+    uses a ParameterName that coincidentally matches a common Windows or shell environment variable
+    (e.g. 'Path', 'Host', 'Environment', 'Username', 'ComputerName', 'Temp', 'SystemRoot'), the
+    environment variable value will be returned instead of the settings value. Always use
+    application-specific, namespaced ParameterNames (e.g. 'MyApp_DbHost' rather than 'Host').
+
+.PARAMETER ParameterName
+  The name of the parameter to resolve. Used as the environment variable key (priority 2) and,
+  when -dottedPath is omitted, as the settings key (priority 3). Must not match a common OS
+  environment variable name unless that environment variable value is intentionally authoritative.
+
+.PARAMETER originalPSBoundParameters
+  The $PSBoundParameters hashtable captured in the calling function's Begin block.
+
+.PARAMETER dottedPath
+  Dot-separated path into the Settings object (e.g. 'Database.Host'). Defaults to ParameterName.
+
+.PARAMETER Settings
+  Hashtable or PSCustomObject to search. Falls back to $script:Settings then $global:settings.
+
+.PARAMETER DefaultValue
+  Value returned when all higher-priority sources produce null.
+
+.PARAMETER AllowMissing
+  When set, returns $null instead of throwing if nothing resolves.
+
+.PARAMETER AsType
+  .NET type to coerce the resolved value to after resolution. Applied uniformly across all sources.
+
+.PARAMETER ValidValues
+  Allowed string values for the resolved result (case-insensitive). Returns the correctly-cased
+  entry from this list. Throws if the resolved value is not in the list.
+
+.OUTPUTS
+  System.Object — the resolved (and optionally coerced) parameter value.
+
+.EXAMPLE
+  Get-PVal -ParameterName 'SqlInstance' -originalPSBoundParameters $PSBoundParameters -Settings $global:settings -DefaultValue 'localhost'
+
+.NOTES
+  AI assisted using Powershell.instructions.md as guidelines
+  Alias: Get-PVal
+  See also: Resolve-ParameterValueToList (obsolete — use -ValidValues instead).
+
+.LINK
+  Resolve-ParameterValueToList
+#>
 function Get-ParameterValueFromNeoConfigurationRoot {
   [Alias('Get-PVal')]
   param(
@@ -162,10 +225,10 @@ function Get-ParameterValueFromNeoConfigurationRoot {
       $resolved = $true
     }
 
-    # 3. Try to get from settings via dottedPath
+    # 3. Try to get from settings via dottedPath (raw value; AsType applied uniformly below)
     if (-not $resolved) {
       try {
-        $settingsValue = Resolve-SettingsValue -dottedPath $dottedPath -Settings $Settings -AllowMissing:$true -AsType $AsType
+        $settingsValue = Resolve-SettingsValue -dottedPath $dottedPath -Settings $Settings -AllowMissing:$true
         if ($null -ne $settingsValue) {
           $resolvedValue = $settingsValue
           $resolved = $true
@@ -200,6 +263,27 @@ function Get-ParameterValueFromNeoConfigurationRoot {
         throw "Parameter '$ParameterName' value '$resolvedValue' is not valid. Must be one of: $($ValidValues -join ', ')"
       }
       $resolvedValue = $match
+    }
+
+    # 7. Apply AsType coercion uniformly, regardless of which priority resolved the value
+    if ($AsType -and $null -ne $resolvedValue) {
+      if ($AsType -eq [bool]) {
+        if ($resolvedValue -is [string]) {
+          $norm = $resolvedValue.Trim().ToLowerInvariant()
+          switch ($norm) {
+            { $_ -in @('true', 't', 'yes', 'y', '1', 'on') } { $resolvedValue = $true; break }
+            { $_ -in @('false', 'f', 'no', 'n', '0', 'off') } { $resolvedValue = $false; break }
+            default { throw "Cannot convert '$resolvedValue' to Boolean for parameter '$ParameterName'." }
+          }
+        }
+        else {
+          if ($resolvedValue -isnot [bool]) { $resolvedValue = [bool]$resolvedValue }
+        }
+      }
+      else {
+        try { $resolvedValue = $resolvedValue -as $AsType }
+        catch { throw "Failed to coerce parameter '$ParameterName' to type $AsType : $_" }
+      }
     }
 
     return $resolvedValue

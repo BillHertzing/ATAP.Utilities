@@ -13,6 +13,18 @@
     2. Ensure the stored procedure dbo.GetRuleByName exists (run Flyway migrations)
     3. Install dbatools if not already present: Install-Module -Name dbatools
 #>
+function Example-RuleExport {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $false)]
+    [string]$OutputDirectory = "C:\Temp\RuleExports",
+
+    [Parameter(Mandatory = $false)]
+    [string]$SqlInstance = "localhost",
+
+    [Parameter(Mandatory = $false)]
+    [string]$DatabaseName = "ATAPUtilities"
+  )
 
 # Import the Export-RuleToTextFile function
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -24,13 +36,10 @@ if (Test-Path $functionPath) {
 }
 else {
   Write-Error "Could not find Export-RuleToTextFile.ps1 at: $functionPath"
-  exit 1
+  throw "Could not find Export-RuleToTextFile.ps1 at: $functionPath"
 }
 
-# Configuration
-$OutputDirectory = "C:\Temp\RuleExports"
-$SqlInstance = "localhost"
-$DatabaseName = "ATAPUtilities"
+# Configuration defaults are supplied by function parameters.
 
 # Create output directory if it doesn't exist
 if (-not (Test-Path $OutputDirectory)) {
@@ -218,3 +227,4 @@ Write-Host ""
 Write-Host "To open an exported file:" -ForegroundColor Cyan
 Write-Host "  notepad.exe (Join-Path '$OutputDirectory' 'filename.txt')" -ForegroundColor White
 Write-Host ""
+}

@@ -1,0 +1,150 @@
+@startuml DB-DeveloperWorkflow
+' ============================================================
+' Diagram: Developer Database Change Workflow
+' Purpose: Shows the full developer inner loop: making schema
+'          changes, testing locally, committing version.json,
+'          and handing off to BuildMaster for CI ingestion.
+' Author:  Generated for Sprint-0007
+' ============================================================
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 11
+skinparam ArrowColor #444444
+skinparam NoteBackgroundColor #FFFDE7
+skinparam NoteBorderColor #F9A825
+skinparam ActivityBorderColor #888888
+
+title "Developer Database Change Workflow\n(Schema edit → Local test → Commit → BuildMaster CI ingestion)"
+
+|Developer Workstation|
+start
+
+:Open sprint worktree\nin VS Code;
+note right
+  Branch: <sprint-number>-Sprint-NNNN-work-items
+  Repo:   ATAP.Utilities-wt-NNN-Sprint-NNNN-work-items
+end note
+
+:Edit Database/Flyway/SQL/\nV00.01.NNNNNN__*.sql\n(new versioned migration);
+note right
+  Follows naming convention:
+  V<Major>.<Minor>.<NNNNNN>__<Description>.sql
+  Major.Minor match version.json
+end note
+
+if (Schema change?) then (yes)
+  :Edit V*.sql DDL\n(ALTER TABLE / CREATE TABLE /\nADD CONSTRAINT, etc.);
+else (data / seed change)
+  :Edit Data/*.csv\nor adjust R__*.sql\n(repeatable migration);
+endif
+
+:Edit db/<App>/releases/<ver>.yml\n(per-release change-unit manifest:\n- dbChangeUnit name\n- flywayTargetVersion\n- list of migration files + checksums);
+
+|Developer Workstation|
+:Run Rebuild-All.ps1\n(targets: Experimental + Development DBs);
+note right
+  Script calls:
+  1. Invoke-DatabaseProvisioning (dbatools drop/create)
+  2. Invoke-Flyway.ps1 (flyway migrate)
+  3. Runs V*.sql, R*.sql, *.csv seed loading
+end note
+
+if (Flyway migrate succeeds?) then (yes)
+  :Run local Pester tests\n(DbManifestSchema.Tests.ps1);
+  note right
+    Tests validate:
+    - Table schemas match expected definitions
+    - Seed data row counts
+    - Constraint names
+    - Migration checksum integrity
+  end note
+  if (Pester tests pass?) then (yes)
+    :Optionally run ad-hoc queries\nin Database/Queries/ to validate data;
+  else (fail)
+    :Fix failing test or schema\n→ loop back;
+    :Edit V*.sql / R*.sql / *.csv;
+    stop
+  endif
+else (fail)
+  :Read Flyway error output;
+  :Fix migration script;
+  stop
+endif
+
+|Developer Workstation|
+:Commit changes to sprint branch\n(all modified Database/** files);
+note right
+  Committed files may include:
+  - Database/Flyway/SQL/V*.sql
+  - Database/Flyway/Data/*.csv
+  - Database/Flyway/SQL/R*.sql
+  - db/<App>/releases/<ver>.yml
+  - Do NOT commit version.json yet
+    (NBGV derives version from commit height)
+end note
+
+:Verify local build one more time:\nNew-DatabaseChangePackage -Tier Experimental;
+note right
+  Packs ATAPUtilities.Database.nupkg
+  with NBGV-derived pre-release version.
+  Verifies all files included correctly.
+end note
+
+if (Package builds cleanly?) then (yes)
+  ' Trigger CI
+  :git push to sprint branch origin;
+  note right
+    GitHub webhook fires →
+    BuildMaster "DB: Experimental" stage triggered.
+    Developer does not need to do anything else.
+  end note
+else (no)
+  :Fix packaging issue;
+  stop
+endif
+
+|BuildMaster (CI)|
+:Receive Git webhook\n(DB/** path filter matches);
+
+:Stage: Experimental\n1. Resolve feed name\n2. New-DatabaseChangePackage (pack)\n3. Push to nuget-experimental;
+
+:Invoke-Flyway.ps1\n→ Experimental SQL Server DB;
+
+if (Flyway + smoke tests pass?) then (yes)
+  :Promote to Development stage\n(Move-ProGetPackage → nuget-development);
+  :Invoke-Flyway.ps1\n→ Development SQL Server DB;
+  if (Full Pester suite passes?) then (yes)
+    :Queue Integration stage;
+    note right
+      Integration + QA + Production
+      follow the promotion pipeline
+      (see DB-PromotionPipeline-BuildMaster-ProGet).
+    end note
+  else (fail)
+    :Notify developer:\nCI failure in Development stage;
+    |Developer Workstation|
+    :Investigate CI failure\n(check BM build log);
+    stop
+  endif
+else (fail)
+  :Notify developer:\nCI failure in Experimental stage;
+  |Developer Workstation|
+  :Fix migration and push again;
+  stop
+endif
+
+|Developer Workstation|
+:Monitor BuildMaster progress\n(Experimental → Development → Integration);
+
+:All stages green?;
+note right
+  Developer's sprint task is complete
+  when Integration stage passes.
+  QA and Production gates are
+  separate human-approval steps.
+end note
+
+stop
+
+@enduml

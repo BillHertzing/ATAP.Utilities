@@ -1,11 +1,11 @@
 function Invoke-Flyway {
   <#
   .SYNOPSIS
-  Builds a JDBC connection string from parameters, sets Flyway environment variables, and runs a Flyway command.
+  Builds a JDBC connection string from a validated SQL connection, sets Flyway environment variables, and runs a Flyway command.
 
   .DESCRIPTION
-  Uses New-ConnectionStringBuilderFromDbaTools with -AsJDBC to construct the Flyway JDBC URL from
-  structured parameters (DatabaseHost, SqlInstance, etc.).
+  Uses Resolve-DatabaseSqlConnection to validate SqlConnection, DBConnectionStringSecretName, or
+  structured connection parts before deriving the Flyway JDBC URL.
 
   Computes SHA256 hashes for specified migration/repeatable SQL files under -SqlMigrationsPath, builds a
   comma-separated (VALUES ...) list for insertion (ManifestValues), and exports these plus package /
@@ -100,51 +100,57 @@ function Invoke-Flyway {
 
   .NOTES
   AI assisted using Powershell.instructions.md as guidelines
-  Uses New-ConnectionStringBuilderFromDbaTools for JDBC connection string creation.
+  Uses Resolve-DatabaseSqlConnection for connection validation before JDBC URL creation.
   Requires dbatools module for database operations.
   Requires Bitwarden CLI (bw) for vault authentication (CredentialsFromVault parameter set).
   #>
   [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKey',
     Justification = 'CredentialsKey is a vault lookup key name, not a credential')]
-  [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low', DefaultParameterSetName = 'ConnectionParameters')]
+  [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low', DefaultParameterSetName = 'ConnectionParts')]
   param(
     # region Database connection parameters
-    [Parameter(Mandatory = $true, Position = 0, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $true, Position = 0, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $true, Position = 0, ValueFromPipelineByPropertyName = $true)]
     [string]$DatabaseName,
 
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
     [string]$Environment,
 
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [Alias('HostName')]
     [string]$DatabaseHost,
 
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [Alias('InstanceName')]
     [string]$SqlInstance,
 
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [string]$ConnectionMethod,
 
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [int]$Port,
 
-    [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParts')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'DBConnectionStringSecretName')]
     [switch]$IntegratedSecurity,
 
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [string]$CredentialsKey,
 
-    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
-    [ValidateNotNull()]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [string]$ApplicationName,
+
+    [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParts')]
+    [switch]$UseTrustedConnection,
+
+    [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'SqlConnection')]
     [Microsoft.Data.SqlClient.SqlConnection]$SqlConnection,
+
+    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'DBConnectionStringSecretName')]
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string]$DBConnectionStringSecretName,
+
+    [Parameter(Mandatory = $false)]
+    [hashtable]$Settings,
     # endregion Database connection parameters
 
     # region Flyway parameters
@@ -201,14 +207,8 @@ function Invoke-Flyway {
 
     # Load required helper functions
     try {
-      if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . (Join-Path $PSScriptRoot '..\..\ATAP.Utilities.PowerShell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1')
-      }
-      if (-not (Get-Command -Name 'New-ConnectionStringBuilderFromDbaTools' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . (Join-Path $PSScriptRoot 'New-ConnectionStringBuilderFromDbaTools.ps1')
-      }
-      if (-not (Get-Command -Name 'Get-DatabaseCredentialsKey' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . (Join-Path $PSScriptRoot 'Get-DatabaseCredentialsKey.ps1')
+      if (-not (Get-Command -Name 'Resolve-DatabaseSqlConnection' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot 'Resolve-DatabaseSqlConnection.ps1')
       }
     } catch {
       $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
@@ -216,62 +216,43 @@ function Invoke-Flyway {
       throw
     }
 
-    # Parameter validation using Get-PVal pattern
-    # region Database connection parameter validation
-    $databasesCollection = $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
+    $databasesCollection = if ($Settings) {
+      $Settings
+    }
+    elseif ($global:settings -and $global:configRootKeys -and $global:configRootKeys['DatabasesCollectionConfigRootKey']) {
+      $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
+    }
+    else {
+      $null
+    }
+
     $DatabaseName = Get-PVal -ParameterName 'DatabaseName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseName" -Settings $databasesCollection -DefaultValue $DatabaseName
-    $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue $Environment -ValidValues @('Production', 'Testing', 'Development', 'Experimental')
-    $DatabaseHost = Get-PVal -ParameterName 'DatabaseHost' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseHost" -Settings $databasesCollection -DefaultValue $DatabaseHost
-    $SqlInstance = Get-PVal -ParameterName 'SqlInstance' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlInstance" -Settings $databasesCollection -DefaultValue $SqlInstance -AllowMissing
-    $ConnectionMethod = Get-PVal -ParameterName 'ConnectionMethod' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ConnectionMethod" -Settings $databasesCollection -DefaultValue $ConnectionMethod -ValidValues @('tcp', 'np', 'lpc')
-    $Port = Get-PVal -ParameterName 'Port' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.Port" -Settings $databasesCollection -DefaultValue $Port -AllowMissing
-    $CredentialsKey = Get-PVal -ParameterName 'CredentialsKey' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.CredentialsKey" -Settings $databasesCollection -DefaultValue $CredentialsKey -AllowMissing
-    # If CredentialsKey was not found in settings or supplied as a parameter, derive it from the
-    # canonical Bitwarden naming scheme — but only when not using Integrated Security.
-    #   Permanent (Production/QA/Integration): dbConnectionString-<DB>-<Host>-<Tier>
-    #   Per-sprint (Development/Experimental): dbConnectionString-<DB>-<Host>-<Tier>-<UserName>
-    if (-not $CredentialsKey -and -not $IntegratedSecurity -and $DatabaseHost -and $Environment) {
-      $CredentialsKey = Get-DatabaseCredentialsKey -DatabaseName $DatabaseName -DatabaseHost $DatabaseHost -Environment $Environment
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Derived CredentialsKey from naming scheme: $CredentialsKey"
-    }
-    # endregion Database connection parameters validation
+    $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue $Environment -ValidValues @('Production', 'Testing', 'Development', 'Experimental') -AllowMissing
 
-    $usingExistingConnection = $PSCmdlet.ParameterSetName -eq 'ExistingConnection'
+    $resolution = Resolve-DatabaseSqlConnection `
+      -OriginalPSBoundParameters $PSBoundParameters `
+      -SqlConnection $SqlConnection `
+      -DBConnectionStringSecretName $DBConnectionStringSecretName `
+      -DatabaseHost $DatabaseHost `
+      -InstanceName $SqlInstance `
+      -DatabaseName $DatabaseName `
+      -ConnectionMethod $ConnectionMethod `
+      -CredentialsKey $CredentialsKey `
+      -ApplicationName $ApplicationName `
+      -UseTrustedConnection:$UseTrustedConnection `
+      -IntegratedSecurity:$IntegratedSecurity `
+      -Settings $databasesCollection `
+      -DatabaseHostDottedPath "$databaseName.$Environment.DatabaseHost" `
+      -InstanceNameDottedPath "$databaseName.$Environment.SqlInstance" `
+      -ConnectionMethodDottedPath "$databaseName.$Environment.ConnectionMethod" `
+      -CredentialsKeyDottedPath "$databaseName.$Environment.CredentialsKey" `
+      -ApplicationNameDottedPath "$databaseName.$Environment.ApplicationName"
 
-    if (-not $CredentialsKey -and -not $IntegratedSecurity) {
-      $IntegratedSecurity = $true
-    }
+    $resolvedSqlConnection = $resolution.Connection
+    $resolvedConnectionOwnedByFunction = -not [bool]$resolution.IsCallerOwned
 
-    if ($usingExistingConnection -and $SqlConnection) {
-      $existingBuilder = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($SqlConnection.ConnectionString)
-      $dataSource = $existingBuilder.DataSource
-      $dataSourceNoProto = if ($dataSource -match ':') { $dataSource.Split(':')[-1] } else { $dataSource }
-
-      if (-not $DatabaseHost) {
-        if ($dataSourceNoProto -match '\\') {
-          $DatabaseHost = $dataSourceNoProto.Split('\\')[0]
-          if (-not $SqlInstance -and $dataSourceNoProto.Split('\\').Count -gt 1) { $SqlInstance = $dataSourceNoProto.Split('\\')[1] }
-        } elseif ($dataSourceNoProto -match ',') {
-          $parts = $dataSourceNoProto.Split(',')
-          $DatabaseHost = $parts[0]
-          if (-not $Port -and $parts.Count -gt 1) { $Port = [int]$parts[1] }
-        } else {
-          $DatabaseHost = $dataSourceNoProto
-        }
-      }
-
-      if (-not $SqlInstance -and $dataSourceNoProto -match '\\') {
-        $SqlInstance = $dataSourceNoProto.Split('\\')[1]
-      }
-
-      if (-not $Port -and $dataSourceNoProto -match ',') {
-        $Port = [int]$dataSourceNoProto.Split(',')[1]
-      }
-
-      if (-not $IntegratedSecurity) {
-        $IntegratedSecurity = $existingBuilder.IntegratedSecurity
-      }
-    }
+    $resolvedConnectionStringBuilder = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($resolvedSqlConnection.ConnectionString)
+    $DatabaseHost = $resolvedSqlConnection.DataSource
     $FlywayExecutablePath = Get-PVal -ParameterName 'FlywayExecutablePath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayExecutablePath" -Settings $databasesCollection -DefaultValue $(if ($FlywayExecutablePath) { $FlywayExecutablePath } else { 'flyway' })
     $FlywayBasePath = Get-PVal -ParameterName 'FlywayBasePath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayBasePath" -Settings $databasesCollection -DefaultValue $FlywayBasePath
     $FlywaySqlMigrationsPath = Get-PVal -ParameterName 'FlywaySqlMigrationsPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywaySqlMigrationsPath" -Settings $databasesCollection -DefaultValue $FlywaySqlMigrationsPath
@@ -334,7 +315,7 @@ function Invoke-Flyway {
       param([string]$StartDir)
       $git = Get-Command git -ErrorAction SilentlyContinue
       if (-not $git) { return @{ Tag = '(no-git)'; Commit = '(no-git)' } }
-      $tag = $null; try { $tag = (git -C $StartDir describe --tags --abbrev=0 2>$null).Trim() } catch {}
+      $tag = $null; try { $tag = (git -C $StartDir describe --tags --abbrev=0 2>$null).Trim() } catch { $null = $_ }
       if (-not $tag) { $tag = '(untagged)' }
       $commit = (git -C $StartDir rev-parse --short HEAD 2>$null).Trim(); if (-not $commit) { $commit = '(no-commit)' }
       @{ Tag = $tag; Commit = $commit }
@@ -378,49 +359,22 @@ function Invoke-Flyway {
       $dataSourceForLog = $DatabaseHost
       $useIntegratedSecurity = $false
 
-      if ($usingExistingConnection) {
-        $existingBuilder = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($SqlConnection.ConnectionString)
-        $dataSourceForLog = $existingBuilder.DataSource
-        $serverSegment = $existingBuilder.DataSource
-        if ($Port -and ($serverSegment -notmatch ',')) { $serverSegment = "$serverSegment,$Port" }
+      $dataSourceForLog = $resolvedConnectionStringBuilder.DataSource
+      $serverSegment = $resolvedConnectionStringBuilder.DataSource
+      if ($Port -and ($serverSegment -notmatch ',')) { $serverSegment = "$serverSegment,$Port" }
 
-        $jdbcUrl = "jdbc:sqlserver://$serverSegment;databaseName=$DatabaseName;encrypt=false;trustServerCertificate=true"
-        $useIntegratedSecurity = $existingBuilder.IntegratedSecurity -or $IntegratedSecurity
-        if ($useIntegratedSecurity) {
-          $jdbcUrl += ';integratedSecurity=true'
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Using Windows Integrated Authentication (existing connection)'
-        } else {
-          $jdbcUrl += ";user=$($existingBuilder.UserID);password=$($existingBuilder.Password)"
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Using SQL authentication from existing connection'
-        }
+      $jdbcUrl = "jdbc:sqlserver://$serverSegment;databaseName=$DatabaseName;encrypt=false;trustServerCertificate=true"
+      $useIntegratedSecurity = $resolvedConnectionStringBuilder.IntegratedSecurity -or $IntegratedSecurity -or $UseTrustedConnection
+      if ($useIntegratedSecurity) {
+        $jdbcUrl += ';integratedSecurity=true'
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Using Windows Integrated Authentication'
       } else {
-        $connBuilderParams = @{
-          DatabaseName = $DatabaseName
-          AsJDBC       = $true
-        }
-
-        if (-not [string]::IsNullOrWhiteSpace($DatabaseHost)) { $connBuilderParams['DatabaseHost'] = $DatabaseHost }
-        if (-not [string]::IsNullOrWhiteSpace($SqlInstance)) { $connBuilderParams['SqlInstance'] = $SqlInstance }
-        if (-not [string]::IsNullOrWhiteSpace($ConnectionMethod) -and $ConnectionMethod -ne 'default') { $connBuilderParams['ConnectionMethod'] = $ConnectionMethod }
-        if ($Port) { $connBuilderParams['Port'] = $Port }
-
-        if ($CredentialsKey) {
-          $connBuilderParams['CredentialsKey'] = $CredentialsKey
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Using vault credentials with key: $CredentialsKey"
-        } else {
-          $connBuilderParams['IntegratedSecurity'] = $true
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Using Windows Integrated Authentication'
-        }
-
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Database: $DatabaseName"
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "ConnectionMethod: $ConnectionMethod"
-
-        $connectionStringBuilder = New-ConnectionStringBuilderFromDbaTools @connBuilderParams
-        $jdbcUrl = $connectionStringBuilder.ToString()
-        $dataSourceForLog = $connectionStringBuilder.DataSource
-        $useIntegratedSecurity = $connectionStringBuilder.UseIntegratedSecurity
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'JDBC connection string built successfully'
+        $jdbcUrl += ";user=$($resolvedConnectionStringBuilder.UserID);password=$($resolvedConnectionStringBuilder.Password)"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Using SQL authentication from resolved connection'
       }
+
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Database: $DatabaseName"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'JDBC connection string built from validated SqlConnection'
 
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "DataSource: $dataSourceForLog"
 
@@ -474,7 +428,7 @@ function Invoke-Flyway {
         }
       } else {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Configuring Flyway for SQL Server Authentication'
-        # Credentials are embedded in the JDBC URL by New-ConnectionStringBuilderFromDbaTools
+        # Credentials are embedded in the JDBC URL derived from the validated connection string.
         # No need to set separate FLYWAY_USER/FLYWAY_PASSWORD environment variables
       }
 
@@ -542,6 +496,12 @@ function Invoke-Flyway {
     $statusText = if ($summary.Success) { 'succeeded' } else { 'failed' }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level $level -Message ('Invoke-Flyway {0}' -f $statusText)
     if (-not $summary.Success) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message ("Errors:`n" + ($summary.Errors -join [Environment]::NewLine)) }
+    if ($resolvedConnectionOwnedByFunction -and $resolvedSqlConnection) {
+      if ($resolvedSqlConnection.State -eq [System.Data.ConnectionState]::Open) {
+        $resolvedSqlConnection.Close()
+      }
+      $resolvedSqlConnection.Dispose()
+    }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Leaving function Invoke-Flyway'
     return $summary
   }

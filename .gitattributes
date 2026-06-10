@@ -1,7 +1,25 @@
 # ===================================================================
 # GENERATED FILE - DO NOT EDIT DIRECTLY
 # Source: C:\dropbox\whertzing\GitHub\SharedVSCode\.gitattributes
-# Generated: 2026-04-06T03:25:36Z
+# Generated: 2026-06-10T06:57:14Z
+# Regenerate using Set-DownstreamSharedVSCodeContext
+# ===================================================================
+# ===================================================================
+# GENERATED FILE - DO NOT EDIT DIRECTLY
+# Source: C:\dropbox\whertzing\GitHub\SharedVSCode-wt-40-sprint-0006-work-items\.gitattributes
+# Generated: 2026-04-13T18:46:45Z
+# Regenerate using Set-DownstreamSharedVSCodeContext
+# ===================================================================
+# ===================================================================
+# GENERATED FILE - DO NOT EDIT DIRECTLY
+# Source: C:\dropbox\whertzing\GitHub\SharedVSCode-wt-40-sprint-0006-work-items\.gitattributes
+# Generated: 2026-04-13T18:46:37Z
+# Regenerate using Set-DownstreamSharedVSCodeContext
+# ===================================================================
+# ===================================================================
+# GENERATED FILE - DO NOT EDIT DIRECTLY
+# Source: C:\dropbox\whertzing\GitHub\SharedVSCode-wt-40-sprint-0006-work-items\.gitattributes
+# Generated: 2026-04-13T18:46:34Z
 # Regenerate using Set-DownstreamSharedVSCodeContext
 # ===================================================================
 *             text=auto
@@ -16,5 +34,7 @@ Wsl2Ubuntu/** text eol=lf
 
 # Prevent NuGet.config merge conflicts — each branch deliberately has a different feed list
 NuGet.config  merge=ours
+
+
 
 

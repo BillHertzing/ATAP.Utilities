@@ -76,8 +76,10 @@ function New-ConnectionStringBuilderFromDbaTools {
   #>
   [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKey',
     Justification = 'CredentialsKey is a vault lookup key name, not a credential')]
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingConvertToSecureStringWithPlainText', '',
+    Justification = 'Password retrieved from Bitwarden vault at runtime; not hardcoded plaintext')]
   [Alias('New-DBAConnStrBuilder')]
-  [CmdletBinding(DefaultParameterSetName = 'IntegratedSecurity')]
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'IntegratedSecurity')]
   param(
     # region Database connection parameters
     [Parameter(Mandatory = $true, Position = 0, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'IntegratedSecurity')]
@@ -135,13 +137,6 @@ function New-ConnectionStringBuilderFromDbaTools {
     # Load required helper functions
     try {
       # Load utility functions
-      if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
-      }
-      if (-not (Get-Command -Name 'Get-BitWardenSecret' -CommandType Function -ErrorAction SilentlyContinue)) {
-        # ToDo create Get-VaultSecret which is a shim that calls the specific vault implementation
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\Get-BitWardenSecret.ps1'
-      }
       if (-not (Get-Command -Name 'New-DbaConnectionStringBuilder' -CommandType Function -ErrorAction SilentlyContinue)) {
         # Try to import dbatools module first
         if (Get-Module -ListAvailable -Name dbatools) {
@@ -183,31 +178,22 @@ function New-ConnectionStringBuilderFromDbaTools {
         }
 
         'CredentialsFromVault' {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Retrieving credentials from vault using key: $CredentialsKey"
-
-          # Retrieve secret object from vault
-          $secret = Get-BitWardenSecret -SecretName $CredentialsKey
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Retrieving credentials from ATAP secret store using key: $CredentialsKey"
 
           if ($CredentialsKey.StartsWith('dbConnectionString')) {
             # ---------------------------------------------------------------
-            # The vault item holds a complete Microsoft.Data.SqlClient
-            # connection string stored in the Password field (plain text or
-            # SecureString).  Parse it, populate the effective variables, then
-            # fall through to the shared builder / JDBC construction below.
+            # The secret-store item holds a complete Microsoft.Data.SqlClient
+            # connection string. dbConnectionString-* items are Secure Notes
+            # whose body lives in the 'password' field by Get-SecretATAP's
+            # mapping (Secure Notes default 'password' -> notes body).
             # ---------------------------------------------------------------
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
-              -Message "CredentialsKey starts with 'dbConnectionString' — parsing full connection string from vault"
+              -Message "CredentialsKey starts with 'dbConnectionString' — parsing full connection string from secret store"
 
-            $rawConnStr = if ($secret -is [System.Security.SecureString]) {
-              $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secret)
-              try { [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr) }
-              finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
-            } else {
-              [string]$secret
-            }
+            $rawConnStr = Get-SecretATAP -SecretName $CredentialsKey -SecretField 'password'
 
             if ([string]::IsNullOrWhiteSpace($rawConnStr)) {
-              throw "Vault secret '$CredentialsKey' cannot be decoded or is null or whitespace"
+              throw "Secret '$CredentialsKey' cannot be decoded or is null or whitespace"
             }
 
             # Parse with Microsoft.Data.SqlClient — handles all key synonyms
@@ -257,49 +243,73 @@ function New-ConnectionStringBuilderFromDbaTools {
 
           } else {
             # ---------------------------------------------------------------
-            # Standard vault secret — separate UserName / Password / optional
-            # HostName / SqlInstance / Port fields.
+            # Standard secret-store item — separate UserName / Password /
+            # optional HostName / SqlInstance / Port / UseIntegratedSecurity
+            # fields. Each field is fetched with its own Get-SecretATAP call
+            # so the wrapper API can stay single-string.
             # ---------------------------------------------------------------
 
-            # Validate required properties
-            if (-not $secret.UserName) {
-              throw "Vault secret '$CredentialsKey' does not contain required 'UserName' property"
-            }
-            if (-not $secret.Password) {
-              throw "Vault secret '$CredentialsKey' does not contain required 'Password' property"
+            $userName = Get-SecretATAP -SecretName $CredentialsKey -SecretField 'username'
+            if ([string]::IsNullOrWhiteSpace($userName)) {
+              throw "Secret '$CredentialsKey' does not contain a 'username' field"
             }
 
-            $userName = $secret.UserName
-            $password = $secret.Password
-
-            # Resolve whether vault explicitly requests integrated security
-            if ($secret.PSObject.Properties['UseIntegratedSecurity']) {
-              $useIntegratedSecurity = [bool]$secret.UseIntegratedSecurity
-            } else {
-              $useIntegratedSecurity = $false
+            $password = Get-SecretATAP -SecretName $CredentialsKey -SecretField 'password'
+            if ([string]::IsNullOrWhiteSpace($password)) {
+              throw "Secret '$CredentialsKey' does not contain a 'password' field"
             }
 
-            # Override connection properties from vault if present
-            if ($secret.HostName -and [string]::IsNullOrWhiteSpace($effectiveDataSource)) {
-              $effectiveDataSource = $secret.HostName
+            # UseIntegratedSecurity: optional custom field; default $false on absence.
+            $useIntegratedSecurity = $false
+            try {
+              $uisRaw = Get-SecretATAP -SecretName $CredentialsKey -SecretField 'UseIntegratedSecurity' -ErrorAction SilentlyContinue
+              if (-not [string]::IsNullOrWhiteSpace($uisRaw)) {
+                $useIntegratedSecurity = [System.Convert]::ToBoolean($uisRaw)
+              }
+            } catch {
               Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
-                -Message "Using HostName from vault as DatabaseHost: $effectiveDataSource"
+                -Message "Optional field 'UseIntegratedSecurity' not present on '$CredentialsKey'; defaulting to false"
             }
 
-            if ($secret.SqlInstance -and [string]::IsNullOrWhiteSpace($effectiveSqlInstance)) {
-              $effectiveSqlInstance = $secret.SqlInstance
+            # Optional HostName/SqlInstance/Port custom fields.
+            try {
+              $hostFromVault = Get-SecretATAP -SecretName $CredentialsKey -SecretField 'HostName' -ErrorAction SilentlyContinue
+              if (-not [string]::IsNullOrWhiteSpace($hostFromVault) -and [string]::IsNullOrWhiteSpace($effectiveDataSource)) {
+                $effectiveDataSource = $hostFromVault
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+                  -Message "Using HostName from secret store as DatabaseHost: $effectiveDataSource"
+              }
+            } catch {
               Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
-                -Message "Using SqlInstance from vault: $effectiveSqlInstance"
+                -Message "Optional field 'HostName' not present on '$CredentialsKey'"
             }
 
-            if ($secret.Port -and $effectivePort -eq 0) {
-              $effectivePort = $secret.Port
+            try {
+              $instFromVault = Get-SecretATAP -SecretName $CredentialsKey -SecretField 'SqlInstance' -ErrorAction SilentlyContinue
+              if (-not [string]::IsNullOrWhiteSpace($instFromVault) -and [string]::IsNullOrWhiteSpace($effectiveSqlInstance)) {
+                $effectiveSqlInstance = $instFromVault
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+                  -Message "Using SqlInstance from secret store: $effectiveSqlInstance"
+              }
+            } catch {
               Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
-                -Message "Using Port from vault: $effectivePort"
+                -Message "Optional field 'SqlInstance' not present on '$CredentialsKey'"
+            }
+
+            try {
+              $portFromVault = Get-SecretATAP -SecretName $CredentialsKey -SecretField 'Port' -ErrorAction SilentlyContinue
+              if (-not [string]::IsNullOrWhiteSpace($portFromVault) -and $effectivePort -eq 0) {
+                $effectivePort = [int]$portFromVault
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+                  -Message "Using Port from secret store: $effectivePort"
+              }
+            } catch {
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+                -Message "Optional field 'Port' not present on '$CredentialsKey'"
             }
 
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
-              -Message "Vault request UseIntegratedSecurity: $useIntegratedSecurity"
+              -Message "Effective UseIntegratedSecurity: $useIntegratedSecurity"
           }
         }
       }

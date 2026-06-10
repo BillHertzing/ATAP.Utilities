@@ -1,0 +1,120 @@
+@startuml DB-PromotionPackage-Files
+' ============================================================
+' Diagram: Database Promotion Package — Files and Structure
+' Purpose: Shows the source files on disk that are assembled
+'          into the ATAPUtilities.Database NuGet content
+'          package (.nupkg) and the internal layout of that
+'          package.
+' Author:  Generated for sprint-0007
+' ============================================================
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 11
+skinparam packageStyle rectangle
+skinparam ArrowColor #444444
+skinparam PackageBorderColor #888888
+skinparam NoteBackgroundColor #FFFDE7
+skinparam NoteBorderColor #F9A825
+
+title "ATAPUtilities.Database — Promotion Package Files and Structure"
+
+' -------------------------------------------------------
+' LEFT: Source files on disk (repo working tree)
+' -------------------------------------------------------
+package "Database/ (Repository Working Tree)" as repoRoot #E3F2FD {
+
+  package "Database/ATAPUtilities/" as atapRoot #BBDEFB {
+    file "version.json\n(Nerdbank.GitVersioning)" as versionJson
+  }
+
+  package "Database/Flyway/" as flywayRoot #BBDEFB {
+    file "flyway.toml\n(Flyway configuration,\nplaceholder settings)" as flywayToml
+
+    package "Database/Flyway/SQL/" as sqlDir #E1F5FE {
+      file "V00.01.000010__Create_..._Schema.sql\n(DDL — table/constraint definitions)" as sqlV010
+      file "V00.01.000020__Load_..._From_CSV.sql\n(Bulk-insert loader scripts)" as sqlV020
+      file "V00.01.00NNNN__*.sql\n(Additional versioned migrations)" as sqlVN
+      file "R__*.sql\n(Repeatable migrations — views, procs)" as sqlR
+    }
+
+    package "Database/Flyway/Data/" as dataDir #E1F5FE {
+      file "<Language>_RulePrimitives.csv\n(Seed: rule primitive definitions)" as csvPrimitives
+      file "<Language>_Rules.csv\n(Seed: rule definitions)" as csvRules
+      file "<Language>_Instantiations.csv\n(Seed: instantiation records)" as csvInst
+      file "<Language>_Philote_*.csv\n(Seed: Philote GUID associations)" as csvPhilote
+    }
+  }
+
+  package "db/<App>/releases/" as releasesDir #C8E6C9 {
+    file "<Version>.yml\n(Per-release DB change unit manifest:\n- appVersion, dbChangeUnit\n- flywayTargetVersion\n- migration file list + checksums)" as releaseYaml
+  }
+}
+
+' -------------------------------------------------------
+' MIDDLE: Build step
+' -------------------------------------------------------
+component "New-DatabaseChangePackage\n(PowerShell, V4-E05)" as buildStep #FFF9C4
+
+' -------------------------------------------------------
+' RIGHT: .nupkg internal structure
+' -------------------------------------------------------
+package "ATAPUtilities.Database.<Version>.nupkg\n(ZIP container — NuGet content package)" as nupkg #F3E5F5 {
+
+  file "ATAPUtilities.Database.nuspec\n(Package manifest:\n- id, version, description\n- contentFiles declaration)" as nuspec
+
+  package "contentFiles/any/any/" as contentFilesRoot #EDE7F6 {
+    package "flyway/" as pkgFlyway #D1C4E9 {
+      file "flyway.toml" as pkgToml
+      package "SQL/" as pkgSQL #B39DDB {
+        file "V*.sql  (versioned migrations)" as pkgVersioned
+        file "R*.sql  (repeatable migrations)" as pkgRepeatable
+      }
+      package "Data/" as pkgData #B39DDB {
+        file "*.csv  (seed data files)" as pkgCSV
+      }
+    }
+    package "releases/" as pkgReleases #D1C4E9 {
+      file "<Version>.yml  (change-unit manifest)" as pkgReleaseYaml
+    }
+    file "version.json\n(resolved SemVer metadata)" as pkgVersion
+  }
+
+  package "[Content_Types].xml\n_rels/.rels  (NuGet zip boilerplate)" as pkgBoilerplate #EDE7F6
+}
+
+' -------------------------------------------------------
+' Relationships: disk → build step → nupkg
+' -------------------------------------------------------
+versionJson    --> buildStep : version input
+flywayToml     --> buildStep : configuration
+sqlDir         --> buildStep : migration scripts
+dataDir        --> buildStep : seed CSV data
+releasesDir    --> buildStep : release manifest
+
+buildStep --> nupkg : dotnet pack\n/ New-DatabaseChangePackage
+
+' Internal mapping annotations
+note right of pkgFlyway
+  Files mirror Database/Flyway/
+  tree so Invoke-Flyway.ps1 can
+  operate on extracted package
+  without path changes.
+end note
+
+note bottom of nuspec
+  Version is resolved by
+  Nerdbank.GitVersioning at
+  pack time from version.json
+  + current git commit height.
+end note
+
+note bottom of releasesDir
+  Only the manifest for the
+  version being packaged is
+  included; prior release
+  manifests remain in git
+  history only.
+end note
+
+@enduml

@@ -1,15 +1,26 @@
 # PowerShell Modules — Build Process
 
-**Scope:** Sprint-0006. How PowerShell modules in the ATAP.Utilities repository
-are produced from loose `.ps1` source files into a single consolidated `.psm1`
-script module plus a validated `.psd1` manifest, ready for packing.
+**Scope:** Sprint-0006/0007. How PowerShell modules in the ATAP.Utilities
+repository are produced from loose `.ps1` source files into a single
+consolidated `.psm1` script module plus a validated `.psd1` manifest, ready
+for packing.
 
 **Audience:** Developers who add/edit PowerShell cmdlets, anyone wiring a new
 module into the 5-tier pipeline, and CI engineers debugging
 `ATAP.Utilities.BuildTooling.PowerShell` build failures.
 
-**Status:** Authoritative for sprint-0006. Supersedes scattered notes in the
-legacy `Publish-PSPackage.ps1` header comments.
+**Status:** Authoritative for sprint-0006/0007. Supersedes scattered notes
+in the legacy `Publish-PSPackage.ps1` header comments.
+
+> **Strategy update (sprint-0007 — Immutable Build).** A PowerShell module
+> `.nupkg` is built and packed **exactly once** (at the Experimental tier)
+> and then promoted unchanged through Development → Integration → QA →
+> Production via `Promote-ProGetPackage`. Higher tiers do **not** rebuild;
+> they restore the existing module from the next-higher feed and run
+> Pester / PSScriptAnalyzer / coverage gates against it. This document
+> covers what happens during the single build at Experimental. See
+> [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md) for the
+> overall policy.
 
 **Not in this doc:**
 - How versions are assigned → see [PowerShell-Modules-Versioning.md](PowerShell-Modules-Versioning.md).
@@ -314,9 +325,12 @@ BuildMaster uploads as the "promotable" artifact bundle (see
    Marked for removal in sprint-0007.
 
 4. **No `Build.ps1` orchestrator at the repo root.** The end-to-end flow in
-   §7 is documented but not scripted. Each developer currently invokes the
-   cmdlets manually or via `Publish-ATAPUtilities.ps1` (see Pack-and-Publish
-   doc).
+   §7 is documented but not scripted. Each developer invokes the cmdlets
+   manually (`New-PSModuleNupkg` → `Publish-PSModuleToProGet`), or the
+   BuildMaster PowerShell-module pipeline runs them via
+   `Invoke-ModuleBuildWithRetry`. (The legacy repo-root
+   `Publish-ATAPUtilities.ps1` orchestrator was deleted in sprint-0007
+   (V4-G10); see Pack-and-Publish doc §11.)
 
 5. **`ATAP.Utilities.PowerShell.psd1` is UTF-16 encoded.** This is a legacy
    byproduct of Windows PowerShell ISE. `Update-ModuleManifest` normalizes
@@ -349,6 +363,124 @@ Get-ChildItem ./src -Directory -Filter '*Powershell*' | ForEach-Object {
     Build-SinglePSModule -ModulePath $_.FullName   # helper not yet written — see gap §12.4
 }
 ```
+
+---
+
+## 14. Hybrid Build via module.build.ps1 (Invoke-Build DAG)
+
+**Source:** Migrated from `Explainers/602 - 5Tier Software Production process
+Revision 2.md` §14.6 and §14.6.1 (row `602-psbuild`).
+
+PowerShell module builds in ATAP use a **hybrid architecture** that combines
+`module.build.ps1` (an Invoke-Build task DAG) with OtterScript `PSCall` in
+BuildMaster. This replaces an earlier approach that embedded all PowerShell
+module build logic directly in OtterScript.
+
+### 14.1 Rationale
+
+The hybrid approach solves three problems:
+
+1. **OtterScript bloat.** Embedding full build logic in OtterScript made the
+   `.otter` plan files long, unreviewable, and impossible to run locally.
+   `module.build.ps1` keeps OtterScript thin — it only triggers the build and
+   captures artifacts.
+2. **Local / CI parity.** Developers run
+   `Invoke-Build -File module.build.ps1 -Task Build` locally using the same
+   cmdlets that BuildMaster calls. There is no hidden CI-only build logic.
+3. **Testable units.** All behavior lives in individual cmdlets in
+   `ATAP.Utilities.BuildTooling.PowerShell`. Each cmdlet is independently
+   Pester-testable. The script itself contains minimal logic — it is purely
+   a task DAG that calls the cmdlets in the correct order.
+
+**Architecture overview:**
+
+```text
+BuildMaster OtterScript Plan
+  |
+  +-- PSCall(module.build.ps1, Task: 'Build')
+         |
+         +-- Resolve-PSModuleMetadata
+         +-- Get-PSModuleVersionFromNBGV
+         +-- Get-TierFromNBGVLabel     (legacy ceiling/feed helper)
+         +-- Invoke-PSModuleBuild
+         +-- Test-PSModule              (Pester wrapper)
+         +-- Assert-PSModuleQualityGate
+         +-- New-PSModuleArtifactLayout
+         +-- Publish-PSModuleToProGetFeed
+         +-- Register-PSModuleBuildMasterPackage
+```
+
+**OtterScript invocation example:**
+
+```otterscript
+# Call module.build.ps1 via PSCall for PowerShell module builds
+PSCall module.build.ps1
+(
+    Task: Build,
+    Branch: $Branch,
+    VersionLabel: $PrereleaseLabel,
+    TargetFeed: $TargetFeed,
+    BitWardenApiKeySecretName: ProGet_BuildMaster_API_Key
+);
+```
+
+### 14.2 Task Hierarchy
+
+`module.build.ps1` defines a small set of named Invoke-Build tasks composed
+out of the 10 cmdlets in §14.3. The composition is layered so that local
+developers, CI, and BuildMaster all enter the DAG at the appropriate level:
+
+| Task      | Composition                                                                                        | Used by                                                            |
+| --------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `Short`   | `Resolve-PSModuleMetadata` → `Get-PSModuleVersionFromNBGV` → `Invoke-PSModuleBuild`                | Fast inner-loop build; no tests, no publish                        |
+| `Verify`  | `Short` + `Test-PSModule` (Unit tag) + `Assert-PSModuleQualityGate`                                | Pre-commit / quick PR check                                        |
+| `All`     | `Verify` + `Test-PSModule` (Integration tag) + `New-PSModuleArtifactLayout`                        | Default local "everything passes" gate before pushing              |
+| `Local`   | `All`                                                                                              | Developer-facing alias (matches the convention developers expect)  |
+| `CI`      | `All` + Pester result file emission + structured logging                                           | Continuous-integration runs that capture results for upload        |
+| `Publish` | `CI` + `Publish-PSModuleToProGetFeed` + `Register-PSModuleBuildMasterPackage`                      | BuildMaster pipeline (Experimental stage only — immutable strategy) |
+
+Notes:
+
+- `Short`, `Verify`, `All`, `Local`, `CI`, `Publish` form a strict superset
+  chain: each task depends on (and re-executes) the prior task. There is no
+  alternate path that skips earlier steps.
+- The `Build` task referenced from OtterScript (§14.1) is the BuildMaster
+  entry point; in the canonical DAG it is an alias for `Publish` when the
+  caller is BuildMaster, and may be aliased to `All` for local developers
+  who want the same surface name.
+- Under the immutable build strategy, `Publish-PSModuleToProGetFeed` runs
+  **only at the Experimental tier**. Later tiers run `Verify` against the
+  promoted `.nupkg` but never re-invoke `Publish`.
+
+### 14.3 Cmdlet Extraction Plan (module.build.ps1 → ATAP.Utilities.BuildTooling.PowerShell)
+
+The following 10 cmdlets are to be extracted from `module.build.ps1` into
+the `ATAP.Utilities.BuildTooling.PowerShell` module so each is independently
+testable with Pester and reusable across build scripts.
+
+| Cmdlet                                | Responsibility                                                                                         |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `Resolve-PSModuleMetadata`            | Reads `.psd1` + `version.json`, returns a module metadata hashtable                                    |
+| `Get-PSModuleVersionFromNBGV`         | Calls `nbgv get-version`, parses and returns version components (label, height, full SemVer)           |
+| `Get-TierFromNBGVLabel`               | Legacy helper that maps NBGV prerelease label (Sprint / feature / Alpha / Beta / QA / empty) to ceiling tier name and PowerShellGet feed |
+| `Invoke-PSModuleBuild`                | Wraps `dotnet publish` or `Build-Module`, writes staged output to a named output directory             |
+| `Publish-PSModuleToProGetFeed`        | Calls `Publish-PSResource`, reading the ProGet API key from Bitwarden via `-BitWardenSecretName`       |
+| `Test-PSModule`                       | Pester 5+ wrapper that applies the tier-appropriate tag filter (`-Tag Unit`, `-Tag Integration`, etc.) |
+| `Assert-PSModuleQualityGate`          | Verifies coverage ≥ `PassingCodeCoveragePct` and test pass rate; throws on gate failure                |
+| `Move-ProGetPackageInterTier`         | Promotes a package from one tier's feed to the next (existing cmdlet — update to 5-tier order)         |
+| `New-PSModuleArtifactLayout`          | Creates the staging directory structure: `.nupkg`, `.psd1`, metadata, and test-result files            |
+| `Register-PSModuleBuildMasterPackage` | Registers the built package with the BuildMaster API so it appears in the build artifacts              |
+
+**Development conventions for all extracted cmdlets:**
+
+- Logging via `Write-PSFMessage -Level Important` (PSFramework); never
+  `Write-Host`.
+- API keys always sourced from Bitwarden via `-BitWardenSecretName` parameter
+  — never hardcoded.
+- Error handling via PSFramework structured errors; no bare `throw`
+  statements.
+- Each cmdlet must have a corresponding `*.Tests.ps1` file in the module's
+  `tests/Unit/` folder.
 
 ---
 

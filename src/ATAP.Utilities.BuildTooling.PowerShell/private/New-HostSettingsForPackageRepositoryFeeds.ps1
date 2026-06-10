@@ -1,13 +1,24 @@
+function New-HostSettingsForPackageRepositoryFeeds {
+  [CmdletBinding()]
+  param(
+    [Parameter()]
+    [ValidateNotNullOrEmpty()]
+    [string]$ConfigRootKeysFragmentPath = "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\Profiles\global_ConfigRootKeys.Fragment.PackageRepositories.ps1",
+
+    [Parameter()]
+    [ValidateNotNullOrEmpty()]
+    [string]$HostSettingsFragmentPath = "C:\Dropbox\whertzing\GitHub\ATAP.IAC\Windows\HostSettings.Fragment.PackageRepositories.ps1",
+
+    [Parameter()]
+    [int]$Base = 50000
+  )
+
 # ToDo: Move this function over to the Powershell.IAC module
 # ToDo: Remove this when packaging works
 #  if (-not (Get-Command -Name 'ConvertTo-ProGetFeedNameAlternateForm' -CommandType Function -ErrorAction SilentlyContinue)) {
 . "$PSScriptRoot\..\private\ConvertTo-ProGetFeedNameAlternateForm.ps1"
 # }
 
-
-$configRootKeysFragmentPath = "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\Profiles\global_ConfigRootKeys.Fragment.PackageRepositories.ps1"
-$hostSettingsFragmentPath = "C:\Dropbox\whertzing\GitHub\ATAP.IAC\Windows\HostSettings.Fragment.PackageRepositories.ps1"
-$base = 50000
 $results = [PSCustomObject]@{HostSettings = [System.Collections.ArrayList]::new(); ConfigRootKeys = [System.Collections.ArrayList]::new(); }
 
 # Output the lines that set $ConfigRootKeys entries for package repository feeds to $results object
@@ -143,4 +154,5 @@ $results.HostSettings += "`$HostsType1.Add(`$global:configRootKeys['PackageRepos
 }
 $results.HostSettings += "###################################################"
 $results.HostSettings | set-content -path $hostSettingsFragmentPath
+}
 

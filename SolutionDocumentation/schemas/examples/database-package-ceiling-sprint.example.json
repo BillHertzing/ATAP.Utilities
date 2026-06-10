@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "fileKind": "database-package-ceiling",
+  "branchKind": "sprint",
+  "branchName": "100-Sprint-0007-work-items",
+  "packageId": "ATAPUtilities.Database",
+  "maxConsumableTier": "Experimental",
+  "maxConsumableFeed": "database-experimental",
+  "versionJsonPrereleaseLabel": "Sprint",
+  "reason": "Sprint work may consume only Experimental database packages until promoted.",
+  "owner": "Sprint 0007 database package pipeline"
+}
+

@@ -47,7 +47,7 @@ function List-ProGetFeeds {
         }
       }
       else {
-        $proGetBaseHost = [Environment]::GetEnvironmentVariable($global:configRootKeys['ProGetAdminUriSchemeConfigRootKey'], 'Process')
+        $proGetBaseHost = [Environment]::GetEnvironmentVariable($global:configRootKeys['ProGetAdminUriHostConfigRootKey'], 'Process')
       }
     }
 
@@ -123,7 +123,9 @@ function List-ProGetFeeds {
     if ($useFeedSet) {
       Write-PSFMessage -Level Verbose -Message 'Returning feeds as a set'
       $feedSet = $global:Settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']]
-      $feedShortNames = $feedSet.Values.shortName
+      $feedShortNames = @($feedSet.Values | ForEach-Object {
+          if ($_ -is [System.Collections.IDictionary]) { $_['FeedName'] } else { $_.FeedName }
+        })
       $proGetFeeds = @{}
       foreach ($feed in $results) {
         if ($feedShortNames -contains $feed.Name) {

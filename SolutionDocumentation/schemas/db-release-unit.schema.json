@@ -1,0 +1,315 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atap.example.com/schemas/db-release-unit/v2.json",
+  "title": "ATAP DB release unit manifest v2",
+  "description": "Schema for db/releases/<x.y.z>.yml files that declare a database change unit. Supports schema-only, data-only, and schema+data packages.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "appVersion",
+    "dbChangeUnit",
+    "changeKind",
+    "flywayTargetVersion",
+    "migrations",
+    "repeatables",
+    "seedFiles",
+    "seedLoaders",
+    "expectedRowCounts",
+    "compatibleAppPackageRanges",
+    "requiresPreviousProductionSnapshot",
+    "rollbackSupported",
+    "rollbackNotes",
+    "evidenceRequirements",
+    "notes"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 2,
+      "description": "Format version of this release-unit manifest schema."
+    },
+    "appVersion": {
+      "$ref": "#/$defs/semVerString",
+      "description": "Application version associated with this DB change unit."
+    },
+    "dbChangeUnit": {
+      "$ref": "#/$defs/nonEmptyString",
+      "description": "Stable identity for the DB change unit (e.g. 'ATAPUtilities-db')."
+    },
+    "changeKind": {
+      "type": "string",
+      "enum": ["schema", "data", "schemaAndData"],
+      "description": "Declares whether this package contains schema migrations, seed/reference data, or both. Controls which validation gates apply."
+    },
+    "dataKind": {
+      "type": "string",
+      "enum": ["staticReference", "slowlyChangingSeed", "repeatableLookup", "fixture", "migrationData"],
+      "description": "Sub-classification of data content. Required when changeKind is 'data' or 'schemaAndData'. Absent when changeKind is 'schema'."
+    },
+    "flywayTargetVersion": {
+      "$ref": "#/$defs/flywayVersion",
+      "description": "Flyway schema version reached after applying this change unit."
+    },
+    "migrations": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/migrationEntry"
+      },
+      "description": "Ordered versioned Flyway migration SQL files included in the change unit."
+    },
+    "repeatables": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/repeatableEntry"
+      },
+      "description": "Repeatable Flyway SQL files included in the change unit."
+    },
+    "seedFiles": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/seedFileEntry"
+      },
+      "description": "CSV seed files included in the change unit."
+    },
+    "seedLoaders": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/seedLoaderEntry"
+      },
+      "description": "SQL or PowerShell scripts that load seed files. Must each declare idempotency."
+    },
+    "expectedRowCounts": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/nonEmptyString"
+      },
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "description": "Expected table row counts after loading seed data. Keys are table names."
+    },
+    "compatibleAppPackageRanges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/semVerRange"
+      },
+      "description": "SemVer ranges of application package versions that this DB change unit is compatible with. Empty array means 'no constraint'."
+    },
+    "requiresPreviousProductionSnapshot": {
+      "type": "boolean",
+      "description": "When true, the rehearsal gate must restore a production snapshot before running Flyway. Indicates irreversible or data-sensitive migration."
+    },
+    "rollbackSupported": {
+      "type": "boolean",
+      "description": "Whether downgrade from this DB change unit is supported. If false, promotion past Integration requires explicit override."
+    },
+    "rollbackNotes": {
+      "$ref": "#/$defs/nonEmptyString",
+      "description": "Operational rollback guidance. Required even when rollbackSupported is true."
+    },
+    "evidenceRequirements": {
+      "$ref": "#/$defs/evidenceRequirements",
+      "description": "Per-tier evidence gates that must be satisfied before promotion."
+    },
+    "notes": {
+      "$ref": "#/$defs/nonEmptyString",
+      "description": "Human-readable operational notes for this change unit."
+    }
+  },
+  "if": {
+    "properties": {
+      "changeKind": {
+        "enum": ["data", "schemaAndData"]
+      }
+    }
+  },
+  "then": {
+    "required": ["dataKind"]
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "semVerString": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "semVerRange": {
+      "type": "string",
+      "description": "SemVer range expression (npm/NuGet style). E.g. '>=1.0.0 <2.0.0' or '[1.0,2.0)'.",
+      "minLength": 1
+    },
+    "flywayVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+(?:\\.[0-9]+)*$"
+    },
+    "migrationFileName": {
+      "type": "string",
+      "pattern": "^V[0-9]+(?:\\.[0-9]+)*__[^\\\\/]+\\.sql$"
+    },
+    "repeatableFileName": {
+      "type": "string",
+      "pattern": "^R__[^\\\\/]+\\.sql$"
+    },
+    "seedCsvFileName": {
+      "type": "string",
+      "pattern": "^(?!.*[\\\\/]).+\\.csv$"
+    },
+    "seedLoaderFileName": {
+      "type": "string",
+      "pattern": "^(?!.*[\\\\/]).+\\.(?:sql|ps1)$"
+    },
+    "checksumSha256": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{64}$"
+        },
+        {
+          "const": "..."
+        }
+      ]
+    },
+    "destructiveChangeKind": {
+      "type": "string",
+      "enum": ["none", "columnDrop", "tableDrop", "columnTypeNarrow", "dataDelete", "indexDrop", "constraintDrop"],
+      "description": "Classification of the most destructive operation in a migration script."
+    },
+    "migrationEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fileName", "checksumSha256", "destructiveChangeKind"],
+      "properties": {
+        "fileName": {
+          "$ref": "#/$defs/migrationFileName",
+          "description": "Flyway versioned migration filename (e.g. V3__add_audit_columns.sql)."
+        },
+        "checksumSha256": {
+          "$ref": "#/$defs/checksumSha256",
+          "description": "SHA-256 of the migration SQL file."
+        },
+        "destructiveChangeKind": {
+          "$ref": "#/$defs/destructiveChangeKind",
+          "description": "Most destructive operation in this script. 'none' means additive-only."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional human note about this migration."
+        }
+      }
+    },
+    "repeatableEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fileName", "checksumSha256"],
+      "properties": {
+        "fileName": {
+          "$ref": "#/$defs/repeatableFileName",
+          "description": "Flyway repeatable migration filename (e.g. R__refresh_view.sql)."
+        },
+        "checksumSha256": {
+          "$ref": "#/$defs/checksumSha256",
+          "description": "SHA-256 of the repeatable SQL file."
+        }
+      }
+    },
+    "seedFileEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fileName", "checksumSha256", "targetTable"],
+      "properties": {
+        "fileName": {
+          "$ref": "#/$defs/seedCsvFileName",
+          "description": "CSV seed file name."
+        },
+        "checksumSha256": {
+          "$ref": "#/$defs/checksumSha256",
+          "description": "SHA-256 of the CSV seed file."
+        },
+        "targetTable": {
+          "$ref": "#/$defs/nonEmptyString",
+          "description": "Target database table name."
+        },
+        "expectedRowCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Expected row count after loading. Optional; overrides expectedRowCounts table-level value."
+        }
+      }
+    },
+    "seedLoaderEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fileName", "checksumSha256", "isIdempotent"],
+      "properties": {
+        "fileName": {
+          "$ref": "#/$defs/seedLoaderFileName",
+          "description": "SQL or PowerShell seed loader filename."
+        },
+        "checksumSha256": {
+          "$ref": "#/$defs/checksumSha256",
+          "description": "SHA-256 of the loader file."
+        },
+        "isIdempotent": {
+          "type": "boolean",
+          "description": "True when the loader is safe to run multiple times without changing the result. Required for rehearsal gate re-runs."
+        }
+      }
+    },
+    "evidenceRequirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Evidence gates per promotion tier. Each key is a tier name.",
+      "properties": {
+        "experimental": {
+          "$ref": "#/$defs/tierEvidence"
+        },
+        "development": {
+          "$ref": "#/$defs/tierEvidence"
+        },
+        "integration": {
+          "$ref": "#/$defs/tierEvidence"
+        },
+        "qa": {
+          "$ref": "#/$defs/tierEvidence"
+        },
+        "stable": {
+          "$ref": "#/$defs/tierEvidence"
+        }
+      }
+    },
+    "tierEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "flywayRehearsalRequired": {
+          "type": "boolean",
+          "default": false,
+          "description": "Flyway rehearsal must pass before promotion to this tier."
+        },
+        "rowCountValidationRequired": {
+          "type": "boolean",
+          "default": false,
+          "description": "Expected row counts must be verified after apply."
+        },
+        "snapshotBackupRequired": {
+          "type": "boolean",
+          "default": false,
+          "description": "A pre-apply snapshot backup is required before Flyway runs at this tier."
+        },
+        "approvalRequired": {
+          "type": "boolean",
+          "default": false,
+          "description": "Human approval gate in BuildMaster before promotion to this tier."
+        }
+      }
+    }
+  }
+}

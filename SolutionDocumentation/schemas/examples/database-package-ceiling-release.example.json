@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "fileKind": "database-package-ceiling",
+  "branchKind": "release",
+  "branchName": "release/1.4.0",
+  "packageId": "AceCommander.Database",
+  "maxConsumableTier": "Production",
+  "maxConsumableFeed": "database-stable",
+  "versionJsonPrereleaseLabel": null,
+  "reason": "Release branches consume Production/stable database packages after QA approval.",
+  "owner": "Release engineering"
+}
+

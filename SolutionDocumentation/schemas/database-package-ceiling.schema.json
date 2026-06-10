@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atap.example.com/schemas/database-package-ceiling/v1.json",
+  "title": "ATAP database package ceiling file",
+  "description": "Schema for database-package-ceiling.json, the consumer-side ceiling that caps the highest database package feed a branch or release lane may consume.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "fileKind",
+    "branchKind",
+    "branchName",
+    "packageId",
+    "maxConsumableTier",
+    "maxConsumableFeed",
+    "versionJsonPrereleaseLabel",
+    "reason"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1,
+      "description": "Format version of this database package ceiling file."
+    },
+    "fileKind": {
+      "type": "string",
+      "const": "database-package-ceiling",
+      "description": "Sentinel value that prevents another JSON document from being accepted accidentally."
+    },
+    "branchKind": {
+      "type": "string",
+      "enum": [
+        "sprint",
+        "feature",
+        "integration",
+        "qa",
+        "release",
+        "hotfix"
+      ],
+      "description": "Kind of branch or release lane this ceiling applies to."
+    },
+    "branchName": {
+      "$ref": "#/$defs/nonEmptyString",
+      "description": "Human-readable branch or lane name."
+    },
+    "packageId": {
+      "$ref": "#/$defs/databasePackageId",
+      "description": "Database package id governed by this ceiling file."
+    },
+    "maxConsumableTier": {
+      "$ref": "#/$defs/tierName",
+      "description": "Highest canonical tier this branch or lane may consume from."
+    },
+    "maxConsumableFeed": {
+      "$ref": "#/$defs/databaseFeedName",
+      "description": "Database ProGet feed matching maxConsumableTier."
+    },
+    "versionJsonPrereleaseLabel": {
+      "description": "Expected version.json prerelease label for this lane. Use null for stable/release lanes.",
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z][A-Za-z0-9.-]*$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reason": {
+      "$ref": "#/$defs/nonEmptyString",
+      "description": "Short human-readable justification for this ceiling."
+    },
+    "owner": {
+      "type": "string",
+      "description": "Responsible person, group, or automation owner."
+    },
+    "effectiveUtc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$",
+      "description": "UTC timestamp when this ceiling became effective."
+    },
+    "expiresUtc": {
+      "description": "UTC timestamp when a temporary ceiling should be revisited; null means no planned expiry.",
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "Z$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional operator notes."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "maxConsumableTier": {
+            "const": "Experimental"
+          }
+        },
+        "required": [
+          "maxConsumableTier"
+        ]
+      },
+      "then": {
+        "properties": {
+          "maxConsumableFeed": {
+            "const": "database-experimental"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "maxConsumableTier": {
+            "const": "Development"
+          }
+        },
+        "required": [
+          "maxConsumableTier"
+        ]
+      },
+      "then": {
+        "properties": {
+          "maxConsumableFeed": {
+            "const": "database-development"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "maxConsumableTier": {
+            "const": "Integration"
+          }
+        },
+        "required": [
+          "maxConsumableTier"
+        ]
+      },
+      "then": {
+        "properties": {
+          "maxConsumableFeed": {
+            "const": "database-integration"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "maxConsumableTier": {
+            "const": "QA"
+          }
+        },
+        "required": [
+          "maxConsumableTier"
+        ]
+      },
+      "then": {
+        "properties": {
+          "maxConsumableFeed": {
+            "const": "database-qa"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "maxConsumableTier": {
+            "const": "Production"
+          }
+        },
+        "required": [
+          "maxConsumableTier"
+        ]
+      },
+      "then": {
+        "properties": {
+          "maxConsumableFeed": {
+            "const": "database-stable"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "databasePackageId": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9]*(?:\\.[A-Za-z][A-Za-z0-9]*)*\\.Database$",
+      "description": "Dotted database NuGet package id, e.g. ATAPUtilities.Database or AceCommander.Reporting.Database."
+    },
+    "tierName": {
+      "type": "string",
+      "enum": [
+        "Experimental",
+        "Development",
+        "Integration",
+        "QA",
+        "Production"
+      ]
+    },
+    "databaseFeedName": {
+      "type": "string",
+      "enum": [
+        "database-experimental",
+        "database-development",
+        "database-integration",
+        "database-qa",
+        "database-stable"
+      ]
+    }
+  }
+}
+

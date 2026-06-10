@@ -22,5 +22,11 @@ This guide describes the 5-tier lifecycle flow for the ATAP.Utilities.BuildTooli
 
 - Use BuildMaster stage pipelines for inter-tier progression.
 - Keep artifact movement aligned with permanent powershellget-* feed names.
+- Load package-repository host settings before feed operations. Build tooling
+  resolves feed names, endpoints, and API-key environment variable names from
+  `$global:Settings[$global:configRootKeys['ProGetFeedCollectionConfigRootKey']]`.
+- Apply the Explainer 0111 dependency rule during restore and validation:
+  a module may consume supplier packages only from its own tier or a more stable
+  tier.
 - Record rollout issues in sprint retrospective notes before sprint-end teardown.
 

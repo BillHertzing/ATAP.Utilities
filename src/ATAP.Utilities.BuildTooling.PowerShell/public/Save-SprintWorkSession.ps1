@@ -63,7 +63,13 @@ function Save-SprintWorkSession {
         [string] $PlanningRoot = '',
 
         [Parameter(Mandatory = $false)]
-        [string] $ClaudeProjectsRoot = (Join-Path $env:USERPROFILE '.claude\projects')
+        [string] $ClaudeProjectsRoot = (Join-Path $env:USERPROFILE '.claude\projects'),
+
+        [Parameter(Mandatory = $false)]
+        [string] $GitHubRoot = 'C:\Dropbox\whertzing\GitHub',
+
+        [Parameter(Mandatory = $false)]
+        [switch] $AllowMainFallback
     )
 
     begin {
@@ -72,14 +78,57 @@ function Save-SprintWorkSession {
 
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Entering function'
 
-        # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: SprintN)
-        $SprintN = Get-PVal -ParameterName SprintN -originalPSBoundParameters $PSBoundParameters -dottedPath SprintN -DefaultValue $SprintN
+        # Load helper functions
+        # None of this is needed once the modules are built and installed into the PSModulePath, but while we are
+        # still running from source code, we need to dot source the helper functions that are not yet in a module.
+        # Once the modules are built and installed, all of the helper functions will be available as cmdlets and
+        # this block can be removed.
+        $helpfunctionsneeded = @(
+            # Get-PVal is an alias for Get-ParameterValueFromNeoConfigurationRoot, used to populate parameters.
+            @{FunctionName = 'Get-ParameterValueFromNeoConfigurationRoot'; ModuleName = 'ATAP.Utilities.PowerShell' }
+        )
+        # These are three hardcoded values which we use until we get packaging working
+        $repoRootParentPath = 'C:\Dropbox\whertzing\GitHub'
+        $stablePath = 'ATAP.Utilities'
+        # If we are in a sprint branch, use the sprint branch version of the helper functions, otherwise use the
+        # stable branch version.  This allows us to use helper functions that are in progress in the sprint branch
+        # without having to merge them into the stable branch first.
+        $wtFolder = $PWD.Path.Split([IO.Path]::DirectorySeparatorChar) |
+            Where-Object { $_ -like '*-wt-*' } |
+            Select-Object -First 1
+        $resolvedModulePath = $wtFolder ? (Join-Path $repoRootParentPath $wtFolder 'src') : (Join-Path $repoRootParentPath $stablePath 'src')
+        foreach ($helpfunction in $helpfunctionsneeded) {
+            try {
+                if (-not (Test-Path -LiteralPath "Function:\$($helpfunction.FunctionName)")) {
+                    $helperPath = Join-Path $resolvedModulePath $helpfunction.ModuleName 'public' "$($helpfunction.FunctionName).ps1"
+                    . $helperPath
+                }
+            } catch {
+                # Non-fatal: if the helper cannot be loaded, log a debug message and continue without Get-PVal.
+                # Parameters already carry usable defaults so settings-resolution is not strictly required.
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+                    -Message "Helper '$($helpfunction.FunctionName)' not loaded from module '$($helpfunction.ModuleName)' at '$helperPath': $($_.Exception.Message). Continuing with parameter declaration defaults."
+            }
+        }
+        # This is the end of the help loading block; it and all above can be removed once module autoloading is
+        # working and the helper functions are available as cmdlets in the PSModulePath.
 
-        # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: PlanningRoot)
-        $PlanningRoot = Get-PVal -ParameterName PlanningRoot -originalPSBoundParameters $PSBoundParameters -dottedPath PlanningRoot -DefaultValue $PlanningRoot
+        # Populate parameters from settings only when Get-PVal is available.
+        # When the helper is absent (sparse environment / direct import), the parameter-declaration
+        # defaults are already usable and no non-terminating error should be emitted.
+        if (Test-Path -LiteralPath 'Function:\Get-PVal') {
+            # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: SprintN)
+            $SprintN = Get-PVal -ParameterName SprintN -originalPSBoundParameters $PSBoundParameters -dottedPath SprintN -DefaultValue $SprintN
 
-        # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: ClaudeProjectsRoot)
-        $ClaudeProjectsRoot = Get-PVal -ParameterName ClaudeProjectsRoot -originalPSBoundParameters $PSBoundParameters -dottedPath ClaudeProjectsRoot -DefaultValue $ClaudeProjectsRoot
+            # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: PlanningRoot)
+            $PlanningRoot = Get-PVal -ParameterName PlanningRoot -originalPSBoundParameters $PSBoundParameters -dottedPath PlanningRoot -DefaultValue $PlanningRoot
+
+            # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: ClaudeProjectsRoot)
+            $ClaudeProjectsRoot = Get-PVal -ParameterName ClaudeProjectsRoot -originalPSBoundParameters $PSBoundParameters -dottedPath ClaudeProjectsRoot -DefaultValue $ClaudeProjectsRoot
+
+            # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: GitHubRoot)
+            $GitHubRoot = Get-PVal -ParameterName GitHubRoot -originalPSBoundParameters $PSBoundParameters -dottedPath GitHubRoot -DefaultValue $GitHubRoot
+        }
     }
 
     process {
@@ -97,11 +146,27 @@ function Save-SprintWorkSession {
                 }
             }
 
-            # ── Auto-resolve _Planning worktree from siblings ──────────────────────
+            # ── Auto-resolve _Planning worktree (SC-0096 fix) ──────────────────────
+            # Resolution order:
+            #   1. Caller-supplied -PlanningRoot wins.
+            #   2. Scan $GitHubRoot for ^_Planning-wt-\d+-sprint-$SprintN-.*
+            #   3. Scan the parent of the current cwd (legacy sibling-scan path)
+            #      in case cwd lives outside $GitHubRoot.
+            #   4. Refuse to fall back to main _Planning unless -AllowMainFallback
+            #      is set, so sprint artifacts never silently land in the main
+            #      planning repo.
             if (-not $PlanningRoot) {
-                $parentDir = Split-Path -Parent (Get-Location).Path
-                $planningWTs = @(Get-ChildItem $parentDir -Directory -ErrorAction SilentlyContinue |
-                        Where-Object { $_.Name -match "^_Planning-wt-\d+-sprint-$SprintN" })
+                $mainPlanning = Join-Path $GitHubRoot '_Planning'
+                $searchRoots = @($GitHubRoot, (Split-Path -Parent (Get-Location).Path)) |
+                    Where-Object { $_ -and (Test-Path $_) } |
+                    Select-Object -Unique
+
+                $planningWTs = @()
+                foreach ($root in $searchRoots) {
+                    $planningWTs += @(Get-ChildItem $root -Directory -ErrorAction SilentlyContinue |
+                            Where-Object { $_.Name -match "^_Planning-wt-\d+-sprint-$SprintN(-|$)" })
+                }
+                $planningWTs = $planningWTs | Sort-Object FullName -Unique
 
                 if ($planningWTs.Count -eq 1) {
                     $PlanningRoot = $planningWTs[0].FullName
@@ -109,17 +174,19 @@ function Save-SprintWorkSession {
                 } elseif ($planningWTs.Count -gt 1) {
                     $candidates = ($planningWTs | ForEach-Object { $_.FullName }) -join ', '
                     throw "Multiple _Planning sprint worktrees match sprint $SprintN. Pass -PlanningRoot to disambiguate: $candidates"
+                } elseif ($AllowMainFallback) {
+                    $PlanningRoot = $mainPlanning
+                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "No _Planning sprint worktree found for sprint $SprintN. -AllowMainFallback set; using main _Planning: $PlanningRoot"
                 } else {
-                    $PlanningRoot = 'C:\Dropbox\whertzing\GitHub\_Planning'
-                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "No _Planning sprint worktree found for sprint $SprintN. Falling back to main _Planning: $PlanningRoot"
+                    throw "No _Planning sprint worktree matched ^_Planning-wt-\\d+-sprint-$SprintN under: $($searchRoots -join '; '). Sprint artifacts must not land in main _Planning silently. Create the sprint worktree, pass -PlanningRoot explicitly, or re-run with -AllowMainFallback."
                 }
             }
 
             # ── Derive project slug from cwd ───────────────────────────────────────
             # Claude Code slugs the project path by lowercasing the drive letter
-            # and replacing ':', '\', '_' with '-'.
+            # and replacing ':', '\', '_', '.' with '-'.
             $cwd = (Get-Location).Path
-            $slug = ($cwd.Substring(0, 1).ToLower() + $cwd.Substring(1)) -replace '[:\\._]', '-' -replace '^-', ''
+            $slug = ($cwd.Substring(0, 1).ToLower() + $cwd.Substring(1)) -replace ':', '-' -replace '\\', '-' -replace '_', '-' -replace '\.', '-' -replace '^-', ''
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Slug derived from cwd '$cwd': $slug"
 
             # ── Find most-recent session JSONL ─────────────────────────────────────

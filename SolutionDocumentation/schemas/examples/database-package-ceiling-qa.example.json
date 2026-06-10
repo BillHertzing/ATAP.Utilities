@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "fileKind": "database-package-ceiling",
+  "branchKind": "qa",
+  "branchName": "qa",
+  "packageId": "ATAPUtilities.Database",
+  "maxConsumableTier": "QA",
+  "maxConsumableFeed": "database-qa",
+  "versionJsonPrereleaseLabel": "QA",
+  "reason": "QA lanes may consume database packages promoted through QA after Integration evidence is present.",
+  "owner": "QA gate owner"
+}
+

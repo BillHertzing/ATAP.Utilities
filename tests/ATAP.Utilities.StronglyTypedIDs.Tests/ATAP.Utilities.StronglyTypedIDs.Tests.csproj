@@ -1,0 +1,113 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IsPackable>false</IsPackable>
+    <!-- Assembly, File, and Package Information for this assembly-->
+    <!-- Build and revision are created based on date-->
+    <MajorVersion>0</MajorVersion>
+    <MinorVersion>1</MinorVersion>
+    <PatchVersion>0</PatchVersion>
+  </PropertyGroup>
+
+  <!-- Packages to add xUnit Testing providers and extensions -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.console">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- Packages to add xUnit Testing dotnet tool -->
+  <ItemGroup>
+  </ItemGroup>
+
+     <!-- ATAP Utility Packages For the abstract Serializer -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\StringConstants\ATAP.Utilities.Serializer.StringConstants.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
+  </ItemGroup>
+
+  <!-- ATAP Utility Packages For the Testing Fixture hierarchy -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing.Fixture.Serialization\ATAP.Utilities.Testing.Fixture.Serialization.csproj" />
+  </ItemGroup>
+
+  <!-- The Serializer Fixture Shim to use -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\Shim\SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" />
+    <!--
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Shim\Newtonsoft\ATAP.Utilities.Serializer.Shim.Newtonsoft.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Shim\ServiceStack\ATAP.Utilities.Serializer.Shim.ServiceStack.csproj" />
+    -->
+  </ItemGroup>
+
+  <!-- The DataForTests -->
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.DataForTests\ATAP.Utilities.Serializer.DataForTests.csproj" />
+  </ItemGroup>
+
+  <!-- Configuration Settings files -->
+  <ItemGroup>
+    <None Update="ATAP.Utilities.Testing.Fixture.Serialization.SystemTextJson.Settings.Development.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ATAP.Utilities.Testing.Fixture.Serialization.SystemTextJson.Settings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+<!-- Specific libraries under test -->
+  <!-- Conditional-SUT pattern per CSharp-Packages-Test-Process.md S3.1:
+       Default UsePackageReferenceForSUT=false uses local ProjectReference for the
+       developer/Experimental inner loop. Promotion tiers (Development+) pass
+       UsePackageReferenceForSUT=true and SUTVersion=<promoted-version> at restore
+       time to switch to PackageReference against the promoted artifact. The
+       conditional CPM-safe pattern uses VersionOverride to honor the per-restore
+       SUTVersion while keeping placeholder PackageVersion entries in
+       Directory.Packages.props. -->
+  <PropertyGroup>
+    <UsePackageReferenceForSUT Condition="'$(UsePackageReferenceForSUT)' == ''">false</UsePackageReferenceForSUT>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(UsePackageReferenceForSUT)' == 'false'">
+    <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedId\Models\ATAP.Utilities.StronglyTypedId.Models.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedId\Interfaces\ATAP.Utilities.StronglyTypedId.Interfaces.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UsePackageReferenceForSUT)' == 'true'">
+    <PackageReference Include="ATAP.Utilities.StronglyTypedId.Models" VersionOverride="$(SUTVersion)" />
+    <PackageReference Include="ATAP.Utilities.StronglyTypedId.Interfaces" VersionOverride="$(SUTVersion)" />
+  </ItemGroup>
+
+
+  <!-- ToDo: The concrete serializer libraries for the ISerializerConfigurableAbstract DI-injected service and all their dependencies need to be copied to a PlugIns subdir below the outputdir -->
+  <!-- Standalone reference to Microsoft.Extensions.DependencyInjection is used by unitTest projects
+            that inject a Serializer via Dependency Injection
+  <ItemGroup>
+    <PackageReference Include="Xunit.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup> -->
+
+  <!-- Plugin Framework for libraries that are dynamically loaded
+  <ItemGroup>
+    <PackageReference Include="McMaster.NETCore.Plugins" />
+  </ItemGroup>
+   -->
+
+
+</Project>

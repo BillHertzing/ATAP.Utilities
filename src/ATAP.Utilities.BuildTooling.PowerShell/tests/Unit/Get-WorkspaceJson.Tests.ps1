@@ -1,5 +1,5 @@
 BeforeAll {
-  . "$PSScriptRoot\..\Import-SharedVSCodeFunctions.ps1"
+  Import-Module ATAP.Utilities.BuildTooling.PowerShell -Force
 }
 
 Describe 'Get-WorkspaceJson [private]' {

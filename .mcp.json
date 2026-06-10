@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "plantuml": {
+      "command": "node",
+      "args": ["C:\\Dropbox\\whertzing\\GitHub\\OSSForks\\plantuml-mcp-server\\dist\\plantuml-mcp-server.js"],
+      "env": {
+        "MCP_TRANSPORT": "stdio"
+      }
+    }
+  }
+}

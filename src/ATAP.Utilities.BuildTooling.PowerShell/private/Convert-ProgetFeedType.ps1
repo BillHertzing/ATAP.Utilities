@@ -5,10 +5,15 @@ function Convert-ProGetFeedType {
     [string]$FeedType
   )
 
-  switch ($FeedType) {
-    'NuGet' { return 'nuget' }
-    'ChocolateyGet' { return 'chocolatey' }
-    'PSResourceGet' { return 'powershell' }
+  switch ($FeedType.ToLowerInvariant()) {
+    'nuget' { return 'nuget' }
+    'chocolatey' { return 'chocolatey' }
+    'chocolateyget' { return 'chocolatey' }
+    'powershell' { return 'powershell' }
+    'powershellget' { return 'powershell' }
+    'psresourceget' { return 'powershell' }
+    'universal' { return 'universal' }
+    'upack' { return 'universal' }
     default {
       $errorMessage = "Unknown feed type: $FeedType"
       Write-PSFMessage -Level Error -Message $errorMessage

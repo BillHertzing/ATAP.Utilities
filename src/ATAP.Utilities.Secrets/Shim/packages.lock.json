@@ -1,0 +1,392 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "Fody": {
+        "type": "Direct",
+        "requested": "[6.9.3, )",
+        "resolved": "6.9.3",
+        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
+      },
+      "MethodBoundaryAspect.Fody": {
+        "type": "Direct",
+        "requested": "[2.0.150, )",
+        "resolved": "2.0.150",
+        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
+        "dependencies": {
+          "Fody": "6.7.0"
+        }
+      },
+      "Microsoft.SourceLink.GitHub": {
+        "type": "Direct",
+        "requested": "[8.0.0, )",
+        "resolved": "8.0.0",
+        "contentHash": "G5q7OqtwIyGTkeIOAc3u2ZuV/kicQaec5EaRnc0pIeSnh9LUjj+PYQrJYBURvDt7twGl2PKA7nSN0kz1Zw5bnQ==",
+        "dependencies": {
+          "Microsoft.Build.Tasks.Git": "8.0.0",
+          "Microsoft.SourceLink.Common": "8.0.0"
+        }
+      },
+      "Nerdbank.GitVersioning": {
+        "type": "Direct",
+        "requested": "[3.9.50, )",
+        "resolved": "3.9.50",
+        "contentHash": "HtOgGF6jZ+WYbXnCUCYPT8Y2d6mIJo9ozjK/FINTRsXdm4Zgv9GehUMa7EFoGQkqrMcDJNOIDwCmENnvXg4UbA=="
+      },
+      "Microsoft.Build.Tasks.Git": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "bZKfSIKJRXLTuSzLudMFte/8CempWjVamNUR5eHJizsy+iuOuO/k2gnh7W0dHJmYY0tBf+gUErfluCv5mySAOQ=="
+      },
+      "Microsoft.Extensions.Primitives": {
+        "type": "Transitive",
+        "resolved": "9.0.0",
+        "contentHash": "N3qEBzmLMYiASUlKxxFIISP4AiwuPTHF5uCh+2CWSwwzAJiIYx0kBJsS30cp1nvhSySFAVi30jecD307jV+8Kg=="
+      },
+      "Microsoft.SourceLink.Common": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
+      },
+      "atap.utilities.etw": {
+        "type": "Project"
+      },
+      "atap.utilities.plugin.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.0, )"
+        }
+      },
+      "atap.utilities.secrets.enumerations": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.secrets.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Plugin.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Secrets.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Secrets.StringConstants": "[0.1.0-Alpha, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.0, )"
+        }
+      },
+      "atap.utilities.secrets.model": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Secrets.Interfaces": "[0.1.0-Alpha, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
+        }
+      },
+      "atap.utilities.secrets.shim.bitwarden": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Secrets.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Secrets.Model": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Secrets.StringConstants": "[0.1.0-Alpha, )",
+          "Microsoft.Extensions.Configuration": "[9.0.0, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.0, )"
+        }
+      },
+      "atap.utilities.secrets.stringconstants": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )"
+        }
+      },
+      "Microsoft.Extensions.Configuration": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.0, )",
+        "resolved": "9.0.0",
+        "contentHash": "YIMO9T3JL8MeEXgVozKt2v79hquo/EFtnY0vgxmLnUvk1Rei/halI7kOWZL2RBeV9FMGzgM9LZA8CVaNwFMaNA==",
+        "dependencies": {
+          "Microsoft.Extensions.Configuration.Abstractions": "9.0.0",
+          "Microsoft.Extensions.Primitives": "9.0.0"
+        }
+      },
+      "Microsoft.Extensions.Configuration.Abstractions": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.0, )",
+        "resolved": "9.0.0",
+        "contentHash": "lqvd7W3FGKUO1+ZoUEMaZ5XDJeWvjpy2/M/ptCGz3tXLD4HWVaSzjufsAsjemasBEg+2SxXVtYVvGt5r2nKDlg==",
+        "dependencies": {
+          "Microsoft.Extensions.Primitives": "9.0.0"
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.0, )",
+        "resolved": "9.0.0",
+        "contentHash": "+6f2qv2a3dLwd5w6JanPIPs47CxRbnk+ZocMJUhv9NxP88VlOcJYZs9jY+MYSjxvady08bUZn6qgiNh7DadGgg=="
+      }
+    },
+    "net10.0/linux-x64": {},
+    "net10.0/win-x64": {},
+    "net8.0": {
+      "Fody": {
+        "type": "Direct",
+        "requested": "[6.9.3, )",
+        "resolved": "6.9.3",
+        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
+      },
+      "MethodBoundaryAspect.Fody": {
+        "type": "Direct",
+        "requested": "[2.0.150, )",
+        "resolved": "2.0.150",
+        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
+        "dependencies": {
+          "Fody": "6.7.0"
+        }
+      },
+      "Microsoft.SourceLink.GitHub": {
+        "type": "Direct",
+        "requested": "[8.0.0, )",
+        "resolved": "8.0.0",
+        "contentHash": "G5q7OqtwIyGTkeIOAc3u2ZuV/kicQaec5EaRnc0pIeSnh9LUjj+PYQrJYBURvDt7twGl2PKA7nSN0kz1Zw5bnQ==",
+        "dependencies": {
+          "Microsoft.Build.Tasks.Git": "8.0.0",
+          "Microsoft.SourceLink.Common": "8.0.0"
+        }
+      },
+      "Nerdbank.GitVersioning": {
+        "type": "Direct",
+        "requested": "[3.9.50, )",
+        "resolved": "3.9.50",
+        "contentHash": "HtOgGF6jZ+WYbXnCUCYPT8Y2d6mIJo9ozjK/FINTRsXdm4Zgv9GehUMa7EFoGQkqrMcDJNOIDwCmENnvXg4UbA=="
+      },
+      "Microsoft.Build.Tasks.Git": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "bZKfSIKJRXLTuSzLudMFte/8CempWjVamNUR5eHJizsy+iuOuO/k2gnh7W0dHJmYY0tBf+gUErfluCv5mySAOQ=="
+      },
+      "Microsoft.Extensions.Primitives": {
+        "type": "Transitive",
+        "resolved": "9.0.0",
+        "contentHash": "N3qEBzmLMYiASUlKxxFIISP4AiwuPTHF5uCh+2CWSwwzAJiIYx0kBJsS30cp1nvhSySFAVi30jecD307jV+8Kg=="
+      },
+      "Microsoft.SourceLink.Common": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
+      },
+      "atap.utilities.etw": {
+        "type": "Project"
+      },
+      "atap.utilities.plugin.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.0, )"
+        }
+      },
+      "atap.utilities.secrets.enumerations": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.secrets.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Plugin.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Secrets.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Secrets.StringConstants": "[0.1.0-Alpha, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.0, )"
+        }
+      },
+      "atap.utilities.secrets.model": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Secrets.Interfaces": "[0.1.0-Alpha, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
+        }
+      },
+      "atap.utilities.secrets.shim.bitwarden": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Secrets.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Secrets.Model": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Secrets.StringConstants": "[0.1.0-Alpha, )",
+          "Microsoft.Extensions.Configuration": "[9.0.0, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.0, )"
+        }
+      },
+      "atap.utilities.secrets.stringconstants": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )"
+        }
+      },
+      "Microsoft.Extensions.Configuration": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.0, )",
+        "resolved": "9.0.0",
+        "contentHash": "YIMO9T3JL8MeEXgVozKt2v79hquo/EFtnY0vgxmLnUvk1Rei/halI7kOWZL2RBeV9FMGzgM9LZA8CVaNwFMaNA==",
+        "dependencies": {
+          "Microsoft.Extensions.Configuration.Abstractions": "9.0.0",
+          "Microsoft.Extensions.Primitives": "9.0.0"
+        }
+      },
+      "Microsoft.Extensions.Configuration.Abstractions": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.0, )",
+        "resolved": "9.0.0",
+        "contentHash": "lqvd7W3FGKUO1+ZoUEMaZ5XDJeWvjpy2/M/ptCGz3tXLD4HWVaSzjufsAsjemasBEg+2SxXVtYVvGt5r2nKDlg==",
+        "dependencies": {
+          "Microsoft.Extensions.Primitives": "9.0.0"
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.0, )",
+        "resolved": "9.0.0",
+        "contentHash": "+6f2qv2a3dLwd5w6JanPIPs47CxRbnk+ZocMJUhv9NxP88VlOcJYZs9jY+MYSjxvady08bUZn6qgiNh7DadGgg=="
+      }
+    },
+    "net8.0/linux-x64": {},
+    "net8.0/win-x64": {},
+    "net9.0": {
+      "Fody": {
+        "type": "Direct",
+        "requested": "[6.9.3, )",
+        "resolved": "6.9.3",
+        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
+      },
+      "MethodBoundaryAspect.Fody": {
+        "type": "Direct",
+        "requested": "[2.0.150, )",
+        "resolved": "2.0.150",
+        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
+        "dependencies": {
+          "Fody": "6.7.0"
+        }
+      },
+      "Microsoft.SourceLink.GitHub": {
+        "type": "Direct",
+        "requested": "[8.0.0, )",
+        "resolved": "8.0.0",
+        "contentHash": "G5q7OqtwIyGTkeIOAc3u2ZuV/kicQaec5EaRnc0pIeSnh9LUjj+PYQrJYBURvDt7twGl2PKA7nSN0kz1Zw5bnQ==",
+        "dependencies": {
+          "Microsoft.Build.Tasks.Git": "8.0.0",
+          "Microsoft.SourceLink.Common": "8.0.0"
+        }
+      },
+      "Nerdbank.GitVersioning": {
+        "type": "Direct",
+        "requested": "[3.9.50, )",
+        "resolved": "3.9.50",
+        "contentHash": "HtOgGF6jZ+WYbXnCUCYPT8Y2d6mIJo9ozjK/FINTRsXdm4Zgv9GehUMa7EFoGQkqrMcDJNOIDwCmENnvXg4UbA=="
+      },
+      "Microsoft.Build.Tasks.Git": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "bZKfSIKJRXLTuSzLudMFte/8CempWjVamNUR5eHJizsy+iuOuO/k2gnh7W0dHJmYY0tBf+gUErfluCv5mySAOQ=="
+      },
+      "Microsoft.Extensions.Primitives": {
+        "type": "Transitive",
+        "resolved": "9.0.0",
+        "contentHash": "N3qEBzmLMYiASUlKxxFIISP4AiwuPTHF5uCh+2CWSwwzAJiIYx0kBJsS30cp1nvhSySFAVi30jecD307jV+8Kg=="
+      },
+      "Microsoft.SourceLink.Common": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
+      },
+      "atap.utilities.etw": {
+        "type": "Project"
+      },
+      "atap.utilities.plugin.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.0, )"
+        }
+      },
+      "atap.utilities.secrets.enumerations": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.secrets.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Plugin.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Secrets.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Secrets.StringConstants": "[0.1.0-Alpha, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.0, )"
+        }
+      },
+      "atap.utilities.secrets.model": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Secrets.Interfaces": "[0.1.0-Alpha, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
+        }
+      },
+      "atap.utilities.secrets.shim.bitwarden": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Secrets.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Secrets.Model": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Secrets.StringConstants": "[0.1.0-Alpha, )",
+          "Microsoft.Extensions.Configuration": "[9.0.0, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.0, )"
+        }
+      },
+      "atap.utilities.secrets.stringconstants": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )"
+        }
+      },
+      "Microsoft.Extensions.Configuration": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.0, )",
+        "resolved": "9.0.0",
+        "contentHash": "YIMO9T3JL8MeEXgVozKt2v79hquo/EFtnY0vgxmLnUvk1Rei/halI7kOWZL2RBeV9FMGzgM9LZA8CVaNwFMaNA==",
+        "dependencies": {
+          "Microsoft.Extensions.Configuration.Abstractions": "9.0.0",
+          "Microsoft.Extensions.Primitives": "9.0.0"
+        }
+      },
+      "Microsoft.Extensions.Configuration.Abstractions": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.0, )",
+        "resolved": "9.0.0",
+        "contentHash": "lqvd7W3FGKUO1+ZoUEMaZ5XDJeWvjpy2/M/ptCGz3tXLD4HWVaSzjufsAsjemasBEg+2SxXVtYVvGt5r2nKDlg==",
+        "dependencies": {
+          "Microsoft.Extensions.Primitives": "9.0.0"
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.0, )",
+        "resolved": "9.0.0",
+        "contentHash": "+6f2qv2a3dLwd5w6JanPIPs47CxRbnk+ZocMJUhv9NxP88VlOcJYZs9jY+MYSjxvady08bUZn6qgiNh7DadGgg=="
+      }
+    },
+    "net9.0/linux-x64": {},
+    "net9.0/win-x64": {}
+  }
+}

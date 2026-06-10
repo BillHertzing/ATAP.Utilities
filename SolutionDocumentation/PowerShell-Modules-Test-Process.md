@@ -1,14 +1,25 @@
 # PowerShell Modules — Test Process
 
-**Scope:** Sprint-0006. How PowerShell modules in the ATAP.Utilities repository
-are tested with Pester 5+, statically analyzed with PSScriptAnalyzer, and
-gated for code coverage as they move through the 5-tier promotion model.
+**Scope:** Sprint-0006/0007. How PowerShell modules in the ATAP.Utilities
+repository are tested with Pester 5+, statically analyzed with
+PSScriptAnalyzer, and gated for code coverage as they move through the
+5-tier promotion model.
 
 **Audience:** Module authors writing Pester tests, anyone debugging why a
 tier promotion failed at the test gate, anyone extending the build-tooling
 test cmdlets.
 
-**Status:** Authoritative for sprint-0006.
+**Status:** Authoritative for sprint-0006/0007.
+
+> **Strategy update (sprint-0007 — Immutable Build).** Tests at every tier
+> run **against the existing promoted `.nupkg`** that was built once at
+> Experimental and is being promoted upward. The test cmdlets
+> (`Invoke-PSModulePesterTests`, `Invoke-PSModulePSScriptAnalyzer`,
+> `Test-CodeCoverageGate`) accept the promoted module's path or feed-name
+> as input; they do **not** re-pack or re-build. Test results are attached
+> to the BuildMaster release record for that exact `(ModuleId, Version)`,
+> not embedded into the `.nupkg` itself. See
+> [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md).
 
 **Not in this doc:**
 - How modules are built / packed / published → see the three sibling
@@ -79,10 +90,11 @@ Conventions:
 - `-OutputPath`         — JUnit XML destination.
 - `-CoverageOutputPath` — JaCoCo XML destination.
 - `-TestPaths`          — optional override; defaults to `$ModuleRoot/tests`.
+- `-PesterOutputVerbosity` — optional Pester console verbosity; defaults to `Normal`.
 
 **Behavior**
 1. **Sprint tier**: skip Pester entirely; return `GatePass = $true` with
-   zero counts. The build still succeeds — fast feedback at T1.
+   zero counts. The build still succeeds — fast feedback at the Experimental tier.
 2. **Alpha+**: confirm Pester 5+ is installed; throw with install hint
    otherwise.
 3. Build a `[PesterConfiguration]` via `New-PSModulePesterConfiguration`
@@ -92,6 +104,8 @@ Conventions:
    - `TestResult.OutputFormat = 'JUnitXml'`, written to `$OutputPath`
    - `CodeCoverage.OutputFormat = 'JaCoCo'`, written to `$CoverageOutputPath`
    - `CodeCoverage.Path` = `public/` and `private/` if they exist
+   - `Output.Verbosity = $PesterOutputVerbosity`; BuildMaster should normally
+     keep the `Normal` default and use `Detailed`/`Diagnostic` only while debugging.
 4. Run `Invoke-Pester -Configuration $cfg`.
 5. Return a structured object including `GatePass = ($FailedCount -eq 0)`.
 
@@ -168,7 +182,7 @@ Describe 'Get-PSModuleVersionFromNBGV' -Tag 'Unit' {
 }
 
 Describe 'Publish-PSModuleToProGetFeed integration' -Tag 'Integration' {
-    It 'publishes to a real ProGet T1 feed' -Tag 'Integration' {
+    It 'publishes to a real ProGet Experimental feed' -Tag 'Integration' {
         # ...
     }
 }
@@ -186,7 +200,7 @@ The same rule that applies in C# (see
 applies here:
 
 - **Unit tests** mock every external dependency: file system writes, network
-  calls, `git`, `nbgv`, `Get-BitWardenSecret`, `Publish-PSResource`. They
+  calls, `git`, `nbgv`, `Get-SecretATAP`, `Publish-PSResource`. They
   must run identically with no network and no Bitwarden vault.
 - **Integration tests** hit the real thing: a real ProGet feed (often a
   developer's local instance), a real `nbgv` invocation against a real
@@ -199,7 +213,7 @@ Describe 'Publish-PSModuleToProGetFeed' -Tag 'Unit' {
     BeforeAll {
         Mock -CommandName 'Publish-PSResource'         -MockWith { } -ModuleName ATAP.Utilities.BuildTooling.PowerShell
         Mock -CommandName 'Register-PSResourceRepository' -MockWith { } -ModuleName ATAP.Utilities.BuildTooling.PowerShell
-        Mock -CommandName 'Get-BitWardenSecret'        -MockWith { 'fake-key' } -ModuleName ATAP.Utilities.BuildTooling.PowerShell
+        Mock -CommandName 'Get-SecretATAP'             -MockWith { 'fake-key' } -ModuleName ATAP.Utilities.BuildTooling.PowerShell
     }
 
     It 'maps Sprint tier to PowershellGet-experimental' {
@@ -209,6 +223,51 @@ Describe 'Publish-PSModuleToProGetFeed' -Tag 'Unit' {
 ```
 
 `-ModuleName` is required to mock cmdlets *inside* the module under test.
+
+### 5.1 DB-backed integration tests against a promoted module
+
+`Invoke-PromotedModuleTests` restores the promoted `.nupkg` and imports it as
+the system-under-test, then delegates the Pester run to
+`Invoke-PSModulePesterTests` (see
+[PowerShell-Modules-Build-Process.md](PowerShell-Modules-Build-Process.md) and
+the M3 task in the V4 plan). The restored module carries the module code
+**only** — it holds no connection string and no knowledge of which database
+tier it is being exercised against. So a DB-backed integration test obtains
+its connection input the same way whether the module under test came from the
+source tree or from a promoted feed:
+
+1. A test never hard-codes a connection string and never reads one out of the
+   restored module.
+2. The connection string lives in a Bitwarden Secure Note whose name follows
+   [SprintInfrastructure-Naming.md §4](SprintInfrastructure-Naming.md#4-bitwarden-connection-string-secret-naming).
+3. The pipeline (or the developer, locally) passes the **secret name** — not
+   the secret value — to the test step in the `ATAPUTILITIES_DB_SECRET_NAME`
+   environment variable. The integration test reads that variable and calls
+   `Get-SecretATAP -SecretName $env:ATAPUTILITIES_DB_SECRET_NAME` (from
+   `ATAP.Utilities.BuildTooling.PowerShell`) to resolve a live connection string
+   at run time.
+4. If `ATAPUTILITIES_DB_SECRET_NAME` is unset, DB-backed integration tests
+   **skip** (`It ... -Skip` with an `# acknowledged:` reason, per §7) rather
+   than fail — the same convention applied to ProGet integration tests that
+   need `localhost:50000` (§12 item 5).
+
+| Tier                     | Bitwarden secret-name form                                    | SQL instance            |
+| ------------------------ | ------------------------------------------------------------- | ----------------------- |
+| Sprint / Experimental    | `dbConnectionString-ATAPUtilities-<Host>-Experimental-<User>` | `<Host>\Exp<username>`  |
+| Alpha (Development)      | `dbConnectionString-ATAPUtilities-<Host>-Development-<User>`  | `<Host>\Dev<username>`  |
+| Beta (Integration)       | `dbConnectionString-ATAPUtilities-utat022-Integration`        | `utat022\Integration`   |
+| QA                       | `dbConnectionString-ATAPUtilities-utat022-QA`                 | `utat022\QA`            |
+| Production               | `dbConnectionString-ATAPUtilities-utat022-Production`         | `utat022\Production`    |
+
+The BuildMaster release plan holds the name in its per-tier variable (for the
+Integration tier this is the existing `IntegrationDatabaseDBConnectionStringSecretName`
+stable variable; see [SprintInfrastructure-Naming.md §6.2](SprintInfrastructure-Naming.md#62-stable-variables-set-once-during-ecosystem-onboarding))
+and exports it into the agent process as `ATAPUTILITIES_DB_SECRET_NAME` for
+the test step. Locally a developer points the same variable at the
+per-sprint, username-suffixed secret created by `New-SprintBitwardenSecrets`.
+The value crossing the process boundary is always a *name*; the credential
+itself is fetched at run time from Bitwarden and never appears in a build
+log, package, or test artifact.
 
 ---
 

@@ -1,4 +1,5 @@
-<#
+<
+#
 .SYNOPSIS
 PowerShell V7 profile template for individual users
 .DESCRIPTION
@@ -49,6 +50,21 @@ $UserPSModulePaths = @(
 # ToDo:  Ensure that the following modules are imported
 # Always Last step - set the environment variables for this user
 . (Join-Path -Path $PSHome -ChildPath 'global_EnvironmentVariables.ps1')
+
+# Service-account exclusions: these env vars resolve to paths under the
+# operator's personal Dropbox (e.g. C:\Dropbox\whertzing\Security\OpenSSL\...).
+# Service accounts have no read access there. If OPENSSL_CONF is left set,
+# tools whose bundled OpenSSL honors it (notably the Bitwarden CLI bw.exe used
+# by Initialize-ServiceAccountBitwardenSession.ps1 / Refresh-BWSession.ps1)
+# fail during TLS init with BIO_new_file Input/output error. Removing these
+# keys from $global:EnvVars before Set-EnvironmentVariablesProcess prevents
+# them being written into the Process env at all.
+foreach ($excluded in @('OPENSSL_CONF', 'OPENSSL_HOME', 'RANDFILE')) {
+  if ($global:EnvVars.ContainsKey($excluded)) {
+    $null = $global:EnvVars.Remove($excluded)
+  }
+}
+
 Set-EnvironmentVariablesProcess # This function should be defined in the AllUsersAllHosts profile
 
 #testing

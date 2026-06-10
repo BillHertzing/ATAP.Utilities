@@ -911,3 +911,101 @@ Architecture implications:
   Secrets family.
 - When both backends are present, `SecretsRouter` should route by workload boundary:
   `bw` for interactive user sessions, `bws` for service-account paths.
+
+---
+
+## Appendix: Shim Implementation Notes
+
+_Migrated from `_Planning/Explainers/0012-Configuration-Secrets-shim-loading.md`. Captures the current `ATAP.Utilities.Configuration.Secrets` implementation, the live consumer wiring in AceCommander, and known stub limitations._
+
+### Package Graph (As Implemented)
+
+```text
+ATAP.Utilities.Configuration          NuGet aggregator
+├── Extensions/                       ATAPStandardConfigurationBuilder + IConfigurationBuilder helpers
+└── Secrets/                          IConfigurationSecrets interface + AddConfigurationSecrets<TShim>()
+                                      ServiceCollectionExtensions.SecretsAdapter (private bridge)
+    └── Shims/                        IConfigurationSecretsShim interface + ConfigurationSecretsShims router
+        └── Bitwarden/ (opt-in)       BitwardenSecretsShim — calls bw CLI
+```
+
+Compile-time dependency direction: `Configuration → Configuration.Extensions`,
+`Configuration → Configuration.Secrets → Configuration.Secrets.Shims`,
+`Configuration.Secrets.Shim.Bitwarden → Configuration.Secrets` (transitively gets `Shims`).
+Shim packages are opt-in; the aggregator does **not** reference any shim.
+
+### Consumer Wiring (AceCommander)
+
+AceCommander's `Program.cs` registers Bitwarden with one of two equivalent calls:
+
+```csharp
+// Option A — generic
+builder.Services.AddConfigurationSecrets<BitwardenSecretsShim>();
+
+// Option B — Bitwarden-native (no generic arg needed)
+builder.Services.AddBitwardenSecrets();
+```
+
+Both register the same three singletons:
+`IConfigurationSecretsShim → BitwardenSecretsShim`,
+`ConfigurationSecretsShims` (router),
+`IConfigurationSecrets → SecretsAdapter`.
+
+Callers inject only `IConfigurationSecrets` — never the shim or router types.
+
+### Why `SecretsAdapter` Lives In `Secrets` (Not `Shims`)
+
+```text
+Secrets  →  Secrets.Shims          ✓  (ProjectReference)
+Shims   →×→ Secrets                ✗  would create a cycle
+```
+
+`ConfigurationSecretsShims` structurally matches `IConfigurationSecrets` but cannot
+formally implement it due to this cycle. `SecretsAdapter` in `Secrets` is the permanent
+workaround until a dedicated `Secrets.Shims.Interfaces` project is introduced.
+
+### Runtime Prerequisite: `BW_SESSION`
+
+`BitwardenSecretsShim` invokes the `bw` Bitwarden CLI. It requires:
+
+1. `bw` on `PATH`.
+2. `BW_SESSION` env var set to a valid vault session key.
+
+`BW_SESSION` is populated automatically at user login by `Initialize-BitwardenSession`
+in `LoginScript.ps1`. If `BW_SESSION` is absent, `BitwardenSecretsShim` throws
+`InvalidOperationException` immediately.
+
+For agent-spawned shells that do not inherit interactive session env vars, read from
+User scope:
+
+```powershell
+[System.Environment]::GetEnvironmentVariable('BW_SESSION', 'User')
+```
+
+### `GetSecretAsync(secretName, fieldName)` Semantics
+
+| `fieldName`              | How retrieved                                                                | Example                            |
+| ------------------------ | ---------------------------------------------------------------------------- | ---------------------------------- |
+| `"password"` _(default)_ | `bw get password <name> --session <BW_SESSION>`                              | login passwords                    |
+| Any other string         | `bw get item <name>` → parse JSON → match `fields[].name` case-insensitively | `"token"`, `"key"`, `"Passphrase"` |
+
+### Error Conditions
+
+| Condition                      | Behaviour                                                  |
+| ------------------------------ | ---------------------------------------------------------- |
+| `BW_SESSION` not set           | `InvalidOperationException` thrown inside `GetSecretAsync` |
+| `bw` not on PATH               | Process start failure propagates from `GetSecretAsync`     |
+| Item name not found            | Returns `null` (exit code non-zero from `bw`)              |
+| Vault locked (session expired) | `bw` exits non-zero; returns `null` — no exception         |
+
+### Known Stub Limitations
+
+- Selection of the active shim is currently compile-time via the generic type argument
+  (`AddConfigurationSecrets<TShim>()`). A future `ConfigurationRootTree`-driven
+  selection (reading e.g. `ConfigurationSecrets:Provider` from `IConfiguration`) is
+  designed but not yet active.
+- The router (`ConfigurationSecretsShims`) supports multiple registered shims but the
+  iteration ordering / first-non-null-wins rule is not yet test-covered for multi-shim
+  scenarios.
+- Vault-locked condition silently returns `null`; consumers must treat `null` as
+  "not found OR vault-locked" until a dedicated lock-state exception is added.

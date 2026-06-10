@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 2,
+  "dbChangeUnit": "ATAPUtilities-db",
+  "appVersion": "1.3.0",
+  "changeKind": "schema",
+  "flywayTargetVersion": "3",
+  "createdUtc": "2026-05-25T00:00:00Z",
+  "createdFromGitTag": "ATAPUtilities/1.3.0",
+  "createdFromGitSha": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+  "files": [
+    {
+      "path": "flyway/V1__init.sql",
+      "kind": "migration",
+      "checksumSha256": "12b452a5aff2b2ccfb58421ef1c53e615f5ca2ca249d26219ccb9e8950e1cf4e",
+      "destructiveChangeKind": "none"
+    },
+    {
+      "path": "flyway/V2__add_philote_table.sql",
+      "kind": "migration",
+      "checksumSha256": "33a69bda51e46f9cf4fd99d4b1f596b3d47d8cb9bc8c6850415f1d84f3beb2f9",
+      "destructiveChangeKind": "none"
+    },
+    {
+      "path": "flyway/V3__add_audit_columns.sql",
+      "kind": "migration",
+      "checksumSha256": "e906b8044dda52b074ec954888f2cad695f251117767430becdeec96ee7815c6",
+      "destructiveChangeKind": "none"
+    },
+    {
+      "path": "flyway/R__refresh_reporting_view.sql",
+      "kind": "repeatable",
+      "checksumSha256": "4a3f1c2d5e6b7a8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
+    }
+  ],
+  "expectedRowCounts": {},
+  "compatibleAppPackageRanges": [">=1.3.0 <2.0.0"],
+  "requiresPreviousProductionSnapshot": false,
+  "rollbackSupported": true,
+  "rollbackNotes": "No destructive changes. Downgrade by removing audit columns manually (additive-only migration).",
+  "evidenceRequirements": {
+    "experimental": {
+      "flywayRehearsalRequired": true,
+      "rowCountValidationRequired": false,
+      "snapshotBackupRequired": false,
+      "approvalRequired": false
+    },
+    "development": {
+      "flywayRehearsalRequired": true,
+      "rowCountValidationRequired": false,
+      "snapshotBackupRequired": false,
+      "approvalRequired": false
+    },
+    "integration": {
+      "flywayRehearsalRequired": true,
+      "rowCountValidationRequired": false,
+      "snapshotBackupRequired": true,
+      "approvalRequired": false
+    },
+    "qa": {
+      "flywayRehearsalRequired": true,
+      "rowCountValidationRequired": false,
+      "snapshotBackupRequired": true,
+      "approvalRequired": true
+    },
+    "stable": {
+      "flywayRehearsalRequired": true,
+      "rowCountValidationRequired": false,
+      "snapshotBackupRequired": true,
+      "approvalRequired": true
+    }
+  }
+}

@@ -32,6 +32,13 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <!-- F01 / BLOCKER-5: enable deterministic restore via NuGet lock files solution-wide.
+       Every restorable project generates packages.lock.json next to its .csproj. Locked-mode
+       enforcement for Integration+ tiers is configured in BuildMaster (F03), not here. -->
+  <PropertyGroup>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+
   <!-- solution-wide properties to include in every project -->
   <PropertyGroup>
     <!-- specify the root directory of the solution, relative to the location where the current project is found -->

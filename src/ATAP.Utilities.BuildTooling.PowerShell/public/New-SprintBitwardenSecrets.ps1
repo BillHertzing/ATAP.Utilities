@@ -45,7 +45,7 @@ function New-SprintBitwardenSecrets {
     $secrets | Format-Table secretName, created, error
   .EXAMPLE
     New-SprintBitwardenSecrets -SprintNumber '0006' -DeveloperUsername 'jsmith' `
-      -HostList @('devbox01', 'localhost') -WhatIf
+      -HostList @('utat022', 'localhost') -WhatIf
   .NOTES
     AI assisted using ./claude/Rules/Powershell.md as guidelines
   .LINK
@@ -75,6 +75,17 @@ function New-SprintBitwardenSecrets {
     $fn = $MyInvocation.MyCommand.Name
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
+
+    # Load helper functions. Fallback for running this file from source without
+    # importing the module; a normal Import-Module already dot-sources the private
+    # helper. Kept inside BEGIN so loading/dot-sourcing this file only DEFINES the
+    # function and never executes anything at load time.
+    if (-not (Get-Command -Name 'Invoke-BitwardenCliWithCleanTlsEnvironment' -ErrorAction SilentlyContinue)) {
+      $bitwardenTlsHelperPath = Join-Path -Path $PSScriptRoot -ChildPath '..\private\Invoke-BitwardenCliWithCleanTlsEnvironment.ps1'
+      if (Test-Path -LiteralPath $bitwardenTlsHelperPath -PathType Leaf) {
+        . $bitwardenTlsHelperPath
+      }
+    }
 
     # Snippet: Check and populate simple parameter - DeveloperUsername
     if ([string]::IsNullOrWhiteSpace($DeveloperUsername)) {
@@ -147,7 +158,9 @@ function New-SprintBitwardenSecrets {
               # Idempotency check: skip if the item already exists
               Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
                 -Message "Checking if Bitwarden item already exists: $secretName" -Tag 'BitwardenCLI'
-              $listOutput = & bw list items --search $secretName --session $env:BW_SESSION 2>&1
+              $listOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+                & bw list items --search $secretName --session $env:BW_SESSION 2>&1
+              }
               $existingItems = $null
               if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($listOutput)) {
                 try { $existingItems = $listOutput | ConvertFrom-Json -ErrorAction SilentlyContinue } catch { }
@@ -182,7 +195,9 @@ function New-SprintBitwardenSecrets {
 
                 $encoded = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($itemJson))
 
-                $createOutput = $encoded | & bw create item --session $env:BW_SESSION 2>&1
+                $createOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+                  $encoded | & bw create item --session $env:BW_SESSION 2>&1
+                }
                 if ($LASTEXITCODE -ne 0) {
                   throw "bw create item failed (exit $LASTEXITCODE): $createOutput"
                 }
@@ -211,7 +226,9 @@ function New-SprintBitwardenSecrets {
     # Sync vault so all clients see the newly created items immediately
     if ($results.Where({ $_.created }).Count -gt 0) {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Running bw sync to propagate new secrets.' -Tag 'BitwardenCLI'
-      $syncOutput = & bw sync --session $env:BW_SESSION 2>&1
+      $syncOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+        & bw sync --session $env:BW_SESSION 2>&1
+      }
       if ($LASTEXITCODE -ne 0) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
           -Message "bw sync failed (exit $LASTEXITCODE): $syncOutput" -Tag 'BitwardenCLI'

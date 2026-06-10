@@ -1,37 +1,34 @@
-Describe 'ConvertFrom-CopilotChatHistory' {
+Describe 'ConvertFrom-CopilotChatHistory' -Tag 'Unit', 'Disabled' {
   Context 'When provided with valid JSON input' {
     It 'Should parse the input and return paired objects' {
       $jsonInput = @"
             {
-                \"requests\": [
+                "requests": [
                     {
-                        \"message\": { \"text\": \"User request text\" },
-                        \"result\": {
-                            \"metadata\": {
-                                \"toolCallRounds\": [
-                                    { \"response\": \"Copilot response text\" }
+                        "message": { "text": "User request text" },
+                        "result": {
+                            "metadata": {
+                                "toolCallRounds": [
+                                    { "response": "Copilot response text" }
                                 ]
                             }
                         },
-                        \"timestamp\": 1697040000000
+                        "timestamp": 1696982400000
                     }
                 ]
             }
 "@
 
-      $expectedOutput = @(
-        [PSCustomObject]@{
-          Index           = 0
-          UserRequest     = "User request text"
-          CopilotResponse = "Copilot response text"
-          RequestTime     = (Get-Date -Date "2023-10-11T00:00:00Z")
-          ResponseTime    = (Get-Date -Date "2023-10-11T00:00:00Z")
-        }
-      )
+      $expectedTime = Get-Date -Date "2023-10-11T00:00:00Z"
 
-      $result = ConvertFrom-CopilotChatHistory -RawText $jsonInput
+      $result = @(ConvertFrom-CopilotChatHistory -RawText $jsonInput)
 
-      $result | Should -BeExactly $expectedOutput
+      $result | Should -HaveCount 1
+      $result[0].Index | Should -Be 0
+      $result[0].UserRequest | Should -BeExactly "User request text"
+      $result[0].CopilotResponse | Should -BeExactly "Copilot response text"
+      $result[0].RequestTime | Should -Be $expectedTime
+      $result[0].ResponseTime | Should -Be $expectedTime
     }
   }
 

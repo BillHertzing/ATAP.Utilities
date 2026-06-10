@@ -1,3 +1,5 @@
+# Load contract: dot-source this file to define New-SprintStage1. No top-level
+# code executes on load — all side effects occur only when the function is called.
 function New-SprintStage1 {
   <#
   .SYNOPSIS
@@ -15,8 +17,11 @@ function New-SprintStage1 {
       5. Applies SharedVSCode context (templateRef, hooksPath, commitTemplate)
          to the _Planning worktree.
       6. Creates a sprint NuGet.config in the SharedVSCode worktree referencing
-         all five ProGet feeds (experimental, development, integration, qa, stable)
-         plus nuget.org.
+          all five ProGet feeds (experimental, development, integration, qa, stable)
+          plus nuget.org.
+      7. Leaves the `_Planning` sprint worktree ready for Step 2 to create the
+         sprint task artifact set: `TASKS.html`, `Tasks.Accomplished.html`,
+         `Tasks.ProceduralDetails.html`, and the synchronized `TASKS.md`.
 
     If any step fails the function captures the error into the appropriate field
     of the return object and stops further processing for that repo while still
@@ -31,6 +36,9 @@ function New-SprintStage1 {
   .PARAMETER JunctionFolderNames
     Folder names to junction from SharedVSCode into _Planning.
     Defaults to @('.claude', '.github', '.vscode').
+  .PARAMETER DryRun
+    Preview all sprint-start actions without creating GitHub issues, branches,
+    worktrees, junctions, SharedVSCode context, or NuGet.config files.
   .OUTPUTS
     PSCustomObject — see the return structure in the code.
   .EXAMPLE
@@ -47,14 +55,16 @@ function New-SprintStage1 {
   param(
     [string]$GitRoot = 'C:\Dropbox\whertzing\GitHub',
 
-    [string]$Owner = 'whertzing',
+    [string]$Owner,
 
     [ValidatePattern('^\d{4}$')]
     [string]$SprintNumber,
 
     [string[]]$JunctionFolderNames = @('.claude', '.github', '.vscode'),
 
-    [string]$ProGetBaseUrl = 'http://localhost:50000'
+    [string]$ProGetBaseUrl = 'http://localhost:50000',
+
+    [switch]$DryRun
   )
 
   begin {
@@ -62,18 +72,43 @@ function New-SprintStage1 {
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
-    # --- Ensure external dependencies are available ---
-    Assert-GitAvailable
+    if ($DryRun) {
+      $WhatIfPreference = $true
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'DryRun enabled — no external side effects will be performed.'
+    }
 
-    if (-not (Get-Command -Name 'gh' -ErrorAction SilentlyContinue)) {
-      throw 'The GitHub CLI (gh) is required but was not found on PATH.'
+    if ([string]::IsNullOrWhiteSpace($Owner)) {
+      $overviewPath = Join-Path $GitRoot 'OverView.code-workspace'
+      if (Test-Path -LiteralPath $overviewPath -PathType Leaf) {
+        try {
+          $workspace = Get-Content -LiteralPath $overviewPath -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+          $Owner = $workspace.githubOwner
+        } catch {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning `
+            -Message "Could not read githubOwner from $overviewPath`: $($_.Exception.Message). Falling back to `$env:USERNAME."
+        }
+      }
+      if ([string]::IsNullOrWhiteSpace($Owner)) {
+        $Owner = $env:USERNAME
+      }
+    }
+
+    # --- Ensure external dependencies are available ---
+    if (-not $DryRun) {
+      Assert-GitAvailable
+
+      if (-not (Get-Command -Name 'gh' -ErrorAction SilentlyContinue)) {
+        throw 'The GitHub CLI (gh) is required but was not found on PATH.'
+      }
     }
 
     # Dot-source Set-WorktreeJunctions if not already loaded
     $setWtJunctionsPath = Join-Path $GitRoot 'ATAP.Utilities' 'src' `
       'ATAP.Utilities.BuildTooling.PowerShell' 'public' 'Set-WorktreeJunctions.ps1'
     if (-not (Get-Command -Name 'Set-WorktreeJunctions' -CommandType Function -ErrorAction SilentlyContinue)) {
-      if (Test-Path $setWtJunctionsPath) {
+      if ($DryRun) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'DryRun: skipping Set-WorktreeJunctions dependency load.'
+      } elseif (Test-Path $setWtJunctionsPath) {
         . $setWtJunctionsPath
       } else {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
@@ -82,15 +117,18 @@ function New-SprintStage1 {
       }
     }
 
-    # Ensure SharedVSCode functions are loaded (Import-SharedVSCodeFunctions)
+    # Dot-source Initialize-DownstreamSprintFromSharedVSCode if not already loaded
     if (-not (Get-Command -Name 'Initialize-DownstreamSprintFromSharedVSCode' -CommandType Function -ErrorAction SilentlyContinue)) {
-      $importPath = Join-Path $GitRoot 'SharedVSCode' 'Powershell' 'Import-SharedVSCodeFunctions.ps1'
-      if (Test-Path $importPath) {
-        . $importPath
+      $initializeDownstreamPath = Join-Path $GitRoot 'ATAP.Utilities' 'src' `
+        'ATAP.Utilities.BuildTooling.PowerShell' 'public' 'Initialize-DownstreamSprintFromSharedVSCode.ps1'
+      if ($DryRun) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'DryRun: skipping Initialize-DownstreamSprintFromSharedVSCode dependency load.'
+      } elseif (Test-Path $initializeDownstreamPath) {
+        . $initializeDownstreamPath
       } else {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
-          -Message "Import-SharedVSCodeFunctions.ps1 not found at $importPath"
-        throw "Import-SharedVSCodeFunctions.ps1 not found at $importPath"
+          -Message "Initialize-DownstreamSprintFromSharedVSCode.ps1 not found at $initializeDownstreamPath"
+        throw "Initialize-DownstreamSprintFromSharedVSCode.ps1 not found at $initializeDownstreamPath"
       }
     }
   }
@@ -100,6 +138,7 @@ function New-SprintStage1 {
     $result = [PSCustomObject]@{
       nextSprintNumber     = $null
       previousSprintNumber = $null
+      dryRun               = $DryRun.IsPresent
       sharedVSCode         = @{
         issueNumber  = $null
         branchName   = $null
@@ -195,6 +234,11 @@ function New-SprintStage1 {
       return $result
     }
 
+    if ($DryRun -and $null -eq $svIssueNum) {
+      $svIssueNum = 'DRYRUN'
+      $result.sharedVSCode.issueNumber = $svIssueNum
+    }
+
     # 2b. Fetch latest main
     try {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
@@ -275,6 +319,11 @@ function New-SprintStage1 {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       $result.planning.error = $errorMessage
       return $result
+    }
+
+    if ($DryRun -and $null -eq $planIssueNum) {
+      $planIssueNum = 'DRYRUN'
+      $result.planning.issueNumber = $planIssueNum
     }
 
     # 3b. Fetch latest main
@@ -391,13 +440,144 @@ function New-SprintStage1 {
 <configuration>
   <packageSources>
     <clear />
-    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
-    <add key="nuget-Sprint$($sprintNum)-experimental" value="$ProGetBaseUrl/nuget/nuget-Sprint$($sprintNum)-experimental/index.json" />
-    <add key="nuget-Sprint$($sprintNum)-development" value="$ProGetBaseUrl/nuget/nuget-Sprint$($sprintNum)-development/index.json" />
-    <add key="nuget-integration" value="$ProGetBaseUrl/nuget/nuget-integration/index.json" />
-    <add key="nuget-qa" value="$ProGetBaseUrl/nuget/nuget-qa/index.json" />
-    <add key="nuget-stable" value="$ProGetBaseUrl/nuget/nuget-stable/index.json" />
+    <!-- ProGet feeds - local dev workstation (5-tier model, sprint branch) -->
+    <!-- ProGet installed on port 50000 (configured in ProGet.config, symlinked from ATAP.IAC) -->
+    <!-- Override port in NuGet.config if ProGet moves to a different port -->
+    <!-- allowInsecureConnections is required because localhost ProGet uses HTTP, not HTTPS -->
+    <!-- ToDo: [Security Concern] make the feeds require HTTPS -->
+    <add key="nuget-experimental"
+      value="$ProGetBaseUrl/nuget/nuget-experimental/v3/index.json"
+      allowInsecureConnections="true" />
+    <add key="nuget-development"
+      value="$ProGetBaseUrl/nuget/nuget-development/v3/index.json"
+      allowInsecureConnections="true" />
+    <add key="nuget-integration"
+      value="$ProGetBaseUrl/nuget/nuget-integration/v3/index.json"
+      allowInsecureConnections="true" />
+    <add key="nuget-qa"
+      value="$ProGetBaseUrl/nuget/nuget-qa/v3/index.json"
+      allowInsecureConnections="true" />
+    <add key="nuget-stable"
+      value="$ProGetBaseUrl/nuget/nuget-stable/v3/index.json"
+      allowInsecureConnections="true" />
+    <!-- nuget.org - primary source for all third-party packages -->
+    <add key="nuget.org"
+      value="https://api.nuget.org/v3/index.json"
+      protocolVersion="3" />
   </packageSources>
+  <packageSourceCredentials>
+    <!-- ToDo: [Security Improvement] original design protected the Proget Feeds with individual keys,
+      current design allows anonymous reads Security Improvement would be to make an API key required for each feed-->
+    <!-- No credentials needed - anonymous read is enabled for all feeds -->
+    <!-- ProGet admin API key is stored in Bitwarden as env var PROGET_ADMIN_API_KEY -->
+    <!-- NuGet CLI usage: dotnet nuget push with -api-key flag using PROGET_ADMIN_API_KEY env var -->
+    <!-- No credentials block needed for anonymous read access on the experimental feed and maybe production -->
+  </packageSourceCredentials>
+
+  <packageRestore>
+    <!-- The <packageRestore> section in nuget.config controls whether NuGet is allowed to restore missing packages -->
+    <!--and those two settings are the defaults.-->
+    <!-- These settings respect NuGet's config hierarchy - a nuget.config at the solution/repo level overrides -->
+    <!-- the machine-level config at %ProgramData%\NuGet\Config. So explicitly setting both to True -->
+    <!-- in the repo-level config ensures restore works consistently even if a CI server's -->
+    <!-- machine-level config has them disabled.-->
+    <!-- Explicitly set defaults so CI machines with a restrictive machine-level config are overridden -->
+    <add key="enabled" value="True" />
+    <add key="automatic" value="True" />
+  </packageRestore>
+
+  <disabledPackageSources>
+    <!-- Promotion feeds - not used for restore, only for publish/promote via BuildMaster -->
+    <!-- Uncomment to enable additional feeds for restore if needed -->
+    <!--
+    <add key="ProGet-Development" value="false" />
+    <add key="ProGet-Testing"     value="false" />
+    <add key="ProGet-Production"  value="false" />
+    -->
+  </disabledPackageSources>
+
+<!-- ==================== Package Source Mapping ====================
+    Required to resolve NuGet warning NU1507.
+    When Central Package Management (CPM) is enabled via Directory.Packages.props
+    (ManagePackageVersionsCentrally=true), NuGet requires that all defined package
+    sources be mapped to package name patterns. Without this, NuGet warns that
+    it cannot deterministically decide which source to use for a given package.
+
+    Rules:
+      - Every active packageSource must have at least one <package pattern="..." /> entry.
+      - The wildcard pattern "*" on nuget.org catches all third-party packages
+        not explicitly mapped to another source.
+      - The "ATAP.*" and AceCommander.* patterns on the ProGet feeds ensures internal packages are
+        resolved exclusively from the local ProGet instance and are never
+        accidentally queried from nuget.org.
+      - Packages that match a pattern on a source will ONLY be resolved from
+        that source - NuGet will not fall back to other sources.
+
+    See: https://aka.ms/nuget-package-source-mapping
+    See: https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu1507
+  -->
+  <packageSourceMapping>
+    <!-- All standard third-party packages come from nuget.org -->
+    <packageSource key="nuget.org">
+      <package pattern="*" />
+    </packageSource>
+    <!-- Internal ATAP packages: on sprint branches, resolve only from nuget-experimental.
+         Higher-tier feeds are listed for restore visibility but ATAP.* packages are only
+         pinned to nuget-experimental here. BuildMaster promotes packages up the tier chain.
+         See SC-INFRA-001 in TASKS.md for the full package migration/promotion design. -->
+    <packageSource key="nuget-experimental">
+      <package pattern="ATAP.*" />
+      <package pattern="AceCommander.*" />
+    </packageSource>
+    <!-- nuget-development through nuget-stable: required entries for NU1507 compliance.
+         All 5 feeds must have a mapping entry when listed as active sources. -->
+    <packageSource key="nuget-development">
+      <package pattern="AceCommander.*" />
+      <package pattern="ATAP.*" />
+    </packageSource>
+    <packageSource key="nuget-integration">
+      <package pattern="AceCommander.*" />
+      <package pattern="ATAP.*" />
+    </packageSource>
+    <packageSource key="nuget-qa">
+      <package pattern="AceCommander.*" />
+      <package pattern="ATAP.*" />
+    </packageSource>
+    <packageSource key="nuget-stable">
+      <package pattern="AceCommander.*" />
+      <package pattern="ATAP.*" />
+    </packageSource>
+  </packageSourceMapping>
+  <auditSources>
+    <clear />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+  </auditSources>
+
+  <!-- ==================== Legacy / Archived Package Sources ====================
+    These feeds were used historically and are retained for reference.
+    They are NOT active - do not remove the enclosing XML comment.
+    To re-enable a feed: move its <add> element into the active <packageSources>
+    block above and add a corresponding <packageSource> entry in <packageSourceMapping>.
+
+    <packageSources>
+      <add key="MyGet ATAP Utilities Feed"
+        value="https://www.myget.org/F/atap-utilities/api/v3/index.json" />
+      <add key="ServiceStack MyGet feed"
+        value="https://www.myget.org/F/servicestack" />
+      <add key="dotnet-public"
+        value="https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-public/nuget/v3/index.json" />
+      <add key="dotnet-tools"
+        value="https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json" />
+      <add key="Telerik Packages"
+        value="https://nuget.telerik.com/nuget" />
+      <add key="Microsoft Visual Studio Offline Packages"
+        value="C:\Program Files (x86)\Microsoft SDKs\NuGetPackages\" />
+      <add key="LocalBaGet"
+        value="http://localhost:50040/v3/index.json"
+        allowInsecureConnections="true" />
+    </packageSources>
+  -->
+
 </configuration>
 "@
 
@@ -414,6 +594,8 @@ function New-SprintStage1 {
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
       -Message "Sprint Stage 1 complete for sprint $sprintNum"
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+      -Message 'Step 2 planning must create or refresh the sprint task artifact set in the _Planning worktree: active board (`TASKS.html` or later `TASKS_V*.html`), `Tasks.Accomplished.html`, `Tasks.ProceduralDetails.html`, and a synchronized `TASKS.md`.'
 
     return $result
   }

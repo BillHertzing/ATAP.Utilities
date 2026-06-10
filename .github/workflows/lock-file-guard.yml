@@ -1,0 +1,70 @@
+# lock-file-guard.yml
+#
+# Purpose: Verify that production-scope packages.lock.json files are up to date
+#          with the current package references. Runs on push and pull_request
+#          to main.
+#
+# Requires a self-hosted Windows runner:
+#   - ProGet feeds are on localhost:50000 (not reachable from github-hosted runners)
+#   - The runner machine must have ProGet running and all ATAP.Utilities packages
+#     present in the appropriate ProGet feed for the branch being built.
+#
+# How it works:
+#   dotnet restore ATAP.Utilities.Production.slnf --locked-mode exits non-zero
+#   when any resolved package version differs from the version pinned in a
+#   production-scope packages.lock.json. This catches:
+#     - New transitive dependencies added without regenerating lock files
+#     - Version bumps in Directory.Packages.props that were not propagated
+#     - Manual edits to packages.lock.json that are inconsistent with .csproj refs
+#
+# To regenerate lock files after a legitimate version change:
+#   dotnet restore ATAP.Utilities.Production.slnf --force-evaluate
+#   git add **/packages.lock.json
+#   git commit -m "chore: regenerate NuGet lock files"
+#
+# Intentionally excluded from this guard:
+#   - samples/** projects. They are demo/scaffold projects and are not included
+#     in ATAP.Utilities.Production.slnf.
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "SolutionDocumentation/**"
+      - "samples/**"
+      - "**.md"
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - "SolutionDocumentation/**"
+      - "samples/**"
+      - "**.md"
+
+name: NuGet Lock-File Guard
+
+jobs:
+  verify-lock-files:
+    name: Verify packages.lock.json files are current
+    runs-on: [self-hosted, Windows] # Requires ProGet on localhost:50000
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Verify production lock files are current (locked-mode restore)
+        # --locked-mode fails if any resolved package version differs from the
+        # pinned version in packages.lock.json.
+        # Use --force-evaluate to regenerate lock files when versions legitimately change.
+        run: |
+          dotnet restore ATAP.Utilities.Production.slnf --locked-mode
+          git diff --exit-code -- '**/packages.lock.json' ':(exclude)samples/**'
+        env:
+          # Suppress interactive prompts; fail fast on any package resolution mismatch
+          DOTNET_NOLOGO: true
+          DOTNET_CLI_TELEMETRY_OPTOUT: true

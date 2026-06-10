@@ -28,9 +28,13 @@ Bootstraps $global:configRootKeys in a fixed four-phase sequence:
                Databases.Tags.ConfigRootKeys.ps1         — Tags DB name key
                RulesManagement.ConfigRootKeys.ps1        — Rules-Management key constants
 
-  Phase 4 — Explicit package repos: dot-sources and calls
-             Add-PackageRepositoriesConfigRootKeys.ps1 so its internal sub-fragment
-             scan runs after all other keys are in place.
+  Phase 4 — Explicit BuildMaster and RulesManagement: dot-sources settings
+             fragments that define Phase 4 automation paths and endpoints.
+
+  Phase 5 — Explicit package repos: dot-sources and calls
+             Add-PackageRepositoriesConfigRootKeys.ps1, the single source of truth
+             for ProGet / NuGet / PowerShellGet feed key constants. No sub-fragment
+             scan is performed.
 
 .PARAMETER Path
 Directory to scan for *.ConfigRootKeys.ps1 fragment files. When omitted, defaults to
@@ -77,19 +81,23 @@ function Set-GlobalConfigRootKeys {
     $mn = 'ATAP.Utilities.ConfigRootKeys.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Entering function $fn"
 
+    # Load Helpers
     try {
+      # ToDo: Remove this when packaging works
       if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
         . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
       }
+      # Add more helper functions here that need to be loaded, before packaging is working
     } catch {
       $errorMessage = "Failed to load Get-ParameterValueFromNeoConfigurationRoot function. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       throw
     }
 
+
     # Snippet: "Check and populate simple parameter as Type"
-    # running Get-PVal on a parameterr called $Path results is the parameter being set to the $env:Path value., not what we want
-    #$Path = Get-PVal -ParameterName 'Path' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Path' -DefaultValue $Path -AsType ([string])
+    # running Get-Pval on a parameterr called $Path results is the parameter being set to the $env:Path value., not what we want
+    #$Path = Get-Pval -ParameterName 'Path' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Path' -DefaultValue $Path -AsType ([string])
 
     # Default Path to the directory containing this script file.
     # $MyInvocation.MyCommand.ScriptBlock.File is reliable regardless of how the
@@ -187,7 +195,21 @@ function Set-GlobalConfigRootKeys {
       #   }
       # }
 
-      # ── Phase 4: Explicit — Add-PackageRepositoriesConfigRootKeys ─────────
+      # ── Phase 4: Explicit — BuildMaster and RulesManagement fragments ─────
+      foreach ($explicitFragmentName in @('BuildMaster.ConfigRootKeys.ps1', 'RulesManagement.ConfigRootKeys.ps1')) {
+        $explicitFragment = Join-Path $Path $explicitFragmentName
+        if (Test-Path -LiteralPath $explicitFragment -PathType Leaf) {
+          if ($PSCmdlet.ShouldProcess($explicitFragment, 'Dot-source ConfigRootKeys fragment')) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Dot-sourcing '$explicitFragment'" -Tag 'ConfigRootKeys'
+            . $explicitFragment
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Loaded '$explicitFragmentName'."
+          }
+        } else {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "No '$explicitFragmentName' found in '$Path'; skipping."
+        }
+      }
+
+      # ── Phase 5: Explicit — Add-PackageRepositoriesConfigRootKeys ─────────
       $pkgRepoScript = Join-Path $Path 'Add-PackageRepositoriesConfigRootKeys.ps1'
       if (Test-Path -LiteralPath $pkgRepoScript -PathType Leaf) {
         if ($PSCmdlet.ShouldProcess($pkgRepoScript, 'Dot-source and invoke Add-PackageRepositoriesConfigRootKeys')) {

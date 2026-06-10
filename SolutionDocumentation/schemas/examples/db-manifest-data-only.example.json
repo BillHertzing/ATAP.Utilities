@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 2,
+  "dbChangeUnit": "ATAPUtilities-db",
+  "appVersion": "1.3.1",
+  "changeKind": "data",
+  "dataKind": "staticReference",
+  "flywayTargetVersion": "3",
+  "createdUtc": "2026-05-26T00:00:00Z",
+  "createdFromGitTag": "ATAPUtilities/1.3.1",
+  "createdFromGitSha": "b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3",
+  "files": [
+    {
+      "path": "seed/lookup_codes__initial.csv",
+      "kind": "seed",
+      "checksumSha256": "22b452a5aff2b2ccfb58421ef1c53e615f5ca2ca249d26219ccb9e8950e1cf5a",
+      "expectedRowCount": 47
+    },
+    {
+      "path": "seed/lookup_codes__loader.sql",
+      "kind": "seedLoader",
+      "checksumSha256": "55a69bda51e46f9cf4fd99d4b1f596b3d47d8cb9bc8c6850415f1d84f3beb3a8"
+    }
+  ],
+  "expectedRowCounts": {
+    "LookupCodes": 47
+  },
+  "compatibleAppPackageRanges": [">=1.3.0 <2.0.0"],
+  "requiresPreviousProductionSnapshot": false,
+  "rollbackSupported": true,
+  "rollbackNotes": "Delete inserted lookup_codes rows by seed batch ID. Loader is idempotent MERGE — re-running is safe.",
+  "evidenceRequirements": {
+    "experimental": {
+      "flywayRehearsalRequired": false,
+      "rowCountValidationRequired": true,
+      "snapshotBackupRequired": false,
+      "approvalRequired": false
+    },
+    "development": {
+      "flywayRehearsalRequired": false,
+      "rowCountValidationRequired": true,
+      "snapshotBackupRequired": false,
+      "approvalRequired": false
+    },
+    "integration": {
+      "flywayRehearsalRequired": false,
+      "rowCountValidationRequired": true,
+      "snapshotBackupRequired": false,
+      "approvalRequired": false
+    },
+    "qa": {
+      "flywayRehearsalRequired": false,
+      "rowCountValidationRequired": true,
+      "snapshotBackupRequired": true,
+      "approvalRequired": true
+    },
+    "stable": {
+      "flywayRehearsalRequired": false,
+      "rowCountValidationRequired": true,
+      "snapshotBackupRequired": true,
+      "approvalRequired": true
+    }
+  }
+}

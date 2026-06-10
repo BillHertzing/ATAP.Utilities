@@ -44,6 +44,16 @@ function Get-IncorrectSymLinksAndJunctions {
     $expectedJunctions = @('.github', '.vscode')
     $expectedSymlinks = @('.gitignore', '.editorconfig', '.markdownlint.yml', '.prettierrc.yml')
     $results = @()
+
+    function Test-IsGitRepository {
+      param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+      )
+
+      $gitPath = Join-Path $Path '.git'
+      return Test-Path -Path $gitPath -PathType Any
+    }
   }
 
   PROCESS {
@@ -56,59 +66,70 @@ function Get-IncorrectSymLinksAndJunctions {
         throw "Base path does not exist: $BasePath"
       }
 
-      Get-ChildItem $BasePath -Directory | ForEach-Object {
+      $candidateFolders = @()
+
+      # If BasePath is already a repository root (including git worktrees with a .git file), validate it directly.
+      if (Test-IsGitRepository -Path $BasePath) {
+        $candidateFolders = @((Get-Item -LiteralPath $BasePath))
+      }
+      else {
+        $candidateFolders = Get-ChildItem -Path $BasePath -Directory | Where-Object { Test-IsGitRepository -Path $_.FullName }
+      }
+
+      $candidateFolders = @($candidateFolders | Where-Object {
+          if ($_.Name -match 'SharedVSCode' -or $_.FullName -match 'SharedVSCode') {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Skipping source repository/worktree: $($_.Name)"
+            return $false
+          }
+          return $true
+        })
+
+      $candidateFolders | ForEach-Object {
         $folder = $_.FullName
         $folderName = $_.Name
         $status = @{ Folder = $folderName; Missing = @(); UnexpectedType = @(); AllPresent = $true }
 
-        # Only process if a .git folder exists
-        $gitPath = Join-Path $folder '.git'
-        if (Test-Path $gitPath) {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Processing Git repository: $folderName"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Processing Git repository: $folderName"
 
-          # Check expected junctions
-          foreach ($name in $expectedJunctions) {
-            $path = Join-Path $folder $name
-            if (Test-Path $path) {
-              $item = Get-Item $path
-              $linkTypeDescription = if ($item.LinkType) { $item.LinkType } elseif ($item.PSIsContainer) { 'Directory' } else { 'File' }
-              if (-not $item.LinkType -or $item.LinkType -ne 'Junction') {
-                $status.UnexpectedType += "$name (Expected: Junction, Actual: $linkTypeDescription)"
-                $status.AllPresent = $false
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Unexpected type in $folderName : $name (Expected: Junction, Actual: $linkTypeDescription)"
-              }
-            }
-            else {
-              $status.Missing += "$name (Expected: Junction)"
+        # Check expected junctions
+        foreach ($name in $expectedJunctions) {
+          $path = Join-Path $folder $name
+          if (Test-Path $path) {
+            $item = Get-Item $path
+            $linkTypeDescription = if ($item.LinkType) { $item.LinkType } elseif ($item.PSIsContainer) { 'Directory' } else { 'File' }
+            if (-not $item.LinkType -or $item.LinkType -ne 'Junction') {
+              $status.UnexpectedType += "$name (Expected: Junction, Actual: $linkTypeDescription)"
               $status.AllPresent = $false
-              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Missing in $folderName : $name (Expected: Junction)"
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Unexpected type in $folderName : $name (Expected: Junction, Actual: $linkTypeDescription)"
             }
           }
+          else {
+            $status.Missing += "$name (Expected: Junction)"
+            $status.AllPresent = $false
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Missing in $folderName : $name (Expected: Junction)"
+          }
+        }
 
-          # Check expected symbolic links
-          foreach ($name in $expectedSymlinks) {
-            $path = Join-Path $folder $name
-            if (Test-Path $path) {
-              $item = Get-Item $path
-              $linkTypeDescription = if ($item.LinkType) { $item.LinkType } elseif ($item.PSIsContainer) { 'Directory' } else { 'File' }
-              if (-not $item.LinkType -or $item.LinkType -ne 'SymbolicLink') {
-                $status.UnexpectedType += "$name (Expected: SymbolicLink, Actual: $linkTypeDescription)"
-                $status.AllPresent = $false
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Unexpected type in $folderName : $name (Expected: SymbolicLink, Actual: $linkTypeDescription)"
-              }
-            }
-            else {
-              $status.Missing += "$name (Expected: SymbolicLink)"
+        # Check expected symbolic links
+        foreach ($name in $expectedSymlinks) {
+          $path = Join-Path $folder $name
+          if (Test-Path $path) {
+            $item = Get-Item $path
+            $linkTypeDescription = if ($item.LinkType) { $item.LinkType } elseif ($item.PSIsContainer) { 'Directory' } else { 'File' }
+            if (-not $item.LinkType -or $item.LinkType -ne 'SymbolicLink') {
+              $status.UnexpectedType += "$name (Expected: SymbolicLink, Actual: $linkTypeDescription)"
               $status.AllPresent = $false
-              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Missing in $folderName : $name (Expected: SymbolicLink)"
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Unexpected type in $folderName : $name (Expected: SymbolicLink, Actual: $linkTypeDescription)"
             }
           }
+          else {
+            $status.Missing += "$name (Expected: SymbolicLink)"
+            $status.AllPresent = $false
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Missing in $folderName : $name (Expected: SymbolicLink)"
+          }
+        }
 
-          $results += $status
-        }
-        else {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Skipping non-Git directory: $folderName"
-        }
+        $results += $status
       }
 
       # Output summary

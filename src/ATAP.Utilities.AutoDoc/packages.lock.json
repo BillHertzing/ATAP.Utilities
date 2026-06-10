@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dependencies": {
+    ".NETStandard,Version=v2.1": {},
+    ".NETStandard,Version=v2.1/linux-x64": {},
+    ".NETStandard,Version=v2.1/win-x64": {},
+    ".NETCoreApp,Version=v5.0": {},
+    ".NETCoreApp,Version=v5.0/linux-x64": {},
+    ".NETCoreApp,Version=v5.0/win-x64": {}
+  }
+}

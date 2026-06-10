@@ -95,8 +95,6 @@ function Set-CoreConfigRootKeys {
           # Context7 settings
           'CONTEXT7_API_KEYConfigRootKey'                                                                = 'CONTEXT7_API_KEY'
           # ProGet Package Repository software settings
-          # ProGetHostConfigRootKey and URI component keys moved to ATAP.IAC ProGet fragment
-          # ToDo: evaluate whether ProGetBaseUri* keys should also move to ATAP.IAC ProGet fragment
           'ProGetBaseUriBuilderConfigRootKey'                                                            = 'ProGetBaseUriBuilder'
           'ProGetBaseUriConfigRootKey'                                                                   = 'ProGetBaseUri'
           'ChocolateyInstallDirConfigRootKey'                                                            = 'ChocolateyInstall'

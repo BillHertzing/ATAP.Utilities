@@ -1,5 +1,5 @@
 
-Function GetProjects-FromSLN {
+Function Get-ProjectsFromSLN {
 
   [CmdletBinding(SupportsShouldProcess = $true)]
   param (

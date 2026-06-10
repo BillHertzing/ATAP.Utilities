@@ -15,6 +15,8 @@ naming adopted during sprint-0006 planning.
 - [Production-and-Tooling-Overview.md](Production-and-Tooling-Overview.md) — index doc
 - [CSharp-Packages-Pack-and-Push.md](CSharp-Packages-Pack-and-Push.md) — feed-topology details
 - [PowerShell-Modules-Pack-and-Publish.md](PowerShell-Modules-Pack-and-Publish.md) — PowerShell feed usage
+- [ProGet-Install-Runbook.md](ProGet-Install-Runbook.md) — permanent ProGet feed topology and connector setup
+- [SecretsPluginArchitecture.md](SecretsPluginArchitecture.md) — Bitwarden secret retrieval architecture
 
 ---
 
@@ -44,10 +46,10 @@ across sprints.
 
 Two instances are created at sprint start and removed at sprint end:
 
-| Instance name   | Tier | Host                              |
-| --------------- | ---- | --------------------------------- |
-| `Dev<username>` | T2   | `localhost` / `$env:COMPUTERNAME` |
-| `Exp<username>` | T1   | `localhost` / `$env:COMPUTERNAME` |
+| Instance name   | Tier         | Host                              |
+| --------------- | ------------ | --------------------------------- |
+| `Dev<username>` | Development  | `localhost` / `$env:COMPUTERNAME` |
+| `Exp<username>` | Experimental | `localhost` / `$env:COMPUTERNAME` |
 
 **Rules:**
 
@@ -56,20 +58,37 @@ Two instances are created at sprint start and removed at sprint end:
 - Both instances exist on the developer workstation; they are not shared.
 - Full SQL instance address: `<hostname>\Dev$env:USERNAME` or `<hostname>\Exp$env:USERNAME`.
 
-**Provisioning cmdlet:** `New-SprintSqlServerInstances` (BuildTooling.PowerShell)
+**Provisioning cmdlet:** [`New-SprintSqlServerInstances`](../src/ATAP.Utilities.BuildTooling.PowerShell/public/New-SprintSqlServerInstances.ps1) (BuildTooling.PowerShell)
 
-**Tear-down cmdlet:** `Remove-SprintSqlServerInstances` (BuildTooling.PowerShell)
+**Tear-down cmdlet:** [`Remove-SprintSqlServerInstances`](../src/ATAP.Utilities.BuildTooling.PowerShell/public/Remove-SprintSqlServerInstances.ps1) (BuildTooling.PowerShell)
 
 ### 2.2 Permanent ecosystem instances
 
-| Instance name | Tier | Host      |
-| ------------- | ---- | --------- |
-| `Integration` | T3   | `utat022` |
-| `QA`          | T4   | `utat022` |
-| `Production`  | T5   | `utat022` |
+| Instance name | Tier        | Host      |
+| ------------- | ----------- | --------- |
+| `Integration` | Integration | `utat022` |
+| `QA`          | QA          | `utat022` |
+| `Production`  | Production  | `utat022` |
 
 These are provisioned once during ecosystem onboarding. Sprint start/end
 never touches them.
+
+### 2.3 Sprint infrastructure health check
+
+`Test-SprintInfrastructureHealth` (BuildTooling.PowerShell) verifies that all
+per-sprint infrastructure components are in the expected state. It confirms:
+
+- Both SQL Server named instances are running and accepting connections.
+- Both databases (`ATAPUtilities`, `AceCommander`) exist and have the current
+  schema version applied.
+- All per-sprint Bitwarden secrets are present and non-empty.
+- ProGet feeds are reachable from the current host.
+
+**Called by:** `SprintEndAgent` (Step 5.1) before tear-down begins. May also be
+run at any point during a sprint to validate workstation readiness.
+
+> **Note:** `Test-SprintInfrastructureHealth.ps1` is a planned cmdlet (TASKS B-T6).
+> This section is a forward reference; update to a hyperlink once the script lands.
 
 ---
 
@@ -80,23 +99,23 @@ family. **No per-sprint feeds.**
 
 ### 3.1 NuGet feeds (C# packages)
 
-| Feed name            | Tier | Hermetic                                       |
-| -------------------- | ---- | ---------------------------------------------- |
-| `nuget-experimental` | T1   | No (has `nuget.org` connector)                 |
-| `nuget-development`  | T2   | No (has `nuget.org` + experimental connectors) |
-| `nuget-integration`  | T3   | ✅ Yes (no public connector)                   |
-| `nuget-qa`           | T4   | ✅ Yes                                         |
-| `nuget-stable`       | T5   | No (has `nuget.org` connector)                 |
+| Feed name            | Tier         | Hermetic                                       |
+| -------------------- | ------------ | ---------------------------------------------- |
+| `nuget-experimental` | Experimental | No (has `nuget.org` connector)                 |
+| `nuget-development`  | Development  | No (has `nuget.org` + experimental connectors) |
+| `nuget-integration`  | Integration  | ✅ Yes (no public connector)                   |
+| `nuget-qa`           | QA           | ✅ Yes                                         |
+| `nuget-stable`       | Production   | No (has `nuget.org` connector)                 |
 
 ### 3.2 PowerShellGet feeds (PowerShell modules)
 
-| Feed name                    | Tier |
-| ---------------------------- | ---- |
-| `powershellget-experimental` | T1   |
-| `powershellget-development`  | T2   |
-| `powershellget-integration`  | T3   |
-| `powershellget-qa`           | T4   |
-| `powershellget-stable`       | T5   |
+| Feed name                    | Tier         |
+| ---------------------------- | ------------ |
+| `powershellget-experimental` | Experimental |
+| `powershellget-development`  | Development  |
+| `powershellget-integration`  | Integration  |
+| `powershellget-qa`           | QA           |
+| `powershellget-stable`       | Production   |
 
 ### 3.3 Connector chain
 
@@ -148,9 +167,9 @@ dbConnectionString-<Database>-<Host>-<Tier>-<DeveloperUSERNAME>
 A sprint start creates 8 secrets per developer:
 2 databases × 2 hosts (`$env:COMPUTERNAME` + `localhost`) × 2 tiers = 8
 
-**Provisioning cmdlet:** `New-SprintBitwardenSecrets`
+**Provisioning cmdlet:** [`New-SprintBitwardenSecrets`](../src/ATAP.Utilities.BuildTooling.PowerShell/public/New-SprintBitwardenSecrets.ps1)
 
-**Tear-down cmdlet:** `Remove-SprintBitwardenSecrets`
+**Tear-down cmdlet:** [`Remove-SprintBitwardenSecrets`](../src/ATAP.Utilities.BuildTooling.PowerShell/public/Remove-SprintBitwardenSecrets.ps1)
 
 ### 4.2 Permanent secrets (Integration, QA, Production tiers)
 
@@ -176,8 +195,8 @@ ecosystem during initial setup. NOT called by SprintStartAgent.
 
 ### 4.3 Retrieval
 
-All secrets are retrieved via `Get-BitwardenSecret -SecretName <name>` from
-`ATAP.Utilities.Security.Powershell`. The cmdlet passes the name unchanged
+All secrets are retrieved via `Get-SecretATAP -SecretName <name>` from
+`ATAP.Utilities.BuildTooling.PowerShell`. The cmdlet passes the name unchanged
 to `Get-Secret` (SecretManagement) — no character filtering occurs, so names
 containing hyphens, machine names, and usernames are handled correctly.
 
@@ -240,28 +259,41 @@ SprintStartAgent / SprintEndAgent PowerShell glob:
 | `IntegrationSqlInstance`                           | `utat022\Integration`                                           |
 | `QASqlInstance`                                    | `utat022\QA`                                                    |
 | `ProductionSqlInstance`                            | `utat022\Production`                                            |
+| `IntegrationDatabaseDBConnectionStringSecretName`           | `dbConnectionString-AceCommander-utat022-Integration`           |
 | `NuGetFeedName_Experimental`                       | `nuget-experimental`                                            |
 | `NuGetFeedUrl_Experimental`                        | `http://localhost:50000/nuget/nuget-experimental/v3/index.json` |
 | `PowerShellGetFeedName_Experimental`               | `powershellget-experimental`                                    |
 | _(and one URL + one name pair per remaining tier)_ |                                                                 |
 
-20 feed name/URL variables + 3 SQL instance variables = 23 stable variables
-per BuildMaster application (`AceCommander`, `ATAP.Utilities`).
+The `IntegrationDatabaseDBConnectionStringSecretName` value follows §4.2 and is the
+ReleaseBundle Integration-stage Flyway rehearsal connection contract. BuildMaster
+passes this name to `Invoke-FlywayRehearsal -DBConnectionStringSecretName`; it does not
+pass `DatabaseHost` / `SqlInstance` for that rehearsal.
 
-**Set cmdlet:** `Set-BuildMasterStableVariables`
+20 feed name/URL variables + 3 SQL instance variables + 1 ReleaseBundle
+Integration DB secret-name variable = 24 stable variables per BuildMaster
+application that runs the ReleaseBundle plan (`AceCommander-ReleaseBundle`,
+`ATAP.Utilities-ReleaseBundle`). Non-ReleaseBundle applications may omit the DB
+secret-name variable.
+
+**Set cmdlet:** `Set-BuildMasterStableVariables` for feed and SQL-instance
+variables; set `IntegrationDatabaseDBConnectionStringSecretName` during ReleaseBundle
+application onboarding until that onboarding automation owns the secret-name
+variable too.
 
 ---
 
 ## 7. Summary Table
 
-| Component               | Naming pattern                                   | Per-sprint? | Cmdlet                                  |
-| ----------------------- | ------------------------------------------------ | ----------- | --------------------------------------- |
-| SQL — sprint            | `Dev<username>` / `Exp<username>`                | ✅          | `New-SprintSqlServerInstances`          |
-| SQL — permanent         | `Integration` / `QA` / `Production` on `utat022` | ❌          | manual / IAC                            |
-| ProGet NuGet feed       | `nuget-<tier>`                                   | ❌          | `New-ProGetFeedSet`                     |
-| ProGet PS feed          | `powershellget-<tier>`                           | ❌          | `New-ProGetFeedSet`                     |
-| Bitwarden — sprint      | `dbConnectionString-<DB>-<Host>-<Tier>-<User>`   | ✅          | `New-SprintBitwardenSecrets`            |
-| Bitwarden — permanent   | `dbConnectionString-<DB>-<Host>-<Tier>`          | ❌          | `New-PermanentBitwardenSecrets`         |
-| Worktree / branch       | `<repo>-wt-<N>-Sprint-<NNNN>-work-items`         | ✅          | `New-SprintStage1` / `New-SprintStage2` |
-| BuildMaster sprint vars | `SprintNumber`, `UserName`, `SprintBranchName`   | ✅          | `Set-BuildMasterSprintVariables`        |
-| BuildMaster stable vars | feed names/URLs, SQL instances                   | ❌          | `Set-BuildMasterStableVariables`        |
+| Component               | Naming pattern                                                          | Per-sprint? | Cmdlet                                                           |
+| ----------------------- | ----------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------- |
+| SQL — sprint            | `Dev<username>` / `Exp<username>`                                       | ✅          | `New-SprintSqlServerInstances` (see §2.1)                        |
+| SQL — permanent         | `Integration` / `QA` / `Production` on `utat022`                       | ❌          | manual / IAC                                                     |
+| SQL — health check      | n/a                                                                     | n/a         | `Test-SprintInfrastructureHealth` _(planned — see §2.3)_         |
+| ProGet NuGet feed       | `nuget-<tier>`                                                          | ❌          | `New-ProGetFeedSet`                                              |
+| ProGet PS feed          | `powershellget-<tier>`                                                  | ❌          | `New-ProGetFeedSet`                                              |
+| Bitwarden — sprint      | `dbConnectionString-<DB>-<Host>-<Tier>-<User>`                          | ✅          | `New-SprintBitwardenSecrets` (see §4.1)                          |
+| Bitwarden — permanent   | `dbConnectionString-<DB>-<Host>-<Tier>`                                 | ❌          | `New-PermanentBitwardenSecrets`                                  |
+| Worktree / branch       | `<repo>-wt-<N>-Sprint-<NNNN>-work-items`                               | ✅          | `New-SprintStage1` / `New-SprintStage2` (function definition files; callers must `Import-Module ATAP.Utilities.BuildTooling.PowerShell -Force` or dot-source before invoking) |
+| BuildMaster sprint vars | `SprintNumber`, `UserName`, `SprintBranchName`                          | ✅          | `Set-BuildMasterSprintVariables`                                 |
+| BuildMaster stable vars | feed names/URLs, SQL instances, ReleaseBundle Integration DB secret name | ❌          | `Set-BuildMasterStableVariables` + ReleaseBundle app onboarding  |

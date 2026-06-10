@@ -1,0 +1,152 @@
+@startuml DB-PromotionPipeline-BuildMaster-ProGet
+' ============================================================
+' Diagram: Database Package Promotion Pipeline
+' Purpose: Shows the BuildMaster pipeline stages that promote
+'          ATAPUtilities.Database from Experimental through
+'          Production, and the ProGet NuGet feeds used at
+'          each stage gate.
+' Author:  Generated for Sprint-0007
+' ============================================================
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 11
+skinparam ArrowColor #444444
+skinparam NoteBackgroundColor #FFFDE7
+skinparam NoteBorderColor #F9A825
+skinparam ActivityBorderColor #888888
+skinparam SequenceBoxBorderColor #888888
+
+title "ATAPUtilities.Database — BuildMaster Promotion Pipeline\n(Experimental → Development → Integration → QA → Production)"
+
+' -------------------------------------------------------
+' Actors / participants
+' -------------------------------------------------------
+actor       "Developer"                   as dev
+participant "Git / NBGV\n(version.json)"  as git
+participant "BuildMaster\nTrigger"        as bmTrigger   #LightBlue
+participant "BM Stage:\nExperimental"     as stageExp    #E3F2FD
+participant "BM Stage:\nDevelopment"      as stageDev    #E8F5E9
+participant "BM Stage:\nIntegration"      as stageInt    #FFF9C4
+participant "BM Stage:\nQA"              as stageQA     #FCE4EC
+participant "BM Stage:\nProduction"       as stageProd   #F3E5F5
+database    "ProGet Feed:\nnuget-experimental"  as pgExp   #E3F2FD
+database    "ProGet Feed:\nnuget-development"   as pgDev   #E8F5E9
+database    "ProGet Feed:\nnuget-integration"   as pgInt   #FFF9C4
+database    "ProGet Feed:\nnuget-qa"            as pgQA    #FCE4EC
+database    "ProGet Feed:\nnuget-production"    as pgProd  #F3E5F5
+collections "SQL Server\n(Experimental DB)"     as dbExp   #E3F2FD
+collections "SQL Server\n(Development DB)"      as dbDev   #E8F5E9
+collections "SQL Server\n(Integration DB)"      as dbInt   #FFF9C4
+collections "SQL Server\n(QA DB)"              as dbQA    #FCE4EC
+collections "SQL Server\n(Production DB)"       as dbProd  #F3E5F5
+
+' -------------------------------------------------------
+' Trigger: developer commits version.json height bump
+' -------------------------------------------------------
+dev       -> git       : git commit (version.json\nor any Database/** change)
+git       -> bmTrigger : Webhook / Git trigger\n(branch: sprint worktree)
+bmTrigger -> stageExp  : Start Experimental stage
+
+' -------------------------------------------------------
+' Stage 1: Experimental
+' -------------------------------------------------------
+note over stageExp
+  **Experimental Stage**
+  Pre-release suffix: -Sprint.{height}
+  Runs on: developer workstation or CI agent
+end note
+
+stageExp -> stageExp   : 1. Resolve-FeedName\n   (Tier=Experimental, FeedType=nuget)
+stageExp -> stageExp   : 2. New-DatabaseChangePackage\n   (pack + NBGV version resolution)
+stageExp -> pgExp      : 3. Push ATAPUtilities.Database\n   <version>-Sprint.N.nupkg
+stageExp -> stageExp   : 4. Invoke-Flyway.ps1\n   (target: Experimental DB\n    baseline or migrate)
+stageExp -> dbExp      : 5. Flyway migrate\n   (V*.sql + R*.sql + *.csv seed data)
+stageExp -> stageExp   : 6. Run smoke tests\n   (Pester: DbManifestSchema.Tests.ps1)
+stageExp --> stageDev  : Gate: smoke tests pass\n→ promote to Development
+
+' -------------------------------------------------------
+' Stage 2: Development
+' -------------------------------------------------------
+note over stageDev
+  **Development Stage**
+  Package still carries pre-release suffix.
+  Promoted from Experimental feed.
+end note
+
+stageDev -> pgExp      : 1. Download package from\n   nuget-experimental
+stageDev -> pgDev      : 2. Move-ProGetPackage\n   → nuget-development
+stageDev -> stageExp   : 3. Invoke-Flyway.ps1\n   (target: Development DB)
+stageDev -> dbDev      : 4. Flyway migrate\n   (idempotent; V* checksums validated)
+stageDev -> stageDev   : 5. Run unit tests\n   (Pester full test suite)
+stageDev --> stageInt  : Gate: all tests pass\n→ promote to Integration
+
+' -------------------------------------------------------
+' Stage 3: Integration
+' -------------------------------------------------------
+note over stageInt
+  **Integration Stage**
+  Integration DB is seeded from Production backup
+  at sprint start (see Export-ProductionDatabaseForSprintInit).
+  Tests run against integrated multi-service schema.
+end note
+
+stageInt -> pgDev      : 1. Download package from\n   nuget-development
+stageInt -> pgInt      : 2. Move-ProGetPackage\n   → nuget-integration
+stageInt -> dbInt      : 3. Flyway migrate\n   (target: Integration DB)
+stageInt -> stageInt   : 4. Run integration tests\n   (end-to-end, multi-service)
+stageInt --> stageQA   : Gate: integration tests pass\n+ human review (optional)\n→ promote to QA
+
+' -------------------------------------------------------
+' Stage 4: QA
+' -------------------------------------------------------
+note over stageQA
+  **QA Stage**
+  QA DB is seeded from Production backup.
+  HermeticFeed active: only nuget-qa visible.
+  Requires manual QA sign-off gate.
+end note
+
+stageQA -> pgInt       : 1. Download package from\n   nuget-integration
+stageQA -> pgQA        : 2. Move-ProGetPackage\n   → nuget-qa
+stageQA -> dbQA        : 3. Flyway migrate\n   (target: QA DB)
+stageQA -> stageQA     : 4. Automated QA regression suite
+stageQA -> stageQA     : 5. **Manual QA gate**\n   (human sign-off required)
+stageQA --> stageProd  : Gate: QA approved\n→ promote to Production
+
+' -------------------------------------------------------
+' Stage 5: Production
+' -------------------------------------------------------
+note over stageProd
+  **Production Stage**
+  Pre-release suffix stripped (stable SemVer).
+  Applied to Production DB during maintenance window.
+  Package version pinned; no further changes.
+end note
+
+stageProd -> pgQA      : 1. Download package from\n   nuget-qa
+stageProd -> pgProd    : 2. Move-ProGetPackage\n   → nuget-production\n   (strip pre-release suffix\n    if not already stable)
+stageProd -> stageProd : 3. Maintenance window opens
+stageProd -> dbProd    : 4. Flyway migrate\n   (target: Production DB\n    — cleanDisabled=true enforced)
+stageProd -> stageProd : 5. Post-deploy smoke test
+stageProd -> git       : 6. Tag git commit\n   v<Major>.<Minor>.<Patch>
+stageProd -> dev       : 7. Notify: deployment complete
+
+' -------------------------------------------------------
+' Notes
+' -------------------------------------------------------
+note over pgExp, pgDev
+  Packages in Experimental and Development
+  feeds carry the **pre-release** SemVer suffix
+  (e.g., 0.1.250-Sprint.42).
+  Only Production feed holds stable packages.
+end note
+
+note over stageInt, stageQA
+  Both Integration and QA DBs are restored from
+  the **Production backup** created by
+  Export-ProductionDatabaseForSprintInit.ps1
+  at the start of each sprint.
+end note
+
+@enduml

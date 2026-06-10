@@ -228,5 +228,3 @@ function Sync-BitWardenDedicatedSecrets {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function completed'
   }
 }
-
-Set-Alias -Name Sync-DedicatedSecrets -Value Sync-BitWardenDedicatedSecrets

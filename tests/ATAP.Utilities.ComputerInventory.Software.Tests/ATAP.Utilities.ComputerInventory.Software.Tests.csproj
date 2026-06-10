@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IsPackable>false</IsPackable>
+    <!-- Assembly, File, and Package Information for this assembly-->
+    <!-- Build and revision are created based on date-->
+    <MajorVersion>0</MajorVersion>
+    <MinorVersion>1</MinorVersion>
+    <PatchVersion>0</PatchVersion>
+  </PropertyGroup>
+
+  <!-- Packages to add xUnit Testing providers and extensions -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.console">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- Packages to add xUnit Testing dotnet tool -->
+  <ItemGroup>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory\Software\Enumerations\ATAP.Utilities.ComputerInventory.Software.Enumerations.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory\Software\Interfaces\ATAP.Utilities.ComputerInventory.Software.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory\Software\Models\ATAP.Utilities.ComputerInventory.Software.Models.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="SerializationStrings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SerializationStrings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <Compile Update="SerializationStrings.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SerializationStrings.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+
+</Project>

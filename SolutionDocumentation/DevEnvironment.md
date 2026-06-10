@@ -121,7 +121,7 @@ Set-PSReadLineOption -HistorySavePath $null
 Then handle `PSReadLine.OnCommandExecuted` yourself and skip commands that match patterns such as:
 
 - `bw unlock`
-- `Get-BitWardenSecret`
+- `Get-SecretATAP`
 - commands that contain `token`, `secret`, or `password`
 - commands that assign secret-bearing environment variables
 
@@ -299,3 +299,93 @@ $Host.Name
 $PROFILE | Format-List *
 (Get-PSReadLineOption).HistorySavePath
 ```
+
+---
+
+## Appendix: Launch Configuration Strategies
+
+_Migrated from `_Planning/Explainers/MultiTFMConfigurationTaskandLaunchOptions.md`. Captures the five launch.json design options considered for AceCommander multi-TFM × multi-build-configuration scenarios. **The project's chosen approach is Option B (`${input:}` pickers).**_
+
+**Context.** AceCommander (`AceCommander.Server`, `AceCommander.Client`) has three base
+VS Code launch configurations (`Launch-Server`, `Launch-Server-With-Debugging`,
+`Launch-Server-With-Browser-Debug`). Each needs to span:
+
+| Axis                | Values                                 |
+| ------------------- | -------------------------------------- |
+| TFM                 | `net8.0`, `net9.0`, `net10.0`          |
+| Build Configuration | `Debug`, `Release`, `ReleaseWithTrace` |
+
+That is 9 variants per base config — 27 launch combinations total. The options below were
+evaluated against this matrix.
+
+### Option A — Explicit Combinatorial Entries (27 configs)
+
+Name each config explicitly, e.g., `AceCommander-Launch-Server [Debug/net10.0]`.
+
+- **Pros:** Fully discoverable in the Run & Debug dropdown; no prompts; works with Compounds.
+- **Cons:** 27 entries — very noisy; high maintenance burden; tedious to add a new TFM.
+
+### Option B — VS Code Input Variables (`${input:}`) — **CHOSEN**
+
+Define an `inputs` array in `launch.json` with `pickString` for each axis. Reference
+them in the `program` path and (critically) in the `preLaunchTask` name.
+
+```jsonc
+"program": "${workspaceFolder}/AceCommander.Server/bin/${input:buildConfig}/${input:tfm}/AceCommander.dll",
+"inputs": [
+  { "id": "tfm",         "type": "pickString",
+    "description": "Target Framework Moniker",
+    "options": ["net10.0", "net9.0", "net8.0"], "default": "net10.0" },
+  { "id": "buildConfig", "type": "pickString",
+    "description": "Build Configuration",
+    "options": ["Debug", "Release", "ReleaseWithTrace"], "default": "Debug" }
+]
+```
+
+**Key constraint:** The `preLaunchTask` must also be parameterized to forward the
+chosen values to `dotnet build` as `/p:Configuration=...` and `/p:TargetFramework=...`
+MSBuild arguments.
+
+- **Pros:** Only 3 launch configs; trivial to add new TFMs / configs; self-documenting.
+- **Cons:** Two picker prompts on every F5; no "remember last choice"; the
+  parameterized `preLaunchTask` is the non-trivial implementation work.
+
+### Option C — Environment Variables (`${env:ACE_TFM}`, `${env:ACE_CONFIG}`)
+
+Set two env vars in the shell before launching; reference them in `launch.json`.
+
+- **Pros:** Zero changes to `launch.json` per combination; scriptable / CI-friendly.
+- **Cons:** Must set vars before each VS Code session — easy to forget; env vars are
+  process-scoped (must be set BEFORE VS Code starts); not discoverable in UI.
+
+### Option D — `.env` File + `envFile` Property
+
+Point `launch.json` at a `.env` file via `"envFile": "${workspaceFolder}/.vscode/ace.env"`.
+Keep multiple `.env` files (per combination) and copy the desired one to `ace.env`.
+
+- **Pros:** No prompts at launch; `.env` can be gitignored for per-dev overrides;
+  works well when active combination changes infrequently.
+- **Cons:** Two-step workflow (edit file, then launch); not discoverable.
+
+### Option E — Pre-launch Task Variants
+
+Keep 3 launch configs but define 9 build tasks (one per TFM/config combination).
+Switching combinations means changing the `preLaunchTask` name inside the launch config.
+
+- **Pros:** Launch configs stay small; build and launch cleanly separated.
+- **Cons:** Task list grows to 9+ entries; `preLaunchTask` must be edited manually
+  in JSON to switch.
+
+### Recommendation Summary
+
+| Best for…                                               | Choose                      |
+| ------------------------------------------------------- | --------------------------- |
+| Frequent switching between combos with minimal friction | **B (Input Variables)**     |
+| Stable single active combo that rarely changes          | **D (.env file)**           |
+| Scripted / CI workflows                                 | **C (Env vars)**            |
+| Maximum discoverability, no tooling changes             | **A (Explicit 27 configs)** |
+
+**Option B is the project's chosen direction for interactive development.** The main
+implementation work is parameterizing the pre-launch build task so it receives
+`${input:buildConfig}` and `${input:tfm}` and forwards them to `dotnet build` as MSBuild
+properties.

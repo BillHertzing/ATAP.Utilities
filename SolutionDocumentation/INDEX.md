@@ -12,22 +12,22 @@ that **describes how the target application — Ace Commander — will work**
   Architecture, Secrets Plugin Architecture, Developer Musings (SecSub design),
   architecture-overview, and the various `.drawio` diagrams.
 
-> **Stub / placeholder files:** `GettingStarted.md` and `ContributingGuidelines.md`
-> are single-line stubs. `ReadMe.md` is only partially populated; most of its
-> subsections (Overview, Publishing, Debugging, Packaging, Using, Disaster
-> Preparedness) still contain TBD/ToDo placeholders. `toc.yml` is a minimal
-> 12-line DocFX stub that lists only six of the 40+ Markdown files in this folder
-> and is badly out of date.
+> **Stub / placeholder files:** `ContributingGuidelines.md` is a single-line
+> stub. `ReadMe.md` is only partially populated; most of its subsections
+> (Overview, Publishing, Debugging, Packaging, Using, Disaster Preparedness)
+> still contain TBD/ToDo placeholders. `toc.yml` is a minimal 12-line DocFX
+> stub that lists only six documents and is badly out of date.
 
 > **Known inconsistencies across documents**
 >
 > - **Tier-label vocabulary conflict — RESOLVED.** `Versioning.md` (stale 4-tier
 >   labels) has been deleted; its non-obsolete content was merged into
->   [BuildMaster-ProGet-CSharp-Package-Pipeline](BuildMaster-ProGet-CSharp-Package-Pipeline.md),
->   which is now the single source of truth for the 5-tier label/feed mapping.
+>   [BuildMaster Pipeline Topology](BuildMaster-Pipeline-Topology.md),
+>   which is the single source of truth for all pipeline, feed, and tier-label
+>   definitions as of Sprint 0007.
 > - **"Module Catalog New Material.md"** was mis-titled (Perplexity.ai WSL2 content,
->   not catalog additions) and has been renamed to
->   **`AI on WSL2 Ansible Docker and Bitwarden.md`**.
+>   not catalog additions). The file now lives under
+>   **`ReviewedAndArchived/AI on WSL2 Ansible Docker and Bitwarden.md`**.
 
 ---
 
@@ -46,8 +46,15 @@ _Teach / Tell how to create software._
   including `Initialize-ProGetSqlServiceLogin`, `Initialize-SqlServiceLogin`,
   ProGet.config symlinking, EncryptionKey retrieval from Bitwarden, API-key
   registration; and a build of the `aaronontheweb/mssql-mcp` MCP server.
-- [Getting Started](GettingStarted.md) — **Stub (1 line).** Intended as the first
-  read for new contributors; content still to be written.
+- [New Computer Setup Using Ansible](NewComputerSetupUsingAnsible.md) —
+  Alternate draft of workstation and build-host bootstrap guidance.
+- [Sprint-Boundary Retargeting](Sprint-Boundary-Retargeting.md) — V4-H03 source of
+  truth for the `Set-SprintBoundaryContext` orchestrator: which concern (machine
+  links, SharedVSCode settings, downstream contexts) retargets at sprint start/end
+  via which worker, and why PowerShell profiles and ConfigRootKeys are
+  stable-by-design no-ops.
+- [WSL2 Setup](WSL2Setup.md) — WSL2 provisioning notes for development and
+  automation workflows.
 - [ReadMe](ReadMe.md) — Repository overview, prerequisites, and pointers to the
   Building, Publishing, Packaging, and Disaster Preparedness sections. **Many
   sections are still TBD/ToDo placeholders** rather than prose.
@@ -99,6 +106,16 @@ _Teach / Tell how to create software — per-developer tooling and shell setup._
   `$env:BW_SESSION` and other interactively set variables are visible inside
   VS Code but not in detached agent shells.
   (Philote `f0da7925-1a2d-454d-bf95-f8ae8d0f3e12`.)
+- [ConfigRootKeys and Host Settings](ConfigRootKeys-and-HostSettings.md) —
+  How the PowerShell two-tier global-settings pattern works:
+  `$global:configRootKeys` (the host-invariant vocabulary of settings-key name
+  constants, built by the `ATAP.Utilities.ConfigRootKeys.PowerShell` module via
+  `Set-GlobalConfigRootKeys`) and `$global:settings` (the host/user-specific
+  values, built by `Get-HostSettings` from the ATAP.IAC `HostSettings.ps1`).
+  Covers the three-level value chain, the profile bootstrap order, the canonical
+  `$global:settings[$global:configRootKeys[...]]` access expression, defensive
+  loading in non-interactive agent shells, and the checklist for adding a new
+  setting.
 
 ---
 
@@ -132,6 +149,19 @@ _Teach / Tell how to create software (with two "describe" entries noted)._
   (Encrypted Master Passwords), SMVs (Secret Management Vaults), DECs (Data
   Encryption Certificates), the `SMEVInfo` custom type, and the AUMPs.txt
   mapping file.
+- [Service Accounts and Bitwarden](ServiceAccountsAndBitwarden.md) —
+  Sprint-0007 design and implementation guide for service accounts used by
+  BuildMaster, ProGet, and other automation processes to access Bitwarden
+  secrets. Covers `SvcBuildmaster` and `SvcProGet` service account setup,
+  Bitwarden API key provisioning, and the `Get-SecretATAP` integration pattern
+  for non-interactive service contexts.
+- [Bitwarden Secrets Manager Access Token Runbook](Runbook-BitwardenServiceAccounts.md) —
+  Operational checklist for service-account and interactive-user BWS project/key
+  inventory, `bws` installation validation, ACL-protected DPAPI access-token
+  provisioning, runtime validation, rotation, and troubleshooting.
+- [Service Accounts and Bitwarden — Alternatives Considered](ServiceAccountsAndBitwarden.-AlternativesConsidered.md) —
+  Design alternatives and trade-off analysis for service account Bitwarden
+  access patterns evaluated in Sprint 0007.
 
 ---
 
@@ -146,29 +176,147 @@ _Teach / Tell how to create software._
   .NetCore editions, Release / Debug), `NuGetLocalFeedPath`,
   `PublishAfterBuild`, Authenticode signing, imgbot, and PowerShell module
   packaging (Plaster / Catesta / Psake / Invoke-Build).
-- [BuildMaster/ProGet C# Package Pipeline](BuildMaster-ProGet-CSharp-Package-Pipeline.md)
-  — Comprehensive 5-stage OtterScript plan (`CSharpPackage-5Stage.otter`)
-  targeting 171 projects. Covers the five feeds `nuget-experimental /
-nuget-development / nuget-integration / nuget-qa / nuget-stable`, NBGV
-  (`version.json`) with labels `Sprint / Alpha / Beta / QA / (empty)`, the
-  BuildMaster Application `ATAP.Utilities-CSharp`, the shared per-package
-  application with `$ProjectPath` override, the meta-package
-  `ATAP.Utilities.csproj`, Repository Monitors, and `PROGET_ADMIN_API_KEY`
-  retrieval via `$Decrypt($ProGetApiKey)`.
+- **[HISTORICAL — file removed]** `BuildMaster-ProGet-CSharp-Package-Pipeline.md`
+  — Superseded by [BuildMaster Pipeline Topology](BuildMaster-Pipeline-Topology.md).
+  Covered the 5-stage OtterScript plan, five `nuget-*` feeds, NBGV labels, and
+  `PROGET_ADMIN_API_KEY` retrieval. Content merged into the Topology doc in Sprint 0007.
 - [MSBuild Binary Logging](MSBuild%20Binary%20Logging.md) — **8-line note.** Use
   of the `-bl` switch and the MSBuildStructuredLog viewer for diagnosing
   build issues.
-- [Plan — Fix `dotnet build` (Central Package Management)](plan-fixDotnetBuild.prompt.md)
-  — Full migration plan from 80+ legacy `<PackageReference Update>` elements
-  in `Directory.Build.targets` (lines 145–304) to a new
-  `Directory.Packages.props` with `<PackageVersion>` entries and
-  `ManagePackageVersionsCentrally`. Includes handling of framework-conditional
-  versions (`System.Text.Json`, `System.Collections.Immutable`,
-  `Newtonsoft.Json`, `McMaster.NETCore.Plugins`) and a complete 85-package
-  inventory grouped by role (security patches, core libraries, ServiceStack,
-  time, Microsoft.Extensions.\*, DI, resilience, file I/O, AOP, messaging,
-  mapping, build tools, Source Link, Serilog, process management, units of
-  measure, xUnit suite, and legacy).
+- [C# Central Package Management](CSharp-Central-Package-Management.md) —
+  Central package-management conventions and migration guidance for C# projects.
+- [C# Packages — Build Process](CSharp-Packages-Build-Process.md) —
+  Step-by-step C# package build flow.
+- [C# Packages — Test Process](CSharp-Packages-Test-Process.md) —
+  C# package testing process and expected test artifacts.
+- [C# Packages — Pack and Push](CSharp-Packages-Pack-and-Push.md) —
+  Packaging and publishing flow for C# packages.
+- [C# Packages — Versioning](CSharp-Packages-Versioning.md) —
+  Versioning policy for C# packages across sprint and release promotion.
+- [PowerShell Modules — Build Process](PowerShell-Modules-Build-Process.md) —
+  Build flow for repository PowerShell modules.
+- [PowerShell Modules — Test Process](PowerShell-Modules-Test-Process.md) —
+  Test flow for PowerShell modules and associated test artifacts.
+- [PowerShell Modules — Pack and Publish](PowerShell-Modules-Pack-and-Publish.md) —
+  Packaging and publishing flow for PowerShell modules.
+- [PowerShell Modules — Versioning](PowerShell-Modules-Versioning.md) —
+  Versioning strategy for PowerShell modules.
+- [BuildMaster Pipeline Topology](BuildMaster-Pipeline-Topology.md) —
+  Current BuildMaster topology and trigger strategy (including polling-based
+  feed checks). Covers all four durable pipelines (C#, PowerShell, Release Bundle,
+  Database), the ProGet feed family per pipeline, the full PowerShell automation
+  surface, and the ProGet-polling integration.
+  **[DEPRECATED cmdlets]** `Set-BuildMasterSprintVariables` and
+  `Set-BuildMasterStableVariables` are deprecated as of Sprint 0007 and will be
+  removed in Sprint 0008. Use `Set-BuildMasterApplicationVariables` instead.
+- [Generated Diagram Pipeline](Generated-Diagram-Pipeline.md) —
+  Runbook for rendering editable PlantUML, UML, and Draw.io sources into
+  checked-in `_generated/diagrams` images with `Convert-DiagramsToImages`.
+  Also records the PlantUML MCP relationship for interactive clients.
+- [BuildMaster Install Runbook](BuildMaster-Install-Runbook.md) —
+  Comprehensive installation, verification, and ongoing-configuration guide for
+  the BuildMaster server. Covers application setup, raft strategy, application
+  variables, ProGet API keys, and per-component smoke checklists. Updated in
+  V4-G01 and V4-E09 for database pipeline applications
+  (`ATAPUtilitiesDatabase`, `AceCommanderDatabase`).
+- [BuildMaster Run-State Runbook](BuildMaster-Run-State-Runbook.md) —
+  Operational guide for the build-id scoped `_generated/buildmaster/<BuildMasterBuildId>/`
+  inter-stage state channel.
+- [PowerShell-Module Pipeline -NoProfile Runbook](PowerShellModule-Pipeline-NoProfile-Runbook.md) —
+  V4-B02 audit + policy of record: every settings lookup in the PowerShell-module
+  plan/runner resolves under `-NoProfile` via explicit parameter, env var, or
+  null-guarded default; the runner never calls `Resolve-ProGetFeedFromSettings` so it
+  needs no `Set-NoProfileProGetFeedSettings` bootstrap. Pinned by
+  `Plans/tests/PowerShellModule-5Stage.Tests.ps1`.
+- [Release Bundle Pipeline](Release-Bundle-Pipeline.md) —
+  Multi-stage release bundle execution model.
+- [ReleaseBundle vs Database Package Architecture](ReleaseBundle-vs-DatabasePackage-Architecture.md) —
+  Sprint-0007 decision record: database change packages promote through the
+  `database-*` feed family independently of the Release Bundle; the Release
+  Bundle consumes compatible database packages at deploy time. Authored V4-F01.
+- [Release Branch and Manifest](Release-Branch-and-Manifest.md) —
+  Rules for release branch creation and manifest generation.
+- [Database Change Unit and Flyway Promotion](Database-Change-Unit-and-Flyway-Promotion.md)
+  — Database change-unit lifecycle and promotion mechanics.
+- [Database Package Artifact and Feed Decision](Database-Package-Artifact-And-Feed-Decision.md)
+  — Sprint-0007 sprint-owner decision record: database change units ship as
+  NuGet content packages through the five-feed `database-*` family
+  (`database-experimental` / `-development` / `-integration` / `-qa` /
+  `-stable`); package-id convention `<App>.Database`; version labels match
+  the existing `Sprint` / `Alpha` / `Beta` / `QA` / _(stable)_ pattern;
+  Universal Packages considered and rejected for pipeline consistency.
+- [Database Package Ceiling File](Database-Package-Ceiling-File.md)
+  — Defines `database-package-ceiling.json`, the source-controlled
+  consumer-side ceiling file that caps the highest `database-*` feed a sprint,
+  feature, integration, QA, release, or hotfix lane may consume.
+- [Database Package Consumer Resolution](Database-Package-Consumer-Resolution.md)
+  — How a consumer selects the correct `database-*` feed for an environment
+  tier, respects `database-package-ceiling.json`, narrows by
+  `compatibleAppPackageRanges`, and resolves a specific package version via
+  `Install-Package` or `dotnet restore`. DBA2-T05 / V4-E11.
+- [Database Package Compatibility](Database-Package-Compatibility.md)
+  — How `compatibleAppPackageRanges` in the database package manifest
+  constrains compatible application versions, how release bundles record
+  the expected pairing, and how `Test-DatabasePackageCompatibility`
+  validates it at promotion/deploy time. DBA2-T06 / V4-E12.
+- [Database MultiDB Future Requirements](Database-MultiDB-Future-Requirements.md)
+  — Forward-looking notes for multi-database scope deferred from
+  Sprint 0007: AceCommander per-user database evolution, multi-stream
+  databases, tenant-fanout migration orchestration, and tenant-level
+  ceiling/rollback work. DBA2-T08 / V4-E16.
+
+### Database/Documentation (implementation deep-reference)
+
+- [`Database/Documentation/ReadMe.md`](../Database/Documentation/ReadMe.md)
+  — Purpose and scope of the in-repo `Database/Documentation/` folder;
+  links to the cross-cutting `SolutionDocumentation/` documents
+  rather than restating them. DBA2-T09 / V4-E17.
+- [`Database/Documentation/Index.md`](../Database/Documentation/Index.md)
+  — In-folder inventory plus deep-link pointers into the
+  `SolutionDocumentation/` documents the database pipeline depends on.
+  Includes settings-key and Bitwarden secret-name conventions used by
+  the database cmdlets. DBA2-T09 / V4-E17.
+
+### DatabaseManagement.PowerShell/Documentation (per-cmdlet deep-reference)
+
+- [`src/ATAP.Utilities.DatabaseManagement.Powershell/Documentation/ReadMe.md`](../src/ATAP.Utilities.DatabaseManagement.Powershell/Documentation/ReadMe.md)
+  — Purpose and scope of the module's `Documentation/` sub-folder,
+  summary of required env vars and Bitwarden secret-name patterns.
+  Module root `ReadMe.md` and `INDEX.md` remain DBA1-owned. DBA2-T10 / V4-E18.
+- [`src/ATAP.Utilities.DatabaseManagement.Powershell/Documentation/INDEX.md`](../src/ATAP.Utilities.DatabaseManagement.Powershell/Documentation/INDEX.md)
+  — Per-cmdlet deep references (description, required env vars,
+  Bitwarden secret names, example invocation) for the database-pipeline
+  cmdlets in the module. Placeholder rows are included for
+  `New-DatabasePreMigrationSnapshot`, `Restore-DatabaseFromSnapshot`,
+  and `Test-DatabaseRollbackReadiness` until DBA1 lands them.
+  DBA2-T10 / V4-E18.
+  — Defines the `compatibleAppPackageRanges` field, NuGet range notation, release
+  bundle pairing, the DB-C-01 deployment-block rule, and the
+  `Test-DatabasePackageCompatibility` cmdlet. DBA2-T06 / V4-E12.
+- [Legacy DatabaseBuildAndMigrateTasks Support Boundary](../src/ATAP.Utilities.DatabaseManagement.Powershell/Documentation/Legacy-DatabaseBuildAndMigrateTasks-Support-Boundary.md)
+  — Closes the support-boundary story for the legacy Redgate / Phil Factor
+  `DatabaseBuildAndMigrateTasks.ps1` task-script bundle. Lists every legacy
+  capability as supported (covered by current cmdlets), deferred (named
+  replacement planned, priority P1-P4), or retired (will not be rebuilt),
+  and documents the reactivation procedure.
+- [Sprint Infrastructure Naming](SprintInfrastructure-Naming.md) —
+  Naming conventions for sprint-scoped infrastructure resources.
+- [Production and Tooling Overview](Production-and-Tooling-Overview.md) —
+  Cross-cut overview of production-facing flows and supporting tooling.
+- [Immutable Build Strategy](Immutable-Build-Strategy.md) —
+  Primary strategy document for immutable build and promotion flows.
+- [version.json as Promotion Ceiling](VersionJsonAsCeiling.md) —
+  Explains `CurrentTier` versus `CeilingTier` and the stage-skip guard.
+- [Critical Analysis of Immutable Build Strategy](CriticalAnalysisOfImmutableBuildStrategy.md)
+  — Risk and trade-off analysis of the immutable strategy.
+- [PowerShell Script Consolidation](PowerShell-Script-Consolidation.md) —
+  Consolidation plan for overlapping automation scripts.
+- [Worktree Source-of-Truth Inventory](Worktree-Source-of-Truth-Inventory.md) —
+  Worktree ownership and source-of-truth inventory for sprint workflows.
+- [Sprint-0006 5-Tier Retrospective](Sprint-0006-5Tier-Retrospective.md) —
+  Lessons learned and follow-up actions from sprint 0006.
+- [Long Developing Features](Long-Developing-Features.md) —
+  Tracking document for long-running feature efforts.
 - [CS0246 Errors — Type Not Found](CS0246-Errors-TypeNotFound.md) — Catalog of
   compile errors on branch `65-migrate-central-package-management` (dated
   2026-03-03), grouped by missing type: `DiFixture` (16), `ISerializerOptions`
@@ -266,6 +414,10 @@ values and renders deterministic output text.
   Primitives for VS Code snippet JSON/JSONC: prefix / body / description
   properties, placeholder substitution, tab stops, and language-neutral
   metadata. (~1,147 lines.)
+- [Rules Compendium — OtterScript](Rules%20Compendium.OtterScript.md) —
+  Rule primitives and conventions for BuildMaster OtterScript automation.
+- [Rules Compendium Template](Rules-Compendium-Template.md) —
+  Template for creating new language-specific Rules Compendium documents.
 
 ---
 
@@ -298,7 +450,7 @@ _Describes how Ace Commander will work (not how to build software in general)._
   (CI/CD headless unlock, VS Code BW_SESSION inheritance, WSL2, Docker) and
   WSL2 runtime environment (install, drive mounting, networking, Ansible,
   Docker). (1,175 lines.)
-- [AI on WSL2 Ansible Docker and Bitwarden](AI%20on%20WSL2%20Ansible%20Docker%20and%20Bitwarden.md) —
+- [AI on WSL2 Ansible Docker and Bitwarden](ReviewedAndArchived/AI%20on%20WSL2%20Ansible%20Docker%20and%20Bitwarden.md) —
   Perplexity.ai Q&A transcript (7 exchanges). Covers: WSL2 install and
   `/mnt/{c,d,e}` DrvFs auto-mount; Windows↔WSL2 bidirectional networking;
   Ansible install and PowerShell-driven playbook generation on Windows;
@@ -334,6 +486,8 @@ _Describes how Ace Commander will work (not how to build software in general)._
   topology diagram.
 - [architecture-overview (diagram)](architecture-overview.drawio) — Visual
   companion to the architecture-overview document.
+- [SW Production Diagrams](SWProductionDiagrams.drawio) —
+  Supplemental software-production diagram set.
 
 ---
 
@@ -343,14 +497,9 @@ _These documents are AI-generated point-in-time snapshots retained as historical
 artifacts. They are superseded by the living documents listed above and should
 not be used as references for the current codebase._
 
-- [AI Generated Summary](AI%20Generated%20Summary.md) —
-
-  > **Snapshot 2025-05-16 — superseded; current stack is C# 14 / .NET 10.**
-
-  ChatGPT-authored survey of the ATAP.Utilities repository as of mid-2025.
-  Reports C# 11 / .NET 8 targets and a dependency diagram generated from the
-  then-current `Directory.Build.props`. Superseded by
-  [Architecture Overview](architecture-overview.md) and
-  [Module Catalog](Module%20Catalog.md). Physical move to
-  `ReviewedAndArchived/` is deferred; a stale banner has been prepended to the
-  file. (~reported as ~.NET 8 era.)
+- [AI Conversations](AI%20Conversations.md) —
+  Curated notes and summaries from AI-assisted repository work sessions.
+- [Reviewed and Archived AI Notes](ReviewedAndArchived/) —
+  Archived AI-generated materials retained for historical context, including
+  [AI on WSL2 Ansible Docker and Bitwarden](ReviewedAndArchived/AI%20on%20WSL2%20Ansible%20Docker%20and%20Bitwarden.md)
+  and other prior assistant artifacts.

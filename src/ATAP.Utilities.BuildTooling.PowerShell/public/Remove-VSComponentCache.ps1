@@ -1,5 +1,5 @@
 #############################################################################
-#region Remove_VSComponentCache
+#region Remove-VSComponentCache
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -28,7 +28,7 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function Remove_VSComponentCache {
+Function Remove-VSComponentCache {
   [CmdletBinding(SupportsShouldProcess = $true)]
   #region FunctionParameters
   param (

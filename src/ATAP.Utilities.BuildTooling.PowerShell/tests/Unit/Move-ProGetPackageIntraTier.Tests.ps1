@@ -13,8 +13,27 @@ BeforeAll {
         function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
     }
 
-    # Stub REST calls globally.
-    function global:Invoke-RestMethod { param([Parameter(ValueFromRemainingArguments = $true)]$rest) return @{} }
+    # Stub REST calls globally and optionally capture calls for payload assertions.
+    function global:Invoke-RestMethod {
+        param(
+            [string]$Uri,
+            [object]$Headers,
+            [string]$Method,
+            [object]$Body,
+            [string]$ContentType,
+            [Parameter(ValueFromRemainingArguments = $true)]$rest
+        )
+        if ($null -ne $global:MoveProGetIntraTierRestCalls) {
+            $global:MoveProGetIntraTierRestCalls.Add([PSCustomObject]@{
+                Uri         = $Uri
+                Headers     = $Headers
+                Method      = $Method
+                Body        = $Body
+                ContentType = $ContentType
+            }) | Out-Null
+        }
+        return @{}
+    }
 
     # Stub Get-PVal.
     function global:Get-PVal {
@@ -29,7 +48,17 @@ BeforeAll {
     $script:apiKey  = 'test-api-key'
 }
 
+AfterAll {
+    Remove-Item -Path 'Function:\Invoke-RestMethod' -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path 'Function:\Get-PVal' -Force -ErrorAction SilentlyContinue
+    Remove-Variable -Name MoveProGetIntraTierRestCalls -Scope Global -Force -ErrorAction SilentlyContinue
+}
+
 Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
+  BeforeEach {
+    Mock Write-PSFMessage { }
+    $global:MoveProGetIntraTierRestCalls = [System.Collections.Generic.List[object]]::new()
+  }
 
   Context 'Phase 2: valid push -> pull moves' {
 
@@ -39,14 +68,14 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
       @{ Source = 'nuget-integration-push'; Dest = 'nuget-integration' }
       @{ Source = 'nuget-qa-push'; Dest = 'nuget-qa' }
       @{ Source = 'nuget-stable-push'; Dest = 'nuget-stable' }
-      @{ Source = 'powershell-integration-push'; Dest = 'powershell-integration' }
+      @{ Source = 'powershellget-integration-push'; Dest = 'powershellget-integration' }
     )
 
     It "Phase 2: '<Source>' -> '<Dest>' succeeds" -TestCases $cases {
       param($Source, $Dest)
       $result = Move-ProGetPackageIntraTier `
-        -PackageName 'Test.Package' -Version '1.0.0' `
-        -SourceFeed $Source -DestinationFeed $Dest `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed $Source -ToFeed $Dest `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       $result.Promoted | Should -BeTrue
       $result.ScanPassed | Should -BeTrue
@@ -59,8 +88,8 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
 
     It 'Returns Promoted=$false, ScanPassed=$true with -ScanOnly' {
       $result = Move-ProGetPackageIntraTier `
-        -PackageName 'Test.Package' -Version '1.0.0' `
-        -SourceFeed 'nuget-experimental' -DestinationFeed 'nuget-experimental' `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed 'nuget-experimental' -ToFeed 'nuget-experimental' `
         -ScanOnly `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       $result.Promoted | Should -BeFalse
@@ -70,8 +99,8 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
 
     It 'Returns Promoted=$false, ScanPassed=$true when source=dest (Phase 1 same-feed)' {
       $result = Move-ProGetPackageIntraTier `
-        -PackageName 'Test.Package' -Version '1.0.0' `
-        -SourceFeed 'nuget-experimental' -DestinationFeed 'nuget-experimental' `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed 'nuget-experimental' -ToFeed 'nuget-experimental' `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       $result.Promoted | Should -BeFalse
       $result.Reason | Should -Be 'Same feed (Phase 1)'
@@ -83,16 +112,16 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
     It 'Accepts source=nuget-testing-push and dest=nuget-testing (normalized to qa)' {
       # Both normalize to qa, same tier, push->pull: valid
       $result = Move-ProGetPackageIntraTier `
-        -PackageName 'Test.Package' -Version '1.0.0' `
-        -SourceFeed 'nuget-testing-push' -DestinationFeed 'nuget-testing' `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed 'nuget-testing-push' -ToFeed 'nuget-testing' `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       $result.Promoted | Should -BeTrue
     }
 
     It 'Accepts source=nuget-production-push and dest=nuget-production (normalized to stable)' {
       $result = Move-ProGetPackageIntraTier `
-        -PackageName 'Test.Package' -Version '1.0.0' `
-        -SourceFeed 'nuget-production-push' -DestinationFeed 'nuget-production' `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed 'nuget-production-push' -ToFeed 'nuget-production' `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       $result.Promoted | Should -BeTrue
     }
@@ -102,8 +131,8 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
 
     It 'Throws when source and destination belong to different tiers' {
       { Move-ProGetPackageIntraTier `
-          -PackageName 'Test.Package' -Version '1.0.0' `
-          -SourceFeed 'nuget-experimental-push' -DestinationFeed 'nuget-development' `
+          -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'nuget-experimental-push' -ToFeed 'nuget-development' `
           -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       } | Should -Throw -ExpectedMessage '*same tier*'
     }
@@ -113,8 +142,8 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
 
     It 'Throws when source is a pull feed in Phase 2 mode' {
       { Move-ProGetPackageIntraTier `
-          -PackageName 'Test.Package' -Version '1.0.0' `
-          -SourceFeed 'nuget-development' -DestinationFeed 'nuget-development' `
+          -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'nuget-development' -ToFeed 'nuget-qa' `
           -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       } | Should -Throw -ExpectedMessage '*push feed*'
     }
@@ -124,8 +153,8 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
 
     It 'Throws when destination is a push feed in Phase 2 mode' {
       { Move-ProGetPackageIntraTier `
-          -PackageName 'Test.Package' -Version '1.0.0' `
-          -SourceFeed 'nuget-development-push' -DestinationFeed 'nuget-development-push' `
+          -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'nuget-development-push' -ToFeed 'nuget-qa-push' `
           -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       } | Should -Throw -ExpectedMessage '*pull feed*'
     }
@@ -133,10 +162,10 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
 
   Context 'Phase 2 validation: package type prefix must match' {
 
-    It 'Throws when source is nuget and destination is powershell' {
+    It 'Throws when source is nuget and destination is powershellget' {
       { Move-ProGetPackageIntraTier `
-          -PackageName 'Test.Package' -Version '1.0.0' `
-          -SourceFeed 'nuget-development-push' -DestinationFeed 'powershell-development' `
+          -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'nuget-development-push' -ToFeed 'powershellget-development' `
           -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       } | Should -Throw -ExpectedMessage '*package type*'
     }
@@ -146,8 +175,8 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
 
     It 'Throws on an unknown tier in SourceFeed' {
       { Move-ProGetPackageIntraTier `
-          -PackageName 'Test.Package' -Version '1.0.0' `
-          -SourceFeed 'nuget-staging-push' -DestinationFeed 'nuget-staging' `
+          -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'nuget-staging-push' -ToFeed 'nuget-staging' `
           -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       } | Should -Throw -ExpectedMessage '*tiers must be one of*'
     }
@@ -157,14 +186,50 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
 
     It 'Returns PSCustomObject with expected properties' {
       $result = Move-ProGetPackageIntraTier `
-        -PackageName 'Test.Package' -Version '2.0.0' `
-        -SourceFeed 'nuget-integration-push' -DestinationFeed 'nuget-integration' `
+        -Name 'Test.Package' -Version '2.0.0' `
+        -FromFeed 'nuget-integration-push' -ToFeed 'nuget-integration' `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
       $result.PSObject.Properties.Name | Should -Contain 'ScanPassed'
       $result.PSObject.Properties.Name | Should -Contain 'Promoted'
       $result.PSObject.Properties.Name | Should -Contain 'Reason'
       $result.PackageName | Should -Be 'Test.Package'
       $result.Version | Should -Be '2.0.0'
+    }
+  }
+
+  Context 'Legacy parameter-name aliases (C2.3 backward compatibility)' {
+
+    It 'Accepts -PackageName / -SourceFeed / -DestinationFeed / -Comments aliases' {
+      $result = Move-ProGetPackageIntraTier `
+        -PackageName 'Test.Package' -Version '1.0.0' `
+        -SourceFeed 'nuget-integration-push' -DestinationFeed 'nuget-integration' `
+        -Comments 'legacy alias call' `
+        -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
+      $result.Promoted | Should -BeTrue
+      $result.ScanPassed | Should -BeTrue
+    }
+  }
+
+  Context 'Promotion API payload' {
+    It 'Sends the current ProGet promote JSON contract' {
+      Move-ProGetPackageIntraTier `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed 'powershellget-integration-push' -ToFeed 'powershellget-integration' `
+        -Reason 'unit intra-tier promotion' `
+        -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey | Out-Null
+
+      $postCall = @($global:MoveProGetIntraTierRestCalls | Where-Object { $_.Method -eq 'POST' })[0]
+      $postCall | Should -Not -BeNullOrEmpty
+
+      $payload = $postCall.Body | ConvertFrom-Json
+      $propertyNames = @($payload.PSObject.Properties.Name)
+      $propertyNames | Should -Contain 'name'
+      $propertyNames | Should -Not -Contain 'packageName'
+      $payload.name | Should -Be 'Test.Package'
+      $payload.version | Should -Be '1.0.0'
+      $payload.fromFeed | Should -Be 'powershellget-integration-push'
+      $payload.toFeed | Should -Be 'powershellget-integration'
+      $payload.comments | Should -Be 'unit intra-tier promotion'
     }
   }
 }

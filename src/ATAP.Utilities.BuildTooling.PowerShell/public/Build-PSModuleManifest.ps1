@@ -7,8 +7,9 @@
   Copies $SourceManifestPath to $OutputManifestPath (creating the parent directory if
   needed), builds a splatted hashtable of Update-ModuleManifest parameters honoring
   only the non-empty list params and $Prerelease when non-empty, invokes
-  Update-ModuleManifest, and validates the result via Test-ModuleManifest. Throws
-  clearly if validation fails.
+  Update-ModuleManifest, clears any source prerelease when $Prerelease is empty,
+  and validates the result via Test-ModuleManifest. Throws clearly if validation
+  fails.
 .PARAMETER SourceManifestPath
   The absolute path to the source .psd1 manifest that should be used as the template.
 .PARAMETER OutputManifestPath
@@ -16,8 +17,8 @@
 .PARAMETER ModuleVersion
   The three-part System.Version to stamp into the manifest.
 .PARAMETER Prerelease
-  Optional prerelease suffix (e.g. 'Alpha6'). When empty, -Prerelease is not passed
-  to Update-ModuleManifest.
+  Optional prerelease suffix (e.g. 'Alpha6'). When empty, the generated manifest
+  is made stable by removing any copied PrivateData.PSData.Prerelease assignment.
 .PARAMETER PublicFunctions
   Names of functions to export (FunctionsToExport). Only passed when non-empty.
 .PARAMETER Aliases
@@ -114,7 +115,9 @@ function Build-PSModuleManifest {
       $params = @{
         Path          = $OutputManifestPath
         ModuleVersion = $ModuleVersion
-        Prerelease    = $Prerelease   # always stamp: empty string clears a pre-existing value; non-empty sets NBGV-derived label
+      }
+      if (-not [string]::IsNullOrWhiteSpace($Prerelease)) {
+        $params['Prerelease'] = $Prerelease
       }
       if ($PublicFunctions -and $PublicFunctions.Count -gt 0) {
         $params['FunctionsToExport'] = $PublicFunctions
@@ -135,6 +138,15 @@ function Build-PSModuleManifest {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling Update-ModuleManifest on '$OutputManifestPath' with $($params.Keys.Count) parameter(s)"
       Update-ModuleManifest @params
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from Update-ModuleManifest for '$OutputManifestPath'"
+
+      if ([string]::IsNullOrWhiteSpace($Prerelease)) {
+        $manifestLines = Get-Content -LiteralPath $OutputManifestPath
+        $filteredManifestLines = @($manifestLines | Where-Object { $_ -notmatch '^\s*Prerelease\s*=' })
+        if ($filteredManifestLines.Count -ne $manifestLines.Count) {
+          Set-Content -LiteralPath $OutputManifestPath -Value $filteredManifestLines -Encoding UTF8
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Removed copied Prerelease assignment from stable manifest '$OutputManifestPath'"
+        }
+      }
 
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Validating manifest via Test-ModuleManifest '$OutputManifestPath'"
       $validationError = $null

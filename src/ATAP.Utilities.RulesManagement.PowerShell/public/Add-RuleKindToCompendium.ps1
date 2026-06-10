@@ -78,7 +78,9 @@ function Add-RuleKindToCompendium {
                 if ($lines[$i].Trim() -eq $marker) { $markerLine = $i; break }
             }
             if ($markerLine -lt 0) {
-                throw "Required marker '$marker' not found in $CompendiumPath. Add it at the end of the last Kind entry."
+                $markerLine = $lines.Count
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning `
+                    -Message "Marker '$marker' not found in $CompendiumPath. Appending the Kind section at end of file."
             }
 
             # Check that the Kind does not already exist
@@ -105,11 +107,11 @@ function Add-RuleKindToCompendium {
             if ($KindDefinition.Primitives -and $KindDefinition.Primitives.Count -gt 0) {
                 [void]$sb.AppendLine('### Primitives')
                 [void]$sb.AppendLine('')
-                [void]$sb.AppendLine('| Primitive | BNF Symbol | DataType | Terminal |')
-                [void]$sb.AppendLine('|---|---|---|---|')
+                [void]$sb.AppendLine('| Primitive | BNF Symbol | DataType | Terminal | PhiloteId |')
+                [void]$sb.AppendLine('|---|---|---|---|---|')
                 foreach ($prim in ($KindDefinition.Primitives | Sort-Object PrimitiveName)) {
                     $terminal = if ($prim.IsTerminal) { '✓' } else { '' }
-                    [void]$sb.AppendLine("| $($prim.PrimitiveName) | \`$($prim.BNFSymbol)\` | $($prim.DataType) | $terminal |")
+                    [void]$sb.AppendLine("| $($prim.PrimitiveName) | \`$($prim.BNFSymbol)\` | $($prim.DataType) | $terminal | $($prim.PhiloteId) |")
                 }
                 [void]$sb.AppendLine('')
             }

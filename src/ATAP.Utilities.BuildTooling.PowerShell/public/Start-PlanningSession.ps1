@@ -18,7 +18,9 @@
       7. Open VS Code with the worktree as the workspace root
       8. Print Claude upload instructions and the suggested opening prompt
 
-    The planning branch is the ONLY approved way to modify TASKS.md.
+    The planning branch is the ONLY approved way to modify TASKS.md and the
+    sprint task HTML set (`TASKS.html`, `Tasks.Accomplished.html`,
+    `Tasks.ProceduralDetails.html`).
     Complete-PlanningSession commits, pushes, opens a PR, squash-merges,
     and removes the worktree — targeting < 1 hour total elapsed time.
 
@@ -407,6 +409,16 @@ _Do not edit this issue manually._
       $null = $sb.AppendLine()
       $null = $sb.AppendLine('---')
       $null = $sb.AppendLine()
+      $null = $sb.AppendLine('## Sprint Task Artifact Set')
+      $null = $sb.AppendLine()
+      $null = $sb.AppendLine('- Active board: `TASKS.html`, or the highest `TASKS_V*.html` if any versioned boards exist.')
+      $null = $sb.AppendLine('- Work log: `Tasks.Accomplished.html` (starts empty; append concrete work/evidence as tasks progress).')
+      $null = $sb.AppendLine('- Carry-forward procedure log: `Tasks.ProceduralDetails.html` (seed with reusable procedure notes carried from the prior sprint).')
+      $null = $sb.AppendLine('- If the board is rebaselined mid-sprint, copy the current board to the next `TASKS_Vx.html`; the highest version becomes active.')
+      $null = $sb.AppendLine('- Keep `TASKS.md` synchronized with the active HTML board until downstream automation stops reading `TASKS.md`.')
+      $null = $sb.AppendLine()
+      $null = $sb.AppendLine('---')
+      $null = $sb.AppendLine()
       $null = $sb.AppendLine('## Tags Taxonomy Review')
       $null = $sb.AppendLine()
       $null = $sb.AppendLine('_(Optional — review Tags-Taxonomy.md during this session if new tags were proposed)_')
@@ -452,6 +464,15 @@ _Do not edit this issue manually._
         if (Test-Path $wtInbox) { $filesToOpen += $wtInbox }
         $wtTasks = Join-Path $worktreePath 'TASKS.md'
         if (Test-Path $wtTasks) { $filesToOpen += $wtTasks }
+        $wtTaskBoard = Join-Path $worktreePath 'TASKS.html'
+        if (Test-Path $wtTaskBoard) { $filesToOpen += $wtTaskBoard }
+        $versionedBoards = @(Get-ChildItem -LiteralPath $worktreePath -Filter 'TASKS_V*.html' -File -ErrorAction SilentlyContinue |
+            Sort-Object Name -Descending)
+        if ($versionedBoards.Count -gt 0) { $filesToOpen += $versionedBoards[0].FullName }
+        foreach ($artifactLeaf in @('Tasks.Accomplished.html', 'Tasks.ProceduralDetails.html')) {
+          $artifactPath = Join-Path $worktreePath $artifactLeaf
+          if (Test-Path $artifactPath) { $filesToOpen += $artifactPath }
+        }
         if ($PlanFile) {
           $wtPlan = Join-Path $worktreePath (Split-Path $PlanFile -Leaf)
           if (Test-Path $wtPlan) { $filesToOpen += $wtPlan }
@@ -475,14 +496,15 @@ _Do not edit this issue manually._
 
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'NEXT STEPS'
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Working branch: $branchName  |  Worktree: $worktreePath$(if ($issueNumber -gt 0) { "  |  Issue: #$issueNumber (closed by PR merge)" })"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'ALL edits during this session go in the worktree, not in main. TASKS.md in the worktree is the approved place to record task changes.'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'ALL edits during this session go in the worktree, not in main. Use the sprint task artifact set there: active board (`TASKS.html` or highest `TASKS_V*.html`), `Tasks.Accomplished.html`, and `Tasks.ProceduralDetails.html`.'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Keep `TASKS.md` synchronized with the active HTML board until downstream automation stops reading `TASKS.md`.'
 
       $claudeFiles = "1. $sessionFileName"
       if ($PlanFile) { $claudeFiles += " | 2. $(Split-Path $PlanFile -Leaf)" }
-      $claudeFiles += ' | 3. AceCommander-Project-State.md | 4. TASKS.md | 5. ScopeCreep-Adopted.md (duplicate detection)'
+      $claudeFiles += ' | 3. TASKS.md | 4. active task board (`TASKS.html` or latest `TASKS_V*.html`) | 5. Tasks.Accomplished.html | 6. Tasks.ProceduralDetails.html | 7. ScopeCreep-Adopted.md (duplicate detection)'
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Upload to Claude project: $claudeFiles"
 
-      $claudePrompt = '"Here is today''s scope-creep triage session. For each idea: 1. Recommend Adopt, Defer, or Reject with a brief rationale. 2. For Adopted ideas: InsertAt, ImpactWeeks, milestone shifts, NewProjectEnd, and TASKS.md entries. 3. Check ScopeCreep-Adopted.md for near-duplicates before adopting. 4. Produce a completed session document. 5. Produce the updated TASKS.md sections for any adopted ideas."'
+      $claudePrompt = '"Here is today''s scope-creep triage session. For each idea: 1. Recommend Adopt, Defer, or Reject with a brief rationale. 2. For Adopted ideas: InsertAt, ImpactWeeks, milestone shifts, NewProjectEnd, TASKS.md entries, and any required updates to the active sprint task board plus its Accomplished/ProceduralDetails companions. 3. Check ScopeCreep-Adopted.md for near-duplicates before adopting. 4. Produce a completed session document. 5. Produce the updated TASKS.md and task-board sections for any adopted ideas."'
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Suggested Claude opening prompt: $claudePrompt"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "When done, run: Complete-PlanningSession -SessionFile '$sessionFileName'"
     }

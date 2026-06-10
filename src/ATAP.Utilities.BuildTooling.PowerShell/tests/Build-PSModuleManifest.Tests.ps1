@@ -25,19 +25,28 @@ Describe 'Build-PSModuleManifest' {
     }
 
     function New-ValidSourceManifest {
-      param([string]$Root, [string]$Name = 'TempManifestModule')
+      param(
+        [string]$Root,
+        [string]$Name = 'TempManifestModule',
+        [string]$Prerelease = ''
+      )
       $srcDir = Join-Path $Root 'src'
       New-Item -ItemType Directory -Path $srcDir -Force | Out-Null
       $manifestPath = Join-Path $srcDir "$Name.psd1"
       # Use a script-module-less manifest (no RootModule) so the generated manifest
       # can be validated in an output directory that does not contain the .psm1 file.
-      New-ModuleManifest `
-        -Path $manifestPath `
-        -ModuleVersion '0.0.1' `
-        -Author 'test' `
-        -CompanyName 'test' `
-        -Description 'test fixture manifest' `
-        -FunctionsToExport @('Invoke-TempNoop')
+      $manifestParameters = @{
+        Path              = $manifestPath
+        ModuleVersion     = '0.0.1'
+        Author            = 'test'
+        CompanyName       = 'test'
+        Description       = 'test fixture manifest'
+        FunctionsToExport = @('Invoke-TempNoop')
+      }
+      if (-not [string]::IsNullOrWhiteSpace($Prerelease)) {
+        $manifestParameters['Prerelease'] = $Prerelease
+      }
+      New-ModuleManifest @manifestParameters
       return $manifestPath
     }
   }
@@ -68,6 +77,24 @@ Describe 'Build-PSModuleManifest' {
 
       $validated = Test-ModuleManifest -Path $script:Output -ErrorAction Stop
       $validated.Version | Should -Be ([version]'1.2.3')
+    }
+
+    It 'clears a copied source prerelease when the generated version is stable' {
+      $sourceWithPrerelease = New-ValidSourceManifest -Root $script:Root -Prerelease 'Alpha002'
+
+      $fileInfo = Build-PSModuleManifest `
+        -SourceManifestPath $sourceWithPrerelease `
+        -OutputManifestPath $script:Output `
+        -ModuleVersion ([version]'1.2.3') `
+        -Prerelease '' `
+        -PublicFunctions @('Invoke-TempNoop') `
+        -Confirm:$false
+
+      $fileInfo | Should -Not -BeNullOrEmpty
+      { Test-ModuleManifest -Path $script:Output -ErrorAction Stop } | Should -Not -Throw
+
+      $data = Import-PowerShellDataFile -Path $script:Output
+      $data.PrivateData.PSData.Keys | Should -Not -Contain 'Prerelease'
     }
   }
 

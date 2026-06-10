@@ -5,36 +5,42 @@ Builds a SQL Server database from scratch using Flyway migrations.
 
 .DESCRIPTION
 This cmdlet orchestrates the complete build of a SQL Server database:
-1. Loads environment variables from .env files
+1. Resolves all connection and path settings from $global:settings via $global:configRootKeys
+   (reads $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']] —
+   populated by HostSettings.IAC.Fragment.Databases.*.ps1 at session startup)
 2. Configures database connection settings
 3. Drops and recreates the database using DatabaseProvisioning
 4. Runs Flyway migrations to create schema and objects
 
-This is a shared utility used by multiple database projects (PCMSC, Gmail, Tags, etc.).
-
 .PARAMETER DatabaseName
-The name of the database to build.
+The name of the database to build (e.g. 'ATAPUtilities', 'PCMSC').
 
 .PARAMETER Environment
-The target environment: 'Development', 'Testing', 'Production', or 'Experimental'.
+The target environment: 'Production', 'QA', 'Integration', 'Development', or 'Experimental'.
 
 .PARAMETER DatabaseHost
-The SQL Server host. Default is 'localhost'.
+The SQL Server host. Resolved from $global:settings if not supplied; defaults to 'localhost'.
 
 .PARAMETER SqlInstance
-The SQL Server instance name to connect to (e.g. 'localhost\SQLEXPRESS' or
-'localhost\development-whertzing'). When specified, this value overrides the
-default instance derived from DatabaseHost. Passed through to DatabaseProvisioning
-and Invoke-Flyway for all database operations.
+The SQL Server named instance (e.g. 'Production', 'Integration', 'Expwhertzing').
+Resolved from $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
+under the key path DatabaseName.Environment.SqlInstance.
+
+IMPORTANT — Experimental environment: the HostSettings fragment stores a placeholder value
+('Exp{username}') for the Experimental instance because it is an ephemeral per-sprint instance
+created by New-SprintSqlServerInstances. When calling this function directly for Experimental,
+you MUST supply -SqlInstance explicitly (e.g. -SqlInstance 'Expwhertzing'). The function will
+throw if SqlInstance cannot be resolved to a non-empty value.
 
 .PARAMETER FlywayBasePath
-Path to the Flyway directory containing flyway.toml. If not specified, attempts to auto-detect.
+Path to the Flyway directory containing flyway.toml. Resolved from $global:settings if not supplied.
 
 .PARAMETER SqlMigrationsPath
-Path to the SQL migrations directory. If not specified, defaults to FlywayBasePath\SQL.
+Path to the SQL migrations directory. Resolved from $global:settings if not supplied;
+defaults to FlywayBasePath\SQL.
 
 .PARAMETER SharedSqlMigrationsPath
-Path to the shared SQL scripts directory. Default is determined from repository structure.
+Path to the shared SQL scripts directory. Resolved from $global:settings if not supplied.
 
 .PARAMETER Force
 Force database drop even if it exists. Default is $true.
@@ -44,98 +50,99 @@ System.Object
 Returns a result object with Success (bool) and any error messages.
 
 .EXAMPLE
-Build-DatabaseWithFlyway -DatabaseName 'Tags' -Environment 'Experimental' -DatabaseHost 'localhost'
+Build-DatabaseWithFlyway -DatabaseName 'ATAPUtilities' -Environment 'Experimental' -SqlInstance 'Expwhertzing'
 
 .EXAMPLE
-Build-DatabaseWithFlyway -DatabaseName 'PCMSC' -Environment 'Development'
+Build-DatabaseWithFlyway -DatabaseName 'ATAPUtilities' -Environment 'Integration'
 
 .NOTES
 AI assisted using Powershell.instructions.md as guidelines
 Requires dbatools module for database operations.
 Requires Flyway CLI to be available in PATH or configured in environment variables.
+Connection settings are NOT read from .env files — they are read from $global:settings.
 
 .LINK
 https://github.com/whertzing/ATAP.Utilities
 #>
-  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ConnectionParameters')]
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ConnectionParts')]
   [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKey',
     Justification = 'CredentialsKey is a vault lookup key name, not a credential')]
   param(
     # region Database connection parameters
-    [Parameter(Mandatory = $true, Position = 0, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $true, Position = 0, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
-    [ValidateNotNullOrEmpty()]
+    [Parameter(Mandatory = $true, Position = 0, ValueFromPipelineByPropertyName = $true)]
     [string]$DatabaseName,
 
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
     [string]$Environment,
 
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [Alias('HostName')]
     [string]$DatabaseHost,
 
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [Alias('InstanceName')]
     [string]$SqlInstance,
 
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [string]$ConnectionMethod,
 
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [int]$Port,
 
-    [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParts')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'DBConnectionStringSecretName')]
     [switch]$IntegratedSecurity,
 
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [string]$CredentialsKey,
 
-    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
+    [string]$ApplicationName,
+
+    [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParts')]
+    [switch]$UseTrustedConnection,
+
+    [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'SqlConnection')]
     [Microsoft.Data.SqlClient.SqlConnection]$SqlConnection,
+
+    [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'DBConnectionStringSecretName')]
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string]$DBConnectionStringSecretName,
+
+    [Parameter(Mandatory = $false)]
+    [hashtable]$Settings,
     # endregion Database connection parameters
 
-    [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false)]
     [string]$DatabasePath,
 
-    [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false)]
     [string]$ProvisioningScriptsPath,
 
-    [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false)]
     [string]$FlywayBasePath,
 
-    [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false)]
     [string]$flywaySqlMigrationsPath,
 
-    [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false)]
     [string]$flywaySharedSqlMigrationsPath,
 
-    [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false)]
     [string]$FlywayDataPath,
 
-    [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false)]
     [string]$FlywayTomlPath,
 
-    [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false)]
+    [string]$RepositoryRoot,
+
+    [Parameter(Mandatory = $false)]
     [switch]$Force,
 
     # When set, run DatabaseProvisioning only and skip Flyway migrations.
     # Use for databases whose migrations live in a different repository.
-    [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParameters')]
-    [Parameter(Mandatory = $false, ParameterSetName = 'ExistingConnection')]
+    [Parameter(Mandatory = $false)]
     [switch]$SkipFlyway
   )
 
@@ -165,23 +172,20 @@ https://github.com/whertzing/ATAP.Utilities
     # Load required helper functions
     try {
       # Import dbatools module for database operations
-      if (-not (Get-Module -Name dbatools -ListAvailable)) {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message 'dbatools module not found. Installing...'
-        Install-Module -Name dbatools -Scope CurrentUser -Force -AllowClobber
+      if (-not (Get-Module -Name dbatools)) {
+        if (-not (Get-Module -Name dbatools -ListAvailable)) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message 'dbatools module not found. Installing...'
+          Install-Module -Name dbatools -Scope CurrentUser -Force -AllowClobber
+        }
+        Import-Module dbatools -ErrorAction SilentlyContinue
       }
-      Import-Module dbatools -ErrorAction Stop
-      if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
+      if ([string]::IsNullOrWhiteSpace($RepositoryRoot)) {
+        $repositoryRoot = Get-RepositoryRoot
+      } else {
+        $repositoryRoot = $RepositoryRoot
       }
-      $repositoryRoot = Get-RepositoryRoot
-      if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . (Join-Path $repositoryRoot 'src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1')
-      }
-      if (-not (Get-Command -Name 'New-DBAConnStrBuilder' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\New-ConnectionStringBuilderFromDbaTools.ps1')
-      }
-      if (-not (Get-Command -Name 'Get-DatabaseCredentialsKey' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\Get-DatabaseCredentialsKey.ps1')
+      if (-not (Get-Command -Name 'Resolve-DatabaseSqlConnection' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\Resolve-DatabaseSqlConnection.ps1')
       }
       if (-not (Get-Command -Name 'DatabaseProvisioning' -CommandType Function -ErrorAction SilentlyContinue)) {
         . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\DatabaseProvisioning.ps1')
@@ -192,67 +196,61 @@ https://github.com/whertzing/ATAP.Utilities
     } catch {
       $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-      $result.Errors += $errorMessage
       throw
     }
 
-    $usingExistingConnection = $PSCmdlet.ParameterSetName -eq 'ExistingConnection'
-    # Parameter validation using Get-PVal pattern
-    # region Database connection parameter validation
-    $databasesCollection = $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
+    $databasesCollection = if ($Settings) {
+      $Settings
+    }
+    elseif ($global:settings -and $global:configRootKeys -and $global:configRootKeys['DatabasesCollectionConfigRootKey']) {
+      $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
+    }
+    else {
+      $null
+    }
+
     $DatabaseName = Get-PVal -ParameterName 'DatabaseName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseName" -Settings $databasesCollection -DefaultValue $DatabaseName
-    $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue $Environment -ValidValues @('Production', 'QA', 'Integration', 'Development', 'Experimental')
-    $DatabaseHost = Get-PVal -ParameterName 'DatabaseHost' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseHost" -Settings $databasesCollection -DefaultValue $DatabaseHost
-    $SqlInstance = Get-PVal -ParameterName 'SqlInstance' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlInstance" -Settings $databasesCollection -DefaultValue $SqlInstance -AllowMissing
-    $ConnectionMethod = Get-PVal -ParameterName 'ConnectionMethod' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ConnectionMethod" -Settings $databasesCollection -DefaultValue $ConnectionMethod -ValidValues @('tcp', 'np', 'lpc')
-    $Port = Get-PVal -ParameterName 'Port' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.Port" -Settings $databasesCollection -DefaultValue $Port -AllowMissing
-    $CredentialsKey = Get-PVal -ParameterName 'CredentialsKey' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.CredentialsKey" -Settings $databasesCollection -DefaultValue $CredentialsKey -AllowMissing
-    $flywayCredentialsKey = $null
-    $provisioningCredentialsKey = $null
-
-    # Build uses two connection intents:
-    # 1) Provisioning/open phase must connect to master
-    # 2) Flyway migration phase should connect to the target database
-    # If an explicit CredentialsKey is passed, keep it for Flyway and derive master for provisioning.
-    if ($CredentialsKey) {
-      $flywayCredentialsKey = $CredentialsKey
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Using caller-supplied CredentialsKey for Flyway: $flywayCredentialsKey"
-    }
-
-    if ($DatabaseHost -and $Environment) {
-      if (-not $flywayCredentialsKey) {
-        $flywayCredentialsKey = Get-DatabaseCredentialsKey -DatabaseName $DatabaseName -DatabaseHost $DatabaseHost -Environment $Environment
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Derived Flyway CredentialsKey from naming scheme: $flywayCredentialsKey"
-      }
-
-      $provisioningCredentialsKey = Get-DatabaseCredentialsKey -DatabaseName 'master' -DatabaseHost $DatabaseHost -Environment $Environment
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Derived provisioning CredentialsKey (master): $provisioningCredentialsKey"
-    }
-
-    if (-not $provisioningCredentialsKey) {
-      # Backward compatibility: fall back to any available key when master-key derivation
-      # is not possible (for example, incomplete config in non-sprint environments).
-      $provisioningCredentialsKey = $flywayCredentialsKey
-    }
-    # endregion Database connection parameter validation
-    $DatabasePath = Get-PVal -ParameterName 'DatabasePath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection -DefaultValue $DatabasePath
-    $ProvisioningScriptsPath = Get-PVal -ParameterName 'ProvisioningScriptsPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisioningScriptsPath" -Settings $databasesCollection -DefaultValue $ProvisioningScriptsPath
+    $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue $Environment -ValidValues @('Production', 'QA', 'Integration', 'Development', 'Experimental') -AllowMissing
+    $DatabasePath = Get-PVal -ParameterName 'DatabasePath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection -DefaultValue $DatabasePath -AllowMissing
+    $ProvisioningScriptsPath = Get-PVal -ParameterName 'ProvisioningScriptsPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisioningScriptsPath" -Settings $databasesCollection -DefaultValue $ProvisioningScriptsPath -AllowMissing
     $FlywayBasePath = Get-PVal -ParameterName 'FlywayBasePath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayBasePath" -Settings $databasesCollection -DefaultValue $FlywayBasePath
-    $flywaySqlMigrationsPath = Get-PVal -ParameterName 'FlywaySqlMigrationsPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywaySqlMigrationsPath" -Settings $databasesCollection -DefaultValue $flywaySqlMigrationsPath
-    $flywaySharedSqlMigrationsPath = Get-PVal -ParameterName 'FlywaySharedSqlMigrationsPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywaySharedSqlMigrationsPath" -Settings $databasesCollection -DefaultValue $flywaySharedSqlMigrationsPath
-    $FlywayDataPath = Get-PVal -ParameterName 'FlywayDataPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayDataPath" -Settings $databasesCollection -DefaultValue $FlywayDataPath
-    $FlywayTomlPath = Get-PVal -ParameterName 'FlywayTomlPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayTomlPath" -Settings $databasesCollection -DefaultValue $FlywayTomlPath
+    $flywaySqlMigrationsPath = Get-PVal -ParameterName 'FlywaySqlMigrationsPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywaySqlMigrationsPath" -Settings $databasesCollection -DefaultValue $flywaySqlMigrationsPath -AllowMissing
+    $flywaySharedSqlMigrationsPath = Get-PVal -ParameterName 'FlywaySharedSqlMigrationsPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywaySharedSqlMigrationsPath" -Settings $databasesCollection -DefaultValue $flywaySharedSqlMigrationsPath -AllowMissing
+    $FlywayDataPath = Get-PVal -ParameterName 'FlywayDataPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayDataPath" -Settings $databasesCollection -DefaultValue $FlywayDataPath -AllowMissing
+    $FlywayTomlPath = Get-PVal -ParameterName 'FlywayTomlPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayTomlPath" -Settings $databasesCollection -DefaultValue $FlywayTomlPath -AllowMissing
 
-    # Determine the SqlInstance value based on the environment if it is not yet defined.
-    if (-not $SqlInstance) {
-      # Per Database Design: SqlInstance matches Environment, except 'Experimental', which uses default instance (blank)
-      $SqlInstance = if ($Environment -eq 'Experimental') { $null } else { $Environment }
+    $resolverBoundParameters = @{}
+    foreach ($key in $PSBoundParameters.Keys) {
+      $resolverBoundParameters[$key] = $PSBoundParameters[$key]
     }
+    $resolverBoundParameters['DatabaseName'] = 'master'
 
-    # If credentials are not supplied, default to IntegratedSecurity
-    if (-not $flywayCredentialsKey -and -not $IntegratedSecurity) {
-      $IntegratedSecurity = $true
-    }
+    $resolution = Resolve-DatabaseSqlConnection `
+      -OriginalPSBoundParameters $resolverBoundParameters `
+      -SqlConnection $SqlConnection `
+      -DBConnectionStringSecretName $DBConnectionStringSecretName `
+      -DatabaseHost $DatabaseHost `
+      -InstanceName $SqlInstance `
+      -DatabaseName 'master' `
+      -ConnectionMethod $ConnectionMethod `
+      -CredentialsKey $CredentialsKey `
+      -ApplicationName $ApplicationName `
+      -UseTrustedConnection:$UseTrustedConnection `
+      -IntegratedSecurity:$IntegratedSecurity `
+      -Settings $databasesCollection `
+      -DatabaseHostDottedPath "$databaseName.$Environment.DatabaseHost" `
+      -InstanceNameDottedPath "$databaseName.$Environment.SqlInstance" `
+      -ConnectionMethodDottedPath "$databaseName.$Environment.ConnectionMethod" `
+      -CredentialsKeyDottedPath "$databaseName.$Environment.CredentialsKey" `
+      -ApplicationNameDottedPath "$databaseName.$Environment.ApplicationName"
+
+    $resolvedSqlConnection = $resolution.Connection
+    $resolvedConnectionOwnedByFunction = -not [bool]$resolution.IsCallerOwned
+
+    $resolvedConnectionStringBuilder = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($resolvedSqlConnection.ConnectionString)
+    $DatabaseHost = $resolvedSqlConnection.DataSource
+    $SqlInstance = $resolvedSqlConnection.DataSource
+    $useIntegratedSecurityForFlyway = [bool]($resolvedConnectionStringBuilder.IntegratedSecurity -or $IntegratedSecurity -or $UseTrustedConnection)
 
     # Initialize result object
     $result = [PSCustomObject]@{
@@ -355,98 +353,8 @@ https://github.com/whertzing/ATAP.Utilities
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Starting database provisioning...'
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Target Server: $DatabaseHost"
 
-      $sqlConnection = $null
-      $sqlConnectionOpenedHere = $false
-      $useIntegratedSecurityForFlyway = $IntegratedSecurity
-
-      if ($usingExistingConnection) {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Using provided SqlConnection object'
-
-        if (-not ($SqlConnection.PSObject.Properties['State'] -and $SqlConnection.PSObject.Methods['Open'])) {
-          $errorMessage = 'Provided SqlConnection object does not expose expected State/Open members'
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-          throw $errorMessage
-        }
-
-        try {
-          if ($SqlConnection.State -ne [System.Data.ConnectionState]::Open) {
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Opening provided SQL connection'
-            $SqlConnection.Open()
-            $sqlConnectionOpenedHere = $true
-          }
-          $sqlConnection = $SqlConnection
-          $existingConnBuilder = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($SqlConnection.ConnectionString)
-          $useIntegratedSecurityForFlyway = $existingConnBuilder.IntegratedSecurity
-        } catch {
-          $errorMessage = "Failed to open provided SQL connection: $($_.Exception.Message)"
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-          $result.Errors += $errorMessage
-          throw
-        }
-      } else {
-        # Build connection string for provisioning (connect to master initially)
-        $connStrBuilderParams = @{
-          DatabaseName     = 'master'
-          DatabaseHost     = $DatabaseHost
-          ConnectionMethod = $ConnectionMethod
-          SqlInstance      = $SqlInstance
-        }
-
-        if ($Port) { $connStrBuilderParams['Port'] = $Port }
-        if ($provisioningCredentialsKey) { $connStrBuilderParams['CredentialsKey'] = $provisioningCredentialsKey }
-        else { $connStrBuilderParams['IntegratedSecurity'] = $true }
-
-        $connStrBuilderResult = New-DBAConnStrBuilder @connStrBuilderParams
-        $useIntegratedSecurityForFlyway = $connStrBuilderResult.UseIntegratedSecurity
-
-        # Get the underlying connection string builder for additional modifications
-        $connectionStringBuilder = $connStrBuilderResult.Builder
-        $connectionStringBuilder.TrustServerCertificate = $true
-        $connectionStringBuilder.Encrypt = $false
-        $connectionStringBuilder['Connect Timeout'] = 30
-
-        # Create and open SQL connection
-        $sqlConnection = New-Object Microsoft.Data.SqlClient.SqlConnection
-        $sqlConnection.ConnectionString = $connStrBuilderResult.ToString()
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'SQL Connection String built (credentials hidden)'
-
-        try {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Opening SQL connection...'
-          $sqlConnection.Open()
-          $sqlConnectionOpenedHere = $true
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'SQL connection opened successfully'
-        } catch {
-          $errorMessage = "Failed to open SQL connection: $($_.Exception.Message)"
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-          $result.Errors += $errorMessage
-          if ($sqlConnection) { $sqlConnection.Dispose() }
-          throw
-        }
-      }
-
-      # Verify connection
-      try {
-        $testCmd = $sqlConnection.CreateCommand()
-        $testCmd.CommandText = 'SELECT @@SERVERNAME AS ServerName, @@VERSION AS Version'
-        $testReader = $testCmd.ExecuteReader()
-        if ($testReader.Read()) {
-          $serverName = $testReader['ServerName']
-          $version = $testReader['Version']
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Connected to server: $serverName"
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Server version: $version"
-        }
-        $testReader.Close()
-        $testCmd.Dispose()
-      } catch {
-        $errorMessage = "Failed to open or test SQL connection: $($_.Exception.Message)"
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-        $result.Errors += $errorMessage
-        if ($sqlConnection) {
-          if ($sqlConnectionOpenedHere -and $sqlConnection.State -eq [System.Data.ConnectionState]::Open) { $sqlConnection.Close() }
-          $sqlConnection.Dispose()
-        }
-        throw
-      }
+      $sqlConnection = $resolvedSqlConnection
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Using SQL connection validated by Resolve-DatabaseSqlConnection'
 
       # Call DatabaseProvisioning with SQL connection object
       $provisioningParams = @{
@@ -461,16 +369,7 @@ https://github.com/whertzing/ATAP.Utilities
 
       if ($PSCmdlet.ShouldProcess($DatabaseName, 'Provision database')) {
         $provisioningResult = $null
-        try {
-          $provisioningResult = DatabaseProvisioning @provisioningParams
-        } finally {
-          # Close the connection after provisioning if we opened it
-          if ($sqlConnection -and $sqlConnectionOpenedHere -and $sqlConnection.State -eq [System.Data.ConnectionState]::Open) {
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Closing SQL connection'
-            $sqlConnection.Close()
-            $sqlConnection.Dispose()
-          }
-        }
+        $provisioningResult = DatabaseProvisioning @provisioningParams
 
         # Check provisioning result before continuing to Flyway
         if (-not $provisioningResult -or -not $provisioningResult.Success) {
@@ -491,10 +390,7 @@ https://github.com/whertzing/ATAP.Utilities
           $FlywayParams = @{
             DatabaseName                  = $DatabaseName
             Environment                   = $Environment
-            DatabaseHost                  = $DatabaseHost
-            SqlInstance                   = $SqlInstance
-            ConnectionMethod              = $ConnectionMethod
-            Port                          = $Port
+            SqlConnection                 = $sqlConnection
             IntegratedSecurity            = $useIntegratedSecurityForFlyway
             FlywayCommand                 = 'migrate'
             FlywayBasePath                = $FlywayBasePath
@@ -506,7 +402,6 @@ https://github.com/whertzing/ATAP.Utilities
             PackageVersion                = 1
           }
 
-          if ($flywayCredentialsKey) { $FlywayParams['CredentialsKey'] = $flywayCredentialsKey }
           Invoke-Flyway @FlywayParams
         }
 
@@ -524,6 +419,12 @@ https://github.com/whertzing/ATAP.Utilities
       # Restore original location
       if ($originalLocation) {
         Set-Location $originalLocation
+      }
+      if ($resolvedConnectionOwnedByFunction -and $resolvedSqlConnection) {
+        if ($resolvedSqlConnection.State -eq [System.Data.ConnectionState]::Open) {
+          $resolvedSqlConnection.Close()
+        }
+        $resolvedSqlConnection.Dispose()
       }
       $result.EndTime = Get-Date
     }

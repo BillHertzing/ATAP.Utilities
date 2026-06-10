@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "fileKind": "database-package-ceiling",
+  "branchKind": "integration",
+  "branchName": "integration",
+  "packageId": "ATAPUtilities.Database",
+  "maxConsumableTier": "Integration",
+  "maxConsumableFeed": "database-integration",
+  "versionJsonPrereleaseLabel": "Beta",
+  "reason": "Integration lanes may consume database packages promoted through Integration, but not QA or Production-only packages.",
+  "owner": "Release engineering"
+}
+

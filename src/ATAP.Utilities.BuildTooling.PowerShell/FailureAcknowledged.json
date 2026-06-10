@@ -1,0 +1,772 @@
+[
+  {
+    "testName": "BuildMaster Otter plan run-context wiring.derives every plan context directory from $BuildMasterId(build)",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "BuildMaster Otter plan run-context wiring.moves Get-BuildContext preambles out of OtterScript one-liners",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "BuildMaster Otter plan run-context wiring.auto-advances promoted PowerShell module stages through the version ceiling",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Routes 'nuget-experimental' -> 'nuget-development' (Phase 1)",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Routes 'nuget-development' -> 'nuget-integration' (Phase 1)",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Routes 'nuget-integration' -> 'nuget-qa' (Phase 1)",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Routes 'nuget-qa' -> 'nuget-stable' (Phase 1)",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Routes 'powershellget-experimental' -> 'powershellget-development' (Phase 1)",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Routes 'powershellget-integration' -> 'powershellget-qa' (Phase 1)",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Routes 'chocolatey-qa' -> 'chocolatey-stable' (Phase 1)",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Routes 'nuget-experimental' -> 'nuget-development-push' (Phase 2 / -UsePushFeed)",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Routes 'nuget-integration' -> 'nuget-qa-push' (Phase 2 / -UsePushFeed)",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Normalizes 'testing' -> 'qa' tier and routes to nuget-stable",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Normalizes 'production' -> 'stable' tier and throws (already at top)",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Accepts nuget-experimental-push and routes to nuget-development",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Uses supplied -ToFeed and does not auto-compute",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Accepts -PackageName / -SourceFeed / -DestinationFeed / -Comments aliases",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Throws when SourceFeed is nuget-stable",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Throws on an unrecognised feed prefix",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Throws on an unknown tier name",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Returns Promoted=false under -WhatIf",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Returns PSCustomObject with all expected properties",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Applies finite timeouts to ProGet verification, promotion, and destination verification calls",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Sends the current ProGet promote form contract",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Throws when source verification returns no package rows",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageInterTier.Throws when promotion returns but the destination feed never exposes the package",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageIntraTier.Phase 2: 'nuget-experimental-push' -> 'nuget-experimental' succeeds",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageIntraTier.Phase 2: 'nuget-development-push' -> 'nuget-development' succeeds",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageIntraTier.Phase 2: 'nuget-integration-push' -> 'nuget-integration' succeeds",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageIntraTier.Phase 2: 'nuget-qa-push' -> 'nuget-qa' succeeds",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageIntraTier.Phase 2: 'nuget-stable-push' -> 'nuget-stable' succeeds",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageIntraTier.Phase 2: 'powershellget-integration-push' -> 'powershellget-integration' succeeds",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageIntraTier.Returns Promoted=$false, ScanPassed=$true with -ScanOnly",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageIntraTier.Returns Promoted=$false, ScanPassed=$true when source=dest (Phase 1 same-feed)",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageIntraTier.Accepts source=nuget-testing-push and dest=nuget-testing (normalized to qa)",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageIntraTier.Accepts source=nuget-production-push and dest=nuget-production (normalized to stable)",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageIntraTier.Throws when source and destination belong to different tiers",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageIntraTier.Throws when source is a pull feed in Phase 2 mode",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageIntraTier.Throws when destination is a push feed in Phase 2 mode",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageIntraTier.Throws when source is nuget and destination is powershellget",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageIntraTier.Throws on an unknown tier in SourceFeed",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageIntraTier.Returns PSCustomObject with expected properties",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageIntraTier.Accepts -PackageName / -SourceFeed / -DestinationFeed / -Comments aliases",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Move-ProGetPackageIntraTier.Sends the current ProGet promote JSON contract",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-BuildMasterRelease.Applies a finite timeout to the create call",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-BuildMasterRelease.Falls back to GET when POST returns HTTP 409",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterItBlock.New-PesterItBlock_RequiredParams_ReturnsHashtableWithExpectedKeys",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterItBlock.New-PesterItBlock_RequiredParams_TagsDefaultToEmpty",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterItBlock.New-PesterItBlock_RequiredParams_ForEachDefaultsToNull",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterItBlock.New-PesterItBlock_WithTags_StoredInModel",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterItBlock.New-PesterItBlock_WithForEach_StoredInModel",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterItBlock.New-PesterItBlock_WithTestCases_StoredInModel",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterContextBlock.New-PesterContextBlock_RequiredParams_ReturnsHashtable",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterContextBlock.New-PesterContextBlock_RequiredParams_ItsStoredCorrectly",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterContextBlock.New-PesterContextBlock_RequiredParams_SetupTeardownDefaultToNull",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterContextBlock.New-PesterContextBlock_WithForEach_StoredInModel",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterContextBlock.New-PesterContextBlock_EmptyName_Throws",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterDescribeBlock.New-PesterDescribeBlock_RequiredParams_ReturnsHashtable",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterDescribeBlock.New-PesterDescribeBlock_RequiredParams_ItsDefaultsToEmpty",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterDescribeBlock.New-PesterDescribeBlock_RequiredParams_ContextsDefaultsToEmpty",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterDescribeBlock.New-PesterDescribeBlock_WithItsAndTags_StoredCorrectly",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterDescribeBlock.New-PesterDescribeBlock_EmptyName_Throws",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterFileModel.New-PesterFileModel_RequiredParams_ReturnsHashtableWithCorrectKeys",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterFileModel.New-PesterFileModel_RequiredParams_DescribesStored",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterFileModel.New-PesterFileModel_RequiredParams_BeforeDiscoveryDefaultsToNull",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterFileModel.New-PesterFileModel_WithBeforeDiscovery_StoredInModel",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterFileModel.New-PesterFileModel_EmptyDescribes_ThrowsParameterBindingException",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterFileModel.New-PesterFileModel_DescribeWithoutName_Throws",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterFileModel.New-PesterFileModel_CustomExtension_StoredInModel",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterBasicUnitTestTemplate.New-PesterBasicUnitTestTemplate_RequiredParams_ReturnsHashtable",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterBasicUnitTestTemplate.New-PesterBasicUnitTestTemplate_RequiredParams_ModelHasOneDescribe",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterBasicUnitTestTemplate.New-PesterBasicUnitTestTemplate_RequiredParams_DescribeNameMatchesFunction",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterBasicUnitTestTemplate.New-PesterBasicUnitTestTemplate_RequiredParams_BeforeAllContainsDotSource",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterBasicUnitTestTemplate.New-PesterBasicUnitTestTemplate_RequiredParams_ContextCountMatchesScenarios",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterBasicUnitTestTemplate.New-PesterBasicUnitTestTemplate_RequiredParams_DefaultTagsIncludeUnit",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterBasicUnitTestTemplate.New-PesterBasicUnitTestTemplate_Rendered_ContainsDescribeBlock",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterBasicUnitTestTemplate.New-PesterBasicUnitTestTemplate_Rendered_ContainsBeforeAllBlock",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterBasicUnitTestTemplate.New-PesterBasicUnitTestTemplate_Rendered_ContainsContextBlock",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterBasicUnitTestTemplate.New-PesterBasicUnitTestTemplate_WithOutputPath_WritesTestFileOnDisk",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterDataDrivenTestTemplate.New-PesterDataDrivenTestTemplate_RequiredParams_ReturnsHashtable",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterDataDrivenTestTemplate.New-PesterDataDrivenTestTemplate_RequiredParams_BeforeDiscoveryPopulated",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterDataDrivenTestTemplate.New-PesterDataDrivenTestTemplate_RequiredParams_HasOneContext",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterDataDrivenTestTemplate.New-PesterDataDrivenTestTemplate_RequiredParams_ItHasForEachSet",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterDataDrivenTestTemplate.New-PesterDataDrivenTestTemplate_WithTestCasesExpr_ExprStoredInDiscovery",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterDataDrivenTestTemplate.New-PesterDataDrivenTestTemplate_Rendered_ContainsBeforeDiscovery",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterDataDrivenTestTemplate.New-PesterDataDrivenTestTemplate_Rendered_ItContainsForEach",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterDataDrivenTestTemplate.New-PesterDataDrivenTestTemplate_WithOutputPath_WritesTestFileOnDisk",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterTestFile.New-PesterTestFile_MinimalModel_ReturnsNonEmptyString",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterTestFile.New-PesterTestFile_MinimalModel_ContainsDescribeKeyword",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterTestFile.New-PesterTestFile_MinimalModel_ContainsItKeyword",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterTestFile.New-PesterTestFile_MinimalModel_ContainsItBody",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterTestFile.New-PesterTestFile_MinimalModel_StartsWithHeaderComment",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterTestFile.New-PesterTestFile_DescribeWithTags_TagsRenderedInOutput",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterTestFile.New-PesterTestFile_DescribeWithBeforeAll_BeforeAllRendered",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterTestFile.New-PesterTestFile_WithBeforeDiscovery_BeforeDiscoveryRendered",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterTestFile.New-PesterTestFile_WithContext_ContextKeywordRendered",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterTestFile.New-PesterTestFile_ContextWithForEach_ForEachRendered",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterTestFile.New-PesterTestFile_ItWithForEach_ForEachRenderedOnItLine",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterTestFile.New-PesterTestFile_EmptyDescribes_ThrowsInvalidModel",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterTestFile.New-PesterTestFile_MissingNameKey_Throws",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterTestFile.New-PesterTestFile_MissingDescribesKey_Throws",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterTestFile.New-PesterTestFile_WithOutputPath_WritesFileToCorrectLocation",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterTestFile.New-PesterTestFile_ExistingFileWithoutForce_Throws",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterTestFile.New-PesterTestFile_ExistingFileWithForce_OverwritesFile",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PesterTestFile.New-PesterTestFile_WrittenFile_ContainsValidPesterDSL",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "New-PSModuleNupkg.Calls Publish-PSResource with -Path and skips dependency resolution for the empty staging repository",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Remove-BuildMasterRelease.Throws when no base URL is configured",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Start-BuildMasterDeployment.Applies a finite timeout to the deploy call",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Start-BuildMasterPipeline.Applies a finite timeout to the create-build call",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  },
+  {
+    "testName": "Test-SprintPrerequisites.Reports dirty lock files from required worktrees",
+    "tier": "T2",
+    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
+    "acknowledgedBy": "pipeline-exercise-2026-05-29",
+    "acknowledgedDate": "2026-05-29"
+  }
+]

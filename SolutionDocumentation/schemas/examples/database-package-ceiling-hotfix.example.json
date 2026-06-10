@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "fileKind": "database-package-ceiling",
+  "branchKind": "hotfix",
+  "branchName": "hotfix/1.4.1-login-repair",
+  "packageId": "AceCommander.Database",
+  "maxConsumableTier": "Production",
+  "maxConsumableFeed": "database-stable",
+  "versionJsonPrereleaseLabel": null,
+  "reason": "Hotfix branches start from the released Production database package baseline and may consume stable database packages.",
+  "owner": "Hotfix release engineer",
+  "expiresUtc": null
+}

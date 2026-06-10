@@ -87,10 +87,10 @@ function Rename-ProGetFeed {
     if ([string]::IsNullOrWhiteSpace($ProGetBaseUrl)) {
       if ($null -ne $global:configRootKeys -and $null -ne $global:Settings) {
         $scheme = $global:Settings[$global:configRootKeys['ProGetAdminUriSchemeConfigRootKey']]
-        $host = $global:Settings[$global:configRootKeys['ProGetAdminUriHostConfigRootKey']]
+        $proGetHost = $global:Settings[$global:configRootKeys['ProGetAdminUriHostConfigRootKey']]
         $port = $global:Settings[$global:configRootKeys['ProGetAdminUriPortConfigRootKey']]
-        if (-not [string]::IsNullOrWhiteSpace($scheme) -and -not [string]::IsNullOrWhiteSpace($host)) {
-          $ProGetBaseUrl = if ($port) { "${scheme}://${host}:${port}" } else { "${scheme}://${host}" }
+        if (-not [string]::IsNullOrWhiteSpace($scheme) -and -not [string]::IsNullOrWhiteSpace($proGetHost)) {
+          $ProGetBaseUrl = if ($port) { "${scheme}://${proGetHost}:${port}" } else { "${scheme}://${proGetHost}" }
         }
       }
     }

@@ -114,6 +114,17 @@ function New-PermanentBitwardenSecrets {
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
+    # Load helper functions. Fallback for running this file from source without
+    # importing the module; a normal Import-Module already dot-sources the private
+    # helper. Kept inside BEGIN so loading/dot-sourcing this file only DEFINES the
+    # function and never executes anything at load time.
+    if (-not (Get-Command -Name 'Invoke-BitwardenCliWithCleanTlsEnvironment' -ErrorAction SilentlyContinue)) {
+      $bitwardenTlsHelperPath = Join-Path -Path $PSScriptRoot -ChildPath '..\private\Invoke-BitwardenCliWithCleanTlsEnvironment.ps1'
+      if (Test-Path -LiteralPath $bitwardenTlsHelperPath -PathType Leaf) {
+        . $bitwardenTlsHelperPath
+      }
+    }
+
     # Snippet: Check and populate simple parameter as Type - Databases
     if (-not $PSBoundParameters.ContainsKey('Databases') -or $null -eq $Databases -or $Databases.Count -eq 0) {
       $Databases = @('ATAPUtilities', 'AceCommander')
@@ -152,11 +163,11 @@ function New-PermanentBitwardenSecrets {
     foreach ($db in $Databases) {
       foreach ($tierEntry in $tierHostMap.GetEnumerator()) {
         $tier = $tierEntry.Key
-        $host = $tierEntry.Value
+        $sqlHost = $tierEntry.Value
 
         # Canonical secret name — no username suffix for permanent tiers
         # (per Get-DatabaseCredentialsKey naming scheme)
-        $secretName = "dbConnectionString-${db}-${host}-${tier}"
+        $secretName = "dbConnectionString-${db}-${sqlHost}-${tier}"
 
         # SQL Server instance name = <host>\<tier>
         $instanceName = $tier
@@ -165,14 +176,14 @@ function New-PermanentBitwardenSecrets {
         $appName = "${db}-${tier}"
 
         # Connection string: Integrated Security, MARS enabled
-        $connStr = "Server=${host}\${instanceName};Database=${db};Integrated Security=True;" +
+        $connStr = "Server=${sqlHost}\${instanceName};Database=${db};Integrated Security=True;" +
         "MultipleActiveResultSets=True;Application Name=${appName};TrustServerCertificate=True;"
 
         $entry = [PSCustomObject]@{
           secretName = $secretName
           database   = $db
           tier       = $tier
-          host       = $host
+          host       = $sqlHost
           created    = $false
           skipped    = $false
           error      = $null
@@ -184,7 +195,9 @@ function New-PermanentBitwardenSecrets {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
               -Message "Checking for existing Bitwarden item: $secretName" -Tag 'BitwardenCLI'
 
-            $listOutput = & bw list items --search $secretName --session $env:BW_SESSION 2>&1
+            $listOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+              & bw list items --search $secretName --session $env:BW_SESSION 2>&1
+            }
             if ($LASTEXITCODE -ne 0) {
               throw "bw list items failed (exit $LASTEXITCODE): $listOutput"
             }
@@ -205,7 +218,9 @@ function New-PermanentBitwardenSecrets {
               $existingId = $existingMatch[0].id
               Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
                 -Message "-Force specified — deleting existing item $existingId before re-creating $secretName" -Tag 'BitwardenCLI'
-              $deleteOutput = & bw delete item $existingId --session $env:BW_SESSION 2>&1
+              $deleteOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+                & bw delete item $existingId --session $env:BW_SESSION 2>&1
+              }
               if ($LASTEXITCODE -ne 0) {
                 throw "bw delete item (pre-Force overwrite) failed (exit $LASTEXITCODE): $deleteOutput"
               }
@@ -228,12 +243,16 @@ function New-PermanentBitwardenSecrets {
 
             $itemJson = $bwItem | ConvertTo-Json -Depth 5 -Compress
 
-            $encoded = $itemJson | & bw encode --session $env:BW_SESSION
+            $encoded = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+              $itemJson | & bw encode --session $env:BW_SESSION
+            }
             if ($LASTEXITCODE -ne 0) {
               throw "bw encode failed (exit $LASTEXITCODE)"
             }
 
-            $createOutput = $encoded | & bw create item --session $env:BW_SESSION 2>&1
+            $createOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
+              $encoded | & bw create item --session $env:BW_SESSION 2>&1
+            }
             if ($LASTEXITCODE -ne 0) {
               throw "bw create item failed (exit $LASTEXITCODE): $createOutput"
             }

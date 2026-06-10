@@ -6,9 +6,10 @@
 
 .DESCRIPTION
     Generates (or overwrites) a machine-scope PowerShell data file that records
-    every permanent ProGet feed name, its URI, and its API-key name. This file is
-    consumed by `Get-ATAPIACConstant` and by any automation that needs feed
-    coordinates without requiring an interactive session.
+    every permanent ProGet feed name, its URI, and its API-key environment
+    variable name. Feed metadata is resolved from `$global:Settings`; the
+    generated file is a compatibility export for automation that cannot load
+    the full host settings session.
 
     The ten permanent feeds (reverted naming scheme, sprint-0007 onward):
 
@@ -36,7 +37,7 @@
 .PARAMETER FeedBaseUrl
     Override the ProGet base URL (scheme + host + port, e.g.
     'http://proget-host:50000'). If omitted, resolved from
-    `$global:settings[$global:configRootKeys['ProGetAdminUriConfigRootKey']]`.
+    `$global:settings[$global:configRootKeys['ProGetBaseUrlConfigRootKey']]`.
 
 .PARAMETER ApiKey
     Override the ProGet API key used for all feeds. If omitted, resolved from
@@ -103,10 +104,10 @@ function New-HostSettingsForPackageRepositoryFeeds {
 
         # ── FeedBaseUrl ───────────────────────────────────────────────────
         if ([string]::IsNullOrWhiteSpace($FeedBaseUrl)) {
-            $FeedBaseUrl = $global:settings[$global:configRootKeys['ProGetAdminUriConfigRootKey']]
+            $FeedBaseUrl = $global:settings[$global:configRootKeys['ProGetBaseUrlConfigRootKey']]
         }
         if ([string]::IsNullOrWhiteSpace($FeedBaseUrl)) {
-            $errorMessage = "FeedBaseUrl could not be resolved. Pass it explicitly or ensure `$global:settings is loaded with 'ProGetAdminUriConfigRootKey'."
+            $errorMessage = "FeedBaseUrl could not be resolved. Pass it explicitly or ensure `$global:settings is loaded with 'ProGetBaseUrlConfigRootKey'."
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
             throw $errorMessage
         }
@@ -129,7 +130,7 @@ function New-HostSettingsForPackageRepositoryFeeds {
         $tierOrder = @('experimental', 'development', 'integration', 'qa', 'stable')
         $packageTypes = @(
             @{ Prefix = 'nuget';         ProGetType = 'nuget';         FeedUrlSegment = 'nuget'     }
-            @{ Prefix = 'powershellget'; ProGetType = 'powershellget'; FeedUrlSegment = 'psget'     }
+            @{ Prefix = 'powershellget'; ProGetType = 'powershellget'; FeedUrlSegment = 'nuget'     }
         )
 
         # Build the canonical feed list. Keys are feed names; values are hashtables
@@ -139,7 +140,7 @@ function New-HostSettingsForPackageRepositoryFeeds {
             foreach ($tier in $tierOrder) {
                 $feedName   = "$($pt.Prefix)-$tier"
                 $feedUri    = "$FeedBaseUrl/$($pt.FeedUrlSegment)/$feedName/"
-                $apiKeyName = "ApiKey-$feedName"
+                $apiKeyName = "PROGET_APIKEY_$($feedName.ToUpperInvariant().Replace('-', '_'))"
                 $feedMap[$feedName] = [ordered]@{
                     FeedName   = $feedName
                     FeedType   = $pt.ProGetType
@@ -155,15 +156,25 @@ function New-HostSettingsForPackageRepositoryFeeds {
         if (-not [string]::IsNullOrWhiteSpace($proGetFeedCollectionKey) -and
             $null -ne $global:settings[$proGetFeedCollectionKey]) {
             $settingsFeedCollection = $global:settings[$proGetFeedCollectionKey]
-            foreach ($feedName in $feedMap.Keys) {
-                if ($settingsFeedCollection.ContainsKey($feedName)) {
-                    $overrides = $settingsFeedCollection[$feedName]
-                    if (-not [string]::IsNullOrWhiteSpace($overrides['Uri'])) {
-                        $feedMap[$feedName]['Uri'] = $overrides['Uri']
+            foreach ($settingsFeedKey in $settingsFeedCollection.Keys) {
+                $overrides = $settingsFeedCollection[$settingsFeedKey]
+                $feedName = if ($overrides -is [System.Collections.IDictionary]) {
+                    $overrides['FeedName']
+                } else {
+                    $overrides.FeedName
+                }
+                if (-not [string]::IsNullOrWhiteSpace($feedName) -and $feedMap.Contains($feedName)) {
+                    $settingsUri = if ($overrides -is [System.Collections.IDictionary]) { $overrides['NuGetV3Uri'] } else { $overrides.NuGetV3Uri }
+                    if ([string]::IsNullOrWhiteSpace([string]$settingsUri)) {
+                        $settingsUri = if ($overrides -is [System.Collections.IDictionary]) { $overrides['Uri'] } else { $overrides.Uri }
+                    }
+                    $settingsApiKeyName = if ($overrides -is [System.Collections.IDictionary]) { $overrides['ApiKeyName'] } else { $overrides.ApiKeyName }
+                    if (-not [string]::IsNullOrWhiteSpace([string]$settingsUri)) {
+                        $feedMap[$feedName]['Uri'] = [string]$settingsUri
                         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Overriding URI for feed '$feedName' from `$global:settings"
                     }
-                    if (-not [string]::IsNullOrWhiteSpace($overrides['ApiKeyName'])) {
-                        $feedMap[$feedName]['ApiKeyName'] = $overrides['ApiKeyName']
+                    if (-not [string]::IsNullOrWhiteSpace([string]$settingsApiKeyName)) {
+                        $feedMap[$feedName]['ApiKeyName'] = [string]$settingsApiKeyName
                         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Overriding ApiKeyName for feed '$feedName' from `$global:settings"
                     }
                 }

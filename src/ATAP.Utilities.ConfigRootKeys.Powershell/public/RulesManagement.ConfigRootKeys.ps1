@@ -24,4 +24,10 @@ $global:configRootKeys.Add('RulesManagementCompendiumPathConfigRootKey', 'RulesM
 $global:configRootKeys.Add('RulesManagementCompendiumRelativePathConfigRootKey', 'RulesManagement.CompendiumRelativePath')
 $global:configRootKeys.Add('RulesManagementDocsRootConfigRootKey', 'RulesManagement.DocsRoot')
 
+# OtterScript rule-kind paths and DB settings
+$global:configRootKeys.Add('OtterScriptRulesDbConfigRootKey', 'RulesManagement.OtterScriptRules.DatabaseName')
+$global:configRootKeys.Add('OtterScriptRulesPrimitiveLanguageKindIdConfigRootKey', 'RulesManagement.OtterScriptRules.PrimitiveLanguageKindId')
+$global:configRootKeys.Add('OtterScriptRulesGrammarPathConfigRootKey', 'RulesManagement.OtterScriptRules.GrammarPath')
+$global:configRootKeys.Add('OtterScriptRulesCompendiumPathConfigRootKey', 'RulesManagement.OtterScriptRules.CompendiumPath')
+
 

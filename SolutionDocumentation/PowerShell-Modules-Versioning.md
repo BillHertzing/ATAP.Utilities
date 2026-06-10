@@ -1,18 +1,31 @@
 # PowerShell Modules — Versioning
 
-**Scope:** Sprint-0006. How a PowerShell module's version (the `ModuleVersion`
-and `Prerelease` fields in `.psd1`) is computed from NBGV and how the
-prerelease label maps onto the 5-tier promotion model.
+**Scope:** Sprint-0006/0007. How a PowerShell module's version (the
+`ModuleVersion` and `Prerelease` fields in `.psd1`) is computed from NBGV
+and how the prerelease label maps onto the 5-tier promotion model.
 
 **Audience:** Anyone who wonders why `Update-ModuleManifest` rejected their
 prerelease string, anyone running `nbgv get-version`, anyone promoting a
 module from one feed tier to the next.
 
-**Status:** Authoritative for sprint-0006. Mirrors the structure of
-[CSharp-Packages-Versioning.md](CSharp-Packages-Versioning.md) but documents the
-PowerShell-specific translation step.
+**Status:** Authoritative for sprint-0006/0007. Mirrors the structure of
+[CSharp-Packages-Versioning.md](CSharp-Packages-Versioning.md) but documents
+the PowerShell-specific translation step.
+
+> **Strategy update (sprint-0007 — Immutable Build).** A module's version
+> (`ModuleVersion` + `Prerelease`) is computed **once** at the moment of
+> the Experimental build and stays the same as the module promotes through
+> the five PowerShellGet feeds. Promotion does not bump `{height}`, does
+> not re-evaluate `version.json`, and does not re-stamp the `.psd1`. The
+> prerelease label declares the **ceiling** tier; the current tier is which
+> feed and BuildMaster stage the module currently lives in. The "promotion procedure" in §7
+> remains the right tool for cutting a _new_ candidate at the next tier
+> (Sprint→Alpha) — but moving an existing `.nupkg` between feeds is now a
+> `Promote-ProGetPackage` call, not a label edit + rebuild. See
+> [Immutable-Build-Strategy.md §6](Immutable-Build-Strategy.md#6-versioning-no-special-case-for-promotion).
 
 **Not in this doc:**
+
 - How NBGV itself works (`version.json` schema, `{height}`, prerelease label
   promotion) → see [CSharp-Packages-Versioning.md](CSharp-Packages-Versioning.md)
   §§3–6. The mechanics are identical for both ecosystems.
@@ -28,10 +41,10 @@ NBGV emits NuGet-style version strings. PowerShell Gallery / `PSResource`
 require a stricter format. The translation is the entire job of
 `Get-PSModuleVersionFromNBGV`.
 
-| Layer                          | Example                  | Allowed shape                                              |
-| ------------------------------ | ------------------------ | ---------------------------------------------------------- |
-| NBGV `NuGetPackageVersion`     | `0.1.0-Sprint.42`        | SemVer 2.0 with `.` separators in the prerelease segment   |
-| `Update-ModuleManifest -Prerelease` | `Sprint042`         | **Alphanumeric only** — no `.`, no `-`, no underscores     |
+| Layer                                  | Example            | Allowed shape                                              |
+| -------------------------------------- | ------------------ | ---------------------------------------------------------- |
+| NBGV `NuGetPackageVersion`             | `0.1.0-Sprint.42`  | SemVer 2.0 with `.` separators in the prerelease segment   |
+| `Update-ModuleManifest -Prerelease`    | `Sprint042`        | **Alphanumeric only** — no `.`, no `-`, no underscores     |
 | `Update-ModuleManifest -ModuleVersion` | `[Version]'0.1.0'` | 2-, 3-, or 4-part `System.Version`; **no prerelease here** |
 
 The two `.psd1` fields together reconstruct the SemVer string when published:
@@ -47,9 +60,10 @@ the gallery joins them as `<ModuleVersion>-<Prerelease>` (e.g.
 **Inputs**: `-ModuleRoot` (absolute path to the module folder).
 
 **Outputs**: `[PSCustomObject]` with three fields
-- `ModuleVersion`     — `[System.Version]` (3-part, e.g. `0.1.0`).
-- `Prerelease`        — alphanumeric string (e.g. `Sprint042`) or empty.
-- `FullNuGetVersion`  — raw NBGV output (e.g. `0.1.0-Sprint.42`).
+
+- `ModuleVersion` — `[System.Version]` (3-part, e.g. `0.1.0`).
+- `Prerelease` — alphanumeric string (e.g. `Sprint042`) or empty.
+- `FullNuGetVersion` — raw NBGV output (e.g. `0.1.0-Sprint.42`).
 
 **Algorithm**:
 
@@ -61,7 +75,7 @@ the gallery joins them as `<ModuleVersion>-<Prerelease>` (e.g.
 5. Parse with the regex
    `^(?<Major>\d+)\.(?<Minor>\d+)\.(?<Patch>\d+)(?:-(?<Label>[A-Za-z][A-Za-z0-9]*)(?:\.(?<Height>\d+))?(?:\.g[0-9a-f]+)?)?$`.
 6. Build the `[Version]` from `Major.Minor.Patch`.
-7. If `Label` is empty → stable / T5 → `Prerelease = ''`.
+7. If `Label` is empty → stable / Production tier → `Prerelease = ''`.
 8. Otherwise concatenate `'{0}{1:D3}' -f $Label, $Height` —
    e.g. `Sprint042`, `Alpha009`, `Beta015`.
 9. Validate the result matches `^[A-Za-z0-9]+$` and throw otherwise.
@@ -75,14 +89,14 @@ The zero-padding to **3 digits** is critical (see §4).
 `Update-ModuleManifest -Prerelease` enforces the rule
 `^[A-Za-z0-9]+$`. It rejects:
 
-- `Sprint.42`  — dot is illegal.
-- `Sprint-42`  — hyphen is illegal.
-- `42Sprint`   — must start with a letter (the regex above catches this in
+- `Sprint.42` — dot is illegal.
+- `Sprint-42` — hyphen is illegal.
+- `42Sprint` — must start with a letter (the regex above catches this in
   the parse step, not the prerelease check).
-- `''` *between* manifests at different tiers — empty is allowed and means
+- `''` _between_ manifests at different tiers — empty is allowed and means
   "stable release."
 
-The PSGallery + ProGet PowerShellGet endpoint both honor SemVer 2.0 *if* the
+The PSGallery + ProGet PowerShellGet endpoint both honor SemVer 2.0 _if_ the
 prerelease is well-formed, but they will not accept a `.psd1` that
 `Test-ModuleManifest` itself rejects locally.
 
@@ -105,29 +119,45 @@ compliant gallery).
 
 ---
 
-## 5. Tier-to-label mapping
+## 5. Ceiling-tier-to-label mapping
 
-The same five labels used for C# packages apply unchanged to PowerShell
-modules. See
-[CSharp-Packages-Versioning.md](CSharp-Packages-Versioning.md) §3 for the
-authoritative table; reproduced here for convenience:
+The five prerelease labels map directly to promotion ceiling tiers. This table
+is the authoritative reference for PowerShell module versioning; no other file
+needs to be consulted to understand the label-to-ceiling mapping.
 
-| Tier | Label name | NBGV `version.json` `prerelease` | Generated `Prerelease` |
-| ---- | ---------- | -------------------------------- | ---------------------- |
-| T1   | Sprint     | `Sprint`                         | `SprintNNN`            |
-| T2   | Alpha      | `Alpha`                          | `AlphaNNN`             |
-| T3   | Beta       | `Beta`                           | `BetaNNN`              |
-| T4   | QA         | `QA`                             | `QANNN`                |
-| T5   | Production | *(empty — no prerelease)*        | *(empty)*              |
+| Ceiling tier         | `version.json` label     | Generated `Prerelease` | Stages that execute at or below ceiling    |
+| -------------------- | ------------------------ | ---------------------- | ------------------------------------------ |
+| Experimental         | `Sprint` / feature label | `SprintNNN`            | Experimental only                          |
+| Development          | `Alpha`                  | `AlphaNNN`             | Experimental, Development                  |
+| Integration          | `Beta`                   | `BetaNNN`              | Experimental, Development, Integration     |
+| QA                   | `QA`                     | `QANNN`                | Experimental, Development, Integration, QA |
+| Production (=Stable) | _(empty)_                | _(empty)_              | Experimental through Production            |
 
-The tier label is **not** stored anywhere PowerShell-specific. It is read
-from the module's `version.json` (the same NBGV file used by the C# build).
-Promoting a module to the next tier means editing
-`<ModuleRoot>/version.json` and committing the change.
+> **Production vs Stable naming.** The canonical tier name in pipeline,
+> cmdlet, and run-state vocabulary is **Production**; the PowerShellGet feed
+> a Production-tier module is published to is named `PowershellGet-stable`.
+> The two names refer to the same tier — "Stable" is feed-side history,
+> "Production" is pipeline-side canonical. The same naming convention applies
+> to the C# NuGet topology (`nuget-stable` feed, Production tier). See
+> [VersionJsonAsCeiling.md](VersionJsonAsCeiling.md) for the canonical
+> cross-ecosystem ceiling narrative.
+
+The tier label is **not** stored anywhere PowerShell-specific. It is read from
+the module's `version.json` (the same NBGV file used by the C# build). Editing
+`<ModuleRoot>/version.json` and committing the change cuts a **new candidate**
+with a new ceiling (it produces a new artifact with a new version number).
+Moving an **existing** `.nupkg` between PowerShellGet feeds is a separate
+operation: `Promote-ProGetPackage`. That operation is documented in §7.
 
 ---
 
 ## 6. The `version.json` per module
+
+Per the V4-D07 per-project placement policy
+([`VersionJsonAsCeiling.md`](VersionJsonAsCeiling.md) "Placement Policy"), each
+module folder owns its own `version.json` adjacent to the `.psd1`; there is no
+reliance on a repo-root file for a module's ceiling. `Get-BuildContext` reads the
+ceiling from this file and throws if it is absent.
 
 Each module folder owns its own `version.json`:
 
@@ -141,8 +171,9 @@ Each module folder owns its own `version.json`:
 ```
 
 Notes:
-- **`pathFilters`** scopes the height to commits affecting *this module's
-  files only*. Without this, every commit anywhere in ATAP.Utilities would
+
+- **`pathFilters`** scopes the height to commits affecting _this module's
+  files only_. Without this, every commit anywhere in ATAP.Utilities would
   bump every module's height.
 - **`semVer: 2`** is required for `-Label.height` syntax; SemVer 1
   prereleases use a different separator and are not supported by the
@@ -152,19 +183,108 @@ Notes:
 
 ---
 
-## 7. Promotion procedure (T1 → T2 example)
+## 7. Promotion mechanics for PowerShell modules
 
-To promote a single module from Sprint (T1) to Alpha (T2):
+Under immutable build, the version-label embedded in a published module
+`.nupkg` declares the **ceiling tier** the module may reach during this run.
+The **current** tier is which PowerShellGet feed and BuildMaster stage the
+`.nupkg` currently lives in.
+Movement between feeds is a `Promote-ProGetPackage` call — a ProGet API
+operation that copies the existing bytes (or moves a feed-membership pointer)
+from one feed to another. The `.psd1` is not re-stamped, NBGV is not
+re-invoked, and `version.json` is not re-edited during a promotion.
+
+### 7.0 Ceiling semantics of the prerelease label
+
+| `version.json` label      | `CeilingTier` | Stages allowed for the same module package |
+| ------------------------- | ------------- | ------------------------------------------ |
+| `Sprint` or feature label | Experimental  | Experimental only                          |
+| `Alpha`                   | Development   | Experimental, Development                  |
+| `Beta`                    | Integration   | Experimental, Development, Integration     |
+| `QA`                      | QA            | Experimental, Development, Integration, QA |
+| none                      | Production    | Experimental through Production            |
+
+Example: changing a module to `"version": "0.1-Beta.{height}"` and committing
+it cuts a fresh Integration-ceiling candidate. The next run builds and
+publishes the `.nupkg` once in Experimental, promotes the same bytes to
+Development and Integration, and then skips QA and Production.
+
+### 7.0.1 BuildMaster run state for PowerShell module promotion
+
+`PowerShellModule-5Stage.otter` derives the current BuildMaster build id with
+`$BuildMasterId(build)` and stores generated inter-stage state here:
+
+```text
+_generated/buildmaster/<BuildMasterBuildId>/
+```
+
+The Experimental preamble captures the module's resolved package version and
+the Experimental stage writes the generated `.nupkg` path in that build-id
+folder. Later tiers use the captured `$ResolvedPackageVersion` from
+`<ModuleName>.resolved-version.tmp`; `$PackageVersion` is no longer an
+externally injected promotion input. Module build outputs remain under
+`_generated/psmodules/<ModuleName>/`; the buildmaster folder is only per-run
+state and diagnostic evidence.
+
+This section is structured around the two distinct operations that earlier
+versions of this doc conflated.
+
+### 7.1 The two operations are different
+
+- **Cutting a new candidate at the next tier** = edit `<ModuleRoot>/version.json`,
+  commit, and let the next pipeline run produce a fresh `.nupkg`. This
+  produces a **new artifact** with a **new version number** (e.g. moving
+  from `Sprint` to `Alpha` makes the next build land at
+  `0.1.0-Alpha.{newheight}`). Use this when you want a fresh build under
+  a different label. Procedure: §7.3.
+- **Promoting an existing candidate** = call `Promote-ProGetPackage`. The
+  `.nupkg`'s bytes are unchanged. The version number is unchanged. Only
+  the feed membership changes. Use this when an artifact has passed its
+  tier gate and is ready for the next feed. Procedure: §7.2.
+
+### 7.2 Promotion procedure (Experimental → Development example)
+
+The artifact `0.1.0-Alpha042` already exists in
+`PowershellGet-experimental` (because the developer who built it cut their
+candidate under the `Alpha` label — see §7.3). To make it official at the
+Development tier, promote it:
+
+```powershell
+Promote-ProGetPackage `
+    -Name     'ATAP.Utilities.FileIO.PowerShell' `
+    -Version  '0.1.0-Alpha042' `
+    -FromFeed 'PowershellGet-experimental' `
+    -ToFeed   'PowershellGet-development' `
+    -Reason   'DEV-PASS for build #4272'
+```
+
+`Promote-ProGetPackage` is the **only** mechanism for moving a
+PowerShell-module `.nupkg` between PowerShellGet feeds under the immutable
+build strategy. Promotion is not a re-pack, not a re-publish, and not a
+re-evaluation of `version.json`. See
+[Immutable-Build-Strategy.md §5](Immutable-Build-Strategy.md#5-what-promotion-is-and-is-not).
+
+BuildMaster passes `-CeilingTier` to `Promote-ProGetPackage`, so attempting to
+promote beyond the label-derived ceiling fails before any ProGet API call.
+
+### 7.3 Cutting a new candidate (formerly the "label promotion procedure")
+
+Run this procedure when you want to **change the label on a fresh build** —
+e.g. you've been building `Sprint` candidates and now want to start
+producing `Alpha` candidates. It produces a new artifact with a new
+version number. It does **not** move an existing artifact between feeds.
+
+To cut a new candidate for a single module under the next label:
 
 ```powershell
 $file = "src/ATAP.Utilities.FileIO.PowerShell/version.json"
 (Get-Content $file -Raw) -replace '"version":\s*"0\.1-Sprint\.\{height\}"', '"version": "0.1-Alpha.{height}"' |
     Set-Content $file -Encoding utf8
 git add $file
-git commit -m "promote(ps): ATAP.Utilities.FileIO.PowerShell to Alpha"
+git commit -m "version(ps): ATAP.Utilities.FileIO.PowerShell cut new Alpha candidate"
 ```
 
-To promote *every* PowerShell module at once:
+To cut _every_ PowerShell module under the next label at once:
 
 ```powershell
 Get-ChildItem ./src -Directory -Filter '*Powershell*','*PowerShell*','FinancialAPI' |
@@ -175,16 +295,25 @@ Get-ChildItem ./src -Directory -Filter '*Powershell*','*PowerShell*','FinancialA
         }
     }
 git add src/*/version.json
-git commit -m "promote(ps): bulk promote PowerShell modules T1->T2"
+git commit -m "version(ps): bulk cut new Alpha candidates for PowerShell modules"
 ```
 
 After commit, the next `nbgv get-version` invocation in any of those module
 roots returns `0.1.0-Alpha.{newheight}`. The build/pack/publish pipeline
-then resolves to the T2 PowerShellGet feed (see Pack-and-Publish doc §4).
+then publishes the resulting `.nupkg` to `PowershellGet-experimental` (the
+**only** publish target — see Pack-and-Publish doc §4). Movement of that
+new `.nupkg` to higher feeds happens by `Promote-ProGetPackage` per §7.2.
+
+### 7.4 Two operations, two procedures
+
+| Operation                                  | When                                                 | Procedure |
+| ------------------------------------------ | ---------------------------------------------------- | --------- |
+| Cut a new candidate at the next tier       | when you want a new artifact built under a new label | §7.3      |
+| Promote an existing artifact between feeds | when an artifact has passed its tier gate            | §7.2      |
 
 ---
 
-## 8. Stable (T5) special case
+## 8. Stable (Production tier) special case
 
 When `version.json` has no `prerelease` segment in `version`:
 
@@ -202,7 +331,8 @@ hyphen, no label). The translation cmdlet:
 `Build-PSModuleManifest` always passes `-Prerelease` to
 `Update-ModuleManifest` regardless of value — passing the empty string
 **clears** any pre-existing prerelease in the source manifest. This is
-intentional: it keeps the same code path for tier promotion to T5.
+intentional: it keeps the same code path for tier promotion to the
+Production tier.
 
 ---
 
@@ -230,13 +360,13 @@ rejects the git-hash suffix, and we never publish height-0 builds anyway
 
 ## 11. Common failures and remedies
 
-| Error                                                                              | Cause                                                | Fix                                                             |
-| ---------------------------------------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------- |
-| `The 'nbgv' CLI was not found on PATH`                                              | NBGV global tool not installed                       | `dotnet tool install -g nbgv`                                  |
-| `nbgv output '...' does not match the expected pattern`                             | `version.json` uses an unsupported syntax (e.g. SemVer 1) | Set `nuGetPackageVersion.semVer` to `2` and use `-Label.height` |
-| `Computed Prerelease '...' does not match the required alphanumeric pattern`        | Label contains `_` or `-`                            | Edit `version.json`; labels must be `^[A-Za-z][A-Za-z0-9]*$`     |
-| `Update-ModuleManifest: Cannot bind parameter Prerelease ... legal characters are alphanumeric` | Hand-passed prerelease bypassed the translation cmdlet | Always use `Get-PSModuleVersionFromNBGV` — never construct the prerelease manually |
-| Two consecutive builds resolve different versions                                  | Files outside `pathFilters` were modified            | Verify `pathFilters` includes only this module's source         |
+| Error                                                                                           | Cause                                                     | Fix                                                                                |
+| ----------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `The 'nbgv' CLI was not found on PATH`                                                          | NBGV global tool not installed                            | `dotnet tool install -g nbgv`                                                      |
+| `nbgv output '...' does not match the expected pattern`                                         | `version.json` uses an unsupported syntax (e.g. SemVer 1) | Set `nuGetPackageVersion.semVer` to `2` and use `-Label.height`                    |
+| `Computed Prerelease '...' does not match the required alphanumeric pattern`                    | Label contains `_` or `-`                                 | Edit `version.json`; labels must be `^[A-Za-z][A-Za-z0-9]*$`                       |
+| `Update-ModuleManifest: Cannot bind parameter Prerelease ... legal characters are alphanumeric` | Hand-passed prerelease bypassed the translation cmdlet    | Always use `Get-PSModuleVersionFromNBGV` — never construct the prerelease manually |
+| Two consecutive builds resolve different versions                                               | Files outside `pathFilters` were modified                 | Verify `pathFilters` includes only this module's source                            |
 
 ---
 
@@ -293,6 +423,83 @@ Promote one module to the next tier:
 $file = './src/ATAP.Utilities.FileIO.PowerShell/version.json'
 (Get-Content $file -Raw) -replace 'Sprint', 'Alpha' | Set-Content $file -Encoding utf8
 ```
+
+---
+
+## 14. Manifest Prerelease vs FullNuGetVersion
+
+**Source:** Migrated from
+`Explainers/0111-proget-feed-tier-dependency-build-report.md` section
+"NBGV version files and tier selection".
+
+`Get-PSModuleVersionFromNBGV.ps1` derives three related-but-different values
+from a single NBGV invocation. The split exists because the PowerShell
+module manifest's prerelease format is **stricter** than the NuGet SemVer
+prerelease format that NBGV emits.
+
+### 14.1 The three derived values
+
+| Value              | Example           | Used for                                 |
+| ------------------ | ----------------- | ---------------------------------------- |
+| `FullNuGetVersion` | `0.1.0-Sprint.42` | NuGet package identity / version         |
+| `ModuleVersion`    | `0.1.0`           | PowerShell manifest stable version field |
+| `Prerelease`       | `Sprint042`       | PowerShell manifest prerelease field     |
+
+### 14.2 Concrete example
+
+Starting from a module `version.json`:
+
+```json
+{
+  "version": "0.1-Sprint.{height}",
+  "nuGetPackageVersion": { "semVer": 2 },
+  "pathFilters": ["./"],
+  "publicReleaseRefSpec": [".*"]
+}
+```
+
+NBGV (`nbgv get-version --variable NuGetPackageVersion`) emits a package
+version such as `0.1.0-Sprint.42`. `Get-PSModuleVersionFromNBGV` then
+derives:
+
+| Field              | Value             | Origin                                                                 |
+| ------------------ | ----------------- | ---------------------------------------------------------------------- |
+| `FullNuGetVersion` | `0.1.0-Sprint.42` | Raw NBGV output — used as the `.nupkg` identity on ProGet              |
+| `ModuleVersion`    | `0.1.0`           | The `Major.Minor.Patch` triple — used as `.psd1` `ModuleVersion` field |
+| `Prerelease`       | `Sprint042`       | Label + zero-padded height — used as `.psd1` `Prerelease` field        |
+
+The `Prerelease` value is produced by `'{0}{1:D3}' -f $Label, $Height` —
+i.e. concatenate the label with the height zero-padded to 3 digits, and
+strip the dot separator. This is the only piece of "translation" the cmdlet
+performs; everything else is direct parsing.
+
+When the gallery / ProGet republishes the package, it joins the two manifest
+fields as `<ModuleVersion>-<Prerelease>` → `0.1.0-Sprint042`. This is **not
+the same string** as `FullNuGetVersion` (`0.1.0-Sprint.42`), but both
+identify the same artifact.
+
+### 14.3 Why the split exists
+
+NuGet SemVer prerelease labels can include dot-separated identifiers
+(`Sprint.42` is valid SemVer 2.0). PowerShell module manifests use a
+stricter prerelease value: `Update-ModuleManifest -Prerelease` enforces
+`^[A-Za-z0-9]+$` (alphanumeric only — no `.`, no `-`, no underscores). So
+the code normalizes the NBGV label and height into an alphanumeric
+PowerShell prerelease string while preserving the original NBGV string for
+NuGet-side identity.
+
+The split therefore reflects two different downstream consumers with two
+different rules, both fed from the same NBGV source of truth:
+
+- **`FullNuGetVersion`** travels with the `.nupkg` (NuGet's identity
+  format).
+- **`ModuleVersion` + `Prerelease`** travel inside the `.psd1` (PowerShell's
+  stricter manifest format).
+
+See §1 ("The two-format gap") and §3 ("Why the prerelease must be
+alphanumeric") for the rule details, and §4 ("Why height is zero-padded to
+3 digits") for why the height transformation is necessary even when the
+label format itself would have been legal.
 
 ---
 

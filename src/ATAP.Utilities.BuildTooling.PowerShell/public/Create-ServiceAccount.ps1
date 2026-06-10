@@ -38,7 +38,7 @@ Function Create-ServiceAccount {
   [CmdletBinding(SupportsShouldProcess = $true)]
   param (
     [ValidateNotNullOrEmpty()][string] $serviceAccount
-    , [ValidateNotNullOrEmpty()][string] $serviceAccountPasswordKey
+    , [ValidateNotNullOrEmpty()][securestring] $serviceAccountPasswordKey
     , [ValidateNotNullOrEmpty()][string] $serviceAccountFullname
     , [ValidateNotNullOrEmpty()][string] $serviceAccountDescription
     , [ValidateNotNullOrEmpty()][string] $serviceAccountUserHomeDirectory
@@ -59,9 +59,8 @@ Function Create-ServiceAccount {
   END {
 
     # Create Service Account User using carbon if the local user does not exist
-    # The password should come from a vault (security vault)
-    $password = ConvertTo-SecureString $serviceAccountPasswordKey -AsPlainText -Force
-    $credential = New-Object System.Management.Automation.PSCredential ($serviceAccount, $password )
+    # The password should come from a vault as a SecureString.
+    $credential = [System.Management.Automation.PSCredential]::new($serviceAccount, $serviceAccountPasswordKey)
     switch ($state) {
       'Present' {
         $result = [ordered]@{

@@ -16,3 +16,8 @@ foreach ($import in $allFunctions) {
 }
 # list the public cmdlet and function names for including into a .psd1 file (ToDo: automate the .psd1 file creation as part of the CI/CD/CD pipeline)
 # list the private cmdlet names for including into a .psd1 file (ToDo: automate the .psd1 file creation as part of the CI/CD/CD pipeline)
+
+# Back-compat command alias (relocated here from private/DatabaseSqlConnection.Helpers.ps1
+# so that file only DEFINES functions and executes nothing at load time). Created in
+# module scope at import, exactly as the dot-sourced Set-Alias did before.
+Set-Alias -Name Resolve-DatabaseSqlConnectionFromBitwardenSecretName -Value Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName -ErrorAction SilentlyContinue

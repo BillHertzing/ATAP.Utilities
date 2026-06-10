@@ -16,6 +16,9 @@ BeforeAll {
 }
 
 Describe 'ConvertTo-ProGetFeedNameAlternateForm' -Tag 'Unit' {
+  BeforeEach {
+    Mock Write-PSFMessage { }
+  }
 
   Context 'FromIndividual — 4-tier legacy values still work' {
 

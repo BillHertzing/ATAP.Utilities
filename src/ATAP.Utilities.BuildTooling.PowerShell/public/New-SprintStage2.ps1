@@ -1,18 +1,3 @@
-# =====================================================================
-# Dot-source private helper functions
-# =====================================================================
-$privateDir = Join-Path $PSScriptRoot '..' 'private'
-. (Join-Path $privateDir 'Set-ClaudeSettingsSymlink.ps1')
-# New-SprintBuildMasterBuilds.ps1 replaced by public Set-BuildMasterSprintVariables (Area 7.2-1)
-# New-SprintDatabaseInstances (private) superseded by public New-SprintSqlServerInstances
-if (-not (Get-Command -Name 'New-SprintSqlServerInstances' -CommandType Function -ErrorAction SilentlyContinue)) {
-  . (Join-Path $PSScriptRoot 'New-SprintSqlServerInstances.ps1')
-}
-
-# =====================================================================
-# Main public cmdlet
-# =====================================================================
-
 function New-SprintStage2 {
   <#
   .SYNOPSIS
@@ -25,7 +10,10 @@ function New-SprintStage2 {
     Reads the sprint TASKS.md file and extracts every unique repository name
     mentioned in task lines (the [RepoName] markers). Repos named '_Planning',
     'SharedVSCode', and 'Cross-Repo' are excluded — Step 1 already handled the
-    first two, and Cross-Repo is not an actual repository.
+    first two, and Cross-Repo is not an actual repository. The active HTML task
+    board for humans is `TASKS.html` or the highest `TASKS_V*.html`; keep
+    `TASKS.md` synchronized with that board until Stage 2 no longer depends on
+    markdown parsing.
 
     For each discovered repo the cmdlet:
       1. Creates a GitHub issue via 'gh issue create'.
@@ -39,6 +27,9 @@ function New-SprintStage2 {
     After all repos are processed the cmdlet also:
       6. Creates a symlink from the SharedVSCode sprint worktree's
          claude-settings.json to ~/.claude/settings.json.
+      6b. Retargets the VS Code user settings symlink
+          ($env:APPDATA\Code\User\settings.json) to point at UserSettings.jsonc
+          in the SharedVSCode sprint worktree via Set-UserSettingsSymlink.
       7. Scaffolds BuildMaster sprint build configurations (DRAFT — see notes).
       8. Creates Bitwarden secure-note items with SQL Server connection strings
          for the ATAPUtilities and AceCommander databases across Development
@@ -55,7 +46,8 @@ function New-SprintStage2 {
   .PARAMETER TasksFilePath
     Path to the TASKS.md file produced by sprint planning (Step 2).
     Defaults to the TASKS.md inside the _Planning sprint worktree whose
-    path is provided via Stage1Result.
+    path is provided via Stage1Result. This remains the legacy automation input;
+    keep it synchronized with the active HTML board and companion task files.
   .PARAMETER Stage1Result
     The PSCustomObject returned by New-SprintStage1. Supplies the sprint
     number, SharedVSCode worktree path, and _Planning worktree path.
@@ -74,7 +66,11 @@ function New-SprintStage2 {
     Defaults to 'http://localhost:50000'.
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server.
-    Defaults to 'http://localhost:50001'.
+    Defaults to 'http://localhost:50017'.
+  .PARAMETER DryRun
+    Preview all sprint-start downstream actions without creating GitHub issues,
+    branches, worktrees, junctions, SharedVSCode context, secrets, SQL Server
+    instances, BuildMaster variables, or claude-settings links.
   .OUTPUTS
     PSCustomObject — contains repoResults, infrastructure, and error fields.
   .EXAMPLE
@@ -106,13 +102,38 @@ function New-SprintStage2 {
 
     [string]$ProGetBaseUrl = 'http://localhost:50000',
 
-    [string]$BuildMasterBaseUrl = 'http://localhost:50001'
+    [string]$BuildMasterBaseUrl = 'http://localhost:50017',
+
+    [switch]$DryRun
   )
 
   begin {
     $fn = $MyInvocation.MyCommand.Name
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
+
+    # Load helper functions. Fallback for running this file from source without
+    # importing the module; a normal Import-Module already dot-sources these
+    # private helpers. Kept inside BEGIN so loading/dot-sourcing this file only
+    # DEFINES the function and never executes anything at load time.
+    $privateDir = Join-Path $PSScriptRoot '..' 'private'
+    foreach ($privateHelperName in @('Set-ClaudeSettingsSymlink.ps1', 'Set-UserSettingsSymlink.ps1', 'Get-SprintTaskRepositoryNames.ps1')) {
+      $privateHelperPath = Join-Path $privateDir $privateHelperName
+      if (Test-Path -LiteralPath $privateHelperPath -PathType Leaf) {
+        . $privateHelperPath
+      }
+    }
+    # Retired in Sprint 0007 task B08 (now under Obsolete/private/):
+    #   - New-SprintBuildMasterBuilds.ps1   replaced by public Set-BuildMasterSprintVariables (Area 7.2-1)
+    #   - New-SprintDatabaseInstances.ps1   superseded by public New-SprintSqlServerInstances
+    if (-not (Get-Command -Name 'New-SprintSqlServerInstances' -CommandType Function -ErrorAction SilentlyContinue)) {
+      . (Join-Path $PSScriptRoot 'New-SprintSqlServerInstances.ps1')
+    }
+
+    if ($DryRun) {
+      $WhatIfPreference = $true
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'DryRun enabled — no external side effects will be performed.'
+    }
 
     # --- Validate Stage1Result has the fields we need ---
     $sprintNum = $Stage1Result.nextSprintNumber
@@ -126,6 +147,21 @@ function New-SprintStage2 {
     }
 
     $svIssueNum = $Stage1Result.sharedVSCode.issueNumber
+    if ([string]::IsNullOrWhiteSpace($svIssueNum)) {
+      $svBranchName = $Stage1Result.sharedVSCode.branchName
+      if (-not [string]::IsNullOrWhiteSpace($svBranchName) -and $svBranchName -match '^(?<IssueNumber>\d+)-Sprint-\d{4}-work-items$') {
+        $svIssueNum = $Matches['IssueNumber']
+      }
+    }
+    if ([string]::IsNullOrWhiteSpace($svIssueNum)) {
+      $svWorktreeLeaf = Split-Path -Path $svWorktreePath -Leaf
+      if ($svWorktreeLeaf -match '^SharedVSCode-wt-(?<IssueNumber>\d+)-Sprint-\d{4}-work-items$') {
+        $svIssueNum = $Matches['IssueNumber']
+      }
+    }
+    if ([string]::IsNullOrWhiteSpace($svIssueNum)) {
+      throw 'Stage1Result.sharedVSCode.issueNumber is missing and could not be derived from branchName or worktreePath.'
+    }
 
     # --- Resolve TasksFilePath default ---
     if (-not $PSBoundParameters.ContainsKey('TasksFilePath')) {
@@ -140,18 +176,58 @@ function New-SprintStage2 {
       throw "TASKS.md not found at $TasksFilePath"
     }
 
-    # --- Ensure external dependencies ---
-    Assert-GitAvailable
+    $planningWorktreePath = Split-Path -Path $TasksFilePath -Parent
+    $activeTaskBoardPath = Join-Path $planningWorktreePath 'TASKS.html'
+    $versionedTaskBoards = @(Get-ChildItem -LiteralPath $planningWorktreePath -Filter 'TASKS_V*.html' -File -ErrorAction SilentlyContinue |
+        Sort-Object Name -Descending)
+    if ($versionedTaskBoards.Count -gt 0) {
+      $activeTaskBoardPath = $versionedTaskBoards[0].FullName
+    }
+    $accomplishedPath = Join-Path $planningWorktreePath 'Tasks.Accomplished.html'
+    $proceduralDetailsPath = Join-Path $planningWorktreePath 'Tasks.ProceduralDetails.html'
 
-    if (-not (Get-Command -Name 'gh' -ErrorAction SilentlyContinue)) {
-      throw 'The GitHub CLI (gh) is required but was not found on PATH.'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+      -Message "Stage 2 repository discovery reads TASKS.md at '$TasksFilePath'. Keep it synchronized with the active task board '$activeTaskBoardPath' and companion files '$accomplishedPath' / '$proceduralDetailsPath'."
+
+    # Stage 2 reads host-specific database and package settings. Fail early so
+    # agent/no-profile shells do not create partial sprint infrastructure.
+    if (-not $DryRun) {
+      $missingGlobalConfig = [System.Collections.Generic.List[string]]::new()
+
+      if ($null -eq $global:configRootKeys -or
+        -not ($global:configRootKeys -is [hashtable]) -or
+        $global:configRootKeys.Count -eq 0) {
+        [void]$missingGlobalConfig.Add('$global:configRootKeys')
+      }
+
+      if ($null -eq $global:settings -or
+        -not ($global:settings -is [hashtable]) -or
+        $global:settings.Count -eq 0) {
+        [void]$missingGlobalConfig.Add('$global:settings')
+      }
+
+      if ($missingGlobalConfig.Count -gt 0) {
+        $setupCommand = 'Set-GlobalConfigRootKeys; $global:settings = Get-HostSettings -hostName $env:COMPUTERNAME'
+        throw "New-SprintStage2 requires $($missingGlobalConfig -join ' and ') before it can run. Run the ATAP configuration setup command first: $setupCommand"
+      }
+    }
+
+    # --- Ensure external dependencies ---
+    if (-not $DryRun) {
+      Assert-GitAvailable
+
+      if (-not (Get-Command -Name 'gh' -ErrorAction SilentlyContinue)) {
+        throw 'The GitHub CLI (gh) is required but was not found on PATH.'
+      }
     }
 
     # Dot-source Set-WorktreeJunctions if not already loaded
     $setWtJunctionsPath = Join-Path $GitRoot 'ATAP.Utilities' 'src' `
       'ATAP.Utilities.BuildTooling.PowerShell' 'public' 'Set-WorktreeJunctions.ps1'
     if (-not (Get-Command -Name 'Set-WorktreeJunctions' -CommandType Function -ErrorAction SilentlyContinue)) {
-      if (Test-Path $setWtJunctionsPath) {
+      if ($DryRun) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'DryRun: skipping Set-WorktreeJunctions dependency load.'
+      } elseif (Test-Path $setWtJunctionsPath) {
         . $setWtJunctionsPath
       } else {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
@@ -160,15 +236,18 @@ function New-SprintStage2 {
       }
     }
 
-    # Ensure SharedVSCode functions are loaded
+    # Dot-source Initialize-DownstreamSprintFromSharedVSCode if not already loaded
     if (-not (Get-Command -Name 'Initialize-DownstreamSprintFromSharedVSCode' -CommandType Function -ErrorAction SilentlyContinue)) {
-      $importPath = Join-Path $GitRoot 'SharedVSCode' 'Powershell' 'Import-SharedVSCodeFunctions.ps1'
-      if (Test-Path $importPath) {
-        . $importPath
+      $initializeDownstreamPath = Join-Path $GitRoot 'ATAP.Utilities' 'src' `
+        'ATAP.Utilities.BuildTooling.PowerShell' 'public' 'Initialize-DownstreamSprintFromSharedVSCode.ps1'
+      if ($DryRun) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'DryRun: skipping Initialize-DownstreamSprintFromSharedVSCode dependency load.'
+      } elseif (Test-Path $initializeDownstreamPath) {
+        . $initializeDownstreamPath
       } else {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
-          -Message "Import-SharedVSCodeFunctions.ps1 not found at $importPath"
-        throw "Import-SharedVSCodeFunctions.ps1 not found at $importPath"
+          -Message "Initialize-DownstreamSprintFromSharedVSCode.ps1 not found at $initializeDownstreamPath"
+        throw "Initialize-DownstreamSprintFromSharedVSCode.ps1 not found at $initializeDownstreamPath"
       }
     }
   }
@@ -181,19 +260,7 @@ function New-SprintStage2 {
       -Message "Parsing $TasksFilePath for repo references"
 
     $tasksContent = Get-Content -Path $TasksFilePath -ErrorAction Stop
-    $repoNames = [System.Collections.Generic.HashSet[string]]::new(
-      [System.StringComparer]::OrdinalIgnoreCase
-    )
-
-    foreach ($line in $tasksContent) {
-      # Match task lines like: - [ ] **Task 4.1** [AceCommander] — ...
-      if ($line -match '\[([A-Za-z][A-Za-z0-9._-]+)\]') {
-        $candidate = $Matches[1]
-        if ($candidate -notin $ExcludeRepos) {
-          [void]$repoNames.Add($candidate)
-        }
-      }
-    }
+    $repoNames = @(Get-SprintTaskRepositoryNames -TasksContent $tasksContent -ExcludeRepos $ExcludeRepos)
 
     if ($repoNames.Count -eq 0) {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
@@ -217,13 +284,14 @@ function New-SprintStage2 {
         worktreePath     = $null
         created          = $false
         junctionsCreated = $false
+        dryRun           = $DryRun.IsPresent
         error            = $null
       }
 
       $repoPath = Join-Path $GitRoot $repoName
 
       # Verify the repo exists locally
-      if (-not (Test-Path (Join-Path $repoPath '.git'))) {
+      if (-not $DryRun -and -not (Test-Path (Join-Path $repoPath '.git'))) {
         $entry.error = "Local repo not found at $repoPath"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $entry.error
         [void]$repoResults.Add([PSCustomObject]$entry)
@@ -263,6 +331,10 @@ function New-SprintStage2 {
       }
 
       # --- 2. Fetch latest main ---
+      if ($DryRun -and $null -eq $entry.issueNumber) {
+        $entry.issueNumber = 'DRYRUN'
+      }
+
       try {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
           -Message "Fetching and checking out $repoName main"
@@ -376,11 +448,29 @@ function New-SprintStage2 {
     $claudeSettingsError = $null
 
     try {
-      Set-ClaudeSettingsSymlink -SharedVSCodeWorktreePath $svWorktreePath
-      $claudeSettingsLinked = $true
+      if ($PSCmdlet.ShouldProcess($svWorktreePath, 'Set claude-settings.json symlink')) {
+        Set-ClaudeSettingsSymlink -SharedVSCodeWorktreePath $svWorktreePath
+        $claudeSettingsLinked = $true
+      }
     } catch {
       $claudeSettingsError = "Failed to symlink claude-settings.json. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $claudeSettingsError
+    }
+
+    # ===================================================================
+    # 6b. Retarget VS Code UserSettings symlink to sprint worktree
+    # ===================================================================
+    $userSettingsLinked = $false
+    $userSettingsError = $null
+
+    try {
+      if ($PSCmdlet.ShouldProcess($svWorktreePath, 'Retarget VS Code UserSettings.jsonc symlink')) {
+        Set-UserSettingsSymlink -SharedVSCodeWorktreePath $svWorktreePath
+        $userSettingsLinked = $true
+      }
+    } catch {
+      $userSettingsError = "Failed to retarget VS Code UserSettings symlink. Exception: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $userSettingsError
     }
 
     # ===================================================================
@@ -403,11 +493,14 @@ function New-SprintStage2 {
         }
       }
 
-      $buildMasterResult = Set-BuildMasterSprintVariables `
-        -SprintNumber $sprintNum `
-        -Username $env:USERNAME `
-        -SprintBranchNames $sprintBranchNameMap `
-        -BuildMasterBaseUrl $BuildMasterBaseUrl
+      if ($PSCmdlet.ShouldProcess($BuildMasterBaseUrl, 'Set BuildMaster sprint variables')) {
+        $buildMasterResult = Set-BuildMasterSprintVariables `
+          -SprintNumber $sprintNum `
+          -Username $env:USERNAME `
+          -SprintBranchNames $sprintBranchNameMap `
+          -BuildMasterBaseUrl $BuildMasterBaseUrl `
+          -WhatIf:$WhatIfPreference
+      }
     } catch {
       $buildMasterError = "Failed to set BuildMaster sprint variables. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $buildMasterError
@@ -420,9 +513,12 @@ function New-SprintStage2 {
     $connStringError = $null
 
     try {
-      $connStringResults = New-SprintBitwardenSecrets `
-        -SprintNumber $sprintNum `
-        -DeveloperUsername $env:USERNAME
+      if ($PSCmdlet.ShouldProcess('Bitwarden vault', 'Create sprint connection string secrets')) {
+        $connStringResults = New-SprintBitwardenSecrets `
+          -SprintNumber $sprintNum `
+          -DeveloperUsername $env:USERNAME `
+          -WhatIf:$WhatIfPreference
+      }
     } catch {
       $connStringError = "Failed to create Bitwarden connection string secrets. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $connStringError
@@ -438,8 +534,8 @@ function New-SprintStage2 {
     $dbInstHost = 'localhost'
     $dbInstConnMethod = 'tcp'
     $dbInstPort = $null
-    $databasesKey2 = $global:configRootKeys['DatabasesCollectionConfigRootKey']
-    if ($global:settings -and $global:settings.ContainsKey($databasesKey2)) {
+    $databasesKey2 = if ($global:configRootKeys) { $global:configRootKeys['DatabasesCollectionConfigRootKey'] } else { $null }
+    if ($databasesKey2 -and $global:settings -and $global:settings.ContainsKey($databasesKey2)) {
       $dbColl2 = $global:settings[$databasesKey2]
       $atapDb2 = if ($dbColl2.ContainsKey('ATAPUtilities')) {
         $dbColl2['ATAPUtilities']
@@ -465,7 +561,9 @@ function New-SprintStage2 {
     }
 
     try {
-      $dbInstanceResults = New-SprintSqlServerInstances @dbInstanceParams
+      if ($PSCmdlet.ShouldProcess('local SQL Server', 'Create sprint SQL Server instances and databases')) {
+        $dbInstanceResults = New-SprintSqlServerInstances @dbInstanceParams -WhatIf:$WhatIfPreference
+      }
     } catch {
       $dbInstanceError = "Failed to create sprint database instances. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $dbInstanceError
@@ -478,10 +576,13 @@ function New-SprintStage2 {
       -Message "Sprint Stage 2 complete — processed $($repoResults.Count) downstream repo(s)"
 
     $finalResult = [PSCustomObject]@{
+      dryRun         = $DryRun.IsPresent
       repoResults    = $repoResults.ToArray()
       infrastructure = [PSCustomObject]@{
         claudeSettingsLinked       = $claudeSettingsLinked
         claudeSettingsError        = $claudeSettingsError
+        userSettingsLinked         = $userSettingsLinked
+        userSettingsError          = $userSettingsError
         # PLACEHOLDER: buildMaster fields are draft — values will be empty
         # until BuildMaster API integration is tested and enabled.
         buildMasterVariablesSet    = if ($buildMasterResult) { $buildMasterResult.variablesSet } else { @() }

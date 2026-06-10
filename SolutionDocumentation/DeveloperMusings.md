@@ -154,3 +154,108 @@ Using: (in machine profile so all pwsh scripts have access to the secrets)
 any errors means the user is not authorized, just ignore any errors in the machine profile
 1) test each SecretManagement extension vault
 
+---
+
+## Appendix: Database Packaging Options A-D
+
+_Migrated from `_Planning/Explainers/0111-acecommander-database-interim-architecture.md` lines 109-195. Captured here as design research; the Sprint-0007 working decision (Option A) lives in `Database-Change-Unit-and-Flyway-Promotion.md` under "Interim Catalog/Schema Decision (Sprint 0007)"._
+
+### Option A - One SQL Server catalog, separate schemas
+
+`ATAPUtilities` is the physical database. `ATAPUtilities` / `MinimalTableSet` are reference schemas. `AceCommander` is the writable application schema.
+
+Benefits:
+
+- Matches the current Flyway implementation.
+- Fixes the immediate runtime failure by pointing both contexts at the same catalog.
+- Supports cross-schema joins, views, and stored procedures without cross-database complexity.
+- Allows schema-scoped permissions: AceCommander can be read-only against reference schemas and read/write against its own schema.
+- Keeps Sprint 0007 testing focused on wiring, data access, scheduled tasks, and tier selection.
+
+Costs:
+
+- Weaker physical isolation between reference and AceCommander data.
+- Backups/restores are catalog-wide unless custom export tooling is added.
+- Future separation into multiple databases will require a migration plan.
+- Multi-tenant server data will still need tenant keys and possibly row-level security.
+
+Recommendation: use this for Sprint 0007.
+
+### Option B - Separate SQL Server databases
+
+`ATAPUtilities` is the reference database. `AceCommander` is the application database.
+
+Benefits:
+
+- Clearer physical ownership and backup boundaries.
+- Easier independent lifecycle, restore, and potential tenant/database split.
+- Aligns with the "two product databases" wording in part of `0104-sql-databases-lifecycle.md`.
+
+Costs:
+
+- Does not match current migrations.
+- Requires two Flyway database lifecycles, two connection strings, and explicit cross-database access decisions.
+- Cross-database foreign keys are not available in SQL Server.
+- Cross-database joins and stored procedures increase permissions and deployment complexity.
+
+Recommendation: defer until the database architecture deep dive.
+
+### Option C - Dedicated database-definition repository/package
+
+Move SQL migrations, CSV seed data, stored procedure references, and database documentation into a dedicated database repo that publishes versioned artifacts.
+
+Potential package forms:
+
+- Flyway migration bundle zip.
+- NuGet package containing `Database/Flyway` assets.
+- DACPAC plus seed-data artifacts.
+- BuildMaster/ProGet database release package.
+
+Benefits:
+
+- Decouples database revisions from both ATAP.Utilities library releases and AceCommander app releases.
+- Makes database versioning explicit and packageable.
+- Lets clients, servers, tests, and build pipelines consume the same database artifact.
+
+Costs:
+
+- Requires a new release pipeline and promotion policy.
+- Forces decisions about semantic versioning for schema/data, package ID naming, and feed tiering.
+- Needs migration compatibility rules between application versions and database artifact versions.
+- Does not solve offline sync or tenant isolation by itself.
+
+Recommendation: create a scope-creep deep dive item now; do not execute during Sprint 0007 unless the sprint is formally re-scoped.
+
+### Option D - SQLCipher local encrypted database for offline apps
+
+Use SQLCipher-backed SQLite on Windows, iOS, Android, macOS, and Linux clients for user-specific offline data, especially PII/PCI and local operation queues.
+
+Benefits:
+
+- Fits offline-first client needs.
+- Avoids storing client PII/PCI in plaintext local files.
+- Cross-platform SQLCipher databases can support a shared local persistence design.
+
+Costs:
+
+- Requires platform key management: Windows DPAPI or credential locker, iOS Keychain, Android Keystore, macOS Keychain, and Linux secret service/keyring.
+- Requires sync architecture: outbox/inbox, conflict detection, tombstones, revision IDs, and tenant/user identity mapping.
+- SQLCipher protects data at rest, not data after it is decrypted in process.
+- SQLite concurrency and server SQL Server concurrency are different enough that one schema should not be blindly copied into the other.
+
+Recommendation: treat SQLCipher as a separate local/offline data product with a deliberate sync boundary, not as a direct clone of the SQL Server schema.
+
+---
+
+## Appendix: Deferred Database Deep-Dive Questions
+
+_Migrated from `_Planning/Explainers/0111-acecommander-database-interim-architecture.md` lines 301-311. These eight questions are deferred past Sprint 0007 per D-07._
+
+- Is the reference database a product in its own right, separate from ATAP.Utilities libraries?
+- Should reference data be distributed as Flyway migrations, DACPAC, NuGet content package, BuildMaster artifact, or a dedicated database package type?
+- Should the hosted server use database-per-tenant, shared multitenant database with RLS, or a hybrid model?
+- What is the formal sync model between server SQL Server and local SQLCipher databases?
+- Which data belongs only on-device, which data syncs to the server, and which data is reference-only?
+- What are the data classification rules for PII, PCI, credentials, tokens, telemetry, scheduled jobs, and plugin data?
+- How will schema/data package versions declare compatibility with AceCommander app versions?
+- What is the migration/rollback strategy for SQLCipher local schemas across app upgrades?

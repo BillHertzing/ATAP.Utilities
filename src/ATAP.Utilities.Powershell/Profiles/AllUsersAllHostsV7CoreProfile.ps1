@@ -174,14 +174,23 @@ $PSDefaultParameterValues = @{
 }
 # encoding : New-Object System.Text.UTF8Encoding($false) # UTF8 encoded with or without a ByteOrdermark(BOM) which results in System.Text.UTF8Encoding
 # encoding : [System.Text.Encoding]::UTF8 which results in System.Text.UTF8Encoding+UTF8EncodingSealed
-
-# Dot source the list of configuration keys
-# ToDo: active development; currently a package, eventually a DB call?
+# Decide if this machine profile will use the stable branch or sprint branch for its child functions
+$repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'  # Stable worktree StartSprintAgent and EndSprintAgent populates these
+$repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items'; # sprint worktree
+# Load the list of configuration keys into $global:ConfigRootKeys
+# May come from the Release package, from the stable worktree, or from a sprint worktree
+# Until the Powershell package is released and installed, get it from the stable worktree
 # Load the helper script
+$projectpathRel = 'src\ATAP.Utilities.ConfigRootKeys.Powershell'
+$cmdletPathRel = 'public\Set-GlobalConfigRootKeys.ps1'
 try {
+  # This will auto-load and return true if the Package is installed
   if (-not (Get-Command -Name 'Set-GlobalConfigRootKeys' -CommandType Function -ErrorAction SilentlyContinue)) {
-    $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
-    $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-98-sprint-0006-work-items'
+    # SprintEndAgent uncomments the following line
+    # SprintStartAgent comments the following line
+    #$repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
+    # sprintstartagent insert a line similar to this, sprintendagent removes this line
+    $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items'
     $projectpathRel = 'src\ATAP.Utilities.ConfigRootKeys.Powershell'
     $cmdletPathRel = 'public\Set-GlobalConfigRootKeys.ps1'
     . $(Join-Path $repobasepath $projectpathRel $cmdletPathRel)
@@ -191,51 +200,22 @@ try {
   Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
   throw
 }
+
 Set-GlobalConfigRootKeys
-
-# Configuration root key .ps1 files should be a peer of the machine profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
-
-# ToDo: have Ansible write a complete global_ConfigRootKeys.ps1 file instead of using fragments that have a hostspecific set of keys
-# . $PSHOME/global_ConfigRootKeys.ps1
-# . $PSHOME/global_ConfigRootKeys.IAC.Fragments/global_ConfigRootKeys.IAC.Fragment.Hosts.ps1
-# Print the global:ConfigRootKeys if Debug
-# Write-PSFMessage -Level Debug -Message ('global:configRootKeys:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:configRootKeys ($indent + $indentIncrement) $indentIncrement) + '}' )
 
 # [Ansible: Understanding variable precedence](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#understanding-variable-precedence)
 
-# Until the organizations 'infrastructure-as-code (IAC)' is stored in a vault, import the HostSettings from the organizations current IAC directory
-# during the transition to packaging, try first the computers local machine directory
-if (Test-Path -Path "$env:ProgramFiles\Powershell\Modules\ATAP.Utilities.Powershell\Resources\HostSettings.ps1") {
-  . "$env:ProgramFiles\Powershell\Modules\\ATAP.Utilities.Powershell\Resources\HostSettings.ps1"
-} elseif (Test-Path -Path "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\ATAP.IAC\Windows\HostSettings.ps1") {
-  # . "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\ATAP.IAC\Windows\HostSettings.ps1"
-  . "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\ATAP.IAC-wt-7-sprint-0006-work-items\Windows\HostSettings.ps1"
-} else {
-  Write-PSFMessage -Level Debug -Message ('HostSettings.ps1 not found')
-}
-# . $(Join-Path -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.IAC', 'Windows', 'HostSettings.ps1'))
-
-# ToDo: get packaging working
-# During the transition to packaging, see if the function exists. If it does not, then dot-source the development copy from Dropbox
-if (!(Get-Command Get-ClonedAndModifiedHashtable -ErrorAction silentlycontinue)) {
-  # command not found, must be on a computer that does not have the ATAP.Utilities.Powershell module installed
-  . $(Join-PathNoResolve -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-ClonedAndModifiedHashtable.ps1'))
-  # . $(Join-PathNoResolve -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-ClonedObject.ps1'))
+### This starts the area where we load the settings for this host
+# Until ATAP.Utilities.Powershell is released as an installed module, dot-source
+# Get-HostSettings.ps1 from the active worktree. The cmdlet itself locates the
+# IAC HostSettings.ps1 (sprint worktree, stable worktree, or installed module
+# Resources) and loads any helpers it needs.
+$getHostSettingsPath = Join-Path $repobasepath 'src\ATAP.Utilities.Powershell\public\Get-HostSettings.ps1'
+if (-not (Get-Command -Name 'Get-HostSettings' -CommandType Function -ErrorAction SilentlyContinue)) {
+  . $getHostSettingsPath
 }
 
-# Define a global settings hash based on the hostname
-$global:settings = Get-HostSettings $hostName
-
-# temporary - Use this structure for passwords that will eventually be stored in a vault
-# These are throwaway passwords, just for testing
-# $global:VaultData = @{
-#   'BuildSetsAdminProductionCredentialsKeyValue'   = 'ChangeMe_!234'
-#   'BuildSetsAdminTestingCredentialsKeyValue'      = 'ChangeMe_!234'
-#   'BuildSetsAdminDevelopmentCredentialsKeyValue'  = 'ChangeMe_!234'
-#   'BuildSetsAdminExperimentalCredentialsKeyValue' = 'ChangeMe_!234'
-#   'PCMSCAdminExperimentalCredentialsKeyValue'     = 'ChangeMe_!234'
-#   'PCMSC_CEPasswordVaultKey'                      = 'ChangeMe!'
-# }
+$global:settings = Get-HostSettings -hostName $hostName -IACBasePath $repobasepath
 
 
 # 'Group Vars' 'Role Vars' 'Host Vars'
@@ -254,6 +234,20 @@ $global:settings[$global:configRootKeys['IsElevatedConfigRootKey']] = (New-Objec
 
 # Opt Out of the dotnet telemetry
 [Environment]::SetEnvironmentVariable('DOTNET_CLI_TELEMETRY_OPTOUT', 1, 'Process')
+
+# Ensure machine-wide dotnet tools (notably nbgv) are resolvable for every
+# local account, including service accounts such as SvcBuildmaster that do
+# not have a per-user dotnet tool path. The canonical location is
+# C:\ProgramData\dotnet\tools (populated by
+# `dotnet tool install --tool-path 'C:\ProgramData\dotnet\tools' nbgv`,
+# per NewComputerSetup.md section 4.4).
+$machineDotnetTools = 'C:\ProgramData\dotnet\tools'
+if (Test-Path -LiteralPath $machineDotnetTools) {
+  $pathParts = $env:Path -split [IO.Path]::PathSeparator
+  if ($pathParts -notcontains $machineDotnetTools) {
+    $env:Path = $machineDotnetTools + [IO.Path]::PathSeparator + $env:Path
+  }
+}
 
 # only set the value of the Environment Environment variable if it has not been set by a calling process
 $inheritedEnvironmentVariable = [System.Environment]::GetEnvironmentVariable('Environment')
@@ -284,15 +278,18 @@ $modifiedPSModulePath = $Env:PSModulePath
 # Add the Desktop module path to the end of the string
 # $modifiedPSModulePath += ';C:\Program Files\WindowsPowerShell\Modules;C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules'
 # Set the environment variable to the new value
+
+# In your $PROFILE, reorder PSModulePath
+$ordered = @(
+  'C:\Program Files\PowerShell\Modules',          # PS7 AllUsers  (25)
+  'c:\program files\powershell\7\Modules',         # PS7 built-in  (24)
+  'C:\Dropbox\whertzing\PowerShell\Modules',       # your personal (16)
+  'C:\Program Files (x86)\Microsoft SQL Server\160\Tools\PowerShell\Modules',  # SQL (1)
+  'C:\Program Files\WindowsPowerShell\Modules',    # WPS legacy   (132) - push to end
+  'C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules'  # WPS system  (120) - push to end
+)
+$env:PSModulePath = $ordered -join ';'
 $Env:PSModulePath = $modifiedPSModulePath
-# Load the JenkinsRoleSettings for this machine into the $global:settings
-# ($global:MachineAndNodeSettings[$hostname])[$global:configRootKeys['JenkinsNodeRolesConfigRootKey']] | ForEach-Object {
-#   $nodeName = $_
-#   $global:settings[$nodeName] = @{}
-#   ($global:JenkinsRoles)[$nodename] | ForEach-Object {
-#     $global:settings[$nodename][$_] = $($global:MachineAndNodeSettings[$hostname][$_])
-#   }
-# }
 
 
 # If the computer is behind a proxy, configure the default proxy settings in the machine powershell profile.
@@ -350,6 +347,13 @@ function Get-CredentialFile {
 }
 
 Write-PSFMessage -Level Debug -Message ('Ending AllUsersAllHostsV7CoreProfile.ps1')
+
+# This block was inserted during development of the build master build pipeline
+# PSFramework starts a background logging runspace; stop it so direct profile
+# invocations do not keep pwsh alive after the profile body has finished.
+if (Test-Path -LiteralPath 'Function:\Stop-PSFRunspace') {
+  Stop-PSFRunspace -Name 'PSFramework.logging' -ErrorAction SilentlyContinue
+}
 
 # Set DebugPreference to Continue  to see the $global:settings and Environment variables at the completion of this profile
 # Print the $global:settings if Debug

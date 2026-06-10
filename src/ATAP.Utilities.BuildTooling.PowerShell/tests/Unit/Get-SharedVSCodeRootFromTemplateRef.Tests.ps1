@@ -1,5 +1,6 @@
 BeforeAll {
-  . "$PSScriptRoot\..\Import-SharedVSCodeFunctions.ps1"
+  $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+  . (Join-Path $moduleRoot 'private\Get-SharedVSCodeRootFromTemplateRef.ps1')
 }
 
 Describe 'Get-SharedVSCodeRootFromTemplateRef [private]' {
@@ -15,7 +16,7 @@ Describe 'Get-SharedVSCodeRootFromTemplateRef [private]' {
   }
 
   Context 'When templateRef is a sprint worktree name' {
-    It 'Returns GitRoot\<worktree name>' {
+    It 'Returns GitRoot joined with the worktree name' {
       $ref = 'SharedVSCode-wt-5-sprint-0003-work-items'
       $result = Get-SharedVSCodeRootFromTemplateRef `
         -TemplateRef $ref `

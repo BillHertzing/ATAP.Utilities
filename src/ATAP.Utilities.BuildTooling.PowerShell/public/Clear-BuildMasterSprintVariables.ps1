@@ -15,8 +15,8 @@ function Clear-BuildMasterSprintVariables {
     Call this cmdlet during the sprint-end teardown sequence (SprintEndAgent
     Step 10.5) after workTrees have been removed.
 
-    Reads the API key from the BUILDMASTER_API_KEY environment variable
-    (User scope preferred, then Process scope).
+    Resolves the API key secret name via Get-PVal (default
+    'BuildMaster.Admin.API.Key') and reads the key value with Get-SecretATAP.
 
     Deletion is idempotent — if a variable does not exist the API returns 404,
     which this cmdlet treats as a successful no-op (already deleted).
@@ -26,7 +26,10 @@ function Clear-BuildMasterSprintVariables {
     Defaults to @('AceCommander', 'ATAP.Utilities').
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server.
-    Defaults to 'http://localhost:50001'.
+    Defaults to 'http://localhost:50017'.
+  .PARAMETER BuildMasterAdminApiKeySecretName
+    ATAP secret name for the BuildMaster admin API key. Resolved via Get-PVal
+    (default 'BuildMaster.Admin.API.Key'); value read with Get-SecretATAP.
   .OUTPUTS
     PSCustomObject with variablesCleared (array of 'appName/varName' strings)
     and errors (array of error message strings) fields.
@@ -34,7 +37,7 @@ function Clear-BuildMasterSprintVariables {
     Clear-BuildMasterSprintVariables
   .EXAMPLE
     # Target a different BuildMaster instance
-    Clear-BuildMasterSprintVariables -BuildMasterBaseUrl 'http://buildmaster.corp:8622'
+    Clear-BuildMasterSprintVariables -BuildMasterBaseUrl 'http://buildmaster.corp:50017'
   .NOTES
     AI assisted using Powershell.instructions.md as guidelines
     Phase 3C — T-31 (7.2-1 BuildMaster sprint application variables teardown)
@@ -46,7 +49,9 @@ function Clear-BuildMasterSprintVariables {
   param(
     [string[]]$Applications = @('AceCommander', 'ATAP.Utilities'),
 
-    [string]$BuildMasterBaseUrl = 'http://localhost:50001'
+    [string]$BuildMasterBaseUrl = 'http://localhost:50017',
+
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key'
   )
 
   begin {
@@ -54,12 +59,28 @@ function Clear-BuildMasterSprintVariables {
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
-    $apiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_API_KEY', 'User')
-    if ([string]::IsNullOrWhiteSpace($apiKey)) {
-      $apiKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_API_KEY', 'Process')
+    $BuildMasterAdminApiKeySecretName = Get-PVal -ParameterName 'BuildMasterAdminApiKeySecretName' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterAdminApiKeySecretName
+
+    # Retrieve the BuildMaster admin API key value via Get-SecretATAP using the
+    # resolved secret name. The key value is never logged.
+    $apiKey = $null
+    $secretErrors = [System.Collections.Generic.List[string]]::new()
+    foreach ($fieldName in @($null, 'token', 'key', 'password')) {
+      try {
+        $candidate = if ($null -eq $fieldName) {
+          Get-SecretATAP -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName -ErrorAction Stop
+        } else {
+          Get-SecretATAP -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName -SecretField $fieldName -ErrorAction Stop
+        }
+        if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) { $apiKey = [string]$candidate; break }
+      } catch {
+        $fieldLabel = if ($null -eq $fieldName) { '<default>' } else { $fieldName }
+        $secretErrors.Add("${fieldLabel}: $($_.Exception.Message)") | Out-Null
+      }
     }
     if ([string]::IsNullOrWhiteSpace($apiKey)) {
-      throw 'BUILDMASTER_API_KEY is not set at User or Process scope. Cannot clear BuildMaster variables.'
+      $detail = if ($secretErrors.Count -gt 0) { " Last error: $($secretErrors[$secretErrors.Count - 1])" } else { '' }
+      throw "Unable to resolve the BuildMaster admin API key from secret '$BuildMasterAdminApiKeySecretName' via Get-SecretATAP. Cannot clear BuildMaster variables.$detail"
     }
 
     $headers = @{ 'X-ApiKey' = $apiKey }

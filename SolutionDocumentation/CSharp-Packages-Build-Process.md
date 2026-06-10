@@ -6,6 +6,16 @@ developer workstation or BuildMaster agent** — the MSBuild file hierarchy, the
 custom task DLL that participates in every build, the bootstrap sequence that gets
 that DLL into place, and the end-to-end data flow for one project build.
 
+> **Strategy update (sprint-0007 — Immutable Build).** Each `.nupkg` is built
+> **exactly once** (at the Experimental tier) and then **promoted unchanged**
+> through Development → Integration → QA → Production via ProGet's promotion
+> API. This document covers what happens during that single build.
+> Higher-tier stages do **not** rebuild — they restore the existing artifact,
+> run tier-appropriate tests against it, and on pass call
+> `Promote-ProGetPackage`. See [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md)
+> for the policy and [BuildMaster-Pipeline-Topology.md](BuildMaster-Pipeline-Topology.md)
+> for how this build slots into the larger pipeline catalog.
+
 **Not in this doc:**
 
 - **Versioning** (NBGV `version.json`, `AssemblyInfo.cs`, label promotion) — see [CSharp-Packages-Versioning.md](CSharp-Packages-Versioning.md).
@@ -35,6 +45,15 @@ MSBuild walks **up** the directory tree from each `.csproj`, searching for
 found. Because both files live at the solution root, every project in `src/` and
 `tests/` inherits them automatically — no explicit `<Import>` is needed in any
 individual `.csproj`.
+
+Test projects follow the unified post-sprint-0007 `.Tests` naming convention in
+both folder and project-file names, for example
+`tests/ATAP.Utilities.Philote.Tests/ATAP.Utilities.Philote.Tests.csproj`.
+Unit, integration, and performance distinctions now live in source-file suffixes
+and xUnit traits rather than tier-specific project-name suffixes. Test projects
+still participate in normal build property inheritance, but they set
+`IsPackable=false` and `GeneratePackageOnBuild=false` so they do not produce
+NuGet packages.
 
 **Load order for one project build:**
 

@@ -176,7 +176,7 @@ $PSDefaultParameterValues = @{
 # encoding : [System.Text.Encoding]::UTF8 which results in System.Text.UTF8Encoding+UTF8EncodingSealed
 # Decide if this machine profile will use the stable branch or sprint branch for its child functions
 $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'  # Stable worktree StartSprintAgent and EndSprintAgent populates these
-$repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items'; # sprint worktree
+# $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items'; # sprint worktree
 # Load the list of configuration keys into $global:ConfigRootKeys
 # May come from the Release package, from the stable worktree, or from a sprint worktree
 # Until the Powershell package is released and installed, get it from the stable worktree
@@ -188,9 +188,8 @@ try {
   if (-not (Get-Command -Name 'Set-GlobalConfigRootKeys' -CommandType Function -ErrorAction SilentlyContinue)) {
     # SprintEndAgent uncomments the following line
     # SprintStartAgent comments the following line
-    #$repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
+    $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
     # sprintstartagent insert a line similar to this, sprintendagent removes this line
-    $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items'
     $projectpathRel = 'src\ATAP.Utilities.ConfigRootKeys.Powershell'
     $cmdletPathRel = 'public\Set-GlobalConfigRootKeys.ps1'
     . $(Join-Path $repobasepath $projectpathRel $cmdletPathRel)

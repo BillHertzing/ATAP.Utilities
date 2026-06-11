@@ -116,6 +116,16 @@ _Teach / Tell how to create software — per-developer tooling and shell setup._
   `$global:settings[$global:configRootKeys[...]]` access expression, defensive
   loading in non-interactive agent shells, and the checklist for adding a new
   setting.
+- [Developer SQL Server Instances Runbook](Developer-SqlServerInstances-Runbook.md) —
+  Onboarding/offboarding runbook for the permanent per-developer SQL Server
+  instances (`Dev<username>` / `Exp<username>`). Documents the Sprint-0008
+  lifecycle change (instances are created once per workstation by
+  `New-DeveloperSqlServerInstances` and removed only by
+  `Remove-DeveloperSqlServerInstances`; sprint boundaries reset only the
+  databases inside them via `Reset-SprintDatabases` / `Remove-SprintDatabases`),
+  the instance naming convention, and the dbatools prerequisites. Migrated from
+  `_Planning/Explainers/0028-developer-onboarding-sql-instances.md` (Sprint 0008,
+  Task 8.4).
 
 ---
 

@@ -1,0 +1,174 @@
+BeforeAll {
+  if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
+    function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
+  }
+
+  $script:stubbedFunctionNames = @(
+    'Assert-GitAvailable',
+    'gh',
+    'git',
+    'Set-WorktreeJunctions',
+    'Initialize-DownstreamSprintFromSharedVSCode',
+    'Set-ClaudeSettingsSymlink',
+    'Set-UserSettingsSymlink',
+    'Set-BuildMasterSprintVariables',
+    'New-SprintBitwardenSecrets',
+    'Reset-SprintDatabases',
+    'New-DeveloperSqlServerInstances'
+  )
+
+  function global:Assert-GitAvailable {
+    $global:stage2DatabaseResetCalls.Add('Assert-GitAvailable') | Out-Null
+  }
+
+  function global:gh {
+    $global:stage2DatabaseResetCalls.Add('gh') | Out-Null
+    $global:LASTEXITCODE = 0
+    'https://github.com/owner/ATAP.Utilities/issues/321'
+  }
+
+  function global:git {
+    $global:stage2DatabaseResetCalls.Add("git:$($args -join ' ')") | Out-Null
+    $addIndex = [Array]::IndexOf($args, 'add')
+    if ($addIndex -ge 0 -and $args.Count -gt ($addIndex + 1)) {
+      New-Item -ItemType Directory -Path $args[$addIndex + 1] -Force | Out-Null
+    }
+    $global:LASTEXITCODE = 0
+    ''
+  }
+
+  function global:Set-WorktreeJunctions {
+    $global:stage2DatabaseResetCalls.Add('Set-WorktreeJunctions') | Out-Null
+    [PSCustomObject]@{ Success = $true; JunctionsCreated = 3; Errors = @() }
+  }
+
+  function global:Initialize-DownstreamSprintFromSharedVSCode {
+    $global:stage2DatabaseResetCalls.Add('Initialize-DownstreamSprintFromSharedVSCode') | Out-Null
+  }
+
+  function global:Set-ClaudeSettingsSymlink {
+    $global:stage2DatabaseResetCalls.Add('Set-ClaudeSettingsSymlink') | Out-Null
+  }
+
+  function global:Set-UserSettingsSymlink {
+    $global:stage2DatabaseResetCalls.Add('Set-UserSettingsSymlink') | Out-Null
+  }
+
+  function global:Set-BuildMasterSprintVariables {
+    $global:stage2DatabaseResetCalls.Add('Set-BuildMasterSprintVariables') | Out-Null
+    [PSCustomObject]@{ variablesSet = @('SprintNumber'); errors = @() }
+  }
+
+  function global:New-SprintBitwardenSecrets {
+    $global:stage2DatabaseResetCalls.Add('New-SprintBitwardenSecrets') | Out-Null
+    @([PSCustomObject]@{ Name = 'connection-string-secret'; Created = $true })
+  }
+
+  function global:Reset-SprintDatabases {
+    param(
+      [string]$DatabaseHost,
+      [string]$ConnectionMethod,
+      [switch]$WhatIf
+    )
+    $global:stage2DatabaseResetCalls.Add('Reset-SprintDatabases') | Out-Null
+    @(
+      [PSCustomObject]@{ instanceName = 'Devtester'; database = 'ATAPUtilities'; reset = $true; migrated = $true; error = $null }
+      [PSCustomObject]@{ instanceName = 'Exptester'; database = 'ATAPUtilities'; reset = $true; migrated = $true; error = $null }
+    )
+  }
+
+  function global:New-DeveloperSqlServerInstances {
+    $global:stage2DatabaseResetCalls.Add('New-DeveloperSqlServerInstances') | Out-Null
+    throw 'New-SprintStage2 must not call New-DeveloperSqlServerInstances.'
+  }
+
+  . "$PSScriptRoot\..\..\public\New-SprintStage2.ps1"
+}
+
+AfterAll {
+  foreach ($name in $script:stubbedFunctionNames) {
+    Remove-Item -Path "Function:\$name" -Force -ErrorAction SilentlyContinue
+  }
+  Remove-Variable -Name stage2DatabaseResetCalls -Scope Global -Force -ErrorAction SilentlyContinue
+}
+
+Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
+  BeforeEach {
+    $global:stage2DatabaseResetCalls = [System.Collections.Generic.List[string]]::new()
+    $script:tempGitRoot = Join-Path ([System.IO.Path]::GetTempPath()) "stage2_dbreset_$([guid]::NewGuid().ToString('N'))"
+    $repoPath = Join-Path $script:tempGitRoot 'ATAP.Utilities'
+    New-Item -ItemType Directory -Path (Join-Path $repoPath '.git') -Force | Out-Null
+
+    $script:tasksPath = Join-Path $script:tempGitRoot 'TASKS.md'
+    Set-Content -LiteralPath $script:tasksPath -Encoding UTF8 -Value @(
+      '- [ ] **Task 8.2** [ATAP.Utilities] - Test database reset wiring'
+    )
+
+    $script:stage1 = [PSCustomObject]@{
+      nextSprintNumber = '0008'
+      sharedVSCode     = @{
+        issueNumber  = '123'
+        branchName   = '123-Sprint-0008-work-items'
+        worktreePath = (Join-Path $script:tempGitRoot 'SharedVSCode-wt-123-Sprint-0008-work-items')
+      }
+      planning         = @{
+        worktreePath = (Join-Path $script:tempGitRoot '_Planning-wt-456-Sprint-0008-work-items')
+      }
+    }
+
+    $script:oldConfigRootKeys = $global:configRootKeys
+    $script:oldSettings = $global:settings
+    $global:configRootKeys = @{ DatabasesCollectionConfigRootKey = 'Databases' }
+    $global:settings = @{
+      Databases = @{
+        ATAPUtilities = @{
+          DatabaseHost     = 'localhost'
+          ConnectionMethod = 'tcp'
+        }
+      }
+    }
+
+    Mock -CommandName Get-Service -MockWith {
+      [PSCustomObject]@{ Name = $Name; Status = 'Running' }
+    } -ParameterFilter { $Name -like 'MSSQL$*' }
+  }
+
+  AfterEach {
+    $global:configRootKeys = $script:oldConfigRootKeys
+    $global:settings = $script:oldSettings
+    Remove-Item -LiteralPath $script:tempGitRoot -Recurse -Force -ErrorAction SilentlyContinue
+  }
+
+  It 'uses Reset-SprintDatabases and returns per-database reset results' {
+    $result = New-SprintStage2 `
+      -Stage1Result $script:stage1 `
+      -TasksFilePath $script:tasksPath `
+      -GitRoot $script:tempGitRoot `
+      -Owner 'owner' `
+      -Confirm:$false
+
+    $global:stage2DatabaseResetCalls | Should -Contain 'Reset-SprintDatabases'
+    $global:stage2DatabaseResetCalls | Should -Not -Contain 'New-DeveloperSqlServerInstances'
+    $result.infrastructure.PSObject.Properties.Name | Should -Contain 'databaseResets'
+    $result.infrastructure.PSObject.Properties.Name | Should -Not -Contain 'databaseInstances'
+    $result.infrastructure.databaseResets.Count | Should -Be 2
+    $result.infrastructure.databaseResetError | Should -BeNullOrEmpty
+  }
+
+  It 'fails before downstream side effects when required SQL Server instances are missing' {
+    Mock -CommandName Get-Service -MockWith { $null } -ParameterFilter { $Name -like 'MSSQL$*' }
+
+    {
+      New-SprintStage2 `
+        -Stage1Result $script:stage1 `
+        -TasksFilePath $script:tasksPath `
+        -GitRoot $script:tempGitRoot `
+        -Owner 'owner' `
+        -Confirm:$false
+    } | Should -Throw -ExpectedMessage '*developer onboarding SQL Server instance setup*'
+
+    $global:stage2DatabaseResetCalls | Should -Not -Contain 'gh'
+    $global:stage2DatabaseResetCalls | Should -Not -Contain 'Reset-SprintDatabases'
+    $global:stage2DatabaseResetCalls | Should -Not -Contain 'New-DeveloperSqlServerInstances'
+  }
+}

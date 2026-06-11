@@ -143,6 +143,54 @@ Describe 'Save-SprintWorkSession' {
     }
   }
 
+  Context 'Bug 2 — slug fallback: stable-repo slug when sprint-worktree slug has no JSONL' {
+
+    It 'falls back to stable slug when sprint-worktree slug directory has no JSONL' {
+      # Build a custom ClaudeProjectsRoot that has a JSONL ONLY at the stable slug.
+      # The sprint worktree slug directory is absent so the function must fall back.
+      $customClaudeRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-slug-' + [guid]::NewGuid().ToString('N'))
+      $customPlanRoot   = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-plan-' + [guid]::NewGuid().ToString('N'))
+
+      # Compute the stable slug by stripping -wt-.+$ from the actual sprint worktree path.
+      $actualWt   = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-107-Sprint-0008-work-items'
+      $stableCwd  = $actualWt -replace '-wt-.+$', ''  # C:\Dropbox\whertzing\GitHub\ATAP.Utilities
+      $stableSlug = ($stableCwd.Substring(0, 1).ToLower() + $stableCwd.Substring(1)) `
+          -replace ':', '-' -replace '\\', '-' -replace '_', '-' -replace '\.', '-' -replace '^-', ''
+
+      $stableSessionDir = Join-Path $customClaudeRoot $stableSlug
+      New-Item -ItemType Directory -Path $stableSessionDir, $customPlanRoot -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $stableSessionDir 'stable.jsonl') `
+          -Value '{"role":"user","content":"stable"}' -Encoding UTF8
+
+      $savedLocation = Get-Location
+      Set-Location $actualWt
+      try {
+        $savedSettings = $global:settings
+        try {
+          $global:settings = $null
+
+          $errorMessages = @()
+          Save-SprintWorkSession `
+            -SprintN '0008' `
+            -PlanningRoot $customPlanRoot `
+            -ClaudeProjectsRoot $customClaudeRoot `
+            -GitHubRoot 'C:\Dropbox\whertzing\GitHub' `
+            -WhatIf `
+            -ErrorVariable ev `
+            -ErrorAction SilentlyContinue
+
+          $ev | ForEach-Object { $errorMessages += $_.Exception.Message }
+          $errorMessages | Should -BeNullOrEmpty -Because 'stable slug fallback should find the JSONL silently'
+        } finally {
+          $global:settings = $savedSettings
+        }
+      } finally {
+        Set-Location $savedLocation
+        Remove-Item -Recurse -Force $customClaudeRoot, $customPlanRoot -ErrorAction SilentlyContinue
+      }
+    }
+  }
+
   Context 'auto-detection — branch name and planning worktree resolution' {
 
     It 'auto-detects sprint number from branch name matching ^\d+-sprint-(\d{4})' {

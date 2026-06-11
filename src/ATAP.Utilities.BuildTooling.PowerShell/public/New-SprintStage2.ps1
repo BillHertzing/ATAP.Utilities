@@ -4,7 +4,7 @@ function New-SprintStage2 {
     Creates downstream repo sprint branches, workTrees, NTFS junctions,
     applies SharedVSCode context, symlinks claude-settings.json, scaffolds
     BuildMaster sprint builds, creates Bitwarden connection string secrets,
-    and provisions sprint SQL Server database instances. ProGet feeds are
+    and resets sprint databases in existing SQL Server instances. ProGet feeds are
     permanent and ecosystem-wide — not created per sprint.
   .DESCRIPTION
     Reads the sprint TASKS.md file and extracts every unique repository name
@@ -34,9 +34,9 @@ function New-SprintStage2 {
       8. Creates Bitwarden secure-note items with SQL Server connection strings
          for the ATAPUtilities and AceCommander databases across Development
          and Experimental tiers via New-SprintBitwardenSecrets.
-      9. Creates local Dev<username> and Exp<username> SQL Server instances and
-         builds the ATAPUtilities and AceCommander databases using full Flyway migrations,
-         via New-SprintSqlServerInstances.
+      9. Resets the ATAPUtilities and AceCommander databases inside existing
+         local Dev<username> and Exp<username> SQL Server instances using full
+         Flyway migrations, via Reset-SprintDatabases.
 
     ProGet feeds are permanent and ecosystem-wide — they are NOT created per
     sprint. See New-ProGetFeedSet for one-time feed provisioning.
@@ -70,7 +70,7 @@ function New-SprintStage2 {
   .PARAMETER DryRun
     Preview all sprint-start downstream actions without creating GitHub issues,
     branches, worktrees, junctions, SharedVSCode context, secrets, SQL Server
-    instances, BuildMaster variables, or claude-settings links.
+    database resets, BuildMaster variables, or claude-settings links.
   .OUTPUTS
     PSCustomObject — contains repoResults, infrastructure, and error fields.
   .EXAMPLE
@@ -118,16 +118,19 @@ function New-SprintStage2 {
     # DEFINES the function and never executes anything at load time.
     $privateDir = Join-Path $PSScriptRoot '..' 'private'
     foreach ($privateHelperName in @('Set-ClaudeSettingsSymlink.ps1', 'Set-UserSettingsSymlink.ps1', 'Get-SprintTaskRepositoryNames.ps1')) {
-      $privateHelperPath = Join-Path $privateDir $privateHelperName
-      if (Test-Path -LiteralPath $privateHelperPath -PathType Leaf) {
-        . $privateHelperPath
+      $privateHelperCommandName = [System.IO.Path]::GetFileNameWithoutExtension($privateHelperName)
+      if (-not (Get-Command -Name $privateHelperCommandName -CommandType Function -ErrorAction SilentlyContinue)) {
+        $privateHelperPath = Join-Path $privateDir $privateHelperName
+        if (Test-Path -LiteralPath $privateHelperPath -PathType Leaf) {
+          . $privateHelperPath
+        }
       }
     }
     # Retired in Sprint 0007 task B08 (now under Obsolete/private/):
     #   - New-SprintBuildMasterBuilds.ps1   replaced by public Set-BuildMasterSprintVariables (Area 7.2-1)
-    #   - New-SprintDatabaseInstances.ps1   superseded by public New-SprintSqlServerInstances
-    if (-not (Get-Command -Name 'New-SprintSqlServerInstances' -CommandType Function -ErrorAction SilentlyContinue)) {
-      . (Join-Path $PSScriptRoot 'New-SprintSqlServerInstances.ps1')
+    #   - New-SprintDatabaseInstances.ps1   superseded by public Reset-SprintDatabases
+    if (-not (Get-Command -Name 'Reset-SprintDatabases' -CommandType Function -ErrorAction SilentlyContinue)) {
+      . (Join-Path $PSScriptRoot 'Reset-SprintDatabases.ps1')
     }
 
     if ($DryRun) {
@@ -209,6 +212,26 @@ function New-SprintStage2 {
       if ($missingGlobalConfig.Count -gt 0) {
         $setupCommand = 'Set-GlobalConfigRootKeys; $global:settings = Get-HostSettings -hostName $env:COMPUTERNAME'
         throw "New-SprintStage2 requires $($missingGlobalConfig -join ' and ') before it can run. Run the ATAP configuration setup command first: $setupCommand"
+      }
+    }
+
+    # Sprint start no longer creates SQL Server instances. Fail before creating
+    # GitHub issues/worktrees if the permanent developer instances are missing.
+    if (-not $DryRun) {
+      $requiredSqlInstanceNames = @("Dev$($env:USERNAME)", "Exp$($env:USERNAME)")
+      $missingSqlInstances = [System.Collections.Generic.List[string]]::new()
+
+      foreach ($instanceName in $requiredSqlInstanceNames) {
+        $serviceName = "MSSQL`$$instanceName"
+        $existingService = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
+        if ($null -eq $existingService) {
+          [void]$missingSqlInstances.Add("$instanceName (service $serviceName)")
+        }
+      }
+
+      if ($missingSqlInstances.Count -gt 0) {
+        $onboardingCommand = 'Run the developer onboarding SQL Server instance setup for this workstation.'
+        throw "New-SprintStage2 requires existing SQL Server instance(s): $($missingSqlInstances -join ', '). $onboardingCommand Stage 2 only resets databases; it never installs SQL Server instances."
       }
     }
 
@@ -525,12 +548,12 @@ function New-SprintStage2 {
     }
 
     # ===================================================================
-    # 10. Create sprint SQL Server database instances
+    # 10. Reset sprint databases inside existing SQL Server instances
     # ===================================================================
-    $dbInstanceResults = $null
-    $dbInstanceError = $null
+    $dbResetResults = $null
+    $dbResetError = $null
 
-    # Read database settings from global config for the DB instance call
+    # Read database settings from global config for the database reset call
     $dbInstHost = 'localhost'
     $dbInstConnMethod = 'tcp'
     $dbInstPort = $null
@@ -555,18 +578,18 @@ function New-SprintStage2 {
       }
     }
 
-    $dbInstanceParams = @{
+    $dbResetParams = @{
       DatabaseHost     = $dbInstHost
       ConnectionMethod = $dbInstConnMethod
     }
 
     try {
-      if ($PSCmdlet.ShouldProcess('local SQL Server', 'Create sprint SQL Server instances and databases')) {
-        $dbInstanceResults = New-SprintSqlServerInstances @dbInstanceParams -WhatIf:$WhatIfPreference
+      if ($PSCmdlet.ShouldProcess('local SQL Server', 'Reset sprint databases in existing SQL Server instances')) {
+        $dbResetResults = Reset-SprintDatabases @dbResetParams -WhatIf:$WhatIfPreference
       }
     } catch {
-      $dbInstanceError = "Failed to create sprint database instances. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $dbInstanceError
+      $dbResetError = "Failed to reset sprint databases. Exception: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $dbResetError
     }
 
     # ===================================================================
@@ -591,9 +614,9 @@ function New-SprintStage2 {
         # Connection string secrets created in Bitwarden (UNTESTED)
         connectionStrings          = if ($connStringResults) { $connStringResults } else { @() }
         connectionStringError      = $connStringError
-        # Sprint SQL Server database instances
-        databaseInstances          = if ($dbInstanceResults) { $dbInstanceResults } else { @() }
-        databaseInstanceError      = $dbInstanceError
+        # Sprint SQL Server database reset results
+        databaseResets             = if ($dbResetResults) { $dbResetResults } else { @() }
+        databaseResetError         = $dbResetError
       }
     }
 

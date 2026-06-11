@@ -65,9 +65,10 @@ function Test-SprintPrerequisites {
     Runs a read-only preflight covering: pwsh engine version, gh CLI auth,
     Bitwarden CLI session, git working state of each required sprint worktree
     (no in-progress merge/rebase/cherry-pick/revert/bisect), BuildTooling module
-    importability, and HEAD reachability of the ProGet and BuildMaster base URLs.
-    Each discovered worktree is also checked with Assert-LockFilesClean unless
-    -SkipLockFileGuard is supplied.
+    importability, existing per-developer SQL Server instances, and HEAD
+    reachability of the ProGet and BuildMaster base URLs. Each discovered
+    worktree is also checked with Assert-LockFilesClean unless -SkipLockFileGuard
+    is supplied.
 
     Every check runs to completion regardless of earlier failures so the
     structured result captures the full diagnostic picture. The cmdlet always
@@ -92,6 +93,14 @@ function Test-SprintPrerequisites {
     $global:settings[$global:configRootKeys['BuildMasterBaseUrlConfigRootKey']]
     when available. Empty/null marks the check as Skipped (Ok=$true).
 
+.PARAMETER DeveloperNames
+    Developer names used to derive the expected SQL Server named instances:
+    Dev<developer> and Exp<developer>. Defaults to $env:USERNAME.
+
+.PARAMETER SqlServerInstanceNames
+    Explicit SQL Server named-instance names to preflight. Overrides
+    DeveloperNames-derived instance names.
+
 .PARAMETER ReachabilityTimeoutSeconds
     HTTP timeout for the two reachability checks. Default 5.
 
@@ -102,6 +111,11 @@ function Test-SprintPrerequisites {
     Explicitly bypasses Assert-LockFilesClean for sprint-start/sprint-end
     preflight. Use only when lock-file drift has been separately reviewed and
     the reason is recorded in sprint notes.
+
+.PARAMETER SkipSqlServerInstanceCheck
+    Explicitly bypasses the Dev<user>/Exp<user> SQL Server service preflight.
+    Use only for tests or when SQL instance readiness has been separately
+    verified and recorded.
 
 .OUTPUTS
     [PSCustomObject] with AllOk [bool], Checks [PSCustomObject], Failures [string[]],
@@ -133,6 +147,12 @@ function Test-SprintPrerequisites {
     [string]$BuildMasterBaseUrl,
 
     [Parameter()]
+    [string[]]$DeveloperNames,
+
+    [Parameter()]
+    [string[]]$SqlServerInstanceNames,
+
+    [Parameter()]
     [ValidateRange(1, 60)]
     [int]$ReachabilityTimeoutSeconds = 5,
 
@@ -140,7 +160,10 @@ function Test-SprintPrerequisites {
     [switch]$ThrowOnFailure,
 
     [Parameter()]
-    [switch]$SkipLockFileGuard
+    [switch]$SkipLockFileGuard,
+
+    [Parameter()]
+    [switch]$SkipSqlServerInstanceCheck
   )
 
   begin {
@@ -353,6 +376,69 @@ function Test-SprintPrerequisites {
         PerRepo = $lockPerRepo
       }
       if (-not $lockOk) { [void]$failures.Add('LockFilesClean') }
+    }
+
+    if ($SkipSqlServerInstanceCheck) {
+      $checks['SqlServerInstances'] = [PSCustomObject]@{
+        Ok          = $true
+        Skipped     = $true
+        Detail      = 'SQL Server instance preflight skipped by explicit caller request'
+        PerInstance = @()
+      }
+    } else {
+      if (-not $PSBoundParameters.ContainsKey('SqlServerInstanceNames') -or
+        $null -eq $SqlServerInstanceNames -or
+        $SqlServerInstanceNames.Count -eq 0) {
+        if (-not $PSBoundParameters.ContainsKey('DeveloperNames') -or
+          $null -eq $DeveloperNames -or
+          $DeveloperNames.Count -eq 0) {
+          $DeveloperNames = @($env:USERNAME)
+        }
+
+        $resolvedSqlInstances = [System.Collections.Generic.List[string]]::new()
+        foreach ($developer in ($DeveloperNames | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)) {
+          [void]$resolvedSqlInstances.Add("Dev$developer")
+          [void]$resolvedSqlInstances.Add("Exp$developer")
+        }
+        $SqlServerInstanceNames = $resolvedSqlInstances.ToArray()
+      }
+
+      $sqlInstanceResults = @()
+      $sqlInstancesOk = $true
+      foreach ($instanceName in ($SqlServerInstanceNames | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)) {
+        $serviceName = "MSSQL`$$instanceName"
+        $service = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
+        $instanceOk = $null -ne $service
+        if (-not $instanceOk) { $sqlInstancesOk = $false }
+        $sqlInstanceResults += [PSCustomObject]@{
+          InstanceName = $instanceName
+          ServiceName  = $serviceName
+          Ok           = $instanceOk
+          Detail       = if ($instanceOk) {
+            "SQL Server instance service '$serviceName' exists"
+          } else {
+            "SQL Server instance service '$serviceName' not found; run developer onboarding SQL Server instance setup"
+          }
+        }
+      }
+
+      if ($sqlInstanceResults.Count -eq 0) {
+        $sqlInstancesOk = $false
+      }
+
+      $checks['SqlServerInstances'] = [PSCustomObject]@{
+        Ok          = $sqlInstancesOk
+        Skipped     = $false
+        Detail      = if ($sqlInstancesOk) {
+          "$($sqlInstanceResults.Count) SQL Server instance service(s) found"
+        } elseif ($sqlInstanceResults.Count -eq 0) {
+          'No SQL Server instance names were supplied or derived'
+        } else {
+          'One or more required SQL Server instance services are missing'
+        }
+        PerInstance = $sqlInstanceResults
+      }
+      if (-not $sqlInstancesOk) { [void]$failures.Add('SqlServerInstances') }
     }
 
     $btOk = $false

@@ -12,9 +12,9 @@ function Find-SqlServerSetupExe {
   .EXAMPLE
     $setupExe = Find-SqlServerSetupExe
   .LINK
-    New-SprintSqlServerInstances
+    New-DeveloperSqlServerInstances
   .LINK
-    Remove-SprintSqlServerInstances
+    Remove-DeveloperSqlServerInstances
   #>
   [CmdletBinding()]
   [OutputType([string])]

@@ -84,7 +84,7 @@
     'Convert-DiagramsToImages', 'Copy-Assets', 'Create-MCPJunction',
     'Create-ServiceAccount', 'Get-AllFilesChangedByCommit',
     'Get-ATAPIACConstant', 'Get-BrokenGitSubDirs', 'Get-BuildContext',
-    'Get-DatabasePackageBuildContext',
+    'Get-DatabasePackageBuildContext', 'Get-SprintEndContext',
     'Get-DeployedReleaseManifest', 'Get-IncorrectSymLinksAndJunctions',
     'Get-JenkinsEnvSettings', 'Get-MergedPesterConfigurations',
     'Get-ModuleAsSymbolicLink', 'Get-ModuleHighestVersion',
@@ -118,8 +118,9 @@
     'New-PesterDescribeBlock', 'New-PesterFileModel', 'New-PesterItBlock',
     'New-PesterTestFile', 'New-ProGetApiKey', 'New-ProGetConnector',
     'New-ProGetFeedSet', 'New-PSModuleNupkg', 'New-ReleaseBundle',
+    'New-DeveloperSqlServerInstances',
     'New-ReleaseManifest', 'New-SprintBitwardenSecrets',
-    'New-SprintSqlServerInstances', 'New-SprintStage1',
+    'New-SprintStage1',
     'New-SprintStage2', 'New-WorktreeWithJunctions',
     'Promote-DatabaseChangePackage', 'Promote-ProGetPackage',
     'Publish-DatabaseChangePackageToProGet', 'Publish-NuGetPackageToProGet',
@@ -130,10 +131,12 @@
     'Remove-BuildMasterApplication',
     'Remove-BuildMasterApplicationVariable',
     'Remove-BuildMasterRelease', 'Remove-BuildMasterScript',
+    'Remove-DeveloperSqlServerInstances',
     'Remove-ObjAndBinSubDirectories', 'Remove-OverviewSprintWorkspace', 'Remove-ProGetApiKeys',
     'Remove-ProGetFeeds', 'Remove-SprintBitwardenSecrets',
-    'Remove-SprintSqlServerInstances', 'Remove-VSComponentCache',
+    'Remove-SprintDatabases', 'Remove-VSComponentCache',
     'Rename-ProGetFeed', 'Reset-DownstreamToSharedVSCodeMain',
+    'Reset-SprintDatabases',
     'Resolve-DatabasePackageFeed',
     'Resolve-FeatureSlug', 'Resolve-PSModuleMetadata',
     'Save-CopilotCheckpoint', 'Save-SprintRetrospectiveSnapshot', 'Save-SprintWorkSession',
@@ -160,7 +163,8 @@
     VariablesToExport    = '*'
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport      = 'Get-ServiceAccountBWSAccessToken', 'Initialize-ServiceAccountBWSAccessToken'
+    AliasesToExport      = 'Get-ServiceAccountBWSAccessToken', 'Initialize-ServiceAccountBWSAccessToken',
+    'New-SprintSqlServerInstances', 'Remove-SprintSqlServerInstances', 'Remove-DeveloperDatabaseInstances'
 
     # DSC resources to export from this module
     # DscResourcesToExport = @()

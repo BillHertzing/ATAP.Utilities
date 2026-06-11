@@ -13,13 +13,13 @@ BeforeAll {
   function global:Get-DbaDatabase { param($SqlInstance, $Database) [PSCustomObject]@{ Name = $Database; SqlInstance = $SqlInstance } }
   function global:Remove-DbaDatabase { param($SqlInstance, $Database, [switch]$Confirm) }
   function global:Start-Process { [PSCustomObject]@{ ExitCode = 0 } }
-  function Resolve-BuildToolingDatabaseSqlConnection { throw 'Resolve-BuildToolingDatabaseSqlConnection should not be called by Remove-SprintSqlServerInstances.' }
-  function Invoke-BuildToolingSqlQuery { throw 'Invoke-BuildToolingSqlQuery should not be called by Remove-SprintSqlServerInstances.' }
+  function Resolve-BuildToolingDatabaseSqlConnection { throw 'Resolve-BuildToolingDatabaseSqlConnection should not be called by Remove-DeveloperSqlServerInstances.' }
+  function Invoke-BuildToolingSqlQuery { throw 'Invoke-BuildToolingSqlQuery should not be called by Remove-DeveloperSqlServerInstances.' }
 
-  . "$PSScriptRoot\..\..\public\Remove-SprintSqlServerInstances.ps1"
+  . "$PSScriptRoot\..\..\public\Remove-DeveloperSqlServerInstances.ps1"
 }
 
-Describe 'Remove-SprintSqlServerInstances [public]' {
+Describe 'Remove-DeveloperSqlServerInstances [public]' {
   BeforeEach {
     $script:setupDir = Join-Path ([System.IO.Path]::GetTempPath()) "rsssi_$([guid]::NewGuid().ToString('N'))"
     New-Item -ItemType Directory -Path $script:setupDir -Force | Out-Null
@@ -37,10 +37,10 @@ Describe 'Remove-SprintSqlServerInstances [public]' {
     Mock -CommandName Remove-DbaDatabase -MockWith {}
     Mock -CommandName Start-Process -MockWith { [PSCustomObject]@{ ExitCode = 0 } }
     Mock -CommandName Resolve-BuildToolingDatabaseSqlConnection -MockWith {
-      throw 'Resolve-BuildToolingDatabaseSqlConnection should not be called by Remove-SprintSqlServerInstances.'
+      throw 'Resolve-BuildToolingDatabaseSqlConnection should not be called by Remove-DeveloperSqlServerInstances.'
     }
     Mock -CommandName Invoke-BuildToolingSqlQuery -MockWith {
-      throw 'Invoke-BuildToolingSqlQuery should not be called by Remove-SprintSqlServerInstances.'
+      throw 'Invoke-BuildToolingSqlQuery should not be called by Remove-DeveloperSqlServerInstances.'
     }
   }
 
@@ -49,7 +49,7 @@ Describe 'Remove-SprintSqlServerInstances [public]' {
   }
 
   It 'does not drop databases when WhatIf is set' {
-    Remove-SprintSqlServerInstances `
+    Remove-DeveloperSqlServerInstances `
       -DeveloperNames @('tester') `
       -SqlServerSetupPath $script:setupDir `
       -WhatIf | Out-Null
@@ -59,7 +59,7 @@ Describe 'Remove-SprintSqlServerInstances [public]' {
   }
 
   It 'drops ATAPUtilities and AceCommander for each sprint instance when not WhatIf' {
-    Remove-SprintSqlServerInstances `
+    Remove-DeveloperSqlServerInstances `
       -DeveloperNames @('tester') `
       -SqlServerSetupPath $script:setupDir `
       -Confirm:$false | Out-Null
@@ -70,7 +70,7 @@ Describe 'Remove-SprintSqlServerInstances [public]' {
   }
 
   It 'does not require a BuildTooling SqlConnection for instance removal' {
-    Remove-SprintSqlServerInstances `
+    Remove-DeveloperSqlServerInstances `
       -DeveloperNames @('tester') `
       -SqlServerSetupPath $script:setupDir `
       -Confirm:$false | Out-Null

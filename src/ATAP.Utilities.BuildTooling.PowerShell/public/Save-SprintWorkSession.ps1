@@ -185,8 +185,14 @@ function Save-SprintWorkSession {
             # ── Derive project slug from cwd ───────────────────────────────────────
             # Claude Code slugs the project path by lowercasing the drive letter
             # and replacing ':', '\', '_', '.' with '-'.
+            # From a sprint worktree the CWD yields a '...-wt-...' slug, but Claude
+            # Code may have been launched from the stable repo root so memory lives
+            # under the main-repo slug (Bug 2). Try the sprint slug first; if no JSONL
+            # is found, fall back to the stable slug by stripping '-wt-.+$' from the
+            # path before slugging.
             $cwd = (Get-Location).Path
-            $slug = ($cwd.Substring(0, 1).ToLower() + $cwd.Substring(1)) -replace ':', '-' -replace '\\', '-' -replace '_', '-' -replace '\.', '-' -replace '^-', ''
+            $makeSlug = { param([string]$p) ($p.Substring(0, 1).ToLower() + $p.Substring(1)) -replace ':', '-' -replace '\\', '-' -replace '_', '-' -replace '\.', '-' -replace '^-', '' }
+            $slug = & $makeSlug $cwd
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Slug derived from cwd '$cwd': $slug"
 
             # ── Find most-recent session JSONL ─────────────────────────────────────
@@ -194,6 +200,25 @@ function Save-SprintWorkSession {
             $jsonl = Get-ChildItem -Path $sessionDir -Filter '*.jsonl' -ErrorAction SilentlyContinue |
                 Sort-Object LastWriteTime -Descending |
                 Select-Object -First 1
+
+            if (-not $jsonl) {
+                # Worktree fallback: strip '-wt-.+$' to get the stable repo path,
+                # recompute slug, and search there.
+                $stableCwd = $cwd -replace '-wt-.+$', ''
+                if ($stableCwd -ne $cwd) {
+                    $stableSlug = & $makeSlug $stableCwd
+                    $stableSessionDir = Join-Path $ClaudeProjectsRoot $stableSlug
+                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "No JSONL at sprint slug '$slug'; trying stable slug '$stableSlug'"
+                    $jsonl = Get-ChildItem -Path $stableSessionDir -Filter '*.jsonl' -ErrorAction SilentlyContinue |
+                        Sort-Object LastWriteTime -Descending |
+                        Select-Object -First 1
+                    if ($jsonl) {
+                        $slug = $stableSlug
+                        $sessionDir = $stableSessionDir
+                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Using stable repo slug '$slug' — Claude Code was launched from the main repo root"
+                    }
+                }
+            }
 
             if (-not $jsonl) {
                 throw "No JSONL found in '$sessionDir' — verify the slug is correct. Slug derived: $slug"

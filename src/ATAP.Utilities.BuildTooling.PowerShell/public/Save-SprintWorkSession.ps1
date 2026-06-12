@@ -101,7 +101,12 @@ function Save-SprintWorkSession {
             try {
                 if (-not (Test-Path -LiteralPath "Function:\$($helpfunction.FunctionName)")) {
                     $helperPath = Join-Path $resolvedModulePath $helpfunction.ModuleName 'public' "$($helpfunction.FunctionName).ps1"
-                    . $helperPath
+                    if (Test-Path -LiteralPath $helperPath -PathType Leaf) {
+                        . $helperPath
+                    } else {
+                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+                            -Message "Helper '$($helpfunction.FunctionName)' not found at '$helperPath'. Continuing with parameter declaration defaults."
+                    }
                 }
             } catch {
                 # Non-fatal: if the helper cannot be loaded, log a debug message and continue without Get-PVal.
@@ -230,6 +235,13 @@ function Save-SprintWorkSession {
             $base = "SprintWorkSession-$SprintN"
             $convName = "$base-Conversation-$branch-$ts"
             $memName = "$base-$branch-$ts"
+            $worktreeName = Split-Path -Path $cwd -Leaf
+            $rosterDir = Join-Path $PlanningRoot 'SprintWorkSessionRoster'
+            $rosterPath = Join-Path $rosterDir "SprintWorkSessionRoster-$SprintN.jsonl"
+            $archiveCreated = $false
+            $memoryCopied = $false
+            $memoryFileCount = 0
+            $memorySkipReason = $null
 
             # ── 1. Compress conversation JSONL with 7-zip ──────────────────────────
             $convDir = Join-Path $PlanningRoot 'SprintWorkSessionConversations'
@@ -240,6 +252,7 @@ function Save-SprintWorkSession {
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Archiving '$($jsonl.FullName)' → '$archive'"
                 & 7z a $archive $jsonl.FullName 2>&1 | Out-Null
                 if (Test-Path $archive) {
+                    $archiveCreated = $true
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Conversation saved: $archive"
                 } else {
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message 'Archive not created — verify 7z is on PATH.'
@@ -250,19 +263,42 @@ function Save-SprintWorkSession {
             # Memory lives under the slug of the directory where Claude Code was launched
             # (i.e. the current working directory), NOT under the _Planning slug.
             $memSrcDir = Join-Path $ClaudeProjectsRoot "$slug\memory"
-
-            if (-not (Test-Path $memSrcDir)) {
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "Memory directory not found: $memSrcDir — memory copy skipped."
-                return
-            }
-
             $memDstDir = Join-Path $PlanningRoot "SprintWorkSessionMemorys\$memName"
 
-            if ($PSCmdlet.ShouldProcess($memDstDir, "Copy memory files from '$memSrcDir'")) {
+            if (-not (Test-Path $memSrcDir)) {
+                $memorySkipReason = "Memory directory not found: $memSrcDir"
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "$memorySkipReason — memory copy skipped."
+            } elseif ($PSCmdlet.ShouldProcess($memDstDir, "Copy memory files from '$memSrcDir'")) {
                 New-Item -ItemType Directory -Path $memDstDir -Force | Out-Null
                 Copy-Item -Path (Join-Path $memSrcDir '*.md') -Destination $memDstDir -Force
-                $copied = (Get-ChildItem $memDstDir -ErrorAction SilentlyContinue).Count
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Memory files saved ($copied files): $memDstDir"
+                $memoryFileCount = (Get-ChildItem $memDstDir -ErrorAction SilentlyContinue).Count
+                $memoryCopied = $true
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Memory files saved ($memoryFileCount files): $memDstDir"
+            }
+
+            # ── 3. Append a lightweight session roster entry ───────────────────────
+            $rosterEntry = [ordered]@{
+                SprintN                    = $SprintN
+                RecordedAt                 = (Get-Date).ToString('o')
+                WorktreeName               = $worktreeName
+                WorktreePath               = $cwd
+                Branch                     = $branch
+                SessionSlug                = $slug
+                ConversationJsonlPath      = $jsonl.FullName
+                ConversationArchivePath    = $archive
+                ConversationArchiveCreated = $archiveCreated
+                MemorySourcePath           = $memSrcDir
+                MemorySnapshotPath         = $memDstDir
+                MemorySnapshotCreated      = $memoryCopied
+                MemoryFileCount            = $memoryFileCount
+                MemorySkipReason           = $memorySkipReason
+            }
+
+            if ($PSCmdlet.ShouldProcess($rosterPath, "Append sprint session roster entry for '$worktreeName'")) {
+                New-Item -ItemType Directory -Path $rosterDir -Force | Out-Null
+                $rosterJson = $rosterEntry | ConvertTo-Json -Compress
+                Add-Content -LiteralPath $rosterPath -Value $rosterJson -Encoding UTF8
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Session roster updated: $rosterPath"
             }
         } catch {
             $errorMessage = "Save-SprintWorkSession failed. Exception: $($_.Exception.Message)"

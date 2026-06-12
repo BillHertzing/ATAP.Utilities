@@ -18,6 +18,12 @@ BeforeAll {
     Import-Module PSFramework -ErrorAction SilentlyContinue
   }
 
+  $script:realGitPath = (Get-Command git.exe -CommandType Application -ErrorAction Stop).Source
+  function global:git {
+    param([Parameter(ValueFromRemainingArguments = $true)]$Arguments)
+    & $script:realGitPath @Arguments
+  }
+
   # Build an isolated temp tree that mimics a real sprint layout:
   #   <gitRoot>/
   #     ATAP.Utilities-wt-100-sprint-0007-work-items/   <- git repo
@@ -48,12 +54,36 @@ BeforeAll {
   New-Item -ItemType Directory -Path $sessionDir -Force | Out-Null
   $jsonlPath = Join-Path $sessionDir 'fake-session.jsonl'
   Set-Content -LiteralPath $jsonlPath -Value '{"role":"user","content":"test"}' -Encoding UTF8
+  $memoryDir = Join-Path $sessionDir 'memory'
+  New-Item -ItemType Directory -Path $memoryDir -Force | Out-Null
+  Set-Content -LiteralPath (Join-Path $memoryDir 'memory-note.md') -Value '# memory' -Encoding UTF8
+
+  function global:7z {
+    param(
+      [string]$Action,
+      [string]$ArchivePath,
+      [string]$SourcePath
+    )
+
+    if ($Action -ne 'a') {
+      throw "Unexpected 7z action: $Action"
+    }
+
+    New-Item -ItemType Directory -Path (Split-Path -Path $ArchivePath -Parent) -Force | Out-Null
+    Set-Content -LiteralPath $ArchivePath -Value "mock archive for $SourcePath" -Encoding UTF8
+  }
 
   # Re-dot-source after the temp tree is ready.
   . $functionPath
 }
 
 AfterAll {
+  if (Test-Path -LiteralPath 'Function:\git') {
+    Remove-Item -LiteralPath 'Function:\git' -ErrorAction SilentlyContinue
+  }
+  if (Test-Path -LiteralPath 'Function:\7z') {
+    Remove-Item -LiteralPath 'Function:\7z' -ErrorAction SilentlyContinue
+  }
   if (Test-Path $script:gitRoot) {
     Remove-Item -Recurse -Force $script:gitRoot -ErrorAction SilentlyContinue
   }
@@ -247,6 +277,46 @@ Describe 'Save-SprintWorkSession' {
 
           $ev | ForEach-Object { $errorMessages += $_.Exception.Message }
           $errorMessages | Should -BeNullOrEmpty -Because 'GitHubRoot contains a matching _Planning worktree'
+        } finally {
+          $global:settings = $savedSettings
+        }
+      } finally {
+        Set-Location $savedLocation
+      }
+    }
+  }
+
+  Context 'checkpoint roster logging' {
+
+    It 'writes a roster entry that names the worktree and saved archive' {
+      $savedLocation = Get-Location
+      Set-Location $script:atapWt
+      try {
+        $savedSettings = $global:settings
+        try {
+          $global:settings = $null
+
+          $convDir = Join-Path $script:planningWt 'SprintWorkSessionConversations'
+          $memRoot = Join-Path $script:planningWt 'SprintWorkSessionMemorys'
+          $rosterDir = Join-Path $script:planningWt 'SprintWorkSessionRoster'
+          Remove-Item -LiteralPath $convDir, $memRoot, $rosterDir -Recurse -Force -ErrorAction SilentlyContinue
+
+          Save-SprintWorkSession `
+            -SprintN $script:sprintNumber `
+            -PlanningRoot $script:planningWt `
+            -ClaudeProjectsRoot $script:claudeProjectsRoot `
+            -GitHubRoot $script:gitRoot `
+            -Confirm:$false
+
+          $rosterPath = Join-Path $rosterDir "SprintWorkSessionRoster-$($script:sprintNumber).jsonl"
+          Test-Path -LiteralPath $rosterPath | Should -BeTrue
+
+          $latestEntry = Get-Content -LiteralPath $rosterPath | Select-Object -Last 1 | ConvertFrom-Json
+          $latestEntry.WorktreeName | Should -Be (Split-Path -Path $script:atapWt -Leaf)
+          $latestEntry.ConversationArchiveCreated | Should -BeTrue
+          $latestEntry.MemorySnapshotCreated | Should -BeTrue
+          $latestEntry.MemoryFileCount | Should -Be 1
+          $latestEntry.ConversationArchivePath | Should -Match 'SprintWorkSession-0007-Conversation-100-sprint-0007-work-items-'
         } finally {
           $global:settings = $savedSettings
         }

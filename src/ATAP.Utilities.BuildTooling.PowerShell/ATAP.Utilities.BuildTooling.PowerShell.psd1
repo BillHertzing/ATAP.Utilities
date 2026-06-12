@@ -81,7 +81,7 @@
     'Confirm-ChocolateyInstalls', 'Confirm-GitFSCK',
     'Confirm-RepositoryPackageProvider',
     'Confirm-RepositoryPackageSource', 'Confirm-Tools',
-    'Convert-DiagramsToImages', 'Copy-Assets', 'Create-MCPJunction',
+    'Convert-DiagramsToImages', 'Convert-TasksMdToSprintBoard', 'Copy-Assets', 'Create-MCPJunction',
     'Create-ServiceAccount', 'Get-AllFilesChangedByCommit',
     'Get-ATAPIACConstant', 'Get-BrokenGitSubDirs', 'Get-BuildContext',
     'Get-DatabasePackageBuildContext', 'Get-SprintEndContext',

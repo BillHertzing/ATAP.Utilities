@@ -457,39 +457,60 @@ Invoke-FlywayRehearsal `
 ## 14. SQL Server Instance Naming
 
 > Migrated from `_Planning/Explainers/0104-sql-databases-lifecycle.md` §2.2-§2.3 and §4.3.
+> Updated 2026-06-11 (Sprint 0008, Task 8.5): the per-developer instances are now
+> **permanent onboarding infrastructure** — sprint boundaries reset only the
+> **databases** inside them, not the instances. See
+> [Developer-SqlServerInstances-Runbook.md](Developer-SqlServerInstances-Runbook.md).
 
 SQL Server supports one **default instance** and multiple **named instances**
-per host. ATAP uses named instances to isolate databases by tier. Each tier,
-each sprint, and each developer gets isolated database instances.
+per host. ATAP uses named instances to isolate databases by tier. Each tier and
+each developer gets isolated **named instances**; the **databases** inside the
+per-developer instances are the per-sprint unit (dropped, recreated, and
+re-migrated at sprint boundaries — the instances persist).
 
 ### 14.1 Instance name constraints
 
 - SQL Server instance names may not contain hyphens (`-`) or dots (`.`).
 - The **16-character limit** applies to the instance name.
-- Per-sprint instances follow the pattern `{Prefix}{user}`: a 3-char prefix
+- Per-developer instances follow the pattern `{Prefix}{user}`: a 3-char prefix
   (`Dev` or `Exp`) directly concatenated with the developer's Windows
   `$env:USERNAME` (≤12 chars) — **no separator character**.
 - The authoritative username-to-host mapping is in
   `Overview.code-workspace`.
-- Isolation between sprints is achieved by destroying and recreating the
-  instances at sprint boundaries.
+- **Isolation between sprints is achieved at the database level** — the
+  `ATAPUtilities` and `AceCommander` databases inside each instance are dropped,
+  recreated, and re-migrated at sprint boundaries. The named instances
+  themselves are **not** destroyed and recreated; they are permanent
+  developer-onboarding infrastructure.
 
 `Dev{user}` hosts active feature-development work (Development tier,
 `-Alpha` label packages). `Exp{user}` hosts throwaway prototypes and spikes
 (Experimental tier, `-Sprint` label packages).
 
-The `New-SprintSqlServerInstances.ps1` cmdlet creates both instances in a
-single call at sprint start. `Remove-SprintSqlServerInstances.ps1` destroys
-both at sprint end.
+The `New-DeveloperSqlServerInstances.ps1` cmdlet creates both instances in a
+single call **once per developer per workstation** (developer onboarding);
+`Remove-DeveloperSqlServerInstances.ps1` destroys both **only** at developer
+offboarding. At sprint boundaries, `Reset-SprintDatabases.ps1` (sprint start)
+and `Remove-SprintDatabases.ps1` (sprint end) operate on the databases inside
+the existing instances and never create or destroy an instance. (The former
+`New-SprintSqlServerInstances` / `Remove-SprintSqlServerInstances` names survive
+only as deprecated aliases of the `*-Developer*` cmdlets.)
 
-### 14.2 Per-sprint instances
+### 14.2 Per-developer instances and the per-sprint database unit
 
-| Instance Name      | Tier         | Lifetime                                                   | Created By                         |
-| ------------------ | ------------ | ---------------------------------------------------------- | ---------------------------------- |
-| `Dev{user}`        | Development  | Created at sprint start; destroyed at sprint close         | `New-SprintSqlServerInstances.ps1` |
-| `Exp{user}`        | Experimental | Created at sprint start; destroyed at sprint close         | `New-SprintSqlServerInstances.ps1` |
-| `Release_{SemVer}` | Production   | Created for release validation; persisted with the release | Manual / SprintEndAgent            |
-| `Hotfix_{issue}`   | Emergency    | Created for hotfix work; destroyed after merge             | Manual                             |
+| Instance Name      | Tier         | Lifetime                                                                    | Created By                            |
+| ------------------ | ------------ | --------------------------------------------------------------------------- | ------------------------------------- |
+| `Dev{user}`        | Development  | **Permanent** — created at developer onboarding; persists across sprints    | `New-DeveloperSqlServerInstances.ps1` |
+| `Exp{user}`        | Experimental | **Permanent** — created at developer onboarding; persists across sprints    | `New-DeveloperSqlServerInstances.ps1` |
+| `Release_{SemVer}` | Production   | Created for release validation; persisted with the release                  | Manual / SprintEndAgent               |
+| `Hotfix_{issue}`   | Emergency    | Created for hotfix work; destroyed after merge                              | Manual                                |
+
+The **databases** inside `Dev{user}` / `Exp{user}` are the per-sprint unit:
+
+| Database          | Inside instances        | Lifetime                                                         | Reset / dropped by                            |
+| ----------------- | ----------------------- | --------------------------------------------------------------- | --------------------------------------------- |
+| `ATAPUtilities`   | `Dev{user}`, `Exp{user}` | Dropped + recreated + re-migrated at sprint start; dropped at sprint end | `Reset-SprintDatabases` / `Remove-SprintDatabases` |
+| `AceCommander`    | `Dev{user}`, `Exp{user}` | Dropped + recreated + re-migrated at sprint start; dropped at sprint end | `Reset-SprintDatabases` / `Remove-SprintDatabases` |
 
 ### 14.3 SemVer normalization in instance names
 
@@ -695,4 +716,5 @@ recreated from scratch.
 - [Release-Branch-and-Manifest.md](Release-Branch-and-Manifest.md) — release manifest schema.
 - [BuildMaster-Pipeline-Topology.md](BuildMaster-Pipeline-Topology.md) — pipeline catalog.
 - `_Planning/Explainers/0104-sql-databases-lifecycle.md` — SQL instance / schema model.
+- [Developer-SqlServerInstances-Runbook.md](Developer-SqlServerInstances-Runbook.md) — permanent per-developer instance onboarding/offboarding and the per-sprint database-reset lifecycle (§14).
 - [Production-and-Tooling-Overview.md](Production-and-Tooling-Overview.md) — index.

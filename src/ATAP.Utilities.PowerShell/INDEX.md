@@ -57,7 +57,7 @@ infrastructure, and cross-cutting utilities used by developer and CI workflows.
 | [Get-HostSettings.ps1](public/Get-HostSettings.ps1)                                                     | Builds the per-host `$global:settings` hashtable by locating the ATAP.IAC `HostSettings.ps1` (sprint worktree, stable worktree, or installed module Resources), loading prerequisite helpers, and dispatching on hostname inside an isolated child scope. |
 | [Get-LargestLeafFolders.ps1](public/Get-LargestLeafFolders.ps1)                                         | Recursively scans from a start path, sums file sizes per folder, and returns the top-N largest folders (FolderPath, SizeBytes, SizeGB).                                                                                                        |
 | [Get-MediaQueryEmbeddedLink.ps1](public/Get-MediaQueryEmbeddedLink.ps1)                                 | Generates markdown embedding link strings for an ATAP `MediaResource` object; used for blog post image embedding.                                                                                                                              |
-| [Get-ParameterValueFromNeoConfigurationRoot.ps1](public/Get-ParameterValueFromNeoConfigurationRoot.ps1) | Resolves parameter values from `$global:settings` via a dotted path; alias `Get-PVal`; falls back to `$PSBoundParameters` or a default value.                                                                                                  |
+| [Get-ParameterValueFromNeoConfigurationRoot.ps1](public/Get-ParameterValueFromNeoConfigurationRoot.ps1) | Resolves parameter values from `$global:settings` via a dotted path; alias `Get-PVal`; falls back to `$PSBoundParameters` or a default value. Since Task 8.16 (SC-prop-0007-1) it throws with `-NoProfile` remediation when no settings source exists at all (no `-Settings`, no `$script:Settings`, no `$global:settings`) instead of silently using the default. |
 | [Get-Patterns.ps1](public/Get-Patterns.ps1)                                                             | Returns a hashtable of regex pattern collections (Date, Name, email, Category, Location) filtered by specified pattern tags.                                                                                                                   |
 | [Get-ScheduledTasks.ps1](public/Get-ScheduledTasks.ps1)                                                 | Exported function (load-then-execute — no query at import time); when invoked, runs `schtasks.exe /Query /FO LIST /V` and parses the verbose output into a hashtable keyed by TaskName whose values are `PSCustomObject` property bags.            |
 | [Get-SecureEnvVar.ps1](Pending/public/Get-SecureEnvVar.ps1) *(Pending — not exported)* | Retrieves a secure environment variable value, checking the session cache first, then reading from Bitwarden using `$env:BW_SESSION`. **Held under `Pending/`; not in `FunctionsToExport` during the bw→bws Secrets Manager migration (V4-B08).** |
@@ -100,6 +100,7 @@ infrastructure, and cross-cutting utilities used by developer and CI workflows.
 | [ConvertFrom-CopilotChatHistory.Tests.ps1](tests/Unit/ConvertFrom-CopilotChatHistory.Tests.ps1) | `ConvertFrom-CopilotChatHistory` | [tests/Unit/](tests/Unit/) |
 | [Get-CollectionTraverseEvaluate.Tests.ps1](tests/Unit/Get-CollectionTraverseEvaluate.Tests.ps1) | `Get-CollectionTraverseEvaluate` | [tests/Unit/](tests/Unit/) |
 | [Get-CoreInfo.Tests.ps1](tests/Unit/Get-CoreInfo.Tests.ps1)                                     | `Get-CoreInfo`                   | [tests/Unit/](tests/Unit/) |
+| [Get-ParameterValueFromNeoConfigurationRoot.Tests.ps1](tests/Unit/Get-ParameterValueFromNeoConfigurationRoot.Tests.ps1) | `Get-ParameterValueFromNeoConfigurationRoot` (`Get-PVal`) — 31 tests incl. the Task 8.16 loud-failure guard context | [tests/Unit/](tests/Unit/) |
 
 ---
 
@@ -156,9 +157,10 @@ The following public scripts have no corresponding `*.Tests.ps1` file in `tests/
 
 > **[PLACEHOLDER — generate this list from the public/ inventory minus test coverage above]**
 >
-> Confirmed covered: `ConvertFrom-CopilotChatHistory`, `Get-CollectionTraverseEvaluate`, `Get-CoreInfo`
+> Confirmed covered: `ConvertFrom-CopilotChatHistory`, `Get-CollectionTraverseEvaluate`, `Get-CoreInfo`,
+> `Get-ParameterValueFromNeoConfigurationRoot`
 >
-> All other public scripts (45 of 48) currently have no Pester test coverage.
+> All other public scripts (44 of 48) currently have no Pester test coverage.
 
 ---
 

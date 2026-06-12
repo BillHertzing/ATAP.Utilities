@@ -21,6 +21,10 @@ function New-GeneratedFileContent {
   }
 
   $source = Get-Content -Path $SourcePath -Raw -Encoding UTF8
+  # If the source is already a generated derivative, strip the old header so
+  # repeated regeneration replaces metadata instead of stacking header blocks.
+  $existingHeaderPattern = '(?s)\A# ===================================================================\r?\n# GENERATED FILE - DO NOT EDIT DIRECTLY\r?\n# Source: .*?\r?\n# Generated: .*?\r?\n# Regenerate using Set-DownstreamSharedVSCodeContext\r?\n# ===================================================================\r?\n(?:\r?\n)?'
+  $source = [regex]::Replace($source, $existingHeaderPattern, '', 1)
   $timestamp = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
 
   $header = @(

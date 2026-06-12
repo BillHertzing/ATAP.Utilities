@@ -14,6 +14,12 @@ If you are viewing this `ReadMe.md` in GitHub, [here is this same ReadMe on the 
 
 This package provides PowerShell goodies make it easier when developing Powershell modules for .Net, and especially inside of Visual Studio Code.
 
+Sprint lifecycle plumbing in this module now resolves downstream Git context from
+the workspace file paths being retargeted instead of the caller's current
+directory. Generated `.gitattributes` and `.gitconfig.shared` content also
+replaces any existing generated header before writing a fresh one, so repeated
+retargeting refreshes metadata without stacking header blocks.
+
 ## Autoloading
 
 The .psm1 file handles dot-sourcing all the .ps1 scripts in the `private` and `public` subdirectories. But for Autoload to work, the functions and cmdlets should be listed in the .psd1 file. Here's a one-liner that will get you the function names

@@ -287,4 +287,49 @@ Describe 'Get-ParameterValueFromNeoConfigurationRoot' -Tag 'Unit' {
       $result | Should -Be $true
     }
   }
+
+  Context 'Loud failure when no settings source exists (Task 8.16, SC-prop-0007-1)' {
+    BeforeEach {
+      $script:savedGlobalSettings = $global:settings
+      $global:settings = $null
+      $script:Settings = $null
+    }
+    AfterEach {
+      $global:settings = $script:savedGlobalSettings
+    }
+
+    It 'Throws with -NoProfile remediation text when $global:settings is absent, even with a DefaultValue' {
+      {
+        Get-ParameterValueFromNeoConfigurationRoot `
+          -ParameterName 'PvalGuardProbeUnique' `
+          -originalPSBoundParameters @{} `
+          -DefaultValue 'ShouldNotBeReturned'
+      } | Should -Throw -ExpectedMessage '*-NoProfile*'
+    }
+
+    It 'Throws even when -AllowMissing is set (environment fault outranks missing-key tolerance)' {
+      {
+        Get-ParameterValueFromNeoConfigurationRoot `
+          -ParameterName 'PvalGuardProbeUnique' `
+          -originalPSBoundParameters @{} `
+          -AllowMissing
+      } | Should -Throw -ExpectedMessage '*no settings source is available*'
+    }
+
+    It 'Does not throw when an explicit -Settings argument is supplied' {
+      $result = Get-ParameterValueFromNeoConfigurationRoot `
+        -ParameterName 'PvalGuardProbeUnique' `
+        -originalPSBoundParameters @{} `
+        -Settings @{} `
+        -DefaultValue 'FallbackValue'
+      $result | Should -Be 'FallbackValue'
+    }
+
+    It 'Does not throw when a bound parameter resolves the value (settings never consulted)' {
+      $result = Get-ParameterValueFromNeoConfigurationRoot `
+        -ParameterName 'PvalGuardProbeUnique' `
+        -originalPSBoundParameters @{ PvalGuardProbeUnique = 'BoundValue' }
+      $result | Should -Be 'BoundValue'
+    }
+  }
 }

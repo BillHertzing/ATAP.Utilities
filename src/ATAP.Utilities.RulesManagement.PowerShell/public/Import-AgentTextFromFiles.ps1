@@ -23,6 +23,13 @@ function Import-AgentTextFromFiles {
     [ValidateNotNullOrEmpty()]
     [string] $SourceRoot,
 
+    # Optional manifest record ids to import. When omitted, every record in the
+    # manifest is imported. Hash validation stays strict either way; filtering
+    # lets callers round-trip one record while unrelated records have drifted.
+    [Parameter(Mandatory = $false)]
+    [ValidateNotNullOrEmpty()]
+    [string[]] $SourceId,
+
     [switch] $AsSql
   )
 
@@ -86,8 +93,17 @@ function Import-AgentTextFromFiles {
         Split-Path -Path $aiRoot -Parent
       }
 
+      $selectedRecords = @($manifest.records)
+      if ($PSBoundParameters.ContainsKey('SourceId')) {
+        $selectedRecords = @($selectedRecords | Where-Object { $_.id -in $SourceId })
+        $missing = @($SourceId | Where-Object { $_ -notin @($selectedRecords | ForEach-Object { $_.id }) })
+        if ($missing.Count -gt 0) {
+          throw "Manifest has no record(s) with id: $($missing -join ', ')"
+        }
+      }
+
       $rows = [System.Collections.Generic.List[object]]::new()
-      foreach ($record in @($manifest.records)) {
+      foreach ($record in $selectedRecords) {
         $sourcePath = if ([System.IO.Path]::IsPathRooted([string]$record.source.path)) {
           [string]$record.source.path
         }
@@ -147,26 +163,31 @@ function Import-AgentTextFromFiles {
         }
 
         if ($AsSql) {
-          $agentTextId = [string]$row.AgentTextId
+          # Resolve the AgentTextId by SourceId so re-running the SQL against an
+          # already-loaded database reuses the existing row instead of inserting
+          # child rows under a fresh GUID that violates the FK constraints.
+          $sourceIdSql = ConvertTo-AgentTextSqlString $row.SourceId
           $sql = [System.Text.StringBuilder]::new()
-          [void]$sql.AppendLine("IF NOT EXISTS (SELECT 1 FROM ATAPUtilities.AgentText WHERE SourceId = $(ConvertTo-AgentTextSqlString $row.SourceId))")
+          [void]$sql.AppendLine("DECLARE @AgentTextId UNIQUEIDENTIFIER = (SELECT AgentTextId FROM ATAPUtilities.AgentText WHERE SourceId = $sourceIdSql);")
+          [void]$sql.AppendLine('IF @AgentTextId IS NULL')
           [void]$sql.AppendLine('BEGIN')
+          [void]$sql.AppendLine("    SET @AgentTextId = '$([string]$row.AgentTextId)';")
           [void]$sql.AppendLine('    INSERT INTO ATAPUtilities.AgentText')
           [void]$sql.AppendLine('        (AgentTextId, SourceId, Kind, DisplayName, SourcePath, BodyFormat, BodySha256, BodyText)')
           [void]$sql.AppendLine('    VALUES')
-          [void]$sql.AppendLine("        ('$agentTextId', $(ConvertTo-AgentTextSqlString $row.SourceId), $(ConvertTo-AgentTextSqlString $row.Kind), $(ConvertTo-AgentTextSqlString $row.DisplayName), $(ConvertTo-AgentTextSqlString $row.SourcePath), $(ConvertTo-AgentTextSqlString $row.BodyFormat), '$($row.BodySha256)', $(ConvertTo-AgentTextSqlString $row.BodyText));")
+          [void]$sql.AppendLine("        (@AgentTextId, $sourceIdSql, $(ConvertTo-AgentTextSqlString $row.Kind), $(ConvertTo-AgentTextSqlString $row.DisplayName), $(ConvertTo-AgentTextSqlString $row.SourcePath), $(ConvertTo-AgentTextSqlString $row.BodyFormat), '$($row.BodySha256)', $(ConvertTo-AgentTextSqlString $row.BodyText));")
           [void]$sql.AppendLine('END;')
           foreach ($tool in @($row.ToolSurface)) {
-            [void]$sql.AppendLine("IF NOT EXISTS (SELECT 1 FROM ATAPUtilities.AgentToolSurface WHERE AgentTextId = '$agentTextId' AND ToolName = $(ConvertTo-AgentTextSqlString $tool))")
-            [void]$sql.AppendLine("    INSERT INTO ATAPUtilities.AgentToolSurface (AgentTextId, ToolName) VALUES ('$agentTextId', $(ConvertTo-AgentTextSqlString $tool));")
+            [void]$sql.AppendLine("IF NOT EXISTS (SELECT 1 FROM ATAPUtilities.AgentToolSurface WHERE AgentTextId = @AgentTextId AND ToolName = $(ConvertTo-AgentTextSqlString $tool))")
+            [void]$sql.AppendLine("    INSERT INTO ATAPUtilities.AgentToolSurface (AgentTextId, ToolName) VALUES (@AgentTextId, $(ConvertTo-AgentTextSqlString $tool));")
           }
           foreach ($target in @($row.AdapterTargets)) {
-            [void]$sql.AppendLine("IF NOT EXISTS (SELECT 1 FROM ATAPUtilities.AgentAdapterTarget WHERE AgentTextId = '$agentTextId' AND TargetPath = $(ConvertTo-AgentTextSqlString $target.Path))")
+            [void]$sql.AppendLine("IF NOT EXISTS (SELECT 1 FROM ATAPUtilities.AgentAdapterTarget WHERE AgentTextId = @AgentTextId AND TargetPath = $(ConvertTo-AgentTextSqlString $target.Path))")
             [void]$sql.AppendLine('    INSERT INTO ATAPUtilities.AgentAdapterTarget (AgentTextId, ToolName, TargetPath, Materialization, RenderedSha256, RenderedBytes)')
-            [void]$sql.AppendLine("    VALUES ('$agentTextId', $(ConvertTo-AgentTextSqlString $target.Tool), $(ConvertTo-AgentTextSqlString $target.Path), $(ConvertTo-AgentTextSqlString $target.Materialization), $(ConvertTo-AgentTextSqlString $target.RenderedSha256), $(if ($target.RenderedBytes) { $target.RenderedBytes } else { 'NULL' }));")
+            [void]$sql.AppendLine("    VALUES (@AgentTextId, $(ConvertTo-AgentTextSqlString $target.Tool), $(ConvertTo-AgentTextSqlString $target.Path), $(ConvertTo-AgentTextSqlString $target.Materialization), $(ConvertTo-AgentTextSqlString $target.RenderedSha256), $(if ($target.RenderedBytes) { $target.RenderedBytes } else { 'NULL' }));")
           }
-          [void]$sql.AppendLine("IF NOT EXISTS (SELECT 1 FROM ATAPUtilities.AgentTextRoundTrip WHERE AgentTextId = '$agentTextId')")
-          [void]$sql.AppendLine("    INSERT INTO ATAPUtilities.AgentTextRoundTrip (AgentTextId, RoundTripPolicy, NormalizationNotes) VALUES ('$agentTextId', $(ConvertTo-AgentTextSqlString $row.RoundTripPolicy), NULL);")
+          [void]$sql.AppendLine('IF NOT EXISTS (SELECT 1 FROM ATAPUtilities.AgentTextRoundTrip WHERE AgentTextId = @AgentTextId)')
+          [void]$sql.AppendLine("    INSERT INTO ATAPUtilities.AgentTextRoundTrip (AgentTextId, RoundTripPolicy, NormalizationNotes) VALUES (@AgentTextId, $(ConvertTo-AgentTextSqlString $row.RoundTripPolicy), NULL);")
           $row | Add-Member -NotePropertyName Sql -NotePropertyValue $sql.ToString() -Force
         }
 

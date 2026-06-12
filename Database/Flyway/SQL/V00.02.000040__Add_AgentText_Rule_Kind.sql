@@ -1,8 +1,13 @@
 -- =====================================================================
--- V00.01.000302__Add_AgentText_Rule_Kind.sql
+-- V00.02.000040__Add_AgentText_Rule_Kind.sql
 --
 -- Adds the AgentText RRSBS kind and pilot tables used to load and
 -- instantiate AI agent/instruction adapter files.
+--
+-- Renumbered from V00.01.000302 before first apply: Integration/QA/Production
+-- already carry 00.01.000302 (Create UserInformation Decrypt Procedure, now in
+-- ObsoleteSQL), and Integration carries 00.02.000010, so with outOfOrder=false
+-- this migration must exceed 00.02.000010 to be promotable to every tier.
 -- =====================================================================
 SET XACT_ABORT ON;
 SET NOCOUNT ON;

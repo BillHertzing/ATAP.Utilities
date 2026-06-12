@@ -88,8 +88,9 @@ function Test-SprintInfrastructureHealth {
 .PARAMETER BuildMasterAdminApiKeySecretName
     The Bitwarden secret name containing the BuildMaster admin API key. Defaults to
     'BuildMaster.Admin.API.Key'. The value is read via Get-SecretATAP with
-    SecretField='notes'. An unresolved key is reported by the BuildMasterApps
-    check rather than thrown.
+    SecretField='notes' and SecretStoreType='BitwardenSecretsManager' (bws +
+    machine access token; no BW_SESSION). An unresolved key is reported by the
+    BuildMasterApps check rather than thrown.
 
 .PARAMETER ProGetBaseUrl
     Base URL for ProGet. Defaults to
@@ -174,12 +175,14 @@ function Test-SprintInfrastructureHealth {
       $BuildMasterBaseUrl = $BuildMasterBaseUrl.TrimEnd('/')
     }
 
-    # Retrieve the BuildMaster admin API key from Bitwarden via Get-SecretATAP.
-    # Non-fatal: an unresolved key is reported by the BuildMasterApps check
-    # rather than thrown. The key value is never logged.
+    # Retrieve the BuildMaster admin API key from Bitwarden Secrets Manager via
+    # Get-SecretATAP, forcing the BWS provider so this sprint-automation path
+    # never depends on BW_SESSION (SC-0175). Non-fatal: an unresolved key is
+    # reported by the BuildMasterApps check rather than thrown. The key value
+    # is never logged.
     $ApiKey = $null
     try {
-      $candidate = Get-SecretATAP -SecretName $BuildMasterAdminApiKeySecretName -SecretField 'notes' -ErrorAction Stop
+      $candidate = Get-SecretATAP -SecretName $BuildMasterAdminApiKeySecretName -SecretField 'notes' -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop
       if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) { $ApiKey = [string]$candidate }
     } catch {
     }
@@ -223,7 +226,10 @@ function Test-SprintInfrastructureHealth {
     $failures = [System.Collections.Generic.List[string]]::new()
 
     # ── BitwardenEnvVars ──────────────────────────────────────────────────────
-    $requiredEnvVars = @('PROGET_ADMIN_API_KEY', 'BW_SESSION', 'BUILDMASTER_GH_WEBHOOK_SECRET')
+    # BW_SESSION is deliberately NOT required (SC-0175): sprint automation
+    # authenticates to Bitwarden Secrets Manager with a bws machine access
+    # token; BW_SESSION is personal-vault-only.
+    $requiredEnvVars = @('PROGET_ADMIN_API_KEY', 'BUILDMASTER_GH_WEBHOOK_SECRET')
     $missingVars = [System.Collections.Generic.List[string]]::new()
     foreach ($varName in $requiredEnvVars) {
       $val = [System.Environment]::GetEnvironmentVariable($varName, 'User')

@@ -63,7 +63,9 @@ function Test-SprintPrerequisites {
 
 .DESCRIPTION
     Runs a read-only preflight covering: pwsh engine version, gh CLI auth,
-    Bitwarden CLI session, git working state of each required sprint worktree
+    Bitwarden Secrets Manager readiness (bws CLI on PATH plus an authenticated
+    machine access token — BW_SESSION is personal-vault-only and is NOT
+    required, per SC-0175), git working state of each required sprint worktree
     (no in-progress merge/rebase/cherry-pick/revert/bisect), BuildTooling module
     importability, existing per-developer SQL Server instances, and HEAD
     reachability of the ProGet and BuildMaster base URLs. Each discovered
@@ -172,13 +174,13 @@ function Test-SprintPrerequisites {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
     # Load helper functions. Fallback for running this file from source without
-    # importing the module; a normal Import-Module already dot-sources the private
-    # helper. Kept inside BEGIN so loading/dot-sourcing this file only DEFINES the
-    # function and never executes anything at load time.
-    if (-not (Get-Command -Name 'Invoke-BitwardenCliWithCleanTlsEnvironment' -ErrorAction SilentlyContinue)) {
-      $bitwardenTlsHelperPath = Join-Path -Path $PSScriptRoot -ChildPath '..\private\Invoke-BitwardenCliWithCleanTlsEnvironment.ps1'
-      if (Test-Path -LiteralPath $bitwardenTlsHelperPath -PathType Leaf) {
-        . $bitwardenTlsHelperPath
+    # importing the module; a normal Import-Module already dot-sources the
+    # sibling public function. Kept inside BEGIN so loading/dot-sourcing this
+    # file only DEFINES the function and never executes anything at load time.
+    if (-not (Get-Command -Name 'Get-BWSAccessToken' -ErrorAction SilentlyContinue)) {
+      $tokenReaderPath = Join-Path -Path $PSScriptRoot -ChildPath 'Get-BWSAccessToken.ps1'
+      if (Test-Path -LiteralPath $tokenReaderPath -PathType Leaf) {
+        . $tokenReaderPath
       }
     }
   }
@@ -215,36 +217,46 @@ function Test-SprintPrerequisites {
     $checks['GhAuth'] = [PSCustomObject]@{ Ok = $ghOk; Detail = $ghDetail }
     if (-not $ghOk) { [void]$failures.Add('GhAuth') }
 
+    # Bitwarden Secrets Manager readiness (SC-0175): sprint automation uses the
+    # bws CLI with a machine access token; BW_SESSION is personal-vault-only
+    # and is deliberately NOT required here.
     $bwOk = $false
-    $bwSessionPresent = -not [string]::IsNullOrWhiteSpace($env:BW_SESSION)
+    $bwsTokenPresent = $false
     $bwDetail = ''
+    $bwsTokenWasSetHere = $false
     try {
-      $bwCmd = Get-Command -Name bw -CommandType Application -ErrorAction Stop
-      $statusJson = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName 'Test-SprintPrerequisites' {
-        & $bwCmd status 2>$null
-      }
-      if ($LASTEXITCODE -eq 0 -and $statusJson) {
-        try {
-          $status = ($statusJson | ConvertFrom-Json).status
-          if ($status -eq 'unlocked') {
-            $bwOk = $true
-            $bwDetail = 'bw status: unlocked'
-          } else {
-            $bwDetail = "bw status: '$status' (need 'unlocked')"
-          }
-        } catch {
-          $bwDetail = "Failed to parse bw status JSON: $($_.Exception.Message)"
-        }
+      $null = Get-Command -Name bws -CommandType Application -ErrorAction Stop
+      if (-not [string]::IsNullOrWhiteSpace($env:BWS_ACCESS_TOKEN)) {
+        $bwsTokenPresent = $true
       } else {
-        $bwDetail = "bw status returned exit code $LASTEXITCODE"
+        try {
+          $cred = Get-BWSAccessToken -ErrorAction Stop
+          $env:BWS_ACCESS_TOKEN = $cred.GetNetworkCredential().Password
+          $bwsTokenWasSetHere = $true
+          $bwsTokenPresent = -not [string]::IsNullOrWhiteSpace($env:BWS_ACCESS_TOKEN)
+        } catch {
+          $bwDetail = "BWS access token not resolvable (env or DPAPI file): $($_.Exception.Message)"
+        }
+      }
+      if ($bwsTokenPresent) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Calling bws project list' -Tag 'BWSCall'
+        $null = & bws project list --output json 2>&1
+        if ($LASTEXITCODE -eq 0) {
+          $bwOk = $true
+          $bwDetail = 'bws CLI present; machine access token authenticated (bws project list succeeded)'
+        } else {
+          $bwDetail = "bws project list returned exit code $LASTEXITCODE (token invalid, revoked, or network failure)"
+        }
       }
     } catch {
-      $bwDetail = "bw CLI not found or invocation failed: $($_.Exception.Message)"
+      $bwDetail = "bws CLI not found or invocation failed: $($_.Exception.Message)"
+    } finally {
+      if ($bwsTokenWasSetHere) { Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue }
     }
     $checks['Bitwarden'] = [PSCustomObject]@{
-      Ok             = $bwOk
-      Detail         = $bwDetail
-      SessionPresent = $bwSessionPresent
+      Ok           = $bwOk
+      Detail       = $bwDetail
+      TokenPresent = $bwsTokenPresent
     }
     if (-not $bwOk) { [void]$failures.Add('Bitwarden') }
 

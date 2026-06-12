@@ -6,11 +6,13 @@ BeforeAll {
   . (Join-Path $script:publicDir 'Test-SprintInfrastructureHealth.ps1')
 
   # Stub the secret store so the health check resolves the BuildMaster admin API
-  # key without contacting Bitwarden.
+  # key without contacting Bitwarden. Records SecretField and SecretStoreType.
   $script:lastSecretField = $null
+  $script:lastSecretStoreType = $null
   function global:Get-SecretATAP {
-    param([string]$SecretName, [string]$SecretField = 'password')
+    param([string]$SecretName, [string]$SecretField = 'password', [string]$SecretStoreType)
     $script:lastSecretField = $SecretField
+    $script:lastSecretStoreType = $SecretStoreType
     'unit-test-key'
   }
 }
@@ -57,6 +59,12 @@ Describe 'Test-SprintInfrastructureHealth' -Tag 'Unit' {
       $script:lastSecretField = $null
       Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' | Out-Null
       $script:lastSecretField | Should -Be 'notes'
+    }
+
+    It 'forces the BitwardenSecretsManager provider so no BW_SESSION is needed (SC-0175)' {
+      $script:lastSecretStoreType = $null
+      Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' | Out-Null
+      $script:lastSecretStoreType | Should -Be 'BitwardenSecretsManager'
     }
 
     It 'BuildMasterAdminApiKeyResolvable.Ok is true when stub returns a value' {

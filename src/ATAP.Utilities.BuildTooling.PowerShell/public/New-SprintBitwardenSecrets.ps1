@@ -1,11 +1,12 @@
 function New-SprintBitwardenSecrets {
   <#
   .SYNOPSIS
-    Creates per-sprint Bitwarden secure-note items containing SQL Server
+    Creates per-sprint Bitwarden Secrets Manager secrets containing SQL Server
     connection strings for the Development and Experimental instances.
   .DESCRIPTION
     For each combination of (database, host, tier), builds a SQL Server
-    connection string and stores it as a Bitwarden secure-note item.
+    connection string and stores it as a Bitwarden Secrets Manager (BWS)
+    secret via the `bws` CLI.
 
     Databases:  master, ATAPUtilities, AceCommander
     Hosts:      $env:COMPUTERNAME and 'localhost' by default
@@ -14,15 +15,22 @@ function New-SprintBitwardenSecrets {
     This yields 12 secrets per developer per sprint
     (3 databases × 2 hosts × 2 tiers).
 
-    Secret naming convention:
+    Secret naming convention (SprintInfrastructure-Naming.md §4.1):
       dbConnectionString-<Database>-<Host>-<Dev|Exp>-<DeveloperUsername>
 
     Connection string format:
       Server=<Host>\Dev<DeveloperUsername> (or Exp<DeveloperUsername>);Database=<Database>;Integrated Security=True;
       MultipleActiveResultSets=True;TrustServerCertificate=True;
 
-    The BW_SESSION environment variable must be set (by the login script at
-    interactive logon). In agent-spawned shells it is read from User scope.
+    Authentication (SC-0175): the cmdlet uses the bws CLI with a machine
+    access token. The token is resolved from process-scope
+    $env:BWS_ACCESS_TOKEN first, then the DPAPI access-token file for the
+    running account (Get-BWSAccessToken). There is no bw login, no unlock,
+    and no BW_SESSION — sprint automation must never depend on the personal
+    Password Manager session.
+
+    Reads of these secrets go through:
+      Get-SecretATAP -SecretName <name> -SecretStoreType 'BitwardenSecretsManager'
 
     Permanent tier secrets (Production, QA, Integration) are NOT created by
     this cmdlet — see New-PermanentBitwardenSecrets for that one-time setup.
@@ -37,9 +45,14 @@ function New-SprintBitwardenSecrets {
   .PARAMETER Databases
     List of database names to create secrets for.
     Defaults to @('master', 'ATAPUtilities', 'AceCommander').
+  .PARAMETER ProjectName
+    Bitwarden Secrets Manager project that owns the per-sprint secrets.
+    Defaults to 'CI-Shared'. Ignored when -ProjectId is supplied.
+  .PARAMETER ProjectId
+    Explicit BWS project id (GUID). Skips the `bws project list` lookup.
   .OUTPUTS
     [PSCustomObject[]] — one entry per (database, host, tier) combination with
-    fields: secretName, database, host, tier, created, error.
+    fields: secretName, database, host, tier, created, alreadyExists, error.
   .EXAMPLE
     $secrets = New-SprintBitwardenSecrets -SprintNumber '0006'
     $secrets | Format-Table secretName, created, error
@@ -54,6 +67,8 @@ function New-SprintBitwardenSecrets {
     Remove-SprintBitwardenSecrets
   .LINK
     Get-DatabaseCredentialsKey
+  .LINK
+    https://bitwarden.com/help/secrets-manager-cli/
   #>
   [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
   param(
@@ -68,7 +83,14 @@ function New-SprintBitwardenSecrets {
     [string[]]$HostList,
 
     [Parameter(Mandatory = $false)]
-    [string[]]$Databases
+    [string[]]$Databases,
+
+    [Parameter(Mandatory = $false)]
+    [ValidateNotNullOrWhiteSpace()]
+    [string]$ProjectName = 'CI-Shared',
+
+    [Parameter(Mandatory = $false)]
+    [string]$ProjectId
   )
 
   begin {
@@ -77,13 +99,13 @@ function New-SprintBitwardenSecrets {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
     # Load helper functions. Fallback for running this file from source without
-    # importing the module; a normal Import-Module already dot-sources the private
-    # helper. Kept inside BEGIN so loading/dot-sourcing this file only DEFINES the
-    # function and never executes anything at load time.
-    if (-not (Get-Command -Name 'Invoke-BitwardenCliWithCleanTlsEnvironment' -ErrorAction SilentlyContinue)) {
-      $bitwardenTlsHelperPath = Join-Path -Path $PSScriptRoot -ChildPath '..\private\Invoke-BitwardenCliWithCleanTlsEnvironment.ps1'
-      if (Test-Path -LiteralPath $bitwardenTlsHelperPath -PathType Leaf) {
-        . $bitwardenTlsHelperPath
+    # importing the module; a normal Import-Module already dot-sources the
+    # sibling public function. Kept inside BEGIN so loading/dot-sourcing this
+    # file only DEFINES the function and never executes anything at load time.
+    if (-not (Get-Command -Name 'Get-BWSAccessToken' -ErrorAction SilentlyContinue)) {
+      $tokenReaderPath = Join-Path -Path $PSScriptRoot -ChildPath 'Get-BWSAccessToken.ps1'
+      if (Test-Path -LiteralPath $tokenReaderPath -PathType Leaf) {
+        . $tokenReaderPath
       }
     }
 
@@ -105,35 +127,71 @@ function New-SprintBitwardenSecrets {
       $Databases = @('master', 'ATAPUtilities', 'AceCommander')
     }
 
-    # Read BW_SESSION from User scope if not present in process scope (R-10 pattern)
-    $bwSession = $env:BW_SESSION
-    if ([string]::IsNullOrWhiteSpace($bwSession)) {
-      $bwSession = [System.Environment]::GetEnvironmentVariable('BW_SESSION', 'User')
+    # Validate bws CLI is available
+    if (-not (Get-Command -Name 'bws' -ErrorAction SilentlyContinue)) {
+      throw 'Bitwarden Secrets Manager CLI (bws) is required but was not found on PATH. Install it (NewComputerSetup.md §9.4.10.1) or add it to PATH.'
     }
-    if ([string]::IsNullOrWhiteSpace($bwSession)) {
-      throw 'BW_SESSION is not set in process scope or User-scope environment. Ensure the login script has run and Bitwarden is unlocked.'
-    }
-    # Ensure process scope is set so bw CLI invocations pick it up
-    $env:BW_SESSION = $bwSession
 
-    # Validate bw CLI is available
-    if (-not (Get-Command -Name 'bw' -ErrorAction SilentlyContinue)) {
-      throw 'Bitwarden CLI (bw) is required but was not found on PATH. Install it or add it to PATH.'
+    # Resolve the BWS access token: process scope first, then the DPAPI file
+    # for the running account (NewComputerSetup.md §9.4.10). Never BW_SESSION.
+    $bwsTokenWasSetHere = $false
+    if ([string]::IsNullOrWhiteSpace($env:BWS_ACCESS_TOKEN)) {
+      $cred = Get-BWSAccessToken -ErrorAction Stop
+      $env:BWS_ACCESS_TOKEN = $cred.GetNetworkCredential().Password
+      $bwsTokenWasSetHere = $true
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'BWS access token resolved from DPAPI file' -Tag 'bws-token'
+    }
+    if ([string]::IsNullOrWhiteSpace($env:BWS_ACCESS_TOKEN)) {
+      throw 'No BWS access token in $env:BWS_ACCESS_TOKEN or the DPAPI token file. Provision it with Initialize-BWSAccessToken (NewComputerSetup.md §9.4.10).'
     }
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-      -Message "Sprint $SprintNumber — creating Bitwarden secrets for $DeveloperUsername; databases: $($Databases -join ', '); hosts: $($HostList -join ', ')"
+      -Message "Sprint $SprintNumber — creating BWS secrets for $DeveloperUsername; databases: $($Databases -join ', '); hosts: $($HostList -join ', ')"
   }
 
   process {
     $tiers = @('Dev', 'Exp')
     $results = [System.Collections.ArrayList]::new()
 
+    try {
+      # Resolve the target project id once (unless supplied explicitly)
+      if ([string]::IsNullOrWhiteSpace($ProjectId)) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Calling bws project list' -Tag 'BWSCall'
+        $projectOutput = & bws project list --output json 2>&1
+        if ($LASTEXITCODE -ne 0) {
+          throw "bws project list failed (exit $LASTEXITCODE): $projectOutput"
+        }
+        $projects = $projectOutput | ConvertFrom-Json -ErrorAction Stop
+        $projectMatch = @($projects | Where-Object { $_.name -and ($_.name.ToLowerInvariant() -eq $ProjectName.ToLowerInvariant()) })
+        if ($projectMatch.Count -eq 0) {
+          throw "No Bitwarden Secrets Manager project named '$ProjectName' is visible to this access token."
+        }
+        $ProjectId = [string]$projectMatch[0].id
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved BWS project '$ProjectName' to id $ProjectId"
+      }
+
+      # List existing secrets once for the idempotency check
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Calling bws secret list' -Tag 'BWSCall'
+      $listOutput = & bws secret list --output json 2>&1
+      if ($LASTEXITCODE -ne 0) {
+        throw "bws secret list failed (exit $LASTEXITCODE): $listOutput"
+      }
+      $existingSecrets = @()
+      if (-not [string]::IsNullOrWhiteSpace([string]$listOutput)) {
+        $existingSecrets = @($listOutput | ConvertFrom-Json -ErrorAction Stop)
+      }
+      $existingKeys = @($existingSecrets | ForEach-Object { ([string]$_.key).ToLowerInvariant() })
+    } catch {
+      $errMsg = "Failed to prepare BWS context (project/secret list). Exception: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errMsg
+      throw
+    }
+
     foreach ($db in $Databases) {
       foreach ($sqlHost in $HostList) {
         foreach ($tier in $tiers) {
 
-          # Canonical secret name per SprintInfrastructure-Naming.md §6
+          # Canonical secret name per SprintInfrastructure-Naming.md §4.1
           $secretName = "dbConnectionString-${db}-${sqlHost}-${tier}-${DeveloperUsername}"
 
           # SQL instance name: 3-char prefix (Dev/Exp) + developer username
@@ -153,66 +211,30 @@ function New-SprintBitwardenSecrets {
             error         = $null
           }
 
-          if ($PSCmdlet.ShouldProcess($secretName, 'Create Bitwarden secure note with SQL Server connection string')) {
+          if ($PSCmdlet.ShouldProcess($secretName, 'Create Bitwarden Secrets Manager secret with SQL Server connection string')) {
             try {
-              # Idempotency check: skip if the item already exists
-              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
-                -Message "Checking if Bitwarden item already exists: $secretName" -Tag 'BitwardenCLI'
-              $listOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
-                & bw list items --search $secretName --session $env:BW_SESSION 2>&1
-              }
-              $existingItems = $null
-              if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($listOutput)) {
-                try { $existingItems = $listOutput | ConvertFrom-Json -ErrorAction SilentlyContinue } catch { }
-              }
-              if ($existingItems -and ($existingItems | Where-Object { $_.name -eq $secretName })) {
+              if ($existingKeys -contains $secretName.ToLowerInvariant()) {
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-                  -Message "Bitwarden item already exists, skipping: $secretName"
+                  -Message "BWS secret already exists, skipping: $secretName"
                 $entry.alreadyExists = $true
               } else {
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
-                  -Message "Creating Bitwarden item: $secretName" -Tag 'BitwardenCLI'
+                  -Message "Calling bws secret create for $secretName" -Tag 'BWSCall'
 
-                # Build Bitwarden item JSON (Secure Note, type = 2)
-                $bwItem = [ordered]@{
-                  organizationId = $null
-                  folderId       = $null
-                  type           = 2
-                  name           = $secretName
-                  notes          = $connStr
-                  secureNote     = [ordered]@{ type = 0 }
-                  fields         = @()
-                  reprompt       = 0
-                }
-
-                $itemJson = $bwItem | ConvertTo-Json -Depth 5 -Compress
-
-                # Encode and create via bw CLI
-                # Use .NET Base64 encoding instead of `bw encode` to avoid PowerShell
-                # piping a UTF-8 BOM (0xEF BB BF) that would corrupt the base64 payload.
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
-                  -Message "Calling bw create item for $secretName" -Tag 'BitwardenCLI'
-
-                $encoded = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($itemJson))
-
-                $createOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
-                  $encoded | & bw create item --session $env:BW_SESSION 2>&1
-                }
+                $note = "Sprint $SprintNumber connection string ($tier) created by New-SprintBitwardenSecrets"
+                $createOutput = & bws secret create $secretName $connStr $ProjectId --note $note --output json 2>&1
                 if ($LASTEXITCODE -ne 0) {
-                  throw "bw create item failed (exit $LASTEXITCODE): $createOutput"
+                  throw "bws secret create failed (exit $LASTEXITCODE): $createOutput"
                 }
-
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
-                  -Message "Successfully created Bitwarden item: $secretName" -Tag 'BitwardenCLI'
 
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-                  -Message "Bitwarden secret created: $secretName"
+                  -Message "BWS secret created: $secretName"
 
                 $entry.created = $true
               }
 
             } catch {
-              $errMsg = "Failed to create or check Bitwarden item '$secretName'. Exception: $($_.Exception.Message)"
+              $errMsg = "Failed to create or check BWS secret '$secretName'. Exception: $($_.Exception.Message)"
               Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errMsg
               $entry.error = $errMsg
             }
@@ -223,20 +245,6 @@ function New-SprintBitwardenSecrets {
       }
     }
 
-    # Sync vault so all clients see the newly created items immediately
-    if ($results.Where({ $_.created }).Count -gt 0) {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Running bw sync to propagate new secrets.' -Tag 'BitwardenCLI'
-      $syncOutput = Invoke-BitwardenCliWithCleanTlsEnvironment -FunctionName $fn -ModuleName $mn {
-        & bw sync --session $env:BW_SESSION 2>&1
-      }
-      if ($LASTEXITCODE -ne 0) {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
-          -Message "bw sync failed (exit $LASTEXITCODE): $syncOutput" -Tag 'BitwardenCLI'
-      } else {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'bw sync completed successfully.' -Tag 'BitwardenCLI'
-      }
-    }
-
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
       -Message "New-SprintBitwardenSecrets complete — $($results.Where({$_.created}).Count) created, $($results.Where({$_.alreadyExists}).Count) skipped (already existed), $($results.Where({$_.error}).Count) errors"
 
@@ -244,6 +252,9 @@ function New-SprintBitwardenSecrets {
   }
 
   end {
+    if ($bwsTokenWasSetHere) {
+      Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue
+    }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn"
   }
 }

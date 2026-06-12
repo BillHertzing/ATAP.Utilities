@@ -8,11 +8,14 @@ BeforeAll {
     function Get-RepositoryRoot { return $null }
   }
   # Stub the secret store so the function retrieves the BuildMaster admin API key
-  # without contacting Bitwarden. Records the SecretField passed by the caller.
+  # without contacting Bitwarden. Records the SecretField and SecretStoreType
+  # passed by the caller.
   $script:lastSecretField = $null
+  $script:lastSecretStoreType = $null
   function global:Get-SecretATAP {
-    param([string]$SecretName, [string]$SecretField = 'password')
+    param([string]$SecretName, [string]$SecretField = 'password', [string]$SecretStoreType)
     $script:lastSecretField = $SecretField
+    $script:lastSecretStoreType = $SecretStoreType
     'unit-test-key'
   }
 
@@ -23,10 +26,10 @@ BeforeAll {
   }
   . $functionPath
 
-  # Required env var names the function checks
+  # Required env var names the function checks. BW_SESSION is deliberately
+  # absent (SC-0175): sprint automation uses bws + machine access token.
   $script:requiredVars = @(
     'PROGET_ADMIN_API_KEY',
-    'BW_SESSION',
     'BUILDMASTER_GH_WEBHOOK_SECRET'
   )
 }
@@ -152,6 +155,25 @@ Describe 'Test-SprintInfrastructureHealth' {
         -ProGetBaseUrl '' `
         -SqlInstancePaths @() | Out-Null
       $script:lastSecretField | Should -Be 'notes'
+    }
+
+    It 'calls Get-SecretATAP with SecretStoreType BitwardenSecretsManager (no BW_SESSION dependency, SC-0175)' {
+      $script:lastSecretStoreType = $null
+      Test-SprintInfrastructureHealth `
+        -BuildMasterBaseUrl '' `
+        -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key' `
+        -ProGetBaseUrl '' `
+        -SqlInstancePaths @() | Out-Null
+      $script:lastSecretStoreType | Should -Be 'BitwardenSecretsManager'
+    }
+
+    It 'does not require BW_SESSION in the BitwardenEnvVars check' {
+      $result = Test-SprintInfrastructureHealth `
+        -BuildMasterBaseUrl '' `
+        -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key' `
+        -ProGetBaseUrl '' `
+        -SqlInstancePaths @()
+      $result.Checks.BitwardenEnvVars.Missing | Should -Not -Contain 'BW_SESSION'
     }
 
     It 'BuildMasterAdminApiKeyResolvable.Ok is true when Get-SecretATAP returns a value' {

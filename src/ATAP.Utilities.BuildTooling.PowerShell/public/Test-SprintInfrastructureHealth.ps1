@@ -86,10 +86,10 @@ function Test-SprintInfrastructureHealth {
     then $env:BUILDMASTER_BASE_URL, then 'http://localhost:50017'.
 
 .PARAMETER BuildMasterAdminApiKeySecretName
-    The ATAP secret name containing the BuildMaster admin API key. Resolved via
-    Get-PVal (parameter → env var → $global:settings → default
-    'BuildMaster.Admin.API.Key'); the value is read with Get-SecretATAP. An
-    unresolved key is reported by the BuildMasterApps check rather than thrown.
+    The Bitwarden secret name containing the BuildMaster admin API key. Defaults to
+    'BuildMaster.Admin.API.Key'. The value is read via Get-SecretATAP with
+    SecretField='notes'. An unresolved key is reported by the BuildMasterApps
+    check rather than thrown.
 
 .PARAMETER ProGetBaseUrl
     Base URL for ProGet. Defaults to
@@ -174,21 +174,14 @@ function Test-SprintInfrastructureHealth {
       $BuildMasterBaseUrl = $BuildMasterBaseUrl.TrimEnd('/')
     }
 
-    # Resolve the BuildMaster admin API key secret name, then retrieve the key
-    # value via Get-SecretATAP. Non-fatal: an unresolved key is reported by the
-    # BuildMasterApps check rather than thrown. The key value is never logged.
-    $BuildMasterAdminApiKeySecretName = Get-PVal -ParameterName 'BuildMasterAdminApiKeySecretName' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterAdminApiKeySecretName
+    # Retrieve the BuildMaster admin API key from Bitwarden via Get-SecretATAP.
+    # Non-fatal: an unresolved key is reported by the BuildMasterApps check
+    # rather than thrown. The key value is never logged.
     $ApiKey = $null
-    foreach ($fieldName in @($null, 'token', 'key', 'password')) {
-      try {
-        $candidate = if ($null -eq $fieldName) {
-          Get-SecretATAP -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName -ErrorAction Stop
-        } else {
-          Get-SecretATAP -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName -SecretField $fieldName -ErrorAction Stop
-        }
-        if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) { $ApiKey = [string]$candidate; break }
-      } catch {
-      }
+    try {
+      $candidate = Get-SecretATAP -SecretName $BuildMasterAdminApiKeySecretName -SecretField 'notes' -ErrorAction Stop
+      if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) { $ApiKey = [string]$candidate }
+    } catch {
     }
 
     # Resolve ProGetBaseUrl

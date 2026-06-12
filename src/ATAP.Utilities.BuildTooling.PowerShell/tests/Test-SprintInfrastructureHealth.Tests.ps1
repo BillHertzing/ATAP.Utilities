@@ -4,23 +4,15 @@
 BeforeAll {
   Import-Module PSFramework -ErrorAction SilentlyContinue
 
-  # Stubs satisfy the begin-block dot-source guard so the function does not
-  # attempt to load helpers from disk during tests.
-  if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-    function Get-ParameterValueFromNeoConfigurationRoot {
-      param([string]$ParameterName, $originalPSBoundParameters, [AllowNull()]$DefaultValue = $null, [string]$dottedPath, [hashtable]$Settings)
-      if ($originalPSBoundParameters -and $originalPSBoundParameters.ContainsKey($ParameterName)) { return $originalPSBoundParameters[$ParameterName] }
-      return $DefaultValue
-    }
-  }
-  Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Global -Force
   if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
     function Get-RepositoryRoot { return $null }
   }
-  # Stub the secret store so the function resolves the BuildMaster admin API key
-  # without contacting Bitwarden.
+  # Stub the secret store so the function retrieves the BuildMaster admin API key
+  # without contacting Bitwarden. Records the SecretField passed by the caller.
+  $script:lastSecretField = $null
   function global:Get-SecretATAP {
-    param([Parameter(ValueFromPipelineByPropertyName = $true)][Alias('BuildMasterAdminApiKeySecretName')][string]$SecretName, [string]$SecretField = 'password')
+    param([string]$SecretName, [string]$SecretField = 'password')
+    $script:lastSecretField = $SecretField
     'unit-test-key'
   }
 
@@ -148,6 +140,27 @@ Describe 'Test-SprintInfrastructureHealth' {
         -SqlInstancePaths @()
       $result.Checks.BuildMasterApps.Skipped | Should -BeTrue
       $result.Checks.BuildMasterApps.Ok | Should -BeTrue
+    }
+  }
+
+  Context 'BuildMaster admin API key resolution' {
+    It 'calls Get-SecretATAP with SecretField notes to retrieve the BuildMaster admin API key' {
+      $script:lastSecretField = $null
+      Test-SprintInfrastructureHealth `
+        -BuildMasterBaseUrl '' `
+        -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key' `
+        -ProGetBaseUrl '' `
+        -SqlInstancePaths @() | Out-Null
+      $script:lastSecretField | Should -Be 'notes'
+    }
+
+    It 'BuildMasterAdminApiKeyResolvable.Ok is true when Get-SecretATAP returns a value' {
+      $result = Test-SprintInfrastructureHealth `
+        -BuildMasterBaseUrl '' `
+        -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key' `
+        -ProGetBaseUrl '' `
+        -SqlInstancePaths @()
+      $result.Checks.BuildMasterAdminApiKeyResolvable.Ok | Should -BeTrue
     }
   }
 }

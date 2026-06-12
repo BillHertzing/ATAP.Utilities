@@ -28,6 +28,8 @@ ATAP.Utilities.RulesManagement.PowerShell/
 | [Test-FlywayMigrationDryRun](public/Test-FlywayMigrationDryRun.ps1) | Run `flyway validate` against a migration path without executing it |
 | [Add-RuleKindToCompendium](public/Add-RuleKindToCompendium.ps1) | Insert a formatted Kind section into a Rules Compendium `.md` file before the `<!-- rule-compendium-end -->` marker |
 | [Sync-RuleDocumentation](public/Sync-RuleDocumentation.ps1) | Insert cross-reference entries for a new Kind into all `.md` files that contain `<!-- rule-index -->` or `<!-- rule-table-start/end -->` markers |
+| [Import-AgentTextFromFiles](public/Import-AgentTextFromFiles.ps1) | Load SharedVSCode `.ai` manifest records and `.md`/`.toml` sources into AgentText-shaped objects or idempotent SQL fragments |
+| [Export-AgentTextToFiles](public/Export-AgentTextToFiles.ps1) | Instantiate AgentText records back into native adapter files for copy/generated-wrapper pilot targets |
 
 ## Typical Workflow (new-rule-kind skill)
 
@@ -50,6 +52,11 @@ Sync-RuleDocumentation     ← propagate cross-references (supports -WhatIf)
 | `ATAPUtilities.RulePrimitive` | SELECT (Get-GrammarForKind), INSERT (New-RuleKindMigration) |
 | `ATAPUtilities.RulePrimitiveComposition` | SELECT (Get-GrammarForKind), INSERT (New-RuleKindMigration) |
 | `ATAPUtilities.RulePrimitiveInput` | SELECT (Get-RulePrimitiveInputs), INSERT (New-RuleKindMigration) |
+| `ATAPUtilities.AgentText` | INSERT/SELECT pilot records for AI instruction source text |
+| `ATAPUtilities.AgentInstruction` | INSERT/SELECT ordered instruction sections, runbook steps, and guardrails |
+| `ATAPUtilities.AgentToolSurface` | INSERT/SELECT minimal native tool declarations |
+| `ATAPUtilities.AgentAdapterTarget` | INSERT/SELECT rendered adapter targets and materialization modes |
+| `ATAPUtilities.AgentTextRoundTrip` | INSERT/SELECT semantic vs byte-for-byte round-trip policy |
 
 ## Dependencies
 
@@ -69,5 +76,6 @@ All database functions support two parameter sets:
 ## Related Files
 
 - `SolutionDocumentation/Rules Compendium.md` — master RRSBS reference
+- `SolutionDocumentation/Rules Compendium.AgentText.md` — AgentText kind definition and embedded grammar for AI adapters
 - `docs/grammar/*.grammar.ebnf` — canonical grammar authority for each Kind
 - `.claude/skills/new-rule-kind/SKILL.md` — agent skill that orchestrates these functions

@@ -20,8 +20,7 @@ Get-SecretATAP once per field. This keeps the wrapper API stable across
 secret-store implementations that expose fields differently.
 
 .PARAMETER SecretName
-The name (item key) of the secret to retrieve. Required. Also accepts
-`-BuildMasterAdminApiKeySecretName` as an alias for BuildMaster helper calls.
+The name (item key) of the secret to retrieve. Required.
 
 .PARAMETER SecretField
 The named field inside the secret to return. Defaults to 'password'.
@@ -37,8 +36,8 @@ Common values:
 The plain-text value of the requested field.
 
 .EXAMPLE
-$apiKey = Get-SecretATAP -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
-Returns the password/value field as a string.
+$apiKey = Get-SecretATAP -SecretName 'BuildMaster.Admin.API.Key' -SecretField 'notes'
+Returns the notes field (where the BuildMaster admin API key is stored).
 
 .EXAMPLE
 $user = Get-SecretATAP -SecretName 'utat022-SvcBuildmaster-Production' -SecretField 'username'
@@ -57,7 +56,6 @@ function Get-SecretATAP {
   param(
     [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
     [ValidateNotNullOrWhiteSpace()]
-    [Alias('BuildMasterAdminApiKeySecretName')]
     [string]$SecretName,
 
     [Parameter(Mandatory = $false, Position = 1, ValueFromPipelineByPropertyName = $true)]

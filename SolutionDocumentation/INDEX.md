@@ -426,6 +426,9 @@ values and renders deterministic output text.
   metadata. (~1,147 lines.)
 - [Rules Compendium — OtterScript](Rules%20Compendium.OtterScript.md) —
   Rule primitives and conventions for BuildMaster OtterScript automation.
+- [Rules Compendium — AgentText](Rules%20Compendium.AgentText.md) —
+  Agent/instruction text kind for loading SharedVSCode `.ai` sources into
+  RRSBS records and rendering Claude, Codex, and GitHub Copilot adapters.
 - [Rules Compendium Template](Rules-Compendium-Template.md) —
   Template for creating new language-specific Rules Compendium documents.
 

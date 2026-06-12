@@ -39,6 +39,8 @@ Other detailed documentation you might be interested are
 
 - [Provisioning Bitwarden Secrets Manager access tokens for service accounts and users](./SolutionDocumentation/Runbook-BitwardenServiceAccounts.md)
 
+- [AgentText RRSBS pilot for AI adapter load/instantiate workflows](./SolutionDocumentation/Rules%20Compendium.AgentText.md)
+
 - [Using DocFx to build the ATAP.Utilities documentation website]()
 
 - [Detailed API Information for the packages in this repository](./API/ReadMe.html)

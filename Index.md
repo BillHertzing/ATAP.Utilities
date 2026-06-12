@@ -18,3 +18,11 @@ images are generated with the PowerShell command documented in
 [`SolutionDocumentation/Generated-Diagram-Pipeline.md`](SolutionDocumentation/Generated-Diagram-Pipeline.md).
 Editable `.puml`, `.uml`, and `.drawio` sources stay in their documentation
 folders; rendered images are written under `_generated/diagrams`.
+
+### AgentText RRSBS pilot
+
+Sprint 0008 adds an AgentText rule kind for AI agent and instruction text.
+The compendium lives at
+[`SolutionDocumentation/Rules Compendium.AgentText.md`](SolutionDocumentation/Rules%20Compendium.AgentText.md),
+with its grammar embedded in that compendium and import/export functions under
+`src/ATAP.Utilities.RulesManagement.PowerShell/public/`.

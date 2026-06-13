@@ -205,7 +205,7 @@ function New-SprintStage1 {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
         -Message "Creating GitHub issue for SharedVSCode sprint $sprintNum"
 
-      if ($PSCmdlet.ShouldProcess('whertzing/SharedVSCode', "Create GitHub issue 'Sprint $sprintNum work items'")) {
+      if ($PSCmdlet.ShouldProcess("$Owner/SharedVSCode", "Create GitHub issue 'Sprint $sprintNum work items'")) {
         $ghOutput = gh issue create `
           --repo "$Owner/SharedVSCode" `
           --title "Sprint $sprintNum work items" `
@@ -293,7 +293,7 @@ function New-SprintStage1 {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
         -Message "Creating GitHub issue for _Planning sprint $sprintNum"
 
-      if ($PSCmdlet.ShouldProcess('whertzing/_Planning', "Create GitHub issue 'Sprint $sprintNum work items'")) {
+      if ($PSCmdlet.ShouldProcess("$Owner/_Planning", "Create GitHub issue 'Sprint $sprintNum work items'")) {
         $ghOutput = gh issue create `
           --repo "$Owner/_Planning" `
           --title "Sprint $sprintNum work items" `

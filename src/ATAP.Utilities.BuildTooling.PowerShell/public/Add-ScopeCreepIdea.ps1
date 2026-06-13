@@ -168,15 +168,31 @@ function Add-ScopeCreepIdea {
 
     $scopeCreepPath = Join-Path -Path $planningRoot -ChildPath 'ScopeCreepManagement'
     $inboxPath = Join-Path -Path $scopeCreepPath -ChildPath 'ScopeCreep-Inbox.md'
+    $adoptedPath = Join-Path -Path $scopeCreepPath -ChildPath 'ScopeCreep-Adopted.md'
+    $deferredPath = Join-Path -Path $scopeCreepPath -ChildPath 'ScopeCreep-Deferred.md'
 
     if (-not (Test-Path -LiteralPath $inboxPath -PathType Leaf)) {
       throw "ScopeCreep-Inbox.md not found at: $inboxPath"
     }
 
-    $content = Get-Content -LiteralPath $inboxPath -Raw -ErrorAction Stop
-    $idMatches = [regex]::Matches($content, '(?m)^## SC-(\d{4})')
-    $existingIds = @($idMatches | ForEach-Object { [int]$_.Groups[1].Value })
-    $nextNum = if ($existingIds.Count -gt 0) { [int]($existingIds | Measure-Object -Maximum).Maximum + 1 } else { 1 }
+    $trackedPaths = @($inboxPath, $adoptedPath, $deferredPath)
+    $existingIds = [System.Collections.Generic.HashSet[int]]::new()
+    foreach ($trackedPath in $trackedPaths) {
+      if (-not (Test-Path -LiteralPath $trackedPath -PathType Leaf)) {
+        continue
+      }
+
+      $content = Get-Content -LiteralPath $trackedPath -Raw -ErrorAction Stop
+      foreach ($match in [regex]::Matches($content, '(?m)^##\s+SC-(\d{4})\b')) {
+        [void]$existingIds.Add([int]$match.Groups[1].Value)
+      }
+    }
+
+    $existingIdValues = @($existingIds)
+    $nextNum = if ($existingIdValues.Count -gt 0) { ([int](($existingIdValues | Measure-Object -Maximum).Maximum) + 1) } else { 1 }
+    while ($existingIds.Contains([int]$nextNum)) {
+      $nextNum++
+    }
     $scId = 'SC-{0:D4}' -f $nextNum
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Adding $scId to ScopeCreep-Inbox.md"

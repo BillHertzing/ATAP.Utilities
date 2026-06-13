@@ -66,11 +66,22 @@ Describe 'Get-SecretATAP' -Tag 'Unit', 'PromotedModuleHostSensitive' {
     Should -Invoke Get-SecretATAPBitwardenSecretsManager -Times 1 -Exactly -Scope It
   }
 
-  It 'Accepts -BuildMasterAdminApiKeySecretName as an alias for SecretName' {
+  It 'Rejects the retired -BuildMasterAdminApiKeySecretName alias (Task 8.9: callers must pass -SecretName)' {
     Mock Get-SecretATAPBitwarden { "bw:${SecretName}:${SecretField}" }
 
-    $result = Get-SecretATAP -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
+    { Get-SecretATAP -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key' } |
+      Should -Throw -ExceptionType ([System.Management.Automation.ParameterBindingException])
+  }
 
-    $result | Should -Be 'bw:BuildMaster.Admin.API.Key:password'
+  It 'Explicit -SecretStoreType overrides the configured store (SC-0175)' {
+    # $global:settings says Bitwarden, but the parameter forces BWS
+    Mock Get-SecretATAPBitwarden { throw 'Bitwarden should not be called' }
+    Mock Get-SecretATAPBitwardenSecretsManager { "bws:${SecretName}:${SecretField}" }
+
+    $result = Get-SecretATAP -SecretName 'dbConnectionString-master-localhost-Dev-tester' -SecretStoreType 'BitwardenSecretsManager'
+
+    $result | Should -Be 'bws:dbConnectionString-master-localhost-Dev-tester:password'
+    Should -Invoke Get-SecretATAPBitwarden -Times 0 -Exactly -Scope It
+    Should -Invoke Get-SecretATAPBitwardenSecretsManager -Times 1 -Exactly -Scope It
   }
 }

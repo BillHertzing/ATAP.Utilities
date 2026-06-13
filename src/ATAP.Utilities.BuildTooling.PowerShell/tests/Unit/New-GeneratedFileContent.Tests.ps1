@@ -1,5 +1,5 @@
 BeforeAll {
-  Import-Module ATAP.Utilities.BuildTooling.PowerShell -Force
+  . (Join-Path $PSScriptRoot '..\..\private\New-GeneratedFileContent.ps1')
 }
 
 Describe 'New-GeneratedFileContent [private]' {
@@ -50,6 +50,27 @@ Describe 'New-GeneratedFileContent [private]' {
 
     $result | Should -Match 'line one'
     $result | Should -Match 'line three'
+  }
+
+  It 'Replaces an existing generated header instead of stacking a second one' {
+    $sourceFile = Join-Path $script:tempDir 'generated-source.txt'
+    $existing = @(
+      '# ==================================================================='
+      '# GENERATED FILE - DO NOT EDIT DIRECTLY'
+      '# Source: C:\Old\source.txt'
+      '# Generated: 2026-06-01T00:00:00Z'
+      '# Regenerate using Set-DownstreamSharedVSCodeContext'
+      '# ==================================================================='
+      ''
+      'real content'
+    ) -join [Environment]::NewLine
+    Set-Content -Path $sourceFile -Value $existing -Encoding UTF8
+
+    $result = New-GeneratedFileContent -SourcePath $sourceFile
+
+    ([regex]::Matches($result, 'GENERATED FILE - DO NOT EDIT DIRECTLY')).Count | Should -Be 1
+    $result | Should -Match 'real content'
+    $result | Should -Not -Match ([regex]::Escape('C:\Old\source.txt'))
   }
 
   It 'Throws when the source file does not exist' {

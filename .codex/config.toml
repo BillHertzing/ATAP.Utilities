@@ -1,0 +1,11 @@
+# Codex adapter pilot configuration
+# Sprint 0008 Task 8.20D
+#
+# Codex discovers custom agents from .codex/agents/*.toml and skills from
+# .agents/skills/*/SKILL.md. This config is intentionally declarative-only for
+# the pilot so it remains valid TOML without relying on an unstable local schema.
+
+[pilot]
+source_manifest = "SharedVSCode/.ai/manifests/instruction-map.json"
+custom_agents = [".codex/agents/version-control-commit.toml"]
+skills = [".agents/skills/git-commit/SKILL.md", ".agents/skills/powershell/SKILL.md", ".agents/skills/html-board-extraction/SKILL.md"]

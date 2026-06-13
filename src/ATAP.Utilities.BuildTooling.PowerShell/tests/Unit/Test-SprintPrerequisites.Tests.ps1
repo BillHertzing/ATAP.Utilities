@@ -2,6 +2,7 @@
 
 BeforeAll {
   Import-Module PSFramework -ErrorAction SilentlyContinue
+  Get-Module -Name 'ATAP.Utilities.BuildTooling.PowerShell' | Remove-Module -Force -ErrorAction SilentlyContinue
   Import-Module "$PSScriptRoot\..\..\ATAP.Utilities.BuildTooling.PowerShell.psd1" -Force
 }
 
@@ -12,7 +13,8 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit' {
       $script:result = Test-SprintPrerequisites `
         -RequiredRepoWorktrees @() `
         -ProGetBaseUrl '' `
-        -BuildMasterBaseUrl ''
+        -BuildMasterBaseUrl '' `
+        -SkipSqlServerInstanceCheck
     }
 
     It 'Returns a PSCustomObject with the top-level contract' {
@@ -24,7 +26,7 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit' {
     }
 
     It 'Populates every documented check' {
-      $names = @('PwshVersion', 'GhAuth', 'Bitwarden', 'GitRepoState', 'LockFilesClean', 'BuildToolingImport', 'ProGetReachable', 'BuildMasterReachable')
+      $names = @('PwshVersion', 'GhAuth', 'Bitwarden', 'GitRepoState', 'LockFilesClean', 'SqlServerInstances', 'BuildToolingImport', 'ProGetReachable', 'BuildMasterReachable')
       foreach ($n in $names) {
         $script:result.Checks.PSObject.Properties.Name | Should -Contain $n
       }
@@ -41,12 +43,12 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit' {
 
   Context 'PwshVersion' {
     It 'Passes when MinimumPwshVersion is below the running version' {
-      $r = Test-SprintPrerequisites -MinimumPwshVersion '1.0' -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl ''
+      $r = Test-SprintPrerequisites -MinimumPwshVersion '1.0' -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SkipSqlServerInstanceCheck
       $r.Checks.PwshVersion.Ok | Should -BeTrue
     }
 
     It 'Fails when MinimumPwshVersion is above the running version' {
-      $r = Test-SprintPrerequisites -MinimumPwshVersion '99.0' -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl ''
+      $r = Test-SprintPrerequisites -MinimumPwshVersion '99.0' -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SkipSqlServerInstanceCheck
       $r.Checks.PwshVersion.Ok | Should -BeFalse
       $r.Failures | Should -Contain 'PwshVersion'
       $r.AllOk | Should -BeFalse
@@ -55,7 +57,7 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit' {
 
   Context 'GitRepoState' {
     It 'Reports Ok with empty repo list' {
-      $r = Test-SprintPrerequisites -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl ''
+      $r = Test-SprintPrerequisites -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SkipSqlServerInstanceCheck
       $r.Checks.GitRepoState.Ok | Should -BeTrue
       $r.Checks.GitRepoState.Detail | Should -Match 'No sprint worktrees'
     }
@@ -67,7 +69,7 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit' {
         $null = New-Item -ItemType Directory -Path $gitSub -Force
         $null = New-Item -ItemType File -Path (Join-Path $gitSub 'MERGE_HEAD') -Force
 
-        $r = Test-SprintPrerequisites -RequiredRepoWorktrees @($tmpRepo) -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SkipLockFileGuard
+        $r = Test-SprintPrerequisites -RequiredRepoWorktrees @($tmpRepo) -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SkipLockFileGuard -SkipSqlServerInstanceCheck
         $r.Checks.GitRepoState.Ok | Should -BeFalse
         $r.Checks.GitRepoState.PerRepo[0].InProgress | Should -Contain 'MERGE_HEAD'
         $r.Failures | Should -Contain 'GitRepoState'
@@ -80,7 +82,7 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit' {
       $tmpRepo = Join-Path ([System.IO.Path]::GetTempPath()) ("a07test-clean-" + [Guid]::NewGuid())
       try {
         $null = New-Item -ItemType Directory -Path (Join-Path $tmpRepo '.git') -Force
-        $r = Test-SprintPrerequisites -RequiredRepoWorktrees @($tmpRepo) -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SkipLockFileGuard
+        $r = Test-SprintPrerequisites -RequiredRepoWorktrees @($tmpRepo) -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SkipLockFileGuard -SkipSqlServerInstanceCheck
         $r.Checks.GitRepoState.PerRepo[0].Ok | Should -BeTrue
       } finally {
         if (Test-Path $tmpRepo) { Remove-Item -Recurse -Force -LiteralPath $tmpRepo }
@@ -101,7 +103,7 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit' {
         & git -C $tmpRepo commit -m 'seed lock file' | Out-Null
         Add-Content -LiteralPath (Join-Path $tmpRepo 'src\App\packages.lock.json') -Value "`n"
 
-        $r = Test-SprintPrerequisites -RequiredRepoWorktrees @($tmpRepo) -ProGetBaseUrl '' -BuildMasterBaseUrl ''
+        $r = Test-SprintPrerequisites -RequiredRepoWorktrees @($tmpRepo) -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SkipSqlServerInstanceCheck
 
         $r.Checks.LockFilesClean.Ok | Should -BeFalse
         $r.Checks.LockFilesClean.PerRepo[0].DirtyLockFiles | Should -Contain 'src/App/packages.lock.json'
@@ -112,22 +114,70 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit' {
     }
 
     It 'Records an explicit bypass when SkipLockFileGuard is supplied' {
-      $r = Test-SprintPrerequisites -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SkipLockFileGuard
+      $r = Test-SprintPrerequisites -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SkipLockFileGuard -SkipSqlServerInstanceCheck
 
       $r.Checks.LockFilesClean.Ok | Should -BeTrue
       $r.Checks.LockFilesClean.Skipped | Should -BeTrue
     }
   }
 
+  Context 'SqlServerInstances' {
+    It 'Records an explicit bypass when SkipSqlServerInstanceCheck is supplied' {
+      $r = Test-SprintPrerequisites -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SkipSqlServerInstanceCheck
+
+      $r.Checks.SqlServerInstances.Ok | Should -BeTrue
+      $r.Checks.SqlServerInstances.Skipped | Should -BeTrue
+    }
+
+    It 'Passes when all requested SQL Server instance services exist' {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell -CommandName Get-Service -MockWith {
+        [PSCustomObject]@{ Name = $Name; Status = 'Running' }
+      } -ParameterFilter { $Name -like 'MSSQL$*' }
+
+      $r = Test-SprintPrerequisites `
+        -RequiredRepoWorktrees @() `
+        -ProGetBaseUrl '' `
+        -BuildMasterBaseUrl '' `
+        -SqlServerInstanceNames @('Devtester', 'Exptester') `
+        -SkipLockFileGuard
+
+      $r.Checks.SqlServerInstances.Ok | Should -BeTrue
+      $r.Checks.SqlServerInstances.PerInstance.Count | Should -Be 2
+      $r.Failures | Should -Not -Contain 'SqlServerInstances'
+    }
+
+    It 'Fails when a required SQL Server instance service is missing' {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell -CommandName Get-Service -MockWith {
+        if ($Name -eq 'MSSQL$Devtester') {
+          [PSCustomObject]@{ Name = $Name; Status = 'Running' }
+        }
+      } -ParameterFilter { $Name -like 'MSSQL$*' }
+
+      $r = Test-SprintPrerequisites `
+        -RequiredRepoWorktrees @() `
+        -ProGetBaseUrl '' `
+        -BuildMasterBaseUrl '' `
+        -SqlServerInstanceNames @('Devtester', 'Exptester') `
+        -SkipLockFileGuard
+
+      $r.Checks.SqlServerInstances.Ok | Should -BeFalse
+      $r.Checks.SqlServerInstances.PerInstance |
+        Where-Object { $_.InstanceName -eq 'Exptester' } |
+        Select-Object -ExpandProperty Ok |
+        Should -BeFalse
+      $r.Failures | Should -Contain 'SqlServerInstances'
+    }
+  }
+
   Context 'URL reachability skip semantics' {
     It 'Marks ProGet check Skipped/Ok when no URL is supplied' {
-      $r = Test-SprintPrerequisites -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl ''
+      $r = Test-SprintPrerequisites -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SkipSqlServerInstanceCheck
       $r.Checks.ProGetReachable.Skipped | Should -BeTrue
       $r.Checks.ProGetReachable.Ok | Should -BeTrue
     }
 
     It 'Marks BuildMaster check Skipped/Ok when no URL is supplied' {
-      $r = Test-SprintPrerequisites -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl ''
+      $r = Test-SprintPrerequisites -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SkipSqlServerInstanceCheck
       $r.Checks.BuildMasterReachable.Skipped | Should -BeTrue
       $r.Checks.BuildMasterReachable.Ok | Should -BeTrue
     }
@@ -136,7 +186,7 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit' {
   Context '-ThrowOnFailure switch' {
     It 'Throws with the expected FullyQualifiedErrorId when a check fails' {
       try {
-        Test-SprintPrerequisites -MinimumPwshVersion '99.0' -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -ThrowOnFailure
+        Test-SprintPrerequisites -MinimumPwshVersion '99.0' -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SkipSqlServerInstanceCheck -ThrowOnFailure
         throw 'Expected Test-SprintPrerequisites to throw a terminating error.'
       } catch {
         $_.FullyQualifiedErrorId | Should -Match '^SprintPrerequisitesFailedException'

@@ -1,20 +1,34 @@
-function New-SprintSqlServerInstances {
+function New-DeveloperSqlServerInstances {
   <#
   .SYNOPSIS
-    Creates the `Dev<username>` and `Exp<username>` SQL Server named instances for
-    the sprint environment and builds all target databases from scratch using Flyway migrations.
+    Developer-onboarding cmdlet: creates the permanent `Dev<username>` and
+    `Exp<username>` SQL Server named instances on a workstation and builds the
+    target databases from scratch using Flyway migrations.
   .DESCRIPTION
-    Idempotently creates two SQL Server named instances — `Dev<username>` (T2
-    Development/Alpha tier) and `Exp<username>` (T1 Experimental/Sprint tier) —
-    using the authoritative naming convention: 3-char prefix + $env:USERNAME,
-    no separator, 16-char SQL Server instance name limit (SprintInfrastructure-Naming.md).
+    Run ONCE per developer per workstation as part of developer onboarding. The two
+    named instances it creates are **permanent developer-onboarding infrastructure**
+    and are NOT created or destroyed at sprint boundaries:
+      - `Dev<username>` — T2 Development/Alpha tier
+      - `Exp<username>` — T1 Experimental/Sprint tier
+
+    The authoritative naming convention is a 3-char prefix + $env:USERNAME with no
+    separator, respecting the 16-char SQL Server instance-name limit
+    (SprintInfrastructure-Naming.md).
 
     For each instance that is successfully created (or already present), the
     function calls `Build-DatabaseWithFlyway` against every database in -Databases,
     which drops and recreates the database then applies all Flyway migrations to
     build the complete schema from scratch.
 
-    Supersedes `New-DeveloperDatabaseInstances` (now archived to Obsolete/).
+    Sprint-boundary behaviour (Sprint 0008 requirement change): SprintStart and
+    SprintEnd no longer create or delete these instances. They drop and recreate the
+    databases *inside* the instances via `Reset-SprintDatabases` (sprint start) and
+    `Remove-SprintDatabases` (sprint end). Use this cmdlet only for the once-per-
+    workstation instance provisioning; the paired offboarding cmdlet is
+    `Remove-DeveloperSqlServerInstances`.
+
+    Supersedes `New-SprintSqlServerInstances` (now retained only as a deprecated
+    alias of this function) and the earlier `New-DeveloperDatabaseInstances`.
 
     Idempotency rules:
     - If the Windows service `MSSQL$<InstanceName>` already exists, instance
@@ -56,22 +70,23 @@ function New-SprintSqlServerInstances {
       built         [bool]    — database schema built successfully via full Flyway migrations
       error         [string]  — error message if any step failed; $null on success
   .EXAMPLE
-    $results = New-SprintSqlServerInstances
+    $results = New-DeveloperSqlServerInstances
     $results | Format-Table instanceName, database, instanceReady, built, error
   .EXAMPLE
-    New-SprintSqlServerInstances -WhatIf
+    New-DeveloperSqlServerInstances -WhatIf
   .EXAMPLE
-    New-SprintSqlServerInstances -InstanceNames @("Dev$($env:USERNAME)") `
+    New-DeveloperSqlServerInstances -InstanceNames @("Dev$($env:USERNAME)") `
       -Databases @('ATAPUtilities') -Verbose
   .NOTES
     AI assisted using ./claude/Rules/Powershell.md as guidelines
   .LINK
-    New-SprintStage2
+    Remove-DeveloperSqlServerInstances
   .LINK
-    Remove-SprintSqlServerInstances
+    Reset-SprintDatabases
   .LINK
     Build-DatabaseWithFlyway
   #>
+  [Alias('New-SprintSqlServerInstances')]
   [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
   param(
     [Parameter(Mandatory = $false)]

@@ -12,9 +12,9 @@ Entity Framework Core abstractions, Flyway migration helpers
 
 | Source File    | Last Modified            |
 | -------------- | ------------------------ |
-| CLAUDE-base.md | 2026-06-02 16:13:54 |
-| CLAUDE-local.md | 2026-06-02 16:11:15 |
-| CLAUDE.md (combined) | 2026-06-02 16:13:59 |
+| CLAUDE-base.md | 2026-06-11 23:41:00 |
+| CLAUDE-local.md | 2026-06-10 14:35:16 |
+| CLAUDE.md (combined) | 2026-06-11 23:52:55 |
 
 ---
 
@@ -99,6 +99,7 @@ In the sprint `_Planning` worktree, treat the task files as a set:
 - Use `headroom_retrieve` when exact line-level evidence, full raw output, or literal values are needed.
 - Do not compress source files before editing unless the task is broad exploration or summarization; exact edits still require exact file reads.
 - If `headroom_retrieve` fails, assume the local or proxy retention window may have expired and reacquire the original content.
+
 ---
 
 ## .claude Folder — Agents, Skills, and Rules
@@ -184,7 +185,7 @@ SprintEndAgent re-targets them back to stable worktree files just before merge.
   skill issue-to-worktree when a sprint worktree does not already exist. Stage changes, and
   summarize the diff for review before any `git commit`.
 - **Secrets:** Never write connection strings, API keys, or credentials into source
-  files. Secrets are stored in a Bitwarden vault. Code should expect a secret's value to be in an environment variable
+  files. Secrets are stored in a Bitwarden vault. Code should expect a secret's name to be in a parameter or an environment variable or in $global:settings (for processes that use machine and user profiles). The code should use Get-SecretATAP to retrieve the secret value from a vault using the secret name
 - **Generated output (SC-0033):** When any agent command or script writes output files to
   the workstation (logs, reports, exports, generated code), they MUST go into the
   `_generated/` folder at the repository root. Never write generated artifacts anywhere
@@ -228,6 +229,7 @@ All agents operate on **Windows** inside **Visual Studio Code**. Use **PowerShel
 - Line continuation uses `` ` `` (backtick) — never `\`
 - When running Pester, NEVER use `-NoProfile`. Always allow PowerShell profiles:
   `pwsh -Command "Invoke-Pester -Path '<path>' -Output Detailed"`
+- For ATAP repository work, do not pass `-NoProfile` unless the task is explicitly auditing no-profile behavior. PowerShell profiles populate `$global:settings`, and BuildTooling resolves host/user configuration through `Get-PVal`; stripping profiles changes configuration resolution and can create misleading failures.
 - If requirements are ambiguous, ask ONE clarifying question before generating commands
 - **Bash tool override (R-01):** If `tools.bash.command` is configurable, set it to `pwsh`.
   In the Bash/terminal tool, ALL commands must be PowerShell. Never send bare PowerShell
@@ -435,28 +437,33 @@ When asked to create or modify a Rule, Rule Set, or Build Set:
    commands sequentially. Do not put speculative calls in parallel when one syntax failure
    would invalidate the rest of the batch.
 9. **Environment variable names (R-27):** API-key and token environment variables use
-   `ALL_UPPERCASE_WITH_UNDERSCORES` names. Prefer names like `PROGET_BUILDMASTER_API_KEY`
+   `ALL_UPPERCASE_WITH_UNDERSCORES` names. Prefer names like `BUILDMASTER_ADMIN_API_KEY`
    and `PROGET_ADMIN_API_KEY`; do not invent mixed-case secret environment variables.
-   (Note: the BuildMaster admin API key is no longer an environment variable — it is the
-   Bitwarden Secrets Manager secret `BuildMaster.Admin.API.Key`, read via `Get-SecretATAP`.)
 10. **Wait for upload completion (R-28):** When the user says they will upload multiple
     files before giving instructions, wait for all uploads and the explicit "go" signal
     before analyzing or acting.
 11. **Small scope-creep units (R-29):** Decompose scope-creep work into units small
     enough for a simpler LLM model, typically one file change or one well-scoped function.
-12. **Pre-pull overlap check (R-31):** Before pulling `main` in a repo with local
+12. **Checkpoint cadence (R-30):** During long or multi-repo sessions, run `/checkpoint`
+    at completed task boundaries, before risky context switches or broad refactors, and
+    always before closing the session. Do not leave an entire sprint's worth of work
+    uncheckpointed.
+13. **Pre-pull overlap check (R-31):** Before pulling `main` in a repo with local
     changes, compare local modified paths to `main..origin/main` changed paths. Block
     automatic pull when paths overlap and ask for human direction.
-13. **Large sprint PR risk note (R-32):** For very large sprint branches, add a short
+14. **Large sprint PR risk note (R-32):** For very large sprint branches, add a short
     risk note to the PR body before moving from draft to ready. The note must name
     high-risk areas and deferred validation items.
-14. **PowerShell-native orchestration (R-33):** In Windows sprint orchestration sessions,
+15. **PowerShell-native orchestration (R-33):** In Windows sprint orchestration sessions,
     use PowerShell-native commands and syntax consistently. Avoid POSIX shell habits in
     runbooks, commands, and generated instructions.
-15. **Agent-swarm threshold (R-36):** For refactors touching more than about 20 files,
+16. **Async process drain before WaitForExit (R-34):** When using `System.Diagnostics.Process`
+    with redirected stdout or stderr, begin draining both streams before `WaitForExit` or
+    `WaitForExitAsync`. Never wait on the process while redirected buffers can still fill.
+17. **Agent-swarm threshold (R-36):** For refactors touching more than about 20 files,
     prefer an agent-swarm plan with one bounded ownership slice per worker. Keep write
     scopes disjoint and merge through a review pass.
-16. **Blazor/Syncfusion instructions (R-37):** For Blazor UI or Syncfusion component
+18. **Blazor/Syncfusion instructions (R-37):** For Blazor UI or Syncfusion component
     work, load `.claude/Rules/BlazorSyncfusion.md` before changing `.razor`, `.razor.cs`,
     `.cshtml`, or Syncfusion-related C# files.
 

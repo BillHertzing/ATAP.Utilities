@@ -35,7 +35,22 @@ function Set-DownstreamSharedVSCodeContext {
   )
 
   Assert-GitAvailable
-  $repoRoot = Get-RepoRoot
+  $workspaceRepoRoots = @(
+    $WorkspaceFiles |
+      ForEach-Object {
+        $resolvedWorkspace = (Resolve-Path -LiteralPath $_ -ErrorAction Stop).ProviderPath
+        Split-Path -Path $resolvedWorkspace -Parent
+      } |
+      Sort-Object -Unique
+  )
+
+  if ($workspaceRepoRoots.Count -eq 0) {
+    throw 'WorkspaceFiles did not resolve to any downstream repository roots.'
+  }
+  if ($workspaceRepoRoots.Count -gt 1) {
+    throw "WorkspaceFiles span multiple downstream repository roots: $($workspaceRepoRoots -join ', ')"
+  }
+  $repoRoot = $workspaceRepoRoots[0]
 
   $contexts = Get-SharedVSCodeContext `
     -WorkspaceFiles $WorkspaceFiles `

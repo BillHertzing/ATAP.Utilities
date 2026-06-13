@@ -14,6 +14,12 @@
   If -AsType is supplied, coercion is applied to the final resolved value regardless of which
   priority source produced it. Boolean coercion understands 'yes/no', 'true/false', '1/0', 'on/off'.
 
+  ⚠ Loud-failure guard (Task 8.16, SC-prop-0007-1): if resolution reaches the settings stage
+  (priority 3) and NO settings source exists at all — no -Settings argument, no $script:Settings,
+  and no $global:settings — the function throws immediately instead of silently falling through
+  to DefaultValue. An entirely absent $global:settings means the ATAP profile did not run
+  (typically a pwsh -NoProfile session), which is an environment fault rather than a missing key.
+
   ⚠ IMPORTANT — Environment Variable Collision:
     Priority 2 checks for an environment variable named exactly like ParameterName. If the caller
     uses a ParameterName that coincidentally matches a common Windows or shell environment variable
@@ -227,6 +233,14 @@ function Get-ParameterValueFromNeoConfigurationRoot {
 
     # 3. Try to get from settings via dottedPath (raw value; AsType applied uniformly below)
     if (-not $resolved) {
+      # Fail loudly when no settings source exists at all (Task 8.16, SC-prop-0007-1).
+      # An absent $global:settings almost always means pwsh was started with -NoProfile;
+      # silently falling through to DefaultValue produced wrong BuildTooling behavior
+      # (Sprint-0007 V4-B01), so this is an environment fault, not a missing key.
+      $hasExplicitSettings = $PSBoundParameters.ContainsKey('Settings') -and ($null -ne $Settings)
+      if (-not $hasExplicitSettings -and ($null -eq $script:Settings) -and ($null -eq $global:settings)) {
+        throw "Get-PVal cannot resolve parameter '$ParameterName': no settings source is available — `$global:settings is not populated and no -Settings argument was supplied. This usually means pwsh was started with -NoProfile; the ATAP AllUsersAllHosts profile builds `$global:settings. Re-run in a pwsh session with profiles loaded — never pass -NoProfile for ATAP work (SC-prop-0007-1)."
+      }
       try {
         $settingsValue = Resolve-SettingsValue -dottedPath $dottedPath -Settings $Settings -AllowMissing:$true
         if ($null -ne $settingsValue) {

@@ -153,6 +153,17 @@ Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit' {
     }
   }
 
+  Context 'ShouldProcess target strings' {
+    It 'uses the resolved owner instead of a hardcoded owner in the WhatIf target expressions' {
+      $source = Get-Content -LiteralPath "$PSScriptRoot\..\..\public\New-SprintStage1.ps1" -Raw
+
+      $source | Should -Match '\$PSCmdlet\.ShouldProcess\("\$Owner/SharedVSCode"'
+      $source | Should -Match '\$PSCmdlet\.ShouldProcess\("\$Owner/_Planning"'
+      $source | Should -Not -Match "ShouldProcess\('whertzing/SharedVSCode'"
+      $source | Should -Not -Match "ShouldProcess\('whertzing/_Planning'"
+    }
+  }
+
   Context 'Custom ProGetBaseUrl' {
     It 'Substitutes a non-default ProGetBaseUrl into every ProGet feed URL' {
       New-SprintStage1 `

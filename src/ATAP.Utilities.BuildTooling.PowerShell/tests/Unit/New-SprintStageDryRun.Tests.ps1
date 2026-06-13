@@ -13,7 +13,8 @@ BeforeAll {
     'git'
     'Set-WorktreeJunctions'
     'Initialize-DownstreamSprintFromSharedVSCode'
-    'New-SprintSqlServerInstances'
+    'New-DeveloperSqlServerInstances'
+    'Reset-SprintDatabases'
     'Set-BuildMasterSprintVariables'
     'New-SprintBitwardenSecrets'
   )
@@ -50,9 +51,14 @@ BeforeAll {
     throw 'Initialize-DownstreamSprintFromSharedVSCode should not be called during DryRun.'
   }
 
-  function global:New-SprintSqlServerInstances {
-    $global:dryRunExternalCalls.Add('New-SprintSqlServerInstances') | Out-Null
-    throw 'New-SprintSqlServerInstances should not be called during DryRun.'
+  function global:New-DeveloperSqlServerInstances {
+    $global:dryRunExternalCalls.Add('New-DeveloperSqlServerInstances') | Out-Null
+    throw 'New-DeveloperSqlServerInstances should not be called during DryRun.'
+  }
+
+  function global:Reset-SprintDatabases {
+    $global:dryRunExternalCalls.Add('Reset-SprintDatabases') | Out-Null
+    throw 'Reset-SprintDatabases should not be called during DryRun.'
   }
 
   function global:Set-BuildMasterSprintVariables {
@@ -152,7 +158,7 @@ Describe 'New-SprintStage dry-run support' -Tag 'Unit' {
     $result.infrastructure.claudeSettingsLinked | Should -BeFalse
     $result.infrastructure.buildMasterVariablesSet.Count | Should -Be 0
     $result.infrastructure.connectionStrings.Count | Should -Be 0
-    $result.infrastructure.databaseInstances.Count | Should -Be 0
+    $result.infrastructure.databaseResets.Count | Should -Be 0
     $global:dryRunExternalCalls.Count | Should -Be 0
   }
 

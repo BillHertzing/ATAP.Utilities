@@ -106,9 +106,9 @@ function New-BuildMasterScript {
       foreach ($fieldName in @($null, 'token', 'key', 'password')) {
         try {
           $candidate = if ($null -eq $fieldName) {
-            Get-SecretATAP -BuildMasterAdminApiKeySecretName $AdminApiKeySecretName -ErrorAction Stop
+            Get-SecretATAP -SecretName $AdminApiKeySecretName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop
           } else {
-            Get-SecretATAP -BuildMasterAdminApiKeySecretName $AdminApiKeySecretName -SecretField $fieldName -ErrorAction Stop
+            Get-SecretATAP -SecretName $AdminApiKeySecretName -SecretStoreType 'BitwardenSecretsManager' -SecretField $fieldName -ErrorAction Stop
           }
           if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) { $resolvedApiKey = [string]$candidate; break }
         } catch {

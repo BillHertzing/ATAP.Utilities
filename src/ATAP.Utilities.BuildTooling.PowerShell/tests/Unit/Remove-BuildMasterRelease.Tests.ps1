@@ -59,7 +59,7 @@ BeforeAll {
   # Stub the secret store so the cmdlet resolves the BuildMaster admin API key
   # without contacting Bitwarden.
   function global:Get-SecretATAP {
-    param([Parameter(ValueFromPipelineByPropertyName = $true)][Alias('BuildMasterAdminApiKeySecretName')][string]$SecretName, [string]$SecretField = 'password')
+    param([Parameter(ValueFromPipelineByPropertyName = $true)][Alias('BuildMasterAdminApiKeySecretName')][string]$SecretName, [string]$SecretField = 'password', [string]$SecretStoreType)
     'unit-test-key'
   }
 

@@ -7,14 +7,15 @@ Get-SecretATAP is the vendor-agnostic wrapper used by ATAP code to read secrets.
 The wrapper resolves the active secret-store implementation in this order:
 1. The -SecretStoreType parameter when supplied (highest precedence).
 2. $global:settings (key 'SecretStoreType') when configured.
-3. Account default: service accounts whose process owner name starts with
-   `Svc` use Bitwarden Secrets Manager; developer accounts use Bitwarden
-   Password Manager.
+3. Default: 'BitwardenSecretsManager' for ALL accounts (bws CLI + DPAPI-protected
+   machine access token).
 
-Sprint lifecycle automation (SprintStartAgent / SprintEndAgent / dry runs)
-must pass -SecretStoreType 'BitwardenSecretsManager' so machine secrets are
-read with the bws CLI and a machine access token, never the personal-vault
-BW_SESSION (SC-0175 policy).
+Bitwarden Secrets Manager is the default for every account (SC-0175). The
+personal-vault Password Manager path (bw CLI + BW_SESSION) is opt-in only and
+must be requested explicitly with -SecretStoreType 'Bitwarden' or by setting
+$global:settings['SecretStoreType'] = 'Bitwarden'. Sprint lifecycle automation
+therefore reads machine secrets with bws by default and never touches the
+personal-vault BW_SESSION unless a caller deliberately opts in.
 
 The 'Bitwarden' and 'BitwardenSecretsManager' providers are implemented today.
 Future stores (for example 'AzureKeyVault' or 'HashiCorpVault') plug into the
@@ -107,15 +108,17 @@ function Get-SecretATAP {
         $accountLeafName = ($accountLeafName -split '@')[0]
       }
 
-      $defaultStoreType = if ($accountLeafName.StartsWith('Svc', [System.StringComparison]::OrdinalIgnoreCase)) {
-        'BitwardenSecretsManager'
-      } else {
-        'Bitwarden'
-      }
+      # Default to Bitwarden Secrets Manager (bws CLI + DPAPI-protected machine
+      # access token) for ALL accounts (SC-0175). The personal-vault Password
+      # Manager path (bw CLI + BW_SESSION) is opt-in only: callers must request
+      # it with -SecretStoreType 'Bitwarden' or set $global:settings['SecretStoreType'].
+      # This removes the prior account-name heuristic that silently routed
+      # developer accounts through bw and required every caller to remember the
+      # override.
+      $defaultStoreType = 'BitwardenSecretsManager'
 
       # Resolve the active secret-store provider: explicit parameter first,
-      # then $global:settings; when both are unset, select BWS for service
-      # accounts and Password Manager for users.
+      # then $global:settings; when both are unset, default to BWS (above).
       $storeType = $defaultStoreType
       if (-not [string]::IsNullOrWhiteSpace($SecretStoreType)) {
         $storeType = $SecretStoreType

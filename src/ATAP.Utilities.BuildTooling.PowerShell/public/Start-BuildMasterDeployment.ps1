@@ -118,9 +118,9 @@ function Start-BuildMasterDeployment {
     foreach ($fieldName in @($null, 'token', 'key', 'password')) {
       try {
         $candidate = if ($null -eq $fieldName) {
-          Get-SecretATAP -BuildMasterAdminApiKeySecretName $resolvedSecretName -ErrorAction Stop
+          Get-SecretATAP -SecretName $resolvedSecretName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop
         } else {
-          Get-SecretATAP -BuildMasterAdminApiKeySecretName $resolvedSecretName -SecretField $fieldName -ErrorAction Stop
+          Get-SecretATAP -SecretName $resolvedSecretName -SecretStoreType 'BitwardenSecretsManager' -SecretField $fieldName -ErrorAction Stop
         }
         if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) {
           $resolvedApiKey = [string]$candidate

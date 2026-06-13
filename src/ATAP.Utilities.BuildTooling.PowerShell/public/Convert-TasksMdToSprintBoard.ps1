@@ -256,7 +256,7 @@ function Convert-TasksMdToSprintBoard {
         $streamTag = $Matches['tag']
 
         $taskLineIndices = for ($i = 1; $i -lt $streamLines.Count; $i++) {
-          if ($streamLines[$i] -match '^- \[[ x]\] \*\*Task ') { $i }
+          if ($streamLines[$i] -match '^- \[[ x~]\] \*\*Task ') { $i }
         }
 
         $purposeLines = if ($taskLineIndices.Count -gt 0) {
@@ -274,7 +274,7 @@ function Convert-TasksMdToSprintBoard {
           $taskLines = Get-TasksMdToSprintBoardSlice -Lines $streamLines -StartIndex $taskStart -EndIndex $taskEnd
 
           $taskHeader = $taskLines[0]
-          if ($taskHeader -notmatch '^- \[(?<checked>[ x])\] \*\*Task (?<id>[^*]+)\*\* \[(?<repo>[^\]]+)\](?<extraTags>(?: \[[^\]]+\])*)\s+[–-]\s+(?<title>.+)$') {
+          if ($taskHeader -notmatch '^- \[(?<checked>[ x~])\] \*\*Task (?<id>[^*]+)\*\* \[(?<repo>[^\]]+)\](?<extraTags>(?: \[[^\]]+\])*)\s+[–-]\s+(?<title>.+)$') {
             throw "Could not parse task header '$taskHeader'."
           }
 
@@ -290,6 +290,8 @@ function Convert-TasksMdToSprintBoard {
 
           $taskStatus = if ($Matches['checked'] -eq 'x') {
             'closed'
+          } elseif ($Matches['checked'] -eq '~') {
+            'partial'
           } elseif ($taskFields.PSObject.Properties.Name -contains 'Status' -and $taskFields.Status -match 'partial|blocked|in-progress') {
             'partial'
           } else {

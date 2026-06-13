@@ -1,7 +1,7 @@
 # ===================================================================
 # GENERATED FILE - DO NOT EDIT DIRECTLY
-# Source: C:\dropbox\whertzing\GitHub\SharedVSCode\.gitattributes
-# Generated: 2026-06-10T06:57:14Z
+# Source: C:\dropbox\whertzing\GitHub\SharedVSCode-wt-46-Sprint-0009-work-items\.gitattributes
+# Generated: 2026-06-13T17:02:33Z
 # Regenerate using Set-DownstreamSharedVSCodeContext
 # ===================================================================
 # ===================================================================
@@ -34,6 +34,7 @@ Wsl2Ubuntu/** text eol=lf
 
 # Prevent NuGet.config merge conflicts — each branch deliberately has a different feed list
 NuGet.config  merge=ours
+
 
 
 

@@ -1,12 +1,20 @@
-function Remove-SprintSqlServerInstances {
+function Remove-DeveloperSqlServerInstances {
   <#
   .SYNOPSIS
-  Removes the per-developer SQL Server named instances created at sprint start.
+  Developer-offboarding cmdlet: removes the permanent per-developer SQL Server
+  named instances from a workstation.
 
   .DESCRIPTION
-  At the end of a sprint, removes the two named instances that were created per developer:
+  Run ONLY as part of developer offboarding (or a deliberate workstation teardown).
+  Removes the two named instances that were provisioned per developer by
+  `New-DeveloperSqlServerInstances`:
     - Dev{DeveloperName}   — T2 Development/Alpha tier
     - Exp{DeveloperName}   — T1 Experimental/Sprint tier
+
+  IMPORTANT (Sprint 0008 requirement change): these instances are permanent
+  developer-onboarding infrastructure. They are NOT removed at sprint end. Sprint
+  end only drops the databases inside the instances via `Remove-SprintDatabases`.
+  Do not call this cmdlet from any sprint-lifecycle agent or script.
 
   Instance removal uses the SQL Server setup.exe with /ACTION=Uninstall.
   The setup media folder must contain a valid setup.exe.
@@ -19,10 +27,11 @@ function Remove-SprintSqlServerInstances {
 
   Caller is responsible for pre-loading the Get-PVal helper function.
 
-  Supersedes Remove-DeveloperDatabaseInstances (now archived to Obsolete/).
+  Supersedes `Remove-SprintSqlServerInstances` (now retained only as a deprecated
+  alias of this function) and the earlier `Remove-DeveloperDatabaseInstances`.
 
   .PARAMETER SprintNumber
-  Four-character zero-padded sprint number, e.g. '0006'. No longer used in instance names;
+  Four-character zero-padded sprint number, e.g. '0006'. Not used in instance names;
   retained for result-object labelling and logging traceability.
 
   .PARAMETER DeveloperNames
@@ -50,30 +59,30 @@ function Remove-SprintSqlServerInstances {
     OverallSuccess   bool
 
   .EXAMPLE
-  Remove-SprintSqlServerInstances
+  Remove-DeveloperSqlServerInstances
   Removes Dev<username> and Exp<username> instances for the current user.
 
   .EXAMPLE
-  Remove-SprintSqlServerInstances -WhatIf
+  Remove-DeveloperSqlServerInstances -WhatIf
   Shows what would be removed without making any changes.
 
   .EXAMPLE
-  Remove-SprintSqlServerInstances -DeveloperNames @('whertzing', 'jsmith') -SprintNumber '0006'
-  Removes sprint instances for two developers.
+  Remove-DeveloperSqlServerInstances -DeveloperNames @('whertzing', 'jsmith')
+  Removes instances for two developers during a shared-workstation teardown.
 
   .NOTES
-  AI assisted using Powershell.instructions.md as guidelines
+  AI assisted using ./claude/Rules/Powershell.md as guidelines
 
   .LINK
-  New-SprintSqlServerInstances
+  New-DeveloperSqlServerInstances
+
+  .LINK
+  Remove-SprintDatabases
 
   .LINK
   Install-SqlServerInstance
-
-  .LINK
-  New-SprintStage2
   #>
-  [Alias('Remove-DeveloperDatabaseInstances')]
+  [Alias('Remove-SprintSqlServerInstances', 'Remove-DeveloperDatabaseInstances')]
   [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
   param(
     [Parameter(Mandatory = $false)]
@@ -107,7 +116,7 @@ function Remove-SprintSqlServerInstances {
   }
 
   # Load Helpers — ToDo: Remove this when packaging works
-  # Mirrors the resolution pattern used in New-SprintSqlServerInstances: locate the
+  # Mirrors the resolution pattern used in New-DeveloperSqlServerInstances: locate the
   # repository root from $PSScriptRoot and dot-source the helper from the in-repo path.
   # Failures are non-fatal — the Get-PVal call below is itself guarded so the cmdlet
   # gracefully falls back to $env:USERNAME if the helper cannot be loaded.

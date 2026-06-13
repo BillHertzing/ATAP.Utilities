@@ -116,6 +116,16 @@ _Teach / Tell how to create software — per-developer tooling and shell setup._
   `$global:settings[$global:configRootKeys[...]]` access expression, defensive
   loading in non-interactive agent shells, and the checklist for adding a new
   setting.
+- [Developer SQL Server Instances Runbook](Developer-SqlServerInstances-Runbook.md) —
+  Onboarding/offboarding runbook for the permanent per-developer SQL Server
+  instances (`Dev<username>` / `Exp<username>`). Documents the Sprint-0008
+  lifecycle change (instances are created once per workstation by
+  `New-DeveloperSqlServerInstances` and removed only by
+  `Remove-DeveloperSqlServerInstances`; sprint boundaries reset only the
+  databases inside them via `Reset-SprintDatabases` / `Remove-SprintDatabases`),
+  the instance naming convention, and the dbatools prerequisites. Migrated from
+  `_Planning/Explainers/0028-developer-onboarding-sql-instances.md` (Sprint 0008,
+  Task 8.4).
 
 ---
 
@@ -416,6 +426,9 @@ values and renders deterministic output text.
   metadata. (~1,147 lines.)
 - [Rules Compendium — OtterScript](Rules%20Compendium.OtterScript.md) —
   Rule primitives and conventions for BuildMaster OtterScript automation.
+- [Rules Compendium — AgentText](Rules%20Compendium.AgentText.md) —
+  Agent/instruction text kind for loading SharedVSCode `.ai` sources into
+  RRSBS records and rendering Claude, Codex, and GitHub Copilot adapters.
 - [Rules Compendium Template](Rules-Compendium-Template.md) —
   Template for creating new language-specific Rules Compendium documents.
 

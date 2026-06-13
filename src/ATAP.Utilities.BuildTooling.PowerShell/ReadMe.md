@@ -14,6 +14,31 @@ If you are viewing this `ReadMe.md` in GitHub, [here is this same ReadMe on the 
 
 This package provides PowerShell goodies make it easier when developing Powershell modules for .Net, and especially inside of Visual Studio Code.
 
+Sprint lifecycle plumbing in this module now resolves downstream Git context from
+the workspace file paths being retargeted instead of the caller's current
+directory. Generated `.gitattributes` and `.gitconfig.shared` content also
+replaces any existing generated header before writing a fresh one, so repeated
+retargeting refreshes metadata without stacking header blocks.
+
+Sprint planning also now has an explicit markdown-to-board path: use
+`Convert-TasksMdToSprintBoard` to regenerate a sprint `TASKS.html` board from the
+authoritative `TASKS.md` file after task edits or status updates.
+
+Checkpoint saves now also append a lightweight session roster entry under the
+sprint `_Planning` worktree at
+`SprintWorkSessionRoster/SprintWorkSessionRoster-<NNNN>.jsonl`, which gives
+SprintEnd a concrete list of worktree session names to validate against the
+archived conversation set.
+
+Sprint lifecycle secret automation (`New-SprintBitwardenSecrets`,
+`Remove-SprintBitwardenSecrets`, `Test-SprintPrerequisites`,
+`Test-SprintInfrastructureHealth`) authenticates to Bitwarden Secrets Manager
+with the `bws` CLI and a machine access token (`$env:BWS_ACCESS_TOKEN` or the
+DPAPI token file via `Get-BWSAccessToken`). `BW_SESSION` is personal-vault-only
+and is never required by sprint automation (SC-0175). Reads of per-sprint
+machine secrets go through
+`Get-SecretATAP -SecretStoreType 'BitwardenSecretsManager'`.
+
 ## Autoloading
 
 The .psm1 file handles dot-sourcing all the .ps1 scripts in the `private` and `public` subdirectories. But for Autoload to work, the functions and cmdlets should be listed in the .psd1 file. Here's a one-liner that will get you the function names

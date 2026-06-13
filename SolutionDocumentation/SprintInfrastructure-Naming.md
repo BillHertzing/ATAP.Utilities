@@ -8,10 +8,13 @@ SprintEndAgent; anyone configuring ecosystem tooling.
 
 **Status:** Authoritative. Supersedes all sprint-0005 and earlier naming
 conventions. Reverted from per-sprint feed and per-sprint SQL instance
-naming adopted during sprint-0006 planning.
+naming adopted during sprint-0006 planning. Updated Sprint 0008 (Tasks
+8.1–8.4): per-developer SQL instances are now **permanent onboarding
+infrastructure**; sprint boundaries reset only the **databases** inside them.
 
 **Related Documents:**
 
+- [Developer-SqlServerInstances-Runbook.md](Developer-SqlServerInstances-Runbook.md) — onboarding/offboarding runbook for the per-developer instances
 - [Production-and-Tooling-Overview.md](Production-and-Tooling-Overview.md) — index doc
 - [CSharp-Packages-Pack-and-Push.md](CSharp-Packages-Pack-and-Push.md) — feed-topology details
 - [PowerShell-Modules-Pack-and-Publish.md](PowerShell-Modules-Pack-and-Publish.md) — PowerShell feed usage
@@ -23,28 +26,31 @@ naming adopted during sprint-0006 planning.
 ## 1. Core Principle
 
 All infrastructure is **permanent or long-lived**. Sprint start and end
-provision and tear down only the two SQL instances and the Bitwarden
-connection-string secrets. Everything else (ProGet feeds, BuildMaster
-variables) is created once per workstation or ecosystem host and reused
-across sprints.
+provision and tear down only the databases inside the two permanent
+per-developer SQL instances and the Bitwarden connection-string secrets.
+Everything else (SQL instances, ProGet feeds, BuildMaster variables) is
+created once per workstation or ecosystem host and reused across sprints.
 
-| Component                                         | Per-sprint?                               | Scope                   |
-| ------------------------------------------------- | ----------------------------------------- | ----------------------- |
-| SQL instances `Dev<username>` / `Exp<username>`   | ✅ Yes — recreated each sprint            | Developer workstation   |
-| Bitwarden secrets (Development / Experimental)    | ✅ Yes — created at start, deleted at end | Developer workstation   |
-| ProGet feeds                                      | ❌ No — permanent                         | Ecosystem ProGet host   |
-| Bitwarden secrets (Integration / QA / Production) | ❌ No — permanent, one-time onboarding    | Ecosystem               |
-| BuildMaster sprint variables                      | ✅ Yes — set at start, cleared at end     | BuildMaster application |
-| BuildMaster stable variables                      | ❌ No — permanent                         | BuildMaster application |
-| Worktrees / branches                              | ✅ Yes — created per sprint per repo      | Developer workstation   |
+| Component                                               | Per-sprint?                                        | Scope                   |
+| ------------------------------------------------------- | -------------------------------------------------- | ----------------------- |
+| SQL instances `Dev<username>` / `Exp<username>`         | ❌ No — permanent; created at developer onboarding | Developer workstation   |
+| Databases (`ATAPUtilities`, `AceCommander`) inside them | ✅ Yes — dropped/recreated each sprint             | Developer workstation   |
+| Bitwarden secrets (Development / Experimental)          | ✅ Yes — created at start, deleted at end          | Developer workstation   |
+| ProGet feeds                                            | ❌ No — permanent                                  | Ecosystem ProGet host   |
+| Bitwarden secrets (Integration / QA / Production)       | ❌ No — permanent, one-time onboarding             | Ecosystem               |
+| BuildMaster sprint variables                            | ✅ Yes — set at start, cleared at end              | BuildMaster application |
+| BuildMaster stable variables                            | ❌ No — permanent                                  | BuildMaster application |
+| Worktrees / branches                                    | ✅ Yes — created per sprint per repo               | Developer workstation   |
 
 ---
 
 ## 2. SQL Server Instance Naming
 
-### 2.1 Per-sprint instances (developer workstation)
+### 2.1 Permanent per-developer instances (developer workstation)
 
-Two instances are created at sprint start and removed at sprint end:
+Two instances are created **once per developer per workstation** at onboarding
+and removed only at developer offboarding (Sprint 0008 lifecycle change —
+see [Developer-SqlServerInstances-Runbook.md](Developer-SqlServerInstances-Runbook.md)):
 
 | Instance name   | Tier         | Host                              |
 | --------------- | ------------ | --------------------------------- |
@@ -57,10 +63,19 @@ Two instances are created at sprint start and removed at sprint end:
 - SQL Server named-instance names have a **maximum of 16 characters**; `Development` or `Experimental` concatenated with a username exceeds this limit.
 - Both instances exist on the developer workstation; they are not shared.
 - Full SQL instance address: `<hostname>\Dev$env:USERNAME` or `<hostname>\Exp$env:USERNAME`.
+- The tier prefix derives the Flyway `Environment` value (`Dev*` → `Development`, `Exp*` → `Experimental`).
 
-**Provisioning cmdlet:** [`New-SprintSqlServerInstances`](../src/ATAP.Utilities.BuildTooling.PowerShell/public/New-SprintSqlServerInstances.ps1) (BuildTooling.PowerShell)
+**Onboarding cmdlet (once per workstation):** [`New-DeveloperSqlServerInstances`](../src/ATAP.Utilities.BuildTooling.PowerShell/public/New-DeveloperSqlServerInstances.ps1) (BuildTooling.PowerShell)
 
-**Tear-down cmdlet:** [`Remove-SprintSqlServerInstances`](../src/ATAP.Utilities.BuildTooling.PowerShell/public/Remove-SprintSqlServerInstances.ps1) (BuildTooling.PowerShell)
+**Offboarding cmdlet (deliberate teardown only):** [`Remove-DeveloperSqlServerInstances`](../src/ATAP.Utilities.BuildTooling.PowerShell/public/Remove-DeveloperSqlServerInstances.ps1) (BuildTooling.PowerShell)
+
+The pre-Sprint-0008 names `New-SprintSqlServerInstances` /
+`Remove-SprintSqlServerInstances` survive only as deprecated aliases.
+
+**Sprint-boundary database cmdlets** (instances untouched):
+
+- Sprint start: [`Reset-SprintDatabases`](../src/ATAP.Utilities.BuildTooling.PowerShell/public/Reset-SprintDatabases.ps1) — drops/recreates `ATAPUtilities` + `AceCommander` and re-runs Flyway.
+- Sprint end: [`Remove-SprintDatabases`](../src/ATAP.Utilities.BuildTooling.PowerShell/public/Remove-SprintDatabases.ps1) — drops the sprint databases; instances remain.
 
 ### 2.2 Permanent ecosystem instances
 
@@ -287,7 +302,8 @@ variable too.
 
 | Component               | Naming pattern                                                          | Per-sprint? | Cmdlet                                                           |
 | ----------------------- | ----------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------- |
-| SQL — sprint            | `Dev<username>` / `Exp<username>`                                       | ✅          | `New-SprintSqlServerInstances` (see §2.1)                        |
+| SQL instances — per-developer | `Dev<username>` / `Exp<username>`                                 | ❌          | `New-DeveloperSqlServerInstances` / `Remove-DeveloperSqlServerInstances` (onboarding/offboarding, see §2.1) |
+| SQL databases — sprint  | `ATAPUtilities` / `AceCommander` inside `Dev`/`Exp` instances           | ✅          | `Reset-SprintDatabases` (start) / `Remove-SprintDatabases` (end) |
 | SQL — permanent         | `Integration` / `QA` / `Production` on `utat022`                       | ❌          | manual / IAC                                                     |
 | SQL — health check      | n/a                                                                     | n/a         | `Test-SprintInfrastructureHealth` _(planned — see §2.3)_         |
 | ProGet NuGet feed       | `nuget-<tier>`                                                          | ❌          | `New-ProGetFeedSet`                                              |

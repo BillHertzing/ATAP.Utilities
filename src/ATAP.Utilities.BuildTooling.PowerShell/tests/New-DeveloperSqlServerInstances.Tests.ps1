@@ -1,14 +1,14 @@
 # AI assisted using ./claude/Rules/Powershell.md as guidelines
-# Pester 5+ happy-path tests for New-SprintSqlServerInstances
+# Pester 5+ happy-path tests for New-DeveloperSqlServerInstances
 
 BeforeAll {
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
-  function Resolve-BuildToolingDatabaseSqlConnection { throw 'Resolve-BuildToolingDatabaseSqlConnection should not be called by New-SprintSqlServerInstances.' }
-  function Invoke-BuildToolingSqlQuery { throw 'Invoke-BuildToolingSqlQuery should not be called by New-SprintSqlServerInstances.' }
+  function Resolve-BuildToolingDatabaseSqlConnection { throw 'Resolve-BuildToolingDatabaseSqlConnection should not be called by New-DeveloperSqlServerInstances.' }
+  function Invoke-BuildToolingSqlQuery { throw 'Invoke-BuildToolingSqlQuery should not be called by New-DeveloperSqlServerInstances.' }
 
-  $functionName = 'New-SprintSqlServerInstances'
+  $functionName = 'New-DeveloperSqlServerInstances'
   if (-not (Get-Command -Name $functionName -CommandType Function -ErrorAction SilentlyContinue)) {
     $functionPath = Join-Path $PSScriptRoot -ChildPath "../public/$functionName.ps1"
     if (Test-Path $functionPath) {
@@ -80,18 +80,18 @@ AfterAll {
   }
 }
 
-Describe 'New-SprintSqlServerInstances — happy path' {
+Describe 'New-DeveloperSqlServerInstances — happy path' {
   BeforeEach {
     Mock -CommandName 'Resolve-BuildToolingDatabaseSqlConnection' -MockWith {
-      throw 'Resolve-BuildToolingDatabaseSqlConnection should not be called by New-SprintSqlServerInstances.'
+      throw 'Resolve-BuildToolingDatabaseSqlConnection should not be called by New-DeveloperSqlServerInstances.'
     }
     Mock -CommandName 'Invoke-BuildToolingSqlQuery' -MockWith {
-      throw 'Invoke-BuildToolingSqlQuery should not be called by New-SprintSqlServerInstances.'
+      throw 'Invoke-BuildToolingSqlQuery should not be called by New-DeveloperSqlServerInstances.'
     }
   }
 
   It 'function exists and is loaded' {
-    Get-Command -Name 'New-SprintSqlServerInstances' -CommandType Function |
+    Get-Command -Name 'New-DeveloperSqlServerInstances' -CommandType Function |
       Should -Not -BeNullOrEmpty
   }
 
@@ -111,7 +111,7 @@ Describe 'New-SprintSqlServerInstances — happy path' {
     }
 
     It 'returns one result row per (instance × database) combination' {
-      $results = New-SprintSqlServerInstances `
+      $results = New-DeveloperSqlServerInstances `
         -InstanceNames @('Development', 'Experimental') `
         -Databases @('ATAPUtilities', 'AceCommander') `
         -DatabaseHost 'localhost' `
@@ -123,7 +123,7 @@ Describe 'New-SprintSqlServerInstances — happy path' {
     }
 
     It 'all result rows have instanceReady = $true and baselined = $true' {
-      $results = New-SprintSqlServerInstances `
+      $results = New-DeveloperSqlServerInstances `
         -InstanceNames @('Development', 'Experimental') `
         -Databases @('ATAPUtilities', 'AceCommander') `
         -DatabaseHost 'localhost' `
@@ -138,7 +138,7 @@ Describe 'New-SprintSqlServerInstances — happy path' {
     }
 
     It 'calls Install-SqlServerInstance once per instance' {
-      New-SprintSqlServerInstances `
+      New-DeveloperSqlServerInstances `
         -InstanceNames @('Development', 'Experimental') `
         -Databases @('ATAPUtilities', 'AceCommander') `
         -DatabaseHost 'localhost' `
@@ -149,7 +149,7 @@ Describe 'New-SprintSqlServerInstances — happy path' {
     }
 
     It 'calls Build-DatabaseWithFlyway once per (instance × database) pair' {
-      New-SprintSqlServerInstances `
+      New-DeveloperSqlServerInstances `
         -InstanceNames @('Development', 'Experimental') `
         -Databases @('ATAPUtilities', 'AceCommander') `
         -DatabaseHost 'localhost' `
@@ -161,7 +161,7 @@ Describe 'New-SprintSqlServerInstances — happy path' {
     }
 
     It 'does not require a BuildTooling SqlConnection for instance creation or Flyway build orchestration' {
-      New-SprintSqlServerInstances `
+      New-DeveloperSqlServerInstances `
         -InstanceNames @('Development') `
         -Databases @('ATAPUtilities') `
         -DatabaseHost 'localhost' `
@@ -175,7 +175,7 @@ Describe 'New-SprintSqlServerInstances — happy path' {
     }
 
     It 'passes the correct DatabaseName to every Build-DatabaseWithFlyway call' {
-      New-SprintSqlServerInstances `
+      New-DeveloperSqlServerInstances `
         -InstanceNames @('Development') `
         -Databases @('ATAPUtilities', 'AceCommander') `
         -DatabaseHost 'localhost' `
@@ -206,7 +206,7 @@ Describe 'New-SprintSqlServerInstances — happy path' {
     }
 
     It 'does NOT call Install-SqlServerInstance when instances already exist' {
-      New-SprintSqlServerInstances `
+      New-DeveloperSqlServerInstances `
         -InstanceNames @('Development', 'Experimental') `
         -Databases @('ATAPUtilities', 'AceCommander') `
         -DatabaseHost 'localhost' `
@@ -217,7 +217,7 @@ Describe 'New-SprintSqlServerInstances — happy path' {
     }
 
     It 'still builds all databases when instances already exist' {
-      $results = New-SprintSqlServerInstances `
+      $results = New-DeveloperSqlServerInstances `
         -InstanceNames @('Development', 'Experimental') `
         -Databases @('ATAPUtilities', 'AceCommander') `
         -DatabaseHost 'localhost' `
@@ -252,7 +252,7 @@ Describe 'New-SprintSqlServerInstances — happy path' {
     }
 
     It 'does NOT call Install-SqlServerInstance when instances already exist' {
-      New-SprintSqlServerInstances `
+      New-DeveloperSqlServerInstances `
         -InstanceNames @('Development', 'Experimental') `
         -Databases @('ATAPUtilities', 'AceCommander') `
         -DatabaseHost 'localhost' `
@@ -263,7 +263,7 @@ Describe 'New-SprintSqlServerInstances — happy path' {
     }
 
     It 'does NOT call Build-DatabaseWithFlyway when databases already exist' {
-      New-SprintSqlServerInstances `
+      New-DeveloperSqlServerInstances `
         -InstanceNames @('Development', 'Experimental') `
         -Databases @('ATAPUtilities', 'AceCommander') `
         -DatabaseHost 'localhost' `
@@ -274,7 +274,7 @@ Describe 'New-SprintSqlServerInstances — happy path' {
     }
 
     It 'returns all rows with instanceReady and built = $true and no errors' {
-      $results = New-SprintSqlServerInstances `
+      $results = New-DeveloperSqlServerInstances `
         -InstanceNames @('Development', 'Experimental') `
         -Databases @('ATAPUtilities', 'AceCommander') `
         -DatabaseHost 'localhost' `
@@ -300,7 +300,7 @@ Describe 'New-SprintSqlServerInstances — happy path' {
     }
 
     It 'does not call Install-SqlServerInstance or Build-DatabaseWithFlyway when -WhatIf is set' {
-      New-SprintSqlServerInstances `
+      New-DeveloperSqlServerInstances `
         -InstanceNames @('Development', 'Experimental') `
         -Databases @('ATAPUtilities', 'AceCommander') `
         -DatabaseHost 'localhost' `
@@ -325,7 +325,7 @@ Describe 'New-SprintSqlServerInstances — happy path' {
     }
 
     It 'uses Dev<username> and Exp<username> as default InstanceNames' {
-      $results = New-SprintSqlServerInstances `
+      $results = New-DeveloperSqlServerInstances `
         -Databases @('ATAPUtilities') `
         -DatabaseHost 'localhost' `
         -FlywayBasePath $script:flywayBase `
@@ -337,7 +337,7 @@ Describe 'New-SprintSqlServerInstances — happy path' {
     }
 
     It 'uses ATAPUtilities and AceCommander as default Databases' {
-      $results = New-SprintSqlServerInstances `
+      $results = New-DeveloperSqlServerInstances `
         -InstanceNames @('Development') `
         -DatabaseHost 'localhost' `
         -FlywayBasePath $script:flywayBase `
@@ -359,7 +359,7 @@ Describe 'New-SprintSqlServerInstances — happy path' {
     }
 
     It 'marks instanceReady as $false and does not attempt database build' {
-      $results = New-SprintSqlServerInstances `
+      $results = New-DeveloperSqlServerInstances `
         -InstanceNames @('Experimental') `
         -Databases @('ATAPUtilities') `
         -DatabaseHost 'localhost' `

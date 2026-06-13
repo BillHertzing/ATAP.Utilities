@@ -4,11 +4,17 @@ Retrieves a single field from a secret in the configured ATAP secret store.
 
 .DESCRIPTION
 Get-SecretATAP is the vendor-agnostic wrapper used by ATAP code to read secrets.
-The wrapper resolves the active secret-store implementation from
-$global:settings (key 'SecretStoreType') when configured. If the setting is
-blank or absent, service accounts whose process owner name starts with `Svc`
-use Bitwarden Secrets Manager; developer accounts use Bitwarden Password
-Manager.
+The wrapper resolves the active secret-store implementation in this order:
+1. The -SecretStoreType parameter when supplied (highest precedence).
+2. $global:settings (key 'SecretStoreType') when configured.
+3. Account default: service accounts whose process owner name starts with
+   `Svc` use Bitwarden Secrets Manager; developer accounts use Bitwarden
+   Password Manager.
+
+Sprint lifecycle automation (SprintStartAgent / SprintEndAgent / dry runs)
+must pass -SecretStoreType 'BitwardenSecretsManager' so machine secrets are
+read with the bws CLI and a machine access token, never the personal-vault
+BW_SESSION (SC-0175 policy).
 
 The 'Bitwarden' and 'BitwardenSecretsManager' providers are implemented today.
 Future stores (for example 'AzureKeyVault' or 'HashiCorpVault') plug into the
@@ -20,8 +26,7 @@ Get-SecretATAP once per field. This keeps the wrapper API stable across
 secret-store implementations that expose fields differently.
 
 .PARAMETER SecretName
-The name (item key) of the secret to retrieve. Required. Also accepts
-`-BuildMasterAdminApiKeySecretName` as an alias for BuildMaster helper calls.
+The name (item key) of the secret to retrieve. Required.
 
 .PARAMETER SecretField
 The named field inside the secret to return. Defaults to 'password'.
@@ -32,18 +37,28 @@ Common values:
   - 'notes'     : the notes field
   - any custom-field name defined inside the item
 
+.PARAMETER SecretStoreType
+Optional explicit secret-store provider. Overrides $global:settings and the
+account-based default. Implemented values: 'Bitwarden' (Password Manager,
+bw CLI + BW_SESSION) and 'BitwardenSecretsManager' (Secrets Manager, bws CLI
++ machine access token).
+
 .OUTPUTS
 [string]
 The plain-text value of the requested field.
 
 .EXAMPLE
-$apiKey = Get-SecretATAP -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
-Returns the password/value field as a string.
+$apiKey = Get-SecretATAP -SecretName 'BuildMaster.Admin.API.Key' -SecretField 'notes'
+Returns the notes field (where the BuildMaster admin API key is stored).
 
 .EXAMPLE
 $user = Get-SecretATAP -SecretName 'utat022-SvcBuildmaster-Production' -SecretField 'username'
 $pass = Get-SecretATAP -SecretName 'utat022-SvcBuildmaster-Production' -SecretField 'password'
 Retrieves the username and password from one Bitwarden item via two calls.
+
+.EXAMPLE
+$connStr = Get-SecretATAP -SecretName 'dbConnectionString-ATAPUtilities-localhost-Dev-jsmith' -SecretStoreType 'BitwardenSecretsManager'
+Sprint automation reads a per-sprint machine secret from Bitwarden Secrets Manager (no BW_SESSION).
 
 .NOTES
 AI assisted using Powershell.instructions.md as guidelines
@@ -57,12 +72,15 @@ function Get-SecretATAP {
   param(
     [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
     [ValidateNotNullOrWhiteSpace()]
-    [Alias('BuildMasterAdminApiKeySecretName')]
     [string]$SecretName,
 
     [Parameter(Mandatory = $false, Position = 1, ValueFromPipelineByPropertyName = $true)]
     [ValidateNotNullOrWhiteSpace()]
-    [string]$SecretField = 'password'
+    [string]$SecretField = 'password',
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+    [ValidateNotNullOrWhiteSpace()]
+    [string]$SecretStoreType
   )
 
   BEGIN {
@@ -95,10 +113,13 @@ function Get-SecretATAP {
         'Bitwarden'
       }
 
-      # Resolve the active secret-store provider from $global:settings; when
-      # unset, select BWS for service accounts and Password Manager for users.
+      # Resolve the active secret-store provider: explicit parameter first,
+      # then $global:settings; when both are unset, select BWS for service
+      # accounts and Password Manager for users.
       $storeType = $defaultStoreType
-      if ($global:settings) {
+      if (-not [string]::IsNullOrWhiteSpace($SecretStoreType)) {
+        $storeType = $SecretStoreType
+      } elseif ($global:settings) {
         $key = 'SecretStoreType'
         if ($global:configRootKeys) {
           $configuredKey = $global:configRootKeys['SecretStoreTypeConfigRootKey']

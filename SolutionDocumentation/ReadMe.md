@@ -37,6 +37,13 @@ ToDo: Insert diagram of development process
 
 ToDo: Insert diagram of CI/CD process
 
+### RRSBS and AgentText
+
+- [Rules Compendium.AgentText](./Rules%20Compendium.AgentText.md) defines the
+  AgentText rule kind and embeds the grammar for AI agent and instruction text.
+- `src/ATAP.Utilities.RulesManagement.PowerShell/public/Import-AgentTextFromFiles.ps1`
+  and `Export-AgentTextToFiles.ps1` provide the load/instantiate pilot path.
+
 ## <a id="Development vs. CI/CD" /> Development vs. CI/CD
 
 There is a distinction that needs to be made between the tasks related to developing a project or feature, and the CI/CD pipeline that produces the production-ready package and artifacts about that package (i.e., test results, test coverage, published security and dependency analysis, documentation, installers, etc.).

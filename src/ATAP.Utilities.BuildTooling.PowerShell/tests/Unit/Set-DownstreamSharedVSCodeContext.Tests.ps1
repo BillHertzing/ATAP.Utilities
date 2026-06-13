@@ -1,5 +1,8 @@
 BeforeAll {
-  Import-Module ATAP.Utilities.BuildTooling.PowerShell -Force
+  $script:moduleName = 'ATAP.Utilities.BuildTooling.PowerShell'
+  $script:modulePath = Join-Path $PSScriptRoot '..\..\ATAP.Utilities.BuildTooling.PowerShell.psd1'
+  Remove-Module $script:moduleName -Force -ErrorAction SilentlyContinue
+  Import-Module $script:modulePath -Force
 }
 
 Describe 'Set-DownstreamSharedVSCodeContext [public]' {
@@ -9,11 +12,13 @@ Describe 'Set-DownstreamSharedVSCodeContext [public]' {
     $script:fakeGitRoot  = $script:tempDir
     $script:fakeShared   = Join-Path $script:fakeGitRoot 'SharedVSCode'
     $script:fakeRepoRoot = Join-Path $script:tempDir 'DownstreamRepo'
+    $script:wrongRepoRoot = Join-Path $script:tempDir 'WrongRepo'
 
     New-Item -ItemType Directory -Path $script:fakeShared -Force | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $script:fakeShared '.githooks') -Force | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $script:fakeShared 'GitTemplates') -Force | Out-Null
     New-Item -ItemType Directory -Path $script:fakeRepoRoot -Force | Out-Null
+    New-Item -ItemType Directory -Path $script:wrongRepoRoot -Force | Out-Null
 
     Set-Content -Path (Join-Path $script:fakeShared '.gitconfig')    -Value '[core]'      -Encoding UTF8
     Set-Content -Path (Join-Path $script:fakeShared '.gitattributes') -Value '* text=auto' -Encoding UTF8
@@ -34,9 +39,8 @@ Describe 'Set-DownstreamSharedVSCodeContext [public]' {
   }
 
   BeforeEach {
-    Mock Assert-GitAvailable { }
-    Mock Get-RepoRoot { return $script:fakeRepoRoot }
-    Mock git { return $null }
+    Mock Assert-GitAvailable -ModuleName $script:moduleName { }
+    Mock git -ModuleName $script:moduleName { return $null }
   }
 
   It 'Creates a generated .gitattributes in the downstream repo root' {
@@ -72,7 +76,7 @@ Describe 'Set-DownstreamSharedVSCodeContext [public]' {
       -SharedVSCodeRepoName 'SharedVSCode'
 
     # commit.template + include.path + core.hooksPath = 3 calls
-    Should -Invoke git -Times 3 -Exactly -Scope It
+    Should -Invoke git -ModuleName $script:moduleName -Times 3 -Exactly -Scope It
   }
 
   It 'Skips core.hooksPath when hooks directory does not exist' {
@@ -86,15 +90,17 @@ Describe 'Set-DownstreamSharedVSCodeContext [public]' {
       -SharedVSCodeRepoName 'SharedVSCode'
 
     # Only commit.template + include.path = 2 calls
-    Should -Invoke git -Times 2 -Exactly -Scope It
+    Should -Invoke git -ModuleName $script:moduleName -Times 2 -Exactly -Scope It
 
     # Recreate hooks dir for other tests
     New-Item -ItemType Directory -Path $hooksDir -Force | Out-Null
   }
 
   It 'Uses New-GeneratedFileContent (private) to stamp downstream files' {
-    Mock New-GeneratedFileContent {
-      return "# MOCKED HEADER`n$( Get-Content -Path $SourcePath -Raw -Encoding UTF8 )"
+    InModuleScope $script:moduleName {
+      Mock New-GeneratedFileContent {
+        return "# MOCKED HEADER`n$( Get-Content -Path $SourcePath -Raw -Encoding UTF8 )"
+      }
     }
 
     Set-DownstreamSharedVSCodeContext `
@@ -102,8 +108,18 @@ Describe 'Set-DownstreamSharedVSCodeContext [public]' {
       -GitRoot $script:fakeGitRoot `
       -SharedVSCodeRepoName 'SharedVSCode'
 
-    Should -Invoke New-GeneratedFileContent -Times 2 -Exactly -Scope It
+    Should -Invoke New-GeneratedFileContent -ModuleName $script:moduleName -Times 2 -Exactly -Scope It
     $gaContent = Get-Content -Path (Join-Path $script:fakeRepoRoot '.gitattributes') -Raw
     $gaContent | Should -Match 'MOCKED HEADER'
+  }
+
+  It 'Targets the repository that owns the workspace file rather than the caller location' {
+    Set-DownstreamSharedVSCodeContext `
+      -WorkspaceFiles @($script:wsFile) `
+      -GitRoot $script:fakeGitRoot `
+      -SharedVSCodeRepoName 'SharedVSCode'
+
+    Test-Path (Join-Path $script:fakeRepoRoot '.gitattributes') | Should -BeTrue
+    Test-Path (Join-Path $script:wrongRepoRoot '.gitattributes') | Should -BeFalse
   }
 }

@@ -347,6 +347,11 @@
     "@Utilities": "_generated/out/Utilities"
   },
   "overrides": {
-    "serialize-javascript": "^7.0.4"
+    "serialize-javascript": "^7.0.4",
+    "@xmldom/xmldom": "0.8.13",
+    "mocha": {
+      "diff": "8.0.4"
+    },
+    "uuid": "11.1.1"
   }
 }

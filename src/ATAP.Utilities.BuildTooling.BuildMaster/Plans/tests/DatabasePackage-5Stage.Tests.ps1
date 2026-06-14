@@ -67,6 +67,14 @@ Describe 'V4-E08 plan shape: DatabaseChangePackage-5Stage.otter is a thin runner
         $script:PlanText | Should -Match '-ProGetUrl\s+"\$ProGetBaseUrl"'
     }
 
+    It 'plan passes the per-tier connection-string secret NAMES (not values) for apply/rehearsal' {
+        $script:PlanText | Should -Match '-ExperimentalDatabaseDBConnectionStringSecretName\s+"\$ExperimentalDatabaseDBConnectionStringSecretName"'
+        $script:PlanText | Should -Match '-DevelopmentDatabaseDBConnectionStringSecretName\s+"\$DevelopmentDatabaseDBConnectionStringSecretName"'
+        $script:PlanText | Should -Match '-IntegrationDatabaseDBConnectionStringSecretName\s+"\$IntegrationDatabaseDBConnectionStringSecretName"'
+        $script:PlanText | Should -Match '-QADatabaseDBConnectionStringSecretName\s+"\$QADatabaseDBConnectionStringSecretName"'
+        $script:PlanText | Should -Match '-ProductionDatabaseDBConnectionStringSecretName\s+"\$ProductionDatabaseDBConnectionStringSecretName"'
+    }
+
     It 'plan references the runner script via $BuildMasterPlanScriptDir + Invoke-DatabasePackageBuildMasterStage.ps1' {
         $script:PlanText | Should -Match 'set\s+\$BuildMasterPlanScriptDir\s*=\s*\$PathCombine'
         $script:PlanText | Should -Match 'Invoke-DatabasePackageBuildMasterStage\.ps1'
@@ -147,6 +155,65 @@ Describe 'V4-E08 runner shape: Invoke-DatabasePackageBuildMasterStage.ps1 contra
         [System.Management.Automation.Language.Parser]::ParseFile(
             $script:RunnerPath, [ref]$tokens, [ref]$parseErrors) | Out-Null
         $parseErrors | Should -BeNullOrEmpty
+    }
+}
+
+Describe 'Task 9.10 runner contract: per-tier apply + rehearsal-before-promotion are wired' {
+
+    It 'runner declares the per-tier connection-string secret-name parameters' {
+        foreach ($param in @(
+            'ExperimentalDatabaseDBConnectionStringSecretName',
+            'DevelopmentDatabaseDBConnectionStringSecretName',
+            'IntegrationDatabaseDBConnectionStringSecretName',
+            'QADatabaseDBConnectionStringSecretName',
+            'ProductionDatabaseDBConnectionStringSecretName'
+        )) {
+            $script:RunnerText | Should -Match "\[string\]\$\b$param\b"
+        }
+    }
+
+    It 'runner exposes -SkipRehearsal and -SkipApply switches' {
+        $script:RunnerText | Should -Match '\[switch\]\$SkipRehearsal'
+        $script:RunnerText | Should -Match '\[switch\]\$SkipApply'
+    }
+
+    It 'runner enforces rehearsal BEFORE promotion (rehearsal call precedes the Promote call)' {
+        $rehearsalIdx = $script:RunnerText.IndexOf('Invoke-DatabasePackageTierRehearsal `')
+        $promoteIdx   = $script:RunnerText.IndexOf('$promotionResult = Promote-DatabaseChangePackage')
+        $rehearsalIdx | Should -BeGreaterThan 0
+        $promoteIdx   | Should -BeGreaterThan 0
+        $rehearsalIdx | Should -BeLessThan $promoteIdx
+    }
+
+    It 'runner blocks promotion when the rehearsal fails (throws on non-Success)' {
+        $script:RunnerText | Should -Match 'rehearsal FAILED'
+        $script:RunnerText | Should -Match 'promotion blocked'
+    }
+
+    It 'runner applies the package to the tier database via Invoke-Flyway migrate' {
+        $script:RunnerText | Should -Match "FlywayCommand\s*=\s*'migrate'"
+        $script:RunnerText | Should -Match 'Invoke-Flyway @flywayParameters'
+    }
+
+    It 'runner takes a pre-migration snapshot for permanent tiers' {
+        $script:RunnerText | Should -Match "permanentTiers\s*=\s*@\('Integration',\s*'QA',\s*'Production'\)"
+        $script:RunnerText | Should -Match 'New-DatabasePreMigrationSnapshot'
+    }
+
+    It 'runner maps Integration and QA tiers to the Testing Flyway environment' {
+        $script:RunnerText | Should -Match "'Integration'\s*\{\s*return 'Testing'"
+        $script:RunnerText | Should -Match "'QA'\s*\{\s*return 'Testing'"
+    }
+
+    It 'runner writes a per-tier apply completion marker' {
+        $script:RunnerText | Should -Match '\$DatabasePackageId\.\$Tier\.applied\.tmp'
+        $script:RunnerText | Should -Match 'Get-DatabasePackageApplyMarkerPath'
+    }
+
+    It 'runner never passes a connection string or secret VALUE on a command line' {
+        $script:RunnerText | Should -Not -Match '(?i)Server\s*=\s*[^;]+;\s*Database\s*='
+        # The migrate path uses DBConnectionStringSecretName (a name), never an inline value.
+        $script:RunnerText | Should -Match 'DBConnectionStringSecretName\s*=\s*\$ConnectionStringSecretName'
     }
 }
 
@@ -252,5 +319,150 @@ Describe 'V4-E08 skip-marker logic: completion marker prevents double-execution'
             -ContextDirectory $script:TempContextDir `
             -DatabasePackageId 'ATAPUtilities.Database' `
             -Tier 'Experimental') | Should -BeTrue
+    }
+}
+
+Describe 'Task 9.10 behavior: per-tier apply + rehearsal helpers' {
+
+    BeforeAll {
+        $script:RunnerPath = Join-Path (Join-Path $PSScriptRoot '..') 'Invoke-DatabasePackageBuildMasterStage.ps1'
+
+        # Load only the runner's function definitions (parsing the file would
+        # evaluate the mandatory script param block + bottom invocation).
+        $parseTokens = $null
+        $parseErrors = $null
+        $runnerAst = [System.Management.Automation.Language.Parser]::ParseFile(
+            $script:RunnerPath, [ref] $parseTokens, [ref] $parseErrors)
+        if ($parseErrors.Count -gt 0) { throw "Failed to parse runner: $($parseErrors[0].Message)" }
+        $helperScript = (
+            $runnerAst.FindAll({
+                param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst]
+            }, $true) | ForEach-Object { $_.Extent.Text }
+        ) -join [Environment]::NewLine
+
+        if (-not (Get-Command -Name Write-PSFMessage -ErrorAction SilentlyContinue)) {
+            function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments)]$args) }
+        }
+
+        Invoke-Expression $helperScript
+
+        $script:TempDir = Join-Path ([System.IO.Path]::GetTempPath()) ('DBA-T9_10-' + [Guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path $script:TempDir -Force | Out-Null
+        $script:TracePath = Join-Path $script:TempDir 'trace.log'
+        # A real on-disk file standing in for the immutable nupkg.
+        $script:FakeNupkg = Join-Path $script:TempDir 'ATAPUtilities.Database.1.0.0.nupkg'
+        Set-Content -LiteralPath $script:FakeNupkg -Value 'fake' -Encoding utf8
+    }
+
+    AfterAll {
+        if (Test-Path -LiteralPath $script:TempDir) {
+            Remove-Item -LiteralPath $script:TempDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    Context 'Get-DatabaseTierEnvironment maps tiers to Flyway environments' {
+        It '<Tier> -> <Expected>' -ForEach @(
+            @{ Tier = 'Experimental'; Expected = 'Experimental' }
+            @{ Tier = 'Development';  Expected = 'Development' }
+            @{ Tier = 'Integration'; Expected = 'Testing' }
+            @{ Tier = 'QA';          Expected = 'Testing' }
+            @{ Tier = 'Production';  Expected = 'Production' }
+        ) {
+            (Get-DatabaseTierEnvironment -Tier $Tier) | Should -BeExactly $Expected
+        }
+    }
+
+    Context 'Resolve-DatabaseTierConnectionSecretName' {
+        It 'returns the configured name for the matching tier' {
+            (Resolve-DatabaseTierConnectionSecretName -Tier 'Integration' `
+                -IntegrationSecretName 'dbConnectionString-ATAPUtilities-localhost-Integration') |
+                Should -BeExactly 'dbConnectionString-ATAPUtilities-localhost-Integration'
+        }
+        It 'returns empty string when the tier has no name configured' {
+            (Resolve-DatabaseTierConnectionSecretName -Tier 'QA') | Should -BeExactly ''
+        }
+    }
+
+    Context 'Invoke-DatabasePackageStageApply policy' {
+        It 'skips (no throw, no apply call) when no connection secret is configured' {
+            $script:applyCalls = 0
+            function global:Invoke-DatabasePackageTierApply { param([Parameter(ValueFromRemainingArguments)]$a) $null = $a; $script:applyCalls++ }
+            { Invoke-DatabasePackageStageApply -ContextDirectory $script:TempDir `
+                -DatabasePackageId 'ATAPUtilities.Database' -DatabaseApplication 'ATAPUtilities' `
+                -PackageVersion '1.0.0' -Tier 'Development' -NupkgPath $script:FakeNupkg `
+                -ConnectionStringSecretName '' -TracePath $script:TracePath } | Should -Not -Throw
+            $script:applyCalls | Should -Be 0
+            Remove-Item Function:\Invoke-DatabasePackageTierApply -ErrorAction SilentlyContinue
+        }
+
+        It 'skips (no apply call) when -SkipApply is set even with a secret configured' {
+            $script:applyCalls = 0
+            function global:Invoke-DatabasePackageTierApply { param([Parameter(ValueFromRemainingArguments)]$a) $null = $a; $script:applyCalls++ }
+            Invoke-DatabasePackageStageApply -ContextDirectory $script:TempDir `
+                -DatabasePackageId 'ATAPUtilities.Database' -DatabaseApplication 'ATAPUtilities' `
+                -PackageVersion '1.0.0' -Tier 'Development' -NupkgPath $script:FakeNupkg `
+                -ConnectionStringSecretName 'dbConnectionString-x' -SkipApply -TracePath $script:TracePath
+            $script:applyCalls | Should -Be 0
+            Remove-Item Function:\Invoke-DatabasePackageTierApply -ErrorAction SilentlyContinue
+        }
+
+        It 'applies and writes the .applied marker when a secret is configured' {
+            function global:Invoke-DatabasePackageTierApply {
+                param([Parameter(ValueFromRemainingArguments)]$a)
+                $null = $a
+                [PSCustomObject]@{ Applied = $true; Environment = 'Development'; SnapshotPath = $null }
+            }
+            Invoke-DatabasePackageStageApply -ContextDirectory $script:TempDir `
+                -DatabasePackageId 'ATAPUtilities.Database' -DatabaseApplication 'ATAPUtilities' `
+                -PackageVersion '1.0.0' -Tier 'Development' -NupkgPath $script:FakeNupkg `
+                -ConnectionStringSecretName 'dbConnectionString-x' -TracePath $script:TracePath
+            $marker = Join-Path $script:TempDir 'ATAPUtilities.Database.Development.applied.tmp'
+            Test-Path -LiteralPath $marker -PathType Leaf | Should -BeTrue
+            Remove-Item Function:\Invoke-DatabasePackageTierApply -ErrorAction SilentlyContinue
+        }
+
+        It 'is idempotent: a second apply with an existing marker does not re-invoke the apply worker' {
+            $script:applyCalls = 0
+            function global:Invoke-DatabasePackageTierApply {
+                param([Parameter(ValueFromRemainingArguments)]$a)
+                $null = $a
+                $script:applyCalls++
+                [PSCustomObject]@{ Applied = $true; Environment = 'Development'; SnapshotPath = $null }
+            }
+            # Marker from the previous test already exists for Development.
+            Invoke-DatabasePackageStageApply -ContextDirectory $script:TempDir `
+                -DatabasePackageId 'ATAPUtilities.Database' -DatabaseApplication 'ATAPUtilities' `
+                -PackageVersion '1.0.0' -Tier 'Development' -NupkgPath $script:FakeNupkg `
+                -ConnectionStringSecretName 'dbConnectionString-x' -TracePath $script:TracePath
+            $script:applyCalls | Should -Be 0
+            Remove-Item Function:\Invoke-DatabasePackageTierApply -ErrorAction SilentlyContinue
+        }
+    }
+
+    Context 'Invoke-DatabasePackageTierRehearsal enforcement' {
+        It 'throws (blocks promotion) when the rehearsal reports Success=$false' {
+            function global:Invoke-DatabasePackageRehearsal {
+                param([Parameter(ValueFromRemainingArguments)]$a)
+                $null = $a
+                [PSCustomObject]@{ Success = $false; ValidateOutput = 'boom' }
+            }
+            { Invoke-DatabasePackageTierRehearsal -NupkgPath $script:FakeNupkg `
+                -Application 'ATAPUtilities' -Tier 'Development' -BuildId '123' `
+                -ConnectionStringSecretName 'dbConnectionString-x' } | Should -Throw '*rehearsal FAILED*'
+            Remove-Item Function:\Invoke-DatabasePackageRehearsal -ErrorAction SilentlyContinue
+        }
+
+        It 'returns the result (allows promotion) when the rehearsal reports Success=$true' {
+            function global:Invoke-DatabasePackageRehearsal {
+                param([Parameter(ValueFromRemainingArguments)]$a)
+                $null = $a
+                [PSCustomObject]@{ Success = $true; ElapsedSeconds = 1 }
+            }
+            $r = Invoke-DatabasePackageTierRehearsal -NupkgPath $script:FakeNupkg `
+                -Application 'ATAPUtilities' -Tier 'Development' -BuildId '123' `
+                -ConnectionStringSecretName 'dbConnectionString-x'
+            $r.Success | Should -BeTrue
+            Remove-Item Function:\Invoke-DatabasePackageRehearsal -ErrorAction SilentlyContinue
+        }
     }
 }

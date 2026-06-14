@@ -166,12 +166,25 @@ Describe 'V4-B02 behavioral proof: Get-PVal degrades to DefaultValue under -NoPr
         # rather than throwing. This is the lynchpin that makes the param -> env ->
         # settings -> default chain in Move-ProGetPackageInterTier / Invoke-PromotedModuleTests
         # safe under BuildMaster's -NoProfile invocation.
+        #
+        # The runner DECLARES the no-profile pipeline context via the
+        # ATAP_NOPROFILE_PIPELINE marker (Task 9.1, V4-B02). The loud-failure guard
+        # (Task 8.16, SC-prop-0007-1) only yields to -DefaultValue when that marker is
+        # set, so the probe sets it exactly as the runner BEGIN block does. Without the
+        # marker an interactive session that merely forgot its profile still fails loud.
         $probe = @"
+`$env:ATAP_NOPROFILE_PIPELINE = '1'
 . '$script:GetPValPath'
 `$resolved = Get-PVal -ParameterName 'ATAP_NoProfile_Probe_DoesNotExist' -originalPSBoundParameters @{} -DefaultValue 'fallback'
 Write-Output `$resolved
 "@
         $output = pwsh -NoProfile -Command $probe 2>&1
         ($output -join "`n").Trim() | Should -Be 'fallback'
+    }
+
+    It 'the runner declares the no-profile pipeline context via the ATAP_NOPROFILE_PIPELINE marker' {
+        # The guard yield depends on the runner setting this marker; pin it so the
+        # context declaration cannot be silently dropped.
+        $script:RunnerText | Should -Match 'ATAP_NOPROFILE_PIPELINE'
     }
 }

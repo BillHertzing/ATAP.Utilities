@@ -43,7 +43,33 @@ pipeline, it MUST be paired with a `Set-NoProfileProGetFeedSettings`-style boots
 | ProGet API key | runner `BEGIN` | `$env:PROGET_BUILDMASTER_API_KEY` → `$env:PROGET_ADMIN_API_KEY` → explicit `throw "Unable to resolve ProGet API key…"`. Never a parameter (keeps secrets off the command line). |
 | `$env:GIT_CONFIG_COUNT` | runner (`Add-GitSafeDirectoryForCurrentProcess`) | Defaults to `0` when unset. |
 | `$env:ATAP_BUILDTOOLING_PESTER_OUTPUT_VERBOSITY` | runner (promotion/test) | Defaults to `'None'`; unknown values warned + ignored. |
-| `Get-PVal` chain for `Name` / `Version` / `FromFeed` / `ToFeed` / `Reason` / `ProGetBaseUrl` / `ApiKey` | `Move-ProGetPackageInterTier`, `Invoke-PromotedModuleTests` | `Get-PVal` (`Get-ParameterValueFromNeoConfigurationRoot`) resolves **PSBoundParameters → env var → settings → DefaultValue**. The settings tier runs `-AllowMissing` inside a try/catch, so when the globals are absent it **degrades to `DefaultValue` without throwing**. The runner pre-sets `$global:ProGetBaseUrl = $ProGetUrl` and `$env:PROGET_BUILDMASTER_API_KEY`, and passes `-ProGetBaseUrl`/`-ApiKey` explicitly to `Invoke-PromotedModuleTests`. |
+| `Get-PVal` chain for `Name` / `Version` / `FromFeed` / `ToFeed` / `Reason` / `ProGetBaseUrl` / `ApiKey` | `Move-ProGetPackageInterTier`, `Invoke-PromotedModuleTests` | `Get-PVal` (`Get-ParameterValueFromNeoConfigurationRoot`) resolves **PSBoundParameters → env var → settings → DefaultValue**. The settings tier runs `-AllowMissing` inside a try/catch, so when the globals are absent it **degrades to `DefaultValue` without throwing** — **provided the runner declared the no-profile pipeline context** (see the host-context note below). The runner pre-sets `$global:ProGetBaseUrl = $ProGetUrl` and `$env:PROGET_BUILDMASTER_API_KEY`, and passes `-ProGetBaseUrl`/`-ApiKey` explicitly to `Invoke-PromotedModuleTests`. |
+
+### Host-context exception for the `Get-PVal` loud-failure guard (Task 9.1)
+
+Sprint 0008 Task 8.16 (SC-prop-0007-1) added a **loud-failure guard** to `Get-PVal`: if
+resolution reaches the settings tier and **no** settings source exists at all (no
+`-Settings`, no `$script:Settings`, no `$global:settings`), it throws instead of silently
+returning the `DefaultValue`. The rationale is that an absent `$global:settings` in an
+**interactive** ATAP session almost always means the profile failed to load, and silently
+defaulting produced wrong BuildTooling behavior (Sprint-0007 V4-B01).
+
+That guard directly contradicted this pipeline's documented contract, which **requires**
+`Get-PVal` to degrade to the `DefaultValue` under `-NoProfile`. Both behaviors are correct
+for their own context, so the guard is now **host-context aware**:
+
+- The 5-tier runners (`Invoke-PowerShellModuleBuildMasterStage.ps1`,
+  `Invoke-CSharpPackageBuildMasterStage.ps1`) **declare** the no-profile pipeline context
+  by setting `$env:ATAP_NOPROFILE_PIPELINE = '1'` at the top of the script.
+- In that declared context, the guard **yields** to an explicit `-DefaultValue` /
+  `-AllowMissing` and the param → env → settings → DefaultValue chain degrades as
+  documented.
+- An interactive shell **never** sets the marker, so the loud-failure guard still fires —
+  the SC-prop-0007-1 protection is fully intact for the case it was written for.
+
+A bare `-NoProfile` on the command line is **not** the signal (Pester and other
+non-interactive harnesses also launch `-NoProfile`); the explicit
+`ATAP_NOPROFILE_PIPELINE` marker is what separates the pipeline from an interactive fault.
 | `$global:settings[GeneratedRelativePath]` for transcript path | `Invoke-ModuleBuildWithRetry` | **Null-guarded** (`if ($null -ne $global:configRootKeys -and $null -ne $global:settings)`) with a fallback to `<moduleRoot>\_generated` (SC-0033). The runner also passes `-BuildLogPath` explicitly, so this branch never runs in the pipeline. |
 
 ## Policy for future changes
@@ -65,7 +91,7 @@ pipeline, it MUST be paired with a `Set-NoProfileProGetFeedSettings`-style boots
 ## Regression test
 
 [`PowerShellModule-5Stage.Tests.ps1`](../src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/tests/PowerShellModule-5Stage.Tests.ps1)
-pins this contract (23 tests):
+pins this contract (24 tests):
 
 - Plan is a thin `-NoProfile -File` runner plan with no `$global:settings`, no inline
   `pwsh -Command`, no API key / `$env:PROGET_*` on the command line.
@@ -74,8 +100,10 @@ pins this contract (23 tests):
   `$global:ProGetBaseUrl` + the key env var before promotion, and passes
   `-ProGetBaseUrl`/`-ApiKey` explicitly to the promoted-module tests; the file parses
   clean.
-- **Behavioral proof:** a clean `pwsh -NoProfile` child process dot-sources `Get-PVal`
-  and confirms it returns the `DefaultValue` (no throw) when no profile globals exist.
+- **Behavioral proof:** a clean `pwsh -NoProfile` child process that declares the
+  pipeline context (`$env:ATAP_NOPROFILE_PIPELINE = '1'`) dot-sources `Get-PVal` and
+  confirms it returns the `DefaultValue` (no throw) when no profile globals exist; a
+  companion static check asserts the runner sets the `ATAP_NOPROFILE_PIPELINE` marker.
 
 Run it (with the profile loaded — never run Pester with `-NoProfile`, per
 [`PowerShell-Modules-Test-Process.md`](PowerShell-Modules-Test-Process.md)):
@@ -84,7 +112,11 @@ Run it (with the profile loaded — never run Pester with `-NoProfile`, per
 pwsh -Command "Invoke-Pester -Path './src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/tests/PowerShellModule-5Stage.Tests.ps1' -Output Detailed"
 ```
 
-Last verified: **2026-06-04 — 23 passed, 0 failed** (Pester v5.7.1).
+Last verified: **2026-06-13 — 24 passed, 0 failed** (Pester v5.7.1; Task 9.1 host-context
+guard fix). The `Get-PVal` unit suite
+([`Get-ParameterValueFromNeoConfigurationRoot.Tests.ps1`](../src/ATAP.Utilities.PowerShell/tests/Unit/Get-ParameterValueFromNeoConfigurationRoot.Tests.ps1))
+also passes 34/0, covering both the interactive loud-failure case and the declared
+pipeline-context degrade case.
 
 ## See also
 

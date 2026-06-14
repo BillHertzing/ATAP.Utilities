@@ -56,8 +56,9 @@
 
         PSData = @{
 
-            # Prerelease string of this module
-            Prerelease = 'Sprint0009'
+            # Prerelease string cleared for the 0.1.4 stable release (Task 9.5,
+            # Gate 7 "stable version finalization"). Re-add a Prerelease label only
+            # for a future prerelease build, never for a Production promotion.
 
         } # End of PSData hashtable
 

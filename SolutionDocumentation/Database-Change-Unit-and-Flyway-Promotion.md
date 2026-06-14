@@ -210,6 +210,33 @@ not pass `-DatabaseHost` / `-SqlInstance` for this rehearsal. The `-BackupPath`
 value is recorded for traceability; restoring the previous-production backup
 remains environment-specific.
 
+> **Rehearsal-before-promotion and per-tier apply are enforced in code (Task
+> 9.10).** Earlier, the `DatabaseChangePackage-5Stage` runner only promoted the
+> immutable `.nupkg` between `database-*` feeds and deployed nothing — the
+> rehearsal/apply steps in this table were documented but not wired. The runner
+> (`Invoke-DatabasePackageBuildMasterStage.ps1`) now accepts a per-tier
+> `*DatabaseDBConnectionStringSecretName` BuildMaster Application Variable for
+> each of Experimental/Development/Integration/QA/Production. When a tier's name
+> is supplied the runner:
+>
+> 1. **Before** promoting into that tier (Development→Production), calls
+>    `Invoke-DatabasePackageRehearsal` against the build's immutable `.nupkg` and
+>    **throws to block the promotion if the rehearsal does not succeed** — the
+>    rehearsal-enforcement gap is now closed in code, not just in this doc.
+> 2. **After** the stage's promotion/publish, applies the package to that tier's
+>    real database via `Invoke-Flyway -FlywayCommand migrate` (Integration/QA map
+>    to the Flyway `Testing` environment, Production to `Production`). For the
+>    permanent Integration/QA/Production tiers it first takes a pre-migration
+>    snapshot (section 17) when `New-DatabasePreMigrationSnapshot` is available.
+>
+> Connection-string **values** are never passed on a command line; the runner
+> passes only the Bitwarden secret **name** and the Flyway cmdlets resolve the
+> value. A per-tier `.applied.tmp` marker makes the apply idempotent within a
+> build. `-SkipRehearsal` / `-SkipApply` are audited (warning-logged) bypasses
+> for disaster recovery. When a tier has no secret name configured, apply and
+> rehearsal are skipped for that tier (logged, not a failure), preserving the
+> prior promote-only behavior for environments without DB connectivity.
+
 ### 5.1 Naming convention and length limits
 
 - **Total DB name length: ≤64 characters.** SQL Server permits 128, but the

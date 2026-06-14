@@ -140,14 +140,18 @@ function Clear-OldBuildMasterRunContexts {
         Where-Object { [System.IO.Path]::GetFullPath($_.FullName) -ne $activePath } |
         Where-Object { $_.LastWriteTimeUtc -lt $cutoff } |
         ForEach-Object {
-          if ($PSCmdlet.ShouldProcess($_.FullName, 'Remove stale BuildMaster run-context directory')) {
-            Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction Stop
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Removed stale run-context '$($_.FullName)'."
+          $staleContextPath = $_.FullName
+          if ($PSCmdlet.ShouldProcess($staleContextPath, 'Remove stale BuildMaster run-context directory')) {
+            try {
+              Remove-Item -LiteralPath $staleContextPath -Recurse -Force -ErrorAction Stop
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Removed stale run-context '$staleContextPath'."
+            } catch {
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Skipped stale run-context '$staleContextPath' because it could not be removed. Exception: $($_.Exception.Message)"
+            }
           }
         }
     } catch {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Failed sweeping stale run-contexts under '$root'. Exception: $($_.Exception.Message)"
-      throw
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Skipped stale run-context sweep under '$root'. Exception: $($_.Exception.Message)"
     } finally {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Sweep complete for '$root'."
     }

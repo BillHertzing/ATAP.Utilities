@@ -63,3 +63,4 @@ for the exact command and renderer prerequisites.
 | Rule Export REST API spec | `API_Specification_RuleExport.md` |
 | Hello-World example walkthrough | `HelloWorld-Example-Remediation-Plan.md` |
 | Per-tier migration state (Integration/QA/Production) + 000302 collision disposition | `../../_generated/DatabaseLadder/Task-9.8-Flyway-Info-Report.md` (generated, local; regenerable via `flyway info`/`validate`) |
+| Drop+recreate of Integration/QA/Production from the consolidated set (Task 9.9 outcome + headless-build runbook) | `../../_generated/DatabaseLadder/Task-9.9-DropRecreate-Report.md` (generated, local; re-run `Powershell/public/Reset-DatabaseLadderTier.ps1` per tier) |

@@ -28,7 +28,7 @@ The public sprint helpers are driven by two runbooks in the SharedVSCode `.claud
 
 **Sprint start sequence (public cmdlets, in execution order):**
 
-1. [Test-SprintPrerequisites.ps1](public/Test-SprintPrerequisites.ps1) — Step 0 preflight (pwsh, gh auth, Bitwarden, BuildTooling import, ProGet/BuildMaster reachability).
+1. [Test-SprintPrerequisites.ps1](public/Test-SprintPrerequisites.ps1) — Step 0 preflight (pwsh, gh auth, Bitwarden, BuildTooling import, ProGet/BuildMaster reachability, and the Task 9.7 `-BuiltModule` promotion+deploy gate: each built module's Production version must be in the `*-stable` feed AND installed on the workstation).
 2. [Assert-BuildMasterReady.ps1](public/Assert-BuildMasterReady.ps1) — Step 0 preflight (BuildMaster apps, pipelines, required application variables, API key).
 3. [New-SprintStage1.ps1](public/New-SprintStage1.ps1) — SharedVSCode + \_Planning sprint branches/worktrees + permanent-feed NuGet.config.
 4. [New-SprintStage2.ps1](public/New-SprintStage2.ps1) — downstream sprint branches/worktrees, NTFS junctions, claude-settings symlinks.
@@ -41,7 +41,7 @@ The public sprint helpers are driven by two runbooks in the SharedVSCode `.claud
 
 **Sprint end sequence (public cmdlets, in execution order):**
 
-1. [Test-SprintPrerequisites.ps1](public/Test-SprintPrerequisites.ps1) — Step 1 preflight (re-run before any side effects).
+1. [Test-SprintPrerequisites.ps1](public/Test-SprintPrerequisites.ps1) — Step 1 preflight (re-run before any side effects; pass `-BuiltModule` so the Task 9.7 gate refuses to close the sprint until each built version is promoted to `*-stable` AND installed).
 2. [Save-SprintRetrospectiveSnapshot.ps1](public/Save-SprintRetrospectiveSnapshot.ps1) — sprint metrics snapshot to `_Planning/SprintRetrospective/Snapshots/<NNNN>/`.
 3. [Reset-DownstreamToSharedVSCodeMain.ps1](public/Reset-DownstreamToSharedVSCodeMain.ps1) — workspace templateRef back to `main`, profile back to `default`, re-apply downstream context.
 4. [Assert-MainBranchTemplateRef.ps1](public/Assert-MainBranchTemplateRef.ps1) — guard rail: confirm all workspace files now point to `main`.

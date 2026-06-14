@@ -62,3 +62,4 @@ for the exact command and renderer prerequisites.
 | Cross-schema view design | `CrossSchema_UserView_Design.md` |
 | Rule Export REST API spec | `API_Specification_RuleExport.md` |
 | Hello-World example walkthrough | `HelloWorld-Example-Remediation-Plan.md` |
+| Per-tier migration state (Integration/QA/Production) + 000302 collision disposition | `../../_generated/DatabaseLadder/Task-9.8-Flyway-Info-Report.md` (generated, local; regenerable via `flyway info`/`validate`) |

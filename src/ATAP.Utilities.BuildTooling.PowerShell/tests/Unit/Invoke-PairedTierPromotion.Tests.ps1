@@ -26,7 +26,7 @@ BeforeAll {
     }
     if (-not (Get-Command Invoke-PromotedModuleTests -ErrorAction SilentlyContinue)) {
         function global:Invoke-PromotedModuleTests {
-            param($Name, $Version, $Feed, $Tier, $ResultsPath, $ModuleSourceRoot, $WorkingDirectory)
+            param($Name, $Version, $Feed, $Tier, $ResultsPath, $ModuleSourceRoot, $WorkingDirectory, $ProGetBaseUrl, $ApiKey)
         }
     }
     if (-not (Get-Command Get-AgentTextFromDatabase -ErrorAction SilentlyContinue)) {
@@ -180,6 +180,21 @@ Describe 'Invoke-PairedTierPromotion' -Tag 'Unit', 'PromotedModuleHostSensitive'
             ($r.Validations | Where-Object Name -eq 'PromotedModuleTests').Status | Should -Be 'Skipped'
             $r.Succeeded | Should -BeTrue
             Assert-MockCalled Invoke-PromotedModuleTests -Times 0 -Exactly -Scope It
+        }
+        It 'Forwards -ProGetBaseUrl and -ApiKey to Invoke-PromotedModuleTests (direct-endpoint restore)' {
+            $r = Invoke-PairedTierPromotion -ModuleVersion '1' -DatabasePackageVersion '1' -Tier 'Development' `
+                -ProGetBaseUrl 'http://localhost:50000' -ApiKey 'secret-key'
+            $r.Succeeded | Should -BeTrue
+            Assert-MockCalled Invoke-PromotedModuleTests -Times 1 -Exactly -Scope It -ParameterFilter {
+                $ProGetBaseUrl -eq 'http://localhost:50000' -and $ApiKey -eq 'secret-key'
+            }
+        }
+        It 'Does not pass ProGet direct-endpoint args when they are not supplied' {
+            $r = Invoke-PairedTierPromotion -ModuleVersion '1' -DatabasePackageVersion '1' -Tier 'Development'
+            $r.Succeeded | Should -BeTrue
+            Assert-MockCalled Invoke-PromotedModuleTests -Times 1 -Exactly -Scope It -ParameterFilter {
+                [string]::IsNullOrEmpty($ProGetBaseUrl) -and [string]::IsNullOrEmpty($ApiKey)
+            }
         }
     }
 

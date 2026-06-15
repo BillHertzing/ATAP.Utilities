@@ -88,6 +88,20 @@
     Directory the PromotedModuleTests results are written to. Defaults to
     _generated/PairedTierPromotion/<Tier> under -WorkingDirectory.
 
+.PARAMETER ProGetBaseUrl
+    Optional ProGet base URL forwarded to Invoke-PromotedModuleTests so the
+    promoted module is restored from ProGet's direct package endpoint
+    (/nuget/<feed>/package/<name>/<version>) instead of PSResourceGet's OData
+    query path. Supply this when the feed's v2 OData FindPackagesById endpoint
+    is unavailable (the documented Sprint-0009 ProGet 404). Resolve it from
+    $global:settings / Resolve-ProGetBaseUrlFromSettings at the call site.
+
+.PARAMETER ApiKey
+    Optional ProGet API key sent as X-ApiKey when restoring the promoted module
+    directly from ProGet (paired with -ProGetBaseUrl). Resolve it from a
+    User-scope environment variable (PROGET_BUILDMASTER_API_KEY /
+    PROGET_ADMIN_API_KEY) at the call site; never embed a literal key.
+
 .PARAMETER WorkingDirectory
     Directory paths are resolved against. Defaults to the current location.
 
@@ -286,6 +300,14 @@ function Invoke-PairedTierPromotion {
 
         [Parameter()]
         [string]$ResultsPath,
+
+        [Parameter()]
+        [AllowEmptyString()]
+        [string]$ProGetBaseUrl = '',
+
+        [Parameter()]
+        [AllowEmptyString()]
+        [string]$ApiKey = '',
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
@@ -502,6 +524,10 @@ function Invoke-PairedTierPromotion {
                                 WorkingDirectory = $WorkingDirectory
                             }
                             if ($ModuleSourceRoot) { $moduleTestParameters['ModuleSourceRoot'] = $ModuleSourceRoot }
+                            # Forward ProGet direct-endpoint inputs so the promoted-module
+                            # restore bypasses the feed's v2 OData path (Sprint-0009 404).
+                            if (-not [string]::IsNullOrWhiteSpace($ProGetBaseUrl)) { $moduleTestParameters['ProGetBaseUrl'] = $ProGetBaseUrl }
+                            if (-not [string]::IsNullOrWhiteSpace($ApiKey)) { $moduleTestParameters['ApiKey'] = $ApiKey }
                             try {
                                 $testResult = Invoke-PromotedModuleTests @moduleTestParameters
                                 $status = if ([bool]$testResult.GatePass) { 'Passed' } else { 'Failed' }

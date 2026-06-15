@@ -17,6 +17,12 @@ $global:settings['SecretStoreType'] = 'Bitwarden'. Sprint lifecycle automation
 therefore reads machine secrets with bws by default and never touches the
 personal-vault BW_SESSION unless a caller deliberately opts in.
 
+Even when the personal-vault path is explicitly selected, the provider
+(Get-SecretATAPBitwarden) refuses CI/infrastructure secret names - connection
+strings, API keys, ProGet/BuildMaster and service-account secrets - and throws
+(Task 9.21). The personal-vault path is reserved for genuine per-user personal
+secrets only; CI/infra secrets live exclusively in Bitwarden Secrets Manager.
+
 The 'Bitwarden' and 'BitwardenSecretsManager' providers are implemented today.
 Future stores (for example 'AzureKeyVault' or 'HashiCorpVault') plug into the
 switch in PROCESS without changing any caller.

@@ -98,7 +98,6 @@
     'Initialize-DownstreamSprintFromSharedVSCode',
     'Initialize-BWSAccessToken', 'Initialize-BWSCredentialDirectory',
     'Initialize-ProGetSqlServiceLogin',
-    'Initialize-ServiceAccountBitwardenSession',
     'Invoke-BuildToolingPesterDebug', 'Invoke-DotnetBuildWithRetry',
     'Invoke-FailureAcknowledgedGate', 'Invoke-GitCommit',
     'Invoke-GitPostCheckoutHook', 'Invoke-GitPostCommitHook', 'Invoke-GitPreCommitHook',
@@ -114,7 +113,7 @@
     'New-DocFilesIfNotPresent', 'New-DocFolderIfNotPresent',
     'New-GitHubIssue', 'New-HostSettingsForPackageRepositoryFeeds',
     'New-MockTestFileStructure', 'New-OverviewSprintWorkspace',
-    'New-PermanentBitwardenSecrets', 'New-PesterBasicUnitTestTemplate',
+    'New-PesterBasicUnitTestTemplate',
     'New-PesterContextBlock', 'New-PesterDataDrivenTestTemplate',
     'New-PesterDescribeBlock', 'New-PesterFileModel', 'New-PesterItBlock',
     'New-PesterTestFile', 'New-ProGetApiKey', 'New-ProGetConnector',
@@ -127,7 +126,7 @@
     'Publish-DatabaseChangePackageToProGet', 'Publish-NuGetPackageToProGet',
     'Publish-PSModuleToProGet', 'Publish-PSModuleToProGetFeed',
     'Publish-PSPackage', 'Publish-UniversalPackageToProGet',
-    'Read-SourceAndCreateRules', 'Refresh-BWSession',
+    'Read-SourceAndCreateRules',
     'Register-ProGetFeedSet',
     'Remove-BuildMasterApplication',
     'Remove-BuildMasterApplicationVariable',
@@ -154,8 +153,7 @@
     'Test-SprintInfrastructureHealth', 'Test-SprintPrerequisites',
     'Update-BlocksInCsproj',
     'Update-OverviewWorkspaceStableInfo', 'Update-PackageVersion',
-    'Test-ProGetFeedSet',
-    'Update-ServiceAccountBWCredentialFile'
+    'Test-ProGetFeedSet'
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport      = '*'

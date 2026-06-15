@@ -39,6 +39,19 @@ and is never required by sprint automation (SC-0175). Reads of per-sprint
 machine secrets go through
 `Get-SecretATAP -SecretStoreType 'BitwardenSecretsManager'`.
 
+**Personal-vault / `bw` purge (Task 9.21).** CI/infrastructure secrets must
+never live in a developer's personal Bitwarden Password Manager vault. The
+`bw`/`BW_SESSION` writer and service-account session machinery
+(`New-PermanentBitwardenSecrets`, `Initialize-ServiceAccountBitwardenSession`,
+`Refresh-BWSession`, `Update-ServiceAccountBWCredentialFile`) was retired to
+`Obsolete/public/` and removed from the exported surface. The personal-vault
+read provider `Get-SecretATAPBitwarden` remains only as an opt-in path for
+genuine per-user personal secrets and now **refuses CI/infra secret names**
+(connection strings, API keys, ProGet/BuildMaster and service-account secrets),
+directing callers to Bitwarden Secrets Manager. If a host still has scheduled
+tasks invoking the retired session scripts, remove them as infrastructure
+cleanup.
+
 ## Autoloading
 
 The .psm1 file handles dot-sourcing all the .ps1 scripts in the `private` and `public` subdirectories. But for Autoload to work, the functions and cmdlets should be listed in the .psd1 file. Here's a one-liner that will get you the function names

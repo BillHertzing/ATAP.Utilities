@@ -30,6 +30,18 @@ sprint `_Planning` worktree at
 SprintEnd a concrete list of worktree session names to validate against the
 archived conversation set.
 
+Scope-creep capture (`Add-ScopeCreepIdea`) now resolves the target `_Planning`
+worktree through `Resolve-PlanningWorktreeRoot` (Task 9.23). Resolution is
+anchored on the **Sprint token** (`Sprint-<NNNN>-work-items`) shared across
+repos — not the per-repo issue number, which differs (e.g.
+`ATAP.Utilities-wt-110-…` pairs with `_Planning-wt-18-…`). From a sprint shell it
+finds the sibling `_Planning*-wt-*-Sprint-<NNNN>-work-items` worktree (with a
+widened, case-insensitive `OverView*.code-workspace` fallback). When a sprint
+context is detected but no sprint `_Planning` worktree can be found, it **throws
+rather than silently writing to the stable (main) worktree**; pass
+`-PlanningRoot` to target a worktree explicitly. This fixes the prior silent
+fall-back that wrote scope-creep ideas to the stable `_Planning` worktree.
+
 Sprint lifecycle secret automation (`New-SprintBitwardenSecrets`,
 `Remove-SprintBitwardenSecrets`, `Test-SprintPrerequisites`,
 `Test-SprintInfrastructureHealth`) authenticates to Bitwarden Secrets Manager

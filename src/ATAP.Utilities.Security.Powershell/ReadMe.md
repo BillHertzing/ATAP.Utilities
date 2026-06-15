@@ -4,6 +4,15 @@
 
 Powershell scripts for managing an organization's computer systems' security
 
+> **Status (Sprint 9, Task 9.15):** This module is an early-stage prototype and is **not yet
+> releasable**. A read-only shortcomings assessment + revise/complete plan is at
+> [_generated/Security/Task-9.15-SecurityPowershell-GapAssessment.md](../../_generated/Security/Task-9.15-SecurityPowershell-GapAssessment.md).
+> Notably, `PKIForNewOrg.ps1` currently runs top-level code on import and the exported
+> `Install-*` cmdlets are stubs — do not `Import-Module` against a live certificate store
+> until Task 9.15-A lands. The working low-level primitives (`New-EncryptedPrivateKey`,
+> `New-CertificateRequest`, `New-CACertificate`, `New-SignedCertificate`,
+> `New-DistinguishedNameHash`) are sound.
+
 ### Public Administration Functions
 
 - Install-VaultsInfrastructure - TBD: for bootstrap hosts. Setup the necessary infrastructure. Can ansible do it? Yes, after preamble and before securing the communications channel

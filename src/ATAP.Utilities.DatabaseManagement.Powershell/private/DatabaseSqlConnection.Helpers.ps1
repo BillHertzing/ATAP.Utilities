@@ -104,6 +104,24 @@ function New-DatabaseSqlConnectionFromConnectionString {
 }
 
 function Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName {
+  <#
+    Resolves a connection-string secret to an open SqlConnection using a layered
+    source order (Task 9.22, bws-write workaround):
+
+      (a) Real vault secret  - read the 'notes' field via Get-SecretATAP. If a
+          non-empty value is present, use it (highest precedence).
+      (b) Deterministic build - when the vault value is absent AND the secret name
+          is classified 'derivable' (sprint Integrated-Security connection string,
+          no credential), rebuild the identical value via
+          Get-DbConnectionStringSecretDescriptor.
+      (c) Hard fail          - when the value is absent and the secret is
+          'credentialed' (must carry a real credential), throw with remediation.
+          A credentialed string is NEVER derived.
+
+    This unblocks reads while the bws write path is broken, and keeps the eventual
+    switch to credentialed secrets a configuration change (mark the name
+    credentialed) rather than a code rewrite.
+  #>
   [CmdletBinding()]
   param(
     [Parameter(Mandatory = $true)]
@@ -114,30 +132,100 @@ function Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName {
     throw 'DBConnectionStringSecretName cannot be null, empty, or whitespace.'
   }
 
-  if (-not (Get-Command -Name 'Get-SecretATAP' -ErrorAction SilentlyContinue)) {
-    throw "Get-SecretATAP is not available. Import ATAP.Utilities.BuildTooling.PowerShell or ensure Get-SecretATAP is on the function path."
+  # ---- (a) Real vault secret, if present --------------------------------------
+  $DBConnectionString = $null
+  $vaultLookupError = $null
+  if (Get-Command -Name 'Get-SecretATAP' -ErrorAction SilentlyContinue) {
+    try {
+      $DBConnectionString = Get-SecretATAP -SecretName $SecretName -SecretField 'notes'
+    } catch {
+      # Absent / unreadable secret is not fatal yet - a derivable secret can be
+      # rebuilt below. Capture the reason for the credentialed hard-fail message.
+      $vaultLookupError = $_
+      $DBConnectionString = $null
+    }
+  } else {
+    $vaultLookupError = [System.Management.Automation.ErrorRecord]::new(
+      [System.InvalidOperationException]::new('Get-SecretATAP is not available (import ATAP.Utilities.BuildTooling.PowerShell).'),
+      'GetSecretATAPMissing', [System.Management.Automation.ErrorCategory]::NotInstalled, $SecretName)
   }
-
-  $DBConnectionString = Get-SecretATAP -SecretName $SecretName -SecretField 'notes'
 
   if ($DBConnectionString -is [array]) {
-    if ($DBConnectionString.Count -ne 1) {
+    if ($DBConnectionString.Count -gt 1) {
       throw "ATAP secret '$SecretName' notes field returned multiple values. Expected exactly one connection string."
     }
-    $DBConnectionString = $DBConnectionString[0]
+    $DBConnectionString = if ($DBConnectionString.Count -eq 1) { $DBConnectionString[0] } else { $null }
   }
 
-  if ($null -eq $DBConnectionString) {
-    throw "ATAP secret '$SecretName' notes field returned null. Expected a connection-string value."
-  }
-
-  if ($DBConnectionString -isnot [string]) {
+  if ($null -ne $DBConnectionString -and $DBConnectionString -isnot [string]) {
     throw "ATAP secret '$SecretName' notes field returned '$($DBConnectionString.GetType().FullName)'. Expected a string."
   }
 
-  return New-DatabaseSqlConnectionFromConnectionString `
-    -ConnectionString $DBConnectionString `
-    -Source "ATAP secret '$SecretName' (notes field)"
+  if (-not [string]::IsNullOrWhiteSpace([string]$DBConnectionString)) {
+    return New-DatabaseSqlConnectionFromConnectionString `
+      -ConnectionString ([string]$DBConnectionString) `
+      -Source "ATAP secret '$SecretName' (notes field)"
+  }
+
+  # ---- (b) Deterministic build when derivable ---------------------------------
+  $descriptor = Get-DbConnectionStringSecretDescriptorForReader -SecretName $SecretName
+  if ($null -ne $descriptor -and $descriptor.IsDerivable -and -not [string]::IsNullOrWhiteSpace([string]$descriptor.ConnectionString)) {
+    $writePSFMessage = Get-Command -Name 'Write-PSFMessage' -ErrorAction SilentlyContinue
+    if ($writePSFMessage) {
+      Write-PSFMessage -FunctionName 'Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName' `
+        -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Important `
+        -Message "Vault secret '$SecretName' absent; resolved deterministically (derivable Integrated-Security connection, no credential)." -Tag 'ConnectionString'
+    }
+    return New-DatabaseSqlConnectionFromConnectionString `
+      -ConnectionString ([string]$descriptor.ConnectionString) `
+      -Source "deterministic fallback for derivable secret '$SecretName'"
+  }
+
+  # ---- (c) Hard fail: credentialed secret required but absent ------------------
+  $reason = if ($null -ne $vaultLookupError) { " Vault lookup error: $($vaultLookupError.Exception.Message)" } else { '' }
+  throw ("Connection-string secret '$SecretName' is not present in the vault and is not derivable " +
+    "(it is classified credentialed, or its name does not match the derivable convention). " +
+    "Provision it in Bitwarden Secrets Manager, or supply explicit connection parts.$reason")
+}
+
+function Get-DbConnectionStringSecretDescriptorForReader {
+  # Best-effort access to the BuildTooling descriptor helper (the single source of
+  # truth for the connection-string format + classification). When the module is
+  # imported the function is already present; from source it is dot-sourced from
+  # the sibling BuildTooling module so the reader fallback works standalone too.
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $true)]
+    [string] $SecretName
+  )
+
+  if (-not (Get-Command -Name 'Get-DbConnectionStringSecretDescriptor' -CommandType Function -ErrorAction SilentlyContinue)) {
+    $buildToolingRoots = @()
+    if (-not [string]::IsNullOrWhiteSpace($PSScriptRoot)) {
+      # $PSScriptRoot = <src>\ATAP.Utilities.DatabaseManagement.Powershell\private
+      $srcRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+      if (-not [string]::IsNullOrWhiteSpace($srcRoot)) {
+        $buildToolingRoots += (Join-Path $srcRoot 'ATAP.Utilities.BuildTooling.PowerShell')
+      }
+    }
+    try {
+      Import-DatabaseScriptCommand `
+        -CommandName 'Get-DbConnectionStringSecretDescriptor' `
+        -ModuleNames @('ATAP.Utilities.BuildTooling.PowerShell') `
+        -ModuleRoots $buildToolingRoots `
+        -RelativeScriptPath 'public\Get-DbConnectionStringSecretDescriptor.ps1'
+    } catch {
+      # Helper unavailable: cannot classify/derive, so no descriptor. The caller
+      # then hard-fails, which is the safe outcome for an absent secret.
+      return $null
+    }
+  }
+
+  if (-not (Get-Command -Name 'Get-DbConnectionStringSecretDescriptor' -CommandType Function -ErrorAction SilentlyContinue)) {
+    return $null
+  }
+
+  return Get-DbConnectionStringSecretDescriptor -SecretName $SecretName
 }
 
 

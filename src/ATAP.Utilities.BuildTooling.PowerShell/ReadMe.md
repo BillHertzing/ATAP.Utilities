@@ -39,6 +39,23 @@ and is never required by sprint automation (SC-0175). Reads of per-sprint
 machine secrets go through
 `Get-SecretATAP -SecretStoreType 'BitwardenSecretsManager'`.
 
+**Deterministic connection-string fallback (Task 9.22).** The `bws` _write_ path
+is currently broken, but the 12 per-sprint Dev/Exp connection strings carry no
+credential (`Integrated Security=True`) and are reproducible from
+host/tier/db/user. `Get-DbConnectionStringSecretDescriptor` is the single source
+of truth for the connection-string **format** and the
+**derivable-vs-credentialed** classification, shared by the writer
+(`New-SprintBitwardenSecrets`) and the reader (`Resolve-DatabaseSqlConnection`).
+By default `New-SprintBitwardenSecrets` derives the strings and writes nothing to
+the vault (so sprint Stage 2 needs no `bws` write at all); `-WriteDerivableToVault`
+persists them once the write path is fixed. `Resolve-DatabaseSqlConnection`
+resolves in order: (a) real vault secret if present, (b) deterministic build when
+derivable, (c) hard fail if a credential is required but absent (a credentialed
+string is never derived). When SQL logins replace Integrated Security, marking the
+affected names credentialed is a one-place config change, not a rewrite, and a
+working programmatic write+rotate path becomes mandatory before those credentialed
+secrets ship.
+
 **Personal-vault / `bw` purge (Task 9.21).** CI/infrastructure secrets must
 never live in a developer's personal Bitwarden Password Manager vault. The
 `bw`/`BW_SESSION` writer and service-account session machinery

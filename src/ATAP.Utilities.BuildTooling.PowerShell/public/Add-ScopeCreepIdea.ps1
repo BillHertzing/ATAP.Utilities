@@ -23,6 +23,12 @@ function Add-ScopeCreepIdea {
     Optional comma-separated PascalCase tags from Tags-Taxonomy.md.
   .PARAMETER GitCommit
     Stages ScopeCreep-Inbox.md and commits with a structured message.
+  .PARAMETER PlanningRoot
+    Explicit _Planning worktree root to target (must contain
+    ScopeCreepManagement\ScopeCreep-Inbox.md). Overrides automatic sprint/stable
+    worktree resolution. Use this to deliberately target the stable _Planning
+    (main) worktree; auto-resolution will otherwise refuse to fall back to stable
+    when a sprint context is detected.
   .OUTPUTS
     PSCustomObject describing the captured scope-creep entry.
   .EXAMPLE
@@ -54,7 +60,9 @@ function Add-ScopeCreepIdea {
 
     [string]$Tags,
 
-    [switch]$GitCommit
+    [switch]$GitCommit,
+
+    [string]$PlanningRoot
   )
 
   begin {
@@ -63,38 +71,10 @@ function Add-ScopeCreepIdea {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
     Set-StrictMode -Version Latest
 
-    function Find-PlanningWorktree {
-      [CmdletBinding()]
-      param(
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string]$GitRoot
-      )
-
-      $workspacePatterns = @(
-        'OverviewSprint*.code-workspace'
-      )
-
-      $wsFiles = foreach ($pattern in $workspacePatterns) {
-        Get-ChildItem -Path $GitRoot -Filter $pattern -File -ErrorAction SilentlyContinue
-      }
-
-      foreach ($wsFile in @($wsFiles | Sort-Object LastWriteTime -Descending)) {
-        $wsContent = Get-Content -LiteralPath $wsFile.FullName -Raw -ErrorAction Stop
-        $match = [regex]::Match($wsContent, '"path"\s*:\s*"(?<Path>[^"]*_Planning-wt-[^"]+)"')
-        if ($match.Success) {
-          $candidatePath = $match.Groups['Path'].Value -replace '/', '\'
-          if (-not [System.IO.Path]::IsPathRooted($candidatePath)) {
-            $candidatePath = Join-Path -Path $GitRoot -ChildPath $candidatePath
-          }
-
-          if (Test-Path -LiteralPath $candidatePath -PathType Container) {
-            return (Resolve-Path -LiteralPath $candidatePath).Path
-          }
-        }
-      }
-
-      return $null
+    # Helper-load fallback: when this file is run from source (not via Import-Module),
+    # dot-source the sibling private resolver so worktree resolution is available.
+    if (-not (Get-Command -Name 'Resolve-PlanningWorktreeRoot' -ErrorAction SilentlyContinue)) {
+      . (Join-Path $PSScriptRoot '..\private\Resolve-PlanningWorktreeRoot.ps1')
     }
 
     function Get-ReposRootFromPSScriptRoot {
@@ -158,13 +138,23 @@ function Add-ScopeCreepIdea {
   }
 
   process {
-    $reposRoot = "C:\Dropbox\$env:USERNAME\GitHub"
-    $found = Find-PlanningWorktree -GitRoot $reposRoot
-    $planningRoot = if ($found) {
-      $found
-    } else {
-      Join-Path -Path (Get-ReposRootFromPSScriptRoot) -ChildPath '_Planning'
+    # Resolve the target _Planning worktree from the active git/path context.
+    # The resolver refuses to silently fall back to the stable (main) worktree
+    # when a sprint context is detected; pass -PlanningRoot to override.
+    $contextPaths = @()
+    try {
+      $contextPaths += (Get-Location).Path
+    } catch {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Could not read current location for sprint-context detection: $($_.Exception.Message)"
     }
+    if ($PSScriptRoot) { $contextPaths += $PSScriptRoot }
+
+    $resolution = Resolve-PlanningWorktreeRoot `
+      -PlanningRoot $PlanningRoot `
+      -ContextPath $contextPaths `
+      -ReposParent (Get-ReposRootFromPSScriptRoot)
+    $planningRoot = $resolution.PlanningRoot
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "ScopeCreep target _Planning worktree: $planningRoot (method=$($resolution.Method), sprint=$($resolution.IsSprint))"
 
     $scopeCreepPath = Join-Path -Path $planningRoot -ChildPath 'ScopeCreepManagement'
     $inboxPath = Join-Path -Path $scopeCreepPath -ChildPath 'ScopeCreep-Inbox.md'
@@ -272,11 +262,14 @@ function Add-ScopeCreepIdea {
     }
 
     [PSCustomObject]@{
-      ScopeCreepId = $scId
-      InboxPath    = $inboxPath
-      Title        = $Title
-      Repo         = $Repo
-      GitCommitted = [bool]$GitCommit
+      ScopeCreepId   = $scId
+      InboxPath      = $inboxPath
+      PlanningRoot   = $planningRoot
+      ResolvedVia    = $resolution.Method
+      IsSprintTarget = $resolution.IsSprint
+      Title          = $Title
+      Repo           = $Repo
+      GitCommitted   = [bool]$GitCommit
     }
   }
 

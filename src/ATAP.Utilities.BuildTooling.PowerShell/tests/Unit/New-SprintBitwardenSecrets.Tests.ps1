@@ -24,6 +24,8 @@ BeforeAll {
     return ''
   }
 
+  # The descriptor helper (single source of truth for format + classification).
+  . "$PSScriptRoot\..\..\public\Get-DbConnectionStringSecretDescriptor.ps1"
   . "$PSScriptRoot\..\..\public\New-SprintBitwardenSecrets.ps1"
 }
 
@@ -43,76 +45,128 @@ Describe 'New-SprintBitwardenSecrets [public]' {
     if ($null -ne $script:oldBwsToken) { $env:BWS_ACCESS_TOKEN = $script:oldBwsToken } else { Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue }
   }
 
-  It 'Creates one BWS secret per (database, host, tier) with the canonical hyphenated name' {
-    $result = New-SprintBitwardenSecrets `
-      -SprintNumber '0008' `
-      -DeveloperUsername 'tester' `
-      -HostList @('localhost') `
-      -Databases @('master') `
-      -Confirm:$false
+  Context 'default — derive without vault write (Task 9.22)' {
+    It 'derives one descriptor per (database, host, tier) with the canonical name and no vault write' {
+      $result = New-SprintBitwardenSecrets `
+        -SprintNumber '0008' `
+        -DeveloperUsername 'tester' `
+        -HostList @('localhost') `
+        -Databases @('master') `
+        -Confirm:$false
 
-    $result.Count | Should -Be 2
-    $result.created | Should -Be @($true, $true)
-    $result.secretName | Should -Be @(
-      'dbConnectionString-master-localhost-Dev-tester',
-      'dbConnectionString-master-localhost-Exp-tester'
-    )
-    $createCalls = @($script:bwsCalls | Where-Object { $_ -like 'secret create *' })
-    $createCalls.Count | Should -Be 2
-    $createCalls[0] | Should -Match 'proj-ci-shared'
+      $result.Count | Should -Be 2
+      $result.derived | Should -Be @($true, $true)
+      $result.created | Should -Be @($false, $false)
+      $result.classification | Should -Be @('derivable', 'derivable')
+      $result.secretName | Should -Be @(
+        'dbConnectionString-master-localhost-Dev-tester',
+        'dbConnectionString-master-localhost-Exp-tester'
+      )
+    }
+
+    It 'makes no bws calls at all on the default derive path' {
+      New-SprintBitwardenSecrets `
+        -SprintNumber '0008' `
+        -DeveloperUsername 'tester' `
+        -HostList @('localhost') `
+        -Databases @('master') `
+        -Confirm:$false | Out-Null
+
+      $script:bwsCalls.Count | Should -Be 0
+    }
+
+    It 'derives successfully even when no BWS access token is present' {
+      Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue
+
+      $result = New-SprintBitwardenSecrets `
+        -SprintNumber '0008' `
+        -DeveloperUsername 'tester' `
+        -HostList @('localhost') `
+        -Databases @('master') `
+        -Confirm:$false
+
+      $result.derived | Should -Be @($true, $true)
+      $script:bwsCalls.Count | Should -Be 0
+    }
   }
 
-  It 'Runs entirely on bws with no BW_SESSION present' {
-    $env:BW_SESSION | Should -BeNullOrEmpty
-    $result = New-SprintBitwardenSecrets `
-      -SprintNumber '0008' `
-      -DeveloperUsername 'tester' `
-      -HostList @('localhost') `
-      -Databases @('master') `
-      -Confirm:$false
+  Context '-WriteDerivableToVault — persist to the vault' {
+    It 'creates one BWS secret per (database, host, tier) with the canonical hyphenated name' {
+      $result = New-SprintBitwardenSecrets `
+        -SprintNumber '0008' `
+        -DeveloperUsername 'tester' `
+        -HostList @('localhost') `
+        -Databases @('master') `
+        -WriteDerivableToVault `
+        -Confirm:$false
 
-    $result.created | Should -Be @($true, $true)
-    @($script:bwsCalls | Where-Object { $_ -like 'project list*' }).Count | Should -Be 1
-  }
+      $result.Count | Should -Be 2
+      $result.created | Should -Be @($true, $true)
+      $result.secretName | Should -Be @(
+        'dbConnectionString-master-localhost-Dev-tester',
+        'dbConnectionString-master-localhost-Exp-tester'
+      )
+      $createCalls = @($script:bwsCalls | Where-Object { $_ -like 'secret create *' })
+      $createCalls.Count | Should -Be 2
+      $createCalls[0] | Should -Match 'proj-ci-shared'
+    }
 
-  It 'Skips creation when the secret key already exists (idempotency)' {
-    $script:bwsSecretInventory = @(
-      [PSCustomObject]@{ id = 'id-dev'; key = 'dbConnectionString-master-localhost-Dev-tester' }
-    )
-    $result = New-SprintBitwardenSecrets `
-      -SprintNumber '0008' `
-      -DeveloperUsername 'tester' `
-      -HostList @('localhost') `
-      -Databases @('master') `
-      -Confirm:$false
+    It 'runs entirely on bws with no BW_SESSION present' {
+      $env:BW_SESSION | Should -BeNullOrEmpty
+      $result = New-SprintBitwardenSecrets `
+        -SprintNumber '0008' `
+        -DeveloperUsername 'tester' `
+        -HostList @('localhost') `
+        -Databases @('master') `
+        -WriteDerivableToVault `
+        -Confirm:$false
 
-    @($result | Where-Object { $_.alreadyExists }).Count | Should -Be 1
-    @($result | Where-Object { $_.created }).Count | Should -Be 1
-    @($script:bwsCalls | Where-Object { $_ -like 'secret create *' }).Count | Should -Be 1
-  }
+      $result.created | Should -Be @($true, $true)
+      @($script:bwsCalls | Where-Object { $_ -like 'project list*' }).Count | Should -Be 1
+    }
 
-  It 'WhatIf prevents secret creation' {
-    New-SprintBitwardenSecrets `
-      -SprintNumber '0008' `
-      -DeveloperUsername 'tester' `
-      -HostList @('localhost') `
-      -Databases @('master') `
-      -WhatIf | Out-Null
+    It 'skips creation when the secret key already exists (idempotency)' {
+      $script:bwsSecretInventory = @(
+        [PSCustomObject]@{ id = 'id-dev'; key = 'dbConnectionString-master-localhost-Dev-tester' }
+      )
+      $result = New-SprintBitwardenSecrets `
+        -SprintNumber '0008' `
+        -DeveloperUsername 'tester' `
+        -HostList @('localhost') `
+        -Databases @('master') `
+        -WriteDerivableToVault `
+        -Confirm:$false
 
-    @($script:bwsCalls | Where-Object { $_ -like 'secret create *' }).Count | Should -Be 0
-  }
+      @($result | Where-Object { $_.alreadyExists }).Count | Should -Be 1
+      @($result | Where-Object { $_.created }).Count | Should -Be 1
+      @($script:bwsCalls | Where-Object { $_ -like 'secret create *' }).Count | Should -Be 1
+    }
 
-  It 'Honors an explicit -ProjectId without calling bws project list' {
-    $result = New-SprintBitwardenSecrets `
-      -SprintNumber '0008' `
-      -DeveloperUsername 'tester' `
-      -HostList @('localhost') `
-      -Databases @('master') `
-      -ProjectId 'explicit-proj-id' `
-      -Confirm:$false
+    It 'WhatIf prevents secret creation' {
+      New-SprintBitwardenSecrets `
+        -SprintNumber '0008' `
+        -DeveloperUsername 'tester' `
+        -HostList @('localhost') `
+        -Databases @('master') `
+        -WriteDerivableToVault `
+        -WhatIf | Out-Null
 
-    $result.created | Should -Be @($true, $true)
-    @($script:bwsCalls | Where-Object { $_ -like 'project list*' }).Count | Should -Be 0
-    @($script:bwsCalls | Where-Object { $_ -like '*explicit-proj-id*' }).Count | Should -Be 2
+      @($script:bwsCalls | Where-Object { $_ -like 'secret create *' }).Count | Should -Be 0
+    }
+
+    It 'honors an explicit -ProjectId without calling bws project list' {
+      $result = New-SprintBitwardenSecrets `
+        -SprintNumber '0008' `
+        -DeveloperUsername 'tester' `
+        -HostList @('localhost') `
+        -Databases @('master') `
+        -WriteDerivableToVault `
+        -ProjectId 'explicit-proj-id' `
+        -Confirm:$false
+
+      $result.created | Should -Be @($true, $true)
+      @($script:bwsCalls | Where-Object { $_ -like 'project list*' }).Count | Should -Be 0
+      @($script:bwsCalls | Where-Object { $_ -like '*explicit-proj-id*' }).Count | Should -Be 2
+    }
   }
 }

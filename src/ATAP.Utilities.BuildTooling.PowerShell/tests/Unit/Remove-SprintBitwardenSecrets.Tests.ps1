@@ -12,18 +12,24 @@ BeforeAll {
     $global:LASTEXITCODE = 0
 
     if ($Arguments.Count -ge 2 -and $Arguments[0] -eq 'secret' -and $Arguments[1] -eq 'list') {
+      if ($script:bwsListShouldFail) {
+        $global:LASTEXITCODE = 1
+        return 'Error: bws secret list failed'
+      }
       return $script:bwsSecretInventory | ConvertTo-Json -Compress -AsArray
     }
 
     return ''
   }
 
+  . "$PSScriptRoot\..\..\public\Get-DbConnectionStringSecretDescriptor.ps1"
   . "$PSScriptRoot\..\..\public\Remove-SprintBitwardenSecrets.ps1"
 }
 
 Describe 'Remove-SprintBitwardenSecrets [public]' {
   BeforeEach {
     $script:bwsCalls = [System.Collections.ArrayList]::new()
+    $script:bwsListShouldFail = $false
     $script:bwsSecretInventory = @(
       [PSCustomObject]@{ id = 'id-dev'; key = 'dbConnectionString-master-localhost-Dev-tester' }
       [PSCustomObject]@{ id = 'id-exp'; key = 'dbConnectionString-master-localhost-Exp-tester' }
@@ -41,53 +47,93 @@ Describe 'Remove-SprintBitwardenSecrets [public]' {
     if ($null -ne $script:oldBwsToken) { $env:BWS_ACCESS_TOKEN = $script:oldBwsToken } else { Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue }
   }
 
-  It 'Force suppresses high-impact confirmation and deletes without Confirm false' {
-    $result = Remove-SprintBitwardenSecrets `
-      -DeveloperUsername 'tester' `
-      -HostList @('localhost') `
-      -Databases @('master') `
-      -Force
+  Context 'bws available — deletes' {
+    It 'Force suppresses high-impact confirmation and deletes without Confirm false' {
+      $result = Remove-SprintBitwardenSecrets `
+        -DeveloperUsername 'tester' `
+        -HostList @('localhost') `
+        -Databases @('master') `
+        -Force
 
-    $result.Count | Should -Be 2
-    $result.deleted | Should -Be @($true, $true)
-    @($script:bwsCalls | Where-Object { $_ -like 'secret delete *' }).Count | Should -Be 2
+      $result.Count | Should -Be 2
+      $result.deleted | Should -Be @($true, $true)
+      @($script:bwsCalls | Where-Object { $_ -like 'secret delete *' }).Count | Should -Be 2
+    }
+
+    It 'Runs entirely on bws with no BW_SESSION present' {
+      $env:BW_SESSION | Should -BeNullOrEmpty
+      $result = Remove-SprintBitwardenSecrets `
+        -DeveloperUsername 'tester' `
+        -HostList @('localhost') `
+        -Databases @('master') `
+        -Force
+
+      $result.deleted | Should -Be @($true, $true)
+      @($script:bwsCalls | Where-Object { $_ -like 'secret list*' }).Count | Should -Be 1
+    }
+
+    It 'Marks a secret skipped when it is not in the BWS inventory' {
+      $script:bwsSecretInventory = @(
+        [PSCustomObject]@{ id = 'id-dev'; key = 'dbConnectionString-master-localhost-Dev-tester' }
+      )
+      $result = Remove-SprintBitwardenSecrets `
+        -DeveloperUsername 'tester' `
+        -HostList @('localhost') `
+        -Databases @('master') `
+        -Force
+
+      @($result | Where-Object { $_.deleted }).Count | Should -Be 1
+      @($result | Where-Object { $_.skipped }).Count | Should -Be 1
+      @($script:bwsCalls | Where-Object { $_ -like 'secret delete *' }).Count | Should -Be 1
+    }
+
+    It 'WhatIf still prevents deletion when Force is supplied' {
+      Remove-SprintBitwardenSecrets `
+        -DeveloperUsername 'tester' `
+        -HostList @('localhost') `
+        -Databases @('master') `
+        -Force `
+        -WhatIf | Out-Null
+
+      @($script:bwsCalls | Where-Object { $_ -like 'secret delete *' }).Count | Should -Be 0
+    }
   }
 
-  It 'Runs entirely on bws with no BW_SESSION present' {
-    $env:BW_SESSION | Should -BeNullOrEmpty
-    $result = Remove-SprintBitwardenSecrets `
-      -DeveloperUsername 'tester' `
-      -HostList @('localhost') `
-      -Databases @('master') `
-      -Force
+  Context 'bws unavailable — graceful no-op (Task 9.22)' {
+    It 'no-ops (all skipped, no list/delete, no throw) when the BWS token cannot be resolved' {
+      # Force the $bwsAvailable = $false branch deterministically (independent of
+      # whether a real bws CLI happens to be installed on the test host).
+      function global:Get-BWSAccessToken { throw 'no machine token' }
+      Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue
+      try {
+        $result = Remove-SprintBitwardenSecrets `
+          -DeveloperUsername 'tester' `
+          -HostList @('localhost') `
+          -Databases @('master') `
+          -Force
 
-    $result.deleted | Should -Be @($true, $true)
-    @($script:bwsCalls | Where-Object { $_ -like 'secret list*' }).Count | Should -Be 1
-  }
+        $result.Count | Should -Be 2
+        @($result | Where-Object { $_.skipped }).Count | Should -Be 2
+        @($result | Where-Object { $_.deleted }).Count | Should -Be 0
+        # No vault interaction at all on this branch.
+        @($script:bwsCalls | Where-Object { $_ -like 'secret list*' }).Count | Should -Be 0
+      } finally {
+        Remove-Item Function:Get-BWSAccessToken -ErrorAction SilentlyContinue
+      }
+    }
 
-  It 'Marks a secret skipped when it is not in the BWS inventory' {
-    $script:bwsSecretInventory = @(
-      [PSCustomObject]@{ id = 'id-dev'; key = 'dbConnectionString-master-localhost-Dev-tester' }
-    )
-    $result = Remove-SprintBitwardenSecrets `
-      -DeveloperUsername 'tester' `
-      -HostList @('localhost') `
-      -Databases @('master') `
-      -Force
+    It 'no-ops (all skipped, no throw) when bws secret list fails' {
+      $script:bwsListShouldFail = $true
 
-    @($result | Where-Object { $_.deleted }).Count | Should -Be 1
-    @($result | Where-Object { $_.skipped }).Count | Should -Be 1
-    @($script:bwsCalls | Where-Object { $_ -like 'secret delete *' }).Count | Should -Be 1
-  }
+      $result = Remove-SprintBitwardenSecrets `
+        -DeveloperUsername 'tester' `
+        -HostList @('localhost') `
+        -Databases @('master') `
+        -Force
 
-  It 'WhatIf still prevents deletion when Force is supplied' {
-    Remove-SprintBitwardenSecrets `
-      -DeveloperUsername 'tester' `
-      -HostList @('localhost') `
-      -Databases @('master') `
-      -Force `
-      -WhatIf | Out-Null
-
-    @($script:bwsCalls | Where-Object { $_ -like 'secret delete *' }).Count | Should -Be 0
+      $result.Count | Should -Be 2
+      @($result | Where-Object { $_.skipped }).Count | Should -Be 2
+      @($script:bwsCalls | Where-Object { $_ -like 'secret delete *' }).Count | Should -Be 0
+    }
   }
 }

@@ -116,3 +116,49 @@ Describe 'Get-SecretATAPBitwarden [public]' -Tag 'Unit' {
     }
   }
 }
+
+Describe 'Get-SecretATAPBitwarden CI-secret quarantine (Task 9.21)' -Tag 'Unit' {
+  BeforeEach {
+    $script:bwObservedEnvironment = @()
+    $script:bwMode = 'Success'
+    $env:BW_SESSION = 'unit-session'
+  }
+
+  AfterEach {
+    Remove-Item Env:BW_SESSION -ErrorAction SilentlyContinue
+  }
+
+  Context 'Refuses CI/infrastructure secret names without ever invoking bw' {
+    It 'throws for a SQL connection-string secret (dbConnectionString-*)' {
+      { Get-SecretATAPBitwarden -SecretName 'dbConnectionString-ATAPUtilities-localhost-Dev-whertzing' -SecretField 'notes' } |
+        Should -Throw '*refuses CI/infrastructure secret*'
+      $script:bwObservedEnvironment.Count | Should -Be 0 -Because 'the guard must refuse before any bw invocation'
+    }
+
+    It 'throws for an env-var-style API key (*_API_KEY)' {
+      { Get-SecretATAPBitwarden -SecretName 'PROGET_ADMIN_API_KEY' } | Should -Throw '*refuses CI/infrastructure secret*'
+    }
+
+    It 'throws for a dotted API-key name (BuildMaster.Admin.API.Key)' {
+      { Get-SecretATAPBitwarden -SecretName 'BuildMaster.Admin.API.Key' -SecretField 'notes' } |
+        Should -Throw '*refuses CI/infrastructure secret*'
+    }
+
+    It 'throws for a webhook signing secret' {
+      { Get-SecretATAPBitwarden -SecretName 'BUILDMASTER_GH_WEBHOOK_SECRET' } | Should -Throw '*refuses CI/infrastructure secret*'
+    }
+
+    It 'throws for a service-account login item (*Svc*)' {
+      { Get-SecretATAPBitwarden -SecretName 'utat022-SvcBuildmaster-Production' -SecretField 'username' } |
+        Should -Throw '*refuses CI/infrastructure secret*'
+    }
+  }
+
+  Context 'Still serves genuine per-user personal secrets' {
+    It 'returns the value for a non-CI personal secret name' {
+      $result = Get-SecretATAPBitwarden -SecretName 'my-personal-login'
+      $result | Should -BeExactly 'unit-secret-value'
+      $script:bwObservedEnvironment.Count | Should -Be 2 -Because 'a personal name passes the guard and reaches bw status + get'
+    }
+  }
+}

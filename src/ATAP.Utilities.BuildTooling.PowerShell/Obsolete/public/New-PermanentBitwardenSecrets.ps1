@@ -1,3 +1,15 @@
+# ============================================================================
+# RETIRED (Task 9.21, Sprint 0009) — personal-vault writer for CI secrets.
+# This cmdlet created the Integration/QA/Production tier connection-string
+# secrets in a developer's PERSONAL Bitwarden Password Manager vault via
+# `bw create item` + BW_SESSION. CI/infrastructure secrets must NEVER live in a
+# personal vault. It was moved out of public/ so it is no longer imported or
+# exported by the module. The permanent-tier connection strings are deterministic
+# Integrated-Security strings (no credential) and are produced by the
+# deterministic fallback (Task 9.22); credentialed CI secrets belong in Bitwarden
+# Secrets Manager (bws + DPAPI machine token). Kept here for history only.
+# ============================================================================
+
 function New-PermanentBitwardenSecrets {
   <#
   .SYNOPSIS

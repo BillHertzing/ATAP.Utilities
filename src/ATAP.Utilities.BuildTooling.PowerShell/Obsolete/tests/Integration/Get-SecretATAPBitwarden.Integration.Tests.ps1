@@ -1,3 +1,13 @@
+# ============================================================================
+# RETIRED (Task 9.21, Sprint 0009). This integration test exercised creating and
+# retrieving a `dbConnectionString-*` CI secret through the PERSONAL-vault bw CLI
+# round-trip — exactly the pattern Task 9.21 prohibits. Get-SecretATAPBitwarden
+# now refuses CI/infra secret names (connection strings, API keys, ProGet/
+# BuildMaster/service-account secrets); they must be read from Bitwarden Secrets
+# Manager via Get-SecretATAP. Moved out of tests/ so it no longer runs. Kept for
+# history only.
+# ============================================================================
+
 # Pester integration tests for Get-SecretATAPBitwarden — long-hyphenated name round-trip
 #
 # Replaces Get-BitwardenSecret.Integration.Tests.ps1 after the rename and the bw-CLI

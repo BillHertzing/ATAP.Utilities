@@ -80,6 +80,20 @@ Describe 'Set-GlobalConfigRootKeys in-module sibling resolution' -Tag 'Unit' {
     $global:configRootKeys = $null
     $emptyDir = Join-Path ([System.IO.Path]::GetTempPath()) ('crk-empty-' + [guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $emptyDir -Force | Out-Null
+    $stagedFunctions = @(
+      'Set-CoreConfigRootKeys'
+      'Add-DatabasesConfigRootKeys'
+      'Set-BuildMasterConfigRootKeys'
+      'Set-RulesManagementConfigRootKeys'
+      'Add-PackageRepositoriesConfigRootKeys'
+    )
+    Mock Get-Command {
+      param($Name, $CommandType, $ErrorAction)
+      if ($Name -in $stagedFunctions) {
+        return $null
+      }
+      Microsoft.PowerShell.Core\Get-Command -Name $Name -CommandType $CommandType -ErrorAction $ErrorAction
+    }
     try {
       { Set-GlobalConfigRootKeys -Path $emptyDir -Confirm:$false } |
         Should -Throw -ExpectedMessage '*is not defined and its source file was not found*'

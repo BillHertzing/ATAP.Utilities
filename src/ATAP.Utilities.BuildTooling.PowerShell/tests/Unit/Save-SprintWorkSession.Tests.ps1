@@ -182,8 +182,10 @@ Describe 'Save-SprintWorkSession' {
       $customPlanRoot   = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-plan-' + [guid]::NewGuid().ToString('N'))
 
       # Compute the stable slug by stripping -wt-.+$ from the actual sprint worktree path.
-      $actualWt   = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-107-Sprint-0008-work-items'
-      $stableCwd  = $actualWt -replace '-wt-.+$', ''  # C:\Dropbox\whertzing\GitHub\ATAP.Utilities
+      # Use the real temp sprint worktree created in BeforeAll (it exists and carries a
+      # '-wt-' segment) so Set-Location succeeds regardless of which sprint we are in.
+      $actualWt   = $script:atapWt
+      $stableCwd  = $actualWt -replace '-wt-.+$', ''  # <gitRoot>\ATAP.Utilities
       $stableSlug = ($stableCwd.Substring(0, 1).ToLower() + $stableCwd.Substring(1)) `
           -replace ':', '-' -replace '\\', '-' -replace '_', '-' -replace '\.', '-' -replace '^-', ''
 
@@ -313,6 +315,7 @@ Describe 'Save-SprintWorkSession' {
 
           $latestEntry = Get-Content -LiteralPath $rosterPath | Select-Object -Last 1 | ConvertFrom-Json
           $latestEntry.WorktreeName | Should -Be (Split-Path -Path $script:atapWt -Leaf)
+          $latestEntry.Agent | Should -Be 'ClaudeCode'
           $latestEntry.ConversationArchiveCreated | Should -BeTrue
           $latestEntry.MemorySnapshotCreated | Should -BeTrue
           $latestEntry.MemoryFileCount | Should -Be 1
@@ -322,6 +325,290 @@ Describe 'Save-SprintWorkSession' {
         }
       } finally {
         Set-Location $savedLocation
+      }
+    }
+  }
+
+  Context 'Task 9.32 — -Agent parameter surface' {
+
+    It 'declares an -Agent parameter with the four supported values' {
+      $cmd = Get-Command -Name 'Save-SprintWorkSession' -CommandType Function
+      $cmd.Parameters.ContainsKey('Agent') | Should -BeTrue
+      $validateSet = $cmd.Parameters['Agent'].Attributes |
+        Where-Object { $_ -is [System.Management.Automation.ValidateSetAttribute] }
+      $validateSet.ValidValues | Should -Be @('ClaudeCode', 'Antigravity', 'Codex', 'Copilot')
+    }
+
+    It 'declares -ConversationId, -SessionId, -ConversationFile, -AntigravityRoot, -CodexRoot' {
+      $cmd = Get-Command -Name 'Save-SprintWorkSession' -CommandType Function
+      foreach ($p in 'ConversationId', 'SessionId', 'ConversationFile', 'AntigravityRoot', 'CodexRoot') {
+        $cmd.Parameters.ContainsKey($p) | Should -BeTrue -Because "the function must expose -$p"
+      }
+    }
+  }
+
+  Context 'Task 9.32 — Antigravity path' {
+
+    It 'archives transcript_full.jsonl, copies brain artifacts (excluding .system_generated), records the conversation DB' {
+      $agRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-ag-' + [guid]::NewGuid().ToString('N'))
+      $convId = [guid]::NewGuid().ToString()
+      $brainFolder = Join-Path $agRoot "brain\$convId"
+      $logsDir = Join-Path $brainFolder '.system_generated\logs'
+      New-Item -ItemType Directory -Path $logsDir -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $logsDir 'transcript_full.jsonl') -Value '{"role":"user"}' -Encoding UTF8
+      Set-Content -LiteralPath (Join-Path $brainFolder 'note.md') -Value '# memory note' -Encoding UTF8
+      $artifacts = Join-Path $brainFolder 'artifacts'
+      New-Item -ItemType Directory -Path $artifacts -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $artifacts 'plan.txt') -Value 'plan' -Encoding UTF8
+      $convDbDir = Join-Path $agRoot 'conversations'
+      New-Item -ItemType Directory -Path $convDbDir -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $convDbDir "$convId.db") -Value 'sqlite' -Encoding UTF8
+
+      $savedLocation = Get-Location
+      Set-Location $script:atapWt
+      try {
+        $savedSettings = $global:settings
+        try {
+          $global:settings = $null
+          Save-SprintWorkSession `
+            -Agent Antigravity `
+            -ConversationId $convId `
+            -AntigravityRoot $agRoot `
+            -SprintN $script:sprintNumber `
+            -PlanningRoot $script:planningWt `
+            -GitHubRoot $script:gitRoot `
+            -Confirm:$false
+
+          $rosterPath = Join-Path $script:planningWt "SprintWorkSessionRoster\SprintWorkSessionRoster-$($script:sprintNumber).jsonl"
+          $entry = Get-Content -LiteralPath $rosterPath | Select-Object -Last 1 | ConvertFrom-Json
+          $entry.Agent | Should -Be 'Antigravity'
+          $entry.AgentSessionKey | Should -Be $convId
+          $entry.ConversationArchiveCreated | Should -BeTrue
+          $entry.MemorySnapshotCreated | Should -BeTrue
+          $entry.MemoryFileCount | Should -BeGreaterThan 0
+          $entry.ConversationDbPath | Should -Match ([regex]::Escape("$convId.db"))
+
+          # Memory snapshot must contain the brain artifacts but NOT .system_generated.
+          Test-Path -LiteralPath (Join-Path $entry.MemorySnapshotPath 'note.md') | Should -BeTrue
+          Test-Path -LiteralPath (Join-Path $entry.MemorySnapshotPath '.system_generated') | Should -BeFalse
+        } finally {
+          $global:settings = $savedSettings
+        }
+      } finally {
+        Set-Location $savedLocation
+        Remove-Item -Recurse -Force $agRoot -ErrorAction SilentlyContinue
+      }
+    }
+
+    It 'falls back to transcript.jsonl when transcript_full.jsonl is absent' {
+      $agRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-ag-' + [guid]::NewGuid().ToString('N'))
+      $convId = [guid]::NewGuid().ToString()
+      $logsDir = Join-Path $agRoot "brain\$convId\.system_generated\logs"
+      New-Item -ItemType Directory -Path $logsDir -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $logsDir 'transcript.jsonl') -Value '{"role":"user"}' -Encoding UTF8
+
+      $savedLocation = Get-Location
+      Set-Location $script:atapWt
+      try {
+        $savedSettings = $global:settings
+        try {
+          $global:settings = $null
+          Save-SprintWorkSession `
+            -Agent Antigravity -ConversationId $convId -AntigravityRoot $agRoot `
+            -SprintN $script:sprintNumber -PlanningRoot $script:planningWt -GitHubRoot $script:gitRoot `
+            -Confirm:$false
+
+          $rosterPath = Join-Path $script:planningWt "SprintWorkSessionRoster\SprintWorkSessionRoster-$($script:sprintNumber).jsonl"
+          $entry = Get-Content -LiteralPath $rosterPath | Select-Object -Last 1 | ConvertFrom-Json
+          $entry.Agent | Should -Be 'Antigravity'
+          $entry.ConversationJsonlPath | Should -Match 'transcript\.jsonl$'
+          $entry.ConversationArchiveCreated | Should -BeTrue
+        } finally {
+          $global:settings = $savedSettings
+        }
+      } finally {
+        Set-Location $savedLocation
+        Remove-Item -Recurse -Force $agRoot -ErrorAction SilentlyContinue
+      }
+    }
+
+    It 'auto-detects the newest brain folder when -ConversationId is omitted' {
+      $agRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-ag-' + [guid]::NewGuid().ToString('N'))
+      $convId = [guid]::NewGuid().ToString()
+      $logsDir = Join-Path $agRoot "brain\$convId\.system_generated\logs"
+      New-Item -ItemType Directory -Path $logsDir -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $logsDir 'transcript_full.jsonl') -Value '{"role":"user"}' -Encoding UTF8
+
+      $savedLocation = Get-Location
+      Set-Location $script:atapWt
+      try {
+        $savedSettings = $global:settings
+        try {
+          $global:settings = $null
+          Save-SprintWorkSession `
+            -Agent Antigravity -AntigravityRoot $agRoot `
+            -SprintN $script:sprintNumber -PlanningRoot $script:planningWt -GitHubRoot $script:gitRoot `
+            -Confirm:$false
+
+          $rosterPath = Join-Path $script:planningWt "SprintWorkSessionRoster\SprintWorkSessionRoster-$($script:sprintNumber).jsonl"
+          $entry = Get-Content -LiteralPath $rosterPath | Select-Object -Last 1 | ConvertFrom-Json
+          $entry.AgentSessionKey | Should -Be $convId
+        } finally {
+          $global:settings = $savedSettings
+        }
+      } finally {
+        Set-Location $savedLocation
+        Remove-Item -Recurse -Force $agRoot -ErrorAction SilentlyContinue
+      }
+    }
+  }
+
+  Context 'Task 9.32 — Codex path' {
+
+    It 'archives the rollout JSONL for an explicit -SessionId and skips memory' {
+      $codexRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-codex-' + [guid]::NewGuid().ToString('N'))
+      $sessionId = [guid]::NewGuid().ToString()
+      $dated = Join-Path $codexRoot 'sessions\2026\06\16'
+      New-Item -ItemType Directory -Path $dated -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $dated "rollout-2026-06-16T10-00-00-$sessionId.jsonl") -Value '{"role":"user"}' -Encoding UTF8
+
+      $savedLocation = Get-Location
+      Set-Location $script:atapWt
+      try {
+        $savedSettings = $global:settings
+        try {
+          $global:settings = $null
+          Save-SprintWorkSession `
+            -Agent Codex -SessionId $sessionId -CodexRoot $codexRoot `
+            -SprintN $script:sprintNumber -PlanningRoot $script:planningWt -GitHubRoot $script:gitRoot `
+            -Confirm:$false
+
+          $rosterPath = Join-Path $script:planningWt "SprintWorkSessionRoster\SprintWorkSessionRoster-$($script:sprintNumber).jsonl"
+          $entry = Get-Content -LiteralPath $rosterPath | Select-Object -Last 1 | ConvertFrom-Json
+          $entry.Agent | Should -Be 'Codex'
+          $entry.AgentSessionKey | Should -Be $sessionId
+          $entry.ConversationArchiveCreated | Should -BeTrue
+          $entry.MemorySnapshotCreated | Should -BeFalse
+          $entry.MemorySkipReason | Should -Match 'no on-disk memory'
+        } finally {
+          $global:settings = $savedSettings
+        }
+      } finally {
+        Set-Location $savedLocation
+        Remove-Item -Recurse -Force $codexRoot -ErrorAction SilentlyContinue
+      }
+    }
+
+    It 'auto-detects the newest rollout and recovers the session id from the filename' {
+      $codexRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-codex-' + [guid]::NewGuid().ToString('N'))
+      $sessionId = [guid]::NewGuid().ToString()
+      $dated = Join-Path $codexRoot 'sessions\2026\06\16'
+      New-Item -ItemType Directory -Path $dated -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $dated "rollout-2026-06-16T10-00-00-$sessionId.jsonl") -Value '{"role":"user"}' -Encoding UTF8
+
+      $savedLocation = Get-Location
+      Set-Location $script:atapWt
+      try {
+        $savedSettings = $global:settings
+        try {
+          $global:settings = $null
+          Save-SprintWorkSession `
+            -Agent Codex -CodexRoot $codexRoot `
+            -SprintN $script:sprintNumber -PlanningRoot $script:planningWt -GitHubRoot $script:gitRoot `
+            -Confirm:$false
+
+          $rosterPath = Join-Path $script:planningWt "SprintWorkSessionRoster\SprintWorkSessionRoster-$($script:sprintNumber).jsonl"
+          $entry = Get-Content -LiteralPath $rosterPath | Select-Object -Last 1 | ConvertFrom-Json
+          $entry.AgentSessionKey | Should -Be $sessionId
+        } finally {
+          $global:settings = $savedSettings
+        }
+      } finally {
+        Set-Location $savedLocation
+        Remove-Item -Recurse -Force $codexRoot -ErrorAction SilentlyContinue
+      }
+    }
+
+    It 'falls back to archived_sessions when no live rollout matches the session id' {
+      $codexRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-codex-' + [guid]::NewGuid().ToString('N'))
+      $sessionId = [guid]::NewGuid().ToString()
+      $archived = Join-Path $codexRoot 'archived_sessions'
+      New-Item -ItemType Directory -Path $archived -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $archived "rollout-2026-06-15T09-00-00-$sessionId.jsonl") -Value '{"role":"user"}' -Encoding UTF8
+
+      $savedLocation = Get-Location
+      Set-Location $script:atapWt
+      try {
+        $savedSettings = $global:settings
+        try {
+          $global:settings = $null
+          Save-SprintWorkSession `
+            -Agent Codex -SessionId $sessionId -CodexRoot $codexRoot `
+            -SprintN $script:sprintNumber -PlanningRoot $script:planningWt -GitHubRoot $script:gitRoot `
+            -Confirm:$false
+
+          $rosterPath = Join-Path $script:planningWt "SprintWorkSessionRoster\SprintWorkSessionRoster-$($script:sprintNumber).jsonl"
+          $entry = Get-Content -LiteralPath $rosterPath | Select-Object -Last 1 | ConvertFrom-Json
+          $entry.ConversationJsonlPath | Should -Match 'archived_sessions'
+          $entry.ConversationArchiveCreated | Should -BeTrue
+        } finally {
+          $global:settings = $savedSettings
+        }
+      } finally {
+        Set-Location $savedLocation
+        Remove-Item -Recurse -Force $codexRoot -ErrorAction SilentlyContinue
+      }
+    }
+  }
+
+  Context 'Task 9.32 — Copilot path delegation' {
+
+    It 'throws an actionable error when -ConversationFile is omitted' {
+      $savedLocation = Get-Location
+      Set-Location $script:atapWt
+      try {
+        { Save-SprintWorkSession `
+            -Agent Copilot `
+            -SprintN $script:sprintNumber -PlanningRoot $script:planningWt -GitHubRoot $script:gitRoot `
+            -Confirm:$false } | Should -Throw -ExpectedMessage '*requires -ConversationFile*'
+      } finally {
+        Set-Location $savedLocation
+      }
+    }
+
+    It 'delegates to Save-CopilotCheckpoint when -ConversationFile is supplied' {
+      $script:ccCalled = $false
+      $script:ccFile = $null
+      function global:Save-CopilotCheckpoint {
+        param(
+          [string]$ConversationFile,
+          [string]$SprintN,
+          [string]$PlanningRoot,
+          [string]$GitHubRoot,
+          [switch]$AllowMainFallback
+        )
+        $script:ccCalled = $true
+        $script:ccFile = $ConversationFile
+      }
+      $tmpConv = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-cop-' + [guid]::NewGuid().ToString('N') + '.md')
+      Set-Content -LiteralPath $tmpConv -Value '# conversation' -Encoding UTF8
+
+      $savedLocation = Get-Location
+      Set-Location $script:atapWt
+      try {
+        Save-SprintWorkSession `
+          -Agent Copilot -ConversationFile $tmpConv `
+          -SprintN $script:sprintNumber -PlanningRoot $script:planningWt -GitHubRoot $script:gitRoot `
+          -Confirm:$false
+
+        $script:ccCalled | Should -BeTrue
+        $script:ccFile | Should -Be $tmpConv
+      } finally {
+        Set-Location $savedLocation
+        Remove-Item -LiteralPath $tmpConv -ErrorAction SilentlyContinue
+        if (Test-Path -LiteralPath 'Function:\Save-CopilotCheckpoint') {
+          Remove-Item -LiteralPath 'Function:\Save-CopilotCheckpoint' -ErrorAction SilentlyContinue
+        }
       }
     }
   }

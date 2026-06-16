@@ -6,7 +6,7 @@ Builds a combined CLAUDE.md file for each repository worktree in the current spr
 Locates the Overview-wt-sprintNNNN.code-workspace file one level above the current
 worktree root, reads the folders list, then for each repository worktree:
   1. Reads CLAUDE-base.md from the SharedVSCode sprint worktree
-  2. Reads CLAUDE-local.md from the repository worktree root (if present)
+  2. Reads ai-local.md (legacy: CLAUDE-local.md) from the repository worktree root (if present)
   3. Combines local + provenance table + base into CLAUDE.md at the worktree root
 
 The provenance table inserted between local and base content records the last-modified
@@ -200,8 +200,18 @@ function Build-CLAUDEPerRepository {
         }
 
         try {
-          # Step 6a: Read CLAUDE-local.md if present
-          $localFilePath = Join-Path $repoFullPath 'CLAUDE-local.md'
+          # Step 6a: Read the per-repo local overlay if present.
+          # As of Task 9.34 the canonical local file is 'ai-local.md'; fall back to the
+          # legacy 'CLAUDE-local.md' for repos not yet renamed.
+          $localFilePath = Join-Path $repoFullPath 'ai-local.md'
+          $localFileName = 'ai-local.md'
+          if (-not (Test-Path $localFilePath -PathType Leaf)) {
+            $legacyLocal = Join-Path $repoFullPath 'CLAUDE-local.md'
+            if (Test-Path $legacyLocal -PathType Leaf) {
+              $localFilePath = $legacyLocal
+              $localFileName = 'CLAUDE-local.md'
+            }
+          }
           $localContent = $null
           $localLastModified = $null
 
@@ -209,9 +219,9 @@ function Build-CLAUDEPerRepository {
             $localContent = Get-Content -Path $localFilePath -Raw -ErrorAction Stop
             $localLastModified = (Get-Item $localFilePath -ErrorAction Stop).LastWriteTime
             $repoResult.HasLocal = $true
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Found CLAUDE-local.md for $repoName"
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Found $localFileName for $repoName"
           } else {
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "No CLAUDE-local.md found for $repoName; using base only"
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "No ai-local.md/CLAUDE-local.md found for $repoName; using base only"
           }
 
           # Step 6b: Build the provenance table
@@ -228,7 +238,7 @@ function Build-CLAUDEPerRepository {
             "| CLAUDE-base.md | $($baseLastModified.ToString($dateFormat)) |"
           )
           if ($localLastModified) {
-            $tableLines += "| CLAUDE-local.md | $($localLastModified.ToString($dateFormat)) |"
+            $tableLines += "| $localFileName | $($localLastModified.ToString($dateFormat)) |"
           }
           $tableLines += "| CLAUDE.md (combined) | $($now.ToString($dateFormat)) |"
           $tableLines += @(

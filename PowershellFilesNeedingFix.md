@@ -2,10 +2,19 @@
 
 ## Files in \*Powershell/public|private without a top-level function
 
-- C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\ATAP.Utilities.ConfigRootKeys.Powershell\public\BuildMaster.ConfigRootKeys.ps1
-- C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\ATAP.Utilities.ConfigRootKeys.Powershell\public\Databases.AceCommander.ConfigRootKeys.ps1
-- C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\ATAP.Utilities.ConfigRootKeys.Powershell\public\Databases.ATAPUtilities.ConfigRootKeys.ps1
-- C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\ATAP.Utilities.ConfigRootKeys.Powershell\public\RulesManagement.ConfigRootKeys.ps1
+> **ConfigRootKeys module — FIXED (Sprint 0009, Task 9.24).** The four
+> `*.ConfigRootKeys.ps1` fragment files below were renamed to eponymous
+> `Set-*ConfigRootKeys` advanced functions, the fragment-discovery practice was
+> removed in favor of explicit ordered invocation, and an in-module sibling-resolution
+> guard was added. See
+> `src/ATAP.Utilities.ConfigRootKeys.Powershell/INDEX.md` and
+> `SolutionDocumentation/ConfigRootKeys-and-HostSettings.md`.
+>
+> - ~~`...\ATAP.Utilities.ConfigRootKeys.Powershell\public\BuildMaster.ConfigRootKeys.ps1`~~ → `Set-BuildMasterConfigRootKeys.ps1`
+> - ~~`...\ATAP.Utilities.ConfigRootKeys.Powershell\public\Databases.AceCommander.ConfigRootKeys.ps1`~~ → `Set-DatabasesAceCommanderConfigRootKeys.ps1`
+> - ~~`...\ATAP.Utilities.ConfigRootKeys.Powershell\public\Databases.ATAPUtilities.ConfigRootKeys.ps1`~~ → `Set-DatabasesATAPUtilitiesConfigRootKeys.ps1`
+> - ~~`...\ATAP.Utilities.ConfigRootKeys.Powershell\public\RulesManagement.ConfigRootKeys.ps1`~~ → `Set-RulesManagementConfigRootKeys.ps1`
+
 - C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Obsolete\afterVersioned\_\_ImportData.ps1
 - C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Obsolete\ATAPUtilities_Database_BackupDropAndRecreate.ps1
 - C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Obsolete\ATAPUtilities_Database_BulkDataOut.ps1

@@ -24,6 +24,12 @@ Sprint planning also now has an explicit markdown-to-board path: use
 `Convert-TasksMdToSprintBoard` to regenerate a sprint `TASKS.html` board from the
 authoritative `TASKS.md` file after task edits or status updates.
 
+`Invoke-GitCommit` now supports task-scoped grouped commits (Task 9.24).
+A cohesive dirty tree can still produce one Conventional Commit, while mixed
+trees can pass explicit path groups so each group stages only its own paths, runs
+the sensitive-file and lock-file guards, appends a `Co-Authored-By` footer, and
+leaves unrelated dirty files unstaged.
+
 Checkpoint saves now also append a lightweight session roster entry under the
 sprint `_Planning` worktree at
 `SprintWorkSessionRoster/SprintWorkSessionRoster-<NNNN>.jsonl`, which gives

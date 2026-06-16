@@ -80,9 +80,10 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
       -ResolvedPackageVersion '0.1.0-Alpha025'
 
     $script:releaseCall['Application'] | Should -Be 'ATAP.Utilities-PowerShell'
-    $script:releaseCall['ReleaseNumber'] | Should -Be '0.1.0-Alpha025'
+    $script:releaseCall['ReleaseNumber'] | Should -Be '0.1.0-Alpha025.ATAP.Utilities.PowerShell'
     $script:releaseCall['ReleaseName'] | Should -Be 'ATAP.Utilities.PowerShell 0.1.0-Alpha025'
     $script:releaseCall['PipelineName'] | Should -Be 'global::PowerShellModule-5Stage'
+    $result.ReleaseNumber | Should -Be '0.1.0-Alpha025.ATAP.Utilities.PowerShell'
     $result.ReleaseName | Should -Be 'ATAP.Utilities.PowerShell 0.1.0-Alpha025'
   }
 
@@ -100,10 +101,10 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
       $Object -eq "Using supplied package version '0.1.0-Alpha025'."
     }
     Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter {
-      $Object -eq "Creating BuildMaster release 'ATAP.Utilities.PowerShell 0.1.0-Alpha025' (ATAP.Utilities-PowerShell/0.1.0-Alpha025) on 'global::PowerShellModule-5Stage'."
+      $Object -eq "Creating BuildMaster release 'ATAP.Utilities.PowerShell 0.1.0-Alpha025' (ATAP.Utilities-PowerShell/0.1.0-Alpha025.ATAP.Utilities.PowerShell) on 'global::PowerShellModule-5Stage'."
     }
     Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter {
-      $Object -eq "Queueing BuildMaster build for release '0.1.0-Alpha025'."
+      $Object -eq "Queueing BuildMaster build for release '0.1.0-Alpha025.ATAP.Utilities.PowerShell'."
     }
     Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter {
       $Object -eq 'Calling BuildMaster release API (timeout 30s).'
@@ -134,7 +135,7 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
 
     $script:releaseCall['Application'] | Should -Be 'ATAP.Utilities-PowerShell'
     $script:releaseCall['PipelineName'] | Should -Be 'global::PowerShellModule-5Stage'
-    $script:releaseCall['ReleaseNumber'] | Should -Be '0.1.0-Beta008'
+    $script:releaseCall['ReleaseNumber'] | Should -Be '0.1.0-Beta008.ATAP.Utilities.PowerShell'
     $script:releaseCall['ReleaseName'] | Should -Be 'ATAP.Utilities.PowerShell 0.1.0-Beta008'
     $script:buildCall['Variables']['$ModuleName'] | Should -Be 'ATAP.Utilities.PowerShell'
     $script:deploymentCall['ToStage'] | Should -BeNullOrEmpty
@@ -170,7 +171,7 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
       Pop-Location
     }
 
-    $script:releaseCall['ReleaseNumber'] | Should -Be '0.1.0-Beta004'
+    $script:releaseCall['ReleaseNumber'] | Should -Be '0.1.0-Beta004.ATAP.Utilities.PowerShell'
     $script:releaseCall['ReleaseName'] | Should -Be 'ATAP.Utilities.PowerShell 0.1.0-Beta004'
     $script:buildCall['Variables']['$ResolvedPackageVersion'] | Should -Be '0.1.0-Beta004'
     $result.ResolvedPackageVersion | Should -Be '0.1.0-Beta004'
@@ -188,7 +189,7 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
       -Variables @{ '$CustomFlag' = 'yes' } | Out-Null
 
     $script:buildCall['Application'] | Should -Be 'ATAP.Utilities-PowerShell'
-    $script:buildCall['ReleaseNumber'] | Should -Be '0.1.0-Beta001'
+    $script:buildCall['ReleaseNumber'] | Should -Be '0.1.0-Beta001.ATAP.Utilities.PowerShell'
     $script:buildCall['Pipeline'] | Should -Be 'global::PowerShellModule-5Stage'
     $variables = $script:buildCall['Variables']
     $variables['$ModuleName'] | Should -Be 'ATAP.Utilities.PowerShell'
@@ -211,7 +212,7 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
       -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
 
     $script:deploymentCall['Application'] | Should -Be 'ATAP.Utilities-PowerShell'
-    $script:deploymentCall['ReleaseNumber'] | Should -Be '0.1.0-Beta001'
+    $script:deploymentCall['ReleaseNumber'] | Should -Be '0.1.0-Beta001.ATAP.Utilities.PowerShell'
     $script:deploymentCall['BuildNumber'] | Should -Be '23'
     $script:deploymentCall['ToStage'] | Should -BeNullOrEmpty
     $script:deploymentCall['BuildMasterBaseUrl'] | Should -Be 'http://localhost:50017'
@@ -243,5 +244,17 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
     $script:deploymentCall | Should -BeNullOrEmpty
     $result.Succeeded | Should -BeTrue
     $result.ResponseSummary | Should -Match 'deployment skipped'
+  }
+
+  It 'Formats stable package versions correctly using a hyphen suffix' {
+    $result = Start-BuildMasterPackagePipeline `
+      -Application 'ATAP.Utilities-PowerShell' `
+      -PipelineName 'global::PowerShellModule-5Stage' `
+      -ModuleName 'ATAP.Utilities.PowerShell' `
+      -ResolvedPackageVersion '0.1.0' `
+      -SkipDeployment
+
+    $script:releaseCall['ReleaseNumber'] | Should -Be '0.1.0-ATAP.Utilities.PowerShell'
+    $result.ReleaseNumber | Should -Be '0.1.0-ATAP.Utilities.PowerShell'
   }
 }

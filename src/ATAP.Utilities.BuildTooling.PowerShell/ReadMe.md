@@ -47,6 +47,8 @@ no on-disk transcript). Antigravity and Codex auto-detect the newest
 conversation/rollout when the id argument is omitted. The roster entry records the
 `Agent`, `AgentSessionKey`, and `ConversationDbPath` for each save.
 
+**BuildMaster PowerShell Module Release Naming (Task 9.37).** To support building multiple arbitrary PowerShell modules within the single consolidated BuildMaster application (`ATAP.Utilities-PowerShell`) without collisions, the BuildMaster `ReleaseNumber` is generated uniquely per module. The release number appends the module name as a suffix (e.g., `0.1.0-ATAP.Utilities.PowerShell` for stable versions, and `0.1.0-Alpha.6.ATAP.Utilities.PowerShell` for prerelease versions), which is fully SemVer 2.0.0 compliant. This naming is strictly internal to BuildMaster and does not bleed into the built package's name, version, or manifest (`.psd1`) file.
+
 Scope-creep capture (`Add-ScopeCreepIdea`) now resolves the target `_Planning`
 worktree through `Resolve-PlanningWorktreeRoot` (Task 9.23). Resolution is
 anchored on the **Sprint token** (`Sprint-<NNNN>-work-items`) shared across

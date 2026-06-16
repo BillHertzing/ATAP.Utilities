@@ -195,6 +195,27 @@ persists the last seen SHA under `_generated/buildmaster/local-poller/`, and
 uses the same `Start-BuildMasterPackagePipeline` handoff when a matching local
 commit is detected.
 
+### 3.1 PowerShell Module Release Naming and Collision Avoidance
+
+To support building multiple arbitrary PowerShell modules within the single consolidated BuildMaster application (`ATAP.Utilities-PowerShell`) without collisions, the BuildMaster `ReleaseNumber` is generated uniquely per module.
+
+#### Release Number Format
+Because multiple modules (e.g., `ATAP.Utilities.PowerShell` and `ATAP.Utilities.ConfigRootKeys.PowerShell`) can share the same version number (e.g., `0.1.0`), using only the version as the release number would cause them to share/collide on a single BuildMaster release. 
+
+To solve this, `Start-BuildMasterPackagePipeline` constructs the BuildMaster `ReleaseNumber` using the module name as a suffix, conforming strictly to SemVer 2.0.0:
+* **Prerelease versions** (e.g., `0.1.0-Alpha.6`): The module name is appended as an additional dot-separated identifier:
+  `0.1.0-Alpha.6.ATAP.Utilities.PowerShell`
+* **Stable versions** (e.g., `0.1.0`): The module name is appended as a prerelease suffix:
+  `0.1.0-ATAP.Utilities.PowerShell`
+
+#### Uniqueness and Isolation
+This naming guarantees that each module+version combination receives its own distinct release record and independent execution pipeline in BuildMaster, avoiding release conflicts in the BuildMaster API (e.g., HTTP 409 conflict errors).
+
+#### Internal Scope (No Bleeding)
+The module-suffixed release number is strictly internal to BuildMaster. It does **not** bleed into the built package's name, version, or manifest (`.psd1`) file:
+* **Manifest and Package Name**: During compilation/pack, versioning is resolved locally from `version.json` via NBGV. The output `.nupkg` package name (e.g., `ATAP.Utilities.PowerShell.0.1.0.nupkg`) and the `.psd1` file contain only the clean version (e.g., `0.1.0`).
+* **Promotion and Testing**: Stage runner scripts (like `Invoke-PowerShellModuleBuildMasterStage.ps1`) resolve the package version from the built `.nupkg` file itself or `version.json`, saving it to `build-context.json` under `PackageVersion`. Downstream promotion and testing APIs consume this clean version, so ProGet only ever registers clean package names and versions.
+
 ---
 
 ## 4. PowerShell automation surface

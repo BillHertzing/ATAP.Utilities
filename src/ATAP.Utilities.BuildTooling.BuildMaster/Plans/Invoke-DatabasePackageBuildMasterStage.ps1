@@ -214,6 +214,7 @@ if (-not (Get-Command -Name Write-PSFMessage -CommandType Function, Cmdlet -Erro
 }
 
 . (Join-Path -Path $PSScriptRoot -ChildPath 'BuildMasterRunContext.Common.ps1')
+Initialize-LocalHostSettings -SourcePath $SourcePath
 
 function Get-DatabaseFeedForTier {
   <#

@@ -189,13 +189,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-# Declare the no-profile BuildMaster pipeline context (Task 9.1, V4-B02). BuildMaster
-# invokes this runner via `pwsh -NoProfile -File`, so the ATAP profile that builds the
-# settings globals never loads — that absence is by design here. Setting this marker
-# tells Get-PVal's loud-failure guard (Task 8.16, SC-prop-0007-1) that the documented
-# param -> env -> settings -> DefaultValue chain may degrade to the supplied default
-# rather than throwing. An interactive shell never sets this, so it still fails loud.
-$env:ATAP_NOPROFILE_PIPELINE = '1'
+# Initialize host settings using the standalone loader (Task 9.38). This populates
+# the settings and configRootKeys globals in memory in this profileless shell.
 
 if (-not (Get-Command -Name Write-PSFMessage -CommandType Function, Cmdlet -ErrorAction SilentlyContinue)) {
   function Write-PSFMessage {
@@ -213,6 +208,7 @@ if (-not (Get-Command -Name Write-PSFMessage -CommandType Function, Cmdlet -Erro
 }
 
 . (Join-Path -Path $PSScriptRoot -ChildPath 'BuildMasterRunContext.Common.ps1')
+Initialize-LocalHostSettings -SourcePath $SourcePath
 
 function Add-GitSafeDirectoryForCurrentProcess {
   <#

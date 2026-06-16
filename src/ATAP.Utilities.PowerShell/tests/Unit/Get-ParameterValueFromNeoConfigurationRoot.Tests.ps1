@@ -345,47 +345,4 @@ Describe 'Get-ParameterValueFromNeoConfigurationRoot' -Tag 'Unit' {
       $result | Should -Be 'BoundValue'
     }
   }
-
-  Context 'No-profile pipeline context yields to DefaultValue (Task 9.1, V4-B02)' {
-    # The BuildMaster runner declares its -NoProfile pipeline context by setting the
-    # ATAP_NOPROFILE_PIPELINE marker. With the marker set AND a caller fallback, the
-    # loud-failure guard yields to the DefaultValue / -AllowMissing instead of throwing,
-    # honoring the documented param -> env -> settings -> DefaultValue contract. Without
-    # the marker the interactive environment-fault behavior above is unchanged.
-    BeforeEach {
-      $script:savedGlobalSettings = $global:settings
-      $script:savedPipelineMarker = $env:ATAP_NOPROFILE_PIPELINE
-      $global:settings = $null
-      $script:Settings = $null
-      $env:ATAP_NOPROFILE_PIPELINE = '1'
-    }
-    AfterEach {
-      $global:settings = $script:savedGlobalSettings
-      $env:ATAP_NOPROFILE_PIPELINE = $script:savedPipelineMarker
-    }
-
-    It 'Returns the DefaultValue without throwing when the pipeline marker is set' {
-      $result = Get-ParameterValueFromNeoConfigurationRoot `
-        -ParameterName 'PvalGuardProbeUnique' `
-        -originalPSBoundParameters @{} `
-        -DefaultValue 'fallback'
-      $result | Should -Be 'fallback'
-    }
-
-    It 'Returns $null without throwing when the pipeline marker is set and -AllowMissing' {
-      $result = Get-ParameterValueFromNeoConfigurationRoot `
-        -ParameterName 'PvalGuardProbeUnique' `
-        -originalPSBoundParameters @{} `
-        -AllowMissing
-      $result | Should -BeNullOrEmpty
-    }
-
-    It 'Still throws when the marker is set but the caller supplied no fallback' {
-      {
-        Get-ParameterValueFromNeoConfigurationRoot `
-          -ParameterName 'PvalGuardProbeUnique' `
-          -originalPSBoundParameters @{}
-      } | Should -Throw -ExpectedMessage '*no settings source is available*'
-    }
-  }
 }

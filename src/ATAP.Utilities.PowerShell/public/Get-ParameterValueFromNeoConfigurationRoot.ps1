@@ -103,42 +103,6 @@ function Get-ParameterValueFromNeoConfigurationRoot {
   )
   # Copilot instruction: do not log cmdlet entry or exit
   Begin {
-    function Test-NoProfilePipelineContext {
-      <#
-      .SYNOPSIS
-        Returns $true when running inside the declared -NoProfile BuildMaster pipeline.
-      .DESCRIPTION
-        Distinguishes the BuildMaster 5-tier pipeline context — which runs the runner
-        via `pwsh -NoProfile -File`, so $global:settings is legitimately absent by
-        design (Task 9.1, V4-B02) — from an interactive ATAP session that simply forgot
-        to load its profile (the genuine environment fault Task 8.16 / SC-prop-0007-1
-        targets). A bare `-NoProfile` on the command line is NOT a sufficient signal,
-        because Pester and other non-interactive harnesses also launch -NoProfile; what
-        separates the pipeline is that its runner DECLARES the context by setting the
-        ATAP_NOPROFILE_PIPELINE marker (env var or global). Interactive shells never set
-        it, so they continue to fail loud regardless of -DefaultValue.
-      .NOTES
-        AI assisted using Powershell.instructions.md as guidelines
-      #>
-      [CmdletBinding()]
-      [OutputType([bool])]
-      param()
-      try {
-        $envMarker = [Environment]::GetEnvironmentVariable('ATAP_NOPROFILE_PIPELINE', 'Process')
-        if (-not [string]::IsNullOrWhiteSpace($envMarker) -and $envMarker -match '(?i)^(1|true|yes|on)$') {
-          return $true
-        }
-        $globalMarker = Get-Variable -Name 'ATAP_NOPROFILE_PIPELINE' -Scope Global -ErrorAction SilentlyContinue
-        if ($null -ne $globalMarker -and [bool]$globalMarker.Value) {
-          return $true
-        }
-        return $false
-      }
-      catch {
-        return $false
-      }
-    }
-
     function Get-NestedValue {
       [CmdletBinding()]
       param(
@@ -312,9 +276,7 @@ function Get-ParameterValueFromNeoConfigurationRoot {
       $hasScriptSettings = $null -ne $scriptSettingsVariable -and $null -ne $scriptSettingsVariable.Value
       $hasGlobalSettings = $null -ne $globalSettingsVariable -and $null -ne $globalSettingsVariable.Value
       $hasExplicitSettings = $PSBoundParameters.ContainsKey('Settings') -and ($null -ne $Settings)
-      $hasCallerFallback = $PSBoundParameters.ContainsKey('DefaultValue') -or $AllowMissing
-      $inNoProfilePipeline = Test-NoProfilePipelineContext
-      $guardYields = $hasExplicitSettings -or ($inNoProfilePipeline -and $hasCallerFallback)
+      $guardYields = $hasExplicitSettings
       if (-not $guardYields -and -not $hasScriptSettings -and -not $hasGlobalSettings) {
         throw "Get-PVal cannot resolve parameter '$ParameterName': no settings source is available — `$global:settings is not populated and no -Settings argument was supplied. This usually means pwsh was started with -NoProfile; the ATAP AllUsersAllHosts profile builds `$global:settings. Re-run in a pwsh session with profiles loaded — never pass -NoProfile for ATAP work (SC-prop-0007-1)."
       }

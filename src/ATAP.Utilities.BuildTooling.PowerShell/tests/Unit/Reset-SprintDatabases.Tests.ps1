@@ -3,6 +3,66 @@ BeforeAll {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
 
+  $script:hadGlobalGetPVal = Test-Path -Path 'Function:\global:Get-PVal'
+  if ($script:hadGlobalGetPVal) {
+    $script:oldGlobalGetPVal = (Get-Item -Path 'Function:\global:Get-PVal').ScriptBlock
+  }
+  function global:Get-PVal {
+    param(
+      [string]$ParameterName,
+      [hashtable]$originalPSBoundParameters,
+      [string]$dottedPath,
+      [hashtable]$Settings,
+      [AllowNull()]$DefaultValue,
+      [switch]$AllowMissing,
+      [type]$AsType,
+      [string[]]$ValidValues
+    )
+
+    if ($originalPSBoundParameters -and $originalPSBoundParameters.ContainsKey($ParameterName)) {
+      return $originalPSBoundParameters[$ParameterName]
+    }
+
+    if ($Settings -and -not [string]::IsNullOrWhiteSpace($dottedPath)) {
+      $current = $Settings
+      $found = $true
+      foreach ($part in ($dottedPath -split '\.')) {
+        if ($current -is [System.Collections.IDictionary] -and $current.Contains($part)) {
+          $current = $current[$part]
+          continue
+        }
+
+        if ($null -ne $current -and $current.PSObject.Properties[$part]) {
+          $current = $current.PSObject.Properties[$part].Value
+          continue
+        }
+
+        $found = $false
+        break
+      }
+
+      if ($found) {
+        if ($null -ne $AsType -and $null -ne $current) {
+          return ($current -as $AsType)
+        }
+        return $current
+      }
+    }
+
+    if ($PSBoundParameters.ContainsKey('DefaultValue')) {
+      if ($null -ne $AsType -and $null -ne $DefaultValue) {
+        return ($DefaultValue -as $AsType)
+      }
+      return $DefaultValue
+    }
+
+    if ($AllowMissing) {
+      return $null
+    }
+
+    throw "Missing test value for $ParameterName"
+  }
+
   function Build-DatabaseWithFlyway {
     param(
       [string]$DatabaseName,
@@ -10,11 +70,21 @@ BeforeAll {
       [string]$DatabaseHost,
       [string]$SqlInstance,
       [string]$ConnectionMethod,
+      [string]$CredentialsKey,
+      [string]$DBConnectionStringSecretName,
+      [string]$DBConnectionStringMasterSecretName,
+      [string]$DBConnectionStringDBSecretName,
+      [string]$ApplicationName,
+      [switch]$UseTrustedConnection,
+      [string]$DatabasePath,
+      [string]$ProvisioningScriptsPath,
       [string]$FlywayBasePath,
       [string]$FlywayTomlPath,
       [string]$FlywaySqlMigrationsPath,
+      [string]$FlywaySharedSqlMigrationsPath,
       [string]$RepositoryRoot,
       [switch]$IntegratedSecurity,
+      [hashtable]$Settings,
       [switch]$Force
     )
     [PSCustomObject]@{ Success = $true; Errors = @() }
@@ -33,6 +103,11 @@ BeforeAll {
 
 AfterAll {
   Remove-Item -LiteralPath $script:tempRepoRoot -Recurse -Force -ErrorAction SilentlyContinue
+  if ($script:hadGlobalGetPVal) {
+    Set-Item -Path 'Function:\global:Get-PVal' -Value $script:oldGlobalGetPVal
+  } else {
+    Remove-Item -Path 'Function:\global:Get-PVal' -ErrorAction SilentlyContinue
+  }
 }
 
 Describe 'Reset-SprintDatabases [public]' {
@@ -80,6 +155,123 @@ Describe 'Reset-SprintDatabases [public]' {
     }
     Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -ParameterFilter {
       $SqlInstance -eq 'Exptester' -and $Environment -eq 'Experimental'
+    }
+  }
+
+  It 'uses split master and database connection-string secret names from per-database settings' {
+    $settingsProvisioningPath = Join-Path $script:tempRepoRoot 'settings-shared-sql'
+    $settingsFlywayBasePath = Join-Path $script:tempRepoRoot 'settings-flyway'
+    $settings = @{
+      ATAPUtilities = @{
+        Development = @{
+          DatabaseHost                 = 'utat022'
+          ConnectionMethod             = 'tcp'
+          SqlInstance                  = 'Devtester'
+          CredentialsKey               = 'legacy-credentials-key'
+          DBConnectionStringMasterSecretName = 'ATAPUtilitiesDevelopmentMasterConnectionString'
+          DBConnectionStringDBSecretName = 'ATAPUtilitiesDevelopmentDBConnectionString'
+          DatabasePath                 = 'C:\LocalDBs\Development\ATAPUtilities'
+          ProvisioningScriptsPath      = $settingsProvisioningPath
+          FlywayBasePath               = $settingsFlywayBasePath
+          FlywaySqlMigrationsPath      = (Join-Path $settingsFlywayBasePath 'SQL')
+          FlywaySharedSqlMigrationsPath = (Join-Path $settingsFlywayBasePath 'Shared')
+          FlywayTomlPath               = (Join-Path $settingsFlywayBasePath 'flyway.toml')
+          ApplicationName              = 'ATAP.Utilities.Tests'
+        }
+      }
+    }
+
+    Reset-SprintDatabases `
+      -InstanceNames @('Devtester') `
+      -Databases @('ATAPUtilities') `
+      -Settings $settings `
+      -RepositoryRoot $script:tempRepoRoot `
+      -IntegratedSecurity `
+      -Confirm:$false | Out-Null
+
+    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -Exactly -ParameterFilter {
+      $DBConnectionStringMasterSecretName -eq 'ATAPUtilitiesDevelopmentMasterConnectionString' -and
+      $DBConnectionStringDBSecretName -eq 'ATAPUtilitiesDevelopmentDBConnectionString' -and
+      [string]::IsNullOrWhiteSpace($DBConnectionStringSecretName) -and
+      $DatabasePath -eq 'C:\LocalDBs\Development\ATAPUtilities' -and
+      $ProvisioningScriptsPath -eq $settingsProvisioningPath -and
+      $FlywayBasePath -eq $settingsFlywayBasePath -and
+      $FlywaySqlMigrationsPath -eq (Join-Path $settingsFlywayBasePath 'SQL') -and
+      $FlywaySharedSqlMigrationsPath -eq (Join-Path $settingsFlywayBasePath 'Shared') -and
+      $FlywayTomlPath -eq (Join-Path $settingsFlywayBasePath 'flyway.toml') -and
+      $ApplicationName -eq 'ATAP.Utilities.Tests' -and
+      [string]::IsNullOrWhiteSpace($SqlInstance) -and
+      [string]::IsNullOrWhiteSpace($DatabaseHost) -and
+      [string]::IsNullOrWhiteSpace($ConnectionMethod) -and
+      [string]::IsNullOrWhiteSpace($CredentialsKey) -and
+      -not $IntegratedSecurity
+    }
+  }
+
+  It 'accepts per-instance hashtable entries with master connection-string secret names' {
+    $instanceSpecs = @(
+      @{
+        InstanceName                         = 'Devtester'
+        DBConnectionStringMasterSecretName   = 'dbConnectionString.master.localhost.Dev.tester'
+      },
+      @{
+        InstanceName                         = 'Exptester'
+        SQLConnectionSecretName              = 'dbConnectionString.master.localhost.Exp.tester'
+      }
+    )
+
+    Reset-SprintDatabases `
+      -InstanceNames $instanceSpecs `
+      -Databases @('ATAPUtilities') `
+      -FlywayBasePath $script:flywayBase `
+      -RepositoryRoot $script:tempRepoRoot `
+      -Confirm:$false | Out-Null
+
+    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -Exactly -ParameterFilter {
+      $Environment -eq 'Development' -and
+      $DBConnectionStringMasterSecretName -eq 'dbConnectionString.master.localhost.Dev.tester' -and
+      [string]::IsNullOrWhiteSpace($SqlInstance) -and
+      [string]::IsNullOrWhiteSpace($DatabaseHost)
+    }
+    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -Exactly -ParameterFilter {
+      $Environment -eq 'Experimental' -and
+      $DBConnectionStringMasterSecretName -eq 'dbConnectionString.master.localhost.Exp.tester' -and
+      [string]::IsNullOrWhiteSpace($SqlInstance) -and
+      [string]::IsNullOrWhiteSpace($DatabaseHost)
+    }
+  }
+
+  It 'uses Get-PVal instance settings when InstanceNames are plain strings' {
+    $settings = @{
+      Instances = @{
+        Devtester = @{
+          DBConnectionStringMasterSecretName = 'settings-dev-master-secret'
+        }
+        Exptester = @{
+          DBConnectionStringMasterSecretName = 'settings-exp-master-secret'
+        }
+      }
+    }
+
+    Reset-SprintDatabases `
+      -InstanceNames @('Devtester', 'Exptester') `
+      -Databases @('ATAPUtilities') `
+      -Settings $settings `
+      -FlywayBasePath $script:flywayBase `
+      -RepositoryRoot $script:tempRepoRoot `
+      -Confirm:$false | Out-Null
+
+    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -Exactly -ParameterFilter {
+      $Environment -eq 'Development' -and
+      $DBConnectionStringMasterSecretName -eq 'settings-dev-master-secret' -and
+      [string]::IsNullOrWhiteSpace($SqlInstance) -and
+      [string]::IsNullOrWhiteSpace($DatabaseHost)
+    }
+    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -Exactly -ParameterFilter {
+      $Environment -eq 'Experimental' -and
+      $DBConnectionStringMasterSecretName -eq 'settings-exp-master-secret' -and
+      [string]::IsNullOrWhiteSpace($SqlInstance) -and
+      [string]::IsNullOrWhiteSpace($DatabaseHost)
     }
   }
 
@@ -137,5 +329,14 @@ Describe 'Reset-SprintDatabases [public]' {
 
     Should -Invoke -CommandName Get-Service -Times 1 -ParameterFilter { $Name -eq "MSSQL`$Dev$($env:USERNAME)" }
     Should -Invoke -CommandName Get-Service -Times 1 -ParameterFilter { $Name -eq "MSSQL`$Exp$($env:USERNAME)" }
+  }
+
+  It 'imports dbatools before dot-sourcing Build-DatabaseWithFlyway' {
+    $source = Get-Content -LiteralPath "$PSScriptRoot\..\..\public\Reset-SprintDatabases.ps1" -Raw
+    $importIndex = $source.IndexOf('Import-Module -Name dbatools')
+    $dotSourceIndex = $source.IndexOf('. $buildDbPath')
+
+    $importIndex | Should -BeGreaterOrEqual 0
+    $dotSourceIndex | Should -BeGreaterThan $importIndex
   }
 }

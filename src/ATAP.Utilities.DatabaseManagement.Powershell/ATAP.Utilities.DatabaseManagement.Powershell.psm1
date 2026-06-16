@@ -1,5 +1,12 @@
 # ToDo : Module comment-based help
 
+try {
+    Import-Module -Name dbatools -ErrorAction Stop
+} catch {
+    Write-Error "Failed to import dbatools before loading ATAP.Utilities.DatabaseManagement.Powershell. dbatools must be loaded first because public functions declare Microsoft.Data.SqlClient.SqlConnection parameters. Exception: $_"
+    throw
+}
+
 # get the fileIO info for each file in the public and private subdirectories
 $publicFunctions = @(Get-ChildItem -Path $PSScriptRoot\public\*.ps1 -ErrorAction SilentlyContinue)
 

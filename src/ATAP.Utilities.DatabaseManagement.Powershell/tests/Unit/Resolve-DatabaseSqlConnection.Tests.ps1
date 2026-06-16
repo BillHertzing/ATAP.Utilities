@@ -62,6 +62,85 @@ Describe 'Resolve-DatabaseSqlConnection' -Tag 'Unit' {
     Assert-MockCalled Resolve-DatabaseSqlConnectionFromConnectionParts -Times 0 -Exactly -Scope It
   }
 
+  It 'uses DBConnectionStringSecretName from settings before connection parts' {
+    $settings = @{
+      ATAPUtilities = @{
+        Development = @{
+          DBConnectionStringSecretName = 'db-secret-from-settings'
+        }
+      }
+    }
+
+    $result = Resolve-DatabaseSqlConnection `
+      -OriginalPSBoundParameters @{} `
+      -Settings $settings `
+      -DBConnectionStringSecretNameDottedPath 'ATAPUtilities.Development.DBConnectionStringSecretName' `
+      -DatabaseHost 'localhost' `
+      -DatabaseName 'ATAPUtilities' `
+      -IntegratedSecurity
+
+    $result.Connection | Should -Be 'bitwarden:db-secret-from-settings'
+    $result.IsCallerOwned | Should -BeFalse
+    Assert-MockCalled Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName -Times 1 -Exactly -Scope It -ParameterFilter {
+      $SecretName -eq 'db-secret-from-settings'
+    }
+    Assert-MockCalled Resolve-DatabaseSqlConnectionFromConnectionParts -Times 0 -Exactly -Scope It
+  }
+
+  It 'uses DBConnectionStringMasterSecretName from settings when resolving master' {
+    $settings = @{
+      ATAPUtilities = @{
+        Development = @{
+          DBConnectionStringMasterSecretName = 'master-secret-from-settings'
+          DBConnectionStringDBSecretName     = 'db-secret-from-settings'
+        }
+      }
+    }
+
+    $result = Resolve-DatabaseSqlConnection `
+      -OriginalPSBoundParameters @{} `
+      -Settings $settings `
+      -DBConnectionStringMasterSecretNameDottedPath 'ATAPUtilities.Development.DBConnectionStringMasterSecretName' `
+      -DBConnectionStringDBSecretNameDottedPath 'ATAPUtilities.Development.DBConnectionStringDBSecretName' `
+      -DatabaseName 'master' `
+      -DatabaseHost 'localhost' `
+      -IntegratedSecurity
+
+    $result.Connection | Should -Be 'bitwarden:master-secret-from-settings'
+    $result.IsCallerOwned | Should -BeFalse
+    Assert-MockCalled Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName -Times 1 -Exactly -Scope It -ParameterFilter {
+      $SecretName -eq 'master-secret-from-settings'
+    }
+    Assert-MockCalled Resolve-DatabaseSqlConnectionFromConnectionParts -Times 0 -Exactly -Scope It
+  }
+
+  It 'uses DBConnectionStringDBSecretName from settings when resolving a named database' {
+    $settings = @{
+      ATAPUtilities = @{
+        Development = @{
+          DBConnectionStringMasterSecretName = 'master-secret-from-settings'
+          DBConnectionStringDBSecretName     = 'db-secret-from-settings'
+        }
+      }
+    }
+
+    $result = Resolve-DatabaseSqlConnection `
+      -OriginalPSBoundParameters @{} `
+      -Settings $settings `
+      -DBConnectionStringMasterSecretNameDottedPath 'ATAPUtilities.Development.DBConnectionStringMasterSecretName' `
+      -DBConnectionStringDBSecretNameDottedPath 'ATAPUtilities.Development.DBConnectionStringDBSecretName' `
+      -DatabaseName 'ATAPUtilities' `
+      -DatabaseHost 'localhost' `
+      -IntegratedSecurity
+
+    $result.Connection | Should -Be 'bitwarden:db-secret-from-settings'
+    $result.IsCallerOwned | Should -BeFalse
+    Assert-MockCalled Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName -Times 1 -Exactly -Scope It -ParameterFilter {
+      $SecretName -eq 'db-secret-from-settings'
+    }
+    Assert-MockCalled Resolve-DatabaseSqlConnectionFromConnectionParts -Times 0 -Exactly -Scope It
+  }
+
   It 'normalizes SqlInstance from the caller bound-parameter map to InstanceName' {
     $callerBoundParameters = @{
       DatabaseHost       = 'localhost'

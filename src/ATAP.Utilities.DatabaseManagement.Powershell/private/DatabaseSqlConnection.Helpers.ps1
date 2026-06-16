@@ -321,9 +321,11 @@ function New-DatabaseConnectionParameterMap {
   }
 
   $aliasesByCanonicalName = @{
-    DBConnectionStringSecretName = @('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')
-    DatabaseHost                 = @('HostName', 'ServerInstance')
-    InstanceName                 = @('SqlInstance')
+    DBConnectionStringSecretName       = @('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')
+    DBConnectionStringMasterSecretName = @('DBConnectionStringMasterSecret', 'MasterSecretName', 'DBMasterConnectionStringSecretName')
+    DBConnectionStringDBSecretName     = @('DBConnectionStringDatabaseSecretName', 'DBConnectionStringDatabaseSecret', 'DatabaseSecretName', 'DBSecretName')
+    DatabaseHost                       = @('HostName', 'ServerInstance')
+    InstanceName                       = @('SqlInstance')
   }
 
   foreach ($canonicalName in $aliasesByCanonicalName.Keys) {

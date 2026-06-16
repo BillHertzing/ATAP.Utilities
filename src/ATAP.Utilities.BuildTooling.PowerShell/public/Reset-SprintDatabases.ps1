@@ -26,7 +26,9 @@ function Reset-SprintDatabases {
     available, otherwise $env:USERNAME.
   .PARAMETER InstanceNames
     Explicit SQL Server named-instance names to reset. When supplied, this
-    overrides DeveloperNames-derived instance names.
+    overrides DeveloperNames-derived instance names. Entries may be strings, or
+    hashtables/objects with InstanceName plus optional per-instance secret-name
+    fields such as DBConnectionStringMasterSecretName or SQLConnectionSecretName.
   .PARAMETER Databases
     Database names to reset on every instance. Defaults to ATAPUtilities and
     AceCommander.
@@ -67,7 +69,7 @@ function Reset-SprintDatabases {
     [string[]]$DeveloperNames,
 
     [Parameter(Mandatory = $false)]
-    [string[]]$InstanceNames,
+    [object[]]$InstanceNames,
 
     [Parameter(Mandatory = $false)]
     [string[]]$Databases,
@@ -80,6 +82,18 @@ function Reset-SprintDatabases {
 
     [Parameter(Mandatory = $false)]
     [string]$CredentialsKey,
+
+    [Parameter(Mandatory = $false)]
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string]$DBConnectionStringSecretName,
+
+    [Parameter(Mandatory = $false)]
+    [Alias('DBConnectionStringMasterSecret', 'MasterSecretName', 'DBMasterConnectionStringSecretName')]
+    [string]$DBConnectionStringMasterSecretName,
+
+    [Parameter(Mandatory = $false)]
+    [Alias('DBConnectionStringDatabaseSecretName', 'DBConnectionStringDatabaseSecret', 'DatabaseSecretName', 'DBSecretName')]
+    [string]$DBConnectionStringDBSecretName,
 
     [Parameter(Mandatory = $false)]
     [string]$ApplicationName,
@@ -115,20 +129,105 @@ function Reset-SprintDatabases {
       $ConfirmPreference = 'None'
     }
 
-    if ([string]::IsNullOrWhiteSpace($DatabaseHost)) {
-      $DatabaseHost = 'localhost'
-    }
-
-    if ([string]::IsNullOrWhiteSpace($ConnectionMethod)) {
-      $ConnectionMethod = 'tcp'
-    }
-
     if (-not $PSBoundParameters.ContainsKey('Databases') -or $null -eq $Databases -or $Databases.Count -eq 0) {
       $Databases = @('ATAPUtilities', 'AceCommander')
     }
     $Databases = @($Databases | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
     if ($Databases.Count -eq 0) {
       throw 'At least one database name is required.'
+    }
+
+    function Get-ResetSprintInputValue {
+      param(
+        [AllowNull()]
+        [object]$InputObject,
+        [Parameter(Mandatory = $true)]
+        [string[]]$Names
+      )
+
+      if ($null -eq $InputObject) {
+        return $null
+      }
+
+      if ($InputObject -is [System.Collections.IDictionary]) {
+        foreach ($name in $Names) {
+          foreach ($key in $InputObject.Keys) {
+            if ([string]::Equals([string]$key, $name, [System.StringComparison]::OrdinalIgnoreCase)) {
+              return $InputObject[$key]
+            }
+          }
+        }
+        return $null
+      }
+
+      foreach ($name in $Names) {
+        $property = $InputObject.PSObject.Properties |
+          Where-Object { [string]::Equals($_.Name, $name, [System.StringComparison]::OrdinalIgnoreCase) } |
+          Select-Object -First 1
+        if ($null -ne $property) {
+          return $property.Value
+        }
+      }
+
+      return $null
+    }
+
+    $instanceMasterSecretNamesByName = @{}
+    $instanceDBSecretNamesByName = @{}
+
+    if ($PSBoundParameters.ContainsKey('InstanceNames') -and $null -ne $InstanceNames -and $InstanceNames.Count -gt 0) {
+      $normalizedInstanceNames = [System.Collections.Generic.List[string]]::new()
+      foreach ($instanceInput in @($InstanceNames)) {
+        if ($null -eq $instanceInput) {
+          continue
+        }
+
+        $instanceName = if ($instanceInput -is [string]) {
+          [string]$instanceInput
+        } else {
+          [string](Get-ResetSprintInputValue -InputObject $instanceInput -Names @('InstanceName', 'SqlInstance', 'Name'))
+        }
+
+        if ([string]::IsNullOrWhiteSpace($instanceName)) {
+          throw 'Each non-string InstanceNames entry must include InstanceName, SqlInstance, or Name.'
+        }
+
+        if (-not $normalizedInstanceNames.Contains($instanceName)) {
+          [void]$normalizedInstanceNames.Add($instanceName)
+        }
+
+        if ($instanceInput -isnot [string]) {
+          $instanceMasterSecretName = [string](Get-ResetSprintInputValue -InputObject $instanceInput -Names @(
+              'DBConnectionStringMasterSecretName',
+              'DBConnectionStringMasterSecret',
+              'DBMasterConnectionStringSecretName',
+              'MasterConnectionStringSecretName',
+              'MasterSecretName',
+              'SQLConnectionSecretName',
+              'DBConnectionStringSecretName',
+              'SecretName',
+              'BitwardenSecretName',
+              'BitwardenSecret'
+            ))
+          if (-not [string]::IsNullOrWhiteSpace($instanceMasterSecretName)) {
+            $instanceMasterSecretNamesByName[$instanceName] = $instanceMasterSecretName
+          }
+
+          $instanceDBSecretName = [string](Get-ResetSprintInputValue -InputObject $instanceInput -Names @(
+              'DBConnectionStringDBSecretName',
+              'DBConnectionStringDatabaseSecretName',
+              'DBConnectionStringDatabaseSecret',
+              'DatabaseConnectionStringSecretName',
+              'DatabaseSecretName',
+              'DBSecretName'
+            ))
+          if (-not [string]::IsNullOrWhiteSpace($instanceDBSecretName)) {
+            $instanceDBSecretNamesByName[$instanceName] = $instanceDBSecretName
+          }
+        }
+      }
+
+      $InstanceNames = $normalizedInstanceNames.ToArray()
     }
 
     if (-not $PSBoundParameters.ContainsKey('InstanceNames') -or $null -eq $InstanceNames -or $InstanceNames.Count -eq 0) {
@@ -140,12 +239,18 @@ function Reset-SprintDatabases {
         }
 
         if (Get-Command -Name 'Get-PVal' -ErrorAction SilentlyContinue) {
-          $DeveloperNames = Get-PVal `
-            -ParameterName 'DeveloperNames' `
-            -originalPSBoundParameters $PSBoundParameters `
-            -dottedPath $settingsKey `
-            -DefaultValue @($env:USERNAME) `
-            -AllowMissing
+          try {
+            $DeveloperNames = Get-PVal `
+              -ParameterName 'DeveloperNames' `
+              -originalPSBoundParameters $PSBoundParameters `
+              -dottedPath $settingsKey `
+              -DefaultValue @($env:USERNAME) `
+              -AllowMissing
+          } catch {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+              -Message "Optional DeveloperNames lookup failed; falling back to env:USERNAME. Exception: $($_.Exception.Message)"
+            $DeveloperNames = @($env:USERNAME)
+          }
         }
 
         if (-not $DeveloperNames) {
@@ -178,19 +283,25 @@ function Reset-SprintDatabases {
       }
     }
 
-    if ([string]::IsNullOrWhiteSpace($FlywayBasePath)) {
-      $flywayKey = 'FlywayBasePathConfigRootKey'
-      if ($null -ne $global:configRootKeys -and $global:configRootKeys.ContainsKey($flywayKey) -and
-        $null -ne $global:settings -and -not [string]::IsNullOrWhiteSpace($global:settings[$global:configRootKeys[$flywayKey]])) {
-        $FlywayBasePath = $global:settings[$global:configRootKeys[$flywayKey]]
-      } else {
-        $FlywayBasePath = Join-Path $RepositoryRoot 'Database' 'Flyway'
-      }
+    $databasesCollection = if ($Settings) {
+      $Settings
+    }
+    elseif ($global:settings -and $global:configRootKeys -and $global:configRootKeys['DatabasesCollectionConfigRootKey']) {
+      $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
+    }
+    elseif ($global:settings -is [System.Collections.IDictionary] -and $global:settings.Contains('DatabasesCollection')) {
+      $global:settings['DatabasesCollection']
+    }
+    elseif ($global:settings -and $global:settings.PSObject.Properties['DatabasesCollection']) {
+      $global:settings.DatabasesCollection
+    }
+    else {
+      $null
     }
 
-    $flywayTomlPath = Join-Path $FlywayBasePath 'flyway.toml'
-    if (-not (Test-Path -LiteralPath $flywayTomlPath -PathType Leaf)) {
-      throw "Flyway configuration file not found: $flywayTomlPath"
+    $resetBoundParameters = @{}
+    foreach ($key in $PSBoundParameters.Keys) {
+      $resetBoundParameters[$key] = $PSBoundParameters[$key]
     }
 
     $isNoOp = [bool]($DryRun -or $WhatIfPreference)
@@ -201,7 +312,23 @@ function Reset-SprintDatabases {
         if (-not (Test-Path -LiteralPath $buildDbPath -PathType Leaf)) {
           throw "Build-DatabaseWithFlyway.ps1 not found at: $buildDbPath"
         }
-        . $buildDbPath
+        try {
+          Import-Module -Name dbatools -ErrorAction Stop
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+            -Message 'Imported dbatools before loading Build-DatabaseWithFlyway.'
+        } catch {
+          $errorMessage = "Failed to import dbatools before loading Build-DatabaseWithFlyway. dbatools must be loaded first because Build-DatabaseWithFlyway declares a Microsoft.Data.SqlClient.SqlConnection parameter. Exception: $($_.Exception.Message)"
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+          throw $errorMessage
+        }
+
+        try {
+          . $buildDbPath
+        } catch {
+          $errorMessage = "Failed to load Build-DatabaseWithFlyway from '$buildDbPath' after importing dbatools. Exception: $($_.Exception.Message)"
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+          throw $errorMessage
+        }
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
           -Message "Loaded Build-DatabaseWithFlyway from $buildDbPath"
       }
@@ -209,8 +336,95 @@ function Reset-SprintDatabases {
       $buildDatabaseWithFlywayParameters = (Get-Command -Name 'Build-DatabaseWithFlyway' -CommandType Function).Parameters.Keys
     }
 
+    $getPValAvailable = [bool](Get-Command -Name 'Get-PVal' -ErrorAction SilentlyContinue)
+    function Resolve-ResetSprintDatabaseSetting {
+      param(
+        [Parameter(Mandatory = $true)]
+        [string]$Name,
+        [Parameter(Mandatory = $true)]
+        [string]$DottedPath,
+        [AllowNull()]
+        [object]$DefaultValue = $null,
+        [switch]$AllowMissing,
+        [type]$AsType
+      )
+
+      if (-not $getPValAvailable) {
+        return $DefaultValue
+      }
+
+      $getPValParams = @{
+        ParameterName             = $Name
+        originalPSBoundParameters = $resetBoundParameters
+        dottedPath                = $DottedPath
+        Settings                  = $databasesCollection
+        DefaultValue              = $DefaultValue
+        AllowMissing              = $AllowMissing
+      }
+      if ($null -ne $AsType) {
+        $getPValParams['AsType'] = $AsType
+      }
+
+      try {
+        Get-PVal @getPValParams
+      } catch {
+        if ($AllowMissing -or $PSBoundParameters.ContainsKey('DefaultValue')) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+            -Message "Optional setting '$Name' at '$DottedPath' was not resolved; using default. Exception: $($_.Exception.Message)"
+          return $DefaultValue
+        }
+        throw
+      }
+    }
+
+    function Resolve-ResetSprintInstanceSecretName {
+      param(
+        [Parameter(Mandatory = $true)]
+        [string]$InstanceName,
+        [Parameter(Mandatory = $true)]
+        [string]$Environment,
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('DBConnectionStringMasterSecretName', 'DBConnectionStringDBSecretName')]
+        [string]$Name,
+        [AllowNull()]
+        [object]$DefaultValue = $null
+      )
+
+      $explicitMap = if ($Name -eq 'DBConnectionStringMasterSecretName') {
+        $instanceMasterSecretNamesByName
+      } else {
+        $instanceDBSecretNamesByName
+      }
+
+      if ($explicitMap.ContainsKey($InstanceName) -and -not [string]::IsNullOrWhiteSpace([string]$explicitMap[$InstanceName])) {
+        return [string]$explicitMap[$InstanceName]
+      }
+
+      foreach ($dottedPath in @(
+          "Instances.$InstanceName.$Name",
+          "SqlInstances.$InstanceName.$Name",
+          "SQLInstances.$InstanceName.$Name",
+          "SQLServerInstances.$InstanceName.$Name",
+          "InstanceNames.$InstanceName.$Name",
+          "$InstanceName.$Name",
+          "$Environment.$Name"
+        )) {
+        $candidate = Resolve-ResetSprintDatabaseSetting `
+          -Name $Name `
+          -DottedPath $dottedPath `
+          -DefaultValue $null `
+          -AllowMissing `
+          -AsType ([string])
+        if (-not [string]::IsNullOrWhiteSpace($candidate)) {
+          return $candidate
+        }
+      }
+
+      return $DefaultValue
+    }
+
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-      -Message "Instances: $($InstanceNames -join ', ') | Databases: $($Databases -join ', ') | Host: $DatabaseHost | DryRun: $DryRun"
+      -Message "Instances: $($InstanceNames -join ', ') | Databases: $($Databases -join ', ') | Host: $(if ([string]::IsNullOrWhiteSpace($DatabaseHost)) { '<settings>' } else { $DatabaseHost }) | DryRun: $DryRun"
   }
 
   process {
@@ -238,12 +452,138 @@ function Reset-SprintDatabases {
       elseif ($instanceName.StartsWith('Exp')) { 'Experimental' }
       else { $instanceName }
 
+      $resolvedInstanceDBConnectionStringMasterSecretName = Resolve-ResetSprintInstanceSecretName `
+        -InstanceName $instanceName `
+        -Environment $environment `
+        -Name 'DBConnectionStringMasterSecretName' `
+        -DefaultValue $DBConnectionStringMasterSecretName
+
+      $resolvedInstanceDBConnectionStringDBSecretName = Resolve-ResetSprintInstanceSecretName `
+        -InstanceName $instanceName `
+        -Environment $environment `
+        -Name 'DBConnectionStringDBSecretName' `
+        -DefaultValue $DBConnectionStringDBSecretName
+
       foreach ($db in $Databases) {
-        $target = if ([string]::IsNullOrWhiteSpace($DatabaseHost) -or $DatabaseHost -eq 'localhost') {
-          "localhost\$instanceName\$db"
-        } else {
-          "$DatabaseHost\$instanceName\$db"
+        $resolvedDatabaseHost = Resolve-ResetSprintDatabaseSetting `
+          -Name 'DatabaseHost' `
+          -DottedPath "$db.$environment.DatabaseHost" `
+          -DefaultValue $DatabaseHost `
+          -AllowMissing `
+          -AsType ([string])
+        if ([string]::IsNullOrWhiteSpace($resolvedDatabaseHost)) {
+          $resolvedDatabaseHost = 'localhost'
         }
+
+        $resolvedConnectionMethod = Resolve-ResetSprintDatabaseSetting `
+          -Name 'ConnectionMethod' `
+          -DottedPath "$db.$environment.ConnectionMethod" `
+          -DefaultValue $ConnectionMethod `
+          -AllowMissing `
+          -AsType ([string])
+
+        $resolvedDBConnectionStringSecretName = Resolve-ResetSprintDatabaseSetting `
+          -Name 'DBConnectionStringSecretName' `
+          -DottedPath "$db.$environment.DBConnectionStringSecretName" `
+          -DefaultValue $DBConnectionStringSecretName `
+          -AllowMissing `
+          -AsType ([string])
+
+        $resolvedDBConnectionStringMasterSecretName = Resolve-ResetSprintDatabaseSetting `
+          -Name 'DBConnectionStringMasterSecretName' `
+          -DottedPath "$db.$environment.DBConnectionStringMasterSecretName" `
+          -DefaultValue $resolvedInstanceDBConnectionStringMasterSecretName `
+          -AllowMissing `
+          -AsType ([string])
+        if ([string]::IsNullOrWhiteSpace($resolvedDBConnectionStringMasterSecretName)) {
+          $resolvedDBConnectionStringMasterSecretName = $resolvedDBConnectionStringSecretName
+        }
+
+        $resolvedDBConnectionStringDBSecretName = Resolve-ResetSprintDatabaseSetting `
+          -Name 'DBConnectionStringDBSecretName' `
+          -DottedPath "$db.$environment.DBConnectionStringDBSecretName" `
+          -DefaultValue $resolvedInstanceDBConnectionStringDBSecretName `
+          -AllowMissing `
+          -AsType ([string])
+        if ([string]::IsNullOrWhiteSpace($resolvedDBConnectionStringDBSecretName)) {
+          $resolvedDBConnectionStringDBSecretName = $resolvedDBConnectionStringSecretName
+        }
+
+        $resolvedCredentialsKey = Resolve-ResetSprintDatabaseSetting `
+          -Name 'CredentialsKey' `
+          -DottedPath "$db.$environment.CredentialsKey" `
+          -DefaultValue $CredentialsKey `
+          -AllowMissing `
+          -AsType ([string])
+
+        $resolvedApplicationName = Resolve-ResetSprintDatabaseSetting `
+          -Name 'ApplicationName' `
+          -DottedPath "$db.$environment.ApplicationName" `
+          -DefaultValue $ApplicationName `
+          -AllowMissing `
+          -AsType ([string])
+
+        $resolvedDatabasePath = Resolve-ResetSprintDatabaseSetting `
+          -Name 'DatabasePath' `
+          -DottedPath "$db.$environment.DatabasePath" `
+          -DefaultValue $null `
+          -AllowMissing `
+          -AsType ([string])
+
+        $resolvedProvisioningScriptsPath = Resolve-ResetSprintDatabaseSetting `
+          -Name 'ProvisioningScriptsPath' `
+          -DottedPath "$db.$environment.ProvisioningScriptsPath" `
+          -DefaultValue $null `
+          -AllowMissing `
+          -AsType ([string])
+
+        $resolvedFlywayBasePath = Resolve-ResetSprintDatabaseSetting `
+          -Name 'FlywayBasePath' `
+          -DottedPath "$db.$environment.FlywayBasePath" `
+          -DefaultValue $FlywayBasePath `
+          -AllowMissing `
+          -AsType ([string])
+        if ([string]::IsNullOrWhiteSpace($resolvedFlywayBasePath)) {
+          $resolvedFlywayBasePath = Join-Path $RepositoryRoot 'Database' 'Flyway'
+        }
+
+        $resolvedFlywaySqlMigrationsPath = Resolve-ResetSprintDatabaseSetting `
+          -Name 'FlywaySqlMigrationsPath' `
+          -DottedPath "$db.$environment.FlywaySqlMigrationsPath" `
+          -DefaultValue $(Join-Path $resolvedFlywayBasePath 'SQL') `
+          -AllowMissing `
+          -AsType ([string])
+
+        $resolvedFlywaySharedSqlMigrationsPath = Resolve-ResetSprintDatabaseSetting `
+          -Name 'FlywaySharedSqlMigrationsPath' `
+          -DottedPath "$db.$environment.FlywaySharedSqlMigrationsPath" `
+          -DefaultValue $null `
+          -AllowMissing `
+          -AsType ([string])
+
+        $resolvedFlywayTomlPath = Resolve-ResetSprintDatabaseSetting `
+          -Name 'FlywayTomlPath' `
+          -DottedPath "$db.$environment.FlywayTomlPath" `
+          -DefaultValue $(Join-Path $resolvedFlywayBasePath 'flyway.toml') `
+          -AllowMissing `
+          -AsType ([string])
+
+        $usingConnectionStringSecret =
+          (-not [string]::IsNullOrWhiteSpace($resolvedDBConnectionStringMasterSecretName)) -or
+          (-not [string]::IsNullOrWhiteSpace($resolvedDBConnectionStringDBSecretName))
+        $targetSecretName = if (-not [string]::IsNullOrWhiteSpace($resolvedDBConnectionStringMasterSecretName)) {
+          $resolvedDBConnectionStringMasterSecretName
+        } else {
+          $resolvedDBConnectionStringDBSecretName
+        }
+        $targetHost = if ($usingConnectionStringSecret) {
+          "<secret:$targetSecretName>"
+        } elseif ([string]::IsNullOrWhiteSpace($resolvedDatabaseHost)) {
+          '<settings>'
+        } else {
+          $resolvedDatabaseHost
+        }
+        $target = "$targetHost\$instanceName\$db"
 
         $entry = [ordered]@{
           instanceName  = $instanceName
@@ -275,39 +615,78 @@ function Reset-SprintDatabases {
           $buildParams = @{
             DatabaseName            = $db
             Environment             = $environment
-            DatabaseHost            = $DatabaseHost
-            ConnectionMethod        = $ConnectionMethod
-            FlywayBasePath          = $FlywayBasePath
-            FlywayTomlPath          = $flywayTomlPath
-            FlywaySqlMigrationsPath = (Join-Path $FlywayBasePath 'SQL')
+            FlywayBasePath          = $resolvedFlywayBasePath
+            FlywayTomlPath          = $resolvedFlywayTomlPath
+            FlywaySqlMigrationsPath = $resolvedFlywaySqlMigrationsPath
             RepositoryRoot          = $RepositoryRoot
             Force                   = $true
           }
 
-          if ($buildDatabaseWithFlywayParameters -contains 'SqlInstance') {
-            $buildParams['SqlInstance'] = $instanceName
-          } else {
-            $buildParams['InstanceName'] = $instanceName
+          $canPassSplitConnectionStringSecrets = $usingConnectionStringSecret -and
+            ($buildDatabaseWithFlywayParameters -contains 'DBConnectionStringMasterSecretName' -or
+              $buildDatabaseWithFlywayParameters -contains 'DBConnectionStringDBSecretName')
+          $canPassConnectionStringSecret = $usingConnectionStringSecret -and
+            $buildDatabaseWithFlywayParameters -contains 'DBConnectionStringSecretName'
+          $passConnectionParts = $true
+          if ($canPassSplitConnectionStringSecrets) {
+            if (-not [string]::IsNullOrWhiteSpace($resolvedDBConnectionStringMasterSecretName) -and
+              $buildDatabaseWithFlywayParameters -contains 'DBConnectionStringMasterSecretName') {
+              $buildParams['DBConnectionStringMasterSecretName'] = $resolvedDBConnectionStringMasterSecretName
+            }
+            if (-not [string]::IsNullOrWhiteSpace($resolvedDBConnectionStringDBSecretName) -and
+              $buildDatabaseWithFlywayParameters -contains 'DBConnectionStringDBSecretName') {
+              $buildParams['DBConnectionStringDBSecretName'] = $resolvedDBConnectionStringDBSecretName
+            }
+            $passConnectionParts = [string]::IsNullOrWhiteSpace($resolvedDBConnectionStringMasterSecretName)
+          } elseif ($canPassConnectionStringSecret) {
+            $buildParams['DBConnectionStringSecretName'] = $resolvedDBConnectionStringSecretName
+            $passConnectionParts = $false
           }
 
-          if ($CredentialsKey -and $buildDatabaseWithFlywayParameters -contains 'CredentialsKey') {
-            $buildParams['CredentialsKey'] = $CredentialsKey
+          if ($passConnectionParts) {
+            $buildParams['DatabaseHost'] = $resolvedDatabaseHost
+            if (-not [string]::IsNullOrWhiteSpace($resolvedConnectionMethod)) {
+              $buildParams['ConnectionMethod'] = $resolvedConnectionMethod
+            }
+
+            if ($buildDatabaseWithFlywayParameters -contains 'SqlInstance') {
+              $buildParams['SqlInstance'] = $instanceName
+            } else {
+              $buildParams['InstanceName'] = $instanceName
+            }
+
+            if ($resolvedCredentialsKey -and $buildDatabaseWithFlywayParameters -contains 'CredentialsKey') {
+              $buildParams['CredentialsKey'] = $resolvedCredentialsKey
+            }
+            elseif ($PSBoundParameters.ContainsKey('IntegratedSecurity') -and $buildDatabaseWithFlywayParameters -contains 'IntegratedSecurity') {
+              $buildParams['IntegratedSecurity'] = $true
+            }
+
+            if ($PSBoundParameters.ContainsKey('UseTrustedConnection') -and $UseTrustedConnection -and $buildDatabaseWithFlywayParameters -contains 'UseTrustedConnection') {
+              $buildParams['UseTrustedConnection'] = $true
+            }
           }
-          elseif ($buildDatabaseWithFlywayParameters -contains 'IntegratedSecurity') {
-            $buildParams['IntegratedSecurity'] = $true
+          if (-not [string]::IsNullOrWhiteSpace($resolvedDatabasePath) -and $buildDatabaseWithFlywayParameters -contains 'DatabasePath') {
+            $buildParams['DatabasePath'] = $resolvedDatabasePath
+          }
+          if (-not [string]::IsNullOrWhiteSpace($resolvedProvisioningScriptsPath) -and $buildDatabaseWithFlywayParameters -contains 'ProvisioningScriptsPath') {
+            $buildParams['ProvisioningScriptsPath'] = $resolvedProvisioningScriptsPath
+          }
+          if (-not [string]::IsNullOrWhiteSpace($resolvedFlywaySharedSqlMigrationsPath) -and $buildDatabaseWithFlywayParameters -contains 'FlywaySharedSqlMigrationsPath') {
+            $buildParams['FlywaySharedSqlMigrationsPath'] = $resolvedFlywaySharedSqlMigrationsPath
           }
 
-          if ($ApplicationName -and $buildDatabaseWithFlywayParameters -contains 'ApplicationName') {
-            $buildParams['ApplicationName'] = $ApplicationName
-          }
-          if ($UseTrustedConnection -and $buildDatabaseWithFlywayParameters -contains 'UseTrustedConnection') {
-            $buildParams['UseTrustedConnection'] = $true
+          if ($resolvedApplicationName -and $buildDatabaseWithFlywayParameters -contains 'ApplicationName') {
+            $buildParams['ApplicationName'] = $resolvedApplicationName
           }
           if ($PSBoundParameters.ContainsKey('Settings') -and $buildDatabaseWithFlywayParameters -contains 'Settings') {
             $buildParams['Settings'] = $Settings
           }
 
-          $buildResult = Build-DatabaseWithFlyway @buildParams
+          $buildOutput = @(Build-DatabaseWithFlyway @buildParams)
+          $buildResult = $buildOutput |
+            Where-Object { $null -ne $_ -and $_.PSObject.Properties['Success'] } |
+            Select-Object -Last 1
           $resultSuccess = $null -ne $buildResult -and $buildResult.PSObject.Properties['Success'] -and $buildResult.Success
 
           if ($resultSuccess) {

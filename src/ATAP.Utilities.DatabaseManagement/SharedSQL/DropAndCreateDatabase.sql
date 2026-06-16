@@ -4,7 +4,7 @@
 --   DatabasePath  - folder where .mdf / .ldf files will be created
 --   DBExists      - '0' or '1' (informational; not used in T-SQL logic here)
 
--- Batch 1: Validate inputs and create directory
+-- Batch 1: Validate inputs and verify directory
 DECLARE @DatabaseName  nvarchar(256)  = N'$(DatabaseName)';
 DECLARE @DatabasePath  nvarchar(4000) = N'$(DatabasePath)';
 DECLARE @DBExists      nvarchar(10)   = N'$(DBExists)';
@@ -21,14 +21,36 @@ BEGIN
     RETURN;
 END;
 
--- Create directory; ignore 22048 (xp_create_subdir wraps Win32 183 = already exists).
-BEGIN TRY
-    EXEC master.dbo.xp_create_subdir @DatabasePath;
-END TRY
-BEGIN CATCH
-    IF NOT (ERROR_NUMBER() = 22048 AND ERROR_MESSAGE() LIKE '%183%')
-        THROW;
-END CATCH;
+-- DatabaseProvisioning owns folder cleanup and creation before this SQL runs.
+-- Keep SQL Server validation here so CREATE DATABASE fails early with a clear
+-- message if the service account cannot see or access the target folder.
+DECLARE @PathStatus TABLE (
+    FileExists int,
+    IsDirectory int,
+    ParentDirectoryExists int
+);
+DECLARE @FileExists int = 0;
+DECLARE @IsDirectory int = 0;
+
+INSERT INTO @PathStatus
+EXEC master.dbo.xp_fileexist @DatabasePath;
+
+SELECT TOP (1)
+    @FileExists = ISNULL(FileExists, 0),
+    @IsDirectory = ISNULL(IsDirectory, 0)
+FROM @PathStatus;
+
+IF @FileExists = 1 AND @IsDirectory = 0
+BEGIN
+    RAISERROR('DatabasePath exists as a file, not a directory: %s', 16, 1, @DatabasePath);
+    RETURN;
+END;
+
+IF @IsDirectory = 0
+BEGIN
+    RAISERROR('DatabasePath does not exist or SQL Server cannot access it: %s', 16, 1, @DatabasePath);
+    RETURN;
+END;
 GO
 
 -- Batch 2: Drop database if it still exists (idempotent safety; caller may have dropped it already)

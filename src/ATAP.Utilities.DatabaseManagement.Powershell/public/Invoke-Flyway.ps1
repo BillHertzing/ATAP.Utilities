@@ -149,6 +149,10 @@ function Invoke-Flyway {
     [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
     [string]$DBConnectionStringSecretName,
 
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+    [Alias('DBConnectionStringDatabaseSecretName', 'DBConnectionStringDatabaseSecret', 'DatabaseSecretName', 'DBSecretName')]
+    [string]$DBConnectionStringDBSecretName,
+
     [Parameter(Mandatory = $false)]
     [hashtable]$Settings,
     # endregion Database connection parameters
@@ -222,17 +226,29 @@ function Invoke-Flyway {
     elseif ($global:settings -and $global:configRootKeys -and $global:configRootKeys['DatabasesCollectionConfigRootKey']) {
       $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
     }
+    elseif ($global:settings -is [System.Collections.IDictionary] -and $global:settings.Contains('DatabasesCollection')) {
+      $global:settings['DatabasesCollection']
+    }
+    elseif ($global:settings -and $global:settings.PSObject.Properties['DatabasesCollection']) {
+      $global:settings.DatabasesCollection
+    }
     else {
       $null
     }
 
     $DatabaseName = Get-PVal -ParameterName 'DatabaseName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseName" -Settings $databasesCollection -DefaultValue $DatabaseName
     $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue $Environment -ValidValues @('Production', 'Testing', 'Development', 'Experimental') -AllowMissing
+    $DBConnectionStringSecretName = Get-PVal -ParameterName 'DBConnectionStringSecretName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DBConnectionStringSecretName" -Settings $databasesCollection -DefaultValue $DBConnectionStringSecretName -AllowMissing
+    $DBConnectionStringDBSecretName = Get-PVal -ParameterName 'DBConnectionStringDBSecretName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DBConnectionStringDBSecretName" -Settings $databasesCollection -DefaultValue $DBConnectionStringDBSecretName -AllowMissing
+    if ([string]::IsNullOrWhiteSpace($DBConnectionStringDBSecretName)) {
+      $DBConnectionStringDBSecretName = $DBConnectionStringSecretName
+    }
 
     $resolution = Resolve-DatabaseSqlConnection `
       -OriginalPSBoundParameters $PSBoundParameters `
       -SqlConnection $SqlConnection `
       -DBConnectionStringSecretName $DBConnectionStringSecretName `
+      -DBConnectionStringDBSecretName $DBConnectionStringDBSecretName `
       -DatabaseHost $DatabaseHost `
       -InstanceName $SqlInstance `
       -DatabaseName $DatabaseName `
@@ -243,6 +259,8 @@ function Invoke-Flyway {
       -IntegratedSecurity:$IntegratedSecurity `
       -Settings $databasesCollection `
       -DatabaseHostDottedPath "$databaseName.$Environment.DatabaseHost" `
+      -DBConnectionStringSecretNameDottedPath "$databaseName.$Environment.DBConnectionStringSecretName" `
+      -DBConnectionStringDBSecretNameDottedPath "$databaseName.$Environment.DBConnectionStringDBSecretName" `
       -InstanceNameDottedPath "$databaseName.$Environment.SqlInstance" `
       -ConnectionMethodDottedPath "$databaseName.$Environment.ConnectionMethod" `
       -CredentialsKeyDottedPath "$databaseName.$Environment.CredentialsKey" `

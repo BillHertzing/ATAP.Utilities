@@ -109,6 +109,14 @@ https://github.com/whertzing/ATAP.Utilities
     [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
     [string]$DBConnectionStringSecretName,
 
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+    [Alias('DBConnectionStringMasterSecret', 'MasterSecretName', 'DBMasterConnectionStringSecretName')]
+    [string]$DBConnectionStringMasterSecretName,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+    [Alias('DBConnectionStringDatabaseSecretName', 'DBConnectionStringDatabaseSecret', 'DatabaseSecretName', 'DBSecretName')]
+    [string]$DBConnectionStringDBSecretName,
+
     [Parameter(Mandatory = $false)]
     [hashtable]$Settings,
     # endregion Database connection parameters
@@ -205,12 +213,27 @@ https://github.com/whertzing/ATAP.Utilities
     elseif ($global:settings -and $global:configRootKeys -and $global:configRootKeys['DatabasesCollectionConfigRootKey']) {
       $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
     }
+    elseif ($global:settings -is [System.Collections.IDictionary] -and $global:settings.Contains('DatabasesCollection')) {
+      $global:settings['DatabasesCollection']
+    }
+    elseif ($global:settings -and $global:settings.PSObject.Properties['DatabasesCollection']) {
+      $global:settings.DatabasesCollection
+    }
     else {
       $null
     }
 
     $DatabaseName = Get-PVal -ParameterName 'DatabaseName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseName" -Settings $databasesCollection -DefaultValue $DatabaseName
     $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue $Environment -ValidValues @('Production', 'QA', 'Integration', 'Development', 'Experimental') -AllowMissing
+    $DBConnectionStringSecretName = Get-PVal -ParameterName 'DBConnectionStringSecretName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DBConnectionStringSecretName" -Settings $databasesCollection -DefaultValue $DBConnectionStringSecretName -AllowMissing
+    $DBConnectionStringMasterSecretName = Get-PVal -ParameterName 'DBConnectionStringMasterSecretName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DBConnectionStringMasterSecretName" -Settings $databasesCollection -DefaultValue $DBConnectionStringMasterSecretName -AllowMissing
+    if ([string]::IsNullOrWhiteSpace($DBConnectionStringMasterSecretName)) {
+      $DBConnectionStringMasterSecretName = $DBConnectionStringSecretName
+    }
+    $DBConnectionStringDBSecretName = Get-PVal -ParameterName 'DBConnectionStringDBSecretName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DBConnectionStringDBSecretName" -Settings $databasesCollection -DefaultValue $DBConnectionStringDBSecretName -AllowMissing
+    if ([string]::IsNullOrWhiteSpace($DBConnectionStringDBSecretName)) {
+      $DBConnectionStringDBSecretName = $DBConnectionStringSecretName
+    }
     $DatabasePath = Get-PVal -ParameterName 'DatabasePath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection -DefaultValue $DatabasePath -AllowMissing
     $ProvisioningScriptsPath = Get-PVal -ParameterName 'ProvisioningScriptsPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisioningScriptsPath" -Settings $databasesCollection -DefaultValue $ProvisioningScriptsPath -AllowMissing
     $FlywayBasePath = Get-PVal -ParameterName 'FlywayBasePath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayBasePath" -Settings $databasesCollection -DefaultValue $FlywayBasePath
@@ -229,6 +252,8 @@ https://github.com/whertzing/ATAP.Utilities
       -OriginalPSBoundParameters $resolverBoundParameters `
       -SqlConnection $SqlConnection `
       -DBConnectionStringSecretName $DBConnectionStringSecretName `
+      -DBConnectionStringMasterSecretName $DBConnectionStringMasterSecretName `
+      -DBConnectionStringDBSecretName $DBConnectionStringDBSecretName `
       -DatabaseHost $DatabaseHost `
       -InstanceName $SqlInstance `
       -DatabaseName 'master' `
@@ -239,6 +264,9 @@ https://github.com/whertzing/ATAP.Utilities
       -IntegratedSecurity:$IntegratedSecurity `
       -Settings $databasesCollection `
       -DatabaseHostDottedPath "$databaseName.$Environment.DatabaseHost" `
+      -DBConnectionStringSecretNameDottedPath "$databaseName.$Environment.DBConnectionStringSecretName" `
+      -DBConnectionStringMasterSecretNameDottedPath "$databaseName.$Environment.DBConnectionStringMasterSecretName" `
+      -DBConnectionStringDBSecretNameDottedPath "$databaseName.$Environment.DBConnectionStringDBSecretName" `
       -InstanceNameDottedPath "$databaseName.$Environment.SqlInstance" `
       -ConnectionMethodDottedPath "$databaseName.$Environment.ConnectionMethod" `
       -CredentialsKeyDottedPath "$databaseName.$Environment.CredentialsKey" `
@@ -306,8 +334,11 @@ https://github.com/whertzing/ATAP.Utilities
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "ProvisioningScriptsPath was empty; defaulting to '$ProvisioningScriptsPath'"
       }
 
-      if ([string]::IsNullOrWhiteSpace($DatabasePath)) {
-        $DatabasePath = Join-Path $env:LOCALAPPDATA ("ATAP.Utilities\\SQLData\\$Environment")
+      if (-not [string]::IsNullOrWhiteSpace($DatabasePath)) {
+        $DatabasePath = [System.IO.Path]::GetFullPath($DatabasePath)
+      } else {
+        $databaseRootPath = 'C:\LocalDBs'
+        $DatabasePath = [System.IO.Path]::GetFullPath((Join-Path $databaseRootPath $DatabaseName))
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "DatabasePath was empty; defaulting to '$DatabasePath'"
       }
 
@@ -390,8 +421,6 @@ https://github.com/whertzing/ATAP.Utilities
           $FlywayParams = @{
             DatabaseName                  = $DatabaseName
             Environment                   = $Environment
-            SqlConnection                 = $sqlConnection
-            IntegratedSecurity            = $useIntegratedSecurityForFlyway
             FlywayCommand                 = 'migrate'
             FlywayBasePath                = $FlywayBasePath
             FlywaySqlMigrationsPath       = $flywaySqlMigrationsPath
@@ -400,6 +429,13 @@ https://github.com/whertzing/ATAP.Utilities
             FlywayTomlPath                = $FlywayTomlPath
             PackageName                   = "$DatabaseName.Functions"
             PackageVersion                = 1
+          }
+
+          if (-not [string]::IsNullOrWhiteSpace($DBConnectionStringDBSecretName)) {
+            $FlywayParams['DBConnectionStringSecretName'] = $DBConnectionStringDBSecretName
+          } else {
+            $FlywayParams['SqlConnection'] = $sqlConnection
+            $FlywayParams['IntegratedSecurity'] = $useIntegratedSecurityForFlyway
           }
 
           Invoke-Flyway @FlywayParams

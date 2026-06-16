@@ -12,6 +12,12 @@ Powershell scripts for managing an organization's computer systems' security
 > until Task 9.15-A lands. The working low-level primitives (`New-EncryptedPrivateKey`,
 > `New-CertificateRequest`, `New-CACertificate`, `New-SignedCertificate`,
 > `New-DistinguishedNameHash`) are sound.
+>
+> **Git SSL status (Sprint 9, Task 9.16):** Remote Git over HTTPS is restored for
+> this workstation by setting user/global `http.sslBackend=schannel`, overriding
+> the system Git for Windows `openssl` backend that could not validate the remote
+> chain through Git's bundled CA bundle. The org-root PEM bundle path remains
+> deferred to Task 9.17 after the module is import-safe.
 
 ### Public Administration Functions
 

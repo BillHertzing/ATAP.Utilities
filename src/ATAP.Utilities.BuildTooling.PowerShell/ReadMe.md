@@ -36,6 +36,17 @@ sprint `_Planning` worktree at
 SprintEnd a concrete list of worktree session names to validate against the
 archived conversation set.
 
+`Save-SprintWorkSession` checkpoints **four** AI coding-agent families via the
+`-Agent` parameter (Task 9.32): `ClaudeCode` (default; transcript JSONL under
+`~\.claude\projects`), `Antigravity` (`-ConversationId`; transcript + memory
+artifacts under `~\.gemini\antigravity\brain\<id>`, with the SQLite conversation
+DB recorded when present), `Codex` (`-SessionId`; rollout transcript under
+`~\.codex\sessions`, falling back to `~\.codex\archived_sessions`), and `Copilot`
+(`-ConversationFile`; delegates to `Save-CopilotCheckpoint` since Copilot writes
+no on-disk transcript). Antigravity and Codex auto-detect the newest
+conversation/rollout when the id argument is omitted. The roster entry records the
+`Agent`, `AgentSessionKey`, and `ConversationDbPath` for each save.
+
 Scope-creep capture (`Add-ScopeCreepIdea`) now resolves the target `_Planning`
 worktree through `Resolve-PlanningWorktreeRoot` (Task 9.23). Resolution is
 anchored on the **Sprint token** (`Sprint-<NNNN>-work-items`) shared across

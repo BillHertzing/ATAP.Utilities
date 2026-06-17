@@ -290,15 +290,6 @@ function New-SprintStage2 {
         throw 'The GitHub CLI (gh) is required but was not found on PATH.'
       }
     }
-
-    # Autoload-or-throw for the public functions this stage invokes (FSS-11).
-    foreach ($required in @('Set-WorktreeJunctions', 'Initialize-DownstreamSprintFromSharedVSCode')) {
-      if (-not (Get-Command -Name $required -ErrorAction SilentlyContinue)) {
-        throw "Required command '$required' is not available. The " +
-        'ATAP.Utilities.BuildTooling.PowerShell module must be installed and ' +
-        'autoloadable. Repair the module install before retrying sprint start.'
-      }
-    }
   }
 
   process {
@@ -468,10 +459,9 @@ function New-SprintStage2 {
             -Message "AI adapters materialized in $repoName worktree"
         }
       } catch {
-        $entry.error = "Failed to materialize $repoName AI adapters. Exception: $($_.Exception.Message)"
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $entry.error
-        [void]$repoResults.Add([PSCustomObject]$entry)
-        continue
+        # FSS-54: Non-fatal adapter materialization failure
+        $warningMessage = "Warning: AI adapter materialization failed in $repoName worktree. Exception: $($_.Exception.Message). Continuing with other setup steps."
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $warningMessage
       }
 
       # --- 5. Apply SharedVSCode context ---
@@ -512,13 +502,11 @@ function New-SprintStage2 {
     # ===================================================================
     # 6. Symlink claude-settings.json
     # ===================================================================
-    $claudeSettingsLinked = $false
     $claudeSettingsError = $null
 
     try {
       if ($PSCmdlet.ShouldProcess($svWorktreePath, 'Set claude-settings.json symlink')) {
         Set-ClaudeSettingsSymlink -SharedVSCodeWorktreePath $svWorktreePath
-        $claudeSettingsLinked = $true
       }
     } catch {
       $claudeSettingsError = "Failed to symlink claude-settings.json. Exception: $($_.Exception.Message)"

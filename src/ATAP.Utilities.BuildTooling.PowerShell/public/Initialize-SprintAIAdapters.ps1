@@ -58,6 +58,8 @@ function Initialize-SprintAIAdapters {
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
       -Message "Loading Render-AIAdapters script from $renderScript"
+    # FSS-62: Dot-source Render-AIAdapters from the SharedVSCode worktree (not installed as module cmdlet).
+    # This function is supplied as a tool script within each sprint worktree's .ai/tools/ folder.
     . $renderScript
   }
 
@@ -65,26 +67,68 @@ function Initialize-SprintAIAdapters {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
       -Message "Materializing AI adapters from manifest $ManifestPath into $TargetRoot"
 
-    $renderParams = @{
-      ManifestPath   = $ManifestPath
-      TargetRoot     = $TargetRoot
-      UpdateManifest = $UpdateManifest
-      Force          = $Force
+    # Load and filter manifest to enforce D-3 outside-junction scoping
+    try {
+      $manifestContent = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json -ErrorAction Stop
+    } catch {
+      throw "Failed to parse manifest at $ManifestPath : $_"
     }
 
-    if ($PSCmdlet.ShouldProcess($TargetRoot, 'Materialize AI adapters')) {
-      $renderResult = Render-AIAdapters @renderParams -WhatIf:$WhatIfPreference
+    # Create a filtered copy with only outside-junction targets
+    $filteredManifest = $manifestContent | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+    $outsideJunctionCount = 0
+    $filteredJunctionCount = 0
 
-      # Log result summary
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-        -Message "AI adapter materialization complete: changed $($renderResult.ChangedCount), errors $($renderResult.ErrorCount)"
+    foreach ($record in $filteredManifest.records) {
+      $filteredTargets = @()
+      foreach ($target in $record.targets) {
+        if ($target.scope -eq 'outside-junction' -or -not $target.scope) {
+          # Keep targets marked outside-junction; also keep unscoped targets for backwards compatibility
+          $filteredTargets += $target
+          $outsideJunctionCount++
+        } else {
+          $filteredJunctionCount++
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
+            -Message "Filtering out junctioned target: $($target.path)"
+        }
+      }
+      $record.targets = $filteredTargets
+    }
 
-      if ($renderResult.ErrorCount -gt 0) {
-        $failedTargets = $renderResult.Results | Where-Object { $_.Action -eq 'error' } | ForEach-Object { "$($_.Path): $($_.Message)" }
-        throw "Failed to materialize all AI adapters: $($failedTargets -join '; ')"
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+      -Message "Materialization scope: keeping $outsideJunctionCount outside-junction targets, filtering $filteredJunctionCount junctioned targets"
+
+    # Write the filtered manifest to a temporary file for Render-AIAdapters
+    $tempManifestPath = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "instruction-map-filtered-$(Get-Random).json")
+    try {
+      $filteredManifest | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $tempManifestPath -Encoding utf8
+
+      $renderParams = @{
+        ManifestPath   = $tempManifestPath
+        TargetRoot     = $TargetRoot
+        UpdateManifest = $false
+        Force          = $Force
       }
 
-      return $renderResult
+      if ($PSCmdlet.ShouldProcess($TargetRoot, 'Materialize AI adapters')) {
+        $renderResult = Render-AIAdapters @renderParams -WhatIf:$WhatIfPreference
+
+        # Log result summary
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+          -Message "AI adapter materialization complete: changed $($renderResult.ChangedCount), errors $($renderResult.ErrorCount)"
+
+        if ($renderResult.ErrorCount -gt 0) {
+          $failedTargets = $renderResult.Results | Where-Object { $_.Action -eq 'error' } | ForEach-Object { "$($_.Path): $($_.Message)" }
+          throw "Failed to materialize all AI adapters: $($failedTargets -join '; ')"
+        }
+
+        return $renderResult
+      }
+    } finally {
+      # Clean up temporary manifest
+      if (Test-Path -LiteralPath $tempManifestPath) {
+        Remove-Item -LiteralPath $tempManifestPath -Force -ErrorAction SilentlyContinue
+      }
     }
   }
 

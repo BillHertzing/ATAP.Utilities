@@ -53,7 +53,7 @@ function New-SprintStage1 {
   #>
   [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
   param(
-    [string]$GitRoot = 'C:\Dropbox\whertzing\GitHub',
+    [string]$GitRoot,
 
     [string]$Owner,
 
@@ -62,7 +62,7 @@ function New-SprintStage1 {
 
     [string[]]$JunctionFolderNames = @('.claude', '.github', '.vscode'),
 
-    [string]$ProGetBaseUrl = 'http://localhost:50000',
+    [string]$ProGetBaseUrl,
 
     [switch]$DryRun
   )
@@ -77,21 +77,40 @@ function New-SprintStage1 {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'DryRun enabled — no external side effects will be performed.'
     }
 
-    if ([string]::IsNullOrWhiteSpace($Owner)) {
-      $overviewPath = Join-Path $GitRoot 'OverView.code-workspace'
-      if (Test-Path -LiteralPath $overviewPath -PathType Leaf) {
+    # --- Resolve configuration via Get-PVal (FSS-02): param > env > settings >
+    #     documented default. This replaces the hard-coded parameter defaults and
+    #     the brittle OverView.code-workspace githubOwner read. Get-PVal raises a
+    #     loud-failure guard when no settings source is loaded (tests / no-profile
+    #     shells), so each lookup is wrapped and degrades to the default rather
+    #     than aborting sprint start. ---
+    $getPValAvailable = [bool](Get-Command -Name 'Get-PVal' -ErrorAction SilentlyContinue)
+    $proGetBaseUrlKey = if ($global:configRootKeys -and $global:configRootKeys['ProGetBaseUrlConfigRootKey']) {
+      $global:configRootKeys['ProGetBaseUrlConfigRootKey']
+    } else { 'ProGetBaseUrl' }
+
+    $gitRootDefault = 'C:\Dropbox\whertzing\GitHub'
+    $ownerDefault = $env:USERNAME
+    $proGetBaseUrlDefault = 'http://localhost:50000'
+
+    if ($getPValAvailable) {
+      foreach ($spec in @(
+          @{ Name = 'GitRoot'; Path = 'GitRoot'; Default = $gitRootDefault },
+          @{ Name = 'Owner'; Path = 'GitHubOwner'; Default = $ownerDefault },
+          @{ Name = 'ProGetBaseUrl'; Path = $proGetBaseUrlKey; Default = $proGetBaseUrlDefault })) {
         try {
-          $workspace = Get-Content -LiteralPath $overviewPath -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
-          $Owner = $workspace.githubOwner
+          $resolvedSetting = Get-PVal -ParameterName $spec.Name `
+            -originalPSBoundParameters $PSBoundParameters `
+            -dottedPath $spec.Path -DefaultValue $spec.Default -AllowMissing
+          Set-Variable -Name $spec.Name -Value $resolvedSetting
         } catch {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning `
-            -Message "Could not read githubOwner from $overviewPath`: $($_.Exception.Message). Falling back to `$env:USERNAME."
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+            -Message "Get-PVal lookup for '$($spec.Name)' fell back to its default. Exception: $($_.Exception.Message)"
         }
       }
-      if ([string]::IsNullOrWhiteSpace($Owner)) {
-        $Owner = $env:USERNAME
-      }
     }
+    if ([string]::IsNullOrWhiteSpace($GitRoot)) { $GitRoot = $gitRootDefault }
+    if ([string]::IsNullOrWhiteSpace($Owner)) { $Owner = $ownerDefault }
+    if ([string]::IsNullOrWhiteSpace($ProGetBaseUrl)) { $ProGetBaseUrl = $proGetBaseUrlDefault }
 
     # --- Ensure external dependencies are available ---
     if (-not $DryRun) {
@@ -102,33 +121,15 @@ function New-SprintStage1 {
       }
     }
 
-    # Dot-source Set-WorktreeJunctions if not already loaded
-    $setWtJunctionsPath = Join-Path $GitRoot 'ATAP.Utilities' 'src' `
-      'ATAP.Utilities.BuildTooling.PowerShell' 'public' 'Set-WorktreeJunctions.ps1'
-    if (-not (Get-Command -Name 'Set-WorktreeJunctions' -CommandType Function -ErrorAction SilentlyContinue)) {
-      if ($DryRun) {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'DryRun: skipping Set-WorktreeJunctions dependency load.'
-      } elseif (Test-Path $setWtJunctionsPath) {
-        . $setWtJunctionsPath
-      } else {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
-          -Message "Set-WorktreeJunctions.ps1 not found at $setWtJunctionsPath"
-        throw "Set-WorktreeJunctions.ps1 not found at $setWtJunctionsPath"
-      }
-    }
-
-    # Dot-source Initialize-DownstreamSprintFromSharedVSCode if not already loaded
-    if (-not (Get-Command -Name 'Initialize-DownstreamSprintFromSharedVSCode' -CommandType Function -ErrorAction SilentlyContinue)) {
-      $initializeDownstreamPath = Join-Path $GitRoot 'ATAP.Utilities' 'src' `
-        'ATAP.Utilities.BuildTooling.PowerShell' 'public' 'Initialize-DownstreamSprintFromSharedVSCode.ps1'
-      if ($DryRun) {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'DryRun: skipping Initialize-DownstreamSprintFromSharedVSCode dependency load.'
-      } elseif (Test-Path $initializeDownstreamPath) {
-        . $initializeDownstreamPath
-      } else {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
-          -Message "Initialize-DownstreamSprintFromSharedVSCode.ps1 not found at $initializeDownstreamPath"
-        throw "Initialize-DownstreamSprintFromSharedVSCode.ps1 not found at $initializeDownstreamPath"
+    # Autoload-or-throw contract (FSS-10): the BuildTooling module is CI-built and
+    # installed, so the functions this stage calls must resolve by module autoload.
+    # A missing command is an environment fault the user must repair — never a
+    # silent dot-source fallback from a worktree path.
+    foreach ($required in @('Set-WorktreeJunctions', 'Initialize-DownstreamSprintFromSharedVSCode')) {
+      if (-not (Get-Command -Name $required -ErrorAction SilentlyContinue)) {
+        throw "Required command '$required' is not available. The " +
+        'ATAP.Utilities.BuildTooling.PowerShell module must be installed and ' +
+        'autoloadable. Repair the module install before retrying sprint start.'
       }
     }
   }

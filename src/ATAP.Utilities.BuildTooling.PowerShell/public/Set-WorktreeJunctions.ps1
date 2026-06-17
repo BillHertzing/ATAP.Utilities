@@ -246,8 +246,7 @@ function Set-WorktreeJunctions {
             throw $errorMessage
         }
 
-        # Snippet: Check and populate simple parameter
-        # Parameter: WorktreePath
+        # Require WorktreePath.
         if (-not $PSBoundParameters.ContainsKey('WorktreePath') -or [string]::IsNullOrWhiteSpace($WorktreePath)) {
             $errorMessage = 'Parameter WorktreePath is required but was not provided or is empty'
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
@@ -291,8 +290,7 @@ function Set-WorktreeJunctions {
                 $devSourceRepoFullPath = $resolvedDevSourceRepoPath.Path
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Dev source repository path resolved to: $devSourceRepoFullPath"
 
-                # Snippet: Check and populate simple parameter
-                # Parameter: DevSourceRepoFolderNames
+                # Require DevSourceRepoFolderNames for the Dev parameter sets.
                 if (-not $PSBoundParameters.ContainsKey('DevSourceRepoFolderNames') -or $null -eq $DevSourceRepoFolderNames -or $DevSourceRepoFolderNames.Count -eq 0) {
                     $errorMessage = 'Parameter DevSourceRepoFolderNames is required but was not provided or is empty'
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage

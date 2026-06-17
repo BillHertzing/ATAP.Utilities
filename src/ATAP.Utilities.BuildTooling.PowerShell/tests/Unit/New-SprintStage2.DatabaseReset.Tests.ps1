@@ -11,6 +11,7 @@ BeforeAll {
     'Initialize-DownstreamSprintFromSharedVSCode',
     'Set-ClaudeSettingsSymlink',
     'Set-UserSettingsSymlink',
+    'Get-SprintTaskRepositoryNames',
     'Set-BuildMasterSprintVariables',
     'New-SprintBitwardenSecrets',
     'Reset-SprintDatabases',
@@ -52,6 +53,12 @@ BeforeAll {
 
   function global:Set-UserSettingsSymlink {
     $global:stage2DatabaseResetCalls.Add('Set-UserSettingsSymlink') | Out-Null
+  }
+
+  function global:Get-SprintTaskRepositoryNames {
+    param($TasksContent, $ExcludeRepos)
+    $global:stage2DatabaseResetCalls.Add('Get-SprintTaskRepositoryNames') | Out-Null
+    , @('ATAP.Utilities')
   }
 
   function global:Set-BuildMasterSprintVariables {

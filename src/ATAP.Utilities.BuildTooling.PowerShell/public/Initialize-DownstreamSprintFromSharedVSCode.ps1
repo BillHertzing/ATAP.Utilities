@@ -11,8 +11,10 @@ function Initialize-DownstreamSprintFromSharedVSCode {
   .PARAMETER TemplateRef
     The SharedVSCode sprint worktree name
     (e.g. "SharedVSCode-wt-5-sprint-0003-work-items").
-  .PARAMETER Profile
-    Optional profile label. Defaults to "default".
+  .PARAMETER ProfileName
+    Optional profile label. Defaults to "default". Exposed under the alias
+    'Profile' for backward compatibility; the parameter is named ProfileName so
+    it does not shadow the automatic $PROFILE variable.
   .PARAMETER GitRoot
     Root directory containing all Git repositories.
   .PARAMETER SharedVSCodeRepoName
@@ -25,7 +27,9 @@ function Initialize-DownstreamSprintFromSharedVSCode {
     Initialize-DownstreamSprintFromSharedVSCode `
       -WorkspaceFiles @('.\Planning.code-workspace') `
       -TemplateRef 'SharedVSCode-wt-5-sprint-0003-work-items' `
-      -Profile 'sprint-0003'
+      -ProfileName 'sprint-0003'
+  .NOTES
+    AI assisted using Powershell.instructions.md as guidelines
   #>
   [CmdletBinding()]
   param(
@@ -37,22 +41,35 @@ function Initialize-DownstreamSprintFromSharedVSCode {
     [ValidateNotNullOrEmpty()]
     [string]$TemplateRef,
 
-    [string]$Profile = 'default',
+    [Alias('Profile')]
+    [string]$ProfileName = 'default',
     [string]$GitRoot = 'C:\dropbox\whertzing\GitHub',
     [string]$SharedVSCodeRepoName = 'SharedVSCode',
     [string]$SharedHooksSubPath = '.githooks',
     [string]$CommitTemplateRelativePath = 'GitTemplates\git.commit.template.txt'
   )
 
-  Set-WorkspaceSharedVSCodeReference `
-    -WorkspaceFiles $WorkspaceFiles `
-    -TemplateRef $TemplateRef `
-    -Profile $Profile
+  begin {
+    $fn = $MyInvocation.MyCommand.Name
+    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
+  }
 
-  Set-DownstreamSharedVSCodeContext `
-    -WorkspaceFiles $WorkspaceFiles `
-    -GitRoot $GitRoot `
-    -SharedVSCodeRepoName $SharedVSCodeRepoName `
-    -SharedHooksSubPath $SharedHooksSubPath `
-    -CommitTemplateRelativePath $CommitTemplateRelativePath
+  process {
+    Set-WorkspaceSharedVSCodeReference `
+      -WorkspaceFiles $WorkspaceFiles `
+      -TemplateRef $TemplateRef `
+      -Profile $ProfileName
+
+    Set-DownstreamSharedVSCodeContext `
+      -WorkspaceFiles $WorkspaceFiles `
+      -GitRoot $GitRoot `
+      -SharedVSCodeRepoName $SharedVSCodeRepoName `
+      -SharedHooksSubPath $SharedHooksSubPath `
+      -CommitTemplateRelativePath $CommitTemplateRelativePath
+  }
+
+  end {
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn in module $mn"
+  }
 }

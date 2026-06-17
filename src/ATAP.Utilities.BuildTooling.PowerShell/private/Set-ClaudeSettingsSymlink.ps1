@@ -23,7 +23,7 @@ function Set-ClaudeSettingsSymlink {
 
   begin {
     $fn = $MyInvocation.MyCommand.Name
-    $mn = 'SharedVSCode'
+    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
   }
 

@@ -13,6 +13,9 @@ BeforeAll {
     'git'
     'Set-WorktreeJunctions'
     'Initialize-DownstreamSprintFromSharedVSCode'
+    'Set-ClaudeSettingsSymlink'
+    'Set-UserSettingsSymlink'
+    'Get-SprintTaskRepositoryNames'
     'New-DeveloperSqlServerInstances'
     'Reset-SprintDatabases'
     'Set-BuildMasterSprintVariables'
@@ -49,6 +52,26 @@ BeforeAll {
   function global:Initialize-DownstreamSprintFromSharedVSCode {
     $global:dryRunExternalCalls.Add('Initialize-DownstreamSprintFromSharedVSCode') | Out-Null
     throw 'Initialize-DownstreamSprintFromSharedVSCode should not be called during DryRun.'
+  }
+
+  # Required by the Stage 2 autoload-or-throw contract (FSS-11). These are guarded
+  # by ShouldProcess so they never run during DryRun; the throwing body is a canary
+  # if that ever changes.
+  function global:Set-ClaudeSettingsSymlink {
+    $global:dryRunExternalCalls.Add('Set-ClaudeSettingsSymlink') | Out-Null
+    throw 'Set-ClaudeSettingsSymlink should not be called during DryRun.'
+  }
+
+  function global:Set-UserSettingsSymlink {
+    $global:dryRunExternalCalls.Add('Set-UserSettingsSymlink') | Out-Null
+    throw 'Set-UserSettingsSymlink should not be called during DryRun.'
+  }
+
+  # Repo discovery is pure text parsing (no external side effect) and runs even in
+  # DryRun, so this stub returns the repo list rather than throwing.
+  function global:Get-SprintTaskRepositoryNames {
+    param($TasksContent, $ExcludeRepos)
+    , @('ATAP.Utilities')
   }
 
   function global:New-DeveloperSqlServerInstances {
@@ -157,7 +180,8 @@ Describe 'New-SprintStage dry-run support' -Tag 'Unit' {
     $result.repoResults[0].dryRun | Should -BeTrue
     $result.infrastructure.claudeSettingsLinked | Should -BeFalse
     $result.infrastructure.buildMasterVariablesSet.Count | Should -Be 0
-    $result.infrastructure.connectionStrings.Count | Should -Be 0
+    # connectionStrings field removed (SC-0172 / FSS-30): sprint start creates no secrets.
+    $result.infrastructure.PSObject.Properties.Name | Should -Not -Contain 'connectionStrings'
     $result.infrastructure.databaseResets.Count | Should -Be 0
     $global:dryRunExternalCalls.Count | Should -Be 0
   }

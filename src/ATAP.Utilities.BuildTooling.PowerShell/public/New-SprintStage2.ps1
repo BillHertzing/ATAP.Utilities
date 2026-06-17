@@ -3,9 +3,10 @@ function New-SprintStage2 {
   .SYNOPSIS
     Creates downstream repo sprint branches, workTrees, NTFS junctions,
     applies SharedVSCode context, symlinks claude-settings.json, scaffolds
-    BuildMaster sprint builds, creates Bitwarden connection string secrets,
-    and resets sprint databases in existing SQL Server instances. ProGet feeds are
-    permanent and ecosystem-wide — not created per sprint.
+    BuildMaster sprint builds, and resets the sprint database in existing SQL
+    Server instances. Sprint start does NOT create or delete any secrets
+    (SC-0172). ProGet feeds are permanent and ecosystem-wide — not created per
+    sprint.
   .DESCRIPTION
     Reads the sprint TASKS.md file and extracts every unique repository name
     mentioned in task lines (the [RepoName] markers). Repos named '_Planning',
@@ -31,12 +32,13 @@ function New-SprintStage2 {
           ($env:APPDATA\Code\User\settings.json) to point at UserSettings.jsonc
           in the SharedVSCode sprint worktree via Set-UserSettingsSymlink.
       7. Scaffolds BuildMaster sprint build configurations (DRAFT — see notes).
-      8. Creates Bitwarden secure-note items with SQL Server connection strings
-         for the ATAPUtilities and AceCommander databases across Development
-         and Experimental tiers via New-SprintBitwardenSecrets.
-      9. Resets the ATAPUtilities and AceCommander databases inside existing
-         local Dev<username> and Exp<username> SQL Server instances using full
-         Flyway migrations, via Reset-SprintDatabases.
+      8. (Removed, SC-0172) Sprint start no longer creates or deletes any
+         Bitwarden secrets. Connection-string secrets are provisioned out of band.
+      9. Resets the single ATAPUtilities database (which contains the
+         ATAPUtilities, AceCommander, Tags and Gmail schemas — D-1) inside the
+         existing local Dev<username> and Exp<username> SQL Server instances using
+         the single Flyway migration set, via Reset-SprintDatabases. One reset per
+         instance (2 total), not per schema.
 
     ProGet feeds are permanent and ecosystem-wide — they are NOT created per
     sprint. See New-ProGetFeedSet for one-time feed provisioning.
@@ -69,8 +71,9 @@ function New-SprintStage2 {
     Defaults to 'http://localhost:50017'.
   .PARAMETER DryRun
     Preview all sprint-start downstream actions without creating GitHub issues,
-    branches, worktrees, junctions, SharedVSCode context, secrets, SQL Server
-    database resets, BuildMaster variables, or claude-settings links.
+    branches, worktrees, junctions, SharedVSCode context, SQL Server database
+    resets, BuildMaster variables, or claude-settings links. (Sprint start never
+    creates or deletes secrets — SC-0172.)
   .OUTPUTS
     PSCustomObject — contains repoResults, infrastructure, and error fields.
   .EXAMPLE
@@ -92,17 +95,17 @@ function New-SprintStage2 {
 
     [string]$TasksFilePath,
 
-    [string]$GitRoot = 'C:\Dropbox\whertzing\GitHub',
+    [string]$GitRoot,
 
-    [string]$Owner = 'whertzing',
+    [string]$Owner,
 
     [string[]]$JunctionFolderNames = @('.claude', '.github', '.vscode'),
 
     [string[]]$ExcludeRepos = @('_Planning', 'SharedVSCode', 'Cross-Repo'),
 
-    [string]$ProGetBaseUrl = 'http://localhost:50000',
+    [string]$ProGetBaseUrl,
 
-    [string]$BuildMasterBaseUrl = 'http://localhost:50017',
+    [string]$BuildMasterBaseUrl,
 
     [switch]$DryRun
   )
@@ -112,30 +115,67 @@ function New-SprintStage2 {
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
-    # Load helper functions. Fallback for running this file from source without
-    # importing the module; a normal Import-Module already dot-sources these
-    # private helpers. Kept inside BEGIN so loading/dot-sourcing this file only
-    # DEFINES the function and never executes anything at load time.
-    $privateDir = Join-Path $PSScriptRoot '..' 'private'
-    foreach ($privateHelperName in @('Set-ClaudeSettingsSymlink.ps1', 'Set-UserSettingsSymlink.ps1', 'Get-SprintTaskRepositoryNames.ps1')) {
-      $privateHelperCommandName = [System.IO.Path]::GetFileNameWithoutExtension($privateHelperName)
-      if (-not (Get-Command -Name $privateHelperCommandName -CommandType Function -ErrorAction SilentlyContinue)) {
-        $privateHelperPath = Join-Path $privateDir $privateHelperName
-        if (Test-Path -LiteralPath $privateHelperPath -PathType Leaf) {
-          . $privateHelperPath
-        }
-      }
-    }
-    # Retired in Sprint 0007 task B08 (now under Obsolete/private/):
-    #   - New-SprintBuildMasterBuilds.ps1   replaced by public Set-BuildMasterSprintVariables (Area 7.2-1)
-    #   - New-SprintDatabaseInstances.ps1   superseded by public Reset-SprintDatabases
-    if (-not (Get-Command -Name 'Reset-SprintDatabases' -CommandType Function -ErrorAction SilentlyContinue)) {
-      . (Join-Path $PSScriptRoot 'Reset-SprintDatabases.ps1')
-    }
-
     if ($DryRun) {
       $WhatIfPreference = $true
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'DryRun enabled — no external side effects will be performed.'
+    }
+
+    # --- Resolve configuration via Get-PVal (FSS-03): param > env > settings >
+    #     documented default. Replaces the hard-coded parameter defaults. Get-PVal
+    #     raises a loud-failure guard when no settings source is loaded (tests /
+    #     no-profile shells), so each lookup is wrapped and degrades to the default
+    #     rather than aborting sprint start. ---
+    $getPValAvailable = [bool](Get-Command -Name 'Get-PVal' -ErrorAction SilentlyContinue)
+    $proGetBaseUrlKey = if ($global:configRootKeys -and $global:configRootKeys['ProGetBaseUrlConfigRootKey']) {
+      $global:configRootKeys['ProGetBaseUrlConfigRootKey']
+    } else { 'ProGetBaseUrl' }
+    $buildMasterBaseUrlKey = if ($global:configRootKeys -and $global:configRootKeys['BuildMasterBaseUrlConfigRootKey']) {
+      $global:configRootKeys['BuildMasterBaseUrlConfigRootKey']
+    } else { 'BuildMasterBaseUrl' }
+
+    $gitRootDefault = 'C:\Dropbox\whertzing\GitHub'
+    $ownerDefault = $env:USERNAME
+    $proGetBaseUrlDefault = 'http://localhost:50000'
+    $buildMasterBaseUrlDefault = 'http://localhost:50017'
+
+    if ($getPValAvailable) {
+      foreach ($spec in @(
+          @{ Name = 'GitRoot'; Path = 'GitRoot'; Default = $gitRootDefault },
+          @{ Name = 'Owner'; Path = 'GitHubOwner'; Default = $ownerDefault },
+          @{ Name = 'ProGetBaseUrl'; Path = $proGetBaseUrlKey; Default = $proGetBaseUrlDefault },
+          @{ Name = 'BuildMasterBaseUrl'; Path = $buildMasterBaseUrlKey; Default = $buildMasterBaseUrlDefault })) {
+        try {
+          $resolvedSetting = Get-PVal -ParameterName $spec.Name `
+            -originalPSBoundParameters $PSBoundParameters `
+            -dottedPath $spec.Path -DefaultValue $spec.Default -AllowMissing
+          Set-Variable -Name $spec.Name -Value $resolvedSetting
+        } catch {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+            -Message "Get-PVal lookup for '$($spec.Name)' fell back to its default. Exception: $($_.Exception.Message)"
+        }
+      }
+    }
+    if ([string]::IsNullOrWhiteSpace($GitRoot)) { $GitRoot = $gitRootDefault }
+    if ([string]::IsNullOrWhiteSpace($Owner)) { $Owner = $ownerDefault }
+    if ([string]::IsNullOrWhiteSpace($ProGetBaseUrl)) { $ProGetBaseUrl = $proGetBaseUrlDefault }
+    if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) { $BuildMasterBaseUrl = $buildMasterBaseUrlDefault }
+
+    # Autoload-or-throw contract (FSS-11): the BuildTooling module is CI-built and
+    # installed, so every command this stage calls must resolve by module autoload
+    # (public functions and the private helpers Set-ClaudeSettingsSymlink,
+    # Set-UserSettingsSymlink, Get-SprintTaskRepositoryNames). A missing command is
+    # an environment fault the user must repair — never a silent dot-source from a
+    # worktree path.
+    foreach ($required in @(
+        'Set-ClaudeSettingsSymlink',
+        'Set-UserSettingsSymlink',
+        'Get-SprintTaskRepositoryNames',
+        'Reset-SprintDatabases')) {
+      if (-not (Get-Command -Name $required -ErrorAction SilentlyContinue)) {
+        throw "Required command '$required' is not available. The " +
+        'ATAP.Utilities.BuildTooling.PowerShell module must be installed and ' +
+        'autoloadable. Repair the module install before retrying sprint start.'
+      }
     }
 
     # --- Validate Stage1Result has the fields we need ---
@@ -244,33 +284,12 @@ function New-SprintStage2 {
       }
     }
 
-    # Dot-source Set-WorktreeJunctions if not already loaded
-    $setWtJunctionsPath = Join-Path $GitRoot 'ATAP.Utilities' 'src' `
-      'ATAP.Utilities.BuildTooling.PowerShell' 'public' 'Set-WorktreeJunctions.ps1'
-    if (-not (Get-Command -Name 'Set-WorktreeJunctions' -CommandType Function -ErrorAction SilentlyContinue)) {
-      if ($DryRun) {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'DryRun: skipping Set-WorktreeJunctions dependency load.'
-      } elseif (Test-Path $setWtJunctionsPath) {
-        . $setWtJunctionsPath
-      } else {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
-          -Message "Set-WorktreeJunctions.ps1 not found at $setWtJunctionsPath"
-        throw "Set-WorktreeJunctions.ps1 not found at $setWtJunctionsPath"
-      }
-    }
-
-    # Dot-source Initialize-DownstreamSprintFromSharedVSCode if not already loaded
-    if (-not (Get-Command -Name 'Initialize-DownstreamSprintFromSharedVSCode' -CommandType Function -ErrorAction SilentlyContinue)) {
-      $initializeDownstreamPath = Join-Path $GitRoot 'ATAP.Utilities' 'src' `
-        'ATAP.Utilities.BuildTooling.PowerShell' 'public' 'Initialize-DownstreamSprintFromSharedVSCode.ps1'
-      if ($DryRun) {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'DryRun: skipping Initialize-DownstreamSprintFromSharedVSCode dependency load.'
-      } elseif (Test-Path $initializeDownstreamPath) {
-        . $initializeDownstreamPath
-      } else {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
-          -Message "Initialize-DownstreamSprintFromSharedVSCode.ps1 not found at $initializeDownstreamPath"
-        throw "Initialize-DownstreamSprintFromSharedVSCode.ps1 not found at $initializeDownstreamPath"
+    # Autoload-or-throw for the public functions this stage invokes (FSS-11).
+    foreach ($required in @('Set-WorktreeJunctions', 'Initialize-DownstreamSprintFromSharedVSCode')) {
+      if (-not (Get-Command -Name $required -ErrorAction SilentlyContinue)) {
+        throw "Required command '$required' is not available. The " +
+        'ATAP.Utilities.BuildTooling.PowerShell module must be installed and ' +
+        'autoloadable. Repair the module install before retrying sprint start.'
       }
     }
   }
@@ -530,22 +549,12 @@ function New-SprintStage2 {
     }
 
     # ===================================================================
-    # 9. Create Bitwarden connection string secrets
+    # 9. (Removed — SC-0172) Sprint start no longer creates Bitwarden secrets.
+    # Connection-string secrets are provisioned out of band; New-SprintStage2
+    # neither creates nor deletes vault items. The former
+    # New-SprintBitwardenSecrets call and the connectionStrings/connectionStringError
+    # return fields were removed.
     # ===================================================================
-    $connStringResults = $null
-    $connStringError = $null
-
-    try {
-      if ($PSCmdlet.ShouldProcess('Bitwarden vault', 'Create sprint connection string secrets')) {
-        $connStringResults = New-SprintBitwardenSecrets `
-          -SprintNumber $sprintNum `
-          -DeveloperUsername $env:USERNAME `
-          -WhatIf:$WhatIfPreference
-      }
-    } catch {
-      $connStringError = "Failed to create Bitwarden connection string secrets. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $connStringError
-    }
 
     # ===================================================================
     # 10. Reset sprint databases inside existing SQL Server instances
@@ -553,20 +562,20 @@ function New-SprintStage2 {
     $dbResetResults = $null
     $dbResetError = $null
 
-    # Read database settings from global config for the database reset call
+    # Read database settings for the reset call. There is ONE database,
+    # ATAPUtilities (D-1), containing the ATAPUtilities, AceCommander, Tags and
+    # Gmail schemas — confirmed by
+    # ATAP.Utilities/Database/Flyway/SQL/V00.01.000010__Create_ATAPUtilities_Core_Schema.sql.
+    # The Databases collection is a structured host setting, so it is read
+    # directly (the same way Reset-SprintDatabases reads it) rather than via the
+    # scalar Get-PVal path used for GitRoot/Owner/base URLs.
     $dbInstHost = 'localhost'
     $dbInstConnMethod = 'tcp'
     $dbInstPort = $null
     $databasesKey2 = if ($global:configRootKeys) { $global:configRootKeys['DatabasesCollectionConfigRootKey'] } else { $null }
     if ($databasesKey2 -and $global:settings -and $global:settings.ContainsKey($databasesKey2)) {
       $dbColl2 = $global:settings[$databasesKey2]
-      $atapDb2 = if ($dbColl2.ContainsKey('ATAPUtilities')) {
-        $dbColl2['ATAPUtilities']
-      } elseif ($dbColl2.ContainsKey('ATAPUtilities')) {
-        $dbColl2['ATAPUtilities']
-      } else {
-        @{}
-      }
+      $atapDb2 = if ($dbColl2.ContainsKey('ATAPUtilities')) { $dbColl2['ATAPUtilities'] } else { @{} }
       if (-not [string]::IsNullOrWhiteSpace($atapDb2['DatabaseHost'])) {
         $dbInstHost = $atapDb2['DatabaseHost']
       }
@@ -611,9 +620,6 @@ function New-SprintStage2 {
         buildMasterVariablesSet    = if ($buildMasterResult) { $buildMasterResult.variablesSet } else { @() }
         buildMasterVariablesErrors = if ($buildMasterResult) { $buildMasterResult.errors } else { @() }
         buildMasterVariablesError  = $buildMasterError
-        # Connection string secrets created in Bitwarden (UNTESTED)
-        connectionStrings          = if ($connStringResults) { $connStringResults } else { @() }
-        connectionStringError      = $connStringError
         # Sprint SQL Server database reset results
         databaseResets             = if ($dbResetResults) { $dbResetResults } else { @() }
         databaseResetError         = $dbResetError

@@ -17,11 +17,10 @@ function New-SprintStage1 {
       5. Applies SharedVSCode context (templateRef, hooksPath, commitTemplate)
          to the _Planning worktree.
       6. Creates a sprint NuGet.config in the SharedVSCode worktree referencing
-          all five ProGet feeds (experimental, development, integration, qa, stable)
-          plus nuget.org.
+         the permanent ProGet feeds and nuget.org.
       7. Leaves the `_Planning` sprint worktree ready for Step 2 to create the
-         sprint task artifact set: `TASKS.html`, `Tasks.Accomplished.html`,
-         `Tasks.ProceduralDetails.html`, and the synchronized `TASKS.md`.
+         sprint task artifact set: `TasksSprintNNNN.html`, `Tasks.Accomplished.SprintNNNN.html`,
+         `Tasks.ProceduralDetails.SprintNNNN.html`, and the synchronized `TasksSprintNNNN.md`.
 
     If any step fails the function captures the error into the appropriate field
     of the return object and stops further processing for that repo while still
@@ -416,10 +415,9 @@ function New-SprintStage1 {
           -Message 'AI adapters materialized in _Planning worktree'
       }
     } catch {
-      $errorMessage = "Failed to materialize _Planning AI adapters. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-      $result.planning.error = $errorMessage
-      return $result
+      # FSS-54: Non-fatal adapter materialization failure
+      $errorMessage = "Warning: AI adapter materialization failed in _Planning worktree. Exception: $($_.Exception.Message). Continuing sprint start."
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $errorMessage
     }
 
     # 3e. Apply SharedVSCode context to _Planning
@@ -498,16 +496,16 @@ function New-SprintStage1 {
         -Message "Creating sprint NuGet.config in SharedVSCode worktree at $svWorktreePath"
 
       $nugetConfigPath = Join-Path $svWorktreePath 'NuGet.config'
+
+      # FSS-56: Remove hard-coded template path fallback. Template must be in one of the expected locations.
       $templatePath = Join-Path $svWorktreePath 'NuGet.config.template'
       if (-not (Test-Path $templatePath)) {
         $templatePath = Join-Path $GitRoot 'SharedVSCode/NuGet.config.template'
       }
-      if (-not (Test-Path $templatePath)) {
-        $templatePath = 'C:/Dropbox/whertzing/GitHub/SharedVSCode/NuGet.config.template'
-      }
 
       if (-not (Test-Path $templatePath)) {
-        throw "NuGet.config.template not found at '$templatePath'"
+        throw "NuGet.config.template not found. Expected location: $(Join-Path $svWorktreePath 'NuGet.config.template') or $(Join-Path $GitRoot 'SharedVSCode/NuGet.config.template'). " +
+              "Ensure SharedVSCode sprint worktree is initialized with required template files."
       }
 
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `

@@ -1,27 +1,24 @@
 function Set-BuildMasterSprintVariables {
   <#
   .SYNOPSIS
-    DEPRECATED. Sets BuildMaster Application Variables for a new sprint.
-    Use Set-BuildMasterApplicationVariables instead.
-    This cmdlet will be removed in Sprint 0008.
+    Sets BuildMaster Application Variables for a new sprint.
   .DESCRIPTION
     Uses the BuildMaster Variables REST API
-    (POST /api/variables/application/{app}/{var}) to set three sprint-scoped
+    (POST /api/variables/application/{app}/{var}) to set sprint-scoped
     application variables for each application in -Applications:
 
-      SprintNumber     — e.g. '0006'
-      UserName         — e.g. 'whertzing'
-      SprintBranchName — e.g. '98-Sprint-0006-work-items'
+      SprintNumber      — e.g. '0006'
+      UserName          — e.g. 'whertzing'
+      SprintBranchName  — e.g. '98-Sprint-0006-work-items'
+      SourcePath        — e.g. the source path for each application's build (FSS-26b)
 
     These variables are consumed by the 5-Stage OtterScript build plans to
-    identify which source branch to check out and which sprint context applies.
+    identify which source branch to check out, which sprint context applies,
+    and where to find source files for the build.
     They are cleared at sprint-end by Clear-BuildMasterSprintVariables.
 
     Resolves the API key secret name via Get-PVal (default
     'BuildMaster.Admin.API.Key') and reads the key value with Get-SecretATAP.
-
-    ** DEPRECATED ** Use Set-BuildMasterApplicationVariables instead.
-    This cmdlet will be removed in Sprint 0008.
 
   .PARAMETER SprintNumber
     The zero-padded four-character sprint number, e.g. '0006'.
@@ -54,8 +51,7 @@ function Set-BuildMasterSprintVariables {
   .NOTES
     AI assisted using Powershell.instructions.md as guidelines
     Phase 3C — T-31 (7.2-1 BuildMaster sprint application variables)
-    DEPRECATED: Use Set-BuildMasterApplicationVariables instead.
-    This cmdlet will be removed in Sprint 0008.
+    FSS-55: Un-deprecated. Actively maintained and used in New-SprintStage2.
   .LINK
     Set-BuildMasterApplicationVariables
     New-SprintStage2
@@ -85,9 +81,6 @@ function Set-BuildMasterSprintVariables {
     $fn = $MyInvocation.MyCommand.Name
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
-
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-      -Message 'DEPRECATED: Use Set-BuildMasterApplicationVariables instead. This cmdlet will be removed in Sprint 0008.'
 
     $BuildMasterBaseUrl = Get-PVal -ParameterName 'BuildMasterBaseUrl' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterBaseUrl
 

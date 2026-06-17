@@ -31,6 +31,7 @@ function New-SprintStage2Result {
     Part of the SprintStartAgent repair.
   #>
   [CmdletBinding()]
+  [OutputType([PSCustomObject])]
   param(
     [Parameter(Mandatory=$false)]
     [switch]$DryRun,

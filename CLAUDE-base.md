@@ -209,6 +209,7 @@ All agents operate on **Windows** inside **Visual Studio Code**. Use **PowerShel
 - Line continuation uses `` ` `` (backtick) — never `\`
 - When running Pester, NEVER use `-NoProfile`. Always allow PowerShell profiles:
   `pwsh -Command "Invoke-Pester -Path '<path>' -Output Detailed"`
+- For ATAP repository work, do not pass `-NoProfile` unless the task is explicitly auditing no-profile behavior. PowerShell profiles populate `$global:settings`, and BuildTooling resolves host/user configuration through `Get-PVal`; stripping profiles changes configuration resolution and can create misleading failures.
 - If requirements are ambiguous, ask ONE clarifying question before generating commands
 - **Bash tool override (R-01):** If `tools.bash.command` is configurable, set it to `pwsh`.
   In the Bash/terminal tool, ALL commands must be PowerShell. Never send bare PowerShell
@@ -423,19 +424,26 @@ When asked to create or modify a Rule, Rule Set, or Build Set:
     before analyzing or acting.
 11. **Small scope-creep units (R-29):** Decompose scope-creep work into units small
     enough for a simpler LLM model, typically one file change or one well-scoped function.
-12. **Pre-pull overlap check (R-31):** Before pulling `main` in a repo with local
+12. **Checkpoint cadence (R-30):** During long or multi-repo sessions, run `/checkpoint`
+    at completed task boundaries, before risky context switches or broad refactors, and
+    always before closing the session. Do not leave an entire sprint's worth of work
+    uncheckpointed.
+13. **Pre-pull overlap check (R-31):** Before pulling `main` in a repo with local
     changes, compare local modified paths to `main..origin/main` changed paths. Block
     automatic pull when paths overlap and ask for human direction.
-13. **Large sprint PR risk note (R-32):** For very large sprint branches, add a short
+14. **Large sprint PR risk note (R-32):** For very large sprint branches, add a short
     risk note to the PR body before moving from draft to ready. The note must name
     high-risk areas and deferred validation items.
-14. **PowerShell-native orchestration (R-33):** In Windows sprint orchestration sessions,
+15. **PowerShell-native orchestration (R-33):** In Windows sprint orchestration sessions,
     use PowerShell-native commands and syntax consistently. Avoid POSIX shell habits in
     runbooks, commands, and generated instructions.
-15. **Agent-swarm threshold (R-36):** For refactors touching more than about 20 files,
+16. **Async process drain before WaitForExit (R-34):** When using `System.Diagnostics.Process`
+    with redirected stdout or stderr, begin draining both streams before `WaitForExit` or
+    `WaitForExitAsync`. Never wait on the process while redirected buffers can still fill.
+17. **Agent-swarm threshold (R-36):** For refactors touching more than about 20 files,
     prefer an agent-swarm plan with one bounded ownership slice per worker. Keep write
     scopes disjoint and merge through a review pass.
-16. **Blazor/Syncfusion instructions (R-37):** For Blazor UI or Syncfusion component
+18. **Blazor/Syncfusion instructions (R-37):** For Blazor UI or Syncfusion component
     work, load `.claude/Rules/BlazorSyncfusion.md` before changing `.razor`, `.razor.cs`,
     `.cshtml`, or Syncfusion-related C# files.
 

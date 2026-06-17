@@ -21,6 +21,8 @@ function Set-DownstreamSharedVSCodeContext {
     Relative path under SharedVSCode root for the commit template.
   .EXAMPLE
     Set-DownstreamSharedVSCodeContext -WorkspaceFiles @('.\Planning.code-workspace')
+  .NOTES
+    AI assisted using Powershell.instructions.md as guidelines
   #>
   [CmdletBinding()]
   param(
@@ -34,8 +36,15 @@ function Set-DownstreamSharedVSCodeContext {
     [string]$CommitTemplateRelativePath = 'GitTemplates\git.commit.template.txt'
   )
 
-  Assert-GitAvailable
-  $workspaceRepoRoots = @(
+  begin {
+    $fn = $MyInvocation.MyCommand.Name
+    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
+  }
+
+  process {
+    Assert-GitAvailable
+    $workspaceRepoRoots = @(
     $WorkspaceFiles |
       ForEach-Object {
         $resolvedWorkspace = (Resolve-Path -LiteralPath $_ -ErrorAction Stop).ProviderPath
@@ -82,5 +91,10 @@ function Set-DownstreamSharedVSCodeContext {
       $hooksResolved = (Resolve-Path -Path $ctx.HooksPath).ProviderPath
       git config --local core.hooksPath $hooksResolved | Out-Null
     }
+    }
+  }
+
+  end {
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn in module $mn"
   }
 }

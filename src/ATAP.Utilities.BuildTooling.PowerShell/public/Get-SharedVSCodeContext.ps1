@@ -19,6 +19,8 @@ function Get-SharedVSCodeContext {
     Relative path under SharedVSCode root for the commit template.
   .EXAMPLE
     $contexts = Get-SharedVSCodeContext -WorkspaceFiles @('.\Planning.code-workspace')
+  .NOTES
+    AI assisted using Powershell.instructions.md as guidelines
   #>
   [CmdletBinding()]
   [OutputType([PSCustomObject[]])]
@@ -33,27 +35,35 @@ function Get-SharedVSCodeContext {
     [string]$CommitTemplateRelativePath = 'GitTemplates\git.commit.template.txt'
   )
 
-  $resolvedWorkspaceFiles = Resolve-WorkspaceFiles -WorkspaceFiles $WorkspaceFiles
-  $results = [System.Collections.Generic.List[PSCustomObject]]::new()
+  begin {
+    $fn = $MyInvocation.MyCommand.Name
+    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
+  }
 
-  foreach ($workspaceFile in $resolvedWorkspaceFiles) {
-    $json = Get-WorkspaceJson -WorkspaceFile $workspaceFile
+  process {
+    $resolvedWorkspaceFiles = Resolve-WorkspaceFiles -WorkspaceFiles $WorkspaceFiles
+    $results = [System.Collections.Generic.List[PSCustomObject]]::new()
 
-    if (-not $json.settings) {
-      throw "Workspace '$workspaceFile' is missing the settings object."
-    }
+    foreach ($workspaceFile in $resolvedWorkspaceFiles) {
+      $json = Get-WorkspaceJson -WorkspaceFile $workspaceFile
 
-    $templateRef = $json.settings.'atap.sharedVSCode.templateRef'
-    if ([string]::IsNullOrWhiteSpace($templateRef)) {
-      throw "Workspace '$workspaceFile' is missing setting 'atap.sharedVSCode.templateRef'."
-    }
+      if (-not $json.settings) {
+        throw "Workspace '$workspaceFile' is missing the settings object."
+      }
 
-    $profile = $json.settings.'atap.sharedVSCode.profile'
-    if ([string]::IsNullOrWhiteSpace($profile)) {
-      $profile = 'default'
-    }
+      $templateRef = $json.settings.'atap.sharedVSCode.templateRef'
+      if ([string]::IsNullOrWhiteSpace($templateRef)) {
+        throw "Workspace '$workspaceFile' is missing setting 'atap.sharedVSCode.templateRef'."
+      }
 
-    $sharedRoot = Get-SharedVSCodeRootFromTemplateRef `
+      # Local label only; named $profileLabel so it does not shadow $PROFILE.
+      $profileLabel = $json.settings.'atap.sharedVSCode.profile'
+      if ([string]::IsNullOrWhiteSpace($profileLabel)) {
+        $profileLabel = 'default'
+      }
+
+      $sharedRoot = Get-SharedVSCodeRootFromTemplateRef `
       -TemplateRef $templateRef `
       -GitRoot $GitRoot `
       -SharedVSCodeRepoName $SharedVSCodeRepoName
@@ -76,14 +86,19 @@ function Get-SharedVSCodeContext {
     $results.Add([PSCustomObject]@{
       WorkspaceFile  = $workspaceFile
       TemplateRef    = $templateRef
-      Profile        = $profile
+      Profile        = $profileLabel
       SharedRoot     = $sharedRoot
       GitConfig      = $gitConfigPath
       GitAttributes  = $gitAttributesPath
       CommitTemplate = $commitTemplatePath
       HooksPath      = $hooksPath
     })
+    }
+
+    return [PSCustomObject[]]$results
   }
 
-  return [PSCustomObject[]]$results
+  end {
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn in module $mn"
+  }
 }

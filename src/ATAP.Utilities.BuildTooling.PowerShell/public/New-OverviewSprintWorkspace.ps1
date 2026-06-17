@@ -5,8 +5,9 @@ function New-OverviewSprintWorkspace {
   .DESCRIPTION
     Clones the stable Overview.code-workspace file, rewrites folder entries to
     matching sprint worktree folders when present, updates powershell.cwd, and
-    adds sprint-ephemeral metadata used by BuildMaster, Bitwarden, SQL Server,
-    and ProGet workflows.
+    adds sprint-ephemeral metadata used by BuildMaster, SQL Server, and ProGet
+    workflows. No secret-vault metadata is emitted — sprint start neither creates
+    nor references secrets (SC-0172).
   .PARAMETER SprintNumber
     Sprint number to encode in the workspace file name and metadata.
   .PARAMETER GitRoot
@@ -169,28 +170,16 @@ function New-OverviewSprintWorkspace {
       Set-ObjectPropertyValue -InputObject $workspace.settings -Name 'powershell.cwd' -Value $planningFolder[0]
     }
 
-    $connectionStringSecretNames = @(
-      'ATAPUtilities:Development:ConnectionString'
-      'ATAPUtilities:Experimental:ConnectionString'
-      'ATAPUtilities:Integration:ConnectionString'
-      'ATAPUtilities:QA:ConnectionString'
-      'ATAPUtilities:Production:ConnectionString'
-      'AceCommander:Development:ConnectionString'
-      'AceCommander:Experimental:ConnectionString'
-      'AceCommander:Integration:ConnectionString'
-      'AceCommander:QA:ConnectionString'
-      'AceCommander:Production:ConnectionString'
-    )
-
+    # Sprint start neither creates nor references secret-vault items (SC-0172,
+    # FSS-32), so the workspace manifest no longer carries a bitwarden
+    # connection-string secret-name section. Connection-string secrets are
+    # provisioned out of band.
     $sprintEphemeral = [PSCustomObject]@{
       sprintNumber      = $sprintText
       developerUsername = $DeveloperUsername
       buildMaster       = [PSCustomObject]@{
         baseUrl       = $BuildMasterBaseUrl
         variableNames = @('SprintNumber', 'UserName', 'SprintBranchName')
-      }
-      bitwarden         = [PSCustomObject]@{
-        connectionStringSecretNames = $connectionStringSecretNames
       }
       sqlInstances      = [PSCustomObject]@{
         stable    = @('Integration', 'QA', 'Production')

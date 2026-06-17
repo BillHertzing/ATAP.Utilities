@@ -3,7 +3,7 @@
 # Verifies the NuGet.config that New-SprintStage1 emits into the SharedVSCode
 # sprint worktree. Acceptance for A09: only permanent feed names
 # (nuget-experimental, nuget-development, nuget-integration, nuget-qa,
-# nuget-stable, plus nuget.org); no sprint-scoped keys; full AceCommander-stable
+# nuget-production, plus nuget.org; D-2); no sprint-scoped keys; full AceCommander-stable
 # topology (packageSources, packageSourceCredentials, packageRestore,
 # disabledPackageSources, packageSourceMapping, auditSources).
 
@@ -45,6 +45,10 @@ BeforeAll {
 
   function global:Initialize-DownstreamSprintFromSharedVSCode {
     $global:stage1ExternalCalls.Add('Initialize-DownstreamSprintFromSharedVSCode') | Out-Null
+  }
+
+  function global:Initialize-SprintAIAdapters {
+    $global:stage1ExternalCalls.Add('Initialize-SprintAIAdapters') | Out-Null
   }
 
   # Dot-source the function definition. This defines New-SprintStage1 and must
@@ -106,7 +110,7 @@ Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit' {
     }
 
     It 'Contains every permanent ProGet feed key' {
-      foreach ($key in @('nuget-experimental','nuget-development','nuget-integration','nuget-qa','nuget-stable')) {
+      foreach ($key in @('nuget-experimental','nuget-development','nuget-integration','nuget-qa','nuget-production')) {
         $script:content | Should -Match ('key="{0}"' -f [regex]::Escape($key))
       }
     }
@@ -116,7 +120,7 @@ Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit' {
     }
 
     It 'Uses /v3/index.json paths for ProGet feeds' {
-      foreach ($key in @('nuget-experimental','nuget-development','nuget-integration','nuget-qa','nuget-stable')) {
+      foreach ($key in @('nuget-experimental','nuget-development','nuget-integration','nuget-qa','nuget-production')) {
         $script:content | Should -Match ('/nuget/{0}/v3/index\.json' -f [regex]::Escape($key))
       }
     }
@@ -132,7 +136,7 @@ Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit' {
     It 'Emits the packageSourceMapping section with all six sources mapped' {
       $script:content | Should -Match '<packageSourceMapping>'
       $script:content | Should -Match 'packageSource key="nuget.org"'
-      foreach ($key in @('nuget-experimental','nuget-development','nuget-integration','nuget-qa','nuget-stable')) {
+      foreach ($key in @('nuget-experimental','nuget-development','nuget-integration','nuget-qa','nuget-production')) {
         $script:content | Should -Match ('packageSource key="{0}"' -f [regex]::Escape($key))
       }
     }
@@ -174,7 +178,7 @@ Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit' {
         -Confirm:$false | Out-Null
 
       $content = Get-Content -LiteralPath $script:nugetConfigPath -Raw
-      foreach ($key in @('nuget-experimental','nuget-development','nuget-integration','nuget-qa','nuget-stable')) {
+      foreach ($key in @('nuget-experimental','nuget-development','nuget-integration','nuget-qa','nuget-production')) {
         $content | Should -Match ('http://proget\.internal:51000/nuget/{0}/v3/index\.json' -f [regex]::Escape($key))
       }
       $content | Should -Not -Match 'http://localhost:50000'

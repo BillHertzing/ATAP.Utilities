@@ -13,6 +13,7 @@ BeforeAll {
     'git'
     'Set-WorktreeJunctions'
     'Initialize-DownstreamSprintFromSharedVSCode'
+    'Initialize-SprintAIAdapters'
     'Set-ClaudeSettingsSymlink'
     'Set-UserSettingsSymlink'
     'Get-SprintTaskRepositoryNames'
@@ -52,6 +53,11 @@ BeforeAll {
   function global:Initialize-DownstreamSprintFromSharedVSCode {
     $global:dryRunExternalCalls.Add('Initialize-DownstreamSprintFromSharedVSCode') | Out-Null
     throw 'Initialize-DownstreamSprintFromSharedVSCode should not be called during DryRun.'
+  }
+
+  function global:Initialize-SprintAIAdapters {
+    $global:dryRunExternalCalls.Add('Initialize-SprintAIAdapters') | Out-Null
+    throw 'Initialize-SprintAIAdapters should not be called during DryRun.'
   }
 
   # Required by the Stage 2 autoload-or-throw contract (FSS-11). These are guarded
@@ -97,6 +103,7 @@ BeforeAll {
   # Dot-source the function definitions. Defining the functions must not execute
   # any Stage 1 / Stage 2 work.
   . "$PSScriptRoot\..\..\public\New-SprintStage1.ps1"
+  . "$PSScriptRoot\..\..\public\New-SprintStage2Result.ps1"
   . "$PSScriptRoot\..\..\public\New-SprintStage2.ps1"
 
   # K04: freeze the set of external calls observed up to and including the
@@ -176,9 +183,7 @@ Describe 'New-SprintStage dry-run support' -Tag 'Unit' {
     $result.repoResults[0].branchName | Should -Be 'DRYRUN-Sprint-0007-work-items'
     $result.repoResults[0].worktreePath | Should -Be (Join-Path $script:tempGitRoot 'ATAP.Utilities-wt-DRYRUN-Sprint-0007-work-items')
     $result.repoResults[0].created | Should -BeFalse
-    $result.repoResults[0].junctionsCreated | Should -BeFalse
     $result.repoResults[0].dryRun | Should -BeTrue
-    $result.infrastructure.claudeSettingsLinked | Should -BeFalse
     $result.infrastructure.buildMasterVariablesSet.Count | Should -Be 0
     # connectionStrings field removed (SC-0172 / FSS-30): sprint start creates no secrets.
     $result.infrastructure.PSObject.Properties.Name | Should -Not -Contain 'connectionStrings'

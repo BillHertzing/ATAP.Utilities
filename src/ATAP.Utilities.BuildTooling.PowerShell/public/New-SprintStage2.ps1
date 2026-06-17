@@ -107,6 +107,8 @@ function New-SprintStage2 {
 
     [string]$BuildMasterBaseUrl,
 
+    [switch]$Force,
+
     [switch]$DryRun
   )
 
@@ -159,6 +161,8 @@ function New-SprintStage2 {
     if ([string]::IsNullOrWhiteSpace($Owner)) { $Owner = $ownerDefault }
     if ([string]::IsNullOrWhiteSpace($ProGetBaseUrl)) { $ProGetBaseUrl = $proGetBaseUrlDefault }
     if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) { $BuildMasterBaseUrl = $buildMasterBaseUrlDefault }
+    $ProGetBaseUrl = $ProGetBaseUrl.TrimEnd('/')
+    $BuildMasterBaseUrl = $BuildMasterBaseUrl.TrimEnd('/')
 
     # Autoload-or-throw contract (FSS-11): the BuildTooling module is CI-built and
     # installed, so every command this stage calls must resolve by module autoload
@@ -170,7 +174,10 @@ function New-SprintStage2 {
         'Set-ClaudeSettingsSymlink',
         'Set-UserSettingsSymlink',
         'Get-SprintTaskRepositoryNames',
-        'Reset-SprintDatabases')) {
+        'Reset-SprintDatabases',
+        'Set-WorktreeJunctions',
+        'Initialize-DownstreamSprintFromSharedVSCode',
+        'Initialize-SprintAIAdapters')) {
       if (-not (Get-Command -Name $required -ErrorAction SilentlyContinue)) {
         throw "Required command '$required' is not available. The " +
         'ATAP.Utilities.BuildTooling.PowerShell module must be installed and ' +
@@ -212,25 +219,25 @@ function New-SprintStage2 {
       if ([string]::IsNullOrWhiteSpace($planningWt)) {
         throw 'Stage1Result.planning.worktreePath is missing and -TasksFilePath was not supplied.'
       }
-      $TasksFilePath = Join-Path $planningWt 'TASKS.md'
+      $TasksFilePath = Join-Path $planningWt "TasksSprint$sprintNum.md"
     }
 
     if (-not (Test-Path $TasksFilePath)) {
-      throw "TASKS.md not found at $TasksFilePath"
+      throw "TasksSprint$sprintNum.md not found at $TasksFilePath"
     }
 
     $planningWorktreePath = Split-Path -Path $TasksFilePath -Parent
-    $activeTaskBoardPath = Join-Path $planningWorktreePath 'TASKS.html'
-    $versionedTaskBoards = @(Get-ChildItem -LiteralPath $planningWorktreePath -Filter 'TASKS_V*.html' -File -ErrorAction SilentlyContinue |
+    $activeTaskBoardPath = Join-Path $planningWorktreePath "TasksSprint$sprintNum.html"
+    $versionedTaskBoards = @(Get-ChildItem -LiteralPath $planningWorktreePath -Filter "TasksSprint${sprintNum}_V*.html" -File -ErrorAction SilentlyContinue |
         Sort-Object Name -Descending)
     if ($versionedTaskBoards.Count -gt 0) {
       $activeTaskBoardPath = $versionedTaskBoards[0].FullName
     }
-    $accomplishedPath = Join-Path $planningWorktreePath 'Tasks.Accomplished.html'
-    $proceduralDetailsPath = Join-Path $planningWorktreePath 'Tasks.ProceduralDetails.html'
+    $accomplishedPath = Join-Path $planningWorktreePath "Tasks.Accomplished.Sprint$sprintNum.html"
+    $proceduralDetailsPath = Join-Path $planningWorktreePath "Tasks.ProceduralDetails.Sprint$sprintNum.html"
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-      -Message "Stage 2 repository discovery reads TASKS.md at '$TasksFilePath'. Keep it synchronized with the active task board '$activeTaskBoardPath' and companion files '$accomplishedPath' / '$proceduralDetailsPath'."
+      -Message "Stage 2 repository discovery reads TasksSprint$sprintNum.md at '$TasksFilePath'. Keep it synchronized with the active task board '$activeTaskBoardPath' and companion files '$accomplishedPath' / '$proceduralDetailsPath'."
 
     # Stage 2 reads host-specific database and package settings. Fail early so
     # agent/no-profile shells do not create partial sprint infrastructure.
@@ -325,7 +332,6 @@ function New-SprintStage2 {
         branchName       = $null
         worktreePath     = $null
         created          = $false
-        junctionsCreated = $false
         dryRun           = $DryRun.IsPresent
         error            = $null
       }
@@ -433,7 +439,6 @@ function New-SprintStage2 {
             -DevSourceRepoFolderNames $JunctionFolderNames
 
           if ($junctionResult.Success) {
-            $entry.junctionsCreated = $true
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
               -Message "$repoName junctions created: $($junctionResult.JunctionsCreated) junction(s)"
           } else {
@@ -443,6 +448,27 @@ function New-SprintStage2 {
         }
       } catch {
         $entry.error = "Failed to create $repoName junctions. Exception: $($_.Exception.Message)"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $entry.error
+        [void]$repoResults.Add([PSCustomObject]$entry)
+        continue
+      }
+
+      # --- 4b. Materialize AI adapters in downstream repo worktree (FSS-22) ---
+      try {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
+          -Message "Materializing AI adapters in $repoName worktree"
+
+        if ($PSCmdlet.ShouldProcess($worktreePath, 'Initialize-SprintAIAdapters')) {
+          Initialize-SprintAIAdapters `
+            -TargetRoot $worktreePath `
+            -SharedVSCodeWorktreePath $svWorktreePath `
+            -Force:$Force | Out-Null
+
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+            -Message "AI adapters materialized in $repoName worktree"
+        }
+      } catch {
+        $entry.error = "Failed to materialize $repoName AI adapters. Exception: $($_.Exception.Message)"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $entry.error
         [void]$repoResults.Add([PSCustomObject]$entry)
         continue
@@ -527,11 +553,17 @@ function New-SprintStage2 {
     $buildMasterError = $null
 
     try {
-      # Build per-application sprint branch name hashtable from $repoResults
+      # Build per-application sprint branch name and source path hashtables from $repoResults
       $sprintBranchNameMap = @{}
+      $sprintSourcePathMap = @{}
       foreach ($rr in $repoResults) {
-        if (-not [string]::IsNullOrWhiteSpace($rr.repoName) -and -not [string]::IsNullOrWhiteSpace($rr.branchName)) {
-          $sprintBranchNameMap[$rr.repoName] = $rr.branchName
+        if (-not [string]::IsNullOrWhiteSpace($rr.repoName)) {
+          if (-not [string]::IsNullOrWhiteSpace($rr.branchName)) {
+            $sprintBranchNameMap[$rr.repoName] = $rr.branchName
+          }
+          if (-not [string]::IsNullOrWhiteSpace($rr.worktreePath)) {
+            $sprintSourcePathMap[$rr.repoName] = $rr.worktreePath
+          }
         }
       }
 
@@ -540,6 +572,7 @@ function New-SprintStage2 {
           -SprintNumber $sprintNum `
           -Username $env:USERNAME `
           -SprintBranchNames $sprintBranchNameMap `
+          -SourcePaths $sprintSourcePathMap `
           -BuildMasterBaseUrl $BuildMasterBaseUrl `
           -WhatIf:$WhatIfPreference
       }
@@ -602,29 +635,22 @@ function New-SprintStage2 {
     }
 
     # ===================================================================
-    # Assemble final result
+    # Assemble final result via New-SprintStage2Result (FSS-41)
     # ===================================================================
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
       -Message "Sprint Stage 2 complete — processed $($repoResults.Count) downstream repo(s)"
 
-    $finalResult = [PSCustomObject]@{
-      dryRun         = $DryRun.IsPresent
-      repoResults    = $repoResults.ToArray()
-      infrastructure = [PSCustomObject]@{
-        claudeSettingsLinked       = $claudeSettingsLinked
-        claudeSettingsError        = $claudeSettingsError
-        userSettingsLinked         = $userSettingsLinked
-        userSettingsError          = $userSettingsError
-        # PLACEHOLDER: buildMaster fields are draft — values will be empty
-        # until BuildMaster API integration is tested and enabled.
-        buildMasterVariablesSet    = if ($buildMasterResult) { $buildMasterResult.variablesSet } else { @() }
-        buildMasterVariablesErrors = if ($buildMasterResult) { $buildMasterResult.errors } else { @() }
-        buildMasterVariablesError  = $buildMasterError
-        # Sprint SQL Server database reset results
-        databaseResets             = if ($dbResetResults) { $dbResetResults } else { @() }
-        databaseResetError         = $dbResetError
-      }
-    }
+    $finalResult = New-SprintStage2Result `
+      -DryRun:$DryRun `
+      -RepoResults ($repoResults.ToArray()) `
+      -ClaudeSettingsError $claudeSettingsError `
+      -UserSettingsLinked $userSettingsLinked `
+      -UserSettingsError $userSettingsError `
+      -BuildMasterVariablesSet $(if ($buildMasterResult) { $buildMasterResult.variablesSet } else { @() }) `
+      -BuildMasterVariablesErrors $(if ($buildMasterResult) { $buildMasterResult.errors } else { @() }) `
+      -BuildMasterError $buildMasterError `
+      -DatabaseResets $(if ($dbResetResults) { $dbResetResults } else { @() }) `
+      -DatabaseResetError $dbResetError
 
     return $finalResult
   }

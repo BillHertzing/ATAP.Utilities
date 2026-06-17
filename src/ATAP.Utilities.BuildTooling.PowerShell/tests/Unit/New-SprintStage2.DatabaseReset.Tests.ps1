@@ -9,6 +9,7 @@ BeforeAll {
     'git',
     'Set-WorktreeJunctions',
     'Initialize-DownstreamSprintFromSharedVSCode',
+    'Initialize-SprintAIAdapters',
     'Set-ClaudeSettingsSymlink',
     'Set-UserSettingsSymlink',
     'Get-SprintTaskRepositoryNames',
@@ -45,6 +46,10 @@ BeforeAll {
 
   function global:Initialize-DownstreamSprintFromSharedVSCode {
     $global:stage2DatabaseResetCalls.Add('Initialize-DownstreamSprintFromSharedVSCode') | Out-Null
+  }
+
+  function global:Initialize-SprintAIAdapters {
+    $global:stage2DatabaseResetCalls.Add('Initialize-SprintAIAdapters') | Out-Null
   }
 
   function global:Set-ClaudeSettingsSymlink {
@@ -89,6 +94,7 @@ BeforeAll {
     throw 'New-SprintStage2 must not call New-DeveloperSqlServerInstances.'
   }
 
+  . "$PSScriptRoot\..\..\public\New-SprintStage2Result.ps1"
   . "$PSScriptRoot\..\..\public\New-SprintStage2.ps1"
 }
 

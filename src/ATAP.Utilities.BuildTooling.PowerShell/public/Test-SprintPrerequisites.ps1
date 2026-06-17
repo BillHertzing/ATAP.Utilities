@@ -1,175 +1,8 @@
 #Requires -Version 7.0
 
-function Test-SprintUrlReachable {
-  [CmdletBinding()]
-  [OutputType([PSCustomObject])]
-  param(
-    [Parameter()]
-    [AllowEmptyString()]
-    [AllowNull()]
-    [string]$Url,
-
-    [Parameter()]
-    [int]$TimeoutSeconds = 5,
-
-    [Parameter(Mandatory = $true)]
-    [string]$Label
-  )
-
-  if ([string]::IsNullOrWhiteSpace($Url)) {
-    return [PSCustomObject]@{
-      Ok      = $true
-      Detail  = "$Label base URL not supplied; reachability check skipped"
-      Url     = $null
-      Skipped = $true
-    }
-  }
-
-  try {
-    $response = Invoke-WebRequest -Uri $Url -Method Head -TimeoutSec $TimeoutSeconds -UseBasicParsing -ErrorAction Stop
-    $code = [int]$response.StatusCode
-    return [PSCustomObject]@{
-      Ok      = ($code -lt 500)
-      Detail  = "$Label HEAD $Url returned HTTP $code"
-      Url     = $Url
-      Skipped = $false
-    }
-  } catch {
-    $code = $null
-    if ($_.Exception.PSObject.Properties['Response'] -and $_.Exception.Response -and $_.Exception.Response.StatusCode) {
-      $code = [int]$_.Exception.Response.StatusCode
-    }
-    if ($code -and $code -lt 500) {
-      return [PSCustomObject]@{
-        Ok      = $true
-        Detail  = "$Label HEAD $Url returned HTTP $code (reachable; auth not asserted)"
-        Url     = $Url
-        Skipped = $false
-      }
-    }
-    return [PSCustomObject]@{
-      Ok      = $false
-      Detail  = "$Label HEAD $Url failed: $($_.Exception.Message)"
-      Url     = $Url
-      Skipped = $false
-    }
-  }
-}
-
-function Test-SprintModulePromotionDeploy {
-  <#
-  .SYNOPSIS
-      For a single sprint-built module, asserts its Production version is in the
-      *-stable PowerShellGet feed AND installed on this workstation.
-
-  .DESCRIPTION
-      The Task 9.7 SprintEnd->SprintStart handoff gate. When a sprint builds a
-      new module/library version, the next sprint must be able to resolve the
-      latest Production module from ProGet and from the local module path. This
-      helper performs both halves for one declared module:
-
-        (a) Feed presence — queries the resolved *-stable feed (default
-            'powershellget-stable') for the exact version via Find-Module. A
-            registered PSRepository of the feed name is preferred; the feed
-            endpoint is resolved from $global:Settings when available.
-        (b) Workstation install — Get-Module -ListAvailable must report the
-            exact version.
-
-      Returns a [PSCustomObject] with Ok plus per-half InStableFeed/Installed
-      flags and a remediation string when either half fails. Never throws on a
-      genuine "not present" result; only inspection failures surface as Detail.
-  #>
-  [CmdletBinding()]
-  [OutputType([PSCustomObject])]
-  param(
-    [Parameter(Mandatory = $true)]
-    [string]$Name,
-
-    [Parameter(Mandatory = $true)]
-    [string]$Version,
-
-    [Parameter()]
-    [string]$StableFeedName = 'powershellget-stable'
-  )
-
-  $fn = 'Test-SprintModulePromotionDeploy'
-  $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
-
-  $result = [PSCustomObject]@{
-    Name         = $Name
-    Version      = $Version
-    StableFeed   = $StableFeedName
-    Ok           = $false
-    InStableFeed = $false
-    Installed    = $false
-    Detail       = ''
-    Remediation  = $null
-  }
-
-  # ---- (a) Is the exact Production version in the *-stable feed? ----
-  $feedDetail = ''
-  try {
-    # Prefer the feed name/URI from host settings; fall back to the default
-    # repository name if settings are not loaded (no-profile / test contexts).
-    if (Get-Command -Name 'Resolve-ProGetFeedFromSettings' -CommandType Function -ErrorAction SilentlyContinue) {
-      try {
-        $feed = Resolve-ProGetFeedFromSettings -FeedType 'powershell' -Tier 'Production'
-        if ($null -ne $feed -and -not [string]::IsNullOrWhiteSpace([string]$feed.FeedName)) {
-          $StableFeedName = [string]$feed.FeedName
-          $result.StableFeed = $StableFeedName
-        }
-      } catch {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolve-ProGetFeedFromSettings unavailable for '$Name'; using default feed '$StableFeedName'. Exception: $($_.Exception.Message)"
-      }
-    }
-
-    $found = Find-Module -Name $Name -RequiredVersion $Version -Repository $StableFeedName -ErrorAction Stop
-    if ($null -ne $found) {
-      $result.InStableFeed = $true
-      $feedDetail = "version $Version present in feed '$StableFeedName'"
-    } else {
-      $feedDetail = "version $Version NOT found in feed '$StableFeedName'"
-    }
-  } catch {
-    $feedDetail = "version $Version not resolvable in feed '$StableFeedName' ($($_.Exception.Message))"
-  }
-
-  # ---- (b) Is the exact version installed on this workstation? ----
-  $installDetail = ''
-  try {
-    $installed = Get-Module -Name $Name -ListAvailable -ErrorAction SilentlyContinue |
-      Where-Object { $_.Version.ToString() -eq $Version }
-    if ($installed) {
-      $result.Installed = $true
-      $installDetail = "version $Version installed on workstation"
-    } else {
-      $available = Get-Module -Name $Name -ListAvailable -ErrorAction SilentlyContinue |
-        Sort-Object Version -Descending | Select-Object -First 1
-      $installDetail = if ($available) {
-        "version $Version NOT installed (highest local is $($available.Version))"
-      } else {
-        "module '$Name' not installed on workstation"
-      }
-    }
-  } catch {
-    $installDetail = "install inspection failed: $($_.Exception.Message)"
-  }
-
-  $result.Ok = ($result.InStableFeed -and $result.Installed)
-  $result.Detail = "$feedDetail; $installDetail"
-  if (-not $result.Ok) {
-    $steps = [System.Collections.Generic.List[string]]::new()
-    if (-not $result.InStableFeed) {
-      [void]$steps.Add("promote $Name $Version to Production (powershellget-stable) via the 5-tier BuildMaster ladder")
-    }
-    if (-not $result.Installed) {
-      [void]$steps.Add("Install-Module -Name $Name -RequiredVersion $Version -Repository $StableFeedName -Scope AllUsers")
-    }
-    $result.Remediation = $steps -join '; then '
-  }
-
-  return $result
-}
+# Private helpers Test-SprintUrlReachable and Test-SprintModulePromotionDeploy
+# now live in their own files under private/ (SC-0178: one eponymous Verb-Noun
+# function per file). They autoload with the module alongside this function.
 
 function Test-SprintPrerequisites {
   <#
@@ -310,14 +143,19 @@ function Test-SprintPrerequisites {
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
-    # Load helper functions. Fallback for running this file from source without
-    # importing the module; a normal Import-Module already dot-sources the
-    # sibling public function. Kept inside BEGIN so loading/dot-sourcing this
-    # file only DEFINES the function and never executes anything at load time.
-    if (-not (Get-Command -Name 'Get-BWSAccessToken' -ErrorAction SilentlyContinue)) {
-      $tokenReaderPath = Join-Path -Path $PSScriptRoot -ChildPath 'Get-BWSAccessToken.ps1'
-      if (Test-Path -LiteralPath $tokenReaderPath -PathType Leaf) {
-        . $tokenReaderPath
+    # Autoload-or-throw contract (PlanFixSprintStart FSS-12). The BuildTooling
+    # module is CI-built and installed, so every command this preflight relies on
+    # must resolve by module autoload. A missing command is an environment fault
+    # the user must repair — never a silent dot-source fallback from a worktree.
+    foreach ($required in @(
+        'Get-BWSAccessToken',
+        'Assert-LockFilesClean',
+        'Test-SprintUrlReachable',
+        'Test-SprintModulePromotionDeploy')) {
+      if (-not (Get-Command -Name $required -ErrorAction SilentlyContinue)) {
+        throw "Required command '$required' is not available. The " +
+        'ATAP.Utilities.BuildTooling.PowerShell module must be installed and ' +
+        'autoloadable. Repair the module install before retrying sprint prerequisites.'
       }
     }
   }

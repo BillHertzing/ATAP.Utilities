@@ -72,6 +72,8 @@ function Set-BuildMasterSprintVariables {
 
     [hashtable]$SprintBranchNames = @{},
 
+    [hashtable]$SourcePaths = @{},
+
     [string[]]$Applications = @('AceCommander', 'ATAP.Utilities'),
 
     [string]$BuildMasterBaseUrl,
@@ -136,6 +138,10 @@ function Set-BuildMasterSprintVariables {
         SprintNumber     = $SprintNumber
         UserName         = $Username
         SprintBranchName = $branchName
+      }
+
+      if ($SourcePaths.ContainsKey($appName)) {
+        $varMap['SourcePath'] = $SourcePaths[$appName]
       }
 
       foreach ($varName in $varMap.Keys) {

@@ -35,23 +35,16 @@ $helpfunctionsneeded = @(
   @{FunctionName = 'Get-ParameterValueFromNeoConfigurationRoot'; ModuleName = 'ATAP.Utilities.PowerShell' }
   #  @{FunctionName = 'Get-ClonedAndModifiedHashtable'; ModuleName = 'ATAP.Utilities.PowerShell' },
 )
-$repoRootParentPath = 'C:\Dropbox\whertzing\GitHub'
-$stablePath = 'ATAP.Utilities'
-# if we are in a sprint branch, use the sprint branch version of the helper functions, otherwise use the stable branch version.
-#  This allows us to use the helper functions that are in progress in the sprint branch without having to merge them
-#  into the stable branch first, which is important because some of the helper functions we need are still in progress
-#  and not yet merged into stable.
-$wtFolder = $PWD.Path.Split([IO.Path]::DirectorySeparatorChar) |
-  Where-Object { $_ -like '*-wt-*' } |
-  Select-Object -First 1
-$resolvedModulePath = $wtFolder ? $(Join-Path $repoRootParentPath $wtFolder 'src') : $(Join-Path $repoRootParentPath $stablePath 'src')
+$resolvedModulePath = Join-Path -Path $PSScriptRoot -ChildPath 'src'
 foreach ($helpfunction in $helpfunctionsneeded) {
+  $helperPath = Join-Path -Path $resolvedModulePath -ChildPath (Join-Path -Path $helpfunction.ModuleName -ChildPath (Join-Path -Path 'public' -ChildPath "$($helpfunction.FunctionName).ps1"))
   try {
-    if (-not (Test-Path -LiteralPath "Function:\$($helpfunction.FunctionName)")) {
-      . (Join-Path $resolvedModulePath $($helpfunction.ModuleName), 'public', "$($helpfunction.FunctionName).ps1")
+    if (-not (Test-Path -LiteralPath $helperPath -PathType Leaf)) {
+      throw "Source helper file not found: $helperPath"
     }
+    . $helperPath
   } catch {
-    $errorMessage = "Failed to load $($helpfunction.FunctionName) function from module path $(Join-Path $resolvedModulePath $($helpfunction.ModuleName), 'public', "$($helpfunction.FunctionName).ps1"). Exception: $($_.Exception.Message)"
+    $errorMessage = "Failed to load $($helpfunction.FunctionName) function from source path $helperPath. Exception: $($_.Exception.Message)"
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
     throw
   }
@@ -76,21 +69,18 @@ $script:_bootstrapCmdlets = @(
   'Compress-PSModuleArtifacts'
 )
 
-# HARDCODED: BuildTooling module is not yet installed; dot-source any missing
-# bootstrap cmdlet from the sprint-branch worktree's BuildTooling public folder.
-# Replace with proper module install / Import-Module once the BuildTooling module
-# is publishable from this build pipeline.
+# BuildTooling may already be installed or imported, but bootstrap builds must use
+# the functions in this source worktree. Dot-source them every time so stale
+# session definitions cannot leak into the package being built.
 $script:_bootstrapPublicDir = `
-  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\ATAP.Utilities.BuildTooling.PowerShell\public'
+  (Join-Path -Path $resolvedModulePath -ChildPath 'ATAP.Utilities.BuildTooling.PowerShell\public')
 
 foreach ($cmdletName in $script:_bootstrapCmdlets) {
-  if (-not (Get-Command $cmdletName -ErrorAction SilentlyContinue)) {
-    $candidatePath = Join-Path $script:_bootstrapPublicDir "$cmdletName.ps1"
-    if (Test-Path -LiteralPath $candidatePath -PathType Leaf) {
-      . $candidatePath
-    } else {
-      throw "Bootstrap cmdlet '$cmdletName' not found at '$candidatePath'."
-    }
+  $candidatePath = Join-Path $script:_bootstrapPublicDir "$cmdletName.ps1"
+  if (Test-Path -LiteralPath $candidatePath -PathType Leaf) {
+    . $candidatePath
+  } else {
+    throw "Bootstrap cmdlet '$cmdletName' not found at '$candidatePath'."
   }
 }
 

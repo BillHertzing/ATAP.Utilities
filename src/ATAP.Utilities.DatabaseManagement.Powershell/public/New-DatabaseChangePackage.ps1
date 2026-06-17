@@ -190,6 +190,29 @@ function New-DatabaseChangePackage {
     elseif ($hasMigrations) { 'schema' }
     else { 'data' }
 
+    # ── 8b. Derive flywayTargetVersion from the highest versioned migration ───
+    # Unified version-numbering scheme (Sprint 0009 Task 9.12): the packaged
+    # change unit uses the SAME canonical dotted, zero-padded Flyway version
+    # scheme as the consolidated authoritative set in Database/Flyway/SQL
+    # (V00.0X.NNNNNN). The target version is therefore the maximum migration
+    # version actually present in db/migrations, compared with Flyway's
+    # part-by-part numeric semantics (each dot-separated component as an integer),
+    # NOT a hard-coded literal. Data-only packages (no versioned migration) keep
+    # '0' to signal "no schema target".
+    $migrationVersions = foreach ($f in ($sortedFiles | Where-Object { $_['kind'] -eq 'migration' })) {
+      $migName = Split-Path -Leaf $f['path']
+      if ($migName -match '^[Vv](?<ver>[0-9]+(?:\.[0-9]+)*)__') { $Matches['ver'] }
+    }
+    $migrationVersions = @($migrationVersions)
+    $flywayTargetVersion = if ($migrationVersions.Count -gt 0) {
+      $migrationVersions |
+        Sort-Object -Property @{ Expression = { ($_ -split '\.' | ForEach-Object { $_.PadLeft(12, '0') }) -join '.' } } |
+        Select-Object -Last 1
+    } else {
+      '0'
+    }
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "flywayTargetVersion=$flywayTargetVersion (derived from $($migrationVersions.Count) versioned migration(s))" -Tag 'Config'
+
     # ── 9. Build manifest object ──────────────────────────────────────────────
     $gitTag = ''
     try {
@@ -220,7 +243,7 @@ function New-DatabaseChangePackage {
       dbChangeUnit                       = $DatabasePackageId
       appVersion                         = $PackageVersion
       changeKind                         = $changeKind
-      flywayTargetVersion                = '1'
+      flywayTargetVersion                = $flywayTargetVersion
       createdUtc                         = $gitCommitDate
       createdFromGitTag                  = $gitTag
       createdFromGitSha                  = $gitSha

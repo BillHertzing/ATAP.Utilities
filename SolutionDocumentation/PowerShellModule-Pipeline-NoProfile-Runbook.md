@@ -1,6 +1,6 @@
 # PowerShell-Module Pipeline — `-NoProfile` Settings Resolution Runbook
 
-**Task:** V4-B02 (Sprint 0007) · **Status:** Policy of record · **Date:** 2026-06-04
+**Task:** V4-B02 (Sprint 0007) · **Update:** Task 9.38 (Sprint 0009) · **Status:** Policy of record · **Date:** 2026-06-16
 
 ## Purpose
 
@@ -8,32 +8,22 @@ BuildMaster runs the PowerShell-module 5-tier pipeline by invoking the runner wi
 `pwsh -NoProfile -File` (see the single `Exec` in
 [`PowerShellModule-5Stage.otter`](../src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/PowerShellModule-5Stage.otter)).
 Under `-NoProfile`, the interactive user profile that populates `$global:settings` and
-`$global:configRootKeys` **never loads**. Any settings lookup that assumes those globals
-exist fails at deploy time with a confusing `$null`-index error deep inside a helper.
+`$global:configRootKeys` **never loads**.
 
-This runbook records the audit of **every settings lookup used by the plan and the
-runner**, confirms each resolves under `-NoProfile`, and states the policy that future
-edits must keep.
+To ensure variables and configuration resolve identically between a developer's interactive workstation and the unattended BuildMaster pipeline, the pipeline runners explicitly bootstrap `$global:settings` in memory. This is achieved via a standalone settings loader helper (`Initialize-LocalHostSettings` in `BuildMasterRunContext.Common.ps1`).
 
-> **Audit conclusion:** the plan + runner are already `-NoProfile`-safe. Every settings
-> lookup resolves through an explicit parameter, an environment variable, or a
-> null-guarded read with a default. **No code change was required** — this task added the
-> policy record and a regression test.
+This design allows the runners to execute within a fast, hermetic `-NoProfile` shell while maintaining full access to the host settings profile configuration, completely eliminating the need for silent fallback degradation or bypass markers inside `Get-PVal`.
 
-## Why this pipeline is safe (and the C# pipeline needed a bootstrap)
+## The Standalone Settings Loader (`Initialize-LocalHostSettings`)
 
-The decisive structural fact: the PowerShell-module runner **never calls
-`Resolve-ProGetFeedFromSettings`** — the one helper that *throws* when `$global:Settings`
-is null. It computes feed URIs directly from the `-ProGetUrl` parameter via
-`Get-PowerShellGetFeedUri` and publishes with `Publish-PSResource`.
+Rather than relying on the PowerShell SCM or service profile configuration (which is complex to set up securely for service accounts like `SvcBuildmaster`), the stage runners explicitly load host settings in memory:
 
-By contrast, the **C# package** runner's publish path
-(`Publish-NuGetPackageToProGet → Resolve-ProGetFeedFromSettings`) *does* read those
-globals, so it carries a deliberate bootstrap,
-[`Set-NoProfileProGetFeedSettings`](../src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/Invoke-CSharpPackageBuildMasterStage.ps1),
-to seed the minimal feed settings under `-NoProfile`. The PowerShell-module runner needs
-no equivalent. If a settings-driven feed *resolver* is ever introduced into this
-pipeline, it MUST be paired with a `Set-NoProfileProGetFeedSettings`-style bootstrap.
+1. Dot-source [`BuildMasterRunContext.Common.ps1`](../src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/BuildMasterRunContext.Common.ps1).
+2. Call `Initialize-LocalHostSettings -SourcePath $SourcePath`.
+
+This helper resolves the local hostname, sets up `$global:PSDefaultParameterValues` settings references, locates the host configuration settings using the active sprint/stable worktree path, and populates `$global:settings` and `$global:configRootKeys` in memory.
+
+Since `$global:settings` is now guaranteed to be populated, the `Get-PVal` loud-failure guard does not need any context bypass logic. The old `$env:ATAP_NOPROFILE_PIPELINE = '1'` context marker and `Test-NoProfilePipelineContext` check have been deprecated and removed.
 
 ## Audit table — settings lookups and their `-NoProfile` resolution
 
@@ -43,55 +33,34 @@ pipeline, it MUST be paired with a `Set-NoProfileProGetFeedSettings`-style boots
 | ProGet API key | runner `BEGIN` | `$env:PROGET_BUILDMASTER_API_KEY` → `$env:PROGET_ADMIN_API_KEY` → explicit `throw "Unable to resolve ProGet API key…"`. Never a parameter (keeps secrets off the command line). |
 | `$env:GIT_CONFIG_COUNT` | runner (`Add-GitSafeDirectoryForCurrentProcess`) | Defaults to `0` when unset. |
 | `$env:ATAP_BUILDTOOLING_PESTER_OUTPUT_VERBOSITY` | runner (promotion/test) | Defaults to `'None'`; unknown values warned + ignored. |
-| `Get-PVal` chain for `Name` / `Version` / `FromFeed` / `ToFeed` / `Reason` / `ProGetBaseUrl` / `ApiKey` | `Move-ProGetPackageInterTier`, `Invoke-PromotedModuleTests` | `Get-PVal` (`Get-ParameterValueFromNeoConfigurationRoot`) resolves **PSBoundParameters → env var → settings → DefaultValue**. The settings tier runs `-AllowMissing` inside a try/catch, so when the globals are absent it **degrades to `DefaultValue` without throwing**. The runner pre-sets `$global:ProGetBaseUrl = $ProGetUrl` and `$env:PROGET_BUILDMASTER_API_KEY`, and passes `-ProGetBaseUrl`/`-ApiKey` explicitly to `Invoke-PromotedModuleTests`. |
-| `$global:settings[GeneratedRelativePath]` for transcript path | `Invoke-ModuleBuildWithRetry` | **Null-guarded** (`if ($null -ne $global:configRootKeys -and $null -ne $global:settings)`) with a fallback to `<moduleRoot>\_generated` (SC-0033). The runner also passes `-BuildLogPath` explicitly, so this branch never runs in the pipeline. |
+| `Get-PVal` chain for `Name` / `Version` / `FromFeed` / `ToFeed` | `Move-ProGetPackageInterTier`, `Invoke-PromotedModuleTests` | Resolves **PSBoundParameters → env var → settings**. Because `$global:settings` is explicitly loaded in memory by `Initialize-LocalHostSettings`, `Get-PVal` has full access to host settings just like an interactive session, and resolves settings values cleanly without throwing or degrading. |
+| `$global:settings[GeneratedRelativePath]` for transcript path | `Invoke-ModuleBuildWithRetry` | Handled via the populated `$global:settings` in memory, falling back to `<moduleRoot>\_generated` (SC-0033) if needed. |
 
 ## Policy for future changes
 
-1. **Never assume `$global:settings` / `$global:configRootKeys` are populated** in this
-   pipeline. The runner and everything it dot-sources run under `-NoProfile`.
-2. **Every new settings lookup must resolve via an explicit parameter or environment
-   variable.** Using the `Get-PVal` *parameter → env → settings → DefaultValue* chain is
-   acceptable **because** it degrades to the `DefaultValue` when the globals are absent —
-   so always supply a meaningful `-DefaultValue` (typically the bound parameter).
-3. **Secrets stay off the command line.** Resolve API keys from `$env:PROGET_*` inside the
-   runner; never add an `ApiKey`/`ProGetApiKey` parameter to the plan or runner.
-4. **If you add a settings-driven resolver** (anything that reads `$global:Settings` and
-   throws when absent, e.g. `Resolve-ProGetFeedFromSettings`), you MUST add a
-   `Set-NoProfileProGetFeedSettings`-style bootstrap to the runner `BEGIN` block.
-5. Any read of a profile global that survives MUST be **null-guarded with a default**, as
-   `Invoke-ModuleBuildWithRetry` does for the generated path.
+1. **Never assume user/machine profiles are loaded automatically** in this pipeline. The runner and everything it dot-sources run under `-NoProfile`.
+2. **Always call `Initialize-LocalHostSettings`** at the entry point of any new stage runner script before calling other build tooling functions that depend on `Get-PVal` or settings globals.
+3. **Secrets stay off the command line.** Resolve API keys from `$env:PROGET_*` inside the runner; never add an `ApiKey`/`ProGetApiKey` parameter to the plan or runner.
+4. **No context bypass markers.** Do not re-introduce `$env:ATAP_NOPROFILE_PIPELINE` or similar context degradation flags. All runners should bootstrap settings explicitly.
 
 ## Regression test
 
-[`PowerShellModule-5Stage.Tests.ps1`](../src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/tests/PowerShellModule-5Stage.Tests.ps1)
-pins this contract (23 tests):
+[`PowerShellModule-5Stage.Tests.ps1`](../src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/tests/PowerShellModule-5Stage.Tests.ps1) pins this contract:
 
-- Plan is a thin `-NoProfile -File` runner plan with no `$global:settings`, no inline
-  `pwsh -Command`, no API key / `$env:PROGET_*` on the command line.
-- Runner resolves the key from env (not a parameter), performs no unguarded
-  `$global:settings` read, never references `Resolve-ProGetFeedFromSettings`, seeds
-  `$global:ProGetBaseUrl` + the key env var before promotion, and passes
-  `-ProGetBaseUrl`/`-ApiKey` explicitly to the promoted-module tests; the file parses
-  clean.
-- **Behavioral proof:** a clean `pwsh -NoProfile` child process dot-sources `Get-PVal`
-  and confirms it returns the `DefaultValue` (no throw) when no profile globals exist.
+- Plan is a thin `-NoProfile -File` runner plan with no `$global:settings` in OtterScript, no inline `pwsh -Command`, no API key / `$env:PROGET_*` on the command line.
+- Runner resolves the key from env (not a parameter), performs no unguarded `$global:settings` read (it resolves settings via the helper/cmdlets), and calls `Initialize-LocalHostSettings`.
+- **Behavioral proof:** Under a bare `-NoProfile` session with no initialized settings, `Get-PVal` fails loud (throws) as expected. The runner itself calls `Initialize-LocalHostSettings` to bootstrap settings.
 
-Run it (with the profile loaded — never run Pester with `-NoProfile`, per
-[`PowerShell-Modules-Test-Process.md`](PowerShell-Modules-Test-Process.md)):
+Run it (with the profile loaded — never run Pester with `-NoProfile`, per [`PowerShell-Modules-Test-Process.md`](PowerShell-Modules-Test-Process.md)):
 
 ```powershell
 pwsh -Command "Invoke-Pester -Path './src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/tests/PowerShellModule-5Stage.Tests.ps1' -Output Detailed"
 ```
 
-Last verified: **2026-06-04 — 23 passed, 0 failed** (Pester v5.7.1).
+The `Get-PVal` unit suite ([`Get-ParameterValueFromNeoConfigurationRoot.Tests.ps1`](../src/ATAP.Utilities.PowerShell/tests/Unit/Get-ParameterValueFromNeoConfigurationRoot.Tests.ps1)) also passes, verifying the loud-failure guard behavior when settings are absent.
 
 ## See also
 
-- [`ConfigRootKeys-and-HostSettings.md`](ConfigRootKeys-and-HostSettings.md) §6.2 — the
-  general defensive guard for no-profile / agent shells.
-- [`PowerShell-Modules-Test-Process.md`](PowerShell-Modules-Test-Process.md) — why Pester
-  itself must run **with** the profile.
-- [`BuildMaster-Pipeline-Topology.md`](BuildMaster-Pipeline-Topology.md),
-  [`Immutable-Build-Strategy.md`](Immutable-Build-Strategy.md) — pipeline shape and the
-  build-once/promote-bytes model this runner implements.
+- [`ConfigRootKeys-and-HostSettings.md`](ConfigRootKeys-and-HostSettings.md) §6.2 — the general defensive guard for no-profile / agent shells.
+- [`PowerShell-Modules-Test-Process.md`](PowerShell-Modules-Test-Process.md) — why Pester itself must run **with** the profile.
+- [`BuildMaster-Pipeline-Topology.md`](BuildMaster-Pipeline-Topology.md), [`Immutable-Build-Strategy.md`](Immutable-Build-Strategy.md) — pipeline shape and the build-once/promote-bytes model this runner implements.

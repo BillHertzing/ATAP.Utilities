@@ -6,15 +6,33 @@ Adds database-related key constants to $global:configRootKeys.
 
 .DESCRIPTION
 Appends the standard set of database configuration key constants to the
-$global:configRootKeys hashtable. These keys are used throughout the codebase
-to look up database connection settings from $global:settings.
+$global:configRootKeys hashtable, then invokes the EXPLICIT, ordered list of
+per-database section functions. There is no directory scan: each per-database
+section is named here and invoked by name. Adding a new database means adding a
+new Set-Databases<Name>ConfigRootKeys function to public/ and adding one line to
+the ordered invocation list below.
 
-Also scans the same directory for sub-fragment files matching the pattern
-'Databases.*.ConfigRootKeys.ps1' and dot-sources each one. Sub-fragments add
-per-database-instance key constants (e.g., Databases.ATAPUtilities.ConfigRootKeys.ps1).
+Per-database section functions invoked (in order):
+  Set-DatabasesATAPUtilitiesConfigRootKeys — ATAPUtilities database-name key
+  Set-DatabasesAceCommanderConfigRootKeys  — AceCommander database-name key
+
+In-module sibling resolution (development-from-source guard)
+------------------------------------------------------------
+When this function runs FROM SOURCE (dot-sourced rather than imported as a built
+module), calling a per-database section function would otherwise trigger PowerShell
+autoloading, which may resolve an INSTALLED production copy of this module and shadow
+the in-development sprint-worktree code. To guarantee the co-located versions win, the
+begin block dot-sources each per-database section from its co-located source file (the
+-Path directory, default $PSScriptRoot) when present. In a built/installed module those
+files are merged into the .psm1, so the already-loaded module-scoped functions are used
+instead. See Set-GlobalConfigRootKeys and the module INDEX.md for the canonical pattern.
 
 Requires $global:configRootKeys to already exist (initialized by Set-CoreConfigRootKeys
 via Set-GlobalConfigRootKeys).
+
+.PARAMETER Path
+Directory containing the co-located per-database section-function source files. When
+omitted, defaults to $PSScriptRoot (the public/ folder this function lives in).
 
 .OUTPUTS
 None. Populates $global:configRootKeys as a side effect.
@@ -22,8 +40,7 @@ None. Populates $global:configRootKeys as a side effect.
 .EXAMPLE
 Add-DatabasesConfigRootKeys
 
-Adds all standard database key constants and loads any Databases.* sub-fragments
-found alongside this script.
+Adds all standard database key constants and invokes every per-database section function.
 
 .EXAMPLE
 Add-DatabasesConfigRootKeys -WhatIf
@@ -41,7 +58,10 @@ function Add-DatabasesConfigRootKeys {
   [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
   [Alias()]
   [OutputType([void])]
-  param ()
+  param (
+    [Parameter(Mandatory = $false)]
+    [string] $Path
+  )
 
   begin {
     $fn = 'Add-DatabasesConfigRootKeys'
@@ -49,16 +69,35 @@ function Add-DatabasesConfigRootKeys {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
     if ($null -eq $global:configRootKeys) {
-      $errorMessage = '$global:configRootKeys is not initialized. Run Set-GlobalConfigRootKeys (which loads Set-CoreConfigRootKeys.ps1 first).'
+      $errorMessage = '$global:configRootKeys is not initialized. Run Set-GlobalConfigRootKeys (which loads Set-CoreConfigRootKeys first).'
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       throw $errorMessage
     }
 
-    $scriptFile = $MyInvocation.MyCommand.ScriptBlock.File
-    $scriptDir = if (-not [string]::IsNullOrEmpty($scriptFile)) {
-      [System.IO.Path]::GetDirectoryName($scriptFile)
-    } else {
-      $PWD.ProviderPath
+    # Default -Path to the directory this function was loaded from.
+    if ([string]::IsNullOrEmpty($Path)) {
+      $Path = $PSScriptRoot
+    }
+
+    # The EXPLICIT, ordered list of per-database section functions to invoke.
+    $perDatabaseSectionFunctions = @(
+      'Set-DatabasesATAPUtilitiesConfigRootKeys'
+      'Set-DatabasesAceCommanderConfigRootKeys'
+    )
+
+    # In-module sibling resolution (see comment-based help above).
+    foreach ($sectionFunction in $perDatabaseSectionFunctions) {
+      $siblingPath = Join-Path -Path $Path -ChildPath "$sectionFunction.ps1"
+      if (Test-Path -LiteralPath $siblingPath -PathType Leaf) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Dot-sourcing co-located sibling '$siblingPath'" -Tag 'ConfigRootKeys'
+        . $siblingPath
+      } elseif (-not (Get-Command -Name $sectionFunction -CommandType Function -ErrorAction SilentlyContinue)) {
+        $errorMessage = "Per-database section function '$sectionFunction' is not defined and its source file was not found at '$siblingPath'."
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+        throw $errorMessage
+      } else {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Using already-loaded module-scoped '$sectionFunction' (built module; no co-located source)." -Tag 'ConfigRootKeys'
+      }
     }
   }
 
@@ -75,38 +114,19 @@ function Add-DatabasesConfigRootKeys {
         $global:configRootKeys.Add('FlywaySharedSqlMigrationsPathConfigRootKey', 'FlywaySharedSqlMigrationsPath')
         $global:configRootKeys.Add('FlywayTomlPathConfigRootKey', 'FlywayTomlPath')
         $global:configRootKeys.Add('UseNamedLoginConfigRootKey', 'UseNamedLogin')
-        $global:configRootKeys.Add('LoginNameConfigRootKey', 'LoginName')
+        $global:configRootKeys.Add('DBConnectionStringMasterSecretNameConfigRootKey', 'DBConnectionStringMasterSecretName')
+        $global:configRootKeys.Add('DBConnectionStringDBSecretNameConfigRootKey', 'DBConnectionStringDBSecretName')
         $global:configRootKeys.Add('LoginPasswordCredentialsKeyConfigRootKey', 'LoginPasswordCredentialsKey')
+        $global:configRootKeys.Add('DatabasesCollectionConfigRootKey', 'DatabasesCollection')
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Added core database key constants.'
       }
 
-      # Discover and load per-database-instance sub-fragment files
-      $subFragments = @(
-        Get-ChildItem -LiteralPath $scriptDir -Filter 'Databases.*.ConfigRootKeys.ps1' -File -ErrorAction SilentlyContinue |
-          Sort-Object Name
-      )
-
-      if ($subFragments.Count -eq 0) {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "No Databases.*.ConfigRootKeys.ps1 sub-fragments found in '$scriptDir'."
-      } else {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Found $($subFragments.Count) database sub-fragment(s) to load."
-
-        if ($PSCmdlet.ShouldProcess('$global:configRootKeys', 'Add DatabasesCollection key and load sub-fragments')) {
-          $global:configRootKeys.Add('DatabasesCollectionConfigRootKey', 'DatabasesCollection')
-        }
-
-        foreach ($subFragment in $subFragments) {
-          if ($PSCmdlet.ShouldProcess($subFragment.FullName, 'Dot-source database sub-fragment')) {
-            try {
-              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Dot-sourcing '$($subFragment.FullName)'" -Tag 'ConfigRootKeys'
-              . $subFragment.FullName
-              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Loaded '$($subFragment.Name)'"
-            } catch {
-              $errorMessage = "Failed to dot-source '$($subFragment.FullName)'. Exception: $($_.Exception.Message)"
-              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-              throw
-            }
-          }
+      # Invoke each per-database section function explicitly, in order.
+      foreach ($sectionFunction in $perDatabaseSectionFunctions) {
+        if ($PSCmdlet.ShouldProcess('$global:configRootKeys', "Invoke $sectionFunction")) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Invoking '$sectionFunction'" -Tag 'ConfigRootKeys'
+          & $sectionFunction
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "$sectionFunction completed."
         }
       }
     } catch {

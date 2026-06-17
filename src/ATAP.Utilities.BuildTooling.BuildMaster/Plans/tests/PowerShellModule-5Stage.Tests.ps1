@@ -154,24 +154,29 @@ Describe 'V4-B02 runner no-profile contract: Invoke-PowerShellModuleBuildMasterS
     }
 }
 
-Describe 'V4-B02 behavioral proof: Get-PVal degrades to DefaultValue under -NoProfile' {
+Describe 'V4-B02 behavioral proof: Get-PVal fails loud under -NoProfile unless settings are initialized' {
 
     It 'the Get-PVal helper the runner depends on exists' {
         $script:GetPValPath | Should -Exist
     }
 
-    It 'Get-PVal returns the DefaultValue (no throw) when no profile globals are loaded' {
-        # Faithful -NoProfile reproduction: a clean child process with neither
-        # $global:settings nor $global:configRootKeys must resolve to the default
-        # rather than throwing. This is the lynchpin that makes the param -> env ->
-        # settings -> default chain in Move-ProGetPackageInterTier / Invoke-PromotedModuleTests
-        # safe under BuildMaster's -NoProfile invocation.
+    It 'Get-PVal throws when no profile globals are loaded and no settings are supplied' {
+        # With the removal of the bypass logic (Task 9.38), Get-PVal must fail loud
+        # under a bare -NoProfile session if settings were not bootstrapped.
         $probe = @"
 . '$script:GetPValPath'
-`$resolved = Get-PVal -ParameterName 'ATAP_NoProfile_Probe_DoesNotExist' -originalPSBoundParameters @{} -DefaultValue 'fallback'
-Write-Output `$resolved
+try {
+    Get-PVal -ParameterName 'ATAP_NoProfile_Probe_DoesNotExist' -originalPSBoundParameters @{} -DefaultValue 'fallback'
+    Write-Output 'Success'
+} catch {
+    Write-Output 'Thrown'
+}
 "@
         $output = pwsh -NoProfile -Command $probe 2>&1
-        ($output -join "`n").Trim() | Should -Be 'fallback'
+        ($output -join "`n").Trim() | Should -Be 'Thrown'
+    }
+
+    It 'the runner initializes local host settings via Initialize-LocalHostSettings' {
+        $script:RunnerText | Should -Match 'Initialize-LocalHostSettings'
     }
 }

@@ -12,7 +12,7 @@
     RootModule           = 'ATAP.Utilities.DatabaseManagement.Powershell.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '0.1.0'
+    ModuleVersion        = '0.1.6'
 
     # Supported PSEditions
     CompatiblePSEditions = 'Desktop', 'Core'
@@ -125,8 +125,9 @@
             # ReleaseNotes of this module
             # ReleaseNotes = ''
 
-            # Prerelease string of this module
-            Prerelease = 'Sprint003'
+            # Prerelease string of this module — cleared for the stable 0.1.4
+            # Production release (Sprint 0009); set only for prerelease builds.
+            # Prerelease = ''
 
             # Flag to indicate whether the module requires explicit user acceptance for install/update/save
             # RequireLicenseAcceptance = $false

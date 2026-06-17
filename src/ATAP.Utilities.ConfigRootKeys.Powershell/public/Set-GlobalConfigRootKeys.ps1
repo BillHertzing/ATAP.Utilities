@@ -2,45 +2,48 @@
 
 <#
 .SYNOPSIS
-Populates $global:configRootKeys by dot-sourcing all *.ConfigRootKeys.ps1 fragment files.
+Populates $global:configRootKeys by invoking each ConfigRootKeys section function in a fixed order.
 
 .DESCRIPTION
-Bootstraps $global:configRootKeys in a fixed four-phase sequence:
+Bootstraps $global:configRootKeys by calling an EXPLICIT, ordered list of section
+functions. There is no directory scan and no fragment-discovery step: every set of
+ConfigRootKeys that the module contributes is named here and invoked by name. Adding a
+new section means adding a new Set-*ConfigRootKeys function to public/ and adding one
+line to the ordered invocation list below.
 
-  Phase 1 — Bootstrap: dot-sources and calls Set-CoreConfigRootKeys.ps1 explicitly.
-             Creates the hashtable; must complete before any fragment adds keys.
+Invocation order (each step depends on the hashtable created by the first):
 
-  Phase 2 — Explicit DB keys: dot-sources and calls Databases.ConfigRootKeys.ps1,
-             which adds core DB connection key constants and auto-loads all
-             Databases.*.ConfigRootKeys.ps1 sub-fragments.
+  1. Set-CoreConfigRootKeys            — creates $global:configRootKeys and registers
+                                         the core / non-domain key constants. Must run
+                                         first.
+  2. Add-DatabasesConfigRootKeys       — adds database connection key constants and
+                                         invokes the per-database section functions
+                                         (Set-DatabasesATAPUtilitiesConfigRootKeys,
+                                         Set-DatabasesAceCommanderConfigRootKeys).
+  3. Set-BuildMasterConfigRootKeys     — BuildMaster automation-path / endpoint keys.
+  4. Set-RulesManagementConfigRootKeys — Rules-Management framework keys.
+  5. Add-PackageRepositoriesConfigRootKeys — single source of truth for ProGet / NuGet /
+                                         PowerShellGet feed key constants.
 
-  Phase 3 — Discovery: searches the directory given by -Path for every .ps1 file
-             whose base name ends with '.ConfigRootKeys', excluding scripts already
-             handled in Phases 1, 2, and 4 to prevent double-loading. Dot-sources
-             each match in alphabetical order and invokes the derived Add- function
-             if one exists; otherwise runs the top-level code directly.
-
-             Expected discovery fragments:
-               Databases.ATAPUtilities.ConfigRootKeys.ps1 — ATAP.Utilities DB name key
-               Databases.BuildSets.ConfigRootKeys.ps1    — BuildSets DB name key
-               Databases.Gmail.ConfigRootKeys.ps1        — Gmail DB name key
-               Databases.PCMSC.ConfigRootKeys.ps1        — PCMSC DB name key
-               Databases.Tags.ConfigRootKeys.ps1         — Tags DB name key
-               RulesManagement.ConfigRootKeys.ps1        — Rules-Management key constants
-
-  Phase 4 — Explicit BuildMaster and RulesManagement: dot-sources settings
-             fragments that define Phase 4 automation paths and endpoints.
-
-  Phase 5 — Explicit package repos: dot-sources and calls
-             Add-PackageRepositoriesConfigRootKeys.ps1, the single source of truth
-             for ProGet / NuGet / PowerShellGet feed key constants. No sub-fragment
-             scan is performed.
+In-module sibling resolution (development-from-source guard)
+------------------------------------------------------------
+When this orchestrator runs FROM SOURCE (its .ps1 dot-sourced individually, e.g. by the
+PowerShell profile or a Pester test rather than imported as a built module), calling a
+sibling function would otherwise trigger PowerShell command autoloading. Autoloading
+resolves the FIRST matching command on $env:PSModulePath — which may be an INSTALLED,
+production-grade copy of this module — silently shadowing the in-development code in the
+sprint worktree. To guarantee that the sibling versions that ship in THIS folder win,
+the begin block dot-sources each required sibling from its co-located source file (the
+-Path directory, default $PSScriptRoot) when that file is present. In a BUILT/installed
+module the individual .ps1 files have been merged into the .psm1, so the files are
+absent and the already-loaded module-scoped functions are used instead. This is the
+canonical pattern for "a higher-level function calling a lower-level function in the
+same module under development"; see the module INDEX.md.
 
 .PARAMETER Path
-Directory to scan for *.ConfigRootKeys.ps1 fragment files. When omitted, defaults to
-the directory containing Set-GlobalConfigRootKeys.ps1 itself, resolved via
-$MyInvocation.MyCommand.ScriptBlock.File so it is correct regardless of how this
-function was dot-sourced or called.
+Directory containing the co-located section-function source files. When omitted, defaults
+to $PSScriptRoot (the public/ folder this orchestrator lives in). Supplying -Path lets a
+test or an alternate layout resolve the sibling sources from a different directory.
 
 .OUTPUTS
 None. Populates $global:configRootKeys as a side effect.
@@ -48,17 +51,17 @@ None. Populates $global:configRootKeys as a side effect.
 .EXAMPLE
 Set-GlobalConfigRootKeys
 
-Loads all *.ConfigRootKeys.ps1 fragments from the default location.
+Creates and fully populates $global:configRootKeys from the co-located section functions.
 
 .EXAMPLE
 Set-GlobalConfigRootKeys -WhatIf
 
-Shows which fragment files would be dot-sourced without executing them.
+Shows which section functions would run without modifying $global:configRootKeys.
 
 .EXAMPLE
-Set-GlobalConfigRootKeys -Path 'D:\AltRepo\src\ConfigRootKeys\public'
+Set-GlobalConfigRootKeys -Path 'D:\AltRepo\src\ATAP.Utilities.ConfigRootKeys.Powershell\public'
 
-Loads fragments from an alternate directory.
+Resolves the section-function sources from an alternate directory.
 
 .NOTES
 AI assisted using Powershell.instructions.md as guidelines
@@ -81,145 +84,47 @@ function Set-GlobalConfigRootKeys {
     $mn = 'ATAP.Utilities.ConfigRootKeys.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Entering function $fn"
 
-    # Load Helpers
-    try {
-      # ToDo: Remove this when packaging works
-      if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
-      }
-      # Add more helper functions here that need to be loaded, before packaging is working
-    } catch {
-      $errorMessage = "Failed to load Get-ParameterValueFromNeoConfigurationRoot function. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-      throw
-    }
-
-
-    # Snippet: "Check and populate simple parameter as Type"
-    # running Get-Pval on a parameterr called $Path results is the parameter being set to the $env:Path value., not what we want
-    #$Path = Get-Pval -ParameterName 'Path' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Path' -DefaultValue $Path -AsType ([string])
-
-    # Default Path to the directory containing this script file.
-    # $MyInvocation.MyCommand.ScriptBlock.File is reliable regardless of how the
-    # function was dot-sourced or invoked from a different working directory.
+    # Default -Path to the directory this orchestrator was loaded from. $PSScriptRoot
+    # resolves to the public/ folder regardless of the caller's working directory.
     if ([string]::IsNullOrEmpty($Path)) {
-      $scriptFile = $MyInvocation.MyCommand.ScriptBlock.File
-      if (-not [string]::IsNullOrEmpty($scriptFile)) {
-        $Path = [System.IO.Path]::GetDirectoryName($scriptFile)
-      } else {
-        $Path = $PWD.ProviderPath
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message (
-          'Could not resolve script file path via ScriptBlock.File; falling back to current working directory.'
-        )
-      }
+      $Path = $PSScriptRoot
     }
 
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Scanning '$Path' for *.ConfigRootKeys.ps1 fragments"
+    # The EXPLICIT, ordered list of section functions to invoke. Order matters: step 1
+    # creates the hashtable, every later step appends to it. A function-local variable
+    # is shared across the begin/process/end blocks of this same invocation.
+    $configRootKeySectionFunctions = @(
+      'Set-CoreConfigRootKeys'
+      'Add-DatabasesConfigRootKeys'
+      'Set-BuildMasterConfigRootKeys'
+      'Set-RulesManagementConfigRootKeys'
+      'Add-PackageRepositoriesConfigRootKeys'
+    )
+
+    # In-module sibling resolution (see comment-based help above).
+    foreach ($sectionFunction in $configRootKeySectionFunctions) {
+      $siblingPath = Join-Path -Path $Path -ChildPath "$sectionFunction.ps1"
+      if (Test-Path -LiteralPath $siblingPath -PathType Leaf) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Dot-sourcing co-located sibling '$siblingPath'" -Tag 'ConfigRootKeys'
+        . $siblingPath
+      } elseif (-not (Get-Command -Name $sectionFunction -CommandType Function -ErrorAction SilentlyContinue)) {
+        $errorMessage = "Section function '$sectionFunction' is not defined and its source file was not found at '$siblingPath'."
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+        throw $errorMessage
+      } else {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Using already-loaded module-scoped '$sectionFunction' (built module; no co-located source)." -Tag 'ConfigRootKeys'
+      }
+    }
   }
 
   process {
     try {
-      if (-not (Test-Path -LiteralPath $Path -PathType Container)) {
-        $errorMessage = "Fragment directory '$Path' does not exist or is not accessible."
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-        throw $errorMessage
-      }
-
-      # ── Phase 1: Bootstrap — Set-CoreConfigRootKeys ───────────────────────
-      $coreScript = Join-Path $Path 'Set-CoreConfigRootKeys.ps1'
-      if (-not (Test-Path -LiteralPath $coreScript -PathType Leaf)) {
-        $errorMessage = "Bootstrap script '$coreScript' not found. Cannot initialize `$global:configRootKeys."
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-        throw $errorMessage
-      }
-      if ($PSCmdlet.ShouldProcess($coreScript, 'Dot-source and invoke Set-CoreConfigRootKeys')) {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Dot-sourcing '$coreScript'" -Tag 'ConfigRootKeys'
-        . $coreScript
-        Set-CoreConfigRootKeys
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Set-CoreConfigRootKeys completed.'
-      }
-
-      # ── Phase 2: Explicit — Add-DatabasesConfigRootKeys ──────────────────
-      $dbScript = Join-Path $Path 'Add-DatabasesConfigRootKeys.ps1'
-      if (Test-Path -LiteralPath $dbScript -PathType Leaf) {
-        if ($PSCmdlet.ShouldProcess($dbScript, 'Dot-source and invoke Add-DatabasesConfigRootKeys')) {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Dot-sourcing '$dbScript'" -Tag 'ConfigRootKeys'
-          . $dbScript
-          Add-DatabasesConfigRootKeys
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Add-DatabasesConfigRootKeys completed.'
+      foreach ($sectionFunction in $configRootKeySectionFunctions) {
+        if ($PSCmdlet.ShouldProcess('$global:configRootKeys', "Invoke $sectionFunction")) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Invoking '$sectionFunction'" -Tag 'ConfigRootKeys'
+          & $sectionFunction
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "$sectionFunction completed."
         }
-      } else {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "No 'Databases.ConfigRootKeys.ps1' found in '$Path'; skipping."
-      }
-
-      # # ── Phase 3: Discovery — remaining *.ConfigRootKeys.ps1 fragments ────
-      # # Explicitly-handled scripts are excluded to avoid double-loading.
-      # $explicitNames = [System.Collections.Generic.HashSet[string]]@(
-      #   'Set-CoreConfigRootKeys.ps1',
-      #   'Databases.ConfigRootKeys.ps1',
-      #   'Add-PackageRepositoriesConfigRootKeys.ps1'
-      # )
-
-      # $fragments = @(
-      #   Get-ChildItem -LiteralPath $Path -Filter '*.ps1' -File -ErrorAction SilentlyContinue |
-      #     Where-Object { $_.BaseName -match '\.ConfigRootKeys$' -and $_.Name -notin $explicitNames } |
-      #     Sort-Object Name
-      # )
-
-      # if ($fragments.Count -eq 0) {
-      #   Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "No additional *.ConfigRootKeys.ps1 fragments found under '$Path'."
-      # } else {
-      #   Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Found $($fragments.Count) additional fragment(s) to load."
-
-      #   foreach ($fragment in $fragments) {
-      #     if ($PSCmdlet.ShouldProcess($fragment.FullName, 'Dot-source ConfigRootKeys fragment')) {
-      #       try {
-      #         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Dot-sourcing '$($fragment.FullName)'" -Tag 'ConfigRootKeys'
-      #         . $fragment.FullName
-      #         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Loaded '$($fragment.Name)'"
-
-      #         $baseName = $fragment.BaseName -replace '\.ConfigRootKeys$', ''
-      #         $derivedFn = "Add-${baseName}ConfigRootKeys"
-      #         if (Get-Command -Name $derivedFn -CommandType Function -ErrorAction SilentlyContinue) {
-      #           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Invoking '$derivedFn'" -Tag 'ConfigRootKeys'
-      #           & $derivedFn
-      #         } else {
-      #           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "No function '$derivedFn' found after dot-sourcing '$($fragment.Name)'; fragment uses top-level code."
-      #         }
-      #       } catch {
-      #         $errorMessage = "Failed to load '$($fragment.FullName)'. Exception: $($_.Exception.Message)"
-      #         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-      #         throw
-      #       }
-      #     }
-      #   }
-      # }
-
-      # ── Phase 4: Explicit — BuildMaster and RulesManagement fragments ─────
-      foreach ($explicitFragmentName in @('BuildMaster.ConfigRootKeys.ps1', 'RulesManagement.ConfigRootKeys.ps1')) {
-        $explicitFragment = Join-Path $Path $explicitFragmentName
-        if (Test-Path -LiteralPath $explicitFragment -PathType Leaf) {
-          if ($PSCmdlet.ShouldProcess($explicitFragment, 'Dot-source ConfigRootKeys fragment')) {
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Dot-sourcing '$explicitFragment'" -Tag 'ConfigRootKeys'
-            . $explicitFragment
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Loaded '$explicitFragmentName'."
-          }
-        } else {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "No '$explicitFragmentName' found in '$Path'; skipping."
-        }
-      }
-
-      # ── Phase 5: Explicit — Add-PackageRepositoriesConfigRootKeys ─────────
-      $pkgRepoScript = Join-Path $Path 'Add-PackageRepositoriesConfigRootKeys.ps1'
-      if (Test-Path -LiteralPath $pkgRepoScript -PathType Leaf) {
-        if ($PSCmdlet.ShouldProcess($pkgRepoScript, 'Dot-source and invoke Add-PackageRepositoriesConfigRootKeys')) {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Dot-sourcing '$pkgRepoScript'" -Tag 'ConfigRootKeys'
-          . $pkgRepoScript
-          Add-PackageRepositoriesConfigRootKeys
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Add-PackageRepositoriesConfigRootKeys completed.'
-        }
-      } else {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "No 'Add-PackageRepositoriesConfigRootKeys.ps1' found in '$Path'; skipping."
       }
     } catch {
       $errorMessage = "Unhandled error in $fn. Exception: $($_.Exception.Message)"

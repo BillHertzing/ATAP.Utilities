@@ -68,9 +68,9 @@ function Clear-BuildMasterSprintVariables {
     foreach ($fieldName in @($null, 'token', 'key', 'password')) {
       try {
         $candidate = if ($null -eq $fieldName) {
-          Get-SecretATAP -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName -ErrorAction Stop
+          Get-SecretATAP -SecretName $BuildMasterAdminApiKeySecretName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop
         } else {
-          Get-SecretATAP -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName -SecretField $fieldName -ErrorAction Stop
+          Get-SecretATAP -SecretName $BuildMasterAdminApiKeySecretName -SecretField $fieldName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop
         }
         if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) { $apiKey = [string]$candidate; break }
       } catch {

@@ -12,7 +12,7 @@
     RootModule           = 'ATAP.Utilities.BuildTooling.Powershell.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '0.1.1'
+    ModuleVersion        = '0.1.4'
 
     # Supported PSEditions
     CompatiblePSEditions = 'Desktop', 'Core'
@@ -84,7 +84,8 @@
     'Convert-DiagramsToImages', 'Convert-TasksMdToSprintBoard', 'Copy-Assets', 'Create-MCPJunction',
     'Create-ServiceAccount', 'Get-AllFilesChangedByCommit',
     'Get-ATAPIACConstant', 'Get-BrokenGitSubDirs', 'Get-BuildContext',
-    'Get-DatabasePackageBuildContext', 'Get-SprintEndContext',
+    'Get-DatabasePackageBuildContext', 'Get-DbConnectionStringSecretDescriptor',
+    'Get-SprintEndContext',
     'Get-DeployedReleaseManifest', 'Get-IncorrectSymLinksAndJunctions',
     'Get-JenkinsEnvSettings', 'Get-MergedPesterConfigurations',
     'Get-ModuleAsSymbolicLink', 'Get-ModuleHighestVersion',
@@ -98,11 +99,11 @@
     'Initialize-DownstreamSprintFromSharedVSCode',
     'Initialize-BWSAccessToken', 'Initialize-BWSCredentialDirectory',
     'Initialize-ProGetSqlServiceLogin',
-    'Initialize-ServiceAccountBitwardenSession',
     'Invoke-BuildToolingPesterDebug', 'Invoke-DotnetBuildWithRetry',
     'Invoke-FailureAcknowledgedGate', 'Invoke-GitCommit',
     'Invoke-GitPostCheckoutHook', 'Invoke-GitPostCommitHook', 'Invoke-GitPreCommitHook',
     'Invoke-ModuleBuildWithRetry', 'Invoke-MSBuildWithLists',
+    'Invoke-PairedTierPromotion',
     'Invoke-PromotedModuleTests', 'Invoke-PromotedPackageTests',
     'Invoke-PSModulePesterTests', 'Invoke-PSModulePSScriptAnalyzer',
     'Invoke-WithFileLock', 'List-ProGetApiKeys', 'List-ProGetConnectors',
@@ -113,7 +114,7 @@
     'New-DocFilesIfNotPresent', 'New-DocFolderIfNotPresent',
     'New-GitHubIssue', 'New-HostSettingsForPackageRepositoryFeeds',
     'New-MockTestFileStructure', 'New-OverviewSprintWorkspace',
-    'New-PermanentBitwardenSecrets', 'New-PesterBasicUnitTestTemplate',
+    'New-PesterBasicUnitTestTemplate',
     'New-PesterContextBlock', 'New-PesterDataDrivenTestTemplate',
     'New-PesterDescribeBlock', 'New-PesterFileModel', 'New-PesterItBlock',
     'New-PesterTestFile', 'New-ProGetApiKey', 'New-ProGetConnector',
@@ -126,7 +127,7 @@
     'Publish-DatabaseChangePackageToProGet', 'Publish-NuGetPackageToProGet',
     'Publish-PSModuleToProGet', 'Publish-PSModuleToProGetFeed',
     'Publish-PSPackage', 'Publish-UniversalPackageToProGet',
-    'Read-SourceAndCreateRules', 'Refresh-BWSession',
+    'Read-SourceAndCreateRules',
     'Register-ProGetFeedSet',
     'Remove-BuildMasterApplication',
     'Remove-BuildMasterApplicationVariable',
@@ -153,8 +154,7 @@
     'Test-SprintInfrastructureHealth', 'Test-SprintPrerequisites',
     'Update-BlocksInCsproj',
     'Update-OverviewWorkspaceStableInfo', 'Update-PackageVersion',
-    'Test-ProGetFeedSet',
-    'Update-ServiceAccountBWCredentialFile'
+    'Test-ProGetFeedSet'
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport      = '*'

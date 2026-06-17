@@ -189,6 +189,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Initialize host settings using the standalone loader (Task 9.38). This populates
+# the settings and configRootKeys globals in memory in this profileless shell.
+
 if (-not (Get-Command -Name Write-PSFMessage -CommandType Function, Cmdlet -ErrorAction SilentlyContinue)) {
   function Write-PSFMessage {
     param(
@@ -205,6 +208,7 @@ if (-not (Get-Command -Name Write-PSFMessage -CommandType Function, Cmdlet -Erro
 }
 
 . (Join-Path -Path $PSScriptRoot -ChildPath 'BuildMasterRunContext.Common.ps1')
+Initialize-LocalHostSettings -SourcePath $SourcePath
 
 function Add-GitSafeDirectoryForCurrentProcess {
   <#
@@ -894,20 +898,17 @@ function Invoke-PowerShellModuleBuildMasterStage {
       @{FunctionName = 'Get-ClonedAndModifiedHashtable'; ModuleName = 'ATAP.Utilities.PowerShell' },
       @{FunctionName = 'Get-ParameterValueFromNeoConfigurationRoot'; ModuleName = 'ATAP.Utilities.PowerShell' }
     )
-    $repoRootParentPath = 'C:\Dropbox\whertzing\GitHub'
-    $stablePath = 'ATAP.Utilities'
-    $wtFolder = $PWD.Path.Split([IO.Path]::DirectorySeparatorChar) |
-      Where-Object { $_ -like '*-wt-*' } |
-      Select-Object -First 1
-    $resolvedModulePath = $wtFolder ? $(Join-Path $repoRootParentPath $wtFolder 'src') : $(Join-Path $repoRootParentPath $stablePath 'src')
+    $resolvedModulePath = Join-Path -Path $SourcePath -ChildPath 'src'
     foreach ($helpfunction in $helpfunctionsneeded) {
+      $helperPath = Join-Path -Path $resolvedModulePath -ChildPath (Join-Path -Path $helpfunction.ModuleName -ChildPath (Join-Path -Path 'public' -ChildPath "$($helpfunction.FunctionName).ps1"))
       try {
-        if (-not (Test-Path -LiteralPath "Function:\$($helpfunction.FunctionName)")) {
-          . (Join-Path $resolvedModulePath $($helpfunction.ModuleName) 'public' "$($helpfunction.FunctionName).ps1")
+        if (-not (Test-Path -LiteralPath $helperPath -PathType Leaf)) {
+          throw "Source helper file not found: $helperPath"
         }
+        . $helperPath
       }
       catch {
-        $errorMessage = "Failed to load $($helpfunction.FunctionName) from '$($helpfunction.ModuleName)'. Exception: $($_.Exception.Message)"
+        $errorMessage = "Failed to load $($helpfunction.FunctionName) from source path '$helperPath'. Exception: $($_.Exception.Message)"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
         throw
       }
@@ -965,12 +966,10 @@ function Invoke-PowerShellModuleBuildMasterStage {
     }
 
     $neoConfigurationPath = Join-Path -Path $SourcePath -ChildPath 'src/ATAP.Utilities.PowerShell/public/Get-ParameterValueFromNeoConfigurationRoot.ps1'
-    if (-not (Get-Command -Name Get-ParameterValueFromNeoConfigurationRoot -CommandType Function -ErrorAction SilentlyContinue)) {
-      if (-not (Test-Path -LiteralPath $neoConfigurationPath -PathType Leaf)) {
-        throw "Required NeoConfigurationRoot helper not found: $neoConfigurationPath"
-      }
-      . $neoConfigurationPath
+    if (-not (Test-Path -LiteralPath $neoConfigurationPath -PathType Leaf)) {
+      throw "Required NeoConfigurationRoot helper not found: $neoConfigurationPath"
     }
+    . $neoConfigurationPath
     Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Global -Force
 
     Add-GitSafeDirectoryForCurrentProcess -RepositoryPath $SourcePath

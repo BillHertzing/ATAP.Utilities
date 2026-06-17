@@ -14,7 +14,8 @@ BeforeAll {
     param(
       [Alias('BuildMasterAdminApiKeySecretName')]
       [string]$SecretName,
-      [string]$SecretField
+      [string]$SecretField,
+      [string]$SecretStoreType
     )
     'unit-test-key'
   }

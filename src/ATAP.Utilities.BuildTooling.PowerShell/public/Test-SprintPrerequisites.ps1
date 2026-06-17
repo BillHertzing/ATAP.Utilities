@@ -56,6 +56,121 @@ function Test-SprintUrlReachable {
   }
 }
 
+function Test-SprintModulePromotionDeploy {
+  <#
+  .SYNOPSIS
+      For a single sprint-built module, asserts its Production version is in the
+      *-stable PowerShellGet feed AND installed on this workstation.
+
+  .DESCRIPTION
+      The Task 9.7 SprintEnd->SprintStart handoff gate. When a sprint builds a
+      new module/library version, the next sprint must be able to resolve the
+      latest Production module from ProGet and from the local module path. This
+      helper performs both halves for one declared module:
+
+        (a) Feed presence — queries the resolved *-stable feed (default
+            'powershellget-stable') for the exact version via Find-Module. A
+            registered PSRepository of the feed name is preferred; the feed
+            endpoint is resolved from $global:Settings when available.
+        (b) Workstation install — Get-Module -ListAvailable must report the
+            exact version.
+
+      Returns a [PSCustomObject] with Ok plus per-half InStableFeed/Installed
+      flags and a remediation string when either half fails. Never throws on a
+      genuine "not present" result; only inspection failures surface as Detail.
+  #>
+  [CmdletBinding()]
+  [OutputType([PSCustomObject])]
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$Name,
+
+    [Parameter(Mandatory = $true)]
+    [string]$Version,
+
+    [Parameter()]
+    [string]$StableFeedName = 'powershellget-stable'
+  )
+
+  $fn = 'Test-SprintModulePromotionDeploy'
+  $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+
+  $result = [PSCustomObject]@{
+    Name         = $Name
+    Version      = $Version
+    StableFeed   = $StableFeedName
+    Ok           = $false
+    InStableFeed = $false
+    Installed    = $false
+    Detail       = ''
+    Remediation  = $null
+  }
+
+  # ---- (a) Is the exact Production version in the *-stable feed? ----
+  $feedDetail = ''
+  try {
+    # Prefer the feed name/URI from host settings; fall back to the default
+    # repository name if settings are not loaded (no-profile / test contexts).
+    if (Get-Command -Name 'Resolve-ProGetFeedFromSettings' -CommandType Function -ErrorAction SilentlyContinue) {
+      try {
+        $feed = Resolve-ProGetFeedFromSettings -FeedType 'powershell' -Tier 'Production'
+        if ($null -ne $feed -and -not [string]::IsNullOrWhiteSpace([string]$feed.FeedName)) {
+          $StableFeedName = [string]$feed.FeedName
+          $result.StableFeed = $StableFeedName
+        }
+      } catch {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolve-ProGetFeedFromSettings unavailable for '$Name'; using default feed '$StableFeedName'. Exception: $($_.Exception.Message)"
+      }
+    }
+
+    $found = Find-Module -Name $Name -RequiredVersion $Version -Repository $StableFeedName -ErrorAction Stop
+    if ($null -ne $found) {
+      $result.InStableFeed = $true
+      $feedDetail = "version $Version present in feed '$StableFeedName'"
+    } else {
+      $feedDetail = "version $Version NOT found in feed '$StableFeedName'"
+    }
+  } catch {
+    $feedDetail = "version $Version not resolvable in feed '$StableFeedName' ($($_.Exception.Message))"
+  }
+
+  # ---- (b) Is the exact version installed on this workstation? ----
+  $installDetail = ''
+  try {
+    $installed = Get-Module -Name $Name -ListAvailable -ErrorAction SilentlyContinue |
+      Where-Object { $_.Version.ToString() -eq $Version }
+    if ($installed) {
+      $result.Installed = $true
+      $installDetail = "version $Version installed on workstation"
+    } else {
+      $available = Get-Module -Name $Name -ListAvailable -ErrorAction SilentlyContinue |
+        Sort-Object Version -Descending | Select-Object -First 1
+      $installDetail = if ($available) {
+        "version $Version NOT installed (highest local is $($available.Version))"
+      } else {
+        "module '$Name' not installed on workstation"
+      }
+    }
+  } catch {
+    $installDetail = "install inspection failed: $($_.Exception.Message)"
+  }
+
+  $result.Ok = ($result.InStableFeed -and $result.Installed)
+  $result.Detail = "$feedDetail; $installDetail"
+  if (-not $result.Ok) {
+    $steps = [System.Collections.Generic.List[string]]::new()
+    if (-not $result.InStableFeed) {
+      [void]$steps.Add("promote $Name $Version to Production (powershellget-stable) via the 5-tier BuildMaster ladder")
+    }
+    if (-not $result.Installed) {
+      [void]$steps.Add("Install-Module -Name $Name -RequiredVersion $Version -Repository $StableFeedName -Scope AllUsers")
+    }
+    $result.Remediation = $steps -join '; then '
+  }
+
+  return $result
+}
+
 function Test-SprintPrerequisites {
   <#
 .SYNOPSIS
@@ -67,10 +182,12 @@ function Test-SprintPrerequisites {
     machine access token — BW_SESSION is personal-vault-only and is NOT
     required, per SC-0175), git working state of each required sprint worktree
     (no in-progress merge/rebase/cherry-pick/revert/bisect), BuildTooling module
-    importability, existing per-developer SQL Server instances, and HEAD
-    reachability of the ProGet and BuildMaster base URLs. Each discovered
-    worktree is also checked with Assert-LockFilesClean unless -SkipLockFileGuard
-    is supplied.
+    importability, existing per-developer SQL Server instances, HEAD
+    reachability of the ProGet and BuildMaster base URLs, and — when the sprint
+    declared newly built modules via -BuiltModule (Task 9.7) — that each built
+    module's Production version is both in the *-stable ProGet feed AND installed
+    on this workstation. Each discovered worktree is also checked with
+    Assert-LockFilesClean unless -SkipLockFileGuard is supplied.
 
     Every check runs to completion regardless of earlier failures so the
     structured result captures the full diagnostic picture. The cmdlet always
@@ -119,6 +236,20 @@ function Test-SprintPrerequisites {
     Use only for tests or when SQL instance readiness has been separately
     verified and recorded.
 
+.PARAMETER BuiltModule
+    (Task 9.7) Zero or more modules the sprint built new versions of, each as a
+    hashtable or PSCustomObject with Name and Version keys, e.g.
+    @{ Name = 'ATAP.Utilities.Powershell'; Version = '0.1.4' }. For each entry
+    the ModulePromotionDeploy check asserts the version is BOTH (a) in the
+    *-stable ProGet feed AND (b) installed on this workstation, so the
+    SprintEnd->SprintStart handoff resolves the latest Production module. When no
+    BuiltModule is supplied the check is recorded as Skipped (Ok=$true).
+
+.PARAMETER SkipModulePromotionDeployCheck
+    Explicitly bypasses the Task 9.7 built-module promotion+deploy gate even when
+    -BuiltModule entries are supplied. Use only for tests or when promotion and
+    deployment have been separately verified and recorded.
+
 .OUTPUTS
     [PSCustomObject] with AllOk [bool], Checks [PSCustomObject], Failures [string[]],
     Timestamp [DateTime].
@@ -165,7 +296,13 @@ function Test-SprintPrerequisites {
     [switch]$SkipLockFileGuard,
 
     [Parameter()]
-    [switch]$SkipSqlServerInstanceCheck
+    [switch]$SkipSqlServerInstanceCheck,
+
+    [Parameter()]
+    [object[]]$BuiltModule,
+
+    [Parameter()]
+    [switch]$SkipModulePromotionDeployCheck
   )
 
   begin {
@@ -509,6 +646,71 @@ function Test-SprintPrerequisites {
 
     $checks['BuildMasterReachable'] = Test-SprintUrlReachable -Url $BuildMasterBaseUrl -TimeoutSeconds $ReachabilityTimeoutSeconds -Label 'BuildMaster'
     if (-not $checks['BuildMasterReachable'].Ok) { [void]$failures.Add('BuildMasterReachable') }
+
+    # Task 9.7: when the sprint built new module versions, confirm each one is
+    # both in the *-stable ProGet feed AND installed on this workstation, so the
+    # SprintEnd->SprintStart agents resolve the latest Production modules.
+    $builtEntries = @($BuiltModule | Where-Object { $null -ne $_ })
+    if ($SkipModulePromotionDeployCheck) {
+      $checks['ModulePromotionDeploy'] = [PSCustomObject]@{
+        Ok        = $true
+        Skipped   = $true
+        Detail    = 'Built-module promotion+deploy gate skipped by explicit caller request'
+        PerModule = @()
+      }
+    } elseif ($builtEntries.Count -eq 0) {
+      $checks['ModulePromotionDeploy'] = [PSCustomObject]@{
+        Ok        = $true
+        Skipped   = $true
+        Detail    = 'No built modules declared (-BuiltModule); promotion+deploy gate not applicable'
+        PerModule = @()
+      }
+    } else {
+      $modPerModule = @()
+      $modOk = $true
+      foreach ($entry in $builtEntries) {
+        $modName = $null
+        $modVersion = $null
+        if ($entry -is [System.Collections.IDictionary]) {
+          $modName = [string]$entry['Name']
+          $modVersion = [string]$entry['Version']
+        } else {
+          if ($entry.PSObject.Properties['Name']) { $modName = [string]$entry.Name }
+          if ($entry.PSObject.Properties['Version']) { $modVersion = [string]$entry.Version }
+        }
+
+        if ([string]::IsNullOrWhiteSpace($modName) -or [string]::IsNullOrWhiteSpace($modVersion)) {
+          $modOk = $false
+          $modPerModule += [PSCustomObject]@{
+            Name         = $modName
+            Version      = $modVersion
+            StableFeed   = $null
+            Ok           = $false
+            InStableFeed = $false
+            Installed    = $false
+            Detail       = 'BuiltModule entry is missing a Name and/or Version'
+            Remediation  = 'Supply each -BuiltModule entry as @{ Name = <module>; Version = <version> }'
+          }
+          continue
+        }
+
+        $moduleResult = Test-SprintModulePromotionDeploy -Name $modName -Version $modVersion
+        if (-not $moduleResult.Ok) { $modOk = $false }
+        $modPerModule += $moduleResult
+      }
+
+      $checks['ModulePromotionDeploy'] = [PSCustomObject]@{
+        Ok        = $modOk
+        Skipped   = $false
+        Detail    = if ($modOk) {
+          "$($modPerModule.Count) built module(s) confirmed in *-stable feed and installed on the workstation"
+        } else {
+          'One or more built modules are missing from the *-stable feed or not installed on the workstation'
+        }
+        PerModule = $modPerModule
+      }
+      if (-not $modOk) { [void]$failures.Add('ModulePromotionDeploy') }
+    }
 
     $result = [PSCustomObject]@{
       AllOk     = ($failures.Count -eq 0)

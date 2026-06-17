@@ -7,7 +7,7 @@ consumed across the ATAP PowerShell ecosystem.
 > or profile in this workspace. Read this before you reference either global.
 >
 > **Scope:** the PowerShell two-tier global-settings pattern only. The C# Options
-> pattern is a separate mechanism — see *Related Documentation* below.
+> pattern is a separate mechanism — see _Related Documentation_ below.
 
 ---
 
@@ -25,10 +25,10 @@ silently at runtime.
 
 The ATAP solution is a **two-tier indirection**:
 
-| Tier | Global | What it holds | Varies by |
-| ---- | ------ | ------------- | --------- |
-| 1 | `$global:configRootKeys` | The **names of settings keys**, as string constants | Nothing — identical on every host |
-| 2 | `$global:settings` | The **actual values** for those keys | Host **and** user |
+| Tier | Global                   | What it holds                                       | Varies by                         |
+| ---- | ------------------------ | --------------------------------------------------- | --------------------------------- |
+| 1    | `$global:configRootKeys` | The **names of settings keys**, as string constants | Nothing — identical on every host |
+| 2    | `$global:settings`       | The **actual values** for those keys                | Host **and** user                 |
 
 Tier 1 is a stable, code-defined vocabulary. Tier 2 is the host/user-specific
 data. Code names a setting through Tier 1 and never types a raw key string, so a
@@ -54,13 +54,13 @@ source of confusion.
                                                                    →  'nuget-experimental'
 ```
 
-- **Level 1 — ConfigRootKey constant name.** A key *in* `$global:configRootKeys`.
+- **Level 1 — ConfigRootKey constant name.** A key _in_ `$global:configRootKeys`.
   By convention it ends in `ConfigRootKey`. This is what code types literally.
-- **Level 2 — settings key string.** The *value* stored at Level 1, and the key
-  *into* `$global:settings`. Usually the Level 1 name with the `ConfigRootKey`
+- **Level 2 — settings key string.** The _value_ stored at Level 1, and the key
+  _into_ `$global:settings`. Usually the Level 1 name with the `ConfigRootKey`
   suffix removed, but treat that as a convention, not a rule — always go through
   the lookup.
-- **Level 3 — runtime value.** The *value* stored at Level 2 in `$global:settings`
+- **Level 3 — runtime value.** The _value_ stored at Level 2 in `$global:settings`
   — the actual path, URL, feed name, or flag the cmdlet uses.
 
 The canonical access expression chains Level 1 → Level 2 → Level 3:
@@ -82,26 +82,55 @@ define this key vocabulary.
 
 ### 3.1 The Orchestrator: `Set-GlobalConfigRootKeys`
 
-`Set-GlobalConfigRootKeys` is the single entry point. It dot-sources the
-fragment scripts in `public/` in a **fixed phase order** — order matters because
-every phase after the first depends on the hashtable already existing.
+`Set-GlobalConfigRootKeys` is the single entry point. It invokes an **explicit,
+ordered list of section functions** — order matters because every step after the
+first depends on the hashtable already existing. There is **no directory scan and no
+fragment discovery**: every set of ConfigRootKeys is a named `Set-*ConfigRootKeys` /
+`Add-*ConfigRootKeys` function, listed both in the module manifest's
+`FunctionsToExport` and in the orchestrator's ordered invocation list.
 
-| Phase | Script | Role |
-| ----- | ------ | ---- |
-| 1 | `Set-CoreConfigRootKeys.ps1` | **Bootstrap.** Creates `$global:configRootKeys` as a fresh hashtable and assigns the ~150 core / non-domain key constants in one literal. Must run first. |
-| 2 | `Add-DatabasesConfigRootKeys.ps1` | Adds database connection key constants; auto-loads `Databases.*.ConfigRootKeys.ps1` sub-fragments. |
-| 3 | _(discovery — currently disabled)_ | Reserved scan for any other `*.ConfigRootKeys.ps1` fragment. The code is present but commented out; phases 2/4/5 cover all fragments explicitly. |
-| 4 | `BuildMaster.ConfigRootKeys.ps1`, `RulesManagement.ConfigRootKeys.ps1` | Adds BuildMaster automation-path / endpoint keys and Rules-Management keys. |
-| 5 | `Add-PackageRepositoriesConfigRootKeys.ps1` | **Single source of truth** for all ProGet / NuGet / PowerShellGet / ReleaseBundle feed key constants (the canonical five-tier set). Loads no sub-fragments. |
+| Order | Section function                                                  | Role                                                                                                                                                        |
+| ----- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | `Set-CoreConfigRootKeys`                                          | **Bootstrap.** Creates `$global:configRootKeys` as a fresh hashtable and assigns the core / non-domain key constants in one literal. Must run first.        |
+| 2     | `Add-DatabasesConfigRootKeys`                                    | Adds database connection key constants, then invokes the per-database section functions **by name**: `Set-DatabasesATAPUtilitiesConfigRootKeys`, `Set-DatabasesAceCommanderConfigRootKeys`. |
+| 3     | `Set-BuildMasterConfigRootKeys`                                  | Adds BuildMaster automation-path / endpoint keys.                                                                                                            |
+| 4     | `Set-RulesManagementConfigRootKeys`                             | Adds Rules-Management framework keys.                                                                                                                        |
+| 5     | `Add-PackageRepositoriesConfigRootKeys`                         | **Single source of truth** for all ProGet / NuGet / PowerShellGet / ReleaseBundle feed key constants (the canonical five-tier set). Loads no sub-fragments.  |
 
-Phase 1 **creates** the hashtable (`$global:configRootKeys = @{ ... }`); every
-later phase **appends** to it with `.Add(...)`. Because `.Add` throws on a
-duplicate key, an accidental double-registration fails loudly rather than
-silently overwriting.
+Step 1 **creates** the hashtable (`$global:configRootKeys = @{ ... }`); every later
+step **appends** to it with `.Add(...)`. Because `.Add` throws on a duplicate key, an
+accidental double-registration fails loudly rather than silently overwriting.
 
-`Set-GlobalConfigRootKeys` supports `-WhatIf` (shows which fragments would load)
-and accepts an optional `-Path` to load fragments from an alternate directory;
-by default it resolves the directory of its own script file.
+`Set-GlobalConfigRootKeys` supports `-WhatIf` (shows which section functions would run)
+and accepts an optional `-Path` to resolve the co-located section sources from an
+alternate directory; by default it resolves `$PSScriptRoot` (the `public/` folder).
+
+#### Explicit loading replaces fragment discovery
+
+The earlier design dropped `*.ConfigRootKeys.ps1` "fragment" files into `public/` and
+let a higher-level function **discover** them with `Get-ChildItem` scans (the old
+"Phase 3" discovery, plus the `Databases.*.ConfigRootKeys.ps1` sub-fragment scan inside
+`Add-DatabasesConfigRootKeys`). That practice is **no longer allowed**. Each section is
+now an eponymous advanced function; adding one means writing a new
+`Set-<Domain>ConfigRootKeys.ps1`, adding it to `FunctionsToExport`, and adding one line
+to the relevant orchestrator's ordered list.
+
+#### In-module sibling resolution (development-from-source guard)
+
+When `Set-GlobalConfigRootKeys` runs **from source** — its `.ps1` dot-sourced
+individually (the profile bootstrap, a Pester test) rather than imported as a built
+module — calling a sibling such as `Set-CoreConfigRootKeys` would trigger PowerShell
+command **autoloading**. Autoloading resolves the first match on `$env:PSModulePath`,
+which may be an **installed, production-grade** copy of this module, silently shadowing
+the in-development sprint-worktree code. To guarantee the worktree version wins, each
+orchestrator's `begin` block dot-sources every section function it invokes from the
+co-located source file (`-Path` directory, default `$PSScriptRoot`) **when that file is
+present**. In a built/installed module the `public/*.ps1` files are merged into the
+`.psm1`, so the files are absent and the already-loaded module-scoped functions (the
+correct production versions) are used instead. This is the canonical pattern for "a
+higher-level function calling a lower-level function in the same module under
+development"; a scope-creep item tracks propagating it to the other ATAP PowerShell
+modules.
 
 ### 3.2 What a ConfigRootKey Entry Looks Like
 
@@ -148,15 +177,15 @@ data**.
 
 1. **Validates the precondition.** If `$global:configRootKeys` is absent, not a
    hashtable, or empty, it throws immediately:
-   *"`$global:configRootKeys` is not populated. Call `Set-GlobalConfigRootKeys`
-   before `Get-HostSettings`."* — Tier 1 must always exist before Tier 2 is built.
+   _"`$global:configRootKeys` is not populated. Call `Set-GlobalConfigRootKeys`
+   before `Get-HostSettings`."_ — Tier 1 must always exist before Tier 2 is built.
 2. **Locates the IAC host-settings script.** It probes a candidate list for
    `HostSettings.ps1` (or `Windows\HostSettings.ps1`): the `-IACBasePath`
    parameter, the ATAP.IAC sprint worktree, the `ATAP_IAC_BASE_PATH` environment
    variable (Process then User scope), `~\GitHub\ATAP.IAC`, the stable ATAP.IAC
    worktree, and finally the installed-module `Resources` folder.
 3. **Dot-sources `HostSettings.ps1` in a child scope.** That IAC file defines its
-   *own inner* `Get-HostSettings` function. The wrapper invokes the inner
+   _own inner_ `Get-HostSettings` function. The wrapper invokes the inner
    function with the requested host name and returns the resulting hashtable.
 4. **Validates the result** — non-null and an actual `[hashtable]` — then returns
    it.
@@ -186,8 +215,8 @@ $global:settings[$global:configRootKeys['ENVIRONMENTConfigRootKey']] = $inProces
 $global:settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']] = 'C:\Dropbox\whertzing\Git\.gitconfig'
 ```
 
-So `$global:settings` = *static host data from IAC* **+** *runtime facts about
-the current process/session*.
+So `$global:settings` = _static host data from IAC_ **+** _runtime facts about
+the current process/session_.
 
 ---
 
@@ -273,33 +302,38 @@ the next agent) can copy-paste the fix.
 
 ## 7. Common Pitfalls
 
-| Pitfall | Symptom | Fix |
-| ------- | ------- | --- |
-| Indexing `$global:settings` with a raw string | Lookup silently returns `$null` | Always go through `$global:configRootKeys[...]` |
-| Calling `Get-HostSettings` before `Set-GlobalConfigRootKeys` | Throws *"`$global:configRootKeys` is not populated"* | Run the orchestrator first |
-| Running a settings-dependent cmdlet in a no-profile / agent shell | `$null` index errors with no obvious cause | Add the §6.2 defensive guard |
-| Adding a new setting but only defining the value | Code that names the key by constant can't find it | Register the **ConfigRootKey constant** in the right fragment **and** add the value in IAC `HostSettings.ps1` |
-| Registering a duplicate ConfigRootKey | `.Add()` throws on load | Pick a unique constant name; check existing fragments |
-| Treating `$global:settings` as immutable | Stale `IsElevated` / `ENVIRONMENT` | Remember the profile and cmdlets mutate it after creation |
+| Pitfall                                                           | Symptom                                              | Fix                                                                                                           |
+| ----------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Indexing `$global:settings` with a raw string                     | Lookup silently returns `$null`                      | Always go through `$global:configRootKeys[...]`                                                               |
+| Calling `Get-HostSettings` before `Set-GlobalConfigRootKeys`      | Throws _"`$global:configRootKeys` is not populated"_ | Run the orchestrator first                                                                                    |
+| Running a settings-dependent cmdlet in a no-profile / agent shell | `$null` index errors with no obvious cause           | Add the §6.2 defensive guard                                                                                  |
+| Adding a new setting but only defining the value                  | Code that names the key by constant can't find it    | Register the **ConfigRootKey constant** in the right fragment **and** add the value in IAC `HostSettings.ps1` |
+| Registering a duplicate ConfigRootKey                             | `.Add()` throws on load                              | Pick a unique constant name; check existing fragments                                                         |
+| Treating `$global:settings` as immutable                          | Stale `IsElevated` / `ENVIRONMENT`                   | Remember the profile and cmdlets mutate it after creation                                                     |
 
 ---
 
 ## 8. Adding a New Setting — Checklist
 
-1. **Pick the fragment.** Choose the `*.ConfigRootKeys.ps1` script that owns the
-   domain (core, databases, BuildMaster, RulesManagement, or package
-   repositories). Add a new domain fragment only if none fits.
+1. **Pick the section function.** Choose the `Set-*ConfigRootKeys` /
+   `Add-*ConfigRootKeys` function that owns the domain (core, databases, BuildMaster,
+   RulesManagement, or package repositories). Add a new domain section function only if
+   none fits — create `public/Set-<Domain>ConfigRootKeys.ps1` as an eponymous advanced
+   function that guards on `$global:configRootKeys` existing and `.Add(...)`s its keys in
+   the `process` block.
 2. **Register the ConfigRootKey constant** (Level 1 → Level 2 mapping). Use a
-   name ending in `ConfigRootKey`; in `Set-CoreConfigRootKeys.ps1` add a hashtable
-   entry, in an `Add-*` fragment use `.Add(...)`.
+   name ending in `ConfigRootKey`; in `Set-CoreConfigRootKeys` add a hashtable entry, in
+   an `Add-*` / `Set-*` section function use `.Add(...)`.
 3. **Provide the value** (Level 2 → Level 3) in the ATAP.IAC `HostSettings.ps1`
    for every host that needs it. Secrets are **not** stored here — store the
-   *name of the environment variable / Bitwarden item*, and let code resolve the
+   _name of the environment variable / Bitwarden item_, and let code resolve the
    actual secret at use time.
 4. **Consume it** with the chained `$global:settings[$global:configRootKeys[...]]`
    expression.
-5. If you added a new fragment, confirm `Set-GlobalConfigRootKeys` loads it in
-   the correct phase and update the module `INDEX.md`.
+5. If you added a new section function, add it to `FunctionsToExport` in the `.psd1`,
+   add its name to the ordered invocation list in the appropriate orchestrator
+   (`Set-GlobalConfigRootKeys`, or `Add-DatabasesConfigRootKeys` for a database), and
+   update the module `INDEX.md`. Do **not** rely on directory discovery — there is none.
 
 ---
 
@@ -318,7 +352,7 @@ the next agent) can copy-paste the fix.
   values, and `constants/FeedConstants.psd1`.
 - **C# equivalent.** C# code does **not** use these globals. It uses the .NET
   Options pattern with DI (`services.AddOptions<T>().Bind(...)`). The two systems
-  are independent; see `CLAUDE.md` → *Configuration System*.
+  are independent; see `CLAUDE.md` → _Configuration System_.
 
 ---
 

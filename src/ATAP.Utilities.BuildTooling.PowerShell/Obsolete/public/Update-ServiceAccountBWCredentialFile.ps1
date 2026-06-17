@@ -1,3 +1,13 @@
+# ============================================================================
+# RETIRED (Task 9.21, Sprint 0009) — BW_SESSION / personal-vault machinery.
+# Rotated the DPAPI-encrypted personal-vault Bitwarden credential files used by
+# the bw login/unlock/BW_SESSION service-account flow. That flow existed only to
+# support CI secrets in a personal Bitwarden Password Manager vault, which is
+# prohibited. CI secrets now live in Bitwarden Secrets Manager (bws + DPAPI
+# machine token). Moved out of public/ so it is no longer imported or exported.
+# Kept here for history only.
+# ============================================================================
+
 <#
 .SYNOPSIS
 Replaces the DPAPI Bitwarden credential files for a Windows service account.

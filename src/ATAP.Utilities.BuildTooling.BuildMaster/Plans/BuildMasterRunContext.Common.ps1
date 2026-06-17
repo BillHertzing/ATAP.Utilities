@@ -140,14 +140,18 @@ function Clear-OldBuildMasterRunContexts {
         Where-Object { [System.IO.Path]::GetFullPath($_.FullName) -ne $activePath } |
         Where-Object { $_.LastWriteTimeUtc -lt $cutoff } |
         ForEach-Object {
-          if ($PSCmdlet.ShouldProcess($_.FullName, 'Remove stale BuildMaster run-context directory')) {
-            Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction Stop
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Removed stale run-context '$($_.FullName)'."
+          $staleContextPath = $_.FullName
+          if ($PSCmdlet.ShouldProcess($staleContextPath, 'Remove stale BuildMaster run-context directory')) {
+            try {
+              Remove-Item -LiteralPath $staleContextPath -Recurse -Force -ErrorAction Stop
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Removed stale run-context '$staleContextPath'."
+            } catch {
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Skipped stale run-context '$staleContextPath' because it could not be removed. Exception: $($_.Exception.Message)"
+            }
           }
         }
     } catch {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Failed sweeping stale run-contexts under '$root'. Exception: $($_.Exception.Message)"
-      throw
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Skipped stale run-context sweep under '$root'. Exception: $($_.Exception.Message)"
     } finally {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Sweep complete for '$root'."
     }
@@ -642,6 +646,87 @@ function Write-BuildMasterRunStateFiles {
         Write-BuildMasterRunContextTextFile -Path $StateFiles[$key] -Value $Values[$key]
       }
     }
+  }
+
+  end {
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Finished $fn"
+  }
+}
+
+function Initialize-LocalHostSettings {
+  <#
+  .SYNOPSIS
+    Bootstraps $global:configRootKeys and $global:settings in a profileless shell context.
+  .DESCRIPTION
+    Loads the Set-GlobalConfigRootKeys and Get-HostSettings functions from the active
+    source repository path, initializes default parameter values, and builds the
+    settings hashtable for the current host name.
+  .PARAMETER SourcePath
+    The active repository base path containing the source tree.
+  .PARAMETER IACBasePath
+    Optional path to the IAC settings repository. Sourced dynamically if omitted.
+  .OUTPUTS
+    None. Side effect: populates $global:settings and $global:configRootKeys.
+  .EXAMPLE
+    Initialize-LocalHostSettings -SourcePath 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
+  #>
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory)]
+    [ValidateNotNullOrEmpty()]
+    [string]$SourcePath,
+
+    [string]$IACBasePath = ''
+  )
+
+  begin {
+    $fn = 'Initialize-LocalHostSettings'
+    $mn = 'ATAP.Utilities.BuildTooling.BuildMaster'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Starting $fn (SourcePath='$SourcePath')"
+  }
+
+  process {
+    $hostName = ([System.Net.DNS]::GetHostByName($Null)).Hostname
+
+    # 1. Establish PSDefaultParameterValues encoding and settings hooks
+    if ($null -eq $global:PSDefaultParameterValues) {
+      $global:PSDefaultParameterValues = @{}
+    }
+    $global:PSDefaultParameterValues['*:Encoding'] = 'UTF8'
+    $global:PSDefaultParameterValues['*:Settings'] = { $global:settings }
+
+    # 2. Load and run Set-GlobalConfigRootKeys
+    if (-not (Get-Command -Name 'Set-GlobalConfigRootKeys' -CommandType Function -ErrorAction SilentlyContinue)) {
+      $configRootKeysScript = Join-Path $SourcePath 'src\ATAP.Utilities.ConfigRootKeys.Powershell\public\Set-GlobalConfigRootKeys.ps1'
+      if (Test-Path -LiteralPath $configRootKeysScript -PathType Leaf) {
+        . $configRootKeysScript
+      } else {
+        Import-Module -Name 'ATAP.Utilities.ConfigRootKeys.PowerShell' -ErrorAction Stop
+      }
+    }
+    Set-GlobalConfigRootKeys
+
+    # 3. Load and run Get-HostSettings
+    if (-not (Get-Command -Name 'Get-HostSettings' -CommandType Function -ErrorAction SilentlyContinue)) {
+      $hostSettingsScript = Join-Path $SourcePath 'src\ATAP.Utilities.Powershell\public\Get-HostSettings.ps1'
+      if (Test-Path -LiteralPath $hostSettingsScript -PathType Leaf) {
+        . $hostSettingsScript
+      } else {
+        Import-Module -Name 'ATAP.Utilities.PowerShell' -ErrorAction Stop
+      }
+    }
+
+    # 4. Populate the settings hashtable
+    $global:settings = Get-HostSettings -hostName $hostName -IACBasePath $IACBasePath
+
+    # 5. Populate machine-runtime entries just like the machine profile does
+    $global:settings[$global:configRootKeys['IsElevatedConfigRootKey']] = (New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
+
+    $inheritedEnvironment = [System.Environment]::GetEnvironmentVariable('Environment')
+    $inProcessEnvironment = if ($inheritedEnvironment) { $inheritedEnvironment } else { 'Production' }
+    $global:settings[$global:configRootKeys['ENVIRONMENTConfigRootKey']] = $inProcessEnvironment
+
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Local host settings initialized successfully via standalone loader."
   }
 
   end {

@@ -84,4 +84,31 @@ Describe 'Get-SecretATAP' -Tag 'Unit', 'PromotedModuleHostSensitive' {
     Should -Invoke Get-SecretATAPBitwarden -Times 0 -Exactly -Scope It
     Should -Invoke Get-SecretATAPBitwardenSecretsManager -Times 1 -Exactly -Scope It
   }
+
+  It 'Defaults to Bitwarden Secrets Manager when neither parameter nor setting selects a store (SC-0175 bws-first)' {
+    # Neither -SecretStoreType nor $global:settings['SecretStoreType'] is set:
+    # the default must be BWS for ALL accounts, never the personal-vault bw path.
+    $global:settings = @{}   # no SecretStoreType configured
+    Mock Get-SecretATAPBitwarden { throw 'Bitwarden (bw) must not be the default — SC-0175' }
+    Mock Get-SecretATAPBitwardenSecretsManager { "bws:${SecretName}:${SecretField}" }
+
+    $result = Get-SecretATAP -SecretName 'BuildMaster.Admin.API.Key' -SecretField 'notes'
+
+    $result | Should -Be 'bws:BuildMaster.Admin.API.Key:notes'
+    Should -Invoke Get-SecretATAPBitwarden -Times 0 -Exactly -Scope It
+    Should -Invoke Get-SecretATAPBitwardenSecretsManager -Times 1 -Exactly -Scope It
+  }
+
+  It 'Selects the personal-vault Password Manager only when explicitly requested' {
+    # bw is opt-in: callers must ask for it via the setting (or -SecretStoreType 'Bitwarden').
+    $global:settings = @{ SecretStoreType = 'Bitwarden' }
+    Mock Get-SecretATAPBitwarden { "bw:${SecretName}:${SecretField}" }
+    Mock Get-SecretATAPBitwardenSecretsManager { throw 'BWS should not be called when Bitwarden is explicitly selected' }
+
+    $result = Get-SecretATAP -SecretName 'some-personal-item' -SecretField 'password'
+
+    $result | Should -Be 'bw:some-personal-item:password'
+    Should -Invoke Get-SecretATAPBitwarden -Times 1 -Exactly -Scope It
+    Should -Invoke Get-SecretATAPBitwardenSecretsManager -Times 0 -Exactly -Scope It
+  }
 }

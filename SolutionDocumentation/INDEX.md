@@ -114,8 +114,10 @@ _Teach / Tell how to create software — per-developer tooling and shell setup._
   values, built by `Get-HostSettings` from the ATAP.IAC `HostSettings.ps1`).
   Covers the three-level value chain, the profile bootstrap order, the canonical
   `$global:settings[$global:configRootKeys[...]]` access expression, defensive
-  loading in non-interactive agent shells, and the checklist for adding a new
-  setting.
+  loading in non-interactive agent shells, the explicit-loading (no fragment
+  discovery) section-function design, the in-module sibling-resolution guard that
+  keeps a sprint-worktree function from being shadowed by an installed module, and
+  the checklist for adding a new setting.
 - [Developer SQL Server Instances Runbook](Developer-SqlServerInstances-Runbook.md) —
   Onboarding/offboarding runbook for the permanent per-developer SQL Server
   instances (`Dev<username>` / `Exp<username>`). Documents the Sprint-0008

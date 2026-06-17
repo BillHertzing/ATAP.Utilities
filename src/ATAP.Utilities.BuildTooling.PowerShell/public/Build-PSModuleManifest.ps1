@@ -140,10 +140,10 @@ function Build-PSModuleManifest {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from Update-ModuleManifest for '$OutputManifestPath'"
 
       if ([string]::IsNullOrWhiteSpace($Prerelease)) {
-        $manifestLines = Get-Content -LiteralPath $OutputManifestPath
+        $manifestLines = [System.IO.File]::ReadAllLines($OutputManifestPath)
         $filteredManifestLines = @($manifestLines | Where-Object { $_ -notmatch '^\s*Prerelease\s*=' })
         if ($filteredManifestLines.Count -ne $manifestLines.Count) {
-          Set-Content -LiteralPath $OutputManifestPath -Value $filteredManifestLines -Encoding UTF8
+          [System.IO.File]::WriteAllLines($OutputManifestPath, $filteredManifestLines)
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Removed copied Prerelease assignment from stable manifest '$OutputManifestPath'"
         }
       }

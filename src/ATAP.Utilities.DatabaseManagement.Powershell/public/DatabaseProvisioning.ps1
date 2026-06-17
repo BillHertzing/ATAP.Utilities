@@ -60,7 +60,9 @@ function DatabaseProvisioning {
   This is usually supplied by an environment variable or from the global settings. but can be overridden here.
 
   .PARAMETER Force
-  If supplied, allow dropping existing database and login, else this fails if the database already exists
+  If supplied, allow dropping an existing database and removing an existing
+  database file folder before provisioning. Without -Force, an existing database
+  or database file folder fails fast.
 
   .EXAMPLE
   # Using existing connection
@@ -116,6 +118,10 @@ function DatabaseProvisioning {
     [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'DBConnectionStringSecretName')]
     [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
     [string]$DBConnectionStringSecretName,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+    [Alias('DBConnectionStringMasterSecret', 'MasterSecretName', 'DBMasterConnectionStringSecretName')]
+    [string]$DBConnectionStringMasterSecretName,
 
     [Parameter(Mandatory = $false)]
     [hashtable]$Settings,
@@ -235,11 +241,22 @@ function DatabaseProvisioning {
     elseif ($global:settings -and $global:configRootKeys -and $global:configRootKeys['DatabasesCollectionConfigRootKey']) {
       $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
     }
+    elseif ($global:settings -is [System.Collections.IDictionary] -and $global:settings.Contains('DatabasesCollection')) {
+      $global:settings['DatabasesCollection']
+    }
+    elseif ($global:settings -and $global:settings.PSObject.Properties['DatabasesCollection']) {
+      $global:settings.DatabasesCollection
+    }
     else {
       $null
     }
 
     $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue $Environment -ValidValues @('Production', 'QA', 'Integration', 'Development', 'Experimental') -AllowMissing
+    $DBConnectionStringSecretName = Get-PVal -ParameterName 'DBConnectionStringSecretName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DBConnectionStringSecretName" -Settings $databasesCollection -DefaultValue $DBConnectionStringSecretName -AllowMissing
+    $DBConnectionStringMasterSecretName = Get-PVal -ParameterName 'DBConnectionStringMasterSecretName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DBConnectionStringMasterSecretName" -Settings $databasesCollection -DefaultValue $DBConnectionStringMasterSecretName -AllowMissing
+    if ([string]::IsNullOrWhiteSpace($DBConnectionStringMasterSecretName)) {
+      $DBConnectionStringMasterSecretName = $DBConnectionStringSecretName
+    }
     $ProvisioningScriptsPath = Get-PVal -ParameterName 'ProvisioningScriptsPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisioningScriptsPath" -Settings $databasesCollection -DefaultValue $ProvisioningScriptsPath -AllowMissing
     $DatabasePath = Get-PVal -ParameterName 'DatabasePath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection -DefaultValue $DatabasePath -AllowMissing
 
@@ -248,8 +265,11 @@ function DatabaseProvisioning {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "ProvisioningScriptsPath was empty; defaulting to '$ProvisioningScriptsPath'"
     }
 
-    if ([string]::IsNullOrWhiteSpace($DatabasePath)) {
-      $DatabasePath = Join-Path $env:LOCALAPPDATA ("ATAP.Utilities\\SQLData\\$Environment")
+    if (-not [string]::IsNullOrWhiteSpace($DatabasePath)) {
+      $DatabasePath = [System.IO.Path]::GetFullPath($DatabasePath)
+    } else {
+      $databaseRootPath = 'C:\LocalDBs'
+      $DatabasePath = [System.IO.Path]::GetFullPath((Join-Path $databaseRootPath $DatabaseName))
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "DatabasePath was empty; defaulting to '$DatabasePath'"
     }
 
@@ -286,6 +306,7 @@ function DatabaseProvisioning {
       -OriginalPSBoundParameters $resolverBoundParameters `
       -SqlConnection $SqlConnection `
       -DBConnectionStringSecretName $DBConnectionStringSecretName `
+      -DBConnectionStringMasterSecretName $DBConnectionStringMasterSecretName `
       -DatabaseHost $DatabaseHost `
       -InstanceName $SqlInstance `
       -DatabaseName 'master' `
@@ -296,6 +317,8 @@ function DatabaseProvisioning {
       -IntegratedSecurity:$IntegratedSecurity `
       -Settings $databasesCollection `
       -DatabaseHostDottedPath "$databaseName.$Environment.DatabaseHost" `
+      -DBConnectionStringSecretNameDottedPath "$databaseName.$Environment.DBConnectionStringSecretName" `
+      -DBConnectionStringMasterSecretNameDottedPath "$databaseName.$Environment.DBConnectionStringMasterSecretName" `
       -InstanceNameDottedPath "$databaseName.$Environment.SqlInstance" `
       -ConnectionMethodDottedPath "$databaseName.$Environment.ConnectionMethod" `
       -CredentialsKeyDottedPath "$databaseName.$Environment.CredentialsKey" `
@@ -434,10 +457,47 @@ END
       }
     }
 
-    # ensure any leftover files are deleted
-    # prior we dropped the database and that should have dropped the database files
-    # If the database files are still present, report that and delete them
-    # ToDo: more sophisticated database files
+    # Ensure a stale database file folder never reaches DropAndCreateDatabase.sql.
+    # SQL Server xp_create_subdir reports error 183 when the folder already exists.
+    if (Test-Path -LiteralPath $DatabasePath -PathType Container) {
+      if (-not $Force) {
+        $errorMessage = "Database folder '$DatabasePath' already exists. Use -Force to remove it before provisioning."
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
+        $errors.Add($errorMessage) | Out-Null
+        throw $errorMessage
+      }
+
+      try {
+        Remove-Item -LiteralPath $DatabasePath -Recurse -Force -ErrorAction Stop
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Deleted existing database folder '$DatabasePath' because -Force is set." -Tag 'Validation', 'Warning'
+      } catch {
+        $errorMessage = "Failed to delete existing database folder '$DatabasePath': $($_.Exception.Message)"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
+        $errors.Add($errorMessage) | Out-Null
+        throw
+      }
+    }
+    elseif (Test-Path -LiteralPath $DatabasePath -PathType Leaf) {
+      $errorMessage = "Database path '$DatabasePath' exists as a file, not a folder."
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
+      $errors.Add($errorMessage) | Out-Null
+      throw $errorMessage
+    }
+
+    try {
+      if (-not (Test-Path -LiteralPath $DatabasePath -PathType Container)) {
+        New-Item -ItemType Directory -Path $DatabasePath -Force -ErrorAction Stop | Out-Null
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Created database folder '$DatabasePath'."
+      }
+    } catch {
+      $errorMessage = "Failed to create database folder '$DatabasePath': $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
+      $errors.Add($errorMessage) | Out-Null
+      throw
+    }
+
+    # Ensure any leftover files are deleted. The folder cleanup above should
+    # normally remove these; keep the file-level cleanup as a precise fallback.
     $mdf = Join-Path -Path $DatabasePath -ChildPath ($DatabaseName + '.mdf')
     $ldf = Join-Path -Path $DatabasePath -ChildPath ($DatabaseName + '_log.ldf')
     $filesToCheck = @($mdf, $ldf)

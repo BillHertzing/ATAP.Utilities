@@ -187,6 +187,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Initialize host settings using the standalone loader (Task 9.38). This populates
+# the settings and configRootKeys globals in memory in this profileless shell.
+
 if (-not (Get-Command -Name Write-PSFMessage -CommandType Function, Cmdlet -ErrorAction SilentlyContinue)) {
   function Write-PSFMessage {
     param(
@@ -203,6 +206,7 @@ if (-not (Get-Command -Name Write-PSFMessage -CommandType Function, Cmdlet -Erro
 }
 
 . (Join-Path -Path $PSScriptRoot -ChildPath 'BuildMasterRunContext.Common.ps1')
+Initialize-LocalHostSettings -SourcePath $SourcePath
 
 function Set-NoProfileProGetFeedSettings {
   <#

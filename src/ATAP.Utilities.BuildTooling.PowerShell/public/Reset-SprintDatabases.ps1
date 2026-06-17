@@ -30,8 +30,12 @@ function Reset-SprintDatabases {
     hashtables/objects with InstanceName plus optional per-instance secret-name
     fields such as DBConnectionStringMasterSecretName or SQLConnectionSecretName.
   .PARAMETER Databases
-    Database names to reset on every instance. Defaults to ATAPUtilities and
-    AceCommander.
+    Database names to reset on every instance. Defaults to the single
+    ATAPUtilities database (D-1): there is one database, ATAPUtilities, containing
+    the ATAPUtilities, AceCommander, Tags and Gmail schemas — confirmed by
+    Database/Flyway/SQL/V00.01.000010__Create_ATAPUtilities_Core_Schema.sql.
+    AceCommander is a schema within ATAPUtilities, not a separate database, so the
+    default no longer lists it. A caller may still pass an explicit list.
   .PARAMETER DatabaseHost
     SQL Server host address. Defaults to localhost.
   .PARAMETER ConnectionMethod
@@ -130,7 +134,10 @@ function Reset-SprintDatabases {
     }
 
     if (-not $PSBoundParameters.ContainsKey('Databases') -or $null -eq $Databases -or $Databases.Count -eq 0) {
-      $Databases = @('ATAPUtilities', 'AceCommander')
+      # One database, ATAPUtilities (D-1). AceCommander/Tags/Gmail are schemas
+      # within it, created by the single Flyway migration set — not separate
+      # databases. So the default is one reset per instance, not per schema.
+      $Databases = @('ATAPUtilities')
     }
     $Databases = @($Databases | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
     if ($Databases.Count -eq 0) {

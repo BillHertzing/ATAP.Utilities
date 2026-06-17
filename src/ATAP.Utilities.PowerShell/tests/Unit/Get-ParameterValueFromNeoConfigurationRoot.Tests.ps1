@@ -289,16 +289,29 @@ Describe 'Get-ParameterValueFromNeoConfigurationRoot' -Tag 'Unit' {
   }
 
   Context 'Loud failure when no settings source exists (Task 8.16, SC-prop-0007-1)' {
+    # NOTE (Task 9.1, V4-B02): the loud-failure guard is host-context aware. These
+    # assertions run inside the profile-loaded Pester host (the repo standard forbids
+    # running Pester with -NoProfile), so Test-NoProfileLaunchedProcess returns $false
+    # and the guard fires even when a DefaultValue / -AllowMissing is supplied — the
+    # interactive environment-fault case. The complementary case (a genuinely
+    # -NoProfile-launched child degrading to the DefaultValue) is pinned by the
+    # behavioral proof in
+    # src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/tests/PowerShellModule-5Stage.Tests.ps1.
     BeforeEach {
       $script:savedGlobalSettings = $global:settings
+      $script:savedPipelineMarker = $env:ATAP_NOPROFILE_PIPELINE
       $global:settings = $null
       $script:Settings = $null
+      # Interactive (profile-expected) host: the pipeline context is NOT declared, so
+      # the loud-failure guard must fire regardless of any ambient marker value.
+      $env:ATAP_NOPROFILE_PIPELINE = $null
     }
     AfterEach {
       $global:settings = $script:savedGlobalSettings
+      $env:ATAP_NOPROFILE_PIPELINE = $script:savedPipelineMarker
     }
 
-    It 'Throws with -NoProfile remediation text when $global:settings is absent, even with a DefaultValue' {
+    It 'Throws with -NoProfile remediation text in an interactive (profile-expected) host even with a DefaultValue' {
       {
         Get-ParameterValueFromNeoConfigurationRoot `
           -ParameterName 'PvalGuardProbeUnique' `
@@ -307,7 +320,7 @@ Describe 'Get-ParameterValueFromNeoConfigurationRoot' -Tag 'Unit' {
       } | Should -Throw -ExpectedMessage '*-NoProfile*'
     }
 
-    It 'Throws even when -AllowMissing is set (environment fault outranks missing-key tolerance)' {
+    It 'Throws in an interactive host even when -AllowMissing is set (environment fault outranks missing-key tolerance)' {
       {
         Get-ParameterValueFromNeoConfigurationRoot `
           -ParameterName 'PvalGuardProbeUnique' `

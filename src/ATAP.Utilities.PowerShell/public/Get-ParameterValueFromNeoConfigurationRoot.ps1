@@ -19,6 +19,11 @@
   and no $global:settings — the function throws immediately instead of silently falling through
   to DefaultValue. An entirely absent $global:settings means the ATAP profile did not run
   (typically a pwsh -NoProfile session), which is an environment fault rather than a missing key.
+  Host-context exception (Task 9.1, V4-B02): the guard YIELDS to an explicit
+  -DefaultValue / -AllowMissing when the BuildMaster 5-tier pipeline declares its no-profile
+  context via the ATAP_NOPROFILE_PIPELINE marker, so the documented
+  param → env → settings → DefaultValue chain degrades by design there. An interactive shell
+  never sets the marker, so it still fails loud regardless of -DefaultValue.
 
   ⚠ IMPORTANT — Environment Variable Collision:
     Priority 2 checks for an environment variable named exactly like ParameterName. If the caller
@@ -153,10 +158,22 @@ function Get-ParameterValueFromNeoConfigurationRoot {
         [Type]$AsType
       )
 
-      # Resolve the effective settings source
-      $effective = if ($PSBoundParameters.ContainsKey('Settings') -and $Settings) { $Settings }
-      elseif ($script:Settings) { $script:Settings }
-      elseif ($global:settings) { $global:settings }
+      # Resolve the effective settings source. Use Get-Variable existence tests
+      # rather than bare `$script:Settings` / `$global:settings` reads: under
+      # Set-StrictMode -Version Latest, reading an undeclared variable throws, so
+      # the bare-read form fails in no-profile / strict callers where those globals
+      # were never created.
+      $scriptSettingsVariable = Get-Variable -Name Settings -Scope Script -ErrorAction SilentlyContinue
+      $globalSettingsVariable = Get-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
+      $effective = if ($PSBoundParameters.ContainsKey('Settings') -and $Settings) {
+        $Settings
+      }
+      elseif ($null -ne $scriptSettingsVariable -and $null -ne $scriptSettingsVariable.Value) {
+        $scriptSettingsVariable.Value
+      }
+      elseif ($null -ne $globalSettingsVariable -and $null -ne $globalSettingsVariable.Value) {
+        $globalSettingsVariable.Value
+      }
       else { @{} }
 
       $dottedPath = if ($dottedPath -is [string]) { $dottedPath } else { $dottedPath.Path }
@@ -234,11 +251,33 @@ function Get-ParameterValueFromNeoConfigurationRoot {
     # 3. Try to get from settings via dottedPath (raw value; AsType applied uniformly below)
     if (-not $resolved) {
       # Fail loudly when no settings source exists at all (Task 8.16, SC-prop-0007-1).
-      # An absent $global:settings almost always means pwsh was started with -NoProfile;
-      # silently falling through to DefaultValue produced wrong BuildTooling behavior
-      # (Sprint-0007 V4-B01), so this is an environment fault, not a missing key.
+      # An absent $global:settings in an interactive ATAP session almost always means the
+      # profile did not load; silently falling through to DefaultValue produced wrong
+      # BuildTooling behavior (Sprint-0007 V4-B01), so for that case it is an environment
+      # fault, not a missing key, and we throw even when a DefaultValue was supplied.
+      #
+      # ⚠ Host-context exception (Task 9.1, V4-B02): the BuildMaster 5-tier pipeline runs
+      # the runner via `pwsh -NoProfile -File` and DECLARES that context via the
+      # ATAP_NOPROFILE_PIPELINE marker, so $global:settings is legitimately absent BY
+      # DESIGN, and every pipeline call passes a meaningful -DefaultValue (the bound
+      # parameter). In the declared pipeline context the documented
+      # param → env → settings → DefaultValue contract
+      # (PowerShellModule-Pipeline-NoProfile-Runbook.md) must degrade to the caller's
+      # -DefaultValue / -AllowMissing rather than throw. The loud guard therefore yields
+      # ONLY when BOTH the declared pipeline context is active AND the caller supplied a
+      # fallback. An interactive session never sets the marker, so it still fails loud
+      # regardless of DefaultValue.
+      # Existence-test the settings globals via Get-Variable rather than bare reads:
+      # under Set-StrictMode -Version Latest a bare `$script:Settings` / `$global:settings`
+      # read throws when the variable was never created (the no-profile case this guard
+      # is specifically about), which would mask the intended throw with a strict-mode error.
+      $scriptSettingsVariable = Get-Variable -Name Settings -Scope Script -ErrorAction SilentlyContinue
+      $globalSettingsVariable = Get-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
+      $hasScriptSettings = $null -ne $scriptSettingsVariable -and $null -ne $scriptSettingsVariable.Value
+      $hasGlobalSettings = $null -ne $globalSettingsVariable -and $null -ne $globalSettingsVariable.Value
       $hasExplicitSettings = $PSBoundParameters.ContainsKey('Settings') -and ($null -ne $Settings)
-      if (-not $hasExplicitSettings -and ($null -eq $script:Settings) -and ($null -eq $global:settings)) {
+      $guardYields = $hasExplicitSettings
+      if (-not $guardYields -and -not $hasScriptSettings -and -not $hasGlobalSettings) {
         throw "Get-PVal cannot resolve parameter '$ParameterName': no settings source is available — `$global:settings is not populated and no -Settings argument was supplied. This usually means pwsh was started with -NoProfile; the ATAP AllUsersAllHosts profile builds `$global:settings. Re-run in a pwsh session with profiles loaded — never pass -NoProfile for ATAP work (SC-prop-0007-1)."
       }
       try {

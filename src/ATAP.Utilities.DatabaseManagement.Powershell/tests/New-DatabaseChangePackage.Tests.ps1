@@ -2,7 +2,7 @@
 # Covers: determinism, error cases, output validation
 
 BeforeAll {
-  $moduleSrc = Join-Path $PSScriptRoot '..' '..'
+  $moduleSrc = Join-Path $PSScriptRoot '..'
   . (Join-Path $moduleSrc 'public' 'New-DatabaseChangePackage.ps1')
 
   # Build a minimal fixture database source tree
@@ -82,6 +82,48 @@ Describe 'New-DatabaseChangePackage — error cases' {
       New-DatabaseChangePackage -Application $script:AppName -RepositoryRoot $noMigRoot
     } | Should -Throw -ExceptionType ([System.Exception]) -PassThru |
       ForEach-Object { $_.Exception.Message | Should -Match 'Migrations folder' }
+  }
+}
+
+Describe 'New-DatabaseChangePackage — flywayTargetVersion derivation (Task 9.12 unified scheme)' {
+
+  BeforeAll {
+    function Get-ManifestForMigrations {
+      param([string[]]$MigrationFileNames)
+      $root = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+      $dbRoot = Join-Path $root 'Database' $script:AppName
+      $mDir = Join-Path $dbRoot 'db' 'migrations'
+      New-Item -ItemType Directory -Path $mDir -Force | Out-Null
+      @{ version = '0.1.0' } | ConvertTo-Json | Set-Content (Join-Path $dbRoot 'version.json')
+      foreach ($name in $MigrationFileNames) { "PRINT 'noop';" | Set-Content (Join-Path $mDir $name) }
+      $nupkg = New-DatabaseChangePackage -Application $script:AppName -RepositoryRoot $root
+      $stagingDir = Split-Path -Parent (Split-Path -Parent $nupkg)
+      Get-Content (Join-Path $stagingDir 'db-release-unit-manifest.json') -Raw | ConvertFrom-Json
+    }
+  }
+
+  It 'derives the dotted V00.0X.NNNNNN scheme as the highest migration version' {
+    $m = Get-ManifestForMigrations -MigrationFileNames @(
+      'V00.01.000010__core.sql',
+      'V00.02.000040__agenttext.sql',
+      'V00.02.000050__smoke.sql'
+    )
+    $m.flywayTargetVersion | Should -Be '00.02.000050'
+  }
+
+  It 'compares versions numerically per Flyway part semantics (not lexically)' {
+    # Lexical sort would pick 000301 over 000050 only within the same band; this
+    # asserts a higher minor band wins regardless of the patch digits.
+    $m = Get-ManifestForMigrations -MigrationFileNames @(
+      'V00.01.000301__late_in_band_one.sql',
+      'V00.02.000050__band_two.sql'
+    )
+    $m.flywayTargetVersion | Should -Be '00.02.000050'
+  }
+
+  It 'still derives a value for the legacy short-integer scheme' {
+    $m = Get-ManifestForMigrations -MigrationFileNames @('V1__init.sql')
+    $m.flywayTargetVersion | Should -Be '1'
   }
 }
 

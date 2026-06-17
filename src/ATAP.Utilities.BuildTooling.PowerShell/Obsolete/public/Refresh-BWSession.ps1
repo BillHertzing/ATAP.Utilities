@@ -1,3 +1,13 @@
+# ============================================================================
+# RETIRED (Task 9.21, Sprint 0009) — BW_SESSION / personal-vault machinery.
+# Periodic refresher for the personal-vault service-account BW_SESSION. The whole
+# bw login/unlock/BW_SESSION pattern existed only to support CI secrets in a
+# personal Bitwarden Password Manager vault, which is prohibited. CI secrets now
+# live in Bitwarden Secrets Manager (bws + DPAPI machine token). Moved out of
+# public/ so it is no longer imported or exported. Any scheduled tasks that
+# invoked this script should be removed. Kept here for history only.
+# ============================================================================
+
 <#
 .SYNOPSIS
 Validates and, if needed, renews the User-scope BW_SESSION for the current account.

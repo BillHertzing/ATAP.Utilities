@@ -26,7 +26,7 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit' {
     }
 
     It 'Populates every documented check' {
-      $names = @('PwshVersion', 'GhAuth', 'Bitwarden', 'GitRepoState', 'LockFilesClean', 'SqlServerInstances', 'BuildToolingImport', 'ProGetReachable', 'BuildMasterReachable')
+      $names = @('PwshVersion', 'GhAuth', 'Bitwarden', 'GitRepoState', 'LockFilesClean', 'SqlServerInstances', 'BuildToolingImport', 'ProGetReachable', 'BuildMasterReachable', 'ModulePromotionDeploy')
       foreach ($n in $names) {
         $script:result.Checks.PSObject.Properties.Name | Should -Contain $n
       }
@@ -180,6 +180,97 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit' {
       $r = Test-SprintPrerequisites -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SkipSqlServerInstanceCheck
       $r.Checks.BuildMasterReachable.Skipped | Should -BeTrue
       $r.Checks.BuildMasterReachable.Ok | Should -BeTrue
+    }
+  }
+
+  Context 'ModulePromotionDeploy gate (Task 9.7)' {
+    It 'Is Skipped/Ok when no built modules are declared' {
+      $r = Test-SprintPrerequisites -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SkipSqlServerInstanceCheck
+      $r.Checks.ModulePromotionDeploy.Skipped | Should -BeTrue
+      $r.Checks.ModulePromotionDeploy.Ok | Should -BeTrue
+      $r.Failures | Should -Not -Contain 'ModulePromotionDeploy'
+    }
+
+    It 'Records an explicit bypass when SkipModulePromotionDeployCheck is supplied' {
+      $r = Test-SprintPrerequisites `
+        -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' `
+        -SkipSqlServerInstanceCheck `
+        -BuiltModule @(@{ Name = 'ATAP.Utilities.Powershell'; Version = '0.1.4' }) `
+        -SkipModulePromotionDeployCheck
+      $r.Checks.ModulePromotionDeploy.Skipped | Should -BeTrue
+      $r.Checks.ModulePromotionDeploy.Ok | Should -BeTrue
+    }
+
+    It 'Passes when a built module is in the *-stable feed AND installed' {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell -CommandName Find-Module -MockWith {
+        [PSCustomObject]@{ Name = $Name; Version = $RequiredVersion; Repository = $Repository }
+      }
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell -CommandName Get-Module -MockWith {
+        [PSCustomObject]@{ Name = $Name; Version = [Version]'0.1.4' }
+      } -ParameterFilter { $ListAvailable -and $Name -eq 'ATAP.Utilities.Powershell' }
+
+      $r = Test-SprintPrerequisites `
+        -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' `
+        -SkipSqlServerInstanceCheck -SkipLockFileGuard `
+        -BuiltModule @(@{ Name = 'ATAP.Utilities.Powershell'; Version = '0.1.4' })
+
+      $r.Checks.ModulePromotionDeploy.Ok | Should -BeTrue
+      $r.Checks.ModulePromotionDeploy.PerModule[0].InStableFeed | Should -BeTrue
+      $r.Checks.ModulePromotionDeploy.PerModule[0].Installed | Should -BeTrue
+      $r.Failures | Should -Not -Contain 'ModulePromotionDeploy'
+    }
+
+    It 'Fails with remediation when the version is in the feed but NOT installed' {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell -CommandName Find-Module -MockWith {
+        [PSCustomObject]@{ Name = $Name; Version = $RequiredVersion; Repository = $Repository }
+      }
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell -CommandName Get-Module -MockWith {
+        # No version matches 0.1.4 locally
+        @()
+      } -ParameterFilter { $ListAvailable -and $Name -eq 'ATAP.Utilities.Powershell' }
+
+      $r = Test-SprintPrerequisites `
+        -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' `
+        -SkipSqlServerInstanceCheck -SkipLockFileGuard `
+        -BuiltModule @(@{ Name = 'ATAP.Utilities.Powershell'; Version = '0.1.4' })
+
+      $r.Checks.ModulePromotionDeploy.Ok | Should -BeFalse
+      $r.Checks.ModulePromotionDeploy.PerModule[0].InStableFeed | Should -BeTrue
+      $r.Checks.ModulePromotionDeploy.PerModule[0].Installed | Should -BeFalse
+      $r.Checks.ModulePromotionDeploy.PerModule[0].Remediation | Should -Match 'Install-Module'
+      $r.Failures | Should -Contain 'ModulePromotionDeploy'
+      $r.AllOk | Should -BeFalse
+    }
+
+    It 'Fails with remediation when the version is installed but NOT in the *-stable feed' {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell -CommandName Find-Module -MockWith {
+        throw 'No match was found for the specified search criteria.'
+      }
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell -CommandName Get-Module -MockWith {
+        [PSCustomObject]@{ Name = $Name; Version = [Version]'0.1.4' }
+      } -ParameterFilter { $ListAvailable -and $Name -eq 'ATAP.Utilities.Powershell' }
+
+      $r = Test-SprintPrerequisites `
+        -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' `
+        -SkipSqlServerInstanceCheck -SkipLockFileGuard `
+        -BuiltModule @(@{ Name = 'ATAP.Utilities.Powershell'; Version = '0.1.4' })
+
+      $r.Checks.ModulePromotionDeploy.Ok | Should -BeFalse
+      $r.Checks.ModulePromotionDeploy.PerModule[0].InStableFeed | Should -BeFalse
+      $r.Checks.ModulePromotionDeploy.PerModule[0].Installed | Should -BeTrue
+      $r.Checks.ModulePromotionDeploy.PerModule[0].Remediation | Should -Match 'powershellget-stable'
+      $r.Failures | Should -Contain 'ModulePromotionDeploy'
+    }
+
+    It 'Fails an entry that is missing Name or Version' {
+      $r = Test-SprintPrerequisites `
+        -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' `
+        -SkipSqlServerInstanceCheck -SkipLockFileGuard `
+        -BuiltModule @(@{ Name = 'ATAP.Utilities.Powershell' })
+
+      $r.Checks.ModulePromotionDeploy.Ok | Should -BeFalse
+      $r.Checks.ModulePromotionDeploy.PerModule[0].Detail | Should -Match 'missing a Name'
+      $r.Failures | Should -Contain 'ModulePromotionDeploy'
     }
   }
 

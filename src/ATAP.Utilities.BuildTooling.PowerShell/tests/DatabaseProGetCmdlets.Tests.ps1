@@ -15,13 +15,20 @@ BeforeAll {
     . (Join-Path $cmdletRoot 'Publish-DatabaseChangePackageToProGet.ps1')
     . (Join-Path $cmdletRoot 'Promote-DatabaseChangePackage.ps1')
 
-    # Stub Move-ProGetPackageInterTier so tests never call ProGet.
+    # Stub Move-ProGetPackageInterTier so tests never call ProGet. It mirrors the
+    # REAL cmdlet's return shape (a 'Promoted' flag + a 'Response' payload); the
+    # earlier fixture used a fictional 'Succeeded'/'ResponseSummary' shape that
+    # masked the wrapper reading the wrong properties.
     function global:Move-ProGetPackageInterTier {
         [CmdletBinding()]
         param($Name, $Version, $FromFeed, $ToFeed, $Reason)
         return [PSCustomObject]@{
-            Succeeded       = $true
-            ResponseSummary = "Moved $Name $Version from $FromFeed to $ToFeed"
+            PackageName = $Name
+            Version     = $Version
+            SourceFeed  = $FromFeed
+            DestinationFeed = $ToFeed
+            Promoted    = $true
+            Response    = "Moved $Name $Version from $FromFeed to $ToFeed"
         }
     }
 
@@ -247,8 +254,10 @@ Describe 'Promote-DatabaseChangePackage' {
             Mock 'Test-PromotionWithinCeiling' {}
             Mock 'Move-ProGetPackageInterTier' {
                 return [PSCustomObject]@{
-                    Succeeded       = $true
-                    ResponseSummary = 'Moved'
+                    PackageName = $Name
+                    Version     = $Version
+                    Promoted    = $true
+                    Response    = 'Moved'
                 }
             }
 
@@ -265,6 +274,43 @@ Describe 'Promote-DatabaseChangePackage' {
             $result.PackageId      | Should -Be 'ATAPUtilities.Database'
             $result.FromFeed       | Should -Be 'database-experimental'
             $result.ToFeed         | Should -Be 'database-development'
+        }
+
+        It 'Returns Succeeded=$false when Move-ProGetPackageInterTier reports Promoted=$false' {
+            # Regression: the wrapper must read the REAL 'Promoted' flag. A false
+            # Promoted (no exception thrown) is a genuine failure, not success.
+            Mock 'Test-PromotionWithinCeiling' {}
+            Mock 'Move-ProGetPackageInterTier' {
+                return [PSCustomObject]@{ PackageName = $Name; Version = $Version; Promoted = $false; Response = '' }
+            }
+
+            $result = Promote-DatabaseChangePackage `
+                -PackageId 'ATAPUtilities.Database' `
+                -Version '1.0.0-experimental.42' `
+                -FromFeed 'database-experimental' `
+                -ToFeed 'database-development' `
+                -CeilingTier 'Development' `
+                -Reason 'regression: promoted=false'
+
+            $result.Succeeded       | Should -Be $false
+            $result.ResponseSummary | Should -Match 'Promoted=false'
+        }
+
+        It 'Treats Promoted=$true as success for an idempotent re-promote (real contract)' {
+            Mock 'Test-PromotionWithinCeiling' {}
+            Mock 'Move-ProGetPackageInterTier' {
+                return [PSCustomObject]@{ PackageName = $Name; Version = $Version; Promoted = $true; Response = 'Move successful' }
+            }
+
+            $result = Promote-DatabaseChangePackage `
+                -PackageId 'ATAPUtilities.Database' `
+                -Version '0.1.0' `
+                -FromFeed 'database-qa' `
+                -ToFeed 'database-stable' `
+                -CeilingTier 'Production' `
+                -Reason 'paired tier promotion to Production'
+
+            $result.Succeeded | Should -Be $true
         }
 
         It 'Returns Succeeded=$true on -WhatIf without calling Move-ProGetPackageInterTier' {
@@ -289,7 +335,7 @@ Describe 'Promote-DatabaseChangePackage' {
 
         It 'Promotes successfully when -NoCeilingCheck is supplied' {
             Mock 'Move-ProGetPackageInterTier' {
-                return [PSCustomObject]@{ Succeeded = $true; ResponseSummary = 'Moved' }
+                return [PSCustomObject]@{ PackageName = $Name; Version = $Version; Promoted = $true; Response = 'Moved' }
             }
 
             $result = Promote-DatabaseChangePackage `

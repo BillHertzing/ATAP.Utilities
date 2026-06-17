@@ -1,3 +1,14 @@
+# ============================================================================
+# RETIRED (Task 9.21, Sprint 0009) — BW_SESSION / personal-vault machinery.
+# This was part of the bw login/unlock/BW_SESSION service-account machinery that
+# existed only to support reading/writing CI secrets from a personal Bitwarden
+# Password Manager vault. CI/infrastructure secrets now live exclusively in
+# Bitwarden Secrets Manager (bws + DPAPI machine access token via
+# Get-BWSAccessToken / Initialize-BWSAccessToken). Moved out of public/ so it is
+# no longer imported or exported. Any scheduled tasks that invoked this script
+# should be removed as host-infrastructure cleanup. Kept here for history only.
+# ============================================================================
+
 <#
 .SYNOPSIS
 Establishes a Bitwarden session for a Windows service account at host startup.

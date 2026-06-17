@@ -136,9 +136,13 @@ function Invoke-ModuleBuildWithRetry {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
     try {
-      if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
+      $buildToolingModuleRoot = Split-Path -Parent $PSScriptRoot
+      $srcRoot = Split-Path -Parent $buildToolingModuleRoot
+      $neoConfigurationPath = Join-Path -Path $srcRoot -ChildPath 'ATAP.Utilities.PowerShell/public/Get-ParameterValueFromNeoConfigurationRoot.ps1'
+      if (-not (Test-Path -LiteralPath $neoConfigurationPath -PathType Leaf)) {
+        throw "Source helper file not found: $neoConfigurationPath"
       }
+      . $neoConfigurationPath
     } catch {
       $errorMessage = "Failed to load Get-ParameterValueFromNeoConfigurationRoot function. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage

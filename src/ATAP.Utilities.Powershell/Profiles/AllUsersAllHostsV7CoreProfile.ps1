@@ -174,28 +174,48 @@ $PSDefaultParameterValues = @{
 }
 # encoding : New-Object System.Text.UTF8Encoding($false) # UTF8 encoded with or without a ByteOrdermark(BOM) which results in System.Text.UTF8Encoding
 # encoding : [System.Text.Encoding]::UTF8 which results in System.Text.UTF8Encoding+UTF8EncodingSealed
-# Decide if this machine profile will use the stable branch or sprint branch for its child functions
-$repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'  # Stable worktree StartSprintAgent and EndSprintAgent populates these
-# $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items'; # sprint worktree
-# Load the list of configuration keys into $global:ConfigRootKeys
-# May come from the Release package, from the stable worktree, or from a sprint worktree
-# Until the Powershell package is released and installed, get it from the stable worktree
-# Load the helper script
-$projectpathRel = 'src\ATAP.Utilities.ConfigRootKeys.Powershell'
-$cmdletPathRel = 'public\Set-GlobalConfigRootKeys.ps1'
+# Decide whether this machine profile is running from the stable worktree or a
+# sprint worktree, and load its child functions accordingly. The decision is made
+# deterministically by inspecting the symlink target of the AllUsersAllHosts profile:
+#   C:\Program Files\PowerShell\7\profile.ps1
+# When that symlink points at the stable worktree copy of this profile, the
+# released/installed ATAP.Utilities.* modules are authoritative, so helper functions
+# are obtained by command autoloading. When it points at a sprint worktree copy, the
+# in-progress helper .ps1 files are dot-sourced directly from that worktree.
+$stableRepoBasePath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
+$allUsersProfilePath = 'C:\Program Files\PowerShell\7\profile.ps1'
+# The profile file lives at <repobasepath>\<profileSuffix>; stripping the suffix from
+# the symlink target recovers the worktree base path (stable or sprint worktree).
+$profileSuffix = 'src\ATAP.Utilities.PowerShell\Profiles\AllUsersAllHostsV7CoreProfile.ps1'
+$profileItem = Get-Item -LiteralPath $allUsersProfilePath -ErrorAction SilentlyContinue
+# Resolve the symlink target; fall back to the link path itself if it is not a symlink
+$profileTarget = if ($profileItem -and $profileItem.Target) { [string]$profileItem.Target } else { $allUsersProfilePath }
+# Normalize slashes so the suffix comparison works regardless of how the link was created
+$normalizedTarget = ($profileTarget -replace '/', '\').TrimEnd('\')
+$normalizedSuffix = '\' + $profileSuffix
+if ($normalizedTarget.EndsWith($normalizedSuffix, [System.StringComparison]::OrdinalIgnoreCase)) {
+  $repobasepath = $normalizedTarget.Substring(0, $normalizedTarget.Length - $normalizedSuffix.Length)
+} else {
+  # Unknown layout (not a recognized profile symlink): assume the stable worktree
+  $repobasepath = $stableRepoBasePath
+}
+$isStableWorktree = $repobasepath.TrimEnd('\') -ieq $stableRepoBasePath.TrimEnd('\')
+
+# Load Set-GlobalConfigRootKeys, which populates $global:configRootKeys.
+#   Stable worktree -> autoload from the latest installed ATAP.Utilities.ConfigRootKeys.PowerShell module.
+#   Sprint worktree -> dot-source the in-progress helper from that worktree.
 try {
-  # This will auto-load and return true if the Package is installed
   if (-not (Get-Command -Name 'Set-GlobalConfigRootKeys' -CommandType Function -ErrorAction SilentlyContinue)) {
-    # SprintEndAgent uncomments the following line
-    # SprintStartAgent comments the following line
-    $repobasepath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
-    # sprintstartagent insert a line similar to this, sprintendagent removes this line
-    $projectpathRel = 'src\ATAP.Utilities.ConfigRootKeys.Powershell'
-    $cmdletPathRel = 'public\Set-GlobalConfigRootKeys.ps1'
-    . $(Join-Path $repobasepath $projectpathRel $cmdletPathRel)
+    if ($isStableWorktree) {
+      # The Get-Command probe above already triggers command autoloading; Import-Module
+      # forces the load (and surfaces a clear error) if the installed module is missing.
+      Import-Module -Name 'ATAP.Utilities.ConfigRootKeys.PowerShell' -ErrorAction Stop
+    } else {
+      . (Join-Path $repobasepath 'src\ATAP.Utilities.ConfigRootKeys.Powershell\public\Set-GlobalConfigRootKeys.ps1')
+    }
   }
 } catch {
-  $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
+  $errorMessage = "Failed to load Set-GlobalConfigRootKeys. Exception: $($_.Exception.Message)"
   Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
   throw
 }
@@ -205,13 +225,26 @@ Set-GlobalConfigRootKeys
 # [Ansible: Understanding variable precedence](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#understanding-variable-precedence)
 
 ### This starts the area where we load the settings for this host
-# Until ATAP.Utilities.Powershell is released as an installed module, dot-source
-# Get-HostSettings.ps1 from the active worktree. The cmdlet itself locates the
-# IAC HostSettings.ps1 (sprint worktree, stable worktree, or installed module
-# Resources) and loads any helpers it needs.
-$getHostSettingsPath = Join-Path $repobasepath 'src\ATAP.Utilities.Powershell\public\Get-HostSettings.ps1'
-if (-not (Get-Command -Name 'Get-HostSettings' -CommandType Function -ErrorAction SilentlyContinue)) {
-  . $getHostSettingsPath
+# Load Get-HostSettings (from the ATAP.Utilities.PowerShell module), using the same
+# stable-vs-sprint decision computed above:
+#   Stable worktree -> autoload from the latest installed ATAP.Utilities.PowerShell module.
+#   Sprint worktree -> dot-source the in-progress helper from that worktree.
+# Get-HostSettings itself locates the IAC HostSettings.ps1 (sprint worktree, stable
+# worktree, or installed-module Resources) and loads any helpers it needs.
+try {
+  if (-not (Get-Command -Name 'Get-HostSettings' -CommandType Function -ErrorAction SilentlyContinue)) {
+    if ($isStableWorktree) {
+      # The Get-Command probe above already triggers command autoloading; Import-Module
+      # forces the load (and surfaces a clear error) if the installed module is missing.
+      Import-Module -Name 'ATAP.Utilities.PowerShell' -ErrorAction Stop
+    } else {
+      . (Join-Path $repobasepath 'src\ATAP.Utilities.Powershell\public\Get-HostSettings.ps1')
+    }
+  }
+} catch {
+  $errorMessage = "Failed to load Get-HostSettings. Exception: $($_.Exception.Message)"
+  Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+  throw
 }
 
 $global:settings = Get-HostSettings -hostName $hostName -IACBasePath $repobasepath

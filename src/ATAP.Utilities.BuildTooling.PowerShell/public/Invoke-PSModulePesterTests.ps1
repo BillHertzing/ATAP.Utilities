@@ -167,20 +167,25 @@ function Get-PSModulePesterBlockTestCount {
     }
 
     $count = 0
-    foreach ($test in @($Block.Tests)) {
-      if ($null -eq $test) {
-        continue
-      }
+    $blockPropertyNames = @($Block.PSObject.Properties.Name)
+    if ($blockPropertyNames -contains 'Tests') {
+      foreach ($test in @($Block.Tests)) {
+        if ($null -eq $test) {
+          continue
+        }
 
-      if ($test.PSObject.Properties.Name -contains 'ShouldRun' -and -not $test.ShouldRun) {
-        continue
-      }
+        if ($test.PSObject.Properties.Name -contains 'ShouldRun' -and -not $test.ShouldRun) {
+          continue
+        }
 
-      $count++
+        $count++
+      }
     }
 
-    foreach ($child in @($Block.Blocks)) {
-      $count += Get-PSModulePesterBlockTestCount -Block $child
+    if ($blockPropertyNames -contains 'Blocks') {
+      foreach ($child in @($Block.Blocks)) {
+        $count += Get-PSModulePesterBlockTestCount -Block $child
+      }
     }
 
     return $count
@@ -255,7 +260,8 @@ function New-PSModulePesterProgressPlugin {
         }
 
         $state.Total = $total
-        $duration = if ($Context.Duration) { $Context.Duration } else { $state.Stopwatch.Elapsed }
+        $contextPropertyNames = @($Context.PSObject.Properties.Name)
+        $duration = if ($contextPropertyNames -contains 'Duration' -and $Context.Duration) { $Context.Duration } else { $state.Stopwatch.Elapsed }
         $elapsedText = $duration.ToString('hh\:mm\:ss')
         & $writeProgressLine "Pester discovery completed: $total test(s) discovered in $elapsedText; reporting every $($state.Interval) completed test(s)."
       }
@@ -430,37 +436,47 @@ function Get-PSModulePesterFailedTestSummary {
       return
     }
 
-    foreach ($test in @($Block.Tests)) {
-      if ($failures.Count -ge $Maximum) {
-        return
-      }
+    $blockPropertyNames = @($Block.PSObject.Properties.Name)
+    if ($blockPropertyNames -contains 'Tests') {
+      foreach ($test in @($Block.Tests)) {
+        if ($failures.Count -ge $Maximum) {
+          return
+        }
 
-      if ($test -and ($test.PSObject.Properties.Name -contains 'Result') -and $test.Result -eq 'Failed') {
-        $failures.Add([PSCustomObject]@{
-            Container = $Container
-            Name      = Get-PSModulePesterTestName -Test $test
-            Message   = Get-PSModulePesterFailureMessage -Test $test
-          }) | Out-Null
+        if ($test -and ($test.PSObject.Properties.Name -contains 'Result') -and $test.Result -eq 'Failed') {
+          $failures.Add([PSCustomObject]@{
+              Container = $Container
+              Name      = Get-PSModulePesterTestName -Test $test
+              Message   = Get-PSModulePesterFailureMessage -Test $test
+            }) | Out-Null
+        }
       }
     }
 
-    foreach ($child in @($Block.Blocks)) {
-      & $walkBlock $child $Container
+    if ($blockPropertyNames -contains 'Blocks') {
+      foreach ($child in @($Block.Blocks)) {
+        & $walkBlock $child $Container
+      }
     }
   }
 
-  foreach ($container in @($PesterResult.Containers)) {
-    $containerName = '<unknown>'
-    if ($container -and $container.PSObject.Properties.Name -contains 'Item' -and $container.Item) {
-      try {
-        $containerName = Split-Path -Leaf ([string]$container.Item)
-      } catch {
-        $containerName = [string]$container.Item
+  if ($PesterResult -and ($PesterResult.PSObject.Properties.Name -contains 'Containers')) {
+    foreach ($container in @($PesterResult.Containers)) {
+      $containerName = '<unknown>'
+      $containerPropertyNames = @($container.PSObject.Properties.Name)
+      if ($container -and $containerPropertyNames -contains 'Item' -and $container.Item) {
+        try {
+          $containerName = Split-Path -Leaf ([string]$container.Item)
+        } catch {
+          $containerName = [string]$container.Item
+        }
       }
-    }
 
-    foreach ($block in @($container.Blocks)) {
-      & $walkBlock $block $containerName
+      if ($containerPropertyNames -contains 'Blocks') {
+        foreach ($block in @($container.Blocks)) {
+          & $walkBlock $block $containerName
+        }
+      }
     }
   }
 
@@ -487,11 +503,48 @@ function Write-PSModulePesterJUnitResult {
     [string]$OutputPath
   )
 
-  $tests = @($PesterResult.Tests)
-  $total = [int]$PesterResult.TotalCount
-  $failed = [int]$PesterResult.FailedCount
-  $skipped = [int]$PesterResult.SkippedCount
-  $duration = if ($PesterResult.Duration) { [double]$PesterResult.Duration.TotalSeconds } else { 0 }
+  $resultPropertyNames = @($PesterResult.PSObject.Properties.Name)
+  $tests = if ($resultPropertyNames -contains 'Tests') { @($PesterResult.Tests) } else { @() }
+  if ($tests.Count -eq 0 -and $resultPropertyNames -contains 'Containers') {
+    $flattenedTests = [System.Collections.Generic.List[object]]::new()
+    $walkBlockForTests = {
+      param($Block)
+
+      if ($null -eq $Block) {
+        return
+      }
+
+      $blockPropertyNames = @($Block.PSObject.Properties.Name)
+      if ($blockPropertyNames -contains 'Tests') {
+        foreach ($test in @($Block.Tests)) {
+          if ($null -ne $test) {
+            $flattenedTests.Add($test) | Out-Null
+          }
+        }
+      }
+
+      if ($blockPropertyNames -contains 'Blocks') {
+        foreach ($child in @($Block.Blocks)) {
+          & $walkBlockForTests $child
+        }
+      }
+    }
+
+    foreach ($container in @($PesterResult.Containers)) {
+      if ($container -and ($container.PSObject.Properties.Name -contains 'Blocks')) {
+        foreach ($block in @($container.Blocks)) {
+          & $walkBlockForTests $block
+        }
+      }
+    }
+
+    $tests = $flattenedTests.ToArray()
+  }
+
+  $total = if ($resultPropertyNames -contains 'TotalCount') { [int]$PesterResult.TotalCount } else { $tests.Count }
+  $failed = if ($resultPropertyNames -contains 'FailedCount') { [int]$PesterResult.FailedCount } else { @($tests | Where-Object { $_.Result -eq 'Failed' }).Count }
+  $skipped = if ($resultPropertyNames -contains 'SkippedCount') { [int]$PesterResult.SkippedCount } else { @($tests | Where-Object { $_.Result -eq 'Skipped' -or $_.Result -eq 'NotRun' }).Count }
+  $duration = if ($resultPropertyNames -contains 'Duration' -and $PesterResult.Duration) { [double]$PesterResult.Duration.TotalSeconds } else { 0 }
 
   $doc = [System.Xml.XmlDocument]::new()
   $null = $doc.AppendChild($doc.CreateXmlDeclaration('1.0', 'utf-8', $null))
@@ -517,20 +570,22 @@ function Write-PSModulePesterJUnitResult {
     $case = $doc.CreateElement('testcase')
     $testName = Get-PSModulePesterTestName -Test $test
     $container = Get-PSModulePesterTestContainer -Test $test
-    $testDuration = if ($test.Duration) { [double]$test.Duration.TotalSeconds } else { 0 }
+    $testPropertyNames = @($test.PSObject.Properties.Name)
+    $testDuration = if ($testPropertyNames -contains 'Duration' -and $test.Duration) { [double]$test.Duration.TotalSeconds } else { 0 }
+    $testResult = if ($testPropertyNames -contains 'Result') { $test.Result } else { 'Unknown' }
 
     Set-PSModulePesterXmlAttribute -Element $case -Name 'name' -Value $testName
     Set-PSModulePesterXmlAttribute -Element $case -Name 'classname' -Value $container
-    Set-PSModulePesterXmlAttribute -Element $case -Name 'status' -Value $test.Result
+    Set-PSModulePesterXmlAttribute -Element $case -Name 'status' -Value $testResult
     Set-PSModulePesterXmlAttribute -Element $case -Name 'time' -Value ('{0:n3}' -f $testDuration)
 
-    if ($test.Result -eq 'Failed') {
+    if ($testResult -eq 'Failed') {
       $failure = $doc.CreateElement('failure')
       $message = Get-PSModulePesterFailureMessage -Test $test
       Set-PSModulePesterXmlAttribute -Element $failure -Name 'message' -Value $message
       $failure.InnerText = $message
       $null = $case.AppendChild($failure)
-    } elseif ($test.Result -in @('Skipped', 'NotRun')) {
+    } elseif ($testResult -in @('Skipped', 'NotRun')) {
       $skippedElement = $doc.CreateElement('skipped')
       $null = $case.AppendChild($skippedElement)
     }

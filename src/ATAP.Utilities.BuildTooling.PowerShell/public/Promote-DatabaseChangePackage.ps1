@@ -282,19 +282,63 @@ function Promote-DatabaseChangePackage {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
             -Message "Promoting '$PackageId' '$Version' from '$FromFeed' to '$ToFeed' (reason: $Reason)"
 
-        $innerResult = Move-ProGetPackageInterTier `
-            -Name      $PackageId `
-            -Version   $Version `
-            -FromFeed  $FromFeed `
-            -ToFeed    $ToFeed `
-            -Reason    $Reason
+        $innerResult = $null
+        $succeeded   = $false
+        $summary     = $null
+        try {
+            $innerResult = Move-ProGetPackageInterTier `
+                -Name      $PackageId `
+                -Version   $Version `
+                -FromFeed  $FromFeed `
+                -ToFeed    $ToFeed `
+                -Reason    $Reason `
+                -ErrorAction Stop
 
-        # Detect no-op (package already in destination).
-        $succeeded = $innerResult.Succeeded -or ($innerResult.ResponseSummary -match 'already')
-        $summary   = if ($succeeded) {
-            "Promoted '$PackageId' '$Version' from '$FromFeed' to '$ToFeed' successfully."
-        } else {
-            "Promotion failed: $($innerResult.ResponseSummary)"
+            # Move-ProGetPackageInterTier returns a PSCustomObject whose success
+            # flag is 'Promoted' (and whose API payload is 'Response') - it does
+            # NOT expose 'Succeeded'/'ResponseSummary'. Read 'Promoted' the same
+            # way Promote-ProGetPackage does so the database and module wrappers
+            # agree on what success means; fall back to a legacy 'Succeeded' flag
+            # for tolerance, then to absence-of-exception.
+            if ($null -ne $innerResult -and $innerResult.PSObject.Properties['Promoted']) {
+                $succeeded = [bool]$innerResult.Promoted
+            } elseif ($null -ne $innerResult -and $innerResult.PSObject.Properties['Succeeded']) {
+                $succeeded = [bool]$innerResult.Succeeded
+            } else {
+                $succeeded = $true
+            }
+
+            $responseText = ''
+            if ($null -ne $innerResult) {
+                if ($innerResult.PSObject.Properties['Response']) {
+                    $responseText = ([string]$innerResult.Response).Trim()
+                } elseif ($innerResult.PSObject.Properties['ResponseSummary']) {
+                    $responseText = ([string]$innerResult.ResponseSummary).Trim()
+                }
+            }
+
+            # Idempotent re-runs: ProGet's promote endpoint accepts repeat calls
+            # for a package already at the destination and returns a success-shaped
+            # response. Surface that as a no-op rather than a failure.
+            if (-not [string]::IsNullOrWhiteSpace($responseText) -and $responseText -match '(?i)already|exists|no-op|duplicate') {
+                $summary   = "No-op: '$PackageId' '$Version' already promoted to '$ToFeed' ($responseText)."
+                $succeeded = $true
+            } elseif ($succeeded) {
+                $summary = "Promoted '$PackageId' '$Version' from '$FromFeed' to '$ToFeed' successfully."
+            } else {
+                $summary = "Move-ProGetPackageInterTier returned Promoted=false for '$PackageId' '$Version' ('$FromFeed' -> '$ToFeed')."
+            }
+        } catch {
+            # Idempotency: ProGet can return 409/Conflict when the package is
+            # already at the destination. Treat that text shape as a no-op.
+            $exceptionMessage = [string]$_.Exception.Message
+            if ($exceptionMessage -match '(?i)already in feed|already promoted|already exists|409') {
+                $summary   = "No-op: '$PackageId' '$Version' already present in '$ToFeed' (inner exception: $exceptionMessage)."
+                $succeeded = $true
+            } else {
+                $summary   = "Promotion failed: $exceptionMessage"
+                $succeeded = $false
+            }
         }
 
         if (-not $succeeded) {

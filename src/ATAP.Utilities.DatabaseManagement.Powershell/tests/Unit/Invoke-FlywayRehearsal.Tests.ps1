@@ -151,15 +151,34 @@ Describe 'Invoke-FlywayRehearsal' -Tag 'Unit' {
   }
 
   It 'passes the resolved SqlConnection through to Invoke-Flyway' {
-    $inputConnection = [PSCustomObject]@{ State = 'Open' }
-
-    Invoke-FlywayRehearsal -Application 'AceCommander' -BuildId '4271' -SqlConnection $inputConnection | Out-Null
-
-    Assert-MockCalled Resolve-DatabaseSqlConnection -Times 1 -Exactly -Scope It -ParameterFilter {
-      $SqlConnection -eq $inputConnection
+    # Use a real (unopened) Microsoft.Data.SqlClient.SqlConnection rather than a
+    # [PSCustomObject]. The real Invoke-Flyway types its -SqlConnection parameter as
+    # [Microsoft.Data.SqlClient.SqlConnection], and Pester mocks preserve the original
+    # parameter types; binding a PSCustomObject to that typed parameter throws
+    # "Cannot create object of type SqlConnection. State is a ReadOnly property." when
+    # the real module is loaded (e.g. promoted-module tier tests). The type is only
+    # available once the module's data-access assembly is loaded; when it is not
+    # (from-source unit runs without the assembly) the test is inapplicable, so skip.
+    if (-not ('Microsoft.Data.SqlClient.SqlConnection' -as [type])) {
+      Set-ItResult -Skipped -Because 'Microsoft.Data.SqlClient.SqlConnection type is not loaded in this run.'
+      return
     }
-    Assert-MockCalled Invoke-Flyway -Times 1 -Exactly -Scope It -ParameterFilter {
-      $SqlConnection -eq $script:fakeConnection -and $DatabaseName -eq 'AceCommander-rehearsal-4271'
+
+    $realConnection = [Microsoft.Data.SqlClient.SqlConnection]::new()
+    try {
+      $script:fakeConnection = $realConnection
+      Mock Resolve-DatabaseSqlConnection { [pscustomobject]@{ Connection = $script:fakeConnection; IsCallerOwned = $true } }
+
+      Invoke-FlywayRehearsal -Application 'AceCommander' -BuildId '4271' -SqlConnection $realConnection | Out-Null
+
+      Assert-MockCalled Resolve-DatabaseSqlConnection -Times 1 -Exactly -Scope It -ParameterFilter {
+        $SqlConnection -eq $realConnection
+      }
+      Assert-MockCalled Invoke-Flyway -Times 1 -Exactly -Scope It -ParameterFilter {
+        $SqlConnection -eq $script:fakeConnection -and $DatabaseName -eq 'AceCommander-rehearsal-4271'
+      }
+    } finally {
+      $realConnection.Dispose()
     }
   }
 

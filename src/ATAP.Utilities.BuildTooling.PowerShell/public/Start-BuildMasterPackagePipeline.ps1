@@ -318,7 +318,11 @@ function Start-BuildMasterPackagePipeline {
     }
 
     $releaseName = '{0} {1}' -f $ModuleName, $ResolvedPackageVersion
-    $releaseNumber = $ResolvedPackageVersion
+    if ($ResolvedPackageVersion.Contains('-')) {
+      $releaseNumber = '{0}.{1}' -f $ResolvedPackageVersion, $ModuleName
+    } else {
+      $releaseNumber = '{0}-{1}' -f $ResolvedPackageVersion, $ModuleName
+    }
     $effectiveReason = if ([string]::IsNullOrWhiteSpace($Reason)) {
       "Package orchestration detected $effectivePackageName $ResolvedPackageVersion"
     } else {

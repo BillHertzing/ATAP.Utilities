@@ -1,16 +1,27 @@
 <#
 .SYNOPSIS
-Retrieves a single field from a Bitwarden vault item using the Bitwarden CLI directly.
+Retrieves a single field from a PERSONAL Bitwarden Password Manager vault item
+via the Bitwarden CLI. Reserved for per-user personal secrets only.
 
 .DESCRIPTION
-Get-SecretATAPBitwarden is the Bitwarden provider implementation behind
-Get-SecretATAP. It does NOT use Microsoft.PowerShell.SecretManagement or any
-Bitwarden vault extension; it shells out to the Bitwarden CLI (`bw`) and parses
-the resulting JSON.
+Get-SecretATAPBitwarden is the personal-vault (Bitwarden Password Manager)
+provider behind Get-SecretATAP. It does NOT use
+Microsoft.PowerShell.SecretManagement or any Bitwarden vault extension; it
+shells out to the Bitwarden CLI (`bw`) and parses the resulting JSON.
+
+QUARANTINED FOR CI/INFRA SECRETS (Task 9.21): CI/infrastructure secrets must
+NEVER live in a user's personal vault. This provider refuses any SecretName that
+looks like a CI/infra secret - SQL connection strings (dbConnectionString-*),
+API keys (*_API_KEY, *.API.Key), ProGet/BuildMaster secrets, webhook secrets,
+and service-account login items (e.g. *Svc*). Read those from Bitwarden Secrets
+Manager via Get-SecretATAP (the default store for all accounts since SC-0175) or
+use the deterministic connection-string fallback (Task 9.22). This path remains
+only for genuine per-user personal secrets, and is opt-in: callers must select it
+with Get-SecretATAP -SecretStoreType 'Bitwarden'.
 
 Session handling:
 1. Reads BW_SESSION from process scope. If empty, reads from User scope
-   (the LoginScript / Initialize-ServiceAccountBitwardenSession destination).
+   (the interactive LoginScript destination — a personal-vault unlock).
 2. Calls `bw status --session <token>` to verify the vault is unlocked.
    Locked or expired sessions fail fast with a structured error pointing to
    the refresh task.
@@ -40,20 +51,24 @@ The named field inside the Bitwarden item to return. Defaults to 'password'.
 The plain-text value of the requested field.
 
 .EXAMPLE
-Get-SecretATAPBitwarden -SecretName 'PROGET_ADMIN_API_KEY'
-Returns the password field from a Login-type item as plain text.
+Get-SecretATAPBitwarden -SecretName 'my-personal-login'
+Returns the password field from a personal Login-type item as plain text.
+
+.EXAMPLE
+Get-SecretATAPBitwarden -SecretName 'my-personal-note' -SecretField 'notes'
+Returns the notes body of a personal Secure Note.
 
 .EXAMPLE
 Get-SecretATAPBitwarden -SecretName 'dbConnectionString-ATAPUtilities-localhost-Dev-whertzing' -SecretField 'notes'
-Returns the connection string stored in a Secure Note's notes body.
-
-.EXAMPLE
-Get-SecretATAPBitwarden -SecretName 'utat022-SvcBuildmaster-Production' -SecretField 'username'
-Returns the Windows account name stored in the Login item's username field.
+THROWS - a CI/infra connection-string secret is refused on the personal-vault
+path (Task 9.21). Use Bitwarden Secrets Manager instead:
+  Get-SecretATAP -SecretName 'dbConnectionString-ATAPUtilities-localhost-Dev-whertzing' -SecretField 'notes'
+which resolves through Bitwarden Secrets Manager by default.
 
 .NOTES
 AI assisted using Powershell.instructions.md as guidelines
 Renamed from Get-BitwardenSecret and rewritten to use bw CLI directly (no SecretManagement).
+Task 9.21: quarantined - refuses CI/infra secret names; personal-vault use only.
 
 .LINK
 https://bitwarden.com/help/cli/
@@ -95,6 +110,32 @@ function Get-SecretATAPBitwarden {
 
   PROCESS {
     try {
+      # -- CI/infra secret quarantine (Task 9.21) ------------------------------
+      # The personal-vault Bitwarden Password Manager path (this provider) must
+      # NEVER serve CI/infrastructure secrets - those live only in Bitwarden
+      # Secrets Manager (bws + DPAPI machine access token) or are produced by the
+      # deterministic connection-string fallback (Task 9.22). Refuse any
+      # SecretName that looks like a CI/infra secret so this bw path is reserved
+      # for genuine per-user personal secrets only. This runs before any bw
+      # invocation so the refusal is independent of session/CLI state.
+      $ciSecretNamePatterns = @(
+        '^dbConnectionString-'   # SQL connection strings (sprint + permanent tiers)
+        '_API_KEY$'              # env-var style API keys (PROGET_ADMIN_API_KEY, *_API_KEY)
+        'API[._-]?Key'           # BuildMaster.Admin.API.Key, *ApiKey
+        '^PROGET[_.-]'           # ProGet infrastructure secrets
+        '^BUILDMASTER[_.-]'      # BuildMaster infrastructure secrets
+        'WEBHOOK'                # webhook signing secrets
+        'Svc[A-Za-z0-9]'         # service-account login items (e.g. utat022-SvcBuildmaster-Production)
+      )
+      foreach ($ciPattern in $ciSecretNamePatterns) {
+        if ($SecretName -imatch $ciPattern) {
+          $msg = "Get-SecretATAPBitwarden refuses CI/infrastructure secret '$SecretName' (matched quarantine pattern '$ciPattern'). CI/infra secrets must never be read from a personal Bitwarden Password Manager vault (Task 9.21). Read it from Bitwarden Secrets Manager instead: Get-SecretATAP -SecretName '$SecretName' -SecretStoreType 'BitwardenSecretsManager' (the default for all accounts since SC-0175), or use the deterministic connection-string fallback (Task 9.22). The bw/personal-vault path is reserved for genuine per-user personal secrets only."
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+          throw $msg
+        }
+      }
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Get-SecretATAPBitwarden (personal-vault bw provider) serving '$SecretName' - this path is reserved for per-user personal secrets only; CI/infrastructure secrets must use Bitwarden Secrets Manager (Get-SecretATAP default)."
+
       # 1. Confirm the bw CLI is available on PATH.
       $bwCommand = Get-Command -Name 'bw' -ErrorAction SilentlyContinue
       if (-not $bwCommand) {
@@ -113,7 +154,7 @@ function Get-SecretATAPBitwarden {
         }
       }
       if ([string]::IsNullOrWhiteSpace($bwSession)) {
-        $msg = "BW_SESSION is not set in process or User scope. Run the LoginScript / Initialize-ServiceAccountBitwardenSession to establish a session before calling Get-SecretATAPBitwarden."
+        $msg = "BW_SESSION is not set in process or User scope. Unlock your personal Bitwarden vault (interactive LoginScript / 'bw unlock') before calling Get-SecretATAPBitwarden. This personal-vault path is for per-user personal secrets only; CI/infrastructure secrets use Bitwarden Secrets Manager (Get-SecretATAP default)."
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
         throw $msg
       }
@@ -126,7 +167,7 @@ function Get-SecretATAPBitwarden {
       $statusExit = $LASTEXITCODE
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "bw status exit code: $statusExit" -Tag 'BWCall'
       if ($statusExit -ne 0) {
-        $msg = "bw status failed (exit $statusExit). Output: $statusOutput. BW_SESSION may be invalid; run Refresh-BWSession."
+        $msg = "bw status failed (exit $statusExit). Output: $statusOutput. BW_SESSION may be invalid; re-unlock your personal Bitwarden vault ('bw unlock')."
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
         throw $msg
       }

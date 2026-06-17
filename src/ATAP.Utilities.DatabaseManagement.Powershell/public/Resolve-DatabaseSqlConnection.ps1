@@ -54,6 +54,14 @@ function Resolve-DatabaseSqlConnection {
     [string] $DBConnectionStringSecretName,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+    [Alias('DBConnectionStringMasterSecret', 'MasterSecretName', 'DBMasterConnectionStringSecretName')]
+    [string] $DBConnectionStringMasterSecretName,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+    [Alias('DBConnectionStringDatabaseSecretName', 'DBConnectionStringDatabaseSecret', 'DatabaseSecretName', 'DBSecretName')]
+    [string] $DBConnectionStringDBSecretName,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
     [Alias('HostName', 'ServerInstance')]
     [string] $DatabaseHost,
 
@@ -87,6 +95,15 @@ function Resolve-DatabaseSqlConnection {
 
     [Parameter(Mandatory = $false)]
     [string] $DatabaseHostDottedPath = 'DatabaseHost',
+
+    [Parameter(Mandatory = $false)]
+    [string] $DBConnectionStringSecretNameDottedPath = 'DBConnectionStringSecretName',
+
+    [Parameter(Mandatory = $false)]
+    [string] $DBConnectionStringMasterSecretNameDottedPath = 'DBConnectionStringMasterSecretName',
+
+    [Parameter(Mandatory = $false)]
+    [string] $DBConnectionStringDBSecretNameDottedPath = 'DBConnectionStringDBSecretName',
 
     [Parameter(Mandatory = $false)]
     [string] $DatabaseNameDottedPath = 'DatabaseName',
@@ -142,10 +159,46 @@ function Resolve-DatabaseSqlConnection {
       }
     }
 
-    # Priority 2: DBConnectionStringSecretName (function-owned).
-    $effectiveSecretName = $DBConnectionStringSecretName
-    if ([string]::IsNullOrWhiteSpace($effectiveSecretName) -and $normalizedBoundParameters.ContainsKey('DBConnectionStringSecretName')) {
-      $effectiveSecretName = [string] $normalizedBoundParameters['DBConnectionStringSecretName']
+    # Priority 2: connection-string secret name (function-owned).
+    $databaseNameForSecretSelection = $DatabaseName
+    if ([string]::IsNullOrWhiteSpace($databaseNameForSecretSelection) -and $normalizedBoundParameters.ContainsKey('DatabaseName')) {
+      $databaseNameForSecretSelection = [string] $normalizedBoundParameters['DatabaseName']
+    }
+    $useMasterSecret = [string]::Equals($databaseNameForSecretSelection, 'master', [System.StringComparison]::OrdinalIgnoreCase)
+
+    $specificSecretParameterName = if ($useMasterSecret) { 'DBConnectionStringMasterSecretName' } else { 'DBConnectionStringDBSecretName' }
+    $specificSecretDottedPath = if ($useMasterSecret) { $DBConnectionStringMasterSecretNameDottedPath } else { $DBConnectionStringDBSecretNameDottedPath }
+    $effectiveSecretName = if ($useMasterSecret) { $DBConnectionStringMasterSecretName } else { $DBConnectionStringDBSecretName }
+    if ([string]::IsNullOrWhiteSpace($effectiveSecretName) -and $normalizedBoundParameters.ContainsKey($specificSecretParameterName)) {
+      $effectiveSecretName = [string] $normalizedBoundParameters[$specificSecretParameterName]
+    }
+    if ([string]::IsNullOrWhiteSpace($effectiveSecretName)) {
+      Import-DatabaseConnectionHelperFunctions
+      $effectiveSecretName = Invoke-DatabaseConnectionGetPVal `
+        -ParameterName $specificSecretParameterName `
+        -BoundParameters $normalizedBoundParameters `
+        -DottedPath $specificSecretDottedPath `
+        -Settings $Settings `
+        -DefaultValue $null `
+        -AllowMissing:$true `
+        -AsType ([string])
+    }
+    if ([string]::IsNullOrWhiteSpace($effectiveSecretName)) {
+      $effectiveSecretName = $DBConnectionStringSecretName
+      if ([string]::IsNullOrWhiteSpace($effectiveSecretName) -and $normalizedBoundParameters.ContainsKey('DBConnectionStringSecretName')) {
+        $effectiveSecretName = [string] $normalizedBoundParameters['DBConnectionStringSecretName']
+      }
+    }
+    if ([string]::IsNullOrWhiteSpace($effectiveSecretName)) {
+      Import-DatabaseConnectionHelperFunctions
+      $effectiveSecretName = Invoke-DatabaseConnectionGetPVal `
+        -ParameterName 'DBConnectionStringSecretName' `
+        -BoundParameters $normalizedBoundParameters `
+        -DottedPath $DBConnectionStringSecretNameDottedPath `
+        -Settings $Settings `
+        -DefaultValue $null `
+        -AllowMissing:$true `
+        -AsType ([string])
     }
     if (-not [string]::IsNullOrWhiteSpace($effectiveSecretName)) {
       $openedConnection = Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName `

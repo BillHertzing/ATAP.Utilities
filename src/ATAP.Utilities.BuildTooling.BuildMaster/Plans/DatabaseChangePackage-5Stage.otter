@@ -22,6 +22,20 @@
 #   $BuildMasterBuildId - runtime value from $BuildMasterId(build), used to
 #                         isolate generated inter-stage state under
 #                         _generated/buildmaster/<BuildMasterBuildId>/.
+#   Per-tier DB connection-string secret names (optional Application Variables):
+#     $ExperimentalDatabaseDBConnectionStringSecretName
+#     $DevelopmentDatabaseDBConnectionStringSecretName
+#     $IntegrationDatabaseDBConnectionStringSecretName
+#     $QADatabaseDBConnectionStringSecretName
+#     $ProductionDatabaseDBConnectionStringSecretName
+#                         Bitwarden item names (NOT values) for each tier's
+#                         database connection string (see SprintInfrastructure-
+#                         Naming.md §4). When a tier's name is set, the runner
+#                         enforces a Flyway rehearsal before promoting into that
+#                         tier AND applies (migrate) the package to that tier's
+#                         real database afterward. The runner resolves the
+#                         secret value from Bitwarden by name; values never
+#                         appear in Arguments.
 #
 # Five stages map to five canonical database feeds:
 #   Experimental -> database-experimental (build .nupkg + publish)
@@ -38,10 +52,22 @@
 #   See SolutionDocumentation/Immutable-Build-Strategy.md and
 #   SolutionDocumentation/Database-Package-Artifact-And-Feed-Decision.md.
 #
+# Per-tier database apply + rehearsal:
+#   Promotion alone only moves the immutable .nupkg between feeds. When a
+#   tier's connection-string secret name is supplied, the runner ALSO:
+#     - (non-Experimental) runs a Flyway rehearsal BEFORE promotion and blocks
+#       the promotion if the rehearsal fails (rehearsal-before-promotion is
+#       enforced in code, not just documented), and
+#     - applies (Flyway migrate) the package to that tier's real database AFTER
+#       the stage's promotion/publish, taking a pre-migration snapshot for the
+#       permanent Integration/QA/Production tiers.
+#   See SolutionDocumentation/Database-Change-Unit-and-Flyway-Promotion.md §5/§17.
+#
 # This plan is assigned as a per-stage deployment step in the BuildMaster UI.
 # Keep the OtterScript surface tiny; the PowerShell runner owns stage/context
 # branching, ceiling-clamp enforcement, per-tier completion markers, run-
-# context JSON, and secret-safe ProGet publish/promote invocations.
+# context JSON, secret-safe ProGet publish/promote invocations, and the
+# per-tier Flyway rehearsal + apply.
 ##########################################################################
 
 # BuildTooling module used by every stage command.
@@ -56,7 +82,7 @@ set $BuildMasterExecutionId = $ExecutionId;
 Exec
 (
     FileName: pwsh,
-    Arguments: >>-NoProfile -File "$InvokeDatabasePackageStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -DatabaseApplication "$DatabaseApplication" -DatabaseStream "$DatabaseStream" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetBaseUrl">>,
+    Arguments: >>-NoProfile -File "$InvokeDatabasePackageStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -DatabaseApplication "$DatabaseApplication" -DatabaseStream "$DatabaseStream" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetBaseUrl" -ExperimentalDatabaseDBConnectionStringSecretName "$ExperimentalDatabaseDBConnectionStringSecretName" -DevelopmentDatabaseDBConnectionStringSecretName "$DevelopmentDatabaseDBConnectionStringSecretName" -IntegrationDatabaseDBConnectionStringSecretName "$IntegrationDatabaseDBConnectionStringSecretName" -QADatabaseDBConnectionStringSecretName "$QADatabaseDBConnectionStringSecretName" -ProductionDatabaseDBConnectionStringSecretName "$ProductionDatabaseDBConnectionStringSecretName">>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );

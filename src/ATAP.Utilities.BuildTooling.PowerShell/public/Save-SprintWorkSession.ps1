@@ -5,20 +5,64 @@ function Save-SprintWorkSession {
     for the current sprint work session.
 
 .DESCRIPTION
-    Saves a point-in-time snapshot of the active Claude Code session into the
+    Saves a point-in-time snapshot of the active AI coding-agent session into the
     _Planning sprint worktree so it can be referenced later.  Two artifacts
     are produced:
 
-      1. A 7-zip archive of the most-recent conversation JSONL found under
-         ~\.claude\projects\<slug>\  →  SprintWorkSessionConversations\
-      2. A copy of all current memory files from the same slug directory
+      1. A 7-zip archive of the most-recent conversation transcript for the
+         calling agent  →  SprintWorkSessionConversations\
+      2. A copy of the agent's current memory files/artifacts
          →  SprintWorkSessionMemorys\<name>\
+
+    Four agent families are supported via -Agent:
+
+      * ClaudeCode  (default) — transcript JSONL under ~\.claude\projects\<slug>\;
+        memory from the same slug's memory\ folder.
+      * Antigravity (Google DeepMind / Gemini) — transcript under the brain folder
+        ~\.gemini\antigravity\brain\<ConversationId>\.system_generated\logs\
+        (transcript_full.jsonl, falling back to transcript.jsonl); memory is every
+        artifact directly under the brain folder except the .system_generated
+        subfolder.  -ConversationId keys the brain folder; when omitted the newest
+        brain folder is auto-detected.
+      * Codex (OpenAI Codex CLI) — rollout transcript JSONL under
+        ~\.codex\sessions\<YYYY>\<MM>\<DD>\rollout-*-<SessionId>.jsonl (falling back
+        to ~\.codex\archived_sessions\); -SessionId selects the rollout, otherwise the
+        newest rollout is auto-detected.
+      * Copilot (GitHub Copilot) — has no on-disk transcript, so this path delegates
+        to Save-CopilotCheckpoint with the caller-supplied -ConversationFile.
 
     The sprint number is auto-detected from the current branch name
     (pattern: ^\d+-sprint-(\d{4})-.+$).  The _Planning worktree is
     auto-resolved from sibling directories matching
     ^_Planning-wt-\d+-sprint-<SprintN>; falls back to the main _Planning repo
     when no sprint worktree is found.
+
+.PARAMETER Agent
+    Which AI coding-agent family's session to checkpoint:
+    'ClaudeCode' (default), 'Antigravity', 'Codex', or 'Copilot'.
+
+.PARAMETER ConversationId
+    Antigravity conversation UUID that keys the brain folder
+    ~\.gemini\antigravity\brain\<ConversationId>\.  When omitted (and -Agent is
+    'Antigravity'), the most-recently-modified brain folder is auto-detected.
+
+.PARAMETER SessionId
+    Codex session UUID embedded in the rollout transcript filename
+    (rollout-<ISO-timestamp>-<SessionId>.jsonl).  When omitted (and -Agent is
+    'Codex'), the most-recently-modified rollout JSONL is auto-detected.
+
+.PARAMETER ConversationFile
+    Copilot-only: path to a pre-written markdown file containing the reconstructed
+    Copilot conversation.  Required when -Agent is 'Copilot'; forwarded to
+    Save-CopilotCheckpoint.
+
+.PARAMETER AntigravityRoot
+    Root of the Antigravity on-disk data
+    (contains brain\ and conversations\).  Defaults to ~\.gemini\antigravity.
+
+.PARAMETER CodexRoot
+    Root of the Codex on-disk data (contains sessions\ and archived_sessions\).
+    Defaults to ~\.codex.
 
 .PARAMETER SprintN
     Four-digit sprint number (e.g. '0006').  Auto-detected from the current
@@ -47,6 +91,18 @@ function Save-SprintWorkSession {
     Save-SprintWorkSession -SprintN 0006 -PlanningRoot 'C:\GitHub\_Planning-wt-12-sprint-0006-work-items'
     # Explicit sprint number and Planning root.
 
+.EXAMPLE
+    Save-SprintWorkSession -Agent Antigravity -ConversationId '3f2a9c84-1d77-4b6e-9a2c-0f5e8b1d4a21'
+    # Checkpoint an Antigravity session keyed by its conversation UUID.
+
+.EXAMPLE
+    Save-SprintWorkSession -Agent Antigravity
+    # Checkpoint the most-recently-modified Antigravity brain folder.
+
+.EXAMPLE
+    Save-SprintWorkSession -Agent Codex -SessionId '019eced5-2e16-7c80-bfc0-333ccd663db1'
+    # Checkpoint a Codex session by its rollout session id (auto-detected when omitted).
+
 .NOTES
     AI assisted using Powershell.instructions.md as guidelines
 
@@ -63,7 +119,26 @@ function Save-SprintWorkSession {
         [string] $PlanningRoot = '',
 
         [Parameter(Mandatory = $false)]
+        [ValidateSet('ClaudeCode', 'Antigravity', 'Codex', 'Copilot')]
+        [string] $Agent = 'ClaudeCode',
+
+        [Parameter(Mandatory = $false)]
+        [string] $ConversationId = '',
+
+        [Parameter(Mandatory = $false)]
+        [string] $SessionId = '',
+
+        [Parameter(Mandatory = $false)]
+        [string] $ConversationFile = '',
+
+        [Parameter(Mandatory = $false)]
         [string] $ClaudeProjectsRoot = (Join-Path $env:USERPROFILE '.claude\projects'),
+
+        [Parameter(Mandatory = $false)]
+        [string] $AntigravityRoot = (Join-Path $env:USERPROFILE '.gemini\antigravity'),
+
+        [Parameter(Mandatory = $false)]
+        [string] $CodexRoot = (Join-Path $env:USERPROFILE '.codex'),
 
         [Parameter(Mandatory = $false)]
         [string] $GitHubRoot = 'C:\Dropbox\whertzing\GitHub',
@@ -131,6 +206,12 @@ function Save-SprintWorkSession {
             # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: ClaudeProjectsRoot)
             $ClaudeProjectsRoot = Get-PVal -ParameterName ClaudeProjectsRoot -originalPSBoundParameters $PSBoundParameters -dottedPath ClaudeProjectsRoot -DefaultValue $ClaudeProjectsRoot
 
+            # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: AntigravityRoot)
+            $AntigravityRoot = Get-PVal -ParameterName AntigravityRoot -originalPSBoundParameters $PSBoundParameters -dottedPath AntigravityRoot -DefaultValue $AntigravityRoot
+
+            # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: CodexRoot)
+            $CodexRoot = Get-PVal -ParameterName CodexRoot -originalPSBoundParameters $PSBoundParameters -dottedPath CodexRoot -DefaultValue $CodexRoot
+
             # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: GitHubRoot)
             $GitHubRoot = Get-PVal -ParameterName GitHubRoot -originalPSBoundParameters $PSBoundParameters -dottedPath GitHubRoot -DefaultValue $GitHubRoot
         }
@@ -138,6 +219,29 @@ function Save-SprintWorkSession {
 
     process {
         try {
+            # ── Copilot path: delegate to Save-CopilotCheckpoint ───────────────────
+            # GitHub Copilot writes no on-disk transcript, so it cannot be archived the
+            # way ClaudeCode/Antigravity/Codex are. The caller pre-writes the
+            # reconstructed conversation markdown (-ConversationFile) and we hand the
+            # whole job to the companion cmdlet, which mirrors the same _Planning
+            # hard-stop. This keeps -Agent Copilot a valid, working call.
+            if ($Agent -eq 'Copilot') {
+                if (-not $ConversationFile) {
+                    throw "The Copilot path requires -ConversationFile (GitHub Copilot has no on-disk transcript). Write the reconstructed conversation to a markdown file, then call: Save-SprintWorkSession -Agent Copilot -ConversationFile <path>."
+                }
+                if (-not (Get-Command -Name 'Save-CopilotCheckpoint' -ErrorAction SilentlyContinue)) {
+                    throw "Save-CopilotCheckpoint is not available in this session. Import/dot-source ATAP.Utilities.BuildTooling.PowerShell (which provides it) before checkpointing the Copilot path."
+                }
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Agent=Copilot: delegating to Save-CopilotCheckpoint with ConversationFile '$ConversationFile'"
+                $copilotParams = @{ ConversationFile = $ConversationFile }
+                if ($SprintN)           { $copilotParams['SprintN'] = $SprintN }
+                if ($PlanningRoot)      { $copilotParams['PlanningRoot'] = $PlanningRoot }
+                if ($GitHubRoot)        { $copilotParams['GitHubRoot'] = $GitHubRoot }
+                if ($AllowMainFallback) { $copilotParams['AllowMainFallback'] = $true }
+                Save-CopilotCheckpoint @copilotParams
+                return
+            }
+
             # ── Auto-detect sprint number from branch ──────────────────────────────
             $branch = & git rev-parse --abbrev-ref HEAD 2>&1
             if ($LASTEXITCODE -ne 0) { throw "Could not determine current branch: $branch" }
@@ -187,48 +291,161 @@ function Save-SprintWorkSession {
                 }
             }
 
-            # ── Derive project slug from cwd ───────────────────────────────────────
-            # Claude Code slugs the project path by lowercasing the drive letter
-            # and replacing ':', '\', '_', '.' with '-'.
-            # From a sprint worktree the CWD yields a '...-wt-...' slug, but Claude
-            # Code may have been launched from the stable repo root so memory lives
-            # under the main-repo slug (Bug 2). Try the sprint slug first; if no JSONL
-            # is found, fall back to the stable slug by stripping '-wt-.+$' from the
-            # path before slugging.
+            # ── Resolve the agent's transcript + memory source ─────────────────────
+            # Each agent stores its conversation transcript and memory artifacts in a
+            # different on-disk location. The switch below sets, for the selected agent:
+            #   $jsonl              the transcript file to archive (FileInfo)
+            #   $memSrcDir          directory whose files become the memory snapshot
+            #   $memoryCopyMode     'ClaudeMd' | 'AntigravityArtifacts' | 'None'
+            #   $slug               session key recorded in the roster (SessionSlug)
+            #   $agentSessionKey    the agent-specific id (slug / ConversationId / SessionId)
+            #   $conversationDbPath optional SQLite DB path (Antigravity), else $null
             $cwd = (Get-Location).Path
-            $makeSlug = { param([string]$p) ($p.Substring(0, 1).ToLower() + $p.Substring(1)) -replace ':', '-' -replace '\\', '-' -replace '_', '-' -replace '\.', '-' -replace '^-', '' }
-            $slug = & $makeSlug $cwd
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Slug derived from cwd '$cwd': $slug"
+            $jsonl = $null
+            $memSrcDir = $null
+            $memoryCopyMode = 'None'
+            $slug = $null
+            $agentSessionKey = $null
+            $conversationDbPath = $null
 
-            # ── Find most-recent session JSONL ─────────────────────────────────────
-            $sessionDir = Join-Path $ClaudeProjectsRoot $slug
-            $jsonl = Get-ChildItem -Path $sessionDir -Filter '*.jsonl' -ErrorAction SilentlyContinue |
-                Sort-Object LastWriteTime -Descending |
-                Select-Object -First 1
+            switch ($Agent) {
+                'ClaudeCode' {
+                    # Claude Code slugs the project path by lowercasing the drive letter
+                    # and replacing ':', '\', '_', '.' with '-'.
+                    # From a sprint worktree the CWD yields a '...-wt-...' slug, but Claude
+                    # Code may have been launched from the stable repo root so memory lives
+                    # under the main-repo slug (Bug 2). Try the sprint slug first; if no
+                    # JSONL is found, fall back to the stable slug by stripping '-wt-.+$'
+                    # from the path before slugging.
+                    $makeSlug = { param([string]$p) ($p.Substring(0, 1).ToLower() + $p.Substring(1)) -replace ':', '-' -replace '\\', '-' -replace '_', '-' -replace '\.', '-' -replace '^-', '' }
+                    $slug = & $makeSlug $cwd
+                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Slug derived from cwd '$cwd': $slug"
 
-            if (-not $jsonl) {
-                # Worktree fallback: strip '-wt-.+$' to get the stable repo path,
-                # recompute slug, and search there.
-                $stableCwd = $cwd -replace '-wt-.+$', ''
-                if ($stableCwd -ne $cwd) {
-                    $stableSlug = & $makeSlug $stableCwd
-                    $stableSessionDir = Join-Path $ClaudeProjectsRoot $stableSlug
-                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "No JSONL at sprint slug '$slug'; trying stable slug '$stableSlug'"
-                    $jsonl = Get-ChildItem -Path $stableSessionDir -Filter '*.jsonl' -ErrorAction SilentlyContinue |
+                    $sessionDir = Join-Path $ClaudeProjectsRoot $slug
+                    $jsonl = Get-ChildItem -Path $sessionDir -Filter '*.jsonl' -ErrorAction SilentlyContinue |
                         Sort-Object LastWriteTime -Descending |
                         Select-Object -First 1
-                    if ($jsonl) {
-                        $slug = $stableSlug
-                        $sessionDir = $stableSessionDir
-                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Using stable repo slug '$slug' — Claude Code was launched from the main repo root"
+
+                    if (-not $jsonl) {
+                        # Worktree fallback: strip '-wt-.+$' to get the stable repo path,
+                        # recompute slug, and search there.
+                        $stableCwd = $cwd -replace '-wt-.+$', ''
+                        if ($stableCwd -ne $cwd) {
+                            $stableSlug = & $makeSlug $stableCwd
+                            $stableSessionDir = Join-Path $ClaudeProjectsRoot $stableSlug
+                            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "No JSONL at sprint slug '$slug'; trying stable slug '$stableSlug'"
+                            $jsonl = Get-ChildItem -Path $stableSessionDir -Filter '*.jsonl' -ErrorAction SilentlyContinue |
+                                Sort-Object LastWriteTime -Descending |
+                                Select-Object -First 1
+                            if ($jsonl) {
+                                $slug = $stableSlug
+                                $sessionDir = $stableSessionDir
+                                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Using stable repo slug '$slug' — Claude Code was launched from the main repo root"
+                            }
+                        }
                     }
+
+                    if (-not $jsonl) {
+                        throw "No JSONL found in '$sessionDir' — verify the slug is correct. Slug derived: $slug"
+                    }
+
+                    # Memory lives under the slug of the directory where Claude Code was
+                    # launched (the current working directory), NOT under the _Planning slug.
+                    $memSrcDir = Join-Path $ClaudeProjectsRoot "$slug\memory"
+                    $memoryCopyMode = 'ClaudeMd'
+                    $agentSessionKey = $slug
+                }
+
+                'Antigravity' {
+                    # Antigravity stores each conversation in a "brain" folder keyed by the
+                    # conversation UUID. Auto-detect the newest brain folder when no
+                    # -ConversationId was supplied.
+                    $brainRoot = Join-Path $AntigravityRoot 'brain'
+                    if (-not (Test-Path $brainRoot)) {
+                        throw "Antigravity brain root not found: '$brainRoot'. Pass -AntigravityRoot to override."
+                    }
+
+                    if (-not $ConversationId) {
+                        $newestBrain = Get-ChildItem -Path $brainRoot -Directory -ErrorAction SilentlyContinue |
+                            Sort-Object LastWriteTime -Descending |
+                            Select-Object -First 1
+                        if (-not $newestBrain) {
+                            throw "No Antigravity brain folders found under '$brainRoot'. Pass -ConversationId or verify the path."
+                        }
+                        $ConversationId = $newestBrain.Name
+                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "ConversationId auto-detected from newest brain folder: $ConversationId"
+                    }
+
+                    $brainFolder = Join-Path $brainRoot $ConversationId
+                    if (-not (Test-Path $brainFolder)) {
+                        throw "Antigravity brain folder not found for ConversationId '$ConversationId': '$brainFolder'."
+                    }
+
+                    # Transcript: prefer transcript_full.jsonl, fall back to transcript.jsonl.
+                    $logsDir = Join-Path $brainFolder '.system_generated\logs'
+                    $transcriptFull = Join-Path $logsDir 'transcript_full.jsonl'
+                    $transcript = Join-Path $logsDir 'transcript.jsonl'
+                    if (Test-Path -LiteralPath $transcriptFull) {
+                        $jsonl = Get-Item -LiteralPath $transcriptFull
+                    } elseif (Test-Path -LiteralPath $transcript) {
+                        $jsonl = Get-Item -LiteralPath $transcript
+                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "transcript_full.jsonl absent; using transcript.jsonl in '$logsDir'"
+                    } else {
+                        throw "No Antigravity transcript found under '$logsDir' (looked for transcript_full.jsonl then transcript.jsonl)."
+                    }
+
+                    # Memory: every artifact directly under the brain folder EXCEPT the
+                    # .system_generated subfolder.
+                    $memSrcDir = $brainFolder
+                    $memoryCopyMode = 'AntigravityArtifacts'
+                    $slug = "antigravity-$ConversationId"
+                    $agentSessionKey = $ConversationId
+
+                    # Optional SQLite conversation database for this conversation.
+                    $candidateDb = Join-Path $AntigravityRoot "conversations\$ConversationId.db"
+                    if (Test-Path -LiteralPath $candidateDb) {
+                        $conversationDbPath = $candidateDb
+                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Antigravity conversation DB: $conversationDbPath"
+                    }
+                }
+
+                'Codex' {
+                    # Codex (OpenAI Codex CLI) writes a rollout transcript JSONL under a
+                    # dated tree, keyed by session UUID. Search the live sessions tree
+                    # first, then archived_sessions.
+                    $sessionsRoot = Join-Path $CodexRoot 'sessions'
+                    $archivedRoot = Join-Path $CodexRoot 'archived_sessions'
+                    $rollFilter = if ($SessionId) { "rollout-*-$SessionId.jsonl" } else { 'rollout-*.jsonl' }
+
+                    foreach ($root in @($sessionsRoot, $archivedRoot)) {
+                        if (-not (Test-Path $root)) { continue }
+                        $jsonl = Get-ChildItem -Path $root -Filter $rollFilter -Recurse -File -ErrorAction SilentlyContinue |
+                            Sort-Object LastWriteTime -Descending |
+                            Select-Object -First 1
+                        if ($jsonl) { break }
+                    }
+
+                    if (-not $jsonl) {
+                        $what = if ($SessionId) { "for session id '$SessionId'" } else { 'any rollout' }
+                        throw "No Codex rollout JSONL found ($what) under '$sessionsRoot' or '$archivedRoot'. Pass -CodexRoot/-SessionId or verify the path."
+                    }
+
+                    # Recover the session id from the rollout filename when auto-detected.
+                    if (-not $SessionId -and $jsonl.Name -match 'rollout-.*-([0-9a-fA-F-]{36})\.jsonl$') {
+                        $SessionId = $Matches[1]
+                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "SessionId auto-detected from newest rollout: $SessionId"
+                    }
+
+                    # Codex has no conventional on-disk memory store; the roster records
+                    # the skip reason and the conversation archive is still written.
+                    $memSrcDir = $null
+                    $memoryCopyMode = 'None'
+                    $slug = if ($SessionId) { "codex-$SessionId" } else { 'codex' }
+                    $agentSessionKey = $SessionId
                 }
             }
 
-            if (-not $jsonl) {
-                throw "No JSONL found in '$sessionDir' — verify the slug is correct. Slug derived: $slug"
-            }
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Most-recent JSONL: $($jsonl.FullName) (LastWriteTime: $($jsonl.LastWriteTime))"
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Agent=$Agent transcript: $($jsonl.FullName) (LastWriteTime: $($jsonl.LastWriteTime))"
 
             # ── Build name components ──────────────────────────────────────────────
             $ts = Get-Date -Format 'yyyy-MM-dd-HH-mm'
@@ -260,17 +477,33 @@ function Save-SprintWorkSession {
             }
 
             # ── 2. Copy memory files ───────────────────────────────────────────────
-            # Memory lives under the slug of the directory where Claude Code was launched
-            # (i.e. the current working directory), NOT under the _Planning slug.
-            $memSrcDir = Join-Path $ClaudeProjectsRoot "$slug\memory"
+            # The memory source and copy semantics were resolved per-agent above:
+            #   ClaudeMd              -> copy *.md from the slug's memory\ folder
+            #   AntigravityArtifacts  -> copy every top-level artifact under the brain
+            #                            folder EXCEPT the .system_generated subfolder
+            #   None                  -> agent has no on-disk memory store (e.g. Codex)
             $memDstDir = Join-Path $PlanningRoot "SprintWorkSessionMemorys\$memName"
 
-            if (-not (Test-Path $memSrcDir)) {
+            if ($memoryCopyMode -eq 'None' -or -not $memSrcDir) {
+                $memorySkipReason = "Agent '$Agent' has no on-disk memory store; memory copy skipped."
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message $memorySkipReason
+            } elseif (-not (Test-Path $memSrcDir)) {
                 $memorySkipReason = "Memory directory not found: $memSrcDir"
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "$memorySkipReason — memory copy skipped."
             } elseif ($PSCmdlet.ShouldProcess($memDstDir, "Copy memory files from '$memSrcDir'")) {
                 New-Item -ItemType Directory -Path $memDstDir -Force | Out-Null
-                Copy-Item -Path (Join-Path $memSrcDir '*.md') -Destination $memDstDir -Force
+                switch ($memoryCopyMode) {
+                    'ClaudeMd' {
+                        Copy-Item -Path (Join-Path $memSrcDir '*.md') -Destination $memDstDir -Force
+                    }
+                    'AntigravityArtifacts' {
+                        # Copy all artifacts directly under the brain folder, excluding the
+                        # .system_generated subfolder (which holds the transcript/logs).
+                        Get-ChildItem -LiteralPath $memSrcDir -Force -ErrorAction SilentlyContinue |
+                            Where-Object { $_.Name -ne '.system_generated' } |
+                            ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $memDstDir -Recurse -Force }
+                    }
+                }
                 $memoryFileCount = (Get-ChildItem $memDstDir -ErrorAction SilentlyContinue).Count
                 $memoryCopied = $true
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Memory files saved ($memoryFileCount files): $memDstDir"
@@ -280,6 +513,8 @@ function Save-SprintWorkSession {
             $rosterEntry = [ordered]@{
                 SprintN                    = $SprintN
                 RecordedAt                 = (Get-Date).ToString('o')
+                Agent                      = $Agent
+                AgentSessionKey            = $agentSessionKey
                 WorktreeName               = $worktreeName
                 WorktreePath               = $cwd
                 Branch                     = $branch
@@ -287,6 +522,7 @@ function Save-SprintWorkSession {
                 ConversationJsonlPath      = $jsonl.FullName
                 ConversationArchivePath    = $archive
                 ConversationArchiveCreated = $archiveCreated
+                ConversationDbPath         = $conversationDbPath
                 MemorySourcePath           = $memSrcDir
                 MemorySnapshotPath         = $memDstDir
                 MemorySnapshotCreated      = $memoryCopied

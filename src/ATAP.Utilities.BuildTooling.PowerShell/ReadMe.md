@@ -24,11 +24,42 @@ Sprint planning also now has an explicit markdown-to-board path: use
 `Convert-TasksMdToSprintBoard` to regenerate a sprint `TASKS.html` board from the
 authoritative `TASKS.md` file after task edits or status updates.
 
+`Invoke-GitCommit` now supports task-scoped grouped commits (Task 9.24).
+A cohesive dirty tree can still produce one Conventional Commit, while mixed
+trees can pass explicit path groups so each group stages only its own paths, runs
+the sensitive-file and lock-file guards, appends a `Co-Authored-By` footer, and
+leaves unrelated dirty files unstaged.
+
 Checkpoint saves now also append a lightweight session roster entry under the
 sprint `_Planning` worktree at
 `SprintWorkSessionRoster/SprintWorkSessionRoster-<NNNN>.jsonl`, which gives
 SprintEnd a concrete list of worktree session names to validate against the
 archived conversation set.
+
+`Save-SprintWorkSession` checkpoints **four** AI coding-agent families via the
+`-Agent` parameter (Task 9.32): `ClaudeCode` (default; transcript JSONL under
+`~\.claude\projects`), `Antigravity` (`-ConversationId`; transcript + memory
+artifacts under `~\.gemini\antigravity\brain\<id>`, with the SQLite conversation
+DB recorded when present), `Codex` (`-SessionId`; rollout transcript under
+`~\.codex\sessions`, falling back to `~\.codex\archived_sessions`), and `Copilot`
+(`-ConversationFile`; delegates to `Save-CopilotCheckpoint` since Copilot writes
+no on-disk transcript). Antigravity and Codex auto-detect the newest
+conversation/rollout when the id argument is omitted. The roster entry records the
+`Agent`, `AgentSessionKey`, and `ConversationDbPath` for each save.
+
+**BuildMaster PowerShell Module Release Naming (Task 9.37).** To support building multiple arbitrary PowerShell modules within the single consolidated BuildMaster application (`ATAP.Utilities-PowerShell`) without collisions, the BuildMaster `ReleaseNumber` is generated uniquely per module. The release number appends the module name as a suffix (e.g., `0.1.0-ATAP.Utilities.PowerShell` for stable versions, and `0.1.0-Alpha.6.ATAP.Utilities.PowerShell` for prerelease versions), which is fully SemVer 2.0.0 compliant. This naming is strictly internal to BuildMaster and does not bleed into the built package's name, version, or manifest (`.psd1`) file.
+
+Scope-creep capture (`Add-ScopeCreepIdea`) now resolves the target `_Planning`
+worktree through `Resolve-PlanningWorktreeRoot` (Task 9.23). Resolution is
+anchored on the **Sprint token** (`Sprint-<NNNN>-work-items`) shared across
+repos — not the per-repo issue number, which differs (e.g.
+`ATAP.Utilities-wt-110-…` pairs with `_Planning-wt-18-…`). From a sprint shell it
+finds the sibling `_Planning*-wt-*-Sprint-<NNNN>-work-items` worktree (with a
+widened, case-insensitive `OverView*.code-workspace` fallback). When a sprint
+context is detected but no sprint `_Planning` worktree can be found, it **throws
+rather than silently writing to the stable (main) worktree**; pass
+`-PlanningRoot` to target a worktree explicitly. This fixes the prior silent
+fall-back that wrote scope-creep ideas to the stable `_Planning` worktree.
 
 Sprint lifecycle secret automation (`New-SprintBitwardenSecrets`,
 `Remove-SprintBitwardenSecrets`, `Test-SprintPrerequisites`,
@@ -38,6 +69,36 @@ DPAPI token file via `Get-BWSAccessToken`). `BW_SESSION` is personal-vault-only
 and is never required by sprint automation (SC-0175). Reads of per-sprint
 machine secrets go through
 `Get-SecretATAP -SecretStoreType 'BitwardenSecretsManager'`.
+
+**Deterministic connection-string fallback (Task 9.22).** The `bws` _write_ path
+is currently broken, but the 12 per-sprint Dev/Exp connection strings carry no
+credential (`Integrated Security=True`) and are reproducible from
+host/tier/db/user. `Get-DbConnectionStringSecretDescriptor` is the single source
+of truth for the connection-string **format** and the
+**derivable-vs-credentialed** classification, shared by the writer
+(`New-SprintBitwardenSecrets`) and the reader (`Resolve-DatabaseSqlConnection`).
+By default `New-SprintBitwardenSecrets` derives the strings and writes nothing to
+the vault (so sprint Stage 2 needs no `bws` write at all); `-WriteDerivableToVault`
+persists them once the write path is fixed. `Resolve-DatabaseSqlConnection`
+resolves in order: (a) real vault secret if present, (b) deterministic build when
+derivable, (c) hard fail if a credential is required but absent (a credentialed
+string is never derived). When SQL logins replace Integrated Security, marking the
+affected names credentialed is a one-place config change, not a rewrite, and a
+working programmatic write+rotate path becomes mandatory before those credentialed
+secrets ship.
+
+**Personal-vault / `bw` purge (Task 9.21).** CI/infrastructure secrets must
+never live in a developer's personal Bitwarden Password Manager vault. The
+`bw`/`BW_SESSION` writer and service-account session machinery
+(`New-PermanentBitwardenSecrets`, `Initialize-ServiceAccountBitwardenSession`,
+`Refresh-BWSession`, `Update-ServiceAccountBWCredentialFile`) was retired to
+`Obsolete/public/` and removed from the exported surface. The personal-vault
+read provider `Get-SecretATAPBitwarden` remains only as an opt-in path for
+genuine per-user personal secrets and now **refuses CI/infra secret names**
+(connection strings, API keys, ProGet/BuildMaster and service-account secrets),
+directing callers to Bitwarden Secrets Manager. If a host still has scheduled
+tasks invoking the retired session scripts, remove them as infrastructure
+cleanup.
 
 ## Autoloading
 

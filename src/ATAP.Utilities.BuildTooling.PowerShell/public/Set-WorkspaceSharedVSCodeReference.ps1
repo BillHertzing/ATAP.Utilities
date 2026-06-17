@@ -9,10 +9,14 @@ function Set-WorkspaceSharedVSCodeReference {
     One or more paths to .code-workspace files.
   .PARAMETER TemplateRef
     The SharedVSCode template reference to write (e.g. "main" or a worktree name).
-  .PARAMETER Profile
-    The profile label to write. Defaults to "default".
+  .PARAMETER ProfileName
+    The profile label to write. Defaults to "default". Exposed under the alias
+    'Profile' for backward compatibility; named ProfileName so it does not shadow
+    the automatic $PROFILE variable.
   .EXAMPLE
     Set-WorkspaceSharedVSCodeReference -WorkspaceFiles @('.\Planning.code-workspace') -TemplateRef 'main'
+  .NOTES
+    AI assisted using Powershell.instructions.md as guidelines
   #>
   [CmdletBinding()]
   param(
@@ -24,23 +28,36 @@ function Set-WorkspaceSharedVSCodeReference {
     [ValidateNotNullOrEmpty()]
     [string]$TemplateRef,
 
-    [string]$Profile = 'default'
+    [Alias('Profile')]
+    [string]$ProfileName = 'default'
   )
 
-  $resolvedWorkspaceFiles = Resolve-WorkspaceFiles -WorkspaceFiles $WorkspaceFiles
+  begin {
+    $fn = $MyInvocation.MyCommand.Name
+    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
+  }
 
-  foreach ($workspaceFile in $resolvedWorkspaceFiles) {
-    $json = Get-WorkspaceJson -WorkspaceFile $workspaceFile
+  process {
+    $resolvedWorkspaceFiles = Resolve-WorkspaceFiles -WorkspaceFiles $WorkspaceFiles
 
-    if (-not $json.settings) {
-      $json | Add-Member -MemberType NoteProperty -Name settings -Value ([PSCustomObject]@{})
+    foreach ($workspaceFile in $resolvedWorkspaceFiles) {
+      $json = Get-WorkspaceJson -WorkspaceFile $workspaceFile
+
+      if (-not $json.settings) {
+        $json | Add-Member -MemberType NoteProperty -Name settings -Value ([PSCustomObject]@{})
+      }
+
+      $json.settings | Add-Member -MemberType NoteProperty `
+        -Name 'atap.sharedVSCode.templateRef' -Value $TemplateRef -Force
+      $json.settings | Add-Member -MemberType NoteProperty `
+        -Name 'atap.sharedVSCode.profile' -Value $ProfileName -Force
+
+      Save-WorkspaceJson -WorkspaceFile $workspaceFile -Json $json
     }
+  }
 
-    $json.settings | Add-Member -MemberType NoteProperty `
-      -Name 'atap.sharedVSCode.templateRef' -Value $TemplateRef -Force
-    $json.settings | Add-Member -MemberType NoteProperty `
-      -Name 'atap.sharedVSCode.profile' -Value $Profile -Force
-
-    Save-WorkspaceJson -WorkspaceFile $workspaceFile -Json $json
+  end {
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn in module $mn"
   }
 }

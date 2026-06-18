@@ -12,6 +12,13 @@ worktree root, reads the folders list, then for each repository worktree:
 The provenance table inserted between local and base content records the last-modified
 timestamps of the base file, the local file, and the newly written combined file.
 
+When the workspace is a sprint Overview workspace (it carries a sprintEphemeral block
+and/or lists at least one sprint worktree folder), any repository that has no sprint
+worktree this sprint is listed under its stable folder name and is SKIPPED rather than
+overwritten. This honors the stable-worktree boundary and avoids seeding
+sprint-base-derived content into a stable repo. Skipped repos are reported with
+Skipped = $true in RepositoryResults.
+
 .PARAMETER WorktreeRoot
 Optional path to the current worktree root. Defaults to the git toplevel of the
 current working directory.
@@ -154,6 +161,16 @@ function Build-CLAUDEPerRepository {
       }
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Found $($folderPaths.Count) folder(s) in workspace: $($folderPaths -join ', ')"
 
+      # Detect sprint context so stable worktrees are not overwritten during a sprint.
+      # A sprint Overview workspace carries a sprintEphemeral block and/or lists at
+      # least one sprint worktree folder. In that context, repos without a sprint
+      # worktree this sprint appear under their stable folder name and must be skipped.
+      $sprintWorktreePattern = '-wt-\d+-Sprint-\d{4}-work-items$'
+      $hasEphemeral = [bool]$workspaceData.PSObject.Properties['sprintEphemeral'] -and $null -ne $workspaceData.sprintEphemeral
+      $hasSprintFolder = @($folderPaths | Where-Object { $_ -match $sprintWorktreePattern }).Count -gt 0
+      $isSprintContext = $hasEphemeral -or $hasSprintFolder
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Sprint context: $isSprintContext (ephemeral=$hasEphemeral, sprintFolder=$hasSprintFolder)"
+
       # Step 3: Identify the SharedVSCode worktree path
       $sharedVSCodeRelPath = $folderPaths | Where-Object { $_ -match 'SharedVSCode' }
       if (-not $sharedVSCodeRelPath) {
@@ -189,15 +206,29 @@ function Build-CLAUDEPerRepository {
         }
 
         $repoName = Split-Path $repoFullPath -Leaf
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Processing repository: $repoName"
 
         $repoResult = [PSCustomObject]@{
           Repository   = $repoName
           Path         = $repoFullPath
           HasLocal     = $false
           Success      = $false
+          Skipped      = $false
           ErrorMessage = $null
         }
+
+        # Boundary guard: in a sprint context, never write CLAUDE.md into a stable
+        # worktree. A repo with no sprint worktree this sprint is listed under its
+        # stable folder name; writing here would violate stable-worktree boundary
+        # rules and seed sprint-base-derived content into a stable repo. Skip it.
+        if ($isSprintContext -and $repoName -notmatch $sprintWorktreePattern) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Skipping stable worktree '$repoName' (no sprint worktree this sprint); CLAUDE.md left untouched to honor stable-worktree boundary."
+          $repoResult.Skipped = $true
+          $result.RepositoryResults += $repoResult
+          $result.RepositoriesProcessed++
+          continue
+        }
+
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Processing repository: $repoName"
 
         try {
           # Step 6a: Read the per-repo local overlay if present.

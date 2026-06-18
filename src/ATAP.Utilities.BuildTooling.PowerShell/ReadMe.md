@@ -30,6 +30,13 @@ trees can pass explicit path groups so each group stages only its own paths, run
 the sensitive-file and lock-file guards, appends a `Co-Authored-By` footer, and
 leaves unrelated dirty files unstaged.
 
+`Build-PSModulePsm1` produces self-contained package modules without carrying
+source-only export declarations into the generated `.psm1` (Task 10.1). It
+strips direct top-level `Export-ModuleMember` statements and export-only
+`if ($MyInvocation.MyCommand.ScriptBlock.Module)` wrappers while preserving the
+source files, nested commands, and unrelated module guards. The generated
+manifest remains the single authority for `FunctionsToExport`.
+
 Checkpoint saves now also append a lightweight session roster entry under the
 sprint `_Planning` worktree at
 `SprintWorkSessionRoster/SprintWorkSessionRoster-<NNNN>.jsonl`, which gives

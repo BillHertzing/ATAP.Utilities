@@ -849,19 +849,10 @@ Write-PSFMessage -FunctionName $fn -Level Debug -Message ('setting environment v
 Set-EnvironmentVariablesProcess
 Write-PSFMessage -FunctionName $fn -Level Debug -Message ('finished setting environment variables in CurrentUsersAllHostsV7CoreProfile.ps1')
 
-# Set the name of the VSC extension project under development
-# ToDo: put this in a vsc extension as a command , and trigger the command every time an editor is activated.
-# The command has a collection set of project paths/names (populated by the list of files below src/ relative to the repository root)
-#  The command matches the editor's document path to (hopefully only one) element, which provide the value for this env var
-# ToDo: put this into a ConfigRootKeys keys tor Typescript and VSC Extension process
-# [Environment]::SetEnvironmentVariable('VSCExtensionProjectName', 'ATAP-AiAssist', [EnvironmentVariableTarget]::User)
-# [Environment]::SetEnvironmentVariable('VSCExtensionProjectRelativePath', 'src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
-# [Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
-# Write-PSFMessage -FunctionName $fn -Level Debug -Message ('line 729 in CurrentUsersAllHostsV7CoreProfile.ps1')
-#[Environment]::SetEnvironmentVariable('VSCExtensionProjectRelativePath', '.', [EnvironmentVariableTarget]::User)
-#Write-PSFMessage -FunctionName $fn -Level Debug -Message ('line 731 in CurrentUsersAllHostsV7CoreProfile.ps1')
-#[Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
-#Write-PSFMessage -FunctionName $fn -Level Debug -Message ('line 733 in CurrentUsersAllHostsV7CoreProfile.ps1')
+# VSCExtensionProject* env vars (VSCExtensionProjectName / *RelativePath / *AbsolutePath)
+# were removed in Sprint 0010 Task 10.24 to decouple AIAssist ahead of its repo split.
+# The definitions are preserved in the AIAssist project holding location:
+#   src/ATAP.VSCExtension.AI/ATAP-AiAssist/_holding/VSCExtensionProjectEnvVars.md
 
 # Unlock the Hashicorp Vault
 

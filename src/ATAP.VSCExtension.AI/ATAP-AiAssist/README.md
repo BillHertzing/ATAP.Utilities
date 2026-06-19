@@ -51,6 +51,18 @@ Added features X, Y, and Z.
 
 ---
 
+## Held configuration (`_holding/`)
+
+The `_holding/` folder holds configuration earmarked for this project as it splits out of
+`ATAP.Utilities` into its own dedicated repository:
+
+* [`_holding/VSCExtensionProjectEnvVars.md`](_holding/VSCExtensionProjectEnvVars.md) — the
+  three `VSCExtensionProject*` environment-variable definitions (names + values) removed
+  from the shared `ATAP.Utilities` PowerShell profile in Sprint 0010 (Task 10.24). Re-home
+  these in the AIAssist repo's own profile/setup after the split.
+
+---
+
 ## Following extension guidelines
 
 Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.

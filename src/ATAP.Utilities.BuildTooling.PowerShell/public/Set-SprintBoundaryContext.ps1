@@ -12,12 +12,13 @@ function Set-SprintBoundaryContext {
     orchestrator that performs (or reverses) the full retarget for one or more
     sprint worktrees.
 
-    It covers the five concerns named in the V4-H03 acceptance criteria:
+    It covers the original five V4-H03 concerns plus the Task 10.20.o AI settings lifecycle:
 
       - machine links (NTFS junctions) ........ Set-WorktreeJunctions (per worktree)
       - SharedVSCode settings ................. Set-UserSettingsSymlink + Set-ClaudeSettingsSymlink (once)
       - downstream contexts ................... Initialize-DownstreamSprintFromSharedVSCode (Start)
                                                 / Reset-DownstreamToSharedVSCodeMain (End) (per worktree)
+      - canonical AI settings ................. Invoke-SprintAISettingsLifecycle (per worktree)
       - PowerShell profiles ................... stable-by-design, no per-sprint retarget
       - ConfigRootKeys ........................ stable-by-design, no per-sprint retarget
 
@@ -64,6 +65,9 @@ function Set-SprintBoundaryContext {
   .PARAMETER CommitTemplateRelativePath
     Relative path under the SharedVSCode root for the commit template. Passed
     through to the downstream context workers.
+  .PARAMETER SkipAISettingsLifecycle
+    Skip project-scope AI settings materialization/audit. Intended only for
+    narrowly scoped repair or diagnostic calls.
   .OUTPUTS
     PSCustomObject with Boundary, DryRun, a per-concern Concerns array, a
     PerWorktree breakdown, and an aggregate Errors array.
@@ -112,7 +116,9 @@ function Set-SprintBoundaryContext {
 
     [string]$SharedHooksSubPath = '.githooks',
 
-    [string]$CommitTemplateRelativePath = 'GitTemplates\git.commit.template.txt'
+    [string]$CommitTemplateRelativePath = 'GitTemplates\git.commit.template.txt',
+
+    [switch]$SkipAISettingsLifecycle
   )
 
   begin {
@@ -146,14 +152,17 @@ function Set-SprintBoundaryContext {
     # ------------------------------------------------------------------
     $junctionsOk = $true
     $contextOk = $true
+    $settingsLifecycleOk = $true
 
     foreach ($worktreePath in $WorktreePaths) {
       $wtEntry = [ordered]@{
         WorktreePath        = $worktreePath
         StableRepoPath      = $null
-        JunctionsRetargeted = $false
-        ContextRetargeted   = $false
-        Error               = $null
+        JunctionsRetargeted  = $false
+        ContextRetargeted    = $false
+        AISettingsProcessed  = $false
+        AISettingsDriftClean = $null
+        Error                = $null
       }
 
       if (-not (Test-Path -LiteralPath $worktreePath -PathType Container)) {
@@ -237,6 +246,28 @@ function Set-SprintBoundaryContext {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $wtEntry.Error
       }
 
+      # --- canonical project AI settings ---
+      try {
+        if (-not $SkipAISettingsLifecycle -and $PSCmdlet.ShouldProcess($worktreePath, "$Boundary canonical AI settings lifecycle")) {
+          $settingsLifecycleResult = Invoke-SprintAISettingsLifecycle `
+            -Boundary $Boundary `
+            -TargetRoot $worktreePath `
+            -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath `
+            -Confirm:$false
+          $wtEntry.AISettingsProcessed = $true
+          $wtEntry.AISettingsDriftClean = $settingsLifecycleResult.DriftClean
+          if ($Boundary -eq 'End' -and -not $settingsLifecycleResult.DriftClean) {
+            throw 'AI settings drift requires promote-or-regenerate review before retarget.'
+          }
+        }
+      } catch {
+        $settingsLifecycleOk = $false
+        $settingsError = "AI settings lifecycle failed for '$worktreePath': $($_.Exception.Message)"
+        $wtEntry.Error = @($wtEntry.Error, $settingsError) | Where-Object { $_ } | Join-String -Separator '; '
+        $errors.Add($settingsError)
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $settingsError
+      }
+
       $perWorktree.Add([PSCustomObject]$wtEntry)
     }
 
@@ -253,6 +284,13 @@ function Set-SprintBoundaryContext {
           Action         = ($Boundary -eq 'Start' ? 'Initialize-DownstreamSprintFromSharedVSCode' : 'Reset-DownstreamToSharedVSCodeMain')
           StableByDesign = $false
           Succeeded      = $contextOk
+          Error          = $null
+        })
+      $concerns.Add([PSCustomObject]@{
+          Concern        = 'AISettingsLifecycle'
+          Action         = ($Boundary -eq 'Start' ? 'Materialize project settings' : 'Retarget-or-promote drift audit')
+          StableByDesign = $false
+          Succeeded      = $settingsLifecycleOk
           Error          = $null
         })
     }

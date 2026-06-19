@@ -103,6 +103,7 @@
     'Invoke-FailureAcknowledgedGate', 'Invoke-GitCommit',
     'Invoke-GitPostCheckoutHook', 'Invoke-GitPostCommitHook', 'Invoke-GitPreCommitHook',
     'Invoke-ModuleBuildWithRetry', 'Invoke-MSBuildWithLists',
+    'Invoke-SprintAISettingsLifecycle',
     'Invoke-PairedTierPromotion',
     'Invoke-PromotedModuleTests', 'Invoke-PromotedPackageTests',
     'Invoke-PSModulePesterTests', 'Invoke-PSModulePSScriptAnalyzer',

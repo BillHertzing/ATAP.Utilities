@@ -36,6 +36,9 @@ Describe 'Set-SprintBoundaryContext [public]' {
     Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Reset-DownstreamToSharedVSCodeMain { }
     Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-UserSettingsSymlink { }
     Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-ClaudeSettingsSymlink { }
+    Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAISettingsLifecycle {
+      [PSCustomObject]@{ DriftClean = $true; Results = @(); ChangedCount = 0 }
+    }
   }
 
   Context 'Parameter validation' {
@@ -80,6 +83,8 @@ Describe 'Set-SprintBoundaryContext [public]' {
         -ParameterFilter { $SharedVSCodeWorktreePath -eq $script:svSprint }
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-ClaudeSettingsSymlink -Times 1 -Exactly -Scope It `
         -ParameterFilter { $SharedVSCodeWorktreePath -eq $script:svSprint }
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAISettingsLifecycle -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $Boundary -eq 'Start' -and $TargetRoot -eq $script:worktree }
     }
   }
 
@@ -106,7 +111,7 @@ Describe 'Set-SprintBoundaryContext [public]' {
   }
 
   Context 'Return contract' {
-    It 'Covers all five named concerns and marks profiles/ConfigRootKeys stable-by-design' {
+    It 'Covers the boundary concerns and marks profiles/ConfigRootKeys stable-by-design' {
       $result = Set-SprintBoundaryContext -Boundary Start `
         -WorktreePaths @($script:worktree) `
         -SharedVSCodeWorktreePath $script:svSprint `
@@ -116,6 +121,7 @@ Describe 'Set-SprintBoundaryContext [public]' {
       $names | Should -Contain 'MachineLinks'
       $names | Should -Contain 'SharedVSCodeSettings'
       $names | Should -Contain 'DownstreamContexts'
+      $names | Should -Contain 'AISettingsLifecycle'
       $names | Should -Contain 'PowerShellProfiles'
       $names | Should -Contain 'ConfigRootKeys'
 
@@ -133,6 +139,8 @@ Describe 'Set-SprintBoundaryContext [public]' {
       $result.PerWorktree[0].StableRepoPath | Should -Be $script:stableRepo
       $result.PerWorktree[0].JunctionsRetargeted | Should -BeTrue
       $result.PerWorktree[0].ContextRetargeted | Should -BeTrue
+      $result.PerWorktree[0].AISettingsProcessed | Should -BeTrue
+      $result.PerWorktree[0].AISettingsDriftClean | Should -BeTrue
     }
 
     It 'Records a missing worktree as an error and continues' {
@@ -167,6 +175,7 @@ Describe 'Set-SprintBoundaryContext [public]' {
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions -Times 0 -Exactly -Scope It
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Initialize-DownstreamSprintFromSharedVSCode -Times 0 -Exactly -Scope It
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-UserSettingsSymlink -Times 0 -Exactly -Scope It
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAISettingsLifecycle -Times 0 -Exactly -Scope It
     }
   }
 }

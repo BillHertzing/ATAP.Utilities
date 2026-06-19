@@ -6,17 +6,18 @@ sprint merges into main. `Set-SprintBoundaryContext`
 (`src/ATAP.Utilities.BuildTooling.PowerShell/public/Set-SprintBoundaryContext.ps1`) is
 the single orchestrator that performs (Start) or reverses (End) the full retarget.
 This document is the source of truth for which concern is retargeted by which worker, and
-why two concerns are intentionally left alone.
+why two concerns are intentionally left alone. Task 10.20.o extends the boundary with canonical project AI-settings materialization and drift review.
 
 This completes task **V4-H03** (Sprint 0007).
 
-## The five concerns
+## Boundary concerns
 
 | Concern | Worker(s) | Start action (→ sprint) | End action (→ stable) | Stable-by-design |
 | --- | --- | --- | --- | --- |
 | Machine links (NTFS junctions) | `Set-WorktreeJunctions` | recreate `.claude` / `.github` / `.vscode` junctions in each sprint worktree, dev-redirected to the SharedVSCode sprint worktree | recreate junctions from the stable repo so they point back to stable SharedVSCode | No |
 | SharedVSCode settings | `Set-UserSettingsSymlink`, `Set-ClaudeSettingsSymlink` | point `%APPDATA%\Code\User\settings.json` and `~/.claude/settings.json` at the sprint worktree's `UserSettings.jsonc` / `claude-settings.json` | point both back at the stable SharedVSCode copies | No |
 | Downstream contexts | `Initialize-DownstreamSprintFromSharedVSCode` (Start) / `Reset-DownstreamToSharedVSCodeMain` (End) | set each `*.code-workspace` `templateRef`/`profile` to the sprint worktree and re-apply hooks / commit template / gitattributes | reset `templateRef` to `main`, `profile` to `default`, re-apply context | No |
+| Canonical project AI settings | `Invoke-SprintAISettingsLifecycle` | render in Antigravity → Codex → Claude Code → Copilot order; real worktrees materialize project scope only | audit each project target as `retarget-clean` or `promote-or-regenerate-review` before link teardown | No |
 | PowerShell profiles | — | none | none | **Yes** |
 | ConfigRootKeys | — | none | none | **Yes** |
 
@@ -71,8 +72,8 @@ when repairing a single host after a partial sprint-start).
   then the two settings symlinks). `SprintStartAgent` names `Set-SprintBoundaryContext`
   `-Boundary Start` as the canonical retargeting entry point and idempotent repair path.
 - **Sprint end.** `SprintEndAgent` calls `Set-SprintBoundaryContext -Boundary End`
-  directly to retarget junctions, settings symlinks, and downstream contexts back to
-  stable before the SharedVSCode sprint worktree is removed.
+  directly to audit canonical project settings, retarget junctions/settings symlinks/downstream
+  contexts back to stable, and block clean teardown when settings require promote/regenerate review.
 
 ## Tests
 
@@ -82,5 +83,5 @@ contract, per-worktree breakdown, missing-worktree error handling, settings-only
 invocation, and `-WhatIf` no-mutation. Run:
 
 ```powershell
-pwsh -Command "Invoke-Pester -Path 'src/ATAP.Utilities.BuildTooling.PowerShell/tests/Unit/Set-SprintBoundaryContext.Tests.ps1' -Output Detailed"
-```
+pwsh -Command "Invoke-Pester -Path 'src/ATAP.Utilities.BuildTooling.PowerShell/tests/Unit/Set-SprintBoundaryContext.Tests.ps1' -Output Minimal"
+  canonical project AI settings through `Initialize-SprintAIAdapters`, then the two settings symlinks).

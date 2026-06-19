@@ -7,6 +7,8 @@ function Initialize-SprintAIAdapters {
   .DESCRIPTION
     Dot-sources Render-AIAdapters.ps1 from the SharedVSCode worktree and invokes it
     to materialize instruction/configuration files into a target sprint worktree.
+    After adapter rendering, canonical project-scope AI settings are materialized
+    through Invoke-SprintAISettingsLifecycle.
   .PARAMETER TargetRoot
     The root path of the target sprint worktree to materialize into.
   .PARAMETER SharedVSCodeWorktreePath
@@ -16,6 +18,9 @@ function Initialize-SprintAIAdapters {
     <SharedVSCodeWorktreePath>/.ai/manifests/instruction-map.json.
   .PARAMETER UpdateManifest
     Switch to update manifest hashes/states in the source manifest.
+  .PARAMETER SkipAISettings
+    Skip canonical project-scope settings materialization. Intended only for
+    diagnostics and narrowly scoped repair workflows.
   .PARAMETER Force
     Switch to force overwrite of existing target files or recreate links.
   #>
@@ -31,6 +36,8 @@ function Initialize-SprintAIAdapters {
     [string]$ManifestPath,
 
     [switch]$UpdateManifest,
+
+    [switch]$SkipAISettings,
 
     [switch]$Force
   )
@@ -121,6 +128,16 @@ function Initialize-SprintAIAdapters {
           $failedTargets = $renderResult.Results | Where-Object { $_.Action -eq 'error' } | ForEach-Object { "$($_.Path): $($_.Message)" }
           throw "Failed to materialize all AI adapters: $($failedTargets -join '; ')"
         }
+
+        $settingsLifecycleResult = $null
+        if (-not $SkipAISettings -and $PSCmdlet.ShouldProcess($TargetRoot, 'Materialize canonical project AI settings')) {
+          $settingsLifecycleResult = Invoke-SprintAISettingsLifecycle `
+            -Boundary Start `
+            -TargetRoot $TargetRoot `
+            -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath `
+            -Confirm:$false
+        }
+        $renderResult | Add-Member -NotePropertyName SettingsLifecycle -NotePropertyValue $settingsLifecycleResult -Force
 
         return $renderResult
       }

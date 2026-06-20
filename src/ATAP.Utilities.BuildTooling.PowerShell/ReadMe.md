@@ -37,6 +37,17 @@ Sprint planning also now has an explicit markdown-to-board path: use
 `Convert-TasksMdToSprintBoard` to regenerate a sprint `TASKS.html` board from the
 authoritative `TASKS.md` file after task edits or status updates.
 
+`New-MarkdownChangeTrackingReport` audits the change-tracking hygiene of a
+documentation tree. It recursively scans `-Path` for `*.md` files, reads the
+first ten lines of each, and flags whether a change-tracking header is present
+(an `<!-- change-tracking:` comment, a `change-tracking:` line, or a
+`last-updated:` line). The result is a single self-contained HTML report written
+to `-Output` (with a sticky folder navigation pane, per-file preview cards, and a
+scanned / tracked / untracked summary banner); all previewed file content is
+HTML-encoded before embedding. Pass `-SolutionDocumentationOnly` to limit the
+scan to `SolutionDocumentation` folders. Per SC-0033, target an `-Output` path
+under the repository `_generated/` folder.
+
 `Invoke-GitCommit` now supports task-scoped grouped commits (Task 9.24).
 A cohesive dirty tree can still produce one Conventional Commit, while mixed
 trees can pass explicit path groups so each group stages only its own paths, runs

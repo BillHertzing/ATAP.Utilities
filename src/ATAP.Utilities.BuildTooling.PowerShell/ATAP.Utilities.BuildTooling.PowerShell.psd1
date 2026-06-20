@@ -114,6 +114,7 @@
     'New-BuildMasterScript', 'New-BundleProjectFiles',
     'New-DocFilesIfNotPresent', 'New-DocFolderIfNotPresent',
     'New-GitHubIssue', 'New-HostSettingsForPackageRepositoryFeeds',
+    'New-MarkdownChangeTrackingReport',
     'New-MockTestFileStructure', 'New-OverviewSprintWorkspace',
     'New-PesterBasicUnitTestTemplate',
     'New-PesterContextBlock', 'New-PesterDataDrivenTestTemplate',

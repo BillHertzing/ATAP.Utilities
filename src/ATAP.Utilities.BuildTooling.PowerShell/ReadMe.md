@@ -33,6 +33,17 @@ preserve/defer surfaces, and all lifecycle evidence/backups belong under
 `_generated/`. Task 10.26.k removed the settings-named transition wrapper; all
 callers now use the adapter lifecycle.
 
+**SprintEnd typed close (Task 10.6).** `Invoke-SprintEndLifecycle` now composes
+structured command-surface, module-promotion/deployment, worktree-state,
+AIAdapter/template reset, GitHub PR/issue, dotted-history, Overview, HANDOFF,
+database/BuildMaster cleanup, and final-boundary phases. PR bodies receive the
+originating issue closing keyword; check results are classified into required,
+informational, and CodeSee planning signals. HANDOFF stable pulls use an R-31
+overlap gate and `pull --ff-only` with editor suppression. Generated
+`.gitattributes` and `.gitconfig.shared` headers are timestamp-free and
+byte-idempotent. SprintEnd never deletes Bitwarden secrets, never removes SQL
+instances, and never invokes a synthetic sprint-completion task.
+
 Sprint planning also now has an explicit markdown-to-board path: use
 `Convert-TasksMdToSprintBoard` to regenerate a sprint `TASKS.html` board from the
 authoritative `TASKS.md` file after task edits or status updates.

@@ -845,8 +845,29 @@ Set-Location -Path $storedInitialDir
 # Set the environment variables for this user
 Write-PSFMessage -FunctionName $fn -Level Debug -Message ('setting environment variables in CurrentUsersAllHostsV7CoreProfile.ps1')
 
-. $(Join-Path $PSHome 'global_EnvironmentVariables.ps1')
-Set-EnvironmentVariablesProcess
+$environmentVariablesProfileCandidates = [System.Collections.Generic.List[string]]::new()
+[void]$environmentVariablesProfileCandidates.Add((Join-Path $PSScriptRoot 'global_EnvironmentVariables.ps1'))
+[void]$environmentVariablesProfileCandidates.Add((Join-Path $PSHome 'global_EnvironmentVariables.ps1'))
+$atapPowerShellModule = Get-Module -Name 'ATAP.Utilities.PowerShell' -ListAvailable -ErrorAction SilentlyContinue |
+  Sort-Object Version -Descending |
+  Select-Object -First 1
+if ($atapPowerShellModule) {
+  [void]$environmentVariablesProfileCandidates.Add(
+    (Join-Path $atapPowerShellModule.ModuleBase 'Profiles\global_EnvironmentVariables.ps1')
+  )
+}
+$environmentVariablesProfilePath = $environmentVariablesProfileCandidates |
+  Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } |
+  Select-Object -First 1
+if ($environmentVariablesProfilePath) {
+  . $environmentVariablesProfilePath
+  Set-EnvironmentVariablesProcess
+} else {
+  Write-PSFMessage -FunctionName $fn -Level Warning -Message (
+    'global_EnvironmentVariables.ps1 was not found beside the profile, under PSHOME, ' +
+    'or in the installed ATAP.Utilities.PowerShell module. Process environment setup was skipped.'
+  )
+}
 Write-PSFMessage -FunctionName $fn -Level Debug -Message ('finished setting environment variables in CurrentUsersAllHostsV7CoreProfile.ps1')
 
 # VSCExtensionProject* env vars (VSCExtensionProjectName / *RelativePath / *AbsolutePath)

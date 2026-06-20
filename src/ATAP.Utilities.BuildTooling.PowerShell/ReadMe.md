@@ -49,6 +49,17 @@ module-relative Flyway or `DropAndCreateDatabase.sql` content. Use
 granular recovery, and `-IncludeRepos` to provision repositories that have no
 task-board marker.
 
+**Stage 1 creates a content-fresh sprint task set (Task 10.11).** After the
+`_Planning` worktree exists, `New-SprintStage1` reads the immediately prior
+sprint's task markdown only to validate and recover its stream structure. It
+generates `Tasks.Sprint<NNNN>.md` with current-sprint scaffold text and no prior
+task content, calls `Convert-TasksMdToSprintBoard` to synchronize
+`Tasks.Sprint<NNNN>.html`, creates empty
+`Tasks.Sprint<NNNN>.Accomplished.html` and
+`Tasks.Sprint<NNNN>.ProceduralDetails.html` companions, and removes the
+prior-sprint root artifacts after templating. Legacy `TASKS.md` and
+`TasksSprint<NNNN>.md` inputs remain accepted for the first transition.
+
 `New-MarkdownChangeTrackingReport` audits the change-tracking hygiene of a
 documentation tree. It recursively scans `-Path` for `*.md` files, reads the
 first ten lines of each, and flags whether a change-tracking header is present

@@ -244,25 +244,39 @@ function New-SprintStage2 {
       if ([string]::IsNullOrWhiteSpace($planningWt)) {
         throw 'Stage1Result.planning.worktreePath is missing and -TasksFilePath was not supplied.'
       }
-      $TasksFilePath = Join-Path $planningWt "TasksSprint$sprintNum.md"
+      $currentTasksFilePath = Join-Path $planningWt "Tasks.Sprint$sprintNum.md"
+      $legacyTasksFilePath = Join-Path $planningWt "TasksSprint$sprintNum.md"
+      $TasksFilePath = if (Test-Path -LiteralPath $currentTasksFilePath -PathType Leaf) {
+        $currentTasksFilePath
+      } else {
+        $legacyTasksFilePath
+      }
     }
 
-    if (-not (Test-Path $TasksFilePath)) {
-      throw "TasksSprint$sprintNum.md not found at $TasksFilePath"
+    if (-not (Test-Path -LiteralPath $TasksFilePath -PathType Leaf)) {
+      throw "Sprint task markdown was not found at $TasksFilePath"
     }
 
     $planningWorktreePath = Split-Path -Path $TasksFilePath -Parent
-    $activeTaskBoardPath = Join-Path $planningWorktreePath "TasksSprint$sprintNum.html"
-    $versionedTaskBoards = @(Get-ChildItem -LiteralPath $planningWorktreePath -Filter "TasksSprint${sprintNum}_V*.html" -File -ErrorAction SilentlyContinue |
-        Sort-Object Name -Descending)
+    $currentTaskBoardPath = Join-Path $planningWorktreePath "Tasks.Sprint$sprintNum.html"
+    $legacyTaskBoardPath = Join-Path $planningWorktreePath "TasksSprint$sprintNum.html"
+    $activeTaskBoardPath = if (Test-Path -LiteralPath $currentTaskBoardPath -PathType Leaf) {
+      $currentTaskBoardPath
+    } else {
+      $legacyTaskBoardPath
+    }
+    $versionedTaskBoards = @(
+      @(Get-ChildItem -LiteralPath $planningWorktreePath -Filter "Tasks.Sprint${sprintNum}.V*.html" -File -ErrorAction SilentlyContinue)
+      @(Get-ChildItem -LiteralPath $planningWorktreePath -Filter "TasksSprint${sprintNum}_V*.html" -File -ErrorAction SilentlyContinue)
+    ) | Sort-Object Name -Descending
     if ($versionedTaskBoards.Count -gt 0) {
       $activeTaskBoardPath = $versionedTaskBoards[0].FullName
     }
-    $accomplishedPath = Join-Path $planningWorktreePath "Tasks.Accomplished.Sprint$sprintNum.html"
-    $proceduralDetailsPath = Join-Path $planningWorktreePath "Tasks.ProceduralDetails.Sprint$sprintNum.html"
+    $accomplishedPath = Join-Path $planningWorktreePath "Tasks.Sprint$sprintNum.Accomplished.html"
+    $proceduralDetailsPath = Join-Path $planningWorktreePath "Tasks.Sprint$sprintNum.ProceduralDetails.html"
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-      -Message "Stage 2 repository discovery reads TasksSprint$sprintNum.md at '$TasksFilePath'. Keep it synchronized with the active task board '$activeTaskBoardPath' and companion files '$accomplishedPath' / '$proceduralDetailsPath'."
+      -Message "Stage 2 repository discovery reads '$([System.IO.Path]::GetFileName($TasksFilePath))' at '$TasksFilePath'. Keep it synchronized with the active task board '$activeTaskBoardPath' and companion files '$accomplishedPath' / '$proceduralDetailsPath'."
 
     # Task 10.5: agent shells do not reliably inherit the workstation profile.
     # Bootstrap the canonical ConfigRootKeys + host settings before Stage 2

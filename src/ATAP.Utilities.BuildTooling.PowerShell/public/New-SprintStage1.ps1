@@ -79,18 +79,23 @@ function New-SprintStage1 {
     }
 
     # --- Resolve configuration via Get-PVal (FSS-02): param > env > settings >
-    #     documented default. This replaces the hard-coded parameter defaults and
-    #     the brittle OverView.code-workspace githubOwner read. Get-PVal raises a
-    #     loud-failure guard when no settings source is loaded (tests / no-profile
-    #     shells), so each lookup is wrapped and degrades to the default rather
-    #     than aborting sprint start. ---
+    #     documented default. Get-PVal raises a loud-failure guard when no settings
+    #     source is loaded (tests / no-profile shells), so each lookup is wrapped
+    #     and degrades to the default rather than aborting sprint start.
+    #     Task 10.2: the documented Owner default is read from
+    #     OverView.code-workspace githubOwner (the file in the folder above the
+    #     stable worktrees), falling back to $env:USERNAME only when that file or
+    #     key is absent — so a no-Owner dry run resolves the real org owner. ---
     $getPValAvailable = [bool](Get-Command -Name 'Get-PVal' -ErrorAction SilentlyContinue)
     $proGetBaseUrlKey = if ($global:configRootKeys -and $global:configRootKeys['ProGetBaseUrlConfigRootKey']) {
       $global:configRootKeys['ProGetBaseUrlConfigRootKey']
     } else { 'ProGetBaseUrl' }
 
     $gitRootDefault = 'C:\Dropbox\whertzing\GitHub'
-    $ownerDefault = $env:USERNAME
+    $gitRootForOwner = if (-not [string]::IsNullOrWhiteSpace($GitRoot)) { $GitRoot } else { $gitRootDefault }
+    $ownerDefault = if (Get-Command -Name 'Get-GitHubOwnerFromWorkspace' -ErrorAction SilentlyContinue) {
+      Get-GitHubOwnerFromWorkspace -GitRoot $gitRootForOwner -Fallback $env:USERNAME
+    } else { $env:USERNAME }
     $proGetBaseUrlDefault = 'http://localhost:50000'
 
     if ($getPValAvailable) {
@@ -113,6 +118,12 @@ function New-SprintStage1 {
     if ([string]::IsNullOrWhiteSpace($Owner)) { $Owner = $ownerDefault }
     if ([string]::IsNullOrWhiteSpace($ProGetBaseUrl)) { $ProGetBaseUrl = $proGetBaseUrlDefault }
     $ProGetBaseUrl = $ProGetBaseUrl.TrimEnd('/')
+
+    # Task 10.2: surface the resolved GitHub owner so a no-Owner dry run shows the
+    # value read from OverView.code-workspace (e.g. 'BillHertzing') before any
+    # gh issue create / ShouldProcess target string is evaluated.
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+      -Message "Resolved GitHub owner '$Owner' (no-Owner default sourced from OverView.code-workspace githubOwner)."
 
     # --- Ensure external dependencies are available ---
     if (-not $DryRun) {
@@ -142,6 +153,7 @@ function New-SprintStage1 {
       nextSprintNumber     = $null
       previousSprintNumber = $null
       dryRun               = $DryRun.IsPresent
+      owner                = $Owner
       sharedVSCode         = @{
         issueNumber  = $null
         branchName   = $null

@@ -17,6 +17,7 @@ BeforeAll {
     'Set-ClaudeSettingsSymlink'
     'Set-UserSettingsSymlink'
     'Get-SprintTaskRepositoryNames'
+    'Initialize-ATAPConfigurationGlobals'
     'New-DeveloperSqlServerInstances'
     'Reset-SprintDatabases'
     'Set-BuildMasterSprintVariables'
@@ -78,6 +79,27 @@ BeforeAll {
   function global:Get-SprintTaskRepositoryNames {
     param($TasksContent, $ExcludeRepos)
     , @('ATAP.Utilities')
+  }
+
+  function global:Initialize-ATAPConfigurationGlobals {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param([string]$RepositoryRoot)
+
+    $global:dryRunExternalCalls.Add('Initialize-ATAPConfigurationGlobals') | Out-Null
+    $global:configRootKeys = @{ DatabasesCollectionConfigRootKey = 'Databases' }
+    $global:settings = @{
+      Databases = @{
+        ATAPUtilities = @{
+          DatabaseHost     = 'localhost'
+          ConnectionMethod = 'tcp'
+        }
+      }
+    }
+    [PSCustomObject]@{
+      Initialized         = $true
+      ConfigRootKeysCount = 1
+      SettingsCount       = 1
+    }
   }
 
   function global:New-DeveloperSqlServerInstances {
@@ -191,7 +213,7 @@ Describe 'New-SprintStage dry-run support' -Tag 'Unit' {
     $global:dryRunExternalCalls.Count | Should -Be 0
   }
 
-  It 'throws an actionable setup command before side effects when config globals are missing' {
+  It 'bootstraps missing configuration globals before the SQL instance guard' {
     $tasksPath = Join-Path $script:tempGitRoot 'TASKS.md'
     Set-Content -LiteralPath $tasksPath -Encoding UTF8 -Value @(
       '- [ ] **Task 7.99** [ATAP.Utilities] [Junior] - Test no-profile guard'
@@ -214,12 +236,20 @@ Describe 'New-SprintStage dry-run support' -Tag 'Unit' {
     try {
       $global:configRootKeys = $null
       $global:settings = $null
+      Mock -CommandName Get-Service -MockWith { $null } -ParameterFilter { $Name -like 'MSSQL$*' }
 
       {
-        New-SprintStage2 -Stage1Result $stage1 -TasksFilePath $tasksPath -GitRoot $script:tempGitRoot -Owner 'owner'
-      } | Should -Throw -ExpectedMessage '*Set-GlobalConfigRootKeys*Get-HostSettings*'
+        New-SprintStage2 `
+          -Stage1Result $stage1 `
+          -TasksFilePath $tasksPath `
+          -GitRoot $script:tempGitRoot `
+          -Owner 'owner'
+      } | Should -Throw -ExpectedMessage '*developer onboarding SQL Server instance setup*'
 
-      $global:dryRunExternalCalls.Count | Should -Be 0
+      $global:dryRunExternalCalls | Should -Contain 'Initialize-ATAPConfigurationGlobals'
+      $global:dryRunExternalCalls | Should -Not -Contain 'gh'
+      $global:configRootKeys['DatabasesCollectionConfigRootKey'] | Should -Be 'Databases'
+      $global:settings.ContainsKey('Databases') | Should -BeTrue
     } finally {
       $global:configRootKeys = $oldConfigRootKeys
       $global:settings = $oldSettings

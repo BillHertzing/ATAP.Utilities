@@ -63,6 +63,13 @@ function New-SprintStage2 {
   .PARAMETER ExcludeRepos
     Repo names to skip even if they appear in TASKS.md.
     Defaults to @('_Planning', 'SharedVSCode', 'Cross-Repo').
+  .PARAMETER IncludeRepos
+    Additional repository names to provision even when they are not referenced
+    by a task-board [RepoName] marker. ExcludeRepos still takes precedence.
+  .PARAMETER SkipDatabaseReset
+    Skips the Dev/Exp SQL Server instance preflight and the destructive
+    Reset-SprintDatabases step. Intended for granular recovery of the remaining
+    Stage 2 work after database readiness has been handled separately.
   .PARAMETER ProGetBaseUrl
     Base URL for the ProGet server.
     Defaults to 'http://localhost:50000'.
@@ -103,11 +110,16 @@ function New-SprintStage2 {
 
     [string[]]$ExcludeRepos = @('_Planning', 'SharedVSCode', 'Cross-Repo'),
 
+    [ValidatePattern('^[A-Za-z0-9._-]+$')]
+    [string[]]$IncludeRepos = @(),
+
     [string]$ProGetBaseUrl,
 
     [string]$BuildMasterBaseUrl,
 
     [switch]$Force,
+
+    [switch]$SkipDatabaseReset,
 
     [switch]$DryRun
   )
@@ -186,6 +198,7 @@ function New-SprintStage2 {
         'Set-ClaudeSettingsSymlink',
         'Set-UserSettingsSymlink',
         'Get-SprintTaskRepositoryNames',
+        'Initialize-ATAPConfigurationGlobals',
         'Reset-SprintDatabases',
         'Set-WorktreeJunctions',
         'Initialize-DownstreamSprintFromSharedVSCode',
@@ -251,32 +264,22 @@ function New-SprintStage2 {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
       -Message "Stage 2 repository discovery reads TasksSprint$sprintNum.md at '$TasksFilePath'. Keep it synchronized with the active task board '$activeTaskBoardPath' and companion files '$accomplishedPath' / '$proceduralDetailsPath'."
 
-    # Stage 2 reads host-specific database and package settings. Fail early so
-    # agent/no-profile shells do not create partial sprint infrastructure.
+    # Task 10.5: agent shells do not reliably inherit the workstation profile.
+    # Bootstrap the canonical ConfigRootKeys + host settings before Stage 2
+    # reads any host-specific values. Prefer the current stable ATAP.Utilities
+    # source here; after the sprint worktree is created, the DB reset explicitly
+    # uses that newer worktree for SQL/Flyway content.
     if (-not $DryRun) {
-      $missingGlobalConfig = [System.Collections.Generic.List[string]]::new()
-
-      if ($null -eq $global:configRootKeys -or
-        -not ($global:configRootKeys -is [hashtable]) -or
-        $global:configRootKeys.Count -eq 0) {
-        [void]$missingGlobalConfig.Add('$global:configRootKeys')
-      }
-
-      if ($null -eq $global:settings -or
-        -not ($global:settings -is [hashtable]) -or
-        $global:settings.Count -eq 0) {
-        [void]$missingGlobalConfig.Add('$global:settings')
-      }
-
-      if ($missingGlobalConfig.Count -gt 0) {
-        $setupCommand = 'Set-GlobalConfigRootKeys; $global:settings = Get-HostSettings -hostName $env:COMPUTERNAME'
-        throw "New-SprintStage2 requires $($missingGlobalConfig -join ' and ') before it can run. Run the ATAP configuration setup command first: $setupCommand"
-      }
+      $configurationRepositoryRoot = Join-Path $GitRoot 'ATAP.Utilities'
+      Initialize-ATAPConfigurationGlobals `
+        -RepositoryRoot $configurationRepositoryRoot `
+        -Confirm:$false | Out-Null
     }
 
     # Sprint start no longer creates SQL Server instances. Fail before creating
     # GitHub issues/worktrees if the permanent developer instances are missing.
-    if (-not $DryRun) {
+    # Task 10.4: -SkipDatabaseReset bypasses this guard as well as the reset.
+    if (-not $DryRun -and -not $SkipDatabaseReset) {
       $requiredSqlInstanceNames = @("Dev$($env:USERNAME)", "Exp$($env:USERNAME)")
       $missingSqlInstances = [System.Collections.Generic.List[string]]::new()
 
@@ -312,7 +315,21 @@ function New-SprintStage2 {
       -Message "Parsing $TasksFilePath for repo references"
 
     $tasksContent = Get-Content -Path $TasksFilePath -ErrorAction Stop
-    $repoNames = @(Get-SprintTaskRepositoryNames -TasksContent $tasksContent -ExcludeRepos $ExcludeRepos)
+    $discoveredRepoNames = @(Get-SprintTaskRepositoryNames -TasksContent $tasksContent -ExcludeRepos $ExcludeRepos)
+    $repoNames = @(
+      foreach ($candidate in (@($discoveredRepoNames) + @($IncludeRepos))) {
+        if ($candidate -is [System.Collections.IEnumerable] -and $candidate -isnot [string]) {
+          foreach ($nestedCandidate in $candidate) {
+            [string]$nestedCandidate
+          }
+        } else {
+          [string]$candidate
+        }
+      }
+    ) | Where-Object {
+      -not [string]::IsNullOrWhiteSpace($_) -and
+      $ExcludeRepos -notcontains $_
+    } | Select-Object -Unique
 
     if ($repoNames.Count -eq 0) {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
@@ -595,43 +612,63 @@ function New-SprintStage2 {
     $dbResetResults = $null
     $dbResetError = $null
 
-    # Read database settings for the reset call. There is ONE database,
-    # ATAPUtilities (D-1), containing the ATAPUtilities, AceCommander, Tags and
-    # Gmail schemas — confirmed by
-    # ATAP.Utilities/Database/Flyway/SQL/V00.01.000010__Create_ATAPUtilities_Core_Schema.sql.
-    # The Databases collection is a structured host setting, so it is read
-    # directly (the same way Reset-SprintDatabases reads it) rather than via the
-    # scalar Get-PVal path used for GitRoot/Owner/base URLs.
-    $dbInstHost = 'localhost'
-    $dbInstConnMethod = 'tcp'
-    $dbInstPort = $null
-    $databasesKey2 = if ($global:configRootKeys) { $global:configRootKeys['DatabasesCollectionConfigRootKey'] } else { $null }
-    if ($databasesKey2 -and $global:settings -and $global:settings.ContainsKey($databasesKey2)) {
-      $dbColl2 = $global:settings[$databasesKey2]
-      $atapDb2 = if ($dbColl2.ContainsKey('ATAPUtilities')) { $dbColl2['ATAPUtilities'] } else { @{} }
-      if (-not [string]::IsNullOrWhiteSpace($atapDb2['DatabaseHost'])) {
-        $dbInstHost = $atapDb2['DatabaseHost']
+    if ($SkipDatabaseReset) {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+        -Message 'Database reset skipped by explicit -SkipDatabaseReset request.'
+    } else {
+      # Read database settings for the reset call. There is ONE database,
+      # ATAPUtilities (D-1), containing the ATAPUtilities, AceCommander, Tags and
+      # Gmail schemas — confirmed by
+      # ATAP.Utilities/Database/Flyway/SQL/V00.01.000010__Create_ATAPUtilities_Core_Schema.sql.
+      # The Databases collection is a structured host setting, so it is read
+      # directly (the same way Reset-SprintDatabases reads it) rather than via the
+      # scalar Get-PVal path used for GitRoot/Owner/base URLs.
+      $dbInstHost = 'localhost'
+      $dbInstConnMethod = 'tcp'
+      $databasesKey2 = if ($global:configRootKeys) { $global:configRootKeys['DatabasesCollectionConfigRootKey'] } else { $null }
+      if ($databasesKey2 -and $global:settings -and $global:settings.ContainsKey($databasesKey2)) {
+        $dbColl2 = $global:settings[$databasesKey2]
+        $atapDb2 = if ($dbColl2.ContainsKey('ATAPUtilities')) { $dbColl2['ATAPUtilities'] } else { @{} }
+        if (-not [string]::IsNullOrWhiteSpace($atapDb2['DatabaseHost'])) {
+          $dbInstHost = $atapDb2['DatabaseHost']
+        }
+        if (-not [string]::IsNullOrWhiteSpace($atapDb2['ConnectionMethod'])) {
+          $dbInstConnMethod = $atapDb2['ConnectionMethod']
+        }
       }
-      if (-not [string]::IsNullOrWhiteSpace($atapDb2['ConnectionMethod'])) {
-        $dbInstConnMethod = $atapDb2['ConnectionMethod']
-      }
-      if (-not [string]::IsNullOrWhiteSpace($atapDb2['Port'])) {
-        $dbInstPort = $atapDb2['Port']
-      }
-    }
 
-    $dbResetParams = @{
-      DatabaseHost     = $dbInstHost
-      ConnectionMethod = $dbInstConnMethod
-    }
-
-    try {
-      if ($PSCmdlet.ShouldProcess('local SQL Server', 'Reset sprint databases in existing SQL Server instances')) {
-        $dbResetResults = Reset-SprintDatabases @dbResetParams -WhatIf:$WhatIfPreference
+      # Task 10.4: the installed BuildTooling module must drive the current
+      # sprint-worktree Flyway/provisioning sources, never its module-relative
+      # path or a stale path retained in host settings.
+      $atapUtilitiesRepoResult = $repoResults |
+        Where-Object {
+          $_.repoName -eq 'ATAP.Utilities' -and
+          -not [string]::IsNullOrWhiteSpace($_.worktreePath) -and
+          (Test-Path -LiteralPath $_.worktreePath -PathType Container)
+        } |
+        Select-Object -First 1
+      $databaseRepositoryRoot = if ($null -ne $atapUtilitiesRepoResult) {
+        $atapUtilitiesRepoResult.worktreePath
+      } else {
+        Join-Path $GitRoot 'ATAP.Utilities'
       }
-    } catch {
-      $dbResetError = "Failed to reset sprint databases. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $dbResetError
+      $provisioningScriptsPath = Join-Path $databaseRepositoryRoot 'src\ATAP.Utilities.DatabaseManagement\SharedSQL'
+
+      $dbResetParams = @{
+        DatabaseHost           = $dbInstHost
+        ConnectionMethod       = $dbInstConnMethod
+        RepositoryRoot         = $databaseRepositoryRoot
+        ProvisioningScriptsPath = $provisioningScriptsPath
+      }
+
+      try {
+        if ($PSCmdlet.ShouldProcess('local SQL Server', 'Reset sprint databases in existing SQL Server instances')) {
+          $dbResetResults = Reset-SprintDatabases @dbResetParams -Confirm:$false -WhatIf:$WhatIfPreference
+        }
+      } catch {
+        $dbResetError = "Failed to reset sprint databases. Exception: $($_.Exception.Message)"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $dbResetError
+      }
     }
 
     # ===================================================================

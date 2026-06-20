@@ -37,6 +37,18 @@ Sprint planning also now has an explicit markdown-to-board path: use
 `Convert-TasksMdToSprintBoard` to regenerate a sprint `TASKS.html` board from the
 authoritative `TASKS.md` file after task edits or status updates.
 
+Stage 2 database startup is now safe for non-interactive agent shells (Tasks
+10.4 and 10.5). `Test-SprintPrerequisites` and `New-SprintStage2` call the
+source-first `Initialize-ATAPConfigurationGlobals` helper when
+`$global:configRootKeys` or `$global:settings` is absent or incomplete. The
+normal reset path passes the newly created ATAP.Utilities worktree root and its
+current `SharedSQL` provisioning folder to `Reset-SprintDatabases`, with
+`-Confirm:$false`, so an installed BuildTooling module cannot fall back to stale
+module-relative Flyway or `DropAndCreateDatabase.sql` content. Use
+`-SkipDatabaseReset` to bypass both the Dev/Exp instance guard and reset during
+granular recovery, and `-IncludeRepos` to provision repositories that have no
+task-board marker.
+
 `New-MarkdownChangeTrackingReport` audits the change-tracking hygiene of a
 documentation tree. It recursively scans `-Path` for `*.md` files, reads the
 first ten lines of each, and flags whether a change-tracking header is present

@@ -158,6 +158,31 @@ Describe 'Reset-SprintDatabases [public]' {
     }
   }
 
+  It 'prefers an explicitly supplied current provisioning-script path over stale settings' {
+    $currentProvisioningPath = Join-Path $script:tempRepoRoot 'src\ATAP.Utilities.DatabaseManagement\SharedSQL'
+    $settings = @{
+      ATAPUtilities = @{
+        Development = @{
+          ProvisioningScriptsPath = 'C:\stale-installed-module\SharedSQL'
+        }
+      }
+    }
+
+    Reset-SprintDatabases `
+      -InstanceNames @('Devtester') `
+      -Databases @('ATAPUtilities') `
+      -Settings $settings `
+      -FlywayBasePath $script:flywayBase `
+      -ProvisioningScriptsPath $currentProvisioningPath `
+      -RepositoryRoot $script:tempRepoRoot `
+      -Confirm:$false | Out-Null
+
+    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -Exactly -ParameterFilter {
+      $ProvisioningScriptsPath -eq $currentProvisioningPath -and
+      $RepositoryRoot -eq $script:tempRepoRoot
+    }
+  }
+
   It 'uses split master and database connection-string secret names from per-database settings' {
     $settingsProvisioningPath = Join-Path $script:tempRepoRoot 'settings-shared-sql'
     $settingsFlywayBasePath = Join-Path $script:tempRepoRoot 'settings-flyway'

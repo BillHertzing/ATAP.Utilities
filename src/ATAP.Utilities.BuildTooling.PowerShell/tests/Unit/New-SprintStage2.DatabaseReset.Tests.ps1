@@ -13,6 +13,7 @@ BeforeAll {
     'Set-ClaudeSettingsSymlink',
     'Set-UserSettingsSymlink',
     'Get-SprintTaskRepositoryNames',
+    'Initialize-ATAPConfigurationGlobals',
     'Set-BuildMasterSprintVariables',
     'New-SprintBitwardenSecrets',
     'Reset-SprintDatabases',
@@ -66,6 +67,32 @@ BeforeAll {
     , @('ATAP.Utilities')
   }
 
+  function global:Initialize-ATAPConfigurationGlobals {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param([string]$RepositoryRoot)
+
+    $global:stage2DatabaseResetCalls.Add('Initialize-ATAPConfigurationGlobals') | Out-Null
+    if (-not ($global:configRootKeys -is [hashtable]) -or $global:configRootKeys.Count -eq 0) {
+      $global:configRootKeys = @{ DatabasesCollectionConfigRootKey = 'Databases' }
+    }
+    if (-not ($global:settings -is [hashtable]) -or $global:settings.Count -eq 0) {
+      $global:settings = @{
+        Databases = @{
+          ATAPUtilities = @{
+            DatabaseHost     = 'localhost'
+            ConnectionMethod = 'tcp'
+          }
+        }
+      }
+    }
+
+    [PSCustomObject]@{
+      Initialized         = $true
+      ConfigRootKeysCount = $global:configRootKeys.Count
+      SettingsCount       = $global:settings.Count
+    }
+  }
+
   function global:Set-BuildMasterSprintVariables {
     $global:stage2DatabaseResetCalls.Add('Set-BuildMasterSprintVariables') | Out-Null
     [PSCustomObject]@{ variablesSet = @('SprintNumber'); errors = @() }
@@ -77,12 +104,18 @@ BeforeAll {
   }
 
   function global:Reset-SprintDatabases {
+    [CmdletBinding(SupportsShouldProcess = $true)]
     param(
       [string]$DatabaseHost,
       [string]$ConnectionMethod,
-      [switch]$WhatIf
+      [string]$RepositoryRoot,
+      [string]$ProvisioningScriptsPath
     )
     $global:stage2DatabaseResetCalls.Add('Reset-SprintDatabases') | Out-Null
+    $global:stage2DatabaseResetParameters = @{}
+    foreach ($key in $PSBoundParameters.Keys) {
+      $global:stage2DatabaseResetParameters[$key] = $PSBoundParameters[$key]
+    }
     @(
       [PSCustomObject]@{ instanceName = 'Devtester'; database = 'ATAPUtilities'; reset = $true; migrated = $true; error = $null }
       [PSCustomObject]@{ instanceName = 'Exptester'; database = 'ATAPUtilities'; reset = $true; migrated = $true; error = $null }
@@ -103,11 +136,13 @@ AfterAll {
     Remove-Item -Path "Function:\$name" -Force -ErrorAction SilentlyContinue
   }
   Remove-Variable -Name stage2DatabaseResetCalls -Scope Global -Force -ErrorAction SilentlyContinue
+  Remove-Variable -Name stage2DatabaseResetParameters -Scope Global -Force -ErrorAction SilentlyContinue
 }
 
 Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
   BeforeEach {
     $global:stage2DatabaseResetCalls = [System.Collections.Generic.List[string]]::new()
+    $global:stage2DatabaseResetParameters = @{}
     $script:tempGitRoot = Join-Path ([System.IO.Path]::GetTempPath()) "stage2_dbreset_$([guid]::NewGuid().ToString('N'))"
     $repoPath = Join-Path $script:tempGitRoot 'ATAP.Utilities'
     New-Item -ItemType Directory -Path (Join-Path $repoPath '.git') -Force | Out-Null
@@ -162,6 +197,11 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
 
     $global:stage2DatabaseResetCalls | Should -Contain 'Reset-SprintDatabases'
     $global:stage2DatabaseResetCalls | Should -Not -Contain 'New-DeveloperSqlServerInstances'
+    $global:stage2DatabaseResetParameters['RepositoryRoot'] |
+      Should -Be (Join-Path $script:tempGitRoot 'ATAP.Utilities-wt-321-Sprint-0008-work-items')
+    $global:stage2DatabaseResetParameters['ProvisioningScriptsPath'] |
+      Should -Be (Join-Path $script:tempGitRoot 'ATAP.Utilities-wt-321-Sprint-0008-work-items\src\ATAP.Utilities.DatabaseManagement\SharedSQL')
+    $global:stage2DatabaseResetParameters['Confirm'] | Should -BeFalse
     $result.infrastructure.PSObject.Properties.Name | Should -Contain 'databaseResets'
     $result.infrastructure.PSObject.Properties.Name | Should -Not -Contain 'databaseInstances'
     $result.infrastructure.databaseResets.Count | Should -Be 2
@@ -183,5 +223,56 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
     $global:stage2DatabaseResetCalls | Should -Not -Contain 'gh'
     $global:stage2DatabaseResetCalls | Should -Not -Contain 'Reset-SprintDatabases'
     $global:stage2DatabaseResetCalls | Should -Not -Contain 'New-DeveloperSqlServerInstances'
+  }
+
+  It 'bootstraps missing configuration globals before Stage 2 side effects' {
+    $global:configRootKeys = $null
+    $global:settings = $null
+
+    $result = New-SprintStage2 `
+      -Stage1Result $script:stage1 `
+      -TasksFilePath $script:tasksPath `
+      -GitRoot $script:tempGitRoot `
+      -Owner 'owner' `
+      -SkipDatabaseReset `
+      -Confirm:$false
+
+    $global:stage2DatabaseResetCalls[0] | Should -Be 'Initialize-ATAPConfigurationGlobals'
+    $global:configRootKeys['DatabasesCollectionConfigRootKey'] | Should -Be 'Databases'
+    $global:settings.ContainsKey('Databases') | Should -BeTrue
+    $result.infrastructure.databaseResets | Should -BeNullOrEmpty
+  }
+
+  It 'skips the SQL instance guard and reset when SkipDatabaseReset is supplied' {
+    Mock -CommandName Get-Service -MockWith { $null } -ParameterFilter { $Name -like 'MSSQL$*' }
+
+    {
+      New-SprintStage2 `
+        -Stage1Result $script:stage1 `
+        -TasksFilePath $script:tasksPath `
+        -GitRoot $script:tempGitRoot `
+        -Owner 'owner' `
+        -SkipDatabaseReset `
+        -Confirm:$false
+    } | Should -Not -Throw
+
+    $global:stage2DatabaseResetCalls | Should -Not -Contain 'Reset-SprintDatabases'
+  }
+
+  It 'provisions IncludeRepos entries that are absent from task-board markers' {
+    New-Item -ItemType Directory -Path (Join-Path $script:tempGitRoot 'ATAP.IAC\.git') -Force | Out-Null
+
+    $result = New-SprintStage2 `
+      -Stage1Result $script:stage1 `
+      -TasksFilePath $script:tasksPath `
+      -GitRoot $script:tempGitRoot `
+      -Owner 'owner' `
+      -IncludeRepos 'ATAP.IAC' `
+      -SkipDatabaseReset `
+      -Confirm:$false
+
+    $result.repoResults.repoName | Should -Contain 'ATAP.Utilities'
+    $result.repoResults.repoName | Should -Contain 'ATAP.IAC'
+    $result.repoResults.Count | Should -Be 2
   }
 }

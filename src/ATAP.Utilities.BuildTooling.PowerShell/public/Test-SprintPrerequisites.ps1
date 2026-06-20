@@ -15,7 +15,8 @@ function Test-SprintPrerequisites {
     machine access token — BW_SESSION is personal-vault-only and is NOT
     required, per SC-0175), git working state of each required sprint worktree
     (no in-progress merge/rebase/cherry-pick/revert/bisect), BuildTooling module
-    importability, existing per-developer SQL Server instances, HEAD
+    importability, self-bootstrap of the ATAP ConfigRootKeys/host-settings
+    globals, existing per-developer SQL Server instances, HEAD
     reachability of the ProGet and BuildMaster base URLs, and — when the sprint
     declared newly built modules via -BuiltModule (Task 9.7) — that each built
     module's Production version is both in the *-stable ProGet feed AND installed
@@ -150,6 +151,7 @@ function Test-SprintPrerequisites {
     foreach ($required in @(
         'Get-BWSAccessToken',
         'Assert-LockFilesClean',
+        'Initialize-ATAPConfigurationGlobals',
         'Test-SprintUrlReachable',
         'Test-SprintModulePromotionDeploy')) {
       if (-not (Get-Command -Name $required -ErrorAction SilentlyContinue)) {
@@ -163,6 +165,32 @@ function Test-SprintPrerequisites {
   process {
     $checks = [ordered]@{}
     $failures = [System.Collections.Generic.List[string]]::new()
+
+    # Task 10.5: repair agent shells that did not inherit the machine/user
+    # profile globals before any settings-backed check runs.
+    try {
+      $configurationResult = Initialize-ATAPConfigurationGlobals -Confirm:$false
+      $checks['ConfigurationGlobals'] = [PSCustomObject]@{
+        Ok                  = $true
+        Detail              = if ($configurationResult.Initialized) {
+          'ATAP configuration globals were initialized for this process'
+        } else {
+          'ATAP configuration globals were already ready'
+        }
+        Initialized         = [bool]$configurationResult.Initialized
+        ConfigRootKeysCount = $configurationResult.ConfigRootKeysCount
+        SettingsCount       = $configurationResult.SettingsCount
+      }
+    } catch {
+      $checks['ConfigurationGlobals'] = [PSCustomObject]@{
+        Ok                  = $false
+        Detail              = "ATAP configuration bootstrap failed: $($_.Exception.Message)"
+        Initialized         = $false
+        ConfigRootKeysCount = 0
+        SettingsCount       = 0
+      }
+      [void]$failures.Add('ConfigurationGlobals')
+    }
 
     $required = [Version]$MinimumPwshVersion
     $actual = $PSVersionTable.PSVersion

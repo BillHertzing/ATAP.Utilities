@@ -4,6 +4,16 @@ BeforeAll {
   Import-Module PSFramework -ErrorAction SilentlyContinue
   Get-Module -Name 'ATAP.Utilities.BuildTooling.PowerShell' | Remove-Module -Force -ErrorAction SilentlyContinue
   Import-Module "$PSScriptRoot\..\..\ATAP.Utilities.BuildTooling.PowerShell.psd1" -Force
+
+  Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell `
+    -CommandName Initialize-ATAPConfigurationGlobals `
+    -MockWith {
+      [PSCustomObject]@{
+        Initialized         = $false
+        ConfigRootKeysCount = 200
+        SettingsCount       = 40
+      }
+    }
 }
 
 Describe 'Test-SprintPrerequisites' -Tag 'Unit' {
@@ -26,7 +36,7 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit' {
     }
 
     It 'Populates every documented check' {
-      $names = @('PwshVersion', 'GhAuth', 'Bitwarden', 'GitRepoState', 'LockFilesClean', 'SqlServerInstances', 'BuildToolingImport', 'ProGetReachable', 'BuildMasterReachable', 'ModulePromotionDeploy')
+      $names = @('ConfigurationGlobals', 'PwshVersion', 'GhAuth', 'Bitwarden', 'GitRepoState', 'LockFilesClean', 'SqlServerInstances', 'BuildToolingImport', 'ProGetReachable', 'BuildMasterReachable', 'ModulePromotionDeploy')
       foreach ($n in $names) {
         $script:result.Checks.PSObject.Properties.Name | Should -Contain $n
       }
@@ -38,6 +48,40 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit' {
       } else {
         $script:result.Failures.Count | Should -BeGreaterThan 0
       }
+    }
+  }
+
+  Context 'Configuration globals bootstrap (Task 10.5)' {
+    It 'runs the bootstrap and records a successful readiness check' {
+      $r = Test-SprintPrerequisites `
+        -RequiredRepoWorktrees @() `
+        -ProGetBaseUrl '' `
+        -BuildMasterBaseUrl '' `
+        -SkipSqlServerInstanceCheck
+
+      $r.Checks.ConfigurationGlobals.Ok | Should -BeTrue
+      $r.Checks.ConfigurationGlobals.Initialized | Should -BeFalse
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell `
+        -CommandName Initialize-ATAPConfigurationGlobals `
+        -Times 1 `
+        -Exactly
+    }
+
+    It 'returns a structured failure when configuration bootstrap fails' {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell `
+        -CommandName Initialize-ATAPConfigurationGlobals `
+        -MockWith { throw 'Host settings unavailable' }
+
+      $r = Test-SprintPrerequisites `
+        -RequiredRepoWorktrees @() `
+        -ProGetBaseUrl '' `
+        -BuildMasterBaseUrl '' `
+        -SkipSqlServerInstanceCheck
+
+      $r.Checks.ConfigurationGlobals.Ok | Should -BeFalse
+      $r.Checks.ConfigurationGlobals.Detail | Should -Match 'Host settings unavailable'
+      $r.Failures | Should -Contain 'ConfigurationGlobals'
+      $r.AllOk | Should -BeFalse
     }
   }
 

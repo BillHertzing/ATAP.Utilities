@@ -202,7 +202,8 @@ function New-SprintStage2 {
         'Reset-SprintDatabases',
         'Set-WorktreeJunctions',
         'Initialize-DownstreamSprintFromSharedVSCode',
-        'Initialize-SprintAIAdapters')) {
+        'Initialize-SprintAIAdapters',
+        'New-OverviewSprintWorkspace')) {
       if (-not (Get-Command -Name $required -ErrorAction SilentlyContinue)) {
         throw "Required command '$required' is not available. The " +
         'ATAP.Utilities.BuildTooling.PowerShell module must be installed and ' +
@@ -543,6 +544,71 @@ function New-SprintStage2 {
       -Message "Downstream repos complete — processed $($repoResults.Count) repo(s)"
 
     # ===================================================================
+    # 5c. Generate and verify the sprint Overview workspace (Task 10.14.a)
+    # OverviewSprintNNNN.code-workspace is the manifest every later step uses to
+    # discover the sprint (Build-CLAUDEPerRepository / CLAUDE.md propagation in
+    # Task 10.3 and other cross-repo tooling). Earlier sprints created it only via
+    # a documentation-only agent step (SprintStartAgent Step 3a), so a live run
+    # that deviated from the runbook left it missing and blocked CLAUDE.md
+    # propagation at Sprint 0010 start (SC-0193). Generating it here — after every
+    # sprint worktree exists (so folder resolution finds them) and before Stage 2
+    # reports success — makes the step unskippable. The verification gate confirms
+    # the file exists and resolves at least one sprint worktree folder.
+    # ===================================================================
+    $overviewWorkspacePath = $null
+    $overviewWorkspaceVerified = $false
+    $overviewWorkspaceError = $null
+    $expectedOverviewPath = Join-Path $GitRoot ('OverviewSprint{0}.code-workspace' -f $sprintNum)
+
+    try {
+      if ($PSCmdlet.ShouldProcess($expectedOverviewPath, 'Generate and verify Overview sprint workspace')) {
+        $overviewResult = New-OverviewSprintWorkspace `
+          -SprintNumber ([int]$sprintNum) `
+          -GitRoot $GitRoot `
+          -DeveloperUsername $env:USERNAME `
+          -BuildMasterBaseUrl $BuildMasterBaseUrl `
+          -ProGetBaseUrl $ProGetBaseUrl `
+          -Confirm:$false `
+          -WhatIf:$WhatIfPreference
+
+        $overviewWorkspacePath = if ($overviewResult -and -not [string]::IsNullOrWhiteSpace($overviewResult.OutputWorkspacePath)) {
+          $overviewResult.OutputWorkspacePath
+        } else {
+          $expectedOverviewPath
+        }
+
+        # --- Verification gate: file exists AND resolves >=1 sprint worktree folder ---
+        if (-not (Test-Path -LiteralPath $overviewWorkspacePath -PathType Leaf)) {
+          throw "Overview sprint workspace was not created at '$overviewWorkspacePath'."
+        }
+
+        $overviewRaw = Get-Content -LiteralPath $overviewWorkspacePath -Raw -ErrorAction Stop
+        $overviewJsonText = $overviewRaw -replace '(?m)//.*$', ''
+        $overviewJsonText = $overviewJsonText -replace ',(\s*[\]}])', '$1'
+        $overviewObj = $overviewJsonText | ConvertFrom-Json -ErrorAction Stop
+
+        $sprintFolderPattern = '-wt-\d+-Sprint-' + $sprintNum + '-work-items$'
+        $resolvedSprintFolders = @(@($overviewObj.folders) |
+            Where-Object { $_.path -match $sprintFolderPattern })
+
+        if ($resolvedSprintFolders.Count -eq 0) {
+          throw "Overview sprint workspace at '$overviewWorkspacePath' resolved no sprint worktree folders matching '*$sprintFolderPattern'."
+        }
+
+        $overviewWorkspaceVerified = $true
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+          -Message "Overview sprint workspace generated and verified at '$overviewWorkspacePath' ($($resolvedSprintFolders.Count) sprint worktree folder(s))."
+      } else {
+        $overviewWorkspacePath = $expectedOverviewPath
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+          -Message "DryRun/WhatIf: Overview sprint workspace generation skipped; would write '$expectedOverviewPath'."
+      }
+    } catch {
+      $overviewWorkspaceError = "Failed to generate or verify the Overview sprint workspace. Exception: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $overviewWorkspaceError
+    }
+
+    # ===================================================================
     # 6. Symlink claude-settings.json
     # ===================================================================
     $claudeSettingsError = $null
@@ -701,7 +767,10 @@ function New-SprintStage2 {
       -BuildMasterVariablesErrors $(if ($buildMasterResult) { $buildMasterResult.errors } else { @() }) `
       -BuildMasterError $buildMasterError `
       -DatabaseResets $(if ($dbResetResults) { $dbResetResults } else { @() }) `
-      -DatabaseResetError $dbResetError
+      -DatabaseResetError $dbResetError `
+      -OverviewWorkspacePath $overviewWorkspacePath `
+      -OverviewWorkspaceVerified $overviewWorkspaceVerified `
+      -OverviewWorkspaceError $overviewWorkspaceError
 
     return $finalResult
   }

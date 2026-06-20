@@ -25,6 +25,14 @@ function New-SprintStage2Result {
     Array of database reset results.
   .PARAMETER DatabaseResetError
     Any error that occurred during database resets.
+  .PARAMETER OverviewWorkspacePath
+    Path to the generated OverviewSprintNNNN.code-workspace file (Task 10.14.a).
+  .PARAMETER OverviewWorkspaceVerified
+    True when the Overview sprint workspace was generated and the verification
+    gate confirmed it exists and resolves at least one sprint worktree folder.
+  .PARAMETER OverviewWorkspaceError
+    Any error that occurred while generating or verifying the Overview sprint
+    workspace.
   .OUTPUTS
     [PSCustomObject]
   .NOTES
@@ -61,7 +69,16 @@ function New-SprintStage2Result {
     [array]$DatabaseResets = @(),
 
     [Parameter(Mandatory=$false)]
-    [string]$DatabaseResetError
+    [string]$DatabaseResetError,
+
+    [Parameter(Mandatory=$false)]
+    [string]$OverviewWorkspacePath,
+
+    [Parameter(Mandatory=$false)]
+    [bool]$OverviewWorkspaceVerified = $false,
+
+    [Parameter(Mandatory=$false)]
+    [string]$OverviewWorkspaceError
   )
 
   begin {
@@ -83,6 +100,9 @@ function New-SprintStage2Result {
         buildMasterVariablesError  = $BuildMasterError
         databaseResets             = $DatabaseResets
         databaseResetError         = $DatabaseResetError
+        overviewWorkspacePath      = $OverviewWorkspacePath
+        overviewWorkspaceVerified  = $OverviewWorkspaceVerified
+        overviewWorkspaceError     = $OverviewWorkspaceError
       }
     }
     return $finalResult

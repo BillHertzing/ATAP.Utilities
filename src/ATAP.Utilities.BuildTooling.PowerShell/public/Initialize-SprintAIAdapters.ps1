@@ -7,8 +7,8 @@ function Initialize-SprintAIAdapters {
   .DESCRIPTION
     Dot-sources Render-AIAdapters.ps1 from the SharedVSCode worktree and invokes it
     to materialize instruction/configuration files into a target sprint worktree.
-    After adapter rendering, canonical project-scope AI settings are materialized
-    through Invoke-SprintAISettingsLifecycle.
+    After instruction adapter rendering, canonical project-scope settings and
+    permissions are materialized through Invoke-SprintAIAdapterLifecycle.
   .PARAMETER TargetRoot
     The root path of the target sprint worktree to materialize into.
   .PARAMETER SharedVSCodeWorktreePath
@@ -18,8 +18,8 @@ function Initialize-SprintAIAdapters {
     <SharedVSCodeWorktreePath>/.ai/manifests/instruction-map.json.
   .PARAMETER UpdateManifest
     Switch to update manifest hashes/states in the source manifest.
-  .PARAMETER SkipAISettings
-    Skip canonical project-scope settings materialization. Intended only for
+  .PARAMETER SkipAIAdapterLifecycle
+    Skip canonical project-scope adapter lifecycle materialization. Intended only for
     diagnostics and narrowly scoped repair workflows.
   .PARAMETER Force
     Switch to force overwrite of existing target files or recreate links.
@@ -37,7 +37,8 @@ function Initialize-SprintAIAdapters {
 
     [switch]$UpdateManifest,
 
-    [switch]$SkipAISettings,
+    [Alias('SkipAISettings')]
+    [switch]$SkipAIAdapterLifecycle,
 
     [switch]$Force
   )
@@ -129,15 +130,16 @@ function Initialize-SprintAIAdapters {
           throw "Failed to materialize all AI adapters: $($failedTargets -join '; ')"
         }
 
-        $settingsLifecycleResult = $null
-        if (-not $SkipAISettings -and $PSCmdlet.ShouldProcess($TargetRoot, 'Materialize canonical project AI settings')) {
-          $settingsLifecycleResult = Invoke-SprintAISettingsLifecycle `
+        $adapterLifecycleResult = $null
+        if (-not $SkipAIAdapterLifecycle -and $PSCmdlet.ShouldProcess($TargetRoot, 'Materialize canonical project AI adapters')) {
+          $adapterLifecycleResult = Invoke-SprintAIAdapterLifecycle `
             -Boundary Start `
             -TargetRoot $TargetRoot `
             -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath `
             -Confirm:$false
         }
-        $renderResult | Add-Member -NotePropertyName SettingsLifecycle -NotePropertyValue $settingsLifecycleResult -Force
+        $renderResult | Add-Member -NotePropertyName AdapterLifecycle -NotePropertyValue $adapterLifecycleResult -Force
+        $renderResult | Add-Member -NotePropertyName SettingsLifecycle -NotePropertyValue $adapterLifecycleResult -Force
 
         return $renderResult
       }

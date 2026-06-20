@@ -26,14 +26,14 @@ Describe 'Initialize-SprintAIAdapters settings integration' {
       $fakeRenderer,
       [Text.UTF8Encoding]::new($false))
     $fakeLifecycle = @(
-      'function Invoke-AISettingsLifecycle {'
+      'function Invoke-AIAdapterLifecycle {'
       '  [CmdletBinding(SupportsShouldProcess)]'
-      '  param($Boundary, $TargetRoot, $SourceRoot, [switch]$FixtureMode, [switch]$AllowUserGlobalWrite, $EvidenceRoot)'
+      '  param($Boundary, $TargetRoot, $SourceRoot, [switch]$FixtureMode, [switch]$AllowUserGlobalWrite, [switch]$CheckpointConfirmed, $EvidenceRoot)'
       '  [pscustomobject]@{ Boundary = $Boundary; TargetRoot = $TargetRoot; DriftClean = $true }'
       '}'
     ) -join "`n"
     [IO.File]::WriteAllText(
-      (Join-Path $script:tools 'Invoke-AISettingsLifecycle.ps1'),
+      (Join-Path $script:tools 'Invoke-AIAdapterLifecycle.ps1'),
       $fakeLifecycle,
       [Text.UTF8Encoding]::new($false))
   }
@@ -44,17 +44,18 @@ Describe 'Initialize-SprintAIAdapters settings integration' {
       -SharedVSCodeWorktreePath $script:source `
       -Confirm:$false
 
-    $result.SettingsLifecycle.Boundary | Should -Be 'Start'
-    $result.SettingsLifecycle.TargetRoot | Should -Be ([IO.Path]::GetFullPath($script:target))
+    $result.AdapterLifecycle.Boundary | Should -Be 'Start'
+    $result.AdapterLifecycle.TargetRoot | Should -Be ([IO.Path]::GetFullPath($script:target))
+    $result.SettingsLifecycle | Should -Be $result.AdapterLifecycle
   }
 
   It 'supports a narrowly scoped settings skip' {
     $result = Initialize-SprintAIAdapters `
       -TargetRoot $script:target `
       -SharedVSCodeWorktreePath $script:source `
-      -SkipAISettings `
+      -SkipAIAdapterLifecycle `
       -Confirm:$false
 
-    $result.SettingsLifecycle | Should -BeNullOrEmpty
+    $result.AdapterLifecycle | Should -BeNullOrEmpty
   }
 }

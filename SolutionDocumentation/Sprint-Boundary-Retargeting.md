@@ -17,7 +17,7 @@ This completes task **V4-H03** (Sprint 0007).
 | Machine links (NTFS junctions) | `Set-WorktreeJunctions` | recreate `.claude` / `.github` / `.vscode` junctions in each sprint worktree, dev-redirected to the SharedVSCode sprint worktree | recreate junctions from the stable repo so they point back to stable SharedVSCode | No |
 | SharedVSCode settings | `Set-UserSettingsSymlink`, `Set-ClaudeSettingsSymlink` | point `%APPDATA%\Code\User\settings.json` and `~/.claude/settings.json` at the sprint worktree's `UserSettings.jsonc` / `claude-settings.json` | point both back at the stable SharedVSCode copies | No |
 | Downstream contexts | `Initialize-DownstreamSprintFromSharedVSCode` (Start) / `Reset-DownstreamToSharedVSCodeMain` (End) | set each `*.code-workspace` `templateRef`/`profile` to the sprint worktree and re-apply hooks / commit template / gitattributes | reset `templateRef` to `main`, `profile` to `default`, re-apply context | No |
-| Canonical project AI settings | `Invoke-SprintAISettingsLifecycle` | render in Antigravity → Codex → Claude Code → Copilot order; real worktrees materialize project scope only | audit each project target as `retarget-clean` or `promote-or-regenerate-review` before link teardown | No |
+| Canonical project AI adapters | `Invoke-SprintAIAdapterLifecycle` | call `Render-AIAdapters -Domain settings,permissions` in Antigravity → Codex → Claude Code → Copilot order; real worktrees materialize project scope only | call `Test-AIAdapterDrift -Domain settings,permissions`; unexplained drift blocks link teardown pending promote/regenerate review | No |
 | PowerShell profiles | — | none | none | **Yes** |
 | ConfigRootKeys | — | none | none | **Yes** |
 

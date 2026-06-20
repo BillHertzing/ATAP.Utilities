@@ -12,13 +12,13 @@ function Set-SprintBoundaryContext {
     orchestrator that performs (or reverses) the full retarget for one or more
     sprint worktrees.
 
-    It covers the original five V4-H03 concerns plus the Task 10.20.o AI settings lifecycle:
+    It covers the original five V4-H03 concerns plus the AI adapter lifecycle:
 
       - machine links (NTFS junctions) ........ Set-WorktreeJunctions (per worktree)
       - SharedVSCode settings ................. Set-UserSettingsSymlink + Set-ClaudeSettingsSymlink (once)
       - downstream contexts ................... Initialize-DownstreamSprintFromSharedVSCode (Start)
                                                 / Reset-DownstreamToSharedVSCodeMain (End) (per worktree)
-      - canonical AI settings ................. Invoke-SprintAISettingsLifecycle (per worktree)
+      - canonical AI adapters ................. Invoke-SprintAIAdapterLifecycle (per worktree)
       - PowerShell profiles ................... stable-by-design, no per-sprint retarget
       - ConfigRootKeys ........................ stable-by-design, no per-sprint retarget
 
@@ -65,8 +65,8 @@ function Set-SprintBoundaryContext {
   .PARAMETER CommitTemplateRelativePath
     Relative path under the SharedVSCode root for the commit template. Passed
     through to the downstream context workers.
-  .PARAMETER SkipAISettingsLifecycle
-    Skip project-scope AI settings materialization/audit. Intended only for
+  .PARAMETER SkipAIAdapterLifecycle
+    Skip project-scope AI adapter materialization/audit. Intended only for
     narrowly scoped repair or diagnostic calls.
   .OUTPUTS
     PSCustomObject with Boundary, DryRun, a per-concern Concerns array, a
@@ -118,7 +118,8 @@ function Set-SprintBoundaryContext {
 
     [string]$CommitTemplateRelativePath = 'GitTemplates\git.commit.template.txt',
 
-    [switch]$SkipAISettingsLifecycle
+    [Alias('SkipAISettingsLifecycle')]
+    [switch]$SkipAIAdapterLifecycle
   )
 
   begin {
@@ -152,7 +153,7 @@ function Set-SprintBoundaryContext {
     # ------------------------------------------------------------------
     $junctionsOk = $true
     $contextOk = $true
-    $settingsLifecycleOk = $true
+    $adapterLifecycleOk = $true
 
     foreach ($worktreePath in $WorktreePaths) {
       $wtEntry = [ordered]@{
@@ -179,6 +180,34 @@ function Set-SprintBoundaryContext {
       $repoName = (Split-Path $worktreePath -Leaf) -replace '-wt-\d+-[Ss]print-\d+-work-items$', ''
       $stableRepoPath = Join-Path $GitRoot $repoName
       $wtEntry.StableRepoPath = $stableRepoPath
+
+      # SprintEnd must pass adapter drift review before any junction or downstream
+      # context teardown occurs. A failed audit leaves the worktree pointed at its
+      # sprint sources so promote/regenerate review can be completed safely.
+      if ($Boundary -eq 'End' -and -not $SkipAIAdapterLifecycle) {
+        try {
+          if ($PSCmdlet.ShouldProcess($worktreePath, 'Audit canonical AI adapter drift before teardown')) {
+            $adapterLifecycleResult = Invoke-SprintAIAdapterLifecycle `
+              -Boundary End `
+              -TargetRoot $worktreePath `
+              -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath `
+              -Confirm:$false
+            $wtEntry.AISettingsProcessed = $true
+            $wtEntry.AISettingsDriftClean = $adapterLifecycleResult.DriftClean
+            if (-not $adapterLifecycleResult.DriftClean) {
+              throw 'AI adapter drift requires promote-or-regenerate review before retarget.'
+            }
+          }
+        } catch {
+          $adapterLifecycleOk = $false
+          $adapterError = "AI adapter lifecycle failed for '$worktreePath': $($_.Exception.Message)"
+          $wtEntry.Error = $adapterError
+          $errors.Add($adapterError)
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $adapterError
+          $perWorktree.Add([PSCustomObject]$wtEntry)
+          continue
+        }
+      }
 
       # --- machine links (junctions) ---
       try {
@@ -246,26 +275,26 @@ function Set-SprintBoundaryContext {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $wtEntry.Error
       }
 
-      # --- canonical project AI settings ---
-      try {
-        if (-not $SkipAISettingsLifecycle -and $PSCmdlet.ShouldProcess($worktreePath, "$Boundary canonical AI settings lifecycle")) {
-          $settingsLifecycleResult = Invoke-SprintAISettingsLifecycle `
-            -Boundary $Boundary `
-            -TargetRoot $worktreePath `
-            -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath `
-            -Confirm:$false
-          $wtEntry.AISettingsProcessed = $true
-          $wtEntry.AISettingsDriftClean = $settingsLifecycleResult.DriftClean
-          if ($Boundary -eq 'End' -and -not $settingsLifecycleResult.DriftClean) {
-            throw 'AI settings drift requires promote-or-regenerate review before retarget.'
+      # SprintStart materializes canonical project adapters after the worktree
+      # links and downstream context point at the sprint SharedVSCode source.
+      if ($Boundary -eq 'Start') {
+        try {
+          if (-not $SkipAIAdapterLifecycle -and $PSCmdlet.ShouldProcess($worktreePath, 'Start canonical AI adapter lifecycle')) {
+            $adapterLifecycleResult = Invoke-SprintAIAdapterLifecycle `
+              -Boundary Start `
+              -TargetRoot $worktreePath `
+              -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath `
+              -Confirm:$false
+            $wtEntry.AISettingsProcessed = $true
+            $wtEntry.AISettingsDriftClean = $adapterLifecycleResult.DriftClean
           }
+        } catch {
+          $adapterLifecycleOk = $false
+          $adapterError = "AI adapter lifecycle failed for '$worktreePath': $($_.Exception.Message)"
+          $wtEntry.Error = @($wtEntry.Error, $adapterError) | Where-Object { $_ } | Join-String -Separator '; '
+          $errors.Add($adapterError)
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $adapterError
         }
-      } catch {
-        $settingsLifecycleOk = $false
-        $settingsError = "AI settings lifecycle failed for '$worktreePath': $($_.Exception.Message)"
-        $wtEntry.Error = @($wtEntry.Error, $settingsError) | Where-Object { $_ } | Join-String -Separator '; '
-        $errors.Add($settingsError)
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $settingsError
       }
 
       $perWorktree.Add([PSCustomObject]$wtEntry)
@@ -287,10 +316,10 @@ function Set-SprintBoundaryContext {
           Error          = $null
         })
       $concerns.Add([PSCustomObject]@{
-          Concern        = 'AISettingsLifecycle'
-          Action         = ($Boundary -eq 'Start' ? 'Materialize project settings' : 'Retarget-or-promote drift audit')
+          Concern        = 'AIAdapterLifecycle'
+          Action         = ($Boundary -eq 'Start' ? 'Materialize project adapters' : 'Retarget-or-promote adapter drift audit')
           StableByDesign = $false
-          Succeeded      = $settingsLifecycleOk
+          Succeeded      = $adapterLifecycleOk
           Error          = $null
         })
     }

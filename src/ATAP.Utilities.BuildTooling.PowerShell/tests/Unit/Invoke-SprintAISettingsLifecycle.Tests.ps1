@@ -3,66 +3,45 @@ BeforeAll {
   Import-Module $script:manifestPath -Force
 }
 
-Describe 'Invoke-SprintAISettingsLifecycle [public]' {
+Describe 'Invoke-SprintAISettingsLifecycle compatibility wrapper' {
   BeforeEach {
-    $script:root = Join-Path $TestDrive 'SharedVSCode'
-    $script:tools = Join-Path $script:root '.ai/tools'
-    New-Item -ItemType Directory -Path $script:tools -Force | Out-Null
-    $fakeLifecycle = @(
-      'function Invoke-AISettingsLifecycle {'
-      '  [CmdletBinding(SupportsShouldProcess)]'
-      '  param($Boundary, $TargetRoot, $SourceRoot, [switch]$FixtureMode, [switch]$AllowUserGlobalWrite, $EvidenceRoot)'
-      '  [pscustomobject]@{'
-      '    Boundary = $Boundary'
-      '    TargetRoot = $TargetRoot'
-      '    SourceRoot = $SourceRoot'
-      '    FixtureMode = [bool]$FixtureMode'
-      '    AllowUserGlobalWrite = [bool]$AllowUserGlobalWrite'
-      '    EvidenceRoot = $EvidenceRoot'
-      '    DriftClean = $true'
-      '  }'
-      '}'
-    ) -join "`n"
-    [IO.File]::WriteAllText(
-      (Join-Path $script:tools 'Invoke-AISettingsLifecycle.ps1'),
-      $fakeLifecycle,
-      [Text.UTF8Encoding]::new($false))
+    Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle {
+      [pscustomobject]@{
+        Boundary = $Boundary
+        TargetRoot = $TargetRoot
+        SharedVSCodeWorktreePath = $SharedVSCodeWorktreePath
+        FixtureMode = [bool]$FixtureMode
+        CheckpointConfirmed = [bool]$CheckpointConfirmed
+        DriftClean = $true
+      }
+    }
   }
 
-  It 'loads the canonical lifecycle from the selected SharedVSCode worktree' {
+  It 'forwards to the adapter lifecycle with compatibility parameters intact' {
     $target = Join-Path $TestDrive 'target'
+    $source = Join-Path $TestDrive 'SharedVSCode'
     $result = Invoke-SprintAISettingsLifecycle `
       -Boundary Start `
       -TargetRoot $target `
-      -SharedVSCodeWorktreePath $script:root `
+      -SharedVSCodeWorktreePath $source `
       -FixtureMode `
       -Confirm:$false
 
     $result.Boundary | Should -Be 'Start'
-    $result.TargetRoot | Should -Be ([IO.Path]::GetFullPath($target))
-    $result.SourceRoot | Should -Be ([IO.Path]::GetFullPath($script:root))
     $result.FixtureMode | Should -BeTrue
-    $result.AllowUserGlobalWrite | Should -BeFalse
+    Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell `
+      Invoke-SprintAIAdapterLifecycle -Times 1 -Exactly -Scope It
   }
 
-  It 'fails clearly when the canonical lifecycle tool is absent' {
-    Remove-Item -LiteralPath (Join-Path $script:tools 'Invoke-AISettingsLifecycle.ps1') -Force
-
-    { Invoke-SprintAISettingsLifecycle `
-        -Boundary End `
-        -TargetRoot (Join-Path $TestDrive 'target') `
-        -SharedVSCodeWorktreePath $script:root `
-        -Confirm:$false } | Should -Throw '*Invoke-AISettingsLifecycle.ps1 not found*'
-  }
-
-  It 'performs no lifecycle call under WhatIf' {
-    $target = Join-Path $TestDrive 'whatif-target'
+  It 'performs no forwarding call under WhatIf' {
     $result = Invoke-SprintAISettingsLifecycle `
       -Boundary Start `
-      -TargetRoot $target `
-      -SharedVSCodeWorktreePath $script:root `
+      -TargetRoot (Join-Path $TestDrive 'whatif-target') `
+      -SharedVSCodeWorktreePath (Join-Path $TestDrive 'SharedVSCode') `
       -WhatIf
 
     $result | Should -BeNullOrEmpty
+    Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell `
+      Invoke-SprintAIAdapterLifecycle -Times 0 -Exactly -Scope It
   }
 }

@@ -20,6 +20,12 @@ directory. Generated `.gitattributes` and `.gitconfig.shared` content also
 replaces any existing generated header before writing a fresh one, so repeated
 retargeting refreshes metadata without stacking header blocks.
 
+SprintStart and SprintEnd now use `Invoke-SprintAIAdapterLifecycle`, which calls
+the SharedVSCode registry-backed settings/permissions renderer and drift audit.
+SprintStart defaults to project-only writes; SprintEnd audits before teardown and
+leaves sprint links intact when drift requires promote/regenerate review. Live
+user/global replacement requires explicit approval and checkpoint confirmation.
+
 Sprint planning also now has an explicit markdown-to-board path: use
 `Convert-TasksMdToSprintBoard` to regenerate a sprint `TASKS.html` board from the
 authoritative `TASKS.md` file after task edits or status updates.

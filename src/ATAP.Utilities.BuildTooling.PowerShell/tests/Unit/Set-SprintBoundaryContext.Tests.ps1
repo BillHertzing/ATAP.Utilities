@@ -36,7 +36,7 @@ Describe 'Set-SprintBoundaryContext [public]' {
     Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Reset-DownstreamToSharedVSCodeMain { }
     Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-UserSettingsSymlink { }
     Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-ClaudeSettingsSymlink { }
-    Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAISettingsLifecycle {
+    Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle {
       [PSCustomObject]@{ DriftClean = $true; Results = @(); ChangedCount = 0 }
     }
   }
@@ -83,12 +83,27 @@ Describe 'Set-SprintBoundaryContext [public]' {
         -ParameterFilter { $SharedVSCodeWorktreePath -eq $script:svSprint }
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-ClaudeSettingsSymlink -Times 1 -Exactly -Scope It `
         -ParameterFilter { $SharedVSCodeWorktreePath -eq $script:svSprint }
-      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAISettingsLifecycle -Times 1 -Exactly -Scope It `
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 1 -Exactly -Scope It `
         -ParameterFilter { $Boundary -eq 'Start' -and $TargetRoot -eq $script:worktree }
     }
   }
 
   Context 'End boundary' {
+    It 'blocks teardown when adapter drift requires review' {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle {
+        [PSCustomObject]@{ DriftClean = $false; Results = @(); ChangedCount = 0 }
+      }
+
+      $result = Set-SprintBoundaryContext -Boundary End `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svStable `
+        -GitRoot $script:gitRoot
+
+      $result.Errors | Should -Match 'promote-or-regenerate review'
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions -Times 0 -Exactly -Scope It
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Reset-DownstreamToSharedVSCodeMain -Times 0 -Exactly -Scope It
+    }
+
     It 'Retargets junctions without a dev-redirect (back to stable)' {
       Set-SprintBoundaryContext -Boundary End `
         -WorktreePaths @($script:worktree) `
@@ -121,7 +136,7 @@ Describe 'Set-SprintBoundaryContext [public]' {
       $names | Should -Contain 'MachineLinks'
       $names | Should -Contain 'SharedVSCodeSettings'
       $names | Should -Contain 'DownstreamContexts'
-      $names | Should -Contain 'AISettingsLifecycle'
+      $names | Should -Contain 'AIAdapterLifecycle'
       $names | Should -Contain 'PowerShellProfiles'
       $names | Should -Contain 'ConfigRootKeys'
 
@@ -175,7 +190,7 @@ Describe 'Set-SprintBoundaryContext [public]' {
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions -Times 0 -Exactly -Scope It
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Initialize-DownstreamSprintFromSharedVSCode -Times 0 -Exactly -Scope It
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-UserSettingsSymlink -Times 0 -Exactly -Scope It
-      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAISettingsLifecycle -Times 0 -Exactly -Scope It
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 0 -Exactly -Scope It
     }
   }
 }

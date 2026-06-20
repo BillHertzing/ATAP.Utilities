@@ -53,6 +53,37 @@ Describe 'Build-CLAUDEPerRepository [public]' {
     Test-Path (Join-Path $script:planningSprint.FullName 'CLAUDE.md') | Should -BeTrue
   }
 
+  It 'reports WrittenPath and ClaudeMdLinkType in RepositoryResults (task 10.14.c - Wrong CLAUDE.md)' {
+    $workspace = Join-Path $script:gitRoot 'OverviewSprint0010.code-workspace'
+    $json = @{
+      folders        = @(
+        @{ path = 'SharedVSCode-wt-48-Sprint-0010-work-items' }
+        @{ path = '_Planning-wt-20-Sprint-0010-work-items' }
+      )
+      sprintEphemeral = @{ sprintNumber = '0010' }
+    } | ConvertTo-Json -Depth 10
+    Set-Content -LiteralPath $workspace -Value $json -Encoding UTF8
+
+    $result = Build-CLAUDEPerRepository -WorktreeRoot $script:planningSprint.FullName
+
+    $result.Success | Should -BeTrue
+
+    # Every processed (non-skipped) repo must report the exact CLAUDE.md path it wrote to.
+    $written = $result.RepositoryResults | Where-Object { -not $_.Skipped -and $_.Success }
+    $written | Should -Not -BeNullOrEmpty
+
+    foreach ($repo in $written) {
+      $repo.WrittenPath | Should -Not -BeNullOrEmpty
+      $repo.WrittenPath | Should -Match 'CLAUDE\.md$'
+      # The written path must end inside the repo's own folder, not inside a .claude junction.
+      $repo.WrittenPath | Should -Not -Match '\.claude'
+      # A plain file has no link type; it must be null or empty.
+      $repo.ClaudeMdLinkType | Should -BeNullOrEmpty
+      # The file must actually exist at the reported path.
+      Test-Path -LiteralPath $repo.WrittenPath | Should -BeTrue
+    }
+  }
+
   It 'writes CLAUDE.md for every repo in a stable (non-sprint) context' {
     $workspace = Join-Path $script:gitRoot 'Overview.code-workspace'
     $json = @{

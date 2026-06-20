@@ -208,12 +208,14 @@ function Build-CLAUDEPerRepository {
         $repoName = Split-Path $repoFullPath -Leaf
 
         $repoResult = [PSCustomObject]@{
-          Repository   = $repoName
-          Path         = $repoFullPath
-          HasLocal     = $false
-          Success      = $false
-          Skipped      = $false
-          ErrorMessage = $null
+          Repository      = $repoName
+          Path            = $repoFullPath
+          HasLocal        = $false
+          Success         = $false
+          Skipped         = $false
+          ErrorMessage    = $null
+          WrittenPath     = $null
+          ClaudeMdLinkType = $null
         }
 
         # Boundary guard: in a sprint context, never write CLAUDE.md into a stable
@@ -292,10 +294,27 @@ function Build-CLAUDEPerRepository {
 
           $claudeMdPath = Join-Path $repoFullPath 'CLAUDE.md'
 
+          # Task 10.14.c (Wrong CLAUDE.md): verify the write target is the literal worktree-root
+          # file, not a junction or symlink pointing elsewhere. Resolve-Path follows junctions,
+          # so $repoFullPath could silently differ from the path the user inspects in VS Code.
+          $claudeMdLinkType = $null
+          if (Test-Path -LiteralPath $claudeMdPath) {
+            $claudeMdItem = Get-Item -LiteralPath $claudeMdPath -ErrorAction SilentlyContinue
+            if ($claudeMdItem) {
+              $claudeMdLinkType = $claudeMdItem.LinkType
+              if ($claudeMdLinkType) {
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "CLAUDE.md at '$claudeMdPath' is a $claudeMdLinkType (Target: $($claudeMdItem.Target)). The write will follow the link and may land in an unexpected location."
+              }
+            }
+          }
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Writing CLAUDE.md for $repoName to: $claudeMdPath (LinkType: $($claudeMdLinkType ?? 'none'))"
+
           if ($PSCmdlet.ShouldProcess($claudeMdPath, 'Write combined CLAUDE.md')) {
-            Set-Content -Path $claudeMdPath -Value $combinedContent -Encoding UTF8 -NoNewline -ErrorAction Stop
+            Set-Content -LiteralPath $claudeMdPath -Value $combinedContent -Encoding UTF8 -NoNewline -ErrorAction Stop
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Wrote CLAUDE.md for $repoName"
             $repoResult.Success = $true
+            $repoResult.WrittenPath = $claudeMdPath
+            $repoResult.ClaudeMdLinkType = $claudeMdLinkType
           }
         } catch {
           $errorMessage = "Failed to build CLAUDE.md for '$repoName': $($_.Exception.Message)"

@@ -30,8 +30,8 @@ The underlying canonical commands are
 `Test-AIAdapterDrift -Domain settings,permissions` at End, in fixed caller order
 Antigravity → Codex → Claude Code → Copilot. Runtime and MCP state remain
 preserve/defer surfaces, and all lifecycle evidence/backups belong under
-`_generated/`. The settings-named lifecycle wrapper is compatibility-only; new
-callers use the adapter lifecycle.
+`_generated/`. Task 10.26.k removed the settings-named transition wrapper; all
+callers now use the adapter lifecycle.
 
 Sprint planning also now has an explicit markdown-to-board path: use
 `Convert-TasksMdToSprintBoard` to regenerate a sprint `TASKS.html` board from the

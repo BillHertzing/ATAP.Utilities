@@ -38,8 +38,8 @@ sprint worktree:
   explicit approval and `-CheckpointConfirmed`; backups/evidence stay beneath
   `_generated/`. Runtime and MCP state remain preserve/defer surfaces.
 
-The settings-named lifecycle command is a temporary compatibility wrapper only;
-new documentation and callers use `Invoke-SprintAIAdapterLifecycle`.
+Task 10.26.k removed the settings-named transition command after parity; all
+documentation and callers use `Invoke-SprintAIAdapterLifecycle`.
 
 ### Why profiles and ConfigRootKeys are stable-by-design
 

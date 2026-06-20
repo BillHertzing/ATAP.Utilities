@@ -6,7 +6,9 @@ sprint merges into main. `Set-SprintBoundaryContext`
 (`src/ATAP.Utilities.BuildTooling.PowerShell/public/Set-SprintBoundaryContext.ps1`) is
 the single orchestrator that performs (Start) or reverses (End) the full retarget.
 This document is the source of truth for which concern is retargeted by which worker, and
-why two concerns are intentionally left alone. Task 10.20.o extends the boundary with canonical project AI-settings materialization and drift review.
+why two concerns are intentionally left alone. Task 10.20.o added canonical
+project AI settings; Task 10.26 consolidated that lifecycle onto the sole
+`Render-AIAdapters` and `Test-AIAdapterDrift` APIs.
 
 This completes task **V4-H03** (Sprint 0007).
 
@@ -20,6 +22,24 @@ This completes task **V4-H03** (Sprint 0007).
 | Canonical project AI adapters | `Invoke-SprintAIAdapterLifecycle` | call `Render-AIAdapters -Domain settings,permissions` in Antigravity → Codex → Claude Code → Copilot order; real worktrees materialize project scope only | call `Test-AIAdapterDrift -Domain settings,permissions`; unexplained drift blocks link teardown pending promote/regenerate review | No |
 | PowerShell profiles | — | none | none | **Yes** |
 | ConfigRootKeys | — | none | none | **Yes** |
+
+## AIAdapter lifecycle contract
+
+`Invoke-SprintAIAdapterLifecycle` is the BuildTooling entry point. It loads the
+SharedVSCode `Invoke-AIAdapterLifecycle` worker from the selected stable or
+sprint worktree:
+
+- **Start:** `Render-AIAdapters -Domain settings,permissions`, fixed caller order
+  Antigravity → Codex → Claude Code → Copilot, project scope by default.
+- **End:** `Test-AIAdapterDrift -Domain settings,permissions` before any junction,
+  settings-link, or downstream-context teardown. Unexplained drift leaves the
+  sprint wiring intact for promote/regenerate review.
+- **Safety:** `-WhatIf` is nonmutating. Live user/global replacement requires
+  explicit approval and `-CheckpointConfirmed`; backups/evidence stay beneath
+  `_generated/`. Runtime and MCP state remain preserve/defer surfaces.
+
+The settings-named lifecycle command is a temporary compatibility wrapper only;
+new documentation and callers use `Invoke-SprintAIAdapterLifecycle`.
 
 ### Why profiles and ConfigRootKeys are stable-by-design
 
@@ -84,4 +104,4 @@ invocation, and `-WhatIf` no-mutation. Run:
 
 ```powershell
 pwsh -Command "Invoke-Pester -Path 'src/ATAP.Utilities.BuildTooling.PowerShell/tests/Unit/Set-SprintBoundaryContext.Tests.ps1' -Output Minimal"
-  canonical project AI settings through `Initialize-SprintAIAdapters`, then the two settings symlinks).
+```

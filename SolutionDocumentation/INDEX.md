@@ -51,9 +51,10 @@ _Teach / Tell how to create software._
 - [Sprint-Boundary Retargeting](Sprint-Boundary-Retargeting.md) — V4-H03 source of
   truth for the `Set-SprintBoundaryContext` orchestrator: which concern (machine
   links, SharedVSCode settings, downstream contexts, registry-backed AI adapters)
-  retargets at sprint start/end via which worker, why adapter drift blocks
-  teardown, and why PowerShell profiles and ConfigRootKeys are stable-by-design
-  no-ops.
+  retargets at sprint start/end via which worker, the sole adapter render/drift
+  APIs and caller order, checkpoint-gated user/global safety, why adapter drift
+  blocks teardown, and why PowerShell profiles and ConfigRootKeys are
+  stable-by-design no-ops.
 - [WSL2 Setup](WSL2Setup.md) — WSL2 provisioning notes for development and
   automation workflows.
 - [ReadMe](ReadMe.md) — Repository overview, prerequisites, and pointers to the

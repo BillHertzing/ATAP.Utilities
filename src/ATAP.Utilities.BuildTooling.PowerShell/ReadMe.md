@@ -25,6 +25,13 @@ the SharedVSCode registry-backed settings/permissions renderer and drift audit.
 SprintStart defaults to project-only writes; SprintEnd audits before teardown and
 leaves sprint links intact when drift requires promote/regenerate review. Live
 user/global replacement requires explicit approval and checkpoint confirmation.
+The underlying canonical commands are
+`Render-AIAdapters -Domain settings,permissions` at Start and
+`Test-AIAdapterDrift -Domain settings,permissions` at End, in fixed caller order
+Antigravity → Codex → Claude Code → Copilot. Runtime and MCP state remain
+preserve/defer surfaces, and all lifecycle evidence/backups belong under
+`_generated/`. The settings-named lifecycle wrapper is compatibility-only; new
+callers use the adapter lifecycle.
 
 Sprint planning also now has an explicit markdown-to-board path: use
 `Convert-TasksMdToSprintBoard` to regenerate a sprint `TASKS.html` board from the

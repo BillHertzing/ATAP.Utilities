@@ -18,9 +18,11 @@ function New-SprintStage1 {
          to the _Planning worktree.
       6. Creates a sprint NuGet.config in the SharedVSCode worktree referencing
          the permanent ProGet feeds and nuget.org.
-      7. Leaves the `_Planning` sprint worktree ready for Step 2 to create the
-         sprint task artifact set: `TasksSprintNNNN.html`, `Tasks.Accomplished.SprintNNNN.html`,
-         `Tasks.ProceduralDetails.SprintNNNN.html`, and the synchronized `TasksSprintNNNN.md`.
+      7. Uses the immediately prior sprint's task markdown as a structure-only
+         template, creates a content-fresh `Tasks.SprintNNNN.md`, synchronizes
+         `Tasks.SprintNNNN.html`, and creates empty-but-structured
+         `Tasks.SprintNNNN.Accomplished.html` and
+         `Tasks.SprintNNNN.ProceduralDetails.html` companion files.
 
     If any step fails the function captures the error into the appropriate field
     of the return object and stops further processing for that repo while still
@@ -138,7 +140,11 @@ function New-SprintStage1 {
     # installed, so the functions this stage calls must resolve by module autoload.
     # A missing command is an environment fault the user must repair — never a
     # silent dot-source fallback from a worktree path.
-    foreach ($required in @('Set-WorktreeJunctions', 'Initialize-DownstreamSprintFromSharedVSCode', 'Initialize-SprintAIAdapters')) {
+    foreach ($required in @(
+        'Set-WorktreeJunctions'
+        'Initialize-DownstreamSprintFromSharedVSCode'
+        'Initialize-SprintAIAdapters'
+        'Convert-TasksMdToSprintBoard')) {
       if (-not (Get-Command -Name $required -ErrorAction SilentlyContinue)) {
         throw "Required command '$required' is not available. The " +
         'ATAP.Utilities.BuildTooling.PowerShell module must be installed and ' +
@@ -462,39 +468,173 @@ function New-SprintStage1 {
       return $result
     }
 
-    # 3g. Rename planning files to sprint-scoped names (FSS-25)
+    # 3g. Create a content-fresh sprint task artifact set from the prior
+    #     sprint's structure-only template (Task 10.11 / FSS-25).
     try {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-        -Message 'Renaming planning files to sprint-scoped names in _Planning worktree'
+        -Message 'Creating the sprint task artifact set from the prior sprint structure'
 
-      $renameMap = @{
-        'TASKS.md'                     = "TasksSprint$sprintNum.md"
-        'TASKS.html'                   = "TasksSprint$sprintNum.html"
-        'Tasks.Accomplished.html'      = "Tasks.Accomplished.Sprint$sprintNum.html"
-        'Tasks.ProceduralDetails.html' = "Tasks.ProceduralDetails.Sprint$sprintNum.html"
+      $artifactNames = [ordered]@{
+        Markdown          = "Tasks.Sprint$sprintNum.md"
+        Board             = "Tasks.Sprint$sprintNum.html"
+        Accomplished      = "Tasks.Sprint$sprintNum.Accomplished.html"
+        ProceduralDetails = "Tasks.Sprint$sprintNum.ProceduralDetails.html"
       }
 
-      foreach ($oldName in $renameMap.Keys) {
-        $oldPath = Join-Path $planWorktreePath $oldName
-        $newName = $renameMap[$oldName]
-        $newPath = Join-Path $planWorktreePath $newName
+      $artifactPaths = [ordered]@{}
+      foreach ($key in $artifactNames.Keys) {
+        $artifactPaths[$key] = Join-Path $planWorktreePath $artifactNames[$key]
+      }
 
-        if ($DryRun) {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-            -Message "[DRY RUN] Would rename $oldPath to $newPath"
-        } elseif (Test-Path $oldPath) {
-          if ($PSCmdlet.ShouldProcess($oldPath, "Rename file to $newPath")) {
-            Rename-Item -Path $oldPath -NewName $newName -Force
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-              -Message "Renamed planning file: $oldName -> $newName"
-          }
-        } else {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-            -Message "Planning file $oldName not found at $oldPath; skipping rename."
+      if ($DryRun) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+          -Message "[DRY RUN] Would generate sprint task artifacts: $($artifactNames.Values -join ', ')"
+      } else {
+        $priorMarkdownCandidates = @(
+          "Tasks.Sprint$prevNum.md"
+          "TasksSprint$prevNum.md"
+          'TASKS.md'
+        )
+        $priorMarkdownPath = $priorMarkdownCandidates |
+          ForEach-Object { Join-Path $planWorktreePath $_ } |
+          Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } |
+          Select-Object -First 1
+
+        if (-not $priorMarkdownPath) {
+          throw "Prior sprint task markdown was not found in '$planWorktreePath'. Expected one of: $($priorMarkdownCandidates -join ', ')."
         }
+
+        $priorMarkdownLines = @(Get-Content -LiteralPath $priorMarkdownPath -Encoding UTF8)
+        foreach ($requiredMarker in @(
+            @{ Name = 'current sprint heading'; Pattern = '^# Current Sprint:\s+' }
+            @{ Name = 'goal section'; Pattern = '^## Goal\s*$' }
+            @{ Name = 'stream section'; Pattern = '^## Stream\s+' })) {
+          if (-not ($priorMarkdownLines | Where-Object { $_ -match $requiredMarker.Pattern } | Select-Object -First 1)) {
+            throw "Prior sprint task template '$priorMarkdownPath' is missing the required $($requiredMarker.Name)."
+          }
+        }
+
+        $priorStreamIds = @(
+          $priorMarkdownLines |
+            Where-Object { $_ -match '^## Stream (?<Id>[A-Za-z0-9]+)\s+[–-]\s+' } |
+            ForEach-Object {
+              if ($_ -match '^## Stream (?<Id>[A-Za-z0-9]+)\s+[–-]\s+') {
+                $Matches['Id']
+              }
+            }
+        )
+        if ($priorStreamIds.Count -eq 0) {
+          throw "Prior sprint task template '$priorMarkdownPath' contains no parseable stream headings."
+        }
+
+        $generatedDate = Get-Date -Format 'yyyy-MM-dd'
+        $sprintDisplayNumber = [int]$sprintNum
+        $freshMarkdownLines = [System.Collections.Generic.List[string]]::new()
+        $freshMarkdownLines.Add("# Current Sprint: Sprint $sprintDisplayNumber - Planning in progress")
+        $freshMarkdownLines.Add('')
+        $freshMarkdownLines.Add("Source: SprintStartAgent structure-only template from Sprint $prevNum ($generatedDate)")
+        $freshMarkdownLines.Add("Last updated: $generatedDate (content-fresh scaffold; finalize during Step 2 planning)")
+        $freshMarkdownLines.Add("Active board: ``$($artifactNames.Board)`` (generated from this authoritative markdown file via ``Convert-TasksMdToSprintBoard``).")
+        $freshMarkdownLines.Add('')
+        $freshMarkdownLines.Add('## Goal')
+        $freshMarkdownLines.Add('')
+        $freshMarkdownLines.Add("Define the Sprint $sprintNum goal during Step 2 planning.")
+        $freshMarkdownLines.Add('')
+        $freshMarkdownLines.Add('---')
+
+        foreach ($streamId in $priorStreamIds) {
+          $freshMarkdownLines.Add('')
+          $freshMarkdownLines.Add("## Stream $streamId - Sprint $sprintNum planning [DRAFT]")
+          $freshMarkdownLines.Add('')
+          $freshMarkdownLines.Add('Generate current-sprint tasks for this stream during Step 2 planning; no prior-sprint task content was carried forward.')
+        }
+        $freshMarkdownLines.Add('')
+
+        if ($PSCmdlet.ShouldProcess($artifactPaths.Markdown, "Generate content-fresh task markdown from '$priorMarkdownPath' structure")) {
+          Set-Content -LiteralPath $artifactPaths.Markdown -Value $freshMarkdownLines -Encoding UTF8
+        }
+
+        if ($PSCmdlet.ShouldProcess($artifactPaths.Board, "Synchronize board from '$($artifactPaths.Markdown)'")) {
+          Convert-TasksMdToSprintBoard `
+            -TasksFilePath $artifactPaths.Markdown `
+            -OutputPath $artifactPaths.Board `
+            -Confirm:$false | Out-Null
+        }
+
+        $accomplishedHtml = @"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint $sprintNum - Accomplished Work &amp; Evidence</title>
+</head>
+<body>
+<header>
+  <h1>Sprint $sprintNum - Accomplished Work &amp; Evidence</h1>
+  <p>Created empty at sprint start on $generatedDate. Append one entry per completed unit of work.</p>
+</header>
+<main class="entries">
+</main>
+</body>
+</html>
+"@
+
+        $proceduralDetailsHtml = @"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint $sprintNum - Procedural Details</title>
+</head>
+<body>
+<header>
+  <h1>Sprint $sprintNum - Procedural Details</h1>
+  <p>Created empty at sprint start on $generatedDate. Add reusable procedures when they change.</p>
+</header>
+<main class="procedures">
+</main>
+</body>
+</html>
+"@
+
+        if ($PSCmdlet.ShouldProcess($artifactPaths.Accomplished, 'Create empty accomplished-work companion')) {
+          Set-Content -LiteralPath $artifactPaths.Accomplished -Value $accomplishedHtml -Encoding UTF8 -NoNewline
+        }
+        if ($PSCmdlet.ShouldProcess($artifactPaths.ProceduralDetails, 'Create empty procedural-details companion')) {
+          Set-Content -LiteralPath $artifactPaths.ProceduralDetails -Value $proceduralDetailsHtml -Encoding UTF8 -NoNewline
+        }
+
+        $priorArtifactCandidates = @(
+          "Tasks.Sprint$prevNum.md"
+          "Tasks.Sprint$prevNum.html"
+          "Tasks.Sprint$prevNum.Accomplished.html"
+          "Tasks.Sprint$prevNum.ProceduralDetails.html"
+          "TasksSprint$prevNum.md"
+          "TasksSprint$prevNum.html"
+          "Tasks.Accomplished.Sprint$prevNum.html"
+          "Tasks.ProceduralDetails.Sprint$prevNum.html"
+          'TASKS.md'
+          'TASKS.html'
+          'Tasks.Accomplished.html'
+          'Tasks.ProceduralDetails.html'
+        )
+
+        foreach ($priorName in $priorArtifactCandidates | Select-Object -Unique) {
+          $priorPath = Join-Path $planWorktreePath $priorName
+          if ((Test-Path -LiteralPath $priorPath -PathType Leaf) -and
+            ($priorPath -notin $artifactPaths.Values) -and
+            $PSCmdlet.ShouldProcess($priorPath, 'Remove prior-sprint task artifact after templating')) {
+            Remove-Item -LiteralPath $priorPath -Force
+          }
+        }
+
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+          -Message "Created content-fresh sprint task artifacts from '$priorMarkdownPath': $($artifactNames.Values -join ', ')"
       }
     } catch {
-      $errorMessage = "Failed to rename planning files. Exception: $($_.Exception.Message)"
+      $errorMessage = "Failed to create sprint task artifacts. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       $result.planning.error = $errorMessage
       return $result
@@ -540,7 +680,7 @@ function New-SprintStage1 {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
       -Message "Sprint Stage 1 complete for sprint $sprintNum"
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-      -Message "Step 2 planning must create or refresh the sprint task artifact set in the _Planning worktree: active board (TasksSprint$sprintNum.html or later TasksSprint${sprintNum}_V*.html), Tasks.Accomplished.Sprint$sprintNum.html, Tasks.ProceduralDetails.Sprint$sprintNum.html, and a synchronized TasksSprint$sprintNum.md."
+      -Message "Step 2 planning must replace the generated scaffold content in Tasks.Sprint$sprintNum.md, then synchronize Tasks.Sprint$sprintNum.html; Tasks.Sprint$sprintNum.Accomplished.html and Tasks.Sprint$sprintNum.ProceduralDetails.html start empty."
 
     return $result
   }

@@ -202,6 +202,8 @@ function Convert-TasksMdToSprintBoard {
         $OutputPath = Join-Path (Split-Path -Path $resolvedTasksFilePath -Parent) 'TASKS.html'
       }
       $resolvedOutputPath = [System.IO.Path]::GetFullPath($OutputPath)
+      $tasksFileName = [System.IO.Path]::GetFileName($resolvedTasksFilePath)
+      $outputFileName = [System.IO.Path]::GetFileName($resolvedOutputPath)
 
       $rawText = Get-Content -LiteralPath $resolvedTasksFilePath -Raw -Encoding UTF8
       $lines = Get-Content -LiteralPath $resolvedTasksFilePath -Encoding UTF8
@@ -334,7 +336,7 @@ function Convert-TasksMdToSprintBoard {
       $generatedDate = Get-Date -Format 'yyyy-MM-dd'
       $sourceText = if ($sourceLine) { Convert-TasksMdToSprintBoardInlineHtml -Text ($sourceLine -replace '^Source:\s*', '') } else { 'Unknown source' }
       $lastUpdatedText = if ($lastUpdatedLine) { Convert-TasksMdToSprintBoardInlineHtml -Text ($lastUpdatedLine -replace '^Last updated:\s*', '') } else { 'No last-updated line recorded' }
-      $subtitle = "$sourceText · $lastUpdatedText · <span class=""mono"">TASKS.html</span> generated from authoritative <span class=""mono"">TASKS.md</span>"
+      $subtitle = "$sourceText · $lastUpdatedText · <span class=""mono"">$([System.Net.WebUtility]::HtmlEncode($outputFileName))</span> generated from authoritative <span class=""mono"">$([System.Net.WebUtility]::HtmlEncode($tasksFileName))</span>"
 
       $htmlTemplate = @'
 <!DOCTYPE html>
@@ -415,7 +417,7 @@ function Convert-TasksMdToSprintBoard {
     @@MISSION_HTML@@
   </div>
   <div id="root"></div>
-  <footer>Sprint board generated @@GENERATED_DATE@@ from authoritative <span class="mono">TASKS.md</span> via <span class="mono">Convert-TasksMdToSprintBoard</span>.</footer>
+  <footer>Sprint board generated @@GENERATED_DATE@@ from authoritative <span class="mono">@@TASKS_FILE_NAME@@</span> via <span class="mono">Convert-TasksMdToSprintBoard</span>.</footer>
 </div>
 <script>
 const STATUS_LABEL={open:"Open",partial:"Partial",closed:"Closed"};
@@ -483,6 +485,7 @@ render();
       $html = $html.Replace('@@SUBTITLE@@', $subtitle)
       $html = $html.Replace('@@MISSION_HTML@@', $missionHtml)
       $html = $html.Replace('@@GENERATED_DATE@@', $generatedDate)
+      $html = $html.Replace('@@TASKS_FILE_NAME@@', [System.Net.WebUtility]::HtmlEncode($tasksFileName))
       $html = $html.Replace('@@STREAMS_JSON@@', $streamsJson)
 
       if ($PSCmdlet.ShouldProcess($resolvedOutputPath, 'Write generated sprint board HTML')) {

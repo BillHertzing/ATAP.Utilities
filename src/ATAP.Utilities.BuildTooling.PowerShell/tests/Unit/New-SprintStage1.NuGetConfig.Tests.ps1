@@ -51,6 +51,8 @@ BeforeAll {
     $global:stage1ExternalCalls.Add('Initialize-SprintAIAdapters') | Out-Null
   }
 
+  . "$PSScriptRoot\..\..\public\Convert-TasksMdToSprintBoard.ps1"
+
   # Dot-source the function definition. This defines New-SprintStage1 and must
   # not execute any Stage 1 work.
   . "$PSScriptRoot\..\..\public\New-SprintStage1.ps1"
@@ -80,8 +82,57 @@ Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit' {
     # Worktrees that the function would normally create via `git worktree add`.
     # Pre-create them so Set-Content on the NuGet.config inside the SharedVSCode
     # worktree succeeds without a real git invocation.
-    New-Item -ItemType Directory -Path (Join-Path $script:tempGitRoot 'SharedVSCode-wt-999-Sprint-0007-work-items') -Force | Out-Null
+    $sharedWorktreePath = Join-Path $script:tempGitRoot 'SharedVSCode-wt-999-Sprint-0007-work-items'
+    New-Item -ItemType Directory -Path $sharedWorktreePath -Force | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $script:tempGitRoot '_Planning-wt-999-Sprint-0007-work-items') -Force | Out-Null
+    Set-Content -LiteralPath (Join-Path $sharedWorktreePath 'NuGet.config.template') -Encoding UTF8 -Value @'
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+    <add key="nuget-experimental" value="${ProGetBaseUrl}/nuget/nuget-experimental/v3/index.json" allowInsecureConnections="true" />
+    <add key="nuget-development" value="${ProGetBaseUrl}/nuget/nuget-development/v3/index.json" allowInsecureConnections="true" />
+    <add key="nuget-integration" value="${ProGetBaseUrl}/nuget/nuget-integration/v3/index.json" allowInsecureConnections="true" />
+    <add key="nuget-qa" value="${ProGetBaseUrl}/nuget/nuget-qa/v3/index.json" allowInsecureConnections="true" />
+    <add key="nuget-production" value="${ProGetBaseUrl}/nuget/nuget-production/v3/index.json" allowInsecureConnections="true" />
+  </packageSources>
+  <packageRestore>
+    <add key="enabled" value="True" />
+    <add key="automatic" value="True" />
+  </packageRestore>
+  <disabledPackageSources>
+    <clear />
+  </disabledPackageSources>
+  <packageSourceMapping>
+    <packageSource key="nuget.org"><package pattern="*" /></packageSource>
+    <packageSource key="nuget-experimental"><package pattern="*" /></packageSource>
+    <packageSource key="nuget-development"><package pattern="*" /></packageSource>
+    <packageSource key="nuget-integration"><package pattern="*" /></packageSource>
+    <packageSource key="nuget-qa"><package pattern="*" /></packageSource>
+    <packageSource key="nuget-production"><package pattern="*" /></packageSource>
+  </packageSourceMapping>
+  <auditSources>
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+  </auditSources>
+</configuration>
+'@
+
+    $priorTasksPath = Join-Path $script:tempGitRoot '_Planning-wt-999-Sprint-0007-work-items' 'TASKS.md'
+    Set-Content -LiteralPath $priorTasksPath -Encoding UTF8 -Value @(
+      '# Current Sprint: Sprint 6 - Prior sprint'
+      ''
+      'Source: unit test'
+      'Last updated: 2026-06-01'
+      ''
+      '## Goal'
+      ''
+      'Prior sprint goal.'
+      ''
+      '## Stream A - Prior work'
+      ''
+      '- [ ] **Task 6.1** [ATAP.Utilities] - Prior task that must not carry forward'
+    )
 
     $script:nugetConfigPath = Join-Path $script:tempGitRoot 'SharedVSCode-wt-999-Sprint-0007-work-items' 'NuGet.config'
   }

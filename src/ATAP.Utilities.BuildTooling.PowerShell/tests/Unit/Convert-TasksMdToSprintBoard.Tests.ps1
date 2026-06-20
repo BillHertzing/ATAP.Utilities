@@ -87,7 +87,7 @@ Keep the board readable.
     $html | Should -Match '8\.20C'
     $html | Should -Match '8\.26'
     $html | Should -Match 'SharedVSCode'
-    $html | Should -Match 'generated from authoritative <span class="mono">TASKS\.md</span>'
+    $html | Should -Match 'EmitData\.TASKS\.html</span> generated from authoritative <span class="mono">EmitData\.TASKS\.md</span>'
   }
 
   It 'Throws when the TASKS.md heading is missing' {

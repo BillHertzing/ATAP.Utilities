@@ -213,6 +213,32 @@ Describe 'New-SprintStage dry-run support' -Tag 'Unit' {
     $global:dryRunExternalCalls.Count | Should -Be 0
   }
 
+  It 'resolves the Tasks.SprintNNNN.md default produced by Stage 1' {
+    $planningWorktreePath = Join-Path $script:tempGitRoot '_Planning-wt-DRYRUN-Sprint-0007-work-items'
+    New-Item -ItemType Directory -Path $planningWorktreePath -Force | Out-Null
+    Set-Content -LiteralPath (Join-Path $planningWorktreePath 'Tasks.Sprint0007.md') -Encoding UTF8 -Value @(
+      '- [ ] **Task 7.99** [ATAP.Utilities] [Junior] - Test current sprint filename'
+    )
+
+    $stage1 = [PSCustomObject]@{
+      nextSprintNumber = '0007'
+      sharedVSCode     = @{
+        issueNumber  = 'DRYRUN'
+        branchName   = 'DRYRUN-Sprint-0007-work-items'
+        worktreePath = (Join-Path $script:tempGitRoot 'SharedVSCode-wt-DRYRUN-Sprint-0007-work-items')
+      }
+      planning         = @{
+        worktreePath = $planningWorktreePath
+      }
+    }
+
+    $result = New-SprintStage2 -Stage1Result $stage1 -GitRoot $script:tempGitRoot -Owner 'owner' -DryRun
+
+    $result.repoResults.Count | Should -Be 1
+    $result.repoResults[0].repoName | Should -Be 'ATAP.Utilities'
+    $global:dryRunExternalCalls.Count | Should -Be 0
+  }
+
   It 'bootstraps missing configuration globals before the SQL instance guard' {
     $tasksPath = Join-Path $script:tempGitRoot 'TASKS.md'
     Set-Content -LiteralPath $tasksPath -Encoding UTF8 -Value @(

@@ -90,6 +90,62 @@ Keep the board readable.
     $html | Should -Match 'EmitData\.TASKS\.html</span> generated from authoritative <span class="mono">EmitData\.TASKS\.md</span>'
   }
 
+  It 'Renders lettered subtasks as separate entries that inherit the umbrella repo' {
+    $tasksMdPath = Join-Path $script:tempDir 'Subtasks.TASKS.md'
+    $outputPath = Join-Path $script:tempDir 'Subtasks.TASKS.html'
+    @'
+# Current Sprint: Sprint 10 - Subtask Check
+
+Source: TEST-0003 (2026-06-20)
+Last updated: 2026-06-20
+
+## Goal
+
+**PRIMARY - Example goal.**
+
+## Stream G - Gap Log [PRIORITY 1]
+
+Umbrella tasks collect lettered subtasks.
+
+- [x] **Task 10.14** [ATAP.Utilities + SharedVSCode] - SprintStart gap log (umbrella)
+  - Background: Gaps surface live and are collected as lettered subtasks.
+  - Status: **Done** (2026-06-20) - all subtasks complete.
+
+  - [x] **Task 10.14.a** - Generate the Overview workspace
+    - Symptom: No workspace existed at sprint start.
+    - Acceptance: A fresh sprint start produces the workspace.
+    - Evidence (2026-06-18): verified via WhatIf run.
+    - See: SC-0193 (logged gap).
+    - Status: **Done** (2026-06-20) - wired into New-SprintStage2.
+
+  - [ ] **Task 10.14.b** - Skip stable worktrees
+    - Acceptance: stable worktree CLAUDE.md left untouched.
+'@ | Set-Content -LiteralPath $tasksMdPath -Encoding UTF8
+
+    $result = Convert-TasksMdToSprintBoard -TasksFilePath $tasksMdPath -OutputPath $outputPath
+    $html = Get-Content -LiteralPath $outputPath -Raw -Encoding UTF8
+
+    # Umbrella + two lettered subtasks = three distinct task entries.
+    $result.TaskCount | Should -Be 3
+    $result.StatusCounts.closed | Should -Be 2
+    $result.StatusCounts.open | Should -Be 1
+    $html | Should -Match '10\.14\.a'
+    $html | Should -Match '10\.14\.b'
+
+    # Subtasks omit the [Repo] tag and must inherit the umbrella's repo.
+    $streamsJson = [regex]::Match(
+      $html,
+      'const STREAMS=(?<json>.*?);\r?\nfunction esc',
+      [System.Text.RegularExpressions.RegexOptions]::Singleline).Groups['json'].Value
+    $parsedStreams = $streamsJson | ConvertFrom-Json
+    $allParsedTasks = @($parsedStreams) | ForEach-Object { $_.tasks }
+    $subtaskA = $allParsedTasks | Where-Object { $_.id -eq '10.14.a' }
+    $subtaskA | Should -Not -BeNullOrEmpty
+    $subtaskA.repo | Should -Be 'ATAP.Utilities + SharedVSCode'
+    # The Acceptance field must not absorb the Evidence/See/Status bullets that follow it.
+    $subtaskA.acc | Should -Be 'A fresh sprint start produces the workspace.'
+  }
+
   It 'Throws when the TASKS.md heading is missing' {
     $tasksMdPath = Join-Path $script:tempDir 'Broken.TASKS.md'
     'No current sprint heading here' | Set-Content -LiteralPath $tasksMdPath -Encoding UTF8

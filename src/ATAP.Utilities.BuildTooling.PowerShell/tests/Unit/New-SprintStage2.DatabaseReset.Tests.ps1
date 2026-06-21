@@ -17,7 +17,8 @@ BeforeAll {
     'Set-BuildMasterSprintVariables',
     'New-SprintBitwardenSecrets',
     'Reset-SprintDatabases',
-    'New-DeveloperSqlServerInstances'
+    'New-DeveloperSqlServerInstances',
+    'New-OverviewSprintWorkspace'
   )
 
   function global:Assert-GitAvailable {
@@ -125,6 +126,29 @@ BeforeAll {
   function global:New-DeveloperSqlServerInstances {
     $global:stage2DatabaseResetCalls.Add('New-DeveloperSqlServerInstances') | Out-Null
     throw 'New-SprintStage2 must not call New-DeveloperSqlServerInstances.'
+  }
+
+  function global:New-OverviewSprintWorkspace {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param(
+      [int]$SprintNumber,
+      [string]$GitRoot,
+      [string]$DeveloperUsername,
+      [string]$BuildMasterBaseUrl,
+      [string]$ProGetBaseUrl
+    )
+    $global:stage2DatabaseResetCalls.Add('New-OverviewSprintWorkspace') | Out-Null
+    $sprintText = '{0:D4}' -f $SprintNumber
+    $outputPath = Join-Path $GitRoot ("OverviewSprint{0}.code-workspace" -f $sprintText)
+    $workspace = [PSCustomObject]@{
+      folders = @([PSCustomObject]@{ path = "ATAP.Utilities-wt-1-Sprint-$sprintText-work-items" })
+    }
+    Set-Content -LiteralPath $outputPath -Value ($workspace | ConvertTo-Json -Depth 10) -Encoding UTF8
+    [PSCustomObject]@{
+      OutputWorkspacePath = $outputPath
+      SprintNumber        = $sprintText
+      FolderCount         = 1
+    }
   }
 
   . "$PSScriptRoot\..\..\public\New-SprintStage2Result.ps1"

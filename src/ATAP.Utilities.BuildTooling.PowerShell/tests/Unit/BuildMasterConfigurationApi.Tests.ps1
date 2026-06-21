@@ -5,6 +5,7 @@ BeforeAll {
   . (Join-Path $publicDir 'New-BuildMasterApplication.ps1')
   . (Join-Path $publicDir 'Set-BuildMasterApplicationVariables.ps1')
   . (Join-Path $publicDir 'Set-BuildMasterSprintVariables.ps1')
+  . (Join-Path $publicDir 'Clear-BuildMasterSprintVariables.ps1')
   . (Join-Path $publicDir 'Set-BuildMasterStableVariables.ps1')
   . (Join-Path $publicDir 'New-BuildMasterScript.ps1')
   . (Join-Path $publicDir 'Remove-BuildMasterScript.ps1')
@@ -443,19 +444,6 @@ Describe 'Deprecated BuildMaster variable cmdlets emit deprecation warnings' -Ta
     Remove-Item -Path 'Function:\Write-PSFMessage' -ErrorAction SilentlyContinue
   }
 
-  It 'Set-BuildMasterSprintVariables emits an Important-level deprecation warning' {
-    Mock Invoke-RestMethod { return @{} }
-
-    Set-BuildMasterSprintVariables -SprintNumber '0007' -WhatIf
-
-    $deprecationWarning = $script:deprecationMessages |
-      Where-Object { $_.Level -eq 'Important' -and $_.Message -like '*DEPRECATED*Set-BuildMasterApplicationVariables*' } |
-      Select-Object -First 1
-
-    $deprecationWarning | Should -Not -BeNullOrEmpty
-    $deprecationWarning.Message | Should -BeLike '*Sprint 0008*'
-  }
-
   It 'Set-BuildMasterStableVariables emits an Important-level deprecation warning' {
     Mock Invoke-RestMethod { return @{} }
 
@@ -467,5 +455,154 @@ Describe 'Deprecated BuildMaster variable cmdlets emit deprecation warnings' -Ta
 
     $deprecationWarning | Should -Not -BeNullOrEmpty
     $deprecationWarning.Message | Should -BeLike '*Sprint 0008*'
+  }
+}
+
+Describe 'Set-BuildMasterSprintVariables application targeting (Task 10.12)' -Tag 'Unit' {
+  BeforeEach {
+    $global:configRootKeys = @{
+      BuildMasterBaseUrlConfigRootKey     = 'BuildMasterBaseUrl'
+      BuildMasterAdminApiKeyConfigRootKey = 'BuildMasterAdminApiKey'
+    }
+    $global:settings = @{
+      BuildMasterBaseUrl     = 'https://buildmaster.example.test'
+      BuildMasterAdminApiKey = 'unit-test-key'
+    }
+    $script:restCalls = [System.Collections.ArrayList]::new()
+  }
+
+  It 'resolves the ATAP.Utilities repo to both BuildMaster applications and never the bare repo name' {
+    Mock Invoke-RestMethod -MockWith {
+      param($Uri, $Method, $Headers, $Body)
+      [void]$script:restCalls.Add([PSCustomObject]@{ Uri = $Uri; Method = $Method; Body = $Body })
+      return @{}
+    }
+
+    $result = Set-BuildMasterSprintVariables `
+      -SprintNumber '0010' `
+      -Username 'whertzing' `
+      -SprintBranchNames @{ 'ATAP.Utilities' = '115-Sprint-0010-work-items' } `
+      -SourcePaths @{ 'ATAP.Utilities' = 'C:\src\ATAP.Utilities-wt-115' }
+
+    $appsTargeted = @($script:restCalls |
+        ForEach-Object { if ($_.Uri -match '/api/variables/application/([^/]+)/') { $Matches[1] } } |
+        Sort-Object -Unique)
+
+    $appsTargeted | Should -Contain 'ATAP.Utilities-CSharp'
+    $appsTargeted | Should -Contain 'ATAP.Utilities-PowerShell'
+    # The bare repo name must NOT be targeted — that is the path that 404s.
+    $appsTargeted | Should -Not -Contain 'ATAP.Utilities'
+
+    # SprintNumber, UserName, SprintBranchName, SourcePath × 2 applications = 8 POSTs.
+    $result.variablesSet.Count | Should -Be 8
+    $result.variablesSet | Should -Contain 'ATAP.Utilities-PowerShell/SourcePath'
+    $result.errors | Should -BeNullOrEmpty
+  }
+
+  It 'does not target AceCommander (or any repo) that is not in the sprint repo set' {
+    Mock Invoke-RestMethod -MockWith {
+      param($Uri, $Method, $Headers, $Body)
+      [void]$script:restCalls.Add([PSCustomObject]@{ Uri = $Uri; Method = $Method; Body = $Body })
+      return @{}
+    }
+
+    Set-BuildMasterSprintVariables `
+      -SprintNumber '0010' `
+      -SprintBranchNames @{ 'ATAP.Utilities' = '115-Sprint-0010-work-items' } | Out-Null
+
+    $aceCalls = @($script:restCalls | Where-Object { $_.Uri -like '*/api/variables/application/AceCommander/*' })
+    $aceCalls.Count | Should -Be 0
+  }
+
+  It 'skips a sprint repository that has no BuildMaster application instead of 404-ing' {
+    Mock Invoke-RestMethod -MockWith {
+      param($Uri, $Method, $Headers, $Body)
+      [void]$script:restCalls.Add([PSCustomObject]@{ Uri = $Uri; Method = $Method; Body = $Body })
+      return @{}
+    }
+
+    $result = Set-BuildMasterSprintVariables `
+      -SprintNumber '0010' `
+      -SprintBranchNames @{
+        'ATAP.Utilities' = '115-Sprint-0010-work-items'
+        '_Planning'      = '20-Sprint-0010-work-items'
+        'SharedVSCode'   = '48-Sprint-0010-work-items'
+      }
+
+    $result.skippedRepositories | Should -Contain '_Planning'
+    $result.skippedRepositories | Should -Contain 'SharedVSCode'
+
+    # No REST call should reference an unmapped repository name.
+    $planningCalls = @($script:restCalls | Where-Object { $_.Uri -like '*_Planning*' -or $_.Uri -like '*SharedVSCode*' })
+    $planningCalls.Count | Should -Be 0
+  }
+
+  It 'sets no variables and reports no errors when no sprint repositories are supplied' {
+    Mock Invoke-RestMethod -MockWith {
+      param($Uri, $Method, $Headers, $Body)
+      [void]$script:restCalls.Add([PSCustomObject]@{ Uri = $Uri; Method = $Method; Body = $Body })
+      return @{}
+    }
+
+    $result = Set-BuildMasterSprintVariables -SprintNumber '0010'
+
+    $script:restCalls.Count | Should -Be 0
+    $result.variablesSet | Should -BeNullOrEmpty
+    $result.errors | Should -BeNullOrEmpty
+  }
+
+  It 'honors a custom RepositoryApplicationMap' {
+    Mock Invoke-RestMethod -MockWith {
+      param($Uri, $Method, $Headers, $Body)
+      [void]$script:restCalls.Add([PSCustomObject]@{ Uri = $Uri; Method = $Method; Body = $Body })
+      return @{}
+    }
+
+    Set-BuildMasterSprintVariables `
+      -SprintNumber '0010' `
+      -SprintBranchNames @{ 'MyRepo' = 'feature-branch' } `
+      -RepositoryApplicationMap @{ 'MyRepo' = @('MyRepo-App') } | Out-Null
+
+    $appsTargeted = @($script:restCalls |
+        ForEach-Object { if ($_.Uri -match '/api/variables/application/([^/]+)/') { $Matches[1] } } |
+        Sort-Object -Unique)
+
+    $appsTargeted | Should -Be @('MyRepo-App')
+  }
+}
+
+Describe 'Clear-BuildMasterSprintVariables application targeting (Task 10.12)' -Tag 'Unit' {
+  BeforeEach {
+    $global:configRootKeys = @{
+      BuildMasterBaseUrlConfigRootKey     = 'BuildMasterBaseUrl'
+      BuildMasterAdminApiKeyConfigRootKey = 'BuildMasterAdminApiKey'
+    }
+    $global:settings = @{
+      BuildMasterBaseUrl     = 'https://buildmaster.example.test'
+      BuildMasterAdminApiKey = 'unit-test-key'
+    }
+    $script:restCalls = [System.Collections.ArrayList]::new()
+  }
+
+  It 'clears the real ATAP.Utilities application names, not the bare repo name' {
+    Mock Invoke-RestMethod -MockWith {
+      param($Uri, $Method, $Headers, $Body)
+      [void]$script:restCalls.Add([PSCustomObject]@{ Uri = $Uri; Method = $Method })
+      return @{}
+    }
+
+    $result = Clear-BuildMasterSprintVariables -Confirm:$false
+
+    $appsTargeted = @($script:restCalls |
+        ForEach-Object { if ($_.Uri -match '/api/variables/application/([^/]+)/') { $Matches[1] } } |
+        Sort-Object -Unique)
+
+    $appsTargeted | Should -Contain 'ATAP.Utilities-CSharp'
+    $appsTargeted | Should -Contain 'ATAP.Utilities-PowerShell'
+    $appsTargeted | Should -Contain 'AceCommander'
+    $appsTargeted | Should -Not -Contain 'ATAP.Utilities'
+
+    # 3 variables × 3 applications = 9 DELETEs.
+    $result.variablesCleared.Count | Should -Be 9
   }
 }

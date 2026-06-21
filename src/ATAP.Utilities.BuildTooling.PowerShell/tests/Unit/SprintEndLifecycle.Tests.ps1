@@ -16,6 +16,9 @@ BeforeAll {
       'New-SprintEndHandoff',
       'Invoke-SprintEndInfrastructureCleanup',
       'Save-SprintHistoryArtifacts',
+      'Restore-SprintHistoryArtifacts',
+      'Save-SprintEndSessionTail',
+      'Test-SprintCheckpointCoverage',
       'Test-SprintEndBoundaryState',
       'Test-SprintEndPullOverlap',
       'Invoke-SprintEndLifecycle'
@@ -175,6 +178,139 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
     }
   }
 
+  Context 'Restore-SprintHistoryArtifacts' {
+    It 'restores explicit historical content and preserves a different existing file' {
+      $planning = Join-Path $TestDrive 'history-planning'
+      New-Item -ItemType Directory -Path $planning -Force | Out-Null
+      git -C $planning init --quiet --initial-branch=main
+      git -C $planning config user.email 'test@example.invalid'
+      git -C $planning config user.name 'Sprint History Test'
+      Set-Content -LiteralPath (Join-Path $planning 'TASKS.md') -Value 'historical board'
+      Set-Content -LiteralPath (Join-Path $planning 'Tasks.Accomplished.html') -Value 'historical accomplished'
+      Set-Content -LiteralPath (Join-Path $planning 'TASKS_V2.md') -Value 'historical variant'
+      git -C $planning add .
+      git -C $planning commit --quiet -m seed
+      $sourceRef = (git -C $planning rev-parse HEAD).Trim()
+
+      $first = Restore-SprintHistoryArtifacts `
+        -PlanningRoot $planning `
+        -SprintNumber 9 `
+        -SourceRef $sourceRef `
+        -SourcePath @('TASKS.md', 'Tasks.Accomplished.html') `
+        -NotebookPath 'SprintRetrospective/Sprint0009.ipynb' `
+        -Confirm:$false
+
+      $first.Ok | Should -BeTrue
+      @($first.Files | Where-Object Status -eq 'Restored').Count | Should -Be 2
+      Test-Path -LiteralPath $first.ManifestPath | Should -BeTrue
+
+      $variant = Restore-SprintHistoryArtifacts `
+        -PlanningRoot $planning `
+        -SprintNumber 9 `
+        -SourceRef $sourceRef `
+        -SourcePath @('TASKS_V2.md') `
+        -NotebookPath 'SprintRetrospective/Sprint0009.ipynb' `
+        -Confirm:$false
+      $variant.Ok | Should -BeTrue
+      $variant.Files[0].Status | Should -Be 'Restored'
+      $manifest = Get-Content -Raw -LiteralPath $first.ManifestPath | ConvertFrom-Json
+      $manifest.SourcePaths.Count | Should -Be 3
+
+      Set-Content -LiteralPath (Join-Path $first.HistoryRoot 'TASKS.md') -Value 'preserve me'
+      $second = Restore-SprintHistoryArtifacts `
+        -PlanningRoot $planning `
+        -SprintNumber 9 `
+        -SourceRef $sourceRef `
+        -SourcePath @('TASKS.md') `
+        -NotebookPath 'SprintRetrospective/Sprint0009.ipynb' `
+        -Confirm:$false
+
+      $second.Ok | Should -BeFalse
+      $second.Files[0].Status | Should -Be 'PreservedConflict'
+      Get-Content -Raw -LiteralPath (Join-Path $first.HistoryRoot 'TASKS.md') |
+        Should -Match 'preserve me'
+    }
+  }
+
+  Context 'Test-SprintCheckpointCoverage' {
+    It 'discovers a final checkpoint using canonical Planning paths only' {
+      $planning = Join-Path $TestDrive 'checkpoint-planning'
+      $conversationRoot = Join-Path $planning 'SprintWorkSessionConversations'
+      $rosterRoot = Join-Path $planning 'SprintWorkSessionRoster'
+      $worktree = Join-Path $TestDrive 'SharedVSCode-wt-48-Sprint-0010-work-items'
+      New-Item -ItemType Directory -Path $conversationRoot, $rosterRoot, $worktree -Force | Out-Null
+      $archive = Join-Path $conversationRoot 'checkpoint.7z'
+      Set-Content -LiteralPath $archive -Value 'reachable archive'
+      $entry = [ordered]@{
+        SprintN = '0010'
+        RecordedAt = '2026-06-20T17:00:00-06:00'
+        Agent = 'Codex'
+        WorktreeName = Split-Path -Path $worktree -Leaf
+        ConversationArchivePath = $archive
+        MemorySnapshotCreated = $false
+        MemorySkipReason = 'Agent has no on-disk memory store.'
+      }
+      $entry | ConvertTo-Json -Compress |
+        Set-Content -LiteralPath (Join-Path $rosterRoot 'SprintWorkSessionRoster-0010.jsonl')
+
+      $result = Test-SprintCheckpointCoverage `
+        -PlanningRoot $planning -SprintNumber 10 -WorktreePaths @($worktree)
+
+      $result.Ok | Should -BeTrue
+      $result.PerWorktree[0].Agent | Should -Be 'Codex'
+      $result.PerWorktree[0].ConversationArchiveReachable | Should -BeTrue
+      $result.PerWorktree[0].MemoryState | Should -Be 'AgentHasNoMemorySnapshot'
+      ($result | ConvertTo-Json -Depth 6) | Should -Not -Match '\\.codex|\\.claude|\\.gemini'
+    }
+  }
+
+  Context 'Save-SprintEndSessionTail' {
+    It 'stages only canonical checkpoint directories and records the stable commit' {
+      $planning = Join-Path $TestDrive 'stable-planning'
+      New-Item -ItemType Directory -Path $planning -Force | Out-Null
+      $script:tailNativeCalls = [System.Collections.Generic.List[string]]::new()
+      Mock Save-SprintWorkSession {}
+      Mock Invoke-SprintEndNativeCommand {
+        $argsText = $ArgumentList -join ' '
+        [void]$script:tailNativeCalls.Add($argsText)
+        $output = switch -Regex ($argsText) {
+          'branch --show-current' { @('main'); break }
+          'status --porcelain' { @('?? SprintWorkSessionRoster/entry.jsonl'); break }
+          'rev-parse HEAD' { @('abc123'); break }
+          default { @('ok') }
+        }
+        [PSCustomObject]@{
+          FilePath = $FilePath
+          ArgumentList = $ArgumentList
+          ExitCode = 0
+          Output = $output
+          Succeeded = $true
+        }
+      }
+
+      $result = Save-SprintEndSessionTail `
+        -PlanningRoot $planning `
+        -SprintNumber 10 `
+        -Agent Codex `
+        -SessionId 'session-id' `
+        -Confirm:$false
+
+      $result.Ok | Should -BeTrue
+      $result.Committed | Should -BeTrue
+      $result.CommitHash | Should -Be 'abc123'
+      $result.Pushed | Should -BeFalse
+      Should -Invoke Save-SprintWorkSession -Times 1 -ParameterFilter {
+        $Agent -eq 'Codex' -and
+        $SprintN -eq '0010' -and
+        $PlanningRoot -eq $planning -and
+        $AllowMainFallback
+      }
+      ($script:tailNativeCalls -join "`n") |
+        Should -Match 'add -- SprintWorkSessionConversations SprintWorkSessionMemorys SprintWorkSessionRoster'
+      ($script:tailNativeCalls -join "`n") | Should -Not -Match 'push'
+    }
+  }
+
   Context 'Test-SprintEndBoundaryState' {
     It 'reports a prohibited process environment variable without exposing its value' {
       $name = 'TASK106_FAKE_SECRET'
@@ -239,7 +375,8 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
 
       $result.Ok | Should -BeTrue
       $result.BitwardenSecretsRemoved | Should -BeFalse
-      $result.SqlInstancesRemoved | Should -BeFalse
+      $result.DatabaseCleanupMode | Should -Be 'SprintDatabasesOnly'
+      $result.SqlInstancesRetained | Should -BeTrue
       Should -Invoke Remove-SprintDatabases -Times 1
       Should -Invoke Clear-BuildMasterSprintVariables -Times 1
     }
@@ -290,6 +427,7 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       Mock Test-SprintEndCommandSurface { [PSCustomObject]@{ Ok = $true; Failures = @() } }
       Mock Test-SprintPrerequisites { [PSCustomObject]@{ AllOk = $true; Failures = @() } }
       Mock Test-SprintEndWorktreeState { [PSCustomObject]@{ Ok = $true; Failures = @() } }
+      Mock Test-SprintCheckpointCoverage { [PSCustomObject]@{ Ok = $true; Failures = @() } }
     }
 
     It 'returns a non-mutating dry-run contract with safety invariants' {
@@ -309,9 +447,59 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $result.ClosedSprintNumber | Should -Be '0010'
       $result.NextSprintNumber | Should -Be '0011'
       $result.BitwardenSecretsRemoved | Should -BeFalse
-      $result.SqlInstancesRemoved | Should -BeFalse
+      $result.DatabaseCleanupMode | Should -Be 'SprintDatabasesOnly'
+      $result.SqlInstancesRetained | Should -BeTrue
       $result.SyntheticTaskCompleted | Should -BeFalse
       $result.Phases.FinalBoundary.Skipped | Should -BeTrue
+    }
+
+    It 'plans every selected mutation phase in a full-switch WhatIf run' {
+      $planning = Join-Path $TestDrive '_Planning-wt-20-Sprint-0010-work-items-full'
+      $shared = Join-Path $TestDrive 'SharedVSCode-wt-48-Sprint-0010-work-items-full'
+      New-Item -ItemType Directory -Path $planning, $shared -Force | Out-Null
+      Mock Set-SprintBoundaryContext { [PSCustomObject]@{ Errors = @() } }
+      Mock Assert-MainBranchTemplateRef { [PSCustomObject]@{ Ok = $true } }
+      Mock Invoke-SprintEndGitHubClose {
+        [PSCustomObject]@{ Ok = $true; Repository = (Split-Path -Path $RepoPath -Leaf) }
+      }
+      Mock Save-SprintHistoryArtifacts { [PSCustomObject]@{ Ok = $true; Files = @() } }
+      Mock Invoke-SprintEndOverviewClose { [PSCustomObject]@{ Ok = $true } }
+      Mock New-SprintEndHandoff { [PSCustomObject]@{ Changed = $false; Planned = $true } }
+      Mock Invoke-SprintEndInfrastructureCleanup {
+        [PSCustomObject]@{
+          Ok = $true
+          DatabaseCleanupMode = 'SprintDatabasesOnly'
+          SqlInstancesRetained = $true
+        }
+      }
+
+      $result = Invoke-SprintEndLifecycle `
+        -GitRoot $TestDrive `
+        -PlanningRoot $planning `
+        -SharedVSCodeWorktreePath $shared `
+        -WorktreePaths @($planning, $shared) `
+        -ApplyBoundary `
+        -CreatePullRequests `
+        -MergePullRequests `
+        -ArchiveHistory `
+        -VerifyCheckpoints `
+        -CloseOverview `
+        -WriteHandoff `
+        -CleanupInfrastructure `
+        -TestFreshShell `
+        -WhatIf
+
+      $result.Ok | Should -BeTrue
+      $result.DryRun | Should -BeTrue
+      $result.Phases.CheckpointCoverage.Ok | Should -BeTrue
+      $result.Phases.BoundaryReset.Errors | Should -BeNullOrEmpty
+      $result.Phases.GitHub.Count | Should -Be 2
+      $result.Phases.History.Ok | Should -BeTrue
+      $result.Phases.Overview.Ok | Should -BeTrue
+      $result.Phases.Handoff.Planned | Should -BeTrue
+      $result.Phases.InfrastructureCleanup.SqlInstancesRetained | Should -BeTrue
+      $result.Phases.FinalBoundary.Planned | Should -BeTrue
+      $result.Phases.FinalBoundary.TestFreshShell | Should -BeTrue
     }
   }
 }

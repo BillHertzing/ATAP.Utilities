@@ -6,8 +6,9 @@ function Invoke-SprintEndInfrastructureCleanup {
   .DESCRIPTION
   Performs the infrastructure health check, drops only per-sprint databases,
   clears BuildMaster sprint variables, and reasserts stable boundary settings.
-  This cmdlet never calls Remove-SprintBitwardenSecrets and never removes SQL
-  Server instances.
+  SQL Server instances are permanent developer infrastructure and are retained.
+  This cmdlet never calls Remove-SprintBitwardenSecrets or any SQL-instance
+  removal command.
 
   .PARAMETER GitRoot
   Parent directory containing stable repositories.
@@ -87,10 +88,11 @@ function Invoke-SprintEndInfrastructureCleanup {
       Applied                    = [bool]$Apply
       Health                     = $health
       DatabaseResults            = $databaseResults
+      DatabaseCleanupMode        = 'SprintDatabasesOnly'
       BuildMasterResult          = $buildMasterResult
       BoundaryResult             = $boundaryResult
       BitwardenSecretsRemoved    = $false
-      SqlInstancesRemoved        = $false
+      SqlInstancesRetained       = $true
       Actions                    = $actions.ToArray()
     }
   }

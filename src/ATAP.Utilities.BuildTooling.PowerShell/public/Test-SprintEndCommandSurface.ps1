@@ -40,6 +40,9 @@ function Test-SprintEndCommandSurface {
       'Remove-SprintDatabases'              = @('DeveloperNames')
       'Clear-BuildMasterSprintVariables'    = @()
       'Save-SprintWorkSession'              = @('Agent', 'SprintN', 'PlanningRoot')
+      'Save-SprintEndSessionTail'           = @('PlanningRoot', 'SprintNumber', 'Agent')
+      'Test-SprintCheckpointCoverage'       = @('PlanningRoot', 'SprintNumber', 'WorktreePaths')
+      'Restore-SprintHistoryArtifacts'      = @('PlanningRoot', 'SprintNumber', 'SourceRef', 'SourcePath')
     },
 
     [Parameter()]

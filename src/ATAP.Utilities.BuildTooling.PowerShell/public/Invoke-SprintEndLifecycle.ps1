@@ -9,8 +9,9 @@ function Invoke-SprintEndLifecycle {
   sprint history, HANDOFF generation, infrastructure cleanup, and final boundary
   verification. Destructive phases require explicit switches and honor WhatIf.
 
-  This cmdlet never deletes Bitwarden secrets, never removes SQL instances, and
-  never marks a synthetic "sprint complete" task.
+  This cmdlet removes sprint databases while retaining permanent SQL Server
+  instances. It never deletes Bitwarden secrets and never marks a synthetic
+  "sprint complete" task.
 
   .PARAMETER GitRoot
   Parent directory containing repositories and sprint worktrees.
@@ -38,6 +39,9 @@ function Invoke-SprintEndLifecycle {
 
   .PARAMETER ArchiveHistory
   Copies dotted sprint task artifacts into SprintHistory.
+
+  .PARAMETER VerifyCheckpoints
+  Verifies every selected worktree has a reachable canonical Planning checkpoint.
 
   .PARAMETER WriteHandoff
   Generates HANDOFF.md.
@@ -99,6 +103,9 @@ function Invoke-SprintEndLifecycle {
     [switch]$ArchiveHistory,
 
     [Parameter()]
+    [switch]$VerifyCheckpoints,
+
+    [Parameter()]
     [switch]$WriteHandoff,
 
     [Parameter()]
@@ -142,6 +149,18 @@ function Invoke-SprintEndLifecycle {
 
     $phases.WorktreeState = Test-SprintEndWorktreeState -WorktreePaths $worktreeFullPaths
     if (-not $phases.WorktreeState.Ok) { [void]$failures.Add('WorktreeState') }
+
+    if ($VerifyCheckpoints -and $phases.Context.Ok) {
+      $phases.CheckpointCoverage = Test-SprintCheckpointCoverage `
+        -PlanningRoot $planningRootFull `
+        -SprintNumber ([int]$phases.Context.ClosedSprintNumber) `
+        -WorktreePaths $worktreeFullPaths
+      if (-not $phases.CheckpointCoverage.Ok) {
+        [void]$failures.Add('CheckpointCoverage')
+      }
+    } else {
+      $phases.CheckpointCoverage = $null
+    }
 
     if ($failures.Count -eq 0 -and $ApplyBoundary) {
       $boundaryParameters = @{
@@ -198,7 +217,7 @@ function Invoke-SprintEndLifecycle {
     }
     $phases.GitHub = $githubResults.ToArray()
 
-    if ($ArchiveHistory -and $phases.Context.Ok) {
+    if ($failures.Count -eq 0 -and $ArchiveHistory -and $phases.Context.Ok) {
       $historyParameters = @{
         PlanningRoot = $planningRootFull
         SprintNumber = [int]$phases.Context.ClosedSprintNumber
@@ -211,19 +230,7 @@ function Invoke-SprintEndLifecycle {
       $phases.History = $null
     }
 
-    if ($WriteHandoff) {
-      $handoffParameters = @{
-        GitRoot       = $gitRootFull
-        WorktreePaths = $worktreeFullPaths
-        Confirm       = $false
-      }
-      if ($WhatIfPreference) { $handoffParameters.WhatIf = $true }
-      $phases.Handoff = New-SprintEndHandoff @handoffParameters
-    } else {
-      $phases.Handoff = $null
-    }
-
-    if ($CloseOverview -and $phases.Context.Ok) {
+    if ($failures.Count -eq 0 -and $CloseOverview -and $phases.Context.Ok) {
       $overviewParameters = @{
         GitRoot       = $gitRootFull
         PlanningRoot  = $planningRootFull
@@ -237,7 +244,19 @@ function Invoke-SprintEndLifecycle {
       $phases.Overview = $null
     }
 
-    if ($CleanupInfrastructure) {
+    if ($failures.Count -eq 0 -and $WriteHandoff) {
+      $handoffParameters = @{
+        GitRoot       = $gitRootFull
+        WorktreePaths = $worktreeFullPaths
+        Confirm       = $false
+      }
+      if ($WhatIfPreference) { $handoffParameters.WhatIf = $true }
+      $phases.Handoff = New-SprintEndHandoff @handoffParameters
+    } else {
+      $phases.Handoff = $null
+    }
+
+    if ($failures.Count -eq 0 -and $CleanupInfrastructure) {
       $cleanupParameters = @{
         GitRoot = $gitRootFull
         Apply   = $true
@@ -259,8 +278,11 @@ function Invoke-SprintEndLifecycle {
     } else {
       $phases.FinalBoundary = [PSCustomObject]@{
         Ok = $true
+        Planned = [bool]($ApplyBoundary -or $CleanupInfrastructure)
         Skipped = $true
-        Detail = 'Final boundary verification is deferred until mutations are applied.'
+        SearchRoots = $worktreeFullPaths
+        TestFreshShell = [bool]$TestFreshShell
+        Detail = 'Final boundary verification is planned after live mutations are applied.'
       }
     }
 
@@ -272,8 +294,9 @@ function Invoke-SprintEndLifecycle {
       NextSprintNumber           = $phases.Context.NextSprintNumber
       Phases                     = [PSCustomObject]$phases
       Failures                   = $uniqueFailures
+      DatabaseCleanupMode        = 'SprintDatabasesOnly'
       BitwardenSecretsRemoved    = $false
-      SqlInstancesRemoved        = $false
+      SqlInstancesRetained       = $true
       SyntheticTaskCompleted     = $false
     }
     if (-not $result.Ok -and $ThrowOnFailure) {

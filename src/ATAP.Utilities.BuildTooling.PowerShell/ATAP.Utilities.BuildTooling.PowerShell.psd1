@@ -145,6 +145,7 @@
     'Reset-SprintDatabases',
     'Resolve-DatabasePackageFeed',
     'Resolve-FeatureSlug', 'Resolve-PSModuleMetadata',
+    'Restore-SprintHistoryArtifacts',
     'Save-CopilotCheckpoint', 'Save-SprintHistoryArtifacts',
     'Save-SprintRetrospectiveSnapshot', 'Save-SprintWorkSession',
     'Set-BuildMasterApplicationVariables',

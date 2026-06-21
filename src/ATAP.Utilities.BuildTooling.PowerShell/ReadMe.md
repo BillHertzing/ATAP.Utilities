@@ -45,8 +45,9 @@ byte-idempotent. `Test-SprintCheckpointCoverage` verifies final checkpoints
 entirely from canonical Planning roots; `Save-SprintEndSessionTail` creates the
 scoped post-merge stable Planning commit without pushing.
 `Restore-SprintHistoryArtifacts` is the explicit one-off path for reconstructing
-pre-dotted history from reviewed Git revisions while preserving different
-existing content. SprintEnd removes sprint databases while retaining permanent
+pre-dotted history from reviewed Git revisions. It writes exact Git blob bytes,
+preserves repository-relative paths, records the resolved commit as provenance,
+and preserves different existing content. SprintEnd removes sprint databases while retaining permanent
 developer SQL Server instances, never deletes Bitwarden secrets, and never
 invokes a synthetic sprint-completion task. The structured result reports
 `DatabaseCleanupMode = 'SprintDatabasesOnly'` and

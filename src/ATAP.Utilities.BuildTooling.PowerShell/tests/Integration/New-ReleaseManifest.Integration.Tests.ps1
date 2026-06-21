@@ -22,7 +22,7 @@ AfterAll {
   }
 }
 
-Describe 'New-ReleaseManifest integration fixture' -Tag 'Integration' {
+Describe 'New-ReleaseManifest integration fixture' -Tag 'Integration', 'PromotedModuleHostSensitive' {
   It 'Generates a schema-valid manifest for tests/fixtures/db/sample/releases/0.0.1.yml' {
     $context = [PSCustomObject]@{
       Application            = 'sample'

@@ -54,7 +54,7 @@ AfterAll {
     Remove-Variable -Name MoveProGetIntraTierRestCalls -Scope Global -Force -ErrorAction SilentlyContinue
 }
 
-Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
+Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   BeforeEach {
     Mock Write-PSFMessage { }
     $global:MoveProGetIntraTierRestCalls = [System.Collections.Generic.List[object]]::new()

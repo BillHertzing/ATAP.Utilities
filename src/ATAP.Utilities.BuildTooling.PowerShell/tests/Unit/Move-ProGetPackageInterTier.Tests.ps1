@@ -40,7 +40,7 @@ AfterAll {
     }
 }
 
-Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
+Describe 'Move-ProGetPackageInterTier' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   BeforeEach {
     Mock Write-PSFMessage { }
     Mock Invoke-RestMethod {

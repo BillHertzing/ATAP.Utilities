@@ -16,7 +16,7 @@ BeforeAll {
     }
 }
 
-Describe 'Test-SprintPrerequisites' -Tag 'Unit' {
+Describe 'Test-SprintPrerequisites' -Tag 'Unit', 'PromotedModuleHostSensitive' {
 
   Context 'Result shape' {
     BeforeAll {

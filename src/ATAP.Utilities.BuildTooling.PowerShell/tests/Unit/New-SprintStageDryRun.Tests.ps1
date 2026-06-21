@@ -140,7 +140,7 @@ AfterAll {
   Remove-Variable -Name dryRunExternalCalls -Scope Global -Force -ErrorAction SilentlyContinue
 }
 
-Describe 'New-SprintStage dry-run support' -Tag 'Unit' {
+Describe 'New-SprintStage dry-run support' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   BeforeEach {
     $global:dryRunExternalCalls.Clear()
     $script:tempGitRoot = Join-Path ([System.IO.Path]::GetTempPath()) "sprint_dryrun_$([guid]::NewGuid().ToString('N'))"

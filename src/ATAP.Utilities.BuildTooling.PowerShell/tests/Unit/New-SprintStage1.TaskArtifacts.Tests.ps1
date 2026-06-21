@@ -41,7 +41,7 @@ AfterAll {
   }
 }
 
-Describe 'New-SprintStage1 task artifact templating (Task 10.11)' -Tag 'Unit' {
+Describe 'New-SprintStage1 task artifact templating (Task 10.11)' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   BeforeEach {
     $script:tempGitRoot = Join-Path ([System.IO.Path]::GetTempPath()) "stage1_tasks_$([guid]::NewGuid().ToString('N'))"
     $script:sharedWorktree = Join-Path $script:tempGitRoot 'SharedVSCode-wt-999-Sprint-0010-work-items'

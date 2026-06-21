@@ -136,7 +136,7 @@ AfterAll {
   $global:PSModuleAutoLoadingPreference = $script:priorModuleAutoLoad
 }
 
-Describe 'New-SprintStage2 Overview workspace generation (Task 10.14.a)' -Tag 'Unit' {
+Describe 'New-SprintStage2 Overview workspace generation (Task 10.14.a)' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   BeforeEach {
     $global:overviewStubCalls = [System.Collections.Generic.List[string]]::new()
     $global:overviewStubMode = 'valid'

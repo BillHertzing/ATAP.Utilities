@@ -41,12 +41,22 @@ originating issue closing keyword; check results are classified into required,
 informational, and CodeSee planning signals. HANDOFF stable pulls use an R-31
 overlap gate and `pull --ff-only` with editor suppression. Generated
 `.gitattributes` and `.gitconfig.shared` headers are timestamp-free and
-byte-idempotent. SprintEnd never deletes Bitwarden secrets, never removes SQL
-instances, and never invokes a synthetic sprint-completion task.
+byte-idempotent. `Test-SprintCheckpointCoverage` verifies final checkpoints
+entirely from canonical Planning roots; `Save-SprintEndSessionTail` creates the
+scoped post-merge stable Planning commit without pushing.
+`Restore-SprintHistoryArtifacts` is the explicit one-off path for reconstructing
+pre-dotted history from reviewed Git revisions while preserving different
+existing content. SprintEnd removes sprint databases while retaining permanent
+developer SQL Server instances, never deletes Bitwarden secrets, and never
+invokes a synthetic sprint-completion task. The structured result reports
+`DatabaseCleanupMode = 'SprintDatabasesOnly'` and
+`SqlInstancesRetained = true`.
 
 Sprint planning also now has an explicit markdown-to-board path: use
 `Convert-TasksMdToSprintBoard` to regenerate a sprint `TASKS.html` board from the
-authoritative `TASKS.md` file after task edits or status updates.
+authoritative `TASKS.md` file after task edits or status updates. Indented lettered
+subtasks (`N.M.a/b/c`) are emitted as their own board cards — numbered distinctly,
+not indented — and inherit the `[Repo]` tag from their umbrella task.
 
 Stage 2 database startup is now safe for non-interactive agent shells (Tasks
 10.4 and 10.5). `Test-SprintPrerequisites` and `New-SprintStage2` call the
@@ -70,6 +80,21 @@ task content, calls `Convert-TasksMdToSprintBoard` to synchronize
 `Tasks.Sprint<NNNN>.ProceduralDetails.html` companions, and removes the
 prior-sprint root artifacts after templating. Legacy `TASKS.md` and
 `TasksSprint<NNNN>.md` inputs remain accepted for the first transition.
+
+**Stage 2 generates the sprint Overview workspace (Task 10.14.a).** After every
+downstream sprint worktree exists, `New-SprintStage2` calls
+`New-OverviewSprintWorkspace` to produce `OverviewSprint<NNNN>.code-workspace` in
+the GitHub root and then runs a verification gate — the file must exist and must
+resolve at least one `*-wt-<n>-Sprint-<NNNN>-work-items` folder. Earlier sprints
+created this file only through a documentation-only agent step, so a live run
+that deviated from the runbook left it missing and blocked
+`Build-CLAUDEPerRepository` / CLAUDE.md propagation at Sprint 0010 start
+(SC-0193). Generating it inside Stage 2 makes the step unskippable; the result
+carries `infrastructure.overviewWorkspacePath`,
+`infrastructure.overviewWorkspaceVerified`, and
+`infrastructure.overviewWorkspaceError`. The gate is non-fatal — a verification
+failure is reported in `overviewWorkspaceError` without aborting the rest of
+Stage 2 — and the step is skipped under `-DryRun`/`-WhatIf`.
 
 `New-MarkdownChangeTrackingReport` audits the change-tracking hygiene of a
 documentation tree. It recursively scans `-Path` for `*.md` files, reads the
@@ -113,6 +138,8 @@ conversation/rollout when the id argument is omitted. The roster entry records t
 `Agent`, `AgentSessionKey`, and `ConversationDbPath` for each save.
 
 **BuildMaster PowerShell Module Release Naming (Task 9.37).** To support building multiple arbitrary PowerShell modules within the single consolidated BuildMaster application (`ATAP.Utilities-PowerShell`) without collisions, the BuildMaster `ReleaseNumber` is generated uniquely per module. The release number appends the module name as a suffix (e.g., `0.1.0-ATAP.Utilities.PowerShell` for stable versions, and `0.1.0-Alpha.6.ATAP.Utilities.PowerShell` for prerelease versions), which is fully SemVer 2.0.0 compliant. This naming is strictly internal to BuildMaster and does not bleed into the built package's name, version, or manifest (`.psd1`) file.
+
+**BuildMaster sprint-variable application targeting (Task 10.12).** A single repository can map to one or more BuildMaster applications whose names do **not** match the repository name — the `ATAP.Utilities` repo builds both `ATAP.Utilities-CSharp` and `ATAP.Utilities-PowerShell`, so POSTing to `/api/variables/application/ATAP.Utilities/...` returns 404. `Set-BuildMasterSprintVariables` and `Clear-BuildMasterSprintVariables` therefore (1) drive the worked set from the sprint's **actual** repositories (the keys of `-SprintBranchNames`/`-SourcePaths`, never a fixed `AceCommander`/`ATAP.Utilities` list, so repos outside the sprint are never touched) and (2) resolve each repository to its real BuildMaster application name(s) through `-RepositoryApplicationMap`. Repositories that participate in the sprint but have no BuildMaster application (e.g. `_Planning`, `SharedVSCode`) are absent from the map and are reported in the `skippedRepositories` result field rather than 404-ing. `New-SprintStage2` passes repo-name-keyed branch/source-path maps built from its `$repoResults`, so the in-sprint applications are set without 404s and AceCommander is no longer targeted when it is not in the sprint.
 
 Scope-creep capture (`Add-ScopeCreepIdea`) now resolves the target `_Planning`
 worktree through `Resolve-PlanningWorktreeRoot` (Task 9.23). Resolution is
@@ -983,3 +1010,26 @@ Add-LocalGroupMember -Group "docker-users" -Member $env:USERNAME
 Use the module-level getting started guide for the lifecycle workflow:
 
 - [Documentation/GettingStarted.md](Documentation/GettingStarted.md)
+
+### Promoted-module test isolation
+
+`Invoke-PromotedModuleTests` restores and imports the immutable package, then
+runs the tier-filtered source tests in a child scope with StrictMode disabled.
+The BuildMaster stage runner keeps `Set-StrictMode -Version Latest` for its own
+orchestration, but that policy no longer leaks into Pester fixture code where
+normal missing-property and scalar `.Count` behavior is expected.
+
+Suites that must import or dot-source the BuildTooling source tree, depend on
+developer-workstation globals or paths, or evaluate the full repository carry
+the `PromotedModuleHostSensitive` tag. They are excluded only from quiet
+promoted-package gates; normal source test runs still execute them.
+
+Task 10.30 promoted `ATAP.Utilities.BuildTooling.PowerShell` 0.1.7 through
+BuildMaster build 14137. Development passed 476/476 tests, and Integration, QA,
+and Production each passed 482/482. ProGet then exposed 0.1.7 in all five
+PowerShellGet feeds, including `powershellget-stable`.
+
+Feed vocabulary remains deliberately split: SprintStart's residual
+`NuGet.config` uses the D-2 `*-production` names, while the immutable promotion
+ladder and `Resolve-ProGetFeedFromSettings` normalize `Production` to the
+canonical `*-stable` tier.

@@ -105,6 +105,13 @@ function New-SprintStage1 {
           @{ Name = 'GitRoot'; Path = 'GitRoot'; Default = $gitRootDefault },
           @{ Name = 'Owner'; Path = 'GitHubOwner'; Default = $ownerDefault },
           @{ Name = 'ProGetBaseUrl'; Path = $proGetBaseUrlKey; Default = $proGetBaseUrlDefault })) {
+        # Highest-precedence source is an explicitly-bound parameter
+        # (param > env > settings > default). Never let Get-PVal re-resolution
+        # overwrite a value the caller passed in. Without this guard the
+        # documented default silently clobbered a bound -GitRoot whenever
+        # Get-PVal was loaded (profile/build env), which failed the
+        # Development-tier promoted-module test gate. See SC-0203 / SC-0205.
+        if ($PSBoundParameters.ContainsKey($spec.Name)) { continue }
         try {
           $resolvedSetting = Get-PVal -ParameterName $spec.Name `
             -originalPSBoundParameters $PSBoundParameters `

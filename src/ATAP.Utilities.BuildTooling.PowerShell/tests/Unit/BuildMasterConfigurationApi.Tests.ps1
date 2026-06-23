@@ -13,12 +13,12 @@ BeforeAll {
   . (Join-Path $publicDir 'Remove-BuildMasterApplication.ps1')
 
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
-    function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
+    function Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
 
   # Stub the secret-name resolver and the secret store so the cmdlets resolve
   # the BuildMaster admin API key without contacting Bitwarden.
-  function global:Get-ParameterValueFromNeoConfigurationRoot {
+  function Get-ParameterValueFromNeoConfigurationRoot {
     param([string]$ParameterName, $originalPSBoundParameters, [AllowNull()]$DefaultValue = $null, [string]$dottedPath, [hashtable]$Settings)
     if ($originalPSBoundParameters -and $originalPSBoundParameters.ContainsKey($ParameterName)) { return $originalPSBoundParameters[$ParameterName] }
     $settingsRoot = if ($Settings) { $Settings } elseif ($global:settings) { $global:settings } else { @{} }
@@ -26,8 +26,8 @@ BeforeAll {
     if ($settingsRoot -is [System.Collections.IDictionary] -and $settingsRoot.Contains($key)) { return $settingsRoot[$key] }
     return $DefaultValue
   }
-  Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Global -Force
-  function global:Get-SecretATAP {
+  Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Script -Force
+  function Get-SecretATAP {
     param([Parameter(ValueFromPipelineByPropertyName = $true)][Alias('BuildMasterAdminApiKeySecretName')][string]$SecretName, [string]$SecretField = 'password', [string]$SecretStoreType)
     'unit-test-key'
   }
@@ -398,6 +398,17 @@ Describe 'Set-BuildMasterApplicationVariables' -Tag 'Unit' {
 }
 
 Describe 'Deprecated BuildMaster variable cmdlets emit deprecation warnings' -Tag 'Unit' {
+  BeforeAll {
+    function Resolve-BuildToolingSettingValue {
+      param([string]$Name)
+      return 'stub'
+    }
+    function Resolve-ProGetFeedFromSettings {
+      param([string]$FeedType, [string]$Tier)
+      return [PSCustomObject]@{ FeedName = 'stub-feed'; EndpointUri = 'https://proget.example.test/nuget/stub' }
+    }
+  }
+
   BeforeEach {
     $global:configRootKeys = @{
       BuildMasterBaseUrlConfigRootKey     = 'BuildMasterBaseUrl'
@@ -408,40 +419,12 @@ Describe 'Deprecated BuildMaster variable cmdlets emit deprecation warnings' -Ta
       BuildMasterAdminApiKey = 'unit-test-key'
     }
     $script:deprecationMessages = [System.Collections.ArrayList]::new()
-    # Capture Write-PSFMessage calls so we can assert on level and message without
-    # needing a live PSFramework installation.
-    function global:Write-PSFMessage {
-      param(
-        [string]$FunctionName,
-        [string]$ModuleName,
-        [string]$Level,
-        [string]$Message,
-        [string[]]$Tag
-      )
+    Mock Write-PSFMessage {
       [void]$script:deprecationMessages.Add([PSCustomObject]@{
         Level   = $Level
         Message = $Message
       })
     }
-    # Stub helpers that the deprecated cmdlets call so they do not fail due to
-    # missing modules or environment variables before the deprecation warning fires.
-    function global:Get-PVal { param([string]$ParameterName, $originalPSBoundParameters, $DefaultValue) return 'https://buildmaster.example.test' }
-    function global:Resolve-BuildToolingSettingValue { param([string]$Name) return 'stub' }
-    function global:Resolve-ProGetFeedFromSettings {
-      param([string]$FeedType, [string]$Tier)
-      return [PSCustomObject]@{ FeedName = 'stub-feed'; EndpointUri = 'https://proget.example.test/nuget/stub' }
-    }
-    # Stub Get-ParameterValueFromNeoConfigurationRoot so the helper-load block
-    # in the deprecated cmdlets does not try to dot-source a real file path.
-    function global:Get-ParameterValueFromNeoConfigurationRoot { param([Parameter(ValueFromRemainingArguments=$true)]$Rest) }
-  }
-
-  AfterEach {
-    Remove-Item -Path 'Function:\Get-PVal' -ErrorAction SilentlyContinue
-    Remove-Item -Path 'Function:\Resolve-BuildToolingSettingValue' -ErrorAction SilentlyContinue
-    Remove-Item -Path 'Function:\Resolve-ProGetFeedFromSettings' -ErrorAction SilentlyContinue
-    Remove-Item -Path 'Function:\Get-ParameterValueFromNeoConfigurationRoot' -ErrorAction SilentlyContinue
-    Remove-Item -Path 'Function:\Write-PSFMessage' -ErrorAction SilentlyContinue
   }
 
   It 'Set-BuildMasterStableVariables emits an Important-level deprecation warning' {

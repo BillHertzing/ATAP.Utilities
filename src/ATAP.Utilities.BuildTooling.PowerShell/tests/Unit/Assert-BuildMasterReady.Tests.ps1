@@ -4,15 +4,14 @@ BeforeAll {
   Import-Module PSFramework -ErrorAction SilentlyContinue
   $script:publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
   . (Join-Path $script:publicDir 'Assert-BuildMasterReady.ps1')
-  if (-not (Get-Command Get-SecretATAP -ErrorAction SilentlyContinue)) {
-    function global:Get-SecretATAP {
-      param(
-        [string]$SecretName,
-        [string]$SecretField,
-        [string]$SecretStoreType,
-        [System.Management.Automation.ActionPreference]$ErrorAction
-      )
-    }
+  function Get-SecretATAP {
+    param(
+      [string]$SecretName,
+      [string]$SecretField,
+      [string]$SecretStoreType,
+      [System.Management.Automation.ActionPreference]$ErrorAction
+    )
+    'fake-test-key'
   }
   # Port 1 is reserved and closed; a TCP HEAD here is refused fast on Windows.
   $script:unreachableUrl = 'http://127.0.0.1:1'

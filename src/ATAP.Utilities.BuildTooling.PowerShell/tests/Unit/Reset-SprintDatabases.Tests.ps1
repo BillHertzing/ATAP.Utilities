@@ -1,13 +1,9 @@
 BeforeAll {
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
-    function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
+    function Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
 
-  $script:hadGlobalGetPVal = Test-Path -Path 'Function:\global:Get-PVal'
-  if ($script:hadGlobalGetPVal) {
-    $script:oldGlobalGetPVal = (Get-Item -Path 'Function:\global:Get-PVal').ScriptBlock
-  }
-  function global:Get-PVal {
+  function Get-ParameterValueFromNeoConfigurationRoot {
     param(
       [string]$ParameterName,
       [hashtable]$originalPSBoundParameters,
@@ -62,6 +58,7 @@ BeforeAll {
 
     throw "Missing test value for $ParameterName"
   }
+  Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Script -Force
 
   function Build-DatabaseWithFlyway {
     param(
@@ -103,11 +100,6 @@ BeforeAll {
 
 AfterAll {
   Remove-Item -LiteralPath $script:tempRepoRoot -Recurse -Force -ErrorAction SilentlyContinue
-  if ($script:hadGlobalGetPVal) {
-    Set-Item -Path 'Function:\global:Get-PVal' -Value $script:oldGlobalGetPVal
-  } else {
-    Remove-Item -Path 'Function:\global:Get-PVal' -ErrorAction SilentlyContinue
-  }
 }
 
 Describe 'Reset-SprintDatabases [public]' {

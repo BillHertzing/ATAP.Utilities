@@ -38,6 +38,11 @@ function New-SprintStage2Result {
   .PARAMETER OverviewWorkspaceError
     Any error that occurred while generating or verifying the Overview sprint
     workspace.
+  .PARAMETER AIInstructionsResult
+    Aggregate returned by Build-AIInstructionsPerRepository.
+  .PARAMETER AIInstructionsError
+    Any error that prevented or failed the single AI-instruction distribution
+    step.
   .OUTPUTS
     [PSCustomObject]
   .NOTES
@@ -89,7 +94,13 @@ function New-SprintStage2Result {
     [bool]$OverviewWorkspaceVerified = $false,
 
     [Parameter(Mandatory=$false)]
-    [string]$OverviewWorkspaceError
+    [string]$OverviewWorkspaceError,
+
+    [Parameter(Mandatory=$false)]
+    [PSCustomObject]$AIInstructionsResult,
+
+    [Parameter(Mandatory=$false)]
+    [string]$AIInstructionsError
   )
 
   begin {
@@ -116,6 +127,8 @@ function New-SprintStage2Result {
         overviewWorkspacePath      = $OverviewWorkspacePath
         overviewWorkspaceVerified  = $OverviewWorkspaceVerified
         overviewWorkspaceError     = $OverviewWorkspaceError
+        aiInstructions             = $AIInstructionsResult
+        aiInstructionsError        = $AIInstructionsError
       }
     }
     return $finalResult

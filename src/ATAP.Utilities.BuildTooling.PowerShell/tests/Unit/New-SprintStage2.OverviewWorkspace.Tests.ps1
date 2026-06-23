@@ -30,7 +30,8 @@ BeforeAll {
     'Initialize-ATAPConfigurationGlobals',
     'Set-BuildMasterSprintVariables',
     'Reset-SprintDatabases',
-    'New-OverviewSprintWorkspace'
+    'New-OverviewSprintWorkspace',
+    'Build-AIInstructionsPerRepository'
   )
 
   function global:Assert-GitAvailable { }
@@ -83,6 +84,19 @@ BeforeAll {
     [CmdletBinding(SupportsShouldProcess = $true)]
     param([string]$DatabaseHost, [string]$ConnectionMethod, [string]$RepositoryRoot, [string]$ProvisioningScriptsPath)
     @()
+  }
+
+  function global:Build-AIInstructionsPerRepository {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param([string]$WorktreeRoot, [string]$WorkspacePath)
+    $global:overviewStubCalls.Add('Build-AIInstructionsPerRepository') | Out-Null
+    [PSCustomObject]@{
+      Success                = $true
+      WorkspacePath          = $WorkspacePath
+      RepositoriesDiscovered = 2
+      Builders               = [PSCustomObject]@{}
+      Errors                 = @()
+    }
   }
 
   # Behaviour of the Overview workspace generator stub is controlled per test
@@ -187,6 +201,11 @@ Describe 'New-SprintStage2 Overview workspace generation (Task 10.14.a)' -Tag 'U
     $result.infrastructure.overviewWorkspacePath | Should -Be $expected
     $result.infrastructure.overviewWorkspaceVerified | Should -BeTrue
     $result.infrastructure.overviewWorkspaceError | Should -BeNullOrEmpty
+    $global:overviewStubCalls |
+      Where-Object { $_ -eq 'Build-AIInstructionsPerRepository' } |
+      Should -HaveCount 1
+    $result.infrastructure.aiInstructions.Success | Should -BeTrue
+    $result.infrastructure.aiInstructionsError | Should -BeNullOrEmpty
     Test-Path -LiteralPath $expected | Should -BeTrue
   }
 
@@ -231,7 +250,10 @@ Describe 'New-SprintStage2 Overview workspace generation (Task 10.14.a)' -Tag 'U
       -DryRun
 
     $global:overviewStubCalls | Should -Not -Contain 'New-OverviewSprintWorkspace'
+    $global:overviewStubCalls | Should -Not -Contain 'Build-AIInstructionsPerRepository'
     $result.infrastructure.overviewWorkspaceVerified | Should -BeFalse
+    $result.infrastructure.aiInstructions.DryRun | Should -BeTrue
+    $result.infrastructure.aiInstructionsError | Should -BeNullOrEmpty
     Test-Path -LiteralPath (Join-Path $script:tempGitRoot 'OverviewSprint0008.code-workspace') | Should -BeFalse
   }
 }

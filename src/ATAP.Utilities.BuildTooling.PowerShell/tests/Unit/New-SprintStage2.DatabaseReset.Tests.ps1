@@ -18,7 +18,8 @@ BeforeAll {
     'New-SprintBitwardenSecrets',
     'Reset-SprintDatabases',
     'New-DeveloperSqlServerInstances',
-    'New-OverviewSprintWorkspace'
+    'New-OverviewSprintWorkspace',
+    'Build-AIInstructionsPerRepository'
   )
 
   function global:Assert-GitAvailable {
@@ -126,6 +127,19 @@ BeforeAll {
   function global:New-DeveloperSqlServerInstances {
     $global:stage2DatabaseResetCalls.Add('New-DeveloperSqlServerInstances') | Out-Null
     throw 'New-SprintStage2 must not call New-DeveloperSqlServerInstances.'
+  }
+
+  function global:Build-AIInstructionsPerRepository {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param([string]$WorktreeRoot, [string]$WorkspacePath)
+    $global:stage2DatabaseResetCalls.Add('Build-AIInstructionsPerRepository') | Out-Null
+    [PSCustomObject]@{
+      Success                = $true
+      WorkspacePath          = $WorkspacePath
+      RepositoriesDiscovered = 1
+      Builders               = [PSCustomObject]@{}
+      Errors                 = @()
+    }
   }
 
   function global:New-OverviewSprintWorkspace {

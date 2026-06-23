@@ -26,6 +26,9 @@ function New-SprintStage2 {
          hooksPath, and commitTemplate.
 
     After all repos are processed the cmdlet also:
+      5c. Generates and verifies the Overview sprint workspace, then calls
+          Build-AIInstructionsPerRepository once to distribute CLAUDE.md,
+          AGENTS.md, GEMINI.md, and .github/copilot-instructions.md.
       6. Creates a symlink from the SharedVSCode sprint worktree's
          claude-settings.json to ~/.claude/settings.json.
       6b. Retargets the VS Code user settings symlink
@@ -210,7 +213,8 @@ function New-SprintStage2 {
         'Set-WorktreeJunctions',
         'Initialize-DownstreamSprintFromSharedVSCode',
         'Initialize-SprintAIAdapters',
-        'New-OverviewSprintWorkspace')) {
+        'New-OverviewSprintWorkspace',
+        'Build-AIInstructionsPerRepository')) {
       if (-not (Get-Command -Name $required -ErrorAction SilentlyContinue)) {
         throw "Required command '$required' is not available. The " +
         'ATAP.Utilities.BuildTooling.PowerShell module must be installed and ' +
@@ -590,8 +594,7 @@ function New-SprintStage2 {
         }
 
         $overviewRaw = Get-Content -LiteralPath $overviewWorkspacePath -Raw -ErrorAction Stop
-        $overviewJsonText = $overviewRaw -replace '(?m)//.*$', ''
-        $overviewJsonText = $overviewJsonText -replace ',(\s*[\]}])', '$1'
+        $overviewJsonText = $overviewRaw -replace ',(\s*[\]}])', '$1'
         $overviewObj = $overviewJsonText | ConvertFrom-Json -ErrorAction Stop
 
         $sprintFolderPattern = '-wt-\d+-Sprint-' + $sprintNum + '-work-items$'
@@ -613,6 +616,49 @@ function New-SprintStage2 {
     } catch {
       $overviewWorkspaceError = "Failed to generate or verify the Overview sprint workspace. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $overviewWorkspaceError
+    }
+
+    # ===================================================================
+    # 5d. Distribute all per-repository AI instruction lanes through one
+    # orchestration call (Task 10.34). The orchestrator parses the Overview
+    # workspace once, applies the stable-worktree boundary once, and returns
+    # one aggregate for CLAUDE.md, AGENTS.md, GEMINI.md, and Copilot.
+    # ===================================================================
+    $aiInstructionsResult = $null
+    $aiInstructionsError = $null
+
+    if ($WhatIfPreference) {
+      $aiInstructionsResult = [PSCustomObject]@{
+        Success       = $true
+        DryRun        = $true
+        WorkspacePath = $overviewWorkspacePath
+        Builders      = $null
+        Errors        = @()
+      }
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+        -Message "DryRun/WhatIf: would run one Build-AIInstructionsPerRepository distribution step for '$overviewWorkspacePath'."
+    } elseif (-not $overviewWorkspaceVerified) {
+      $aiInstructionsError = "AI instruction distribution skipped because the Overview sprint workspace was not verified: $overviewWorkspaceError"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $aiInstructionsError
+    } else {
+      try {
+        if ($PSCmdlet.ShouldProcess($overviewWorkspacePath, 'Distribute all per-repository AI instruction lanes')) {
+          $aiInstructionsResult = Build-AIInstructionsPerRepository `
+            -WorktreeRoot $svWorktreePath `
+            -WorkspacePath $overviewWorkspacePath `
+            -Confirm:$false
+
+          if (-not $aiInstructionsResult.Success -or @($aiInstructionsResult.Errors).Count -gt 0) {
+            throw "Build-AIInstructionsPerRepository reported errors: $(@($aiInstructionsResult.Errors) -join '; ')"
+          }
+
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+            -Message "AI instruction distribution completed through one orchestration call for $($aiInstructionsResult.RepositoriesDiscovered) repository folder(s)."
+        }
+      } catch {
+        $aiInstructionsError = "Failed to distribute per-repository AI instructions. Exception: $($_.Exception.Message)"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $aiInstructionsError
+      }
     }
 
     # ===================================================================
@@ -822,7 +868,9 @@ function New-SprintStage2 {
       -DatabaseResetError $dbResetError `
       -OverviewWorkspacePath $overviewWorkspacePath `
       -OverviewWorkspaceVerified $overviewWorkspaceVerified `
-      -OverviewWorkspaceError $overviewWorkspaceError
+      -OverviewWorkspaceError $overviewWorkspaceError `
+      -AIInstructionsResult $aiInstructionsResult `
+      -AIInstructionsError $aiInstructionsError
 
     return $finalResult
   }

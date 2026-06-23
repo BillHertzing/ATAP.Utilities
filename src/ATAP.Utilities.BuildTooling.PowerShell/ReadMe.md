@@ -97,6 +97,20 @@ carries `infrastructure.overviewWorkspacePath`,
 failure is reported in `overviewWorkspaceError` without aborting the rest of
 Stage 2 — and the step is skipped under `-DryRun`/`-WhatIf`.
 
+**Stage 2 distributes AI instructions through one orchestration (Task 10.34).**
+Immediately after the Overview workspace verification gate,
+`New-SprintStage2` calls `Build-AIInstructionsPerRepository` once. The
+orchestrator parses the workspace and computes stable-worktree skips once, then
+passes that shared context to the existing Claude, AGENTS/Codex, and
+agent-specific lanes. Its aggregate is returned as
+`infrastructure.aiInstructions`, with failures in
+`infrastructure.aiInstructionsError`. A dry run reports the single planned
+distribution step without invoking any builder. The four resulting surfaces are
+`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, and
+`.github/copilot-instructions.md`; compare-before-write behavior makes a second
+run a true no-op, and agent-specific bases are rejected if they duplicate the
+shared core body.
+
 `New-MarkdownChangeTrackingReport` audits the change-tracking hygiene of a
 documentation tree. It recursively scans `-Path` for `*.md` files, reads the
 first ten lines of each, and flags whether a change-tracking header is present

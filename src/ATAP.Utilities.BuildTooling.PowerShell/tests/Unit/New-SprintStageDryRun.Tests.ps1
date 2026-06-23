@@ -22,6 +22,7 @@ BeforeAll {
     'Reset-SprintDatabases'
     'Set-BuildMasterSprintVariables'
     'New-SprintBitwardenSecrets'
+    'Build-AIInstructionsPerRepository'
   )
   $script:dryRunOriginalFunctions = @{}
   foreach ($name in $script:dryRunStubbedFunctionNames) {
@@ -120,6 +121,11 @@ BeforeAll {
   function global:New-SprintBitwardenSecrets {
     $global:dryRunExternalCalls.Add('New-SprintBitwardenSecrets') | Out-Null
     throw 'New-SprintBitwardenSecrets should not be called during DryRun.'
+  }
+
+  function global:Build-AIInstructionsPerRepository {
+    $global:dryRunExternalCalls.Add('Build-AIInstructionsPerRepository') | Out-Null
+    throw 'Build-AIInstructionsPerRepository should not be called during DryRun.'
   }
 
   # Dot-source the function definitions. Defining the functions must not execute

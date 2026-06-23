@@ -1,50 +1,44 @@
 <#
 .SYNOPSIS
-Materializes all per-repo AI instruction files for the current sprint in one call.
+Materializes all per-repository AI instruction files for the current sprint.
 
 .DESCRIPTION
-Build-AIInstructionsPerRepository is the single SprintStart orchestration entry point for
-per-repository AI instruction materialization. It runs the three per-repo builders in the
-canonical order required by the shared-core architecture (Task 10.23):
+Build-AIInstructionsPerRepository is the single SprintStart orchestration entry
+point for per-repository AI instruction materialization. It resolves and parses
+the Overview workspace once, computes the stable-worktree boundary once, and
+passes that shared repository context to the three existing lane builders:
 
-  1. Build-CLAUDEPerRepository       — CLAUDE.md = ai-local.md + CLAUDE-base.md (Claude).
-  2. Build-AGENTSPerRepository       — AGENTS.md = ai-local.md (AI-LOCAL) + AGENTS-base.md
-                                       (AI-CORE), the shared core for Codex / Antigravity /
-                                       GitHub Copilot.
-  3. Build-AgentSpecificPerRepository — distributes GEMINI.md and
-                                       .github/copilot-instructions.md (per-agent deltas only,
-                                       NO core body).
+  1. Build-CLAUDEPerRepository
+  2. Build-AGENTSPerRepository
+  3. Build-AgentSpecificPerRepository
 
-Each builder performs its own Overview-workspace discovery, stable-worktree skip guard, and
-idempotent compare-before-write, so this orchestrator simply forwards WorktreeRoot /
-WorkspacePath to all three and aggregates their results. A builder failure is recorded and
-does not stop the remaining builders; overall Success is false if any builder failed.
-
-Prerequisites: the canonical bases must already be rendered to the SharedVSCode worktree root
-(CLAUDE-base.md, AGENTS-base.md, GEMINI.md, .github/copilot-instructions.md) by
-Render-AIAdapters / Initialize-SprintAIAdapters before this runs.
+The lane builders retain ownership of their file-composition and copy logic.
+The returned aggregate contains each lane result plus a per-repository view of
+Success, Skipped, and Errors. A lane failure is recorded without preventing the
+remaining lanes from running.
 
 .PARAMETER WorktreeRoot
-Optional path to the current worktree root. Defaults to the git toplevel of the current
-working directory. Forwarded to each builder.
+Optional path to the current worktree root. Defaults to the git toplevel of the
+current working directory.
 
 .PARAMETER WorkspacePath
-Optional explicit path to the sprint Overview code-workspace file. Forwarded to each builder.
+Optional explicit path to the sprint Overview code-workspace file. When omitted,
+the newest supported Overview sprint workspace in the worktree parent is used.
 
 .OUTPUTS
 System.Management.Automation.PSCustomObject
-Returns a result object with Success, WorkspacePath, a Builders object holding the three
-individual result objects (Claude, Agents, AgentSpecific), and an aggregated Errors array.
+Returns the resolved workspace, lane results, per-repository aggregate results,
+and errors.
 
 .EXAMPLE
 Build-AIInstructionsPerRepository
 
-Runs all three per-repo builders for the discovered sprint workspace, in canonical order.
+Discovers the sprint workspace once and materializes all four instruction files.
 
 .EXAMPLE
-Build-AIInstructionsPerRepository -WorktreeRoot $shared -WorkspacePath $wsPath -WhatIf
+Build-AIInstructionsPerRepository -WorkspacePath $workspacePath -WhatIf
 
-Previews every per-repo write across all three builders without changing any file.
+Previews the three instruction lanes without changing files.
 
 .NOTES
 AI assisted using Powershell.instructions.md as guidelines.
@@ -71,84 +65,202 @@ function Build-AIInstructionsPerRepository {
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
-    # Load the sibling builders co-located with this orchestrator and ALWAYS prefer that
-    # copy. Dot-sourcing $PSScriptRoot/<builder>.ps1 binds the orchestrator to the builders
-    # that ship with it: the sprint-worktree source when run from source, or the installed
-    # copy when run from an installed module. Gating on Get-Command instead would let module
-    # auto-loading resolve a STALE installed builder (e.g. a pre-Task-10.23 Build-AGENTSPerRepository
-    # that still reads AGENTS.md instead of AGENTS-base.md), so we do not gate.
     $builderOrder = @(
-      'Build-CLAUDEPerRepository'
-      'Build-AGENTSPerRepository'
-      'Build-AgentSpecificPerRepository'
-    )
-    foreach ($builder in $builderOrder) {
-      $builderPath = Join-Path $PSScriptRoot "$builder.ps1"
-      if (Test-Path -LiteralPath $builderPath -PathType Leaf) {
-        . $builderPath
-      } elseif (-not (Get-Command -Name $builder -ErrorAction SilentlyContinue)) {
-        $errorMessage = "Required builder '$builder' is not available and was not found at '$builderPath'."
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-        throw $errorMessage
-      }
-    }
-
-    # Forward only the parameters the caller actually supplied.
-    $forward = @{}
-    if ($PSBoundParameters.ContainsKey('WorktreeRoot') -and -not [string]::IsNullOrWhiteSpace($WorktreeRoot)) {
-      $forward['WorktreeRoot'] = $WorktreeRoot
-    }
-    if ($PSBoundParameters.ContainsKey('WorkspacePath') -and -not [string]::IsNullOrWhiteSpace($WorkspacePath)) {
-      $forward['WorkspacePath'] = $WorkspacePath
-    }
-
-    $result = [PSCustomObject]@{
-      Success       = $false
-      WorkspacePath = $null
-      Builders      = [PSCustomObject]@{
-        Claude        = $null
-        Agents        = $null
-        AgentSpecific = $null
-      }
-      Errors        = @()
-    }
-  }
-
-  process {
-    # Builder name -> the Builders result property it populates. Run in canonical order; a
-    # failure in one is recorded but does not stop the others ($WhatIfPreference and other
-    # preference variables propagate automatically into the called advanced functions).
-    $steps = @(
       [PSCustomObject]@{ Name = 'Build-CLAUDEPerRepository'; Property = 'Claude' }
       [PSCustomObject]@{ Name = 'Build-AGENTSPerRepository'; Property = 'Agents' }
       [PSCustomObject]@{ Name = 'Build-AgentSpecificPerRepository'; Property = 'AgentSpecific' }
     )
 
-    foreach ($step in $steps) {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Running $($step.Name)"
-      try {
-        $builderResult = & $step.Name @forward
-        $result.Builders.$($step.Property) = $builderResult
-
-        if ($null -eq $result.WorkspacePath -and $builderResult.PSObject.Properties['WorkspacePath']) {
-          $result.WorkspacePath = $builderResult.WorkspacePath
-        }
-        if ($builderResult.PSObject.Properties['Errors']) {
-          foreach ($builderError in @($builderResult.Errors)) {
-            $result.Errors += $builderError
-          }
-        }
-        if ($builderResult.PSObject.Properties['Success'] -and -not $builderResult.Success) {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "$($step.Name) reported Success=false."
-        }
-      } catch {
-        $errorMessage = "$($step.Name) failed: $($_.Exception.Message)"
+    foreach ($builder in $builderOrder) {
+      $builderPath = Join-Path $PSScriptRoot "$($builder.Name).ps1"
+      if (Test-Path -LiteralPath $builderPath -PathType Leaf) {
+        . $builderPath
+      } elseif (-not (Get-Command -Name $builder.Name -ErrorAction SilentlyContinue)) {
+        $errorMessage = "Required builder '$($builder.Name)' is not available and was not found at '$builderPath'."
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-        $result.Errors += $errorMessage
+        throw $errorMessage
       }
     }
 
-    $result.Success = ($result.Errors.Count -eq 0)
+    $result = [PSCustomObject]@{
+      Success                = $false
+      WorkspacePath          = $null
+      WorkspaceReadCount     = 0
+      SharedVSCodePath       = $null
+      RepositoriesDiscovered = 0
+      RepositoriesSkipped    = 0
+      Builders               = [PSCustomObject]@{
+        Claude        = $null
+        Agents        = $null
+        AgentSpecific = $null
+      }
+      RepositoryResults      = @()
+      Errors                 = @()
+    }
+  }
+
+  process {
+    try {
+      if (-not $PSBoundParameters.ContainsKey('WorktreeRoot') -or [string]::IsNullOrWhiteSpace($WorktreeRoot)) {
+        $gitTopLevel = git rev-parse --show-toplevel 2>&1
+        if ($LASTEXITCODE -ne 0) {
+          throw "git rev-parse --show-toplevel failed: $gitTopLevel"
+        }
+        $WorktreeRoot = (Resolve-Path $gitTopLevel -ErrorAction Stop).Path
+      } else {
+        $WorktreeRoot = (Resolve-Path $WorktreeRoot -ErrorAction Stop).Path
+      }
+
+      $worktreeParent = Split-Path $WorktreeRoot -Parent
+      if ($PSBoundParameters.ContainsKey('WorkspacePath') -and -not [string]::IsNullOrWhiteSpace($WorkspacePath)) {
+        $workspaceFile = Get-Item -LiteralPath $WorkspacePath -ErrorAction Stop
+      } else {
+        $workspaceFiles = @()
+        $workspaceFiles += Get-ChildItem -Path $worktreeParent -Filter 'Overview-wt-sprint????.code-workspace' -File -ErrorAction SilentlyContinue
+        $workspaceFiles += Get-ChildItem -Path $worktreeParent -Filter 'OverviewSprint????.code-workspace' -File -ErrorAction SilentlyContinue
+        if ($workspaceFiles.Count -eq 0) {
+          throw "No Overview sprint code-workspace file found in '$worktreeParent'."
+        }
+        $workspaceFile = $workspaceFiles |
+          Sort-Object LastWriteTime, Name -Descending |
+          Select-Object -First 1
+      }
+
+      $workspaceFile = Get-Item -LiteralPath $workspaceFile.FullName -ErrorAction Stop
+      $result.WorkspacePath = $workspaceFile.FullName
+      $workspaceRoot = Split-Path $workspaceFile.FullName -Parent
+
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Reading workspace once: $($workspaceFile.FullName)"
+      $workspaceContent = Get-Content -LiteralPath $workspaceFile.FullName -Raw -ErrorAction Stop
+      $result.WorkspaceReadCount++
+      $cleanedJson = $workspaceContent -replace ',\s*([}\]])', '$1'
+      $workspaceData = $cleanedJson | ConvertFrom-Json -ErrorAction Stop
+      if (-not $workspaceData.folders) {
+        throw "Workspace file '$($workspaceFile.FullName)' has no folders section."
+      }
+
+      $folderPaths = @($workspaceData.folders | ForEach-Object { [string]$_.path })
+      $sprintWorktreePattern = '-wt-\d+-Sprint-\d{4}-work-items$'
+      $hasEphemeral = [bool]$workspaceData.PSObject.Properties['sprintEphemeral'] -and $null -ne $workspaceData.sprintEphemeral
+      $hasSprintFolder = @($folderPaths | Where-Object { $_ -match $sprintWorktreePattern }).Count -gt 0
+      $isSprintContext = $hasEphemeral -or $hasSprintFolder
+
+      $repositories = @()
+      foreach ($relativePath in $folderPaths) {
+        $candidatePath = if ([IO.Path]::IsPathRooted($relativePath)) {
+          $relativePath
+        } else {
+          Join-Path $workspaceRoot $relativePath
+        }
+
+        $resolvedPath = $null
+        $resolutionError = $null
+        try {
+          $resolvedPath = (Resolve-Path -LiteralPath $candidatePath -ErrorAction Stop).Path
+        } catch {
+          $resolutionError = "Repository path does not exist: $candidatePath"
+          $result.Errors += $resolutionError
+        }
+
+        $repositoryName = if ($resolvedPath) {
+          Split-Path $resolvedPath -Leaf
+        } else {
+          Split-Path $candidatePath -Leaf
+        }
+        $skipped = $isSprintContext -and $repositoryName -notmatch $sprintWorktreePattern
+
+        $repositories += [PSCustomObject]@{
+          Repository      = $repositoryName
+          RelativePath    = $relativePath
+          Path            = $resolvedPath
+          Skipped         = $skipped
+          ResolutionError = $resolutionError
+        }
+      }
+
+      $sharedRepositories = @($repositories | Where-Object {
+          -not $_.ResolutionError -and $_.Repository -match '^SharedVSCode(?:-wt-\d+-Sprint-\d{4}-work-items)?$'
+        })
+      if ($sharedRepositories.Count -ne 1) {
+        throw "Expected exactly one SharedVSCode folder in '$($workspaceFile.FullName)'; found $($sharedRepositories.Count)."
+      }
+
+      $result.SharedVSCodePath = $sharedRepositories[0].Path
+      $result.RepositoriesDiscovered = $repositories.Count
+      $result.RepositoriesSkipped = @($repositories | Where-Object Skipped).Count
+
+      $repositoryContext = [PSCustomObject]@{
+        WorkspacePath        = $workspaceFile.FullName
+        WorkspaceRoot        = $workspaceRoot
+        SharedVSCodePath     = $result.SharedVSCodePath
+        IsSprintContext      = $isSprintContext
+        SprintWorktreePattern = $sprintWorktreePattern
+        Repositories         = $repositories
+      }
+
+      foreach ($builder in $builderOrder) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Running $($builder.Name)"
+        try {
+          $builderResult = & $builder.Name -RepositoryContext $repositoryContext -WhatIf:$WhatIfPreference
+          $result.Builders.$($builder.Property) = $builderResult
+          if ($builderResult.PSObject.Properties['Errors']) {
+            $result.Errors += @($builderResult.Errors)
+          }
+        } catch {
+          $errorMessage = "$($builder.Name) failed: $($_.Exception.Message)"
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+          $result.Errors += $errorMessage
+        }
+      }
+
+      foreach ($repository in $repositories) {
+        $laneResults = [ordered]@{}
+        $repositoryErrors = @()
+        $laneSuccess = $true
+
+        foreach ($builder in $builderOrder) {
+          $builderResult = $result.Builders.$($builder.Property)
+          $laneResult = if ($builderResult -and $builderResult.PSObject.Properties['RepositoryResults']) {
+            $builderResult.RepositoryResults |
+              Where-Object { $_.Repository -eq $repository.Repository } |
+              Select-Object -First 1
+          } else {
+            $null
+          }
+          $laneResults[$builder.Property] = $laneResult
+
+          if ($laneResult -and $laneResult.PSObject.Properties['ErrorMessage'] -and $laneResult.ErrorMessage) {
+            $repositoryErrors += $laneResult.ErrorMessage
+          }
+          if (-not $repository.Skipped -and (-not $laneResult -or
+              ($laneResult.PSObject.Properties['Success'] -and -not $laneResult.Success))) {
+            $laneSuccess = $false
+          }
+        }
+
+        if ($repository.ResolutionError) {
+          $repositoryErrors += $repository.ResolutionError
+          $laneSuccess = $false
+        }
+
+        $result.RepositoryResults += [PSCustomObject]@{
+          Repository = $repository.Repository
+          Path       = $repository.Path
+          Skipped    = $repository.Skipped
+          Success    = ($repository.Skipped -or ($laneSuccess -and $repositoryErrors.Count -eq 0))
+          Lanes      = [PSCustomObject]$laneResults
+          Errors     = $repositoryErrors
+        }
+      }
+
+      $result.Errors = @($result.Errors | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | Select-Object -Unique)
+      $result.Success = ($result.Errors.Count -eq 0)
+    } catch {
+      $errorMessage = "Build-AIInstructionsPerRepository failed: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      $result.Errors += $errorMessage
+      $result.Success = $false
+    }
   }
 
   end {

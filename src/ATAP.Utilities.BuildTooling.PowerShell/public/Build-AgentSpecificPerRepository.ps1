@@ -14,7 +14,7 @@ do, because each agent reads them repo-relatively:
 
 These files are rendered ONCE at the SharedVSCode worktree root by Render-AIAdapters
 (the ai.agent-specific.* records) and contain ONLY per-agent deltas plus a pointer to
-AGENTS.md for core — never the core body (no-double-core invariant). Distribution is a
+AGENTS.md for core, never the core body (no-double-core invariant). Distribution is a
 PURE COPY (the agent-specific content is repo-independent; repo-specific rules live in
 the AGENTS.md / CLAUDE.md AI-LOCAL block). A pure copy makes the self-copy into the
 SharedVSCode worktree a harmless no-op and keeps re-runs idempotent.
@@ -31,6 +31,11 @@ current working directory.
 .PARAMETER WorkspacePath
 Optional explicit path to the sprint Overview code-workspace file. When supplied,
 the cmdlet uses this file instead of filename-based discovery in the parent folder.
+
+.PARAMETER RepositoryContext
+Internal pre-resolved repository context supplied by
+Build-AIInstructionsPerRepository so all lanes share one workspace read and one
+stable-worktree skip decision.
 
 .OUTPUTS
 System.Management.Automation.PSCustomObject
@@ -59,7 +64,10 @@ function Build-AgentSpecificPerRepository {
     [Parameter(Mandatory = $false, Position = 1,
       HelpMessage = 'Path to the sprint Overview code-workspace file')]
     [ValidateNotNullOrEmpty()]
-    [string]$WorkspacePath
+    [string]$WorkspacePath,
+
+    [Parameter(Mandatory = $false, DontShow = $true)]
+    [PSCustomObject]$RepositoryContext
   )
 
   begin {
@@ -75,7 +83,8 @@ function Build-AgentSpecificPerRepository {
       [PSCustomObject]@{ Name = 'copilot-instructions.md'; RelativePath = '.github/copilot-instructions.md' }
     )
 
-    if (-not $PSBoundParameters.ContainsKey('WorktreeRoot') -or [string]::IsNullOrWhiteSpace($WorktreeRoot)) {
+    if ($null -eq $RepositoryContext -and
+      (-not $PSBoundParameters.ContainsKey('WorktreeRoot') -or [string]::IsNullOrWhiteSpace($WorktreeRoot))) {
       try {
         $gitTopLevel = git rev-parse --show-toplevel 2>&1
         if ($LASTEXITCODE -ne 0) {
@@ -88,7 +97,7 @@ function Build-AgentSpecificPerRepository {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
         throw $errorMessage
       }
-    } else {
+    } elseif ($null -eq $RepositoryContext) {
       try {
         $WorktreeRoot = (Resolve-Path $WorktreeRoot -ErrorAction Stop).Path
       } catch {
@@ -98,7 +107,9 @@ function Build-AgentSpecificPerRepository {
       }
     }
 
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Using worktree root: $WorktreeRoot"
+    if ($null -eq $RepositoryContext) {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Using worktree root: $WorktreeRoot"
+    }
 
     $result = [PSCustomObject]@{
       Success               = $false
@@ -112,64 +123,81 @@ function Build-AgentSpecificPerRepository {
 
   process {
     try {
-      # Step 1: Resolve the sprint workspace file (prefer an explicit path).
-      $parentDir = Split-Path $WorktreeRoot -Parent
-      if ($PSBoundParameters.ContainsKey('WorkspacePath') -and -not [string]::IsNullOrWhiteSpace($WorkspacePath)) {
-        try {
-          $workspaceFile = Get-Item -LiteralPath $WorkspacePath -ErrorAction Stop
-        } catch {
-          throw "WorkspacePath does not exist: $WorkspacePath"
-        }
+      if ($null -ne $RepositoryContext) {
+        $result.WorkspacePath = $RepositoryContext.WorkspacePath
+        $sharedVSCodeFullPath = $RepositoryContext.SharedVSCodePath
+        $sprintWorktreePattern = $RepositoryContext.SprintWorktreePattern
+        $repositoryEntries = @($RepositoryContext.Repositories)
       } else {
-        $workspaceFiles = @()
-        $workspaceFiles += Get-ChildItem -Path $parentDir -Filter 'Overview-wt-sprint????.code-workspace' -File -ErrorAction SilentlyContinue
-        $workspaceFiles += Get-ChildItem -Path $parentDir -Filter 'OverviewSprint????.code-workspace' -File -ErrorAction SilentlyContinue
+        $parentDir = Split-Path $WorktreeRoot -Parent
+        if ($PSBoundParameters.ContainsKey('WorkspacePath') -and -not [string]::IsNullOrWhiteSpace($WorkspacePath)) {
+          try {
+            $workspaceFile = Get-Item -LiteralPath $WorkspacePath -ErrorAction Stop
+          } catch {
+            throw "WorkspacePath does not exist: $WorkspacePath"
+          }
+        } else {
+          $workspaceFiles = @()
+          $workspaceFiles += Get-ChildItem -Path $parentDir -Filter 'Overview-wt-sprint????.code-workspace' -File -ErrorAction SilentlyContinue
+          $workspaceFiles += Get-ChildItem -Path $parentDir -Filter 'OverviewSprint????.code-workspace' -File -ErrorAction SilentlyContinue
 
-        if (-not $workspaceFiles -or $workspaceFiles.Count -eq 0) {
-          throw "No Overview sprint code-workspace file found in '$parentDir'"
+          if (-not $workspaceFiles -or $workspaceFiles.Count -eq 0) {
+            throw "No Overview sprint code-workspace file found in '$parentDir'"
+          }
+          if ($workspaceFiles.Count -gt 1) {
+            $workspaceFiles = $workspaceFiles | Sort-Object LastWriteTime, Name -Descending
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Multiple workspace files found; using latest: $($workspaceFiles[0].Name)"
+          }
+          $workspaceFile = $workspaceFiles[0]
         }
-        if ($workspaceFiles.Count -gt 1) {
-          $workspaceFiles = $workspaceFiles | Sort-Object LastWriteTime, Name -Descending
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Multiple workspace files found; using latest: $($workspaceFiles[0].Name)"
+
+        $workspaceFile = Get-Item -LiteralPath $workspaceFile.FullName -ErrorAction Stop
+        $result.WorkspacePath = $workspaceFile.FullName
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Using workspace file: $($workspaceFile.FullName)"
+
+        try {
+          $workspaceContent = Get-Content -Path $workspaceFile.FullName -Raw -ErrorAction Stop
+          $cleanedJson = $workspaceContent -replace ',\s*([}\]])', '$1'
+          $workspaceData = $cleanedJson | ConvertFrom-Json -ErrorAction Stop
+        } catch {
+          throw "Failed to parse workspace file '$($workspaceFile.FullName)': $($_.Exception.Message)"
         }
-        $workspaceFile = $workspaceFiles[0]
+        if (-not $workspaceData.folders) {
+          throw "Workspace file '$($workspaceFile.FullName)' has no folders section"
+        }
+
+        $folderPaths = @($workspaceData.folders | ForEach-Object { $_.path })
+        $sprintWorktreePattern = '-wt-\d+-Sprint-\d{4}-work-items$'
+        $hasEphemeral = [bool]$workspaceData.PSObject.Properties['sprintEphemeral'] -and $null -ne $workspaceData.sprintEphemeral
+        $hasSprintFolder = @($folderPaths | Where-Object { $_ -match $sprintWorktreePattern }).Count -gt 0
+        $isSprintContext = $hasEphemeral -or $hasSprintFolder
+
+        $repositoryEntries = foreach ($relativePath in $folderPaths) {
+          $candidatePath = Join-Path $parentDir $relativePath
+          $resolvedPath = $null
+          $resolutionError = $null
+          try {
+            $resolvedPath = (Resolve-Path $candidatePath -ErrorAction Stop).Path
+          } catch {
+            $resolutionError = "Repository path does not exist: $candidatePath"
+          }
+          $repositoryName = if ($resolvedPath) { Split-Path $resolvedPath -Leaf } else { Split-Path $candidatePath -Leaf }
+          [PSCustomObject]@{
+            Repository      = $repositoryName
+            Path            = $resolvedPath
+            Skipped         = $isSprintContext -and $repositoryName -notmatch $sprintWorktreePattern
+            ResolutionError = $resolutionError
+          }
+        }
+
+        $sharedRepository = $repositoryEntries |
+          Where-Object { -not $_.ResolutionError -and $_.Repository -match '^SharedVSCode(?:-wt-\d+-Sprint-\d{4}-work-items)?$' } |
+          Select-Object -First 1
+        if (-not $sharedRepository) {
+          throw 'No SharedVSCode folder found in workspace file'
+        }
+        $sharedVSCodeFullPath = $sharedRepository.Path
       }
-
-      $workspaceFile = Get-Item -LiteralPath $workspaceFile.FullName -ErrorAction Stop
-      $result.WorkspacePath = $workspaceFile.FullName
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Using workspace file: $($workspaceFile.FullName)"
-
-      # Step 2: Read the workspace folders.
-      try {
-        $workspaceContent = Get-Content -Path $workspaceFile.FullName -Raw -ErrorAction Stop
-        $cleanedJson = $workspaceContent -replace ',\s*([}\]])', '$1'
-        $workspaceData = $cleanedJson | ConvertFrom-Json -ErrorAction Stop
-      } catch {
-        throw "Failed to parse workspace file '$($workspaceFile.FullName)': $($_.Exception.Message)"
-      }
-
-      if (-not $workspaceData.folders) {
-        throw "Workspace file '$($workspaceFile.FullName)' has no folders section"
-      }
-
-      $folderPaths = @()
-      foreach ($folder in $workspaceData.folders) {
-        $folderPaths += $folder.path
-      }
-
-      $sprintWorktreePattern = '-wt-\d+-Sprint-\d{4}-work-items$'
-      $hasEphemeral = [bool]$workspaceData.PSObject.Properties['sprintEphemeral'] -and $null -ne $workspaceData.sprintEphemeral
-      $hasSprintFolder = @($folderPaths | Where-Object { $_ -match $sprintWorktreePattern }).Count -gt 0
-      $isSprintContext = $hasEphemeral -or $hasSprintFolder
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Sprint context: $isSprintContext (ephemeral=$hasEphemeral, sprintFolder=$hasSprintFolder)"
-
-      # Step 3: Identify the SharedVSCode worktree path (the rendered base location).
-      $sharedVSCodeRelPath = $folderPaths | Where-Object { $_ -match 'SharedVSCode' }
-      if (-not $sharedVSCodeRelPath) {
-        throw 'No SharedVSCode folder found in workspace file'
-      }
-      $sharedVSCodeFullPath = Join-Path $parentDir $sharedVSCodeRelPath
-      $sharedVSCodeFullPath = (Resolve-Path $sharedVSCodeFullPath -ErrorAction Stop).Path
 
       # Step 4: Read the rendered agent-specific bases once.
       $bases = @()
@@ -178,28 +206,31 @@ function Build-AgentSpecificPerRepository {
         if (-not (Test-Path -LiteralPath $baseFilePath -PathType Leaf)) {
           throw "Rendered agent-specific base '$($spec.RelativePath)' not found at '$baseFilePath'. Render it first from canonical via Render-AIAdapters (ai.agent-specific.* records)."
         }
+        $baseContent = Get-Content -LiteralPath $baseFilePath -Raw -ErrorAction Stop
+        if ($baseContent -match 'SourceId:\s*ai\.core\.main-instructions\.v1' -or
+          $baseContent -match '<!-- AI-CORE:BEGIN -->') {
+          throw "Rendered agent-specific base '$($spec.RelativePath)' contains the shared core body. The no-double-core invariant requires core instructions to live only in AGENTS.md."
+        }
         $bases += [PSCustomObject]@{
           Name         = $spec.Name
           RelativePath = $spec.RelativePath
           FullPath     = $baseFilePath
-          Content      = Get-Content -LiteralPath $baseFilePath -Raw -ErrorAction Stop
+          Content      = $baseContent
         }
       }
       $result.BaseFiles = @($bases | ForEach-Object { $_.FullPath })
 
       # Step 5: Distribute into every repository worktree.
-      foreach ($relPath in $folderPaths) {
-        $repoFullPath = Join-Path $parentDir $relPath
-        try {
-          $repoFullPath = (Resolve-Path $repoFullPath -ErrorAction Stop).Path
-        } catch {
-          $errorMessage = "Repository path does not exist: $repoFullPath"
+      foreach ($repositoryEntry in $repositoryEntries) {
+        if ($repositoryEntry.ResolutionError) {
+          $errorMessage = $repositoryEntry.ResolutionError
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
           $result.Errors += $errorMessage
           continue
         }
 
-        $repoName = Split-Path $repoFullPath -Leaf
+        $repoFullPath = $repositoryEntry.Path
+        $repoName = $repositoryEntry.Repository
 
         $repoResult = [PSCustomObject]@{
           Repository   = $repoName
@@ -209,7 +240,7 @@ function Build-AgentSpecificPerRepository {
           ErrorMessage = $null
         }
 
-        if ($isSprintContext -and $repoName -notmatch $sprintWorktreePattern) {
+        if ($repositoryEntry.Skipped) {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Skipping stable worktree '$repoName' (no sprint worktree this sprint); agent-specific files left untouched to honor stable-worktree boundary."
           $repoResult.Skipped = $true
           $result.RepositoryResults += $repoResult

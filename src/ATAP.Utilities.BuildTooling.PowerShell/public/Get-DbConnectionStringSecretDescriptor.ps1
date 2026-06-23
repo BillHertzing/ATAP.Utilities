@@ -1,50 +1,36 @@
 function Get-DbConnectionStringSecretDescriptor {
   <#
   .SYNOPSIS
-    Single source of truth for the SQL connection-string secret format AND the
-    derivable-vs-credentialed classification used by the sprint secret writer and
-    the database connection-string reader.
+    Single source of truth for SQL connection-string secret names, plus an
+    explicit provisioning-only value builder for sprint Dev/Exp secrets.
 
   .DESCRIPTION
-    Task 9.22 (bws-write workaround). The per-sprint connection-string secrets
-    (dbConnectionString-<db>-<host>-<Dev|Exp>-<user>) currently contain NO
-    credential - they are deterministic Integrated-Security strings built entirely
-    from host / tier / database / user, identical every sprint under the
-    permanent-instance lifecycle. Because the Bitwarden Secrets Manager (bws) write
-    path is broken, those secrets cannot be stored in the vault - but they also do
-    not need to be, because the value can be regenerated at read time.
+    Database connection strings, including Development and Experimental sprint
+    names, are vault-owned BWS secrets. Runtime readers must fetch them through
+    Get-SecretATAP / BitwardenSecretsManager and fail loudly if the BWS secret is
+    absent.
 
-    This helper centralizes BOTH concerns in one place so the eventual switch to
-    real credentialed secrets is a configuration change, not a rewrite:
-
-      1. The connection-string FORMAT lives here once. Both the writer
-         (New-SprintBitwardenSecrets) and the deterministic read-time fallback
-         (Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName) call this
-         helper rather than hand-building the string.
-
-      2. The CLASSIFICATION lives here once. A secret is 'derivable' when its value
-         can be reproduced with no credential (Integrated Security, sprint tier),
-         or 'credentialed' when it MUST come from the vault (a real secret). The
-         "is this derivable?" test is intentionally simple: a sprint tier
-         (Dev / Exp) with no overriding credentialed flag is derivable; everything
-         else is credentialed. When credentials are added later, those names are
-         listed in -CredentialedSecretName (or their tier removed from
-         -DerivableTier) and they stop being derived - without touching any caller.
+    This helper centralizes the canonical dbConnectionString-* naming convention.
+    It can also build the Integrated-Security value for Dev/Exp names, but only
+    when a caller explicitly supplies -DerivableTier. That mode is reserved for
+    provisioning/writer flows such as New-SprintBitwardenSecrets, which creates or
+    verifies the BWS entries. The default reader-facing classification is
+    credentialed/vault-only, so Dev and Exp do not silently fall back to a local
+    deterministic string.
 
     Two modes:
 
       ByName  - parse a canonical secret name into its parts and classify it.
-                Used by the reader to decide whether a missing vault secret can be
-                rebuilt deterministically.
+                Used by diagnostics/tests to understand the name. By default this
+                mode does not return a connection string.
 
       ByParts - build the canonical secret name (and, when derivable, the
                 connection string) from explicit parts. Used by the writer to
-                decide, per secret, whether a vault write is required at all.
+                create/check the corresponding BWS secret.
 
-    The deterministic connection string is ONLY produced for derivable secrets.
-    For credentialed secrets ConnectionString is $null - the caller MUST read the
-    real value from the vault and MUST fail loudly if it is absent. This helper
-    never derives a credentialed string.
+    The connection string is ONLY produced when a caller opts into derivation with
+    -DerivableTier. For credentialed/default secrets ConnectionString is $null -
+    runtime callers MUST read the real value from the vault.
 
   .PARAMETER SecretName
     ByName mode. A canonical connection-string secret name of the form
@@ -68,9 +54,10 @@ function Get-DbConnectionStringSecretDescriptor {
     (Dev / Exp). Defaults to $env:USERNAME when omitted for a sprint tier.
 
   .PARAMETER DerivableTier
-    The set of normalized tier tokens whose values can be reproduced with no
-    credential. Defaults to @('Dev','Exp'). Narrow this (or list specific names in
-    -CredentialedSecretName) when a tier starts carrying a real credential.
+    The set of normalized tier tokens whose provisioning value can be generated
+    locally. Defaults to empty so all tiers, including Dev and Exp, are BWS-only
+    at runtime. New-SprintBitwardenSecrets passes @('Dev','Exp') explicitly while
+    creating/checking BWS entries.
 
   .PARAMETER CredentialedSecretName
     Explicit secret names that MUST be treated as credentialed even if their tier
@@ -90,11 +77,11 @@ function Get-DbConnectionStringSecretDescriptor {
 
   .EXAMPLE
     Get-DbConnectionStringSecretDescriptor -SecretName 'dbConnectionString-ATAPUtilities-localhost-Dev-jsmith'
-    # IsDerivable = $true; ConnectionString built deterministically.
+    # IsDerivable = $false by default; runtime must fetch the value from BWS.
 
   .EXAMPLE
-    Get-DbConnectionStringSecretDescriptor -DatabaseName 'master' -DatabaseHost 'localhost' -Environment 'Exp' -UserName 'jsmith'
-    # SecretName = dbConnectionString-master-localhost-Exp-jsmith; derivable.
+    Get-DbConnectionStringSecretDescriptor -DatabaseName 'master' -DatabaseHost 'localhost' -Environment 'Exp' -UserName 'jsmith' -DerivableTier @('Dev','Exp')
+    # SecretName = dbConnectionString-master-localhost-Exp-jsmith; provisioning value returned for BWS creation.
 
   .EXAMPLE
     Get-DbConnectionStringSecretDescriptor -SecretName 'dbConnectionString-ATAPUtilities-sql01-Production'
@@ -102,7 +89,8 @@ function Get-DbConnectionStringSecretDescriptor {
 
   .NOTES
     AI assisted using Powershell.instructions.md as guidelines. See
-    Research/Bitwarden-Secret-Write-Workaround.md for the design rationale.
+    Research/Bitwarden-Secret-Write-Workaround.md for the historical design
+    rationale and the Task 10.7 cleanup that made BWS the normal DB path.
   .LINK
     New-SprintBitwardenSecrets
   .LINK
@@ -133,7 +121,7 @@ function Get-DbConnectionStringSecretDescriptor {
     [string] $UserName,
 
     [Parameter(Mandatory = $false)]
-    [string[]] $DerivableTier = @('Dev', 'Exp'),
+    [string[]] $DerivableTier = @(),
 
     [Parameter(Mandatory = $false)]
     [string[]] $CredentialedSecretName = @()
@@ -164,9 +152,9 @@ function Get-DbConnectionStringSecretDescriptor {
       }
     }
 
-    # The connection-string FORMAT - defined exactly once for the whole ecosystem.
-    # Derivable (sprint) instances are named <Tier><UserName> (e.g. Devjsmith) and
-    # use Windows Integrated Security, so the value carries no credential.
+    # The connection-string FORMAT - defined exactly once for provisioning flows.
+    # Sprint instances are named <Tier><UserName> (e.g. Devjsmith) and use Windows
+    # Integrated Security, so the seeded BWS value carries no password.
     $buildDeterministicConnectionString = {
       param([string] $DbName, [string] $DbHost, [string] $Tier, [string] $User)
       $instanceName = "${Tier}${User}"
@@ -242,7 +230,7 @@ function Get-DbConnectionStringSecretDescriptor {
     # ---- Classification ----------------------------------------------------
     # A secret is derivable only when ALL of these hold:
     #   * it parsed into a known tier,
-    #   * that tier is in the derivable set (default Dev/Exp),
+    #   * that tier is in the explicit derivable set (default empty),
     #   * a username is available (sprint instances are per-developer),
     #   * the name is not explicitly flagged credentialed.
     $isExplicitlyCredentialed = $false

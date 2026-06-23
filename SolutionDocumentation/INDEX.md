@@ -314,7 +314,9 @@ _Teach / Tell how to create software._
   replacement planned, priority P1-P4), or retired (will not be rebuilt),
   and documents the reactivation procedure.
 - [Sprint Infrastructure Naming](SprintInfrastructure-Naming.md) —
-  Naming conventions for sprint-scoped infrastructure resources.
+  Naming conventions for sprint-scoped infrastructure resources, including
+  BWS-owned `dbConnectionString-*` keys for Development and Experimental
+  database connection strings.
 - [Production and Tooling Overview](Production-and-Tooling-Overview.md) —
   Cross-cut overview of production-facing flows and supporting tooling.
 - [Immutable Build Strategy](Immutable-Build-Strategy.md) —

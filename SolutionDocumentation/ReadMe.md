@@ -46,6 +46,9 @@ ToDo: Insert diagram of CI/CD process
 - [Sprint-Boundary Retargeting](./Sprint-Boundary-Retargeting.md) documents the
   registry-backed AI adapter lifecycle, project-only SprintStart defaults, and
   the pre-teardown SprintEnd drift gate.
+- [Sprint Infrastructure Naming](./SprintInfrastructure-Naming.md) records the
+  sprint resource names, including BWS-owned `dbConnectionString-*` keys for
+  Development and Experimental database connection strings.
 
 ## <a id="Development vs. CI/CD" /> Development vs. CI/CD
 

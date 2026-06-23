@@ -27,9 +27,16 @@ The compendium lives at
 with its grammar embedded in that compendium and import/export functions under
 `src/ATAP.Utilities.RulesManagement.PowerShell/public/`.
 
-### Generated reports
+### Agent instruction surfaces
 
-- [`_generated/ReportOnAccessingSecretsFromBitwarden.md`](_generated/ReportOnAccessingSecretsFromBitwarden.md)
-  records the Sprint 0010 Task 10.7 review of Bitwarden Password Manager `bw`,
-  Bitwarden Secrets Manager `bws`, DPAPI token resolution, BuildMaster secret
-  access, and remaining migration gaps.
+`AGENTS.md`, `CLAUDE.md`, and `.agents/skills/bitwarden/SKILL.md` carry the
+Sprint 0010 Task 10.7 Bitwarden split: `Get-SecretATAP` defaults to
+Bitwarden Secrets Manager (`bws` plus process/DPAPI token), while Password
+Manager `bw` + `BW_SESSION` is opt-in for personal user-owned secrets only.
+
+### Research reports
+
+- `Research/ReportOnAccessingSecretsFromBitwarden.md` in the `_Planning` Sprint
+  0010 worktree records the Task 10.7 review of Bitwarden Password Manager
+  `bw`, Bitwarden Secrets Manager `bws`, DPAPI token resolution, BuildMaster
+  secret access, and the DB connection-string BWS cleanup.

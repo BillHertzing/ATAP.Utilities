@@ -20,25 +20,33 @@ Rules for accessing secrets from the organization's Bitwarden vault.
 
 ## PowerShell Access Pattern
 
-Use the `Get-BitWardenSecret` cmdlet (from `ATAP.Utilities.BuildTooling.PowerShell`)
-to retrieve secrets. Do NOT use the PowerShell Secrets Management vault extension —
-it stores secrets in a parallel vault that is not visible in the Bitwarden UI.
+Use `Get-SecretATAP` (from `ATAP.Utilities.BuildTooling.PowerShell`) to retrieve
+secrets by name. The default provider is Bitwarden Secrets Manager
+(`BitwardenSecretsManager`, `bws` CLI). Select the Password Manager provider
+(`Bitwarden`, `bw` CLI) only for personal, user-owned secrets.
+
+Do NOT use the PowerShell Secrets Management vault extension - it stores secrets
+in a parallel vault that is not visible in the Bitwarden UI.
 
 ```powershell
-$secret = Get-BitWardenSecret -ItemName 'MySecretName'
+$secret = Get-SecretATAP -SecretName 'BuildMaster.Admin.API.Key'
+$personalSecret = Get-SecretATAP -SecretName 'MyPersonalSecret' -SecretStoreType 'Bitwarden'
 ```
 
 ---
 
 ## BW_SESSION Environment Variable
 
-The Bitwarden CLI session token (`BW_SESSION`) is set at interactive login by
-`LoginScript.ps1`. In agent-spawned shells, process-scope `$env:BW_SESSION` may
-be empty. Read it from User scope:
+`BW_SESSION` is only for the personal Password Manager `bw` path. It is set at
+interactive login/unlock and may be read from User scope when a real user has
+explicitly selected `-SecretStoreType 'Bitwarden'`:
 
 ```powershell
 $bwSession = [System.Environment]::GetEnvironmentVariable('BW_SESSION', 'User')
 ```
+
+Do not require `BW_SESSION` for CI, BuildMaster, service accounts, database
+connection strings, or other project/runtime secrets.
 
 ---
 
@@ -53,8 +61,8 @@ using a machine access token instead:
   DPAPI access-token file for the running account (`Get-BWSAccessToken`).
   Provision the token file with `Initialize-BWSAccessToken`.
 - Per-sprint machine secrets (`dbConnectionString-*-<Dev|Exp>-<UserName>`)
-  live in Bitwarden Secrets Manager (project `CI-Shared`), created by
-  `New-SprintBitwardenSecrets` and deleted by `Remove-SprintBitwardenSecrets`.
+  live in Bitwarden Secrets Manager (project `CI-Shared`) and are created or
+  checked by `New-SprintBitwardenSecrets`.
 - Sprint-automation reads go through
   `Get-SecretATAP -SecretName <name> -SecretStoreType 'BitwardenSecretsManager'`.
 - Never make sprint automation depend on `bw login`, `bw unlock`, or
@@ -70,31 +78,32 @@ file. When a new secret is needed:
 
 1. Stop and inform the user of the required secret and a suggested environment
    variable name (e.g., `MY_SERVICE_API_KEY`).
-2. The user will add the secret to Bitwarden and update `LoginScript.ps1` to export
-   it as a User-scope environment variable.
+2. For CI/runtime/project secrets, the user will add the value to Bitwarden
+   Secrets Manager and grant the appropriate BWS project access. Store only the
+   secret name in source/configuration.
 3. Thereafter, read the value with:
    ```powershell
-   $value = [System.Environment]::GetEnvironmentVariable('MY_SERVICE_API_KEY', 'User')
+   $value = Get-SecretATAP -SecretName 'My.Secret.Name'
    ```
 
 ---
 
 ## Bitwarden CLI vs. Secrets Management Extension
 
-| Method                                | Vault visible in UI? | Use for        |
-| ------------------------------------- | -------------------- | -------------- |
-| `Get-BitWardenSecret` (Bitwarden CLI) | Yes                  | All secrets    |
-| PowerShell Secrets Management vault   | No (separate vault)  | **Do not use** |
+| Method                                         | Vault visible in UI? | Use for                                |
+| ---------------------------------------------- | -------------------- | -------------------------------------- |
+| `Get-SecretATAP` default / `bws`               | Yes                  | CI/runtime/project secrets             |
+| `Get-SecretATAP -SecretStoreType 'Bitwarden'` | Yes                  | Personal user-owned Password Manager secrets |
+| PowerShell Secrets Management vault            | No (separate vault)  | **Do not use**                         |
 
 ---
 
 ## Database Connection String Secrets (R-35)
 
-Permanent-tier connection strings are Bitwarden Password Manager secure-note items
-(store the connection string in the item's `connString` field). Per-sprint ephemeral
-connection strings are Bitwarden Secrets Manager secrets (the secret value IS the
-connection string; see SC-0175 above). Never commit connection strings, SQL
-passwords, API keys, or vault exports.
+Permanent-tier and per-sprint connection strings are Bitwarden Secrets Manager
+secrets (the BWS secret value is the connection string; see SC-0175 / Task 10.7
+above). Never commit connection strings, SQL passwords, API keys, or vault
+exports.
 
 ### Naming Patterns
 
@@ -164,7 +173,7 @@ may create, migrate, inspect, or tear down:
 | Ephemeral | `Dev<UserName>`, `Exp<UserName>` | `dbConnectionString-master-<Host>-<Dev|Exp>-<UserName>` |
 
 When writing tooling that creates or removes databases, resolve the `master` connection
-string first. Do not derive it by editing an application database connection string unless
-there is no Bitwarden item and the user explicitly approves that fallback.
+string first through `Get-SecretATAP -SecretStoreType 'BitwardenSecretsManager'`.
+Do not derive missing Development or Experimental strings locally.
 
 End of instructions.

@@ -296,13 +296,16 @@ a ETW channel for function tracing that uses Fody weaving, but that is not yet i
 
 ## Secrets Management
 
-BitWarden is the password manager. Use `Get-BitWardenSecret` PowerShell cmdlet for access.
-The BitWarden session identifier environment variable is always present (set by login script).
+Bitwarden access goes through `Get-SecretATAP`. The default provider is
+Bitwarden Secrets Manager (`bws` plus process `BWS_ACCESS_TOKEN` or the
+DPAPI-protected BWS token file). Use the Password Manager `bw` provider only for
+personal user-owned secrets by explicitly selecting `-SecretStoreType
+'Bitwarden'`; that path uses `BW_SESSION`.
 
 - Do NOT use the PowerShell Secrets Management vault extension — it stores secrets in a
-  parallel vault not visible in the BitWarden UI
-- if a new secret is needed, stop and tell the user. Give a suggested Environment variable name for the secret.
-  Thereafter expect the environment variable with the secret value will be present
+  parallel vault not visible in the Bitwarden UI
+- if a new secret is needed, stop and tell the user. Give a suggested Environment variable name or Bitwarden secret name.
+  Thereafter expect the secret value to be present in Bitwarden Secrets Manager or in the explicitly approved environment variable.
 - Never write connection strings, API keys, or credentials into source files
 
 ---

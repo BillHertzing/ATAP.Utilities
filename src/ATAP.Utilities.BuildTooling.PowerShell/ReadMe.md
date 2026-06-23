@@ -179,22 +179,18 @@ and is never required by sprint automation (SC-0175). Reads of per-sprint
 machine secrets go through
 `Get-SecretATAP -SecretStoreType 'BitwardenSecretsManager'`.
 
-**Deterministic connection-string fallback (Task 9.22).** The `bws` _write_ path
-is currently broken, but the 12 per-sprint Dev/Exp connection strings carry no
-credential (`Integrated Security=True`) and are reproducible from
-host/tier/db/user. `Get-DbConnectionStringSecretDescriptor` is the single source
-of truth for the connection-string **format** and the
-**derivable-vs-credentialed** classification, shared by the writer
-(`New-SprintBitwardenSecrets`) and the reader (`Resolve-DatabaseSqlConnection`).
-By default `New-SprintBitwardenSecrets` derives the strings and writes nothing to
-the vault (so sprint Stage 2 needs no `bws` write at all); `-WriteDerivableToVault`
-persists them once the write path is fixed. `Resolve-DatabaseSqlConnection`
-resolves in order: (a) real vault secret if present, (b) deterministic build when
-derivable, (c) hard fail if a credential is required but absent (a credentialed
-string is never derived). When SQL logins replace Integrated Security, marking the
-affected names credentialed is a one-place config change, not a rewrite, and a
-working programmatic write+rotate path becomes mandatory before those credentialed
-secrets ship.
+**DB connection-string secrets (Task 10.7 cleanup).** Development and
+Experimental DB connection strings are normal Bitwarden Secrets Manager entries,
+not personal-vault items and not reader-side deterministic fallbacks.
+`New-SprintBitwardenSecrets` uses `bws` plus `$env:BWS_ACCESS_TOKEN` or the
+DPAPI token file to create/check the expected `dbConnectionString-*` entries in
+the `CI-Shared` project. `Get-DbConnectionStringSecretDescriptor` remains the
+single source of truth for the canonical name and can generate the
+Integrated-Security value only when a provisioning caller explicitly opts into
+`-DerivableTier @('Dev','Exp')`. Runtime reads use `Get-SecretATAP
+-SecretStoreType 'BitwardenSecretsManager'` (or `Resolve-DatabaseSqlConnection`)
+and fail if BWS cannot return the value. The compatibility
+`-WriteDerivableToVault` switch is retained but persistence is now the default.
 
 **Personal-vault / `bw` purge (Task 9.21).** CI/infrastructure secrets must
 never live in a developer's personal Bitwarden Password Manager vault. The

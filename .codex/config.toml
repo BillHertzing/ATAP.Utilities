@@ -1,26 +1,23 @@
-# Canonical Codex configuration — authored, shareable subset.
-# Source of truth: SharedVSCode .ai/config/codex/config.toml
-# Rendered by .ai/tools/Render-AIAdapters.ps1 to each repo's .codex/config.toml (the project layer,
-# which Codex loads only for TRUSTED projects). The global ~/.codex/config.toml is managed separately
-# by .ai/tools/Update-CodexGlobalConfig.ps1 (managed merge: these authored keys + the preserved
-# [projects] trust table).
+# Codex adapter pilot configuration
+# Sprint 0008 Task 8.20D
 #
-# Intentionally EXCLUDED (machine/session/runtime-managed by the Codex desktop app):
-#   marketplaces, plugins, node_repl, the computer-use notify command, per-project trust.
-# MCP servers are intentionally NOT declared here yet — they will be scoped to specific subagents once
-# the canonical subagent/orchestration set is authored. Codex auto-discovers agents from
-# .codex/agents/*.toml and skills from .agents/skills/*/SKILL.md by folder, so no discovery markers
-# are needed.
+# Codex discovers custom agents from .codex/agents/*.toml and skills from
+# .agents/skills/*/SKILL.md. This config is intentionally declarative-only for
+# the pilot so it remains valid TOML without relying on an unstable local schema.
 
-model = "gpt-5.5"
-model_reasoning_effort = "xhigh"
-service_tier = "default"
+[pilot]
+source_manifest = "SharedVSCode/.ai/manifests/instruction-map.json"
+custom_agents = [".codex/agents/version-control-commit.toml"]
+skills = [".agents/skills/git-commit/SKILL.md", ".agents/skills/powershell/SKILL.md", ".agents/skills/html-board-extraction/SKILL.md"]
 
-[windows]
-sandbox = "elevated"
+# BEGIN ATAP AI SETTINGS (managed)
+# Task 10.20 reviewed project-scope Codex settings.
+# Global-only model, service tier, desktop, plugin, marketplace, trust, notify,
+# Windows sandbox, and MCP sections are intentionally excluded.
 
 [shell_environment_policy]
 inherit = "core"
 
 [shell_environment_policy.set]
 CLAUDE_CODE_SHELL = "pwsh"
+# END ATAP AI SETTINGS (managed)

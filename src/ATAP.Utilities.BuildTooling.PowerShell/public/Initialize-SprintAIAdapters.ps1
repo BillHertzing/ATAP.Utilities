@@ -114,7 +114,7 @@ function Initialize-SprintAIAdapters {
       -Message "Materialization scope: keeping $outsideJunctionCount outside-junction targets, filtering $filteredJunctionCount junctioned targets"
 
     # Write the filtered manifest to a temporary file for Render-AIAdapters
-    $tempManifestPath = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "instruction-map-filtered-$(Get-Random).json")
+    $tempManifestPath = Join-Path $SharedVSCodeWorktreePath ".ai/manifests/instruction-map-filtered-$(Get-Random).json"
     try {
       $filteredManifest | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $tempManifestPath -Encoding utf8
 

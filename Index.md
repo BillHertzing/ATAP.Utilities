@@ -26,3 +26,10 @@ The compendium lives at
 [`SolutionDocumentation/Rules Compendium.AgentText.md`](SolutionDocumentation/Rules%20Compendium.AgentText.md),
 with its grammar embedded in that compendium and import/export functions under
 `src/ATAP.Utilities.RulesManagement.PowerShell/public/`.
+
+### Generated reports
+
+- [`_generated/ReportOnAccessingSecretsFromBitwarden.md`](_generated/ReportOnAccessingSecretsFromBitwarden.md)
+  records the Sprint 0010 Task 10.7 review of Bitwarden Password Manager `bw`,
+  Bitwarden Secrets Manager `bws`, DPAPI token resolution, BuildMaster secret
+  access, and remaining migration gaps.

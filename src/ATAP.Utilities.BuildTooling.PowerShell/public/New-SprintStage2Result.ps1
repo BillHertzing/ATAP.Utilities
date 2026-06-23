@@ -15,6 +15,11 @@ function New-SprintStage2Result {
     Specifies if the VS Code user settings symlink was successfully retargeted.
   .PARAMETER UserSettingsError
     Any error that occurred during UserSettings.jsonc symlink creation.
+  .PARAMETER ProfileSymlinksRetargeted
+    True when the machine-wide PowerShell 7 profile symlinks (profile.ps1,
+    HostSettings.ps1) were successfully retargeted to the sprint worktrees.
+  .PARAMETER ProfileSymlinkError
+    Any error that occurred while retargeting the PowerShell 7 profile symlinks.
   .PARAMETER BuildMasterVariablesSet
     Array of BuildMaster variable names that were successfully set.
   .PARAMETER BuildMasterVariablesErrors
@@ -57,6 +62,12 @@ function New-SprintStage2Result {
     [string]$UserSettingsError,
 
     [Parameter(Mandatory=$false)]
+    [bool]$ProfileSymlinksRetargeted = $false,
+
+    [Parameter(Mandatory=$false)]
+    [string]$ProfileSymlinkError,
+
+    [Parameter(Mandatory=$false)]
     [array]$BuildMasterVariablesSet = @(),
 
     [Parameter(Mandatory=$false)]
@@ -95,6 +106,8 @@ function New-SprintStage2Result {
         claudeSettingsError        = $ClaudeSettingsError
         userSettingsLinked         = $UserSettingsLinked
         userSettingsError          = $UserSettingsError
+        profileSymlinksRetargeted  = $ProfileSymlinksRetargeted
+        profileSymlinkError        = $ProfileSymlinkError
         buildMasterVariablesSet    = $BuildMasterVariablesSet
         buildMasterVariablesErrors = $BuildMasterVariablesErrors
         buildMasterVariablesError  = $BuildMasterError

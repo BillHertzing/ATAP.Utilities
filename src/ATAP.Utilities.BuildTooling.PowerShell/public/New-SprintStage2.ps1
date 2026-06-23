@@ -646,6 +646,49 @@ function New-SprintStage2 {
     }
 
     # ===================================================================
+    # 6c. Retarget machine-wide PowerShell 7 profile symlinks to the sprint
+    # worktrees (H09/SC-0188, Task 10.13). profile.ps1 must track the
+    # ATAP.Utilities sprint worktree so the AllUsersAllHosts core profile detects
+    # the active sprint context; HostSettings.ps1 tracks the ATAP.IAC sprint
+    # worktree when one is part of this sprint, else stable. The worker also
+    # removes the now-obsolete global_ConfigRootKeys.ps1 /
+    # global_environmentVariables.ps1 symlinks. SprintEnd resets all of these to
+    # the stable repositories via Set-SprintBoundaryContext.
+    # ===================================================================
+    $profileSymlinksRetargeted = $false
+    $profileSymlinkError = $null
+
+    try {
+      $utilWtRoot = $repoResults |
+        Where-Object { $_.repoName -eq 'ATAP.Utilities' -and -not [string]::IsNullOrWhiteSpace($_.worktreePath) } |
+        Select-Object -First 1 -ExpandProperty worktreePath
+      if ([string]::IsNullOrWhiteSpace($utilWtRoot)) { $utilWtRoot = Join-Path $GitRoot 'ATAP.Utilities' }
+
+      $iacWtRoot = $repoResults |
+        Where-Object { $_.repoName -eq 'ATAP.IAC' -and -not [string]::IsNullOrWhiteSpace($_.worktreePath) } |
+        Select-Object -First 1 -ExpandProperty worktreePath
+      if ([string]::IsNullOrWhiteSpace($iacWtRoot)) { $iacWtRoot = Join-Path $GitRoot 'ATAP.IAC' }
+
+      if ($PSCmdlet.ShouldProcess($utilWtRoot, 'Retarget PowerShell 7 profile symlinks to sprint worktrees')) {
+        $profileSymlinkResult = Set-PowerShell7ProfileSymlink `
+          -ATAPUtilitiesRoot $utilWtRoot `
+          -ATAPIACRoot $iacWtRoot `
+          -Confirm:$false
+        if ($profileSymlinkResult.Ok) {
+          $profileSymlinksRetargeted = $true
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+            -Message "PowerShell 7 profile symlinks retargeted: profile.ps1 -> $utilWtRoot, HostSettings.ps1 -> $iacWtRoot"
+        } else {
+          $profileSymlinkError = "Profile symlink retarget reported failures: $($profileSymlinkResult.Failures -join '; ')"
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profileSymlinkError
+        }
+      }
+    } catch {
+      $profileSymlinkError = "Failed to retarget PowerShell 7 profile symlinks. Exception: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profileSymlinkError
+    }
+
+    # ===================================================================
     # 7. Set BuildMaster sprint application variables (Area 7.2-1)
     # Sets SprintNumber, UserName, SprintBranchName for each application.
     # These are consumed by the 5-Stage OtterScript plans and are cleared
@@ -770,6 +813,8 @@ function New-SprintStage2 {
       -ClaudeSettingsError $claudeSettingsError `
       -UserSettingsLinked $userSettingsLinked `
       -UserSettingsError $userSettingsError `
+      -ProfileSymlinksRetargeted $profileSymlinksRetargeted `
+      -ProfileSymlinkError $profileSymlinkError `
       -BuildMasterVariablesSet $(if ($buildMasterResult) { $buildMasterResult.variablesSet } else { @() }) `
       -BuildMasterVariablesErrors $(if ($buildMasterResult) { $buildMasterResult.errors } else { @() }) `
       -BuildMasterError $buildMasterError `

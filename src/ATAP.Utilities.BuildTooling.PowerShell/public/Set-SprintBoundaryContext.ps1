@@ -19,14 +19,18 @@ function Set-SprintBoundaryContext {
       - downstream contexts ................... Initialize-DownstreamSprintFromSharedVSCode (Start)
                                                 / Reset-DownstreamToSharedVSCodeMain (End) (per worktree)
       - canonical AI adapters ................. Invoke-SprintAIAdapterLifecycle (per worktree)
-      - PowerShell profiles ................... stable-by-design, no per-sprint retarget
-      - ConfigRootKeys ........................ stable-by-design, no per-sprint retarget
+      - PowerShell 7 profile symlinks ......... Set-PowerShell7ProfileSymlink (once)
+      - ConfigRootKeys ........................ in-process bootstrap, no symlink
 
-    PowerShell profiles load their ATAP modules from the stable repo path and
-    PSModulePath, and ConfigRootKeys store host/user values (never worktree paths),
-    so neither is retargeted at a sprint boundary. The cmdlet records both as an
-    explicit StableByDesign no-op so the returned contract demonstrably covers all
-    five concerns.
+    The machine-wide PowerShell 7 profile symlinks (profile.ps1 -> ATAP.Utilities,
+    HostSettings.ps1 -> ATAP.IAC) are NOT stable-by-design: profile.ps1 is how the
+    AllUsersAllHosts core profile detects the active stable-vs-sprint worktree, so it
+    must track the sprint worktree at Start and reset to stable at End (H09/SC-0188,
+    Task 10.13). This concern delegates to Set-PowerShell7ProfileSymlink, which also
+    removes the now-obsolete global_ConfigRootKeys.ps1 and global_environmentVariables.ps1
+    symlinks. ConfigRootKeys remain genuinely stable-by-design: they are bootstrapped
+    in-process by Initialize-ATAPConfigurationGlobals (Task 10.5) rather than dot-sourced
+    from a worktree symlink, so there is nothing to retarget.
 
     Every worker is invoked under the cmdlet's own ShouldProcess, so -WhatIf
     previews the full retarget without mutating anything.
@@ -68,6 +72,17 @@ function Set-SprintBoundaryContext {
   .PARAMETER SkipAIAdapterLifecycle
     Skip project-scope AI adapter materialization/audit. Intended only for
     narrowly scoped repair or diagnostic calls.
+  .PARAMETER ATAPUtilitiesRoot
+    Repository or worktree root that owns the profile.ps1 symlink target. Defaults
+    to the ATAP.Utilities sprint worktree (from WorktreePaths) on Start and the
+    stable '<GitRoot>\ATAP.Utilities' on End.
+  .PARAMETER ATAPIACRoot
+    Repository or worktree root that owns the HostSettings.ps1 symlink target.
+    Defaults to the ATAP.IAC sprint worktree (when one exists) on Start and the
+    stable '<GitRoot>\ATAP.IAC' on End.
+  .PARAMETER SkipProfileSymlinks
+    Skip the machine-wide PowerShell 7 profile-symlink retarget concern. Intended
+    only for narrowly scoped repair or diagnostic calls.
   .OUTPUTS
     PSCustomObject with Boundary, DryRun, a per-concern Concerns array, a
     PerWorktree breakdown, and an aggregate Errors array.
@@ -117,6 +132,12 @@ function Set-SprintBoundaryContext {
     [string]$SharedHooksSubPath = '.githooks',
 
     [string]$CommitTemplateRelativePath = 'GitTemplates\git.commit.template.txt',
+
+    [string]$ATAPUtilitiesRoot,
+
+    [string]$ATAPIACRoot,
+
+    [switch]$SkipProfileSymlinks,
 
     [Alias('SkipAISettingsLifecycle')]
     [switch]$SkipAIAdapterLifecycle
@@ -349,18 +370,72 @@ function Set-SprintBoundaryContext {
       })
 
     # ------------------------------------------------------------------
-    # Stable-by-design concerns: PowerShell profiles + ConfigRootKeys
+    # Machine-global concern: PowerShell 7 profile symlinks (once)
+    # profile.ps1 -> ATAP.Utilities, HostSettings.ps1 -> ATAP.IAC. Formerly
+    # 'stable-by-design / no-op'; now actively retargeted per H09/SC-0188 (Task
+    # 10.13). The worker also removes the obsolete global_ConfigRootKeys.ps1 and
+    # global_environmentVariables.ps1 symlinks.
+    # ------------------------------------------------------------------
+    $profileSymlinksOk = $true
+    $profileSymlinksError = $null
+    if (-not $SkipProfileSymlinks) {
+      try {
+        # Resolve the repo roots that own the two managed symlinks. Start tracks the
+        # sprint worktrees; End resets to the stable repositories under GitRoot.
+        if (-not $PSBoundParameters.ContainsKey('ATAPUtilitiesRoot') -or [string]::IsNullOrWhiteSpace($ATAPUtilitiesRoot)) {
+          if ($Boundary -eq 'Start') {
+            $utilMatch = @($WorktreePaths | Where-Object { (Split-Path $_ -Leaf) -match '^ATAP\.Utilities-wt-' })
+            $ATAPUtilitiesRoot = if ($utilMatch.Count -gt 0) { $utilMatch[0] } else { Join-Path $GitRoot 'ATAP.Utilities' }
+          } else {
+            $ATAPUtilitiesRoot = Join-Path $GitRoot 'ATAP.Utilities'
+          }
+        }
+        if (-not $PSBoundParameters.ContainsKey('ATAPIACRoot') -or [string]::IsNullOrWhiteSpace($ATAPIACRoot)) {
+          if ($Boundary -eq 'Start') {
+            $iacMatch = @($WorktreePaths | Where-Object { (Split-Path $_ -Leaf) -match '^ATAP\.IAC-wt-' })
+            if ($iacMatch.Count -eq 0) {
+              $iacMatch = @(Get-ChildItem -Path $GitRoot -Directory -Filter 'ATAP.IAC-wt-*' -ErrorAction SilentlyContinue |
+                  Sort-Object Name | Select-Object -Last 1 -ExpandProperty FullName)
+            }
+            $ATAPIACRoot = if ($iacMatch.Count -gt 0) { $iacMatch[0] } else { Join-Path $GitRoot 'ATAP.IAC' }
+          } else {
+            $ATAPIACRoot = Join-Path $GitRoot 'ATAP.IAC'
+          }
+        }
+
+        if ($PSCmdlet.ShouldProcess($ATAPUtilitiesRoot, "Retarget PowerShell 7 profile symlinks ($Boundary)")) {
+          $profileSymlinkResult = Set-PowerShell7ProfileSymlink `
+            -ATAPUtilitiesRoot $ATAPUtilitiesRoot `
+            -ATAPIACRoot $ATAPIACRoot `
+            -Confirm:$false
+          if (-not $profileSymlinkResult.Ok) {
+            $profileSymlinksOk = $false
+            $profileSymlinksError = "Profile symlink retarget reported failures: $($profileSymlinkResult.Failures -join '; ')"
+            $errors.Add($profileSymlinksError)
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profileSymlinksError
+          }
+        }
+      } catch {
+        $profileSymlinksOk = $false
+        $profileSymlinksError = "Profile symlink retarget failed: $($_.Exception.Message)"
+        $errors.Add($profileSymlinksError)
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profileSymlinksError
+      }
+    }
+    $concerns.Add([PSCustomObject]@{
+        Concern        = 'PowerShell7ProfileSymlinks'
+        Action         = ($SkipProfileSymlinks ? 'Skipped' : "Set-PowerShell7ProfileSymlink ($Boundary)")
+        StableByDesign = $false
+        Succeeded      = $profileSymlinksOk
+        Error          = $profileSymlinksError
+      })
+
+    # ------------------------------------------------------------------
+    # Stable-by-design concern: ConfigRootKeys
     # ------------------------------------------------------------------
     $concerns.Add([PSCustomObject]@{
-        Concern        = 'PowerShellProfiles'
-        Action         = 'None (loads modules from stable repo path + PSModulePath)'
-        StableByDesign = $true
-        Succeeded      = $true
-        Error          = $null
-      })
-    $concerns.Add([PSCustomObject]@{
         Concern        = 'ConfigRootKeys'
-        Action         = 'None (store host/user values, no worktree paths)'
+        Action         = 'None (in-process bootstrap via Initialize-ATAPConfigurationGlobals; legacy symlink removed by profile retarget)'
         StableByDesign = $true
         Succeeded      = $true
         Error          = $null

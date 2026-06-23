@@ -39,6 +39,9 @@ Describe 'Set-SprintBoundaryContext [public]' {
     Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle {
       [PSCustomObject]@{ DriftClean = $true; Results = @(); ChangedCount = 0 }
     }
+    Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-PowerShell7ProfileSymlink {
+      [PSCustomObject]@{ Ok = $true; Failures = @(); Links = @(); DryRun = $false }
+    }
   }
 
   Context 'Parameter validation' {
@@ -126,7 +129,7 @@ Describe 'Set-SprintBoundaryContext [public]' {
   }
 
   Context 'Return contract' {
-    It 'Covers the boundary concerns and marks profiles/ConfigRootKeys stable-by-design' {
+    It 'Covers the boundary concerns; profile symlinks are active, ConfigRootKeys stable-by-design' {
       $result = Set-SprintBoundaryContext -Boundary Start `
         -WorktreePaths @($script:worktree) `
         -SharedVSCodeWorktreePath $script:svSprint `
@@ -137,11 +140,42 @@ Describe 'Set-SprintBoundaryContext [public]' {
       $names | Should -Contain 'SharedVSCodeSettings'
       $names | Should -Contain 'DownstreamContexts'
       $names | Should -Contain 'AIAdapterLifecycle'
-      $names | Should -Contain 'PowerShellProfiles'
+      $names | Should -Contain 'PowerShell7ProfileSymlinks'
       $names | Should -Contain 'ConfigRootKeys'
 
-      ($result.Concerns | Where-Object Concern -EQ 'PowerShellProfiles').StableByDesign | Should -BeTrue
+      ($result.Concerns | Where-Object Concern -EQ 'PowerShell7ProfileSymlinks').StableByDesign | Should -BeFalse
       ($result.Concerns | Where-Object Concern -EQ 'ConfigRootKeys').StableByDesign | Should -BeTrue
+    }
+
+    It 'Retargets the PowerShell 7 profile symlinks to the sprint worktree at Start' {
+      Set-SprintBoundaryContext -Boundary Start `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -GitRoot $script:gitRoot
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-PowerShell7ProfileSymlink -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $ATAPUtilitiesRoot -eq $script:worktree }
+    }
+
+    It 'Resets the PowerShell 7 profile symlinks to stable repos at End' {
+      Set-SprintBoundaryContext -Boundary End `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svStable `
+        -GitRoot $script:gitRoot
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-PowerShell7ProfileSymlink -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $ATAPUtilitiesRoot -eq (Join-Path $script:gitRoot 'ATAP.Utilities') -and $ATAPIACRoot -eq (Join-Path $script:gitRoot 'ATAP.IAC') }
+    }
+
+    It 'Skips the profile-symlink concern when -SkipProfileSymlinks is set' {
+      $result = Set-SprintBoundaryContext -Boundary End `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svStable `
+        -GitRoot $script:gitRoot `
+        -SkipProfileSymlinks
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-PowerShell7ProfileSymlink -Times 0 -Exactly -Scope It
+      ($result.Concerns | Where-Object Concern -EQ 'PowerShell7ProfileSymlinks').Action | Should -Be 'Skipped'
     }
 
     It 'Reports a per-worktree breakdown with the derived stable repo path' {
@@ -191,6 +225,7 @@ Describe 'Set-SprintBoundaryContext [public]' {
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Initialize-DownstreamSprintFromSharedVSCode -Times 0 -Exactly -Scope It
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-UserSettingsSymlink -Times 0 -Exactly -Scope It
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 0 -Exactly -Scope It
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-PowerShell7ProfileSymlink -Times 0 -Exactly -Scope It
     }
   }
 }

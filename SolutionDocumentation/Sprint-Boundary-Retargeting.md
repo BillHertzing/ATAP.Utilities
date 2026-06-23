@@ -20,8 +20,8 @@ This completes task **V4-H03** (Sprint 0007).
 | SharedVSCode settings | `Set-UserSettingsSymlink`, `Set-ClaudeSettingsSymlink` | point `%APPDATA%\Code\User\settings.json` and `~/.claude/settings.json` at the sprint worktree's `UserSettings.jsonc` / `claude-settings.json` | point both back at the stable SharedVSCode copies | No |
 | Downstream contexts | `Initialize-DownstreamSprintFromSharedVSCode` (Start) / `Reset-DownstreamToSharedVSCodeMain` (End) | set each `*.code-workspace` `templateRef`/`profile` to the sprint worktree and re-apply hooks / commit template / gitattributes | reset `templateRef` to `main`, `profile` to `default`, re-apply context | No |
 | Canonical project AI adapters | `Invoke-SprintAIAdapterLifecycle` | call `Render-AIAdapters -Domain settings,permissions` in Antigravity → Codex → Claude Code → Copilot order; real worktrees materialize project scope only | call `Test-AIAdapterDrift -Domain settings,permissions`; unexplained drift blocks link teardown pending promote/regenerate review | No |
-| PowerShell profiles | — | none | none | **Yes** |
-| ConfigRootKeys | — | none | none | **Yes** |
+| PowerShell 7 profile symlinks | `Set-PowerShell7ProfileSymlink` | point `C:\Program Files\PowerShell\7\profile.ps1` at the ATAP.Utilities sprint worktree and `HostSettings.ps1` at the ATAP.IAC sprint worktree; remove the obsolete `global_ConfigRootKeys.ps1` / `global_environmentVariables.ps1` links | point `profile.ps1` / `HostSettings.ps1` back at the stable ATAP.Utilities / ATAP.IAC repos | No |
+| ConfigRootKeys | — | none (in-process bootstrap) | none (in-process bootstrap) | **Yes** |
 
 ## AIAdapter lifecycle contract
 
@@ -41,19 +41,28 @@ sprint worktree:
 Task 10.26.k removed the settings-named transition command after parity; all
 documentation and callers use `Invoke-SprintAIAdapterLifecycle`.
 
-### Why profiles and ConfigRootKeys are stable-by-design
+### PowerShell 7 profile symlinks are retargeted; ConfigRootKeys are stable-by-design
 
-- **PowerShell profiles** load their ATAP modules from the **stable** repo path
-  (`C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\...`) and from `PSModulePath`. The
-  profile is installed once per machine and is never re-pointed per sprint, so there is
-  nothing to retarget at a sprint boundary.
-- **ConfigRootKeys** map key-name constants to host/user-specific values
-  (`$global:configRootKeys` / `$global:settings`). They store no sprint-worktree paths, so
-  they are identical across sprints.
+- **PowerShell 7 profile symlinks** are **not** stable-by-design (corrected under
+  H09/SC-0188, Task 10.13). `C:\Program Files\PowerShell\7\profile.ps1` is how the
+  AllUsersAllHosts core profile (`AllUsersAllHostsV7CoreProfile.ps1`) detects whether the
+  active session is in a stable or sprint worktree, so it must track the ATAP.Utilities
+  sprint worktree while a sprint is open and reset to stable at SprintEnd. `HostSettings.ps1`
+  follows the ATAP.IAC worktree the same way. `Set-PowerShell7ProfileSymlink` performs the
+  retarget (and removes the obsolete `global_ConfigRootKeys.ps1` /
+  `global_environmentVariables.ps1` symlinks). SprintEnd 0009 not resetting
+  `global_ConfigRootKeys.ps1` left it pointed at the deleted Sprint 0009 worktree — the root
+  cause of the recurring config-globals breakage this concern now prevents.
+- **ConfigRootKeys** remain genuinely stable-by-design: they are bootstrapped **in-process**
+  by `Initialize-ATAPConfigurationGlobals` (Task 10.5) into `$global:configRootKeys` /
+  `$global:settings` rather than dot-sourced from a `C:\Program Files\PowerShell\7` symlink,
+  so there is no sprint-worktree path to retarget.
 
-`Set-SprintBoundaryContext` still emits an explicit `StableByDesign = $true` result entry
-for both, so the returned contract demonstrably covers all five concerns named in the
-V4-H03 acceptance criteria.
+`Set-SprintBoundaryContext` emits one concern entry per row above: the
+`PowerShell7ProfileSymlinks` concern carries `StableByDesign = $false` and its active
+`Set-PowerShell7ProfileSymlink` result, while `ConfigRootKeys` keeps `StableByDesign = $true`.
+The returned contract demonstrably covers every concern named in the V4-H03 acceptance
+criteria as extended by H09/SC-0188 (Task 10.13).
 
 ## Contract
 

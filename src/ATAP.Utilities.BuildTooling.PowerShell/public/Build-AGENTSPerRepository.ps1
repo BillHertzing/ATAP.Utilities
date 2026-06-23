@@ -13,14 +13,19 @@ from the canonical .ai/core/main-instructions.md (the Codex 'generated-wrapper' 
 the ai.core.main-instructions.v1 manifest record). That rendered base file lives at the
 SharedVSCode sprint worktree root as AGENTS.md and is read here as the source of truth.
 
-Unlike Build-CLAUDEPerRepository, this cmdlet:
-  - performs a PURE copy of the rendered base (no per-repo local overlay and no
-    provenance table). Codex gets the pure rendered base for now; a per-repo Codex
-    overlay (analogous to ai-local.md) can be added later. The generated-wrapper header
-    already carries provenance (SourceId, SourceSha256). Omitting the timestamped
-    provenance table keeps the per-repo AGENTS.md BYTE-IDENTICAL across repos and
+Task 10.23: AGENTS.md is the shared CORE carrier for Codex, Antigravity (Gemini), and
+GitHub Copilot. Like Build-CLAUDEPerRepository, this cmdlet now COMBINES the per-repo
+overlay with the core base:
+  - It reads the repo's ai-local.md (legacy CLAUDE-local.md fallback) — the SAME
+    per-repo file Build-CLAUDEPerRepository consumes, so CLAUDE.md and AGENTS.md draw
+    their repo-specific block from one source of truth.
+  - It wraps the two regions in deterministic, non-timestamped sentinels
+    (<!-- AI-LOCAL:BEGIN/END --> then <!-- AI-CORE:BEGIN/END -->). The AI-CORE block is
+    the rendered base verbatim, so Task 10.23.h can extract and diff it against canonical.
+  - Because the sentinels carry no timestamp, the combined per-repo AGENTS.md stays
     idempotent on re-run (a second build is a no-op), which the AGENTS.md acceptance
-    requires.
+    requires. Provenance still lives in the base's generated-wrapper header
+    (SourceId, SourceSha256).
 
 When the workspace is a sprint Overview workspace (it carries a sprintEphemeral block
 and/or lists at least one sprint worktree folder), any repository that has no sprint
@@ -189,12 +194,15 @@ function Build-AGENTSPerRepository {
       $sharedVSCodeFullPath = (Resolve-Path $sharedVSCodeFullPath -ErrorAction Stop).Path
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "SharedVSCode worktree: $sharedVSCodeFullPath"
 
-      # Step 4: Locate the rendered Codex base AGENTS.md in the SharedVSCode worktree
-      $baseFilePath = Join-Path $sharedVSCodeFullPath 'AGENTS.md'
+      # Step 4: Locate the rendered shared core base AGENTS-base.md in the SharedVSCode
+      # worktree. Task 10.23 renders the shared core (Codex/Antigravity/Copilot) to the
+      # distinct filename AGENTS-base.md (analogous to CLAUDE-base.md) so this combiner can
+      # write the repo-root AGENTS.md without overwriting its own source.
+      $baseFilePath = Join-Path $sharedVSCodeFullPath 'AGENTS-base.md'
       if (-not (Test-Path $baseFilePath -PathType Leaf)) {
-        throw "Rendered Codex base AGENTS.md not found at '$baseFilePath'. Render it first from canonical via Render-AIAdapters (Codex target of ai.core.main-instructions.v1)."
+        throw "Rendered shared core base AGENTS-base.md not found at '$baseFilePath'. Render it first from canonical via Render-AIAdapters (Codex/shared target of ai.core.main-instructions.v1)."
       }
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Codex base AGENTS.md found at: $baseFilePath"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Shared core base AGENTS-base.md found at: $baseFilePath"
       $result.BaseFilePath = $baseFilePath
 
       # Read raw bytes so the per-repo copy is byte-identical to the rendered base.
@@ -217,6 +225,7 @@ function Build-AGENTSPerRepository {
         $repoResult = [PSCustomObject]@{
           Repository   = $repoName
           Path         = $repoFullPath
+          HasLocal     = $false
           Success      = $false
           Skipped      = $false
           Action       = $null
@@ -240,21 +249,52 @@ function Build-AGENTSPerRepository {
         try {
           $agentsMdPath = Join-Path $repoFullPath 'AGENTS.md'
 
-          # Idempotent write: only touch the file when the rendered base differs from
-          # what is already there. This makes a re-run a true no-op (Action=unchanged),
-          # proves drift-identical idempotency, and avoids needlessly rewriting a file
-          # that a cloud-sync provider may still be holding open.
+          # Task 10.23: read the per-repo overlay. ai-local.md is the canonical per-repo
+          # file (the same one Build-CLAUDEPerRepository consumes); fall back to the legacy
+          # CLAUDE-local.md for repos not yet renamed. Reading it identically here keeps the
+          # AI-LOCAL block byte-identical to the CLAUDE.md local block.
+          $localFilePath = Join-Path $repoFullPath 'ai-local.md'
+          if (-not (Test-Path -LiteralPath $localFilePath -PathType Leaf)) {
+            $legacyLocal = Join-Path $repoFullPath 'CLAUDE-local.md'
+            if (Test-Path -LiteralPath $legacyLocal -PathType Leaf) {
+              $localFilePath = $legacyLocal
+            }
+          }
+          $localContent = $null
+          if (Test-Path -LiteralPath $localFilePath -PathType Leaf) {
+            $localContent = Get-Content -LiteralPath $localFilePath -Raw -ErrorAction Stop
+            $repoResult.HasLocal = $true
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Found $(Split-Path $localFilePath -Leaf) for $repoName"
+          }
+
+          # Combine: AI-LOCAL block (repo-specific) then AI-CORE block (rendered base
+          # verbatim). Deterministic, non-timestamped sentinels make the AI-CORE block
+          # machine-recoverable for the Task 10.23.h core diff and keep the file
+          # byte-idempotent on re-run.
+          $combinedParts = [System.Collections.Generic.List[string]]::new()
+          $combinedParts.Add('<!-- AI-LOCAL:BEGIN -->')
+          if ($localContent) { $combinedParts.Add($localContent.TrimEnd()) }
+          $combinedParts.Add('<!-- AI-LOCAL:END -->')
+          $combinedParts.Add('<!-- AI-CORE:BEGIN -->')
+          $combinedParts.Add($baseContent.TrimEnd())
+          $combinedParts.Add('<!-- AI-CORE:END -->')
+          $combinedParts.Add('')
+          $combinedContent = ($combinedParts -join "`n")
+
+          # Idempotent write: a re-run with an unchanged base and overlay is a true no-op
+          # (Action=unchanged), and avoids rewriting a file a cloud-sync provider may hold open.
           $existing = if (Test-Path -LiteralPath $agentsMdPath -PathType Leaf) {
             Get-Content -LiteralPath $agentsMdPath -Raw -ErrorAction Stop
           } else { $null }
 
-          if ($null -ne $existing -and $existing -ceq $baseContent) {
+          if ($null -ne $existing -and $existing -ceq $combinedContent) {
             $repoResult.Action = 'unchanged'
             $repoResult.Success = $true
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "AGENTS.md unchanged for $repoName"
-          } elseif ($PSCmdlet.ShouldProcess($agentsMdPath, 'Write Codex base AGENTS.md')) {
-            # Pure copy of the rendered base; -NoNewline preserves byte-for-byte content.
-            Set-Content -Path $agentsMdPath -Value $baseContent -Encoding UTF8 -NoNewline -ErrorAction Stop
+          } elseif ($PSCmdlet.ShouldProcess($agentsMdPath, 'Write combined AGENTS.md (core + ai-local)')) {
+            # -NoNewline preserves byte-for-byte content; the trailing newline is already
+            # in $combinedContent from the final empty element.
+            Set-Content -LiteralPath $agentsMdPath -Value $combinedContent -Encoding UTF8 -NoNewline -ErrorAction Stop
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Wrote AGENTS.md for $repoName"
             $repoResult.Action = 'written'
             $repoResult.Success = $true

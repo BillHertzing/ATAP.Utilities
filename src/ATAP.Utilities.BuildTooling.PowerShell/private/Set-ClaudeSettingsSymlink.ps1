@@ -29,32 +29,35 @@ function Set-ClaudeSettingsSymlink {
 
   process {
     $sourcePath = Join-Path $SharedVSCodeWorktreePath 'claude-settings.json'
-    $targetPath = Join-Path $env:USERPROFILE '.claude' 'settings.json'
+    $targetPath = Join-Path `
+      -Path $env:USERPROFILE `
+      -ChildPath '.claude' `
+      -AdditionalChildPath 'settings.json'
 
     if (-not (Test-Path $sourcePath)) {
       throw "Source claude-settings.json not found at $sourcePath"
     }
 
-    # Ensure the target directory exists
-    $targetDir = Split-Path $targetPath -Parent
-    if (-not (Test-Path $targetDir)) {
-      New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
-    }
-
-    # Remove existing file/symlink at target so we can replace it
-    if (Test-Path $targetPath) {
-      $existingItem = Get-Item $targetPath -Force
-      if ($existingItem.LinkType -eq 'SymbolicLink') {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-          -Message "Removing existing symlink at $targetPath"
-      } else {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-          -Message "Replacing non-symlink file at $targetPath with symlink"
+    if ($PSCmdlet.ShouldProcess($targetPath, "Replace with symlink -> $sourcePath")) {
+      # Ensure the target directory exists only after mutation approval.
+      $targetDir = Split-Path $targetPath -Parent
+      if (-not (Test-Path $targetDir)) {
+        New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
       }
-      Remove-Item $targetPath -Force
-    }
 
-    if ($PSCmdlet.ShouldProcess($targetPath, "Create symlink -> $sourcePath")) {
+      # Remove only the exact settings file/link; never recurse into ~/.claude.
+      if (Test-Path $targetPath) {
+        $existingItem = Get-Item $targetPath -Force
+        if ($existingItem.LinkType -eq 'SymbolicLink') {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
+            -Message "Removing existing symlink at $targetPath"
+        } else {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+            -Message "Replacing non-symlink file at $targetPath with symlink"
+        }
+        Remove-Item $targetPath -Force
+      }
+
       New-Item -ItemType SymbolicLink -Path $targetPath -Target $sourcePath -Force | Out-Null
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
         -Message "Symlink created: $targetPath -> $sourcePath"

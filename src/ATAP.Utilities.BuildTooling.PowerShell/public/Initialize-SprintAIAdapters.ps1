@@ -90,14 +90,21 @@ function Initialize-SprintAIAdapters {
     foreach ($record in $filteredManifest.records) {
       $filteredTargets = @()
       foreach ($target in $record.targets) {
-        if ($target.scope -eq 'outside-junction' -or -not $target.scope) {
+        # Null-safe scope read (Task 10.3.f): many manifest targets legitimately omit
+        # 'scope', and a direct $target.scope member access throws PropertyNotFoundException
+        # under Set-StrictMode -Version Latest (the original Sprint 0010 start defect).
+        $scopeProperty = $target.PSObject.Properties['scope']
+        $scopeValue = if ($scopeProperty) { $scopeProperty.Value } else { $null }
+        if ($scopeValue -eq 'outside-junction' -or -not $scopeValue) {
           # Keep targets marked outside-junction; also keep unscoped targets for backwards compatibility
           $filteredTargets += $target
           $outsideJunctionCount++
         } else {
           $filteredJunctionCount++
+          $pathProperty = $target.PSObject.Properties['path']
+          $targetPath = if ($pathProperty) { $pathProperty.Value } else { '(unknown path)' }
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-            -Message "Filtering out junctioned target: $($target.path)"
+            -Message "Filtering out junctioned target: $targetPath"
         }
       }
       $record.targets = $filteredTargets

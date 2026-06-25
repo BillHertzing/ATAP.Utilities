@@ -73,7 +73,7 @@ function Invoke-SprintEndGitHubClose {
       $remoteResult = Invoke-SprintEndNativeCommand -FilePath 'git' `
         -ArgumentList @('-C', $resolvedRepoPath, 'remote', 'get-url', 'origin')
       $remote = ($remoteResult.Output -join '').Trim()
-      if ($remote -match '(?i)(?:github\.com[:/])(?<repo>[^/]+/[^/.]+)(?:\.git)?$') {
+      if ($remote -match '(?i)(?:github\.com[:/])(?<repo>[^/]+/.+?)(?:\.git)?/?$') {
         $Repository = $Matches.repo
       } else {
         throw "Could not derive GitHub repository from origin '$remote'."

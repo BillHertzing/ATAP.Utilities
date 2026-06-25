@@ -415,6 +415,30 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $result.CodeSee[0].Classification | Should -Be 'PlanningSignal'
       $result.PlanningPayload.CodeSeeClassification | Should -Be 'PlanningSignal'
     }
+
+    It 'derives a repository whose name contains dots from origin' {
+      Mock Invoke-SprintEndNativeCommand {
+        $argsText = $ArgumentList -join ' '
+        $output = switch -Regex ($argsText) {
+          'branch --show-current' { @('11-Sprint-0010-work-items'); break }
+          'remote get-url origin' { @('https://github.com/BillHertzing/ATAP.IAC.git'); break }
+          'issue view 11' { @('{"number":11,"state":"OPEN","title":"Sprint 0010","url":"https://example/11"}'); break }
+          'pr list' { @('[]'); break }
+          default { @('ok') }
+        }
+        [PSCustomObject]@{
+          FilePath = $FilePath; ArgumentList = $ArgumentList; ExitCode = 0
+          Output = $output; Succeeded = $true
+        }
+      }
+
+      $repo = Join-Path $TestDrive 'ATAP.IAC-wt-11-Sprint-0010-work-items'
+      New-Item -ItemType Directory -Path $repo -Force | Out-Null
+      $result = Invoke-SprintEndGitHubClose -RepoPath $repo -Confirm:$false
+
+      $result.Repository | Should -Be 'BillHertzing/ATAP.IAC'
+      $result.IssueNumber | Should -Be 11
+    }
   }
 
   Context 'Invoke-SprintEndLifecycle' {

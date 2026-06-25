@@ -15,6 +15,11 @@ function New-SprintStage2Result {
     Specifies if the VS Code user settings symlink was successfully retargeted.
   .PARAMETER UserSettingsError
     Any error that occurred during UserSettings.jsonc symlink creation.
+  .PARAMETER ProfileSymlinksRetargeted
+    True when the machine-wide PowerShell 7 profile symlinks (profile.ps1,
+    HostSettings.ps1) were successfully retargeted to the sprint worktrees.
+  .PARAMETER ProfileSymlinkError
+    Any error that occurred while retargeting the PowerShell 7 profile symlinks.
   .PARAMETER BuildMasterVariablesSet
     Array of BuildMaster variable names that were successfully set.
   .PARAMETER BuildMasterVariablesErrors
@@ -25,6 +30,19 @@ function New-SprintStage2Result {
     Array of database reset results.
   .PARAMETER DatabaseResetError
     Any error that occurred during database resets.
+  .PARAMETER OverviewWorkspacePath
+    Path to the generated OverviewSprintNNNN.code-workspace file (Task 10.14.a).
+  .PARAMETER OverviewWorkspaceVerified
+    True when the Overview sprint workspace was generated and the verification
+    gate confirmed it exists and resolves at least one sprint worktree folder.
+  .PARAMETER OverviewWorkspaceError
+    Any error that occurred while generating or verifying the Overview sprint
+    workspace.
+  .PARAMETER AIInstructionsResult
+    Aggregate returned by Build-AIInstructionsPerRepository.
+  .PARAMETER AIInstructionsError
+    Any error that prevented or failed the single AI-instruction distribution
+    step.
   .OUTPUTS
     [PSCustomObject]
   .NOTES
@@ -49,6 +67,12 @@ function New-SprintStage2Result {
     [string]$UserSettingsError,
 
     [Parameter(Mandatory=$false)]
+    [bool]$ProfileSymlinksRetargeted = $false,
+
+    [Parameter(Mandatory=$false)]
+    [string]$ProfileSymlinkError,
+
+    [Parameter(Mandatory=$false)]
     [array]$BuildMasterVariablesSet = @(),
 
     [Parameter(Mandatory=$false)]
@@ -61,7 +85,22 @@ function New-SprintStage2Result {
     [array]$DatabaseResets = @(),
 
     [Parameter(Mandatory=$false)]
-    [string]$DatabaseResetError
+    [string]$DatabaseResetError,
+
+    [Parameter(Mandatory=$false)]
+    [string]$OverviewWorkspacePath,
+
+    [Parameter(Mandatory=$false)]
+    [bool]$OverviewWorkspaceVerified = $false,
+
+    [Parameter(Mandatory=$false)]
+    [string]$OverviewWorkspaceError,
+
+    [Parameter(Mandatory=$false)]
+    [PSCustomObject]$AIInstructionsResult,
+
+    [Parameter(Mandatory=$false)]
+    [string]$AIInstructionsError
   )
 
   begin {
@@ -78,11 +117,18 @@ function New-SprintStage2Result {
         claudeSettingsError        = $ClaudeSettingsError
         userSettingsLinked         = $UserSettingsLinked
         userSettingsError          = $UserSettingsError
+        profileSymlinksRetargeted  = $ProfileSymlinksRetargeted
+        profileSymlinkError        = $ProfileSymlinkError
         buildMasterVariablesSet    = $BuildMasterVariablesSet
         buildMasterVariablesErrors = $BuildMasterVariablesErrors
         buildMasterVariablesError  = $BuildMasterError
         databaseResets             = $DatabaseResets
         databaseResetError         = $DatabaseResetError
+        overviewWorkspacePath      = $OverviewWorkspacePath
+        overviewWorkspaceVerified  = $OverviewWorkspaceVerified
+        overviewWorkspaceError     = $OverviewWorkspaceError
+        aiInstructions             = $AIInstructionsResult
+        aiInstructionsError        = $AIInstructionsError
       }
     }
     return $finalResult

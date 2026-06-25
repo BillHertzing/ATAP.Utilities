@@ -21,9 +21,25 @@ function Clear-BuildMasterSprintVariables {
     Deletion is idempotent — if a variable does not exist the API returns 404,
     which this cmdlet treats as a successful no-op (already deleted).
 
+    Application targeting (Task 10.12): the worked application set is the union
+    of every BuildMaster application named in -RepositoryApplicationMap (so the
+    ATAP.Utilities repository resolves to both 'ATAP.Utilities-CSharp' and
+    'ATAP.Utilities-PowerShell') plus any explicit -Applications. This keeps
+    Clear in lock-step with Set-BuildMasterSprintVariables, which writes to the
+    same real application names; clearing the bare 'ATAP.Utilities' name would
+    404 and leave the actual sprint variables behind.
+
+  .PARAMETER RepositoryApplicationMap
+    Hashtable mapping a repository name to the BuildMaster application name(s)
+    that repository builds. Every application named in the map is cleared.
+    Default:
+      @{
+        'AceCommander'   = @('AceCommander')
+        'ATAP.Utilities' = @('ATAP.Utilities-CSharp', 'ATAP.Utilities-PowerShell')
+      }
   .PARAMETER Applications
-    List of BuildMaster application names to clear.
-    Defaults to @('AceCommander', 'ATAP.Utilities').
+    Optional list of ADDITIONAL BuildMaster application names to clear beyond
+    those resolved from -RepositoryApplicationMap. Defaults to an empty list.
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server.
     Defaults to 'http://localhost:50017'.
@@ -47,7 +63,12 @@ function Clear-BuildMasterSprintVariables {
   #>
   [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
   param(
-    [string[]]$Applications = @('AceCommander', 'ATAP.Utilities'),
+    [hashtable]$RepositoryApplicationMap = @{
+      'AceCommander'   = @('AceCommander')
+      'ATAP.Utilities' = @('ATAP.Utilities-CSharp', 'ATAP.Utilities-PowerShell')
+    },
+
+    [string[]]$Applications = @(),
 
     [string]$BuildMasterBaseUrl = 'http://localhost:50017',
 
@@ -93,7 +114,25 @@ function Clear-BuildMasterSprintVariables {
     $variablesCleared = [System.Collections.ArrayList]::new()
     $errors = [System.Collections.ArrayList]::new()
 
+    # Resolve the worked application set (Task 10.12): every BuildMaster
+    # application named in the repository map, unioned with any explicit
+    # -Applications. This matches the real application names that
+    # Set-BuildMasterSprintVariables writes to.
+    $targetApplications = [System.Collections.Generic.List[string]]::new()
+    foreach ($mappedApps in $RepositoryApplicationMap.Values) {
+      foreach ($appName in @($mappedApps)) {
+        if (-not [string]::IsNullOrWhiteSpace($appName) -and -not $targetApplications.Contains($appName)) {
+          [void]$targetApplications.Add($appName)
+        }
+      }
+    }
     foreach ($appName in $Applications) {
+      if (-not [string]::IsNullOrWhiteSpace($appName) -and -not $targetApplications.Contains($appName)) {
+        [void]$targetApplications.Add($appName)
+      }
+    }
+
+    foreach ($appName in $targetApplications) {
       foreach ($varName in $sprintVarNames) {
         $escapedApp = [Uri]::EscapeDataString($appName)
         $escapedVar = [Uri]::EscapeDataString($varName)

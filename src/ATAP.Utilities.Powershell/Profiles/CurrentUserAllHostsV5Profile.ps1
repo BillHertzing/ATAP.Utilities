@@ -177,14 +177,10 @@ Write-PSFMessage -Level Verbose -Message $('Final PSModulePath in AlluserAllshel
 $elevatedSIDPattern = 'S-1-5-32-544|S-1-16-12288'
 if ((whoami /all) -match $elevatedSIDPattern) { Write-PSFMessage -Level Verbose -Message $('Elevated permissions') } #ToDo; change window border to yellow}
 
-# Set the name of the VSC extension project under development
-# ToDo: put this in a vsc extension as a command , and trigger the command every time an editor is activated.
-# The command has a collection set of project paths/names (populated by the list of files below src/ relative to the repository root)
-#  The command matches the editor's document path to (hopefully only one) element, which provide the value for this env var
-# ToDo: put this into a ConfigRootKeys keys tor Typescript and VSC Extension process
-[Environment]::SetEnvironmentVariable('VSCExtensionProjectName', 'ATAP-AiAssist', [EnvironmentVariableTarget]::User)
-[Environment]::SetEnvironmentVariable('VSCExtensionProjectRelativePath', 'src/ATAP.VSCExtension.ATAPAIAssist/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
-[Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.VSCExtension.AI\ATAP-AiAssist', [EnvironmentVariableTarget]::User)
+# VSCExtensionProject* env vars (VSCExtensionProjectName / *RelativePath / *AbsolutePath)
+# were removed in Sprint 0010 Task 10.24 to decouple AIAssist ahead of its repo split.
+# The definitions are preserved in the AIAssist project holding location:
+#   src/ATAP.VSCExtension.AI/ATAP-AiAssist/_holding/VSCExtensionProjectEnvVars.md
 
 # Capture SSL keys needed to decrypt SSL traffic using wireshark
 # use sparingly, because this file gets locked and won't sync with Dropbox

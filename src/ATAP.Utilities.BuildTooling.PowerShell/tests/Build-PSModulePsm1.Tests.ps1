@@ -103,6 +103,78 @@ function Invoke-B { 'B' }
     }
   }
 
+  Context 'module with top-level Export-ModuleMember statements' {
+    BeforeEach {
+      $script:ModuleRoot = New-TempModuleRoot
+      $publicDir = Join-Path $script:ModuleRoot 'public'
+      New-Item -ItemType Directory -Path $publicDir -Force | Out-Null
+
+      $script:GuardedSourcePath = Join-Path $publicDir 'Invoke-Guarded.ps1'
+      @'
+function Invoke-Guarded {
+  'guarded'
+}
+
+if ($MyInvocation.MyCommand.ScriptBlock.Module) {
+  Export-ModuleMember -Function Invoke-Guarded
+}
+'@ | Set-Content -Path $script:GuardedSourcePath -Encoding utf8
+
+      $script:DirectSourcePath = Join-Path $publicDir 'Invoke-Direct.ps1'
+      @'
+function Invoke-Direct {
+  'direct'
+}
+
+Export-ModuleMember -Function Invoke-Direct
+'@ | Set-Content -Path $script:DirectSourcePath -Encoding utf8
+
+      $script:NestedSourcePath = Join-Path $publicDir 'Invoke-Nested.ps1'
+      @'
+function Invoke-Nested {
+  Export-ModuleMember -Function Invoke-Nested
+}
+
+if ($MyInvocation.MyCommand.ScriptBlock.Module) {
+  $script:LoadedInsideModule = $true
+}
+'@ | Set-Content -Path $script:NestedSourcePath -Encoding utf8
+
+      $script:GuardedSourceBeforeBuild = Get-Content -Path $script:GuardedSourcePath -Raw
+      $script:DirectSourceBeforeBuild = Get-Content -Path $script:DirectSourcePath -Raw
+      $script:NestedSourceBeforeBuild = Get-Content -Path $script:NestedSourcePath -Raw
+      $script:OutputPath = Join-Path $script:ModuleRoot 'Out\WithoutExports.psm1'
+    }
+
+    AfterEach {
+      if (Test-Path $script:ModuleRoot) {
+        Remove-Item -Path $script:ModuleRoot -Recurse -Force -ErrorAction SilentlyContinue
+      }
+    }
+
+    It 'strips direct exports and export-only module guard wrappers from generated output' {
+      Build-PSModulePsm1 -ModuleRoot $script:ModuleRoot -OutputPath $script:OutputPath -Confirm:$false | Out-Null
+      $content = Get-Content -Path $script:OutputPath -Raw
+
+      $content | Should -Match 'function Invoke-Guarded'
+      $content | Should -Match 'function Invoke-Direct'
+      $content | Should -Not -Match 'Export-ModuleMember -Function Invoke-Guarded'
+      $content | Should -Not -Match 'Export-ModuleMember -Function Invoke-Direct'
+
+      # A nested export and a non-export module guard are not top-level export declarations.
+      $content | Should -Match 'Export-ModuleMember -Function Invoke-Nested'
+      $content | Should -Match '\$script:LoadedInsideModule = \$true'
+    }
+
+    It 'does not modify the source files while generating the consolidated module' {
+      Build-PSModulePsm1 -ModuleRoot $script:ModuleRoot -OutputPath $script:OutputPath -Confirm:$false | Out-Null
+
+      (Get-Content -Path $script:GuardedSourcePath -Raw) | Should -BeExactly $script:GuardedSourceBeforeBuild
+      (Get-Content -Path $script:DirectSourcePath -Raw) | Should -BeExactly $script:DirectSourceBeforeBuild
+      (Get-Content -Path $script:NestedSourcePath -Raw) | Should -BeExactly $script:NestedSourceBeforeBuild
+    }
+  }
+
   Context 'module with only private functions' {
     BeforeEach {
       $script:ModuleRoot = New-TempModuleRoot

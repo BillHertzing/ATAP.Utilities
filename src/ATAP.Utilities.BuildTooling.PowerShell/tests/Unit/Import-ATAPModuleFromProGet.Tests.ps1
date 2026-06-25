@@ -32,7 +32,7 @@ BeforeAll {
   }
 }
 
-Describe 'Import-ATAPModuleFromProGet [private]' -Tag 'Unit' {
+Describe 'Import-ATAPModuleFromProGet [private]' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   BeforeEach {
     $script:requiredCommandAvailable = $false
     $script:installedVersion = $null

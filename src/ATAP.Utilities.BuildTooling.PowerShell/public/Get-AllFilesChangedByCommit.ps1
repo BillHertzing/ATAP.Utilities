@@ -21,7 +21,12 @@ Function Get-AllFilesChangedByCommit {
     $TempPath,
     [Parameter(Mandatory = $false, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
     # ToDo: add validation script to ensure proper keys and values exists
-    $currentRepositoryPath = $env:VSCExtensionProjectAbsolutePath
+    # Task 10.24: the VSCExtensionProjectAbsolutePath env var was removed from the shared
+    # ATAP.Utilities profile (decoupling AIAssist ahead of its repo split). Fall back to the
+    # current location when the env var is absent so this function still resolves; callers
+    # should pass -currentRepositoryPath explicitly. See
+    # src/ATAP.VSCExtension.AI/ATAP-AiAssist/_holding/VSCExtensionProjectEnvVars.md.
+    $currentRepositoryPath = $(if ($env:VSCExtensionProjectAbsolutePath) { $env:VSCExtensionProjectAbsolutePath } else { (Get-Location).Path })
   )
   BEGIN {
     # $DebugPreference = 'SilentlyContinue' # Continue SilentlyContinue

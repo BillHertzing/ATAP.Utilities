@@ -20,15 +20,120 @@ directory. Generated `.gitattributes` and `.gitconfig.shared` content also
 replaces any existing generated header before writing a fresh one, so repeated
 retargeting refreshes metadata without stacking header blocks.
 
+SprintStart and SprintEnd now use `Invoke-SprintAIAdapterLifecycle`, which calls
+the SharedVSCode registry-backed settings/permissions renderer and drift audit.
+SprintStart defaults to project-only writes; SprintEnd audits before teardown and
+leaves sprint links intact when drift requires promote/regenerate review. Live
+user/global replacement requires explicit approval and checkpoint confirmation.
+The underlying canonical commands are
+`Render-AIAdapters -Domain settings,permissions` at Start and
+`Test-AIAdapterDrift -Domain settings,permissions` at End, in fixed caller order
+Antigravity → Codex → Claude Code → Copilot. Runtime and MCP state remain
+preserve/defer surfaces, and all lifecycle evidence/backups belong under
+`_generated/`. Task 10.26.k removed the settings-named transition wrapper; all
+callers now use the adapter lifecycle.
+
+**SprintEnd typed close (Task 10.6).** `Invoke-SprintEndLifecycle` now composes
+structured command-surface, module-promotion/deployment, worktree-state,
+AIAdapter/template reset, GitHub PR/issue, dotted-history, Overview, HANDOFF,
+database/BuildMaster cleanup, and final-boundary phases. PR bodies receive the
+originating issue closing keyword; check results are classified into required,
+informational, and CodeSee planning signals. HANDOFF stable pulls use an R-31
+overlap gate and `pull --ff-only` with editor suppression. Generated
+`.gitattributes` and `.gitconfig.shared` headers are timestamp-free and
+byte-idempotent. `Test-SprintCheckpointCoverage` verifies final checkpoints
+entirely from canonical Planning roots; `Save-SprintEndSessionTail` creates the
+scoped post-merge stable Planning commit without pushing.
+`Restore-SprintHistoryArtifacts` is the explicit one-off path for reconstructing
+pre-dotted history from reviewed Git revisions. It writes exact Git blob bytes,
+preserves repository-relative paths, records the resolved commit as provenance,
+and preserves different existing content. SprintEnd removes sprint databases while retaining permanent
+developer SQL Server instances, never deletes Bitwarden secrets, and never
+invokes a synthetic sprint-completion task. The structured result reports
+`DatabaseCleanupMode = 'SprintDatabasesOnly'` and
+`SqlInstancesRetained = true`.
+
 Sprint planning also now has an explicit markdown-to-board path: use
 `Convert-TasksMdToSprintBoard` to regenerate a sprint `TASKS.html` board from the
-authoritative `TASKS.md` file after task edits or status updates.
+authoritative `TASKS.md` file after task edits or status updates. Indented lettered
+subtasks (`N.M.a/b/c`) are emitted as their own board cards — numbered distinctly,
+not indented — and inherit the `[Repo]` tag from their umbrella task.
+
+Stage 2 database startup is now safe for non-interactive agent shells (Tasks
+10.4 and 10.5). `Test-SprintPrerequisites` and `New-SprintStage2` call the
+source-first `Initialize-ATAPConfigurationGlobals` helper when
+`$global:configRootKeys` or `$global:settings` is absent or incomplete. The
+normal reset path passes the newly created ATAP.Utilities worktree root and its
+current `SharedSQL` provisioning folder to `Reset-SprintDatabases`, with
+`-Confirm:$false`, so an installed BuildTooling module cannot fall back to stale
+module-relative Flyway or `DropAndCreateDatabase.sql` content. Use
+`-SkipDatabaseReset` to bypass both the Dev/Exp instance guard and reset during
+granular recovery, and `-IncludeRepos` to provision repositories that have no
+task-board marker.
+
+**Stage 1 creates a content-fresh sprint task set (Task 10.11).** After the
+`_Planning` worktree exists, `New-SprintStage1` reads the immediately prior
+sprint's task markdown only to validate and recover its stream structure. It
+generates `Tasks.Sprint<NNNN>.md` with current-sprint scaffold text and no prior
+task content, calls `Convert-TasksMdToSprintBoard` to synchronize
+`Tasks.Sprint<NNNN>.html`, creates empty
+`Tasks.Sprint<NNNN>.Accomplished.html` and
+`Tasks.Sprint<NNNN>.ProceduralDetails.html` companions, and removes the
+prior-sprint root artifacts after templating. Legacy `TASKS.md` and
+`TasksSprint<NNNN>.md` inputs remain accepted for the first transition.
+
+**Stage 2 generates the sprint Overview workspace (Task 10.14.a).** After every
+downstream sprint worktree exists, `New-SprintStage2` calls
+`New-OverviewSprintWorkspace` to produce `OverviewSprint<NNNN>.code-workspace` in
+the GitHub root and then runs a verification gate — the file must exist and must
+resolve at least one `*-wt-<n>-Sprint-<NNNN>-work-items` folder. Earlier sprints
+created this file only through a documentation-only agent step, so a live run
+that deviated from the runbook left it missing and blocked
+`Build-CLAUDEPerRepository` / CLAUDE.md propagation at Sprint 0010 start
+(SC-0193). Generating it inside Stage 2 makes the step unskippable; the result
+carries `infrastructure.overviewWorkspacePath`,
+`infrastructure.overviewWorkspaceVerified`, and
+`infrastructure.overviewWorkspaceError`. The gate is non-fatal — a verification
+failure is reported in `overviewWorkspaceError` without aborting the rest of
+Stage 2 — and the step is skipped under `-DryRun`/`-WhatIf`.
+
+**Stage 2 distributes AI instructions through one orchestration (Task 10.34).**
+Immediately after the Overview workspace verification gate,
+`New-SprintStage2` calls `Build-AIInstructionsPerRepository` once. The
+orchestrator parses the workspace and computes stable-worktree skips once, then
+passes that shared context to the existing Claude, AGENTS/Codex, and
+agent-specific lanes. Its aggregate is returned as
+`infrastructure.aiInstructions`, with failures in
+`infrastructure.aiInstructionsError`. A dry run reports the single planned
+distribution step without invoking any builder. The four resulting surfaces are
+`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, and
+`.github/copilot-instructions.md`; compare-before-write behavior makes a second
+run a true no-op, and agent-specific bases are rejected if they duplicate the
+shared core body.
+
+`New-MarkdownChangeTrackingReport` audits the change-tracking hygiene of a
+documentation tree. It recursively scans `-Path` for `*.md` files, reads the
+first ten lines of each, and flags whether a change-tracking header is present
+(an `<!-- change-tracking:` comment, a `change-tracking:` line, or a
+`last-updated:` line). The result is a single self-contained HTML report written
+to `-Output` (with a sticky folder navigation pane, per-file preview cards, and a
+scanned / tracked / untracked summary banner); all previewed file content is
+HTML-encoded before embedding. Pass `-SolutionDocumentationOnly` to limit the
+scan to `SolutionDocumentation` folders. Per SC-0033, target an `-Output` path
+under the repository `_generated/` folder.
 
 `Invoke-GitCommit` now supports task-scoped grouped commits (Task 9.24).
 A cohesive dirty tree can still produce one Conventional Commit, while mixed
 trees can pass explicit path groups so each group stages only its own paths, runs
 the sensitive-file and lock-file guards, appends a `Co-Authored-By` footer, and
 leaves unrelated dirty files unstaged.
+
+`Build-PSModulePsm1` produces self-contained package modules without carrying
+source-only export declarations into the generated `.psm1` (Task 10.1). It
+strips direct top-level `Export-ModuleMember` statements and export-only
+`if ($MyInvocation.MyCommand.ScriptBlock.Module)` wrappers while preserving the
+source files, nested commands, and unrelated module guards. The generated
+manifest remains the single authority for `FunctionsToExport`.
 
 Checkpoint saves now also append a lightweight session roster entry under the
 sprint `_Planning` worktree at
@@ -48,6 +153,10 @@ conversation/rollout when the id argument is omitted. The roster entry records t
 `Agent`, `AgentSessionKey`, and `ConversationDbPath` for each save.
 
 **BuildMaster PowerShell Module Release Naming (Task 9.37).** To support building multiple arbitrary PowerShell modules within the single consolidated BuildMaster application (`ATAP.Utilities-PowerShell`) without collisions, the BuildMaster `ReleaseNumber` is generated uniquely per module. The release number appends the module name as a suffix (e.g., `0.1.0-ATAP.Utilities.PowerShell` for stable versions, and `0.1.0-Alpha.6.ATAP.Utilities.PowerShell` for prerelease versions), which is fully SemVer 2.0.0 compliant. This naming is strictly internal to BuildMaster and does not bleed into the built package's name, version, or manifest (`.psd1`) file.
+
+**BuildMaster sprint-variable application targeting (Task 10.12).** A single repository can map to one or more BuildMaster applications whose names do **not** match the repository name — the `ATAP.Utilities` repo builds both `ATAP.Utilities-CSharp` and `ATAP.Utilities-PowerShell`, so POSTing to `/api/variables/application/ATAP.Utilities/...` returns 404. `Set-BuildMasterSprintVariables` and `Clear-BuildMasterSprintVariables` therefore (1) drive the worked set from the sprint's **actual** repositories (the keys of `-SprintBranchNames`/`-SourcePaths`, never a fixed `AceCommander`/`ATAP.Utilities` list, so repos outside the sprint are never touched) and (2) resolve each repository to its real BuildMaster application name(s) through `-RepositoryApplicationMap`. Repositories that participate in the sprint but have no BuildMaster application (e.g. `_Planning`, `SharedVSCode`) are absent from the map and are reported in the `skippedRepositories` result field rather than 404-ing. `New-SprintStage2` passes repo-name-keyed branch/source-path maps built from its `$repoResults`, so the in-sprint applications are set without 404s and AceCommander is no longer targeted when it is not in the sprint.
+
+**Batch module pipeline driver (Task 10.33).** `Start-BuildMasterModulePipelineBatch` releases several PowerShell modules in one call without releasing any of them by hand. It accepts an ordered `[string[]] -ModuleName`, normalizes duplicates while preserving caller order, and **preflights every module before creating any BuildMaster release**: it resolves `src/<ModuleName>` (requiring a project-adjacent `version.json` via `Resolve-BuildMasterPackageProjectPath`), computes the immutable package version and `CeilingTier` through `Get-BuildContext`, and resolves each module's BuildMaster application from `-ApplicationByModule` or reviewed configuration — it never guesses when a mapping is absent. Only after all modules pass preflight does it invoke `Start-BuildMasterPackagePipeline` once per module on `global::PowerShellModule-5Stage`, passing the resolved identity and the module's ceiling as the `$CeilingTier` build variable so BuildMaster builds/packages once in Experimental, runs the applicable promoted-module tests, promotes the same immutable bytes through ProGet, and skips every stage above that module's ceiling (`Sprint`/feature → Experimental, `Alpha` → Development, `Beta` → Integration, `QA` → QA, no prerelease label → Production/stable). Modules run sequentially and the batch fails fast unless `-ContinueOnError` is supplied; it supports `-WhatIf`, passes only a secret *name* for BuildMaster credentials, and returns one structured aggregate whose ordered `Results` carry each module's application, project path, package version, ceiling, BuildMaster release/build/execution identifiers, terminal tier, success, and failure detail. The batch only queues and observes BuildMaster work — it never reimplements packaging, tests, feed promotion, or ceiling decisions locally.
 
 Scope-creep capture (`Add-ScopeCreepIdea`) now resolves the target `_Planning`
 worktree through `Resolve-PlanningWorktreeRoot` (Task 9.23). Resolution is
@@ -70,22 +179,18 @@ and is never required by sprint automation (SC-0175). Reads of per-sprint
 machine secrets go through
 `Get-SecretATAP -SecretStoreType 'BitwardenSecretsManager'`.
 
-**Deterministic connection-string fallback (Task 9.22).** The `bws` _write_ path
-is currently broken, but the 12 per-sprint Dev/Exp connection strings carry no
-credential (`Integrated Security=True`) and are reproducible from
-host/tier/db/user. `Get-DbConnectionStringSecretDescriptor` is the single source
-of truth for the connection-string **format** and the
-**derivable-vs-credentialed** classification, shared by the writer
-(`New-SprintBitwardenSecrets`) and the reader (`Resolve-DatabaseSqlConnection`).
-By default `New-SprintBitwardenSecrets` derives the strings and writes nothing to
-the vault (so sprint Stage 2 needs no `bws` write at all); `-WriteDerivableToVault`
-persists them once the write path is fixed. `Resolve-DatabaseSqlConnection`
-resolves in order: (a) real vault secret if present, (b) deterministic build when
-derivable, (c) hard fail if a credential is required but absent (a credentialed
-string is never derived). When SQL logins replace Integrated Security, marking the
-affected names credentialed is a one-place config change, not a rewrite, and a
-working programmatic write+rotate path becomes mandatory before those credentialed
-secrets ship.
+**DB connection-string secrets (Task 10.7 cleanup).** Development and
+Experimental DB connection strings are normal Bitwarden Secrets Manager entries,
+not personal-vault items and not reader-side deterministic fallbacks.
+`New-SprintBitwardenSecrets` uses `bws` plus `$env:BWS_ACCESS_TOKEN` or the
+DPAPI token file to create/check the expected `dbConnectionString-*` entries in
+the `CI-Shared` project. `Get-DbConnectionStringSecretDescriptor` remains the
+single source of truth for the canonical name and can generate the
+Integrated-Security value only when a provisioning caller explicitly opts into
+`-DerivableTier @('Dev','Exp')`. Runtime reads use `Get-SecretATAP
+-SecretStoreType 'BitwardenSecretsManager'` (or `Resolve-DatabaseSqlConnection`)
+and fail if BWS cannot return the value. The compatibility
+`-WriteDerivableToVault` switch is retained but persistence is now the default.
 
 **Personal-vault / `bw` purge (Task 9.21).** CI/infrastructure secrets must
 never live in a developer's personal Bitwarden Password Manager vault. The
@@ -918,3 +1023,26 @@ Add-LocalGroupMember -Group "docker-users" -Member $env:USERNAME
 Use the module-level getting started guide for the lifecycle workflow:
 
 - [Documentation/GettingStarted.md](Documentation/GettingStarted.md)
+
+### Promoted-module test isolation
+
+`Invoke-PromotedModuleTests` restores and imports the immutable package, then
+runs the tier-filtered source tests in a child scope with StrictMode disabled.
+The BuildMaster stage runner keeps `Set-StrictMode -Version Latest` for its own
+orchestration, but that policy no longer leaks into Pester fixture code where
+normal missing-property and scalar `.Count` behavior is expected.
+
+Suites that must import or dot-source the BuildTooling source tree, depend on
+developer-workstation globals or paths, or evaluate the full repository carry
+the `PromotedModuleHostSensitive` tag. They are excluded only from quiet
+promoted-package gates; normal source test runs still execute them.
+
+Task 10.30 promoted `ATAP.Utilities.BuildTooling.PowerShell` 0.1.7 through
+BuildMaster build 14137. Development passed 476/476 tests, and Integration, QA,
+and Production each passed 482/482. ProGet then exposed 0.1.7 in all five
+PowerShellGet feeds, including `powershellget-stable`.
+
+Feed vocabulary remains deliberately split: SprintStart's residual
+`NuGet.config` uses the D-2 `*-production` names, while the immutable promotion
+ladder and `Resolve-ProGetFeedFromSettings` normalize `Production` to the
+canonical `*-stable` tier.

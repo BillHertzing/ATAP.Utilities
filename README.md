@@ -25,6 +25,11 @@ These are a treasure of Projects/Assemblies (at least I hope they will be eventu
 
 Further information on the overall contents of this repository can be found in the [detailed documentation for this repository](./SolutionDocumentation/ReadMe.html)
 
+Agent instruction surfaces (`AGENTS.md`, `CLAUDE.md`, and the Bitwarden skill
+mirror under `.agents/skills/bitwarden/`) now route CI/runtime/project secrets
+through `Get-SecretATAP` / Bitwarden Secrets Manager (`bws`) and reserve `bw` +
+`BW_SESSION` for personal Password Manager secrets.
+
 Other detailed documentation you might be interested are
 
 - [Building a solution from Visual Studio]()
@@ -38,6 +43,11 @@ Other detailed documentation you might be interested are
 - [Using ATAP BuildTooling PowerShell scripts with Visual studio]()
 
 - [Provisioning Bitwarden Secrets Manager access tokens for service accounts and users](./SolutionDocumentation/Runbook-BitwardenServiceAccounts.md)
+
+- Sprint 0010 Task 10.7 Bitwarden access report: persisted in the `_Planning`
+  sprint worktree at `Research/ReportOnAccessingSecretsFromBitwarden.md`. It
+  records the `bw`/`BW_SESSION` personal-vault boundary, the `bws`/DPAPI Secrets
+  Manager path, and the DB connection-string BWS cleanup.
 
 - [AgentText RRSBS pilot for AI adapter load/instantiate workflows](./SolutionDocumentation/Rules%20Compendium.AgentText.md)
 

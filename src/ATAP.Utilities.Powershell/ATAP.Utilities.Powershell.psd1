@@ -89,7 +89,7 @@
     'PracticeKeyboardSkills', 'Register-StartupScheduledTask',
     'Resolve-ParameterValueToList', 'Search-Registry',
     'Search-WindowsIndexs', 'Set-EnvVarsFromBitWarden',
-    'Set-InedoServicesDependency',
+    'Set-GroupEnvironmentVariables', 'Set-InedoServicesDependency',
     'Set-PerceivedTypeInRegistryForPreviewPane',
     'Set-RepositoryPackageSources', 'Set-ScreenReaderOff',
     'Set-ServiceLogonAccount',

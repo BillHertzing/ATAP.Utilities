@@ -64,7 +64,7 @@ function Test-SprintInfrastructureHealth {
     Verifies that the permanent host infrastructure required for sprint builds is healthy.
 
 .DESCRIPTION
-    Runs a read-only health check covering: Bitwarden-related environment variables,
+    Runs a read-only health check covering: prohibited secret-bearing environment variables,
     SQL Server instance connectivity, Flyway CLI availability, NBGV CLI availability,
     git safe.directory configuration for the ATAP.Utilities repo root, BuildMaster
     application existence, ProGet reachability, and BuildMaster reachability.
@@ -225,34 +225,44 @@ function Test-SprintInfrastructureHealth {
     $checks = [ordered]@{}
     $failures = [System.Collections.Generic.List[string]]::new()
 
-    # ── BitwardenEnvVars ──────────────────────────────────────────────────────
-    # BW_SESSION is deliberately NOT required (SC-0175): sprint automation
-    # authenticates to Bitwarden Secrets Manager with a bws machine access
-    # token; BW_SESSION is personal-vault-only.
-    $requiredEnvVars = @('PROGET_ADMIN_API_KEY', 'BUILDMASTER_GH_WEBHOOK_SECRET')
-    $missingVars = [System.Collections.Generic.List[string]]::new()
-    foreach ($varName in $requiredEnvVars) {
-      $val = [System.Environment]::GetEnvironmentVariable($varName, 'User')
-      if ([string]::IsNullOrWhiteSpace($val)) {
-        $val = [System.Environment]::GetEnvironmentVariable($varName, 'Process')
-      }
-      if ([string]::IsNullOrWhiteSpace($val)) {
-        [void]$missingVars.Add($varName)
+    # ── SecretEnvironmentVariables ────────────────────────────────────────────
+    # Sprint automation resolves secret names through $global:settings/Get-PVal
+    # and retrieves values from Bitwarden. Persistent Process/User/Machine API-key
+    # variables create an untracked parallel configuration path and are prohibited.
+    $prohibitedSecretEnvironmentVariables = @(
+      'PROGET_ADMIN_API_KEY',
+      'BUILDMASTER_ADMIN_API_KEY',
+      'BUILDMASTER_GH_WEBHOOK_SECRET',
+      'BWS_ACCESS_TOKEN',
+      'BW_SESSION'
+    )
+    $presentSecretEnvironmentVariables = [System.Collections.Generic.List[object]]::new()
+    foreach ($scope in @('Process', 'User', 'Machine')) {
+      foreach ($varName in $prohibitedSecretEnvironmentVariables) {
+        $value = [System.Environment]::GetEnvironmentVariable($varName, $scope)
+        if (-not [string]::IsNullOrWhiteSpace($value)) {
+          [void]$presentSecretEnvironmentVariables.Add([PSCustomObject]@{
+              Name = $varName
+              Scope = $scope
+            })
+        }
       }
     }
-    $bwVarsOk = ($missingVars.Count -eq 0)
-    $bwVarsDetail = if ($bwVarsOk) {
-      "All required env vars present: $($requiredEnvVars -join ', ')"
+    $secretEnvironmentOk = ($presentSecretEnvironmentVariables.Count -eq 0)
+    $secretEnvironmentDetail = if ($secretEnvironmentOk) {
+      'No prohibited secret-bearing environment variables are present.'
     } else {
-      "Missing env var(s): $($missingVars -join ', ')"
+      'Prohibited secret-bearing environment variable(s) are present: ' +
+      (($presentSecretEnvironmentVariables | ForEach-Object { "$($_.Scope):$($_.Name)" }) -join ', ')
     }
-    $checks['BitwardenEnvVars'] = [PSCustomObject]@{
-      Ok      = $bwVarsOk
-      Detail  = $bwVarsDetail
-      Missing = $missingVars.ToArray()
+    $checks['SecretEnvironmentVariables'] = [PSCustomObject]@{
+      Ok      = $secretEnvironmentOk
+      Detail  = $secretEnvironmentDetail
+      Present = $presentSecretEnvironmentVariables.ToArray()
     }
-    if (-not $bwVarsOk) { [void]$failures.Add('BitwardenEnvVars') }
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "BitwardenEnvVars: $bwVarsDetail"
+    if (-not $secretEnvironmentOk) { [void]$failures.Add('SecretEnvironmentVariables') }
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+      -Message "SecretEnvironmentVariables: $secretEnvironmentDetail"
 
     # ── BuildMasterAdminApiKeyResolvable ──────────────────────────────────────
     $bmKeyOk = -not [string]::IsNullOrWhiteSpace($ApiKey)

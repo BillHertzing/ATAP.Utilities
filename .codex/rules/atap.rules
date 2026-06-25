@@ -1,0 +1,11 @@
+# BEGIN ATAP AI SETTINGS (managed)
+# Managed by Task 10.20 from ai.policy.powershell.no-profile.deny.v1.
+# Codex prefix rules cannot express the full canonical regex. These rules cover
+# direct invocations only; capabilities.json requires a hard diagnostic for any
+# attempted claim of complete translation.
+prefix_rule(pattern=["pwsh", "-NoProfile"], decision="forbidden")
+prefix_rule(pattern=["pwsh.exe", "-NoProfile"], decision="forbidden")
+prefix_rule(pattern=["powershell", "-NoProfile"], decision="forbidden")
+prefix_rule(pattern=["powershell.exe", "-NoProfile"], decision="forbidden")
+prefix_rule(pattern=["C:\\Program Files\\PowerShell\\7\\pwsh.exe", "-NoProfile"], decision="forbidden")
+# END ATAP AI SETTINGS (managed)

@@ -28,8 +28,11 @@
     The actual Pester run is delegated to the existing
     Invoke-PSModulePesterTests driver, which already owns the
     tier-to-tag filter matrix, JUnit-XML emission, and coverage
-    configuration. This cmdlet's job is the restore + import + tier
-    translation + result projection around that driver.
+    configuration. The delegated run executes in a child scope with
+    StrictMode disabled so BuildMaster's runner-level StrictMode does not
+    leak into test containers that are designed for normal module-consumer
+    semantics. This cmdlet's job is the restore + import + tier translation
+    + test-scope isolation + result projection around that driver.
 
     BuildMaster tier names (Experimental/Development/Integration/QA/
     Production) are translated to the Invoke-PSModulePesterTests filter
@@ -338,15 +341,25 @@ function Invoke-PromotedModuleTests {
             $coverageFile = Join-Path $ResultsPath 'CoverageResults.xml'
 
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Running $testDescription for $target (tests from '$ModuleSourceRoot', module from '$savedModulePath')"
-            $innerResult = Invoke-PSModulePesterTests `
-                -ModuleRoot $ModuleSourceRoot `
-                -Tier $pesterTier `
-                -OutputPath $outputFile `
-                -CoverageOutputPath $coverageFile `
-                -SkipCodeCoverage `
-                -PesterOutputVerbosity $PesterOutputVerbosity `
-                -PesterProgressInterval $PesterProgressInterval `
-                -ErrorAction Stop
+            # BuildMasterRunContext.Common.ps1 intentionally enables
+            # StrictMode for the stage runner. Pester test containers are
+            # module-consumer code and must not inherit that runner policy:
+            # under StrictMode, ordinary missing-property probes and scalar
+            # .Count checks abort fixture setup, causing broad false failures.
+            # A child scope keeps the caller's StrictMode unchanged while
+            # giving the delegated test run normal PowerShell semantics.
+            $innerResult = & {
+                Set-StrictMode -Off
+                Invoke-PSModulePesterTests `
+                    -ModuleRoot $ModuleSourceRoot `
+                    -Tier $pesterTier `
+                    -OutputPath $outputFile `
+                    -CoverageOutputPath $coverageFile `
+                    -SkipCodeCoverage `
+                    -PesterOutputVerbosity $PesterOutputVerbosity `
+                    -PesterProgressInterval $PesterProgressInterval `
+                    -ErrorAction Stop
+            }
 
             $passed = if ($null -ne $innerResult) { [int]$innerResult.Passed } else { 0 }
             $failed = if ($null -ne $innerResult) { [int]$innerResult.Failed } else { 0 }

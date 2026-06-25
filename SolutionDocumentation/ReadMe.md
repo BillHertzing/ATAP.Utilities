@@ -43,6 +43,12 @@ ToDo: Insert diagram of CI/CD process
   AgentText rule kind and embeds the grammar for AI agent and instruction text.
 - `src/ATAP.Utilities.RulesManagement.PowerShell/public/Import-AgentTextFromFiles.ps1`
   and `Export-AgentTextToFiles.ps1` provide the load/instantiate pilot path.
+- [Sprint-Boundary Retargeting](./Sprint-Boundary-Retargeting.md) documents the
+  registry-backed AI adapter lifecycle, project-only SprintStart defaults, and
+  the pre-teardown SprintEnd drift gate.
+- [Sprint Infrastructure Naming](./SprintInfrastructure-Naming.md) records the
+  sprint resource names, including BWS-owned `dbConnectionString-*` keys for
+  Development and Experimental database connection strings.
 
 ## <a id="Development vs. CI/CD" /> Development vs. CI/CD
 

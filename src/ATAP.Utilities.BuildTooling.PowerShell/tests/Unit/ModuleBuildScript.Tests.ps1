@@ -29,4 +29,13 @@ Describe 'module.build.ps1 package staging contract' {
     $text | Should -Match '\$script:OutputRoot = \$script:meta.OutputRoot'
     $text | Should -Match '\$script:OutputRoot = \(\$resolvedOutputRoot'
   }
+
+  It 'derives exported aliases from the source manifest and public function Alias attributes only' {
+    $text = Get-Content -LiteralPath $script:moduleBuildPath -Raw
+
+    $text | Should -Match 'Import-PowerShellDataFile -LiteralPath \$script:meta\.ManifestPath'
+    $text | Should -Match '\$functionAst\.Body\.ParamBlock\.Attributes'
+    $text | Should -Match 'if \(\$null -eq \$functionAst\.Body\.ParamBlock\)'
+    $text | Should -Not -Match "GetCommandName\(\) -in @\('Set-Alias', 'New-Alias'\)"
+  }
 }

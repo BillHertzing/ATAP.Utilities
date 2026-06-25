@@ -1,13 +1,9 @@
 BeforeAll {
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
-    function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
+    function Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
 
-  $script:hadGlobalGetPVal = Test-Path -Path 'Function:\global:Get-PVal'
-  if ($script:hadGlobalGetPVal) {
-    $script:oldGlobalGetPVal = (Get-Item -Path 'Function:\global:Get-PVal').ScriptBlock
-  }
-  function global:Get-PVal {
+  function Get-ParameterValueFromNeoConfigurationRoot {
     param(
       [string]$ParameterName,
       [hashtable]$originalPSBoundParameters,
@@ -62,6 +58,7 @@ BeforeAll {
 
     throw "Missing test value for $ParameterName"
   }
+  Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Script -Force
 
   function Build-DatabaseWithFlyway {
     param(
@@ -103,11 +100,6 @@ BeforeAll {
 
 AfterAll {
   Remove-Item -LiteralPath $script:tempRepoRoot -Recurse -Force -ErrorAction SilentlyContinue
-  if ($script:hadGlobalGetPVal) {
-    Set-Item -Path 'Function:\global:Get-PVal' -Value $script:oldGlobalGetPVal
-  } else {
-    Remove-Item -Path 'Function:\global:Get-PVal' -ErrorAction SilentlyContinue
-  }
 }
 
 Describe 'Reset-SprintDatabases [public]' {
@@ -155,6 +147,31 @@ Describe 'Reset-SprintDatabases [public]' {
     }
     Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -ParameterFilter {
       $SqlInstance -eq 'Exptester' -and $Environment -eq 'Experimental'
+    }
+  }
+
+  It 'prefers an explicitly supplied current provisioning-script path over stale settings' {
+    $currentProvisioningPath = Join-Path $script:tempRepoRoot 'src\ATAP.Utilities.DatabaseManagement\SharedSQL'
+    $settings = @{
+      ATAPUtilities = @{
+        Development = @{
+          ProvisioningScriptsPath = 'C:\stale-installed-module\SharedSQL'
+        }
+      }
+    }
+
+    Reset-SprintDatabases `
+      -InstanceNames @('Devtester') `
+      -Databases @('ATAPUtilities') `
+      -Settings $settings `
+      -FlywayBasePath $script:flywayBase `
+      -ProvisioningScriptsPath $currentProvisioningPath `
+      -RepositoryRoot $script:tempRepoRoot `
+      -Confirm:$false | Out-Null
+
+    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -Exactly -ParameterFilter {
+      $ProvisioningScriptsPath -eq $currentProvisioningPath -and
+      $RepositoryRoot -eq $script:tempRepoRoot
     }
   }
 

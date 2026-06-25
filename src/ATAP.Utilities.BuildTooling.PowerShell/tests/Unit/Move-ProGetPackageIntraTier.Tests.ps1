@@ -10,11 +10,12 @@ BeforeAll {
     $script:scriptPath = Join-Path $publicDir 'Move-ProGetPackageIntraTier.ps1'
 
     if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
-        function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
+        function Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
     }
 
-    # Stub REST calls globally and optionally capture calls for payload assertions.
-    function global:Invoke-RestMethod {
+    # Stub REST calls within this Pester container and optionally capture calls
+    # for payload assertions.
+    function Invoke-RestMethod {
         param(
             [string]$Uri,
             [object]$Headers,
@@ -23,8 +24,8 @@ BeforeAll {
             [string]$ContentType,
             [Parameter(ValueFromRemainingArguments = $true)]$rest
         )
-        if ($null -ne $global:MoveProGetIntraTierRestCalls) {
-            $global:MoveProGetIntraTierRestCalls.Add([PSCustomObject]@{
+        if ($null -ne $script:MoveProGetIntraTierRestCalls) {
+            $script:MoveProGetIntraTierRestCalls.Add([PSCustomObject]@{
                 Uri         = $Uri
                 Headers     = $Headers
                 Method      = $Method
@@ -35,11 +36,12 @@ BeforeAll {
         return @{}
     }
 
-    # Stub Get-PVal.
-    function global:Get-PVal {
+    # Provide a container-local resolver and alias.
+    function Get-ParameterValueFromNeoConfigurationRoot {
         param($ParameterName, $originalPSBoundParameters, $dottedPath, $DefaultValue)
         return $DefaultValue
     }
+    Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Script -Force
 
     # Dot-source the file to load the Move-ProGetPackageIntraTier function.
     . $script:scriptPath
@@ -48,16 +50,10 @@ BeforeAll {
     $script:apiKey  = 'test-api-key'
 }
 
-AfterAll {
-    Remove-Item -Path 'Function:\Invoke-RestMethod' -Force -ErrorAction SilentlyContinue
-    Remove-Item -Path 'Function:\Get-PVal' -Force -ErrorAction SilentlyContinue
-    Remove-Variable -Name MoveProGetIntraTierRestCalls -Scope Global -Force -ErrorAction SilentlyContinue
-}
-
-Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
+Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   BeforeEach {
     Mock Write-PSFMessage { }
-    $global:MoveProGetIntraTierRestCalls = [System.Collections.Generic.List[object]]::new()
+    $script:MoveProGetIntraTierRestCalls = [System.Collections.Generic.List[object]]::new()
   }
 
   Context 'Phase 2: valid push -> pull moves' {
@@ -218,7 +214,7 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit' {
         -Reason 'unit intra-tier promotion' `
         -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey | Out-Null
 
-      $postCall = @($global:MoveProGetIntraTierRestCalls | Where-Object { $_.Method -eq 'POST' })[0]
+      $postCall = @($script:MoveProGetIntraTierRestCalls | Where-Object { $_.Method -eq 'POST' })[0]
       $postCall | Should -Not -BeNullOrEmpty
 
       $payload = $postCall.Body | ConvertFrom-Json

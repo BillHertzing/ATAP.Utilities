@@ -33,6 +33,29 @@ the loud-failure guard above is fully intact for the case it was written for. A 
 from an interactive fault. See
 `SolutionDocumentation/PowerShellModule-Pipeline-NoProfile-Runbook.md`.
 
+## Set-GroupEnvironmentVariables (eliminate the global_EnvironmentVariables.ps1 profile symlink)
+
+`Set-GroupEnvironmentVariables` projects a caller-supplied group of ConfigRootKeys into
+**process-scope** environment variables. For each `ConfigRootKey` it resolves the variable
+**name** from `$global:configRootKeys[<ConfigRootKey>]` and the variable **value** from
+`$global:settings[$global:configRootKeys[<ConfigRootKey>]]`, then sets the process
+environment variable.
+
+It is the programmatic replacement for symlinking
+`Profiles/global_EnvironmentVariables.ps1` into the machine PowerShell profile directory
+(`C:\Program Files\PowerShell\7\`). Rather than maintaining a per-worktree symlink that must
+be retargeted at every sprint boundary (H09 / SC-0188), a profile, agent bootstrap, or
+pipeline calls this function with just the group of ConfigRootKeys it needs, reading
+authoritative values from the already-bootstrapped `$global:settings`. Like `Get-PVal`, it is
+StrictMode-safe and **fails loud** when `$global:configRootKeys` / `$global:settings` are
+absent and no `-ConfigRootKeyMap` / `-Settings` override is supplied. Secrets and API keys are
+intentionally **not** projected — resolve those by canonical name through `Get-PVal` /
+`Get-SecretATAP`.
+
+```powershell
+Set-GroupEnvironmentVariables -ConfigRootKeys 'FastTempBasePathConfigRootKey','DropBoxBasePathConfigRootKey'
+```
+
 ## 5-Tier Module Flow
 
 Use the module-level getting started guide for the lifecycle workflow:

@@ -12,24 +12,25 @@ Describe 'New-GeneratedFileContent [private]' {
     Remove-Item -Path $script:tempDir -Recurse -Force -ErrorAction SilentlyContinue
   }
 
-  It 'Prepends the generated header containing the source path' {
+  It 'prepends the generated header containing a stable logical source label' {
     $sourceFile = Join-Path $script:tempDir 'source.txt'
     Set-Content -Path $sourceFile -Value 'original content' -Encoding UTF8
 
     $result = New-GeneratedFileContent -SourcePath $sourceFile
 
     $result | Should -Match 'GENERATED FILE - DO NOT EDIT DIRECTLY'
-    $result | Should -Match ([regex]::Escape($sourceFile))
+    $result | Should -Match 'Source: SharedVSCode/source\.txt'
+    $result | Should -Not -Match ([regex]::Escape($script:tempDir))
     $result | Should -Match 'original content'
   }
 
-  It 'Includes a UTC timestamp in ISO 8601 format' {
+  It 'excludes timestamps so regeneration is deterministic' {
     $sourceFile = Join-Path $script:tempDir 'timestamped.txt'
     Set-Content -Path $sourceFile -Value 'data' -Encoding UTF8
 
     $result = New-GeneratedFileContent -SourcePath $sourceFile
 
-    $result | Should -Match '# Generated: \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z'
+    $result | Should -Not -Match '# Generated:'
   }
 
   It 'Includes the regeneration command reference' {
@@ -71,6 +72,17 @@ Describe 'New-GeneratedFileContent [private]' {
     ([regex]::Matches($result, 'GENERATED FILE - DO NOT EDIT DIRECTLY')).Count | Should -Be 1
     $result | Should -Match 'real content'
     $result | Should -Not -Match ([regex]::Escape('C:\Old\source.txt'))
+  }
+
+  It 'returns identical bytes for repeated generation of unchanged content' {
+    $sourceFile = Join-Path $script:tempDir '.gitattributes'
+    Set-Content -Path $sourceFile -Value '*.ps1 text eol=crlf' -Encoding UTF8
+
+    $first = New-GeneratedFileContent -SourcePath $sourceFile
+    Start-Sleep -Milliseconds 20
+    $second = New-GeneratedFileContent -SourcePath $sourceFile
+
+    $second | Should -BeExactly $first
   }
 
   It 'Throws when the source file does not exist' {

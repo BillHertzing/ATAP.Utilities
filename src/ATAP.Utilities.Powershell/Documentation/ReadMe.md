@@ -37,6 +37,12 @@ a) `global_MachineAndNodeSettings.ps1`
 
 a) `global_EnvironmentVariables.ps1`
 
+`global_ConfigRootKeys.ps1` remains active: `$global:settings` and `Get-PVal`
+still use its stable key constants. Sprint 0010 therefore does not retire it.
+`global_EnvironmentVariables.ps1` now exports non-secret process configuration
+only; secrets and API keys remain in the canonical settings/vault path and are
+resolved through `Get-PVal` / `Get-SecretATAP` when needed.
+
 1. Test the Developer's profile ([Testing the machine profile and global settings[(TBD)])
 1. Copy `CurrentUserAllHostsV7CoreProfile.ps1` to (join-path ([Environment]::GetFolderPath('MyDocuments')) 'PowerShell' 'Profile.ps1')
 

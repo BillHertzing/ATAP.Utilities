@@ -26,6 +26,9 @@ function New-SprintStage2 {
          hooksPath, and commitTemplate.
 
     After all repos are processed the cmdlet also:
+      5c. Generates and verifies the Overview sprint workspace, then calls
+          Build-AIInstructionsPerRepository once to distribute CLAUDE.md,
+          AGENTS.md, GEMINI.md, and .github/copilot-instructions.md.
       6. Creates a symlink from the SharedVSCode sprint worktree's
          claude-settings.json to ~/.claude/settings.json.
       6b. Retargets the VS Code user settings symlink
@@ -63,6 +66,13 @@ function New-SprintStage2 {
   .PARAMETER ExcludeRepos
     Repo names to skip even if they appear in TASKS.md.
     Defaults to @('_Planning', 'SharedVSCode', 'Cross-Repo').
+  .PARAMETER IncludeRepos
+    Additional repository names to provision even when they are not referenced
+    by a task-board [RepoName] marker. ExcludeRepos still takes precedence.
+  .PARAMETER SkipDatabaseReset
+    Skips the Dev/Exp SQL Server instance preflight and the destructive
+    Reset-SprintDatabases step. Intended for granular recovery of the remaining
+    Stage 2 work after database readiness has been handled separately.
   .PARAMETER ProGetBaseUrl
     Base URL for the ProGet server.
     Defaults to 'http://localhost:50000'.
@@ -103,11 +113,16 @@ function New-SprintStage2 {
 
     [string[]]$ExcludeRepos = @('_Planning', 'SharedVSCode', 'Cross-Repo'),
 
+    [ValidatePattern('^[A-Za-z0-9._-]+$')]
+    [string[]]$IncludeRepos = @(),
+
     [string]$ProGetBaseUrl,
 
     [string]$BuildMasterBaseUrl,
 
     [switch]$Force,
+
+    [switch]$SkipDatabaseReset,
 
     [switch]$DryRun
   )
@@ -123,10 +138,13 @@ function New-SprintStage2 {
     }
 
     # --- Resolve configuration via Get-PVal (FSS-03): param > env > settings >
-    #     documented default. Replaces the hard-coded parameter defaults. Get-PVal
-    #     raises a loud-failure guard when no settings source is loaded (tests /
-    #     no-profile shells), so each lookup is wrapped and degrades to the default
-    #     rather than aborting sprint start. ---
+    #     documented default. Get-PVal raises a loud-failure guard when no settings
+    #     source is loaded (tests / no-profile shells), so each lookup is wrapped
+    #     and degrades to the default rather than aborting sprint start.
+    #     Task 10.2: the documented Owner default is read from
+    #     OverView.code-workspace githubOwner (the file in the folder above the
+    #     stable worktrees), falling back to $env:USERNAME only when that file or
+    #     key is absent — so a no-Owner dry run resolves the real org owner. ---
     $getPValAvailable = [bool](Get-Command -Name 'Get-PVal' -ErrorAction SilentlyContinue)
     $proGetBaseUrlKey = if ($global:configRootKeys -and $global:configRootKeys['ProGetBaseUrlConfigRootKey']) {
       $global:configRootKeys['ProGetBaseUrlConfigRootKey']
@@ -136,7 +154,10 @@ function New-SprintStage2 {
     } else { 'BuildMasterBaseUrl' }
 
     $gitRootDefault = 'C:\Dropbox\whertzing\GitHub'
-    $ownerDefault = $env:USERNAME
+    $gitRootForOwner = if (-not [string]::IsNullOrWhiteSpace($GitRoot)) { $GitRoot } else { $gitRootDefault }
+    $ownerDefault = if (Get-Command -Name 'Get-GitHubOwnerFromWorkspace' -ErrorAction SilentlyContinue) {
+      Get-GitHubOwnerFromWorkspace -GitRoot $gitRootForOwner -Fallback $env:USERNAME
+    } else { $env:USERNAME }
     $proGetBaseUrlDefault = 'http://localhost:50000'
     $buildMasterBaseUrlDefault = 'http://localhost:50017'
 
@@ -146,6 +167,13 @@ function New-SprintStage2 {
           @{ Name = 'Owner'; Path = 'GitHubOwner'; Default = $ownerDefault },
           @{ Name = 'ProGetBaseUrl'; Path = $proGetBaseUrlKey; Default = $proGetBaseUrlDefault },
           @{ Name = 'BuildMasterBaseUrl'; Path = $buildMasterBaseUrlKey; Default = $buildMasterBaseUrlDefault })) {
+        # Highest-precedence source is an explicitly-bound parameter
+        # (param > env > settings > default). Never let Get-PVal re-resolution
+        # overwrite a value the caller passed in. Without this guard the
+        # documented default silently clobbered a bound -GitRoot whenever
+        # Get-PVal was loaded (profile/build env), which failed the
+        # Development-tier promoted-module test gate. See SC-0203 / SC-0205.
+        if ($PSBoundParameters.ContainsKey($spec.Name)) { continue }
         try {
           $resolvedSetting = Get-PVal -ParameterName $spec.Name `
             -originalPSBoundParameters $PSBoundParameters `
@@ -164,6 +192,12 @@ function New-SprintStage2 {
     $ProGetBaseUrl = $ProGetBaseUrl.TrimEnd('/')
     $BuildMasterBaseUrl = $BuildMasterBaseUrl.TrimEnd('/')
 
+    # Task 10.2: surface the resolved GitHub owner so a no-Owner dry run shows the
+    # value read from OverView.code-workspace (e.g. 'BillHertzing') before any
+    # gh issue create / ShouldProcess target string is evaluated.
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+      -Message "Resolved GitHub owner '$Owner' (no-Owner default sourced from OverView.code-workspace githubOwner)."
+
     # Autoload-or-throw contract (FSS-11): the BuildTooling module is CI-built and
     # installed, so every command this stage calls must resolve by module autoload
     # (public functions and the private helpers Set-ClaudeSettingsSymlink,
@@ -174,10 +208,13 @@ function New-SprintStage2 {
         'Set-ClaudeSettingsSymlink',
         'Set-UserSettingsSymlink',
         'Get-SprintTaskRepositoryNames',
+        'Initialize-ATAPConfigurationGlobals',
         'Reset-SprintDatabases',
         'Set-WorktreeJunctions',
         'Initialize-DownstreamSprintFromSharedVSCode',
-        'Initialize-SprintAIAdapters')) {
+        'Initialize-SprintAIAdapters',
+        'New-OverviewSprintWorkspace',
+        'Build-AIInstructionsPerRepository')) {
       if (-not (Get-Command -Name $required -ErrorAction SilentlyContinue)) {
         throw "Required command '$required' is not available. The " +
         'ATAP.Utilities.BuildTooling.PowerShell module must be installed and ' +
@@ -219,52 +256,56 @@ function New-SprintStage2 {
       if ([string]::IsNullOrWhiteSpace($planningWt)) {
         throw 'Stage1Result.planning.worktreePath is missing and -TasksFilePath was not supplied.'
       }
-      $TasksFilePath = Join-Path $planningWt "TasksSprint$sprintNum.md"
+      $currentTasksFilePath = Join-Path $planningWt "Tasks.Sprint$sprintNum.md"
+      $legacyTasksFilePath = Join-Path $planningWt "TasksSprint$sprintNum.md"
+      $TasksFilePath = if (Test-Path -LiteralPath $currentTasksFilePath -PathType Leaf) {
+        $currentTasksFilePath
+      } else {
+        $legacyTasksFilePath
+      }
     }
 
-    if (-not (Test-Path $TasksFilePath)) {
-      throw "TasksSprint$sprintNum.md not found at $TasksFilePath"
+    if (-not (Test-Path -LiteralPath $TasksFilePath -PathType Leaf)) {
+      throw "Sprint task markdown was not found at $TasksFilePath"
     }
 
     $planningWorktreePath = Split-Path -Path $TasksFilePath -Parent
-    $activeTaskBoardPath = Join-Path $planningWorktreePath "TasksSprint$sprintNum.html"
-    $versionedTaskBoards = @(Get-ChildItem -LiteralPath $planningWorktreePath -Filter "TasksSprint${sprintNum}_V*.html" -File -ErrorAction SilentlyContinue |
-        Sort-Object Name -Descending)
+    $currentTaskBoardPath = Join-Path $planningWorktreePath "Tasks.Sprint$sprintNum.html"
+    $legacyTaskBoardPath = Join-Path $planningWorktreePath "TasksSprint$sprintNum.html"
+    $activeTaskBoardPath = if (Test-Path -LiteralPath $currentTaskBoardPath -PathType Leaf) {
+      $currentTaskBoardPath
+    } else {
+      $legacyTaskBoardPath
+    }
+    $versionedTaskBoards = @(
+      @(Get-ChildItem -LiteralPath $planningWorktreePath -Filter "Tasks.Sprint${sprintNum}.V*.html" -File -ErrorAction SilentlyContinue)
+      @(Get-ChildItem -LiteralPath $planningWorktreePath -Filter "TasksSprint${sprintNum}_V*.html" -File -ErrorAction SilentlyContinue)
+    ) | Sort-Object Name -Descending
     if ($versionedTaskBoards.Count -gt 0) {
       $activeTaskBoardPath = $versionedTaskBoards[0].FullName
     }
-    $accomplishedPath = Join-Path $planningWorktreePath "Tasks.Accomplished.Sprint$sprintNum.html"
-    $proceduralDetailsPath = Join-Path $planningWorktreePath "Tasks.ProceduralDetails.Sprint$sprintNum.html"
+    $accomplishedPath = Join-Path $planningWorktreePath "Tasks.Sprint$sprintNum.Accomplished.html"
+    $proceduralDetailsPath = Join-Path $planningWorktreePath "Tasks.Sprint$sprintNum.ProceduralDetails.html"
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-      -Message "Stage 2 repository discovery reads TasksSprint$sprintNum.md at '$TasksFilePath'. Keep it synchronized with the active task board '$activeTaskBoardPath' and companion files '$accomplishedPath' / '$proceduralDetailsPath'."
+      -Message "Stage 2 repository discovery reads '$([System.IO.Path]::GetFileName($TasksFilePath))' at '$TasksFilePath'. Keep it synchronized with the active task board '$activeTaskBoardPath' and companion files '$accomplishedPath' / '$proceduralDetailsPath'."
 
-    # Stage 2 reads host-specific database and package settings. Fail early so
-    # agent/no-profile shells do not create partial sprint infrastructure.
+    # Task 10.5: agent shells do not reliably inherit the workstation profile.
+    # Bootstrap the canonical ConfigRootKeys + host settings before Stage 2
+    # reads any host-specific values. Prefer the current stable ATAP.Utilities
+    # source here; after the sprint worktree is created, the DB reset explicitly
+    # uses that newer worktree for SQL/Flyway content.
     if (-not $DryRun) {
-      $missingGlobalConfig = [System.Collections.Generic.List[string]]::new()
-
-      if ($null -eq $global:configRootKeys -or
-        -not ($global:configRootKeys -is [hashtable]) -or
-        $global:configRootKeys.Count -eq 0) {
-        [void]$missingGlobalConfig.Add('$global:configRootKeys')
-      }
-
-      if ($null -eq $global:settings -or
-        -not ($global:settings -is [hashtable]) -or
-        $global:settings.Count -eq 0) {
-        [void]$missingGlobalConfig.Add('$global:settings')
-      }
-
-      if ($missingGlobalConfig.Count -gt 0) {
-        $setupCommand = 'Set-GlobalConfigRootKeys; $global:settings = Get-HostSettings -hostName $env:COMPUTERNAME'
-        throw "New-SprintStage2 requires $($missingGlobalConfig -join ' and ') before it can run. Run the ATAP configuration setup command first: $setupCommand"
-      }
+      $configurationRepositoryRoot = Join-Path $GitRoot 'ATAP.Utilities'
+      Initialize-ATAPConfigurationGlobals `
+        -RepositoryRoot $configurationRepositoryRoot `
+        -Confirm:$false | Out-Null
     }
 
     # Sprint start no longer creates SQL Server instances. Fail before creating
     # GitHub issues/worktrees if the permanent developer instances are missing.
-    if (-not $DryRun) {
+    # Task 10.4: -SkipDatabaseReset bypasses this guard as well as the reset.
+    if (-not $DryRun -and -not $SkipDatabaseReset) {
       $requiredSqlInstanceNames = @("Dev$($env:USERNAME)", "Exp$($env:USERNAME)")
       $missingSqlInstances = [System.Collections.Generic.List[string]]::new()
 
@@ -300,7 +341,21 @@ function New-SprintStage2 {
       -Message "Parsing $TasksFilePath for repo references"
 
     $tasksContent = Get-Content -Path $TasksFilePath -ErrorAction Stop
-    $repoNames = @(Get-SprintTaskRepositoryNames -TasksContent $tasksContent -ExcludeRepos $ExcludeRepos)
+    $discoveredRepoNames = @(Get-SprintTaskRepositoryNames -TasksContent $tasksContent -ExcludeRepos $ExcludeRepos)
+    $repoNames = @(
+      foreach ($candidate in (@($discoveredRepoNames) + @($IncludeRepos))) {
+        if ($candidate -is [System.Collections.IEnumerable] -and $candidate -isnot [string]) {
+          foreach ($nestedCandidate in $candidate) {
+            [string]$nestedCandidate
+          }
+        } else {
+          [string]$candidate
+        }
+      }
+    ) | Where-Object {
+      -not [string]::IsNullOrWhiteSpace($_) -and
+      $ExcludeRepos -notcontains $_
+    } | Select-Object -Unique
 
     if ($repoNames.Count -eq 0) {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
@@ -500,6 +555,113 @@ function New-SprintStage2 {
       -Message "Downstream repos complete — processed $($repoResults.Count) repo(s)"
 
     # ===================================================================
+    # 5c. Generate and verify the sprint Overview workspace (Task 10.14.a)
+    # OverviewSprintNNNN.code-workspace is the manifest every later step uses to
+    # discover the sprint (Build-CLAUDEPerRepository / CLAUDE.md propagation in
+    # Task 10.3 and other cross-repo tooling). Earlier sprints created it only via
+    # a documentation-only agent step (SprintStartAgent Step 3a), so a live run
+    # that deviated from the runbook left it missing and blocked CLAUDE.md
+    # propagation at Sprint 0010 start (SC-0193). Generating it here — after every
+    # sprint worktree exists (so folder resolution finds them) and before Stage 2
+    # reports success — makes the step unskippable. The verification gate confirms
+    # the file exists and resolves at least one sprint worktree folder.
+    # ===================================================================
+    $overviewWorkspacePath = $null
+    $overviewWorkspaceVerified = $false
+    $overviewWorkspaceError = $null
+    $expectedOverviewPath = Join-Path $GitRoot ('OverviewSprint{0}.code-workspace' -f $sprintNum)
+
+    try {
+      if ($PSCmdlet.ShouldProcess($expectedOverviewPath, 'Generate and verify Overview sprint workspace')) {
+        $overviewResult = New-OverviewSprintWorkspace `
+          -SprintNumber ([int]$sprintNum) `
+          -GitRoot $GitRoot `
+          -DeveloperUsername $env:USERNAME `
+          -BuildMasterBaseUrl $BuildMasterBaseUrl `
+          -ProGetBaseUrl $ProGetBaseUrl `
+          -Confirm:$false `
+          -WhatIf:$WhatIfPreference
+
+        $overviewWorkspacePath = if ($overviewResult -and -not [string]::IsNullOrWhiteSpace($overviewResult.OutputWorkspacePath)) {
+          $overviewResult.OutputWorkspacePath
+        } else {
+          $expectedOverviewPath
+        }
+
+        # --- Verification gate: file exists AND resolves >=1 sprint worktree folder ---
+        if (-not (Test-Path -LiteralPath $overviewWorkspacePath -PathType Leaf)) {
+          throw "Overview sprint workspace was not created at '$overviewWorkspacePath'."
+        }
+
+        $overviewRaw = Get-Content -LiteralPath $overviewWorkspacePath -Raw -ErrorAction Stop
+        $overviewJsonText = $overviewRaw -replace ',(\s*[\]}])', '$1'
+        $overviewObj = $overviewJsonText | ConvertFrom-Json -ErrorAction Stop
+
+        $sprintFolderPattern = '-wt-\d+-Sprint-' + $sprintNum + '-work-items$'
+        $resolvedSprintFolders = @(@($overviewObj.folders) |
+            Where-Object { $_.path -match $sprintFolderPattern })
+
+        if ($resolvedSprintFolders.Count -eq 0) {
+          throw "Overview sprint workspace at '$overviewWorkspacePath' resolved no sprint worktree folders matching '*$sprintFolderPattern'."
+        }
+
+        $overviewWorkspaceVerified = $true
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+          -Message "Overview sprint workspace generated and verified at '$overviewWorkspacePath' ($($resolvedSprintFolders.Count) sprint worktree folder(s))."
+      } else {
+        $overviewWorkspacePath = $expectedOverviewPath
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+          -Message "DryRun/WhatIf: Overview sprint workspace generation skipped; would write '$expectedOverviewPath'."
+      }
+    } catch {
+      $overviewWorkspaceError = "Failed to generate or verify the Overview sprint workspace. Exception: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $overviewWorkspaceError
+    }
+
+    # ===================================================================
+    # 5d. Distribute all per-repository AI instruction lanes through one
+    # orchestration call (Task 10.34). The orchestrator parses the Overview
+    # workspace once, applies the stable-worktree boundary once, and returns
+    # one aggregate for CLAUDE.md, AGENTS.md, GEMINI.md, and Copilot.
+    # ===================================================================
+    $aiInstructionsResult = $null
+    $aiInstructionsError = $null
+
+    if ($WhatIfPreference) {
+      $aiInstructionsResult = [PSCustomObject]@{
+        Success       = $true
+        DryRun        = $true
+        WorkspacePath = $overviewWorkspacePath
+        Builders      = $null
+        Errors        = @()
+      }
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+        -Message "DryRun/WhatIf: would run one Build-AIInstructionsPerRepository distribution step for '$overviewWorkspacePath'."
+    } elseif (-not $overviewWorkspaceVerified) {
+      $aiInstructionsError = "AI instruction distribution skipped because the Overview sprint workspace was not verified: $overviewWorkspaceError"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $aiInstructionsError
+    } else {
+      try {
+        if ($PSCmdlet.ShouldProcess($overviewWorkspacePath, 'Distribute all per-repository AI instruction lanes')) {
+          $aiInstructionsResult = Build-AIInstructionsPerRepository `
+            -WorktreeRoot $svWorktreePath `
+            -WorkspacePath $overviewWorkspacePath `
+            -Confirm:$false
+
+          if (-not $aiInstructionsResult.Success -or @($aiInstructionsResult.Errors).Count -gt 0) {
+            throw "Build-AIInstructionsPerRepository reported errors: $(@($aiInstructionsResult.Errors) -join '; ')"
+          }
+
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+            -Message "AI instruction distribution completed through one orchestration call for $($aiInstructionsResult.RepositoriesDiscovered) repository folder(s)."
+        }
+      } catch {
+        $aiInstructionsError = "Failed to distribute per-repository AI instructions. Exception: $($_.Exception.Message)"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $aiInstructionsError
+      }
+    }
+
+    # ===================================================================
     # 6. Symlink claude-settings.json
     # ===================================================================
     $claudeSettingsError = $null
@@ -527,6 +689,49 @@ function New-SprintStage2 {
     } catch {
       $userSettingsError = "Failed to retarget VS Code UserSettings symlink. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $userSettingsError
+    }
+
+    # ===================================================================
+    # 6c. Retarget machine-wide PowerShell 7 profile symlinks to the sprint
+    # worktrees (H09/SC-0188, Task 10.13). profile.ps1 must track the
+    # ATAP.Utilities sprint worktree so the AllUsersAllHosts core profile detects
+    # the active sprint context; HostSettings.ps1 tracks the ATAP.IAC sprint
+    # worktree when one is part of this sprint, else stable. The worker also
+    # removes the now-obsolete global_ConfigRootKeys.ps1 /
+    # global_environmentVariables.ps1 symlinks. SprintEnd resets all of these to
+    # the stable repositories via Set-SprintBoundaryContext.
+    # ===================================================================
+    $profileSymlinksRetargeted = $false
+    $profileSymlinkError = $null
+
+    try {
+      $utilWtRoot = $repoResults |
+        Where-Object { $_.repoName -eq 'ATAP.Utilities' -and -not [string]::IsNullOrWhiteSpace($_.worktreePath) } |
+        Select-Object -First 1 -ExpandProperty worktreePath
+      if ([string]::IsNullOrWhiteSpace($utilWtRoot)) { $utilWtRoot = Join-Path $GitRoot 'ATAP.Utilities' }
+
+      $iacWtRoot = $repoResults |
+        Where-Object { $_.repoName -eq 'ATAP.IAC' -and -not [string]::IsNullOrWhiteSpace($_.worktreePath) } |
+        Select-Object -First 1 -ExpandProperty worktreePath
+      if ([string]::IsNullOrWhiteSpace($iacWtRoot)) { $iacWtRoot = Join-Path $GitRoot 'ATAP.IAC' }
+
+      if ($PSCmdlet.ShouldProcess($utilWtRoot, 'Retarget PowerShell 7 profile symlinks to sprint worktrees')) {
+        $profileSymlinkResult = Set-PowerShell7ProfileSymlink `
+          -ATAPUtilitiesRoot $utilWtRoot `
+          -ATAPIACRoot $iacWtRoot `
+          -Confirm:$false
+        if ($profileSymlinkResult.Ok) {
+          $profileSymlinksRetargeted = $true
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+            -Message "PowerShell 7 profile symlinks retargeted: profile.ps1 -> $utilWtRoot, HostSettings.ps1 -> $iacWtRoot"
+        } else {
+          $profileSymlinkError = "Profile symlink retarget reported failures: $($profileSymlinkResult.Failures -join '; ')"
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profileSymlinkError
+        }
+      }
+    } catch {
+      $profileSymlinkError = "Failed to retarget PowerShell 7 profile symlinks. Exception: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profileSymlinkError
     }
 
     # ===================================================================
@@ -583,43 +788,63 @@ function New-SprintStage2 {
     $dbResetResults = $null
     $dbResetError = $null
 
-    # Read database settings for the reset call. There is ONE database,
-    # ATAPUtilities (D-1), containing the ATAPUtilities, AceCommander, Tags and
-    # Gmail schemas — confirmed by
-    # ATAP.Utilities/Database/Flyway/SQL/V00.01.000010__Create_ATAPUtilities_Core_Schema.sql.
-    # The Databases collection is a structured host setting, so it is read
-    # directly (the same way Reset-SprintDatabases reads it) rather than via the
-    # scalar Get-PVal path used for GitRoot/Owner/base URLs.
-    $dbInstHost = 'localhost'
-    $dbInstConnMethod = 'tcp'
-    $dbInstPort = $null
-    $databasesKey2 = if ($global:configRootKeys) { $global:configRootKeys['DatabasesCollectionConfigRootKey'] } else { $null }
-    if ($databasesKey2 -and $global:settings -and $global:settings.ContainsKey($databasesKey2)) {
-      $dbColl2 = $global:settings[$databasesKey2]
-      $atapDb2 = if ($dbColl2.ContainsKey('ATAPUtilities')) { $dbColl2['ATAPUtilities'] } else { @{} }
-      if (-not [string]::IsNullOrWhiteSpace($atapDb2['DatabaseHost'])) {
-        $dbInstHost = $atapDb2['DatabaseHost']
+    if ($SkipDatabaseReset) {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+        -Message 'Database reset skipped by explicit -SkipDatabaseReset request.'
+    } else {
+      # Read database settings for the reset call. There is ONE database,
+      # ATAPUtilities (D-1), containing the ATAPUtilities, AceCommander, Tags and
+      # Gmail schemas — confirmed by
+      # ATAP.Utilities/Database/Flyway/SQL/V00.01.000010__Create_ATAPUtilities_Core_Schema.sql.
+      # The Databases collection is a structured host setting, so it is read
+      # directly (the same way Reset-SprintDatabases reads it) rather than via the
+      # scalar Get-PVal path used for GitRoot/Owner/base URLs.
+      $dbInstHost = 'localhost'
+      $dbInstConnMethod = 'tcp'
+      $databasesKey2 = if ($global:configRootKeys) { $global:configRootKeys['DatabasesCollectionConfigRootKey'] } else { $null }
+      if ($databasesKey2 -and $global:settings -and $global:settings.ContainsKey($databasesKey2)) {
+        $dbColl2 = $global:settings[$databasesKey2]
+        $atapDb2 = if ($dbColl2.ContainsKey('ATAPUtilities')) { $dbColl2['ATAPUtilities'] } else { @{} }
+        if (-not [string]::IsNullOrWhiteSpace($atapDb2['DatabaseHost'])) {
+          $dbInstHost = $atapDb2['DatabaseHost']
+        }
+        if (-not [string]::IsNullOrWhiteSpace($atapDb2['ConnectionMethod'])) {
+          $dbInstConnMethod = $atapDb2['ConnectionMethod']
+        }
       }
-      if (-not [string]::IsNullOrWhiteSpace($atapDb2['ConnectionMethod'])) {
-        $dbInstConnMethod = $atapDb2['ConnectionMethod']
-      }
-      if (-not [string]::IsNullOrWhiteSpace($atapDb2['Port'])) {
-        $dbInstPort = $atapDb2['Port']
-      }
-    }
 
-    $dbResetParams = @{
-      DatabaseHost     = $dbInstHost
-      ConnectionMethod = $dbInstConnMethod
-    }
-
-    try {
-      if ($PSCmdlet.ShouldProcess('local SQL Server', 'Reset sprint databases in existing SQL Server instances')) {
-        $dbResetResults = Reset-SprintDatabases @dbResetParams -WhatIf:$WhatIfPreference
+      # Task 10.4: the installed BuildTooling module must drive the current
+      # sprint-worktree Flyway/provisioning sources, never its module-relative
+      # path or a stale path retained in host settings.
+      $atapUtilitiesRepoResult = $repoResults |
+        Where-Object {
+          $_.repoName -eq 'ATAP.Utilities' -and
+          -not [string]::IsNullOrWhiteSpace($_.worktreePath) -and
+          (Test-Path -LiteralPath $_.worktreePath -PathType Container)
+        } |
+        Select-Object -First 1
+      $databaseRepositoryRoot = if ($null -ne $atapUtilitiesRepoResult) {
+        $atapUtilitiesRepoResult.worktreePath
+      } else {
+        Join-Path $GitRoot 'ATAP.Utilities'
       }
-    } catch {
-      $dbResetError = "Failed to reset sprint databases. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $dbResetError
+      $provisioningScriptsPath = Join-Path $databaseRepositoryRoot 'src\ATAP.Utilities.DatabaseManagement\SharedSQL'
+
+      $dbResetParams = @{
+        DatabaseHost           = $dbInstHost
+        ConnectionMethod       = $dbInstConnMethod
+        RepositoryRoot         = $databaseRepositoryRoot
+        ProvisioningScriptsPath = $provisioningScriptsPath
+      }
+
+      try {
+        if ($PSCmdlet.ShouldProcess('local SQL Server', 'Reset sprint databases in existing SQL Server instances')) {
+          $dbResetResults = Reset-SprintDatabases @dbResetParams -Confirm:$false -WhatIf:$WhatIfPreference
+        }
+      } catch {
+        $dbResetError = "Failed to reset sprint databases. Exception: $($_.Exception.Message)"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $dbResetError
+      }
     }
 
     # ===================================================================
@@ -634,11 +859,18 @@ function New-SprintStage2 {
       -ClaudeSettingsError $claudeSettingsError `
       -UserSettingsLinked $userSettingsLinked `
       -UserSettingsError $userSettingsError `
+      -ProfileSymlinksRetargeted $profileSymlinksRetargeted `
+      -ProfileSymlinkError $profileSymlinkError `
       -BuildMasterVariablesSet $(if ($buildMasterResult) { $buildMasterResult.variablesSet } else { @() }) `
       -BuildMasterVariablesErrors $(if ($buildMasterResult) { $buildMasterResult.errors } else { @() }) `
       -BuildMasterError $buildMasterError `
       -DatabaseResets $(if ($dbResetResults) { $dbResetResults } else { @() }) `
-      -DatabaseResetError $dbResetError
+      -DatabaseResetError $dbResetError `
+      -OverviewWorkspacePath $overviewWorkspacePath `
+      -OverviewWorkspaceVerified $overviewWorkspaceVerified `
+      -OverviewWorkspaceError $overviewWorkspaceError `
+      -AIInstructionsResult $aiInstructionsResult `
+      -AIInstructionsError $aiInstructionsError
 
     return $finalResult
   }

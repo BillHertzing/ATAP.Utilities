@@ -37,7 +37,7 @@ Describe 'Test-SprintInfrastructureHealth' -Tag 'Unit' {
 
     It 'Populates every documented check key' {
       $expected = @(
-        'BitwardenEnvVars', 'BuildMasterAdminApiKeyResolvable', 'SqlInstances', 'FlywayAvailable',
+        'SecretEnvironmentVariables', 'BuildMasterAdminApiKeyResolvable', 'SqlInstances', 'FlywayAvailable',
         'NbgvAvailable', 'GitSafeDirectory', 'BuildMasterApps', 'ProGetReachable', 'BuildMasterReachable'
       )
       foreach ($key in $expected) {
@@ -101,50 +101,40 @@ Describe 'Test-SprintInfrastructureHealth' -Tag 'Unit' {
     }
   }
 
-  Context 'BitwardenEnvVars — missing variable detection' {
+  Context 'SecretEnvironmentVariables — prohibited variable detection' {
     BeforeAll {
-      # Clear one required var at BOTH User and Process scope (the check reads
-      # User then Process) to deterministically trigger a BitwardenEnvVars
-      # failure without disturbing the active BW_SESSION.
-      $script:savedWebhookUser = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_GH_WEBHOOK_SECRET', 'User')
       $script:savedWebhookProc = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_GH_WEBHOOK_SECRET', 'Process')
-      [System.Environment]::SetEnvironmentVariable('BUILDMASTER_GH_WEBHOOK_SECRET', $null, 'User')
-      [System.Environment]::SetEnvironmentVariable('BUILDMASTER_GH_WEBHOOK_SECRET', $null, 'Process')
+      [System.Environment]::SetEnvironmentVariable('BUILDMASTER_GH_WEBHOOK_SECRET', 'unit-test-secret', 'Process')
     }
     AfterAll {
-      [System.Environment]::SetEnvironmentVariable('BUILDMASTER_GH_WEBHOOK_SECRET', $script:savedWebhookUser, 'User')
       [System.Environment]::SetEnvironmentVariable('BUILDMASTER_GH_WEBHOOK_SECRET', $script:savedWebhookProc, 'Process')
     }
 
-    It 'Fails BitwardenEnvVars when a required env var is absent at both scopes' {
+    It 'fails when a prohibited secret variable is present' {
       $r = Test-SprintInfrastructureHealth -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SqlInstancePaths @()
-      # Only assert on BitwardenEnvVars check — other checks may pass or fail independently
-      $r.Checks.BitwardenEnvVars.Ok | Should -BeFalse
-      $r.Checks.BitwardenEnvVars.Missing.Count | Should -BeGreaterThan 0
-      $r.Failures | Should -Contain 'BitwardenEnvVars'
+      $r.Checks.SecretEnvironmentVariables.Ok | Should -BeFalse
+      $r.Checks.SecretEnvironmentVariables.Present.Count | Should -BeGreaterThan 0
+      $r.Failures | Should -Contain 'SecretEnvironmentVariables'
       $r.AllOk | Should -BeFalse
     }
 
-    It 'Reports missing var names in the Missing array' {
+    It 'reports names and scopes without returning secret values' {
       $r = Test-SprintInfrastructureHealth -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SqlInstancePaths @()
-      $r.Checks.BitwardenEnvVars.Missing | Should -Not -BeNullOrEmpty
+      $entry = $r.Checks.SecretEnvironmentVariables.Present |
+        Where-Object Name -eq 'BUILDMASTER_GH_WEBHOOK_SECRET' |
+        Select-Object -First 1
+      $entry.Scope | Should -Be 'Process'
+      ($r | ConvertTo-Json -Depth 6) | Should -Not -Match 'unit-test-secret'
     }
   }
 
   Context '-ThrowOnFailure switch' {
     BeforeAll {
-      # Ensure at least one env var is absent to guarantee a failure
-      $script:savedProGet = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'Process')
-      [System.Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $null, 'Process')
-      $script:savedBwSession = [System.Environment]::GetEnvironmentVariable('BW_SESSION', 'Process')
-      [System.Environment]::SetEnvironmentVariable('BW_SESSION', $null, 'Process')
-      $script:savedWebhook = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_GH_WEBHOOK_SECRET', 'Process')
-      [System.Environment]::SetEnvironmentVariable('BUILDMASTER_GH_WEBHOOK_SECRET', $null, 'Process')
+      $script:savedAdminKey = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'Process')
+      [System.Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', 'unit-test-secret', 'Process')
     }
     AfterAll {
-      [System.Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $script:savedProGet, 'Process')
-      [System.Environment]::SetEnvironmentVariable('BW_SESSION', $script:savedBwSession, 'Process')
-      [System.Environment]::SetEnvironmentVariable('BUILDMASTER_GH_WEBHOOK_SECRET', $script:savedWebhook, 'Process')
+      [System.Environment]::SetEnvironmentVariable('BUILDMASTER_ADMIN_API_KEY', $script:savedAdminKey, 'Process')
     }
 
     It 'Throws with FullyQualifiedErrorId InfrastructureHealthFailedException when a check fails' {

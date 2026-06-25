@@ -17,10 +17,12 @@ BeforeAll {
     'Set-ClaudeSettingsSymlink'
     'Set-UserSettingsSymlink'
     'Get-SprintTaskRepositoryNames'
+    'Initialize-ATAPConfigurationGlobals'
     'New-DeveloperSqlServerInstances'
     'Reset-SprintDatabases'
     'Set-BuildMasterSprintVariables'
     'New-SprintBitwardenSecrets'
+    'Build-AIInstructionsPerRepository'
   )
   $script:dryRunOriginalFunctions = @{}
   foreach ($name in $script:dryRunStubbedFunctionNames) {
@@ -80,6 +82,27 @@ BeforeAll {
     , @('ATAP.Utilities')
   }
 
+  function global:Initialize-ATAPConfigurationGlobals {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param([string]$RepositoryRoot)
+
+    $global:dryRunExternalCalls.Add('Initialize-ATAPConfigurationGlobals') | Out-Null
+    $global:configRootKeys = @{ DatabasesCollectionConfigRootKey = 'Databases' }
+    $global:settings = @{
+      Databases = @{
+        ATAPUtilities = @{
+          DatabaseHost     = 'localhost'
+          ConnectionMethod = 'tcp'
+        }
+      }
+    }
+    [PSCustomObject]@{
+      Initialized         = $true
+      ConfigRootKeysCount = 1
+      SettingsCount       = 1
+    }
+  }
+
   function global:New-DeveloperSqlServerInstances {
     $global:dryRunExternalCalls.Add('New-DeveloperSqlServerInstances') | Out-Null
     throw 'New-DeveloperSqlServerInstances should not be called during DryRun.'
@@ -100,6 +123,11 @@ BeforeAll {
     throw 'New-SprintBitwardenSecrets should not be called during DryRun.'
   }
 
+  function global:Build-AIInstructionsPerRepository {
+    $global:dryRunExternalCalls.Add('Build-AIInstructionsPerRepository') | Out-Null
+    throw 'Build-AIInstructionsPerRepository should not be called during DryRun.'
+  }
+
   # Dot-source the function definitions. Defining the functions must not execute
   # any Stage 1 / Stage 2 work.
   . "$PSScriptRoot\..\..\public\New-SprintStage1.ps1"
@@ -118,7 +146,7 @@ AfterAll {
   Remove-Variable -Name dryRunExternalCalls -Scope Global -Force -ErrorAction SilentlyContinue
 }
 
-Describe 'New-SprintStage dry-run support' -Tag 'Unit' {
+Describe 'New-SprintStage dry-run support' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   BeforeEach {
     $global:dryRunExternalCalls.Clear()
     $script:tempGitRoot = Join-Path ([System.IO.Path]::GetTempPath()) "sprint_dryrun_$([guid]::NewGuid().ToString('N'))"
@@ -191,7 +219,33 @@ Describe 'New-SprintStage dry-run support' -Tag 'Unit' {
     $global:dryRunExternalCalls.Count | Should -Be 0
   }
 
-  It 'throws an actionable setup command before side effects when config globals are missing' {
+  It 'resolves the Tasks.SprintNNNN.md default produced by Stage 1' {
+    $planningWorktreePath = Join-Path $script:tempGitRoot '_Planning-wt-DRYRUN-Sprint-0007-work-items'
+    New-Item -ItemType Directory -Path $planningWorktreePath -Force | Out-Null
+    Set-Content -LiteralPath (Join-Path $planningWorktreePath 'Tasks.Sprint0007.md') -Encoding UTF8 -Value @(
+      '- [ ] **Task 7.99** [ATAP.Utilities] [Junior] - Test current sprint filename'
+    )
+
+    $stage1 = [PSCustomObject]@{
+      nextSprintNumber = '0007'
+      sharedVSCode     = @{
+        issueNumber  = 'DRYRUN'
+        branchName   = 'DRYRUN-Sprint-0007-work-items'
+        worktreePath = (Join-Path $script:tempGitRoot 'SharedVSCode-wt-DRYRUN-Sprint-0007-work-items')
+      }
+      planning         = @{
+        worktreePath = $planningWorktreePath
+      }
+    }
+
+    $result = New-SprintStage2 -Stage1Result $stage1 -GitRoot $script:tempGitRoot -Owner 'owner' -DryRun
+
+    $result.repoResults.Count | Should -Be 1
+    $result.repoResults[0].repoName | Should -Be 'ATAP.Utilities'
+    $global:dryRunExternalCalls.Count | Should -Be 0
+  }
+
+  It 'bootstraps missing configuration globals before the SQL instance guard' {
     $tasksPath = Join-Path $script:tempGitRoot 'TASKS.md'
     Set-Content -LiteralPath $tasksPath -Encoding UTF8 -Value @(
       '- [ ] **Task 7.99** [ATAP.Utilities] [Junior] - Test no-profile guard'
@@ -214,12 +268,20 @@ Describe 'New-SprintStage dry-run support' -Tag 'Unit' {
     try {
       $global:configRootKeys = $null
       $global:settings = $null
+      Mock -CommandName Get-Service -MockWith { $null } -ParameterFilter { $Name -like 'MSSQL$*' }
 
       {
-        New-SprintStage2 -Stage1Result $stage1 -TasksFilePath $tasksPath -GitRoot $script:tempGitRoot -Owner 'owner'
-      } | Should -Throw -ExpectedMessage '*Set-GlobalConfigRootKeys*Get-HostSettings*'
+        New-SprintStage2 `
+          -Stage1Result $stage1 `
+          -TasksFilePath $tasksPath `
+          -GitRoot $script:tempGitRoot `
+          -Owner 'owner'
+      } | Should -Throw -ExpectedMessage '*developer onboarding SQL Server instance setup*'
 
-      $global:dryRunExternalCalls.Count | Should -Be 0
+      $global:dryRunExternalCalls | Should -Contain 'Initialize-ATAPConfigurationGlobals'
+      $global:dryRunExternalCalls | Should -Not -Contain 'gh'
+      $global:configRootKeys['DatabasesCollectionConfigRootKey'] | Should -Be 'Databases'
+      $global:settings.ContainsKey('Databases') | Should -BeTrue
     } finally {
       $global:configRootKeys = $oldConfigRootKeys
       $global:settings = $oldSettings

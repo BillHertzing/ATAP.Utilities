@@ -15,9 +15,9 @@ looks like a CI/infra secret - SQL connection strings (dbConnectionString-*),
 API keys (*_API_KEY, *.API.Key), ProGet/BuildMaster secrets, webhook secrets,
 and service-account login items (e.g. *Svc*). Read those from Bitwarden Secrets
 Manager via Get-SecretATAP (the default store for all accounts since SC-0175) or
-use the deterministic connection-string fallback (Task 9.22). This path remains
-only for genuine per-user personal secrets, and is opt-in: callers must select it
-with Get-SecretATAP -SecretStoreType 'Bitwarden'.
+explicitly select BitwardenSecretsManager. This path remains only for genuine
+per-user personal secrets, and is opt-in: callers must select it with
+Get-SecretATAP -SecretStoreType 'Bitwarden'.
 
 Session handling:
 1. Reads BW_SESSION from process scope. If empty, reads from User scope
@@ -113,10 +113,9 @@ function Get-SecretATAPBitwarden {
       # -- CI/infra secret quarantine (Task 9.21) ------------------------------
       # The personal-vault Bitwarden Password Manager path (this provider) must
       # NEVER serve CI/infrastructure secrets - those live only in Bitwarden
-      # Secrets Manager (bws + DPAPI machine access token) or are produced by the
-      # deterministic connection-string fallback (Task 9.22). Refuse any
-      # SecretName that looks like a CI/infra secret so this bw path is reserved
-      # for genuine per-user personal secrets only. This runs before any bw
+      # Secrets Manager (bws + DPAPI/user access token). Refuse any SecretName
+      # that looks like a CI/infra secret so this bw path is reserved for
+      # genuine per-user personal secrets only. This runs before any bw
       # invocation so the refusal is independent of session/CLI state.
       $ciSecretNamePatterns = @(
         '^dbConnectionString-'   # SQL connection strings (sprint + permanent tiers)
@@ -129,7 +128,7 @@ function Get-SecretATAPBitwarden {
       )
       foreach ($ciPattern in $ciSecretNamePatterns) {
         if ($SecretName -imatch $ciPattern) {
-          $msg = "Get-SecretATAPBitwarden refuses CI/infrastructure secret '$SecretName' (matched quarantine pattern '$ciPattern'). CI/infra secrets must never be read from a personal Bitwarden Password Manager vault (Task 9.21). Read it from Bitwarden Secrets Manager instead: Get-SecretATAP -SecretName '$SecretName' -SecretStoreType 'BitwardenSecretsManager' (the default for all accounts since SC-0175), or use the deterministic connection-string fallback (Task 9.22). The bw/personal-vault path is reserved for genuine per-user personal secrets only."
+          $msg = "Get-SecretATAPBitwarden refuses CI/infrastructure secret '$SecretName' (matched quarantine pattern '$ciPattern'). CI/infra secrets must never be read from a personal Bitwarden Password Manager vault (Task 9.21). Read it from Bitwarden Secrets Manager instead: Get-SecretATAP -SecretName '$SecretName' -SecretStoreType 'BitwardenSecretsManager' (the default for all accounts since SC-0175). The bw/personal-vault path is reserved for genuine per-user personal secrets only."
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
           throw $msg
         }

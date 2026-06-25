@@ -4,7 +4,6 @@ $global:EnvVars = @{
   'ATAPUtilitiesVersion'                                        = $global:Settings[$global:configRootKeys['ATAPUtilitiesVersionConfigRootKey']]
   'DOTNET_CLI_TELEMETRY_OPTOUT'                                 = 1
   $global:configRootKeys['FastTempBasePathConfigRootKey']       = $global:Settings[$global:configRootKeys['FastTempBasePathConfigRootKey']]
-  $global:configRootKeys['DropboxAccessTokenConfigRootKey']     = 'PopulateViaSecretsOrManually'
   $global:configRootKeys['DropBoxBasePathConfigRootKey']        = $global:Settings[$global:configRootKeys['DropBoxBasePathConfigRootKey']]
   $global:configRootKeys['ErlangHomeDirConfigRootKey']          = $global:Settings[$global:configRootKeys['ErlangHomeDirConfigRootKey']]
   $global:configRootKeys['ENVIRONMENTConfigRootKey']            = $global:Settings[$global:configRootKeys['ENVIRONMENTConfigRootKey']]
@@ -16,7 +15,6 @@ $global:EnvVars = @{
   # These Jenkins Environment Variables are used to access a Jenkins Controller and Authenticate
   $global:configRootKeys['JENKINS_URLConfigRootKey']            = $global:Settings[$global:configRootKeys['JENKINS_URLConfigRootKey']]
   $global:configRootKeys['JENKINS_USER_IDConfigRootKey']        = $global:Settings[$global:configRootKeys['JENKINS_USER_IDConfigRootKey']]
-  $global:configRootKeys['JENKINS_API_TOKENConfigRootKey']      = $global:Settings[$global:configRootKeys['JENKINS_API_TOKENConfigRootKey']]
   $global:configRootKeys['CommonJarsBasePathConfigRootKey']     = $global:Settings[$global:configRootKeys['CommonJarsBasePathConfigRootKey']]
   #'CLASSPATH'                                                   = (Join-Path ($global:Settings[$global:configRootKeys['CommonJarsBasePathConfigRootKey']]) '*') + [IO.Path]::PathSeparator + ([Environment]::GetEnvironmentVariable('CLASSPATH'))
 
@@ -26,11 +24,7 @@ $global:EnvVars = @{
 
   # Used by Bitwarden
   $global:configRootKeys['BW_EMAILConfigRootKey']               = $global:Settings[$global:configRootKeys['BW_EMAILConfigRootKey']]
-  $global:configRootKeys['BW_APP_PASSWORDConfigRootKey']        = $global:Settings[$global:configRootKeys['BW_APP_PASSWORDConfigRootKey']]
-  $global:configRootKeys['BW_MASTER_PASSWORDConfigRootKey']     = $global:Settings[$global:configRootKeys['BW_MASTER_PASSWORDConfigRootKey']]
-
   # related to the Hashicorp Vault installation and operations
-  $global:configRootKeys['VAULT_TOKENConfigRootKey']            = $global:Settings[$global:configRootKeys['VAULT_TOKENConfigRootKey']]
   $global:configRootKeys['VAULT_ADDRConfigRootKey']             = $global:Settings[$global:configRootKeys['VAULT_ADDRConfigRootKey']]
 
   # OpenSSL Environment variables
@@ -41,18 +35,15 @@ $global:EnvVars = @{
   # Env variables used by ChatGPT
   $global:configRootKeys['CHATGPT_URLConfigRootKey']            = $global:Settings[$global:configRootKeys['CHATGPT_URLConfigRootKey']]
   $global:configRootKeys['CHATGPT_USER_IDConfigRootKey']        = $global:Settings[$global:configRootKeys['CHATGPT_USER_IDConfigRootKey']]
-  $global:configRootKeys['CHATGPT_API_TOKENConfigRootKey']      = $global:Settings[$global:configRootKeys['CHATGPT_API_TOKENConfigRootKey']]
-
-  # Env variables used by Perplexity
-  $global:configRootKeys['PERPLEXITY_API_KEYConfigRootKey']     = $global:Settings[$global:configRootKeys['PERPLEXITY_API_KEYConfigRootKey']]
-
-  # related to the Hydrus-Network application
-  $global:configRootKeys['HYDRUS_ACCESS_KEYConfigRootKey']      = $global:Settings[$global:configRootKeys['HYDRUS_ACCESS_KEYConfigRootKey']]
-
   # Allows Wireshark and other applications to capture the SSL Keys pre-negotiation, so HTTPS SSL traffic can be decrypted
   # $global:configRootKeys['SSLKEYLOGFILEConfigRootKey']          = $global:Settings[$global:configRootKeys['SSLKEYLOGFILEConfigRootKey']]
 
 }
+
+# Secret values and API keys are deliberately not projected into the process
+# environment. Callers resolve them by canonical setting name through Get-PVal
+# and Get-SecretATAP. This includes Dropbox access tokens, Jenkins API tokens,
+# Bitwarden passwords, Vault tokens, ChatGPT/Perplexity keys, and Hydrus keys.
 
 function Set-EnvironmentVariablesProcess {
   Write-PSFMessage -Level Debug -Message ("setting $(($global:envVars.keys).count) environment variables in global_EnvironmentVariables.ps1")

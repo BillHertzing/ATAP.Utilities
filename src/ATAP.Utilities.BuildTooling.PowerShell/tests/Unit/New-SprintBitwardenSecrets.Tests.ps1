@@ -3,8 +3,8 @@ BeforeAll {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
 
-  # Mock the Bitwarden Secrets Manager CLI (SC-0175: sprint automation uses
-  # bws + machine access token; never bw/BW_SESSION).
+  # Mock the Bitwarden Secrets Manager CLI (SC-0175 / Task 10.7: sprint
+  # automation uses bws + access token/DPAPI; never bw/BW_SESSION).
   function global:bws {
     param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Arguments)
 
@@ -45,63 +45,19 @@ Describe 'New-SprintBitwardenSecrets [public]' {
     if ($null -ne $script:oldBwsToken) { $env:BWS_ACCESS_TOKEN = $script:oldBwsToken } else { Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue }
   }
 
-  Context 'default — derive without vault write (Task 9.22)' {
-    It 'derives one descriptor per (database, host, tier) with the canonical name and no vault write' {
-      $result = New-SprintBitwardenSecrets `
-        -SprintNumber '0008' `
-        -DeveloperUsername 'tester' `
-        -HostList @('localhost') `
-        -Databases @('master') `
-        -Confirm:$false
-
-      $result.Count | Should -Be 2
-      $result.derived | Should -Be @($true, $true)
-      $result.created | Should -Be @($false, $false)
-      $result.classification | Should -Be @('derivable', 'derivable')
-      $result.secretName | Should -Be @(
-        'dbConnectionString-master-localhost-Dev-tester',
-        'dbConnectionString-master-localhost-Exp-tester'
-      )
-    }
-
-    It 'makes no bws calls at all on the default derive path' {
-      New-SprintBitwardenSecrets `
-        -SprintNumber '0008' `
-        -DeveloperUsername 'tester' `
-        -HostList @('localhost') `
-        -Databases @('master') `
-        -Confirm:$false | Out-Null
-
-      $script:bwsCalls.Count | Should -Be 0
-    }
-
-    It 'derives successfully even when no BWS access token is present' {
-      Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue
-
-      $result = New-SprintBitwardenSecrets `
-        -SprintNumber '0008' `
-        -DeveloperUsername 'tester' `
-        -HostList @('localhost') `
-        -Databases @('master') `
-        -Confirm:$false
-
-      $result.derived | Should -Be @($true, $true)
-      $script:bwsCalls.Count | Should -Be 0
-    }
-  }
-
-  Context '-WriteDerivableToVault — persist to the vault' {
+  Context 'default - create or verify BWS secrets' {
     It 'creates one BWS secret per (database, host, tier) with the canonical hyphenated name' {
       $result = New-SprintBitwardenSecrets `
         -SprintNumber '0008' `
         -DeveloperUsername 'tester' `
         -HostList @('localhost') `
         -Databases @('master') `
-        -WriteDerivableToVault `
         -Confirm:$false
 
       $result.Count | Should -Be 2
+      $result.derived | Should -Be @($false, $false)
       $result.created | Should -Be @($true, $true)
+      $result.classification | Should -Be @('derivable', 'derivable')
       $result.secretName | Should -Be @(
         'dbConnectionString-master-localhost-Dev-tester',
         'dbConnectionString-master-localhost-Exp-tester'
@@ -118,7 +74,6 @@ Describe 'New-SprintBitwardenSecrets [public]' {
         -DeveloperUsername 'tester' `
         -HostList @('localhost') `
         -Databases @('master') `
-        -WriteDerivableToVault `
         -Confirm:$false
 
       $result.created | Should -Be @($true, $true)
@@ -134,7 +89,6 @@ Describe 'New-SprintBitwardenSecrets [public]' {
         -DeveloperUsername 'tester' `
         -HostList @('localhost') `
         -Databases @('master') `
-        -WriteDerivableToVault `
         -Confirm:$false
 
       @($result | Where-Object { $_.alreadyExists }).Count | Should -Be 1
@@ -148,7 +102,6 @@ Describe 'New-SprintBitwardenSecrets [public]' {
         -DeveloperUsername 'tester' `
         -HostList @('localhost') `
         -Databases @('master') `
-        -WriteDerivableToVault `
         -WhatIf | Out-Null
 
       @($script:bwsCalls | Where-Object { $_ -like 'secret create *' }).Count | Should -Be 0
@@ -160,13 +113,27 @@ Describe 'New-SprintBitwardenSecrets [public]' {
         -DeveloperUsername 'tester' `
         -HostList @('localhost') `
         -Databases @('master') `
-        -WriteDerivableToVault `
         -ProjectId 'explicit-proj-id' `
         -Confirm:$false
 
       $result.created | Should -Be @($true, $true)
       @($script:bwsCalls | Where-Object { $_ -like 'project list*' }).Count | Should -Be 0
       @($script:bwsCalls | Where-Object { $_ -like '*explicit-proj-id*' }).Count | Should -Be 2
+    }
+  }
+
+  Context '-WriteDerivableToVault compatibility' {
+    It 'keeps the old switch as an alias for the default BWS create path' {
+      $result = New-SprintBitwardenSecrets `
+        -SprintNumber '0008' `
+        -DeveloperUsername 'tester' `
+        -HostList @('localhost') `
+        -Databases @('master') `
+        -WriteDerivableToVault `
+        -Confirm:$false
+
+      $result.created | Should -Be @($true, $true)
+      @($script:bwsCalls | Where-Object { $_ -like 'secret create *' }).Count | Should -Be 2
     }
   }
 }

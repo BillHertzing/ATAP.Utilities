@@ -30,6 +30,15 @@ Import-Module ATAP.Utilities.DatabaseManagement.Powershell
 See **[INDEX.md](INDEX.md)** for the complete, categorized list of every public cmdlet,
 its synopsis, required environment variables, and Bitwarden secret names.
 
+## Connection-String Secrets
+
+`Resolve-DatabaseSqlConnection` treats `DBConnectionString*` /
+`dbConnectionString-*` names as Bitwarden Secrets Manager values. Runtime secret
+reads use `Get-SecretATAP -SecretStoreType 'BitwardenSecretsManager'` and do not
+derive missing Development or Experimental strings locally. Use
+`New-SprintBitwardenSecrets` in BuildTooling to create/check the expected Dev/Exp
+BWS entries before database rebuilds.
+
 ## Deep Reference Documentation
 
 See **[Documentation/](Documentation/)** for implementation details, required

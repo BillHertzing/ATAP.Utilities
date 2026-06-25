@@ -9,6 +9,8 @@ tests do not touch a real Bitwarden Secrets Manager account.
 #>
 
 BeforeAll {
+  $script:oldBwsAccessToken = $env:BWS_ACCESS_TOKEN
+
   . "$PSScriptRoot\..\..\public\Get-SecretATAPBitwardenSecretsManager.ps1"
 
   # No-op logging shim if PSFramework is not loaded in the test host.
@@ -18,10 +20,17 @@ BeforeAll {
 
   # Canned output for the `bws` CLI, controlled per-test via $script:bwsJson.
   $script:bwsJson = '[]'
+  $script:bwsObservedTokens = [System.Collections.ArrayList]::new()
   function bws {
     param([Parameter(ValueFromRemainingArguments = $true)]$Args)
+    [void]$script:bwsObservedTokens.Add($env:BWS_ACCESS_TOKEN)
     $script:bwsJson
     $global:LASTEXITCODE = 0
+  }
+
+  function Get-BWSAccessToken {
+    $secureToken = ConvertTo-SecureString -String 'dpapi.test.token' -AsPlainText -Force
+    return [System.Management.Automation.PSCredential]::new('BWS_ACCESS_TOKEN', $secureToken)
   }
 
   # Skip the DPAPI token path by supplying a process-scope token.
@@ -29,7 +38,11 @@ BeforeAll {
 }
 
 AfterAll {
-  Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue
+  if ($null -ne $script:oldBwsAccessToken) {
+    $env:BWS_ACCESS_TOKEN = $script:oldBwsAccessToken
+  } else {
+    Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue
+  }
 }
 
 Describe 'Get-SecretATAPBitwardenSecretsManager' {
@@ -58,5 +71,16 @@ Describe 'Get-SecretATAPBitwardenSecretsManager' {
   It 'throws when the secret key is not found' {
     $script:bwsJson = '[{"id":"1","key":"Other.Key","value":"x","projectId":"p1"}]'
     { Get-SecretATAPBitwardenSecretsManager -SecretName 'Missing.Key' } | Should -Throw '*No Bitwarden Secrets Manager secret found*'
+  }
+
+  It 'uses the DPAPI token helper when BWS_ACCESS_TOKEN is absent and cleans up the process token' {
+    Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue
+    $script:bwsObservedTokens.Clear()
+    $script:bwsJson = '[{"id":"3","key":"BuildMaster.Admin.API.Key","value":"from-dpapi","projectId":"p1"}]'
+
+    Get-SecretATAPBitwardenSecretsManager -SecretName 'BuildMaster.Admin.API.Key' | Should -BeExactly 'from-dpapi'
+
+    $script:bwsObservedTokens | Should -Contain 'dpapi.test.token'
+    $env:BWS_ACCESS_TOKEN | Should -BeNullOrEmpty
   }
 }

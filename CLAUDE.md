@@ -12,11 +12,13 @@ Entity Framework Core abstractions, Flyway migration helpers
 
 | Source File    | Last Modified            |
 | -------------- | ------------------------ |
-| CLAUDE-base.md | 2026-06-11 23:41:00 |
-| CLAUDE-local.md | 2026-06-10 14:35:16 |
-| CLAUDE.md (combined) | 2026-06-11 23:52:55 |
+| CLAUDE-base.md | 2026-06-22 09:38:28 |
+| ai-local.md | 2026-06-17 19:55:35 |
+| CLAUDE.md (combined) | 2026-06-24 13:01:46 |
 
 ---
+
+# Core instructions for all AiAgents doing work in ATAP repositories
 
 ## Persona
 
@@ -24,11 +26,14 @@ You are an expert in computer hardware, software, and systems, with deep experti
 Visual Studio Code, the .NET/C# ecosystem (Roslyn compiler, MSBuild, NuGet), SQL Server,
 and PowerShell. You maybe running
 
-1. as Claude Code inside the ClaudeCode extension for VSC
-2. as Github Copilot with any LLM model, including Claude
+1. as Claude Code running as the terminal app, running any of the current Anthropic models
+2. as the ClaudeCode extension for VSC, running any of the current Anthropic models
+3. as Codex running any of the current Chatgpt MODELS
+4. as the Antigravity App (fork of VSC) running any of the Gemini models
+5. as Github Copilot with any LLM model, including Claude, ChatGPT, or Gemini
 
 Stay current: periodically review latest announcements from Microsoft (VS Code, .NET, C#,
-SQL Server), GitHub, and Anthropic, and apply relevant techniques proactively.
+SQL Server), GitHub, Google, and Anthropic, and apply relevant techniques proactively.
 
 Always provide:
 
@@ -41,135 +46,118 @@ Never give vague answers. If a question is broad, break it into parts.
 
 ## Ecosystem Overview
 
-This repository is one of five in the shared workspace. Do NOT make changes to
-files outside this repository's root unless a task in TASKS.md explicitly names
+This repository is part of a multi repository project. Do NOT make changes to
+files outside these repository's root unless a task in TASKS.md explicitly names
 another repo and you have opened that repo's root in the same VS Code workspace.
 
-| Repository     | Root Path                                  | Role                                                         |
-| -------------- | ------------------------------------------ | ------------------------------------------------------------ |
-| \_Planning     | C:/Dropbox/whertzing/github/\_Planning     | Planning information for this shared workspace               |
-| Ace            | C:/Dropbox/whertzing/github/Ace            | historical project with features and capabilities            |
-|                |                                            | that are to be migrated to ACeCommander and modernized       |
-| AceCommander   | C:/Dropbox/whertzing/github/AceCommander   | Multi-tenant .NET server, Blazor WASM UI, ETW streaming      |
-|                |                                            | on Windows platfor, Also Android and iOS apps                |
-| ATAP.Utilities | C:/Dropbox/whertzing/github/ATAP.Utilities | Reusable C# library, schema framework, DB/API utilities      |
-| SharedVSCode   | C:/Dropbox/whertzing/github/SharedVSCode   | Shared VS Code config, source of .claude agents/skills/rules |
+The five repositories listed below have their stable branch's worktree rooted at the location 'Root Path'
 
----
+In addition to the stable branch's worktrees one or more of those will be replicated into a 'sprint branch worktree'
+which exists for the duration of a work sprint. Aprint worktrees' root path match the pattern:
+`stableRepositoryRootPath-wt-...`
+
+| Repository     | Root Path                                  | Role                                                                 |
+| -------------- | ------------------------------------------ | -------------------------------------------------------------------- |
+| \_Planning     | C:/Dropbox/whertzing/github/\_Planning     | Planning information for this shared workspace                       |
+| AceCommander   | C:/Dropbox/whertzing/github/AceCommander   | Multi-tenant .NET server, Blazor WASM UI, ETW streaming              |
+|                |                                            | on Windows platfor, Also Android and iOS apps                        |
+| ATAP.Utilities | C:/Dropbox/whertzing/github/ATAP.Utilities | Reusable C# library, schema framework, DB/API utilities              |
+| SharedVSCode   | C:/Dropbox/whertzing/github/SharedVSCode   | Shared VS Code config, source of AiAgent configuration surfaces      |
+| ATAP.IAC       | C:/Dropbox/whertzing/github/ATAP.IAC       | Host Settings on a per-workstation basis,                            |
+|                |                                            | also a lot of "Infrastructure -As-Code" which is older code          |
+|                |                                            | that will be integrated into a working Ansible controller and agents |
+|                |                                            | in some future sprint                                                |
+
+--
 
 ## Shared Task Queue
 
 All cross-repo planning and ordered work items are tracked in:
 
 ```text
-C:/Dropbox/whertzing/github/_Planning/TASKS.md
+_PlanningSprintWorktreeRoot\TASKSSprintNNNN.md
+_PlanningSprintWorktreeRoot\TASKSSprintNNNN.html
+_PlanningSprintWorktreeRoot\Tasks.ProceduralDetails.SprintNNNN.html
+_PlanningSprintWorktreeRoot\Tasks.Accomplished.SprintNNNN.html
 ```
 
-- Before starting any work, read TASKS.md and identify the first unchecked item
-  that targets **this repository**.
-- After completing a step and confirming tests pass, mark it `[x]` in TASKS.md.
-- If a step requires changes in multiple repos, complete only the portion scoped
-  to **this repo**, mark it partial, and note which repo handles the remainder.
-- Never reorder or delete items in TASKS.md without being explicitly asked to.
+- Before starting any work, read the active sprint TASKS file for the current sprint.
+- After completing a step and confirming tests pass, mark it `[x]` in the active sprint TASKS file.
+- Never reorder or delete items in the TASKS file without being explicitly asked to.
 
 ## Sprint Task Artifacts
 
 In the sprint `_Planning` worktree, treat the task files as a set:
 
-- `TASKS.html` is the sprint board. If any `TASKS_V*.html` files exist, the
-  highest `V` file is the active board and lower versions are history.
-- `Tasks.Accomplished.html` starts empty and accumulates concrete work/evidence
+- The sprint board is the highest-versioned `TASKS*` file. If any versioned `TASKS_V*`
+  files exist, the highest `V` file is the active board and lower versions are history.
+- `Tasks.Accomplished` starts empty and accumulates concrete work/evidence
   as tasks progress.
-- `Tasks.ProceduralDetails.html` carries forward reusable procedure/runbook
+- `Tasks.ProceduralDetails` carries forward reusable procedure/runbook
   detail needed by later agents or the next sprint.
 - Sprint start/planning must create or refresh all three; seed
-  `Tasks.ProceduralDetails.html` with carried-forward procedures.
+  `Tasks.ProceduralDetails` with carried-forward procedures.
 - When working a task, read the active board first, then update
-  `Tasks.Accomplished.html` and `Tasks.ProceduralDetails.html` whenever work or
+  `Tasks.Accomplished` and `Tasks.ProceduralDetails` whenever work or
   procedure knowledge changed.
 - If the board is rebaselined mid-sprint, copy the current board to the next
-  `TASKS_Vx.html` and continue from the highest version.
-- Until downstream automation is migrated, keep `TASKS.md` synchronized with the
-  active HTML board.
-
-## Headroom Workflow
-
-- Use Headroom MCP tools before reasoning over large build/test logs, long search results, large JSON arrays, or long generated traces.
-- Start with `headroom_compress` when the task is triage, summarization, or pattern-finding across bulky output.
-- Use `headroom_retrieve` when exact line-level evidence, full raw output, or literal values are needed.
-- Do not compress source files before editing unless the task is broad exploration or summarization; exact edits still require exact file reads.
-- If `headroom_retrieve` fails, assume the local or proxy retention window may have expired and reacquire the original content.
+  `TASKS_Vx` and continue from the highest version.
+- Until downstream automation is migrated, keep the markdown and HTML copies of the
+  active board synchronized.
 
 ---
 
-## .claude Folder — Agents, Skills, and Rules
+## AiAgent Configuration Surfaces — Instructions, Skills, Agents, Settings, and MCP Servers
 
-The `.claude` folder at the root of each repository is an **NTFS junction** pointing to
-the matching SharedVSCode worktree for the current branch context:
+Each AiAgent has its own configuration surface: language instructions/rules, skills,
+agents and subagents, settings and config files, and MCP server registrations. These are
+organized in a manner unique to each AiAgent, so this file does **not** name their
+on-disk paths.
 
-```text
-Stable repo worktree  -> C:/Dropbox/whertzing/github/SharedVSCode/.claude
-Sprint repo worktree  -> C:/Dropbox/whertzing/github/SharedVSCode-wt-<issue>-Sprint-<NNNN>-work-items/.claude
-```
+Historically these surfaces were exposed in every repository as NTFS junctions pointing
+back to the SharedVSCode worktree for the current branch context. As part of making the
+`.ai` folder the canonical source of truth, those junctions are being replaced with
+actual, per-agent folders and files generated by the AiRender function. This conversion
+is still in progress, so a given repository may currently show either junctions or
+rendered folders.
 
-In general, pointers and symlinks in sprint branches point to files in sprint branch
-worktrees; the same pointers in stable branches point to files in stable branch
-worktrees. During SprintStartAgent, after each sprint worktree is created, retarget
-its `.claude` junction and related pointers to sprint worktree files. During
-SprintEndAgent, retarget those pointers back to stable worktree files just before the
-sprint branch is merged into the stable branch.
+For the authoritative, current layout of any AiAgent's instructions, skills, agents and
+subagents, settings and config files, or MCP servers, consult the `.ai` ReadMe in the
+SharedVSCode repository. When working inside a sprint, prefer the sprint branch's copy of
+that ReadMe.
 
-The folder structure is:
-
-```text
-.claude/
-├── agents/       # Custom sub-agents for specialized tasks
-├── skills/       # Reusable skill instruction sets
-└── Rules/        # Language-specific instruction files (.md)
-    ├── ansible.md
-    ├── Bitwarden.md
-    ├── BlazorSyncfusion.md
-    ├── BuildMaster.md
-    ├── CSharp.md
-    ├── CSharpTestData.md
-    ├── jenkins.md
-    ├── markdown.md
-    ├── pesterTest.md
-    ├── PesterTestData.md
-    ├── Powershell.md
-    ├── ProGet.md
-    ├── snippet.md
-    ├── SQL.md
-    ├── TypeScript.md
-    ├── UML.md
-    └── xunit.md
-```
+In general, pointers and rendered configuration in sprint branches resolve to the sprint
+branch worktree; the same surfaces in stable branches resolve to the stable branch
+worktree. SprintStartAgent retargets a sprint worktree's configuration surfaces to sprint
+worktree files after the worktree is created; SprintEndAgent retargets them back to
+stable worktree files just before the sprint branch is merged into the stable branch.
 
 **When writing code:**
 
-- Always load the relevant rules file for the language you are working in before
-  generating or editing code (e.g., `.claude/Rules/CSharp.md` for any C# work).
-- Use agents in `.claude/agents/` when a task matches their defined specialty.
-- Do NOT modify files inside `.claude/` unless the task explicitly targets
+- Always load the relevant language rules/instructions for the language you are working
+  in before generating or editing code (for example, the C# rules for any C# work, or the
+  Blazor/Syncfusion rules before changing `.razor`, `.razor.cs`, `.cshtml`, or
+  Syncfusion-related C# files).
+- Use the available agents or subagents when a task matches their defined specialty.
+- Do NOT modify an AiAgent's configuration surface unless the task explicitly targets
   SharedVSCode or the shared configuration.
 
 ---
 
 ## VS Code Settings
 
-All repositories share a single VS Code user settings file by pointer. There is **no**
-`.vscode/settings.json` in any repository. The pointer target must match the active
-worktree context:
+All repositories share a single VS Code user settings surface rather than a
+per-repository `.vscode/settings.json`. The active settings target must match the active
+worktree context: stable settings for a stable worktree, sprint settings for a sprint
+worktree.
 
-```text
-Stable context  -> SharedVSCode/UserSettings.jsonc
-Sprint context  -> SharedVSCode-wt-<issue>-Sprint-<NNNN>-work-items/UserSettings.jsonc
-```
-
-Do NOT create or modify `.vscode/settings.json` in any repository. If a setting needs
-to change during a sprint, edit the SharedVSCode sprint worktree copy. SprintStartAgent
-re-targets settings pointers to sprint worktree files after the sprint worktree exists;
-SprintEndAgent re-targets them back to stable worktree files just before merge.
+Do NOT create or modify `.vscode/settings.json` in any repository. If a setting needs to
+change during a sprint, edit the shared settings copy for the sprint context. For the
+current location and pointer arrangement of these settings and config files, consult the
+`.ai` ReadMe in the SharedVSCode repository (sprint branch copy when in a sprint).
+SprintStartAgent retargets settings pointers to sprint worktree files after the sprint
+worktree exists; SprintEndAgent retargets them back to stable worktree files just before
+merge.
 
 ---
 
@@ -182,10 +170,13 @@ SprintEndAgent re-targets them back to stable worktree files just before merge.
 - **Git:** Never commit directly to `main` or to a stable branch worktree for ordinary sprint work.
   Make changes in the most recent sprint branch worktree for the repo unless the user explicitly
   asks for stable-branch maintenance. Create an issue, a feature branch, and a worktree using the
-  skill issue-to-worktree when a sprint worktree does not already exist. Stage changes, and
+  issue-to-worktree skill when a sprint worktree does not already exist. Stage changes, and
   summarize the diff for review before any `git commit`.
 - **Secrets:** Never write connection strings, API keys, or credentials into source
-  files. Secrets are stored in a Bitwarden vault. Code should expect a secret's name to be in a parameter or an environment variable or in $global:settings (for processes that use machine and user profiles). The code should use Get-SecretATAP to retrieve the secret value from a vault using the secret name
+  files. Reference every secret by its `SecretName`, and call `Get-SecretATAP` to resolve it.
+  `Get-SecretATAP` reads `$global:settings` to decide which secret vault to use (Bitwarden
+  today) and fetches the secret value with `bws` (not `bw`). See the SolutionDocumentation
+  for details.
 - **Generated output (SC-0033):** When any agent command or script writes output files to
   the workstation (logs, reports, exports, generated code), they MUST go into the
   `_generated/` folder at the repository root. Never write generated artifacts anywhere
@@ -230,7 +221,7 @@ All agents operate on **Windows** inside **Visual Studio Code**. Use **PowerShel
 - When running Pester, NEVER use `-NoProfile`. Always allow PowerShell profiles:
   `pwsh -Command "Invoke-Pester -Path '<path>' -Output Detailed"`
 - For ATAP repository work, do not pass `-NoProfile` unless the task is explicitly auditing no-profile behavior. PowerShell profiles populate `$global:settings`, and BuildTooling resolves host/user configuration through `Get-PVal`; stripping profiles changes configuration resolution and can create misleading failures.
-- If requirements are ambiguous, ask ONE clarifying question before generating commands
+- If requirements are ambiguous, ask from one to five clarifying question before generating commands
 - **Bash tool override (R-01):** If `tools.bash.command` is configurable, set it to `pwsh`.
   In the Bash/terminal tool, ALL commands must be PowerShell. Never send bare PowerShell
   syntax (e.g. `Start-Sleep`, `Write-Host`) as a raw bash command — it will fail with
@@ -240,7 +231,7 @@ All agents operate on **Windows** inside **Visual Studio Code**. Use **PowerShel
   session. Always use the User-scope registry to read tokens and session IDs:
 
   ```powershell
-  $token = [System.Environment]::GetEnvironmentVariable('MY_SECRET_TOKEN', 'User')
+  $token = [System.Environment]::GetEnvironmentVariable('MY_SECRET_TOKENS_SECRET_NAME', 'User')
   ```
 
 - **VS Code extension listing (R-07):** `code --list-extensions` is unreliable from
@@ -284,7 +275,6 @@ services.AddSingleton<IMyFeature, MyFeature>();
 
 **OtterScript (BuildMaster) (R-24):** In OtterScript, use `$EnvironmentVariable(NAME)` to
 read Windows environment variables, not bare `$NAME` (which refers to BuildMaster variables).
-Secrets are machine-scope env vars provisioned via `LoginScript.ps1` / Bitwarden.
 
 ---
 
@@ -305,14 +295,17 @@ a ETW channel for function tracing that uses Fody weaving, but that is not yet i
 
 ## Secrets Management
 
-BitWarden is the password manager. Use `Get-BitWardenSecret` PowerShell cmdlet for access.
-The BitWarden session identifier environment variable is always present (set by login script).
+Reference every secret by its `SecretName`. Call `Get-SecretATAP` to resolve a secret: it
+reads `$global:settings` to decide which secret vault to use (Bitwarden today) and fetches
+the value with `bws` (not `bw`).
 
-- Do NOT use the PowerShell Secrets Management vault extension — it stores secrets in a
-  parallel vault not visible in the BitWarden UI
-- if a new secret is needed, stop and tell the user. Give a suggested Environment variable name for the secret.
-  Thereafter expect the environment variable with the secret value will be present
-- Never write connection strings, API keys, or credentials into source files
+- Do NOT use the PowerShell SecretManagement vault extension — it stores secrets in a
+  parallel vault not visible in the vault UI.
+- If a new secret is needed, stop and tell the user. Suggest an
+  `ALL_UPPERCASE_WITH_UNDERSCORES` `SecretName` for it. Thereafter expect that secret to be
+  resolvable by name through `Get-SecretATAP`.
+- Never write connection strings, API keys, or credentials into source files.
+- See the SolutionDocumentation for additional detail on vault selection and `Get-SecretATAP`.
 
 ---
 
@@ -464,58 +457,74 @@ When asked to create or modify a Rule, Rule Set, or Build Set:
     prefer an agent-swarm plan with one bounded ownership slice per worker. Keep write
     scopes disjoint and merge through a review pass.
 18. **Blazor/Syncfusion instructions (R-37):** For Blazor UI or Syncfusion component
-    work, load `.claude/Rules/BlazorSyncfusion.md` before changing `.razor`, `.razor.cs`,
-    `.cshtml`, or Syncfusion-related C# files.
+    work, load the Blazor/Syncfusion rules/instructions before changing `.razor`,
+    `.razor.cs`, `.cshtml`, or Syncfusion-related C# files.
 
 ---
 
-## Repository Purpose
+## Working Principles — Definition of Done & Evidence (All Agents)
+
+These apply to **every** agent in this workspace (Claude, Codex, Copilot,
+Antigravity) so behavior stays homogeneous regardless of which agent runs a task.
+
+1. **"Done" means deploy-state, not build-state.** A change is not done until it
+   runs where it is actually consumed. A successful build, a passing test, or a
+   green local run is necessary but not sufficient. For PowerShell modules this
+   means: version-bump → promote through the tier ladder → install to the
+   consuming scope — because ProGet feed versions are immutable, so re-shipping a
+   fix under the same version is impossible. Never report a fix as complete on a
+   build artifact alone; state explicitly where it is (and is not yet) deployed.
+
+2. **Repo conventions are mandatory, not discoverable.** Treat this workspace's
+   non-obvious local conventions as hard requirements and emit your work against
+   them as a checklist — do not rediscover them each task: SC-0033 (`_generated/`
+   for all generated output *and* evidence artifacts), sprint-scoped file naming,
+   autoload-or-throw for required cmdlets, PSFramework logging, and "no top-level
+   executable code in module `.ps1` files."
+
+3. **Run an adversarial self-pass on your own change's failure mode.** Before
+   claiming done, enumerate the inputs or near-variants that would defeat your own
+   change and either handle them or document the assumption. When fixing a bug,
+   explicitly ask "what close variant of this input re-introduces the same bug?"
+   and cover or call it out.
+
+4. **Keep claims separable from evidence.** Tag each acceptance claim with the
+   command or artifact that proves it, or mark it plainly as "asserted,
+   unverified." Never blend verified facts and unverified assertions in the same
+   prose. Write verification artifacts (counts, proofs, before/after) into
+   `_generated/` so the next agent can audit the claim quickly.
+
+5. **Right-size the work and tool surface to the task tier (see R-29, R-36).**
+   Decompose to the smallest unit a simpler model can own (typically one file or
+   one well-scoped function); provision the minimum tools and a tight Definition
+   of Done; reserve broad tool access and agent-swarm plans for genuinely
+   multi-file work (R-36, ~20+ files).
+
+---
+
+## SharedVSCode Repository Purpose
 
 SharedVSCode is the **canonical source** for shared VS Code configuration, snippets,
-extension recommendations, and the `.claude` tooling folder (agents, skills, rules).
-The `.claude` folder here is NTFS-junction into the root of all other repositories.
+extension recommendations, and the AiAgent configuration surfaces (instructions, skills,
+agents/subagents, settings, and MCP servers). As the `.ai` folder becomes the canonical
+source of truth, the AiRender function generates each agent's actual folders and files
+from it; previously these surfaces were exposed in other repositories as NTFS junctions
+back to this repo.
 
-⚠ **High-impact repository**: changes here propagate immediately and silently to all
-repos. Confirm with the user before modifying any file under `.claude/`.
+⚠ **High-impact repository**: changes here propagate to all repositories — historically
+immediately and silently via junctions, and going forward through rendered configuration.
+Confirm with the user before modifying any shared AiAgent configuration.
 
----
+### Rules for Modifying Shared AiAgent Configuration
 
-## .claude Folder — Canonical Source
+- A change to any shared language rules/instructions file changes AiAgent behavior across
+  all repositories — state explicitly which repos and behaviors are affected before editing.
+- After editing, summarize the delta so it can be reviewed before the next AiAgent session.
+- New agent or skill files should be self-contained; do not assume repo-specific paths.
 
-```text
-.claude/
-├── agents/          # Custom sub-agents for specialized tasks
-├── skills/          # Reusable skill instruction sets
-└── Rules/           # Language-specific instruction files
-    ├── ansible.md
-    ├── Bitwarden.md
-    ├── BlazorSyncfusion.md
-    ├── BuildMaster.md
-    ├── CSharp.md
-    ├── CSharpTestData.md
-    ├── jenkins.md
-    ├── markdown.md
-    ├── pesterTest.md
-    ├── PesterTestData.md
-    ├── Powershell.md
-    ├── ProGet.md
-    ├── snippet.md
-    ├── SQL.md
-    ├── TypeScript.md
-    ├── UML.md
-    └── xunit.md
-```
+### Modes
 
-### Rules for Modifying .claude Contents
-
-- A change to any `Rules/*.md` file changes AI behavior across ALL four repositories
-- Before editing, state explicitly which repos will be affected and what behavior changes
-- After editing, summarize the delta so it can be reviewed before the next Claude Code session
-- New agent or skill files should be self-contained; do not assume repo-specific paths
-
-### Modes (inherited from original copilot instructions)
-
-Claude Code operates in one of three modes in this repo:
+An AiAgent operates in one of three modes in this repo:
 
 - **Coding** — generating or editing source files
 - **Testing** — producing or running test files
@@ -630,8 +639,7 @@ Flyway migration SQL and the Rules Compendium document.
 
 ### When to Use the new-rule-kind Skill
 
-Invoke `.claude/skills/new-rule-kind/SKILL.md` (activation: "define a new rule
-kind") when:
+Invoke the new-rule-kind skill (activation: "define a new rule kind") when:
 
 - A new `PrimitiveLanguageKind` row needs to be created.
 - A new language (e.g., Terraform, TypeScript) is being added to the RRSBS system.

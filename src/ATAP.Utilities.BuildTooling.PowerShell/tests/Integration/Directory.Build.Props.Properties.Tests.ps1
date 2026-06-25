@@ -94,7 +94,7 @@ BeforeAll {
   }
 }
 
-Describe 'Directory.Build.props — PackageLifeCycleStage propagates to every csproj' -Tag 'Integration', '5Tier' {
+Describe 'Directory.Build.props — PackageLifeCycleStage propagates to every csproj' -Tag 'Integration', '5Tier', 'PromotedModuleHostSensitive' {
 
   It "PackageLifeCycleStage is in the valid-stage set for <CsprojName>" -ForEach $script:csprojCases {
     param($CsprojPath, $CsprojName)
@@ -105,7 +105,7 @@ Describe 'Directory.Build.props — PackageLifeCycleStage propagates to every cs
   }
 }
 
-Describe 'Directory.Build.props — TargetProGetFeed propagates and matches stage' -Tag 'Integration', '5Tier' {
+Describe 'Directory.Build.props — TargetProGetFeed propagates and matches stage' -Tag 'Integration', '5Tier', 'PromotedModuleHostSensitive' {
 
   It "TargetProGetFeed matches the expected feed for PackageLifeCycleStage on <CsprojName>" -ForEach $script:csprojCases {
     param($CsprojPath, $CsprojName)
@@ -119,7 +119,7 @@ Describe 'Directory.Build.props — TargetProGetFeed propagates and matches stag
   }
 }
 
-Describe 'Directory.Build.props — CentralPackageVersionOverridesEnabled is false' -Tag 'Integration', '5Tier' {
+Describe 'Directory.Build.props — CentralPackageVersionOverridesEnabled is false' -Tag 'Integration', '5Tier', 'PromotedModuleHostSensitive' {
 
   It "CentralPackageVersionOverridesEnabled evaluates to 'false' on <CsprojName>" -ForEach $script:csprojCases {
     param($CsprojPath, $CsprojName)

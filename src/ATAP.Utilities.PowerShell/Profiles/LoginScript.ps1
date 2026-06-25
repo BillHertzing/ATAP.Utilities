@@ -32,7 +32,7 @@ function Initialize-BitwardenSession {
   [OutputType([PSCustomObject])]
   param()
 
-  BEGIN {
+  begin {
     $fn = 'Initialize-BitwardenSession'
     $mn = 'ATAP.Utilities.Powershell'
 
@@ -56,8 +56,7 @@ function Initialize-BitwardenSession {
       if (-not (Get-Command -Name 'Set-EnvVarsFromBitWarden' -CommandType Function -ErrorAction SilentlyContinue)) {
         . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Set-EnvVarsFromBitWarden.ps1'
       }
-    }
-    catch {
+    } catch {
       $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       throw
@@ -68,7 +67,7 @@ function Initialize-BitwardenSession {
 
   }
 
-  PROCESS {
+  process {
     # Snippet: Try-Catch-Finally
     try {
       # Check if Bitwarden CLI is available
@@ -100,8 +99,7 @@ function Initialize-BitwardenSession {
 
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Login email: $loginEmail" -Tag 'startup'
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Both credentials retrieved successfully' -Tag 'startup'
-        }
-        catch {
+        } catch {
           $errorMessage = "Failed to retrieve Bitwarden credentials. Exception: $($_.Exception.Message)"
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'startup'
           return [PSCustomObject]@{
@@ -136,8 +134,7 @@ function Initialize-BitwardenSession {
           }
 
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Successfully logged in to Bitwarden' -Tag 'startup'
-        }
-        else {
+        } else {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Already logged in to Bitwarden' -Tag 'startup'
         }
 
@@ -155,6 +152,9 @@ function Initialize-BitwardenSession {
         $sessionKey = bw unlock --raw --passwordenv BW_PASSWORD 2>&1
         $exitCode = $LASTEXITCODE
 
+        # Clear unlock password from memory
+        $unlockPassword = $null
+
         # Log immediately after unlock
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "bw unlock completed. Exit code: $exitCode" -Tag 'startup'
 
@@ -165,8 +165,6 @@ function Initialize-BitwardenSession {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Session key first 20 chars: $(if($sessionKeyStr -and $sessionKeyStr.Length -gt 0){$sessionKeyStr.Substring(0, [Math]::Min(20, $sessionKeyStr.Length))}else{'N/A'})" -Tag 'startup'
 
         Remove-Item Env:BW_PASSWORD
-        # Clear unlock password from memory
-        $unlockPassword = $null
 
         if ($exitCode -eq 0 -and -not [string]::IsNullOrWhiteSpace($sessionKeyStr)) {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Unlock successful, setting environment variables' -Tag 'startup'
@@ -192,8 +190,7 @@ function Initialize-BitwardenSession {
             Success = $true
             Message = $successMessage
           }
-        }
-        else {
+        } else {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Unlock condition failed. Exit code: $exitCode, Session key empty: $([string]::IsNullOrWhiteSpace($sessionKeyStr))" -Tag 'startup'
 
           # Log the actual output from bw unlock (might contain error message)
@@ -210,19 +207,17 @@ function Initialize-BitwardenSession {
           }
         }
       }
-    }
-    catch {
+    } catch {
       $errorMessage = "Failed to unlock Bitwarden vault. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'startup'
       # ToDo: accumulate the errors; potentially add to 'Problems'
       throw # the unadorned throw will throw the $_ exception and keep the stack trace intact
-    }
-    finally {
+    } finally {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Leaving Function $fn in module $mn" -Tag 'startup'
     }
   }
 
-  END {
+  end {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Function completed' -Tag 'startup'
   }
 }
@@ -240,18 +235,16 @@ if ($MyInvocation.InvocationName -ne '.') {
   if (-not [System.Diagnostics.EventLog]::SourceExists('BitwardenLogin')) {
     try {
       New-EventLog -LogName Application -Source 'BitwardenLogin'
-    }
-    catch {
+    } catch {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Could not create event log source: $($_.Exception.Message)" -Tag 'startup'
     }
   }
 
   # Log script start to Event Log
   try {
-    Write-EventLog -LogName Application -Source 'BitwardenLogin' -EntryType Information -EventId 1000 -Message "LoginScript execution started"
+    Write-EventLog -LogName Application -Source 'BitwardenLogin' -EntryType Information -EventId 1000 -Message 'LoginScript execution started'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'LoginScript execution started' -Tag 'startup'
-  }
-  catch {
+  } catch {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Could not write start event to Event Log: $($_.Exception.Message)" -Tag 'startup'
   }
 
@@ -299,8 +292,7 @@ if ($MyInvocation.InvocationName -ne '.') {
         if ($envVarResult.Success) {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $envVarResult.Message -Tag 'startup'
           $successCount++
-        }
-        else {
+        } else {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "$($envVarResult.EnvVarName) retrieval failed: $($envVarResult.Message)" -Tag 'startup'
           $failureCount++
           $failureDetails += "$($envVarResult.EnvVarName): $($envVarResult.Message)"
@@ -315,16 +307,14 @@ if ($MyInvocation.InvocationName -ne '.') {
       Write-EventLog -LogName Application -Source 'BitwardenLogin' -EntryType Information -EventId 1001 -Message $successMessage
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $successMessage -Tag 'startup'
     }
-  }
-  catch {
+  } catch {
     $errorMessage = "✗ CRITICAL ERROR in LoginScript: $($_.Exception.Message). StackTrace: $($_.Exception.StackTrace)"
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'startup'
 
     # Write failure to Event Log
     try {
       Write-EventLog -LogName Application -Source 'BitwardenLogin' -EntryType Error -EventId 2001 -Message $errorMessage
-    }
-    catch {
+    } catch {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Could not write error to Event Log: $($_.Exception.Message)" -Tag 'startup'
     }
   }

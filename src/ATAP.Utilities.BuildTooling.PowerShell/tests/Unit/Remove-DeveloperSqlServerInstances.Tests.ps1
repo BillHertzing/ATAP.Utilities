@@ -1,18 +1,19 @@
 BeforeAll {
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
-    function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
+    function Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
 
-  function global:Get-PVal {
+  function Get-ParameterValueFromNeoConfigurationRoot {
     param($ParameterName, $originalPSBoundParameters, $dottedPath, $DefaultValue)
     return $DefaultValue
   }
+  Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Script -Force
 
-  function global:Get-DbaRegisteredServer { @() }
-  function global:Connect-DbaInstance { param($SqlInstance) [PSCustomObject]@{ Name = $SqlInstance } }
-  function global:Get-DbaDatabase { param($SqlInstance, $Database) [PSCustomObject]@{ Name = $Database; SqlInstance = $SqlInstance } }
-  function global:Remove-DbaDatabase { param($SqlInstance, $Database, [switch]$Confirm) }
-  function global:Start-Process { [PSCustomObject]@{ ExitCode = 0 } }
+  function Get-DbaRegisteredServer { @() }
+  function Connect-DbaInstance { param($SqlInstance) [PSCustomObject]@{ Name = $SqlInstance } }
+  function Get-DbaDatabase { param($SqlInstance, $Database) [PSCustomObject]@{ Name = $Database; SqlInstance = $SqlInstance } }
+  function Remove-DbaDatabase { param($SqlInstance, $Database, [switch]$Confirm) }
+  function Start-Process { [PSCustomObject]@{ ExitCode = 0 } }
   function Resolve-BuildToolingDatabaseSqlConnection { throw 'Resolve-BuildToolingDatabaseSqlConnection should not be called by Remove-DeveloperSqlServerInstances.' }
   function Invoke-BuildToolingSqlQuery { throw 'Invoke-BuildToolingSqlQuery should not be called by Remove-DeveloperSqlServerInstances.' }
 

@@ -8,27 +8,33 @@ BeforeAll {
 
 Describe 'Get-DbConnectionStringSecretDescriptor [public]' {
 
-  Context 'ByName — derivable sprint tiers' {
-    It 'parses a Dev secret name into parts and classifies it derivable' {
+  Context 'ByName - BWS-only sprint tiers by default' {
+    It 'parses a Dev secret name into parts and classifies it credentialed by default' {
       $d = Get-DbConnectionStringSecretDescriptor -SecretName 'dbConnectionString-ATAPUtilities-localhost-Dev-jsmith'
 
       $d.DatabaseName | Should -Be 'ATAPUtilities'
       $d.DatabaseHost | Should -Be 'localhost'
       $d.Environment | Should -Be 'Dev'
       $d.UserName | Should -Be 'jsmith'
-      $d.Classification | Should -Be 'derivable'
-      $d.IsDerivable | Should -BeTrue
+      $d.Classification | Should -Be 'credentialed'
+      $d.IsDerivable | Should -BeFalse
+      $d.ConnectionString | Should -BeNullOrEmpty
     }
 
-    It 'builds the exact Integrated-Security connection string format' {
-      $d = Get-DbConnectionStringSecretDescriptor -SecretName 'dbConnectionString-ATAPUtilities-localhost-Dev-jsmith'
+    It 'builds the exact Integrated-Security connection string format only when explicitly enabled for provisioning' {
+      $d = Get-DbConnectionStringSecretDescriptor `
+        -SecretName 'dbConnectionString-ATAPUtilities-localhost-Dev-jsmith' `
+        -DerivableTier @('Dev', 'Exp')
 
+      $d.IsDerivable | Should -BeTrue
       $d.ConnectionString | Should -BeExactly `
         'Server=localhost\Devjsmith;Database=ATAPUtilities;Integrated Security=True;MultipleActiveResultSets=True;TrustServerCertificate=True;'
     }
 
-    It 'parses an Exp secret name' {
-      $d = Get-DbConnectionStringSecretDescriptor -SecretName 'dbConnectionString-master-utat022-Exp-tester'
+    It 'parses and builds an Exp secret name when explicitly enabled for provisioning' {
+      $d = Get-DbConnectionStringSecretDescriptor `
+        -SecretName 'dbConnectionString-master-utat022-Exp-tester' `
+        -DerivableTier @('Dev', 'Exp')
 
       $d.Environment | Should -Be 'Exp'
       $d.ConnectionString | Should -BeExactly `
@@ -46,7 +52,7 @@ Describe 'Get-DbConnectionStringSecretDescriptor [public]' {
       $d.DatabaseHost | Should -Be 'my-build-box'
       $d.Environment | Should -Be 'Dev'
       $d.UserName | Should -Be 'jsmith'
-      $d.IsDerivable | Should -BeTrue
+      $d.IsDerivable | Should -BeFalse
     }
   }
 
@@ -78,8 +84,21 @@ Describe 'Get-DbConnectionStringSecretDescriptor [public]' {
   }
 
   Context 'ByParts — build mode' {
-    It 'builds the canonical sprint name and connection string from parts' {
+    It 'builds the canonical sprint name from parts as BWS-only by default' {
       $d = Get-DbConnectionStringSecretDescriptor -DatabaseName 'master' -DatabaseHost 'localhost' -Environment 'Exp' -UserName 'jsmith'
+
+      $d.SecretName | Should -Be 'dbConnectionString-master-localhost-Exp-jsmith'
+      $d.IsDerivable | Should -BeFalse
+      $d.ConnectionString | Should -BeNullOrEmpty
+    }
+
+    It 'builds the canonical sprint name and provisioning value from parts when explicitly enabled' {
+      $d = Get-DbConnectionStringSecretDescriptor `
+        -DatabaseName 'master' `
+        -DatabaseHost 'localhost' `
+        -Environment 'Exp' `
+        -UserName 'jsmith' `
+        -DerivableTier @('Dev', 'Exp')
 
       $d.SecretName | Should -Be 'dbConnectionString-master-localhost-Exp-jsmith'
       $d.IsDerivable | Should -BeTrue
@@ -99,14 +118,17 @@ Describe 'Get-DbConnectionStringSecretDescriptor [public]' {
       $d = Get-DbConnectionStringSecretDescriptor -DatabaseName 'master' -DatabaseHost 'localhost' -Environment 'Dev'
 
       $d.UserName | Should -Be $env:USERNAME
-      $d.IsDerivable | Should -BeTrue
+      $d.IsDerivable | Should -BeFalse
     }
   }
 
   Context 'classification overrides (forward compatibility)' {
     It 'treats an explicitly credentialed name as credentialed even on a sprint tier' {
       $name = 'dbConnectionString-ATAPUtilities-localhost-Dev-jsmith'
-      $d = Get-DbConnectionStringSecretDescriptor -SecretName $name -CredentialedSecretName @($name)
+      $d = Get-DbConnectionStringSecretDescriptor `
+        -SecretName $name `
+        -DerivableTier @('Dev') `
+        -CredentialedSecretName @($name)
 
       $d.IsDerivable | Should -BeFalse
       $d.Classification | Should -Be 'credentialed'

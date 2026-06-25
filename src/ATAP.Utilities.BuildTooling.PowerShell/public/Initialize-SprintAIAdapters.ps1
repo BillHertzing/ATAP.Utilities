@@ -7,6 +7,8 @@ function Initialize-SprintAIAdapters {
   .DESCRIPTION
     Dot-sources Render-AIAdapters.ps1 from the SharedVSCode worktree and invokes it
     to materialize instruction/configuration files into a target sprint worktree.
+    After instruction adapter rendering, canonical project-scope settings and
+    permissions are materialized through Invoke-SprintAIAdapterLifecycle.
   .PARAMETER TargetRoot
     The root path of the target sprint worktree to materialize into.
   .PARAMETER SharedVSCodeWorktreePath
@@ -16,6 +18,9 @@ function Initialize-SprintAIAdapters {
     <SharedVSCodeWorktreePath>/.ai/manifests/instruction-map.json.
   .PARAMETER UpdateManifest
     Switch to update manifest hashes/states in the source manifest.
+  .PARAMETER SkipAIAdapterLifecycle
+    Skip canonical project-scope adapter lifecycle materialization. Intended only for
+    diagnostics and narrowly scoped repair workflows.
   .PARAMETER Force
     Switch to force overwrite of existing target files or recreate links.
   #>
@@ -31,6 +36,9 @@ function Initialize-SprintAIAdapters {
     [string]$ManifestPath,
 
     [switch]$UpdateManifest,
+
+    [Alias('SkipAISettings')]
+    [switch]$SkipAIAdapterLifecycle,
 
     [switch]$Force
   )
@@ -82,14 +90,21 @@ function Initialize-SprintAIAdapters {
     foreach ($record in $filteredManifest.records) {
       $filteredTargets = @()
       foreach ($target in $record.targets) {
-        if ($target.scope -eq 'outside-junction' -or -not $target.scope) {
+        # Null-safe scope read (Task 10.3.f): many manifest targets legitimately omit
+        # 'scope', and a direct $target.scope member access throws PropertyNotFoundException
+        # under Set-StrictMode -Version Latest (the original Sprint 0010 start defect).
+        $scopeProperty = $target.PSObject.Properties['scope']
+        $scopeValue = if ($scopeProperty) { $scopeProperty.Value } else { $null }
+        if ($scopeValue -eq 'outside-junction' -or -not $scopeValue) {
           # Keep targets marked outside-junction; also keep unscoped targets for backwards compatibility
           $filteredTargets += $target
           $outsideJunctionCount++
         } else {
           $filteredJunctionCount++
+          $pathProperty = $target.PSObject.Properties['path']
+          $targetPath = if ($pathProperty) { $pathProperty.Value } else { '(unknown path)' }
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-            -Message "Filtering out junctioned target: $($target.path)"
+            -Message "Filtering out junctioned target: $targetPath"
         }
       }
       $record.targets = $filteredTargets
@@ -99,7 +114,7 @@ function Initialize-SprintAIAdapters {
       -Message "Materialization scope: keeping $outsideJunctionCount outside-junction targets, filtering $filteredJunctionCount junctioned targets"
 
     # Write the filtered manifest to a temporary file for Render-AIAdapters
-    $tempManifestPath = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "instruction-map-filtered-$(Get-Random).json")
+    $tempManifestPath = Join-Path $SharedVSCodeWorktreePath ".ai/manifests/instruction-map-filtered-$(Get-Random).json"
     try {
       $filteredManifest | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $tempManifestPath -Encoding utf8
 
@@ -121,6 +136,17 @@ function Initialize-SprintAIAdapters {
           $failedTargets = $renderResult.Results | Where-Object { $_.Action -eq 'error' } | ForEach-Object { "$($_.Path): $($_.Message)" }
           throw "Failed to materialize all AI adapters: $($failedTargets -join '; ')"
         }
+
+        $adapterLifecycleResult = $null
+        if (-not $SkipAIAdapterLifecycle -and $PSCmdlet.ShouldProcess($TargetRoot, 'Materialize canonical project AI adapters')) {
+          $adapterLifecycleResult = Invoke-SprintAIAdapterLifecycle `
+            -Boundary Start `
+            -TargetRoot $TargetRoot `
+            -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath `
+            -Confirm:$false
+        }
+        $renderResult | Add-Member -NotePropertyName AdapterLifecycle -NotePropertyValue $adapterLifecycleResult -Force
+        $renderResult | Add-Member -NotePropertyName SettingsLifecycle -NotePropertyValue $adapterLifecycleResult -Force
 
         return $renderResult
       }

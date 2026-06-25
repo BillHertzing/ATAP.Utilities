@@ -9,7 +9,10 @@
     2. Collects and deduplicates all 'using namespace' and 'using assembly' statements,
       sorts them (namespace first, then assembly, then other), and hoists them below the
       Requires block.
-    3. Concatenates the remaining file bodies, each preceded by a '# <filename>' header.
+    3. Strips top-level Export-ModuleMember statements and export-only
+      if ($MyInvocation.MyCommand.ScriptBlock.Module) guard wrappers. The generated
+      manifest defines the exported surface.
+    4. Concatenates the remaining file bodies, each preceded by a '# <filename>' header.
   An empty module (no .ps1 files found) produces an empty .psm1 and logs a warning
   instead of throwing. Missing parent directories of $OutputPath are created automatically.
   Supports -WhatIf to preview without writing.
@@ -104,11 +107,30 @@ function Build-PSModulePsm1 {
         return (Get-Item -LiteralPath $OutputPath)
       }
 
-      # Collect unique #Requires directives and using statements; build per-file body stripped of both
+      # Collect unique #Requires directives and using statements; build per-file body
+      # stripped of those plus top-level Export-ModuleMember statements.
       $requiresSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
       $usingSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
       $orderedUsings = [System.Collections.Generic.List[string]]::new()
       $fileBodies = [System.Collections.Generic.List[PSCustomObject]]::new()
+      $exportRemovalCount = 0
+
+      $isExportModuleMemberStatement = {
+        param(
+          [System.Management.Automation.Language.StatementAst] $Statement
+        )
+
+        if ($Statement -isnot [System.Management.Automation.Language.PipelineAst] -or
+          $Statement.PipelineElements.Count -ne 1) {
+          return $false
+        }
+
+        $pipelineElement = $Statement.PipelineElements[0]
+        return (
+          $pipelineElement -is [System.Management.Automation.Language.CommandAst] -and
+          $pipelineElement.GetCommandName() -eq 'Export-ModuleMember'
+        )
+      }
 
       foreach ($srcFile in $sourceFiles) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Parsing AST for '$($srcFile.FullName)'"
@@ -119,20 +141,63 @@ function Build-PSModulePsm1 {
 
         $fileText = [System.IO.File]::ReadAllText($srcFile.FullName)
         $bodyText = $fileText
+        $removalExtents = [System.Collections.Generic.List[System.Management.Automation.Language.IScriptExtent]]::new()
 
-        # Strip AST-detected 'using' statements (working highest offset first to preserve positions)
+        # Collect AST-detected 'using' statements for removal and hoisting.
         if ($ast.UsingStatements -and $ast.UsingStatements.Count -gt 0) {
-          $sortedAstUsings = $ast.UsingStatements | Sort-Object -Property { $_.Extent.StartOffset } -Descending
-          foreach ($u in $sortedAstUsings) {
+          foreach ($u in $ast.UsingStatements) {
             $usingLine = $u.Extent.Text.Trim()
             if ($usingSet.Add($usingLine)) {
               [void]$orderedUsings.Add($usingLine)
             }
-            $bodyText = $bodyText.Remove($u.Extent.StartOffset, $u.Extent.EndOffset - $u.Extent.StartOffset)
+            [void]$removalExtents.Add($u.Extent)
           }
         }
 
-        # Strip #Requires lines from the remaining body text
+        # The packaged manifest owns the export surface. Remove only top-level
+        # Export-ModuleMember statements and export-only module guard wrappers.
+        if ($ast.EndBlock) {
+          foreach ($statement in $ast.EndBlock.Statements) {
+            if (& $isExportModuleMemberStatement $statement) {
+              [void]$removalExtents.Add($statement.Extent)
+              $exportRemovalCount++
+              continue
+            }
+
+            if ($statement -isnot [System.Management.Automation.Language.IfStatementAst]) {
+              continue
+            }
+
+            $clauses = @($statement.Clauses)
+            if ($clauses.Count -ne 1 -or $null -ne $statement.ElseClause) {
+              continue
+            }
+
+            $conditionText = $clauses[0].Item1.Extent.Text
+            $guardBodyStatements = @($clauses[0].Item2.Statements)
+            $isModuleGuard = $conditionText -match '^\s*\(?\s*\$MyInvocation\.MyCommand\.ScriptBlock\.Module\s*\)?\s*$'
+            if ($isModuleGuard -and
+              $guardBodyStatements.Count -eq 1 -and
+              (& $isExportModuleMemberStatement $guardBodyStatements[0])) {
+              [void]$removalExtents.Add($statement.Extent)
+              $exportRemovalCount++
+            }
+          }
+        }
+
+        # Apply all AST removals from the end of the original text so offsets remain valid.
+        foreach ($extent in ($removalExtents | Sort-Object -Property StartOffset -Descending)) {
+          $bodyText = $bodyText.Remove(
+            $extent.StartOffset,
+            $extent.EndOffset - $extent.StartOffset
+          )
+        }
+
+        if ($removalExtents.Count -gt 0) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Removed $($removalExtents.Count) generated-module-only statement(s) from '$($srcFile.FullName)'"
+        }
+
+        # Strip #Requires lines from the remaining body text.
         $bodyLines = $bodyText -split "`r?`n"
         # also catches '# #Requires' (commented-out requires) and case variants
         $requiresLines = $bodyLines | Where-Object { $_ -match '^\s*#\s*[Rr]equires\s' }
@@ -219,7 +284,7 @@ function Build-PSModulePsm1 {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Writing generated .psm1 to '$OutputPath'"
       Set-Content -Path $OutputPath -Value $sb.ToString() -Encoding utf8BOM
 
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Built: '$OutputPath' ($($sourceFiles.Count) source files, $($requiresSet.Count) #Requires collected, $($usingSet.Count) using statements hoisted)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Built: '$OutputPath' ($($sourceFiles.Count) source files, $($requiresSet.Count) #Requires collected, $($usingSet.Count) using statements hoisted, $exportRemovalCount export statement(s) stripped)"
 
       return (Get-Item -LiteralPath $OutputPath)
     } catch {

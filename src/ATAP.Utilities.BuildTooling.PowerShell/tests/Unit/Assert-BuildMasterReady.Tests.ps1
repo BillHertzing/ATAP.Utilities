@@ -4,17 +4,28 @@ BeforeAll {
   Import-Module PSFramework -ErrorAction SilentlyContinue
   $script:publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
   . (Join-Path $script:publicDir 'Assert-BuildMasterReady.ps1')
+  function Get-SecretATAP {
+    param(
+      [string]$SecretName,
+      [string]$SecretField,
+      [string]$SecretStoreType,
+      [System.Management.Automation.ActionPreference]$ErrorAction
+    )
+    'fake-test-key'
+  }
   # Port 1 is reserved and closed; a TCP HEAD here is refused fast on Windows.
   $script:unreachableUrl = 'http://127.0.0.1:1'
 }
 
 Describe 'Assert-BuildMasterReady' -Tag 'Unit' {
+  BeforeEach {
+    Mock Get-SecretATAP { 'fake-test-key' }
+  }
 
   Context 'Result shape with forced ApiReachable failure' {
     BeforeAll {
       $script:result = Assert-BuildMasterReady `
         -BuildMasterBaseUrl $script:unreachableUrl `
-        -ApiKey 'fake-test-key' `
         -TimeoutSeconds 1
     }
 
@@ -37,9 +48,9 @@ Describe 'Assert-BuildMasterReady' -Tag 'Unit' {
       $script:result.AllOk | Should -BeFalse
     }
 
-    It 'ApiKeyResolvable passes when -ApiKey is supplied' {
+    It 'ApiKeyResolvable passes when Get-SecretATAP resolves the configured secret' {
       $script:result.Checks.ApiKeyResolvable.Ok | Should -BeTrue
-      $script:result.Checks.ApiKeyResolvable.Source | Should -Be 'Parameter'
+      $script:result.Checks.ApiKeyResolvable.Source | Should -Be 'Get-SecretATAP'
     }
 
     It 'ApiReachable fails when URL is unreachable' {
@@ -72,7 +83,6 @@ Describe 'Assert-BuildMasterReady' -Tag 'Unit' {
     It 'Respects a custom application list and produces one PerApp entry per name' {
       $r = Assert-BuildMasterReady `
         -BuildMasterBaseUrl $script:unreachableUrl `
-        -ApiKey 'fake' `
         -TimeoutSeconds 1 `
         -ApplicationNames @('OnlyApp')
       $r.Checks.ApplicationExistence.PerApp.Count | Should -Be 1
@@ -85,7 +95,6 @@ Describe 'Assert-BuildMasterReady' -Tag 'Unit' {
       try {
         Assert-BuildMasterReady `
           -BuildMasterBaseUrl $script:unreachableUrl `
-          -ApiKey 'fake' `
           -TimeoutSeconds 1 `
           -ThrowOnFailure | Out-Null
         throw 'Expected Assert-BuildMasterReady to throw a terminating error.'

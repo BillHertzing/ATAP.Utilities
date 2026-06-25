@@ -50,8 +50,10 @@ _Teach / Tell how to create software._
   Alternate draft of workstation and build-host bootstrap guidance.
 - [Sprint-Boundary Retargeting](Sprint-Boundary-Retargeting.md) — V4-H03 source of
   truth for the `Set-SprintBoundaryContext` orchestrator: which concern (machine
-  links, SharedVSCode settings, downstream contexts) retargets at sprint start/end
-  via which worker, and why PowerShell profiles and ConfigRootKeys are
+  links, SharedVSCode settings, downstream contexts, registry-backed AI adapters)
+  retargets at sprint start/end via which worker, the sole adapter render/drift
+  APIs and caller order, checkpoint-gated user/global safety, why adapter drift
+  blocks teardown, and why PowerShell profiles and ConfigRootKeys are
   stable-by-design no-ops.
 - [WSL2 Setup](WSL2Setup.md) — WSL2 provisioning notes for development and
   automation workflows.
@@ -312,7 +314,9 @@ _Teach / Tell how to create software._
   replacement planned, priority P1-P4), or retired (will not be rebuilt),
   and documents the reactivation procedure.
 - [Sprint Infrastructure Naming](SprintInfrastructure-Naming.md) —
-  Naming conventions for sprint-scoped infrastructure resources.
+  Naming conventions for sprint-scoped infrastructure resources, including
+  BWS-owned `dbConnectionString-*` keys for Development and Experimental
+  database connection strings.
 - [Production and Tooling Overview](Production-and-Tooling-Overview.md) —
   Cross-cut overview of production-facing flows and supporting tooling.
 - [Immutable Build Strategy](Immutable-Build-Strategy.md) —

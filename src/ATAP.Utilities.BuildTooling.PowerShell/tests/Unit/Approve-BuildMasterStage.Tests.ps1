@@ -7,12 +7,12 @@ BeforeAll {
   . (Join-Path $publicDir 'Approve-BuildMasterStage.ps1')
 
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
-    function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
+    function Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
   }
 
   # Stub the secret-name resolver and the secret store so the cmdlet resolves the
   # BuildMaster admin API key without contacting Bitwarden.
-  function global:Get-ParameterValueFromNeoConfigurationRoot {
+  function Get-ParameterValueFromNeoConfigurationRoot {
     param([string]$ParameterName, $originalPSBoundParameters, [AllowNull()]$DefaultValue = $null, [string]$dottedPath, [hashtable]$Settings)
     if ($originalPSBoundParameters -and $originalPSBoundParameters.ContainsKey($ParameterName)) { return $originalPSBoundParameters[$ParameterName] }
     $settingsRoot = if ($Settings) { $Settings } elseif ($global:settings) { $global:settings } else { @{} }
@@ -20,8 +20,8 @@ BeforeAll {
     if ($settingsRoot -is [System.Collections.IDictionary] -and $settingsRoot.Contains($key)) { return $settingsRoot[$key] }
     return $DefaultValue
   }
-  Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Global -Force
-  function global:Get-SecretATAP {
+  Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Script -Force
+  function Get-SecretATAP {
     param([Parameter(ValueFromPipelineByPropertyName = $true)][Alias('BuildMasterAdminApiKeySecretName')][string]$SecretName, [string]$SecretField = 'password', [string]$SecretStoreType)
     'unit-test-key'
   }

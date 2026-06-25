@@ -15,6 +15,15 @@ Describe 'New-ReleaseBundle' -Tag 'Unit' {
     BeforeEach {
         $script:tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('NewReleaseBundle_' + [Guid]::NewGuid().ToString('N'))
         New-Item -ItemType Directory -Path $script:tempRoot -Force | Out-Null
+
+        # Binary fixtures are intentionally ignored by the repository. Build a
+        # complete disposable source tree so the manifest can exercise the
+        # release-bundle layout without requiring a checked-in .dll.
+        $script:tempSourceRoot = Join-Path $script:tempRoot 'source'
+        Copy-Item -LiteralPath $script:fixtureSourceRoot -Destination $script:tempSourceRoot -Recurse -Force
+        $appBinPath = Join-Path $script:tempSourceRoot 'app/bin'
+        New-Item -ItemType Directory -Path $appBinPath -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $appBinPath 'AceCommander.dll') -Value 'test fixture' -Encoding UTF8
     }
 
     AfterEach {
@@ -24,7 +33,7 @@ Describe 'New-ReleaseBundle' -Tag 'Unit' {
     }
 
     It 'creates the documented staging layout and packs a .upack archive from a fixture manifest' {
-        $result = New-ReleaseBundle -Manifest $script:fixtureManifest -OutputPath $script:tempRoot -SourceRoot $script:fixtureSourceRoot
+        $result = New-ReleaseBundle -Manifest $script:fixtureManifest -OutputPath $script:tempRoot -SourceRoot $script:tempSourceRoot
 
         $result.Path | Should -BeOfType ([System.IO.FileInfo])
         $result.Path.Extension | Should -Be '.upack'
@@ -86,7 +95,7 @@ Describe 'New-ReleaseBundle' -Tag 'Unit' {
             checksums = @{}
         } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $badManifest -Encoding UTF8
 
-        { New-ReleaseBundle -Manifest $badManifest -OutputPath $script:tempRoot -SourceRoot $script:fixtureSourceRoot } |
+        { New-ReleaseBundle -Manifest $badManifest -OutputPath $script:tempRoot -SourceRoot $script:tempSourceRoot } |
             Should -Throw -ExpectedMessage "*releaseVersion*"
     }
 
@@ -110,7 +119,7 @@ Describe 'New-ReleaseBundle' -Tag 'Unit' {
             }
         } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $badManifest -Encoding UTF8
 
-        { New-ReleaseBundle -Manifest $badManifest -OutputPath $script:tempRoot -SourceRoot $script:fixtureSourceRoot } |
+        { New-ReleaseBundle -Manifest $badManifest -OutputPath $script:tempRoot -SourceRoot $script:tempSourceRoot } |
             Should -Throw -ExpectedMessage '*escapes the allowed root*'
     }
 
@@ -121,7 +130,7 @@ Describe 'New-ReleaseBundle' -Tag 'Unit' {
             Add-Member -NotePropertyName 'docs/MISSING.md' -NotePropertyValue ('sha256:' + ('1' * 64))
         $manifestObject | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $badManifest -Encoding UTF8
 
-        { New-ReleaseBundle -Manifest $badManifest -OutputPath $script:tempRoot -SourceRoot $script:fixtureSourceRoot } |
+        { New-ReleaseBundle -Manifest $badManifest -OutputPath $script:tempRoot -SourceRoot $script:tempSourceRoot } |
             Should -Throw -ExpectedMessage "*docs/MISSING.md*not found under any source root*"
     }
 }

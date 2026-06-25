@@ -9,21 +9,16 @@ BeforeAll {
     $script:scriptPath = Join-Path $publicDir 'Move-ProGetPackageInterTier.ps1'
 
     if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
-        function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
+        function Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
     }
 
-    $script:hadGlobalGetPValFunction = Test-Path -Path 'Function:\global:Get-PVal'
-    $script:originalGlobalGetPValFunction = if ($script:hadGlobalGetPValFunction) {
-        (Get-Item -Path 'Function:\global:Get-PVal').ScriptBlock
-    } else {
-        $null
-    }
-
-    # Stub Get-PVal to pass through values unchanged.
-    function global:Get-PVal {
+    # Provide a container-local resolver and alias. The production resolver remains
+    # opaque to this unit test and the stub cannot escape into later build steps.
+    function Get-ParameterValueFromNeoConfigurationRoot {
         param($ParameterName, $originalPSBoundParameters, $dottedPath, $DefaultValue)
         return $DefaultValue
     }
+    Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Script -Force
 
     # Dot-source the autoloaded function for testing.
     . $script:scriptPath
@@ -32,15 +27,7 @@ BeforeAll {
     $script:apiKey = 'test-api-key'
 }
 
-AfterAll {
-    if ($script:hadGlobalGetPValFunction) {
-        Set-Item -Path 'Function:\global:Get-PVal' -Value $script:originalGlobalGetPValFunction
-    } else {
-        Remove-Item -Path 'Function:\global:Get-PVal' -ErrorAction SilentlyContinue
-    }
-}
-
-Describe 'Move-ProGetPackageInterTier' -Tag 'Unit' {
+Describe 'Move-ProGetPackageInterTier' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   BeforeEach {
     Mock Write-PSFMessage { }
     Mock Invoke-RestMethod {

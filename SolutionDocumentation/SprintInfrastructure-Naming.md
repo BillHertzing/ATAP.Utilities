@@ -161,8 +161,11 @@ maps to feed names via `Get-ATAPIACConstant` constants:
 
 ## 4. Bitwarden Connection-String Secret Naming
 
-Each Bitwarden item is a **Secure Note** whose hidden field `connString`
-holds the full ADO.NET connection string.
+Each database connection string is a Bitwarden Secrets Manager (`bws`) secret.
+The secret key follows the naming convention below, and the secret value is the
+full ADO.NET connection string. Do not store these connection strings in a
+developer's personal Password Manager vault or retrieve them with `bw` /
+`BW_SESSION`.
 
 ### 4.1 Per-sprint secrets (Development and Experimental tiers)
 
@@ -174,13 +177,14 @@ dbConnectionString-<Database>-<Host>-<Tier>-<DeveloperUSERNAME>
 | --------------------- | -------------------------------------------- |
 | `<Database>`          | `ATAPUtilities` \| `AceCommander`            |
 | `<Host>`              | `$env:COMPUTERNAME` or `localhost`           |
-| `<Tier>`              | `Development` \| `Experimental`              |
+| `<Tier>`              | `Dev` \| `Exp`                               |
 | `<DeveloperUSERNAME>` | `$env:USERNAME` on the developer workstation |
 
-**Example:** `dbConnectionString-ATAPUtilities-DEVBOX01-Development-jsmith`
+**Example:** `dbConnectionString-ATAPUtilities-DEVBOX01-Dev-jsmith`
 
-A sprint start creates 8 secrets per developer:
-2 databases × 2 hosts (`$env:COMPUTERNAME` + `localhost`) × 2 tiers = 8
+A sprint start creates 12 secrets per developer by default:
+3 databases (`master`, `ATAPUtilities`, `AceCommander`) × 2 hosts
+(`$env:COMPUTERNAME` + `localhost`) × 2 tiers = 12
 
 **Provisioning cmdlet:** [`New-SprintBitwardenSecrets`](../src/ATAP.Utilities.BuildTooling.PowerShell/public/New-SprintBitwardenSecrets.ps1)
 
@@ -210,10 +214,13 @@ ecosystem during initial setup. NOT called by SprintStartAgent.
 
 ### 4.3 Retrieval
 
-All secrets are retrieved via `Get-SecretATAP -SecretName <name>` from
-`ATAP.Utilities.BuildTooling.PowerShell`. The cmdlet passes the name unchanged
-to `Get-Secret` (SecretManagement) — no character filtering occurs, so names
-containing hyphens, machine names, and usernames are handled correctly.
+All database connection-string secrets are retrieved via `Get-SecretATAP
+-SecretName <name> -SecretStoreType 'BitwardenSecretsManager'` from
+`ATAP.Utilities.BuildTooling.PowerShell`, or indirectly through
+`Resolve-DatabaseSqlConnection`. The BWS provider passes the key name unchanged
+to `bws`, so names containing hyphens, machine names, and usernames are handled
+correctly. Development and Experimental values must exist in BWS; readers do not
+derive missing strings locally.
 
 ---
 

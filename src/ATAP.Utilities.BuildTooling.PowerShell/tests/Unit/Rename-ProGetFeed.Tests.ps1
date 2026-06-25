@@ -12,34 +12,32 @@ BeforeAll {
 
   # Stub Write-PSFMessage so test output stays clean.
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
-    function global:Write-PSFMessage {
+    function Write-PSFMessage {
       param([Parameter(ValueFromRemainingArguments = $true)]$rest)
     }
   }
 
-  # Stub Get-PVal: if the parameter was supplied on the cmdline, return it;
-  # otherwise return -DefaultValue.  This simulates an empty $global:settings
-  # without requiring the full module infrastructure.
-  if (-not (Get-Command Get-PVal -ErrorAction SilentlyContinue)) {
-    function global:Get-PVal {
-      param(
-        [string]$ParameterName,
-        [hashtable]$originalPSBoundParameters,
-        [string]$dottedPath,
-        $DefaultValue
-      )
-      if ($null -ne $originalPSBoundParameters -and
-        $originalPSBoundParameters.ContainsKey($ParameterName)) {
-        return $originalPSBoundParameters[$ParameterName]
-      }
-      return $DefaultValue
-    }
-  }
+  $script:oldSettings = $global:settings
+  $script:oldConfigRootKeys = $global:configRootKeys
+  $script:hadGlobalProGetBaseUrl = Test-Path -LiteralPath 'Variable:\global:ProGetBaseUrl'
+  $script:oldGlobalProGetBaseUrl = $global:ProGetBaseUrl
+  $script:oldProcessProGetBaseUrl = [Environment]::GetEnvironmentVariable('PROGET_BASE_URL', 'Process')
+  $script:oldProcessProGetApiKey = [Environment]::GetEnvironmentVariable('PROGET_API_KEY', 'Process')
+
+  $global:settings = $null
+  $global:configRootKeys = $null
 }
 
 AfterAll {
-  Remove-Item Function:\Get-PVal -ErrorAction SilentlyContinue
-  Remove-Item Function:\Write-PSFMessage -ErrorAction SilentlyContinue
+  $global:settings = $script:oldSettings
+  $global:configRootKeys = $script:oldConfigRootKeys
+  if ($script:hadGlobalProGetBaseUrl) {
+    $global:ProGetBaseUrl = $script:oldGlobalProGetBaseUrl
+  } else {
+    Remove-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
+  }
+  [Environment]::SetEnvironmentVariable('PROGET_BASE_URL', $script:oldProcessProGetBaseUrl, 'Process')
+  [Environment]::SetEnvironmentVariable('PROGET_API_KEY', $script:oldProcessProGetApiKey, 'Process')
 }
 
 # ── 1 ▸ Static tests (no data required) ─────────────────────────────────────
@@ -199,20 +197,30 @@ Describe 'Rename-ProGetFeed — static' {
     }
   }
 
-  Context 'Global ProGetBaseUrl fallback' {
+  Context 'Global settings fallback' {
 
-    It 'Resolves ProGetBaseUrl from $global:ProGetBaseUrl when parameter omitted' {
-      $global:ProGetBaseUrl = 'http://global-proget.test'
+    It 'Resolves ProGetBaseUrl from $global:settings when parameter omitted' {
+      $global:configRootKeys = @{
+        ProGetAdminUriSchemeConfigRootKey = 'ProGetAdminUriScheme'
+        ProGetAdminUriHostConfigRootKey   = 'ProGetAdminUriHost'
+        ProGetAdminUriPortConfigRootKey   = 'ProGetAdminUriPort'
+      }
+      $global:settings = @{
+        ProGetAdminUriScheme = 'http'
+        ProGetAdminUriHost   = 'global-proget.test'
+        ProGetAdminUriPort   = 50000
+      }
       $env:PROGET_API_KEY = $null      # ensure env fallback not used for ApiKey
       $env:PROGET_BASE_URL = $null
 
       Rename-ProGetFeed -OldFeedName 'x' -NewFeedName 'y' -ApiKey 'k'
 
       Should -Invoke Invoke-RestMethod -Times 1 -Exactly -ParameterFilter {
-        $Uri -like 'http://global-proget.test/*'
+        $Uri -like 'http://global-proget.test:50000/*'
       }
 
-      $global:ProGetBaseUrl = $null   # restore
+      $global:settings = $null
+      $global:configRootKeys = $null
     }
   }
 }

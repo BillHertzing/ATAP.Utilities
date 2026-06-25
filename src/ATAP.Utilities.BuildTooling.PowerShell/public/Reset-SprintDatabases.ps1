@@ -43,6 +43,11 @@ function Reset-SprintDatabases {
   .PARAMETER FlywayBasePath
     Root folder containing flyway.toml and SQL migrations. Defaults to
     <RepositoryRoot>\Database\Flyway, or global settings when available.
+  .PARAMETER ProvisioningScriptsPath
+    Folder containing the current DropAndCreateDatabase.sql and related
+    provisioning scripts. An explicit caller value takes precedence over host
+    settings so an installed BuildTooling module can execute scripts from the
+    active repository worktree.
   .PARAMETER RepositoryRoot
     Root of the ATAP.Utilities repository worktree. Defaults to three levels
     above this script's location.
@@ -113,6 +118,9 @@ function Reset-SprintDatabases {
 
     [Parameter(Mandatory = $false)]
     [string]$FlywayBasePath,
+
+    [Parameter(Mandatory = $false)]
+    [string]$ProvisioningScriptsPath,
 
     [Parameter(Mandatory = $false)]
     [string]$RepositoryRoot,
@@ -540,7 +548,7 @@ function Reset-SprintDatabases {
         $resolvedProvisioningScriptsPath = Resolve-ResetSprintDatabaseSetting `
           -Name 'ProvisioningScriptsPath' `
           -DottedPath "$db.$environment.ProvisioningScriptsPath" `
-          -DefaultValue $null `
+          -DefaultValue $ProvisioningScriptsPath `
           -AllowMissing `
           -AsType ([string])
 

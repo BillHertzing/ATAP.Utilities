@@ -6,19 +6,9 @@ BeforeAll {
   $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
   . (Join-Path $publicDir 'Remove-BuildMasterRelease.ps1')
 
-  # Provide a deterministic settings resolver for this test file. The real
-  # helper can be loaded by earlier tests in aggregate runs, so preserve and
-  # restore any existing global definition instead of depending on load order.
-  $script:hadGlobalGetPValFunction = Test-Path -Path 'Function:\global:Get-ParameterValueFromNeoConfigurationRoot'
-  if ($script:hadGlobalGetPValFunction) {
-    $script:originalGlobalGetPValFunction = (Get-Item -Path 'Function:\global:Get-ParameterValueFromNeoConfigurationRoot').ScriptBlock
-  }
-  $script:hadGlobalGetPValAlias = Test-Path -Path 'Alias:\Get-PVal'
-  if ($script:hadGlobalGetPValAlias) {
-    $script:originalGlobalGetPValAlias = (Get-Alias -Name Get-PVal).Definition
-  }
-
-  function global:Get-ParameterValueFromNeoConfigurationRoot {
+  # Provide a deterministic resolver within this Pester container so aggregate
+  # test runs cannot alter the host's production resolver or alias.
+  function Get-ParameterValueFromNeoConfigurationRoot {
     param(
       [string]$ParameterName,
       $originalPSBoundParameters,
@@ -49,16 +39,16 @@ BeforeAll {
 
     return $DefaultValue
   }
-  Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Global -Force
+  Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Script -Force
 
   # Suppress PSFramework noise in tests.
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
-    function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
+    function Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
   }
 
   # Stub the secret store so the cmdlet resolves the BuildMaster admin API key
   # without contacting Bitwarden.
-  function global:Get-SecretATAP {
+  function Get-SecretATAP {
     param([Parameter(ValueFromPipelineByPropertyName = $true)][Alias('BuildMasterAdminApiKeySecretName')][string]$SecretName, [string]$SecretField = 'password', [string]$SecretStoreType)
     'unit-test-key'
   }
@@ -72,17 +62,6 @@ AfterAll {
   $global:configRootKeys = $script:oldConfigRootKeys
   $global:settings = $script:oldSettings
   [Environment]::SetEnvironmentVariable('BUILDMASTER_BASE_URL', $script:savedBaseUrl, 'User')
-
-  if ($script:hadGlobalGetPValFunction) {
-    Set-Item -Path 'Function:\global:Get-ParameterValueFromNeoConfigurationRoot' -Value $script:originalGlobalGetPValFunction
-  } else {
-    Remove-Item -Path 'Function:\global:Get-ParameterValueFromNeoConfigurationRoot' -ErrorAction SilentlyContinue
-  }
-  if ($script:hadGlobalGetPValAlias) {
-    Set-Alias -Name Get-PVal -Value $script:originalGlobalGetPValAlias -Scope Global -Force
-  } else {
-    Remove-Item -Path 'Alias:\Get-PVal' -ErrorAction SilentlyContinue
-  }
 }
 
 Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {

@@ -12,7 +12,7 @@
     RootModule           = 'ATAP.Utilities.BuildTooling.Powershell.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '0.1.4'
+    ModuleVersion        = '0.1.10'
 
     # Supported PSEditions
     CompatiblePSEditions = 'Desktop', 'Core'
@@ -72,7 +72,9 @@
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
     FunctionsToExport    = 'Add-ScopeCreepIdea', 'Add-SharedFileContent',
     'Approve-BuildMasterStage', 'Assert-BuildMasterReady',
-    'Assert-LockFilesClean', 'Assert-MainBranchTemplateRef', 'Build-CLAUDEPerRepository',
+    'Assert-LockFilesClean', 'Assert-MainBranchTemplateRef',
+    'Build-AGENTSPerRepository', 'Build-AgentSpecificPerRepository',
+    'Build-AIInstructionsPerRepository', 'Build-CLAUDEPerRepository',
     'Build-ImageFromPlantUML', 'Build-PSModuleManifest',
     'Build-PSModulePsm1', 'Clear-BuildMasterSprintVariables',
     'Clear-NuGetCaches', 'Clear-SprintGeneratedArtifacts',
@@ -103,6 +105,10 @@
     'Invoke-FailureAcknowledgedGate', 'Invoke-GitCommit',
     'Invoke-GitPostCheckoutHook', 'Invoke-GitPostCommitHook', 'Invoke-GitPreCommitHook',
     'Invoke-ModuleBuildWithRetry', 'Invoke-MSBuildWithLists',
+    'Invoke-SprintAIAdapterLifecycle',
+    'Invoke-SprintEndGitHubClose', 'Invoke-SprintEndInfrastructureCleanup',
+    'Invoke-SprintEndOverviewClose',
+    'Invoke-SprintEndLifecycle',
     'Invoke-PairedTierPromotion',
     'Invoke-PromotedModuleTests', 'Invoke-PromotedPackageTests',
     'Invoke-PSModulePesterTests', 'Invoke-PSModulePSScriptAnalyzer',
@@ -113,6 +119,7 @@
     'New-BuildMasterScript', 'New-BundleProjectFiles',
     'New-DocFilesIfNotPresent', 'New-DocFolderIfNotPresent',
     'New-GitHubIssue', 'New-HostSettingsForPackageRepositoryFeeds',
+    'New-MarkdownChangeTrackingReport',
     'New-MockTestFileStructure', 'New-OverviewSprintWorkspace',
     'New-PesterBasicUnitTestTemplate',
     'New-PesterContextBlock', 'New-PesterDataDrivenTestTemplate',
@@ -120,7 +127,7 @@
     'New-PesterTestFile', 'New-ProGetApiKey', 'New-ProGetConnector',
     'New-ProGetFeedSet', 'New-PSModuleNupkg', 'New-ReleaseBundle',
     'New-DeveloperSqlServerInstances',
-    'New-ReleaseManifest', 'New-SprintBitwardenSecrets',
+    'New-ReleaseManifest', 'New-SprintBitwardenSecrets', 'New-SprintEndHandoff',
     'New-SprintStage1',
     'New-SprintStage2', 'New-SprintStage2Result', 'New-WorktreeWithJunctions',
     'Promote-DatabaseChangePackage', 'Promote-ProGetPackage',
@@ -140,17 +147,24 @@
     'Reset-SprintDatabases',
     'Resolve-DatabasePackageFeed',
     'Resolve-FeatureSlug', 'Resolve-PSModuleMetadata',
-    'Save-CopilotCheckpoint', 'Save-SprintRetrospectiveSnapshot', 'Save-SprintWorkSession',
+    'Restore-SprintHistoryArtifacts',
+    'Save-CopilotCheckpoint', 'Save-SprintEndSessionTail', 'Save-SprintHistoryArtifacts',
+    'Save-SprintRetrospectiveSnapshot', 'Save-SprintWorkSession',
     'Set-BuildMasterApplicationVariables',
     'Set-BuildMasterSprintVariables', 'Set-BuildMasterStableVariables',
     'Set-BuildMasterPipelineStageDeploymentStep', 'Set-DownstreamSharedVSCodeContext',
-    'Set-FloatingPackagePins', 'Set-SprintBoundaryContext', 'Set-TaskComplete',
+    'Set-FloatingPackagePins', 'Set-PowerShell7ProfileSymlink',
+    'Set-SprintBoundaryContext', 'Set-TaskComplete',
     'Set-WorkspaceSharedVSCodeReference', 'Set-WorktreeJunctions',
-    'Start-BuildMasterDeployment', 'Start-BuildMasterPackagePipeline', 'Start-BuildMasterPipeline', 'Start-DebugPowerShell',
+    'Start-BuildMasterDeployment', 'Start-BuildMasterModulePipelineBatch',
+    'Start-BuildMasterPackagePipeline', 'Start-BuildMasterPipeline', 'Start-DebugPowerShell',
     'Start-LocalPowerShellModuleBuildMasterPoller',
     'Start-PlanningSession', 'Sync-BuildMasterPlans', 'Sync-RulesToCSV',
     'Test-CodeCoverageGate', 'Test-DatabasePackageCompatibility', 'Test-FailureAcknowledgedGate',
     'Test-PowerShellSyntax', 'Test-PromotionWithinCeiling',
+    'Test-SprintCheckpointCoverage',
+    'Test-SprintEndBoundaryState', 'Test-SprintEndCommandSurface',
+    'Test-SprintEndPullOverlap', 'Test-SprintEndWorktreeState',
     'Test-SprintInfrastructureHealth', 'Test-SprintPrerequisites',
     'Update-BlocksInCsproj',
     'Update-OverviewWorkspaceStableInfo', 'Update-PackageVersion',
@@ -215,4 +229,3 @@
     # DefaultCommandPrefix = ''
 
 }
-

@@ -845,23 +845,35 @@ Set-Location -Path $storedInitialDir
 # Set the environment variables for this user
 Write-PSFMessage -FunctionName $fn -Level Debug -Message ('setting environment variables in CurrentUsersAllHostsV7CoreProfile.ps1')
 
-. $(Join-Path $PSHome 'global_EnvironmentVariables.ps1')
-Set-EnvironmentVariablesProcess
+$environmentVariablesProfileCandidates = [System.Collections.Generic.List[string]]::new()
+[void]$environmentVariablesProfileCandidates.Add((Join-Path $PSScriptRoot 'global_EnvironmentVariables.ps1'))
+[void]$environmentVariablesProfileCandidates.Add((Join-Path $PSHome 'global_EnvironmentVariables.ps1'))
+$atapPowerShellModule = Get-Module -Name 'ATAP.Utilities.PowerShell' -ListAvailable -ErrorAction SilentlyContinue |
+  Sort-Object Version -Descending |
+  Select-Object -First 1
+if ($atapPowerShellModule) {
+  [void]$environmentVariablesProfileCandidates.Add(
+    (Join-Path $atapPowerShellModule.ModuleBase 'Profiles\global_EnvironmentVariables.ps1')
+  )
+}
+$environmentVariablesProfilePath = $environmentVariablesProfileCandidates |
+  Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } |
+  Select-Object -First 1
+if ($environmentVariablesProfilePath) {
+  . $environmentVariablesProfilePath
+  Set-EnvironmentVariablesProcess
+} else {
+  Write-PSFMessage -FunctionName $fn -Level Warning -Message (
+    'global_EnvironmentVariables.ps1 was not found beside the profile, under PSHOME, ' +
+    'or in the installed ATAP.Utilities.PowerShell module. Process environment setup was skipped.'
+  )
+}
 Write-PSFMessage -FunctionName $fn -Level Debug -Message ('finished setting environment variables in CurrentUsersAllHostsV7CoreProfile.ps1')
 
-# Set the name of the VSC extension project under development
-# ToDo: put this in a vsc extension as a command , and trigger the command every time an editor is activated.
-# The command has a collection set of project paths/names (populated by the list of files below src/ relative to the repository root)
-#  The command matches the editor's document path to (hopefully only one) element, which provide the value for this env var
-# ToDo: put this into a ConfigRootKeys keys tor Typescript and VSC Extension process
-# [Environment]::SetEnvironmentVariable('VSCExtensionProjectName', 'ATAP-AiAssist', [EnvironmentVariableTarget]::User)
-# [Environment]::SetEnvironmentVariable('VSCExtensionProjectRelativePath', 'src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
-# [Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
-# Write-PSFMessage -FunctionName $fn -Level Debug -Message ('line 729 in CurrentUsersAllHostsV7CoreProfile.ps1')
-#[Environment]::SetEnvironmentVariable('VSCExtensionProjectRelativePath', '.', [EnvironmentVariableTarget]::User)
-#Write-PSFMessage -FunctionName $fn -Level Debug -Message ('line 731 in CurrentUsersAllHostsV7CoreProfile.ps1')
-#[Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
-#Write-PSFMessage -FunctionName $fn -Level Debug -Message ('line 733 in CurrentUsersAllHostsV7CoreProfile.ps1')
+# VSCExtensionProject* env vars (VSCExtensionProjectName / *RelativePath / *AbsolutePath)
+# were removed in Sprint 0010 Task 10.24 to decouple AIAssist ahead of its repo split.
+# The definitions are preserved in the AIAssist project holding location:
+#   src/ATAP.VSCExtension.AI/ATAP-AiAssist/_holding/VSCExtensionProjectEnvVars.md
 
 # Unlock the Hashicorp Vault
 

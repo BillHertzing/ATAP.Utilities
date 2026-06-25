@@ -67,6 +67,10 @@ function Set-BuildMasterConfigRootKeys {
         # absolute path of the OtterScript plans directory on this host
         $global:configRootKeys.Add('BuildMasterPlansDirectoryConfigRootKey', 'BuildMasterPlansDirectory')
         $global:configRootKeys.Add('BuildMasterCSharpPerProjectPlanPathConfigRootKey', 'BuildMasterCSharpPerProjectPlanPath')
+        # reviewed map: PowerShell module name -> BuildMaster application name.
+        # Consumed by Resolve-BuildMasterApplicationForModule / Start-BuildMasterModulePipelineBatch;
+        # the value (a hashtable) is supplied per host in the ATAP.IAC BuildMaster host-settings fragment.
+        $global:configRootKeys.Add('BuildMasterApplicationByModuleConfigRootKey', 'BuildMasterApplicationByModule')
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Added BuildMaster key constants.'
       }
     } catch {

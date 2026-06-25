@@ -1,14 +1,13 @@
 function New-SprintBitwardenSecrets {
   <#
   .SYNOPSIS
-    Resolves the per-sprint SQL Server connection-string secrets for the
-    Development and Experimental instances. By default these are DERIVED (no vault
-    write) because their values are deterministic and contain no credential.
+    Creates or verifies the per-sprint SQL Server connection-string secrets for
+    the Development and Experimental instances in Bitwarden Secrets Manager.
   .DESCRIPTION
     For each combination of (database, host, tier), this cmdlet produces a
     descriptor for the canonical connection-string secret via
     Get-DbConnectionStringSecretDescriptor (the single source of truth for the
-    connection-string format and the derivable-vs-credentialed classification).
+    connection-string name and provisioning value format).
 
     Databases:  master, ATAPUtilities, AceCommander
     Hosts:      $env:COMPUTERNAME and 'localhost' by default
@@ -24,37 +23,26 @@ function New-SprintBitwardenSecrets {
       Server=<Host>\Dev<DeveloperUsername> (or Exp<DeveloperUsername>);Database=<Database>;Integrated Security=True;
       MultipleActiveResultSets=True;TrustServerCertificate=True;
 
-    Task 9.22 (bws-write workaround). The Bitwarden Secrets Manager (bws) WRITE
-    path is currently broken (create/edit return 404), but the sprint
-    connection-string values carry NO credential - they are deterministic
-    Integrated-Security strings that the reader regenerates at read time via the
-    same descriptor helper. Therefore, by default, this cmdlet does NOT write the
-    derivable secrets to the vault: it no-ops gracefully (logs Important, returns a
-    descriptor per secret) so sprint Stage 2 completes without any bws write and
-    without requiring the bws CLI or a machine token at all.
-
-    Pass -WriteDerivableToVault to additionally persist the derivable values into
-    the vault (use this only once the bws write path is fixed). In that mode the
-    cmdlet uses the bws CLI with a machine access token resolved from
+    Task 10.7 cleanup: Dev/Exp connection strings are now normal BWS secrets.
+    The cmdlet uses the bws CLI with a machine/user access token resolved from
     $env:BWS_ACCESS_TOKEN first, then the DPAPI access-token file for the running
-    account (Get-BWSAccessToken) - never bw / BW_SESSION.
+    Windows account (Get-BWSAccessToken) - never bw / BW_SESSION.
 
-    Credentialed secrets (a future state, when SQL logins replace Integrated
-    Security) are NEVER auto-created or derived by this cmdlet: it has no
-    credential value to write, so it logs and skips them. Such secrets must be
-    provisioned in the vault out-of-band, and the reader fails loudly if they are
-    absent.
+    The Integrated-Security string can still be generated here because this is a
+    provisioning flow that writes the value into Bitwarden Secrets Manager. Runtime
+    readers do not derive; they fetch the dbConnectionString-* value through
+    Get-SecretATAP / BitwardenSecretsManager and fail if the BWS secret is absent.
 
     Reads of these secrets go through:
       Get-SecretATAP -SecretName <name> -SecretStoreType 'BitwardenSecretsManager'
-    or, for an actual SqlConnection, Resolve-DatabaseSqlConnection, which falls
-    back to the deterministic build when the vault secret is absent and derivable.
+    or, for an actual SqlConnection, Resolve-DatabaseSqlConnection, which fails
+    when BWS cannot return the secret value.
 
     Permanent tier secrets (Production, QA, Integration) are NOT handled by this
     cmdlet.
   .PARAMETER SprintNumber
     The zero-padded 4-digit sprint number (e.g. '0006'). Recorded in the vault note
-    when -WriteDerivableToVault is used.
+    when a secret is created.
   .PARAMETER DeveloperUsername
     The developer's Windows username appended to the secret name.
     Defaults to $env:USERNAME.
@@ -65,16 +53,13 @@ function New-SprintBitwardenSecrets {
     List of database names to create secrets for.
     Defaults to @('master', 'ATAPUtilities', 'AceCommander').
   .PARAMETER WriteDerivableToVault
-    Also persist the derivable connection strings into Bitwarden Secrets Manager.
-    Off by default (the values are reproducible at read time and the bws write path
-    is currently broken). Requires the bws CLI and a machine access token.
+    Compatibility switch retained for existing callers. Vault persistence is now
+    the default and this switch no longer changes behavior.
   .PARAMETER ProjectName
     Bitwarden Secrets Manager project that owns the per-sprint secrets.
-    Defaults to 'CI-Shared'. Ignored when -ProjectId is supplied. Only used when
-    -WriteDerivableToVault is set.
+    Defaults to 'CI-Shared'. Ignored when -ProjectId is supplied.
   .PARAMETER ProjectId
-    Explicit BWS project id (GUID). Skips the `bws project list` lookup. Only used
-    when -WriteDerivableToVault is set.
+    Explicit BWS project id (GUID). Skips the `bws project list` lookup.
   .OUTPUTS
     [PSCustomObject[]] - one entry per (database, host, tier) combination with
     fields: secretName, database, host, tier, classification, derived, created,
@@ -82,10 +67,10 @@ function New-SprintBitwardenSecrets {
   .EXAMPLE
     $secrets = New-SprintBitwardenSecrets -SprintNumber '0006'
     $secrets | Format-Table secretName, classification, derived, created, error
-    # Default: derivable secrets resolved deterministically, no vault write.
+    # Default: missing Dev/Exp BWS secrets are created; existing keys are skipped.
   .EXAMPLE
     New-SprintBitwardenSecrets -SprintNumber '0006' -WriteDerivableToVault
-    # Also persists the derivable values into the vault (requires working bws write).
+    # Compatibility spelling; same behavior as the default.
   .EXAMPLE
     New-SprintBitwardenSecrets -SprintNumber '0006' -DeveloperUsername 'jsmith' `
       -HostList @('utat022', 'localhost') -WhatIf
@@ -164,69 +149,68 @@ function New-SprintBitwardenSecrets {
       $Databases = @('master', 'ATAPUtilities', 'AceCommander')
     }
 
-    # The bws CLI and a machine access token are required ONLY when actually
-    # writing to the vault. The default derive/no-op path needs neither - that is
-    # the whole point of Task 9.22 (Stage 2 completes without bws writes).
+    # The bws CLI and an access token are required because Dev/Exp DB connection
+    # strings are BWS secrets, not reader-side deterministic fallbacks.
     $bwsTokenWasSetHere = $false
-    if ($WriteDerivableToVault) {
-      if (-not (Get-Command -Name 'bws' -ErrorAction SilentlyContinue)) {
-        throw 'Bitwarden Secrets Manager CLI (bws) is required for -WriteDerivableToVault but was not found on PATH. Install it (NewComputerSetup.md 9.4.10.1) or add it to PATH. Omit -WriteDerivableToVault to derive without a vault write.'
-      }
+    if (-not (Get-Command -Name 'bws' -ErrorAction SilentlyContinue)) {
+      throw 'Bitwarden Secrets Manager CLI (bws) is required to create or verify Dev/Exp DB connection-string secrets but was not found on PATH. Install it (NewComputerSetup.md 9.4.10.1) or add it to PATH.'
+    }
 
-      if ([string]::IsNullOrWhiteSpace($env:BWS_ACCESS_TOKEN)) {
-        $cred = Get-BWSAccessToken -ErrorAction Stop
-        $env:BWS_ACCESS_TOKEN = $cred.GetNetworkCredential().Password
-        $bwsTokenWasSetHere = $true
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'BWS access token resolved from DPAPI file' -Tag 'bws-token'
-      }
-      if ([string]::IsNullOrWhiteSpace($env:BWS_ACCESS_TOKEN)) {
-        throw 'No BWS access token in $env:BWS_ACCESS_TOKEN or the DPAPI token file. Provision it with Initialize-BWSAccessToken (NewComputerSetup.md 9.4.10), or omit -WriteDerivableToVault.'
-      }
+    if ([string]::IsNullOrWhiteSpace($env:BWS_ACCESS_TOKEN)) {
+      $cred = Get-BWSAccessToken -ErrorAction Stop
+      $env:BWS_ACCESS_TOKEN = $cred.GetNetworkCredential().Password
+      $bwsTokenWasSetHere = $true
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'BWS access token resolved from DPAPI file' -Tag 'bws-token'
+    }
+    if ([string]::IsNullOrWhiteSpace($env:BWS_ACCESS_TOKEN)) {
+      throw 'No BWS access token in $env:BWS_ACCESS_TOKEN or the DPAPI token file. Provision it with Initialize-BWSAccessToken (NewComputerSetup.md 9.4.10).'
+    }
+
+    if ($WriteDerivableToVault) {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+        -Message '-WriteDerivableToVault was supplied; persistence is now the default, so the switch is treated as compatibility-only.'
     }
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-      -Message "Sprint $SprintNumber - resolving sprint connection-string secrets for $DeveloperUsername; databases: $($Databases -join ', '); hosts: $($HostList -join ', '); writeToVault=$([bool]$WriteDerivableToVault)"
+      -Message "Sprint $SprintNumber - creating/verifying sprint connection-string secrets for $DeveloperUsername; databases: $($Databases -join ', '); hosts: $($HostList -join ', '); project=$ProjectName"
   }
 
   process {
     $tiers = @('Dev', 'Exp')
     $results = [System.Collections.ArrayList]::new()
 
-    # When writing to the vault, resolve the project once and list existing
-    # secrets for the idempotency check. Skipped entirely on the derive path.
+    # Resolve the project once and list existing secrets for the idempotency check.
     $existingKeys = @()
-    if ($WriteDerivableToVault) {
-      try {
-        if ([string]::IsNullOrWhiteSpace($ProjectId)) {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Calling bws project list' -Tag 'BWSCall'
-          $projectOutput = & bws project list --output json 2>&1
-          if ($LASTEXITCODE -ne 0) {
-            throw "bws project list failed (exit $LASTEXITCODE): $projectOutput"
-          }
-          $projects = $projectOutput | ConvertFrom-Json -ErrorAction Stop
-          $projectMatch = @($projects | Where-Object { $_.name -and ($_.name.ToLowerInvariant() -eq $ProjectName.ToLowerInvariant()) })
-          if ($projectMatch.Count -eq 0) {
-            throw "No Bitwarden Secrets Manager project named '$ProjectName' is visible to this access token."
-          }
-          $ProjectId = [string]$projectMatch[0].id
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved BWS project '$ProjectName' to id $ProjectId"
-        }
-
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Calling bws secret list' -Tag 'BWSCall'
-        $listOutput = & bws secret list --output json 2>&1
+    try {
+      if ([string]::IsNullOrWhiteSpace($ProjectId)) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Calling bws project list' -Tag 'BWSCall'
+        $projectOutput = & bws project list --output json 2>&1
         if ($LASTEXITCODE -ne 0) {
-          throw "bws secret list failed (exit $LASTEXITCODE): $listOutput"
+          throw "bws project list failed (exit $LASTEXITCODE): $projectOutput"
         }
-        $existingSecrets = @()
-        if (-not [string]::IsNullOrWhiteSpace([string]$listOutput)) {
-          $existingSecrets = @($listOutput | ConvertFrom-Json -ErrorAction Stop)
+        $projects = $projectOutput | ConvertFrom-Json -ErrorAction Stop
+        $projectMatch = @($projects | Where-Object { $_.name -and ($_.name.ToLowerInvariant() -eq $ProjectName.ToLowerInvariant()) })
+        if ($projectMatch.Count -eq 0) {
+          throw "No Bitwarden Secrets Manager project named '$ProjectName' is visible to this access token."
         }
-        $existingKeys = @($existingSecrets | ForEach-Object { ([string]$_.key).ToLowerInvariant() })
-      } catch {
-        $errMsg = "Failed to prepare BWS context (project/secret list). Exception: $($_.Exception.Message)"
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errMsg
-        throw
+        $ProjectId = [string]$projectMatch[0].id
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved BWS project '$ProjectName' to id $ProjectId"
       }
+
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Calling bws secret list' -Tag 'BWSCall'
+      $listOutput = & bws secret list --output json 2>&1
+      if ($LASTEXITCODE -ne 0) {
+        throw "bws secret list failed (exit $LASTEXITCODE): $listOutput"
+      }
+      $existingSecrets = @()
+      if (-not [string]::IsNullOrWhiteSpace([string]$listOutput)) {
+        $existingSecrets = @($listOutput | ConvertFrom-Json -ErrorAction Stop)
+      }
+      $existingKeys = @($existingSecrets | ForEach-Object { ([string]$_.key).ToLowerInvariant() })
+    } catch {
+      $errMsg = "Failed to prepare BWS context (project/secret list). Exception: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errMsg
+      throw
     }
 
     foreach ($db in $Databases) {
@@ -236,7 +220,7 @@ function New-SprintBitwardenSecrets {
           # Single source of truth for the canonical name, the format, and the
           # derivable-vs-credentialed classification.
           $descriptor = Get-DbConnectionStringSecretDescriptor `
-            -DatabaseName $db -DatabaseHost $sqlHost -Environment $tier -UserName $DeveloperUsername
+            -DatabaseName $db -DatabaseHost $sqlHost -Environment $tier -UserName $DeveloperUsername -DerivableTier @('Dev', 'Exp')
 
           $entry = [PSCustomObject]@{
             secretName     = $descriptor.SecretName
@@ -251,25 +235,14 @@ function New-SprintBitwardenSecrets {
           }
 
           if (-not $descriptor.IsDerivable) {
-            # Credentialed secret: this cmdlet has no credential value to write and
-            # must never derive one. Leave it to vault provisioning.
+            # The writer only knows how to seed Dev/Exp Integrated-Security values.
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-              -Message "Secret '$($descriptor.SecretName)' is credentialed - not derived or auto-created; provision it in Bitwarden Secrets Manager."
+              -Message "Secret '$($descriptor.SecretName)' cannot be seeded by this cmdlet; provision it in Bitwarden Secrets Manager."
+            $entry.error = "Secret '$($descriptor.SecretName)' cannot be seeded by New-SprintBitwardenSecrets."
             [void]$results.Add($entry)
             continue
           }
 
-          if (-not $WriteDerivableToVault) {
-            # Default: derive at read time, no vault write. Stage 2 completes
-            # without bws. The reader rebuilds the identical value on demand.
-            $entry.derived = $true
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-              -Message "Derivable secret '$($descriptor.SecretName)' resolved deterministically (no vault write)."
-            [void]$results.Add($entry)
-            continue
-          }
-
-          # -WriteDerivableToVault: persist the deterministic value into the vault.
           if ($PSCmdlet.ShouldProcess($descriptor.SecretName, 'Create Bitwarden Secrets Manager secret with SQL Server connection string')) {
             try {
               if ($existingKeys -contains $descriptor.SecretName.ToLowerInvariant()) {
@@ -304,7 +277,7 @@ function New-SprintBitwardenSecrets {
     }
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-      -Message "New-SprintBitwardenSecrets complete - $($results.Where({$_.derived}).Count) derived (no vault write), $($results.Where({$_.created}).Count) created, $($results.Where({$_.alreadyExists}).Count) skipped (already existed), $($results.Where({$_.error}).Count) errors"
+      -Message "New-SprintBitwardenSecrets complete - $($results.Where({$_.created}).Count) created, $($results.Where({$_.alreadyExists}).Count) skipped (already existed), $($results.Where({$_.error}).Count) errors"
 
     return $results.ToArray()
   }

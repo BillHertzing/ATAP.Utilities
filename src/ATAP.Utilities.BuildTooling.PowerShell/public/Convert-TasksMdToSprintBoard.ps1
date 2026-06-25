@@ -155,7 +155,11 @@ function Convert-TasksMdToSprintBoard {
           continue
         }
 
-        if ($currentLabel -and $line -match '^\s{4,}(?<value>\S.*)$') {
+        # A continuation is a wrapped line of the current field's value, never a new
+        # list item. Excluding bullet lines (`- `) stops unrecognized bullets such as
+        # `Symptom:`, `Evidence (<date>):`, or `See:` from bleeding into the prior
+        # field — important now that indented subtasks carry such bullets.
+        if ($currentLabel -and $line -notmatch '^\s*-\s' -and $line -match '^\s{4,}(?<value>\S.*)$') {
           $currentValue.Add($Matches['value'].Trim())
         }
       }
@@ -202,6 +206,8 @@ function Convert-TasksMdToSprintBoard {
         $OutputPath = Join-Path (Split-Path -Path $resolvedTasksFilePath -Parent) 'TASKS.html'
       }
       $resolvedOutputPath = [System.IO.Path]::GetFullPath($OutputPath)
+      $tasksFileName = [System.IO.Path]::GetFileName($resolvedTasksFilePath)
+      $outputFileName = [System.IO.Path]::GetFileName($resolvedOutputPath)
 
       $rawText = Get-Content -LiteralPath $resolvedTasksFilePath -Raw -Encoding UTF8
       $lines = Get-Content -LiteralPath $resolvedTasksFilePath -Encoding UTF8
@@ -255,8 +261,12 @@ function Convert-TasksMdToSprintBoard {
         $streamName = $Matches['name'].Trim()
         $streamTag = $Matches['tag']
 
+        # Match both top-level task lines (column 0) and indented lettered subtask
+        # lines (e.g. `  - [x] **Task 10.14.a**`). Allowing optional leading whitespace
+        # ensures nested subtasks become their own board entries instead of being
+        # absorbed into the umbrella task's detail block.
         $taskLineIndices = for ($i = 1; $i -lt $streamLines.Count; $i++) {
-          if ($streamLines[$i] -match '^- \[[ x~]\] \*\*Task ') { $i }
+          if ($streamLines[$i] -match '^\s*- \[[ x~]\] \*\*Task ') { $i }
         }
 
         $purposeLines = if ($taskLineIndices.Count -gt 0) {
@@ -268,18 +278,29 @@ function Convert-TasksMdToSprintBoard {
 
         $streamTasks = [System.Collections.Generic.List[object]]::new()
 
+        # Remember the most recent umbrella (top-level) task's repo so lettered
+        # subtasks, which omit the [Repo] tag, can inherit it.
+        $umbrellaRepo = ''
+
         for ($taskIndex = 0; $taskIndex -lt $taskLineIndices.Count; $taskIndex++) {
           $taskStart = $taskLineIndices[$taskIndex]
           $taskEnd = if ($taskIndex + 1 -lt $taskLineIndices.Count) { $taskLineIndices[$taskIndex + 1] - 1 } else { $streamLines.Count - 1 }
           $taskLines = Get-TasksMdToSprintBoardSlice -Lines $streamLines -StartIndex $taskStart -EndIndex $taskEnd
 
           $taskHeader = $taskLines[0]
-          if ($taskHeader -notmatch '^- \[(?<checked>[ x~])\] \*\*Task (?<id>[^*]+)\*\* \[(?<repo>[^\]]+)\](?<extraTags>(?: \[[^\]]+\])*)\s+[–-]\s+(?<title>.+)$') {
+          # Leading whitespace is optional (indented subtasks); the [Repo] tag is
+          # optional because lettered subtasks omit it and inherit the umbrella's repo.
+          if ($taskHeader -notmatch '^\s*- \[(?<checked>[ x~])\] \*\*Task (?<id>[^*]+)\*\*(?:\s+\[(?<repo>[^\]]+)\])?(?<extraTags>(?: \[[^\]]+\])*)\s+[–-]\s+(?<title>.+)$') {
             throw "Could not parse task header '$taskHeader'."
           }
 
           $taskId = $Matches['id'].Trim()
-          $taskRepo = $Matches['repo'].Trim()
+          if ($Matches['repo']) {
+            $taskRepo = $Matches['repo'].Trim()
+            $umbrellaRepo = $taskRepo
+          } else {
+            $taskRepo = $umbrellaRepo
+          }
           $taskTitle = $Matches['title'].Trim()
           if ($Matches['extraTags']) {
             $taskTitle = ($taskTitle + $Matches['extraTags']).Trim()
@@ -334,7 +355,7 @@ function Convert-TasksMdToSprintBoard {
       $generatedDate = Get-Date -Format 'yyyy-MM-dd'
       $sourceText = if ($sourceLine) { Convert-TasksMdToSprintBoardInlineHtml -Text ($sourceLine -replace '^Source:\s*', '') } else { 'Unknown source' }
       $lastUpdatedText = if ($lastUpdatedLine) { Convert-TasksMdToSprintBoardInlineHtml -Text ($lastUpdatedLine -replace '^Last updated:\s*', '') } else { 'No last-updated line recorded' }
-      $subtitle = "$sourceText · $lastUpdatedText · <span class=""mono"">TASKS.html</span> generated from authoritative <span class=""mono"">TASKS.md</span>"
+      $subtitle = "$sourceText · $lastUpdatedText · <span class=""mono"">$([System.Net.WebUtility]::HtmlEncode($outputFileName))</span> generated from authoritative <span class=""mono"">$([System.Net.WebUtility]::HtmlEncode($tasksFileName))</span>"
 
       $htmlTemplate = @'
 <!DOCTYPE html>
@@ -415,7 +436,7 @@ function Convert-TasksMdToSprintBoard {
     @@MISSION_HTML@@
   </div>
   <div id="root"></div>
-  <footer>Sprint board generated @@GENERATED_DATE@@ from authoritative <span class="mono">TASKS.md</span> via <span class="mono">Convert-TasksMdToSprintBoard</span>.</footer>
+  <footer>Sprint board generated @@GENERATED_DATE@@ from authoritative <span class="mono">@@TASKS_FILE_NAME@@</span> via <span class="mono">Convert-TasksMdToSprintBoard</span>.</footer>
 </div>
 <script>
 const STATUS_LABEL={open:"Open",partial:"Partial",closed:"Closed"};
@@ -483,6 +504,7 @@ render();
       $html = $html.Replace('@@SUBTITLE@@', $subtitle)
       $html = $html.Replace('@@MISSION_HTML@@', $missionHtml)
       $html = $html.Replace('@@GENERATED_DATE@@', $generatedDate)
+      $html = $html.Replace('@@TASKS_FILE_NAME@@', [System.Net.WebUtility]::HtmlEncode($tasksFileName))
       $html = $html.Replace('@@STREAMS_JSON@@', $streamsJson)
 
       if ($PSCmdlet.ShouldProcess($resolvedOutputPath, 'Write generated sprint board HTML')) {

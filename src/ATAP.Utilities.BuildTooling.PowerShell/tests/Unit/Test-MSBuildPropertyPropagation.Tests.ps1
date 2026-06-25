@@ -89,7 +89,7 @@ Describe 'Directory.Build.props — structural checks (task 1.1-1 through 1.1-4)
   }
 }
 
-Describe 'Directory.Build.props — TargetProGetFeed evaluation (task 1.1-2, Integration)' -Tag 'Integration' {
+Describe 'Directory.Build.props — TargetProGetFeed evaluation (task 1.1-2, Integration)' -Tag 'Integration', 'PromotedModuleHostSensitive' {
 
   BeforeAll {
     if (-not (Test-Path $script:probeProject)) {
@@ -114,7 +114,7 @@ Describe 'Directory.Build.props — TargetProGetFeed evaluation (task 1.1-2, Int
   }
 }
 
-Describe 'Directory.Build.props — CentralPackageVersionOverridesEnabled evaluation (task 1.1-4, Integration)' -Tag 'Integration' {
+Describe 'Directory.Build.props — CentralPackageVersionOverridesEnabled evaluation (task 1.1-4, Integration)' -Tag 'Integration', 'PromotedModuleHostSensitive' {
 
   BeforeAll {
     if (-not (Test-Path $script:probeProject)) {

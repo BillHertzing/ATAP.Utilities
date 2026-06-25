@@ -218,6 +218,39 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             }
         }
 
+        It 'isolates the delegated Pester run from caller StrictMode' {
+            $script:strictModeWasDisabled = $false
+            Mock Invoke-PSModulePesterTests {
+                $probe = [PSCustomObject]@{}
+                $null = $probe.PropertyThatDoesNotExist
+                $script:strictModeWasDisabled = $true
+
+                [PSCustomObject]@{
+                    Tier         = $Tier
+                    Passed       = 1
+                    Failed       = 0
+                    PassedCount  = 1
+                    FailedCount  = 0
+                    SkippedCount = 0
+                    TotalCount   = 1
+                    Duration     = [TimeSpan]::Zero
+                    GatePass     = $true
+                    OutputFile   = $OutputPath
+                    CoverageFile = $CoverageOutputPath
+                    Result       = $null
+                }
+            }
+
+            & {
+                Set-StrictMode -Version Latest
+                Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0' `
+                    -Feed 'powershellget-development' -Tier 'Development' -ResultsPath 'r' `
+                    -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake'
+            } | Out-Null
+
+            $script:strictModeWasDisabled | Should -BeTrue
+        }
+
         It 'Restores from the direct ProGet package endpoint when ProGetBaseUrl is supplied' {
             $result = Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0-Alpha001' `
                 -Feed 'powershellget-development' -Tier 'Development' -ResultsPath 'r' `

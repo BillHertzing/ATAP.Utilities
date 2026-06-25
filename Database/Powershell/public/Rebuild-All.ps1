@@ -54,6 +54,8 @@ try {
   $helperScripts = @(
     'src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1',
     'src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1',
+    'src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-BWSAccessToken.ps1',
+    'src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-SecretATAPBitwardenSecretsManager.ps1',
     'src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-SecretATAPBitwarden.ps1',
     'src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-SecretATAP.ps1',
     'src\ATAP.Utilities.DatabaseManagement.Powershell\public\New-ConnectionStringBuilderFromDbaTools.ps1',
@@ -75,16 +77,6 @@ try {
   throw
 }
 
-# Ensure BW_SESSION is available (R-10: read User-scope env if process scope is empty)
-$bwSession = $env:BW_SESSION
-if ([string]::IsNullOrWhiteSpace($bwSession)) {
-  $bwSession = [System.Environment]::GetEnvironmentVariable('BW_SESSION', 'User')
-}
-if ([string]::IsNullOrWhiteSpace($bwSession)) {
-  throw 'BW_SESSION is not set in process or User scope. Run the login script to unlock Bitwarden.'
-}
-$env:BW_SESSION = $bwSession
-
 # Configure dbatools SSL/encryption settings
 Write-PSFMessage -Level Verbose -Message 'Configuring dbatools to trust server certificates'
 Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -PassThru | Register-DbatoolsConfig
@@ -99,8 +91,8 @@ function get-tierAbbrev ([string]$envName) {
   }
 }
 
-# Retrieve the master connection string for an environment from the ATAP secret
-# store and parse out DatabaseHost and SqlInstance. Secret name pattern:
+# Retrieve the master connection string for an environment from Bitwarden Secrets
+# Manager and parse out DatabaseHost and SqlInstance. Secret name pattern:
 #   dbConnectionString-master-localhost-<Dev|Exp>-<username>
 function get-connectionInfoFromVault ([string]$envName) {
   $tierAbbrev = get-tierAbbrev -envName $envName
@@ -108,7 +100,10 @@ function get-connectionInfoFromVault ([string]$envName) {
 
   Write-PSFMessage -Level Verbose -Message "Retrieving connection info for '$envName' from secret '$secretName'"
 
-  $rawConnStr = Get-SecretATAP -SecretName $secretName -SecretField 'password'
+  $rawConnStr = Get-SecretATAP `
+    -SecretName $secretName `
+    -SecretField 'notes' `
+    -SecretStoreType 'BitwardenSecretsManager'
 
   if ([string]::IsNullOrWhiteSpace($rawConnStr)) {
     throw "Secret '$secretName' returned an empty connection string"

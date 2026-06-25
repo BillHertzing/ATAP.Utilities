@@ -37,7 +37,7 @@ BeforeAll {
   }
 }
 
-Describe 'Invoke-GitCommit' -Tag 'Unit' {
+Describe 'Invoke-GitCommit' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   BeforeEach {
     $script:repo = New-InvokeGitCommitTestRepo
   }

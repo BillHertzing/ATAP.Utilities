@@ -12,9 +12,9 @@ Entity Framework Core abstractions, Flyway migration helpers
 
 | Source File    | Last Modified            |
 | -------------- | ------------------------ |
-| CLAUDE-base.md | 2026-06-22 09:38:28 |
-| ai-local.md | 2026-06-17 19:55:35 |
-| CLAUDE.md (combined) | 2026-06-24 13:01:46 |
+| CLAUDE-base.md | 2026-06-25 13:49:21 |
+| ai-local.md | 2026-06-25 16:38:10 |
+| CLAUDE.md (combined) | 2026-06-25 16:38:16 |
 
 ---
 

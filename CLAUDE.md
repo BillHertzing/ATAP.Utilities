@@ -12,9 +12,9 @@ Entity Framework Core abstractions, Flyway migration helpers
 
 | Source File    | Last Modified            |
 | -------------- | ------------------------ |
-| CLAUDE-base.md | 2026-06-25 13:49:21 |
+| CLAUDE-base.md | 2026-06-25 18:29:11 |
 | ai-local.md | 2026-06-25 16:38:10 |
-| CLAUDE.md (combined) | 2026-06-25 16:38:16 |
+| CLAUDE.md (combined) | 2026-06-25 18:29:45 |
 
 ---
 
@@ -69,6 +69,24 @@ which exists for the duration of a work sprint. Aprint worktrees' root path matc
 |                |                                            | in some future sprint                                                |
 
 --
+
+## Sprint worktree path placeholders
+
+Many instructions, documentation, and code files use symbolic placeholders for sprint
+worktree paths. Replace each `${SPRINT_WORKTREE_PATH_*}` with the actual path for the
+current sprint before running commands or applying configuration changes.
+
+Placeholders:
+
+- `${SPRINT_WORKTREE_PATH_SHAREDVSCODE}` — SharedVSCode sprint worktree path.
+- `${SPRINT_WORKTREE_PATH_ATAP_UTILITIES}` — ATAP.Utilities sprint worktree path.
+- `${SPRINT_WORKTREE_PATH_ATAP_IAC}` — ATAP.IAC (Infrastructure-as-Code) sprint worktree path.
+- `${SPRINT_WORKTREE_PATH_ATAP_PLANNING}` — _Planning sprint worktree path.
+- `${SPRINT_WORKTREE_PATH_EPHEMERAL}` — Abstract sprint worktree path (used in examples not tied to a specific repository).
+
+These placeholders are not real paths; tools and AI agents should recognize them as
+variables that represent ephemeral sprint branch worktrees, rather than hard-coded
+directories.
 
 ## Shared Task Queue
 

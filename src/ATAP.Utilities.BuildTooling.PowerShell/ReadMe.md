@@ -1046,3 +1046,6 @@ Feed vocabulary remains deliberately split: SprintStart's residual
 `NuGet.config` uses the D-2 `*-production` names, while the immutable promotion
 ladder and `Resolve-ProGetFeedFromSettings` normalize `Production` to the
 canonical `*-stable` tier.
+
+- Version bumped to 0.1.13 in Sprint 11
+

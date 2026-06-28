@@ -41,3 +41,6 @@ sibling-resolution guard, and how to add a new section.
 ```powershell
 Invoke-Pester -Path ./tests/Unit -Output Detailed
 ```
+
+- Version bumped to 0.1.4 in Sprint 11
+

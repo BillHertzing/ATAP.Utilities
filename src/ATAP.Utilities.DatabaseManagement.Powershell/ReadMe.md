@@ -88,3 +88,6 @@ Use the module-level getting started guide for the lifecycle workflow:
 ### Example Scripts
 
 - `public/Example-RuleExport.ps1` — demonstrates `Export-RuleToTextFile` usage
+
+- Version bumped to 0.1.10 in Sprint 11
+

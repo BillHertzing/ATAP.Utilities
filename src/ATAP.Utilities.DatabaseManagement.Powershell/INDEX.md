@@ -160,3 +160,6 @@ foreach ($inst in @("Dev$($env:USERNAME)", "Exp$($env:USERNAME)")) {
 
 - [SolutionDocumentation/SprintInfrastructure-Naming.md](../../SolutionDocumentation/SprintInfrastructure-Naming.md) — SQL instance naming rules (16-char max; `Dev<username>` / `Exp<username>`)
 - [SolutionDocumentation/Rules Compendium.Powershell.md](../../SolutionDocumentation/Rules%20Compendium.Powershell.md) — `Build-DatabaseWithFlyway` rule primitives
+
+- Version bumped to 0.1.10 in Sprint 11
+

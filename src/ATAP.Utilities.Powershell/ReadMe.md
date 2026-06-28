@@ -62,3 +62,6 @@ Use the module-level getting started guide for the lifecycle workflow:
 
 - [Documentation/GettingStarted.md](Documentation/GettingStarted.md)
 
+
+- Version bumped to 0.1.8 in Sprint 11
+

@@ -575,3 +575,6 @@ inside a disposable temp copy because repository rules ignore compiled binaries.
 | [Run7-InISE.ps1](tools/Run7-InISE.ps1)           | PowerShell helper for run7 in ise.                                         |
 | [Setup-GitHubMCP.ps1](tools/Setup-GitHubMCP.ps1) | Helper script to configure GitHub MCP (Model Context Protocol) for VS Code |
 | [Test-GitHubMCP.ps1](tools/Test-GitHubMCP.ps1)   | Test the GitHub MCP server connection                                      |
+
+- Version bumped to 0.1.13 in Sprint 11
+

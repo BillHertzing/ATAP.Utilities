@@ -202,3 +202,6 @@ This ensures the generated `.psd1` remains in sync with actual code-level alias 
 | [ReleaseNotes.md](ReleaseNotes.md)                                           | Changelog and release notes.                                                                               |
 | [toc.yml](toc.yml)                                                           | Table of contents for module documentation.                                                                |
 | [version.json](version.json)                                                 | Module version metadata (used by Nerdbank.GitVersioning).                                                  |
+
+- Version bumped to 0.1.8 in Sprint 11
+

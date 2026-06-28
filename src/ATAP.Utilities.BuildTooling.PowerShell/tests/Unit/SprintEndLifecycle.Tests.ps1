@@ -77,26 +77,36 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
   }
 
   Context 'New-SprintEndHandoff' {
-    It 'writes an idempotent handoff without secret or instance deletion' {
+    It 'writes an idempotent sprint-specific handoff without secret or instance deletion' {
       $gitRoot = Join-Path $TestDrive 'gitroot'
       $worktree = Join-Path $gitRoot 'App-wt-42-Sprint-0010-work-items'
       New-Item -ItemType Directory -Path $worktree -Force | Out-Null
-      $output = Join-Path $gitRoot 'HANDOFF.md'
+      $output = Join-Path $gitRoot 'HANDOFF.Sprint0010.md'
 
-      $first = New-SprintEndHandoff -GitRoot $gitRoot -WorktreePaths @($worktree) -OutputPath $output -Confirm:$false
-      $second = New-SprintEndHandoff -GitRoot $gitRoot -WorktreePaths @($worktree) -OutputPath $output -Confirm:$false
+      $first = New-SprintEndHandoff -GitRoot $gitRoot -WorktreePaths @($worktree) -Confirm:$false
+      $second = New-SprintEndHandoff -GitRoot $gitRoot -WorktreePaths @($worktree) -Confirm:$false
       $text = Get-Content -Raw -LiteralPath $output
+      $code = [regex]::Match($text, '(?s)```powershell\s*(.*?)\s*```').Groups[1].Value
+      $tokens = $null
+      $errors = $null
+      [System.Management.Automation.Language.Parser]::ParseInput($code, [ref]$tokens, [ref]$errors) | Out-Null
 
       $first.Changed | Should -BeTrue
       $second.Changed | Should -BeFalse
+      $first.Path | Should -Be $output
+      $first.SprintNumber | Should -Be '0010'
+      $errors | Should -BeNullOrEmpty
       $text | Should -Match 'git -C .* worktree remove'
       $text | Should -Match 'pull --ff-only'
       $text | Should -Match 'Test-SprintEndPullOverlap'
       $text | Should -Match 'branch -D'
       $text | Should -Match 'Remove-SprintDatabases'
+      $text | Should -Match 'Set-SprintBoundaryContext @boundaryParams'
+      $text | Should -Match 'Test-SprintEndBoundaryState @boundaryTestParams'
       $text | Should -Not -Match 'Remove-SprintBitwardenSecrets'
       $text | Should -Not -Match 'Remove-DeveloperSqlServerInstances'
-      $text | Should -Match ([regex]::Escape("Remove-Item -LiteralPath '$output' -Force"))
+      $text | Should -Match 'Remove-Item @handoffRemovalParams'
+      $text | Should -Match ([regex]::Escape("LiteralPath = '$output'"))
     }
   }
 
@@ -458,6 +468,8 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $planning = Join-Path $TestDrive '_Planning-wt-20-Sprint-0010-work-items'
       $shared = Join-Path $TestDrive 'SharedVSCode-wt-48-Sprint-0010-work-items'
       New-Item -ItemType Directory -Path $planning, $shared -Force | Out-Null
+      New-Item -ItemType Directory -Path (Join-Path $planning 'SprintRetrospective') -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $planning 'SprintRetrospective\Notebook-SprintWorkSession-0010-End.md') -Value '# Sprint 0010 End'
 
       $result = Invoke-SprintEndLifecycle `
         -GitRoot $TestDrive `
@@ -474,6 +486,7 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $result.DatabaseCleanupMode | Should -Be 'SprintDatabasesOnly'
       $result.SqlInstancesRetained | Should -BeTrue
       $result.SyntheticTaskCompleted | Should -BeFalse
+      $result.Phases.ClosePlan.WorktreePath | Should -Contain $planning
       $result.Phases.FinalBoundary.Skipped | Should -BeTrue
     }
 
@@ -481,6 +494,8 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $planning = Join-Path $TestDrive '_Planning-wt-20-Sprint-0010-work-items-full'
       $shared = Join-Path $TestDrive 'SharedVSCode-wt-48-Sprint-0010-work-items-full'
       New-Item -ItemType Directory -Path $planning, $shared -Force | Out-Null
+      New-Item -ItemType Directory -Path (Join-Path $planning 'SprintRetrospective') -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $planning 'SprintRetrospective\Notebook-SprintWorkSession-0010-End.md') -Value '# Sprint 0010 End'
       Mock Set-SprintBoundaryContext { [PSCustomObject]@{ Errors = @() } }
       Mock Assert-MainBranchTemplateRef { [PSCustomObject]@{ Ok = $true } }
       Mock Invoke-SprintEndGitHubClose {
@@ -524,6 +539,45 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $result.Phases.InfrastructureCleanup.SqlInstancesRetained | Should -BeTrue
       $result.Phases.FinalBoundary.Planned | Should -BeTrue
       $result.Phases.FinalBoundary.TestFreshShell | Should -BeTrue
+    }
+
+    It 'adds the Planning worktree to the SprintEnd close plan when omitted by the caller' {
+      $planning = Join-Path $TestDrive '_Planning-wt-20-Sprint-0010-work-items-omitted'
+      $shared = Join-Path $TestDrive 'SharedVSCode-wt-48-Sprint-0010-work-items-omitted'
+      New-Item -ItemType Directory -Path $planning, $shared -Force | Out-Null
+      New-Item -ItemType Directory -Path (Join-Path $planning 'SprintRetrospective') -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $planning 'SprintRetrospective\Notebook-SprintWorkSession-0010-End.md') -Value '# Sprint 0010 End'
+      Mock Invoke-SprintEndGitHubClose {
+        [PSCustomObject]@{ Ok = $true; Repository = (Split-Path -Path $RepoPath -Leaf) }
+      }
+      Mock New-SprintEndHandoff {
+        [PSCustomObject]@{
+          Changed = $false
+          Planned = $true
+          Path = Join-Path $GitRoot 'HANDOFF.Sprint0010.md'
+          WorktreePaths = $WorktreePaths
+        }
+      }
+
+      $result = Invoke-SprintEndLifecycle `
+        -GitRoot $TestDrive `
+        -PlanningRoot $planning `
+        -SharedVSCodeWorktreePath $shared `
+        -WorktreePaths @($shared) `
+        -CreatePullRequests `
+        -MergePullRequests `
+        -WriteHandoff `
+        -WhatIf
+
+      $result.Ok | Should -BeTrue
+      $planningPlan = @($result.Phases.ClosePlan | Where-Object IsPlanningWorktree)
+      $planningPlan.Count | Should -Be 1
+      $planningPlan[0].PullRequestClosePlanned | Should -BeTrue
+      $planningPlan[0].PullRequestMergePlanned | Should -BeTrue
+      $planningPlan[0].BranchDeletePlanned | Should -BeTrue
+      $planningPlan[0].WorktreeRemovalPlanned | Should -BeTrue
+      $result.Phases.GitHub.Count | Should -Be 2
+      $result.Phases.Handoff.WorktreePaths | Should -Contain $planning
     }
   }
 }

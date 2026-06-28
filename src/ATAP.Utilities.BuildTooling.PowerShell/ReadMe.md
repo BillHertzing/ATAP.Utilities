@@ -33,13 +33,18 @@ preserve/defer surfaces, and all lifecycle evidence/backups belong under
 `_generated/`. Task 10.26.k removed the settings-named transition wrapper; all
 callers now use the adapter lifecycle.
 
-**SprintEnd typed close (Task 10.6).** `Invoke-SprintEndLifecycle` now composes
+**SprintEnd typed close (Task 10.6 / 11.7.c-e).** `Invoke-SprintEndLifecycle` now composes
 structured command-surface, module-promotion/deployment, worktree-state,
 AIAdapter/template reset, GitHub PR/issue, dotted-history, Overview, HANDOFF,
 database/BuildMaster cleanup, retrospective notebook gates, and final-boundary phases. PR bodies receive the
 originating issue closing keyword; check results are classified into required,
 informational, and CodeSee planning signals. HANDOFF stable pulls use an R-31
-overlap gate and `pull --ff-only` with editor suppression. Generated
+overlap gate and `pull --ff-only` with editor suppression. The lifecycle always
+keeps the active `_Planning` worktree in the close plan, even if the caller omits
+it from `-WorktreePaths`, so dry-runs show `_Planning` alongside the other PR,
+merge, branch-delete, and worktree-removal targets. Generated handoffs now use
+the sprint-specific `HANDOFF.SprintNNNN.md` naming pattern and emit parser-safe
+splatting for boundary verification and self-removal commands. Generated
 `.gitattributes` and `.gitconfig.shared` headers are timestamp-free and
 byte-idempotent. `Test-SprintCheckpointCoverage` verifies final checkpoints
 entirely from canonical Planning roots; `Save-SprintEndSessionTail` creates the

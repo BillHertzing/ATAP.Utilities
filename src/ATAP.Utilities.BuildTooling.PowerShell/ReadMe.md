@@ -36,7 +36,7 @@ callers now use the adapter lifecycle.
 **SprintEnd typed close (Task 10.6).** `Invoke-SprintEndLifecycle` now composes
 structured command-surface, module-promotion/deployment, worktree-state,
 AIAdapter/template reset, GitHub PR/issue, dotted-history, Overview, HANDOFF,
-database/BuildMaster cleanup, and final-boundary phases. PR bodies receive the
+database/BuildMaster cleanup, retrospective notebook gates, and final-boundary phases. PR bodies receive the
 originating issue closing keyword; check results are classified into required,
 informational, and CodeSee planning signals. HANDOFF stable pulls use an R-31
 overlap gate and `pull --ff-only` with editor suppression. Generated
@@ -57,7 +57,7 @@ Sprint planning also now has an explicit markdown-to-board path: use
 `Convert-TasksMdToSprintBoard` to regenerate a sprint `TASKS.html` board from the
 authoritative `TASKS.md` file after task edits or status updates. Indented lettered
 subtasks (`N.M.a/b/c`) are emitted as their own board cards — numbered distinctly,
-not indented — and inherit the `[Repo]` tag from their umbrella task.
+not indented — and inherit the `[Repo]` tag from their umbrella task. Single-line tasks are parsed safely without scalar unrolling.
 
 Stage 2 database startup is now safe for non-interactive agent shells (Tasks
 10.4 and 10.5). `Test-SprintPrerequisites` and `New-SprintStage2` call the
@@ -80,7 +80,9 @@ task content, calls `Convert-TasksMdToSprintBoard` to synchronize
 `Tasks.Sprint<NNNN>.Accomplished.html` and
 `Tasks.Sprint<NNNN>.ProceduralDetails.html` companions, and removes the
 prior-sprint root artifacts after templating. Legacy `TASKS.md` and
-`TasksSprint<NNNN>.md` inputs remain accepted for the first transition.
+`TasksSprint<NNNN>.md` inputs remain accepted for the first transition. The sprint
+numbering is now robustly detected from the max numbering across artifact families,
+and `-WhatIf` context is correctly propagated through all nested operations.
 
 **Stage 2 generates the sprint Overview workspace (Task 10.14.a).** After every
 downstream sprint worktree exists, `New-SprintStage2` calls

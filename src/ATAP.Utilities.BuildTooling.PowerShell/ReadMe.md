@@ -33,6 +33,17 @@ preserve/defer surfaces, and all lifecycle evidence/backups belong under
 `_generated/`. Task 10.26.k removed the settings-named transition wrapper; all
 callers now use the adapter lifecycle.
 
+`Set-SprintBoundaryContext` now closes the remaining SprintEnd boundary gaps from
+Tasks 11.7.f-h. In addition to machine-level profile symlink retargeting, it
+deploys developer profiles from `OverviewSprintNNNN.code-workspace` and service
+account profiles from host settings into each identity's
+`Documents\PowerShell\profile.ps1`. The cmdlet also refreshes the SharedVSCode
+settings render at both boundaries so `permissions.additionalDirectories` and
+hook command paths in `settings.overlay.json` follow the sprint or stable target
+before user settings are relinked. `Test-SprintEndBoundaryState` auto-discovers
+those managed profiles when `-ProfilePaths` is omitted and verifies that each is
+stable-sourced, readable, and free of stale `-wt-` references after SprintEnd.
+
 **SprintEnd typed close (Task 10.6 / 11.7.c-e).** `Invoke-SprintEndLifecycle` now composes
 structured command-surface, module-promotion/deployment, worktree-state,
 AIAdapter/template reset, GitHub PR/issue, dotted-history, Overview, HANDOFF,

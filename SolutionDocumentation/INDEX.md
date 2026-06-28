@@ -52,9 +52,10 @@ _Teach / Tell how to create software._
   truth for the `Set-SprintBoundaryContext` orchestrator: which concern (machine
   links, SharedVSCode settings, downstream contexts, registry-backed AI adapters)
   retargets at sprint start/end via which worker, the sole adapter render/drift
-  APIs and caller order, checkpoint-gated user/global safety, why adapter drift
-  blocks teardown, and why PowerShell profiles and ConfigRootKeys are
-  stable-by-design no-ops.
+  APIs and caller order, boundary-time `settings.overlay.json` refresh, why
+  adapter drift blocks teardown, and how machine, developer, plus service-account
+  PowerShell profiles now follow the sprint/stable boundary while ConfigRootKeys
+  remain the only stable-by-design no-op.
 - [WSL2 Setup](WSL2Setup.md) — WSL2 provisioning notes for development and
   automation workflows.
 - [ReadMe](ReadMe.md) — Repository overview, prerequisites, and pointers to the

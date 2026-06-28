@@ -352,6 +352,12 @@ function Set-SprintBoundaryContext {
     $settingsError = $null
     try {
       if ($PSCmdlet.ShouldProcess($SharedVSCodeWorktreePath, "Retarget SharedVSCode settings symlinks ($Boundary)")) {
+        Invoke-SprintAIAdapterLifecycle `
+          -Boundary Start `
+          -TargetRoot $SharedVSCodeWorktreePath `
+          -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath `
+          -Confirm:$false `
+          -WhatIf:$WhatIfPreference | Out-Null
         Set-UserSettingsSymlink -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath
         Set-ClaudeSettingsSymlink -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath
       }
@@ -363,7 +369,7 @@ function Set-SprintBoundaryContext {
     }
     $concerns.Add([PSCustomObject]@{
         Concern        = 'SharedVSCodeSettings'
-        Action         = 'Set-UserSettingsSymlink + Set-ClaudeSettingsSymlink'
+        Action         = 'Invoke-SprintAIAdapterLifecycle (render shared settings) + Set-UserSettingsSymlink + Set-ClaudeSettingsSymlink'
         StableByDesign = $false
         Succeeded      = $settingsOk
         Error          = $settingsError
@@ -428,6 +434,74 @@ function Set-SprintBoundaryContext {
         StableByDesign = $false
         Succeeded      = $profileSymlinksOk
         Error          = $profileSymlinksError
+      })
+
+    # ------------------------------------------------------------------
+    # User-profile concerns: developer and service-account profiles (once)
+    # Each applicable identity receives Documents\PowerShell\profile.ps1 that
+    # tracks the ATAP.Utilities sprint or stable profile source.
+    # ------------------------------------------------------------------
+    $developerProfilesOk = $true
+    $developerProfilesError = $null
+    $serviceProfilesOk = $true
+    $serviceProfilesError = $null
+    try {
+      if (-not $SkipProfileSymlinks -and $PSCmdlet.ShouldProcess($ATAPUtilitiesRoot, "Retarget developer and service-account PowerShell profiles ($Boundary)")) {
+        $userProfileResult = Set-SprintBoundaryUserProfiles `
+          -ATAPUtilitiesRoot $ATAPUtilitiesRoot `
+          -ATAPIACRoot $ATAPIACRoot `
+          -GitRoot $GitRoot `
+          -Confirm:$false `
+          -WhatIf:$WhatIfPreference
+
+        foreach ($warning in @($userProfileResult.Warnings)) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $warning
+        }
+
+        $developerFailures = @(
+          $userProfileResult.Profiles |
+            Where-Object { $_.Kind -eq 'Developer' -and -not $_.Succeeded }
+        )
+        $serviceFailures = @(
+          $userProfileResult.Profiles |
+            Where-Object { $_.Kind -eq 'ServiceAccount' -and -not $_.Succeeded }
+        )
+
+        if ($developerFailures.Count -gt 0) {
+          $developerProfilesOk = $false
+          $developerProfilesError = "Developer profile deployment reported failures: $((@($developerFailures.Error) | Where-Object { $_ }) -join '; ')"
+          $errors.Add($developerProfilesError)
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $developerProfilesError
+        }
+
+        if ($serviceFailures.Count -gt 0) {
+          $serviceProfilesOk = $false
+          $serviceProfilesError = "Service-account profile deployment reported failures: $((@($serviceFailures.Error) | Where-Object { $_ }) -join '; ')"
+          $errors.Add($serviceProfilesError)
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $serviceProfilesError
+        }
+      }
+    } catch {
+      $developerProfilesOk = $false
+      $serviceProfilesOk = $false
+      $developerProfilesError = "Managed user-profile deployment failed: $($_.Exception.Message)"
+      $serviceProfilesError = $developerProfilesError
+      $errors.Add($developerProfilesError)
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $developerProfilesError
+    }
+    $concerns.Add([PSCustomObject]@{
+        Concern        = 'DeveloperPowerShellProfiles'
+        Action         = ($SkipProfileSymlinks ? 'Skipped' : "Set-SprintBoundaryUserProfiles ($Boundary)")
+        StableByDesign = $false
+        Succeeded      = $developerProfilesOk
+        Error          = $developerProfilesError
+      })
+    $concerns.Add([PSCustomObject]@{
+        Concern        = 'ServiceAccountPowerShellProfiles'
+        Action         = ($SkipProfileSymlinks ? 'Skipped' : "Set-SprintBoundaryUserProfiles ($Boundary)")
+        StableByDesign = $false
+        Succeeded      = $serviceProfilesOk
+        Error          = $serviceProfilesError
       })
 
     # ------------------------------------------------------------------

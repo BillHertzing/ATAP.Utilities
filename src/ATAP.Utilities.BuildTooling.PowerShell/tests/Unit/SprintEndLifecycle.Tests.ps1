@@ -362,6 +362,49 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $userProfile | Should -Match 'ATAP\.Utilities\.PowerShell'
       $userProfile | Should -Match 'Process environment setup was skipped'
     }
+
+    It 'verifies managed developer and service-account profiles when ProfilePaths is not supplied' {
+      $gitRoot = Join-Path $TestDrive 'gitroot-managed-profiles'
+      $utilRoot = Join-Path $gitRoot 'ATAP.Utilities'
+      $iacRoot = Join-Path $gitRoot 'ATAP.IAC'
+      $developerHome = Join-Path $TestDrive 'alice-home'
+      $serviceHome = Join-Path $TestDrive 'svc-home'
+      $developerSource = Join-Path $utilRoot 'src\ATAP.Utilities.PowerShell\Profiles\CurrentUserAllHostsV7CoreProfile.ps1'
+      $serviceSource = Join-Path $utilRoot 'src\ATAP.Utilities.PowerShell\Profiles\ProfileForServiceAccountUsers.ps1'
+      $developerProfile = Join-Path $developerHome 'Documents\PowerShell\profile.ps1'
+      $serviceProfile = Join-Path $serviceHome 'Documents\PowerShell\profile.ps1'
+      New-Item -ItemType Directory -Path (Split-Path $developerSource -Parent), $iacRoot, (Split-Path $developerProfile -Parent), (Split-Path $serviceProfile -Parent) -Force | Out-Null
+      Set-Content -LiteralPath $developerSource -Value '# developer stable profile' -Encoding UTF8
+      Set-Content -LiteralPath $serviceSource -Value '# service stable profile' -Encoding UTF8
+      New-Item -ItemType SymbolicLink -Path $developerProfile -Target $developerSource -Force | Out-Null
+      New-Item -ItemType SymbolicLink -Path $serviceProfile -Target $serviceSource -Force | Out-Null
+
+      Mock Set-SprintBoundaryUserProfiles {
+        [PSCustomObject]@{
+          Ok = $true
+          Profiles = @(
+            [PSCustomObject]@{
+              Kind = 'Developer'; Identity = 'alice'; ProfilePath = $developerProfile; SourcePath = $developerSource; Skipped = $false; Warning = $null
+            },
+            [PSCustomObject]@{
+              Kind = 'ServiceAccount'; Identity = 'SvcBuildmaster'; ProfilePath = $serviceProfile; SourcePath = $serviceSource; Skipped = $false; Warning = $null
+            }
+          )
+          Warnings = @()
+          Failures = @()
+        }
+      }
+
+      $result = Test-SprintEndBoundaryState `
+        -GitRoot $gitRoot `
+        -SearchRoots @() `
+        -ATAPUtilitiesRoot $utilRoot `
+        -ATAPIACRoot $iacRoot
+
+      $result.Ok | Should -BeTrue
+      @($result.Profiles | Where-Object Kind -NE 'General').Count | Should -Be 2
+      $result.ManagedProfileFailures | Should -BeNullOrEmpty
+    }
   }
 
   Context 'Invoke-SprintEndInfrastructureCleanup' {

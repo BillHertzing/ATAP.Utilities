@@ -192,14 +192,16 @@ https://github.com/whertzing/ATAP.Utilities
       } else {
         $repositoryRoot = $RepositoryRoot
       }
-      if (-not (Get-Command -Name 'Resolve-DatabaseSqlConnection' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\Resolve-DatabaseSqlConnection.ps1')
-      }
-      if (-not (Get-Command -Name 'DatabaseProvisioning' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\DatabaseProvisioning.ps1')
-      }
-      if (-not (Get-Command -Name 'Invoke-Flyway' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\Invoke-Flyway.ps1')
+      foreach ($helperPath in @(
+          'src\ATAP.Utilities.DatabaseManagement.Powershell\public\Resolve-DatabaseSqlConnection.ps1',
+          'src\ATAP.Utilities.DatabaseManagement.Powershell\public\DatabaseProvisioning.ps1',
+          'src\ATAP.Utilities.DatabaseManagement.Powershell\public\Invoke-Flyway.ps1'
+        )) {
+        $sourceHelperPath = Join-Path $repositoryRoot $helperPath
+        if (-not (Test-Path -LiteralPath $sourceHelperPath -PathType Leaf)) {
+          throw "Required database helper not found at '$sourceHelperPath'."
+        }
+        . $sourceHelperPath
       }
     } catch {
       $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
@@ -278,7 +280,6 @@ https://github.com/whertzing/ATAP.Utilities
     $resolvedConnectionStringBuilder = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($resolvedSqlConnection.ConnectionString)
     $DatabaseHost = $resolvedSqlConnection.DataSource
     $SqlInstance = $resolvedSqlConnection.DataSource
-    $useIntegratedSecurityForFlyway = [bool]($resolvedConnectionStringBuilder.IntegratedSecurity -or $IntegratedSecurity -or $UseTrustedConnection)
 
     # Initialize result object
     $result = [PSCustomObject]@{
@@ -435,7 +436,6 @@ https://github.com/whertzing/ATAP.Utilities
             $FlywayParams['DBConnectionStringSecretName'] = $DBConnectionStringDBSecretName
           } else {
             $FlywayParams['SqlConnection'] = $sqlConnection
-            $FlywayParams['IntegratedSecurity'] = $useIntegratedSecurityForFlyway
           }
 
           Invoke-Flyway @FlywayParams

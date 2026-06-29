@@ -96,10 +96,16 @@ source-first `Initialize-ATAPConfigurationGlobals` helper when
 normal reset path passes the newly created ATAP.Utilities worktree root and its
 current `SharedSQL` provisioning folder to `Reset-SprintDatabases`, with
 `-Confirm:$false`, so an installed BuildTooling module cannot fall back to stale
-module-relative Flyway or `DropAndCreateDatabase.sql` content. Use
-`-SkipDatabaseReset` to bypass both the Dev/Exp instance guard and reset during
-granular recovery, and `-IncludeRepos` to provision repositories that have no
-task-board marker.
+module-relative Flyway or `DropAndCreateDatabase.sql` content.
+`Reset-SprintDatabases` imports `dbatools` before resolving
+`Build-DatabaseWithFlyway`, preventing `Microsoft.Data.SqlClient` assembly
+load-order conflicts during Stage 2 database resets. Connection-part resets
+default to Windows integrated security when no connection-string secret or
+credential key is resolved, and each instance uses an instance-scoped fallback
+database-file path under `C:\LocalDBs\<InstanceName>\<DatabaseName>` when no
+settings value supplies `DatabasePath`. Use `-SkipDatabaseReset` to bypass both
+the Dev/Exp instance guard and reset during granular recovery, and
+`-IncludeRepos` to provision repositories that have no task-board marker.
 
 **Stage 1 creates a content-fresh sprint task set (Task 10.11).** After the
 `_Planning` worktree exists, `New-SprintStage1` reads the immediately prior

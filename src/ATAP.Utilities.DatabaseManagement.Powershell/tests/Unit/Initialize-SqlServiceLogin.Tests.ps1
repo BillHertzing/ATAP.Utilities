@@ -15,10 +15,10 @@ Describe 'Initialize-SqlServiceLogin' -Tag 'Unit' {
   }
 
   # -------------------------------------------------------------------------
-  Context 'Success path — Invoke-Sqlcmd succeeds for both batches' {
+  Context 'Success path - Invoke-DbaQuery succeeds for both batches' {
 
     BeforeEach {
-      Mock -CommandName Invoke-Sqlcmd -MockWith { }
+      Mock -CommandName Invoke-DbaQuery -MockWith { }
     }
 
     It 'returns Status = Success' {
@@ -53,38 +53,38 @@ Describe 'Initialize-SqlServiceLogin' -Tag 'Unit' {
       $result.ServiceAccount | Should -Be $script:account
     }
 
-    It 'calls Invoke-Sqlcmd exactly twice (login batch + user/role batch)' {
+    It 'calls Invoke-DbaQuery exactly twice (login batch + user/role batch)' {
       Initialize-SqlServiceLogin `
         -SqlInstance $script:instance `
         -DatabaseName $script:database `
         -ServiceAccount $script:account | Out-Null
-      Should -Invoke Invoke-Sqlcmd -Exactly 2
+      Should -Invoke Invoke-DbaQuery -Exactly 2
     }
 
-    It 'first Invoke-Sqlcmd call targets master database' {
+    It 'first Invoke-DbaQuery call targets master database' {
       Initialize-SqlServiceLogin `
         -SqlInstance $script:instance `
         -DatabaseName $script:database `
         -ServiceAccount $script:account | Out-Null
-      Should -Invoke Invoke-Sqlcmd -ParameterFilter { $Database -eq 'master' } -Exactly 1
+      Should -Invoke Invoke-DbaQuery -ParameterFilter { $Database -eq 'master' } -Exactly 1
     }
 
-    It 'second Invoke-Sqlcmd call targets the application database' {
+    It 'second Invoke-DbaQuery call targets the application database' {
       Initialize-SqlServiceLogin `
         -SqlInstance $script:instance `
         -DatabaseName $script:database `
         -ServiceAccount $script:account | Out-Null
-      Should -Invoke Invoke-Sqlcmd -ParameterFilter { $Database -eq $script:database } -Exactly 1
+      Should -Invoke Invoke-DbaQuery -ParameterFilter { $Database -eq $script:database } -Exactly 1
     }
 
-    It 'passes TrustServerCertificate = $true when switch is specified' {
+    It 'passes Trust Server Certificate = True in the appended connection string when switch is specified' {
       Initialize-SqlServiceLogin `
         -SqlInstance $script:instance `
         -DatabaseName $script:database `
         -ServiceAccount $script:account `
         -TrustServerCertificate | Out-Null
-      Should -Invoke Invoke-Sqlcmd `
-        -ParameterFilter { $TrustServerCertificate -eq $true } -Exactly 2
+      Should -Invoke Invoke-DbaQuery `
+        -ParameterFilter { $AppendConnectionString -match 'Trust Server Certificate=True' } -Exactly 2
     }
 
     It 'passes Encrypt = Mandatory when specified' {
@@ -93,8 +93,17 @@ Describe 'Initialize-SqlServiceLogin' -Tag 'Unit' {
         -DatabaseName $script:database `
         -ServiceAccount $script:account `
         -Encrypt Mandatory | Out-Null
-      Should -Invoke Invoke-Sqlcmd `
-        -ParameterFilter { $Encrypt -eq 'Mandatory' } -Exactly 2
+      Should -Invoke Invoke-DbaQuery `
+        -ParameterFilter { $AppendConnectionString -match 'Encrypt=Mandatory' } -Exactly 2
+    }
+
+    It 'enables dbatools exceptions so failures are caught by the cmdlet try/catch' {
+      Initialize-SqlServiceLogin `
+        -SqlInstance $script:instance `
+        -DatabaseName $script:database `
+        -ServiceAccount $script:account | Out-Null
+      Should -Invoke Invoke-DbaQuery `
+        -ParameterFilter { $EnableException -eq $true -and $ErrorAction -eq 'Stop' } -Exactly 2
     }
   }
 
@@ -102,7 +111,7 @@ Describe 'Initialize-SqlServiceLogin' -Tag 'Unit' {
   Context '-WhatIf suppresses SQL execution' {
 
     BeforeEach {
-      Mock -CommandName Invoke-Sqlcmd -MockWith { }
+      Mock -CommandName Invoke-DbaQuery -MockWith { }
     }
 
     It 'returns Status = WhatIf' {
@@ -114,21 +123,21 @@ Describe 'Initialize-SqlServiceLogin' -Tag 'Unit' {
       $result.Status | Should -Be 'WhatIf'
     }
 
-    It 'does NOT call Invoke-Sqlcmd' {
+    It 'does NOT call Invoke-DbaQuery' {
       Initialize-SqlServiceLogin `
         -SqlInstance $script:instance `
         -DatabaseName $script:database `
         -ServiceAccount $script:account `
         -WhatIf | Out-Null
-      Should -Invoke Invoke-Sqlcmd -Exactly 0
+      Should -Invoke Invoke-DbaQuery -Exactly 0
     }
   }
 
   # -------------------------------------------------------------------------
-  Context 'Error handling — first Invoke-Sqlcmd throws' {
+  Context 'Error handling - first Invoke-DbaQuery throws' {
 
     BeforeEach {
-      Mock -CommandName Invoke-Sqlcmd -MockWith {
+      Mock -CommandName Invoke-DbaQuery -MockWith {
         throw [System.Exception]'Cannot connect to SQL Server'
       }
     }
@@ -148,7 +157,7 @@ Describe 'Initialize-SqlServiceLogin' -Tag 'Unit' {
 
     It 'login query contains the escaped service account name' {
       $capturedQuery = $null
-      Mock -CommandName Invoke-Sqlcmd -MockWith {
+      Mock -CommandName Invoke-DbaQuery -MockWith {
         param($Query, $Database)
         if ($Database -eq 'master') { $script:capturedLoginQuery = $Query }
       }
@@ -162,7 +171,7 @@ Describe 'Initialize-SqlServiceLogin' -Tag 'Unit' {
     }
 
     It 'login query contains CREATE LOGIN' {
-      Mock -CommandName Invoke-Sqlcmd -MockWith {
+      Mock -CommandName Invoke-DbaQuery -MockWith {
         param($Query, $Database)
         if ($Database -eq 'master') { $script:capturedLoginQuery = $Query }
       }
@@ -176,7 +185,7 @@ Describe 'Initialize-SqlServiceLogin' -Tag 'Unit' {
     }
 
     It 'user query contains ALTER ROLE db_owner ADD MEMBER' {
-      Mock -CommandName Invoke-Sqlcmd -MockWith {
+      Mock -CommandName Invoke-DbaQuery -MockWith {
         param($Query, $Database)
         if ($Database -eq $script:database) { $script:capturedUserQuery = $Query }
       }
@@ -194,7 +203,7 @@ Describe 'Initialize-SqlServiceLogin' -Tag 'Unit' {
   Context 'Single-quote in ServiceAccount is escaped (SQL injection resistance)' {
 
     BeforeEach {
-      Mock -CommandName Invoke-Sqlcmd -MockWith { }
+      Mock -CommandName Invoke-DbaQuery -MockWith { }
     }
 
     It 'does not throw when ServiceAccount contains a single quote' {

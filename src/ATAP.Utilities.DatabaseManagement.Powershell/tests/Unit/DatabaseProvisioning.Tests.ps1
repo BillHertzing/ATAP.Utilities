@@ -261,3 +261,30 @@ Describe 'DropAndCreateDatabase SQL path guard' -Tag 'Unit' {
     $scriptText | Should -Match 'DatabasePath does not exist or SQL Server cannot access it'
   }
 }
+
+Describe 'Build-DatabaseWithFlyway Flyway invocation shape' -Tag 'Unit' {
+  It 'does not combine SqlConnection and IntegratedSecurity when calling Invoke-Flyway' {
+    $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+    $buildSource = Get-Content -LiteralPath (Join-Path $moduleRoot 'public\Build-DatabaseWithFlyway.ps1') -Raw
+
+    $buildSource | Should -Match "\`$FlywayParams\['SqlConnection'\] = \`$sqlConnection"
+    $buildSource | Should -Not -Match "\`$FlywayParams\['IntegratedSecurity'\]"
+    $buildSource | Should -Not -Match 'useIntegratedSecurityForFlyway'
+    $buildSource | Should -Match "src\\ATAP.Utilities.DatabaseManagement.Powershell\\public\\Invoke-Flyway.ps1"
+    $buildSource | Should -Match 'Required database helper not found'
+  }
+}
+
+Describe 'Invoke-Flyway Java runtime guard' -Tag 'Unit' {
+  It 'selects a process-local Java 17+ runtime before invoking Flyway' {
+    $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+    $invokeSource = Get-Content -LiteralPath (Join-Path $moduleRoot 'public\Invoke-Flyway.ps1') -Raw
+
+    $invokeSource | Should -Match 'function Use-FlywayCompatibleJavaRuntime'
+    $invokeSource | Should -Match '\$minimumJavaMajorVersion = 17'
+    $invokeSource | Should -Match '\$env:JAVA_HOME = \$selectedCandidate.Root'
+    $invokeSource | Should -Match 'Use-FlywayCompatibleJavaRuntime'
+    $invokeSource | Should -Match "GetEnvironmentVariable\('AceCommander_UserPii__PassphraseV1', 'User'\)"
+    $invokeSource | Should -Match "GetEnvironmentVariable\('UserPii__PassphraseV1', 'User'\)"
+  }
+}

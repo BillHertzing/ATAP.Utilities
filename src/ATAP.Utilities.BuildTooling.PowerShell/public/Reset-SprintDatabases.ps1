@@ -322,19 +322,20 @@ function Reset-SprintDatabases {
     $isNoOp = [bool]($DryRun -or $WhatIfPreference)
     $buildDatabaseWithFlywayParameters = $null
     if (-not $isNoOp) {
+      try {
+        Import-Module -Name dbatools -ErrorAction Stop
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+          -Message 'Imported dbatools before resolving Build-DatabaseWithFlyway.'
+      } catch {
+        $errorMessage = "Failed to import dbatools before resolving Build-DatabaseWithFlyway. dbatools must be loaded first because Build-DatabaseWithFlyway declares a Microsoft.Data.SqlClient.SqlConnection parameter. Exception: $($_.Exception.Message)"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+        throw $errorMessage
+      }
+
       if (-not (Get-Command -Name 'Build-DatabaseWithFlyway' -CommandType Function -ErrorAction SilentlyContinue)) {
         $buildDbPath = Join-Path $RepositoryRoot 'src' 'ATAP.Utilities.DatabaseManagement.Powershell' 'public' 'Build-DatabaseWithFlyway.ps1'
         if (-not (Test-Path -LiteralPath $buildDbPath -PathType Leaf)) {
           throw "Build-DatabaseWithFlyway.ps1 not found at: $buildDbPath"
-        }
-        try {
-          Import-Module -Name dbatools -ErrorAction Stop
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
-            -Message 'Imported dbatools before loading Build-DatabaseWithFlyway.'
-        } catch {
-          $errorMessage = "Failed to import dbatools before loading Build-DatabaseWithFlyway. dbatools must be loaded first because Build-DatabaseWithFlyway declares a Microsoft.Data.SqlClient.SqlConnection parameter. Exception: $($_.Exception.Message)"
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-          throw $errorMessage
         }
 
         try {
@@ -544,6 +545,9 @@ function Reset-SprintDatabases {
           -DefaultValue $null `
           -AllowMissing `
           -AsType ([string])
+        if ([string]::IsNullOrWhiteSpace($resolvedDatabasePath)) {
+          $resolvedDatabasePath = Join-Path (Join-Path 'C:\LocalDBs' $instanceName) $db
+        }
 
         $resolvedProvisioningScriptsPath = Resolve-ResetSprintDatabaseSetting `
           -Name 'ProvisioningScriptsPath' `
@@ -673,7 +677,14 @@ function Reset-SprintDatabases {
             if ($resolvedCredentialsKey -and $buildDatabaseWithFlywayParameters -contains 'CredentialsKey') {
               $buildParams['CredentialsKey'] = $resolvedCredentialsKey
             }
-            elseif ($PSBoundParameters.ContainsKey('IntegratedSecurity') -and $buildDatabaseWithFlywayParameters -contains 'IntegratedSecurity') {
+            $useIntegratedSecurityForConnectionParts = if ($PSBoundParameters.ContainsKey('IntegratedSecurity')) {
+              [bool]$IntegratedSecurity
+            } else {
+              -not $resolvedCredentialsKey -and
+              -not $usingConnectionStringSecret -and
+              -not ($PSBoundParameters.ContainsKey('UseTrustedConnection') -and $UseTrustedConnection)
+            }
+            if ($useIntegratedSecurityForConnectionParts -and $buildDatabaseWithFlywayParameters -contains 'IntegratedSecurity') {
               $buildParams['IntegratedSecurity'] = $true
             }
 

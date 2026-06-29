@@ -23,6 +23,10 @@ function Test-SprintPrerequisites {
     on this workstation. Each discovered worktree is also checked with
     Assert-LockFilesClean unless -SkipLockFileGuard is supplied.
 
+    Worktree git-state and lock-file checks run only when -RequiredRepoWorktrees
+    is supplied. This keeps SprintStart Step 0 from failing on unrelated sibling
+    worktrees while still supporting explicit multi-worktree gates.
+
     Every check runs to completion regardless of earlier failures so the
     structured result captures the full diagnostic picture. The cmdlet always
     returns a [PSCustomObject]; with -ThrowOnFailure, it additionally throws a
@@ -30,8 +34,8 @@ function Test-SprintPrerequisites {
     when AllOk is $false.
 
 .PARAMETER RequiredRepoWorktrees
-    Paths of git working trees to inspect. Defaults to all
-    *-wt-*-Sprint-*-work-items directories in the parent of the current worktree.
+    Paths of git working trees to inspect. When omitted, the git-state and
+    lock-file checks are recorded as skipped/Ok.
 
 .PARAMETER MinimumPwshVersion
     Required PowerShell engine version. Default '7.0'.
@@ -152,6 +156,7 @@ function Test-SprintPrerequisites {
         'Get-BWSAccessToken',
         'Assert-LockFilesClean',
         'Initialize-ATAPConfigurationGlobals',
+        'Get-PVal',
         'Test-SprintUrlReachable',
         'Test-SprintModulePromotionDeploy')) {
       if (-not (Get-Command -Name $required -ErrorAction SilentlyContinue)) {
@@ -263,19 +268,8 @@ function Test-SprintPrerequisites {
     }
     if (-not $bwOk) { [void]$failures.Add('Bitwarden') }
 
-    $resolvedRepos = @()
-    if ($PSBoundParameters.ContainsKey('RequiredRepoWorktrees')) {
-      $resolvedRepos = @($RequiredRepoWorktrees)
-    } else {
-      try {
-        $here = (Get-Location).Path
-        $parent = Split-Path $here -Parent
-        $resolvedRepos = @(Get-ChildItem -Path $parent -Directory -Filter '*-wt-*-Sprint-*-work-items' -ErrorAction SilentlyContinue |
-          Select-Object -ExpandProperty FullName)
-      } catch {
-        $resolvedRepos = @()
-      }
-    }
+    $worktreeChecksRequested = $PSBoundParameters.ContainsKey('RequiredRepoWorktrees')
+    $resolvedRepos = if ($worktreeChecksRequested) { @($RequiredRepoWorktrees) } else { @() }
 
     $perRepo = @()
     $gitOk = $true
@@ -338,14 +332,24 @@ function Test-SprintPrerequisites {
     $repoCount = $resolvedRepos.Count
     $checks['GitRepoState'] = [PSCustomObject]@{
       Ok      = $gitOk
-      Detail  = if ($gitOk) {
-        if ($repoCount -eq 0) { 'No sprint worktrees found to inspect' } else { "$repoCount worktree(s) clean of in-progress git operations" }
+      Skipped = -not $worktreeChecksRequested
+      Detail  = if (-not $worktreeChecksRequested) {
+        'Git worktree state check skipped because -RequiredRepoWorktrees was not supplied'
+      } elseif ($gitOk) {
+        if ($repoCount -eq 0) { 'No requested worktrees to inspect' } else { "$repoCount worktree(s) clean of in-progress git operations" }
       } else { 'One or more worktrees have in-progress git operations' }
       PerRepo = $perRepo
     }
     if (-not $gitOk) { [void]$failures.Add('GitRepoState') }
 
-    if ($SkipLockFileGuard) {
+    if (-not $worktreeChecksRequested) {
+      $checks['LockFilesClean'] = [PSCustomObject]@{
+        Ok      = $true
+        Skipped = $true
+        Detail  = 'Lock-file check skipped because -RequiredRepoWorktrees was not supplied'
+        PerRepo = @()
+      }
+    } elseif ($SkipLockFileGuard) {
       $checks['LockFilesClean'] = [PSCustomObject]@{
         Ok      = $true
         Skipped = $true
@@ -488,22 +492,22 @@ function Test-SprintPrerequisites {
 
     if (-not $PSBoundParameters.ContainsKey('ProGetBaseUrl')) {
       try {
-        if ($global:configRootKeys -and $global:settings) {
-          $k = $global:configRootKeys['ProGetBaseUrlConfigRootKey']
-          if ($k -and $global:settings.ContainsKey($k)) {
-            $ProGetBaseUrl = [string]$global:settings[$k]
-          }
+        $proGetKey = if ($global:configRootKeys -and $global:configRootKeys['ProGetBaseUrlConfigRootKey']) {
+          $global:configRootKeys['ProGetBaseUrlConfigRootKey']
+        } else {
+          'ProGetBaseUrl'
         }
+        $ProGetBaseUrl = [string](Get-PVal -ParameterName 'ProGetBaseUrl' -originalPSBoundParameters $PSBoundParameters -dottedPath $proGetKey -DefaultValue $ProGetBaseUrl -AllowMissing)
       } catch { }
     }
     if (-not $PSBoundParameters.ContainsKey('BuildMasterBaseUrl')) {
       try {
-        if ($global:configRootKeys -and $global:settings) {
-          $k = $global:configRootKeys['BuildMasterBaseUrlConfigRootKey']
-          if ($k -and $global:settings.ContainsKey($k)) {
-            $BuildMasterBaseUrl = [string]$global:settings[$k]
-          }
+        $buildMasterKey = if ($global:configRootKeys -and $global:configRootKeys['BuildMasterBaseUrlConfigRootKey']) {
+          $global:configRootKeys['BuildMasterBaseUrlConfigRootKey']
+        } else {
+          'BuildMasterBaseUrl'
         }
+        $BuildMasterBaseUrl = [string](Get-PVal -ParameterName 'BuildMasterBaseUrl' -originalPSBoundParameters $PSBoundParameters -dottedPath $buildMasterKey -DefaultValue $BuildMasterBaseUrl -AllowMissing)
       } catch { }
     }
 

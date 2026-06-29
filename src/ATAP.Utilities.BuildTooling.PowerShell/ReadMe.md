@@ -69,10 +69,15 @@ splatting for boundary verification and self-removal commands. Generated
 byte-idempotent. `Test-SprintCheckpointCoverage` verifies final checkpoints
 entirely from canonical Planning roots; `Save-SprintEndSessionTail` creates the
 scoped post-merge stable Planning commit without pushing.
-`Restore-SprintHistoryArtifacts` is the explicit one-off path for reconstructing
-pre-dotted history from reviewed Git revisions. It writes exact Git blob bytes,
-preserves repository-relative paths, records the resolved commit as provenance,
-and preserves different existing content. SprintEnd removes sprint databases while retaining permanent
+`Get-SprintHistoryReconstruction` reconstructs the latest completed sprint from
+retrospective notebooks, SprintHistory folders, task artifact sets, snapshots,
+and close commits, then reports source disagreements as structured warnings.
+`New-SprintStage1` uses that aggregate instead of trusting one weak signal when
+auto-detecting the next sprint number. `Restore-SprintHistoryArtifacts` remains
+the explicit one-off path for reconstructing pre-dotted history from reviewed Git
+revisions. It writes exact Git blob bytes, preserves repository-relative paths,
+records the resolved commit as provenance, and preserves different existing
+content. SprintEnd removes sprint databases while retaining permanent
 developer SQL Server instances, never deletes Bitwarden secrets, and never
 invokes a synthetic sprint-completion task. The structured result reports
 `DatabaseCleanupMode = 'SprintDatabasesOnly'` and
@@ -104,7 +109,9 @@ task content, calls `Convert-TasksMdToSprintBoard` to synchronize
 `Tasks.Sprint<NNNN>.html`, creates empty
 `Tasks.Sprint<NNNN>.Accomplished.html` and
 `Tasks.Sprint<NNNN>.ProceduralDetails.html` companions, and removes the
-prior-sprint root artifacts after templating. Legacy `TASKS.md` and
+prior-sprint root artifacts after templating. Stage 1 now creates only the
+supported `.vscode` junction in `_Planning` by default; `.claude` and `.github`
+surfaces are owned by AIAdapter materialization. Legacy `TASKS.md` and
 `TasksSprint<NNNN>.md` inputs remain accepted for the first transition. The sprint
 numbering is now robustly detected from the max numbering across artifact families,
 and `-WhatIf` context is correctly propagated through all nested operations.

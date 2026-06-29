@@ -34,6 +34,9 @@ Describe 'New-SprintStage1 load-contract (K03)' -Tag 'Unit' {
     function global:Initialize-DownstreamSprintFromSharedVSCode {
       $global:K03SideEffectCalls.Add('Initialize-DownstreamSprintFromSharedVSCode')
     }
+    function global:Get-SprintHistoryReconstruction {
+      $global:K03SideEffectCalls.Add('Get-SprintHistoryReconstruction')
+    }
     function global:New-DeveloperSqlServerInstances {
       $global:K03SideEffectCalls.Add('New-DeveloperSqlServerInstances')
     }
@@ -48,7 +51,7 @@ Describe 'New-SprintStage1 load-contract (K03)' -Tag 'Unit' {
   AfterEach {
     # Remove all canary stubs to avoid polluting subsequent tests or test runs.
     'Assert-GitAvailable', 'gh', 'git', 'Set-WorktreeJunctions',
-    'Initialize-DownstreamSprintFromSharedVSCode', 'New-DeveloperSqlServerInstances',
+    'Initialize-DownstreamSprintFromSharedVSCode', 'Get-SprintHistoryReconstruction', 'New-DeveloperSqlServerInstances',
     'Set-BuildMasterSprintVariables', 'New-SprintBitwardenSecrets' |
       ForEach-Object { Remove-Item "Function:\$_" -ErrorAction SilentlyContinue }
 

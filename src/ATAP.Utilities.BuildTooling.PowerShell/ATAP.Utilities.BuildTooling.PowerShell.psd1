@@ -87,7 +87,7 @@
     'Create-ServiceAccount', 'Get-AllFilesChangedByCommit',
     'Get-ATAPIACConstant', 'Get-BrokenGitSubDirs', 'Get-BuildContext',
     'Get-DatabasePackageBuildContext', 'Get-DbConnectionStringSecretDescriptor',
-    'Get-SprintEndContext',
+    'Get-SprintEndContext', 'Get-SprintHistoryReconstruction',
     'Get-DeployedReleaseManifest', 'Get-IncorrectSymLinksAndJunctions',
     'Get-JenkinsEnvSettings', 'Get-MergedPesterConfigurations',
     'Get-ModuleAsSymbolicLink', 'Get-ModuleHighestVersion',

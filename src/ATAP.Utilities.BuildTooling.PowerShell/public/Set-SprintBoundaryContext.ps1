@@ -57,6 +57,10 @@ function Set-SprintBoundaryContext {
     Names of junction folders whose targets are dev-redirected to the SharedVSCode
     sprint worktree on 'Start'. Ignored on 'End' (junctions follow the stable repo).
     Defaults to '.claude', '.github', '.vscode'.
+  .PARAMETER StableJunctionFolderNames
+    Names of source-repository junction folders that SprintEnd is allowed to
+    recreate from the stable repo. Defaults to '.vscode' so obsolete rendered
+    `.claude` / `.github` folders are not recreated as junctions during close.
   .PARAMETER GitRoot
     Root directory containing all Git repositories. Used to derive each worktree's
     stable repo path (junction source). Defaults to 'C:\dropbox\whertzing\GitHub'.
@@ -124,6 +128,8 @@ function Set-SprintBoundaryContext {
     [string]$Profile = 'default',
 
     [string[]]$JunctionFolderNames = @('.claude', '.github', '.vscode'),
+
+    [string[]]$StableJunctionFolderNames = @('.vscode'),
 
     [string]$GitRoot = 'C:\dropbox\whertzing\GitHub',
 
@@ -244,6 +250,8 @@ function Set-SprintBoundaryContext {
             # Dev-redirect .claude/.github/.vscode to the SharedVSCode sprint worktree.
             $junctionParams.DevSourceRepoPath        = $SharedVSCodeWorktreePath
             $junctionParams.DevSourceRepoFolderNames = $JunctionFolderNames
+          } else {
+            $junctionParams.SourceRepoFolderNames = $StableJunctionFolderNames
           }
           $junctionResult = Set-WorktreeJunctions @junctionParams
           if ($junctionResult.Success) {

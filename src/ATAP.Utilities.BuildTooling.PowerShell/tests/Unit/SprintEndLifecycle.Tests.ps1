@@ -18,6 +18,7 @@ BeforeAll {
       'Save-SprintHistoryArtifacts',
       'Restore-SprintHistoryArtifacts',
       'Save-SprintEndSessionTail',
+      'Set-SprintBoundaryUserProfiles',
       'Test-SprintCheckpointCoverage',
       'Test-SprintEndBoundaryState',
       'Test-SprintEndPullOverlap',
@@ -161,6 +162,24 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       }
       Should -Invoke Remove-OverviewSprintWorkspace -Times 1 -ParameterFilter {
         $SprintNumber -eq 10 -and $ArchiveDirectoryPath -like '*SprintRetrospective*WorkspaceArchive'
+      }
+    }
+
+    It 'prefers the exact closing sprint workspace and ignores stale older overview artifacts' {
+      $planning = Join-Path $TestDrive '_Planning-wt-52-Sprint-0011-work-items'
+      New-Item -ItemType Directory -Path $planning -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $TestDrive 'Overview.Sprint0011.code-workspace') -Value '{}'
+      Set-Content -LiteralPath (Join-Path $TestDrive 'OverviewSprint0008.code-workspace') -Value '{}'
+
+      $result = Invoke-SprintEndOverviewClose `
+        -GitRoot $TestDrive -PlanningRoot $planning -SprintNumber 11 -Confirm:$false
+
+      $result.SourceWorkspacePath | Should -Be (Join-Path $TestDrive 'Overview.Sprint0011.code-workspace')
+      Should -Invoke Update-OverviewWorkspaceStableInfo -Times 1 -ParameterFilter {
+        $SourceWorkspacePath -eq (Join-Path $TestDrive 'Overview.Sprint0011.code-workspace')
+      }
+      Should -Invoke Remove-OverviewSprintWorkspace -Times 1 -ParameterFilter {
+        $SourceWorkspacePath -eq (Join-Path $TestDrive 'Overview.Sprint0011.code-workspace')
       }
     }
   }
@@ -441,6 +460,7 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       Mock Invoke-SprintEndNativeCommand {
         $argsText = $ArgumentList -join ' '
         $output = switch -Regex ($argsText) {
+          '^api -i rate_limit$' { @('HTTP/1.1 200 OK', 'X-OAuth-Scopes: repo, read:org', '', '{}'); break }
           'branch --show-current' { @('48-Sprint-0010-work-items'); break }
           'remote get-url origin' { @('https://github.com/BillHertzing/SharedVSCode.git'); break }
           'issue view 48' { @('{"number":48,"state":"OPEN","title":"Sprint 0010","url":"https://example/48"}'); break }
@@ -473,6 +493,7 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       Mock Invoke-SprintEndNativeCommand {
         $argsText = $ArgumentList -join ' '
         $output = switch -Regex ($argsText) {
+          '^api -i rate_limit$' { @('HTTP/1.1 200 OK', 'X-OAuth-Scopes: repo, read:discussion', '', '{}'); break }
           'branch --show-current' { @('11-Sprint-0010-work-items'); break }
           'remote get-url origin' { @('https://github.com/BillHertzing/ATAP.IAC.git'); break }
           'issue view 11' { @('{"number":11,"state":"OPEN","title":"Sprint 0010","url":"https://example/11"}'); break }
@@ -491,6 +512,29 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
 
       $result.Repository | Should -Be 'BillHertzing/ATAP.IAC'
       $result.IssueNumber | Should -Be 11
+    }
+
+    It 'fails early with remediation when the gh token lacks the supplemental GraphQL scopes' {
+      Mock Invoke-SprintEndNativeCommand {
+        $argsText = $ArgumentList -join ' '
+        $output = switch -Regex ($argsText) {
+          'branch --show-current' { @('11-Sprint-0011-work-items'); break }
+          'remote get-url origin' { @('https://github.com/BillHertzing/SharedVSCode.git'); break }
+          '^api -i rate_limit$' { @('HTTP/1.1 200 OK', 'X-OAuth-Scopes: repo', '', '{}'); break }
+          default { @('ok'); break }
+        }
+        [PSCustomObject]@{
+          FilePath = $FilePath; ArgumentList = $ArgumentList; ExitCode = 0
+          Output = $output; Succeeded = $true
+        }
+      }
+
+      $repo = Join-Path $TestDrive 'SharedVSCode-wt-11-Sprint-0011-work-items'
+      New-Item -ItemType Directory -Path $repo -Force | Out-Null
+
+      {
+        Invoke-SprintEndGitHubClose -RepoPath $repo -Confirm:$false
+      } | Should -Throw '*read:org*read:discussion*'
     }
   }
 

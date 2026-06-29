@@ -4,7 +4,7 @@ function Invoke-SprintEndOverviewClose {
   Updates the parent Overview workspace and archives the closing sprint workspace.
 
   .DESCRIPTION
-  Requires OverviewSprintNNNN.code-workspace at the Git root, invokes
+  Requires the closing sprint Overview workspace at the Git root, invokes
   Update-OverviewWorkspaceStableInfo with its real RootWorkspacePath contract,
   then archives the sprint workspace beneath the active planning worktree.
 
@@ -49,9 +49,17 @@ function Invoke-SprintEndOverviewClose {
     $gitRootFull = [IO.Path]::GetFullPath($GitRoot)
     $planningRootFull = [IO.Path]::GetFullPath($PlanningRoot)
     $sprintText = '{0:D4}' -f $SprintNumber
-    $sourceWorkspacePath = Join-Path $gitRootFull "OverviewSprint$sprintText.code-workspace"
+    $sourceWorkspaceCandidates = @(
+      (Join-Path $gitRootFull "Overview.Sprint$sprintText.code-workspace"),
+      (Join-Path $gitRootFull "OverviewSprint$sprintText.code-workspace"),
+      (Join-Path $gitRootFull "OverViewSprint$sprintText.code-workspace")
+    )
+    $sourceWorkspacePath = @(
+      $sourceWorkspaceCandidates |
+        Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }
+    ) | Select-Object -First 1
     if (-not (Test-Path -LiteralPath $sourceWorkspacePath -PathType Leaf)) {
-      throw "Required closing-sprint workspace does not exist: '$sourceWorkspacePath'."
+      throw "Required closing-sprint workspace does not exist. Tried: $($sourceWorkspaceCandidates -join ', ')."
     }
 
     $preferredRoot = Join-Path $gitRootFull 'Overview.code-workspace'

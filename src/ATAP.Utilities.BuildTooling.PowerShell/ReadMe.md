@@ -35,7 +35,9 @@ callers now use the adapter lifecycle.
 
 `Set-SprintBoundaryContext` now closes the remaining SprintEnd boundary gaps from
 Tasks 11.7.f-h. In addition to machine-level profile symlink retargeting, it
-deploys developer profiles from `OverviewSprintNNNN.code-workspace` and service
+deploys developer profiles from the resolved closing-sprint Overview workspace
+(`Overview.SprintNNNN.code-workspace` when present, otherwise the legacy
+`OverviewSprintNNNN.code-workspace`) and service
 account profiles from host settings into each identity's
 `Documents\PowerShell\profile.ps1`. The cmdlet also refreshes the SharedVSCode
 settings render at both boundaries so `permissions.additionalDirectories` and
@@ -43,13 +45,20 @@ hook command paths in `settings.overlay.json` follow the sprint or stable target
 before user settings are relinked. `Test-SprintEndBoundaryState` auto-discovers
 those managed profiles when `-ProfilePaths` is omitted and verifies that each is
 stable-sourced, readable, and free of stale `-wt-` references after SprintEnd.
+SprintEnd stable junction retargeting is now intentionally narrower: by default
+it recreates only the supported `.vscode` junction and does not reintroduce
+obsolete rendered `.claude` / `.github` links.
 
 **SprintEnd typed close (Task 10.6 / 11.7.c-e).** `Invoke-SprintEndLifecycle` now composes
 structured command-surface, module-promotion/deployment, worktree-state,
 AIAdapter/template reset, GitHub PR/issue, dotted-history, Overview, HANDOFF,
 database/BuildMaster cleanup, retrospective notebook gates, and final-boundary phases. PR bodies receive the
 originating issue closing keyword; check results are classified into required,
-informational, and CodeSee planning signals. HANDOFF stable pulls use an R-31
+informational, and CodeSee planning signals. The GitHub close path now runs a
+token-scope preflight before any GraphQL-backed PR calls and fails early with
+clear remediation when the active `gh` token lacks either `read:org` or
+`read:discussion`, which avoids the late `slug`-field permission failure seen
+during SprintEnd close. HANDOFF stable pulls use an R-31
 overlap gate and `pull --ff-only` with editor suppression. The lifecycle always
 keeps the active `_Planning` worktree in the close plan, even if the caller omits
 it from `-WorktreePaths`, so dry-runs show `_Planning` alongside the other PR,
@@ -114,6 +123,9 @@ carries `infrastructure.overviewWorkspacePath`,
 `infrastructure.overviewWorkspaceError`. The gate is non-fatal — a verification
 failure is reported in `overviewWorkspaceError` without aborting the rest of
 Stage 2 — and the step is skipped under `-DryRun`/`-WhatIf`.
+SprintEnd now resolves the exact closing sprint artifact by sprint number and
+prefers `Overview.Sprint<NNNN>.code-workspace` when that newer naming appears,
+instead of accidentally touching stale older overview files.
 
 **Stage 2 distributes AI instructions through one orchestration (Task 10.34).**
 Immediately after the Overview workspace verification gate,

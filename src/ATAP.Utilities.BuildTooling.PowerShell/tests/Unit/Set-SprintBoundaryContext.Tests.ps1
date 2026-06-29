@@ -131,7 +131,10 @@ Describe 'Set-SprintBoundaryContext [public]' {
         -GitRoot $script:gitRoot
 
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions -Times 1 -Exactly -Scope It `
-        -ParameterFilter { [string]::IsNullOrEmpty($DevSourceRepoPath) }
+        -ParameterFilter {
+          [string]::IsNullOrEmpty($DevSourceRepoPath) -and
+          (@($SourceRepoFolderNames) -join ',') -eq '.vscode'
+        }
     }
 
     It 'Resets downstream context via Reset-DownstreamToSharedVSCodeMain' {

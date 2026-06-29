@@ -4,6 +4,21 @@
 
 Miscellaneous Powershell scripts
 
+## Write-\*Indented Diagnostic Display Helpers (SC-0183, Task 11.20)
+
+Four diagnostic display functions were moved from the inline `AllUsersAllHosts` profile
+into this module's `public/` folder so the profile loads them via module autoloading
+rather than redefining them on every session start (reduces profile load time):
+
+- `Write-ArrayIndented` — formats an array as a multi-line indented string
+- `Write-HashIndented` — formats a hashtable alphabetically as indented key=value pairs
+- `Write-KVPIndented` — formats a single key-value pair as an indented string
+- `Write-EnvironmentVariablesIndented` — formats all environment variables (Machine, User, Process scopes)
+
+These are still called in the profile via the `Write-EnvironmentVariablesIndented` call
+that appears in the startup diagnostics block; they now resolve from the installed module
+(stable worktree) or dot-sourced sprint files (sprint worktree).
+
 ## Get-FilesWithContent
 
 ToDo: write content
@@ -11,6 +26,7 @@ ToDo: write content
 ## Get-GoogleChromeBookmarks
 
 ToDo: write content
+
 ## Get-PVal Loud-Failure Guard (Task 8.16, SC-prop-0007-1; host-context exception Task 9.1, V4-B02)
 
 `Get-ParameterValueFromNeoConfigurationRoot` (alias `Get-PVal`) throws with `-NoProfile`
@@ -22,7 +38,7 @@ even when a `DefaultValue` or `-AllowMissing` is supplied. An entirely absent
 `-NoProfile` for ATAP work.
 
 **Host-context exception (Task 9.1, V4-B02).** The BuildMaster 5-tier pipeline runs its
-runners via `pwsh -NoProfile -File` *by design*, so `$global:settings` is legitimately
+runners via `pwsh -NoProfile -File` _by design_, so `$global:settings` is legitimately
 absent there and the documented param → env → settings → `DefaultValue` chain must degrade
 rather than throw. The runners declare that context by setting
 `$env:ATAP_NOPROFILE_PIPELINE = '1'`; in the declared context the guard **yields** to an
@@ -62,6 +78,4 @@ Use the module-level getting started guide for the lifecycle workflow:
 
 - [Documentation/GettingStarted.md](Documentation/GettingStarted.md)
 
-
 - Version bumped to 0.1.8 in Sprint 11
-

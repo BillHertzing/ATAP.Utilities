@@ -1,14 +1,10 @@
 {
   "$schema": "https://raw.githubusercontent.com/dotnet/Nerdbank.GitVersioning/main/src/NerdBank.GitVersioning/version.schema.json",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "nuGetPackageVersion": {
     "semVer": 2
   },
-  "pathFilters": [
-    "./"
-  ],
-  "publicReleaseRefSpec": [
-    ".*"
-  ],
+  "pathFilters": ["./"],
+  "publicReleaseRefSpec": [".*"],
   "dummybumper": "2"
 }

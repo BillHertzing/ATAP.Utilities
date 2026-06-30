@@ -4,8 +4,9 @@ function Get-SprintTaskRepositoryNames {
     Extracts repository names from sprint TASKS.md task headers.
   .DESCRIPTION
     Reads task lines and returns only repository markers that appear immediately
-    after the **Task N.M** token. Other bracketed annotations in a task body are
-    intentionally ignored.
+    after the **Task N.M** token. Compound markers such as
+    [ATAP.Utilities + ATAP.IAC] are split into their individual repository
+    names. Other bracketed annotations in a task body are intentionally ignored.
   .PARAMETER TasksContent
     Lines from TASKS.md.
   .PARAMETER ExcludeRepos
@@ -32,10 +33,15 @@ function Get-SprintTaskRepositoryNames {
 
   process {
     foreach ($line in $TasksContent) {
-      if ($line -match '^\s*(?:[-*]\s*)?(?:\[[ xX]\]\s*)?\*\*Task\s+\d+(?:\.\d+)+\*\*\s+\[(?<Repo>[A-Za-z][A-Za-z0-9._-]+)\]') {
-        $candidate = $Matches['Repo']
-        if ($candidate -notin $ExcludeRepos) {
-          [void]$repoNames.Add($candidate)
+      if ($line -match '^\s*(?:[-*]\s*)?(?:\[[ xX]\]\s*)?\*\*Task\s+\d+(?:\.\d+)+\*\*\s+\[(?<RepoList>[A-Za-z][A-Za-z0-9._\-\s+]+)\]') {
+        $candidates = $Matches['RepoList'] -split '\+' |
+          ForEach-Object { $_.Trim() } |
+          Where-Object { $_ -match '^[A-Za-z][A-Za-z0-9._-]+$' }
+
+        foreach ($candidate in $candidates) {
+          if ($candidate -notin $ExcludeRepos) {
+            [void]$repoNames.Add($candidate)
+          }
         }
       }
     }

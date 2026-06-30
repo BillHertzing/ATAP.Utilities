@@ -285,7 +285,7 @@ function Convert-TasksMdToSprintBoard {
         for ($taskIndex = 0; $taskIndex -lt $taskLineIndices.Count; $taskIndex++) {
           $taskStart = $taskLineIndices[$taskIndex]
           $taskEnd = if ($taskIndex + 1 -lt $taskLineIndices.Count) { $taskLineIndices[$taskIndex + 1] - 1 } else { $streamLines.Count - 1 }
-          $taskLines = Get-TasksMdToSprintBoardSlice -Lines $streamLines -StartIndex $taskStart -EndIndex $taskEnd
+          $taskLines = @(Get-TasksMdToSprintBoardSlice -Lines $streamLines -StartIndex $taskStart -EndIndex $taskEnd)
 
           $taskHeader = $taskLines[0]
           # Leading whitespace is optional (indented subtasks); the [Repo] tag is

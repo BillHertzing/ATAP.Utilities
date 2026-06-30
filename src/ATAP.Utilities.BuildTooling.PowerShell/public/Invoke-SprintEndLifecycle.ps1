@@ -186,6 +186,20 @@ function Invoke-SprintEndLifecycle {
       $phases.CheckpointCoverage = $null
     }
 
+    $phases.RetrospectiveNotebook = [PSCustomObject]@{ Ok = $true; Message = 'Notebook check skipped.' }
+    if ($phases.Context.Ok) {
+      $notebookName = "Notebook-SprintWorkSession-$($phases.Context.ClosedSprintNumber)-End.md"
+      $notebookPath = Join-Path $planningRootFull 'SprintRetrospective' | Join-Path -ChildPath $notebookName
+      if (-not (Test-Path -LiteralPath $notebookPath -PathType Leaf)) {
+        $phases.RetrospectiveNotebook.Ok = $false
+        $phases.RetrospectiveNotebook.Message = "Closing sprint retrospective notebook not found at: $notebookPath"
+        [void]$failures.Add('RetrospectiveNotebook')
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $phases.RetrospectiveNotebook.Message
+      } else {
+        $phases.RetrospectiveNotebook.Message = "Closing sprint retrospective notebook found: $notebookName"
+      }
+    }
+
     if ($failures.Count -eq 0 -and $ApplyBoundary) {
       $boundaryParameters = @{
         Boundary                    = 'End'

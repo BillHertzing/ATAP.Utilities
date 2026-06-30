@@ -29,6 +29,22 @@ function, unlocks the interactive Password Manager vault with `bw`, then process
 Profiles intentionally do not load or call this helper; startup tasks or explicit user commands own interactive `BW_SESSION` setup. This helper is only for personal Password Manager access. CI,
 BuildMaster, service-account, database, and project/runtime secrets must continue to
 use Bitwarden Secrets Manager through `Get-SecretATAP` / `bws`.
+
+## BuildMaster module routing normalization (Task 11.22)
+
+`Get-HostSettings` now normalizes the reviewed
+`$global:settings['BuildMasterApplicationByModule']` hashtable after it loads the
+ATAP.IAC `HostSettings.ps1` source. The wrapper ensures the core ATAP PowerShell
+modules all route to the shared `ATAP.Utilities-PowerShell` BuildMaster
+application, including `ATAP.Utilities.RulesManagement.PowerShell`, which was
+missing from the upstream fragment observed on 2026-06-30.
+
+This keeps `Start-BuildMasterModulePipelineBatch` deterministic in this repo
+without teaching it a one-off fallback. If the upstream HostSettings source later
+provides a conflicting reviewed mapping, `Get-HostSettings` throws so the
+configuration drift is surfaced instead of silently masked. Verification for the
+Sprint 0011 change is recorded in
+`_generated/Task-11.22-BuildMasterApplicationMap-evidence.md`.
 ## Get-FilesWithContent
 
 ToDo: write content

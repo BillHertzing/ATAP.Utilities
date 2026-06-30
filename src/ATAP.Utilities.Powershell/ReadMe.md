@@ -19,6 +19,16 @@ These are still called in the profile via the `Write-EnvironmentVariablesIndente
 that appears in the startup diagnostics block; they now resolve from the installed module
 (stable worktree) or dot-sourced sprint files (sprint worktree).
 
+## Interactive Bitwarden Session Helper (Task 11.16 follow-up)
+
+`Initialize-BitwardenSession` now lives in `public/` and is exported by the module.
+`Profiles/LoginScript.ps1` remains the startup-task runner: it loads the exported
+function, unlocks the interactive Password Manager vault with `bw`, then processes
+`Profiles/BitwardenEnvVarConfig.json` through `Set-EnvVarsFromBitWarden`.
+
+Profiles intentionally do not load or call this helper; startup tasks or explicit user commands own interactive `BW_SESSION` setup. This helper is only for personal Password Manager access. CI,
+BuildMaster, service-account, database, and project/runtime secrets must continue to
+use Bitwarden Secrets Manager through `Get-SecretATAP` / `bws`.
 ## Get-FilesWithContent
 
 ToDo: write content
@@ -78,4 +88,6 @@ Use the module-level getting started guide for the lifecycle workflow:
 
 - [Documentation/GettingStarted.md](Documentation/GettingStarted.md)
 
-- Version bumped to 0.1.8 in Sprint 11
+- Version bumped to 0.1.10 in Sprint 11 for the Initialize-BitwardenSession module move.
+
+

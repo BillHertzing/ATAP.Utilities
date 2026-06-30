@@ -126,30 +126,8 @@ function prompt {
 # Tell all GIT operations where to find the global configuration file
 $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']] = 'C:\Dropbox\whertzing\Git\.gitconfig'
 
-# Unlock the Secrets for this user
-# We use Bitwarden, and hopefully the user has already logged in interactively at least once, which sets the BW_Session
-# if not, use Initialize-BitwardenSession
-if (-not (Test-Path Env:BW_SESSION)) {
-  # Load required helper functions
-  try {
-    if (-not (Get-Command -Name 'Initialize-BitwardenSession' -CommandType Function -ErrorAction SilentlyContinue)) {
-      . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\Profiles\LoginScript.ps1'
-    }
-  }
-  catch {
-    $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-    throw
-  }
-
-  Initialize-BitwardenSession
-}
-if (-not (Test-Path Env:BW_SESSION)) {
-  Write-PSFMessage -FunctionName $fn -Level Warning -Message 'Bitwarden session could not be initialized, secrets will not be available'
-}
-else {
-  Write-PSFMessage -FunctionName $fn -Level Verbose -Message 'Bitwarden session initialized, secrets are available'
-}
+# Bitwarden session initialization is intentionally not performed by the profile.
+# LoginScript.ps1 or an explicit user command owns interactive BW_SESSION setup.
 
 # Set the console encoding to suport ASCII ;ine drawing characters in Playwright output
 # Set console output encoding to UTF-8

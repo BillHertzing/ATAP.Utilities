@@ -12,7 +12,7 @@
     RootModule           = 'ATAP.Utilities.Powershell.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '0.1.8'
+    ModuleVersion        = '0.1.10'
 
     # Supported PSEditions
     CompatiblePSEditions = 'Desktop', 'Core'
@@ -82,7 +82,7 @@
     'Get-ScheduledTasks', 'Get-SIDfromAccountName',
     'Get-TopologicalSort', 'Get-UniqueFileBaseNames',
     'Get-ViewOfProfiles', 'Import-EnvFile',
-    'Invoke-ProvisionInedoServiceAccounts',
+    'Initialize-BitwardenSession', 'Invoke-ProvisionInedoServiceAccounts',
     'Invoke-SetInedoServiceLogonAccounts',
     'Invoke-StartupTaskRegistrationTest', 'Invoke-Webserver',
     'New-SymbolicLink',
@@ -154,4 +154,5 @@
     # DefaultCommandPrefix = ''
 
 }
+
 

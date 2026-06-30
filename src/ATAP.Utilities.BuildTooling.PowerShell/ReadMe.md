@@ -201,6 +201,8 @@ conversation/rollout when the id argument is omitted. The roster entry records t
 
 **Batch module pipeline driver (Task 10.33).** `Start-BuildMasterModulePipelineBatch` releases several PowerShell modules in one call without releasing any of them by hand. It accepts an ordered `[string[]] -ModuleName`, normalizes duplicates while preserving caller order, and **preflights every module before creating any BuildMaster release**: it resolves `src/<ModuleName>` (requiring a project-adjacent `version.json` via `Resolve-BuildMasterPackageProjectPath`), computes the immutable package version and `CeilingTier` through `Get-BuildContext`, and resolves each module's BuildMaster application from `-ApplicationByModule` or reviewed configuration — it never guesses when a mapping is absent. Only after all modules pass preflight does it invoke `Start-BuildMasterPackagePipeline` once per module on `global::PowerShellModule-5Stage`, passing the resolved identity and the module's ceiling as the `$CeilingTier` build variable so BuildMaster builds/packages once in Experimental, runs the applicable promoted-module tests, promotes the same immutable bytes through ProGet, and skips every stage above that module's ceiling (`Sprint`/feature → Experimental, `Alpha` → Development, `Beta` → Integration, `QA` → QA, no prerelease label → Production/stable). Modules run sequentially and the batch fails fast unless `-ContinueOnError` is supplied; it supports `-WhatIf`, passes only a secret *name* for BuildMaster credentials, and returns one structured aggregate whose ordered `Results` carry each module's application, project path, package version, ceiling, BuildMaster release/build/execution identifiers, terminal tier, success, and failure detail. The batch only queues and observes BuildMaster work — it never reimplements packaging, tests, feed promotion, or ceiling decisions locally.
 
+**Profileless BuildMaster promotion runners.** `Promote-ProGetPackage` accepts explicit `-ProGetBaseUrl` and `-ApiKey` values and forwards them to `Move-ProGetPackageInterTier`. BuildMaster stage runners must pass those values because they intentionally run under `pwsh -NoProfile`, where `$global:settings` is not guaranteed to exist.
+
 Scope-creep capture (`Add-ScopeCreepIdea`) now resolves the target `_Planning`
 worktree through `Resolve-PlanningWorktreeRoot` (Task 9.23). Resolution is
 anchored on the **Sprint token** (`Sprint-<NNNN>-work-items`) shared across
@@ -1091,4 +1093,5 @@ ladder and `Resolve-ProGetFeedFromSettings` normalize `Production` to the
 canonical `*-stable` tier.
 
 - Version bumped to 0.1.13 in Sprint 11
+
 

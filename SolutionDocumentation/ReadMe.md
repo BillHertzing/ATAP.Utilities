@@ -39,6 +39,10 @@ ToDo: Insert diagram of CI/CD process
 
 ### RRSBS and AgentText
 
+- [ATAPUtilities Instantiation Tables](./ATAPUtilities-Instantiation-Tables.md)
+  defines the Sprint 0012 inventory/version/manifestation schema used to model
+  organization, computers, repositories, source modules, and rendered artifacts
+  for ATAPUtilities instantiations.
 - [Rules Compendium.AgentText](./Rules%20Compendium.AgentText.md) defines the
   AgentText rule kind and embeds the grammar for AI agent and instruction text.
 - `src/ATAP.Utilities.RulesManagement.PowerShell/public/Import-AgentTextFromFiles.ps1`

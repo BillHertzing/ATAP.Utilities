@@ -279,6 +279,11 @@ _Teach / Tell how to create software._
   Sprint 0007: AceCommander per-user database evolution, multi-stream
   databases, tenant-fanout migration orchestration, and tenant-level
   ceiling/rollback work. DBA2-T08 / V4-E16.
+- [ATAPUtilities Instantiation Tables](ATAPUtilities-Instantiation-Tables.md)
+  — Sprint 0012 design for Philote-backed organization, user, computer,
+  repository, source-module, instantiation-version, and manifestation-artifact
+  tables. Defines the source-ingestion and renderer contracts that follow-on
+  Tasks 12.26.b/c should implement.
 
 ### Database/Documentation (implementation deep-reference)
 

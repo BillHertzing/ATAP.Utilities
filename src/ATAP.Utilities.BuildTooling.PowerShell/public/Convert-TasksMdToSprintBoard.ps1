@@ -290,7 +290,9 @@ function Convert-TasksMdToSprintBoard {
           $taskHeader = $taskLines[0]
           # Leading whitespace is optional (indented subtasks); the [Repo] tag is
           # optional because lettered subtasks omit it and inherit the umbrella's repo.
-          if ($taskHeader -notmatch '^\s*- \[(?<checked>[ x~])\] \*\*Task (?<id>[^*]+)\*\*(?:\s+\[(?<repo>[^\]]+)\])?(?<extraTags>(?: \[[^\]]+\])*)\s+[–-]\s+(?<title>.+)$') {
+          # extraTags allows optional **bold** wrapping (e.g. **[HITL]**) in addition to
+          # plain [tag] — the board convention bolds human-in-the-loop gate markers.
+          if ($taskHeader -notmatch '^\s*- \[(?<checked>[ x~])\] \*\*Task (?<id>[^*]+)\*\*(?:\s+\[(?<repo>[^\]]+)\])?(?<extraTags>(?:\s+\*{0,2}\[[^\]]+\]\*{0,2})*)\s+[–-]\s+(?<title>.+)$') {
             throw "Could not parse task header '$taskHeader'."
           }
 
@@ -306,7 +308,10 @@ function Convert-TasksMdToSprintBoard {
             $taskTitle = ($taskTitle + $Matches['extraTags']).Trim()
           }
 
-          $taskDetailLines = Get-TasksMdToSprintBoardSlice -Lines $taskLines -StartIndex 1 -EndIndex ($taskLines.Count - 1)
+          # @() wrapper required: a task with zero detail lines makes the slice's empty
+          # pipeline output collapse to $null on assignment, and $null fails to bind to
+          # the next call's mandatory -Lines parameter (Task 12.34).
+          $taskDetailLines = @(Get-TasksMdToSprintBoardSlice -Lines $taskLines -StartIndex 1 -EndIndex ($taskLines.Count - 1))
           $taskFields = Get-TasksMdToSprintBoardTaskFields -Lines $taskDetailLines
 
           $taskStatus = if ($Matches['checked'] -eq 'x') {

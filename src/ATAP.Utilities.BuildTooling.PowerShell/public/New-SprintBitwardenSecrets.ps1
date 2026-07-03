@@ -184,7 +184,7 @@ function New-SprintBitwardenSecrets {
     try {
       if ([string]::IsNullOrWhiteSpace($ProjectId)) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Calling bws project list' -Tag 'BWSCall'
-        $projectOutput = & bws project list --output json 2>&1
+        $projectOutput = & bws project list --output json --color no 2>&1
         if ($LASTEXITCODE -ne 0) {
           throw "bws project list failed (exit $LASTEXITCODE): $projectOutput"
         }
@@ -198,7 +198,7 @@ function New-SprintBitwardenSecrets {
       }
 
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Calling bws secret list' -Tag 'BWSCall'
-      $listOutput = & bws secret list --output json 2>&1
+      $listOutput = & bws secret list --output json --color no 2>&1
       if ($LASTEXITCODE -ne 0) {
         throw "bws secret list failed (exit $LASTEXITCODE): $listOutput"
       }

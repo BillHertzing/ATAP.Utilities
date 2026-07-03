@@ -202,7 +202,7 @@ function Remove-SprintBitwardenSecrets {
     $existingSecrets = @()
     try {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Calling bws secret list' -Tag 'BWSCall'
-      $listOutput = & bws secret list --output json 2>&1
+      $listOutput = & bws secret list --output json --color no 2>&1
       if ($LASTEXITCODE -ne 0) {
         throw "bws secret list failed (exit $LASTEXITCODE): $listOutput"
       }

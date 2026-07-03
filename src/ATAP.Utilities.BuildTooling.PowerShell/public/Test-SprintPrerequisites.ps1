@@ -248,7 +248,7 @@ function Test-SprintPrerequisites {
       }
       if ($bwsTokenPresent) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Calling bws project list' -Tag 'BWSCall'
-        $null = & bws project list --output json 2>&1
+        $null = & bws project list --output json --color no 2>&1
         if ($LASTEXITCODE -eq 0) {
           $bwOk = $true
           $bwDetail = 'bws CLI present; machine access token authenticated (bws project list succeeded)'

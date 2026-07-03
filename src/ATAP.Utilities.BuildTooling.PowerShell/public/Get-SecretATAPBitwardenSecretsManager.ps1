@@ -104,7 +104,7 @@ function Get-SecretATAPBitwardenSecretsManager {
 
       # 3. List secrets (bws reads $env:BWS_ACCESS_TOKEN).
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Calling bws secret list' -Tag 'BWSCall'
-      $listOutput = & bws secret list --output json 2>&1
+      $listOutput = & bws secret list --output json --color no 2>&1
       $listExit = $LASTEXITCODE
       if ($listExit -ne 0) {
         $msg = "bws secret list failed (exit $listExit). Output: $listOutput"

@@ -61,6 +61,56 @@ function Invoke-SprintEndGitHubClose {
   }
 
   process {
+    function Test-SprintEndGitHubTokenScopePreflight {
+      [CmdletBinding()]
+      [OutputType([PSCustomObject])]
+      param()
+
+      $scopeProbe = Invoke-SprintEndNativeCommand -FilePath 'gh' `
+        -ArgumentList @('api', '-i', 'rate_limit') `
+        -AllowNonZeroExitCode
+      if (-not $scopeProbe.Succeeded) {
+        return [PSCustomObject]@{
+          Checked = $false
+          Ok      = $true
+          Scopes  = @()
+          Message = 'GitHub token-scope preflight could not determine the active scopes; continuing with the close flow.'
+        }
+      }
+
+      $scopeHeader = @(
+        $scopeProbe.Output |
+          Where-Object { $_ -match '^(?i)x-oauth-scopes:' }
+      ) | Select-Object -First 1
+      if ([string]::IsNullOrWhiteSpace($scopeHeader)) {
+        return [PSCustomObject]@{
+          Checked = $false
+          Ok      = $true
+          Scopes  = @()
+          Message = 'GitHub token-scope preflight did not find an X-OAuth-Scopes header; continuing with the close flow.'
+        }
+      }
+
+      $scopes = @(
+        (($scopeHeader -replace '^(?i)x-oauth-scopes:\s*', '') -split ',') |
+          ForEach-Object { $_.Trim() } |
+          Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+      )
+      $hasRequiredScope = ($scopes -contains 'read:org') -or ($scopes -contains 'read:discussion')
+      $message = if ($hasRequiredScope) {
+        "GitHub token-scope preflight passed with one of the required supplemental scopes: $($scopes -join ', ')."
+      } else {
+        "GitHub token-scope preflight detected scopes '$($scopes -join ', ')'. The current SprintEnd GitHub close flow needs a token that includes either 'read:org' or 'read:discussion' before any PR GraphQL calls are attempted."
+      }
+
+      return [PSCustomObject]@{
+        Checked = $true
+        Ok      = $hasRequiredScope
+        Scopes  = $scopes
+        Message = $message
+      }
+    }
+
     $resolvedRepoPath = [IO.Path]::GetFullPath($RepoPath)
     $branchResult = Invoke-SprintEndNativeCommand -FilePath 'git' `
       -ArgumentList @('-C', $resolvedRepoPath, 'branch', '--show-current')
@@ -86,6 +136,12 @@ function Invoke-SprintEndGitHubClose {
       } else {
         throw "IssueNumber was not supplied and branch '$branch' has no numeric issue prefix."
       }
+    }
+
+    $scopePreflight = Test-SprintEndGitHubTokenScopePreflight
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $scopePreflight.Message
+    if (-not $scopePreflight.Ok) {
+      throw "GitHub token-scope preflight failed for '$Repository'. Add either 'read:org' or 'read:discussion' to the SprintEnd token used by gh before retrying."
     }
 
     $issueResult = Invoke-SprintEndNativeCommand -FilePath 'gh' `

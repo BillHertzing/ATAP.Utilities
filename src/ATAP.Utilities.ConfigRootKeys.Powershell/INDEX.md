@@ -115,3 +115,6 @@ other ATAP PowerShell modules.
   Source-of-truth report on five-tier feed dependency policy.
 - `ATAP.IAC/constants/FeedConstants.psd1` — canonical feed name and URL
   defaults consumed by host settings.
+
+- Version bumped to 0.1.4 in Sprint 11
+

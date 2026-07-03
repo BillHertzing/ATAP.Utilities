@@ -41,13 +41,14 @@ SprintWorkSessionConversations/*
 # patterns that do not start with "/" match if the pattern appears anywhere in the FullPath of the file
 # patterns that end with '/' are directories and gitignore will ignore all files and directories under that directory
 
-# The contents of the .vscode, .github, and .claude folders at the root of a repository are symbolic links to the same folder in
-#  a special repository that tracks shared VS Code files between repositories
-# .gitignore on the main branch will ignore these folders, but they will be present in the worktrees created by the issue-to-worktree skill, so we need to ignore them here as well
-# .gitignore on a worktree branch of SharedVSCode will not ignore these folders, so they will be checked in to the worktree branch, but that is acceptable because those branches are temporary and will be deleted after the issue is resolved and merged back to main
+# .vscode remains a junction/mirror of the SharedVSCode .vscode folder and is ignored here.
+# (A canonical .vscode with its own render/drift pipeline is planned; until then keep it a junction.)
+# .github, .claude, .codex, .agents, and .gemini are now CONCRETE rendered AI-adapter folders and ARE
+# tracked/checked in (Sprint 0011: concrete-on-stable). .claude/settings.json is boundary-managed --
+# the sprint-end render omits sprint worktrees so only stable paths are committed. Only .vscode and the
+# local-preserve .claude/settings.local.json stay ignored.
 **/.vscode/
-**/.github/
-**/.claude/
+**/.claude/settings.local.json
 
 # Standard .NET build output (explicit glob form)
 **/bin/

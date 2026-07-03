@@ -209,6 +209,86 @@ function Invoke-Flyway {
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
+    function Get-FlywayJavaMajorVersion {
+      param(
+        [Parameter(Mandatory = $true)]
+        [string]$JavaExecutablePath
+      )
+
+      try {
+        $versionOutput = @(& $JavaExecutablePath -version 2>&1)
+      } catch {
+        return $null
+      }
+
+      $versionText = ($versionOutput -join [Environment]::NewLine)
+      if ($versionText -match 'version "1\.(\d+)\.') {
+        return [int]$Matches[1]
+      }
+      if ($versionText -match 'version "(\d+)(?:\.|")') {
+        return [int]$Matches[1]
+      }
+      if ($versionText -match 'openjdk (\d+)(?:\.|")') {
+        return [int]$Matches[1]
+      }
+
+      return $null
+    }
+
+    function Use-FlywayCompatibleJavaRuntime {
+      $minimumJavaMajorVersion = 17
+      $currentJavaMajorVersion = Get-FlywayJavaMajorVersion -JavaExecutablePath 'java'
+      if ($currentJavaMajorVersion -ge $minimumJavaMajorVersion) {
+        return
+      }
+
+      $candidateRoots = [System.Collections.Generic.List[string]]::new()
+      if (-not [string]::IsNullOrWhiteSpace($env:JAVA_HOME)) {
+        $candidateRoots.Add($env:JAVA_HOME)
+      }
+
+      foreach ($root in @(
+          'C:\Program Files\Eclipse Adoptium',
+          'C:\Program Files\Java',
+          'C:\Program Files\Microsoft',
+          'C:\Program Files\Zulu'
+        )) {
+        if (Test-Path -LiteralPath $root -PathType Container) {
+          Get-ChildItem -LiteralPath $root -Directory -ErrorAction SilentlyContinue |
+            ForEach-Object { $candidateRoots.Add($_.FullName) }
+        }
+      }
+
+      $compatibleCandidates = @(
+        $candidateRoots |
+          Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+          Select-Object -Unique |
+          ForEach-Object {
+            $candidateJava = Join-Path $_ 'bin\java.exe'
+            if (Test-Path -LiteralPath $candidateJava -PathType Leaf) {
+              $majorVersion = Get-FlywayJavaMajorVersion -JavaExecutablePath $candidateJava
+              if ($majorVersion -ge $minimumJavaMajorVersion) {
+                [PSCustomObject]@{
+                  Root         = $_
+                  JavaPath     = $candidateJava
+                  MajorVersion = $majorVersion
+                }
+              }
+            }
+          } |
+          Sort-Object -Property MajorVersion -Descending
+      )
+
+      $selectedCandidate = $compatibleCandidates | Select-Object -First 1
+      if ($null -eq $selectedCandidate) {
+        throw "Flyway requires Java $minimumJavaMajorVersion or newer. Current java major version is '$currentJavaMajorVersion', and no compatible installed runtime was found."
+      }
+
+      $env:JAVA_HOME = $selectedCandidate.Root
+      $env:PATH = (Join-Path $selectedCandidate.Root 'bin') + [System.IO.Path]::PathSeparator + $env:PATH
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Using Java $($selectedCandidate.MajorVersion) runtime for Flyway: $($selectedCandidate.Root)"
+    }
+
     # Load required helper functions
     try {
       if (-not (Get-Command -Name 'Resolve-DatabaseSqlConnection' -CommandType Function -ErrorAction SilentlyContinue)) {
@@ -458,7 +538,19 @@ function Invoke-Flyway {
       $env:FLYWAY_PLACEHOLDERS_GITTAG = $GitTag
       $env:FLYWAY_PLACEHOLDERS_GITCOMMIT = $GitCommit
       $env:FLYWAY_PLACEHOLDERS_DATA_DIR = $FlywayDataPath
-      $env:FLYWAY_PLACEHOLDERS_USER_PII_PASSPHRASE = $env:AceCommander_UserPii__PassphraseV1
+      $userPiiPassphrase = $env:AceCommander_UserPii__PassphraseV1
+      if ([string]::IsNullOrWhiteSpace($userPiiPassphrase)) {
+        $userPiiPassphrase = [System.Environment]::GetEnvironmentVariable('AceCommander_UserPii__PassphraseV1', 'User')
+      }
+      if ([string]::IsNullOrWhiteSpace($userPiiPassphrase)) {
+        $userPiiPassphrase = $env:UserPii__PassphraseV1
+      }
+      if ([string]::IsNullOrWhiteSpace($userPiiPassphrase)) {
+        $userPiiPassphrase = [System.Environment]::GetEnvironmentVariable('UserPii__PassphraseV1', 'User')
+      }
+      if (-not [string]::IsNullOrWhiteSpace($userPiiPassphrase)) {
+        $env:FLYWAY_PLACEHOLDERS_USER_PII_PASSPHRASE = $userPiiPassphrase
+      }
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Flyway data directory: $FlywayDataPath"
 
       # Build flyway parameters and execute
@@ -470,6 +562,7 @@ function Invoke-Flyway {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Running flyway $FlywayCommand..."
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling flyway with args: $($flywayParams -join ' ')"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Changing to FlywayBasePath: $FlywayBasePath"
+        Use-FlywayCompatibleJavaRuntime
 
         if (-not (Test-Path -LiteralPath $FlywayBasePath -PathType Container)) {
           throw "FlywayBasePath does not exist: '$FlywayBasePath'"

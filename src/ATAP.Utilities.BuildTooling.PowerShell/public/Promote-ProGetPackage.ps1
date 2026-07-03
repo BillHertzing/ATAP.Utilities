@@ -61,6 +61,14 @@
     the version.json-as-ceiling policy. This switch is mutually exclusive with
     -CeilingTier so bypasses are visible at the call site.
 
+.PARAMETER ProGetBaseUrl
+    Optional ProGet base URL forwarded to Move-ProGetPackageInterTier. BuildMaster
+    runners should pass this explicitly because they run in a profileless shell.
+
+.PARAMETER ApiKey
+    Optional ProGet API key forwarded to Move-ProGetPackageInterTier. The value
+    is never logged.
+
 .OUTPUTS
     [PSCustomObject] with at least these properties (per V3 plan S2.1):
       - OperationName   : Always 'Promote-ProGetPackage'.
@@ -153,7 +161,13 @@ function Promote-ProGetPackage {
         [string]$CeilingTier,
 
         [Parameter(Mandatory, ParameterSetName = 'NoCeilingCheck')]
-        [switch]$NoCeilingCheck
+        [switch]$NoCeilingCheck,
+
+        [Parameter(Mandatory = $false)]
+        [string]$ProGetBaseUrl,
+
+        [Parameter(Mandatory = $false)]
+        [string]$ApiKey
     )
 
     begin {
@@ -205,13 +219,22 @@ function Promote-ProGetPackage {
         $succeeded = $false
         $summary = $null
         try {
-            $innerResult = Move-ProGetPackageInterTier `
-                -Name $Name `
-                -Version $Version `
-                -FromFeed $FromFeed `
-                -ToFeed $ToFeed `
-                -Reason $Reason `
-                -ErrorAction Stop
+            $moveParams = @{
+                Name        = $Name
+                Version     = $Version
+                FromFeed    = $FromFeed
+                ToFeed      = $ToFeed
+                Reason      = $Reason
+                ErrorAction = 'Stop'
+            }
+            if (-not [string]::IsNullOrWhiteSpace($ProGetBaseUrl)) {
+                $moveParams['ProGetBaseUrl'] = $ProGetBaseUrl
+            }
+            if (-not [string]::IsNullOrWhiteSpace($ApiKey)) {
+                $moveParams['ApiKey'] = $ApiKey
+            }
+
+            $innerResult = Move-ProGetPackageInterTier @moveParams
 
             # Inner cmdlet returns a PSCustomObject with a Promoted property.
             # Idempotent re-runs: ProGet's promote endpoint accepts repeat

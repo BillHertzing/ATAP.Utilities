@@ -79,3 +79,6 @@ All database functions support two parameter sets:
 - `SolutionDocumentation/Rules Compendium.AgentText.md` — AgentText kind definition and embedded grammar for AI adapters
 - `docs/grammar/*.grammar.ebnf` — canonical grammar authority for each Kind
 - `.claude/skills/new-rule-kind/SKILL.md` — agent skill that orchestrates these functions
+
+- Version bumped to 0.1.9 in Sprint 11
+

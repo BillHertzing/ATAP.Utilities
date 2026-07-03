@@ -11,6 +11,13 @@ The IAC file defines its own Get-HostSettings function. This wrapper invokes
 that inner function and returns the resulting hashtable whose keys are the
 values from $global:configRootKeys.
 
+Before returning, the wrapper also normalizes the reviewed
+`BuildMasterApplicationByModule` map used by local BuildTooling cmdlets. This
+keeps core ATAP PowerShell modules, including
+`ATAP.Utilities.RulesManagement.PowerShell`, routed to the shared
+`ATAP.Utilities-PowerShell` BuildMaster application even when an upstream
+HostSettings fragment lags a newly-added module.
+
 .PARAMETER hostName
 Hostname used by the IAC HostSettings.ps1 dispatch switch.
 
@@ -79,6 +86,65 @@ function Get-HostSettings {
 
       if (-not $CandidatePaths.Contains($Path)) {
         [void] $CandidatePaths.Add($Path)
+      }
+    }
+
+    function Update-BuildMasterApplicationMap {
+      param(
+        [Parameter(Mandatory = $true)]
+        [hashtable] $SettingsHash
+      )
+
+      $settingsKey = $global:configRootKeys['BuildMasterApplicationByModuleConfigRootKey']
+      if ([string]::IsNullOrWhiteSpace([string] $settingsKey)) {
+        return
+      }
+
+      $requiredMappings = [ordered]@{
+        'ATAP.Utilities.PowerShell'                    = 'ATAP.Utilities-PowerShell'
+        'ATAP.Utilities.ConfigRootKeys.PowerShell'     = 'ATAP.Utilities-PowerShell'
+        'ATAP.Utilities.BuildTooling.PowerShell'       = 'ATAP.Utilities-PowerShell'
+        'ATAP.Utilities.DatabaseManagement.PowerShell' = 'ATAP.Utilities-PowerShell'
+        'ATAP.Utilities.RulesManagement.PowerShell'    = 'ATAP.Utilities-PowerShell'
+      }
+
+      $resolvedMappings = @{}
+      $existingMappings = $SettingsHash[$settingsKey]
+      if ($null -ne $existingMappings) {
+        if (-not ($existingMappings -is [System.Collections.IDictionary])) {
+          throw "The '$settingsKey' setting must be a hashtable/dictionary when present. Found '$($existingMappings.GetType().FullName)'."
+        }
+
+        foreach ($key in $existingMappings.Keys) {
+          $resolvedMappings[[string] $key] = [string] $existingMappings[$key]
+        }
+      }
+
+      $addedModules = [System.Collections.Generic.List[string]]::new()
+      foreach ($moduleName in $requiredMappings.Keys) {
+        $expectedApplication = $requiredMappings[$moduleName]
+        if ($resolvedMappings.ContainsKey($moduleName)) {
+          $currentApplication = [string] $resolvedMappings[$moduleName]
+          if ([string]::IsNullOrWhiteSpace($currentApplication)) {
+            $resolvedMappings[$moduleName] = $expectedApplication
+            [void] $addedModules.Add($moduleName)
+            continue
+          }
+
+          if ($currentApplication -ne $expectedApplication) {
+            throw "Reviewed BuildMaster mapping conflict for module '$moduleName'. Expected '$expectedApplication' but HostSettings returned '$currentApplication'."
+          }
+
+          continue
+        }
+
+        $resolvedMappings[$moduleName] = $expectedApplication
+        [void] $addedModules.Add($moduleName)
+      }
+
+      $SettingsHash[$settingsKey] = $resolvedMappings
+      if ($addedModules.Count -gt 0) {
+        Write-HostSettingsMessage -Level Verbose -Message "Normalized BuildMaster module routing by adding reviewed mapping(s) for: $($addedModules -join ', ')."
       }
     }
 
@@ -179,6 +245,7 @@ function Get-HostSettings {
         throw "HostSettings.ps1 returned '$($settingsHash.GetType().FullName)' for hostName '$hostName'; expected System.Collections.Hashtable."
       }
 
+      Update-BuildMasterApplicationMap -SettingsHash $settingsHash
       return $settingsHash
     } catch {
       $errorMessage = "Failed to build host settings for '$hostName' from '$hostSettingsScript'. Exception: $($_.Exception.Message)"

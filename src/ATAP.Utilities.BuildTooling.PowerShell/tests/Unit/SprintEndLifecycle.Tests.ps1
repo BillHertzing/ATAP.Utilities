@@ -18,6 +18,7 @@ BeforeAll {
       'Save-SprintHistoryArtifacts',
       'Restore-SprintHistoryArtifacts',
       'Save-SprintEndSessionTail',
+      'Set-SprintBoundaryUserProfiles',
       'Test-SprintCheckpointCoverage',
       'Test-SprintEndBoundaryState',
       'Test-SprintEndPullOverlap',
@@ -77,26 +78,36 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
   }
 
   Context 'New-SprintEndHandoff' {
-    It 'writes an idempotent handoff without secret or instance deletion' {
+    It 'writes an idempotent sprint-specific handoff without secret or instance deletion' {
       $gitRoot = Join-Path $TestDrive 'gitroot'
       $worktree = Join-Path $gitRoot 'App-wt-42-Sprint-0010-work-items'
       New-Item -ItemType Directory -Path $worktree -Force | Out-Null
-      $output = Join-Path $gitRoot 'HANDOFF.md'
+      $output = Join-Path $gitRoot 'HANDOFF.Sprint0010.md'
 
-      $first = New-SprintEndHandoff -GitRoot $gitRoot -WorktreePaths @($worktree) -OutputPath $output -Confirm:$false
-      $second = New-SprintEndHandoff -GitRoot $gitRoot -WorktreePaths @($worktree) -OutputPath $output -Confirm:$false
+      $first = New-SprintEndHandoff -GitRoot $gitRoot -WorktreePaths @($worktree) -Confirm:$false
+      $second = New-SprintEndHandoff -GitRoot $gitRoot -WorktreePaths @($worktree) -Confirm:$false
       $text = Get-Content -Raw -LiteralPath $output
+      $code = [regex]::Match($text, '(?s)```powershell\s*(.*?)\s*```').Groups[1].Value
+      $tokens = $null
+      $errors = $null
+      [System.Management.Automation.Language.Parser]::ParseInput($code, [ref]$tokens, [ref]$errors) | Out-Null
 
       $first.Changed | Should -BeTrue
       $second.Changed | Should -BeFalse
+      $first.Path | Should -Be $output
+      $first.SprintNumber | Should -Be '0010'
+      $errors | Should -BeNullOrEmpty
       $text | Should -Match 'git -C .* worktree remove'
       $text | Should -Match 'pull --ff-only'
       $text | Should -Match 'Test-SprintEndPullOverlap'
       $text | Should -Match 'branch -D'
       $text | Should -Match 'Remove-SprintDatabases'
+      $text | Should -Match 'Set-SprintBoundaryContext @boundaryParams'
+      $text | Should -Match 'Test-SprintEndBoundaryState @boundaryTestParams'
       $text | Should -Not -Match 'Remove-SprintBitwardenSecrets'
       $text | Should -Not -Match 'Remove-DeveloperSqlServerInstances'
-      $text | Should -Match ([regex]::Escape("Remove-Item -LiteralPath '$output' -Force"))
+      $text | Should -Match 'Remove-Item @handoffRemovalParams'
+      $text | Should -Match ([regex]::Escape("LiteralPath = '$output'"))
     }
   }
 
@@ -151,6 +162,24 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       }
       Should -Invoke Remove-OverviewSprintWorkspace -Times 1 -ParameterFilter {
         $SprintNumber -eq 10 -and $ArchiveDirectoryPath -like '*SprintRetrospective*WorkspaceArchive'
+      }
+    }
+
+    It 'prefers the exact closing sprint workspace and ignores stale older overview artifacts' {
+      $planning = Join-Path $TestDrive '_Planning-wt-52-Sprint-0011-work-items'
+      New-Item -ItemType Directory -Path $planning -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $TestDrive 'Overview.Sprint0011.code-workspace') -Value '{}'
+      Set-Content -LiteralPath (Join-Path $TestDrive 'OverviewSprint0008.code-workspace') -Value '{}'
+
+      $result = Invoke-SprintEndOverviewClose `
+        -GitRoot $TestDrive -PlanningRoot $planning -SprintNumber 11 -Confirm:$false
+
+      $result.SourceWorkspacePath | Should -Be (Join-Path $TestDrive 'Overview.Sprint0011.code-workspace')
+      Should -Invoke Update-OverviewWorkspaceStableInfo -Times 1 -ParameterFilter {
+        $SourceWorkspacePath -eq (Join-Path $TestDrive 'Overview.Sprint0011.code-workspace')
+      }
+      Should -Invoke Remove-OverviewSprintWorkspace -Times 1 -ParameterFilter {
+        $SourceWorkspacePath -eq (Join-Path $TestDrive 'Overview.Sprint0011.code-workspace')
       }
     }
   }
@@ -352,6 +381,49 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $userProfile | Should -Match 'ATAP\.Utilities\.PowerShell'
       $userProfile | Should -Match 'Process environment setup was skipped'
     }
+
+    It 'verifies managed developer and service-account profiles when ProfilePaths is not supplied' {
+      $gitRoot = Join-Path $TestDrive 'gitroot-managed-profiles'
+      $utilRoot = Join-Path $gitRoot 'ATAP.Utilities'
+      $iacRoot = Join-Path $gitRoot 'ATAP.IAC'
+      $developerHome = Join-Path $TestDrive 'alice-home'
+      $serviceHome = Join-Path $TestDrive 'svc-home'
+      $developerSource = Join-Path $utilRoot 'src\ATAP.Utilities.PowerShell\Profiles\CurrentUserAllHostsV7CoreProfile.ps1'
+      $serviceSource = Join-Path $utilRoot 'src\ATAP.Utilities.PowerShell\Profiles\ProfileForServiceAccountUsers.ps1'
+      $developerProfile = Join-Path $developerHome 'Documents\PowerShell\profile.ps1'
+      $serviceProfile = Join-Path $serviceHome 'Documents\PowerShell\profile.ps1'
+      New-Item -ItemType Directory -Path (Split-Path $developerSource -Parent), $iacRoot, (Split-Path $developerProfile -Parent), (Split-Path $serviceProfile -Parent) -Force | Out-Null
+      Set-Content -LiteralPath $developerSource -Value '# developer stable profile' -Encoding UTF8
+      Set-Content -LiteralPath $serviceSource -Value '# service stable profile' -Encoding UTF8
+      New-Item -ItemType SymbolicLink -Path $developerProfile -Target $developerSource -Force | Out-Null
+      New-Item -ItemType SymbolicLink -Path $serviceProfile -Target $serviceSource -Force | Out-Null
+
+      Mock Set-SprintBoundaryUserProfiles {
+        [PSCustomObject]@{
+          Ok = $true
+          Profiles = @(
+            [PSCustomObject]@{
+              Kind = 'Developer'; Identity = 'alice'; ProfilePath = $developerProfile; SourcePath = $developerSource; Skipped = $false; Warning = $null
+            },
+            [PSCustomObject]@{
+              Kind = 'ServiceAccount'; Identity = 'SvcBuildmaster'; ProfilePath = $serviceProfile; SourcePath = $serviceSource; Skipped = $false; Warning = $null
+            }
+          )
+          Warnings = @()
+          Failures = @()
+        }
+      }
+
+      $result = Test-SprintEndBoundaryState `
+        -GitRoot $gitRoot `
+        -SearchRoots @() `
+        -ATAPUtilitiesRoot $utilRoot `
+        -ATAPIACRoot $iacRoot
+
+      $result.Ok | Should -BeTrue
+      @($result.Profiles | Where-Object Kind -NE 'General').Count | Should -Be 2
+      $result.ManagedProfileFailures | Should -BeNullOrEmpty
+    }
   }
 
   Context 'Invoke-SprintEndInfrastructureCleanup' {
@@ -388,6 +460,7 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       Mock Invoke-SprintEndNativeCommand {
         $argsText = $ArgumentList -join ' '
         $output = switch -Regex ($argsText) {
+          '^api -i rate_limit$' { @('HTTP/1.1 200 OK', 'X-OAuth-Scopes: repo, read:org', '', '{}'); break }
           'branch --show-current' { @('48-Sprint-0010-work-items'); break }
           'remote get-url origin' { @('https://github.com/BillHertzing/SharedVSCode.git'); break }
           'issue view 48' { @('{"number":48,"state":"OPEN","title":"Sprint 0010","url":"https://example/48"}'); break }
@@ -420,6 +493,7 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       Mock Invoke-SprintEndNativeCommand {
         $argsText = $ArgumentList -join ' '
         $output = switch -Regex ($argsText) {
+          '^api -i rate_limit$' { @('HTTP/1.1 200 OK', 'X-OAuth-Scopes: repo, read:discussion', '', '{}'); break }
           'branch --show-current' { @('11-Sprint-0010-work-items'); break }
           'remote get-url origin' { @('https://github.com/BillHertzing/ATAP.IAC.git'); break }
           'issue view 11' { @('{"number":11,"state":"OPEN","title":"Sprint 0010","url":"https://example/11"}'); break }
@@ -438,6 +512,29 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
 
       $result.Repository | Should -Be 'BillHertzing/ATAP.IAC'
       $result.IssueNumber | Should -Be 11
+    }
+
+    It 'fails early with remediation when the gh token lacks the supplemental GraphQL scopes' {
+      Mock Invoke-SprintEndNativeCommand {
+        $argsText = $ArgumentList -join ' '
+        $output = switch -Regex ($argsText) {
+          'branch --show-current' { @('11-Sprint-0011-work-items'); break }
+          'remote get-url origin' { @('https://github.com/BillHertzing/SharedVSCode.git'); break }
+          '^api -i rate_limit$' { @('HTTP/1.1 200 OK', 'X-OAuth-Scopes: repo', '', '{}'); break }
+          default { @('ok'); break }
+        }
+        [PSCustomObject]@{
+          FilePath = $FilePath; ArgumentList = $ArgumentList; ExitCode = 0
+          Output = $output; Succeeded = $true
+        }
+      }
+
+      $repo = Join-Path $TestDrive 'SharedVSCode-wt-11-Sprint-0011-work-items'
+      New-Item -ItemType Directory -Path $repo -Force | Out-Null
+
+      {
+        Invoke-SprintEndGitHubClose -RepoPath $repo -Confirm:$false
+      } | Should -Throw '*read:org*read:discussion*'
     }
   }
 
@@ -458,6 +555,8 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $planning = Join-Path $TestDrive '_Planning-wt-20-Sprint-0010-work-items'
       $shared = Join-Path $TestDrive 'SharedVSCode-wt-48-Sprint-0010-work-items'
       New-Item -ItemType Directory -Path $planning, $shared -Force | Out-Null
+      New-Item -ItemType Directory -Path (Join-Path $planning 'SprintRetrospective') -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $planning 'SprintRetrospective\Notebook-SprintWorkSession-0010-End.md') -Value '# Sprint 0010 End'
 
       $result = Invoke-SprintEndLifecycle `
         -GitRoot $TestDrive `
@@ -474,6 +573,7 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $result.DatabaseCleanupMode | Should -Be 'SprintDatabasesOnly'
       $result.SqlInstancesRetained | Should -BeTrue
       $result.SyntheticTaskCompleted | Should -BeFalse
+      $result.Phases.ClosePlan.WorktreePath | Should -Contain $planning
       $result.Phases.FinalBoundary.Skipped | Should -BeTrue
     }
 
@@ -481,6 +581,8 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $planning = Join-Path $TestDrive '_Planning-wt-20-Sprint-0010-work-items-full'
       $shared = Join-Path $TestDrive 'SharedVSCode-wt-48-Sprint-0010-work-items-full'
       New-Item -ItemType Directory -Path $planning, $shared -Force | Out-Null
+      New-Item -ItemType Directory -Path (Join-Path $planning 'SprintRetrospective') -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $planning 'SprintRetrospective\Notebook-SprintWorkSession-0010-End.md') -Value '# Sprint 0010 End'
       Mock Set-SprintBoundaryContext { [PSCustomObject]@{ Errors = @() } }
       Mock Assert-MainBranchTemplateRef { [PSCustomObject]@{ Ok = $true } }
       Mock Invoke-SprintEndGitHubClose {
@@ -524,6 +626,45 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $result.Phases.InfrastructureCleanup.SqlInstancesRetained | Should -BeTrue
       $result.Phases.FinalBoundary.Planned | Should -BeTrue
       $result.Phases.FinalBoundary.TestFreshShell | Should -BeTrue
+    }
+
+    It 'adds the Planning worktree to the SprintEnd close plan when omitted by the caller' {
+      $planning = Join-Path $TestDrive '_Planning-wt-20-Sprint-0010-work-items-omitted'
+      $shared = Join-Path $TestDrive 'SharedVSCode-wt-48-Sprint-0010-work-items-omitted'
+      New-Item -ItemType Directory -Path $planning, $shared -Force | Out-Null
+      New-Item -ItemType Directory -Path (Join-Path $planning 'SprintRetrospective') -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $planning 'SprintRetrospective\Notebook-SprintWorkSession-0010-End.md') -Value '# Sprint 0010 End'
+      Mock Invoke-SprintEndGitHubClose {
+        [PSCustomObject]@{ Ok = $true; Repository = (Split-Path -Path $RepoPath -Leaf) }
+      }
+      Mock New-SprintEndHandoff {
+        [PSCustomObject]@{
+          Changed = $false
+          Planned = $true
+          Path = Join-Path $GitRoot 'HANDOFF.Sprint0010.md'
+          WorktreePaths = $WorktreePaths
+        }
+      }
+
+      $result = Invoke-SprintEndLifecycle `
+        -GitRoot $TestDrive `
+        -PlanningRoot $planning `
+        -SharedVSCodeWorktreePath $shared `
+        -WorktreePaths @($shared) `
+        -CreatePullRequests `
+        -MergePullRequests `
+        -WriteHandoff `
+        -WhatIf
+
+      $result.Ok | Should -BeTrue
+      $planningPlan = @($result.Phases.ClosePlan | Where-Object IsPlanningWorktree)
+      $planningPlan.Count | Should -Be 1
+      $planningPlan[0].PullRequestClosePlanned | Should -BeTrue
+      $planningPlan[0].PullRequestMergePlanned | Should -BeTrue
+      $planningPlan[0].BranchDeletePlanned | Should -BeTrue
+      $planningPlan[0].WorktreeRemovalPlanned | Should -BeTrue
+      $result.Phases.GitHub.Count | Should -Be 2
+      $result.Phases.Handoff.WorktreePaths | Should -Contain $planning
     }
   }
 }

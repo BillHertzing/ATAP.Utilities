@@ -150,6 +150,41 @@ Describe 'Reset-SprintDatabases [public]' {
     }
   }
 
+  It 'defaults connection-part resets to integrated security when no secret or credential key is supplied' {
+    Reset-SprintDatabases `
+      -InstanceNames @('Devtester') `
+      -Databases @('ATAPUtilities') `
+      -FlywayBasePath $script:flywayBase `
+      -RepositoryRoot $script:tempRepoRoot `
+      -Confirm:$false | Out-Null
+
+    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -Exactly -ParameterFilter {
+      $SqlInstance -eq 'Devtester' -and
+      $IntegratedSecurity -and
+      [string]::IsNullOrWhiteSpace($CredentialsKey) -and
+      [string]::IsNullOrWhiteSpace($DBConnectionStringMasterSecretName) -and
+      [string]::IsNullOrWhiteSpace($DBConnectionStringDBSecretName)
+    }
+  }
+
+  It 'uses an instance-scoped default database path when settings do not provide one' {
+    Reset-SprintDatabases `
+      -InstanceNames @('Devtester', 'Exptester') `
+      -Databases @('ATAPUtilities') `
+      -FlywayBasePath $script:flywayBase `
+      -RepositoryRoot $script:tempRepoRoot `
+      -Confirm:$false | Out-Null
+
+    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -Exactly -ParameterFilter {
+      $SqlInstance -eq 'Devtester' -and
+      $DatabasePath -eq 'C:\LocalDBs\Devtester\ATAPUtilities'
+    }
+    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -Exactly -ParameterFilter {
+      $SqlInstance -eq 'Exptester' -and
+      $DatabasePath -eq 'C:\LocalDBs\Exptester\ATAPUtilities'
+    }
+  }
+
   It 'prefers an explicitly supplied current provisioning-script path over stale settings' {
     $currentProvisioningPath = Join-Path $script:tempRepoRoot 'src\ATAP.Utilities.DatabaseManagement\SharedSQL'
     $settings = @{
@@ -348,12 +383,14 @@ Describe 'Reset-SprintDatabases [public]' {
     Should -Invoke -CommandName Get-Service -Times 1 -ParameterFilter { $Name -eq "MSSQL`$Exp$($env:USERNAME)" }
   }
 
-  It 'imports dbatools before dot-sourcing Build-DatabaseWithFlyway' {
+  It 'imports dbatools before resolving or dot-sourcing Build-DatabaseWithFlyway' {
     $source = Get-Content -LiteralPath "$PSScriptRoot\..\..\public\Reset-SprintDatabases.ps1" -Raw
     $importIndex = $source.IndexOf('Import-Module -Name dbatools')
+    $resolveIndex = $source.IndexOf("Get-Command -Name 'Build-DatabaseWithFlyway'")
     $dotSourceIndex = $source.IndexOf('. $buildDbPath')
 
     $importIndex | Should -BeGreaterOrEqual 0
+    $resolveIndex | Should -BeGreaterThan $importIndex
     $dotSourceIndex | Should -BeGreaterThan $importIndex
   }
 }

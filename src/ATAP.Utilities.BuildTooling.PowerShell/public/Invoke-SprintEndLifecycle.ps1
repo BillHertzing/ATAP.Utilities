@@ -6,8 +6,9 @@ function Invoke-SprintEndLifecycle {
   .DESCRIPTION
   Coordinates context detection, command contracts, module readiness, one-pass
   worktree inspection, AIAdapter/template boundary reset, GitHub PR/issue close,
-  sprint history, HANDOFF generation, infrastructure cleanup, and final boundary
-  verification. Destructive phases require explicit switches and honor WhatIf.
+  sprint history, sprint-specific handoff generation, infrastructure cleanup,
+  and final boundary verification. Destructive phases require explicit switches
+  and honor WhatIf.
 
   This cmdlet removes sprint databases while retaining permanent SQL Server
   instances. It never deletes Bitwarden secrets and never marks a synthetic
@@ -44,7 +45,7 @@ function Invoke-SprintEndLifecycle {
   Verifies every selected worktree has a reachable canonical Planning checkpoint.
 
   .PARAMETER WriteHandoff
-  Generates HANDOFF.md.
+  Generates HANDOFF.SprintNNNN.md.
 
   .PARAMETER CloseOverview
   Updates Overview.code-workspace and archives OverviewSprintNNNN.code-workspace.
@@ -130,12 +131,35 @@ function Invoke-SprintEndLifecycle {
   process {
     $gitRootFull = [IO.Path]::GetFullPath($GitRoot)
     $planningRootFull = [IO.Path]::GetFullPath($PlanningRoot)
-    $worktreeFullPaths = @($WorktreePaths | ForEach-Object { [IO.Path]::GetFullPath($_) })
+    $worktreeSet = [System.Collections.Generic.List[string]]::new()
+    foreach ($worktreePath in @($WorktreePaths) + @($planningRootFull)) {
+      $fullPath = [IO.Path]::GetFullPath($worktreePath)
+      if (-not @($worktreeSet | Where-Object { [StringComparer]::OrdinalIgnoreCase.Equals($_, $fullPath) })) {
+        [void]$worktreeSet.Add($fullPath)
+      }
+    }
+    $worktreeFullPaths = $worktreeSet.ToArray()
     $phases = [ordered]@{}
     $failures = [System.Collections.Generic.List[string]]::new()
 
     $phases.Context = Get-SprintEndContext -GitRoot $gitRootFull -CurrentPath $planningRootFull
     if (-not $phases.Context.Ok) { [void]$failures.Add('Context') }
+
+    $closePlan = foreach ($worktreePath in $worktreeFullPaths) {
+      $leaf = Split-Path -Path $worktreePath -Leaf
+      $stableName = $leaf -replace '-wt-\d+-Sprint-\d{4}-work-items$', ''
+      [PSCustomObject]@{
+        WorktreePath             = $worktreePath
+        WorktreeName             = $leaf
+        RepositoryName           = $stableName
+        IsPlanningWorktree       = [StringComparer]::OrdinalIgnoreCase.Equals($worktreePath, $planningRootFull)
+        PullRequestClosePlanned  = [bool]($CreatePullRequests -or $MergePullRequests)
+        PullRequestMergePlanned  = [bool]$MergePullRequests
+        BranchDeletePlanned      = [bool]$WriteHandoff
+        WorktreeRemovalPlanned   = [bool]$WriteHandoff
+      }
+    }
+    $phases.ClosePlan = @($closePlan)
 
     $phases.CommandSurface = Test-SprintEndCommandSurface
     if (-not $phases.CommandSurface.Ok) { [void]$failures.Add('CommandSurface') }
@@ -160,6 +184,20 @@ function Invoke-SprintEndLifecycle {
       }
     } else {
       $phases.CheckpointCoverage = $null
+    }
+
+    $phases.RetrospectiveNotebook = [PSCustomObject]@{ Ok = $true; Message = 'Notebook check skipped.' }
+    if ($phases.Context.Ok) {
+      $notebookName = "Notebook-SprintWorkSession-$($phases.Context.ClosedSprintNumber)-End.md"
+      $notebookPath = Join-Path $planningRootFull 'SprintRetrospective' | Join-Path -ChildPath $notebookName
+      if (-not (Test-Path -LiteralPath $notebookPath -PathType Leaf)) {
+        $phases.RetrospectiveNotebook.Ok = $false
+        $phases.RetrospectiveNotebook.Message = "Closing sprint retrospective notebook not found at: $notebookPath"
+        [void]$failures.Add('RetrospectiveNotebook')
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $phases.RetrospectiveNotebook.Message
+      } else {
+        $phases.RetrospectiveNotebook.Message = "Closing sprint retrospective notebook found: $notebookName"
+      }
     }
 
     if ($failures.Count -eq 0 -and $ApplyBoundary) {
@@ -248,6 +286,7 @@ function Invoke-SprintEndLifecycle {
       $handoffParameters = @{
         GitRoot       = $gitRootFull
         WorktreePaths = $worktreeFullPaths
+        SprintNumber  = $phases.Context.ClosedSprintNumber
         Confirm       = $false
       }
       if ($WhatIfPreference) { $handoffParameters.WhatIf = $true }

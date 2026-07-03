@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "1.0.0",
+  "description": "Canonical command-guard policy for the PreToolUse-PwshGuard hook (Task 11.18.e/.f). The guard matches the tool command against each rule in order: the first matching 'deny' rule blocks the call, otherwise the first matching 'ask' rule prompts. A rule matches via either a named built-in 'match' (for logic a plain regex cannot express) or a case-insensitive regex 'pattern'. 'appliesToTool' scopes a rule to a tool_name ('*' = any). Since Task 11.18.f this file owns the nuanced deny/ask policy that previously lived in the per-agent settings 'deny'/'ask' lists: the 'deny' bucket is the robust-regex form of the catastrophic floor (recursive root delete, force-push to a protected branch, full vault export) plus the two -NoProfile / Verb-Noun-to-Bash seed bans; the 'ask' bucket holds the destructive-but-recoverable commands that should prompt. The per-agent settings 'deny' keeps only a coarse prefix-form floor as a fail-open backstop; settings 'allow' is widened and settings 'ask' is empty. To change deny/ask behavior, add a rule here with a 'pattern' regex and a 'reason' - no edit to the guard script is required. Use '{0}' in a reason to interpolate the matched first token.",
+  "deny": [
+    {
+      "id": "no-profile-ban",
+      "appliesToTool": "*",
+      "match": "pwsh-noprofile",
+      "reason": "BLOCKED: -NoProfile is banned for ATAP work (SC-prop-0007-1, Task 8.16). The AllUsersAllHosts profile builds $global:settings; BuildTooling reads configuration via Get-PVal and fails loudly without it. Remediation: re-run the same command WITHOUT -NoProfile so profiles load, e.g. pwsh -Command \"<command>\". If you genuinely need to prove a module loads in a bare engine, ask the user first."
+    },
+    {
+      "id": "verb-noun-to-bash",
+      "appliesToTool": "Bash",
+      "match": "powershell-verb-noun-first-token",
+      "reason": "BLOCKED: '{0}' looks like a raw PowerShell Verb-Noun command sent to the Bash tool (SC-prop-0007-2, Task 8.16, rule R-01). The Bash tool runs Git Bash / POSIX sh, so PowerShell cmdlets fail there with 'command not found'. Remediation: use the PowerShell tool instead, or wrap the command: pwsh -Command \"{0} ...\" (escape PowerShell $ as \\$ when calling from bash - rule R-16). Never add -NoProfile."
+    },
+    {
+      "id": "rm-rf-root",
+      "appliesToTool": "*",
+      "pattern": "(?i)(?:^|[\\s;&|(])(?:sudo\\s+)?rm\\s+-[a-z]*(?:rf|fr)[a-z]*\\s+/(?:\\*)?(?:\\s|$)",
+      "reason": "BLOCKED: a recursive force-delete of the filesystem root ('rm -rf /') is catastrophic and never appropriate. To delete a specific tree, target an explicit subpath and confirm with the user first."
+    },
+    {
+      "id": "git-force-push-protected",
+      "appliesToTool": "*",
+      "pattern": "(?i)\\bgit\\s+push\\b(?:.*(?:--force-with-lease|--force|-f)\\b.*\\b(?:main|master)\\b|.*\\b(?:main|master)\\b.*(?:--force-with-lease|--force|-f)\\b)",
+      "reason": "BLOCKED: force-pushing to main/master rewrites shared history on a protected branch (rule: never commit/rewrite main directly). Push to a sprint branch and open a PR. Genuine stable-branch maintenance that needs a force-push must be done deliberately by the user outside the agent."
+    },
+    {
+      "id": "secret-vault-export",
+      "appliesToTool": "*",
+      "pattern": "(?i)(?:^|[\\s;&|(])bw\\s+export\\b",
+      "reason": "BLOCKED: 'bw export' dumps the entire Bitwarden vault (secrets in cleartext). Resolve individual secrets by name via Get-SecretATAP instead; never export the whole vault."
+    }
+  ],
+  "ask": [
+    {
+      "id": "file-removal",
+      "appliesToTool": "*",
+      "pattern": "(?i)(?:^|[\\s;&|(])(?:rm|rmdir|del|erase|Remove-Item|Remove-ItemProperty)(?=$|[\\s])",
+      "reason": "ASK: this deletes files or items. Confirm the target path is correct - especially with -Recurse / -Force or a wildcard - before proceeding."
+    },
+    {
+      "id": "clear-content",
+      "appliesToTool": "*",
+      "pattern": "(?i)(?:^|[\\s;&|(])Clear-(?:Content|Item|ItemProperty)(?=$|[\\s])",
+      "reason": "ASK: Clear-Content / Clear-Item / Clear-ItemProperty empties file or item content or properties. Confirm the target before proceeding."
+    },
+    {
+      "id": "invoke-expression",
+      "appliesToTool": "*",
+      "pattern": "(?i)(?:^|[\\s;&|(])(?:Invoke-Expression|iex)(?=$|[\\s])",
+      "reason": "ASK: Invoke-Expression / iex executes a constructed string as code. Confirm the expression is trusted before proceeding."
+    },
+    {
+      "id": "process-and-power-control",
+      "appliesToTool": "*",
+      "pattern": "(?i)(?:^|[\\s;&|(])(?:Start-Process|Stop-Process|Stop-Computer|Restart-Computer|taskkill|kill|shutdown)(?=$|[\\s])",
+      "reason": "ASK: this starts or stops a process, or restarts/shuts down the computer. Confirm intent before proceeding."
+    },
+    {
+      "id": "disk-volume-boot",
+      "appliesToTool": "*",
+      "pattern": "(?i)(?:^|[\\s;&|(])(?:Format-Volume|diskpart|bcdedit)(?=$|[\\s])",
+      "reason": "ASK: a disk, volume, or boot-configuration tool - these can destroy data or render the system unbootable. Confirm intent before proceeding."
+    },
+    {
+      "id": "permissions-ownership",
+      "appliesToTool": "*",
+      "pattern": "(?i)(?:^|[\\s;&|(])(?:takeown|icacls|chmod|chown)(?=$|[\\s])",
+      "reason": "ASK: this changes file ownership or permissions. Confirm the target and the ACL change before proceeding."
+    },
+    {
+      "id": "registry-mutation",
+      "appliesToTool": "*",
+      "pattern": "(?i)(?:^|[\\s;&|(])reg\\s+(?:add|delete)(?=$|[\\s])",
+      "reason": "ASK: this modifies the Windows registry. Confirm the key and value before proceeding."
+    },
+    {
+      "id": "scheduled-task-mutation",
+      "appliesToTool": "*",
+      "pattern": "(?i)(?:^|[\\s;&|(])schtasks\\s+/(?:create|delete|change|run|end)(?=$|[\\s])",
+      "reason": "ASK: this creates, modifies, or runs a scheduled task. Confirm intent before proceeding."
+    },
+    {
+      "id": "git-history-rewrite",
+      "appliesToTool": "*",
+      "pattern": "(?i)(?:^|[\\s;&|(])git\\s+(?:clean|reset|revert)(?=$|[\\s])",
+      "reason": "ASK: git clean / reset / revert can discard uncommitted work or rewrite local history. Confirm before proceeding."
+    },
+    {
+      "id": "secret-token-to-network",
+      "appliesToTool": "*",
+      "pattern": "(?i)\\b(?:curl|wget|Invoke-WebRequest|Invoke-RestMethod|iwr|irm|nc|ncat)\\b[^\\r\\n]*\\b(?:BWS_ACCESS_TOKEN|BW_SESSION|PROGET_ADMIN_API_KEY|BUILDMASTER_ADMIN_API_KEY|[A-Z][A-Z0-9_]*_API_KEY|[A-Z][A-Z0-9_]*_TOKEN|[A-Z][A-Z0-9_]*_SECRET)\\b",
+      "reason": "ASK: this references a secret/token-bearing value on a network call. Confirm the endpoint is a trusted local host (e.g. local ProGet/BuildMaster) and not an off-box exfiltration target. Never transmit secrets to an external host."
+    }
+  ]
+}

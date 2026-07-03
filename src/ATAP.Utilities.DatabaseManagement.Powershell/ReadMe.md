@@ -13,6 +13,9 @@ database lifecycle management for the ATAP ecosystem. It covers:
   feature shared databases, backup jobs, and connection string resolution.
 - **Rule export utilities** — export Rules from the ATAPUtilities database for review
   or archiving.
+- **Instantiation inventory helpers** — scan repository PowerShell/C# module source
+  into database-shaped `SourceModule` rows and render manifestation evidence for
+  Sprint 0012 instantiation work.
 
 ## Importing the Module
 
@@ -83,6 +86,8 @@ Use the module-level getting started guide for the lifecycle workflow:
 | `Remove-FeatureSharedDb`                  | Developer Databases | Drop disposable per-feature shared databases.                                                                              |
 | `Resolve-DatabaseSqlConnection`           | Connection Helpers  | Resolve a SqlConnection from three connection-method parameter sets.                                                       |
 | `Resolve-DbInstanceName`                  | Instance Management | Resolve canonical Stream J database names.                                                                                 |
+| `Get-InstantiationSourceModuleInventory`  | Instantiation       | Scan `src/` PowerShell modules into `ATAPUtilities.SourceModule`-shaped inventory rows.                                    |
+| `Export-InstantiationManifestation`       | Instantiation       | Render source-module model rows into `_generated/Instantiation` JSON, source-file, folder-tree, and report artifacts.      |
 | `Export-RuleToTextFile`                   | Rules               | Export a Rule from the ATAPUtilities database to a formatted text file.                                                    |
 
 ### Example Scripts

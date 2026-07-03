@@ -108,6 +108,13 @@ backup automation, and rule-export utilities in the ATAP 5-tier ecosystem.
 | `Export-RuleToTextFile`  | [public/Export-RuleToTextFile.ps1](public/Export-RuleToTextFile.ps1) | Retrieves a Rule by name from the ATAPUtilities database and exports all metadata (PhiloteID, purpose, language kind, composition, primitives) to a formatted text file. |
 | `Example-RuleExport.ps1` | [public/Example-RuleExport.ps1](public/Example-RuleExport.ps1)       | Example script demonstrating `Export-RuleToTextFile` usage scenarios: single export, batch export, and error handling.                                                   |
 
+### Instantiation Inventory
+
+| Cmdlet                                  | File                                                                                                             | Synopsis                                                                                                                                                                       |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Get-InstantiationSourceModuleInventory` | [public/Get-InstantiationSourceModuleInventory.ps1](public/Get-InstantiationSourceModuleInventory.ps1)           | Scans repository PowerShell and optional C# source folders into Sprint 0012 `ATAPUtilities.SourceModule`-shaped rows, including planned module support and manifestation artifact hints. |
+| `Export-InstantiationManifestation`      | [public/Export-InstantiationManifestation.ps1](public/Export-InstantiationManifestation.ps1)                     | Renders source-module model rows into `_generated/Instantiation` model JSON, source-file inventory, folder tree, summary JSON, and markdown report artifacts.                  |
+
 ---
 
 ## Obsolete Scripts

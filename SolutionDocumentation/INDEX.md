@@ -282,8 +282,8 @@ _Teach / Tell how to create software._
 - [ATAPUtilities Instantiation Tables](ATAPUtilities-Instantiation-Tables.md)
   — Sprint 0012 design for Philote-backed organization, user, computer,
   repository, source-module, instantiation-version, and manifestation-artifact
-  tables. Defines the source-ingestion and renderer contracts that follow-on
-  Tasks 12.26.b/c should implement.
+  tables. Defines the source-ingestion and renderer contracts; Tasks 12.26.b-e
+  implemented the read-only scanner, renderer, and v1/v2 manifestation evidence.
 
 ### Database/Documentation (implementation deep-reference)
 

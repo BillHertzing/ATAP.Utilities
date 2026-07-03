@@ -42,7 +42,8 @@ ToDo: Insert diagram of CI/CD process
 - [ATAPUtilities Instantiation Tables](./ATAPUtilities-Instantiation-Tables.md)
   defines the Sprint 0012 inventory/version/manifestation schema used to model
   organization, computers, repositories, source modules, and rendered artifacts
-  for ATAPUtilities instantiations.
+  for ATAPUtilities instantiations; Tasks 12.26.b-e added the read-only
+  scanner, renderer, and v1/v2 manifestation evidence.
 - [Rules Compendium.AgentText](./Rules%20Compendium.AgentText.md) defines the
   AgentText rule kind and embeds the grammar for AI agent and instruction text.
 - `src/ATAP.Utilities.RulesManagement.PowerShell/public/Import-AgentTextFromFiles.ps1`

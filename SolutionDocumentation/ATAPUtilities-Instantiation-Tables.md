@@ -57,9 +57,12 @@ repository tree. For each module, the ingester should record:
 - public and private function folders, when present;
 - whether the module is planned rather than present on disk.
 
-The first implementation can be a PowerShell function in the database or
-rules-management tooling that scans `src/`, normalizes relative paths, and
-writes inventory rows. It must not write generated output outside `_generated/`.
+The first implementation is
+`src/ATAP.Utilities.DatabaseManagement.Powershell/public/Get-InstantiationSourceModuleInventory.ps1`.
+It scans `src/`, normalizes relative paths, returns database-shaped
+`SourceModule` rows, supports optional C# project discovery, and supports
+caller-supplied planned PowerShell modules. It is read-only: SQL upsert behavior
+remains a later layer, and any scan evidence must be written under `_generated/`.
 
 ## Renderer Contract
 
@@ -77,6 +80,14 @@ This keeps renderers independent from the physical table layout. A renderer can
 materialize a folder tree, produce a report, or compare the model to the real
 repository state using the same artifact list.
 
+The first implementation is
+`src/ATAP.Utilities.DatabaseManagement.Powershell/public/Export-InstantiationManifestation.ps1`.
+It renders source-module model rows to `_generated/Instantiation` as model JSON,
+source-file inventory JSON, folder-tree text, summary JSON, and a markdown
+report. The renderer performs exact-case path checks so Windows' case-insensitive
+filesystem behavior does not hide the v2 `Powershell` to `PowerShell` planned
+layout correction.
+
 ## Versioned Seed
 
 The first migration seeds `ATAP Utilities Sprint 0012` with two versions:
@@ -91,10 +102,7 @@ The first migration seeds `ATAP Utilities Sprint 0012` with two versions:
 
 ## Follow-On Work
 
-Tasks 12.26.b and 12.26.c remain the implementation follow-on:
-
-- build the source ingester that updates `SourceModule` from repository
-  source;
-- build renderers that consume `ManifestationArtifact`;
-- add tests that compare v1 artifacts with the real repository state and verify
-  the v1-to-v2 module diff.
+Tasks 12.26.b through 12.26.e implemented the read-only scanner, renderer, and
+v1/v2 manifestation evidence. Remaining follow-on outside the current slice is
+the SQL persistence layer that upserts scanner output into the live
+`ATAPUtilities.SourceModule` tables once the sprint SQL endpoint is available.

@@ -1,4 +1,4 @@
-#Requires -Modules PSFramework, SqlServer
+#Requires -Modules PSFramework, dbatools
 
 function Initialize-SqlServiceLogin {
   <#
@@ -73,7 +73,7 @@ function Initialize-SqlServiceLogin {
         Shows what would be executed without making changes.
 
     .NOTES
-        Requires the SqlServer PowerShell module (Invoke-Sqlcmd).
+        Requires the dbatools PowerShell module (Invoke-DbaQuery).
         The caller must have a SQL Server login with sysadmin or securityadmin + alter any
         login permissions.  Running as the host administrator under Integrated Security is
         the typical approach on a new-computer setup.
@@ -97,7 +97,7 @@ function Initialize-SqlServiceLogin {
   )
 
   $fn = $MyInvocation.MyCommand.Name
-  $mn = 'ATAP.Utilities.PowerShell'
+  $mn = 'ATAP.Utilities.DatabaseManagement.Powershell'
 
   Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
     -Message "[$fn] Applying SQL principal grants on $SqlInstance for database '$DatabaseName' and account '$ServiceAccount'"
@@ -116,9 +116,9 @@ function Initialize-SqlServiceLogin {
   $userEscaped = ($ServiceAccount -split '\\')[-1] -replace "'", "''"
 
   $commonParams = @{
-    ServerInstance         = $SqlInstance
-    Encrypt                = $Encrypt
-    TrustServerCertificate = $TrustServerCertificate.IsPresent
+    SqlInstance            = $SqlInstance
+    AppendConnectionString = "Encrypt=$Encrypt;Trust Server Certificate=$($TrustServerCertificate.IsPresent)"
+    EnableException        = $true
     ErrorAction            = 'Stop'
   }
 
@@ -162,12 +162,12 @@ END;
     if ($PSCmdlet.ShouldProcess("$SqlInstance / $DatabaseName", "Grant db_owner to '$ServiceAccount'")) {
 
       # Step 1: server login
-      Invoke-Sqlcmd @commonParams -Database 'master' -Query $loginSql
+      Invoke-DbaQuery @commonParams -Database 'master' -Query $loginSql
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
         -Message "[$fn] Server login step completed"
 
       # Step 2: DB user + role membership
-      Invoke-Sqlcmd @commonParams -Database $DatabaseName -Query $userSql
+      Invoke-DbaQuery @commonParams -Database $DatabaseName -Query $userSql
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
         -Message "[$fn] Database user/role step completed in '$DatabaseName'"
 

@@ -44,8 +44,9 @@ ToDo: Insert diagram of CI/CD process
 - `src/ATAP.Utilities.RulesManagement.PowerShell/public/Import-AgentTextFromFiles.ps1`
   and `Export-AgentTextToFiles.ps1` provide the load/instantiate pilot path.
 - [Sprint-Boundary Retargeting](./Sprint-Boundary-Retargeting.md) documents the
-  registry-backed AI adapter lifecycle, project-only SprintStart defaults, and
-  the pre-teardown SprintEnd drift gate.
+  registry-backed AI adapter lifecycle, project-only SprintStart defaults, the
+  boundary-time re-render of SharedVSCode settings, the managed developer/service
+  PowerShell profile deployment, and the pre-teardown SprintEnd drift gate.
 - [Sprint Infrastructure Naming](./SprintInfrastructure-Naming.md) records the
   sprint resource names, including BWS-owned `dbConnectionString-*` keys for
   Development and Experimental database connection strings.

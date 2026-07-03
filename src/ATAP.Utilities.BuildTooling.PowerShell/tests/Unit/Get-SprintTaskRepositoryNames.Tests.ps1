@@ -22,4 +22,19 @@ Describe 'Get-SprintTaskRepositoryNames [private]' {
     $result | Should -Not -Contain 'ATAP.IAC'
     $result.Count | Should -Be 2
   }
+  It 'splits compound repository markers on plus signs' {
+    $tasksContent = @(
+      '- [ ] **Task 11.16** [ATAP.Utilities + ATAP.IAC] Validate both downstream worktrees.'
+      '- [ ] **Task 11.17** [SharedVSCode + _Planning] Excluded compound marker.'
+    )
+
+    $result = Get-SprintTaskRepositoryNames -TasksContent $tasksContent -ExcludeRepos @('SharedVSCode', '_Planning')
+
+    $result | Should -Contain 'ATAP.Utilities'
+    $result | Should -Contain 'ATAP.IAC'
+    $result | Should -Not -Contain 'SharedVSCode'
+    $result | Should -Not -Contain '_Planning'
+    $result.Count | Should -Be 2
+  }
 }
+

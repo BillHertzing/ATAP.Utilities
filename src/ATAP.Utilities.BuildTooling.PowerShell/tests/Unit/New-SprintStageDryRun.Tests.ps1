@@ -62,6 +62,13 @@ BeforeAll {
     throw 'Initialize-SprintAIAdapters should not be called during DryRun.'
   }
 
+  function global:Get-SprintHistoryReconstruction {
+    [PSCustomObject]@{
+      LastCompletedSprintNumber = 6
+      Warnings                  = @()
+    }
+  }
+
   # Required by the Stage 2 autoload-or-throw contract (FSS-11). These are guarded
   # by ShouldProcess so they never run during DryRun; the throwing body is a canary
   # if that ever changes.

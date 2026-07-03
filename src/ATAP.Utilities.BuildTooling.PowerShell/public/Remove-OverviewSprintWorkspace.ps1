@@ -4,7 +4,7 @@ function Remove-OverviewSprintWorkspace {
 Archives a sprint-specific Overview code-workspace file.
 
 .DESCRIPTION
-Moves OverviewSprintNNNN.code-workspace into the planning repository archive
+Moves the closing sprint Overview workspace into the planning repository archive
 folder used by SprintEndAgent:
 _Planning/SprintRetrospective/WorkspaceArchive/.
 
@@ -13,7 +13,7 @@ target already exists with identical content, the source file is removed and the
 result reports that the workspace was already archived.
 
 .PARAMETER SprintNumber
-Sprint number used to resolve the default OverviewSprintNNNN.code-workspace
+Sprint number used to resolve the default closing-sprint Overview workspace
 source file.
 
 .PARAMETER GitRoot
@@ -21,8 +21,10 @@ Root directory containing stable repositories, sprint worktrees, and the
 _Planning repository.
 
 .PARAMETER SourceWorkspacePath
-Source sprint workspace file. Defaults to OverviewSprintNNNN.code-workspace
-under GitRoot, with legacy OverViewSprintNNNN.code-workspace fallback.
+Source sprint workspace file. Defaults to the exact closing-sprint workspace
+under GitRoot, preferring Overview.SprintNNNN.code-workspace, then
+OverviewSprintNNNN.code-workspace, with legacy OverViewSprintNNNN.code-workspace
+fallback.
 
 .PARAMETER ArchiveDirectoryPath
 Destination archive directory. Defaults to
@@ -121,16 +123,16 @@ New-OverviewSprintWorkspace
     }
 
     if (-not $SourceWorkspacePath) {
-      $preferredSourcePath = Join-Path -Path $GitRoot -ChildPath "OverviewSprint$sprintText.code-workspace"
-      $legacySourcePath = Join-Path -Path $GitRoot -ChildPath "OverViewSprint$sprintText.code-workspace"
-
-      if (Test-Path -LiteralPath $preferredSourcePath -PathType Leaf) {
-        $SourceWorkspacePath = $preferredSourcePath
-      } elseif (Test-Path -LiteralPath $legacySourcePath -PathType Leaf) {
-        $SourceWorkspacePath = $legacySourcePath
-      } else {
-        $SourceWorkspacePath = $preferredSourcePath
-      }
+      $sourceWorkspaceCandidates = @(
+        (Join-Path -Path $GitRoot -ChildPath "Overview.Sprint$sprintText.code-workspace"),
+        (Join-Path -Path $GitRoot -ChildPath "OverviewSprint$sprintText.code-workspace"),
+        (Join-Path -Path $GitRoot -ChildPath "OverViewSprint$sprintText.code-workspace")
+      )
+      $resolvedSourceWorkspacePath = @(
+        $sourceWorkspaceCandidates |
+          Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }
+      ) | Select-Object -First 1
+      $SourceWorkspacePath = if ($resolvedSourceWorkspacePath) { $resolvedSourceWorkspacePath } else { $sourceWorkspaceCandidates[0] }
     }
 
     if (-not (Test-Path -LiteralPath $SourceWorkspacePath -PathType Leaf)) {

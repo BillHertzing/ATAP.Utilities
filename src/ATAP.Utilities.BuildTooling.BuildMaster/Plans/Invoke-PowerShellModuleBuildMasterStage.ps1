@@ -1150,6 +1150,8 @@ function Invoke-PowerShellModuleBuildMasterStage {
             -FromFeed $sourceFeed `
             -ToFeed $destinationFeed `
             -Reason "$Tier gate for $ApplicationName $PromotedPackageVersion on $Branch" `
+            -ProGetBaseUrl $ProGetUrl `
+            -ApiKey $script:resolvedProGetApiKey `
             -CeilingTier $ceilingTier
         }
         catch {

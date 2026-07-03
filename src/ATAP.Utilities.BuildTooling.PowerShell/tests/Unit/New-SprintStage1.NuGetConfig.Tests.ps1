@@ -51,6 +51,14 @@ BeforeAll {
     $global:stage1ExternalCalls.Add('Initialize-SprintAIAdapters') | Out-Null
   }
 
+  function global:Get-SprintHistoryReconstruction {
+    param([string]$PlanningRoot)
+    [PSCustomObject]@{
+      LastCompletedSprintNumber = 6
+      Warnings                  = @()
+    }
+  }
+
   . "$PSScriptRoot\..\..\public\Convert-TasksMdToSprintBoard.ps1"
 
   # Dot-source the function definition. This defines New-SprintStage1 and must

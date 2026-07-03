@@ -103,7 +103,15 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit', 'PromotedModuleHostSensitive' {
     It 'Reports Ok with empty repo list' {
       $r = Test-SprintPrerequisites -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SkipSqlServerInstanceCheck
       $r.Checks.GitRepoState.Ok | Should -BeTrue
-      $r.Checks.GitRepoState.Detail | Should -Match 'No sprint worktrees'
+      $r.Checks.GitRepoState.Detail | Should -Match 'No requested worktrees'
+    }
+
+    It 'Skips worktree checks when RequiredRepoWorktrees is omitted' {
+      $r = Test-SprintPrerequisites -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SkipSqlServerInstanceCheck
+      $r.Checks.GitRepoState.Ok | Should -BeTrue
+      $r.Checks.GitRepoState.Skipped | Should -BeTrue
+      $r.Checks.LockFilesClean.Ok | Should -BeTrue
+      $r.Checks.LockFilesClean.Skipped | Should -BeTrue
     }
 
     It 'Detects an in-progress merge via MERGE_HEAD' {

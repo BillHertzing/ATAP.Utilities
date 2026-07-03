@@ -12,7 +12,7 @@
     RootModule           = 'ATAP.Utilities.ConfigRootKeys.Powershell.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '0.1.0'
+    ModuleVersion        = '0.1.4'
 
     # Supported PSEditions
     CompatiblePSEditions = 'Desktop', 'Core'
@@ -51,7 +51,7 @@
     # ProcessorArchitecture = ''
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules      = @(@{ModuleName = 'PSFramework'; ModuleVersion = '1.10.0'; MaximumVersion = '1.999.999'; })
+    RequiredModules      = @(@{ModuleName = 'PSFramework'; ModuleVersion = '0.1.4'; MaximumVersion = '1.999.999'; })
 
     # Assemblies that must be loaded prior to importing this module
     # RequiredAssemblies = @()

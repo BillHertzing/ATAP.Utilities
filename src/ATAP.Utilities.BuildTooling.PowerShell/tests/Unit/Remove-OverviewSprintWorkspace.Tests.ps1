@@ -43,6 +43,29 @@ Describe 'Remove-OverviewSprintWorkspace [public]' {
     Test-Path -LiteralPath $archivePath | Should -BeTrue
   }
 
+  It 'prefers the exact dotted closing-sprint workspace over a stale legacy artifact' {
+    Remove-Item -LiteralPath $script:sourceWorkspace -Force
+    $dottedSource = Join-Path $script:tempDir 'Overview.Sprint0007.code-workspace'
+    @'
+{
+  "folders": [
+    {
+      "path": "ATAP.Utilities-wt-100-Sprint-0007-work-items"
+    }
+  ]
+}
+'@ | Set-Content -LiteralPath $dottedSource -Encoding UTF8
+    Set-Content -LiteralPath (Join-Path $script:tempDir 'OverviewSprint0008.code-workspace') -Value '{}' -Encoding UTF8
+
+    $result = Remove-OverviewSprintWorkspace -SprintNumber 7 -GitRoot $script:tempDir -Confirm:$false
+    $archivePath = Join-Path $script:planningRoot 'SprintRetrospective\WorkspaceArchive\Overview.Sprint0007.code-workspace'
+
+    $result.SourceWorkspacePath | Should -Be $dottedSource
+    $result.ArchiveWorkspacePath | Should -Be $archivePath
+    Test-Path -LiteralPath $archivePath | Should -BeTrue
+    Test-Path -LiteralPath (Join-Path $script:tempDir 'OverviewSprint0008.code-workspace') | Should -BeTrue
+  }
+
   It 'supports WhatIf without moving the workspace or creating the archive directory' {
     $result = Remove-OverviewSprintWorkspace -SprintNumber 7 -GitRoot $script:tempDir -WhatIf
     $archiveDirectory = Join-Path $script:planningRoot 'SprintRetrospective\WorkspaceArchive'

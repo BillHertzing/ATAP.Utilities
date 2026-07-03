@@ -13,6 +13,7 @@ BeforeAll {
     'Set-WorktreeJunctions'
     'Initialize-DownstreamSprintFromSharedVSCode'
     'Initialize-SprintAIAdapters'
+    'Get-SprintHistoryReconstruction'
   )
   foreach ($name in $script:stubbedNames) {
     Set-Item -Path "Function:\global:$name" -Value ([scriptblock]::Create("throw '$name should not be called during DryRun.'"))

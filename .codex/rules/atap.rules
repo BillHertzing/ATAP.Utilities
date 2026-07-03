@@ -8,4 +8,22 @@ prefix_rule(pattern=["pwsh.exe", "-NoProfile"], decision="forbidden")
 prefix_rule(pattern=["powershell", "-NoProfile"], decision="forbidden")
 prefix_rule(pattern=["powershell.exe", "-NoProfile"], decision="forbidden")
 prefix_rule(pattern=["C:\\Program Files\\PowerShell\\7\\pwsh.exe", "-NoProfile"], decision="forbidden")
+
+# Task 11.18.g - command-guard catastrophic floor (prefix-representable subset).
+# Source: .ai/policy/command-guard.json deny[]. Codex prefix_rule is an ordered
+# argument-prefix mechanism, not a regex: it covers ONLY direct, ordered prefixes.
+# Reordered/embedded forms (e.g. `git push origin main --force`, combined `rm -rfv /`)
+# and the entire recoverable "ask" bucket are NOT expressible here and remain a
+# documented capability gap (capabilities.json floor-prefix-only / lossy-regex-to-prefix).
+prefix_rule(pattern=["rm", "-rf", "/"], decision="forbidden")
+prefix_rule(pattern=["rm", "-fr", "/"], decision="forbidden")
+prefix_rule(pattern=["sudo", "rm", "-rf", "/"], decision="forbidden")
+prefix_rule(pattern=["sudo", "rm", "-fr", "/"], decision="forbidden")
+prefix_rule(pattern=["bw", "export"], decision="forbidden")
+prefix_rule(pattern=["git", "push", "--force", "origin", "main"], decision="forbidden")
+prefix_rule(pattern=["git", "push", "-f", "origin", "main"], decision="forbidden")
+prefix_rule(pattern=["git", "push", "--force-with-lease", "origin", "main"], decision="forbidden")
+prefix_rule(pattern=["git", "push", "--force", "origin", "master"], decision="forbidden")
+prefix_rule(pattern=["git", "push", "-f", "origin", "master"], decision="forbidden")
+prefix_rule(pattern=["git", "push", "--force-with-lease", "origin", "master"], decision="forbidden")
 # END ATAP AI SETTINGS (managed)

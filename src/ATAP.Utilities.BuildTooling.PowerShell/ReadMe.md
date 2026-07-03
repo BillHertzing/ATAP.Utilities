@@ -33,21 +33,51 @@ preserve/defer surfaces, and all lifecycle evidence/backups belong under
 `_generated/`. Task 10.26.k removed the settings-named transition wrapper; all
 callers now use the adapter lifecycle.
 
-**SprintEnd typed close (Task 10.6).** `Invoke-SprintEndLifecycle` now composes
+`Set-SprintBoundaryContext` now closes the remaining SprintEnd boundary gaps from
+Tasks 11.7.f-h. In addition to machine-level profile symlink retargeting, it
+deploys developer profiles from the resolved closing-sprint Overview workspace
+(`Overview.SprintNNNN.code-workspace` when present, otherwise the legacy
+`OverviewSprintNNNN.code-workspace`) and service
+account profiles from host settings into each identity's
+`Documents\PowerShell\profile.ps1`. The cmdlet also refreshes the SharedVSCode
+settings render at both boundaries so `permissions.additionalDirectories` and
+hook command paths in `settings.overlay.json` follow the sprint or stable target
+before user settings are relinked. `Test-SprintEndBoundaryState` auto-discovers
+those managed profiles when `-ProfilePaths` is omitted and verifies that each is
+stable-sourced, readable, and free of stale `-wt-` references after SprintEnd.
+SprintEnd stable junction retargeting is now intentionally narrower: by default
+it recreates only the supported `.vscode` junction and does not reintroduce
+obsolete rendered `.claude` / `.github` links.
+
+**SprintEnd typed close (Task 10.6 / 11.7.c-e).** `Invoke-SprintEndLifecycle` now composes
 structured command-surface, module-promotion/deployment, worktree-state,
 AIAdapter/template reset, GitHub PR/issue, dotted-history, Overview, HANDOFF,
-database/BuildMaster cleanup, and final-boundary phases. PR bodies receive the
+database/BuildMaster cleanup, retrospective notebook gates, and final-boundary phases. PR bodies receive the
 originating issue closing keyword; check results are classified into required,
-informational, and CodeSee planning signals. HANDOFF stable pulls use an R-31
-overlap gate and `pull --ff-only` with editor suppression. Generated
+informational, and CodeSee planning signals. The GitHub close path now runs a
+token-scope preflight before any GraphQL-backed PR calls and fails early with
+clear remediation when the active `gh` token lacks either `read:org` or
+`read:discussion`, which avoids the late `slug`-field permission failure seen
+during SprintEnd close. HANDOFF stable pulls use an R-31
+overlap gate and `pull --ff-only` with editor suppression. The lifecycle always
+keeps the active `_Planning` worktree in the close plan, even if the caller omits
+it from `-WorktreePaths`, so dry-runs show `_Planning` alongside the other PR,
+merge, branch-delete, and worktree-removal targets. Generated handoffs now use
+the sprint-specific `HANDOFF.SprintNNNN.md` naming pattern and emit parser-safe
+splatting for boundary verification and self-removal commands. Generated
 `.gitattributes` and `.gitconfig.shared` headers are timestamp-free and
 byte-idempotent. `Test-SprintCheckpointCoverage` verifies final checkpoints
 entirely from canonical Planning roots; `Save-SprintEndSessionTail` creates the
 scoped post-merge stable Planning commit without pushing.
-`Restore-SprintHistoryArtifacts` is the explicit one-off path for reconstructing
-pre-dotted history from reviewed Git revisions. It writes exact Git blob bytes,
-preserves repository-relative paths, records the resolved commit as provenance,
-and preserves different existing content. SprintEnd removes sprint databases while retaining permanent
+`Get-SprintHistoryReconstruction` reconstructs the latest completed sprint from
+retrospective notebooks, SprintHistory folders, task artifact sets, snapshots,
+and close commits, then reports source disagreements as structured warnings.
+`New-SprintStage1` uses that aggregate instead of trusting one weak signal when
+auto-detecting the next sprint number. `Restore-SprintHistoryArtifacts` remains
+the explicit one-off path for reconstructing pre-dotted history from reviewed Git
+revisions. It writes exact Git blob bytes, preserves repository-relative paths,
+records the resolved commit as provenance, and preserves different existing
+content. SprintEnd removes sprint databases while retaining permanent
 developer SQL Server instances, never deletes Bitwarden secrets, and never
 invokes a synthetic sprint-completion task. The structured result reports
 `DatabaseCleanupMode = 'SprintDatabasesOnly'` and
@@ -57,7 +87,7 @@ Sprint planning also now has an explicit markdown-to-board path: use
 `Convert-TasksMdToSprintBoard` to regenerate a sprint `TASKS.html` board from the
 authoritative `TASKS.md` file after task edits or status updates. Indented lettered
 subtasks (`N.M.a/b/c`) are emitted as their own board cards — numbered distinctly,
-not indented — and inherit the `[Repo]` tag from their umbrella task.
+not indented — and inherit the `[Repo]` tag from their umbrella task. Single-line tasks are parsed safely without scalar unrolling.
 
 Stage 2 database startup is now safe for non-interactive agent shells (Tasks
 10.4 and 10.5). `Test-SprintPrerequisites` and `New-SprintStage2` call the
@@ -66,10 +96,16 @@ source-first `Initialize-ATAPConfigurationGlobals` helper when
 normal reset path passes the newly created ATAP.Utilities worktree root and its
 current `SharedSQL` provisioning folder to `Reset-SprintDatabases`, with
 `-Confirm:$false`, so an installed BuildTooling module cannot fall back to stale
-module-relative Flyway or `DropAndCreateDatabase.sql` content. Use
-`-SkipDatabaseReset` to bypass both the Dev/Exp instance guard and reset during
-granular recovery, and `-IncludeRepos` to provision repositories that have no
-task-board marker.
+module-relative Flyway or `DropAndCreateDatabase.sql` content.
+`Reset-SprintDatabases` imports `dbatools` before resolving
+`Build-DatabaseWithFlyway`, preventing `Microsoft.Data.SqlClient` assembly
+load-order conflicts during Stage 2 database resets. Connection-part resets
+default to Windows integrated security when no connection-string secret or
+credential key is resolved, and each instance uses an instance-scoped fallback
+database-file path under `C:\LocalDBs\<InstanceName>\<DatabaseName>` when no
+settings value supplies `DatabasePath`. Use `-SkipDatabaseReset` to bypass both
+the Dev/Exp instance guard and reset during granular recovery, and
+`-IncludeRepos` to provision repositories that have no task-board marker.
 
 **Stage 1 creates a content-fresh sprint task set (Task 10.11).** After the
 `_Planning` worktree exists, `New-SprintStage1` reads the immediately prior
@@ -79,8 +115,12 @@ task content, calls `Convert-TasksMdToSprintBoard` to synchronize
 `Tasks.Sprint<NNNN>.html`, creates empty
 `Tasks.Sprint<NNNN>.Accomplished.html` and
 `Tasks.Sprint<NNNN>.ProceduralDetails.html` companions, and removes the
-prior-sprint root artifacts after templating. Legacy `TASKS.md` and
-`TasksSprint<NNNN>.md` inputs remain accepted for the first transition.
+prior-sprint root artifacts after templating. Stage 1 now creates only the
+supported `.vscode` junction in `_Planning` by default; `.claude` and `.github`
+surfaces are owned by AIAdapter materialization. Legacy `TASKS.md` and
+`TasksSprint<NNNN>.md` inputs remain accepted for the first transition. The sprint
+numbering is now robustly detected from the max numbering across artifact families,
+and `-WhatIf` context is correctly propagated through all nested operations.
 
 **Stage 2 generates the sprint Overview workspace (Task 10.14.a).** After every
 downstream sprint worktree exists, `New-SprintStage2` calls
@@ -96,6 +136,9 @@ carries `infrastructure.overviewWorkspacePath`,
 `infrastructure.overviewWorkspaceError`. The gate is non-fatal — a verification
 failure is reported in `overviewWorkspaceError` without aborting the rest of
 Stage 2 — and the step is skipped under `-DryRun`/`-WhatIf`.
+SprintEnd now resolves the exact closing sprint artifact by sprint number and
+prefers `Overview.Sprint<NNNN>.code-workspace` when that newer naming appears,
+instead of accidentally touching stale older overview files.
 
 **Stage 2 distributes AI instructions through one orchestration (Task 10.34).**
 Immediately after the Overview workspace verification gate,
@@ -157,6 +200,8 @@ conversation/rollout when the id argument is omitted. The roster entry records t
 **BuildMaster sprint-variable application targeting (Task 10.12).** A single repository can map to one or more BuildMaster applications whose names do **not** match the repository name — the `ATAP.Utilities` repo builds both `ATAP.Utilities-CSharp` and `ATAP.Utilities-PowerShell`, so POSTing to `/api/variables/application/ATAP.Utilities/...` returns 404. `Set-BuildMasterSprintVariables` and `Clear-BuildMasterSprintVariables` therefore (1) drive the worked set from the sprint's **actual** repositories (the keys of `-SprintBranchNames`/`-SourcePaths`, never a fixed `AceCommander`/`ATAP.Utilities` list, so repos outside the sprint are never touched) and (2) resolve each repository to its real BuildMaster application name(s) through `-RepositoryApplicationMap`. Repositories that participate in the sprint but have no BuildMaster application (e.g. `_Planning`, `SharedVSCode`) are absent from the map and are reported in the `skippedRepositories` result field rather than 404-ing. `New-SprintStage2` passes repo-name-keyed branch/source-path maps built from its `$repoResults`, so the in-sprint applications are set without 404s and AceCommander is no longer targeted when it is not in the sprint.
 
 **Batch module pipeline driver (Task 10.33).** `Start-BuildMasterModulePipelineBatch` releases several PowerShell modules in one call without releasing any of them by hand. It accepts an ordered `[string[]] -ModuleName`, normalizes duplicates while preserving caller order, and **preflights every module before creating any BuildMaster release**: it resolves `src/<ModuleName>` (requiring a project-adjacent `version.json` via `Resolve-BuildMasterPackageProjectPath`), computes the immutable package version and `CeilingTier` through `Get-BuildContext`, and resolves each module's BuildMaster application from `-ApplicationByModule` or reviewed configuration — it never guesses when a mapping is absent. Only after all modules pass preflight does it invoke `Start-BuildMasterPackagePipeline` once per module on `global::PowerShellModule-5Stage`, passing the resolved identity and the module's ceiling as the `$CeilingTier` build variable so BuildMaster builds/packages once in Experimental, runs the applicable promoted-module tests, promotes the same immutable bytes through ProGet, and skips every stage above that module's ceiling (`Sprint`/feature → Experimental, `Alpha` → Development, `Beta` → Integration, `QA` → QA, no prerelease label → Production/stable). Modules run sequentially and the batch fails fast unless `-ContinueOnError` is supplied; it supports `-WhatIf`, passes only a secret *name* for BuildMaster credentials, and returns one structured aggregate whose ordered `Results` carry each module's application, project path, package version, ceiling, BuildMaster release/build/execution identifiers, terminal tier, success, and failure detail. The batch only queues and observes BuildMaster work — it never reimplements packaging, tests, feed promotion, or ceiling decisions locally.
+
+**Profileless BuildMaster promotion runners.** `Promote-ProGetPackage` accepts explicit `-ProGetBaseUrl` and `-ApiKey` values and forwards them to `Move-ProGetPackageInterTier`. BuildMaster stage runners must pass those values because they intentionally run under `pwsh -NoProfile`, where `$global:settings` is not guaranteed to exist.
 
 Scope-creep capture (`Add-ScopeCreepIdea`) now resolves the target `_Planning`
 worktree through `Resolve-PlanningWorktreeRoot` (Task 9.23). Resolution is
@@ -1046,3 +1091,7 @@ Feed vocabulary remains deliberately split: SprintStart's residual
 `NuGet.config` uses the D-2 `*-production` names, while the immutable promotion
 ladder and `Resolve-ProGetFeedFromSettings` normalize `Production` to the
 canonical `*-stable` tier.
+
+- Version bumped to 0.1.13 in Sprint 11
+
+

@@ -23,6 +23,13 @@ BeforeAll {
   }
   function global:Initialize-DownstreamSprintFromSharedVSCode {}
   function global:Initialize-SprintAIAdapters {}
+  function global:Get-SprintHistoryReconstruction {
+    param([string]$PlanningRoot)
+    [PSCustomObject]@{
+      LastCompletedSprintNumber = 9
+      Warnings                  = @()
+    }
+  }
 
   . "$PSScriptRoot\..\..\public\Convert-TasksMdToSprintBoard.ps1"
   . "$PSScriptRoot\..\..\public\New-SprintStage1.ps1"
@@ -36,6 +43,7 @@ AfterAll {
     'Set-WorktreeJunctions'
     'Initialize-DownstreamSprintFromSharedVSCode'
     'Initialize-SprintAIAdapters'
+    'Get-SprintHistoryReconstruction'
   ) | ForEach-Object {
     Remove-Item -Path "Function:\$_" -Force -ErrorAction SilentlyContinue
   }

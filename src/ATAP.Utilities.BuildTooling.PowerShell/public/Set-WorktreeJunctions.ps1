@@ -41,6 +41,11 @@ recreated as junctions in the worktree, but with their targets pointing to a dev
 This is useful for development scenarios where you want certain junctions to point to a different location
 (like a development branch) while still maintaining the same relative paths.
 
+.PARAMETER SourceRepoFolderNames
+Optional string array containing the names of source-repository junction folders
+that should be recreated in the worktree. When omitted, all source junctions are
+recreated.
+
 .OUTPUTS
 System.Management.Automation.PSCustomObject
 Returns a result object containing:
@@ -164,7 +169,10 @@ function Set-WorktreeJunctions {
             HelpMessage = 'Names of junction folders whose targets should be redirected to the dev source repository'
         )]
         [ValidateNotNullOrEmpty()]
-        [string[]]$DevSourceRepoFolderNames
+        [string[]]$DevSourceRepoFolderNames,
+
+        [Parameter()]
+        [string[]]$SourceRepoFolderNames
     )
 
     begin {
@@ -324,8 +332,17 @@ function Set-WorktreeJunctions {
 
             if ($PSCmdlet.ShouldProcess("$($result.WorktreePath)", 'Recreate junctions from source repository')) {
                 try {
-                    $junctions = Get-ChildItem -Path $sourceRepoFullPath -Recurse -Force -Attributes ReparsePoint -ErrorAction Stop |
+                    $junctions = @(Get-ChildItem -Path $sourceRepoFullPath -Recurse -Force -Attributes ReparsePoint -ErrorAction Stop |
                         Where-Object { $_.LinkType -eq 'Junction' }
+                    )
+
+                    if ($PSBoundParameters.ContainsKey('SourceRepoFolderNames') -and @($SourceRepoFolderNames).Count -gt 0) {
+                        $junctions = @(
+                            $junctions |
+                                Where-Object { $SourceRepoFolderNames -contains $_.Name }
+                        )
+                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Filtered source junctions to: $($SourceRepoFolderNames -join ', ')"
+                    }
 
                     if (-not $junctions) {
                         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'No junctions found in source repository'
@@ -405,6 +422,8 @@ function Set-WorktreeJunctions {
                     $result.Errors += $errorMessage
                     throw
                 }
+            } else {
+                $result.Success = $true
             }
         } catch {
             $errorMessage = "Set-WorktreeJunctions failed: $($_.Exception.Message)"

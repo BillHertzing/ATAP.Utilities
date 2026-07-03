@@ -17,10 +17,12 @@ This completes task **V4-H03** (Sprint 0007).
 | Concern | Worker(s) | Start action (→ sprint) | End action (→ stable) | Stable-by-design |
 | --- | --- | --- | --- | --- |
 | Machine links (NTFS junctions) | `Set-WorktreeJunctions` | recreate `.claude` / `.github` / `.vscode` junctions in each sprint worktree, dev-redirected to the SharedVSCode sprint worktree | recreate junctions from the stable repo so they point back to stable SharedVSCode | No |
-| SharedVSCode settings | `Set-UserSettingsSymlink`, `Set-ClaudeSettingsSymlink` | point `%APPDATA%\Code\User\settings.json` and `~/.claude/settings.json` at the sprint worktree's `UserSettings.jsonc` / `claude-settings.json` | point both back at the stable SharedVSCode copies | No |
+| SharedVSCode settings | `Invoke-SprintAIAdapterLifecycle`, `Set-UserSettingsSymlink`, `Set-ClaudeSettingsSymlink` | re-render the SharedVSCode settings target for the sprint boundary, then point `%APPDATA%\Code\User\settings.json` and `~/.claude/settings.json` at the sprint worktree's `UserSettings.jsonc` / `claude-settings.json` | re-render the SharedVSCode settings target for stable, then point both symlinks back at the stable SharedVSCode copies | No |
 | Downstream contexts | `Initialize-DownstreamSprintFromSharedVSCode` (Start) / `Reset-DownstreamToSharedVSCodeMain` (End) | set each `*.code-workspace` `templateRef`/`profile` to the sprint worktree and re-apply hooks / commit template / gitattributes | reset `templateRef` to `main`, `profile` to `default`, re-apply context | No |
 | Canonical project AI adapters | `Invoke-SprintAIAdapterLifecycle` | call `Render-AIAdapters -Domain settings,permissions` in Antigravity → Codex → Claude Code → Copilot order; real worktrees materialize project scope only | call `Test-AIAdapterDrift -Domain settings,permissions`; unexplained drift blocks link teardown pending promote/regenerate review | No |
 | PowerShell 7 profile symlinks | `Set-PowerShell7ProfileSymlink` | point `C:\Program Files\PowerShell\7\profile.ps1` at the ATAP.Utilities sprint worktree and `HostSettings.ps1` at the ATAP.IAC sprint worktree; remove the obsolete `global_ConfigRootKeys.ps1` / `global_environmentVariables.ps1` links | point `profile.ps1` / `HostSettings.ps1` back at the stable ATAP.Utilities / ATAP.IAC repos | No |
+| Developer PowerShell profiles | `Set-SprintBoundaryUserProfiles` | discover developers from `OverviewSprintNNNN.code-workspace` and install each developer's `Documents\PowerShell\profile.ps1` from `CurrentUserAllHostsV7CoreProfile.ps1` in the sprint ATAP.Utilities worktree | install each developer profile from the stable ATAP.Utilities `CurrentUserAllHostsV7CoreProfile.ps1` | No |
+| Service-account PowerShell profiles | `Set-SprintBoundaryUserProfiles` | discover configured service accounts from host settings and install each available account's `Documents\PowerShell\profile.ps1` from `ProfileForServiceAccountUsers.ps1` in the sprint ATAP.Utilities worktree | install each available service-account profile from the stable ATAP.Utilities `ProfileForServiceAccountUsers.ps1`; missing/disabled accounts are warned, not hard-coded | No |
 | ConfigRootKeys | — | none (in-process bootstrap) | none (in-process bootstrap) | **Yes** |
 
 ## AIAdapter lifecycle contract
@@ -34,6 +36,11 @@ sprint worktree:
 - **End:** `Test-AIAdapterDrift -Domain settings,permissions` before any junction,
   settings-link, or downstream-context teardown. Unexplained drift leaves the
   sprint wiring intact for promote/regenerate review.
+- **Boundary settings refresh:** `Set-SprintBoundaryContext` also reuses the Start
+  render against the selected SharedVSCode target at both boundaries so
+  `settings.overlay.json` output such as `permissions.additionalDirectories` and
+  hook command paths is regenerated before `settings.json` / `claude-settings.json`
+  symlinks are repointed.
 - **Safety:** `-WhatIf` is nonmutating. Live user/global replacement requires
   explicit approval and `-CheckpointConfirmed`; backups/evidence stay beneath
   `_generated/`. Runtime and MCP state remain preserve/defer surfaces.
@@ -41,7 +48,7 @@ sprint worktree:
 Task 10.26.k removed the settings-named transition command after parity; all
 documentation and callers use `Invoke-SprintAIAdapterLifecycle`.
 
-### PowerShell 7 profile symlinks are retargeted; ConfigRootKeys are stable-by-design
+### PowerShell profiles are retargeted or deployed; ConfigRootKeys are stable-by-design
 
 - **PowerShell 7 profile symlinks** are **not** stable-by-design (corrected under
   H09/SC-0188, Task 10.13). `C:\Program Files\PowerShell\7\profile.ps1` is how the
@@ -53,6 +60,13 @@ documentation and callers use `Invoke-SprintAIAdapterLifecycle`.
   `global_environmentVariables.ps1` symlinks). SprintEnd 0009 not resetting
   `global_ConfigRootKeys.ps1` left it pointed at the deleted Sprint 0009 worktree — the root
   cause of the recurring config-globals breakage this concern now prevents.
+- **Developer and service-account profiles** are also **not** stable-by-design
+  (Tasks 11.7.f/g). `Set-SprintBoundaryUserProfiles` resolves developers from the
+  sprint Overview workspace and service accounts from the existing host settings,
+  then ensures each available identity has `Documents\PowerShell\profile.ps1`
+  sourced from the correct sprint or stable ATAP.Utilities profile file. SprintEnd
+  verification re-discovers those managed profiles and proves that they are
+  readable, stable-sourced, and free of stale sprint-worktree references.
 - **ConfigRootKeys** remain genuinely stable-by-design: they are bootstrapped **in-process**
   by `Initialize-ATAPConfigurationGlobals` (Task 10.5) into `$global:configRootKeys` /
   `$global:settings` rather than dot-sourced from a `C:\Program Files\PowerShell\7` symlink,
@@ -60,7 +74,9 @@ documentation and callers use `Invoke-SprintAIAdapterLifecycle`.
 
 `Set-SprintBoundaryContext` emits one concern entry per row above: the
 `PowerShell7ProfileSymlinks` concern carries `StableByDesign = $false` and its active
-`Set-PowerShell7ProfileSymlink` result, while `ConfigRootKeys` keeps `StableByDesign = $true`.
+`Set-PowerShell7ProfileSymlink` result, the `DeveloperPowerShellProfiles` and
+`ServiceAccountPowerShellProfiles` concerns carry `StableByDesign = $false`, and
+`ConfigRootKeys` keeps `StableByDesign = $true`.
 The returned contract demonstrably covers every concern named in the V4-H03 acceptance
 criteria as extended by H09/SC-0188 (Task 10.13).
 
@@ -107,9 +123,13 @@ when repairing a single host after a partial sprint-start).
 ## Tests
 
 `src/ATAP.Utilities.BuildTooling.PowerShell/tests/Unit/Set-SprintBoundaryContext.Tests.ps1`
-(mocked workers): Start vs End worker dispatch and targets, the five-concern return
-contract, per-worktree breakdown, missing-worktree error handling, settings-only
-invocation, and `-WhatIf` no-mutation. Run:
+(mocked workers): Start vs End worker dispatch and targets, the seven-concern return
+contract, shared-settings re-rendering, managed profile deployment, per-worktree
+breakdown, missing-worktree error handling, settings-only invocation, and
+`-WhatIf` no-mutation. `tests/Unit/Set-SprintBoundaryUserProfiles.Tests.ps1`
+exercises developer/service-account profile discovery and deployment, and
+`tests/Unit/SprintEndLifecycle.Tests.ps1` verifies that
+`Test-SprintEndBoundaryState` auto-discovers the managed profiles. Run:
 
 ```powershell
 pwsh -Command "Invoke-Pester -Path 'src/ATAP.Utilities.BuildTooling.PowerShell/tests/Unit/Set-SprintBoundaryContext.Tests.ps1' -Output Minimal"

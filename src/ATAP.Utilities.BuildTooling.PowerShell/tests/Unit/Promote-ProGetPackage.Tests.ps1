@@ -28,6 +28,8 @@ BeforeAll {
                 [string]$ToFeed,
                 [Alias('Comments')]
                 [string]$Reason,
+                [string]$ProGetBaseUrl,
+                [string]$ApiKey,
                 [System.Management.Automation.ActionPreference]$ErrorAction
             )
         }
@@ -125,6 +127,17 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit', 'PromotedModuleHostSensitive' {
 
             Assert-MockCalled Move-ProGetPackageInterTier -Times 1 -Exactly -Scope It -ParameterFilter {
                 $Name -eq 'pkg' -and $Reason -eq 'why'
+            }
+        }
+
+        It 'Forwards ProGetBaseUrl and ApiKey to the inner cmdlet for profileless BuildMaster runners' {
+            Promote-ProGetPackage -Name 'pkg' -Version '1.0.0' `
+                -FromFeed 'powershellget-development' -ToFeed 'powershellget-integration' `
+                -Reason 'integration gate' -CeilingTier 'Integration' `
+                -ProGetBaseUrl 'http://localhost:50000' -ApiKey 'unit-key' | Out-Null
+
+            Assert-MockCalled Move-ProGetPackageInterTier -Times 1 -Exactly -Scope It -ParameterFilter {
+                $ProGetBaseUrl -eq 'http://localhost:50000' -and $ApiKey -eq 'unit-key'
             }
         }
 

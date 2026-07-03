@@ -13,7 +13,8 @@ Describe 'Get-HostSettings' -Tag 'Unit' {
     $script:hadPreviousConfigRootKeys = $null -ne $existingConfigRootKeys
     $script:previousConfigRootKeys = if ($script:hadPreviousConfigRootKeys) { $existingConfigRootKeys.Value } else { $null }
     $global:configRootKeys = @{
-      ExampleConfigRootKey = 'ExampleConfig'
+      ExampleConfigRootKey                         = 'ExampleConfig'
+      BuildMasterApplicationByModuleConfigRootKey = 'BuildMasterApplicationByModule'
     }
 
     $script:testIacRoot = Join-Path $PSScriptRoot '_tmp_GetHostSettings_IAC'
@@ -60,5 +61,61 @@ function Get-HostSettings {
     $result['ExampleConfig'] | Should -Be 'override'
     $result['HostName'] | Should -Be 'test-host'
     $result['JoinedPath'] | Should -Be (Join-Path 'C:\Temp' 'Example')
+  }
+
+  It 'normalizes the reviewed BuildMaster application map to include RulesManagement' {
+    @'
+if (-not (Get-Command -Name 'Get-ClonedAndModifiedHashtable' -CommandType Function -ErrorAction SilentlyContinue)) {
+  throw 'Get-ClonedAndModifiedHashtable was not available before HostSettings.ps1 was loaded.'
+}
+
+function Get-HostSettings {
+  param(
+    [string] $hostName
+  )
+
+  @{
+    HostName = $hostName
+    $global:configRootKeys['BuildMasterApplicationByModuleConfigRootKey'] = @{
+      'ATAP.Utilities.PowerShell'                    = 'ATAP.Utilities-PowerShell'
+      'ATAP.Utilities.ConfigRootKeys.PowerShell'     = 'ATAP.Utilities-PowerShell'
+      'ATAP.Utilities.BuildTooling.PowerShell'       = 'ATAP.Utilities-PowerShell'
+      'ATAP.Utilities.DatabaseManagement.PowerShell' = 'ATAP.Utilities-PowerShell'
+    }
+  }
+}
+'@ | Set-Content -LiteralPath (Join-Path $script:testIacRoot 'HostSettings.ps1') -Encoding UTF8
+
+    $result = Get-HostSettings -hostName 'test-host' -IACBasePath $script:testIacRoot
+    $map = $result['BuildMasterApplicationByModule']
+
+    $map.Keys.Count | Should -Be 5
+    $map['ATAP.Utilities.RulesManagement.PowerShell'] | Should -Be 'ATAP.Utilities-PowerShell'
+    $map['ATAP.Utilities.BuildTooling.PowerShell'] | Should -Be 'ATAP.Utilities-PowerShell'
+  }
+
+  It 'throws when a reviewed BuildMaster module mapping conflicts with the local contract' {
+    @'
+if (-not (Get-Command -Name 'Get-ClonedAndModifiedHashtable' -CommandType Function -ErrorAction SilentlyContinue)) {
+  throw 'Get-ClonedAndModifiedHashtable was not available before HostSettings.ps1 was loaded.'
+}
+
+function Get-HostSettings {
+  param(
+    [string] $hostName
+  )
+
+  @{
+    HostName = $hostName
+    $global:configRootKeys['BuildMasterApplicationByModuleConfigRootKey'] = @{
+      'ATAP.Utilities.RulesManagement.PowerShell' = 'Unexpected-App'
+    }
+  }
+}
+'@ | Set-Content -LiteralPath (Join-Path $script:testIacRoot 'HostSettings.ps1') -Encoding UTF8
+
+    {
+      Get-HostSettings -hostName 'test-host' -IACBasePath $script:testIacRoot
+    } | Should -Throw '*Reviewed BuildMaster mapping conflict*'
   }
 }

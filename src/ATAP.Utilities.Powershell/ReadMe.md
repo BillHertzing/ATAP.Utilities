@@ -4,6 +4,47 @@
 
 Miscellaneous Powershell scripts
 
+## Write-\*Indented Diagnostic Display Helpers (SC-0183, Task 11.20)
+
+Four diagnostic display functions were moved from the inline `AllUsersAllHosts` profile
+into this module's `public/` folder so the profile loads them via module autoloading
+rather than redefining them on every session start (reduces profile load time):
+
+- `Write-ArrayIndented` — formats an array as a multi-line indented string
+- `Write-HashIndented` — formats a hashtable alphabetically as indented key=value pairs
+- `Write-KVPIndented` — formats a single key-value pair as an indented string
+- `Write-EnvironmentVariablesIndented` — formats all environment variables (Machine, User, Process scopes)
+
+These are still called in the profile via the `Write-EnvironmentVariablesIndented` call
+that appears in the startup diagnostics block; they now resolve from the installed module
+(stable worktree) or dot-sourced sprint files (sprint worktree).
+
+## Interactive Bitwarden Session Helper (Task 11.16 follow-up)
+
+`Initialize-BitwardenSession` now lives in `public/` and is exported by the module.
+`Profiles/LoginScript.ps1` remains the startup-task runner: it loads the exported
+function, unlocks the interactive Password Manager vault with `bw`, then processes
+`Profiles/BitwardenEnvVarConfig.json` through `Set-EnvVarsFromBitWarden`.
+
+Profiles intentionally do not load or call this helper; startup tasks or explicit user commands own interactive `BW_SESSION` setup. This helper is only for personal Password Manager access. CI,
+BuildMaster, service-account, database, and project/runtime secrets must continue to
+use Bitwarden Secrets Manager through `Get-SecretATAP` / `bws`.
+
+## BuildMaster module routing normalization (Task 11.22)
+
+`Get-HostSettings` now normalizes the reviewed
+`$global:settings['BuildMasterApplicationByModule']` hashtable after it loads the
+ATAP.IAC `HostSettings.ps1` source. The wrapper ensures the core ATAP PowerShell
+modules all route to the shared `ATAP.Utilities-PowerShell` BuildMaster
+application, including `ATAP.Utilities.RulesManagement.PowerShell`, which was
+missing from the upstream fragment observed on 2026-06-30.
+
+This keeps `Start-BuildMasterModulePipelineBatch` deterministic in this repo
+without teaching it a one-off fallback. If the upstream HostSettings source later
+provides a conflicting reviewed mapping, `Get-HostSettings` throws so the
+configuration drift is surfaced instead of silently masked. Verification for the
+Sprint 0011 change is recorded in
+`_generated/Task-11.22-BuildMasterApplicationMap-evidence.md`.
 ## Get-FilesWithContent
 
 ToDo: write content
@@ -11,6 +52,7 @@ ToDo: write content
 ## Get-GoogleChromeBookmarks
 
 ToDo: write content
+
 ## Get-PVal Loud-Failure Guard (Task 8.16, SC-prop-0007-1; host-context exception Task 9.1, V4-B02)
 
 `Get-ParameterValueFromNeoConfigurationRoot` (alias `Get-PVal`) throws with `-NoProfile`
@@ -22,7 +64,7 @@ even when a `DefaultValue` or `-AllowMissing` is supplied. An entirely absent
 `-NoProfile` for ATAP work.
 
 **Host-context exception (Task 9.1, V4-B02).** The BuildMaster 5-tier pipeline runs its
-runners via `pwsh -NoProfile -File` *by design*, so `$global:settings` is legitimately
+runners via `pwsh -NoProfile -File` _by design_, so `$global:settings` is legitimately
 absent there and the documented param → env → settings → `DefaultValue` chain must degrade
 rather than throw. The runners declare that context by setting
 `$env:ATAP_NOPROFILE_PIPELINE = '1'`; in the declared context the guard **yields** to an
@@ -61,4 +103,7 @@ Set-GroupEnvironmentVariables -ConfigRootKeys 'FastTempBasePathConfigRootKey','D
 Use the module-level getting started guide for the lifecycle workflow:
 
 - [Documentation/GettingStarted.md](Documentation/GettingStarted.md)
+
+- Version bumped to 0.1.10 in Sprint 11 for the Initialize-BitwardenSession module move.
+
 

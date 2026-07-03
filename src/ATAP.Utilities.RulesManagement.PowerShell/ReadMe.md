@@ -17,3 +17,6 @@ Sprint 0008 adds the AgentText pilot:
   for the obsolete UserInformation decrypt procedure.)
 
 See [INDEX.md](INDEX.md) for the complete function and table inventory.
+
+- Version bumped to 0.1.9 in Sprint 11
+

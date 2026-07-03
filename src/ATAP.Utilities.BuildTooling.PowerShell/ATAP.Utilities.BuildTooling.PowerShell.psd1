@@ -12,7 +12,7 @@
     RootModule           = 'ATAP.Utilities.BuildTooling.Powershell.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '0.1.10'
+    ModuleVersion        = '0.1.13'
 
     # Supported PSEditions
     CompatiblePSEditions = 'Desktop', 'Core'
@@ -51,8 +51,8 @@
     # ProcessorArchitecture = ''
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules      = @(@{ModuleName = 'PSFramework'; ModuleVersion = '1.10.0'; MaximumVersion = '1.999.999'; },
-        @{ModuleName = 'powershell-yaml'; ModuleVersion = '0.4.7'; MaximumVersion = '0.999.999'; })
+    RequiredModules      = @(@{ModuleName = 'PSFramework'; ModuleVersion = '0.1.13'; MaximumVersion = '1.999.999'; },
+        @{ModuleName = 'powershell-yaml'; ModuleVersion = '0.1.13'; MaximumVersion = '0.999.999'; })
 
     # Assemblies that must be loaded prior to importing this module
     # RequiredAssemblies = @()
@@ -87,7 +87,7 @@
     'Create-ServiceAccount', 'Get-AllFilesChangedByCommit',
     'Get-ATAPIACConstant', 'Get-BrokenGitSubDirs', 'Get-BuildContext',
     'Get-DatabasePackageBuildContext', 'Get-DbConnectionStringSecretDescriptor',
-    'Get-SprintEndContext',
+    'Get-SprintEndContext', 'Get-SprintHistoryReconstruction',
     'Get-DeployedReleaseManifest', 'Get-IncorrectSymLinksAndJunctions',
     'Get-JenkinsEnvSettings', 'Get-MergedPesterConfigurations',
     'Get-ModuleAsSymbolicLink', 'Get-ModuleHighestVersion',
@@ -155,6 +155,7 @@
     'Set-BuildMasterPipelineStageDeploymentStep', 'Set-DownstreamSharedVSCodeContext',
     'Set-FloatingPackagePins', 'Set-PowerShell7ProfileSymlink',
     'Set-SprintBoundaryContext', 'Set-TaskComplete',
+    'Set-SprintBoundaryUserProfiles',
     'Set-WorkspaceSharedVSCodeReference', 'Set-WorktreeJunctions',
     'Start-BuildMasterDeployment', 'Start-BuildMasterModulePipelineBatch',
     'Start-BuildMasterPackagePipeline', 'Start-BuildMasterPipeline', 'Start-DebugPowerShell',

@@ -61,7 +61,7 @@ function New-SprintStage1 {
     [ValidatePattern('^\d{4}$')]
     [string]$SprintNumber,
 
-    [string[]]$JunctionFolderNames = @('.claude', '.github', '.vscode'),
+    [string[]]$JunctionFolderNames = @('.vscode'),
 
     [string]$ProGetBaseUrl,
 
@@ -76,6 +76,9 @@ function New-SprintStage1 {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
     if ($DryRun) {
+      if ($PSBoundParameters.ContainsKey('WhatIf') -and -not $WhatIfPreference) {
+        throw "Cannot specify -DryRun and -WhatIf:`$false together."
+      }
       $WhatIfPreference = $true
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'DryRun enabled — no external side effects will be performed.'
     }
@@ -151,6 +154,7 @@ function New-SprintStage1 {
         'Set-WorktreeJunctions'
         'Initialize-DownstreamSprintFromSharedVSCode'
         'Initialize-SprintAIAdapters'
+        'Get-SprintHistoryReconstruction'
         'Convert-TasksMdToSprintBoard')) {
       if (-not (Get-Command -Name $required -ErrorAction SilentlyContinue)) {
         throw "Required command '$required' is not available. The " +
@@ -195,28 +199,13 @@ function New-SprintStage1 {
         -Message "Using explicit sprint number $sprintNum"
     } else {
       $planningRoot = Join-Path $GitRoot '_Planning'
-      $retroDir = Join-Path $planningRoot 'SprintRetrospective'
-
-      $retrospectives = Get-ChildItem $retroDir `
-        -Filter 'Notebook-SprintWorkSession-*-End.md' -ErrorAction SilentlyContinue |
-        Sort-Object Name -Descending
-
-      if ($retrospectives) {
-        $lastRetro = $retrospectives[0].Name
-        if ($lastRetro -match 'SprintWorkSession-(\d{4})-End') {
-          $lastSprintN = [int]$Matches[1]
-          $newSprintN = $lastSprintN + 1
-        } else {
-          $newSprintN = 1
-        }
-      } else {
-        $newSprintN = 1
-      }
+      $history = Get-SprintHistoryReconstruction -PlanningRoot $planningRoot
+      $newSprintN = [int]$history.LastCompletedSprintNumber + 1
 
       $sprintNum = '{0:D4}' -f $newSprintN
       $prevNum = '{0:D4}' -f ($newSprintN - 1)
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-        -Message "Auto-detected sprint number $sprintNum (previous: $prevNum)"
+        -Message "Auto-detected sprint number $sprintNum (previous: $prevNum) from sprint-history reconstruction with $(@($history.Warnings).Count) warning(s)"
     }
 
     $result.nextSprintNumber = $sprintNum
@@ -400,14 +389,15 @@ function New-SprintStage1 {
     # 3d. Create NTFS junctions in the _Planning worktree
     try {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-        -Message 'Creating NTFS junctions in _Planning worktree pointing to SharedVSCode sprint worktree'
+        -Message "Creating supported NTFS junctions in _Planning worktree: $($JunctionFolderNames -join ', ')"
 
       if ($PSCmdlet.ShouldProcess($planWorktreePath, 'Set-WorktreeJunctions')) {
-        $junctionResult = Set-WorktreeJunctions `
-          -SourceRepoPath $planRepoPath `
-          -WorktreePath $planWorktreePath `
-          -DevSourceRepoPath $svWorktreePath `
-          -DevSourceRepoFolderNames $JunctionFolderNames
+          $junctionResult = Set-WorktreeJunctions `
+            -SourceRepoPath $planRepoPath `
+            -WorktreePath $planWorktreePath `
+            -DevSourceRepoPath $svWorktreePath `
+            -DevSourceRepoFolderNames $JunctionFolderNames `
+            -WhatIf:$WhatIfPreference
 
         if ($junctionResult.Success) {
           $result.planning.junctionsCreated = $true
@@ -431,10 +421,11 @@ function New-SprintStage1 {
         -Message 'Materializing AI adapters in _Planning worktree'
 
       if ($PSCmdlet.ShouldProcess($planWorktreePath, 'Initialize-SprintAIAdapters')) {
-        Initialize-SprintAIAdapters `
-          -TargetRoot $planWorktreePath `
-          -SharedVSCodeWorktreePath $svWorktreePath `
-          -Force:$Force | Out-Null
+          Initialize-SprintAIAdapters `
+            -TargetRoot $planWorktreePath `
+            -SharedVSCodeWorktreePath $svWorktreePath `
+            -Force:$Force `
+            -WhatIf:$WhatIfPreference | Out-Null
 
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
           -Message 'AI adapters materialized in _Planning worktree'
@@ -462,7 +453,8 @@ function New-SprintStage1 {
           Initialize-DownstreamSprintFromSharedVSCode `
             -WorkspaceFiles $workspaceFiles `
             -TemplateRef $templateRef `
-            -Profile "sprint-$sprintNum"
+            -Profile "sprint-$sprintNum" `
+            -WhatIf:$WhatIfPreference
 
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
             -Message "_Planning context applied with templateRef $templateRef"
@@ -565,7 +557,8 @@ function New-SprintStage1 {
           Convert-TasksMdToSprintBoard `
             -TasksFilePath $artifactPaths.Markdown `
             -OutputPath $artifactPaths.Board `
-            -Confirm:$false | Out-Null
+            -Confirm:$false `
+            -WhatIf:$WhatIfPreference | Out-Null
         }
 
         $accomplishedHtml = @"

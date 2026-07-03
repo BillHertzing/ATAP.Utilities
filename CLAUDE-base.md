@@ -50,6 +50,37 @@ which exists for the duration of a work sprint. Aprint worktrees' root path matc
 
 --
 
+## Sprint worktree path placeholders
+
+Many instructions, documentation, and code files use symbolic placeholders for sprint
+worktree paths. Replace each `${SPRINT_WORKTREE_PATH_*}` with the actual path for the
+current sprint before running commands or applying configuration changes.
+
+Sprint (`${SPRINT_WORKTREE_PATH_*}`) placeholders — the active sprint branch worktree for a repo:
+
+- `${SPRINT_WORKTREE_PATH_SHAREDVSCODE}` — SharedVSCode sprint worktree path.
+- `${SPRINT_WORKTREE_PATH_ATAP_UTILITIES}` — ATAP.Utilities sprint worktree path.
+- `${SPRINT_WORKTREE_PATH_ATAP_IAC}` — ATAP.IAC (Infrastructure-as-Code) sprint worktree path.
+- `${SPRINT_WORKTREE_PATH_ATAP_PLANNING}` — _Planning sprint worktree path.
+- `${SPRINT_WORKTREE_PATH_ACECOMMANDER}` — AceCommander sprint worktree path.
+- `${SPRINT_WORKTREE_PATH_EPHEMERAL}` — Abstract sprint worktree path (used in examples not tied to a specific repository).
+
+Stable (`${STABLE_WORKTREE_PATH_*}`) placeholders — the permanent stable-branch worktree for a
+repo (the closed-state path used after a sprint ends). The same five repository suffixes apply:
+`${STABLE_WORKTREE_PATH_SHAREDVSCODE}`, `${STABLE_WORKTREE_PATH_ATAP_UTILITIES}`,
+`${STABLE_WORKTREE_PATH_ATAP_IAC}`, `${STABLE_WORKTREE_PATH_ATAP_PLANNING}`, and
+`${STABLE_WORKTREE_PATH_ACECOMMANDER}`.
+
+These placeholders are not real paths; tools and AI agents should recognize them as variables
+that represent stable or ephemeral sprint branch worktrees, rather than hard-coded directories.
+
+`Render-AIAdapters` resolves both families to concrete absolute paths when it renders agent
+configuration (for example the Claude Code hook-registration command and the
+`permissions.additionalDirectories` trusted-directory list). A standalone trusted-directory
+placeholder whose worktree does not currently exist (for example a repo with no sprint worktree
+this sprint) is omitted from the rendered list, so the list only ever contains real directories
+and the sprint entries drop out automatically at sprint end.
+
 ## Shared Task Queue
 
 All cross-repo planning and ordered work items are tracked in:

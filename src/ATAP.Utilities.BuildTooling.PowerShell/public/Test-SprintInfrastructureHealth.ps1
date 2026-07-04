@@ -402,7 +402,10 @@ function Test-SprintInfrastructureHealth {
         }
       }
 
-      $gitOutput = & git config --global safe.directory 2>&1
+      # --get-all is required: safe.directory is multi-valued, and the plain
+      # 'git config --global safe.directory' form silently returns only the
+      # LAST-added entry, causing a false failure for every earlier repo root.
+      $gitOutput = & git config --global --get-all safe.directory 2>&1
       $gitExitCode = $LASTEXITCODE
       $safeList = @($gitOutput | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 

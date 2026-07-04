@@ -401,7 +401,7 @@
     "dotnet.defaultSolution": "ATAP.Utilities.sln",
     "powershell.cwd": "ATAP.Utilities (Root)",
     "atap.sharedVSCode.repoRoot": "C:\\dropbox\\whertzing\\GitHub\\SharedVSCode",
-    "atap.sharedVSCode.templateRef": "main",
+    "atap.sharedVSCode.templateRef": "SharedVSCode-wt-54-Sprint-0012-work-items",
     "atap.sharedVSCode.profile": "default"
   }
 }

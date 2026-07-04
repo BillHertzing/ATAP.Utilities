@@ -201,9 +201,13 @@ _Teach / Tell how to create software._
 - [C# Central Package Management](CSharp-Central-Package-Management.md) —
   Central package-management conventions and migration guidance for C# projects.
 - [C# Packages — Build Process](CSharp-Packages-Build-Process.md) —
-  Step-by-step C# package build flow.
+  Step-by-step C# package build flow. Also names the separate
+  `Build\Invoke-RepoHealthGate.ps1` RepoHealth gate for shared MSBuild property
+  checks that must run after restore and before pack/publish.
 - [C# Packages — Test Process](CSharp-Packages-Test-Process.md) —
-  C# package testing process and expected test artifacts.
+  C# package testing process and expected test artifacts, including the
+  repo-wide `tests\RepoHealth` Pester gate that is intentionally outside
+  package/module test discovery.
 - [C# Packages — Pack and Push](CSharp-Packages-Pack-and-Push.md) —
   Packaging and publishing flow for C# packages.
 - [C# Packages — Versioning](CSharp-Packages-Versioning.md) —

@@ -101,6 +101,80 @@ Describe 'Set-SprintBoundaryContext [public]' {
         -ParameterFilter { $Boundary -eq 'Start' -and $TargetRoot -eq $script:svSprint }
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 1 -Exactly -Scope It `
         -ParameterFilter { $Boundary -eq 'Start' -and $TargetRoot -eq $script:worktree }
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 0 -Exactly -Scope It `
+        -ParameterFilter { [bool]$OmitSprintWorktrees }
+    }
+  }
+
+  Context 'Concrete-adapter regression (SC-0231): .claude/.github are never junctioned' {
+    It 'Start never dev-redirects .claude or .github (default JunctionFolderNames is .vscode only)' {
+      Set-SprintBoundaryContext -Boundary Start `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -GitRoot $script:gitRoot
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions -Times 1 -Exactly -Scope It `
+        -ParameterFilter {
+          @($DevSourceRepoFolderNames) -notcontains '.claude' -and
+          @($DevSourceRepoFolderNames) -notcontains '.github' -and
+          (@($DevSourceRepoFolderNames) -join ',') -eq '.vscode'
+        }
+    }
+
+    It 'End never sources .claude or .github back as junctions (StableJunctionFolderNames is .vscode only)' {
+      Set-SprintBoundaryContext -Boundary End `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svStable `
+        -GitRoot $script:gitRoot
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions -Times 1 -Exactly -Scope It `
+        -ParameterFilter {
+          @($SourceRepoFolderNames) -notcontains '.claude' -and
+          @($SourceRepoFolderNames) -notcontains '.github'
+        }
+    }
+
+    It 'An explicit legacy three-folder request is the ONLY way .claude/.github get dev-redirected (guards the default, not the capability)' {
+      Set-SprintBoundaryContext -Boundary Start `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -GitRoot $script:gitRoot `
+        -JunctionFolderNames @('.claude', '.github', '.vscode')
+
+      # Proves the assertion above is about the DEFAULT: when a caller explicitly opts
+      # in, the names flow through - so a regression to the old default would be caught
+      # by the default-only tests, not masked by the parameter being ignored.
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions -Times 1 -Exactly -Scope It `
+        -ParameterFilter { @($DevSourceRepoFolderNames) -contains '.claude' }
+    }
+  }
+
+  Context 'SC-0236 regression: Start filters the junction SOURCE SCAN, not just the dev-redirect' {
+    It 'Passes -SourceRepoFolderNames matching JunctionFolderNames on Start (default .vscode only)' {
+      Set-SprintBoundaryContext -Boundary Start `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -GitRoot $script:gitRoot
+
+      # Before the SC-0236 fix, Start never bound -SourceRepoFolderNames at all, so
+      # Set-WorktreeJunctions' scan was unfiltered and would recreate ANY junction
+      # physically present in the stable repo (e.g. a stale .claude/.github junction),
+      # independent of DevSourceRepoFolderNames. This asserts the scan filter itself.
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions -Times 1 -Exactly -Scope It `
+        -ParameterFilter {
+          (@($SourceRepoFolderNames) -join ',') -eq '.vscode'
+        }
+    }
+
+    It 'An explicit legacy three-folder request also widens the source scan (guards the default, not the capability)' {
+      Set-SprintBoundaryContext -Boundary Start `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -GitRoot $script:gitRoot `
+        -JunctionFolderNames @('.claude', '.github', '.vscode')
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions -Times 1 -Exactly -Scope It `
+        -ParameterFilter { @($SourceRepoFolderNames) -contains '.claude' }
     }
   }
 
@@ -145,6 +219,18 @@ Describe 'Set-SprintBoundaryContext [public]' {
 
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Reset-DownstreamToSharedVSCodeMain -Times 1 -Exactly -Scope It
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Initialize-DownstreamSprintFromSharedVSCode -Times 0 -Exactly -Scope It
+    }
+
+    It 'Re-renders shared settings with OmitSprintWorktrees while keeping the per-worktree End audit unomitted' {
+      Set-SprintBoundaryContext -Boundary End `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svStable `
+        -GitRoot $script:gitRoot
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $Boundary -eq 'End' -and $TargetRoot -eq $script:worktree -and -not [bool]$OmitSprintWorktrees }
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $Boundary -eq 'Start' -and $TargetRoot -eq $script:svStable -and [bool]$OmitSprintWorktrees }
     }
   }
 
@@ -243,6 +329,8 @@ Describe 'Set-SprintBoundaryContext [public]' {
 
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-UserSettingsSymlink -Times 1 -Exactly -Scope It
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions -Times 0 -Exactly -Scope It
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $Boundary -eq 'Start' -and $TargetRoot -eq $script:svStable -and [bool]$OmitSprintWorktrees }
     }
   }
 

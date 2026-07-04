@@ -35,8 +35,10 @@ function New-SprintStage1 {
     Explicit sprint number (four-digit zero-padded string, e.g. '0006').
     When omitted the function auto-detects from the latest retrospective.
   .PARAMETER JunctionFolderNames
-    Folder names to junction from SharedVSCode into _Planning.
-    Defaults to @('.claude', '.github', '.vscode').
+    Folder names to junction from SharedVSCode into _Planning, and the same
+    names used to filter the source-repo junction scan (SC-0236). Defaults to
+    @('.vscode'): `.claude`/`.github` are concrete, canonical-rendered
+    directories (SC-0231) and must never be junctioned.
   .PARAMETER DryRun
     Preview all sprint-start actions without creating GitHub issues, branches,
     worktrees, junctions, SharedVSCode context, or NuGet.config files.
@@ -397,6 +399,7 @@ function New-SprintStage1 {
             -WorktreePath $planWorktreePath `
             -DevSourceRepoPath $svWorktreePath `
             -DevSourceRepoFolderNames $JunctionFolderNames `
+            -SourceRepoFolderNames $JunctionFolderNames `
             -WhatIf:$WhatIfPreference
 
         if ($junctionResult.Success) {

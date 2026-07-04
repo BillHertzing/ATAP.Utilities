@@ -1,5 +1,7 @@
 {
-  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "CLAUDE_CODE_SHELL": "pwsh"
+  },
   "permissions": {
     "defaultMode": "acceptEdits",
     "allow": [
@@ -136,12 +138,17 @@
       "C:\\Program Files\\PowerShell\\Modules",
       "C:\\Program Files\\PowerShell\\7",
       "C:\\Dropbox\\whertzing\\GitHub\\SharedVSCode",
+      "C:\\Dropbox\\whertzing\\GitHub\\SharedVSCode-wt-54-Sprint-0012-work-items",
       "C:\\Dropbox\\whertzing\\GitHub\\_Planning",
+      "C:\\Dropbox\\whertzing\\GitHub\\_Planning-wt-26-Sprint-0012-work-items",
       "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities",
+      "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities-wt-120-Sprint-0012-work-items",
       "C:\\Dropbox\\whertzing\\GitHub\\ATAP.IAC",
+      "C:\\Dropbox\\whertzing\\GitHub\\ATAP.IAC-wt-15-Sprint-0012-work-items",
       "C:\\Dropbox\\whertzing\\GitHub\\AceCommander"
     ]
   },
+  "model": "sonnet",
   "hooks": {
     "PreToolUse": [
       {
@@ -149,14 +156,22 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"C:\\Dropbox\\whertzing\\GitHub\\SharedVSCode\\.claude\\hooks\\PreToolUse-PwshGuard.ps1\""
+            "command": "pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"C:\\Dropbox\\whertzing\\GitHub\\SharedVSCode-wt-54-Sprint-0012-work-items\\.claude\\hooks\\PreToolUse-PwshGuard.ps1\""
           }
         ]
       }
     ]
   },
-  "env": {
-    "CLAUDE_CODE_SHELL": "pwsh"
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    }
   },
-  "autoUpdatesChannel": "latest"
+  "effortLevel": "xhigh",
+  "autoUpdatesChannel": "latest",
+  "agentPushNotifEnabled": true,
+  "$schema": "https://json.schemastore.org/claude-code-settings.json"
 }

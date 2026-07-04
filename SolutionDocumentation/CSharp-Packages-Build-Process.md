@@ -769,6 +769,23 @@ dotnet build MyProject.csproj --configuration Release
 | `ProGetExperimentalFeedUrl`                    | `ATAP.Utilities.BuildTooling.targets`                       | `http://localhost:50000/nuget/nuget-experimental/v3/index.json`        | Push destination.                                                                             |
 | `PROGET_ADMIN_API_KEY`                         | Environment variable (from Bitwarden via `LoginScript.ps1`) | (secret)                                                               | ProGet API key.                                                                               |
 
+### 8.1 RepoHealth gate for shared MSBuild properties
+
+The repository-wide MSBuild property audit is a **RepoHealth** gate, not a
+package test. Run it with:
+
+```powershell
+pwsh -File Build\Invoke-RepoHealthGate.ps1
+```
+
+The gate invokes `tests\RepoHealth\Directory.Build.Props.Properties.Tests.ps1`
+and evaluates `PackageLifeCycleStage`, `TargetProGetFeed`, and
+`CentralPackageVersionOverridesEnabled` through `dotnet msbuild -getProperty`
+for every C# project under `src/`. C# CI and BuildMaster flows should run this
+after restore and before `dotnet pack` or publish. It intentionally lives
+outside `src\ATAP.Utilities.BuildTooling.PowerShell\tests` so a single
+PowerShell module package build does not enumerate all C# projects.
+
 ---
 
 ## 9. Concurrent Migration — NBGV Alongside AssemblyInfo.cs

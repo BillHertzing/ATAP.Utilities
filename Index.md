@@ -19,6 +19,14 @@ images are generated with the PowerShell command documented in
 Editable `.puml`, `.uml`, and `.drawio` sources stay in their documentation
 folders; rendered images are written under `_generated/diagrams`.
 
+### RepoHealth gate
+
+`Build\Invoke-RepoHealthGate.ps1` runs repository-wide checks that are too broad
+for an individual package/module test suite. The current gate invokes
+`tests\RepoHealth\Directory.Build.Props.Properties.Tests.ps1` after C# restore
+and before pack/publish to verify `Directory.Build.props` properties across all
+C# projects under `src/`.
+
 ### AgentText RRSBS pilot
 
 Sprint 0008 adds an AgentText rule kind for AI agent and instruction text.

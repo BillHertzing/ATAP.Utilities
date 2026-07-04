@@ -14,6 +14,11 @@ If you are viewing this `ReadMe.md` in GitHub, [here is this same ReadMe on the 
 
 This package provides PowerShell goodies make it easier when developing Powershell modules for .Net, and especially inside of Visual Studio Code.
 
+Full-repository C# MSBuild property audits live outside this module at
+`tests\RepoHealth` and run through `Build\Invoke-RepoHealthGate.ps1`. They are
+not part of `module.build.ps1` for this PowerShell module because they enumerate
+C# projects across the repository.
+
 Sprint lifecycle plumbing in this module now resolves downstream Git context from
 the workspace file paths being retargeted instead of the caller's current
 directory. Generated `.gitattributes` and `.gitconfig.shared` content also
@@ -552,29 +557,24 @@ $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey'
 
 ```
 
-## Symbolic link for ~/.claude/settings.json
+## Managed render for ~/.claude/settings.json
 
-The `settings.json` file at (e.g) `C:\Users\<username>\.claude\settings.json` holds the settings that Claude Code will use. It applies to all repositories and workspaces. Every developer on a host needs to link to the organization's common settings, which are stored in the main branch's worktree of the `SharedVSCode` repository. To do this,replace the value of $username with the actual user name in the following command and run the following block of code.
+The `settings.json` file at `C:\Users\<username>\.claude\settings.json` holds
+Claude Code user-scope settings. It is a real JSON file rendered from
+`SharedVSCode\.ai\config\claudecode\settings.overlay.json`; the retired
+SharedVSCode root `claude-settings.json` file is no longer a target.
+
+Live user-global writes require both an explicit write gate and a confirmed
+checkpoint. `Set-ClaudeSettingsSymlink` keeps its historical name for callers,
+but now performs the managed render, backs up any existing target, replaces an
+existing symlink with a real file, and preserves unmanaged local root keys.
 
 ```Powershell
-  $username = 'whertzing'
-  # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
-  # ToDo: Fix after packaging is working
-  if (!${get-command New-SymbolicLink}) {
-    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\New-SymbolicLink.ps1'
-  }
-  # main branch's worktree for SharedVSCode
-  $mainBranchWorktree = Join-Path  $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $username 'GitHub', 'SharedVSCode'
-  # Figure out the best way to get the users home direcotry on this computer
-  $userHome = Join-Path $env:SystemDrive 'Users' $username
-  $claudeFolder =  Join-Path  $userHome '.claude'
-  #ToDo - ensure the folder exists
-  # link the SharedVSCode claude-settings.json to settings.json
-  New-SymbolicLink -targetPath $(Join-Path $mainBranchWorktree 'claude-settings.json') -symbolicLinkPath $(Join-Path $claudeFolder 'settings.json') -force
-  # Note the following may be used during development of the Claude settings.json
-  # Sprint branch's worktree root C:\Dropbox\$usernamewhertzing\GitHub\SharedVSCode-wt-36-sprint-0004-work-items
-  $sprintWorktree = "C:\Dropbox\$username\GitHub\SharedVSCode-wt-36-sprint-0004-work-items"
-  New-SymbolicLink -targetPath $(Join-Path $sprintWorktree 'claude-settings.json') -symbolicLinkPath $(Join-Path $claudeFolder 'settings.json') -force
+$sharedVSCodeWorktree = 'C:\Dropbox\whertzing\GitHub\SharedVSCode-wt-54-Sprint-0012-work-items'
+Set-ClaudeSettingsSymlink `
+  -SharedVSCodeWorktreePath $sharedVSCodeWorktree `
+  -AllowUserGlobalWrite `
+  -CheckpointConfirmed
 ```
 
 ## Symbolic Links for Prettier formatting rules, CSpell, eslint rules, building Powershell; modules (Invoke-Build) and Mocha

@@ -74,6 +74,12 @@ All of the tools used in producing a production-ready package are themselves sof
 
 The non-documentation Projects in this repository are written in C#, Powershell, and SQL. Documentation is written in Markdown, Unified Modelling Language (UML), and DrawIO.
 
+Repository-wide C# build health checks run through
+`Build\Invoke-RepoHealthGate.ps1` after restore and before pack or publish.
+That gate invokes `tests\RepoHealth` Pester tests for shared MSBuild contracts
+such as `Directory.Build.props` property propagation, and it is intentionally
+outside individual PowerShell module package build/test flows.
+
 ## <a id="Publishing" />Publishing
 
 ## <a id="Debugging" />Debugging

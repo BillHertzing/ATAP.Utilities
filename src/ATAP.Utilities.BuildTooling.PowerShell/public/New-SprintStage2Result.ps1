@@ -10,7 +10,7 @@ function New-SprintStage2Result {
   .PARAMETER RepoResults
     Array of repository results.
   .PARAMETER ClaudeSettingsError
-    Any error that occurred during claude-settings.json symlink creation.
+    Any error that occurred during Claude Code user settings render.
   .PARAMETER UserSettingsLinked
     Specifies if the VS Code user settings symlink was successfully retargeted.
   .PARAMETER UserSettingsError

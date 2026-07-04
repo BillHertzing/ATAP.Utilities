@@ -56,7 +56,9 @@ function Set-SprintBoundaryContext {
   .PARAMETER JunctionFolderNames
     Names of junction folders whose targets are dev-redirected to the SharedVSCode
     sprint worktree on 'Start'. Ignored on 'End' (junctions follow the stable repo).
-    Defaults to '.claude', '.github', '.vscode'.
+    Defaults to '.vscode' only: `.claude`/`.github` are concrete, canonical-rendered
+    directories in every repo (SC-0231 decision) and must never be junctioned, even
+    for dev-redirect purposes, so they are excluded from this default.
   .PARAMETER StableJunctionFolderNames
     Names of source-repository junction folders that SprintEnd is allowed to
     recreate from the stable repo. Defaults to '.vscode' so obsolete rendered
@@ -87,6 +89,12 @@ function Set-SprintBoundaryContext {
   .PARAMETER SkipProfileSymlinks
     Skip the machine-wide PowerShell 7 profile-symlink retarget concern. Intended
     only for narrowly scoped repair or diagnostic calls.
+  .PARAMETER AllowUserGlobalWrite
+    Permit this boundary operation to update user-global settings files such as
+    ~/.claude/settings.json.
+  .PARAMETER CheckpointConfirmed
+    Confirms the sprint session has been checkpointed before user-global settings
+    files are updated.
   .OUTPUTS
     PSCustomObject with Boundary, DryRun, a per-concern Concerns array, a
     PerWorktree breakdown, and an aggregate Errors array.
@@ -127,7 +135,7 @@ function Set-SprintBoundaryContext {
 
     [string]$Profile = 'default',
 
-    [string[]]$JunctionFolderNames = @('.claude', '.github', '.vscode'),
+    [string[]]$JunctionFolderNames = @('.vscode'),
 
     [string[]]$StableJunctionFolderNames = @('.vscode'),
 
@@ -144,6 +152,10 @@ function Set-SprintBoundaryContext {
     [string]$ATAPIACRoot,
 
     [switch]$SkipProfileSymlinks,
+
+    [switch]$AllowUserGlobalWrite,
+
+    [switch]$CheckpointConfirmed,
 
     [Alias('SkipAISettingsLifecycle')]
     [switch]$SkipAIAdapterLifecycle
@@ -247,9 +259,18 @@ function Set-SprintBoundaryContext {
             WorktreePath   = $worktreePath
           }
           if ($Boundary -eq 'Start') {
-            # Dev-redirect .claude/.github/.vscode to the SharedVSCode sprint worktree.
+            # Dev-redirect the junction folders (default '.vscode' only) to the
+            # SharedVSCode sprint worktree. `.claude`/`.github` are concrete,
+            # canonical-rendered directories (SC-0231) and are intentionally excluded
+            # from $JunctionFolderNames so they are never dev-redirected as junctions.
+            # SC-0236: also restrict the SOURCE SCAN itself to $JunctionFolderNames —
+            # DevSourceRepoFolderNames only controls which recreated junctions get
+            # redirected, not which ones are scanned/recreated in the first place. If
+            # the stable repo still has `.claude`/`.github` as junctions, an unfiltered
+            # scan would recreate them in the new sprint worktree regardless.
             $junctionParams.DevSourceRepoPath        = $SharedVSCodeWorktreePath
             $junctionParams.DevSourceRepoFolderNames = $JunctionFolderNames
+            $junctionParams.SourceRepoFolderNames    = $JunctionFolderNames
           } else {
             $junctionParams.SourceRepoFolderNames = $StableJunctionFolderNames
           }
@@ -360,14 +381,24 @@ function Set-SprintBoundaryContext {
     $settingsError = $null
     try {
       if ($PSCmdlet.ShouldProcess($SharedVSCodeWorktreePath, "Retarget SharedVSCode settings symlinks ($Boundary)")) {
-        Invoke-SprintAIAdapterLifecycle `
-          -Boundary Start `
-          -TargetRoot $SharedVSCodeWorktreePath `
-          -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath `
-          -Confirm:$false `
-          -WhatIf:$WhatIfPreference | Out-Null
+        $sharedSettingsRenderParameters = @{
+          Boundary = 'Start'
+          TargetRoot = $SharedVSCodeWorktreePath
+          SharedVSCodeWorktreePath = $SharedVSCodeWorktreePath
+          Confirm = $false
+          WhatIf = $WhatIfPreference
+          AllowUserGlobalWrite = $AllowUserGlobalWrite
+          CheckpointConfirmed = $CheckpointConfirmed
+        }
+        if ($Boundary -eq 'End') {
+          $sharedSettingsRenderParameters.OmitSprintWorktrees = $true
+        }
+        Invoke-SprintAIAdapterLifecycle @sharedSettingsRenderParameters | Out-Null
         Set-UserSettingsSymlink -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath
-        Set-ClaudeSettingsSymlink -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath
+        Set-ClaudeSettingsSymlink `
+          -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath `
+          -AllowUserGlobalWrite:$AllowUserGlobalWrite `
+          -CheckpointConfirmed:$CheckpointConfirmed
       }
     } catch {
       $settingsOk = $false

@@ -2,7 +2,7 @@ function New-SprintStage2 {
   <#
   .SYNOPSIS
     Creates downstream repo sprint branches, workTrees, NTFS junctions,
-    applies SharedVSCode context, symlinks claude-settings.json, scaffolds
+    applies SharedVSCode context, renders Claude Code user settings, scaffolds
     BuildMaster sprint builds, and resets the sprint database in existing SQL
     Server instances. Sprint start does NOT create or delete any secrets
     (SC-0172). ProGet feeds are permanent and ecosystem-wide — not created per
@@ -29,8 +29,8 @@ function New-SprintStage2 {
       5c. Generates and verifies the Overview sprint workspace, then calls
           Build-AIInstructionsPerRepository once to distribute CLAUDE.md,
           AGENTS.md, GEMINI.md, and .github/copilot-instructions.md.
-      6. Creates a symlink from the SharedVSCode sprint worktree's
-         claude-settings.json to ~/.claude/settings.json.
+      6. Renders ~/.claude/settings.json as a real file from the SharedVSCode
+         .ai/config/claudecode/settings.overlay.json canonical overlay.
       6b. Retargets the VS Code user settings symlink
           ($env:APPDATA\Code\User\settings.json) to point at UserSettings.jsonc
           in the SharedVSCode sprint worktree via Set-UserSettingsSymlink.
@@ -61,8 +61,10 @@ function New-SprintStage2 {
   .PARAMETER Owner
     GitHub owner / organisation name.
   .PARAMETER JunctionFolderNames
-    Folder names to junction from SharedVSCode into downstream repos.
-    Defaults to @('.claude', '.github', '.vscode').
+    Folder names to junction from SharedVSCode into downstream repos, and the
+    same names used to filter the source-repo junction scan (SC-0236).
+    Defaults to @('.vscode'): `.claude`/`.github` are concrete, canonical-
+    rendered directories (SC-0231) and must never be junctioned.
   .PARAMETER ExcludeRepos
     Repo names to skip even if they appear in TASKS.md.
     Defaults to @('_Planning', 'SharedVSCode', 'Cross-Repo').
@@ -84,6 +86,12 @@ function New-SprintStage2 {
     branches, worktrees, junctions, SharedVSCode context, SQL Server database
     resets, BuildMaster variables, or claude-settings links. (Sprint start never
     creates or deletes secrets — SC-0172.)
+  .PARAMETER AllowUserGlobalWrite
+    Permit this stage to update user-global settings files such as
+    ~/.claude/settings.json.
+  .PARAMETER CheckpointConfirmed
+    Confirms the sprint session has been checkpointed before user-global settings
+    files are updated.
   .OUTPUTS
     PSCustomObject — contains repoResults, infrastructure, and error fields.
   .EXAMPLE
@@ -109,7 +117,7 @@ function New-SprintStage2 {
 
     [string]$Owner,
 
-    [string[]]$JunctionFolderNames = @('.claude', '.github', '.vscode'),
+    [string[]]$JunctionFolderNames = @('.vscode'),
 
     [string[]]$ExcludeRepos = @('_Planning', 'SharedVSCode', 'Cross-Repo'),
 
@@ -123,6 +131,10 @@ function New-SprintStage2 {
     [switch]$Force,
 
     [switch]$SkipDatabaseReset,
+
+    [switch]$AllowUserGlobalWrite,
+
+    [switch]$CheckpointConfirmed,
 
     [switch]$DryRun
   )
@@ -482,7 +494,8 @@ function New-SprintStage2 {
             -SourceRepoPath $repoPath `
             -WorktreePath $worktreePath `
             -DevSourceRepoPath $svWorktreePath `
-            -DevSourceRepoFolderNames $JunctionFolderNames
+            -DevSourceRepoFolderNames $JunctionFolderNames `
+            -SourceRepoFolderNames $JunctionFolderNames
 
           if ($junctionResult.Success) {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
@@ -662,16 +675,19 @@ function New-SprintStage2 {
     }
 
     # ===================================================================
-    # 6. Symlink claude-settings.json
+    # 6. Render Claude Code user settings
     # ===================================================================
     $claudeSettingsError = $null
 
     try {
-      if ($PSCmdlet.ShouldProcess($svWorktreePath, 'Set claude-settings.json symlink')) {
-        Set-ClaudeSettingsSymlink -SharedVSCodeWorktreePath $svWorktreePath
+      if ($PSCmdlet.ShouldProcess($svWorktreePath, 'Render Claude Code user settings')) {
+        Set-ClaudeSettingsSymlink `
+          -SharedVSCodeWorktreePath $svWorktreePath `
+          -AllowUserGlobalWrite:$AllowUserGlobalWrite `
+          -CheckpointConfirmed:$CheckpointConfirmed
       }
     } catch {
-      $claudeSettingsError = "Failed to symlink claude-settings.json. Exception: $($_.Exception.Message)"
+      $claudeSettingsError = "Failed to render Claude Code user settings. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $claudeSettingsError
     }
 

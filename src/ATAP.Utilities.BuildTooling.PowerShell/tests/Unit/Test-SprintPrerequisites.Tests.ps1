@@ -2,7 +2,7 @@
 
 BeforeAll {
   Import-Module PSFramework -ErrorAction SilentlyContinue
-  Get-Module -Name 'ATAP.Utilities.BuildTooling.PowerShell' | Remove-Module -Force -ErrorAction SilentlyContinue
+  Get-Module -Name 'ATAP.Utilities.BuildTooling.PowerShell' -All | Remove-Module -Force -ErrorAction SilentlyContinue
   Import-Module "$PSScriptRoot\..\..\ATAP.Utilities.BuildTooling.PowerShell.psd1" -Force
 
   Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell `
@@ -36,7 +36,7 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit', 'PromotedModuleHostSensitive' {
     }
 
     It 'Populates every documented check' {
-      $names = @('ConfigurationGlobals', 'PwshVersion', 'GhAuth', 'Bitwarden', 'GitRepoState', 'LockFilesClean', 'SqlServerInstances', 'BuildToolingImport', 'ProGetReachable', 'BuildMasterReachable', 'ModulePromotionDeploy')
+      $names = @('ConfigurationGlobals', 'PwshVersion', 'GhAuth', 'Bitwarden', 'GitRepoState', 'LockFilesClean', 'SqlServerInstances', 'BuildToolingImport', 'BuildToolingVersionIntegrity', 'ProGetReachable', 'BuildMasterReachable', 'ModulePromotionDeploy')
       foreach ($n in $names) {
         $script:result.Checks.PSObject.Properties.Name | Should -Contain $n
       }
@@ -323,6 +323,43 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit', 'PromotedModuleHostSensitive' {
       $r.Checks.ModulePromotionDeploy.Ok | Should -BeFalse
       $r.Checks.ModulePromotionDeploy.PerModule[0].Detail | Should -Match 'missing a Name'
       $r.Failures | Should -Contain 'ModulePromotionDeploy'
+    }
+  }
+
+  Context 'BuildToolingVersionIntegrity' {
+    BeforeAll {
+      $script:tempRepo = Join-Path ([System.IO.Path]::GetTempPath()) ("bt-integrity-test-" + [Guid]::NewGuid())
+      $null = New-Item -ItemType Directory -Path (Join-Path $script:tempRepo 'src\ATAP.Utilities.BuildTooling.PowerShell') -Force
+    }
+    AfterAll {
+      if (Test-Path $script:tempRepo) { Remove-Item -Recurse -Force -LiteralPath $script:tempRepo }
+    }
+    It 'Passes when active version matches source version' {
+      $activeVersion = (Get-Module -Name 'ATAP.Utilities.BuildTooling.PowerShell' -ErrorAction SilentlyContinue).Version.ToString()
+      if (-not $activeVersion) { $activeVersion = '0.1.16' }
+      
+      $versionJsonPath = Join-Path $script:tempRepo 'src\ATAP.Utilities.BuildTooling.PowerShell\version.json'
+      $null = Set-Content -LiteralPath $versionJsonPath -Value "{`"version`": `"$activeVersion`"}" -Force
+      
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell -CommandName Get-RepositoryRoot -MockWith {
+        return $script:tempRepo
+      }
+      
+      $r = Test-SprintPrerequisites -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SkipSqlServerInstanceCheck
+      $r.Checks.BuildToolingVersionIntegrity.Ok | Should -BeTrue
+    }
+    
+    It 'Fails when active version mismatches source version' {
+      $versionJsonPath = Join-Path $script:tempRepo 'src\ATAP.Utilities.BuildTooling.PowerShell\version.json'
+      $null = Set-Content -LiteralPath $versionJsonPath -Value "{`"version`": `"99.9.9`"}" -Force
+      
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell -CommandName Get-RepositoryRoot -MockWith {
+        return $script:tempRepo
+      }
+      
+      $r = Test-SprintPrerequisites -RequiredRepoWorktrees @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -SkipSqlServerInstanceCheck
+      $r.Checks.BuildToolingVersionIntegrity.Ok | Should -BeFalse
+      $r.Failures | Should -Contain 'BuildToolingVersionIntegrity'
     }
   }
 

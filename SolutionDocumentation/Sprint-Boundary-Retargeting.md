@@ -17,7 +17,7 @@ This completes task **V4-H03** (Sprint 0007).
 | Concern | Worker(s) | Start action (→ sprint) | End action (→ stable) | Stable-by-design |
 | --- | --- | --- | --- | --- |
 | Machine links (NTFS junctions) | `Set-WorktreeJunctions` | recreate `.claude` / `.github` / `.vscode` junctions in each sprint worktree, dev-redirected to the SharedVSCode sprint worktree | recreate junctions from the stable repo so they point back to stable SharedVSCode | No |
-| SharedVSCode settings | `Invoke-SprintAIAdapterLifecycle`, `Set-UserSettingsSymlink`, `Set-ClaudeSettingsSymlink` | re-render the SharedVSCode settings target for the sprint boundary, then point `%APPDATA%\Code\User\settings.json` and `~/.claude/settings.json` at the sprint worktree's `UserSettings.jsonc` / `claude-settings.json` | re-render the SharedVSCode settings target for stable, then point both symlinks back at the stable SharedVSCode copies | No |
+| SharedVSCode settings | `Invoke-SprintAIAdapterLifecycle`, `Set-UserSettingsSymlink`, `Set-ClaudeSettingsSymlink` | re-render the SharedVSCode settings target for the sprint boundary, point `%APPDATA%\Code\User\settings.json` at the sprint `UserSettings.jsonc`, and render `~/.claude/settings.json` as a real file from `.ai/config/claudecode/settings.overlay.json` | re-render the SharedVSCode settings target for stable, point VS Code user settings back at stable, and render Claude user settings from the stable overlay | No |
 | Downstream contexts | `Initialize-DownstreamSprintFromSharedVSCode` (Start) / `Reset-DownstreamToSharedVSCodeMain` (End) | set each `*.code-workspace` `templateRef`/`profile` to the sprint worktree and re-apply hooks / commit template / gitattributes | reset `templateRef` to `main`, `profile` to `default`, re-apply context | No |
 | Canonical project AI adapters | `Invoke-SprintAIAdapterLifecycle` | call `Render-AIAdapters -Domain settings,permissions` in Antigravity → Codex → Claude Code → Copilot order; real worktrees materialize project scope only | call `Test-AIAdapterDrift -Domain settings,permissions`; unexplained drift blocks link teardown pending promote/regenerate review | No |
 | PowerShell 7 profile symlinks | `Set-PowerShell7ProfileSymlink` | point `C:\Program Files\PowerShell\7\profile.ps1` at the ATAP.Utilities sprint worktree and `HostSettings.ps1` at the ATAP.IAC sprint worktree; remove the obsolete `global_ConfigRootKeys.ps1` / `global_environmentVariables.ps1` links | point `profile.ps1` / `HostSettings.ps1` back at the stable ATAP.Utilities / ATAP.IAC repos | No |
@@ -39,8 +39,8 @@ sprint worktree:
 - **Boundary settings refresh:** `Set-SprintBoundaryContext` also reuses the Start
   render against the selected SharedVSCode target at both boundaries so
   `settings.overlay.json` output such as `permissions.additionalDirectories` and
-  hook command paths is regenerated before `settings.json` / `claude-settings.json`
-  symlinks are repointed.
+  hook command paths is regenerated before VS Code user settings are repointed
+  and Claude user settings are rendered.
 - **Safety:** `-WhatIf` is nonmutating. Live user/global replacement requires
   explicit approval and `-CheckpointConfirmed`; backups/evidence stay beneath
   `_generated/`. Runtime and MCP state remain preserve/defer surfaces.

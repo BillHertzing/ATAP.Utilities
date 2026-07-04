@@ -44,6 +44,8 @@ Other detailed documentation you might be interested are
 
 - [Provisioning Bitwarden Secrets Manager access tokens for service accounts and users](./SolutionDocumentation/Runbook-BitwardenServiceAccounts.md)
 
+- [RepoHealth gate for C# build shared-property checks](./Build/README.md)
+
 - Sprint 0010 Task 10.7 Bitwarden access report: persisted in the `_Planning`
   sprint worktree at `Research/ReportOnAccessingSecretsFromBitwarden.md`. It
   records the `bw`/`BW_SESSION` personal-vault boundary, the `bws`/DPAPI Secrets

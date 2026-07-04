@@ -67,9 +67,16 @@ function New-OverviewSprintWorkspace {
         [string]$Content
       )
 
-      $json = $Content -replace '(?m)//.*$', ''
-      $json = $json -replace ',(\s*[\]}])', '$1'
-      return $json | ConvertFrom-Json -ErrorAction Stop
+      try {
+        return $Content | ConvertFrom-Json -ErrorAction Stop
+      } catch {
+        # Strip whole-line `// ...` comments only (must be preceded by whitespace
+        # or line start) plus trailing commas before `]` / `}`. Inline `//` inside
+        # string values is left alone.
+        $stripped = $Content -replace '(?m)^\s*//.*$', ''
+        $stripped = $stripped -replace ',(\s*[\]}])', '$1'
+        return $stripped | ConvertFrom-Json -ErrorAction Stop
+      }
     }
 
     function Set-ObjectPropertyValue {

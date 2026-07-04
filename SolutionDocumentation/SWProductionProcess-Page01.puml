@@ -121,9 +121,9 @@ end note
 Updates workspace/shared context
 in downstream repo ;
 
-#e1d5e7: <b>Set claude-settings.json symlink</b>
-SharedVSCode sprint claude-settings.json
-→ ~/.claude/settings.json ;
+#e1d5e7: <b>Render Claude Code user settings</b>
+SharedVSCode .ai/config/claudecode/settings.overlay.json
+→ ~/.claude/settings.json real file ;
 
 ' ─────────────────────────────────────────────────────────────
 ' After Stage 2 the workspace-metadata and secrets/infra

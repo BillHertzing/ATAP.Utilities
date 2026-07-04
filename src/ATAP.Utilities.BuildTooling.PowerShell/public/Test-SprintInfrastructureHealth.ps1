@@ -242,7 +242,7 @@ function Test-SprintInfrastructureHealth {
         $value = [System.Environment]::GetEnvironmentVariable($varName, $scope)
         if (-not [string]::IsNullOrWhiteSpace($value)) {
           [void]$presentSecretEnvironmentVariables.Add([PSCustomObject]@{
-              Name = $varName
+              Name  = $varName
               Scope = $scope
             })
         }
@@ -281,9 +281,9 @@ function Test-SprintInfrastructureHealth {
     # ── SqlInstances ─────────────────────────────────────────────────────────
     if ($null -eq $SqlInstancePaths -or $SqlInstancePaths.Count -eq 0) {
       $checks['SqlInstances'] = [PSCustomObject]@{
-        Ok      = $true
-        Detail  = 'No SQL instance paths configured; check skipped'
-        Skipped = $true
+        Ok          = $true
+        Detail      = 'No SQL instance paths configured; check skipped'
+        Skipped     = $true
         PerInstance = @()
       }
     } else {
@@ -385,11 +385,19 @@ function Test-SprintInfrastructureHealth {
       $repoRoot = $null
       try {
         if (Test-Path -LiteralPath 'Function:\Get-RepositoryRoot') {
-          $repoRoot = Get-RepositoryRoot -ErrorAction SilentlyContinue
+          # -Absolute is required inside a git worktree: there '.git' is a file
+          # pointer rather than a directory, and the default relative-path return
+          # (e.g. '..\repo-wt-...') never matches the absolute 'safe.directory'
+          # entries this check compares against.
+          if ((Get-Command Get-RepositoryRoot).Parameters.ContainsKey('Absolute')) {
+            $repoRoot = Get-RepositoryRoot -Absolute -ErrorAction SilentlyContinue
+          } else {
+            $repoRoot = Get-RepositoryRoot -ErrorAction SilentlyContinue
+          }
         }
       } catch { }
       if ([string]::IsNullOrWhiteSpace($repoRoot)) {
-        # Walk up from current directory to find .git
+        # Walk up from current directory to find .git (file OR directory)
         $dir = (Get-Location).Path
         while (-not [string]::IsNullOrWhiteSpace($dir)) {
           if (Test-Path (Join-Path $dir '.git')) {
@@ -400,6 +408,16 @@ function Test-SprintInfrastructureHealth {
           if ($parent -eq $dir) { break }
           $dir = $parent
         }
+      }
+
+      # Defensive: if any path source yielded a relative path, resolve it to an
+      # absolute path (against the current location) so the comparison below is
+      # always absolute-vs-absolute.
+      if (-not [string]::IsNullOrWhiteSpace($repoRoot)) {
+        try {
+          $resolvedRoot = Resolve-Path -LiteralPath $repoRoot -ErrorAction SilentlyContinue
+          if ($resolvedRoot) { $repoRoot = $resolvedRoot.Path }
+        } catch { }
       }
 
       # --get-all is required: safe.directory is multi-valued, and the plain
@@ -472,17 +490,17 @@ function Test-SprintInfrastructureHealth {
         $appList = Invoke-RestMethod -Uri $appsUri -Method Get -Headers $headers -TimeoutSec $ReachabilityTimeoutSeconds -ErrorAction Stop
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from $appsUri" -Tag 'RestCall'
         $appNames = @($appList | ForEach-Object {
-          if ($_.PSObject.Properties['Application_Name']) { $_.Application_Name }
-          elseif ($_.PSObject.Properties['name']) { $_.name }
-          else { $_ }
-        })
+            if ($_.PSObject.Properties['Application_Name']) { $_.Application_Name }
+            elseif ($_.PSObject.Properties['name']) { $_.name }
+            else { $_ }
+          })
         $missingApps = @()
         $foundApps = @()
         foreach ($appName in $expectedApps) {
           $entry = [PSCustomObject]@{
             ApplicationName = $appName
             Ok              = ($appNames -contains $appName)
-            Detail          = if ($appNames -contains $appName) { "Found" } else { "Not found in BuildMaster" }
+            Detail          = if ($appNames -contains $appName) { 'Found' } else { 'Not found in BuildMaster' }
           }
           if ($entry.Ok) { $foundApps += $appName } else { $missingApps += $appName }
           $perApp += $entry

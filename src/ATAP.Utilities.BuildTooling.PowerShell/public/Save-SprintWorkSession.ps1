@@ -215,6 +215,39 @@ function Save-SprintWorkSession {
             # Check and populate simple parameter (snippet: CheckAndPopulateSimpleParameter, param: GitHubRoot)
             $GitHubRoot = Get-PVal -ParameterName GitHubRoot -originalPSBoundParameters $PSBoundParameters -dottedPath GitHubRoot -DefaultValue $GitHubRoot
         }
+
+        function Resolve-CaseInsensitiveChildDirectory {
+            [CmdletBinding()]
+            param(
+                [Parameter(Mandatory = $true)]
+                [string] $ParentPath,
+
+                [Parameter(Mandatory = $true)]
+                [string] $ChildName
+            )
+
+            $candidatePath = Join-Path -Path $ParentPath -ChildPath $ChildName
+            if (-not (Test-Path -LiteralPath $ParentPath -PathType Container)) {
+                return $candidatePath
+            }
+
+            $children = @(Get-ChildItem -LiteralPath $ParentPath -Directory -Force -ErrorAction SilentlyContinue)
+            $exactMatch = $children |
+                Where-Object { $_.Name -ceq $ChildName } |
+                Select-Object -First 1
+            if ($exactMatch) {
+                return $exactMatch.FullName
+            }
+
+            $caseInsensitiveMatch = $children |
+                Where-Object { $_.Name -ieq $ChildName } |
+                Select-Object -First 1
+            if ($caseInsensitiveMatch) {
+                return $caseInsensitiveMatch.FullName
+            }
+
+            return $candidatePath
+        }
     }
 
     process {
@@ -321,7 +354,7 @@ function Save-SprintWorkSession {
                     $slug = & $makeSlug $cwd
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Slug derived from cwd '$cwd': $slug"
 
-                    $sessionDir = Join-Path $ClaudeProjectsRoot $slug
+                    $sessionDir = Resolve-CaseInsensitiveChildDirectory -ParentPath $ClaudeProjectsRoot -ChildName $slug
                     $jsonl = Get-ChildItem -Path $sessionDir -Filter '*.jsonl' -ErrorAction SilentlyContinue |
                         Sort-Object LastWriteTime -Descending |
                         Select-Object -First 1
@@ -332,7 +365,7 @@ function Save-SprintWorkSession {
                         $stableCwd = $cwd -replace '-wt-.+$', ''
                         if ($stableCwd -ne $cwd) {
                             $stableSlug = & $makeSlug $stableCwd
-                            $stableSessionDir = Join-Path $ClaudeProjectsRoot $stableSlug
+                            $stableSessionDir = Resolve-CaseInsensitiveChildDirectory -ParentPath $ClaudeProjectsRoot -ChildName $stableSlug
                             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "No JSONL at sprint slug '$slug'; trying stable slug '$stableSlug'"
                             $jsonl = Get-ChildItem -Path $stableSessionDir -Filter '*.jsonl' -ErrorAction SilentlyContinue |
                                 Sort-Object LastWriteTime -Descending |
@@ -351,7 +384,7 @@ function Save-SprintWorkSession {
 
                     # Memory lives under the slug of the directory where Claude Code was
                     # launched (the current working directory), NOT under the _Planning slug.
-                    $memSrcDir = Join-Path $ClaudeProjectsRoot "$slug\memory"
+                    $memSrcDir = Resolve-CaseInsensitiveChildDirectory -ParentPath $sessionDir -ChildName 'memory'
                     $memoryCopyMode = 'ClaudeMd'
                     $agentSessionKey = $slug
                 }

@@ -223,6 +223,53 @@ Describe 'Save-SprintWorkSession' {
     }
   }
 
+  Context 'Task 12.29 — Claude project slug directory casing' {
+
+    It 'records and copies memory from the actual on-disk Claude project directory casing' {
+      $customClaudeRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-case-' + [guid]::NewGuid().ToString('N'))
+      $customPlanRoot   = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-plan-' + [guid]::NewGuid().ToString('N'))
+
+      $expectedLowerSlug = ($script:atapWt.Substring(0, 1).ToLower() + $script:atapWt.Substring(1)) `
+        -replace ':', '-' -replace '\\', '-' -replace '_', '-' -replace '\.', '-' -replace '^-', ''
+      $actualSlug = $expectedLowerSlug.Substring(0, 1).ToUpper() + $expectedLowerSlug.Substring(1)
+
+      $actualSessionDir = Join-Path $customClaudeRoot $actualSlug
+      $actualMemoryDir = Join-Path $actualSessionDir 'memory'
+      New-Item -ItemType Directory -Path $actualMemoryDir, $customPlanRoot -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $actualSessionDir 'case-test.jsonl') `
+        -Value '{"role":"user","content":"case"}' -Encoding UTF8
+      Set-Content -LiteralPath (Join-Path $actualMemoryDir 'case-memory.md') `
+        -Value '# case memory' -Encoding UTF8
+
+      $savedLocation = Get-Location
+      Set-Location $script:atapWt
+      try {
+        $savedSettings = $global:settings
+        try {
+          $global:settings = $null
+
+          Save-SprintWorkSession `
+            -SprintN $script:sprintNumber `
+            -PlanningRoot $customPlanRoot `
+            -ClaudeProjectsRoot $customClaudeRoot `
+            -GitHubRoot $script:gitRoot `
+            -Confirm:$false
+
+          $rosterPath = Join-Path $customPlanRoot "SprintWorkSessionRoster\SprintWorkSessionRoster-$($script:sprintNumber).jsonl"
+          $entry = Get-Content -LiteralPath $rosterPath | Select-Object -Last 1 | ConvertFrom-Json
+          $entry.MemorySourcePath | Should -BeExactly $actualMemoryDir
+          $entry.MemorySnapshotCreated | Should -BeTrue
+          Test-Path -LiteralPath (Join-Path $entry.MemorySnapshotPath 'case-memory.md') | Should -BeTrue
+        } finally {
+          $global:settings = $savedSettings
+        }
+      } finally {
+        Set-Location $savedLocation
+        Remove-Item -Recurse -Force $customClaudeRoot, $customPlanRoot -ErrorAction SilentlyContinue
+      }
+    }
+  }
+
   Context 'auto-detection — branch name and planning worktree resolution' {
 
     It 'auto-detects sprint number from branch name matching ^\d+-sprint-(\d{4})' {

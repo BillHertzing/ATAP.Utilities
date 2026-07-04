@@ -178,6 +178,11 @@ strips direct top-level `Export-ModuleMember` statements and export-only
 source files, nested commands, and unrelated module guards. The generated
 manifest remains the single authority for `FunctionsToExport`.
 
+`Build-PSModuleManifest` regenerates package manifests with core
+`New-ModuleManifest` parameters instead of copying a manifest and calling
+PowerShellGet's `Update-ModuleManifest`; prerelease metadata is supplied through
+`-Prerelease`, and malformed source manifests now fail as terminating errors.
+
 Checkpoint saves now also append a lightweight session roster entry under the
 sprint `_Planning` worktree at
 `SprintWorkSessionRoster/SprintWorkSessionRoster-<NNNN>.jsonl`, which gives

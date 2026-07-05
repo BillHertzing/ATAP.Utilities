@@ -114,7 +114,7 @@ function Invoke-SprintAIAdapterLifecycle {
             'hooks',
             'toolsets'
           )
-          $callerOrder = @('Antigravity', 'Codex', 'ClaudeCode', 'Copilot')
+          $callerOrder = @('AntigravityCli', 'AntigravityApp', 'Codex', 'ClaudeCode', 'Copilot')
           $effectiveEvidenceRoot = if ([string]::IsNullOrWhiteSpace($EvidenceRoot)) {
             Join-Path $TargetRoot '_generated/AIAdapterLifecycle'
           } else {

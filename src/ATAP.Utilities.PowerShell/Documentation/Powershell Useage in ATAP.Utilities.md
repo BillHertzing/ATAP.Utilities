@@ -94,68 +94,44 @@ When using powershell Core, Note that if the path to the Powershell Desktop modu
 
 ### logging per user or per serviceaccount
 
-Use PSFramework for logging
-use the gelf logging provider configured as follows:
+Use PSFramework for logging.
+
+To log to the local SEQ server, use the `gelfudp` provider via `Enable-SeqGelfLogging`
+(in this module). SEQ ingests GELF through the `Seq.Input.Gelf` app (`sqelf.exe`), which
+listens on `udp://127.0.0.1:12201` and is separate from SEQ's normal HTTP ingestion
+port 5341.
 
 ```Powershell
-# ToDo: adding protocol = 'udp'; produces the error "A parameter cannot be found that matches parameter name 'protocol'."
-# ToDo:   since UDP is the default protocol this is not an issue. But both of these command work correctly
-# ToDo:     Set-PSFConfig 'PSFramework.logging.gelf.protocol' 'udp'
-# ToDo:     Get-PSFConfig 'PSFramework.logging.gelf.protocol'  - return 'udp'
-$gelfLoggingProviderConfiguration =  @{Name='gelf'; instanceName = 'default'; GelfServer = '127.0.0.1'; port = 12201; Encrypt=$false; minlevel=1; maxlevel=9; Enabled=$true;Verbose=$true}
-Set-PSFLoggingProvider @gelfLoggingProviderConfiguration
-# Then explicitly initialize it
-$null = Wait-PSFMessage -Timeout 1
-# see if it has been initialized
-Get-PSFLoggingProvider -Name gelf
+# Registers the 'gelfudp' provider (if needed) and enables the SendToSEQ instance
+Enable-SeqGelfLogging
+
+# Explicit form
+Enable-SeqGelfLogging -GelfServer '127.0.0.1' -Port 12201 -InstanceName 'SendToSEQ'
+
+# With read-back verification against the SEQ events API (requires the
+# SEQ_ADMIN_API_KEY secret to be resolvable via Get-SecretATAP)
+Enable-SeqGelfLogging -VerifyDelivery
 ```
 
-or
+Why not the built-in `gelf` provider (finding from Task 12.19 / SC-0230):
 
-```Powershell
-Set-PSFLoggingProvider -Name 'gelf' -Enabled $false -Verbose
-set-psfconfig 'LoggingProvider.gelf.AutoInstall' $true
-get-psfconfig 'LoggingProvider.gelf.AutoInstall'
-set-psfconfig 'PSFramework.Logging.gelf.encrypt' $false
-get-psfconfig 'PSFramework.Logging.gelf.encrypt'
-set-psfconfig 'PSFramework.Logging.gelf.gelfserver' '127.0.0.1'
-get-psfconfig 'PSFramework.Logging.gelf.gelfserver'
-set-psfconfig 'PSFramework.Logging.GELF.Port' '12201'
-get-psfconfig 'PSFramework.Logging.GELF.port'
-Set-PSFConfig 'PSFramework.logging.gelf.protocol' 'udp'
-Get-PSFConfig 'PSFramework.logging.gelf.protocol'
-set-psfconfig 'PSFramework.Logging.gelf.verbose' $true
-get-psfconfig 'PSFramework.Logging.gelf.verbose'
-set-psfconfig 'PSFramework.Logging.gelf.minlevel' 0
-get-psfconfig 'PSFramework.Logging.gelf.minlevel'
-set-psfconfig 'PSFramework.Logging.gelf.maxlevel' 9
-get-psfconfig 'PSFramework.Logging.gelf.maxlevel'
-set-psfconfig 'LoggingProvider.gelf.enabled' $true
-get-psfconfig 'LoggingProvider.gelf.enabled'
-Set-PSFLoggingProvider -Name 'gelf' -Enabled $true -Verbose
-# Then explicitly initialize it
-$null = Wait-PSFMessage -Timeout 1
-# see if it has been initialized
-Get-PSFLoggingProvider -Name gelf
-Write-PSFMessage -Level Debug -Message "Testing Write-PFSMessage to GelfServer"
-```
+- PSFramework's built-in `gelf` provider is hard-coded to `PSGELF\Send-PSGelfTCP` —
+  **TCP only**. The SEQ GELF input listens on **UDP only**, so the built-in provider can
+  never reach it.
+- There is **no** `PSFramework.logging.gelf.protocol` configuration key. `Set-PSFConfig`
+  will happily create one, but nothing reads it — earlier attempts that set
+  `protocol = 'udp'` only created an orphan key.
+- The `gelfudp` provider registered by `Enable-SeqGelfLogging` sends each message with
+  `PSGELF\Send-PSGelfUDP`, matching the UDP-only ingestor.
 
-Get-PSFConfig 'PSFramework.Logging.Console.MinLevel'
-Get-PSFConfig 'PSFramework.Logging.Console.MaxLevel'
-Get-PSFConfig 'LoggingProvider.Console.enabled'
-Get-PSFConfig 'PSFramework.Logging.Filesystem.MinLevel'
-Get-PSFConfig 'PSFramework.Logging.Filesystem.MaxLevel'
-Get-PSFConfig 'LoggingProvider.Filesystem.enabled'
+Operational notes:
 
-use SEQ to listen for gelf formated messages on udp://127.0.0.1:12201
-
-or this:
-
-```powerShell
-# ToDo: variable instance name (?)
-$gelfLoggingProviderConfiguration =  @{Name='gelf';instanceName='powerShellScriptXYZ'; gelfserver= 'localhost'; port=12201;Enabled=$true;Encrypt=$false}
-Set-PSFLoggingProvider @gelfLoggingProviderConfiguration
-```
+- The logging instance starts asynchronously; messages logged before the instance
+  finishes starting are not replayed to it. `Enable-SeqGelfLogging` emits its test
+  marker across two flush cycles to cover this window.
+- The SEQ events API requires authentication. The API key is referenced by SecretName
+  only (`SEQ_ADMIN_API_KEY` via `Get-SecretATAP`); never place a literal key in code,
+  parameters, or documentation.
 
 ### Logging during user login
 

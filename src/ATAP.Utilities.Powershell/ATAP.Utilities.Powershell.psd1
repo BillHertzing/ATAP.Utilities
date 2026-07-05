@@ -70,7 +70,8 @@
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
     FunctionsToExport    = 'Add-BlogPostImages', 'ConvertFrom-CopilotChatHistory',
-    'ConvertFrom-MboxFile', 'ConvertTo-PDF', 'Format-GroupLikeLines',
+    'ConvertFrom-MboxFile', 'ConvertTo-PDF', 'Enable-SeqGelfLogging',
+    'Format-GroupLikeLines',
     'Get-AccountsWithUserRight', 'Get-AllWindowsShortcutHotKeys',
     'Get-ArrayCombinations', 'Get-BookMarksToTagged',
     'Get-BrowserBookmarks', 'Get-ChocolatyPackagesFromProgramsList',

@@ -109,7 +109,7 @@ Enable-SeqGelfLogging
 Enable-SeqGelfLogging -GelfServer '127.0.0.1' -Port 12201 -InstanceName 'SendToSEQ'
 
 # With read-back verification against the SEQ events API (requires the
-# SEQ_ADMIN_API_KEY secret to be resolvable via Get-SecretATAP)
+# SEQ.Admin.API.Key secret to be resolvable via Get-SecretATAP)
 Enable-SeqGelfLogging -VerifyDelivery
 ```
 
@@ -130,7 +130,7 @@ Operational notes:
   finishes starting are not replayed to it. `Enable-SeqGelfLogging` emits its test
   marker across two flush cycles to cover this window.
 - The SEQ events API requires authentication. The API key is referenced by SecretName
-  only (`SEQ_ADMIN_API_KEY` via `Get-SecretATAP`); never place a literal key in code,
+  only (`SEQ.Admin.API.Key` via `Get-SecretATAP`); never place a literal key in code,
   parameters, or documentation.
 
 ### Logging during user login

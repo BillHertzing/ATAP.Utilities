@@ -38,7 +38,7 @@
   Defaults to http://localhost:5341.
 .PARAMETER SeqApiKeySecretName
   SecretName (resolved via Get-SecretATAP) of the SEQ API key used as the
-  X-Seq-ApiKey token for -VerifyDelivery reads. Defaults to 'SEQ_ADMIN_API_KEY'.
+  X-Seq-ApiKey token for -VerifyDelivery reads. Defaults to 'SEQ.Admin.API.Key'.
   Never pass a literal API key.
 .PARAMETER VerifyDelivery
   After enabling the provider, emit a marker message, flush, and query the SEQ events
@@ -56,7 +56,7 @@
   Enable-SeqGelfLogging -GelfServer utat022 -Port 12201 -VerifyDelivery
 
   Enables logging to a remote ingestor and verifies a marker event arrives in SEQ
-  (requires the SEQ_ADMIN_API_KEY secret to be resolvable via Get-SecretATAP).
+  (requires the SEQ.Admin.API.Key secret to be resolvable via Get-SecretATAP).
 .NOTES
   Requires the PSGELF module (the same dependency as the built-in 'gelf' provider).
   AI assisted using Powershell.instructions.md as guidelines (Task 12.19 / SC-0230).
@@ -93,7 +93,7 @@ function Enable-SeqGelfLogging {
 
     [Parameter(ValueFromPipelineByPropertyName = $true)]
     [ValidateNotNullOrEmpty()]
-    [string] $SeqApiKeySecretName = 'SEQ_ADMIN_API_KEY',
+    [string] $SeqApiKeySecretName = 'SEQ.Admin.API.Key',
 
     [switch] $VerifyDelivery
   )

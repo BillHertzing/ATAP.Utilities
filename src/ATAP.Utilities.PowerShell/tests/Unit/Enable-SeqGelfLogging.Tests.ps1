@@ -44,7 +44,7 @@ Describe 'Enable-SeqGelfLogging' {
       $cmd.Parameters.Keys | Should -Not -Contain 'SeqApiKey'
       $ast = $cmd.ScriptBlock.Ast
       $ast.Body.ParamBlock.Parameters.Where({ $_.Name.VariablePath.UserPath -eq 'SeqApiKeySecretName' }).DefaultValue.Value |
-        Should -Be 'SEQ_ADMIN_API_KEY'
+        Should -Be 'SEQ.Admin.API.Key'
     }
   }
 

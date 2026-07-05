@@ -159,6 +159,21 @@ try {
 
 $global:settings = Get-HostSettings -hostName $hostName -IACBasePath $repobasepath
 
+# Enable GELF logging to Seq by default (instantaneous, no test-marker wait)
+try {
+  if (-not (Get-Command -Name 'Enable-SeqGelfLogging' -CommandType Function -ErrorAction SilentlyContinue)) {
+    if ($isStableWorktree) {
+      Import-Module -Name 'ATAP.Utilities.PowerShell' -ErrorAction Stop
+    } else {
+      . (Join-Path $repobasepath 'src\ATAP.Utilities.Powershell\public\Enable-SeqGelfLogging.ps1')
+    }
+  }
+  Enable-SeqGelfLogging
+} catch {
+  Write-PSFMessage -Level Warning -Message "Failed to enable default GELF logging. Exception: $($_.Exception.Message)"
+}
+
+
 
 # 'Group Vars' 'Role Vars' 'Host Vars'
 #

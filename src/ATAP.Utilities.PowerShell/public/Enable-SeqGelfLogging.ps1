@@ -95,7 +95,9 @@ function Enable-SeqGelfLogging {
     [ValidateNotNullOrEmpty()]
     [string] $SeqApiKeySecretName = 'SEQ.Admin.API.Key',
 
-    [switch] $VerifyDelivery
+    [switch] $VerifyDelivery,
+
+    [switch] $SendTestMarker
   )
 
   begin {
@@ -194,16 +196,19 @@ function Enable-SeqGelfLogging {
         -MinLevel $MinLevel -MaxLevel $MaxLevel -Enabled $true
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Enabled 'gelfudp' instance '$InstanceName' -> udp://$($GelfServer):$($Port)"
 
-      # The logging instance starts asynchronously in the PSFramework logging runspace,
-      # and messages logged before it finishes starting are NOT replayed to it (the
-      # instance's Initialized property also lags well behind actual readiness, so it
-      # cannot be polled as a readiness signal — verified 2026-07-04). Emit the marker
-      # across two flush cycles so at least one emission lands after instance start.
-      $testMarker = "Enable-SeqGelfLogging marker $([guid]::NewGuid())"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $testMarker
-      $null = Wait-PSFMessage -Timeout 5
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $testMarker
-      $null = Wait-PSFMessage -Timeout 5
+      $testMarker = $null
+      if ($SendTestMarker -or $VerifyDelivery) {
+        # The logging instance starts asynchronously in the PSFramework logging runspace,
+        # and messages logged before it finishes starting are NOT replayed to it (the
+        # instance's Initialized property also lags well behind actual readiness, so it
+        # cannot be polled as a readiness signal — verified 2026-07-04). Emit the marker
+        # across two flush cycles so at least one emission lands after instance start.
+        $testMarker = "Enable-SeqGelfLogging marker $([guid]::NewGuid())"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $testMarker
+        $null = Wait-PSFMessage -Timeout 5
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $testMarker
+        $null = Wait-PSFMessage -Timeout 5
+      }
 
       $providerInstance = Get-PSFLoggingProviderInstance -ProviderName 'gelfudp' -Name $InstanceName -ErrorAction SilentlyContinue
       $providerInitialized = [bool]($providerInstance -and $providerInstance.Enabled)

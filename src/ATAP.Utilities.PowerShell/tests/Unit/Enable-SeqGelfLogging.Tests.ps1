@@ -63,7 +63,7 @@ Describe 'Enable-SeqGelfLogging' {
       $udpClient = [System.Net.Sockets.UdpClient]::new(0)
       $listenPort = ([System.Net.IPEndPoint]$udpClient.Client.LocalEndPoint).Port
       try {
-        $result = Enable-SeqGelfLogging -GelfServer '127.0.0.1' -Port $listenPort -InstanceName 'SendToPesterListener' -Confirm:$false
+        $result = Enable-SeqGelfLogging -GelfServer '127.0.0.1' -Port $listenPort -InstanceName 'SendToPesterListener' -SendTestMarker -Confirm:$false
 
         $result | Should -Not -BeNullOrEmpty
         $result.ProviderName | Should -Be 'gelfudp'

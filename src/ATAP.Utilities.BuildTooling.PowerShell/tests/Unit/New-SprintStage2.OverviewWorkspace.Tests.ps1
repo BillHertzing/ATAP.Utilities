@@ -115,7 +115,7 @@ BeforeAll {
     )
     $global:overviewStubCalls.Add('New-OverviewSprintWorkspace') | Out-Null
     $sprintText = '{0:D4}' -f $SprintNumber
-    $outputPath = Join-Path $GitRoot ("OverviewSprint{0}.code-workspace" -f $sprintText)
+    $outputPath = Join-Path $GitRoot ("Overview.Sprint{0}.code-workspace" -f $sprintText)
 
     switch ($global:overviewStubMode) {
       'nofile' { }
@@ -197,7 +197,7 @@ Describe 'New-SprintStage2 Overview workspace generation (Task 10.14.a)' -Tag 'U
       -Confirm:$false
 
     $global:overviewStubCalls | Should -Contain 'New-OverviewSprintWorkspace'
-    $expected = Join-Path $script:tempGitRoot 'OverviewSprint0008.code-workspace'
+    $expected = Join-Path $script:tempGitRoot 'Overview.Sprint0008.code-workspace'
     $result.infrastructure.overviewWorkspacePath | Should -Be $expected
     $result.infrastructure.overviewWorkspaceVerified | Should -BeTrue
     $result.infrastructure.overviewWorkspaceError | Should -BeNullOrEmpty
@@ -254,6 +254,6 @@ Describe 'New-SprintStage2 Overview workspace generation (Task 10.14.a)' -Tag 'U
     $result.infrastructure.overviewWorkspaceVerified | Should -BeFalse
     $result.infrastructure.aiInstructions.DryRun | Should -BeTrue
     $result.infrastructure.aiInstructionsError | Should -BeNullOrEmpty
-    Test-Path -LiteralPath (Join-Path $script:tempGitRoot 'OverviewSprint0008.code-workspace') | Should -BeFalse
+    Test-Path -LiteralPath (Join-Path $script:tempGitRoot 'Overview.Sprint0008.code-workspace') | Should -BeFalse
   }
 }

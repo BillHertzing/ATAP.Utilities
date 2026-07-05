@@ -1,7 +1,27 @@
-
+# PSLSA.types.ps1
+#
+# C# type-definition file (canonical repo pattern for PowerShell type definitions):
+#   - Lives in lib/ (NOT public/ or private/) so manifest generation, which derives
+#     FunctionsToExport from public/*.ps1 basenames, never declares a phantom export
+#     for a file that defines no function.
+#   - Contains exactly one guarded Add-Type statement and nothing else. The guard makes
+#     the file idempotent: safe to dot-source on every Import-Module (including -Force
+#     re-imports) and safe to dot-source directly when running from source.
+#   - lib/*.ps1 files are dot-sourced by the module .psm1 and are included in the
+#     built (concatenated) .psm1 by Build-PSModulePsm1, so the type is available at
+#     import time. Public functions may therefore reference the type in param() blocks
+#     (e.g. [PS_LSA.Rights[]]); PowerShell resolves parameter type constraints at first
+#     invocation, after import has loaded the type.
+#
+# The PS_LSA namespace wraps the Windows LSA (Local Security Authority) user-rights
+# APIs. It is used by Get-AccountsWithUserRight, Invoke-ProvisionInedoServiceAccounts,
+# New-LocalServiceAccount (holding pen), and the historical Grant-UserRight /
+# Revoke-UserRight / Get-UserRightsGrantedToAccount functions.
+#
 # Attribution: https://github.com/KurtDeGreeff/PlayPowershell/blob/master/UserRights.ps1
 
-Add-Type @'
+if (-not ('PS_LSA.LsaWrapper' -as [type])) {
+  Add-Type @'
 using System;
 namespace PS_LSA
 {
@@ -321,4 +341,5 @@ namespace PS_LSA
         }
     }
 }
-'@ # This type (PS_LSA) is used by Grant-UserRight, Revoke-UserRight, Get-UserRightsGrantedToAccount, Get-AccountsWithUserRight
+'@
+}

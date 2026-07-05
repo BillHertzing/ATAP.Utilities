@@ -148,12 +148,15 @@ function Update-OverviewWorkspaceStableInfo {
     }
 
     if ([string]::IsNullOrWhiteSpace($SourceWorkspacePath)) {
-      $candidates = @(Get-ChildItem -LiteralPath $GitRoot -File -Filter 'OverviewSprint*.code-workspace' -ErrorAction SilentlyContinue |
-          Sort-Object -Property LastWriteTimeUtc -Descending)
+      $workspaceFiles = @()
+      $workspaceFiles += Get-ChildItem -LiteralPath $GitRoot -File -Filter 'Overview.Sprint*.code-workspace' -ErrorAction SilentlyContinue
+      $workspaceFiles += Get-ChildItem -LiteralPath $GitRoot -File -Filter 'OverviewSprint*.code-workspace' -ErrorAction SilentlyContinue
+      $workspaceFiles += Get-ChildItem -LiteralPath $GitRoot -File -Filter 'OverViewSprint*.code-workspace' -ErrorAction SilentlyContinue
+      $candidates = @($workspaceFiles | Sort-Object -Property LastWriteTimeUtc -Descending)
       if ($candidates.Count -ge 1) {
         $SourceWorkspacePath = $candidates[0].FullName
       } else {
-        $msg = "No sprint workspace (OverviewSprint*.code-workspace) found under '$GitRoot' and no -SourceWorkspacePath supplied."
+        $msg = "No sprint workspace (Overview.Sprint*.code-workspace or OverviewSprint*.code-workspace) found under '$GitRoot' and no -SourceWorkspacePath supplied."
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
         throw $msg
       }

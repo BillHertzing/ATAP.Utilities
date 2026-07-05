@@ -130,10 +130,11 @@ function Set-SprintBoundaryUserProfiles {
         return [IO.Path]::GetFullPath($WorkspacePath)
       }
 
-      $candidates = @(
-        Get-ChildItem -LiteralPath $GitRoot -File -Filter 'OverviewSprint*.code-workspace' -ErrorAction SilentlyContinue |
-          Sort-Object LastWriteTime -Descending
-      )
+      $workspaceFiles = @()
+      $workspaceFiles += Get-ChildItem -LiteralPath $GitRoot -File -Filter 'Overview.Sprint*.code-workspace' -ErrorAction SilentlyContinue
+      $workspaceFiles += Get-ChildItem -LiteralPath $GitRoot -File -Filter 'OverviewSprint*.code-workspace' -ErrorAction SilentlyContinue
+      $workspaceFiles += Get-ChildItem -LiteralPath $GitRoot -File -Filter 'OverViewSprint*.code-workspace' -ErrorAction SilentlyContinue
+      $candidates = @($workspaceFiles | Sort-Object LastWriteTime -Descending)
       if ($candidates.Count -gt 0) {
         return $candidates[0].FullName
       }

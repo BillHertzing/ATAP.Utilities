@@ -18,7 +18,7 @@ Describe 'Set-SprintBoundaryUserProfiles [public]' {
     Set-Content -LiteralPath (Join-Path $profileSourceDir 'CurrentUserAllHostsV7CoreProfile.ps1') -Value '# developer profile' -Encoding UTF8
     Set-Content -LiteralPath (Join-Path $profileSourceDir 'ProfileForServiceAccountUsers.ps1') -Value '# service profile' -Encoding UTF8
 
-    $script:overviewPath = Join-Path $script:gitRoot 'OverviewSprint0011.code-workspace'
+    $script:overviewPath = Join-Path $script:gitRoot 'Overview.Sprint0011.code-workspace'
     @{
       folders = @(@{ path = 'ATAP.Utilities-wt-118-Sprint-0011-work-items' })
       developers = @(

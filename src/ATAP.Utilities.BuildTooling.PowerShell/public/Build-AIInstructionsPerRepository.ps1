@@ -117,6 +117,7 @@ function Build-AIInstructionsPerRepository {
       } else {
         $workspaceFiles = @()
         $workspaceFiles += Get-ChildItem -Path $worktreeParent -Filter 'Overview-wt-sprint????.code-workspace' -File -ErrorAction SilentlyContinue
+        $workspaceFiles += Get-ChildItem -Path $worktreeParent -Filter 'Overview.Sprint????.code-workspace' -File -ErrorAction SilentlyContinue
         $workspaceFiles += Get-ChildItem -Path $worktreeParent -Filter 'OverviewSprint????.code-workspace' -File -ErrorAction SilentlyContinue
         if ($workspaceFiles.Count -eq 0) {
           throw "No Overview sprint code-workspace file found in '$worktreeParent'."

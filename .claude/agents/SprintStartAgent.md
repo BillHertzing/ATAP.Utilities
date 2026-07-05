@@ -265,7 +265,7 @@ if ($missingInstances) {
 ```
 ```
 
-## Step 3a: Create `OverViewSprint<NNNN>.code-workspace`
+## Step 3a: Create `Overview.Sprint<NNNN>.code-workspace`
 
 Create the sprint-scoped overview workspace file by cloning the stable
 `OverView.code-workspace` template from the SharedVSCode sprint worktree and
@@ -277,7 +277,7 @@ then injecting all sprint-specific data discovered or provisioned in Steps 1–3
 src\ATAP.Utilities.BuildTooling.PowerShell\public\New-OverviewSprintWorkspace.ps1
 ```
 
-### What goes into `OverViewSprint<NNNN>.code-workspace`
+### What goes into `Overview.Sprint<NNNN>.code-workspace`
 
 The file is the single manifest of everything ephemeral about the sprint. It
 holds both the standard VS Code workspace `folders` array AND a custom
@@ -315,7 +315,7 @@ $overviewWsResult | ConvertTo-Json -Depth 6
   immediately sees the active sprint workspace.
 - **Self-documenting.** A future developer (or future-you) can answer "what
   feeds / SQL instances / secrets does sprint 0006 have?" by reading one file.
-- **Not git-tracked.** `OverViewSprint*.code-workspace` is in
+- **Not git-tracked.** `Overview.Sprint*.code-workspace` is in
   `.gitignore` (per SC-0033 spirit — sprint-ephemeral). Stable info that
   applies across sprints lives in `OverView.code-workspace` (git-tracked) and
   is updated by SprintEndAgent.
@@ -333,7 +333,7 @@ $overviewWsResult | ConvertTo-Json -Depth 6
 ## Step 3c: Materialize per-repo AI instruction files and AIAdapter surfaces
 
 `New-SprintStage2` performs the per-repo instruction distribution immediately
-after it creates and verifies `OverviewSprint<NNNN>.code-workspace`. Do not
+after it creates and verifies `Overview.Sprint<NNNN>.code-workspace`. Do not
 invoke the individual lane builders. Verify the aggregate returned by Stage 2:
 
 ```powershell

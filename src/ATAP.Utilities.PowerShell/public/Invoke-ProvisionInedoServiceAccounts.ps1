@@ -12,9 +12,9 @@ function Invoke-ProvisionInedoServiceAccounts {
       3. Creates the SvcBuildmaster Windows local service account (password via clipboard).
       4. Grants SvcProGet db_owner on the ProGet PRODUCTION database.
       5. Grants SvcBuildmaster db_owner on the BuildMaster PRODUCTION database.
-    Must be run as Administrator. The same-module dependencies (Type-PSLSA,
-    New-LocalServiceAccount) are in scope when loaded via the module and are
-    dot-sourced from $PSScriptRoot when run standalone. Initialize-SqlServiceLogin
+    Must be run as Administrator. The PS_LSA C# type (lib\PSLSA.types.ps1) and the
+    same-module dependency New-LocalServiceAccount are in scope when loaded via the
+    module and are dot-sourced from the source tree when run standalone. Initialize-SqlServiceLogin
     lives in the ATAP.Utilities.DatabaseManagement.Powershell module and is imported
     on demand.
   .PARAMETER SqlInstance
@@ -50,8 +50,22 @@ function Invoke-ProvisionInedoServiceAccounts {
       throw $errMsg
     }
 
-    # Load same-module dependencies when running standalone (already in scope when loaded via module)
-    foreach ($dep in @('Type-PSLSA', 'New-LocalServiceAccount')) {
+    # Ensure the PS_LSA C# type is loaded (lib/PSLSA.types.ps1 is dot-sourced at module
+    # import; this fallback covers running this file standalone from source)
+    if (-not ('PS_LSA.LsaWrapper' -as [type])) {
+      $typesPath = Join-Path (Split-Path $PSScriptRoot -Parent) 'lib\PSLSA.types.ps1'
+      if (Test-Path $typesPath) {
+        . $typesPath
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Dot-sourced PS_LSA type definition from '$typesPath'."
+      }
+      else {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "PS_LSA type is not loaded and '$typesPath' was not found."
+        throw "Required type 'PS_LSA.LsaWrapper' could not be loaded. Import the ATAP.Utilities.PowerShell module or dot-source lib\PSLSA.types.ps1 first."
+      }
+    }
+
+    # Load same-module function dependencies when running standalone (already in scope when loaded via module)
+    foreach ($dep in @('New-LocalServiceAccount')) {
       if (-not (Get-Command -Name $dep -CommandType Function -ErrorAction SilentlyContinue)) {
         $depPath = Join-Path $PSScriptRoot "$dep.ps1"
         if (Test-Path $depPath) {

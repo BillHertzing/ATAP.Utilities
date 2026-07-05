@@ -582,7 +582,7 @@ function New-SprintStage2 {
     $overviewWorkspacePath = $null
     $overviewWorkspaceVerified = $false
     $overviewWorkspaceError = $null
-    $expectedOverviewPath = Join-Path $GitRoot ('OverviewSprint{0}.code-workspace' -f $sprintNum)
+    $expectedOverviewPath = Join-Path $GitRoot ('Overview.Sprint{0}.code-workspace' -f $sprintNum)
 
     try {
       if ($PSCmdlet.ShouldProcess($expectedOverviewPath, 'Generate and verify Overview sprint workspace')) {

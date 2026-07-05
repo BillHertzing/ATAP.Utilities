@@ -15,8 +15,8 @@ function New-LocalServiceAccount {
             separately if required.
 
         Uses built-in New-LocalUser / Remove-LocalUser cmdlets — no Carbon module dependency.
-        Requires the PS_LSA C# type (Type-PSLSA.ps1 in the same public/ folder) whenever
-        -GrantSeServiceLogonRight is specified.
+        Requires the PS_LSA C# type (lib/PSLSA.types.ps1 in the ATAP.Utilities.PowerShell
+        module) whenever -GrantSeServiceLogonRight is specified.
 
     .PARAMETER AccountName
         Name of the local account to create or remove (e.g. 'SvcProGet').
@@ -40,7 +40,7 @@ function New-LocalServiceAccount {
     .PARAMETER GrantSeServiceLogonRight
         When specified, grants the SeServiceLogonRight privilege to
         COMPUTERNAME\AccountName using the Windows LSA API.
-        Requires the PS_LSA type to be available (auto-loaded from Type-PSLSA.ps1
+        Requires the PS_LSA type to be available (auto-loaded from lib\PSLSA.types.ps1
         if not already in session).
 
     .OUTPUTS
@@ -231,13 +231,15 @@ function New-LocalServiceAccount {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
         -Message "[$AccountName] Start: State=$State GrantSeServiceLogonRight=$($GrantSeServiceLogonRight.IsPresent)"
 
-    # Ensure the PS_LSA C# type is loaded before any LSA operations
+    # Ensure the PS_LSA C# type is loaded before any LSA operations. The type
+    # definition lives in the real module's lib\ folder (guarded Add-Type); from
+    # this holding-pen public\ folder the source tree path is ..\..\..\ATAP.Utilities.PowerShell\lib
     if ($GrantSeServiceLogonRight -and
         -not ([System.Management.Automation.PSTypeName]'PS_LSA.LsaWrapper').Type) {
-        $typeScript = Join-Path $PSScriptRoot 'Type-PSLSA.ps1'
+        $typeScript = Join-Path $PSScriptRoot '..\..\..\ATAP.Utilities.PowerShell\lib\PSLSA.types.ps1'
         if (-not (Test-Path $typeScript)) {
-            throw "PS_LSA type is not loaded and Type-PSLSA.ps1 was not found at '$typeScript'. " +
-            "Load the full ATAP.Utilities.PowerShell module or dot-source Type-PSLSA.ps1 first."
+            throw "PS_LSA type is not loaded and PSLSA.types.ps1 was not found at '$typeScript'. " +
+            "Load the full ATAP.Utilities.PowerShell module or dot-source lib\PSLSA.types.ps1 first."
         }
         . $typeScript
     }

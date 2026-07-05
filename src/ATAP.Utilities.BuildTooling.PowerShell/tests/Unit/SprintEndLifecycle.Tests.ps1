@@ -149,16 +149,16 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
     It 'uses the parent overview files and real cmdlet contracts' {
       $planning = Join-Path $TestDrive '_Planning-wt-20-Sprint-0010-work-items'
       New-Item -ItemType Directory -Path $planning -Force | Out-Null
-      Set-Content -LiteralPath (Join-Path $TestDrive 'OverviewSprint0010.code-workspace') -Value '{}'
+      Set-Content -LiteralPath (Join-Path $TestDrive 'Overview.Sprint0010.code-workspace') -Value '{}'
 
       $result = Invoke-SprintEndOverviewClose `
         -GitRoot $TestDrive -PlanningRoot $planning -SprintNumber 10 -Confirm:$false
 
       $result.Ok | Should -BeTrue
-      $result.SourceWorkspacePath | Should -Be (Join-Path $TestDrive 'OverviewSprint0010.code-workspace')
+      $result.SourceWorkspacePath | Should -Be (Join-Path $TestDrive 'Overview.Sprint0010.code-workspace')
       Should -Invoke Update-OverviewWorkspaceStableInfo -Times 1 -ParameterFilter {
         $RootWorkspacePath -eq (Join-Path $TestDrive 'Overview.code-workspace') -and
-        $SourceWorkspacePath -eq (Join-Path $TestDrive 'OverviewSprint0010.code-workspace')
+        $SourceWorkspacePath -eq (Join-Path $TestDrive 'Overview.Sprint0010.code-workspace')
       }
       Should -Invoke Remove-OverviewSprintWorkspace -Times 1 -ParameterFilter {
         $SprintNumber -eq 10 -and $ArchiveDirectoryPath -like '*SprintRetrospective*WorkspaceArchive'
@@ -418,7 +418,8 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
         -GitRoot $gitRoot `
         -SearchRoots @() `
         -ATAPUtilitiesRoot $utilRoot `
-        -ATAPIACRoot $iacRoot
+        -ATAPIACRoot $iacRoot `
+        -ProhibitedEnvironmentVariableNames @()
 
       $result.Ok | Should -BeTrue
       @($result.Profiles | Where-Object Kind -NE 'General').Count | Should -Be 2

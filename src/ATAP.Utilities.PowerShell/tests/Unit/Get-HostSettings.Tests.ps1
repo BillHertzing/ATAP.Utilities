@@ -17,8 +17,7 @@ Describe 'Get-HostSettings' -Tag 'Unit' {
       BuildMasterApplicationByModuleConfigRootKey = 'BuildMasterApplicationByModule'
     }
 
-    $script:testIacRoot = Join-Path $PSScriptRoot '_tmp_GetHostSettings_IAC'
-    Remove-Item -LiteralPath $script:testIacRoot -Recurse -Force -ErrorAction SilentlyContinue
+    $script:testIacRoot = Join-Path $PSScriptRoot ('_tmp_GetHostSettings_IAC_' + [guid]::NewGuid().ToString('N'))
     New-Item -Path $script:testIacRoot -ItemType Directory -Force | Out-Null
 
     @'

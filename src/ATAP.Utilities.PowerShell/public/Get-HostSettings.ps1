@@ -221,7 +221,29 @@ function Get-HostSettings {
           . $GetClonedAndModifiedHashtablePath
         }
 
-        . $Path
+        $maxHostSettingsLoadAttempts = 5
+        $hostSettingsLoadDelayMilliseconds = 200
+        for ($attempt = 1; $attempt -le $maxHostSettingsLoadAttempts; $attempt++) {
+          try {
+            . $Path
+            break
+          } catch {
+            $exceptionMessages = [System.Collections.Generic.List[string]]::new()
+            $currentException = $_.Exception
+            while ($null -ne $currentException) {
+              [void] $exceptionMessages.Add($currentException.Message)
+              $currentException = $currentException.InnerException
+            }
+
+            $isSharingViolation = (($exceptionMessages -join "`n") -match 'being used by another process|process cannot access the file')
+            if (-not $isSharingViolation -or $attempt -ge $maxHostSettingsLoadAttempts) {
+              throw
+            }
+
+            Start-Sleep -Milliseconds $hostSettingsLoadDelayMilliseconds
+            $hostSettingsLoadDelayMilliseconds = [Math]::Min(($hostSettingsLoadDelayMilliseconds * 2), 2000)
+          }
+        }
 
         $innerGetHostSettings = Get-Command -Name 'Get-HostSettings' -CommandType Function -ErrorAction Stop
         $innerFunctionFile = if ($innerGetHostSettings.ScriptBlock.File) {

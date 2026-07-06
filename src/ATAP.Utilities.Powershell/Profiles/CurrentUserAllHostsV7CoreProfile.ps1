@@ -455,8 +455,7 @@ function Get-Attributions {
           }
         }
       }
-    }
-    finally {
+    } finally {
       $reader.Close()
       $FileStream.Close()
     }
@@ -486,8 +485,7 @@ function Get-LinksFromDrafts {
       if ($matchResult.Success) {
         $Subject = $matchResult.captures.groups['Subject'].value
         Write-PSFMessage -FunctionName $fn -Level Debug -Message "Subject = $Subject"
-      }
-      else {
+      } else {
         $matchResult = [RegEx]::Matches($line, $findRegex2)
         if ($matchResult.Success) {
           $URL = $matchResult.captures.groups['URL'].value
@@ -505,8 +503,7 @@ function Get-LinksFromDrafts {
         $URL = ''
       }
     }
-  }
-  finally {
+  } finally {
     $reader.Close()
     $Stream.Close()
   }
@@ -607,8 +604,7 @@ function Open-BookmarksInBrave {
         foreach ($bookmark in $input) {
           $urlList += $bookmark.url
         }
-      }
-      else {
+      } else {
         $urlList = $URLs
       }
     }
@@ -730,8 +726,7 @@ function WatchFile {
       Write-Host '.' -NoNewline
 
     } while ($true)
-  }
-  finally {
+  } finally {
     # this gets executed when user presses CTRL+C:
 
     # stop monitoring
@@ -891,21 +886,21 @@ function Start-ExplorerWindowSet {
   FancyZones.exe apply -id '45BA8D3D-74C5-460B-AA17-97DAEF91780B'
 }
 
-Write-PSFMessage -FunctionName $fn -Level Debug -Message ('line 764 in CurrentUsersAllHostsV7CoreProfile.ps1')
+# Write-PSFMessage -FunctionName $fn -Level Debug -Message ('line 764 in CurrentUsersAllHostsV7CoreProfile.ps1')
 
 ##############################
 # Headroom Context Compression Proxy
 ##############################
 
 # Wrapper function for Headroom CLI with full venv path
-function headroom {
-  & "C:\Users\whertzing\.venvs\headroom\Scripts\headroom.exe" @args
-}
+# function headroom {
+#   & "C:\Users\whertzing\.venvs\headroom\Scripts\headroom.exe" @args
+# }
 
-# Startup check: warn if Headroom proxy port 8787 is not listening
-if (-not (netstat -ano 2>$null | Select-String ":8787.*LISTENING")) {
-  Write-Warning "Headroom proxy is NOT running on port 8787. Start with: headroom proxy --port 8787"
-}
+# # Startup check: warn if Headroom proxy port 8787 is not listening
+# if (-not (netstat -ano 2>$null | Select-String ":8787.*LISTENING")) {
+#   Write-Warning "Headroom proxy is NOT running on port 8787. Start with: headroom proxy --port 8787"
+# }
 
 <# To Be Moved Somewhere else #>
 

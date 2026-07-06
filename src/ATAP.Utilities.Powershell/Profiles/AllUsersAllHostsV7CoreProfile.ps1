@@ -173,7 +173,8 @@ try {
       . (Join-Path $repobasepath 'src\ATAP.Utilities.Powershell\public\Enable-SeqGelfLogging.ps1')
     }
   }
-  Enable-SeqGelfLogging
+  $SeqGelfLoggingResults = Enable-SeqGelfLogging
+  Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message $SeqGelfLoggingResults
 } catch {
   Write-PSFMessage -Level Warning -Message "Failed to enable default GELF logging. Exception: $($_.Exception.Message)"
 }

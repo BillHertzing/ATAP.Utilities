@@ -194,7 +194,7 @@ function Enable-SeqGelfLogging {
       Set-PSFLoggingProvider -Name 'gelfudp' -InstanceName $InstanceName `
         -GelfServer $GelfServer -Port $Port `
         -MinLevel $MinLevel -MaxLevel $MaxLevel -Enabled $true
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Enabled 'gelfudp' instance '$InstanceName' -> udp://$($GelfServer):$($Port)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Enabled 'gelfudp' instance '$InstanceName' -> udp://$($GelfServer):$($Port)"
 
       $testMarker = $null
       if ($SendTestMarker -or $VerifyDelivery) {

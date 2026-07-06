@@ -25,6 +25,11 @@ ToDo: Need attribution for Console Settings
 <Configuration Management Keywords>
 #>
 
+# SSH-backed PowerShell remoting must start with a silent stream.
+if ($env:SSH_CONNECTION -or $env:SSH_CLIENT -or $env:SSH_TTY) {
+  return
+}
+
 
 ########################################################
 # Machine-wide PowerShell Profile

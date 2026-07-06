@@ -22,6 +22,12 @@ ToDo: Need attribution for Console Settings
 .SCM
 <Configuration Management Keywords>
 #>
+
+# SSH-backed PowerShell remoting must start with a silent stream.
+if ($env:SSH_CONNECTION -or $env:SSH_CLIENT -or $env:SSH_TTY) {
+  return
+}
+
 #  Set these for debugging the profile
 # Don't Print any debug messages to the console
 $DebugPreference = 'SilentlyContinue'

@@ -395,8 +395,15 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       New-Item -ItemType Directory -Path (Split-Path $developerSource -Parent), $iacRoot, (Split-Path $developerProfile -Parent), (Split-Path $serviceProfile -Parent) -Force | Out-Null
       Set-Content -LiteralPath $developerSource -Value '# developer stable profile' -Encoding UTF8
       Set-Content -LiteralPath $serviceSource -Value '# service stable profile' -Encoding UTF8
-      New-Item -ItemType SymbolicLink -Path $developerProfile -Target $developerSource -Force | Out-Null
-      New-Item -ItemType SymbolicLink -Path $serviceProfile -Target $serviceSource -Force | Out-Null
+      try {
+        # Symbolic-link creation needs elevation or Developer Mode; restricted
+        # accounts (e.g. SvcBuildmaster) cannot do it (Task 12.46 / exec 17480).
+        New-Item -ItemType SymbolicLink -Path $developerProfile -Target $developerSource -Force -ErrorAction Stop | Out-Null
+        New-Item -ItemType SymbolicLink -Path $serviceProfile -Target $serviceSource -Force -ErrorAction Stop | Out-Null
+      } catch {
+        Set-ItResult -Skipped -Because "symbolic-link creation is unavailable for this account: $($_.Exception.Message)"
+        return
+      }
 
       Mock Set-SprintBoundaryUserProfiles {
         [PSCustomObject]@{

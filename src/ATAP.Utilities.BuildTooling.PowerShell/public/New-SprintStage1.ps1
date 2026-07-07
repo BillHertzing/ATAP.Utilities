@@ -12,13 +12,13 @@ function New-SprintStage1 {
          document in _Planning/SprintRetrospective.
       2. Creates a GitHub issue, branch, and worktree for SharedVSCode.
       3. Creates a GitHub issue, branch, and worktree for _Planning.
-      4. Creates NTFS junctions in the _Planning worktree pointing to the
-         SharedVSCode sprint worktree.
-      5. Applies SharedVSCode context (templateRef, hooksPath, commitTemplate)
-         to the _Planning worktree.
-      6. Creates a sprint NuGet.config in the SharedVSCode worktree referencing
+      4. Provisions the _Planning worktree through the single Start entry
+         point Set-SprintBoundaryContext (Task 12.2.b): NTFS junctions
+         ('.vscode' only) -> SharedVSCode context (templateRef, hooksPath,
+         commitTemplate) -> full AI adapter materialization, in that order.
+      5. Creates a sprint NuGet.config in the SharedVSCode worktree referencing
          the permanent ProGet feeds and nuget.org.
-      7. Uses the immediately prior sprint's task markdown as a structure-only
+      6. Uses the immediately prior sprint's task markdown as a structure-only
          template, creates a content-fresh `Tasks.SprintNNNN.md`, synchronizes
          `Tasks.SprintNNNN.html`, and creates empty-but-structured
          `Tasks.SprintNNNN.Accomplished.html` and
@@ -153,9 +153,7 @@ function New-SprintStage1 {
     # A missing command is an environment fault the user must repair — never a
     # silent dot-source fallback from a worktree path.
     foreach ($required in @(
-        'Set-WorktreeJunctions'
-        'Initialize-DownstreamSprintFromSharedVSCode'
-        'Initialize-SprintAIAdapters'
+        'Set-SprintBoundaryContext'
         'Get-SprintHistoryReconstruction'
         'Convert-TasksMdToSprintBoard')) {
       if (-not (Get-Command -Name $required -ErrorAction SilentlyContinue)) {
@@ -388,83 +386,59 @@ function New-SprintStage1 {
       return $result
     }
 
-    # 3d. Create NTFS junctions in the _Planning worktree
+    # 3d-3f. Provision the _Planning worktree through the single Start entry
+    # point (Task 12.2.b / SC-0236): Set-SprintBoundaryContext -Boundary Start
+    # performs junctions ('.vscode' only) -> downstream context -> full adapter
+    # materialization, in that structurally enforced order. Machine-global
+    # concerns (shared settings, profile symlinks) are skipped here — Stage 1
+    # does not own them.
     try {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-        -Message "Creating supported NTFS junctions in _Planning worktree: $($JunctionFolderNames -join ', ')"
+        -Message "Provisioning _Planning worktree via Set-SprintBoundaryContext (junctions: $($JunctionFolderNames -join ', '))"
 
-      if ($PSCmdlet.ShouldProcess($planWorktreePath, 'Set-WorktreeJunctions')) {
-          $junctionResult = Set-WorktreeJunctions `
-            -SourceRepoPath $planRepoPath `
-            -WorktreePath $planWorktreePath `
-            -DevSourceRepoPath $svWorktreePath `
-            -DevSourceRepoFolderNames $JunctionFolderNames `
-            -SourceRepoFolderNames $JunctionFolderNames `
-            -WhatIf:$WhatIfPreference
+      if ($PSCmdlet.ShouldProcess($planWorktreePath, 'Set-SprintBoundaryContext -Boundary Start (junctions -> context -> adapters)')) {
+        $templateRef = "SharedVSCode-wt-$svIssueNum-Sprint-$sprintNum-work-items"
+        $boundaryResult = Set-SprintBoundaryContext `
+          -Boundary Start `
+          -WorktreePaths @($planWorktreePath) `
+          -SharedVSCodeWorktreePath $svWorktreePath `
+          -TemplateRef $templateRef `
+          -Profile "sprint-$sprintNum" `
+          -JunctionFolderNames $JunctionFolderNames `
+          -GitRoot $GitRoot `
+          -SkipSharedVSCodeSettings `
+          -SkipProfileSymlinks `
+          -Confirm:$false
 
-        if ($junctionResult.Success) {
-          $result.planning.junctionsCreated = $true
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-            -Message "_Planning junctions created: $($junctionResult.JunctionsCreated) junction(s)"
-        } else {
-          $junctionErrors = ($junctionResult.Errors -join '; ')
-          throw "Set-WorktreeJunctions completed but reported errors: $junctionErrors"
+        $planBoundaryEntry = @($boundaryResult.PerWorktree) | Select-Object -First 1
+        if ($null -eq $planBoundaryEntry) {
+          throw 'Set-SprintBoundaryContext returned no per-worktree result for the _Planning worktree.'
         }
-      }
-    } catch {
-      $errorMessage = "Failed to create _Planning junctions. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-      $result.planning.error = $errorMessage
-      return $result
-    }
 
-    # 3f. Materialize AI adapters in the _Planning worktree (FSS-22)
-    try {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-        -Message 'Materializing AI adapters in _Planning worktree'
-
-      if ($PSCmdlet.ShouldProcess($planWorktreePath, 'Initialize-SprintAIAdapters')) {
-          Initialize-SprintAIAdapters `
-            -TargetRoot $planWorktreePath `
-            -SharedVSCodeWorktreePath $svWorktreePath `
-            -Force:$Force `
-            -WhatIf:$WhatIfPreference | Out-Null
-
+        if (-not $planBoundaryEntry.JunctionsRetargeted) {
+          throw "Failed to create _Planning junctions. $($planBoundaryEntry.JunctionError ?? $planBoundaryEntry.Error)"
+        }
+        $result.planning.junctionsCreated = $true
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-          -Message 'AI adapters materialized in _Planning worktree'
-      }
-    } catch {
-      # FSS-54: Non-fatal adapter materialization failure
-      $errorMessage = "Warning: AI adapter materialization failed in _Planning worktree. Exception: $($_.Exception.Message). Continuing sprint start."
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $errorMessage
-    }
+          -Message '_Planning junctions created via Set-SprintBoundaryContext'
 
-    # 3e. Apply SharedVSCode context to _Planning
-    try {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-        -Message 'Applying SharedVSCode context to _Planning worktree'
+        if ($planBoundaryEntry.ContextError) {
+          throw "Failed to apply SharedVSCode context to _Planning. $($planBoundaryEntry.ContextError)"
+        }
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+          -Message "_Planning context applied with templateRef $templateRef"
 
-      if ($PSCmdlet.ShouldProcess($planWorktreePath, 'Initialize-DownstreamSprintFromSharedVSCode')) {
-        $workspaceFiles = @(Get-ChildItem -Path $planWorktreePath -Filter '*.code-workspace' |
-            Select-Object -ExpandProperty FullName)
-
-        if ($workspaceFiles.Count -eq 0) {
+        if ($planBoundaryEntry.AdapterError) {
+          # FSS-54: Non-fatal adapter materialization failure
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-            -Message 'No .code-workspace files found in _Planning worktree; skipping context initialization'
+            -Message "Warning: AI adapter materialization failed in _Planning worktree. $($planBoundaryEntry.AdapterError). Continuing sprint start."
         } else {
-          $templateRef = "SharedVSCode-wt-$svIssueNum-Sprint-$sprintNum-work-items"
-          Initialize-DownstreamSprintFromSharedVSCode `
-            -WorkspaceFiles $workspaceFiles `
-            -TemplateRef $templateRef `
-            -Profile "sprint-$sprintNum" `
-            -WhatIf:$WhatIfPreference
-
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-            -Message "_Planning context applied with templateRef $templateRef"
+            -Message 'AI adapters materialized in _Planning worktree'
         }
       }
     } catch {
-      $errorMessage = "Failed to apply SharedVSCode context to _Planning. Exception: $($_.Exception.Message)"
+      $errorMessage = "Failed to provision the _Planning worktree boundary context. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       $result.planning.error = $errorMessage
       return $result

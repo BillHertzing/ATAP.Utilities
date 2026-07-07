@@ -178,6 +178,94 @@ Describe 'Set-SprintBoundaryContext [public]' {
     }
   }
 
+  Context 'Single-entry Start ordering (Task 12.2.b): junctions -> context -> adapter render' {
+    BeforeEach {
+      $global:sbcCallOrder = [System.Collections.Generic.List[string]]::new()
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions {
+        $global:sbcCallOrder.Add('junctions')
+        [PSCustomObject]@{ Success = $true; Errors = @() }
+      }
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Initialize-DownstreamSprintFromSharedVSCode {
+        $global:sbcCallOrder.Add('context')
+      }
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle {
+        $global:sbcCallOrder.Add('render')
+        [PSCustomObject]@{ DriftClean = $true; Results = @(); ChangedCount = 0 }
+      }
+    }
+
+    AfterEach {
+      Remove-Variable -Name sbcCallOrder -Scope Global -Force -ErrorAction SilentlyContinue
+    }
+
+    It 'Renders adapters only AFTER junction setup and downstream context (junctions-before-render)' {
+      Set-SprintBoundaryContext -Boundary Start `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -GitRoot $script:gitRoot `
+        -SkipSharedVSCodeSettings `
+        -SkipProfileSymlinks
+
+      @($global:sbcCallOrder) | Should -Be @('junctions', 'context', 'render')
+    }
+
+    It 'A junction failure prevents the adapter render for that worktree (render can never precede junctions)' {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions {
+        $global:sbcCallOrder.Add('junctions')
+        [PSCustomObject]@{ Success = $false; Errors = @('boom') }
+      }
+
+      $result = Set-SprintBoundaryContext -Boundary Start `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -GitRoot $script:gitRoot `
+        -SkipSharedVSCodeSettings `
+        -SkipProfileSymlinks
+
+      @($global:sbcCallOrder) | Should -Be @('junctions')
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 0 -Exactly -Scope It
+      $result.PerWorktree[0].JunctionError | Should -Match 'Junction retarget failed'
+    }
+
+    It 'Reports granular per-concern errors so delegating Stage callers can map severities' {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle {
+        $global:sbcCallOrder.Add('render')
+        throw 'render exploded'
+      }
+
+      $result = Set-SprintBoundaryContext -Boundary Start `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -GitRoot $script:gitRoot `
+        -SkipSharedVSCodeSettings `
+        -SkipProfileSymlinks
+
+      $result.PerWorktree[0].JunctionsRetargeted | Should -BeTrue
+      $result.PerWorktree[0].JunctionError | Should -BeNullOrEmpty
+      $result.PerWorktree[0].ContextError | Should -BeNullOrEmpty
+      $result.PerWorktree[0].AdapterError | Should -Match 'render exploded'
+    }
+  }
+
+  Context 'SkipSharedVSCodeSettings (Task 12.2.b): Stage callers own the machine-global settings concern' {
+    It 'Skips the shared-settings render and both settings symlinks' {
+      $result = Set-SprintBoundaryContext -Boundary Start `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -GitRoot $script:gitRoot `
+        -SkipSharedVSCodeSettings
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-UserSettingsSymlink -Times 0 -Exactly -Scope It
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-ClaudeSettingsSymlink -Times 0 -Exactly -Scope It
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 0 -Exactly -Scope It `
+        -ParameterFilter { $TargetRoot -eq $script:svSprint }
+      ($result.Concerns | Where-Object Concern -EQ 'SharedVSCodeSettings').Action | Should -Be 'Skipped'
+      # The per-worktree adapter materialization still runs — only the machine-global concern is skipped.
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $Boundary -eq 'Start' -and $TargetRoot -eq $script:worktree }
+    }
+  }
+
   Context 'End boundary' {
     It 'blocks teardown when adapter drift requires review' {
       Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle {

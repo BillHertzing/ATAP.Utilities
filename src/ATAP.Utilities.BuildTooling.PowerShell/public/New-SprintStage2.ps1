@@ -20,10 +20,10 @@ function New-SprintStage2 {
       1. Creates a GitHub issue via 'gh issue create'.
       2. Fetches and pulls main.
       3. Creates the sprint branch and worktree.
-      4. Calls Set-WorktreeJunctions to create NTFS junctions pointing to the
-         SharedVSCode sprint worktree.
-      5. Calls Initialize-DownstreamSprintFromSharedVSCode to apply templateRef,
-         hooksPath, and commitTemplate.
+      4. Provisions the worktree through the single Start entry point
+         Set-SprintBoundaryContext (Task 12.2.b): NTFS junctions ('.vscode'
+         only) -> SharedVSCode context (templateRef, hooksPath, commitTemplate)
+         -> full AI adapter materialization, in that order.
 
     After all repos are processed the cmdlet also:
       5c. Generates and verifies the Overview sprint workspace, then calls
@@ -222,9 +222,7 @@ function New-SprintStage2 {
         'Get-SprintTaskRepositoryNames',
         'Initialize-ATAPConfigurationGlobals',
         'Reset-SprintDatabases',
-        'Set-WorktreeJunctions',
-        'Initialize-DownstreamSprintFromSharedVSCode',
-        'Initialize-SprintAIAdapters',
+        'Set-SprintBoundaryContext',
         'New-OverviewSprintWorkspace',
         'Build-AIInstructionsPerRepository')) {
       if (-not (Get-Command -Name $required -ErrorAction SilentlyContinue)) {
@@ -484,81 +482,64 @@ function New-SprintStage2 {
         continue
       }
 
-      # --- 4. Create NTFS junctions ---
+      # --- 4-5. Provision the worktree through the single Start entry point
+      # (Task 12.2.b / SC-0236): Set-SprintBoundaryContext -Boundary Start
+      # performs junctions ('.vscode' only) -> SharedVSCode context -> full AI
+      # adapter materialization, in that structurally enforced order.
+      # Machine-global concerns (shared settings, profile symlinks) stay in
+      # steps 6/6b/6c below, so they run once per stage — not once per repo.
       try {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-          -Message "Creating NTFS junctions in $repoName worktree pointing to SharedVSCode sprint worktree"
+          -Message "Provisioning $repoName worktree via Set-SprintBoundaryContext (junctions: $($JunctionFolderNames -join ', '))"
 
-        if ($PSCmdlet.ShouldProcess($worktreePath, 'Set-WorktreeJunctions')) {
-          $junctionResult = Set-WorktreeJunctions `
-            -SourceRepoPath $repoPath `
-            -WorktreePath $worktreePath `
-            -DevSourceRepoPath $svWorktreePath `
-            -DevSourceRepoFolderNames $JunctionFolderNames `
-            -SourceRepoFolderNames $JunctionFolderNames
-
-          if ($junctionResult.Success) {
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-              -Message "$repoName junctions created: $($junctionResult.JunctionsCreated) junction(s)"
-          } else {
-            $junctionErrors = ($junctionResult.Errors -join '; ')
-            throw "Set-WorktreeJunctions completed but reported errors: $junctionErrors"
-          }
-        }
-      } catch {
-        $entry.error = "Failed to create $repoName junctions. Exception: $($_.Exception.Message)"
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $entry.error
-        [void]$repoResults.Add([PSCustomObject]$entry)
-        continue
-      }
-
-      # --- 4b. Materialize AI adapters in downstream repo worktree (FSS-22) ---
-      try {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-          -Message "Materializing AI adapters in $repoName worktree"
-
-        if ($PSCmdlet.ShouldProcess($worktreePath, 'Initialize-SprintAIAdapters')) {
-          Initialize-SprintAIAdapters `
-            -TargetRoot $worktreePath `
+        if ($PSCmdlet.ShouldProcess($worktreePath, 'Set-SprintBoundaryContext -Boundary Start (junctions -> context -> adapters)')) {
+          $templateRef = "SharedVSCode-wt-$svIssueNum-Sprint-$sprintNum-work-items"
+          $boundaryResult = Set-SprintBoundaryContext `
+            -Boundary Start `
+            -WorktreePaths @($worktreePath) `
             -SharedVSCodeWorktreePath $svWorktreePath `
-            -Force:$Force | Out-Null
+            -TemplateRef $templateRef `
+            -Profile "sprint-$sprintNum" `
+            -JunctionFolderNames $JunctionFolderNames `
+            -GitRoot $GitRoot `
+            -SkipSharedVSCodeSettings `
+            -SkipProfileSymlinks `
+            -Confirm:$false
 
+          $repoBoundaryEntry = @($boundaryResult.PerWorktree) | Select-Object -First 1
+          if ($null -eq $repoBoundaryEntry) {
+            throw "Set-SprintBoundaryContext returned no per-worktree result for '$worktreePath'."
+          }
+
+          if (-not $repoBoundaryEntry.JunctionsRetargeted) {
+            throw "Failed to create $repoName junctions. $($repoBoundaryEntry.JunctionError ?? $repoBoundaryEntry.Error)"
+          }
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-            -Message "AI adapters materialized in $repoName worktree"
-        }
-      } catch {
-        # FSS-54: Non-fatal adapter materialization failure
-        $warningMessage = "Warning: AI adapter materialization failed in $repoName worktree. Exception: $($_.Exception.Message). Continuing with other setup steps."
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $warningMessage
-      }
+            -Message "$repoName junctions created via Set-SprintBoundaryContext"
 
-      # --- 5. Apply SharedVSCode context ---
-      try {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-          -Message "Applying SharedVSCode context to $repoName worktree"
-
-        if ($PSCmdlet.ShouldProcess($worktreePath, 'Initialize-DownstreamSprintFromSharedVSCode')) {
-          $workspaceFiles = @(Get-ChildItem -Path $worktreePath -Filter '*.code-workspace' |
-              Select-Object -ExpandProperty FullName)
-
-          if ($workspaceFiles.Count -eq 0) {
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-              -Message "No .code-workspace files found in $repoName worktree; skipping context initialization"
+          if ($repoBoundaryEntry.ContextError) {
+            # Don't skip the repo — junctions and worktree are already created; log the context error
+            $entry.error = "Failed to apply SharedVSCode context to $repoName. $($repoBoundaryEntry.ContextError)"
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $entry.error
           } else {
-            $templateRef = "SharedVSCode-wt-$svIssueNum-Sprint-$sprintNum-work-items"
-            Initialize-DownstreamSprintFromSharedVSCode `
-              -WorkspaceFiles $workspaceFiles `
-              -TemplateRef $templateRef `
-              -Profile "sprint-$sprintNum"
-
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
               -Message "$repoName context applied with templateRef $templateRef"
           }
+
+          if ($repoBoundaryEntry.AdapterError) {
+            # FSS-54: Non-fatal adapter materialization failure
+            $warningMessage = "Warning: AI adapter materialization failed in $repoName worktree. $($repoBoundaryEntry.AdapterError). Continuing with other setup steps."
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $warningMessage
+          } else {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+              -Message "AI adapters materialized in $repoName worktree"
+          }
         }
       } catch {
-        $entry.error = "Failed to apply SharedVSCode context to $repoName. Exception: $($_.Exception.Message)"
+        $entry.error = "Failed to provision $repoName worktree boundary context. Exception: $($_.Exception.Message)"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $entry.error
-        # Don't continue — junctions and worktree are already created, just log the context error
+        [void]$repoResults.Add([PSCustomObject]$entry)
+        continue
       }
 
       [void]$repoResults.Add([PSCustomObject]$entry)

@@ -448,26 +448,29 @@ When asked to create or modify a Rule, Rule Set, or Build Set:
     before analyzing or acting.
 11. **Small scope-creep units (R-29):** Decompose scope-creep work into units small
     enough for a simpler LLM model, typically one file change or one well-scoped function.
-12. **Checkpoint cadence (R-30):** During long or multi-repo sessions, run `/checkpoint`
+12. **Scope-creep capture (R-35):** When recording a new out-of-scope idea, use the
+    `Add-ScopeCreepIdea` PowerShell function or the `add-scope-creep` skill instead of
+    hand-editing `ScopeCreep-Inbox.md`, adopted, or deferred scope-creep files.
+13. **Checkpoint cadence (R-30):** During long or multi-repo sessions, run `/checkpoint`
     at completed task boundaries, before risky context switches or broad refactors, and
     always before closing the session. Do not leave an entire sprint's worth of work
     uncheckpointed.
-13. **Pre-pull overlap check (R-31):** Before pulling `main` in a repo with local
+14. **Pre-pull overlap check (R-31):** Before pulling `main` in a repo with local
     changes, compare local modified paths to `main..origin/main` changed paths. Block
     automatic pull when paths overlap and ask for human direction.
-14. **Large sprint PR risk note (R-32):** For very large sprint branches, add a short
+15. **Large sprint PR risk note (R-32):** For very large sprint branches, add a short
     risk note to the PR body before moving from draft to ready. The note must name
     high-risk areas and deferred validation items.
-15. **PowerShell-native orchestration (R-33):** In Windows sprint orchestration sessions,
+16. **PowerShell-native orchestration (R-33):** In Windows sprint orchestration sessions,
     use PowerShell-native commands and syntax consistently. Avoid POSIX shell habits in
     runbooks, commands, and generated instructions.
-16. **Async process drain before WaitForExit (R-34):** When using `System.Diagnostics.Process`
+17. **Async process drain before WaitForExit (R-34):** When using `System.Diagnostics.Process`
     with redirected stdout or stderr, begin draining both streams before `WaitForExit` or
     `WaitForExitAsync`. Never wait on the process while redirected buffers can still fill.
-17. **Agent-swarm threshold (R-36):** For refactors touching more than about 20 files,
+18. **Agent-swarm threshold (R-36):** For refactors touching more than about 20 files,
     prefer an agent-swarm plan with one bounded ownership slice per worker. Keep write
     scopes disjoint and merge through a review pass.
-18. **Blazor/Syncfusion instructions (R-37):** For Blazor UI or Syncfusion component
+19. **Blazor/Syncfusion instructions (R-37):** For Blazor UI or Syncfusion component
     work, load the Blazor/Syncfusion rules/instructions before changing `.razor`,
     `.razor.cs`, `.cshtml`, or Syncfusion-related C# files.
 
@@ -488,8 +491,8 @@ Antigravity) so behavior stays homogeneous regardless of which agent runs a task
 
 2. **Repo conventions are mandatory, not discoverable.** Treat this workspace's
    non-obvious local conventions as hard requirements and emit your work against
-   them as a checklist — do not rediscover them each task: SC-0033 (`_generated/`
-   for all generated output *and* evidence artifacts), sprint-scoped file naming,
+  them as a checklist — do not rediscover them each task: SC-0033 (`_generated/`
+  for all generated output *and* evidence artifacts), sprint-scoped file naming,
    autoload-or-throw for required cmdlets, PSFramework logging, and "no top-level
    executable code in module `.ps1` files."
 

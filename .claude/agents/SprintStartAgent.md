@@ -1,6 +1,14 @@
 ---
 description: "Bootstraps a new sprint in three stages: (1) New-SprintStage1 creates SharedVSCode and _Planning branches/worktrees, reconstructs the prior sprint signal, creates only the supported _Planning `.vscode` junction by default, and materializes AIAdapter-owned surfaces; (2) interactive sprint planning produces the Sprint 0011 naming-convention task set `TASKS.SprintNNNN.md`, `TASKS.SprintNNNN.html`, `TASKS.SprintNNNN.Accomplished.html`, and `TASKS.SprintNNNN.ProceduralDetails.html`; (3) New-SprintStage2 creates downstream repo branches/worktrees, retargets settings/profile links, scaffolds BuildMaster variables, distributes AI instructions, and resets the ATAPUtilities database inside permanent per-developer SQL instances. Activate when user says 'start sprint', 'new sprint', or 'bootstrap sprint'."
-tools: ["read", "search", "edit", "terminal", "agent/runSubagent", "sprint-start-tools"]
+tools:
+  [
+    "read",
+    "search",
+    "edit",
+    "terminal",
+    "agent/runSubagent",
+    "sprint-start-tools",
+  ]
 ---
 
 # SprintStartAgent
@@ -26,10 +34,10 @@ branch/worktree creation workflow.
 
 ### Per-sprint work performed by this agent
 
-| Resource                               | Pattern                                            | Example (user `whertzing`)             |
-| -------------------------------------- | -------------------------------------------------- | -------------------------------------- |
-| Database reset (Development instance)  | drop + recreate `ATAPUtilities` in `Dev<UserName>` | `Devwhertzing` → reset `ATAPUtilities` |
-| Database reset (Experimental instance) | drop + recreate `ATAPUtilities` in `Exp<UserName>` | `Expwhertzing` → reset `ATAPUtilities` |
+| Resource                               | Pattern                                              | Example (user `whertzing`)                         |
+| -------------------------------------- | ---------------------------------------------------- | -------------------------------------------------- |
+| Database reset (Development instance)  | drop + recreate `ATAPUtilities` in `Dev<UserName>`   | `Devwhertzing` → reset `ATAPUtilities`             |
+| Database reset (Experimental instance) | drop + recreate `ATAPUtilities` in `Exp<UserName>`   | `Expwhertzing` → reset `ATAPUtilities`             |
 
 This agent **resets the database** inside the two **permanent** per-developer
 SQL instances; it does **not** create or destroy the instances themselves.
@@ -81,6 +89,7 @@ Import-Module ATAP.Utilities.BuildTooling.PowerShell
 > In the event of a `CommandNotFoundException` or related resolution throw, the agent MUST **halt immediately and ask the user to repair the module installation**.
 > Do **not** attempt to dot-source files from worktree paths as a fallback.
 
+
 > **H08 — VS Code `UserSettings.jsonc` symlink retarget implemented (SC-0099):** `New-SprintStage2`
 > Step 6b calls `Set-UserSettingsSymlink` to retarget `$env:APPDATA\Code\User\settings.json` to
 > `UserSettings.jsonc` in the SharedVSCode sprint worktree. At sprint end, SprintEndAgent
@@ -126,9 +135,9 @@ Verifies that required CLI tools (git, gh, bws), PowerShell version, module auto
 
 ---
 
-## Step 1: Create SharedVSCode and \_Planning Sprint Infrastructure
+## Step 1: Create SharedVSCode and _Planning Sprint Infrastructure
 
-`New-SprintStage1` bootstraps the initial sprint infrastructure (SharedVSCode and \_Planning).
+`New-SprintStage1` bootstraps the initial sprint infrastructure (SharedVSCode and _Planning).
 
 ### Parameters
 
@@ -254,10 +263,9 @@ if ($missingInstances) {
     return
 }
 ```
+```
 
-````
-
-## Step 3a: Create `Overview.Sprint<NNNN>.code-workspace`
+## Step 3a: Create `OverViewSprint<NNNN>.code-workspace`
 
 Create the sprint-scoped overview workspace file by cloning the stable
 `OverView.code-workspace` template from the SharedVSCode sprint worktree and
@@ -267,25 +275,25 @@ then injecting all sprint-specific data discovered or provisioned in Steps 1–3
 
 ```text
 src\ATAP.Utilities.BuildTooling.PowerShell\public\New-OverviewSprintWorkspace.ps1
-````
+```
 
-### What goes into `Overview.Sprint<NNNN>.code-workspace`
+### What goes into `OverViewSprint<NNNN>.code-workspace`
 
 The file is the single manifest of everything ephemeral about the sprint. It
 holds both the standard VS Code workspace `folders` array AND a custom
 top-level object `sprintInfrastructure` that records:
 
-| Key                               | Source                                               | Example                                                                                                                                     |
-| --------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sprintNumber`                    | `$stage1.nextSprintNumber`                           | `"0006"`                                                                                                                                    |
-| `userName`                        | `$env:USERNAME`                                      | `"whertzing"`                                                                                                                               |
-| `sprintBranchName`                | `$stage1.sharedVSCode.branchName`                    | `"40-Sprint-0006-work-items"`                                                                                                               |
-| `worktreePaths`                   | `$stage2.repoResults[*].worktreePath`                | array of paths                                                                                                                              |
-| `databaseResets`                  | from `Reset-SprintDatabases` result (Stage 2 Step 9) | 2 entries: `[{instanceName:'Devwhertzing',database:'ATAPUtilities',dropped:true,recreated:true,built:true},...]` (2 instances × 1 database) |
-| `buildmasterApplicationVariables` | from Stage 2 step 7                                  | `{SprintNumber,UserName,SprintBranchName,SourcePath}`                                                                                       |
-| `developerDatabaseInstances`      | preflight result (Stage 2 Step 9, permanent)         | always `[{name:'Dev<user>',host:...},{name:'Exp<user>',host:...}]` — recorded for reference; created at onboarding, NOT this sprint         |
-| `tasksFilePath`                   | `$stage2.tasksFilePath`                              | full path to `_Planning` worktree `TASKS.SprintNNNN.md` or compatibility input; keep synced with the active HTML board                      |
-| `sprintStartTimestamp`            | `Get-Date -Format 'o'`                               | ISO 8601                                                                                                                                    |
+| Key                               | Source                                               | Example                                                                                                                                      |
+| --------------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sprintNumber`                    | `$stage1.nextSprintNumber`                           | `"0006"`                                                                                                                                     |
+| `userName`                        | `$env:USERNAME`                                      | `"whertzing"`                                                                                                                                |
+| `sprintBranchName`                | `$stage1.sharedVSCode.branchName`                    | `"40-Sprint-0006-work-items"`                                                                                                                |
+| `worktreePaths`                   | `$stage2.repoResults[*].worktreePath`                | array of paths                                                                                                                               |
+| `databaseResets`                  | from `Reset-SprintDatabases` result (Stage 2 Step 9) | 2 entries: `[{instanceName:'Devwhertzing',database:'ATAPUtilities',dropped:true,recreated:true,built:true},...]` (2 instances × 1 database)  |
+| `buildmasterApplicationVariables` | from Stage 2 step 7                                  | `{SprintNumber,UserName,SprintBranchName,SourcePath}`                                                                                        |
+| `developerDatabaseInstances`      | preflight result (Stage 2 Step 9, permanent)         | always `[{name:'Dev<user>',host:...},{name:'Exp<user>',host:...}]` — recorded for reference; created at onboarding, NOT this sprint          |
+| `tasksFilePath`                   | `$stage2.tasksFilePath`                              | full path to `_Planning` worktree `TASKS.SprintNNNN.md` or compatibility input; keep synced with the active HTML board                     |
+| `sprintStartTimestamp`            | `Get-Date -Format 'o'`                               | ISO 8601                                                                                                                                     |
 
 ### Invocation
 
@@ -307,7 +315,7 @@ $overviewWsResult | ConvertTo-Json -Depth 6
   immediately sees the active sprint workspace.
 - **Self-documenting.** A future developer (or future-you) can answer "what
   feeds / SQL instances / secrets does sprint 0006 have?" by reading one file.
-- **Not git-tracked.** `Overview.Sprint*.code-workspace` is in
+- **Not git-tracked.** `OverViewSprint*.code-workspace` is in
   `.gitignore` (per SC-0033 spirit — sprint-ephemeral). Stable info that
   applies across sprints lives in `OverView.code-workspace` (git-tracked) and
   is updated by SprintEndAgent.
@@ -321,10 +329,11 @@ $overviewWsResult | ConvertTo-Json -Depth 6
 
 ---
 
+
 ## Step 3c: Materialize per-repo AI instruction files and AIAdapter surfaces
 
 `New-SprintStage2` performs the per-repo instruction distribution immediately
-after it creates and verifies `Overview.Sprint<NNNN>.code-workspace`. Do not
+after it creates and verifies `OverviewSprint<NNNN>.code-workspace`. Do not
 invoke the individual lane builders. Verify the aggregate returned by Stage 2:
 
 ```powershell
@@ -408,6 +417,7 @@ caller's load set (`AGENTS.md` for Codex/Antigravity/Copilot, `CLAUDE.md` for Cl
 ```
 
 ---
+
 
 ## Step 4: Verify Sprint Infrastructure Health
 

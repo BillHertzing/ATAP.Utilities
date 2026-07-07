@@ -4,7 +4,7 @@ function Set-InedoServicesDependency {
     Ensures both Inedo services (ProGet and BuildMaster) depend on SQL Server before starting.
   .DESCRIPTION
     Sets the Windows service dependency for INEDOPROGETSVC and INEDOBMSVC so both services
-    start after MSSQL$PRODUCTION. Idempotent — skips any service that already has the dependency.
+    start after MSSQL$Production. Idempotent — skips any service that already has the dependency.
   .OUTPUTS
     None. Writes status via Write-PSFMessage.
   .EXAMPLE
@@ -22,7 +22,7 @@ function Set-InedoServicesDependency {
     $mn = 'ATAP.Utilities.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Entering function'
 
-    $sqlServiceName = 'MSSQL$PRODUCTION'
+    $sqlServiceName = 'MSSQL$Production'
     $serviceNames = @('INEDOPROGETSVC', 'INEDOBMSVC')
   }
 

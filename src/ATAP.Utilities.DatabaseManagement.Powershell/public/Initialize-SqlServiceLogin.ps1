@@ -24,9 +24,17 @@ function Initialize-SqlServiceLogin {
         account is the NT Service virtual account created by ProGet; use this function
         when the account is a real local Windows user such as SvcProGet or SvcBuildmaster.
 
+    .PARAMETER SqlConnection
+        Existing open SQL connection. When supplied, this function uses the connection
+        directly and leaves lifecycle ownership with the caller.
+
+    .PARAMETER DBConnectionStringSecretName
+        Bitwarden secret name whose notes field contains the SQL connection string.
+        Alias: SecretName.
+
     .PARAMETER SqlInstance
         SQL Server instance in 'Server\Instance' or 'Server' format.
-        Example: 'localhost\PRODUCTION'
+        Example: 'localhost\Production'
 
     .PARAMETER DatabaseName
         Name of the application database that the service account needs db_owner access to.
@@ -53,7 +61,7 @@ function Initialize-SqlServiceLogin {
 
     .EXAMPLE
         Initialize-SqlServiceLogin `
-            -SqlInstance     'localhost\PRODUCTION' `
+            -SqlInstance     'localhost\Production' `
             -DatabaseName    'ProGet' `
             -ServiceAccount  "$env:COMPUTERNAME\SvcProGet" `
             -Encrypt          Optional `
@@ -63,7 +71,7 @@ function Initialize-SqlServiceLogin {
 
     .EXAMPLE
         Initialize-SqlServiceLogin `
-            -SqlInstance     'localhost\PRODUCTION' `
+            -SqlInstance     'localhost\Production' `
             -DatabaseName    'BuildMaster' `
             -ServiceAccount  "UTAT022\SvcBuildmaster" `
             -Encrypt          Optional `
@@ -79,9 +87,17 @@ function Initialize-SqlServiceLogin {
         the typical approach on a new-computer setup.
     #>
 
-  [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
+  [CmdletBinding(DefaultParameterSetName = 'SqlInstance', SupportsShouldProcess, ConfirmImpact = 'Medium')]
   param (
-    [Parameter(Mandatory)]
+    [Parameter(Mandatory, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'SqlConnection')]
+    [AllowNull()]
+    [object] $SqlConnection,
+
+    [Parameter(Mandatory, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'DBConnectionStringSecretName')]
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string] $DBConnectionStringSecretName,
+
+    [Parameter(Mandatory, ParameterSetName = 'SqlInstance')]
     [string] $SqlInstance,
 
     [Parameter(Mandatory)]
@@ -99,6 +115,36 @@ function Initialize-SqlServiceLogin {
   $fn = $MyInvocation.MyCommand.Name
   $mn = 'ATAP.Utilities.DatabaseManagement.Powershell'
 
+  if (-not (Get-Command -Name 'Resolve-DatabaseSqlConnection' -CommandType Function -ErrorAction SilentlyContinue)) {
+    . (Join-Path -Path $PSScriptRoot -ChildPath 'Resolve-DatabaseSqlConnection.ps1')
+  }
+
+  $openSQLConnection = $null
+  $isCallerOwnedConnection = $false
+
+  if ($PSCmdlet.ParameterSetName -eq 'SqlInstance') {
+    $connectionStringBuilder = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new()
+    $connectionStringBuilder.DataSource = $SqlInstance
+    $connectionStringBuilder.InitialCatalog = 'master'
+    $connectionStringBuilder.IntegratedSecurity = $true
+    $connectionStringBuilder.Encrypt = $Encrypt
+    $connectionStringBuilder.TrustServerCertificate = [bool] $TrustServerCertificate
+    $openSQLConnection = [Microsoft.Data.SqlClient.SqlConnection]::new($connectionStringBuilder.ConnectionString)
+    $openSQLConnection.Open()
+  }
+  else {
+    $resolution = Resolve-DatabaseSqlConnection `
+      -OriginalPSBoundParameters $PSBoundParameters `
+      -SqlConnection $SqlConnection `
+      -DBConnectionStringSecretName $DBConnectionStringSecretName `
+      -DatabaseName $DatabaseName
+    $openSQLConnection = $resolution.Connection
+    $isCallerOwnedConnection = [bool] $resolution.IsCallerOwned
+    if (-not [string]::IsNullOrWhiteSpace($DBConnectionStringSecretName)) {
+      $SqlInstance = $openSQLConnection.DataSource
+    }
+  }
+
   Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
     -Message "[$fn] Applying SQL principal grants on $SqlInstance for database '$DatabaseName' and account '$ServiceAccount'"
 
@@ -115,15 +161,9 @@ function Initialize-SqlServiceLogin {
   $loginEscaped = $ServiceAccount -replace "'", "''"
   $userEscaped = ($ServiceAccount -split '\\')[-1] -replace "'", "''"
 
-  $commonParams = @{
-    SqlInstance            = $SqlInstance
-    AppendConnectionString = "Encrypt=$Encrypt;Trust Server Certificate=$($TrustServerCertificate.IsPresent)"
-    EnableException        = $true
-    ErrorAction            = 'Stop'
-  }
-
   # Batch 1: create the server-level Windows login (run against master)
   $loginSql = @"
+USE [master];
 DECLARE @login NVARCHAR(256) = N'$loginEscaped';
 IF NOT EXISTS (
     SELECT 1
@@ -139,6 +179,7 @@ END;
 
   # Batch 2: create the DB user and grant db_owner (run against the target database)
   $userSql = @"
+USE [$($DatabaseName.Replace(']', ']]'))];
 DECLARE @login NVARCHAR(256) = N'$loginEscaped';
 DECLARE @user  NVARCHAR(128) = N'$userEscaped';
 IF NOT EXISTS (
@@ -162,12 +203,16 @@ END;
     if ($PSCmdlet.ShouldProcess("$SqlInstance / $DatabaseName", "Grant db_owner to '$ServiceAccount'")) {
 
       # Step 1: server login
-      Invoke-DbaQuery @commonParams -Database 'master' -Query $loginSql
+      $loginCommand = $openSQLConnection.CreateCommand()
+      $loginCommand.CommandText = $loginSql
+      [void] $loginCommand.ExecuteNonQuery()
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
         -Message "[$fn] Server login step completed"
 
       # Step 2: DB user + role membership
-      Invoke-DbaQuery @commonParams -Database $DatabaseName -Query $userSql
+      $userCommand = $openSQLConnection.CreateCommand()
+      $userCommand.CommandText = $userSql
+      [void] $userCommand.ExecuteNonQuery()
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
         -Message "[$fn] Database user/role step completed in '$DatabaseName'"
 
@@ -182,6 +227,12 @@ END;
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
       -Message "[$fn] $($_.Exception.Message)" -Exception $_.Exception
     throw
+  }
+  finally {
+    if ($null -ne $openSQLConnection -and -not $isCallerOwnedConnection) {
+      try { $openSQLConnection.Close() } catch { }
+      try { $openSQLConnection.Dispose() } catch { }
+    }
   }
 
   $result

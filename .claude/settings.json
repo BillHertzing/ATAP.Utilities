@@ -1,10 +1,10 @@
 {
-  "env": {
-    "CLAUDE_CODE_SHELL": "pwsh"
-  },
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "model": "sonnet",
   "permissions": {
     "defaultMode": "acceptEdits",
     "allow": [
+      "PowerShell(:*)",
       "PowerShell(*)",
       "PowerShell(Invoke-Pester:*)",
       "PowerShell(Get-Content:*)",
@@ -22,6 +22,7 @@
       "PowerShell(git diff:*)",
       "PowerShell(git -C * status:*)",
       "PowerShell(git -C * diff:*)",
+      "Bash(:*)",
       "Bash(*)",
       "Bash(pwsh:*)",
       "Bash(pwsh -Command:*)",
@@ -146,7 +147,6 @@
       "C:\\Dropbox\\whertzing\\GitHub\\AceCommander"
     ]
   },
-  "model": "sonnet",
   "hooks": {
     "PreToolUse": [
       {
@@ -154,22 +154,14 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"C:\\Dropbox\\whertzing\\GitHub\\SharedVSCode-wt-54-Sprint-0012-work-items\\.claude\\hooks\\PreToolUse-PwshGuard.ps1\""
+            "command": "pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities-wt-120-Sprint-0012-work-items\\.claude\\hooks\\PreToolUse-PwshGuard.ps1\""
           }
         ]
       }
     ]
   },
-  "extraKnownMarketplaces": {
-    "claude-plugins-official": {
-      "source": {
-        "source": "github",
-        "repo": "anthropics/claude-plugins-official"
-      }
-    }
+  "env": {
+    "CLAUDE_CODE_SHELL": "pwsh"
   },
-  "effortLevel": "xhigh",
-  "autoUpdatesChannel": "latest",
-  "agentPushNotifEnabled": true,
-  "$schema": "https://json.schemastore.org/claude-code-settings.json"
+  "autoUpdatesChannel": "latest"
 }

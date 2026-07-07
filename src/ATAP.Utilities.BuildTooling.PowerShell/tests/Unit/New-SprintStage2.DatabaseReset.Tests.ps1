@@ -10,6 +10,7 @@ BeforeAll {
     'Set-WorktreeJunctions',
     'Initialize-DownstreamSprintFromSharedVSCode',
     'Initialize-SprintAIAdapters',
+    'Set-SprintBoundaryContext',
     'Set-ClaudeSettingsSymlink',
     'Set-UserSettingsSymlink',
     'Get-SprintTaskRepositoryNames',
@@ -53,6 +54,32 @@ BeforeAll {
 
   function global:Initialize-SprintAIAdapters {
     $global:stage2DatabaseResetCalls.Add('Initialize-SprintAIAdapters') | Out-Null
+  }
+
+  # Task 12.2.b: New-SprintStage2 provisions each worktree via the single Start
+  # entry point. Healthy recording fake so the stage continues into the
+  # database-reset steps under test.
+  function global:Set-SprintBoundaryContext {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param(
+      [string]$Boundary, [string]$SharedVSCodeWorktreePath, [string[]]$WorktreePaths = @(),
+      [string]$TemplateRef, [string]$Profile, [string[]]$JunctionFolderNames,
+      [string[]]$StableJunctionFolderNames, [string]$GitRoot,
+      [switch]$SkipSharedVSCodeSettings, [switch]$SkipProfileSymlinks,
+      [switch]$AllowUserGlobalWrite, [switch]$CheckpointConfirmed, [switch]$SkipAIAdapterLifecycle
+    )
+    $global:stage2DatabaseResetCalls.Add('Set-SprintBoundaryContext') | Out-Null
+    [PSCustomObject]@{
+      Boundary = $Boundary; DryRun = $false; Concerns = @(); Errors = @()
+      PerWorktree = @(foreach ($wt in $WorktreePaths) {
+        [PSCustomObject]@{
+          WorktreePath = $wt; StableRepoPath = $null
+          JunctionsRetargeted = $true; ContextRetargeted = $true
+          AISettingsProcessed = $true; AISettingsDriftClean = $true
+          JunctionError = $null; ContextError = $null; AdapterError = $null; Error = $null
+        }
+      })
+    }
   }
 
   function global:Set-ClaudeSettingsSymlink {

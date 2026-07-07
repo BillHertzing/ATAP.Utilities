@@ -17,7 +17,7 @@ function New-SprintBitwardenSecrets {
     (3 databases x 2 hosts x 2 tiers).
 
     Secret naming convention (SprintInfrastructure-Naming.md 4.1):
-      dbConnectionString-<Database>-<Host>-<Dev|Exp>-<DeveloperUsername>
+      dbConnectionString.<Database>.<Host>.<Dev|Exp>.<DeveloperUsername>
 
     Connection string format (owned by Get-DbConnectionStringSecretDescriptor):
       Server=<Host>\Dev<DeveloperUsername> (or Exp<DeveloperUsername>);Database=<Database>;Integrated Security=True;
@@ -30,7 +30,7 @@ function New-SprintBitwardenSecrets {
 
     The Integrated-Security string can still be generated here because this is a
     provisioning flow that writes the value into Bitwarden Secrets Manager. Runtime
-    readers do not derive; they fetch the dbConnectionString-* value through
+    readers do not derive; they fetch the dbConnectionString.* value through
     Get-SecretATAP / BitwardenSecretsManager and fail if the BWS secret is absent.
 
     Reads of these secrets go through:

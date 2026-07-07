@@ -1,24 +1,32 @@
 # AI assisted using Powershell.instructions.md as guidelines
-# Provision SvcProGet and SvcBuildmaster, then grant db_owner on their respective PRODUCTION databases.
+# Provision SvcProGet and SvcBuildmaster, then grant db_owner on their respective Production databases.
 function Invoke-ProvisionInedoServiceAccounts {
   <#
   .SYNOPSIS
     Provisions SvcProGet and SvcBuildmaster local service accounts and grants
-    db_owner on their respective PRODUCTION SQL Server databases.
+    db_owner on their respective Production SQL Server databases.
   .DESCRIPTION
     Interactive wizard that:
       1. Creates the SvcProGet Windows local service account (password via clipboard).
       2. Grants SvcProGet Full Control over C:\ProgramData\ProGet\Packages.
       3. Creates the SvcBuildmaster Windows local service account (password via clipboard).
-      4. Grants SvcProGet db_owner on the ProGet PRODUCTION database.
-      5. Grants SvcBuildmaster db_owner on the BuildMaster PRODUCTION database.
-    Must be run as Administrator. The PS_LSA C# type (lib\PSLSA.types.ps1) and the
-    same-module dependency New-LocalServiceAccount are in scope when loaded via the
-    module and are dot-sourced from the source tree when run standalone. Initialize-SqlServiceLogin
+      4. Grants SvcProGet db_owner on the ProGet Production database.
+      5. Grants SvcBuildmaster db_owner on the BuildMaster Production database.
+    Must be run as Administrator. The same-module dependencies (Type-PSLSA,
+    New-LocalServiceAccount) are in scope when loaded via the module and are
+    dot-sourced from $PSScriptRoot when run standalone. Initialize-SqlServiceLogin
     lives in the ATAP.Utilities.DatabaseManagement.Powershell module and is imported
     on demand.
   .PARAMETER SqlInstance
-    SQL Server instance for the PRODUCTION database grants. Default: localhost\PRODUCTION.
+    SQL Server instance for the Production database grants. Default: localhost\Production.
+  .PARAMETER ProGetDBConnectionStringSecretName
+    Bitwarden secret name whose notes field contains the ProGet SQL connection string.
+    Default: dbConnectionString.ProGet.localhost.Production.
+    Alias: ProGetSecretName.
+  .PARAMETER BuildMasterDBConnectionStringSecretName
+    Bitwarden secret name whose notes field contains the BuildMaster SQL connection string.
+    Default: dbConnectionString.BuildMaster.localhost.Production.
+    Alias: BuildMasterSecretName.
   .OUTPUTS
     [PSCustomObject[]] One result object per provisioning step.
   .EXAMPLE
@@ -34,7 +42,15 @@ function Invoke-ProvisionInedoServiceAccounts {
     Justification = 'Password is read interactively from the clipboard; plaintext exposure is intentional and ephemeral.')]
   param(
     [Parameter()]
-    [string]$SqlInstance = 'localhost\PRODUCTION'
+    [string]$SqlInstance = 'localhost\Production',
+
+    [Parameter()]
+    [Alias('ProGetSecretName')]
+    [string]$ProGetDBConnectionStringSecretName = 'dbConnectionString.ProGet.localhost.Production',
+
+    [Parameter()]
+    [Alias('BuildMasterSecretName')]
+    [string]$BuildMasterDBConnectionStringSecretName = 'dbConnectionString.BuildMaster.localhost.Production'
   )
 
   BEGIN {
@@ -50,22 +66,8 @@ function Invoke-ProvisionInedoServiceAccounts {
       throw $errMsg
     }
 
-    # Ensure the PS_LSA C# type is loaded (lib/PSLSA.types.ps1 is dot-sourced at module
-    # import; this fallback covers running this file standalone from source)
-    if (-not ('PS_LSA.LsaWrapper' -as [type])) {
-      $typesPath = Join-Path (Split-Path $PSScriptRoot -Parent) 'lib\PSLSA.types.ps1'
-      if (Test-Path $typesPath) {
-        . $typesPath
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Dot-sourced PS_LSA type definition from '$typesPath'."
-      }
-      else {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "PS_LSA type is not loaded and '$typesPath' was not found."
-        throw "Required type 'PS_LSA.LsaWrapper' could not be loaded. Import the ATAP.Utilities.PowerShell module or dot-source lib\PSLSA.types.ps1 first."
-      }
-    }
-
-    # Load same-module function dependencies when running standalone (already in scope when loaded via module)
-    foreach ($dep in @('New-LocalServiceAccount')) {
+    # Load same-module dependencies when running standalone (already in scope when loaded via module)
+    foreach ($dep in @('Type-PSLSA', 'New-LocalServiceAccount')) {
       if (-not (Get-Command -Name $dep -CommandType Function -ErrorAction SilentlyContinue)) {
         $depPath = Join-Path $PSScriptRoot "$dep.ps1"
         if (Test-Path $depPath) {
@@ -146,12 +148,19 @@ function Invoke-ProvisionInedoServiceAccounts {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Granting ProGet db_owner on $SqlInstance to SvcProGet."
     Write-Host '--- Granting ProGet db_owner to SvcProGet ---' -ForegroundColor Cyan
     if ($PSCmdlet.ShouldProcess("$SqlInstance / ProGet", 'Initialize-SqlServiceLogin')) {
-      $r3 = Initialize-SqlServiceLogin `
-        -SqlInstance $SqlInstance `
-        -DatabaseName 'ProGet' `
-        -ServiceAccount "$env:COMPUTERNAME\SvcProGet" `
-        -Encrypt Optional `
-        -TrustServerCertificate
+      $proGetSqlLoginParams = @{
+        DatabaseName           = 'ProGet'
+        ServiceAccount         = "$env:COMPUTERNAME\SvcProGet"
+        Encrypt                = 'Optional'
+        TrustServerCertificate = $true
+      }
+      if (-not [string]::IsNullOrWhiteSpace($ProGetDBConnectionStringSecretName)) {
+        $proGetSqlLoginParams['DBConnectionStringSecretName'] = $ProGetDBConnectionStringSecretName
+      }
+      else {
+        $proGetSqlLoginParams['SqlInstance'] = $SqlInstance
+      }
+      $r3 = Initialize-SqlServiceLogin @proGetSqlLoginParams
       $r3 | Format-List
       $results.Add($r3)
     }
@@ -160,12 +169,19 @@ function Invoke-ProvisionInedoServiceAccounts {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Granting BuildMaster db_owner on $SqlInstance to SvcBuildmaster."
     Write-Host '--- Granting BuildMaster db_owner to SvcBuildmaster ---' -ForegroundColor Cyan
     if ($PSCmdlet.ShouldProcess("$SqlInstance / BuildMaster", 'Initialize-SqlServiceLogin')) {
-      $r4 = Initialize-SqlServiceLogin `
-        -SqlInstance $SqlInstance `
-        -DatabaseName 'BuildMaster' `
-        -ServiceAccount "$env:COMPUTERNAME\SvcBuildmaster" `
-        -Encrypt Optional `
-        -TrustServerCertificate
+      $buildMasterSqlLoginParams = @{
+        DatabaseName           = 'BuildMaster'
+        ServiceAccount         = "$env:COMPUTERNAME\SvcBuildmaster"
+        Encrypt                = 'Optional'
+        TrustServerCertificate = $true
+      }
+      if (-not [string]::IsNullOrWhiteSpace($BuildMasterDBConnectionStringSecretName)) {
+        $buildMasterSqlLoginParams['DBConnectionStringSecretName'] = $BuildMasterDBConnectionStringSecretName
+      }
+      else {
+        $buildMasterSqlLoginParams['SqlInstance'] = $SqlInstance
+      }
+      $r4 = Initialize-SqlServiceLogin @buildMasterSqlLoginParams
       $r4 | Format-List
       $results.Add($r4)
     }

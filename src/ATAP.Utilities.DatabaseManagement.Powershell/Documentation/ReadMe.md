@@ -47,22 +47,24 @@ items. The cmdlets resolve them **by name** at runtime via
 ### Permanent tiers
 
 ```
-dbConnectionString-<Database>-<Host>-<Production|QA|Integration>
+dbConnectionString.<Database>.<Host>.<Production|QA|Integration>
 ```
 
-Examples used today on the `utat022` workstation:
+Examples:
 
-- `dbConnectionString-ATAPUtilities-utat022-Integration`
-- `dbConnectionString-ATAPUtilities-utat022-QA`
-- `dbConnectionString-ATAPUtilities-utat022-Production`
-- `dbConnectionString-AceCommander-utat022-Integration`
-- `dbConnectionString-AceCommander-utat022-QA`
-- `dbConnectionString-AceCommander-utat022-Production`
+- `dbConnectionString.ProGet.localhost.Production`
+- `dbConnectionString.BuildMaster.localhost.Production`
+- `dbConnectionString.ATAPUtilities.localhost.Integration`
+- `dbConnectionString.ATAPUtilities.localhost.QA`
+- `dbConnectionString.ATAPUtilities.localhost.Production`
+- `dbConnectionString.AceCommander.localhost.Integration`
+- `dbConnectionString.AceCommander.localhost.QA`
+- `dbConnectionString.AceCommander.localhost.Production`
 
 ### Ephemeral sprint instances
 
 ```
-dbConnectionString-<Database>-<Host>-<Dev|Exp>-<UserName>
+dbConnectionString.<Database>.<Host>.<Dev|Exp>.<UserName>
 ```
 
 The `master` database needs a connection string for every SQL Server

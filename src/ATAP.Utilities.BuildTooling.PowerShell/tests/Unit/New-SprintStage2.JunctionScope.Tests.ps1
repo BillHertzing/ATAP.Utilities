@@ -19,7 +19,7 @@ BeforeAll {
     'git',
     'Set-WorktreeJunctions',
     'Initialize-DownstreamSprintFromSharedVSCode',
-    'Initialize-SprintAIAdapters',
+    'Invoke-SprintAIAdapterLifecycle',
     'Set-ClaudeSettingsSymlink',
     'Set-UserSettingsSymlink',
     'Get-SprintTaskRepositoryNames',
@@ -57,11 +57,17 @@ BeforeAll {
     $global:stage2JunctionCalls.Add([PSCustomObject]@{
         SourceRepoFolderNames = $SourceRepoFolderNames
       }) | Out-Null
+    $global:stage2CallOrder.Add('junctions') | Out-Null
     [PSCustomObject]@{ Success = $true; JunctionsCreated = 3; Errors = @() }
   }
 
   function global:Initialize-DownstreamSprintFromSharedVSCode { }
-  function global:Initialize-SprintAIAdapters { }
+  function global:Invoke-SprintAIAdapterLifecycle {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param([string]$Boundary, [string]$TargetRoot, [string]$SharedVSCodeWorktreePath, [switch]$FixtureMode, [switch]$AllowUserGlobalWrite, [switch]$CheckpointConfirmed, [string]$EvidenceRoot, [switch]$OmitSprintWorktrees)
+    $global:stage2CallOrder.Add('render') | Out-Null
+    [PSCustomObject]@{ DriftClean = $true; Results = @(); ChangedCount = 0 }
+  }
   function global:Set-ClaudeSettingsSymlink { }
   function global:Set-UserSettingsSymlink { }
 
@@ -126,6 +132,11 @@ BeforeAll {
   }
 
   . "$PSScriptRoot\..\..\public\New-SprintStage2Result.ps1"
+  # Task 12.2.b: New-SprintStage2 delegates per-worktree provisioning to the
+  # single Start entry point. Dot-source the REAL Set-SprintBoundaryContext so
+  # the SC-0236 assertions still flow end-to-end into the Set-WorktreeJunctions
+  # stub through the consolidated code path.
+  . "$PSScriptRoot\..\..\public\Set-SprintBoundaryContext.ps1"
   . "$PSScriptRoot\..\..\public\New-SprintStage2.ps1"
 }
 
@@ -139,6 +150,7 @@ AfterAll {
 Describe 'New-SprintStage2 junction scan scope (SC-0236)' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   BeforeEach {
     $global:stage2JunctionCalls = [System.Collections.Generic.List[object]]::new()
+    $global:stage2CallOrder = [System.Collections.Generic.List[string]]::new()
 
     $script:tempGitRoot = Join-Path ([System.IO.Path]::GetTempPath()) "stage2_junctionscope_$([guid]::NewGuid().ToString('N'))"
     $repoPath = Join-Path $script:tempGitRoot 'ATAP.Utilities'
@@ -172,6 +184,7 @@ Describe 'New-SprintStage2 junction scan scope (SC-0236)' -Tag 'Unit', 'Promoted
     $global:settings = $script:oldSettings
     Remove-Item -LiteralPath $script:tempGitRoot -Recurse -Force -ErrorAction SilentlyContinue
     Remove-Variable -Name stage2JunctionCalls -Scope Global -Force -ErrorAction SilentlyContinue
+    Remove-Variable -Name stage2CallOrder -Scope Global -Force -ErrorAction SilentlyContinue
   }
 
   It 'Passes -SourceRepoFolderNames matching JunctionFolderNames (default .vscode only)' {
@@ -199,5 +212,19 @@ Describe 'New-SprintStage2 junction scan scope (SC-0236)' -Tag 'Unit', 'Promoted
 
     $global:stage2JunctionCalls | Should -HaveCount 1
     @($global:stage2JunctionCalls[0].SourceRepoFolderNames) | Should -Contain '.claude'
+  }
+
+  It 'Provisions through the single Start entry point with junctions strictly before the adapter render (Task 12.2.b)' {
+    New-SprintStage2 `
+      -Stage1Result $script:stage1 `
+      -TasksFilePath $script:tasksPath `
+      -GitRoot $script:tempGitRoot `
+      -Owner 'owner' `
+      -SkipDatabaseReset `
+      -Confirm:$false | Out-Null
+
+    @($global:stage2CallOrder) | Should -Contain 'junctions'
+    @($global:stage2CallOrder) | Should -Contain 'render'
+    $global:stage2CallOrder.IndexOf('junctions') | Should -BeLessThan $global:stage2CallOrder.IndexOf('render')
   }
 }

@@ -31,6 +31,7 @@ BeforeAll {
     $global:stage1JunctionCalls.Add([PSCustomObject]@{
         SourceRepoFolderNames = $SourceRepoFolderNames
       }) | Out-Null
+    $global:stage1CallOrder.Add('junctions') | Out-Null
     [PSCustomObject]@{
       Success          = $true
       JunctionsCreated = 3
@@ -38,7 +39,12 @@ BeforeAll {
     }
   }
   function global:Initialize-DownstreamSprintFromSharedVSCode {}
-  function global:Initialize-SprintAIAdapters {}
+  function global:Invoke-SprintAIAdapterLifecycle {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param([string]$Boundary, [string]$TargetRoot, [string]$SharedVSCodeWorktreePath, [switch]$FixtureMode, [switch]$AllowUserGlobalWrite, [switch]$CheckpointConfirmed, [string]$EvidenceRoot, [switch]$OmitSprintWorktrees)
+    $global:stage1CallOrder.Add('render') | Out-Null
+    [PSCustomObject]@{ DriftClean = $true; Results = @(); ChangedCount = 0 }
+  }
   function global:Get-SprintHistoryReconstruction {
     param([string]$PlanningRoot)
     [PSCustomObject]@{
@@ -48,6 +54,11 @@ BeforeAll {
   }
 
   . "$PSScriptRoot\..\..\public\Convert-TasksMdToSprintBoard.ps1"
+  # Task 12.2.b: New-SprintStage1 delegates per-worktree provisioning to the
+  # single Start entry point. Dot-source the REAL Set-SprintBoundaryContext so
+  # the SC-0236 assertions still flow end-to-end into the Set-WorktreeJunctions
+  # stub through the consolidated code path.
+  . "$PSScriptRoot\..\..\public\Set-SprintBoundaryContext.ps1"
   . "$PSScriptRoot\..\..\public\New-SprintStage1.ps1"
 }
 
@@ -58,7 +69,7 @@ AfterAll {
     'git'
     'Set-WorktreeJunctions'
     'Initialize-DownstreamSprintFromSharedVSCode'
-    'Initialize-SprintAIAdapters'
+    'Invoke-SprintAIAdapterLifecycle'
     'Get-SprintHistoryReconstruction'
   ) | ForEach-Object {
     Remove-Item -Path "Function:\$_" -Force -ErrorAction SilentlyContinue
@@ -68,6 +79,7 @@ AfterAll {
 Describe 'New-SprintStage1 junction scan scope (SC-0236)' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   BeforeEach {
     $global:stage1JunctionCalls = [System.Collections.Generic.List[object]]::new()
+    $global:stage1CallOrder = [System.Collections.Generic.List[string]]::new()
 
     $script:tempGitRoot = Join-Path ([System.IO.Path]::GetTempPath()) "stage1_junctionscope_$([guid]::NewGuid().ToString('N'))"
     $script:sharedWorktree = Join-Path $script:tempGitRoot 'SharedVSCode-wt-999-Sprint-0010-work-items'
@@ -75,6 +87,9 @@ Describe 'New-SprintStage1 junction scan scope (SC-0236)' -Tag 'Unit', 'Promoted
 
     New-Item -ItemType Directory -Path $script:sharedWorktree -Force | Out-Null
     New-Item -ItemType Directory -Path $script:planningWorktree -Force | Out-Null
+    # Task 12.2.b: the real Set-SprintBoundaryContext derives and validates the
+    # stable repo path from the worktree name, so the stable _Planning repo must exist.
+    New-Item -ItemType Directory -Path (Join-Path $script:tempGitRoot '_Planning') -Force | Out-Null
 
     Set-Content -LiteralPath (Join-Path $script:sharedWorktree 'NuGet.config.template') -Encoding UTF8 -Value @(
       '<?xml version="1.0" encoding="utf-8"?>'
@@ -103,6 +118,7 @@ Describe 'New-SprintStage1 junction scan scope (SC-0236)' -Tag 'Unit', 'Promoted
   AfterEach {
     Remove-Item -LiteralPath $script:tempGitRoot -Recurse -Force -ErrorAction SilentlyContinue
     Remove-Variable -Name stage1JunctionCalls -Scope Global -Force -ErrorAction SilentlyContinue
+    Remove-Variable -Name stage1CallOrder -Scope Global -Force -ErrorAction SilentlyContinue
   }
 
   It 'Passes -SourceRepoFolderNames matching JunctionFolderNames (default .vscode only)' {
@@ -126,5 +142,17 @@ Describe 'New-SprintStage1 junction scan scope (SC-0236)' -Tag 'Unit', 'Promoted
 
     $global:stage1JunctionCalls | Should -HaveCount 1
     @($global:stage1JunctionCalls[0].SourceRepoFolderNames) | Should -Contain '.claude'
+  }
+
+  It 'Provisions through the single Start entry point with junctions strictly before the adapter render (Task 12.2.b)' {
+    New-SprintStage1 `
+      -GitRoot $script:tempGitRoot `
+      -Owner 'owner' `
+      -SprintNumber '0010' `
+      -Confirm:$false | Out-Null
+
+    @($global:stage1CallOrder) | Should -Contain 'junctions'
+    @($global:stage1CallOrder) | Should -Contain 'render'
+    $global:stage1CallOrder.IndexOf('junctions') | Should -BeLessThan $global:stage1CallOrder.IndexOf('render')
   }
 }

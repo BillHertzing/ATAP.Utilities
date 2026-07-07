@@ -12,7 +12,7 @@ function Remove-SprintBitwardenSecrets {
     Tiers:      Dev, Exp
 
     Secret naming convention (must match what New-SprintBitwardenSecrets created):
-      dbConnectionString-<Database>-<Host>-<Dev|Exp>-<DeveloperUsername>
+      dbConnectionString.<Database>.<Host>.<Dev|Exp>.<DeveloperUsername>
 
     To locate each secret, the cmdlet calls `bws secret list --output json`
     once, then filters the returned array for an exact key match
@@ -234,7 +234,7 @@ function Remove-SprintBitwardenSecrets {
         foreach ($tier in $tiers) {
 
           # Canonical secret name - must match New-SprintBitwardenSecrets exactly
-          $secretName = "dbConnectionString-${db}-${sqlHost}-${tier}-${DeveloperUsername}"
+          $secretName = "dbConnectionString.${db}.${sqlHost}.${tier}.${DeveloperUsername}"
 
           $entry = [PSCustomObject]@{
             secretName = $secretName

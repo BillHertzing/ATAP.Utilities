@@ -9,7 +9,7 @@ Describe 'Initialize-SqlServiceLogin' -Tag 'Unit' {
 
     Write-PSFMessage -Level Debug -Message 'Starting Initialize-SqlServiceLogin tests' -Tag 'Trace', 'Tests'
 
-    $script:instance = 'localhost\PRODUCTION'
+    $script:instance = 'localhost\Production'
     $script:database = 'ProGet'
     $script:account = 'TESTHOST\SvcProGet'
   }

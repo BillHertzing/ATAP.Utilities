@@ -12,6 +12,18 @@ function Set-SprintBoundaryContext {
     orchestrator that performs (or reverses) the full retarget for one or more
     sprint worktrees.
 
+    SINGLE START ENTRY POINT (Task 12.2.b / SC-0236): this cmdlet is the ONLY
+    code path that provisions a sprint worktree at the Start boundary. The
+    per-worktree order is fixed and structurally enforced: junctions
+    ('.vscode' only) -> downstream context -> full adapter materialization
+    (Invoke-SprintAIAdapterLifecycle, all canonical domains). A junction
+    failure skips the later steps for that worktree, so adapter rendering can
+    never race ahead of junction setup. New-SprintStage1 and New-SprintStage2
+    delegate their per-worktree provisioning here (with
+    -SkipSharedVSCodeSettings and -SkipProfileSymlinks, because they handle
+    those machine-global concerns themselves), and Initialize-SprintAIAdapters
+    is a thin delegate over the same Invoke-SprintAIAdapterLifecycle code path.
+
     It covers the original five V4-H03 concerns plus the AI adapter lifecycle:
 
       - machine links (NTFS junctions) ........ Set-WorktreeJunctions (per worktree)
@@ -89,6 +101,12 @@ function Set-SprintBoundaryContext {
   .PARAMETER SkipProfileSymlinks
     Skip the machine-wide PowerShell 7 profile-symlink retarget concern. Intended
     only for narrowly scoped repair or diagnostic calls.
+  .PARAMETER SkipSharedVSCodeSettings
+    Skip the machine-global SharedVSCode settings concern (shared-settings
+    render, Set-UserSettingsSymlink, Set-ClaudeSettingsSymlink). Used by
+    New-SprintStage1/New-SprintStage2 which orchestrate those machine-global
+    concerns once per stage while delegating per-worktree provisioning here
+    (Task 12.2.b).
   .PARAMETER AllowUserGlobalWrite
     Permit this boundary operation to update user-global settings files such as
     ~/.claude/settings.json.
@@ -153,6 +171,8 @@ function Set-SprintBoundaryContext {
 
     [switch]$SkipProfileSymlinks,
 
+    [switch]$SkipSharedVSCodeSettings,
+
     [switch]$AllowUserGlobalWrite,
 
     [switch]$CheckpointConfirmed,
@@ -202,6 +222,12 @@ function Set-SprintBoundaryContext {
         ContextRetargeted    = $false
         AISettingsProcessed  = $false
         AISettingsDriftClean = $null
+        # Granular per-concern errors (Task 12.2.b) so delegating callers
+        # (New-SprintStage1/New-SprintStage2) can map severities without
+        # parsing the aggregate Error string.
+        JunctionError        = $null
+        ContextError         = $null
+        AdapterError         = $null
         Error                = $null
       }
 
@@ -240,6 +266,7 @@ function Set-SprintBoundaryContext {
         } catch {
           $adapterLifecycleOk = $false
           $adapterError = "AI adapter lifecycle failed for '$worktreePath': $($_.Exception.Message)"
+          $wtEntry.AdapterError = $adapterError
           $wtEntry.Error = $adapterError
           $errors.Add($adapterError)
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $adapterError
@@ -283,7 +310,8 @@ function Set-SprintBoundaryContext {
         }
       } catch {
         $junctionsOk = $false
-        $wtEntry.Error = "Junction retarget failed for '$worktreePath': $($_.Exception.Message)"
+        $wtEntry.JunctionError = "Junction retarget failed for '$worktreePath': $($_.Exception.Message)"
+        $wtEntry.Error = $wtEntry.JunctionError
         $errors.Add($wtEntry.Error)
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $wtEntry.Error
         $perWorktree.Add([PSCustomObject]$wtEntry)
@@ -320,7 +348,8 @@ function Set-SprintBoundaryContext {
         }
       } catch {
         $contextOk = $false
-        $wtEntry.Error = "Downstream context retarget failed for '$worktreePath': $($_.Exception.Message)"
+        $wtEntry.ContextError = "Downstream context retarget failed for '$worktreePath': $($_.Exception.Message)"
+        $wtEntry.Error = $wtEntry.ContextError
         $errors.Add($wtEntry.Error)
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $wtEntry.Error
       }
@@ -341,6 +370,7 @@ function Set-SprintBoundaryContext {
         } catch {
           $adapterLifecycleOk = $false
           $adapterError = "AI adapter lifecycle failed for '$worktreePath': $($_.Exception.Message)"
+          $wtEntry.AdapterError = $adapterError
           $wtEntry.Error = @($wtEntry.Error, $adapterError) | Where-Object { $_ } | Join-String -Separator '; '
           $errors.Add($adapterError)
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $adapterError
@@ -380,7 +410,7 @@ function Set-SprintBoundaryContext {
     $settingsOk = $true
     $settingsError = $null
     try {
-      if ($PSCmdlet.ShouldProcess($SharedVSCodeWorktreePath, "Retarget SharedVSCode settings symlinks ($Boundary)")) {
+      if (-not $SkipSharedVSCodeSettings -and $PSCmdlet.ShouldProcess($SharedVSCodeWorktreePath, "Retarget SharedVSCode settings symlinks ($Boundary)")) {
         $sharedSettingsRenderParameters = @{
           Boundary = 'Start'
           TargetRoot = $SharedVSCodeWorktreePath
@@ -408,7 +438,7 @@ function Set-SprintBoundaryContext {
     }
     $concerns.Add([PSCustomObject]@{
         Concern        = 'SharedVSCodeSettings'
-        Action         = 'Invoke-SprintAIAdapterLifecycle (render shared settings) + Set-UserSettingsSymlink + Set-ClaudeSettingsSymlink'
+        Action         = ($SkipSharedVSCodeSettings ? 'Skipped' : 'Invoke-SprintAIAdapterLifecycle (render shared settings) + Set-UserSettingsSymlink + Set-ClaudeSettingsSymlink')
         StableByDesign = $false
         Succeeded      = $settingsOk
         Error          = $settingsError

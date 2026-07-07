@@ -2,31 +2,6 @@
   "version": 2,
   "dependencies": {
     "net10.0": {
-      "ATAP.Utilities.Philote": {
-        "type": "Direct",
-        "requested": "[0.1.0, )",
-        "resolved": "0.1.0",
-        "contentHash": "bxS5Wtxmf7SXFp29mtJwgmPvtU+6+nFW/8sL9uiCaYp6b6nfUsjxFjgpDNpSh9p8oBdoVAW1jUlk0by7YD3izQ=="
-      },
-      "ATAP.Utilities.Philote.DefaultConfiguration": {
-        "type": "Direct",
-        "requested": "[0.1.0, )",
-        "resolved": "0.1.0",
-        "contentHash": "2DWeglOO33Iz9AfaE0TFe8SSb7w3Zb+NKNYWYj2vpH7zH9qEb9c+PmeWozoO5Y68HgRykdAIOdR91FHS8CplxQ==",
-        "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "0.1.0"
-        }
-      },
-      "ATAP.Utilities.Philote.Interfaces": {
-        "type": "Direct",
-        "requested": "[0.1.0, )",
-        "resolved": "0.1.0",
-        "contentHash": "XXcOhY24CDPZLw22qXvWT5lbAau+9yEkBQfWKScR8wtnhNaWAYrkz58ayT0RGVYN4OloozAaPgvrgzjriHn4Cg==",
-        "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "0.1.0",
-          "TimePeriodLibrary.NET": "2.1.5"
-        }
-      },
       "coverlet.collector": {
         "type": "Direct",
         "requested": "[3.1.0, )",
@@ -326,7 +301,7 @@
         "contentHash": "xkKFzm0hylHF0SlDj78ACYMJC/i8fQ3i16sDDNYoKnjTsstGSQfuSBJ+QT4nqRXk/fOiYTh+iY0KIX5N7HTLuQ==",
         "dependencies": {
           "Microsoft.TestPlatform.ObjectModel": "17.0.0",
-          "Newtonsoft.Json": "[13.0.4, )"
+          "Newtonsoft.Json": "9.0.1"
         }
       },
       "NETStandard.Library": {
@@ -427,12 +402,31 @@
           "Microsoft.Extensions.Logging": "[9.0.0, )"
         }
       },
+      "atap.utilities.philote": {
+        "type": "Project"
+      },
+      "atap.utilities.philote.defaultconfiguration": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.philote.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
+          "TimePeriodLibrary.NET": "[2.1.5, )"
+        }
+      },
       "atap.utilities.serializer.interfaces": {
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ETW": "[1.0.0, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
         }
+      },
+      "atap.utilities.stronglytypedid.interfaces": {
+        "type": "Project"
       },
       "atap.utilities.testing": {
         "type": "Project",
@@ -445,12 +439,6 @@
           "Moq": "[4.16.1, )",
           "xunit": "[2.4.1, )"
         }
-      },
-      "ATAP.Utilities.StronglyTypedId.Interfaces": {
-        "type": "CentralTransitive",
-        "requested": "[0.0.0-placeholder, )",
-        "resolved": "0.1.0",
-        "contentHash": "AjLF0l46fOARi3WGOEFm3apBkJIu78HHgS62kkFkqLNAa05B4Y9KLScr+yAiy3BF4+fxzPinkMwW5GyzfNfQLw=="
       },
       "Microsoft.Extensions.Configuration": {
         "type": "CentralTransitive",
@@ -592,7 +580,7 @@
       "Newtonsoft.Json": {
         "type": "CentralTransitive",
         "requested": "[13.0.4, )",
-        "resolved": "13.0.4",
+        "resolved": "9.0.1",
         "contentHash": "U82mHQSKaIk+lpSVCbWYKNavmNH1i5xrExDEquU1i6I5pV6UMOqRnJRSlKO3cMPfcpp0RgDY+8jUXHdQ4IfXvw=="
       },
       "TimePeriodLibrary.NET": {
@@ -627,31 +615,6 @@
       }
     },
     "net8.0": {
-      "ATAP.Utilities.Philote": {
-        "type": "Direct",
-        "requested": "[0.1.0, )",
-        "resolved": "0.1.0",
-        "contentHash": "bxS5Wtxmf7SXFp29mtJwgmPvtU+6+nFW/8sL9uiCaYp6b6nfUsjxFjgpDNpSh9p8oBdoVAW1jUlk0by7YD3izQ=="
-      },
-      "ATAP.Utilities.Philote.DefaultConfiguration": {
-        "type": "Direct",
-        "requested": "[0.1.0, )",
-        "resolved": "0.1.0",
-        "contentHash": "2DWeglOO33Iz9AfaE0TFe8SSb7w3Zb+NKNYWYj2vpH7zH9qEb9c+PmeWozoO5Y68HgRykdAIOdR91FHS8CplxQ==",
-        "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "0.1.0"
-        }
-      },
-      "ATAP.Utilities.Philote.Interfaces": {
-        "type": "Direct",
-        "requested": "[0.1.0, )",
-        "resolved": "0.1.0",
-        "contentHash": "XXcOhY24CDPZLw22qXvWT5lbAau+9yEkBQfWKScR8wtnhNaWAYrkz58ayT0RGVYN4OloozAaPgvrgzjriHn4Cg==",
-        "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "0.1.0",
-          "TimePeriodLibrary.NET": "2.1.5"
-        }
-      },
       "coverlet.collector": {
         "type": "Direct",
         "requested": "[3.1.0, )",
@@ -954,7 +917,7 @@
         "contentHash": "xkKFzm0hylHF0SlDj78ACYMJC/i8fQ3i16sDDNYoKnjTsstGSQfuSBJ+QT4nqRXk/fOiYTh+iY0KIX5N7HTLuQ==",
         "dependencies": {
           "Microsoft.TestPlatform.ObjectModel": "17.0.0",
-          "Newtonsoft.Json": "[13.0.4, )"
+          "Newtonsoft.Json": "9.0.1"
         }
       },
       "NETStandard.Library": {
@@ -1070,12 +1033,31 @@
           "Microsoft.Extensions.Logging": "[9.0.0, )"
         }
       },
+      "atap.utilities.philote": {
+        "type": "Project"
+      },
+      "atap.utilities.philote.defaultconfiguration": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.philote.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
+          "TimePeriodLibrary.NET": "[2.1.5, )"
+        }
+      },
       "atap.utilities.serializer.interfaces": {
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ETW": "[1.0.0, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
         }
+      },
+      "atap.utilities.stronglytypedid.interfaces": {
+        "type": "Project"
       },
       "atap.utilities.testing": {
         "type": "Project",
@@ -1088,12 +1070,6 @@
           "Moq": "[4.16.1, )",
           "xunit": "[2.4.1, )"
         }
-      },
-      "ATAP.Utilities.StronglyTypedId.Interfaces": {
-        "type": "CentralTransitive",
-        "requested": "[0.0.0-placeholder, )",
-        "resolved": "0.1.0",
-        "contentHash": "AjLF0l46fOARi3WGOEFm3apBkJIu78HHgS62kkFkqLNAa05B4Y9KLScr+yAiy3BF4+fxzPinkMwW5GyzfNfQLw=="
       },
       "Microsoft.Extensions.Configuration": {
         "type": "CentralTransitive",
@@ -1237,7 +1213,7 @@
       "Newtonsoft.Json": {
         "type": "CentralTransitive",
         "requested": "[13.0.4, )",
-        "resolved": "13.0.4",
+        "resolved": "9.0.1",
         "contentHash": "U82mHQSKaIk+lpSVCbWYKNavmNH1i5xrExDEquU1i6I5pV6UMOqRnJRSlKO3cMPfcpp0RgDY+8jUXHdQ4IfXvw=="
       },
       "System.Text.Json": {
@@ -1292,31 +1268,6 @@
       }
     },
     "net9.0": {
-      "ATAP.Utilities.Philote": {
-        "type": "Direct",
-        "requested": "[0.1.0, )",
-        "resolved": "0.1.0",
-        "contentHash": "bxS5Wtxmf7SXFp29mtJwgmPvtU+6+nFW/8sL9uiCaYp6b6nfUsjxFjgpDNpSh9p8oBdoVAW1jUlk0by7YD3izQ=="
-      },
-      "ATAP.Utilities.Philote.DefaultConfiguration": {
-        "type": "Direct",
-        "requested": "[0.1.0, )",
-        "resolved": "0.1.0",
-        "contentHash": "2DWeglOO33Iz9AfaE0TFe8SSb7w3Zb+NKNYWYj2vpH7zH9qEb9c+PmeWozoO5Y68HgRykdAIOdR91FHS8CplxQ==",
-        "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "0.1.0"
-        }
-      },
-      "ATAP.Utilities.Philote.Interfaces": {
-        "type": "Direct",
-        "requested": "[0.1.0, )",
-        "resolved": "0.1.0",
-        "contentHash": "XXcOhY24CDPZLw22qXvWT5lbAau+9yEkBQfWKScR8wtnhNaWAYrkz58ayT0RGVYN4OloozAaPgvrgzjriHn4Cg==",
-        "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "0.1.0",
-          "TimePeriodLibrary.NET": "2.1.5"
-        }
-      },
       "coverlet.collector": {
         "type": "Direct",
         "requested": "[3.1.0, )",
@@ -1616,7 +1567,7 @@
         "contentHash": "xkKFzm0hylHF0SlDj78ACYMJC/i8fQ3i16sDDNYoKnjTsstGSQfuSBJ+QT4nqRXk/fOiYTh+iY0KIX5N7HTLuQ==",
         "dependencies": {
           "Microsoft.TestPlatform.ObjectModel": "17.0.0",
-          "Newtonsoft.Json": "[13.0.4, )"
+          "Newtonsoft.Json": "9.0.1"
         }
       },
       "NETStandard.Library": {
@@ -1717,12 +1668,31 @@
           "Microsoft.Extensions.Logging": "[9.0.0, )"
         }
       },
+      "atap.utilities.philote": {
+        "type": "Project"
+      },
+      "atap.utilities.philote.defaultconfiguration": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.philote.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
+          "TimePeriodLibrary.NET": "[2.1.5, )"
+        }
+      },
       "atap.utilities.serializer.interfaces": {
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ETW": "[1.0.0, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
         }
+      },
+      "atap.utilities.stronglytypedid.interfaces": {
+        "type": "Project"
       },
       "atap.utilities.testing": {
         "type": "Project",
@@ -1735,12 +1705,6 @@
           "Moq": "[4.16.1, )",
           "xunit": "[2.4.1, )"
         }
-      },
-      "ATAP.Utilities.StronglyTypedId.Interfaces": {
-        "type": "CentralTransitive",
-        "requested": "[0.0.0-placeholder, )",
-        "resolved": "0.1.0",
-        "contentHash": "AjLF0l46fOARi3WGOEFm3apBkJIu78HHgS62kkFkqLNAa05B4Y9KLScr+yAiy3BF4+fxzPinkMwW5GyzfNfQLw=="
       },
       "Microsoft.Extensions.Configuration": {
         "type": "CentralTransitive",
@@ -1882,7 +1846,7 @@
       "Newtonsoft.Json": {
         "type": "CentralTransitive",
         "requested": "[13.0.4, )",
-        "resolved": "13.0.4",
+        "resolved": "9.0.1",
         "contentHash": "U82mHQSKaIk+lpSVCbWYKNavmNH1i5xrExDEquU1i6I5pV6UMOqRnJRSlKO3cMPfcpp0RgDY+8jUXHdQ4IfXvw=="
       },
       "TimePeriodLibrary.NET": {

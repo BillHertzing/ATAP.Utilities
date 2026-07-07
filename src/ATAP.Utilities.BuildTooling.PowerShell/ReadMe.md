@@ -241,7 +241,7 @@ machine secrets go through
 Experimental DB connection strings are normal Bitwarden Secrets Manager entries,
 not personal-vault items and not reader-side deterministic fallbacks.
 `New-SprintBitwardenSecrets` uses `bws` plus `$env:BWS_ACCESS_TOKEN` or the
-DPAPI token file to create/check the expected `dbConnectionString-*` entries in
+DPAPI token file to create/check the expected `dbConnectionString.*` entries in
 the `CI-Shared` project. `Get-DbConnectionStringSecretDescriptor` remains the
 single source of truth for the canonical name and can generate the
 Integrated-Security value only when a provisioning caller explicitly opts into

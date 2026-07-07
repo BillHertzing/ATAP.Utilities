@@ -113,15 +113,14 @@ The interesting bucket — and the focus of this doc — is **C**.
 | `AceCommander.Server.Tests/bin/.../*.ps1`                            | E      | Playwright vendor scripts                 | Ignore                             |
 | `_generated/*.ps1`                                                   | D      | Sprint-0006 ProGet diagnostics            | Delete after sprint closes         |
 
-### 3.3 \_Planning
+### 3.3 \_Planning — RESOLVED 2026-07-07 (Sprint 0012 Task 12.46.e)
 
-| Path                                             | Bucket | Purpose                                         | Disposition                                          |
-| ------------------------------------------------ | ------ | ----------------------------------------------- | ---------------------------------------------------- |
-| `Powershell/Public/Save-SprintWorkSession.ps1`   | A      | Sprint checkpoint helper (R-15 names this path) | Promote to a `_Planning.PowerShell` module — pending |
-| `Powershell/Public/Start-PlanningSession.ps1`    | A      | Begin a planning session (now a cmdlet)         | Same                                                 |
-| `Powershell/Public/Complete-PlanningSession.ps1` | A      | End a planning session (now a cmdlet)           | Same                                                 |
-| `Powershell/Public/New-BundleProjectFiles.ps1`   | A      | Bundle related project docs                     | Same                                                 |
-| `Powershell/Public/Add-ScopeCreepIdea.ps1`       | A      | Park an idea outside the current sprint         | Same                                                 |
+The `_Planning\Powershell\` folder was removed. All planning commands live in
+`ATAP.Utilities.BuildTooling.PowerShell` as cmdlets (`Save-SprintWorkSession` — R-15
+now names the BuildTooling path as canonical — `Start-PlanningSession`,
+`Complete-PlanningSession`, `Add-ScopeCreepIdea`); the `_Planning` copy of
+`Save-SprintWorkSession.ps1` had already been reduced to a thin wrapper and was
+deleted rather than promoted to a `_Planning.PowerShell` module.
 
 The `_Planning/Powershell/Public/` folder follows the _layout_ of a
 PowerShell module's public directory but lacks a `.psd1`. It is a

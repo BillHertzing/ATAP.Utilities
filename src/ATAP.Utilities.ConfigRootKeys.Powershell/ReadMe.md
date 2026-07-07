@@ -44,3 +44,6 @@ Invoke-Pester -Path ./tests/Unit -Output Detailed
 
 - Version bumped to 0.1.4 in Sprint 11
 
+## Functional area
+
+Environment / Workstation Setup - START HERE: SolutionDocumentation\NewComputerSetup.md (see also ConfigRootKeys-and-HostSettings.md) (link-up added 2026-07-07, Sprint 0012 Task 12.46.f)

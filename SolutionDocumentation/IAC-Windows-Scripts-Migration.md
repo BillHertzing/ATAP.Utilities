@@ -22,6 +22,13 @@
 >   present (and `PowerShellGetFeedMap.psd1` sits under `constants\Obsolete\`) even
 >   though their content is migrated to `ATAP.Utilities.ConfigRootKeys.PowerShell`;
 >   the on-disk copies are removal candidates.
+> - **2026-07-07 (Task 12.46.c):** `Windows\Parity\` (module `ATAP.IAC.Parity.PowerShell`,
+>   never committed to ATAP.IAC) moved to
+>   `src\ATAP.Utilities.SystemParityMonitor.PowerShell` — public function names kept,
+>   manifest/GUID/`$mn` strings renamed, Pester 4/4 green at the new location.
+>   `Register-ParityScheduledTasks.ps1` was reconstructed (old on-disk copy was
+>   null-byte corrupted). No Parity scheduled tasks were registered on utat022 at move
+>   time; when tasks are (re)registered they must use the new module path.
 > - The fragment system's current documentation lives in
 >   `ConfigRootKeys-and-HostSettings.md` §9 (this folder).
 
@@ -104,22 +111,22 @@ Migration applies to categories 1 and 2 only.
 - [ ] Create a GitHub issue in ATAP.Utilities for the migration work and open a worktree
   using the `issue-to-worktree` skill.
 
-### Phase 1 — Migrate `Add-NetworkShareAsLocalDriveLetter.ps1`
+### Phase 1 — Migrate `Add-NetworkShareAsLocalDriveLetter.ps1` ✅ COMPLETE 2026-07-07
 
-This is the simplest migration; the function has no dependencies on `HostSettings` or
-`global_ConfigRootKeys`.
-
-**Steps:**
-1. Copy `Add-NetworkShareAsLocalDriveLetter.ps1` to
-   `ATAP.Utilities/src/ATAP.Utilities.FileIO.PowerShell/public/`.
-2. Rename to `Add-NetworkDriveMapping.ps1` (or keep original name if preferred) and
-   review for conformance with PowerShell.instructions.md (PSFMessage logging, param
-   blocks, approved verbs).
-3. Add a Pester test in
-   `ATAP.Utilities/src/ATAP.Utilities.FileIO.PowerShell/tests/Unit/`.
-4. Export the function in the module manifest.
-5. Delete the source file from ATAP.IAC and replace with a comment stub pointing to the
-   new location.
+> **Done (Sprint 0012 Task 12.46.d):** rewritten as a proper parameterized function at
+> `ATAP.Utilities/src/ATAP.Utilities.FileIO.PowerShell/public/Add-NetworkShareAsLocalDriveLetter.ps1`
+> (original name kept — `Add` is an approved verb; the old two-line snippet relied on
+> `$global:creds` and the nonexistent `Get-Credentials`). Pester test added at
+> `tests/Add-NetworkShareAsLocalDriveLetter.Tests.ps1` (5/5 green). Manifest exports
+> `'*'`, so no manifest edit was needed. Source `git rm`'d from ATAP.IAC (no comment
+> stub — this ledger is the pointer).
+>
+> Also 2026-07-07: the two loose repo-root drafts `Ansible-Security.ps1` and
+> `Get-AnsibleInventory.ps1` (outside this ledger's original `Windows\` scope) were
+> archived to `ATAP.Utilities.IAC.Ansible.Powershell\archive\` with provenance headers —
+> both were non-functional drafts (placeholder GUIDs / 8 parse errors) superseded by the
+> module's live `Get-AnsibleBuildoutInventory` / `Get-AnsibleCertificates` /
+> `Get-HostSettings` — and `git rm`'d from ATAP.IAC.
 
 ### Phase 2 — Migrate `global_ConfigRootKeys.IAC.Fragments/` *(Partially Complete — Sprint 7)*
 

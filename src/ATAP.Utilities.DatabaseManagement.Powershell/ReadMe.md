@@ -96,3 +96,6 @@ Use the module-level getting started guide for the lifecycle workflow:
 
 - Version bumped to 0.1.10 in Sprint 11
 
+## Functional area
+
+Database & Flyway - START HERE: SolutionDocumentation\Database-Change-Unit-and-Flyway-Promotion.md (link-up added 2026-07-07, Sprint 0012 Task 12.46.f)

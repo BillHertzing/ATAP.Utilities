@@ -1102,4 +1102,6 @@ canonical `*-stable` tier.
 
 - Version bumped to 0.1.13 in Sprint 11
 
+## Functional area
 
+PowerShell Build & Packaging - START HERE: SolutionDocumentation\PowerShell-Modules-Build-Process.md (link-up added 2026-07-07, Sprint 0012 Task 12.46.f)

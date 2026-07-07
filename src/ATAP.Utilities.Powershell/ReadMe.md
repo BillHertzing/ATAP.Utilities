@@ -106,4 +106,6 @@ Use the module-level getting started guide for the lifecycle workflow:
 
 - Version bumped to 0.1.10 in Sprint 11 for the Initialize-BitwardenSession module move.
 
+## Functional area
 
+Core PowerShell Utilities - this module's ReadMe is the area START-HERE (area created 2026-07-07, Sprint 0012 Task 12.46.g user decision) (area assigned 2026-07-07, Sprint 0012 Task 12.46.g)

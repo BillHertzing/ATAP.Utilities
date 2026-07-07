@@ -111,10 +111,11 @@ other ATAP PowerShell modules.
 
 ## Related Documentation
 
-- `_Planning/Explainers/0111-proget-feed-tier-dependency-build-report.md` —
-  Source-of-truth report on five-tier feed dependency policy.
-- `ATAP.IAC/constants/FeedConstants.psd1` — canonical feed name and URL
-  defaults consumed by host settings.
+- `SolutionDocumentation/Immutable-Build-Strategy.md` — canonical five-tier feed
+  dependency / promotion policy (supersedes the retired Explainer 0111 report).
+- Feed name and URL defaults are defined in this module's PackageRepositories
+  ConfigRootKeys files (the former `ATAP.IAC/constants/FeedConstants.psd1` was
+  removed 2026-07-07, Sprint 0012 Task 12.46.d — content had been migrated here).
 
 - Version bumped to 0.1.4 in Sprint 11
 

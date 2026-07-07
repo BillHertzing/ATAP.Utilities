@@ -10,16 +10,18 @@ carry the per-file detail.
 | Functional area | START HERE | Also in this area (selection) |
 | --- | --- | --- |
 | C# Build & Packaging | `CSharp-Packages-Build-Process.md` | CSharp-Packages-{Versioning,Test-Process,Pack-and-Push}, CSharp-Central-Package-Management, BuildTooling-MSBuild-Internals, CS0246-Errors-TypeNotFound |
-| PowerShell Build & Packaging | `PowerShell-Modules-Build-Process.md` | PowerShell-Modules-{Versioning,Test-Process,Pack-and-Publish}, PowerShell-Script-Consolidation, PowerShellModule-Pipeline-NoProfile-Runbook |
+| PowerShell Build & Packaging | `PowerShell-Modules-Build-Process.md` | PowerShell-Modules-{Versioning,Test-Process,Pack-and-Publish}, PowerShell-Script-Consolidation, PowerShellModule-Pipeline-NoProfile-Runbook; module: `src\ATAP.Utilities.BuildTooling.PowerShell` |
 | Versioning & Immutable Build Strategy | `Immutable-Build-Strategy.md` | VersionJsonAsCeiling(+Runbook), Package-Pinning-Ownership-Decision, BranchModel-Future-Work, Long-Developing-Features |
 | BuildMaster / ProGet Infrastructure | `Production-and-Tooling-Overview.md` | BuildMaster-Pipeline-Topology, BuildMaster-Install-Runbook, Runbook-BuildMasterConfiguration, BuildMaster-Run-State-Runbook, ProGet-Install-Runbook |
-| Database & Flyway | `Database-Change-Unit-and-Flyway-Promotion.md` | Database-Package-* decisions, Database-MultiDB-Future-Requirements, Developer-SqlServerInstances-Runbook, ATAPUtilities-Instantiation-Tables |
-| RRSBS & Rules Compendiums | `Rules Compendium.md` | Rules Compendium.{CSharp,SQL,PowerShell,MSBuild,Snippet,Manim,Path,OtterScript,AgentText}, Rules-Compendium-Template, Example.RuleInstantiation.HelloWorld |
-| Secrets & Security | `Security Shift-Left.md` | ServiceAccountsAndBitwarden(+AlternativesConsidered), Runbook-BitwardenServiceAccounts, SecretsPluginArchitecture, GenericPluginArchitecture |
-| Environment / Workstation Setup | `NewComputerSetup.md` | NewComputerSetupUsingAnsible, NewOrganizationSetup, DevEnvironment, WSL2Setup, VisualStudioExtensions, ConfigRootKeys-and-HostSettings, IAC-Windows-Scripts-Migration |
+| Database & Flyway | `Database-Change-Unit-and-Flyway-Promotion.md` | Database-Package-* decisions, Database-MultiDB-Future-Requirements, Developer-SqlServerInstances-Runbook, ATAPUtilities-Instantiation-Tables; module: `src\ATAP.Utilities.DatabaseManagement.Powershell` |
+| RRSBS & Rules Compendiums | `Rules Compendium.md` | Rules Compendium.{CSharp,SQL,PowerShell,MSBuild,Snippet,Manim,Path,OtterScript,AgentText}, Rules-Compendium-Template, Example.RuleInstantiation.HelloWorld; module: `src\ATAP.Utilities.RulesManagement.PowerShell` |
+| Secrets & Security | `Security Shift-Left.md` | ServiceAccountsAndBitwarden(+AlternativesConsidered), Runbook-BitwardenServiceAccounts, SecretsPluginArchitecture, GenericPluginArchitecture; module: `src\ATAP.Utilities.Security.Powershell` |
+| Environment / Workstation Setup | `NewComputerSetup.md` | NewComputerSetupUsingAnsible, NewOrganizationSetup, DevEnvironment, WSL2Setup, VisualStudioExtensions, ConfigRootKeys-and-HostSettings, IAC-Windows-Scripts-Migration, `src\ATAP.Utilities.SystemParityMonitor.PowerShell\Documentation\Overview.md` (host-pair parity monitoring, moved from ATAP.IAC 2026-07-07); modules: `src\ATAP.Utilities.ConfigRootKeys.Powershell`, `src\ATAP.Utilities.IAC.Ansible.Powershell` |
 | Sprint & Worktree Infrastructure | `Sprint-Boundary-Retargeting.md` | Worktree-Source-of-Truth-Inventory, SprintInfrastructure-Naming, Sprint-Planning references |
 | Testing | `TestingMethodology.md` | CSharp-Packages-Test-Process, PowerShell-Modules-Test-Process |
 | Disaster Preparedness | `Disaster Preparedness.md` | Backup-SqlServer-ProGet-BuildMaster, Backup-ProGet-BuildMaster-ApplicationData, Cobian-Reflector-Backup-Automation |
+| Core PowerShell Utilities | `src\ATAP.Utilities.PowerShell\ReadMe.md` | Added 2026-07-07 (Task 12.46.g, user-approved): the base cross-cutting utilities/profile-helpers module plus `src\ATAP.Utilities.FileIO.PowerShell` (file/path/Dropbox/drive-mapping helpers) |
+| Domain & Personal Utilities | `Domain-and-Personal-Utilities.md` | Added 2026-07-07 (Task 12.46.g, user-approved): FinancialAPI, Hydrus, Neo4j, Speech, VennDiagramGenerator, VoiceRecognition modules (see the START-HERE page's module table) |
 | AI Agents & Adapters (pointer area) | SharedVSCode `SolutionDocumentation/INDEX.md` | Sprint-Lifecycle-Agent-Workflow, Agent-Permission-Model, CLAUDE-md-Across-Repositories, Junction-vs-File-Sync-Alternatives, Using-Agent-Swarms (all in SharedVSCode) |
 | AceCommander (parked) | `AceCommander-architecture-overview.md` | AceCommander-Modernization-Plan, SQLCipher-License-Decision — eventual home AceCommander SolutionDocumentation (SC-0245) |
 

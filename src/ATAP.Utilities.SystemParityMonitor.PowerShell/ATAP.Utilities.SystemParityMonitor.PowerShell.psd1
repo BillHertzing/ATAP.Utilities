@@ -8,6 +8,7 @@
   Description = 'System parity journal and audit tooling for host-pair operations (moved from ATAP.IAC Windows\Parity, Sprint 0012 Task 12.46).'
   PowerShellVersion = '7.0'
   CompatiblePSEditions = @('Core')
+  RequiredModules = @()
   FunctionsToExport = @(
     'Add-ParityChangeEntry',
     'Get-PeerPendingChanges',

@@ -56,6 +56,14 @@ ToDo: Insert diagram of CI/CD process
   sprint resource names, including BWS-owned `dbConnectionString-*` keys for
   Development and Experimental database connection strings.
 
+### ManimVideoGenerator
+
+- The subsystem generating Manim animations from text/voice descriptions (a
+  planned AceCommander bolt-on module). Master overview:
+  [src/ATAP.Utilities.ManimVideoGenerator/Documentation/Overview.md](../src/ATAP.Utilities.ManimVideoGenerator/Documentation/Overview.md)
+  (moved from `_Planning/Explainers/0200`, 2026-07-06); rule grammar in
+  [Rules Compendium.Manim](./Rules%20Compendium.Manim.md).
+
 ## <a id="Development vs. CI/CD" /> Development vs. CI/CD
 
 There is a distinction that needs to be made between the tasks related to developing a project or feature, and the CI/CD pipeline that produces the production-ready package and artifacts about that package (i.e., test results, test coverage, published security and dependency analysis, documentation, installers, etc.).

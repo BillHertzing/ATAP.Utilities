@@ -14,7 +14,7 @@ maps to a named non-terminal in the BNF grammar for that artifact type.
 
 This compendium is the authoritative source for Manim-specific Rule Primitives. The full BNF
 from which these primitives are drawn appears in
-`_Planning/Explainers/0200-manim-video-generator-overview.md § BNF — Manim Python Scene Grammar`.
+`../src/ATAP.Utilities.ManimVideoGenerator/Documentation/Overview.md § BNF — Manim Python Scene Grammar` (moved from `_Planning/Explainers/0200`, 2026-07-06).
 
 ---
 
@@ -341,5 +341,5 @@ public enum ManimRateFunc
 
 - [Manim Community API Reference](https://docs.manim.community/en/stable/reference.html)
 - [Manim Community Mobject Gallery](https://docs.manim.community/en/stable/reference/manim.mobject.html)
-- `_Planning/Explainers/0200-manim-video-generator-overview.md` — full BNF and 0200 series overview
+- `../src/ATAP.Utilities.ManimVideoGenerator/Documentation/Overview.md` — full BNF and ManimVideoGenerator overview (moved from `_Planning/Explainers/0200`, 2026-07-06)
 - `SolutionDocumentation/Rules Compendium.CSharp.md` — C# Rule Primitives (format reference)

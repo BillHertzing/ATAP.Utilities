@@ -48,6 +48,20 @@ In the event of a disaster that renders the computers used in the creation of so
 
 Many of the tools used in the development and CI/CD process have settings and configurations. 
 
+### Backup runbooks (detailed documents in this folder)
+
+- [Backup-SqlServer-ProGet-BuildMaster.md](Backup-SqlServer-ProGet-BuildMaster.md) —
+  SQL Server backup strategy for the ProGet and BuildMaster databases (moved from
+  `_Planning/Explainers/0021`, 2026-07-06).
+- [Backup-ProGet-BuildMaster-ApplicationData.md](Backup-ProGet-BuildMaster-ApplicationData.md) —
+  application-data backup jobs for ProGet and BuildMaster via Cobian file-copy tasks,
+  covering `C:\ProgramData\Inedo\ProGet\`, BuildMaster data, and package storage
+  directories; scripted via `New-CobianAppJobs` (moved from
+  `_Planning/Explainers/0021a`, 2026-07-06).
+- [Cobian-Reflector-Backup-Automation.md](Cobian-Reflector-Backup-Automation.md) —
+  Cobian Reflector `MainList.lst` format and PowerShell automation (moved from
+  `_Planning/Explainers/0023`, 2026-07-06).
+
 ### Visual Studio Code
 
 #### settings.json

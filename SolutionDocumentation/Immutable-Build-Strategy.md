@@ -304,7 +304,7 @@ Because `+<hash>` is part of the SemVer 2.0 identity, two such packages
 are different artifacts. Capturing the version once at Experimental and
 reading it everywhere downstream is what makes "promote the artifact"
 mean a single, identifiable thing. This is the rationale documented in
-§12 of `CriticalAnalysisOfImmutableBuildStrategy.md` (the
+§12 of `ReviewedAndArchived/CriticalAnalysisOfImmutableBuildStrategy.md` (the
 `+<gitshorthash>` problem).
 
 ### 6.3 Resolving "latest in feed X"

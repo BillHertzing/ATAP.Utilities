@@ -1,5 +1,9 @@
 # Setup a New Development Computer
 
+> **Canonical.** The companion [NewComputerSetupUsingAnsible.md](NewComputerSetupUsingAnsible.md)
+> is retained only for its deeper BIOS / OS-install / Ansible-bootstrap notes; where the two
+> overlap, THIS document wins (cross-link added 2026-07-06, Task 12.45.e).
+
 ## Purpose
 
 This document bootstraps a new Windows 11 developer workstation so it can participate in

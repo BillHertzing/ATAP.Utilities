@@ -204,3 +204,62 @@ With the org, projects, machine accounts, and tokens in place:
 
 > **Future organization-level topics** (shared DNS, certificate authorities, cloud
 > resource provisioning) belong here as new phases, not in the per-computer runbook.
+
+---
+
+## Appendix A: Compute inventory and third-party software model (migrated from the ATAP.IAC ReadMe, 2026-07-06)
+
+> Conceptual design content extracted from the ATAP.IAC repository ReadMe during
+> the Task 12.45.c documentation reorganization. ATAP.IAC holds the **data** for
+> this model (the `ansibleInventory` object and host settings fragments); the
+> concepts live here. Cross-reference: the Task 12.24.e organization-layer
+> enumeration (`PLanUTAT01Onboarding.md` §1.5) is the measured, current-state
+> counterpart of this design; `ATAP.IAC/ansible/inventory` is designated as the
+> first machine-readable home for the role→computer assignment map.
+
+### A.1 The ansibleInventory object
+
+The ATAP.IAC package defines the compute resources of an organization, its
+compute-users, and the assignment of users to resources. The `ansibleInventory`
+object defines the organization's compute inventory. On the compute-resource
+side, Info data structures are defined for hosts, AnsibleGroups, AnsibleRoles,
+Chocolatey packages, PowerShell modules, and NuGet packages; all of these may
+carry RegistrySettings, GlobalSettings, ScheduledJobs, and PKISecurityCertificates.
+The organization's hosts file (IP connectivity) is part of the package.
+
+### A.2 Keyhole/key permission model
+
+The security data structures are entwined with the user data structures: a
+collection of users, a collection of compute resources, and a keyhole/key map
+specifying the level of permission a user has to utilize a resource. The compute
+resource holds the keyhole (an exclusion lock keeping users out of the
+resource/feature); it accepts a request to use the resource in a given manner
+only if the key fits — the key being a passing test for a specific permission
+assigned to a specific user on a specific host. Permissions must be re-evaluated
+periodically (tens of seconds), on demand, and via full re-evaluation.
+
+### A.3 Third-party software (SWBOM) property structures
+
+The organization should maintain an approved list of third-party software and a
+process to keep it updated. Changes actuate through delivery of packages from
+production package-repository hosts. The SWBOM data structures compose as:
+
+- `commonProperties`: RegistrySettings (`hashtable<string,hashtable<string,string>>`),
+  GlobalSettings, ScheduledJobs, PKICertificates
+- `commonInstallableProperties`: Name (string), version (SemanticVersion),
+  allowPrerelease (bool), additional_parameters? (object), Notes? (string)
+- `packagingProperties` (has commonInstallableProperties + commonProperties):
+  NuGetPackages, ChocolateyPackages, wingetPackages
+- `packageProviderProperties` (has packagingProperties + both common sets):
+  packageProvider, pushUri, pullUri
+- `AnsibleRoleNames` / `AnsibleGroupsNames` (have commonInstallableProperties +
+  commonProperties): Meta, Plays/Roles/Packages (TBD)
+
+### A.4 Scheduled maintenance windows
+
+Every computer in the organization wakes at least once every 24 hours and runs
+maintenance tasks. Initial schedule: the production package-repository computer
+(utat022) wakes at 05:55 and runs its housekeeping script at waketime + 5
+minutes; other computers wake 10 minutes after the package-repository host and
+run housekeeping at their waketime + 5 minutes. An organization spanning time
+zones will eventually need a rotation schedule.

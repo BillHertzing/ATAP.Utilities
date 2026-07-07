@@ -89,7 +89,7 @@ The following cmdlets are involved:
   recovery path is the scheduled refresh task; a second ad-hoc refresh task remains a
   follow-up item to evaluate.
 - **Alternatives are retained for future reference** in
-  [ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md).
+  [ServiceAccountsAndBitwarden-AlternativesConsidered.md](ServiceAccountsAndBitwarden-AlternativesConsidered.md).
 
 These choices move the document from open-ended research toward an implementation-ready
 decision record while preserving the discarded and deferred options.
@@ -428,7 +428,7 @@ Bitwarden Secrets Manager is the architecturally cleaner option for service acco
 is **not available on the current Bitwarden Free tier** and is therefore deferred. The
 full description of the Secrets Manager model, official Bitwarden guidance, pros/cons,
 and the revisit trigger are recorded in
-[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md#bitwarden-secrets-manager).
+[ServiceAccountsAndBitwarden-AlternativesConsidered.md](ServiceAccountsAndBitwarden-AlternativesConsidered.md#bitwarden-secrets-manager).
 
 ### Service-Specific Secret Injection Patterns
 
@@ -499,7 +499,7 @@ Ansible Tower / AWX has a **Credentials** framework:
 **Completed:** 2026-05-25
 
 **Note:** Detailed evaluations of the discarded and deferred patterns have moved to
-[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md).
+[ServiceAccountsAndBitwarden-AlternativesConsidered.md](ServiceAccountsAndBitwarden-AlternativesConsidered.md).
 The selected pattern (Pattern 1: DPAPI + startup unlock) is documented in full below.
 Patterns 2–6 retain a short verdict line and a link to their full evaluation.
 
@@ -551,35 +551,35 @@ D-01 through D-03 and I-01 through I-02.
 #### Pattern 2: Windows Credential Manager
 
 **Verdict:** Discarded — offers no material advantage over Pattern 1. See
-[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md#windows-credential-manager)
+[ServiceAccountsAndBitwarden-AlternativesConsidered.md](ServiceAccountsAndBitwarden-AlternativesConsidered.md#windows-credential-manager)
 for the full evaluation.
 
 #### Pattern 3: Bitwarden Secrets Manager
 
 **Verdict:** Architecturally superior; deferred because the current Bitwarden
 organization is on the Free tier. See
-[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md#bitwarden-secrets-manager)
+[ServiceAccountsAndBitwarden-AlternativesConsidered.md](ServiceAccountsAndBitwarden-AlternativesConsidered.md#bitwarden-secrets-manager)
 for the full evaluation and revisit trigger.
 
 #### Pattern 4: HashiCorp Vault
 
 **Verdict:** Rejected — disproportionate operational overhead for current ATAP scale.
 See
-[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md#hashicorp-vault)
+[ServiceAccountsAndBitwarden-AlternativesConsidered.md](ServiceAccountsAndBitwarden-AlternativesConsidered.md#hashicorp-vault)
 for the full evaluation.
 
 #### Pattern 5: Per-Service Env-Var Injection at Startup
 
 **Verdict:** Rejected — machine-scope `BW_SESSION` has unacceptable blast radius for
 production multi-service hosts. See
-[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md#machine-scope-bw_session)
+[ServiceAccountsAndBitwarden-AlternativesConsidered.md](ServiceAccountsAndBitwarden-AlternativesConsidered.md#machine-scope-bw_session)
 for the full evaluation.
 
 #### Pattern 6: Named Pipe / Local HTTPS Proxy
 
 **Verdict:** Rejected — adds custom infrastructure and a new single point of failure
 without enough benefit. See
-[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md#named-pipe-local-https-proxy)
+[ServiceAccountsAndBitwarden-AlternativesConsidered.md](ServiceAccountsAndBitwarden-AlternativesConsidered.md#named-pipe-local-https-proxy)
 for the full evaluation.
 
 ### R-04 Findings Summary
@@ -770,7 +770,7 @@ Based on the research findings, the key factors driving the architecture decisio
 
 See [R-04](#r-04-alternative-patterns-evaluation) for the in-document research matrix,
 or use the decision companion file
-[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md)
+[ServiceAccountsAndBitwarden-AlternativesConsidered.md](ServiceAccountsAndBitwarden-AlternativesConsidered.md)
 for the condensed list of discarded and deferred alternatives.
 
 **Short list:**
@@ -947,5 +947,5 @@ mandates managed service account credentials.
 - [src/ATAP.Utilities.PowerShell/Profiles/LoginScript.ps1](../src/ATAP.Utilities.PowerShell/Profiles/LoginScript.ps1)
 - [Bitwarden CLI Documentation](https://bitwarden.com/help/cli/)
 - [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/)
-- [ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md)
+- [ServiceAccountsAndBitwarden-AlternativesConsidered.md](ServiceAccountsAndBitwarden-AlternativesConsidered.md)
 - `.github/instructions/Bitwarden.instructions.md`

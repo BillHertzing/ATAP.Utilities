@@ -207,6 +207,8 @@ AfterAll {
 
 Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
   BeforeEach {
+    $script:priorWhatIf = $WhatIfPreference
+    $WhatIfPreference = $false
     $global:stage2DatabaseResetCalls = [System.Collections.Generic.List[string]]::new()
     $global:stage2DatabaseResetParameters = @{}
     $script:tempGitRoot = Join-Path ([System.IO.Path]::GetTempPath()) "stage2_dbreset_$([guid]::NewGuid().ToString('N'))"
@@ -248,6 +250,7 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
   }
 
   AfterEach {
+    $WhatIfPreference = $script:priorWhatIf
     $global:configRootKeys = $script:oldConfigRootKeys
     $global:settings = $script:oldSettings
     Remove-Item -LiteralPath $script:tempGitRoot -Recurse -Force -ErrorAction SilentlyContinue

@@ -1,4 +1,6 @@
 BeforeAll {
+  $script:priorModuleAutoLoad = $global:PSModuleAutoLoadingPreference
+  $global:PSModuleAutoLoadingPreference = 'None'
   Remove-Module 'ATAP.Utilities.BuildTooling.PowerShell' -Force -ErrorAction SilentlyContinue
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
@@ -198,6 +200,7 @@ BeforeAll {
 }
 
 AfterAll {
+  $global:PSModuleAutoLoadingPreference = $script:priorModuleAutoLoad
   foreach ($name in $script:stubbedFunctionNames) {
     Remove-Item -Path "Function:\$name" -Force -ErrorAction SilentlyContinue
   }

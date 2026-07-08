@@ -262,7 +262,8 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
       -TasksFilePath $script:tasksPath `
       -GitRoot $script:tempGitRoot `
       -Owner 'owner' `
-      -Confirm:$false
+      -Confirm:$false `
+      -WhatIf:$false
 
     $global:stage2DatabaseResetCalls | Should -Contain 'Reset-SprintDatabases'
     $global:stage2DatabaseResetCalls | Should -Not -Contain 'New-DeveloperSqlServerInstances'
@@ -286,7 +287,8 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
         -TasksFilePath $script:tasksPath `
         -GitRoot $script:tempGitRoot `
         -Owner 'owner' `
-        -Confirm:$false
+        -Confirm:$false `
+        -WhatIf:$false
     } | Should -Throw -ExpectedMessage '*developer onboarding SQL Server instance setup*'
 
     $global:stage2DatabaseResetCalls | Should -Not -Contain 'gh'
@@ -304,7 +306,8 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
       -GitRoot $script:tempGitRoot `
       -Owner 'owner' `
       -SkipDatabaseReset `
-      -Confirm:$false
+      -Confirm:$false `
+      -WhatIf:$false
 
     $global:stage2DatabaseResetCalls[0] | Should -Be 'Initialize-ATAPConfigurationGlobals'
     $global:configRootKeys['DatabasesCollectionConfigRootKey'] | Should -Be 'Databases'
@@ -322,7 +325,8 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
         -GitRoot $script:tempGitRoot `
         -Owner 'owner' `
         -SkipDatabaseReset `
-        -Confirm:$false
+        -Confirm:$false `
+        -WhatIf:$false
     } | Should -Not -Throw
 
     $global:stage2DatabaseResetCalls | Should -Not -Contain 'Reset-SprintDatabases'

@@ -2,8 +2,9 @@
 
 BeforeAll {
   Import-Module PSFramework -ErrorAction SilentlyContinue
-  Get-Module -Name 'ATAP.Utilities.BuildTooling.PowerShell' -All | Remove-Module -Force -ErrorAction SilentlyContinue
-  Import-Module "$PSScriptRoot\..\..\ATAP.Utilities.BuildTooling.PowerShell.psd1" -Force
+  if (-not (Get-Module -Name 'ATAP.Utilities.BuildTooling.PowerShell')) {
+    Import-Module "$PSScriptRoot\..\..\ATAP.Utilities.BuildTooling.PowerShell.psd1" -Force
+  }
 
   Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell `
     -CommandName Initialize-ATAPConfigurationGlobals `

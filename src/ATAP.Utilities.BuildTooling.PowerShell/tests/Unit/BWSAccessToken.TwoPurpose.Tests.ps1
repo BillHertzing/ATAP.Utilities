@@ -29,7 +29,7 @@ AfterAll {
 Describe 'BWS access-token DPAPI helpers' -Tag 'Unit', 'BWS' {
   BeforeEach {
     $script:psfMessages.Clear()
-    $script:credentialDirectory = Join-Path $TestDrive 'bws-token-slots'
+    $script:credentialDirectory = Join-Path $TestDrive "bws-token-slots-$([Guid]::NewGuid())"
     New-Item -ItemType Directory -Path $script:credentialDirectory -Force | Out-Null
     $script:currentSamName = ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name -split '\\')[-1]
     $script:readOnlyTokenValue = 'task-12-52-readonly-token-value'

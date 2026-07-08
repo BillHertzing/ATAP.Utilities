@@ -363,6 +363,20 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit', 'PromotedModuleHostSensitive' {
     }
   }
 
+  Context 'BWS token purpose routing' {
+    It 'source requests the ReadOnly BWS token purpose for readiness checks' {
+      $source = Get-Content -LiteralPath (Join-Path $PSScriptRoot '..\..\public\Test-SprintPrerequisites.ps1') -Raw
+      $source | Should -Match 'Get-BWSAccessToken\s+-TokenPurpose\s+ReadOnly'
+      $source | Should -Match 'CommonCIForBitwardenReadOnly'
+    }
+  }
+  Context 'BWS token purpose routing' {
+    It 'source requests the ReadOnly BWS token purpose for readiness checks' {
+      $source = Get-Content -LiteralPath (Join-Path $PSScriptRoot '..\..\public\Test-SprintPrerequisites.ps1') -Raw
+      $source | Should -Match 'Get-BWSAccessToken\s+-TokenPurpose\s+ReadOnly'
+      $source | Should -Match 'CommonCIForBitwardenReadOnly'
+    }
+  }
   Context '-ThrowOnFailure switch' {
     It 'Throws with the expected FullyQualifiedErrorId when a check fails' {
       try {
@@ -374,3 +388,4 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit', 'PromotedModuleHostSensitive' {
     }
   }
 }
+

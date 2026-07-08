@@ -89,7 +89,7 @@ function Test-SprintInfrastructureHealth {
     The Bitwarden secret name containing the BuildMaster admin API key. Defaults to
     'BuildMaster.Admin.API.Key'. The value is read via Get-SecretATAP with
     SecretField='notes' and SecretStoreType='BitwardenSecretsManager' (bws +
-    machine access token; no BW_SESSION). An unresolved key is reported by the
+    CommonCIForBitwardenReadOnly machine access token; no BW_SESSION). An unresolved key is reported by the
     BuildMasterApps check rather than thrown.
 
 .PARAMETER ProGetBaseUrl
@@ -269,9 +269,9 @@ function Test-SprintInfrastructureHealth {
     $checks['BuildMasterAdminApiKeyResolvable'] = [PSCustomObject]@{
       Ok         = $bmKeyOk
       Detail     = if ($bmKeyOk) {
-        "BuildMaster admin API key resolved from secret '$BuildMasterAdminApiKeySecretName' via Get-SecretATAP"
+        "BuildMaster admin API key resolved from secret '$BuildMasterAdminApiKeySecretName' via Get-SecretATAP / CommonCIForBitwardenReadOnly"
       } else {
-        "BuildMaster admin API key NOT resolvable from secret '$BuildMasterAdminApiKeySecretName' via Get-SecretATAP"
+        "BuildMaster admin API key NOT resolvable from secret '$BuildMasterAdminApiKeySecretName' via Get-SecretATAP / CommonCIForBitwardenReadOnly"
       }
       SecretName = $BuildMasterAdminApiKeySecretName
     }

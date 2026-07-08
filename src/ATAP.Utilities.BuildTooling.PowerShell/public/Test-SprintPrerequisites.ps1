@@ -12,7 +12,7 @@ function Test-SprintPrerequisites {
 .DESCRIPTION
     Runs a read-only preflight covering: pwsh engine version, gh CLI auth,
     Bitwarden Secrets Manager readiness (bws CLI on PATH plus an authenticated
-    machine access token — BW_SESSION is personal-vault-only and is NOT
+    CommonCIForBitwardenReadOnly machine access token — BW_SESSION is personal-vault-only and is NOT
     required, per SC-0175), git working state of each required sprint worktree
     (no in-progress merge/rebase/cherry-pick/revert/bisect), BuildTooling module
     importability, self-bootstrap of the ATAP ConfigRootKeys/host-settings
@@ -226,7 +226,7 @@ function Test-SprintPrerequisites {
     if (-not $ghOk) { [void]$failures.Add('GhAuth') }
 
     # Bitwarden Secrets Manager readiness (SC-0175): sprint automation uses the
-    # bws CLI with a machine access token; BW_SESSION is personal-vault-only
+    # bws CLI with the CommonCIForBitwardenReadOnly machine access token; BW_SESSION is personal-vault-only
     # and is deliberately NOT required here.
     $bwOk = $false
     $bwsTokenPresent = $false
@@ -238,12 +238,12 @@ function Test-SprintPrerequisites {
         $bwsTokenPresent = $true
       } else {
         try {
-          $cred = Get-BWSAccessToken -ErrorAction Stop
+          $cred = Get-BWSAccessToken -TokenPurpose ReadOnly -ErrorAction Stop
           $env:BWS_ACCESS_TOKEN = $cred.GetNetworkCredential().Password
           $bwsTokenWasSetHere = $true
           $bwsTokenPresent = -not [string]::IsNullOrWhiteSpace($env:BWS_ACCESS_TOKEN)
         } catch {
-          $bwDetail = "BWS access token not resolvable (env or DPAPI file): $($_.Exception.Message)"
+          $bwDetail = "BWS access token not resolvable (env or CommonCIForBitwardenReadOnly DPAPI file): $($_.Exception.Message)"
         }
       }
       if ($bwsTokenPresent) {
@@ -251,7 +251,7 @@ function Test-SprintPrerequisites {
         $null = & bws project list --output json --color no 2>&1
         if ($LASTEXITCODE -eq 0) {
           $bwOk = $true
-          $bwDetail = 'bws CLI present; machine access token authenticated (bws project list succeeded)'
+          $bwDetail = 'bws CLI present; CommonCIForBitwardenReadOnly machine access token authenticated (bws project list succeeded)'
         } else {
           $bwDetail = "bws project list returned exit code $LASTEXITCODE (token invalid, revoked, or network failure)"
         }

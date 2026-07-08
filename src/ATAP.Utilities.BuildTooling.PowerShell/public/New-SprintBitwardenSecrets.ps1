@@ -24,9 +24,9 @@ function New-SprintBitwardenSecrets {
       MultipleActiveResultSets=True;TrustServerCertificate=True;
 
     Task 10.7 cleanup: Dev/Exp connection strings are now normal BWS secrets.
-    The cmdlet uses the bws CLI with a machine/user access token resolved from
-    $env:BWS_ACCESS_TOKEN first, then the DPAPI access-token file for the running
-    Windows account (Get-BWSAccessToken) - never bw / BW_SESSION.
+    The cmdlet uses the bws CLI with a CommonCIForBitwardenReadWrite machine/user access token resolved from
+    $env:BWS_ACCESS_TOKEN first, then the ReadWrite DPAPI access-token file for the running
+    Windows account (Get-BWSAccessToken -TokenPurpose ReadWrite) - never bw / BW_SESSION.
 
     The Integrated-Security string can still be generated here because this is a
     provisioning flow that writes the value into Bitwarden Secrets Manager. Runtime
@@ -157,13 +157,13 @@ function New-SprintBitwardenSecrets {
     }
 
     if ([string]::IsNullOrWhiteSpace($env:BWS_ACCESS_TOKEN)) {
-      $cred = Get-BWSAccessToken -ErrorAction Stop
+      $cred = Get-BWSAccessToken -TokenPurpose ReadWrite -ErrorAction Stop
       $env:BWS_ACCESS_TOKEN = $cred.GetNetworkCredential().Password
       $bwsTokenWasSetHere = $true
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'BWS access token resolved from DPAPI file' -Tag 'bws-token'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'BWS ReadWrite access token resolved from CommonCIForBitwardenReadWrite DPAPI file' -Tag 'bws-token'
     }
     if ([string]::IsNullOrWhiteSpace($env:BWS_ACCESS_TOKEN)) {
-      throw 'No BWS access token in $env:BWS_ACCESS_TOKEN or the DPAPI token file. Provision it with Initialize-BWSAccessToken (NewComputerSetup.md 9.4.10).'
+      throw 'No BWS access token in $env:BWS_ACCESS_TOKEN or the CommonCIForBitwardenReadWrite DPAPI token file. Provision it with Initialize-BWSAccessToken -TokenPurpose ReadWrite (NewComputerSetup.md 9.4.10).'
     }
 
     if ($WriteDerivableToVault) {

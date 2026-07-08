@@ -9,10 +9,10 @@ token and returns a single secret value by its key.
 
 Token resolution (in order):
 1. Process-scope `$env:BWS_ACCESS_TOKEN`.
-2. The DPAPI access-token file for the running account (Get-BWSAccessToken).
+2. The CommonCIForBitwardenReadOnly DPAPI access-token file for the running account (Get-BWSAccessToken -TokenPurpose ReadOnly).
 
 Unlike the Password-Manager provider there is no login, unlock, master password, or
-BW_SESSION; the access token alone authorizes reads of the granted projects.
+BW_SESSION; the CommonCIForBitwardenReadOnly access token authorizes reads of the granted projects.
 
 Lookup: `bws secret list --output json` is parsed and the entry whose `key` matches
 SecretName (case-insensitive) is selected.
@@ -90,14 +90,14 @@ function Get-SecretATAPBitwardenSecretsManager {
       # 2. Resolve the access token: process scope first, then the DPAPI file.
       $token = $env:BWS_ACCESS_TOKEN
       if ([string]::IsNullOrWhiteSpace($token)) {
-        $cred = Get-BWSAccessToken -ErrorAction Stop
+        $cred = Get-BWSAccessToken -TokenPurpose ReadOnly -ErrorAction Stop
         $token = $cred.GetNetworkCredential().Password
         $env:BWS_ACCESS_TOKEN = $token
         $tokenWasSetHere = $true
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'BWS access token resolved from DPAPI file'
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'BWS ReadOnly access token resolved from CommonCIForBitwardenReadOnly DPAPI file'
       }
       if ([string]::IsNullOrWhiteSpace($token)) {
-        $msg = 'No BWS access token in $env:BWS_ACCESS_TOKEN or the DPAPI token file. Provision it with Initialize-BWSAccessToken (see NewComputerSetup.md section 9.4.10).'
+        $msg = 'No BWS access token in $env:BWS_ACCESS_TOKEN or the CommonCIForBitwardenReadOnly DPAPI token file. Provision it with Initialize-BWSAccessToken -TokenPurpose ReadOnly (see NewComputerSetup.md section 9.4.10).'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
         throw $msg
       }

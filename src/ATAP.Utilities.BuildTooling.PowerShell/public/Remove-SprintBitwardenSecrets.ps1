@@ -27,10 +27,10 @@ function Remove-SprintBitwardenSecrets {
     ShouldProcess confirmation, but it does not override -WhatIf. Deletion is
     reversible only by re-running New-SprintBitwardenSecrets.
 
-    Authentication (SC-0175): the cmdlet uses the bws CLI with a machine
+    Authentication (SC-0175): the cmdlet uses the bws CLI with the CommonCIForBitwardenReadWrite machine
     access token resolved from process-scope $env:BWS_ACCESS_TOKEN first,
-    then the DPAPI access-token file for the running account
-    (Get-BWSAccessToken). No bw login, no unlock, no BW_SESSION - sprint
+    then the ReadWrite DPAPI access-token file for the running account
+    (Get-BWSAccessToken -TokenPurpose ReadWrite). No bw login, no unlock, no BW_SESSION - sprint
     automation must never depend on the personal Password Manager session.
 
     Task 9.22 (bws-write workaround). Under the current scheme New-SprintBitwardenSecrets
@@ -136,14 +136,14 @@ function Remove-SprintBitwardenSecrets {
       $bwsAvailable = $false
       $bwsUnavailableReason = 'the bws CLI was not found on PATH'
     } else {
-      # Resolve the BWS access token: process scope first, then the DPAPI file
+      # Resolve the BWS access token: process scope first, then the ReadWrite DPAPI file
       # for the running account (NewComputerSetup.md 9.4.10). Never BW_SESSION.
       if ([string]::IsNullOrWhiteSpace($env:BWS_ACCESS_TOKEN)) {
         try {
-          $cred = Get-BWSAccessToken -ErrorAction Stop
+          $cred = Get-BWSAccessToken -TokenPurpose ReadWrite -ErrorAction Stop
           $env:BWS_ACCESS_TOKEN = $cred.GetNetworkCredential().Password
           $bwsTokenWasSetHere = $true
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'BWS access token resolved from DPAPI file' -Tag 'bws-token'
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'BWS ReadWrite access token resolved from CommonCIForBitwardenReadWrite DPAPI file' -Tag 'bws-token'
         } catch {
           $bwsAvailable = $false
           $bwsUnavailableReason = "the BWS machine access token could not be resolved ($($_.Exception.Message))"
@@ -151,7 +151,7 @@ function Remove-SprintBitwardenSecrets {
       }
       if ($bwsAvailable -and [string]::IsNullOrWhiteSpace($env:BWS_ACCESS_TOKEN)) {
         $bwsAvailable = $false
-        $bwsUnavailableReason = 'no BWS access token in $env:BWS_ACCESS_TOKEN or the DPAPI token file'
+        $bwsUnavailableReason = 'no BWS access token in $env:BWS_ACCESS_TOKEN or the CommonCIForBitwardenReadWrite DPAPI token file'
       }
     }
 

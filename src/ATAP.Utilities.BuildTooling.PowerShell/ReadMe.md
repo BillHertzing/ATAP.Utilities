@@ -231,17 +231,19 @@ fall-back that wrote scope-creep ideas to the stable `_Planning` worktree.
 Sprint lifecycle secret automation (`New-SprintBitwardenSecrets`,
 `Remove-SprintBitwardenSecrets`, `Test-SprintPrerequisites`,
 `Test-SprintInfrastructureHealth`) authenticates to Bitwarden Secrets Manager
-with the `bws` CLI and a machine access token (`$env:BWS_ACCESS_TOKEN` or the
-DPAPI token file via `Get-BWSAccessToken`). `BW_SESSION` is personal-vault-only
-and is never required by sprint automation (SC-0175). Reads of per-sprint
-machine secrets go through
+with the `bws` CLI and a machine access token (`$env:BWS_ACCESS_TOKEN` or a
+purpose-specific DPAPI token file via `Get-BWSAccessToken`). `ReadOnly` maps to
+`CommonCIForBitwardenReadOnly` and is the default for reads; `ReadWrite` maps to
+`CommonCIForBitwardenReadWrite` and is reserved for secret creation, deletion,
+and rotation. `BW_SESSION` is personal-vault-only and is never required by sprint
+automation (SC-0175). Reads of per-sprint machine secrets go through
 `Get-SecretATAP -SecretStoreType 'BitwardenSecretsManager'`.
 
 **DB connection-string secrets (Task 10.7 cleanup).** Development and
 Experimental DB connection strings are normal Bitwarden Secrets Manager entries,
 not personal-vault items and not reader-side deterministic fallbacks.
-`New-SprintBitwardenSecrets` uses `bws` plus `$env:BWS_ACCESS_TOKEN` or the
-DPAPI token file to create/check the expected `dbConnectionString.*` entries in
+`New-SprintBitwardenSecrets` uses `bws` plus process `$env:BWS_ACCESS_TOKEN` override or the
+`CommonCIForBitwardenReadWrite` DPAPI token file to create/check the expected `dbConnectionString.*` entries in
 the `CI-Shared` project. `Get-DbConnectionStringSecretDescriptor` remains the
 single source of truth for the canonical name and can generate the
 Integrated-Security value only when a provisioning caller explicitly opts into

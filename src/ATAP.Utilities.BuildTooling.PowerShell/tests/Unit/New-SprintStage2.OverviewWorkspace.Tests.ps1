@@ -3,6 +3,7 @@
 # produces the manifest that Build-CLAUDEPerRepository / CLAUDE.md propagation
 # (Task 10.3) depend on, with no manual agent step.
 BeforeAll {
+  Remove-Module 'ATAP.Utilities.BuildTooling.PowerShell' -Force -ErrorAction SilentlyContinue
   # New-SprintStage2's begin block runs an autoload contract (Get-Command -Name
   # <exported>) over its dependencies. On a workstation where the installed
   # ATAP.Utilities.BuildTooling.PowerShell module is on PSModulePath, that lookup

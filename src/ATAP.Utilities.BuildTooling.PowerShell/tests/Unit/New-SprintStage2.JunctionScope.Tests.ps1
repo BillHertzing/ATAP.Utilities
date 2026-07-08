@@ -6,6 +6,7 @@
 # stale @('.claude', '.github', '.vscode') JunctionFolderNames default regressing.
 # See _generated/Task-12.2-investigation-findings.md.
 BeforeAll {
+  Remove-Module 'ATAP.Utilities.BuildTooling.PowerShell' -Force -ErrorAction SilentlyContinue
   $script:priorModuleAutoLoad = $global:PSModuleAutoLoadingPreference
   $global:PSModuleAutoLoadingPreference = 'None'
 

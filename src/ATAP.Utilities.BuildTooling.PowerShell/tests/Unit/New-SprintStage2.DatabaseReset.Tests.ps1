@@ -1,4 +1,5 @@
 BeforeAll {
+  Remove-Module 'ATAP.Utilities.BuildTooling.PowerShell' -Force -ErrorAction SilentlyContinue
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }

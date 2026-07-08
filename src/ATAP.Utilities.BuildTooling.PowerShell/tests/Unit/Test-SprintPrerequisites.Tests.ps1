@@ -1,23 +1,22 @@
 #Requires -Version 7.0
 
-BeforeAll {
-  Import-Module PSFramework -ErrorAction SilentlyContinue
-  if (-not (Get-Module -Name 'ATAP.Utilities.BuildTooling.PowerShell')) {
-    Import-Module "$PSScriptRoot\..\..\ATAP.Utilities.BuildTooling.PowerShell.psd1" -Force
-  }
-
-  Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell `
-    -CommandName Initialize-ATAPConfigurationGlobals `
-    -MockWith {
-      [PSCustomObject]@{
-        Initialized         = $false
-        ConfigRootKeysCount = 200
-        SettingsCount       = 40
-      }
-    }
-}
-
 Describe 'Test-SprintPrerequisites' -Tag 'Unit', 'PromotedModuleHostSensitive' {
+  BeforeAll {
+    Import-Module PSFramework -ErrorAction SilentlyContinue
+    if (-not (Get-Module -Name 'ATAP.Utilities.BuildTooling.PowerShell')) {
+      Import-Module "$PSScriptRoot\..\..\ATAP.Utilities.BuildTooling.PowerShell.psd1" -Force
+    }
+
+    Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell `
+      -CommandName Initialize-ATAPConfigurationGlobals `
+      -MockWith {
+        [PSCustomObject]@{
+          Initialized         = $false
+          ConfigRootKeysCount = 200
+          SettingsCount       = 40
+        }
+      }
+  }
 
   Context 'Result shape' {
     BeforeAll {

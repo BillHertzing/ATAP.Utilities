@@ -801,18 +801,20 @@ function Invoke-PSModulePesterTests {
           }
 
           try {
-            Invoke-Pester -Configuration $cfg 2>$null 3>$null 4>$null 5>$null 6>$null | ForEach-Object {
-              if (Test-PSModulePesterRunResult -InputObject $_) {
-                $result = $_
+            $pesterOutput = Invoke-Pester -Configuration $cfg 2>$null 3>$null 4>$null 5>$null 6>$null
+            foreach ($item in $pesterOutput) {
+              if (Test-PSModulePesterRunResult -InputObject $item) {
+                $result = $item
               }
             }
           } finally {
             Restore-PSModulePesterAdditionalPlugin -State $progressPluginState
           }
         } else {
-          Invoke-Pester -Configuration $cfg | ForEach-Object {
-            if (Test-PSModulePesterRunResult -InputObject $_) {
-              $result = $_
+          $pesterOutput = Invoke-Pester -Configuration $cfg
+          foreach ($item in $pesterOutput) {
+            if (Test-PSModulePesterRunResult -InputObject $item) {
+              $result = $item
             }
           }
         }

@@ -427,9 +427,11 @@ When asked to create or modify a Rule, Rule Set, or Build Set:
 3. **USE individual project paths** when solution-level build fails
 4. **ONE clarifying question** — if requirements are ambiguous, ask one focused question
    before generating code or commands
-5. **Save-SprintWorkSession.ps1 path (R-15):** The script is at
-   `_Planning/Powershell/Public/Save-SprintWorkSession.ps1` — never `_Planning/Scripts/`.
-   The checkpoint skill must use this correct path.
+5. **Save-SprintWorkSession.ps1 path (R-15):** The canonical script is at
+   `ATAP.Utilities/src/ATAP.Utilities.BuildTooling.PowerShell/public/Save-SprintWorkSession.ps1`
+   (prefer the most-recent ATAP.Utilities sprint worktree copy; fall back to the stable
+   repo). The former `_Planning/Powershell/Public/` wrapper was removed 2026-07-07
+   (Sprint 0012 Task 12.46.e); never use `_Planning/Scripts/`.
 6. **Sprint session memory file (R-17):** If `project_sprint_work_sessions.md` does not
    exist in memory, create it after the user provides the session number, so future
    checkpoints in the same sprint don't need to ask again.
@@ -473,6 +475,16 @@ When asked to create or modify a Rule, Rule Set, or Build Set:
 19. **Blazor/Syncfusion instructions (R-37):** For Blazor UI or Syncfusion component
     work, load the Blazor/Syncfusion rules/instructions before changing `.razor`,
     `.razor.cs`, `.cshtml`, or Syncfusion-related C# files.
+20. **Persist-beyond-sprint information (R-38):** `_generated\` folders under the
+    ephemeral sprint worktrees are deleted at sprint end. Any file carrying important
+    information about FUTURE tasks — deferred tasks, scope-creep items,
+    architectural-decision reasoning, or anything that must persist indefinitely beyond
+    the current sprint — must be placed under
+    `${SPRINT_WORKTREE_PATH_PLANNING}\InformationForTheFuture\` and committed, so it
+    merges into the stable `_Planning` worktree at sprint end. `_generated\` remains
+    correct for point-in-time verification evidence of completed tasks; when a file's
+    content is an input to future work rather than proof of past work, move it to
+    `InformationForTheFuture\` and update the documents that reference it.
 
 ---
 

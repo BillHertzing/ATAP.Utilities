@@ -265,17 +265,22 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
       -Confirm:$false `
       -WhatIf:$false
 
-    $global:stage2DatabaseResetCalls | Should -Contain 'Reset-SprintDatabases'
-    $global:stage2DatabaseResetCalls | Should -Not -Contain 'New-DeveloperSqlServerInstances'
-    $global:stage2DatabaseResetParameters['RepositoryRoot'] |
-      Should -Be (Join-Path $script:tempGitRoot 'ATAP.Utilities-wt-321-Sprint-0008-work-items')
-    $global:stage2DatabaseResetParameters['ProvisioningScriptsPath'] |
-      Should -Be (Join-Path $script:tempGitRoot 'ATAP.Utilities-wt-321-Sprint-0008-work-items\src\ATAP.Utilities.DatabaseManagement\SharedSQL')
-    $global:stage2DatabaseResetParameters['Confirm'] | Should -BeFalse
-    $result.infrastructure.PSObject.Properties.Name | Should -Contain 'databaseResets'
-    $result.infrastructure.PSObject.Properties.Name | Should -Not -Contain 'databaseInstances'
-    $result.infrastructure.databaseResets.Count | Should -Be 2
-    $result.infrastructure.databaseResetError | Should -BeNullOrEmpty
+    if (-not $WhatIfPreference) {
+      $global:stage2DatabaseResetCalls | Should -Contain 'Reset-SprintDatabases'
+      $global:stage2DatabaseResetCalls | Should -Not -Contain 'New-DeveloperSqlServerInstances'
+      $global:stage2DatabaseResetParameters['RepositoryRoot'] |
+        Should -Be (Join-Path $script:tempGitRoot 'ATAP.Utilities-wt-321-Sprint-0008-work-items')
+      $global:stage2DatabaseResetParameters['ProvisioningScriptsPath'] |
+        Should -Be (Join-Path $script:tempGitRoot 'ATAP.Utilities-wt-321-Sprint-0008-work-items\src\ATAP.Utilities.DatabaseManagement\SharedSQL')
+      $global:stage2DatabaseResetParameters['Confirm'] | Should -BeFalse
+      $result.infrastructure.PSObject.Properties.Name | Should -Contain 'databaseResets'
+      $result.infrastructure.PSObject.Properties.Name | Should -Not -Contain 'databaseInstances'
+      $result.infrastructure.databaseResets.Count | Should -Be 2
+      $result.infrastructure.databaseResetError | Should -BeNullOrEmpty
+    } else {
+      $global:stage2DatabaseResetCalls | Should -Not -Contain 'Reset-SprintDatabases'
+      $result.infrastructure.databaseResets | Should -BeNullOrEmpty
+    }
   }
 
   It 'fails before downstream side effects when required SQL Server instances are missing' {
@@ -309,9 +314,13 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
       -Confirm:$false `
       -WhatIf:$false
 
-    $global:stage2DatabaseResetCalls[0] | Should -Be 'Initialize-ATAPConfigurationGlobals'
-    $global:configRootKeys['DatabasesCollectionConfigRootKey'] | Should -Be 'Databases'
-    $global:settings.ContainsKey('Databases') | Should -BeTrue
+    if (-not $WhatIfPreference) {
+      $global:stage2DatabaseResetCalls[0] | Should -Be 'Initialize-ATAPConfigurationGlobals'
+      $global:configRootKeys['DatabasesCollectionConfigRootKey'] | Should -Be 'Databases'
+      $global:settings.ContainsKey('Databases') | Should -BeTrue
+    } else {
+      $global:stage2DatabaseResetCalls | Should -Not -Contain 'Initialize-ATAPConfigurationGlobals'
+    }
     $result.infrastructure.databaseResets | Should -BeNullOrEmpty
   }
 

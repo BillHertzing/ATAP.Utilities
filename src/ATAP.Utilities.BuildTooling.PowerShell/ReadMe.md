@@ -52,7 +52,11 @@ those managed profiles when `-ProfilePaths` is omitted and verifies that each is
 stable-sourced, readable, and free of stale `-wt-` references after SprintEnd.
 SprintEnd stable junction retargeting is now intentionally narrower: by default
 it recreates only the supported `.vscode` junction and does not reintroduce
-obsolete rendered `.claude` / `.github` links.
+obsolete rendered `.claude` / `.github` links. For one-time stable maintenance,
+`Convert-StableWorktreeToConcreteAdapters` removes legacy `.claude` /
+`.github` junctions from a stable repo root and restores the tracked concrete
+content from `HEAD`; it refuses staged changes and leaves `.vscode` alone by
+design.
 
 **SprintEnd typed close (Task 10.6 / 11.7.c-e).** `Invoke-SprintEndLifecycle` now composes
 structured command-surface, module-promotion/deployment, worktree-state,

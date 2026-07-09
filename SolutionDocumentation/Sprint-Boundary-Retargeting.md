@@ -5,8 +5,10 @@ worktree while a sprint is active, and the **stable** SharedVSCode worktree once
 sprint merges into main. `Set-SprintBoundaryContext`
 (`src/ATAP.Utilities.BuildTooling.PowerShell/public/Set-SprintBoundaryContext.ps1`) is
 the single orchestrator that performs (Start) or reverses (End) the full retarget.
-This document is the source of truth for which concern is retargeted by which worker, and
-why two concerns are intentionally left alone. Task 10.20.o added canonical
+This document is the source of truth for which concern is retargeted by which worker,
+why two concerns are intentionally left alone, and how Task 12.1 narrowed the
+supported junction surface to `.vscode` while `.claude` / `.github` became
+concrete canonical adapter directories. Task 10.20.o added canonical
 project AI settings; Task 10.26 consolidated that lifecycle onto the sole
 `Render-AIAdapters` and `Test-AIAdapterDrift` APIs.
 
@@ -16,7 +18,7 @@ This completes task **V4-H03** (Sprint 0007).
 
 | Concern | Worker(s) | Start action (→ sprint) | End action (→ stable) | Stable-by-design |
 | --- | --- | --- | --- | --- |
-| Machine links (NTFS junctions) | `Set-WorktreeJunctions` | recreate `.claude` / `.github` / `.vscode` junctions in each sprint worktree, dev-redirected to the SharedVSCode sprint worktree | recreate junctions from the stable repo so they point back to stable SharedVSCode | No |
+| Machine links (NTFS junctions) | `Set-WorktreeJunctions` | recreate only the supported `.vscode` junction in each sprint worktree, dev-redirected to the SharedVSCode sprint worktree | recreate only the supported `.vscode` junction from the stable repo so it points back to stable SharedVSCode | No |
 | SharedVSCode settings | `Invoke-SprintAIAdapterLifecycle`, `Set-UserSettingsSymlink`, `Set-ClaudeSettingsSymlink` | re-render the SharedVSCode settings target for the sprint boundary, point `%APPDATA%\Code\User\settings.json` at the sprint `UserSettings.jsonc`, and render `~/.claude/settings.json` as a real file from `.ai/config/claudecode/settings.overlay.json` | re-render the SharedVSCode settings target for stable, point VS Code user settings back at stable, and render Claude user settings from the stable overlay | No |
 | Downstream contexts | `Initialize-DownstreamSprintFromSharedVSCode` (Start) / `Reset-DownstreamToSharedVSCodeMain` (End) | set each `*.code-workspace` `templateRef`/`profile` to the sprint worktree and re-apply hooks / commit template / gitattributes | reset `templateRef` to `main`, `profile` to `default`, re-apply context | No |
 | Canonical project AI adapters | `Invoke-SprintAIAdapterLifecycle` | call `Render-AIAdapters -Domain settings,permissions` in Antigravity → Codex → Claude Code → Copilot order; real worktrees materialize project scope only | call `Test-AIAdapterDrift -Domain settings,permissions`; unexplained drift blocks link teardown pending promote/regenerate review | No |
@@ -31,9 +33,9 @@ This completes task **V4-H03** (Sprint 0007).
 SharedVSCode `Invoke-AIAdapterLifecycle` worker from the selected stable or
 sprint worktree:
 
-- **Start:** `Render-AIAdapters -Domain settings,permissions`, fixed caller order
+- **Start:** render the canonical adapter domains, in fixed caller order
   Antigravity → Codex → Claude Code → Copilot, project scope by default.
-- **End:** `Test-AIAdapterDrift -Domain settings,permissions` before any junction,
+- **End:** audit those same canonical domains for drift before any junction,
   settings-link, or downstream-context teardown. Unexplained drift leaves the
   sprint wiring intact for promote/regenerate review.
 - **Boundary settings refresh:** `Set-SprintBoundaryContext` also reuses the Start
@@ -79,6 +81,17 @@ documentation and callers use `Invoke-SprintAIAdapterLifecycle`.
 `ConfigRootKeys` keeps `StableByDesign = $true`.
 The returned contract demonstrably covers every concern named in the V4-H03 acceptance
 criteria as extended by H09/SC-0188 (Task 10.13).
+
+## Stable de-junction repair
+
+Task 12.1 also introduced `Convert-StableWorktreeToConcreteAdapters`
+(`src/ATAP.Utilities.BuildTooling.PowerShell/public/Convert-StableWorktreeToConcreteAdapters.ps1`)
+for the one-time stable-worktree migration away from legacy `.claude` / `.github`
+junctions. Use it only for explicit stable-maintenance work: it removes the
+junction pointer with `cmd /c rmdir`, refuses to proceed when staged changes
+exist under the folder, and restores the tracked concrete directory from
+`HEAD`. `.vscode` is intentionally excluded because it remains the only
+supported junction after Task 12.1.
 
 ## Contract
 

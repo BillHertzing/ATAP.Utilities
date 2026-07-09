@@ -132,12 +132,12 @@ function Invoke-RotateSecretsATAP {
 
     # Load helper functions.
     # Get-BWSAccessToken and Initialize-BWSAccessToken still live in
-    # ATAP.Utilities.BuildTooling.PowerShell. Their -TokenPurpose parameter (Sprint 0012 Stream I,
-    # Tasks 12.50-12.53) is newer than the version installed on PSModulePath, so this module cannot
-    # yet declare a RequiredModules minimum on BuildTooling -- that lands with Task 12.55.f, after
-    # Task 12.54.d publishes the version that has it. Until then, prefer an already-loaded command,
-    # then the sibling source tree. The Function: provider check also means a Pester mock, which is
-    # injected as a function in this module's scope, is never overwritten by a dot-source.
+    # ATAP.Utilities.BuildTooling.PowerShell, which the manifest now pins at a 0.1.29 minimum for
+    # their -TokenPurpose parameter. Importing this module therefore normally imports them first,
+    # and the Function: provider check below short-circuits. The sibling-source fallback remains
+    # for running this file straight from the source tree without a module import, and the
+    # Function: check also means a Pester mock -- injected as a function in this module's scope --
+    # is never overwritten by a dot-source.
     $helpFunctionsNeeded = @(
       @{ FunctionName = 'Get-BWSAccessToken'; ModuleName = 'ATAP.Utilities.BuildTooling.PowerShell' }
       @{ FunctionName = 'Initialize-BWSAccessToken'; ModuleName = 'ATAP.Utilities.BuildTooling.PowerShell' }

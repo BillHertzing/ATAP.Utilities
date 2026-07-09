@@ -134,6 +134,25 @@ Describe 'ATAP.Utilities.Security.Secrets.PowerShell module contract' {
       $script:Manifest.RequiredModules | Should -Not -Contain 'ATAP.Utilities.Security.PKI.PowerShell'
     }
 
+    It 'pins BuildTooling at the version that first shipped -TokenPurpose' {
+      # Invoke-RotateSecretsATAP resolves Get-BWSAccessToken / Initialize-BWSAccessToken with
+      # -TokenPurpose. That parameter first ships in 0.1.29; an older BuildTooling would bind-fail
+      # at rotation time rather than at import time, which is the wrong place to find out.
+      $pin = $script:Manifest.RequiredModules |
+        Where-Object { $_ -is [hashtable] -and $_.ModuleName -eq 'ATAP.Utilities.BuildTooling.PowerShell' }
+      $pin | Should -Not -BeNullOrEmpty
+      [version]$pin.ModuleVersion | Should -BeGreaterOrEqual ([version]'0.1.29')
+    }
+
+    It 'the pinned BuildTooling actually exposes -TokenPurpose on both functions' {
+      # Guards the pin itself: a version number is only as good as what it contains.
+      foreach ($name in @('Get-BWSAccessToken', 'Initialize-BWSAccessToken')) {
+        $cmd = Get-Command $name -ErrorAction SilentlyContinue
+        $cmd | Should -Not -BeNullOrEmpty -Because "$name must resolve once the child is imported"
+        $cmd.Parameters.Keys | Should -Contain 'TokenPurpose' -Because "$name must accept -TokenPurpose"
+      }
+    }
+
     It 'FunctionsToExport matches the public file basenames exactly' {
       $files = (Get-ChildItem (Join-Path $script:ModuleRoot 'public') -Filter '*.ps1').BaseName | Sort-Object
       ($script:Manifest.FunctionsToExport | Sort-Object) | Should -Be $files

@@ -76,16 +76,23 @@ Live rotation on `utat01` and `utat022` is Sprint 0012 Task 12.56.
 
 ## Dependencies
 
-`RequiredModules`: `PSFramework`, `Microsoft.PowerShell.SecretManagement`.
+`RequiredModules`:
 
-`Get-PVal` / `Get-ParameterValueFromNeoConfigurationRoot` (from `ATAP.Utilities.PowerShell`) and
-`Get-BWSAccessToken` / `Initialize-BWSAccessToken` (from `ATAP.Utilities.BuildTooling.PowerShell`)
-are resolved through the standard in-function helper-load block, not a manifest dependency.
+| Module | Constraint | Why |
+| --- | --- | --- |
+| `PSFramework` | any | Logging |
+| `Microsoft.PowerShell.SecretManagement` | any | `Sync-BitWardenDedicatedSecrets` calls its `Test-SecretVault` |
+| `ATAP.Utilities.BuildTooling.PowerShell` | **≥ 0.1.29** | `Invoke-RotateSecretsATAP` calls `Get-BWSAccessToken` / `Initialize-BWSAccessToken` with `-TokenPurpose`, which first ships in 0.1.29 |
 
-> The BuildTooling pin is deferred on purpose. `Invoke-RotateSecretsATAP` needs `-TokenPurpose`,
-> which ships in a BuildTooling version newer than the 0.1.20 currently on `PSModulePath`. A
-> `RequiredModules` minimum naming an unavailable version would break `Import-Module` from source.
-> The pin lands in Task 12.55.f, after Task 12.54.d publishes it.
+The BuildTooling constraint is a **minimum**, not an exact version, so a later BuildTooling satisfies
+it. It is pinned rather than resolved at call time because an older BuildTooling would bind-fail at
+*rotation* time — the worst possible moment to discover it — instead of at import time. A contract
+test asserts both the pin and that the resolved version really does expose `-TokenPurpose`.
+
+There is **no** edge on `ATAP.Utilities.Security.PKI.PowerShell` — design decision D1.
+
+`Get-PVal` / `Get-ParameterValueFromNeoConfigurationRoot` (from `ATAP.Utilities.PowerShell`) is
+resolved through the standard in-function helper-load block, not a manifest dependency.
 
 > **Future direction.** The secrets/Bitwarden functions that currently live in
 > `ATAP.Utilities.BuildTooling.PowerShell` — `Get-SecretATAP`,

@@ -59,7 +59,16 @@ Live rotation on `utat01` and `utat022` is Sprint 0012 Task 12.56 — a **human-
   against it. Fixing it changes the public signature, which is a consumer-facing break. (SC-0248)
 - `List-BitwardenSecrets` and `Load-BitwardenBackup` use non-approved verbs. Rename deferred by
   Sprint 0012 Task 12.55.a; when renamed, the old names ship as exported aliases.
-- No `RequiredModules` minimum on `ATAP.Utilities.BuildTooling.PowerShell` yet. The `-TokenPurpose`
-  parameter that `Invoke-RotateSecretsATAP` consumes is newer than the installed 0.1.20, so the pin
-  waits for Task 12.54.d to publish it and Task 12.55.f to apply it. Until then the function
-  dot-sources the sibling source tree.
+- Not yet published to any ProGet feed, and not yet added to the umbrella's `RequiredModules` (that
+  waits until the child is published). Blocked on **SC-0252**: the reviewed BuildMaster module map
+  in the ATAP.IAC sprint worktree never reaches `$global:settings`, because `Get-HostSettings`
+  hard-codes a Sprint 0007 worktree path as its only sprint-shaped candidate, so
+  `Start-BuildMasterModulePipelineBatch` cannot resolve this module's application.
+
+### Dependencies
+
+`RequiredModules` now pins `ATAP.Utilities.BuildTooling.PowerShell` at a **0.1.29 minimum** — the
+version that first ships `-TokenPurpose` on `Get-BWSAccessToken` / `Initialize-BWSAccessToken`.
+Pinning it means an older BuildTooling fails at import rather than at rotation time. Two contract
+tests guard it: one on the declared minimum, one asserting the resolved version really exposes the
+parameter.

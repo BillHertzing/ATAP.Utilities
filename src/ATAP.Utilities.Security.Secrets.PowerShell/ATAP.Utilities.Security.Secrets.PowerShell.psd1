@@ -10,9 +10,14 @@
   PowerShellVersion     = '7.0'
   CompatiblePSEditions  = @('Core')
 
+  # Invoke-RotateSecretsATAP calls Get-BWSAccessToken / Initialize-BWSAccessToken with
+  # -TokenPurpose, which first ships in BuildTooling 0.1.29 (Sprint 0012 Stream I, Tasks
+  # 12.50-12.54). The minimum is declared, not an exact version, so a later BuildTooling
+  # satisfies it. No edge on the PKI child -- design decision D1.
   RequiredModules       = @(
     'PSFramework',
-    'Microsoft.PowerShell.SecretManagement'
+    'Microsoft.PowerShell.SecretManagement',
+    @{ ModuleName = 'ATAP.Utilities.BuildTooling.PowerShell'; ModuleVersion = '0.1.29' }
   )
 
   FunctionsToExport     = @(

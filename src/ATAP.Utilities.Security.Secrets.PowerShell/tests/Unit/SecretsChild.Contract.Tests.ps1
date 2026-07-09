@@ -7,6 +7,7 @@ Describe 'ATAP.Utilities.Security.Secrets.PowerShell module contract' {
   BeforeDiscovery {
     $ExpectedFunctions = @(
       'Get-BitWardenCredential'
+      'Invoke-RotateSecretsATAP'
       'List-BitwardenSecrets'
       'Load-BitwardenBackup'
       'New-BitwardenBackup'
@@ -28,6 +29,7 @@ Describe 'ATAP.Utilities.Security.Secrets.PowerShell module contract' {
 
     $script:ExpectedFunctions = @(
       'Get-BitWardenCredential'
+      'Invoke-RotateSecretsATAP'
       'List-BitwardenSecrets'
       'Load-BitwardenBackup'
       'New-BitwardenBackup'
@@ -80,7 +82,7 @@ Describe 'ATAP.Utilities.Security.Secrets.PowerShell module contract' {
 
   Context 'Exported command surface' {
 
-    It 'exports exactly the six expected functions' {
+    It 'exports exactly the seven expected functions' {
       $actual = (Get-Command -Module $script:ModuleName -CommandType Function).Name | Sort-Object
       $actual | Should -Be ($script:ExpectedFunctions | Sort-Object)
     }
@@ -155,6 +157,36 @@ Describe 'ATAP.Utilities.Security.Secrets.PowerShell module contract' {
     It '<_> declares [CmdletBinding()]' -ForEach $ExpectedFunctions {
       $content = Get-Content (Join-Path $script:ModuleRoot "public\$_.ps1") -Raw
       $content | Should -Match 'CmdletBinding'
+    }
+
+    It '<_> attributes its PSFramework messages to this module, not the umbrella it moved out of' -ForEach $ExpectedFunctions {
+      $content = Get-Content (Join-Path $script:ModuleRoot "public\$_.ps1") -Raw
+      $content | Should -Not -Match "'ATAP\.Utilities\.Security\.Powershell'"
+    }
+
+    It 'Get-BitWardenCredential supports ShouldProcess, because it writes credential files' {
+      # Rule 11 debt fixed in Task 12.55.c: this Get- function backs up, creates a directory, and
+      # writes two Export-Clixml files. A -WhatIf that silently wrote them would be worse than none.
+      (Get-Command 'Get-BitWardenCredential' -Module $script:ModuleName).Parameters.Keys |
+        Should -Contain 'WhatIf'
+    }
+
+    It 'private helpers also define only functions' {
+      foreach ($file in Get-ChildItem (Join-Path $script:ModuleRoot 'private') -Filter '*.ps1') {
+        $ast = [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$null, [ref]$null)
+        $topLevel = $ast.EndBlock.Statements |
+          Where-Object { $_ -isnot [System.Management.Automation.Language.FunctionDefinitionAst] }
+        $topLevel | Should -BeNullOrEmpty -Because "$($file.Name) must define only a function"
+      }
+    }
+
+    It 'keeps the private helpers private' {
+      # Fingerprinting and console-state helpers are implementation detail; exporting them would
+      # invite a caller to fingerprint a secret outside the rotation path.
+      foreach ($name in @('Get-SecureStringFingerprint', 'Test-BWSAccessTokenFormat', 'Test-RotationSessionIsInteractive')) {
+        Get-Command -Module $script:ModuleName -Name $name -ErrorAction SilentlyContinue |
+          Should -BeNullOrEmpty -Because "$name is a private helper"
+      }
     }
   }
 

@@ -19,29 +19,27 @@ Powershell scripts for managing an organization's computer systems' security
 > `Import-Module ATAP.Utilities.Security.Powershell` still resolves all of them and the command
 > surface is unchanged (28 functions, verified before/after).
 >
-> Two non-function scripts were moved **out of `public/`** because the `.psm1` dot-sources every
+> Three non-function scripts were moved **out of `public/`** because the `.psm1` dot-sources every
 > `public/*.ps1` at import and these executed at import time:
 >
 > | Was | Now | Why |
 > | --- | --- | --- |
 > | `public/SecretVaultTesting.ps1` | `Documentation/SecretVaultTesting.ps1.txt` | Prompted for a password, echoed it in plaintext, and ran `Get-SecretVault \| Unregister-SecretVault` on import. |
 > | `public/Test-SecretVault.ps1` | `Documentation/Test-SecretVault.ps1.txt` | Declared no function; dot-sourced three absolute **stable-worktree** paths, including itself. |
+> | `public/PKIForNewOrg.ps1` | `Documentation/PKIForNewOrg.ps1.txt` | Declared no function; executed top-level code at import, writing to the user root certificate store. |
 >
-> Both were phantom entries in `FunctionsToExport` (listed, never defined) and have been removed
-> from it. `Test-SecretVault` at runtime resolves to the `Microsoft.PowerShell.SecretManagement`
-> cmdlet, which is what `Sync-BitWardenDedicatedSecrets` actually calls.
->
-> **Still outstanding:** `PKIForNewOrg.ps1` remains in `public/` and still executes top-level code
-> at import (it attempts to touch the user root certificate store and fails with
-> *"The operation is on user root store and UI is not allowed"*). It is a phantom export for that
-> reason. See the Sprint 9 Task 9.15 note below; it is scheduled for the PKI extraction
-> (plan Tasks 5.5/5.7).
+> All three were phantom entries in `FunctionsToExport` (listed, never defined) and have been
+> removed from it. `Test-SecretVault` at runtime resolves to the
+> `Microsoft.PowerShell.SecretManagement` cmdlet, which is what `Sync-BitWardenDedicatedSecrets`
+> actually calls. `PKIForNewOrg.ps1.txt` is preserved verbatim as the input to the
+> `Documentation/PKIForNewOrg.md` runbook conversion (plan Tasks 5.5/5.7, a future sprint).
 
 > **Status (Sprint 9, Task 9.15):** This module is an early-stage prototype and is **not yet
 > releasable**. A read-only shortcomings assessment + revise/complete plan is at
 > [_generated/Security/Task-9.15-SecurityPowershell-GapAssessment.md](../../_generated/Security/Task-9.15-SecurityPowershell-GapAssessment.md).
-> Notably, `PKIForNewOrg.ps1` currently runs top-level code on import and the exported
-> `Install-*` cmdlets are stubs — do not `Import-Module` against a live certificate store
+> The `PKIForNewOrg.ps1` import-time hazard called out by that assessment was resolved in
+> Sprint 0012 Task 12.55.c (moved to `Documentation/PKIForNewOrg.ps1.txt`), but the exported
+> `Install-*` cmdlets are still stubs — do not `Import-Module` against a live certificate store
 > until Task 9.15-A lands. The working low-level primitives (`New-EncryptedPrivateKey`,
 > `New-CertificateRequest`, `New-CACertificate`, `New-SignedCertificate`,
 > `New-DistinguishedNameHash`) are sound.

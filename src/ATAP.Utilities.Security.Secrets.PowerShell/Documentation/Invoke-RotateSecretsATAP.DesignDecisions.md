@@ -1,6 +1,9 @@
 # `Invoke-RotateSecretsATAP` — binding design decisions
 
-**Status:** Design record. The function is **not yet implemented** (Sprint 0012 Task 12.55.c).
+**Status:** Design record. The function is **implemented** as of Sprint 0012 Task 12.55.c
+(`public/Invoke-RotateSecretsATAP.ps1`), with a mocked Pester suite (Task 12.55.d) and a `-WhatIf`
+dry-run transcript (Task 12.55.e). Each decision below has at least one assertion in
+`tests/Unit/Invoke-RotateSecretsATAP.Tests.ps1`.
 **Source of authority:** `_Planning/InformationForTheFuture/PlanPowerShellSecurityReorganization.md`
 Task 5.1 and Task 5.3; `_Planning/TASKS.Sprint0012.md` Tasks 12.55.a–12.55.a4, 12.56.
 
@@ -96,26 +99,62 @@ interactive developer identity **and every service account** in the
 Enumerate identities from that matrix, not from memory. DPAPI files are host- and user-bound and
 can never be copied between identities or machines.
 
+## D8 — Idempotency and rollback semantics (settled at implementation, Task 12.55.c)
+
+**Idempotency.** The function is idempotent in the only sense available to it: pasting the same
+token value twice produces the same DPAPI file contents and the same reported fingerprint. It cannot
+detect "already rotated" and skip, because it never sees the vault's notion of the current token —
+the operator regenerates in the UI, and the function only receives what is pasted. Re-running it is
+always safe; it will prompt again.
+
+**Verification, not trust.** Each write is followed by a read-back through
+`Get-BWSAccessToken -TokenPurpose`, whose fingerprint must equal the fingerprint of the value that
+was pasted. This is what catches a swapped paste, a cross-slot write, and a DPAPI write that
+reported success but stored something else. A swapped token authenticates on first touch, so it must
+be caught here, not later.
+
+**Rollback.** `Initialize-BWSAccessToken` copies any existing token file to
+`<file>.<yyyyMMdd_HHmmss>.bak` before overwriting. Rollback of a single slot is therefore a file
+restore. Rollback of the *vault side* is not the function's to perform: the operator regenerated the
+token in the Bitwarden UI, which already revoked the previous value. This is why Task 12.56.a
+requires the current tokens to be recorded out-of-band **before** the rotation window opens.
+
+**Failure granularity.** Every guard fails **terminating**, and every guard sits before the write it
+protects. A rotation that fails on `ReadWrite` leaves `ReadOnly` fully rotated and verified, which is
+recoverable; the reverse order would not be (D5). No guard can leave a token file half-written.
+
 ## Still open
 
-- Idempotency and rollback semantics (plan Task 5.1 design-gate step 4).
 - Whether Bitwarden **issues** the new token value on regeneration (expected) or whether any local
-  generation is required. Verify against the `bws` CLI surface before coding. If Bitwarden issues
-  it, there is no generator to choose and D3 is the whole story.
+  generation is required. Verify against the `bws` CLI surface before the Task 12.56 live run. If
+  Bitwarden issues it, there is no generator to choose and D3 is the whole story.
+- The `-TokenPurpose` parameter that this function depends on ships in a BuildTooling version newer
+  than the one installed on `PSModulePath` (0.1.20). Until Task 12.54.d publishes it, this module
+  cannot declare a `RequiredModules` minimum on `ATAP.Utilities.BuildTooling.PowerShell` — it
+  dot-sources the sibling source tree instead. Add the pin in Task 12.55.f.
 
 ---
 
-## Rule 11 debt carried into this module (not introduced by it)
+## Rule 11 debt: `Get-BitWardenCredential` — FIXED in Task 12.55.c
 
-`Get-BitWardenCredential` mutates state — `Copy-Item` backups (lines ~161-162), `New-Item -Force`
-directory creation (~205), and `Export-Clixml` credential writes (~211, ~214) — but declares only
-`[CmdletBinding()]`, **without** `SupportsShouldProcess`.
+`Get-BitWardenCredential` mutates state — `Copy-Item` backups, `New-Item -Force` directory creation,
+and two `Export-Clixml` credential writes — but declared only `[CmdletBinding()]`, **without**
+`SupportsShouldProcess`. It was deliberately left alone during the Task 12.55.b extraction, because
+adding `SupportsShouldProcess` without guarding each mutation would advertise a `-WhatIf` that
+silently does nothing while still writing credential files.
 
-This was **not** patched during the Task 12.55.b extraction. Adding `SupportsShouldProcess`
-without guarding each mutation with `$PSCmdlet.ShouldProcess(...)` would be worse than leaving it:
-it would advertise a `-WhatIf` that silently does nothing while still writing credential files.
-Doing it correctly is a real edit to a 246-line credential-handling function, and the smoke tests
-that would catch a regression were authored in the same commit as the move.
+It now declares `[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]`, and all
+five mutation points sit behind a **single** `$PSCmdlet.ShouldProcess(...)` gate. Declining that gate
+(`-WhatIf`, or `No` at `-Confirm`) leaves the filesystem exactly as found and returns `$null`.
 
-**Fix it in Task 12.55.c**, with the test slice already green, guarding each of the five mutation
-points above. Tracked against SC-0248.
+The backup `Copy-Item` calls also **moved after** the required-parameter validation. Previously a
+call that was going to fail validation still left `.bak` files behind. Tracked against SC-0248.
+
+### Carried debt, still not fixed
+
+`Get-BitWardenCredential` takes `$BitWardenLoginPassword` and `$BitWardenUnlockPassword` as
+`[string]`, and PSScriptAnalyzer reports `PSAvoidUsingConvertToSecureStringWithPlainText` and
+`PSAvoidUsingUsernameAndPasswordParams` (Error severity) against it. Fixing that means changing the
+public signature to `SecureString`/`PSCredential`, which is a consumer-facing break. It is out of
+Task 12.55.c's scope and is **not** on the `Invoke-RotateSecretsATAP` rotation path. Tracked against
+SC-0248.

@@ -28,19 +28,64 @@ in the umbrella and move later (plan Task 5.6).
 
 | Function | Aliases | Notes |
 | --- | --- | --- |
-| `Get-BitWardenCredential` | — | Loads/creates encrypted BitWarden login + unlock credentials |
+| `Get-BitWardenCredential` | — | Loads/creates encrypted BitWarden login + unlock credentials. Supports `-WhatIf` (Task 12.55.c) |
+| `Invoke-RotateSecretsATAP` | — | **New.** Rotates the two machine-account access tokens. See below |
 | `List-BitwardenSecrets` | — | Non-approved verb; rename deferred (Task 12.55.a) |
 | `Load-BitwardenBackup` | — | Non-approved verb; rename deferred. **Was unexported in the umbrella manifest — now exported.** |
 | `New-BitwardenBackup` | — | |
 | `Set-BitWardenSecret` | `New-BWSecret`, `Add-BitWardenLogin` | |
 | `Sync-BitWardenDedicatedSecrets` | `Sync-DedicatedSecrets` | Calls `Test-SecretVault` from `Microsoft.PowerShell.SecretManagement` |
 
+`Invoke-RotateSecretsATAP` is **not** re-exported by the umbrella. It is a new function, not a moved
+name, so no existing consumer expects to find it there.
+
+## `Invoke-RotateSecretsATAP`
+
+Rotates exactly two secrets — the Bitwarden machine-account access tokens
+`CommonCIForBitwardenReadOnly` and `CommonCIForBitwardenReadWrite` — on the current host, for the
+current Windows identity. DPAPI token files are host- and user-bound, so it must be run once per
+host, once per identity.
+
+It **generates nothing.** The operator regenerates each token by hand in the Bitwarden UI, then
+pastes each value into a separate prompt that names the machine account it belongs to.
+
+```powershell
+# Safe from any shell: enumerates what would rotate, prompts for nothing, writes nothing.
+Invoke-RotateSecretsATAP -WhatIf
+
+# Live. Requires a real interactive terminal.
+Invoke-RotateSecretsATAP
+```
+
+> ⛔ **The live path is human-only.** It reads pasted values with `Read-Host`, so it cannot run from
+> an agent shell, a scheduled task, CI, or any `-NonInteractive` session. Such a session is rejected
+> before the first write with one terminating error — it never half-rotates and never falls through
+> to an empty token.
+
+Each paste is confirmed by character length plus a 12-character SHA-256 prefix, and the written file
+is read back and re-fingerprinted before the next token is prompted for. That is what catches a
+swapped or truncated paste, which would otherwise authenticate on first touch and only surface later
+as a confusing permissions error. No token value is ever echoed, logged, or thrown.
+
+`ReadOnly` rotates first and `ReadWrite` last, because the function authenticates with the
+`ReadWrite` token it is rotating.
+
+The binding design decisions (D1–D8) are recorded in
+[`Documentation/Invoke-RotateSecretsATAP.DesignDecisions.md`](Documentation/Invoke-RotateSecretsATAP.DesignDecisions.md).
+Live rotation on `utat01` and `utat022` is Sprint 0012 Task 12.56.
+
 ## Dependencies
 
 `RequiredModules`: `PSFramework`, `Microsoft.PowerShell.SecretManagement`.
 
-`Get-PVal` / `Get-ParameterValueFromNeoConfigurationRoot` (from `ATAP.Utilities.PowerShell`) are
-resolved through the standard in-function helper-load block, not a manifest dependency.
+`Get-PVal` / `Get-ParameterValueFromNeoConfigurationRoot` (from `ATAP.Utilities.PowerShell`) and
+`Get-BWSAccessToken` / `Initialize-BWSAccessToken` (from `ATAP.Utilities.BuildTooling.PowerShell`)
+are resolved through the standard in-function helper-load block, not a manifest dependency.
+
+> The BuildTooling pin is deferred on purpose. `Invoke-RotateSecretsATAP` needs `-TokenPurpose`,
+> which ships in a BuildTooling version newer than the 0.1.20 currently on `PSModulePath`. A
+> `RequiredModules` minimum naming an unavailable version would break `Import-Module` from source.
+> The pin lands in Task 12.55.f, after Task 12.54.d publishes it.
 
 > **Future direction.** The secrets/Bitwarden functions that currently live in
 > `ATAP.Utilities.BuildTooling.PowerShell` — `Get-SecretATAP`,
@@ -58,7 +103,8 @@ connection strings, API keys, or credentials into source. Never log a secret val
 ## Testing
 
 ```powershell
-pwsh -Command "Invoke-Pester -Path './tests/Unit' -Output Detailed"
+pwsh -Command "Invoke-Pester -Path './tests/Unit' -Output Minimal"
 ```
 
-All Bitwarden CLI (`bw`) and vault calls are mocked. Tests never touch a real vault.
+All Bitwarden CLI (`bw`/`bws`), vault, and `Read-Host` calls are mocked. Tests never touch a real
+vault, never prompt, and never write a DPAPI file, so the suite runs non-interactively in CI.

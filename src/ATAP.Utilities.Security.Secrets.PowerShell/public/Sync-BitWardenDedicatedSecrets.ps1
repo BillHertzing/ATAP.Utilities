@@ -46,7 +46,7 @@ function Sync-BitWardenDedicatedSecrets {
 
   BEGIN {
     $fn = 'Sync-BitWardenDedicatedSecrets'
-    $mn = 'ATAP.Utilities.Security.Powershell'
+    $mn = 'ATAP.Utilities.Security.Secrets.PowerShell'
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 

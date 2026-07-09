@@ -72,7 +72,7 @@ function Load-BitwardenBackup {
 
   begin {
     $fn = 'Load-BitwardenBackup'
-    $mn = 'ATAP.Utilities.Security.Powershell'
+    $mn = 'ATAP.Utilities.Security.Secrets.PowerShell'
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn in module $mn"
 

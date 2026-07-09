@@ -29,7 +29,9 @@ The existing credential files will be backed up before being replaced.
 
 .OUTPUTS
 System.Collections.Hashtable
-Returns a hashtable with keys 'LoginCredential' and 'UnlockCredential'.
+Returns a hashtable with keys 'LoginCredential' and 'UnlockCredential'. Returns $null when a
+credential-creating call is declined at -Confirm or suppressed by -WhatIf, because no credential
+was created to return.
 
 .EXAMPLE
 $credentials = Get-BitWardenCredential
@@ -43,15 +45,25 @@ Creates new credentials with specified values.
 $credentials = Get-BitWardenCredential -Replace
 Forces recreation of both credential files, backing up the old ones.
 
+.EXAMPLE
+Get-BitWardenCredential -Replace -WhatIf
+Reports the credential files that would be backed up and rewritten, and writes nothing.
+
 .NOTES
 AI assisted using Powershell.instructions.md as guidelines
 The encrypted credential files are user and computer specific.
+
+Despite the Get- verb, the credential-creating branch of this function is a mutating operation:
+it backs up, creates a directory, and writes two DPAPI-encrypted files. It therefore declares
+SupportsShouldProcess and gates every one of those writes behind a single ShouldProcess call, so
+-WhatIf is honest rather than advertised-and-ignored. The read-only branch (both files present,
+no -Replace) performs no writes and is not gated.
 
 .LINK
 https://github.com/whertzing/ATAP.Utilities
 #>
 function Get-BitWardenCredential {
-  [CmdletBinding()]
+  [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
   [OutputType([System.Collections.Hashtable])]
   param(
     [Parameter(Mandatory = $false)]
@@ -79,7 +91,7 @@ function Get-BitWardenCredential {
 
   BEGIN {
     $fn = 'Get-BitWardenCredential'
-    $mn = 'ATAP.Utilities.Security.Powershell'
+    $mn = 'ATAP.Utilities.Security.Secrets.PowerShell'
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
@@ -136,6 +148,7 @@ function Get-BitWardenCredential {
     # Snippet: Try-Catch-Finally
     try {
       $shouldCreateNew = $false
+      $shouldBackup = $false
       $loginCredential = $null
       $unlockCredential = $null
 
@@ -152,17 +165,10 @@ function Get-BitWardenCredential {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Successfully loaded unlock credential for user: $($unlockCredential.UserName)"
       }
       else {
-        # Need to create new credentials
-        if ($Replace -and $loginExists -and $unlockExists) {
-          # Backup existing credential files
-          $loginBackupPath = "$loginCredPath.$(Get-Date -Format 'yyyyMMdd_HHmmss').bak"
-          $unlockBackupPath = "$unlockCredPath.$(Get-Date -Format 'yyyyMMdd_HHmmss').bak"
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Replace parameter specified. Backing up existing credentials"
-          Copy-Item -Path $loginCredPath -Destination $loginBackupPath -Force -ErrorAction Stop
-          Copy-Item -Path $unlockCredPath -Destination $unlockBackupPath -Force -ErrorAction Stop
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Existing credentials backed up successfully"
-        }
-
+        # Need to create new credentials. The backup used to happen here, before the required
+        # parameters were validated, so a call that was going to fail validation still left .bak
+        # files behind. It now runs inside the ShouldProcess-gated block below, after validation.
+        $shouldBackup = ($Replace -and $loginExists -and $unlockExists)
         $shouldCreateNew = $true
       }
 
@@ -186,6 +192,28 @@ function Get-BitWardenCredential {
           $errorMessage = 'BitWardenUnlockPassword parameter is required when creating new credentials'
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
           throw $errorMessage
+        }
+
+        # Single gate for every mutation this function performs: the two .bak copies, the
+        # credential-directory creation, and the two Export-Clixml writes. Declining here (-WhatIf,
+        # or 'No' at -Confirm) must leave the filesystem exactly as it was found.
+        $shouldProcessTarget = "$loginCredPath, $unlockCredPath"
+        $shouldProcessAction = $shouldBackup `
+          ? 'Back up and replace the DPAPI-encrypted BitWarden login and unlock credential files' `
+          : 'Create the DPAPI-encrypted BitWarden login and unlock credential files'
+        if (-not $PSCmdlet.ShouldProcess($shouldProcessTarget, $shouldProcessAction)) {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Dry run: would $shouldProcessAction. No file was written."
+          return $null
+        }
+
+        if ($shouldBackup) {
+          # Backup existing credential files
+          $loginBackupPath = "$loginCredPath.$(Get-Date -Format 'yyyyMMdd_HHmmss').bak"
+          $unlockBackupPath = "$unlockCredPath.$(Get-Date -Format 'yyyyMMdd_HHmmss').bak"
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Replace parameter specified. Backing up existing credentials'
+          Copy-Item -Path $loginCredPath -Destination $loginBackupPath -Force -ErrorAction Stop
+          Copy-Item -Path $unlockCredPath -Destination $unlockBackupPath -Force -ErrorAction Stop
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Existing credentials backed up successfully'
         }
 
         # Create login credential

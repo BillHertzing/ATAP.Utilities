@@ -119,7 +119,7 @@ function Set-BitWardenSecret {
   BEGIN {
     # Snippet: FunctionNameModuleName - Function and Module name variables for logging
     $fn = $MyInvocation.MyCommand.Name
-    $mn = if ($MyInvocation.MyCommand.Module) { $MyInvocation.MyCommand.Module.Name } else { 'ATAP.Utilities.Security.Powershell' }
+    $mn = if ($MyInvocation.MyCommand.Module) { $MyInvocation.MyCommand.Module.Name } else { 'ATAP.Utilities.Security.Secrets.PowerShell' }
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 

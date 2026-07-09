@@ -17,6 +17,7 @@
 
   FunctionsToExport     = @(
     'Get-BitWardenCredential',
+    'Invoke-RotateSecretsATAP',
     'List-BitwardenSecrets',
     'Load-BitwardenBackup',
     'New-BitwardenBackup',

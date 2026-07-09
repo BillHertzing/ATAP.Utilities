@@ -15,6 +15,7 @@ Set-Alias -Name Sync-DedicatedSecrets -Value Sync-BitWardenDedicatedSecrets
 
 Export-ModuleMember -Function @(
   'Get-BitWardenCredential',
+  'Invoke-RotateSecretsATAP',
   'List-BitwardenSecrets',
   'Load-BitwardenBackup',
   'New-BitwardenBackup',

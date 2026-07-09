@@ -81,10 +81,10 @@ FunctionsToExport = 'Get-BitWardenCredential',
                'New-DistinguishedNameHash', 'New-EncryptedPasswordFile', 
                'New-EncryptedPrivateKey', 'New-RandomEncryptionKeyToFile', 
                'New-RandomPassPhraseToFile', 'New-SignedCertificate', 
-               'New-SSLCertificateRequest', 'Open-UsersSecretVault', 'PKIForNewOrg', 
-               'SecretVaultTesting', 'SecTesting', 'Set-BitWardenSecret', 
-               'Sync-BitWardenDedicatedSecrets', 'Test-SecretVault', 
-               'Unlock-UsersSecretVault', 'Update-KeySecurestringFile', 
+               'New-SSLCertificateRequest', 'Open-UsersSecretVault', 'PKIForNewOrg',
+               'SecTesting', 'Set-BitWardenSecret',
+               'Sync-BitWardenDedicatedSecrets',
+               'Unlock-UsersSecretVault', 'Update-KeySecurestringFile',
                'Update-MasterPasswordSecureStringFile'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.

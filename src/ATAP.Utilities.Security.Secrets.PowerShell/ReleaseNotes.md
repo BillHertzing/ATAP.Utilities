@@ -84,11 +84,15 @@ Live rotation on `utat01` and `utat022` is Sprint 0012 Task 12.56 — a **human-
   against it. Fixing it changes the public signature, which is a consumer-facing break. (SC-0248)
 - `List-BitwardenSecrets` and `Load-BitwardenBackup` use non-approved verbs. Rename deferred by
   Sprint 0012 Task 12.55.a; when renamed, the old names ship as exported aliases.
-- Not yet published to any ProGet feed, and not yet added to the umbrella's `RequiredModules` (that
-  waits until the child is published). Blocked on **SC-0252**: the reviewed BuildMaster module map
-  in the ATAP.IAC sprint worktree never reaches `$global:settings`, because `Get-HostSettings`
-  hard-codes a Sprint 0007 worktree path as its only sprint-shaped candidate, so
-  `Start-BuildMasterModulePipelineBatch` cannot resolve this module's application.
+### Deployment
+
+Published to `powershellget-stable` and installed `-Scope AllUsers` on **`utat022`** and **`utat01`**
+(Sprint 0012 Task 12.55.f). On both hosts a fresh shell resolves `Invoke-RotateSecretsATAP` from the
+installed module, and `Install-Module` pulls `ATAP.Utilities.BuildTooling.PowerShell` 0.1.29
+automatically through the `RequiredModules` pin.
+
+The umbrella `ATAP.Utilities.Security.Powershell` now declares this module in its own
+`RequiredModules` at a `0.1.1` minimum.
 
 ### Dependencies
 

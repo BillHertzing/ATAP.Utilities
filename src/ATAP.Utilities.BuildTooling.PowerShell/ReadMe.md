@@ -233,11 +233,17 @@ Sprint lifecycle secret automation (`New-SprintBitwardenSecrets`,
 `Test-SprintInfrastructureHealth`) authenticates to Bitwarden Secrets Manager
 with the `bws` CLI and a machine access token (`$env:BWS_ACCESS_TOKEN` or a
 purpose-specific DPAPI token file via `Get-BWSAccessToken`). `ReadOnly` maps to
-`CommonCIForBitwardenReadOnly` and is the default for reads; `ReadWrite` maps to
-`CommonCIForBitwardenReadWrite` and is reserved for secret creation, deletion,
-and rotation. `BW_SESSION` is personal-vault-only and is never required by sprint
+CommonCIForBitwardenReadOnly and is the default for reads; ReadWrite maps to
+CommonCIForBitwardenReadWrite and is reserved for secret creation, deletion,
+and rotation. BW_SESSION is personal-vault-only and is never required by sprint
 automation (SC-0175). Reads of per-sprint machine secrets go through
-`Get-SecretATAP -SecretStoreType 'BitwardenSecretsManager'`.
+Get-SecretATAP -SecretStoreType 'BitwardenSecretsManager'.
+
+For human provisioning, every developer or service account that reads BWS secrets should
+have a local ReadOnly DPAPI token file. A second ReadWrite DPAPI token file exists so
+secret-maintenance workflows can be authorized separately; provision it only on trusted
+maintainer or provisioning identities and only on hosts that actually perform write/delete
+or rotation work.
 
 **DB connection-string secrets (Task 10.7 cleanup).** Development and
 Experimental DB connection strings are normal Bitwarden Secrets Manager entries,

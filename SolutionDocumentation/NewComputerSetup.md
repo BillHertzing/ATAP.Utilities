@@ -1625,16 +1625,16 @@ Preconditions:
 
 Host mapping:
 
-| Windows service account | BWS machine account | Projects                        | DPAPI token file                                             |
-| ----------------------- | ------------------- | ------------------------------- | ------------------------------------------------------------ |
-| `SvcBuildmaster`        | `SvcBuildMaster`    | `BuildMaster-Core`, `CI-Shared` | `…\SvcBuildmaster\<HOST>_SvcBuildmaster_BWS_AccessToken.xml` |
-| `SvcProGet`             | `SvcInfraShared`    | `ProGet-Core`, `CI-Shared`      | `…\SvcProGet\<HOST>_SvcProGet_BWS_AccessToken.xml`           |
+| Windows service account | BWS machine account | Projects                        | Required DPAPI token file | Optional DPAPI token file |
+| ----------------------- | ------------------- | ------------------------------- | ------------------------- | ------------------------- |
+| `SvcBuildmaster`        | `SvcBuildMaster`    | `BuildMaster-Core`, `CI-Shared` | `…\SvcBuildmaster\<HOST>_SvcBuildmaster_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | `…\SvcBuildmaster\<HOST>_SvcBuildmaster_BWS_CommonCIForBitwardenReadWrite_AccessToken.xml` only if this host runs secret-maintenance workflows |
+| `SvcProGet`             | `SvcInfraShared`    | `ProGet-Core`, `CI-Shared`      | `…\SvcProGet\<HOST>_SvcProGet_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | None by default |
 
 Interactive-user mapping:
 
-| Windows interactive user | BWS access-token scope | DPAPI token file                                  |
-| ------------------------ | ---------------------- | ------------------------------------------------- |
-| `$env:USERNAME`          | Project-specific token, typically `CI-Shared` plus any required project | `…\<USERNAME>\<HOST>_<USERNAME>_BWS_AccessToken.xml` |
+| Windows interactive user | BWS access-token scope | Required DPAPI token file | Optional DPAPI token file |
+| ------------------------ | ---------------------- | ------------------------- | ------------------------- |
+| `$env:USERNAME`          | Project-specific token, typically `CI-Shared` plus any required project | `…\<USERNAME>\<HOST>_<USERNAME>_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | `…\<USERNAME>\<HOST>_<USERNAME>_BWS_CommonCIForBitwardenReadWrite_AccessToken.xml` only on trusted maintainer workstations |
 
 ##### 9.4.10.1 Confirm the `bws` CLI is installed machine-wide
 
@@ -1679,14 +1679,22 @@ user's own shell. For a service account, open a shell as that account and store 
 The helper cmdlet `Initialize-BWSAccessToken` encapsulates the DPAPI write:
 
 ```powershell
-$token = Read-Host 'BWS access token' -AsSecureString
-Initialize-BWSAccessToken -AccessToken $token
+$token = Read-Host 'BWS access token for CommonCIForBitwardenReadOnly' -AsSecureString
+Initialize-BWSAccessToken -TokenPurpose ReadOnly -AccessToken $token
+```
+
+Only trusted maintainer or provisioning identities should also store:
+
+```powershell
+$token = Read-Host 'BWS access token for CommonCIForBitwardenReadWrite' -AsSecureString
+Initialize-BWSAccessToken -TokenPurpose ReadWrite -AccessToken $token
 ```
 
 The token is stored in a PSCredential whose UserName is the literal
 `BWS_ACCESS_TOKEN`; the password is the BWS access token. The canonical helper names are
 `Initialize-BWSAccessToken` and `Get-BWSAccessToken`. The older service-account names
-remain module aliases for compatibility.
+remain module aliases for compatibility. DPAPI binds these files to the current Windows
+identity and host, so they cannot be copied between users or hosts and still decrypt.
 
 ##### 9.4.10.4 Validate (as the owning account)
 

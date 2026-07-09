@@ -8,6 +8,38 @@
 
 ---
 
+## Current BWS token-purpose baseline (Task 12.53)
+
+BuildTooling's Bitwarden Secrets Manager path now uses two purpose-specific DPAPI token
+slots under `C:\ProgramData\ATAP\BitwardenCredentials\<SamAccountName>`:
+
+| Token purpose | Token label | Who needs it |
+| --- | --- | --- |
+| `ReadOnly` | `CommonCIForBitwardenReadOnly` | Every developer or service account that reads BWS secrets |
+| `ReadWrite` | `CommonCIForBitwardenReadWrite` | Only explicitly authorized maintainer or provisioning identities that create, update, delete, or rotate BWS secrets |
+
+The current documentation baseline is "read everywhere, write only where justified." Task
+12.54.a remains the live-review gate for which identities actually receive the optional
+`ReadWrite` slot on a given host.
+
+### Recommended identity matrix
+
+| Windows identity | Needs `ReadOnly` | Needs `ReadWrite` | Notes |
+| --- | --- | --- | --- |
+| `SvcBuildmaster` | Yes | Only if BuildMaster on that host creates or rotates BWS secrets | Default runtime/build reads |
+| `SvcProGet` | Yes | No by default | Runtime/package-feed reads only |
+| `JenkinsAgentSrvAcct` | Yes if Jenkins jobs on that host resolve BWS secrets | Only on a dedicated secret-maintenance host/job runner | Keep writer token off ordinary agents |
+| `SeqDefaultInstance` | Yes if Seq startup or maintenance resolves BWS secrets | No | Runtime config reads only |
+| `ansibleAdmin` | Yes on verification/provisioning hosts | Only on provisioning hosts that actually create or rotate secrets | Prefer the smallest host set |
+| Trusted maintainer developer workstation | Yes | Optional | Provision `ReadWrite` only when that workstation performs secret maintenance |
+| Non-maintainer developer workstation | Yes | No | Normal development and validation only |
+
+See [Runbook-BitwardenServiceAccounts.md](Runbook-BitwardenServiceAccounts.md) for the
+authoritative provisioning sequence and [NewComputerSetup.md](NewComputerSetup.md) for the
+linear onboarding checklist.
+
+---
+
 ## Purpose
 
 This document records research findings, decision drivers, considered alternatives,
@@ -827,6 +859,14 @@ That section is the authoritative checklist (9.4.1 → 9.4.9) and covers:
 When the Ansible controller does exist, the same outcome is produced by the
 `ansibleAdmin` first-boot provisioning model described in
 [R-02](#r-02-dpapi-credential-file-approach-for-service-accounts-evaluation).
+
+For the current BWS machine-token path, that manual/bootstrap flow means:
+
+1. Provision `CommonCIForBitwardenReadOnly` for every identity that reads secrets.
+2. Provision `CommonCIForBitwardenReadWrite` only for explicitly approved
+   maintainer/provisioning identities on trusted hosts.
+3. Never persist `BWS_ACCESS_TOKEN` at User or Machine scope; it may exist only in
+   process scope long enough to invoke `bws`.
 
 ### Important Note about `--passwordfile`
 

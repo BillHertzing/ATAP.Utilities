@@ -27,8 +27,10 @@ Further information on the overall contents of this repository can be found in t
 
 Agent instruction surfaces (`AGENTS.md`, `CLAUDE.md`, and the Bitwarden skill
 mirror under `.agents/skills/bitwarden/`) now route CI/runtime/project secrets
-through `Get-SecretATAP` / Bitwarden Secrets Manager (`bws`) and reserve `bw` +
-`BW_SESSION` for personal Password Manager secrets.
+through Get-SecretATAP / Bitwarden Secrets Manager (ws) and reserve w +
+BW_SESSION for personal Password Manager secrets. The BWS path now uses a
+required ReadOnly DPAPI token file for secret reads plus an optional
+ReadWrite DPAPI token file only on trusted maintainer/provisioning hosts.
 
 Other detailed documentation you might be interested are
 
@@ -48,8 +50,9 @@ Other detailed documentation you might be interested are
 
 - Sprint 0010 Task 10.7 Bitwarden access report: persisted in the `_Planning`
   sprint worktree at `Research/ReportOnAccessingSecretsFromBitwarden.md`. It
-  records the `bw`/`BW_SESSION` personal-vault boundary, the `bws`/DPAPI Secrets
-  Manager path, and the DB connection-string BWS cleanup.
+  records the w/BW_SESSION personal-vault boundary, the ws/DPAPI Secrets
+  Manager path, the later ReadOnly/ReadWrite DPAPI split, and the DB
+  connection-string BWS cleanup.
 
 - [AgentText RRSBS pilot for AI adapter load/instantiate workflows](./SolutionDocumentation/Rules%20Compendium.AgentText.md)
 

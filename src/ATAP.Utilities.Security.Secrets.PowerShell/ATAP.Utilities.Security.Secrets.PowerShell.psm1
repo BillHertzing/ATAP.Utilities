@@ -7,11 +7,11 @@ foreach ($import in @($privateFunctions + $publicFunctions)) {
   . $import.FullName
 }
 
-# Command aliases. Module .ps1 files define only functions, so aliases live here in the
-# .psm1. Export is governed by AliasesToExport in the .psd1.
-Set-Alias -Name New-BWSecret          -Value Set-BitWardenSecret
-Set-Alias -Name Add-BitWardenLogin    -Value Set-BitWardenSecret
-Set-Alias -Name Sync-DedicatedSecrets -Value Sync-BitWardenDedicatedSecrets
+# Command aliases are declared with function-level [Alias()] attributes in public\, NOT with
+# Set-Alias here. Build-PSModulePsm1 regenerates the shipped .psm1 by concatenating public\ and
+# private\ and discards this file, so a Set-Alias here works when running from source and then
+# silently vanishes from the published package -- leaving AliasesToExport naming aliases that
+# nothing defines. A contract test asserts every exported alias is backed by an [Alias()] attribute.
 
 Export-ModuleMember -Function @(
   'Get-BitWardenCredential',

@@ -78,6 +78,10 @@ Use 'bw unlock' to get a session key, then set $env:BW_SESSION.
 https://github.com/BillHertzing/ATAP.Utilities
 #>
 function Set-BitWardenSecret {
+  # Function-level [Alias()], not Set-Alias in the .psm1. Build-PSModulePsm1 regenerates the shipped
+  # .psm1 from public\ and private\ and discards the source .psm1, so a Set-Alias there never reaches
+  # the published package -- leaving AliasesToExport naming aliases that nothing defines.
+  [Alias('New-BWSecret', 'Add-BitWardenLogin')]
   [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium', DefaultParameterSetName = 'Credential')]
   param(
     [Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'Credential')]

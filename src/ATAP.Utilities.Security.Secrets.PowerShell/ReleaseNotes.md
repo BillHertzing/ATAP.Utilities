@@ -1,6 +1,31 @@
 # Release Notes — ATAP.Utilities.Security.Secrets.PowerShell
 
-## 0.1.0 (unreleased)
+## 0.1.1 — 2026-07-09
+
+### Fixed
+
+- **The three exported aliases were missing from the published 0.1.0 package.** They were declared
+  with `Set-Alias` in the source `.psm1`. `Build-PSModulePsm1` **regenerates** the shipped `.psm1` by
+  concatenating `public\` and `private\` and **discards the source `.psm1`**, so the `Set-Alias`
+  calls never reached the package. `AliasesToExport` named three aliases that nothing defined:
+  `New-BWSecret`, `Add-BitWardenLogin`, and `Sync-DedicatedSecrets` all resolved to *nothing* when
+  the module was installed, and the umbrella's re-export of them silently exported zero aliases.
+
+  Everything looked correct from source, which is exactly why it shipped. Aliases are now declared
+  with function-level `[Alias()]` attributes on `Set-BitWardenSecret` and
+  `Sync-BitWardenDedicatedSecrets` — the pattern `ATAP.Utilities.PowerShell` already uses for
+  `Get-PVal`, and the only one that survives the module build.
+
+### Added
+
+- Three contract tests that would have caught it before publishing: every alias in `AliasesToExport`
+  must be defined by the loaded module; each alias must be backed by a function-level `[Alias()]`
+  attribute (asserted by AST); and the source `.psm1` must contain no `Set-Alias`.
+
+> ⚠ **0.1.0 is defective and immutable.** It is present in `powershellget-stable` with three broken
+> alias exports. Do not install it. Consider removing it from the feed.
+
+## 0.1.0 — 2026-07-09 (superseded by 0.1.1; do not use)
 
 Initial extraction. Pilot child of the `ATAP.Utilities.Security.*` family
 (Sprint 0012 Task 12.55.b).

@@ -105,6 +105,38 @@ Describe 'ATAP.Utilities.Security.Secrets.PowerShell module contract' {
       $resolved.ResolvedCommand.Name | Should -Be $target
     }
 
+    It 'backs alias <alias> with a function-level [Alias()] attribute, not Set-Alias in the .psm1' -ForEach $ExpectedAliasPairs {
+      # Regression guard. Build-PSModulePsm1 regenerates the shipped .psm1 from public\ and private\
+      # and DISCARDS the source .psm1. A Set-Alias there works from source and then silently vanishes
+      # from the published package, leaving AliasesToExport naming aliases that nothing defines --
+      # which is exactly what shipped in 0.1.0. Only a function-level [Alias()] attribute survives.
+      $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+        (Join-Path $script:ModuleRoot "public\$target.ps1"), [ref]$null, [ref]$null)
+      $func = $ast.FindAll({ $args[0] -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)[0]
+
+      $aliasAttributeValues = @(
+        $func.Body.ParamBlock.Attributes |
+          Where-Object { $_.TypeName.Name -in @('Alias', 'AliasAttribute') } |
+          ForEach-Object { $_.PositionalArguments.Value }
+      )
+
+      $aliasAttributeValues | Should -Contain $alias -Because "$target.ps1 must declare [Alias('$alias')] so it survives the module build"
+    }
+
+    It 'defines no Set-Alias in the source .psm1, because the build discards it' {
+      $psm1 = Get-Content (Join-Path $script:ModuleRoot "$script:ModuleName.psm1") -Raw
+      $psm1 | Should -Not -Match '^\s*Set-Alias' -Because 'Set-Alias in the source .psm1 never reaches the published package'
+    }
+
+    It 'every alias in AliasesToExport is actually defined by the loaded module' {
+      # The manifest must not promise an alias that no code creates.
+      $manifest = Import-PowerShellDataFile -Path $script:ModulePath
+      foreach ($alias in $manifest.AliasesToExport) {
+        Get-Command -Module $script:ModuleName -Name $alias -CommandType Alias -ErrorAction SilentlyContinue |
+          Should -Not -BeNullOrEmpty -Because "AliasesToExport names '$alias'"
+      }
+    }
+
     It 'exports no cmdlets and no variables' {
       $manifest = Import-PowerShellDataFile -Path $script:ModulePath
       $manifest.CmdletsToExport | Should -BeNullOrEmpty

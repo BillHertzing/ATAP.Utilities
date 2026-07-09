@@ -35,6 +35,8 @@ Requires BW_SESSION environment variable to be set and vault to be unlocked.
 https://github.com/BillHertzing/ATAP.Utilities
 #>
 function Sync-BitWardenDedicatedSecrets {
+  # Function-level [Alias()] so the alias survives Build-PSModulePsm1. See Set-BitWardenSecret.ps1.
+  [Alias('Sync-DedicatedSecrets')]
   [CmdletBinding(SupportsShouldProcess)]
   param(
     [Parameter(Mandatory = $false)]

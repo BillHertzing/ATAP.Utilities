@@ -23,6 +23,14 @@ foreach ($import in $allFunctions) {
 # re-exports those names, so existing consumers that import only this module see an
 # unchanged command surface. Maintained as one per-group list, not per-function proxies.
 # Remove when the umbrella is thinned (plan Task 6.1).
+#
+# ⚠ THIS BLOCK ONLY WORKS FROM SOURCE. `Build-PSModulePsm1` regenerates the shipped .psm1 by
+# concatenating public\ and private\ and DISCARDS this file. If the umbrella is ever built and
+# published, the child import and re-export below vanish from the package and the umbrella's
+# command surface silently loses all six Bitwarden functions. This is the same defect that shipped
+# broken aliases in the Secrets child 0.1.0 (see its ReleaseNotes). The umbrella is currently
+# consumed from source only. Before publishing it, move this logic somewhere the build preserves,
+# or make the build carry the source .psm1 forward.
 $secretsChildName = 'ATAP.Utilities.Security.Secrets.PowerShell'
 $secretsChildFunctions = @(
     'Get-BitWardenCredential'

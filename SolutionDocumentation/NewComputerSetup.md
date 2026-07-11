@@ -1594,7 +1594,14 @@ that service account is complete.
 > [ServiceAccountsAndBitwarden.md](ServiceAccountsAndBitwarden.md#rotation-and-refresh-strategy)
 > for the rotation runbook.
 
-#### 9.4.10 Provision Secrets Manager (`bws`) access tokens for Windows accounts
+> **Sprint 0012 status — rotation deferred:** The protected `CommonCIForBitwardenReadOnly`
+> DPAPI files have been created and validated for `whertzing` and for `SvcBuildMaster`,
+> `SvcProGet`, `SvcSeq`, `SvcSQLServer`, and `SvcParityAudit` on both `utat01` and `utat022`.
+> This is a validated provisioning baseline, not authorization to rotate a token or password.
+> The remaining bootstrap automation and all password/access-token rotation implementation are
+> deferred to next-sprint planning; use the carry-forward plan in the `_Planning` repository
+> before attempting a rotation.
+#### 9.4.10 Provision Secrets Manager (ws) access tokens for Windows accounts
 
 Under the current architecture, runtime/project secrets live in **Bitwarden Secrets
 Manager** and are read with a BWS **access token** - there is no `bw login`, no `unlock`,
@@ -1630,7 +1637,14 @@ Interactive-user mapping:
 
 | Windows interactive user | BWS access-token scope | Required DPAPI token file | Optional DPAPI token file |
 | ------------------------ | ---------------------- | ------------------------- | ------------------------- |
-| `whertzing` | `CommonCIForBitwardenReadOnly` for `CI-Shared` | `…\whertzing\<HOST>_whertzing_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
+| `whertzing` | `CommonCIForBitwardenReadOnly` for `CI-Shared` | `…\whertzing\<HOST>_whertzing_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Approved only for `utat022\whertzing`; otherwise not approved by default |
+
+**ReadOnly rotation distribution rule:** whenever `CommonCIForBitwardenReadOnly` is
+rotated, update the ReadOnly DPAPI file locally on both `utat01` and `utat022` for
+`SvcBuildMaster`, `SvcProGet`, `SvcSeq`, `SvcSQLServer`, and `SvcParityAudit`. Also refresh
+all active developers listed in `C:\Dropbox\whertzing\GitHub\Overview.SprintNNNN.code-workspace` on
+their declared host; Sprint 0012 currently lists `whertzing` on `utat022`. Run the write as
+each owning identity; never copy a DPAPI file between identities or hosts.
 
 ##### 9.4.10.1 Confirm the `bws` CLI is installed machine-wide
 

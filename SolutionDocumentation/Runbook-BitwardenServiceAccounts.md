@@ -132,6 +132,14 @@ both hosts. It does not by itself prove that each identity can invoke `bws`, dec
 the token, or access every required project; perform the no-secret validation in
 SA-04 before declaring live access healthy.
 
+### Rotation implementation deferred
+
+The provisioning baseline above is complete and validated. Sprint 0012 does not authorize a
+live rotation of either BWS access token, any service password, or any other secret. The
+remaining idempotent bootstrap automation, release work, human-only live rotation, and stream
+exit review are deferred to the next sprint. Start from the durable carry-forward entry in
+`_Planning\InformationForTheFuture\PlanPasswordRotationSystemCritique.md` before scheduling
+that work.
 ## SA-04 validation
 
 For each identity that consumes BWS secrets, run the SA-03 validation commands in a

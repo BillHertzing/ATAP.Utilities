@@ -353,168 +353,61 @@ New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $scriptT
 
 ## Filesystem junctions
 
-There are multiple folders and files that need to be present at the root of each repository, and need to be source-controlled and versioned. Having multiple independent copies is prone to errors and misconfigurations. Therefore, we have created a repository named `SharedVSCode`, and placed the source-of-truth copies of these shared folders and files in this git-versioned repository.
+Sprint 0012 Task 12.1 retired the old three-folder junction model. The current
+boundary model is:
 
-**Design decision (2026-04-03):** The `.claude`, `.github`, and `.vscode` folders at the root of
-every downstream repo worktree (ATAP.Utilities, AceCommander, \_Planning) are **always NTFS
-junctions** — never real folders and never file-sync copies. The `Sync-WorktreeShared.ps1`
-copy-based approach has been retired (archived) in favour of the junction-only design.
+- `.claude`, `.github`, `.codex`, `.agents`, and `.gemini` are concrete,
+  git-visible AIAdapter materialization folders.
+- `.vscode` remains the SharedVSCode junction because it carries workstation IDE
+  behavior that should follow the active SharedVSCode target.
+- `Set-SprintBoundaryContext -Boundary Start` retargets only `.vscode`, applies
+  downstream SharedVSCode context, then materializes the concrete AIAdapter
+  folders.
+- `Set-SprintBoundaryContext -Boundary End` audits AIAdapter drift before
+  teardown and recreates only the supported stable `.vscode` junction.
+- `Convert-StableWorktreeToConcreteAdapters` is the one-time repair tool for
+  legacy stable worktrees that still have `.claude` or `.github` as junctions;
+  it removes the junction safely and restores tracked concrete content from
+  `HEAD`. It intentionally leaves `.vscode` alone.
 
-Junctions are listed in `.dropboxignore` so Dropbox does not try to sync them, and in
-`.gitignore` so git does not track them. This is the canonical design.
+The old copy-based `Sync-WorktreeShared.ps1` approach remains archived. The old
+`.claude` / `.github` junction guidance is historical only and must not be used
+for sprint boundaries.
 
-**Junction targets by worktree type:**
+### Junction safety rules
 
-| Worktree                  | Junction target                |
-| ------------------------- | ------------------------------ |
-| Main worktree (permanent) | `SharedVSCode` main worktree   |
-| Sprint worktree           | `SharedVSCode` sprint worktree |
-| Normal issue worktree     | `SharedVSCode` main worktree   |
-
-**CRITICAL junction safety rules:**
-
-1. **Never use `Remove-Item -Recurse` on a junction.** Always use just `Remove-Item` (no
-   `-Recurse`). This removes the reparse point and does not touch the junction target.
-2. **Never use `Remove-Item -Recurse` on any parent folder above a junction.** Always ensure
-   the junction has been removed with `Remove-Item` (no `-Recurse`) BEFORE calling any
-   `Remove-Item -Recurse` on a parent folder.
-3. **Sprint end cleanup:** Before calling `git worktree remove`, always explicitly remove
-   the `.claude`, `.github`, and `.vscode` junctions from the worktree first.
+1. Never use `Remove-Item -Recurse` on a junction. Use `cmd /c rmdir` or remove
+   the reparse point itself without recursion.
+2. Never recurse-delete a parent folder until every junction below it has been
+   removed or proven absent.
+3. At sprint close, enumerate junctions before `git worktree remove`. The
+   expected SharedVSCode-managed junction is `.vscode`; treat any `.claude` or
+   `.github` junction as legacy drift requiring review or the
+   `Convert-StableWorktreeToConcreteAdapters` repair path.
 
 ```powershell
-# Safe junction removal
-foreach ($name in @('.claude', '.github', '.vscode')) {
-    $jp = Join-Path $worktreePath $name
-    if (Test-Path -LiteralPath $jp) {
-        $item = Get-Item -LiteralPath $jp -Force
-        if ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
-            Remove-Item -LiteralPath $jp  # NO -Recurse on junctions
-        }
-    }
-}
-# Only AFTER all junctions are confirmed removed:
-git worktree remove $worktreePath --force
+# Supported sprint-boundary junction set
+$junctionFolderNames = @('.vscode')
+
+Set-WorktreeJunctions `
+  -SourceRepoPath $stableRepoRoot `
+  -WorktreePath $worktreePath `
+  -DevSourceRepoPath $sharedVSCodeSprintRoot `
+  -SourceRepoFolderNames $junctionFolderNames `
+  -DevSourceRepoFolderNames $junctionFolderNames
 ```
-
-### Filesystem junction for .claude folder
-
-Claude and Claude Code will look up the filesystem to the repository root for folders named `.claude`. Prompt instructions for Claude AI are stored in the file(s) found in this directory. To make the same prompt instructions available to every repository, the .claude folder is linked, using a junction to the base of the repository.
-
-of particular note are the AI Agent instruction files, for both Copilot and for Claude Code
-there is a frontmatter format mismatch between Copilot and Claude Code. For proper path-scoping in Claude Code, we need separate .claude/rules/ files with paths frontmatter and then @import the shared content body from .github/instructions/ to avoid duplication.
-
-### Filesystem junction for .github folder
-
-Every repository needs instruction files for GitHub Copilot. These are kept in the .github directory, and a directory junction is created in the root of the repository. Run the following Powershell commands at the repository root to create a directory junction back to the shared VS Code directory.
-
-ToDo: must look at the other stuff in .github to see if they can be made to work for multiple repositories, or, if Issue Templates and workflows need to be specific to individual repositories
 
 ### Filesystem junction for .vscode folder
 
-The organization has multiple GIT repositories. Every repository that uses Visual Studio Code as the IDE, needs a subdirectory `.vscode`, which contains these files and folders
+The organization has multiple Git repositories. Every repository that uses Visual
+Studio Code as the IDE needs a `.vscode` directory with shared workspace
+configuration such as dictionaries, launch/tasks files, CSpell settings, and
+extension recommendations. That folder remains junctioned to the matching
+SharedVSCode worktree.
 
-```text
-repo-root/
-├── .vscode/
-    ├── dictionaries/ # Used by the 'CSpell' VSC extension
-    ├── solution-explorer/ # Used by the 'Solution Explorer' VSC extension
-    ├── cspell.json
-    ├── extensions.json
-    ├── iisexpress.json
-    ├── launch.json
-    ├── mcp.json
-    ├── PSScriptAnalyzerSettings.psd1
-    ├── tasks.json
-```
-
-```text
-repo-root/
-└── .claude/
-|   └── rules/
-|       ├── python.md ← paths: ["**/*.py"], body: @../../.github/instructions/python.instructions.md
-|       └── typescript.md ← paths: ["**/*.ts","**/*.tsx"], body: @../../.github/instructions/typescript.instructions.md
-|       └── etc...
-├── .github/
-│   ├── copilot-instructions.md ← Single source of truth for global instructions
-│   └── instructions/
-│       ├── Powershell.instructions.md
-│       ├── CSharp.instructions.md
-│       └── etc...
-├── .vscode/
-    ├── dictionaries/ # Used by the 'CSpell' VSC extension
-    ├── solution-explorer/ # Used by the 'Solution Explorer' VSC extension
-    ├── cspell.json
-    ├── extensions.json
-    ├── iisexpress.json
-    ├── launch.json
-    ├── mcp.json
-    ├── PSScriptAnalyzerSettings.psd1
-    ├── tasks.json
-```
-
-### Create Filesystem junctions
-
-​
-In every new repository, after running `git init`, run these commands (as an administrator) in the root folder of the repository:
-We create a junction in each repository that links to the `.github` folder in `SharedVSCode`.
-
-ToDo: replace with a BuildTooling.Powershell script for New-Junction
-
-In every new repository, after running `git init`, run these commands (as an administrator) in the root folder of the repository:
-We create a junction in each repository that links to the `.vscode` folder in `SharedVSCode`.
-
-ToDo: replace with a BuildTooling.Powershell script for New-Junction
-
-```powershell
-# Ensure that .claude is a folder, junction linked from the repo root to the target.
-# The target is GitHub/SharedVSCode/.claude
-# The junction name is .claude
-# if .claude is present in the repo root, and is a junction to the .claude subfolder under SharedVSCode folder, do nothing.
-# if .claude is present in the repo root, and is a junction to anything other than the .claude subfolder under SharedVSCode folder, delete and create it as a junction to the .claude subfolder under SharedVSCode folder.
-# if .claude is not present in the repo root create it as a junction to the .claude subfolder under SharedVSCode folder
-if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-  . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
-}
-
-$userName = 'whertzing'
-$junctionFolderNames = ('.claude', '.github', '.vscode')
-$junctionFolderNames | % {
- $junctionFolderName = $_
-$targetFolder = Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $username 'GitHub', 'SharedVSCode', $junctionFolderName
-# Check if junction exists
-if (Test-Path $junctionFolderName) {
-    $item = Get-Item $junctionFolderName
-    # Check if it's a junction/reparse point
-    if ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
-        # Get the target of the junction
-        $currentTarget = $item.Target
-        # Compare with expected target
-        if ($currentTarget -ne $targetFolder) {
-            # Wrong target, delete and recreate
-            Write-PSFMessage -Level Verbose -Message "Removing existing junction with wrong target: $currentTarget"
-            Remove-Item -Path $junctionFolderName -Force
-            $null = New-Item -Path $junctionFolderName -ItemType Junction -Target $targetFolder
-            Write-PSFMessage -Level Important -Message "Created $junctionFolderName junction to: $targetFolder"
-        }
-        else {
-            # Correct junction already exists, do nothing
-            Write-PSFMessage -Level Verbose -Message "$junctionFolderName junction already points to correct target: $targetFolder"
-        }
-    } else {
-        # It exists but is not a junction - remove and create junction
-        Write-PSFMessage -Level Warning -Message "$junctionFolderName exists but is not a junction. Removing and recreating as junction"
-        Remove-Item -Path $junctionFolderName -Recurse -Force
-        $null = New-Item -Path $junctionFolderName -ItemType Junction -Target $targetFolder
-        Write-PSFMessage -Level Important -Message "Created $junctionFolderName junction to: $targetFolder"
-    }
-} else {
-    # Doesn't exist, create it
-    $null = New-Item -Path $junctionFolderName -ItemType Junction -Target $targetFolder
-    Write-PSFMessage -Level Important -Message "Created $junctionFolderName junction to: $targetFolder"
-}
-}
-
-```
+AI-agent instruction surfaces are no longer provided through `.claude` or
+`.github` junctions. They are rendered as concrete files and folders by the
+AIAdapter lifecycle and move between branches through normal git history.
 
 ### Repository symbolic links
 

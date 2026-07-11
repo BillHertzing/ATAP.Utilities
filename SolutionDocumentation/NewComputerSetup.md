@@ -682,38 +682,31 @@ Import-Module ATAP.Utilities.PowerShell
 
 $serviceAccounts = @(
   @{
-    SecretName  = "$env:COMPUTERNAME-SQLServerSrvAcct-Production"
+    SecretName  = "SQLServerSrvAcct.$($env:COMPUTERNAME.ToLowerInvariant())"
     AccountName = 'SQLServerSrvAcct'
     FullName    = 'SQL Server Service Identity'
     Description = 'Local service account for SQL Server Database Engine and Agent'
   },
   @{
-    SecretName  = "$env:COMPUTERNAME-SvcProGet-Production"
+    SecretName  = "SvcProGet.$($env:COMPUTERNAME.ToLowerInvariant())"
     AccountName = 'SvcProGet'
     FullName    = 'ProGet Service Identity'
     Description = 'Local service account for the Inedo ProGet service'
   },
   @{
-    SecretName  = "$env:COMPUTERNAME-SvcBuildmaster-Production"
+    SecretName  = "SvcBuildmaster.$($env:COMPUTERNAME.ToLowerInvariant())"
     AccountName = 'SvcBuildmaster'
     FullName    = 'BuildMaster Service Identity'
-    Description = 'Local service account for the Inedo BuildMaster service'
+    Description = 'Local service account for Inedo BuildMaster service'
   }
 )
 
 foreach ($entry in $serviceAccounts) {
-  $password = Get-SecretATAP -SecretName $entry.SecretName -SecretField 'password'
-  if ([string]::IsNullOrWhiteSpace($password)) {
-    throw "Secret store item '$($entry.SecretName)' is missing a password field."
-  }
-
-  $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-
   New-LocalServiceAccount `
     -AccountName $entry.AccountName `
     -FullName $entry.FullName `
     -Description $entry.Description `
-    -Password $securePassword `
+    -SecretNameServiceAccountLoginCredentials $entry.SecretName `
     -GrantSeServiceLogonRight
 }
 ```

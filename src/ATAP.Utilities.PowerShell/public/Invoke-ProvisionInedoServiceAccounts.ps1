@@ -6,10 +6,10 @@ function Invoke-ProvisionInedoServiceAccounts {
     Provisions SvcProGet and SvcBuildmaster local service accounts and grants
     db_owner on their respective Production SQL Server databases.
   .DESCRIPTION
-    Interactive wizard that:
-      1. Creates the SvcProGet Windows local service account (password via clipboard).
+    Provisioning workflow that:
+      1. Creates the SvcProGet Windows local service account (password via Bitwarden Secrets Manager).
       2. Grants SvcProGet Full Control over C:\ProgramData\ProGet\Packages.
-      3. Creates the SvcBuildmaster Windows local service account (password via clipboard).
+      3. Creates the SvcBuildmaster Windows local service account (password via Bitwarden Secrets Manager).
       4. Grants SvcProGet db_owner on the ProGet Production database.
       5. Grants SvcBuildmaster db_owner on the BuildMaster Production database.
     Must be run as Administrator. The same-module dependencies (Type-PSLSA,
@@ -38,8 +38,6 @@ function Invoke-ProvisionInedoServiceAccounts {
     https://github.com/BillHertzing/ATAP.Utilities
   #>
   [CmdletBinding(SupportsShouldProcess)]
-  [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingConvertToSecureStringWithPlainText', '',
-    Justification = 'Password is read interactively from the clipboard; plaintext exposure is intentional and ephemeral.')]
   param(
     [Parameter()]
     [string]$SqlInstance = 'localhost\Production',
@@ -101,15 +99,11 @@ function Invoke-ProvisionInedoServiceAccounts {
     # ---- SvcProGet -----------------------------------------------------------
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Creating SvcProGet local service account.'
     Write-Host '--- Creating SvcProGet ---' -ForegroundColor Cyan
-    Write-Host 'Copy the SvcProGet password to your clipboard, then press Enter...' -ForegroundColor Yellow
-    $null = Read-Host
-    $pwProGet = ConvertTo-SecureString (Get-Clipboard) -AsPlainText -Force
     if ($PSCmdlet.ShouldProcess('SvcProGet', 'New-LocalServiceAccount')) {
       $r1 = New-LocalServiceAccount `
         -AccountName SvcProGet `
         -FullName 'ProGet Service Identity' `
         -Description 'Windows service account for Inedo ProGet' `
-        -Password $pwProGet `
         -GrantSeServiceLogonRight
       $r1 | Format-List
       $results.Add($r1)
@@ -130,15 +124,11 @@ function Invoke-ProvisionInedoServiceAccounts {
     # ---- SvcBuildmaster ------------------------------------------------------
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Creating SvcBuildmaster local service account.'
     Write-Host '--- Creating SvcBuildmaster ---' -ForegroundColor Cyan
-    Write-Host 'Copy the SvcBuildmaster password to your clipboard, then press Enter...' -ForegroundColor Yellow
-    $null = Read-Host
-    $pwBM = ConvertTo-SecureString (Get-Clipboard) -AsPlainText -Force
     if ($PSCmdlet.ShouldProcess('SvcBuildmaster', 'New-LocalServiceAccount')) {
       $r2 = New-LocalServiceAccount `
         -AccountName SvcBuildmaster `
         -FullName 'BuildMaster Service Identity' `
         -Description 'Windows service account for Inedo BuildMaster' `
-        -Password $pwBM `
         -GrantSeServiceLogonRight
       $r2 | Format-List
       $results.Add($r2)

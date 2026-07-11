@@ -29,9 +29,10 @@ function New-LocalServiceAccount {
     .PARAMETER Description
         Optional description stored on the account.
 
-    .PARAMETER Password
-        SecureString password for the account. The account is configured so that the
-        password never expires and the user may not change it.
+    .PARAMETER SecretNameServiceAccountLoginCredentials
+        Name of the Bitwarden Secrets Manager secret that contains the account password in its
+        password field. When omitted, the name defaults to <AccountName>.<lowercase hostname>.
+        The account is configured so that the password never expires and the user may not change it.
 
     .PARAMETER State
         'Present' (default) — create the account if it does not yet exist.
@@ -55,18 +56,17 @@ function New-LocalServiceAccount {
           SeServiceLogonRight, SeBatchLogonRight, Status
 
     .EXAMPLE
-        $pw = ConvertTo-SecureString 'S3rv!ceP@ss' -AsPlainText -Force
-        New-LocalServiceAccount -AccountName SvcProGet -Password $pw -GrantSeServiceLogonRight
+        New-LocalServiceAccount -AccountName SvcProGet -GrantSeServiceLogonRight
 
         Creates SvcProGet (if absent) and grants SeServiceLogonRight.
 
     .EXAMPLE
-        New-LocalServiceAccount -AccountName SvcProGet -Password $pw -GrantSeBatchLogonRight
+        New-LocalServiceAccount -AccountName SvcProGet -SecretNameServiceAccountLoginCredentials 'SvcProGet.utat022' -GrantSeBatchLogonRight
 
         Creates SvcProGet (if absent) and grants SeBatchLogonRight.
 
     .EXAMPLE
-        New-LocalServiceAccount -AccountName SvcProGet -Password $pw -State Absent
+        New-LocalServiceAccount -AccountName SvcProGet -State Absent
 
         Removes the SvcProGet account if it exists.
 
@@ -88,8 +88,9 @@ function New-LocalServiceAccount {
 
         [string] $Description = '',
 
-        [Parameter(Mandatory)]
-        [SecureString] $Password,
+        [Parameter()]
+        [AllowEmptyString()]
+        [string] $SecretNameServiceAccountLoginCredentials,
 
         [ValidateSet('Present', 'Absent')]
         [string] $State = 'Present',
@@ -254,6 +255,13 @@ function New-LocalServiceAccount {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
         -Message "[$AccountName] Start: State=$State GrantSeServiceLogonRight=$($GrantSeServiceLogonRight.IsPresent) GrantSeBatchLogonRight=$($GrantSeBatchLogonRight.IsPresent)"
 
+    if ($State -eq 'Present' -and -not (Get-Command -Name 'Get-SecretATAP' -CommandType Function -ErrorAction SilentlyContinue)) {
+        $getSecretPath = Join-Path $PSScriptRoot '..\..\ATAP.Utilities.BuildTooling.PowerShell\public\Get-SecretATAP.ps1'
+        if (-not (Test-Path -LiteralPath $getSecretPath -PathType Leaf)) {
+            throw "Get-SecretATAP is not available and its source fallback was not found at '$getSecretPath'."
+        }
+        . $getSecretPath
+    }
     # Ensure the PS_LSA C# type is loaded before any LSA operations. The type
     # definition lives in this module's lib\ folder (guarded Add-Type).
     if (($GrantSeServiceLogonRight -or $GrantSeBatchLogonRight) -and
@@ -285,16 +293,36 @@ function New-LocalServiceAccount {
             # --- Create the account if it does not exist ---
             if ($null -eq $existingUser) {
                 if ($PSCmdlet.ShouldProcess($AccountName, 'Create local service account')) {
-                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-                        -Message "[$AccountName] Creating local user account (FullName='$FullName')"
+                    if ([string]::IsNullOrWhiteSpace($SecretNameServiceAccountLoginCredentials)) {
+                        $SecretNameServiceAccountLoginCredentials = '{0}.{1}' -f $AccountName, $env:COMPUTERNAME.ToLowerInvariant()
+                    }
 
-                    New-LocalUserCompat `
-                        -Name               $AccountName `
-                        -SecurePassword     $Password `
-                        -DisplayName        $FullName `
-                        -AccountDescription $Description
+                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
+                        -Message "[$AccountName] Resolving local-account password from secret '$SecretNameServiceAccountLoginCredentials'" -Tag 'service-account', 'secret'
+                    $plainPassword = $null
+                    $securePassword = $null
+                    try {
+                        $plainPassword = Get-SecretATAP -SecretName $SecretNameServiceAccountLoginCredentials -SecretField 'password' -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop
+                        if ([string]::IsNullOrWhiteSpace($plainPassword)) {
+                            throw "Secret '$SecretNameServiceAccountLoginCredentials' did not return a password for local service account '$AccountName'."
+                        }
 
-                    $result.UserCreated = $true
+                        $securePassword = ConvertTo-SecureString -String $plainPassword -AsPlainText -Force
+                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+                            -Message "[$AccountName] Creating local user account (FullName='$FullName')"
+                        New-LocalUserCompat `
+                            -Name               $AccountName `
+                            -SecurePassword     $securePassword `
+                            -DisplayName        $FullName `
+                            -AccountDescription $Description
+                        $result.UserCreated = $true
+                    }
+                    finally {
+                        if ($null -ne $securePassword) {
+                            $securePassword.Dispose()
+                        }
+                        $plainPassword = $null
+                    }
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
                         -Message "[$AccountName] Local user account created"
                 }

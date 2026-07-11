@@ -12,56 +12,22 @@ param(
 
   [double]$StaleMultiplier = 1.5,
 
-  [string]$ResultDirectory
+  [string]$ResultDirectory,
+
+  [string]$CredentialDirectory,
+
+  [ValidateSet('ReadOnly', 'ReadWrite')]
+  [string]$TokenPurpose = 'ReadOnly',
+
+  [string]$EventLogName = 'Application',
+
+  [string]$EventSource = 'ATAP.SystemParityMonitor'
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-function Get-ParityTaskTokenCredential {
-  [CmdletBinding()]
-  param()
-
-  $currentSamName = ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name -split '\\')[-1]
-  $credentialDirectory = Join-Path 'C:\ProgramData\ATAP\BitwardenCredentials' $currentSamName
-  $tokenPath = Join-Path $credentialDirectory "$env:COMPUTERNAME`_$currentSamName`_BWS_AccessToken.xml"
-  if (-not (Test-Path -LiteralPath $tokenPath)) {
-    throw "BWS access-token file was not found at '$tokenPath'."
-  }
-
-  [pscustomobject]@{
-    CredentialDirectory = $credentialDirectory
-    TokenPath = $tokenPath
-    Credential = Import-Clixml -LiteralPath $tokenPath -ErrorAction Stop
-  }
-}
-
-function Invoke-ParityTaskBwsProbe {
-  [CmdletBinding()]
-  param()
-
-  $tokenResult = Get-ParityTaskTokenCredential
-  $bwsCommand = Get-Command -Name 'bws' -CommandType Application -ErrorAction Stop
-  $env:BWS_ACCESS_TOKEN = $tokenResult.Credential.GetNetworkCredential().Password
-
-  try {
-    $secretListOutput = & $bwsCommand.Source secret list --output json --color no 2>&1
-    if ($LASTEXITCODE -ne 0) {
-      throw "bws secret list failed with exit code $LASTEXITCODE. Output: $($secretListOutput -join [Environment]::NewLine)"
-    }
-
-    $secretCount = @($secretListOutput | ConvertFrom-Json -ErrorAction Stop).Count
-    [pscustomobject]@{
-      Success = $true
-      CredentialDirectory = $tokenResult.CredentialDirectory
-      TokenPath = $tokenResult.TokenPath
-      BwsPath = $bwsCommand.Source
-      SecretCount = $secretCount
-    }
-  } finally {
-    Remove-Item -LiteralPath Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue
-  }
-}
+. (Join-Path $PSScriptRoot 'ParityScheduledTask.Common.ps1')
 
 $modulePath = Join-Path $PSScriptRoot '..\ATAP.Utilities.SystemParityMonitor.PowerShell.psd1'
 Import-Module -Name $modulePath -Force
@@ -76,7 +42,7 @@ $stamp = $timestampUtc.ToString('yyyyMMddTHHmmssZ', [Globalization.CultureInfo]:
 $resultPath = Join-Path $ResultDirectory "ParityCompareTaskResult.$($LeftHostName.ToLowerInvariant()).$($RightHostName.ToLowerInvariant()).$stamp.json"
 
 try {
-  $probe = Invoke-ParityTaskBwsProbe
+  $probe = Invoke-ParityScheduledTaskBwsProbe -CredentialDirectory $CredentialDirectory -TokenPurpose $TokenPurpose
   $comparison = Compare-ParityAudits `
     -LeftStatePath $LeftStatePath `
     -RightStatePath $RightStatePath `
@@ -98,9 +64,17 @@ try {
     WhitelistedDriftCount = @($comparison.WhitelistedDrift).Count
     StaleSnapshotCount = @($comparison.StaleSnapshots).Count
     StaleSnapshots = @($comparison.StaleSnapshots)
+    EventLog = $null
     BwsProbe = $probe
   } | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $resultPath -Encoding utf8
 } catch {
+  $eventLogResult = Write-ParityScheduledTaskEvent `
+    -EntryType Error `
+    -EventId 12381 `
+    -Message "Parity compare scheduled task failed for '$LeftHostName' versus '$RightHostName'. $($_.Exception.Message)" `
+    -LogName $EventLogName `
+    -Source $EventSource
+
   [pscustomobject]@{
     Success = $false
     Task = 'ParityCompare'
@@ -108,6 +82,7 @@ try {
     RightHostName = $RightHostName.ToLowerInvariant()
     IdentityName = try { [System.Security.Principal.WindowsIdentity]::GetCurrent().Name } catch { '<unknown>' }
     GeneratedAtUtc = $timestampUtc.ToString('o', [Globalization.CultureInfo]::InvariantCulture)
+    EventLog = $eventLogResult
     Error = $_.Exception.Message
   } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $resultPath -Encoding utf8
   throw

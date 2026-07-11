@@ -134,3 +134,144 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' {
     Test-Path -LiteralPath $reportPath | Should -BeTrue
   }
 }
+
+Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell scheduled task scripts' {
+  BeforeAll {
+    $moduleRoot = Join-Path $PSScriptRoot '..\..'
+    $scriptsRoot = Join-Path $moduleRoot 'scripts'
+    $registerScriptPath = Join-Path $scriptsRoot 'Register-ParityScheduledTasks.ps1'
+    $commonScriptPath = Join-Path $scriptsRoot 'ParityScheduledTask.Common.ps1'
+    . $registerScriptPath
+    . $commonScriptPath
+  }
+
+  BeforeEach {
+    $script:scheduledTaskRegistrations = @()
+
+    Mock -CommandName Get-Command -ParameterFilter { $Name -eq 'pwsh' } -MockWith {
+      [pscustomobject]@{ Source = 'C:\Program Files\PowerShell\7\pwsh.exe' }
+    }
+
+    Mock -CommandName Register-ScheduledTask -MockWith {
+      param($TaskName, $TaskPath, $Action, $Trigger, $Settings, $Principal, $InputObject, $User, $Password, [switch] $Force, $ErrorAction)
+      $script:scheduledTaskRegistrations += [pscustomobject]@{
+        TaskName = $TaskName
+        TaskPath = $TaskPath
+        Action = $Action
+        Trigger = $Trigger
+        Settings = $Settings
+        Principal = $Principal
+        InputObject = $InputObject
+        User = $User
+        Password = $Password
+        Force = $Force.IsPresent
+        ErrorAction = $ErrorAction
+      }
+    }
+  }
+
+  It 'Register-ParityScheduledTasks creates only the local audit task for AuditOnly' {
+    Register-ParityScheduledTasks `
+      -TaskSet AuditOnly `
+      -StatePath 'C:\ProgramData\ATAP\ParityState' `
+      -HostName 'utat01' `
+      -TaskPath '\ATAP-Test\' `
+      -UserId 'UTAT01\SvcParityAudit' `
+      -Confirm:$false
+
+    $script:scheduledTaskRegistrations | Should -HaveCount 1
+    $script:scheduledTaskRegistrations[0].TaskName | Should -Be 'ATAP-ParityAudit'
+    $script:scheduledTaskRegistrations[0].Principal.UserId | Should -Be 'UTAT01\SvcParityAudit'
+    $script:scheduledTaskRegistrations[0].Principal.LogonType | Should -Be 'S4U'
+    $script:scheduledTaskRegistrations[0].Principal.RunLevel | Should -Be 'Limited'
+    $script:scheduledTaskRegistrations[0].ErrorAction | Should -Be 'Stop'
+    $script:scheduledTaskRegistrations[0].Action.Arguments | Should -Match 'Invoke-ParityScheduledAuditTask\.ps1'
+    $script:scheduledTaskRegistrations[0].Action.Arguments | Should -Match '-TokenPurpose ReadOnly'
+    $script:scheduledTaskRegistrations[0].Action.Arguments | Should -Not -Match 'Invoke-Command'
+  }
+
+  It 'Register-ParityScheduledTasks creates weekly biweekly audit and compare tasks for the primary task set' {
+    Register-ParityScheduledTasks `
+      -TaskSet AuditAndCompare `
+      -Cadence BiWeekly `
+      -BiWeeklyDaysOfWeek Wednesday `
+      -StatePath 'C:\ProgramData\ATAP\ParityState' `
+      -RightStatePath '\\utat01\ParityState' `
+      -HostName 'utat022' `
+      -RightHostName 'utat01' `
+      -TaskPath '\ATAP-Test\' `
+      -UserId 'UTAT022\SvcParityAudit' `
+      -Confirm:$false
+
+    $script:scheduledTaskRegistrations | Should -HaveCount 2
+    @($script:scheduledTaskRegistrations.TaskName) | Should -Contain 'ATAP-ParityAudit'
+    @($script:scheduledTaskRegistrations.TaskName) | Should -Contain 'ATAP-ParityCompare'
+    foreach ($registration in $script:scheduledTaskRegistrations) {
+      $registration.Trigger.CimClass.CimClassName | Should -Be 'MSFT_TaskWeeklyTrigger'
+      $registration.Trigger.WeeksInterval | Should -Be 2
+      $registration.Trigger.DaysOfWeek | Should -Be 8
+      $registration.Principal.UserId | Should -Be 'UTAT022\SvcParityAudit'
+      $registration.Principal.RunLevel | Should -Be 'Highest'
+      $registration.ErrorAction | Should -Be 'Stop'
+    }
+
+    $compareRegistration = $script:scheduledTaskRegistrations |
+      Where-Object TaskName -eq 'ATAP-ParityCompare' |
+      Select-Object -First 1
+    $compareRegistration.Action.Arguments | Should -Match '-ExpectedCadenceDays 14'
+    $compareRegistration.Action.Arguments | Should -Match '-StaleMultiplier 1.5'
+    $compareRegistration.Action.Arguments | Should -Match '-RightStatePath "\\\\utat01\\ParityState"'
+  }
+
+  It 'Register-ParityScheduledTasks supports Password logon registration for peer-share access' {
+    $credential = [pscredential]::new(
+      'UTAT022\SvcParityAudit',
+      (ConvertTo-SecureString 'not-a-real-password' -AsPlainText -Force)
+    )
+
+    Register-ParityScheduledTasks `
+      -TaskSet AuditAndCompare `
+      -StatePath 'C:\ProgramData\ATAP\ParityState' `
+      -RightStatePath '\\utat01\ParityState' `
+      -HostName 'utat022' `
+      -RightHostName 'utat01' `
+      -TaskPath '\ATAP-Test\' `
+      -UserId 'UTAT022\SvcParityAudit' `
+      -LogonType Password `
+      -Credential $credential `
+      -Confirm:$false
+
+    $script:scheduledTaskRegistrations | Should -HaveCount 2
+    foreach ($registration in $script:scheduledTaskRegistrations) {
+      $registration.InputObject | Should -Not -BeNullOrEmpty
+      $registration.User | Should -Be 'UTAT022\SvcParityAudit'
+      $registration.Password | Should -Be 'not-a-real-password'
+      $registration.Action | Should -BeNullOrEmpty
+      $registration.InputObject.Principal.RunLevel | Should -Be 'Highest'
+      $registration.ErrorAction | Should -Be 'Stop'
+    }
+  }
+
+  It 'Resolve-ParityScheduledTaskBwsCredential requires the purpose-specific ReadOnly token file' {
+    $credentialDirectory = Join-Path ([IO.Path]::GetTempPath()) "ATAP-Parity-Credentials-$([guid]::NewGuid())"
+    New-Item -ItemType Directory -Path $credentialDirectory -Force | Out-Null
+
+    try {
+      { Resolve-ParityScheduledTaskBwsCredential -CredentialDirectory $credentialDirectory -TokenPurpose ReadOnly } |
+        Should -Throw '*CommonCIForBitwardenReadOnly*'
+    } finally {
+      Remove-Item -LiteralPath $credentialDirectory -Recurse -Force -ErrorAction SilentlyContinue
+    }
+  }
+
+  It 'scheduled task wrappers use the shared ReadOnly BWS helper and no remoting path' {
+    $auditSource = Get-Content -LiteralPath (Join-Path $scriptsRoot 'Invoke-ParityScheduledAuditTask.ps1') -Raw
+    $compareSource = Get-Content -LiteralPath (Join-Path $scriptsRoot 'Invoke-ParityScheduledCompareTask.ps1') -Raw
+
+    $auditSource | Should -Match 'Invoke-ParityScheduledTaskBwsProbe'
+    $compareSource | Should -Match 'Invoke-ParityScheduledTaskBwsProbe'
+    ($auditSource + $compareSource) | Should -Not -Match '_BWS_AccessToken\.xml'
+    ($auditSource + $compareSource) | Should -Not -Match 'Invoke-Command'
+    ($auditSource + $compareSource) | Should -Not -Match 'BW_SESSION|bw login|bw unlock'
+  }
+}

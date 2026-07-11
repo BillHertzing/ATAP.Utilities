@@ -1,7 +1,6 @@
 <#
 .SYNOPSIS
-  Registers the two SystemParityMonitor scheduled tasks (daily parity audit and
-  daily parity compare) on the local host.
+  Registers the SystemParityMonitor scheduled tasks on the local host.
 
 .DESCRIPTION
   Reconstructed 2026-07-07 (Sprint 0012 Task 12.46.c): the original
@@ -10,15 +9,39 @@
   the contract of the two intact task-action scripts it registers
   (Invoke-ParityScheduledAuditTask.ps1 and Invoke-ParityScheduledCompareTask.ps1).
 
-  Each task runs pwsh -File against the sibling script in this module's scripts\
-  folder, under the invoking user's account. The task-action scripts resolve their own
-  BWS access token from C:\ProgramData\ATAP\BitwardenCredentials and import the module
-  from this folder's parent, so the registration only needs stable paths.
+  Task 12.38.e hardened the scheduled path: every host registers a local audit task
+  that writes only to its own ParityState folder, and the primary host also registers
+  the compare task that reads the peer share and writes drift reports. Tasks run as the
+  dedicated local SvcParityAudit identity and use that identity's purpose-specific
+  CommonCIForBitwardenReadOnly DPAPI token through Get-BWSAccessToken. Use S4U for
+  local-only audit registration; use Password with a PSCredential when the compare task
+  must authenticate to a peer SMB share.
 
 .NOTES
   Dual-purpose script guard: registration only fires under `pwsh -File`; dot-sourcing
   or module import defines the function without side effects (module-loading standard).
 #>
+
+function New-ParityScheduledTaskTrigger {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $true)]
+    [ValidateSet('Daily', 'BiWeekly')]
+    [string] $Cadence,
+
+    [Parameter(Mandatory = $true)]
+    [string] $At,
+
+    [Parameter(Mandatory = $false)]
+    [string[]] $BiWeeklyDaysOfWeek = @('Monday')
+  )
+
+  if ($Cadence -eq 'Daily') {
+    return New-ScheduledTaskTrigger -Daily -At $At
+  }
+
+  return New-ScheduledTaskTrigger -Weekly -WeeksInterval 2 -DaysOfWeek $BiWeeklyDaysOfWeek -At $At
+}
 
 function Register-ParityScheduledTasks {
   [CmdletBinding(SupportsShouldProcess)]
@@ -32,14 +55,46 @@ function Register-ParityScheduledTasks {
     # Peer host name passed to the compare task.
     [string] $RightHostName = 'utat01',
 
+    # Local host name passed to both task-action scripts.
+    [string] $HostName = $env:COMPUTERNAME,
+
     # Daily trigger times (local).
     [string] $AuditTime = '03:00',
     [string] $CompareTime = '03:30',
 
+    [ValidateSet('AuditOnly', 'AuditAndCompare')]
+    [string] $TaskSet = $(if ($env:COMPUTERNAME -ieq 'utat022') { 'AuditAndCompare' } else { 'AuditOnly' }),
+
+    [ValidateSet('Daily', 'BiWeekly')]
+    [string] $Cadence = 'Daily',
+
+    [string[]] $BiWeeklyDaysOfWeek = @('Monday'),
+
+    [double] $ExpectedCadenceDays = 0,
+
+    [double] $StaleMultiplier = 1.5,
+
+    [ValidateSet('ReadOnly', 'ReadWrite')]
+    [string] $TokenPurpose = 'ReadOnly',
+
+    [string] $CredentialDirectory,
+
     [string] $TaskPath = '\ATAP\',
 
-    # Account the tasks run under; defaults to the invoking user.
-    [string] $UserId = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+    # Dedicated local service account that owns the DPAPI token and scheduled tasks.
+    [string] $RunAsAccountName = 'SvcParityAudit',
+
+    [string] $UserId,
+
+    [ValidateSet('S4U', 'Password', 'ServiceAccount')]
+    [string] $LogonType = 'S4U',
+
+    [System.Management.Automation.PSCredential] $Credential,
+
+    # Audit-only S4U tasks should remain least-privileged. Other task/logon
+    # combinations retain the historical Highest default unless explicitly overridden.
+    [ValidateSet('Limited', 'Highest')]
+    [string] $RunLevel
   )
 
   begin {
@@ -47,23 +102,65 @@ function Register-ParityScheduledTasks {
     $mn = 'ATAP.Utilities.SystemParityMonitor.PowerShell'
     $scriptRoot = $PSScriptRoot
     $pwshPath = (Get-Command -Name 'pwsh' -CommandType Application -ErrorAction Stop).Source
+    if ([string]::IsNullOrWhiteSpace($UserId)) {
+      $UserId = if ($LogonType -eq 'Password' -and $Credential) {
+        $Credential.UserName
+      } else {
+        "$env:COMPUTERNAME\$RunAsAccountName"
+      }
+    }
+
+    if ($LogonType -eq 'Password') {
+      if (-not $Credential) {
+        throw 'Credential is required when -LogonType Password is used.'
+      }
+
+      if ($Credential.UserName -ne $UserId) {
+        throw "Credential.UserName ('$($Credential.UserName)') must match UserId ('$UserId') when -LogonType Password is used."
+      }
+    }
+
+    if ($ExpectedCadenceDays -le 0) {
+      $ExpectedCadenceDays = if ($Cadence -eq 'BiWeekly') { 14 } else { 1 }
+    }
+
+    if ([string]::IsNullOrWhiteSpace($RunLevel)) {
+      $RunLevel = if ($TaskSet -eq 'AuditOnly' -and $LogonType -eq 'S4U') {
+        'Limited'
+      } else {
+        'Highest'
+      }
+    }
   }
 
   process {
+    $auditArguments = "-StatePath `"$StatePath`" -HostName `"$HostName`" -TokenPurpose $TokenPurpose"
+    if (-not [string]::IsNullOrWhiteSpace($CredentialDirectory)) {
+      $auditArguments += " -CredentialDirectory `"$CredentialDirectory`""
+    }
+
     $definitions = @(
       @{
         TaskName = 'ATAP-ParityAudit'
         ScriptName = 'Invoke-ParityScheduledAuditTask.ps1'
-        Arguments = "-StatePath `"$StatePath`""
+        Arguments = $auditArguments
         At = $AuditTime
-      },
-      @{
-        TaskName = 'ATAP-ParityCompare'
-        ScriptName = 'Invoke-ParityScheduledCompareTask.ps1'
-        Arguments = "-LeftStatePath `"$StatePath`" -RightStatePath `"$RightStatePath`" -RightHostName `"$RightHostName`""
-        At = $CompareTime
       }
     )
+
+    if ($TaskSet -eq 'AuditAndCompare') {
+      $compareArguments = "-LeftStatePath `"$StatePath`" -RightStatePath `"$RightStatePath`" -LeftHostName `"$HostName`" -RightHostName `"$RightHostName`" -ExpectedCadenceDays $ExpectedCadenceDays -StaleMultiplier $StaleMultiplier -TokenPurpose $TokenPurpose"
+      if (-not [string]::IsNullOrWhiteSpace($CredentialDirectory)) {
+        $compareArguments += " -CredentialDirectory `"$CredentialDirectory`""
+      }
+
+      $definitions += @{
+        TaskName = 'ATAP-ParityCompare'
+        ScriptName = 'Invoke-ParityScheduledCompareTask.ps1'
+        Arguments = $compareArguments
+        At = $CompareTime
+      }
+    }
 
     foreach ($definition in $definitions) {
       $scriptPath = Join-Path $scriptRoot $definition.ScriptName
@@ -73,14 +170,22 @@ function Register-ParityScheduledTasks {
 
       $action = New-ScheduledTaskAction -Execute $pwshPath `
         -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$scriptPath`" $($definition.Arguments)"
-      $trigger = New-ScheduledTaskTrigger -Daily -At $definition.At
+      $trigger = New-ParityScheduledTaskTrigger -Cadence $Cadence -At $definition.At -BiWeeklyDaysOfWeek $BiWeeklyDaysOfWeek
       $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
         -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Hours 2)
-      $principal = New-ScheduledTaskPrincipal -UserId $UserId -LogonType S4U -RunLevel Highest
+      $principal = New-ScheduledTaskPrincipal -UserId $UserId -LogonType $LogonType -RunLevel $RunLevel
 
       if ($PSCmdlet.ShouldProcess("$($definition.TaskName) -> $scriptPath", 'Register scheduled task')) {
-        Register-ScheduledTask -TaskName $definition.TaskName -TaskPath $TaskPath `
-          -Action $action -Trigger $trigger -Settings $settings -Principal $principal -Force | Out-Null
+        if ($LogonType -eq 'Password') {
+          $task = New-ScheduledTask -Action $action -Trigger $trigger -Settings $settings -Principal $principal
+          Register-ScheduledTask -TaskName $definition.TaskName -TaskPath $TaskPath `
+            -InputObject $task -User $Credential.UserName -Password $Credential.GetNetworkCredential().Password `
+            -Force -ErrorAction Stop | Out-Null
+        } else {
+          Register-ScheduledTask -TaskName $definition.TaskName -TaskPath $TaskPath `
+            -Action $action -Trigger $trigger -Settings $settings -Principal $principal `
+            -Force -ErrorAction Stop | Out-Null
+        }
 
         if (Get-Command -Name 'Write-PSFMessage' -ErrorAction SilentlyContinue) {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `

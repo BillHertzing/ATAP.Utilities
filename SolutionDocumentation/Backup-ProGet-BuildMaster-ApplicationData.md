@@ -26,6 +26,17 @@ Created: 2026-04-03 (SprintWorkSession-0004)
 
 ---
 
+## Parity journal requirement
+
+Before a step in this runbook creates, changes, removes, or schedules backup
+state on `utat022` or `utat01`, append a secret-safe declaration with
+`Add-ParityChangeEntry` on the host being changed. Include the category, item,
+old/new state, peer host, and a peer action; do not include any secret value.
+After the peer applies its corresponding action, acknowledge it from that peer
+with `Confirm-ParityChangeApplied`.
+
+---
+
 ## 1. Background
 
 ProGet (port 50000) and BuildMaster (port 8622) each consist of two recoverable layers:

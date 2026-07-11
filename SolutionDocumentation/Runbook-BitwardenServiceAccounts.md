@@ -17,6 +17,15 @@ interactive users. The supported runtime pattern is:
 
 Do not persist `BWS_ACCESS_TOKEN` as a long-lived Machine/User environment variable. It may exist only in Process scope while `bws` is being called. DPAPI-protected token files are bound to both the Windows identity and the host, so they cannot be copied to another user profile or another machine and still decrypt.
 
+## Parity journal requirement
+
+Before a step in this runbook changes machine-local service-account, token-file,
+ACL, or `bws` installation state on `utat022` or `utat01`, append a secret-safe
+declaration with `Add-ParityChangeEntry` on the host being changed. Record
+SecretNames and token purposes only—never token values or credentials. After the
+peer applies its corresponding action, acknowledge it from that peer with
+`Confirm-ParityChangeApplied`.
+
 ## Token-purpose baseline
 
 | Token purpose | Token label                     | Who needs it                                                                                                        |

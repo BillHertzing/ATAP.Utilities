@@ -16,6 +16,14 @@
 >   `SvcBuildmaster` can resolve `PSFramework` and `powershell-yaml` —
 >   [NewComputerSetup.md § 4.3](NewComputerSetup.md).
 
+## Parity journal requirement
+
+Before a step in this runbook changes state on `utat022` or `utat01`, append a
+secret-safe declaration with `Add-ParityChangeEntry` on the host being changed.
+Include the category, item, old/new state, peer host, and a peer action; do not
+include any secret value. After the peer applies its corresponding action,
+acknowledge it from that peer with `Confirm-ParityChangeApplied`.
+
 ## Introduction
 
 Setting up a new computer can be a daunting task when there are hundreds of customizations needed to make the computer a productive element of an organization's infrastructure. Infrastructure As Code (IAC) is the discipline that is concerned with formalizing how to codify the customizations, and executing on the configuration to make a computer conform to the customizations desired.

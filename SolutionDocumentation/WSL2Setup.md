@@ -11,6 +11,15 @@ This is a companion reference to [NewComputerSetup.md](./NewComputerSetup.md). U
 document when the workstation will run Ansible or Docker inside WSL2 rather than directly
 on Windows.
 
+## Parity journal requirement
+
+Before a step in this runbook changes WSL, Ansible-controller, Docker, or related
+host configuration on `utat022` or `utat01`, append a secret-safe declaration
+with `Add-ParityChangeEntry` on the host being changed. Include the category,
+item, old/new state, peer host, and a peer action; do not include any secret
+value. After the peer applies its corresponding action, acknowledge it from that
+peer with `Confirm-ParityChangeApplied`.
+
 ## Recommended Baseline
 
 - Use Windows 11 with WSL version 2.

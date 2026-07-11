@@ -25,6 +25,12 @@ The end state is:
 
 ## Important Conventions
 
+- **Parity journal required:** Before a step in this runbook changes state on
+  `utat022` or `utat01`, append a secret-safe declaration with
+  `Add-ParityChangeEntry` on the host being changed. Include the category,
+  item, old/new state, peer host, and a peer action; do not include any secret
+  value. After the peer applies its corresponding action, acknowledge it from
+  that peer with `Confirm-ParityChangeApplied`.
 - Use PowerShell 7 (`pwsh`) for all commands in this document.
 - The historical phrase `SQL Server Community Edition` appears in older notes, but for a
   developer workstation that needs SQL Server Agent you should install SQL Server 2022

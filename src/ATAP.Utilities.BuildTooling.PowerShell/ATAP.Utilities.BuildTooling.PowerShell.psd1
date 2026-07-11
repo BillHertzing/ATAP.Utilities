@@ -51,7 +51,8 @@
     # ProcessorArchitecture = ''
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules      = @(@{ModuleName = 'PSFramework'; ModuleVersion = '0.1.13'; MaximumVersion = '1.999.999'; },
+    RequiredModules      = @(@{ModuleName = 'ATAP.Utilities.Powershell'; ModuleVersion = '0.1.19'; MaximumVersion = '0.999.999'; },
+        @{ModuleName = 'PSFramework'; ModuleVersion = '0.1.13'; MaximumVersion = '1.999.999'; },
         @{ModuleName = 'powershell-yaml'; ModuleVersion = '0.1.13'; MaximumVersion = '0.999.999'; })
 
     # Assemblies that must be loaded prior to importing this module

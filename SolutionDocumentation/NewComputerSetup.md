@@ -1614,20 +1614,23 @@ Preconditions:
    ([NewOrganizationSetup.md](NewOrganizationSetup.md) Phase 2).
 2. Any service accounts being provisioned exist on this host.
 3. You are elevated for the credential-folder ACL step.
-4. You have each target account's BWS access token to hand.
+4. You have the approved BWS access token authority for the intended project; do not record or persist its value.
 
 Host mapping:
 
-| Windows service account | BWS machine account | Projects                        | Required DPAPI token file | Optional DPAPI token file |
-| ----------------------- | ------------------- | ------------------------------- | ------------------------- | ------------------------- |
-| `SvcBuildmaster`        | `SvcBuildMaster`    | `BuildMaster-Core`, `CI-Shared` | `…\SvcBuildmaster\<HOST>_SvcBuildmaster_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | `…\SvcBuildmaster\<HOST>_SvcBuildmaster_BWS_CommonCIForBitwardenReadWrite_AccessToken.xml` only if this host runs secret-maintenance workflows |
-| `SvcProGet`             | `SvcInfraShared`    | `ProGet-Core`, `CI-Shared`      | `…\SvcProGet\<HOST>_SvcProGet_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | None by default |
+| Windows identity | ReadOnly access-token authority | Intended project | Required DPAPI token file | ReadWrite status |
+| ---------------- | ------------------------------- | ---------------- | ------------------------- | ---------------- |
+| `SvcBuildMaster` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcBuildMaster\<HOST>_SvcBuildMaster_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
+| `SvcProGet` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcProGet\<HOST>_SvcProGet_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
+| `SvcSeq` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcSeq\<HOST>_SvcSeq_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
+| `SvcSQLServer` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcSQLServer\<HOST>_SvcSQLServer_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
+| `SvcParityAudit` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcParityAudit\<HOST>_SvcParityAudit_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
 
 Interactive-user mapping:
 
 | Windows interactive user | BWS access-token scope | Required DPAPI token file | Optional DPAPI token file |
 | ------------------------ | ---------------------- | ------------------------- | ------------------------- |
-| `$env:USERNAME`          | Project-specific token, typically `CI-Shared` plus any required project | `…\<USERNAME>\<HOST>_<USERNAME>_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | `…\<USERNAME>\<HOST>_<USERNAME>_BWS_CommonCIForBitwardenReadWrite_AccessToken.xml` only on trusted maintainer workstations |
+| `whertzing` | `CommonCIForBitwardenReadOnly` for `CI-Shared` | `…\whertzing\<HOST>_whertzing_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
 
 ##### 9.4.10.1 Confirm the `bws` CLI is installed machine-wide
 

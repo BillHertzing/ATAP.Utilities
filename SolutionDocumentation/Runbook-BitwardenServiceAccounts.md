@@ -19,10 +19,10 @@ Do not persist `BWS_ACCESS_TOKEN` as a long-lived Machine/User environment varia
 
 ## Token-purpose baseline
 
-| Token purpose | Token label | Who needs it |
-| --- | --- | --- |
-| `ReadOnly` | `CommonCIForBitwardenReadOnly` | Every developer or service account that reads BWS secrets |
-| `ReadWrite` | `CommonCIForBitwardenReadWrite` | Only explicitly authorized maintainer or provisioning identities that create, update, delete, or rotate BWS secrets |
+| Token purpose | Token label                     | Who needs it                                                                                                        |
+| ------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `ReadOnly`    | `CommonCIForBitwardenReadOnly`  | Every developer or service account that reads BWS secrets                                                           |
+| `ReadWrite`   | `CommonCIForBitwardenReadWrite` | Only explicitly authorized maintainer or provisioning identities that create, update, delete, or rotate BWS secrets |
 
 Provision `ReadOnly` first. Add `ReadWrite` only where the host and identity are trusted for secret-maintenance work.
 
@@ -30,13 +30,13 @@ Provision `ReadOnly` first. Add `ReadWrite` only where the host and identity are
 
 Confirm these BWS projects and key names exist before live BuildMaster validation. Record names only; never record values.
 
-| Project | Required keys |
-| --- | --- |
-| `BuildMaster-Core` | `BuildMaster.Admin.API.Key` |
-| `BuildMaster-Core` | ProGet feed read/write/promote keys used by BuildMaster pipeline runners |
-| `CI-Shared` | PowerShellGet feed keys for Experimental, Development, Integration, QA, and Production |
-| `CI-Shared` | Database rehearsal connection-string secrets used by database package validation |
-| `CI-Shared` | Bootstrap credential items required to bring a fresh service account online |
+| Project            | Required keys                                                                          |
+| ------------------ | -------------------------------------------------------------------------------------- |
+| `BuildMaster-Core` | `BuildMaster.Admin.API.Key`                                                            |
+| `BuildMaster-Core` | ProGet feed read/write/promote keys used by BuildMaster pipeline runners               |
+| `CI-Shared`        | PowerShellGet feed keys for Experimental, Development, Integration, QA, and Production |
+| `CI-Shared`        | Database rehearsal connection-string secrets used by database package validation       |
+| `CI-Shared`        | Bootstrap credential items required to bring a fresh service account online            |
 
 Structured secrets that need field extraction must store a JSON object as the BWS secret value. `Get-SecretATAP -SecretField <field>` expects fields such as `username`, `password`, `token`, or `connectionString`.
 
@@ -53,88 +53,49 @@ Example value shape:
 
 ## SA-03 Provisioning
 
-Run the folder-ACL step from an elevated administrative shell, then run the DPAPI write
-step from a shell started as the target Windows account. For `SvcBuildmaster`, use an
-elevated local-admin provisioning session that launches PowerShell under that identity.
-For the current interactive user, the DPAPI write can run in the user's own shell.
+Run the folder-ACL step from an elevated administrative shell. Run the DPAPI token
+write as the owning Windows account: DPAPI protection binds the file to both that
+identity and the host. Do not copy the file between accounts or hosts.
 
-1. Confirm `bws` is available:
+1. Confirm `bws` is available to the target identity:
 
 ```powershell
 Get-Command bws -ErrorAction Stop
 bws --version
 ```
 
-2. Create and ACL the BWS credential directory.
-
-For the current interactive user:
+2. Create the protected directory for the interactive user and each already-created
+   local service account. This step is idempotent.
 
 ```powershell
-Import-Module .\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1 -Force
+$serviceAccountNames = @(
+  'SvcBuildMaster',
+  'SvcProGet',
+  'SvcSeq',
+  'SvcSQLServer',
+  'SvcParityAudit'
+)
+
 Initialize-BWSCredentialDirectory
+foreach ($serviceAccountName in $serviceAccountNames) {
+  Initialize-BWSCredentialDirectory -AccountName $serviceAccountName
+}
 ```
 
-For a service account:
+3. In a PowerShell session running as each owning identity, write the `ReadOnly`
+   access token. Supply the token only through a `SecureString`; never put it in a
+   source file, a persistent environment variable, transcript, or log.
 
 ```powershell
-Import-Module .\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1 -Force
-Initialize-BWSCredentialDirectory -AccountName '.\SvcBuildmaster'
+$accessToken = Read-Host 'BWS ReadOnly access token' -AsSecureString
+Initialize-BWSAccessToken -TokenPurpose ReadOnly -AccessToken $accessToken
 ```
 
-3. For a service account, open a PowerShell session as that account with the user profile loaded:
+4. Validate decryption and project access without printing the token:
 
 ```powershell
-$serviceCredential = Get-Credential '.\SvcBuildmaster'
-Start-Process pwsh -Credential $serviceCredential -ArgumentList '-NoExit', '-Command', 'Set-Location "C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-120-Sprint-0012-work-items"' -LoadUserProfile
-```
-
-4. Store the required BWS access token slot(s) while running as the owning account.
-
-Required `ReadOnly` slot for every reader:
-
-```powershell
-Import-Module .\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1 -Force
-$token = Read-Host 'BWS access token for CommonCIForBitwardenReadOnly' -AsSecureString
-Initialize-BWSAccessToken -TokenPurpose ReadOnly -AccessToken $token
-```
-
-Optional `ReadWrite` provisioning for trusted maintainer or provisioning identities only:
-
-```powershell
-Import-Module .\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1 -Force
-$token = Read-Host 'BWS access token for CommonCIForBitwardenReadWrite' -AsSecureString
-Initialize-BWSAccessToken -TokenPurpose ReadWrite -AccessToken $token
-```
-
-Expected `ReadOnly` file:
-
-```text
-C:\ProgramData\ATAP\BitwardenCredentials\SvcBuildmaster\<HOST>_SvcBuildmaster_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml
-```
-
-Optional `ReadWrite` file:
-
-```text
-C:\ProgramData\ATAP\BitwardenCredentials\SvcBuildmaster\<HOST>_SvcBuildmaster_BWS_CommonCIForBitwardenReadWrite_AccessToken.xml
-```
-
-For the current interactive user, the expected `ReadOnly` file is:
-
-```text
-C:\ProgramData\ATAP\BitwardenCredentials\<USERNAME>\<HOST>_<USERNAME>_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml
-```
-
-Only trusted maintainer workstations should also carry:
-
-```text
-C:\ProgramData\ATAP\BitwardenCredentials\<USERNAME>\<HOST>_<USERNAME>_BWS_CommonCIForBitwardenReadWrite_AccessToken.xml
-```
-
-5. Validate `ReadOnly` token decryption and project access without leaving plaintext behind:
-
-```powershell
-$cred = Get-BWSAccessToken -TokenPurpose ReadOnly
-$env:BWS_ACCESS_TOKEN = $cred.GetNetworkCredential().Password
+$credential = Get-BWSAccessToken -TokenPurpose ReadOnly
+$env:BWS_ACCESS_TOKEN = $credential.GetNetworkCredential().Password
 try {
   bws secret list --output json | ConvertFrom-Json | Select-Object key, projectId
 }
@@ -143,47 +104,40 @@ finally {
 }
 ```
 
-Optional `ReadWrite` validation for identities that are explicitly allowed to maintain secrets:
+The expected `ReadOnly` DPAPI file is:
 
-```powershell
-$cred = Get-BWSAccessToken -TokenPurpose ReadWrite
-$env:BWS_ACCESS_TOKEN = $cred.GetNetworkCredential().Password
-try {
-  bws secret list --output json | ConvertFrom-Json | Select-Object key, projectId
-}
-finally {
-  Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue
-}
+```text
+C:\ProgramData\ATAP\BitwardenCredentials\<SamAccountName>\<HOST>_<SamAccountName>_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml
 ```
 
-6. Validate the runtime provider:
-
-```powershell
-Get-SecretATAP -SecretName 'BuildMaster.Admin.API.Key' -SecretField 'token'
-```
-
-The command should return the secret value and emit no plaintext to logs. Record only the
-secret key name, project, Windows account identity, host name, timestamp, and any redacted
-value-presence/length check that does not reveal the value itself.
-
-The canonical cmdlets are `Initialize-BWSCredentialDirectory`,
-`Initialize-BWSAccessToken`, and `Get-BWSAccessToken`. The old
-`Initialize-ServiceAccountBWSAccessToken` and `Get-ServiceAccountBWSAccessToken` names
-remain exported aliases for existing automation.
-
+`ReadWrite` remains optional and is limited to explicitly authorized maintainer or
+provisioning identities. Use a separate `Initialize-BWSAccessToken -TokenPurpose
+ReadWrite` operation only when such authority is required.
 ## Current Finding
 
-## SA-04 validation attempt
+### Completed ReadOnly DPAPI baseline — 2026-07-10
 
-As of the 2026-06-05 SA-04 pass (before the Task 12.50+ two-slot update):
+The operator completed the folder-ACL and `CommonCIForBitwardenReadOnly` DPAPI token
+file provisioning on both hosts for every identity below. This records file presence
+and ACL provisioning only; it records no token value, no password, and no secret
+content.
 
-- Current automation identity was `UTAT022\whertzing`, not `UTAT022\SvcBuildmaster`.
-- `Get-Command bws -ErrorAction SilentlyContinue` returned no command in the current automation shell.
-- The expected `SvcBuildmaster` DPAPI token file existed at `C:\ProgramData\ATAP\BitwardenCredentials\SvcBuildmaster\utat022_SvcBuildmaster_BWS_AccessToken.xml`; contents were not read or logged. Current runs should expect the purpose-specific `CommonCIForBitwardenReadOnly` filename instead, with optional `CommonCIForBitwardenReadWrite` for authorized writers.
-- Focused mocked-provider Pester coverage passed: `Get-SecretATAP.Tests.ps1` and `Get-SecretATAPBitwardenSecretsManager.Tests.ps1` passed 8/8 tests.
+| Host | Interactive user | Service accounts with protected folder and ReadOnly DPAPI file |
+| --- | --- | --- |
+| `utat01` | `whertzing` | `SvcBuildMaster`, `SvcProGet`, `SvcSeq`, `SvcSQLServer`, `SvcParityAudit` |
+| `utat022` | `whertzing` | `SvcBuildMaster`, `SvcProGet`, `SvcSeq`, `SvcSQLServer`, `SvcParityAudit` |
 
-The repo-side helpers and unit-tested BWS provider exist, and a service-account DPAPI token file is present, but SA-04 live validation remains blocked until the commands above are run from a no-profile shell as `SvcBuildmaster` with `bws` visible on PATH. Record only secret key names, project IDs/names, host, identity, timestamps, and value lengths/presence; do not record secret values.
+This removes the DPAPI-file prerequisite for the Sprint 0012 BWS read-path tasks on
+both hosts. It does not by itself prove that each identity can invoke `bws`, decrypt
+the token, or access every required project; perform the no-secret validation in
+SA-04 before declaring live access healthy.
 
+## SA-04 validation
+
+For each identity that consumes BWS secrets, run the SA-03 validation commands in a
+session owned by that identity. Record only host, identity, timestamp, project/key
+names, and redacted presence or length checks. Do not record token values or secret
+values.
 ## Rotation
 
 1. Create or rotate the BWS machine-account access token in Bitwarden Secrets Manager.
@@ -195,11 +149,11 @@ The repo-side helpers and unit-tested BWS provider exist, and a service-account 
 
 ## Troubleshooting
 
-| Symptom | Likely cause | Check |
-| --- | --- | --- |
-| `bws` not found | CLI not installed or not visible to service-account PATH | `Get-Command bws` from the service-account shell |
-| ReadOnly DPAPI file missing | The baseline read token was never provisioned for this identity/host | Confirm the `CommonCIForBitwardenReadOnly` path under `C:\ProgramData\ATAP\BitwardenCredentials\<SamAccountName>` |
-| ReadWrite DPAPI file missing | Secret-maintenance work was attempted without the optional writer token | Provision `CommonCIForBitwardenReadWrite` only on an explicitly authorized maintainer/provisioning account |
-| DPAPI decrypt fails | File was created by a different identity or copied from another host | Re-run `Initialize-BWSAccessToken` as the target account on the target host |
-| Secret key not found | Machine account lacks project access or the key name differs | Compare BWS project assignments and the SA-02 inventory |
-| `-SecretField` returns raw JSON | Field name is absent or value is not JSON | Confirm the BWS secret value shape |
+| Symptom                         | Likely cause                                                            | Check                                                                                                             |
+| ------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `bws` not found                 | CLI not installed or not visible to service-account PATH                | `Get-Command bws` from the service-account shell                                                                  |
+| ReadOnly DPAPI file missing     | The baseline read token was never provisioned for this identity/host    | Confirm the `CommonCIForBitwardenReadOnly` path under `C:\ProgramData\ATAP\BitwardenCredentials\<SamAccountName>` |
+| ReadWrite DPAPI file missing    | Secret-maintenance work was attempted without the optional writer token | Provision `CommonCIForBitwardenReadWrite` only on an explicitly authorized maintainer/provisioning account        |
+| DPAPI decrypt fails             | File was created by a different identity or copied from another host    | Re-run `Initialize-BWSAccessToken` as the target account on the target host                                       |
+| Secret key not found            | Machine account lacks project access or the key name differs            | Compare BWS project assignments and the SA-02 inventory                                                           |
+| `-SecretField` returns raw JSON | Field name is absent or value is not JSON                               | Confirm the BWS secret value shape                                                                                |

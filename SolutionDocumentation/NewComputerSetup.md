@@ -1965,6 +1965,64 @@ in the repo `NuGet.Config` files. Confirm from a repo root with:
 dotnet nuget list source
 ```
 
+### 9.10 Configure SystemParityMonitor on Windows 10 and Windows 11
+
+Parity monitoring is a host-pair service, not merely a module import. The complete
+installation, registration, first-run, rollback, and troubleshooting procedure ships
+with the module at:
+
+```text
+$moduleRoot\Documentation\InstallationAndTroubleshooting.md
+```
+
+An administrator must complete this checklist on each participating host:
+
+1. Install the exact promoted `ATAP.Utilities.SystemParityMonitor.PowerShell` version
+   for AllUsers. Resolve `$moduleRoot` below
+   `C:\Program Files\PowerShell\Modules\ATAP.Utilities.SystemParityMonitor.PowerShell`.
+2. Verify the installed package contains its `scripts\` and `Documentation\` folders.
+   Do not register tasks from a sprint-worktree path or manually copy missing payloads
+   into Program Files.
+3. Create and enable the non-administrative `SvcParityAudit` account. Do not grant
+   local Administrator membership to work around scheduled-task failures.
+4. Create and ACL `C:\ProgramData\ATAP\ParityState`, its SMB share, journals,
+   acknowledgements, snapshots, whitelist, and task-results folders as specified by
+   the parity runbook.
+5. Create the `\ATAP` Task Scheduler folder.
+6. Grant `SvcParityAudit` `SeBatchLogonRight` while preserving every existing right
+   holder. Confirm neither the account nor one of its governing policies assigns
+   `SeDenyBatchLogonRight`. The guarded `secedit` pattern in §9.4.6.5 applies; add
+   `SvcParityAudit` to the SID list.
+7. As `SvcParityAudit` on that same host, provision and validate the
+   `CommonCIForBitwardenReadOnly` DPAPI token. Never copy the token from another host
+   or account, and never use `bw`/`BW_SESSION` in the scheduled path.
+8. Register `AuditAndCompare` on the primary host with Password logon when peer SMB
+   access needs reusable credentials. Register `AuditOnly` on the peer with S4U and a
+   limited run level.
+9. Run the peer audit, primary audit, and primary comparison in that order; require
+   successful task-result JSON, fresh snapshots, a drift report, and no secret values
+   in evidence.
+10. Keep Daily cadence for the first clean month, then re-register as BiWeekly.
+
+Windows 10 can require the inbox `ScheduledTasks` manifest to be imported by full path
+from Windows PowerShell 5.1. Use WinRM with
+`-ConfigurationName Microsoft.PowerShell` when administering it remotely. Windows 11
+normally exposes the cmdlets directly, but the same full-path import is valid. The
+module runbook records the exact compatibility checks and these live findings:
+
+- the registration script must be dot-sourced before calling
+  `Register-ParityScheduledTasks`; invoking the file with `&` intentionally performs no
+  registration;
+- `Get-Module -ListAvailable` in Windows PowerShell 5.1 may not enumerate a module
+  whose manifest requires PowerShell 7, so discover `$moduleRoot` from the installed
+  filesystem path;
+- a PSFramework success message after `Register-ScheduledTask` reports an error is not
+  proof; verify with `Get-ScheduledTask` and force registration errors to stop;
+- installed SystemParityMonitor version `0.1.0` requests Highest run level for peer
+  S4U registration and is therefore blocked on a deliberately non-admin Windows 10
+  `SvcParityAudit` account. Deploy the limited-run-level correction rather than adding
+  the account to Administrators.
+
 ## Step 10: Create Cobian Backup Jobs for the Tooling Databases
 
 Create separate Cobian jobs for `ProGet` and `BuildMaster`. Each Cobian job should call

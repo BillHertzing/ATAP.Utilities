@@ -45,7 +45,10 @@ ToDo: Insert diagram of CI/CD process
   action is applied and verified. Record only identifiers and configuration
   metadata—never credentials, tokens, or secret values. This is a mandatory
   step in the active Windows/host provisioning, SQL, service-account, backup,
-  and WSL runbooks (Task 12.38.f).
+  and WSL runbooks (Task 12.38.f). The module-level
+  `src/ATAP.Utilities.SystemParityMonitor.PowerShell/Documentation/InstallationAndTroubleshooting.md`
+  runbook covers Windows 10/11 installation, scheduler registration, first-run proof,
+  and recovery from the live Task 12.38.e failure modes.
 - [ATAPUtilities Instantiation Tables](./ATAPUtilities-Instantiation-Tables.md)
   defines the Sprint 0012 inventory/version/manifestation schema used to model
   organization, computers, repositories, source modules, and rendered artifacts

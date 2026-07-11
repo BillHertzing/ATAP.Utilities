@@ -23,20 +23,38 @@ Sprint 0012 Task 12.46; public function names are unchanged.
 
 - `public\`, `private\` — one function per file; no top-level executable code
 - `scripts\` — scheduled-task wrappers (`Invoke-ParityScheduledAuditTask.ps1`,
-  `Invoke-ParityScheduledCompareTask.ps1`) and `Register-ParityScheduledTasks.ps1`
+  `Invoke-ParityScheduledCompareTask.ps1`), shared scheduled-task helper
+  `ParityScheduledTask.Common.ps1`, and `Register-ParityScheduledTasks.ps1`
   (dual-purpose, `&`-proof guarded)
 - `tests\Unit\` — Pester suite
 - `Documentation\` — module documentation (see `Documentation\Overview.md`); images in
   `Documentation\images\`
 
+Start with `Documentation\InstallationAndTroubleshooting.md` for the deployed-layout
+contract, Windows 10/11 prerequisites, registration commands, first-run proof, and
+known live-registration failure modes.
+
 ## Deployment notes
 
 - State root: `C:\ProgramData\ATAP\ParityState` (journal, acks, audit snapshots,
   task results); peer state is read over an SMB share (default `\\utat01\ParityState`).
-- Scheduled tasks resolve the invoking user's BWS access token from
-  `C:\ProgramData\ATAP\BitwardenCredentials` — secrets by SecretName only.
+- Scheduled tasks run under the dedicated `SvcParityAudit` identity by default and
+  resolve that identity's purpose-specific `CommonCIForBitwardenReadOnly` DPAPI token
+  via `Get-BWSAccessToken -TokenPurpose ReadOnly`; the wrappers never use `bw`,
+  `BW_SESSION`, or remoting.
+- Register `AuditOnly` on peer hosts and `AuditAndCompare` on the primary host
+  (`utat022`). The compare task reads the peer share, so live primary-host
+  registration may need `-LogonType Password -Credential <PSCredential>` rather than
+  `S4U` when SMB access requires reusable service-account credentials.
+- Cadence is `Daily` during the first onboarding month; re-register with
+  `-Cadence BiWeekly` after the first clean month. The compare wrapper passes the
+  expected cadence into `Compare-ParityAudits`, which flags snapshots older than
+  `1.5x` cadence as stale.
 - BuildMaster: consolidated application `ATAP.Utilities-PowerShell` (see the reviewed
   module map in the ATAP.IAC BuildMaster HostSettings fragment).
+- Packaging must preserve the `scripts\` and `Documentation\` folders below the
+  installed module root. A package missing either folder is not deployable for parity
+  monitoring; do not repair it by copying files manually into Program Files.
 
 ## Functional area
 

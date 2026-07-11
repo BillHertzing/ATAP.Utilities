@@ -21,20 +21,33 @@ ATAP.Utilities in Task 12.46.
 
 ## Scheduled operation
 
-`scripts\Register-ParityScheduledTasks.ps1` registers two daily tasks:
+`scripts\Register-ParityScheduledTasks.ps1` registers local Task Scheduler entries
+for the host role:
 
-1. `ATAP-ParityAudit` → `Invoke-ParityScheduledAuditTask.ps1` — local snapshot plus a
-   BWS credential probe; result JSON under `<StateRoot>\TaskResults`.
-2. `ATAP-ParityCompare` → `Invoke-ParityScheduledCompareTask.ps1` — cross-host
-   comparison against the peer's state share (default `\\utat01\ParityState`).
+1. `ATAP-ParityAudit` -> `Invoke-ParityScheduledAuditTask.ps1` — local snapshot plus a
+   `CommonCIForBitwardenReadOnly` BWS credential probe; result JSON under
+   `<StateRoot>\TaskResults`.
+2. `ATAP-ParityCompare` -> `Invoke-ParityScheduledCompareTask.ps1` — primary-host
+   comparison against the peer's state share (default `\\utat01\ParityState`). Register
+   this only on the primary host (`TaskSet AuditAndCompare`).
 
-Both wrappers import the module from this folder's parent by relative path, so
-registered tasks must be re-registered when the module's on-disk location changes
-(deploy-state note: after this relocation, any tasks registered from the old ATAP.IAC
-path must be re-registered — none were found registered on utat022 as of 2026-07-07).
+Both wrappers import the module from this folder's parent by relative path and use the
+shared `ParityScheduledTask.Common.ps1` helper. The scheduled path performs no
+PowerShell remoting: each host writes its own snapshots locally, and `utat022` reads the
+peer snapshot share during compare. Tasks default to `SvcParityAudit` with `S4U`; use
+`-LogonType Password -Credential <PSCredential>` for the primary compare task when SMB
+peer-share access requires reusable service-account credentials. Re-register tasks when
+the module's on-disk location changes.
+
+Cadence starts as `Daily` for the first onboarding month and then relaxes to
+`BiWeekly` after a clean month. The compare wrapper passes the expected cadence and
+`1.5` stale multiplier into `Compare-ParityAudits`, so stale snapshots are reported as
+their own drift-report line.
 
 ## Related documentation
 
+- Installation, platform prerequisites, live-registration procedure, and the
+  troubleshooting record: `Documentation\InstallationAndTroubleshooting.md`.
 - Functional area: Environment / Workstation Setup — START HERE
   `SolutionDocumentation\NewComputerSetup.md`; see also
   `SolutionDocumentation\ConfigRootKeys-and-HostSettings.md` and

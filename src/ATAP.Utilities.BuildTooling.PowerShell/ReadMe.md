@@ -58,6 +58,16 @@ obsolete rendered `.claude` / `.github` links. For one-time stable maintenance,
 content from `HEAD`; it refuses staged changes and leaves `.vscode` alone by
 design.
 
+**Managed user-scope profiles (Task 12.49).** `Set-UserScopeProfile` renders
+the canonical ATAP.IAC developer or service-account template to
+`Documents\PowerShell\profile.ps1`. Developer profiles dot-source the selected
+ATAP.Utilities core profile; service-account profiles are minimal and contain
+no `bw`/`bws`, browser, or secret-resolution path. Existing profiles without
+the managed marker require `-Force`; each live mutation journals through
+`Add-ParityChangeEntry`. `Set-SprintBoundaryUserProfiles` uses this cmdlet for
+its discovered developer and service identities, leaving peer provisioning to
+the hardened remoting path.
+
 **SprintEnd typed close (Task 10.6 / 11.7.c-e).** `Invoke-SprintEndLifecycle` now composes
 structured command-surface, module-promotion/deployment, worktree-state,
 AIAdapter/template reset, GitHub PR/issue, dotted-history, Overview, HANDOFF,

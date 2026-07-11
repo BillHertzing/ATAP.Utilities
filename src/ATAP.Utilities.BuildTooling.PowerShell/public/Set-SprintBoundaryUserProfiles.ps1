@@ -5,19 +5,21 @@ function Set-SprintBoundaryUserProfiles {
   .DESCRIPTION
     Resolves the active sprint or stable overview workspace to discover developer
     identities, bootstraps ATAP host settings to discover local service-account
-    identities, and installs each applicable PowerShell 7 user profile as
+    identities, and renders each applicable PowerShell 7 user profile as
     `<Home>\Documents\PowerShell\profile.ps1`.
 
-    Developer profiles always point at
+    Developer profiles use the ATAP.IAC developer template to dot-source
     `CurrentUserAllHostsV7CoreProfile.ps1` beneath the supplied
-    `ATAPUtilitiesRoot`. Service-account profiles always point at
-    `ProfileForServiceAccountUsers.ps1` beneath the same root. Missing or
-    disabled service accounts are skipped with explicit warnings so SprintEnd can
-    proceed safely on hosts that do not provision every account.
+    `ATAPUtilitiesRoot`. Service-account profiles use the ATAP.IAC minimal
+    non-interactive template. Missing or disabled service accounts are skipped
+    with explicit warnings so SprintEnd can proceed safely on hosts that do not
+    provision every account.
 
-    The function is idempotent: if a target profile already points at or matches
-    the expected source, it is left in place and reported as `AlreadyCurrent`.
-    Every filesystem mutation runs under ShouldProcess.
+    The function is idempotent: a managed target profile matching the rendered
+    template is left in place and reported as `AlreadyCurrent`. User-owned
+    profiles remain protected by Set-UserScopeProfile and are never replaced
+    without its explicit -Force option. Every filesystem mutation runs under
+    ShouldProcess.
   .PARAMETER ATAPUtilitiesRoot
     Repository or worktree root that owns the canonical profile sources.
   .PARAMETER ATAPIACRoot
@@ -149,40 +151,8 @@ function Set-SprintBoundaryUserProfiles {
       return $null
     }
 
-    function Test-ProfileMatchesSource {
-      param(
-        [string]$ProfilePath,
-        [string]$SourcePath
-      )
-
-      if (-not ((Test-Path -LiteralPath $ProfilePath -PathType Leaf) -and (Test-Path -LiteralPath $SourcePath -PathType Leaf))) {
-        return $false
-      }
-
-      $existingItem = Get-Item -LiteralPath $ProfilePath -Force -ErrorAction SilentlyContinue
-      $existingTarget = if ($existingItem -and $existingItem.PSObject.Properties['Target']) {
-        @($existingItem.Target) | Select-Object -First 1
-      } else {
-        $null
-      }
-
-      if (-not [string]::IsNullOrWhiteSpace($existingTarget)) {
-        $resolvedSource = [IO.Path]::GetFullPath($SourcePath)
-        $resolvedTarget = [IO.Path]::GetFullPath([string]$existingTarget)
-        if ([string]::Equals($resolvedSource, $resolvedTarget, [StringComparison]::OrdinalIgnoreCase)) {
-          return $true
-        }
-      }
-
-      return [string]::Equals(
-        (Get-Content -LiteralPath $ProfilePath -Raw -ErrorAction SilentlyContinue),
-        (Get-Content -LiteralPath $SourcePath -Raw -ErrorAction SilentlyContinue),
-        [StringComparison]::Ordinal
-      )
-    }
-
-    $developerSourcePath = Join-Path $ATAPUtilitiesRoot 'src\ATAP.Utilities.PowerShell\Profiles\CurrentUserAllHostsV7CoreProfile.ps1'
-    $serviceSourcePath = Join-Path $ATAPUtilitiesRoot 'src\ATAP.Utilities.PowerShell\Profiles\ProfileForServiceAccountUsers.ps1'
+    $developerSourcePath = Join-Path $ATAPIACRoot 'Windows\ProfileTemplates\Developer.CurrentUserAllHosts.ps1.template'
+    $serviceSourcePath = Join-Path $ATAPIACRoot 'Windows\ProfileTemplates\ServiceAccount.CurrentUserAllHosts.ps1.template'
 
     $profiles = [System.Collections.Generic.List[object]]::new()
     $warnings = [System.Collections.Generic.List[string]]::new()
@@ -326,60 +296,22 @@ function Set-SprintBoundaryUserProfiles {
         continue
       }
 
-      if (-not (Test-Path -LiteralPath $profile.SourcePath -PathType Leaf)) {
-        $profile.Action = 'SourceMissing'
-        $profile.Error = "Profile source not found: '$($profile.SourcePath)'"
+      try {
+        $profileResult = Set-UserScopeProfile `
+          -AccountName $profile.Identity `
+          -AccountClass $profile.Kind `
+          -ATAPIACRoot $ATAPIACRoot `
+          -ATAPUtilitiesRoot $ATAPUtilitiesRoot `
+          -UserProfilePath $profile.HomeDirectory `
+          -Confirm:$false `
+          -WhatIf:$WhatIfPreference
+        $profile.Action = $profileResult.Action
+        $profile.Succeeded = $true
+        $profile.SourceMatch = $profileResult.Action -eq 'AlreadyCurrent'
+      } catch {
+        $profile.Action = 'ProvisionFailed'
+        $profile.Error = "Failed to provision profile '$($profile.ProfilePath)': $($_.Exception.Message)"
         [void]$failures.Add($profile.Error)
-        continue
-      }
-
-      $profile.SourceMatch = Test-ProfileMatchesSource -ProfilePath $profile.ProfilePath -SourcePath $profile.SourcePath
-      if ($profile.SourceMatch) {
-        $existingItem = Get-Item -LiteralPath $profile.ProfilePath -Force -ErrorAction SilentlyContinue
-        $profile.LinkTarget = if ($existingItem -and $existingItem.PSObject.Properties['Target']) {
-          @($existingItem.Target) | Select-Object -First 1
-        } else {
-          $null
-        }
-        $profile.Action = 'AlreadyCurrent'
-        $profile.Succeeded = $true
-        continue
-      }
-
-      $profileDirectory = Split-Path -Path $profile.ProfilePath -Parent
-      $actionDescription = "$($profile.Kind) profile for '$($profile.Identity)' -> '$($profile.SourcePath)'"
-      if ($PSCmdlet.ShouldProcess($profile.ProfilePath, $actionDescription)) {
-        try {
-          if (-not (Test-Path -LiteralPath $profileDirectory -PathType Container)) {
-            New-Item -ItemType Directory -Path $profileDirectory -Force -ErrorAction Stop | Out-Null
-          }
-
-          if (Test-Path -LiteralPath $profile.ProfilePath -PathType Leaf) {
-            Remove-Item -LiteralPath $profile.ProfilePath -Force -ErrorAction Stop
-          }
-
-          New-Item -ItemType SymbolicLink -Path $profile.ProfilePath -Target $profile.SourcePath -Force -ErrorAction Stop | Out-Null
-          $existingItem = Get-Item -LiteralPath $profile.ProfilePath -Force -ErrorAction SilentlyContinue
-          $profile.LinkTarget = if ($existingItem -and $existingItem.PSObject.Properties['Target']) {
-            @($existingItem.Target) | Select-Object -First 1
-          } else {
-            $null
-          }
-          $profile.SourceMatch = Test-ProfileMatchesSource -ProfilePath $profile.ProfilePath -SourcePath $profile.SourcePath
-          $profile.Action = 'Retargeted'
-          $profile.Succeeded = $profile.SourceMatch
-          if (-not $profile.Succeeded) {
-            $profile.Error = "Profile deployment completed but '$($profile.ProfilePath)' does not match '$($profile.SourcePath)'."
-            [void]$failures.Add($profile.Error)
-          }
-        } catch {
-          $profile.Action = 'RetargetFailed'
-          $profile.Error = "Failed to deploy profile '$($profile.ProfilePath)': $($_.Exception.Message)"
-          [void]$failures.Add($profile.Error)
-        }
-      } else {
-        $profile.Action = if (Test-Path -LiteralPath $profile.ProfilePath -PathType Leaf) { 'WouldRetarget' } else { 'WouldCreate' }
-        $profile.Succeeded = $true
       }
     }
 

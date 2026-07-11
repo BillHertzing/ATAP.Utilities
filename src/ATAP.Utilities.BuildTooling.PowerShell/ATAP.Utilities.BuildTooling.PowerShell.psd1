@@ -155,7 +155,7 @@
     'Set-BuildMasterPipelineStageDeploymentStep', 'Set-DownstreamSharedVSCodeContext',
     'Set-FloatingPackagePins', 'Set-PowerShell7ProfileSymlink',
     'Set-SprintBoundaryContext', 'Set-TaskComplete',
-    'Set-SprintBoundaryUserProfiles',
+    'Set-SprintBoundaryUserProfiles', 'Set-UserScopeProfile',
     'Set-WorkspaceSharedVSCodeReference', 'Set-WorktreeJunctions',
     'Start-BuildMasterDeployment', 'Start-BuildMasterModulePipelineBatch',
     'Start-BuildMasterPackagePipeline', 'Start-BuildMasterPipeline', 'Start-DebugPowerShell',

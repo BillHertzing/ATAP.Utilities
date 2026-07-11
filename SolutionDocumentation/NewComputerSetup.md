@@ -391,25 +391,30 @@ New-Item -ItemType SymbolicLink `
   -Target (Join-Path $profileSource 'AllUsersAllHostsV7CoreProfile.ps1') | Out-Null
 ```
 
-### 4.2 Link the current-user all-hosts and current-host profiles
+### 4.2 Provision managed current-user profiles
+
+Use `Set-UserScopeProfile` instead of copying or linking an individual profile.
+The developer template dot-sources the canonical core profile; service-account
+templates are deliberately minimal and never start Bitwarden/browser
+authentication or resolve secrets. The command refuses to replace a profile
+without the managed-header marker unless `-Force` is supplied. Each live change
+adds an `Add-ParityChangeEntry` record for the peer machine.
 
 ```powershell
-$documentsPowerShell = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'PowerShell'
-New-Item -ItemType Directory -Path $documentsPowerShell -Force | Out-Null
+Import-Module ATAP.Utilities.BuildTooling.PowerShell
 
-Remove-Item (Join-Path $documentsPowerShell 'Profile.ps1') -ErrorAction SilentlyContinue
-Copy-Item (Join-Path $profileSource 'CurrentUserAllHostsV7CoreProfile.ps1') (Join-Path $documentsPowerShell 'Profile.ps1') -Force
+$iacRoot = Join-Path $gitHubRoot 'ATAP.IAC'
+Set-UserScopeProfile -AccountName 'whertzing' -AccountClass Developer `
+  -ATAPIACRoot $iacRoot -ATAPUtilitiesRoot $atapRoot -Confirm:$false
 
-Remove-Item (Join-Path $documentsPowerShell 'Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue
-New-Item -ItemType SymbolicLink `
-  -Path (Join-Path $documentsPowerShell 'Microsoft.PowerShell_profile.ps1') `
-  -Target (Join-Path $profileSource 'CurrentUserAllHostsV7CoreProfile.ps1') | Out-Null
-
-Remove-Item (Join-Path $documentsPowerShell 'Microsoft.VSCode_profile.ps1') -ErrorAction SilentlyContinue
-New-Item -ItemType SymbolicLink `
-  -Path (Join-Path $documentsPowerShell 'Microsoft.VSCode_profile.ps1') `
-  -Target (Join-Path $profileSource 'CurrentUserAllHostsV7CoreProfile.ps1') | Out-Null
+# Run this only after the local service account exists. Use an elevated shell
+# because a different user's profile directory is being written.
+Set-UserScopeProfile -AccountName 'SvcBuildmaster' -AccountClass ServiceAccount `
+  -ATAPIACRoot $iacRoot -ATAPUtilitiesRoot $atapRoot -Confirm:$false
 ```
+
+For the complete service-account and BWS-machine-token procedure, see
+[Runbook-BitwardenServiceAccounts.md](Runbook-BitwardenServiceAccounts.md).
 
 ### 4.3 Install required PowerShell Gallery modules
 

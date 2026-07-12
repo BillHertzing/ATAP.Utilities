@@ -44,15 +44,18 @@ known live-registration failure modes.
   via `Get-BWSAccessToken -TokenPurpose ReadOnly`; the wrappers never use `bw`,
   `BW_SESSION`, or remoting.
 - Register `AuditOnly` on peer hosts and `AuditAndCompare` on the primary host
-  (`utat022`). The compare task reads the peer share, so live primary-host
-  registration may need `-LogonType Password -Credential <PSCredential>` rather than
-  `S4U` when SMB access requires reusable service-account credentials.
+  (`utat022`). Both roles use `-LogonType Password -Credential <PSCredential>` because
+  the current wrappers decrypt a per-user DPAPI BWS token; the peer remains
+  `RunLevel Limited`, while the primary uses `Highest` and its reusable credential to
+  read the peer SMB share.
 - When an administrator registers an S4U task for a different account, supply that
   account's credential at registration while retaining S4U in the saved principal.
   Version `0.1.3` uses Task Scheduler COM for this credential-backed registration;
   the task definition remains S4U/Limited and does not persist the registration
-  password. Version `0.1.2` could incorrectly persist a Password principal on the
-  peer and must not be used for new S4U registrations.
+  password. This capability is for tasks that do not decrypt per-user DPAPI material;
+  it is not the deployed parity-wrapper topology. Version `0.1.2` could incorrectly
+  persist a Password principal on the peer and must not be used for new S4U
+  registrations.
 - Cadence is `Daily` during the first onboarding month; re-register with
   `-Cadence BiWeekly` after the first clean month. The compare wrapper passes the
   expected cadence into `Compare-ParityAudits`, which flags snapshots older than

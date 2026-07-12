@@ -16,5 +16,5 @@
 | `scripts\Register-ParityScheduledTasks.ps1` | Registers audit-only or audit+compare scheduled tasks for `SvcParityAudit`, with daily or biweekly cadence, including credential-backed S4U registration when caller and run-as identities differ |
 | `tests\Unit\Parity.Tests.ps1` | Pester suite (journal round-trip, audit snapshot, drift comparison, stale snapshots, scheduled-task registration contracts) |
 | `Documentation\Overview.md` | Concept overview: parity journal, audit snapshots, drift classes |
-| `Documentation\InstallationAndTroubleshooting.md` | Windows 10/11 deployment contract, 0.1.1 recovery history, credential-backed S4U registration, package-content verification, WinRM compatibility, first-run proof, and live troubleshooting record |
+| `Documentation\InstallationAndTroubleshooting.md` | Windows 10/11 deployment contract, DPAPI-compatible Password principals, credential-backed S4U capability, package-content verification, WinRM compatibility, first-run proof, and live troubleshooting record |
 | `Documentation\images\` | Images referenced by module documentation |

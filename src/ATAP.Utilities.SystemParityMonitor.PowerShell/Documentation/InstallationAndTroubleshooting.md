@@ -13,7 +13,7 @@ entry point is `SolutionDocumentation\NewComputerSetup.md`.
 | Host role | Example host | Scheduled tasks | Task logon |
 | --- | --- | --- | --- |
 | Primary | `utat022` | `ATAP-ParityAudit`, `ATAP-ParityCompare` | `Password` when the compare task needs reusable SMB credentials |
-| Peer | `utat01` | `ATAP-ParityAudit` only | `S4U` for the local-only audit |
+| Peer | `utat01` | `ATAP-ParityAudit` only | `Password`, with `RunLevel Limited`, so the owning account can decrypt its DPAPI token |
 
 The scheduled runtime performs no PowerShell remoting. Each host writes its own
 snapshot to `C:\ProgramData\ATAP\ParityState`; the primary compare task reads the
@@ -229,8 +229,9 @@ Register-ParityScheduledTasks @parameters
 
 ### Peer host
 
-The peer registers only its local audit task. The intended least-privilege principal
-is S4U with `RunLevel Limited`.
+The peer registers only its local audit task. Use Password logon with `RunLevel
+Limited`: the wrapper decrypts the owning account's per-user DPAPI BWS token, and S4U
+has no password material with which to unlock the DPAPI master key after a cold start.
 
 ```powershell
 $parameters = @{
@@ -239,20 +240,17 @@ $parameters = @{
   Cadence          = 'Daily'
   AuditTime        = '03:00'
   RunAsAccountName = 'SvcParityAudit'
-  LogonType        = 'S4U'
+  LogonType        = 'Password'
   Credential       = $svcCredential
   RunLevel         = 'Limited'
 }
 ```
 
-The credential is required at registration because the elevated administrator is
-registering an S4U task for a different account. The resulting task remains S4U and
-does not store the password. A direct `LOGON32_LOGON_BATCH` test on `utat01` proved
-that `SvcParityAudit` can perform a batch logon; `TaskFolder.RegisterTaskDefinition`
-without the credential still returned `0x80070005`, and the same call succeeded once
-the credential was supplied. See Microsoft's
-[Security Contexts for Tasks](https://learn.microsoft.com/en-us/windows/win32/taskschd/security-contexts-for-running-tasks)
-for the distinct registration-credential and saved-principal rules.
+The saved password supplies only batch-logon and DPAPI-unlock material; the account
+remains non-administrative and the task remains Limited. A direct
+`LOGON32_LOGON_BATCH` test on `utat01` proved that `SvcParityAudit` can perform a batch
+logon. See Microsoft's [Security Contexts for Tasks](https://learn.microsoft.com/en-us/windows/win32/taskschd/security-contexts-for-running-tasks)
+for the saved-principal rules.
 
 ### Version 0.1.1 recovery and version 0.1.2 correction
 
@@ -277,11 +275,11 @@ RunLevel  : 0
 NextRun   : 7/12/2026 3:00:00 AM
 ```
 
-The durable correction is to make the script use credential-backed registration for
-S4U when the caller and task identities differ, retain the S4U principal in the saved
-definition, add a focused Pester contract, and publish a new immutable version. Version
-`0.1.2` provides that correction. Task 12.38.e remains open until first-run snapshots
-and the primary drift report are proven.
+Version `0.1.3` corrected the credential-backed S4U implementation by using Task
+Scheduler COM while preserving `TASK_LOGON_S4U`. Live cold-start validation then
+proved that S4U is not the deployed topology for the current wrappers: their mandatory
+per-user DPAPI BWS probe requires Password logon. S4U remains available for future
+tasks that do not decrypt per-user DPAPI material.
 
 ## Verify registration
 
@@ -303,7 +301,7 @@ Get-ScheduledTask -TaskPath '\ATAP\' |
 Expected topology:
 
 - `utat022`: audit and compare, both Ready, Password logon.
-- `utat01`: audit only, Ready, S4U logon, limited run level.
+- `utat01`: audit only, Ready, Password logon, limited run level.
 - Every action path is below the installed `$moduleRoot`, never a sprint worktree.
 
 ## First-run proof
@@ -363,15 +361,15 @@ days.
 | `TaskPath '\ATAP\'` finds nothing | The scheduler folder does not exist | Create `\ATAP` through `Schedule.Service` before registration |
 | Registration or runtime reports batch-logon failure | `SvcParityAudit` lacks effective `SeBatchLogonRight`, or a deny right applies | Preserve existing rights and verify with a `LOGON32_LOGON_BATCH` test; `secedit` may export a local account by name, so absence of a literal SID is not proof that the right is absent |
 | Version 0.1.0 peer registration returns `Access is denied` | It requests Highest run level for a non-admin account | Upgrade; do not add the service account to Administrators |
-| Version 0.1.1 peer S4U registration returns `0x80070005` although batch logon succeeds | An administrator is registering for a different account without supplying that account's registration credential | Upgrade to 0.1.2 and supply the `SvcParityAudit` credential while preserving S4U/Limited in the task definition |
+| Version 0.1.1 peer S4U registration returns `0x80070005` although batch logon succeeds | An administrator is registering for a different account without supplying that account's registration credential | Upgrade to 0.1.3 for the corrected S4U capability; use Password/Limited for the deployed DPAPI-reading peer wrapper |
 | Windows 10 WinRM cannot autoload inbox modules | The endpoint's `PSModulePath` omits the Windows PowerShell system-module root | Import manifests by absolute path for recovery; fix `PSModulePath` and add a `pwsh` endpoint under SC-0266 |
 | `Find-Module` succeeds but promoted testing gets `Save-PSResource` HTTP 404 | The registered stable feed works through PowerShellGet/NuGet v2, while the PSResourceGet request shape is rejected | Do not claim promoted tests passed; record the exact URL/error, use `Find-Module`/`Install-Module` only when explicitly authorized, and fix the promoted-test runner or feed protocol separately |
 | Error followed by `Registered scheduled task` | Registration error was non-terminating and the logger ran anyway | Treat the error and `Get-ScheduledTask` as authoritative; update code to use `-ErrorAction Stop` and log only after success |
 | Headroom proxy warning appears during a nested `pwsh` call | The child PowerShell process loaded the user's profile | Treat the warning as unrelated unless the child command fails; capture the complete error record |
 | `Add-ParityChangeEntry` asks for mandatory parameters from a nested command string | Backtick continuations were consumed while building a double-quoted here-string | Use a parameter hashtable and splatting inside the child command string |
-| BWS token file exists but decryption fails | The DPAPI file was created under another identity or host | Re-provision it as `SvcParityAudit` on the same host; never copy it |
+| BWS token file exists but decryption fails | The DPAPI file was created under another identity/host, its user master key is stale after password history, or the task uses S4U | Re-provision the token as `SvcParityAudit` on that host (transfer the token value only through an approved secure in-memory channel), register the wrapper as Password logon, and never copy the DPAPI file |
 | Task result JSON is absent | Wrapper failed before or while creating the result directory, or the task never started | Inspect `LastTaskResult`, Task Scheduler history, Application event IDs 12380/12381, action path, and account rights |
-| Compare cannot read the peer share | S4U has no reusable network credential, share/NTFS ACL is wrong, or peer state is absent | Use Password logon on the primary compare task and verify read-only SMB access without printing credentials |
+| Compare cannot read the peer share | The saved service-account passwords differ, share/NTFS ACL is wrong, or peer state is absent | Compare the two CI-project password secrets without printing them, register Password logon with the current credentials, and verify read-only SMB access |
 
 ## Evidence and rollback
 

@@ -1,12 +1,15 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
-## 0.1.3 (unreleased)
+## 0.1.3 (published 2026-07-12)
 
 - Correct credential-backed S4U registration to use Task Scheduler COM
   `RegisterTaskDefinition` with `TASK_LOGON_S4U`; `Register-ScheduledTask -User`
   and `-Password` saved a Password principal on the live Windows host.
 - Add `Invoke-ParityTaskAndWait.ps1` for deterministic interactive first-run proof of
   audit and compare tasks, including timeout and non-zero-result enforcement.
+- Live cold-start validation established that the deployed wrappers must use Password
+  logon when decrypting their owning account's DPAPI BWS token. The peer remains
+  Limited; S4U registration is retained only as a capability for non-DPAPI tasks.
 
 ## 0.1.2 (published 2026-07-12)
 

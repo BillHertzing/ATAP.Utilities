@@ -64,9 +64,11 @@ the canonical ATAP.IAC developer or service-account template to
 ATAP.Utilities core profile; service-account profiles are minimal and contain
 no `bw`/`bws`, browser, or secret-resolution path. Existing profiles without
 the managed marker require `-Force`; each live mutation journals through
-`Add-ParityChangeEntry`. `Set-SprintBoundaryUserProfiles` uses this cmdlet for
-its discovered developer and service identities, leaving peer provisioning to
-the hardened remoting path.
+`Add-ParityChangeEntry`. For Task 12.49, the complete service-account scope for
+both a managed profile and Bitwarden ReadOnly access is `SvcBuildMaster`,
+`SvcProGet`, `SvcSeq`, `SvcSQLServer`, and `SvcParityAudit`.
+`Set-SprintBoundaryUserProfiles` uses this cmdlet for the approved developer and
+service identities, leaving peer provisioning to the hardened remoting path.
 
 **SprintEnd typed close (Task 10.6 / 11.7.c-e).** `Invoke-SprintEndLifecycle` now composes
 structured command-surface, module-promotion/deployment, worktree-state,

@@ -1619,12 +1619,13 @@ Manager** and are read with a BWS **access token** - there is no `bw login`, no 
 no `BW_SESSION`, and no startup/refresh task. The DPAPI-protected access token is the
 entire runtime credential.
 
-This applies to both service accounts and interactive users. Service accounts such as
-`SvcBuildmaster` use project-scoped machine-account tokens. Interactive users can be
-given their own project-scoped BWS token so they can call the same `Get-SecretATAP`
-Secrets Manager path without duplicating project secrets into Password Manager. User-only
-secrets remain in Password Manager and continue to use the login-time `BW_SESSION`
-pattern.
+This applies to both service accounts and interactive users. The complete
+service-account set requiring both a managed PowerShell profile and project-scoped
+machine-account token is `SvcBuildMaster`, `SvcProGet`, `SvcSeq`, `SvcSQLServer`,
+and `SvcParityAudit`. Interactive users can be given their own project-scoped BWS
+token so they can call the same `Get-SecretATAP` Secrets Manager path without
+duplicating project secrets into Password Manager. User-only secrets remain in
+Password Manager and continue to use the login-time `BW_SESSION` pattern.
 
 Preconditions:
 
@@ -1659,10 +1660,10 @@ each owning identity; never copy a DPAPI file between identities or hosts.
 
 ##### 9.4.10.1 Confirm the `bws` CLI is installed machine-wide
 
-`bws` is installed machine-wide in **Step 4.6**, so `SvcBuildmaster`, `SvcProGet`, and
-every interactive account resolve the same binary from the system `PATH`. Confirm it is
-visible from a `-NoProfile` shell (the context the service accounts actually run in) and
-continue:
+`bws` is installed machine-wide in **Step 4.6**, so `SvcBuildMaster`, `SvcProGet`,
+`SvcSeq`, `SvcSQLServer`, `SvcParityAudit`, and every interactive account resolve the
+same binary from the system `PATH`. Confirm it is visible from a `-NoProfile` shell
+(the context the service accounts actually run in) and continue:
 
 ```powershell
 pwsh -NoProfile -Command "(Get-Command bws -ErrorAction SilentlyContinue).Source"
@@ -1686,7 +1687,7 @@ For a service account, pass the account name:
 
 ```powershell
 Import-Module .\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1 -Force
-Initialize-BWSCredentialDirectory -AccountName '.\SvcBuildmaster'
+Initialize-BWSCredentialDirectory -AccountName '.\SvcBuildMaster'
 ```
 
 The helper creates `C:\ProgramData\ATAP\BitwardenCredentials\<SamAccountName>` and grants

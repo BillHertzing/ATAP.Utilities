@@ -22,15 +22,23 @@ The current documentation baseline is "read everywhere, write only where justifi
 12.54.a remains the live-review gate for which identities actually receive the optional
 `ReadWrite` slot on a given host.
 
+### Task 12.49 approved profile and Bitwarden scope
+
+The complete service-account set that requires both a managed PowerShell profile
+and Bitwarden Secrets Manager ReadOnly access is `SvcBuildMaster`, `SvcProGet`,
+`SvcSeq`, `SvcSQLServer`, and `SvcParityAudit`. Registry discovery is an
+inventory input; it must not expand this approved provisioning scope without a
+new user decision.
+
 ### Recommended identity matrix
 
 | Windows identity | Needs `ReadOnly` | Needs `ReadWrite` | Notes |
 | --- | --- | --- | --- |
-| `SvcBuildmaster` | Yes | Only if BuildMaster on that host creates or rotates BWS secrets | Default runtime/build reads |
+| `SvcBuildMaster` | Yes | Only if BuildMaster on that host creates or rotates BWS secrets | Default runtime/build reads |
 | `SvcProGet` | Yes | No by default | Runtime/package-feed reads only |
-| `JenkinsAgentSrvAcct` | Yes if Jenkins jobs on that host resolve BWS secrets | Only on a dedicated secret-maintenance host/job runner | Keep writer token off ordinary agents |
-| `SeqDefaultInstance` | Yes if Seq startup or maintenance resolves BWS secrets | No | Runtime config reads only |
-| `ansibleAdmin` | Yes on verification/provisioning hosts | Only on provisioning hosts that actually create or rotate secrets | Prefer the smallest host set |
+| `SvcSeq` | Yes | No by default | SEQ runtime/configuration reads only |
+| `SvcSQLServer` | Yes | No by default | SQL Server runtime/configuration reads only |
+| `SvcParityAudit` | Yes | No by default | Parity-audit automation reads only |
 | Trusted maintainer developer workstation | Yes | Optional | Provision `ReadWrite` only when that workstation performs secret maintenance |
 | Non-maintainer developer workstation | Yes | No | Normal development and validation only |
 
@@ -55,14 +63,15 @@ Several ATAP ecosystem services run as dedicated Windows service accounts:
 
 | Service                 | Windows Service Account |
 | ----------------------- | ----------------------- |
-| BuildMaster             | `SvcBuildmaster`        |
+| BuildMaster             | `SvcBuildMaster`        |
 | ProGet                  | `SvcProGet`             |
-| Jenkins                 | `JenkinsAgentSrvAcct`   |
-| SEQ (log listener)      | `SeqDefaultInstance`    |
-| Ansible (AWX/Semaphore) | `ansibleAdmin`          |
+| SEQ (log listener)      | `SvcSeq`                |
+| SQL Server              | `SvcSQLServer`          |
+| Parity audit            | `SvcParityAudit`        |
 
-All of these services need to read secrets from the Bitwarden vault — for example,
-database connection credentials, API keys, and inter-service authentication tokens.
+These five services need to read secrets from Bitwarden — for example, database
+connection credentials, API keys, and inter-service authentication tokens. They
+are also the complete Task 12.49 user-scope-profile provisioning set.
 
 ### Existing Infrastructure
 

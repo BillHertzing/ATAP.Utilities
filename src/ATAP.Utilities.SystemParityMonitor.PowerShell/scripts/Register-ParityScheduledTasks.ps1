@@ -103,21 +103,19 @@ function Register-ParityScheduledTasks {
     $scriptRoot = $PSScriptRoot
     $pwshPath = (Get-Command -Name 'pwsh' -CommandType Application -ErrorAction Stop).Source
     if ([string]::IsNullOrWhiteSpace($UserId)) {
-      $UserId = if ($LogonType -eq 'Password' -and $Credential) {
+      $UserId = if ($Credential) {
         $Credential.UserName
       } else {
         "$env:COMPUTERNAME\$RunAsAccountName"
       }
     }
 
-    if ($LogonType -eq 'Password') {
-      if (-not $Credential) {
-        throw 'Credential is required when -LogonType Password is used.'
-      }
+    if ($LogonType -eq 'Password' -and -not $Credential) {
+      throw 'Credential is required when -LogonType Password is used.'
+    }
 
-      if ($Credential.UserName -ne $UserId) {
-        throw "Credential.UserName ('$($Credential.UserName)') must match UserId ('$UserId') when -LogonType Password is used."
-      }
+    if ($Credential -and $Credential.UserName -ne $UserId) {
+      throw "Credential.UserName ('$($Credential.UserName)') must match UserId ('$UserId') when a credential is supplied."
     }
 
     if ($ExpectedCadenceDays -le 0) {
@@ -176,7 +174,7 @@ function Register-ParityScheduledTasks {
       $principal = New-ScheduledTaskPrincipal -UserId $UserId -LogonType $LogonType -RunLevel $RunLevel
 
       if ($PSCmdlet.ShouldProcess("$($definition.TaskName) -> $scriptPath", 'Register scheduled task')) {
-        if ($LogonType -eq 'Password') {
+        if ($Credential) {
           $task = New-ScheduledTask -Action $action -Trigger $trigger -Settings $settings -Principal $principal
           Register-ScheduledTask -TaskName $definition.TaskName -TaskPath $TaskPath `
             -InputObject $task -User $Credential.UserName -Password $Credential.GetNetworkCredential().Password `

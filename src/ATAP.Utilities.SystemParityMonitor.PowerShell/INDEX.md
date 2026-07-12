@@ -12,8 +12,8 @@
 | `scripts\ParityScheduledTask.Common.ps1` | Shared scheduled-task helper for purpose-specific ReadOnly BWS token probing and event-log failure reporting |
 | `scripts\Invoke-ParityScheduledAuditTask.ps1` | Local scheduled audit wrapper; imports this module, probes `CommonCIForBitwardenReadOnly`, writes snapshot and task-result JSON |
 | `scripts\Invoke-ParityScheduledCompareTask.ps1` | Primary-host scheduled compare wrapper; reads local + peer snapshots, writes drift report, and flags stale snapshots using the cadence threshold |
-| `scripts\Register-ParityScheduledTasks.ps1` | Registers audit-only or audit+compare scheduled tasks for `SvcParityAudit`, with daily or biweekly cadence; version 0.1.1 still needs credential-backed S4U registration when caller and run-as identities differ |
+| `scripts\Register-ParityScheduledTasks.ps1` | Registers audit-only or audit+compare scheduled tasks for `SvcParityAudit`, with daily or biweekly cadence, including credential-backed S4U registration when caller and run-as identities differ |
 | `tests\Unit\Parity.Tests.ps1` | Pester suite (journal round-trip, audit snapshot, drift comparison, stale snapshots, scheduled-task registration contracts) |
 | `Documentation\Overview.md` | Concept overview: parity journal, audit snapshots, drift classes |
-| `Documentation\InstallationAndTroubleshooting.md` | Windows 10/11 deployment contract, 0.1.1 packaging limitations, credential-backed S4U registration, WinRM compatibility, first-run proof, and live troubleshooting record |
+| `Documentation\InstallationAndTroubleshooting.md` | Windows 10/11 deployment contract, 0.1.1 recovery history, credential-backed S4U registration, package-content verification, WinRM compatibility, first-run proof, and live troubleshooting record |
 | `Documentation\images\` | Images referenced by module documentation |

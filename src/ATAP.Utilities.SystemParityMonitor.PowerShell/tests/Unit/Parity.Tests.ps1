@@ -252,6 +252,33 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell scheduled task scripts' 
     }
   }
 
+  It 'Register-ParityScheduledTasks supplies a credential for S4U registration without changing the S4U principal' {
+    $credential = [pscredential]::new(
+      'UTAT01\SvcParityAudit',
+      (ConvertTo-SecureString 'not-a-real-password' -AsPlainText -Force)
+    )
+
+    Register-ParityScheduledTasks `
+      -TaskSet AuditOnly `
+      -StatePath 'C:\ProgramData\ATAP\ParityState' `
+      -HostName 'utat01' `
+      -TaskPath '\ATAP-Test\' `
+      -LogonType S4U `
+      -Credential $credential `
+      -Confirm:$false
+
+    $script:scheduledTaskRegistrations | Should -HaveCount 1
+    $registration = $script:scheduledTaskRegistrations[0]
+    $registration.InputObject | Should -Not -BeNullOrEmpty
+    $registration.InputObject.Principal.UserId | Should -Be 'UTAT01\SvcParityAudit'
+    $registration.InputObject.Principal.LogonType | Should -Be 'S4U'
+    $registration.InputObject.Principal.RunLevel | Should -Be 'Limited'
+    $registration.User | Should -Be 'UTAT01\SvcParityAudit'
+    $registration.Password | Should -Be 'not-a-real-password'
+    $registration.Action | Should -BeNullOrEmpty
+    $registration.ErrorAction | Should -Be 'Stop'
+  }
+
   It 'Resolve-ParityScheduledTaskBwsCredential requires the purpose-specific ReadOnly token file' {
     $credentialDirectory = Join-Path ([IO.Path]::GetTempPath()) "ATAP-Parity-Credentials-$([guid]::NewGuid())"
     New-Item -ItemType Directory -Path $credentialDirectory -Force | Out-Null

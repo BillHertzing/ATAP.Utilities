@@ -70,17 +70,17 @@ $moduleRoot\Documentation\InstallationAndTroubleshooting.md
 ```
 
 If `scripts` or `Documentation` is missing from a promoted package, the package is not
-deployment-complete. Correct the module build and packaging contract, publish a new
-immutable version, install that exact version, and verify it from a fresh shell. The
-missing-static-folder packaging capability is tracked as SC-0264.
+deployment-complete. Version `0.1.2` stages both folders before publication. Reject any
+promoted package that does not contain them, then correct the module build and packaging
+contract, publish a new immutable version, install that exact version, and verify it
+from a fresh shell.
 
 Live exception recorded 2026-07-11: version `0.1.1` was promoted and installed for
 AllUsers on `utat022` and `utat01`, but the package omitted both static folders. The
 operator manually copied `scripts\` into the PowerShell 7 module roots on both hosts to
 unblock Task 12.38.e. Treat those hosts as manually repaired, not reproducibly deployed;
 do not use that exception as the normal installation procedure. `Documentation\` remains
-available from source until SC-0264 is implemented and a new immutable version is
-published.
+available from source until version `0.1.2` is installed and verified.
 
 ## Prerequisites on every host
 
@@ -253,7 +253,7 @@ the credential was supplied. See Microsoft's
 [Security Contexts for Tasks](https://learn.microsoft.com/en-us/windows/win32/taskschd/security-contexts-for-running-tasks)
 for the distinct registration-credential and saved-principal rules.
 
-### Version 0.1.1 S4U limitation and live recovery
+### Version 0.1.1 recovery and version 0.1.2 correction
 
 Version `0.1.1` corrected the earlier `RunLevel Highest` defect by selecting
 `Limited` for `AuditOnly` + `S4U` and made registration errors terminating. It still
@@ -278,8 +278,9 @@ NextRun   : 7/12/2026 3:00:00 AM
 
 The durable correction is to make the script use credential-backed registration for
 S4U when the caller and task identities differ, retain the S4U principal in the saved
-definition, add a focused Pester contract, and publish a new immutable version. Task
-12.38.e remains open until first-run snapshots and the primary drift report are proven.
+definition, add a focused Pester contract, and publish a new immutable version. Version
+`0.1.2` provides that correction. Task 12.38.e remains open until first-run snapshots
+and the primary drift report are proven.
 
 ## Verify registration
 
@@ -350,7 +351,7 @@ days.
 | `TaskPath '\ATAP\'` finds nothing | The scheduler folder does not exist | Create `\ATAP` through `Schedule.Service` before registration |
 | Registration or runtime reports batch-logon failure | `SvcParityAudit` lacks effective `SeBatchLogonRight`, or a deny right applies | Preserve existing rights and verify with a `LOGON32_LOGON_BATCH` test; `secedit` may export a local account by name, so absence of a literal SID is not proof that the right is absent |
 | Version 0.1.0 peer registration returns `Access is denied` | It requests Highest run level for a non-admin account | Upgrade; do not add the service account to Administrators |
-| Version 0.1.1 peer S4U registration returns `0x80070005` although batch logon succeeds | An administrator is registering for a different account without supplying that account's registration credential | Supply the `SvcParityAudit` credential while preserving S4U/Limited in the task definition; publish the durable script fix in a new immutable version |
+| Version 0.1.1 peer S4U registration returns `0x80070005` although batch logon succeeds | An administrator is registering for a different account without supplying that account's registration credential | Upgrade to 0.1.2 and supply the `SvcParityAudit` credential while preserving S4U/Limited in the task definition |
 | Windows 10 WinRM cannot autoload inbox modules | The endpoint's `PSModulePath` omits the Windows PowerShell system-module root | Import manifests by absolute path for recovery; fix `PSModulePath` and add a `pwsh` endpoint under SC-0266 |
 | `Find-Module` succeeds but promoted testing gets `Save-PSResource` HTTP 404 | The registered stable feed works through PowerShellGet/NuGet v2, while the PSResourceGet request shape is rejected | Do not claim promoted tests passed; record the exact URL/error, use `Find-Module`/`Install-Module` only when explicitly authorized, and fix the promoted-test runner or feed protocol separately |
 | Error followed by `Registered scheduled task` | Registration error was non-terminating and the logger ran anyway | Treat the error and `Get-ScheduledTask` as authoritative; update code to use `-ErrorAction Stop` and log only after success |

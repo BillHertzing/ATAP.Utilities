@@ -1,5 +1,17 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
+## 0.1.2 (published 2026-07-12)
+
+- `Register-ParityScheduledTasks.ps1` now uses an optional supplied `PSCredential`
+  when registering S4U tasks, retaining the S4U/Limited principal in the saved task
+  while providing Task Scheduler the separate registration credential needed when the
+  caller and run-as identities differ.
+- The module builder stages optional `scripts\` and `Documentation\` folders before
+  invoking `Publish-PSResource`; the promoted package therefore contains the scheduler
+  actions and its deployment runbook.
+- Added Pester coverage for credential-backed S4U registration and static-folder build
+  staging.
+
 ## 0.1.1 (published 2026-07-11)
 
 - Module relocated from ATAP.IAC `Windows\Parity` (`ATAP.IAC.Parity.PowerShell`) in

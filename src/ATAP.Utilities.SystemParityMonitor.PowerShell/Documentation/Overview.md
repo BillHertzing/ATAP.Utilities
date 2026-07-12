@@ -39,14 +39,13 @@ peer snapshot share during compare. Tasks default to `SvcParityAudit` with `S4U`
 peer-share access requires reusable service-account credentials. When an administrator
 registers an S4U task for a different identity, Task Scheduler also requires that
 identity's credential during registration even though the saved principal remains S4U
-and does not store the password. Version `0.1.1` does not yet implement that S4U
-credential path; `utat01` was registered through the equivalent Task Scheduler COM call
-with logon type S4U and Limited run level. Re-register tasks when the module's on-disk
-location changes.
+and does not store the password. Version `0.1.2` supplies that registration credential
+while retaining the S4U/Limited saved principal. Re-register tasks when the module's
+on-disk location changes.
 
 The `0.1.1` package installed on both live hosts omitted `scripts\` and
 `Documentation\`; `scripts\` was copied manually as a temporary Task 12.38.e recovery.
-SC-0264 owns reproducible static-payload packaging, and SC-0266 owns the incomplete
+Version `0.1.2` stages both folders into the package. SC-0266 owns the incomplete
 Windows 10 WinRM `PSModulePath` plus a PowerShell 7 endpoint.
 
 Cadence starts as `Daily` for the first onboarding month and then relaxes to

@@ -48,18 +48,17 @@ known live-registration failure modes.
   `S4U` when SMB access requires reusable service-account credentials.
 - When an administrator registers an S4U task for a different account, supply that
   account's credential at registration while retaining S4U in the saved principal.
-  Version `0.1.1` does not yet implement this path; the live Windows 10 peer task was
-  registered through Task Scheduler COM as S4U/Limited.
+  Version `0.1.2` implements credential-backed S4U registration; the task definition
+  remains S4U/Limited and does not persist the registration password.
 - Cadence is `Daily` during the first onboarding month; re-register with
   `-Cadence BiWeekly` after the first clean month. The compare wrapper passes the
   expected cadence into `Compare-ParityAudits`, which flags snapshots older than
   `1.5x` cadence as stale.
 - BuildMaster: consolidated application `ATAP.Utilities-PowerShell` (see the reviewed
   module map in the ATAP.IAC BuildMaster HostSettings fragment).
-- Packaging must preserve the `scripts\` and `Documentation\` folders below the
-  installed module root. A package missing either folder is not deployable for parity
-  monitoring. The live `0.1.1` hosts have a documented temporary manual `scripts\`
-  copy; SC-0264 remains the required reproducible fix.
+- Packaging preserves the `scripts\` and `Documentation\` folders below the installed
+  module root. A package missing either folder is not deployable for parity monitoring.
+  Version `0.1.2` replaces the temporary manual `scripts\` copy used for 0.1.1.
 
 ## Functional area
 

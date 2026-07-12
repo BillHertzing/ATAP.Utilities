@@ -1,5 +1,11 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
+## 0.1.3 (unreleased)
+
+- Correct credential-backed S4U registration to use Task Scheduler COM
+  `RegisterTaskDefinition` with `TASK_LOGON_S4U`; `Register-ScheduledTask -User`
+  and `-Password` saved a Password principal on the live Windows host.
+
 ## 0.1.2 (published 2026-07-12)
 
 - `Register-ParityScheduledTasks.ps1` now uses an optional supplied `PSCredential`

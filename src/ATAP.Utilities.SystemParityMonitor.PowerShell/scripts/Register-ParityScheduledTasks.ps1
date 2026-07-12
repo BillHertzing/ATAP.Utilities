@@ -43,6 +43,58 @@ function New-ParityScheduledTaskTrigger {
   return New-ScheduledTaskTrigger -Weekly -WeeksInterval 2 -DaysOfWeek $BiWeeklyDaysOfWeek -At $At
 }
 
+function Register-ParityScheduledTaskS4U {
+  [CmdletBinding()]
+  param(
+    [string] $TaskName,
+    [string] $TaskPath,
+    [string] $PwshPath,
+    [string] $Arguments,
+    [ValidateSet('Daily', 'BiWeekly')]
+    [string] $Cadence,
+    [string] $At,
+    [string[]] $BiWeeklyDaysOfWeek,
+    [string] $UserId,
+    [System.Management.Automation.PSCredential] $Credential,
+    [ValidateSet('Limited', 'Highest')]
+    [string] $RunLevel
+  )
+
+  $scheduler = New-Object -ComObject 'Schedule.Service'
+  $scheduler.Connect()
+  $folderPath = $TaskPath.TrimEnd('\\')
+  if ([string]::IsNullOrWhiteSpace($folderPath)) {
+    $folderPath = '\\'
+  }
+  $folder = $scheduler.GetFolder($folderPath)
+  $definition = $scheduler.NewTask(0)
+  $definition.Principal.UserId = $UserId
+  $definition.Principal.LogonType = 2 # TASK_LOGON_S4U
+  $definition.Principal.RunLevel = if ($RunLevel -eq 'Highest') { 1 } else { 0 }
+  $definition.Settings.StartWhenAvailable = $true
+  $definition.Settings.MultipleInstances = 2 # TASK_INSTANCES_IGNORE_NEW
+  $definition.Settings.ExecutionTimeLimit = 'PT2H'
+
+  $startBoundary = (Get-Date).Date.Add([datetime]::ParseExact($At, 'HH:mm', [Globalization.CultureInfo]::InvariantCulture).TimeOfDay)
+  if ($startBoundary -le (Get-Date)) {
+    $startBoundary = $startBoundary.AddDays(1)
+  }
+  $trigger = if ($Cadence -eq 'Daily') { $definition.Triggers.Create(2) } else { $definition.Triggers.Create(3) }
+  $trigger.StartBoundary = $startBoundary.ToString('s', [Globalization.CultureInfo]::InvariantCulture)
+  if ($Cadence -eq 'Daily') {
+    $trigger.DaysInterval = 1
+  } else {
+    $dayFlags = @{ Sunday = 1; Monday = 2; Tuesday = 4; Wednesday = 8; Thursday = 16; Friday = 32; Saturday = 64 }
+    $trigger.WeeksInterval = 2
+    $trigger.DaysOfWeek = ($BiWeeklyDaysOfWeek | ForEach-Object { $dayFlags[$_] } | Measure-Object -Sum).Sum
+  }
+
+  $action = $definition.Actions.Create(0) # TASK_ACTION_EXEC
+  $action.Path = $PwshPath
+  $action.Arguments = $Arguments
+  $null = $folder.RegisterTaskDefinition($TaskName, $definition, 6, $Credential.UserName, $Credential.GetNetworkCredential().Password, 2, $null)
+}
+
 function Register-ParityScheduledTasks {
   [CmdletBinding(SupportsShouldProcess)]
   param(
@@ -174,7 +226,13 @@ function Register-ParityScheduledTasks {
       $principal = New-ScheduledTaskPrincipal -UserId $UserId -LogonType $LogonType -RunLevel $RunLevel
 
       if ($PSCmdlet.ShouldProcess("$($definition.TaskName) -> $scriptPath", 'Register scheduled task')) {
-        if ($Credential) {
+        if ($LogonType -eq 'S4U' -and $Credential) {
+          Register-ParityScheduledTaskS4U `
+            -TaskName $definition.TaskName -TaskPath $TaskPath -PwshPath $pwshPath `
+            -Arguments "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$scriptPath`" $($definition.Arguments)" `
+            -Cadence $Cadence -At $definition.At -BiWeeklyDaysOfWeek $BiWeeklyDaysOfWeek `
+            -UserId $UserId -Credential $Credential -RunLevel $RunLevel
+        } elseif ($Credential) {
           $task = New-ScheduledTask -Action $action -Trigger $trigger -Settings $settings -Principal $principal
           Register-ScheduledTask -TaskName $definition.TaskName -TaskPath $TaskPath `
             -InputObject $task -User $Credential.UserName -Password $Credential.GetNetworkCredential().Password `

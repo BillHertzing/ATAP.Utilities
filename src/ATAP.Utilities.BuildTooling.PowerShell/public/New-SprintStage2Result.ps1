@@ -16,10 +16,10 @@ function New-SprintStage2Result {
   .PARAMETER UserSettingsError
     Any error that occurred during UserSettings.jsonc symlink creation.
   .PARAMETER ProfileSymlinksRetargeted
-    True when the machine-wide PowerShell 7 profile symlinks (profile.ps1,
-    HostSettings.ps1) were successfully retargeted to the sprint worktrees.
+    True when the machine-wide PowerShell 7 profile payload was deployed and
+    HostSettings.ps1 was successfully retargeted to the sprint worktree.
   .PARAMETER ProfileSymlinkError
-    Any error that occurred while retargeting the PowerShell 7 profile symlinks.
+    Any error that occurred while deploying the profile or retargeting HostSettings.
   .PARAMETER BuildMasterVariablesSet
     Array of BuildMaster variable names that were successfully set.
   .PARAMETER BuildMasterVariablesErrors
@@ -31,7 +31,7 @@ function New-SprintStage2Result {
   .PARAMETER DatabaseResetError
     Any error that occurred during database resets.
   .PARAMETER OverviewWorkspacePath
-    Path to the generated OverviewSprintNNNN.code-workspace file (Task 10.14.a).
+    Path to the generated Overview.Sprint.NNNN.code-workspace file (Task 10.14.a).
   .PARAMETER OverviewWorkspaceVerified
     True when the Overview sprint workspace was generated and the verification
     gate confirmed it exists and resolves at least one sprint worktree folder.

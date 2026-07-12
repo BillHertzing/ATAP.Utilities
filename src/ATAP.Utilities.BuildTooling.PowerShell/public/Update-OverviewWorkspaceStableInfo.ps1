@@ -5,7 +5,7 @@ function Update-OverviewWorkspaceStableInfo {
     `Overview.code-workspace` at sprint end.
   .DESCRIPTION
     Called from SprintEndAgent (the counterpart of `New-OverviewSprintWorkspace`,
-    which produces the sprint-specific `OverviewSprintNNNN.code-workspace` at
+    which produces the sprint-specific `Overview.Sprint.NNNN.code-workspace` at
     sprint start). After a sprint's life, the *sprint* workspace is the freshest
     source of truth for repository folder layout and ProGet feed catalog, since
     new repos or new feeds may have been added during the sprint. This cmdlet
@@ -65,7 +65,7 @@ function Update-OverviewWorkspaceStableInfo {
     target does not yet exist, an empty workspace object is used as the seed.
   .PARAMETER SourceWorkspacePath
     Path to the sprint workspace whose stable-branch data should be merged in.
-    Defaults to the most-recently modified `OverviewSprint*.code-workspace`
+    Defaults to the most-recently modified `Overview.Sprint.*.code-workspace`
     under `-GitRoot`. Required (resolved or supplied) for the merge to run.
   .PARAMETER Fetch
     When set, runs `git fetch --quiet` for each discovered stable repository
@@ -92,7 +92,7 @@ function Update-OverviewWorkspaceStableInfo {
     Update-OverviewWorkspaceStableInfo -WhatIf
     # Computes the merge and returns the result object without writing.
   .EXAMPLE
-    Update-OverviewWorkspaceStableInfo -Fetch -SourceWorkspacePath 'C:\Dropbox\user\GitHub\OverviewSprint0007.code-workspace'
+    Update-OverviewWorkspaceStableInfo -Fetch -SourceWorkspacePath 'C:\Dropbox\user\GitHub\Overview.Sprint.0007.code-workspace'
     # Fetches each stable repo to surface remote drift, then merges from the named source.
   .NOTES
     Called from SprintEndAgent. Counterpart of `New-OverviewSprintWorkspace`
@@ -149,6 +149,8 @@ function Update-OverviewWorkspaceStableInfo {
 
     if ([string]::IsNullOrWhiteSpace($SourceWorkspacePath)) {
       $workspaceFiles = @()
+      $workspaceFiles += Get-ChildItem -LiteralPath $GitRoot -File -Filter 'Overview.Sprint.*.code-workspace' -ErrorAction SilentlyContinue
+      # Legacy compatibility only:
       $workspaceFiles += Get-ChildItem -LiteralPath $GitRoot -File -Filter 'Overview.Sprint*.code-workspace' -ErrorAction SilentlyContinue
       $workspaceFiles += Get-ChildItem -LiteralPath $GitRoot -File -Filter 'OverviewSprint*.code-workspace' -ErrorAction SilentlyContinue
       $workspaceFiles += Get-ChildItem -LiteralPath $GitRoot -File -Filter 'OverViewSprint*.code-workspace' -ErrorAction SilentlyContinue
@@ -156,7 +158,7 @@ function Update-OverviewWorkspaceStableInfo {
       if ($candidates.Count -ge 1) {
         $SourceWorkspacePath = $candidates[0].FullName
       } else {
-        $msg = "No sprint workspace (Overview.Sprint*.code-workspace or OverviewSprint*.code-workspace) found under '$GitRoot' and no -SourceWorkspacePath supplied."
+        $msg = "No sprint workspace (Overview.Sprint.*.code-workspace or a supported legacy spelling) found under '$GitRoot' and no -SourceWorkspacePath supplied."
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
         throw $msg
       }

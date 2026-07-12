@@ -195,7 +195,11 @@ Remediation: pass -PlanningRoot '<reposParent>\_Planning-wt-<issue>-$sprintToken
     # 3. No sprint path context detected - prefer an Overview.Sprint.NNNN workspace, then stable maintenance.
     $stableParent = if ($ReposParent) { $ReposParent } else { @($ContextPath | Where-Object { $_ } | Select-Object -First 1) }
     if ($stableParent) {
-      $fromSprintOverview = Resolve-FromWorkspace -WorkspaceReposParent $stableParent -WorkspaceFilter 'OverView.Sprint*.code-workspace' -RequireSprint
+      $fromSprintOverview = Resolve-FromWorkspace -WorkspaceReposParent $stableParent -WorkspaceFilter 'Overview.Sprint.*.code-workspace' -RequireSprint
+      if (-not $fromSprintOverview) {
+        # Legacy compatibility only.
+        $fromSprintOverview = Resolve-FromWorkspace -WorkspaceReposParent $stableParent -WorkspaceFilter 'Overview.Sprint*.code-workspace' -RequireSprint
+      }
       if ($fromSprintOverview) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Resolved sprint _Planning worktree from sprint overview workspace file: $($fromSprintOverview.PlanningRoot)"
         return [pscustomobject]@{

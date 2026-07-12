@@ -31,14 +31,13 @@ function Set-SprintBoundaryContext {
       - downstream contexts ................... Initialize-DownstreamSprintFromSharedVSCode (Start)
                                                 / Reset-DownstreamToSharedVSCodeMain (End) (per worktree)
       - canonical AI adapters ................. Invoke-SprintAIAdapterLifecycle (per worktree)
-      - PowerShell 7 profile symlinks ......... Set-PowerShell7ProfileSymlink (once)
+      - PowerShell 7 profile + HostSettings ... Set-PowerShell7ProfileSymlink (once)
       - ConfigRootKeys ........................ in-process bootstrap, no symlink
 
-    The machine-wide PowerShell 7 profile symlinks (profile.ps1 -> ATAP.Utilities,
-    HostSettings.ps1 -> ATAP.IAC) are NOT stable-by-design: profile.ps1 is how the
-    AllUsersAllHosts core profile detects the active stable-vs-sprint worktree, so it
-    must track the sprint worktree at Start and reset to stable at End (H09/SC-0188,
-    Task 10.13). This concern delegates to Set-PowerShell7ProfileSymlink, which also
+    The machine-wide PowerShell 7 profile payload and HostSettings link are NOT
+    stable-by-design: the payload is copied from the selected ATAP.IAC stable or sprint
+    worktree, and HostSettings tracks the same boundary (H09/SC-0188, Task 10.13).
+    This concern delegates to Set-PowerShell7ProfileSymlink, which also
     removes the now-obsolete global_ConfigRootKeys.ps1 and global_environmentVariables.ps1
     symlinks. ConfigRootKeys remain genuinely stable-by-design: they are bootstrapped
     in-process by Initialize-ATAPConfigurationGlobals (Task 10.5) rather than dot-sourced
@@ -445,8 +444,8 @@ function Set-SprintBoundaryContext {
       })
 
     # ------------------------------------------------------------------
-    # Machine-global concern: PowerShell 7 profile symlinks (once)
-    # profile.ps1 -> ATAP.Utilities, HostSettings.ps1 -> ATAP.IAC. Formerly
+    # Machine-global concern: PowerShell 7 profile deployment and HostSettings link (once)
+    # profile.ps1 is copied from ATAP.IAC; HostSettings.ps1 links to ATAP.IAC. Formerly
     # 'stable-by-design / no-op'; now actively retargeted per H09/SC-0188 (Task
     # 10.13). The worker also removes the obsolete global_ConfigRootKeys.ps1 and
     # global_environmentVariables.ps1 symlinks.
@@ -455,7 +454,7 @@ function Set-SprintBoundaryContext {
     $profileSymlinksError = $null
     if (-not $SkipProfileSymlinks) {
       try {
-        # Resolve the repo roots that own the two managed symlinks. Start tracks the
+        # Resolve the repo roots used by the compatibility cmdlet. Start tracks the
         # sprint worktrees; End resets to the stable repositories under GitRoot.
         if (-not $PSBoundParameters.ContainsKey('ATAPUtilitiesRoot') -or [string]::IsNullOrWhiteSpace($ATAPUtilitiesRoot)) {
           if ($Boundary -eq 'Start') {
@@ -478,7 +477,7 @@ function Set-SprintBoundaryContext {
           }
         }
 
-        if ($PSCmdlet.ShouldProcess($ATAPUtilitiesRoot, "Retarget PowerShell 7 profile symlinks ($Boundary)")) {
+        if ($PSCmdlet.ShouldProcess($ATAPUtilitiesRoot, "Deploy PowerShell 7 profile and retarget HostSettings ($Boundary)")) {
           $profileSymlinkResult = Set-PowerShell7ProfileSymlink `
             -ATAPUtilitiesRoot $ATAPUtilitiesRoot `
             -ATAPIACRoot $ATAPIACRoot `

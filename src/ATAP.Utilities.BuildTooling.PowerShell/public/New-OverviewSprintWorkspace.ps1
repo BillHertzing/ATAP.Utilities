@@ -15,7 +15,7 @@ function New-OverviewSprintWorkspace {
   .PARAMETER SourceWorkspacePath
     Source Overview workspace file. Defaults to Overview.code-workspace under GitRoot.
   .PARAMETER OutputWorkspacePath
-    Output sprint workspace file. Defaults to Overview.SprintNNNN.code-workspace under GitRoot.
+    Output sprint workspace file. Defaults to Overview.Sprint.NNNN.code-workspace under GitRoot.
   .PARAMETER DeveloperUsername
     Developer username used in sprint metadata and ephemeral SQL instance names.
   .PARAMETER BuildMasterBaseUrl
@@ -142,7 +142,7 @@ function New-OverviewSprintWorkspace {
     }
 
     if (-not $OutputWorkspacePath) {
-      $OutputWorkspacePath = Join-Path -Path $GitRoot -ChildPath ('Overview.Sprint{0}.code-workspace' -f $sprintText)
+      $OutputWorkspacePath = Join-Path -Path $GitRoot -ChildPath ('Overview.Sprint.{0}.code-workspace' -f $sprintText)
     }
 
     if (-not (Test-Path -LiteralPath $SourceWorkspacePath -PathType Leaf)) {
@@ -203,7 +203,7 @@ function New-OverviewSprintWorkspace {
     Set-ObjectPropertyValue -InputObject $workspace -Name 'generatedBy' -Value $fn
     Set-ObjectPropertyValue -InputObject $workspace -Name 'generatedAt' -Value (Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')
 
-    if ($PSCmdlet.ShouldProcess($OutputWorkspacePath, "Write Overview.Sprint$sprintText workspace")) {
+    if ($PSCmdlet.ShouldProcess($OutputWorkspacePath, "Write Overview.Sprint.$sprintText workspace")) {
       $outputJson = $workspace | ConvertTo-Json -Depth 30
       Set-Content -LiteralPath $OutputWorkspacePath -Value $outputJson -Encoding UTF8 -ErrorAction Stop
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Created $OutputWorkspacePath"

@@ -3,27 +3,27 @@ function Set-UserScopeProfile {
   .SYNOPSIS
     Creates or retargets the managed PowerShell 7 CurrentUserAllHosts profile for one identity.
   .DESCRIPTION
-    Renders the profile template owned by ATAP.IAC for either a developer or a
-    service account into <UserProfilePath>\Documents\PowerShell\profile.ps1.
+    Copies the canonical profile payload owned by ATAP.IAC for either a developer
+    or a service account into <UserProfilePath>\Documents\PowerShell\profile.ps1.
     Existing unmanaged profiles are protected and require -Force.  Service
-    templates are validated to prohibit Bitwarden CLI invocation so a service
-    shell never starts interactive authentication.
+    Service payloads are validated to prohibit an interactive Password Manager
+    `bw` invocation so a service shell never starts interactive authentication.
 
     This cmdlet targets the local computer.  Invoke it through the hardened
     remoting path when provisioning a peer computer.
   .PARAMETER AccountName
     Local account whose CurrentUserAllHosts profile is managed.
   .PARAMETER AccountClass
-    Developer profiles dot-source the canonical developer core profile.
-    ServiceAccount profiles use the minimal non-interactive template.
+    Developer profiles copy the canonical CurrentUserAllHosts payload.
+    ServiceAccount profiles copy the administrator-managed service payload.
   .PARAMETER ComputerName
     Target computer.  The current implementation accepts only the local host;
     use the Task 12.38.b remoting path to execute this command on a peer.
   .PARAMETER ATAPIACRoot
     ATAP.IAC repository or worktree containing Windows\ProfileTemplates.
   .PARAMETER ATAPUtilitiesRoot
-    ATAP.Utilities repository or worktree containing the canonical developer
-    core profile referenced by the developer template.
+    Retained for caller compatibility. Profile payloads are now owned entirely
+    by ATAP.IAC and this value is not used to compose deployed content.
   .PARAMETER UserProfilePath
     Explicit profile root.  Intended for tests and carefully scoped repairs.
   .PARAMETER Force
@@ -51,7 +51,7 @@ function Set-UserScopeProfile {
     [ValidateSet('Developer', 'ServiceAccount')]
     [string] $AccountClass,
 
-    [string] $ComputerName = $env:COMPUTERNAME,
+    [string] $ComputerName = [Environment]::MachineName,
 
     [Parameter(Mandatory)]
     [ValidateNotNullOrEmpty()]
@@ -74,7 +74,8 @@ function Set-UserScopeProfile {
     $managedHeader = '# ATAP-Managed-UserScopeProfile: v1'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
-    $localNames = @('.', 'localhost', $env:COMPUTERNAME) | Where-Object { $_ }
+    $localComputerName = if ($env:COMPUTERNAME) { $env:COMPUTERNAME } else { [Environment]::MachineName }
+    $localNames = @('.', 'localhost', $localComputerName) | Where-Object { $_ }
     if ($ComputerName -notin $localNames) {
       throw "Set-UserScopeProfile only writes the local host. Execute it through the approved remoting path on '$ComputerName'."
     }
@@ -123,31 +124,36 @@ function Set-UserScopeProfile {
       }
     }
 
-    $templateFileName = if ($AccountClass -eq 'Developer') {
-      'Developer.CurrentUserAllHosts.ps1.template'
+    $sourceFileName = if ($AccountClass -eq 'Developer') {
+      'CurrentUserAllHostsV7CoreProfile.ps1'
     } else {
-      'ServiceAccount.CurrentUserAllHosts.ps1.template'
+      'ProfileForServiceAccountUsers.ps1'
     }
-    $templatePath = Join-Path $ATAPIACRoot 'Windows\ProfileTemplates' $templateFileName
-    if (-not (Test-Path -LiteralPath $templatePath -PathType Leaf)) {
-      throw "Profile template was not found: '$templatePath'."
+    $sourcePath = Join-Path $ATAPIACRoot 'Windows\ProfileTemplates' $sourceFileName
+    if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
+      throw "Profile payload was not found: '$sourcePath'."
     }
 
-    $template = Get-Content -LiteralPath $templatePath -Raw -ErrorAction Stop
-    if (-not $template.StartsWith($managedHeader, [StringComparison]::Ordinal)) {
-      throw "Profile template '$templatePath' is missing the required managed-header marker."
+    $sourceContent = Get-Content -LiteralPath $sourcePath -Raw -ErrorAction Stop
+    if (-not $sourceContent.StartsWith($managedHeader, [StringComparison]::Ordinal)) {
+      throw "Profile payload '$sourcePath' is missing the required managed-header marker."
     }
-    if ($AccountClass -eq 'ServiceAccount' -and $template -match '(?im)\b(bw|bws)\b') {
-      throw "Service-account template '$templatePath' must not invoke Bitwarden CLI commands."
+    if ($AccountClass -eq 'ServiceAccount' -and $sourceContent -match '(?im)^\s*(?:&\s*)?bw(?:\.exe)?\b') {
+      throw "Service-account profile '$sourcePath' must not invoke the interactive Bitwarden Password Manager CLI."
     }
+    $sourceBytes = [IO.File]::ReadAllBytes($sourcePath)
 
     $profileRoot = Resolve-ProfileRoot -Name $AccountName -Override $UserProfilePath
-    $profileDirectory = Join-Path $profileRoot 'Documents\PowerShell'
-    $profilePath = Join-Path $profileDirectory 'profile.ps1'
-    $desiredContent = $template.Replace('{{ATAP_UTILITIES_ROOT}}', [IO.Path]::GetFullPath($ATAPUtilitiesRoot)).Replace('{{ACCOUNT_NAME}}', $AccountName)
-    $resolvedPeerHostName = if ($PeerHostName) { $PeerHostName } else { Get-DefaultPeerHostName -HostName $env:COMPUTERNAME }
+    $isCurrentIdentity = [string]::Equals($AccountName, $env:USERNAME, [StringComparison]::OrdinalIgnoreCase)
+    $profilePath = if ([string]::IsNullOrWhiteSpace($UserProfilePath) -and $isCurrentIdentity) {
+      [IO.Path]::GetFullPath($PROFILE.CurrentUserAllHosts)
+    } else {
+      Join-Path $profileRoot 'Documents\PowerShell\profile.ps1'
+    }
+    $profileDirectory = Split-Path -Path $profilePath -Parent
+    $resolvedPeerHostName = if ($PeerHostName) { $PeerHostName } else { Get-DefaultPeerHostName -HostName $localComputerName }
 
-    if (-not $WhatIfPreference -and -not [string]::Equals($AccountName, $env:USERNAME, [StringComparison]::OrdinalIgnoreCase) -and -not (Test-ProcessElevation)) {
+    if (-not $WhatIfPreference -and -not $isCurrentIdentity -and -not (Test-ProcessElevation)) {
       throw "Provisioning '$AccountName' requires an elevated session because it writes another user's profile."
     }
 
@@ -163,14 +169,24 @@ function Set-UserScopeProfile {
       $null
     }
 
-    if ($null -ne $existingContent -and [string]::Equals($existingContent, $desiredContent, [StringComparison]::Ordinal)) {
+    $existingBytes = if (Test-Path -LiteralPath $profilePath -PathType Leaf) {
+      [IO.File]::ReadAllBytes($profilePath)
+    } else {
+      $null
+    }
+    $contentMatches = $null -ne $existingBytes -and [Convert]::ToBase64String($existingBytes) -eq [Convert]::ToBase64String($sourceBytes)
+    if ($contentMatches) {
       return [PSCustomObject]@{
-        AccountName = $AccountName; AccountClass = $AccountClass; ComputerName = $env:COMPUTERNAME
-        ProfilePath = $profilePath; TemplatePath = $templatePath; Action = 'AlreadyCurrent'; Changed = $false; Journaled = $false
+        AccountName = $AccountName; AccountClass = $AccountClass; ComputerName = $localComputerName
+        ProfilePath = $profilePath; SourcePath = $sourcePath; TemplatePath = $sourcePath; Action = 'AlreadyCurrent'; Changed = $false; Journaled = $false
       }
     }
 
-    if ($null -ne $existingContent -and -not $existingContent.StartsWith($managedHeader, [StringComparison]::Ordinal) -and -not $Force) {
+    $isLegacyManagedWrapper = $null -ne $existingContent -and
+      $existingContent.Contains('# Quiet SSH-backed PowerShell remoting before profile initialization.') -and
+      $existingContent.Contains('CurrentUserAllHostsV7CoreProfile.ps1') -and
+      $existingContent -match '(?m)^\.\s+'
+    if ($null -ne $existingContent -and -not $existingContent.StartsWith($managedHeader, [StringComparison]::Ordinal) -and -not $isLegacyManagedWrapper -and -not $Force) {
       throw "Refusing to overwrite unmanaged profile '$profilePath'. Re-run with -Force only after preserving its user-owned content."
     }
 
@@ -180,7 +196,7 @@ function Set-UserScopeProfile {
         if (-not (Test-Path -LiteralPath $profileDirectory -PathType Container)) {
           New-Item -ItemType Directory -Path $profileDirectory -Force -ErrorAction Stop | Out-Null
         }
-        Set-Content -LiteralPath $profilePath -Value $desiredContent -Encoding utf8 -NoNewline -ErrorAction Stop
+        [IO.File]::WriteAllBytes($profilePath, $sourceBytes)
         $oldValue = if ($null -eq $existingContent) { 'Absent' } else { 'ManagedProfile' }
         Add-ParityChangeEntry -Category Files -Item "PowerShell profile: $AccountName" `
           -OldValue $oldValue `
@@ -191,8 +207,8 @@ function Set-UserScopeProfile {
           -Reason 'Task 12.49 managed user-scope profile provisioning.' `
           -Confirm:$false | Out-Null
         return [PSCustomObject]@{
-          AccountName = $AccountName; AccountClass = $AccountClass; ComputerName = $env:COMPUTERNAME
-          ProfilePath = $profilePath; TemplatePath = $templatePath; Action = $action; Changed = $true; Journaled = $true
+          AccountName = $AccountName; AccountClass = $AccountClass; ComputerName = $localComputerName
+          ProfilePath = $profilePath; SourcePath = $sourcePath; TemplatePath = $sourcePath; Action = $action; Changed = $true; Journaled = $true
         }
       } catch {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Failed to provision '$profilePath'. Exception: $($_.Exception.Message)"
@@ -201,8 +217,8 @@ function Set-UserScopeProfile {
     }
 
     return [PSCustomObject]@{
-      AccountName = $AccountName; AccountClass = $AccountClass; ComputerName = $env:COMPUTERNAME
-      ProfilePath = $profilePath; TemplatePath = $templatePath; Action = "Would$action"; Changed = $false; Journaled = $false
+      AccountName = $AccountName; AccountClass = $AccountClass; ComputerName = $localComputerName
+      ProfilePath = $profilePath; SourcePath = $sourcePath; TemplatePath = $sourcePath; Action = "Would$action"; Changed = $false; Journaled = $false
     }
   }
 

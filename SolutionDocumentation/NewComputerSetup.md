@@ -38,7 +38,7 @@ The end state is:
 - Keep SQL Server instance names under 16 characters. The base instances are
   `Production`, `QA`, and `Integration`. Sprint and feature-branch instances use a short
   tier prefix such as `Dev` or `Exp` plus a shortened branch or user token.
-- Prefer the newest `Overview.code-workspace` and `OverviewSprintNNNN.code-workspace`
+- Prefer the newest `Overview.code-workspace` and `Overview.Sprint.NNNN.code-workspace`
   files at `C:\Dropbox\whertzing\GitHub` as the current branch/worktree matrix when
   they are present.
 
@@ -847,7 +847,7 @@ Notes:
    does not create `Production`, `QA`, or `Integration`.
 2. For long-lived multi-sprint feature branches, combine a short feature token with the
    tier prefix and keep the full instance name under 16 characters.
-3. Use the current `Overview.code-workspace` and `OverviewSprintNNNN.code-workspace`
+3. Use the current `Overview.code-workspace` and `Overview.Sprint.NNNN.code-workspace`
    files as the branch matrix when deciding which extra instances are still required.
 
 ## Step 8: Build the Databases on All Instances
@@ -1411,76 +1411,36 @@ Bitwarden CLI (`bw.exe`) to abort during TLS init.
 > clean environment, and (b) it documents the contract that service-account
 > sessions must not inherit operator-Dropbox paths.
 
-Run this from the elevated administrative session. The script creates the
-`Documents\PowerShell` folder under each service account's home directory
-(needed only the first time) and creates an NTFS symbolic link from each
-account's `profile.ps1` to the worktree copy of
-`ProfileForServiceAccountUsers.ps1`:
+Run this from an elevated administrative session. BuildTooling copies the
+selected stable or sprint ATAP.IAC payload; it does not create a profile
+symlink or repository dot-source wrapper:
 
 ```powershell
-$candidateRoots = @(
-  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items',
-  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
-)
-$profileRelative = 'src\ATAP.Utilities.PowerShell\Profiles\ProfileForServiceAccountUsers.ps1'
-$repoRoot = $candidateRoots | Where-Object {
-  Test-Path -LiteralPath (Join-Path $_ $profileRelative)
-} | Select-Object -First 1
-if (-not $repoRoot) {
-  throw "ProfileForServiceAccountUsers.ps1 not found in any known repository root."
-}
-$profileSource = Join-Path $repoRoot $profileRelative
-
-foreach ($svcAccount in @('SvcBuildmaster', 'SvcProGet')) {
-  $svcHome = "C:\Users\$svcAccount"
-  $psDir   = Join-Path $svcHome 'Documents\PowerShell'
-  $linkPs1 = Join-Path $psDir 'profile.ps1'
-
-  if (-not (Test-Path -LiteralPath $svcHome -PathType Container)) {
-    throw "Home folder '$svcHome' does not exist. Log in as $svcAccount once (or run a process as that account) to create the profile, then retry."
-  }
-  if (-not (Test-Path -LiteralPath $psDir -PathType Container)) {
-    New-Item -ItemType Directory -Path $psDir -Force | Out-Null
-    Write-Host "Created $psDir"
-  }
-
-  # If a real file or stale link already exists, replace it.
-  if (Test-Path -LiteralPath $linkPs1) {
-    $existing = Get-Item -LiteralPath $linkPs1 -Force
-    if ($existing.LinkType -eq 'SymbolicLink' -and $existing.Target -contains $profileSource) {
-      Write-Host "Link already correct: $linkPs1 -> $profileSource"
-      continue
-    }
-    Write-Host "Replacing existing $linkPs1"
-    Remove-Item -LiteralPath $linkPs1 -Force
-  }
-
-  New-Item -ItemType SymbolicLink -Path $linkPs1 -Target $profileSource -Force | Out-Null
-  Write-Host "Linked $linkPs1 -> $profileSource"
+$iacRoot = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC'
+$utilitiesRoot = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
+foreach ($svcAccount in @('SvcBuildMaster', 'SvcProGet', 'SvcSQLServer', 'SvcSeq', 'SvcParityAudit')) {
+  Set-UserScopeProfile -AccountName $svcAccount -AccountClass ServiceAccount `
+    -ATAPIACRoot $iacRoot -ATAPUtilitiesRoot $utilitiesRoot -Confirm:$false
 }
 ```
 
-Verification — both links resolve to the worktree source file:
+Verification — each deployed profile is a real file whose hash matches the
+selected IAC payload:
 
 ```powershell
-foreach ($svcAccount in @('SvcBuildmaster', 'SvcProGet')) {
-  $linkPs1 = "C:\Users\$svcAccount\Documents\PowerShell\profile.ps1"
-  if (Test-Path -LiteralPath $linkPs1) {
-    $info = Get-Item -LiteralPath $linkPs1 -Force
-    "{0,-25} {1,-12} -> {2}" -f $svcAccount, $info.LinkType, ($info.Target -join ';')
-  } else {
-    "{0,-25} MISSING" -f $svcAccount
+$source = Join-Path $iacRoot 'Windows\ProfileTemplates\ProfileForServiceAccountUsers.ps1'
+foreach ($svcAccount in @('SvcBuildMaster', 'SvcProGet', 'SvcSQLServer', 'SvcSeq', 'SvcParityAudit')) {
+  $profilePath = "C:\Users\$svcAccount\Documents\PowerShell\profile.ps1"
+  [PSCustomObject]@{
+    Account = $svcAccount
+    IsRealFile = -not (Get-Item -LiteralPath $profilePath -Force).LinkType
+    HashMatches = (Get-FileHash $profilePath).Hash -eq (Get-FileHash $source).Hash
   }
 }
 ```
 
-Expected — two `SymbolicLink` lines pointing at the same worktree path.
-
-> **Sprint vs stable retarget.** This link is created from the sprint
-> worktree path. When the sprint merges into stable, retarget each link to
-> `C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.PowerShell\Profiles\ProfileForServiceAccountUsers.ps1`
-> as part of SprintEndAgent. Re-running the script above against the stable
-> worktree (after removing the sprint-pointing links) is sufficient.
+Secret policy: `SvcBuildMaster`, `SvcProGet`, and `SvcSQLServer` require
+non-interactive secret access. `SvcSeq` and `SvcParityAudit` do not.
 
 #### 9.4.7 Register the per-service-account startup task
 
@@ -1654,7 +1614,7 @@ Interactive-user mapping:
 **ReadOnly rotation distribution rule:** whenever `CommonCIForBitwardenReadOnly` is
 rotated, update the ReadOnly DPAPI file locally on both `utat01` and `utat022` for
 `SvcBuildMaster`, `SvcProGet`, `SvcSeq`, `SvcSQLServer`, and `SvcParityAudit`. Also refresh
-all active developers listed in `C:\Dropbox\whertzing\GitHub\Overview.SprintNNNN.code-workspace` on
+all active developers listed in `C:\Dropbox\whertzing\GitHub\Overview.Sprint.NNNN.code-workspace` on
 their declared host; Sprint 0012 currently lists `whertzing` on `utat022`. Run the write as
 each owning identity; never copy a DPAPI file between identities or hosts.
 
@@ -2426,7 +2386,7 @@ Antigravity should not be configured with a hard-coded list of repository paths 
 Instead, the local configuration should be generated from the current sprint's `.code-workspace` file, for example:
 
 ```text
-C:\Dropbox\whertzing\GitHub\OverviewSprint0007.code-workspace
+C:\Dropbox\whertzing\GitHub\Overview.Sprint.0007.code-workspace
 ```
 
 Each new sprint creates a new workspace file, so the authoritative source for the repo list is the active sprint workspace file, not a static Antigravity configuration checked in once.
@@ -2453,7 +2413,7 @@ Suggested contract:
 
 ```powershell
 Set-AntigravityWorkspaceRepos `
-  -WorkspacePath 'C:\Dropbox\whertzing\GitHub\OverviewSprint0007.code-workspace' `
+  -WorkspacePath 'C:\Dropbox\whertzing\GitHub\Overview.Sprint.0007.code-workspace' `
   -AntigravityConfigPath "$env:LOCALAPPDATA\Google\Antigravity\repos.json"
 ```
 
@@ -2530,7 +2490,7 @@ function Set-AntigravityWorkspaceRepos {
 
 ### Maintenance note
 
-Document the Antigravity integration in terms of an active workspace file and a generated local config, rather than naming a specific sprint file such as `OverviewSprint0007.code-workspace`, because that filename changes every sprint.
+Document the Antigravity integration in terms of an active workspace file and a generated local config, rather than naming a specific sprint file such as `Overview.Sprint.0007.code-workspace`, because that filename changes every sprint.
 
 ## (Optional) Headroom — AI Agent Context Compression
 

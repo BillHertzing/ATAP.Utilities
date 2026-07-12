@@ -390,7 +390,7 @@ function New-SprintStage1 {
     # point (Task 12.2.b / SC-0236): Set-SprintBoundaryContext -Boundary Start
     # performs junctions ('.vscode' only) -> downstream context -> full adapter
     # materialization, in that structurally enforced order. Machine-global
-    # concerns (shared settings, profile symlinks) are skipped here — Stage 1
+    # concerns (shared settings, managed profile deployment) are skipped here — Stage 1
     # does not own them.
     try {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `

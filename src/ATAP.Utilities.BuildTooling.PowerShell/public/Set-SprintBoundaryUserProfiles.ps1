@@ -5,13 +5,12 @@ function Set-SprintBoundaryUserProfiles {
   .DESCRIPTION
     Resolves the active sprint or stable overview workspace to discover developer
     identities, bootstraps ATAP host settings to discover local service-account
-    identities, and renders each applicable PowerShell 7 user profile as
+    identities, and copies each applicable PowerShell 7 user profile as
     `<Home>\Documents\PowerShell\profile.ps1`.
 
-    Developer profiles use the ATAP.IAC developer template to dot-source
-    `CurrentUserAllHostsV7CoreProfile.ps1` beneath the supplied
-    `ATAPUtilitiesRoot`. Service-account profiles use the ATAP.IAC minimal
-    non-interactive template. Missing or disabled service accounts are skipped
+    Developer profiles copy the ATAP.IAC `CurrentUserAllHostsV7CoreProfile.ps1`
+    payload. Service-account profiles copy the ATAP.IAC administrator-managed
+    payload. Missing or disabled service accounts are skipped
     with explicit warnings so SprintEnd can proceed safely on hosts that do not
     provision every account.
 
@@ -29,9 +28,10 @@ function Set-SprintBoundaryUserProfiles {
     Parent directory containing the overview workspace files.
   .PARAMETER OverviewWorkspacePath
     Optional explicit path to the sprint or stable overview `.code-workspace`
-    file. When omitted, the function prefers the newest `OverviewSprint*.code-workspace`
-    beneath `GitRoot`, then falls back to `Overview.code-workspace` or
-    `OverView.code-workspace`.
+    file. When omitted, the function prefers the newest canonical
+    `Overview.Sprint.NNNN.code-workspace` beneath `GitRoot`, then checks legacy
+    sprint spellings for compatibility before falling back to
+    `Overview.code-workspace`.
   .PARAMETER HomeDirectoryOverrides
     Optional map of identity name to home-directory path. Intended for tests and
     narrowly scoped repairs.
@@ -73,6 +73,7 @@ function Set-SprintBoundaryUserProfiles {
   begin {
     $fn = $MyInvocation.MyCommand.Name
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+    $localComputerName = if ($env:COMPUTERNAME) { $env:COMPUTERNAME } else { [Environment]::MachineName }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
     foreach ($privateHelperName in @('Get-WorkspaceJson', 'Initialize-ATAPConfigurationGlobals')) {
@@ -108,7 +109,7 @@ function Set-SprintBoundaryUserProfiles {
         return [IO.Path]::GetFullPath([string]$HomeDirectoryOverrides[$leafName])
       }
 
-      if ($HostName -and -not [string]::Equals($HostName, $env:COMPUTERNAME, [StringComparison]::OrdinalIgnoreCase)) {
+      if ($HostName -and -not [string]::Equals($HostName, $localComputerName, [StringComparison]::OrdinalIgnoreCase)) {
         return $null
       }
 
@@ -133,6 +134,8 @@ function Set-SprintBoundaryUserProfiles {
       }
 
       $workspaceFiles = @()
+      $workspaceFiles += Get-ChildItem -LiteralPath $GitRoot -File -Filter 'Overview.Sprint.*.code-workspace' -ErrorAction SilentlyContinue
+      # Legacy compatibility only; new workspaces use Overview.Sprint.NNNN.
       $workspaceFiles += Get-ChildItem -LiteralPath $GitRoot -File -Filter 'Overview.Sprint*.code-workspace' -ErrorAction SilentlyContinue
       $workspaceFiles += Get-ChildItem -LiteralPath $GitRoot -File -Filter 'OverviewSprint*.code-workspace' -ErrorAction SilentlyContinue
       $workspaceFiles += Get-ChildItem -LiteralPath $GitRoot -File -Filter 'OverViewSprint*.code-workspace' -ErrorAction SilentlyContinue
@@ -151,8 +154,15 @@ function Set-SprintBoundaryUserProfiles {
       return $null
     }
 
-    $developerSourcePath = Join-Path $ATAPIACRoot 'Windows\ProfileTemplates\Developer.CurrentUserAllHosts.ps1.template'
-    $serviceSourcePath = Join-Path $ATAPIACRoot 'Windows\ProfileTemplates\ServiceAccount.CurrentUserAllHosts.ps1.template'
+    $developerSourcePath = Join-Path $ATAPIACRoot 'Windows\ProfileTemplates\CurrentUserAllHostsV7CoreProfile.ps1'
+    $serviceSourcePath = Join-Path $ATAPIACRoot 'Windows\ProfileTemplates\ProfileForServiceAccountUsers.ps1'
+    $approvedServiceAccountPolicy = @{
+      SvcBuildMaster = $true
+      SvcProGet = $true
+      SvcSQLServer = $true
+      SvcSeq = $false
+      SvcParityAudit = $false
+    }
 
     $profiles = [System.Collections.Generic.List[object]]::new()
     $warnings = [System.Collections.Generic.List[string]]::new()
@@ -180,8 +190,8 @@ function Set-SprintBoundaryUserProfiles {
       $skipReason = $null
       $isFailure = $false
 
-      if ($developerHost -and -not [string]::Equals($developerHost, $env:COMPUTERNAME, [StringComparison]::OrdinalIgnoreCase)) {
-        $skipReason = "Developer '$username' belongs to host '$developerHost', not '$env:COMPUTERNAME'."
+      if ($developerHost -and -not [string]::Equals($developerHost, $localComputerName, [StringComparison]::OrdinalIgnoreCase)) {
+        $skipReason = "Developer '$username' belongs to host '$developerHost', not '$localComputerName'."
         [void]$warnings.Add($skipReason)
       } elseif ([string]::IsNullOrWhiteSpace($homeDirectory)) {
         $skipReason = "Home directory could not be resolved for developer '$username'."
@@ -236,6 +246,10 @@ function Set-SprintBoundaryUserProfiles {
 
       $configuredHome = [string]$global:settings[$homeSettingKey]
       $leafIdentity = Resolve-LeafName -Identity $identity
+      if (-not $approvedServiceAccountPolicy.ContainsKey($leafIdentity)) {
+        [void]$warnings.Add("Ignoring discovered service account '$identity' because it is outside the user-approved Task 12.49 scope.")
+        continue
+      }
       $localUser = $null
       try {
         $localUser = Get-LocalUser -Name $leafIdentity -ErrorAction Stop
@@ -256,10 +270,10 @@ function Set-SprintBoundaryUserProfiles {
       $isFailure = $false
 
       if ($null -eq $localUser) {
-        $skipReason = "Service account '$identity' is not present on host '$env:COMPUTERNAME'."
+        $skipReason = "Service account '$identity' is not present on host '$localComputerName'."
         [void]$warnings.Add($skipReason)
       } elseif ($localUser.PSObject.Properties['Enabled'] -and -not [bool]$localUser.Enabled) {
-        $skipReason = "Service account '$identity' is disabled on host '$env:COMPUTERNAME'."
+        $skipReason = "Service account '$identity' is disabled on host '$localComputerName'."
         [void]$warnings.Add($skipReason)
       } elseif ([string]::IsNullOrWhiteSpace($homeDirectory)) {
         $skipReason = "Home directory could not be resolved for service account '$identity'."
@@ -270,10 +284,11 @@ function Set-SprintBoundaryUserProfiles {
       [void]$profiles.Add([PSCustomObject]@{
           Identity      = $identity
           Kind          = 'ServiceAccount'
-          Host          = $env:COMPUTERNAME
+          Host          = $localComputerName
           HomeDirectory = $homeDirectory
           ProfilePath   = $profilePath
           SourcePath    = $serviceSourcePath
+          RequiresSecret = [bool]$approvedServiceAccountPolicy[$leafIdentity]
           Skipped       = [bool]$skipReason -and -not $isFailure
           Warning       = if ($isFailure) { $null } else { $skipReason }
           Error         = if ($isFailure) { $skipReason } else { $null }

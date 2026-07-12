@@ -145,7 +145,7 @@ fork
 
 #e1d5e7: <b>Set powershell.cwd to _Planning sprint worktree</b> ;
 
-#d5e8d4: <b>Write OverviewSprintNNNN.code-workspace</b> ;
+#d5e8d4: <b>Write Overview.Sprint.NNNN.code-workspace</b> ;
 
 note right #f5f5f5
   Current cmdlet default.

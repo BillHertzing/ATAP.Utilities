@@ -32,7 +32,7 @@ Describe 'New-OverviewSprintWorkspace [public]' {
   }
 
   It 'creates a sprint workspace using discovered sprint worktree folders' {
-    $outputWorkspace = Join-Path $script:tempDir 'Overview.Sprint0007.code-workspace'
+    $outputWorkspace = Join-Path $script:tempDir 'Overview.Sprint.0007.code-workspace'
 
     $result = New-OverviewSprintWorkspace -SprintNumber 7 -GitRoot $script:tempDir -SourceWorkspacePath $script:sourceWorkspace -OutputWorkspacePath $outputWorkspace
     $workspace = Get-Content -LiteralPath $outputWorkspace -Raw | ConvertFrom-Json

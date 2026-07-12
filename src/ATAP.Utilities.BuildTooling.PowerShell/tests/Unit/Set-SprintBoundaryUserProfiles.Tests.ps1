@@ -13,20 +13,18 @@ Describe 'Set-SprintBoundaryUserProfiles [public]' {
     $script:iacRoot = Join-Path $script:gitRoot 'ATAP.IAC-wt-13-Sprint-0011-work-items'
     $script:developerHome = Join-Path $script:testRoot 'DeveloperHome'
     $script:serviceHome = Join-Path $script:testRoot 'SvcHome'
-    $profileSourceDir = Join-Path $script:utilRoot 'src\ATAP.Utilities.PowerShell\Profiles'
     $templateDir = Join-Path $script:iacRoot 'Windows\ProfileTemplates'
-    New-Item -ItemType Directory -Path $profileSourceDir, $templateDir, $script:developerHome, $script:serviceHome -Force | Out-Null
-    Set-Content -LiteralPath (Join-Path $profileSourceDir 'CurrentUserAllHostsV7CoreProfile.ps1') -Value '# developer profile' -Encoding UTF8
+    New-Item -ItemType Directory -Path $templateDir, $script:developerHome, $script:serviceHome -Force | Out-Null
     @'
 # ATAP-Managed-UserScopeProfile: v1
-. '{{ATAP_UTILITIES_ROOT}}\src\ATAP.Utilities.PowerShell\Profiles\CurrentUserAllHostsV7CoreProfile.ps1'
-'@ | Set-Content -LiteralPath (Join-Path $templateDir 'Developer.CurrentUserAllHosts.ps1.template') -Encoding UTF8 -NoNewline
+# developer profile payload
+'@ | Set-Content -LiteralPath (Join-Path $templateDir 'CurrentUserAllHostsV7CoreProfile.ps1') -Encoding UTF8 -NoNewline
     @'
 # ATAP-Managed-UserScopeProfile: v1
 Set-StrictMode -Version Latest
-'@ | Set-Content -LiteralPath (Join-Path $templateDir 'ServiceAccount.CurrentUserAllHosts.ps1.template') -Encoding UTF8 -NoNewline
+'@ | Set-Content -LiteralPath (Join-Path $templateDir 'ProfileForServiceAccountUsers.ps1') -Encoding UTF8 -NoNewline
 
-    $script:overviewPath = Join-Path $script:gitRoot 'Overview.Sprint0011.code-workspace'
+    $script:overviewPath = Join-Path $script:gitRoot 'Overview.Sprint.0011.code-workspace'
     @{
       folders = @(@{ path = 'ATAP.Utilities-wt-118-Sprint-0011-work-items' })
       developers = @(
@@ -76,9 +74,8 @@ Set-StrictMode -Version Latest
     $result.Ok | Should -BeTrue
     $developerProfile = Join-Path $script:developerHome 'Documents\PowerShell\profile.ps1'
     Test-Path -LiteralPath $developerProfile | Should -BeTrue
-    $escapedUtilitiesRoot = [regex]::Escape($script:utilRoot)
     Get-Content -LiteralPath $developerProfile -Raw |
-      Should -Match $escapedUtilitiesRoot
+      Should -Match 'developer profile payload'
   }
 
   It 'deploys the service-account profile for an enabled local account' {

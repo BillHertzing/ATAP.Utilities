@@ -22,9 +22,9 @@ This completes task **V4-H03** (Sprint 0007).
 | SharedVSCode settings | `Invoke-SprintAIAdapterLifecycle`, `Set-UserSettingsSymlink`, `Set-ClaudeSettingsSymlink` | re-render the SharedVSCode settings target for the sprint boundary, point `%APPDATA%\Code\User\settings.json` at the sprint `UserSettings.jsonc`, and render `~/.claude/settings.json` as a real file from `.ai/config/claudecode/settings.overlay.json` | re-render the SharedVSCode settings target for stable, point VS Code user settings back at stable, and render Claude user settings from the stable overlay | No |
 | Downstream contexts | `Initialize-DownstreamSprintFromSharedVSCode` (Start) / `Reset-DownstreamToSharedVSCodeMain` (End) | set each `*.code-workspace` `templateRef`/`profile` to the sprint worktree and re-apply hooks / commit template / gitattributes | reset `templateRef` to `main`, `profile` to `default`, re-apply context | No |
 | Canonical project AI adapters | `Invoke-SprintAIAdapterLifecycle` | call `Render-AIAdapters -Domain settings,permissions` in Antigravity → Codex → Claude Code → Copilot order; real worktrees materialize project scope only | call `Test-AIAdapterDrift -Domain settings,permissions`; unexplained drift blocks link teardown pending promote/regenerate review | No |
-| PowerShell 7 profile symlinks | `Set-PowerShell7ProfileSymlink` | point `C:\Program Files\PowerShell\7\profile.ps1` at the ATAP.Utilities sprint worktree and `HostSettings.ps1` at the ATAP.IAC sprint worktree; remove the obsolete `global_ConfigRootKeys.ps1` / `global_environmentVariables.ps1` links | point `profile.ps1` / `HostSettings.ps1` back at the stable ATAP.Utilities / ATAP.IAC repos | No |
-| Developer PowerShell profiles | `Set-SprintBoundaryUserProfiles` | discover developers from `OverviewSprintNNNN.code-workspace` and install each developer's `Documents\PowerShell\profile.ps1` from `CurrentUserAllHostsV7CoreProfile.ps1` in the sprint ATAP.Utilities worktree | install each developer profile from the stable ATAP.Utilities `CurrentUserAllHostsV7CoreProfile.ps1` | No |
-| Service-account PowerShell profiles | `Set-SprintBoundaryUserProfiles` | discover configured service accounts from host settings and install each available account's `Documents\PowerShell\profile.ps1` from `ProfileForServiceAccountUsers.ps1` in the sprint ATAP.Utilities worktree | install each available service-account profile from the stable ATAP.Utilities `ProfileForServiceAccountUsers.ps1`; missing/disabled accounts are warned, not hard-coded | No |
+| PowerShell 7 machine profile + HostSettings | `Set-PowerShell7ProfileSymlink` (compatibility name) | copy the sprint ATAP.IAC `AllUsersAllHostsV7CoreProfile.ps1` payload to `C:\Program Files\PowerShell\7\profile.ps1`, retarget `HostSettings.ps1` to sprint ATAP.IAC, and remove obsolete links | copy the stable ATAP.IAC machine payload and retarget `HostSettings.ps1` to stable ATAP.IAC | No |
+| Developer PowerShell profiles | `Set-SprintBoundaryUserProfiles` | discover developers from `Overview.Sprint.NNNN.code-workspace` and copy each developer's `Documents\PowerShell\profile.ps1` from `CurrentUserAllHostsV7CoreProfile.ps1` in the sprint ATAP.IAC worktree | copy each developer profile from the stable ATAP.IAC `CurrentUserAllHostsV7CoreProfile.ps1` | No |
+| Service-account PowerShell profiles | `Set-SprintBoundaryUserProfiles` | discover only the five approved accounts from host settings and copy each available account's `Documents\PowerShell\profile.ps1` from sprint ATAP.IAC | copy each available service-account profile from stable ATAP.IAC; missing/disabled accounts are warned | No |
 | ConfigRootKeys | — | none (in-process bootstrap) | none (in-process bootstrap) | **Yes** |
 
 ## AIAdapter lifecycle contract
@@ -52,13 +52,11 @@ documentation and callers use `Invoke-SprintAIAdapterLifecycle`.
 
 ### PowerShell profiles are retargeted or deployed; ConfigRootKeys are stable-by-design
 
-- **PowerShell 7 profile symlinks** are **not** stable-by-design (corrected under
-  H09/SC-0188, Task 10.13). `C:\Program Files\PowerShell\7\profile.ps1` is how the
-  AllUsersAllHosts core profile (`AllUsersAllHostsV7CoreProfile.ps1`) detects whether the
-  active session is in a stable or sprint worktree, so it must track the ATAP.Utilities
-  sprint worktree while a sprint is open and reset to stable at SprintEnd. `HostSettings.ps1`
-  follows the ATAP.IAC worktree the same way. `Set-PowerShell7ProfileSymlink` performs the
-  retarget (and removes the obsolete `global_ConfigRootKeys.ps1` /
+- **The PowerShell 7 machine profile is copied; HostSettings remains linked.**
+  `Set-PowerShell7ProfileSymlink` retains its compatibility name, but Task
+  12.49.e changed `profile.ps1` to a real byte-for-byte copy of the selected
+  stable/sprint ATAP.IAC payload. `HostSettings.ps1` follows the selected
+  ATAP.IAC worktree. The worker also removes obsolete `global_ConfigRootKeys.ps1` /
   `global_environmentVariables.ps1` symlinks). SprintEnd 0009 not resetting
   `global_ConfigRootKeys.ps1` left it pointed at the deleted Sprint 0009 worktree — the root
   cause of the recurring config-globals breakage this concern now prevents.

@@ -486,7 +486,7 @@ function New-SprintStage2 {
       # (Task 12.2.b / SC-0236): Set-SprintBoundaryContext -Boundary Start
       # performs junctions ('.vscode' only) -> SharedVSCode context -> full AI
       # adapter materialization, in that structurally enforced order.
-      # Machine-global concerns (shared settings, profile symlinks) stay in
+      # Machine-global concerns (shared settings, managed profile deployment) stay in
       # steps 6/6b/6c below, so they run once per stage — not once per repo.
       try {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
@@ -550,7 +550,7 @@ function New-SprintStage2 {
 
     # ===================================================================
     # 5c. Generate and verify the sprint Overview workspace (Task 10.14.a)
-    # OverviewSprintNNNN.code-workspace is the manifest every later step uses to
+    # Overview.Sprint.NNNN.code-workspace is the manifest every later step uses to
     # discover the sprint (Build-CLAUDEPerRepository / CLAUDE.md propagation in
     # Task 10.3 and other cross-repo tooling). Earlier sprints created it only via
     # a documentation-only agent step (SprintStartAgent Step 3a), so a live run
@@ -563,7 +563,7 @@ function New-SprintStage2 {
     $overviewWorkspacePath = $null
     $overviewWorkspaceVerified = $false
     $overviewWorkspaceError = $null
-    $expectedOverviewPath = Join-Path $GitRoot ('Overview.Sprint{0}.code-workspace' -f $sprintNum)
+    $expectedOverviewPath = Join-Path $GitRoot ('Overview.Sprint.{0}.code-workspace' -f $sprintNum)
 
     try {
       if ($PSCmdlet.ShouldProcess($expectedOverviewPath, 'Generate and verify Overview sprint workspace')) {
@@ -689,7 +689,7 @@ function New-SprintStage2 {
     }
 
     # ===================================================================
-    # 6c. Retarget machine-wide PowerShell 7 profile symlinks to the sprint
+    # 6c. Deploy the machine-wide PowerShell 7 profile and retarget HostSettings
     # worktrees (H09/SC-0188, Task 10.13). profile.ps1 must track the
     # ATAP.Utilities sprint worktree so the AllUsersAllHosts core profile detects
     # the active sprint context; HostSettings.ps1 tracks the ATAP.IAC sprint
@@ -712,7 +712,7 @@ function New-SprintStage2 {
         Select-Object -First 1 -ExpandProperty worktreePath
       if ([string]::IsNullOrWhiteSpace($iacWtRoot)) { $iacWtRoot = Join-Path $GitRoot 'ATAP.IAC' }
 
-      if ($PSCmdlet.ShouldProcess($utilWtRoot, 'Retarget PowerShell 7 profile symlinks to sprint worktrees')) {
+      if ($PSCmdlet.ShouldProcess($utilWtRoot, 'Deploy the PowerShell 7 profile payload and retarget HostSettings to sprint worktrees')) {
         $profileSymlinkResult = Set-PowerShell7ProfileSymlink `
           -ATAPUtilitiesRoot $utilWtRoot `
           -ATAPIACRoot $iacWtRoot `
@@ -720,14 +720,14 @@ function New-SprintStage2 {
         if ($profileSymlinkResult.Ok) {
           $profileSymlinksRetargeted = $true
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-            -Message "PowerShell 7 profile symlinks retargeted: profile.ps1 -> $utilWtRoot, HostSettings.ps1 -> $iacWtRoot"
+            -Message "PowerShell 7 profile payload deployed from ATAP.IAC and HostSettings.ps1 retargeted to $iacWtRoot"
         } else {
           $profileSymlinkError = "Profile symlink retarget reported failures: $($profileSymlinkResult.Failures -join '; ')"
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profileSymlinkError
         }
       }
     } catch {
-      $profileSymlinkError = "Failed to retarget PowerShell 7 profile symlinks. Exception: $($_.Exception.Message)"
+      $profileSymlinkError = "Failed to deploy the PowerShell 7 profile payload or retarget HostSettings. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profileSymlinkError
     }
 

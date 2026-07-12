@@ -23,6 +23,9 @@ http://www.somewhere.com/attribution.html
 <Configuration Management Keywords>
 #>
 
+# OBSOLETE / UNSUPPORTED (Sprint 0012 Task 12.49.e).
+# Canonical profile payloads are owned by ATAP.IAC\Windows\ProfileTemplates and
+# copied by BuildTooling. Do not invoke or export this historical generator.
 function Create-AllUsersAllHostsV7CoreProfile {
   param(
     [string] $hostname
@@ -139,113 +142,6 @@ $DebugPreference = 'SilentlyContinue'
 # Don't Print any verbose messages to the console
 $VerbosePreference = 'SilentlyContinue' # SilentlyContinue Continue
 
-########################################################
-# Locally defined functions
-########################################################
-
-#region Functions needed by the machine profile, must be defined in the profile, or dot-sourced
-function Write-ArrayIndented {
-  param ($a, $indent, $indentIncrement)
-  $outstr = ' ' * $indent
-  $a | ForEach-Object {
-    switch ($_) {
-      ({ $PSItem -is [system.boolean] }) {
-        $outstr += $_
-        break
-      }
-      ({ $PSItem -is [system.string] }) {
-        $outstr += $_
-        break
-      }
-      ({ $PSItem -is [system.array] }) {
-        $outstr += '(' + [Environment]::NewLine
-        $outstr += Write-ArrayIndented $_ ($indent + $indentIncrement) $indentIncrement
-        $outstr += ' ' * $indent + ')'
-        break
-      }
-      ({ $PSItem -is [System.Collections.Hashtable] }) {
-        $outstr += '{' + [Environment]::NewLine
-        $outstr += Write-HashIndented $_ ($indent + $indentIncrement) $indentIncrement
-        $outstr += ' ' * $indent + '}'
-        break
-      }
-    }
-  }
-  $outstr += $a -join [Environment]::NewLine
-}
-
-function Write-HashIndented {
-  param($hash
-    , [int] $initialIndent = 0
-    , [int] $indentIncrement = 2
-  )
-
-  $outstr = ''
-  $hash.GetEnumerator() | Sort-Object -Property Key | ForEach-Object { $outstr += Write-KVPIndented $_ $initialIndent $indentIncrement }
-  $outstr
-}
-
-function Write-KVPIndented {
-  param ($kvp, $indent, $indentIncrement)
-  $outstr = ' ' * $indent + $kvp.Key + ' = '
-  switch ($kvp.Value) {
-    ({ $PSItem -is [system.boolean] }) {
-      $outstr += $kvp.Value
-      break
-    }
-    ({ $PSItem -is [system.string] }) {
-      $outstr += $kvp.Value
-      break
-    }
-    ({ $PSItem -is [system.array] }) {
-      $outstr += '(' + [Environment]::NewLine
-      $outstr += Write-ArrayIndented $kvp.Value ($indent + $indentIncrement) $indentIncrement
-      $outstr += ' ' * $indent + ')'
-      break
-    }
-    ({ $PSItem -is [System.Collections.Hashtable] }) {
-      $outstr += '{' + [Environment]::NewLine
-      $outstr += Write-HashIndented $kvp.Value ($indent + $indentIncrement) $indentIncrement
-      $outstr += ' ' * $indent + '}'
-      break
-    }
-  }
-  $outstr += [Environment]::NewLine
-  $outstr
-}
-
-function Write-EnvironmentVariablesIndented {
-  param(
-    [int] $initialIndent = 0
-    , [int] $indentIncrement = 2
-  )
-  ('Machine', 'User', 'Process') | ForEach-Object { $scope = $_
-    [System.Environment]::GetEnvironmentVariables($scope) | ForEach-Object { $envVarHashTable = $_
-      $envVarHashTable.Keys | Sort-Object | ForEach-Object { $key = $_
-        if ($key -eq 'path') {
-          $outstr += ' ' * $initialIndent + $key + ' (' + $scope + ') = ' + [Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) + `
-          $($($($envVarHashTable[$key] -split [IO.Path]::PathSeparator) | Sort-Object) -join $([Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) ) )
-        } else {
-          $outstr += ' ' * $initialIndent + $key + ' = ' + $envVarHashTable[$key] + '  [' + $scope + ']' + [Environment]::NewLine
-        }
-      }
-    }
-  }
-  $outstr
-}
-
-#endregion Functions needed by the machine profile, must be defined in the profile
-##################################################################################
-
-function ValidateTools {
-  # validate dotnet
-  # validate dotnet build
-  # validate java
-  # vallidate PlantUML
-  # validate PlantUmlClassDiagramGenerator
-  # dotnet tool install --global PlantUmlClassDiagramGenerator --version 1.2.4
-}
-
 #region Security Subsystem core functions (to be moved into a separate ATAP.Utilities module)
 ##################################################################################
 
@@ -306,8 +202,6 @@ Write-PSFMessage -Level Debug -Message ("hostname = $hostName")
 $PSDefaultParameterValues = @{
   '*:Encoding' = 'UTF8'
 }
-# encoding : New-Object System.Text.UTF8Encoding($false) # UTF8 encoded with or without a ByteOrdermark(BOM) which results in System.Text.UTF8Encoding
-# encoding : [System.Text.Encoding]::UTF8 which results in System.Text.UTF8Encoding+UTF8EncodingSealed
 
 # Dot source the list of configuration keys
 # Configuration root key .ps1 files should be a peer of the machine profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
@@ -358,9 +252,7 @@ $matchPatternRegex = [System.Text.RegularExpressions.Regex]::new( 'global:settin
 # Until ATAP.Utilities package imports are working.... dot source the file
 .  $(Join-Path -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-CollectionTraverseEvaluate.ps1'))
 # From the various source collections create the final global:settings
-Get-CollectionTraverseEvaluate -SourceCollections $sourceCollections -destination $global:Settings -matchPatternRegex $matchPatternRegex
-
-
+Get-CollectionTraverseEvaluate -sourceCollections $sourceCollections -destination $global:Settings -matchPatternRegex $matchPatternRegex
 
 # Opt Out of the dotnet telemetry
 [Environment]::SetEnvironmentVariable('DOTNET_CLI_TELEMETRY_OPTOUT', 1, 'Process')

@@ -11,18 +11,18 @@ Describe 'Set-UserScopeProfile [public]' {
     $script:iacRoot = Join-Path $script:testRoot 'ATAP.IAC'
     $script:utilitiesRoot = Join-Path $script:testRoot 'ATAP.Utilities'
     $script:userHome = Join-Path $script:testRoot 'whertzing'
-    $templateRoot = Join-Path $script:iacRoot 'Windows\ProfileTemplates'
-    New-Item -ItemType Directory -Path $templateRoot, $script:utilitiesRoot, $script:userHome -Force | Out-Null
+    $script:templateRoot = Join-Path $script:iacRoot 'Windows\ProfileTemplates'
+    New-Item -ItemType Directory -Path $script:templateRoot, $script:utilitiesRoot, $script:userHome -Force | Out-Null
     @'
 # ATAP-Managed-UserScopeProfile: v1
-# Developer profile for {{ACCOUNT_NAME}}
-. '{{ATAP_UTILITIES_ROOT}}\src\ATAP.Utilities.PowerShell\Profiles\CurrentUserAllHostsV7CoreProfile.ps1'
-'@ | Set-Content -LiteralPath (Join-Path $templateRoot 'Developer.CurrentUserAllHosts.ps1.template') -Encoding utf8 -NoNewline
+# Canonical developer profile payload.
+$global:Task1249Fixture = 'developer'
+'@ | Set-Content -LiteralPath (Join-Path $script:templateRoot 'CurrentUserAllHostsV7CoreProfile.ps1') -Encoding utf8 -NoNewline
     @'
 # ATAP-Managed-UserScopeProfile: v1
 # Minimal non-interactive service-account profile for {{ACCOUNT_NAME}}.
 Set-StrictMode -Version Latest
-'@ | Set-Content -LiteralPath (Join-Path $templateRoot 'ServiceAccount.CurrentUserAllHosts.ps1.template') -Encoding utf8 -NoNewline
+'@ | Set-Content -LiteralPath (Join-Path $script:templateRoot 'ProfileForServiceAccountUsers.ps1') -Encoding utf8 -NoNewline
   }
 
   AfterAll {
@@ -34,7 +34,7 @@ Set-StrictMode -Version Latest
     Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Add-ParityChangeEntry { [PSCustomObject]@{ Id = 'journal-entry' } }
   }
 
-  It 'creates a managed developer profile from the canonical template' {
+  It 'copies the canonical developer payload byte-for-byte' {
     $result = Set-UserScopeProfile -AccountName 'whertzing' -AccountClass Developer `
       -ATAPIACRoot $script:iacRoot -ATAPUtilitiesRoot $script:utilitiesRoot `
       -UserProfilePath $script:userHome -Confirm:$false
@@ -42,8 +42,9 @@ Set-StrictMode -Version Latest
     $result.Action | Should -Be 'Created'
     $result.Journaled | Should -BeTrue
     $result.ProfilePath | Should -Exist
-    $escapedUtilitiesRoot = [regex]::Escape($script:utilitiesRoot)
-    Get-Content -LiteralPath $result.ProfilePath -Raw | Should -Match $escapedUtilitiesRoot
+    $result.SourcePath | Should -Be (Join-Path $script:templateRoot 'CurrentUserAllHostsV7CoreProfile.ps1')
+    [Convert]::ToBase64String([IO.File]::ReadAllBytes($result.ProfilePath)) |
+      Should -Be ([Convert]::ToBase64String([IO.File]::ReadAllBytes($result.SourcePath)))
     Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Add-ParityChangeEntry -Times 1 -Exactly -Scope It
   }
 
@@ -71,6 +72,23 @@ Set-StrictMode -Version Latest
         -ATAPIACRoot $script:iacRoot -ATAPUtilitiesRoot $script:utilitiesRoot `
         -UserProfilePath $script:userHome -Confirm:$false
     } | Should -Throw '*Refusing to overwrite unmanaged profile*'
+  }
+
+  It 'migrates the known SSH-safe legacy dot-source wrapper without Force' {
+    $profileDirectory = Join-Path $script:userHome 'Documents\PowerShell'
+    New-Item -ItemType Directory -Path $profileDirectory -Force | Out-Null
+    @'
+# Quiet SSH-backed PowerShell remoting before profile initialization.
+if ($env:SSH_CONNECTION) { return }
+. 'C:\Legacy\CurrentUserAllHostsV7CoreProfile.ps1'
+'@ | Set-Content -LiteralPath (Join-Path $profileDirectory 'profile.ps1') -Encoding utf8 -NoNewline
+
+    $result = Set-UserScopeProfile -AccountName 'whertzing' -AccountClass Developer `
+      -ATAPIACRoot $script:iacRoot -ATAPUtilitiesRoot $script:utilitiesRoot `
+      -UserProfilePath $script:userHome -Confirm:$false
+
+    $result.Action | Should -Be 'Updated'
+    Get-Content -LiteralPath $result.ProfilePath -Raw | Should -Match 'Canonical developer profile payload'
   }
 
   It 'does not mutate the filesystem under WhatIf' {

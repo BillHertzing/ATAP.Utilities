@@ -39,10 +39,10 @@ preserve/defer surfaces, and all lifecycle evidence/backups belong under
 callers now use the adapter lifecycle.
 
 `Set-SprintBoundaryContext` now closes the remaining SprintEnd boundary gaps from
-Tasks 11.7.f-h. In addition to machine-level profile symlink retargeting, it
+Tasks 11.7.f-h. In addition to machine-level profile deployment and HostSettings retargeting, it
 deploys developer profiles from the resolved closing-sprint Overview workspace
-(`Overview.SprintNNNN.code-workspace` when present, otherwise the legacy
-`OverviewSprintNNNN.code-workspace`) and service
+(`Overview.Sprint.NNNN.code-workspace` when present, otherwise an explicitly
+supported legacy sprint-workspace spelling) and service
 account profiles from host settings into each identity's
 `Documents\PowerShell\profile.ps1`. The cmdlet also refreshes the SharedVSCode
 settings render at both boundaries so `permissions.additionalDirectories` and
@@ -145,7 +145,7 @@ and `-WhatIf` context is correctly propagated through all nested operations.
 
 **Stage 2 generates the sprint Overview workspace (Task 10.14.a).** After every
 downstream sprint worktree exists, `New-SprintStage2` calls
-`New-OverviewSprintWorkspace` to produce `OverviewSprint<NNNN>.code-workspace` in
+`New-OverviewSprintWorkspace` to produce `Overview.Sprint.NNNN.code-workspace` in
 the GitHub root and then runs a verification gate — the file must exist and must
 resolve at least one `*-wt-<n>-Sprint-<NNNN>-work-items` folder. Earlier sprints
 created this file only through a documentation-only agent step, so a live run
@@ -158,7 +158,7 @@ carries `infrastructure.overviewWorkspacePath`,
 failure is reported in `overviewWorkspaceError` without aborting the rest of
 Stage 2 — and the step is skipped under `-DryRun`/`-WhatIf`.
 SprintEnd now resolves the exact closing sprint artifact by sprint number and
-prefers `Overview.Sprint<NNNN>.code-workspace` when that newer naming appears,
+prefers `Overview.Sprint.NNNN.code-workspace`,
 instead of accidentally touching stale older overview files.
 
 **Stage 2 distributes AI instructions through one orchestration (Task 10.34).**

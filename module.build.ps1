@@ -315,6 +315,18 @@ Task BuildManifest {
 # T-43  Package — produce a .nupkg under _generated/…/packages/
 # ---------------------------------------------------------------------------
 Task Package BuildPSM1, BuildManifest, {
+  # The generated PSM1 and manifest replace source implementation files, but
+  # optional static module content remains source-owned and must be staged
+  # explicitly before Publish-PSResource packages the directory.
+  $moduleContentDirectories = @('scripts', 'Documentation')
+  foreach ($contentDirectoryName in $moduleContentDirectories) {
+    $sourceContentDirectory = Join-Path $script:ModuleRoot $contentDirectoryName
+    if (Test-Path -LiteralPath $sourceContentDirectory -PathType Container) {
+      Copy-Item -LiteralPath $sourceContentDirectory -Destination $script:PackageSrcDir `
+        -Recurse -Force -ErrorAction Stop
+    }
+  }
+
   $localRepoName = "LocalBuild_$($script:ModuleName)"
   $localRepoUri = $script:PackagesDir
 

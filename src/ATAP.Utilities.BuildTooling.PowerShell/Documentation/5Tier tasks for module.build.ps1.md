@@ -373,7 +373,10 @@ Each T-1x task delivers one public cmdlet in [src/ATAP.Utilities.BuildTooling.Po
 **Steps:**
 
 1. Delete `BuildPackageSpecificPSD1AndPSM1`, `BuildNuSpecFromManifest`, `AddReadMeToNuSpec`, `BuildChocolateyPackage`.
-2. Introduce one `Package` task that calls `New-PSResourcePackage` (or uses `Publish-PSResource -WhatIf` to produce a nupkg locally).
+2. Stage optional source-owned `scripts\` and `Documentation\` folders alongside the
+   generated PSM1 and manifest, then introduce one `Package` task that calls
+   `New-PSResourcePackage` (or uses `Publish-PSResource -WhatIf` to produce a nupkg
+   locally).
    **Acceptance:** One `.nupkg` file lands under `_generated/PSModules/<name>/packages/`.
    **Dependencies:** T-42.
 

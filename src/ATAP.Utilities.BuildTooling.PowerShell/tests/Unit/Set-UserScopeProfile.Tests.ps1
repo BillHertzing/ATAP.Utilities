@@ -91,6 +91,25 @@ if ($env:SSH_CONNECTION) { return }
     Get-Content -LiteralPath $result.ProfilePath -Raw | Should -Match 'Canonical developer profile payload'
   }
 
+  It 'replaces a legacy profile link with a real copied file even when its target bytes already match' {
+    $profileDirectory = Join-Path $script:userHome 'Documents\PowerShell'
+    New-Item -ItemType Directory -Path $profileDirectory -Force | Out-Null
+    $legacyTarget = Join-Path $script:testRoot 'legacy-service-profile.ps1'
+    Copy-Item -LiteralPath (Join-Path $script:templateRoot 'ProfileForServiceAccountUsers.ps1') -Destination $legacyTarget
+    $profilePath = Join-Path $profileDirectory 'profile.ps1'
+    New-Item -ItemType SymbolicLink -Path $profilePath -Target $legacyTarget | Out-Null
+
+    $result = Set-UserScopeProfile -AccountName 'whertzing' -AccountClass ServiceAccount `
+      -ATAPIACRoot $script:iacRoot -ATAPUtilitiesRoot $script:utilitiesRoot `
+      -UserProfilePath $script:userHome -Confirm:$false
+
+    $result.Action | Should -Be 'Updated'
+    (Get-Item -LiteralPath $profilePath).LinkType | Should -BeNullOrEmpty
+    [Convert]::ToBase64String([IO.File]::ReadAllBytes($profilePath)) |
+      Should -Be ([Convert]::ToBase64String([IO.File]::ReadAllBytes($result.SourcePath)))
+    Test-Path -LiteralPath $legacyTarget -PathType Leaf | Should -BeTrue
+  }
+
   It 'does not mutate the filesystem under WhatIf' {
     $result = Set-UserScopeProfile -AccountName 'whertzing' -AccountClass ServiceAccount `
       -ATAPIACRoot $script:iacRoot -ATAPUtilitiesRoot $script:utilitiesRoot `

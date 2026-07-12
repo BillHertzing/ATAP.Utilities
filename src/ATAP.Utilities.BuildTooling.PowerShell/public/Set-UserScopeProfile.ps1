@@ -8,6 +8,8 @@ function Set-UserScopeProfile {
     Existing unmanaged profiles are protected and require -Force.  Service
     Service payloads are validated to prohibit an interactive Password Manager
     `bw` invocation so a service shell never starts interactive authentication.
+    An approved legacy symbolic-link target is removed before bytes are copied;
+    cloud-backed real files with reparse attributes remain ordinary files.
 
     This cmdlet targets the local computer.  Invoke it through the hardened
     remoting path when provisioning a peer computer.
@@ -163,6 +165,11 @@ function Set-UserScopeProfile {
   }
 
   process {
+    $profileItem = Get-Item -LiteralPath $profilePath -Force -ErrorAction SilentlyContinue
+    # Cloud-backed real files can carry ReparsePoint (for example Dropbox
+    # placeholders). LinkType distinguishes an actual symlink from those files.
+    $isProfileLink = $null -ne $profileItem -and
+      -not [string]::IsNullOrWhiteSpace([string]$profileItem.LinkType)
     $existingContent = if (Test-Path -LiteralPath $profilePath -PathType Leaf) {
       Get-Content -LiteralPath $profilePath -Raw -ErrorAction Stop
     } else {
@@ -175,7 +182,7 @@ function Set-UserScopeProfile {
       $null
     }
     $contentMatches = $null -ne $existingBytes -and [Convert]::ToBase64String($existingBytes) -eq [Convert]::ToBase64String($sourceBytes)
-    if ($contentMatches) {
+    if ($contentMatches -and -not $isProfileLink) {
       return [PSCustomObject]@{
         AccountName = $AccountName; AccountClass = $AccountClass; ComputerName = $localComputerName
         ProfilePath = $profilePath; SourcePath = $sourcePath; TemplatePath = $sourcePath; Action = 'AlreadyCurrent'; Changed = $false; Journaled = $false
@@ -195,6 +202,9 @@ function Set-UserScopeProfile {
       try {
         if (-not (Test-Path -LiteralPath $profileDirectory -PathType Container)) {
           New-Item -ItemType Directory -Path $profileDirectory -Force -ErrorAction Stop | Out-Null
+        }
+        if ($isProfileLink) {
+          Remove-Item -LiteralPath $profilePath -Force -ErrorAction Stop
         }
         [IO.File]::WriteAllBytes($profilePath, $sourceBytes)
         $oldValue = if ($null -eq $existingContent) { 'Absent' } else { 'ManagedProfile' }

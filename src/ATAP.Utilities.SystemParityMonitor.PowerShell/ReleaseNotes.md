@@ -1,6 +1,6 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
-## 0.1.1 (unreleased)
+## 0.1.1 (published 2026-07-11)
 
 - Module relocated from ATAP.IAC `Windows\Parity` (`ATAP.IAC.Parity.PowerShell`) in
   Sprint 0012 Task 12.46. Public function names unchanged; module identity, manifest
@@ -16,5 +16,14 @@
   plus task-result JSON.
 - Unit coverage expanded to 9 Pester tests, including scheduled-task registration
   contracts and legacy `BW_SESSION` / `bw` / single-slot BWS filename guards.
-- Not yet published to the ProGet PowerShell feed; scheduled tasks are not yet
-  registered on any host from this location.
+- Published to `powershellget-stable` and installed for AllUsers on `utat022` and
+  `utat01`. The promoted package omitted `scripts\` and `Documentation\`; the operator
+  manually copied `scripts\` to both PowerShell 7 module roots as a temporary recovery
+  (SC-0264 tracks the packaging fix).
+- `utat022` has Ready audit and compare tasks using Password logon. Windows 10
+  `utat01` has a Ready audit task using S4U (`LogonType 2`) and Limited run level
+  (`RunLevel 0`), registered through Task Scheduler COM after supplying the
+  service-account credential at registration.
+- Known limitation: `Register-ParityScheduledTasks.ps1` 0.1.1 supplies credentials
+  only for Password logon. Its S4U branch returns `0x80070005` when an administrator
+  registers for a different account; a new immutable version must implement that path.

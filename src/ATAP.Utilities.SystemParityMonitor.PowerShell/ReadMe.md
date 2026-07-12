@@ -46,6 +46,10 @@ known live-registration failure modes.
   (`utat022`). The compare task reads the peer share, so live primary-host
   registration may need `-LogonType Password -Credential <PSCredential>` rather than
   `S4U` when SMB access requires reusable service-account credentials.
+- When an administrator registers an S4U task for a different account, supply that
+  account's credential at registration while retaining S4U in the saved principal.
+  Version `0.1.1` does not yet implement this path; the live Windows 10 peer task was
+  registered through Task Scheduler COM as S4U/Limited.
 - Cadence is `Daily` during the first onboarding month; re-register with
   `-Cadence BiWeekly` after the first clean month. The compare wrapper passes the
   expected cadence into `Compare-ParityAudits`, which flags snapshots older than
@@ -54,7 +58,8 @@ known live-registration failure modes.
   module map in the ATAP.IAC BuildMaster HostSettings fragment).
 - Packaging must preserve the `scripts\` and `Documentation\` folders below the
   installed module root. A package missing either folder is not deployable for parity
-  monitoring; do not repair it by copying files manually into Program Files.
+  monitoring. The live `0.1.1` hosts have a documented temporary manual `scripts\`
+  copy; SC-0264 remains the required reproducible fix.
 
 ## Functional area
 

@@ -29,6 +29,13 @@
 >   `Register-ParityScheduledTasks.ps1` was reconstructed (old on-disk copy was
 >   null-byte corrupted). No Parity scheduled tasks were registered on utat022 at move
 >   time; when tasks are (re)registered they must use the new module path.
+> - **2026-07-11 (Task 12.38.e):** the relocated scheduler scripts were hardened for
+>   Stage 1 operation: local audit tasks run on each host as `SvcParityAudit`, the
+>   primary host can additionally register the compare task, wrappers require the
+>   purpose-specific `CommonCIForBitwardenReadOnly` DPAPI token through
+>   `Get-BWSAccessToken -TokenPurpose ReadOnly`, and compare reports stale snapshots at
+>   `1.5x` the configured cadence. Live registration remains an operator action because
+>   primary-host SMB access may require `-LogonType Password -Credential <PSCredential>`.
 > - The fragment system's current documentation lives in
 >   `ConfigRootKeys-and-HostSettings.md` §9 (this folder).
 

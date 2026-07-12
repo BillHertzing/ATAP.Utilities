@@ -755,6 +755,17 @@ Install or verify these permanent instances:
 2. `QA`
 3. `Integration`
 
+All SQL Server named instances use TCP with fixed, high-range ports; do not use
+dynamic ports. This is the intended configuration on every host:
+
+| Instance | TCP port |
+| --- | ---: |
+| `Production` | 50020 |
+| `QA` | 50025 |
+| `Integration` | 50030 |
+| `DevWhertzing` | 50035 |
+| `ExpWhertzing` | 50040 |
+
 Use the database-management helper:
 
 ```powershell
@@ -764,9 +775,9 @@ $setupExe = Find-SqlServerSetupExe
 $setupRoot = Split-Path $setupExe -Parent
 
 $instances = @(
-  @{ Name = 'Production'; Port = 1433 },
-  @{ Name = 'QA';         Port = 1435 },
-  @{ Name = 'Integration'; Port = 1434 }
+  @{ Name = 'Production';  Port = 50020 },
+  @{ Name = 'QA';          Port = 50025 },
+  @{ Name = 'Integration'; Port = 50030 }
 )
 
 foreach ($instance in $instances) {
@@ -802,7 +813,8 @@ When the SQL installer prompts for service accounts:
 
 ### 6.5 Enable TCP/IP and set backup paths
 
-For each named instance:
+For each named instance, configure TCP/IP with the fixed port in the preceding
+table and clear its dynamic-port setting:
 
 1. Open SQL Server Configuration Manager.
 2. Enable TCP/IP for the instance.

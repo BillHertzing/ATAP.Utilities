@@ -1968,12 +1968,16 @@ dotnet nuget list source
 ### 9.10 Configure SystemParityMonitor on Windows 10 and Windows 11
 
 Parity monitoring is a host-pair service, not merely a module import. The complete
-installation, registration, first-run, rollback, and troubleshooting procedure ships
-with the module at:
+installation, registration, first-run, rollback, and troubleshooting procedure is
+intended to ship with the module at:
 
 ```text
 $moduleRoot\Documentation\InstallationAndTroubleshooting.md
 ```
+
+Version `0.1.1` omitted `Documentation\`; until SC-0264 is implemented, use the
+canonical source copy under
+`src\ATAP.Utilities.SystemParityMonitor.PowerShell\Documentation`.
 
 An administrator must complete this checklist on each participating host:
 
@@ -1981,8 +1985,10 @@ An administrator must complete this checklist on each participating host:
    for AllUsers. Resolve `$moduleRoot` below
    `C:\Program Files\PowerShell\Modules\ATAP.Utilities.SystemParityMonitor.PowerShell`.
 2. Verify the installed package contains its `scripts\` and `Documentation\` folders.
-   Do not register tasks from a sprint-worktree path or manually copy missing payloads
-   into Program Files.
+   A package missing either folder is not deployment-complete. The live `0.1.1`
+   installation required a temporary manual `scripts\` copy on both hosts; SC-0264
+   owns the reproducible package fix, and source documentation remains authoritative
+   until a corrected immutable version ships.
 3. Create and enable the non-administrative `SvcParityAudit` account. Do not grant
    local Administrator membership to work around scheduled-task failures.
 4. Create and ACL `C:\ProgramData\ATAP\ParityState`, its SMB share, journals,
@@ -1998,17 +2004,23 @@ An administrator must complete this checklist on each participating host:
    or account, and never use `bw`/`BW_SESSION` in the scheduled path.
 8. Register `AuditAndCompare` on the primary host with Password logon when peer SMB
    access needs reusable credentials. Register `AuditOnly` on the peer with S4U and a
-   limited run level.
+   limited run level. When the elevated administrator and S4U run-as identities differ,
+   supply the run-as credential during registration; Task Scheduler uses it to
+   authorize registration while preserving S4U/no stored password in the task.
 9. Run the peer audit, primary audit, and primary comparison in that order; require
    successful task-result JSON, fresh snapshots, a drift report, and no secret values
    in evidence.
 10. Keep Daily cadence for the first clean month, then re-register as BiWeekly.
 
 Windows 10 can require the inbox `ScheduledTasks` manifest to be imported by full path
-from Windows PowerShell 5.1. Use WinRM with
-`-ConfigurationName Microsoft.PowerShell` when administering it remotely. Windows 11
-normally exposes the cmdlets directly, but the same full-path import is valid. The
-module runbook records the exact compatibility checks and these live findings:
+from Windows PowerShell 5.1. The observed `utat01` endpoint omitted
+`C:\Windows\System32\WindowsPowerShell\v1.0\Modules` from `PSModulePath`, which also
+prevented normal autoload of `Microsoft.PowerShell.Utility` and `PowerShellGet`. Use
+WinRM with `-ConfigurationName Microsoft.PowerShell` and absolute manifest paths for
+the current recovery. SC-0266 tracks restoring a complete `PSModulePath` and adding a
+PowerShell 7 (`pwsh`) endpoint; WinRM profile loading is separate work. Windows 11
+normally exposes the cmdlets directly. The module runbook records the exact
+compatibility checks and these live findings:
 
 - the registration script must be dot-sourced before calling
   `Register-ParityScheduledTasks`; invoking the file with `&` intentionally performs no
@@ -2018,10 +2030,16 @@ module runbook records the exact compatibility checks and these live findings:
   filesystem path;
 - a PSFramework success message after `Register-ScheduledTask` reports an error is not
   proof; verify with `Get-ScheduledTask` and force registration errors to stop;
-- installed SystemParityMonitor version `0.1.0` requests Highest run level for peer
-  S4U registration and is therefore blocked on a deliberately non-admin Windows 10
-  `SvcParityAudit` account. Deploy the limited-run-level correction rather than adding
-  the account to Administrators.
+- version `0.1.1` fixed the historical Highest-run-level and false-success-log defects,
+  but its S4U branch still omits the different run-as account's registration
+  credential. `LOGON32_LOGON_BATCH` proved the account right is effective; COM and
+  cmdlet registration without a credential returned `0x80070005`, while credential-
+  backed COM registration succeeded and saved S4U (`2`) with Limited run level (`0`);
+- do not infer that a batch right is absent merely because `secedit` exports the local
+  account by name rather than literal SID; use an actual batch-logon test;
+- `Find-Module` and `Install-Module` can resolve the stable NuGet v2 feed even when
+  `Save-PSResource` returns 404 against its `FindPackagesById` request. Treat that as a
+  promoted-test-runner/feed-protocol defect, not proof that the package is absent.
 
 ## Step 10: Create Cobian Backup Jobs for the Tooling Databases
 

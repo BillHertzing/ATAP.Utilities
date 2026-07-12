@@ -48,7 +48,9 @@ ToDo: Insert diagram of CI/CD process
   and WSL runbooks (Task 12.38.f). The module-level
   `src/ATAP.Utilities.SystemParityMonitor.PowerShell/Documentation/InstallationAndTroubleshooting.md`
   runbook covers Windows 10/11 installation, scheduler registration, first-run proof,
-  and recovery from the live Task 12.38.e failure modes.
+  and recovery from the live Task 12.38.e failure modes, including Windows 10
+  WinRM/`PSModulePath`, credential-backed S4U registration, and version 0.1.1 static-
+  payload packaging limitations.
 - [ATAPUtilities Instantiation Tables](./ATAPUtilities-Instantiation-Tables.md)
   defines the Sprint 0012 inventory/version/manifestation schema used to model
   organization, computers, repositories, source modules, and rendered artifacts

@@ -68,6 +68,12 @@ try {
     BwsProbe = $probe
   } | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $resultPath -Encoding utf8
 } catch {
+  $identityName = try {
+    [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+  } catch {
+    '<unknown>'
+  }
+
   $eventLogResult = Write-ParityScheduledTaskEvent `
     -EntryType Error `
     -EventId 12381 `
@@ -80,7 +86,7 @@ try {
     Task = 'ParityCompare'
     LeftHostName = $LeftHostName.ToLowerInvariant()
     RightHostName = $RightHostName.ToLowerInvariant()
-    IdentityName = try { [System.Security.Principal.WindowsIdentity]::GetCurrent().Name } catch { '<unknown>' }
+    IdentityName = $identityName
     GeneratedAtUtc = $timestampUtc.ToString('o', [Globalization.CultureInfo]::InvariantCulture)
     EventLog = $eventLogResult
     Error = $_.Exception.Message

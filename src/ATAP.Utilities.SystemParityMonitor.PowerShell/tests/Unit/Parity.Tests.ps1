@@ -274,4 +274,18 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell scheduled task scripts' 
     ($auditSource + $compareSource) | Should -Not -Match 'Invoke-Command'
     ($auditSource + $compareSource) | Should -Not -Match 'BW_SESSION|bw login|bw unlock'
   }
+
+  It 'scheduled task wrappers parse successfully' {
+    foreach ($scriptName in @('Invoke-ParityScheduledAuditTask.ps1', 'Invoke-ParityScheduledCompareTask.ps1')) {
+      $tokens = $null
+      $errors = $null
+      [System.Management.Automation.Language.Parser]::ParseFile(
+        (Join-Path $scriptsRoot $scriptName),
+        [ref] $tokens,
+        [ref] $errors
+      ) | Out-Null
+
+      $errors | Should -BeNullOrEmpty
+    }
+  }
 }

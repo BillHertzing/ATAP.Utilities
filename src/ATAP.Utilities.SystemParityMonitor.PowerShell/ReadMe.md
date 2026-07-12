@@ -23,9 +23,10 @@ Sprint 0012 Task 12.46; public function names are unchanged.
 
 - `public\`, `private\` — one function per file; no top-level executable code
 - `scripts\` — scheduled-task wrappers (`Invoke-ParityScheduledAuditTask.ps1`,
-  `Invoke-ParityScheduledCompareTask.ps1`), shared scheduled-task helper
-  `ParityScheduledTask.Common.ps1`, and `Register-ParityScheduledTasks.ps1`
-  (dual-purpose, `&`-proof guarded)
+  `Invoke-ParityScheduledCompareTask.ps1`), interactive first-run helper
+  `Invoke-ParityTaskAndWait.ps1`, shared scheduled-task helper
+  `ParityScheduledTask.Common.ps1`, and `Register-ParityScheduledTasks.ps1` (the
+  executable scripts are dual-purpose and `&`-proof guarded)
 - `tests\Unit\` — Pester suite
 - `Documentation\` — module documentation (see `Documentation\Overview.md`); images in
   `Documentation\images\`
@@ -48,8 +49,10 @@ known live-registration failure modes.
   `S4U` when SMB access requires reusable service-account credentials.
 - When an administrator registers an S4U task for a different account, supply that
   account's credential at registration while retaining S4U in the saved principal.
-  Version `0.1.2` implements credential-backed S4U registration; the task definition
-  remains S4U/Limited and does not persist the registration password.
+  Version `0.1.3` uses Task Scheduler COM for this credential-backed registration;
+  the task definition remains S4U/Limited and does not persist the registration
+  password. Version `0.1.2` could incorrectly persist a Password principal on the
+  peer and must not be used for new S4U registrations.
 - Cadence is `Daily` during the first onboarding month; re-register with
   `-Cadence BiWeekly` after the first clean month. The compare wrapper passes the
   expected cadence into `Compare-ParityAudits`, which flags snapshots older than

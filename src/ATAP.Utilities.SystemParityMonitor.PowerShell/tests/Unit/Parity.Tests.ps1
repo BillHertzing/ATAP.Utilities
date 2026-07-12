@@ -147,6 +147,7 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell scheduled task scripts' 
 
   BeforeEach {
     $script:scheduledTaskRegistrations = @()
+    $script:s4uRegistrations = @()
 
     Mock -CommandName Get-Command -ParameterFilter { $Name -eq 'pwsh' } -MockWith {
       [pscustomobject]@{ Source = 'C:\Program Files\PowerShell\7\pwsh.exe' }
@@ -166,6 +167,22 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell scheduled task scripts' 
         Password = $Password
         Force = $Force.IsPresent
         ErrorAction = $ErrorAction
+      }
+    }
+
+    Mock -CommandName Register-ParityScheduledTaskS4U -MockWith {
+      param($TaskName, $TaskPath, $PwshPath, $Arguments, $Cadence, $At, $BiWeeklyDaysOfWeek, $UserId, $Credential, $RunLevel)
+      $script:s4uRegistrations += [pscustomobject]@{
+        TaskName = $TaskName
+        TaskPath = $TaskPath
+        PwshPath = $PwshPath
+        Arguments = $Arguments
+        Cadence = $Cadence
+        At = $At
+        BiWeeklyDaysOfWeek = $BiWeeklyDaysOfWeek
+        UserId = $UserId
+        Credential = $Credential
+        RunLevel = $RunLevel
       }
     }
   }
@@ -267,16 +284,15 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell scheduled task scripts' 
       -Credential $credential `
       -Confirm:$false
 
-    $script:scheduledTaskRegistrations | Should -HaveCount 1
-    $registration = $script:scheduledTaskRegistrations[0]
-    $registration.InputObject | Should -Not -BeNullOrEmpty
-    $registration.InputObject.Principal.UserId | Should -Be 'UTAT01\SvcParityAudit'
-    $registration.InputObject.Principal.LogonType | Should -Be 'S4U'
-    $registration.InputObject.Principal.RunLevel | Should -Be 'Limited'
-    $registration.User | Should -Be 'UTAT01\SvcParityAudit'
-    $registration.Password | Should -Be 'not-a-real-password'
-    $registration.Action | Should -BeNullOrEmpty
-    $registration.ErrorAction | Should -Be 'Stop'
+    $script:scheduledTaskRegistrations | Should -HaveCount 0
+    $script:s4uRegistrations | Should -HaveCount 1
+    $registration = $script:s4uRegistrations[0]
+    $registration.TaskName | Should -Be 'ATAP-ParityAudit'
+    $registration.UserId | Should -Be 'UTAT01\SvcParityAudit'
+    $registration.Credential.UserName | Should -Be 'UTAT01\SvcParityAudit'
+    $registration.Credential.GetNetworkCredential().Password | Should -Be 'not-a-real-password'
+    $registration.RunLevel | Should -Be 'Limited'
+    $registration.Arguments | Should -Match 'Invoke-ParityScheduledAuditTask\.ps1'
   }
 
   It 'Resolve-ParityScheduledTaskBwsCredential requires the purpose-specific ReadOnly token file' {
@@ -303,7 +319,11 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell scheduled task scripts' 
   }
 
   It 'scheduled task wrappers parse successfully' {
-    foreach ($scriptName in @('Invoke-ParityScheduledAuditTask.ps1', 'Invoke-ParityScheduledCompareTask.ps1')) {
+    foreach ($scriptName in @(
+      'Invoke-ParityScheduledAuditTask.ps1',
+      'Invoke-ParityScheduledCompareTask.ps1',
+      'Invoke-ParityTaskAndWait.ps1'
+    )) {
       $tokens = $null
       $errors = $null
       [System.Management.Automation.Language.Parser]::ParseFile(

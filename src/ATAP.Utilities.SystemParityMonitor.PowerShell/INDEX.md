@@ -12,6 +12,7 @@
 | `scripts\ParityScheduledTask.Common.ps1` | Shared scheduled-task helper for purpose-specific ReadOnly BWS token probing and event-log failure reporting |
 | `scripts\Invoke-ParityScheduledAuditTask.ps1` | Local scheduled audit wrapper; imports this module, probes `CommonCIForBitwardenReadOnly`, writes snapshot and task-result JSON |
 | `scripts\Invoke-ParityScheduledCompareTask.ps1` | Primary-host scheduled compare wrapper; reads local + peer snapshots, writes drift report, and flags stale snapshots using the cadence threshold |
+| `scripts\Invoke-ParityTaskAndWait.ps1` | Interactive first-run helper; starts one parity task, waits for a newly recorded run, and fails on timeout or a non-zero Task Scheduler result |
 | `scripts\Register-ParityScheduledTasks.ps1` | Registers audit-only or audit+compare scheduled tasks for `SvcParityAudit`, with daily or biweekly cadence, including credential-backed S4U registration when caller and run-as identities differ |
 | `tests\Unit\Parity.Tests.ps1` | Pester suite (journal round-trip, audit snapshot, drift comparison, stale snapshots, scheduled-task registration contracts) |
 | `Documentation\Overview.md` | Concept overview: parity journal, audit snapshots, drift classes |

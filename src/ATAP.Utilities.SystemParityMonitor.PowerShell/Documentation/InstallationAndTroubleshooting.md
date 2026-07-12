@@ -64,6 +64,7 @@ $moduleRoot\ATAP.Utilities.SystemParityMonitor.PowerShell.psm1
 $moduleRoot\scripts\ParityScheduledTask.Common.ps1
 $moduleRoot\scripts\Invoke-ParityScheduledAuditTask.ps1
 $moduleRoot\scripts\Invoke-ParityScheduledCompareTask.ps1
+$moduleRoot\scripts\Invoke-ParityTaskAndWait.ps1
 $moduleRoot\scripts\Register-ParityScheduledTasks.ps1
 $moduleRoot\Documentation\Overview.md
 $moduleRoot\Documentation\InstallationAndTroubleshooting.md
@@ -318,6 +319,17 @@ Run tasks in this order so both snapshots exist before comparison:
 ```powershell
 Start-ScheduledTask -TaskPath '\ATAP\' -TaskName 'ATAP-ParityAudit'
 Get-ScheduledTaskInfo -TaskPath '\ATAP\' -TaskName 'ATAP-ParityAudit'
+```
+
+For interactive first-run verification, use the installed
+`scripts\Invoke-ParityTaskAndWait.ps1` helper. It starts the requested task, waits for
+a newly recorded run, and throws on timeout or a non-zero result. Invoke it through
+`powershell.exe -File`; its dual-purpose guard deliberately makes a call-operator
+invocation a no-op.
+
+```powershell
+$waitScript = Join-Path $moduleRoot 'scripts\Invoke-ParityTaskAndWait.ps1'
+powershell.exe -NoProfile -File $waitScript -TaskName 'ATAP-ParityAudit'
 ```
 
 Audit and compare results are written below:

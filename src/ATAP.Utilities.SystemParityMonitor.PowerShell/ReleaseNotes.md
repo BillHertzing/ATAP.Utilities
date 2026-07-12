@@ -5,6 +5,8 @@
 - Correct credential-backed S4U registration to use Task Scheduler COM
   `RegisterTaskDefinition` with `TASK_LOGON_S4U`; `Register-ScheduledTask -User`
   and `-Password` saved a Password principal on the live Windows host.
+- Add `Invoke-ParityTaskAndWait.ps1` for deterministic interactive first-run proof of
+  audit and compare tasks, including timeout and non-zero-result enforcement.
 
 ## 0.1.2 (published 2026-07-12)
 

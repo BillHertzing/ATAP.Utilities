@@ -8,7 +8,10 @@ function Test-WinRM {
     [PSCredential] $credential
     , [parameter(Mandatory = $false, ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)] [switch] $useSSL
     , [parameter(Mandatory = $false, ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)] [switch] $useSelfSignedCert
-    #, [parameter(Mandatory = $false, ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)] [switch] $useProfile
+    # -ConfigurationName routes the test through a registered session configuration
+    # (for example 'ATAP.PS7.Profiled', registered via Register-ProfiledRemotingEndpoint,
+    # SC-0267) instead of the default endpoint. Left unset, behavior is unchanged.
+    , [parameter(Mandatory = $false, ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)] [string] $configurationName
 
   )
 
@@ -19,26 +22,23 @@ function Test-WinRM {
       throw '-useSelfSignedCert requires the -useSSL switch'
     }
 
-    # if ($useProfile) {
-    #   # this depends upon the `WithProfile` configuration being registered on the remote host
-    #   $configurationName = 'WithProfile'
-    # }
     $sessionOption = $(New-PSSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck)
     $scriptBlockToRun = { hostname }
 
     function RunRemoteCommand {
-      Write-PSFMessage -Level Debug -Message $($("-ComputerName $computername -ScriptBlock {$scriptBlockToRun} -Credential $credential.ToString() $(if($useSSL){ ' -useSSL '})") + $(if ($useSelfSignedCert) { ' -SessionOption $(New-PSSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck)' }))
+      Write-PSFMessage -Level Debug -Message $($("-ComputerName $computername -ScriptBlock {$scriptBlockToRun} -Credential $credential.ToString() $(if($useSSL){ ' -useSSL '})") + $(if ($useSelfSignedCert) { ' -SessionOption $(New-PSSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck)' }) + $(if ($configurationName) { " -ConfigurationName $configurationName" }))
       $result = ''
+      $configurationNameArgs = if ($configurationName) { @{ ConfigurationName = $configurationName } } else { @{} }
       if ($useSSL) {
         if ($useSelfSignedCert) {
-          $result = Invoke-Command -ComputerName $computername -ScriptBlock $scriptBlockToRun -Credential $credential -UseSSL -SessionOption $sessionOption
+          $result = Invoke-Command -ComputerName $computername -ScriptBlock $scriptBlockToRun -Credential $credential -UseSSL -SessionOption $sessionOption @configurationNameArgs
         }
         else {
-          $result = Invoke-Command -ComputerName $computername -ScriptBlock $scriptBlockToRun -Credential $credential -UseSSL
+          $result = Invoke-Command -ComputerName $computername -ScriptBlock $scriptBlockToRun -Credential $credential -UseSSL @configurationNameArgs
         }
       }
       else {
-        $result = Invoke-Command -ComputerName $computername -ScriptBlock $scriptBlockToRun -Credential $credential
+        $result = Invoke-Command -ComputerName $computername -ScriptBlock $scriptBlockToRun -Credential $credential @configurationNameArgs
       }
       # $hostpackageInfos[$computerName] = Get-ChocolateyInstalledPackages -CN $computerName
       $result

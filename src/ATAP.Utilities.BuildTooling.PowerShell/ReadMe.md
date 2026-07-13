@@ -217,7 +217,8 @@ artifacts under `~\.gemini\antigravity\brain\<id>`, with the SQLite conversation
 DB recorded when present), `Codex` (`-SessionId`; rollout transcript under
 `~\.codex\sessions`, falling back to `~\.codex\archived_sessions`), and `Copilot`
 (`-ConversationFile`; delegates to `Save-CopilotCheckpoint` since Copilot writes
-no on-disk transcript). Antigravity and Codex auto-detect the newest
+no on-disk transcript). Every agent path, including Copilot, writes the canonical
+sprint-session roster entry. Antigravity and Codex auto-detect the newest
 conversation/rollout when the id argument is omitted. The roster entry records the
 `Agent`, `AgentSessionKey`, and `ConversationDbPath` for each save. For
 ClaudeCode, the project slug directory is resolved from the actual on-disk child

@@ -658,5 +658,36 @@ Describe 'Save-SprintWorkSession' {
         }
       }
     }
+
+    It 'writes a canonical roster entry through the Copilot checkpoint path' {
+      $copilotFunctionPath = Join-Path $PSScriptRoot '..\..\public\Save-CopilotCheckpoint.ps1'
+      . $copilotFunctionPath
+      $tmpConv = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-cop-roster-' + [guid]::NewGuid().ToString('N') + '.md')
+      $missingMemoryRoot = Join-Path $script:gitRoot 'copilot-memory-does-not-exist'
+      Set-Content -LiteralPath $tmpConv -Value '# conversation' -Encoding UTF8
+
+      $savedLocation = Get-Location
+      Set-Location $script:atapWt
+      try {
+        Save-CopilotCheckpoint `
+          -ConversationFile $tmpConv `
+          -SprintN $script:sprintNumber -PlanningRoot $script:planningWt -GitHubRoot $script:gitRoot `
+          -CopilotMemoryRoot $missingMemoryRoot -Confirm:$false
+
+        $rosterPath = Join-Path $script:planningWt "SprintWorkSessionRoster\SprintWorkSessionRoster-$($script:sprintNumber).jsonl"
+        $entry = Get-Content -LiteralPath $rosterPath | Select-Object -Last 1 | ConvertFrom-Json
+        $entry.Agent | Should -Be 'Copilot'
+        $entry.ConversationArchiveCreated | Should -BeTrue
+        (Test-Path -LiteralPath $entry.ConversationArchivePath) | Should -BeTrue
+        $entry.MemorySnapshotCreated | Should -BeFalse
+        $entry.MemorySkipReason | Should -Match 'Memory directory not found'
+      } finally {
+        Set-Location $savedLocation
+        Remove-Item -LiteralPath $tmpConv -ErrorAction SilentlyContinue
+        if (Test-Path -LiteralPath 'Function:\Save-CopilotCheckpoint') {
+          Remove-Item -LiteralPath 'Function:\Save-CopilotCheckpoint' -ErrorAction SilentlyContinue
+        }
+      }
+    }
   }
 }

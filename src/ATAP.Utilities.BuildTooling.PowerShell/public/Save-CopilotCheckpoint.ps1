@@ -9,7 +9,8 @@ function Save-CopilotCheckpoint {
     Copilot does not write an on-disk JSONL, the caller provides a pre-written
     conversation markdown file via -ConversationFile.  The function compresses
     it with 7-zip, runs an optional memory de-duplication check, copies
-    new/changed memory files, and reports results.
+    new/changed memory files, appends the canonical sprint-session roster entry,
+    and reports results.
 
     Sprint number is auto-detected from the most-recent SharedVSCode sprint
     worktree found under -GitHubRoot.  The _Planning worktree is resolved using
@@ -158,11 +159,17 @@ function Save-CopilotCheckpoint {
             $convDir = Join-Path $PlanningRoot 'SprintWorkSessionConversations'
             New-Item -ItemType Directory -Path $convDir -Force | Out-Null
             $archive = Join-Path $convDir "$convName.7z"
+            $archiveCreated = $false
+            $memorySnapshotPath = $null
+            $memorySnapshotCreated = $false
+            $memoryFileCount = 0
+            $memorySkipReason = $null
 
             if ($PSCmdlet.ShouldProcess($archive, "Archive conversation '$ConversationFile'")) {
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Archiving '$ConversationFile' → '$archive'"
                 & 7z a $archive $ConversationFile 2>&1 | Out-Null
                 if (Test-Path $archive) {
+                    $archiveCreated = $true
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Conversation saved: $archive"
                 } else {
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message 'Archive not created — verify 7z is on PATH: 7z i'
@@ -172,39 +179,74 @@ function Save-CopilotCheckpoint {
 
             # ── 2. Memory de-duplication check and copy ────────────────────────────
             if (-not (Test-Path $CopilotMemoryRoot)) {
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "Memory directory not found: '$CopilotMemoryRoot' — memory copy skipped."
-                return
-            }
-
-            $memSnapshotBase = Join-Path $PlanningRoot 'SprintWorkSessionMemorys'
-            $lastSnap = Get-ChildItem $memSnapshotBase -Directory -ErrorAction SilentlyContinue |
-                Sort-Object Name -Descending | Select-Object -First 1
-
-            $memoryChanged = $true   # assume changed until proven otherwise
-            if ($lastSnap) {
-                $changed = $false
-                Get-ChildItem $CopilotMemoryRoot -File -Recurse | ForEach-Object {
-                    $relativeFile = $_.FullName.Substring($CopilotMemoryRoot.Length).TrimStart('\')
-                    $prev = Join-Path $lastSnap.FullName $relativeFile
-                    if (-not (Test-Path $prev)) {
-                        $changed = $true
-                    } elseif ((Get-FileHash $_.FullName).Hash -ne (Get-FileHash $prev).Hash) {
-                        $changed = $true
-                    }
-                }
-                $memoryChanged = $changed
-            }
-
-            if ($memoryChanged) {
-                $snapDir = Join-Path $memSnapshotBase $memName
-                if ($PSCmdlet.ShouldProcess($snapDir, "Copy memory files from '$CopilotMemoryRoot'")) {
-                    New-Item -ItemType Directory -Path $snapDir -Force | Out-Null
-                    Copy-Item -Path "$CopilotMemoryRoot\*" -Destination $snapDir -Recurse -Force
-                    $fileCount = (Get-ChildItem $snapDir -Recurse -File -ErrorAction SilentlyContinue).Count
-                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Memory files saved ($fileCount files): $snapDir"
-                }
+                $memorySkipReason = "Memory directory not found: '$CopilotMemoryRoot'"
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "$memorySkipReason — memory copy skipped."
             } else {
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Memory unchanged since last checkpoint — skipped.'
+                $memSnapshotBase = Join-Path $PlanningRoot 'SprintWorkSessionMemorys'
+                $lastSnap = Get-ChildItem $memSnapshotBase -Directory -ErrorAction SilentlyContinue |
+                    Sort-Object Name -Descending | Select-Object -First 1
+
+                $memoryChanged = $true   # assume changed until proven otherwise
+                if ($lastSnap) {
+                    $changed = $false
+                    Get-ChildItem $CopilotMemoryRoot -File -Recurse | ForEach-Object {
+                        $relativeFile = $_.FullName.Substring($CopilotMemoryRoot.Length).TrimStart('\')
+                        $prev = Join-Path $lastSnap.FullName $relativeFile
+                        if (-not (Test-Path $prev)) {
+                            $changed = $true
+                        } elseif ((Get-FileHash $_.FullName).Hash -ne (Get-FileHash $prev).Hash) {
+                            $changed = $true
+                        }
+                    }
+                    $memoryChanged = $changed
+                }
+
+                if ($memoryChanged) {
+                    $memorySnapshotPath = Join-Path $memSnapshotBase $memName
+                    if ($PSCmdlet.ShouldProcess($memorySnapshotPath, "Copy memory files from '$CopilotMemoryRoot'")) {
+                        New-Item -ItemType Directory -Path $memorySnapshotPath -Force | Out-Null
+                        Copy-Item -Path "$CopilotMemoryRoot\*" -Destination $memorySnapshotPath -Recurse -Force
+                        $memoryFileCount = (Get-ChildItem $memorySnapshotPath -Recurse -File -ErrorAction SilentlyContinue).Count
+                        $memorySnapshotCreated = $true
+                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Memory files saved ($memoryFileCount files): $memorySnapshotPath"
+                    }
+                } else {
+                    $memorySkipReason = 'Memory unchanged since last checkpoint.'
+                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Memory unchanged since last checkpoint — skipped.'
+                }
+            }
+
+            # ── 3. Append the canonical session roster entry ───────────────────────
+            $cwd = (Get-Location).Path
+            $branch = (& git rev-parse --abbrev-ref HEAD 2>$null) -join "`n"
+            if ($LASTEXITCODE -ne 0) { $branch = $null }
+            $rosterDir = Join-Path $PlanningRoot 'SprintWorkSessionRoster'
+            $rosterPath = Join-Path $rosterDir "SprintWorkSessionRoster-$SprintN.jsonl"
+            $rosterEntry = [ordered]@{
+                SprintN                    = $SprintN
+                RecordedAt                 = (Get-Date).ToString('o')
+                Agent                      = 'Copilot'
+                AgentSessionKey            = $branchTag
+                WorktreeName               = Split-Path -Path $cwd -Leaf
+                WorktreePath               = $cwd
+                Branch                     = $branch
+                SessionSlug                = "copilot-$branchTag"
+                ConversationJsonlPath      = $ConversationFile
+                ConversationArchivePath    = $archive
+                ConversationArchiveCreated = $archiveCreated
+                ConversationDbPath         = $null
+                MemorySourcePath           = $CopilotMemoryRoot
+                MemorySnapshotPath         = $memorySnapshotPath
+                MemorySnapshotCreated      = $memorySnapshotCreated
+                MemoryFileCount            = $memoryFileCount
+                MemorySkipReason           = $memorySkipReason
+            }
+
+            if ($PSCmdlet.ShouldProcess($rosterPath, "Append sprint session roster entry for '$($rosterEntry.WorktreeName)'")) {
+                New-Item -ItemType Directory -Path $rosterDir -Force | Out-Null
+                $rosterEntry | ConvertTo-Json -Compress |
+                    Add-Content -LiteralPath $rosterPath -Encoding UTF8
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Session roster updated: $rosterPath"
             }
         } catch {
             $errorMessage = "Save-CopilotCheckpoint failed. Exception: $($_.Exception.Message)"

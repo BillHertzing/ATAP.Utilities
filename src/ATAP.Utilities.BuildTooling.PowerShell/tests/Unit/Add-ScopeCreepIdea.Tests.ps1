@@ -218,6 +218,26 @@ Describe 'Add-ScopeCreepIdea' -Tag 'Unit' {
     Assert-MockCalled Get-Content -Times 1 -ParameterFilter { $LiteralPath -eq $script:deferredPath }
   }
 
+  It 'writes an entry without tags when the optional tags prompt is unavailable' {
+    Mock Read-Host {
+      throw [System.Management.Automation.PSInvalidOperationException]::new('PowerShell is in NonInteractive mode.')
+    }
+
+    $result = Add-ScopeCreepIdea `
+      -Title 'Non-interactive optional tags' `
+      -SuggestedBy 'Self' `
+      -Repo 'ATAP.Utilities' `
+      -Context 'BuildTooling / scope-creep capture' `
+      -InitialSize 'XS' `
+      -Description 'The optional tags prompt must not block capture.' `
+      -Confirm:$false
+
+    $result.ScopeCreepId | Should -Be 'SC-0147'
+    $script:appendedEntries.Count | Should -Be 1
+    $script:appendedEntries[0] | Should -Not -Match '(?m)^- \*\*Tags\*\*:'
+    Assert-MockCalled Read-Host -Times 1
+  }
+
   It 'propagates the resolver refusal and never writes when only a stable worktree is available' {
     Mock Resolve-PlanningWorktreeRoot {
       throw 'Resolve-PlanningWorktreeRoot: Refusing to fall back to the stable _Planning (main) worktree for sprint work.'

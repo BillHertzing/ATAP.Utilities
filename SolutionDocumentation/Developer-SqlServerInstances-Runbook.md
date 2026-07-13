@@ -53,8 +53,10 @@ Sprint 0008 inverts the ownership:
 | `ATAPUtilities` / `AceCommander` DBs        | **Sprint start** — drop/recreate + Flyway       | `Reset-SprintDatabases`              |
 | (drop of those DBs)                         | **Sprint end** — drop, instances remain         | `Remove-SprintDatabases`             |
 
-The instances `Devwhertzing` and `Expwhertzing` remain present throughout all
-sprints.
+The instances `Devwhertzing` and `Expwhertzing` are permanent per-developer
+infrastructure: provision them when the developer joins the project, retain them
+through all sprints and host-alignment work, and remove them only during deliberate
+developer offboarding.
 
 ---
 

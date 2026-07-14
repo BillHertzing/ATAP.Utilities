@@ -222,6 +222,8 @@ function Register-ParityScheduledTasks {
         -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$scriptPath`" $($definition.Arguments)"
       $trigger = New-ParityScheduledTaskTrigger -Cadence $Cadence -At $definition.At -BiWeeklyDaysOfWeek $BiWeeklyDaysOfWeek
       $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
+        -AllowStartIfOnBatteries `
+        -DontStopIfGoingOnBatteries `
         -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Hours 2)
       $principal = New-ScheduledTaskPrincipal -UserId $UserId -LogonType $LogonType -RunLevel $RunLevel
 

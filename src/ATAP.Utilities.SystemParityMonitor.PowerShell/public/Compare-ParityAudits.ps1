@@ -104,7 +104,11 @@ reported as undeclared drift for human escalation.
 
       $leftSnapshot = Read-ParityJsonFile -Path $LeftSnapshotPath
       $rightSnapshot = Read-ParityJsonFile -Path $RightSnapshotPath
-      $whitelist = if ($WhitelistPath) { @(Read-ParityJsonFile -Path $WhitelistPath) } else { @() }
+      $whitelist = @(
+        if ($WhitelistPath) {
+          Read-ParityJsonFile -Path $WhitelistPath | Where-Object { $null -ne $_ }
+        }
+      )
       $journalEntries = @(
         Read-ParityJsonLines -Path (Get-ParityJournalPath -StatePath $LeftStatePath -HostName $LeftHostName)
         Read-ParityJsonLines -Path (Get-ParityJournalPath -StatePath $RightStatePath -HostName $RightHostName)
@@ -184,11 +188,23 @@ reported as undeclared drift for human escalation.
             CapturedAtUtc = $rightSnapshot.CapturedAtUtc
           }
         )) {
-        $capturedAt = [DateTimeOffset]::Parse(
-          [string]$candidate.CapturedAtUtc,
-          [Globalization.CultureInfo]::InvariantCulture,
-          [Globalization.DateTimeStyles]::RoundtripKind
-        ).ToUniversalTime()
+        $capturedAtValue = $candidate.CapturedAtUtc
+        $capturedAt = if ($capturedAtValue -is [DateTimeOffset]) {
+          $capturedAtValue.ToUniversalTime()
+        } elseif ($capturedAtValue -is [DateTime]) {
+          $capturedAtDateTime = [DateTime]$capturedAtValue
+          if ($capturedAtDateTime.Kind -eq [DateTimeKind]::Unspecified) {
+            $capturedAtDateTime = [DateTime]::SpecifyKind($capturedAtDateTime, [DateTimeKind]::Utc)
+          }
+
+          ([DateTimeOffset]$capturedAtDateTime).ToUniversalTime()
+        } else {
+          [DateTimeOffset]::Parse(
+            [string]$capturedAtValue,
+            [Globalization.CultureInfo]::InvariantCulture,
+            [Globalization.DateTimeStyles]::RoundtripKind
+          ).ToUniversalTime()
+        }
         $age = $timestampUtc - $capturedAt.UtcDateTime
 
         [pscustomobject]@{

@@ -2,6 +2,7 @@ function Test-ParityJournalCorrelation {
   [CmdletBinding()]
   param(
     [Parameter(Mandatory = $true)]
+    [AllowEmptyCollection()]
     [object[]] $JournalEntries,
 
     [Parameter(Mandatory = $true)]

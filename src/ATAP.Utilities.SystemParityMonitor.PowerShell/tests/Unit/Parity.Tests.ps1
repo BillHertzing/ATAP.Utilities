@@ -386,6 +386,9 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell scheduled task scripts' 
     $script:scheduledTaskRegistrations[0].Action.Arguments | Should -Match 'Invoke-ParityScheduledAuditTask\.ps1'
     $script:scheduledTaskRegistrations[0].Action.Arguments | Should -Match '-TokenPurpose ReadOnly'
     $script:scheduledTaskRegistrations[0].Action.Arguments | Should -Not -Match 'Invoke-Command'
+    $script:scheduledTaskRegistrations[0].Settings.DisallowStartIfOnBatteries | Should -BeFalse
+    $script:scheduledTaskRegistrations[0].Settings.StopIfGoingOnBatteries | Should -BeFalse
+    $script:scheduledTaskRegistrations[0].Settings.StartWhenAvailable | Should -BeTrue
   }
 
   It 'Register-ParityScheduledTasks creates weekly biweekly audit and compare tasks for the primary task set' {

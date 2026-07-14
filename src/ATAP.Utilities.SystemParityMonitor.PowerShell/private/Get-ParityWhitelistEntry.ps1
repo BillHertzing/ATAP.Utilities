@@ -2,6 +2,7 @@ function Get-ParityWhitelistEntry {
   [CmdletBinding()]
   param(
     [Parameter(Mandatory = $true)]
+    [AllowEmptyCollection()]
     [object[]] $Whitelist,
 
     [Parameter(Mandatory = $true)]

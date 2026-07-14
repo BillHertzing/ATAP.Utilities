@@ -364,7 +364,20 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $resolvedModuleRoot = (Resolve-Path -LiteralPath $moduleRoot).Path
       $profileRoot = Join-Path (Split-Path $resolvedModuleRoot -Parent) 'ATAP.Utilities.PowerShell\Profiles'
       $environmentProfile = Get-Content -Raw -LiteralPath (Join-Path $profileRoot 'global_EnvironmentVariables.ps1')
-      $userProfile = Get-Content -Raw -LiteralPath (Join-Path $profileRoot 'CurrentUserAllHostsV7CoreProfile.ps1')
+      $utilitiesRepoRoot = Split-Path (Split-Path $resolvedModuleRoot -Parent) -Parent
+      $githubRoot = Split-Path $utilitiesRepoRoot -Parent
+      $sprintMatch = [regex]::Match((Split-Path $utilitiesRepoRoot -Leaf), 'Sprint-(?<Sprint>\d{4})')
+      $iacRoot = if ($sprintMatch.Success) {
+        Get-ChildItem -LiteralPath $githubRoot -Directory |
+          Where-Object { $_.Name -match "^ATAP\.IAC-wt-\d+-Sprint-$($sprintMatch.Groups['Sprint'].Value)-work-items$" } |
+          Select-Object -ExpandProperty FullName -First 1
+      } else {
+        Join-Path $githubRoot 'ATAP.IAC'
+      }
+      if (-not $iacRoot) {
+        throw "Could not locate the Sprint $($sprintMatch.Groups['Sprint'].Value) ATAP.IAC worktree."
+      }
+      $userProfile = Get-Content -Raw -LiteralPath (Join-Path $iacRoot 'Windows\ProfileTemplates\CurrentUserAllHostsV7CoreProfile.ps1')
 
       foreach ($secretKey in @(
           'DropboxAccessTokenConfigRootKey',

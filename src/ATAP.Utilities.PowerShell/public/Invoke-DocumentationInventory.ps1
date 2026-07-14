@@ -114,9 +114,15 @@ Function Invoke-DocumentationInventory {
 }
 #endregion Invoke-DocumentationInventory
 
-if ($MyInvocation.InvocationName -ne '.' -and $MyInvocation.InvocationName -ne '&') {
+if ($PSCommandPath -and $PSCommandPath -like '*.ps1' -and
+  $MyInvocation.InvocationName -ne '.' -and $MyInvocation.InvocationName -ne '&') {
   # This block fires ONLY under: pwsh -File <script>
-  # Skipped on: dot-source (.), module import, call operator (&)
+  # Skipped on: dot-source (.), call operator (&), and — critically — when the build
+  # inlines this file into the self-contained module .psm1, where $PSCommandPath ends in
+  # .psm1: without the .ps1 check, Import-Module executes the call, PowerShell prompts
+  # for the mandatory -ConfigPath, and any non-interactive host (BuildMaster promoted-
+  # module tests) hangs forever. That exact hang stranded 0.1.20/0.1.21 at the
+  # development tier on 2026-07-13.
   Invoke-DocumentationInventory @args
 }
 #############################################################################

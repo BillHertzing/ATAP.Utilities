@@ -42,6 +42,11 @@ function Register-ProfiledRemotingEndpoint {
     Path on the remote host where the .pssc is copied before registration.
     Ignored for local registration.
 
+  .PARAMETER RemotePowerShellExecutablePath
+    Absolute PowerShell 7 executable path on a remote target. The detached
+    registration must run under pwsh, rather than the unnamed default WinRM
+    endpoint (which is commonly Windows PowerShell 5.1).
+
   .PARAMETER ThrowOnFailure
     Throw when registration did not succeed.
 
@@ -87,6 +92,10 @@ function Register-ProfiledRemotingEndpoint {
     [Parameter()]
     [ValidateNotNullOrEmpty()]
     [string] $RemoteStagingPath = 'C:\ProgramData\ATAP\RemotingEndpoints\WithProfiles.pssc',
+
+    [Parameter()]
+    [ValidateNotNullOrEmpty()]
+    [string] $RemotePowerShellExecutablePath = 'C:\Program Files\PowerShell\7\pwsh.exe',
 
     [Parameter()]
     [switch] $ThrowOnFailure
@@ -170,6 +179,7 @@ function Register-ProfiledRemotingEndpoint {
   process {
     $failures = [System.Collections.Generic.List[string]]::new()
     $localHash = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
+    $psscContent = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes($Path))
     $outcome = $null
 
     if ($isLocal) {
@@ -198,12 +208,23 @@ function Register-ProfiledRemotingEndpoint {
         $session = New-PSSession -ComputerName $ComputerName -Credential $Credential -ErrorAction Stop
 
         Invoke-Command -Session $session -ScriptBlock {
-          param($StagingPath)
+          param($StagingPath, $PwshPath, $PsscContent, $ConfigurationName)
           $dir = Split-Path -Path $StagingPath -Parent
           if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
-        } -ArgumentList $RemoteStagingPath -ErrorAction Stop
-
-        Copy-Item -Path $Path -Destination $RemoteStagingPath -ToSession $session -Force -ErrorAction Stop
+          if (-not (Test-Path -LiteralPath $PwshPath -PathType Leaf)) {
+            throw "The required PowerShell 7 executable was not found: '$PwshPath'."
+          }
+          # A prior version of this function could create the named endpoint from
+          # the default Windows PowerShell 5.1 host. pwsh cannot unregister that
+          # mismatched legacy plug-in, so remove only that clearly identified
+          # registry entry before its replacement is registered under pwsh.
+          $pluginPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WSMAN\Plugin\$ConfigurationName"
+          $plugin = Get-ItemProperty -LiteralPath $pluginPath -ErrorAction SilentlyContinue
+          if ($plugin.ConfigXML -match 'PSVersion" Value="5\.1"') {
+            Remove-Item -LiteralPath $pluginPath -Recurse -Force -ErrorAction Stop
+          }
+          [System.IO.File]::WriteAllBytes($StagingPath, [Convert]::FromBase64String($PsscContent))
+        } -ArgumentList $RemoteStagingPath, $RemotePowerShellExecutablePath, $psscContent, $ConfigurationName -ErrorAction Stop
 
         if ($PSCmdlet.ShouldProcess("$ConfigurationName@$ComputerName", 'Register profiled remoting endpoint')) {
           $detachedScriptText = @"
@@ -221,17 +242,16 @@ try {
 }
 "@
           Invoke-Command -Session $session -ScriptBlock {
-            param($ScriptPath, $ScriptText, $ResultPath)
+            param($ScriptPath, $ScriptText, $ResultPath, $PwshPath)
             Remove-Item -LiteralPath $ResultPath -Force -ErrorAction SilentlyContinue
             Set-Content -LiteralPath $ScriptPath -Value $ScriptText -Encoding UTF8 -Force
-            # Launch with the actual running host executable, not $PSHOME\pwsh.exe --
-            # a session opened without -ConfigurationName connects to the DEFAULT
-            # WinRM endpoint (Windows PowerShell 5.1), where $PSHOME has no pwsh.exe.
-            $currentHostExe = (Get-Process -Id $PID).Path
-            Start-Process -FilePath $currentHostExe `
-              -ArgumentList '-NoLogo', '-File', $ScriptPath `
+            # The bootstrap session deliberately uses the default endpoint so this
+            # recovery path remains available if the PS7 endpoint is broken. Never
+            # inherit that host executable: it is normally powershell.exe 5.1.
+            Start-Process -FilePath $PwshPath `
+              -ArgumentList '-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $ScriptPath `
               -WindowStyle Hidden
-          } -ArgumentList $registerScriptPath, $detachedScriptText, $resultPath -ErrorAction Stop
+          } -ArgumentList $registerScriptPath, $detachedScriptText, $resultPath, $RemotePowerShellExecutablePath -ErrorAction Stop
 
           Remove-PSSession -Session $session -ErrorAction SilentlyContinue
           $session = $null

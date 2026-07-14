@@ -60,6 +60,10 @@ function Unregister-ProfiledRemotingEndpoint {
     [string] $StagingPath = 'C:\ProgramData\ATAP\RemotingEndpoints\WithProfiles.pssc',
 
     [Parameter()]
+    [ValidateNotNullOrEmpty()]
+    [string] $RemotePowerShellExecutablePath = 'C:\Program Files\PowerShell\7\pwsh.exe',
+
+    [Parameter()]
     [switch] $ThrowOnFailure
   )
 
@@ -148,15 +152,16 @@ try {
 }
 "@
           Invoke-Command -Session $session -ScriptBlock {
-            param($ScriptPath, $ScriptText, $ResultPath)
+            param($ScriptPath, $ScriptText, $ResultPath, $PwshPath)
             Remove-Item -LiteralPath $ResultPath -Force -ErrorAction SilentlyContinue
             Set-Content -LiteralPath $ScriptPath -Value $ScriptText -Encoding UTF8 -Force
-            # Actual running host executable -- a session opened without
-            # -ConfigurationName connects to the DEFAULT WinRM endpoint (Windows
-            # PowerShell 5.1), where $PSHOME has no pwsh.exe.
-            $currentHostExe = (Get-Process -Id $PID).Path
-            Start-Process -FilePath $currentHostExe -ArgumentList '-NoLogo', '-File', $ScriptPath -WindowStyle Hidden
-          } -ArgumentList $unregisterScriptPath, $detachedScriptText, $resultPath -ErrorAction Stop
+            # The bootstrap session may be Windows PowerShell 5.1; run endpoint
+            # mutation under the explicit remote PowerShell 7 executable instead.
+            if (-not (Test-Path -LiteralPath $PwshPath -PathType Leaf)) {
+              throw "The required PowerShell 7 executable was not found: '$PwshPath'."
+            }
+            Start-Process -FilePath $PwshPath -ArgumentList '-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $ScriptPath -WindowStyle Hidden
+          } -ArgumentList $unregisterScriptPath, $detachedScriptText, $resultPath, $RemotePowerShellExecutablePath -ErrorAction Stop
 
           Remove-PSSession -Session $session -ErrorAction SilentlyContinue
           $session = $null

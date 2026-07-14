@@ -216,4 +216,13 @@ This ensures the generated `.psd1` remains in sync with actual code-level alias 
 
 - Version bumped to 0.1.10 in Sprint 11 for the Initialize-BitwardenSession module move.
 
+## Profiled remoting endpoint functions
+
+`public/Register-ProfiledRemotingEndpoint.ps1` and
+`public/Unregister-ProfiledRemotingEndpoint.ps1` manage the named PowerShell 7
+profiled endpoint. Task 12.63 requires the remote detached operation to use the
+explicit remote pwsh path rather than the default Windows PowerShell endpoint;
+the companion `tests/Unit/ProfiledRemotingEndpointHost.Tests.ps1` guards that
+contract and the byte-staged `.pssc` transfer path.
+
 

@@ -30,6 +30,17 @@ Profiles intentionally do not load or call this helper; startup tasks or explici
 BuildMaster, service-account, database, and project/runtime secrets must continue to
 use Bitwarden Secrets Manager through `Get-SecretATAP` / `bws`.
 
+## Profiled PowerShell 7 remoting repair (Task 12.63)
+
+`Register-ProfiledRemotingEndpoint` and `Unregister-ProfiledRemotingEndpoint`
+always launch a remote detached operation with the explicit target
+`C:\Program Files\PowerShell\7\pwsh.exe` path. They must never inherit the unnamed
+default WinRM endpoint's executable, because that endpoint is commonly Windows
+PowerShell 5.1. The registration path stages the `.pssc` as base64 bytes instead
+of `Copy-Item -ToSession`, avoiding the PowerShell 7.6 `-Encoding Byte` remoting
+regression. A legacy 5.1 plug-in under the managed endpoint name is removed only
+when its registry configuration explicitly identifies `PSVersion` 5.1.
+
 ## BuildMaster module routing normalization (Task 11.22)
 
 `Get-HostSettings` now normalizes the reviewed

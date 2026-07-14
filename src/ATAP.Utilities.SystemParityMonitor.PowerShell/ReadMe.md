@@ -14,6 +14,8 @@ Sprint 0012 Task 12.46; public function names are unchanged.
 | Function | Purpose |
 | --- | --- |
 | `Add-ParityChangeEntry` | Append an intentional-change entry to the local parity journal |
+| `Get-ParityPrimaryRole` | Read and validate the local Task 12.59 `PrimaryRole.json` marker |
+| `Set-ParityPrimaryRole` | Atomically write the human-authorized local DPOM entry or exit marker |
 | `Get-PeerPendingChanges` | List peer journal entries not yet acknowledged locally |
 | `Confirm-ParityChangeApplied` | Acknowledge a peer change as applied locally |
 | `Invoke-ParityAudit` | Capture local configuration surfaces, including Chocolatey, pip, npm, and NuGet-managed package versions and cross-manager ownership conflicts |
@@ -34,6 +36,50 @@ Sprint 0012 Task 12.46; public function names are unchanged.
 Start with `Documentation\InstallationAndTroubleshooting.md` for the deployed-layout
 contract, Windows 10/11 prerequisites, registration commands, first-run proof, and
 known live-registration failure modes.
+
+## DPOM role marker
+
+`Set-ParityPrimaryRole` implements the Task 12.59 schema without remoting. It writes
+one canonical record at
+`C:\Dropbox\whertzing\ATAP\ParityState\PrimaryRole.json`. Run it once on either
+host only after a human authorizes the entry or exit and `Add-ParityChangeEntry`
+returns the journal ID referenced by the marker. Wait for Dropbox to report
+`Up to date` before shutting down or disconnecting the other host. Never run
+simultaneous marker writes on both hosts.
+
+```powershell
+$entry = Add-ParityChangeEntry `
+  -Category Runbook `
+  -Item 'DPOM primary role' `
+  -OldValue 'utat022' `
+  -NewValue 'utat01' `
+  -PeerHostName 'utat022' `
+  -PeerActionKind Manual `
+  -PeerAction 'Write the matching authorized PrimaryRole.json marker.' `
+  -Reason 'first Class A test'
+
+Set-ParityPrimaryRole `
+  -PrimaryRole 'utat01' `
+  -PlannedAbsenceHostName 'utat022' `
+  -Reason 'first Class A test' `
+  -AuthorizedBy 'Bill Hertzing' `
+  -JournalEntryId $entry.Id
+```
+
+The sprint-boundary workflow validates this stable operational path. It can
+migrate a lone legacy marker from `C:\ProgramData\ATAP\ParityState` when no
+shared marker exists, but it refuses to choose between differing local and
+shared markers.
+
+An exit marker restores the normal primary and has no planned absence:
+
+```powershell
+Set-ParityPrimaryRole `
+  -PrimaryRole 'utat022' `
+  -Reason 'DPOM exit' `
+  -AuthorizedBy 'Bill Hertzing' `
+  -JournalEntryId $exitEntry.Id
+```
 
 ## Deployment notes
 

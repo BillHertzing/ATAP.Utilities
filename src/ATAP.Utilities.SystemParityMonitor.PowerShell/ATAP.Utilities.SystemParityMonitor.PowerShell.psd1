@@ -11,6 +11,8 @@
   RequiredModules = @()
   FunctionsToExport = @(
     'Add-ParityChangeEntry',
+    'Get-ParityPrimaryRole',
+    'Set-ParityPrimaryRole',
     'Get-PeerPendingChanges',
     'Confirm-ParityChangeApplied',
     'Invoke-ParityAudit',

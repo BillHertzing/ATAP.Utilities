@@ -2,6 +2,10 @@
 
 ## 0.1.4 (unreleased)
 
+- Add canonical Task 12.59 `PrimaryRole.json` read/write cmdlets with atomic,
+  idempotent writes and schema validation for DPOM entry and exit. The single
+  marker lives under the Dropbox-synchronized ATAP operational state path so a
+  human runs the writer once on either host.
 - Add Chocolatey, pip, npm, and NuGet global-tool package/version surfaces plus
   action-required cross-manager ownership conflict rows that remain visible when
   both hosts share the same conflict.

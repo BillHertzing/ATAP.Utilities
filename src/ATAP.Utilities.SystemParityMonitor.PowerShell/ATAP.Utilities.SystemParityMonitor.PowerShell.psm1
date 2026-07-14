@@ -9,6 +9,8 @@ foreach ($import in @($privateFunctions + $publicFunctions)) {
 
 Export-ModuleMember -Function @(
   'Add-ParityChangeEntry',
+  'Get-ParityPrimaryRole',
+  'Set-ParityPrimaryRole',
   'Get-PeerPendingChanges',
   'Confirm-ParityChangeApplied',
   'Invoke-ParityAudit',

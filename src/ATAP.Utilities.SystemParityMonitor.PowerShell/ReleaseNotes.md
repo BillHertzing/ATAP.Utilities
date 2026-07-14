@@ -2,6 +2,9 @@
 
 ## 0.1.4 (unreleased)
 
+- Add Chocolatey, pip, npm, and NuGet global-tool package/version surfaces plus
+  action-required cross-manager ownership conflict rows that remain visible when
+  both hosts share the same conflict.
 - Add SQL Server parity collection for engine/service identity, build, logins,
   roles, permissions, Agent jobs, endpoints, TCP settings, default directories,
   and canonical physical-file path conformance.

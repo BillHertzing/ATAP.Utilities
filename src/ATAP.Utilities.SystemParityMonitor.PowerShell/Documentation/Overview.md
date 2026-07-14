@@ -18,6 +18,16 @@ ATAP.Utilities in Task 12.46.
   and identity, version, logins, server roles and permissions, Agent jobs, endpoints,
   fixed TCP configuration, default directories, and physical-file conformance to
   `C:\LocalDBs\<INSTANCE_NAME>\{Data,Log,Backup}\`.
+- **Package-manager surfaces** — snapshots inventory Chocolatey local packages, pip
+  packages for the active Python interpreter, npm global packages, and NuGet-managed
+  global .NET tools. Each manager/package row carries its installed version, so the
+  two hosts must have both the same managed package set and matching versions.
+- **Package ownership conflicts** — package names are normalized case-insensitively
+  across the four managers. If one normalized name has more than one owning manager,
+  the audit emits a host-qualified `PackageManagerConflict` row beginning
+  `ACTION REQUIRED`. Host qualification intentionally keeps the warning in the drift
+  report even when both hosts share the same conflict; an operator must select one
+  manager and remove the duplicate installation.
 - **Drift comparison** — `Compare-ParityAudits` compares the two hosts' latest
   snapshots and classifies every difference as **declared** (journaled), **whitelisted**
   (expected per-host differences), or **undeclared drift** (the actionable class), and

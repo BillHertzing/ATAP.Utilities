@@ -6,8 +6,10 @@ Writes a local parity audit JSON snapshot.
 .DESCRIPTION
 Captures deterministic host parity surfaces into a timestamped JSON snapshot in
 ParityState. The scope includes OS, PowerShell, selected service state, SMB shares,
-ParityState files, and SQL instance/version/login/permission/Agent-job/endpoint/path
-surfaces required by Task 12.39.
+ParityState files, SQL instance/version/login/permission/Agent-job/endpoint/path
+surfaces, and Chocolatey, pip, npm, and NuGet-managed package versions. Packages
+with the same normalized name under multiple managers produce action-required
+conflict surfaces.
 
 .PARAMETER StatePath
 Local ParityState folder where the snapshot is written.
@@ -77,6 +79,10 @@ Invoke-ParityAudit -StatePath C:\ProgramData\ATAP\ParityState -HostName utat022
 
       foreach ($sqlSurface in @(Get-SqlParitySurfaces)) {
         $surfaces.Add($sqlSurface)
+      }
+
+      foreach ($packageSurface in @(Get-PackageManagerParitySurfaces -HostName $HostName)) {
+        $surfaces.Add($packageSurface)
       }
 
       $shareSource = if (Get-Command -Name 'Get-SmbShare' -ErrorAction SilentlyContinue) {

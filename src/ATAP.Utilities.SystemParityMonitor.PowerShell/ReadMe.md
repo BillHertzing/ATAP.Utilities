@@ -16,7 +16,7 @@ Sprint 0012 Task 12.46; public function names are unchanged.
 | `Add-ParityChangeEntry` | Append an intentional-change entry to the local parity journal |
 | `Get-PeerPendingChanges` | List peer journal entries not yet acknowledged locally |
 | `Confirm-ParityChangeApplied` | Acknowledge a peer change as applied locally |
-| `Invoke-ParityAudit` | Capture an audit snapshot of the local configuration surfaces |
+| `Invoke-ParityAudit` | Capture local configuration surfaces, including Chocolatey, pip, npm, and NuGet-managed package versions and cross-manager ownership conflicts |
 | `Compare-ParityAudits` | Compare two hosts' snapshots and classify drift (declared / whitelisted / undeclared / stale) |
 
 ## Layout
@@ -60,6 +60,13 @@ known live-registration failure modes.
   `-Cadence BiWeekly` after the first clean month. The compare wrapper passes the
   expected cadence into `Compare-ParityAudits`, which flags snapshots older than
   `1.5x` cadence as stale.
+- Package collection covers Chocolatey local packages, pip packages for the active
+  `python` interpreter, npm global packages, and NuGet-managed global .NET tools.
+  Package/version rows compare normally between hosts. A normalized package name
+  found under multiple managers produces a host-qualified `PackageManagerConflict`
+  row whose value begins `ACTION REQUIRED`; this keeps the conflict visible in the
+  drift report even when both hosts have made the same conflicting manager choices.
+  Operators must choose one owning manager and remove the duplicate installation.
 - BuildMaster: consolidated application `ATAP.Utilities-PowerShell` (see the reviewed
   module map in the ATAP.IAC BuildMaster HostSettings fragment).
 - Packaging preserves the `scripts\` and `Documentation\` folders below the installed

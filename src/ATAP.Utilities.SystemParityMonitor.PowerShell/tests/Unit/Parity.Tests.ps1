@@ -36,6 +36,9 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' {
     Mock -CommandName Get-SqlParitySurfaces -ModuleName 'ATAP.Utilities.SystemParityMonitor.PowerShell' -MockWith {
       [pscustomobject]@{ Category = 'SQL'; Item = 'Instance/PRODUCTION/Paths'; Value = 'FilesConform=True'; Source = 'fixture' }
     }
+    Mock -CommandName Get-PackageManagerParitySurfaces -ModuleName 'ATAP.Utilities.SystemParityMonitor.PowerShell' -MockWith {
+      [pscustomobject]@{ Category = 'PackageManager'; Item = 'Chocolatey/git'; Value = '2.46.0'; Source = 'fixture' }
+    }
 
     $snapshot = Invoke-ParityAudit -StatePath $leftState -HostName 'utat022' -OutputPath $snapshotPath
 
@@ -43,7 +46,76 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' {
     $snapshot.HostName | Should -Be 'utat022'
     @($snapshot.Surfaces).Count | Should -BeGreaterThan 0
     @($snapshot.Surfaces | Where-Object Category -eq 'SQL') | Should -HaveCount 1
+    @($snapshot.Surfaces | Where-Object Category -eq 'PackageManager') | Should -HaveCount 1
     $snapshot.SnapshotPath | Should -Be $snapshotPath
+  }
+
+  It 'collects package versions and flags normalized cross-manager ownership conflicts' {
+    InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' {
+      Mock -CommandName Get-Command -ParameterFilter {
+        $Name -in @('choco', 'python', 'npm', 'dotnet')
+      } -MockWith {
+        [pscustomobject]@{ Source = "$Name.exe" }
+      }
+      Mock -CommandName Invoke-ParityNativeCommand -MockWith {
+        param($Command, $ArgumentList)
+
+        $output = switch ([IO.Path]::GetFileNameWithoutExtension($Command)) {
+          'choco' { @('git|2.46.0', 'requests|1.0.0') }
+          'python' { @('[{"name":"requests","version":"2.32.0"},{"name":"httpx","version":"0.28.0"}]') }
+          'npm' { @('{"dependencies":{"eslint":{"version":"9.0.0"}}}') }
+          'dotnet' { @('Package Id      Version      Commands', '------------------------------------------', 'dotnet-ef       10.0.0       dotnet-ef') }
+        }
+
+        [pscustomobject]@{ ExitCode = 0; Output = $output }
+      }
+
+      $surfaces = @(Get-PackageManagerParitySurfaces -HostName 'utat022')
+
+      @($surfaces | Where-Object Category -eq 'PackageManager') | Should -HaveCount 6
+      @($surfaces | Where-Object Category -eq 'PackageManagerStatus') | Should -HaveCount 4
+      $conflicts = @($surfaces | Where-Object Category -eq 'PackageManagerConflict')
+      $conflicts | Should -HaveCount 1
+      $conflicts[0].Item | Should -Be 'utat022/requests'
+      $conflicts[0].Value | Should -Match 'ACTION REQUIRED.*Chocolatey:requests@1.0.0.*pip:requests@2.32.0'
+    }
+  }
+
+  It 'surfaces package-manager conflicts in the drift report even when both hosts share the conflict' {
+    $leftSnapshotPath = Join-Path $leftState 'ParityAudit.utat022.package-conflict.fixture.json'
+    $rightSnapshotPath = Join-Path $rightState 'ParityAudit.utat01.package-conflict.fixture.json'
+    $reportPath = Join-Path $leftState 'DriftReport.package-conflict.fixture.md'
+    $nowUtc = (Get-Date).ToUniversalTime().ToString('o')
+
+    [pscustomobject]@{
+      SchemaVersion = 1
+      HostName = 'utat022'
+      CapturedAtUtc = $nowUtc
+      Surfaces = @(
+        [pscustomobject]@{ Category = 'PackageManagerConflict'; Item = 'utat022/requests'; Value = 'ACTION REQUIRED: resolve package ownership conflict (Chocolatey:requests@1.0; pip:requests@2.0)' }
+      )
+    } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $leftSnapshotPath -Encoding utf8
+
+    [pscustomobject]@{
+      SchemaVersion = 1
+      HostName = 'utat01'
+      CapturedAtUtc = $nowUtc
+      Surfaces = @(
+        [pscustomobject]@{ Category = 'PackageManagerConflict'; Item = 'utat01/requests'; Value = 'ACTION REQUIRED: resolve package ownership conflict (Chocolatey:requests@1.0; pip:requests@2.0)' }
+      )
+    } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $rightSnapshotPath -Encoding utf8
+
+    $comparison = Compare-ParityAudits `
+      -LeftStatePath $leftState `
+      -RightStatePath $rightState `
+      -LeftHostName 'utat022' `
+      -RightHostName 'utat01' `
+      -LeftSnapshotPath $leftSnapshotPath `
+      -RightSnapshotPath $rightSnapshotPath `
+      -ReportPath $reportPath
+
+    @($comparison.UndeclaredDrift) | Should -HaveCount 2
+    (Get-Content -LiteralPath $reportPath -Raw) | Should -Match 'ACTION REQUIRED: resolve package ownership conflict'
   }
 
   It 'Compare-ParityAudits classifies whitelisted, declared, undeclared, and conflicted-copy drift' {

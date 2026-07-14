@@ -18,6 +18,9 @@ rather than hard-coding strings.
 | `version.json`                                | NBGV version configuration                                                          |
 | `tests/Unit/`                                 | Pester 5 tests: orchestration, in-module sibling resolution, and the no-top-level-code / eponymous-function structural rules |
 
+The module entry point makes its `private/` directory optional. This preserves
+normal profile-time imports while the module has only public functions (Task 12.63).
+
 ## Public Scripts
 
 Every file in `public/` is an **eponymous advanced function** (cmdlet shape with

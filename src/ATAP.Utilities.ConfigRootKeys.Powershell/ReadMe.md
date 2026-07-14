@@ -13,6 +13,10 @@ Import-Module ATAP.Utilities.ConfigRootKeys.PowerShell
 Set-GlobalConfigRootKeys     # creates and fully populates $global:configRootKeys
 ```
 
+The module has no `private/` folder today. Its module entry point treats that
+folder as optional, so profile-time `Import-Module` works from an AllUsers
+PowerShell 7 profile without requiring an empty placeholder directory (Task 12.63).
+
 `Set-GlobalConfigRootKeys` is the single entry point. It invokes each section
 function — `Set-CoreConfigRootKeys`, `Add-DatabasesConfigRootKeys` (which in turn
 invokes the per-database `Set-Databases*ConfigRootKeys` functions),

@@ -8,13 +8,15 @@ Enumerates documentation-type files under a root directory and emits one invento
 Walks a repository (or worktree) root recursively and returns a PSCustomObject for every file whose
 extension is in the documentation extension list, skipping paths that match the exclusion pattern.
 Each record carries the repo name, root-relative path, extension, size, line count (text formats
-only), and the filesystem last-write time.
+only), and the filesystem creation and last-write times (both UTC [datetimeoffset]).
 
 This is the DR-1.1 building block of the ATAP Documentation Review program
-(_Planning\DocumentationReview\DocumentationReview-Plan.md). Filesystem timestamps are captured for
-reference only — authoritative created/modified dates come from git history via Get-GitFileDates
-(DR-1.2). Note that `_generated\` folders are deliberately NOT excluded by default: per the G0
-decision of 2026-07-13 their files are inventoried and classed GeneratedOutput downstream.
+(_Planning\DocumentationReview\DocumentationReview-Plan.md). Filesystem timestamps are raw
+observations: for historical files they are unreliable (Dropbox sync, worktree checkouts) and the
+authoritative bounds come from git history via Get-GitFileDates (DR-1.2); for files created or
+modified in the current sprint they feed the §3a 'actual' fields via Export-DocumentationInventory.
+Note that `_generated\` folders are deliberately NOT excluded by default: per the G0 decision of
+2026-07-13 their files are inventoried and classed GeneratedOutput downstream.
 
 .PARAMETER RootPath
 The directory to inventory. Must exist. Typically a repository or sprint-worktree root.
@@ -35,7 +37,8 @@ None. RootPath may be bound from the pipeline by property name.
 
 .OUTPUTS
 PSCustomObject with properties: RepoName, RelativePath, Extension, SizeBytes, LineCount,
-FileSystemLastWrite. LineCount is $null for non-text (binary) documentation formats.
+FileSystemCreated, FileSystemLastWrite (UTC [datetimeoffset]). LineCount is $null for non-text
+(binary) documentation formats.
 
 .EXAMPLE
 Get-DocumentationFileInventory -RootPath 'C:\Dropbox\whertzing\GitHub\ATAP.IAC-wt-15-Sprint-0012-work-items'
@@ -106,7 +109,8 @@ Function Get-DocumentationFileInventory {
           Extension           = $extension
           SizeBytes           = $_.Length
           LineCount           = $lineCount
-          FileSystemLastWrite = $_.LastWriteTime
+          FileSystemCreated   = [datetimeoffset]::new($_.CreationTimeUtc, [timespan]::Zero)
+          FileSystemLastWrite = [datetimeoffset]::new($_.LastWriteTimeUtc, [timespan]::Zero)
         }
       }
   }

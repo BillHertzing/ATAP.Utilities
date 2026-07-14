@@ -6,6 +6,11 @@ Describe 'Export-DocumentationInventory and Invoke-DocumentationInventory' -Tag 
     . (Join-Path $PSScriptRoot '..\..\public\Export-DocumentationInventory.ps1')
     . (Join-Path $PSScriptRoot '..\..\public\Invoke-DocumentationInventory.ps1')
 
+    $script:expectedHeader = 'RepoName,RelativePath,Extension,SizeBytes,LineCount,' +
+      'CreatedNoEarlierThanUtc,CreatedNoLaterThanUtc,CreatedActualUtc,' +
+      'LastWriteNoEarlierThanUtc,LastWriteNoLaterThanUtc,LastWriteActualUtc,' +
+      'CommitCount,IsTracked'
+
     $script:fixtureBase = Join-Path ([System.IO.Path]::GetTempPath()) "DocExpFixture_$([guid]::NewGuid().ToString('N'))"
     $script:repoRoot = Join-Path $script:fixtureBase 'RepoA'
     New-Item -ItemType Directory -Path $script:repoRoot -Force | Out-Null
@@ -14,7 +19,7 @@ Describe 'Export-DocumentationInventory and Invoke-DocumentationInventory' -Tag 
     & git -C $script:repoRoot config user.name 'Fixture'
     Set-Content -Path (Join-Path $script:repoRoot 'ReadMe.md') -Value "one`ntwo"
     & git -C $script:repoRoot add -A
-    $env:GIT_AUTHOR_DATE = '2024-02-20T08:00:00-06:00'
+    $env:GIT_AUTHOR_DATE = '2024-02-20T08:00:00-06:00'   # = 2024-02-20T14:00:00Z
     $env:GIT_COMMITTER_DATE = '2024-02-20T08:00:00-06:00'
     & git -C $script:repoRoot commit --quiet -m 'initial'
     Remove-Item Env:\GIT_AUTHOR_DATE, Env:\GIT_COMMITTER_DATE -ErrorAction SilentlyContinue
@@ -29,11 +34,12 @@ Describe 'Export-DocumentationInventory and Invoke-DocumentationInventory' -Tag 
     }
   }
 
-  Context 'Export-DocumentationInventory' {
+  Context 'Export-DocumentationInventory without SprintStartUtc (historical corpus)' {
     BeforeAll {
       $script:summary = Export-DocumentationInventory `
         -Root @(@{ RepoName = 'RepoA'; RootPath = $script:repoRoot }) `
         -OutputDirectory $script:outDir
+      $script:rows = Import-Csv $script:summary.CsvPath
     }
 
     It 'returns an accurate summary object' {
@@ -42,10 +48,9 @@ Describe 'Export-DocumentationInventory and Invoke-DocumentationInventory' -Tag 
       $script:summary.UntrackedCount | Should -Be 1
     }
 
-    It 'writes a CSV with the stable column order' {
-      Test-Path $script:summary.CsvPath | Should -BeTrue
+    It 'writes a CSV with the stable §3a column order' {
       $header = (Get-Content $script:summary.CsvPath -TotalCount 1) -replace '"', ''
-      $header | Should -Be 'RepoName,RelativePath,Extension,SizeBytes,LineCount,FirstCommitDate,LastCommitDate,CommitCount,IsTracked,FileSystemLastWrite'
+      $header | Should -Be $script:expectedHeader
     }
 
     It 'writes one JSON object per line in the JSONL copy' {
@@ -54,19 +59,23 @@ Describe 'Export-DocumentationInventory and Invoke-DocumentationInventory' -Tag 
       foreach ($line in $lines) { { $line | ConvertFrom-Json } | Should -Not -Throw }
     }
 
-    It 'joins git dates for tracked files' {
-      $rows = Import-Csv $script:summary.CsvPath
-      $tracked = $rows | Where-Object RelativePath -eq 'ReadMe.md'
+    It 'gives a tracked historical file git bounds in UTC and NO actual values' {
+      $tracked = $script:rows | Where-Object RelativePath -eq 'ReadMe.md'
       $tracked.IsTracked | Should -Be 'True'
-      $tracked.FirstCommitDate | Should -Match '^2024-02-20'
+      $tracked.CreatedNoLaterThanUtc | Should -Be '2024-02-20T14:00:00+00:00'
+      $tracked.LastWriteNoLaterThanUtc | Should -Be '2024-02-20T14:00:00+00:00'
+      $tracked.CreatedNoEarlierThanUtc | Should -BeNullOrEmpty   # root commit
+      $tracked.CreatedActualUtc | Should -BeNullOrEmpty
+      $tracked.LastWriteActualUtc | Should -BeNullOrEmpty
       $tracked.CommitCount | Should -Be '1'
     }
 
-    It 'flags untracked files with empty dates' {
-      $rows = Import-Csv $script:summary.CsvPath
-      $untracked = $rows | Where-Object RelativePath -eq 'untracked.md'
+    It 'gives an untracked file actual values from the filesystem and no git bounds' {
+      $untracked = $script:rows | Where-Object RelativePath -eq 'untracked.md'
       $untracked.IsTracked | Should -Be 'False'
-      $untracked.FirstCommitDate | Should -BeNullOrEmpty
+      $untracked.CreatedNoLaterThanUtc | Should -BeNullOrEmpty
+      $untracked.CreatedActualUtc | Should -Match '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00$'
+      $untracked.LastWriteActualUtc | Should -Match '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00$'
       $untracked.CommitCount | Should -Be '0'
     }
 
@@ -76,16 +85,43 @@ Describe 'Export-DocumentationInventory and Invoke-DocumentationInventory' -Tag 
     }
   }
 
+  Context 'Export-DocumentationInventory with SprintStartUtc (sprint-created files get actuals)' {
+    It 'populates both actual fields for a file first committed on/after sprint start' {
+      $summary = Export-DocumentationInventory `
+        -Root @(@{ RepoName = 'RepoA'; RootPath = $script:repoRoot }) `
+        -OutputDirectory (Join-Path $script:fixtureBase 'out-sprint') `
+        -SprintStartUtc ([datetimeoffset]::Parse('2024-01-01T00:00:00+00:00'))
+      $rows = Import-Csv $summary.CsvPath
+      $tracked = $rows | Where-Object RelativePath -eq 'ReadMe.md'
+      $tracked.CreatedActualUtc | Should -Match '\+00:00$'
+      $tracked.LastWriteActualUtc | Should -Match '\+00:00$'
+      # bounds are still present alongside actuals
+      $tracked.CreatedNoLaterThanUtc | Should -Be '2024-02-20T14:00:00+00:00'
+    }
+
+    It 'populates no actual fields for tracked files when sprint start post-dates all commits' {
+      $summary = Export-DocumentationInventory `
+        -Root @(@{ RepoName = 'RepoA'; RootPath = $script:repoRoot }) `
+        -OutputDirectory (Join-Path $script:fixtureBase 'out-future') `
+        -SprintStartUtc ([datetimeoffset]::Parse('2030-01-01T00:00:00+00:00'))
+      $rows = Import-Csv $summary.CsvPath
+      $tracked = $rows | Where-Object RelativePath -eq 'ReadMe.md'
+      $tracked.CreatedActualUtc | Should -BeNullOrEmpty
+      $tracked.LastWriteActualUtc | Should -BeNullOrEmpty
+    }
+  }
+
   Context 'Invoke-DocumentationInventory (config-driven driver)' {
     BeforeAll {
       $script:configDir = Join-Path $script:fixtureBase 'config'
       New-Item -ItemType Directory -Path $script:configDir -Force | Out-Null
       $config = @{
-        activeRoots = @(
+        activeRoots    = @(
           @{ repoName = 'RepoA'; rootPath = $script:repoRoot },
           @{ repoName = 'MissingRepo'; rootPath = (Join-Path $script:fixtureBase 'does-not-exist') }
         )
-        outputs     = @{
+        sprintStartUtc = '2024-01-01T00:00:00+00:00'
+        outputs        = @{
           curatedDirectory  = 'Inventory'
           evidenceDirectory = 'Evidence'
         }
@@ -97,6 +133,11 @@ Describe 'Export-DocumentationInventory and Invoke-DocumentationInventory' -Tag 
 
     It 'inventories the existing root and skips the missing one' {
       $script:driverSummary.FileCount | Should -Be 2
+    }
+
+    It 'passes sprintStartUtc through to the actual-field rules' {
+      $rows = Import-Csv $script:driverSummary.CsvPath
+      ($rows | Where-Object RelativePath -eq 'ReadMe.md').CreatedActualUtc | Should -Match '\+00:00$'
     }
 
     It 'writes curated outputs with stable names relative to the config' {

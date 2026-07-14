@@ -10,11 +10,17 @@ walk (DR-1.2), joins the two on RelativePath, and writes the combined records to
 <OutputDirectory>\<BaseName>.csv and <OutputDirectory>\<BaseName>.jsonl with a stable column order:
 
   RepoName, RelativePath, Extension, SizeBytes, LineCount,
-  FirstCommitDate, LastCommitDate, CommitCount, IsTracked, FileSystemLastWrite
+  CreatedNoEarlierThanUtc, CreatedNoLaterThanUtc, CreatedActualUtc,
+  LastWriteNoEarlierThanUtc, LastWriteNoLaterThanUtc, LastWriteActualUtc,
+  CommitCount, IsTracked
 
-Dates are serialized as ISO-8601 strings so the CSV and JSONL copies are byte-comparable across
-runs. Inventory files not present in git history get IsTracked = False with empty dates — an
-anomaly the DR-2.2.b sweep reports on.
+Temporal fields follow the §3a schema of the plan of record: git-derived no-earlier-than /
+no-later-than bounds for both Created and LastWrite on every tracked file, plus 'actual' values
+from authentic filesystem timestamps where knowable — CreatedActualUtc and LastWriteActualUtc when
+the file's first commit is on/after -SprintStartUtc; LastWriteActualUtc alone when only the newest
+commit is on/after -SprintStartUtc; both for untracked files (which have no git bounds). Every
+datetime is UTC, serialized ISO-8601 with explicit offset (+00:00), so the CSV and JSONL copies are
+byte-comparable across runs. IsTracked = False rows are an anomaly the DR-2.2.b sweep reports on.
 
 This is the DR-1.3 building block of the ATAP Documentation Review program
 (_Planning\DocumentationReview\DocumentationReview-Plan.md). The Invoke-DocumentationInventory
@@ -35,6 +41,10 @@ Passed through to Get-DocumentationFileInventory. Defaults to that function's DR
 
 .PARAMETER ExcludePathPattern
 Passed through to Get-DocumentationFileInventory. Defaults to that function's default.
+
+.PARAMETER SprintStartUtc
+Start of the current sprint (UTC). Gates the population of the 'actual' fields per §3a. When
+omitted, no tracked file gets 'actual' values (untracked files still do).
 
 .PARAMETER PassThru
 Also emit the joined records to the pipeline.
@@ -68,6 +78,8 @@ Function Export-DocumentationInventory {
     , [parameter()]
     [string] $ExcludePathPattern
     , [parameter()]
+    [nullable[datetimeoffset]] $SprintStartUtc
+    , [parameter()]
     [switch] $PassThru
   )
   #endregion FunctionParameters
@@ -81,6 +93,8 @@ Function Export-DocumentationInventory {
       }
     }
     $isoFormat = 'yyyy-MM-ddTHH:mm:sszzz'
+    # Serializes a nullable [datetimeoffset] as ISO-8601 UTC with explicit offset, or ''.
+    $toUtcString = { param($value) if ($null -ne $value -and $value -ne '') { ([datetimeoffset]$value).ToUniversalTime().ToString($isoFormat) } else { '' } }
   }
   #endregion FunctionBeginBlock
   #region FunctionEndBlock
@@ -105,17 +119,26 @@ Function Export-DocumentationInventory {
 
       foreach ($file in $inventory) {
         $dates = $dateMap[$file.RelativePath]
+        # §3a 'actual' population: untracked files always (filesystem is all we have);
+        # tracked files gated by SprintStartUtc against their git bounds.
+        $createdThisSprint = $dates -and $null -ne $SprintStartUtc -and $dates.CreatedNoLaterThan -ge $SprintStartUtc
+        $modifiedThisSprint = $dates -and $null -ne $SprintStartUtc -and $dates.LastWriteNoLaterThan -ge $SprintStartUtc
+        $createdActual = if ((-not $dates) -or $createdThisSprint) { $file.FileSystemCreated } else { $null }
+        $lastWriteActual = if ((-not $dates) -or $modifiedThisSprint) { $file.FileSystemLastWrite } else { $null }
         $records.Add([PSCustomObject]@{
-            RepoName            = $file.RepoName
-            RelativePath        = $file.RelativePath
-            Extension           = $file.Extension
-            SizeBytes           = $file.SizeBytes
-            LineCount           = $file.LineCount
-            FirstCommitDate     = if ($dates) { $dates.FirstCommitDate.ToString($isoFormat) } else { '' }
-            LastCommitDate      = if ($dates) { $dates.LastCommitDate.ToString($isoFormat) } else { '' }
-            CommitCount         = if ($dates) { $dates.CommitCount } else { 0 }
-            IsTracked           = [bool]$dates
-            FileSystemLastWrite = $file.FileSystemLastWrite.ToString($isoFormat)
+            RepoName                  = $file.RepoName
+            RelativePath              = $file.RelativePath
+            Extension                 = $file.Extension
+            SizeBytes                 = $file.SizeBytes
+            LineCount                 = $file.LineCount
+            CreatedNoEarlierThanUtc   = & $toUtcString ($dates ? $dates.CreatedNoEarlierThan : $null)
+            CreatedNoLaterThanUtc     = & $toUtcString ($dates ? $dates.CreatedNoLaterThan : $null)
+            CreatedActualUtc          = & $toUtcString $createdActual
+            LastWriteNoEarlierThanUtc = & $toUtcString ($dates ? $dates.LastWriteNoEarlierThan : $null)
+            LastWriteNoLaterThanUtc   = & $toUtcString ($dates ? $dates.LastWriteNoLaterThan : $null)
+            LastWriteActualUtc        = & $toUtcString $lastWriteActual
+            CommitCount               = if ($dates) { $dates.CommitCount } else { 0 }
+            IsTracked                 = [bool]$dates
           })
       }
     }

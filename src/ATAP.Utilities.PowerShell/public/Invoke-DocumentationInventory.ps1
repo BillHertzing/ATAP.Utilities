@@ -17,6 +17,7 @@ Config schema (all output directories may be absolute or relative to the config 
   {
     "activeRoots":        [ { "repoName": "...", "rootPath": "C:\\..." }, ... ],
     "deferredRoots":      [ { "repoName": "...", "reason": "..." }, ... ],
+    "sprintStartUtc":     "2026-07-03T00:00:00+00:00",  // optional; gates §3a 'actual' fields
     "includeExtensions":  [ ".md", ... ],        // optional; omit for function defaults
     "excludePathPattern": "regex",               // optional; omit for function defaults
     "outputs": { "curatedDirectory": "...", "evidenceDirectory": "..." }
@@ -92,6 +93,7 @@ Function Invoke-DocumentationInventory {
     $exportArgs = @{ Root = $activeRoots; OutputDirectory = $curatedDirectory }
     if ($config.includeExtensions) { $exportArgs.IncludeExtension = [string[]]$config.includeExtensions }
     if ($config.excludePathPattern) { $exportArgs.ExcludePathPattern = [string]$config.excludePathPattern }
+    if ($config.sprintStartUtc) { $exportArgs.SprintStartUtc = [datetimeoffset]::Parse($config.sprintStartUtc) }
     $summary = Export-DocumentationInventory @exportArgs
 
     if (-not (Test-Path -LiteralPath $evidenceDirectory -PathType Container)) {

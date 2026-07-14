@@ -78,9 +78,12 @@ Describe 'Get-DocumentationFileInventory' -Tag 'Unit' {
       ($script:result | Where-Object RelativePath -eq 'docs\manual.pdf').LineCount | Should -BeNullOrEmpty
     }
 
-    It 'reports SizeBytes and FileSystemLastWrite' {
+    It 'reports SizeBytes and UTC filesystem timestamps' {
       $script:readme.SizeBytes | Should -BeGreaterThan 0
-      $script:readme.FileSystemLastWrite | Should -BeOfType [datetime]
+      $script:readme.FileSystemCreated | Should -BeOfType [datetimeoffset]
+      $script:readme.FileSystemLastWrite | Should -BeOfType [datetimeoffset]
+      $script:readme.FileSystemCreated.Offset | Should -Be ([timespan]::Zero)
+      $script:readme.FileSystemLastWrite.Offset | Should -Be ([timespan]::Zero)
     }
   }
 

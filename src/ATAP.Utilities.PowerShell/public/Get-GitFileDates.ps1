@@ -2,23 +2,31 @@
 #region Get-GitFileDates
 <#
 .SYNOPSIS
-Returns first-commit and last-commit dates per file in a git repository, using one history walk.
+Returns git-derived no-earlier-than / no-later-than datetime bounds for each file's creation and last write, using one history walk.
 
 .DESCRIPTION
-Runs a single `git log --name-only` walk over the history reachable from HEAD and builds a map of
-repo-relative path -> FirstCommitDate (oldest commit touching the path), LastCommitDate (newest),
-and CommitCount. Emits one record per path, or — when -RelativePath is supplied — one record per
-requested path, with IsTracked = $false and null dates for paths absent from history.
+Runs a single `git log --name-only` walk over the history reachable from HEAD and derives, per
+repo-relative path, the temporal-bounds fields of the ATAP Documentation Review program's §3a
+schema (_Planning\DocumentationReview\DocumentationReview-Plan.md):
 
-This is the DR-1.2 building block of the ATAP Documentation Review program
-(_Planning\DocumentationReview\DocumentationReview-Plan.md). Because documentation files live under
-git control, filesystem timestamps are unreliable; the first/last commit dates are the program's
-creation/modification proxies.
+  CreatedNoEarlierThan   — author date of the commit immediately preceding (in git log order) the
+                           first commit that introduced the path; $null when the path arrived in
+                           the root commit (no lower bound exists).
+  CreatedNoLaterThan     — author date of the first commit that introduced the path.
+  LastWriteNoEarlierThan — author date of the second-newest commit touching the path; for
+                           single-commit files, equals CreatedNoEarlierThan.
+  LastWriteNoLaterThan   — author date of the newest commit touching the path.
 
-Rename tradeoff (documented per DR-1.2.b): the batch walk does not follow renames, so a renamed
-file's FirstCommitDate reflects the commit that created its CURRENT name. Per-file
-`git log --follow` is deliberately not used here (1,600+ invocations is prohibitively slow); run it
-manually for individual files flagged as suspiciously young.
+All values are [datetimeoffset] converted to UTC. Emits one record per path in history, or — when
+-RelativePath is supplied — one record per requested path, with IsTracked = $false and null bounds
+for paths absent from history.
+
+Known approximations (per DR-1.2.b): "immediately preceding commit" is the next commit in the
+single-walk `git log` output, which for non-linear history may not be the literal parent — the
+bound stays conservative for ordinary sprint workflows. The walk does not follow renames, so a
+renamed file's Created bounds reflect the commit that created its CURRENT name; per-file
+`git log --follow` is deliberately not used (1,600+ invocations is prohibitively slow) — run it
+manually for files flagged as suspiciously young.
 
 .PARAMETER RepositoryRoot
 Root of the git repository or worktree to walk. Must contain a resolvable git work tree.
@@ -31,8 +39,9 @@ property name so inventory records can be piped in. When omitted, every path in 
 Objects with a RelativePath property (e.g., Get-DocumentationFileInventory output).
 
 .OUTPUTS
-PSCustomObject with properties: RelativePath (backslash-normalized), FirstCommitDate,
-LastCommitDate ([datetimeoffset]), CommitCount, IsTracked.
+PSCustomObject with properties: RelativePath (backslash-normalized), CreatedNoEarlierThan,
+CreatedNoLaterThan, LastWriteNoEarlierThan, LastWriteNoLaterThan ([datetimeoffset] UTC or $null),
+CommitCount, IsTracked.
 
 .EXAMPLE
 Get-GitFileDates -RepositoryRoot 'C:\Dropbox\whertzing\GitHub\ATAP.IAC-wt-15-Sprint-0012-work-items'
@@ -63,28 +72,52 @@ Function Get-GitFileDates {
       throw "Get-GitFileDates: '$RepositoryRoot' is not inside a git work tree."
     }
 
-    # One history walk: newest-first commits, each header '#<author-date-ISO8601>', followed by
-    # the touched paths. First sighting of a path = LastCommitDate; every later sighting pushes
-    # FirstCommitDate older.
-    $dateMap = @{}
-    $currentDate = $null
+    # One newest-first history walk. Each header line is '#<author-date-ISO8601>'; the lines that
+    # follow are the paths that commit touched. Per path we track:
+    #   NewestDate       (first sighting)        -> LastWriteNoLaterThan
+    #   SecondNewestDate (second sighting)       -> LastWriteNoEarlierThan
+    #   OldestIndex      (index of last sighting) -> CreatedNoLaterThan = commitDates[OldestIndex],
+    #                                                CreatedNoEarlierThan = commitDates[OldestIndex+1]
+    $commitDates = [System.Collections.Generic.List[datetimeoffset]]::new()
+    $pathMap = @{}
     & git -C $RepositoryRoot -c core.quotepath=false log --format='#%aI' --name-only 2>$null |
       ForEach-Object {
         if ($_.Length -eq 0) { return }
         if ($_ -match '^#\d{4}-\d{2}-\d{2}T') {
-          $currentDate = [datetimeoffset]::Parse($_.Substring(1))
+          $commitDates.Add([datetimeoffset]::Parse($_.Substring(1)).ToUniversalTime())
           return
         }
         $key = $_.Replace('/', '\')
-        $entry = $dateMap[$key]
+        $commitIndex = $commitDates.Count - 1
+        $entry = $pathMap[$key]
         if ($null -eq $entry) {
-          $dateMap[$key] = @{ First = $currentDate; Last = $currentDate; Count = 1 }
+          $pathMap[$key] = @{
+            NewestDate       = $commitDates[$commitIndex]
+            SecondNewestDate = $null
+            OldestIndex      = $commitIndex
+            Count            = 1
+          }
         } else {
-          $entry.First = $currentDate   # walk is newest-first, so each sighting is older
+          if ($null -eq $entry.SecondNewestDate) { $entry.SecondNewestDate = $commitDates[$commitIndex] }
+          $entry.OldestIndex = $commitIndex
           $entry.Count++
         }
       }
-    Write-PSFMessage -Level Verbose -Message "Get-GitFileDates: history walk of $RepositoryRoot mapped $($dateMap.Count) paths" -Tag 'DocumentationReview'
+    Write-PSFMessage -Level Verbose -Message "Get-GitFileDates: history walk of $RepositoryRoot mapped $($pathMap.Count) paths across $($commitDates.Count) commits" -Tag 'DocumentationReview'
+
+    $resolveEntry = {
+      param($key, $entry)
+      $createdNoEarlier = if ($entry.OldestIndex + 1 -lt $commitDates.Count) { $commitDates[$entry.OldestIndex + 1] } else { $null }
+      [PSCustomObject]@{
+        RelativePath           = $key
+        CreatedNoEarlierThan   = $createdNoEarlier
+        CreatedNoLaterThan     = $commitDates[$entry.OldestIndex]
+        LastWriteNoEarlierThan = if ($null -ne $entry.SecondNewestDate) { $entry.SecondNewestDate } else { $createdNoEarlier }
+        LastWriteNoLaterThan   = $entry.NewestDate
+        CommitCount            = $entry.Count
+        IsTracked              = $true
+      }
+    }
     $requestedAny = $false
   }
   #endregion FunctionBeginBlock
@@ -95,23 +128,19 @@ Function Get-GitFileDates {
     $requestedAny = $true
     foreach ($path in $RelativePath) {
       $key = $path.Replace('/', '\')
-      $entry = $dateMap[$key]
+      $entry = $pathMap[$key]
       if ($null -eq $entry) {
         [PSCustomObject]@{
-          RelativePath    = $key
-          FirstCommitDate = $null
-          LastCommitDate  = $null
-          CommitCount     = 0
-          IsTracked       = $false
+          RelativePath           = $key
+          CreatedNoEarlierThan   = $null
+          CreatedNoLaterThan     = $null
+          LastWriteNoEarlierThan = $null
+          LastWriteNoLaterThan   = $null
+          CommitCount            = 0
+          IsTracked              = $false
         }
       } else {
-        [PSCustomObject]@{
-          RelativePath    = $key
-          FirstCommitDate = $entry.First
-          LastCommitDate  = $entry.Last
-          CommitCount     = $entry.Count
-          IsTracked       = $true
-        }
+        & $resolveEntry $key $entry
       }
     }
   }
@@ -120,15 +149,8 @@ Function Get-GitFileDates {
   ########################################
   END {
     if (-not $requestedAny) {
-      foreach ($key in $dateMap.Keys) {
-        $entry = $dateMap[$key]
-        [PSCustomObject]@{
-          RelativePath    = $key
-          FirstCommitDate = $entry.First
-          LastCommitDate  = $entry.Last
-          CommitCount     = $entry.Count
-          IsTracked       = $true
-        }
+      foreach ($key in $pathMap.Keys) {
+        & $resolveEntry $key $pathMap[$key]
       }
     }
     Write-PSFMessage -Level Debug -Message 'Leaving Function Get-GitFileDates in module ATAP.Utilities.Powershell' -Tag 'Trace'

@@ -12,9 +12,9 @@ Entity Framework Core abstractions, Flyway migration helpers
 
 | Source File    | Last Modified            |
 | -------------- | ------------------------ |
-| CLAUDE-base.md | 2026-07-07 21:30:01 |
+| CLAUDE-base.md | 2026-07-10 21:39:49 |
 | ai-local.md | 2026-07-03 10:16:12 |
-| CLAUDE.md (combined) | 2026-07-08 12:28:40 |
+| CLAUDE.md (combined) | 2026-07-13 21:53:06 |
 
 ---
 
@@ -332,9 +332,10 @@ the value with `bws` (not `bw`).
 
 - Do NOT use the PowerShell SecretManagement vault extension — it stores secrets in a
   parallel vault not visible in the vault UI.
-- If a new secret is needed, stop and tell the user. Suggest an
-  `ALL_UPPERCASE_WITH_UNDERSCORES` `SecretName` for it. Thereafter expect that secret to be
-  resolvable by name through `Get-SecretATAP`.
+- If a new secret is needed, stop and tell the user. Suggest a dotted-notation
+  `SecretName` for it, such as `Windows.Remoting.Credential.UTAT01`,
+  `Windows.Remoting.Credential.UTAT022`, or `SEQ.Admin.API.Key`. Thereafter
+  expect that secret to be resolvable by name through `Get-SecretATAP`.
 - Never write connection strings, API keys, or credentials into source files.
 - See the SolutionDocumentation for additional detail on vault selection and `Get-SecretATAP`.
 

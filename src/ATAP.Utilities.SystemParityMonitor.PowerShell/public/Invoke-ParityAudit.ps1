@@ -5,8 +5,9 @@ Writes a local parity audit JSON snapshot.
 
 .DESCRIPTION
 Captures deterministic host parity surfaces into a timestamped JSON snapshot in
-ParityState. Stage 1 includes OS, PowerShell, selected service state, SMB share
-names, and ParityState file inventory. Later sprint tasks can extend this scope.
+ParityState. The scope includes OS, PowerShell, selected service state, SMB shares,
+ParityState files, and SQL instance/version/login/permission/Agent-job/endpoint/path
+surfaces required by Task 12.39.
 
 .PARAMETER StatePath
 Local ParityState folder where the snapshot is written.
@@ -74,15 +75,26 @@ Invoke-ParityAudit -StatePath C:\ProgramData\ATAP\ParityState -HostName utat022
           })
       }
 
-      if (Get-Command -Name 'Get-SmbShare' -ErrorAction SilentlyContinue) {
-        $shareNames = @(Get-SmbShare -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name | Sort-Object)
-        $surfaces.Add([pscustomobject] @{
-            Category = 'Shares'
-            Item = 'SmbShareNames'
-            Value = ($shareNames -join ';')
-            Source = 'Get-SmbShare'
-          })
+      foreach ($sqlSurface in @(Get-SqlParitySurfaces)) {
+        $surfaces.Add($sqlSurface)
       }
+
+      $shareSource = if (Get-Command -Name 'Get-SmbShare' -ErrorAction SilentlyContinue) {
+        'Get-SmbShare'
+      } else {
+        'Win32_Share'
+      }
+      $shareNames = if ($shareSource -eq 'Get-SmbShare') {
+        @(Get-SmbShare -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name | Sort-Object)
+      } else {
+        @(Get-CimInstance -ClassName Win32_Share -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name | Sort-Object)
+      }
+      $surfaces.Add([pscustomobject] @{
+          Category = 'Shares'
+          Item = 'SmbShareNames'
+          Value = ($shareNames -join ';')
+          Source = $shareSource
+        })
 
       $stateFiles = @(
         Get-ChildItem -LiteralPath $StatePath -File -ErrorAction SilentlyContinue |

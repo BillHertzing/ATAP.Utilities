@@ -22,15 +22,15 @@ The target environment: 'Production', 'QA', 'Integration', 'Development', or 'Ex
 The SQL Server host. Resolved from $global:settings if not supplied; defaults to 'localhost'.
 
 .PARAMETER SqlInstance
-The SQL Server named instance (e.g. 'Production', 'Integration', 'Expwhertzing').
+The SQL Server named instance (e.g. 'PRODUCTION', 'INTEGRATION', 'EXPWHERTZING').
 Resolved from $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
 under the key path DatabaseName.Environment.SqlInstance.
 
-IMPORTANT — Experimental environment: the HostSettings fragment stores a placeholder value
-('Exp{username}') for the Experimental instance because it is an ephemeral per-sprint instance
-created by New-SprintSqlServerInstances. When calling this function directly for Experimental,
-you MUST supply -SqlInstance explicitly (e.g. -SqlInstance 'Expwhertzing'). The function will
-throw if SqlInstance cannot be resolved to a non-empty value.
+IMPORTANT — Development and Experimental environments: HostSettings stores the canonical
+patterns `DEV<USERNAME>` and `EXP<USERNAME>`, while the permanent onboarding instances use
+resolved names such as `DEVWHERTZING` and `EXPWHERTZING`. When calling this function directly,
+pass the resolved instance name. The function throws if SqlInstance cannot be resolved to a
+non-empty value.
 
 .PARAMETER FlywayBasePath
 Path to the Flyway directory containing flyway.toml. Resolved from $global:settings if not supplied.
@@ -50,7 +50,7 @@ System.Object
 Returns a result object with Success (bool) and any error messages.
 
 .EXAMPLE
-Build-DatabaseWithFlyway -DatabaseName 'ATAPUtilities' -Environment 'Experimental' -SqlInstance 'Expwhertzing'
+Build-DatabaseWithFlyway -DatabaseName 'ATAPUtilities' -Environment 'Experimental' -SqlInstance 'EXPWHERTZING'
 
 .EXAMPLE
 Build-DatabaseWithFlyway -DatabaseName 'ATAPUtilities' -Environment 'Integration'
@@ -123,6 +123,9 @@ https://github.com/whertzing/ATAP.Utilities
 
     [Parameter(Mandatory = $false)]
     [string]$DatabasePath,
+
+    [Parameter(Mandatory = $false)]
+    [string]$DatabaseLogPath,
 
     [Parameter(Mandatory = $false)]
     [string]$ProvisioningScriptsPath,
@@ -247,6 +250,7 @@ https://github.com/whertzing/ATAP.Utilities
       $DBConnectionStringDBSecretName = $DBConnectionStringSecretName
     }
     $DatabasePath = Get-PVal -ParameterName 'DatabasePath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection -DefaultValue $DatabasePath -AllowMissing
+    $DatabaseLogPath = Get-PVal -ParameterName 'DatabaseLogPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseLogPath" -Settings $databasesCollection -DefaultValue $DatabaseLogPath -AllowMissing
     $ProvisioningScriptsPath = Get-PVal -ParameterName 'ProvisioningScriptsPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisioningScriptsPath" -Settings $databasesCollection -DefaultValue $ProvisioningScriptsPath -AllowMissing
     $FlywayBasePath = Get-PVal -ParameterName 'FlywayBasePath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayBasePath" -Settings $databasesCollection -DefaultValue $FlywayBasePath
     $flywaySqlMigrationsPath = Get-PVal -ParameterName 'FlywaySqlMigrationsPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywaySqlMigrationsPath" -Settings $databasesCollection -DefaultValue $flywaySqlMigrationsPath -AllowMissing
@@ -319,6 +323,7 @@ https://github.com/whertzing/ATAP.Utilities
       #  relative paths need to be adjusted to be relative to the FlywayBasePath, because
       #  that's where the Flyway command will be run from
       $DatabasePath = adjust-path $originalLocation, $FlywayBasePath, $DatabasePath
+      $DatabaseLogPath = adjust-path $originalLocation, $FlywayBasePath, $DatabaseLogPath
       $ProvisioningScriptsPath = adjust-path $originalLocation, $FlywayBasePath, $ProvisioningScriptsPath
       $flywaySharedSqlMigrationsPath = adjust-path $originalLocation, $FlywayBasePath, $flywaySharedSqlMigrationsPath
       $FlywayDataPath = adjust-path $originalLocation, $FlywayBasePath, $FlywayDataPath
@@ -352,6 +357,8 @@ https://github.com/whertzing/ATAP.Utilities
         $DatabasePath = [System.IO.Path]::GetFullPath((Join-Path $databaseRootPath $DatabaseName))
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "DatabasePath was empty; defaulting to '$DatabasePath'"
       }
+      if ([string]::IsNullOrWhiteSpace($DatabaseLogPath)) { $DatabaseLogPath = $DatabasePath }
+      $DatabaseLogPath = [System.IO.Path]::GetFullPath($DatabaseLogPath)
 
       if ([string]::IsNullOrWhiteSpace($FlywayDataPath)) {
         $FlywayDataPath = Join-Path $FlywayBasePath 'Data'
@@ -403,6 +410,8 @@ https://github.com/whertzing/ATAP.Utilities
         DatabaseName            = $DatabaseName
         SqlConnection           = $sqlConnection
         DatabasePath            = $DatabasePath
+        DatabaseLogPath         = $DatabaseLogPath
+        RepositoryRoot          = $repositoryRoot
         ProvisioningScriptsPath = $ProvisioningScriptsPath
         Force                   = $Force
       }
@@ -429,9 +438,18 @@ https://github.com/whertzing/ATAP.Utilities
         } else {
           # Run Flyway migrations
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Running Flyway migrations...'
+          # Invoke-Flyway still uses the legacy environment vocabulary. Keep
+          # provisioning on the canonical QA/Integration names while mapping
+          # only the Flyway call until that legacy contract is retired.
+          $flywayEnvironment = switch ($Environment) {
+            'QA' { 'Testing' }
+            'Integration' { 'Development' }
+            default { $Environment }
+          }
+
           $FlywayParams = @{
             DatabaseName                  = $DatabaseName
-            Environment                   = $Environment
+            Environment                   = $flywayEnvironment
             FlywayCommand                 = 'migrate'
             FlywayBasePath                = $FlywayBasePath
             FlywaySqlMigrationsPath       = $flywaySqlMigrationsPath

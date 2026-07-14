@@ -69,11 +69,11 @@ Use the module-level getting started guide for the lifecycle workflow:
 | `New-DatabasePreMigrationSnapshot`        | Rollback / Snapshot | Takes a Full backup before migration; captures Flyway version; writes evidence JSON.                                       |
 | `Restore-DatabaseFromSnapshot`            | Rollback / Snapshot | Restores from a pre-migration `.bak` via dbatools; verifies post-restore Flyway version.                                   |
 | `Test-DatabaseRollbackReadiness`          | Rollback / Snapshot | Checks evidence file age, backup file presence, and timestamp — no SQL connection required.                                |
-| `Build-DatabaseWithFlyway`                | Flyway Helpers      | Rebuild a target database using active worktree helper files; resolved `SqlConnection` objects carry Flyway auth state.     |
+| `Build-DatabaseWithFlyway`                | Flyway Helpers      | Rebuild a target database using active worktree helper files; keeps data and log files in independently supplied settings-backed paths and maps canonical QA/Integration tier names at the legacy Flyway boundary. |
 | `Get-DatabaseCredentialsKey`              | Connection Helpers  | Resolve the Bitwarden credentials key for a given database / tier / host.                                                  |
 | `Get-InstalledDatabaseInformation`        | Instance Management | Return metadata about installed SQL Server instances.                                                                      |
 | `Initialize-SqlServiceLogin`              | Instance Management | Initialise SQL Server service logins using dbatools `Invoke-DbaQuery` without loading the SqlServer module.                 |
-| `Install-SqlServerInstance`               | Instance Management | Install and configure a SQL Server Express instance.                                                                       |
+| `Install-SqlServerInstance`               | Instance Management | Install and configure a SQL Server instance using the target host/instance data, log, and backup paths from `$global:settings`. |
 | `Invoke-Flyway`                           | Flyway Helpers      | Invoke Flyway with Java 17+ selection and User-scope `UserPii` passphrase fallback for agent shells.                       |
 | `Invoke-FlywayRehearsal`                  | Flyway Helpers      | Run Flyway against a per-run ephemeral rehearsal database.                                                                 |
 | `Invoke-SqlServerBackup`                  | Backup              | Back up a SQL Server database using dbatools.                                                                              |

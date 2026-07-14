@@ -33,12 +33,16 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' {
 
   It 'Invoke-ParityAudit writes a JSON snapshot with surfaces' {
     $snapshotPath = Join-Path $leftState 'ParityAudit.utat022.fixture.json'
+    Mock -CommandName Get-SqlParitySurfaces -ModuleName 'ATAP.Utilities.SystemParityMonitor.PowerShell' -MockWith {
+      [pscustomobject]@{ Category = 'SQL'; Item = 'Instance/PRODUCTION/Paths'; Value = 'FilesConform=True'; Source = 'fixture' }
+    }
 
     $snapshot = Invoke-ParityAudit -StatePath $leftState -HostName 'utat022' -OutputPath $snapshotPath
 
     Test-Path -LiteralPath $snapshotPath | Should -BeTrue
     $snapshot.HostName | Should -Be 'utat022'
     @($snapshot.Surfaces).Count | Should -BeGreaterThan 0
+    @($snapshot.Surfaces | Where-Object Category -eq 'SQL') | Should -HaveCount 1
     $snapshot.SnapshotPath | Should -Be $snapshotPath
   }
 
@@ -132,6 +136,111 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' {
     $comparison.StaleSnapshots[0].HostName | Should -Be 'utat01'
     $comparison.StaleThreshold | Should -Not -BeNullOrEmpty
     Test-Path -LiteralPath $reportPath | Should -BeTrue
+  }
+
+  It 'Compare-ParityAudits preserves deserialized UTC DateTime offsets when calculating freshness' {
+    $leftSnapshotPath = Join-Path $leftState 'ParityAudit.utat022.fixture.json'
+    $rightSnapshotPath = Join-Path $rightState 'ParityAudit.utat01.fixture.json'
+    $reportPath = Join-Path $leftState 'DriftReport.utc.fixture.md'
+    $nowUtc = (Get-Date).ToUniversalTime()
+
+    [pscustomobject]@{
+      SchemaVersion = 1
+      HostName = 'utat022'
+      CapturedAtUtc = $nowUtc.AddMinutes(-15)
+      Surfaces = @(
+        [pscustomobject] @{ Category = 'OS'; Item = 'Version'; Value = 'Windows 11' }
+      )
+    } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $leftSnapshotPath -Encoding utf8
+
+    [pscustomobject]@{
+      SchemaVersion = 1
+      HostName = 'utat01'
+      CapturedAtUtc = $nowUtc.AddMinutes(-10)
+      Surfaces = @(
+        [pscustomobject] @{ Category = 'OS'; Item = 'Version'; Value = 'Windows 11' }
+      )
+    } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $rightSnapshotPath -Encoding utf8
+
+    $comparison = Compare-ParityAudits `
+      -LeftStatePath $leftState `
+      -RightStatePath $rightState `
+      -LeftHostName 'utat022' `
+      -RightHostName 'utat01' `
+      -LeftSnapshotPath $leftSnapshotPath `
+      -RightSnapshotPath $rightSnapshotPath `
+      -ReportPath $reportPath `
+      -ExpectedCadence (New-TimeSpan -Days 1)
+
+    @($comparison.SnapshotFreshness).Count | Should -Be 2
+    foreach ($freshness in $comparison.SnapshotFreshness) {
+      $freshness.Age | Should -BeGreaterOrEqual ([TimeSpan]::Zero)
+      $freshness.IsStale | Should -BeFalse
+    }
+  }
+
+  It 'Compare-ParityAudits treats a missing whitelist as an empty whitelist' {
+    $leftSnapshotPath = Join-Path $leftState 'ParityAudit.utat022.fixture.json'
+    $rightSnapshotPath = Join-Path $rightState 'ParityAudit.utat01.fixture.json'
+    $reportPath = Join-Path $leftState 'DriftReport.no-whitelist.fixture.md'
+    $nowUtc = (Get-Date).ToUniversalTime().ToString('o')
+
+    [pscustomobject]@{
+      SchemaVersion = 1
+      HostName = 'utat022'
+      CapturedAtUtc = $nowUtc
+      Surfaces = @(
+        [pscustomobject] @{ Category = 'OS'; Item = 'Version'; Value = 'Windows 11' }
+      )
+    } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $leftSnapshotPath -Encoding utf8
+
+    [pscustomobject]@{
+      SchemaVersion = 1
+      HostName = 'utat01'
+      CapturedAtUtc = $nowUtc
+      Surfaces = @(
+        [pscustomobject] @{ Category = 'OS'; Item = 'Version'; Value = 'Windows 10' }
+      )
+    } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $rightSnapshotPath -Encoding utf8
+
+    $comparison = Compare-ParityAudits `
+      -LeftStatePath $leftState `
+      -RightStatePath $rightState `
+      -LeftHostName 'utat022' `
+      -RightHostName 'utat01' `
+      -LeftSnapshotPath $leftSnapshotPath `
+      -RightSnapshotPath $rightSnapshotPath `
+      -ReportPath $reportPath
+
+    @($comparison.WhitelistedDrift) | Should -HaveCount 0
+    @($comparison.UndeclaredDrift) | Should -HaveCount 1
+  }
+
+  It 'Invoke-ParityAudit falls back to Win32_Share when Get-SmbShare is unavailable' {
+    $snapshotPath = Join-Path $leftState 'ParityAudit.utat022.win32-share.fixture.json'
+    $moduleName = 'ATAP.Utilities.SystemParityMonitor.PowerShell'
+    Mock -CommandName Get-SqlParitySurfaces -ModuleName $moduleName -MockWith { @() }
+
+    Mock -CommandName Get-Command -ModuleName $moduleName -ParameterFilter { $Name -eq 'Get-SmbShare' } -MockWith {
+      $null
+    }
+    Mock -CommandName Get-CimInstance -ModuleName $moduleName -MockWith {
+      param($ClassName)
+      if ($ClassName -eq 'Win32_OperatingSystem') {
+        [pscustomobject]@{ Caption = 'Windows 10'; Version = '10.0'; BuildNumber = '19045' }
+      } elseif ($ClassName -eq 'Win32_Share') {
+        @(
+          [pscustomobject]@{ Name = 'ParityState' },
+          [pscustomobject]@{ Name = 'Public' }
+        )
+      }
+    }
+
+    $snapshot = Invoke-ParityAudit -StatePath $leftState -HostName 'utat022' -OutputPath $snapshotPath
+    $shares = $snapshot.Surfaces | Where-Object { $_.Category -eq 'Shares' -and $_.Item -eq 'SmbShareNames' }
+
+    $shares.Source | Should -Be 'Win32_Share'
+    $shares.Value | Should -Be 'ParityState;Public'
   }
 }
 

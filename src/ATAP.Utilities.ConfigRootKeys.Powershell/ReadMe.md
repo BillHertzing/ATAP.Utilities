@@ -16,8 +16,13 @@ Set-GlobalConfigRootKeys     # creates and fully populates $global:configRootKey
 `Set-GlobalConfigRootKeys` is the single entry point. It invokes each section
 function — `Set-CoreConfigRootKeys`, `Add-DatabasesConfigRootKeys` (which in turn
 invokes the per-database `Set-Databases*ConfigRootKeys` functions),
-`Set-BuildMasterConfigRootKeys`, `Set-RulesManagementConfigRootKeys`, and
+`Set-SqlInstanceTopologyConfigRootKeys`, `Set-BuildMasterConfigRootKeys`,
+`Set-RulesManagementConfigRootKeys`, and
 `Add-PackageRepositoriesConfigRootKeys` — **by name, in a fixed order**.
+
+The SQL topology section defines only host-invariant schema keys. ATAP.IAC's
+`HostSettings.IAC.Fragment.SqlInstanceTopology.ps1` remains the single source of
+truth for current/planned hosts, instance names, filesystem paths, and TCP ports.
 
 ## Design rules
 

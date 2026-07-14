@@ -774,18 +774,20 @@ Import-Module ATAP.Utilities.DatabaseManagement.Powershell
 $setupExe = Find-SqlServerSetupExe
 $setupRoot = Split-Path $setupExe -Parent
 
-$instances = @(
-  @{ Name = 'Production';  Port = 50020 },
-  @{ Name = 'QA';          Port = 50025 },
-  @{ Name = 'Integration'; Port = 50030 }
-)
+$hostName = $env:COMPUTERNAME.ToLowerInvariant()
+$topology = $global:settings[$global:configRootKeys['SqlInstanceTopologyConfigRootKey']]
+$hosts = $topology[$global:configRootKeys['SqlInstanceTopologyHostsConfigRootKey']]
+$instances = $hosts[$hostName][$global:configRootKeys['SqlInstanceTopologyInstancesConfigRootKey']]
+$instanceNameKey = $global:configRootKeys['SqlInstanceTopologyInstanceNameConfigRootKey']
+$tcpPortKey = $global:configRootKeys['SqlInstanceTopologyTcpPortConfigRootKey']
 
-foreach ($instance in $instances) {
+foreach ($role in @('PRODUCTION', 'QA', 'INTEGRATION')) {
+  $instance = $instances[$role]
   Install-SqlServerInstance `
     -DatabaseHost 'localhost' `
-    -SqlInstance $instance.Name `
+    -SqlInstance $instance[$instanceNameKey] `
     -ConnectionMethod 'tcp' `
-    -Port $instance.Port `
+    -Port $instance[$tcpPortKey] `
     -AuthenticationMode 'Windows' `
     -IntegratedSecurity `
     -Version '2022' `
@@ -820,13 +822,28 @@ table and clear its dynamic-port setting:
 2. Enable TCP/IP for the instance.
 3. Assign the intended static port.
 4. Restart the instance.
-5. Set the default backup directory to the Dropbox-backed location.
+5. Verify that the data, log, and backup directories match the current host's
+   SQL topology row in `$global:settings`.
 
-The current convention for `Production` is:
+Display the authoritative values for the current host:
 
-- Data: `C:\LocalDBs\Production`
-- Logs: `C:\LocalDBs\Production`
-- Backups: `C:\Dropbox\DatabaseBackups\Production`
+```powershell
+$hostName = $env:COMPUTERNAME.ToLowerInvariant()
+$topology = $global:settings[$global:configRootKeys['SqlInstanceTopologyConfigRootKey']]
+$hosts = $topology[$global:configRootKeys['SqlInstanceTopologyHostsConfigRootKey']]
+$instances = $hosts[$hostName][$global:configRootKeys['SqlInstanceTopologyInstancesConfigRootKey']]
+
+$instances.Values | Select-Object InstanceName, DataPath, LogPath, BackupPath, TcpPort
+```
+
+Every instance follows this settings-backed convention:
+
+- Data: `C:\LocalDBs\<INSTANCE_NAME>\Data\`
+- Logs: `C:\LocalDBs\<INSTANCE_NAME>\Log\`
+- Backups: `C:\LocalDBs\<INSTANCE_NAME>\Backup\`
+
+`Install-SqlServerInstance` resolves these values from `$global:settings` and passes
+them to dbatools. Do not reproduce the paths as independent literals in setup scripts.
 
 Verify TCP connectivity:
 

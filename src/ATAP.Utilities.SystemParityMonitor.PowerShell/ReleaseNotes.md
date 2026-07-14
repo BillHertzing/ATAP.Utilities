@@ -1,5 +1,18 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
+## 0.1.4 (unreleased)
+
+- Add SQL Server parity collection for engine/service identity, build, logins,
+  roles, permissions, Agent jobs, endpoints, TCP settings, default directories,
+  and canonical physical-file path conformance.
+- Preserve the UTC instant of deserialized `CapturedAtUtc` values when calculating
+  snapshot freshness, preventing a local-time conversion from reporting a negative age.
+- Treat absent or empty `ParityWhitelist.json` and empty journals as valid first-run
+  inputs; unmatched differences are classified as undeclared drift.
+- Fall back to `Win32_Share` when `Get-SmbShare` is unavailable, including on the
+  affected Windows 10 module-discovery surface.
+- Add focused Pester regression coverage for all three paths.
+
 ## 0.1.3 (published 2026-07-12)
 
 - Correct credential-backed S4U registration to use Task Scheduler COM

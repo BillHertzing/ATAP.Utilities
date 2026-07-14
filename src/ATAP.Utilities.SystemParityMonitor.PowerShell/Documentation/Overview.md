@@ -14,6 +14,10 @@ ATAP.Utilities in Task 12.46.
   is mirrored locally.
 - **Audit snapshots** — `Invoke-ParityAudit` captures a snapshot of the host's
   configuration surfaces (per the internal surface map) into the state root.
+- **SQL topology surfaces** — snapshots include named engine instances, service state
+  and identity, version, logins, server roles and permissions, Agent jobs, endpoints,
+  fixed TCP configuration, default directories, and physical-file conformance to
+  `C:\LocalDBs\<INSTANCE_NAME>\{Data,Log,Backup}\`.
 - **Drift comparison** — `Compare-ParityAudits` compares the two hosts' latest
   snapshots and classifies every difference as **declared** (journaled), **whitelisted**
   (expected per-host differences), or **undeclared drift** (the actionable class), and
@@ -47,6 +51,12 @@ The `0.1.1` package installed on both live hosts omitted `scripts\` and
 `Documentation\`; `scripts\` was copied manually as a temporary Task 12.38.e recovery.
 Version `0.1.2` stages both folders into the package. SC-0266 owns the incomplete
 Windows 10 WinRM `PSModulePath` plus a PowerShell 7 endpoint.
+
+Version `0.1.4` adds source-level resilience for the associated Windows 10 surface:
+when `Get-SmbShare` is unavailable, audit collection falls back to `Win32_Share`.
+Comparison also treats an absent whitelist or journal as empty and preserves the UTC
+instant of deserialized snapshots during freshness calculation. The change is not live
+until version 0.1.4 is promoted and installed.
 
 Cadence starts as `Daily` for the first onboarding month and then relaxes to
 `BiWeekly` after a clean month. The compare wrapper passes the expected cadence and

@@ -496,6 +496,21 @@ After SQL Server is installed and the `PRODUCTION` instance is verified running,
 `Integration` and `QA` named instances. These are required for the sprint-based development
 workflow and must exist before ProGet or BuildMaster attempt to use them.
 
+Load the current host's authoritative instance rows before provisioning:
+
+```powershell
+$hostName = $env:COMPUTERNAME.ToLowerInvariant()
+$topology = $global:settings[$global:configRootKeys['SqlInstanceTopologyConfigRootKey']]
+$hosts = $topology[$global:configRootKeys['SqlInstanceTopologyHostsConfigRootKey']]
+$instances = $hosts[$hostName][$global:configRootKeys['SqlInstanceTopologyInstancesConfigRootKey']]
+$instanceNameKey = $global:configRootKeys['SqlInstanceTopologyInstanceNameConfigRootKey']
+$tcpPortKey = $global:configRootKeys['SqlInstanceTopologyTcpPortConfigRootKey']
+```
+
+Each row supplies `DataPath`, `LogPath`, and `BackupPath` under
+`C:\LocalDBs\<INSTANCE_NAME>\`. `Install-SqlServerInstance` passes those settings
+to dbatools; Ansible or setup scripts must not maintain separate path literals.
+
 > **Why separate instances?** Each instance (`Integration`, `QA`, `PRODUCTION`) maps to a
 > promotion tier in the BuildMaster pipeline. Flyway migrations and package deployments
 > target the appropriate instance at each stage. Running them on separate named instances
@@ -506,7 +521,8 @@ workflow and must exist before ProGet or BuildMaster attempt to use them.
 ```powershell
 Install-SqlServerInstance `
     -DatabaseHost        'localhost' `
-    -SqlInstance         'Integration' `
+    -SqlInstance         $instances['INTEGRATION'][$instanceNameKey] `
+    -Port                $instances['INTEGRATION'][$tcpPortKey] `
     -Version             '2022' `
     -AuthenticationMode  Windows `
     -SqlServerSetupPath  'D:\Temp\SQLExpr\extracted'
@@ -521,7 +537,8 @@ using the port reserved for Integration in `HostSettings.ps1`
 ```powershell
 Install-SqlServerInstance `
     -DatabaseHost        'localhost' `
-    -SqlInstance         'QA' `
+    -SqlInstance         $instances['QA'][$instanceNameKey] `
+    -Port                $instances['QA'][$tcpPortKey] `
     -Version             '2022' `
     -AuthenticationMode  Windows `
     -SqlServerSetupPath  'D:\Temp\SQLExpr\extracted'

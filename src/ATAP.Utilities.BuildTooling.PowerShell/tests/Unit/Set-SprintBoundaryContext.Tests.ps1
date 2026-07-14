@@ -1,8 +1,8 @@
 BeforeAll {
   # Import the module from THIS worktree (tests/Unit -> module root) so the test
   # exercises the worktree's source rather than a stable-repo copy on PSModulePath.
-  $script:manifestPath = Join-Path $PSScriptRoot '..' '..' 'ATAP.Utilities.BuildTooling.PowerShell.psd1'
-  Import-Module $script:manifestPath -Force
+  $script:rootModulePath = Join-Path $PSScriptRoot '..' '..' 'ATAP.Utilities.BuildTooling.Powershell.psm1'
+  Import-Module $script:rootModulePath -Force
 }
 
 Describe 'Set-SprintBoundaryContext [public]' {
@@ -51,6 +51,14 @@ Describe 'Set-SprintBoundaryContext [public]' {
         )
         Warnings = @()
         Failures = @()
+      }
+    }
+    Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Sync-SprintBoundaryPrimaryRoleMarker {
+      [PSCustomObject]@{
+        Boundary = $Boundary
+        Action = 'SharedVerified'
+        Succeeded = $true
+        SharedStatePath = $SharedStatePath
       }
     }
   }
@@ -337,10 +345,29 @@ Describe 'Set-SprintBoundaryContext [public]' {
       $names | Should -Contain 'PowerShell7ProfileSymlinks'
       $names | Should -Contain 'DeveloperPowerShellProfiles'
       $names | Should -Contain 'ServiceAccountPowerShellProfiles'
+      $names | Should -Contain 'SharedPrimaryRoleMarker'
       $names | Should -Contain 'ConfigRootKeys'
 
       ($result.Concerns | Where-Object Concern -EQ 'PowerShell7ProfileSymlinks').StableByDesign | Should -BeFalse
+      ($result.Concerns | Where-Object Concern -EQ 'SharedPrimaryRoleMarker').StableByDesign | Should -BeTrue
       ($result.Concerns | Where-Object Concern -EQ 'ConfigRootKeys').StableByDesign | Should -BeTrue
+    }
+
+    It 'validates the stable shared primary-role marker at Start and End' {
+      Set-SprintBoundaryContext -Boundary Start `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -GitRoot $script:gitRoot
+
+      Set-SprintBoundaryContext -Boundary End `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svStable `
+        -GitRoot $script:gitRoot
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Sync-SprintBoundaryPrimaryRoleMarker -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $Boundary -eq 'Start' }
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Sync-SprintBoundaryPrimaryRoleMarker -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $Boundary -eq 'End' }
     }
 
     It 'Retargets the PowerShell 7 profile symlinks to the sprint worktree at Start' {
@@ -436,6 +463,7 @@ Describe 'Set-SprintBoundaryContext [public]' {
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 0 -Exactly -Scope It
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-PowerShell7ProfileSymlink -Times 0 -Exactly -Scope It
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-SprintBoundaryUserProfiles -Times 0 -Exactly -Scope It
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Sync-SprintBoundaryPrimaryRoleMarker -Times 0 -Exactly -Scope It
     }
   }
 }

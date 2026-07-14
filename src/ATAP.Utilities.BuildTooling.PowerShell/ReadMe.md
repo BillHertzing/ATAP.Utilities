@@ -43,6 +43,14 @@ Tasks 11.7.f-h. In addition to machine-level profile deployment and HostSettings
 deploys developer profiles from the resolved closing-sprint Overview workspace
 (`Overview.Sprint.NNNN.code-workspace` when present, otherwise an explicitly
 supported legacy sprint-workspace spelling) and service
+
+The same Start and End orchestration treats the Task 12.59 DPOM role marker as
+stable operational state. `Sync-SprintBoundaryPrimaryRoleMarker` validates the
+single Dropbox-synchronized marker at
+`C:\Dropbox\whertzing\ATAP\ParityState\PrimaryRole.json`; if only the legacy
+`C:\ProgramData\ATAP\ParityState\PrimaryRole.json` exists, it atomically copies
+that record to the shared location. It never changes an authorized role and
+stops the boundary when shared and legacy records disagree.
 account profiles from host settings into each identity's
 `Documents\PowerShell\profile.ps1`. The cmdlet also refreshes the SharedVSCode
 settings render at both boundaries so `permissions.additionalDirectories` and

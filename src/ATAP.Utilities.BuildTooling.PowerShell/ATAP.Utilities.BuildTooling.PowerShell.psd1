@@ -155,7 +155,7 @@
     'Set-BuildMasterSprintVariables', 'Set-BuildMasterStableVariables',
     'Set-BuildMasterPipelineStageDeploymentStep', 'Set-DownstreamSharedVSCodeContext',
     'Set-FloatingPackagePins', 'Set-PowerShell7ProfileSymlink',
-    'Set-SprintBoundaryContext', 'Set-TaskComplete',
+    'Set-SprintBoundaryContext', 'Sync-SprintBoundaryPrimaryRoleMarker', 'Set-TaskComplete',
     'Set-SprintBoundaryUserProfiles', 'Set-UserScopeProfile',
     'Set-WorkspaceSharedVSCodeReference', 'Set-WorktreeJunctions',
     'Start-BuildMasterDeployment', 'Start-BuildMasterModulePipelineBatch',

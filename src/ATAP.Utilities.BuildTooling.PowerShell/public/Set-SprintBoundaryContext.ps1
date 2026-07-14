@@ -112,6 +112,10 @@ function Set-SprintBoundaryContext {
   .PARAMETER CheckpointConfirmed
     Confirms the sprint session has been checkpointed before user-global settings
     files are updated.
+  .PARAMETER PrimaryRoleSharedStatePath
+    Optional explicit Dropbox-synchronized ParityState folder for the canonical
+    PrimaryRole.json marker. Defaults to the ATAP\ParityState folder beside the
+    GitHub folder under the Dropbox account root.
   .OUTPUTS
     PSCustomObject with Boundary, DryRun, a per-concern Concerns array, a
     PerWorktree breakdown, and an aggregate Errors array.
@@ -175,6 +179,8 @@ function Set-SprintBoundaryContext {
     [switch]$AllowUserGlobalWrite,
 
     [switch]$CheckpointConfirmed,
+
+    [string]$PrimaryRoleSharedStatePath,
 
     [Alias('SkipAISettingsLifecycle')]
     [switch]$SkipAIAdapterLifecycle
@@ -570,6 +576,91 @@ function Set-SprintBoundaryContext {
         StableByDesign = $false
         Succeeded      = $serviceProfilesOk
         Error          = $serviceProfilesError
+      })
+
+    # ------------------------------------------------------------------
+    # Local registration of the managed, profiled PowerShell 7 remoting
+    # endpoint (SC-0267). This is a local-only, sibling step to the profile
+    # deployment above -- it registers/refreshes the WithProfiles.pssc-defined
+    # session configuration on THIS host so it reflects whichever profile
+    # payloads Set-SprintBoundaryUserProfiles just deployed. Cross-host
+    # registration on a peer (for example utat01 from utat022) is a separate,
+    # explicit call to Register-ProfiledRemotingEndpoint -ComputerName -Credential,
+    # not performed automatically at every boundary.
+    # ------------------------------------------------------------------
+    $profiledEndpointOk = $true
+    $profiledEndpointError = $null
+    try {
+      if (-not $SkipProfileSymlinks) {
+        if (-not (Get-Command -Name Register-ProfiledRemotingEndpoint -ErrorAction SilentlyContinue)) {
+          $profiledEndpointError = 'Register-ProfiledRemotingEndpoint (ATAP.Utilities.PowerShell) is not available; skipping local endpoint registration.'
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $profiledEndpointError
+        } elseif ($PSCmdlet.ShouldProcess('local', "Register profiled PowerShell 7 remoting endpoint ($Boundary)")) {
+          $endpointResult = Register-ProfiledRemotingEndpoint -Confirm:$false -WhatIf:$WhatIfPreference
+          if (-not $endpointResult.Ok) {
+            $profiledEndpointOk = $false
+            $profiledEndpointError = "Profiled remoting endpoint registration reported failures: $($endpointResult.Failures -join '; ')"
+            $errors.Add($profiledEndpointError)
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profiledEndpointError
+          }
+        }
+      }
+    } catch {
+      $profiledEndpointOk = $false
+      $profiledEndpointError = "Profiled remoting endpoint registration failed: $($_.Exception.Message)"
+      $errors.Add($profiledEndpointError)
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profiledEndpointError
+    }
+    $concerns.Add([PSCustomObject]@{
+        Concern        = 'ProfiledRemotingEndpoint'
+        Action         = ($SkipProfileSymlinks ? 'Skipped' : "Register-ProfiledRemotingEndpoint ($Boundary)")
+        StableByDesign = $false
+        Succeeded      = $profiledEndpointOk
+        Error          = $profiledEndpointError
+      })
+
+    # ------------------------------------------------------------------
+    # Stable operational concern: the single DPOM PrimaryRole.json marker
+    # lives under Dropbox outside every Git worktree. Boundary processing
+    # validates the shared marker and may migrate a lone legacy ProgramData
+    # marker, but never rewrites role content or chooses between conflicts.
+    # ------------------------------------------------------------------
+    $primaryRoleMarkerOk = $true
+    $primaryRoleMarkerError = $null
+    $primaryRoleMarkerAction = 'NotProcessed'
+    try {
+      $primaryRoleTarget = if ([string]::IsNullOrWhiteSpace($PrimaryRoleSharedStatePath)) {
+        Join-Path (Split-Path -Path ([IO.Path]::GetFullPath($GitRoot)) -Parent) 'ATAP\ParityState'
+      } else {
+        $PrimaryRoleSharedStatePath
+      }
+      if ($PSCmdlet.ShouldProcess($primaryRoleTarget, "Validate shared DPOM primary-role marker ($Boundary)")) {
+        $primaryRoleParameters = @{
+          Boundary = $Boundary
+          GitRoot = $GitRoot
+          Confirm = $false
+          WhatIf = $WhatIfPreference
+        }
+        if (-not [string]::IsNullOrWhiteSpace($PrimaryRoleSharedStatePath)) {
+          $primaryRoleParameters.SharedStatePath = $PrimaryRoleSharedStatePath
+        }
+        $primaryRoleResult = Sync-SprintBoundaryPrimaryRoleMarker @primaryRoleParameters
+        $primaryRoleMarkerAction = $primaryRoleResult.Action
+      } elseif ($WhatIfPreference) {
+        $primaryRoleMarkerAction = 'WhatIf'
+      }
+    } catch {
+      $primaryRoleMarkerOk = $false
+      $primaryRoleMarkerError = "Shared DPOM primary-role marker validation failed: $($_.Exception.Message)"
+      $errors.Add($primaryRoleMarkerError)
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $primaryRoleMarkerError
+    }
+    $concerns.Add([PSCustomObject]@{
+        Concern        = 'SharedPrimaryRoleMarker'
+        Action         = $primaryRoleMarkerAction
+        StableByDesign = $true
+        Succeeded      = $primaryRoleMarkerOk
+        Error          = $primaryRoleMarkerError
       })
 
     # ------------------------------------------------------------------

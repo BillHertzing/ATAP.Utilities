@@ -826,14 +826,21 @@ function Invoke-PSModulePesterTests {
       $total = if ($result) { [int]$result.TotalCount } else { 0 }
       $duration = if ($result -and $result.Duration) { $result.Duration } else { [TimeSpan]::Zero }
 
-      $gatePass = ($failed -eq 0)
+      # A filtered run that selects no tests is a configuration failure, not a
+      # successful gate. Sprint is the only intentional skip and returns above.
+      $gatePass = ($total -gt 0 -and $failed -eq 0)
       if (-not $SkipTestResult -and $result) {
         Write-PSModulePesterJUnitResult -PesterResult $result -OutputPath $OutputPath
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Pester test result artifact: '$OutputPath'"
       }
 
       if (-not $gatePass) {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Pester gate FAILED: $failed failing test(s) of $total"
+        $gateFailureMessage = if ($total -eq 0) {
+          'Pester gate FAILED: no tests matched the tier filter'
+        } else {
+          "Pester gate FAILED: $failed failing test(s) of $total"
+        }
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $gateFailureMessage
         $failedTests = Get-PSModulePesterFailedTestSummary -PesterResult $result -Maximum 50
         $failureArtifactPath = [System.IO.Path]::ChangeExtension($OutputPath, '.Failures.json')
         $failureArtifactDirectory = Split-Path -Path $failureArtifactPath -Parent

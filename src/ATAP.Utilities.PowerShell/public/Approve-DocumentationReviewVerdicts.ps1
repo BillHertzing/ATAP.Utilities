@@ -12,15 +12,24 @@ Walks the pending rows of the DR program's findings register
   - the suggested disposition (Verdict, FindingSummary, Evidence, coordinator notes),
   - the first N lines of the file itself (default 50; skipped for binary/missing files),
 
-then accepts exactly 'Y' or 'N' from the console:
+then accepts exactly one of 'Y', 'N', 'K', 'D', or 'S' from the console:
 
   Y — accept the suggested disposition: the row's AcceptanceStatus becomes 'accepted'.
   N — hold the row for another acceptance pass: AcceptanceStatus becomes 'held'.
+  K — keep: the file is a thin wrapper that nevertheless contains useful information
+      to review later. The file is NOT deleted; the row's Disposition becomes
+      'thin-wrapper-useful' and AcceptanceStatus becomes 'accepted'.
+  D — delete: the file is a thin wrapper with no useful information. The file is
+      DELETED from disk (honors -WhatIf/-Confirm); the row's Disposition becomes
+      'thin-wrapper-no-value' and AcceptanceStatus becomes 'accepted'.
+  S — skip: no decision. The row is left pending (no disposition, no deletion) and
+      will be presented again on the next run.
 
 Any other input re-prompts. The register is rewritten after EVERY decision, so an
 interrupted session loses nothing; a later run resumes with the still-pending rows
 (rows already 'accepted', or with VerificationStatus containing 'remediated', are
-skipped; 'held' rows reappear only when -IncludeHeld is passed).
+skipped; 'held' rows reappear only when -IncludeHeld is passed; skipped rows always
+reappear).
 
 This is the DR-4 gate-G4 HITL tool of the ATAP Documentation Review program
 (_Planning\DocumentationReview\DocumentationReview-Plan.md). It is intentionally
@@ -29,7 +38,7 @@ non-interactive shell.
 
 .PARAMETER RegisterPath
 Path to the findings register CSV (append-only, coordinator-written). The function adds
-AcceptanceStatus and AcceptedUtc columns if absent.
+AcceptanceStatus, AcceptedUtc, and Disposition columns if absent.
 
 .PARAMETER ConfigPath
 Path to ReviewConfig.json; its activeRoots map RepoName -> rootPath so the file preview
@@ -51,7 +60,8 @@ Also re-present rows previously marked 'held'.
 None.
 
 .OUTPUTS
-A summary PSCustomObject: Presented, Accepted, Held, RemainingPending.
+A summary PSCustomObject: Presented, Accepted, Held, Kept, Deleted, Skipped,
+RemainingPending.
 
 .EXAMPLE
 Approve-DocumentationReviewVerdicts `
@@ -66,7 +76,7 @@ Approve-DocumentationReviewVerdicts -RegisterPath $reg -ConfigPath $cfg -BatchId
 #>
 Function Approve-DocumentationReviewVerdicts {
   #region FunctionParameters
-  [CmdletBinding()]
+  [CmdletBinding(SupportsShouldProcess)]
   param (
     [parameter(Mandatory = $true)]
     [ValidateScript({ Test-Path -LiteralPath $_ -PathType Leaf })]
@@ -103,6 +113,7 @@ Function Approve-DocumentationReviewVerdicts {
     $rows = @(Import-Csv -LiteralPath $RegisterPath) | ForEach-Object {
       if (-not $_.PSObject.Properties['AcceptanceStatus']) { $_ | Add-Member -NotePropertyName AcceptanceStatus -NotePropertyValue '' }
       if (-not $_.PSObject.Properties['AcceptedUtc']) { $_ | Add-Member -NotePropertyName AcceptedUtc -NotePropertyValue '' }
+      if (-not $_.PSObject.Properties['Disposition']) { $_ | Add-Member -NotePropertyName Disposition -NotePropertyValue '' }
       $_
     }
 
@@ -114,7 +125,7 @@ Function Approve-DocumentationReviewVerdicts {
       ((-not $Verdict) -or ($Verdict -contains $_.Verdict))
     }
 
-    $presented = 0; $accepted = 0; $held = 0
+    $presented = 0; $accepted = 0; $held = 0; $kept = 0; $deleted = 0; $skipped = 0
     foreach ($row in $pending) {
       $presented++
       Write-Host ''
@@ -140,17 +151,54 @@ Function Approve-DocumentationReviewVerdicts {
       Write-Host ('-' * 78) -ForegroundColor Cyan
 
       $answer = ''
-      while ($answer -notin 'Y', 'N') {
-        $answer = (Read-Host "Accept suggested disposition '$($row.Verdict)'? [Y] accept  [N] hold for another pass").Trim().ToUpperInvariant()
+      while ($answer -notin 'Y', 'N', 'K', 'D', 'S') {
+        $answer = (Read-Host "Accept suggested disposition '$($row.Verdict)'? [Y] accept  [N] hold  [K] keep thin-wrapper-useful  [D] delete thin-wrapper-no-value  [S] skip").Trim().ToUpperInvariant()
       }
-      if ($answer -eq 'Y') {
-        $row.AcceptanceStatus = 'accepted'
-        $row.AcceptedUtc = [datetimeoffset]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ss+00:00')
-        $accepted++
-      } else {
-        $row.AcceptanceStatus = 'held'
-        $row.AcceptedUtc = ''
-        $held++
+      switch ($answer) {
+        'Y' {
+          $row.AcceptanceStatus = 'accepted'
+          $row.AcceptedUtc = [datetimeoffset]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ss+00:00')
+          $accepted++
+        }
+        'N' {
+          $row.AcceptanceStatus = 'held'
+          $row.AcceptedUtc = ''
+          $held++
+        }
+        'K' {
+          $row.Disposition = 'thin-wrapper-useful'
+          $row.AcceptanceStatus = 'accepted'
+          $row.AcceptedUtc = [datetimeoffset]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ss+00:00')
+          $kept++
+        }
+        'D' {
+          if ($absolutePath -and (Test-Path -LiteralPath $absolutePath)) {
+            if ($PSCmdlet.ShouldProcess($absolutePath, 'Delete thin-wrapper file')) {
+              try {
+                Remove-Item -LiteralPath $absolutePath -Force -Confirm:$false
+                Write-PSFMessage -Level Important -Message "Deleted thin-wrapper file '$absolutePath'" -Tag 'DocumentationReview'
+              } catch {
+                Write-PSFMessage -Level Error -Message "Failed to delete '$absolutePath': $($_.Exception.Message)" -Tag 'DocumentationReview'
+                Write-Host "Delete failed: $($_.Exception.Message) — row left pending." -ForegroundColor Red
+                $skipped++
+                continue
+              }
+            } else {
+              # -WhatIf (or Confirm declined): no deletion, no marking — behaves as skip.
+              $skipped++
+              continue
+            }
+          }
+          $row.Disposition = 'thin-wrapper-no-value'
+          $row.AcceptanceStatus = 'accepted'
+          $row.AcceptedUtc = [datetimeoffset]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ss+00:00')
+          $deleted++
+        }
+        'S' {
+          # No decision recorded; row stays pending and reappears next run.
+          $skipped++
+          continue
+        }
       }
       # Persist after every decision so an interrupted session loses nothing.
       $rows | Export-Csv -LiteralPath $RegisterPath -NoTypeInformation -Encoding utf8
@@ -159,11 +207,14 @@ Function Approve-DocumentationReviewVerdicts {
     $remaining = @($rows | Where-Object {
         $_.VerificationStatus -notlike '*remediated*' -and $_.AcceptanceStatus -notin 'accepted', 'held'
       }).Count
-    Write-PSFMessage -Level Verbose -Message "Approve-DocumentationReviewVerdicts: presented=$presented accepted=$accepted held=$held remaining=$remaining" -Tag 'DocumentationReview'
+    Write-PSFMessage -Level Verbose -Message "Approve-DocumentationReviewVerdicts: presented=$presented accepted=$accepted held=$held kept=$kept deleted=$deleted skipped=$skipped remaining=$remaining" -Tag 'DocumentationReview'
     [PSCustomObject]@{
       Presented        = $presented
       Accepted         = $accepted
       Held             = $held
+      Kept             = $kept
+      Deleted          = $deleted
+      Skipped          = $skipped
       RemainingPending = $remaining
     }
     Write-PSFMessage -Level Debug -Message 'Leaving Function Approve-DocumentationReviewVerdicts in module ATAP.Utilities.Powershell' -Tag 'Trace'

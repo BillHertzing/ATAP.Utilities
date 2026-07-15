@@ -1,7 +1,9 @@
-Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' {
+Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit' {
   BeforeAll {
-    $modulePath = Join-Path $PSScriptRoot '..\..\ATAP.Utilities.SystemParityMonitor.PowerShell.psd1'
-    Import-Module -Name $modulePath -Force
+    if (-not (Get-Module -Name 'ATAP.Utilities.SystemParityMonitor.PowerShell')) {
+      $modulePath = Join-Path $PSScriptRoot '..\..\ATAP.Utilities.SystemParityMonitor.PowerShell.psd1'
+      Import-Module -Name $modulePath -Force
+    }
   }
 
   BeforeEach {
@@ -316,9 +318,12 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' {
   }
 }
 
-Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell scheduled task scripts' {
+Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell scheduled task scripts' -Tag 'Unit' {
   BeforeAll {
-    $moduleRoot = Join-Path $PSScriptRoot '..\..'
+    $moduleRoot = (Get-Module -Name 'ATAP.Utilities.SystemParityMonitor.PowerShell').ModuleBase
+    if (-not $moduleRoot) {
+      throw 'ATAP.Utilities.SystemParityMonitor.PowerShell must be imported before scheduled-task tests run.'
+    }
     $scriptsRoot = Join-Path $moduleRoot 'scripts'
     $registerScriptPath = Join-Path $scriptsRoot 'Register-ParityScheduledTasks.ps1'
     $commonScriptPath = Join-Path $scriptsRoot 'ParityScheduledTask.Common.ps1'

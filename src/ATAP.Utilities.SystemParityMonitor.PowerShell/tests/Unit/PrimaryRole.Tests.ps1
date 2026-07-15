@@ -1,7 +1,9 @@
-Describe 'DPOM primary-role marker' {
+Describe 'DPOM primary-role marker' -Tag 'Unit' {
   BeforeAll {
-    $modulePath = Join-Path $PSScriptRoot '..\..\ATAP.Utilities.SystemParityMonitor.PowerShell.psd1'
-    Import-Module -Name $modulePath -Force
+    if (-not (Get-Module -Name 'ATAP.Utilities.SystemParityMonitor.PowerShell')) {
+      $modulePath = Join-Path $PSScriptRoot '..\..\ATAP.Utilities.SystemParityMonitor.PowerShell.psd1'
+      Import-Module -Name $modulePath -Force
+    }
     $sinceUtc = [DateTimeOffset]::Parse('2026-07-14T21:00:00.0000000Z')
     $journalEntryId = [guid] '11111111-1111-1111-1111-111111111111'
   }

@@ -268,7 +268,7 @@ Flyway manages schema evolution with versioned migrations. PowerShell cmdlets (`
 | [Module Catalog.md](../SolutionDocumentation/Module%20Catalog.md) | Ace Commander module catalog v0.9 -- comprehensive feature roadmap | Existing doc |
 | [Security Shift-Left.md](../SolutionDocumentation/Security%20Shift-Left.md) | Secrets management, PKI strategy | Existing doc |
 | [AI Generated Summary.md](../SolutionDocumentation/AI%20Generated%20Summary.md) | ChatGPT-generated repository analysis and dependency diagram | Existing doc |
-| [Refactoring-Phase1-Discovery-Report.md](../SolutionDocumentation/Refactoring-Phase1-Discovery-Report.md) | Refactoring discovery: 22 module groups identified for reorganization | Existing doc |
+| [Refactoring-Phase1-Discovery-Report.md](../SolutionDocumentation/ReviewedAndArchived/Refactoring-Phase1-Discovery-Report.md) (archived 2026-07-06) | Refactoring discovery: 22 module groups identified for reorganization | Existing doc |
 | [ContributingGuidelines.md](../SolutionDocumentation/ContributingGuidelines.md) | Contribution guidelines | Existing doc |
 | Rules Compendium files (CSharp, MSBuild, Path, Powershell, SQL, Snippet) | Rule definitions per language | Existing doc |
 | Various `.drawio` files | Package lifecycle, Windows packages, users diagrams | Existing doc |

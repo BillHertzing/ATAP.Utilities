@@ -140,6 +140,8 @@ function Build-CLAUDEPerRepository {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Searching for workspace file in: $parentDir"
 
           $workspaceFiles = @()
+          $workspaceFiles += Get-ChildItem -Path $parentDir -Filter 'Overview.Sprint.????.code-workspace' -File -ErrorAction SilentlyContinue
+          # Legacy compatibility only:
           $workspaceFiles += Get-ChildItem -Path $parentDir -Filter 'Overview-wt-sprint????.code-workspace' -File -ErrorAction SilentlyContinue
           $workspaceFiles += Get-ChildItem -Path $parentDir -Filter 'OverviewSprint????.code-workspace' -File -ErrorAction SilentlyContinue
 

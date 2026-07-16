@@ -61,6 +61,12 @@ Describe 'Test-SprintInfrastructureHealth' -Tag 'Unit' {
       $script:lastSecretField | Should -Be 'notes'
     }
 
+    It 'source documents CommonCIForBitwardenReadOnly for the BWS-backed provider path' {
+      $source = Get-Content -LiteralPath (Join-Path $script:publicDir 'Test-SprintInfrastructureHealth.ps1') -Raw
+      $source | Should -Match 'CommonCIForBitwardenReadOnly'
+      $source | Should -Match "SecretStoreType 'BitwardenSecretsManager'"
+    }
+
     It 'forces the BitwardenSecretsManager provider so no BW_SESSION is needed (SC-0175)' {
       $script:lastSecretStoreType = $null
       Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' | Out-Null
@@ -151,3 +157,4 @@ Describe 'Test-SprintInfrastructureHealth' -Tag 'Unit' {
     }
   }
 }
+

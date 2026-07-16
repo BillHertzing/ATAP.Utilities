@@ -20,3 +20,6 @@ See [INDEX.md](INDEX.md) for the complete function and table inventory.
 
 - Version bumped to 0.1.9 in Sprint 11
 
+## Functional area
+
+RRSBS & Rules Compendiums - START HERE: SolutionDocumentation\Rules Compendium.md (link-up added 2026-07-07, Sprint 0012 Task 12.46.f)

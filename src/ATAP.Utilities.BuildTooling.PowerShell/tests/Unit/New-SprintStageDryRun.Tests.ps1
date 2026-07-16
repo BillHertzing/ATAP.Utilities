@@ -14,6 +14,7 @@ BeforeAll {
     'Set-WorktreeJunctions'
     'Initialize-DownstreamSprintFromSharedVSCode'
     'Initialize-SprintAIAdapters'
+    'Set-SprintBoundaryContext'
     'Set-ClaudeSettingsSymlink'
     'Set-UserSettingsSymlink'
     'Get-SprintTaskRepositoryNames'
@@ -60,6 +61,13 @@ BeforeAll {
   function global:Initialize-SprintAIAdapters {
     $global:dryRunExternalCalls.Add('Initialize-SprintAIAdapters') | Out-Null
     throw 'Initialize-SprintAIAdapters should not be called during DryRun.'
+  }
+
+  # Task 12.2.b: Stage 1/2 provision worktrees via the single Start entry point.
+  # ShouldProcess-guarded, so it must never run during DryRun.
+  function global:Set-SprintBoundaryContext {
+    $global:dryRunExternalCalls.Add('Set-SprintBoundaryContext') | Out-Null
+    throw 'Set-SprintBoundaryContext should not be called during DryRun.'
   }
 
   function global:Get-SprintHistoryReconstruction {

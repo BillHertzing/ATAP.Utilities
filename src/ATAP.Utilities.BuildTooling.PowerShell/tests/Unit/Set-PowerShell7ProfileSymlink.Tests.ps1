@@ -34,16 +34,18 @@ Describe 'Set-PowerShell7ProfileSymlink [public]' {
     $script:iacSprint = Join-Path $script:root 'ATAP.IAC-wt-11-Sprint-0010-work-items'
     $script:iacStable = Join-Path $script:root 'ATAP.IAC'
 
-    $script:profileRel = 'src\ATAP.Utilities.PowerShell\Profiles\AllUsersAllHostsV7CoreProfile.ps1'
+    $script:profileRel = 'Windows\ProfileTemplates\AllUsersAllHostsV7CoreProfile.ps1'
     $script:hostRel = 'Windows\HostSettings.ps1'
 
     foreach ($pair in @(
-        @($script:utilSprint, $script:profileRel), @($script:utilStable, $script:profileRel),
+        @($script:iacSprint, $script:profileRel), @($script:iacStable, $script:profileRel),
         @($script:iacSprint, $script:hostRel), @($script:iacStable, $script:hostRel))) {
       $file = Join-Path $pair[0] $pair[1]
       New-Item -ItemType Directory -Path (Split-Path $file -Parent) -Force | Out-Null
       Set-Content -LiteralPath $file -Value '# fixture' -Encoding UTF8
     }
+    Set-Content -LiteralPath (Join-Path $script:iacSprint $script:profileRel) -Value '# sprint profile' -Encoding UTF8
+    Set-Content -LiteralPath (Join-Path $script:iacStable $script:profileRel) -Value '# stable profile' -Encoding UTF8
 
     $script:ps7 = Join-Path $script:root 'PowerShell7'
     New-Item -ItemType Directory -Path $script:ps7 -Force | Out-Null
@@ -65,7 +67,7 @@ Describe 'Set-PowerShell7ProfileSymlink [public]' {
   }
 
   Context 'Return contract' {
-    It 'Reports a managed link for profile.ps1 and HostSettings.ps1' {
+    It 'reports the managed machine profile and HostSettings link' {
       $result = Set-PowerShell7ProfileSymlink -ATAPUtilitiesRoot $script:utilSprint `
         -ATAPIACRoot $script:iacSprint -PowerShell7Path $script:ps7 -WhatIf
       $names = $result.Links.Name
@@ -77,20 +79,20 @@ Describe 'Set-PowerShell7ProfileSymlink [public]' {
       $start = Set-PowerShell7ProfileSymlink -ATAPUtilitiesRoot $script:utilSprint `
         -ATAPIACRoot $script:iacSprint -PowerShell7Path $script:ps7 -WhatIf
       ($start.Links | Where-Object Name -EQ 'profile.ps1').Target |
-        Should -Be (Join-Path $script:utilSprint $script:profileRel)
+        Should -Be (Join-Path $script:iacSprint $script:profileRel)
       ($start.Links | Where-Object Name -EQ 'HostSettings.ps1').Target |
         Should -Be (Join-Path $script:iacSprint $script:hostRel)
 
       $end = Set-PowerShell7ProfileSymlink -ATAPUtilitiesRoot $script:utilStable `
         -ATAPIACRoot $script:iacStable -PowerShell7Path $script:ps7 -WhatIf
       ($end.Links | Where-Object Name -EQ 'profile.ps1').Target |
-        Should -Be (Join-Path $script:utilStable $script:profileRel)
+        Should -Be (Join-Path $script:iacStable $script:profileRel)
     }
   }
 
   Context 'Dangling-target guard' {
     It 'Records TargetMissing and creates no link when the target file is absent' {
-      Remove-Item -LiteralPath (Join-Path $script:utilSprint $script:profileRel) -Force
+      Remove-Item -LiteralPath (Join-Path $script:iacSprint $script:profileRel) -Force
       $result = Set-PowerShell7ProfileSymlink -ATAPUtilitiesRoot $script:utilSprint `
         -ATAPIACRoot $script:iacSprint -PowerShell7Path $script:ps7
       $profileLink = $result.Links | Where-Object Name -EQ 'profile.ps1'
@@ -119,21 +121,23 @@ Describe 'Set-PowerShell7ProfileSymlink [public]' {
     }
   }
 
-  Context 'Mutation (requires symlink privilege)' {
-    It 'Retargets both managed links to existing targets' {
+  Context 'Mutation (HostSettings link requires symlink privilege)' {
+    It 'copies the machine profile and retargets HostSettings' {
       if (-not $script:canSymlink) { Set-ItResult -Skipped -Because 'engine cannot create symlinks (no elevation / Developer Mode)' }
       $result = Set-PowerShell7ProfileSymlink -ATAPUtilitiesRoot $script:utilSprint `
         -ATAPIACRoot $script:iacSprint -PowerShell7Path $script:ps7
       $result.Ok | Should -BeTrue
       $profileLinkPath = Join-Path $script:ps7 'profile.ps1'
       Test-Path -LiteralPath $profileLinkPath | Should -BeTrue
-      (Get-Item -LiteralPath $profileLinkPath -Force).Target |
-        Should -Be (Join-Path $script:utilSprint $script:profileRel)
+      (Get-Item -LiteralPath $profileLinkPath -Force).LinkType | Should -BeNullOrEmpty
+      [Convert]::ToBase64String([IO.File]::ReadAllBytes($profileLinkPath)) |
+        Should -Be ([Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $script:iacSprint $script:profileRel))))
     }
 
     It 'Removes an existing obsolete symlink' {
       if (-not $script:canSymlink) { Set-ItResult -Skipped -Because 'engine cannot create symlinks (no elevation / Developer Mode)' }
       $obsoleteTarget = Join-Path $script:utilSprint 'src\ATAP.Utilities.PowerShell\Profiles\global_ConfigRootKeys.ps1'
+      New-Item -ItemType Directory -Path (Split-Path $obsoleteTarget -Parent) -Force | Out-Null
       Set-Content -LiteralPath $obsoleteTarget -Value '# obsolete' -Encoding UTF8
       $obsoleteLink = Join-Path $script:ps7 'global_ConfigRootKeys.ps1'
       New-Item -ItemType SymbolicLink -Path $obsoleteLink -Target $obsoleteTarget -Force | Out-Null
@@ -146,15 +150,17 @@ Describe 'Set-PowerShell7ProfileSymlink [public]' {
       Test-Path -LiteralPath $obsoleteTarget | Should -BeTrue
     }
 
-    It 'Retarget is idempotent across repeated runs' {
+    It 'replaces a sprint copy with the stable payload across repeated runs' {
       if (-not $script:canSymlink) { Set-ItResult -Skipped -Because 'engine cannot create symlinks (no elevation / Developer Mode)' }
       Set-PowerShell7ProfileSymlink -ATAPUtilitiesRoot $script:utilSprint `
         -ATAPIACRoot $script:iacSprint -PowerShell7Path $script:ps7 | Out-Null
       $second = Set-PowerShell7ProfileSymlink -ATAPUtilitiesRoot $script:utilStable `
         -ATAPIACRoot $script:iacStable -PowerShell7Path $script:ps7
       $second.Ok | Should -BeTrue
-      (Get-Item -LiteralPath (Join-Path $script:ps7 'profile.ps1') -Force).Target |
-        Should -Be (Join-Path $script:utilStable $script:profileRel)
+      $secondProfile = $second.Links | Where-Object Name -EQ 'profile.ps1'
+      $secondProfile.Action | Should -Be 'Copied'
+      [Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $script:ps7 'profile.ps1'))) |
+        Should -Be ([Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $script:iacStable $script:profileRel))))
     }
   }
 }

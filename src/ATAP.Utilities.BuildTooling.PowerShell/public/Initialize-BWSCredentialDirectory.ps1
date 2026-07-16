@@ -4,8 +4,12 @@ Creates and hardens the per-account Bitwarden Secrets Manager credential directo
 
 .DESCRIPTION
 Initialize-BWSCredentialDirectory creates the folder that holds a Windows account's
-DPAPI-protected BWS access-token file, then replaces inherited ACLs with explicit
+DPAPI-protected BWS access-token files, then replaces inherited ACLs with explicit
 FullControl grants for the owning account, SYSTEM, and local Administrators.
+
+The directory behavior is intentionally filename-agnostic. The same protected folder can
+hold both purpose-specific common CI token slots written by Initialize-BWSAccessToken:
+CommonCIForBitwardenReadOnly and CommonCIForBitwardenReadWrite.
 
 By default the account is the current Windows identity and the folder is
 `C:\ProgramData\ATAP\BitwardenCredentials\<SamAccountName>`. Pass AccountName to prepare

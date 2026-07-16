@@ -48,7 +48,7 @@ function Invoke-SprintEndLifecycle {
   Generates HANDOFF.SprintNNNN.md.
 
   .PARAMETER CloseOverview
-  Updates Overview.code-workspace and archives OverviewSprintNNNN.code-workspace.
+  Updates Overview.code-workspace and archives Overview.Sprint.NNNN.code-workspace.
 
   .PARAMETER CleanupInfrastructure
   Drops sprint databases, clears BuildMaster variables, and reasserts stable boundary.

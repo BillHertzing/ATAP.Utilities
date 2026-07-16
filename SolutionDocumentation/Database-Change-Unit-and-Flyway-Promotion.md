@@ -686,7 +686,7 @@ application with the database that already exists.
 The deeper questions around database packaging, offline sync, tenant
 isolation, SQLCipher data modeling, and release-channel ownership are
 deliberately deferred for Sprint 0007. They need to be decided together,
-not piecemeal. See [`DeveloperMusings.md`](DeveloperMusings.md) for:
+not piecemeal. See [`DeveloperMusings.md`](ReviewedAndArchived/DeveloperMusings.md) (archived 2026-07-06) for:
 
 - "Database Packaging Options A-D" — the option matrix (one catalog
   multi-schema, separate databases, dedicated DB-definition repository,

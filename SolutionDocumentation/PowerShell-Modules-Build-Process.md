@@ -87,6 +87,29 @@ Key invariants:
   `FunctionsToExport`.
 - **Pester tests live in `tests/`** — never shipped.
 
+### 2.1 Standard module scaffold (mandatory — Sprint 0012 Task 12.46, plan 1.b)
+
+Beyond the build-relevant layout above, every first-party module and submodule
+under `src/` MUST carry this scaffold (see `PlanPowershellReorganization.md`):
+
+| Item | Requirement |
+| --- | --- |
+| `ReadMe.md` | Module purpose, public-function table, layout, deployment notes — real content, not boilerplate |
+| `INDEX.md` | One row per file/folder in the module with a one-line description |
+| `tests/` | Pester suite; every public function has at least one test |
+| `Documentation/` | Module-level docs (at minimum an `Overview.md`) |
+| `Documentation/images/` | Images referenced by module docs (keep a `.gitkeep` when empty) |
+| `version.json` | NBGV config (packaging prerequisite) |
+| BuildMaster map entry | A reviewed row in `BuildMasterApplicationByModuleConfigRootKey` (ATAP.IAC BuildMaster HostSettings fragment); all PowerShell modules share the consolidated application `ATAP.Utilities-PowerShell` |
+| Area link-up | `Documentation/` links to the module's functional-area START-HERE doc in `SolutionDocumentation/INDEX.md`, and the area row links back |
+
+Code standards for every module `.ps1` (enforced by the Task 12.46 compliance
+sweep): no top-level executable code (BEGIN-block helper fallbacks,
+function-local constants, aliases only in the `.psm1`, `&`-proof guards for
+dual-purpose scripts), PSFramework logging levels only
+(`Debug`/`Verbose`/`Important`/`Error`), and secrets referenced by SecretName
+via `Get-SecretATAP` — never literals.
+
 ---
 
 ## 3. Build concept: consolidation, not copy

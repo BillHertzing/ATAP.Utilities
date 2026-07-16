@@ -135,23 +135,53 @@ function Convert-TasksMdToSprintBoard {
         [Parameter(Mandatory)]
         [AllowEmptyCollection()]
         [AllowEmptyString()]
-        [string[]]$Lines
+        [string[]]$Lines,
+
+        [Parameter()]
+        [AllowEmptyString()]
+        [string]$TaskId
       )
 
       $fields = [ordered]@{}
       $currentLabel = $null
+      $currentDisplayLabel = $null
       $currentValue = [System.Collections.Generic.List[string]]::new()
 
-      foreach ($line in $Lines) {
-        if ($line -match '^\s{2,}-\s+(?<label>Files|Do|Acceptance|Status|Evidence):\s*(?<value>.*)$') {
-          if ($currentLabel) {
-            $fields[$currentLabel] = (Convert-TasksMdToSprintBoardInlineText -Text ($currentValue -join ' '))
+      function Save-CurrentTaskField {
+        if ($currentLabel) {
+          $fields[$currentLabel] = (Convert-TasksMdToSprintBoardInlineText -Text ($currentValue -join ' '))
+          if ($currentLabel -eq 'Evidence' -and $currentDisplayLabel) {
+            $fields['EvidenceLabel'] = $currentDisplayLabel
           }
+        }
+      }
+
+      foreach ($line in $Lines) {
+        if ($line -match '^\s{2,}-\s+(?<label>Files|Do|Acceptance|Status):\s*(?<value>.*)$') {
+          Save-CurrentTaskField
           $currentLabel = $Matches['label']
+          $currentDisplayLabel = "$($Matches['label']):"
           $currentValue.Clear()
           if ($Matches['value']) {
             $currentValue.Add($Matches['value'].Trim())
           }
+          continue
+        }
+
+        if ($line -match '^\s{2,}-\s+Evidence(?<suffix>\s+(?:\([^)]+\)|[^:]+))?:\s*(?<value>.*)$') {
+          Save-CurrentTaskField
+          $currentLabel = 'Evidence'
+          $currentDisplayLabel = ('Evidence' + ($Matches['suffix'] ?? '') + ':').Trim()
+          $currentValue.Clear()
+          if ($Matches['value']) {
+            $currentValue.Add($Matches['value'].Trim())
+          }
+          continue
+        }
+
+        if ($line -match '^\s{2,}-\s+Evidence\b') {
+          $taskPrefix = if ([string]::IsNullOrWhiteSpace($TaskId)) { 'task with unknown id' } else { "task $TaskId" }
+          Write-Warning "Could not parse Evidence-like bullet for ${taskPrefix}: $($line.Trim())"
           continue
         }
 
@@ -164,11 +194,60 @@ function Convert-TasksMdToSprintBoard {
         }
       }
 
-      if ($currentLabel) {
-        $fields[$currentLabel] = (Convert-TasksMdToSprintBoardInlineText -Text ($currentValue -join ' '))
-      }
+      Save-CurrentTaskField
 
       return [PSCustomObject]$fields
+    }
+
+    function Get-TasksMdToSprintBoardExistingTaskMap {
+      param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$ExistingOutputPath
+      )
+
+      $taskMap = @{}
+      if (-not (Test-Path -LiteralPath $ExistingOutputPath -PathType Leaf)) {
+        return $taskMap
+      }
+
+      try {
+        $existingHtml = Get-Content -LiteralPath $ExistingOutputPath -Raw -Encoding UTF8
+        $jsonMatch = [regex]::Match(
+          $existingHtml,
+          'const STREAMS=(?<json>.*?);\r?\nfunction esc',
+          [System.Text.RegularExpressions.RegexOptions]::Singleline)
+        if (-not $jsonMatch.Success) {
+          Write-Warning "Could not inspect existing sprint board for resolution reconciliation: '$ExistingOutputPath' does not contain a recognizable STREAMS block."
+          return $taskMap
+        }
+
+        $existingStreams = $jsonMatch.Groups['json'].Value | ConvertFrom-Json
+        foreach ($existingStream in @($existingStreams)) {
+          foreach ($existingTask in @($existingStream.tasks)) {
+            if ($null -ne $existingTask -and -not [string]::IsNullOrWhiteSpace($existingTask.id)) {
+              $taskMap[[string]$existingTask.id] = $existingTask
+            }
+          }
+        }
+      } catch {
+        Write-Warning "Could not inspect existing sprint board for resolution reconciliation: $($_.Exception.Message)"
+      }
+
+      return $taskMap
+    }
+
+    function New-TasksMdToSprintBoardReconciliationReportPath {
+      param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$GeneratedBoardPath
+      )
+
+      $boardDirectory = Split-Path -Path $GeneratedBoardPath -Parent
+      $generatedDirectory = Join-Path $boardDirectory '_generated'
+      $baseName = [System.IO.Path]::GetFileNameWithoutExtension($GeneratedBoardPath)
+      return (Join-Path $generatedDirectory "$baseName.EvidenceReconciliation.json")
     }
 
     function Get-TasksMdToSprintBoardSlice {
@@ -290,7 +369,9 @@ function Convert-TasksMdToSprintBoard {
           $taskHeader = $taskLines[0]
           # Leading whitespace is optional (indented subtasks); the [Repo] tag is
           # optional because lettered subtasks omit it and inherit the umbrella's repo.
-          if ($taskHeader -notmatch '^\s*- \[(?<checked>[ x~])\] \*\*Task (?<id>[^*]+)\*\*(?:\s+\[(?<repo>[^\]]+)\])?(?<extraTags>(?: \[[^\]]+\])*)\s+[–-]\s+(?<title>.+)$') {
+          # extraTags allows optional **bold** wrapping (e.g. **[HITL]**) in addition to
+          # plain [tag] — the board convention bolds human-in-the-loop gate markers.
+          if ($taskHeader -notmatch '^\s*- \[(?<checked>[ x~])\] \*\*Task (?<id>[^*]+)\*\*(?:\s+\[(?<repo>[^\]]+)\])?(?<extraTags>(?:\s+\*{0,2}\[[^\]]+\]\*{0,2})*)\s+[–-]\s+(?<title>.+)$') {
             throw "Could not parse task header '$taskHeader'."
           }
 
@@ -306,8 +387,11 @@ function Convert-TasksMdToSprintBoard {
             $taskTitle = ($taskTitle + $Matches['extraTags']).Trim()
           }
 
-          $taskDetailLines = Get-TasksMdToSprintBoardSlice -Lines $taskLines -StartIndex 1 -EndIndex ($taskLines.Count - 1)
-          $taskFields = Get-TasksMdToSprintBoardTaskFields -Lines $taskDetailLines
+          # @() wrapper required: a task with zero detail lines makes the slice's empty
+          # pipeline output collapse to $null on assignment, and $null fails to bind to
+          # the next call's mandatory -Lines parameter (Task 12.34).
+          $taskDetailLines = @(Get-TasksMdToSprintBoardSlice -Lines $taskLines -StartIndex 1 -EndIndex ($taskLines.Count - 1))
+          $taskFields = Get-TasksMdToSprintBoardTaskFields -Lines $taskDetailLines -TaskId $taskId
 
           $taskStatus = if ($Matches['checked'] -eq 'x') {
             'closed'
@@ -324,7 +408,8 @@ function Convert-TasksMdToSprintBoard {
             $resolution = $taskFields.Status
           }
           if ($taskFields.PSObject.Properties.Name -contains 'Evidence') {
-            $evidenceText = 'Evidence: ' + $taskFields.Evidence
+            $evidenceLabel = if ($taskFields.PSObject.Properties.Name -contains 'EvidenceLabel') { $taskFields.EvidenceLabel } else { 'Evidence:' }
+            $evidenceText = "$evidenceLabel $($taskFields.Evidence)"
             $resolution = if ($resolution) { "$resolution $evidenceText" } else { $evidenceText }
           }
 
@@ -349,6 +434,30 @@ function Convert-TasksMdToSprintBoard {
             purpose = $purposeText
             tasks = @($streamTasks)
           })
+      }
+
+      $lostResolutionRecords = [System.Collections.Generic.List[object]]::new()
+      $existingTaskMap = Get-TasksMdToSprintBoardExistingTaskMap -ExistingOutputPath $resolvedOutputPath
+      foreach ($task in $allTasks) {
+        if (-not $existingTaskMap.ContainsKey($task.id)) {
+          continue
+        }
+
+        $existingTask = $existingTaskMap[$task.id]
+        $existingResolution = if ($null -ne $existingTask.PSObject.Properties['res']) { [string]$existingTask.res } else { $null }
+        if (-not [string]::IsNullOrWhiteSpace($existingResolution) -and [string]::IsNullOrWhiteSpace([string]$task.res)) {
+          $lostResolutionRecords.Add([PSCustomObject]@{
+              TaskId = $task.id
+              ExistingRes = $existingResolution
+              GeneratedRes = $task.res
+            })
+        }
+      }
+
+      $reconciliationReportPath = $null
+      if ($lostResolutionRecords.Count -gt 0) {
+        $reconciliationReportPath = New-TasksMdToSprintBoardReconciliationReportPath -GeneratedBoardPath $resolvedOutputPath
+        Write-Warning "Existing sprint board resolution text would be lost for $($lostResolutionRecords.Count) task(s). Reconciliation report: $reconciliationReportPath"
       }
 
       $streamsJson = $streams | ConvertTo-Json -Depth 8
@@ -509,6 +618,15 @@ render();
 
       if ($PSCmdlet.ShouldProcess($resolvedOutputPath, 'Write generated sprint board HTML')) {
         Set-Content -LiteralPath $resolvedOutputPath -Value $html -Encoding UTF8 -NoNewline
+        if ($reconciliationReportPath) {
+          $reconciliationReportDirectory = Split-Path -Path $reconciliationReportPath -Parent
+          if (-not (Test-Path -LiteralPath $reconciliationReportDirectory -PathType Container)) {
+            New-Item -ItemType Directory -Path $reconciliationReportDirectory -Force | Out-Null
+          }
+          $lostResolutionRecords |
+            ConvertTo-Json -Depth 4 |
+            Set-Content -LiteralPath $reconciliationReportPath -Encoding UTF8
+        }
       }
 
       $statusCounts = [ordered]@{
@@ -523,6 +641,8 @@ render();
         StreamCount = $streams.Count
         TaskCount = $allTasks.Count
         StatusCounts = [PSCustomObject]$statusCounts
+        ReconciliationReportPath = $reconciliationReportPath
+        LostResolutionCount = $lostResolutionRecords.Count
       }
     } catch {
       $errorMessage = "Failed to generate sprint board from '$TasksFilePath': $($_.Exception.Message)"

@@ -14,6 +14,11 @@ If you are viewing this `ReadMe.md` in GitHub, [here is this same ReadMe on the 
 
 This package provides PowerShell goodies make it easier when developing Powershell modules for .Net, and especially inside of Visual Studio Code.
 
+Full-repository C# MSBuild property audits live outside this module at
+`tests\RepoHealth` and run through `Build\Invoke-RepoHealthGate.ps1`. They are
+not part of `module.build.ps1` for this PowerShell module because they enumerate
+C# projects across the repository.
+
 Sprint lifecycle plumbing in this module now resolves downstream Git context from
 the workspace file paths being retargeted instead of the caller's current
 directory. Generated `.gitattributes` and `.gitconfig.shared` content also
@@ -34,10 +39,18 @@ preserve/defer surfaces, and all lifecycle evidence/backups belong under
 callers now use the adapter lifecycle.
 
 `Set-SprintBoundaryContext` now closes the remaining SprintEnd boundary gaps from
-Tasks 11.7.f-h. In addition to machine-level profile symlink retargeting, it
+Tasks 11.7.f-h. In addition to machine-level profile deployment and HostSettings retargeting, it
 deploys developer profiles from the resolved closing-sprint Overview workspace
-(`Overview.SprintNNNN.code-workspace` when present, otherwise the legacy
-`OverviewSprintNNNN.code-workspace`) and service
+(`Overview.Sprint.NNNN.code-workspace` when present, otherwise an explicitly
+supported legacy sprint-workspace spelling) and service
+
+The same Start and End orchestration treats the Task 12.59 DPOM role marker as
+stable operational state. `Sync-SprintBoundaryPrimaryRoleMarker` validates the
+single Dropbox-synchronized marker at
+`C:\Dropbox\whertzing\ATAP\ParityState\PrimaryRole.json`; if only the legacy
+`C:\ProgramData\ATAP\ParityState\PrimaryRole.json` exists, it atomically copies
+that record to the shared location. It never changes an authorized role and
+stops the boundary when shared and legacy records disagree.
 account profiles from host settings into each identity's
 `Documents\PowerShell\profile.ps1`. The cmdlet also refreshes the SharedVSCode
 settings render at both boundaries so `permissions.additionalDirectories` and
@@ -47,7 +60,23 @@ those managed profiles when `-ProfilePaths` is omitted and verifies that each is
 stable-sourced, readable, and free of stale `-wt-` references after SprintEnd.
 SprintEnd stable junction retargeting is now intentionally narrower: by default
 it recreates only the supported `.vscode` junction and does not reintroduce
-obsolete rendered `.claude` / `.github` links.
+obsolete rendered `.claude` / `.github` links. For one-time stable maintenance,
+`Convert-StableWorktreeToConcreteAdapters` removes legacy `.claude` /
+`.github` junctions from a stable repo root and restores the tracked concrete
+content from `HEAD`; it refuses staged changes and leaves `.vscode` alone by
+design.
+
+**Managed user-scope profiles (Task 12.49).** `Set-UserScopeProfile` renders
+the canonical ATAP.IAC developer or service-account template to
+`Documents\PowerShell\profile.ps1`. Developer profiles dot-source the selected
+ATAP.Utilities core profile; service-account profiles are minimal and contain
+no `bw`/`bws`, browser, or secret-resolution path. Existing profiles without
+the managed marker require `-Force`; each live mutation journals through
+`Add-ParityChangeEntry`. For Task 12.49, the complete service-account scope for
+both a managed profile and Bitwarden ReadOnly access is `SvcBuildMaster`,
+`SvcProGet`, `SvcSeq`, `SvcSQLServer`, and `SvcParityAudit`.
+`Set-SprintBoundaryUserProfiles` uses this cmdlet for the approved developer and
+service identities, leaving peer provisioning to the hardened remoting path.
 
 **SprintEnd typed close (Task 10.6 / 11.7.c-e).** `Invoke-SprintEndLifecycle` now composes
 structured command-surface, module-promotion/deployment, worktree-state,
@@ -124,7 +153,7 @@ and `-WhatIf` context is correctly propagated through all nested operations.
 
 **Stage 2 generates the sprint Overview workspace (Task 10.14.a).** After every
 downstream sprint worktree exists, `New-SprintStage2` calls
-`New-OverviewSprintWorkspace` to produce `OverviewSprint<NNNN>.code-workspace` in
+`New-OverviewSprintWorkspace` to produce `Overview.Sprint.NNNN.code-workspace` in
 the GitHub root and then runs a verification gate — the file must exist and must
 resolve at least one `*-wt-<n>-Sprint-<NNNN>-work-items` folder. Earlier sprints
 created this file only through a documentation-only agent step, so a live run
@@ -137,7 +166,7 @@ carries `infrastructure.overviewWorkspacePath`,
 failure is reported in `overviewWorkspaceError` without aborting the rest of
 Stage 2 — and the step is skipped under `-DryRun`/`-WhatIf`.
 SprintEnd now resolves the exact closing sprint artifact by sprint number and
-prefers `Overview.Sprint<NNNN>.code-workspace` when that newer naming appears,
+prefers `Overview.Sprint.NNNN.code-workspace`,
 instead of accidentally touching stale older overview files.
 
 **Stage 2 distributes AI instructions through one orchestration (Task 10.34).**
@@ -178,6 +207,11 @@ strips direct top-level `Export-ModuleMember` statements and export-only
 source files, nested commands, and unrelated module guards. The generated
 manifest remains the single authority for `FunctionsToExport`.
 
+`Build-PSModuleManifest` regenerates package manifests with core
+`New-ModuleManifest` parameters instead of copying a manifest and calling
+PowerShellGet's `Update-ModuleManifest`; prerelease metadata is supplied through
+`-Prerelease`, and malformed source manifests now fail as terminating errors.
+
 Checkpoint saves now also append a lightweight session roster entry under the
 sprint `_Planning` worktree at
 `SprintWorkSessionRoster/SprintWorkSessionRoster-<NNNN>.jsonl`, which gives
@@ -191,9 +225,13 @@ artifacts under `~\.gemini\antigravity\brain\<id>`, with the SQLite conversation
 DB recorded when present), `Codex` (`-SessionId`; rollout transcript under
 `~\.codex\sessions`, falling back to `~\.codex\archived_sessions`), and `Copilot`
 (`-ConversationFile`; delegates to `Save-CopilotCheckpoint` since Copilot writes
-no on-disk transcript). Antigravity and Codex auto-detect the newest
+no on-disk transcript). Every agent path, including Copilot, writes the canonical
+sprint-session roster entry. Antigravity and Codex auto-detect the newest
 conversation/rollout when the id argument is omitted. The roster entry records the
-`Agent`, `AgentSessionKey`, and `ConversationDbPath` for each save.
+`Agent`, `AgentSessionKey`, and `ConversationDbPath` for each save. For
+ClaudeCode, the project slug directory is resolved from the actual on-disk child
+folder before searching transcripts or copying `memory\`, so drive-letter casing
+differences in Claude's project folder names do not cause false memory-copy skips.
 
 **BuildMaster PowerShell Module Release Naming (Task 9.37).** To support building multiple arbitrary PowerShell modules within the single consolidated BuildMaster application (`ATAP.Utilities-PowerShell`) without collisions, the BuildMaster `ReleaseNumber` is generated uniquely per module. The release number appends the module name as a suffix (e.g., `0.1.0-ATAP.Utilities.PowerShell` for stable versions, and `0.1.0-Alpha.6.ATAP.Utilities.PowerShell` for prerelease versions), which is fully SemVer 2.0.0 compliant. This naming is strictly internal to BuildMaster and does not bleed into the built package's name, version, or manifest (`.psd1`) file.
 
@@ -218,17 +256,25 @@ fall-back that wrote scope-creep ideas to the stable `_Planning` worktree.
 Sprint lifecycle secret automation (`New-SprintBitwardenSecrets`,
 `Remove-SprintBitwardenSecrets`, `Test-SprintPrerequisites`,
 `Test-SprintInfrastructureHealth`) authenticates to Bitwarden Secrets Manager
-with the `bws` CLI and a machine access token (`$env:BWS_ACCESS_TOKEN` or the
-DPAPI token file via `Get-BWSAccessToken`). `BW_SESSION` is personal-vault-only
-and is never required by sprint automation (SC-0175). Reads of per-sprint
-machine secrets go through
-`Get-SecretATAP -SecretStoreType 'BitwardenSecretsManager'`.
+with the `bws` CLI and a machine access token (`$env:BWS_ACCESS_TOKEN` or a
+purpose-specific DPAPI token file via `Get-BWSAccessToken`). `ReadOnly` maps to
+CommonCIForBitwardenReadOnly and is the default for reads; ReadWrite maps to
+CommonCIForBitwardenReadWrite and is reserved for secret creation, deletion,
+and rotation. BW_SESSION is personal-vault-only and is never required by sprint
+automation (SC-0175). Reads of per-sprint machine secrets go through
+Get-SecretATAP -SecretStoreType 'BitwardenSecretsManager'.
+
+For human provisioning, every developer or service account that reads BWS secrets should
+have a local ReadOnly DPAPI token file. A second ReadWrite DPAPI token file exists so
+secret-maintenance workflows can be authorized separately; provision it only on trusted
+maintainer or provisioning identities and only on hosts that actually perform write/delete
+or rotation work.
 
 **DB connection-string secrets (Task 10.7 cleanup).** Development and
 Experimental DB connection strings are normal Bitwarden Secrets Manager entries,
 not personal-vault items and not reader-side deterministic fallbacks.
-`New-SprintBitwardenSecrets` uses `bws` plus `$env:BWS_ACCESS_TOKEN` or the
-DPAPI token file to create/check the expected `dbConnectionString-*` entries in
+`New-SprintBitwardenSecrets` uses `bws` plus process `$env:BWS_ACCESS_TOKEN` override or the
+`CommonCIForBitwardenReadWrite` DPAPI token file to create/check the expected `dbConnectionString.*` entries in
 the `CI-Shared` project. `Get-DbConnectionStringSecretDescriptor` remains the
 single source of truth for the canonical name and can generate the
 Integrated-Security value only when a provisioning caller explicitly opts into
@@ -328,168 +374,61 @@ New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $scriptT
 
 ## Filesystem junctions
 
-There are multiple folders and files that need to be present at the root of each repository, and need to be source-controlled and versioned. Having multiple independent copies is prone to errors and misconfigurations. Therefore, we have created a repository named `SharedVSCode`, and placed the source-of-truth copies of these shared folders and files in this git-versioned repository.
+Sprint 0012 Task 12.1 retired the old three-folder junction model. The current
+boundary model is:
 
-**Design decision (2026-04-03):** The `.claude`, `.github`, and `.vscode` folders at the root of
-every downstream repo worktree (ATAP.Utilities, AceCommander, \_Planning) are **always NTFS
-junctions** — never real folders and never file-sync copies. The `Sync-WorktreeShared.ps1`
-copy-based approach has been retired (archived) in favour of the junction-only design.
+- `.claude`, `.github`, `.codex`, `.agents`, and `.gemini` are concrete,
+  git-visible AIAdapter materialization folders.
+- `.vscode` remains the SharedVSCode junction because it carries workstation IDE
+  behavior that should follow the active SharedVSCode target.
+- `Set-SprintBoundaryContext -Boundary Start` retargets only `.vscode`, applies
+  downstream SharedVSCode context, then materializes the concrete AIAdapter
+  folders.
+- `Set-SprintBoundaryContext -Boundary End` audits AIAdapter drift before
+  teardown and recreates only the supported stable `.vscode` junction.
+- `Convert-StableWorktreeToConcreteAdapters` is the one-time repair tool for
+  legacy stable worktrees that still have `.claude` or `.github` as junctions;
+  it removes the junction safely and restores tracked concrete content from
+  `HEAD`. It intentionally leaves `.vscode` alone.
 
-Junctions are listed in `.dropboxignore` so Dropbox does not try to sync them, and in
-`.gitignore` so git does not track them. This is the canonical design.
+The old copy-based `Sync-WorktreeShared.ps1` approach remains archived. The old
+`.claude` / `.github` junction guidance is historical only and must not be used
+for sprint boundaries.
 
-**Junction targets by worktree type:**
+### Junction safety rules
 
-| Worktree                  | Junction target                |
-| ------------------------- | ------------------------------ |
-| Main worktree (permanent) | `SharedVSCode` main worktree   |
-| Sprint worktree           | `SharedVSCode` sprint worktree |
-| Normal issue worktree     | `SharedVSCode` main worktree   |
-
-**CRITICAL junction safety rules:**
-
-1. **Never use `Remove-Item -Recurse` on a junction.** Always use just `Remove-Item` (no
-   `-Recurse`). This removes the reparse point and does not touch the junction target.
-2. **Never use `Remove-Item -Recurse` on any parent folder above a junction.** Always ensure
-   the junction has been removed with `Remove-Item` (no `-Recurse`) BEFORE calling any
-   `Remove-Item -Recurse` on a parent folder.
-3. **Sprint end cleanup:** Before calling `git worktree remove`, always explicitly remove
-   the `.claude`, `.github`, and `.vscode` junctions from the worktree first.
+1. Never use `Remove-Item -Recurse` on a junction. Use `cmd /c rmdir` or remove
+   the reparse point itself without recursion.
+2. Never recurse-delete a parent folder until every junction below it has been
+   removed or proven absent.
+3. At sprint close, enumerate junctions before `git worktree remove`. The
+   expected SharedVSCode-managed junction is `.vscode`; treat any `.claude` or
+   `.github` junction as legacy drift requiring review or the
+   `Convert-StableWorktreeToConcreteAdapters` repair path.
 
 ```powershell
-# Safe junction removal
-foreach ($name in @('.claude', '.github', '.vscode')) {
-    $jp = Join-Path $worktreePath $name
-    if (Test-Path -LiteralPath $jp) {
-        $item = Get-Item -LiteralPath $jp -Force
-        if ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
-            Remove-Item -LiteralPath $jp  # NO -Recurse on junctions
-        }
-    }
-}
-# Only AFTER all junctions are confirmed removed:
-git worktree remove $worktreePath --force
+# Supported sprint-boundary junction set
+$junctionFolderNames = @('.vscode')
+
+Set-WorktreeJunctions `
+  -SourceRepoPath $stableRepoRoot `
+  -WorktreePath $worktreePath `
+  -DevSourceRepoPath $sharedVSCodeSprintRoot `
+  -SourceRepoFolderNames $junctionFolderNames `
+  -DevSourceRepoFolderNames $junctionFolderNames
 ```
-
-### Filesystem junction for .claude folder
-
-Claude and Claude Code will look up the filesystem to the repository root for folders named `.claude`. Prompt instructions for Claude AI are stored in the file(s) found in this directory. To make the same prompt instructions available to every repository, the .claude folder is linked, using a junction to the base of the repository.
-
-of particular note are the AI Agent instruction files, for both Copilot and for Claude Code
-there is a frontmatter format mismatch between Copilot and Claude Code. For proper path-scoping in Claude Code, we need separate .claude/rules/ files with paths frontmatter and then @import the shared content body from .github/instructions/ to avoid duplication.
-
-### Filesystem junction for .github folder
-
-Every repository needs instruction files for GitHub Copilot. These are kept in the .github directory, and a directory junction is created in the root of the repository. Run the following Powershell commands at the repository root to create a directory junction back to the shared VS Code directory.
-
-ToDo: must look at the other stuff in .github to see if they can be made to work for multiple repositories, or, if Issue Templates and workflows need to be specific to individual repositories
 
 ### Filesystem junction for .vscode folder
 
-The organization has multiple GIT repositories. Every repository that uses Visual Studio Code as the IDE, needs a subdirectory `.vscode`, which contains these files and folders
+The organization has multiple Git repositories. Every repository that uses Visual
+Studio Code as the IDE needs a `.vscode` directory with shared workspace
+configuration such as dictionaries, launch/tasks files, CSpell settings, and
+extension recommendations. That folder remains junctioned to the matching
+SharedVSCode worktree.
 
-```text
-repo-root/
-├── .vscode/
-    ├── dictionaries/ # Used by the 'CSpell' VSC extension
-    ├── solution-explorer/ # Used by the 'Solution Explorer' VSC extension
-    ├── cspell.json
-    ├── extensions.json
-    ├── iisexpress.json
-    ├── launch.json
-    ├── mcp.json
-    ├── PSScriptAnalyzerSettings.psd1
-    ├── tasks.json
-```
-
-```text
-repo-root/
-└── .claude/
-|   └── rules/
-|       ├── python.md ← paths: ["**/*.py"], body: @../../.github/instructions/python.instructions.md
-|       └── typescript.md ← paths: ["**/*.ts","**/*.tsx"], body: @../../.github/instructions/typescript.instructions.md
-|       └── etc...
-├── .github/
-│   ├── copilot-instructions.md ← Single source of truth for global instructions
-│   └── instructions/
-│       ├── Powershell.instructions.md
-│       ├── CSharp.instructions.md
-│       └── etc...
-├── .vscode/
-    ├── dictionaries/ # Used by the 'CSpell' VSC extension
-    ├── solution-explorer/ # Used by the 'Solution Explorer' VSC extension
-    ├── cspell.json
-    ├── extensions.json
-    ├── iisexpress.json
-    ├── launch.json
-    ├── mcp.json
-    ├── PSScriptAnalyzerSettings.psd1
-    ├── tasks.json
-```
-
-### Create Filesystem junctions
-
-​
-In every new repository, after running `git init`, run these commands (as an administrator) in the root folder of the repository:
-We create a junction in each repository that links to the `.github` folder in `SharedVSCode`.
-
-ToDo: replace with a BuildTooling.Powershell script for New-Junction
-
-In every new repository, after running `git init`, run these commands (as an administrator) in the root folder of the repository:
-We create a junction in each repository that links to the `.vscode` folder in `SharedVSCode`.
-
-ToDo: replace with a BuildTooling.Powershell script for New-Junction
-
-```powershell
-# Ensure that .claude is a folder, junction linked from the repo root to the target.
-# The target is GitHub/SharedVSCode/.claude
-# The junction name is .claude
-# if .claude is present in the repo root, and is a junction to the .claude subfolder under SharedVSCode folder, do nothing.
-# if .claude is present in the repo root, and is a junction to anything other than the .claude subfolder under SharedVSCode folder, delete and create it as a junction to the .claude subfolder under SharedVSCode folder.
-# if .claude is not present in the repo root create it as a junction to the .claude subfolder under SharedVSCode folder
-if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-  . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
-}
-
-$userName = 'whertzing'
-$junctionFolderNames = ('.claude', '.github', '.vscode')
-$junctionFolderNames | % {
- $junctionFolderName = $_
-$targetFolder = Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $username 'GitHub', 'SharedVSCode', $junctionFolderName
-# Check if junction exists
-if (Test-Path $junctionFolderName) {
-    $item = Get-Item $junctionFolderName
-    # Check if it's a junction/reparse point
-    if ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
-        # Get the target of the junction
-        $currentTarget = $item.Target
-        # Compare with expected target
-        if ($currentTarget -ne $targetFolder) {
-            # Wrong target, delete and recreate
-            Write-PSFMessage -Level Verbose -Message "Removing existing junction with wrong target: $currentTarget"
-            Remove-Item -Path $junctionFolderName -Force
-            $null = New-Item -Path $junctionFolderName -ItemType Junction -Target $targetFolder
-            Write-PSFMessage -Level Important -Message "Created $junctionFolderName junction to: $targetFolder"
-        }
-        else {
-            # Correct junction already exists, do nothing
-            Write-PSFMessage -Level Verbose -Message "$junctionFolderName junction already points to correct target: $targetFolder"
-        }
-    } else {
-        # It exists but is not a junction - remove and create junction
-        Write-PSFMessage -Level Warning -Message "$junctionFolderName exists but is not a junction. Removing and recreating as junction"
-        Remove-Item -Path $junctionFolderName -Recurse -Force
-        $null = New-Item -Path $junctionFolderName -ItemType Junction -Target $targetFolder
-        Write-PSFMessage -Level Important -Message "Created $junctionFolderName junction to: $targetFolder"
-    }
-} else {
-    # Doesn't exist, create it
-    $null = New-Item -Path $junctionFolderName -ItemType Junction -Target $targetFolder
-    Write-PSFMessage -Level Important -Message "Created $junctionFolderName junction to: $targetFolder"
-}
-}
-
-```
+AI-agent instruction surfaces are no longer provided through `.claude` or
+`.github` junctions. They are rendered as concrete files and folders by the
+AIAdapter lifecycle and move between branches through normal git history.
 
 ### Repository symbolic links
 
@@ -544,29 +483,24 @@ $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey'
 
 ```
 
-## Symbolic link for ~/.claude/settings.json
+## Managed render for ~/.claude/settings.json
 
-The `settings.json` file at (e.g) `C:\Users\<username>\.claude\settings.json` holds the settings that Claude Code will use. It applies to all repositories and workspaces. Every developer on a host needs to link to the organization's common settings, which are stored in the main branch's worktree of the `SharedVSCode` repository. To do this,replace the value of $username with the actual user name in the following command and run the following block of code.
+The `settings.json` file at `C:\Users\<username>\.claude\settings.json` holds
+Claude Code user-scope settings. It is a real JSON file rendered from
+`SharedVSCode\.ai\config\claudecode\settings.overlay.json`; the retired
+SharedVSCode root `claude-settings.json` file is no longer a target.
+
+Live user-global writes require both an explicit write gate and a confirmed
+checkpoint. `Set-ClaudeSettingsSymlink` keeps its historical name for callers,
+but now performs the managed render, backs up any existing target, replaces an
+existing symlink with a real file, and preserves unmanaged local root keys.
 
 ```Powershell
-  $username = 'whertzing'
-  # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
-  # ToDo: Fix after packaging is working
-  if (!${get-command New-SymbolicLink}) {
-    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\New-SymbolicLink.ps1'
-  }
-  # main branch's worktree for SharedVSCode
-  $mainBranchWorktree = Join-Path  $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $username 'GitHub', 'SharedVSCode'
-  # Figure out the best way to get the users home direcotry on this computer
-  $userHome = Join-Path $env:SystemDrive 'Users' $username
-  $claudeFolder =  Join-Path  $userHome '.claude'
-  #ToDo - ensure the folder exists
-  # link the SharedVSCode claude-settings.json to settings.json
-  New-SymbolicLink -targetPath $(Join-Path $mainBranchWorktree 'claude-settings.json') -symbolicLinkPath $(Join-Path $claudeFolder 'settings.json') -force
-  # Note the following may be used during development of the Claude settings.json
-  # Sprint branch's worktree root C:\Dropbox\$usernamewhertzing\GitHub\SharedVSCode-wt-36-sprint-0004-work-items
-  $sprintWorktree = "C:\Dropbox\$username\GitHub\SharedVSCode-wt-36-sprint-0004-work-items"
-  New-SymbolicLink -targetPath $(Join-Path $sprintWorktree 'claude-settings.json') -symbolicLinkPath $(Join-Path $claudeFolder 'settings.json') -force
+$sharedVSCodeWorktree = 'C:\Dropbox\whertzing\GitHub\SharedVSCode-wt-54-Sprint-0012-work-items'
+Set-ClaudeSettingsSymlink `
+  -SharedVSCodeWorktreePath $sharedVSCodeWorktree `
+  -AllowUserGlobalWrite `
+  -CheckpointConfirmed
 ```
 
 ## Symbolic Links for Prettier formatting rules, CSpell, eslint rules, building Powershell; modules (Invoke-Build) and Mocha
@@ -1094,4 +1028,6 @@ canonical `*-stable` tier.
 
 - Version bumped to 0.1.13 in Sprint 11
 
+## Functional area
 
+PowerShell Build & Packaging - START HERE: SolutionDocumentation\PowerShell-Modules-Build-Process.md (link-up added 2026-07-07, Sprint 0012 Task 12.46.f)

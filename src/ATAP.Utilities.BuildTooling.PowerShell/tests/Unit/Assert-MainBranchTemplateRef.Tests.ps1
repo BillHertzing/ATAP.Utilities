@@ -1,5 +1,12 @@
 BeforeAll {
-  Import-Module ATAP.Utilities.BuildTooling.PowerShell -Force
+  if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
+    function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
+  }
+
+  $moduleRoot = Join-Path $PSScriptRoot '..\..'
+  . (Join-Path $moduleRoot 'private\Get-WorkspaceJson.ps1')
+  . (Join-Path $moduleRoot 'private\Resolve-WorkspaceFiles.ps1')
+  . (Join-Path $moduleRoot 'public\Assert-MainBranchTemplateRef.ps1')
 }
 
 Describe 'Assert-MainBranchTemplateRef [public]' {

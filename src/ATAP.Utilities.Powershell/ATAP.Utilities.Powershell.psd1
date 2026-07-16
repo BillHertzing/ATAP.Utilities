@@ -12,7 +12,7 @@
     RootModule           = 'ATAP.Utilities.Powershell.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '0.1.10'
+    ModuleVersion        = '0.1.11'
 
     # Supported PSEditions
     CompatiblePSEditions = 'Desktop', 'Core'
@@ -51,7 +51,7 @@
     # ProcessorArchitecture = ''
 
     # Modules that must be imported into the global environment prior to importing this module
-    # RequiredModules = @()
+    RequiredModules      = @()
 
     # Assemblies that must be loaded prior to importing this module
     # RequiredAssemblies = @()
@@ -69,32 +69,38 @@
     # NestedModules = @()
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport    = 'Add-BlogPostImages', 'ConvertFrom-CopilotChatHistory',
-    'ConvertFrom-MboxFile', 'ConvertTo-PDF', 'Format-GroupLikeLines',
+    FunctionsToExport    = 'Add-BlogPostImages', 'Approve-DocumentationReviewVerdicts',
+    'ConvertFrom-CopilotChatHistory',
+    'ConvertFrom-MboxFile', 'ConvertTo-PDF', 'Enable-SeqGelfLogging',
+    'Export-DocumentationInventory',
+    'Format-GroupLikeLines',
     'Get-AccountsWithUserRight', 'Get-AllWindowsShortcutHotKeys',
     'Get-ArrayCombinations', 'Get-BookMarksToTagged',
     'Get-BrowserBookmarks', 'Get-ChocolatyPackagesFromProgramsList',
     'Get-ClonedAndModifiedHashtable', 'Get-ClonedObject',
     'Get-CollectionTraverseEvaluate', 'Get-CoreInfo',
-    'Get-FilesWithContent', 'Get-HostSettings',
+    'Get-DocumentationFileInventory',
+    'Get-FilesWithContent', 'Get-GitFileDates', 'Get-HostSettings',
     'Get-LargestLeafFolders', 'Get-MediaQueryEmbeddedLink',
     'Get-ParameterValueFromNeoConfigurationRoot', 'Get-Patterns',
     'Get-ScheduledTasks', 'Get-SIDfromAccountName',
     'Get-TopologicalSort', 'Get-UniqueFileBaseNames',
     'Get-ViewOfProfiles', 'Import-EnvFile',
-    'Initialize-BitwardenSession', 'Invoke-ProvisionInedoServiceAccounts',
+    'Initialize-BitwardenSession', 'Invoke-DocumentationInventory',
+    'Invoke-ProvisionInedoServiceAccounts',
     'Invoke-SetInedoServiceLogonAccounts',
     'Invoke-StartupTaskRegistrationTest', 'Invoke-Webserver',
     'New-SymbolicLink',
-    'PracticeKeyboardSkills', 'Register-StartupScheduledTask',
+    'PracticeKeyboardSkills', 'Register-ProfiledRemotingEndpoint',
+    'Register-StartupScheduledTask',
     'Resolve-ParameterValueToList', 'Search-Registry',
     'Search-WindowsIndexs', 'Set-EnvVarsFromBitWarden',
     'Set-GroupEnvironmentVariables', 'Set-InedoServicesDependency',
     'Set-PerceivedTypeInRegistryForPreviewPane',
     'Set-RepositoryPackageSources', 'Set-ScreenReaderOff',
     'Set-ServiceLogonAccount',
-    'Test-StartupScheduledTaskPresence', 'Test-WinRM',
-    'Unregister-StartupScheduledTask', 'Watch-ETWEvents'
+    'Test-ProfiledRemotingEndpoint', 'Test-StartupScheduledTaskPresence', 'Test-WinRM',
+    'Unregister-ProfiledRemotingEndpoint', 'Unregister-StartupScheduledTask', 'Watch-ETWEvents'
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport      = '*'

@@ -13,12 +13,18 @@ Describe 'Set-SprintBoundaryUserProfiles [public]' {
     $script:iacRoot = Join-Path $script:gitRoot 'ATAP.IAC-wt-13-Sprint-0011-work-items'
     $script:developerHome = Join-Path $script:testRoot 'DeveloperHome'
     $script:serviceHome = Join-Path $script:testRoot 'SvcHome'
-    $profileSourceDir = Join-Path $script:utilRoot 'src\ATAP.Utilities.PowerShell\Profiles'
-    New-Item -ItemType Directory -Path $profileSourceDir, $script:iacRoot, $script:developerHome, $script:serviceHome -Force | Out-Null
-    Set-Content -LiteralPath (Join-Path $profileSourceDir 'CurrentUserAllHostsV7CoreProfile.ps1') -Value '# developer profile' -Encoding UTF8
-    Set-Content -LiteralPath (Join-Path $profileSourceDir 'ProfileForServiceAccountUsers.ps1') -Value '# service profile' -Encoding UTF8
+    $templateDir = Join-Path $script:iacRoot 'Windows\ProfileTemplates'
+    New-Item -ItemType Directory -Path $templateDir, $script:developerHome, $script:serviceHome -Force | Out-Null
+    @'
+# ATAP-Managed-UserScopeProfile: v1
+# developer profile payload
+'@ | Set-Content -LiteralPath (Join-Path $templateDir 'CurrentUserAllHostsV7CoreProfile.ps1') -Encoding UTF8 -NoNewline
+    @'
+# ATAP-Managed-UserScopeProfile: v1
+Set-StrictMode -Version Latest
+'@ | Set-Content -LiteralPath (Join-Path $templateDir 'ProfileForServiceAccountUsers.ps1') -Encoding UTF8 -NoNewline
 
-    $script:overviewPath = Join-Path $script:gitRoot 'OverviewSprint0011.code-workspace'
+    $script:overviewPath = Join-Path $script:gitRoot 'Overview.Sprint.0011.code-workspace'
     @{
       folders = @(@{ path = 'ATAP.Utilities-wt-118-Sprint-0011-work-items' })
       developers = @(
@@ -48,6 +54,7 @@ Describe 'Set-SprintBoundaryUserProfiles [public]' {
       }
       [PSCustomObject]@{ Initialized = $true }
     }
+    Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Add-ParityChangeEntry { [PSCustomObject]@{ Id = 'journal-entry' } }
     Remove-Item -LiteralPath (Join-Path $script:developerHome 'Documents'), (Join-Path $script:serviceHome 'Documents') -Recurse -Force -ErrorAction SilentlyContinue
   }
 
@@ -67,8 +74,8 @@ Describe 'Set-SprintBoundaryUserProfiles [public]' {
     $result.Ok | Should -BeTrue
     $developerProfile = Join-Path $script:developerHome 'Documents\PowerShell\profile.ps1'
     Test-Path -LiteralPath $developerProfile | Should -BeTrue
-    (Get-Item -LiteralPath $developerProfile -Force).Target |
-      Should -Be (Join-Path $script:utilRoot 'src\ATAP.Utilities.PowerShell\Profiles\CurrentUserAllHostsV7CoreProfile.ps1')
+    Get-Content -LiteralPath $developerProfile -Raw |
+      Should -Match 'developer profile payload'
   }
 
   It 'deploys the service-account profile for an enabled local account' {
@@ -87,8 +94,8 @@ Describe 'Set-SprintBoundaryUserProfiles [public]' {
     $result.Ok | Should -BeTrue
     $serviceProfile = Join-Path $script:serviceHome 'Documents\PowerShell\profile.ps1'
     Test-Path -LiteralPath $serviceProfile | Should -BeTrue
-    (Get-Item -LiteralPath $serviceProfile -Force).Target |
-      Should -Be (Join-Path $script:utilRoot 'src\ATAP.Utilities.PowerShell\Profiles\ProfileForServiceAccountUsers.ps1')
+    Get-Content -LiteralPath $serviceProfile -Raw |
+      Should -Match 'Set-StrictMode'
   }
 
   It 'skips a missing or disabled service account with an explicit warning' {

@@ -135,6 +135,15 @@ junctions for all other repos and must not have junctions itself.
 - **Normal issue worktrees**: junctions point to the SharedVSCode **main** worktree
   (default behavior — just copy targets from the source repo).
 
+> **Junctions vs. rendered configuration (clarified 2026-07-14, DR program item DRR-005):**
+> `Set-WorktreeJunctions` remains in use for worktree *structure* (shared folders such as
+> `.vscode` and other junction targets). AI-agent configuration surfaces, however, are no
+> longer materialized by junctions: the `.ai` folder in SharedVSCode is the canonical
+> source and `Render-AIAdapters` renders concrete per-agent files into each repo.
+> SprintStartAgent/SprintEndAgent retarget those rendered surfaces at sprint boundaries.
+> During the transition a repo may still show either form; do not add new junctions for
+> agent-config folders.
+
 Ask the user:
 > "Does this worktree need junctions to point to a specific SharedVSCode sprint worktree
 > (e.g., for sprint branches where `.claude` / `.github` / `.vscode` should come from

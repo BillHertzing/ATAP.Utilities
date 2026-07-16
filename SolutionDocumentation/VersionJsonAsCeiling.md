@@ -1,5 +1,10 @@
 # version.json as Promotion Ceiling
 
+> Design document. Operational procedures live in the companion
+> [VersionJsonAsCeiling-Runbook.md](VersionJsonAsCeiling-Runbook.md); the superseded analysis is
+> archived at [ReviewedAndArchived/AnalysisOfVersionJsonAsCeiling.md](ReviewedAndArchived/AnalysisOfVersionJsonAsCeiling.md)
+> (cross-links added 2026-07-06, Task 12.45.e).
+
 **Status:** Sprint 0007 production-process requirement.
 
 `version.json` no longer answers "which tier is this stage?" During a

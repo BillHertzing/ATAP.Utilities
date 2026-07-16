@@ -130,6 +130,9 @@ function Set-CoreConfigRootKeys {
           'PythonInterpretersBaseDirectoryConfigRootKey'                                                 = 'PythonInterpretersBaseDirectory'
           'PythonInterpretersInstallDirectoryConfigRootKey'                                              = 'PythonInterpretersInstallDirectory'
           'PythonExePathConfigRootKey'                                                                   = 'PythonExePath'
+          # One role-to-host map drives ProGet, BuildMaster, and SQL-primary endpoint
+          # resolution.  The host-specific value is owned by ATAP.IAC.
+          'ServicePlacementMapConfigRootKey'                                                             = 'ServicePlacementMap'
           # Manim animation renderer executable path
           'ManimExePathConfigRootKey'                                                                    = 'MANIM_EXE_PATH'
           # related to the Hydrus-Network application

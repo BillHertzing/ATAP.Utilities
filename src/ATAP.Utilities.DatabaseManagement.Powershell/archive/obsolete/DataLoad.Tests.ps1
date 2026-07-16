@@ -25,7 +25,7 @@
   This is usually supplied by an environment variable or from the global settings. but can be overridden here.
 
   .PARAMETER SqlInstance
-  SQL Server instance (local or remote) to target (e.g. '<hostname>\PRODUCTION').
+  SQL Server instance (local or remote) to target (e.g. '<hostname>\Production').
   This is usually supplied by an environment variable or from the global settings. but can be overridden here.
   If there exists a database with the same name as the database in the DatabaseHost\SqlInstance path, the operation is aborted unless force is true.
   If force is true, the existing database is deleted.

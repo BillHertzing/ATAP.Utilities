@@ -12,7 +12,7 @@ BeforeAll {
     'git'
     'Set-WorktreeJunctions'
     'Initialize-DownstreamSprintFromSharedVSCode'
-    'Initialize-SprintAIAdapters'
+    'Set-SprintBoundaryContext'
     'Get-SprintHistoryReconstruction'
   )
   foreach ($name in $script:stubbedNames) {

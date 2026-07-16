@@ -1,11 +1,13 @@
-# Rebuild-All-AllInstances script for ATAPUtilities database
-# Builds the ATAPUtilities database on all three named instances in sequence:
-#   Testing  -> QA instance         (C:\LocalDBs\QA\ATAPUtilities)
-#   Development -> Integration instance (C:\LocalDBs\Integration\ATAPUtilities)
-#   Production  -> Production instance  (C:\LocalDBs\Production\ATAPUtilities)
-#
-# This is a top-level script - it has no parameters. All configuration is
-# done via the variables defined below.
+[CmdletBinding()]
+param(
+  [switch]$IncludeDevExp,
+  [switch]$IncludeSeedData
+)
+
+# Rebuilds ATAPUtilities across the canonical SQL instance ladder. QA,
+# INTEGRATION, and PRODUCTION are always included; DEVWHERTZING and
+# EXPWHERTZING are added by -IncludeDevExp. -IncludeSeedData validates and
+# explicitly supplies the checked-in Flyway CSV data set used by the load migrations.
 
 # Compute repo root from this script's known position in the tree:
 #   <repo_root>\Database\Powershell\public\Rebuild-All-AllInstances.ps1  =>  3 levels up
@@ -23,6 +25,9 @@ $flywaySqlMigrationsPath = Join-Path $flywayBasePath 'SQL'
 $flywaySharedSqlMigrationsPath = Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement\SharedSQL'
 $flywayDataPath = Join-Path $flywayBasePath 'Data'
 $FlywayTomlPath = Join-Path $flywayBasePath 'flyway.toml'
+if ($IncludeSeedData -and @(Get-ChildItem -LiteralPath $flywayDataPath -Filter '*.csv' -File -Recurse).Count -eq 0) {
+  throw "IncludeSeedData was requested but no CSV seed files exist under '$flywayDataPath'."
+}
 
 # Load required helper functions
 try {
@@ -62,10 +67,14 @@ Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -PassThru | Re
 
 # Define each instance to build
 $instances = @(
-  [PSCustomObject]@{ Environment = 'Testing'; SqlInstance = 'QA'; DatabasePath = "C:\LocalDBs\QA\$databaseName" }
-  [PSCustomObject]@{ Environment = 'Development'; SqlInstance = 'Integration'; DatabasePath = "C:\LocalDBs\Integration\$databaseName" }
-  [PSCustomObject]@{ Environment = 'Production'; SqlInstance = 'Production'; DatabasePath = "C:\LocalDBs\Production\$databaseName" }
+  [PSCustomObject]@{ Environment = 'QA'; SqlInstance = 'QA'; Port = 50025; DatabasePath = "C:\LocalDBs\QA\Data\$databaseName"; DatabaseLogPath = "C:\LocalDBs\QA\Log\$databaseName" }
+  [PSCustomObject]@{ Environment = 'Integration'; SqlInstance = 'INTEGRATION'; Port = 50030; DatabasePath = "C:\LocalDBs\INTEGRATION\Data\$databaseName"; DatabaseLogPath = "C:\LocalDBs\INTEGRATION\Log\$databaseName" }
+  [PSCustomObject]@{ Environment = 'Production'; SqlInstance = 'PRODUCTION'; Port = 50020; DatabasePath = "C:\LocalDBs\PRODUCTION\Data\$databaseName"; DatabaseLogPath = "C:\LocalDBs\PRODUCTION\Log\$databaseName" }
 )
+if ($IncludeDevExp) {
+  $instances += [PSCustomObject]@{ Environment = 'Development'; SqlInstance = 'DEVWHERTZING'; Port = 50035; DatabasePath = "C:\LocalDBs\DEVWHERTZING\Data\$databaseName"; DatabaseLogPath = "C:\LocalDBs\DEVWHERTZING\Log\$databaseName" }
+  $instances += [PSCustomObject]@{ Environment = 'Experimental'; SqlInstance = 'EXPWHERTZING'; Port = 50040; DatabasePath = "C:\LocalDBs\EXPWHERTZING\Data\$databaseName"; DatabaseLogPath = "C:\LocalDBs\EXPWHERTZING\Log\$databaseName" }
+}
 
 $overallSuccess = $true
 
@@ -79,13 +88,16 @@ foreach ($inst in $instances) {
       -DatabaseHost $databaseHost `
       -SqlInstance $inst.SqlInstance `
       -ConnectionMethod $connectionMethod `
+      -Port $inst.Port `
       -DatabasePath $inst.DatabasePath `
+      -DatabaseLogPath $inst.DatabaseLogPath `
       -ProvisioningScriptsPath $ProvisioningScriptsPath `
       -FlywayBasePath $flywayBasePath `
       -FlywaySqlMigrationsPath $flywaySqlMigrationsPath `
       -FlywaySharedSqlMigrationsPath $flywaySharedSqlMigrationsPath `
       -FlywayDataPath $flywayDataPath `
       -FlywayTomlPath $FlywayTomlPath `
+      -RepositoryRoot $repositoryRoot `
       -IntegratedSecurity `
       -Force:$Force `
       -Verbose:$VerbosePreference

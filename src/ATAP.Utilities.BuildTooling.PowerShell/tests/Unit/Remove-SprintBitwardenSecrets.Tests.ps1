@@ -22,6 +22,18 @@ BeforeAll {
     return ''
   }
 
+  $script:bwsAccessTokenPurposes = [System.Collections.ArrayList]::new()
+  function global:Get-BWSAccessToken {
+    param(
+      [Parameter()]
+      [ValidateSet('ReadOnly', 'ReadWrite')]
+      [string]$TokenPurpose = 'ReadOnly'
+    )
+    [void]$script:bwsAccessTokenPurposes.Add($TokenPurpose)
+    $secureToken = ConvertTo-SecureString -String 'dpapi.remove-secret-writer-token' -AsPlainText -Force
+    [System.Management.Automation.PSCredential]::new('BWS_ACCESS_TOKEN', $secureToken)
+  }
+
   . "$PSScriptRoot\..\..\public\Get-DbConnectionStringSecretDescriptor.ps1"
   . "$PSScriptRoot\..\..\public\Remove-SprintBitwardenSecrets.ps1"
 }
@@ -31,8 +43,8 @@ Describe 'Remove-SprintBitwardenSecrets [public]' {
     $script:bwsCalls = [System.Collections.ArrayList]::new()
     $script:bwsListShouldFail = $false
     $script:bwsSecretInventory = @(
-      [PSCustomObject]@{ id = 'id-dev'; key = 'dbConnectionString-master-localhost-Dev-tester' }
-      [PSCustomObject]@{ id = 'id-exp'; key = 'dbConnectionString-master-localhost-Exp-tester' }
+      [PSCustomObject]@{ id = 'id-dev'; key = 'dbConnectionString.master.localhost.Dev.tester' }
+      [PSCustomObject]@{ id = 'id-exp'; key = 'dbConnectionString.master.localhost.Exp.tester' }
       [PSCustomObject]@{ id = 'id-other'; key = 'BuildMaster.Admin.API.Key' }
     )
     # Acceptance (Task 8.10): sprint automation must run without BW_SESSION.
@@ -40,6 +52,10 @@ Describe 'Remove-SprintBitwardenSecrets [public]' {
     Remove-Item Env:BW_SESSION -ErrorAction SilentlyContinue
     $script:oldBwsToken = $env:BWS_ACCESS_TOKEN
     $env:BWS_ACCESS_TOKEN = 'test-machine-token'
+  }
+
+  AfterAll {
+    Remove-Item Function:Get-BWSAccessToken -ErrorAction SilentlyContinue
   }
 
   AfterEach {
@@ -74,7 +90,7 @@ Describe 'Remove-SprintBitwardenSecrets [public]' {
 
     It 'Marks a secret skipped when it is not in the BWS inventory' {
       $script:bwsSecretInventory = @(
-        [PSCustomObject]@{ id = 'id-dev'; key = 'dbConnectionString-master-localhost-Dev-tester' }
+        [PSCustomObject]@{ id = 'id-dev'; key = 'dbConnectionString.master.localhost.Dev.tester' }
       )
       $result = Remove-SprintBitwardenSecrets `
         -DeveloperUsername 'tester' `
@@ -85,6 +101,19 @@ Describe 'Remove-SprintBitwardenSecrets [public]' {
       @($result | Where-Object { $_.deleted }).Count | Should -Be 1
       @($result | Where-Object { $_.skipped }).Count | Should -Be 1
       @($script:bwsCalls | Where-Object { $_ -like 'secret delete *' }).Count | Should -Be 1
+    }
+
+    It 'requests the ReadWrite DPAPI slot when the process token is absent' {
+      Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue
+
+      Remove-SprintBitwardenSecrets `
+        -DeveloperUsername 'tester' `
+        -HostList @('localhost') `
+        -Databases @('master') `
+        -Force | Out-Null
+
+      $script:bwsAccessTokenPurposes | Should -Contain 'ReadWrite'
+      $env:BWS_ACCESS_TOKEN | Should -BeNullOrEmpty
     }
 
     It 'WhatIf still prevents deletion when Force is supplied' {
@@ -103,7 +132,14 @@ Describe 'Remove-SprintBitwardenSecrets [public]' {
     It 'no-ops (all skipped, no list/delete, no throw) when the BWS token cannot be resolved' {
       # Force the $bwsAvailable = $false branch deterministically (independent of
       # whether a real bws CLI happens to be installed on the test host).
-      function global:Get-BWSAccessToken { throw 'no machine token' }
+      function global:Get-BWSAccessToken {
+        param(
+          [Parameter()]
+          [ValidateSet('ReadOnly', 'ReadWrite')]
+          [string]$TokenPurpose = 'ReadOnly'
+        )
+        throw 'no machine token'
+      }
       Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue
       try {
         $result = Remove-SprintBitwardenSecrets `
@@ -137,3 +173,4 @@ Describe 'Remove-SprintBitwardenSecrets [public]' {
     }
   }
 }
+

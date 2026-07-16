@@ -135,18 +135,20 @@ function Invoke-ModuleBuildWithRetry {
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
-    try {
-      $buildToolingModuleRoot = Split-Path -Parent $PSScriptRoot
-      $srcRoot = Split-Path -Parent $buildToolingModuleRoot
-      $neoConfigurationPath = Join-Path -Path $srcRoot -ChildPath 'ATAP.Utilities.PowerShell/public/Get-ParameterValueFromNeoConfigurationRoot.ps1'
-      if (-not (Test-Path -LiteralPath $neoConfigurationPath -PathType Leaf)) {
-        throw "Source helper file not found: $neoConfigurationPath"
+    if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+      try {
+        $buildToolingModuleRoot = Split-Path -Parent $PSScriptRoot
+        $srcRoot = Split-Path -Parent $buildToolingModuleRoot
+        $neoConfigurationPath = Join-Path -Path $srcRoot -ChildPath 'ATAP.Utilities.PowerShell/public/Get-ParameterValueFromNeoConfigurationRoot.ps1'
+        if (-not (Test-Path -LiteralPath $neoConfigurationPath -PathType Leaf)) {
+          throw "Source helper file not found: $neoConfigurationPath"
+        }
+        . $neoConfigurationPath
+      } catch {
+        $errorMessage = "Failed to load Get-ParameterValueFromNeoConfigurationRoot function. Exception: $($_.Exception.Message)"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+        throw
       }
-      . $neoConfigurationPath
-    } catch {
-      $errorMessage = "Failed to load Get-ParameterValueFromNeoConfigurationRoot function. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-      throw
     }
 
     # Snippet: "Check and populate simple parameter as Type" for every parameter.

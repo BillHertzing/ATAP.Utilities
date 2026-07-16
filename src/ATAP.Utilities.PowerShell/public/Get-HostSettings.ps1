@@ -22,9 +22,10 @@ HostSettings fragment lags a newly-added module.
 Hostname used by the IAC HostSettings.ps1 dispatch switch.
 
 .PARAMETER IACBasePath
-Optional root of the ATAP.IAC repository or worktree. When omitted, the
-function probes the ATAP.IAC sprint worktree first, then environment, stable
-development, and installed-module locations.
+Optional root of the ATAP.IAC repository or worktree. When omitted, the probe order is, most
+specific first: `$env:ATAP_IAC_BASE_PATH` (process then user scope), the current sprint's ATAP.IAC
+worktree, the stable ATAP.IAC checkout, and finally the copy shipped inside the installed
+ATAP.Utilities.PowerShell module. See Get-IACHostSettingsCandidatePath.
 
 .OUTPUTS
 System.Collections.Hashtable
@@ -35,6 +36,17 @@ $global:settings = Get-HostSettings -hostName $env:COMPUTERNAME
 .NOTES
 Requires $global:configRootKeys to be populated first. Call
 Set-GlobalConfigRootKeys before this cmdlet.
+
+The sprint worktree is discovered by pattern, never named. Until SC-0252 was fixed this function
+hard-coded `ATAP.IAC-wt-9-Sprint-0007-work-items` as its only sprint-shaped candidate. That folder
+disappeared at the end of Sprint 0007, so resolution silently fell through to the stable checkout
+and every HostSettings edit made in a sprint worktree -- which is where the repository's boundary
+rule says sprint work belongs -- had no runtime effect for four sprints.
+
+Update-BuildMasterApplicationMap is a BACKSTOP, not the source of truth. It merges a small reviewed
+set of module->application mappings so a lagging HostSettings fragment cannot break core module
+routing. If a module you expect is missing from the effective map, fix the ATAP.IAC fragment; do not
+add it here.
 #>
 function Get-HostSettings {
   [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
@@ -166,16 +178,27 @@ function Get-HostSettings {
       throw $errorMessage
     }
 
-    $candidatePaths = [System.Collections.Generic.List[string]]::new()
-    Add-CandidatePath -CandidatePaths $candidatePaths -Path $IACBasePath
-    Add-CandidatePath -CandidatePaths $candidatePaths -Path 'C:\Dropbox\whertzing\GitHub\ATAP.IAC-wt-9-Sprint-0007-work-items'
-    Add-CandidatePath -CandidatePaths $candidatePaths -Path ([System.Environment]::GetEnvironmentVariable('ATAP_IAC_BASE_PATH', 'Process'))
-    Add-CandidatePath -CandidatePaths $candidatePaths -Path ([System.Environment]::GetEnvironmentVariable('ATAP_IAC_BASE_PATH', 'User'))
-    Add-CandidatePath -CandidatePaths $candidatePaths -Path (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub\ATAP.IAC')
-    Add-CandidatePath -CandidatePaths $candidatePaths -Path 'C:\Dropbox\whertzing\GitHub\ATAP.IAC'
+    # Candidate ordering lives in Get-IACHostSettingsCandidatePath so it can be tested without a
+    # real ATAP.IAC checkout. The sprint worktree is DISCOVERED, never hard-coded: a literal here
+    # named the Sprint 0007 worktree and quietly stopped matching when that sprint ended (SC-0252).
+    $searchRoots = @(
+      (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub')
+      'C:\Dropbox\whertzing\GitHub'
+    )
+    $programFilesResourcePath = if (-not [string]::IsNullOrWhiteSpace($env:ProgramFiles)) {
+      Join-Path $env:ProgramFiles 'Powershell\Modules\ATAP.Utilities.Powershell\Resources'
+    } else {
+      $null
+    }
 
-    if (-not [string]::IsNullOrWhiteSpace($env:ProgramFiles)) {
-      Add-CandidatePath -CandidatePaths $candidatePaths -Path (Join-Path $env:ProgramFiles 'Powershell\Modules\ATAP.Utilities.Powershell\Resources')
+    if (-not (Get-Command -Name 'Get-IACHostSettingsCandidatePath' -CommandType Function -ErrorAction SilentlyContinue)) {
+      # Running this file straight from source, without the module import that dot-sources private\.
+      . (Join-Path $PSScriptRoot '..\private\Get-IACHostSettingsCandidatePath.ps1')
+    }
+
+    $candidatePaths = [System.Collections.Generic.List[string]]::new()
+    foreach ($candidate in (Get-IACHostSettingsCandidatePath -IACBasePath $IACBasePath -SearchRoot $searchRoots -ProgramFilesResourcePath $programFilesResourcePath)) {
+      Add-CandidatePath -CandidatePaths $candidatePaths -Path $candidate
     }
 
     $hostSettingsScript = $null
@@ -221,7 +244,29 @@ function Get-HostSettings {
           . $GetClonedAndModifiedHashtablePath
         }
 
-        . $Path
+        $maxHostSettingsLoadAttempts = 5
+        $hostSettingsLoadDelayMilliseconds = 200
+        for ($attempt = 1; $attempt -le $maxHostSettingsLoadAttempts; $attempt++) {
+          try {
+            . $Path
+            break
+          } catch {
+            $exceptionMessages = [System.Collections.Generic.List[string]]::new()
+            $currentException = $_.Exception
+            while ($null -ne $currentException) {
+              [void] $exceptionMessages.Add($currentException.Message)
+              $currentException = $currentException.InnerException
+            }
+
+            $isSharingViolation = (($exceptionMessages -join "`n") -match 'being used by another process|process cannot access the file')
+            if (-not $isSharingViolation -or $attempt -ge $maxHostSettingsLoadAttempts) {
+              throw
+            }
+
+            Start-Sleep -Milliseconds $hostSettingsLoadDelayMilliseconds
+            $hostSettingsLoadDelayMilliseconds = [Math]::Min(($hostSettingsLoadDelayMilliseconds * 2), 2000)
+          }
+        }
 
         $innerGetHostSettings = Get-Command -Name 'Get-HostSettings' -CommandType Function -ErrorAction Stop
         $innerFunctionFile = if ($innerGetHostSettings.ScriptBlock.File) {

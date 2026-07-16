@@ -19,7 +19,11 @@
      locates the ATAP.IAC repository's `constants/` folder by walking up from
      the current git root (`git rev-parse --show-toplevel`) to a sibling
      `ATAP.IAC` directory, then imports every `*.psd1` found there and reads
-     the named key.
+     the named key. NOTE (2026-07-07, Sprint 0012 Task 12.46.h): the ATAP.IAC
+     `constants/` folder was removed (content long since migrated to
+     `ATAP.Utilities.ConfigRootKeys.PowerShell`), so this stage now always
+     fails; the function has no remaining callers and is a retirement
+     candidate (see SC-0248 backlog).
 
   This two-stage approach means the cmdlet works both in an interactive
   developer session (where $global:settings is populated) and in a headless

@@ -1,20 +1,19 @@
 function Set-PowerShell7ProfileSymlink {
   <#
   .SYNOPSIS
-    Retargets the machine-wide PowerShell 7 profile symlinks to a given repository
-    root and removes obsolete profile symlinks.
+    Copies the machine-wide PowerShell 7 profile from the selected IAC worktree,
+    retargets the adjacent HostSettings symlink, and removes obsolete links.
 
   .DESCRIPTION
     The PowerShell 7 install directory (C:\Program Files\PowerShell\7) holds two
-    machine-wide symlinks that ATAP tooling owns:
+    machine-wide files that ATAP tooling owns:
 
-      - profile.ps1     -> <ATAP.Utilities root>\src\ATAP.Utilities.PowerShell\Profiles\AllUsersAllHostsV7CoreProfile.ps1
+      - profile.ps1      (copied from <ATAP.IAC root>\Windows\ProfileTemplates\AllUsersAllHostsV7CoreProfile.ps1)
       - HostSettings.ps1 -> <ATAP.IAC root>\Windows\HostSettings.ps1
 
-    The AllUsersAllHosts core profile derives the active stable-vs-sprint context by
-    reading the target of profile.ps1, so this symlink must track the worktree that
-    owns the current session. HostSettings.ps1 follows the ATAP.IAC worktree the same
-    way.
+    The caller selects the stable or sprint IAC root. Copying the profile avoids a
+    second profile dot-source on every shell startup; HostSettings remains a link so
+    the copied profile can load the selected IAC host data beside itself.
 
     Two formerly-deployed symlinks are no longer needed because the configuration
     globals are now bootstrapped in-process (Task 10.5,
@@ -50,8 +49,7 @@ function Set-PowerShell7ProfileSymlink {
     '<ProgramFiles>\PowerShell\7'. Override for tests.
 
   .PARAMETER ProfileRelativePath
-    Repo-relative path, under ATAPUtilitiesRoot, of the core profile that profile.ps1
-    points at.
+    Repo-relative path, under ATAPIACRoot, of the core profile copied to profile.ps1.
 
   .PARAMETER HostSettingsRelativePath
     Repo-relative path, under ATAPIACRoot, of the host settings file that
@@ -102,7 +100,7 @@ function Set-PowerShell7ProfileSymlink {
 
     [Parameter()]
     [ValidateNotNullOrEmpty()]
-    [string]$ProfileRelativePath = 'src\ATAP.Utilities.PowerShell\Profiles\AllUsersAllHostsV7CoreProfile.ps1',
+    [string]$ProfileRelativePath = 'Windows\ProfileTemplates\AllUsersAllHostsV7CoreProfile.ps1',
 
     [Parameter()]
     [ValidateNotNullOrEmpty()]
@@ -125,9 +123,9 @@ function Set-PowerShell7ProfileSymlink {
     $links = [System.Collections.Generic.List[object]]::new()
     $failures = [System.Collections.Generic.List[string]]::new()
 
-    # Managed links: link leaf name -> absolute target file the link must point at.
+    # Managed sources: profile.ps1 is copied; HostSettings.ps1 remains a link.
     $managed = [ordered]@{
-      'profile.ps1'      = (Join-Path $ATAPUtilitiesRoot $ProfileRelativePath)
+      'profile.ps1'      = (Join-Path $ATAPIACRoot $ProfileRelativePath)
       'HostSettings.ps1' = (Join-Path $ATAPIACRoot $HostSettingsRelativePath)
     }
 
@@ -149,6 +147,41 @@ function Set-PowerShell7ProfileSymlink {
         $entry.Error = "Symlink target not found: '$target'"
         $failures.Add($entry.Error)
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $entry.Error
+        $links.Add([PSCustomObject]$entry)
+        continue
+      }
+
+      if ($linkName -eq 'profile.ps1') {
+        $existingItem = Get-Item -LiteralPath $linkPath -Force -ErrorAction SilentlyContinue
+        $existingBytes = if ($existingItem -and -not $existingItem.LinkType -and (Test-Path -LiteralPath $linkPath -PathType Leaf)) { [IO.File]::ReadAllBytes($linkPath) } else { $null }
+        $sourceBytes = [IO.File]::ReadAllBytes($target)
+        if (-not $existingItem.LinkType -and $null -ne $existingBytes -and [Convert]::ToBase64String($existingBytes) -eq [Convert]::ToBase64String($sourceBytes)) {
+          $entry.Action = 'AlreadyCurrent'
+          $entry.Succeeded = $true
+          $links.Add([PSCustomObject]$entry)
+          continue
+        }
+
+        if ($PSCmdlet.ShouldProcess($linkPath, "Copy machine profile from '$target'")) {
+          try {
+            if ($existingItem -and $existingItem.LinkType) {
+              Remove-Item -LiteralPath $linkPath -Force -ErrorAction Stop
+            }
+            [IO.File]::WriteAllBytes($linkPath, $sourceBytes)
+            $entry.Action = 'Copied'
+            $entry.Succeeded = $true
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Copied '$target' to '$linkPath'"
+          } catch {
+            $entry.Action = 'CopyFailed'
+            $entry.Error = "Failed to copy '$target' to '$linkPath': $($_.Exception.Message)"
+            $failures.Add($entry.Error)
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $entry.Error
+          }
+        } else {
+          $entry.Action = 'WouldCopy'
+          $entry.Succeeded = $true
+        }
+
         $links.Add([PSCustomObject]$entry)
         continue
       }

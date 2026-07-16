@@ -10,7 +10,7 @@ function Get-DbConnectionStringSecretDescriptor {
     Get-SecretATAP / BitwardenSecretsManager and fail loudly if the BWS secret is
     absent.
 
-    This helper centralizes the canonical dbConnectionString-* naming convention.
+    This helper centralizes the canonical dbConnectionString.* naming convention.
     It can also build the Integrated-Security value for Dev/Exp names, but only
     when a caller explicitly supplies -DerivableTier. That mode is reserved for
     provisioning/writer flows such as New-SprintBitwardenSecrets, which creates or
@@ -34,9 +34,7 @@ function Get-DbConnectionStringSecretDescriptor {
 
   .PARAMETER SecretName
     ByName mode. A canonical connection-string secret name of the form
-    dbConnectionString-<Database>-<Host>-<Tier>[-<User>]. Database names and tier
-    tokens contain no hyphens; hyphenated hosts/users are tolerated because the
-    tier token is located by value, not position.
+    dbConnectionString.<Database>.<Host>.<Tier>[.<User>].
 
   .PARAMETER DatabaseName
     ByParts mode. The logical database name (e.g. 'ATAPUtilities', 'AceCommander').
@@ -76,15 +74,15 @@ function Get-DbConnectionStringSecretDescriptor {
       ConnectionString - deterministic connection string when derivable, else $null
 
   .EXAMPLE
-    Get-DbConnectionStringSecretDescriptor -SecretName 'dbConnectionString-ATAPUtilities-localhost-Dev-jsmith'
+    Get-DbConnectionStringSecretDescriptor -SecretName 'dbConnectionString.ATAPUtilities.localhost.Dev.jsmith'
     # IsDerivable = $false by default; runtime must fetch the value from BWS.
 
   .EXAMPLE
     Get-DbConnectionStringSecretDescriptor -DatabaseName 'master' -DatabaseHost 'localhost' -Environment 'Exp' -UserName 'jsmith' -DerivableTier @('Dev','Exp')
-    # SecretName = dbConnectionString-master-localhost-Exp-jsmith; provisioning value returned for BWS creation.
+    # SecretName = dbConnectionString.master.localhost.Exp.jsmith; provisioning value returned for BWS creation.
 
   .EXAMPLE
-    Get-DbConnectionStringSecretDescriptor -SecretName 'dbConnectionString-ATAPUtilities-sql01-Production'
+    Get-DbConnectionStringSecretDescriptor -SecretName 'dbConnectionString.ATAPUtilities.sql01.Production'
     # IsDerivable = $false (permanent tier); ConnectionString = $null - must come from the vault.
 
   .NOTES
@@ -173,13 +171,31 @@ function Get-DbConnectionStringSecretDescriptor {
     if ($PSCmdlet.ParameterSetName -eq 'ByName') {
       $canonicalName = $SecretName
 
-      $prefix = 'dbConnectionString-'
-      if (-not $SecretName.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+      $dottedPrefix = 'dbConnectionString.'
+      $legacyHyphenPrefix = 'dbConnectionString-'
+      if ($SecretName.StartsWith($dottedPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+        $remainder = $SecretName.Substring($dottedPrefix.Length)
+        $segments = @($remainder -split '\.')
+
+        if ($segments.Count -ge 3) {
+          $parsedDatabaseName = $segments[0]
+          $parsedDatabaseHost = $segments[1]
+          if ($tierAliasMap.ContainsKey($segments[2])) {
+            $normalizedTier = $tierAliasMap[$segments[2]]
+            if ($segments.Count -gt 3) {
+              $parsedUserName = ($segments[3..($segments.Count - 1)] -join '.')
+            }
+          } else {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+              -Message "Secret name '$SecretName' has no recognizable tier token; classified credentialed (vault-only)." -Tag 'ConnectionString'
+          }
+        }
+      } elseif (-not $SecretName.StartsWith($legacyHyphenPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
         # Not a recognized connection-string secret name; cannot derive.
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
-          -Message "Secret name '$SecretName' does not match the dbConnectionString- convention; classified credentialed (vault-only)." -Tag 'ConnectionString'
+          -Message "Secret name '$SecretName' does not match the dbConnectionString.* convention; classified credentialed (vault-only)." -Tag 'ConnectionString'
       } else {
-        $remainder = $SecretName.Substring($prefix.Length)
+        $remainder = $SecretName.Substring($legacyHyphenPrefix.Length)
         $segments = @($remainder -split '-')
 
         if ($segments.Count -ge 3) {
@@ -221,9 +237,9 @@ function Get-DbConnectionStringSecretDescriptor {
       }
 
       if ($sprintTier) {
-        $canonicalName = "dbConnectionString-$parsedDatabaseName-$parsedDatabaseHost-$normalizedTier-$parsedUserName"
+        $canonicalName = "dbConnectionString.$parsedDatabaseName.$parsedDatabaseHost.$normalizedTier.$parsedUserName"
       } else {
-        $canonicalName = "dbConnectionString-$parsedDatabaseName-$parsedDatabaseHost-$normalizedTier"
+        $canonicalName = "dbConnectionString.$parsedDatabaseName.$parsedDatabaseHost.$normalizedTier"
       }
     }
 

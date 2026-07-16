@@ -2,13 +2,21 @@
 
 ## Overview
 
-Profiles define the environment in which a powershell process executes. The machine profile sets values that are applicable for a specific machine. The user profile sets values that can override or supplement the machine profile on a per user basis. The profiles in the ATAP.Utilities.Powershell module, and the two `global` files, setup the environments for developer computers and computers that participate in the ATAP CI/CD pipeline
+Profiles define the environment in which a PowerShell process executes. As of
+Sprint 0012 Task 12.49.e, canonical profile payloads are IAC data owned by
+`ATAP.IAC\Windows\ProfileTemplates`; they are no longer shipped from this
+module. BuildTooling copies the selected stable or sprint payload to the real
+machine/user profile path. Supporting settings assets remain under this
+module's `Profiles\` folder.
 
 ## Profiles
 
-Important: This package currently only supplies profiles for Powershell Core (currently V7).
-
-This package supplies multiple profiles and multiple settings files. One profile is for AllUsersAllHosts, and should be installed at the location as specified in `$profile.AllUsersAllHosts`. The other profile, CurrentUserAllHosts, is for a developer's computer, and should be installed for a developer user on the computer at the location as specified in `$profile.CurrentUserAllHosts`. Additional profiles for service accounts used in the CI/CD pipline should be installed to the service account's root folder, to setup the service account's profile
+ATAP.IAC supplies PowerShell 7 machine/developer/service-account payloads and a
+legacy Windows PowerShell 5 user payload. `Set-PowerShell7ProfileSymlink`
+(compatibility name) copies the machine payload; `Set-UserScopeProfile` copies
+developer or service-account payloads. Machine and service-account copies are
+administrator/deployment managed. A developer may edit the copy in that
+developer's own profile directory.
 
 Important: Location of CurrentUserAllHosts will not always be at `~`. Sometimes a user will have moved their Documents folder from the default location. To determine the location of the user's Documents folder, use `[Environment]::GetFolderPath("MyDocuments")`
 
@@ -19,7 +27,7 @@ Location of `Program Files` may not always be at `C:\`. To determine the locatio
 | Windows 10/11 64bit | AllUsersAllHosts    | join-path [Environment]::GetEnvironmentVariable('ProgramFiles') 'PowerShell' '7' 'profile.ps1' |
 | Windows 10/11 64bit | CurrentUserAllHosts | join-path ([Environment]::GetFolderPath('MyDocuments')) 'PowerShell' 'Profile.ps1'             |
 
-### Using the profiles in this package
+### Using the IAC-owned profiles
 
 1. Install the ATAP.Utilities.Powershell package ([ATAP Powershell Module Installation](TBD link to anchor point))
 1. Configure the `global_MachineAndNodeSettings.ps1` ([Machine and Node Settings](TBD link to anchor point`))
@@ -27,15 +35,8 @@ Location of `Program Files` may not always be at `C:\`. To determine the locatio
 
    **always test them first in a safe environment (non-admin, firewalled, virus and malware detectors running).**
 
-1. Copy the following files to the `$profile.AllUsersAllHosts` directory:
-
-a) `AllUsersAllHostsV7CoreProfile.ps1`
-
-a) `global_ConfigRootKeys.ps1`
-
-a) `global_MachineAndNodeSettings.ps1`
-
-a) `global_EnvironmentVariables.ps1`
+1. Select the stable or sprint ATAP.IAC root and invoke the BuildTooling profile
+   lifecycle. Do not create a one-line dot-source wrapper.
 
 `global_ConfigRootKeys.ps1` remains active: `$global:settings` and `Get-PVal`
 still use its stable key constants. Sprint 0010 therefore does not retire it.
@@ -44,11 +45,16 @@ only; secrets and API keys remain in the canonical settings/vault path and are
 resolved through `Get-PVal` / `Get-SecretATAP` when needed.
 
 1. Test the Developer's profile ([Testing the machine profile and global settings[(TBD)])
-1. Copy `CurrentUserAllHostsV7CoreProfile.ps1` to (join-path ([Environment]::GetFolderPath('MyDocuments')) 'PowerShell' 'Profile.ps1')
+1. Use `Set-UserScopeProfile` to copy the IAC-owned
+   `CurrentUserAllHostsV7CoreProfile.ps1` or
+   `ProfileForServiceAccountUsers.ps1` payload.
 
 Start new powershell sessions and validate the `Env:` values and the `global:settings` values are correct for the machine and user. Once they are correct and mirror the actual computer configuration, the development and CI/CD process for an ATAP-based app should 'just work'
 
-#### Using Symbolic links instead of copying
+#### Obsolete symbolic-link instructions (do not use)
+
+The following block is retained as migration history only. Production profile
+deployment now copies IAC-owned payloads. It must not be used for provisioning.
 
 If a developer is modifying these profile and settings files (and they are in a Git repository) it is easier to create a symbolic link at the desired subdirectory pointing back to the target files in the git repository. These Powershell one-liners will create the necessary symbolic links. Note the use of Join-path for all the full path names, to support both Windows and \*nix
 

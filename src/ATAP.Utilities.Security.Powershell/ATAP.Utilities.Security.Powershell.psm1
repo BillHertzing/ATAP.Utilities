@@ -17,10 +17,57 @@ foreach ($import in $allFunctions) {
 # list the public cmdlet and function names for including into a .psd1 file (ToDo: automate the .psd1 file creation as part of the CI/CD/CD pipeline)
 # list the private cmdlet names for including into a .psd1 file (ToDo: automate the .psd1 file creation as part of the CI/CD/CD pipeline)
 
-# Command aliases (relocated here from the eponymous public function files so those
-# files only DEFINE functions and execute nothing at load time). Created in module
-# scope at import, exactly as the dot-sourced Set-Alias calls did before. Export is
-# still governed by AliasesToExport in the .psd1 (currently @() = module-internal).
-Set-Alias -Name New-BWSecret          -Value Set-BitWardenSecret
-Set-Alias -Name Add-BitWardenLogin    -Value Set-BitWardenSecret
-Set-Alias -Name Sync-DedicatedSecrets -Value Sync-BitWardenDedicatedSecrets
+# --- Re-export mode: ATAP.Utilities.Security.Secrets.PowerShell -------------------------
+# The six Bitwarden functions and their three aliases moved to the Secrets child
+# (Sprint 0012 Task 12.55.b). The umbrella imports the child into its own module scope and
+# re-exports those names, so existing consumers that import only this module see an
+# unchanged command surface. Maintained as one per-group list, not per-function proxies.
+# Remove when the umbrella is thinned (plan Task 6.1).
+#
+# ⚠ THIS BLOCK ONLY WORKS FROM SOURCE. `Build-PSModulePsm1` regenerates the shipped .psm1 by
+# concatenating public\ and private\ and DISCARDS this file. If the umbrella is ever built and
+# published, the child import and re-export below vanish from the package and the umbrella's
+# command surface silently loses all six Bitwarden functions. This is the same defect that shipped
+# broken aliases in the Secrets child 0.1.0 (see its ReleaseNotes). The umbrella is currently
+# consumed from source only. Before publishing it, move this logic somewhere the build preserves,
+# or make the build carry the source .psm1 forward.
+$secretsChildName = 'ATAP.Utilities.Security.Secrets.PowerShell'
+$secretsChildFunctions = @(
+    'Get-BitWardenCredential'
+    'List-BitwardenSecrets'
+    'Load-BitwardenBackup'
+    'New-BitwardenBackup'
+    'Set-BitWardenSecret'
+    'Sync-BitWardenDedicatedSecrets'
+)
+$secretsChildAliases = @(
+    'New-BWSecret'
+    'Add-BitWardenLogin'
+    'Sync-DedicatedSecrets'
+)
+
+# Prefer the installed child from PSModulePath; fall back to the sibling source tree so the
+# umbrella still imports when running from source against an unpublished child.
+$secretsChildSourceManifest = Join-Path $PSScriptRoot ".." $secretsChildName "$secretsChildName.psd1"
+if (Get-Module -ListAvailable -Name $secretsChildName -ErrorAction SilentlyContinue) {
+    Import-Module -Name $secretsChildName -ErrorAction Stop
+} elseif (Test-Path -LiteralPath $secretsChildSourceManifest) {
+    Import-Module -Name $secretsChildSourceManifest -ErrorAction Stop
+} else {
+    throw "Required child module '$secretsChildName' was not found on PSModulePath or at '$secretsChildSourceManifest'."
+}
+
+# This module previously had no Export-ModuleMember, so every dot-sourced function was a
+# module member and .psd1 FunctionsToExport did the filtering. Calling Export-ModuleMember
+# at all makes it authoritative, so the umbrella's OWN public functions must be listed here
+# too or they would silently disappear from the command surface.
+$ownFunctions = @($publicFunctions | ForEach-Object { $_.BaseName })
+
+# Aliases are deliberately NOT passed to -Alias here. Once the child is listed in this module's
+# RequiredModules, PowerShell imports it into the global session before the umbrella loads, so its
+# three aliases are already visible to any consumer that imports only the umbrella (verified:
+# New-BWSecret, Add-BitWardenLogin and Sync-DedicatedSecrets all resolve, attributed to the child).
+# Passing -Alias would re-export nothing and quietly look like it had worked -- the same silent-no-op
+# failure mode as SC-0254. If the umbrella is ever thinned (plan Task 6.1) and stops requiring the
+# child, revisit this: consumers would then need the child imported explicitly.
+Export-ModuleMember -Function ($ownFunctions + $secretsChildFunctions)

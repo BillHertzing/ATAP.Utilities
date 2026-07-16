@@ -33,7 +33,7 @@ another repo and you have opened that repo's root in the same VS Code workspace.
 The five repositories listed below have their stable branch's worktree rooted at the location 'Root Path'
 
 In addition to the stable branch's worktrees one or more of those will be replicated into a 'sprint branch worktree'
-which exists for the duration of a work sprint. Aprint worktrees' root path match the pattern:
+which exists for the duration of a work sprint. Sprint worktrees' root paths match the pattern:
 `stableRepositoryRootPath-wt-...`
 
 | Repository     | Root Path                                  | Role                                                                 |
@@ -86,11 +86,15 @@ and the sprint entries drop out automatically at sprint end.
 All cross-repo planning and ordered work items are tracked in:
 
 ```text
-_PlanningSprintWorktreeRoot\TASKSSprintNNNN.md
-_PlanningSprintWorktreeRoot\TASKSSprintNNNN.html
-_PlanningSprintWorktreeRoot\Tasks.ProceduralDetails.SprintNNNN.html
-_PlanningSprintWorktreeRoot\Tasks.Accomplished.SprintNNNN.html
+_PlanningSprintWorktreeRoot\TASKS.SprintNNNN.md
+_PlanningSprintWorktreeRoot\TASKS.SprintNNNN.html
+_PlanningSprintWorktreeRoot\TASKS.SprintNNNN.ProceduralDetails.html
+_PlanningSprintWorktreeRoot\TASKS.SprintNNNN.Accomplished.html
 ```
+
+(File-name casing on disk may vary, e.g. `Tasks.Sprint0012.html`; Windows paths are
+case-insensitive. Corrected 2026-07-14, DR program item DRR-004 — verified against the
+actual Sprint 0012 files.)
 
 - Before starting any work, read the active sprint TASKS file for the current sprint.
 - After completing a step and confirming tests pass, mark it `[x]` in the active sprint TASKS file.
@@ -312,9 +316,10 @@ the value with `bws` (not `bw`).
 
 - Do NOT use the PowerShell SecretManagement vault extension — it stores secrets in a
   parallel vault not visible in the vault UI.
-- If a new secret is needed, stop and tell the user. Suggest an
-  `ALL_UPPERCASE_WITH_UNDERSCORES` `SecretName` for it. Thereafter expect that secret to be
-  resolvable by name through `Get-SecretATAP`.
+- If a new secret is needed, stop and tell the user. Suggest a dotted-notation
+  `SecretName` for it, such as `Windows.Remoting.Credential.UTAT01`,
+  `Windows.Remoting.Credential.UTAT022`, or `SEQ.Admin.API.Key`. Thereafter
+  expect that secret to be resolvable by name through `Get-SecretATAP`.
 - Never write connection strings, API keys, or credentials into source files.
 - See the SolutionDocumentation for additional detail on vault selection and `Get-SecretATAP`.
 
@@ -427,9 +432,11 @@ When asked to create or modify a Rule, Rule Set, or Build Set:
 3. **USE individual project paths** when solution-level build fails
 4. **ONE clarifying question** — if requirements are ambiguous, ask one focused question
    before generating code or commands
-5. **Save-SprintWorkSession.ps1 path (R-15):** The script is at
-   `_Planning/Powershell/Public/Save-SprintWorkSession.ps1` — never `_Planning/Scripts/`.
-   The checkpoint skill must use this correct path.
+5. **Save-SprintWorkSession.ps1 path (R-15):** The canonical script is at
+   `ATAP.Utilities/src/ATAP.Utilities.BuildTooling.PowerShell/public/Save-SprintWorkSession.ps1`
+   (prefer the most-recent ATAP.Utilities sprint worktree copy; fall back to the stable
+   repo). The former `_Planning/Powershell/Public/` wrapper was removed 2026-07-07
+   (Sprint 0012 Task 12.46.e); never use `_Planning/Scripts/`.
 6. **Sprint session memory file (R-17):** If `project_sprint_work_sessions.md` does not
    exist in memory, create it after the user provides the session number, so future
    checkpoints in the same sprint don't need to ask again.
@@ -448,28 +455,41 @@ When asked to create or modify a Rule, Rule Set, or Build Set:
     before analyzing or acting.
 11. **Small scope-creep units (R-29):** Decompose scope-creep work into units small
     enough for a simpler LLM model, typically one file change or one well-scoped function.
-12. **Checkpoint cadence (R-30):** During long or multi-repo sessions, run `/checkpoint`
+12. **Scope-creep capture (R-35):** When recording a new out-of-scope idea, use the
+    `Add-ScopeCreepIdea` PowerShell function or the `add-scope-creep` skill instead of
+    hand-editing `ScopeCreep-Inbox.md`, adopted, or deferred scope-creep files.
+13. **Checkpoint cadence (R-30):** During long or multi-repo sessions, run `/checkpoint`
     at completed task boundaries, before risky context switches or broad refactors, and
     always before closing the session. Do not leave an entire sprint's worth of work
     uncheckpointed.
-13. **Pre-pull overlap check (R-31):** Before pulling `main` in a repo with local
+14. **Pre-pull overlap check (R-31):** Before pulling `main` in a repo with local
     changes, compare local modified paths to `main..origin/main` changed paths. Block
     automatic pull when paths overlap and ask for human direction.
-14. **Large sprint PR risk note (R-32):** For very large sprint branches, add a short
+15. **Large sprint PR risk note (R-32):** For very large sprint branches, add a short
     risk note to the PR body before moving from draft to ready. The note must name
     high-risk areas and deferred validation items.
-15. **PowerShell-native orchestration (R-33):** In Windows sprint orchestration sessions,
+16. **PowerShell-native orchestration (R-33):** In Windows sprint orchestration sessions,
     use PowerShell-native commands and syntax consistently. Avoid POSIX shell habits in
     runbooks, commands, and generated instructions.
-16. **Async process drain before WaitForExit (R-34):** When using `System.Diagnostics.Process`
+17. **Async process drain before WaitForExit (R-34):** When using `System.Diagnostics.Process`
     with redirected stdout or stderr, begin draining both streams before `WaitForExit` or
     `WaitForExitAsync`. Never wait on the process while redirected buffers can still fill.
-17. **Agent-swarm threshold (R-36):** For refactors touching more than about 20 files,
+18. **Agent-swarm threshold (R-36):** For refactors touching more than about 20 files,
     prefer an agent-swarm plan with one bounded ownership slice per worker. Keep write
     scopes disjoint and merge through a review pass.
-18. **Blazor/Syncfusion instructions (R-37):** For Blazor UI or Syncfusion component
+19. **Blazor/Syncfusion instructions (R-37):** For Blazor UI or Syncfusion component
     work, load the Blazor/Syncfusion rules/instructions before changing `.razor`,
     `.razor.cs`, `.cshtml`, or Syncfusion-related C# files.
+20. **Persist-beyond-sprint information (R-38):** `_generated\` folders under the
+    ephemeral sprint worktrees are deleted at sprint end. Any file carrying important
+    information about FUTURE tasks — deferred tasks, scope-creep items,
+    architectural-decision reasoning, or anything that must persist indefinitely beyond
+    the current sprint — must be placed under
+    `${SPRINT_WORKTREE_PATH_PLANNING}\InformationForTheFuture\` and committed, so it
+    merges into the stable `_Planning` worktree at sprint end. `_generated\` remains
+    correct for point-in-time verification evidence of completed tasks; when a file's
+    content is an input to future work rather than proof of past work, move it to
+    `InformationForTheFuture\` and update the documents that reference it.
 
 ---
 
@@ -488,8 +508,8 @@ Antigravity) so behavior stays homogeneous regardless of which agent runs a task
 
 2. **Repo conventions are mandatory, not discoverable.** Treat this workspace's
    non-obvious local conventions as hard requirements and emit your work against
-   them as a checklist — do not rediscover them each task: SC-0033 (`_generated/`
-   for all generated output *and* evidence artifacts), sprint-scoped file naming,
+  them as a checklist — do not rediscover them each task: SC-0033 (`_generated/`
+  for all generated output *and* evidence artifacts), sprint-scoped file naming,
    autoload-or-throw for required cmdlets, PSFramework logging, and "no top-level
    executable code in module `.ps1` files."
 

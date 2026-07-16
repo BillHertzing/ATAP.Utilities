@@ -47,8 +47,30 @@ BeforeAll {
     $global:stage1ExternalCalls.Add('Initialize-DownstreamSprintFromSharedVSCode') | Out-Null
   }
 
-  function global:Initialize-SprintAIAdapters {
-    $global:stage1ExternalCalls.Add('Initialize-SprintAIAdapters') | Out-Null
+  # Task 12.2.b: New-SprintStage1 provisions the worktree via the single Start
+  # entry point. Healthy recording fake so the stage continues into the
+  # NuGet.config step.
+  function global:Set-SprintBoundaryContext {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param(
+      [string]$Boundary, [string]$SharedVSCodeWorktreePath, [string[]]$WorktreePaths = @(),
+      [string]$TemplateRef, [string]$Profile, [string[]]$JunctionFolderNames,
+      [string[]]$StableJunctionFolderNames, [string]$GitRoot,
+      [switch]$SkipSharedVSCodeSettings, [switch]$SkipProfileSymlinks,
+      [switch]$AllowUserGlobalWrite, [switch]$CheckpointConfirmed, [switch]$SkipAIAdapterLifecycle
+    )
+    $global:stage1ExternalCalls.Add('Set-SprintBoundaryContext') | Out-Null
+    [PSCustomObject]@{
+      Boundary = $Boundary; DryRun = $false; Concerns = @(); Errors = @()
+      PerWorktree = @(foreach ($wt in $WorktreePaths) {
+        [PSCustomObject]@{
+          WorktreePath = $wt; StableRepoPath = $null
+          JunctionsRetargeted = $true; ContextRetargeted = $true
+          AISettingsProcessed = $true; AISettingsDriftClean = $true
+          JunctionError = $null; ContextError = $null; AdapterError = $null; Error = $null
+        }
+      })
+    }
   }
 
   function global:Get-SprintHistoryReconstruction {

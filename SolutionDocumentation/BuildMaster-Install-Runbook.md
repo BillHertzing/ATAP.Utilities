@@ -30,6 +30,17 @@ through ProGet and run tests against the promoted artifact.
 
 ---
 
+## Parity journal requirement
+
+Before a step in this runbook changes BuildMaster, its service account, its host
+configuration, or its SQL backing state on `utat022` or `utat01`, append a
+secret-safe declaration with `Add-ParityChangeEntry` on the host being changed.
+Include the category, item, old/new state, peer host, and a peer action; do not
+include any secret value. After the peer applies its corresponding action,
+acknowledge it from that peer with `Confirm-ParityChangeApplied`.
+
+---
+
 ## 1. What changed in this runbook
 
 This document combines the reliable parts of the original installation runbook

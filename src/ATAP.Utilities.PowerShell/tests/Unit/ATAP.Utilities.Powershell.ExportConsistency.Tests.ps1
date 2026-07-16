@@ -7,7 +7,6 @@
 # eponymous), this module's manifest is hand-maintained and the public/ folder
 # legitimately contains a few NON-function files:
 #
-#   - Type-PSLSA.ps1            defines the PS_LSA C# type via Add-Type (no function)
 #   - testIcomparer.ps1         demonstrates a PowerShell class (no function)
 #   - Test-Copilot.ps1          empty placeholder (no function)
 #   - SomethingDebugUtilities.ps1  internal Write-* debug helpers (no eponymous function)
@@ -46,9 +45,10 @@ Describe 'ATAP.Utilities.Powershell module export consistency' {
       $phantom | Should -BeNullOrEmpty -Because @'
 Every name in FunctionsToExport must be defined by a public/*.ps1 file. A
 declared name with no backing function exports nothing and silently disappears
-from the published module (e.g. Type-PSLSA / testIcomparer / Test-Copilot /
-SomethingDebugUtilities, which define a type, a class, nothing, and internal
-helpers respectively, and must not be declared as exports).
+from the published module (e.g. testIcomparer / Test-Copilot /
+SomethingDebugUtilities, which define a class, nothing, and internal
+helpers respectively, and must not be declared as exports). C# type
+definitions (e.g. PS_LSA) live in lib/*.ps1 and are never export candidates.
 '@
     }
   }

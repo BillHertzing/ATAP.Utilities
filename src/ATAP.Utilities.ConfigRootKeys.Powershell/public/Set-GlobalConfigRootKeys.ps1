@@ -20,9 +20,10 @@ Invocation order (each step depends on the hashtable created by the first):
                                          invokes the per-database section functions
                                          (Set-DatabasesATAPUtilitiesConfigRootKeys,
                                          Set-DatabasesAceCommanderConfigRootKeys).
-  3. Set-BuildMasterConfigRootKeys     — BuildMaster automation-path / endpoint keys.
-  4. Set-RulesManagementConfigRootKeys — Rules-Management framework keys.
-  5. Add-PackageRepositoriesConfigRootKeys — single source of truth for ProGet / NuGet /
+  3. Set-SqlInstanceTopologyConfigRootKeys — SQL host/instance topology schema keys.
+  4. Set-BuildMasterConfigRootKeys     — BuildMaster automation-path / endpoint keys.
+  5. Set-RulesManagementConfigRootKeys — Rules-Management framework keys.
+  6. Add-PackageRepositoriesConfigRootKeys — single source of truth for ProGet / NuGet /
                                          PowerShellGet feed key constants.
 
 In-module sibling resolution (development-from-source guard)
@@ -96,6 +97,7 @@ function Set-GlobalConfigRootKeys {
     $configRootKeySectionFunctions = @(
       'Set-CoreConfigRootKeys'
       'Add-DatabasesConfigRootKeys'
+      'Set-SqlInstanceTopologyConfigRootKeys'
       'Set-BuildMasterConfigRootKeys'
       'Set-RulesManagementConfigRootKeys'
       'Add-PackageRepositoriesConfigRootKeys'

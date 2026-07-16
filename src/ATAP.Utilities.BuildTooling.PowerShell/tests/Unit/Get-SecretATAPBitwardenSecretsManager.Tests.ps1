@@ -21,6 +21,7 @@ BeforeAll {
   # Canned output for the `bws` CLI, controlled per-test via $script:bwsJson.
   $script:bwsJson = '[]'
   $script:bwsObservedTokens = [System.Collections.ArrayList]::new()
+  $script:bwsAccessTokenPurposes = [System.Collections.ArrayList]::new()
   function bws {
     param([Parameter(ValueFromRemainingArguments = $true)]$Args)
     [void]$script:bwsObservedTokens.Add($env:BWS_ACCESS_TOKEN)
@@ -29,6 +30,12 @@ BeforeAll {
   }
 
   function Get-BWSAccessToken {
+    param(
+      [Parameter()]
+      [ValidateSet('ReadOnly', 'ReadWrite')]
+      [string]$TokenPurpose = 'ReadOnly'
+    )
+    [void]$script:bwsAccessTokenPurposes.Add($TokenPurpose)
     $secureToken = ConvertTo-SecureString -String 'dpapi.test.token' -AsPlainText -Force
     return [System.Management.Automation.PSCredential]::new('BWS_ACCESS_TOKEN', $secureToken)
   }
@@ -73,14 +80,29 @@ Describe 'Get-SecretATAPBitwardenSecretsManager' {
     { Get-SecretATAPBitwardenSecretsManager -SecretName 'Missing.Key' } | Should -Throw '*No Bitwarden Secrets Manager secret found*'
   }
 
+  It 'does not leak DPAPI token values through thrown messages' {
+    Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue
+    $script:bwsJson = '[{"id":"1","key":"Other.Key","value":"x","projectId":"p1"}]'
+
+    { Get-SecretATAPBitwardenSecretsManager -SecretName 'Missing.Key' } |
+      Should -Throw '*No Bitwarden Secrets Manager secret found*'
+
+    $thrown = $null
+    try { Get-SecretATAPBitwardenSecretsManager -SecretName 'Missing.Key' } catch { $thrown = $_.Exception.Message }
+    $thrown | Should -Not -Match 'dpapi\.test\.token'
+  }
+
   It 'uses the DPAPI token helper when BWS_ACCESS_TOKEN is absent and cleans up the process token' {
     Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue
     $script:bwsObservedTokens.Clear()
+    $script:bwsAccessTokenPurposes.Clear()
     $script:bwsJson = '[{"id":"3","key":"BuildMaster.Admin.API.Key","value":"from-dpapi","projectId":"p1"}]'
 
     Get-SecretATAPBitwardenSecretsManager -SecretName 'BuildMaster.Admin.API.Key' | Should -BeExactly 'from-dpapi'
 
     $script:bwsObservedTokens | Should -Contain 'dpapi.test.token'
+    $script:bwsAccessTokenPurposes | Should -Contain 'ReadOnly'
     $env:BWS_ACCESS_TOKEN | Should -BeNullOrEmpty
   }
 }
+

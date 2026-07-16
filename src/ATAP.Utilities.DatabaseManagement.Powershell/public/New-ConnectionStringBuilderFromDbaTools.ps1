@@ -183,7 +183,7 @@ function New-ConnectionStringBuilderFromDbaTools {
           if ($CredentialsKey.StartsWith('dbConnectionString')) {
             # ---------------------------------------------------------------
             # The secret-store item holds a complete Microsoft.Data.SqlClient
-            # connection string. dbConnectionString-* items are Secure Notes
+            # connection string. dbConnectionString.* items are Secure Notes
             # whose body lives in the 'password' field by Get-SecretATAP's
             # mapping (Secure Notes default 'password' -> notes body).
             # ---------------------------------------------------------------

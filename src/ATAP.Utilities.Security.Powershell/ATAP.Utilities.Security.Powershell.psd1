@@ -50,8 +50,13 @@ PowerShellVersion = '5.1'
 # Processor architecture (None, X86, Amd64) required by this module
 # ProcessorArchitecture = ''
 
-# Modules that must be imported into the global environment prior to importing this module
-# RequiredModules = @()
+# Modules that must be imported into the global environment prior to importing this module.
+# The umbrella re-exports the six Bitwarden functions and their three aliases from the Secrets
+# child (Sprint 0012 Task 12.55.b), so the child must be present. 0.1.1 is the first version whose
+# aliases actually survive the module build -- 0.1.0 declared three that nothing defined (SC-0254).
+RequiredModules = @(
+    @{ ModuleName = 'ATAP.Utilities.Security.Secrets.PowerShell'; ModuleVersion = '0.1.1' }
+  )
 
 # Assemblies that must be loaded prior to importing this module
 # RequiredAssemblies = @()
@@ -81,10 +86,10 @@ FunctionsToExport = 'Get-BitWardenCredential',
                'New-DistinguishedNameHash', 'New-EncryptedPasswordFile', 
                'New-EncryptedPrivateKey', 'New-RandomEncryptionKeyToFile', 
                'New-RandomPassPhraseToFile', 'New-SignedCertificate', 
-               'New-SSLCertificateRequest', 'Open-UsersSecretVault', 'PKIForNewOrg', 
-               'SecretVaultTesting', 'SecTesting', 'Set-BitWardenSecret', 
-               'Sync-BitWardenDedicatedSecrets', 'Test-SecretVault', 
-               'Unlock-UsersSecretVault', 'Update-KeySecurestringFile', 
+               'New-SSLCertificateRequest', 'Open-UsersSecretVault',
+               'SecTesting', 'Set-BitWardenSecret',
+               'Sync-BitWardenDedicatedSecrets',
+               'Unlock-UsersSecretVault', 'Update-KeySecurestringFile',
                'Update-MasterPasswordSecureStringFile'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.

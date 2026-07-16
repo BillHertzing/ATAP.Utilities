@@ -22,8 +22,9 @@ _Planning repository.
 
 .PARAMETER SourceWorkspacePath
 Source sprint workspace file. Defaults to the exact closing-sprint workspace
-under GitRoot, preferring Overview.SprintNNNN.code-workspace, then
-OverviewSprintNNNN.code-workspace, with legacy OverViewSprintNNNN.code-workspace
+under GitRoot, preferring Overview.Sprint.NNNN.code-workspace, then legacy
+Legacy compatibility accepts Overview.SprintNNNN.code-workspace and OverviewSprintNNNN.code-workspace, with
+legacy OverViewSprintNNNN.code-workspace
 fallback.
 
 .PARAMETER ArchiveDirectoryPath
@@ -124,6 +125,7 @@ New-OverviewSprintWorkspace
 
     if (-not $SourceWorkspacePath) {
       $sourceWorkspaceCandidates = @(
+        (Join-Path -Path $GitRoot -ChildPath "Overview.Sprint.$sprintText.code-workspace"),
         (Join-Path -Path $GitRoot -ChildPath "Overview.Sprint$sprintText.code-workspace"),
         (Join-Path -Path $GitRoot -ChildPath "OverviewSprint$sprintText.code-workspace"),
         (Join-Path -Path $GitRoot -ChildPath "OverViewSprint$sprintText.code-workspace")

@@ -20,9 +20,9 @@ the cmdlet New-ConnectionStringBuilderFromDbaTools has a large number of paramet
 
 DatabaseName - the name of the database
 
-Environment - 'Development', 'Testing', 'Production', 'Experimental'. This drives the value of SqlInstance
+Environment - 'Production', 'QA', 'Integration', 'Development', 'Experimental'. This drives the value of SqlInstance
 
-SqlInstance - the named instances 'Development', 'Testing', 'Production', corresponding to value of the 'Environment' parameter. SqlInstance is blank (left off the connection string) if thevalue of the environment parameter is 'Experimental'
+SqlInstance - the shared named instances are 'localhost\Production', 'localhost\QA', and 'localhost\Integration', corresponding to the Production, QA, and Integration environments. Development and Experimental use developer-specific instances.
 
 DatabaseServer (Alias 'HostName') - the resolvable name that identifies the computer address to use
 

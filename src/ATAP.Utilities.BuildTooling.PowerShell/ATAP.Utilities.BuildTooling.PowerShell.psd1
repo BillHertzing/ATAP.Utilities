@@ -51,7 +51,8 @@
     # ProcessorArchitecture = ''
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules      = @(@{ModuleName = 'PSFramework'; ModuleVersion = '0.1.13'; MaximumVersion = '1.999.999'; },
+    RequiredModules      = @(@{ModuleName = 'ATAP.Utilities.Powershell'; ModuleVersion = '0.1.19'; MaximumVersion = '0.999.999'; },
+        @{ModuleName = 'PSFramework'; ModuleVersion = '0.1.13'; MaximumVersion = '1.999.999'; },
         @{ModuleName = 'powershell-yaml'; ModuleVersion = '0.1.13'; MaximumVersion = '0.999.999'; })
 
     # Assemblies that must be loaded prior to importing this module
@@ -149,13 +150,13 @@
     'Resolve-FeatureSlug', 'Resolve-PSModuleMetadata',
     'Restore-SprintHistoryArtifacts',
     'Save-CopilotCheckpoint', 'Save-SprintEndSessionTail', 'Save-SprintHistoryArtifacts',
-    'Save-SprintRetrospectiveSnapshot', 'Save-SprintWorkSession',
+    'Save-SprintRetrospectiveSnapshot', 'Save-SprintWorkSession', 'Select-PSModulePesterRunResult',
     'Set-BuildMasterApplicationVariables',
     'Set-BuildMasterSprintVariables', 'Set-BuildMasterStableVariables',
     'Set-BuildMasterPipelineStageDeploymentStep', 'Set-DownstreamSharedVSCodeContext',
     'Set-FloatingPackagePins', 'Set-PowerShell7ProfileSymlink',
-    'Set-SprintBoundaryContext', 'Set-TaskComplete',
-    'Set-SprintBoundaryUserProfiles',
+    'Set-SprintBoundaryContext', 'Sync-SprintBoundaryPrimaryRoleMarker', 'Set-TaskComplete',
+    'Set-SprintBoundaryUserProfiles', 'Set-UserScopeProfile',
     'Set-WorkspaceSharedVSCodeReference', 'Set-WorktreeJunctions',
     'Start-BuildMasterDeployment', 'Start-BuildMasterModulePipelineBatch',
     'Start-BuildMasterPackagePipeline', 'Start-BuildMasterPipeline', 'Start-DebugPowerShell',
@@ -166,7 +167,7 @@
     'Test-SprintCheckpointCoverage',
     'Test-SprintEndBoundaryState', 'Test-SprintEndCommandSurface',
     'Test-SprintEndPullOverlap', 'Test-SprintEndWorktreeState',
-    'Test-SprintInfrastructureHealth', 'Test-SprintPrerequisites',
+    'Test-SprintInfrastructureHealth', 'Test-SprintPrerequisites', 'Test-PSModulePesterRunResult',
     'Update-BlocksInCsproj',
     'Update-OverviewWorkspaceStableInfo', 'Update-PackageVersion',
     'Test-ProGetFeedSet'

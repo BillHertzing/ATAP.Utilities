@@ -21,6 +21,13 @@ Describe 'module.build.ps1 package staging contract' {
     $text | Should -Match 'Publish-PSResource\s+`\s+\r?\n\s+-Path \$script:PackageSrcDir'
   }
 
+  It 'stages optional scripts and Documentation folders before packaging' {
+    $text = Get-Content -LiteralPath $script:moduleBuildPath -Raw
+
+    $text | Should -Match "\$moduleContentDirectories = @\('scripts', 'Documentation'\)"
+    $text | Should -Match 'Copy-Item -LiteralPath \$sourceContentDirectory -Destination \$script:PackageSrcDir'
+  }
+
   It 'supports a caller-supplied OutputRoot override for isolated package staging' {
     $text = Get-Content -LiteralPath $script:moduleBuildPath -Raw
 

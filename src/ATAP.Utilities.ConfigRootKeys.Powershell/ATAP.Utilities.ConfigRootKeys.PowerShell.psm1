@@ -1,8 +1,12 @@
 # ToDo : Module comment-based help
 
-# get the fileIO info for each file in the public and private subdirectories
-$publicFunctions = @(Get-ChildItem -Path $PSScriptRoot\public\*.ps1 -ErrorAction SilentlyContinue)
-$privateFunctions = @(Get-ChildItem -Path $PSScriptRoot\private\*.ps1 -ErrorAction SilentlyContinue)
+# Get the file information for each file in the public and optional private
+# subdirectories. This module currently has no private implementation folder;
+# guard the lookup so a normal Import-Module does not fail on that absence.
+$publicPath = Join-Path $PSScriptRoot 'public'
+$privatePath = Join-Path $PSScriptRoot 'private'
+$publicFunctions = @(if (Test-Path -LiteralPath $publicPath -PathType Container) { Get-ChildItem -LiteralPath $publicPath -Filter '*.ps1' -File })
+$privateFunctions = @(if (Test-Path -LiteralPath $privatePath -PathType Container) { Get-ChildItem -LiteralPath $privatePath -Filter '*.ps1' -File })
 $allFunctions = $publicFunctions + $privateFunctions
 # Dot-source the public and private files.
 foreach ($import in $allFunctions) {

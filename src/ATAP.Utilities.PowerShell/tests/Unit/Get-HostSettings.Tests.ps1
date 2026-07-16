@@ -17,8 +17,7 @@ Describe 'Get-HostSettings' -Tag 'Unit' {
       BuildMasterApplicationByModuleConfigRootKey = 'BuildMasterApplicationByModule'
     }
 
-    $script:testIacRoot = Join-Path $PSScriptRoot '_tmp_GetHostSettings_IAC'
-    Remove-Item -LiteralPath $script:testIacRoot -Recurse -Force -ErrorAction SilentlyContinue
+    $script:testIacRoot = Join-Path $PSScriptRoot ('_tmp_GetHostSettings_IAC_' + [guid]::NewGuid().ToString('N'))
     New-Item -Path $script:testIacRoot -ItemType Directory -Force | Out-Null
 
     @'
@@ -61,6 +60,33 @@ function Get-HostSettings {
     $result['ExampleConfig'] | Should -Be 'override'
     $result['HostName'] | Should -Be 'test-host'
     $result['JoinedPath'] | Should -Be (Join-Path 'C:\Temp' 'Example')
+  }
+
+  It 'retries when the resolved HostSettings script is temporarily locked' {
+    $hostSettingsPath = Join-Path $script:testIacRoot 'HostSettings.ps1'
+    $lockScript = @"
+`$stream = [System.IO.File]::Open('$($hostSettingsPath.Replace("'", "''"))', [System.IO.FileMode]::Open, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None)
+try {
+  Start-Sleep -Milliseconds 700
+} finally {
+  `$stream.Dispose()
+}
+"@
+    $encodedLockScript = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($lockScript))
+    $lockProcess = Start-Process -FilePath 'pwsh' -ArgumentList @('-EncodedCommand', $encodedLockScript) -WindowStyle Hidden -PassThru
+    Start-Sleep -Milliseconds 150
+
+    try {
+      $result = Get-HostSettings -hostName 'test-host' -IACBasePath $script:testIacRoot
+
+      $result | Should -BeOfType [hashtable]
+      $result['ExampleConfig'] | Should -Be 'override'
+    } finally {
+      if ($null -ne $lockProcess -and -not $lockProcess.HasExited) {
+        $lockProcess.Kill()
+        $lockProcess.WaitForExit()
+      }
+    }
   }
 
   It 'normalizes the reviewed BuildMaster application map to include RulesManagement' {

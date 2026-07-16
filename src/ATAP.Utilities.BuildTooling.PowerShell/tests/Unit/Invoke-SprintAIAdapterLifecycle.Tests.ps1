@@ -11,7 +11,7 @@ Describe 'Invoke-SprintAIAdapterLifecycle [public]' {
     $fakeLifecycle = @(
       'function Invoke-AIAdapterLifecycle {'
       '  [CmdletBinding(SupportsShouldProcess)]'
-      '  param($Boundary, $TargetRoot, $SourceRoot, [switch]$FixtureMode, [switch]$AllowUserGlobalWrite, [switch]$CheckpointConfirmed, $EvidenceRoot)'
+      '  param($Boundary, $TargetRoot, $SourceRoot, [switch]$FixtureMode, [switch]$AllowUserGlobalWrite, [switch]$CheckpointConfirmed, $EvidenceRoot, [switch]$OmitSprintWorktrees)'
       '  [pscustomobject]@{'
       '    Boundary = $Boundary'
       '    TargetRoot = $TargetRoot'
@@ -20,6 +20,7 @@ Describe 'Invoke-SprintAIAdapterLifecycle [public]' {
       '    AllowUserGlobalWrite = [bool]$AllowUserGlobalWrite'
       '    CheckpointConfirmed = [bool]$CheckpointConfirmed'
       '    EvidenceRoot = $EvidenceRoot'
+      '    OmitSprintWorktrees = [bool]$OmitSprintWorktrees'
       '    DriftClean = $true'
       '  }'
       '}'
@@ -57,6 +58,57 @@ Describe 'Invoke-SprintAIAdapterLifecycle [public]' {
 
     $result.AllowUserGlobalWrite | Should -BeTrue
     $result.CheckpointConfirmed | Should -BeTrue
+  }
+
+  It 'forwards OmitSprintWorktrees when the canonical lifecycle exposes it' {
+    $result = Invoke-SprintAIAdapterLifecycle `
+      -Boundary Start `
+      -TargetRoot (Join-Path $TestDrive 'stable-target') `
+      -SharedVSCodeWorktreePath $script:root `
+      -OmitSprintWorktrees `
+      -Confirm:$false
+
+    $result.OmitSprintWorktrees | Should -BeTrue
+  }
+
+  It 'falls back to direct render when the selected lifecycle lacks OmitSprintWorktrees' {
+    $fakeLifecycleWithoutSwitch = @(
+      'function Invoke-AIAdapterLifecycle {'
+      '  [CmdletBinding(SupportsShouldProcess)]'
+      '  param($Boundary, $TargetRoot, $SourceRoot, [switch]$FixtureMode, [switch]$AllowUserGlobalWrite, [switch]$CheckpointConfirmed, $EvidenceRoot)'
+      '  [pscustomobject]@{ Boundary = $Boundary; DriftClean = $true }'
+      '}'
+    ) -join "`n"
+    [IO.File]::WriteAllText(
+      (Join-Path $script:tools 'Invoke-AIAdapterLifecycle.ps1'),
+      $fakeLifecycleWithoutSwitch,
+      [Text.UTF8Encoding]::new($false))
+
+    $fakeRenderer = @(
+      'function Render-AIAdapters {'
+      '  [CmdletBinding(SupportsShouldProcess)]'
+      '  param($RegistryPath, [string[]]$Domain, $TargetRoot, $BackupRoot, [switch]$FixtureMode, [switch]$AllowUserGlobalWrite, [switch]$OmitSprintWorktrees, [switch]$Force)'
+      '  [pscustomobject]@{ Results = @([pscustomobject]@{ OmitSprintWorktrees = [bool]$OmitSprintWorktrees }); ChangedCount = 1; SkippedUserScopeCount = 0 }'
+      '}'
+    ) -join "`n"
+    [IO.File]::WriteAllText(
+      (Join-Path $script:tools 'Render-AIAdapters.ps1'),
+      $fakeRenderer,
+      [Text.UTF8Encoding]::new($false))
+
+    $manifestRoot = Join-Path $script:root '.ai/manifests'
+    New-Item -ItemType Directory -Path $manifestRoot -Force | Out-Null
+    '{}' | Set-Content -Path (Join-Path $manifestRoot 'adapter-registry.json') -Encoding UTF8
+
+    $result = Invoke-SprintAIAdapterLifecycle `
+      -Boundary Start `
+      -TargetRoot (Join-Path $TestDrive 'stable-target-fallback') `
+      -SharedVSCodeWorktreePath $script:root `
+      -OmitSprintWorktrees `
+      -Confirm:$false
+
+    $result.OmitSprintWorktrees | Should -BeTrue
+    $result.RenderResult.Results[0].OmitSprintWorktrees | Should -BeTrue
   }
 
   It 'fails clearly when the canonical adapter lifecycle tool is absent' {

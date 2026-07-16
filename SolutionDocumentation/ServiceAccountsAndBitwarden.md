@@ -8,6 +8,46 @@
 
 ---
 
+## Current BWS token-purpose baseline (Task 12.53)
+
+BuildTooling's Bitwarden Secrets Manager path now uses two purpose-specific DPAPI token
+slots under `C:\ProgramData\ATAP\BitwardenCredentials\<SamAccountName>`:
+
+| Token purpose | Token label | Who needs it |
+| --- | --- | --- |
+| `ReadOnly` | `CommonCIForBitwardenReadOnly` | Every developer or service account that reads BWS secrets |
+| `ReadWrite` | `CommonCIForBitwardenReadWrite` | Only explicitly authorized maintainer or provisioning identities that create, update, delete, or rotate BWS secrets |
+
+The current documentation baseline is "read everywhere, write only where justified." Task
+12.54.a remains the live-review gate for which identities actually receive the optional
+`ReadWrite` slot on a given host.
+
+### Task 12.49 approved profile and Bitwarden scope
+
+The complete service-account set that requires both a managed PowerShell profile
+and Bitwarden Secrets Manager ReadOnly access is `SvcBuildMaster`, `SvcProGet`,
+`SvcSeq`, `SvcSQLServer`, and `SvcParityAudit`. Registry discovery is an
+inventory input; it must not expand this approved provisioning scope without a
+new user decision.
+
+### Recommended identity matrix
+
+| Windows identity | Needs `ReadOnly` | Needs `ReadWrite` | Notes |
+| --- | --- | --- | --- |
+| `SvcBuildMaster` | Yes | Only if BuildMaster on that host creates or rotates BWS secrets | Default runtime/build reads |
+| `SvcProGet` | Yes | No by default | Runtime/package-feed reads only |
+| `SvcSeq` | Yes | No by default | SEQ runtime/configuration reads only |
+| `SvcSQLServer` | Yes | No by default | SQL Server runtime/configuration reads only |
+| `SvcParityAudit` | Yes | No by default | Parity-audit automation reads only |
+| Trusted maintainer developer workstation | Yes | Optional | Provision `ReadWrite` only when that workstation performs secret maintenance |
+| Non-maintainer developer workstation | Yes | No | Normal development and validation only |
+
+See [Runbook-BitwardenServiceAccounts.md](Runbook-BitwardenServiceAccounts.md) for the
+authoritative provisioning sequence and [NewComputerSetup.md](NewComputerSetup.md) for the
+linear onboarding checklist.
+
+---
+
 ## Purpose
 
 This document records research findings, decision drivers, considered alternatives,
@@ -23,14 +63,15 @@ Several ATAP ecosystem services run as dedicated Windows service accounts:
 
 | Service                 | Windows Service Account |
 | ----------------------- | ----------------------- |
-| BuildMaster             | `SvcBuildmaster`        |
+| BuildMaster             | `SvcBuildMaster`        |
 | ProGet                  | `SvcProGet`             |
-| Jenkins                 | `JenkinsAgentSrvAcct`   |
-| SEQ (log listener)      | `SeqDefaultInstance`    |
-| Ansible (AWX/Semaphore) | `ansibleAdmin`          |
+| SEQ (log listener)      | `SvcSeq`                |
+| SQL Server              | `SvcSQLServer`          |
+| Parity audit            | `SvcParityAudit`        |
 
-All of these services need to read secrets from the Bitwarden vault — for example,
-database connection credentials, API keys, and inter-service authentication tokens.
+These five services need to read secrets from Bitwarden — for example, database
+connection credentials, API keys, and inter-service authentication tokens. They
+are also the complete Task 12.49 user-scope-profile provisioning set.
 
 ### Existing Infrastructure
 
@@ -89,7 +130,7 @@ The following cmdlets are involved:
   recovery path is the scheduled refresh task; a second ad-hoc refresh task remains a
   follow-up item to evaluate.
 - **Alternatives are retained for future reference** in
-  [ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md).
+  [ServiceAccountsAndBitwarden-AlternativesConsidered.md](ServiceAccountsAndBitwarden-AlternativesConsidered.md).
 
 These choices move the document from open-ended research toward an implementation-ready
 decision record while preserving the discarded and deferred options.
@@ -428,7 +469,7 @@ Bitwarden Secrets Manager is the architecturally cleaner option for service acco
 is **not available on the current Bitwarden Free tier** and is therefore deferred. The
 full description of the Secrets Manager model, official Bitwarden guidance, pros/cons,
 and the revisit trigger are recorded in
-[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md#bitwarden-secrets-manager).
+[ServiceAccountsAndBitwarden-AlternativesConsidered.md](ServiceAccountsAndBitwarden-AlternativesConsidered.md#bitwarden-secrets-manager).
 
 ### Service-Specific Secret Injection Patterns
 
@@ -499,7 +540,7 @@ Ansible Tower / AWX has a **Credentials** framework:
 **Completed:** 2026-05-25
 
 **Note:** Detailed evaluations of the discarded and deferred patterns have moved to
-[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md).
+[ServiceAccountsAndBitwarden-AlternativesConsidered.md](ServiceAccountsAndBitwarden-AlternativesConsidered.md).
 The selected pattern (Pattern 1: DPAPI + startup unlock) is documented in full below.
 Patterns 2–6 retain a short verdict line and a link to their full evaluation.
 
@@ -551,35 +592,35 @@ D-01 through D-03 and I-01 through I-02.
 #### Pattern 2: Windows Credential Manager
 
 **Verdict:** Discarded — offers no material advantage over Pattern 1. See
-[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md#windows-credential-manager)
+[ServiceAccountsAndBitwarden-AlternativesConsidered.md](ServiceAccountsAndBitwarden-AlternativesConsidered.md#windows-credential-manager)
 for the full evaluation.
 
 #### Pattern 3: Bitwarden Secrets Manager
 
 **Verdict:** Architecturally superior; deferred because the current Bitwarden
 organization is on the Free tier. See
-[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md#bitwarden-secrets-manager)
+[ServiceAccountsAndBitwarden-AlternativesConsidered.md](ServiceAccountsAndBitwarden-AlternativesConsidered.md#bitwarden-secrets-manager)
 for the full evaluation and revisit trigger.
 
 #### Pattern 4: HashiCorp Vault
 
 **Verdict:** Rejected — disproportionate operational overhead for current ATAP scale.
 See
-[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md#hashicorp-vault)
+[ServiceAccountsAndBitwarden-AlternativesConsidered.md](ServiceAccountsAndBitwarden-AlternativesConsidered.md#hashicorp-vault)
 for the full evaluation.
 
 #### Pattern 5: Per-Service Env-Var Injection at Startup
 
 **Verdict:** Rejected — machine-scope `BW_SESSION` has unacceptable blast radius for
 production multi-service hosts. See
-[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md#machine-scope-bw_session)
+[ServiceAccountsAndBitwarden-AlternativesConsidered.md](ServiceAccountsAndBitwarden-AlternativesConsidered.md#machine-scope-bw_session)
 for the full evaluation.
 
 #### Pattern 6: Named Pipe / Local HTTPS Proxy
 
 **Verdict:** Rejected — adds custom infrastructure and a new single point of failure
 without enough benefit. See
-[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md#named-pipe-local-https-proxy)
+[ServiceAccountsAndBitwarden-AlternativesConsidered.md](ServiceAccountsAndBitwarden-AlternativesConsidered.md#named-pipe-local-https-proxy)
 for the full evaluation.
 
 ### R-04 Findings Summary
@@ -770,7 +811,7 @@ Based on the research findings, the key factors driving the architecture decisio
 
 See [R-04](#r-04-alternative-patterns-evaluation) for the in-document research matrix,
 or use the decision companion file
-[ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md)
+[ServiceAccountsAndBitwarden-AlternativesConsidered.md](ServiceAccountsAndBitwarden-AlternativesConsidered.md)
 for the condensed list of discarded and deferred alternatives.
 
 **Short list:**
@@ -827,6 +868,14 @@ That section is the authoritative checklist (9.4.1 → 9.4.9) and covers:
 When the Ansible controller does exist, the same outcome is produced by the
 `ansibleAdmin` first-boot provisioning model described in
 [R-02](#r-02-dpapi-credential-file-approach-for-service-accounts-evaluation).
+
+For the current BWS machine-token path, that manual/bootstrap flow means:
+
+1. Provision `CommonCIForBitwardenReadOnly` for every identity that reads secrets.
+2. Provision `CommonCIForBitwardenReadWrite` only for explicitly approved
+   maintainer/provisioning identities on trusted hosts.
+3. Never persist `BWS_ACCESS_TOKEN` at User or Machine scope; it may exist only in
+   process scope long enough to invoke `bws`.
 
 ### Important Note about `--passwordfile`
 
@@ -947,5 +996,5 @@ mandates managed service account credentials.
 - [src/ATAP.Utilities.PowerShell/Profiles/LoginScript.ps1](../src/ATAP.Utilities.PowerShell/Profiles/LoginScript.ps1)
 - [Bitwarden CLI Documentation](https://bitwarden.com/help/cli/)
 - [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/)
-- [ServiceAccountsAndBitwarden.-AlternativesConsidered.md](ServiceAccountsAndBitwarden.-AlternativesConsidered.md)
+- [ServiceAccountsAndBitwarden-AlternativesConsidered.md](ServiceAccountsAndBitwarden-AlternativesConsidered.md)
 - `.github/instructions/Bitwarden.instructions.md`

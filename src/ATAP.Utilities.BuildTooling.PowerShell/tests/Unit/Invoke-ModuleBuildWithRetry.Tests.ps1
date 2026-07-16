@@ -28,4 +28,15 @@ Describe 'Invoke-ModuleBuildWithRetry retry policy' {
     $text | Should -Match '\$invokeBuildParameters\[''OutputRoot''\] = \$OutputRoot'
     $text | Should -Match 'Invoke-Build \$Task @invokeBuildParameters'
   }
+
+  It 'uses the imported configuration helper before attempting the source-tree fallback' {
+    $text = Get-Content -LiteralPath $script:functionPath -Raw
+
+    $guardIndex = $text.IndexOf("Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot'")
+    $fallbackIndex = $text.IndexOf("Source helper file not found: `$neoConfigurationPath")
+
+    $guardIndex | Should -BeGreaterThan -1
+    $fallbackIndex | Should -BeGreaterThan $guardIndex
+    $text | Should -Match "if \(-not \(Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue\)\)"
+  }
 }

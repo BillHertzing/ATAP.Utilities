@@ -24,6 +24,18 @@ BeforeAll {
     return ''
   }
 
+  $script:bwsAccessTokenPurposes = [System.Collections.ArrayList]::new()
+  function global:Get-BWSAccessToken {
+    param(
+      [Parameter()]
+      [ValidateSet('ReadOnly', 'ReadWrite')]
+      [string]$TokenPurpose = 'ReadOnly'
+    )
+    [void]$script:bwsAccessTokenPurposes.Add($TokenPurpose)
+    $secureToken = ConvertTo-SecureString -String 'dpapi.new-secret-writer-token' -AsPlainText -Force
+    [System.Management.Automation.PSCredential]::new('BWS_ACCESS_TOKEN', $secureToken)
+  }
+
   # The descriptor helper (single source of truth for format + classification).
   . "$PSScriptRoot\..\..\public\Get-DbConnectionStringSecretDescriptor.ps1"
   . "$PSScriptRoot\..\..\public\New-SprintBitwardenSecrets.ps1"
@@ -38,6 +50,10 @@ Describe 'New-SprintBitwardenSecrets [public]' {
     Remove-Item Env:BW_SESSION -ErrorAction SilentlyContinue
     $script:oldBwsToken = $env:BWS_ACCESS_TOKEN
     $env:BWS_ACCESS_TOKEN = 'test-machine-token'
+  }
+
+  AfterAll {
+    Remove-Item Function:Get-BWSAccessToken -ErrorAction SilentlyContinue
   }
 
   AfterEach {
@@ -59,8 +75,8 @@ Describe 'New-SprintBitwardenSecrets [public]' {
       $result.created | Should -Be @($true, $true)
       $result.classification | Should -Be @('derivable', 'derivable')
       $result.secretName | Should -Be @(
-        'dbConnectionString-master-localhost-Dev-tester',
-        'dbConnectionString-master-localhost-Exp-tester'
+        'dbConnectionString.master.localhost.Dev.tester',
+        'dbConnectionString.master.localhost.Exp.tester'
       )
       $createCalls = @($script:bwsCalls | Where-Object { $_ -like 'secret create *' })
       $createCalls.Count | Should -Be 2
@@ -82,7 +98,7 @@ Describe 'New-SprintBitwardenSecrets [public]' {
 
     It 'skips creation when the secret key already exists (idempotency)' {
       $script:bwsSecretInventory = @(
-        [PSCustomObject]@{ id = 'id-dev'; key = 'dbConnectionString-master-localhost-Dev-tester' }
+        [PSCustomObject]@{ id = 'id-dev'; key = 'dbConnectionString.master.localhost.Dev.tester' }
       )
       $result = New-SprintBitwardenSecrets `
         -SprintNumber '0008' `
@@ -105,6 +121,21 @@ Describe 'New-SprintBitwardenSecrets [public]' {
         -WhatIf | Out-Null
 
       @($script:bwsCalls | Where-Object { $_ -like 'secret create *' }).Count | Should -Be 0
+    }
+
+    It 'requests the ReadWrite DPAPI slot when the process token is absent' {
+      Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue
+
+      New-SprintBitwardenSecrets `
+        -SprintNumber '0008' `
+        -DeveloperUsername 'tester' `
+        -HostList @('localhost') `
+        -Databases @('master') `
+        -ProjectId 'explicit-proj-id' `
+        -Confirm:$false | Out-Null
+
+      $script:bwsAccessTokenPurposes | Should -Contain 'ReadWrite'
+      $env:BWS_ACCESS_TOKEN | Should -BeNullOrEmpty
     }
 
     It 'honors an explicit -ProjectId without calling bws project list' {
@@ -137,3 +168,4 @@ Describe 'New-SprintBitwardenSecrets [public]' {
     }
   }
 }
+

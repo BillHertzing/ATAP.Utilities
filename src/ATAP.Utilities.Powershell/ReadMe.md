@@ -30,6 +30,17 @@ Profiles intentionally do not load or call this helper; startup tasks or explici
 BuildMaster, service-account, database, and project/runtime secrets must continue to
 use Bitwarden Secrets Manager through `Get-SecretATAP` / `bws`.
 
+## Profiled PowerShell 7 remoting repair (Task 12.63)
+
+`Register-ProfiledRemotingEndpoint` and `Unregister-ProfiledRemotingEndpoint`
+always launch a remote detached operation with the explicit target
+`C:\Program Files\PowerShell\7\pwsh.exe` path. They must never inherit the unnamed
+default WinRM endpoint's executable, because that endpoint is commonly Windows
+PowerShell 5.1. The registration path stages the `.pssc` as base64 bytes instead
+of `Copy-Item -ToSession`, avoiding the PowerShell 7.6 `-Encoding Byte` remoting
+regression. A legacy 5.1 plug-in under the managed endpoint name is removed only
+when its registry configuration explicitly identifies `PSVersion` 5.1.
+
 ## BuildMaster module routing normalization (Task 11.22)
 
 `Get-HostSettings` now normalizes the reviewed
@@ -106,4 +117,6 @@ Use the module-level getting started guide for the lifecycle workflow:
 
 - Version bumped to 0.1.10 in Sprint 11 for the Initialize-BitwardenSession module move.
 
+## Functional area
 
+Core PowerShell Utilities - this module's ReadMe is the area START-HERE (area created 2026-07-07, Sprint 0012 Task 12.46.g user decision) (area assigned 2026-07-07, Sprint 0012 Task 12.46.g)

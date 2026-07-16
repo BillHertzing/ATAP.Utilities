@@ -331,6 +331,16 @@ function Invoke-PromotedModuleTests {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Promoted module restored; manifest at '$savedModulePath'"
 
             # ---- Step 2: import the promoted module (it is the SUT) --------
+            # A BuildMaster execution can exercise several tiers in one pwsh
+            # process. Remove the prior tier's copy before importing the next
+            # restored path; PowerShell otherwise permits same-name modules
+            # from different paths to remain loaded simultaneously.
+            Remove-Module -Name $Name -Force -ErrorAction SilentlyContinue
+            $remainingCopies = @(Get-Module -Name $Name -All)
+            if ($remainingCopies.Count -ne 0) {
+                $remainingPaths = $remainingCopies | ForEach-Object { $_.Path } | Sort-Object -Unique
+                throw "Unable to isolate promoted module '$Name'; loaded copy or copies remain: $($remainingPaths -join ', ')"
+            }
             Import-Module -Name $savedModulePath -Force -ErrorAction Stop
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Imported promoted module $target"
 
@@ -398,6 +408,7 @@ function Invoke-PromotedModuleTests {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errMsg
             throw
         } finally {
+            Remove-Module -Name $Name -Force -ErrorAction SilentlyContinue
             Pop-Location
         }
     }

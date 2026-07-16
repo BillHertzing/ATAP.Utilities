@@ -10,7 +10,7 @@ Describe 'Remove-OverviewSprintWorkspace [public]' {
     $script:planningRoot = Join-Path $script:tempDir '_Planning'
     New-Item -ItemType Directory -Path $script:planningRoot -Force | Out-Null
 
-    $script:sourceWorkspace = Join-Path $script:tempDir 'OverviewSprint0007.code-workspace'
+    $script:sourceWorkspace = Join-Path $script:tempDir 'Overview.Sprint0007.code-workspace'
     @'
 {
   "folders": [
@@ -33,7 +33,7 @@ Describe 'Remove-OverviewSprintWorkspace [public]' {
 
   It 'archives the default sprint workspace into the planning archive directory' {
     $result = Remove-OverviewSprintWorkspace -SprintNumber 7 -GitRoot $script:tempDir -Confirm:$false
-    $archivePath = Join-Path $script:planningRoot 'SprintRetrospective\WorkspaceArchive\OverviewSprint0007.code-workspace'
+    $archivePath = Join-Path $script:planningRoot 'SprintRetrospective\WorkspaceArchive\Overview.Sprint0007.code-workspace'
 
     $result.WasArchived | Should -BeTrue
     $result.SourceRemoved | Should -BeTrue
@@ -105,7 +105,7 @@ Describe 'Remove-OverviewSprintWorkspace [public]' {
   It 'removes the source when an identical archive target already exists' {
     $archiveDirectory = Join-Path $script:planningRoot 'SprintRetrospective\WorkspaceArchive'
     New-Item -ItemType Directory -Path $archiveDirectory -Force | Out-Null
-    $archivePath = Join-Path $archiveDirectory 'OverviewSprint0007.code-workspace'
+    $archivePath = Join-Path $archiveDirectory 'Overview.Sprint0007.code-workspace'
     Copy-Item -LiteralPath $script:sourceWorkspace -Destination $archivePath
 
     $result = Remove-OverviewSprintWorkspace -SprintNumber 7 -GitRoot $script:tempDir -Confirm:$false
@@ -121,7 +121,7 @@ Describe 'Remove-OverviewSprintWorkspace [public]' {
   It 'refuses to overwrite a different archived workspace' {
     $archiveDirectory = Join-Path $script:planningRoot 'SprintRetrospective\WorkspaceArchive'
     New-Item -ItemType Directory -Path $archiveDirectory -Force | Out-Null
-    $archivePath = Join-Path $archiveDirectory 'OverviewSprint0007.code-workspace'
+    $archivePath = Join-Path $archiveDirectory 'Overview.Sprint0007.code-workspace'
     'different content' | Set-Content -LiteralPath $archivePath -Encoding UTF8
 
     { Remove-OverviewSprintWorkspace -SprintNumber 7 -GitRoot $script:tempDir -Confirm:$false } |

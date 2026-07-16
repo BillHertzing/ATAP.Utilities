@@ -223,6 +223,53 @@ Describe 'Save-SprintWorkSession' {
     }
   }
 
+  Context 'Task 12.29 — Claude project slug directory casing' {
+
+    It 'records and copies memory from the actual on-disk Claude project directory casing' {
+      $customClaudeRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-case-' + [guid]::NewGuid().ToString('N'))
+      $customPlanRoot   = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-plan-' + [guid]::NewGuid().ToString('N'))
+
+      $expectedLowerSlug = ($script:atapWt.Substring(0, 1).ToLower() + $script:atapWt.Substring(1)) `
+        -replace ':', '-' -replace '\\', '-' -replace '_', '-' -replace '\.', '-' -replace '^-', ''
+      $actualSlug = $expectedLowerSlug.Substring(0, 1).ToUpper() + $expectedLowerSlug.Substring(1)
+
+      $actualSessionDir = Join-Path $customClaudeRoot $actualSlug
+      $actualMemoryDir = Join-Path $actualSessionDir 'memory'
+      New-Item -ItemType Directory -Path $actualMemoryDir, $customPlanRoot -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $actualSessionDir 'case-test.jsonl') `
+        -Value '{"role":"user","content":"case"}' -Encoding UTF8
+      Set-Content -LiteralPath (Join-Path $actualMemoryDir 'case-memory.md') `
+        -Value '# case memory' -Encoding UTF8
+
+      $savedLocation = Get-Location
+      Set-Location $script:atapWt
+      try {
+        $savedSettings = $global:settings
+        try {
+          $global:settings = $null
+
+          Save-SprintWorkSession `
+            -SprintN $script:sprintNumber `
+            -PlanningRoot $customPlanRoot `
+            -ClaudeProjectsRoot $customClaudeRoot `
+            -GitHubRoot $script:gitRoot `
+            -Confirm:$false
+
+          $rosterPath = Join-Path $customPlanRoot "SprintWorkSessionRoster\SprintWorkSessionRoster-$($script:sprintNumber).jsonl"
+          $entry = Get-Content -LiteralPath $rosterPath | Select-Object -Last 1 | ConvertFrom-Json
+          $entry.MemorySourcePath | Should -BeExactly $actualMemoryDir
+          $entry.MemorySnapshotCreated | Should -BeTrue
+          Test-Path -LiteralPath (Join-Path $entry.MemorySnapshotPath 'case-memory.md') | Should -BeTrue
+        } finally {
+          $global:settings = $savedSettings
+        }
+      } finally {
+        Set-Location $savedLocation
+        Remove-Item -Recurse -Force $customClaudeRoot, $customPlanRoot -ErrorAction SilentlyContinue
+      }
+    }
+  }
+
   Context 'auto-detection — branch name and planning worktree resolution' {
 
     It 'auto-detects sprint number from branch name matching ^\d+-sprint-(\d{4})' {
@@ -603,6 +650,37 @@ Describe 'Save-SprintWorkSession' {
 
         $script:ccCalled | Should -BeTrue
         $script:ccFile | Should -Be $tmpConv
+      } finally {
+        Set-Location $savedLocation
+        Remove-Item -LiteralPath $tmpConv -ErrorAction SilentlyContinue
+        if (Test-Path -LiteralPath 'Function:\Save-CopilotCheckpoint') {
+          Remove-Item -LiteralPath 'Function:\Save-CopilotCheckpoint' -ErrorAction SilentlyContinue
+        }
+      }
+    }
+
+    It 'writes a canonical roster entry through the Copilot checkpoint path' {
+      $copilotFunctionPath = Join-Path $PSScriptRoot '..\..\public\Save-CopilotCheckpoint.ps1'
+      . $copilotFunctionPath
+      $tmpConv = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-cop-roster-' + [guid]::NewGuid().ToString('N') + '.md')
+      $missingMemoryRoot = Join-Path $script:gitRoot 'copilot-memory-does-not-exist'
+      Set-Content -LiteralPath $tmpConv -Value '# conversation' -Encoding UTF8
+
+      $savedLocation = Get-Location
+      Set-Location $script:atapWt
+      try {
+        Save-CopilotCheckpoint `
+          -ConversationFile $tmpConv `
+          -SprintN $script:sprintNumber -PlanningRoot $script:planningWt -GitHubRoot $script:gitRoot `
+          -CopilotMemoryRoot $missingMemoryRoot -Confirm:$false
+
+        $rosterPath = Join-Path $script:planningWt "SprintWorkSessionRoster\SprintWorkSessionRoster-$($script:sprintNumber).jsonl"
+        $entry = Get-Content -LiteralPath $rosterPath | Select-Object -Last 1 | ConvertFrom-Json
+        $entry.Agent | Should -Be 'Copilot'
+        $entry.ConversationArchiveCreated | Should -BeTrue
+        (Test-Path -LiteralPath $entry.ConversationArchivePath) | Should -BeTrue
+        $entry.MemorySnapshotCreated | Should -BeFalse
+        $entry.MemorySkipReason | Should -Match 'Memory directory not found'
       } finally {
         Set-Location $savedLocation
         Remove-Item -LiteralPath $tmpConv -ErrorAction SilentlyContinue

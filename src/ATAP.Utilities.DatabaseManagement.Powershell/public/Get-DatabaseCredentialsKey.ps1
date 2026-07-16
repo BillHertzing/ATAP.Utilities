@@ -9,10 +9,10 @@ function Get-DatabaseCredentialsKey {
   Environment) tuple, following the ecosystem naming scheme:
 
     Permanent tiers (Production, QA, Integration):
-      dbConnectionString-<DatabaseName>-<DatabaseHost>-<Environment>
+      dbConnectionString.<DatabaseName>.<DatabaseHost>.<Environment>
 
     Per-sprint tiers (Development/Dev, Experimental/Exp):
-      dbConnectionString-<DatabaseName>-<DatabaseHost>-<Environment>-<UserName>
+      dbConnectionString.<DatabaseName>.<DatabaseHost>.<Environment>.<UserName>
 
   The returned string is suitable for use as the -SecretName argument to
   Get-SecretATAP, or as the CredentialsKey setting value in
@@ -46,15 +46,15 @@ function Get-DatabaseCredentialsKey {
 
   .EXAMPLE
   Get-DatabaseCredentialsKey -DatabaseName 'ATAPUtilities' -DatabaseHost 'localhost' -Environment 'Development'
-  # Returns: dbConnectionString-ATAPUtilities-localhost-Dev-<current username>
+  # Returns: dbConnectionString.ATAPUtilities.localhost.Dev.<current username>
 
   .EXAMPLE
   Get-DatabaseCredentialsKey -DatabaseName 'AceCommander' -DatabaseHost 'sqlserver01' -Environment 'Production'
-  # Returns: dbConnectionString-AceCommander-sqlserver01-Production
+  # Returns: dbConnectionString.AceCommander.sqlserver01.Production
 
   .EXAMPLE
   Get-DatabaseCredentialsKey -DatabaseName 'ATAPUtilities' -DatabaseHost 'localhost' -Environment 'Experimental' -UserName 'jsmith'
-  # Returns: dbConnectionString-ATAPUtilities-localhost-Exp-jsmith
+  # Returns: dbConnectionString.ATAPUtilities.localhost.Exp.jsmith
 
   .NOTES
   Naming scheme defined in 5TierRemainingTasks.md §6 and §4.3.
@@ -102,12 +102,12 @@ function Get-DatabaseCredentialsKey {
       if ([string]::IsNullOrWhiteSpace($UserName)) {
         $UserName = $env:USERNAME
       }
-      $key = "dbConnectionString-$DatabaseName-$DatabaseHost-$tierToken-$UserName"
+      $key = "dbConnectionString.$DatabaseName.$DatabaseHost.$tierToken.$UserName"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
         -Message "Computed per-sprint CredentialsKey: $key" -Tag 'ConnectionString'
     } else {
       # Permanent secret: no username suffix
-      $key = "dbConnectionString-$DatabaseName-$DatabaseHost-$tierToken"
+      $key = "dbConnectionString.$DatabaseName.$DatabaseHost.$tierToken"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
         -Message "Computed permanent CredentialsKey: $key" -Tag 'ConnectionString'
     }

@@ -1,7 +1,7 @@
 # Generic Plugin Architecture for ATAP.Utilities
 
 > **Status:** Architecture specification, April 2026
-> **Related documents:** [SecretsPluginArchitecture.md](SecretsPluginArchitecture.md) - [PLugin Creation Prompt.md](PLugin%20Creation%20Prompt.md) - [architecture-overview.md](architecture-overview.md)
+> **Related documents:** [SecretsPluginArchitecture.md](SecretsPluginArchitecture.md) - [Plugin-Creation-Prompt.md](ReviewedAndArchived/Plugin-Creation-Prompt.md) (archived) - [architecture-overview.md](architecture-overview.md)
 > **Primary source packages:** `ATAP.Utilities.Plugin`, `ATAP.Utilities.Loader`, `ATAP.Utilities.Serializer` (reference implementation)
 > **Legacy reference:** [Ace PluginArchitecture.md](../../Ace/Doc/PluginArchitecture.md)
 

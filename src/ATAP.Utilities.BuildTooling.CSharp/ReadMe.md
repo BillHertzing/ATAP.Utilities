@@ -8,6 +8,18 @@ This project provides:
 an additional Targets file that can be imported in a project's build definition (.csproj)
 a .dll file that contains additional MSBuild Task definitions written in CSharp
 
+Repository-wide C# build health checks run through
+`Build\Invoke-RepoHealthGate.ps1` after restore and before pack or publish.
+Those checks live outside this project and outside PowerShell module package
+tests because they audit shared `Directory.Build.props` behavior across the
+repository.
+
+Repository-wide C# build health checks run through
+`Build\Invoke-RepoHealthGate.ps1` after restore and before pack or publish.
+Those checks live outside this project and outside PowerShell module package
+tests because they audit shared `Directory.Build.props` behavior across the
+repository.
+
 ## ATAP.Utilities.BuildTooling.Targets
 
 This is a .targets file that can be imported into a project, either by inclusion in a .csproj file, or solution-wide by inclusion in to a Directory.Build.props file

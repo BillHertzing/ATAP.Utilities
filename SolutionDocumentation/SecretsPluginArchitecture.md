@@ -1,7 +1,7 @@
 # Secrets Plugin Family Architecture
 
 > **Status:** Architecture specification, April 2026
-> **Related documents:** [GenericPluginArchitecture.md](GenericPluginArchitecture.md) - [PLugin Creation Prompt.md](PLugin%20Creation%20Prompt.md)
+> **Related documents:** [GenericPluginArchitecture.md](GenericPluginArchitecture.md) - [Plugin-Creation-Prompt.md](ReviewedAndArchived/Plugin-Creation-Prompt.md) (archived)
 > **Primary source packages:** `ATAP.Utilities.Secrets`, `ATAP.Utilities.Secrets.Shim.Bitwarden`, `ATAP.Utilities.Loader`
 > **Existing implementations being consolidated:**
 >

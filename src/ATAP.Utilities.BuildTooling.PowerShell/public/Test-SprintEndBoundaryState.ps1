@@ -37,6 +37,15 @@ function Test-SprintEndBoundaryState {
   .PARAMETER TestFreshShell
   Starts a profile-enabled PowerShell process and fails on profile error text.
 
+  .PARAMETER ServiceAccountCredential
+  Credentials used to run a fresh PowerShell 7 process as managed service
+  accounts. UserName must match the discovered service-account identity, with
+  or without a domain prefix.
+
+  .PARAMETER RequireServiceAccountFreshShell
+  Treat a managed service-account profile as failed when no matching credential
+  is supplied for the fresh-shell check.
+
   .PARAMETER ThrowOnFailure
   Throws when the boundary audit is not clean.
 
@@ -84,6 +93,12 @@ function Test-SprintEndBoundaryState {
     [switch]$TestFreshShell,
 
     [Parameter()]
+    [pscredential[]]$ServiceAccountCredential = @(),
+
+    [Parameter()]
+    [switch]$RequireServiceAccountFreshShell,
+
+    [Parameter()]
     [switch]$ThrowOnFailure
   )
 
@@ -94,6 +109,12 @@ function Test-SprintEndBoundaryState {
 
     if (-not (Get-Command -Name 'Set-SprintBoundaryUserProfiles' -CommandType Function -ErrorAction SilentlyContinue)) {
       $helperPath = Join-Path $PSScriptRoot 'Set-SprintBoundaryUserProfiles.ps1'
+      if (Test-Path -LiteralPath $helperPath -PathType Leaf) {
+        . $helperPath
+      }
+    }
+    if (-not (Get-Command -Name 'Invoke-SprintEndServiceAccountFreshShell' -CommandType Function -ErrorAction SilentlyContinue)) {
+      $helperPath = Join-Path (Split-Path -Path $PSScriptRoot -Parent) 'private\Invoke-SprintEndServiceAccountFreshShell.ps1'
       if (Test-Path -LiteralPath $helperPath -PathType Leaf) {
         . $helperPath
       }
@@ -158,6 +179,14 @@ function Test-SprintEndBoundaryState {
         [void]$allProfilePaths.Add($managedProfilePath)
       }
     }
+    $credentialByName = @{}
+    foreach ($credential in @($ServiceAccountCredential | Where-Object { $_ })) {
+      $rawName = [string]$credential.UserName
+      $shortName = if ($rawName -match '^(?:[^\\]+\\)?(?<Name>[^\\]+)$') { $Matches.Name } else { $rawName }
+      foreach ($name in @($rawName, $shortName) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }) {
+        $credentialByName[$name.ToLowerInvariant()] = $credential
+      }
+    }
 
     $profileResults = foreach ($profilePath in $allProfilePaths) {
       $managedDefinition = @($managedProfileDefinitions | Where-Object { $_.ProfilePath -eq $profilePath } | Select-Object -First 1)
@@ -199,6 +228,36 @@ function Test-SprintEndBoundaryState {
       } else {
         $false
       }
+      $serviceAccountFreshShell = [PSCustomObject]@{
+        Tested = $false
+        Ok = $true
+        CredentialSupplied = $false
+        Required = $false
+        ExitCode = $null
+        Output = @()
+      }
+      if ($TestFreshShell -and $managedDefinition -and $managedDefinition.Kind -eq 'ServiceAccount') {
+        $identity = [string]$managedDefinition.Identity
+        $credential = if (-not [string]::IsNullOrWhiteSpace($identity)) {
+          $credentialByName[$identity.ToLowerInvariant()]
+        } else {
+          $null
+        }
+        if ($credential) {
+          $serviceAccountFreshShell = Invoke-SprintEndServiceAccountFreshShell -Credential $credential -Identity $identity
+          $serviceAccountFreshShell | Add-Member -NotePropertyName CredentialSupplied -NotePropertyValue $true -Force
+          $serviceAccountFreshShell | Add-Member -NotePropertyName Required -NotePropertyValue ([bool]$RequireServiceAccountFreshShell) -Force
+        } else {
+          $serviceAccountFreshShell = [PSCustomObject]@{
+            Tested = $false
+            Ok = -not [bool]$RequireServiceAccountFreshShell
+            CredentialSupplied = $false
+            Required = [bool]$RequireServiceAccountFreshShell
+            ExitCode = $null
+            Output = @("No credential supplied for service account '$identity'.")
+          }
+        }
+      }
 
       [PSCustomObject]@{
         Path                 = $profilePath
@@ -210,6 +269,7 @@ function Test-SprintEndBoundaryState {
         MatchesSource        = $matchesSource
         ContainsSprintReference = $containsSprintReference
         FreshShellReadable   = $freshShellReadable
+        ServiceAccountFreshShell = $serviceAccountFreshShell
         Skipped              = if ($managedDefinition) { [bool]$managedDefinition.Skipped } else { $false }
         Warning              = if ($managedDefinition) { $managedDefinition.Warning } else { $null }
       }
@@ -250,7 +310,8 @@ function Test-SprintEndBoundaryState {
             -not $_.Exists -or
             -not $_.MatchesSource -or
             $_.ContainsSprintReference -or
-            -not $_.FreshShellReadable
+            -not $_.FreshShellReadable -or
+            -not $_.ServiceAccountFreshShell.Ok
           )
         }
     )

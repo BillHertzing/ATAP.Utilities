@@ -7,7 +7,8 @@ function New-HostSettingsForPackageRepositoryFeeds {
 
     [Parameter()]
     [ValidateNotNullOrEmpty()]
-    [string]$HostSettingsFragmentPath = "C:\Dropbox\whertzing\GitHub\ATAP.IAC\Windows\HostSettings.Fragment.PackageRepositories.ps1",
+    # Default retargeted 2026-07-07 (Task 12.46.d): the pre-rename Windows\HostSettings.Fragment.* path no longer exists
+    [string]$HostSettingsFragmentPath = "C:\Dropbox\whertzing\GitHub\ATAP.IAC\Windows\HostSettings.IAC.Fragments\HostSettings.IAC.Fragment.PackageRepositories.ps1",
 
     [Parameter()]
     [int]$Base = 50000

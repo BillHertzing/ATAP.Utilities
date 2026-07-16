@@ -1,5 +1,42 @@
 # SolutionDocumentation Index
 
+## Functional Area Map (START HERE per area)
+
+Added 2026-07-06 (Sprint 0012 Task 12.45.e, `PlanDocumentationReorganization.md` 4.a;
+area list approved by the user 2026-07-06). Each functional area of the ecosystem has
+exactly one START-HERE (highest-level) document; the annotated sections further below
+carry the per-file detail.
+
+| Functional area                       | START HERE                                     | Also in this area (selection)                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| C# Build & Packaging                  | `CSharp-Packages-Build-Process.md`             | CSharp-Packages-{Versioning,Test-Process,Pack-and-Push}, CSharp-Central-Package-Management, BuildTooling-MSBuild-Internals, CS0246-Errors-TypeNotFound                                                                                                                                                                                                                                                                   |
+| PowerShell Build & Packaging          | `PowerShell-Modules-Build-Process.md`          | PowerShell-Modules-{Versioning,Test-Process,Pack-and-Publish}, PowerShell-Script-Consolidation, PowerShellModule-Pipeline-NoProfile-Runbook; module: `src\ATAP.Utilities.BuildTooling.PowerShell`                                                                                                                                                                                                                        |
+| Versioning & Immutable Build Strategy | `Immutable-Build-Strategy.md`                  | VersionJsonAsCeiling(+Runbook), Package-Pinning-Ownership-Decision, BranchModel-Future-Work, Long-Developing-Features                                                                                                                                                                                                                                                                                                    |
+| BuildMaster / ProGet Infrastructure   | `Production-and-Tooling-Overview.md`           | BuildMaster-Pipeline-Topology, BuildMaster-Install-Runbook, Runbook-BuildMasterConfiguration, BuildMaster-Run-State-Runbook, ProGet-Install-Runbook                                                                                                                                                                                                                                                                      |
+| Database & Flyway                     | `Database-Change-Unit-and-Flyway-Promotion.md` | Database-Package-\* decisions, Database-MultiDB-Future-Requirements, Developer-SqlServerInstances-Runbook, ATAPUtilities-Instantiation-Tables; machine provisioning and settings-backed `C:\LocalDBs\<INSTANCE>\{Data,Log,Backup}\` topology: `NewComputerSetup.md` / `NewComputerSetupUsingAnsible.md`; module: `src\ATAP.Utilities.DatabaseManagement.Powershell` |
+| RRSBS & Rules Compendiums             | `Rules Compendium.md`                          | Rules Compendium.{CSharp,SQL,PowerShell,MSBuild,Snippet,Manim,Path,OtterScript,AgentText}, Rules-Compendium-Template, Example.RuleInstantiation.HelloWorld; module: `src\ATAP.Utilities.RulesManagement.PowerShell`                                                                                                                                                                                                      |
+| Secrets & Security                    | `Security Shift-Left.md`                       | ServiceAccountsAndBitwarden(+AlternativesConsidered), Runbook-BitwardenServiceAccounts, SecretsPluginArchitecture, GenericPluginArchitecture; modules: `src\ATAP.Utilities.Security.Powershell` (umbrella, re-export mode), `src\ATAP.Utilities.Security.Secrets.PowerShell` (Bitwarden pilot child, Sprint 0012 Task 12.55.b)                                                                                           |
+| Environment / Workstation Setup       | `NewComputerSetup.md`                          | NewComputerSetupUsingAnsible, NewOrganizationSetup, DevEnvironment, WSL2Setup, VisualStudioExtensions, ConfigRootKeys-and-HostSettings, IAC-Windows-Scripts-Migration, `src\ATAP.Utilities.SystemParityMonitor.PowerShell\Documentation\Overview.md` and `InstallationAndTroubleshooting.md` (host-pair parity architecture plus Windows 10/11 install, credential-backed S4U registration, WinRM/PSModulePath recovery, and static-payload packaging limitations; journal every `utat022`/`utat01` machine-state change before execution, Task 12.38.f; moved from ATAP.IAC 2026-07-07); modules: `src\ATAP.Utilities.ConfigRootKeys.Powershell`, `src\ATAP.Utilities.IAC.Ansible.Powershell`, `src\ATAP.Utilities.SystemParityMonitor.PowerShell` |
+| Sprint & Worktree Infrastructure      | `Sprint-Boundary-Retargeting.md`               | Worktree-Source-of-Truth-Inventory, SprintInfrastructure-Naming, Sprint-Planning references                                                                                                                                                                                                                                                                                                                              |
+| Testing                               | `TestingMethodology.md`                        | CSharp-Packages-Test-Process, PowerShell-Modules-Test-Process                                                                                                                                                                                                                                                                                                                                                            |
+| Disaster Preparedness                 | `Disaster Preparedness.md`                     | Backup-SqlServer-ProGet-BuildMaster, Backup-ProGet-BuildMaster-ApplicationData, Cobian-Reflector-Backup-Automation                                                                                                                                                                                                                                                                                                       |
+| Core PowerShell Utilities             | `src\ATAP.Utilities.PowerShell\ReadMe.md`      | Added 2026-07-07 (Task 12.46.g, user-approved): the base cross-cutting utilities/profile-helpers module plus `src\ATAP.Utilities.FileIO.PowerShell` (file/path/Dropbox/drive-mapping helpers)                                                                                                                                                                                                                            |
+| Domain & Personal Utilities           | `Domain-and-Personal-Utilities.md`             | Added 2026-07-07 (Task 12.46.g, user-approved): FinancialAPI, Hydrus, Neo4j, Speech, VennDiagramGenerator, VoiceRecognition modules (see the START-HERE page's module table)                                                                                                                                                                                                                                             |
+| AI Agents & Adapters (pointer area)   | SharedVSCode `SolutionDocumentation/INDEX.md`  | Sprint-Lifecycle-Agent-Workflow, Agent-Permission-Model, CLAUDE-md-Across-Repositories, Junction-vs-File-Sync-Alternatives, Using-Agent-Swarms (all in SharedVSCode)                                                                                                                                                                                                                                                     |
+| AceCommander (parked)                 | `AceCommander-architecture-overview.md`        | AceCommander-Modernization-Plan, SQLCipher-License-Decision — eventual home AceCommander SolutionDocumentation (SC-0245)                                                                                                                                                                                                                                                                                                 |
+
+Files indexed into areas 2026-07-06 (previously missing from this INDEX):
+`AceCommander-Modernization-Plan.md`, `AceCommander-architecture-overview.md`,
+`Backup-ProGet-BuildMaster-ApplicationData.md`, `Backup-SqlServer-ProGet-BuildMaster.md`,
+`BranchModel-Future-Work.md`, `BuildTooling-MSBuild-Internals.md`,
+`Cobian-Reflector-Backup-Automation.md`, `IAC-Windows-Scripts-Migration.md`,
+`NewOrganizationSetup.md`, `Package-Pinning-Ownership-Decision.md`,
+`ProGet-Install-Runbook.md`, `Runbook-BuildMasterConfiguration.md`,
+`SQLCipher-License-Decision.md`, `TraceETW-Configuration.md` (C# Build & Packaging area),
+`VersionJsonAsCeiling-Runbook.md`.
+
+---
+
 This index catalogs the non-AI documents under `SolutionDocumentation/`. Documents
 are grouped by purpose. A top-level distinction separates material that **teaches
 or tells how to create software** (methodology, build, rules, setup) from material
@@ -157,7 +194,7 @@ _Teach / Tell how to create software (with two "describe" entries noted)._
   `DefaultFieldName`), `BitwardenSecretsShim`, `BitwardenConfigurationSource`
   and `BitwardenConfigurationProvider`, and a `SecretsPluginShim` implementing
   `ILoadDynamicSubModules`.
-- [Developer Musings — SecSub Design](DeveloperMusings.md) — _Describes Ace
+- [Developer Musings — SecSub Design](ReviewedAndArchived/DeveloperMusings.md) (archived 2026-07-06) — _Describes Ace
   Commander._ Three "brainstorming" iterations of the Security Subsystem.
   Explains PowerShell SecretManagement limitations (single-vault and
   local-disk-only ACLs), then defines SCVP (Secure Cloud Vault Path), EMBs
@@ -173,8 +210,10 @@ _Teach / Tell how to create software (with two "describe" entries noted)._
 - [Bitwarden Secrets Manager Access Token Runbook](Runbook-BitwardenServiceAccounts.md) —
   Operational checklist for service-account and interactive-user BWS project/key
   inventory, `bws` installation validation, ACL-protected DPAPI access-token
-  provisioning, runtime validation, rotation, and troubleshooting.
-- [Service Accounts and Bitwarden — Alternatives Considered](ServiceAccountsAndBitwarden.-AlternativesConsidered.md) —
+  provisioning, runtime validation, rotation, and troubleshooting. The current
+  `ReadOnly` DPAPI baseline covers `whertzing` plus `SvcBuildMaster`, `SvcProGet`,
+  `SvcSeq`, `SvcSQLServer`, and `SvcParityAudit` on `utat01` and `utat022`.
+- [Service Accounts and Bitwarden — Alternatives Considered](ServiceAccountsAndBitwarden-AlternativesConsidered.md) —
   Design alternatives and trade-off analysis for service account Bitwarden
   access patterns evaluated in Sprint 0007.
 
@@ -201,9 +240,13 @@ _Teach / Tell how to create software._
 - [C# Central Package Management](CSharp-Central-Package-Management.md) —
   Central package-management conventions and migration guidance for C# projects.
 - [C# Packages — Build Process](CSharp-Packages-Build-Process.md) —
-  Step-by-step C# package build flow.
+  Step-by-step C# package build flow. Also names the separate
+  `Build\Invoke-RepoHealthGate.ps1` RepoHealth gate for shared MSBuild property
+  checks that must run after restore and before pack/publish.
 - [C# Packages — Test Process](CSharp-Packages-Test-Process.md) —
-  C# package testing process and expected test artifacts.
+  C# package testing process and expected test artifacts, including the
+  repo-wide `tests\RepoHealth` Pester gate that is intentionally outside
+  package/module test discovery.
 - [C# Packages — Pack and Push](CSharp-Packages-Pack-and-Push.md) —
   Packaging and publishing flow for C# packages.
 - [C# Packages — Versioning](CSharp-Packages-Versioning.md) —
@@ -279,6 +322,11 @@ _Teach / Tell how to create software._
   Sprint 0007: AceCommander per-user database evolution, multi-stream
   databases, tenant-fanout migration orchestration, and tenant-level
   ceiling/rollback work. DBA2-T08 / V4-E16.
+- [ATAPUtilities Instantiation Tables](ATAPUtilities-Instantiation-Tables.md)
+  — Sprint 0012 design for Philote-backed organization, user, computer,
+  repository, source-module, instantiation-version, and manifestation-artifact
+  tables. Defines the source-ingestion and renderer contracts; Tasks 12.26.b-e
+  implemented the read-only scanner, renderer, and v1/v2 manifestation evidence.
 
 ### Database/Documentation (implementation deep-reference)
 
@@ -324,13 +372,13 @@ _Teach / Tell how to create software._
   Primary strategy document for immutable build and promotion flows.
 - [version.json as Promotion Ceiling](VersionJsonAsCeiling.md) —
   Explains `CurrentTier` versus `CeilingTier` and the stage-skip guard.
-- [Critical Analysis of Immutable Build Strategy](CriticalAnalysisOfImmutableBuildStrategy.md)
+- [Critical Analysis of Immutable Build Strategy](ReviewedAndArchived/CriticalAnalysisOfImmutableBuildStrategy.md) (archived 2026-07-06)
   — Risk and trade-off analysis of the immutable strategy.
 - [PowerShell Script Consolidation](PowerShell-Script-Consolidation.md) —
   Consolidation plan for overlapping automation scripts.
 - [Worktree Source-of-Truth Inventory](Worktree-Source-of-Truth-Inventory.md) —
   Worktree ownership and source-of-truth inventory for sprint workflows.
-- [Sprint-0006 5-Tier Retrospective](Sprint-0006-5Tier-Retrospective.md) —
+- [Sprint-0006 5-Tier Retrospective](ReviewedAndArchived/Sprint-0006-5Tier-Retrospective.md) (archived 2026-07-06) —
   Lessons learned and follow-up actions from sprint 0006.
 - [Long Developing Features](Long-Developing-Features.md) —
   Tracking document for long-running feature efforts.
@@ -346,14 +394,14 @@ _Teach / Tell how to create software._
   Pester layout with `RegularTests` and `RequiresNewProcess` directories, the
   `_NewProcess` suffix convention, and Pester `-Tag` / `-RunInNewProcess`
   usage. Does not currently cover xUnit / C# test conventions.
-- [Refactoring — Phase 1 Discovery Report](Refactoring-Phase1-Discovery-Report.md)
+- [Refactoring — Phase 1 Discovery Report](ReviewedAndArchived/Refactoring-Phase1-Discovery-Report.md) (archived 2026-07-06)
   — Dated 2026-02-28, branch `60-update-overall-systems-documentation`.
   22 candidate groups (16 safe, 6 "Both"-type conflicts). Conflict resolution
   uses `git mv` to rename conflicting parents to `*.Model`. Specific
   conflicts listed: `ATAP.Services.GenerateProgram`, `ATAP.Utilities.Loader`,
   `ATAP.Utilities.MessageQueue`, `ATAP.Utilities.Persistence`,
   `ATAP.Utilities.Philote`, `ATAP.Utilities.Serializer`.
-- [Tasks ToDo — Plugin Work](Tasks%20ToDo%20For%20Plugin.md) — **702-line**
+- [Tasks ToDo — Plugin Work](ReviewedAndArchived/Tasks-ToDo-For-Plugin.md) (archived 2026-07-06) — **702-line**
   50-task plan across 5 agents and 6 phases (0–5), on branch
   `94-sprint-0004-work-items`, dated 2026-04-05. Includes full dependency
   graph, task matrix, and agent workload table: Tasks 1–5 Loader (Agent 1),
@@ -361,7 +409,7 @@ _Teach / Tell how to create software._
   PluginFamily (Agent 1), 20–28 Bitwarden shim + Secrets facade (Agents 3, 4),
   29–37 Plugin integration + tests (Agents 4, 5), 38–46 PluginDemo +
   integration tests (Agents 4, 5), 47–50 cleanup + PowerShell (Agents 1, 3).
-- [Plugin Creation Prompt](PLugin%20Creation%20Prompt.md) — **78 lines, an
+- [Plugin Creation Prompt](ReviewedAndArchived/Plugin-Creation-Prompt.md) (archived 2026-07-06) — **78 lines, an
   authorial brief, not a specification.** The prompt the user issued to
   generate the plugin-architecture and SecretsPluginArchitecture documents.
   Lists the plugin-capable families (Secrets / MessageQueue / Serializer /
@@ -421,7 +469,8 @@ values and renders deterministic output text.
   `ManimScene` RulesKind and its Rule Primitives for the
   `ATAP.Utilities.ManimVideoGenerator` subsystem and the AceCommander bolt-on
   module. Cross-references the BNF in
-  `_Planning/Explainers/0200-manim-video-generator-overview.md`. (~345 lines.)
+  `src/ATAP.Utilities.ManimVideoGenerator/Documentation/Overview.md`
+  (moved from `_Planning/Explainers/0200`, 2026-07-06). (~345 lines.)
 - [Rules Compendium — Path](Rules%20Compendium.Path.md) — Rule Primitives for
   Windows filesystem path syntax, including reserved names (`CON`, `PRN`,
   `AUX`, `NUL`, `COM1–COM9`, `LPT1–LPT9`), `MAX_PATH` (260 / 32,767 with

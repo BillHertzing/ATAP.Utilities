@@ -28,11 +28,11 @@ PSCustomObject
 
 .EXAMPLE
 # Call the autoloaded function with basic parameters and confirmation
-Initialize-ProGetSqlServiceLogin -SqlInstance 'localhost\PRODUCTION' -DatabaseName 'ProGet' -ServiceAccount 'NT SERVICE\INEDOPROGETSVC' -Confirm
+Initialize-ProGetSqlServiceLogin -SqlInstance 'localhost\Production' -DatabaseName 'ProGet' -ServiceAccount 'NT SERVICE\INEDOPROGETSVC' -Confirm
 
 .EXAMPLE
 # Call the function with encryption settings
-Initialize-ProGetSqlServiceLogin -SqlInstance 'localhost\PRODUCTION' -DatabaseName 'ProGet' -ServiceAccount 'NT SERVICE\INEDOPROGETSVC' -Encrypt Optional -TrustServerCertificate
+Initialize-ProGetSqlServiceLogin -SqlInstance 'localhost\Production' -DatabaseName 'ProGet' -ServiceAccount 'NT SERVICE\INEDOPROGETSVC' -Encrypt Optional -TrustServerCertificate
 
 .NOTES
 AI assisted using Powershell.instructions.md as guidelines
@@ -55,7 +55,7 @@ https://docs.inedo.com/docs/installation/configuration-files
     [string]$DatabaseHost = 'localhost',
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
-    [string]$InstanceName = 'PRODUCTION',
+    [string]$InstanceName = 'Production',
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [string]$SqlInstance,

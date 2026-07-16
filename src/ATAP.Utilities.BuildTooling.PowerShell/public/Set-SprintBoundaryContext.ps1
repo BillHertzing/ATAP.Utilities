@@ -12,6 +12,18 @@ function Set-SprintBoundaryContext {
     orchestrator that performs (or reverses) the full retarget for one or more
     sprint worktrees.
 
+    SINGLE START ENTRY POINT (Task 12.2.b / SC-0236): this cmdlet is the ONLY
+    code path that provisions a sprint worktree at the Start boundary. The
+    per-worktree order is fixed and structurally enforced: junctions
+    ('.vscode' only) -> downstream context -> full adapter materialization
+    (Invoke-SprintAIAdapterLifecycle, all canonical domains). A junction
+    failure skips the later steps for that worktree, so adapter rendering can
+    never race ahead of junction setup. New-SprintStage1 and New-SprintStage2
+    delegate their per-worktree provisioning here (with
+    -SkipSharedVSCodeSettings and -SkipProfileSymlinks, because they handle
+    those machine-global concerns themselves), and Initialize-SprintAIAdapters
+    is a thin delegate over the same Invoke-SprintAIAdapterLifecycle code path.
+
     It covers the original five V4-H03 concerns plus the AI adapter lifecycle:
 
       - machine links (NTFS junctions) ........ Set-WorktreeJunctions (per worktree)
@@ -19,14 +31,13 @@ function Set-SprintBoundaryContext {
       - downstream contexts ................... Initialize-DownstreamSprintFromSharedVSCode (Start)
                                                 / Reset-DownstreamToSharedVSCodeMain (End) (per worktree)
       - canonical AI adapters ................. Invoke-SprintAIAdapterLifecycle (per worktree)
-      - PowerShell 7 profile symlinks ......... Set-PowerShell7ProfileSymlink (once)
+      - PowerShell 7 profile + HostSettings ... Set-PowerShell7ProfileSymlink (once)
       - ConfigRootKeys ........................ in-process bootstrap, no symlink
 
-    The machine-wide PowerShell 7 profile symlinks (profile.ps1 -> ATAP.Utilities,
-    HostSettings.ps1 -> ATAP.IAC) are NOT stable-by-design: profile.ps1 is how the
-    AllUsersAllHosts core profile detects the active stable-vs-sprint worktree, so it
-    must track the sprint worktree at Start and reset to stable at End (H09/SC-0188,
-    Task 10.13). This concern delegates to Set-PowerShell7ProfileSymlink, which also
+    The machine-wide PowerShell 7 profile payload and HostSettings link are NOT
+    stable-by-design: the payload is copied from the selected ATAP.IAC stable or sprint
+    worktree, and HostSettings tracks the same boundary (H09/SC-0188, Task 10.13).
+    This concern delegates to Set-PowerShell7ProfileSymlink, which also
     removes the now-obsolete global_ConfigRootKeys.ps1 and global_environmentVariables.ps1
     symlinks. ConfigRootKeys remain genuinely stable-by-design: they are bootstrapped
     in-process by Initialize-ATAPConfigurationGlobals (Task 10.5) rather than dot-sourced
@@ -56,7 +67,9 @@ function Set-SprintBoundaryContext {
   .PARAMETER JunctionFolderNames
     Names of junction folders whose targets are dev-redirected to the SharedVSCode
     sprint worktree on 'Start'. Ignored on 'End' (junctions follow the stable repo).
-    Defaults to '.claude', '.github', '.vscode'.
+    Defaults to '.vscode' only: `.claude`/`.github` are concrete, canonical-rendered
+    directories in every repo (SC-0231 decision) and must never be junctioned, even
+    for dev-redirect purposes, so they are excluded from this default.
   .PARAMETER StableJunctionFolderNames
     Names of source-repository junction folders that SprintEnd is allowed to
     recreate from the stable repo. Defaults to '.vscode' so obsolete rendered
@@ -87,6 +100,22 @@ function Set-SprintBoundaryContext {
   .PARAMETER SkipProfileSymlinks
     Skip the machine-wide PowerShell 7 profile-symlink retarget concern. Intended
     only for narrowly scoped repair or diagnostic calls.
+  .PARAMETER SkipSharedVSCodeSettings
+    Skip the machine-global SharedVSCode settings concern (shared-settings
+    render, Set-UserSettingsSymlink, Set-ClaudeSettingsSymlink). Used by
+    New-SprintStage1/New-SprintStage2 which orchestrate those machine-global
+    concerns once per stage while delegating per-worktree provisioning here
+    (Task 12.2.b).
+  .PARAMETER AllowUserGlobalWrite
+    Permit this boundary operation to update user-global settings files such as
+    ~/.claude/settings.json.
+  .PARAMETER CheckpointConfirmed
+    Confirms the sprint session has been checkpointed before user-global settings
+    files are updated.
+  .PARAMETER PrimaryRoleSharedStatePath
+    Optional explicit Dropbox-synchronized ParityState folder for the canonical
+    PrimaryRole.json marker. Defaults to the ATAP\ParityState folder beside the
+    GitHub folder under the Dropbox account root.
   .OUTPUTS
     PSCustomObject with Boundary, DryRun, a per-concern Concerns array, a
     PerWorktree breakdown, and an aggregate Errors array.
@@ -127,7 +156,7 @@ function Set-SprintBoundaryContext {
 
     [string]$Profile = 'default',
 
-    [string[]]$JunctionFolderNames = @('.claude', '.github', '.vscode'),
+    [string[]]$JunctionFolderNames = @('.vscode'),
 
     [string[]]$StableJunctionFolderNames = @('.vscode'),
 
@@ -144,6 +173,14 @@ function Set-SprintBoundaryContext {
     [string]$ATAPIACRoot,
 
     [switch]$SkipProfileSymlinks,
+
+    [switch]$SkipSharedVSCodeSettings,
+
+    [switch]$AllowUserGlobalWrite,
+
+    [switch]$CheckpointConfirmed,
+
+    [string]$PrimaryRoleSharedStatePath,
 
     [Alias('SkipAISettingsLifecycle')]
     [switch]$SkipAIAdapterLifecycle
@@ -190,6 +227,12 @@ function Set-SprintBoundaryContext {
         ContextRetargeted    = $false
         AISettingsProcessed  = $false
         AISettingsDriftClean = $null
+        # Granular per-concern errors (Task 12.2.b) so delegating callers
+        # (New-SprintStage1/New-SprintStage2) can map severities without
+        # parsing the aggregate Error string.
+        JunctionError        = $null
+        ContextError         = $null
+        AdapterError         = $null
         Error                = $null
       }
 
@@ -228,6 +271,7 @@ function Set-SprintBoundaryContext {
         } catch {
           $adapterLifecycleOk = $false
           $adapterError = "AI adapter lifecycle failed for '$worktreePath': $($_.Exception.Message)"
+          $wtEntry.AdapterError = $adapterError
           $wtEntry.Error = $adapterError
           $errors.Add($adapterError)
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $adapterError
@@ -247,9 +291,18 @@ function Set-SprintBoundaryContext {
             WorktreePath   = $worktreePath
           }
           if ($Boundary -eq 'Start') {
-            # Dev-redirect .claude/.github/.vscode to the SharedVSCode sprint worktree.
+            # Dev-redirect the junction folders (default '.vscode' only) to the
+            # SharedVSCode sprint worktree. `.claude`/`.github` are concrete,
+            # canonical-rendered directories (SC-0231) and are intentionally excluded
+            # from $JunctionFolderNames so they are never dev-redirected as junctions.
+            # SC-0236: also restrict the SOURCE SCAN itself to $JunctionFolderNames —
+            # DevSourceRepoFolderNames only controls which recreated junctions get
+            # redirected, not which ones are scanned/recreated in the first place. If
+            # the stable repo still has `.claude`/`.github` as junctions, an unfiltered
+            # scan would recreate them in the new sprint worktree regardless.
             $junctionParams.DevSourceRepoPath        = $SharedVSCodeWorktreePath
             $junctionParams.DevSourceRepoFolderNames = $JunctionFolderNames
+            $junctionParams.SourceRepoFolderNames    = $JunctionFolderNames
           } else {
             $junctionParams.SourceRepoFolderNames = $StableJunctionFolderNames
           }
@@ -262,7 +315,8 @@ function Set-SprintBoundaryContext {
         }
       } catch {
         $junctionsOk = $false
-        $wtEntry.Error = "Junction retarget failed for '$worktreePath': $($_.Exception.Message)"
+        $wtEntry.JunctionError = "Junction retarget failed for '$worktreePath': $($_.Exception.Message)"
+        $wtEntry.Error = $wtEntry.JunctionError
         $errors.Add($wtEntry.Error)
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $wtEntry.Error
         $perWorktree.Add([PSCustomObject]$wtEntry)
@@ -299,7 +353,8 @@ function Set-SprintBoundaryContext {
         }
       } catch {
         $contextOk = $false
-        $wtEntry.Error = "Downstream context retarget failed for '$worktreePath': $($_.Exception.Message)"
+        $wtEntry.ContextError = "Downstream context retarget failed for '$worktreePath': $($_.Exception.Message)"
+        $wtEntry.Error = $wtEntry.ContextError
         $errors.Add($wtEntry.Error)
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $wtEntry.Error
       }
@@ -320,6 +375,7 @@ function Set-SprintBoundaryContext {
         } catch {
           $adapterLifecycleOk = $false
           $adapterError = "AI adapter lifecycle failed for '$worktreePath': $($_.Exception.Message)"
+          $wtEntry.AdapterError = $adapterError
           $wtEntry.Error = @($wtEntry.Error, $adapterError) | Where-Object { $_ } | Join-String -Separator '; '
           $errors.Add($adapterError)
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $adapterError
@@ -359,15 +415,25 @@ function Set-SprintBoundaryContext {
     $settingsOk = $true
     $settingsError = $null
     try {
-      if ($PSCmdlet.ShouldProcess($SharedVSCodeWorktreePath, "Retarget SharedVSCode settings symlinks ($Boundary)")) {
-        Invoke-SprintAIAdapterLifecycle `
-          -Boundary Start `
-          -TargetRoot $SharedVSCodeWorktreePath `
-          -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath `
-          -Confirm:$false `
-          -WhatIf:$WhatIfPreference | Out-Null
+      if (-not $SkipSharedVSCodeSettings -and $PSCmdlet.ShouldProcess($SharedVSCodeWorktreePath, "Retarget SharedVSCode settings symlinks ($Boundary)")) {
+        $sharedSettingsRenderParameters = @{
+          Boundary = 'Start'
+          TargetRoot = $SharedVSCodeWorktreePath
+          SharedVSCodeWorktreePath = $SharedVSCodeWorktreePath
+          Confirm = $false
+          WhatIf = $WhatIfPreference
+          AllowUserGlobalWrite = $AllowUserGlobalWrite
+          CheckpointConfirmed = $CheckpointConfirmed
+        }
+        if ($Boundary -eq 'End') {
+          $sharedSettingsRenderParameters.OmitSprintWorktrees = $true
+        }
+        Invoke-SprintAIAdapterLifecycle @sharedSettingsRenderParameters | Out-Null
         Set-UserSettingsSymlink -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath
-        Set-ClaudeSettingsSymlink -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath
+        Set-ClaudeSettingsSymlink `
+          -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath `
+          -AllowUserGlobalWrite:$AllowUserGlobalWrite `
+          -CheckpointConfirmed:$CheckpointConfirmed
       }
     } catch {
       $settingsOk = $false
@@ -377,15 +443,15 @@ function Set-SprintBoundaryContext {
     }
     $concerns.Add([PSCustomObject]@{
         Concern        = 'SharedVSCodeSettings'
-        Action         = 'Invoke-SprintAIAdapterLifecycle (render shared settings) + Set-UserSettingsSymlink + Set-ClaudeSettingsSymlink'
+        Action         = ($SkipSharedVSCodeSettings ? 'Skipped' : 'Invoke-SprintAIAdapterLifecycle (render shared settings) + Set-UserSettingsSymlink + Set-ClaudeSettingsSymlink')
         StableByDesign = $false
         Succeeded      = $settingsOk
         Error          = $settingsError
       })
 
     # ------------------------------------------------------------------
-    # Machine-global concern: PowerShell 7 profile symlinks (once)
-    # profile.ps1 -> ATAP.Utilities, HostSettings.ps1 -> ATAP.IAC. Formerly
+    # Machine-global concern: PowerShell 7 profile deployment and HostSettings link (once)
+    # profile.ps1 is copied from ATAP.IAC; HostSettings.ps1 links to ATAP.IAC. Formerly
     # 'stable-by-design / no-op'; now actively retargeted per H09/SC-0188 (Task
     # 10.13). The worker also removes the obsolete global_ConfigRootKeys.ps1 and
     # global_environmentVariables.ps1 symlinks.
@@ -394,7 +460,7 @@ function Set-SprintBoundaryContext {
     $profileSymlinksError = $null
     if (-not $SkipProfileSymlinks) {
       try {
-        # Resolve the repo roots that own the two managed symlinks. Start tracks the
+        # Resolve the repo roots used by the compatibility cmdlet. Start tracks the
         # sprint worktrees; End resets to the stable repositories under GitRoot.
         if (-not $PSBoundParameters.ContainsKey('ATAPUtilitiesRoot') -or [string]::IsNullOrWhiteSpace($ATAPUtilitiesRoot)) {
           if ($Boundary -eq 'Start') {
@@ -417,7 +483,7 @@ function Set-SprintBoundaryContext {
           }
         }
 
-        if ($PSCmdlet.ShouldProcess($ATAPUtilitiesRoot, "Retarget PowerShell 7 profile symlinks ($Boundary)")) {
+        if ($PSCmdlet.ShouldProcess($ATAPUtilitiesRoot, "Deploy PowerShell 7 profile and retarget HostSettings ($Boundary)")) {
           $profileSymlinkResult = Set-PowerShell7ProfileSymlink `
             -ATAPUtilitiesRoot $ATAPUtilitiesRoot `
             -ATAPIACRoot $ATAPIACRoot `
@@ -510,6 +576,91 @@ function Set-SprintBoundaryContext {
         StableByDesign = $false
         Succeeded      = $serviceProfilesOk
         Error          = $serviceProfilesError
+      })
+
+    # ------------------------------------------------------------------
+    # Local registration of the managed, profiled PowerShell 7 remoting
+    # endpoint (SC-0267). This is a local-only, sibling step to the profile
+    # deployment above -- it registers/refreshes the WithProfiles.pssc-defined
+    # session configuration on THIS host so it reflects whichever profile
+    # payloads Set-SprintBoundaryUserProfiles just deployed. Cross-host
+    # registration on a peer (for example utat01 from utat022) is a separate,
+    # explicit call to Register-ProfiledRemotingEndpoint -ComputerName -Credential,
+    # not performed automatically at every boundary.
+    # ------------------------------------------------------------------
+    $profiledEndpointOk = $true
+    $profiledEndpointError = $null
+    try {
+      if (-not $SkipProfileSymlinks) {
+        if (-not (Get-Command -Name Register-ProfiledRemotingEndpoint -ErrorAction SilentlyContinue)) {
+          $profiledEndpointError = 'Register-ProfiledRemotingEndpoint (ATAP.Utilities.PowerShell) is not available; skipping local endpoint registration.'
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $profiledEndpointError
+        } elseif ($PSCmdlet.ShouldProcess('local', "Register profiled PowerShell 7 remoting endpoint ($Boundary)")) {
+          $endpointResult = Register-ProfiledRemotingEndpoint -Confirm:$false -WhatIf:$WhatIfPreference
+          if (-not $endpointResult.Ok) {
+            $profiledEndpointOk = $false
+            $profiledEndpointError = "Profiled remoting endpoint registration reported failures: $($endpointResult.Failures -join '; ')"
+            $errors.Add($profiledEndpointError)
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profiledEndpointError
+          }
+        }
+      }
+    } catch {
+      $profiledEndpointOk = $false
+      $profiledEndpointError = "Profiled remoting endpoint registration failed: $($_.Exception.Message)"
+      $errors.Add($profiledEndpointError)
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profiledEndpointError
+    }
+    $concerns.Add([PSCustomObject]@{
+        Concern        = 'ProfiledRemotingEndpoint'
+        Action         = ($SkipProfileSymlinks ? 'Skipped' : "Register-ProfiledRemotingEndpoint ($Boundary)")
+        StableByDesign = $false
+        Succeeded      = $profiledEndpointOk
+        Error          = $profiledEndpointError
+      })
+
+    # ------------------------------------------------------------------
+    # Stable operational concern: the single DPOM PrimaryRole.json marker
+    # lives under Dropbox outside every Git worktree. Boundary processing
+    # validates the shared marker and may migrate a lone legacy ProgramData
+    # marker, but never rewrites role content or chooses between conflicts.
+    # ------------------------------------------------------------------
+    $primaryRoleMarkerOk = $true
+    $primaryRoleMarkerError = $null
+    $primaryRoleMarkerAction = 'NotProcessed'
+    try {
+      $primaryRoleTarget = if ([string]::IsNullOrWhiteSpace($PrimaryRoleSharedStatePath)) {
+        Join-Path (Split-Path -Path ([IO.Path]::GetFullPath($GitRoot)) -Parent) 'ATAP\ParityState'
+      } else {
+        $PrimaryRoleSharedStatePath
+      }
+      if ($PSCmdlet.ShouldProcess($primaryRoleTarget, "Validate shared DPOM primary-role marker ($Boundary)")) {
+        $primaryRoleParameters = @{
+          Boundary = $Boundary
+          GitRoot = $GitRoot
+          Confirm = $false
+          WhatIf = $WhatIfPreference
+        }
+        if (-not [string]::IsNullOrWhiteSpace($PrimaryRoleSharedStatePath)) {
+          $primaryRoleParameters.SharedStatePath = $PrimaryRoleSharedStatePath
+        }
+        $primaryRoleResult = Sync-SprintBoundaryPrimaryRoleMarker @primaryRoleParameters
+        $primaryRoleMarkerAction = $primaryRoleResult.Action
+      } elseif ($WhatIfPreference) {
+        $primaryRoleMarkerAction = 'WhatIf'
+      }
+    } catch {
+      $primaryRoleMarkerOk = $false
+      $primaryRoleMarkerError = "Shared DPOM primary-role marker validation failed: $($_.Exception.Message)"
+      $errors.Add($primaryRoleMarkerError)
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $primaryRoleMarkerError
+    }
+    $concerns.Add([PSCustomObject]@{
+        Concern        = 'SharedPrimaryRoleMarker'
+        Action         = $primaryRoleMarkerAction
+        StableByDesign = $true
+        Succeeded      = $primaryRoleMarkerOk
+        Error          = $primaryRoleMarkerError
       })
 
     # ------------------------------------------------------------------

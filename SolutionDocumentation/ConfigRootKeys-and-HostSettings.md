@@ -337,19 +337,91 @@ the next agent) can copy-paste the fix.
 
 ---
 
-## 9. Related Documentation
+## 9. The ATAP.IAC HostSettings Fragment Files (Tier 2 data source)
+
+> Migrated from ATAP.IAC `Documentation\global_ConfigRootKeys and HostSettings.md`
+> (2026-07-06, Task 12.45.c) and reconciled against the live `Windows\` tree. The
+> fragment **data files remain in the ATAP.IAC repository** (they are host-specific
+> infrastructure data); this section documents them because they are the physical
+> source of the Tier 2 values described in §4.
+
+`Get-HostSettings` (§4.1) dot-sources ATAP.IAC `Windows\HostSettings.ps1`, whose
+inner function builds the `$HostsType1` hashtable by loading fragment files from
+`Windows\HostSettings.IAC.Fragments\`. Live inventory as of 2026-07-06:
+
+| Fragment | Role |
+| --- | --- |
+| `HostSettings.IAC.Fragment.Hosts.ps1` | Entry point. Uses `$PSScriptRoot` to locate peer fragments and a `switch` on `$env:COMPUTERNAME` (currently `utat022`, `utat01`) to decide which fragments to load. |
+| `HostSettings.IAC.Fragment.Databases.ps1` | Orchestrator. Auto-discovers and dot-sources all `HostSettings.IAC.Fragment.Databases.*.ps1` files and creates the `DatabasesCollection` entry in `$HostsType1`. |
+| `HostSettings.IAC.Fragment.Databases.ATAPUtilities.ps1` | Values for the ATAPUtilities database across environments. |
+| `HostSettings.IAC.Fragment.Databases.AceCommander.ps1` | Values for the AceCommander database across environments. |
+| `HostSettings.IAC.Fragment.PackageRepositories.ps1` | Creates `PackageRepositoriesCollection` in `$HostsType1`; builds URIs with `[UriBuilder]::new()` from component parts; defines connector configurations for push feeds (NuGet → api.nuget.org, PSResourceGet → powershellgallery.com, ChocolateyGet → chocolatey.org). Each entry carries `LongName`, `ShortName`, `ApiKeyName` (vault reference), `Uri`, and `Connectors`. |
+| `HostSettings.IAC.Fragment.PackageRepositories.ProGetFeeds.ps1` | ProGet feed URI value population. |
+| `HostSettings.IAC.Fragment.BuildMaster.ps1` | BuildMaster endpoint/automation values. |
+| `HostSettings.IAC.Fragment.RulesManagement.ps1` | Rules-Management framework values. |
+| `HostSettings.IAC.Fragment.AmbitiousPackageRepositories.ps1` | Deprecated 5-dimension feed structure; superseded by `PackageRepositories.ProGetFeeds.ps1`. |
+
+Each database fragment populates a nested hashtable, environments as keys:
+
+```powershell
+$HostsType1['DatabasesCollection']['<DatabaseName>'] = @{
+  'Production' = @{
+    DatabaseHost     = '<host>'
+    ConnectionMethod = '<method>'
+    SqlInstance      = '<instance>'
+    DatabasePath     = '<path>'
+    UseNamedLogin    = '<boolean>'
+    LoginKey         = '<credentials-key>'
+  }
+  '<EnvironmentName>' = @{ ... }
+}
+```
+
+### 9.1 Adding a new database or host
+
+1. Add the key-name constants as a section function in
+   `ATAP.Utilities.ConfigRootKeys.PowerShell` (see the §8 checklist — no directory
+   discovery; register in `FunctionsToExport` and the orchestrator's ordered list).
+2. Create `HostSettings.IAC.Fragment.Databases.<NewName>.ps1` in ATAP.IAC
+   `Windows\HostSettings.IAC.Fragments\` to populate the runtime values; it is
+   auto-discovered by `HostSettings.IAC.Fragment.Databases.ps1`.
+3. For a new host, extend the `switch` in `HostSettings.IAC.Fragment.Hosts.ps1`
+   and, if new key definitions are needed, `Set-GlobalConfigRootKeys`.
+
+### 9.2 Historical: migrated ConfigRootKeys fragments and constants
+
+The Tier 1 side of the old two-sided IAC fragment system is gone. The
+`global_ConfigRootKeys.IAC.Fragment.*` files (Hosts, Databases,
+Databases.ATAPUtilities, PCMSC_CE, PackageRepositories) were removed from ATAP.IAC
+in Sprint 7; their definitions are authoritative in
+`ATAP.Utilities.ConfigRootKeys.PowerShell` (`Set-GlobalConfigRootKeys` and the
+section functions of §3.1). The `constants\` data files (`FeedConstants.psd1`,
+`HostConstants.psd1`, `PowerShellGetFeedMap.psd1`) were likewise migrated to that
+module — note that as of 2026-07-06 `FeedConstants.psd1` and `HostConstants.psd1`
+are still physically present in ATAP.IAC `constants\` (with
+`PowerShellGetFeedMap.psd1` under `constants\Obsolete\`); the module is
+authoritative and those on-disk copies are removal candidates. PCMSC fragments
+(`HostSettings.IAC.Fragment.Databases.PCMSC.ps1`, `HostSettingsFragment.PCMSC_CE.ps1`)
+no longer exist in the live tree.
+
+---
+
+## 10. Related Documentation
 
 - `src/ATAP.Utilities.ConfigRootKeys.Powershell/INDEX.md` — module file map,
   phase order, deprecated fragments, and the canonical five-tier feed mapping.
 - `src/ATAP.Utilities.PowerShell/INDEX.md` — `Get-HostSettings` and related
   cmdlets.
-- `_Planning/Explainers/0012-Configuration-Secrets-shim-loading.md` —
-  configuration/secrets shim loading.
-- `_Planning/Explainers/0111-proget-feed-tier-dependency-build-report.md` —
-  source-of-truth report on the five-tier feed set referenced by
-  `Add-PackageRepositoriesConfigRootKeys`.
-- `ATAP.IAC` repository — `HostSettings.ps1`, the per-host source of Tier 2
-  values, and `constants/FeedConstants.psd1`.
+- `SecretsPluginArchitecture.md` (this folder) — configuration/secrets shim
+  loading (absorbed the former `_Planning` Explainer 0012, deleted 2026-05-28).
+- `Immutable-Build-Strategy.md` (this folder) §Dependency Restoration Invariant —
+  the five-tier feed set referenced by `Add-PackageRepositoriesConfigRootKeys`
+  (absorbed the former `_Planning` Explainer 0111 feed-tier report).
+- `ATAP.IAC` repository — `Windows\HostSettings.ps1` and the
+  `HostSettings.IAC.Fragments\` data files (§9), the per-host source of Tier 2
+  values.
+- `IAC-Windows-Scripts-Migration.md` (this folder) — status ledger for migrating
+  the executable scripts out of ATAP.IAC `Windows\`.
 - **C# equivalent.** C# code does **not** use these globals. It uses the .NET
   Options pattern with DI (`services.AddOptions<T>().Bind(...)`). The two systems
   are independent; see `CLAUDE.md` → _Configuration System_.

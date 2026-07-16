@@ -93,7 +93,7 @@ names, and example invocation** for each one.
   evidence capture.
 - **Required env vars:** `BW_SESSION` (for connection-string resolution).
 - **Required Bitwarden secret names:**
-  - `dbConnectionString-<Database>-<Host>-<Tier>` for the target instance.
+  - `dbConnectionString.<Database>.<Host>.<Tier>` for the target instance.
 - **Example:**
   ```powershell
   Invoke-DatabasePackageRehearsal `
@@ -124,7 +124,7 @@ names, and example invocation** for each one.
   checksums.
 - **Required env vars:** `BW_SESSION`.
 - **Required Bitwarden secret names:**
-  - `dbConnectionString-<Database>-<Host>-<Tier>` for the target instance.
+  - `dbConnectionString.<Database>.<Host>.<Tier>` for the target instance.
 - **Example:**
   ```powershell
   Test-DatabaseSeedIdempotency -SeedLoaderPath './expanded/1.5.0/seed-loader.ps1' `
@@ -138,7 +138,7 @@ names, and example invocation** for each one.
   target database.
 - **Required env vars:** `BW_SESSION`.
 - **Required Bitwarden secret names:**
-  - `dbConnectionString-<Database>-<Host>-<Tier>` for the target instance.
+  - `dbConnectionString.<Database>.<Host>.<Tier>` for the target instance.
 - **Example:**
   ```powershell
   Get-FlywaySchemaVersion -Database 'ATAPUtilities' -Host 'utat022' -Tier 'Production'
@@ -164,7 +164,7 @@ The three cmdlets below complete the rollback story owned by DBA1-T05.
   `-RepositoryRoot` (optional, defaults via `Get-RepositoryRoot`).
 - **Required env vars:** `BW_SESSION` (for `Get-FlywaySchemaVersion`).
 - **Required Bitwarden secret names:**
-  - `dbConnectionString-<Application>-<Tier>` (SELECT on `flyway_schema_history`).
+  - `dbConnectionString.<Application>.<Host>.<Tier>` (SELECT on `flyway_schema_history`).
 - **Example:**
   ```powershell
   New-DatabasePreMigrationSnapshot -Application ATAPUtilities -DatabaseName ATAPUtilities `
@@ -182,7 +182,7 @@ The three cmdlets below complete the rollback story owned by DBA1-T05.
   `-SqlInstance` (required), `-EvidenceFile` (optional), `-WithReplace` (switch).
 - **Required env vars:** `BW_SESSION`.
 - **Required Bitwarden secret names:**
-  - `dbConnectionString-master-<Host>-<Tier>` (ALTER DATABASE rights for restore).
+  - `dbConnectionString.master.<Host>.<Tier>` (ALTER DATABASE rights for restore).
 - **Example:**
   ```powershell
   Restore-DatabaseFromSnapshot -BackupPath 'C:\Temp\…\ATAPUtilities_PREMIG_….bak' `

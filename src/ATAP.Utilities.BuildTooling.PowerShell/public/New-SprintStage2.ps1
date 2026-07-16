@@ -2,7 +2,7 @@ function New-SprintStage2 {
   <#
   .SYNOPSIS
     Creates downstream repo sprint branches, workTrees, NTFS junctions,
-    applies SharedVSCode context, symlinks claude-settings.json, scaffolds
+    applies SharedVSCode context, renders Claude Code user settings, scaffolds
     BuildMaster sprint builds, and resets the sprint database in existing SQL
     Server instances. Sprint start does NOT create or delete any secrets
     (SC-0172). ProGet feeds are permanent and ecosystem-wide — not created per
@@ -20,17 +20,17 @@ function New-SprintStage2 {
       1. Creates a GitHub issue via 'gh issue create'.
       2. Fetches and pulls main.
       3. Creates the sprint branch and worktree.
-      4. Calls Set-WorktreeJunctions to create NTFS junctions pointing to the
-         SharedVSCode sprint worktree.
-      5. Calls Initialize-DownstreamSprintFromSharedVSCode to apply templateRef,
-         hooksPath, and commitTemplate.
+      4. Provisions the worktree through the single Start entry point
+         Set-SprintBoundaryContext (Task 12.2.b): NTFS junctions ('.vscode'
+         only) -> SharedVSCode context (templateRef, hooksPath, commitTemplate)
+         -> full AI adapter materialization, in that order.
 
     After all repos are processed the cmdlet also:
       5c. Generates and verifies the Overview sprint workspace, then calls
           Build-AIInstructionsPerRepository once to distribute CLAUDE.md,
           AGENTS.md, GEMINI.md, and .github/copilot-instructions.md.
-      6. Creates a symlink from the SharedVSCode sprint worktree's
-         claude-settings.json to ~/.claude/settings.json.
+      6. Renders ~/.claude/settings.json as a real file from the SharedVSCode
+         .ai/config/claudecode/settings.overlay.json canonical overlay.
       6b. Retargets the VS Code user settings symlink
           ($env:APPDATA\Code\User\settings.json) to point at UserSettings.jsonc
           in the SharedVSCode sprint worktree via Set-UserSettingsSymlink.
@@ -61,8 +61,10 @@ function New-SprintStage2 {
   .PARAMETER Owner
     GitHub owner / organisation name.
   .PARAMETER JunctionFolderNames
-    Folder names to junction from SharedVSCode into downstream repos.
-    Defaults to @('.claude', '.github', '.vscode').
+    Folder names to junction from SharedVSCode into downstream repos, and the
+    same names used to filter the source-repo junction scan (SC-0236).
+    Defaults to @('.vscode'): `.claude`/`.github` are concrete, canonical-
+    rendered directories (SC-0231) and must never be junctioned.
   .PARAMETER ExcludeRepos
     Repo names to skip even if they appear in TASKS.md.
     Defaults to @('_Planning', 'SharedVSCode', 'Cross-Repo').
@@ -84,6 +86,12 @@ function New-SprintStage2 {
     branches, worktrees, junctions, SharedVSCode context, SQL Server database
     resets, BuildMaster variables, or claude-settings links. (Sprint start never
     creates or deletes secrets — SC-0172.)
+  .PARAMETER AllowUserGlobalWrite
+    Permit this stage to update user-global settings files such as
+    ~/.claude/settings.json.
+  .PARAMETER CheckpointConfirmed
+    Confirms the sprint session has been checkpointed before user-global settings
+    files are updated.
   .OUTPUTS
     PSCustomObject — contains repoResults, infrastructure, and error fields.
   .EXAMPLE
@@ -109,7 +117,7 @@ function New-SprintStage2 {
 
     [string]$Owner,
 
-    [string[]]$JunctionFolderNames = @('.claude', '.github', '.vscode'),
+    [string[]]$JunctionFolderNames = @('.vscode'),
 
     [string[]]$ExcludeRepos = @('_Planning', 'SharedVSCode', 'Cross-Repo'),
 
@@ -123,6 +131,10 @@ function New-SprintStage2 {
     [switch]$Force,
 
     [switch]$SkipDatabaseReset,
+
+    [switch]$AllowUserGlobalWrite,
+
+    [switch]$CheckpointConfirmed,
 
     [switch]$DryRun
   )
@@ -210,9 +222,7 @@ function New-SprintStage2 {
         'Get-SprintTaskRepositoryNames',
         'Initialize-ATAPConfigurationGlobals',
         'Reset-SprintDatabases',
-        'Set-WorktreeJunctions',
-        'Initialize-DownstreamSprintFromSharedVSCode',
-        'Initialize-SprintAIAdapters',
+        'Set-SprintBoundaryContext',
         'New-OverviewSprintWorkspace',
         'Build-AIInstructionsPerRepository')) {
       if (-not (Get-Command -Name $required -ErrorAction SilentlyContinue)) {
@@ -472,80 +482,64 @@ function New-SprintStage2 {
         continue
       }
 
-      # --- 4. Create NTFS junctions ---
+      # --- 4-5. Provision the worktree through the single Start entry point
+      # (Task 12.2.b / SC-0236): Set-SprintBoundaryContext -Boundary Start
+      # performs junctions ('.vscode' only) -> SharedVSCode context -> full AI
+      # adapter materialization, in that structurally enforced order.
+      # Machine-global concerns (shared settings, managed profile deployment) stay in
+      # steps 6/6b/6c below, so they run once per stage — not once per repo.
       try {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-          -Message "Creating NTFS junctions in $repoName worktree pointing to SharedVSCode sprint worktree"
+          -Message "Provisioning $repoName worktree via Set-SprintBoundaryContext (junctions: $($JunctionFolderNames -join ', '))"
 
-        if ($PSCmdlet.ShouldProcess($worktreePath, 'Set-WorktreeJunctions')) {
-          $junctionResult = Set-WorktreeJunctions `
-            -SourceRepoPath $repoPath `
-            -WorktreePath $worktreePath `
-            -DevSourceRepoPath $svWorktreePath `
-            -DevSourceRepoFolderNames $JunctionFolderNames
-
-          if ($junctionResult.Success) {
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-              -Message "$repoName junctions created: $($junctionResult.JunctionsCreated) junction(s)"
-          } else {
-            $junctionErrors = ($junctionResult.Errors -join '; ')
-            throw "Set-WorktreeJunctions completed but reported errors: $junctionErrors"
-          }
-        }
-      } catch {
-        $entry.error = "Failed to create $repoName junctions. Exception: $($_.Exception.Message)"
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $entry.error
-        [void]$repoResults.Add([PSCustomObject]$entry)
-        continue
-      }
-
-      # --- 4b. Materialize AI adapters in downstream repo worktree (FSS-22) ---
-      try {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-          -Message "Materializing AI adapters in $repoName worktree"
-
-        if ($PSCmdlet.ShouldProcess($worktreePath, 'Initialize-SprintAIAdapters')) {
-          Initialize-SprintAIAdapters `
-            -TargetRoot $worktreePath `
+        if ($PSCmdlet.ShouldProcess($worktreePath, 'Set-SprintBoundaryContext -Boundary Start (junctions -> context -> adapters)')) {
+          $templateRef = "SharedVSCode-wt-$svIssueNum-Sprint-$sprintNum-work-items"
+          $boundaryResult = Set-SprintBoundaryContext `
+            -Boundary Start `
+            -WorktreePaths @($worktreePath) `
             -SharedVSCodeWorktreePath $svWorktreePath `
-            -Force:$Force | Out-Null
+            -TemplateRef $templateRef `
+            -Profile "sprint-$sprintNum" `
+            -JunctionFolderNames $JunctionFolderNames `
+            -GitRoot $GitRoot `
+            -SkipSharedVSCodeSettings `
+            -SkipProfileSymlinks `
+            -Confirm:$false
 
+          $repoBoundaryEntry = @($boundaryResult.PerWorktree) | Select-Object -First 1
+          if ($null -eq $repoBoundaryEntry) {
+            throw "Set-SprintBoundaryContext returned no per-worktree result for '$worktreePath'."
+          }
+
+          if (-not $repoBoundaryEntry.JunctionsRetargeted) {
+            throw "Failed to create $repoName junctions. $($repoBoundaryEntry.JunctionError ?? $repoBoundaryEntry.Error)"
+          }
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-            -Message "AI adapters materialized in $repoName worktree"
-        }
-      } catch {
-        # FSS-54: Non-fatal adapter materialization failure
-        $warningMessage = "Warning: AI adapter materialization failed in $repoName worktree. Exception: $($_.Exception.Message). Continuing with other setup steps."
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $warningMessage
-      }
+            -Message "$repoName junctions created via Set-SprintBoundaryContext"
 
-      # --- 5. Apply SharedVSCode context ---
-      try {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-          -Message "Applying SharedVSCode context to $repoName worktree"
-
-        if ($PSCmdlet.ShouldProcess($worktreePath, 'Initialize-DownstreamSprintFromSharedVSCode')) {
-          $workspaceFiles = @(Get-ChildItem -Path $worktreePath -Filter '*.code-workspace' |
-              Select-Object -ExpandProperty FullName)
-
-          if ($workspaceFiles.Count -eq 0) {
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-              -Message "No .code-workspace files found in $repoName worktree; skipping context initialization"
+          if ($repoBoundaryEntry.ContextError) {
+            # Don't skip the repo — junctions and worktree are already created; log the context error
+            $entry.error = "Failed to apply SharedVSCode context to $repoName. $($repoBoundaryEntry.ContextError)"
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $entry.error
           } else {
-            $templateRef = "SharedVSCode-wt-$svIssueNum-Sprint-$sprintNum-work-items"
-            Initialize-DownstreamSprintFromSharedVSCode `
-              -WorkspaceFiles $workspaceFiles `
-              -TemplateRef $templateRef `
-              -Profile "sprint-$sprintNum"
-
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
               -Message "$repoName context applied with templateRef $templateRef"
           }
+
+          if ($repoBoundaryEntry.AdapterError) {
+            # FSS-54: Non-fatal adapter materialization failure
+            $warningMessage = "Warning: AI adapter materialization failed in $repoName worktree. $($repoBoundaryEntry.AdapterError). Continuing with other setup steps."
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $warningMessage
+          } else {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+              -Message "AI adapters materialized in $repoName worktree"
+          }
         }
       } catch {
-        $entry.error = "Failed to apply SharedVSCode context to $repoName. Exception: $($_.Exception.Message)"
+        $entry.error = "Failed to provision $repoName worktree boundary context. Exception: $($_.Exception.Message)"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $entry.error
-        # Don't continue — junctions and worktree are already created, just log the context error
+        [void]$repoResults.Add([PSCustomObject]$entry)
+        continue
       }
 
       [void]$repoResults.Add([PSCustomObject]$entry)
@@ -556,7 +550,7 @@ function New-SprintStage2 {
 
     # ===================================================================
     # 5c. Generate and verify the sprint Overview workspace (Task 10.14.a)
-    # OverviewSprintNNNN.code-workspace is the manifest every later step uses to
+    # Overview.Sprint.NNNN.code-workspace is the manifest every later step uses to
     # discover the sprint (Build-CLAUDEPerRepository / CLAUDE.md propagation in
     # Task 10.3 and other cross-repo tooling). Earlier sprints created it only via
     # a documentation-only agent step (SprintStartAgent Step 3a), so a live run
@@ -569,7 +563,7 @@ function New-SprintStage2 {
     $overviewWorkspacePath = $null
     $overviewWorkspaceVerified = $false
     $overviewWorkspaceError = $null
-    $expectedOverviewPath = Join-Path $GitRoot ('OverviewSprint{0}.code-workspace' -f $sprintNum)
+    $expectedOverviewPath = Join-Path $GitRoot ('Overview.Sprint.{0}.code-workspace' -f $sprintNum)
 
     try {
       if ($PSCmdlet.ShouldProcess($expectedOverviewPath, 'Generate and verify Overview sprint workspace')) {
@@ -662,16 +656,19 @@ function New-SprintStage2 {
     }
 
     # ===================================================================
-    # 6. Symlink claude-settings.json
+    # 6. Render Claude Code user settings
     # ===================================================================
     $claudeSettingsError = $null
 
     try {
-      if ($PSCmdlet.ShouldProcess($svWorktreePath, 'Set claude-settings.json symlink')) {
-        Set-ClaudeSettingsSymlink -SharedVSCodeWorktreePath $svWorktreePath
+      if ($PSCmdlet.ShouldProcess($svWorktreePath, 'Render Claude Code user settings')) {
+        Set-ClaudeSettingsSymlink `
+          -SharedVSCodeWorktreePath $svWorktreePath `
+          -AllowUserGlobalWrite:$AllowUserGlobalWrite `
+          -CheckpointConfirmed:$CheckpointConfirmed
       }
     } catch {
-      $claudeSettingsError = "Failed to symlink claude-settings.json. Exception: $($_.Exception.Message)"
+      $claudeSettingsError = "Failed to render Claude Code user settings. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $claudeSettingsError
     }
 
@@ -692,7 +689,7 @@ function New-SprintStage2 {
     }
 
     # ===================================================================
-    # 6c. Retarget machine-wide PowerShell 7 profile symlinks to the sprint
+    # 6c. Deploy the machine-wide PowerShell 7 profile and retarget HostSettings
     # worktrees (H09/SC-0188, Task 10.13). profile.ps1 must track the
     # ATAP.Utilities sprint worktree so the AllUsersAllHosts core profile detects
     # the active sprint context; HostSettings.ps1 tracks the ATAP.IAC sprint
@@ -715,7 +712,7 @@ function New-SprintStage2 {
         Select-Object -First 1 -ExpandProperty worktreePath
       if ([string]::IsNullOrWhiteSpace($iacWtRoot)) { $iacWtRoot = Join-Path $GitRoot 'ATAP.IAC' }
 
-      if ($PSCmdlet.ShouldProcess($utilWtRoot, 'Retarget PowerShell 7 profile symlinks to sprint worktrees')) {
+      if ($PSCmdlet.ShouldProcess($utilWtRoot, 'Deploy the PowerShell 7 profile payload and retarget HostSettings to sprint worktrees')) {
         $profileSymlinkResult = Set-PowerShell7ProfileSymlink `
           -ATAPUtilitiesRoot $utilWtRoot `
           -ATAPIACRoot $iacWtRoot `
@@ -723,14 +720,14 @@ function New-SprintStage2 {
         if ($profileSymlinkResult.Ok) {
           $profileSymlinksRetargeted = $true
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-            -Message "PowerShell 7 profile symlinks retargeted: profile.ps1 -> $utilWtRoot, HostSettings.ps1 -> $iacWtRoot"
+            -Message "PowerShell 7 profile payload deployed from ATAP.IAC and HostSettings.ps1 retargeted to $iacWtRoot"
         } else {
           $profileSymlinkError = "Profile symlink retarget reported failures: $($profileSymlinkResult.Failures -join '; ')"
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profileSymlinkError
         }
       }
     } catch {
-      $profileSymlinkError = "Failed to retarget PowerShell 7 profile symlinks. Exception: $($_.Exception.Message)"
+      $profileSymlinkError = "Failed to deploy the PowerShell 7 profile payload or retarget HostSettings. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profileSymlinkError
     }
 

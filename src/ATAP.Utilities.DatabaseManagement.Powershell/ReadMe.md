@@ -13,6 +13,9 @@ database lifecycle management for the ATAP ecosystem. It covers:
   feature shared databases, backup jobs, and connection string resolution.
 - **Rule export utilities** — export Rules from the ATAPUtilities database for review
   or archiving.
+- **Instantiation inventory helpers** — scan repository PowerShell/C# module source
+  into database-shaped `SourceModule` rows and render manifestation evidence for
+  Sprint 0012 instantiation work.
 
 ## Importing the Module
 
@@ -66,11 +69,11 @@ Use the module-level getting started guide for the lifecycle workflow:
 | `New-DatabasePreMigrationSnapshot`        | Rollback / Snapshot | Takes a Full backup before migration; captures Flyway version; writes evidence JSON.                                       |
 | `Restore-DatabaseFromSnapshot`            | Rollback / Snapshot | Restores from a pre-migration `.bak` via dbatools; verifies post-restore Flyway version.                                   |
 | `Test-DatabaseRollbackReadiness`          | Rollback / Snapshot | Checks evidence file age, backup file presence, and timestamp — no SQL connection required.                                |
-| `Build-DatabaseWithFlyway`                | Flyway Helpers      | Rebuild a target database using active worktree helper files; resolved `SqlConnection` objects carry Flyway auth state.     |
+| `Build-DatabaseWithFlyway`                | Flyway Helpers      | Rebuild a target database using active worktree helper files; keeps data and log files in independently supplied settings-backed paths and maps canonical QA/Integration tier names at the legacy Flyway boundary. |
 | `Get-DatabaseCredentialsKey`              | Connection Helpers  | Resolve the Bitwarden credentials key for a given database / tier / host.                                                  |
 | `Get-InstalledDatabaseInformation`        | Instance Management | Return metadata about installed SQL Server instances.                                                                      |
 | `Initialize-SqlServiceLogin`              | Instance Management | Initialise SQL Server service logins using dbatools `Invoke-DbaQuery` without loading the SqlServer module.                 |
-| `Install-SqlServerInstance`               | Instance Management | Install and configure a SQL Server Express instance.                                                                       |
+| `Install-SqlServerInstance`               | Instance Management | Install and configure a SQL Server instance using the target host/instance data, log, and backup paths from `$global:settings`. |
 | `Invoke-Flyway`                           | Flyway Helpers      | Invoke Flyway with Java 17+ selection and User-scope `UserPii` passphrase fallback for agent shells.                       |
 | `Invoke-FlywayRehearsal`                  | Flyway Helpers      | Run Flyway against a per-run ephemeral rehearsal database.                                                                 |
 | `Invoke-SqlServerBackup`                  | Backup              | Back up a SQL Server database using dbatools.                                                                              |
@@ -83,6 +86,8 @@ Use the module-level getting started guide for the lifecycle workflow:
 | `Remove-FeatureSharedDb`                  | Developer Databases | Drop disposable per-feature shared databases.                                                                              |
 | `Resolve-DatabaseSqlConnection`           | Connection Helpers  | Resolve a SqlConnection from three connection-method parameter sets.                                                       |
 | `Resolve-DbInstanceName`                  | Instance Management | Resolve canonical Stream J database names.                                                                                 |
+| `Get-InstantiationSourceModuleInventory`  | Instantiation       | Scan `src/` PowerShell modules into `ATAPUtilities.SourceModule`-shaped inventory rows.                                    |
+| `Export-InstantiationManifestation`       | Instantiation       | Render source-module model rows into `_generated/Instantiation` JSON, source-file, folder-tree, and report artifacts.      |
 | `Export-RuleToTextFile`                   | Rules               | Export a Rule from the ATAPUtilities database to a formatted text file.                                                    |
 
 ### Example Scripts
@@ -91,3 +96,6 @@ Use the module-level getting started guide for the lifecycle workflow:
 
 - Version bumped to 0.1.10 in Sprint 11
 
+## Functional area
+
+Database & Flyway - START HERE: SolutionDocumentation\Database-Change-Unit-and-Flyway-Promotion.md (link-up added 2026-07-07, Sprint 0012 Task 12.46.f)

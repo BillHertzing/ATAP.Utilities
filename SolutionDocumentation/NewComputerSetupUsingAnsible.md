@@ -16,6 +16,14 @@
 >   `SvcBuildmaster` can resolve `PSFramework` and `powershell-yaml` —
 >   [NewComputerSetup.md § 4.3](NewComputerSetup.md).
 
+## Parity journal requirement
+
+Before a step in this runbook changes state on `utat022` or `utat01`, append a
+secret-safe declaration with `Add-ParityChangeEntry` on the host being changed.
+Include the category, item, old/new state, peer host, and a peer action; do not
+include any secret value. After the peer applies its corresponding action,
+acknowledge it from that peer with `Confirm-ParityChangeApplied`.
+
 ## Introduction
 
 Setting up a new computer can be a daunting task when there are hundreds of customizations needed to make the computer a productive element of an organization's infrastructure. Infrastructure As Code (IAC) is the discipline that is concerned with formalizing how to codify the customizations, and executing on the configuration to make a computer conform to the customizations desired.
@@ -302,7 +310,7 @@ Before installing SQL Server, create a dedicated Windows service account for run
 
 > **Prerequisites:**
 >
-> 1. Ensure a Bitwarden secret named `SvcSQLServer-<COMPUTERNAME>` exists in the `ComputerLogins` folder with:
+> 1. Ensure a Bitwarden secret named `SvcSQLServer.<lowercase-hostname>` exists in Bitwarden Secrets Manager with:
 >    - Username: `SvcSQLServer`
 >    - Password: the service account password
 > 2. Ensure `ATAP.Utilities.PowerShell` module is loaded, which provides `New-LocalServiceAccount`:
@@ -316,21 +324,17 @@ Before installing SQL Server, create a dedicated Windows service account for run
 Create the SvcSQLServer account:
 
 ```powershell
-# Retrieve password from Bitwarden secret SvcSQLServer-<COMPUTERNAME> in ComputerLogins
-$secret = Get-SecretATAP -SecretName "SvcSQLServer-<COMPUTERNAME>"
-$pw = ConvertTo-SecureString -String $secret.password -AsPlainText -Force
-
 New-LocalServiceAccount `
     -AccountName              SvcSQLServer `
     -FullName                 'SQL Server Service Identity' `
     -Description              'Dedicated Windows service account for SQL Server Database Engine' `
-    -Password                 $pw `
+    -SecretNameServiceAccountLoginCredentials "SvcSQLServer.$($env:COMPUTERNAME.ToLowerInvariant())" `
     -GrantSeServiceLogonRight
 ```
 
 Expected result: `Status = Success`, `UserCreated = True`, `SeServiceLogonRight = True`.
 
-**Bitwarden record requirement:** Ensure `SvcSQLServer-<COMPUTERNAME>` remains in `ComputerLogins` so the credential can be recovered for SQL Server service maintenance.
+**Bitwarden record requirement:** Ensure `SvcSQLServer.<lowercase-hostname>` remains available in Bitwarden Secrets Manager for SQL Server service maintenance.
 
 ---
 
@@ -457,14 +461,11 @@ Creating dedicated Windows service accounts provides better auditability and pas
 Create this account **before** installing ProGet:
 
 ```powershell
-# Retrieve or set the password and store it in Bitwarden
-$pw = Read-Host -Prompt 'SvcProGet password' -AsSecureString
-
 New-LocalServiceAccount `
     -AccountName              SvcProGet `
     -FullName                 'ProGet Service Identity' `
     -Description              'Dedicated Windows service account for Inedo ProGet' `
-    -Password                 $pw `
+    -SecretNameServiceAccountLoginCredentials "SvcProGet.$($env:COMPUTERNAME.ToLowerInvariant())" `
     -GrantSeServiceLogonRight
 ```
 
@@ -477,13 +478,11 @@ Expected result: `Status = Success`, `UserCreated = True`, `SeServiceLogonRight 
 Create this account **before** installing BuildMaster:
 
 ```powershell
-$pw = Read-Host -Prompt 'SvcBuildmaster password' -AsSecureString
-
 New-LocalServiceAccount `
     -AccountName              SvcBuildmaster `
     -FullName                 'BuildMaster Service Identity' `
     -Description              'Dedicated Windows service account for Inedo BuildMaster' `
-    -Password                 $pw `
+    -SecretNameServiceAccountLoginCredentials "SvcBuildmaster.$($env:COMPUTERNAME.ToLowerInvariant())" `
     -GrantSeServiceLogonRight
 ```
 
@@ -497,6 +496,21 @@ After SQL Server is installed and the `PRODUCTION` instance is verified running,
 `Integration` and `QA` named instances. These are required for the sprint-based development
 workflow and must exist before ProGet or BuildMaster attempt to use them.
 
+Load the current host's authoritative instance rows before provisioning:
+
+```powershell
+$hostName = $env:COMPUTERNAME.ToLowerInvariant()
+$topology = $global:settings[$global:configRootKeys['SqlInstanceTopologyConfigRootKey']]
+$hosts = $topology[$global:configRootKeys['SqlInstanceTopologyHostsConfigRootKey']]
+$instances = $hosts[$hostName][$global:configRootKeys['SqlInstanceTopologyInstancesConfigRootKey']]
+$instanceNameKey = $global:configRootKeys['SqlInstanceTopologyInstanceNameConfigRootKey']
+$tcpPortKey = $global:configRootKeys['SqlInstanceTopologyTcpPortConfigRootKey']
+```
+
+Each row supplies `DataPath`, `LogPath`, and `BackupPath` under
+`C:\LocalDBs\<INSTANCE_NAME>\`. `Install-SqlServerInstance` passes those settings
+to dbatools; Ansible or setup scripts must not maintain separate path literals.
+
 > **Why separate instances?** Each instance (`Integration`, `QA`, `PRODUCTION`) maps to a
 > promotion tier in the BuildMaster pipeline. Flyway migrations and package deployments
 > target the appropriate instance at each stage. Running them on separate named instances
@@ -507,7 +521,8 @@ workflow and must exist before ProGet or BuildMaster attempt to use them.
 ```powershell
 Install-SqlServerInstance `
     -DatabaseHost        'localhost' `
-    -SqlInstance         'Integration' `
+    -SqlInstance         $instances['INTEGRATION'][$instanceNameKey] `
+    -Port                $instances['INTEGRATION'][$tcpPortKey] `
     -Version             '2022' `
     -AuthenticationMode  Windows `
     -SqlServerSetupPath  'D:\Temp\SQLExpr\extracted'
@@ -522,7 +537,8 @@ using the port reserved for Integration in `HostSettings.ps1`
 ```powershell
 Install-SqlServerInstance `
     -DatabaseHost        'localhost' `
-    -SqlInstance         'QA' `
+    -SqlInstance         $instances['QA'][$instanceNameKey] `
+    -Port                $instances['QA'][$tcpPortKey] `
     -Version             '2022' `
     -AuthenticationMode  Windows `
     -SqlServerSetupPath  'D:\Temp\SQLExpr\extracted'

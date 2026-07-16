@@ -100,7 +100,7 @@ unit, or release branch.
 ## 4. Provenance note
 
 This inventory is derived analysis from
-`CriticalAnalysisOfImmutableBuildStrategy.md §4` (the source-of-truth
+`ReviewedAndArchived/CriticalAnalysisOfImmutableBuildStrategy.md §4` (the source-of-truth
 gap section) and is **net-new** to the doc set — it does not appear in
 the Perplexity research file that seeded the Sprint-7 strategy docs.
 The per-area docs (C# Build Process, PowerShell Build Process,

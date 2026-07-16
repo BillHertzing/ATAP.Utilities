@@ -11,7 +11,7 @@ shells out to the Bitwarden CLI (`bw`) and parses the resulting JSON.
 
 QUARANTINED FOR CI/INFRA SECRETS (Task 9.21): CI/infrastructure secrets must
 NEVER live in a user's personal vault. This provider refuses any SecretName that
-looks like a CI/infra secret - SQL connection strings (dbConnectionString-*),
+  looks like a CI/infra secret - SQL connection strings (dbConnectionString.*),
 API keys (*_API_KEY, *.API.Key), ProGet/BuildMaster secrets, webhook secrets,
 and service-account login items (e.g. *Svc*). Read those from Bitwarden Secrets
 Manager via Get-SecretATAP (the default store for all accounts since SC-0175) or
@@ -59,10 +59,10 @@ Get-SecretATAPBitwarden -SecretName 'my-personal-note' -SecretField 'notes'
 Returns the notes body of a personal Secure Note.
 
 .EXAMPLE
-Get-SecretATAPBitwarden -SecretName 'dbConnectionString-ATAPUtilities-localhost-Dev-whertzing' -SecretField 'notes'
+Get-SecretATAPBitwarden -SecretName 'dbConnectionString.ATAPUtilities.localhost.Dev.whertzing' -SecretField 'notes'
 THROWS - a CI/infra connection-string secret is refused on the personal-vault
 path (Task 9.21). Use Bitwarden Secrets Manager instead:
-  Get-SecretATAP -SecretName 'dbConnectionString-ATAPUtilities-localhost-Dev-whertzing' -SecretField 'notes'
+  Get-SecretATAP -SecretName 'dbConnectionString.ATAPUtilities.localhost.Dev.whertzing' -SecretField 'notes'
 which resolves through Bitwarden Secrets Manager by default.
 
 .NOTES
@@ -118,7 +118,7 @@ function Get-SecretATAPBitwarden {
       # genuine per-user personal secrets only. This runs before any bw
       # invocation so the refusal is independent of session/CLI state.
       $ciSecretNamePatterns = @(
-        '^dbConnectionString-'   # SQL connection strings (sprint + permanent tiers)
+        '^dbConnectionString[.-]' # SQL connection strings (sprint + permanent tiers; dotted canonical, hyphen legacy)
         '_API_KEY$'              # env-var style API keys (PROGET_ADMIN_API_KEY, *_API_KEY)
         'API[._-]?Key'           # BuildMaster.Admin.API.Key, *ApiKey
         '^PROGET[_.-]'           # ProGet infrastructure secrets

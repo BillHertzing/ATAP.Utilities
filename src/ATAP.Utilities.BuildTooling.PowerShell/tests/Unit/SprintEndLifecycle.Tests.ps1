@@ -149,16 +149,16 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
     It 'uses the parent overview files and real cmdlet contracts' {
       $planning = Join-Path $TestDrive '_Planning-wt-20-Sprint-0010-work-items'
       New-Item -ItemType Directory -Path $planning -Force | Out-Null
-      Set-Content -LiteralPath (Join-Path $TestDrive 'OverviewSprint0010.code-workspace') -Value '{}'
+      Set-Content -LiteralPath (Join-Path $TestDrive 'Overview.Sprint0010.code-workspace') -Value '{}'
 
       $result = Invoke-SprintEndOverviewClose `
         -GitRoot $TestDrive -PlanningRoot $planning -SprintNumber 10 -Confirm:$false
 
       $result.Ok | Should -BeTrue
-      $result.SourceWorkspacePath | Should -Be (Join-Path $TestDrive 'OverviewSprint0010.code-workspace')
+      $result.SourceWorkspacePath | Should -Be (Join-Path $TestDrive 'Overview.Sprint0010.code-workspace')
       Should -Invoke Update-OverviewWorkspaceStableInfo -Times 1 -ParameterFilter {
         $RootWorkspacePath -eq (Join-Path $TestDrive 'Overview.code-workspace') -and
-        $SourceWorkspacePath -eq (Join-Path $TestDrive 'OverviewSprint0010.code-workspace')
+        $SourceWorkspacePath -eq (Join-Path $TestDrive 'Overview.Sprint0010.code-workspace')
       }
       Should -Invoke Remove-OverviewSprintWorkspace -Times 1 -ParameterFilter {
         $SprintNumber -eq 10 -and $ArchiveDirectoryPath -like '*SprintRetrospective*WorkspaceArchive'
@@ -364,7 +364,20 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $resolvedModuleRoot = (Resolve-Path -LiteralPath $moduleRoot).Path
       $profileRoot = Join-Path (Split-Path $resolvedModuleRoot -Parent) 'ATAP.Utilities.PowerShell\Profiles'
       $environmentProfile = Get-Content -Raw -LiteralPath (Join-Path $profileRoot 'global_EnvironmentVariables.ps1')
-      $userProfile = Get-Content -Raw -LiteralPath (Join-Path $profileRoot 'CurrentUserAllHostsV7CoreProfile.ps1')
+      $utilitiesRepoRoot = Split-Path (Split-Path $resolvedModuleRoot -Parent) -Parent
+      $githubRoot = Split-Path $utilitiesRepoRoot -Parent
+      $sprintMatch = [regex]::Match((Split-Path $utilitiesRepoRoot -Leaf), 'Sprint-(?<Sprint>\d{4})')
+      $iacRoot = if ($sprintMatch.Success) {
+        Get-ChildItem -LiteralPath $githubRoot -Directory |
+          Where-Object { $_.Name -match "^ATAP\.IAC-wt-\d+-Sprint-$($sprintMatch.Groups['Sprint'].Value)-work-items$" } |
+          Select-Object -ExpandProperty FullName -First 1
+      } else {
+        Join-Path $githubRoot 'ATAP.IAC'
+      }
+      if (-not $iacRoot) {
+        throw "Could not locate the Sprint $($sprintMatch.Groups['Sprint'].Value) ATAP.IAC worktree."
+      }
+      $userProfile = Get-Content -Raw -LiteralPath (Join-Path $iacRoot 'Windows\ProfileTemplates\CurrentUserAllHostsV7CoreProfile.ps1')
 
       foreach ($secretKey in @(
           'DropboxAccessTokenConfigRootKey',
@@ -395,8 +408,15 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       New-Item -ItemType Directory -Path (Split-Path $developerSource -Parent), $iacRoot, (Split-Path $developerProfile -Parent), (Split-Path $serviceProfile -Parent) -Force | Out-Null
       Set-Content -LiteralPath $developerSource -Value '# developer stable profile' -Encoding UTF8
       Set-Content -LiteralPath $serviceSource -Value '# service stable profile' -Encoding UTF8
-      New-Item -ItemType SymbolicLink -Path $developerProfile -Target $developerSource -Force | Out-Null
-      New-Item -ItemType SymbolicLink -Path $serviceProfile -Target $serviceSource -Force | Out-Null
+      try {
+        # Symbolic-link creation needs elevation or Developer Mode; restricted
+        # accounts (e.g. SvcBuildmaster) cannot do it (Task 12.46 / exec 17480).
+        New-Item -ItemType SymbolicLink -Path $developerProfile -Target $developerSource -Force -ErrorAction Stop | Out-Null
+        New-Item -ItemType SymbolicLink -Path $serviceProfile -Target $serviceSource -Force -ErrorAction Stop | Out-Null
+      } catch {
+        Set-ItResult -Skipped -Because "symbolic-link creation is unavailable for this account: $($_.Exception.Message)"
+        return
+      }
 
       Mock Set-SprintBoundaryUserProfiles {
         [PSCustomObject]@{
@@ -418,7 +438,8 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
         -GitRoot $gitRoot `
         -SearchRoots @() `
         -ATAPUtilitiesRoot $utilRoot `
-        -ATAPIACRoot $iacRoot
+        -ATAPIACRoot $iacRoot `
+        -ProhibitedEnvironmentVariableNames @()
 
       $result.Ok | Should -BeTrue
       @($result.Profiles | Where-Object Kind -NE 'General').Count | Should -Be 2

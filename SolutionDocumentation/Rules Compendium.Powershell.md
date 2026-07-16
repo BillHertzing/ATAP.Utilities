@@ -1801,28 +1801,51 @@ finally {
 
 This section extends the **Logging Rule Set** with rules specific to configuring
 PSFramework logging providers that route messages to remote structured-logging
-sinks such as SEQ (via the GELF provider) or Graylog.
+sinks such as SEQ (via GELF) or Graylog.
+
+#### Rule GELF-0: Match the provider transport to the ingestor (TCP vs UDP)
+
+PSFramework's built-in `gelf` provider is hard-coded to `PSGELF\Send-PSGelfTCP` —
+**TCP only**. The organization's SEQ GELF input (`Seq.Input.Gelf` / sqelf) listens on
+**UDP only** (`udp://127.0.0.1:12201`), so the built-in provider can never reach it.
+There is **no** `protocol` provider property or configuration key: `Set-PSFConfig`
+on `psframework.logging.gelf.protocol` creates an orphan key that nothing reads
+(this was the root cause of every historical "GELF to SEQ doesn't work" attempt —
+resolved 2026-07-04, Task 12.19 / SC-0230).
+
+For SEQ, use `Enable-SeqGelfLogging` (ATAP.Utilities.PowerShell), which registers a
+`gelfudp` provider sending each message via `PSGELF\Send-PSGelfUDP`:
+
+```powershell
+# Enables the 'SendToSEQ' instance of the 'gelfudp' provider -> udp://127.0.0.1:12201
+Enable-SeqGelfLogging
+```
+
+For a TCP-capable sink (e.g. Graylog TCP input), the built-in `gelf` provider works;
+its provider properties are `GelfServer`, `Port`, and `Encrypt` under configuration
+root `PSFramework.Logging.GELF` (note: the server key is `GelfServer`, not `server`).
 
 #### Rule GELF-1: One named instance per sink
 
 Configure exactly one PSFramework logging provider instance per remote sink.
-Use the `includeinstances` PSFConfig key to bind a named provider activation to a
-single instance name. Never reuse the same instance name across two different
-provider configurations — doing so causes both providers to compete for messages
-from the same instance and can result in duplicate forwarding or dropped messages.
+Never reuse the same instance name across two different provider configurations —
+doing so causes both providers to compete for messages from the same instance and
+can result in duplicate forwarding or dropped messages.
 
 ```powershell
-# One provider → one sink
+# One provider instance → one sink
+Enable-SeqGelfLogging -InstanceName 'SendToSEQ'    # gelfudp instance for SEQ
 
-# GELF provider bound to the 'SendToSEQ' instance
-Set-PSFConfig -FullName 'psframework.logging.gelf.server'           -Value '127.0.0.1'
-Set-PSFConfig -FullName 'psframework.logging.gelf.port'             -Value 12201
-Set-PSFConfig -FullName 'psframework.logging.gelf.protocol'         -Value 'udp'
-Set-PSFConfig -FullName 'psframework.logging.gelf.encrypt'          -Value $false
-Set-PSFConfig -FullName 'psframework.logging.gelf.minlevel'         -Value 3        # Information
-Set-PSFConfig -FullName 'psframework.logging.gelf.includeinstances' -Value @('SendToSEQ')
-Set-PSFLoggingProvider -Name gelf -Enable $true
+# Equivalent explicit form for any V2 provider instance
+Set-PSFLoggingProvider -Name gelfudp -InstanceName 'SendToSEQ' `
+  -GelfServer '127.0.0.1' -Port 12201 -MinLevel 1 -MaxLevel 9 -Enabled $true
 ```
+
+Instance startup is asynchronous: messages logged before the instance finishes
+starting are not replayed to it. Do not treat the instance's `Initialized` property
+as a readiness signal (it lags); if the first messages of a session must reach the
+sink, emit them across two `Wait-PSFMessage` flush cycles (as
+`Enable-SeqGelfLogging` does with its marker).
 
 #### Rule GELF-2: Naming convention `SendTo<Sink>`
 
@@ -1846,9 +1869,8 @@ Apply level and instance filters via `Set-PSFConfig` on the provider, not via
 decisions in configuration and allows them to be adjusted without code changes.
 
 ```powershell
-# Correct — filter at provider level
-Set-PSFConfig -FullName 'psframework.logging.gelf.minlevel'         -Value 3  # Information and above
-Set-PSFConfig -FullName 'psframework.logging.gelf.includeinstances' -Value @('SendToSEQ')
+# Correct — filter at provider-instance level (LoggingProvider.<provider>.<instance>.*)
+Set-PSFConfig -FullName 'LoggingProvider.gelfudp.SendToSEQ.MinLevel' -Value 3  # Information and above
 
 # Incorrect — gate logging in application code
 if ($VerbosePreference -eq 'Continue') {
@@ -1864,12 +1886,12 @@ cannot be found that matches parameter name 'IncludeInstances'."`. Set all
 instance-routing filters via `Set-PSFConfig` before enabling the provider.
 
 ```powershell
-# CORRECT
-Set-PSFConfig -FullName 'psframework.logging.gelf.includeinstances' -Value @('SendToSEQ')
-Set-PSFLoggingProvider -Name gelf -Enable $true
+# CORRECT — instance-scoped filter keys (LoggingProvider.<provider>.<instance>.*)
+Set-PSFConfig -FullName 'LoggingProvider.gelfudp.SendToSEQ.IncludeModules' -Value @('ATAP.*')
+Set-PSFLoggingProvider -Name gelfudp -InstanceName 'SendToSEQ' -Enabled $true
 
 # INCORRECT — parameter does not exist
-Set-PSFLoggingProvider -Name gelf -Enable $true -IncludeInstances 'SendToSEQ'
+Set-PSFLoggingProvider -Name gelfudp -Enabled $true -IncludeInstances 'SendToSEQ'
 ```
 
 #### Rule GELF-5: Persist configuration with `Register-PSFConfig`

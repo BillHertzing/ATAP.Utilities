@@ -208,10 +208,22 @@ function Invoke-SprintEndGitHubClose {
         }
       }
 
+      $viewJsonFields = 'number,state,mergeable,reviewDecision,isDraft,statusCheckRollup,url,headRefOid'
       $viewResult = Invoke-SprintEndNativeCommand -FilePath 'gh' `
-        -ArgumentList @('pr', 'view', "$($pr.number)", '--repo', $Repository, `
-          '--json', 'number,state,mergeable,reviewDecision,isDraft,statusCheckRollup,url,headRefOid')
+        -ArgumentList @('pr', 'view', "$($pr.number)", '--repo', $Repository, '--json', $viewJsonFields)
       $view = ($viewResult.Output -join [Environment]::NewLine) | ConvertFrom-Json
+      if ($Merge -and [bool]$view.isDraft -and [string]$pr.state -ne 'MERGED') {
+        if ($PSCmdlet.ShouldProcess("$Repository PR #$($pr.number)", 'Mark pull request ready for review before merge')) {
+          [void](Invoke-SprintEndNativeCommand -FilePath 'gh' `
+              -ArgumentList @('pr', 'ready', "$($pr.number)", '--repo', $Repository))
+          [void]$actions.Add('Marked PR ready for review.')
+          $viewResult = Invoke-SprintEndNativeCommand -FilePath 'gh' `
+            -ArgumentList @('pr', 'view', "$($pr.number)", '--repo', $Repository, '--json', $viewJsonFields)
+          $view = ($viewResult.Output -join [Environment]::NewLine) | ConvertFrom-Json
+        } else {
+          [void]$actions.Add('Would mark PR ready for review.')
+        }
+      }
       $requiredResult = Invoke-SprintEndNativeCommand -FilePath 'gh' `
         -ArgumentList @('pr', 'checks', "$($pr.number)", '--repo', $Repository, '--required', `
           '--json', 'bucket,name,state,link,workflow') -AllowNonZeroExitCode

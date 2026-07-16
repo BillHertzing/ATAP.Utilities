@@ -1,0 +1,1471 @@
+{
+  "summary": {
+    "date": "2026-07-06",
+    "task": "12.45.e (plan 4.e)",
+    "totalModuleDocs": 243,
+    "linkUpToSolutionDocumentation": 17,
+    "missingLinkUp": 226,
+    "boilerplateStubs": 7,
+    "note": "Boilerplate stubs (<=3 non-empty lines) are flagged for future content, NOT moved (plan 4.e). Adding link-up lines to ~226 docs is follow-on editorial work, not done in this pass."
+  },
+  "rows": [
+    {
+      "file": "src/ATAP.Utilities.AutoDoc/ReadMe.md",
+      "nonEmptyLines": 4,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.BuildMaster/ReadMe.md",
+      "nonEmptyLines": 1,
+      "boilerplate": true,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.CSharp/ReadMe.md",
+      "nonEmptyLines": 32,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.Chocolatey/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.Jenkins/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.PowerShell/ReadMe.md",
+      "nonEmptyLines": 888,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": true
+    },
+    {
+      "file": "src/ATAP.Utilities.ChatGPT/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Collection.Extensions/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ComputerInventory/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ConcurrentObservableCollections/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ConfigRootKeys.Powershell/ReadMe.md",
+      "nonEmptyLines": 35,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": true
+    },
+    {
+      "file": "src/ATAP.Utilities.Configuration/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.CryptoCoin/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.CryptoMiner/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.DatabaseManagement.Powershell/ReadMe.md",
+      "nonEmptyLines": 78,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.DatabaseManagement/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.DateTime/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ETW/ReadMe.md",
+      "nonEmptyLines": 36,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Enumeration/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.FIleIO/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.FileIO.PowerShell/ReadMe.md",
+      "nonEmptyLines": 5,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.FinancialAPI/ReadMe.md",
+      "nonEmptyLines": 1,
+      "boilerplate": true,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.GenerateProgram.Interfaces/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.GenerateProgram/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.GenericHost.Extensions/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Gmail/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.GraphDataStructures.Interfaces/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.GraphDataStructures/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Http/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Hydrus.Powershell/ReadMe.md",
+      "nonEmptyLines": 5,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.IAC.Ansible.Powershell/ReadMe.md",
+      "nonEmptyLines": 828,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.IAC.Ansible/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Images.Enumerations/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Loader/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Logging/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ManimVideoGenerator/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.MessageQueue/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Neo4j.Powershell/ReadMe.md",
+      "nonEmptyLines": 15,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ORMLite.Models/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Persistence/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Philote/ReadMe.md",
+      "nonEmptyLines": 20,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Plugin/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.PowerShell/ReadMe.md",
+      "nonEmptyLines": 81,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": true
+    },
+    {
+      "file": "src/ATAP.Utilities.Reactive.Extensions/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.RealEstate.Enumerations/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.RulesManagement.PowerShell/ReadMe.md",
+      "nonEmptyLines": 16,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": true
+    },
+    {
+      "file": "src/ATAP.Utilities.Secrets/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Security.Powershell/ReadMe.md",
+      "nonEmptyLines": 46,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Serializer/ReadMe.md",
+      "nonEmptyLines": 13,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Speech.Powershell/ReadMe.md",
+      "nonEmptyLines": 5,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.String/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.StronglyTypedId/ReadMe.md",
+      "nonEmptyLines": 18,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Tags/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.DI.Fixture.Serialization/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.DI/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.Fixture.Database/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.Fixture.Serialization.Shim.Newtonsoft/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.Fixture.Serialization.Shim.Plugin/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.Fixture.Serialization.Shim.ServiceStack/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.Fixture.Serialization/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.VennDiagramGenerator.Powershell/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.VoiceAttack/ReadMe.md",
+      "nonEmptyLines": 4,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.VoiceRecognition.Powershell/ReadMe.md",
+      "nonEmptyLines": 5,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ZSandbox/ReadMe.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/_AdminRequiresHoldingPen/ReadMe.md",
+      "nonEmptyLines": 9,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.AutoDoc/README.md",
+      "nonEmptyLines": 4,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.BuildMaster/README.md",
+      "nonEmptyLines": 1,
+      "boilerplate": true,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.CSharp/README.md",
+      "nonEmptyLines": 32,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.Chocolatey/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.Jenkins/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.PowerShell/README.md",
+      "nonEmptyLines": 888,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": true
+    },
+    {
+      "file": "src/ATAP.Utilities.ChatGPT/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Collection.Extensions/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ComputerInventory/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ConcurrentObservableCollections/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ConfigRootKeys.Powershell/README.md",
+      "nonEmptyLines": 35,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": true
+    },
+    {
+      "file": "src/ATAP.Utilities.Configuration/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.CryptoCoin/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.CryptoMiner/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.DatabaseManagement.Powershell/README.md",
+      "nonEmptyLines": 78,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.DatabaseManagement/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.DateTime/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ETW/README.md",
+      "nonEmptyLines": 36,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Enumeration/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.FIleIO/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.FileIO.PowerShell/README.md",
+      "nonEmptyLines": 5,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.FinancialAPI/README.md",
+      "nonEmptyLines": 1,
+      "boilerplate": true,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.GenerateProgram.Interfaces/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.GenerateProgram/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.GenericHost.Extensions/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Gmail/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.GraphDataStructures.Interfaces/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.GraphDataStructures/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Http/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Hydrus.Powershell/README.md",
+      "nonEmptyLines": 5,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.IAC.Ansible.Powershell/README.md",
+      "nonEmptyLines": 828,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.IAC.Ansible/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Images.Enumerations/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Loader/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Logging/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ManimVideoGenerator/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.MessageQueue/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Neo4j.Powershell/README.md",
+      "nonEmptyLines": 15,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ORMLite.Models/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Persistence/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Philote/README.md",
+      "nonEmptyLines": 20,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Plugin/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.PowerShell/README.md",
+      "nonEmptyLines": 81,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": true
+    },
+    {
+      "file": "src/ATAP.Utilities.Reactive.Extensions/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.RealEstate.Enumerations/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.RulesManagement.PowerShell/README.md",
+      "nonEmptyLines": 16,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": true
+    },
+    {
+      "file": "src/ATAP.Utilities.Secrets/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Security.Powershell/README.md",
+      "nonEmptyLines": 46,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Serializer/README.md",
+      "nonEmptyLines": 13,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Speech.Powershell/README.md",
+      "nonEmptyLines": 5,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.String/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.StronglyTypedId/README.md",
+      "nonEmptyLines": 18,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Tags/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.DI.Fixture.Serialization/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.DI/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.Fixture.Database/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.Fixture.Serialization.Shim.Newtonsoft/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.Fixture.Serialization.Shim.Plugin/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.Fixture.Serialization.Shim.ServiceStack/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.Fixture.Serialization/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.VennDiagramGenerator.Powershell/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.VoiceAttack/README.md",
+      "nonEmptyLines": 4,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.VoiceRecognition.Powershell/README.md",
+      "nonEmptyLines": 5,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ZSandbox/README.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/_AdminRequiresHoldingPen/README.md",
+      "nonEmptyLines": 9,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.AutoDoc/Readme.md",
+      "nonEmptyLines": 4,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.BuildMaster/Readme.md",
+      "nonEmptyLines": 1,
+      "boilerplate": true,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.CSharp/Readme.md",
+      "nonEmptyLines": 32,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.Chocolatey/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.Jenkins/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.PowerShell/Readme.md",
+      "nonEmptyLines": 888,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": true
+    },
+    {
+      "file": "src/ATAP.Utilities.ChatGPT/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Collection.Extensions/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ComputerInventory/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ConcurrentObservableCollections/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ConfigRootKeys.Powershell/Readme.md",
+      "nonEmptyLines": 35,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": true
+    },
+    {
+      "file": "src/ATAP.Utilities.Configuration/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.CryptoCoin/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.CryptoMiner/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.DatabaseManagement.Powershell/Readme.md",
+      "nonEmptyLines": 78,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.DatabaseManagement/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.DateTime/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ETW/Readme.md",
+      "nonEmptyLines": 36,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Enumeration/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.FIleIO/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.FileIO.PowerShell/Readme.md",
+      "nonEmptyLines": 5,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.FinancialAPI/Readme.md",
+      "nonEmptyLines": 1,
+      "boilerplate": true,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.GenerateProgram.Interfaces/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.GenerateProgram/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.GenericHost.Extensions/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Gmail/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.GraphDataStructures.Interfaces/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.GraphDataStructures/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Http/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Hydrus.Powershell/Readme.md",
+      "nonEmptyLines": 5,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.IAC.Ansible.Powershell/Readme.md",
+      "nonEmptyLines": 828,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.IAC.Ansible/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Images.Enumerations/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Loader/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Logging/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ManimVideoGenerator/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.MessageQueue/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Neo4j.Powershell/Readme.md",
+      "nonEmptyLines": 15,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ORMLite.Models/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Persistence/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Philote/Readme.md",
+      "nonEmptyLines": 20,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Plugin/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.PowerShell/Readme.md",
+      "nonEmptyLines": 81,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": true
+    },
+    {
+      "file": "src/ATAP.Utilities.Reactive.Extensions/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.RealEstate.Enumerations/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.RulesManagement.PowerShell/Readme.md",
+      "nonEmptyLines": 16,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": true
+    },
+    {
+      "file": "src/ATAP.Utilities.Secrets/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Security.Powershell/Readme.md",
+      "nonEmptyLines": 46,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Serializer/Readme.md",
+      "nonEmptyLines": 13,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Speech.Powershell/Readme.md",
+      "nonEmptyLines": 5,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.String/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.StronglyTypedId/Readme.md",
+      "nonEmptyLines": 18,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Tags/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.DI.Fixture.Serialization/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.DI/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.Fixture.Database/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.Fixture.Serialization.Shim.Newtonsoft/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.Fixture.Serialization.Shim.Plugin/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.Fixture.Serialization.Shim.ServiceStack/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing.Fixture.Serialization/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.VennDiagramGenerator.Powershell/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.VoiceAttack/Readme.md",
+      "nonEmptyLines": 4,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.VoiceRecognition.Powershell/Readme.md",
+      "nonEmptyLines": 5,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ZSandbox/Readme.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/_AdminRequiresHoldingPen/Readme.md",
+      "nonEmptyLines": 9,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.AutoDoc/Documentation/DocumentationHomePage.md",
+      "nonEmptyLines": 12,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.AutoDoc/Documentation/GettingStarted.md",
+      "nonEmptyLines": 8,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.AutoDoc/Documentation/QuickStart.md",
+      "nonEmptyLines": 8,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.AutoDoc/Documentation/Using AutoDoc project in your Repository.md",
+      "nonEmptyLines": 10,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.CSharp/Documentation/index.md",
+      "nonEmptyLines": 4,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": true
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.Chocolatey/Documentation/ReadMe.md",
+      "nonEmptyLines": 3,
+      "boilerplate": true,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.Jenkins/Documentation/DevOps Guidelines.md",
+      "nonEmptyLines": 263,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.Jenkins/Documentation/InstallationGuidelines.md",
+      "nonEmptyLines": 68,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.Jenkins/Documentation/ReadMe.md",
+      "nonEmptyLines": 23,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.PowerShell/Documentation/5Tier gaps.md",
+      "nonEmptyLines": 137,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": true
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.PowerShell/Documentation/5Tier tasks for module.build.ps1.md",
+      "nonEmptyLines": 396,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.PowerShell/Documentation/5tier Implementation plan.md",
+      "nonEmptyLines": 259,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.PowerShell/Documentation/Attribution.md",
+      "nonEmptyLines": 9,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.PowerShell/Documentation/Deep Dive on Building Modules and Publishing to Powershell Package Repositories.md",
+      "nonEmptyLines": 227,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.BuildTooling.PowerShell/Documentation/GettingStarted.md",
+      "nonEmptyLines": 22,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.DatabaseManagement.Powershell/Documentation/Database Design.md",
+      "nonEmptyLines": 28,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.DatabaseManagement.Powershell/Documentation/GettingStarted.md",
+      "nonEmptyLines": 16,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.DatabaseManagement.Powershell/Documentation/INDEX.md",
+      "nonEmptyLines": 185,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": true
+    },
+    {
+      "file": "src/ATAP.Utilities.DatabaseManagement.Powershell/Documentation/Legacy-DatabaseBuildAndMigrateTasks-Support-Boundary.md",
+      "nonEmptyLines": 92,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.DatabaseManagement.Powershell/Documentation/ReadMe.md",
+      "nonEmptyLines": 66,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": true
+    },
+    {
+      "file": "src/ATAP.Utilities.FileIO.PowerShell/Documentation/GettingStarted.md",
+      "nonEmptyLines": 16,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.FileIO.PowerShell/Documentation/ReadMe.md",
+      "nonEmptyLines": 26,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Hydrus.Powershell/Documentation/GettingStarted.md",
+      "nonEmptyLines": 16,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Hydrus.Powershell/Documentation/ReadMe.md",
+      "nonEmptyLines": 17,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.IAC.Ansible.Powershell/Documentation/GettingStarted.md",
+      "nonEmptyLines": 16,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.IAC.Ansible.Powershell/Documentation/Starting an organization infrastructure.md",
+      "nonEmptyLines": 96,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.ManimVideoGenerator/Documentation/Overview.md",
+      "nonEmptyLines": 394,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": true
+    },
+    {
+      "file": "src/ATAP.Utilities.Neo4j.Powershell/Documentation/GettingStarted.md",
+      "nonEmptyLines": 16,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Neo4j.Powershell/Documentation/Setup Neo4j Development.md",
+      "nonEmptyLines": 6,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.PowerShell/Documentation/GettingStarted.md",
+      "nonEmptyLines": 16,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.PowerShell/Documentation/Powershell Useage in ATAP.Utilities.md",
+      "nonEmptyLines": 91,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.PowerShell/Documentation/ReadMe.md",
+      "nonEmptyLines": 184,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Security.Powershell/Documentation/AttributionsForOpenSSL.md",
+      "nonEmptyLines": 44,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Security.Powershell/Documentation/GettingStarted.md",
+      "nonEmptyLines": 16,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Security.Powershell/Documentation/ReadMe.md",
+      "nonEmptyLines": 4,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Security.Powershell/Documentation/Using the ATAP.Utilities.Security.Powershell .md",
+      "nonEmptyLines": 19,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Speech.Powershell/Documentation/GettingStarted.md",
+      "nonEmptyLines": 16,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Speech.Powershell/Documentation/ReadMe.md",
+      "nonEmptyLines": 17,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.Testing/Documentation/FixtureHierarchy.md",
+      "nonEmptyLines": 22,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.VennDiagramGenerator.Powershell/Documentation/GettingStarted.md",
+      "nonEmptyLines": 16,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.VoiceAttack/Documentation/Readme.md",
+      "nonEmptyLines": 107,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    },
+    {
+      "file": "src/ATAP.Utilities.VoiceRecognition.Powershell/Documentation/GettingStarted.md",
+      "nonEmptyLines": 16,
+      "boilerplate": false,
+      "linksToSolutionDocumentation": false
+    }
+  ]
+}

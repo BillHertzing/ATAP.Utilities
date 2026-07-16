@@ -12,9 +12,9 @@ Entity Framework Core abstractions, Flyway migration helpers
 
 | Source File    | Last Modified            |
 | -------------- | ------------------------ |
-| CLAUDE-base.md | 2026-07-10 21:39:49 |
-| ai-local.md | 2026-07-03 10:16:12 |
-| CLAUDE.md (combined) | 2026-07-13 21:53:06 |
+| CLAUDE-base.md | 2026-07-16 00:31:14 |
+| ai-local.md | 2026-07-16 00:47:27 |
+| CLAUDE.md (combined) | 2026-07-16 00:47:33 |
 
 ---
 
@@ -53,7 +53,7 @@ another repo and you have opened that repo's root in the same VS Code workspace.
 The five repositories listed below have their stable branch's worktree rooted at the location 'Root Path'
 
 In addition to the stable branch's worktrees one or more of those will be replicated into a 'sprint branch worktree'
-which exists for the duration of a work sprint. Aprint worktrees' root path match the pattern:
+which exists for the duration of a work sprint. Sprint worktrees' root paths match the pattern:
 `stableRepositoryRootPath-wt-...`
 
 | Repository     | Root Path                                  | Role                                                                 |
@@ -106,11 +106,15 @@ and the sprint entries drop out automatically at sprint end.
 All cross-repo planning and ordered work items are tracked in:
 
 ```text
-_PlanningSprintWorktreeRoot\TASKSSprintNNNN.md
-_PlanningSprintWorktreeRoot\TASKSSprintNNNN.html
-_PlanningSprintWorktreeRoot\Tasks.ProceduralDetails.SprintNNNN.html
-_PlanningSprintWorktreeRoot\Tasks.Accomplished.SprintNNNN.html
+_PlanningSprintWorktreeRoot\TASKS.SprintNNNN.md
+_PlanningSprintWorktreeRoot\TASKS.SprintNNNN.html
+_PlanningSprintWorktreeRoot\TASKS.SprintNNNN.ProceduralDetails.html
+_PlanningSprintWorktreeRoot\TASKS.SprintNNNN.Accomplished.html
 ```
+
+(File-name casing on disk may vary, e.g. `Tasks.Sprint0012.html`; Windows paths are
+case-insensitive. Corrected 2026-07-14, DR program item DRR-004 — verified against the
+actual Sprint 0012 files.)
 
 - Before starting any work, read the active sprint TASKS file for the current sprint.
 - After completing a step and confirming tests pass, mark it `[x]` in the active sprint TASKS file.

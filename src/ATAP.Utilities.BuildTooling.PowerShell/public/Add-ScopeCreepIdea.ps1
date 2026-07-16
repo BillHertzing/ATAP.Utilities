@@ -20,7 +20,8 @@ function Add-ScopeCreepIdea {
   .PARAMETER Paste
     Reads the description from the clipboard instead of prompting.
   .PARAMETER Tags
-    Optional comma-separated PascalCase tags from Tags-Taxonomy.md.
+    Optional comma-separated PascalCase tags from Tags-Taxonomy.md. When omitted in
+    a non-interactive session, capture continues without a Tags line.
   .PARAMETER GitCommit
     Stages ScopeCreep-Inbox.md and commits with a structured message.
   .PARAMETER PlanningRoot
@@ -211,7 +212,12 @@ function Add-ScopeCreepIdea {
       $Description = Prompt-RequiredValue -Field 'Description'
     }
     if (-not $Tags) {
-      $rawTags = Read-Host '  Tags (optional, comma-separated PascalCase from Tags-Taxonomy.md, Enter to skip)'
+      $rawTags = ''
+      try {
+        $rawTags = Read-Host '  Tags (optional, comma-separated PascalCase from Tags-Taxonomy.md, Enter to skip)' -ErrorAction Stop
+      } catch {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Optional tags prompt is unavailable; continuing without tags. $($_.Exception.Message)"
+      }
       $Tags = $rawTags.Trim()
     }
 

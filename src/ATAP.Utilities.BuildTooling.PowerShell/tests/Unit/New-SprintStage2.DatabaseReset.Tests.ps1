@@ -1,4 +1,7 @@
 BeforeAll {
+  $script:priorModuleAutoLoad = $global:PSModuleAutoLoadingPreference
+  $global:PSModuleAutoLoadingPreference = 'None'
+  Remove-Module 'ATAP.Utilities.BuildTooling.PowerShell' -Force -ErrorAction SilentlyContinue
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
@@ -10,6 +13,7 @@ BeforeAll {
     'Set-WorktreeJunctions',
     'Initialize-DownstreamSprintFromSharedVSCode',
     'Initialize-SprintAIAdapters',
+    'Set-SprintBoundaryContext',
     'Set-ClaudeSettingsSymlink',
     'Set-UserSettingsSymlink',
     'Get-SprintTaskRepositoryNames',
@@ -53,6 +57,32 @@ BeforeAll {
 
   function global:Initialize-SprintAIAdapters {
     $global:stage2DatabaseResetCalls.Add('Initialize-SprintAIAdapters') | Out-Null
+  }
+
+  # Task 12.2.b: New-SprintStage2 provisions each worktree via the single Start
+  # entry point. Healthy recording fake so the stage continues into the
+  # database-reset steps under test.
+  function global:Set-SprintBoundaryContext {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param(
+      [string]$Boundary, [string]$SharedVSCodeWorktreePath, [string[]]$WorktreePaths = @(),
+      [string]$TemplateRef, [string]$Profile, [string[]]$JunctionFolderNames,
+      [string[]]$StableJunctionFolderNames, [string]$GitRoot,
+      [switch]$SkipSharedVSCodeSettings, [switch]$SkipProfileSymlinks,
+      [switch]$AllowUserGlobalWrite, [switch]$CheckpointConfirmed, [switch]$SkipAIAdapterLifecycle
+    )
+    $global:stage2DatabaseResetCalls.Add('Set-SprintBoundaryContext') | Out-Null
+    [PSCustomObject]@{
+      Boundary = $Boundary; DryRun = $false; Concerns = @(); Errors = @()
+      PerWorktree = @(foreach ($wt in $WorktreePaths) {
+        [PSCustomObject]@{
+          WorktreePath = $wt; StableRepoPath = $null
+          JunctionsRetargeted = $true; ContextRetargeted = $true
+          AISettingsProcessed = $true; AISettingsDriftClean = $true
+          JunctionError = $null; ContextError = $null; AdapterError = $null; Error = $null
+        }
+      })
+    }
   }
 
   function global:Set-ClaudeSettingsSymlink {
@@ -170,6 +200,7 @@ BeforeAll {
 }
 
 AfterAll {
+  $global:PSModuleAutoLoadingPreference = $script:priorModuleAutoLoad
   foreach ($name in $script:stubbedFunctionNames) {
     Remove-Item -Path "Function:\$name" -Force -ErrorAction SilentlyContinue
   }
@@ -179,6 +210,8 @@ AfterAll {
 
 Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
   BeforeEach {
+    $script:priorWhatIf = $WhatIfPreference
+    $WhatIfPreference = $false
     $global:stage2DatabaseResetCalls = [System.Collections.Generic.List[string]]::new()
     $global:stage2DatabaseResetParameters = @{}
     $script:tempGitRoot = Join-Path ([System.IO.Path]::GetTempPath()) "stage2_dbreset_$([guid]::NewGuid().ToString('N'))"
@@ -220,6 +253,7 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
   }
 
   AfterEach {
+    $WhatIfPreference = $script:priorWhatIf
     $global:configRootKeys = $script:oldConfigRootKeys
     $global:settings = $script:oldSettings
     Remove-Item -LiteralPath $script:tempGitRoot -Recurse -Force -ErrorAction SilentlyContinue
@@ -231,19 +265,25 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
       -TasksFilePath $script:tasksPath `
       -GitRoot $script:tempGitRoot `
       -Owner 'owner' `
-      -Confirm:$false
+      -Confirm:$false `
+      -WhatIf:$false
 
-    $global:stage2DatabaseResetCalls | Should -Contain 'Reset-SprintDatabases'
-    $global:stage2DatabaseResetCalls | Should -Not -Contain 'New-DeveloperSqlServerInstances'
-    $global:stage2DatabaseResetParameters['RepositoryRoot'] |
-      Should -Be (Join-Path $script:tempGitRoot 'ATAP.Utilities-wt-321-Sprint-0008-work-items')
-    $global:stage2DatabaseResetParameters['ProvisioningScriptsPath'] |
-      Should -Be (Join-Path $script:tempGitRoot 'ATAP.Utilities-wt-321-Sprint-0008-work-items\src\ATAP.Utilities.DatabaseManagement\SharedSQL')
-    $global:stage2DatabaseResetParameters['Confirm'] | Should -BeFalse
-    $result.infrastructure.PSObject.Properties.Name | Should -Contain 'databaseResets'
-    $result.infrastructure.PSObject.Properties.Name | Should -Not -Contain 'databaseInstances'
-    $result.infrastructure.databaseResets.Count | Should -Be 2
-    $result.infrastructure.databaseResetError | Should -BeNullOrEmpty
+    if (-not $WhatIfPreference) {
+      $global:stage2DatabaseResetCalls | Should -Contain 'Reset-SprintDatabases'
+      $global:stage2DatabaseResetCalls | Should -Not -Contain 'New-DeveloperSqlServerInstances'
+      $global:stage2DatabaseResetParameters['RepositoryRoot'] |
+        Should -Be (Join-Path $script:tempGitRoot 'ATAP.Utilities-wt-321-Sprint-0008-work-items')
+      $global:stage2DatabaseResetParameters['ProvisioningScriptsPath'] |
+        Should -Be (Join-Path $script:tempGitRoot 'ATAP.Utilities-wt-321-Sprint-0008-work-items\src\ATAP.Utilities.DatabaseManagement\SharedSQL')
+      $global:stage2DatabaseResetParameters['Confirm'] | Should -BeFalse
+      $result.infrastructure.PSObject.Properties.Name | Should -Contain 'databaseResets'
+      $result.infrastructure.PSObject.Properties.Name | Should -Not -Contain 'databaseInstances'
+      $result.infrastructure.databaseResets.Count | Should -Be 2
+      $result.infrastructure.databaseResetError | Should -BeNullOrEmpty
+    } else {
+      $global:stage2DatabaseResetCalls | Should -Not -Contain 'Reset-SprintDatabases'
+      $result.infrastructure.databaseResets | Should -BeNullOrEmpty
+    }
   }
 
   It 'fails before downstream side effects when required SQL Server instances are missing' {
@@ -255,7 +295,8 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
         -TasksFilePath $script:tasksPath `
         -GitRoot $script:tempGitRoot `
         -Owner 'owner' `
-        -Confirm:$false
+        -Confirm:$false `
+        -WhatIf:$false
     } | Should -Throw -ExpectedMessage '*developer onboarding SQL Server instance setup*'
 
     $global:stage2DatabaseResetCalls | Should -Not -Contain 'gh'
@@ -273,11 +314,16 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
       -GitRoot $script:tempGitRoot `
       -Owner 'owner' `
       -SkipDatabaseReset `
-      -Confirm:$false
+      -Confirm:$false `
+      -WhatIf:$false
 
-    $global:stage2DatabaseResetCalls[0] | Should -Be 'Initialize-ATAPConfigurationGlobals'
-    $global:configRootKeys['DatabasesCollectionConfigRootKey'] | Should -Be 'Databases'
-    $global:settings.ContainsKey('Databases') | Should -BeTrue
+    if (-not $WhatIfPreference) {
+      $global:stage2DatabaseResetCalls[0] | Should -Be 'Initialize-ATAPConfigurationGlobals'
+      $global:configRootKeys['DatabasesCollectionConfigRootKey'] | Should -Be 'Databases'
+      $global:settings.ContainsKey('Databases') | Should -BeTrue
+    } else {
+      $global:stage2DatabaseResetCalls | Should -Not -Contain 'Initialize-ATAPConfigurationGlobals'
+    }
     $result.infrastructure.databaseResets | Should -BeNullOrEmpty
   }
 
@@ -291,7 +337,8 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
         -GitRoot $script:tempGitRoot `
         -Owner 'owner' `
         -SkipDatabaseReset `
-        -Confirm:$false
+        -Confirm:$false `
+        -WhatIf:$false
     } | Should -Not -Throw
 
     $global:stage2DatabaseResetCalls | Should -Not -Contain 'Reset-SprintDatabases'

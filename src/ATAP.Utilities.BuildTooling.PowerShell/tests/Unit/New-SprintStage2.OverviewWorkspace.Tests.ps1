@@ -3,6 +3,7 @@
 # produces the manifest that Build-CLAUDEPerRepository / CLAUDE.md propagation
 # (Task 10.3) depend on, with no manual agent step.
 BeforeAll {
+  Remove-Module 'ATAP.Utilities.BuildTooling.PowerShell' -Force -ErrorAction SilentlyContinue
   # New-SprintStage2's begin block runs an autoload contract (Get-Command -Name
   # <exported>) over its dependencies. On a workstation where the installed
   # ATAP.Utilities.BuildTooling.PowerShell module is on PSModulePath, that lookup
@@ -24,6 +25,7 @@ BeforeAll {
     'Set-WorktreeJunctions',
     'Initialize-DownstreamSprintFromSharedVSCode',
     'Initialize-SprintAIAdapters',
+    'Set-SprintBoundaryContext',
     'Set-ClaudeSettingsSymlink',
     'Set-UserSettingsSymlink',
     'Get-SprintTaskRepositoryNames',
@@ -56,6 +58,29 @@ BeforeAll {
 
   function global:Initialize-DownstreamSprintFromSharedVSCode { }
   function global:Initialize-SprintAIAdapters { }
+  # Task 12.2.b: New-SprintStage2 provisions each worktree via the single Start
+  # entry point. Healthy fake so the stage continues into the Overview step.
+  function global:Set-SprintBoundaryContext {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param(
+      [string]$Boundary, [string]$SharedVSCodeWorktreePath, [string[]]$WorktreePaths = @(),
+      [string]$TemplateRef, [string]$Profile, [string[]]$JunctionFolderNames,
+      [string[]]$StableJunctionFolderNames, [string]$GitRoot,
+      [switch]$SkipSharedVSCodeSettings, [switch]$SkipProfileSymlinks,
+      [switch]$AllowUserGlobalWrite, [switch]$CheckpointConfirmed, [switch]$SkipAIAdapterLifecycle
+    )
+    [PSCustomObject]@{
+      Boundary = $Boundary; DryRun = $false; Concerns = @(); Errors = @()
+      PerWorktree = @(foreach ($wt in $WorktreePaths) {
+        [PSCustomObject]@{
+          WorktreePath = $wt; StableRepoPath = $null
+          JunctionsRetargeted = $true; ContextRetargeted = $true
+          AISettingsProcessed = $true; AISettingsDriftClean = $true
+          JunctionError = $null; ContextError = $null; AdapterError = $null; Error = $null
+        }
+      })
+    }
+  }
   function global:Set-ClaudeSettingsSymlink { }
   function global:Set-UserSettingsSymlink { }
 
@@ -115,7 +140,7 @@ BeforeAll {
     )
     $global:overviewStubCalls.Add('New-OverviewSprintWorkspace') | Out-Null
     $sprintText = '{0:D4}' -f $SprintNumber
-    $outputPath = Join-Path $GitRoot ("OverviewSprint{0}.code-workspace" -f $sprintText)
+    $outputPath = Join-Path $GitRoot ("Overview.Sprint.{0}.code-workspace" -f $sprintText)
 
     switch ($global:overviewStubMode) {
       'nofile' { }
@@ -197,7 +222,7 @@ Describe 'New-SprintStage2 Overview workspace generation (Task 10.14.a)' -Tag 'U
       -Confirm:$false
 
     $global:overviewStubCalls | Should -Contain 'New-OverviewSprintWorkspace'
-    $expected = Join-Path $script:tempGitRoot 'OverviewSprint0008.code-workspace'
+    $expected = Join-Path $script:tempGitRoot 'Overview.Sprint.0008.code-workspace'
     $result.infrastructure.overviewWorkspacePath | Should -Be $expected
     $result.infrastructure.overviewWorkspaceVerified | Should -BeTrue
     $result.infrastructure.overviewWorkspaceError | Should -BeNullOrEmpty
@@ -254,6 +279,6 @@ Describe 'New-SprintStage2 Overview workspace generation (Task 10.14.a)' -Tag 'U
     $result.infrastructure.overviewWorkspaceVerified | Should -BeFalse
     $result.infrastructure.aiInstructions.DryRun | Should -BeTrue
     $result.infrastructure.aiInstructionsError | Should -BeNullOrEmpty
-    Test-Path -LiteralPath (Join-Path $script:tempGitRoot 'OverviewSprint0008.code-workspace') | Should -BeFalse
+    Test-Path -LiteralPath (Join-Path $script:tempGitRoot 'Overview.Sprint.0008.code-workspace') | Should -BeFalse
   }
 }

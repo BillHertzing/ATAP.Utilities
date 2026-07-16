@@ -1,5 +1,48 @@
 # Release Notes for ATAP.Utilities.PowerShell
 
+## [0.1.18] — 2026-07-09
+
+### Fixed
+
+- **SC-0252 — `Get-HostSettings` never probed the current sprint's ATAP.IAC worktree.** The candidate
+  chain hard-coded `ATAP.IAC-wt-9-Sprint-0007-work-items` as its only sprint-shaped path. That
+  worktree was deleted at the end of Sprint 0007, so resolution silently fell through to the
+  **stable** ATAP.IAC checkout, and any `HostSettings` edit made in a sprint worktree — which is
+  where the repository's boundary rule says sprint work belongs — had **no runtime effect** for four
+  sprints. Six BuildMaster module→application mappings added during Sprint 0012 were inert as a
+  result; the effective map showed 5 entries where the reviewed fragment declared 10.
+
+  The sprint worktree is now **discovered by pattern**, never named. Candidate ordering moved to a
+  new private helper, `Get-IACHostSettingsCandidatePath`, so it can be tested without a real ATAP.IAC
+  checkout:
+
+  1. an explicit `-IACBasePath`;
+  2. `$env:ATAP_IAC_BASE_PATH` (process, then user scope) — an operator naming a path outranks
+     anything discovered, so this moved **ahead** of auto-discovery;
+  3. the newest ATAP.IAC sprint worktree under each search root;
+  4. the stable `ATAP.IAC` checkout under each search root;
+  5. the `Resources` copy inside the installed module.
+
+  Sprint worktrees rank by sprint number then worktree number, both compared as **integers**. A
+  lexical sort puts `wt-9-Sprint-0007` above `wt-15-Sprint-0012`, which would have reproduced the
+  original bug from the other direction. There is a test for exactly that.
+
+### Added
+
+- `private/Get-IACHostSettingsCandidatePath.ps1` (not exported).
+- `tests/Unit/Get-IACHostSettingsCandidatePath.Tests.ps1` — 16 tests covering the **default**
+  candidate chain. The old suite passed `-IACBasePath` explicitly in all four of its tests, so the
+  only code path that runs in production was untested. That is why SC-0252 survived four sprints.
+  Two of the new tests are source guards: `Get-HostSettings` must contain no hard-coded sprint
+  worktree literal, and must delegate to the discovery helper.
+
+### Notes
+
+- `Update-BuildMasterApplicationMap`'s `$requiredMappings` list is retained as a **backstop** for a
+  lagging HostSettings fragment, and is now documented as such. It is not the source of truth: a
+  module missing from the effective map should be fixed in the ATAP.IAC fragment, not added here.
+  Before this fix it was the *only* thing keeping core module routing alive.
+
 ## [0.1.2] — 2026-06-02
 
 ### Fixed

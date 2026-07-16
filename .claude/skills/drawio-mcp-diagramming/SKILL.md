@@ -1,0 +1,228 @@
+# Draw.io MCP Diagramming Skill
+
+> **Attribution**
+> Skill adapted from: <https://github.com/thomast1906/github-copilot-agent-skills/tree/main/.github/skills/drawio-mcp-diagramming>
+> MCP server: <https://github.com/lgazo/drawio-mcp-server>
+
+## Overview
+
+This skill enables AI agents to create and modify draw.io diagrams programmatically
+using the Draw.io MCP server. The MCP server exposes tools such as
+`create_diagram`, `add_shape`, `add_edge`, `update_cell`, and `delete_cell` that
+let you build architectural diagrams, flowcharts, and visual documentation
+without leaving your IDE.
+
+## MCP Server Setup
+
+The `drawio` MCP server is configured in `.vscode/mcp.json` (entry `"drawio"`):
+
+```json
+"drawio": {
+  "command": "npx",
+  "args": ["-y", "drawio-mcp-server", "--editor"]
+}
+```
+
+After the MCP host starts, open the built-in editor at <http://localhost:3000/>.
+
+---
+
+## Icon Convention
+
+**Do NOT use Azure icons** (`img/lib/azure2/`).
+
+Use icons from the VS Code **Material Icon Theme** extension instead. In draw.io
+XML, reference Material Icon Theme icons by mapping them to the appropriate
+draw.io built-in shape or to `.svg` files from the extension's icon set.
+
+### Icon Mapping Reference
+
+| Concept                             | Azure icon (DO NOT USE)                                  | Material Icon Theme equivalent | draw.io style                               |
+| ----------------------------------- | -------------------------------------------------------- | ------------------------------ | ------------------------------------------- |
+| Virtual Network / VNet              | `img/lib/azure2/networking/Virtual_Networks.svg`         | `folder-network`               | `shape=mxgraph.network.network;`            |
+| Subnet                              | `img/lib/azure2/networking/Subnets.svg`                  | `folder-network`               | `shape=mxgraph.network.subnet;`             |
+| Application Gateway / Load Balancer | `img/lib/azure2/networking/Application_Gateways.svg`     | `file-api`                     | `shape=mxgraph.network.load_balancer;`      |
+| Key Vault / Secrets                 | `img/lib/azure2/security/Key_Vaults.svg`                 | `folder-secure`                | `shape=mxgraph.cisco.firewalls.firewall;`   |
+| DNS                                 | `img/lib/azure2/networking/DNS_Zones.svg`                | `folder-config`                | `shape=mxgraph.network.dns;`                |
+| Monitoring / Observability          | `img/lib/azure2/monitor/Monitor.svg`                     | `file-graphql`                 | `shape=mxgraph.network.network_management;` |
+| Log Analytics / SIEM                | `img/lib/azure2/general/Log_Analytics_Workspaces.svg`    | `file-log`                     | `shape=mxgraph.network.server;`             |
+| Security / SIEM                     | `img/lib/azure2/security/Microsoft_Sentinel.svg`         | `folder-security`              | `shape=mxgraph.cisco.firewalls.ips_sensor;` |
+| Container / Microservice            | `img/lib/azure2/containers/Container_Registries.svg`     | `folder-docker`                | `shape=mxgraph.network.server_2;`           |
+| Database                            | `img/lib/azure2/databases/SQL_Databases.svg`             | `folder-database`              | `shape=mxgraph.flowchart.stored_data;`      |
+| API / Gateway                       | `img/lib/azure2/integration/API_Management_Services.svg` | `file-api`                     | `shape=mxgraph.network.router;`             |
+
+### Example: Decorative Icon (corner-anchored)
+
+Instead of an Azure Virtual Network decorative icon, use a generic network icon
+anchored to the top-right corner of its container:
+
+```xml
+<!-- Anchor to top-right of region/VNet container — Material Icon Theme style -->
+<mxCell id="8" value="Network Zone"
+  style="image;aspect=fixed;whiteSpace=wrap;html=1;
+         image=img/lib/network/network.svg;"
+  vertex="1" parent="1">
+  <!-- x = container_x + container_width - icon_width - 20px margin -->
+  <mxGeometry x="1360" y="180" width="140" height="90" as="geometry"/>
+</mxCell>
+```
+
+---
+
+## Draw.io Layout Anti-Patterns Reference
+
+Worked examples of layout problems encountered in real diagram reviews, and how
+to fix them.
+
+---
+
+### Common Root Causes of Cluttered Diagrams
+
+Six issues frequently compound to make lines and labels unreadable:
+
+| #   | Problem                                                                              | Symptom                                                                  |
+| --- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| 1   | Repeated identical label on 3+ edges from the same hub node                          | Labels stacked on top of each other at the source exit                   |
+| 2   | 3+ dashed lines leaving the same node face within 20px                               | Lines rendered as one thick bar                                          |
+| 3   | Observability service placed inside a network/subnet container                       | Architecturally incorrect and visually clutters the private network zone |
+| 4   | Decorative resource icon free-floating inside a container, overlapping service icons | Icon covers service icon                                                 |
+| 5   | Two services sharing one subnet with exits on the same face                          | Shared corridor, all edges stacked                                       |
+| 6   | All `mxCell` elements on one line                                                    | Any patch edit fails context match                                       |
+
+---
+
+### Fix Patterns
+
+#### Repeated edge labels
+
+```xml
+<!-- BEFORE (all three labels identical) -->
+<mxCell id="33" value="Route" ... source="hub" target="A">
+<mxCell id="34" value="Route" ... source="hub" target="B">
+<mxCell id="35" value="Route" ... source="hub" target="C">
+
+<!-- AFTER (each label names the specific target) -->
+<mxCell id="33" value="Service A" ... source="hub" target="A">
+<mxCell id="34" value="Service B" ... source="hub" target="B">
+<mxCell id="35" value="Service C" ... source="hub" target="C">
+```
+
+#### Exit anchor fanning (3+ edges from one node face)
+
+Spread `exitX` values at least 0.15 apart. Use `<Array as="points">` waypoints
+to route each edge into its own horizontal corridor before they reach targets.
+
+The `x`/`y` attributes on `mxGeometry relative="1"` shift the **label** along
+the edge path — use this to avoid label stacking when edges share a path segment:
+
+```xml
+<!-- Three edges leaving the bottom of a hub node, fanned across 0.35 / 0.5 / 0.65 -->
+<mxCell id="33" value="Service A"
+  style="...;exitX=0.35;exitY=1;...;entryX=0.5;entryY=0;..."
+  edge="1" source="hub" target="A" parent="1">
+  <mxGeometry relative="1" x="-0.55" y="-16" as="geometry">
+    <Array as="points"><mxPoint x="WAY_X" y="WAY_Y"/></Array>
+  </mxGeometry>
+</mxCell>
+
+<mxCell id="34" value="Service B"
+  style="...;exitX=0.5;exitY=1;...;entryX=0.5;entryY=0;..."
+  edge="1" source="hub" target="B" parent="1">
+  <mxGeometry relative="1" x="-0.2" y="-4" as="geometry">
+    <Array as="points"><mxPoint x="WAY_X" y="WAY_Y"/></Array>
+  </mxGeometry>
+</mxCell>
+
+<mxCell id="35" value="Service C"
+  style="...;exitX=0.65;exitY=1;...;entryX=0.5;entryY=0;..."
+  edge="1" source="hub" target="C" parent="1">
+  <mxGeometry relative="1" x="0.2" y="10" as="geometry">
+    <Array as="points"><mxPoint x="WAY_X" y="WAY_Y"/></Array>
+  </mxGeometry>
+</mxCell>
+```
+
+Same pattern for right-side dashed management/observability edges from a hub node:
+
+```
+exitX=1, exitY=0.35   → first target   (label offset: x=-0.45, y=-18)
+exitX=1, exitY=0.52   → second target  (label offset: x=-0.15, y=-2)
+exitX=1, exitY=0.68   → third target   (label offset: x=0.25,  y=14)
+```
+
+#### Observability zone placement
+
+Observability services (monitoring, log aggregation, SIEM) are **not network
+resources**. They must be positioned in a zone outside/right of the private
+network boundary. The telemetry edge (dashed) crosses the network boundary —
+that's correct and communicates the service model.
+
+```
+WRONG layout:
+  ┌─────────────────────────────────────────────┐
+  │ VNet / Private Network Zone                 │
+  │  ┌──────────────────┐  ┌─────────────────┐  │
+  │  │ snet-ingress     │  │ snet-mgmt       │  │
+  │  │  [GW]  [Hub Svc] │  │  [KV] [DNS]     │  │
+  │  └──────────────────┘  └─────────────────┘  │
+  │  [Monitor]  ← WRONG: Monitor inside VNet     │
+  └─────────────────────────────────────────────┘
+
+CORRECT layout:
+  ┌─────────────────────────────────────────────┐   [Monitor] ──→ [Log Aggregator] ──→ [SIEM]
+  │ VNet / Private Network Zone                 │       ↑
+  │  ┌──────────────────┐  ┌─────────────────┐  │   dashed telemetry edge exits network boundary
+  │  │ snet-ingress     │  │ snet-mgmt       │  │
+  │  │  [GW]  [Hub Svc] │  │  [KV] [DNS]     │  │
+  │  └──────────────────┘  └─────────────────┘  │
+  └─────────────────────────────────────────────┘
+```
+
+#### Decorative icon positioning
+
+Icons used as a visual label companion should be anchored to a fixed corner of
+their parent container — typically top-right. Without anchoring, draw.io renders
+them at the computed top-left of the container, where they land on top of subnet
+boxes or service icons.
+
+```xml
+<!-- Anchor to top-right of region/network container -->
+<mxCell id="8" value="Network Zone"
+  style="image;aspect=fixed;whiteSpace=wrap;html=1;
+         image=img/lib/network/network.svg;"
+  vertex="1" parent="1">
+  <!-- x = container_x + container_width - icon_width - 20px margin -->
+  <mxGeometry x="1360" y="180" width="140" height="90" as="geometry"/>
+</mxCell>
+```
+
+#### Single-line XML — how to avoid
+
+When generating `mxGraphModel` XML, always emit one `mxCell` per line with child
+elements indented:
+
+```xml
+<!-- BAD: impossible to patch, xmllint errors point to char 0 -->
+<mxCell id="0"/><mxCell id="1" parent="0"/><mxCell id="2" value="..." style="..." vertex="1" parent="1"><mxGeometry x="30" y="20" width="1940" height="70" as="geometry"/></mxCell>...
+
+<!-- GOOD: each element independently patchable -->
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="2" value="Title" style="..." vertex="1" parent="1">
+  <mxGeometry x="30" y="20" width="1940" height="70" as="geometry"/>
+</mxCell>
+```
+
+---
+
+## Quick Checklist Before Finalising Any Diagram
+
+- [ ] All sibling edges (same source → different targets) have **unique** labels
+- [ ] 3+ edges from same node face have spread `exitX` values (≥0.15 gap) + waypoints
+- [ ] Edge labels are offset using `mxGeometry x`/`y` when edges share a path segment
+- [ ] Monitoring / log aggregation / SIEM services are **outside** any private network or subnet container
+- [ ] Decorative network/resource icons are corner-anchored, not free-floating
+- [ ] At most 2 dashed cross-zone lines (one security/secrets, one telemetry)
+- [ ] No Azure icon paths (`img/lib/azure2/`) — use Material Icon Theme equivalents
+- [ ] XML is indented (one `mxCell` per line) — not minified
+- [ ] `xmllint --noout <file>` returns no errors

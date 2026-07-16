@@ -102,19 +102,34 @@ function Build-PSModuleManifest {
         New-Item -ItemType Directory -Path $outputParent -Force | Out-Null
       }
 
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Copying manifest '$SourceManifestPath' -> '$OutputManifestPath'"
-      Copy-Item -Path $SourceManifestPath -Destination $OutputManifestPath -Force
-      # If the source .psd1 is a symlink, Copy-Item preserves the ReparsePoint attribute on the
-      # destination, making Update-ModuleManifest fail with a permissions error. Strip it here.
-      $copiedItem = Get-Item -LiteralPath $OutputManifestPath
-      if ($copiedItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
-        $copiedItem.Attributes = $copiedItem.Attributes -band (-bnot [System.IO.FileAttributes]::ReparsePoint)
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Stripped ReparsePoint attribute from '$OutputManifestPath'"
-      }
-
+      $sourceManifest = Import-PowerShellDataFile -LiteralPath $SourceManifestPath -ErrorAction Stop
       $params = @{
         Path          = $OutputManifestPath
         ModuleVersion = $ModuleVersion
+      }
+      foreach ($manifestField in @(
+          @{ Key = 'RootModule'; Value = $sourceManifest.RootModule },
+          @{ Key = 'Guid'; Value = if ($sourceManifest.GUID) { [guid]$sourceManifest.GUID } else { $null } },
+          @{ Key = 'Author'; Value = $sourceManifest.Author },
+          @{ Key = 'CompanyName'; Value = $sourceManifest.CompanyName },
+          @{ Key = 'Copyright'; Value = $sourceManifest.Copyright },
+          @{ Key = 'Description'; Value = $sourceManifest.Description },
+          @{ Key = 'PowerShellVersion'; Value = if ($sourceManifest.PowerShellVersion) { [version]$sourceManifest.PowerShellVersion } else { $null } },
+          @{ Key = 'CompatiblePSEditions'; Value = @($sourceManifest.CompatiblePSEditions | Where-Object { $_ }) },
+          @{ Key = 'RequiredModules'; Value = @($sourceManifest.RequiredModules | Where-Object { $_ }) },
+          @{ Key = 'CmdletsToExport'; Value = @($sourceManifest.CmdletsToExport | Where-Object { $_ }) },
+          @{ Key = 'VariablesToExport'; Value = @($sourceManifest.VariablesToExport | Where-Object { $_ }) }
+        )) {
+        if ($null -eq $manifestField.Value) {
+          continue
+        }
+        if ($manifestField.Value -is [array] -and $manifestField.Value.Count -eq 0) {
+          continue
+        }
+        if ($manifestField.Value -is [string] -and [string]::IsNullOrWhiteSpace($manifestField.Value)) {
+          continue
+        }
+        $params[$manifestField.Key] = $manifestField.Value
       }
       if (-not [string]::IsNullOrWhiteSpace($Prerelease)) {
         $params['Prerelease'] = $Prerelease
@@ -135,18 +150,9 @@ function Build-PSModuleManifest {
         $params['DscResourcesToExport'] = $DscResources
       }
 
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling Update-ModuleManifest on '$OutputManifestPath' with $($params.Keys.Count) parameter(s)"
-      Update-ModuleManifest @params
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from Update-ModuleManifest for '$OutputManifestPath'"
-
-      if ([string]::IsNullOrWhiteSpace($Prerelease)) {
-        $manifestLines = [System.IO.File]::ReadAllLines($OutputManifestPath)
-        $filteredManifestLines = @($manifestLines | Where-Object { $_ -notmatch '^\s*Prerelease\s*=' })
-        if ($filteredManifestLines.Count -ne $manifestLines.Count) {
-          [System.IO.File]::WriteAllLines($OutputManifestPath, $filteredManifestLines)
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Removed copied Prerelease assignment from stable manifest '$OutputManifestPath'"
-        }
-      }
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling New-ModuleManifest on '$OutputManifestPath' with $($params.Keys.Count) parameter(s)"
+      New-ModuleManifest @params
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from New-ModuleManifest for '$OutputManifestPath'"
 
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Validating manifest via Test-ModuleManifest '$OutputManifestPath'"
       $validationError = $null

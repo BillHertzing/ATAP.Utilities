@@ -17,20 +17,20 @@ function New-SprintBitwardenSecrets {
     (3 databases x 2 hosts x 2 tiers).
 
     Secret naming convention (SprintInfrastructure-Naming.md 4.1):
-      dbConnectionString-<Database>-<Host>-<Dev|Exp>-<DeveloperUsername>
+      dbConnectionString.<Database>.<Host>.<Dev|Exp>.<DeveloperUsername>
 
     Connection string format (owned by Get-DbConnectionStringSecretDescriptor):
       Server=<Host>\Dev<DeveloperUsername> (or Exp<DeveloperUsername>);Database=<Database>;Integrated Security=True;
       MultipleActiveResultSets=True;TrustServerCertificate=True;
 
     Task 10.7 cleanup: Dev/Exp connection strings are now normal BWS secrets.
-    The cmdlet uses the bws CLI with a machine/user access token resolved from
-    $env:BWS_ACCESS_TOKEN first, then the DPAPI access-token file for the running
-    Windows account (Get-BWSAccessToken) - never bw / BW_SESSION.
+    The cmdlet uses the bws CLI with a CommonCIForBitwardenReadWrite machine/user access token resolved from
+    $env:BWS_ACCESS_TOKEN first, then the ReadWrite DPAPI access-token file for the running
+    Windows account (Get-BWSAccessToken -TokenPurpose ReadWrite) - never bw / BW_SESSION.
 
     The Integrated-Security string can still be generated here because this is a
     provisioning flow that writes the value into Bitwarden Secrets Manager. Runtime
-    readers do not derive; they fetch the dbConnectionString-* value through
+    readers do not derive; they fetch the dbConnectionString.* value through
     Get-SecretATAP / BitwardenSecretsManager and fail if the BWS secret is absent.
 
     Reads of these secrets go through:
@@ -157,13 +157,13 @@ function New-SprintBitwardenSecrets {
     }
 
     if ([string]::IsNullOrWhiteSpace($env:BWS_ACCESS_TOKEN)) {
-      $cred = Get-BWSAccessToken -ErrorAction Stop
+      $cred = Get-BWSAccessToken -TokenPurpose ReadWrite -ErrorAction Stop
       $env:BWS_ACCESS_TOKEN = $cred.GetNetworkCredential().Password
       $bwsTokenWasSetHere = $true
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'BWS access token resolved from DPAPI file' -Tag 'bws-token'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'BWS ReadWrite access token resolved from CommonCIForBitwardenReadWrite DPAPI file' -Tag 'bws-token'
     }
     if ([string]::IsNullOrWhiteSpace($env:BWS_ACCESS_TOKEN)) {
-      throw 'No BWS access token in $env:BWS_ACCESS_TOKEN or the DPAPI token file. Provision it with Initialize-BWSAccessToken (NewComputerSetup.md 9.4.10).'
+      throw 'No BWS access token in $env:BWS_ACCESS_TOKEN or the CommonCIForBitwardenReadWrite DPAPI token file. Provision it with Initialize-BWSAccessToken -TokenPurpose ReadWrite (NewComputerSetup.md 9.4.10).'
     }
 
     if ($WriteDerivableToVault) {
@@ -184,7 +184,7 @@ function New-SprintBitwardenSecrets {
     try {
       if ([string]::IsNullOrWhiteSpace($ProjectId)) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Calling bws project list' -Tag 'BWSCall'
-        $projectOutput = & bws project list --output json 2>&1
+        $projectOutput = & bws project list --output json --color no 2>&1
         if ($LASTEXITCODE -ne 0) {
           throw "bws project list failed (exit $LASTEXITCODE): $projectOutput"
         }
@@ -198,7 +198,7 @@ function New-SprintBitwardenSecrets {
       }
 
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Calling bws secret list' -Tag 'BWSCall'
-      $listOutput = & bws secret list --output json 2>&1
+      $listOutput = & bws secret list --output json --color no 2>&1
       if ($LASTEXITCODE -ne 0) {
         throw "bws secret list failed (exit $LASTEXITCODE): $listOutput"
       }

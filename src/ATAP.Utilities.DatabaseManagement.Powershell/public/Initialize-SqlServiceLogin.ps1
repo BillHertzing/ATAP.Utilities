@@ -20,13 +20,21 @@ function Initialize-SqlServiceLogin {
         to prevent SQL-injection via account or database names.
 
         This is a generic replacement / generalization of Initialize-ProGetSqlServiceLogin
-        in ATAP.Utilities.BuildTooling.PowerShell.  Use that function when the service
+        in ATAP.Utilities.BuildTooling.PowerShell. Use that function when the service
         account is the NT Service virtual account created by ProGet; use this function
         when the account is a real local Windows user such as SvcProGet or SvcBuildmaster.
 
+    .PARAMETER SqlConnection
+        Existing open SQL connection. When supplied, this function uses the connection
+        directly and leaves lifecycle ownership with the caller.
+
+    .PARAMETER DBConnectionStringSecretName
+        Bitwarden secret name whose notes field contains the SQL connection string.
+        Alias: SecretName.
+
     .PARAMETER SqlInstance
         SQL Server instance in 'Server\Instance' or 'Server' format.
-        Example: 'localhost\PRODUCTION'
+        Example: 'localhost\Production'
 
     .PARAMETER DatabaseName
         Name of the application database that the service account needs db_owner access to.
@@ -39,49 +47,30 @@ function Initialize-SqlServiceLogin {
         Examples: 'UTAT022\SvcProGet', 'UTAT022\SvcBuildmaster'
 
     .PARAMETER Encrypt
-        SqlClient Encrypt connection setting.  Allowed values: Optional, Mandatory, Strict.
+        SqlClient Encrypt connection setting. Allowed values: Optional, Mandatory, Strict.
         Default: 'Optional'.
 
     .PARAMETER TrustServerCertificate
         When specified, disables certificate chain validation for the SQL Server TLS
-        certificate.  Useful in development / new-computer setup before a proper cert
+        certificate. Useful in development / new-computer setup before a proper cert
         is deployed.
 
     .OUTPUTS
         PSCustomObject with fields:
           SqlInstance, DatabaseName, ServiceAccount, Status
-
-    .EXAMPLE
-        Initialize-SqlServiceLogin `
-            -SqlInstance     'localhost\PRODUCTION' `
-            -DatabaseName    'ProGet' `
-            -ServiceAccount  "$env:COMPUTERNAME\SvcProGet" `
-            -Encrypt          Optional `
-            -TrustServerCertificate
-
-        Creates / verifies the Windows login and grants db_owner on the ProGet database.
-
-    .EXAMPLE
-        Initialize-SqlServiceLogin `
-            -SqlInstance     'localhost\PRODUCTION' `
-            -DatabaseName    'BuildMaster' `
-            -ServiceAccount  "UTAT022\SvcBuildmaster" `
-            -Encrypt          Optional `
-            -TrustServerCertificate `
-            -WhatIf
-
-        Shows what would be executed without making changes.
-
-    .NOTES
-        Requires the dbatools PowerShell module (Invoke-DbaQuery).
-        The caller must have a SQL Server login with sysadmin or securityadmin + alter any
-        login permissions.  Running as the host administrator under Integrated Security is
-        the typical approach on a new-computer setup.
     #>
 
-  [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
+  [CmdletBinding(DefaultParameterSetName = 'SqlInstance', SupportsShouldProcess, ConfirmImpact = 'Medium')]
   param (
-    [Parameter(Mandatory)]
+    [Parameter(Mandatory, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'SqlConnection')]
+    [AllowNull()]
+    [object] $SqlConnection,
+
+    [Parameter(Mandatory, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'DBConnectionStringSecretName')]
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string] $DBConnectionStringSecretName,
+
+    [Parameter(Mandatory, ParameterSetName = 'SqlInstance')]
     [string] $SqlInstance,
 
     [Parameter(Mandatory)]
@@ -99,6 +88,26 @@ function Initialize-SqlServiceLogin {
   $fn = $MyInvocation.MyCommand.Name
   $mn = 'ATAP.Utilities.DatabaseManagement.Powershell'
 
+  if (-not (Get-Command -Name 'Resolve-DatabaseSqlConnection' -CommandType Function -ErrorAction SilentlyContinue)) {
+    . (Join-Path -Path $PSScriptRoot -ChildPath 'Resolve-DatabaseSqlConnection.ps1')
+  }
+
+  $openSQLConnection = $null
+  $isCallerOwnedConnection = $false
+
+  if ($PSCmdlet.ParameterSetName -ne 'SqlInstance') {
+    $resolution = Resolve-DatabaseSqlConnection `
+      -OriginalPSBoundParameters $PSBoundParameters `
+      -SqlConnection $SqlConnection `
+      -DBConnectionStringSecretName $DBConnectionStringSecretName `
+      -DatabaseName $DatabaseName
+    $openSQLConnection = $resolution.Connection
+    $isCallerOwnedConnection = [bool] $resolution.IsCallerOwned
+    if (-not [string]::IsNullOrWhiteSpace($DBConnectionStringSecretName)) {
+      $SqlInstance = $openSQLConnection.DataSource
+    }
+  }
+
   Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
     -Message "[$fn] Applying SQL principal grants on $SqlInstance for database '$DatabaseName' and account '$ServiceAccount'"
 
@@ -109,21 +118,11 @@ function Initialize-SqlServiceLogin {
     Status         = 'NotStarted'
   }
 
-  # Escape single quotes in all values used as NVARCHAR literals in DECLARE statements.
-  # QUOTENAME() in the dynamic EXEC calls protects identifier injection;
-  # the single-quote doubling here protects the DECLARE string assignments.
   $loginEscaped = $ServiceAccount -replace "'", "''"
   $userEscaped = ($ServiceAccount -split '\\')[-1] -replace "'", "''"
 
-  $commonParams = @{
-    SqlInstance            = $SqlInstance
-    AppendConnectionString = "Encrypt=$Encrypt;Trust Server Certificate=$($TrustServerCertificate.IsPresent)"
-    EnableException        = $true
-    ErrorAction            = 'Stop'
-  }
-
-  # Batch 1: create the server-level Windows login (run against master)
   $loginSql = @"
+USE [master];
 DECLARE @login NVARCHAR(256) = N'$loginEscaped';
 IF NOT EXISTS (
     SELECT 1
@@ -137,8 +136,8 @@ BEGIN
 END;
 "@
 
-  # Batch 2: create the DB user and grant db_owner (run against the target database)
   $userSql = @"
+USE [$($DatabaseName.Replace(']', ']]'))];
 DECLARE @login NVARCHAR(256) = N'$loginEscaped';
 DECLARE @user  NVARCHAR(128) = N'$userEscaped';
 IF NOT EXISTS (
@@ -158,31 +157,58 @@ BEGIN
 END;
 "@
 
+  $appendConnectionStringParts = @("Integrated Security=True", "Encrypt=$Encrypt")
+  if ($TrustServerCertificate) {
+    $appendConnectionStringParts += 'Trust Server Certificate=True'
+  }
+  $appendConnectionString = $appendConnectionStringParts -join ';'
+
   try {
     if ($PSCmdlet.ShouldProcess("$SqlInstance / $DatabaseName", "Grant db_owner to '$ServiceAccount'")) {
+      if ($PSCmdlet.ParameterSetName -eq 'SqlInstance') {
+        Invoke-DbaQuery -SqlInstance $SqlInstance -Database 'master' -Query $loginSql -AppendConnectionString $appendConnectionString -EnableException -ErrorAction Stop | Out-Null
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+          -Message "[$fn] Server login step completed"
 
-      # Step 1: server login
-      Invoke-DbaQuery @commonParams -Database 'master' -Query $loginSql
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
-        -Message "[$fn] Server login step completed"
+        Invoke-DbaQuery -SqlInstance $SqlInstance -Database $DatabaseName -Query $userSql -AppendConnectionString $appendConnectionString -EnableException -ErrorAction Stop | Out-Null
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+          -Message "[$fn] Database user/role step completed in '$DatabaseName'"
+      }
+      else {
+        $loginCommand = $openSQLConnection.CreateCommand()
+        $loginCommand.CommandText = $loginSql
+        [void] $loginCommand.ExecuteNonQuery()
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+          -Message "[$fn] Server login step completed"
 
-      # Step 2: DB user + role membership
-      Invoke-DbaQuery @commonParams -Database $DatabaseName -Query $userSql
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
-        -Message "[$fn] Database user/role step completed in '$DatabaseName'"
+        $userCommand = $openSQLConnection.CreateCommand()
+        $userCommand.CommandText = $userSql
+        [void] $userCommand.ExecuteNonQuery()
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+          -Message "[$fn] Database user/role step completed in '$DatabaseName'"
+      }
 
       $result.Status = 'Success'
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
         -Message "[$fn] SQL principal grants applied successfully"
-    } else {
+    }
+    else {
       $result.Status = 'WhatIf'
     }
-  } catch {
+  }
+  catch {
     $result.Status = "Error: $($_.Exception.Message)"
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
       -Message "[$fn] $($_.Exception.Message)" -Exception $_.Exception
     throw
   }
+  finally {
+    if ($null -ne $openSQLConnection -and -not $isCallerOwnedConnection) {
+      try { $openSQLConnection.Close() } catch { }
+      try { $openSQLConnection.Dispose() } catch { }
+    }
+  }
 
   $result
 }
+

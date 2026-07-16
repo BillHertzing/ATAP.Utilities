@@ -73,6 +73,8 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
         Mock Invoke-WebRequest { }
         Mock Start-Sleep { }
         Mock Expand-Archive { }
+        Mock Remove-Module { }
+        Mock Get-Module { @() }
         Mock Import-Module { }
         Mock Get-ChildItem {
             [PSCustomObject]@{
@@ -199,11 +201,42 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
                 $Name -eq 'Mod' -and $Version -eq '1.0.0' -and $Repository -eq 'powershellget-development'
             }
             Assert-MockCalled Invoke-WebRequest -Times 0 -Exactly -Scope It
+            Assert-MockCalled Remove-Module -Times 2 -Exactly -Scope It -ParameterFilter {
+                $Name -eq 'Mod' -and $Force
+            }
             Assert-MockCalled Import-Module -Times 1 -Exactly -Scope It -ParameterFilter { $Name -match 'Mod\.psd1' }
             Assert-MockCalled Invoke-PSModulePesterTests -Times 1 -Exactly -Scope It -ParameterFilter {
                 $ModuleRoot -eq 'C:\fake\src\Mod' -and $Tier -eq 'Alpha' -and (-not $SkipTestResult) -and $SkipCodeCoverage -and
                 $PesterOutputVerbosity -eq 'Normal' -and $PesterProgressInterval -eq 20
             }
+        }
+
+        It 'removes a prior tier copy before import and cleans up after testing' {
+            $script:removeCount = 0
+            Mock Remove-Module { $script:removeCount++ }
+            Mock Import-Module {
+                $script:removeCount | Should -Be 1
+            }
+
+            Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0' `
+                -Feed 'powershellget-development' -Tier 'Development' -ResultsPath 'r' `
+                -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake' | Out-Null
+
+            $script:removeCount | Should -Be 2
+        }
+
+        It 'fails before import when a same-name module remains loaded' {
+            Mock Get-Module {
+                [PSCustomObject]@{ Name = 'Mod'; Path = 'C:\old-tier\Mod.psd1' }
+            }
+
+            {
+                Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0' `
+                    -Feed 'powershellget-integration' -Tier 'Integration' -ResultsPath 'r' `
+                    -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake'
+            } | Should -Throw '*Unable to isolate promoted module*old-tier*'
+
+            Assert-MockCalled Import-Module -Times 0 -Exactly -Scope It
         }
 
         It 'Passes explicit Pester output settings to the delegated test runner' {

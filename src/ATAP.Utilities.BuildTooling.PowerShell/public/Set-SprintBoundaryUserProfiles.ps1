@@ -5,19 +5,20 @@ function Set-SprintBoundaryUserProfiles {
   .DESCRIPTION
     Resolves the active sprint or stable overview workspace to discover developer
     identities, bootstraps ATAP host settings to discover local service-account
-    identities, and installs each applicable PowerShell 7 user profile as
+    identities, and copies each applicable PowerShell 7 user profile as
     `<Home>\Documents\PowerShell\profile.ps1`.
 
-    Developer profiles always point at
-    `CurrentUserAllHostsV7CoreProfile.ps1` beneath the supplied
-    `ATAPUtilitiesRoot`. Service-account profiles always point at
-    `ProfileForServiceAccountUsers.ps1` beneath the same root. Missing or
-    disabled service accounts are skipped with explicit warnings so SprintEnd can
-    proceed safely on hosts that do not provision every account.
+    Developer profiles copy the ATAP.IAC `CurrentUserAllHostsV7CoreProfile.ps1`
+    payload. Service-account profiles copy the ATAP.IAC administrator-managed
+    payload. Missing or disabled service accounts are skipped
+    with explicit warnings so SprintEnd can proceed safely on hosts that do not
+    provision every account.
 
-    The function is idempotent: if a target profile already points at or matches
-    the expected source, it is left in place and reported as `AlreadyCurrent`.
-    Every filesystem mutation runs under ShouldProcess.
+    The function is idempotent: a managed target profile matching the rendered
+    template is left in place and reported as `AlreadyCurrent`. User-owned
+    profiles remain protected by Set-UserScopeProfile and are never replaced
+    without its explicit -Force option. Every filesystem mutation runs under
+    ShouldProcess.
   .PARAMETER ATAPUtilitiesRoot
     Repository or worktree root that owns the canonical profile sources.
   .PARAMETER ATAPIACRoot
@@ -27,9 +28,10 @@ function Set-SprintBoundaryUserProfiles {
     Parent directory containing the overview workspace files.
   .PARAMETER OverviewWorkspacePath
     Optional explicit path to the sprint or stable overview `.code-workspace`
-    file. When omitted, the function prefers the newest `OverviewSprint*.code-workspace`
-    beneath `GitRoot`, then falls back to `Overview.code-workspace` or
-    `OverView.code-workspace`.
+    file. When omitted, the function prefers the newest canonical
+    `Overview.Sprint.NNNN.code-workspace` beneath `GitRoot`, then checks legacy
+    sprint spellings for compatibility before falling back to
+    `Overview.code-workspace`.
   .PARAMETER HomeDirectoryOverrides
     Optional map of identity name to home-directory path. Intended for tests and
     narrowly scoped repairs.
@@ -71,6 +73,7 @@ function Set-SprintBoundaryUserProfiles {
   begin {
     $fn = $MyInvocation.MyCommand.Name
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+    $localComputerName = if ($env:COMPUTERNAME) { $env:COMPUTERNAME } else { [Environment]::MachineName }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
     foreach ($privateHelperName in @('Get-WorkspaceJson', 'Initialize-ATAPConfigurationGlobals')) {
@@ -106,7 +109,7 @@ function Set-SprintBoundaryUserProfiles {
         return [IO.Path]::GetFullPath([string]$HomeDirectoryOverrides[$leafName])
       }
 
-      if ($HostName -and -not [string]::Equals($HostName, $env:COMPUTERNAME, [StringComparison]::OrdinalIgnoreCase)) {
+      if ($HostName -and -not [string]::Equals($HostName, $localComputerName, [StringComparison]::OrdinalIgnoreCase)) {
         return $null
       }
 
@@ -130,10 +133,13 @@ function Set-SprintBoundaryUserProfiles {
         return [IO.Path]::GetFullPath($WorkspacePath)
       }
 
-      $candidates = @(
-        Get-ChildItem -LiteralPath $GitRoot -File -Filter 'OverviewSprint*.code-workspace' -ErrorAction SilentlyContinue |
-          Sort-Object LastWriteTime -Descending
-      )
+      $workspaceFiles = @()
+      $workspaceFiles += Get-ChildItem -LiteralPath $GitRoot -File -Filter 'Overview.Sprint.*.code-workspace' -ErrorAction SilentlyContinue
+      # Legacy compatibility only; new workspaces use Overview.Sprint.NNNN.
+      $workspaceFiles += Get-ChildItem -LiteralPath $GitRoot -File -Filter 'Overview.Sprint*.code-workspace' -ErrorAction SilentlyContinue
+      $workspaceFiles += Get-ChildItem -LiteralPath $GitRoot -File -Filter 'OverviewSprint*.code-workspace' -ErrorAction SilentlyContinue
+      $workspaceFiles += Get-ChildItem -LiteralPath $GitRoot -File -Filter 'OverViewSprint*.code-workspace' -ErrorAction SilentlyContinue
+      $candidates = @($workspaceFiles | Sort-Object LastWriteTime -Descending)
       if ($candidates.Count -gt 0) {
         return $candidates[0].FullName
       }
@@ -148,40 +154,15 @@ function Set-SprintBoundaryUserProfiles {
       return $null
     }
 
-    function Test-ProfileMatchesSource {
-      param(
-        [string]$ProfilePath,
-        [string]$SourcePath
-      )
-
-      if (-not ((Test-Path -LiteralPath $ProfilePath -PathType Leaf) -and (Test-Path -LiteralPath $SourcePath -PathType Leaf))) {
-        return $false
-      }
-
-      $existingItem = Get-Item -LiteralPath $ProfilePath -Force -ErrorAction SilentlyContinue
-      $existingTarget = if ($existingItem -and $existingItem.PSObject.Properties['Target']) {
-        @($existingItem.Target) | Select-Object -First 1
-      } else {
-        $null
-      }
-
-      if (-not [string]::IsNullOrWhiteSpace($existingTarget)) {
-        $resolvedSource = [IO.Path]::GetFullPath($SourcePath)
-        $resolvedTarget = [IO.Path]::GetFullPath([string]$existingTarget)
-        if ([string]::Equals($resolvedSource, $resolvedTarget, [StringComparison]::OrdinalIgnoreCase)) {
-          return $true
-        }
-      }
-
-      return [string]::Equals(
-        (Get-Content -LiteralPath $ProfilePath -Raw -ErrorAction SilentlyContinue),
-        (Get-Content -LiteralPath $SourcePath -Raw -ErrorAction SilentlyContinue),
-        [StringComparison]::Ordinal
-      )
+    $developerSourcePath = Join-Path $ATAPIACRoot 'Windows\ProfileTemplates\CurrentUserAllHostsV7CoreProfile.ps1'
+    $serviceSourcePath = Join-Path $ATAPIACRoot 'Windows\ProfileTemplates\ProfileForServiceAccountUsers.ps1'
+    $approvedServiceAccountPolicy = @{
+      SvcBuildMaster = $true
+      SvcProGet = $true
+      SvcSQLServer = $true
+      SvcSeq = $false
+      SvcParityAudit = $false
     }
-
-    $developerSourcePath = Join-Path $ATAPUtilitiesRoot 'src\ATAP.Utilities.PowerShell\Profiles\CurrentUserAllHostsV7CoreProfile.ps1'
-    $serviceSourcePath = Join-Path $ATAPUtilitiesRoot 'src\ATAP.Utilities.PowerShell\Profiles\ProfileForServiceAccountUsers.ps1'
 
     $profiles = [System.Collections.Generic.List[object]]::new()
     $warnings = [System.Collections.Generic.List[string]]::new()
@@ -209,8 +190,8 @@ function Set-SprintBoundaryUserProfiles {
       $skipReason = $null
       $isFailure = $false
 
-      if ($developerHost -and -not [string]::Equals($developerHost, $env:COMPUTERNAME, [StringComparison]::OrdinalIgnoreCase)) {
-        $skipReason = "Developer '$username' belongs to host '$developerHost', not '$env:COMPUTERNAME'."
+      if ($developerHost -and -not [string]::Equals($developerHost, $localComputerName, [StringComparison]::OrdinalIgnoreCase)) {
+        $skipReason = "Developer '$username' belongs to host '$developerHost', not '$localComputerName'."
         [void]$warnings.Add($skipReason)
       } elseif ([string]::IsNullOrWhiteSpace($homeDirectory)) {
         $skipReason = "Home directory could not be resolved for developer '$username'."
@@ -265,6 +246,10 @@ function Set-SprintBoundaryUserProfiles {
 
       $configuredHome = [string]$global:settings[$homeSettingKey]
       $leafIdentity = Resolve-LeafName -Identity $identity
+      if (-not $approvedServiceAccountPolicy.ContainsKey($leafIdentity)) {
+        [void]$warnings.Add("Ignoring discovered service account '$identity' because it is outside the user-approved Task 12.49 scope.")
+        continue
+      }
       $localUser = $null
       try {
         $localUser = Get-LocalUser -Name $leafIdentity -ErrorAction Stop
@@ -285,10 +270,10 @@ function Set-SprintBoundaryUserProfiles {
       $isFailure = $false
 
       if ($null -eq $localUser) {
-        $skipReason = "Service account '$identity' is not present on host '$env:COMPUTERNAME'."
+        $skipReason = "Service account '$identity' is not present on host '$localComputerName'."
         [void]$warnings.Add($skipReason)
       } elseif ($localUser.PSObject.Properties['Enabled'] -and -not [bool]$localUser.Enabled) {
-        $skipReason = "Service account '$identity' is disabled on host '$env:COMPUTERNAME'."
+        $skipReason = "Service account '$identity' is disabled on host '$localComputerName'."
         [void]$warnings.Add($skipReason)
       } elseif ([string]::IsNullOrWhiteSpace($homeDirectory)) {
         $skipReason = "Home directory could not be resolved for service account '$identity'."
@@ -299,10 +284,11 @@ function Set-SprintBoundaryUserProfiles {
       [void]$profiles.Add([PSCustomObject]@{
           Identity      = $identity
           Kind          = 'ServiceAccount'
-          Host          = $env:COMPUTERNAME
+          Host          = $localComputerName
           HomeDirectory = $homeDirectory
           ProfilePath   = $profilePath
           SourcePath    = $serviceSourcePath
+          RequiresSecret = [bool]$approvedServiceAccountPolicy[$leafIdentity]
           Skipped       = [bool]$skipReason -and -not $isFailure
           Warning       = if ($isFailure) { $null } else { $skipReason }
           Error         = if ($isFailure) { $skipReason } else { $null }
@@ -325,60 +311,22 @@ function Set-SprintBoundaryUserProfiles {
         continue
       }
 
-      if (-not (Test-Path -LiteralPath $profile.SourcePath -PathType Leaf)) {
-        $profile.Action = 'SourceMissing'
-        $profile.Error = "Profile source not found: '$($profile.SourcePath)'"
+      try {
+        $profileResult = Set-UserScopeProfile `
+          -AccountName $profile.Identity `
+          -AccountClass $profile.Kind `
+          -ATAPIACRoot $ATAPIACRoot `
+          -ATAPUtilitiesRoot $ATAPUtilitiesRoot `
+          -UserProfilePath $profile.HomeDirectory `
+          -Confirm:$false `
+          -WhatIf:$WhatIfPreference
+        $profile.Action = $profileResult.Action
+        $profile.Succeeded = $true
+        $profile.SourceMatch = $profileResult.Action -eq 'AlreadyCurrent'
+      } catch {
+        $profile.Action = 'ProvisionFailed'
+        $profile.Error = "Failed to provision profile '$($profile.ProfilePath)': $($_.Exception.Message)"
         [void]$failures.Add($profile.Error)
-        continue
-      }
-
-      $profile.SourceMatch = Test-ProfileMatchesSource -ProfilePath $profile.ProfilePath -SourcePath $profile.SourcePath
-      if ($profile.SourceMatch) {
-        $existingItem = Get-Item -LiteralPath $profile.ProfilePath -Force -ErrorAction SilentlyContinue
-        $profile.LinkTarget = if ($existingItem -and $existingItem.PSObject.Properties['Target']) {
-          @($existingItem.Target) | Select-Object -First 1
-        } else {
-          $null
-        }
-        $profile.Action = 'AlreadyCurrent'
-        $profile.Succeeded = $true
-        continue
-      }
-
-      $profileDirectory = Split-Path -Path $profile.ProfilePath -Parent
-      $actionDescription = "$($profile.Kind) profile for '$($profile.Identity)' -> '$($profile.SourcePath)'"
-      if ($PSCmdlet.ShouldProcess($profile.ProfilePath, $actionDescription)) {
-        try {
-          if (-not (Test-Path -LiteralPath $profileDirectory -PathType Container)) {
-            New-Item -ItemType Directory -Path $profileDirectory -Force -ErrorAction Stop | Out-Null
-          }
-
-          if (Test-Path -LiteralPath $profile.ProfilePath -PathType Leaf) {
-            Remove-Item -LiteralPath $profile.ProfilePath -Force -ErrorAction Stop
-          }
-
-          New-Item -ItemType SymbolicLink -Path $profile.ProfilePath -Target $profile.SourcePath -Force -ErrorAction Stop | Out-Null
-          $existingItem = Get-Item -LiteralPath $profile.ProfilePath -Force -ErrorAction SilentlyContinue
-          $profile.LinkTarget = if ($existingItem -and $existingItem.PSObject.Properties['Target']) {
-            @($existingItem.Target) | Select-Object -First 1
-          } else {
-            $null
-          }
-          $profile.SourceMatch = Test-ProfileMatchesSource -ProfilePath $profile.ProfilePath -SourcePath $profile.SourcePath
-          $profile.Action = 'Retargeted'
-          $profile.Succeeded = $profile.SourceMatch
-          if (-not $profile.Succeeded) {
-            $profile.Error = "Profile deployment completed but '$($profile.ProfilePath)' does not match '$($profile.SourcePath)'."
-            [void]$failures.Add($profile.Error)
-          }
-        } catch {
-          $profile.Action = 'RetargetFailed'
-          $profile.Error = "Failed to deploy profile '$($profile.ProfilePath)': $($_.Exception.Message)"
-          [void]$failures.Add($profile.Error)
-        }
-      } else {
-        $profile.Action = if (Test-Path -LiteralPath $profile.ProfilePath -PathType Leaf) { 'WouldRetarget' } else { 'WouldCreate' }
-        $profile.Succeeded = $true
       }
     }
 

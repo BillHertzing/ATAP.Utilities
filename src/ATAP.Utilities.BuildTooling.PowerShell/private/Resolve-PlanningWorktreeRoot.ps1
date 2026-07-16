@@ -18,9 +18,10 @@ function Resolve-PlanningWorktreeRoot {
          a sprint _Planning worktree. If a sprint context is detected but NO sprint
          _Planning worktree can be found, THROW with remediation rather than fall
          back to the stable _Planning (main) worktree.
-      3. No sprint context (genuine stable maintenance): resolve the stable
-         _Planning worktree (workspace file, else <ReposParent>\_Planning) and
-         return it flagged IsSprint=$false.
+      3. No sprint path context: first resolve the latest Overview.Sprint.NNNN
+        workspace to its sprint _Planning worktree, then fall back to
+        Overview.code-workspace and finally <ReposParent>\_Planning for stable
+        maintenance.
   .PARAMETER PlanningRoot
     Explicit _Planning worktree root supplied by the caller. Overrides all
     auto-resolution.
@@ -83,11 +84,13 @@ function Resolve-PlanningWorktreeRoot {
       param(
         [string]$WorkspaceReposParent,
         [string]$SprintToken,
+        [string]$WorkspaceFilter = 'OverView*.code-workspace',
+        [switch]$RequireStable,
         [switch]$RequireSprint
       )
       if (-not $WorkspaceReposParent) { return $null }
       $wsFiles = @(
-        Get-ChildItem -Path $WorkspaceReposParent -Filter 'OverView*.code-workspace' -File -ErrorAction SilentlyContinue
+        Get-ChildItem -Path $WorkspaceReposParent -Filter $WorkspaceFilter -File -ErrorAction SilentlyContinue
       )
       foreach ($wsFile in @($wsFiles | Sort-Object LastWriteTime -Descending)) {
         $wsContent = Get-Content -LiteralPath $wsFile.FullName -Raw -ErrorAction SilentlyContinue
@@ -99,12 +102,26 @@ function Resolve-PlanningWorktreeRoot {
           }
           $leaf = Split-Path -Path $candidate -Leaf
           if ($leaf -notlike '_Planning*') { continue }
+          $candidateSprintToken = $null
+          if ($leaf -match '-wt-.*-(?<sprint>Sprint-\d+-work-items)$') {
+            $candidateSprintToken = $Matches['sprint']
+          }
           if ($RequireSprint) {
-            if ($leaf -notmatch "-wt-.*-$([regex]::Escape($SprintToken))$") { continue }
+            if (-not $candidateSprintToken) { continue }
+            if ($SprintToken -and $candidateSprintToken -ne $SprintToken) { continue }
+          }
+          if ($RequireStable) {
+            if ($candidateSprintToken) { continue }
           }
           if (Test-PlanningRootHasInbox -Root $candidate) {
             $resolved = Resolve-Path -LiteralPath $candidate -ErrorAction SilentlyContinue
-            return $(if ($resolved) { $resolved.Path } else { $candidate })
+            $rootPath = $(if ($resolved) { $resolved.Path } else { $candidate })
+            return [pscustomobject]@{
+              PlanningRoot  = $rootPath
+              IsSprint      = [bool]$candidateSprintToken
+              SprintToken   = $candidateSprintToken
+              WorkspaceFile = $wsFile.FullName
+            }
           }
         }
       }
@@ -158,9 +175,9 @@ function Resolve-PlanningWorktreeRoot {
       # 2b. Widened workspace-file fallback - must yield a SPRINT _Planning worktree.
       $sprintFromWs = Resolve-FromWorkspace -WorkspaceReposParent $ctxReposParent -SprintToken $sprintToken -RequireSprint
       if ($sprintFromWs) {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved sprint _Planning worktree via workspace file: $sprintFromWs"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved sprint _Planning worktree via workspace file: $($sprintFromWs.PlanningRoot)"
         return [pscustomobject]@{
-          PlanningRoot = $sprintFromWs
+          PlanningRoot = $sprintFromWs.PlanningRoot
           Method       = 'SprintWorkspaceFile'
           IsSprint     = $true
           SprintToken  = $sprintToken
@@ -175,17 +192,31 @@ Remediation: pass -PlanningRoot '<reposParent>\_Planning-wt-<issue>-$sprintToken
 "@
     }
 
-    # 3. No sprint context detected - genuine stable maintenance is acceptable.
+    # 3. No sprint path context detected - prefer an Overview.Sprint.NNNN workspace, then stable maintenance.
     $stableParent = if ($ReposParent) { $ReposParent } else { @($ContextPath | Where-Object { $_ } | Select-Object -First 1) }
     if ($stableParent) {
-      $fromWs = Resolve-FromWorkspace -WorkspaceReposParent $stableParent
-      if ($fromWs) {
-        $leaf = Split-Path -Path $fromWs -Leaf
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Resolved _Planning worktree from workspace file (no sprint context detected): $fromWs"
+      $fromSprintOverview = Resolve-FromWorkspace -WorkspaceReposParent $stableParent -WorkspaceFilter 'Overview.Sprint.*.code-workspace' -RequireSprint
+      if (-not $fromSprintOverview) {
+        # Legacy compatibility only.
+        $fromSprintOverview = Resolve-FromWorkspace -WorkspaceReposParent $stableParent -WorkspaceFilter 'Overview.Sprint*.code-workspace' -RequireSprint
+      }
+      if ($fromSprintOverview) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Resolved sprint _Planning worktree from sprint overview workspace file: $($fromSprintOverview.PlanningRoot)"
         return [pscustomobject]@{
-          PlanningRoot = $fromWs
-          Method       = 'WorkspaceFile'
-          IsSprint     = [bool]($leaf -match '-wt-.*-Sprint-\d+-work-items$')
+          PlanningRoot = $fromSprintOverview.PlanningRoot
+          Method       = 'SprintOverviewWorkspaceFile'
+          IsSprint     = $true
+          SprintToken  = $fromSprintOverview.SprintToken
+        }
+      }
+
+      $fromWs = Resolve-FromWorkspace -WorkspaceReposParent $stableParent -WorkspaceFilter 'OverView.code-workspace' -RequireStable
+      if ($fromWs) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Resolved stable _Planning worktree from overview workspace file: $($fromWs.PlanningRoot)"
+        return [pscustomobject]@{
+          PlanningRoot = $fromWs.PlanningRoot
+          Method       = 'StableWorkspaceFile'
+          IsSprint     = $false
           SprintToken  = $null
         }
       }

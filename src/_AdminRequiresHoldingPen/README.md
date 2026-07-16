@@ -9,5 +9,4 @@ a dedicated administrator-focused module once that module boundary is defined.
 Current holdings:
 
 - `ATAP.Utilities.PowerShell/public/New-LocalServiceAccount.ps1`
-- `ATAP.Utilities.PowerShell/tests/Unit/New-LocalServiceAccount.Tests.ps1`
 - `ATAP.Utilities.DatabaseManagement.Powershell/archive/New-SqlWinScheduledTasks.ps1`

@@ -39,6 +39,23 @@ ToDo: Insert diagram of CI/CD process
 
 ### RRSBS and AgentText
 
+- **Host-pair parity journals:** Before any runbook changes machine state on
+  `utat022` or `utat01`, declare the change locally with
+  `Add-ParityChangeEntry`, then have the peer acknowledge it after its matching
+  action is applied and verified. Record only identifiers and configuration
+  metadata—never credentials, tokens, or secret values. This is a mandatory
+  step in the active Windows/host provisioning, SQL, service-account, backup,
+  and WSL runbooks (Task 12.38.f). The module-level
+  `src/ATAP.Utilities.SystemParityMonitor.PowerShell/Documentation/InstallationAndTroubleshooting.md`
+  runbook covers Windows 10/11 installation, scheduler registration, first-run proof,
+  and recovery from the live Task 12.38.e failure modes, including Windows 10
+  WinRM/`PSModulePath`, credential-backed S4U registration, and version 0.1.1 static-
+  payload packaging limitations.
+- [ATAPUtilities Instantiation Tables](./ATAPUtilities-Instantiation-Tables.md)
+  defines the Sprint 0012 inventory/version/manifestation schema used to model
+  organization, computers, repositories, source modules, and rendered artifacts
+  for ATAPUtilities instantiations; Tasks 12.26.b-e added the read-only
+  scanner, renderer, and v1/v2 manifestation evidence.
 - [Rules Compendium.AgentText](./Rules%20Compendium.AgentText.md) defines the
   AgentText rule kind and embeds the grammar for AI agent and instruction text.
 - `src/ATAP.Utilities.RulesManagement.PowerShell/public/Import-AgentTextFromFiles.ps1`
@@ -50,6 +67,14 @@ ToDo: Insert diagram of CI/CD process
 - [Sprint Infrastructure Naming](./SprintInfrastructure-Naming.md) records the
   sprint resource names, including BWS-owned `dbConnectionString-*` keys for
   Development and Experimental database connection strings.
+
+### ManimVideoGenerator
+
+- The subsystem generating Manim animations from text/voice descriptions (a
+  planned AceCommander bolt-on module). Master overview:
+  [src/ATAP.Utilities.ManimVideoGenerator/Documentation/Overview.md](../src/ATAP.Utilities.ManimVideoGenerator/Documentation/Overview.md)
+  (moved from `_Planning/Explainers/0200`, 2026-07-06); rule grammar in
+  [Rules Compendium.Manim](./Rules%20Compendium.Manim.md).
 
 ## <a id="Development vs. CI/CD" /> Development vs. CI/CD
 
@@ -68,6 +93,12 @@ All of the tools used in producing a production-ready package are themselves sof
 ## <a id="Building" /> Building
 
 The non-documentation Projects in this repository are written in C#, Powershell, and SQL. Documentation is written in Markdown, Unified Modelling Language (UML), and DrawIO.
+
+Repository-wide C# build health checks run through
+`Build\Invoke-RepoHealthGate.ps1` after restore and before pack or publish.
+That gate invokes `tests\RepoHealth` Pester tests for shared MSBuild contracts
+such as `Directory.Build.props` property propagation, and it is intentionally
+outside individual PowerShell module package build/test flows.
 
 ## <a id="Publishing" />Publishing
 

@@ -19,6 +19,14 @@ images are generated with the PowerShell command documented in
 Editable `.puml`, `.uml`, and `.drawio` sources stay in their documentation
 folders; rendered images are written under `_generated/diagrams`.
 
+### RepoHealth gate
+
+`Build\Invoke-RepoHealthGate.ps1` runs repository-wide checks that are too broad
+for an individual package/module test suite. The current gate invokes
+`tests\RepoHealth\Directory.Build.Props.Properties.Tests.ps1` after C# restore
+and before pack/publish to verify `Directory.Build.props` properties across all
+C# projects under `src/`.
+
 ### AgentText RRSBS pilot
 
 Sprint 0008 adds an AgentText rule kind for AI agent and instruction text.
@@ -31,12 +39,15 @@ with its grammar embedded in that compendium and import/export functions under
 
 `AGENTS.md`, `CLAUDE.md`, and `.agents/skills/bitwarden/SKILL.md` carry the
 Sprint 0010 Task 10.7 Bitwarden split: `Get-SecretATAP` defaults to
-Bitwarden Secrets Manager (`bws` plus process/DPAPI token), while Password
-Manager `bw` + `BW_SESSION` is opt-in for personal user-owned secrets only.
+Bitwarden Secrets Manager (ws plus process/DPAPI token), while Password
+Manager w + BW_SESSION is opt-in for personal user-owned secrets only. The
+current BWS DPAPI model provisions ReadOnly for all readers and optional
+ReadWrite only for trusted maintainer/provisioning identities.
 
 ### Research reports
 
 - `Research/ReportOnAccessingSecretsFromBitwarden.md` in the `_Planning` Sprint
   0010 worktree records the Task 10.7 review of Bitwarden Password Manager
-  `bw`, Bitwarden Secrets Manager `bws`, DPAPI token resolution, BuildMaster
-  secret access, and the DB connection-string BWS cleanup.
+  w, Bitwarden Secrets Manager ws, DPAPI token resolution, the later
+  ReadOnly/ReadWrite token-purpose split, BuildMaster secret access, and
+  the DB connection-string BWS cleanup.

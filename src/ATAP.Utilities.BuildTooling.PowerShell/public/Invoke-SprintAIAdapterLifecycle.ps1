@@ -21,6 +21,9 @@ function Invoke-SprintAIAdapterLifecycle {
     Confirms a checkpoint completed before live user/global replacement.
   .PARAMETER EvidenceRoot
     Optional _generated evidence and backup directory.
+  .PARAMETER OmitSprintWorktrees
+    For SprintEnd shared-settings renders, resolves sprint-worktree placeholders
+    to their stable/closed-state form.
   .OUTPUTS
     PSCustomObject returned by Invoke-AIAdapterLifecycle.
   .EXAMPLE
@@ -52,7 +55,9 @@ function Invoke-SprintAIAdapterLifecycle {
 
     [switch]$CheckpointConfirmed,
 
-    [string]$EvidenceRoot
+    [string]$EvidenceRoot,
+
+    [switch]$OmitSprintWorktrees
   )
 
   begin {
@@ -63,6 +68,7 @@ function Invoke-SprintAIAdapterLifecycle {
     $TargetRoot = [IO.Path]::GetFullPath($TargetRoot)
     $SharedVSCodeWorktreePath = [IO.Path]::GetFullPath($SharedVSCodeWorktreePath)
     $lifecycleScript = Join-Path $SharedVSCodeWorktreePath '.ai/tools/Invoke-AIAdapterLifecycle.ps1'
+    $rendererPath = Join-Path $SharedVSCodeWorktreePath '.ai/tools/Render-AIAdapters.ps1'
     if (-not (Test-Path -LiteralPath $lifecycleScript -PathType Leaf)) {
       throw "Invoke-AIAdapterLifecycle.ps1 not found at expected path: $lifecycleScript"
     }
@@ -83,6 +89,66 @@ function Invoke-SprintAIAdapterLifecycle {
       }
       if (-not [string]::IsNullOrWhiteSpace($EvidenceRoot)) {
         $parameters.EvidenceRoot = $EvidenceRoot
+      }
+
+      $lifecycleCommand = Get-Command -Name Invoke-AIAdapterLifecycle -CommandType Function -ErrorAction Stop
+      if ($OmitSprintWorktrees) {
+        if ($lifecycleCommand.Parameters.ContainsKey('OmitSprintWorktrees')) {
+          $parameters.OmitSprintWorktrees = $true
+        } elseif ($Boundary -eq 'Start') {
+          if (-not (Test-Path -LiteralPath $rendererPath -PathType Leaf)) {
+            throw "Render-AIAdapters.ps1 not found at expected path: $rendererPath"
+          }
+          if (-not (Get-Command -Name Render-AIAdapters -CommandType Function -ErrorAction SilentlyContinue)) {
+            . $rendererPath
+          }
+          $renderCommand = Get-Command -Name Render-AIAdapters -CommandType Function -ErrorAction Stop
+          if (-not $renderCommand.Parameters.ContainsKey('OmitSprintWorktrees')) {
+            throw 'Render-AIAdapters does not support -OmitSprintWorktrees in the selected SharedVSCode worktree.'
+          }
+          $registryPath = Join-Path $SharedVSCodeWorktreePath '.ai/manifests/adapter-registry.json'
+          $lifecycleDomains = @(
+            'instructions',
+            'settings',
+            'permissions',
+            'hooks',
+            'toolsets'
+          )
+          $callerOrder = @('AntigravityCli', 'AntigravityApp', 'Codex', 'ClaudeCode', 'Copilot')
+          $effectiveEvidenceRoot = if ([string]::IsNullOrWhiteSpace($EvidenceRoot)) {
+            Join-Path $TargetRoot '_generated/AIAdapterLifecycle'
+          } else {
+            [IO.Path]::GetFullPath($EvidenceRoot)
+          }
+          $renderResult = Render-AIAdapters `
+            -RegistryPath $registryPath `
+            -Domain $lifecycleDomains `
+            -TargetRoot $TargetRoot `
+            -BackupRoot (Join-Path $effectiveEvidenceRoot 'backups') `
+            -FixtureMode:$FixtureMode `
+            -AllowUserGlobalWrite:$AllowUserGlobalWrite `
+            -OmitSprintWorktrees `
+            -Force `
+            -WhatIf:$WhatIfPreference `
+            -Confirm:$false
+
+          return [pscustomobject]@{
+            Boundary = $Boundary
+            Domain = $lifecycleDomains
+            TargetRoot = $TargetRoot
+            FixtureMode = [bool]$FixtureMode
+            CallerOrder = $callerOrder
+            Results = @($renderResult.Results)
+            ChangedCount = $renderResult.ChangedCount
+            SkippedUserScopeCount = $renderResult.SkippedUserScopeCount
+            DriftClean = $true
+            RenderResult = $renderResult
+            DriftResult = $null
+            OmitSprintWorktrees = $true
+          }
+        } else {
+          throw '-OmitSprintWorktrees is only supported for render-style lifecycle calls.'
+        }
       }
 
       return Invoke-AIAdapterLifecycle @parameters -WhatIf:$WhatIfPreference

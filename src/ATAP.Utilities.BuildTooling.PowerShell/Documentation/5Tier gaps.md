@@ -1,7 +1,7 @@
 # 5-Tier Compliance Gaps — `module.build.ps1`
 
 **Target file:** [module.build.ps1](../module.build.ps1)
-**Authoritative reference:** [602 - 5Tier Software Production process Revision 2.md](../../../../_Planning-wt-12-sprint-0006-work-items/Explainers/602%20-%205Tier%20Software%20Production%20process%20Revision%202.md)
+**Authoritative reference:** [Immutable-Build-Strategy.md](../../../SolutionDocumentation/Immutable-Build-Strategy.md) (the former `602 - 5Tier...Revision 2` explainer was superseded and deleted; retargeted 2026-07-06, Task 12.45.e)
 **Scope:** PowerShell module build-and-publish pipeline executed by Invoke-Build against any `.psd1` module folder under `src/` in the ATAP.Utilities repository. The same `module.build.ps1` file is NTFS-symlinked into every PowerShell module root, so any gap below applies to **every** module that uses it.
 
 ---
@@ -121,7 +121,7 @@ These aspects are compatible with the 5-Tier model and should be preserved throu
 
 `module.build.ps1` was fully rewritten in sprint-0006 and all 11 Blockers and 14 Major gaps
 are now resolved. The 10 Minor gaps are deferred to sprint-0007 (see Area 2.3-3 retrospective
-note in `SolutionDocumentation/Sprint-0006-5Tier-Retrospective.md`).
+note in `SolutionDocumentation/ReviewedAndArchived/Sprint-0006-5Tier-Retrospective.md` (archived 2026-07-06)).
 
 ### 5.1 Blockers — all resolved
 

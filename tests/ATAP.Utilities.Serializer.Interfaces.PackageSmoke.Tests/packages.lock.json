@@ -2,16 +2,6 @@
   "version": 2,
   "dependencies": {
     "net10.0": {
-      "ATAP.Utilities.Serializer.Interfaces": {
-        "type": "Direct",
-        "requested": "[0.1.0, )",
-        "resolved": "0.1.0",
-        "contentHash": "q+WePBj7ZEPjtHSE4Aa5j5UWvfZVVIHqOPJbgu7HUsVAkeURcnkFR45j9vPtkiUVA8I+rpJJFCUlVczGDR1OgQ==",
-        "dependencies": {
-          "ATAP.Utilities.ETW": "0.1.0",
-          "Microsoft.Extensions.Configuration.Abstractions": "9.0.0"
-        }
-      },
       "Fody": {
         "type": "Direct",
         "requested": "[6.9.3, )",
@@ -70,11 +60,6 @@
         "resolved": "2.4.3",
         "contentHash": "kZZSmOmKA8OBlAJaquPXnJJLM9RwQ27H7BMVqfMLUcTi9xHinWGJiWksa3D4NEtz0wZ/nxd2mogObvBgJKCRhQ=="
       },
-      "ATAP.Utilities.ETW": {
-        "type": "Transitive",
-        "resolved": "0.1.0",
-        "contentHash": "vqPkRuL7EBya/Je1EuzLcvnjh8+TapaGrd3ToJugU+aDCATX28XWFj0/YG0xt5Hi6GlNnMt+vGsJwOXaLMQQKw=="
-      },
       "Microsoft.Build.Tasks.Git": {
         "type": "Transitive",
         "resolved": "8.0.0",
@@ -114,7 +99,7 @@
         "contentHash": "xkKFzm0hylHF0SlDj78ACYMJC/i8fQ3i16sDDNYoKnjTsstGSQfuSBJ+QT4nqRXk/fOiYTh+iY0KIX5N7HTLuQ==",
         "dependencies": {
           "Microsoft.TestPlatform.ObjectModel": "17.0.0",
-          "Newtonsoft.Json": "[13.0.4, )"
+          "Newtonsoft.Json": "9.0.1"
         }
       },
       "NETStandard.Library": {
@@ -175,6 +160,16 @@
           "xunit.extensibility.core": "[2.4.1]"
         }
       },
+      "atap.utilities.etw": {
+        "type": "Project"
+      },
+      "atap.utilities.serializer.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
+        }
+      },
       "Microsoft.Extensions.Configuration.Abstractions": {
         "type": "CentralTransitive",
         "requested": "[9.0.0, )",
@@ -187,23 +182,13 @@
       "Newtonsoft.Json": {
         "type": "CentralTransitive",
         "requested": "[13.0.4, )",
-        "resolved": "13.0.4",
+        "resolved": "9.0.1",
         "contentHash": "U82mHQSKaIk+lpSVCbWYKNavmNH1i5xrExDEquU1i6I5pV6UMOqRnJRSlKO3cMPfcpp0RgDY+8jUXHdQ4IfXvw=="
       }
     },
     "net10.0/linux-x64": {},
     "net10.0/win-x64": {},
     "net8.0": {
-      "ATAP.Utilities.Serializer.Interfaces": {
-        "type": "Direct",
-        "requested": "[0.1.0, )",
-        "resolved": "0.1.0",
-        "contentHash": "q+WePBj7ZEPjtHSE4Aa5j5UWvfZVVIHqOPJbgu7HUsVAkeURcnkFR45j9vPtkiUVA8I+rpJJFCUlVczGDR1OgQ==",
-        "dependencies": {
-          "ATAP.Utilities.ETW": "0.1.0",
-          "Microsoft.Extensions.Configuration.Abstractions": "9.0.0"
-        }
-      },
       "Fody": {
         "type": "Direct",
         "requested": "[6.9.3, )",
@@ -262,11 +247,6 @@
         "resolved": "2.4.3",
         "contentHash": "kZZSmOmKA8OBlAJaquPXnJJLM9RwQ27H7BMVqfMLUcTi9xHinWGJiWksa3D4NEtz0wZ/nxd2mogObvBgJKCRhQ=="
       },
-      "ATAP.Utilities.ETW": {
-        "type": "Transitive",
-        "resolved": "0.1.0",
-        "contentHash": "vqPkRuL7EBya/Je1EuzLcvnjh8+TapaGrd3ToJugU+aDCATX28XWFj0/YG0xt5Hi6GlNnMt+vGsJwOXaLMQQKw=="
-      },
       "Microsoft.Build.Tasks.Git": {
         "type": "Transitive",
         "resolved": "8.0.0",
@@ -306,7 +286,7 @@
         "contentHash": "xkKFzm0hylHF0SlDj78ACYMJC/i8fQ3i16sDDNYoKnjTsstGSQfuSBJ+QT4nqRXk/fOiYTh+iY0KIX5N7HTLuQ==",
         "dependencies": {
           "Microsoft.TestPlatform.ObjectModel": "17.0.0",
-          "Newtonsoft.Json": "[13.0.4, )"
+          "Newtonsoft.Json": "9.0.1"
         }
       },
       "NETStandard.Library": {
@@ -367,6 +347,16 @@
           "xunit.extensibility.core": "[2.4.1]"
         }
       },
+      "atap.utilities.etw": {
+        "type": "Project"
+      },
+      "atap.utilities.serializer.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
+        }
+      },
       "Microsoft.Extensions.Configuration.Abstractions": {
         "type": "CentralTransitive",
         "requested": "[9.0.0, )",
@@ -379,23 +369,13 @@
       "Newtonsoft.Json": {
         "type": "CentralTransitive",
         "requested": "[13.0.4, )",
-        "resolved": "13.0.4",
+        "resolved": "9.0.1",
         "contentHash": "U82mHQSKaIk+lpSVCbWYKNavmNH1i5xrExDEquU1i6I5pV6UMOqRnJRSlKO3cMPfcpp0RgDY+8jUXHdQ4IfXvw=="
       }
     },
     "net8.0/linux-x64": {},
     "net8.0/win-x64": {},
     "net9.0": {
-      "ATAP.Utilities.Serializer.Interfaces": {
-        "type": "Direct",
-        "requested": "[0.1.0, )",
-        "resolved": "0.1.0",
-        "contentHash": "q+WePBj7ZEPjtHSE4Aa5j5UWvfZVVIHqOPJbgu7HUsVAkeURcnkFR45j9vPtkiUVA8I+rpJJFCUlVczGDR1OgQ==",
-        "dependencies": {
-          "ATAP.Utilities.ETW": "0.1.0",
-          "Microsoft.Extensions.Configuration.Abstractions": "9.0.0"
-        }
-      },
       "Fody": {
         "type": "Direct",
         "requested": "[6.9.3, )",
@@ -454,11 +434,6 @@
         "resolved": "2.4.3",
         "contentHash": "kZZSmOmKA8OBlAJaquPXnJJLM9RwQ27H7BMVqfMLUcTi9xHinWGJiWksa3D4NEtz0wZ/nxd2mogObvBgJKCRhQ=="
       },
-      "ATAP.Utilities.ETW": {
-        "type": "Transitive",
-        "resolved": "0.1.0",
-        "contentHash": "vqPkRuL7EBya/Je1EuzLcvnjh8+TapaGrd3ToJugU+aDCATX28XWFj0/YG0xt5Hi6GlNnMt+vGsJwOXaLMQQKw=="
-      },
       "Microsoft.Build.Tasks.Git": {
         "type": "Transitive",
         "resolved": "8.0.0",
@@ -498,7 +473,7 @@
         "contentHash": "xkKFzm0hylHF0SlDj78ACYMJC/i8fQ3i16sDDNYoKnjTsstGSQfuSBJ+QT4nqRXk/fOiYTh+iY0KIX5N7HTLuQ==",
         "dependencies": {
           "Microsoft.TestPlatform.ObjectModel": "17.0.0",
-          "Newtonsoft.Json": "[13.0.4, )"
+          "Newtonsoft.Json": "9.0.1"
         }
       },
       "NETStandard.Library": {
@@ -559,6 +534,16 @@
           "xunit.extensibility.core": "[2.4.1]"
         }
       },
+      "atap.utilities.etw": {
+        "type": "Project"
+      },
+      "atap.utilities.serializer.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
+        }
+      },
       "Microsoft.Extensions.Configuration.Abstractions": {
         "type": "CentralTransitive",
         "requested": "[9.0.0, )",
@@ -571,7 +556,7 @@
       "Newtonsoft.Json": {
         "type": "CentralTransitive",
         "requested": "[13.0.4, )",
-        "resolved": "13.0.4",
+        "resolved": "9.0.1",
         "contentHash": "U82mHQSKaIk+lpSVCbWYKNavmNH1i5xrExDEquU1i6I5pV6UMOqRnJRSlKO3cMPfcpp0RgDY+8jUXHdQ4IfXvw=="
       }
     },

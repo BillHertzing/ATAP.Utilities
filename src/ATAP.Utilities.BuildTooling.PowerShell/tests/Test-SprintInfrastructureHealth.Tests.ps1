@@ -185,4 +185,47 @@ Describe 'Test-SprintInfrastructureHealth' {
       $result.Checks.BuildMasterAdminApiKeyResolvable.Ok | Should -BeTrue
     }
   }
+
+  Context 'GitSafeDirectory check (Task 12.35)' {
+    # safe.directory is multi-valued and stored with forward slashes on Windows.
+    # These tests mock git so the assertions do not depend on the machine's real
+    # global git config, and mock Get-RepositoryRoot so we control the compared root.
+    It 'Ok is true when the (absolute) repo root is present in safe.directory' {
+      Mock -CommandName git -MockWith {
+        'C:/repos/RepoA'
+        'C:/repos/RepoB-wt-1'
+      } -ParameterFilter { $args -contains 'safe.directory' }
+      Mock -CommandName Get-RepositoryRoot -MockWith { 'C:/repos/RepoB-wt-1' }
+
+      $result = Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl ''
+      $result.Checks.GitSafeDirectory.Ok | Should -BeTrue
+      $result.Checks.GitSafeDirectory.Detail | Should -Match 'contains repo root'
+    }
+
+    It 'regression: an absolute worktree root still matches (no false failure like the pre-fix relative path)' {
+      # Pre-fix, Get-RepositoryRoot returned a relative '..\RepoB-wt-1' that never
+      # matched the absolute safe.directory entries. The fix returns the absolute root.
+      Mock -CommandName git -MockWith {
+        'C:/repos/RepoA'
+        'C:/repos/RepoB-wt-1'
+      } -ParameterFilter { $args -contains 'safe.directory' }
+      Mock -CommandName Get-RepositoryRoot -MockWith { 'C:\repos\RepoB-wt-1' }
+
+      $result = Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl ''
+      $result.Checks.GitSafeDirectory.Ok | Should -BeTrue
+    }
+
+    It 'Ok is false when the repo root is NOT present in safe.directory' {
+      Mock -CommandName git -MockWith {
+        'C:/repos/RepoA'
+      } -ParameterFilter { $args -contains 'safe.directory' }
+      Mock -CommandName Get-RepositoryRoot -MockWith { 'C:/repos/RepoUnregistered' }
+
+      $result = Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl ''
+      $result.Checks.GitSafeDirectory.Ok | Should -BeFalse
+      $result.Checks.GitSafeDirectory.Detail | Should -Match 'does not include repo root'
+    }
+  }
 }
+
+

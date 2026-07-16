@@ -7,6 +7,10 @@ function Install-SqlServerInstance {
   Uses dbatools Install-DbaInstance to create/configure a SQL Server instance on a host
   where SQL Server software is already present.
 
+  Data, log, and backup paths are mandatory topology data. The cmdlet resolves them
+  from the target host and instance row in $global:settings and passes them to
+  Install-DbaInstance. It does not synthesize or override those locations locally.
+
   This cmdlet is intentionally not converted to Resolve-DatabaseSqlConnection for the
   target instance. The target SQL Server instance may not exist until Install-DbaInstance
   completes, so requiring an already-open SqlConnection would make instance creation
@@ -39,6 +43,16 @@ function Install-SqlServerInstance {
   .PARAMETER CredentialsKey
   Bitwarden key used to retrieve UserName/Password.
   Used for SQL-auth context and mixed-mode SA credential setup.
+
+  .PARAMETER EngineCredentialSecretName
+  Approved Bitwarden SecretName containing the Windows service account username and
+  password passed to dbatools as EngineCredential. The secret value is never returned
+  or logged.
+
+  .PARAMETER EngineCredential
+  Pre-resolved Windows service credential, normally supplied across an authenticated
+  remoting boundary after local SecretName resolution. Mutually exclusive with
+  EngineCredentialSecretName.
 
   .PARAMETER Version
   SQL Server version value for dbatools instance creation.
@@ -108,6 +122,12 @@ function Install-SqlServerInstance {
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
     [string]$CredentialsKey,
 
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+    [string]$EngineCredentialSecretName,
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+    [System.Management.Automation.PSCredential]$EngineCredential,
+
     [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
     [string]$Version = '2022',
@@ -136,7 +156,12 @@ function Install-SqlServerInstance {
       }
       Import-Module dbatools -ErrorAction Stop
 
-      if (-not (Get-Command -Name 'Get-SecretATAP' -CommandType Function -ErrorAction SilentlyContinue)) {
+      if (-not (Get-Command -Name 'Set-SqlServerSystemDatabaseTopology' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot '..\private\Set-SqlServerSystemDatabaseTopology.ps1')
+      }
+
+      if ((-not [string]::IsNullOrWhiteSpace($CredentialsKey) -or -not [string]::IsNullOrWhiteSpace($EngineCredentialSecretName)) -and
+        -not (Get-Command -Name 'Get-SecretATAP' -CommandType Function -ErrorAction SilentlyContinue)) {
         . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-SecretATAPBitwarden.ps1'
         . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-SecretATAP.ps1'
       }
@@ -148,6 +173,69 @@ function Install-SqlServerInstance {
   }
 
   process {
+    $requiredTopologyConfigRootKeys = @(
+      'SqlInstanceTopologyConfigRootKey'
+      'SqlInstanceTopologyHostsConfigRootKey'
+      'SqlInstanceTopologyInstancesConfigRootKey'
+      'SqlInstanceTopologyInstanceNameConfigRootKey'
+      'SqlInstanceTopologyDataPathConfigRootKey'
+      'SqlInstanceTopologyLogPathConfigRootKey'
+      'SqlInstanceTopologyBackupPathConfigRootKey'
+      'SqlInstanceTopologyTcpPortConfigRootKey'
+    )
+    $missingTopologyConfigRootKeys = @(
+      $requiredTopologyConfigRootKeys | Where-Object {
+        $null -eq $global:configRootKeys -or -not $global:configRootKeys.ContainsKey($_)
+      }
+    )
+    if ($missingTopologyConfigRootKeys.Count -gt 0 -or $null -eq $global:settings) {
+      $errorMessage = 'SQL instance topology is unavailable in $global:settings. Load the current ConfigRootKeys module and host settings before provisioning an instance.'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      throw $errorMessage
+    }
+
+    $settingsHostName = if ($DatabaseHost -in @('localhost', '.', '127.0.0.1')) {
+      $env:COMPUTERNAME.ToLowerInvariant()
+    } else {
+      $DatabaseHost.ToLowerInvariant()
+    }
+    $topology = $global:settings[$global:configRootKeys['SqlInstanceTopologyConfigRootKey']]
+    if ($null -eq $topology) {
+      $errorMessage = 'SQL instance topology is unavailable in $global:settings. Load the current host settings before provisioning an instance.'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      throw $errorMessage
+    }
+    $hostTopologies = $topology[$global:configRootKeys['SqlInstanceTopologyHostsConfigRootKey']]
+    $hostTopology = $hostTopologies[$settingsHostName]
+    if ($null -eq $hostTopology) {
+      $errorMessage = "SQL instance topology does not contain host '$settingsHostName'."
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      throw $errorMessage
+    }
+
+    $instances = $hostTopology[$global:configRootKeys['SqlInstanceTopologyInstancesConfigRootKey']]
+    $instanceNameKey = $global:configRootKeys['SqlInstanceTopologyInstanceNameConfigRootKey']
+    $topologyRows = @(
+      $instances.Values | Where-Object { [string]$_[$instanceNameKey] -ieq $SqlInstance }
+    )
+    if ($topologyRows.Count -ne 1) {
+      $errorMessage = "SQL instance topology must contain exactly one '$SqlInstance' row for host '$settingsHostName'; found $($topologyRows.Count)."
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      throw $errorMessage
+    }
+
+    $topologyRow = $topologyRows[0]
+    $dataPath = [string]$topologyRow[$global:configRootKeys['SqlInstanceTopologyDataPathConfigRootKey']]
+    $logPath = [string]$topologyRow[$global:configRootKeys['SqlInstanceTopologyLogPathConfigRootKey']]
+    $backupPath = [string]$topologyRow[$global:configRootKeys['SqlInstanceTopologyBackupPathConfigRootKey']]
+    $topologyPort = [int]$topologyRow[$global:configRootKeys['SqlInstanceTopologyTcpPortConfigRootKey']]
+    $effectivePort = if ($PSBoundParameters.ContainsKey('Port')) { $Port } else { $topologyPort }
+    if ([string]::IsNullOrWhiteSpace($dataPath) -or [string]::IsNullOrWhiteSpace($logPath) -or [string]::IsNullOrWhiteSpace($backupPath) -or $effectivePort -lt 1) {
+      $errorMessage = "SQL instance topology row '$settingsHostName\$SqlInstance' must define DataPath, LogPath, BackupPath, and TcpPort."
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      throw $errorMessage
+    }
+
     $targetInstanceName = if ([string]::IsNullOrWhiteSpace($SqlInstance) -or $SqlInstance -eq 'MSSQLSERVER') {
       $DatabaseHost
     } else {
@@ -158,6 +246,7 @@ function Install-SqlServerInstance {
     $useIntegratedSecurity = [string]::IsNullOrWhiteSpace($CredentialsKey)
     $vaultSecret = $null
     $saCredential = $null
+    $resolvedEngineCredential = $EngineCredential
 
     if (-not $useIntegratedSecurity) {
       try {
@@ -178,7 +267,30 @@ function Install-SqlServerInstance {
       }
     }
 
-    if ($Port -and $ConnectionMethod -ne 'tcp') {
+    if ($EngineCredential -and -not [string]::IsNullOrWhiteSpace($EngineCredentialSecretName)) {
+      $errorMessage = 'Specify EngineCredential or EngineCredentialSecretName, not both.'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      throw $errorMessage
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($EngineCredentialSecretName)) {
+      try {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolving engine service credential by approved SecretName '$EngineCredentialSecretName'."
+        $engineUserName = Get-SecretATAP -SecretName $EngineCredentialSecretName -SecretField 'username'
+        $enginePassword = Get-SecretATAP -SecretName $EngineCredentialSecretName -SecretField 'password'
+        if ([string]::IsNullOrWhiteSpace($engineUserName) -or [string]::IsNullOrWhiteSpace($enginePassword)) {
+          throw "Secret '$EngineCredentialSecretName' must expose both 'username' and 'password' fields."
+        }
+        $engineSecurePassword = ConvertTo-SecureString -String $enginePassword -AsPlainText -Force
+        $resolvedEngineCredential = [System.Management.Automation.PSCredential]::new($engineUserName, $engineSecurePassword)
+      } catch {
+        $errorMessage = "Failed resolving engine service credential '$EngineCredentialSecretName'. Exception: $($_.Exception.Message)"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+        throw
+      }
+    }
+
+    if ($effectivePort -and $ConnectionMethod -ne 'tcp') {
       $errorMessage = "Port may only be specified when ConnectionMethod is 'tcp'. ConnectionMethod is '$ConnectionMethod'."
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       throw $errorMessage
@@ -195,11 +307,16 @@ function Install-SqlServerInstance {
       Version            = $Version
       Feature            = $Feature
       AuthenticationMode = $AuthenticationMode
+      DataPath           = $dataPath
+      LogPath            = $logPath
+      BackupPath         = $backupPath
+      TempPath           = $dataPath
+      Configuration      = @{ SQLTEMPDBLOGDIR = $logPath }
       EnableException    = $true
     }
 
-    if ($Port) {
-      $installParams['Port'] = $Port
+    if ($effectivePort) {
+      $installParams['Port'] = $effectivePort
     }
 
     if ($AdminAccount -and $AdminAccount.Count -gt 0) {
@@ -208,6 +325,9 @@ function Install-SqlServerInstance {
 
     if ($AuthenticationMode -eq 'Mixed' -and $saCredential) {
       $installParams['SaCredential'] = $saCredential
+    }
+    if ($resolvedEngineCredential) {
+      $installParams['EngineCredential'] = $resolvedEngineCredential
     }
 
     # Placeholder for future connection-string builder integration requested by design:
@@ -235,6 +355,8 @@ function Install-SqlServerInstance {
         # scope so the prompt is never raised.
         $ConfirmPreference = 'None'
         $installResult = Install-DbaInstance @installParams -Confirm:$false
+        $systemDatabaseTopology = Set-SqlServerSystemDatabaseTopology -DatabaseHost $DatabaseHost `
+          -SqlInstance $SqlInstance -Port $effectivePort -DataPath $dataPath -LogPath $logPath -Confirm:$false
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Tag 'DbaToolsCall' -Message "Successfully returned from Install-DbaInstance for target $targetInstanceName"
 
         [PSCustomObject]@{
@@ -242,13 +364,18 @@ function Install-SqlServerInstance {
           SqlInstance        = $SqlInstance
           TargetInstance     = $targetInstanceName
           ConnectionMethod   = $ConnectionMethod
-          Port               = $Port
+          Port               = $effectivePort
           IntegratedSecurity = [bool]$useIntegratedSecurity
           CredentialsKey     = $CredentialsKey
+          EngineCredentialSecretName = $EngineCredentialSecretName
           AuthenticationMode = $AuthenticationMode
           Feature            = $Feature
           Version            = $Version
+          DataPath           = $dataPath
+          LogPath            = $logPath
+          BackupPath         = $backupPath
           InstallResult      = $installResult
+          SystemDatabaseTopology = $systemDatabaseTopology
           Success            = $true
           TimestampUtc       = (Get-Date).ToUniversalTime()
         }
@@ -264,12 +391,16 @@ function Install-SqlServerInstance {
         SqlInstance        = $SqlInstance
         TargetInstance     = $targetInstanceName
         ConnectionMethod   = $ConnectionMethod
-        Port               = $Port
+        Port               = $effectivePort
         IntegratedSecurity = [bool]$useIntegratedSecurity
         CredentialsKey     = $CredentialsKey
+        EngineCredentialSecretName = $EngineCredentialSecretName
         AuthenticationMode = $AuthenticationMode
         Feature            = $Feature
         Version            = $Version
+        DataPath           = $dataPath
+        LogPath            = $logPath
+        BackupPath         = $backupPath
         InstallResult      = $null
         Success            = $false
         Cancelled          = $true

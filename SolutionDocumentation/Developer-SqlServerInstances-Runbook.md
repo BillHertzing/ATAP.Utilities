@@ -21,6 +21,17 @@ Module of record: `src/ATAP.Utilities.BuildTooling.PowerShell`
 
 ---
 
+## Parity journal requirement
+
+Before a step in this runbook creates, removes, upgrades, or configures SQL
+Server state on `utat022` or `utat01`, append a secret-safe declaration with
+`Add-ParityChangeEntry` on the host being changed. Include the category, item,
+old/new state, peer host, and a peer action; do not include any secret value.
+After the peer applies its corresponding action, acknowledge it from that peer
+with `Confirm-ParityChangeApplied`.
+
+---
+
 ## 1. The requirement change
 
 Through Sprint 0007, SprintStart created the two named SQL Server instances and
@@ -42,8 +53,10 @@ Sprint 0008 inverts the ownership:
 | `ATAPUtilities` / `AceCommander` DBs        | **Sprint start** — drop/recreate + Flyway       | `Reset-SprintDatabases`              |
 | (drop of those DBs)                         | **Sprint end** — drop, instances remain         | `Remove-SprintDatabases`             |
 
-The instances `Devwhertzing` and `Expwhertzing` remain present throughout all
-sprints.
+The instances `Devwhertzing` and `Expwhertzing` are permanent per-developer
+infrastructure: provision them when the developer joins the project, retain them
+through all sprints and host-alignment work, and remove them only during deliberate
+developer offboarding.
 
 ---
 

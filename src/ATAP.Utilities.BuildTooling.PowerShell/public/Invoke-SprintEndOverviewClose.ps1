@@ -50,6 +50,8 @@ function Invoke-SprintEndOverviewClose {
     $planningRootFull = [IO.Path]::GetFullPath($PlanningRoot)
     $sprintText = '{0:D4}' -f $SprintNumber
     $sourceWorkspaceCandidates = @(
+      (Join-Path $gitRootFull "Overview.Sprint.$sprintText.code-workspace"),
+      # Legacy compatibility candidates:
       (Join-Path $gitRootFull "Overview.Sprint$sprintText.code-workspace"),
       (Join-Path $gitRootFull "OverviewSprint$sprintText.code-workspace"),
       (Join-Path $gitRootFull "OverViewSprint$sprintText.code-workspace")

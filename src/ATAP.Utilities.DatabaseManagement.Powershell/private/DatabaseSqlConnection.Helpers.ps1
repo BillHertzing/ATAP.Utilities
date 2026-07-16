@@ -106,7 +106,7 @@ function New-DatabaseSqlConnectionFromConnectionString {
 function Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName {
   <#
     Resolves a connection-string secret to an open SqlConnection by reading the
-    BWS-owned dbConnectionString-* value through Get-SecretATAP with
+    BWS-owned dbConnectionString.* value through Get-SecretATAP with
     BitwardenSecretsManager selected explicitly.
 
     Task 10.7 cleanup: Development and Experimental connection strings are stored
@@ -162,13 +162,13 @@ function Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName {
 
   $reason = if ($null -ne $vaultLookupError) { " Vault lookup error: $($vaultLookupError.Exception.Message)" } else { '' }
   throw ("Connection-string secret '$SecretName' was not retrieved from Bitwarden Secrets Manager. " +
-    "Provision or repair the dbConnectionString-* value in BWS (New-SprintBitwardenSecrets for Dev/Exp), " +
+    "Provision or repair the dbConnectionString.* value in BWS (New-SprintBitwardenSecrets for Dev/Exp), " +
     "or supply explicit connection parts.$reason")
 }
 
 function Get-DbConnectionStringSecretDescriptorForReader {
   # Retained for diagnostics and legacy callers that need to parse a
-  # dbConnectionString-* name. Runtime connection opening no longer uses this to
+  # dbConnectionString.* name. Runtime connection opening no longer uses this to
   # derive missing values; BWS is the source of truth.
   [CmdletBinding()]
   param(

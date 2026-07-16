@@ -18,6 +18,9 @@ rather than hard-coding strings.
 | `version.json`                                | NBGV version configuration                                                          |
 | `tests/Unit/`                                 | Pester 5 tests: orchestration, in-module sibling resolution, and the no-top-level-code / eponymous-function structural rules |
 
+The module entry point makes its `private/` directory optional. This preserves
+normal profile-time imports while the module has only public functions (Task 12.63).
+
 ## Public Scripts
 
 Every file in `public/` is an **eponymous advanced function** (cmdlet shape with
@@ -32,9 +35,10 @@ Every file in `public/` is an **eponymous advanced function** (cmdlet shape with
 | `public/Add-DatabasesConfigRootKeys.ps1`              |  2    | Adds database connection key constants, then invokes the per-database section functions by name.  |
 | `public/Set-DatabasesATAPUtilitiesConfigRootKeys.ps1` |  2a   | Per-database section function for the ATAPUtilities database name key.                             |
 | `public/Set-DatabasesAceCommanderConfigRootKeys.ps1`  |  2b   | Per-database section function for the AceCommander database name key.                              |
-| `public/Set-BuildMasterConfigRootKeys.ps1`            |  3    | BuildMaster automation paths, endpoint, and the module→application map (`BuildMasterApplicationByModuleConfigRootKey`) key constants. |
-| `public/Set-RulesManagementConfigRootKeys.ps1`        |  4    | Rules-Management framework key constants.                                                          |
-| `public/Add-PackageRepositoriesConfigRootKeys.ps1`    |  5    | **Single source of truth** for ProGet / NuGet / PowerShellGet feed key constants. Five-tier canonical set (Experimental / Development / Integration / QA / Stable). Loads no sub-fragments. |
+| `public/Set-SqlInstanceTopologyConfigRootKeys.ps1`    |  3    | Host-invariant schema keys for the ATAP.IAC SQL host/instance topology map (identity, lifecycle, paths, and fixed TCP port fields). |
+| `public/Set-BuildMasterConfigRootKeys.ps1`            |  4    | BuildMaster automation paths, endpoint, and the module→application map (`BuildMasterApplicationByModuleConfigRootKey`) key constants. |
+| `public/Set-RulesManagementConfigRootKeys.ps1`        |  5    | Rules-Management framework key constants.                                                          |
+| `public/Add-PackageRepositoriesConfigRootKeys.ps1`    |  6    | **Single source of truth** for ProGet / NuGet / PowerShellGet feed key constants. Five-tier canonical set (Experimental / Development / Integration / QA / Stable). Loads no sub-fragments. |
 
 ### Explicit loading — no fragment discovery
 
@@ -111,10 +115,11 @@ other ATAP PowerShell modules.
 
 ## Related Documentation
 
-- `_Planning/Explainers/0111-proget-feed-tier-dependency-build-report.md` —
-  Source-of-truth report on five-tier feed dependency policy.
-- `ATAP.IAC/constants/FeedConstants.psd1` — canonical feed name and URL
-  defaults consumed by host settings.
+- `SolutionDocumentation/Immutable-Build-Strategy.md` — canonical five-tier feed
+  dependency / promotion policy (supersedes the retired Explainer 0111 report).
+- Feed name and URL defaults are defined in this module's PackageRepositories
+  ConfigRootKeys files (the former `ATAP.IAC/constants/FeedConstants.psd1` was
+  removed 2026-07-07, Sprint 0012 Task 12.46.d — content had been migrated here).
 
 - Version bumped to 0.1.4 in Sprint 11
 

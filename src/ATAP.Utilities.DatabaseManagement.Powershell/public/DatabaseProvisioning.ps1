@@ -33,7 +33,7 @@ function DatabaseProvisioning {
   This is usually supplied by an environment variable or from the global settings. but can be overridden here.
 
   .PARAMETER SqlInstance
-  SQL Server instance (local or remote) to target (e.g. '<hostname>\PRODUCTION').
+  SQL Server instance (local or remote) to target (e.g. '<hostname>\Production').
   This is usually supplied by an environment variable or from the global settings. but can be overridden here.
   If there exists a database with the same name as the database in the DatabaseHost\SqlInstance path, the operation is aborted unless force is true.
   If force is true, the existing database is deleted.
@@ -130,6 +130,12 @@ function DatabaseProvisioning {
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
     [string]$DatabasePath,
 
+    [Parameter(Mandatory = $false)]
+    [string]$DatabaseLogPath,
+
+    [Parameter(Mandatory = $false)]
+    [string]$RepositoryRoot,
+
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
     [string]$ProvisioningScriptsPath,
 
@@ -152,7 +158,11 @@ function DatabaseProvisioning {
 
     # Load required helper functions
     try {
-      $repositoryRoot = Get-RepositoryRoot
+      $repositoryRoot = if ([string]::IsNullOrWhiteSpace($RepositoryRoot)) {
+        Get-RepositoryRoot
+      } else {
+        $RepositoryRoot
+      }
       if (-not (Get-Command -Name 'Resolve-DatabaseSqlConnection' -CommandType Function -ErrorAction SilentlyContinue)) {
         . (Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement.Powershell\public\Resolve-DatabaseSqlConnection.ps1')
       }
@@ -259,6 +269,7 @@ function DatabaseProvisioning {
     }
     $ProvisioningScriptsPath = Get-PVal -ParameterName 'ProvisioningScriptsPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisioningScriptsPath" -Settings $databasesCollection -DefaultValue $ProvisioningScriptsPath -AllowMissing
     $DatabasePath = Get-PVal -ParameterName 'DatabasePath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $databasesCollection -DefaultValue $DatabasePath -AllowMissing
+    $DatabaseLogPath = Get-PVal -ParameterName 'DatabaseLogPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseLogPath" -Settings $databasesCollection -DefaultValue $DatabaseLogPath -AllowMissing
 
     if ([string]::IsNullOrWhiteSpace($ProvisioningScriptsPath)) {
       $ProvisioningScriptsPath = Join-Path $repositoryRoot 'src\ATAP.Utilities.DatabaseManagement\SharedSQL'
@@ -272,6 +283,8 @@ function DatabaseProvisioning {
       $DatabasePath = [System.IO.Path]::GetFullPath((Join-Path $databaseRootPath $DatabaseName))
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "DatabasePath was empty; defaulting to '$DatabasePath'"
     }
+    if ([string]::IsNullOrWhiteSpace($DatabaseLogPath)) { $DatabaseLogPath = $DatabasePath }
+    $DatabaseLogPath = [System.IO.Path]::GetFullPath($DatabaseLogPath)
 
     $requiredProvisioningScripts = @(
       'DropAndCreateDatabase.sql',
@@ -338,6 +351,7 @@ function DatabaseProvisioning {
       DatabaseName            = $DatabaseName
       Environment             = $Environment
       DatabasePath            = $DatabasePath
+      DatabaseLogPath         = $DatabaseLogPath
       SqlInstance             = $serverForConnect
       CredentialsKey          = $CredentialsKey
       GrantDatabaseOwner      = $GrantDatabaseOwner
@@ -496,10 +510,18 @@ END
       throw
     }
 
+    if ($DatabaseLogPath -ine $DatabasePath) {
+      if (Test-Path -LiteralPath $DatabaseLogPath -PathType Container) {
+        if (-not $Force) { throw "Database log folder '$DatabaseLogPath' already exists. Use -Force to remove it before provisioning." }
+        Remove-Item -LiteralPath $DatabaseLogPath -Recurse -Force -ErrorAction Stop
+      }
+      New-Item -ItemType Directory -Path $DatabaseLogPath -Force -ErrorAction Stop | Out-Null
+    }
+
     # Ensure any leftover files are deleted. The folder cleanup above should
     # normally remove these; keep the file-level cleanup as a precise fallback.
     $mdf = Join-Path -Path $DatabasePath -ChildPath ($DatabaseName + '.mdf')
-    $ldf = Join-Path -Path $DatabasePath -ChildPath ($DatabaseName + '_log.ldf')
+    $ldf = Join-Path -Path $DatabaseLogPath -ChildPath ($DatabaseName + '_log.ldf')
     $filesToCheck = @($mdf, $ldf)
     foreach ($file in $filesToCheck) {
       if (Test-Path $file) {
@@ -549,6 +571,7 @@ END
             $sqlVariables = @{
               DatabaseName       = $DatabaseName
               DatabasePath       = $DatabasePath
+              DatabaseLogPath    = $DatabaseLogPath
               LoginName          = $loginName
               loginPassword      = $loginPassword
               DBExists           = [int]$dbExists

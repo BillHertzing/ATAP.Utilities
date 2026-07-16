@@ -2,7 +2,7 @@
 # Do not edit this adapter directly; edit the canonical source or record an overlay in the manifest.
 # SourceId: ai.agent.version-control-issue-to-worktree.v1
 # Source: .ai/agents/version-control-issue-to-worktree.agent.md
-# SourceSha256: d1dd2145474fb03818b42561d42bd9709f8d006411318adc017f648505aec839
+# SourceSha256: a8d8690bd6448000ba9658aef7297a54e0f7373d76e153e013376eb11d74a08e
 # Materialization: generated-wrapper
 
 name = "version_control_issue_to_worktree"
@@ -134,6 +134,15 @@ junctions for all other repos and must not have junctions itself.
   not the main worktree. Use `-DevSourceRepoPath` for this.
 - **Normal issue worktrees**: junctions point to the SharedVSCode **main** worktree
   (default behavior — just copy targets from the source repo).
+
+> **Junctions vs. rendered configuration (clarified 2026-07-14, DR program item DRR-005):**
+> `Set-WorktreeJunctions` remains in use for worktree *structure* (shared folders such as
+> `.vscode` and other junction targets). AI-agent configuration surfaces, however, are no
+> longer materialized by junctions: the `.ai` folder in SharedVSCode is the canonical
+> source and `Render-AIAdapters` renders concrete per-agent files into each repo.
+> SprintStartAgent/SprintEndAgent retarget those rendered surfaces at sprint boundaries.
+> During the transition a repo may still show either form; do not add new junctions for
+> agent-config folders.
 
 Ask the user:
 > "Does this worktree need junctions to point to a specific SharedVSCode sprint worktree

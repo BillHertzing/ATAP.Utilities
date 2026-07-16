@@ -1,0 +1,82 @@
+[33;1mWARNING: Headroom proxy is NOT running on port 8787. Start with: headroom proxy --port 8787[0m
+[95mPester v5.7.1[0m
+[95m
+[95mStarting discovery in 3 files.[0m
+[95mDiscovery found 32 tests in 209ms.[0m
+[95mRunning tests.[0m
+[95m
+[95mRunning tests from 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-120-Sprint-0012-work-items\src\ATAP.Utilities.BuildTooling.PowerShell\tests\Unit\SprintEndTask12Fixes.Tests.ps1'[0m
+[92mDescribing SprintEnd Task 12 fixes[0m
+[96m Context Task 12.10 draft PR merge close[0m
+[[37m23:11:53[96m][[37mInvoke-SprintEndGitHubClose[96m] GitHub token-scope preflight passed with one of the required supplemental scopes: repo, read:org.
+[32m   [+] marks a draft pull request ready before squash merge[0m[90m 386ms (338ms|48ms)[0m
+[96m Context Task 12.11 templateRef WhatIf[0m
+What if: Performing the operation "Throw templateRef merge-gate violation for 1 workspace file(s)" on target "C:\Users\whertzing\AppData\Local\Temp\57cef850-2e2f-46bd-9b41-25d184c0ef99\Sprint.code-workspace".
+[32m   [+] returns a dry-run violation preview instead of throwing[0m[90m 48ms (45ms|3ms)[0m
+[96m Context Task 12.13 service-account fresh shell[0m
+[32m   [+] uses a supplied service-account credential for fresh-shell validation[0m[90m 193ms (191ms|1ms)[0m
+[95m
+[95mRunning tests from 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-120-Sprint-0012-work-items\src\ATAP.Utilities.BuildTooling.PowerShell\tests\Unit\Assert-MainBranchTemplateRef.Tests.ps1'[0m
+[92mDescribing Assert-MainBranchTemplateRef [public][0m
+[96m Context All workspace files point to main[0m
+[32m   [+] Does not throw[0m[90m 15ms (12ms|3ms)[0m
+[96m Context A workspace file points to a sprint ref[0m
+[32m   [+] Throws a merge-gate violation naming the ref[0m[90m 14ms (13ms|1ms)[0m
+[96m Context templateRef is missing[0m
+[32m   [+] Throws a merge-gate violation for missing ref[0m[90m 11ms (9ms|3ms)[0m
+[96m Context Settings object is absent[0m
+[32m   [+] Throws a merge-gate violation[0m[90m 9ms (8ms|1ms)[0m
+[96m Context Multiple files — one good, one bad[0m
+[32m   [+] Reports the offending file in the error message[0m[90m 11ms (9ms|2ms)[0m
+[96m Context Multiple files — all good[0m
+[32m   [+] Does not throw[0m[90m 8ms (7ms|1ms)[0m
+[96m Context Uses private helpers Resolve-WorkspaceFiles and Get-WorkspaceJson[0m
+[32m   [+] Calls through Resolve-WorkspaceFiles for path resolution[0m[90m 19ms (18ms|1ms)[0m
+[95m
+[95mRunning tests from 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-120-Sprint-0012-work-items\src\ATAP.Utilities.BuildTooling.PowerShell\tests\Unit\SprintEndLifecycle.Tests.ps1'[0m
+[92mDescribing SprintEnd typed lifecycle[0m
+[96m Context Test-SprintEndCommandSurface[0m
+[32m   [+] returns one structured failure for a missing parameter contract[0m[90m 29ms (28ms|2ms)[0m
+[96m Context Test-SprintEndWorktreeState[0m
+[32m   [+] accepts a clean worktree[0m[90m 303ms (301ms|1ms)[0m
+warning: re-init: ignored --initial-branch=48-Sprint-0010-work-items
+[32m   [+] classifies an expected workspace mutation separately[0m[90m 268ms (266ms|2ms)[0m
+warning: re-init: ignored --initial-branch=48-Sprint-0010-work-items
+[32m   [+] blocks an unexpected user change[0m[90m 1.07s (1.07s|0ms)[0m
+[96m Context New-SprintEndHandoff[0m
+[32m   [+] writes an idempotent sprint-specific handoff without secret or instance deletion[0m[90m 60ms (59ms|1ms)[0m
+[96m Context Test-SprintEndPullOverlap[0m
+[32m   [+] blocks a stable pull when a local path also changed remotely[0m[90m 45ms (43ms|2ms)[0m
+[96m Context Invoke-SprintEndOverviewClose[0m
+[32m   [+] uses the parent overview files and real cmdlet contracts[0m[90m 519ms (518ms|1ms)[0m
+[32m   [+] prefers the exact closing sprint workspace and ignores stale older overview artifacts[0m[90m 45ms (44ms|1ms)[0m
+[96m Context Save-SprintHistoryArtifacts[0m
+[32m   [+] archives the dotted artifact set and is idempotent[0m[90m 87ms (85ms|2ms)[0m
+[96m Context Restore-SprintHistoryArtifacts[0m
+[[37m23:11:57[96m][[37mRestore-SprintHistoryArtifacts[96m] Sprint-history reconstruction completed for Sprint0009 with 2 file result(s) and 0 failure(s).
+[[37m23:11:57[96m][[37mRestore-SprintHistoryArtifacts[96m] Sprint-history reconstruction completed for Sprint0009 with 1 file result(s) and 0 failure(s).
+[[37m23:11:57[96m][[37mRestore-SprintHistoryArtifacts[96m] Sprint-history reconstruction completed for Sprint0009 with 1 file result(s) and 1 failure(s).
+[32m   [+] restores explicit historical content and preserves a different existing file[0m[90m 891ms (890ms|1ms)[0m
+[96m Context Test-SprintCheckpointCoverage[0m
+[32m   [+] discovers a final checkpoint using canonical Planning paths only[0m[90m 33ms (32ms|1ms)[0m
+[96m Context Save-SprintEndSessionTail[0m
+[32m   [+] stages only canonical checkpoint directories and records the stable commit[0m[90m 59ms (58ms|1ms)[0m
+[96m Context Test-SprintEndBoundaryState[0m
+[32m   [+] reports a prohibited process environment variable without exposing its value[0m[90m 37ms (36ms|2ms)[0m
+[32m   [+] keeps secret-bearing settings out of the process-environment profile[0m[90m 10ms (9ms|1ms)[0m
+[32m   [+] verifies managed developer and service-account profiles when ProfilePaths is not supplied[0m[90m 15.1s (15.1s|1ms)[0m
+[96m Context Invoke-SprintEndInfrastructureCleanup[0m
+[32m   [+] runs database and BuildMaster cleanup but never secret or instance removal[0m[90m 56ms (55ms|1ms)[0m
+[96m Context Invoke-SprintEndGitHubClose[0m
+[[37m23:12:12[96m][[37mInvoke-SprintEndGitHubClose[96m] GitHub token-scope preflight passed with one of the required supplemental scopes: repo, read:org.
+[32m   [+] derives the issue from the branch and adds a closing keyword[0m[90m 40ms (39ms|1ms)[0m
+[[37m23:12:12[96m][[37mInvoke-SprintEndGitHubClose[96m] GitHub token-scope preflight passed with one of the required supplemental scopes: repo, read:discussion.
+[32m   [+] derives a repository whose name contains dots from origin[0m[90m 12ms (12ms|0ms)[0m
+[[37m23:12:12[96m][[37mInvoke-SprintEndGitHubClose[96m] GitHub token-scope preflight detected scopes 'repo'. The current SprintEnd GitHub close flow needs a token that includes either 'read:org' or 'read:discussion' before any PR GraphQL calls are attempted.
+[32m   [+] fails early with remediation when the gh token lacks the supplemental GraphQL scopes[0m[90m 11ms (11ms|1ms)[0m
+[96m Context Invoke-SprintEndLifecycle[0m
+[32m   [+] returns a non-mutating dry-run contract with safety invariants[0m[90m 79ms (79ms|1ms)[0m
+[32m   [+] plans every selected mutation phase in a full-switch WhatIf run[0m[90m 113ms (112ms|0ms)[0m
+[32m   [+] adds the Planning worktree to the SprintEnd close plan when omitted by the caller[0m[90m 29ms (28ms|0ms)[0m
+[97mTests completed in 20.61s[0m
+[32mTests Passed: 32, [0m[90mFailed: 0, [0m[90mSkipped: 0, [0m[90mInconclusive: 0, [0m[37m[0m[90mNotRun: 0[0m

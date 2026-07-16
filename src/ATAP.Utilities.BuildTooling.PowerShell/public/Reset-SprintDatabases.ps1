@@ -299,7 +299,17 @@ function Reset-SprintDatabases {
     }
 
     $databasesCollection = if ($Settings) {
-      $Settings
+      # A caller (or the profile's $PSDefaultParameterValues['*:Settings'] = $global:settings)
+      # may hand us the WHOLE settings blob rather than the DatabasesCollection sub-dict.
+      # Normalize: if the passed settings contain a 'DatabasesCollection' key, drill into it;
+      # otherwise assume the value already IS the DatabasesCollection. Without this, the
+      # dotted-path lookup '<Db>.<Env>.DBConnectionString*SecretName' resolves EMPTY and the
+      # connection-string secret path is skipped (falls through to ConnectionParts).
+      if ($Settings -is [System.Collections.IDictionary] -and $Settings.Contains('DatabasesCollection')) {
+        $Settings['DatabasesCollection']
+      } else {
+        $Settings
+      }
     }
     elseif ($global:settings -and $global:configRootKeys -and $global:configRootKeys['DatabasesCollectionConfigRootKey']) {
       $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]

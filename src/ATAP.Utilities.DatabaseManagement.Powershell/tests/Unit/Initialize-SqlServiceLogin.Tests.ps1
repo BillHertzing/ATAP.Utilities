@@ -9,7 +9,7 @@ Describe 'Initialize-SqlServiceLogin' -Tag 'Unit' {
 
     Write-PSFMessage -Level Debug -Message 'Starting Initialize-SqlServiceLogin tests' -Tag 'Trace', 'Tests'
 
-    $script:instance = 'localhost\PRODUCTION'
+    $script:instance = 'localhost\Production'
     $script:database = 'ProGet'
     $script:account = 'TESTHOST\SvcProGet'
   }
@@ -216,4 +216,103 @@ Describe 'Initialize-SqlServiceLogin' -Tag 'Unit' {
       } | Should -Not -Throw
     }
   }
+  # -------------------------------------------------------------------------
+  Context 'DBConnectionStringSecretName path uses the resolved SQL connection' {
+
+    BeforeEach {
+      function New-FakeSqlConnection {
+        param(
+          [string] $DataSource
+        )
+
+        $connection = [pscustomobject]@{
+          DataSource = $DataSource
+          CommandLog = [System.Collections.Generic.List[string]]::new()
+        }
+        $connection | Add-Member -MemberType ScriptMethod -Name CreateCommand -Value {
+          $command = [pscustomobject]@{
+            CommandText = $null
+            ParentConnection = $this
+          }
+          $command | Add-Member -MemberType ScriptMethod -Name ExecuteNonQuery -Value {
+            $this.ParentConnection.CommandLog.Add($this.CommandText) | Out-Null
+            return 1
+          }
+          return $command
+        }
+        $connection | Add-Member -MemberType ScriptMethod -Name Close -Value { }
+        $connection | Add-Member -MemberType ScriptMethod -Name Dispose -Value { }
+        return $connection
+      }
+
+      $script:resolvedSecretName = $null
+      $script:fakeConnection = New-FakeSqlConnection -DataSource 'secret-host\Production'
+
+      Mock -CommandName Resolve-DatabaseSqlConnection -MockWith {
+        param(
+          $OriginalPSBoundParameters,
+          $SqlConnection,
+          $DBConnectionStringSecretName,
+          $DatabaseName
+        )
+
+        $script:resolvedSecretName = $DBConnectionStringSecretName
+        [pscustomobject]@{
+          Connection    = $script:fakeConnection
+          IsCallerOwned = $false
+        }
+      }
+    }
+
+    It 'accepts DBConnectionStringSecretName and returns Success' {
+      $result = Initialize-SqlServiceLogin `
+        -DBConnectionStringSecretName 'DB_SECRET_NAME' `
+        -DatabaseName $script:database `
+        -ServiceAccount $script:account
+
+      $result.Status | Should -Be 'Success'
+      $script:resolvedSecretName | Should -Be 'DB_SECRET_NAME'
+    }
+
+    It 'echoes SqlInstance from the resolved connection when using DBConnectionStringSecretName' {
+      $result = Initialize-SqlServiceLogin `
+        -DBConnectionStringSecretName 'DB_SECRET_NAME' `
+        -DatabaseName $script:database `
+        -ServiceAccount $script:account
+
+      $result.SqlInstance | Should -Be 'secret-host\Production'
+    }
+
+    It 'executes both login and user batches through the resolved connection' {
+      Initialize-SqlServiceLogin `
+        -DBConnectionStringSecretName 'DB_SECRET_NAME' `
+        -DatabaseName $script:database `
+        -ServiceAccount $script:account | Out-Null
+
+      $script:fakeConnection.CommandLog.Count | Should -Be 2
+      $script:fakeConnection.CommandLog[0] | Should -Match 'CREATE LOGIN'
+      $script:fakeConnection.CommandLog[1] | Should -Match 'ALTER ROLE \[db_owner\] ADD MEMBER'
+    }
+
+    It 'supports DBConnectionStringSecretName when targeting master' {
+      $masterConnection = New-FakeSqlConnection -DataSource 'secret-host\Production'
+      Mock -CommandName Resolve-DatabaseSqlConnection -MockWith {
+        [pscustomobject]@{
+          Connection    = $masterConnection
+          IsCallerOwned = $false
+        }
+      }
+
+      $result = Initialize-SqlServiceLogin `
+        -DBConnectionStringSecretName 'MASTER_SECRET_NAME' `
+        -DatabaseName 'master' `
+        -ServiceAccount $script:account
+
+      $result.Status | Should -Be 'Success'
+      $masterConnection.CommandLog.Count | Should -Be 2
+      $masterConnection.CommandLog[0] | Should -Match 'USE \[master\]'
+      $masterConnection.CommandLog[1] | Should -Match 'USE \[master\]'
+    }
+  }
 }
+

@@ -13,7 +13,7 @@ BeforeAll {
   }
 
   # Build an isolated GitRoot containing fake stable repo folders, a source
-  # OverviewSprint0007.code-workspace, and (in some tests) a pre-existing root
+  # Overview.Sprint0007.code-workspace, and (in some tests) a pre-existing root
   # Overview.code-workspace to be merged into.
   $script:gitRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('uowsi-test-' + [guid]::NewGuid().ToString('N'))
   New-Item -ItemType Directory -Path $script:gitRoot -Force | Out-Null
@@ -49,7 +49,7 @@ BeforeAll {
     generatedBy = 'New-OverviewSprintWorkspace'
     generatedAt = '2026-04-15T08:00:00Z'
   }
-  $script:sprintWorkspacePath = Join-Path $script:gitRoot 'OverviewSprint0007.code-workspace'
+  $script:sprintWorkspacePath = Join-Path $script:gitRoot 'Overview.Sprint0007.code-workspace'
   ($sprintWorkspaceObj | ConvertTo-Json -Depth 20) |
     Set-Content -LiteralPath $script:sprintWorkspacePath -Encoding UTF8
 
@@ -194,10 +194,10 @@ Describe 'Update-OverviewWorkspaceStableInfo' {
     @($reloaded.folders | ForEach-Object { $_.path }) | Should -Contain 'MissingRepo'
   }
 
-  It 'auto-discovers the most recent OverviewSprint*.code-workspace when -SourceWorkspacePath is omitted' {
+  It 'auto-discovers the most recent Overview.Sprint*.code-workspace when -SourceWorkspacePath is omitted' {
     # Seed an additional, older sprint workspace alongside the current 0007 one
     # and ensure the newer 0007 (LastWriteTimeUtc-wise) is chosen.
-    $olderPath = Join-Path $script:gitRoot 'OverviewSprint0006.code-workspace'
+    $olderPath = Join-Path $script:gitRoot 'Overview.Sprint0006.code-workspace'
     '{ "folders": [{ "path": "AceCommander" }] }' | Set-Content -LiteralPath $olderPath -Encoding UTF8
     (Get-Item -LiteralPath $olderPath).LastWriteTimeUtc = (Get-Date).ToUniversalTime().AddDays(-30)
 

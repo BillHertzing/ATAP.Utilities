@@ -38,9 +38,12 @@ Describe 'Set-GlobalConfigRootKeys population' -Tag 'Unit' {
 
     # one representative key from each section function
     $global:configRootKeys.ContainsKey('SYSTEMDRIVEConfigRootKey') | Should -BeTrue                       # Set-CoreConfigRootKeys
+    $global:configRootKeys.ContainsKey('ServicePlacementMapConfigRootKey') | Should -BeTrue               # Set-CoreConfigRootKeys (role -> host placement map)
     $global:configRootKeys.ContainsKey('DatabaseHostConfigRootKey') | Should -BeTrue                      # Add-DatabasesConfigRootKeys
     $global:configRootKeys.ContainsKey('DatabaseATAPUtilitiesNameConfigRootKey') | Should -BeTrue         # Set-DatabasesATAPUtilitiesConfigRootKeys
     $global:configRootKeys.ContainsKey('DatabaseAceCommanderNameConfigRootKey') | Should -BeTrue          # Set-DatabasesAceCommanderConfigRootKeys
+    $global:configRootKeys.ContainsKey('SqlInstanceTopologyConfigRootKey') | Should -BeTrue               # Set-SqlInstanceTopologyConfigRootKeys
+    $global:configRootKeys.ContainsKey('SqlInstanceTopologyTcpPortConfigRootKey') | Should -BeTrue        # Set-SqlInstanceTopologyConfigRootKeys
     $global:configRootKeys.ContainsKey('BuildMasterBaseUrlConfigRootKey') | Should -BeTrue                # Set-BuildMasterConfigRootKeys
     $global:configRootKeys.ContainsKey('BuildMasterApplicationByModuleConfigRootKey') | Should -BeTrue    # Set-BuildMasterConfigRootKeys (module->application map)
     $global:configRootKeys.ContainsKey('RulesManagementDatabaseHostConfigRootKey') | Should -BeTrue       # Set-RulesManagementConfigRootKeys
@@ -84,6 +87,7 @@ Describe 'Set-GlobalConfigRootKeys in-module sibling resolution' -Tag 'Unit' {
     $stagedFunctions = @(
       'Set-CoreConfigRootKeys'
       'Add-DatabasesConfigRootKeys'
+      'Set-SqlInstanceTopologyConfigRootKeys'
       'Set-BuildMasterConfigRootKeys'
       'Set-RulesManagementConfigRootKeys'
       'Add-PackageRepositoriesConfigRootKeys'
@@ -108,6 +112,7 @@ Describe 'ConfigRootKeys section functions precondition guard' -Tag 'Unit' {
   BeforeAll {
     . (Join-Path $script:publicDir 'Set-BuildMasterConfigRootKeys.ps1')
     . (Join-Path $script:publicDir 'Add-DatabasesConfigRootKeys.ps1')
+    . (Join-Path $script:publicDir 'Set-SqlInstanceTopologyConfigRootKeys.ps1')
   }
 
   It 'Set-BuildMasterConfigRootKeys throws when $global:configRootKeys is null' {
@@ -118,5 +123,10 @@ Describe 'ConfigRootKeys section functions precondition guard' -Tag 'Unit' {
   It 'Add-DatabasesConfigRootKeys throws when $global:configRootKeys is null' {
     $global:configRootKeys = $null
     { Add-DatabasesConfigRootKeys -Confirm:$false } | Should -Throw -ExpectedMessage '*not initialized*'
+  }
+
+  It 'Set-SqlInstanceTopologyConfigRootKeys throws when $global:configRootKeys is null' {
+    $global:configRootKeys = $null
+    { Set-SqlInstanceTopologyConfigRootKeys -Confirm:$false } | Should -Throw -ExpectedMessage '*not initialized*'
   }
 }

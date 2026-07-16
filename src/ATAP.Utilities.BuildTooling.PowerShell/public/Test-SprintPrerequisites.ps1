@@ -12,7 +12,7 @@ function Test-SprintPrerequisites {
 .DESCRIPTION
     Runs a read-only preflight covering: pwsh engine version, gh CLI auth,
     Bitwarden Secrets Manager readiness (bws CLI on PATH plus an authenticated
-    machine access token — BW_SESSION is personal-vault-only and is NOT
+    CommonCIForBitwardenReadOnly machine access token — BW_SESSION is personal-vault-only and is NOT
     required, per SC-0175), git working state of each required sprint worktree
     (no in-progress merge/rebase/cherry-pick/revert/bisect), BuildTooling module
     importability, self-bootstrap of the ATAP ConfigRootKeys/host-settings
@@ -226,7 +226,7 @@ function Test-SprintPrerequisites {
     if (-not $ghOk) { [void]$failures.Add('GhAuth') }
 
     # Bitwarden Secrets Manager readiness (SC-0175): sprint automation uses the
-    # bws CLI with a machine access token; BW_SESSION is personal-vault-only
+    # bws CLI with the CommonCIForBitwardenReadOnly machine access token; BW_SESSION is personal-vault-only
     # and is deliberately NOT required here.
     $bwOk = $false
     $bwsTokenPresent = $false
@@ -238,20 +238,20 @@ function Test-SprintPrerequisites {
         $bwsTokenPresent = $true
       } else {
         try {
-          $cred = Get-BWSAccessToken -ErrorAction Stop
+          $cred = Get-BWSAccessToken -TokenPurpose ReadOnly -ErrorAction Stop
           $env:BWS_ACCESS_TOKEN = $cred.GetNetworkCredential().Password
           $bwsTokenWasSetHere = $true
           $bwsTokenPresent = -not [string]::IsNullOrWhiteSpace($env:BWS_ACCESS_TOKEN)
         } catch {
-          $bwDetail = "BWS access token not resolvable (env or DPAPI file): $($_.Exception.Message)"
+          $bwDetail = "BWS access token not resolvable (env or CommonCIForBitwardenReadOnly DPAPI file): $($_.Exception.Message)"
         }
       }
       if ($bwsTokenPresent) {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Calling bws project list' -Tag 'BWSCall'
-        $null = & bws project list --output json 2>&1
+        $null = & bws project list --output json --color no 2>&1
         if ($LASTEXITCODE -eq 0) {
           $bwOk = $true
-          $bwDetail = 'bws CLI present; machine access token authenticated (bws project list succeeded)'
+          $bwDetail = 'bws CLI present; CommonCIForBitwardenReadOnly machine access token authenticated (bws project list succeeded)'
         } else {
           $bwDetail = "bws project list returned exit code $LASTEXITCODE (token invalid, revoked, or network failure)"
         }
@@ -489,6 +489,94 @@ function Test-SprintPrerequisites {
       Version = $btVersion
     }
     if (-not $btOk) { [void]$failures.Add('BuildToolingImport') }
+
+    $integrityOk = $true
+    $integrityDetail = ''
+    $sourceVersion = $null
+    $sourcePath = $null
+
+    if (-not $btOk) {
+      $integrityOk = $false
+      $integrityDetail = 'BuildTooling module is not imported or available; cannot verify version integrity.'
+    } else {
+      # 1. Try to find the ATAP.Utilities repository root from $RequiredRepoWorktrees
+      if ($RequiredRepoWorktrees) {
+        foreach ($wt in $RequiredRepoWorktrees) {
+          if ($wt) {
+            $leaf = Split-Path -Path $wt -Leaf
+            if ($leaf -eq 'ATAP.Utilities' -or $leaf -like 'ATAP.Utilities-wt-*') {
+              $candidatePath = Join-Path $wt 'src\ATAP.Utilities.BuildTooling.PowerShell\version.json'
+              if (Test-Path -LiteralPath $candidatePath -PathType Leaf) {
+                $sourcePath = $candidatePath
+                break
+              }
+            }
+          }
+        }
+      }
+
+      # 2. Fallback to finding it relative to current repository root
+      if (-not $sourcePath) {
+        try {
+          if (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue) {
+            $localRoot = Get-RepositoryRoot -ErrorAction SilentlyContinue
+            if ($localRoot) {
+              $localRootFull = [IO.Path]::GetFullPath($localRoot)
+              $candidatePath = Join-Path $localRootFull 'src\ATAP.Utilities.BuildTooling.PowerShell\version.json'
+              if (Test-Path -LiteralPath $candidatePath -PathType Leaf) {
+                $sourcePath = $candidatePath
+              }
+            }
+          }
+        } catch { }
+      }
+
+      # 3. Fallback to parent directory discovery
+      if (-not $sourcePath) {
+        $parentDir = 'C:\Dropbox\whertzing\GitHub'
+        if (Test-Path -LiteralPath $parentDir -PathType Container) {
+          $siblingDirs = Get-ChildItem -LiteralPath $parentDir -Directory -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -eq 'ATAP.Utilities' -or $_.Name -like 'ATAP.Utilities-wt-*' }
+          foreach ($sibling in $siblingDirs) {
+            $candidatePath = Join-Path $sibling.FullName 'src\ATAP.Utilities.BuildTooling.PowerShell\version.json'
+            if (Test-Path -LiteralPath $candidatePath -PathType Leaf) {
+              $sourcePath = $candidatePath
+              break
+            }
+          }
+        }
+      }
+
+      if ($sourcePath) {
+        try {
+          $json = Get-Content -Raw -LiteralPath $sourcePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+          if ($json.version) {
+            $sourceVersion = $json.version
+            if ($btVersion -eq $sourceVersion) {
+              $integrityDetail = "Active module version ($btVersion) matches source version at ${sourcePath}"
+            } else {
+              $integrityOk = $false
+              $integrityDetail = "Version mismatch: source version is $sourceVersion (at ${sourcePath}) but imported/available module version is $btVersion. Run a build/rebuild/promote/install session."
+            }
+          } else {
+            $integrityDetail = "version.json at ${sourcePath} does not contain a 'version' key."
+          }
+        } catch {
+          $integrityDetail = "Failed to parse version.json at ${sourcePath}: $($_.Exception.Message)"
+        }
+      } else {
+        $integrityDetail = 'Could not locate ATAP.Utilities version.json; skipping source-vs-published integrity check.'
+      }
+    }
+
+    $checks['BuildToolingVersionIntegrity'] = [PSCustomObject]@{
+      Ok            = $integrityOk
+      Detail        = $integrityDetail
+      SourceVersion = $sourceVersion
+      ActiveVersion = $btVersion
+    }
+    if (-not $integrityOk) { [void]$failures.Add('BuildToolingVersionIntegrity') }
+
 
     if (-not $PSBoundParameters.ContainsKey('ProGetBaseUrl')) {
       try {

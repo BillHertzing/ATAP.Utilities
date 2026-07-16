@@ -59,8 +59,9 @@ produces a phantom export.
 
   Context 'Imported module exports every declared function with no phantoms' {
     BeforeAll {
-      Remove-Module 'ATAP.Utilities.BuildTooling.PowerShell' -Force -ErrorAction SilentlyContinue
-      Import-Module $script:manifestPath -Force -ErrorAction Stop -WarningAction SilentlyContinue
+      if (-not (Get-Module -Name 'ATAP.Utilities.BuildTooling.PowerShell')) {
+        Import-Module $script:manifestPath -Force -ErrorAction Stop -WarningAction SilentlyContinue
+      }
       $script:liveExports = (Get-Module 'ATAP.Utilities.BuildTooling.PowerShell').ExportedFunctions.Keys
     }
 

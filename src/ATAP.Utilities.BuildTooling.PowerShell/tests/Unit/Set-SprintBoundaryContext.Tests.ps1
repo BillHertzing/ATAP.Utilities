@@ -1,8 +1,8 @@
 BeforeAll {
   # Import the module from THIS worktree (tests/Unit -> module root) so the test
   # exercises the worktree's source rather than a stable-repo copy on PSModulePath.
-  $script:manifestPath = Join-Path $PSScriptRoot '..' '..' 'ATAP.Utilities.BuildTooling.PowerShell.psd1'
-  Import-Module $script:manifestPath -Force
+  $script:rootModulePath = Join-Path $PSScriptRoot '..' '..' 'ATAP.Utilities.BuildTooling.Powershell.psm1'
+  Import-Module $script:rootModulePath -Force
 }
 
 Describe 'Set-SprintBoundaryContext [public]' {
@@ -53,6 +53,14 @@ Describe 'Set-SprintBoundaryContext [public]' {
         Failures = @()
       }
     }
+    Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Sync-SprintBoundaryPrimaryRoleMarker {
+      [PSCustomObject]@{
+        Boundary = $Boundary
+        Action = 'SharedVerified'
+        Succeeded = $true
+        SharedStatePath = $SharedStatePath
+      }
+    }
   }
 
   Context 'Parameter validation' {
@@ -101,6 +109,168 @@ Describe 'Set-SprintBoundaryContext [public]' {
         -ParameterFilter { $Boundary -eq 'Start' -and $TargetRoot -eq $script:svSprint }
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 1 -Exactly -Scope It `
         -ParameterFilter { $Boundary -eq 'Start' -and $TargetRoot -eq $script:worktree }
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 0 -Exactly -Scope It `
+        -ParameterFilter { [bool]$OmitSprintWorktrees }
+    }
+  }
+
+  Context 'Concrete-adapter regression (SC-0231): .claude/.github are never junctioned' {
+    It 'Start never dev-redirects .claude or .github (default JunctionFolderNames is .vscode only)' {
+      Set-SprintBoundaryContext -Boundary Start `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -GitRoot $script:gitRoot
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions -Times 1 -Exactly -Scope It `
+        -ParameterFilter {
+          @($DevSourceRepoFolderNames) -notcontains '.claude' -and
+          @($DevSourceRepoFolderNames) -notcontains '.github' -and
+          (@($DevSourceRepoFolderNames) -join ',') -eq '.vscode'
+        }
+    }
+
+    It 'End never sources .claude or .github back as junctions (StableJunctionFolderNames is .vscode only)' {
+      Set-SprintBoundaryContext -Boundary End `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svStable `
+        -GitRoot $script:gitRoot
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions -Times 1 -Exactly -Scope It `
+        -ParameterFilter {
+          @($SourceRepoFolderNames) -notcontains '.claude' -and
+          @($SourceRepoFolderNames) -notcontains '.github'
+        }
+    }
+
+    It 'An explicit legacy three-folder request is the ONLY way .claude/.github get dev-redirected (guards the default, not the capability)' {
+      Set-SprintBoundaryContext -Boundary Start `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -GitRoot $script:gitRoot `
+        -JunctionFolderNames @('.claude', '.github', '.vscode')
+
+      # Proves the assertion above is about the DEFAULT: when a caller explicitly opts
+      # in, the names flow through - so a regression to the old default would be caught
+      # by the default-only tests, not masked by the parameter being ignored.
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions -Times 1 -Exactly -Scope It `
+        -ParameterFilter { @($DevSourceRepoFolderNames) -contains '.claude' }
+    }
+  }
+
+  Context 'SC-0236 regression: Start filters the junction SOURCE SCAN, not just the dev-redirect' {
+    It 'Passes -SourceRepoFolderNames matching JunctionFolderNames on Start (default .vscode only)' {
+      Set-SprintBoundaryContext -Boundary Start `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -GitRoot $script:gitRoot
+
+      # Before the SC-0236 fix, Start never bound -SourceRepoFolderNames at all, so
+      # Set-WorktreeJunctions' scan was unfiltered and would recreate ANY junction
+      # physically present in the stable repo (e.g. a stale .claude/.github junction),
+      # independent of DevSourceRepoFolderNames. This asserts the scan filter itself.
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions -Times 1 -Exactly -Scope It `
+        -ParameterFilter {
+          (@($SourceRepoFolderNames) -join ',') -eq '.vscode'
+        }
+    }
+
+    It 'An explicit legacy three-folder request also widens the source scan (guards the default, not the capability)' {
+      Set-SprintBoundaryContext -Boundary Start `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -GitRoot $script:gitRoot `
+        -JunctionFolderNames @('.claude', '.github', '.vscode')
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions -Times 1 -Exactly -Scope It `
+        -ParameterFilter { @($SourceRepoFolderNames) -contains '.claude' }
+    }
+  }
+
+  Context 'Single-entry Start ordering (Task 12.2.b): junctions -> context -> adapter render' {
+    BeforeEach {
+      $global:sbcCallOrder = [System.Collections.Generic.List[string]]::new()
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions {
+        $global:sbcCallOrder.Add('junctions')
+        [PSCustomObject]@{ Success = $true; Errors = @() }
+      }
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Initialize-DownstreamSprintFromSharedVSCode {
+        $global:sbcCallOrder.Add('context')
+      }
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle {
+        $global:sbcCallOrder.Add('render')
+        [PSCustomObject]@{ DriftClean = $true; Results = @(); ChangedCount = 0 }
+      }
+    }
+
+    AfterEach {
+      Remove-Variable -Name sbcCallOrder -Scope Global -Force -ErrorAction SilentlyContinue
+    }
+
+    It 'Renders adapters only AFTER junction setup and downstream context (junctions-before-render)' {
+      Set-SprintBoundaryContext -Boundary Start `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -GitRoot $script:gitRoot `
+        -SkipSharedVSCodeSettings `
+        -SkipProfileSymlinks
+
+      @($global:sbcCallOrder) | Should -Be @('junctions', 'context', 'render')
+    }
+
+    It 'A junction failure prevents the adapter render for that worktree (render can never precede junctions)' {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions {
+        $global:sbcCallOrder.Add('junctions')
+        [PSCustomObject]@{ Success = $false; Errors = @('boom') }
+      }
+
+      $result = Set-SprintBoundaryContext -Boundary Start `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -GitRoot $script:gitRoot `
+        -SkipSharedVSCodeSettings `
+        -SkipProfileSymlinks
+
+      @($global:sbcCallOrder) | Should -Be @('junctions')
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 0 -Exactly -Scope It
+      $result.PerWorktree[0].JunctionError | Should -Match 'Junction retarget failed'
+    }
+
+    It 'Reports granular per-concern errors so delegating Stage callers can map severities' {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle {
+        $global:sbcCallOrder.Add('render')
+        throw 'render exploded'
+      }
+
+      $result = Set-SprintBoundaryContext -Boundary Start `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -GitRoot $script:gitRoot `
+        -SkipSharedVSCodeSettings `
+        -SkipProfileSymlinks
+
+      $result.PerWorktree[0].JunctionsRetargeted | Should -BeTrue
+      $result.PerWorktree[0].JunctionError | Should -BeNullOrEmpty
+      $result.PerWorktree[0].ContextError | Should -BeNullOrEmpty
+      $result.PerWorktree[0].AdapterError | Should -Match 'render exploded'
+    }
+  }
+
+  Context 'SkipSharedVSCodeSettings (Task 12.2.b): Stage callers own the machine-global settings concern' {
+    It 'Skips the shared-settings render and both settings symlinks' {
+      $result = Set-SprintBoundaryContext -Boundary Start `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -GitRoot $script:gitRoot `
+        -SkipSharedVSCodeSettings
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-UserSettingsSymlink -Times 0 -Exactly -Scope It
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-ClaudeSettingsSymlink -Times 0 -Exactly -Scope It
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 0 -Exactly -Scope It `
+        -ParameterFilter { $TargetRoot -eq $script:svSprint }
+      ($result.Concerns | Where-Object Concern -EQ 'SharedVSCodeSettings').Action | Should -Be 'Skipped'
+      # The per-worktree adapter materialization still runs — only the machine-global concern is skipped.
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $Boundary -eq 'Start' -and $TargetRoot -eq $script:worktree }
     }
   }
 
@@ -146,6 +316,18 @@ Describe 'Set-SprintBoundaryContext [public]' {
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Reset-DownstreamToSharedVSCodeMain -Times 1 -Exactly -Scope It
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Initialize-DownstreamSprintFromSharedVSCode -Times 0 -Exactly -Scope It
     }
+
+    It 'Re-renders shared settings with OmitSprintWorktrees while keeping the per-worktree End audit unomitted' {
+      Set-SprintBoundaryContext -Boundary End `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svStable `
+        -GitRoot $script:gitRoot
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $Boundary -eq 'End' -and $TargetRoot -eq $script:worktree -and -not [bool]$OmitSprintWorktrees }
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $Boundary -eq 'Start' -and $TargetRoot -eq $script:svStable -and [bool]$OmitSprintWorktrees }
+    }
   }
 
   Context 'Return contract' {
@@ -163,10 +345,29 @@ Describe 'Set-SprintBoundaryContext [public]' {
       $names | Should -Contain 'PowerShell7ProfileSymlinks'
       $names | Should -Contain 'DeveloperPowerShellProfiles'
       $names | Should -Contain 'ServiceAccountPowerShellProfiles'
+      $names | Should -Contain 'SharedPrimaryRoleMarker'
       $names | Should -Contain 'ConfigRootKeys'
 
       ($result.Concerns | Where-Object Concern -EQ 'PowerShell7ProfileSymlinks').StableByDesign | Should -BeFalse
+      ($result.Concerns | Where-Object Concern -EQ 'SharedPrimaryRoleMarker').StableByDesign | Should -BeTrue
       ($result.Concerns | Where-Object Concern -EQ 'ConfigRootKeys').StableByDesign | Should -BeTrue
+    }
+
+    It 'validates the stable shared primary-role marker at Start and End' {
+      Set-SprintBoundaryContext -Boundary Start `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -GitRoot $script:gitRoot
+
+      Set-SprintBoundaryContext -Boundary End `
+        -WorktreePaths @($script:worktree) `
+        -SharedVSCodeWorktreePath $script:svStable `
+        -GitRoot $script:gitRoot
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Sync-SprintBoundaryPrimaryRoleMarker -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $Boundary -eq 'Start' }
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Sync-SprintBoundaryPrimaryRoleMarker -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $Boundary -eq 'End' }
     }
 
     It 'Retargets the PowerShell 7 profile symlinks to the sprint worktree at Start' {
@@ -243,6 +444,8 @@ Describe 'Set-SprintBoundaryContext [public]' {
 
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-UserSettingsSymlink -Times 1 -Exactly -Scope It
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions -Times 0 -Exactly -Scope It
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $Boundary -eq 'Start' -and $TargetRoot -eq $script:svStable -and [bool]$OmitSprintWorktrees }
     }
   }
 
@@ -260,6 +463,7 @@ Describe 'Set-SprintBoundaryContext [public]' {
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 0 -Exactly -Scope It
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-PowerShell7ProfileSymlink -Times 0 -Exactly -Scope It
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-SprintBoundaryUserProfiles -Times 0 -Exactly -Scope It
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Sync-SprintBoundaryPrimaryRoleMarker -Times 0 -Exactly -Scope It
     }
   }
 }

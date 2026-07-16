@@ -1,7 +1,7 @@
 # 5-Tier Implementation Plan — `module.build.ps1`
 
 **Partner documents:** [5Tier gaps.md](./5Tier%20gaps.md), [5Tier tasks for module.build.ps1.md](./5Tier%20tasks%20for%20module.build.ps1.md)
-**Authoritative reference:** [602 - 5Tier Software Production process Revision 2.md](../../../../_Planning-wt-12-sprint-0006-work-items/Explainers/602%20-%205Tier%20Software%20Production%20process%20Revision%202.md)
+**Authoritative reference:** [Immutable-Build-Strategy.md](../../../SolutionDocumentation/Immutable-Build-Strategy.md) (the former `602 - 5Tier...Revision 2` explainer was superseded and deleted; retargeted 2026-07-06, Task 12.45.e)
 **Goal:** Bring `module.build.ps1` into full compliance with the 5-Tier software production process so that every PowerShell module under `src/` in ATAP.Utilities builds, tests, packages, and publishes through the same pipeline as the C# / .NET projects.
 
 ---

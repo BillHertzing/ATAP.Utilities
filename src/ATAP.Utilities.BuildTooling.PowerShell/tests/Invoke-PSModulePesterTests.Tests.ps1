@@ -311,4 +311,29 @@ Describe 'Invoke-PSModulePesterTests (quiet output)' -Tag 'Unit' {
     $script:capturedPesterConfiguration.Filter.ExcludeTag.Value | Should -Contain 'PromotedModuleHostSensitive'
     Should -Invoke -CommandName Invoke-Pester -Times 1 -Exactly
   }
+
+  It 'fails a non-Sprint gate when the tier filter selects zero tests' {
+    Mock -CommandName Invoke-Pester -MockWith {
+      [PSCustomObject]@{
+        PassedCount  = 0
+        FailedCount  = 0
+        SkippedCount = 0
+        TotalCount   = 0
+        Duration     = [TimeSpan]::Zero
+      }
+    }
+
+    $moduleRoot = Join-Path $script:tempRoot 'zero-test-module'
+    New-Item -ItemType Directory -Path $moduleRoot -Force | Out-Null
+
+    $result = Invoke-PSModulePesterTests `
+      -ModuleRoot $moduleRoot `
+      -Tier 'Production' `
+      -OutputPath (Join-Path $script:tempRoot 'zero-test-out.xml') `
+      -CoverageOutputPath (Join-Path $script:tempRoot 'zero-test-cov.xml') `
+      -SkipTestResult
+
+    $result.TotalCount | Should -Be 0
+    $result.GatePass | Should -BeFalse
+  }
 }

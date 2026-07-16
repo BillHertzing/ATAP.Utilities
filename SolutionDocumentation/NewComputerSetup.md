@@ -1,5 +1,9 @@
 # Setup a New Development Computer
 
+> **Canonical.** The companion [NewComputerSetupUsingAnsible.md](NewComputerSetupUsingAnsible.md)
+> is retained only for its deeper BIOS / OS-install / Ansible-bootstrap notes; where the two
+> overlap, THIS document wins (cross-link added 2026-07-06, Task 12.45.e).
+
 ## Purpose
 
 This document bootstraps a new Windows 11 developer workstation so it can participate in
@@ -21,6 +25,12 @@ The end state is:
 
 ## Important Conventions
 
+- **Parity journal required:** Before a step in this runbook changes state on
+  `utat022` or `utat01`, append a secret-safe declaration with
+  `Add-ParityChangeEntry` on the host being changed. Include the category,
+  item, old/new state, peer host, and a peer action; do not include any secret
+  value. After the peer applies its corresponding action, acknowledge it from
+  that peer with `Confirm-ParityChangeApplied`.
 - Use PowerShell 7 (`pwsh`) for all commands in this document.
 - The historical phrase `SQL Server Community Edition` appears in older notes, but for a
   developer workstation that needs SQL Server Agent you should install SQL Server 2022
@@ -28,7 +38,7 @@ The end state is:
 - Keep SQL Server instance names under 16 characters. The base instances are
   `Production`, `QA`, and `Integration`. Sprint and feature-branch instances use a short
   tier prefix such as `Dev` or `Exp` plus a shortened branch or user token.
-- Prefer the newest `Overview.code-workspace` and `OverviewSprintNNNN.code-workspace`
+- Prefer the newest `Overview.code-workspace` and `Overview.Sprint.NNNN.code-workspace`
   files at `C:\Dropbox\whertzing\GitHub` as the current branch/worktree matrix when
   they are present.
 
@@ -387,25 +397,30 @@ New-Item -ItemType SymbolicLink `
   -Target (Join-Path $profileSource 'AllUsersAllHostsV7CoreProfile.ps1') | Out-Null
 ```
 
-### 4.2 Link the current-user all-hosts and current-host profiles
+### 4.2 Provision managed current-user profiles
+
+Use `Set-UserScopeProfile` instead of copying or linking an individual profile.
+The developer template dot-sources the canonical core profile; service-account
+templates are deliberately minimal and never start Bitwarden/browser
+authentication or resolve secrets. The command refuses to replace a profile
+without the managed-header marker unless `-Force` is supplied. Each live change
+adds an `Add-ParityChangeEntry` record for the peer machine.
 
 ```powershell
-$documentsPowerShell = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'PowerShell'
-New-Item -ItemType Directory -Path $documentsPowerShell -Force | Out-Null
+Import-Module ATAP.Utilities.BuildTooling.PowerShell
 
-Remove-Item (Join-Path $documentsPowerShell 'Profile.ps1') -ErrorAction SilentlyContinue
-Copy-Item (Join-Path $profileSource 'CurrentUserAllHostsV7CoreProfile.ps1') (Join-Path $documentsPowerShell 'Profile.ps1') -Force
+$iacRoot = Join-Path $gitHubRoot 'ATAP.IAC'
+Set-UserScopeProfile -AccountName 'whertzing' -AccountClass Developer `
+  -ATAPIACRoot $iacRoot -ATAPUtilitiesRoot $atapRoot -Confirm:$false
 
-Remove-Item (Join-Path $documentsPowerShell 'Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue
-New-Item -ItemType SymbolicLink `
-  -Path (Join-Path $documentsPowerShell 'Microsoft.PowerShell_profile.ps1') `
-  -Target (Join-Path $profileSource 'CurrentUserAllHostsV7CoreProfile.ps1') | Out-Null
-
-Remove-Item (Join-Path $documentsPowerShell 'Microsoft.VSCode_profile.ps1') -ErrorAction SilentlyContinue
-New-Item -ItemType SymbolicLink `
-  -Path (Join-Path $documentsPowerShell 'Microsoft.VSCode_profile.ps1') `
-  -Target (Join-Path $profileSource 'CurrentUserAllHostsV7CoreProfile.ps1') | Out-Null
+# Run this only after the local service account exists. Use an elevated shell
+# because a different user's profile directory is being written.
+Set-UserScopeProfile -AccountName 'SvcBuildmaster' -AccountClass ServiceAccount `
+  -ATAPIACRoot $iacRoot -ATAPUtilitiesRoot $atapRoot -Confirm:$false
 ```
+
+For the complete service-account and BWS-machine-token procedure, see
+[Runbook-BitwardenServiceAccounts.md](Runbook-BitwardenServiceAccounts.md).
 
 ### 4.3 Install required PowerShell Gallery modules
 
@@ -678,38 +693,31 @@ Import-Module ATAP.Utilities.PowerShell
 
 $serviceAccounts = @(
   @{
-    SecretName  = "$env:COMPUTERNAME-SQLServerSrvAcct-Production"
+    SecretName  = "SQLServerSrvAcct.$($env:COMPUTERNAME.ToLowerInvariant())"
     AccountName = 'SQLServerSrvAcct'
     FullName    = 'SQL Server Service Identity'
     Description = 'Local service account for SQL Server Database Engine and Agent'
   },
   @{
-    SecretName  = "$env:COMPUTERNAME-SvcProGet-Production"
+    SecretName  = "SvcProGet.$($env:COMPUTERNAME.ToLowerInvariant())"
     AccountName = 'SvcProGet'
     FullName    = 'ProGet Service Identity'
     Description = 'Local service account for the Inedo ProGet service'
   },
   @{
-    SecretName  = "$env:COMPUTERNAME-SvcBuildmaster-Production"
+    SecretName  = "SvcBuildmaster.$($env:COMPUTERNAME.ToLowerInvariant())"
     AccountName = 'SvcBuildmaster'
     FullName    = 'BuildMaster Service Identity'
-    Description = 'Local service account for the Inedo BuildMaster service'
+    Description = 'Local service account for Inedo BuildMaster service'
   }
 )
 
 foreach ($entry in $serviceAccounts) {
-  $password = Get-SecretATAP -SecretName $entry.SecretName -SecretField 'password'
-  if ([string]::IsNullOrWhiteSpace($password)) {
-    throw "Secret store item '$($entry.SecretName)' is missing a password field."
-  }
-
-  $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-
   New-LocalServiceAccount `
     -AccountName $entry.AccountName `
     -FullName $entry.FullName `
     -Description $entry.Description `
-    -Password $securePassword `
+    -SecretNameServiceAccountLoginCredentials $entry.SecretName `
     -GrantSeServiceLogonRight
 }
 ```
@@ -747,6 +755,17 @@ Install or verify these permanent instances:
 2. `QA`
 3. `Integration`
 
+All SQL Server named instances use TCP with fixed, high-range ports; do not use
+dynamic ports. This is the intended configuration on every host:
+
+| Instance | TCP port |
+| --- | ---: |
+| `Production` | 50020 |
+| `QA` | 50025 |
+| `Integration` | 50030 |
+| `DevWhertzing` | 50035 |
+| `ExpWhertzing` | 50040 |
+
 Use the database-management helper:
 
 ```powershell
@@ -755,18 +774,20 @@ Import-Module ATAP.Utilities.DatabaseManagement.Powershell
 $setupExe = Find-SqlServerSetupExe
 $setupRoot = Split-Path $setupExe -Parent
 
-$instances = @(
-  @{ Name = 'Production'; Port = 1433 },
-  @{ Name = 'QA';         Port = 1435 },
-  @{ Name = 'Integration'; Port = 1434 }
-)
+$hostName = $env:COMPUTERNAME.ToLowerInvariant()
+$topology = $global:settings[$global:configRootKeys['SqlInstanceTopologyConfigRootKey']]
+$hosts = $topology[$global:configRootKeys['SqlInstanceTopologyHostsConfigRootKey']]
+$instances = $hosts[$hostName][$global:configRootKeys['SqlInstanceTopologyInstancesConfigRootKey']]
+$instanceNameKey = $global:configRootKeys['SqlInstanceTopologyInstanceNameConfigRootKey']
+$tcpPortKey = $global:configRootKeys['SqlInstanceTopologyTcpPortConfigRootKey']
 
-foreach ($instance in $instances) {
+foreach ($role in @('PRODUCTION', 'QA', 'INTEGRATION')) {
+  $instance = $instances[$role]
   Install-SqlServerInstance `
     -DatabaseHost 'localhost' `
-    -SqlInstance $instance.Name `
+    -SqlInstance $instance[$instanceNameKey] `
     -ConnectionMethod 'tcp' `
-    -Port $instance.Port `
+    -Port $instance[$tcpPortKey] `
     -AuthenticationMode 'Windows' `
     -IntegratedSecurity `
     -Version '2022' `
@@ -794,19 +815,35 @@ When the SQL installer prompts for service accounts:
 
 ### 6.5 Enable TCP/IP and set backup paths
 
-For each named instance:
+For each named instance, configure TCP/IP with the fixed port in the preceding
+table and clear its dynamic-port setting:
 
 1. Open SQL Server Configuration Manager.
 2. Enable TCP/IP for the instance.
 3. Assign the intended static port.
 4. Restart the instance.
-5. Set the default backup directory to the Dropbox-backed location.
+5. Verify that the data, log, and backup directories match the current host's
+   SQL topology row in `$global:settings`.
 
-The current convention for `Production` is:
+Display the authoritative values for the current host:
 
-- Data: `C:\LocalDBs\Production`
-- Logs: `C:\LocalDBs\Production`
-- Backups: `C:\Dropbox\DatabaseBackups\Production`
+```powershell
+$hostName = $env:COMPUTERNAME.ToLowerInvariant()
+$topology = $global:settings[$global:configRootKeys['SqlInstanceTopologyConfigRootKey']]
+$hosts = $topology[$global:configRootKeys['SqlInstanceTopologyHostsConfigRootKey']]
+$instances = $hosts[$hostName][$global:configRootKeys['SqlInstanceTopologyInstancesConfigRootKey']]
+
+$instances.Values | Select-Object InstanceName, DataPath, LogPath, BackupPath, TcpPort
+```
+
+Every instance follows this settings-backed convention:
+
+- Data: `C:\LocalDBs\<INSTANCE_NAME>\Data\`
+- Logs: `C:\LocalDBs\<INSTANCE_NAME>\Log\`
+- Backups: `C:\LocalDBs\<INSTANCE_NAME>\Backup\`
+
+`Install-SqlServerInstance` resolves these values from `$global:settings` and passes
+them to dbatools. Do not reproduce the paths as independent literals in setup scripts.
 
 Verify TCP connectivity:
 
@@ -839,7 +876,7 @@ Notes:
    does not create `Production`, `QA`, or `Integration`.
 2. For long-lived multi-sprint feature branches, combine a short feature token with the
    tier prefix and keep the full instance name under 16 characters.
-3. Use the current `Overview.code-workspace` and `OverviewSprintNNNN.code-workspace`
+3. Use the current `Overview.code-workspace` and `Overview.Sprint.NNNN.code-workspace`
    files as the branch matrix when deciding which extra instances are still required.
 
 ## Step 8: Build the Databases on All Instances
@@ -1403,76 +1440,36 @@ Bitwarden CLI (`bw.exe`) to abort during TLS init.
 > clean environment, and (b) it documents the contract that service-account
 > sessions must not inherit operator-Dropbox paths.
 
-Run this from the elevated administrative session. The script creates the
-`Documents\PowerShell` folder under each service account's home directory
-(needed only the first time) and creates an NTFS symbolic link from each
-account's `profile.ps1` to the worktree copy of
-`ProfileForServiceAccountUsers.ps1`:
+Run this from an elevated administrative session. BuildTooling copies the
+selected stable or sprint ATAP.IAC payload; it does not create a profile
+symlink or repository dot-source wrapper:
 
 ```powershell
-$candidateRoots = @(
-  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items',
-  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
-)
-$profileRelative = 'src\ATAP.Utilities.PowerShell\Profiles\ProfileForServiceAccountUsers.ps1'
-$repoRoot = $candidateRoots | Where-Object {
-  Test-Path -LiteralPath (Join-Path $_ $profileRelative)
-} | Select-Object -First 1
-if (-not $repoRoot) {
-  throw "ProfileForServiceAccountUsers.ps1 not found in any known repository root."
-}
-$profileSource = Join-Path $repoRoot $profileRelative
-
-foreach ($svcAccount in @('SvcBuildmaster', 'SvcProGet')) {
-  $svcHome = "C:\Users\$svcAccount"
-  $psDir   = Join-Path $svcHome 'Documents\PowerShell'
-  $linkPs1 = Join-Path $psDir 'profile.ps1'
-
-  if (-not (Test-Path -LiteralPath $svcHome -PathType Container)) {
-    throw "Home folder '$svcHome' does not exist. Log in as $svcAccount once (or run a process as that account) to create the profile, then retry."
-  }
-  if (-not (Test-Path -LiteralPath $psDir -PathType Container)) {
-    New-Item -ItemType Directory -Path $psDir -Force | Out-Null
-    Write-Host "Created $psDir"
-  }
-
-  # If a real file or stale link already exists, replace it.
-  if (Test-Path -LiteralPath $linkPs1) {
-    $existing = Get-Item -LiteralPath $linkPs1 -Force
-    if ($existing.LinkType -eq 'SymbolicLink' -and $existing.Target -contains $profileSource) {
-      Write-Host "Link already correct: $linkPs1 -> $profileSource"
-      continue
-    }
-    Write-Host "Replacing existing $linkPs1"
-    Remove-Item -LiteralPath $linkPs1 -Force
-  }
-
-  New-Item -ItemType SymbolicLink -Path $linkPs1 -Target $profileSource -Force | Out-Null
-  Write-Host "Linked $linkPs1 -> $profileSource"
+$iacRoot = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC'
+$utilitiesRoot = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
+foreach ($svcAccount in @('SvcBuildMaster', 'SvcProGet', 'SvcSQLServer', 'SvcSeq', 'SvcParityAudit')) {
+  Set-UserScopeProfile -AccountName $svcAccount -AccountClass ServiceAccount `
+    -ATAPIACRoot $iacRoot -ATAPUtilitiesRoot $utilitiesRoot -Confirm:$false
 }
 ```
 
-Verification — both links resolve to the worktree source file:
+Verification — each deployed profile is a real file whose hash matches the
+selected IAC payload:
 
 ```powershell
-foreach ($svcAccount in @('SvcBuildmaster', 'SvcProGet')) {
-  $linkPs1 = "C:\Users\$svcAccount\Documents\PowerShell\profile.ps1"
-  if (Test-Path -LiteralPath $linkPs1) {
-    $info = Get-Item -LiteralPath $linkPs1 -Force
-    "{0,-25} {1,-12} -> {2}" -f $svcAccount, $info.LinkType, ($info.Target -join ';')
-  } else {
-    "{0,-25} MISSING" -f $svcAccount
+$source = Join-Path $iacRoot 'Windows\ProfileTemplates\ProfileForServiceAccountUsers.ps1'
+foreach ($svcAccount in @('SvcBuildMaster', 'SvcProGet', 'SvcSQLServer', 'SvcSeq', 'SvcParityAudit')) {
+  $profilePath = "C:\Users\$svcAccount\Documents\PowerShell\profile.ps1"
+  [PSCustomObject]@{
+    Account = $svcAccount
+    IsRealFile = -not (Get-Item -LiteralPath $profilePath -Force).LinkType
+    HashMatches = (Get-FileHash $profilePath).Hash -eq (Get-FileHash $source).Hash
   }
 }
 ```
 
-Expected — two `SymbolicLink` lines pointing at the same worktree path.
-
-> **Sprint vs stable retarget.** This link is created from the sprint
-> worktree path. When the sprint merges into stable, retarget each link to
-> `C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.PowerShell\Profiles\ProfileForServiceAccountUsers.ps1`
-> as part of SprintEndAgent. Re-running the script above against the stable
-> worktree (after removing the sprint-pointing links) is sufficient.
+Secret policy: `SvcBuildMaster`, `SvcProGet`, and `SvcSQLServer` require
+non-interactive secret access. `SvcSeq` and `SvcParityAudit` do not.
 
 #### 9.4.7 Register the per-service-account startup task
 
@@ -1597,19 +1594,27 @@ that service account is complete.
 > [ServiceAccountsAndBitwarden.md](ServiceAccountsAndBitwarden.md#rotation-and-refresh-strategy)
 > for the rotation runbook.
 
-#### 9.4.10 Provision Secrets Manager (`bws`) access tokens for Windows accounts
+> **Sprint 0012 status — rotation deferred:** The protected `CommonCIForBitwardenReadOnly`
+> DPAPI files have been created and validated for `whertzing` and for `SvcBuildMaster`,
+> `SvcProGet`, `SvcSeq`, `SvcSQLServer`, and `SvcParityAudit` on both `utat01` and `utat022`.
+> This is a validated provisioning baseline, not authorization to rotate a token or password.
+> The remaining bootstrap automation and all password/access-token rotation implementation are
+> deferred to next-sprint planning; use the carry-forward plan in the `_Planning` repository
+> before attempting a rotation.
+#### 9.4.10 Provision Secrets Manager (ws) access tokens for Windows accounts
 
 Under the current architecture, runtime/project secrets live in **Bitwarden Secrets
 Manager** and are read with a BWS **access token** - there is no `bw login`, no `unlock`,
 no `BW_SESSION`, and no startup/refresh task. The DPAPI-protected access token is the
 entire runtime credential.
 
-This applies to both service accounts and interactive users. Service accounts such as
-`SvcBuildmaster` use project-scoped machine-account tokens. Interactive users can be
-given their own project-scoped BWS token so they can call the same `Get-SecretATAP`
-Secrets Manager path without duplicating project secrets into Password Manager. User-only
-secrets remain in Password Manager and continue to use the login-time `BW_SESSION`
-pattern.
+This applies to both service accounts and interactive users. The complete
+service-account set requiring both a managed PowerShell profile and project-scoped
+machine-account token is `SvcBuildMaster`, `SvcProGet`, `SvcSeq`, `SvcSQLServer`,
+and `SvcParityAudit`. Interactive users can be given their own project-scoped BWS
+token so they can call the same `Get-SecretATAP` Secrets Manager path without
+duplicating project secrets into Password Manager. User-only secrets remain in
+Password Manager and continue to use the login-time `BW_SESSION` pattern.
 
 Preconditions:
 
@@ -1617,27 +1622,37 @@ Preconditions:
    ([NewOrganizationSetup.md](NewOrganizationSetup.md) Phase 2).
 2. Any service accounts being provisioned exist on this host.
 3. You are elevated for the credential-folder ACL step.
-4. You have each target account's BWS access token to hand.
+4. You have the approved BWS access token authority for the intended project; do not record or persist its value.
 
 Host mapping:
 
-| Windows service account | BWS machine account | Projects                        | DPAPI token file                                             |
-| ----------------------- | ------------------- | ------------------------------- | ------------------------------------------------------------ |
-| `SvcBuildmaster`        | `SvcBuildMaster`    | `BuildMaster-Core`, `CI-Shared` | `…\SvcBuildmaster\<HOST>_SvcBuildmaster_BWS_AccessToken.xml` |
-| `SvcProGet`             | `SvcInfraShared`    | `ProGet-Core`, `CI-Shared`      | `…\SvcProGet\<HOST>_SvcProGet_BWS_AccessToken.xml`           |
+| Windows identity | ReadOnly access-token authority | Intended project | Required DPAPI token file | ReadWrite status |
+| ---------------- | ------------------------------- | ---------------- | ------------------------- | ---------------- |
+| `SvcBuildMaster` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcBuildMaster\<HOST>_SvcBuildMaster_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
+| `SvcProGet` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcProGet\<HOST>_SvcProGet_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
+| `SvcSeq` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcSeq\<HOST>_SvcSeq_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
+| `SvcSQLServer` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcSQLServer\<HOST>_SvcSQLServer_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
+| `SvcParityAudit` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcParityAudit\<HOST>_SvcParityAudit_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
 
 Interactive-user mapping:
 
-| Windows interactive user | BWS access-token scope | DPAPI token file                                  |
-| ------------------------ | ---------------------- | ------------------------------------------------- |
-| `$env:USERNAME`          | Project-specific token, typically `CI-Shared` plus any required project | `…\<USERNAME>\<HOST>_<USERNAME>_BWS_AccessToken.xml` |
+| Windows interactive user | BWS access-token scope | Required DPAPI token file | Optional DPAPI token file |
+| ------------------------ | ---------------------- | ------------------------- | ------------------------- |
+| `whertzing` | `CommonCIForBitwardenReadOnly` for `CI-Shared` | `…\whertzing\<HOST>_whertzing_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Approved only for `utat022\whertzing`; otherwise not approved by default |
+
+**ReadOnly rotation distribution rule:** whenever `CommonCIForBitwardenReadOnly` is
+rotated, update the ReadOnly DPAPI file locally on both `utat01` and `utat022` for
+`SvcBuildMaster`, `SvcProGet`, `SvcSeq`, `SvcSQLServer`, and `SvcParityAudit`. Also refresh
+all active developers listed in `C:\Dropbox\whertzing\GitHub\Overview.Sprint.NNNN.code-workspace` on
+their declared host; Sprint 0012 currently lists `whertzing` on `utat022`. Run the write as
+each owning identity; never copy a DPAPI file between identities or hosts.
 
 ##### 9.4.10.1 Confirm the `bws` CLI is installed machine-wide
 
-`bws` is installed machine-wide in **Step 4.6**, so `SvcBuildmaster`, `SvcProGet`, and
-every interactive account resolve the same binary from the system `PATH`. Confirm it is
-visible from a `-NoProfile` shell (the context the service accounts actually run in) and
-continue:
+`bws` is installed machine-wide in **Step 4.6**, so `SvcBuildMaster`, `SvcProGet`,
+`SvcSeq`, `SvcSQLServer`, `SvcParityAudit`, and every interactive account resolve the
+same binary from the system `PATH`. Confirm it is visible from a `-NoProfile` shell
+(the context the service accounts actually run in) and continue:
 
 ```powershell
 pwsh -NoProfile -Command "(Get-Command bws -ErrorAction SilentlyContinue).Source"
@@ -1661,7 +1676,7 @@ For a service account, pass the account name:
 
 ```powershell
 Import-Module .\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1 -Force
-Initialize-BWSCredentialDirectory -AccountName '.\SvcBuildmaster'
+Initialize-BWSCredentialDirectory -AccountName '.\SvcBuildMaster'
 ```
 
 The helper creates `C:\ProgramData\ATAP\BitwardenCredentials\<SamAccountName>` and grants
@@ -1675,14 +1690,22 @@ user's own shell. For a service account, open a shell as that account and store 
 The helper cmdlet `Initialize-BWSAccessToken` encapsulates the DPAPI write:
 
 ```powershell
-$token = Read-Host 'BWS access token' -AsSecureString
-Initialize-BWSAccessToken -AccessToken $token
+$token = Read-Host 'BWS access token for CommonCIForBitwardenReadOnly' -AsSecureString
+Initialize-BWSAccessToken -TokenPurpose ReadOnly -AccessToken $token
+```
+
+Only trusted maintainer or provisioning identities should also store:
+
+```powershell
+$token = Read-Host 'BWS access token for CommonCIForBitwardenReadWrite' -AsSecureString
+Initialize-BWSAccessToken -TokenPurpose ReadWrite -AccessToken $token
 ```
 
 The token is stored in a PSCredential whose UserName is the literal
 `BWS_ACCESS_TOKEN`; the password is the BWS access token. The canonical helper names are
 `Initialize-BWSAccessToken` and `Get-BWSAccessToken`. The older service-account names
-remain module aliases for compatibility.
+remain module aliases for compatibility. DPAPI binds these files to the current Windows
+identity and host, so they cannot be copied between users or hosts and still decrypt.
 
 ##### 9.4.10.4 Validate (as the owning account)
 
@@ -1931,6 +1954,82 @@ in the repo `NuGet.Config` files. Confirm from a repo root with:
 ```powershell
 dotnet nuget list source
 ```
+
+### 9.10 Configure SystemParityMonitor on Windows 10 and Windows 11
+
+Parity monitoring is a host-pair service, not merely a module import. The complete
+installation, registration, first-run, rollback, and troubleshooting procedure is
+intended to ship with the module at:
+
+```text
+$moduleRoot\Documentation\InstallationAndTroubleshooting.md
+```
+
+Version `0.1.1` omitted `Documentation\`; until SC-0264 is implemented, use the
+canonical source copy under
+`src\ATAP.Utilities.SystemParityMonitor.PowerShell\Documentation`.
+
+An administrator must complete this checklist on each participating host:
+
+1. Install the exact promoted `ATAP.Utilities.SystemParityMonitor.PowerShell` version
+   for AllUsers. Resolve `$moduleRoot` below
+   `C:\Program Files\PowerShell\Modules\ATAP.Utilities.SystemParityMonitor.PowerShell`.
+2. Verify the installed package contains its `scripts\` and `Documentation\` folders.
+   A package missing either folder is not deployment-complete. The live `0.1.1`
+   installation required a temporary manual `scripts\` copy on both hosts; SC-0264
+   owns the reproducible package fix, and source documentation remains authoritative
+   until a corrected immutable version ships.
+3. Create and enable the non-administrative `SvcParityAudit` account. Do not grant
+   local Administrator membership to work around scheduled-task failures.
+4. Create and ACL `C:\ProgramData\ATAP\ParityState`, its SMB share, journals,
+   acknowledgements, snapshots, whitelist, and task-results folders as specified by
+   the parity runbook.
+5. Create the `\ATAP` Task Scheduler folder.
+6. Grant `SvcParityAudit` `SeBatchLogonRight` while preserving every existing right
+   holder. Confirm neither the account nor one of its governing policies assigns
+   `SeDenyBatchLogonRight`. The guarded `secedit` pattern in §9.4.6.5 applies; add
+   `SvcParityAudit` to the SID list.
+7. As `SvcParityAudit` on that same host, provision and validate the
+   `CommonCIForBitwardenReadOnly` DPAPI token. Never copy the token from another host
+   or account, and never use `bw`/`BW_SESSION` in the scheduled path.
+8. Register `AuditAndCompare` on the primary host with Password logon when peer SMB
+   access needs reusable credentials. Register `AuditOnly` on the peer with S4U and a
+   limited run level. When the elevated administrator and S4U run-as identities differ,
+   supply the run-as credential during registration; Task Scheduler uses it to
+   authorize registration while preserving S4U/no stored password in the task.
+9. Run the peer audit, primary audit, and primary comparison in that order; require
+   successful task-result JSON, fresh snapshots, a drift report, and no secret values
+   in evidence.
+10. Keep Daily cadence for the first clean month, then re-register as BiWeekly.
+
+Windows 10 can require the inbox `ScheduledTasks` manifest to be imported by full path
+from Windows PowerShell 5.1. The observed `utat01` endpoint omitted
+`C:\Windows\System32\WindowsPowerShell\v1.0\Modules` from `PSModulePath`, which also
+prevented normal autoload of `Microsoft.PowerShell.Utility` and `PowerShellGet`. Use
+WinRM with `-ConfigurationName Microsoft.PowerShell` and absolute manifest paths for
+the current recovery. SC-0266 tracks restoring a complete `PSModulePath` and adding a
+PowerShell 7 (`pwsh`) endpoint; WinRM profile loading is separate work. Windows 11
+normally exposes the cmdlets directly. The module runbook records the exact
+compatibility checks and these live findings:
+
+- the registration script must be dot-sourced before calling
+  `Register-ParityScheduledTasks`; invoking the file with `&` intentionally performs no
+  registration;
+- `Get-Module -ListAvailable` in Windows PowerShell 5.1 may not enumerate a module
+  whose manifest requires PowerShell 7, so discover `$moduleRoot` from the installed
+  filesystem path;
+- a PSFramework success message after `Register-ScheduledTask` reports an error is not
+  proof; verify with `Get-ScheduledTask` and force registration errors to stop;
+- version `0.1.1` fixed the historical Highest-run-level and false-success-log defects,
+  but its S4U branch still omits the different run-as account's registration
+  credential. `LOGON32_LOGON_BATCH` proved the account right is effective; COM and
+  cmdlet registration without a credential returned `0x80070005`, while credential-
+  backed COM registration succeeded and saved S4U (`2`) with Limited run level (`0`);
+- do not infer that a batch right is absent merely because `secedit` exports the local
+  account by name rather than literal SID; use an actual batch-logon test;
+- `Find-Module` and `Install-Module` can resolve the stable NuGet v2 feed even when
+  `Save-PSResource` returns 404 against its `FindPackagesById` request. Treat that as a
+  promoted-test-runner/feed-protocol defect, not proof that the package is absent.
 
 ## Step 10: Create Cobian Backup Jobs for the Tooling Databases
 
@@ -2316,7 +2415,7 @@ Antigravity should not be configured with a hard-coded list of repository paths 
 Instead, the local configuration should be generated from the current sprint's `.code-workspace` file, for example:
 
 ```text
-C:\Dropbox\whertzing\GitHub\OverviewSprint0007.code-workspace
+C:\Dropbox\whertzing\GitHub\Overview.Sprint.0007.code-workspace
 ```
 
 Each new sprint creates a new workspace file, so the authoritative source for the repo list is the active sprint workspace file, not a static Antigravity configuration checked in once.
@@ -2343,7 +2442,7 @@ Suggested contract:
 
 ```powershell
 Set-AntigravityWorkspaceRepos `
-  -WorkspacePath 'C:\Dropbox\whertzing\GitHub\OverviewSprint0007.code-workspace' `
+  -WorkspacePath 'C:\Dropbox\whertzing\GitHub\Overview.Sprint.0007.code-workspace' `
   -AntigravityConfigPath "$env:LOCALAPPDATA\Google\Antigravity\repos.json"
 ```
 
@@ -2420,7 +2519,7 @@ function Set-AntigravityWorkspaceRepos {
 
 ### Maintenance note
 
-Document the Antigravity integration in terms of an active workspace file and a generated local config, rather than naming a specific sprint file such as `OverviewSprint0007.code-workspace`, because that filename changes every sprint.
+Document the Antigravity integration in terms of an active workspace file and a generated local config, rather than naming a specific sprint file such as `Overview.Sprint.0007.code-workspace`, because that filename changes every sprint.
 
 ## (Optional) Headroom — AI Agent Context Compression
 

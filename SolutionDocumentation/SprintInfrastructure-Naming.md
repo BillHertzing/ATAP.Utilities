@@ -217,10 +217,22 @@ ecosystem during initial setup. NOT called by SprintStartAgent.
 All database connection-string secrets are retrieved via `Get-SecretATAP
 -SecretName <name> -SecretStoreType 'BitwardenSecretsManager'` from
 `ATAP.Utilities.BuildTooling.PowerShell`, or indirectly through
-`Resolve-DatabaseSqlConnection`. The BWS provider passes the key name unchanged
+`Resolve-DatabaseSqlConnection`. Normal retrieval uses
+`Get-BWSAccessToken -TokenPurpose ReadOnly` /
+`CommonCIForBitwardenReadOnly` (or a short-lived process-scope
+`$env:BWS_ACCESS_TOKEN` override). Provisioning and deletion paths such as
+`New-SprintBitwardenSecrets` and `Remove-SprintBitwardenSecrets` use
+`Get-BWSAccessToken -TokenPurpose ReadWrite` /
+`CommonCIForBitwardenReadWrite`. The BWS provider passes the key name unchanged
 to `bws`, so names containing hyphens, machine names, and usernames are handled
 correctly. Development and Experimental values must exist in BWS; readers do not
 derive missing strings locally.
+
+The write-capable token is intentionally opt-in and should be provisioned only for
+trusted maintainer or provisioning identities. See
+[ServiceAccountsAndBitwarden.md](ServiceAccountsAndBitwarden.md) for the current account
+matrix and [Runbook-BitwardenServiceAccounts.md](Runbook-BitwardenServiceAccounts.md) for
+the authoritative provisioning flow.
 
 ---
 

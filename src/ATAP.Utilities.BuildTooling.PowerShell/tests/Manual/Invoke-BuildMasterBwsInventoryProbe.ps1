@@ -4,7 +4,7 @@ Runs a redacted Bitwarden Secrets Manager inventory probe.
 
 .DESCRIPTION
 This script is intended to run from a Windows Scheduled Task under the
-SvcBuildmaster account. It reads the DPAPI-protected BWS access token through
+SvcBuildmaster account. It reads the CommonCIForBitwardenReadOnly DPAPI-protected BWS access token through
 the BuildTooling helper, runs bws, and writes redacted evidence to _generated.
 
 Secret values and access tokens are never written. Evidence records secret
@@ -89,20 +89,26 @@ function Get-BwsProbeAccessTokenCredential {
     [string]$CredentialDirectory
   )
 
-  $currentSamName = ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name -split '\\')[-1]
-  if ([string]::IsNullOrWhiteSpace($CredentialDirectory)) {
-    $CredentialDirectory = Join-Path 'C:\ProgramData\ATAP\BitwardenCredentials' $currentSamName
+  $helperPath = Join-Path $PSScriptRoot '..\..\public\Get-BWSAccessToken.ps1'
+  if (-not (Get-Command -Name 'Get-BWSAccessToken' -CommandType Function -ErrorAction SilentlyContinue)) {
+    if (-not (Test-Path -LiteralPath $helperPath -PathType Leaf)) {
+      throw "Get-BWSAccessToken helper was not found at '$helperPath'."
+    }
+    . $helperPath
   }
 
-  $tokenFileName = "$env:COMPUTERNAME`_$currentSamName`_BWS_AccessToken.xml"
-  $tokenPath = Join-Path $CredentialDirectory $tokenFileName
-  if (-not (Test-Path -LiteralPath $tokenPath)) {
-    throw "BWS access-token file was not found at '$tokenPath'."
+  $parameters = @{
+    TokenPurpose = 'ReadOnly'
+    ErrorAction = 'Stop'
+  }
+  if (-not [string]::IsNullOrWhiteSpace($CredentialDirectory)) {
+    $parameters.CredentialDirectory = $CredentialDirectory
   }
 
+  $credential = Get-BWSAccessToken @parameters
   [pscustomobject]@{
-    Credential = Import-Clixml -LiteralPath $tokenPath -ErrorAction Stop
-    TokenPath  = $tokenPath
+    Credential = $credential
+    TokenPurpose = 'ReadOnly'
   }
 }
 
@@ -125,7 +131,7 @@ try {
     throw "bws --version failed with exit code $LASTEXITCODE. Output: $($versionOutput -join [Environment]::NewLine)"
   }
 
-  $secretListOutput = & $bwsCommand.Source secret list --output json 2>&1
+  $secretListOutput = & $bwsCommand.Source secret list --output json --color no 2>&1
   if ($LASTEXITCODE -ne 0) {
     throw "bws secret list failed with exit code $LASTEXITCODE. Output: $($secretListOutput -join [Environment]::NewLine)"
   }
@@ -170,7 +176,7 @@ try {
     bwsPath             = $bwsCommand.Source
     bwsVersion          = [string]$versionOutput
     credentialDirectory = $CredentialDirectory
-    tokenPath           = $tokenCredentialResult.TokenPath
+    tokenPurpose        = $tokenCredentialResult.TokenPurpose
     secretCount         = $inventory.Count
     projectIds          = $projects
     inventory           = $inventory

@@ -13,11 +13,20 @@ Import-Module ATAP.Utilities.ConfigRootKeys.PowerShell
 Set-GlobalConfigRootKeys     # creates and fully populates $global:configRootKeys
 ```
 
+The module has no `private/` folder today. Its module entry point treats that
+folder as optional, so profile-time `Import-Module` works from an AllUsers
+PowerShell 7 profile without requiring an empty placeholder directory (Task 12.63).
+
 `Set-GlobalConfigRootKeys` is the single entry point. It invokes each section
 function — `Set-CoreConfigRootKeys`, `Add-DatabasesConfigRootKeys` (which in turn
 invokes the per-database `Set-Databases*ConfigRootKeys` functions),
-`Set-BuildMasterConfigRootKeys`, `Set-RulesManagementConfigRootKeys`, and
+`Set-SqlInstanceTopologyConfigRootKeys`, `Set-BuildMasterConfigRootKeys`,
+`Set-RulesManagementConfigRootKeys`, and
 `Add-PackageRepositoriesConfigRootKeys` — **by name, in a fixed order**.
+
+The SQL topology section defines only host-invariant schema keys. ATAP.IAC's
+`HostSettings.IAC.Fragment.SqlInstanceTopology.ps1` remains the single source of
+truth for current/planned hosts, instance names, filesystem paths, and TCP ports.
 
 ## Design rules
 
@@ -44,3 +53,6 @@ Invoke-Pester -Path ./tests/Unit -Output Detailed
 
 - Version bumped to 0.1.4 in Sprint 11
 
+## Functional area
+
+Environment / Workstation Setup - START HERE: SolutionDocumentation\NewComputerSetup.md (see also ConfigRootKeys-and-HostSettings.md) (link-up added 2026-07-07, Sprint 0012 Task 12.46.f)

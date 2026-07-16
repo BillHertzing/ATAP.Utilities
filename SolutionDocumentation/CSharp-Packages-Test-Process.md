@@ -262,6 +262,22 @@ The tier-to-filter mapping in BuildMaster:
 In developer tiers, `UsePackageReferenceForSUT` defaults to `false`, so
 `dotnet test` uses `<ProjectReference>` and no extra flags are required.
 
+### 5.0 RepoHealth gate
+
+RepoHealth tests are repository-wide checks, not tests for one C# package or one
+PowerShell module. Run them separately:
+
+```powershell
+pwsh -File Build\Invoke-RepoHealthGate.ps1
+```
+
+The current gate runs
+`tests\RepoHealth\Directory.Build.Props.Properties.Tests.ps1`, which audits
+`Directory.Build.props` propagation across every C# project under `src/`.
+C# pipelines should run it after restore and before pack or publish. It is not
+part of `module.build.ps1` for `ATAP.Utilities.BuildTooling.PowerShell`, so
+PowerShell module package builds do not evaluate all `.csproj` files.
+
 ### 5.1 The whole solution
 
 ```powershell

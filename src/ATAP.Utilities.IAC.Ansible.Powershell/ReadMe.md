@@ -1203,3 +1203,6 @@ Use the module-level getting started guide for the lifecycle workflow:
 
 - [Documentation/GettingStarted.md](Documentation/GettingStarted.md)
 
+## Functional area
+
+Environment / Workstation Setup - START HERE: SolutionDocumentation\NewComputerSetup.md (see also NewComputerSetupUsingAnsible.md) (link-up added 2026-07-07, Sprint 0012 Task 12.46.f)

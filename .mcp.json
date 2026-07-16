@@ -2,9 +2,29 @@
   "mcpServers": {
     "plantuml": {
       "command": "node",
-      "args": ["C:\\Dropbox\\whertzing\\GitHub\\OSSForks\\plantuml-mcp-server\\dist\\plantuml-mcp-server.js"],
+      "args": [
+        "${OSS_FORKS_ROOT}/plantuml-mcp-server/dist/plantuml-mcp-server.js"
+      ],
       "env": {
         "MCP_TRANSPORT": "stdio"
+      },
+      "type": "stdio"
+    },
+    "drawio": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "drawio-mcp-server",
+        "--editor"
+      ]
+    },
+    "mssql-ataputilities-Exp-whertzing": {
+      "type": "stdio",
+      "command": "${OSS_FORKS_ROOT}/aaronontheweb/mssql-mcp/src/MSSQL.MCP.IntegrationTests/bin/Release/net9.0/MSSQL.MCP.exe",
+      "args": [],
+      "env": {
+        "MSSQL_CONNECTION_STRING": "Server=localhost\\Expwhertzing;Database=ATAPUtilities;Trusted_Connection=true;TrustServerCertificate=true;"
       }
     }
   }

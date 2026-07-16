@@ -144,6 +144,120 @@ Umbrella tasks collect lettered subtasks.
     $subtaskA.repo | Should -Be 'ATAP.Utilities + SharedVSCode'
     # The Acceptance field must not absorb the Evidence/See/Status bullets that follow it.
     $subtaskA.acc | Should -Be 'A fresh sprint start produces the workspace.'
+    $subtaskA.res | Should -Match 'Evidence \(2026-06-18\): verified via WhatIf run.'
+  }
+
+  It 'Warns when an evidence-like bullet cannot be parsed' {
+    $tasksMdPath = Join-Path $script:tempDir 'MalformedEvidence.TASKS.md'
+    $outputPath = Join-Path $script:tempDir 'MalformedEvidence.TASKS.html'
+    @'
+# Current Sprint: Sprint 12 - Malformed Evidence Check
+
+Source: TEST-0006 (2026-07-04)
+Last updated: 2026-07-04
+
+## Goal
+
+**PRIMARY - Example goal.**
+
+## Stream E - Evidence Stream [DRAFT]
+
+- [ ] **Task 12.36** [ATAP.Utilities] - Evidence warning check.
+  - Acceptance: malformed evidence-like bullets warn.
+  - Evidence (2026-07-04) missing colon and cannot be parsed.
+'@ | Set-Content -LiteralPath $tasksMdPath -Encoding UTF8
+
+    $warnings = @()
+    $result = Convert-TasksMdToSprintBoard -TasksFilePath $tasksMdPath -OutputPath $outputPath -WarningVariable warnings
+
+    $result.TaskCount | Should -Be 1
+    $warnings | Should -Not -BeNullOrEmpty
+    ($warnings | Select-Object -First 1).Message | Should -Match 'Could not parse Evidence-like bullet for task 12\.36'
+  }
+
+  It 'Reports existing HTML resolution text that regeneration would otherwise drop' {
+    $tasksMdPath = Join-Path $script:tempDir 'LostResolution.TASKS.md'
+    $outputPath = Join-Path $script:tempDir 'LostResolution.TASKS.html'
+    @'
+# Current Sprint: Sprint 12 - Lost Resolution Check
+
+Source: TEST-0007 (2026-07-04)
+Last updated: 2026-07-04
+
+## Goal
+
+**PRIMARY - Example goal.**
+
+## Stream E - Evidence Stream [DRAFT]
+
+- [ ] **Task 12.36** [ATAP.Utilities] - A task whose markdown has no resolution.
+'@ | Set-Content -LiteralPath $tasksMdPath -Encoding UTF8
+
+    @'
+<!DOCTYPE html>
+<html>
+<body>
+<script>
+const STREAMS=[
+  {
+    "id": "E",
+    "name": "Evidence Stream",
+    "tasks": [
+      {
+        "id": "12.36",
+        "status": "open",
+        "title": "A task whose markdown has no resolution.",
+        "repo": "ATAP.Utilities",
+        "scope": null,
+        "acc": null,
+        "res": "Evidence: hand-edited browser-only evidence"
+      }
+    ]
+  }
+];
+function esc(s){return s;}
+</script>
+</body>
+</html>
+'@ | Set-Content -LiteralPath $outputPath -Encoding UTF8
+
+    $warnings = @()
+    $result = Convert-TasksMdToSprintBoard -TasksFilePath $tasksMdPath -OutputPath $outputPath -WarningVariable warnings
+
+    $result.LostResolutionCount | Should -Be 1
+    $result.ReconciliationReportPath | Should -Not -BeNullOrEmpty
+    Test-Path -LiteralPath $result.ReconciliationReportPath | Should -BeTrue
+    $warnings | Should -Not -BeNullOrEmpty
+    ($warnings | Select-Object -First 1).Message | Should -Match 'resolution text would be lost'
+
+    $report = Get-Content -LiteralPath $result.ReconciliationReportPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $report.TaskId | Should -Be '12.36'
+    $report.ExistingRes | Should -Be 'Evidence: hand-edited browser-only evidence'
+  }
+
+  It 'Parses tasks with no detail lines (detail-free)' {
+    $tasksMdPath = Join-Path $script:tempDir 'DetailFree.TASKS.md'
+    $outputPath = Join-Path $script:tempDir 'DetailFree.TASKS.html'
+    @'
+# Current Sprint: Sprint 12 - Detail Free Check
+
+Source: TEST-0004 (2026-07-04)
+Last updated: 2026-07-04
+
+## Goal
+
+**PRIMARY - Example goal.**
+
+## Stream A - Detail-Free Stream [PRIORITY 1]
+
+- [ ] **Task 12.32** [ATAP.Utilities] - A detail free task with no details
+'@ | Set-Content -LiteralPath $tasksMdPath -Encoding UTF8
+
+    $result = Convert-TasksMdToSprintBoard -TasksFilePath $tasksMdPath -OutputPath $outputPath
+    $html = Get-Content -LiteralPath $outputPath -Raw -Encoding UTF8
+
+    $result.TaskCount | Should -Be 1
+    $html | Should -Match '12\.32'
   }
 
   It 'Throws when the TASKS.md heading is missing' {
@@ -154,3 +268,4 @@ Umbrella tasks collect lettered subtasks.
       Should -Throw '*Current Sprint*'
   }
 }
+

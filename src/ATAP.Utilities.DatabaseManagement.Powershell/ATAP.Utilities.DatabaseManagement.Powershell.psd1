@@ -51,7 +51,7 @@
     # ProcessorArchitecture = ''
 
     # Modules that must be imported into the global environment prior to importing this module
-    # RequiredModules = @()
+    RequiredModules      = @()
 
     # Assemblies that must be loaded prior to importing this module
     # RequiredAssemblies = @()
@@ -71,9 +71,9 @@
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
     FunctionsToExport    = 'Build-DatabaseWithFlyway', 'DatabaseProvisioning',
     'Example-RuleExport', 'Expand-DatabaseChangePackage',
-    'Export-RuleToTextFile',
+    'Export-InstantiationManifestation', 'Export-RuleToTextFile',
     'Get-DatabaseCredentialsKey', 'Get-DatabasePackageManifest',
-    'Get-InstalledDatabaseInformation',
+    'Get-InstalledDatabaseInformation', 'Get-InstantiationSourceModuleInventory',
     'Initialize-SqlServiceLogin', 'Install-SqlServerInstance',
     'Invoke-DatabasePackageRehearsal', 'Invoke-Flyway', 'Invoke-FlywayRehearsal',
     'Invoke-SqlServerBackup', 'New-CobianAppJobs', 'New-CobianSqlJobs',
@@ -146,4 +146,5 @@
     # DefaultCommandPrefix = ''
 
 }
+
 

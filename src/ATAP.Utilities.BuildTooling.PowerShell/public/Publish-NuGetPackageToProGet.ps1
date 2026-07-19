@@ -15,8 +15,8 @@
         - Resolves the ProGet feed URI from the feed name via
           Resolve-ProGetFeedFromSettings; the feed name defaults to
           'nuget-experimental'.
-        - Resolves the API key from the PROGET_ADMIN_API_KEY environment
-          variable at User scope (per R-10 in CLAUDE.md).
+        - Resolves the key named by -ProGetApiKeySecretName through
+          Get-SecretATAP immediately before the push.
         - Invokes `dotnet nuget push` with --skip-duplicate so that
           re-pushing the same version is a no-op (idempotent).
         - Wraps the dotnet call in a private helper Invoke-DotnetNuGetPush
@@ -43,6 +43,10 @@
     Emergency/manual bypass for direct publishes to feeds above Experimental
     without a ceiling check. This is intended for disaster recovery only and is
     logged as a warning.
+
+.PARAMETER ProGetApiKeySecretName
+    Bitwarden Secrets Manager SecretName for the publishing key. Raw key
+    parameters and environment-variable fallbacks are unsupported.
 
 .OUTPUTS
     [PSCustomObject] with at least:
@@ -123,7 +127,10 @@ function Publish-NuGetPackageToProGet {
         [string]$CeilingTier,
 
         [Parameter(Mandatory = $false)]
-        [switch]$Force
+        [switch]$Force,
+
+        [ValidateNotNullOrEmpty()]
+        [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key'
     )
 
     begin {
@@ -201,20 +208,7 @@ function Publish-NuGetPackageToProGet {
             }
         }
 
-        # 3. Resolve the API key from PROGET_ADMIN_API_KEY (User scope per R-10).
-        $apiKey = [Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
-        if ([string]::IsNullOrWhiteSpace($apiKey)) {
-            $apiKey = [Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'Process')
-        }
-        if ([string]::IsNullOrWhiteSpace($apiKey)) {
-            $msg = "Unable to resolve ProGet API key. Set the User-scope environment variable 'PROGET_ADMIN_API_KEY'."
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
-            throw $msg
-        }
-        # NEVER log the API key value; only confirm it was resolved.
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'ProGet API key resolved from PROGET_ADMIN_API_KEY (value redacted as ***)'
-
-        # 4. WhatIf short-circuit.
+        # 3. WhatIf short-circuit. Secret resolution is deliberately deferred.
         $target = $resolvedNupkg
         $action = "dotnet nuget push to '$feedName' ($feedUri) with --skip-duplicate"
         if (-not $PSCmdlet.ShouldProcess($target, $action)) {
@@ -227,6 +221,16 @@ function Publish-NuGetPackageToProGet {
                 CeilingTier     = $CeilingTier
                 ResponseSummary = "WhatIf: planned push of '$resolvedNupkg' to '$feedName' with --skip-duplicate"
             }
+        }
+
+        # 4. Resolve the key only at the authenticated-operation boundary.
+        try {
+            $apiKey = [string](Get-SecretATAP -SecretName $ProGetApiKeySecretName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop)
+        } catch {
+            throw "Unable to resolve the ProGet API key from SecretName '$ProGetApiKeySecretName'."
+        }
+        if ([string]::IsNullOrWhiteSpace($apiKey)) {
+            throw "The ProGet secret named '$ProGetApiKeySecretName' resolved to an empty value."
         }
 
         # 5. Invoke the dotnet helper. Pester mocks Invoke-DotnetNuGetPush.
@@ -267,7 +271,7 @@ function Publish-NuGetPackageToProGet {
                 $exceptionMessage = $exceptionMessage.Replace($apiKey, '***')
             }
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Push failed: $exceptionMessage"
-            throw
+            throw "Push failed: $exceptionMessage"
         }
 
         return [PSCustomObject]@{

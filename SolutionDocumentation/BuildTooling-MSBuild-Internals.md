@@ -1,5 +1,7 @@
 # BuildTooling MSBuild Internals
 
+> **Task 13.62 security cutover:** Inline MSBuild raw-key examples below are superseded. `PublishAfterBuild` passes `ProGet.Admin.API.Key` only as a SecretName to `Invoke-ProGetNuGetPublish.ps1`; MSBuild never receives a key value.
+
 _Migrated from `_Planning/Explainers/0013-BuildTooling-CSharp-MSBuild-interaction.md` (lines 1-791). Describes how `Directory.Build.props`, `Directory.Build.targets`, the `ATAP.Utilities.BuildTooling.CSharp` task DLL, and `ATAP.Utilities.BuildTooling.targets` cooperate to give every solution project automatic version management, JSON-settings copying, multi-RID publishing, and NuGet push-to-ProGet during an ordinary `dotnet build` or `dotnet pack`._
 
 ---
@@ -270,13 +272,16 @@ For multi-TFM projects, `UpdateVersion` runs inside an inner build; the updated 
 
 ```xml
 <Target Name="PublishAfterBuild" AfterTargets="GenerateNuspec">
-    <Exec Command="dotnet nuget push &quot;...$(PackageId).$(PackageVersion).nupkg&quot;
-                   --source &quot;$(ProGetExperimentalFeedUrl)&quot;
-                   --api-key &quot;$(PROGET_ADMIN_API_KEY)&quot;" />
+    <Exec Command="pwsh -File &quot;$(MSBuildThisFileDirectory)Invoke-ProGetNuGetPublish.ps1&quot;
+                   -NupkgPath &quot;...$(PackageId).$(PackageVersion).nupkg&quot;
+                   -Source &quot;$(ProGetExperimentalFeedUrl)&quot;
+                   -ProGetApiKeySecretName &quot;ProGet.Admin.API.Key&quot;" />
 </Target>
 ```
 
-Pushes the freshly-packed `.nupkg` to ProGet's `nuget-experimental` feed. `PROGET_ADMIN_API_KEY` must be present as an environment variable (sourced from Bitwarden at login). `ProGetExperimentalFeedUrl` defaults to `http://localhost:50000/nuget/nuget-experimental/v3/index.json`.
+Pushes through a PowerShell leaf that resolves `ProGet.Admin.API.Key` with
+`Get-SecretATAP`. `ProGetExperimentalFeedUrl` defaults to
+`http://localhost:50000/nuget/nuget-experimental/v3/index.json`.
 
 ### `DeployBuildToolingToBuildDirectory` — automated deployment
 
@@ -388,7 +393,7 @@ dotnet build MyProject.csproj --configuration Release
 | `PackageLifeCycleStage`                        | Individual `.csproj`                                | `Development`                                                          | Controls whether a pre-release suffix is added                                                  |
 | `PackageLabel`                                 | Individual `.csproj`                                | `Alpha`                                                                | Pre-release label string                                                                        |
 | `ProGetExperimentalFeedUrl`                    | `ATAP.Utilities.BuildTooling.targets`               | `http://localhost:50000/nuget/nuget-experimental/v3/index.json`        | Push destination                                                                                |
-| `PROGET_ADMIN_API_KEY`                         | Environment variable                                | (secret)                                                               | ProGet API key from Bitwarden                                                                   |
+| `ProGetApiKeySecretName`                       | `ATAP.Utilities.BuildTooling.targets`               | `ProGet.Admin.API.Key`                                                  | Non-secret name passed to the PowerShell publishing leaf                                        |
 
 ---
 
@@ -402,7 +407,8 @@ For an AI agent that must replicate this build system in another repository:
 2. Agent has write access to the repository root.
 3. `dotnet` (SDK 8.0+) is available.
 4. Shell is PowerShell 7 (`pwsh`).
-5. A ProGet instance is reachable and `PROGET_ADMIN_API_KEY` is in the environment. If ProGet is not used, the `PublishAfterBuild` target must be disabled.
+5. A ProGet instance is reachable and `ProGet.Admin.API.Key` resolves through
+   `Get-SecretATAP`. If ProGet is not used, disable `PublishAfterBuild`.
 
 ### Sequence
 

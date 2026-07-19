@@ -8,11 +8,8 @@ function New-ProGetApiKey {
     [string]$FeedName,
 
     [Parameter(Mandatory)]
-    [ValidateSet("view", "add", "delete", "promote")]
+    [ValidateSet('view', 'add', 'delete', 'promote')]
     [string[]]$PackagePermissions ,
-    # If present, use it, but if not, let ProGet generate an API key
-    [Parameter(Mandatory = $false)]
-    [string]$apiKey,
 
     [Parameter(Mandatory = $false)]
     [ValidateSet('http', 'https')]
@@ -20,7 +17,9 @@ function New-ProGetApiKey {
     [Parameter(Mandatory = $false)]
     [string]$proGetBaseHost,
     [Parameter(Mandatory = $false)]
-    [int]$proGetBasePort
+    [int]$proGetBasePort,
+    [ValidateNotNullOrEmpty()]
+    [string]$ProGetApiKeySecretName = 'ProGet.Admin.API.Key'
   )
 
   Begin {
@@ -77,18 +76,9 @@ function New-ProGetApiKey {
     }
 
 
-    # ToDo: Fetch from Secrets vault instead of environment variable
-    # TODo: Set and expiration date, and ensure a policy that rotates the key value before they expire
-    $adminApiKey = [Environment]::GetEnvironmentVariable($global:configRootKeys['ProGetAdminApiKeyConfigRootKey'], 'Process')
-    if (-not $adminApiKey) {
-      $errorMessage = "ProGet admin API key is not available in environment variable."
-      Write-PSFMessage -Level Error -Message $errorMessage -Tag 'New-ProGetApiKey', 'Trace', 'Error'
-      throw $errorMessage
-    }
-    # The elements of the requests's headers are constant, so define them here
-    $headers = @{
-      'Accept'   = 'application/json'
-      "X-ApiKey" = $adminApiKey
+    if (-not $PSBoundParameters.ContainsKey('ProGetApiKeySecretName') -and $global:configRootKeys -and $global:Settings) {
+      $settingName = $global:configRootKeys['ProGetAdminApiKeySecretNameConfigRootKey']
+      if ($settingName -and $global:Settings[$settingName]) { $ProGetApiKeySecretName = [string]$global:Settings[$settingName] }
     }
 
     # The Page for the command to list all API keys in ProGet
@@ -109,23 +99,23 @@ function New-ProGetApiKey {
       feedGroup          = $null
       packagePermissions = $PackagePermissions
     }
-    if ($null -ne $apiKey) {
-      $body.key = $apiKey
-    }
-
     if ($PSCmdlet.ShouldProcess("ProGet", "Create API key '$ApiKeyName' for feed '$FeedName'")) {
       try {
+        if (-not (Get-Command Get-SecretATAP -ErrorAction SilentlyContinue)) { throw 'Get-SecretATAP is required for ProGet authentication.' }
+        $adminApiKey = [string](Get-SecretATAP -SecretName $ProGetApiKeySecretName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop)
+        if ([string]::IsNullOrWhiteSpace($adminApiKey)) { throw "Secret '$ProGetApiKeySecretName' did not resolve to a ProGet API key." }
+        $headers = @{ Accept = 'application/json'; 'X-ApiKey' = $adminApiKey }
         Write-PSFMessage -Level Verbose -Message "Calling ProGet API to create API key '$ApiKeyName' on port $ProGetBasePort" -Tag 'New-ProGetApiKey', 'Trace'
         $response = Invoke-RestMethod -Uri $apiEndPoint.AbsoluteUri -Method Post -Headers $headers -Body ($body | ConvertTo-Json -Depth 3) -ContentType "application/json"
         Write-PSFMessage -Level Important -Message "Successfully created API key '$ApiKeyName' for feed '$FeedName'" -Tag 'New-ProGetApiKey', 'Trace'
       }
       catch {
-        $errorMessage = "Failed to create API key '$ApiKeyName'. Exception: $($_.Exception.Message)"
-        Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception
-        throw $_
+        $errorMessage = "Failed to create API key '$ApiKeyName'. Verify connectivity and the configured SecretName."
+        Write-PSFMessage -Level Error -Message $errorMessage
+        throw $errorMessage
       }
       Write-PSFMessage -Level Verbose -Message "Leaving function: New-ProGetApiKey" -Tag 'New-ProGetApiKey', 'Trace'
-      $response
+      [PSCustomObject]@{ ApiKeyName = $ApiKeyName; FeedName = $FeedName; Created = $true }
     }
   }
   End {

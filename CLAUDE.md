@@ -12,9 +12,9 @@ Entity Framework Core abstractions, Flyway migration helpers
 
 | Source File    | Last Modified            |
 | -------------- | ------------------------ |
-| CLAUDE-base.md | 2026-07-16 00:31:14 |
+| CLAUDE-base.md | 2026-07-18 20:37:21 |
 | ai-local.md | 2026-07-16 00:47:27 |
-| CLAUDE.md (combined) | 2026-07-16 00:47:33 |
+| CLAUDE.md (combined) | 2026-07-19 07:58:20 |
 
 ---
 
@@ -467,9 +467,11 @@ When asked to create or modify a Rule, Rule Set, or Build Set:
    REST APIs, or command syntax where the first result determines the next command, run
    commands sequentially. Do not put speculative calls in parallel when one syntax failure
    would invalidate the rest of the batch.
-9. **Environment variable names (R-27):** API-key and token environment variables use
-   `ALL_UPPERCASE_WITH_UNDERSCORES` names. Prefer names like `BUILDMASTER_ADMIN_API_KEY`
-   and `PROGET_ADMIN_API_KEY`; do not invent mixed-case secret environment variables.
+9. **Environment variable names (R-27):** When a non-ProGet integration explicitly
+   requires an API-key or token environment variable, use an
+   `ALL_UPPERCASE_WITH_UNDERSCORES` name such as `BUILDMASTER_ADMIN_API_KEY`; do not
+   invent mixed-case names. ProGet callers use canonical SecretNames and
+   `Get-SecretATAP`, never API-key environment variables.
 10. **Wait for upload completion (R-28):** When the user says they will upload multiple
     files before giving instructions, wait for all uploads and the explicit "go" signal
     before analyzing or acting.

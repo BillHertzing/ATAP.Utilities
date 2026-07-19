@@ -12,18 +12,22 @@ BeforeAll {
     }
   }
 
+  if (-not (Get-Command Get-SecretATAP -ErrorAction SilentlyContinue)) {
+    function global:Get-SecretATAP {
+      param([string]$SecretName, [string]$SecretStoreType)
+      'unit-test-admin-key'
+    }
+  }
+
   $script:oldConfigRootKeys = $global:configRootKeys
   $script:oldSettings = $global:Settings
-  $script:savedAdminApiKey = [Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'Process')
-  $script:savedReleaseBundleApiKey = [Environment]::GetEnvironmentVariable('PROGET_APIKEY_RELEASEBUNDLE_EXPERIMENTAL', 'User')
 }
 
 AfterAll {
   $global:configRootKeys = $script:oldConfigRootKeys
   $global:Settings = $script:oldSettings
-  [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $script:savedAdminApiKey, 'Process')
-  [Environment]::SetEnvironmentVariable('PROGET_APIKEY_RELEASEBUNDLE_EXPERIMENTAL', $script:savedReleaseBundleApiKey, 'User')
   Remove-Item Function:\Write-PSFMessage -ErrorAction SilentlyContinue
+  Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
 }
 
 Describe 'New-ProGetFeedSet' -Tag 'Unit', 'PromotedModuleHostSensitive' {
@@ -35,7 +39,7 @@ Describe 'New-ProGetFeedSet' -Tag 'Unit', 'PromotedModuleHostSensitive' {
       ProGetAdminUriSchemeConfigRootKey = 'PROGET_ADMIN_URI_SCHEME'
       ProGetAdminUriHostConfigRootKey   = 'PROGET_ADMIN_URI_HOST'
       ProGetAdminUriPortConfigRootKey   = 'PROGET_ADMIN_URI_PORT'
-      ProGetAdminApiKeyConfigRootKey    = 'PROGET_ADMIN_API_KEY'
+      ProGetAdminApiKeySecretNameConfigRootKey = 'ProGetAdminApiKeySecretName'
       ProGetFeedCollectionConfigRootKey = 'ProGetFeedCollection'
     }
     $global:Settings = @{
@@ -63,8 +67,7 @@ Describe 'New-ProGetFeedSet' -Tag 'Unit', 'PromotedModuleHostSensitive' {
       }
     }
 
-    [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'admin-key', 'Process')
-    [Environment]::SetEnvironmentVariable('PROGET_APIKEY_RELEASEBUNDLE_EXPERIMENTAL', $null, 'User')
+    Mock Get-SecretATAP { 'unit-test-admin-key' }
 
     Mock Invoke-RestMethod {
       param($Uri, $Method, $Headers, $Body, $ContentType)
@@ -75,7 +78,7 @@ Describe 'New-ProGetFeedSet' -Tag 'Unit', 'PromotedModuleHostSensitive' {
         return [PSCustomObject]@{ status = 'created' }
       }
       if ($Method -eq 'Post' -and $Uri -like '*/api/api-keys/create') {
-        return [PSCustomObject]@{ key = 'feed-key' }
+        return [PSCustomObject]@{ key = 'must-not-escape' }
       }
       throw "Unexpected REST call: $Method $Uri"
     }
@@ -118,5 +121,21 @@ Describe 'New-ProGetFeedSet' -Tag 'Unit', 'PromotedModuleHostSensitive' {
     New-ProGetFeedSet -proGetBaseScheme 'http' -proGetBaseHost 'localhost' -proGetBasePort 50000 -FeedNameFilter 'releasebundle-experimental' | Out-Null
 
     ($script:capturedFeedCreateBody | ConvertFrom-Json).feedType | Should -Be 'universal'
+  }
+
+  It 'passes only the SecretName boundary and does not persist or return generated key values' {
+    $result = New-ProGetFeedSet -proGetBaseScheme 'http' -proGetBaseHost 'localhost' -proGetBasePort 50000 -FeedNameFilter 'releasebundle-*' -ProGetApiKeySecretName 'Custom.Admin.Secret'
+
+    Should -Invoke Get-SecretATAP -ParameterFilter { $SecretName -eq 'Custom.Admin.Secret' }
+    ($result | ConvertTo-Json -Depth 8) | Should -Not -Match 'must-not-escape'
+    [Environment]::GetEnvironmentVariable('PROGET_APIKEY_RELEASEBUNDLE_EXPERIMENTAL', 'User') | Should -BeNullOrEmpty
+  }
+
+  It 'performs no discovery, secret resolution, REST call, or mutation under WhatIf' {
+    $result = New-ProGetFeedSet -proGetBaseScheme 'http' -proGetBaseHost 'localhost' -proGetBasePort 50000 -FeedNameFilter 'releasebundle-*' -WhatIf
+
+    Should -Invoke Get-SecretATAP -Times 0
+    Should -Invoke Invoke-RestMethod -Times 0
+    @($result | Where-Object Created).Count | Should -Be 0
   }
 }

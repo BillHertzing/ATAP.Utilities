@@ -165,6 +165,9 @@ param(
   [ValidateNotNullOrEmpty()]
   [string]$ProGetUrl,
 
+  [ValidateNotNullOrEmpty()]
+  [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
+
   [AllowEmptyString()]
   [string]$AllowExperimental = '',
 
@@ -416,7 +419,7 @@ function Test-ProGetPackageVersionInFeed {
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$FeedName,
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$PackageName,
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$Version,
-    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ApiKey
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ProGetApiKeySecretName
   )
 
   BEGIN {
@@ -456,12 +459,13 @@ function Test-ProGetPackageVersionInFeed {
     $trimmedBaseUrl = $BaseUrl.TrimEnd('/')
     $checkUrl = "$trimmedBaseUrl/api/packages/$FeedName/versions" +
       "?name=$([uri]::EscapeDataString($PackageName))&version=$([uri]::EscapeDataString($Version))"
-    $headers = @{
-      'Accept'   = 'application/json'
-      'X-ApiKey' = $ApiKey
-    }
-
+    $proGetApiKey = $null
     try {
+      $proGetApiKey = Get-SecretATAP -SecretName $ProGetApiKeySecretName
+      $headers = @{
+        'Accept'   = 'application/json'
+        'X-ApiKey' = $proGetApiKey
+      }
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling $checkUrl" -Tag 'RestCall'
       $response = Invoke-RestMethod -Uri $checkUrl -Headers $headers -Method Get -TimeoutSec 15 -ErrorAction Stop
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from $checkUrl" -Tag 'RestCall'
@@ -471,6 +475,7 @@ function Test-ProGetPackageVersionInFeed {
       return $false
     }
     finally {
+      $proGetApiKey = $null
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Probe complete for '$checkUrl'." -Tag 'RestCall'
     }
 
@@ -497,7 +502,7 @@ function Publish-PowerShellModulePackageToExperimental {
   param(
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$NupkgPath,
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$FeedName,
-    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ApiKey
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ProGetApiKeySecretName
   )
 
   BEGIN {
@@ -507,8 +512,10 @@ function Publish-PowerShellModulePackageToExperimental {
   }
 
   PROCESS {
+    $proGetApiKey = $null
     try {
-      Publish-PSResource -NupkgPath $NupkgPath -Repository $FeedName -ApiKey $ApiKey
+      $proGetApiKey = Get-SecretATAP -SecretName $ProGetApiKeySecretName
+      Publish-PSResource -NupkgPath $NupkgPath -Repository $FeedName -ApiKey $proGetApiKey
       return "Published '$NupkgPath' to '$FeedName'."
     }
     catch {
@@ -520,6 +527,7 @@ function Publish-PowerShellModulePackageToExperimental {
       throw
     }
     finally {
+      $proGetApiKey = $null
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Publish attempt complete for '$NupkgPath'."
     }
   }
@@ -876,6 +884,7 @@ function Invoke-PowerShellModuleBuildMasterStage {
     [AllowEmptyString()][string]$PackageOutputPath = '',
     [AllowEmptyString()][string]$NupkgPathFile = '',
     [Parameter(Mandatory)][string]$ProGetUrl,
+    [ValidateNotNullOrEmpty()][string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
     [string]$ExperimentalFeed = 'powershellget-experimental',
     [string]$DevelopmentFeed = 'powershellget-development',
     [string]$IntegrationFeed = 'powershellget-integration',
@@ -897,6 +906,7 @@ function Invoke-PowerShellModuleBuildMasterStage {
       @{FunctionName = 'Get-RepositoryRoot'; ModuleName = 'ATAP.Utilities.BuildTooling.PowerShell' },
       @{FunctionName = 'Get-ClonedAndModifiedHashtable'; ModuleName = 'ATAP.Utilities.PowerShell' },
       @{FunctionName = 'Get-ParameterValueFromNeoConfigurationRoot'; ModuleName = 'ATAP.Utilities.PowerShell' }
+      @{FunctionName = 'Get-SecretATAP'; ModuleName = 'ATAP.Utilities.BuildTooling.PowerShell' }
     )
     $resolvedModulePath = Join-Path -Path $SourcePath -ChildPath 'src'
     foreach ($helpfunction in $helpfunctionsneeded) {
@@ -914,19 +924,6 @@ function Invoke-PowerShellModuleBuildMasterStage {
       }
     }
     # End of help loading block
-
-    $script:resolvedProGetApiKey = if (-not [string]::IsNullOrWhiteSpace($env:PROGET_BUILDMASTER_API_KEY)) {
-      $env:PROGET_BUILDMASTER_API_KEY
-    }
-    elseif (-not [string]::IsNullOrWhiteSpace($env:PROGET_ADMIN_API_KEY)) {
-      $env:PROGET_ADMIN_API_KEY
-    }
-    else {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message 'Unable to resolve ProGet API key.'
-      throw 'Unable to resolve ProGet API key. Set PROGET_BUILDMASTER_API_KEY or PROGET_ADMIN_API_KEY in the BuildMaster process environment.'
-    }
-    $env:PROGET_BUILDMASTER_API_KEY = $script:resolvedProGetApiKey
-    $env:PROGET_ADMIN_API_KEY = $script:resolvedProGetApiKey
 
     $script:buildToolingRoot = Split-Path -Parent $BuildToolingModulePath
   }
@@ -1135,7 +1132,6 @@ function Invoke-PowerShellModuleBuildMasterStage {
         $promotionTracePath = Join-Path -Path $contextDirectory -ChildPath "$ModuleName.$($Tier.ToLowerInvariant()).log"
         Add-BuildMasterPublishTrace -Path $promotionTracePath -Message "Promoting '$PackageName' version '$PromotedPackageVersion' from '$sourceFeed' to '$destinationFeed'. Captured resolved version is '$capturedResolvedVersion'."
 
-        $env:PROGET_BUILDMASTER_API_KEY = $script:resolvedProGetApiKey
         $global:ProGetBaseUrl = $ProGetUrl
 
         $destinationFeedUri = Get-PowerShellGetFeedUri -BaseUrl $ProGetUrl -FeedName $destinationFeed
@@ -1151,7 +1147,7 @@ function Invoke-PowerShellModuleBuildMasterStage {
             -ToFeed $destinationFeed `
             -Reason "$Tier gate for $ApplicationName $PromotedPackageVersion on $Branch" `
             -ProGetBaseUrl $ProGetUrl `
-            -ApiKey $script:resolvedProGetApiKey `
+            -ProGetApiKeySecretName $ProGetApiKeySecretName `
             -CeilingTier $ceilingTier
         }
         catch {
@@ -1184,7 +1180,7 @@ function Invoke-PowerShellModuleBuildMasterStage {
             -ModuleSourceRoot $ModulePath `
             -WorkingDirectory $SourcePath `
             -ProGetBaseUrl $ProGetUrl `
-            -ApiKey $script:resolvedProGetApiKey `
+            -ProGetApiKeySecretName $ProGetApiKeySecretName `
             -PesterOutputVerbosity $pesterOutputVerbosity
         }
         catch {
@@ -1289,11 +1285,8 @@ function Invoke-PowerShellModuleBuildMasterStage {
             Set-PSResourceRepositoryEnsured -Name $ExperimentalFeed -Uri $feedUri
             Add-BuildMasterPublishTrace -Path $publishTracePath -Message "PSResourceRepository '$ExperimentalFeed' is registered."
 
-            $env:PROGET_APIKEY_POWERSHELLGET_EXPERIMENTAL = $script:resolvedProGetApiKey
-            $env:PROGET_ADMIN_API_KEY = $script:resolvedProGetApiKey
-
             try {
-              $publishSummary = Publish-PowerShellModulePackageToExperimental -NupkgPath $nupkg.FullName -FeedName $ExperimentalFeed -ApiKey $script:resolvedProGetApiKey
+              $publishSummary = Publish-PowerShellModulePackageToExperimental -NupkgPath $nupkg.FullName -FeedName $ExperimentalFeed -ProGetApiKeySecretName $ProGetApiKeySecretName
               Add-BuildMasterPublishTrace -Path $publishTracePath -Message $publishSummary
             }
             catch {
@@ -1363,6 +1356,7 @@ Invoke-PowerShellModuleBuildMasterStage `
   -PackageOutputPath $PackageOutputPath `
   -NupkgPathFile $NupkgPathFile `
   -ProGetUrl $ProGetUrl `
+  -ProGetApiKeySecretName $ProGetApiKeySecretName `
   -ExperimentalFeed $ExperimentalFeed `
   -DevelopmentFeed $DevelopmentFeed `
   -IntegrationFeed $IntegrationFeed `

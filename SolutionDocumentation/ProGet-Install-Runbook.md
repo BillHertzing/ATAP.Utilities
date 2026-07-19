@@ -1,5 +1,7 @@
 # ProGet Install Runbook
 
+> **Task 13.62 security cutover:** Do not create, export, print, or validate a ProGet key through an environment variable as older sections below direct. Use canonical SecretNames `ProGet.Admin.API.Key` and `ProGet.BuildMaster.API.Key` through `Get-SecretATAP`; BuildMaster never falls back to admin.
+
 > **Provenance:** Migrated from `_Planning/Explainers/0002-ProGet-Setup.md` (rows
 > `0002-install` and `0002-403`) as part of the Sprint 0007 Explainer Elimination Plan.
 > The full historical explainer is being retired; this runbook is now the canonical
@@ -17,7 +19,7 @@
 | **Database user**             | `NT SERVICE\INEDOPROGETSVC` (db_owner on `ProGet` database)                                     |
 | **Feed architecture**         | Phase 1 (combined push+pull feeds per tier) — see Architecture Overview below                   |
 | **Build pipeline smoke test** | Complete — `ATAP.Utilities.BuildTooling.CSharp` pushes to `nuget-experimental` on every build   |
-| **Admin API key env var**     | `PROGET_ADMIN_API_KEY` — value stored in Bitwarden, registered in ProGet UI with Full Control   |
+| **Admin API key SecretName**  | `ProGet.Admin.API.Key` — resolved only by secure bootstrap/authenticated leaves                 |
 
 ---
 
@@ -241,7 +243,7 @@ Before creating feeds via the API, you need a system-level API key.
 | Field        | Value                                                                     |
 | ------------ | ------------------------------------------------------------------------- |
 | Key Type     | System (manage/admin ProGet)                                              |
-| API Key      | paste the value from Bitwarden entry `PROGET_ADMIN_API_KEY` field `token` |
+| API Key      | Use the secure one-time bootstrap for SecretName `ProGet.Admin.API.Key`; never display, export, or record the value |
 | Display Name | `ProGet Admin API Token`                                                  |
 | Description  | `ProGet Admin API Token`                                                  |
 | Permissions  | **Full Control (Including Native API)** — check this box                  |
@@ -249,35 +251,18 @@ Before creating feeds via the API, you need a system-level API key.
 
 4. Click **Save API Key**
 
-> **Critical:** The key value entered in ProGet MUST exactly match the value of the
-> `PROGET_ADMIN_API_KEY` environment variable (set by `LoginScript.ps1` from Bitwarden).
-> If they don't match, every push will return `403 Forbidden` — ProGet rejects
-> unrecognized keys before evaluating any permission grants. See the Troubleshooting
-> section below.
+> **Critical:** The securely entered value must be the value resolved for
+> `ProGet.Admin.API.Key`. Do not copy it through an environment variable,
+> transcript, command argument, or evidence artifact. A mismatch returns `403`.
 
 > **Why Full Control?** This is the system admin key. ProGet Free Edition does not
 > support feed-scoped privileges, so a feed-specific key type is not available. Full
 > Control is correct.
 
-Verify the environment variable is set:
-
-```powershell
-# Should print the token value (same as what you pasted into ProGet):
-$env:PROGET_ADMIN_API_KEY
-```
-
-The `LoginScript.ps1` loads this automatically at login from Bitwarden:
-
-```powershell
-# Entry in LoginScript.ps1 secrets-loading array:
-[PSCustomObject]@{ EnvVarName = 'PROGET_ADMIN_API_KEY'; BwSearchName = 'PROGET_ADMIN_API_KEY'; BwFieldName = 'token' }
-```
-
-If the environment variable is empty after login, check that:
-
-- The Bitwarden entry name matches `PROGET_ADMIN_API_KEY` exactly
-- The Bitwarden session is active (`$env:BW_SESSION` is set)
-- The login script ran without errors
+After bootstrap, validate only metadata and a redacted authenticated probe through
+a cmdlet that accepts `-ProGetApiKeySecretName 'ProGet.Admin.API.Key'`. Never print
+or compare the resolved value. If resolution fails, verify the SecretName, BWS
+project grant, service identity, and purpose-specific BWS credential metadata.
 
 ---
 
@@ -392,11 +377,12 @@ The same pattern applies to the `PowershellGallery-*` feeds — see
 - [ ] `Initialize-ProGetSqlServiceLogin` ran successfully; `NT SERVICE\INEDOPROGETSVC`
       is `db_owner` on the `ProGet` database
 - [ ] Web UI reachable at `http://localhost:50000`; admin password changed from default
-- [ ] `PROGET_ADMIN_API_KEY` is registered in **Administration → Security → API Keys**
+- [ ] The value securely associated with `ProGet.Admin.API.Key` is registered in **Administration → Security → API Keys**
       with **Full Control (Including Native API)**
-- [ ] The Bitwarden entry `PROGET_ADMIN_API_KEY` exists and the `token` field matches
-      the value entered in the ProGet UI
-- [ ] `$env:PROGET_ADMIN_API_KEY` is populated after a fresh PowerShell 7 session
+- [ ] `ProGet.Admin.API.Key` exists in the approved BWS project and a redacted
+      authenticated administration probe succeeds
+- [ ] No persistent User, Machine, service, or process-launch ProGet API-key
+      environment variable exists
 - [ ] All 4 NuGet feeds (`nuget-experimental`, `nuget-development`, `nuget-testing`,
       `nuget-production`) exist
 - [ ] All 4 PowerShell feeds (`PowershellGallery-experimental`,

@@ -52,9 +52,9 @@ function Move-ProGetPackageInterTier {
     The ProGet base URL. Falls back to $global:settings via configRootKeys →
     $global:ProGetBaseUrl.
 
-.PARAMETER ApiKey
-    The API key for ProGet. Falls back to $env:PROGET_BUILDMASTER_API_KEY →
-    env var via configRootKeys.
+.PARAMETER ProGetApiKeySecretName
+    Bitwarden Secrets Manager SecretName for the ProGet promotion key. Raw
+    API-key values and environment-variable fallbacks are unsupported.
 
 .OUTPUTS
     PSCustomObject with properties: PackageName, Version, SourceFeed,
@@ -124,7 +124,8 @@ function Move-ProGetPackageInterTier {
 
         [string]$ProGetBaseUrl,
 
-        [string]$ApiKey
+        [ValidateNotNullOrEmpty()]
+        [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key'
     )
 
     begin {
@@ -247,22 +248,6 @@ function Move-ProGetPackageInterTier {
         $ProGetBaseUrl = $ProGetBaseUrl.TrimEnd('/')
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "ProGetBaseUrl is $ProGetBaseUrl"
 
-        # Check and populate simple parameter: ApiKey
-        $ApiKey = Get-PVal -ParameterName 'ApiKey' -originalPSBoundParameters $PSBoundParameters -dottedPath 'ApiKey' -DefaultValue $ApiKey
-        if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-            $ApiKey = $env:PROGET_BUILDMASTER_API_KEY
-        }
-        if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-            $errorMessage = 'ApiKey could not be resolved. Pass it explicitly or set $env:PROGET_BUILDMASTER_API_KEY.'
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-            throw $errorMessage
-        }
-
-        $headers = @{
-            'Accept'   = 'application/json'
-            'X-ApiKey' = $ApiKey
-        }
-
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Package:     $Name"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Version:     $Version"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Source:      $FromFeed (tier: $parsedTier)"
@@ -272,6 +257,26 @@ function Move-ProGetPackageInterTier {
     }
 
     process {
+        if ($WhatIfPreference) {
+            return [PSCustomObject]@{
+                PackageName = $Name; Version = $Version; SourceFeed = $FromFeed
+                SourceTier = $parsedTier; DestinationFeed = $ToFeed
+                DestinationTier = if ($ToFeed -match '-(\w+?)(-push)?$') { $matches[1] } else { '(custom)' }
+                PackageType = $parsedPrefix; Phase2Mode = [bool]$UsePushFeed
+                Promoted = $false; Response = $null
+            }
+        }
+
+        try {
+            $apiKey = [string](Get-SecretATAP -SecretName $ProGetApiKeySecretName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop)
+        } catch {
+            throw "Unable to resolve the ProGet API key from SecretName '$ProGetApiKeySecretName'."
+        }
+        if ([string]::IsNullOrWhiteSpace($apiKey)) {
+            throw "The ProGet secret named '$ProGetApiKeySecretName' resolved to an empty value."
+        }
+        $headers = @{ 'Accept' = 'application/json'; 'X-ApiKey' = $apiKey }
+
         # ── Step 1: Verify package exists in source feed ─────────────────────
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Verifying '$Name' v$Version exists in '$FromFeed'"
 
@@ -327,9 +332,10 @@ function Move-ProGetPackageInterTier {
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Move successful'
                 $promoted = $true
             } catch {
-                $errorMessage = "Failed to move '$Name' v$Version from '$FromFeed' to '$ToFeed'. Exception: $($_.Exception.Message)"
+                $safeException = ([string]$_.Exception.Message).Replace($apiKey, '***')
+                $errorMessage = "Failed to move '$Name' v$Version from '$FromFeed' to '$ToFeed'. Exception: $safeException"
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-                throw
+                throw $errorMessage
             }
 
             $destinationCheckUrl = "$ProGetBaseUrl/api/packages/$ToFeed/versions" +
@@ -345,7 +351,8 @@ function Move-ProGetPackageInterTier {
                         break
                     }
                 } catch {
-                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Could not verify destination feed on attempt $attempt/6: $($_.Exception.Message)"
+                    $safeException = ([string]$_.Exception.Message).Replace($apiKey, '***')
+                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Could not verify destination feed on attempt $attempt/6: $safeException"
                 }
 
                 if ($attempt -lt 6) {
@@ -370,7 +377,7 @@ function Move-ProGetPackageInterTier {
             PackageType     = $parsedPrefix
             Phase2Mode      = [bool]$UsePushFeed
             Promoted        = $promoted
-            Response        = $response
+            Response        = if ($null -eq $response) { $null } else { (($response | Out-String).Trim()).Replace($apiKey, '***') }
         }
     }
 

@@ -87,12 +87,12 @@ No actual host values are listed in this index. Read them at runtime via
 ## Secret name conventions
 
 The database promotion cmdlets resolve secrets by **name** at runtime.
-The actual values live only in Bitwarden and in User-scope environment
-variables on the build host. Names used:
+The actual values live only in Bitwarden Secrets Manager; callers and build
+hosts do not export them as environment variables. Names used:
 
-- `PROGET_BUILDMASTER_API_KEY` (preferred) and `PROGET_ADMIN_API_KEY`
-  (fallback) — ProGet API key environment variable names. See
-  `.claude/Rules/ProGet.md` for the resolution order.
+- `ProGet.BuildMaster.API.Key` — CI publishing/promotion SecretName, passed as
+  `-ProGetApiKeySecretName`. The authenticated leaf resolves it through
+  `Get-SecretATAP` and fails closed; there is no administrator-key fallback.
 - `dbConnectionString-<Database>-<Host>-<Tier>` — Bitwarden secure-note
   items for permanent SQL Server connection strings, e.g.
   `dbConnectionString-ATAPUtilities-utat022-Production`. The naming

@@ -22,8 +22,8 @@
         - Resolves the ProGet base URL from $global:settings via
           Resolve-ProGetFeedFromSettings (same key as the NuGet cmdlets,
           different feed-type query).
-        - Resolves the API key from PROGET_BUILDMASTER_API_KEY first, then
-          falls back to PROGET_ADMIN_API_KEY, both at User scope per R-10.
+        - Resolves the key named by -ProGetApiKeySecretName through
+          Get-SecretATAP immediately before the push.
         - Invokes `dotnet nuget push` with --skip-duplicate (idempotent)
           and allows HTTP sources only when the resolved ProGet feed URI is
           explicitly HTTP.
@@ -51,6 +51,10 @@
     Emergency/manual bypass for direct publishes to feeds above Experimental
     without a ceiling check. Intended for disaster-recovery only. Logged as
     a warning.
+
+.PARAMETER ProGetApiKeySecretName
+    Bitwarden Secrets Manager SecretName for the publishing key. Raw key
+    parameters and environment-variable fallbacks are unsupported.
 
 .OUTPUTS
     [PSCustomObject] with at least:
@@ -138,7 +142,10 @@ function Publish-DatabaseChangePackageToProGet {
         [string]$CeilingTier,
 
         [Parameter(Mandatory = $false)]
-        [switch]$Force
+        [switch]$Force,
+
+        [ValidateNotNullOrEmpty()]
+        [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key'
     )
 
     begin {
@@ -238,18 +245,7 @@ function Publish-DatabaseChangePackageToProGet {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
             -Message "Resolved database feed '$feedName' at '$feedUri'"
 
-        # 6. Resolve API key: PROGET_BUILDMASTER_API_KEY first, then PROGET_ADMIN_API_KEY (User scope).
-        $apiKey = [System.Environment]::GetEnvironmentVariable('PROGET_BUILDMASTER_API_KEY', 'User')
-        if ([string]::IsNullOrWhiteSpace($apiKey)) {
-            $apiKey = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
-        }
-        if ([string]::IsNullOrWhiteSpace($apiKey)) {
-            $msg = "Cannot resolve ProGet API key. Set PROGET_BUILDMASTER_API_KEY or PROGET_ADMIN_API_KEY in User-scope environment variables."
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
-            throw $msg
-        }
-
-        # 7. WhatIf short-circuit before invoking dotnet.
+        # 6. WhatIf short-circuit before resolving a secret or invoking dotnet.
         $target = [System.IO.Path]::GetFileName($resolvedNupkg)
         $action = "Push '$target' to database feed '$feedName'"
         if (-not $PSCmdlet.ShouldProcess($target, $action)) {
@@ -265,13 +261,24 @@ function Publish-DatabaseChangePackageToProGet {
             }
         }
 
+        # 7. Resolve the key only at the authenticated-operation boundary.
+        try {
+            $apiKey = [string](Get-SecretATAP -SecretName $ProGetApiKeySecretName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop)
+        } catch {
+            throw "Unable to resolve the ProGet API key from SecretName '$ProGetApiKeySecretName'."
+        }
+        if ([string]::IsNullOrWhiteSpace($apiKey)) {
+            throw "The ProGet secret named '$ProGetApiKeySecretName' resolved to an empty value."
+        }
+
         # 8. Invoke the push helper.
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
             -Message "Pushing '$target' to database feed '$feedName' at '$feedUri'"
         $pushResult = Invoke-DotnetDatabaseNuGetPush -NupkgPath $resolvedNupkg -FeedUri $feedUri -ApiKey $apiKey
 
         $published = ($pushResult.ExitCode -eq 0)
-        $summary   = if ($published) { "Pushed successfully to '$feedName'" } else { "Push failed (exit $($pushResult.ExitCode)): $($pushResult.StdOut)" }
+        $redactedStdOut = ([string]$pushResult.StdOut).Replace($apiKey, '***')
+        $summary   = if ($published) { "Pushed successfully to '$feedName'" } else { "Push failed (exit $($pushResult.ExitCode)): $redactedStdOut" }
 
         if (-not $published) {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $summary

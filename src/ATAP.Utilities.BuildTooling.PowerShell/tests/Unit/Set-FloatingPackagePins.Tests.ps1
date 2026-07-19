@@ -31,6 +31,7 @@ BeforeAll {
 
 Describe 'Set-FloatingPackagePins' {
   BeforeEach {
+    Mock -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -CommandName Get-SecretATAP -MockWith { 'test-proget-key' }
     $script:propsPath = Join-Path -Path $TestDrive -ChildPath 'Directory.Packages.props'
     New-PropsFixture -Path $script:propsPath
   }
@@ -90,6 +91,8 @@ Describe 'Set-FloatingPackagePins' {
       Set-FloatingPackagePins -PackagePropsPath $script:propsPath -ProGetUrl 'http://proget.local:50000' -WhatIf | Out-Null
       $after = Get-Content -LiteralPath $script:propsPath -Raw
       $after | Should -Be $before
+      Assert-MockCalled -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -CommandName Get-SecretATAP -Times 0 -Exactly -Scope It
+      Assert-MockCalled -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -CommandName Invoke-RestMethod -Times 0 -Exactly -Scope It
     }
   }
 

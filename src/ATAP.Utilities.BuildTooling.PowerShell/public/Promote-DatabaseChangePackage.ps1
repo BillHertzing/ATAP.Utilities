@@ -24,8 +24,8 @@
           ceiling file (`Database/<App>/database-package-ceiling.json`) when
           -Application is supplied; blocks if the version's prerelease label
           exceeds the ceiling tier.
-        - Resolves the API key from PROGET_BUILDMASTER_API_KEY first, then
-          PROGET_ADMIN_API_KEY (User scope, per R-10).
+        - Passes -ProGetApiKeySecretName to the leaf promotion cmdlet, which
+          resolves it immediately before its authenticated request.
         - Delegates the actual ProGet REST call to
           Move-ProGetPackageInterTier.
         - Returns a structured result with OperationName, Succeeded,
@@ -61,6 +61,10 @@
     Emergency/manual bypass for promotions that intentionally skip the
     ceiling policy. Mutually exclusive with -CeilingTier. Logged as a
     warning.
+
+.PARAMETER ProGetApiKeySecretName
+    Bitwarden Secrets Manager SecretName forwarded to the leaf promotion
+    cmdlet. Raw API-key values and environment-variable fallbacks are unsupported.
 
 .OUTPUTS
     [PSCustomObject] with at least:
@@ -165,7 +169,11 @@ function Promote-DatabaseChangePackage {
         [string]$CeilingTier,
 
         [Parameter(Mandatory, ParameterSetName = 'NoCeilingCheck')]
-        [switch]$NoCeilingCheck
+        [switch]$NoCeilingCheck,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key'
     )
 
     begin {
@@ -261,18 +269,7 @@ function Promote-DatabaseChangePackage {
             }
         }
 
-        # 5. Resolve API key (User scope, R-10).
-        $apiKey = [System.Environment]::GetEnvironmentVariable('PROGET_BUILDMASTER_API_KEY', 'User')
-        if ([string]::IsNullOrWhiteSpace($apiKey)) {
-            $apiKey = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
-        }
-        if ([string]::IsNullOrWhiteSpace($apiKey)) {
-            $msg = "Cannot resolve ProGet API key. Set PROGET_BUILDMASTER_API_KEY or PROGET_ADMIN_API_KEY in User-scope environment variables."
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
-            throw $msg
-        }
-
-        # 6. Delegate to Move-ProGetPackageInterTier.
+        # 5. Delegate SecretName resolution to Move-ProGetPackageInterTier.
         if (-not (Get-Command -Name 'Move-ProGetPackageInterTier' -CommandType Function -ErrorAction SilentlyContinue)) {
             $innerPath = Join-Path $PSScriptRoot 'Move-ProGetPackageInterTier.ps1'
             if (Test-Path -LiteralPath $innerPath -PathType Leaf) { . $innerPath }
@@ -292,6 +289,7 @@ function Promote-DatabaseChangePackage {
                 -FromFeed  $FromFeed `
                 -ToFeed    $ToFeed `
                 -Reason    $Reason `
+                -ProGetApiKeySecretName $ProGetApiKeySecretName `
                 -ErrorAction Stop
 
             # Move-ProGetPackageInterTier returns a PSCustomObject whose success

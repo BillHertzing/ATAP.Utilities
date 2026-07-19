@@ -8,7 +8,9 @@ function List-ProGetFeeds {
     [string]$proGetBaseHost,
     [Parameter(Mandatory = $false)]
     [int]$proGetBasePort,
-    [switch] $useFeedSet
+    [switch] $useFeedSet,
+    [ValidateNotNullOrEmpty()]
+    [string]$ProGetApiKeySecretName = 'ProGet.Admin.API.Key'
   )
   Begin {
     Write-PSFMessage -Level Verbose -Message 'Entering function: List-ProGetFeeds'
@@ -68,20 +70,9 @@ function List-ProGetFeeds {
       }
     }
 
-    # $adminApiKey is used to authenticate an admin role to ProGet
-    # ToDo: Fetch from Secrets vault instead of environment variable
-    # ToDo: Set an expiration date, and ensure the organization implements a policy that rotates the key value before they expire
-    # ToDo: consider allowing this function to setup feeds on multiple proget hosts, would need a $adminApiKey in the settings for each
-    $adminApiKey = [Environment]::GetEnvironmentVariable($global:configRootKeys['ProGetAdminApiKeyConfigRootKey'], 'Process')
-    if (-not $adminApiKey) {
-      $errorMessage = 'ProGet adminApiKey is not available in environment variable.'
-      Write-PSFMessage -Level Error -Message $errorMessage -Tag 'New-ProGetApiKey', 'Trace', 'Error'
-      throw $errorMessage
-    }
-    # The elements of the requests's headers are constant, so define them here
-    $headers = @{
-      'Accept'   = 'application/json'
-      "X-ApiKey" = $adminApiKey
+    if (-not $PSBoundParameters.ContainsKey('ProGetApiKeySecretName') -and $global:configRootKeys -and $global:Settings) {
+      $settingName = $global:configRootKeys['ProGetAdminApiKeySecretNameConfigRootKey']
+      if ($settingName -and $global:Settings[$settingName]) { $ProGetApiKeySecretName = [string]$global:Settings[$settingName] }
     }
 
     # The Page for the command to list all feeds in ProGet
@@ -97,8 +88,15 @@ function List-ProGetFeeds {
 
 
   Process {
+    if (-not $PSCmdlet.ShouldProcess($apiEndPoint.AbsoluteUri, 'List ProGet feeds')) {
+      return
+    }
     # Make the API Call
     try {
+      if (-not (Get-Command Get-SecretATAP -ErrorAction SilentlyContinue)) { throw 'Get-SecretATAP is required for ProGet authentication.' }
+      $adminApiKey = [string](Get-SecretATAP -SecretName $ProGetApiKeySecretName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop)
+      if ([string]::IsNullOrWhiteSpace($adminApiKey)) { throw "Secret '$ProGetApiKeySecretName' did not resolve to a ProGet API key." }
+      $headers = @{ Accept = 'application/json'; 'X-ApiKey' = $adminApiKey }
       Write-PSFMessage -Level Verbose -Message "Attempting to get the list of Feeds" -Tag 'List-ProGetFeeds', 'Trace'
       $response = Invoke-RestMethod -Uri $apiEndPoint.AbsoluteUri -Headers $headers -Method Get
       if ($response.count -eq 0) {
@@ -112,9 +110,9 @@ function List-ProGetFeeds {
       }
     }
     catch {
-      $errorMessage = "Failed to retrieve feeds from ProGet at $($apiEndpoint.AbsoluteUri ). Exception: $($_.Exception.Message)"
+      $errorMessage = "Failed to retrieve feeds from ProGet at $($apiEndpoint.AbsoluteUri). Verify connectivity and the configured SecretName."
       Write-PSFMessage -Level Error -Message $errorMessage -Tag 'List-ProGetFeeds', 'Trace', 'Error'
-      throw $_
+      throw $errorMessage
     }
   }
 

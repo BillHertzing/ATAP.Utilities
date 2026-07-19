@@ -1,5 +1,8 @@
 # BuildMaster — File Index
 
+The active plans under [`Plans/`](Plans/) use a SecretName-only ProGet contract;
+see the [module ReadMe](ReadMe.md) for the authentication boundary.
+
 This folder holds the OtterScript pipeline plans and the PowerShell entry-point
 scripts that BuildMaster executes for the four ATAP.Utilities build pipelines:
 

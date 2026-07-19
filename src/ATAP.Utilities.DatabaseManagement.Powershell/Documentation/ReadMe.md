@@ -1,5 +1,7 @@
 # ATAP.Utilities.DatabaseManagement.PowerShell — Documentation
 
+> **Task 13.62 security cutover:** Database package pipelines pass `ProGet.BuildMaster.API.Key` only as `-ProGetApiKeySecretName`. Publish and promotion leaves resolve it with `Get-SecretATAP`; no ProGet key environment variable or admin fallback is permitted.
+
 This folder is the **deep reference** for the database-pipeline cmdlets in
 the `ATAP.Utilities.DatabaseManagement.PowerShell` module. The module
 root [`../ReadMe.md`](../ReadMe.md) and [`../INDEX.md`](../INDEX.md) are
@@ -22,18 +24,15 @@ module-root pages.
   are supported by current cmdlets, which are deferred, which are
   retired, and the reactivation procedure.
 
-## Required environment variables
+## Runtime configuration and SecretNames
 
-The database pipeline cmdlets resolve secrets and base URLs from
-User-scope environment variables and the `$global:settings` two-tier
-configuration system. The cmdlets in this module use the following
-variable names (values are never stored in this folder):
+The database pipeline resolves base URLs from `$global:settings`, carries
+SecretNames as ordinary configuration, and resolves secret values only at the
+authenticated leaf. It uses these non-secret runtime names:
 
 | Variable | Source | Purpose |
 | --- | --- | --- |
-| `BW_SESSION` | Set by `LoginScript.ps1` at User scope | Bitwarden CLI session token used by `Get-BitWardenSecret`. |
-| `PROGET_BUILDMASTER_API_KEY` (preferred) | Set by `LoginScript.ps1` at User scope | ProGet API key used by the publish/promote cmdlets in `ATAP.Utilities.BuildTooling.PowerShell` that this module's pipeline triggers. |
-| `PROGET_ADMIN_API_KEY` (fallback) | Set by `LoginScript.ps1` at User scope | Fallback ProGet API key when the BuildMaster-only key is absent. |
+| `ProGet.BuildMaster.API.Key` (SecretName) | Passed as `-ProGetApiKeySecretName` | ProGet publish/promotion identity. There is no administrator-key or environment fallback. |
 | `BuildMaster.Admin.API.Key` (secret) | Stored in Bitwarden Secrets Manager; read via `Get-SecretATAP` | BuildMaster API key, used when this module's cmdlets interact with the BuildMaster REST API. |
 | `BUILDMASTER_BUILD_ID` | Set by BuildMaster at run-time | Build identifier propagated into evidence bundles produced by this module's rehearsal cmdlets. |
 

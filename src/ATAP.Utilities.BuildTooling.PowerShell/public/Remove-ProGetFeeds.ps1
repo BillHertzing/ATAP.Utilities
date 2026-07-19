@@ -41,7 +41,12 @@ function Remove-ProGetFeeds {
       ParameterSetName = 'ByFeedSet',
       Mandatory = $true                # must be present to select this set
     )]
-    [switch] $UseFeedSet
+    [switch] $UseFeedSet,
+
+    [Parameter(ParameterSetName = 'ByName')]
+    [Parameter(ParameterSetName = 'ByFeedSet')]
+    [ValidateNotNullOrEmpty()]
+    [string]$ProGetApiKeySecretName = 'ProGet.Admin.API.Key'
   )
   Begin {
     Write-PSFMessage -Level Verbose -Message 'Entering function: Remove-ProGetFeeds' -Tag 'Remove-ProGetFeeds', 'Trace'
@@ -95,19 +100,9 @@ function Remove-ProGetFeeds {
         $proGetBasePort = [Environment]::GetEnvironmentVariable($global:configRootKeys['ProGetAdminUriPortConfigRootKey'], 'Process')
       }
     }
-    # $adminApiKey is used to authenticate an admin role to ProGet
-    # ToDo: Fetch from Secrets vault instead of environment variable
-    # ToDo: consider allowing this function to administer multiple ProGet hosts, would need a $adminApiKey in the settings for each
-    $adminApiKey = [Environment]::GetEnvironmentVariable($global:configRootKeys['ProGetAdminApiKeyConfigRootKey'], 'Process')
-    if (-not $adminApiKey) {
-      $errorMessage = 'ProGet adminAPI key is not available in environment variable.'
-      Write-PSFMessage -Level Error -Message $errorMessage -Tag 'Remove-ProGetFeeds', 'Trace', 'Error'
-      throw $errorMessage
-    }
-    # The elements of the requests's headers are constant, so define them here
-    $headers = @{
-      'Accept'   = 'application/json'
-      "X-ApiKey" = $adminApiKey
+    if (-not $PSBoundParameters.ContainsKey('ProGetApiKeySecretName') -and $global:configRootKeys -and $global:Settings) {
+      $settingName = $global:configRootKeys['ProGetAdminApiKeySecretNameConfigRootKey']
+      if ($settingName -and $global:Settings[$settingName]) { $ProGetApiKeySecretName = [string]$global:Settings[$settingName] }
     }
     # The preamble to the page for the command to delete one feed in ProGet
     # ToDo: Move the constant portion of the page Uri  to list all ApiKeys into configroot and settings
@@ -155,6 +150,10 @@ function Remove-ProGetFeeds {
 
         # Make the API Call
         try {
+          if (-not (Get-Command Get-SecretATAP -ErrorAction SilentlyContinue)) { throw 'Get-SecretATAP is required for ProGet authentication.' }
+          $adminApiKey = [string](Get-SecretATAP -SecretName $ProGetApiKeySecretName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop)
+          if ([string]::IsNullOrWhiteSpace($adminApiKey)) { throw "Secret '$ProGetApiKeySecretName' did not resolve to a ProGet API key." }
+          $headers = @{ Accept = 'application/json'; 'X-ApiKey' = $adminApiKey }
           Write-PSFMessage -Level Verbose -Message "Calling ProGet API to delete feed '$feedShortName' " -Tag 'Remove-ProGetFeeds', 'Trace'
           $response = Invoke-RestMethod -Uri $apiEndPoint.AbsoluteUri -Method Post -Headers $headers -Body ($body | ConvertTo-Json -Depth 3) -ContentType "application/json"
           $DeletedNames[$feedShortName] = $true
@@ -163,10 +162,10 @@ function Remove-ProGetFeeds {
         catch {
           $DeletedNames[$feedShortName] = $false
           if ($ErrorActionPreference -eq 'SilentlyContinue') {
-            Write-PSFMessage -Level Verbose -Message "Failed to delete feed '$feedShortName'. Exception: $($_.Exception.Message)" -Tag 'Remove-ProGetFeeds', 'Trace', 'Error'
+            Write-PSFMessage -Level Verbose -Message "Failed to delete feed '$feedShortName'. Verify connectivity and the configured SecretName." -Tag 'Remove-ProGetFeeds', 'Trace', 'Error'
             continue
           }
-          $errorMessage = "Failed to delete feed '$feedShortName'. Exception: $($_.Exception.Message)"
+          $errorMessage = "Failed to delete feed '$feedShortName'. Verify connectivity and the configured SecretName."
           Write-PSFMessage -Level Error -Message $errorMessage -Tag 'Remove-ProGetFeeds', 'Trace', 'Error'
           # ToDO: exception handling should wrap then throw, not just throw with only the error message
           throw $errorMessage

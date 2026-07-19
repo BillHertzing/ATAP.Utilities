@@ -8,8 +8,8 @@ Maps a canonical tier name (Experimental/Development/Integration/QA/Production)
 to a PowerShellGet feed
 name and endpoint from $global:Settings using the ProGet feed collection
 defined by ATAP.Utilities.ConfigRootKeys.PowerShell and host settings,
-resolves the API key via Get-SecretATAP or the feed's configured
-ApiKeyName environment variable, ensures a matching
+resolves the API key named by -ProGetApiKeySecretName via Get-SecretATAP,
+ensures a matching
 PSResourceRepository is registered, and invokes Publish-PSResource.
 
 All network and secret operations are mockable. The API key value is never
@@ -27,6 +27,10 @@ using the canonical five-tier mapping from Explainer 0111.
 .PARAMETER AllowTierOverride
 Reserved for a future cross-check between an explicit tier and the tier NBGV
 would derive from the branch label. Currently unused.
+
+.PARAMETER ProGetApiKeySecretName
+Bitwarden Secrets Manager SecretName for the ProGet publishing key. Raw key
+parameters and environment-variable fallbacks are intentionally unsupported.
 
 .PARAMETER WhatIf
 If specified, short-circuits before calling Publish-PSResource. The returned
@@ -70,7 +74,10 @@ function Publish-PSModuleToProGetFeed {
   [ValidateSet('Experimental', 'Development', 'Integration', 'QA', 'Production', 'Sprint', 'Alpha', 'Beta')]
     [string]$Tier,
 
-    [switch]$AllowTierOverride
+    [switch]$AllowTierOverride,
+
+    [ValidateNotNullOrEmpty()]
+    [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key'
   )
 
   begin {
@@ -126,87 +133,19 @@ function Publish-PSModuleToProGetFeed {
     $feedUri = $feed.EndpointUri
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved tier '$Tier' to feed '$feedName' at '$feedUri' from global settings"
 
-    # 3. Resolve API key: per-tier ATAP secret store preferred, then configured
-    #    User env var, then admin-key fallback (PROGET_ADMIN_API_KEY).
-    #
-    # SCOPE CREEP — REMOVE ADMIN-KEY FALLBACK ONCE PER-TIER KEYS EXIST
-    # ----------------------------------------------------------------
-    # The PROGET_ADMIN_API_KEY fallback below is a temporary bootstrap so local
-    # builds and early sprint pipelines can publish before per-tier ProGet API
-    # keys are minted, stored in the ATAP secret store, and documented. Once
-    # every tier (Experimental/Development/Integration/QA/Production) has its own key in the
-    # secret store under 'ProGet_PowerShellGet_<Tier>_ApiKey' and a documented
-    # rotation plan exists, delete the fallback block and let this function
-    # throw when the tier-specific key is missing.
-    $apiKey = $null
-    $apiKeySource = $null
-    $secretCmd = Get-Command -Name 'Get-SecretATAP' -ErrorAction SilentlyContinue
-    if ($null -ne $secretCmd) {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Attempting Get-SecretATAP for tier '$Tier'"
-      try {
-      $secretName = "ProGet_PowerShellGet_${canonicalTier}_ApiKey"
-        $apiKey = Get-SecretATAP -SecretName $secretName
-        if (-not [string]::IsNullOrWhiteSpace([string]$apiKey)) {
-          $apiKeySource = "ATAP secret store item '$secretName'"
-        }
-      } catch {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Get-SecretATAP threw; will fall back to env var'
-        $apiKey = $null
+    # 3. WhatIf short-circuit before secret lookup, repository mutation, or publish.
+    if ($WhatIfPreference) {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "WhatIf: would publish '$resolvedNupkg' to '$feedName'"
+      return [PSCustomObject]@{
+        NupkgPath       = $resolvedNupkg
+        FeedName        = $feedName
+        FeedUri         = $feedUri
+        Published       = $false
+        ResponseSummary = "WhatIf: planned publish of '$resolvedNupkg' to '$feedName'"
       }
     }
-    if ([string]::IsNullOrWhiteSpace([string]$apiKey)) {
-      $envName = if (-not [string]::IsNullOrWhiteSpace($feed.ApiKeyName)) {
-        $feed.ApiKeyName
-      } else {
-        "PROGET_POWERSHELLGET_APIKEY_$Tier"
-      }
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Falling back to configured env var '$envName' for API key"
-      $apiKey = [Environment]::GetEnvironmentVariable($envName, 'Process')
-      if ([string]::IsNullOrWhiteSpace([string]$apiKey)) {
-        $apiKey = [Environment]::GetEnvironmentVariable($envName, 'User')
-      }
-      if (-not [string]::IsNullOrWhiteSpace([string]$apiKey)) {
-        $apiKeySource = "env var '$envName'"
-      }
-    }
-    if ([string]::IsNullOrWhiteSpace([string]$apiKey)) {
-      # TEMPORARY admin-key fallback (see SCOPE CREEP note above).
-      $adminEnvName = 'PROGET_ADMIN_API_KEY'
-      $apiKey = [Environment]::GetEnvironmentVariable($adminEnvName, 'User')
-      if (-not [string]::IsNullOrWhiteSpace([string]$apiKey)) {
-        $apiKeySource = "User env var '$adminEnvName' (admin fallback)"
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message (
-          "Using PROGET_ADMIN_API_KEY admin fallback for tier '$Tier' — provision " +
-          "'ProGet_PowerShellGet_${Tier}_ApiKey' in the ATAP secret store to remove this fallback."
-        )
-      }
-    }
-    if ([string]::IsNullOrWhiteSpace([string]$apiKey) -and $null -ne $secretCmd) {
-      # Bitwarden admin-key fallback: 'ProGet.Admin.API.Key' is the canonical Secrets Manager
-      # item name when no tier-specific key exists yet.
-      try {
-        $adminSecretName = 'ProGet.Admin.API.Key'
-        $apiKey = Get-SecretATAP -SecretName $adminSecretName
-        if (-not [string]::IsNullOrWhiteSpace([string]$apiKey)) {
-          $apiKeySource = "ATAP secret store item '$adminSecretName' (admin fallback)"
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message (
-            "Using Bitwarden '$adminSecretName' admin fallback for tier '$Tier' — provision " +
-            "'ProGet_PowerShellGet_${canonicalTier}_ApiKey' in the ATAP secret store to remove this fallback."
-          )
-        }
-      } catch {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Get-SecretATAP threw for 'ProGet.Admin.API.Key'; no admin key available."
-        $apiKey = $null
-      }
-    }
-    if ([string]::IsNullOrWhiteSpace([string]$apiKey)) {
-      $msg = "Unable to resolve ProGet API key for tier '$Tier'. Expected Get-SecretATAP -SecretName 'ProGet_PowerShellGet_${Tier}_ApiKey', configured env var '$($feed.ApiKeyName)', or admin fallback 'PROGET_ADMIN_API_KEY'."
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
-      throw $msg
-    }
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "API key resolved for tier '$Tier' from $apiKeySource (value redacted)"
 
-    # 5. Ensure the PSResourceRepository is registered with the right URI.
+    # 4. Ensure the PSResourceRepository is registered with the right URI.
     $existingRepo = Get-PSResourceRepository -Name $feedName -ErrorAction SilentlyContinue
     if ($null -eq $existingRepo) {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Registering PSResourceRepository '$feedName'"
@@ -221,19 +160,17 @@ function Publish-PSModuleToProGetFeed {
       }
     }
 
-    # 6. WhatIf short-circuit.
-    if ($WhatIfPreference) {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "WhatIf: would publish '$resolvedNupkg' to '$feedName'"
-      return [PSCustomObject]@{
-        NupkgPath       = $resolvedNupkg
-        FeedName        = $feedName
-        FeedUri         = $feedUri
-        Published       = $false
-        ResponseSummary = "WhatIf: planned publish of '$resolvedNupkg' to '$feedName'"
-      }
+    # 5. Resolve the key only at the authenticated-operation boundary.
+    try {
+      $apiKey = [string](Get-SecretATAP -SecretName $ProGetApiKeySecretName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop)
+    } catch {
+      throw "Unable to resolve the ProGet API key from SecretName '$ProGetApiKeySecretName'."
+    }
+    if ([string]::IsNullOrWhiteSpace($apiKey)) {
+      throw "The ProGet secret named '$ProGetApiKeySecretName' resolved to an empty value."
     }
 
-    # 7. Publish.
+    # 6. Publish.
     $published = $false
     $summary = $null
     try {
@@ -242,12 +179,13 @@ function Publish-PSModuleToProGetFeed {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from Publish-PSResource for '$feedName'"
       $published = $true
       if ($null -ne $result) {
-        $summary = "Publish-PSResource returned: $($result | Out-String)".Trim()
+        $summary = ("Publish-PSResource returned: $($result | Out-String)".Trim()).Replace($apiKey, '***')
       } else {
         $summary = 'Publish-PSResource completed without returning an object.'
       }
     } catch {
-      $msg = "Publish-PSResource failed for '$resolvedNupkg' to '$feedName': $($_.Exception.Message)"
+      $exceptionMessage = ([string]$_.Exception.Message).Replace($apiKey, '***')
+      $msg = "Publish-PSResource failed for '$resolvedNupkg' to '$feedName': $exceptionMessage"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
       throw $msg
     }

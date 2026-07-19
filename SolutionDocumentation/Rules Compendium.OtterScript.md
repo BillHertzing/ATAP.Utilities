@@ -80,12 +80,15 @@ if $Tier == Development
         WorkingDirectory: $SourcePath,
         SuccessExitCode: 0
     );
-    Exec dotnet (
-        Arguments: "nuget push _generated\nuget\$Tier\$PackageSlug\*.nupkg --source $ProGetUrl/nuget/$FeedName/v3/index.json --api-key $Decrypt($ProGetApiKey) --skip-duplicate",
-        WorkingDirectory: $SourcePath,
-        SuccessExitCode: 0
-    );
+    # Delegate publishing to the source-controlled C# stage runner. The plan
+    # passes ProGet.BuildMaster.API.Key as ProGetApiKeySecretName; the
+    # authenticated BuildTooling leaf resolves it immediately before push.
 }
 ```
+
+Never construct a direct authenticated package-push command in OtterScript.
+The durable `CSharpPackage-5Stage.otter` plan invokes
+`Invoke-CSharpPackageBuildMasterStage.ps1`, which owns the SecretName-only
+handoff.
 
 <!-- rule-compendium-end -->

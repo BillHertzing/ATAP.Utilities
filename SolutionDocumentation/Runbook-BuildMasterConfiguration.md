@@ -3,6 +3,10 @@
 > runbook is now [BuildMaster-Install-Runbook.md](BuildMaster-Install-Runbook.md).
 > Do not execute new BuildMaster configuration from this file.
 >
+> **Task 13.62:** All resolved ProGet-value and environment-variable
+> instructions below are superseded. Active plans pass
+> `ProGet.BuildMaster.API.Key` only as a SecretName.
+>
 > Service-account bootstrap steps that used to be scattered here — the git
 > `safe.directory` entry that lets `SvcBuildmaster` operate on Dropbox-owned
 > worktrees, and the machine-wide NBGV install required for
@@ -84,7 +88,7 @@ The exact UI labels must be verified during execution. Expected flow:
 8. Navigate to **Settings** → **Variables**.
 9. Add the variables listed for that Application below. Store names without the
    leading `$`; the `$` is OtterScript reference syntax only.
-10. Mark `ProGetApiKey` as **Sensitive** or **Encrypted**.
+10. Set non-secret `ProGetApiKeySecretName` to `ProGet.BuildMaster.API.Key`.
 11. Navigate to the Application's pipeline/plan configuration page. Verify the
     actual UI label, then select the durable plan from §2.1 as the default route
     for builds in this Application.
@@ -104,7 +108,7 @@ Source: `SolutionDocumentation/BuildMaster-ProGet-CSharp-Package-Pipeline.md`
 | `SourcePath`   | `C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber` | No         | Confirm actual BuildMaster worktree path during UI session.                          |
 | `Branch`       | `100-Sprint-0007-work-items`                        | No         | Default only; the Repository Monitor supplies the triggering branch at build scope.   |
 | `ProGetUrl`    | `http://localhost:50000`                            | No         | Confirm host-specific ProGet URL.                                                    |
-| `ProGetApiKey` | Paste from approved secret source                   | Yes        | Retrieve from the approved `PROGET_ADMIN_API_KEY` secret source. Do not write it here. |
+| `ProGetApiKeySecretName` | `ProGet.BuildMaster.API.Key`              | No         | Non-secret name; authenticated leaf resolution only.                                  |
 
 **Build-scope variables** (supplied by the concrete C# Repository Monitor or manual build):
 
@@ -131,7 +135,7 @@ Execution notes (final state, verified 2026-05-14):
   | `$Branch`          | `100-Sprint-0007-work-items`                               |
   | `$Configuration`   | `Release`                                                  |
   | `$MetaPackageName` | `ATAP.Utilities`                                           |
-  | `$ProGetApiKey`    | `(hidden)` — sensitive                                     |
+  | `$ProGetApiKeySecretName` | `ProGet.BuildMaster.API.Key`                        |
   | `$ProGetUrl`       | `http://localhost:50000`                                   |
   | `$ProjectPath`     | `src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj` |
   | `$SourcePath`      | `C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber`        |
@@ -158,7 +162,7 @@ so no new application is required per module.
 | `Branch`          | `100-Sprint-0007-work-items`                        | No         | Source branch for checkout. Update each sprint. Present in CSharp app; required here for the same reason.     |
 | `SourcePath`      | `C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber` | No         | Use the durable BuildMaster-managed path. Do NOT use a concrete Dropbox worktree path (see CSharp deviation). |
 | `ProGetUrl`       | `http://localhost:50000`                            | No         | Confirm host-specific ProGet URL.                                                                             |
-| `ProGetApiKey`    | Paste from approved secret source                   | Yes        | Retrieve from the approved `PROGET_ADMIN_API_KEY` secret. Do not write the value here.                        |
+| `ProGetApiKeySecretName` | `ProGet.BuildMaster.API.Key`              | No         | Non-secret name; authenticated leaf resolution only.                                                   |
 
 **Build-scope variables** (supplied by the poller at `New-BuildMasterBuild` call time):
 
@@ -186,7 +190,7 @@ Execution notes (final state, verified 2026-05-14):
   | ------------------ | --------------------------------------------------- |
   | `$ApplicationName` | `ATAP.Utilities-PowerShell`                         |
   | `$Branch`          | `100-Sprint-0007-work-items`                        |
-  | `$ProGetApiKey`    | `(hidden)` — sensitive                              |
+  | `$ProGetApiKeySecretName` | `ProGet.BuildMaster.API.Key`                 |
   | `$ProGetUrl`       | `http://localhost:50000`                            |
   | `$SourcePath`      | `C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber` |
 
@@ -208,7 +212,7 @@ Source: `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/ReleaseBundle-6Stage.
 | `Branch`                                          | `<current release or sprint branch>`                  | No         | Branch fallback when `ReleaseTag` is blank.                                                                                              |
 | `SourcePath`                                      | `C:\BuildMaster\work\AceCommander\$ReleaseNumber`     | No         | Confirm actual product worktree path during UI session; also passed as `Get-BuildContext -ProjectPath` for the repo-root `version.json`. |
 | `ProGetUrl`                                       | `http://localhost:50000`                              | No         | Confirm host-specific ProGet URL.                                                                                                        |
-| `ProGetApiKey`                                    | Paste from approved secret source                     | Yes        | Retrieve from the approved ProGet secret source. Do not write the value here.                                                            |
+| `ProGetApiKeySecretName`                          | `ProGet.BuildMaster.API.Key`                          | No         | Non-secret name; authenticated leaf resolution only.                                                                                     |
 | `ReleaseBundleExperimentalFeedName`               | `releasebundle-experimental`                          | No         | Universal Package feed.                                                                                                                  |
 | `ReleaseBundleDevelopmentFeedName`                | `releasebundle-development`                           | No         | Universal Package feed.                                                                                                                  |
 | `ReleaseBundleIntegrationFeedName`                | `releasebundle-integration`                           | No         | Universal Package feed.                                                                                                                  |
@@ -234,7 +238,7 @@ After the three Applications are created:
 2. Open each Application and confirm the selected durable plan is correct.
 3. Open each Application's variables page and confirm:
    - Required variable names exist without leading `$`.
-   - `ProGetApiKey` is marked sensitive/encrypted.
+   - `ProGetApiKeySecretName` is exactly `ProGet.BuildMaster.API.Key`.
    - No secret value appears in page text, notes, screenshots, or this runbook.
 4. If BuildMaster has an audit/history page, record the audit entry ID or
    timestamp for each Application creation.

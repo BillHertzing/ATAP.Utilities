@@ -9,7 +9,9 @@ function New-ProGetFeedSet {
     [Parameter(Mandatory = $false)]
     [int]$proGetBasePort,
     [Parameter(Mandatory = $false)]
-    [string[]]$FeedNameFilter
+    [string[]]$FeedNameFilter,
+    [ValidateNotNullOrEmpty()]
+    [string]$ProGetApiKeySecretName = 'ProGet.Admin.API.Key'
   )
   Begin {
     Write-PSFMessage -Level Verbose -Message 'Entering function: New-ProGetFeedSet' -Tag 'New-ProGetFeedSet', 'Trace'
@@ -81,19 +83,9 @@ function New-ProGetFeedSet {
       }
     }
 
-    # $adminApiKey is used to authenticate an admin role to ProGet
-    # ToDo: Fetch from Secrets vault instead of environment variable
-    # ToDo: consider allowing this function to setup feeds on multiple proget hosts, would need a $adminApiKey in the settings for each
-    $adminApiKey = [Environment]::GetEnvironmentVariable($global:configRootKeys['ProGetAdminApiKeyConfigRootKey'], 'Process')
-    if (-not $adminApiKey) {
-      $errorMessage = 'ProGet adminAPI key is not available in environment variable.'
-      Write-PSFMessage -Level Error -Message $errorMessage -Tag 'New-ProGetFeedSet', 'Trace', 'Error'
-      throw $errorMessage
-    }
-    # The elements of the requests's headers are constant, so define them here
-    $headers = @{
-      'Accept'   = 'application/json'
-      "X-ApiKey" = $adminApiKey
+    if (-not $PSBoundParameters.ContainsKey('ProGetApiKeySecretName') -and $global:configRootKeys -and $global:Settings) {
+      $settingName = $global:configRootKeys['ProGetAdminApiKeySecretNameConfigRootKey']
+      if ($settingName -and $global:Settings[$settingName]) { $ProGetApiKeySecretName = [string]$global:Settings[$settingName] }
     }
 
     # The Page for the command to list all API keys in ProGet
@@ -104,18 +96,22 @@ function New-ProGetFeedSet {
     $apiEndPoint = [UriBuilder]::new($proGetBaseScheme, $proGetBaseHost, $proGetBasePort, $proGetAPIpage, $null ).URI
 
     $existingFeedNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
-    try {
-      $currentFeeds = @(List-ProGetFeeds -proGetBaseScheme $proGetBaseScheme -proGetBaseHost $proGetBaseHost -proGetBasePort $proGetBasePort)
-      foreach ($currentFeed in $currentFeeds) {
-        if ($null -ne $currentFeed.Name -and -not [string]::IsNullOrWhiteSpace([string]$currentFeed.Name)) {
-          [void]$existingFeedNames.Add([string]$currentFeed.Name)
+    # Discovery is authenticated. Suppress it under -WhatIf so preview mode has
+    # no secret access or network activity.
+    if (-not $WhatIfPreference) {
+      try {
+        $currentFeeds = @(List-ProGetFeeds -proGetBaseScheme $proGetBaseScheme -proGetBaseHost $proGetBaseHost -proGetBasePort $proGetBasePort -ProGetApiKeySecretName $ProGetApiKeySecretName)
+        foreach ($currentFeed in $currentFeeds) {
+          if ($null -ne $currentFeed.Name -and -not [string]::IsNullOrWhiteSpace([string]$currentFeed.Name)) {
+            [void]$existingFeedNames.Add([string]$currentFeed.Name)
+          }
         }
       }
-    }
-    catch {
-      $errorMessage = "Failed to query existing ProGet feeds before creating feed set. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception -Tag 'New-ProGetFeedSet', 'Trace', 'Error'
-      throw $_
+      catch {
+        $errorMessage = 'Failed to query existing ProGet feeds before creating feed set. Verify connectivity and the configured SecretName.'
+        Write-PSFMessage -Level Error -Message $errorMessage -Tag 'New-ProGetFeedSet', 'Trace', 'Error'
+        throw $errorMessage
+      }
     }
 
     $processedCounter = 0
@@ -162,7 +158,7 @@ function New-ProGetFeedSet {
         foreach ($connector in $feed.Connectors) {
           Write-PSFMessage -Level Verbose -Message "Creating connector '$($connector.Name)' for feed '$($feed.FeedName)'" -Tag 'New-ProGetFeedSet', 'Trace'
           # if New-ProGetConnector fails, it will throw
-          New-ProGetConnector -proGetBaseScheme $proGetBaseScheme -proGetBaseHost $proGetBaseHost -proGetBasePort $proGetBasePort -Connector $connector
+          New-ProGetConnector -proGetBaseScheme $proGetBaseScheme -proGetBaseHost $proGetBaseHost -proGetBasePort $proGetBasePort -Connector $connector -ProGetApiKeySecretName $ProGetApiKeySecretName
         }
       }
 
@@ -215,6 +211,10 @@ function New-ProGetFeedSet {
         # Make the API Call
 
         try {
+          if (-not (Get-Command Get-SecretATAP -ErrorAction SilentlyContinue)) { throw 'Get-SecretATAP is required for ProGet authentication.' }
+          $adminApiKey = [string](Get-SecretATAP -SecretName $ProGetApiKeySecretName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop)
+          if ([string]::IsNullOrWhiteSpace($adminApiKey)) { throw "Secret '$ProGetApiKeySecretName' did not resolve to a ProGet API key." }
+          $headers = @{ Accept = 'application/json'; 'X-ApiKey' = $adminApiKey }
           Write-PSFMessage -Level Verbose -Message "Attempting to create feed '$($feed.FeedName)' of type '$proGetFeedType' on port $ProGetBasePort" -Tag 'New-ProGetFeedSet', 'Trace'
           # ToDo: accumulate the results for each feed, and pass them on down the pipeline
           $feedCreationResults = Invoke-RestMethod -Uri $apiEndPoint.AbsoluteUri -Method Post -Headers $headers -Body ($body | ConvertTo-Json -Depth 3) -ContentType 'application/json'
@@ -224,22 +224,18 @@ function New-ProGetFeedSet {
           $createdCounter++
         }
         catch {
-          $errorMessage = "Failed to create feed $($feed.FeedName) on port $ProGetBasePort. Exception: $($_.Exception.Message)"
-          Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception -Tag 'New-ProGetFeedSet', 'Trace', 'Error'
-          throw $_
+          $errorMessage = "Failed to create feed $($feed.FeedName) on port $ProGetBasePort. Verify connectivity and the configured SecretName."
+          Write-PSFMessage -Level Error -Message $errorMessage -Tag 'New-ProGetFeedSet', 'Trace', 'Error'
+          throw $errorMessage
         }
         try {
           # Protect the new feed by creating a new Api Key for the feed and assigning the key certain permissions
-          $APIKeyCreationResults = New-ProGetApiKey -ApiKeyName $feedApiKeyName -FeedName $feed.FeedName -PackagePermissions @('view', 'add', 'delete') -ProGetBaseScheme $proGetBaseScheme -ProGetBaseHost $ProGetBaseHost -ProGetBasePort $ProGetBasePort
-          # ToDo: Assign it to a process environment variable
-          [Environment]::SetEnvironmentVariable( $feedApiKeyName, $APIKeyCreationResults.key, [EnvironmentVariableTarget]::User)
-          # ToDo: Store it in a secrets vault
-          # ToDo: Store the APIKey in a secrets vault keyed by the feed name
+          $APIKeyCreationResults = New-ProGetApiKey -ApiKeyName $feedApiKeyName -FeedName $feed.FeedName -PackagePermissions @('view', 'add', 'delete') -ProGetBaseScheme $proGetBaseScheme -ProGetBaseHost $ProGetBaseHost -ProGetBasePort $ProGetBasePort -ProGetApiKeySecretName $ProGetApiKeySecretName
         }
         catch {
-          $errorMessage = "Failed to create and assign APIKey $feedApiKeyName to feed $($feed.FeedName) on port $ProGetBasePort. Exception: $($_.Exception.Message)"
-          Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception -Tag 'New-ProGetFeedSet', 'Trace', 'Error'
-          throw $_
+          $errorMessage = "Failed to create API-key metadata $feedApiKeyName for feed $($feed.FeedName) on port $ProGetBasePort. Verify connectivity and the configured SecretName."
+          Write-PSFMessage -Level Error -Message $errorMessage -Tag 'New-ProGetFeedSet', 'Trace', 'Error'
+          throw $errorMessage
         }
       }
       [PSCustomObject]@{

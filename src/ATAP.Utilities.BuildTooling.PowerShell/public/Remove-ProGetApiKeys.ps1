@@ -16,7 +16,9 @@ function Remove-ProGetApiKeys {
     [string]$proGetBaseHost,
     [Parameter(Mandatory = $false)]
     [int]$proGetBasePort,
-    [switch]$useFeedSet
+    [switch]$useFeedSet,
+    [ValidateNotNullOrEmpty()]
+    [string]$ProGetApiKeySecretName = 'ProGet.Admin.API.Key'
   )
   Begin {
     Write-PSFMessage -Level Verbose -Message 'Entering function: Remove-ProGetApiKeys' -Tag 'Remove-ProGetApiKeys', 'Trace'
@@ -70,19 +72,9 @@ function Remove-ProGetApiKeys {
         $proGetBasePort = [Environment]::GetEnvironmentVariable($global:configRootKeys['ProGetAdminUriPortConfigRootKey'], 'Process')
       }
     }
-    # $adminApiKey is used to authenticate an admin role to ProGet
-    # ToDo: Fetch from Secrets vault instead of environment variable
-    # ToDo: consider allowing this function to administer multiple ProGet hosts, would need a $adminApiKey in the settings for each
-    $adminApiKey = [Environment]::GetEnvironmentVariable($global:configRootKeys['ProGetAdminApiKeyConfigRootKey'], 'Process')
-    if (-not $adminApiKey) {
-      $errorMessage = 'ProGet adminAPI key is not available in environment variable.'
-      Write-PSFMessage -Level Error -Message $errorMessage -Tag 'Remove-ProGetApiKeys', 'Trace', 'Error'
-      throw $errorMessage
-    }
-    # The elements of the requests's headers are constant, so define them here
-    $headers = @{
-      'Accept'   = 'application/json'
-      "X-ApiKey" = $adminApiKey
+    if (-not $PSBoundParameters.ContainsKey('ProGetApiKeySecretName') -and $global:configRootKeys -and $global:Settings) {
+      $settingName = $global:configRootKeys['ProGetAdminApiKeySecretNameConfigRootKey']
+      if ($settingName -and $global:Settings[$settingName]) { $ProGetApiKeySecretName = [string]$global:Settings[$settingName] }
     }
     # The Page for the command to delete one API key in ProGet
     # ToDo: Move the constant portion of the page Uri  to list all ApiKeys into configroot and settings
@@ -127,6 +119,10 @@ function Remove-ProGetApiKeys {
 
         # Make the API Call
         try {
+          if (-not (Get-Command Get-SecretATAP -ErrorAction SilentlyContinue)) { throw 'Get-SecretATAP is required for ProGet authentication.' }
+          $adminApiKey = [string](Get-SecretATAP -SecretName $ProGetApiKeySecretName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop)
+          if ([string]::IsNullOrWhiteSpace($adminApiKey)) { throw "Secret '$ProGetApiKeySecretName' did not resolve to a ProGet API key." }
+          $headers = @{ Accept = 'application/json'; 'X-ApiKey' = $adminApiKey }
           Write-PSFMessage -Level Verbose -Message "Calling ProGet API to delete ApiKey '$apiKeyId'" -Tag 'Remove-ProGetApiKeys', 'Trace'
           $response = Invoke-RestMethod -Uri $apiEndPoint.AbsoluteUri -Method Delete -Headers $headers
           $DeletedIds[$apiKeyId] = $true
@@ -135,10 +131,10 @@ function Remove-ProGetApiKeys {
         catch {
           $DeletedIds[$apiKeyId] = $false
           if ($ErrorActionPreference -eq 'SilentlyContinue') {
-            Write-PSFMessage -Level Verbose -Message "Failed to delete ApiKey $apiKeyId. Exception: $($_.Exception.Message)" -Tag 'Remove-ProGetApiKeys', 'Trace', 'Error'
+            Write-PSFMessage -Level Verbose -Message "Failed to delete API-key metadata $apiKeyId. Verify connectivity and the configured SecretName." -Tag 'Remove-ProGetApiKeys', 'Trace', 'Error'
             continue
           }
-          $errorMessage = "Failed to delete ApiKey '$apiKeyId'. Exception: $($_.Exception.Message)"
+          $errorMessage = "Failed to delete API-key metadata '$apiKeyId'. Verify connectivity and the configured SecretName."
           Write-PSFMessage -Level Error -Message $errorMessage -Tag 'Remove-ProGetApiKeys', 'Trace', 'Error'
           # ToDO: exception handling should wrap then throw, not just throw with only the error message
           throw $errorMessage

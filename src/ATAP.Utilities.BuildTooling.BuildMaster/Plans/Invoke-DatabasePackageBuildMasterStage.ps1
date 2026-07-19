@@ -164,6 +164,9 @@ param(
   [ValidateNotNullOrEmpty()]
   [string]$ProGetUrl,
 
+  [ValidateNotNullOrEmpty()]
+  [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
+
   [string]$ExperimentalFeed = 'database-experimental',
   [string]$DevelopmentFeed = 'database-development',
   [string]$IntegrationFeed = 'database-integration',
@@ -847,6 +850,7 @@ function Invoke-DatabasePackageBuildMasterStage {
     [AllowEmptyString()][string]$Branch = '',
     [Parameter(Mandatory)][string]$Stage,
     [Parameter(Mandatory)][string]$ProGetUrl,
+    [ValidateNotNullOrEmpty()][string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
     [string]$ExperimentalFeed = 'database-experimental',
     [string]$DevelopmentFeed = 'database-development',
     [string]$IntegrationFeed = 'database-integration',
@@ -865,31 +869,6 @@ function Invoke-DatabasePackageBuildMasterStage {
     $fn = 'Invoke-DatabasePackageBuildMasterStage'
     $mn = 'ATAP.Utilities.BuildTooling.BuildMaster'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Starting $fn for BuildId='$BuildMasterBuildId'; Application='$DatabaseApplication'; Stream='$DatabaseStream'; Stage='$Stage'"
-
-    # Resolve API key from User-scope environment (R-10): try BuildMaster key
-    # first, then the admin key. Never accept the key as a parameter and never
-    # echo it.
-    $userBuildmasterKey = [System.Environment]::GetEnvironmentVariable('PROGET_BUILDMASTER_API_KEY', 'User')
-    $userAdminKey = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
-
-    $script:resolvedProGetApiKey = if (-not [string]::IsNullOrWhiteSpace($env:PROGET_BUILDMASTER_API_KEY)) {
-      $env:PROGET_BUILDMASTER_API_KEY
-    }
-    elseif (-not [string]::IsNullOrWhiteSpace($userBuildmasterKey)) {
-      $userBuildmasterKey
-    }
-    elseif (-not [string]::IsNullOrWhiteSpace($env:PROGET_ADMIN_API_KEY)) {
-      $env:PROGET_ADMIN_API_KEY
-    }
-    elseif (-not [string]::IsNullOrWhiteSpace($userAdminKey)) {
-      $userAdminKey
-    }
-    else {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message 'Unable to resolve ProGet API key.'
-      throw 'Unable to resolve ProGet API key. Set PROGET_BUILDMASTER_API_KEY or PROGET_ADMIN_API_KEY in the BuildMaster service-account User-scope environment.'
-    }
-    $env:PROGET_BUILDMASTER_API_KEY = $script:resolvedProGetApiKey
-    $env:PROGET_ADMIN_API_KEY = $script:resolvedProGetApiKey
 
     $script:buildToolingRoot = Split-Path -Parent $BuildToolingModulePath
   }
@@ -1085,7 +1064,8 @@ function Invoke-DatabasePackageBuildMasterStage {
 
       $publishResult = Publish-DatabaseChangePackageToProGet `
         -NupkgPath $nupkgPath `
-        -Feed $ExperimentalFeed
+        -Feed $ExperimentalFeed `
+        -ProGetApiKeySecretName $ProGetApiKeySecretName
       Add-DatabasePackagePublishTrace -Path $tracePath -Message $publishResult.ResponseSummary
 
       if (-not [bool]$publishResult.Published) {
@@ -1199,6 +1179,7 @@ function Invoke-DatabasePackageBuildMasterStage {
       -ToFeed $toFeed `
       -Reason "$Stage gate for $ApplicationName $resolvedVersion on $Branch" `
       -Application $DatabaseApplication `
+      -ProGetApiKeySecretName $ProGetApiKeySecretName `
       -CeilingTier $effectiveCeilingTier
     Add-DatabasePackagePublishTrace -Path $tracePath -Message $promotionResult.ResponseSummary
 
@@ -1241,6 +1222,7 @@ Invoke-DatabasePackageBuildMasterStage `
   -Branch $Branch `
   -Stage $Stage `
   -ProGetUrl $ProGetUrl `
+  -ProGetApiKeySecretName $ProGetApiKeySecretName `
   -ExperimentalFeed $ExperimentalFeed `
   -DevelopmentFeed $DevelopmentFeed `
   -IntegrationFeed $IntegrationFeed `

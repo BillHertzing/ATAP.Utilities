@@ -96,11 +96,9 @@
     is unavailable (the documented Sprint-0009 ProGet 404). Resolve it from
     $global:settings / Resolve-ProGetBaseUrlFromSettings at the call site.
 
-.PARAMETER ApiKey
-    Optional ProGet API key sent as X-ApiKey when restoring the promoted module
-    directly from ProGet (paired with -ProGetBaseUrl). Resolve it from a
-    User-scope environment variable (PROGET_BUILDMASTER_API_KEY /
-    PROGET_ADMIN_API_KEY) at the call site; never embed a literal key.
+.PARAMETER ProGetApiKeySecretName
+    Bitwarden Secrets Manager SecretName forwarded to each ProGet leaf cmdlet.
+    Raw API-key values and environment-variable fallbacks are unsupported.
 
 .PARAMETER WorkingDirectory
     Directory paths are resolved against. Defaults to the current location.
@@ -306,8 +304,8 @@ function Invoke-PairedTierPromotion {
         [string]$ProGetBaseUrl = '',
 
         [Parameter()]
-        [AllowEmptyString()]
-        [string]$ApiKey = '',
+        [ValidateNotNullOrEmpty()]
+        [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
@@ -402,7 +400,8 @@ function Invoke-PairedTierPromotion {
                 -FromFeed $moduleFromFeed `
                 -ToFeed $moduleToFeed `
                 -Reason $Reason `
-                -CeilingTier $CeilingTier
+                -CeilingTier $CeilingTier `
+                -ProGetApiKeySecretName $ProGetApiKeySecretName
             $moduleSucceeded = [bool]$modulePromotion.Succeeded
         } catch {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
@@ -448,7 +447,8 @@ function Invoke-PairedTierPromotion {
                 -ToFeed $dbToFeed `
                 -Reason $Reason `
                 -Application $DatabaseApplication `
-                -CeilingTier $CeilingTier
+                -CeilingTier $CeilingTier `
+                -ProGetApiKeySecretName $ProGetApiKeySecretName
             $databaseSucceeded = [bool]$databasePromotion.Succeeded
         } catch {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
@@ -527,7 +527,7 @@ function Invoke-PairedTierPromotion {
                             # Forward ProGet direct-endpoint inputs so the promoted-module
                             # restore bypasses the feed's v2 OData path (Sprint-0009 404).
                             if (-not [string]::IsNullOrWhiteSpace($ProGetBaseUrl)) { $moduleTestParameters['ProGetBaseUrl'] = $ProGetBaseUrl }
-                            if (-not [string]::IsNullOrWhiteSpace($ApiKey)) { $moduleTestParameters['ApiKey'] = $ApiKey }
+                            $moduleTestParameters['ProGetApiKeySecretName'] = $ProGetApiKeySecretName
                             try {
                                 $testResult = Invoke-PromotedModuleTests @moduleTestParameters
                                 $status = if ([bool]$testResult.GatePass) { 'Passed' } else { 'Failed' }

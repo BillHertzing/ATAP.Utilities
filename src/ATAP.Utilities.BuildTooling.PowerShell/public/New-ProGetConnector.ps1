@@ -9,7 +9,9 @@ function New-ProGetConnector {
     [Parameter(Mandatory = $false)]
     [string]$proGetBaseHost,
     [Parameter(Mandatory = $false)]
-    [int]$proGetBasePort
+    [int]$proGetBasePort,
+    [ValidateNotNullOrEmpty()]
+    [string]$ProGetApiKeySecretName = 'ProGet.Admin.API.Key'
   )
   Begin {
     Write-PSFMessage -Level Verbose -Message 'Entering function: New-ProGetConnector' -Tag 'New-ProGetConnector', 'Trace'
@@ -72,19 +74,9 @@ function New-ProGetConnector {
       }
     }
 
-    # $adminApiKey is used to authenticate an admin role to ProGet
-    # ToDo: Fetch from Secrets vault instead of environment variable
-    # ToDo: consider allowing this function to setup feeds on multiple proget hosts, would need a $adminApiKey in the settings for each
-    $adminApiKey = [Environment]::GetEnvironmentVariable($global:configRootKeys['ProGetAdminApiKeyConfigRootKey'], 'Process')
-    if (-not $adminApiKey) {
-      $errorMessage = 'ProGet adminAPI key is not available in environment variable.'
-      Write-PSFMessage -Level Error -Message $errorMessage -Tag 'New-ProGetConnector', 'Trace', 'Error'
-      throw $errorMessage
-    }
-    # The elements of the requests's headers are constant, so define them here
-    $headers = @{
-      'Accept'   = 'application/json'
-      "X-ApiKey" = $adminApiKey
+    if (-not $PSBoundParameters.ContainsKey('ProGetApiKeySecretName') -and $global:configRootKeys -and $global:Settings) {
+      $settingName = $global:configRootKeys['ProGetAdminApiKeySecretNameConfigRootKey']
+      if ($settingName -and $global:Settings[$settingName]) { $ProGetApiKeySecretName = [string]$global:Settings[$settingName] }
     }
 
     # The Page for the command to create connectors in ProGet
@@ -96,12 +88,17 @@ function New-ProGetConnector {
 
     $connectorCreationResults = $null
 
-    # Proget connector names must be unique. An attempt to create a connector that already exists will result in an error.
-    $currentConnectors = List-ProGetConnectors -proGetBaseScheme $proGetBaseScheme -proGetBaseHost $proGetBaseHost -proGetBasePort $proGetBasePort
-
   }
 
   Process {
+    if (-not $PSCmdlet.ShouldProcess("ProGet Connector [$($connector.name)]", "Create connector with URL $($connector.url)")) {
+      return
+    }
+
+    # ProGet connector names must be unique. Query only after the mutation gate so
+    # -WhatIf performs no secret resolution and no REST calls.
+    $currentConnectors = List-ProGetConnectors -proGetBaseScheme $proGetBaseScheme -proGetBaseHost $proGetBaseHost -proGetBasePort $proGetBasePort -ProGetApiKeySecretName $ProGetApiKeySecretName
+
     # Create the connector defined for the specific feedname unless a connector by that name already exists
     if ($currentConnectors | Where-Object { $_.name -eq $connector.name }) {
       Write-PSFMessage -Level Warning -Message "A connector with the name $($connector.name) already exists. Skipping creation of connector." -Tag 'New-ProGetConnector', 'Trace', 'Warning'
@@ -118,18 +115,19 @@ function New-ProGetConnector {
       description = $connector.description
     }
 
-    if ($PSCmdlet.ShouldProcess("ProGet Connector [$($connector.name)]", "Create Connector $($connector.name) of feedType $($body.feedType) with URL $($connector.url)" )) {
-      try {
-        Write-PSFMessage -Level Verbose -Message "Attempting to Create Connector $($connector.name) of feedType $($body.feedType) with URL $($connector.url)" -Tag 'New-ProGetConnector', 'Trace'
-        # ToDo: accumulate the results for each feed, and pass them on down the pipeline
-        $connectorCreationResults = Invoke-RestMethod -Uri $apiEndPoint.AbsoluteUri -Method Post -Headers $headers -Body ($body | ConvertTo-Json -Depth 3) -ContentType 'application/json'
-        Write-PSFMessage -Level Verbose -Message "Successfully created Connector $($connector.name)" -Tag 'New-ProGetConnector', 'Trace'
-      }
-      catch {
-        $errorMessage = "Failed to create Connector $($connector.name). Exception: $($_.Exception.Message)"
-        Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception -Tag 'New-ProGetConnector', 'Trace', 'Error'
-        throw $_
-      }
+    try {
+      if (-not (Get-Command Get-SecretATAP -ErrorAction SilentlyContinue)) { throw 'Get-SecretATAP is required for ProGet authentication.' }
+      $adminApiKey = [string](Get-SecretATAP -SecretName $ProGetApiKeySecretName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop)
+      if ([string]::IsNullOrWhiteSpace($adminApiKey)) { throw "Secret '$ProGetApiKeySecretName' did not resolve to a ProGet API key." }
+      $headers = @{ Accept = 'application/json'; 'X-ApiKey' = $adminApiKey }
+      Write-PSFMessage -Level Verbose -Message "Attempting to Create Connector $($connector.name) of feedType $($body.feedType) with URL $($connector.url)" -Tag 'New-ProGetConnector', 'Trace'
+      $connectorCreationResults = Invoke-RestMethod -Uri $apiEndPoint.AbsoluteUri -Method Post -Headers $headers -Body ($body | ConvertTo-Json -Depth 3) -ContentType 'application/json'
+      Write-PSFMessage -Level Verbose -Message "Successfully created Connector $($connector.name)" -Tag 'New-ProGetConnector', 'Trace'
+    }
+    catch {
+      $errorMessage = "Failed to create connector $($connector.name). Verify connectivity and the configured SecretName."
+      Write-PSFMessage -Level Error -Message $errorMessage -Tag 'New-ProGetConnector', 'Trace', 'Error'
+      throw $errorMessage
     }
   }
 

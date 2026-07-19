@@ -22,9 +22,8 @@
 
     The feed metadata is resolved from `$global:Settings` via
     `Resolve-ProGetFeedFromSettings -FeedType 'powershellget' -Tier 'Experimental'`.
-    The API key is resolved per the same chain used by the legacy
-    Publish-PSModuleToProGetFeed (Bitwarden -> configured env var ->
-    PROGET_ADMIN_API_KEY admin fallback).
+    The API key named by -ProGetApiKeySecretName is resolved through
+    Get-SecretATAP immediately before Publish-PSResource is invoked.
 
     -WhatIf short-circuits before calling Publish-PSResource. The returned
     object still carries the resolved feed name + URI so callers can
@@ -38,6 +37,10 @@
     Optional promotion ceiling recorded in the returned object for BuildMaster
     evidence. The publish target remains Experimental; later stages enforce
     the ceiling with Promote-ProGetPackage -CeilingTier.
+
+.PARAMETER ProGetApiKeySecretName
+    Bitwarden Secrets Manager SecretName for the publishing key. Raw keys and
+    environment-variable fallbacks are intentionally unsupported.
 
 .OUTPUTS
     [PSCustomObject] per PowerShell-Modules-Pack-and-Publish.md S8:
@@ -75,7 +78,10 @@ function Publish-PSModuleToProGet {
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$CeilingTier
+        [string]$CeilingTier,
+
+        [ValidateNotNullOrEmpty()]
+        [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key'
     )
 
     begin {
@@ -114,50 +120,7 @@ function Publish-PSModuleToProGet {
         $feedUri = $feed.EndpointUri
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved experimental feed '$feedName' at '$feedUri' from global settings"
 
-        # 3. Resolve API key: ATAP secret store -> configured env var -> admin fallback.
-        $apiKey = $null
-        $apiKeySource = $null
-        $secretCmd = Get-Command -Name 'Get-SecretATAP' -ErrorAction SilentlyContinue
-        if ($null -ne $secretCmd) {
-            try {
-                $secretName = 'ProGet_PowerShellGet_Experimental_ApiKey'
-                $apiKey = Get-SecretATAP -SecretName $secretName
-                if (-not [string]::IsNullOrWhiteSpace([string]$apiKey)) {
-                    $apiKeySource = "ATAP secret store item '$secretName'"
-                }
-            } catch {
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Get-SecretATAP threw; will fall back to env var'
-                $apiKey = $null
-            }
-        }
-        if ([string]::IsNullOrWhiteSpace([string]$apiKey)) {
-            $envName = if (-not [string]::IsNullOrWhiteSpace($feed.ApiKeyName)) { $feed.ApiKeyName } else { 'PROGET_APIKEY_POWERSHELLGET_EXPERIMENTAL' }
-            $apiKey = [Environment]::GetEnvironmentVariable($envName, 'Process')
-            if ([string]::IsNullOrWhiteSpace([string]$apiKey)) {
-                $apiKey = [Environment]::GetEnvironmentVariable($envName, 'User')
-            }
-            if (-not [string]::IsNullOrWhiteSpace([string]$apiKey)) {
-                $apiKeySource = "env var '$envName'"
-            }
-        }
-        if ([string]::IsNullOrWhiteSpace([string]$apiKey)) {
-            # TEMPORARY admin-key fallback. Same scope-creep note as the
-            # legacy Publish-PSModuleToProGetFeed: remove when per-tier keys
-            # are minted and stored in Bitwarden.
-            $apiKey = [Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
-            if (-not [string]::IsNullOrWhiteSpace([string]$apiKey)) {
-                $apiKeySource = "User env var 'PROGET_ADMIN_API_KEY' (admin fallback)"
-            }
-        }
-        if ([string]::IsNullOrWhiteSpace([string]$apiKey)) {
-            $msg = "Unable to resolve ProGet API key for Experimental feed. Expected Get-SecretATAP -SecretName 'ProGet_PowerShellGet_Experimental_ApiKey', configured env var '$($feed.ApiKeyName)', or admin fallback 'PROGET_ADMIN_API_KEY'."
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
-            throw $msg
-        }
-        # NOTE: the API key value is never logged; only the source.
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "API key resolved for Experimental from $apiKeySource (value redacted)"
-
-        # 4. Ensure the PSResourceRepository is registered with the right URI.
+        # 3. Ensure the PSResourceRepository is registered with the right URI.
         $existingRepo = Get-PSResourceRepository -Name $feedName -ErrorAction SilentlyContinue
         if ($null -eq $existingRepo) {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Registering PSResourceRepository '$feedName' at '$feedUri'"
@@ -185,6 +148,16 @@ function Publish-PSModuleToProGet {
             }
         }
 
+        # 5. Resolve the key only at the authenticated-operation boundary.
+        try {
+            $apiKey = [string](Get-SecretATAP -SecretName $ProGetApiKeySecretName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop)
+        } catch {
+            throw "Unable to resolve the ProGet API key from SecretName '$ProGetApiKeySecretName'."
+        }
+        if ([string]::IsNullOrWhiteSpace($apiKey)) {
+            throw "The ProGet secret named '$ProGetApiKeySecretName' resolved to an empty value."
+        }
+
         # 6. Publish via Publish-PSResource -NupkgPath (per S8 of the pack/publish doc).
         $published = $false
         $summary = $null
@@ -194,12 +167,12 @@ function Publish-PSModuleToProGet {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from Publish-PSResource for '$feedName'" -Tag 'RestCall'
             $published = $true
             if ($null -ne $result) {
-                $summary = "Publish-PSResource returned: $($result | Out-String)".Trim()
+                $summary = ("Publish-PSResource returned: $($result | Out-String)".Trim()).Replace($apiKey, '***')
             } else {
                 $summary = "Published '$resolvedNupkg' to '$feedName'."
             }
         } catch {
-            $exceptionMessage = [string]$_.Exception.Message
+            $exceptionMessage = ([string]$_.Exception.Message).Replace($apiKey, '***')
             # Idempotent re-publish: ProGet rejects duplicate versions but
             # Publish-PSResource may surface that as a recoverable error.
             if ($exceptionMessage -match '(?i)already exists|already present|duplicate version|409') {

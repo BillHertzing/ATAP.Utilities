@@ -83,9 +83,9 @@
     Optional ProGet base URL. When supplied, restore the promoted .nupkg
     directly from /nuget/<feed>/package/<name>/<version>.
 
-.PARAMETER ApiKey
-    Optional ProGet API key to send as X-ApiKey when restoring directly
-    from ProGet.
+.PARAMETER ProGetApiKeySecretName
+    Bitwarden Secrets Manager SecretName used when restoring directly from the
+    ProGet package endpoint. Raw API-key values are unsupported.
 
 .PARAMETER PesterOutputVerbosity
     Controls the delegated Pester console output. Defaults to Normal to keep
@@ -183,8 +183,8 @@ function Invoke-PromotedModuleTests {
         [string]$ProGetBaseUrl = $global:ProGetBaseUrl,
 
         [Parameter()]
-        [AllowEmptyString()]
-        [string]$ApiKey = $env:PROGET_BUILDMASTER_API_KEY,
+        [ValidateNotNullOrEmpty()]
+        [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
 
         [Parameter()]
         [ValidateSet('None', 'Normal', 'Detailed', 'Diagnostic')]
@@ -279,9 +279,13 @@ function Invoke-PromotedModuleTests {
                 $headers = @{
                     Accept = 'application/zip'
                 }
-                if (-not [string]::IsNullOrWhiteSpace($ApiKey)) {
-                    $headers['X-ApiKey'] = $ApiKey
+                try {
+                    $apiKey = [string](Get-SecretATAP -SecretName $ProGetApiKeySecretName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop)
+                } catch {
+                    throw "Unable to resolve the ProGet API key from SecretName '$ProGetApiKeySecretName'."
                 }
+                if ([string]::IsNullOrWhiteSpace($apiKey)) { throw "The ProGet secret named '$ProGetApiKeySecretName' resolved to an empty value." }
+                $headers['X-ApiKey'] = $apiKey
 
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Downloading promoted module package from '$packageUri'"
                 for ($attempt = 1; $attempt -le $RestoreRetryCount; $attempt++) {
@@ -293,7 +297,8 @@ function Invoke-PromotedModuleTests {
                             throw
                         }
 
-                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "Promoted module package download attempt $attempt/$RestoreRetryCount failed for '$packageUri': $($_.Exception.Message). Retrying in $RestoreRetryDelaySeconds second(s)."
+                        $safeException = ([string]$_.Exception.Message).Replace($apiKey, '***')
+                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "Promoted module package download attempt $attempt/$RestoreRetryCount failed for '$packageUri': $safeException. Retrying in $RestoreRetryDelaySeconds second(s)."
                         if ($RestoreRetryDelaySeconds -gt 0) {
                             Start-Sleep -Seconds $RestoreRetryDelaySeconds
                         }

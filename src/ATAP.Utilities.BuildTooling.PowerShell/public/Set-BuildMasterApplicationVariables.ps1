@@ -31,7 +31,7 @@ function Set-BuildMasterApplicationVariables {
       -Variables @{ Branch = '100-Sprint-0007-work-items'; Configuration = 'Release' }
   .EXAMPLE
     Set-BuildMasterApplicationVariables -ApplicationName 'ATAP.Utilities-CSharp' `
-      -Variables @{ ProGetApiKey = @{ Value = $env:PROGET_ADMIN_API_KEY; Sensitive = $true } }
+      -Variables @{ ProGetApiKeySecretName = @{ Value = 'ProGet.BuildMaster.API.Key'; Sensitive = $false } }
   .NOTES
     AI assisted using Powershell.instructions.md as guidelines
   .LINK

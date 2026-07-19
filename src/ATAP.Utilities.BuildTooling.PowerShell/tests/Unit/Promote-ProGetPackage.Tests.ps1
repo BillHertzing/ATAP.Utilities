@@ -6,6 +6,7 @@ BeforeAll {
     $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
     . (Join-Path $publicDir 'Get-TierOrder.ps1')
     . (Join-Path $publicDir 'Test-PromotionWithinCeiling.ps1')
+    . (Join-Path $publicDir 'Move-ProGetPackageInterTier.ps1')
     . (Join-Path $publicDir 'Promote-ProGetPackage.ps1')
 
     # Suppress PSFramework noise in tests when the module is not loaded.
@@ -29,7 +30,7 @@ BeforeAll {
                 [Alias('Comments')]
                 [string]$Reason,
                 [string]$ProGetBaseUrl,
-                [string]$ApiKey,
+                [string]$ProGetApiKeySecretName,
                 [System.Management.Automation.ActionPreference]$ErrorAction
             )
         }
@@ -134,10 +135,10 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit', 'PromotedModuleHostSensitive' {
             Promote-ProGetPackage -Name 'pkg' -Version '1.0.0' `
                 -FromFeed 'powershellget-development' -ToFeed 'powershellget-integration' `
                 -Reason 'integration gate' -CeilingTier 'Integration' `
-                -ProGetBaseUrl 'http://localhost:50000' -ApiKey 'unit-key' | Out-Null
+                -ProGetBaseUrl 'http://localhost:50000' -ProGetApiKeySecretName 'Test.ProGet.API.Key' | Out-Null
 
             Assert-MockCalled Move-ProGetPackageInterTier -Times 1 -Exactly -Scope It -ParameterFilter {
-                $ProGetBaseUrl -eq 'http://localhost:50000' -and $ApiKey -eq 'unit-key'
+                $ProGetBaseUrl -eq 'http://localhost:50000' -and $ProGetApiKeySecretName -eq 'Test.ProGet.API.Key'
             }
         }
 

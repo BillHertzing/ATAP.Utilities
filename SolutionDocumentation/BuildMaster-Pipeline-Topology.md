@@ -1,5 +1,7 @@
 # BuildMaster Pipeline Topology
 
+> **Task 13.62 security cutover:** Any raw `ApiKey` parameter or ProGet API-key environment guidance below is superseded. Active callers pass `ProGet.BuildMaster.API.Key` (CI) or `ProGet.Admin.API.Key` (administration) only as a SecretName to a `Get-SecretATAP` leaf, with no fallback.
+
 **Scope:** The catalog of durable BuildMaster pipelines, their relationship to
 ProGet feeds, the PowerShell automation surface that drives them, and the
 ProGet polling integration that triggers them.
@@ -62,7 +64,7 @@ Each BuildMaster Application supplies its own values for the variables its
 | `$Branch`                                          | injected by Repository Monitor                     | injected by Repository Monitor                     | injected by Repository Monitor or build-trigger script       | injected by Repository Monitor                        |
 | `$SourcePath`                                      | path to ATAP.Utilities worktree                    | path to AceCommander worktree                      | path to ATAP.Utilities worktree                             | path to AceCommander worktree                         |
 | `$Configuration`                                   | `Release`                                          | `Release`                                          | _(not used)_                                                | _(not used)_                                          |
-| `$ProGetApiKey`                                    | masked, from `PROGET_ADMIN_API_KEY`                | masked, from `PROGET_ADMIN_API_KEY`                | masked, from `PROGET_ADMIN_API_KEY`                         | masked, from `PROGET_ADMIN_API_KEY`                   |
+| `$ProGetApiKeySecretName`                          | `ProGet.BuildMaster.API.Key`                       | `ProGet.BuildMaster.API.Key`                       | `ProGet.BuildMaster.API.Key`                                | `ProGet.BuildMaster.API.Key`                          |
 | `$MetaPackageName`                                 | `ATAP.Utilities.StronglyTypedId` (pilot monitor)   | `AceCommander`                                     | _(not used)_                                                | _(not used)_                                          |
 | `$SolutionPath` _(new per BD-10)_                  | `ATAP.Utilities.Production.slnf` (pilot monitor)   | `AceCommander.sln`                                 | _(not used)_                                                | _(not used)_                                          |
 | `$ProjectPath`                                     | `src/ATAP.Utilities.StronglyTypedId/ATAP.Utilities.StronglyTypedId.csproj` (pilot monitor) | project directory or `.csproj` for NBGV | _(not used)_                                                | _(not used)_                                          |
@@ -504,8 +506,8 @@ definition, or runbook examples. The exact Bitwarden item names, and the
 minimum scope each key carries (ProGet: read on the three Experimental feeds
 only — not promote or delete; BuildMaster: release-create and build-start on
 the three durable Applications only), are recorded in the BuildMaster
-configuration runbook. Do not reuse the broad `PROGET_ADMIN_API_KEY` for the
-poller.
+configuration runbook. The poller uses its approved canonical SecretName and
+never receives or exports a resolved ProGet value.
 
 **Runner identity and state-file ACL.** The single active runner executes
 under a dedicated operations service account — not a developer's interactive

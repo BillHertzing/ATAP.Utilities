@@ -58,9 +58,9 @@ function Move-ProGetPackageIntraTier {
     The ProGet base URL (e.g., 'http://localhost:50000').
     Falls back to: $global:settings via configRootKeys → $global:ProGetBaseUrl.
 
-.PARAMETER ApiKey
-    The API key for ProGet. Falls back to: $env:PROGET_BUILDMASTER_API_KEY →
-    env var via configRootKeys.
+.PARAMETER ProGetApiKeySecretName
+    Bitwarden Secrets Manager SecretName for the ProGet promotion key. Raw
+    API-key values and environment-variable fallbacks are unsupported.
 
 .OUTPUTS
     PSCustomObject with properties: PackageName, Version, SourceFeed,
@@ -122,7 +122,8 @@ function Move-ProGetPackageIntraTier {
 
         [string]$ProGetBaseUrl,
 
-        [string]$ApiKey
+        [ValidateNotNullOrEmpty()]
+        [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key'
     )
 
     begin {
@@ -180,22 +181,6 @@ function Move-ProGetPackageIntraTier {
         }
         $ProGetBaseUrl = $ProGetBaseUrl.TrimEnd('/')
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "ProGetBaseUrl is $ProGetBaseUrl"
-
-        # Check and populate simple parameter: ApiKey
-        $ApiKey = Get-PVal -ParameterName 'ApiKey' -originalPSBoundParameters $PSBoundParameters -dottedPath 'ApiKey' -DefaultValue $ApiKey
-        if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-            $ApiKey = $env:PROGET_BUILDMASTER_API_KEY
-        }
-        if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-            $errorMessage = 'ApiKey could not be resolved. Pass it explicitly or set $env:PROGET_BUILDMASTER_API_KEY.'
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-            throw $errorMessage
-        }
-
-        $headers = @{
-            'Accept'   = 'application/json'
-            'X-ApiKey' = $ApiKey
-        }
 
         # Validate that source/destination follow expected Phase 2 push/pull feed pair naming.
         # Also support legacy tier aliases (testing -> qa, production -> stable).
@@ -279,6 +264,24 @@ function Move-ProGetPackageIntraTier {
     }
 
     process {
+        if ($WhatIfPreference) {
+            return [PSCustomObject]@{
+                PackageName = $Name; Version = $Version; SourceFeed = $FromFeed
+                DestinationFeed = $ToFeed; ScanPassed = $false
+                Promoted = $false; Reason = 'WhatIf'
+            }
+        }
+
+        try {
+            $apiKey = [string](Get-SecretATAP -SecretName $ProGetApiKeySecretName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop)
+        } catch {
+            throw "Unable to resolve the ProGet API key from SecretName '$ProGetApiKeySecretName'."
+        }
+        if ([string]::IsNullOrWhiteSpace($apiKey)) {
+            throw "The ProGet secret named '$ProGetApiKeySecretName' resolved to an empty value."
+        }
+        $headers = @{ 'Accept' = 'application/json'; 'X-ApiKey' = $apiKey }
+
         # ── Step 1: Verify package exists in source feed ─────────────────────
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Verifying '$Name' v$Version exists in feed '$FromFeed'"
 
@@ -361,9 +364,10 @@ function Move-ProGetPackageIntraTier {
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from $promoteUrl" -Tag 'RestCall'
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Move successful'
             } catch {
-                $errorMessage = "Failed to move '$Name' v$Version from '$FromFeed' to '$ToFeed'. Exception: $($_.Exception.Message)"
+                $safeException = ([string]$_.Exception.Message).Replace($apiKey, '***')
+                $errorMessage = "Failed to move '$Name' v$Version from '$FromFeed' to '$ToFeed'. Exception: $safeException"
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-                throw
+                throw $errorMessage
             }
         }
 
@@ -375,7 +379,7 @@ function Move-ProGetPackageIntraTier {
             ScanPassed      = $true
             Promoted        = $true
             Reason          = 'Intra-tier move after scan'
-            Response        = $response
+            Response        = if ($null -eq $response) { $null } else { (($response | Out-String).Trim()).Replace($apiKey, '***') }
         }
     }
 

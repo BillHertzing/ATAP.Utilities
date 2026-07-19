@@ -65,9 +65,9 @@
     Optional ProGet base URL forwarded to Move-ProGetPackageInterTier. BuildMaster
     runners should pass this explicitly because they run in a profileless shell.
 
-.PARAMETER ApiKey
-    Optional ProGet API key forwarded to Move-ProGetPackageInterTier. The value
-    is never logged.
+.PARAMETER ProGetApiKeySecretName
+    Bitwarden Secrets Manager SecretName forwarded to
+    Move-ProGetPackageInterTier. Raw API-key values are unsupported.
 
 .OUTPUTS
     [PSCustomObject] with at least these properties (per V3 plan S2.1):
@@ -167,7 +167,8 @@ function Promote-ProGetPackage {
         [string]$ProGetBaseUrl,
 
         [Parameter(Mandatory = $false)]
-        [string]$ApiKey
+        [ValidateNotNullOrEmpty()]
+        [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key'
     )
 
     begin {
@@ -225,15 +226,12 @@ function Promote-ProGetPackage {
                 FromFeed    = $FromFeed
                 ToFeed      = $ToFeed
                 Reason      = $Reason
+                ProGetApiKeySecretName = $ProGetApiKeySecretName
                 ErrorAction = 'Stop'
             }
             if (-not [string]::IsNullOrWhiteSpace($ProGetBaseUrl)) {
                 $moveParams['ProGetBaseUrl'] = $ProGetBaseUrl
             }
-            if (-not [string]::IsNullOrWhiteSpace($ApiKey)) {
-                $moveParams['ApiKey'] = $ApiKey
-            }
-
             $innerResult = Move-ProGetPackageInterTier @moveParams
 
             # Inner cmdlet returns a PSCustomObject with a Promoted property.

@@ -110,7 +110,7 @@ Describe 'Publish-PSModuleToProGetFeed' {
       param($Tier, $Expected)
 
       # Inject API key via Bitwarden helper override (function-scope; visible through Get-Command).
-      function global:Get-SecretATAP { param([string]$SecretName) return 'dummy-key' }
+      function global:Get-SecretATAP { [CmdletBinding()] param([string]$SecretName, [string]$SecretStoreType) return 'dummy-key' }
       try {
         $result = Publish-PSModuleToProGetFeed -NupkgPath $script:fakeNupkg -Tier $Tier
         $result.FeedName | Should -Be $Expected
@@ -126,7 +126,8 @@ Describe 'Publish-PSModuleToProGetFeed' {
     It 'Uses Get-SecretATAP when available' {
       $script:bwCalls = 0
       function global:Get-SecretATAP {
-        param([string]$SecretName)
+        [CmdletBinding()]
+        param([string]$SecretName, [string]$SecretStoreType)
         $script:bwCalls++
         return 'bw-secret-value'
       }
@@ -139,46 +140,43 @@ Describe 'Publish-PSModuleToProGetFeed' {
       }
     }
 
-    It 'Falls back to env var when Get-SecretATAP is absent' {
-      # Ensure Get-SecretATAP is not defined.
-      Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
-
-      # Monkey-patch [Environment]::GetEnvironmentVariable via a wrapper function isn't possible,
-      # so instead override Get-Command so the cmdlet skips the BW path, and seed a Process env var
-      # that the User-scope getter won't see. That means we need another shim: override the whole
-      # API key resolution by providing Get-SecretATAP that returns an empty string first,
-      # then the cmdlet falls through to env var. To make the env var visible at User scope we
-      # temporarily set it.
+    It 'Does not fall back to an environment variable when secret resolution fails' {
       $envName = 'PROGET_APIKEY_POWERSHELLGET_INTEGRATION'
       [Environment]::SetEnvironmentVariable($envName, 'env-api-key', 'User')
+      function global:Get-SecretATAP { [CmdletBinding()] param([string]$SecretName, [string]$SecretStoreType) throw 'secret unavailable' }
       try {
-        $result = Publish-PSModuleToProGetFeed -NupkgPath $script:fakeNupkg -Tier Beta
-        $result.Published | Should -BeTrue
-        $result.FeedName | Should -Be 'powershellget-integration'
+        { Publish-PSModuleToProGetFeed -NupkgPath $script:fakeNupkg -Tier Beta } |
+          Should -Throw -ExpectedMessage '*ProGet.BuildMaster.API.Key*'
       } finally {
         [Environment]::SetEnvironmentVariable($envName, $null, 'User')
+        Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
       }
     }
 
-    It 'Throws when neither Bitwarden nor env var provides a key' {
-      Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
-      $envName = 'PROGET_APIKEY_POWERSHELLGET_QA'
-      [Environment]::SetEnvironmentVariable($envName, $null, 'User')
-
-      { Publish-PSModuleToProGetFeed -NupkgPath $script:fakeNupkg -Tier QA } |
-        Should -Throw -ExpectedMessage '*Unable to resolve ProGet API key*'
+    It 'Fails closed when the named secret resolves empty' {
+      function global:Get-SecretATAP { [CmdletBinding()] param([string]$SecretName, [string]$SecretStoreType) return '' }
+      try {
+        { Publish-PSModuleToProGetFeed -NupkgPath $script:fakeNupkg -Tier QA } |
+          Should -Throw -ExpectedMessage '*resolved to an empty value*'
+      } finally {
+        Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
+      }
     }
   }
 
   Context 'WhatIf short-circuit' {
-    It 'Does not call Publish-PSResource when -WhatIf is supplied' {
-      function global:Get-SecretATAP { param([string]$SecretName) return 'dummy' }
+    It 'Performs no secret lookup, repository mutation, or publish under -WhatIf' {
+      Mock Get-SecretATAP { throw 'must not be called' }
       try {
         $result = Publish-PSModuleToProGetFeed -NupkgPath $script:fakeNupkg -Tier Sprint -WhatIf
         $result.Published | Should -BeFalse
         $result.FeedName | Should -Be 'powershellget-experimental'
         $result.ResponseSummary | Should -Match 'WhatIf'
         Assert-MockCalled Publish-PSResource -Times 0 -Exactly -Scope It
+        Assert-MockCalled Get-SecretATAP -Times 0 -Exactly -Scope It
+        Assert-MockCalled Get-PSResourceRepository -Times 0 -Exactly -Scope It
+        Assert-MockCalled Register-PSResourceRepository -Times 0 -Exactly -Scope It
+        Assert-MockCalled Set-PSResourceRepository -Times 0 -Exactly -Scope It
       } finally {
         Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
       }
@@ -187,7 +185,7 @@ Describe 'Publish-PSModuleToProGetFeed' {
 
   Context 'PSResourceRepository registration' {
     It 'Registers the repository when missing' {
-      function global:Get-SecretATAP { param([string]$SecretName) return 'dummy' }
+      function global:Get-SecretATAP { [CmdletBinding()] param([string]$SecretName, [string]$SecretStoreType) return 'dummy' }
       Mock Get-PSResourceRepository { $null }
       try {
         Publish-PSModuleToProGetFeed -NupkgPath $script:fakeNupkg -Tier Alpha | Out-Null
@@ -199,7 +197,7 @@ Describe 'Publish-PSModuleToProGetFeed' {
     }
 
     It 'Updates the repository when URI differs' {
-      function global:Get-SecretATAP { param([string]$SecretName) return 'dummy' }
+      function global:Get-SecretATAP { [CmdletBinding()] param([string]$SecretName, [string]$SecretStoreType) return 'dummy' }
       Mock Get-PSResourceRepository { [PSCustomObject]@{ Name = 'powershellget-development'; Uri = 'https://old.example/' } }
       try {
         Publish-PSModuleToProGetFeed -NupkgPath $script:fakeNupkg -Tier Alpha | Out-Null
@@ -213,7 +211,7 @@ Describe 'Publish-PSModuleToProGetFeed' {
 
   Context 'Validation' {
     It 'Throws when NupkgPath does not exist' {
-      function global:Get-SecretATAP { param([string]$SecretName) return 'dummy' }
+      function global:Get-SecretATAP { [CmdletBinding()] param([string]$SecretName, [string]$SecretStoreType) return 'dummy' }
       try {
         { Publish-PSModuleToProGetFeed -NupkgPath 'C:/does/not/exist.nupkg' -Tier Alpha } |
           Should -Throw -ExpectedMessage '*does not exist*'
@@ -223,7 +221,7 @@ Describe 'Publish-PSModuleToProGetFeed' {
     }
 
     It 'Throws when NupkgPath is not a .nupkg' {
-      function global:Get-SecretATAP { param([string]$SecretName) return 'dummy' }
+      function global:Get-SecretATAP { [CmdletBinding()] param([string]$SecretName, [string]$SecretStoreType) return 'dummy' }
       $wrongExt = Join-Path $script:tempRoot 'NotANupkg.zip'
       Set-Content -LiteralPath $wrongExt -Value 'x' -Encoding Ascii
       try {

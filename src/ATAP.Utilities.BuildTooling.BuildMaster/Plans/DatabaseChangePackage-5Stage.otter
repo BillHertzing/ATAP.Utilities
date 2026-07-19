@@ -11,12 +11,8 @@
 #   $Branch             - source branch name supplied by monitor/poller
 #   $SourcePath         - absolute path to the developer/build worktree
 #   $ProGetBaseUrl      - Base URL of the ProGet server hosting the feeds
-#   ProGet API key      - supplied to the runner through process environment
-#                         variable PROGET_BUILDMASTER_API_KEY or
-#                         PROGET_ADMIN_API_KEY; do NOT pass secrets in Arguments.
-#                         The runner resolves the key and the database
-#                         publish/promote cmdlets use it without it ever
-#                         appearing in command-line args.
+#   ProGet API key      - Arguments carry only ProGet.BuildMaster.API.Key as a
+#                         SecretName; no environment fallback is permitted.
 #   BuildMaster stage   - passed explicitly from $PipelineStageName so
 #                         deployment targets do not depend on agent env vars
 #   $BuildMasterBuildId - runtime value from $BuildMasterId(build), used to
@@ -82,7 +78,7 @@ set $BuildMasterExecutionId = $ExecutionId;
 Exec
 (
     FileName: pwsh,
-    Arguments: >>-NoProfile -File "$InvokeDatabasePackageStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -DatabaseApplication "$DatabaseApplication" -DatabaseStream "$DatabaseStream" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetBaseUrl" -ExperimentalDatabaseDBConnectionStringSecretName "$ExperimentalDatabaseDBConnectionStringSecretName" -DevelopmentDatabaseDBConnectionStringSecretName "$DevelopmentDatabaseDBConnectionStringSecretName" -IntegrationDatabaseDBConnectionStringSecretName "$IntegrationDatabaseDBConnectionStringSecretName" -QADatabaseDBConnectionStringSecretName "$QADatabaseDBConnectionStringSecretName" -ProductionDatabaseDBConnectionStringSecretName "$ProductionDatabaseDBConnectionStringSecretName">>,
+    Arguments: >>-NoProfile -File "$InvokeDatabasePackageStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -DatabaseApplication "$DatabaseApplication" -DatabaseStream "$DatabaseStream" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetBaseUrl" -ProGetApiKeySecretName "ProGet.BuildMaster.API.Key" -ExperimentalDatabaseDBConnectionStringSecretName "$ExperimentalDatabaseDBConnectionStringSecretName" -DevelopmentDatabaseDBConnectionStringSecretName "$DevelopmentDatabaseDBConnectionStringSecretName" -IntegrationDatabaseDBConnectionStringSecretName "$IntegrationDatabaseDBConnectionStringSecretName" -QADatabaseDBConnectionStringSecretName "$QADatabaseDBConnectionStringSecretName" -ProductionDatabaseDBConnectionStringSecretName "$ProductionDatabaseDBConnectionStringSecretName">>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );

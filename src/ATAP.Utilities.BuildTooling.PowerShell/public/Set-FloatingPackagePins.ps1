@@ -47,10 +47,9 @@ function Set-FloatingPackagePins {
     only the internal ATAP.Utilities package family is pinned and third-party
     packages are left untouched.
 
-.PARAMETER ProGetApiKey
-    API key for the ProGet feed. May be omitted for feeds that allow anonymous
-    reads. Accepts a plain [string]; treat as sensitive and pass via environment
-    variable or BuildMaster Application Variable rather than hard-coding.
+.PARAMETER ProGetApiKeySecretName
+    Bitwarden Secrets Manager SecretName for the ProGet read key. Raw API-key
+    values and environment-variable fallbacks are unsupported.
 
 .OUTPUTS
     [pscustomobject] with properties:
@@ -68,7 +67,7 @@ function Set-FloatingPackagePins {
         -ProGetUrl 'http://proget.local:50000' `
         -FeedName 'nuget-integration' `
         -PackageIdPrefix 'ATAP.' `
-        -ProGetApiKey $env:PROGET_ADMIN_API_KEY
+        -ProGetApiKeySecretName 'ProGet.BuildMaster.API.Key'
 
 .LINK
     https://github.com/ATAPUtilities/ATAP.Utilities
@@ -96,7 +95,8 @@ function Set-FloatingPackagePins {
     [string]$PackageIdPrefix = 'ATAP.',
 
     [Parameter()]
-    [string]$ProGetApiKey
+    [ValidateNotNullOrEmpty()]
+    [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key'
   )
 
   begin {
@@ -160,10 +160,15 @@ function Set-FloatingPackagePins {
       $packageIdLower = $PackageId.ToLower()
       $url = "$proGetBaseUrl/nuget/$FeedName/v3/flatcontainer/$packageIdLower/index.json"
 
-      $headers = @{}
-      if ($ProGetApiKey) {
-        $headers['X-ApiKey'] = $ProGetApiKey
+      try {
+        $apiKey = [string](Get-SecretATAP -SecretName $ProGetApiKeySecretName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop)
+      } catch {
+        throw "Unable to resolve the ProGet API key from SecretName '$ProGetApiKeySecretName'."
       }
+      if ([string]::IsNullOrWhiteSpace($apiKey)) {
+        throw "The ProGet secret named '$ProGetApiKeySecretName' resolved to an empty value."
+      }
+      $headers = @{ 'X-ApiKey' = $apiKey }
 
       try {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling $url" -Tag 'RestCall'
@@ -171,7 +176,7 @@ function Set-FloatingPackagePins {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from $url" -Tag 'RestCall'
       } catch {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-          -Message "Package '$PackageId' not found in feed '$FeedName': $($_.Exception.Message)"
+          -Message "Package '$PackageId' not found in feed '$FeedName': $(([string]$_.Exception.Message).Replace($apiKey, '***'))"
         return $null
       }
 
@@ -200,6 +205,15 @@ function Set-FloatingPackagePins {
         $errorMessage = "Directory.Packages.props not found at: $resolvedPath"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
         throw $errorMessage
+      }
+
+      if ($WhatIfPreference) {
+        return [pscustomobject]@{
+          PackagePropsPath = $resolvedPath
+          PackageIdPrefix  = $PackageIdPrefix
+          PackagesPinned   = [ordered]@{}
+          PackagesSkipped  = [System.Collections.Generic.List[string]]::new()
+        }
       }
 
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `

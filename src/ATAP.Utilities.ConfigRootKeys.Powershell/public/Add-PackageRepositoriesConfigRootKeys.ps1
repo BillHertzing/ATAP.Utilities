@@ -12,7 +12,7 @@ $global:configRootKeys hashtable in one pass; no sub-fragment files are loaded.
 The keys cover:
 
   - ProGet server endpoint components (scheme, host, port, base URL, service paths)
-  - ProGet API keys
+  - ProGet API-key SecretName references (plus temporary legacy environment-variable names)
   - ProGet upstream connector names (nuget.org, PSGallery, Chocolatey)
   - Feed Collection / Promotion Tier Order
   - NuGet feed per-tier keys for the canonical five-tier pipeline
@@ -89,7 +89,14 @@ function Add-PackageRepositoriesConfigRootKeys {
         $global:configRootKeys.Add('ProGetAdminUriPortConfigRootKey', 'ProGetAdminUriPort')
         $global:configRootKeys.Add('ProGetBaseUrlConfigRootKey', 'ProGetBaseUrl')
 
-        # ── ProGet API Keys ───────────────────────────────────────────────────
+        # ── ProGet API-key SecretName references ──────────────────────────────
+        # These settings carry Bitwarden SecretNames only. Secret values are
+        # resolved at the authenticated-operation boundary by later consumers.
+        $global:configRootKeys.Add('ProGetAdminApiKeySecretNameConfigRootKey', 'ProGetAdminApiKeySecretName')
+        $global:configRootKeys.Add('ProGetBuildMasterApiKeySecretNameConfigRootKey', 'ProGetBuildMasterApiKeySecretName')
+
+        # Temporary compatibility keys for callers awaiting Task 13.62.c/d.
+        # Do not add new consumers of these environment-variable-name settings.
         $global:configRootKeys.Add('ProGetAdminApiKeyConfigRootKey', 'PROGET_ADMIN_API_KEY')
         $global:configRootKeys.Add('ProGetBuildMasterApiKeyConfigRootKey', 'PROGET_BUILDMASTER_API_KEY')
 

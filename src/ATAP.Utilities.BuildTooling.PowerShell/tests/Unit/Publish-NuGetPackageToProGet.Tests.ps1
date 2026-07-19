@@ -59,6 +59,7 @@ BeforeAll {
     $script:savedAdminApiKey = [Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
     $script:secretApiKey = 'super-secret-api-key-XYZ987'
     [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $script:secretApiKey, 'User')
+    function Get-SecretATAP { [CmdletBinding()] param($SecretName, $SecretStoreType) $script:secretApiKey }
 
     $global:configRootKeys = @{
         ProGetFeedCollectionConfigRootKey = 'ProGetFeedCollection'
@@ -217,14 +218,14 @@ Describe 'Publish-NuGetPackageToProGet' -Tag 'Unit' {
             }
         }
 
-        It 'Throws when PROGET_ADMIN_API_KEY is not set' {
-            [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $null, 'User')
-            [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $null, 'Process')
+        It 'Rejects environment fallback when the named secret is unavailable' {
+            Mock Get-SecretATAP { throw 'secret unavailable' }
+            [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'must-not-be-used', 'Process')
             try {
                 { Publish-NuGetPackageToProGet -NupkgPath $script:fakeNupkg } |
-                    Should -Throw -ExpectedMessage '*PROGET_ADMIN_API_KEY*'
+                    Should -Throw -ExpectedMessage '*ProGet.BuildMaster.API.Key*'
             } finally {
-                [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $script:secretApiKey, 'User')
+                [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $null, 'Process')
             }
         }
     }

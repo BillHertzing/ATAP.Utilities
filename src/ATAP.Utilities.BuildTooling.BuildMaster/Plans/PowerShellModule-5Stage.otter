@@ -7,9 +7,8 @@
 #   $SourcePath       - absolute path to the developer/build worktree
 #   $ModuleName       - module folder under src/, e.g. "ATAP.Utilities.PowerShell"
 #   $PackageName      - ProGet package/module ID, normally the same as $ModuleName
-#   ProGet API key    - supplied to the runner through process environment
-#                       variable PROGET_BUILDMASTER_API_KEY or
-#                       PROGET_ADMIN_API_KEY; do not pass secrets in Arguments
+#   ProGet API key    - Arguments carry only ProGet.BuildMaster.API.Key as a
+#                       SecretName; no environment fallback is permitted.
 #   BuildMaster stage - passed explicitly from $PipelineStageName so deployment
 #                       targets do not depend on agent environment variables
 #   $BuildMasterBuildId - runtime value from $BuildMasterId(build), used to
@@ -50,7 +49,7 @@ set $BuildMasterExecutionId = $ExecutionId;
 Exec
 (
     FileName: pwsh,
-    Arguments: >>-NoProfile -File "$InvokePowerShellModuleStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -ModuleName "$ModuleName" -PackageName "$PackageName" -ModulePath "$ModulePath" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetUrl">>,
+    Arguments: >>-NoProfile -File "$InvokePowerShellModuleStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -ModuleName "$ModuleName" -PackageName "$PackageName" -ModulePath "$ModulePath" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "ProGet.BuildMaster.API.Key">>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );

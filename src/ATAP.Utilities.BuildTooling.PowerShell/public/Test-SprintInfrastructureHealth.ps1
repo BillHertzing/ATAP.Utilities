@@ -231,6 +231,7 @@ function Test-SprintInfrastructureHealth {
     # variables create an untracked parallel configuration path and are prohibited.
     $prohibitedSecretEnvironmentVariables = @(
       'PROGET_ADMIN_API_KEY',
+      'PROGET_BUILDMASTER_API_KEY',
       'BUILDMASTER_ADMIN_API_KEY',
       'BUILDMASTER_GH_WEBHOOK_SECRET',
       'BWS_ACCESS_TOKEN',

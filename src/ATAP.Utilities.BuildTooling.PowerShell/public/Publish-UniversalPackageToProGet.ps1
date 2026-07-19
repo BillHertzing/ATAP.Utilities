@@ -18,8 +18,8 @@
           (Stream F is still landing), it falls back first to a tier-named
           environment variable and finally to a local default
           (http://localhost:50000/upack/<feed>/).
-        - Resolves the API key from PROGET_ADMIN_API_KEY (User scope per
-          R-10).
+        - Resolves the API key named by -ProGetApiKeySecretName through
+          Get-SecretATAP immediately before the authenticated request.
         - Invokes `Invoke-RestMethod -Method Put -Uri <feedUri>/<file>
           -InFile <upack> -Headers @{ 'X-ApiKey' = <key> }`.
         - The API key value is NEVER written to any PSFramework log line.
@@ -42,6 +42,11 @@
     Emergency/manual bypass for direct publishes to feeds above Experimental
     without a ceiling check. This is intended for disaster recovery only and is
     logged as a warning.
+
+.PARAMETER ProGetApiKeySecretName
+    Bitwarden Secrets Manager SecretName for the ProGet key. Defaults to the
+    BuildMaster publishing identity. Raw API-key values and environment-variable
+    fallbacks are intentionally unsupported.
 
 .OUTPUTS
     [PSCustomObject] with at least:
@@ -86,7 +91,11 @@ function Publish-UniversalPackageToProGet {
         [string]$CeilingTier,
 
         [Parameter(Mandatory = $false)]
-        [switch]$Force
+        [switch]$Force,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key'
     )
 
     begin {
@@ -188,20 +197,7 @@ function Publish-UniversalPackageToProGet {
             }
         }
 
-        # 4. Resolve API key from PROGET_ADMIN_API_KEY (User scope per R-10).
-        $apiKey = [Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
-        if ([string]::IsNullOrWhiteSpace($apiKey)) {
-            $apiKey = [Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'Process')
-        }
-        if ([string]::IsNullOrWhiteSpace($apiKey)) {
-            $msg = "Unable to resolve ProGet API key. Set the User-scope environment variable 'PROGET_ADMIN_API_KEY'."
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
-            throw $msg
-        }
-        # NEVER log the API key value.
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'ProGet API key resolved from PROGET_ADMIN_API_KEY (value redacted as ***)'
-
-        # 5. WhatIf short-circuit.
+        # 4. WhatIf short-circuit. Secret resolution is deliberately deferred.
         $target = $resolvedUpack
         $action = "PUT to '$feedUri' (Universal feed '$Feed')"
         if (-not $PSCmdlet.ShouldProcess($target, $action)) {
@@ -214,6 +210,19 @@ function Publish-UniversalPackageToProGet {
                 CeilingTier     = $CeilingTier
                 ResponseSummary = "WhatIf: planned upload of '$resolvedUpack' to '$Feed'"
             }
+        }
+
+        # 5. Resolve the key only at the authenticated-operation boundary.
+        $apiKey = $null
+        try {
+            $apiKey = [string](Get-SecretATAP -SecretName $ProGetApiKeySecretName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop)
+        } catch {
+            $msg = "Unable to resolve the ProGet API key from SecretName '$ProGetApiKeySecretName'."
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+            throw $msg
+        }
+        if ([string]::IsNullOrWhiteSpace($apiKey)) {
+            throw "The ProGet secret named '$ProGetApiKeySecretName' resolved to an empty value."
         }
 
         # 6. Invoke the PUT.

@@ -48,12 +48,38 @@ BeforeAll {
 
     $script:baseUrl = 'http://proget.test:50000'
     $script:apiKey  = 'test-api-key'
+    function Get-SecretATAP { [CmdletBinding()] param($SecretName, $SecretStoreType) $script:apiKey }
 }
 
 Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   BeforeEach {
     Mock Write-PSFMessage { }
     $script:MoveProGetIntraTierRestCalls = [System.Collections.Generic.List[object]]::new()
+  }
+
+  Context 'Secret boundary' {
+    It 'performs no secret lookup or REST call under -WhatIf' {
+      Mock Get-SecretATAP { throw 'must not be called' }
+      Mock Invoke-RestMethod { throw 'must not be called' }
+      $result = Move-ProGetPackageIntraTier -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed 'nuget-experimental-push' -ToFeed 'nuget-experimental' `
+        -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key' -WhatIf
+      $result.Promoted | Should -BeFalse
+      Assert-MockCalled Get-SecretATAP -Times 0 -Exactly -Scope It
+      Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It
+    }
+
+    It 'redacts a secret echoed by a promotion failure before throwing' {
+      Mock Invoke-RestMethod { throw $script:apiKey }
+      try {
+        Move-ProGetPackageIntraTier -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'nuget-experimental-push' -ToFeed 'nuget-experimental' `
+          -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
+        throw 'Expected promotion failure.'
+      } catch {
+        $_.Exception.Message | Should -Not -Match ([regex]::Escape($script:apiKey))
+      }
+    }
   }
 
   Context 'Phase 2: valid push -> pull moves' {
@@ -72,7 +98,7 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit', 'PromotedModuleHostSensitive
       $result = Move-ProGetPackageIntraTier `
         -Name 'Test.Package' -Version '1.0.0' `
         -FromFeed $Source -ToFeed $Dest `
-        -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
+        -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
       $result.Promoted | Should -BeTrue
       $result.ScanPassed | Should -BeTrue
       $result.SourceFeed | Should -Be $Source
@@ -87,7 +113,7 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit', 'PromotedModuleHostSensitive
         -Name 'Test.Package' -Version '1.0.0' `
         -FromFeed 'nuget-experimental' -ToFeed 'nuget-experimental' `
         -ScanOnly `
-        -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
+        -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
       $result.Promoted | Should -BeFalse
       $result.ScanPassed | Should -BeTrue
       $result.Reason | Should -Be 'ScanOnly mode'
@@ -97,7 +123,7 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit', 'PromotedModuleHostSensitive
       $result = Move-ProGetPackageIntraTier `
         -Name 'Test.Package' -Version '1.0.0' `
         -FromFeed 'nuget-experimental' -ToFeed 'nuget-experimental' `
-        -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
+        -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
       $result.Promoted | Should -BeFalse
       $result.Reason | Should -Be 'Same feed (Phase 1)'
     }
@@ -110,7 +136,7 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit', 'PromotedModuleHostSensitive
       $result = Move-ProGetPackageIntraTier `
         -Name 'Test.Package' -Version '1.0.0' `
         -FromFeed 'nuget-testing-push' -ToFeed 'nuget-testing' `
-        -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
+        -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
       $result.Promoted | Should -BeTrue
     }
 
@@ -118,7 +144,7 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit', 'PromotedModuleHostSensitive
       $result = Move-ProGetPackageIntraTier `
         -Name 'Test.Package' -Version '1.0.0' `
         -FromFeed 'nuget-production-push' -ToFeed 'nuget-production' `
-        -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
+        -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
       $result.Promoted | Should -BeTrue
     }
   }
@@ -129,7 +155,7 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit', 'PromotedModuleHostSensitive
       { Move-ProGetPackageIntraTier `
           -Name 'Test.Package' -Version '1.0.0' `
           -FromFeed 'nuget-experimental-push' -ToFeed 'nuget-development' `
-          -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
+          -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
       } | Should -Throw -ExpectedMessage '*same tier*'
     }
   }
@@ -140,7 +166,7 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit', 'PromotedModuleHostSensitive
       { Move-ProGetPackageIntraTier `
           -Name 'Test.Package' -Version '1.0.0' `
           -FromFeed 'nuget-development' -ToFeed 'nuget-qa' `
-          -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
+          -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
       } | Should -Throw -ExpectedMessage '*push feed*'
     }
   }
@@ -151,7 +177,7 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit', 'PromotedModuleHostSensitive
       { Move-ProGetPackageIntraTier `
           -Name 'Test.Package' -Version '1.0.0' `
           -FromFeed 'nuget-development-push' -ToFeed 'nuget-qa-push' `
-          -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
+          -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
       } | Should -Throw -ExpectedMessage '*pull feed*'
     }
   }
@@ -162,7 +188,7 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit', 'PromotedModuleHostSensitive
       { Move-ProGetPackageIntraTier `
           -Name 'Test.Package' -Version '1.0.0' `
           -FromFeed 'nuget-development-push' -ToFeed 'powershellget-development' `
-          -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
+          -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
       } | Should -Throw -ExpectedMessage '*package type*'
     }
   }
@@ -173,7 +199,7 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit', 'PromotedModuleHostSensitive
       { Move-ProGetPackageIntraTier `
           -Name 'Test.Package' -Version '1.0.0' `
           -FromFeed 'nuget-staging-push' -ToFeed 'nuget-staging' `
-          -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
+          -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
       } | Should -Throw -ExpectedMessage '*tiers must be one of*'
     }
   }
@@ -184,7 +210,7 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit', 'PromotedModuleHostSensitive
       $result = Move-ProGetPackageIntraTier `
         -Name 'Test.Package' -Version '2.0.0' `
         -FromFeed 'nuget-integration-push' -ToFeed 'nuget-integration' `
-        -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
+        -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
       $result.PSObject.Properties.Name | Should -Contain 'ScanPassed'
       $result.PSObject.Properties.Name | Should -Contain 'Promoted'
       $result.PSObject.Properties.Name | Should -Contain 'Reason'
@@ -200,7 +226,7 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit', 'PromotedModuleHostSensitive
         -PackageName 'Test.Package' -Version '1.0.0' `
         -SourceFeed 'nuget-integration-push' -DestinationFeed 'nuget-integration' `
         -Comments 'legacy alias call' `
-        -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey
+        -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
       $result.Promoted | Should -BeTrue
       $result.ScanPassed | Should -BeTrue
     }
@@ -212,7 +238,7 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit', 'PromotedModuleHostSensitive
         -Name 'Test.Package' -Version '1.0.0' `
         -FromFeed 'powershellget-integration-push' -ToFeed 'powershellget-integration' `
         -Reason 'unit intra-tier promotion' `
-        -ProGetBaseUrl $script:baseUrl -ApiKey $script:apiKey | Out-Null
+        -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key' | Out-Null
 
       $postCall = @($script:MoveProGetIntraTierRestCalls | Where-Object { $_.Method -eq 'POST' })[0]
       $postCall | Should -Not -BeNullOrEmpty

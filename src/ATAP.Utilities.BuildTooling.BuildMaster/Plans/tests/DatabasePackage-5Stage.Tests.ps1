@@ -95,17 +95,17 @@ Describe 'V4-E08 runner shape: Invoke-DatabasePackageBuildMasterStage.ps1 contra
             'DatabaseStream',
             'Branch',
             'Stage',
-            'ProGetUrl'
+            'ProGetUrl',
+            'ProGetApiKeySecretName'
         )) {
             $script:RunnerText | Should -Match "\[string\]\$\b$param\b"
         }
     }
 
-    It 'runner resolves API key from User-scope environment, not from a parameter' {
-        $script:RunnerText | Should -Match 'PROGET_BUILDMASTER_API_KEY'
-        $script:RunnerText | Should -Match 'PROGET_ADMIN_API_KEY'
-        $script:RunnerText | Should -Match "GetEnvironmentVariable\('PROGET_BUILDMASTER_API_KEY',\s*'User'\)"
-        $script:RunnerText | Should -Not -Match '\[Parameter\(Mandatory\)\][^\]]*\$ProGetApiKey'
+    It 'runner carries only the canonical BuildMaster SecretName' {
+        $script:RunnerText | Should -Match "ProGetApiKeySecretName\s*=\s*'ProGet\.BuildMaster\.API\.Key'"
+        $script:RunnerText | Should -Not -Match 'PROGET_(?:BUILDMASTER|ADMIN)_API_KEY'
+        $script:RunnerText | Should -Not -Match '\$ProGetApiKey\b'
     }
 
     It 'runner invokes Publish-DatabaseChangePackageToProGet (no inline dotnet nuget push)' {

@@ -14,25 +14,17 @@ BeforeAll {
 
     # Stub the delegate cmdlets BEFORE dot-sourcing the SUT so its BEGIN block
     # finds them and does not dot-source the real siblings; Mock then replaces them.
-    if (-not (Get-Command Promote-ProGetPackage -ErrorAction SilentlyContinue)) {
-        function global:Promote-ProGetPackage {
-            param($Name, $Version, $FromFeed, $ToFeed, $Reason, $CeilingTier, [switch]$NoCeilingCheck)
-        }
+    function Promote-ProGetPackage {
+        param($Name, $Version, $FromFeed, $ToFeed, $Reason, $CeilingTier, [switch]$NoCeilingCheck, $ProGetApiKeySecretName)
     }
-    if (-not (Get-Command Promote-DatabaseChangePackage -ErrorAction SilentlyContinue)) {
-        function global:Promote-DatabaseChangePackage {
-            param($PackageId, $Version, $FromFeed, $ToFeed, $Reason, $Application, $CeilingTier, [switch]$NoCeilingCheck)
-        }
+    function Promote-DatabaseChangePackage {
+        param($PackageId, $Version, $FromFeed, $ToFeed, $Reason, $Application, $CeilingTier, [switch]$NoCeilingCheck, $ProGetApiKeySecretName)
     }
-    if (-not (Get-Command Invoke-PromotedModuleTests -ErrorAction SilentlyContinue)) {
-        function global:Invoke-PromotedModuleTests {
-            param($Name, $Version, $Feed, $Tier, $ResultsPath, $ModuleSourceRoot, $WorkingDirectory, $ProGetBaseUrl, $ApiKey)
-        }
+    function Invoke-PromotedModuleTests {
+        param($Name, $Version, $Feed, $Tier, $ResultsPath, $ModuleSourceRoot, $WorkingDirectory, $ProGetBaseUrl, $ProGetApiKeySecretName)
     }
-    if (-not (Get-Command Get-AgentTextFromDatabase -ErrorAction SilentlyContinue)) {
-        function global:Get-AgentTextFromDatabase {
-            param($ConnectionString, $SourceId)
-        }
+    function Get-AgentTextFromDatabase {
+        param($ConnectionString, $SourceId)
     }
 
     . (Join-Path $publicDir 'Invoke-PairedTierPromotion.ps1')
@@ -181,19 +173,19 @@ Describe 'Invoke-PairedTierPromotion' -Tag 'Unit', 'PromotedModuleHostSensitive'
             $r.Succeeded | Should -BeTrue
             Assert-MockCalled Invoke-PromotedModuleTests -Times 0 -Exactly -Scope It
         }
-        It 'Forwards -ProGetBaseUrl and -ApiKey to Invoke-PromotedModuleTests (direct-endpoint restore)' {
+        It 'Forwards -ProGetBaseUrl and -ProGetApiKeySecretName to Invoke-PromotedModuleTests (direct-endpoint restore)' {
             $r = Invoke-PairedTierPromotion -ModuleVersion '1' -DatabasePackageVersion '1' -Tier 'Development' `
-                -ProGetBaseUrl 'http://localhost:50000' -ApiKey 'secret-key'
+                -ProGetBaseUrl 'http://localhost:50000' -ProGetApiKeySecretName 'Test.ProGet.API.Key'
             $r.Succeeded | Should -BeTrue
             Assert-MockCalled Invoke-PromotedModuleTests -Times 1 -Exactly -Scope It -ParameterFilter {
-                $ProGetBaseUrl -eq 'http://localhost:50000' -and $ApiKey -eq 'secret-key'
+                $ProGetBaseUrl -eq 'http://localhost:50000' -and $ProGetApiKeySecretName -eq 'Test.ProGet.API.Key'
             }
         }
         It 'Does not pass ProGet direct-endpoint args when they are not supplied' {
             $r = Invoke-PairedTierPromotion -ModuleVersion '1' -DatabasePackageVersion '1' -Tier 'Development'
             $r.Succeeded | Should -BeTrue
             Assert-MockCalled Invoke-PromotedModuleTests -Times 1 -Exactly -Scope It -ParameterFilter {
-                [string]::IsNullOrEmpty($ProGetBaseUrl) -and [string]::IsNullOrEmpty($ApiKey)
+                [string]::IsNullOrEmpty($ProGetBaseUrl) -and $ProGetApiKeySecretName -eq 'ProGet.BuildMaster.API.Key'
             }
         }
     }

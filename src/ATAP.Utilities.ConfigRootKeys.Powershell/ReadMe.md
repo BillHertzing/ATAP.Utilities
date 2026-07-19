@@ -28,6 +28,13 @@ The SQL topology section defines only host-invariant schema keys. ATAP.IAC's
 `HostSettings.IAC.Fragment.SqlInstanceTopology.ps1` remains the single source of
 truth for current/planned hosts, instance names, filesystem paths, and TCP ports.
 
+The package-repository section also defines canonical settings keys for ProGet
+credential **SecretName references**: `ProGetAdminApiKeySecretName` and
+`ProGetBuildMasterApiKeySecretName`. ATAP.IAC supplies names such as
+`ProGet.Admin.API.Key`; neither ConfigRootKeys nor host settings contain secret
+values. Older environment-variable-name keys remain compatibility-only while
+Sprint 0013 Task 13.62.c/d migrates callers.
+
 ## Design rules
 
 - **Eponymous functions only.** Every file in `public/` defines exactly one advanced

@@ -13,11 +13,9 @@
       3. User-scope environment variable PROGET_BASE_URL
       4. $global:Settings via $global:configRootKeys (ProGetAdminUriScheme/Host/Port keys)
 
-    The API key is resolved from (in priority order):
-      1. -ApiKey parameter
-      2. $env:PROGET_API_KEY (process scope)
-      3. User-scope environment variable PROGET_API_KEY
-      4. $global:Settings via $global:configRootKeys (ProGetAdminApiKeyConfigRootKey)
+    The API key is resolved by passing ProGetApiKeySecretName to Get-SecretATAP
+    immediately before the authenticated request. Raw API-key parameters and
+    environment-variable fallbacks are intentionally unsupported.
 
     If -WhatIf is supplied, the function returns the planned object without
     contacting the ProGet API.
@@ -32,9 +30,8 @@
     The ProGet server base URL (e.g., 'http://localhost:50000').
     Optional — resolved from $global:settings or environment if omitted.
 
-.PARAMETER ApiKey
-    The ProGet API key with feed management permissions.
-    Optional — resolved from $global:settings or environment if omitted.
+.PARAMETER ProGetApiKeySecretName
+    Name of the Bitwarden secret containing the ProGet administration API key.
 
 .OUTPUTS
     [PSCustomObject] with fields:
@@ -50,7 +47,7 @@
 
 .EXAMPLE
     Rename-ProGetFeed -OldFeedName 'old-feed' -NewFeedName 'new-feed' `
-        -ProGetBaseUrl 'http://localhost:50000' -ApiKey 'my-api-key' -WhatIf
+        -ProGetBaseUrl 'http://localhost:50000' -ProGetApiKeySecretName 'ProGet.Admin.API.Key' -WhatIf
 
     Shows what would happen without contacting ProGet.
 
@@ -69,7 +66,8 @@ function Rename-ProGetFeed {
 
     [string]$ProGetBaseUrl,
 
-    [string]$ApiKey
+    [ValidateNotNullOrEmpty()]
+    [string]$ProGetApiKeySecretName = 'ProGet.Admin.API.Key'
   )
 
   begin {
@@ -102,22 +100,9 @@ function Rename-ProGetFeed {
     $ProGetBaseUrl = $ProGetBaseUrl.TrimEnd('/')
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "ProGetBaseUrl resolved to '$ProGetBaseUrl'"
 
-    # Resolve ApiKey: parameter → env var (process) → env var (user) → global settings
-    if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-      $ApiKey = [Environment]::GetEnvironmentVariable('PROGET_API_KEY', 'Process')
-    }
-    if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-      $ApiKey = [Environment]::GetEnvironmentVariable('PROGET_API_KEY', 'User')
-    }
-    if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-      if ($null -ne $global:configRootKeys -and $null -ne $global:Settings) {
-        $ApiKey = $global:Settings[$global:configRootKeys['ProGetAdminApiKeyConfigRootKey']]
-      }
-    }
-    if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-      $errorMessage = 'ApiKey could not be resolved. Pass -ApiKey explicitly, set env var PROGET_API_KEY, or configure $global:Settings via $global:configRootKeys.'
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-      throw $errorMessage
+    if (-not $PSBoundParameters.ContainsKey('ProGetApiKeySecretName') -and $global:configRootKeys -and $global:Settings) {
+      $settingName = $global:configRootKeys['ProGetAdminApiKeySecretNameConfigRootKey']
+      if ($settingName -and $global:Settings[$settingName]) { $ProGetApiKeySecretName = [string]$global:Settings[$settingName] }
     }
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "All parameters validated. OldFeedName='$OldFeedName' NewFeedName='$NewFeedName'"
@@ -126,11 +111,6 @@ function Rename-ProGetFeed {
   process {
     $uri = "$ProGetBaseUrl/api/management/feeds/update/$([uri]::EscapeDataString($OldFeedName))"
     $body = @{ name = $NewFeedName } | ConvertTo-Json -Compress
-    $headers = @{
-      'X-ApiKey'     = $ApiKey
-      'Content-Type' = 'application/json'
-    }
-
     if (-not $PSCmdlet.ShouldProcess("ProGet feed '$OldFeedName'", "Rename to '$NewFeedName'")) {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "WhatIf active — skipping API call to $uri"
       return [PSCustomObject]@{
@@ -143,14 +123,18 @@ function Rename-ProGetFeed {
 
     $response = $null
     try {
+      if (-not (Get-Command Get-SecretATAP -ErrorAction SilentlyContinue)) { throw 'Get-SecretATAP is required for ProGet authentication.' }
+      $adminApiKey = [string](Get-SecretATAP -SecretName $ProGetApiKeySecretName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop)
+      if ([string]::IsNullOrWhiteSpace($adminApiKey)) { throw "Secret '$ProGetApiKeySecretName' did not resolve to a ProGet API key." }
+      $headers = @{ 'X-ApiKey' = $adminApiKey; 'Content-Type' = 'application/json' }
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling $uri" -Tag 'RestCall'
       $response = Invoke-RestMethod -Uri $uri -Method Post -Headers $headers -Body $body -ErrorAction Stop
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from $uri" -Tag 'RestCall'
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Feed '$OldFeedName' successfully renamed to '$NewFeedName'."
     } catch {
-      $errorMessage = "Failed to rename ProGet feed '$OldFeedName' to '$NewFeedName'. Exception: $($_.Exception.Message)"
+      $errorMessage = "Failed to rename ProGet feed '$OldFeedName' to '$NewFeedName'. Verify ProGet connectivity and the secret named '$ProGetApiKeySecretName'."
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-      throw
+      throw $errorMessage
     } finally {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving $fn" -Tag 'Trace'
     }

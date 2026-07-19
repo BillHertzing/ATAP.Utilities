@@ -61,7 +61,7 @@ set $BuildMasterExecutionId = $ExecutionId;
 Exec
 (
     FileName: pwsh,
-    Arguments: >>-NoProfile -File "$InvokeCSharpPackageStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -MetaPackageName "$MetaPackageName" -PackageName "$PackageName" -ProjectPath "$ProjectPath" -SolutionPath "$SolutionPath" -Configuration "$Configuration" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "ProGet.BuildMaster.API.Key">>,
+    Arguments: >>-NoProfile -File "$InvokeCSharpPackageStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -MetaPackageName "$MetaPackageName" -PackageName "$PackageName" -ProjectPath "$ProjectPath" -SolutionPath "$SolutionPath" -Configuration "$Configuration" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName">>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );

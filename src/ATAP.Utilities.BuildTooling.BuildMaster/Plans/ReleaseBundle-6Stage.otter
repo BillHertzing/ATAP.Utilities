@@ -122,7 +122,7 @@ stage Experimental
     Exec
     (
         FileName: pwsh,
-        Arguments: >>-NoProfile -File "$NewReleaseBundleBuildMasterPackageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ContextDirectory "$BuildContextDir" -ReleaseBundleContextFile "$ReleaseBundleContextFile" -ReleaseBundleNameFile "$ReleaseBundleNameFile" -ReleaseBundleResolvedVersionFile "$ResolvedPackageVersionFile" -ReleaseBundleBundleVersionFile "$ReleaseBundleBundleVersionFile" -ReleaseBundlePathFile "$ReleaseBundlePathFile" -ReleaseBundleManifestPathFile "$ReleaseBundleManifestPathFile" -ReleaseBundleExperimentalFeedName "$ReleaseBundleExperimentalFeedName" -CeilingTier "$CeilingTier" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "ProGet.BuildMaster.API.Key">>,
+        Arguments: >>-NoProfile -File "$NewReleaseBundleBuildMasterPackageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ContextDirectory "$BuildContextDir" -ReleaseBundleContextFile "$ReleaseBundleContextFile" -ReleaseBundleNameFile "$ReleaseBundleNameFile" -ReleaseBundleResolvedVersionFile "$ResolvedPackageVersionFile" -ReleaseBundleBundleVersionFile "$ReleaseBundleBundleVersionFile" -ReleaseBundlePathFile "$ReleaseBundlePathFile" -ReleaseBundleManifestPathFile "$ReleaseBundleManifestPathFile" -ReleaseBundleExperimentalFeedName "$ReleaseBundleExperimentalFeedName" -CeilingTier "$CeilingTier" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName">>,
         WorkingDirectory: $SourcePath,
         SuccessExitCode: 0
     );
@@ -153,7 +153,7 @@ stage Development
     Exec
     (
         FileName: pwsh,
-        Arguments: >>-NoProfile -File "$PromoteReleaseBundleScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -Stage Development -ReleaseBundleNameFile "$ReleaseBundleNameFile" -ReleaseBundleBundleVersionFile "$ReleaseBundleBundleVersionFile" -FromFeed "$ReleaseBundleExperimentalFeedName" -ToFeed "$ReleaseBundleDevelopmentFeedName" -CeilingTier "$CeilingTier" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "ProGet.BuildMaster.API.Key">>,
+        Arguments: >>-NoProfile -File "$PromoteReleaseBundleScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -Stage Development -ReleaseBundleNameFile "$ReleaseBundleNameFile" -ReleaseBundleBundleVersionFile "$ReleaseBundleBundleVersionFile" -FromFeed "$ReleaseBundleExperimentalFeedName" -ToFeed "$ReleaseBundleDevelopmentFeedName" -CeilingTier "$CeilingTier" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName">>,
         WorkingDirectory: $SourcePath,
         SuccessExitCode: 0
     );
@@ -176,7 +176,7 @@ stage Integration
     Exec
     (
         FileName: pwsh,
-        Arguments: >>-NoProfile -File "$PromoteReleaseBundleScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -Stage Integration -ReleaseBundleNameFile "$ReleaseBundleNameFile" -ReleaseBundleBundleVersionFile "$ReleaseBundleBundleVersionFile" -FromFeed "$ReleaseBundleDevelopmentFeedName" -ToFeed "$ReleaseBundleIntegrationFeedName" -CeilingTier "$CeilingTier" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "ProGet.BuildMaster.API.Key">>,
+        Arguments: >>-NoProfile -File "$PromoteReleaseBundleScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -Stage Integration -ReleaseBundleNameFile "$ReleaseBundleNameFile" -ReleaseBundleBundleVersionFile "$ReleaseBundleBundleVersionFile" -FromFeed "$ReleaseBundleDevelopmentFeedName" -ToFeed "$ReleaseBundleIntegrationFeedName" -CeilingTier "$CeilingTier" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName">>,
         WorkingDirectory: $SourcePath,
         SuccessExitCode: 0
     );
@@ -214,7 +214,7 @@ stage QA
     Exec
     (
         FileName: pwsh,
-        Arguments: >>-NoProfile -File "$PromoteReleaseBundleScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -Stage QA -ReleaseBundleNameFile "$ReleaseBundleNameFile" -ReleaseBundleBundleVersionFile "$ReleaseBundleBundleVersionFile" -FromFeed "$ReleaseBundleIntegrationFeedName" -ToFeed "$ReleaseBundleQAFeedName" -CeilingTier "$CeilingTier" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "ProGet.BuildMaster.API.Key">>,
+        Arguments: >>-NoProfile -File "$PromoteReleaseBundleScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -Stage QA -ReleaseBundleNameFile "$ReleaseBundleNameFile" -ReleaseBundleBundleVersionFile "$ReleaseBundleBundleVersionFile" -FromFeed "$ReleaseBundleIntegrationFeedName" -ToFeed "$ReleaseBundleQAFeedName" -CeilingTier "$CeilingTier" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName">>,
         WorkingDirectory: $SourcePath,
         SuccessExitCode: 0
     );
@@ -236,7 +236,7 @@ stage Production
     Exec
     (
         FileName: pwsh,
-        Arguments: >>-NoProfile -File "$PromoteReleaseBundleScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -Stage Production -ReleaseBundleNameFile "$ReleaseBundleNameFile" -ReleaseBundleBundleVersionFile "$ReleaseBundleBundleVersionFile" -FromFeed "$ReleaseBundleQAFeedName" -ToFeed "$ReleaseBundleProductionFeedName" -CeilingTier "$CeilingTier" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "ProGet.BuildMaster.API.Key">>,
+        Arguments: >>-NoProfile -File "$PromoteReleaseBundleScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -Stage Production -ReleaseBundleNameFile "$ReleaseBundleNameFile" -ReleaseBundleBundleVersionFile "$ReleaseBundleBundleVersionFile" -FromFeed "$ReleaseBundleQAFeedName" -ToFeed "$ReleaseBundleProductionFeedName" -CeilingTier "$CeilingTier" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName">>,
         WorkingDirectory: $SourcePath,
         SuccessExitCode: 0
     );

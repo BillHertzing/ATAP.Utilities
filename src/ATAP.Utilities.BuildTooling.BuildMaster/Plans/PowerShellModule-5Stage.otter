@@ -7,8 +7,11 @@
 #   $SourcePath       - absolute path to the developer/build worktree
 #   $ModuleName       - module folder under src/, e.g. "ATAP.Utilities.PowerShell"
 #   $PackageName      - ProGet package/module ID, normally the same as $ModuleName
-#   ProGet API key    - Arguments carry only ProGet.BuildMaster.API.Key as a
-#                       SecretName; no environment fallback is permitted.
+#   ProGet API key    - Arguments carry only a SecretName, supplied by the
+#                       per-instance BuildMaster global variable
+#                       $ProGetApiKeySecretName (host-suffixed, e.g.
+#                       ProGet.BuildMaster.API.Key.utat01 per SC-0288/13.66.b);
+#                       no environment fallback is permitted.
 #   BuildMaster stage - passed explicitly from $PipelineStageName so deployment
 #                       targets do not depend on agent environment variables
 #   $BuildMasterBuildId - runtime value from $BuildMasterId(build), used to
@@ -49,7 +52,7 @@ set $BuildMasterExecutionId = $ExecutionId;
 Exec
 (
     FileName: pwsh,
-    Arguments: >>-NoProfile -File "$InvokePowerShellModuleStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -ModuleName "$ModuleName" -PackageName "$PackageName" -ModulePath "$ModulePath" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "ProGet.BuildMaster.API.Key">>,
+    Arguments: >>-NoProfile -File "$InvokePowerShellModuleStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -ModuleName "$ModuleName" -PackageName "$PackageName" -ModulePath "$ModulePath" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName">>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );

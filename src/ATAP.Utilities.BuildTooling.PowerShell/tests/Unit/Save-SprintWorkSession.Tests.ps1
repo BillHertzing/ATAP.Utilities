@@ -366,7 +366,10 @@ Describe 'Save-SprintWorkSession' {
           $latestEntry.ConversationArchiveCreated | Should -BeTrue
           $latestEntry.MemorySnapshotCreated | Should -BeTrue
           $latestEntry.MemoryFileCount | Should -Be 1
-          $latestEntry.ConversationArchivePath | Should -Match 'SprintWorkSession-0007-Conversation-100-sprint-0007-work-items-'
+          # Task 13.20.f: names now carry repo/worktree identity ahead of the branch
+          # tag so two repos sharing a branch name cannot collide.
+          $expectedRepoTag = (Split-Path -Path $script:atapWt -Leaf) -replace '[^A-Za-z0-9\-]', '-'
+          $latestEntry.ConversationArchivePath | Should -Match "SprintWorkSession-0007-Conversation-$([regex]::Escape($expectedRepoTag))-100-sprint-0007-work-items-"
         } finally {
           $global:settings = $savedSettings
         }
@@ -687,6 +690,121 @@ Describe 'Save-SprintWorkSession' {
         if (Test-Path -LiteralPath 'Function:\Save-CopilotCheckpoint') {
           Remove-Item -LiteralPath 'Function:\Save-CopilotCheckpoint' -ErrorAction SilentlyContinue
         }
+      }
+    }
+  }
+
+  Context 'Task 13.20.f — collision-free checkpoint names across repos/worktrees' {
+
+    BeforeAll {
+      $script:checkpointNameHelperPath = Join-Path $PSScriptRoot '..\..\private\New-CheckpointNameComponents.ps1'
+      if (-not (Test-Path -LiteralPath $script:checkpointNameHelperPath)) {
+        throw "Helper not found: $script:checkpointNameHelperPath"
+      }
+      . $script:checkpointNameHelperPath
+    }
+
+    It 'New-CheckpointNameComponents produces four unique conversation and memory names for four checkpoints fired in the same second, from two different repo identities' {
+      # Simulate two stable repos both on branch `main`, checkpointing twice
+      # each — four calls total, no artificial delay between them, so all four
+      # land in the same wall-clock second (the exact defect this task fixes).
+      $calls = @(
+        @{ WorktreeName = 'ATAP.Utilities';   Branch = 'main' }
+        @{ WorktreeName = 'ATAP.Utilities';   Branch = 'main' }
+        @{ WorktreeName = 'AceCommander';     Branch = 'main' }
+        @{ WorktreeName = 'AceCommander';     Branch = 'main' }
+      )
+
+      $results = foreach ($call in $calls) {
+        New-CheckpointNameComponents -SprintN '0013' -WorktreeName $call.WorktreeName -Branch $call.Branch
+      }
+
+      ($results | Measure-Object).Count | Should -Be 4
+
+      $convNames = $results | Select-Object -ExpandProperty ConvName
+      $memNames  = $results | Select-Object -ExpandProperty MemName
+
+      ($convNames | Select-Object -Unique | Measure-Object).Count | Should -Be 4 -Because 'four checkpoints in the same second must not collide on conversation-archive name'
+      ($memNames  | Select-Object -Unique | Measure-Object).Count | Should -Be 4 -Because 'four checkpoints in the same second must not collide on memory-snapshot name'
+
+      # Repo identity must be present so the two 'ATAP.Utilities' entries differ
+      # from the two 'AceCommander' entries even though both share branch 'main'.
+      $convNames[0] | Should -Match 'ATAP-Utilities'
+      $convNames[1] | Should -Match 'ATAP-Utilities'
+      $convNames[2] | Should -Match 'AceCommander'
+      $convNames[3] | Should -Match 'AceCommander'
+    }
+
+    It 'end-to-end: two Save-SprintWorkSession checkpoints from different repo worktrees on the same branch produce distinct archive and memory names' {
+      # Build a second fake repo worktree, also on a branch literally named 'main',
+      # sitting alongside $script:atapWt (which is on a sprint branch) — mirrors
+      # the real defect of two *different* repos both on branch `main`.
+      $secondRepoRoot = Join-Path $script:gitRoot 'AceCommander-stable-sim'
+      New-Item -ItemType Directory -Path $secondRepoRoot -Force | Out-Null
+      & git -C $secondRepoRoot init --quiet --initial-branch=main 2>$null
+      & git -C $secondRepoRoot config user.email 'test@example.com'
+      & git -C $secondRepoRoot config user.name 'Pester Tester'
+      Set-Content -LiteralPath (Join-Path $secondRepoRoot 'README.md') -Value 'seed' -Encoding UTF8
+      & git -C $secondRepoRoot add . 2>$null | Out-Null
+      & git -C $secondRepoRoot commit --quiet -m 'seed' 2>$null | Out-Null
+
+      # A minimal Claude-projects session for the second repo's slug.
+      $secondSlug = ($secondRepoRoot.Substring(0, 1).ToLower() + $secondRepoRoot.Substring(1)) `
+        -replace ':', '-' -replace '\\', '-' -replace '_', '-' -replace '\.', '-' -replace '^-', ''
+      $secondSessionDir = Join-Path $script:claudeProjectsRoot $secondSlug
+      New-Item -ItemType Directory -Path $secondSessionDir -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $secondSessionDir 'second-repo.jsonl') -Value '{"role":"user","content":"second"}' -Encoding UTF8
+      $secondMemoryDir = Join-Path $secondSessionDir 'memory'
+      New-Item -ItemType Directory -Path $secondMemoryDir -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $secondMemoryDir 'second-memory.md') -Value '# second memory' -Encoding UTF8
+
+      # Also seed $script:atapWt's own branch as 'main' isn't possible (it uses a
+      # sprint branch name by design for auto-detect), so instead pass -SprintN
+      # explicitly for both calls and rely on the two repos' differing worktree
+      # names to prove collision-freedom even when name components otherwise
+      # overlap (same SprintN, same PlanningRoot).
+      $convDir = Join-Path $script:planningWt 'SprintWorkSessionConversations'
+      $memRoot = Join-Path $script:planningWt 'SprintWorkSessionMemorys'
+      $rosterDir = Join-Path $script:planningWt 'SprintWorkSessionRoster'
+      Remove-Item -LiteralPath $convDir, $memRoot, $rosterDir -Recurse -Force -ErrorAction SilentlyContinue
+
+      $savedLocation = Get-Location
+      $savedSettings = $global:settings
+      try {
+        $global:settings = $null
+
+        Set-Location $script:atapWt
+        Save-SprintWorkSession `
+          -SprintN $script:sprintNumber `
+          -PlanningRoot $script:planningWt `
+          -ClaudeProjectsRoot $script:claudeProjectsRoot `
+          -GitHubRoot $script:gitRoot `
+          -Confirm:$false
+
+        Set-Location $secondRepoRoot
+        Save-SprintWorkSession `
+          -SprintN $script:sprintNumber `
+          -PlanningRoot $script:planningWt `
+          -ClaudeProjectsRoot $script:claudeProjectsRoot `
+          -GitHubRoot $script:gitRoot `
+          -Confirm:$false
+
+        $rosterPath = Join-Path $rosterDir "SprintWorkSessionRoster-$($script:sprintNumber).jsonl"
+        $entries = Get-Content -LiteralPath $rosterPath | Select-Object -Last 2 | ForEach-Object { $_ | ConvertFrom-Json }
+        ($entries | Measure-Object).Count | Should -Be 2
+
+        $archivePaths = $entries | Select-Object -ExpandProperty ConversationArchivePath
+        $memoryPaths  = $entries | Select-Object -ExpandProperty MemorySnapshotPath
+
+        ($archivePaths | Select-Object -Unique | Measure-Object).Count | Should -Be 2 -Because 'two different repo worktrees must not collide on conversation-archive name'
+        ($memoryPaths  | Select-Object -Unique | Measure-Object).Count | Should -Be 2 -Because 'two different repo worktrees must not collide on memory-snapshot name'
+
+        # Both archives must actually exist on disk (no overwrite occurred).
+        foreach ($p in $archivePaths) { Test-Path -LiteralPath $p | Should -BeTrue }
+      } finally {
+        $global:settings = $savedSettings
+        Set-Location $savedLocation
+        Remove-Item -Recurse -Force $secondRepoRoot, $secondSessionDir -ErrorAction SilentlyContinue
       }
     }
   }

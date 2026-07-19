@@ -251,6 +251,30 @@ function Set-SprintBoundaryContext {
       $stableRepoPath = Join-Path $GitRoot $repoName
       $wtEntry.StableRepoPath = $stableRepoPath
 
+      # CP06-D02 (Sprint 0012 close incident, Task 13.20.a): refuse to treat a
+      # stable repository root as if it were a sprint worktree. This happens
+      # when a caller (or a stale post-deletion disk rescan) substitutes a
+      # stable path into WorktreePaths -- the worktree leaf then has no
+      # '-wt-<n>-Sprint-<nnnn>-work-items' suffix to strip, so the derived
+      # "stable" path and the supplied "worktree" path are identical. Previously
+      # this was only caught deep inside Set-WorktreeJunctions, which surfaced
+      # as an opaque failure after other retargeting had already started. Reject
+      # it here, before any external helper is invoked, with an unambiguous
+      # message that names the offending path.
+      $normalizedWorktreePath = ([IO.Path]::GetFullPath($worktreePath)).TrimEnd('\')
+      $normalizedStableRepoPath = ([IO.Path]::GetFullPath($stableRepoPath)).TrimEnd('\')
+      if ([StringComparer]::OrdinalIgnoreCase.Equals($normalizedWorktreePath, $normalizedStableRepoPath)) {
+        $samePathError = "Refusing to retarget junctions for '$worktreePath': the derived stable repository path is identical to the supplied worktree path. This is a stable repository root, not a sprint worktree -- pass the actual sprint worktree path (its leaf name must match '-wt-<n>-Sprint-<nnnn>-work-items')."
+        $wtEntry.JunctionError = $samePathError
+        $wtEntry.Error = $samePathError
+        $errors.Add($samePathError)
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $samePathError
+        $perWorktree.Add([PSCustomObject]$wtEntry)
+        $junctionsOk = $false
+        $contextOk = $false
+        continue
+      }
+
       # SprintEnd must pass adapter drift review before any junction or downstream
       # context teardown occurs. A failed audit leaves the worktree pointed at its
       # sprint sources so promote/regenerate review can be completed safely.

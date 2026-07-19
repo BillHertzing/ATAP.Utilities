@@ -109,6 +109,55 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $text | Should -Match 'Remove-Item @handoffRemovalParams'
       $text | Should -Match ([regex]::Escape("LiteralPath = '$output'"))
     }
+
+    It 'carries the actual sprint WorktreePaths into the boundary reset call, BEFORE any worktree is removed (CP06-D01/D02, Task 13.20.a)' {
+      # Regression for the Sprint 0012 close incident (CP06-D01): the generated
+      # handoff previously omitted -WorktreePaths from the embedded
+      # Set-SprintBoundaryContext call, so the resumed command had nothing to
+      # retarget. It must now carry the exact worktree list this function was
+      # called with, and the reset must happen before worktree removal so the
+      # sprint worktrees still exist on disk when it runs.
+      $gitRoot = Join-Path $TestDrive 'gitroot-worktreepaths'
+      $worktreeOne = Join-Path $gitRoot 'App-wt-42-Sprint-0011-work-items'
+      $worktreeTwo = Join-Path $gitRoot 'Other-wt-43-Sprint-0011-work-items'
+      New-Item -ItemType Directory -Path $worktreeOne, $worktreeTwo -Force | Out-Null
+      $output = Join-Path $gitRoot 'HANDOFF.Sprint0011.md'
+
+      $result = New-SprintEndHandoff -GitRoot $gitRoot -WorktreePaths @($worktreeOne, $worktreeTwo) -Confirm:$false
+      $text = Get-Content -Raw -LiteralPath $output
+      $code = [regex]::Match($text, '(?s)```powershell\s*(.*?)\s*```').Groups[1].Value
+      $tokens = $null
+      $parseErrors = $null
+      [System.Management.Automation.Language.Parser]::ParseInput($code, [ref]$tokens, [ref]$parseErrors) | Out-Null
+
+      $result.Changed | Should -BeTrue
+      $parseErrors | Should -BeNullOrEmpty
+
+      # Both worktree paths must appear as literal entries inside the embedded
+      # $boundaryParams.WorktreePaths array -- never omitted, never rediscovered
+      # by a disk rescan.
+      $text | Should -Match ([regex]::Escape("'$worktreeOne'"))
+      $text | Should -Match ([regex]::Escape("'$worktreeTwo'"))
+      $text | Should -Match 'WorktreePaths\s*=\s*@\('
+      $text | Should -Match '\$boundaryResetResult = Set-SprintBoundaryContext @boundaryParams'
+      $text | Should -Match 'if \(@\(\$boundaryResetResult\.Errors\)\.Count -gt 0\)'
+
+      # Ordering: the boundary reset block must appear in the script BEFORE the
+      # first 'git ... worktree remove' command.
+      $boundaryResetIndex = $code.IndexOf('Set-SprintBoundaryContext @boundaryParams')
+      $firstRemoveIndex = $code.IndexOf('worktree remove')
+      $boundaryResetIndex | Should -BeGreaterThan -1
+      $firstRemoveIndex | Should -BeGreaterThan -1
+      $boundaryResetIndex | Should -BeLessThan $firstRemoveIndex
+    }
+
+    It 'requires WorktreePaths and rejects an omitted/empty list rather than silently generating a handoff with nothing to retarget (CP06-D01, Task 13.20.a)' {
+      $gitRoot = Join-Path $TestDrive 'gitroot-omitted-worktreepaths'
+      New-Item -ItemType Directory -Path $gitRoot -Force | Out-Null
+
+      { New-SprintEndHandoff -GitRoot $gitRoot -Confirm:$false } | Should -Throw
+      { New-SprintEndHandoff -GitRoot $gitRoot -WorktreePaths @() -Confirm:$false } | Should -Throw
+    }
   }
 
   Context 'Test-SprintEndPullOverlap' {

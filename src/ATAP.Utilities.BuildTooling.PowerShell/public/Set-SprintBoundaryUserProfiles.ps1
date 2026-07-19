@@ -5,8 +5,11 @@ function Set-SprintBoundaryUserProfiles {
   .DESCRIPTION
     Resolves the active sprint or stable overview workspace to discover developer
     identities, bootstraps ATAP host settings to discover local service-account
-    identities, and copies each applicable PowerShell 7 user profile as
-    `<Home>\Documents\PowerShell\profile.ps1`.
+    identities, selects developer assignments for the current host, and copies
+    each applicable PowerShell 7 user profile to the path that identity loads.
+    For the interactive identity this is `$PROFILE.CurrentUserAllHosts`, which
+    honors redirected Documents known folders. Service-account profiles retain
+    their configured `<Home>\Documents\PowerShell\profile.ps1` targets.
 
     Developer profiles copy the ATAP.IAC `CurrentUserAllHostsV7CoreProfile.ps1`
     payload. Service-account profiles copy the ATAP.IAC administrator-managed
@@ -35,6 +38,10 @@ function Set-SprintBoundaryUserProfiles {
   .PARAMETER HomeDirectoryOverrides
     Optional map of identity name to home-directory path. Intended for tests and
     narrowly scoped repairs.
+  .PARAMETER CurrentUserAllHostsProfilePath
+    The actual PowerShell 7 CurrentUserAllHosts path for the interactive
+    identity. Defaults to `$PROFILE.CurrentUserAllHosts`; the explicit parameter
+    is intended for deterministic tests and verified repairs.
   .PARAMETER ThrowOnFailure
     Throws when any non-skipped developer or service-account profile could not be
     resolved or deployed.
@@ -65,6 +72,10 @@ function Set-SprintBoundaryUserProfiles {
 
     [Parameter()]
     [hashtable]$HomeDirectoryOverrides = @{},
+
+    [Parameter()]
+    [ValidateNotNullOrEmpty()]
+    [string]$CurrentUserAllHostsProfilePath = $PROFILE.CurrentUserAllHosts,
 
     [Parameter()]
     [switch]$ThrowOnFailure
@@ -175,7 +186,14 @@ function Set-SprintBoundaryUserProfiles {
 
     $developerIdentities = @()
     if ($workspaceJson -and $workspaceJson.PSObject.Properties['developers']) {
-      $developerIdentities = @($workspaceJson.developers)
+      $developerIdentities = @(
+        $workspaceJson.developers |
+          Where-Object {
+            -not $_.PSObject.Properties['host'] -or
+            [string]::IsNullOrWhiteSpace([string]$_.host) -or
+            [string]::Equals([string]$_.host, $localComputerName, [StringComparison]::OrdinalIgnoreCase)
+          }
+      )
     }
 
     foreach ($developer in $developerIdentities) {
@@ -186,7 +204,15 @@ function Set-SprintBoundaryUserProfiles {
 
       $developerHost = if ($developer.PSObject.Properties['host']) { [string]$developer.host } else { $null }
       $homeDirectory = Resolve-HomeDirectory -Identity $username -HostName $developerHost
-      $profilePath = if ($homeDirectory) { Join-Path $homeDirectory 'Documents\PowerShell\profile.ps1' } else { $null }
+      $leafUsername = Resolve-LeafName -Identity $username
+      $isCurrentIdentity = [string]::Equals($leafUsername, $env:USERNAME, [StringComparison]::OrdinalIgnoreCase)
+      $profilePath = if ($homeDirectory -and $isCurrentIdentity) {
+        [IO.Path]::GetFullPath($CurrentUserAllHostsProfilePath)
+      } elseif ($homeDirectory) {
+        Join-Path $homeDirectory 'Documents\PowerShell\profile.ps1'
+      } else {
+        $null
+      }
       $skipReason = $null
       $isFailure = $false
 
@@ -318,6 +344,7 @@ function Set-SprintBoundaryUserProfiles {
           -ATAPIACRoot $ATAPIACRoot `
           -ATAPUtilitiesRoot $ATAPUtilitiesRoot `
           -UserProfilePath $profile.HomeDirectory `
+          -TargetProfilePath $profile.ProfilePath `
           -Confirm:$false `
           -WhatIf:$WhatIfPreference
         $profile.Action = $profileResult.Action

@@ -14,6 +14,12 @@ If you are viewing this `ReadMe.md` in GitHub, [here is this same ReadMe on the 
 
 This package provides PowerShell goodies make it easier when developing Powershell modules for .Net, and especially inside of Visual Studio Code.
 
+The bounded BWS ReadOnly bootstrap commands provision only `SvcBuildMaster`,
+`SvcProGet`, and `SvcSQLServer` for the fixed `CI-Shared` ReadOnly purpose. See
+[BWSReadOnlyBootstrap.md](Documentation/BWSReadOnlyBootstrap.md) for the public-certificate
+CMS envelope flow, canonical account paths, Password-logon task isolation under
+`\ATAP\`, idempotency statuses, and fail-closed recovery rules.
+
 Full-repository C# MSBuild property audits live outside this module at
 `tests\RepoHealth` and run through `Build\Invoke-RepoHealthGate.ps1`. They are
 not part of `module.build.ps1` for this PowerShell module because they enumerate
@@ -24,6 +30,15 @@ the workspace file paths being retargeted instead of the caller's current
 directory. Generated `.gitattributes` and `.gitconfig.shared` content also
 replaces any existing generated header before writing a fresh one, so repeated
 retargeting refreshes metadata without stacking header blocks.
+
+SprintStart verifies the owner of each newly created worktree's exact `.git`
+pointer before the first commit. A mismatch is repaired only on that pointer,
+re-read, and failed closed if ownership still differs from the interactive
+operator; the workflow never adds parent-wide or wildcard `safe.directory`
+trust. Sprint overview developer identity is the composite `(username, host)`
+pair, so one developer may be assigned to multiple hosts. Regeneration preserves
+explicit or existing multi-host assignments deterministically instead of
+deduplicating by username.
 
 SprintStart and SprintEnd now use `Invoke-SprintAIAdapterLifecycle`, which calls
 the SharedVSCode registry-backed settings/permissions renderer and drift audit.

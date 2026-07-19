@@ -317,6 +317,44 @@ Describe 'Set-SprintBoundaryContext [public]' {
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Initialize-DownstreamSprintFromSharedVSCode -Times 0 -Exactly -Scope It
     }
 
+    It 'Refuses to retarget junctions when the supplied worktree path is identical to the derived stable repo path (CP06-D02, Task 13.20.a regression)' {
+      # Regression for the Sprint 0012 close incident (CP06-D02): a stable
+      # repository root was substituted for a missing sprint worktree, which
+      # made the derived "stable" path identical to the supplied "worktree"
+      # path. Previously this only surfaced as an opaque throw deep inside
+      # Set-WorktreeJunctions. It must now be rejected explicitly, before any
+      # external helper (Set-WorktreeJunctions, adapter lifecycle) is invoked,
+      # with a clear message -- and must not abort the whole call: other,
+      # valid worktrees still get processed.
+      $stableRootAsWorktree = $script:stableRepo
+
+      $result = Set-SprintBoundaryContext -Boundary End `
+        -WorktreePaths @($stableRootAsWorktree, $script:worktree) `
+        -SharedVSCodeWorktreePath $script:svStable `
+        -GitRoot $script:gitRoot
+
+      # Joined match (not a per-element pipeline match): this environment's
+      # Set-SprintBoundaryContext may also record an unrelated, unmocked
+      # Register-ProfiledRemotingEndpoint failure in the same Errors array
+      # (a pre-existing local-machine condition, reproducible even on a clean
+      # checkout with no code changes); the assertion must not depend on
+      # every array element matching this specific message.
+      ($result.Errors -join '; ') | Should -Match 'identical to the supplied worktree path'
+      $badEntry = $result.PerWorktree | Where-Object { $_.WorktreePath -eq $stableRootAsWorktree }
+      $badEntry.JunctionError | Should -Match 'identical to the supplied worktree path'
+      $badEntry.JunctionsRetargeted | Should -BeFalse
+
+      # Set-WorktreeJunctions must never be invoked for the offending path.
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions -Times 0 -Exactly -Scope It `
+        -ParameterFilter { $WorktreePath -eq $stableRootAsWorktree }
+
+      # The other, legitimate worktree in the same call still gets retargeted.
+      $goodEntry = $result.PerWorktree | Where-Object { $_.WorktreePath -eq $script:worktree }
+      $goodEntry.JunctionsRetargeted | Should -BeTrue
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $WorktreePath -eq $script:worktree }
+    }
+
     It 'Re-renders shared settings with OmitSprintWorktrees while keeping the per-worktree End audit unomitted' {
       Set-SprintBoundaryContext -Boundary End `
         -WorktreePaths @($script:worktree) `

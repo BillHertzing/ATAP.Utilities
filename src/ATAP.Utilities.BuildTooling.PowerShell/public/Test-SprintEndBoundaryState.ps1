@@ -53,6 +53,20 @@ function Test-SprintEndBoundaryState {
   PSCustomObject containing stale references, profile results, and env findings.
 
   .NOTES
+  Task 13.20.c (Sprint 0013) split stale sprint-path reference auditing into two
+  scopes: `LiveConfiguration` and `HistoricalEvidence`. Live configuration is
+  active adapters, settings, and workspace files; historical evidence is
+  `SprintHistory\`, `SprintRetrospective\` (including `WorkspaceArchive\`),
+  any `Archived\` folder, `Samples\`/`Sample\` folders, and `_generated\`
+  evidence. Both scopes are searched and reported, but only
+  `LiveConfiguration` findings can fail the gate (`Ok` / `Failures`).
+  `StaleReferences` now carries a `Classification` property on every entry
+  (`'LiveConfiguration'` or `'HistoricalEvidence'`) — this is an additive,
+  backward-compatible change. The result also adds `LiveStaleReferences` and
+  `HistoricalStaleReferences` as explicit convenience subsets of
+  `StaleReferences`. Previously `SprintHistory\` and `_generated\` files were
+  skipped entirely during the scan; they are now scanned and reported as
+  `HistoricalEvidence` instead of being silently excluded.
   AI assisted using Powershell.instructions.md as guidelines.
   #>
   [CmdletBinding()]
@@ -128,11 +142,18 @@ function Test-SprintEndBoundaryState {
     }
     $staleReferences = [System.Collections.Generic.List[object]]::new()
     $extensions = @('*.code-workspace', '*.json', '*.jsonc', '*.toml')
+    $alwaysSkipPathPattern = '[\\/]\.git[\\/]'
+    $historicalEvidencePathPattern = '(?i)[\\/](?:_generated|SprintHistory|SprintRetrospective|Archived|Samples?)[\\/]'
     foreach ($searchRoot in $SearchRoots) {
       if (-not (Test-Path -LiteralPath $searchRoot -PathType Container)) { continue }
       foreach ($extension in $extensions) {
         foreach ($file in @(Get-ChildItem -LiteralPath $searchRoot -Filter $extension -File -Recurse -ErrorAction SilentlyContinue)) {
-          if ($file.FullName -match '[\\/](?:\.git|_generated|SprintHistory)[\\/]') { continue }
+          if ($file.FullName -match $alwaysSkipPathPattern) { continue }
+          $classification = if ($file.FullName -match $historicalEvidencePathPattern) {
+            'HistoricalEvidence'
+          } else {
+            'LiveConfiguration'
+          }
           $referenceMatches = Select-String -LiteralPath $file.FullName `
             -Pattern '-wt-\d+-Sprint-\d{4}-work-items' -AllMatches -ErrorAction SilentlyContinue
           foreach ($match in $referenceMatches) {
@@ -140,11 +161,14 @@ function Test-SprintEndBoundaryState {
                 Path = $file.FullName
                 LineNumber = $match.LineNumber
                 Text = $match.Line.Trim()
+                Classification = $classification
               })
           }
         }
       }
     }
+    $liveStaleReferences = @($staleReferences | Where-Object { $_.Classification -eq 'LiveConfiguration' })
+    $historicalStaleReferences = @($staleReferences | Where-Object { $_.Classification -eq 'HistoricalEvidence' })
 
     if (-not $PSBoundParameters.ContainsKey('ATAPUtilitiesRoot') -or [string]::IsNullOrWhiteSpace($ATAPUtilitiesRoot)) {
       $ATAPUtilitiesRoot = Join-Path $gitRootFull 'ATAP.Utilities'
@@ -316,13 +340,15 @@ function Test-SprintEndBoundaryState {
         }
     )
     $failures = [System.Collections.Generic.List[string]]::new()
-    if ($staleReferences.Count -gt 0) { [void]$failures.Add('StaleSprintReferences') }
+    if ($liveStaleReferences.Count -gt 0) { [void]$failures.Add('StaleSprintReferences') }
     if ($environmentFindings.Count -gt 0) { [void]$failures.Add('SecretEnvironmentVariables') }
     if (-not $freshShell.Ok) { [void]$failures.Add('FreshShellProfile') }
     if ($managedProfileFailures.Count -gt 0) { [void]$failures.Add('ManagedUserProfiles') }
     $result = [PSCustomObject]@{
       Ok                           = ($failures.Count -eq 0)
       StaleReferences              = $staleReferences.ToArray()
+      LiveStaleReferences          = $liveStaleReferences
+      HistoricalStaleReferences    = $historicalStaleReferences
       Profiles                     = @($profileResults)
       MissingProfiles              = $missingProfiles
       ManagedProfileFailures       = @($managedProfileFailures)

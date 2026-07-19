@@ -193,6 +193,19 @@ function Save-SprintWorkSession {
         # This is the end of the help loading block; it and all above can be removed once module autoloading is
         # working and the helper functions are available as cmdlets in the PSModulePath.
 
+        # Load the collision-free name-composition helper (private\New-CheckpointNameComponents.ps1)
+        # when running from source (dot-sourced directly, as the Pester tests do) rather than via
+        # module import, where it is already dot-sourced by the .psm1.
+        if (-not (Test-Path -LiteralPath 'Function:\New-CheckpointNameComponents')) {
+            $checkpointNameHelperPath = Join-Path $PSScriptRoot '..\private\New-CheckpointNameComponents.ps1'
+            if (Test-Path -LiteralPath $checkpointNameHelperPath) {
+                . $checkpointNameHelperPath
+            } else {
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+                    -Message "Helper 'New-CheckpointNameComponents' not found at '$checkpointNameHelperPath'."
+            }
+        }
+
         # Populate parameters from settings only when Get-PVal is available.
         # When the helper is absent (sparse environment / direct import), the parameter-declaration
         # defaults are already usable and no non-terminating error should be emitted.
@@ -481,11 +494,14 @@ function Save-SprintWorkSession {
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Agent=$Agent transcript: $($jsonl.FullName) (LastWriteTime: $($jsonl.LastWriteTime))"
 
             # ── Build name components ──────────────────────────────────────────────
-            $ts = Get-Date -Format 'yyyy-MM-dd-HH-mm'
-            $base = "SprintWorkSession-$SprintN"
-            $convName = "$base-Conversation-$branch-$ts"
-            $memName = "$base-$branch-$ts"
+            # Names must be collision-free across multiple stable repositories that
+            # are all on branch `main`, checkpointed within the same second — see
+            # New-CheckpointNameComponents (repo/worktree identity + second-precision
+            # timestamp + PID/high-resolution-tick disambiguator).
             $worktreeName = Split-Path -Path $cwd -Leaf
+            $nameComponents = New-CheckpointNameComponents -SprintN $SprintN -WorktreeName $worktreeName -Branch $branch
+            $convName = $nameComponents.ConvName
+            $memName = $nameComponents.MemName
             $rosterDir = Join-Path $PlanningRoot 'SprintWorkSessionRoster'
             $rosterPath = Join-Path $rosterDir "SprintWorkSessionRoster-$SprintN.jsonl"
             $archiveCreated = $false

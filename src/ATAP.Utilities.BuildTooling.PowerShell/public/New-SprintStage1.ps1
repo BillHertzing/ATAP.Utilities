@@ -77,6 +77,10 @@ function New-SprintStage1 {
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
+    if (-not (Get-Command -Name 'Confirm-WorktreeGitPointerOwnership' -ErrorAction SilentlyContinue)) {
+      . (Join-Path $PSScriptRoot '..\private\Confirm-WorktreeGitPointerOwnership.ps1')
+    }
+
     if ($DryRun) {
       if ($PSBoundParameters.ContainsKey('WhatIf') -and -not $WhatIfPreference) {
         throw "Cannot specify -DryRun and -WhatIf:`$false together."
@@ -288,6 +292,10 @@ function New-SprintStage1 {
         if ($LASTEXITCODE -ne 0) {
           throw "git worktree add failed (exit $LASTEXITCODE): $wtOutput"
         }
+        $ownership = Confirm-WorktreeGitPointerOwnership -WorktreePath $svWorktreePath -Confirm:$false
+        if (-not $ownership.Verified) {
+          throw "SharedVSCode worktree Git pointer ownership was not verified: $svWorktreePath"
+        }
         $result.sharedVSCode.created = $true
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
           -Message "SharedVSCode worktree created at $svWorktreePath"
@@ -374,6 +382,10 @@ function New-SprintStage1 {
         $wtOutput = git -C $planRepoPath worktree add $planWorktreePath -b $planBranch 2>&1
         if ($LASTEXITCODE -ne 0) {
           throw "git worktree add failed (exit $LASTEXITCODE): $wtOutput"
+        }
+        $ownership = Confirm-WorktreeGitPointerOwnership -WorktreePath $planWorktreePath -Confirm:$false
+        if (-not $ownership.Verified) {
+          throw "_Planning worktree Git pointer ownership was not verified: $planWorktreePath"
         }
         $result.planning.created = $true
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `

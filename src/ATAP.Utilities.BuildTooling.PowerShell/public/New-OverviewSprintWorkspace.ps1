@@ -18,6 +18,13 @@ function New-OverviewSprintWorkspace {
     Output sprint workspace file. Defaults to Overview.Sprint.NNNN.code-workspace under GitRoot.
   .PARAMETER DeveloperUsername
     Developer username used in sprint metadata and ephemeral SQL instance names.
+  .PARAMETER DeveloperAssignments
+    Optional developer-to-host assignments. Each item must contain non-empty
+    username and host properties. The composite (username, host) pair is the
+    identity, so one username can be assigned to multiple hosts. When omitted,
+    assignments are preserved from the existing output, the source workspace,
+    or the latest earlier sprint workspace, in that order. If no configured
+    assignments exist, the current developer and computer form one assignment.
   .PARAMETER BuildMasterBaseUrl
     Base URL for BuildMaster metadata.
   .PARAMETER ProGetBaseUrl
@@ -46,6 +53,8 @@ function New-OverviewSprintWorkspace {
 
     [ValidateNotNullOrEmpty()]
     [string]$DeveloperUsername = $env:USERNAME,
+
+    [object[]]$DeveloperAssignments,
 
     [ValidateNotNullOrEmpty()]
     [string]$BuildMasterBaseUrl = 'http://localhost:50017',
@@ -124,6 +133,70 @@ function New-OverviewSprintWorkspace {
       if ($worktree) { return $worktree.Name }
       return $RepositoryName
     }
+
+    function ConvertTo-DeveloperAssignments {
+      [CmdletBinding()]
+      param(
+        [Parameter(Mandatory)]
+        [AllowEmptyCollection()]
+        [object[]]$Assignments
+      )
+
+      $normalizedAssignments = @()
+      $assignmentKeys = [System.Collections.Generic.HashSet[string]]::new(
+        [System.StringComparer]::OrdinalIgnoreCase)
+
+      foreach ($assignment in $Assignments) {
+        if ($null -eq $assignment) {
+          throw 'Developer assignment cannot be null.'
+        }
+
+        $username = if ($assignment -is [System.Collections.IDictionary]) {
+          [string]$assignment['username']
+        } else {
+          [string]$assignment.username
+        }
+        $hostName = if ($assignment -is [System.Collections.IDictionary]) {
+          [string]$assignment['host']
+        } else {
+          [string]$assignment.host
+        }
+
+        $username = $username.Trim()
+        $hostName = $hostName.Trim()
+        if ([string]::IsNullOrWhiteSpace($username) -or [string]::IsNullOrWhiteSpace($hostName)) {
+          throw 'Each developer assignment must contain non-empty username and host properties.'
+        }
+
+        $assignmentKey = '{0}@{1}' -f $username, $hostName
+        if (-not $assignmentKeys.Add($assignmentKey)) {
+          throw "Duplicate developer assignment '$assignmentKey'."
+        }
+
+        $normalizedAssignments += [PSCustomObject]@{
+          username = $username
+          host     = $hostName.ToLowerInvariant()
+        }
+      }
+
+      return @($normalizedAssignments | Sort-Object `
+          @{ Expression = { $_.username.ToLowerInvariant() } }, `
+          @{ Expression = { $_.host.ToLowerInvariant() } })
+    }
+
+    function Get-WorkspaceDeveloperAssignments {
+      [CmdletBinding()]
+      param(
+        [Parameter(Mandatory)]
+        [object]$Workspace
+      )
+
+      if ($Workspace.PSObject.Properties['developers'] -and $null -ne $Workspace.developers) {
+        return @($Workspace.developers)
+      }
+
+      return @()
+    }
   }
 
   process {
@@ -150,6 +223,56 @@ function New-OverviewSprintWorkspace {
     }
 
     $workspace = ConvertFrom-WorkspaceJsonContent -Content (Get-Content -LiteralPath $SourceWorkspacePath -Raw -ErrorAction Stop)
+
+    $configuredDeveloperAssignments = @()
+    if ($PSBoundParameters.ContainsKey('DeveloperAssignments')) {
+      $configuredDeveloperAssignments = @($DeveloperAssignments)
+    } else {
+      if (Test-Path -LiteralPath $OutputWorkspacePath -PathType Leaf) {
+        $existingOutputWorkspace = ConvertFrom-WorkspaceJsonContent -Content (
+          Get-Content -LiteralPath $OutputWorkspacePath -Raw -ErrorAction Stop)
+        $configuredDeveloperAssignments = @(
+          Get-WorkspaceDeveloperAssignments -Workspace $existingOutputWorkspace)
+      }
+
+      if ($configuredDeveloperAssignments.Count -eq 0) {
+        $configuredDeveloperAssignments = @(Get-WorkspaceDeveloperAssignments -Workspace $workspace)
+      }
+
+      if ($configuredDeveloperAssignments.Count -eq 0) {
+        $priorWorkspace = Get-ChildItem -LiteralPath $GitRoot -File `
+          -Filter 'Overview.Sprint.*.code-workspace' -ErrorAction SilentlyContinue |
+          Where-Object {
+            $_.FullName -ne $OutputWorkspacePath -and
+            $_.Name -match '^Overview\.Sprint\.(?<Sprint>\d{4})\.code-workspace$' -and
+            [int]$Matches['Sprint'] -lt $SprintNumber
+          } |
+          Sort-Object Name -Descending |
+          Select-Object -First 1
+
+        if ($priorWorkspace) {
+          $priorWorkspaceContent = ConvertFrom-WorkspaceJsonContent -Content (
+            Get-Content -LiteralPath $priorWorkspace.FullName -Raw -ErrorAction Stop)
+          $configuredDeveloperAssignments = @(
+            Get-WorkspaceDeveloperAssignments -Workspace $priorWorkspaceContent)
+        }
+      }
+
+      if ($configuredDeveloperAssignments.Count -eq 0) {
+        $configuredDeveloperAssignments = @([PSCustomObject]@{
+            username = $DeveloperUsername
+            host     = $env:COMPUTERNAME
+          })
+      }
+    }
+
+    $normalizedDeveloperAssignments = @(
+      ConvertTo-DeveloperAssignments -Assignments $configuredDeveloperAssignments)
+    if ($normalizedDeveloperAssignments.Count -eq 0) {
+      throw 'At least one developer assignment is required.'
+    }
+
+    Set-ObjectPropertyValue -InputObject $workspace -Name 'developers' -Value $normalizedDeveloperAssignments
     $folderNames = @()
     $newFolders = @()
 

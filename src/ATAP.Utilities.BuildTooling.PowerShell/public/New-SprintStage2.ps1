@@ -144,6 +144,10 @@ function New-SprintStage2 {
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
+    if (-not (Get-Command -Name 'Confirm-WorktreeGitPointerOwnership' -ErrorAction SilentlyContinue)) {
+      . (Join-Path $PSScriptRoot '..\private\Confirm-WorktreeGitPointerOwnership.ps1')
+    }
+
     if ($DryRun) {
       $WhatIfPreference = $true
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'DryRun enabled — no external side effects will be performed.'
@@ -470,6 +474,10 @@ function New-SprintStage2 {
           $wtOutput = git -C $repoPath worktree add $worktreePath -b $branchName 2>&1
           if ($LASTEXITCODE -ne 0) {
             throw "git worktree add failed (exit $LASTEXITCODE): $wtOutput"
+          }
+          $ownership = Confirm-WorktreeGitPointerOwnership -WorktreePath $worktreePath -Confirm:$false
+          if (-not $ownership.Verified) {
+            throw "$repoName worktree Git pointer ownership was not verified: $worktreePath"
           }
           $entry.created = $true
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `

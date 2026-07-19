@@ -92,6 +92,19 @@ function Save-CopilotCheckpoint {
         $mn = $MyInvocation.MyCommand.ModuleName
         if (-not $mn) { $mn = 'Save-CopilotCheckpoint' }
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Entering function'
+
+        # Load the collision-free name-composition helper (private\New-CheckpointNameComponents.ps1)
+        # when running from source (dot-sourced directly, as the Pester tests do) rather than via
+        # module import, where it is already dot-sourced by the .psm1.
+        if (-not (Test-Path -LiteralPath 'Function:\New-CheckpointNameComponents')) {
+            $checkpointNameHelperPath = Join-Path $PSScriptRoot '..\private\New-CheckpointNameComponents.ps1'
+            if (Test-Path -LiteralPath $checkpointNameHelperPath) {
+                . $checkpointNameHelperPath
+            } else {
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+                    -Message "Helper 'New-CheckpointNameComponents' not found at '$checkpointNameHelperPath'."
+            }
+        }
     }
 
     process {
@@ -150,10 +163,15 @@ function Save-CopilotCheckpoint {
             }
 
             # ── Build name components ──────────────────────────────────────────────
-            $ts       = Get-Date -Format 'yyyy-MM-dd-HH-mm'
-            $base     = "SprintWorkSession-$SprintN"
-            $convName = "$base-Conversation-copilot-$branchTag-$ts"
-            $memName  = "$base-copilot-$branchTag-$ts"
+            # Names must be collision-free across multiple stable repositories that
+            # are all on branch `main`, checkpointed within the same second — see
+            # New-CheckpointNameComponents (repo/worktree identity + second-precision
+            # timestamp + PID/high-resolution-tick disambiguator).
+            $cwd          = (Get-Location).Path
+            $worktreeName = Split-Path -Path $cwd -Leaf
+            $nameComponents = New-CheckpointNameComponents -SprintN $SprintN -WorktreeName $worktreeName -Branch $branchTag -AgentTag 'copilot'
+            $convName = $nameComponents.ConvName
+            $memName  = $nameComponents.MemName
 
             # ── 1. Compress conversation markdown with 7-zip ───────────────────────
             $convDir = Join-Path $PlanningRoot 'SprintWorkSessionConversations'
@@ -217,7 +235,6 @@ function Save-CopilotCheckpoint {
             }
 
             # ── 3. Append the canonical session roster entry ───────────────────────
-            $cwd = (Get-Location).Path
             $branch = (& git rev-parse --abbrev-ref HEAD 2>$null) -join "`n"
             if ($LASTEXITCODE -ne 0) { $branch = $null }
             $rosterDir = Join-Path $PlanningRoot 'SprintWorkSessionRoster'

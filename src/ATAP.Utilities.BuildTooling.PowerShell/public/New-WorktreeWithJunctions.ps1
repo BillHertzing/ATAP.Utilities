@@ -105,6 +105,10 @@ function New-WorktreeWithJunctions {
 
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
+        if (-not (Get-Command -Name 'Confirm-WorktreeGitPointerOwnership' -ErrorAction SilentlyContinue)) {
+            . (Join-Path $PSScriptRoot '..\private\Confirm-WorktreeGitPointerOwnership.ps1')
+        }
+
         # Snippet: Check and populate simple parameter as Type
         # Parameter: SourceRepoPath
         if (-not $PSBoundParameters.ContainsKey('SourceRepoPath') -or [string]::IsNullOrWhiteSpace($SourceRepoPath)) {
@@ -177,6 +181,10 @@ function New-WorktreeWithJunctions {
                     if ($LASTEXITCODE -ne 0) {
                         $gitError = $gitOutput.Trim()
                         throw "git worktree add command failed with exit code ${LASTEXITCODE}. Git output: $gitError"
+                    }
+                    $ownership = Confirm-WorktreeGitPointerOwnership -WorktreePath $WorktreePath -Confirm:$false
+                    if (-not $ownership.Verified) {
+                        throw "Worktree Git pointer ownership was not verified: $WorktreePath"
                     }
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Git worktree created successfully'
                 } catch {

@@ -107,6 +107,40 @@ function New-SprintEndHandoff {
     $lines.Add("`$env:GIT_MERGE_AUTOEDIT = 'no'")
     $lines.Add("Import-Module ATAP.Utilities.BuildTooling.PowerShell -Force")
     $lines.Add('')
+
+    # CP06-D01/D02 (Sprint 0012 close incident, Task 13.20.a): the boundary
+    # reset must run BEFORE any worktree is removed, and must carry the actual
+    # sprint WorktreePaths captured by this function's own -WorktreePaths
+    # parameter -- never a disk rescan performed after worktrees are gone, and
+    # never a stable repository root substituted for a missing sprint
+    # worktree. Retargeting junctions/adapters back to stable while each
+    # sprint worktree still exists on disk is what makes per-repository
+    # retargeting completable; deferring this call until after removal (the
+    # pre-fix ordering) left it with nothing to retarget and forced an unsafe
+    # stable-root substitution during the Sprint 0012 live close.
+    $lines.Add('# Reset the boundary for every sprint worktree BEFORE any worktree is removed.')
+    $lines.Add('# WorktreePaths below are the actual sprint worktrees carried from this')
+    $lines.Add('# handoff''s own generation-time parameters (Task 13.20.a; CP06-D01/D02) --')
+    $lines.Add('# never rescan GitRoot for worktrees at resume time, and never substitute a')
+    $lines.Add('# stable repository path for a sprint worktree.')
+    $lines.Add('$boundaryParams = @{')
+    $lines.Add("  Boundary = 'End'")
+    $lines.Add("  SharedVSCodeWorktreePath = Join-Path $gitRootLiteral 'SharedVSCode'")
+    $lines.Add('  WorktreePaths = @(')
+    for ($worktreeIndex = 0; $worktreeIndex -lt $orderedWorktrees.Count; $worktreeIndex++) {
+      $worktreeLiteral = ConvertTo-SprintEndHandoffSingleQuotedLiteral -Value ([IO.Path]::GetFullPath($orderedWorktrees[$worktreeIndex]))
+      $trailingComma = if ($worktreeIndex -lt $orderedWorktrees.Count - 1) { ',' } else { '' }
+      $lines.Add("    $worktreeLiteral$trailingComma")
+    }
+    $lines.Add('  )')
+    $lines.Add('  Confirm = $false')
+    $lines.Add('}')
+    $lines.Add('$boundaryResetResult = Set-SprintBoundaryContext @boundaryParams')
+    $lines.Add('if (@($boundaryResetResult.Errors).Count -gt 0) {')
+    $lines.Add('  throw "Boundary reset reported errors before worktree removal: $($boundaryResetResult.Errors -join ''; '')"')
+    $lines.Add('}')
+    $lines.Add('')
+
     foreach ($worktreePath in $orderedWorktrees) {
       $full = [IO.Path]::GetFullPath($worktreePath)
       $leaf = Split-Path -Path $full -Leaf
@@ -137,12 +171,6 @@ function New-SprintEndHandoff {
     $lines.Add('# Infrastructure cleanup: databases only; never SQL instances or Bitwarden secrets.')
     $lines.Add("Remove-SprintDatabases -DeveloperNames @(`$env:USERNAME) -Force -Confirm:`$false")
     $lines.Add("Clear-BuildMasterSprintVariables -Confirm:`$false")
-    $lines.Add('$boundaryParams = @{')
-    $lines.Add("  Boundary = 'End'")
-    $lines.Add("  SharedVSCodeWorktreePath = Join-Path $gitRootLiteral 'SharedVSCode'")
-    $lines.Add('  Confirm = $false')
-    $lines.Add('}')
-    $lines.Add('Set-SprintBoundaryContext @boundaryParams')
     $lines.Add('$boundaryTestParams = @{')
     $lines.Add("  GitRoot = $gitRootLiteral")
     $lines.Add('  TestFreshShell = $true')

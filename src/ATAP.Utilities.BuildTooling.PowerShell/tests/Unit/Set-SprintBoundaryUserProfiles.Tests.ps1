@@ -1,8 +1,23 @@
 #Requires -Version 7.0
 
 BeforeAll {
+  $script:addedGetLocalUserShim = $false
+  if (-not (Get-Command -Name Get-LocalUser -ErrorAction SilentlyContinue)) {
+    function global:Get-LocalUser {
+      param([string]$Name)
+      return $null
+    }
+    $script:addedGetLocalUserShim = $true
+  }
+
   $script:manifestPath = Join-Path $PSScriptRoot '..' '..' 'ATAP.Utilities.BuildTooling.PowerShell.psd1'
   Import-Module $script:manifestPath -Force
+}
+
+AfterAll {
+  if ($script:addedGetLocalUserShim) {
+    Remove-Item -LiteralPath 'Function:\global:Get-LocalUser' -ErrorAction SilentlyContinue
+  }
 }
 
 Describe 'Set-SprintBoundaryUserProfiles [public]' {
@@ -71,6 +86,7 @@ Set-StrictMode -Version Latest
       -HomeDirectoryOverrides @{ alice = $script:developerHome } `
       -Confirm:$false
 
+    $result.Failures | Should -BeNullOrEmpty
     $result.Ok | Should -BeTrue
     $developerProfile = Join-Path $script:developerHome 'Documents\PowerShell\profile.ps1'
     Test-Path -LiteralPath $developerProfile | Should -BeTrue
@@ -96,6 +112,43 @@ Set-StrictMode -Version Latest
     Test-Path -LiteralPath $serviceProfile | Should -BeTrue
     Get-Content -LiteralPath $serviceProfile -Raw |
       Should -Match 'Set-StrictMode'
+  }
+
+  It 'selects the current-host assignment and deploys only the redirected loaded profile idempotently' {
+    Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Get-LocalUser { $null }
+    $currentHome = Join-Path $script:testRoot 'CurrentDeveloperHome'
+    $redirectedProfile = Join-Path $script:testRoot 'Dropbox\CurrentDeveloper\PowerShell\profile.ps1'
+    $multiHostOverview = Join-Path $script:gitRoot 'Overview.Sprint.0013.MultiHost.code-workspace'
+    @{
+      folders = @()
+      developers = @(
+        @{ username = $env:USERNAME; host = 'not-this-host' }
+        @{ username = $env:USERNAME; host = $env:COMPUTERNAME }
+      )
+    } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $multiHostOverview -Encoding UTF8
+
+    $parameters = @{
+      ATAPUtilitiesRoot = $script:utilRoot
+      ATAPIACRoot = $script:iacRoot
+      GitRoot = $script:gitRoot
+      OverviewWorkspacePath = $multiHostOverview
+      HomeDirectoryOverrides = @{ $env:USERNAME = $currentHome }
+      CurrentUserAllHostsProfilePath = $redirectedProfile
+      Confirm = $false
+    }
+
+    $first = Set-SprintBoundaryUserProfiles @parameters
+    $second = Set-SprintBoundaryUserProfiles @parameters
+
+    $developerProfiles = @($second.Profiles | Where-Object Kind -EQ 'Developer')
+    $developerProfiles.Count | Should -Be 1
+    $developerProfiles[0].Host | Should -Be $env:COMPUTERNAME
+    $developerProfiles[0].Action | Should -Be 'AlreadyCurrent'
+    $developerProfiles[0].ProfilePath | Should -Be ([IO.Path]::GetFullPath($redirectedProfile))
+    Test-Path -LiteralPath $redirectedProfile -PathType Leaf | Should -BeTrue
+    Test-Path -LiteralPath (Join-Path $currentHome 'Documents\PowerShell\profile.ps1') | Should -BeFalse
+    $first.Ok | Should -BeTrue
+    $second.Ok | Should -BeTrue
   }
 
   It 'skips a missing or disabled service account with an explicit warning' {

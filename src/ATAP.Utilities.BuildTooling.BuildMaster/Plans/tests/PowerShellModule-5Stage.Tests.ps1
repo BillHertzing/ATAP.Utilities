@@ -127,6 +127,10 @@ Describe 'V4-B02 runner no-profile contract: Invoke-PowerShellModuleBuildMasterS
         $script:RunnerText | Should -Match '-ProGetApiKeySecretName\s+\$ProGetApiKeySecretName'
     }
 
+    It 'runner reports every promoted-module test start for service-stall diagnosis' {
+        $script:RunnerText | Should -Match '-PesterProgressInterval\s+1'
+    }
+
     It 'runner promotes via Promote-ProGetPackage and computes feed URIs from $ProGetUrl' {
         $script:RunnerText | Should -Match 'Promote-ProGetPackage'
         $script:RunnerText | Should -Match 'Get-PowerShellGetFeedUri\s+-BaseUrl\s+\$ProGetUrl'

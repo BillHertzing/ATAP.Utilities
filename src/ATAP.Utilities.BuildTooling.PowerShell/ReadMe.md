@@ -1061,6 +1061,10 @@ or force-reimport BuildTooling without breaking runner teardown or artifact
 generation. Tier totals and JUnit cases exclude Pester's tag-filtered `NotRun`
 records; explicit skips remain represented as skipped cases.
 
+`Set-TaskComplete` validates its literal helper and task-file paths with
+`System.IO.File.Exists`. This avoids PowerShell-provider initialization when a
+service identity checks a nonexistent temporary task path.
+
 Task 10.30 promoted `ATAP.Utilities.BuildTooling.PowerShell` 0.1.7 through
 BuildMaster build 14137. Development passed 476/476 tests, and Integration, QA,
 and Production each passed 482/482. ProGet then exposed 0.1.7 in all five

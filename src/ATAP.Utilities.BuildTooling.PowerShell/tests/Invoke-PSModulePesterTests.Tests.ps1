@@ -340,6 +340,35 @@ Describe 'Invoke-PSModulePesterTests (quiet output)' -Tag 'Unit' {
     Should -Invoke -CommandName Invoke-Pester -Times 1 -Exactly
   }
 
+  It 'adds caller-supplied exclusions independently of output verbosity' {
+    $script:capturedPesterConfiguration = $null
+    Mock -CommandName Invoke-Pester -MockWith {
+      param($Configuration)
+      $script:capturedPesterConfiguration = $Configuration
+      [PSCustomObject]@{
+        PassedCount  = 1
+        FailedCount  = 0
+        SkippedCount = 0
+        TotalCount   = 1
+        Duration     = [TimeSpan]::Zero
+      }
+    }
+
+    $moduleRoot = Join-Path $script:tempRoot 'additional-exclude-module'
+    New-Item -ItemType Directory -Path $moduleRoot -Force | Out-Null
+
+    $result = Invoke-PSModulePesterTests `
+      -ModuleRoot $moduleRoot `
+      -Tier 'Alpha' `
+      -OutputPath (Join-Path $script:tempRoot 'additional-exclude-out.xml') `
+      -CoverageOutputPath (Join-Path $script:tempRoot 'additional-exclude-cov.xml') `
+      -AdditionalExcludeTag @('PromotedModuleHostSensitive', 'Disabled')
+
+    $result.GatePass | Should -BeTrue
+    $script:capturedPesterConfiguration.Filter.ExcludeTag.Value | Should -Contain 'PromotedModuleHostSensitive'
+    @($script:capturedPesterConfiguration.Filter.ExcludeTag.Value | Where-Object { $_ -eq 'Disabled' }).Count | Should -Be 1
+  }
+
   It 'fails a non-Sprint gate when the tier filter selects zero tests' {
     Mock -CommandName Invoke-Pester -MockWith {
       [PSCustomObject]@{

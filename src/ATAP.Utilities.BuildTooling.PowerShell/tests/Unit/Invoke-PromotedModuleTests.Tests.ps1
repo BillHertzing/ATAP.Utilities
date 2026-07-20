@@ -208,7 +208,8 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             Assert-MockCalled Import-Module -Times 1 -Exactly -Scope It -ParameterFilter { $Name -match 'Mod\.psd1' }
             Assert-MockCalled Invoke-PSModulePesterTests -Times 1 -Exactly -Scope It -ParameterFilter {
                 $ModuleRoot -eq 'C:\fake\src\Mod' -and $Tier -eq 'Alpha' -and (-not $SkipTestResult) -and $SkipCodeCoverage -and
-                $PesterOutputVerbosity -eq 'Normal' -and $PesterProgressInterval -eq 20
+                $PesterOutputVerbosity -eq 'Normal' -and $PesterProgressInterval -eq 20 -and
+                $AdditionalExcludeTag -contains 'PromotedModuleHostSensitive'
             }
         }
 

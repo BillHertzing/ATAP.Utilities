@@ -371,6 +371,7 @@ function Invoke-PromotedModuleTests {
                     -OutputPath $outputFile `
                     -CoverageOutputPath $coverageFile `
                     -SkipCodeCoverage `
+                    -AdditionalExcludeTag 'PromotedModuleHostSensitive' `
                     -PesterOutputVerbosity $PesterOutputVerbosity `
                     -PesterProgressInterval $PesterProgressInterval `
                     -ErrorAction Stop

@@ -34,6 +34,11 @@ interactive troubleshooting.
 When PesterOutputVerbosity is None, writes compact progress lines after this
 many completed tests. Defaults to 20; set to 0 to disable.
 
+.PARAMETER AdditionalExcludeTag
+Additional Pester tags to exclude from this invocation. This lets callers add
+context-specific exclusions without changing the tier filter or coupling test
+selection to console-output verbosity.
+
 .OUTPUTS
 [PSCustomObject] projecting Pester summary fields plus GatePass, OutputFile,
 CoverageFile.
@@ -683,7 +688,9 @@ function Invoke-PSModulePesterTests {
     [string]$PesterOutputVerbosity = 'Normal',
 
     [ValidateRange(0, [int]::MaxValue)]
-    [int]$PesterProgressInterval = 20
+    [int]$PesterProgressInterval = 20,
+
+    [string[]]$AdditionalExcludeTag = @()
   )
 
   begin {
@@ -776,7 +783,7 @@ function Invoke-PSModulePesterTests {
       }
 
       $filter = Get-PSModulePesterTierFilter -Tier $Tier
-      $excludeTag = @($filter.ExcludeTag)
+      $excludeTag = @($filter.ExcludeTag) + @($AdditionalExcludeTag)
       if ($PesterOutputVerbosity -eq 'None') {
         # Some unit tests intentionally exercise SupportsShouldProcess with
         # -WhatIf. PowerShell writes those host messages outside the normal
@@ -787,6 +794,7 @@ function Invoke-PSModulePesterTests {
         $excludeTag += 'BuildTranscriptNoise'
         $excludeTag += 'PromotedModuleHostSensitive'
       }
+      $excludeTag = @($excludeTag | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | Select-Object -Unique)
 
       $coveragePaths = @()
       $publicDir = Join-Path $ModuleRoot 'public'

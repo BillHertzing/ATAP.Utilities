@@ -335,7 +335,8 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
     $text | Should -Match '-Feed \$destinationFeed'
     $text | Should -Match '\$\(\$Tier\)TestResults'
     $text | Should -Match '-ProGetBaseUrl \$ProGetUrl'
-    $text | Should -Match '-ApiKey \$script:resolvedProGetApiKey'
+    $text | Should -Match '-ProGetApiKeySecretName \$ProGetApiKeySecretName'
+    $text | Should -Not -Match '-ApiKey\s+\$script:resolvedProGetApiKey'
     $text | Should -Match 'next stage gate'
     $text | Should -Match "starting promotion/test"
     $text | Should -Not -Match 'promotion/test execution.*not implemented yet'

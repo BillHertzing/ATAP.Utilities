@@ -239,6 +239,34 @@ Describe 'Select-PSModulePesterRunResult' -Tag 'Unit' {
   }
 }
 
+Describe 'Write-PSModulePesterJUnitResult' -Tag 'Unit' {
+
+  It 'excludes tag-filtered NotRun tests from JUnit counts and cases' {
+    $result = [PSCustomObject]@{
+      PassedCount  = 1
+      FailedCount  = 0
+      SkippedCount = 1
+      NotRunCount  = 1
+      TotalCount   = 3
+      Duration     = [TimeSpan]::FromSeconds(1)
+      Tests        = @(
+        [PSCustomObject]@{ Name = 'runs'; Result = 'Passed'; Duration = [TimeSpan]::Zero }
+        [PSCustomObject]@{ Name = 'explicit skip'; Result = 'Skipped'; Duration = [TimeSpan]::Zero }
+        [PSCustomObject]@{ Name = 'filtered out'; Result = 'NotRun'; Duration = [TimeSpan]::Zero }
+      )
+    }
+    $out = Join-Path $script:tempRoot 'filtered-junit.xml'
+
+    Write-PSModulePesterJUnitResult -PesterResult $result -OutputPath $out
+
+    $xml = [xml](Get-Content -LiteralPath $out -Raw)
+    $xml.testsuites.tests | Should -Be '2'
+    $xml.testsuites.skipped | Should -Be '1'
+    @($xml.testsuites.testsuite.testcase) | Should -HaveCount 2
+    @($xml.testsuites.testsuite.testcase.name) | Should -Not -Contain 'filtered out'
+  }
+}
+
 Describe 'Invoke-PSModulePesterTests (Sprint short-circuit)' -Tag 'Unit' {
 
   It 'returns GatePass=$true without invoking Pester when Tier=Sprint' {
@@ -335,5 +363,86 @@ Describe 'Invoke-PSModulePesterTests (quiet output)' -Tag 'Unit' {
 
     $result.TotalCount | Should -Be 0
     $result.GatePass | Should -BeFalse
+  }
+
+  It 'reports only executed tests in the tier gate total' {
+    Mock -CommandName Invoke-Pester -MockWith {
+      [PSCustomObject]@{
+        PassedCount  = 1
+        FailedCount  = 0
+        SkippedCount = 0
+        NotRunCount  = 2
+        TotalCount   = 3
+        Duration     = [TimeSpan]::Zero
+      }
+    }
+
+    $moduleRoot = Join-Path $script:tempRoot 'filtered-count-module'
+    New-Item -ItemType Directory -Path $moduleRoot -Force | Out-Null
+
+    $result = Invoke-PSModulePesterTests `
+      -ModuleRoot $moduleRoot `
+      -Tier 'Alpha' `
+      -OutputPath (Join-Path $script:tempRoot 'filtered-count-out.xml') `
+      -CoverageOutputPath (Join-Path $script:tempRoot 'filtered-count-cov.xml') `
+      -SkipTestResult
+
+    $result.TotalCount | Should -Be 1
+    $result.GatePass | Should -BeTrue
+  }
+
+  It 'retains runner helpers when a test reload removes the owning module' {
+    $runnerModuleName = 'ATAP.BuildTooling.PesterRunner.IsolationTest'
+    $runnerModule = New-Module -Name $runnerModuleName -ArgumentList $functionPath -ScriptBlock {
+      param([string]$RunnerFunctionPath)
+
+      . $RunnerFunctionPath
+      Export-ModuleMember -Function Invoke-PSModulePesterTests
+    }
+    Import-Module $runnerModule -Force
+
+    try {
+      Mock -CommandName Invoke-Pester -ModuleName $runnerModuleName -MockWith {
+        Remove-Module 'ATAP.BuildTooling.PesterRunner.IsolationTest' -Force
+        $passedTest = [PSCustomObject]@{
+          Name      = 'survives module reload'
+          Result    = 'Passed'
+          Duration  = [TimeSpan]::FromMilliseconds(5)
+          Path      = 'C:\tests\RunnerIsolation.Tests.ps1'
+        }
+        [PSCustomObject]@{
+          PassedCount  = 1
+          FailedCount  = 0
+          SkippedCount = 0
+          TotalCount   = 1
+          Duration     = [TimeSpan]::Zero
+          Tests        = @($passedTest)
+        }
+      }
+
+      $moduleRoot = Join-Path $script:tempRoot 'module-reload-isolation'
+      New-Item -ItemType Directory -Path $moduleRoot -Force | Out-Null
+      $out = Join-Path $script:tempRoot 'module-reload-isolation-out.xml'
+      $cov = Join-Path $script:tempRoot 'module-reload-isolation-cov.xml'
+
+      $result = & $runnerModule {
+        param($ModuleRoot, $OutputPath, $CoverageOutputPath)
+
+        Invoke-PSModulePesterTests `
+          -ModuleRoot $ModuleRoot `
+          -Tier 'Alpha' `
+          -OutputPath $OutputPath `
+          -CoverageOutputPath $CoverageOutputPath `
+          -PesterOutputVerbosity 'None' `
+          -PesterProgressInterval 1
+      } $moduleRoot $out $cov
+
+      $result.GatePass | Should -BeTrue
+      $result.Passed | Should -Be 1
+      Test-Path -LiteralPath $out | Should -BeTrue
+      Get-Module $runnerModuleName | Should -BeNullOrEmpty
+    } finally {
+      Remove-Module $runnerModuleName -Force -ErrorAction SilentlyContinue
+    }
   }
 }

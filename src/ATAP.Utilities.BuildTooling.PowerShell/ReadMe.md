@@ -1055,6 +1055,12 @@ developer-workstation globals or paths, or evaluate the full repository carry
 the `PromotedModuleHostSensitive` tag. They are excluded only from quiet
 promoted-package gates; normal source test runs still execute them.
 
+`Invoke-PSModulePesterTests` retains its module-bound result, plugin-restoration,
+and JUnit helper scriptblocks before entering Pester. Tests may therefore remove
+or force-reimport BuildTooling without breaking runner teardown or artifact
+generation. Tier totals and JUnit cases exclude Pester's tag-filtered `NotRun`
+records; explicit skips remain represented as skipped cases.
+
 Task 10.30 promoted `ATAP.Utilities.BuildTooling.PowerShell` 0.1.7 through
 BuildMaster build 14137. Development passed 476/476 tests, and Integration, QA,
 and Production each passed 482/482. ProGet then exposed 0.1.7 in all five

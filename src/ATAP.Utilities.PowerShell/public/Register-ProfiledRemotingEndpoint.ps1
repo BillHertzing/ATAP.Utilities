@@ -35,8 +35,25 @@ function Register-ProfiledRemotingEndpoint {
     Name under which the session configuration is registered.
 
   .PARAMETER Path
-    Local path to the source .pssc file. Defaults to the module's own
-    WithProfiles.pssc under Profiles\.
+    Local path to the source .pssc file: the canonical, stable
+    WithProfiles.pssc that is actually registered. Defaults to a documented,
+    multi-candidate resolution (dev-tree layout relative to this file's own
+    Profiles\ sibling, then the installed module's ModuleBase\Profiles\) so
+    resolution does not depend on a single guessed $PSScriptRoot-relative
+    path being correct for every install layout. Throws a clear, bounded
+    error naming the resolved candidate path when no candidate exists.
+
+  .PARAMETER LocalMarkerPath
+    Base path (without the ".registered-sha256" suffix) for the local
+    idempotency hash-marker written after a successful local registration.
+    Deliberately independent of -Path: registration reads its content from
+    -Path, but the marker must never live beside the source .pssc when -Path
+    points inside a Git worktree, since that pollutes the tree and breaks
+    clean-tree gates. Defaults to a machine-state location resolved by
+    Get-ProfiledRemotingMachineStateRoot (ProgramData\ATAP\RemotingEndpoints,
+    with a Machine-scope and windir-derived fallback for agent shells that do
+    not inherit Process-scope ProgramData/windir). Ignored for remote
+    registration, which already stages/markers under -RemoteStagingPath.
 
   .PARAMETER RemoteStagingPath
     Path on the remote host where the .pssc is copied before registration.
@@ -87,7 +104,36 @@ function Register-ProfiledRemotingEndpoint {
 
     [Parameter()]
     [ValidateNotNullOrEmpty()]
-    [string] $Path = (Join-Path $PSScriptRoot '..\Profiles\WithProfiles.pssc'),
+    [string] $Path = $(
+      # Documented, multi-candidate default rather than a single blind
+      # $PSScriptRoot guess: try the dev-tree layout first (this file lives
+      # in public\, WithProfiles.pssc lives in the sibling Profiles\), then
+      # fall back to the installed module's own ModuleBase\Profiles\, which
+      # can differ from the dev-tree layout depending on how the module was
+      # packaged/installed.
+      $devCandidate = Join-Path $PSScriptRoot '..\Profiles\WithProfiles.pssc'
+      if (Test-Path -LiteralPath $devCandidate -PathType Leaf) {
+        (Resolve-Path -LiteralPath $devCandidate).ProviderPath
+      } else {
+        $installedModule = Get-Module -Name 'ATAP.Utilities.Powershell' -ErrorAction SilentlyContinue | Select-Object -First 1
+        $moduleCandidate = if ($installedModule -and $installedModule.ModuleBase) {
+          Join-Path $installedModule.ModuleBase 'Profiles\WithProfiles.pssc'
+        }
+        if ($moduleCandidate -and (Test-Path -LiteralPath $moduleCandidate -PathType Leaf)) {
+          (Resolve-Path -LiteralPath $moduleCandidate).ProviderPath
+        } else {
+          # Neither candidate exists: return the primary (dev-tree) candidate
+          # so the begin-block guard below throws a clear, stable error
+          # naming a real, documented path instead of $null.
+          $devCandidate
+        }
+      }
+    ),
+
+    [Parameter()]
+    [AllowNull()]
+    [AllowEmptyString()]
+    [string] $LocalMarkerPath,
 
     [Parameter()]
     [ValidateNotNullOrEmpty()]
@@ -106,11 +152,31 @@ function Register-ProfiledRemotingEndpoint {
     $mn = 'ATAP.Utilities.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn"
 
-    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
-      throw "Session configuration file not found: '$Path'."
+    # Load-once, module-import-safe helper fallback: when the module is imported
+    # normally, private\*.ps1 is already dot-sourced by the .psm1 and these commands
+    # exist. When this file is dot-sourced directly (for example a lightweight Pester
+    # test that avoids importing the whole module), load the sibling private helpers
+    # explicitly instead of duplicating their logic here.
+    if (-not (Get-Command -Name 'Resolve-ATAPMachineEnvironmentVariable' -ErrorAction SilentlyContinue)) {
+      . (Join-Path $PSScriptRoot '..\private\Resolve-ATAPMachineEnvironmentVariable.ps1')
+    }
+    if (-not (Get-Command -Name 'Get-ProfiledRemotingMachineStateRoot' -ErrorAction SilentlyContinue)) {
+      . (Join-Path $PSScriptRoot '..\private\Get-ProfiledRemotingMachineStateRoot.ps1')
     }
 
-    $localComputerName = if ($env:COMPUTERNAME) { $env:COMPUTERNAME } else { [Environment]::MachineName }
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+      throw "Session configuration file not found: '$Path'. Neither the dev-tree candidate (this module's own Profiles\WithProfiles.pssc) nor an installed module's ModuleBase\Profiles\WithProfiles.pssc resolved to an existing file; pass -Path explicitly to the canonical stable source."
+    }
+
+    if ([string]::IsNullOrWhiteSpace($LocalMarkerPath)) {
+      # Deliberately independent of -Path: the marker must live under a
+      # machine-state root, never beside the source .pssc, because -Path
+      # commonly points inside a Git worktree (the dev-tree candidate above).
+      # Writing the marker there pollutes the tree and breaks clean-tree gates.
+      $LocalMarkerPath = Join-Path (Get-ProfiledRemotingMachineStateRoot) 'WithProfiles.pssc'
+    }
+
+    $localComputerName = Resolve-ATAPMachineEnvironmentVariable -Name 'COMPUTERNAME' -DefaultValue ([Environment]::MachineName) -FunctionName $fn -ModuleName $mn
     $localNames = @('.', 'localhost', $localComputerName) | Where-Object { $_ }
     $isLocal = $ComputerName -in $localNames
 
@@ -126,14 +192,18 @@ function Register-ProfiledRemotingEndpoint {
     # remotely via Invoke-Command -- kept as a single scriptblock so both paths
     # exercise the same idempotency decision.
     $script:registerScript = {
-      param($ConfigurationName, $PsscPath, $ExpectedHash)
+      param($ConfigurationName, $PsscPath, $MarkerPath, $ExpectedHash)
 
       # WinRM does not expose the byte content of a registered .pssc-defined
       # configuration in a directly comparable form, so idempotency is tracked via
-      # a sidecar hash-marker file written next to the staged .pssc at the end of
-      # a successful registration -- not by re-hashing the source file (which would
-      # trivially match itself and never detect drift).
-      $hashMarkerPath = "$PsscPath.registered-sha256"
+      # a sidecar hash-marker file written at the end of a successful registration
+      # -- not by re-hashing the source file (which would trivially match itself
+      # and never detect drift). $MarkerPath is deliberately independent of
+      # $PsscPath: the source .pssc is registered from $PsscPath (which may live
+      # inside a Git worktree), but the marker is always written under a
+      # machine-state root (see Get-ProfiledRemotingMachineStateRoot) so it never
+      # pollutes the worktree.
+      $hashMarkerPath = "$MarkerPath.registered-sha256"
       $existing = Get-PSSessionConfiguration -Name $ConfigurationName -ErrorAction SilentlyContinue
       $recordedHash = if (Test-Path -LiteralPath $hashMarkerPath -PathType Leaf) {
         (Get-Content -LiteralPath $hashMarkerPath -Raw -ErrorAction SilentlyContinue).Trim()
@@ -150,6 +220,11 @@ function Register-ProfiledRemotingEndpoint {
           Unregister-PSSessionConfiguration -Name $ConfigurationName -Force -NoServiceRestart -ErrorAction Stop
         }
         Register-PSSessionConfiguration -Name $ConfigurationName -Path $PsscPath -Force -NoServiceRestart -ErrorAction Stop
+
+        $markerDir = Split-Path -Path $hashMarkerPath -Parent
+        if ($markerDir -and -not (Test-Path -LiteralPath $markerDir -PathType Container)) {
+          New-Item -ItemType Directory -Path $markerDir -Force | Out-Null
+        }
         Set-Content -LiteralPath $hashMarkerPath -Value $ExpectedHash -Encoding UTF8 -Force
 
         # Register-PSSessionConfiguration itself persists the config to the WSMan
@@ -184,7 +259,7 @@ function Register-ProfiledRemotingEndpoint {
 
     if ($isLocal) {
       if ($PSCmdlet.ShouldProcess("$ConfigurationName@local", 'Register profiled remoting endpoint')) {
-        $outcome = & $script:registerScript $ConfigurationName $Path $localHash
+        $outcome = & $script:registerScript $ConfigurationName $Path $LocalMarkerPath $localHash
       } else {
         $existing = Get-PSSessionConfiguration -Name $ConfigurationName -ErrorAction SilentlyContinue
         $outcome = [PSCustomObject]@{ Action = $(if ($existing) { 'WouldUpdate' } else { 'WouldCreate' }); Error = $null }

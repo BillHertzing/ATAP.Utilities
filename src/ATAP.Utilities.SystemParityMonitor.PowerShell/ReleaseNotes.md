@@ -18,7 +18,16 @@
   inputs; unmatched differences are classified as undeclared drift.
 - Fall back to `Win32_Share` when `Get-SmbShare` is unavailable, including on the
   affected Windows 10 module-discovery surface.
-- Add focused Pester regression coverage for all three paths.
+- Remove the scheduled audit and compare wrappers' Bitwarden/BWS credential probe,
+  token-purpose parameters, and credential-directory dependency. Scheduled action
+  arguments now contain no vault-token inputs, and metadata-only task-result JSON
+  records `SecretAccessRequired = false`.
+- Restore S4U/Limited as the peer audit topology; a supplied Windows credential is
+  used only for cross-account task registration or primary-host peer SMB access, not
+  for vault access.
+- Add focused Pester regression coverage for the parity collection paths and
+  adversarial guards against reintroducing `Get-BWSAccessToken`, `bws`, or credential
+  directories into scheduled execution.
 
 ## 0.1.3 (published 2026-07-12)
 

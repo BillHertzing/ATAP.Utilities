@@ -6,11 +6,6 @@ param(
 
   [string]$ResultDirectory,
 
-  [string]$CredentialDirectory,
-
-  [ValidateSet('ReadOnly', 'ReadWrite')]
-  [string]$TokenPurpose = 'ReadOnly',
-
   [string]$EventLogName = 'Application',
 
   [string]$EventSource = 'ATAP.SystemParityMonitor'
@@ -34,7 +29,6 @@ $stamp = $timestampUtc.ToString('yyyyMMddTHHmmssZ', [Globalization.CultureInfo]:
 $resultPath = Join-Path $ResultDirectory "ParityAuditTaskResult.$($HostName.ToLowerInvariant()).$stamp.json"
 
 try {
-  $probe = Invoke-ParityScheduledTaskBwsProbe -CredentialDirectory $CredentialDirectory -TokenPurpose $TokenPurpose
   $snapshot = Invoke-ParityAudit -StatePath $StatePath -HostName $HostName
 
   [pscustomobject]@{
@@ -45,8 +39,8 @@ try {
     GeneratedAtUtc = $timestampUtc.ToString('o', [Globalization.CultureInfo]::InvariantCulture)
     SnapshotPath = $snapshot.SnapshotPath
     CapturedAtUtc = $snapshot.CapturedAtUtc
+    SecretAccessRequired = $false
     EventLog = $null
-    BwsProbe = $probe
   } | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $resultPath -Encoding utf8
 } catch {
   $identityName = try {
@@ -68,6 +62,7 @@ try {
     HostName = $HostName.ToLowerInvariant()
     IdentityName = $identityName
     GeneratedAtUtc = $timestampUtc.ToString('o', [Globalization.CultureInfo]::InvariantCulture)
+    SecretAccessRequired = $false
     EventLog = $eventLogResult
     Error = $_.Exception.Message
   } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $resultPath -Encoding utf8

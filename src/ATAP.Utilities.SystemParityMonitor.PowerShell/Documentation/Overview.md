@@ -38,22 +38,23 @@ ATAP.Utilities in Task 12.46.
 `scripts\Register-ParityScheduledTasks.ps1` registers local Task Scheduler entries
 for the host role:
 
-1. `ATAP-ParityAudit` -> `Invoke-ParityScheduledAuditTask.ps1` — local snapshot plus a
-   `CommonCIForBitwardenReadOnly` BWS credential probe; result JSON under
-   `<StateRoot>\TaskResults`.
+1. `ATAP-ParityAudit` -> `Invoke-ParityScheduledAuditTask.ps1` — token-free local
+   snapshot; metadata-only result JSON under `<StateRoot>\TaskResults` records
+   `SecretAccessRequired = false`.
 2. `ATAP-ParityCompare` -> `Invoke-ParityScheduledCompareTask.ps1` — primary-host
    comparison against the peer's state share (default `\\utat01\ParityState`). Register
    this only on the primary host (`TaskSet AuditAndCompare`).
 
 Both wrappers import the module from this folder's parent by relative path and use the
-shared `ParityScheduledTask.Common.ps1` helper. The scheduled path performs no
-PowerShell remoting: each host writes its own snapshots locally, and `utat022` reads the
+shared `ParityScheduledTask.Common.ps1` event-reporting helper. Scheduled execution
+requires no secret-vault token or credential directory and performs no PowerShell
+remoting: each host writes its own snapshots locally, and `utat022` reads the
 peer snapshot share during compare. Tasks default to `SvcParityAudit` with `S4U`; use
 `-LogonType Password -Credential <PSCredential>` for the primary compare task when SMB
 peer-share access requires reusable service-account credentials. When an administrator
 registers an S4U task for a different identity, Task Scheduler also requires that
 identity's credential during registration even though the saved principal remains S4U
-and does not store the password. Version `0.1.2` supplies that registration credential
+and does not store the password. Version `0.1.3` supplies that registration credential
 while retaining the S4U/Limited saved principal. Re-register tasks when the module's
 on-disk location changes.
 

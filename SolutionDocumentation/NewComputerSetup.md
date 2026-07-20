@@ -12,16 +12,22 @@ BuildMaster promotion workflows, and offline development.
 
 The end state is:
 
-1. The machine has the expected stable and sprint worktrees under `C:\Dropbox\whertzing\GitHub`.
-2. PowerShell 7 profiles and login automation are installed from `ATAP.Utilities.PowerShell`.
+1. The machine has the expected stable and sprint worktrees under `C:\Dropbox\whertzing\GitHub`,
+   and the active overview assigns each developer to every approved host rather than
+   deduplicating by username.
+2. PowerShell 7 profiles are rendered from the canonical ATAP.IAC templates into the
+   profile paths PowerShell actually loads; profiled remoting passes a bounded identity probe.
 3. Third-party software is installed and configured:
    - SQL Server with the base instances `Production`, `QA`, and `Integration`
    - ProGet using the `Production` SQL instance — full step-by-step procedure: see [ProGet-Install-Runbook.md](ProGet-Install-Runbook.md)
    - BuildMaster using the `Production` SQL instance — full step-by-step procedure: see [BuildMaster-Install-Runbook.md](BuildMaster-Install-Runbook.md)
-4. The local service accounts and Bitwarden secrets required by SQL Server, ProGet, and
-   BuildMaster exist and are wired up.
-5. Backup jobs exist for the ProGet and BuildMaster databases.
-6. Stable-branch builds and tests complete successfully.
+4. Service accounts have managed profiles, while only the explicitly approved identities
+   receive Bitwarden Secrets Manager (`bws`) access. Interactive Password Manager
+   (`bw`/`BW_SESSION`) use remains a separate user-only path.
+5. Classified, verified SQL backups exist outside Git and Dropbox; independent Inedo
+   databases are never copied or merged between hosts.
+6. Stable-branch builds and tests complete successfully, and Class A/off-LAN plus bounded
+   return certification is recorded with metadata-only evidence.
 
 ## Important Conventions
 
@@ -41,6 +47,29 @@ The end state is:
 - Prefer the newest `Overview.code-workspace` and `Overview.Sprint.NNNN.code-workspace`
   files at `C:\Dropbox\whertzing\GitHub` as the current branch/worktree matrix when
   they are present.
+
+### Current architecture and deferred gates
+
+Apply the guide in this dependency order. A later gate does not excuse a failed earlier one.
+
+1. Settle Dropbox, inventory mutable application state, and prove exact repository integrity
+   before changing Git or worktree state. Never grant Git trust to the whole GitHub parent.
+2. Join an existing sprint with the machine-local boundary retarget procedure, not a second
+   SprintStart. Only `.vscode` is a designed junction; AI adapter surfaces are concrete renders.
+3. Resolve the active `(developer, host)` assignment and the profile paths PowerShell actually
+   loads. Profile templates come from ATAP.IAC, not a retired ATAP.Utilities profile target.
+4. Keep personal `bw`/`BW_SESSION` use distinct from project-scoped `bws` automation.
+   Provision no new BWS identity until the Tasks 13.40–13.43 senior decision and release gates.
+5. Declare one package manager as owner for every executable. The Java vendor/version/update
+   decision remains deferred to `SC-0286`; measured Java 21/Flyway success is not that decision.
+6. Verify the five SQL roles, classified backup boundaries, ProGet on port `50000`, and
+   BuildMaster on port `50017` before package or application readiness claims.
+7. Finish with mobile-host security, Class A off-LAN proof, and a bounded return drill.
+
+The profiled-remoting source/runtime-state fix (Task 13.20.e), the BWS identity
+decision (Tasks 13.40–13.43), the Java decision (`SC-0286`), the production-data policy
+(Task 13.60), and the BuildMaster helper release (Task 13.20.j) remain explicit gates. Do not
+turn a successful operator workaround into a claim that these product changes are deployed.
 
 ## OS Image Sources
 
@@ -322,7 +351,11 @@ interpreter.
 
 ## Step 3: Sync the Repository Tree
 
-Wait for Dropbox to report `Up to date`, then verify the stable repos exist:
+Before allowing Dropbox to synchronize application state, inventory host-local mutable
+directories such as databases, package stores, logs, caches, sessions, histories, captures,
+and credential stores. Keep them out of Dropbox/Git unless a reviewed procedure explicitly
+classifies a safe declarative subset. Wait for Dropbox to report `Up to date`, scan for
+`*conflicted copy*` files and unexpected reparse points, then verify the stable repos exist:
 
 ```powershell
 $gitHubRoot = 'C:\Dropbox\whertzing\GitHub'
@@ -344,6 +377,12 @@ If the current sprint already exists, verify the sprint worktrees are present as
 Get-ChildItem $gitHubRoot -Directory -Filter '*-wt-*-Sprint-*-work-items' |
   Select-Object FullName
 ```
+
+Do not run SprintStart a second time merely because this host is joining an active sprint.
+Run the current machine-local boundary retarget, then verify clean Git state and exact-path
+ownership/trust for each repository and worktree. Trusting `C:\Dropbox\whertzing\GitHub` as a
+single parent path is prohibited. Confirm `.vscode` is the intended junction and that `.agents`,
+`.claude`, `.codex`, and `.gemini` are concrete rendered surfaces.
 
 Also confirm the shell-folder mapping script is present on disk before running it below:
 
@@ -379,23 +418,19 @@ reboot) so Windows Explorer picks up the changed shell-folder locations.
 
 ## Step 4: Install PowerShell Profiles and the Login Script
 
-The machine-level and user-level PowerShell 7 profiles come from
-`ATAP.Utilities.PowerShell`. Install them either by copying the files or, during active
-development, by linking them back to the source worktree.
+The canonical developer and service-account templates come from ATAP.IAC. Deploy managed
+copies through BuildTooling and HostSettings; do not create a profile symlink or revive the
+retired ATAP.Utilities profile target. Discover the paths PowerShell actually loads from
+`$PROFILE` in a fresh shell, including redirected known folders.
 
-### 4.1 Link the machine-wide PowerShell 7 profile
+### 4.1 Verify the machine-wide PowerShell 7 profile source
 
-```powershell
-$gitHubRoot = 'C:\Dropbox\whertzing\GitHub'
-$atapRoot = Join-Path $gitHubRoot 'ATAP.Utilities'
-$profileSource = Join-Path $atapRoot 'src\ATAP.Utilities.PowerShell\Profiles'
-
-New-Item -ItemType Directory -Path (Join-Path $env:ProgramFiles 'PowerShell\7') -Force | Out-Null
-Remove-Item (Join-Path $env:ProgramFiles 'PowerShell\7\profile.ps1') -ErrorAction SilentlyContinue
-New-Item -ItemType SymbolicLink `
-  -Path (Join-Path $env:ProgramFiles 'PowerShell\7\profile.ps1') `
-  -Target (Join-Path $profileSource 'AllUsersAllHostsV7CoreProfile.ps1') | Out-Null
-```
+Use the current ATAP.IAC profile template selected through HostSettings. In both a direct
+fresh shell and `ATAP.PS7.Profiled`, record the loaded `$PROFILE` paths, source/target
+existence, parser/import results, and current identity. The verified bounded workaround is
+to register the endpoint with an explicit `WithProfiles.pssc` path. Default deployed-module
+resolution and machine-state placement remain deferred to Task 13.20.e; do not present the
+workaround as the installed fix.
 
 ### 4.2 Provision managed current-user profiles
 
@@ -667,6 +702,19 @@ version, printed from the service account's own `-NoProfile` context.
 > see it. If a verified machine-scope package becomes available you may use it, but you
 > must still pass the `-NoProfile` and service-account resolution checks above.
 
+### 4.7 Gate Java, Flyway, and package-manager ownership
+
+Inventory Java from every package manager and every resolved path before installing or
+removing a runtime. A successful UTAT01 repair removed Oracle Java 8 and proved Java 21 with
+Flyway, but the canonical vendor, architecture, version, update owner, rollback, `JAVA_HOME`,
+and PATH-order decision remains deferred to `SC-0286`. Do not generalize that measured repair
+into an organization-wide Java selection.
+
+Apply the same ownership gate to Chocolatey, pip, npm, NuGet/.NET tools, and manually
+installed binaries. Every overlap needs one declared owner even when versions match. Record
+only version, path, architecture, package owner, and test outcome. Flyway validation must run
+with the exact Java executable selected by the gate.
+
 ## Phase 2: Third-Party Software
 
 ## Step 5: Create the Bitwarden Secrets and Local Service Accounts
@@ -881,7 +929,16 @@ Notes:
 
 ## Step 8: Build the Databases on All Instances
 
-Run the database rebuild script after the instances exist:
+Classify the five roles before running any database command:
+
+- `Devwhertzing` and `Expwhertzing` are permanent developer instances managed by the sprint
+  lifecycle and may be rebuilt from Flyway under that contract.
+- `Integration` and `QA` are ecosystem tiers with their own verification and reset policy.
+- `Production` is protected data. Do not rebuild, seed, copy, restore, or reset it merely
+  because a developer instance was created. Task 13.60 owns the protection/seed policy.
+
+Run the database rebuild script only for roles whose current policy explicitly authorizes a
+rebuild:
 
 ```powershell
 Push-Location 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
@@ -890,13 +947,32 @@ Pop-Location
 ```
 
 This script should be treated as a temporary bootstrap script until it is converted into a
-module cmdlet. For now, it is still the documented way to build and seed the databases on
-the permanent instances.
+module cmdlet. Review its resolved target list before execution. It is not authorization to
+build or seed Production, and it must not collapse the five roles into "two instances total."
 
 ## Step 9: Install and Configure ProGet and BuildMaster
 
 Group all tooling setup under this section. ProGet and BuildMaster both use the local
 `Production` SQL Server instance and Windows integrated security.
+
+The two Inedo products are independent per host. ProGet is canonical on port `50000` and
+BuildMaster on port `50017`; port `8600` is obsolete. Never copy or merge an Inedo database
+between `utat01` and `utat022`. All service placement and derived URLs come from the single
+`ServicePlacementMap`; do not edit derived endpoint keys individually.
+
+ProGet readiness includes the per-host license state, `Storage.PackagesRootPath` readback as
+`C:\ProgramData\ProGet\Packages`, `SvcProGet` ACLs, the canonical 15-feed inventory, explicit
+connector-free mapping, and a harmless publish/download/restore proof. The approved local HTTP
+NuGet source may set `allowInsecureConnections=true`; public sources remain HTTPS. Resolve the
+host-specific administrative SecretName only at the authenticated-operation boundary and never
+record the value.
+
+BuildMaster readiness includes the host-specific administrative SecretName, the approved
+`ATAP.Utilities-CSharp` and `ATAP.Utilities-PowerShell` application definitions, required
+non-secret variables, default raft, and full `Assert-BuildMasterReady` outcome. The supported
+server `ArtifactUsage` values are `FileSystem`, `AssetDirectory`, and `None`; do not send
+`Default`. The direct API fallback is a verified workaround only. Optional/null-field handling,
+response detail, idempotent create/update tests, release, and installation remain Task 13.20.j.
 
 ### 9.1 Install ProGet and BuildMaster from Inedo Hub
 
@@ -1081,7 +1157,8 @@ Set-Acl -LiteralPath $credentialDirectory -AclObject $acl
 DPAPI binds the encryption key to the running user, so the `Export-Clixml` files must
 be produced by a process running as `SvcBuildmaster` itself. The standard pattern is
 `Start-Process -Credential` to obtain a shell in that account's security context, then
-run [`Update-ServiceAccountBWCredentialFile.ps1`](../src/ATAP.Utilities.BuildTooling.PowerShell/public/Update-ServiceAccountBWCredentialFile.ps1)
+run the historical
+[`Update-ServiceAccountBWCredentialFile.ps1`](../src/ATAP.Utilities.BuildTooling.PowerShell/Obsolete/public/Update-ServiceAccountBWCredentialFile.ps1)
 inside that shell. The helper function takes the new Bitwarden passwords as
 `SecureString` parameters (so they never appear on the command line), runs the security
 guard that verifies the current user equals `-ServiceAccount`, and wraps
@@ -1252,7 +1329,8 @@ Set-Acl -LiteralPath $credentialDirectory -AclObject $acl
 #### 9.4.5 Create the ProGet DPAPI credential files
 
 Same pattern as 9.4.2 — launch a `pwsh` window as `SvcProGet` and invoke
-[`Update-ServiceAccountBWCredentialFile.ps1`](../src/ATAP.Utilities.BuildTooling.PowerShell/public/Update-ServiceAccountBWCredentialFile.ps1)
+the historical
+[`Update-ServiceAccountBWCredentialFile.ps1`](../src/ATAP.Utilities.BuildTooling.PowerShell/Obsolete/public/Update-ServiceAccountBWCredentialFile.ps1)
 inside that shell.
 
 Run **from the elevated administrative session**:
@@ -1601,20 +1679,24 @@ that service account is complete.
 > The remaining bootstrap automation and all password/access-token rotation implementation are
 > deferred to next-sprint planning; use the carry-forward plan in the `_Planning` repository
 > before attempting a rotation.
-#### 9.4.10 Provision Secrets Manager (ws) access tokens for Windows accounts
+
+#### 9.4.10 Provision Secrets Manager (`bws`) access tokens for Windows accounts
 
 Under the current architecture, runtime/project secrets live in **Bitwarden Secrets
 Manager** and are read with a BWS **access token** - there is no `bw login`, no `unlock`,
 no `BW_SESSION`, and no startup/refresh task. The DPAPI-protected access token is the
 entire runtime credential.
 
-This applies to both service accounts and interactive users. The complete
-service-account set requiring both a managed PowerShell profile and project-scoped
-machine-account token is `SvcBuildMaster`, `SvcProGet`, `SvcSeq`, `SvcSQLServer`,
-and `SvcParityAudit`. Interactive users can be given their own project-scoped BWS
-token so they can call the same `Get-SecretATAP` Secrets Manager path without
-duplicating project secrets into Password Manager. User-only secrets remain in
-Password Manager and continue to use the login-time `BW_SESSION` pattern.
+Managed profiles and secret access are separate decisions. The accepted current policy
+requires non-interactive secret access only for `SvcBuildMaster`, `SvcProGet`, and
+`SvcSQLServer`. `SvcSeq` and `SvcParityAudit` receive managed profiles without secret
+material. Interactive users may use the separately approved project-scoped BWS path;
+user-only secrets remain in Password Manager and may use the interactive `bw`/`BW_SESSION`
+pattern. Do not let a Windows service inherit a developer's `BW_SESSION`.
+
+The exact BWS identity set, bootstrap, provisioning, release, and deploy-state proof remain
+deferred to Tasks 13.40–13.43. The rows below document the currently accepted three-account
+scope; they do not authorize token creation or rotation by themselves.
 
 Preconditions:
 
@@ -1630,9 +1712,7 @@ Host mapping:
 | ---------------- | ------------------------------- | ---------------- | ------------------------- | ---------------- |
 | `SvcBuildMaster` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcBuildMaster\<HOST>_SvcBuildMaster_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
 | `SvcProGet` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcProGet\<HOST>_SvcProGet_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
-| `SvcSeq` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcSeq\<HOST>_SvcSeq_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
 | `SvcSQLServer` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcSQLServer\<HOST>_SvcSQLServer_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
-| `SvcParityAudit` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcParityAudit\<HOST>_SvcParityAudit_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
 
 Interactive-user mapping:
 
@@ -1640,18 +1720,17 @@ Interactive-user mapping:
 | ------------------------ | ---------------------- | ------------------------- | ------------------------- |
 | `whertzing` | `CommonCIForBitwardenReadOnly` for `CI-Shared` | `…\whertzing\<HOST>_whertzing_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Approved only for `utat022\whertzing`; otherwise not approved by default |
 
-**ReadOnly rotation distribution rule:** whenever `CommonCIForBitwardenReadOnly` is
-rotated, update the ReadOnly DPAPI file locally on both `utat01` and `utat022` for
-`SvcBuildMaster`, `SvcProGet`, `SvcSeq`, `SvcSQLServer`, and `SvcParityAudit`. Also refresh
-all active developers listed in `C:\Dropbox\whertzing\GitHub\Overview.Sprint.NNNN.code-workspace` on
-their declared host; Sprint 0012 currently lists `whertzing` on `utat022`. Run the write as
-each owning identity; never copy a DPAPI file between identities or hosts.
+**Rotation gate:** rotation is a separate human-in-the-loop operation. After Tasks
+13.40–13.43 approve and release the identity-specific procedure, update each approved DPAPI
+file locally as its owning identity on each declared host. Never copy a DPAPI file between
+identities or hosts. The active overview may assign the same developer to both `utat01` and
+`utat022`; do not deduplicate that assignment by username.
 
 ##### 9.4.10.1 Confirm the `bws` CLI is installed machine-wide
 
-`bws` is installed machine-wide in **Step 4.6**, so `SvcBuildMaster`, `SvcProGet`,
-`SvcSeq`, `SvcSQLServer`, `SvcParityAudit`, and every interactive account resolve the
-same binary from the system `PATH`. Confirm it is visible from a `-NoProfile` shell
+`bws` is installed machine-wide in **Step 4.6**, so approved service identities and
+interactive accounts resolve the same binary from the system `PATH`. Confirm it is visible
+from a `-NoProfile` shell
 (the context the service accounts actually run in) and continue:
 
 ```powershell
@@ -1729,7 +1808,7 @@ Runtime secret reads go through `Get-SecretATAP` with the
 > **Rotation:** regenerating the BWS access token in the web vault invalidates the
 > old one; re-run 9.4.10.3 on every host/account that uses that token.
 
-### 9.5 Bootstrap git `safe.directory` for the BuildMaster service account
+### 9.5 Bootstrap exact Git trust for the BuildMaster service account
 
 When a BuildMaster build agent runs as the BuildMaster service account
 (`SvcBuildmaster` on `utat022`) against a worktree under
@@ -1748,12 +1827,15 @@ surfaces first during `dotnet restore` because of the
 `Directory.Build.props:36`, which triggers an NBGV evaluation that needs
 git.
 
-Run **once**, as `SvcBuildmaster` itself (not as your interactive login),
-in an elevated `pwsh` session opened with that account's credentials:
+Run as `SvcBuildmaster` itself, not as the interactive developer. Add only the resolved
+repository and worktree paths that this identity is authorized to build. Task 13.5 owns the
+idempotent ownership/trust automation; until that automation is deployed, review each exact
+path before adding it.
 
 ```powershell
-# Elevated pwsh, running as SvcBuildmaster
-git config --global --add safe.directory C:/Dropbox/whertzing/GitHub
+# Elevated pwsh running as SvcBuildmaster; repeat for each reviewed exact path.
+$authorizedWorktree = 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities'
+git config --global --add safe.directory $authorizedWorktree
 ```
 
 Verify:
@@ -1768,13 +1850,10 @@ Critical notes:
    lives in the running user's `~/.gitconfig`. Running it from your
    developer account writes to the wrong user's gitconfig and the dubious
    ownership error persists.
-2. **The trailing path is the parent** that contains every repo worktree
-   (`ATAP.Utilities`, `AceCommander`, `ATAP.IAC`, `SharedVSCode`,
-   `_Planning`, and all `*-wt-*-Sprint-*-work-items` siblings). Using the
-   parent path lets one entry cover every current and future worktree
-   under that root.
-3. **Wildcards are not supported.** If a future repo root moves outside
-   `C:\Dropbox\whertzing\GitHub\`, add a second `safe.directory` entry.
+2. **Never trust the parent GitHub directory.** Parent-wide trust silently authorizes
+   current and future repositories that were not reviewed.
+3. **Wildcards are not supported or acceptable here.** Add each authorized repository or
+   worktree as an exact canonical path, and remove obsolete entries during return cleanup.
 
 A common way to obtain a `SvcBuildmaster` shell from an admin login:
 
@@ -1785,12 +1864,12 @@ $bmCred = New-Object System.Management.Automation.PSCredential(
   (ConvertTo-SecureString $bmPassword -AsPlainText -Force)
 )
 Start-Process pwsh -Credential $bmCred -ArgumentList '-NoExit', '-Command',
-  'git config --global --add safe.directory C:/Dropbox/whertzing/GitHub; git config --global --get-all safe.directory'
+  'git config --global --add safe.directory C:/Dropbox/whertzing/GitHub/ATAP.Utilities; git config --global --get-all safe.directory'
 ```
 
-Acceptance: a fresh BuildMaster build under `SvcBuildmaster` against any
-worktree under `C:\Dropbox\whertzing\GitHub\` completes `dotnet restore`
-and `Get-BuildContext` without a `dubious ownership` error.
+Acceptance: the exact authorized paths appear in `safe.directory`, no parent-wide entry is
+present, and a fresh BuildMaster build under `SvcBuildmaster` completes `dotnet restore` and
+`Get-BuildContext` without a `dubious ownership` error.
 
 ### 9.6 Keep the config files under source control
 
@@ -2049,10 +2128,13 @@ Operational guidance:
 
 1. Schedule a weekly full backup for each database.
 2. Add nightly differential backups after the first full backup exists.
-3. Point Cobian at the Dropbox-backed backup root so the resulting `.bak` or `.bak.7z`
-   files replicate off-machine.
-4. Verify restore instructions for both databases before the workstation is considered
-   production-ready.
+3. Before extended DPOM, write classified `COPY_ONLY` backups with `CHECKSUM` under
+   `C:\LocalDBs\PRODUCTION\Backup` and run `RESTORE VERIFYONLY`.
+4. Keep backup contents outside Git and Dropbox. Evidence contains metadata such as path
+   identity, size, hash, timestamp, and verification outcome, never database contents.
+5. Never merge or restore ProGet/BuildMaster databases across hosts as workstation state;
+   reconstruct outcomes from Git, packages, and reviewed configuration.
+6. Retention, recovery objectives, monitoring, and rehearsal remain gated by Task 13.60.
 
 ## Phase 3: Validate the Development Environment
 
@@ -2100,6 +2182,10 @@ Minimum checks:
 3. ProGet is reachable.
 4. BuildMaster is reachable.
 
+On a Sprint branch, pass `-p:PackageLifeCycleStage=Sprint` consistently to split and
+combined restore/build/test flows. Preserve the `ATAP5TIER001` guard. Omit the override on
+`main`, where the stable/empty lifecycle label is valid.
+
 Example reachability checks:
 
 ```powershell
@@ -2128,22 +2214,54 @@ server command is installed, checks the repository `.vscode\settings.json` MCP
 server entry, and performs a GitHub API identity/rate-limit check with the token.
 Restart VS Code after setting the token at user scope.
 
+### 11.5 Mobile-host and Class A certification
+
+Before a mobile workstation is considered ready for extended DPOM, record metadata-only
+proof for:
+
+1. BitLocker fully encrypted with protection on; anti-malware current; time synchronized.
+2. Sleep/hibernate, battery-sensitive scheduled tasks, Windows support/EOS, and public-network
+   behavior reviewed.
+3. NordVPN Internet Kill Switch and the trusted-network rule tested before cloud access.
+4. Local SQL and Inedo health, one value-discarding SecretName resolution, representative
+   restore/build/test, GitHub authentication, and Dropbox continuity.
+5. A live off-LAN gate where peer services are unreachable and local Class A work still passes.
+6. A bounded return drill that reconciles parity journals and path/hash-only AI intent,
+   transfers immutable packages by hash, and reconstructs BuildMaster outcomes without copying
+   Inedo databases.
+
+Class B/full-offline secret use is separately limited and is not implied by a Class A pass.
+If a parity-share read encounters Windows double hop, use the documented temporary
+credentialed-PSDrive workaround with a credential resolved by SecretName. Do not weaken
+remoting globally; hardened transport remains deferred to `SC-0242`.
+
 ## Ready State
 
 The new computer is ready for a developer when all of the following are true:
 
-1. The expected stable and sprint worktrees exist and are synchronized.
-2. PowerShell 7 profiles load without manual fixes.
-3. `BW_SESSION`, .ADMIN.API.KEY`, and `BUILDMASTER.ADMIN.API.KEY` are populated
-   at user scope after sign-in.
-4. SQL Server `Production`, `QA`, and `Integration` are running.
-5. The required `Dev...` and `Exp...` instances exist for the active sprint or feature
-   branches.
-6. ProGet and BuildMaster start under their dedicated service accounts and depend on
-   `MSSQL$PRODUCTION`.
-7. Cobian backup jobs exist for both tooling databases.
-8. Stable-branch builds and tests pass.
-9. GitHub MCP token, server, VS Code settings, and API access validation pass.
+1. Dropbox is settled; conflict/reparse and tracked-file integrity checks pass; every Git
+   trust entry is an exact authorized path.
+2. The multi-host overview, machine-local sprint retarget, `.vscode` junction, and concrete AI
+   adapter renders match the current host assignment.
+3. Developer and service-account profiles load from canonical ATAP.IAC templates in the paths
+   PowerShell actually uses; direct and profiled-remoting identity probes pass or carry an
+   explicit deferred exception.
+4. Personal `bw`/`BW_SESSION` and automation `bws` boundaries are respected. Host settings and
+   callers contain SecretNames only; no raw API-key environment-variable readiness claim is
+   permitted.
+5. The declared Java/package owners and Flyway resolution pass, or the deferred Java decision
+   is recorded without claiming canonicalization.
+6. SQL Server `Devwhertzing`, `Expwhertzing`, `Integration`, `QA`, and `Production` are verified
+   under their distinct data classifications. Required local backups pass checksum and restore
+   verification outside Git/Dropbox.
+7. ProGet answers on `50000` with its package-root, license, feed inventory, ACL, and package
+   proof complete. BuildMaster answers on `50017` with supported application definitions and a
+   full readiness assertion.
+8. Stable-branch builds/tests pass; Sprint-branch flows pass with the lifecycle override.
+9. Mobile security, Class A off-LAN, GitHub/Dropbox continuity, and bounded return evidence pass.
+10. Every acceptance record distinguishes source, deploy, service, and operator state and
+    contains metadata only. Unresolved HITL/deferred gates remain named rather than silently
+    treated as complete.
 
 At that point the workstation can serve as a fully functional developer machine.
 

@@ -73,6 +73,11 @@ that **describes how the target application — Ace Commander — will work**
 _Teach / Tell how to create software._
 
 - [New Computer Setup](NewComputerSetup.md) — **Far more than a bootstrap page.**
+  Sprint 0013 reconciliation records Dropbox/Git integrity, host-qualified
+  multi-host sprint assignment, canonical ATAP.IAC profile sources, BWS versus
+  personal-vault boundaries, five-role SQL protection, canonical Inedo ports,
+  mobile/Class A certification, and explicit deferred/HITL gates. Linked
+  runbooks, automation, and clean-host rehearsal remain open work.
   The first half covers Rufus USB preparation, BIOS configuration, Windows
   install, and WinRM/Ansible enablement via `ConfigureRemotingForAnsible.ps1`.
   The second half (the bulk of the 700+-line document) is an end-to-end

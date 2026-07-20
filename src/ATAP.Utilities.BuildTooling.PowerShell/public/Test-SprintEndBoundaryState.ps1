@@ -99,6 +99,7 @@ function Test-SprintEndBoundaryState {
       'BUILDMASTER_ADMIN_API_KEY',
       'BUILDMASTER_GH_WEBHOOK_SECRET',
       'PROGET_ADMIN_API_KEY',
+      'PROGET_BUILDMASTER_API_KEY',
       'BWS_ACCESS_TOKEN',
       'BW_SESSION'
     ),

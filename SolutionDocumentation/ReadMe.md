@@ -67,6 +67,11 @@ ToDo: Insert diagram of CI/CD process
 - [Sprint Infrastructure Naming](./SprintInfrastructure-Naming.md) records the
   sprint resource names, including BWS-owned `dbConnectionString-*` keys for
   Development and Experimental database connection strings.
+- [New Computer Setup](./NewComputerSetup.md) is the current workstation
+  bootstrap and certification guide. Its Sprint 0013 reconciliation distinguishes
+  host-qualified sprint assignment, canonical profile ownership, five SQL roles,
+  Inedo port/data boundaries, BWS versus personal-vault access, Class A return
+  controls, and the open product/HITL gates that must not be reported as deployed.
 
 ### ManimVideoGenerator
 

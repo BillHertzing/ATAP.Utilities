@@ -1052,8 +1052,11 @@ normal missing-property and scalar `.Count` behavior is expected.
 
 Suites that must import or dot-source the BuildTooling source tree, depend on
 developer-workstation globals or paths, or evaluate the full repository carry
-the `PromotedModuleHostSensitive` tag. They are excluded only from quiet
-promoted-package gates; normal source test runs still execute them.
+the `PromotedModuleHostSensitive` tag. `Invoke-PromotedModuleTests` passes that
+tag through `AdditionalExcludeTag`, so promoted-package selection is identical
+at every console verbosity. Normal source test runs still execute the tagged
+tests unless the quiet BuildMaster source gate applies its established
+host-sensitive exclusions.
 
 `Invoke-PSModulePesterTests` retains its module-bound result, plugin-restoration,
 and JUnit helper scriptblocks before entering Pester. Tests may therefore remove

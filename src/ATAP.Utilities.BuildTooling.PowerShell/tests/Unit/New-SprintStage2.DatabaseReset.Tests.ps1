@@ -259,7 +259,7 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
     Remove-Item -LiteralPath $script:tempGitRoot -Recurse -Force -ErrorAction SilentlyContinue
   }
 
-  It 'uses Reset-SprintDatabases and returns per-database reset results' {
+  It 'uses Reset-SprintDatabases and returns per-database reset results' -Tag 'PromotedModuleHostSensitive' {
     $result = New-SprintStage2 `
       -Stage1Result $script:stage1 `
       -TasksFilePath $script:tasksPath `
@@ -304,7 +304,7 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
     $global:stage2DatabaseResetCalls | Should -Not -Contain 'New-DeveloperSqlServerInstances'
   }
 
-  It 'bootstraps missing configuration globals before Stage 2 side effects' {
+  It 'bootstraps missing configuration globals before Stage 2 side effects' -Tag 'PromotedModuleHostSensitive' {
     $global:configRootKeys = $null
     $global:settings = $null
 

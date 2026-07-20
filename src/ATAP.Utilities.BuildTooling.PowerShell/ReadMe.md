@@ -1062,8 +1062,8 @@ generation. Tier totals and JUnit cases exclude Pester's tag-filtered `NotRun`
 records; explicit skips remain represented as skipped cases.
 
 `Set-TaskComplete` validates its literal helper and task-file paths with
-`System.IO.File.Exists`. This avoids PowerShell-provider initialization when a
-service identity checks a nonexistent temporary task path.
+`System.IO.File.Exists`, avoiding unnecessary PowerShell-provider lookup for
+paths that are always literal files.
 
 Task 10.30 promoted `ATAP.Utilities.BuildTooling.PowerShell` 0.1.7 through
 BuildMaster build 14137. Development passed 476/476 tests, and Integration, QA,

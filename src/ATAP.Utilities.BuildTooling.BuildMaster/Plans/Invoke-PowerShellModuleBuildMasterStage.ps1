@@ -1181,8 +1181,7 @@ function Invoke-PowerShellModuleBuildMasterStage {
             -WorkingDirectory $SourcePath `
             -ProGetBaseUrl $ProGetUrl `
             -ProGetApiKeySecretName $ProGetApiKeySecretName `
-            -PesterOutputVerbosity $pesterOutputVerbosity `
-            -PesterProgressInterval 1
+            -PesterOutputVerbosity $pesterOutputVerbosity
         }
         catch {
           Write-PSFMessage -FunctionName $f -ModuleName $m -Level Error -Message "Invoke-PromotedModuleTests threw for '$PackageName' '$PromotedPackageVersion'. Exception: $($_.Exception.Message)"

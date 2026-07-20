@@ -96,9 +96,8 @@ function Set-TaskComplete {
     }
     . $lockScript
 
-    # This is always a literal file path. Avoid provider resolution here because
-    # service identities can block indefinitely while Test-Path initializes or
-    # probes their PowerShell provider context for a nonexistent temporary path.
+    # This is always a literal file path, so avoid unnecessary provider lookup
+    # and keep validation independent of the caller's provider state.
     if (-not [System.IO.File]::Exists($TasksFilePath)) {
       throw "Set-TaskComplete: TASKS.md not found at '$TasksFilePath'"
     }

@@ -38,9 +38,10 @@ function New-SprintEndHandoff {
     [ValidateScript({ Test-Path -LiteralPath $_ -PathType Container })]
     [string]$GitRoot,
 
-    [Parameter(Mandatory)]
-    [ValidateNotNullOrEmpty()]
-    [string[]]$WorktreePaths,
+    [Parameter()]
+    [AllowNull()]
+    [AllowEmptyCollection()]
+    [string[]]$WorktreePaths = @(),
 
     [Parameter()]
     [ValidatePattern('^\d{1,4}$')]
@@ -57,6 +58,17 @@ function New-SprintEndHandoff {
   }
 
   process {
+    # Do not mark this collection Mandatory. PowerShell treats an explicitly
+    # empty mandatory array as missing and prompts for input; a noninteractive
+    # BuildMaster worker then waits forever. Validate explicitly so omitted,
+    # null, empty, and blank entries all fail immediately without host input.
+    if (@($WorktreePaths).Count -eq 0) {
+      throw 'New-SprintEndHandoff requires at least one WorktreePaths entry.'
+    }
+    if (@($WorktreePaths | Where-Object { [string]::IsNullOrWhiteSpace($_) }).Count -gt 0) {
+      throw 'New-SprintEndHandoff WorktreePaths entries must not be null, empty, or whitespace.'
+    }
+
     function ConvertTo-SprintEndHandoffSingleQuotedLiteral {
       param(
         [Parameter(Mandatory)]

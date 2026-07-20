@@ -155,8 +155,13 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $gitRoot = Join-Path $TestDrive 'gitroot-omitted-worktreepaths'
       New-Item -ItemType Directory -Path $gitRoot -Force | Out-Null
 
-      { New-SprintEndHandoff -GitRoot $gitRoot -Confirm:$false } | Should -Throw
-      { New-SprintEndHandoff -GitRoot $gitRoot -WorktreePaths @() -Confirm:$false } | Should -Throw
+      $worktreeParameter = (Get-Command New-SprintEndHandoff).Parameters['WorktreePaths']
+      $parameterAttributes = @($worktreeParameter.Attributes | Where-Object { $_ -is [System.Management.Automation.ParameterAttribute] })
+      @($parameterAttributes | Where-Object Mandatory).Count | Should -Be 0
+
+      { New-SprintEndHandoff -GitRoot $gitRoot -Confirm:$false } | Should -Throw '*requires at least one WorktreePaths entry*'
+      { New-SprintEndHandoff -GitRoot $gitRoot -WorktreePaths @() -Confirm:$false } | Should -Throw '*requires at least one WorktreePaths entry*'
+      { New-SprintEndHandoff -GitRoot $gitRoot -WorktreePaths @('') -Confirm:$false } | Should -Throw '*must not be null, empty, or whitespace*'
     }
   }
 

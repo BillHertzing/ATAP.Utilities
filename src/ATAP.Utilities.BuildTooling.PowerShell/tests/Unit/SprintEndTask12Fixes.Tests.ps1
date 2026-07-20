@@ -96,9 +96,9 @@ Describe 'SprintEnd Task 12 fixes' -Tag 'Unit' {
       $utilRoot = Join-Path $gitRoot 'ATAP.Utilities'
       $iacRoot = Join-Path $gitRoot 'ATAP.IAC'
       $serviceHome = Join-Path $TestDrive 'svc-home'
-      $serviceSource = Join-Path $utilRoot 'src\ATAP.Utilities.PowerShell\Profiles\ProfileForServiceAccountUsers.ps1'
+      $serviceSource = Join-Path $iacRoot 'Windows\ProfileTemplates\ProfileForServiceAccountUsers.ps1'
       $serviceProfile = Join-Path $serviceHome 'Documents\PowerShell\profile.ps1'
-      New-Item -ItemType Directory -Path (Split-Path $serviceSource -Parent), $iacRoot, (Split-Path $serviceProfile -Parent) -Force | Out-Null
+      New-Item -ItemType Directory -Path (Split-Path $serviceSource -Parent), (Split-Path $serviceProfile -Parent) -Force | Out-Null
       Set-Content -LiteralPath $serviceSource -Value '# service stable profile' -Encoding UTF8
       Set-Content -LiteralPath $serviceProfile -Value '# service stable profile' -Encoding UTF8
       $credential = [pscredential]::new('MACHINE\SvcBuildmaster', (ConvertTo-SecureString 'not-used' -AsPlainText -Force))
@@ -140,6 +140,8 @@ Describe 'SprintEnd Task 12 fixes' -Tag 'Unit' {
       $serviceProfileResult.ServiceAccountFreshShell.Tested | Should -BeTrue
       $serviceProfileResult.ServiceAccountFreshShell.CredentialSupplied | Should -BeTrue
       Should -Invoke Invoke-SprintEndServiceAccountFreshShell -Times 1 -Exactly
+      Test-Path -LiteralPath (Join-Path $utilRoot 'src\ATAP.Utilities.PowerShell\Profiles') |
+        Should -BeFalse
     }
   }
 }

@@ -23,7 +23,8 @@ function Set-SprintBoundaryUserProfiles {
     without its explicit -Force option. Every filesystem mutation runs under
     ShouldProcess.
   .PARAMETER ATAPUtilitiesRoot
-    Repository or worktree root that owns the canonical profile sources.
+    Repository or worktree root used to bootstrap ATAP configuration globals.
+    Profile payloads are never discovered beneath this root; ATAP.IAC owns them.
   .PARAMETER ATAPIACRoot
     Repository or worktree root used to bootstrap host settings and discover
     service-account metadata.

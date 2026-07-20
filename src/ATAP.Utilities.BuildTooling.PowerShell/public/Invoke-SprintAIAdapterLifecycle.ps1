@@ -23,7 +23,9 @@ function Invoke-SprintAIAdapterLifecycle {
     Optional _generated evidence and backup directory.
   .PARAMETER OmitSprintWorktrees
     For SprintEnd shared-settings renders, resolves sprint-worktree placeholders
-    to their stable/closed-state form.
+    to their stable/closed-state form. This is a render-only recovery path: it
+    performs two passes, requires the second pass to make zero changes, and
+    writes a metadata-only user/global intent hash ledger beneath EvidenceRoot.
   .OUTPUTS
     PSCustomObject returned by Invoke-AIAdapterLifecycle.
   .EXAMPLE
@@ -67,6 +69,9 @@ function Invoke-SprintAIAdapterLifecycle {
 
     $TargetRoot = [IO.Path]::GetFullPath($TargetRoot)
     $SharedVSCodeWorktreePath = [IO.Path]::GetFullPath($SharedVSCodeWorktreePath)
+    if ($OmitSprintWorktrees -and $AllowUserGlobalWrite -and -not $FixtureMode -and -not $CheckpointConfirmed) {
+      throw 'Live user/global stable-only adapter replacement requires -CheckpointConfirmed after a successful sprint checkpoint.'
+    }
     $lifecycleScript = Join-Path $SharedVSCodeWorktreePath '.ai/tools/Invoke-AIAdapterLifecycle.ps1'
     $rendererPath = Join-Path $SharedVSCodeWorktreePath '.ai/tools/Render-AIAdapters.ps1'
     if (-not (Test-Path -LiteralPath $lifecycleScript -PathType Leaf)) {
@@ -91,11 +96,8 @@ function Invoke-SprintAIAdapterLifecycle {
         $parameters.EvidenceRoot = $EvidenceRoot
       }
 
-      $lifecycleCommand = Get-Command -Name Invoke-AIAdapterLifecycle -CommandType Function -ErrorAction Stop
       if ($OmitSprintWorktrees) {
-        if ($lifecycleCommand.Parameters.ContainsKey('OmitSprintWorktrees')) {
-          $parameters.OmitSprintWorktrees = $true
-        } elseif ($Boundary -eq 'Start') {
+        if ($Boundary -eq 'Start') {
           if (-not (Test-Path -LiteralPath $rendererPath -PathType Leaf)) {
             throw "Render-AIAdapters.ps1 not found at expected path: $rendererPath"
           }
@@ -120,17 +122,71 @@ function Invoke-SprintAIAdapterLifecycle {
           } else {
             [IO.Path]::GetFullPath($EvidenceRoot)
           }
-          $renderResult = Render-AIAdapters `
-            -RegistryPath $registryPath `
-            -Domain $lifecycleDomains `
-            -TargetRoot $TargetRoot `
-            -BackupRoot (Join-Path $effectiveEvidenceRoot 'backups') `
-            -FixtureMode:$FixtureMode `
-            -AllowUserGlobalWrite:$AllowUserGlobalWrite `
-            -OmitSprintWorktrees `
-            -Force `
-            -WhatIf:$WhatIfPreference `
-            -Confirm:$false
+          $renderParameters = @{
+            RegistryPath = $registryPath
+            Domain = $lifecycleDomains
+            TargetRoot = $TargetRoot
+            BackupRoot = Join-Path $effectiveEvidenceRoot 'backups'
+            FixtureMode = $FixtureMode
+            AllowUserGlobalWrite = $AllowUserGlobalWrite
+            OmitSprintWorktrees = $true
+            Force = $true
+            Confirm = $false
+            WhatIf = $WhatIfPreference
+          }
+          $firstRenderResult = Render-AIAdapters @renderParameters
+          $secondRenderResult = Render-AIAdapters @renderParameters
+
+          $secondPassErrorCount = if ($secondRenderResult.PSObject.Properties['ErrorCount']) {
+            [int]$secondRenderResult.ErrorCount
+          } else {
+            @($secondRenderResult.Results | Where-Object Action -EQ 'error').Count
+          }
+          $secondPassWouldBeClean = if ($secondRenderResult.PSObject.Properties['SecondRunWouldBeClean']) {
+            [bool]$secondRenderResult.SecondRunWouldBeClean
+          } else {
+            $secondPassErrorCount -eq 0
+          }
+          if ([int]$secondRenderResult.ChangedCount -ne 0 -or $secondPassErrorCount -ne 0 -or -not $secondPassWouldBeClean) {
+            throw "Stable-only AI adapter render was not idempotent: second pass changed $($secondRenderResult.ChangedCount) target(s) and reported $secondPassErrorCount error(s)."
+          }
+
+          $userGlobalIntent = @(
+            foreach ($firstRow in @($firstRenderResult.Results | Where-Object { $_.PSObject.Properties['Scope'] -and $_.Scope -in @('user', 'managed') })) {
+              $matchingSecondRow = @(
+                $secondRenderResult.Results |
+                  Where-Object { $_.Tool -eq $firstRow.Tool -and $_.Path -eq $firstRow.Path -and $_.Scope -eq $firstRow.Scope }
+              ) | Select-Object -First 1
+              [pscustomobject]@{
+                Tool = $firstRow.Tool
+                Path = $firstRow.Path
+                Scope = $firstRow.Scope
+                FirstAction = $firstRow.Action
+                FirstSha256 = $firstRow.Sha256
+                SecondAction = if ($matchingSecondRow) { $matchingSecondRow.Action } else { $null }
+                SecondSha256 = if ($matchingSecondRow) { $matchingSecondRow.Sha256 } else { $null }
+              }
+            }
+          )
+          $intentLedgerPath = Join-Path $effectiveEvidenceRoot 'StableRender-UserGlobalIntent.json'
+          if (-not $WhatIfPreference) {
+            [IO.Directory]::CreateDirectory($effectiveEvidenceRoot) | Out-Null
+            $intentLedger = [ordered]@{
+              SchemaVersion = 1
+              TargetRoot = $TargetRoot
+              SourceRoot = $SharedVSCodeWorktreePath
+              OmitSprintWorktrees = $true
+              AllowUserGlobalWrite = [bool]$AllowUserGlobalWrite
+              CheckpointConfirmed = [bool]$CheckpointConfirmed
+              FirstPassChangedCount = [int]$firstRenderResult.ChangedCount
+              SecondPassChangedCount = [int]$secondRenderResult.ChangedCount
+              UserGlobalIntent = $userGlobalIntent
+            }
+            [IO.File]::WriteAllText(
+              $intentLedgerPath,
+              (($intentLedger | ConvertTo-Json -Depth 20) + [Environment]::NewLine),
+              [Text.UTF8Encoding]::new($false))
+          }
 
           return [pscustomobject]@{
             Boundary = $Boundary
@@ -138,11 +194,17 @@ function Invoke-SprintAIAdapterLifecycle {
             TargetRoot = $TargetRoot
             FixtureMode = [bool]$FixtureMode
             CallerOrder = $callerOrder
-            Results = @($renderResult.Results)
-            ChangedCount = $renderResult.ChangedCount
-            SkippedUserScopeCount = $renderResult.SkippedUserScopeCount
+            Results = @($firstRenderResult.Results)
+            ChangedCount = $firstRenderResult.ChangedCount
+            SkippedUserScopeCount = $firstRenderResult.SkippedUserScopeCount
             DriftClean = $true
-            RenderResult = $renderResult
+            RenderResult = $firstRenderResult
+            FirstRenderResult = $firstRenderResult
+            SecondRenderResult = $secondRenderResult
+            SecondPassChangedCount = [int]$secondRenderResult.ChangedCount
+            Idempotent = $true
+            UserGlobalIntent = $userGlobalIntent
+            UserGlobalIntentLedgerPath = if ($WhatIfPreference) { $null } else { $intentLedgerPath }
             DriftResult = $null
             OmitSprintWorktrees = $true
           }
@@ -151,6 +213,7 @@ function Invoke-SprintAIAdapterLifecycle {
         }
       }
 
+      $lifecycleCommand = Get-Command -Name Invoke-AIAdapterLifecycle -CommandType Function -ErrorAction Stop
       return Invoke-AIAdapterLifecycle @parameters -WhatIf:$WhatIfPreference
     }
   }

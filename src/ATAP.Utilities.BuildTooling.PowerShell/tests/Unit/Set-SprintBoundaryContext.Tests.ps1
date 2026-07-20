@@ -37,7 +37,7 @@ Describe 'Set-SprintBoundaryContext [public]' {
     Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-UserSettingsSymlink { }
     Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-ClaudeSettingsSymlink { }
     Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle {
-      [PSCustomObject]@{ DriftClean = $true; Results = @(); ChangedCount = 0 }
+      [PSCustomObject]@{ DriftClean = $true; Results = @(); ChangedCount = 0; Idempotent = $true; UserGlobalIntentLedgerPath = 'intent.json' }
     }
     Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-PowerShell7ProfileSymlink {
       [PSCustomObject]@{ Ok = $true; Failures = @(); Links = @(); DryRun = $false }
@@ -275,12 +275,12 @@ Describe 'Set-SprintBoundaryContext [public]' {
   }
 
   Context 'End boundary' {
-    It 'blocks teardown when adapter drift requires review' {
+    It 'recovers detected drift through the approved stable-only render and continues teardown' {
       Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle {
         if ($Boundary -eq 'End') {
           [PSCustomObject]@{ DriftClean = $false; Results = @(); ChangedCount = 0 }
         } else {
-          [PSCustomObject]@{ DriftClean = $true; Results = @(); ChangedCount = 0 }
+          [PSCustomObject]@{ DriftClean = $true; Results = @(); ChangedCount = 0; Idempotent = $true; UserGlobalIntentLedgerPath = 'intent.json' }
         }
       }
 
@@ -289,9 +289,15 @@ Describe 'Set-SprintBoundaryContext [public]' {
         -SharedVSCodeWorktreePath $script:svStable `
         -GitRoot $script:gitRoot
 
-      $result.Errors | Should -Match 'promote-or-regenerate review'
-      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions -Times 0 -Exactly -Scope It
-      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Reset-DownstreamToSharedVSCodeMain -Times 0 -Exactly -Scope It
+      ($result.Errors -join '; ') | Should -Not -Match 'AI adapter lifecycle failed|promote-or-regenerate review'
+      $result.PerWorktree[0].AISettingsDriftClean | Should -BeFalse
+      $result.PerWorktree[0].StableAdaptersRegenerated | Should -BeTrue
+      $result.PerWorktree[0].StableAdapterSecondPassClean | Should -BeTrue
+      $result.PerWorktree[0].StableAdapterIntentLedgerPath | Should -Be 'intent.json'
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $Boundary -eq 'Start' -and $TargetRoot -eq $script:stableRepo -and [bool]$OmitSprintWorktrees }
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Set-WorktreeJunctions -Times 1 -Exactly -Scope It
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Reset-DownstreamToSharedVSCodeMain -Times 1 -Exactly -Scope It
     }
 
     It 'Retargets junctions without a dev-redirect (back to stable)' {
@@ -355,7 +361,7 @@ Describe 'Set-SprintBoundaryContext [public]' {
         -ParameterFilter { $WorktreePath -eq $script:worktree }
     }
 
-    It 'Re-renders shared settings with OmitSprintWorktrees while keeping the per-worktree End audit unomitted' {
+    It 'Re-renders each stable repository and shared settings with OmitSprintWorktrees while keeping the outgoing audit unomitted' {
       Set-SprintBoundaryContext -Boundary End `
         -WorktreePaths @($script:worktree) `
         -SharedVSCodeWorktreePath $script:svStable `
@@ -363,6 +369,8 @@ Describe 'Set-SprintBoundaryContext [public]' {
 
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 1 -Exactly -Scope It `
         -ParameterFilter { $Boundary -eq 'End' -and $TargetRoot -eq $script:worktree -and -not [bool]$OmitSprintWorktrees }
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $Boundary -eq 'Start' -and $TargetRoot -eq $script:stableRepo -and [bool]$OmitSprintWorktrees }
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Invoke-SprintAIAdapterLifecycle -Times 1 -Exactly -Scope It `
         -ParameterFilter { $Boundary -eq 'Start' -and $TargetRoot -eq $script:svStable -and [bool]$OmitSprintWorktrees }
     }

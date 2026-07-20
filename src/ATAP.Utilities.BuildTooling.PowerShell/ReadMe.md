@@ -73,6 +73,9 @@ hook command paths in `settings.overlay.json` follow the sprint or stable target
 before user settings are relinked. `Test-SprintEndBoundaryState` auto-discovers
 those managed profiles when `-ProfilePaths` is omitted and verifies that each is
 stable-sourced, readable, and free of stale `-wt-` references after SprintEnd.
+Both developer and service-account source discovery resolves only the canonical
+`ATAP.IAC\Windows\ProfileTemplates` payloads; validation never recreates the
+retired `ATAP.Utilities.PowerShell\Profiles` payload targets.
 SprintEnd stable junction retargeting is now intentionally narrower: by default
 it recreates only the supported `.vscode` junction and does not reintroduce
 obsolete rendered `.claude` / `.github` links. For one-time stable maintenance,
@@ -426,6 +429,21 @@ for sprint boundaries.
    expected SharedVSCode-managed junction is `.vscode`; treat any `.claude` or
    `.github` junction as legacy drift requiring review or the
    `Convert-StableWorktreeToConcreteAdapters` repair path.
+
+### Process-lock-aware worktree teardown
+
+Use `Remove-SprintWorktreeSafely` only after the SprintEnd boundary reset and
+repository close steps have succeeded. The cmdlet verifies the exact Git
+worktree registration, refuses removal while the current shell, Codex, or VS
+Code references that worktree, and limits Git removal to a caller-selected
+number of attempts (three by default). If removal remains blocked, it writes a
+minimal handoff containing only the remaining teardown command.
+
+Adapter cleanup is opt-in. Pass only direct-child placeholder paths known to be
+safe, such as `.codex`; each candidate must be an empty ordinary directory at
+execution time. Reparse points, nested paths, non-empty directories, and paths
+outside the exact worktree are preserved and reported. The implementation never
+uses recursive deletion.
 
 ```powershell
 # Supported sprint-boundary junction set

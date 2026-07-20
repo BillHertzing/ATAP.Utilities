@@ -73,7 +73,7 @@ Set-StrictMode -Version Latest
     Remove-Item -LiteralPath (Join-Path $script:developerHome 'Documents'), (Join-Path $script:serviceHome 'Documents') -Recurse -Force -ErrorAction SilentlyContinue
   }
 
-  It 'deploys the developer profile to Documents\\PowerShell\\profile.ps1' {
+  It 'discovers and validates the canonical developer profile without requiring a cross-account write' {
     Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Get-LocalUser {
       [PSCustomObject]@{ Name = 'SvcBuildmaster'; Enabled = $false }
     }
@@ -84,17 +84,24 @@ Set-StrictMode -Version Latest
       -GitRoot $script:gitRoot `
       -OverviewWorkspacePath $script:overviewPath `
       -HomeDirectoryOverrides @{ alice = $script:developerHome } `
+      -WhatIf `
       -Confirm:$false
 
     $result.Failures | Should -BeNullOrEmpty
     $result.Ok | Should -BeTrue
     $developerProfile = Join-Path $script:developerHome 'Documents\PowerShell\profile.ps1'
-    Test-Path -LiteralPath $developerProfile | Should -BeTrue
-    Get-Content -LiteralPath $developerProfile -Raw |
+    $developerResult = $result.Profiles | Where-Object Kind -EQ 'Developer'
+    $developerResult.Action | Should -Be 'WouldCreated'
+    Test-Path -LiteralPath $developerProfile | Should -BeFalse
+    $developerResult.SourcePath |
+      Should -Be (Join-Path $script:iacRoot 'Windows\ProfileTemplates\CurrentUserAllHostsV7CoreProfile.ps1')
+    Get-Content -LiteralPath $developerResult.SourcePath -Raw |
       Should -Match 'developer profile payload'
+    Test-Path -LiteralPath (Join-Path $script:utilRoot 'src\ATAP.Utilities.PowerShell\Profiles') |
+      Should -BeFalse
   }
 
-  It 'deploys the service-account profile for an enabled local account' {
+  It 'discovers and validates the canonical service-account profile without requiring a credential or cross-account write' {
     Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Get-LocalUser {
       [PSCustomObject]@{ Name = 'SvcBuildmaster'; Enabled = $true }
     }
@@ -105,13 +112,20 @@ Set-StrictMode -Version Latest
       -GitRoot $script:gitRoot `
       -OverviewWorkspacePath $script:overviewPath `
       -HomeDirectoryOverrides @{ alice = $script:developerHome; SvcBuildmaster = $script:serviceHome } `
+      -WhatIf `
       -Confirm:$false
 
     $result.Ok | Should -BeTrue
     $serviceProfile = Join-Path $script:serviceHome 'Documents\PowerShell\profile.ps1'
-    Test-Path -LiteralPath $serviceProfile | Should -BeTrue
-    Get-Content -LiteralPath $serviceProfile -Raw |
+    $serviceResult = $result.Profiles | Where-Object Kind -EQ 'ServiceAccount'
+    $serviceResult.Action | Should -Be 'WouldCreated'
+    Test-Path -LiteralPath $serviceProfile | Should -BeFalse
+    $serviceResult.SourcePath |
+      Should -Be (Join-Path $script:iacRoot 'Windows\ProfileTemplates\ProfileForServiceAccountUsers.ps1')
+    Get-Content -LiteralPath $serviceResult.SourcePath -Raw |
       Should -Match 'Set-StrictMode'
+    Test-Path -LiteralPath (Join-Path $script:utilRoot 'src\ATAP.Utilities.PowerShell\Profiles') |
+      Should -BeFalse
   }
 
   It 'selects the current-host assignment and deploys only the redirected loaded profile idempotently' {
@@ -160,6 +174,7 @@ Set-StrictMode -Version Latest
       -GitRoot $script:gitRoot `
       -OverviewWorkspacePath $script:overviewPath `
       -HomeDirectoryOverrides @{ alice = $script:developerHome } `
+      -WhatIf `
       -Confirm:$false
 
     $result.Ok | Should -BeTrue
@@ -184,5 +199,36 @@ Set-StrictMode -Version Latest
     $result.Ok | Should -BeTrue
     ($result.Profiles | Where-Object Identity -EQ 'alice').Action | Should -Match '^Would'
     Test-Path -LiteralPath (Join-Path $script:serviceHome 'Documents\PowerShell\profile.ps1') | Should -BeFalse
+  }
+
+  It 'ignores pre-existing retired ATAP.Utilities template candidates' {
+    Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Get-LocalUser {
+      [PSCustomObject]@{ Name = 'SvcBuildmaster'; Enabled = $true }
+    }
+    $retiredTemplateRoot = Join-Path $script:utilRoot 'src\ATAP.Utilities.PowerShell\Profiles'
+    New-Item -ItemType Directory -Path $retiredTemplateRoot -Force | Out-Null
+    Set-Content -LiteralPath (Join-Path $retiredTemplateRoot 'CurrentUserAllHostsV7CoreProfile.ps1') `
+      -Value '# retired developer payload must not be selected' -Encoding UTF8
+    Set-Content -LiteralPath (Join-Path $retiredTemplateRoot 'ProfileForServiceAccountUsers.ps1') `
+      -Value '# retired service payload must not be selected' -Encoding UTF8
+
+    $result = Set-SprintBoundaryUserProfiles `
+      -ATAPUtilitiesRoot $script:utilRoot `
+      -ATAPIACRoot $script:iacRoot `
+      -GitRoot $script:gitRoot `
+      -OverviewWorkspacePath $script:overviewPath `
+      -HomeDirectoryOverrides @{ alice = $script:developerHome; SvcBuildmaster = $script:serviceHome } `
+      -WhatIf `
+      -Confirm:$false
+
+    $result.Ok | Should -BeTrue
+    @($result.Profiles | Where-Object { -not $_.Skipped }).SourcePath |
+      Should -Not -Contain (Join-Path $retiredTemplateRoot 'CurrentUserAllHostsV7CoreProfile.ps1')
+    @($result.Profiles | Where-Object { -not $_.Skipped }).SourcePath |
+      Should -Not -Contain (Join-Path $retiredTemplateRoot 'ProfileForServiceAccountUsers.ps1')
+    ($result.Profiles | Where-Object Kind -EQ 'Developer').SourcePath |
+      Should -Be (Join-Path $script:iacRoot 'Windows\ProfileTemplates\CurrentUserAllHostsV7CoreProfile.ps1')
+    ($result.Profiles | Where-Object Kind -EQ 'ServiceAccount').SourcePath |
+      Should -Be (Join-Path $script:iacRoot 'Windows\ProfileTemplates\ProfileForServiceAccountUsers.ps1')
   }
 }

@@ -227,6 +227,9 @@ function Set-SprintBoundaryContext {
         ContextRetargeted    = $false
         AISettingsProcessed  = $false
         AISettingsDriftClean = $null
+        StableAdaptersRegenerated = $false
+        StableAdapterSecondPassClean = $null
+        StableAdapterIntentLedgerPath = $null
         # Granular per-concern errors (Task 12.2.b) so delegating callers
         # (New-SprintStage1/New-SprintStage2) can map severities without
         # parsing the aggregate Error string.
@@ -275,9 +278,10 @@ function Set-SprintBoundaryContext {
         continue
       }
 
-      # SprintEnd must pass adapter drift review before any junction or downstream
-      # context teardown occurs. A failed audit leaves the worktree pointed at its
-      # sprint sources so promote/regenerate review can be completed safely.
+      # SprintEnd audits the outgoing worktree first, then executes the approved
+      # stable-only regeneration policy against the corresponding stable root.
+      # The regeneration wrapper hash-ledgers user/global intent and refuses to
+      # continue unless its second pass changes zero targets (Task 13.20.b).
       if ($Boundary -eq 'End' -and -not $SkipAIAdapterLifecycle) {
         try {
           if ($PSCmdlet.ShouldProcess($worktreePath, 'Audit canonical AI adapter drift before teardown')) {
@@ -289,8 +293,23 @@ function Set-SprintBoundaryContext {
             $wtEntry.AISettingsProcessed = $true
             $wtEntry.AISettingsDriftClean = $adapterLifecycleResult.DriftClean
             if (-not $adapterLifecycleResult.DriftClean) {
-              throw 'AI adapter drift requires promote-or-regenerate review before retarget.'
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "AI adapter drift detected for '$worktreePath'; applying the approved stable-only regeneration policy to '$stableRepoPath'."
             }
+
+            $stableRenderResult = Invoke-SprintAIAdapterLifecycle `
+              -Boundary Start `
+              -TargetRoot $stableRepoPath `
+              -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath `
+              -AllowUserGlobalWrite:$AllowUserGlobalWrite `
+              -CheckpointConfirmed:$CheckpointConfirmed `
+              -OmitSprintWorktrees `
+              -Confirm:$false
+            if (-not $stableRenderResult.PSObject.Properties['Idempotent'] -or -not $stableRenderResult.Idempotent) {
+              throw "Stable-only AI adapter regeneration did not prove a zero-change second pass for '$stableRepoPath'."
+            }
+            $wtEntry.StableAdaptersRegenerated = $true
+            $wtEntry.StableAdapterSecondPassClean = $true
+            $wtEntry.StableAdapterIntentLedgerPath = $stableRenderResult.UserGlobalIntentLedgerPath
           }
         } catch {
           $adapterLifecycleOk = $false
@@ -426,7 +445,7 @@ function Set-SprintBoundaryContext {
         })
       $concerns.Add([PSCustomObject]@{
           Concern        = 'AIAdapterLifecycle'
-          Action         = ($Boundary -eq 'Start' ? 'Materialize project adapters' : 'Retarget-or-promote adapter drift audit')
+          Action         = ($Boundary -eq 'Start' ? 'Materialize project adapters' : 'Audit outgoing adapters, stable-only regenerate, hash-ledger intent, verify zero-change second pass')
           StableByDesign = $false
           Succeeded      = $adapterLifecycleOk
           Error          = $null

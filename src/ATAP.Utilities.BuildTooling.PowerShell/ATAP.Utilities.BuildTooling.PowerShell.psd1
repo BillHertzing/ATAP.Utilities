@@ -143,7 +143,7 @@
     'Remove-DeveloperSqlServerInstances',
     'Remove-ObjAndBinSubDirectories', 'Remove-OverviewSprintWorkspace', 'Remove-ProGetApiKeys',
     'Remove-ProGetFeeds', 'Remove-SprintBitwardenSecrets',
-    'Remove-SprintDatabases', 'Remove-VSComponentCache',
+    'Remove-SprintDatabases', 'Remove-SprintWorktreeSafely', 'Remove-VSComponentCache',
     'Rename-ProGetFeed', 'Reset-DownstreamToSharedVSCodeMain',
     'Reset-SprintDatabases',
     'Resolve-DatabasePackageFeed',

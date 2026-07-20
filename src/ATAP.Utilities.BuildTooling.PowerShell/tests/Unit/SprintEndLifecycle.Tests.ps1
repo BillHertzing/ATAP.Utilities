@@ -450,11 +450,11 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $iacRoot = Join-Path $gitRoot 'ATAP.IAC'
       $developerHome = Join-Path $TestDrive 'alice-home'
       $serviceHome = Join-Path $TestDrive 'svc-home'
-      $developerSource = Join-Path $utilRoot 'src\ATAP.Utilities.PowerShell\Profiles\CurrentUserAllHostsV7CoreProfile.ps1'
-      $serviceSource = Join-Path $utilRoot 'src\ATAP.Utilities.PowerShell\Profiles\ProfileForServiceAccountUsers.ps1'
+      $developerSource = Join-Path $iacRoot 'Windows\ProfileTemplates\CurrentUserAllHostsV7CoreProfile.ps1'
+      $serviceSource = Join-Path $iacRoot 'Windows\ProfileTemplates\ProfileForServiceAccountUsers.ps1'
       $developerProfile = Join-Path $developerHome 'Documents\PowerShell\profile.ps1'
       $serviceProfile = Join-Path $serviceHome 'Documents\PowerShell\profile.ps1'
-      New-Item -ItemType Directory -Path (Split-Path $developerSource -Parent), $iacRoot, (Split-Path $developerProfile -Parent), (Split-Path $serviceProfile -Parent) -Force | Out-Null
+      New-Item -ItemType Directory -Path (Split-Path $developerSource -Parent), (Split-Path $developerProfile -Parent), (Split-Path $serviceProfile -Parent) -Force | Out-Null
       Set-Content -LiteralPath $developerSource -Value '# developer stable profile' -Encoding UTF8
       Set-Content -LiteralPath $serviceSource -Value '# service stable profile' -Encoding UTF8
       try {
@@ -493,6 +493,8 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $result.Ok | Should -BeTrue
       @($result.Profiles | Where-Object Kind -NE 'General').Count | Should -Be 2
       $result.ManagedProfileFailures | Should -BeNullOrEmpty
+      Test-Path -LiteralPath (Join-Path $utilRoot 'src\ATAP.Utilities.PowerShell\Profiles') |
+        Should -BeFalse
     }
   }
 

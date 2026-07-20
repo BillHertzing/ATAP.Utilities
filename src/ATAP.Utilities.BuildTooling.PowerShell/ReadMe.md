@@ -1058,7 +1058,9 @@ promoted-package gates; normal source test runs still execute them.
 `Invoke-PSModulePesterTests` retains its module-bound result, plugin-restoration,
 and JUnit helper scriptblocks before entering Pester. Tests may therefore remove
 or force-reimport BuildTooling without breaking runner teardown or artifact
-generation. Tier totals and JUnit cases exclude Pester's tag-filtered `NotRun`
+generation. It also restores the pre-run global `Get-SecretATAP` function so a
+test double cannot contaminate the next promoted tier; no secret value is
+retained. Tier totals and JUnit cases exclude Pester's tag-filtered `NotRun`
 records; explicit skips remain represented as skipped cases.
 
 `Set-TaskComplete` validates its literal helper and task-file paths with

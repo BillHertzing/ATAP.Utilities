@@ -445,4 +445,42 @@ Describe 'Invoke-PSModulePesterTests (quiet output)' -Tag 'Unit' {
       Remove-Module $runnerModuleName -Force -ErrorAction SilentlyContinue
     }
   }
+
+  It 'restores Get-SecretATAP after a test installs a global double' {
+    $originalCommand = ${function:global:Get-SecretATAP}
+    $hadOriginalFunction = $null -ne $originalCommand
+    ${function:global:Get-SecretATAP} = { 'original-secret-resolver' }
+
+    try {
+      Mock -CommandName Invoke-Pester -MockWith {
+        ${function:global:Get-SecretATAP} = { 'leaked-test-double' }
+        [PSCustomObject]@{
+          PassedCount  = 1
+          FailedCount  = 0
+          SkippedCount = 0
+          TotalCount   = 1
+          Duration     = [TimeSpan]::Zero
+          Tests        = @()
+        }
+      }
+
+      $moduleRoot = Join-Path $script:tempRoot 'secret-resolver-isolation'
+      New-Item -ItemType Directory -Path $moduleRoot -Force | Out-Null
+      $result = Invoke-PSModulePesterTests `
+        -ModuleRoot $moduleRoot `
+        -Tier 'Alpha' `
+        -OutputPath (Join-Path $script:tempRoot 'secret-resolver-isolation-out.xml') `
+        -CoverageOutputPath (Join-Path $script:tempRoot 'secret-resolver-isolation-cov.xml') `
+        -SkipTestResult
+
+      $result.GatePass | Should -BeTrue
+      (& global:Get-SecretATAP) | Should -Be 'original-secret-resolver'
+    } finally {
+      if ($hadOriginalFunction) {
+        ${function:global:Get-SecretATAP} = $originalCommand
+      } else {
+        ${function:global:Get-SecretATAP} = $null
+      }
+    }
+  }
 }

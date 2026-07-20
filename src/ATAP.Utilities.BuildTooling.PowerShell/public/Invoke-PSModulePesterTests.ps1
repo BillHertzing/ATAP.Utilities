@@ -827,34 +827,49 @@ function Invoke-PSModulePesterTests {
       $getTestContainerCommand = ${function:Get-PSModulePesterTestContainer}
       $getFailureMessageCommand = ${function:Get-PSModulePesterFailureMessage}
 
+      # Some test containers intentionally install global Get-SecretATAP test
+      # doubles. Retain the real resolver before Pester so a promoted-module
+      # pipeline can resolve the next tier's SecretName after the tested module
+      # has been removed or reloaded. Never retain the secret value itself.
+      $getSecretATAPCommand = ${function:global:Get-SecretATAP}
+      $hadGetSecretATAPFunction = $null -ne $getSecretATAPCommand
+
       $result = $null
       if ($PSCmdlet.ShouldProcess("$TestPaths", 'Invoke-Pester')) {
-        if ($PesterOutputVerbosity -eq 'None') {
-          # BuildMaster summary logging comes from this wrapper. When Pester's
-          # own output is disabled, suppress incidental streams emitted by
-          # tests that intentionally exercise warning/error paths.
-          $progressPluginState = $null
-          if ($PesterProgressInterval -gt 0) {
-            $progressPlugin = New-PSModulePesterProgressPlugin -Interval $PesterProgressInterval -FunctionName $fn
-            $progressPluginState = Push-PSModulePesterAdditionalPlugin -Plugin $progressPlugin
-          }
+        try {
+          if ($PesterOutputVerbosity -eq 'None') {
+            # BuildMaster summary logging comes from this wrapper. When Pester's
+            # own output is disabled, suppress incidental streams emitted by
+            # tests that intentionally exercise warning/error paths.
+            $progressPluginState = $null
+            if ($PesterProgressInterval -gt 0) {
+              $progressPlugin = New-PSModulePesterProgressPlugin -Interval $PesterProgressInterval -FunctionName $fn
+              $progressPluginState = Push-PSModulePesterAdditionalPlugin -Plugin $progressPlugin
+            }
 
-          try {
-            $pesterOutput = Invoke-Pester -Configuration $cfg 2>$null 3>$null 4>$null 5>$null 6>$null
+            try {
+              $pesterOutput = Invoke-Pester -Configuration $cfg 2>$null 3>$null 4>$null 5>$null 6>$null
+              foreach ($item in $pesterOutput) {
+                if (& $testRunResultCommand -InputObject $item) {
+                  $result = $item
+                }
+              }
+            } finally {
+              & $restoreAdditionalPluginCommand -State $progressPluginState
+            }
+          } else {
+            $pesterOutput = Invoke-Pester -Configuration $cfg
             foreach ($item in $pesterOutput) {
               if (& $testRunResultCommand -InputObject $item) {
                 $result = $item
               }
             }
-          } finally {
-            & $restoreAdditionalPluginCommand -State $progressPluginState
           }
-        } else {
-          $pesterOutput = Invoke-Pester -Configuration $cfg
-          foreach ($item in $pesterOutput) {
-            if (& $testRunResultCommand -InputObject $item) {
-              $result = $item
-            }
+        } finally {
+          if ($hadGetSecretATAPFunction) {
+            ${function:global:Get-SecretATAP} = $getSecretATAPCommand
+          } else {
+            ${function:global:Get-SecretATAP} = $null
           }
         }
       }

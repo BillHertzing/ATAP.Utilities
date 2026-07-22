@@ -4,7 +4,7 @@ module: ATAP.Utilities.BuildTooling.Common.PowerShell
 functional-area: BuildTooling
 family-parent: ATAP.Utilities.BuildTooling.PowerShell
 
-release-state: 0.1.4 explicitly identifies the immutable artifact for promoted-module Pester fixtures after 0.1.2 and 0.1.3 Development gate failures. It retains Get-RepositoryRoot as the approved PesterScaffolding prerequisite; release pending. Version 0.1.1 is Stable/AllUsers; parent remains unrewired.
+release-state: 0.1.5 binds the promoted contract assertion to its imported ModuleInfo after the BuildMaster service account exposed duplicate same-name modules. It retains Get-RepositoryRoot as the approved PesterScaffolding prerequisite; release pending. Version 0.1.1 is Stable/AllUsers; parent remains unrewired.
 
 ## Public functions
 

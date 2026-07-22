@@ -1,5 +1,12 @@
 # Release notes — ATAP.Utilities.BuildTooling.Common.PowerShell
 
+## 0.1.5
+
+- Binds the promoted-module export contract to the `ModuleInfo` returned by the explicit manifest
+  import, rather than the ambiguous process-wide `Get-Command -Module <name>` lookup.
+- Replaces immutable 0.1.4 after the BuildMaster service account selected a stale same-name module
+  during that process-wide lookup despite the restored package containing all five commands.
+
 ## 0.1.4
 
 - Adds the explicit promoted-manifest test-process contract so all selected Common fixtures

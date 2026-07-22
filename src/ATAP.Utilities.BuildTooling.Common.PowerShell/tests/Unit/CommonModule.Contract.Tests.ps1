@@ -5,7 +5,8 @@ BeforeAll {
 
   $promotedManifest = [System.Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
   Remove-Module -Name 'ATAP.Utilities.BuildTooling.Common.PowerShell' -Force -ErrorAction SilentlyContinue
-  Import-Module -Name $(if ([string]::IsNullOrWhiteSpace($promotedManifest)) { $manifestPath } else { $promotedManifest }) -Force -ErrorAction Stop
+  $moduleToTest = if ([string]::IsNullOrWhiteSpace($promotedManifest)) { $manifestPath } else { $promotedManifest }
+  $script:ImportedModule = Import-Module -Name $moduleToTest -Force -PassThru -ErrorAction Stop
 }
 
 Describe 'ATAP.Utilities.BuildTooling.Common.PowerShell scaffold contract' -Tag 'Unit' {
@@ -34,8 +35,8 @@ Describe 'ATAP.Utilities.BuildTooling.Common.PowerShell scaffold contract' -Tag 
   }
 
   It 'imports from its manifest and exposes the approved commands' {
-    Get-Module -Name 'ATAP.Utilities.BuildTooling.Common.PowerShell' | Should -Not -BeNullOrEmpty
-    @(Get-Command -Module 'ATAP.Utilities.BuildTooling.Common.PowerShell').Name | Should -Be @(
+    $script:ImportedModule | Should -Not -BeNullOrEmpty
+    @($script:ImportedModule.ExportedCommands.Keys | Sort-Object) | Should -Be @(
       'Assert-GitAvailable',
       'Get-RepositoryRoot',
       'Get-WorkspaceJson',

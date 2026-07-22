@@ -41,7 +41,7 @@ function Set-CoreConfigRootKeys {
   begin {
     $fn = 'Set-CoreConfigRootKeys'
     $mn = 'ATAP.Utilities.ConfigRootKeys.PowerShell'
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
+    Write-ConfigRootKeysMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
   }
 
   process {
@@ -263,18 +263,18 @@ function Set-CoreConfigRootKeys {
           'CertificateServerComputerRoleConfigRootKey'                                                   = 'CertificateServerComputer'
           'ProGetPackageRepositoryProviderComputerRoleConfigRootKey'                                     = 'ProGetPackageRepositoryProviderComputer'
         }
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message '$global:configRootKeys initialized with core key constants.'
+        Write-ConfigRootKeysMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message '$global:configRootKeys initialized with core key constants.'
       }
     } catch {
       $errorMessage = "Unhandled error in $fn. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      Write-ConfigRootKeysMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       throw
     } finally {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving process block in $fn"
+      Write-ConfigRootKeysMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving process block in $fn"
     }
   }
 
   end {
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn"
+    Write-ConfigRootKeysMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn"
   }
 }

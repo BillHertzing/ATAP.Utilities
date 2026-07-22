@@ -39,11 +39,11 @@ function Set-SqlInstanceTopologyConfigRootKeys {
   begin {
     $fn = 'Set-SqlInstanceTopologyConfigRootKeys'
     $mn = 'ATAP.Utilities.ConfigRootKeys.PowerShell'
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
+    Write-ConfigRootKeysMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
     if ($null -eq $global:configRootKeys) {
       $errorMessage = '$global:configRootKeys is not initialized. Run Set-GlobalConfigRootKeys (which loads Set-CoreConfigRootKeys first).'
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      Write-ConfigRootKeysMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       throw $errorMessage
     }
   }
@@ -66,18 +66,18 @@ function Set-SqlInstanceTopologyConfigRootKeys {
         $global:configRootKeys.Add('SqlInstanceTopologyBackupPathConfigRootKey', 'BackupPath')
         $global:configRootKeys.Add('SqlInstanceTopologyErrorLogPathConfigRootKey', 'ErrorLogPath')
         $global:configRootKeys.Add('SqlInstanceTopologyTcpPortConfigRootKey', 'TcpPort')
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Added SQL instance-topology key constants.'
+        Write-ConfigRootKeysMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Added SQL instance-topology key constants.'
       }
     } catch {
       $errorMessage = "Unhandled error in $fn. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      Write-ConfigRootKeysMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       throw
     } finally {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving process block in $fn"
+      Write-ConfigRootKeysMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving process block in $fn"
     }
   }
 
   end {
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn"
+    Write-ConfigRootKeysMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn"
   }
 }

@@ -42,11 +42,11 @@ function Set-DatabasesATAPUtilitiesConfigRootKeys {
   begin {
     $fn = 'Set-DatabasesATAPUtilitiesConfigRootKeys'
     $mn = 'ATAP.Utilities.ConfigRootKeys.PowerShell'
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
+    Write-ConfigRootKeysMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 
     if ($null -eq $global:configRootKeys) {
       $errorMessage = '$global:configRootKeys is not initialized. Run Set-GlobalConfigRootKeys (which loads Set-CoreConfigRootKeys first).'
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      Write-ConfigRootKeysMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       throw $errorMessage
     }
   }
@@ -55,18 +55,18 @@ function Set-DatabasesATAPUtilitiesConfigRootKeys {
     try {
       if ($PSCmdlet.ShouldProcess('$global:configRootKeys', 'Add ATAPUtilities database-name key constant')) {
         $global:configRootKeys.Add('DatabaseATAPUtilitiesNameConfigRootKey', 'ATAPUtilities')
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Added ATAPUtilities database-name key constant.'
+        Write-ConfigRootKeysMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Added ATAPUtilities database-name key constant.'
       }
     } catch {
       $errorMessage = "Unhandled error in $fn. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      Write-ConfigRootKeysMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       throw
     } finally {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving process block in $fn"
+      Write-ConfigRootKeysMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving process block in $fn"
     }
   }
 
   end {
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn"
+    Write-ConfigRootKeysMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn"
   }
 }

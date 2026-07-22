@@ -52,9 +52,9 @@ function Assert-BuildMasterReady {
     then $env:BUILDMASTER_BASE_URL, then 'http://localhost:50017'.
 
 .PARAMETER BuildMasterAdminApiKeySecretName
-    The ATAP secret name containing the BuildMaster admin API key. Resolved via
-    Get-PVal (parameter → env var → $global:settings → default
-    'BuildMaster.Admin.API.Key'); the value is read with Get-SecretATAP.
+    The ATAP secret name containing the BuildMaster admin API key. Defaults to
+    'BuildMaster.Admin.API.Key'; the value is read with Get-SecretATAP. The
+    parameter/default contract is independent of profile-populated settings.
 
 .PARAMETER TimeoutSeconds
     HTTP timeout per API call. Default 10.
@@ -112,7 +112,6 @@ function Assert-BuildMasterReady {
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
-    $BuildMasterAdminApiKeySecretName = Get-PVal -ParameterName 'BuildMasterAdminApiKeySecretName' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterAdminApiKeySecretName
   }
 
   process {

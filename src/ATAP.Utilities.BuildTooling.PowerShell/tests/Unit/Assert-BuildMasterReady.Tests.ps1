@@ -13,13 +13,53 @@ BeforeAll {
     )
     'fake-test-key'
   }
+  function Get-ParameterValueFromNeoConfigurationRoot {
+    param($ParameterName, $originalPSBoundParameters, $DefaultValue)
+    $script:getPValCallCount++
+    return $DefaultValue
+  }
+  Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Script -Force
   # Port 1 is reserved and closed; a TCP HEAD here is refused fast on Windows.
   $script:unreachableUrl = 'http://127.0.0.1:1'
 }
 
 Describe 'Assert-BuildMasterReady' -Tag 'Unit' {
   BeforeEach {
+    $script:getPValCallCount = 0
     Mock Get-SecretATAP { 'fake-test-key' }
+  }
+
+  Context 'No-profile BuildMaster host' {
+    It 'uses the local secret-name default when global settings is absent' {
+      $savedSettings = Get-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
+      try {
+        Remove-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
+        $result = Assert-BuildMasterReady -BuildMasterBaseUrl $script:unreachableUrl -TimeoutSeconds 1
+        $result.Checks.ApiKeyResolvable.Ok | Should -BeTrue
+        $script:getPValCallCount | Should -Be 0
+        Should -Invoke Get-SecretATAP -ParameterFilter { $SecretName -eq 'BuildMaster.Admin.API.Key' }
+      } finally {
+        if ($null -ne $savedSettings) { Set-Variable -Name settings -Scope Global -Value $savedSettings.Value }
+      }
+    }
+
+    It 'uses an explicit secret name when global settings lacks the key' {
+      $savedSettings = Get-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
+      try {
+        Set-Variable -Name settings -Scope Global -Value @{ Unrelated = 'value' }
+        $result = Assert-BuildMasterReady -BuildMasterBaseUrl $script:unreachableUrl `
+          -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01' -TimeoutSeconds 1
+        $result.Checks.ApiKeyResolvable.Ok | Should -BeTrue
+        $script:getPValCallCount | Should -Be 0
+        Should -Invoke Get-SecretATAP -ParameterFilter { $SecretName -eq 'BuildMaster.Admin.API.Key.utat01' }
+      } finally {
+        if ($null -ne $savedSettings) {
+          Set-Variable -Name settings -Scope Global -Value $savedSettings.Value
+        } else {
+          Remove-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
+        }
+      }
+    }
   }
 
   Context 'Result shape with forced ApiReachable failure' {

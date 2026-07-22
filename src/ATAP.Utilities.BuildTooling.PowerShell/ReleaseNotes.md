@@ -1,5 +1,10 @@
 # Production Release Notes in Chronological order
 
+# 0.1.48
+
+- Made the BuildMaster readiness probe's secret-name default independent of global settings.
+- Added absent and incomplete global-settings regressions for the readiness probe.
+
 # 0.1.47
 
 - Made explicit ProGet promotion inputs independent of profile-populated global settings.

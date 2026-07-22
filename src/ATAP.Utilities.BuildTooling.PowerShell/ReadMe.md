@@ -259,6 +259,8 @@ differences in Claude's project folder names do not cause false memory-copy skip
 
 **Profileless BuildMaster promotion runners.** `Promote-ProGetPackage` accepts explicit `-ProGetBaseUrl` and the non-secret `-ProGetApiKeySecretName`, forwarding the SecretName to `Move-ProGetPackageInterTier`. The authenticated leaf resolves it through `Get-SecretATAP`; runners never receive a raw key or use an environment fallback. Explicit promotion inputs bypass profile-populated global settings, including when `$global:settings` is absent or lacks the promotion keys.
 
+`Assert-BuildMasterReady` follows the same host contract: its explicit or local-default BuildMaster API-key SecretName is consumed directly and does not require `$global:settings`.
+
 **ProGet administration SecretName boundary (Task 13.62).** Administration
 cmdlets accept only the non-secret `ProGet.Admin.API.Key` name and resolve it
 inside the authenticated leaf. See

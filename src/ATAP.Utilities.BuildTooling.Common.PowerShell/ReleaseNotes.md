@@ -2,6 +2,12 @@
 
 ## 0.1.1
 
+- Promoted through UTAT01 Experimental, Development, Integration, QA, and Stable. BuildMaster
+  release 11/build 11 passed the Development, Integration, QA, and Production gates (12/12 each).
+- Installed the immutable Stable package AllUsers at
+  `C:\Program Files\PowerShell\Modules\ATAP.Utilities.BuildTooling.Common.PowerShell\0.1.1`.
+  The package SHA-256 is `C902582372279E483696CEBF5131788277A231E6909E4BABA49A574FC6BED573`;
+  a fresh profile-loaded import exposes all four module commands.
 - Classifies the two mock-only `Assert-GitAvailable` Unit tests as
   `PromotedModuleHostSensitive`. They remain in the normal Unit suite but are excluded from the
   BuildMaster service-account promoted-module gate, where they re-import source code and fail

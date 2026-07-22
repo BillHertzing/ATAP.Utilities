@@ -8,6 +8,11 @@ This module contains the first reviewed helper batch created under Sprint 0013 T
 The parent `ATAP.Utilities.BuildTooling.PowerShell` remains the active provider of these commands
 until a later parent-rewire task; the temporary duplicate implementations are intentional.
 
+Production version `0.1.1` has completed the UTAT01 BuildMaster tier path and is installed for
+all users at `C:\Program Files\PowerShell\Modules\ATAP.Utilities.BuildTooling.Common.PowerShell\0.1.1`.
+A fresh profile-loaded PowerShell import resolves that installed module. The parent remains
+unrewired.
+
 ## Contract
 
 - Requires PowerShell 7.0 or later and the Core edition.

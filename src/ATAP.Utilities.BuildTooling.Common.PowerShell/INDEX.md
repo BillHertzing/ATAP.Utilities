@@ -4,6 +4,8 @@ module: ATAP.Utilities.BuildTooling.Common.PowerShell
 functional-area: BuildTooling
 family-parent: ATAP.Utilities.BuildTooling.PowerShell
 
+release-state: 0.1.1 is promoted to UTAT01 Stable and installed AllUsers; parent remains unrewired.
+
 ## Public functions
 
 | Function | Summary |

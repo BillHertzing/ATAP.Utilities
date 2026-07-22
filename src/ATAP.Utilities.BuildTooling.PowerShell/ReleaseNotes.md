@@ -1,5 +1,11 @@
 # Production Release Notes in Chronological order
 
+# 0.1.47
+
+- Made explicit ProGet promotion inputs independent of profile-populated global settings.
+- Added regressions for absent settings and settings maps without promotion keys.
+- Raised the PesterScaffolding child dependency floor to the deployed 0.1.1 release.
+
 ## 0.2.0 - VersionJsonAsCeiling (Sprint 0007)
 
 - Added `CurrentTier`, `CeilingTier`, and `IsAtCeiling` to `Get-BuildContext`.

@@ -133,34 +133,12 @@ function Move-ProGetPackageInterTier {
         $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
-        if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-            $helperCandidates = @(
-                (Join-Path -Path $PSScriptRoot -ChildPath 'Get-ParameterValueFromNeoConfigurationRoot.ps1'),
-                ([System.IO.Path]::GetFullPath((Join-Path -Path $PSScriptRoot -ChildPath '..\..\ATAP.Utilities.PowerShell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'))),
-                ([System.IO.Path]::GetFullPath((Join-Path -Path $PSScriptRoot -ChildPath '..\..\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'))),
-                'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
-            )
-            $helperPath = $helperCandidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
-            if (-not $helperPath) {
-                throw "Could not locate Get-ParameterValueFromNeoConfigurationRoot.ps1. Checked: $($helperCandidates -join ', ')"
-            }
-            . $helperPath
-        }
-
-        # Check and populate simple parameter: Name
-        $Name = Get-PVal -ParameterName 'Name' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Name' -DefaultValue $Name
+        # Mandatory parameters are already resolved by the PowerShell binder. Do not
+        # route explicit values through Get-PVal: BuildMaster deliberately launches
+        # this function in a no-profile process where $global:settings is absent.
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Name is $Name"
-
-        # Check and populate simple parameter: Version
-        $Version = Get-PVal -ParameterName 'Version' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Version' -DefaultValue $Version
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Version is $Version"
-
-        # Check and populate simple parameter: FromFeed
-        $FromFeed = Get-PVal -ParameterName 'FromFeed' -originalPSBoundParameters $PSBoundParameters -dottedPath 'FromFeed' -DefaultValue $FromFeed
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "FromFeed is $FromFeed"
-
-        # Check and populate simple parameter: ToFeed
-        $ToFeed = Get-PVal -ParameterName 'ToFeed' -originalPSBoundParameters $PSBoundParameters -dottedPath 'ToFeed' -DefaultValue $ToFeed
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "ToFeed is $ToFeed"
 
         # ── Tier definitions ─────────────────────────────────────────────────
@@ -228,17 +206,36 @@ function Move-ProGetPackageInterTier {
             $ToFeed = "$parsedPrefix-$nextTier$pushSuffix"
         }
 
-        # Check and populate simple parameter: Reason (with computed default)
-        $Reason = Get-PVal -ParameterName 'Reason' -originalPSBoundParameters $PSBoundParameters -dottedPath 'Reason' -DefaultValue $Reason
+        # Reason is optional and has a local computed default. Resolving it through
+        # global settings makes an otherwise self-contained promotion host-sensitive.
         if ([string]::IsNullOrWhiteSpace($Reason)) {
             $Reason = "Inter-tier move: $parsedTier → next tier ($(Get-Date -Format 'yyyy-MM-dd HH:mm'))"
         }
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Reason is $Reason"
 
-        # Check and populate simple parameter: ProGetBaseUrl
-        $ProGetBaseUrl = Get-PVal -ParameterName 'ProGetBaseUrl' -originalPSBoundParameters $PSBoundParameters -dottedPath 'ProGetBaseUrl' -DefaultValue $ProGetBaseUrl
+        # An explicit URL must work in the no-profile BuildMaster host. Only load and
+        # invoke the configuration resolver when the caller did not provide a URL.
         if ([string]::IsNullOrWhiteSpace($ProGetBaseUrl)) {
-            $ProGetBaseUrl = $global:ProGetBaseUrl
+            $globalProGetBaseUrl = Get-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
+            if ($null -ne $globalProGetBaseUrl) {
+                $ProGetBaseUrl = [string]$globalProGetBaseUrl.Value
+            }
+        }
+        if ([string]::IsNullOrWhiteSpace($ProGetBaseUrl)) {
+            if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+                $helperCandidates = @(
+                    (Join-Path -Path $PSScriptRoot -ChildPath 'Get-ParameterValueFromNeoConfigurationRoot.ps1'),
+                    ([System.IO.Path]::GetFullPath((Join-Path -Path $PSScriptRoot -ChildPath '..\..\ATAP.Utilities.PowerShell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'))),
+                    ([System.IO.Path]::GetFullPath((Join-Path -Path $PSScriptRoot -ChildPath '..\..\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'))),
+                    'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
+                )
+                $helperPath = $helperCandidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+                if (-not $helperPath) {
+                    throw "Could not locate Get-ParameterValueFromNeoConfigurationRoot.ps1. Checked: $($helperCandidates -join ', ')"
+                }
+                . $helperPath
+            }
+            $ProGetBaseUrl = Get-PVal -ParameterName 'ProGetBaseUrl' -originalPSBoundParameters $PSBoundParameters -dottedPath 'ProGetBaseUrl' -DefaultValue $null -AllowMissing
         }
         if ([string]::IsNullOrWhiteSpace($ProGetBaseUrl)) {
             $errorMessage = 'ProGetBaseUrl could not be resolved. Pass it explicitly, set $global:ProGetBaseUrl, or ensure configRootKeys are loaded.'

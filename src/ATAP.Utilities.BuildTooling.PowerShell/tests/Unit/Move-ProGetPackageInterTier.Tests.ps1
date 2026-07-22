@@ -15,7 +15,8 @@ BeforeAll {
     # Provide a container-local resolver and alias. The production resolver remains
     # opaque to this unit test and the stub cannot escape into later build steps.
     function Get-ParameterValueFromNeoConfigurationRoot {
-        param($ParameterName, $originalPSBoundParameters, $dottedPath, $DefaultValue)
+        param($ParameterName, $originalPSBoundParameters, $dottedPath, $DefaultValue, [switch]$AllowMissing)
+        $script:getPValCallCount++
         return $DefaultValue
     }
     Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Script -Force
@@ -30,6 +31,7 @@ BeforeAll {
 
 Describe 'Move-ProGetPackageInterTier' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   BeforeEach {
+    $script:getPValCallCount = 0
     Mock Write-PSFMessage { }
     Mock Invoke-RestMethod {
       if ($Method -eq 'Get') {
@@ -182,6 +184,53 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit', 'PromotedModuleHostSensitive
       $result.Promoted | Should -BeFalse
       Assert-MockCalled Get-SecretATAP -Times 0 -Exactly -Scope It
       Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It
+    }
+  }
+
+  Context 'No-profile BuildMaster promotion host' {
+
+    It 'uses explicit inputs when the global settings variable is absent' {
+      $savedSettings = Get-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
+      $savedBaseUrl = Get-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
+      try {
+        Remove-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
+        Remove-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
+
+        $result = Move-ProGetPackageInterTier `
+          -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'powershellget-development' `
+          -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
+
+        $result.DestinationFeed | Should -Be 'powershellget-integration'
+        $script:getPValCallCount | Should -Be 0
+      } finally {
+        if ($null -ne $savedSettings) { Set-Variable -Name settings -Scope Global -Value $savedSettings.Value }
+        if ($null -ne $savedBaseUrl) { Set-Variable -Name ProGetBaseUrl -Scope Global -Value $savedBaseUrl.Value }
+      }
+    }
+
+    It 'uses explicit inputs when global settings exists but lacks promotion keys' {
+      $savedSettings = Get-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
+      $savedBaseUrl = Get-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
+      try {
+        Set-Variable -Name settings -Scope Global -Value @{ Unrelated = 'value' }
+        Remove-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
+
+        $result = Move-ProGetPackageInterTier `
+          -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'powershellget-development' `
+          -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
+
+        $result.DestinationFeed | Should -Be 'powershellget-integration'
+        $script:getPValCallCount | Should -Be 0
+      } finally {
+        if ($null -ne $savedSettings) {
+          Set-Variable -Name settings -Scope Global -Value $savedSettings.Value
+        } else {
+          Remove-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
+        }
+        if ($null -ne $savedBaseUrl) { Set-Variable -Name ProGetBaseUrl -Scope Global -Value $savedBaseUrl.Value }
+      }
     }
   }
 

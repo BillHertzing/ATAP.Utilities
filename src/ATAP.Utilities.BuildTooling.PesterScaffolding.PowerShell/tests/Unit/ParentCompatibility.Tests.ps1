@@ -42,4 +42,11 @@ Describe 'BuildTooling parent PesterScaffolding compatibility surface' {
     $result.Name | Should -Be 'returns the generated model'
     $result.Body | Should -Be '$true | Should -BeTrue'
   }
+
+  It 'declares the sprint branch as a public release ref' {
+    $versionMetadata = Get-Content -LiteralPath (Join-Path $script:ChildRoot 'version.json') -Raw |
+      ConvertFrom-Json
+
+    @($versionMetadata.publicReleaseRefSpec) | Should -Contain '.*'
+  }
 }

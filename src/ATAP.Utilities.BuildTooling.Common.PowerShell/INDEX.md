@@ -1,0 +1,36 @@
+# INDEX — ATAP.Utilities.BuildTooling.Common.PowerShell
+
+module: ATAP.Utilities.BuildTooling.Common.PowerShell
+functional-area: BuildTooling
+family-parent: ATAP.Utilities.BuildTooling.PowerShell
+
+## Public functions
+
+| Function | Summary |
+| --- | --- |
+| `Assert-GitAvailable` | Throws when `git` is unavailable on PATH. |
+| `Get-WorkspaceJson` | Reads and parses a `.code-workspace` JSON document. |
+| `Initialize-ATAPConfigurationGlobals` | Initializes the standard ATAP configuration globals. |
+| `Resolve-WorkspaceFiles` | Resolves workspace-file paths to provider paths. |
+
+## Private functions
+
+None.
+
+## Documentation
+
+| File | Purpose |
+| --- | --- |
+| `ReadMe.md` | Module purpose, boundary, and verification command. |
+| `ReleaseNotes.md` | Release history. |
+| `Documentation/Task-13.70.d-Batch-1-Disposition.md` | SC-0248 and temporary parent-duplication disposition for the first helper batch. |
+
+## Tests
+
+| File | Covers |
+| --- | --- |
+| `tests/Unit/CommonModule.Contract.Tests.ps1` | Manifest contract, source import, and four-command export surface. |
+| `tests/Unit/Assert-GitAvailable.Tests.ps1` | Git-available and Git-missing behavior through Common module scope. |
+| `tests/Unit/Get-WorkspaceJson.Tests.ps1` | Valid, missing, and malformed workspace JSON behavior. |
+| `tests/Unit/Initialize-ATAPConfigurationGlobals.Tests.ps1` | Source-first initialization, ready-state no-op, and required settings validation. |
+| `tests/Unit/Resolve-WorkspaceFiles.Tests.ps1` | Single/multiple workspace path resolution and missing-path failure. |

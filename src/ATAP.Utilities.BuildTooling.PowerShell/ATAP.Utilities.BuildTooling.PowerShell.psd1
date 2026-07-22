@@ -9,7 +9,7 @@
 @{
 
     # Script module or binary module file associated with this manifest.
-    RootModule           = 'ATAP.Utilities.BuildTooling.Powershell.psm1'
+    RootModule           = 'ATAP.Utilities.BuildTooling.PowerShell.psm1'
 
     # Version number of this module.
     ModuleVersion        = '0.1.13'
@@ -51,9 +51,9 @@
     # ProcessorArchitecture = ''
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules      = @(@{ModuleName = 'ATAP.Utilities.Powershell'; ModuleVersion = '0.1.19'; MaximumVersion = '0.999.999'; },
-        @{ModuleName = 'PSFramework'; ModuleVersion = '0.1.13'; MaximumVersion = '1.999.999'; },
-        @{ModuleName = 'powershell-yaml'; ModuleVersion = '0.1.13'; MaximumVersion = '0.999.999'; })
+    RequiredModules      = @(@{ModuleName = 'ATAP.Utilities.Powershell'; ModuleVersion = '0.1.23'; MaximumVersion = '0.999.999'; },
+        @{ModuleName = 'PSFramework'; ModuleVersion = '1.14.457'; MaximumVersion = '1.999.999'; },
+        @{ModuleName = 'powershell-yaml'; ModuleVersion = '0.4.12'; MaximumVersion = '0.999.999'; })
 
     # Assemblies that must be loaded prior to importing this module
     # RequiredAssemblies = @()

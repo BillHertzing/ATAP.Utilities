@@ -86,7 +86,7 @@ synthetic "close sprint" task.
 
 | File                                                                                             | Purpose                                                                   |
 | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| [ATAP.Utilities.BuildTooling.Powershell.dll](ATAP.Utilities.BuildTooling.Powershell.dll)         | Compiled helper assembly bundled with the module.                         |
+| [ATAP.Utilities.BuildTooling.PowerShell.dll](ATAP.Utilities.BuildTooling.PowerShell.dll)         | Compiled helper assembly bundled with the module.                         |
 | [ATAP.Utilities.BuildTooling.PowerShell.psd1](ATAP.Utilities.BuildTooling.PowerShell.psd1)       | PowerShell module manifest; exports the managed user-scope profile helpers. |
 | [ATAP.Utilities.BuildTooling.PowerShell.psm1](ATAP.Utilities.BuildTooling.PowerShell.psm1)       | Built module root that dot-sources public and private scripts.            |
 | [ATAP.Utilities.BuildTooling.PowerShell.pssproj](ATAP.Utilities.BuildTooling.PowerShell.pssproj) | PowerShell Studio project file for the module.                            |
@@ -142,7 +142,7 @@ synthetic "close sprint" task.
 
 | File                                                                                          | Purpose                                           |
 | --------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| [ATAP.Utilities.BuildTooling.Powershell.dll](libs/ATAP.Utilities.BuildTooling.Powershell.dll) | Compiled helper assembly bundled with the module. |
+| [ATAP.Utilities.BuildTooling.PowerShell.dll](libs/ATAP.Utilities.BuildTooling.PowerShell.dll) | Compiled helper assembly bundled with the module. |
 
 ## Obsolete/public
 
@@ -204,7 +204,6 @@ Retired in Sprint 0007 task B08. Retained for provenance only — no active cmdl
 | [Resolve-WorkspaceFiles.ps1](private/Resolve-WorkspaceFiles.ps1)                                       | Resolves an array of workspace file paths to their full provider paths.                                                            |
 | [Save-WorkspaceJson.ps1](private/Save-WorkspaceJson.ps1)                                               | Serializes a PSCustomObject back to a .code-workspace file as JSON.                                                                |
 | [Set-ClaudeSettingsSymlink.ps1](private/Set-ClaudeSettingsSymlink.ps1)                                 | Historical wrapper name; renders `~/.claude/settings.json` as a real file from SharedVSCode `.ai/config/claudecode/settings.overlay.json`, preserving unmanaged local keys and requiring `-AllowUserGlobalWrite` plus `-CheckpointConfirmed` for live writes. |
-| [Test-CommandExists.ps1](private/Test-CommandExists.ps1)                                               | Checks whether a command is available in the current session.                                                                      |
 
 ## public
 
@@ -592,7 +591,6 @@ inside a disposable temp copy because repository rules ignore compiled binaries.
 | [Start-LocalPowerShellModuleBuildMasterPoller.Tests.ps1](tests/Unit/Start-LocalPowerShellModuleBuildMasterPoller.Tests.ps1) | Pester tests for local committed-path polling and BuildMaster package pipeline handoff.                                                                                                                                |
 | [Sync-BuildMasterPlans.Tests.ps1](tests/Unit/Sync-BuildMasterPlans.Tests.ps1)                                             | Pester tests for sync build master plans.                                                                                                                                                                              |
 | [Sync-RulesToCSV.Tests.ps1](tests/Unit/Sync-RulesToCSV.Tests.ps1)                                                         | Pester tests for sync rules to csv.                                                                                                                                                                                    |
-| [Test-CommandExists.Tests.ps1](tests/Unit/Test-CommandExists.Tests.ps1)                                                   | Pester tests for test command exists.                                                                                                                                                                                  |
 | [Test-ModuleManifest.NotRight.ps1](tests/Unit/Test-ModuleManifest.NotRight.ps1)                                           | ToDo: write Help SYNOPSIS For this function                                                                                                                                                                            |
 | [Test-MSBuildPropertyPropagation.Tests.ps1](tests/Unit/Test-MSBuildPropertyPropagation.Tests.ps1)                         | MSBuild property evaluation tests; Integration-tagged describes are also `PromotedModuleHostSensitive` because they require the full repository. |
 | [Test-SprintPrerequisites.Tests.ps1](tests/Unit/Test-SprintPrerequisites.Tests.ps1)                                       | Structured sprint preflight tests; tagged `PromotedModuleHostSensitive` because they replace configuration globals and installed-module state. |

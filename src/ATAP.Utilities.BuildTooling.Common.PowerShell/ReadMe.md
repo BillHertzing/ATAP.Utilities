@@ -4,7 +4,7 @@ Shared PowerShell helpers for the `ATAP.Utilities.BuildTooling.*` module family.
 
 ## Status
 
-This module contains the first reviewed helper batch created under Sprint 0013 Task 13.70.d.
+This module contains reviewed helper batches created under Sprint 0013 Tasks 13.70 and 13.68.c.
 The parent `ATAP.Utilities.BuildTooling.PowerShell` remains the active provider of these commands
 until a later parent-rewire task; the temporary duplicate implementations are intentional.
 
@@ -22,12 +22,13 @@ unrewired.
   that neither a guarded `lib/*.types.ps1` loader nor `RequiredAssemblies` is applicable until a
   future extraction introduces an explicitly shared type.
 
-## First batch
+## Reviewed membership
 
-The approved membership is `Assert-GitAvailable`, `Get-WorkspaceJson`,
-`Resolve-WorkspaceFiles`, and `Initialize-ATAPConfigurationGlobals`. The four functions are
-copied into this module as public commands. Existing parent implementations and tests remain in
-place until the separately tracked parent-rewire and Pester-slice tasks.
+The approved membership is `Assert-GitAvailable`, `Get-RepositoryRoot`,
+`Get-WorkspaceJson`, `Resolve-WorkspaceFiles`, and `Initialize-ATAPConfigurationGlobals`.
+`Get-RepositoryRoot` is the PesterScaffolding prerequisite approved to remove that pilot's
+GitWorktree dependency. Existing parent implementations and tests remain in place until the
+separately tracked parent-rewire and Pester-slice tasks.
 
 `Initialize-ATAPConfigurationGlobals` requires `PSFramework` for its existing structured logging.
 Its other configuration dependencies remain dynamically resolved by design, preserving its

@@ -1,6 +1,6 @@
 @{
   RootModule           = 'ATAP.Utilities.BuildTooling.Common.PowerShell.psm1'
-  ModuleVersion        = '0.1.1'
+  ModuleVersion        = '0.1.2'
   GUID                 = 'e5188e6b-f4de-451b-9ec1-d8e5dd15a6fd'
   Author               = 'Bill Hertzing for ATAPUtilities.org'
   CompanyName          = 'ATAPUtilities.org'
@@ -15,6 +15,7 @@
 
   FunctionsToExport    = @(
     'Assert-GitAvailable',
+    'Get-RepositoryRoot',
     'Get-WorkspaceJson',
     'Initialize-ATAPConfigurationGlobals',
     'Resolve-WorkspaceFiles'

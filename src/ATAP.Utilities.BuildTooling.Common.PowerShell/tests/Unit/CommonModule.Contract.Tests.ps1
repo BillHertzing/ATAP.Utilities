@@ -16,6 +16,7 @@ Describe 'ATAP.Utilities.BuildTooling.Common.PowerShell scaffold contract' -Tag 
   It 'uses the approved explicit function exports' {
     @($script:Manifest.FunctionsToExport) | Should -Be @(
       'Assert-GitAvailable',
+      'Get-RepositoryRoot',
       'Get-WorkspaceJson',
       'Initialize-ATAPConfigurationGlobals',
       'Resolve-WorkspaceFiles'
@@ -35,6 +36,7 @@ Describe 'ATAP.Utilities.BuildTooling.Common.PowerShell scaffold contract' -Tag 
     Get-Module -Name 'ATAP.Utilities.BuildTooling.Common.PowerShell' | Should -Not -BeNullOrEmpty
     @(Get-Command -Module 'ATAP.Utilities.BuildTooling.Common.PowerShell').Name | Should -Be @(
       'Assert-GitAvailable',
+      'Get-RepositoryRoot',
       'Get-WorkspaceJson',
       'Initialize-ATAPConfigurationGlobals',
       'Resolve-WorkspaceFiles'

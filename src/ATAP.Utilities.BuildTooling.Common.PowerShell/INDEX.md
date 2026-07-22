@@ -4,13 +4,14 @@ module: ATAP.Utilities.BuildTooling.Common.PowerShell
 functional-area: BuildTooling
 family-parent: ATAP.Utilities.BuildTooling.PowerShell
 
-release-state: 0.1.1 is promoted to UTAT01 Stable and installed AllUsers; parent remains unrewired.
+release-state: 0.1.2 adds Get-RepositoryRoot as the approved PesterScaffolding prerequisite; release pending. Version 0.1.1 is Stable/AllUsers; parent remains unrewired.
 
 ## Public functions
 
 | Function | Summary |
 | --- | --- |
 | `Assert-GitAvailable` | Throws when `git` is unavailable on PATH. |
+| `Get-RepositoryRoot` | Resolves a Git repository root, optionally as an absolute worktree path. |
 | `Get-WorkspaceJson` | Reads and parses a `.code-workspace` JSON document. |
 | `Initialize-ATAPConfigurationGlobals` | Initializes the standard ATAP configuration globals. |
 | `Resolve-WorkspaceFiles` | Resolves workspace-file paths to provider paths. |
@@ -31,8 +32,9 @@ None.
 
 | File | Covers |
 | --- | --- |
-| `tests/Unit/CommonModule.Contract.Tests.ps1` | Manifest contract, source import, four-command export surface, and no-type/no-assembly boundary. |
+| `tests/Unit/CommonModule.Contract.Tests.ps1` | Manifest contract, source import, five-command export surface, and no-type/no-assembly boundary. |
 | `tests/Unit/Assert-GitAvailable.Tests.ps1` | Git-available and Git-missing behavior through Common module scope. |
+| `tests/Unit/Get-RepositoryRoot.Tests.ps1` | Absolute, relative, and invalid-path Git root behavior through Common module scope. |
 | `tests/Unit/Get-WorkspaceJson.Tests.ps1` | Valid, missing, and malformed workspace JSON behavior. |
 | `tests/Unit/Initialize-ATAPConfigurationGlobals.Tests.ps1` | Source-first initialization, ready-state no-op, and required settings validation. |
 | `tests/Unit/Resolve-WorkspaceFiles.Tests.ps1` | Single/multiple workspace path resolution and missing-path failure. |

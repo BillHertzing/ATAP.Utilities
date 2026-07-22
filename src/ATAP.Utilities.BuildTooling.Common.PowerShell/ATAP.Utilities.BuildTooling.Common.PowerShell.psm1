@@ -9,6 +9,7 @@ foreach ($import in @($privateFunctions + $publicFunctions)) {
 
 Export-ModuleMember -Function @(
   'Assert-GitAvailable',
+  'Get-RepositoryRoot',
   'Get-WorkspaceJson',
   'Initialize-ATAPConfigurationGlobals',
   'Resolve-WorkspaceFiles'

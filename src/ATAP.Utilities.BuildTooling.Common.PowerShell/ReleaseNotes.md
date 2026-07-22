@@ -1,5 +1,10 @@
 # Release notes — ATAP.Utilities.BuildTooling.Common.PowerShell
 
+## 0.1.2
+
+- Adds `Get-RepositoryRoot` as a Common public command for the approved PesterScaffolding
+  pilot prerequisite. The parent copy remains until the serialized parent rewire.
+
 ## 0.1.1
 
 - Promoted through UTAT01 Experimental, Development, Integration, QA, and Stable. BuildMaster

@@ -163,4 +163,31 @@ Describe 'Build-PSModuleManifest' {
       } | Should -Throw
     }
   }
+
+  Context 'family module layout' {
+    BeforeEach {
+      $script:Root = New-TempManifestRoot
+      $script:ModuleRoot = Join-Path $script:Root 'ATAP.Utilities.BuildTooling.Sample.PowerShell'
+      New-Item -ItemType Directory -Path (Join-Path $script:ModuleRoot 'public') -Force | Out-Null
+      "function Get-Sample { 'sample' }" | Set-Content -Path (Join-Path $script:ModuleRoot 'public\Get-Sample.ps1') -Encoding utf8
+      $script:Source = Join-Path $script:ModuleRoot 'ATAP.Utilities.BuildTooling.Sample.PowerShell.psd1'
+      New-ModuleManifest -Path $script:Source -RootModule 'ATAP.Utilities.BuildTooling.Sample.PowerShell.psm1' -ModuleVersion '0.1.0' -PowerShellVersion '7.0' -CompatiblePSEditions Core -FunctionsToExport @()
+      $script:Output = Join-Path $script:Root 'out\Generated.psd1'
+      New-Item -ItemType Directory -Path (Split-Path -Parent $script:Output) -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path (Split-Path -Parent $script:Output) 'ATAP.Utilities.BuildTooling.Sample.PowerShell.psm1') -Value '' -Encoding utf8
+    }
+
+    AfterEach { Remove-Item -LiteralPath $script:Root -Recurse -Force -ErrorAction SilentlyContinue }
+
+    It 'derives explicit exports from public files when ModuleRoot is provided' {
+      Build-PSModuleManifest -SourceManifestPath $script:Source -OutputManifestPath $script:Output -ModuleVersion ([version]'1.2.3') -ModuleRoot $script:ModuleRoot -Confirm:$false | Out-Null
+      (Import-PowerShellDataFile $script:Output).FunctionsToExport | Should -Be @('Get-Sample')
+    }
+
+    It 'rejects a ModuleRoot whose folder name does not match the manifest BaseName' {
+      $wrongRoot = Join-Path $script:Root 'WrongFolder'
+      New-Item -ItemType Directory -Path $wrongRoot -Force | Out-Null
+      { Build-PSModuleManifest -SourceManifestPath $script:Source -OutputManifestPath $script:Output -ModuleVersion ([version]'1.2.3') -ModuleRoot $wrongRoot -Confirm:$false } | Should -Throw
+    }
+  }
 }

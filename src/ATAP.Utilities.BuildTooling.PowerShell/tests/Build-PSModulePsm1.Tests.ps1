@@ -213,4 +213,25 @@ function Get-PrivateBar {
       $content | Should -Match 'function Get-PrivateBar'
     }
   }
+
+  Context 'guarded type definition files' {
+    BeforeEach {
+      $script:ModuleRoot = New-TempModuleRoot
+      New-Item -ItemType Directory -Path (Join-Path $script:ModuleRoot 'public') -Force | Out-Null
+      $libDir = Join-Path $script:ModuleRoot 'lib'
+      New-Item -ItemType Directory -Path $libDir -Force | Out-Null
+      "if (-not ('Example.Type' -as [type])) { Add-Type 'public class Type {}' }" | Set-Content -Path (Join-Path $libDir 'Example.types.ps1') -Encoding utf8
+      "'must not be packaged'" | Set-Content -Path (Join-Path $libDir 'Ignored.ps1') -Encoding utf8
+      $script:OutputPath = Join-Path $script:ModuleRoot 'Out\Types.psm1'
+    }
+
+    AfterEach { Remove-Item -LiteralPath $script:ModuleRoot -Recurse -Force -ErrorAction SilentlyContinue }
+
+    It 'includes only lib files explicitly marked as types' {
+      Build-PSModulePsm1 -ModuleRoot $script:ModuleRoot -OutputPath $script:OutputPath -Confirm:$false | Out-Null
+      $content = Get-Content -LiteralPath $script:OutputPath -Raw
+      $content | Should -Match 'Example\.types\.ps1'
+      $content | Should -Not -Match 'must not be packaged'
+    }
+  }
 }

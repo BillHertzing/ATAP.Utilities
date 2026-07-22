@@ -1,5 +1,32 @@
 # ToDo : Module comment-based help
 
+# Import the approved child before the remaining parent implementation so its explicit
+# command exports can be re-exported by the compatibility parent manifest.
+$pesterScaffoldingManifest = Join-Path $PSScriptRoot '..\ATAP.Utilities.BuildTooling.PesterScaffolding.PowerShell\ATAP.Utilities.BuildTooling.PesterScaffolding.PowerShell.psd1'
+$pesterScaffoldingModule = Import-Module -Name $pesterScaffoldingManifest -Force -PassThru -ErrorAction Stop
+foreach ($childCommand in @(Get-Command -Module $pesterScaffoldingModule.Name -CommandType Function)) {
+    $childCommandName = $childCommand.Name
+    $childModuleProxy = $pesterScaffoldingModule
+    $childCommandMetadata = [System.Management.Automation.CommandMetadata]::new($childCommand)
+    $childCommandProxyTemplate = [System.Management.Automation.ProxyCommand]::Create($childCommandMetadata)
+    $beginOffset = $childCommandProxyTemplate.IndexOf('begin', [System.StringComparison]::Ordinal)
+    if ($beginOffset -lt 0) {
+        throw "Unable to derive the parameter contract for child command '$childCommandName'."
+    }
+    $childCommandProxyHeader = $childCommandProxyTemplate.Substring(0, $beginOffset)
+    $childCommandProxyDefinition = $childCommandProxyHeader + @'
+process
+{
+    & $childModuleProxy {
+        param($commandName, $boundParameters, $remainingArguments)
+        & $commandName @boundParameters @remainingArguments
+    } $childCommandName $PSBoundParameters $args
+}
+'@
+    $childCommandProxyBody = [scriptblock]::Create($childCommandProxyDefinition).GetNewClosure()
+    Set-Item -Path "Function:script:$childCommandName" -Value $childCommandProxyBody
+}
+
 # get the fileIO info for each file in the public and private subdirectories
 $publicFunctions = @(Get-ChildItem -Path $PSScriptRoot\public\*.ps1 -ErrorAction SilentlyContinue)
 $privateFunctions = @(Get-ChildItem -Path $PSScriptRoot\private\*.ps1 -ErrorAction SilentlyContinue)

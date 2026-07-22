@@ -34,3 +34,5 @@ stuff
 - Added checked-in `ModuleFamily.psd1` metadata and deterministic family build selection.
 - Added the empty BuildTooling child-module scaffold and `New-BuildToolingChildModule`.
 - Hardened parent exports to explicit functions, aliases, and empty cmdlet/variable arrays.
+- Promoted the family-aware bootstrap through Production; installed deployment remains a separate gate.
+- Prepared the parent compatibility dependency on the PesterScaffolding 0.1.0 pilot.

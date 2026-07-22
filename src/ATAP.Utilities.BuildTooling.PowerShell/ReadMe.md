@@ -1107,3 +1107,9 @@ SolutionDocumentation-index text. It never edits another repository.
 During migration, packaging and publishing commands must resolve from the installed,
 immutable bootstrap module—not from the in-flight source tree. The parent source path is
 used only to build the bootstrap release itself.
+
+The first extraction pilot is
+`ATAP.Utilities.BuildTooling.PesterScaffolding.PowerShell`. It owns ten Pester
+configuration and test-template commands. The parent requires child version 0.1.0 or
+later and generates parameter-preserving compatibility forwarders at import time, so
+the committed 200-command parent surface remains unchanged during migration.

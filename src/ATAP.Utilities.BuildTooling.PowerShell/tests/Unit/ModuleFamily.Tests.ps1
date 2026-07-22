@@ -26,6 +26,27 @@ Describe 'ModuleFamily metadata' {
     }
   }
 
+  It 'matches checked-in manifests for GUIDs and family dependency floors' {
+    foreach ($member in $script:Family.Members) {
+      $moduleRoot = Join-Path $script:RepositoryRoot (Join-Path 'src' $member.Name)
+      $manifestPath = Join-Path $moduleRoot "$($member.Name).psd1"
+      if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
+        continue
+      }
+
+      $manifest = Import-PowerShellDataFile -LiteralPath $manifestPath
+      $manifest.Guid.ToString() | Should -Be ([guid]$member.Guid).ToString()
+
+      foreach ($dependency in @($member.Dependencies)) {
+        $requiredModule = @($manifest.RequiredModules) |
+          Where-Object { $_ -is [hashtable] -and $_.ModuleName -eq $dependency } |
+          Select-Object -First 1
+        $requiredModule | Should -Not -BeNullOrEmpty
+        [version]$requiredModule.ModuleVersion | Should -Be ([version]$member.MinimumVersions[$dependency])
+      }
+    }
+  }
+
   It 'rejects malformed or cyclic family data before it can be used as a build order' {
     $malformed = @{ Members = @(@{ Name = 'A'; Dependencies = @('Missing') }) }
     $cyclic = @{ Members = @(@{ Name = 'A'; Dependencies = @('B') }, @{ Name = 'B'; Dependencies = @('A') }) }

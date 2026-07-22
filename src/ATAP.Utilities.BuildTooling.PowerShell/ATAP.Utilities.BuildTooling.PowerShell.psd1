@@ -53,7 +53,8 @@
     # Modules that must be imported into the global environment prior to importing this module
     RequiredModules      = @(@{ModuleName = 'ATAP.Utilities.Powershell'; ModuleVersion = '0.1.23'; MaximumVersion = '0.999.999'; },
         @{ModuleName = 'PSFramework'; ModuleVersion = '1.14.457'; MaximumVersion = '1.999.999'; },
-        @{ModuleName = 'powershell-yaml'; ModuleVersion = '0.4.12'; MaximumVersion = '0.999.999'; })
+        @{ModuleName = 'powershell-yaml'; ModuleVersion = '0.4.12'; MaximumVersion = '0.999.999'; },
+        @{ModuleName = 'ATAP.Utilities.BuildTooling.PesterScaffolding.PowerShell'; ModuleVersion = '0.1.0'; })
 
     # Assemblies that must be loaded prior to importing this module
     # RequiredAssemblies = @()

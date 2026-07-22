@@ -1091,3 +1091,19 @@ canonical `*-stable` tier.
 ## Functional area
 
 PowerShell Build & Packaging - START HERE: SolutionDocumentation\PowerShell-Modules-Build-Process.md (link-up added 2026-07-07, Sprint 0012 Task 12.46.f)
+## BuildTooling family contract
+
+`ModuleFamily.psd1` at the repository root is the checked-in source for approved
+BuildTooling module names, GUIDs, dependency minimums, and deterministic build order.
+`module.build.ps1 -ModuleName <approved name>` builds a named family member while
+preserving the legacy parent-module path. `Build-PSModulePsm1` includes only guarded
+`lib/*.types.ps1` files, and `Build-PSModuleManifest` derives explicit function exports
+from the target module's public files.
+
+`New-BuildToolingChildModule` renders one empty, importable child module from
+`src/_Templates/BuildToolingChildModule` and returns proposed BuildMaster-map and
+SolutionDocumentation-index text. It never edits another repository.
+
+During migration, packaging and publishing commands must resolve from the installed,
+immutable bootstrap module—not from the in-flight source tree. The parent source path is
+used only to build the bootstrap release itself.

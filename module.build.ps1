@@ -21,6 +21,10 @@ param(
   # module per invocation.
   [string] $ModuleRoot,
 
+  # Optional approved family member name. When supplied, ModuleRoot is resolved
+  # from the checked-in ModuleFamily.psd1 metadata under this repository's src/.
+  [string] $ModuleName,
+
   # Optional generated output root override. When omitted, Resolve-PSModuleMetadata
   # supplies the legacy shared '<RepoRoot>/_generated/psmodules/<ModuleName>/' path.
   # BuildMaster passes a build-id scoped path to avoid concurrent runs sharing a
@@ -94,7 +98,20 @@ $script:_savedHermeticRepos = @()
 Enter-Build {
   # Resolve effective module root: explicit -ModuleRoot wins; otherwise fall
   # back to $BuildRoot (legacy symlink-into-module-folder layout).
-  if ([string]::IsNullOrEmpty($ModuleRoot)) {
+  if (-not [string]::IsNullOrWhiteSpace($ModuleName) -and -not [string]::IsNullOrWhiteSpace($ModuleRoot)) {
+    throw 'Specify either ModuleName or ModuleRoot, not both.'
+  }
+  if (-not [string]::IsNullOrWhiteSpace($ModuleName)) {
+    $familyPath = Join-Path $PSScriptRoot 'ModuleFamily.psd1'
+    if (-not (Test-Path -LiteralPath $familyPath -PathType Leaf)) {
+      throw "ModuleFamily.psd1 was not found at '$familyPath'."
+    }
+    $family = Import-PowerShellDataFile -LiteralPath $familyPath
+    if (@($family.Members | Where-Object { $_.Name -eq $ModuleName }).Count -ne 1) {
+      throw "ModuleName '$ModuleName' is not an approved ModuleFamily member."
+    }
+    $script:EffectiveModuleRoot = Join-Path $PSScriptRoot (Join-Path 'src' $ModuleName)
+  } elseif ([string]::IsNullOrEmpty($ModuleRoot)) {
     $script:EffectiveModuleRoot = $BuildRoot
   } else {
     $script:EffectiveModuleRoot = $ModuleRoot
@@ -105,6 +122,14 @@ Enter-Build {
   $script:ModuleName = $script:meta.ModuleName
   $script:ModuleRoot = $script:meta.ModuleRoot
   $script:RepoRoot = $script:meta.RepoRoot
+  $candidateFamilyPath = Join-Path $PSScriptRoot 'ModuleFamily.psd1'
+  $script:ModuleFamilyPath = ''
+  if (Test-Path -LiteralPath $candidateFamilyPath -PathType Leaf) {
+    $candidateFamily = Import-PowerShellDataFile -LiteralPath $candidateFamilyPath
+    if (@($candidateFamily.Members | Where-Object { $_.Name -eq $script:ModuleName }).Count -eq 1) {
+      $script:ModuleFamilyPath = $candidateFamilyPath
+    }
+  }
   if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
     $script:OutputRoot = $script:meta.OutputRoot
   } else {
@@ -304,6 +329,8 @@ Task BuildManifest {
     -OutputManifestPath $script:GeneratedManifestPath `
     -ModuleVersion $script:verInfo.ModuleVersion `
     -Prerelease $script:verInfo.Prerelease `
+    -ModuleRoot $script:ModuleRoot `
+    -ModuleFamilyPath $script:ModuleFamilyPath `
     -PublicFunctions $publicFunctions `
     -Aliases $functionAliases
 

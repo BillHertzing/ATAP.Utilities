@@ -64,6 +64,12 @@ function Build-PSModuleManifest {
     [string[]] $PublicFunctions = @(),
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+    [string] $ModuleRoot = '',
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+    [string] $ModuleFamilyPath = '',
+
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
     [string[]] $Aliases = @(),
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
@@ -103,6 +109,43 @@ function Build-PSModuleManifest {
       }
 
       $sourceManifest = Import-PowerShellDataFile -LiteralPath $SourceManifestPath -ErrorAction Stop
+      $effectiveModuleRoot = if ([string]::IsNullOrWhiteSpace($ModuleRoot)) {
+        Split-Path -Parent $SourceManifestPath
+      } else {
+        $ModuleRoot
+      }
+      $manifestBaseName = [System.IO.Path]::GetFileNameWithoutExtension($SourceManifestPath)
+      $moduleFolderName = Split-Path -Leaf $effectiveModuleRoot
+      if ($PSBoundParameters.ContainsKey('ModuleRoot') -and $moduleFolderName -ne $manifestBaseName) {
+        throw "Module folder '$moduleFolderName' must match manifest BaseName '$manifestBaseName'."
+      }
+      if ($PSBoundParameters.ContainsKey('PublicFunctions') -and $PublicFunctions.Count -gt 0) {
+        $resolvedPublicFunctions = @($PublicFunctions | Sort-Object -Unique)
+      } else {
+        $publicDirectory = Join-Path $effectiveModuleRoot 'public'
+        $resolvedPublicFunctions = if (Test-Path -LiteralPath $publicDirectory -PathType Container) {
+          @(Get-ChildItem -LiteralPath $publicDirectory -Filter '*.ps1' -File |
+              Select-Object -ExpandProperty BaseName | Sort-Object -Unique)
+        } else {
+          @()
+        }
+      }
+      $familyRequiredModules = @()
+      if (-not [string]::IsNullOrWhiteSpace($ModuleFamilyPath)) {
+        if (-not (Test-Path -LiteralPath $ModuleFamilyPath -PathType Leaf)) {
+          throw "ModuleFamilyPath '$ModuleFamilyPath' does not exist."
+        }
+        $family = Import-PowerShellDataFile -LiteralPath $ModuleFamilyPath -ErrorAction Stop
+        $member = @($family.Members | Where-Object { $_.Name -eq $manifestBaseName })
+        if ($member.Count -ne 1) {
+          throw "Manifest '$manifestBaseName' is not exactly one ModuleFamily member."
+        }
+        $familyRequiredModules = @(
+          foreach ($dependency in @($member[0].Dependencies)) {
+            @{ ModuleName = $dependency; ModuleVersion = $member[0].MinimumVersions[$dependency] }
+          }
+        )
+      }
       $params = @{
         Path          = $OutputManifestPath
         ModuleVersion = $ModuleVersion
@@ -116,7 +159,7 @@ function Build-PSModuleManifest {
           @{ Key = 'Description'; Value = $sourceManifest.Description },
           @{ Key = 'PowerShellVersion'; Value = if ($sourceManifest.PowerShellVersion) { [version]$sourceManifest.PowerShellVersion } else { $null } },
           @{ Key = 'CompatiblePSEditions'; Value = @($sourceManifest.CompatiblePSEditions | Where-Object { $_ }) },
-          @{ Key = 'RequiredModules'; Value = @($sourceManifest.RequiredModules | Where-Object { $_ }) },
+          @{ Key = 'RequiredModules'; Value = if ($familyRequiredModules.Count -gt 0) { $familyRequiredModules } else { @($sourceManifest.RequiredModules | Where-Object { $_ }) } },
           @{ Key = 'CmdletsToExport'; Value = @($sourceManifest.CmdletsToExport | Where-Object { $_ }) },
           @{ Key = 'VariablesToExport'; Value = @($sourceManifest.VariablesToExport | Where-Object { $_ }) }
         )) {
@@ -134,9 +177,7 @@ function Build-PSModuleManifest {
       if (-not [string]::IsNullOrWhiteSpace($Prerelease)) {
         $params['Prerelease'] = $Prerelease
       }
-      if ($PublicFunctions -and $PublicFunctions.Count -gt 0) {
-        $params['FunctionsToExport'] = $PublicFunctions
-      }
+      $params['FunctionsToExport'] = $resolvedPublicFunctions
       if ($Aliases -and $Aliases.Count -gt 0) {
         $params['AliasesToExport'] = $Aliases
       }

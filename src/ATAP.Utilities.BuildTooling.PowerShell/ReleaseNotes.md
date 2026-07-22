@@ -29,3 +29,8 @@ Template for release notes, edit before production release
 ## Must have another level 2 chapter here
 
 stuff
+# 0.1.45
+
+- Added checked-in `ModuleFamily.psd1` metadata and deterministic family build selection.
+- Added the empty BuildTooling child-module scaffold and `New-BuildToolingChildModule`.
+- Hardened parent exports to explicit functions, aliases, and empty cmdlet/variable arrays.

@@ -85,7 +85,8 @@ function Build-PSModulePsm1 {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Sub-directory '$subDirPath' does not exist; skipping"
           continue
         }
-        $found = Get-ChildItem -Path $subDirPath -Filter '*.ps1' -File -Recurse -ErrorAction SilentlyContinue |
+        $filter = if ($subDirName -eq 'lib') { '*.types.ps1' } else { '*.ps1' }
+        $found = Get-ChildItem -Path $subDirPath -Filter $filter -File -Recurse -ErrorAction SilentlyContinue |
           Sort-Object FullName
         foreach ($f in $found) {
           [void]$sourceFiles.Add($f)

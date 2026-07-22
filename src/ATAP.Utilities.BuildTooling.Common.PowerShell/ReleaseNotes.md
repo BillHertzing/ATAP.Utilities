@@ -1,5 +1,13 @@
 # Release notes — ATAP.Utilities.BuildTooling.Common.PowerShell
 
+## 0.1.3
+
+- Corrects the Common contract and `Get-RepositoryRoot` test fixtures so a promotion gate keeps
+  the restored immutable package as the system under test. Standalone source test runs still
+  import the source manifest.
+- Replaces immutable 0.1.2 after its Development gate failed solely because the test fixtures
+  re-imported source code and therefore invalidated the promoted-package contract.
+
 ## 0.1.2
 
 - Adds `Get-RepositoryRoot` as a Common public command for the approved PesterScaffolding

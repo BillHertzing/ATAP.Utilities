@@ -4,7 +4,7 @@ module: ATAP.Utilities.BuildTooling.Common.PowerShell
 functional-area: BuildTooling
 family-parent: ATAP.Utilities.BuildTooling.PowerShell
 
-release-state: 0.1.2 adds Get-RepositoryRoot as the approved PesterScaffolding prerequisite; release pending. Version 0.1.1 is Stable/AllUsers; parent remains unrewired.
+release-state: 0.1.3 corrects promoted-package test isolation after the immutable 0.1.2 Development gate failed. It retains Get-RepositoryRoot as the approved PesterScaffolding prerequisite; release pending. Version 0.1.1 is Stable/AllUsers; parent remains unrewired.
 
 ## Public functions
 

@@ -3,8 +3,12 @@ BeforeAll {
   $manifestPath = Join-Path $moduleRoot 'ATAP.Utilities.BuildTooling.Common.PowerShell.psd1'
   $script:Manifest = Import-PowerShellDataFile -LiteralPath $manifestPath
 
-  Remove-Module -Name 'ATAP.Utilities.BuildTooling.Common.PowerShell' -Force -ErrorAction SilentlyContinue
-  Import-Module -Name $manifestPath -Force -ErrorAction Stop
+  # A promoted-package gate imports the immutable package before invoking this
+  # source test suite. Preserve that module as the system under test; import
+  # the source manifest only for standalone test runs.
+  if ($null -eq (Get-Module -Name 'ATAP.Utilities.BuildTooling.Common.PowerShell')) {
+    Import-Module -Name $manifestPath -Force -ErrorAction Stop
+  }
 }
 
 Describe 'ATAP.Utilities.BuildTooling.Common.PowerShell scaffold contract' -Tag 'Unit' {

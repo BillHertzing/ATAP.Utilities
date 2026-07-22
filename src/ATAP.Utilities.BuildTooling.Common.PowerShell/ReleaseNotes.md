@@ -7,3 +7,5 @@
   `Get-WorkspaceJson`, `Initialize-ATAPConfigurationGlobals`, and `Resolve-WorkspaceFiles`.
 - Parent implementations remain temporarily to preserve the unrewired parent contract.
 - Added the Common-owned Pester slice for each exported helper under Task 13.70.e.
+- Recorded the Task 13.70.f no-type/no-assembly disposition: this function-only batch has no
+  Common-owned duplicate DLL and no applicable type-loading mechanism.

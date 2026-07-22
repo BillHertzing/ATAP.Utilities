@@ -36,3 +36,16 @@ Task 13.70.e adds Common-owned functional coverage for every exported helper:
 The parent copies and their tests remain while the parent is unrewired. The Common test files
 import Common's manifest directly, so they validate Common ownership and command scope without
 depending on the parent module.
+
+## Task 13.70.f type and assembly disposition
+
+The approved first batch exposes only PowerShell functions. The Common module contains no
+shared type definition, `Add-Type` use, DLL, `lib/*.types.ps1` file, or manifest
+`RequiredAssemblies` entry. Therefore neither proposed type-loading mechanism applies to this
+batch, and no guarded loader is added speculatively.
+
+No duplicate DLL is owned by Common, so there is no Common DLL copy to remove. Any assembly that
+remains with the unrewired parent stays parent-owned until a later extraction explicitly moves the
+type and names the duplicate-copy disposition. `CommonModule.Contract.Tests.ps1` makes this
+absence an intentional contract so a future type introduction must update the manifest/loader,
+the test, and this disposition together.

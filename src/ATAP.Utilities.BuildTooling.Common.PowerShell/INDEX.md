@@ -23,13 +23,13 @@ None.
 | --- | --- |
 | `ReadMe.md` | Module purpose, boundary, and verification command. |
 | `ReleaseNotes.md` | Release history. |
-| `Documentation/Task-13.70.d-Batch-1-Disposition.md` | SC-0248 and temporary parent-duplication disposition for the first helper batch. |
+| `Documentation/Task-13.70.d-Batch-1-Disposition.md` | SC-0248, temporary parent-duplication, and Task 13.70.f no-type/no-assembly disposition for the first helper batch. |
 
 ## Tests
 
 | File | Covers |
 | --- | --- |
-| `tests/Unit/CommonModule.Contract.Tests.ps1` | Manifest contract, source import, and four-command export surface. |
+| `tests/Unit/CommonModule.Contract.Tests.ps1` | Manifest contract, source import, four-command export surface, and no-type/no-assembly boundary. |
 | `tests/Unit/Assert-GitAvailable.Tests.ps1` | Git-available and Git-missing behavior through Common module scope. |
 | `tests/Unit/Get-WorkspaceJson.Tests.ps1` | Valid, missing, and malformed workspace JSON behavior. |
 | `tests/Unit/Initialize-ATAPConfigurationGlobals.Tests.ps1` | Source-first initialization, ready-state no-op, and required settings validation. |

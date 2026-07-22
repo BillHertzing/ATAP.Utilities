@@ -25,6 +25,12 @@ Describe 'ATAP.Utilities.BuildTooling.Common.PowerShell scaffold contract' -Tag 
     @($script:Manifest.AliasesToExport).Count | Should -Be 0
   }
 
+  It 'keeps the first batch free of shared types and assemblies' {
+    $script:Manifest.ContainsKey('RequiredAssemblies') | Should -BeFalse
+    @(Get-ChildItem -LiteralPath $moduleRoot -Filter '*.dll' -File -Recurse).Count | Should -Be 0
+    @(Get-ChildItem -LiteralPath (Join-Path $moduleRoot 'lib') -Filter '*.types.ps1' -File -ErrorAction SilentlyContinue).Count | Should -Be 0
+  }
+
   It 'imports from its manifest and exposes the approved commands' {
     Get-Module -Name 'ATAP.Utilities.BuildTooling.Common.PowerShell' | Should -Not -BeNullOrEmpty
     @(Get-Command -Module 'ATAP.Utilities.BuildTooling.Common.PowerShell').Name | Should -Be @(

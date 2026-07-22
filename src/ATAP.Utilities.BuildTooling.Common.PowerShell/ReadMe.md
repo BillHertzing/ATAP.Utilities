@@ -13,8 +13,9 @@ until a later parent-rewire task; the temporary duplicate implementations are in
 - Requires PowerShell 7.0 or later and the Core edition.
 - Declares four explicit function exports and explicit empty cmdlet, variable, and alias exports.
 - Keeps public helpers in `public/` and non-exported helpers in `private/`.
-- Contains no shared types or assemblies. A later Task 13.70.f decision is required before
-  adding either a guarded `lib/*.types.ps1` file or a required assembly.
+- Contains no shared types or assemblies in the approved first batch. Task 13.70.f determined
+  that neither a guarded `lib/*.types.ps1` loader nor `RequiredAssemblies` is applicable until a
+  future extraction introduces an explicitly shared type.
 
 ## First batch
 

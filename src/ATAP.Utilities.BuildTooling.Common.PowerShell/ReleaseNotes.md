@@ -1,5 +1,13 @@
 # Release notes — ATAP.Utilities.BuildTooling.Common.PowerShell
 
+## 0.1.1
+
+- Classifies the two mock-only `Assert-GitAvailable` Unit tests as
+  `PromotedModuleHostSensitive`. They remain in the normal Unit suite but are excluded from the
+  BuildMaster service-account promoted-module gate, where they re-import source code and fail
+  without diagnostic detail rather than validating the restored package.
+- Bumps the immutable package version after the failed 0.1.0 Development gate.
+
 ## 0.1.0
 
 - Created the empty, PowerShell 7/Core-only Common module scaffold for Sprint 0013 Task 13.70.c.

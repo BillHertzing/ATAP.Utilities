@@ -37,3 +37,8 @@ Invoke-Pester -Path './tests/Unit' -Output Minimal
 The Common-owned slice covers all four exported commands. The parent suite remains in place
 while the parent owns the active command surface; it will be reconciled when parent rewire work
 is authorized.
+
+The `Assert-GitAvailable` mock-only tests retain the `Unit` tag but also carry
+`PromotedModuleHostSensitive`: BuildMaster's promoted-module gate restores the package and then
+the tests re-import source code to install module-scoped mocks, so these checks do not validate
+the restored artifact and are excluded from that service-account gate.

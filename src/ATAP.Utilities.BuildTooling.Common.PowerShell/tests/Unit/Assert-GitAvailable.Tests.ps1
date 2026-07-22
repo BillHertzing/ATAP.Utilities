@@ -4,7 +4,7 @@ BeforeAll {
   Import-Module -Name $manifestPath -Force
 }
 
-Describe 'Assert-GitAvailable' -Tag 'Unit' {
+Describe 'Assert-GitAvailable' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   Context 'When git is on PATH' {
     BeforeAll {
       Mock Get-Command -ModuleName ATAP.Utilities.BuildTooling.Common.PowerShell { [PSCustomObject]@{ Name = 'git' } } -ParameterFilter { $Name -eq 'git' }

@@ -1050,6 +1050,12 @@ The BuildMaster stage runner keeps `Set-StrictMode -Version Latest` for its own
 orchestration, but that policy no longer leaks into Pester fixture code where
 normal missing-property and scalar `.Count` behavior is expected.
 
+For fixtures that must reload the module, the delegated run temporarily sets
+the process-scoped `ATAP_PROMOTED_MODULE_MANIFEST` value to the restored package
+manifest. Fixtures use that path rather than a source manifest, then the runner
+restores the previous value after Pester completes. This keeps the promoted
+artifact—not the source tree—as the system under test.
+
 Suites that must import or dot-source the BuildTooling source tree, depend on
 developer-workstation globals or paths, or evaluate the full repository carry
 the `PromotedModuleHostSensitive` tag. `Invoke-PromotedModuleTests` passes that

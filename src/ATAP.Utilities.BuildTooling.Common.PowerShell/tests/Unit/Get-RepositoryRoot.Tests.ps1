@@ -1,11 +1,9 @@
 BeforeAll {
   $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
   $manifestPath = Join-Path $moduleRoot 'ATAP.Utilities.BuildTooling.Common.PowerShell.psd1'
-  # Preserve the already-imported promoted package when this suite runs in a
-  # promotion gate. Standalone source runs import the source manifest instead.
-  if ($null -eq (Get-Module -Name 'ATAP.Utilities.BuildTooling.Common.PowerShell')) {
-    Import-Module -Name $manifestPath -Force -ErrorAction Stop
-  }
+  $promotedManifest = [System.Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
+  Remove-Module -Name 'ATAP.Utilities.BuildTooling.Common.PowerShell' -Force -ErrorAction SilentlyContinue
+  Import-Module -Name $(if ([string]::IsNullOrWhiteSpace($promotedManifest)) { $manifestPath } else { $promotedManifest }) -Force -ErrorAction Stop
 }
 
 Describe 'Get-RepositoryRoot' -Tag 'Unit' {

@@ -356,6 +356,11 @@ function Invoke-PromotedModuleTests {
             $coverageFile = Join-Path $ResultsPath 'CoverageResults.xml'
 
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Running $testDescription for $target (tests from '$ModuleSourceRoot', module from '$savedModulePath')"
+            # Source-owned Pester fixtures need an explicit way to identify the
+            # immutable artifact under test. The process-scoped value is restored
+            # immediately after the delegated run so it cannot leak to later tiers.
+            $previousPromotedModuleManifest = [System.Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
+            [System.Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', $savedModulePath, 'Process')
             # BuildMasterRunContext.Common.ps1 intentionally enables
             # StrictMode for the stage runner. Pester test containers are
             # module-consumer code and must not inherit that runner policy:
@@ -363,18 +368,22 @@ function Invoke-PromotedModuleTests {
             # .Count checks abort fixture setup, causing broad false failures.
             # A child scope keeps the caller's StrictMode unchanged while
             # giving the delegated test run normal PowerShell semantics.
-            $innerResult = & {
-                Set-StrictMode -Off
-                Invoke-PSModulePesterTests `
-                    -ModuleRoot $ModuleSourceRoot `
-                    -Tier $pesterTier `
-                    -OutputPath $outputFile `
-                    -CoverageOutputPath $coverageFile `
-                    -SkipCodeCoverage `
-                    -AdditionalExcludeTag 'PromotedModuleHostSensitive' `
-                    -PesterOutputVerbosity $PesterOutputVerbosity `
-                    -PesterProgressInterval $PesterProgressInterval `
-                    -ErrorAction Stop
+            try {
+                $innerResult = & {
+                    Set-StrictMode -Off
+                    Invoke-PSModulePesterTests `
+                        -ModuleRoot $ModuleSourceRoot `
+                        -Tier $pesterTier `
+                        -OutputPath $outputFile `
+                        -CoverageOutputPath $coverageFile `
+                        -SkipCodeCoverage `
+                        -AdditionalExcludeTag 'PromotedModuleHostSensitive' `
+                        -PesterOutputVerbosity $PesterOutputVerbosity `
+                        -PesterProgressInterval $PesterProgressInterval `
+                        -ErrorAction Stop
+                }
+            } finally {
+                [System.Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', $previousPromotedModuleManifest, 'Process')
             }
 
             $passed = if ($null -ne $innerResult) { [int]$innerResult.Passed } else { 0 }

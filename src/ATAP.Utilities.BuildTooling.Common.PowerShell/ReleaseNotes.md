@@ -1,5 +1,11 @@
 # Release notes — ATAP.Utilities.BuildTooling.Common.PowerShell
 
+## 0.1.4
+
+- Adds the explicit promoted-manifest test-process contract so all selected Common fixtures
+  re-import the immutable promoted package instead of source code during a tier gate.
+- Replaces immutable 0.1.3 after its Development gate exposed remaining source-fixture imports.
+
 ## 0.1.3
 
 - Corrects the Common contract and `Get-RepositoryRoot` test fixtures so a promotion gate keeps

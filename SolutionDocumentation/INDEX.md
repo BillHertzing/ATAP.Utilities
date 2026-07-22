@@ -76,8 +76,11 @@ _Teach / Tell how to create software._
   Sprint 0013 reconciliation records Dropbox/Git integrity, host-qualified
   multi-host sprint assignment, canonical ATAP.IAC profile sources, BWS versus
   personal-vault boundaries, five-role SQL protection, canonical Inedo ports,
-  mobile/Class A certification, and explicit deferred/HITL gates. Linked
-  runbooks, automation, and clean-host rehearsal remain open work.
+  mobile/Class A certification, and explicit deferred/HITL gates. Linked runbook and
+  documentation-contract reconciliation is complete; clean-host rehearsal remains open.
+  Run the read-only,
+  idempotent `Test-NewComputerSetupDocumentation.ps1` contract validator after changing
+  this guide or its active linked BuildMaster runbooks.
   The first half covers Rufus USB preparation, BIOS configuration, Windows
   install, and WinRM/Ansible enablement via `ConfigureRemotingForAnsible.ps1`.
   The second half (the bulk of the 700+-line document) is an end-to-end

@@ -72,6 +72,8 @@ ToDo: Insert diagram of CI/CD process
   host-qualified sprint assignment, canonical profile ownership, five SQL roles,
   Inedo port/data boundaries, BWS versus personal-vault access, Class A return
   controls, and the open product/HITL gates that must not be reported as deployed.
+  `Test-NewComputerSetupDocumentation.ps1` provides the read-only, idempotent contract
+  check for the canonical guide and its active linked BuildMaster runbooks.
 
 ### ManimVideoGenerator
 

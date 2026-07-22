@@ -1053,760 +1053,102 @@ icacls "C:\ProgramData\ProGet\Packages" /grant "SvcProGet:(OI)(CI)F" /T
 > automatically after creating the `SvcProGet` account. Run it instead of the manual
 > command when provisioning a new machine.
 
-### 9.4 Manually provision DPAPI Bitwarden credentials for the service accounts
+### 9.4 Provision approved Bitwarden Secrets Manager ReadOnly identities
 
-> **⚠ Architecture update (Sprint 0007 — Bitwarden Secrets Manager).** Subsections
-> 9.4.1–9.4.9 below provision the **Password Manager** (`bw`) login/unlock DPAPI files and
-> were originally written for `SvcBuildmaster` / `SvcProGet`. They are **retained** as the
-> reference pattern, which now applies to the **interactive Password Manager user
-> `DeveloperTwo`** (the 2nd Bitwarden org user — see
-> [NewOrganizationSetup.md](NewOrganizationSetup.md)). The **service accounts** obtain
-> runtime secrets from **Bitwarden Secrets Manager** (`bws`) using machine-account access
-> tokens instead — see **§9.4.10** below. Identity map for this host:
->
-> | Identity                                | Bitwarden identity           | Provisioning path                           |
-> | --------------------------------------- | ---------------------------- | ------------------------------------------- |
-> | Windows interactive user `DeveloperTwo` | PM User 2                    | `bw` login/unlock — **9.4.1–9.4.9 pattern** |
-> | `SvcBuildmaster` (service)              | BWS machine `SvcBuildMaster` | `bws` access token — **§9.4.10**            |
-> | `SvcProGet` (service)                   | BWS machine `SvcInfraShared` | `bws` access token — **§9.4.10**            |
-> | AceCommander service / IIS              | BWS machine `AceCommander`   | `bws` access token — **§9.4.10**            |
+This is the only supported non-interactive secret bootstrap. Password Manager
+`bw`/`BW_SESSION` is interactive-user-only and must never be provisioned to or inherited by
+a Windows service. The retired service-account Password Manager procedure is available in
+Git history only and is non-executable.
 
-This section is the manual (no-Ansible) provisioning runbook for the per-service-account
-DPAPI credential files described in
-[ServiceAccountsAndBitwarden.md](ServiceAccountsAndBitwarden.md). Use it after the local
-service accounts exist (Step 5) and after the Inedo services are installed (Step 9.1)
-but before you reconfigure those services to run as the dedicated accounts (Step 9.3).
-The output of this section is two pairs of DPAPI-encrypted `.xml` credential files
-(login + unlock) under
-`C:\ProgramData\ATAP\BitwardenCredentials\<ServiceAccount>\`, each readable only by the
-owning service account on this host.
+The approved automation allowlist is exact: `SvcBuildMaster`, `SvcProGet`, and
+`SvcSQLServer`, each scoped to project `CI-Shared` with purpose `ReadOnly`. `SvcSeq`,
+`SvcParityAudit`, and `ansibleAdmin` receive no BWS token. ReadWrite is approved only for
+`utat022\whertzing` and is not a fallback for any service account. Creating accounts,
+certificates, Bitwarden grants, tokens, logon rights, or scheduled tasks is a separate HITL
+operation under Tasks 13.40–13.43.
 
-Preconditions:
+#### 9.4.1 Preconditions and dry run
 
-1. `SvcProGet` and `SvcBuildmaster` exist on this host (Step 5).
-2. You are logged in interactively as a member of the local Administrators group.
-3. You know the Windows password for each of those two service accounts.
-4. You know the Bitwarden email plus the Bitwarden login password and the master/unlock
-   password that should be bound to each service account. In the simplest single-tenant
-   model these are the same for both service accounts; if each service account has its
-   own dedicated Bitwarden identity, you will need both sets of passwords.
-5. The Bitwarden CLI (`bw`) is installed and on `PATH`.
-6. You are running PowerShell 7 elevated.
-
-#### 9.4.0 Checklist
-
-Work through these steps in order. Tick each box as you complete it.
-
-- [ ] **9.4.1** Create and ACL `C:\ProgramData\ATAP\BitwardenCredentials\SvcBuildmaster\`
-- [ ] **9.4.2** Launch a PowerShell session as `SvcBuildmaster` and create its
-      `BW_Login_Credential.xml` and `BW_Unlock_Credential.xml`
-- [ ] **9.4.3** Validate the BuildMaster credential files were created
-- [ ] **9.4.4** Create and ACL `C:\ProgramData\ATAP\BitwardenCredentials\SvcProGet\`
-- [ ] **9.4.5** Launch a PowerShell session as `SvcProGet` and create its
-      `BW_Login_Credential.xml` and `BW_Unlock_Credential.xml`
-- [ ] **9.4.6** Validate the ProGet credential files were created
-- [ ] **9.4.6.5** Grant `SeBatchLogonRight` ("Log on as a batch job") to
-      `SvcBuildmaster` and `SvcProGet` — required before Task Scheduler will
-      launch the tasks registered in 9.4.7 / 9.4.8
-- [ ] **9.4.6.6** Install `ProfileForServiceAccountUsers.ps1` as the
-      `CurrentUserAllHosts` profile for each service account (creates the
-      `Documents\PowerShell` folder under each home directory and links the
-      worktree script as `profile.ps1`)
-- [ ] **9.4.7** Register the per-service-account startup task that establishes
-      `BW_SESSION` (`Initialize-ServiceAccountBitwardenSession.ps1`)
-- [ ] **9.4.8** Register the per-service-account periodic refresh task
-      (`Refresh-BWSession.ps1`)
-- [ ] **9.4.9** Smoke-test that each service account can establish a `BW_SESSION` and
-      retrieve at least one known Bitwarden item via `Get-SecretATAP`
-
-#### 9.4.1 Create and ACL the BuildMaster credentials folder
-
-Run this from the elevated administrative session. It does not need to run as the
-service account.
+1. Install BuildTooling 0.1.44 or later from `powershellget-stable` at AllUsers scope and
+   verify a fresh shell imports that exact version from `C:\Program Files\PowerShell\Modules`.
+2. Confirm the service account, its Password logon credential, its document-encryption
+   certificate/private key, and its `CI-Shared` ReadOnly machine-account grant were created
+   under explicit operator authority.
+3. Resolve the current repository root and host at run time. Do not paste a sprint worktree
+   path or a suffixless infrastructure SecretName into this procedure.
+4. Run both cmdlets with `-WhatIf`. Require `ProjectName=CI-Shared`,
+   `TokenPurpose=ReadOnly`, the intended account, and no state change.
 
 ```powershell
-$serviceAccount = 'SvcBuildmaster'
-$credentialDirectory = "C:\ProgramData\ATAP\BitwardenCredentials\$serviceAccount"
+$repositoryRoot = git rev-parse --show-toplevel
+Import-Module (Join-Path $repositoryRoot 'src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1') -Force
 
-New-Item -ItemType Directory -Path $credentialDirectory -Force | Out-Null
+$accountName = '.\SvcProGet' # repeat separately for each approved account
+$token = Read-Host 'CI-Shared ReadOnly BWS token' -AsSecureString
+$envelope = Join-Path $env:TEMP 'ATAP-BWS-ReadOnly-bootstrap.cms'
+$certificatePath = Join-Path $env:TEMP 'SvcProGet.cer'
 
-$acl = Get-Acl $credentialDirectory
-$acl.SetAccessRuleProtection($true, $false)
-$acl.Access | ForEach-Object { [void]$acl.RemoveAccessRule($_) }
+New-BWSReadOnlyBootstrapEnvelope `
+  -AccountName $accountName `
+  -AccessToken $token `
+  -RecipientCertificatePath $certificatePath `
+  -OutputPath $envelope `
+  -WhatIf
+```
 
-$inheritFlags = [System.Security.AccessControl.InheritanceFlags]'ContainerInherit,ObjectInherit'
-$propFlags    = [System.Security.AccessControl.PropagationFlags]::None
-$allowType    = [System.Security.AccessControl.AccessControlType]::Allow
-$fullCtl      = [System.Security.AccessControl.FileSystemRights]::FullControl
+The public `.cer` must have document-encryption EKU and a simple name exactly matching the
+approved account. The envelope contains no plaintext token and is bound to that account's
+certificate. Never put a token in an argument, environment variable, transcript, log, or
+evidence artifact.
 
-$rules = @(
-  [System.Security.AccessControl.FileSystemAccessRule]::new($serviceAccount,  $fullCtl, $inheritFlags, $propFlags, $allowType),
-  [System.Security.AccessControl.FileSystemAccessRule]::new('SYSTEM',         $fullCtl, $inheritFlags, $propFlags, $allowType),
-  [System.Security.AccessControl.FileSystemAccessRule]::new('Administrators', $fullCtl, $inheritFlags, $propFlags, $allowType)
-)
+#### 9.4.2 Execute the bounded bootstrap
 
-foreach ($rule in $rules) {
-  $acl.AddAccessRule($rule)
+After reviewing the dry run, create the CMS envelope and invoke the bounded one-shot
+Password-logon scheduled task. The service logon credential identity must exactly match
+`-AccountName`.
+
+```powershell
+$serviceLogonCredential = Get-Credential -UserName $accountName
+$envelopeResult = New-BWSReadOnlyBootstrapEnvelope `
+  -AccountName $accountName `
+  -AccessToken $token `
+  -RecipientCertificatePath $certificatePath `
+  -OutputPath $envelope
+
+$bootstrap = Invoke-BWSReadOnlyTokenBootstrap `
+  -AccountName $accountName `
+  -ServiceLogonCredential $serviceLogonCredential `
+  -EnvelopePath $envelopeResult.EnvelopePath `
+  -CertificateThumbprint $envelopeResult.CertificateThumbprint
+
+Remove-Item -LiteralPath $envelopeResult.EnvelopePath -Force
+$serviceLogonCredential = $null
+$token = $null
+```
+
+The automation uses the fixed `\ATAP\` task path, waits for bounded completion, verifies the
+canonical account-bound DPAPI ReadOnly file, and removes the temporary task. Re-running
+without `-Force` returns the existing-state result without overwriting it; use `-Force` only
+for an operator-reviewed repair. A failure stops and verifies task removal before deleting
+the envelope; a cleanup failure is an operator gate, not permission to continue.
+
+#### 9.4.3 Validate without exposing secret material
+
+Run validation as the owning account in a fresh profile-enabled shell:
+
+```powershell
+$credential = Get-BWSAccessToken -TokenPurpose ReadOnly
+if ($credential.UserName -ne 'BWS_ACCESS_TOKEN') {
+  throw 'The canonical ReadOnly DPAPI slot did not return the expected credential shape.'
 }
-
-Set-Acl -LiteralPath $credentialDirectory -AclObject $acl
+Get-SecretATAP -SecretName '<approved-CI-Shared-secret-name>' | Out-Null
 ```
 
-#### 9.4.2 Create the BuildMaster DPAPI credential files
-
-DPAPI binds the encryption key to the running user, so the `Export-Clixml` files must
-be produced by a process running as `SvcBuildmaster` itself. The standard pattern is
-`Start-Process -Credential` to obtain a shell in that account's security context, then
-run the historical
-[`Update-ServiceAccountBWCredentialFile.ps1`](../src/ATAP.Utilities.BuildTooling.PowerShell/Obsolete/public/Update-ServiceAccountBWCredentialFile.ps1)
-inside that shell. The helper function takes the new Bitwarden passwords as
-`SecureString` parameters (so they never appear on the command line), runs the security
-guard that verifies the current user equals `-ServiceAccount`, and wraps
-`Get-BitWardenCredential -Replace` with a single call.
-
-Run **from the elevated administrative session**:
-
-```powershell
-$serviceAccount = 'SvcBuildmaster'
-$credentialDirectory = "C:\ProgramData\ATAP\BitwardenCredentials\$serviceAccount"
-
-# Auto-detect the source tree containing the new helpers. Prefer the active sprint
-# worktree during sprint development; fall back to the stable repo after merge.
-$candidateRoots = @(
-  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items',
-  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
-)
-$repoRoot = $candidateRoots | Where-Object {
-  Test-Path -LiteralPath (Join-Path $_ 'src\ATAP.Utilities.BuildTooling.PowerShell\public\Update-ServiceAccountBWCredentialFile.ps1')
-} | Select-Object -First 1
-if (-not $repoRoot) {
-  throw 'Update-ServiceAccountBWCredentialFile.ps1 not found in any known repository root.'
-}
-$updateScript = Join-Path $repoRoot 'src\ATAP.Utilities.BuildTooling.PowerShell\public\Update-ServiceAccountBWCredentialFile.ps1'
-
-$serviceCredential = Get-Credential -UserName ".\$serviceAccount" `
-  -Message "Enter the Windows password for $serviceAccount"
-
-# Build a small provisioning script and write it to the (ACL-protected) credential
-# directory. Driving the spawned pwsh with -File <path> instead of -Command "<here-string>"
-# avoids the Windows command-line argument escaping that was mangling SecureString
-# variables across line continuations. The script self-deletes at the end so the
-# credential directory stays clean.
-$provScript = Join-Path $credentialDirectory ".provision-$serviceAccount-$(Get-Random).ps1"
-
-# Single-quoted here-string keeps every $ literal; explicit Replace() substitutes the
-# three placeholders so there is exactly one substitution mechanism (no nested escaping).
-$scriptBody = @'
-$env:TEMP = '__CREDDIR__'
-$env:TMP  = '__CREDDIR__'
-
-Write-Host '---- Spawned-window security context ----'
-Write-Host ('Windows identity : ' + [System.Security.Principal.WindowsIdentity]::GetCurrent().Name)
-Write-Host ('whoami output    : ' + (whoami))
-Write-Host ('Expected         : *\__SERVICE__')
-Write-Host '-----------------------------------------'
-
-. '__UPDATE__'
-
-$bwUser   = Read-Host 'Bitwarden username/email bound to __SERVICE__'
-$bwLogin  = Read-Host 'Bitwarden login password' -AsSecureString
-$bwUnlock = Read-Host 'Bitwarden unlock/master password' -AsSecureString
-
-# Splat the arguments so PowerShell binds them by name from a hashtable. This avoids the
-# multi-line command-line parameter binding issue that was converting $bwLogin to String.
-$params = @{
-    ServiceAccount          = '__SERVICE__'
-    CredentialDirectory     = '__CREDDIR__'
-    BitwardenUserName       = $bwUser
-    BitWardenLoginPassword  = $bwLogin
-    BitWardenUnlockPassword = $bwUnlock
-    NoRefresh               = $true
-}
-Update-ServiceAccountBWCredentialFile @params
-
-Write-Host ''
-Write-Host 'Provisioning complete. Type "exit" to close this window.'
-
-# Self-delete this provisioning script.
-Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue
-'@
-
-$scriptBody = $scriptBody.Replace('__CREDDIR__', $credentialDirectory)
-$scriptBody = $scriptBody.Replace('__UPDATE__',  $updateScript)
-$scriptBody = $scriptBody.Replace('__SERVICE__', $serviceAccount)
-
-Set-Content -LiteralPath $provScript -Value $scriptBody -Encoding utf8
-
-# -NoProfile bypasses the user profile of the service account. Service accounts that
-# have never interactively logged in have no MyDocuments folder, so the standard ATAP
-# AllUsersAllHostsV7CoreProfile.ps1 throws inside Get-HostSettings.ps1 when it tries to
-# Join-Path against an empty MyDocuments. (Note: -NoProfile is disallowed for Pester per
-# the repo rules, but is appropriate here.)
-Start-Process pwsh `
-  -Credential $serviceCredential `
-  -WorkingDirectory $credentialDirectory `
-  -ArgumentList '-NoProfile', '-NoExit', '-File', $provScript
-```
-
-When the spawned window opens, the first lines printed must include
-`Windows identity : UTAT022\SvcBuildmaster`. If they instead show your interactive
-user (for example `UTAT022\whertzing`), `Start-Process -Credential` did not actually
-elevate. That happens on hardened workstations where the launching session lacks the
-`SeAssignPrimaryToken` privilege; in that case fall back to one of:
-
-- **PsExec** (Sysinternals): `psexec -u .\SvcBuildmaster -p <pwd> -h pwsh.exe -NoProfile -NoExit -File <provScript>`
-- **Task Scheduler one-shot**: register a task with `-Principal SvcBuildmaster -LogonType Password`, trigger once, then `Unregister-ScheduledTask` after the credential files appear.
-
-A new PowerShell window appears running as `SvcBuildmaster`. The window prompts for
-the three Bitwarden values, calls `Update-ServiceAccountBWCredentialFile`, and prints
-a `PSCustomObject` summarizing the rotation. After reviewing the output, close the
-window with `exit`.
-
-> **Why `-NoRefresh`?** `Update-ServiceAccountBWCredentialFile` normally triggers
-> `Refresh-BWSession -ForceReunlock` at the end so a running service picks up the new
-> credentials immediately. During first-time provisioning the live `BW_SESSION` does
-> not exist yet, so the refresh is suppressed; step 9.4.7 registers the startup task
-> that will perform the unlock at next boot, and step 9.4.8 registers the recurring
-> refresh that maintains it thereafter.
-
-#### 9.4.3 Validate the BuildMaster credential files
-
-Back in the elevated administrative session:
-
-```powershell
-$credentialDirectory = 'C:\ProgramData\ATAP\BitwardenCredentials\SvcBuildmaster'
-Get-ChildItem -LiteralPath $credentialDirectory -Filter '*.xml' |
-  Select-Object Name, Length, LastWriteTime
-```
-
-You should see at least these two files:
-
-```text
-<COMPUTERNAME>_SvcBuildmaster_BW_Login_Credential.xml
-<COMPUTERNAME>_SvcBuildmaster_BW_Unlock_Credential.xml
-```
-
-Confirm via ACL that only `SvcBuildmaster`, `SYSTEM`, and `Administrators` are
-granted access:
-
-```powershell
-(Get-Acl $credentialDirectory).Access |
-  Select-Object IdentityReference, FileSystemRights, AccessControlType
-```
-
-#### 9.4.4 Create and ACL the ProGet credentials folder
-
-Repeat Step 9.4.1 substituting `SvcProGet`:
-
-```powershell
-$serviceAccount = 'SvcProGet'
-$credentialDirectory = "C:\ProgramData\ATAP\BitwardenCredentials\$serviceAccount"
-
-New-Item -ItemType Directory -Path $credentialDirectory -Force | Out-Null
-
-$acl = Get-Acl $credentialDirectory
-$acl.SetAccessRuleProtection($true, $false)
-$acl.Access | ForEach-Object { [void]$acl.RemoveAccessRule($_) }
-
-$inheritFlags = [System.Security.AccessControl.InheritanceFlags]'ContainerInherit,ObjectInherit'
-$propFlags    = [System.Security.AccessControl.PropagationFlags]::None
-$allowType    = [System.Security.AccessControl.AccessControlType]::Allow
-$fullCtl      = [System.Security.AccessControl.FileSystemRights]::FullControl
-
-$rules = @(
-  [System.Security.AccessControl.FileSystemAccessRule]::new($serviceAccount,  $fullCtl, $inheritFlags, $propFlags, $allowType),
-  [System.Security.AccessControl.FileSystemAccessRule]::new('SYSTEM',         $fullCtl, $inheritFlags, $propFlags, $allowType),
-  [System.Security.AccessControl.FileSystemAccessRule]::new('Administrators', $fullCtl, $inheritFlags, $propFlags, $allowType)
-)
-
-foreach ($rule in $rules) {
-  $acl.AddAccessRule($rule)
-}
-
-Set-Acl -LiteralPath $credentialDirectory -AclObject $acl
-```
-
-#### 9.4.5 Create the ProGet DPAPI credential files
-
-Same pattern as 9.4.2 — launch a `pwsh` window as `SvcProGet` and invoke
-the historical
-[`Update-ServiceAccountBWCredentialFile.ps1`](../src/ATAP.Utilities.BuildTooling.PowerShell/Obsolete/public/Update-ServiceAccountBWCredentialFile.ps1)
-inside that shell.
-
-Run **from the elevated administrative session**:
-
-```powershell
-$serviceAccount = 'SvcProGet'
-$credentialDirectory = "C:\ProgramData\ATAP\BitwardenCredentials\$serviceAccount"
-
-$candidateRoots = @(
-  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items',
-  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
-)
-$repoRoot = $candidateRoots | Where-Object {
-  Test-Path -LiteralPath (Join-Path $_ 'src\ATAP.Utilities.BuildTooling.PowerShell\public\Update-ServiceAccountBWCredentialFile.ps1')
-} | Select-Object -First 1
-if (-not $repoRoot) {
-  throw 'Update-ServiceAccountBWCredentialFile.ps1 not found in any known repository root.'
-}
-$updateScript = Join-Path $repoRoot 'src\ATAP.Utilities.BuildTooling.PowerShell\public\Update-ServiceAccountBWCredentialFile.ps1'
-
-$serviceCredential = Get-Credential -UserName ".\$serviceAccount" `
-  -Message "Enter the Windows password for $serviceAccount"
-
-# Same temp-script + splat pattern as 9.4.2.
-$provScript = Join-Path $credentialDirectory ".provision-$serviceAccount-$(Get-Random).ps1"
-
-$scriptBody = @'
-$env:TEMP = '__CREDDIR__'
-$env:TMP  = '__CREDDIR__'
-
-Write-Host '---- Spawned-window security context ----'
-Write-Host ('Windows identity : ' + [System.Security.Principal.WindowsIdentity]::GetCurrent().Name)
-Write-Host ('whoami output    : ' + (whoami))
-Write-Host ('Expected         : *\__SERVICE__')
-Write-Host '-----------------------------------------'
-
-. '__UPDATE__'
-
-$bwUser   = Read-Host 'Bitwarden username/email bound to __SERVICE__'
-$bwLogin  = Read-Host 'Bitwarden login password' -AsSecureString
-$bwUnlock = Read-Host 'Bitwarden unlock/master password' -AsSecureString
-
-$params = @{
-    ServiceAccount          = '__SERVICE__'
-    CredentialDirectory     = '__CREDDIR__'
-    BitwardenUserName       = $bwUser
-    BitWardenLoginPassword  = $bwLogin
-    BitWardenUnlockPassword = $bwUnlock
-    NoRefresh               = $true
-}
-Update-ServiceAccountBWCredentialFile @params
-
-Write-Host ''
-Write-Host 'Provisioning complete. Type "exit" to close this window.'
-
-Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue
-'@
-
-$scriptBody = $scriptBody.Replace('__CREDDIR__', $credentialDirectory)
-$scriptBody = $scriptBody.Replace('__UPDATE__',  $updateScript)
-$scriptBody = $scriptBody.Replace('__SERVICE__', $serviceAccount)
-
-Set-Content -LiteralPath $provScript -Value $scriptBody -Encoding utf8
-
-Start-Process pwsh `
-  -Credential $serviceCredential `
-  -WorkingDirectory $credentialDirectory `
-  -ArgumentList '-NoProfile', '-NoExit', '-File', $provScript
-```
-
-The header in the spawned window must show `Windows identity : UTAT022\SvcProGet`.
-If it shows your interactive user, fall back to PsExec or a one-shot scheduled task
-as described under 9.4.2.
-
-Answer the three prompts in the new window, review the rotation summary, then close
-the window with `exit`. The `-NoRefresh`, `-NoProfile`, and TEMP-reset rationales from
-9.4.2 apply here as well.
-
-#### 9.4.6 Validate the ProGet credential files
-
-```powershell
-$credentialDirectory = 'C:\ProgramData\ATAP\BitwardenCredentials\SvcProGet'
-Get-ChildItem -LiteralPath $credentialDirectory -Filter '*.xml' |
-  Select-Object Name, Length, LastWriteTime
-```
-
-#### 9.4.6.5 Grant `SeBatchLogonRight` to the service accounts
-
-The scheduled tasks registered in 9.4.7 and 9.4.8 run with `LogonType=Password`,
-which under the hood uses `LOGON32_LOGON_BATCH`. Windows requires the target
-account to hold the "Log on as a batch job" user right (`SeBatchLogonRight`),
-otherwise Task Scheduler accepts `Register-ScheduledTask` silently but refuses
-to launch the task: `LastTaskResult` stays at `267011` (`SCHED_S_TASK_HAS_NOT_RUN`)
-and no event is written to the script's event source or PSFramework log file.
-
-Unlike `schtasks.exe`, the PowerShell `Register-ScheduledTask` cmdlet does **not**
-grant `SeBatchLogonRight` automatically when `-Password` is supplied. Grant it
-explicitly via `secedit` from the elevated administrative session, once per
-host, before running 9.4.7:
-
-```powershell
-$sids = @(
-  (Get-LocalUser -Name 'SvcBuildmaster').SID.Value,
-  (Get-LocalUser -Name 'SvcProGet').SID.Value
-)
-
-# Read the current entry so we append rather than replace
-$tmp = "$env:TEMP\userrights-export-$(Get-Random).inf"
-secedit /export /areas USER_RIGHTS /cfg $tmp | Out-Null
-$currentLine = (Select-String -Path $tmp -Pattern '^SeBatchLogonRight\s*=').Line
-Remove-Item $tmp -ErrorAction SilentlyContinue
-
-# Parse the existing entries, add ours (deduplicated), rebuild the entry
-$existing = ($currentLine -replace '^SeBatchLogonRight\s*=\s*', '') -split ','
-$combined = ($existing + ($sids | ForEach-Object { "*$_" })) |
-  ForEach-Object { $_.Trim() } |
-  Where-Object { $_ } |
-  Select-Object -Unique
-$newLine = "SeBatchLogonRight = " + ($combined -join ',')
-
-# Write a minimal INF and apply it (USER_RIGHTS area only)
-$applyInf = "$env:TEMP\grant-batch-$(Get-Random).inf"
-$applyDb  = "$env:TEMP\grant-batch-$(Get-Random).sdb"
-@"
-[Unicode]
-Unicode=yes
-[Version]
-signature="`$CHICAGO`$"
-Revision=1
-[Privilege Rights]
-$newLine
-"@ | Set-Content -LiteralPath $applyInf -Encoding Unicode
-
-secedit /configure /db $applyDb /cfg $applyInf /areas USER_RIGHTS /quiet
-
-Remove-Item $applyInf, $applyDb -ErrorAction SilentlyContinue
-```
-
-Verify the right landed. `secedit` resolves the SIDs of local accounts back to
-their SAM names on import, so the entry shows the accounts by name rather than
-SID — both forms are equivalent:
-
-```powershell
-$tmp = "$env:TEMP\userrights-verify-$(Get-Random).inf"
-secedit /export /areas USER_RIGHTS /cfg $tmp | Out-Null
-$line = (Select-String -Path $tmp -Pattern '^SeBatchLogonRight\s*=').Line
-Remove-Item $tmp -ErrorAction SilentlyContinue
-Write-Host $line
-foreach ($svc in @('SvcBuildmaster', 'SvcProGet')) {
-  $sid = (Get-LocalUser -Name $svc).SID.Value
-  $has = ($line -match [regex]::Escape($svc)) -or ($line -match [regex]::Escape($sid))
-  Write-Host "$svc has SeBatchLogonRight: $has"
-}
-```
-
-Expected — the printed line contains `SvcBuildmaster` and `SvcProGet` (or their
-SIDs), and both verification lines say `True`.
-
-> **Why this is not handled by `Register-ScheduledTask`:** the PowerShell
-> ScheduledTasks module uses the Task Scheduler 2.0 COM API, which does not
-> touch LSA user-rights policy. Only `schtasks.exe` (and its legacy
-> `at.exe` predecessor) grants `SeBatchLogonRight` as a side effect. For a
-> reproducible runbook we grant the right explicitly with `secedit` so the
-> step does not depend on which registration tool happens to be in use.
-
-#### 9.4.6.6 Install the service-account PowerShell profile
-
-`ProfileForServiceAccountUsers.ps1` is the PowerShell `CurrentUserAllHosts`
-profile that interactive service-account sessions load. It dot-sources the
-machine-wide `global_EnvironmentVariables.ps1` and then calls
-`Set-EnvironmentVariablesProcess`, with a service-account-specific exclusion
-list that removes `OPENSSL_CONF`, `OPENSSL_HOME`, and `RANDFILE` from the
-`$global:EnvVars` hash before any environment variable is written. These three
-keys resolve to paths under the operator's personal Dropbox folder; service
-accounts have no read access there, and leaving `OPENSSL_CONF` set causes the
-Bitwarden CLI (`bw.exe`) to abort during TLS init.
-
-> **Scheduled tasks vs interactive sessions.** The 9.4.7 / 9.4.8 tasks run
-> `pwsh.exe -NoProfile -File …`, so the profile installed here is **not**
-> evaluated when the task fires. The two Bitwarden helper scripts also clear
-> these OpenSSL vars defensively at the top of `PROCESS{}` as a belt-and-
-> suspenders measure. The profile is still required because (a) any
-> interactive `Start-Process pwsh -Credential` window opened as a service
-> account during diagnostics, smoke-testing, or future maintenance gets a
-> clean environment, and (b) it documents the contract that service-account
-> sessions must not inherit operator-Dropbox paths.
-
-Run this from an elevated administrative session. BuildTooling copies the
-selected stable or sprint ATAP.IAC payload; it does not create a profile
-symlink or repository dot-source wrapper:
-
-```powershell
-$iacRoot = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC'
-$utilitiesRoot = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
-foreach ($svcAccount in @('SvcBuildMaster', 'SvcProGet', 'SvcSQLServer', 'SvcSeq', 'SvcParityAudit')) {
-  Set-UserScopeProfile -AccountName $svcAccount -AccountClass ServiceAccount `
-    -ATAPIACRoot $iacRoot -ATAPUtilitiesRoot $utilitiesRoot -Confirm:$false
-}
-```
-
-Verification — each deployed profile is a real file whose hash matches the
-selected IAC payload:
-
-```powershell
-$source = Join-Path $iacRoot 'Windows\ProfileTemplates\ProfileForServiceAccountUsers.ps1'
-foreach ($svcAccount in @('SvcBuildMaster', 'SvcProGet', 'SvcSQLServer', 'SvcSeq', 'SvcParityAudit')) {
-  $profilePath = "C:\Users\$svcAccount\Documents\PowerShell\profile.ps1"
-  [PSCustomObject]@{
-    Account = $svcAccount
-    IsRealFile = -not (Get-Item -LiteralPath $profilePath -Force).LinkType
-    HashMatches = (Get-FileHash $profilePath).Hash -eq (Get-FileHash $source).Hash
-  }
-}
-```
-
-Secret policy: `SvcBuildMaster`, `SvcProGet`, and `SvcSQLServer` require
-non-interactive secret access. `SvcSeq` and `SvcParityAudit` do not.
-
-#### 9.4.7 Register the per-service-account startup task
-
-The startup task runs once at host boot under each service account, decrypts the DPAPI
-credential files, and writes `BW_SESSION` into that account's User-scope environment so
-the service inherits it on next start.
-
-```powershell
-# Resolve the init script using the same candidate-roots fallback as 9.4.2 / 9.4.5
-# so this works both during a sprint (script lives only in the sprint worktree)
-# and after the sprint merges into stable. The registered task invokes the script
-# by absolute path with -NoProfile, so no module import is needed here.
-$candidateRoots = @(
-  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items',
-  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
-)
-$initRelative = 'src\ATAP.Utilities.BuildTooling.PowerShell\public\Initialize-ServiceAccountBitwardenSession.ps1'
-$repoRoot = $candidateRoots | Where-Object {
-  Test-Path -LiteralPath (Join-Path $_ $initRelative)
-} | Select-Object -First 1
-if (-not $repoRoot) {
-  throw "Initialize-ServiceAccountBitwardenSession.ps1 not found in any known repository root."
-}
-$initScript = Join-Path $repoRoot $initRelative
-
-foreach ($svcAccount in @('SvcBuildmaster', 'SvcProGet')) {
-  # Use the fully qualified COMPUTER\account form. Register-ScheduledTask's
-  # LookupAccountName call does not reliably resolve the '.\' prefix for local
-  # accounts; passing $env:COMPUTERNAME\<account> works on all Windows versions.
-  $accountUpn = "$env:COMPUTERNAME\$svcAccount"
-  $credentialDirectory = "C:\ProgramData\ATAP\BitwardenCredentials\$svcAccount"
-
-  $svcPassword = Read-Host "Windows password for $svcAccount" -AsSecureString
-
-  $action = New-ScheduledTaskAction -Execute 'pwsh.exe' `
-    -Argument "-NoProfile -File `"$initScript`" -CredentialDirectory `"$credentialDirectory`""
-  $trigger = New-ScheduledTaskTrigger -AtStartup
-  $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
-
-  # -User + -Password belongs to a different parameter set than -Principal in
-  # Register-ScheduledTask. Supplying -Password makes LogonType=Password and
-  # the default RunLevel=Limited is what we want for these service tasks.
-  Register-ScheduledTask `
-    -TaskName "ATAP-BWSession-Init-$svcAccount" `
-    -Action $action `
-    -Trigger $trigger `
-    -Settings $settings `
-    -User $accountUpn `
-    -Password ([Runtime.InteropServices.Marshal]::PtrToStringAuto(
-      [Runtime.InteropServices.Marshal]::SecureStringToBSTR($svcPassword)
-    )) `
-    -Force | Out-Null
-}
-```
-
-#### 9.4.8 Register the per-service-account refresh task
-
-The refresh task runs on a recurring trigger and re-unlocks the vault before the session
-expires.
-
-```powershell
-# Resolve the refresh script using the same candidate-roots fallback as 9.4.7.
-# The registered task invokes the script by absolute path with -NoProfile, so
-# no module import is needed here.
-$candidateRoots = @(
-  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items',
-  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
-)
-$refreshRelative = 'src\ATAP.Utilities.BuildTooling.PowerShell\public\Refresh-BWSession.ps1'
-$repoRoot = $candidateRoots | Where-Object {
-  Test-Path -LiteralPath (Join-Path $_ $refreshRelative)
-} | Select-Object -First 1
-if (-not $repoRoot) {
-  throw "Refresh-BWSession.ps1 not found in any known repository root."
-}
-$refreshScript = Join-Path $repoRoot $refreshRelative
-
-foreach ($svcAccount in @('SvcBuildmaster', 'SvcProGet')) {
-  # See 9.4.7 for the rationale on using $env:COMPUTERNAME\<account> instead of .\<account>.
-  $accountUpn = "$env:COMPUTERNAME\$svcAccount"
-  $credentialDirectory = "C:\ProgramData\ATAP\BitwardenCredentials\$svcAccount"
-
-  $svcPassword = Read-Host "Windows password for $svcAccount" -AsSecureString
-
-  $action = New-ScheduledTaskAction -Execute 'pwsh.exe' `
-    -Argument "-NoProfile -File `"$refreshScript`" -CredentialDirectory `"$credentialDirectory`""
-  $trigger = New-ScheduledTaskTrigger -Once -At ((Get-Date).AddMinutes(5)) `
-    -RepetitionInterval (New-TimeSpan -Hours 1) `
-    -RepetitionDuration ([TimeSpan]::FromDays(365))
-  $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 3)
-
-  # See 9.4.7 for the rationale on -User/-Password vs -Principal.
-  Register-ScheduledTask `
-    -TaskName "ATAP-BWSession-Refresh-$svcAccount" `
-    -Action $action `
-    -Trigger $trigger `
-    -Settings $settings `
-    -User $accountUpn `
-    -Password ([Runtime.InteropServices.Marshal]::PtrToStringAuto(
-      [Runtime.InteropServices.Marshal]::SecureStringToBSTR($svcPassword)
-    )) `
-    -Force | Out-Null
-}
-```
-
-#### 9.4.9 Smoke-test secret retrieval as each service account
-
-For each service account, launch a `Start-Process pwsh -Credential` window and verify:
-
-```powershell
-[System.Environment]::GetEnvironmentVariable('BW_SESSION', 'User') |
-  ForEach-Object { "BW_SESSION length: $($_.Length)" }
-Get-SecretATAP -SecretName "$env:COMPUTERNAME-SvcBuildmaster-Production" -SecretField 'username'
-```
-
-If the second call returns the expected username string, the manual provisioning for
-that service account is complete.
-
-> **Cross-reference:** Re-keying these credential files later (Bitwarden master password
-> change, Windows password rotation, host migration) is handled by
-> `Update-ServiceAccountBWCredentialFile`. See
-> [ServiceAccountsAndBitwarden.md](ServiceAccountsAndBitwarden.md#rotation-and-refresh-strategy)
-> for the rotation runbook.
-
-> **Sprint 0012 status — rotation deferred:** The protected `CommonCIForBitwardenReadOnly`
-> DPAPI files have been created and validated for `whertzing` and for `SvcBuildMaster`,
-> `SvcProGet`, `SvcSeq`, `SvcSQLServer`, and `SvcParityAudit` on both `utat01` and `utat022`.
-> This is a validated provisioning baseline, not authorization to rotate a token or password.
-> The remaining bootstrap automation and all password/access-token rotation implementation are
-> deferred to next-sprint planning; use the carry-forward plan in the `_Planning` repository
-> before attempting a rotation.
-
-#### 9.4.10 Provision Secrets Manager (`bws`) access tokens for Windows accounts
-
-Under the current architecture, runtime/project secrets live in **Bitwarden Secrets
-Manager** and are read with a BWS **access token** - there is no `bw login`, no `unlock`,
-no `BW_SESSION`, and no startup/refresh task. The DPAPI-protected access token is the
-entire runtime credential.
-
-Managed profiles and secret access are separate decisions. The accepted current policy
-requires non-interactive secret access only for `SvcBuildMaster`, `SvcProGet`, and
-`SvcSQLServer`. `SvcSeq` and `SvcParityAudit` receive managed profiles without secret
-material. Interactive users may use the separately approved project-scoped BWS path;
-user-only secrets remain in Password Manager and may use the interactive `bw`/`BW_SESSION`
-pattern. Do not let a Windows service inherit a developer's `BW_SESSION`.
-
-The exact BWS identity set, bootstrap, provisioning, release, and deploy-state proof remain
-deferred to Tasks 13.40–13.43. The rows below document the currently accepted three-account
-scope; they do not authorize token creation or rotation by themselves.
-
-Preconditions:
-
-1. The Bitwarden org, projects, machine accounts, and **access tokens** exist
-   ([NewOrganizationSetup.md](NewOrganizationSetup.md) Phase 2).
-2. Any service accounts being provisioned exist on this host.
-3. You are elevated for the credential-folder ACL step.
-4. You have the approved BWS access token authority for the intended project; do not record or persist its value.
-
-Host mapping:
-
-| Windows identity | ReadOnly access-token authority | Intended project | Required DPAPI token file | ReadWrite status |
-| ---------------- | ------------------------------- | ---------------- | ------------------------- | ---------------- |
-| `SvcBuildMaster` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcBuildMaster\<HOST>_SvcBuildMaster_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
-| `SvcProGet` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcProGet\<HOST>_SvcProGet_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
-| `SvcSQLServer` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcSQLServer\<HOST>_SvcSQLServer_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
-
-Interactive-user mapping:
-
-| Windows interactive user | BWS access-token scope | Required DPAPI token file | Optional DPAPI token file |
-| ------------------------ | ---------------------- | ------------------------- | ------------------------- |
-| `whertzing` | `CommonCIForBitwardenReadOnly` for `CI-Shared` | `…\whertzing\<HOST>_whertzing_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Approved only for `utat022\whertzing`; otherwise not approved by default |
-
-**Rotation gate:** rotation is a separate human-in-the-loop operation. After Tasks
-13.40–13.43 approve and release the identity-specific procedure, update each approved DPAPI
-file locally as its owning identity on each declared host. Never copy a DPAPI file between
-identities or hosts. The active overview may assign the same developer to both `utat01` and
-`utat022`; do not deduplicate that assignment by username.
-
-##### 9.4.10.1 Confirm the `bws` CLI is installed machine-wide
-
-`bws` is installed machine-wide in **Step 4.6**, so approved service identities and
-interactive accounts resolve the same binary from the system `PATH`. Confirm it is visible
-from a `-NoProfile` shell
-(the context the service accounts actually run in) and continue:
-
-```powershell
-pwsh -NoProfile -Command "(Get-Command bws -ErrorAction SilentlyContinue).Source"
-bws --version
-```
-
-If `bws` does not resolve, complete Step 4.6 (machine-wide `bws` install) before
-continuing.
-
-##### 9.4.10.2 Create and ACL the BWS credential directory
-
-Create the protected directory before writing the DPAPI token file. This can be run from
-an elevated administrative shell. For the current interactive user:
-
-```powershell
-Import-Module .\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1 -Force
-Initialize-BWSCredentialDirectory
-```
-
-For a service account, pass the account name:
-
-```powershell
-Import-Module .\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1 -Force
-Initialize-BWSCredentialDirectory -AccountName '.\SvcBuildMaster'
-```
-
-The helper creates `C:\ProgramData\ATAP\BitwardenCredentials\<SamAccountName>` and grants
-FullControl only to the owning account, `SYSTEM`, and local `Administrators`.
-
-##### 9.4.10.3 DPAPI-store each access token (run AS the owning account)
-
-DPAPI binds to the running user, so the token file must be written by a process running as
-the account that will later read it. For an interactive user, run the command from that
-user's own shell. For a service account, open a shell as that account and store its token.
-The helper cmdlet `Initialize-BWSAccessToken` encapsulates the DPAPI write:
-
-```powershell
-$token = Read-Host 'BWS access token for CommonCIForBitwardenReadOnly' -AsSecureString
-Initialize-BWSAccessToken -TokenPurpose ReadOnly -AccessToken $token
-```
-
-Only trusted maintainer or provisioning identities should also store:
-
-```powershell
-$token = Read-Host 'BWS access token for CommonCIForBitwardenReadWrite' -AsSecureString
-Initialize-BWSAccessToken -TokenPurpose ReadWrite -AccessToken $token
-```
-
-The token is stored in a PSCredential whose UserName is the literal
-`BWS_ACCESS_TOKEN`; the password is the BWS access token. The canonical helper names are
-`Initialize-BWSAccessToken` and `Get-BWSAccessToken`. The older service-account names
-remain module aliases for compatibility. DPAPI binds these files to the current Windows
-identity and host, so they cannot be copied between users or hosts and still decrypt.
-
-##### 9.4.10.4 Validate (as the owning account)
-
-Decrypt the token in memory and confirm the BWS token can read only its intended projects:
-
-```powershell
-$cred = Get-BWSAccessToken
-$env:BWS_ACCESS_TOKEN = $cred.GetNetworkCredential().Password
-try {
-  bws secret list --output json | ConvertFrom-Json | Select-Object key, projectId
-} finally {
-  Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue
-}
-```
-
-Expected — the listed secret `key`s match the projects granted to that BWS token.
-Runtime secret reads go through `Get-SecretATAP` with the
-`BitwardenSecretsManager` provider (set `SecretStoreType='BitwardenSecretsManager'` in
-`$global:settings`), which resolves the token from this DPAPI file.
-
-> **Rotation:** regenerating the BWS access token in the web vault invalidates the
-> old one; re-run 9.4.10.3 on every host/account that uses that token.
+Record only account, host, project, purpose, module version/path, operation ID, redacted
+status, and the DPAPI file path/hash. Do not record the credential value, BWS output, CMS
+contents, task XML, runtime environment, transcript, cache, or history. Repeat independently
+for all three approved accounts and both hosts; DPAPI files and envelopes are never copied
+between accounts or hosts.
 
 ### 9.5 Bootstrap exact Git trust for the BuildMaster service account
 
@@ -1905,7 +1247,7 @@ worktree.
 
 ```powershell
 # Dot-source the function and invoke it
-. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\_AdminRequiresHoldingPen\ATAP.Utilities.PowerShell\public\Install-ATAPModulesFromProGet.ps1'
+. 'C:\Dropbox\whertzing\GitHub\<active-ATAP.Utilities-worktree>\src\_AdminRequiresHoldingPen\ATAP.Utilities.PowerShell\public\Install-ATAPModulesFromProGet.ps1'
 
 Install-ATAPModulesFromProGet
 ```
@@ -2246,7 +1588,7 @@ The new computer is ready for a developer when all of the following are true:
 3. Developer and service-account profiles load from canonical ATAP.IAC templates in the paths
    PowerShell actually uses; direct and profiled-remoting identity probes pass or carry an
    explicit deferred exception.
-4. Personal `bw`/`BW_SESSION` and automation `bws` boundaries are respected. Host settings and
+4. The `SecretName/Get-SecretATAP/bws` automation boundary and separate personal `bw`/`BW_SESSION` boundary are respected. Host settings and
    callers contain SecretNames only; no raw API-key environment-variable readiness claim is
    permitted.
 5. The declared Java/package owners and Flyway resolution pass, or the deferred Java decision
@@ -2472,12 +1814,12 @@ both keys must point to the **sprint worktree venv**. These settings live in
 | `manim-sideview.defaultManimPath` | Path to the `manim.exe` the Sideview extension invokes |
 | `python.defaultInterpreterPath`   | Python interpreter VS Code uses for the workspace      |
 
-Sprint-start — set to the sprint worktree venv (example sprint `94-sprint-0004-work-items`):
+Sprint-start — set to the sprint worktree venv (example sprint `<active-sprint-branch>`):
 
 ```jsonc
 // In SharedVSCode/UserSettings.jsonc
-"manim-sideview.defaultManimPath": "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities-wt-94-sprint-0004-work-items\\ManimVideoGenerator\\.venv\\Scripts\\manim.exe",
-"python.defaultInterpreterPath": "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities-wt-94-sprint-0004-work-items\\ManimVideoGenerator\\.venv\\Scripts\\python.exe",
+"manim-sideview.defaultManimPath": "C:\\Dropbox\\whertzing\\GitHub\\<active-ATAP.Utilities-worktree>\\ManimVideoGenerator\\.venv\\Scripts\\manim.exe",
+"python.defaultInterpreterPath": "C:\\Dropbox\\whertzing\\GitHub\\<active-ATAP.Utilities-worktree>\\ManimVideoGenerator\\.venv\\Scripts\\python.exe",
 ```
 
 Sprint-end — revert to the main-branch venv after the PR merges and the worktree is removed:

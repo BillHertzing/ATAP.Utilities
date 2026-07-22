@@ -1,16 +1,17 @@
 # BuildMaster Install and Configuration Runbook
 
-> **Task 13.62 security cutover:** Legacy ProGet raw-key, sensitive-variable, and environment instructions below are superseded. BuildMaster passes `ProGet.BuildMaster.API.Key` only as a SecretName; administration uses `ProGet.Admin.API.Key`, never as fallback.
+> **Task 13.62 security cutover:** Legacy ProGet raw-key, sensitive-variable, and environment instructions below are superseded. BuildMaster passes `ProGet.BuildMaster.API.Key.<service-host>` only as a SecretName; administration uses `ProGet.Admin.API.Key.<service-host>`, never as fallback.
 
 > **SEC-T1 / Task 13.62:** The ProGet API key must never appear in
 > BuildMaster arguments, variables, environments, or transcripts. Active plans
-> pass only `ProGet.BuildMaster.API.Key` as `-ProGetApiKeySecretName`; the leaf
+> pass only `ProGet.BuildMaster.API.Key.<service-host>` as `-ProGetApiKeySecretName`; the leaf
 > resolves it through `Get-SecretATAP` immediately before authentication.
 
-**Status:** Sprint 0007 runbook. Replaces
-`Runbook-BuildMasterConfiguration.md`.
+**Status:** Current installation runbook. The Sprint 0007 discovery ledger in
+`Runbook-BuildMasterConfiguration.md` is historical/non-executable; current values are
+resolved from the service-placement host, repository root, and active branch at run time.
 
-**Scope:** Install BuildMaster Free on `utat022`, create the ATAP BuildMaster
+**Scope:** Install BuildMaster Free on the approved placement host, create the ATAP BuildMaster
 applications, configure the immutable-build pipelines, and define the
 PowerShell automation plan for repeatable setup.
 
@@ -86,9 +87,9 @@ captured and can be safely replayed by PowerShell.
 | BuildMaster database     | `BuildMaster`                                                                        |
 | Windows service          | `INEDOBMSVC`                                                                         |
 | Service account          | `NetworkService` until a dedicated service account is required                       |
-| Admin API key secret     | `BuildMaster.Admin.API.Key` (Bitwarden Secrets Manager; read via `Get-SecretATAP`)   |
+| Admin API key secret     | `BuildMaster.Admin.API.Key.<service-host>` (Bitwarden Secrets Manager; read via `Get-SecretATAP`)   |
 | ProGet URL               | `http://localhost:50000`                                                             |
-| ProGet identity used by plans | Non-secret variable `ProGetApiKeySecretName` = `ProGet.BuildMaster.API.Key` |
+| ProGet identity used by plans | Non-secret variable `ProGetApiKeySecretName` = `ProGet.BuildMaster.API.Key.<service-host>` |
 
 ### Target applications
 
@@ -178,11 +179,11 @@ In the UI:
    - Infrastructure Management
    - CI Badge, if badge checks are used
 4. Store the generated key in Bitwarden Secrets Manager under the secret name
-   `BuildMaster.Admin.API.Key`.
+   `BuildMaster.Admin.API.Key.<service-host>`.
 5. Code and runbooks read it through `Get-SecretATAP`:
 
 ```powershell
-$BuildMasterApiKey = Get-SecretATAP -SecretName 'BuildMaster.Admin.API.Key'
+$BuildMasterApiKey = Get-SecretATAP -SecretName $BuildMasterAdminSecretName
 ```
 
 Keep the API key out of runbooks, screenshots, logs, and Git history.
@@ -194,10 +195,15 @@ Keep the API key out of runbooks, screenshots, logs, and Git history.
 Use this PowerShell shape for every API-backed step.
 
 ```powershell
+$serviceHost = [Net.Dns]::GetHostName().ToLowerInvariant()
+$BuildMasterAdminSecretName = "BuildMaster.Admin.API.Key.$serviceHost"
+$ProGetApiKeySecretName = "ProGet.BuildMaster.API.Key.$serviceHost"
+$ProGetAdminSecretName = "ProGet.Admin.API.Key.$serviceHost"
 $BuildMasterBaseUrl = 'http://localhost:50017'
-$BuildMasterApiKey = Get-SecretATAP -SecretName 'BuildMaster.Admin.API.Key'
-
-Import-Module 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1' -Force
+$BuildMasterApiKey = Get-SecretATAP -SecretName $BuildMasterAdminSecretName
+$RepositoryRoot = git rev-parse --show-toplevel
+$ActiveBranch = git -C $RepositoryRoot branch --show-current
+Import-Module (Join-Path $RepositoryRoot 'src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1') -Force
 ```
 
 The module exports these BuildMaster functions used by this runbook:
@@ -277,7 +283,7 @@ $Applications = @(
 $Applications | ForEach-Object {
   New-BuildMasterApplication @_ `
     -BuildMasterBaseUrl $BuildMasterBaseUrl `
-    -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
+    -BuildMasterAdminApiKeySecretName $BuildMasterAdminSecretName
 }
 ```
 
@@ -335,10 +341,10 @@ Application-scope variables:
 
 | Variable       | Value                                               | Sensitive | Notes                                           |
 | -------------- | --------------------------------------------------- | --------- | ----------------------------------------------- |
-| `Branch`       | `100-Sprint-0007-work-items`                        | No        | Default only; repository monitors supply it.    |
+| `Branch`       | `<active-sprint-branch>`                        | No        | Default only; repository monitors supply it.    |
 | `SourcePath`   | `C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber` | No        | Durable BuildMaster work path.                  |
 | `ProGetUrl`    | `http://localhost:50000`                            | No        | Host-specific ProGet URL.                       |
-| `ProGetApiKeySecretName` | `ProGet.BuildMaster.API.Key`             | No        | Non-secret name; leaf resolution only.          |
+| `ProGetApiKeySecretName` | `ProGet.BuildMaster.API.Key.<service-host>`             | No        | Non-secret name; leaf resolution only.          |
 
 Build-scope variables supplied by the concrete C# Repository Monitor:
 
@@ -358,9 +364,9 @@ Application-scope variables:
 | Variable          | Value                                               | Sensitive | Notes                                           |
 | ----------------- | --------------------------------------------------- | --------- | ----------------------------------------------- |
 | `ApplicationName` | `ATAP.Utilities-PowerShell`                         | No        | BuildMaster application identity.               |
-| `Branch`          | `100-Sprint-0007-work-items`                        | No        | Update each sprint or supply by monitor/poller. |
+| `Branch`          | `<active-sprint-branch>`                        | No        | Update each sprint or supply by monitor/poller. |
 | `SourcePath`      | `C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber` | No        | Durable BuildMaster work path.                  |
-| `ProGetApiKeySecretName` | `ProGet.BuildMaster.API.Key`             | No        | Non-secret name; leaf resolution only.          |
+| `ProGetApiKeySecretName` | `ProGet.BuildMaster.API.Key.<service-host>`             | No        | Non-secret name; leaf resolution only.          |
 
 Build-scope variables supplied when creating a build:
 
@@ -381,7 +387,7 @@ Build-scope variables supplied when creating a build:
 | `Branch`                                          | Current release or sprint branch                      | No        | Fallback when `ReleaseTag` is empty.                                                                                            |
 | `SourcePath`                                      | `C:\BuildMaster\work\AceCommander\$ReleaseNumber`     | No        | Durable product work path; also passed as `Get-BuildContext -ProjectPath` because the bundle uses the repo-root `version.json`. |
 | `ProGetUrl`                                       | `http://localhost:50000`                              | No        | Host-specific ProGet URL.                                                                                                       |
-| `ProGetApiKeySecretName`                          | `ProGet.BuildMaster.API.Key`                          | No        | Non-secret name; leaf resolution only.                                                                                          |
+| `ProGetApiKeySecretName`                          | `ProGet.BuildMaster.API.Key.<service-host>`                          | No        | Non-secret name; leaf resolution only.                                                                                          |
 | `ReleaseBundleExperimentalFeedName`               | `releasebundle-experimental`                          | No        | Universal Package feed.                                                                                                         |
 | `ReleaseBundleDevelopmentFeedName`                | `releasebundle-development`                           | No        | Universal Package feed.                                                                                                         |
 | `ReleaseBundleIntegrationFeedName`                | `releasebundle-integration`                           | No        | Universal Package feed.                                                                                                         |
@@ -396,13 +402,13 @@ Build-scope variables supplied when creating a build:
 Set-BuildMasterApplicationVariables `
   -ApplicationName 'ATAP.Utilities-CSharp' `
   -Variables @{
-    Branch = '100-Sprint-0007-work-items'
+    Branch = $ActiveBranch
     SourcePath = 'C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber'
     ProGetUrl = 'http://localhost:50000'
-    ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key'
+    ProGetApiKeySecretName = $ProGetApiKeySecretName
   } `
   -BuildMasterBaseUrl $BuildMasterBaseUrl `
-  -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
+  -BuildMasterAdminApiKeySecretName $BuildMasterAdminSecretName
 ```
 
 Use the same function for the PowerShell and Release Bundle application
@@ -414,7 +420,7 @@ UI fallback:
 
 1. Open **Application -> Settings -> Variables**.
 2. Add each variable without a leading `$`.
-3. Set `ProGetApiKeySecretName` to `ProGet.BuildMaster.API.Key`; this is a
+3. Set `ProGetApiKeySecretName` to `ProGet.BuildMaster.API.Key.<service-host>`; this is a
    non-secret name and must not be marked sensitive.
 4. Confirm no ProGet key value exists in Application Variables.
 
@@ -425,8 +431,8 @@ Set only the canonical non-secret name:
 ```powershell
 Set-BuildMasterApplicationVariables `
   -ApplicationName 'ATAP.Utilities-CSharp' `
-  -Variables @{ ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key' } `
-  -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
+  -Variables @{ ProGetApiKeySecretName = $ProGetApiKeySecretName } `
+  -BuildMasterAdminApiKeySecretName $BuildMasterAdminSecretName
 ```
 
 The runner passes this SecretName to the appropriate BuildTooling cmdlet. That
@@ -499,14 +505,14 @@ Canonical authored files:
 Upload the three stage scripts into the default raft:
 
 ```powershell
-$PlansRoot = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\ATAP.Utilities.BuildTooling.BuildMaster\Plans'
+$PlansRoot = Join-Path $RepositoryRoot 'src\ATAP.Utilities.BuildTooling.BuildMaster\Plans'
 
 Get-ChildItem -LiteralPath $PlansRoot -Filter '*.otter' | ForEach-Object {
   New-BuildMasterScript `
     -ScriptName $_.Name `
     -Path $_.FullName `
     -BuildMasterBaseUrl $BuildMasterBaseUrl `
-    -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
+    -BuildMasterAdminApiKeySecretName $BuildMasterAdminSecretName
 }
 ```
 
@@ -518,7 +524,7 @@ script:
 Remove-BuildMasterScript `
   -ScriptName 'Old-Experimental-Script.otter' `
   -BuildMasterBaseUrl $BuildMasterBaseUrl `
-  -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key' `
+  -BuildMasterAdminApiKeySecretName $BuildMasterAdminSecretName `
   -Confirm:$false
 ```
 
@@ -570,7 +576,7 @@ Future automation target after capture:
 # Sync-BuildMasterPipeline `
 #   -PipelineFile '.\CapturedBuildMasterRaft\Pipelines\CSharpPackage-5Stage.json' `
 #   -BuildMasterBaseUrl $BuildMasterBaseUrl `
-#   -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
+#   -BuildMasterAdminApiKeySecretName $BuildMasterAdminSecretName
 ```
 
 ---
@@ -701,12 +707,12 @@ Next implementation order:
 
 - [ ] BuildMaster service `INEDOBMSVC` is running.
 - [ ] BuildMaster UI is reachable at `http://localhost:50017`.
-- [ ] The `BuildMaster.Admin.API.Key` secret resolves via `Get-SecretATAP`.
+- [ ] The `BuildMaster.Admin.API.Key.<service-host>` secret resolves via `Get-SecretATAP`.
 - [ ] Environments exist: Experimental, Development, Integration, QA, Production.
 - [ ] Applications exist: `ATAP.Utilities-CSharp`,
       `ATAP.Utilities-PowerShell`, `AceCommander-ReleaseBundle`.
 - [ ] Each application has the variables listed in section 8.
-- [ ] `ProGetApiKeySecretName` is exactly `ProGet.BuildMaster.API.Key` and no
+- [ ] `ProGetApiKeySecretName` is exactly `ProGet.BuildMaster.API.Key.<service-host>` and no
       resolved ProGet value exists in the UI.
 - [ ] Global pipelines exist and use the canonical stage order.
 - [ ] No Distribution stage is wired for the Release Bundle in Sprint 0007.
@@ -720,7 +726,7 @@ Next implementation order:
 - [ ] `DatabaseChangePackage-5Stage.otter` plan is visible in the default raft.
 - [ ] Five canonical `database-*` ProGet feeds exist (see §15 and
       `ProGet-Install-Runbook.md`).
-- [ ] `ProGet.BuildMaster.API.Key` resolves for the BuildMaster service account
+- [ ] `ProGet.BuildMaster.API.Key.<service-host>` resolves for the BuildMaster service account
       through `Get-SecretATAP`; no ProGet API-key environment variable exists.
 
 ---
@@ -810,10 +816,10 @@ and calls `Start-BuildMasterPackagePipeline` when committed files under
 
 ```powershell
 Start-LocalPowerShellModuleBuildMasterPoller `
-  -RepoRoot 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items' `
+  -RepoRoot $RepositoryRoot `
   -UsePreviousCommitWhenStateMissing `
   -BuildMasterBaseUrl 'http://localhost:8622' `
-  -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
+  -BuildMasterAdminApiKeySecretName $BuildMasterAdminSecretName
 ```
 
 By default it stores state at
@@ -833,7 +839,7 @@ Use `Assert-BuildMasterReady` for the supported non-secret readiness checks and
 verify repository monitors in the BuildMaster UI. The Native API does not expose
 a stable monitor-listing endpoint, so this runbook intentionally provides no
 direct authenticated REST example. Any future automation must accept
-`BuildMaster.Admin.API.Key` as a SecretName and resolve it only inside the
+`BuildMaster.Admin.API.Key.<service-host>` as a SecretName and resolve it only inside the
 authenticated leaf.
 
 ### Create monitors via BuildMaster UI (if not already present)
@@ -850,7 +856,7 @@ authenticated leaf.
 ### Trigger test
 
 Push a commit touching `src/ATAP.Utilities.BuildTooling.PowerShell/**` to the
-sprint branch `100-Sprint-0007-work-items` and confirm the
+sprint branch `<active-sprint-branch>` and confirm the
 `ATAP.Utilities-PowerShell` build starts with `ModuleName` and `PackageName`
 set to `ATAP.Utilities.BuildTooling.PowerShell`. For C#, push a commit touching
 `src/ATAP.Utilities.StronglyTypedId/**` and confirm the `ATAP.Utilities-CSharp`
@@ -911,9 +917,9 @@ blocks.
 ### Required ProGet SecretName on the BuildMaster service account
 
 The runner accepts `-ProGetApiKeySecretName` with canonical value
-`ProGet.BuildMaster.API.Key`. The authenticated leaf calls `Get-SecretATAP` and
+`ProGet.BuildMaster.API.Key.<service-host>`. The authenticated leaf calls `Get-SecretATAP` and
 fails closed if that exact name cannot resolve. It never reads a ProGet API-key
-environment variable and never falls back to `ProGet.Admin.API.Key`.
+environment variable and never falls back to `ProGet.Admin.API.Key.<service-host>`.
 
 ### Required ProGet feeds
 

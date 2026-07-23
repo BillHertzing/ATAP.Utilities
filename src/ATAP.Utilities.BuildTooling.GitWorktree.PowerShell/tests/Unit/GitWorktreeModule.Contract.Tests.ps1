@@ -11,7 +11,7 @@ Describe 'GitWorktree child scaffold contract' -Tag 'Unit' {
       'Get-BrokenGitSubDirs', 'Get-LocalPowerShellModulePollerGitScalar', 'Invoke-GitCommit',
       'Invoke-GitPostCheckoutHook', 'Invoke-GitPostCommitHook', 'Invoke-GitPreCommitHook',
       'Invoke-LocalPowerShellModulePollerGit', 'New-GitHubIssue', 'New-WorktreeWithJunctions',
-      'Set-WorktreeJunctions'
+      'Set-WorktreeJunctions', 'Start-LocalPowerShellModuleBuildMasterPoller'
     )
   }
 
@@ -21,7 +21,7 @@ Describe 'GitWorktree child scaffold contract' -Tag 'Unit' {
     @($script:Manifest.CompatiblePSEditions) | Should -Be @('Core')
   }
 
-  It 'declares exactly the thirteen approved public exports' {
+  It 'declares the fourteen compatibility-preserving public exports' {
     @($script:Manifest.FunctionsToExport | Sort-Object) | Should -Be @($script:ExpectedExports | Sort-Object)
     @($script:Manifest.CmdletsToExport).Count | Should -Be 0
     @($script:Manifest.VariablesToExport).Count | Should -Be 0

@@ -4,14 +4,15 @@ BeforeAll {
 }
 
 Describe 'GitWorktree Batch 3 public contracts' {
-  It 'exports the six commands implemented by the five frozen files' {
+  It 'exports the seven commands implemented by the five frozen files' {
     $expected = @(
       'Get-LocalPowerShellModulePollerGitScalar',
       'Invoke-GitPreCommitHook',
       'Invoke-LocalPowerShellModulePollerGit',
       'New-GitHubIssue',
       'New-WorktreeWithJunctions',
-      'Set-WorktreeJunctions'
+      'Set-WorktreeJunctions',
+      'Start-LocalPowerShellModuleBuildMasterPoller'
     )
 
     foreach ($name in $expected) {

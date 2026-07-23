@@ -1,6 +1,6 @@
 # Task 13.72.1 GitWorktree disposition
 
-The frozen scope is the 15 files and 16 functions listed in the Planning Phase 4 group-order record. The child exports thirteen public commands; the three private helpers remain internal.
+The frozen scope began as the 15 files and 16 functions listed in the Planning Phase 4 group-order record. The compatibility gate exposed a cross-group function/file overlap in `Start-LocalPowerShellModuleBuildMasterPoller.ps1`: its two Git helpers were assigned to GitWorktree while the `Start-LocalPowerShellModuleBuildMasterPoller` entry was assigned to BuildMaster. Because the implementation file moved as one reviewed unit, the GitWorktree child temporarily exports fourteen public commands; BuildMaster must split and assume the `Start-*` command in its later iteration. The three private helpers remain internal.
 
 The refreshed AST inventory reports no top-level executable code and no `Write-Host` use for this group. No SC-0248 source correction is approved beyond path/import changes required by the move. Six matching functional test files move with their owning batches; missing public smoke contracts are added in the child.
 
@@ -31,8 +31,23 @@ The dependency adversarial pass confirmed that `Invoke-GitCommit` calls `Assert-
 
 Batch 3 moved the pre-commit hook, issue/worktree commands, junction command, and the local BuildMaster poller file. The junction suite moved with its owner. The child-owned Batch 3 contract verifies all six exported commands supplied by these five implementation files, exercises both Git poller helpers against a temporary local repository, previews issue creation without calling `gh`, and repeats the function-only AST assertion.
 
-The dependency adversarial pass identified two late-bound runtime contracts not represented by the child manifest: `New-GitHubIssue` resolves `Get-PVal` from the configured host, and `Start-LocalPowerShellModuleBuildMasterPoller` invokes `Start-BuildMasterPackagePipeline` only when a qualifying change is detected. These remain aggregate/toolchain contracts for this iteration and must be revisited when ParentResidual and BuildMaster ownership are finalized; they are not silently declared as Common dependencies.
+The dependency adversarial pass identified two late-bound runtime contracts not represented by the child manifest: `New-GitHubIssue` resolves `Get-PVal` from the configured host, and `Start-LocalPowerShellModuleBuildMasterPoller` invokes `Start-BuildMasterPackagePipeline` only when a qualifying change is detected. These remain aggregate/toolchain contracts for this iteration and must be revisited when ParentResidual and BuildMaster ownership are finalized; they are not silently declared as Common dependencies. The parent compatibility test proved why the interim `Start-*` export is necessary: omitting it reduced the frozen 200-function surface to 199.
 
 - PowerShell parser: 0 errors across the complete child module.
 - Manifest validation: passed for source version 0.1.0.
 - Complete child Pester gate after Batch 3: 39 passed, 0 failed across ten test files.
+
+## Parent rewire evidence
+
+The parent psm1 now creates contract-preserving proxies for an ordered list of child modules instead of hard-coding the PesterScaffolding child. The parent manifest and family metadata declare GitWorktree 0.1.0 alongside PesterScaffolding 0.1.1.
+
+- Focused compatibility Pester gate: 3 passed, 0 failed.
+- Fresh source import: exactly 200 parent functions and five source-manifest aliases.
+- `Invoke-GitCommit` retains its named `RepoPath` parameter through the proxy.
+- `Start-LocalPowerShellModuleBuildMasterPoller` remains present in the frozen parent surface.
+- The two new child-only poller helpers remain intentionally excluded from the parent manifest.
+- Combined child, compatibility, and family-metadata Pester gate: 46 passed, 0 failed across twelve test files.
+
+## Consumer evidence
+
+Eight SharedVSCode canonical `.ai` files referenced GitWorktree commands. Seven are command-name-only consumers and require no edit because the parent compatibility surface remains stable. The canonical `git-commit` skill contained two explicit parent source paths; both now point to the GitWorktree child. The governed render updated all four agent adapters, a second render changed zero files, and instruction drift reports zero drift and zero missing targets.

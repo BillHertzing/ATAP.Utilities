@@ -17,5 +17,6 @@ Export-ModuleMember -Function @(
   'Invoke-LocalPowerShellModulePollerGit',
   'New-GitHubIssue',
   'New-WorktreeWithJunctions',
-  'Set-WorktreeJunctions'
+  'Set-WorktreeJunctions',
+  'Start-LocalPowerShellModuleBuildMasterPoller'
 ) -Cmdlet @() -Variable @() -Alias @()

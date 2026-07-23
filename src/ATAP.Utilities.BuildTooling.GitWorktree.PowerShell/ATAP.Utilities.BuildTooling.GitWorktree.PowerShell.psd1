@@ -82,7 +82,8 @@ FunctionsToExport = @(
     'Invoke-LocalPowerShellModulePollerGit',
     'New-GitHubIssue',
     'New-WorktreeWithJunctions',
-    'Set-WorktreeJunctions'
+    'Set-WorktreeJunctions',
+    'Start-LocalPowerShellModuleBuildMasterPoller'
 )
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.

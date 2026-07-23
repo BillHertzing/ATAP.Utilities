@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.1.1
+
+- Declared an explicit empty `VariablesToExport` contract required by packaged
+  manifest generation.
+- Added regression coverage for all empty non-function export collections.
+- Replaces burned 0.1.0, whose first Experimental build failed before package
+  publication.
+
 ## 0.1.0
 
 - Created the child scaffold and moved the three frozen PlanningSession commands.

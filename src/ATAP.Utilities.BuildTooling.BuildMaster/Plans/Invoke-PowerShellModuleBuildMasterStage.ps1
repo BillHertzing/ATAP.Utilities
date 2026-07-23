@@ -906,7 +906,7 @@ function Invoke-PowerShellModuleBuildMasterStage {
       @{FunctionName = 'Get-RepositoryRoot'; ModuleName = 'ATAP.Utilities.BuildTooling.PowerShell' },
       @{FunctionName = 'Get-ClonedAndModifiedHashtable'; ModuleName = 'ATAP.Utilities.PowerShell' },
       @{FunctionName = 'Get-ParameterValueFromNeoConfigurationRoot'; ModuleName = 'ATAP.Utilities.PowerShell' }
-      @{FunctionName = 'Get-SecretATAP'; ModuleName = 'ATAP.Utilities.BuildTooling.PowerShell' }
+      @{FunctionName = 'Get-SecretATAP'; ModuleName = 'ATAP.Utilities.BuildTooling.Secrets.PowerShell' }
     )
     $resolvedModulePath = Join-Path -Path $SourcePath -ChildPath 'src'
     foreach ($helpfunction in $helpfunctionsneeded) {

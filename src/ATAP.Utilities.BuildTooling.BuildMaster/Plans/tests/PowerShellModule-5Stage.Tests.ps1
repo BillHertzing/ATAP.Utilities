@@ -174,4 +174,9 @@ try {
     It 'the runner initializes local host settings via Initialize-LocalHostSettings' {
         $script:RunnerText | Should -Match 'Initialize-LocalHostSettings'
     }
+
+    It 'loads Get-SecretATAP from the extracted Secrets child module' {
+        $script:RunnerText | Should -Match "FunctionName = 'Get-SecretATAP'; ModuleName = 'ATAP\.Utilities\.BuildTooling\.Secrets\.PowerShell'"
+        $script:RunnerText | Should -Not -Match "FunctionName = 'Get-SecretATAP'; ModuleName = 'ATAP\.Utilities\.BuildTooling\.PowerShell'"
+    }
 }

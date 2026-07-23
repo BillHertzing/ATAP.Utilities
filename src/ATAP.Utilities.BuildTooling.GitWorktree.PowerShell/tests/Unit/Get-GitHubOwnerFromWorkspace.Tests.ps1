@@ -1,6 +1,10 @@
 BeforeAll {
   $moduleRoot = Join-Path $PSScriptRoot '..\..'
-  Import-Module (Join-Path $moduleRoot 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell.psd1') -Force
+  $manifestPath = Join-Path $moduleRoot 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell.psd1'
+  $promotedManifest = [System.Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
+  $moduleToTest = if ([string]::IsNullOrWhiteSpace($promotedManifest)) { $manifestPath } else { $promotedManifest }
+  Remove-Module -Name 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell' -Force -ErrorAction SilentlyContinue
+  Import-Module -Name $moduleToTest -Force -ErrorAction Stop
 }
 
 Describe 'Get-GitHubOwnerFromWorkspace' -Tag 'Unit' {

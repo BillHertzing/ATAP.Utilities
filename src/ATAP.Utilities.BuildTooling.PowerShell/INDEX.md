@@ -12,6 +12,9 @@ This index lists every file currently in the BuildTooling PowerShell project and
 The ten Pester configuration and test-template commands are now owned by
 `ATAP.Utilities.BuildTooling.PesterScaffolding.PowerShell`. The parent imports that
 child and retains parameter-preserving compatibility exports during the migration.
+The Git/worktree commands are owned by
+`ATAP.Utilities.BuildTooling.GitWorktree.PowerShell` 0.1.2 or later and are likewise
+re-exported through parameter-preserving parent compatibility proxies.
 - `Resources/`, `Documentation/`, and `Obsolete/` hold support files, docs, and retained historical scripts.
 - `Obsolete/private/` retains retired internal helpers (e.g. the per-sprint ProGet feed and per-sprint database/BuildMaster scaffolding) for provenance only; no current cmdlet dot-sources them.
 - Sprint planning boards now flow from authoritative `TASKS.md` to generated `TASKS.html` via `Convert-TasksMdToSprintBoard`.

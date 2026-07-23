@@ -20,6 +20,10 @@ The bounded BWS ReadOnly bootstrap commands provision only `SvcBuildMaster`,
 CMS envelope flow, canonical account paths, Password-logon task isolation under
 `\ATAP\`, idempotency statuses, and fail-closed recovery rules.
 
+The compatibility parent imports the deployed GitWorktree child at minimum
+version 0.1.2 and re-exports the legacy Git/worktree command surface while the
+module-family extraction remains in progress.
+
 Full-repository C# MSBuild property audits live outside this module at
 `tests\RepoHealth` and run through `Build\Invoke-RepoHealthGate.ps1`. They are
 not part of `module.build.ps1` for this PowerShell module because they enumerate

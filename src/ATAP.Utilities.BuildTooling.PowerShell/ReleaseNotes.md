@@ -1,5 +1,11 @@
 # Production Release Notes in Chronological order
 
+# 0.1.50
+
+- Re-exported the GitWorktree child through the parent compatibility surface.
+- Raised the GitWorktree dependency floor to the deployed 0.1.2 release, whose
+  Stable package preserves all fourteen child exports.
+
 # 0.1.49
 
 - Preserved the legacy `Get-ServiceAccountBWSAccessToken` and

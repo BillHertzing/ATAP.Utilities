@@ -41,6 +41,6 @@ Describe 'GitWorktree compatibility parent rewire' {
     ($requirements | Where-Object ModuleName -eq 'ATAP.Utilities.BuildTooling.PesterScaffolding.PowerShell').ModuleVersion |
       Should -Be '0.1.1'
     ($requirements | Where-Object ModuleName -eq 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell').ModuleVersion |
-      Should -Be '0.1.0'
+      Should -Be '0.1.2'
   }
 }

@@ -10,10 +10,11 @@ function Get-GitHubOwnerFromWorkspace {
   )
 
   $childModule = Get-Module -Name 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell' |
+    Where-Object Version -ge ([version]'0.1.2') |
     Sort-Object Version -Descending |
     Select-Object -First 1
   if (-not $childModule) {
-    throw 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell must be loaded before calling Get-GitHubOwnerFromWorkspace.'
+    $childModule = Import-Module -Name 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell' -MinimumVersion '0.1.2' -Force -PassThru -ErrorAction Stop
   }
 
   & $childModule {

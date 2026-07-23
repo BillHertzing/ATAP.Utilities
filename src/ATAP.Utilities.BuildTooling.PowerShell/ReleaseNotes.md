@@ -1,5 +1,10 @@
 # Production Release Notes in Chronological order
 
+# 0.1.52
+
+- Made private GitWorktree dispatch shims explicitly restore the deployed child
+  when an isolated test or consumer unloads it.
+
 # 0.1.51
 
 - Added private parent dispatch shims for GitWorktree helpers still consumed by

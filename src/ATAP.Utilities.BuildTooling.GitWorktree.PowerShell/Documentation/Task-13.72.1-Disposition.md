@@ -35,6 +35,8 @@ The dependency adversarial pass identified two late-bound runtime contracts not 
 
 The parent 0.1.50 promoted test exposed three remaining parent-private consumers of moved GitWorktree helpers. Parent 0.1.51 therefore carries non-exported dispatch shims for `Confirm-WorktreeGitPointerOwnership`, `Get-GitHubOwnerFromWorkspace`, and `Resolve-PlanningWorktreeRoot`; each invokes the canonical private implementation inside the loaded GitWorktree child module. These shims are temporary migration debt and must be removed when their remaining parent consumers move.
 
+The independent Stable verification then exposed an order variant that unloaded the child before a later parent test. Parent 0.1.52 makes each shim autoload GitWorktree 0.1.2 or later when absent, so compatibility does not depend on test or consumer module-load order. Parent 0.1.50 and 0.1.51 are burned.
+
 - PowerShell parser: 0 errors across the complete child module.
 - Manifest validation: passed for source version 0.1.0.
 - Complete child Pester gate after Batch 3: 39 passed, 0 failed across ten test files.

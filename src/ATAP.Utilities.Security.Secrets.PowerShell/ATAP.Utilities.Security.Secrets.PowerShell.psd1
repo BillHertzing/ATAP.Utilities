@@ -17,7 +17,7 @@
   RequiredModules       = @(
     'PSFramework',
     'Microsoft.PowerShell.SecretManagement',
-    @{ ModuleName = 'ATAP.Utilities.BuildTooling.PowerShell'; ModuleVersion = '0.1.29' }
+    @{ ModuleName = 'ATAP.Utilities.BuildTooling.Secrets.PowerShell'; ModuleVersion = '0.1.0' }
   )
 
   FunctionsToExport     = @(

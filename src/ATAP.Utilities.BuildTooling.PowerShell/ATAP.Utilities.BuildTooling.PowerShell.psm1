@@ -7,6 +7,7 @@ $childModuleNames = @(
     'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell'
     'ATAP.Utilities.BuildTooling.PlanningSession.PowerShell'
     'ATAP.Utilities.BuildTooling.AiRendering.PowerShell'
+    'ATAP.Utilities.BuildTooling.Secrets.PowerShell'
 )
 foreach ($childModuleName in $childModuleNames) {
     $childManifest = Join-Path $PSScriptRoot "..\$childModuleName\$childModuleName.psd1"

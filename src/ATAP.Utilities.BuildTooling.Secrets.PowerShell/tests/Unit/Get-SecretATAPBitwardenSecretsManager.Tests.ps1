@@ -1,0 +1,108 @@
+<#
+.SYNOPSIS
+Unit tests for Get-SecretATAPBitwardenSecretsManager (Bitwarden Secrets Manager provider).
+
+.NOTES
+AI assisted using Powershell.instructions.md as guidelines
+The `bws` CLI is replaced by an in-scope function shim returning canned JSON, so these
+tests do not touch a real Bitwarden Secrets Manager account.
+#>
+
+BeforeAll {
+  $script:oldBwsAccessToken = $env:BWS_ACCESS_TOKEN
+
+  . "$PSScriptRoot\..\..\public\Get-SecretATAPBitwardenSecretsManager.ps1"
+
+  # No-op logging shim if PSFramework is not loaded in the test host.
+  if (-not (Get-Command -Name 'Write-PSFMessage' -ErrorAction SilentlyContinue)) {
+    function Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Args) }
+  }
+
+  # Canned output for the `bws` CLI, controlled per-test via $script:bwsJson.
+  $script:bwsJson = '[]'
+  $script:bwsObservedTokens = [System.Collections.ArrayList]::new()
+  $script:bwsAccessTokenPurposes = [System.Collections.ArrayList]::new()
+  function bws {
+    param([Parameter(ValueFromRemainingArguments = $true)]$Args)
+    [void]$script:bwsObservedTokens.Add($env:BWS_ACCESS_TOKEN)
+    $script:bwsJson
+    $global:LASTEXITCODE = 0
+  }
+
+  function Get-BWSAccessToken {
+    param(
+      [Parameter()]
+      [ValidateSet('ReadOnly', 'ReadWrite')]
+      [string]$TokenPurpose = 'ReadOnly'
+    )
+    [void]$script:bwsAccessTokenPurposes.Add($TokenPurpose)
+    $secureToken = ConvertTo-SecureString -String 'dpapi.test.token' -AsPlainText -Force
+    return [System.Management.Automation.PSCredential]::new('BWS_ACCESS_TOKEN', $secureToken)
+  }
+
+  # Skip the DPAPI token path by supplying a process-scope token.
+  $env:BWS_ACCESS_TOKEN = '0.test.token'
+}
+
+AfterAll {
+  if ($null -ne $script:oldBwsAccessToken) {
+    $env:BWS_ACCESS_TOKEN = $script:oldBwsAccessToken
+  } else {
+    Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue
+  }
+}
+
+Describe 'Get-SecretATAPBitwardenSecretsManager' {
+
+  It 'returns the raw value for a non-JSON secret' {
+    $script:bwsJson = '[{"id":"1","key":"BuildMaster.Admin.API.Key","value":"abc123","projectId":"p1"}]'
+    Get-SecretATAPBitwardenSecretsManager -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key' | Should -BeExactly 'abc123'
+  }
+
+  It 'matches the key case-insensitively' {
+    $script:bwsJson = '[{"id":"1","key":"BuildMaster.Admin.API.Key","value":"abc123","projectId":"p1"}]'
+    Get-SecretATAPBitwardenSecretsManager -SecretName 'buildmaster.admin.api.key' | Should -BeExactly 'abc123'
+  }
+
+  It 'extracts a field from a JSON-structured value' {
+    $script:bwsJson = '[{"id":"2","key":"Windows.ServiceAccount.BuildMaster","value":"{\"username\":\"SvcBuildmaster\",\"password\":\"p@ss\"}","projectId":"p1"}]'
+    Get-SecretATAPBitwardenSecretsManager -SecretName 'Windows.ServiceAccount.BuildMaster' -SecretField 'username' | Should -BeExactly 'SvcBuildmaster'
+    Get-SecretATAPBitwardenSecretsManager -SecretName 'Windows.ServiceAccount.BuildMaster' -SecretField 'password' | Should -BeExactly 'p@ss'
+  }
+
+  It 'returns the raw JSON string when the requested field is absent' {
+    $script:bwsJson = '[{"id":"2","key":"Some.Json","value":"{\"username\":\"u\"}","projectId":"p1"}]'
+    Get-SecretATAPBitwardenSecretsManager -SecretName 'Some.Json' -SecretField 'password' | Should -BeExactly '{"username":"u"}'
+  }
+
+  It 'throws when the secret key is not found' {
+    $script:bwsJson = '[{"id":"1","key":"Other.Key","value":"x","projectId":"p1"}]'
+    { Get-SecretATAPBitwardenSecretsManager -SecretName 'Missing.Key' } | Should -Throw '*No Bitwarden Secrets Manager secret found*'
+  }
+
+  It 'does not leak DPAPI token values through thrown messages' {
+    Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue
+    $script:bwsJson = '[{"id":"1","key":"Other.Key","value":"x","projectId":"p1"}]'
+
+    { Get-SecretATAPBitwardenSecretsManager -SecretName 'Missing.Key' } |
+      Should -Throw '*No Bitwarden Secrets Manager secret found*'
+
+    $thrown = $null
+    try { Get-SecretATAPBitwardenSecretsManager -SecretName 'Missing.Key' } catch { $thrown = $_.Exception.Message }
+    $thrown | Should -Not -Match 'dpapi\.test\.token'
+  }
+
+  It 'uses the DPAPI token helper when BWS_ACCESS_TOKEN is absent and cleans up the process token' {
+    Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue
+    $script:bwsObservedTokens.Clear()
+    $script:bwsAccessTokenPurposes.Clear()
+    $script:bwsJson = '[{"id":"3","key":"BuildMaster.Admin.API.Key","value":"from-dpapi","projectId":"p1"}]'
+
+    Get-SecretATAPBitwardenSecretsManager -SecretName 'BuildMaster.Admin.API.Key' | Should -BeExactly 'from-dpapi'
+
+    $script:bwsObservedTokens | Should -Contain 'dpapi.test.token'
+    $script:bwsAccessTokenPurposes | Should -Contain 'ReadOnly'
+    $env:BWS_ACCESS_TOKEN | Should -BeNullOrEmpty
+  }
+}
+

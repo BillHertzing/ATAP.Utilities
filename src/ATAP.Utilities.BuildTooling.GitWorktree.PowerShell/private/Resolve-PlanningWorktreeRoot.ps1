@@ -50,7 +50,7 @@ function Resolve-PlanningWorktreeRoot {
 
   begin {
     $fn = $MyInvocation.MyCommand.Name
-    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+    $mn = 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
     Set-StrictMode -Version Latest
 

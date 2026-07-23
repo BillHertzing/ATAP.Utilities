@@ -1,12 +1,6 @@
 BeforeAll {
-  if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
-    function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
-  }
-
-  # Dot-source the private helpers under test. Get-GitHubOwnerFromWorkspace
-  # delegates the JSON read to Get-WorkspaceJson, so both must be loaded.
-  . "$PSScriptRoot\..\..\private\Get-WorkspaceJson.ps1"
-  . "$PSScriptRoot\..\..\private\Get-GitHubOwnerFromWorkspace.ps1"
+  $moduleRoot = Join-Path $PSScriptRoot '..\..'
+  Import-Module (Join-Path $moduleRoot 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell.psd1') -Force
 }
 
 Describe 'Get-GitHubOwnerFromWorkspace' -Tag 'Unit' {
@@ -26,8 +20,9 @@ Describe 'Get-GitHubOwnerFromWorkspace' -Tag 'Unit' {
         githubOwner = 'BillHertzing'
       } | ConvertTo-Json -Depth 4)
 
-    Get-GitHubOwnerFromWorkspace -GitRoot $script:tempGitRoot -Fallback 'whertzing' |
-      Should -Be 'BillHertzing'
+    InModuleScope ATAP.Utilities.BuildTooling.GitWorktree.PowerShell -Parameters @{ GitRoot = $script:tempGitRoot } {
+      Get-GitHubOwnerFromWorkspace -GitRoot $GitRoot -Fallback 'whertzing'
+    } | Should -Be 'BillHertzing'
   }
 
   It 'trims surrounding whitespace from githubOwner' {
@@ -35,13 +30,15 @@ Describe 'Get-GitHubOwnerFromWorkspace' -Tag 'Unit' {
         githubOwner = '  BillHertzing  '
       } | ConvertTo-Json -Depth 4)
 
-    Get-GitHubOwnerFromWorkspace -GitRoot $script:tempGitRoot -Fallback 'whertzing' |
-      Should -Be 'BillHertzing'
+    InModuleScope ATAP.Utilities.BuildTooling.GitWorktree.PowerShell -Parameters @{ GitRoot = $script:tempGitRoot } {
+      Get-GitHubOwnerFromWorkspace -GitRoot $GitRoot -Fallback 'whertzing'
+    } | Should -Be 'BillHertzing'
   }
 
   It 'returns the fallback when OverView.code-workspace is missing' {
-    Get-GitHubOwnerFromWorkspace -GitRoot $script:tempGitRoot -Fallback 'whertzing' |
-      Should -Be 'whertzing'
+    InModuleScope ATAP.Utilities.BuildTooling.GitWorktree.PowerShell -Parameters @{ GitRoot = $script:tempGitRoot } {
+      Get-GitHubOwnerFromWorkspace -GitRoot $GitRoot -Fallback 'whertzing'
+    } | Should -Be 'whertzing'
   }
 
   It 'returns the fallback when githubOwner key is absent' {
@@ -49,8 +46,9 @@ Describe 'Get-GitHubOwnerFromWorkspace' -Tag 'Unit' {
         folders = @(@{ path = 'SharedVSCode' })
       } | ConvertTo-Json -Depth 4)
 
-    Get-GitHubOwnerFromWorkspace -GitRoot $script:tempGitRoot -Fallback 'whertzing' |
-      Should -Be 'whertzing'
+    InModuleScope ATAP.Utilities.BuildTooling.GitWorktree.PowerShell -Parameters @{ GitRoot = $script:tempGitRoot } {
+      Get-GitHubOwnerFromWorkspace -GitRoot $GitRoot -Fallback 'whertzing'
+    } | Should -Be 'whertzing'
   }
 
   It 'returns the fallback when githubOwner is empty/whitespace' {
@@ -58,14 +56,16 @@ Describe 'Get-GitHubOwnerFromWorkspace' -Tag 'Unit' {
         githubOwner = '   '
       } | ConvertTo-Json -Depth 4)
 
-    Get-GitHubOwnerFromWorkspace -GitRoot $script:tempGitRoot -Fallback 'whertzing' |
-      Should -Be 'whertzing'
+    InModuleScope ATAP.Utilities.BuildTooling.GitWorktree.PowerShell -Parameters @{ GitRoot = $script:tempGitRoot } {
+      Get-GitHubOwnerFromWorkspace -GitRoot $GitRoot -Fallback 'whertzing'
+    } | Should -Be 'whertzing'
   }
 
   It 'returns the fallback when the workspace file is not valid JSON' {
     Set-Content -LiteralPath $script:workspaceFile -Encoding UTF8 -Value 'not-json{'
 
-    Get-GitHubOwnerFromWorkspace -GitRoot $script:tempGitRoot -Fallback 'whertzing' |
-      Should -Be 'whertzing'
+    InModuleScope ATAP.Utilities.BuildTooling.GitWorktree.PowerShell -Parameters @{ GitRoot = $script:tempGitRoot } {
+      Get-GitHubOwnerFromWorkspace -GitRoot $GitRoot -Fallback 'whertzing'
+    } | Should -Be 'whertzing'
   }
 }

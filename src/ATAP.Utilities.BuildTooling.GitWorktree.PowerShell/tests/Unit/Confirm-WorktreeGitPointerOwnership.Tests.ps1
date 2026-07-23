@@ -1,12 +1,14 @@
 BeforeAll {
-  . "$PSScriptRoot\..\..\private\Confirm-WorktreeGitPointerOwnership.ps1"
-
-  function Write-PSFMessage { param($FunctionName, $ModuleName, $Level, $Message) }
-
-  $script:operator = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+  $moduleRoot = Join-Path $PSScriptRoot '..\..'
+  Import-Module (Join-Path $moduleRoot 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell.psd1') -Force
+  . (Join-Path $moduleRoot 'private\Confirm-WorktreeGitPointerOwnership.ps1')
 }
 
 Describe 'Confirm-WorktreeGitPointerOwnership' {
+  BeforeAll {
+    $script:operator = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+  }
+
   BeforeEach {
     $script:worktree = Join-Path $TestDrive 'repo-wt-1'
     New-Item -ItemType Directory -Path $script:worktree -Force | Out-Null
@@ -63,7 +65,7 @@ Describe 'Confirm-WorktreeGitPointerOwnership' {
   }
 
   It 'contains no safe.directory mutation or wildcard trust' {
-    $source = Get-Content -LiteralPath "$PSScriptRoot\..\..\private\Confirm-WorktreeGitPointerOwnership.ps1" -Raw
+    $source = Get-Content -LiteralPath (Join-Path $moduleRoot 'private\Confirm-WorktreeGitPointerOwnership.ps1') -Raw
     $source | Should -Not -Match 'safe\.directory'
     $source | Should -Not -Match 'config\s+--global\s+--add'
   }

@@ -37,7 +37,7 @@ function Get-GitHubOwnerFromWorkspace {
   )
 
   $fn = $MyInvocation.MyCommand.Name
-  $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+  $mn = 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell'
 
   $workspaceFile = Join-Path $GitRoot 'OverView.code-workspace'
   if (-not (Test-Path -LiteralPath $workspaceFile)) {

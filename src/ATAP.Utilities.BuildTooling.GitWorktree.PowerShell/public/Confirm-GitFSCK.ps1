@@ -75,7 +75,7 @@ Function Confirm-GitFSCK {
       throw "$outDir is not a directory"
     }
     # Validate that the $OutPath is writable
-    $testOutFn = $outDir + 'test.txt'
+    $testOutFn = Join-Path $outDir 'test.txt'
     try { New-Item $testOutFn -Force -type file >$null
     }
     catch { # if an exception ocurrs

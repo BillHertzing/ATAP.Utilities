@@ -1,12 +1,6 @@
 BeforeAll {
-  if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
-    function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
-  }
-
   $moduleRoot = Join-Path $PSScriptRoot '..\..'
-  . (Join-Path $moduleRoot 'private\Get-WorkspaceJson.ps1')
-  . (Join-Path $moduleRoot 'private\Resolve-WorkspaceFiles.ps1')
-  . (Join-Path $moduleRoot 'public\Assert-MainBranchTemplateRef.ps1')
+  Import-Module (Join-Path $moduleRoot 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell.psd1') -Force
 }
 
 Describe 'Assert-MainBranchTemplateRef [public]' {
@@ -103,7 +97,7 @@ Describe 'Assert-MainBranchTemplateRef [public]' {
 
   Context 'Uses private helpers Resolve-WorkspaceFiles and Get-WorkspaceJson' {
     It 'Calls through Resolve-WorkspaceFiles for path resolution' {
-      Mock Resolve-WorkspaceFiles { return @($WorkspaceFiles[0]) }
+      Mock Resolve-WorkspaceFiles { return @($WorkspaceFiles[0]) } -ModuleName ATAP.Utilities.BuildTooling.GitWorktree.PowerShell
 
       $wsFile = Join-Path $script:tempDir 'DelegateTest.code-workspace'
       @{
@@ -112,7 +106,7 @@ Describe 'Assert-MainBranchTemplateRef [public]' {
       } | ConvertTo-Json -Depth 10 | Set-Content -Path $wsFile -Encoding UTF8
 
       { Assert-MainBranchTemplateRef -WorkspaceFiles @($wsFile) } | Should -Not -Throw
-      Should -Invoke Resolve-WorkspaceFiles -Times 1 -Exactly -Scope It
+      Should -Invoke Resolve-WorkspaceFiles -Times 1 -Exactly -Scope It -ModuleName ATAP.Utilities.BuildTooling.GitWorktree.PowerShell
     }
   }
 }

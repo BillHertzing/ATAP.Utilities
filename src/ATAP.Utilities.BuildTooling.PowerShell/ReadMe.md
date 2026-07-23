@@ -21,7 +21,7 @@ CMS envelope flow, canonical account paths, Password-logon task isolation under
 `\ATAP\`, idempotency statuses, and fail-closed recovery rules.
 
 The compatibility parent imports GitWorktree at minimum version 0.1.3 and
-PlanningSession at minimum version 0.1.0. It re-exports the legacy Git/worktree
+PlanningSession at minimum version 0.1.2. It re-exports the legacy Git/worktree
 and planning-session command surfaces while keeping the child-only
 `Resolve-PlanningWorktreeRoot` contract hidden.
 

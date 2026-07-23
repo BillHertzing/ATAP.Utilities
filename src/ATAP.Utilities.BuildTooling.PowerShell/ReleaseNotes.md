@@ -1,5 +1,14 @@
 # Production Release Notes in Chronological order
 
+# 0.1.53
+
+- Re-exported the three PlanningSession commands through the compatibility
+  parent while moving their implementations into the deployed child module.
+- Raised the PlanningSession dependency floor to the independently validated
+  Stable/AllUsers 0.1.2 release.
+- Kept `Resolve-PlanningWorktreeRoot` child-only while preserving the exact
+  legacy parent command surface.
+
 # 0.1.52
 
 - Made private GitWorktree dispatch shims explicitly restore the deployed child

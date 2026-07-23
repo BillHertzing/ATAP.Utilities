@@ -34,13 +34,15 @@ Describe 'GitWorktree compatibility parent rewire' {
     }
   }
 
-  It 'declares both extracted children at their immutable minimum versions' {
+  It 'declares all extracted children at their immutable minimum versions' {
     $manifest = Import-PowerShellDataFile (Join-Path $moduleRoot 'ATAP.Utilities.BuildTooling.PowerShell.psd1')
     $requirements = @($manifest.RequiredModules)
 
     ($requirements | Where-Object ModuleName -eq 'ATAP.Utilities.BuildTooling.PesterScaffolding.PowerShell').ModuleVersion |
       Should -Be '0.1.1'
     ($requirements | Where-Object ModuleName -eq 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell').ModuleVersion |
+      Should -Be '0.1.3'
+    ($requirements | Where-Object ModuleName -eq 'ATAP.Utilities.BuildTooling.PlanningSession.PowerShell').ModuleVersion |
       Should -Be '0.1.2'
   }
 }

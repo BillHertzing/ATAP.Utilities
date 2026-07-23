@@ -61,7 +61,7 @@ function Build-AIInstructionsPerRepository {
 
   begin {
     $fn = 'Build-AIInstructionsPerRepository'
-    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+    $mn = 'ATAP.Utilities.BuildTooling.AiRendering.PowerShell'
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 

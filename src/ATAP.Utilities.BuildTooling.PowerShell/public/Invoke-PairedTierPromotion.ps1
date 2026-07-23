@@ -194,7 +194,6 @@ function Get-PairedTierIndex {
         return $index
     }
 }
-
 # Helper: resolve the canonical feed name for a tier given a ladder prefix.
 # Production maps to the '-stable' feed for both ladders (powershellget-stable,
 # database-stable); the other tiers use the lowercased tier name.
@@ -611,62 +610,5 @@ function Get-PairedPreviousTierName {
     process {
         $index = $tierOrder.IndexOf($Tier)
         return $tierOrder[$index - 1]
-    }
-}
-
-# Helper: the AgentText-backed database-data validation suites. DatabaseDataPresence
-# confirms the tier's database carries the AgentText record (DB-data advanced);
-# AgentTextRoundTrip additionally confirms the stored body matches its recorded
-# SHA-256 (file -> DB -> file integrity). Both Skip cleanly when their inputs or
-# the Get-AgentTextFromDatabase cmdlet are unavailable.
-function Test-PairedAgentTextSuite {
-    [CmdletBinding()]
-    [OutputType([PSCustomObject])]
-    param(
-        [Parameter(Mandatory)]
-        [ValidateSet('DatabaseDataPresence', 'AgentTextRoundTrip')]
-        [string]$SuiteName,
-        [Parameter()][AllowEmptyString()][string]$ConnectionString = '',
-        [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$SourceId,
-        [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$Tier
-    )
-
-    process {
-        if ([string]::IsNullOrWhiteSpace($ConnectionString)) {
-            return [PSCustomObject]@{ Name = $SuiteName; Status = 'Skipped'; Detail = 'No -DatabaseConnectionString supplied for this tier.' }
-        }
-        if (-not (Get-Command -Name 'Get-AgentTextFromDatabase' -ErrorAction SilentlyContinue)) {
-            return [PSCustomObject]@{ Name = $SuiteName; Status = 'Skipped'; Detail = 'Get-AgentTextFromDatabase (RulesManagement.PowerShell) not available in this session.' }
-        }
-
-        try {
-            $records = @(Get-AgentTextFromDatabase -ConnectionString $ConnectionString -SourceId $SourceId)
-            if ($records.Count -eq 0) {
-                return [PSCustomObject]@{ Name = $SuiteName; Status = 'Failed'; Detail = "AgentText SourceId '$SourceId' not present in the '$Tier' database." }
-            }
-            $record = $records[0]
-
-            if ($SuiteName -eq 'DatabaseDataPresence') {
-                return [PSCustomObject]@{ Name = $SuiteName; Status = 'Passed'; Detail = "AgentText SourceId '$SourceId' present in the '$Tier' database (Kind='$($record.Kind)')." }
-            }
-
-            # AgentTextRoundTrip: recompute SHA-256 of the stored body and compare
-            # to the recorded BodySha256.
-            $bytes = [System.Text.Encoding]::UTF8.GetBytes([string]$record.BodyText)
-            $sha = [System.Security.Cryptography.SHA256]::Create()
-            try {
-                $hashBytes = $sha.ComputeHash($bytes)
-            } finally {
-                $sha.Dispose()
-            }
-            $computed = ([System.BitConverter]::ToString($hashBytes) -replace '-', '').ToLowerInvariant()
-            $stored = ([string]$record.BodySha256).ToLowerInvariant()
-            if ($computed -eq $stored) {
-                return [PSCustomObject]@{ Name = $SuiteName; Status = 'Passed'; Detail = "Round-trip integrity OK for '$SourceId' (sha256 $stored)." }
-            }
-            return [PSCustomObject]@{ Name = $SuiteName; Status = 'Failed'; Detail = "Round-trip integrity MISMATCH for '$SourceId': stored=$stored computed=$computed." }
-        } catch {
-            return [PSCustomObject]@{ Name = $SuiteName; Status = 'Failed'; Detail = $_.Exception.Message }
-        }
     }
 }

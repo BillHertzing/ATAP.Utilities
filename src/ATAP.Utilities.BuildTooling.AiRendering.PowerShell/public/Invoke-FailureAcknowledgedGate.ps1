@@ -75,7 +75,7 @@ function Invoke-FailureAcknowledgedGate {
   begin {
     $fn = $MyInvocation.MyCommand.Name
     $mn = $MyInvocation.MyCommand.ModuleName
-    if (-not $mn) { $mn = 'ATAP.Utilities.BuildTooling.PowerShell' }
+    if (-not $mn) { $mn = 'ATAP.Utilities.BuildTooling.AiRendering.PowerShell' }
 
     # Map OtterScript tier names -> PS-tier names consumed by Test-FailureAcknowledgedGate.
     $tierMap = @{

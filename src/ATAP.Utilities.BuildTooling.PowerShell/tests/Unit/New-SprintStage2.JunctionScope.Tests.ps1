@@ -16,6 +16,7 @@ BeforeAll {
 
   $script:stubbedFunctionNames = @(
     'Assert-GitAvailable',
+    'Confirm-WorktreeGitPointerOwnership',
     'gh',
     'git',
     'Set-WorktreeJunctions',
@@ -32,6 +33,9 @@ BeforeAll {
   )
 
   function global:Assert-GitAvailable { }
+  function global:Confirm-WorktreeGitPointerOwnership {
+    [PSCustomObject]@{ Verified = $true; Repaired = $false }
+  }
 
   function global:gh {
     $global:LASTEXITCODE = 0
@@ -41,7 +45,10 @@ BeforeAll {
   function global:git {
     $addIndex = [Array]::IndexOf($args, 'add')
     if ($addIndex -ge 0 -and $args.Count -gt ($addIndex + 1)) {
-      New-Item -ItemType Directory -Path $args[$addIndex + 1] -Force | Out-Null
+      $worktreePath = $args[$addIndex + 1]
+      New-Item -ItemType Directory -Path $worktreePath -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $worktreePath '.git') `
+        -Value 'gitdir: C:\fixture\worktrees\test' -NoNewline
     }
     $global:LASTEXITCODE = 0
     ''

@@ -56,7 +56,8 @@
         @{ModuleName = 'powershell-yaml'; ModuleVersion = '0.4.12'; MaximumVersion = '0.999.999'; },
         @{ModuleName = 'ATAP.Utilities.BuildTooling.PesterScaffolding.PowerShell'; ModuleVersion = '0.1.1'; },
         @{ModuleName = 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell'; ModuleVersion = '0.1.3'; },
-        @{ModuleName = 'ATAP.Utilities.BuildTooling.PlanningSession.PowerShell'; ModuleVersion = '0.1.2'; })
+        @{ModuleName = 'ATAP.Utilities.BuildTooling.PlanningSession.PowerShell'; ModuleVersion = '0.1.2'; },
+        @{ModuleName = 'ATAP.Utilities.BuildTooling.AiRendering.PowerShell'; ModuleVersion = '0.1.0'; })
 
     # Assemblies that must be loaded prior to importing this module
     # RequiredAssemblies = @()

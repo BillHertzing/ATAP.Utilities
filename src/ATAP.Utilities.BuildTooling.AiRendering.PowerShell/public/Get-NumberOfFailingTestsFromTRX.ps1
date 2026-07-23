@@ -1,4 +1,4 @@
-Function Get-NumberOfFailingTestsFromTRX ( [string] $xmlInputFile )
+function Get-NumberOfFailingTestsFromTRX ( [string] $xmlInputFile )
 {
     $xml = [Xml](Get-Content $xmlInputFile)
 

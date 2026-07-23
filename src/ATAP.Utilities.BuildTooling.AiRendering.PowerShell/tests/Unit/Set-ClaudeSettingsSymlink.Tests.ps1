@@ -5,7 +5,7 @@ BeforeAll {
     param()
   }
 
-  . (Join-Path $PSScriptRoot '..\..\private\Set-ClaudeSettingsSymlink.ps1')
+  . (Join-Path $PSScriptRoot '..\..\public\Set-ClaudeSettingsSymlink.ps1')
   $script:originalUserProfile = $env:USERPROFILE
 }
 
@@ -105,7 +105,12 @@ Describe 'Set-ClaudeSettingsSymlink managed render boundary' {
     $legacyTarget = Join-Path $script:sharedRoot 'claude-settings.json'
     New-Item -ItemType Directory -Path $claudeRoot -Force | Out-Null
     [IO.File]::WriteAllText($legacyTarget, '{"legacy":true}', [Text.UTF8Encoding]::new($false))
-    New-Item -ItemType SymbolicLink -Path $settingsPath -Target $legacyTarget | Out-Null
+    $link = New-Item -ItemType SymbolicLink -Path $settingsPath -Target $legacyTarget `
+      -ErrorAction SilentlyContinue
+    if (-not $link) {
+      Set-ItResult -Skipped -Because 'the current token cannot create symbolic links'
+      return
+    }
 
     Set-ClaudeSettingsSymlink `
       -SharedVSCodeWorktreePath $script:sharedRoot `

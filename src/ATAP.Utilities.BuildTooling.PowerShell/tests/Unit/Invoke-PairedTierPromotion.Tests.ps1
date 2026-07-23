@@ -6,6 +6,9 @@
 
 BeforeAll {
     $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
+    $aiRenderingPublicDir = Join-Path (
+        Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
+    ) 'ATAP.Utilities.BuildTooling.AiRendering.PowerShell\public'
 
     # Suppress PSFramework noise when the module is not loaded.
     if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
@@ -27,6 +30,7 @@ BeforeAll {
         param($ConnectionString, $SourceId)
     }
 
+    . (Join-Path $aiRenderingPublicDir 'Test-PairedAgentTextSuite.ps1')
     . (Join-Path $publicDir 'Invoke-PairedTierPromotion.ps1')
 
     # Compute a known SHA-256 so the round-trip integrity test can return a record

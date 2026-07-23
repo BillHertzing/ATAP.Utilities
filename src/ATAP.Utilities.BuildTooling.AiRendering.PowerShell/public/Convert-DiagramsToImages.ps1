@@ -73,7 +73,7 @@ function Convert-DiagramsToImages {
 
   begin {
     $fn = 'Convert-DiagramsToImages'
-    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+    $mn = 'ATAP.Utilities.BuildTooling.AiRendering.PowerShell'
 
     function Write-DiagramMessage {
       param(

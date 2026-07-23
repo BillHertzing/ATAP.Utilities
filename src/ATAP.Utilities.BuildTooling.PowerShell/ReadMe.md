@@ -25,6 +25,12 @@ PlanningSession at minimum version 0.1.2. It re-exports the legacy Git/worktree
 and planning-session command surfaces while keeping the child-only
 `Resolve-PlanningWorktreeRoot` contract hidden.
 
+Task 13.72.3 adds the AiRendering child at minimum version 0.1.0. The parent
+continues to re-export the nine legacy AiRendering commands. Child-only
+`Set-ClaudeSettingsSymlink` and `Test-PairedAgentTextSuite` remain outside the
+frozen 200-command parent surface. SC-0246's ten SharedVSCode `.ai/tools`
+PowerShell files remain reserved for the future AIAdapters module.
+
 Parent 0.1.53 is the accepted Stable/AllUsers compatibility release for this
 iteration (Stable SHA-256
 `0D89AB810A52041E2B1B244D18C1DDC9B41F0202737447E1FC089BA3940F8956`).

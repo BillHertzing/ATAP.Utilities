@@ -1,38 +1,28 @@
 <#
 .SYNOPSIS
-Materializes the Codex AGENTS.md base into each repository worktree in the current sprint.
+Distributes the rendered agent-specific instruction files into each sprint repository.
 
 .DESCRIPTION
-Build-AGENTSPerRepository is the Codex (AGENTS.md) sibling of Build-CLAUDEPerRepository.
-It locates the Overview-wt-sprintNNNN.code-workspace file one level above the current
-worktree root, reads the folders list, then for each repository worktree writes the
-shared Codex base instructions to AGENTS.md at the worktree root.
+Build-AgentSpecificPerRepository is the agent-specific-lane sibling of
+Build-AGENTSPerRepository and Build-CLAUDEPerRepository (Task 10.23). After the shared
+core is rendered to AGENTS-base.md and combined into each repo's AGENTS.md, the
+per-agent (NON-core) surfaces must also land in every repo the way AGENTS.md / CLAUDE.md
+do, because each agent reads them repo-relatively:
 
-The Codex base is the AGENTS.md rendered by SharedVSCode/.ai/tools/Render-AIAdapters.ps1
-from the canonical .ai/core/main-instructions.md (the Codex 'generated-wrapper' target of
-the ai.core.main-instructions.v1 manifest record). That rendered base file lives at the
-SharedVSCode sprint worktree root as AGENTS.md and is read here as the source of truth.
+  - GEMINI.md                       (Antigravity / Gemini agent-specific)
+  - .github/copilot-instructions.md (GitHub Copilot agent-specific)
 
-Task 10.23: AGENTS.md is the shared CORE carrier for Codex, Antigravity (Gemini), and
-GitHub Copilot. Like Build-CLAUDEPerRepository, this cmdlet now COMBINES the per-repo
-overlay with the core base:
-  - It reads the repo's ai-local.md (legacy CLAUDE-local.md fallback) — the SAME
-    per-repo file Build-CLAUDEPerRepository consumes, so CLAUDE.md and AGENTS.md draw
-    their repo-specific block from one source of truth.
-  - It wraps the two regions in deterministic, non-timestamped sentinels
-    (<!-- AI-LOCAL:BEGIN/END --> then <!-- AI-CORE:BEGIN/END -->). The AI-CORE block is
-    the rendered base verbatim, so Task 10.23.h can extract and diff it against canonical.
-  - Because the sentinels carry no timestamp, the combined per-repo AGENTS.md stays
-    idempotent on re-run (a second build is a no-op), which the AGENTS.md acceptance
-    requires. Provenance still lives in the base's generated-wrapper header
-    (SourceId, SourceSha256).
+These files are rendered ONCE at the SharedVSCode worktree root by Render-AIAdapters
+(the ai.agent-specific.* records) and contain ONLY per-agent deltas plus a pointer to
+AGENTS.md for core, never the core body (no-double-core invariant). Distribution is a
+PURE COPY (the agent-specific content is repo-independent; repo-specific rules live in
+the AGENTS.md / CLAUDE.md AI-LOCAL block). A pure copy makes the self-copy into the
+SharedVSCode worktree a harmless no-op and keeps re-runs idempotent.
 
 When the workspace is a sprint Overview workspace (it carries a sprintEphemeral block
 and/or lists at least one sprint worktree folder), any repository that has no sprint
 worktree this sprint is listed under its stable folder name and is SKIPPED rather than
-written. This honors the stable-worktree boundary (Task 10.14.b) and avoids seeding
-sprint-base-derived content into a stable repo. Skipped repos are reported with
-Skipped = $true in RepositoryResults.
+written, honoring the stable-worktree boundary (Task 10.14.b).
 
 .PARAMETER WorktreeRoot
 Optional path to the current worktree root. Defaults to the git toplevel of the
@@ -49,29 +39,20 @@ stable-worktree skip decision.
 
 .OUTPUTS
 System.Management.Automation.PSCustomObject
-Returns a result object containing:
-  - Success (bool): Whether the operation completed successfully
-  - WorkspacePath (string): Path to the discovered workspace file
-  - BaseFilePath (string): Path to the rendered AGENTS.md base in SharedVSCode
-  - RepositoriesProcessed (int): Number of repositories processed
-  - RepositoryResults (array): Per-repository details
-  - Errors (array): Any errors encountered
+Returns a result object containing Success, WorkspacePath, the discovered base files,
+RepositoriesProcessed, RepositoryResults, and Errors.
 
 .EXAMPLE
-Build-AGENTSPerRepository
+Build-AgentSpecificPerRepository
 
-Discovers the sprint workspace from the current worktree and writes AGENTS.md for all
-sprint repositories from the SharedVSCode rendered Codex base.
+Discovers the sprint workspace and writes GEMINI.md and .github/copilot-instructions.md
+into every sprint repository from the SharedVSCode rendered agent-specific bases.
 
 .NOTES
 AI assisted using Powershell.instructions.md as guidelines.
-The rendered base (SharedVSCode/AGENTS.md) is produced by Render-AIAdapters; because the
-whole Dropbox tree carries a Cloud-Files reparse attribute, Render-AIAdapters' reparse
-guard (SC-0198) blocks in-place writes, so the base render is performed by invoking the
-renderer's generated-wrapper logic directly. This cmdlet only copies that base out.
 #>
 
-function Build-AGENTSPerRepository {
+function Build-AgentSpecificPerRepository {
   [CmdletBinding(SupportsShouldProcess = $true)]
   [OutputType([PSCustomObject])]
   param(
@@ -90,13 +71,18 @@ function Build-AGENTSPerRepository {
   )
 
   begin {
-    $fn = 'Build-AGENTSPerRepository'
-    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+    $fn = 'Build-AgentSpecificPerRepository'
+    $mn = 'ATAP.Utilities.BuildTooling.AiRendering.PowerShell'
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
-    # Snippet: Check and populate simple parameter
-    # Parameter: WorktreeRoot
+    # The agent-specific surfaces distributed to every repo. RelativePath is the
+    # repo-relative destination; a parent directory is created when needed.
+    $agentSpecificFiles = @(
+      [PSCustomObject]@{ Name = 'GEMINI.md'; RelativePath = 'GEMINI.md' }
+      [PSCustomObject]@{ Name = 'copilot-instructions.md'; RelativePath = '.github/copilot-instructions.md' }
+    )
+
     if ($null -eq $RepositoryContext -and
       (-not $PSBoundParameters.ContainsKey('WorktreeRoot') -or [string]::IsNullOrWhiteSpace($WorktreeRoot))) {
       try {
@@ -125,11 +111,10 @@ function Build-AGENTSPerRepository {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Using worktree root: $WorktreeRoot"
     }
 
-    # Initialize result object
     $result = [PSCustomObject]@{
       Success               = $false
       WorkspacePath         = $null
-      BaseFilePath          = $null
+      BaseFiles             = @()
       RepositoriesProcessed = 0
       RepositoryResults     = @()
       Errors                = @()
@@ -152,8 +137,6 @@ function Build-AGENTSPerRepository {
             throw "WorkspacePath does not exist: $WorkspacePath"
           }
         } else {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Searching for workspace file in: $parentDir"
-
           $workspaceFiles = @()
           $workspaceFiles += Get-ChildItem -Path $parentDir -Filter 'Overview.Sprint.????.code-workspace' -File -ErrorAction SilentlyContinue
           # Legacy compatibility only:
@@ -217,23 +200,29 @@ function Build-AGENTSPerRepository {
         }
         $sharedVSCodeFullPath = $sharedRepository.Path
       }
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "SharedVSCode worktree: $sharedVSCodeFullPath"
 
-      # Step 4: Locate the rendered shared core base AGENTS-base.md in the SharedVSCode
-      # worktree. Task 10.23 renders the shared core (Codex/Antigravity/Copilot) to the
-      # distinct filename AGENTS-base.md (analogous to CLAUDE-base.md) so this combiner can
-      # write the repo-root AGENTS.md without overwriting its own source.
-      $baseFilePath = Join-Path $sharedVSCodeFullPath 'AGENTS-base.md'
-      if (-not (Test-Path $baseFilePath -PathType Leaf)) {
-        throw "Rendered shared core base AGENTS-base.md not found at '$baseFilePath'. Render it first from canonical via Render-AIAdapters (Codex/shared target of ai.core.main-instructions.v1)."
+      # Step 4: Read the rendered agent-specific bases once.
+      $bases = @()
+      foreach ($spec in $agentSpecificFiles) {
+        $baseFilePath = Join-Path $sharedVSCodeFullPath $spec.RelativePath
+        if (-not (Test-Path -LiteralPath $baseFilePath -PathType Leaf)) {
+          throw "Rendered agent-specific base '$($spec.RelativePath)' not found at '$baseFilePath'. Render it first from canonical via Render-AIAdapters (ai.agent-specific.* records)."
+        }
+        $baseContent = Get-Content -LiteralPath $baseFilePath -Raw -ErrorAction Stop
+        if ($baseContent -match 'SourceId:\s*ai\.core\.main-instructions\.v1' -or
+          $baseContent -match '<!-- AI-CORE:BEGIN -->') {
+          throw "Rendered agent-specific base '$($spec.RelativePath)' contains the shared core body. The no-double-core invariant requires core instructions to live only in AGENTS.md."
+        }
+        $bases += [PSCustomObject]@{
+          Name         = $spec.Name
+          RelativePath = $spec.RelativePath
+          FullPath     = $baseFilePath
+          Content      = $baseContent
+        }
       }
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Shared core base AGENTS-base.md found at: $baseFilePath"
-      $result.BaseFilePath = $baseFilePath
+      $result.BaseFiles = @($bases | ForEach-Object { $_.FullPath })
 
-      # Read raw bytes so the per-repo copy is byte-identical to the rendered base.
-      $baseContent = Get-Content -Path $baseFilePath -Raw -ErrorAction Stop
-
-      # Step 5: Process each repository worktree
+      # Step 5: Distribute into every repository worktree.
       foreach ($repositoryEntry in $repositoryEntries) {
         if ($repositoryEntry.ResolutionError) {
           $errorMessage = $repositoryEntry.ResolutionError
@@ -248,19 +237,13 @@ function Build-AGENTSPerRepository {
         $repoResult = [PSCustomObject]@{
           Repository   = $repoName
           Path         = $repoFullPath
-          HasLocal     = $false
-          Success      = $false
           Skipped      = $false
-          Action       = $null
+          Files        = @()
           ErrorMessage = $null
         }
 
-        # Boundary guard: in a sprint context, never write AGENTS.md into a stable
-        # worktree. A repo with no sprint worktree this sprint is listed under its
-        # stable folder name; writing here would violate stable-worktree boundary
-        # rules and seed sprint-base-derived content into a stable repo. Skip it.
         if ($repositoryEntry.Skipped) {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Skipping stable worktree '$repoName' (no sprint worktree this sprint); AGENTS.md left untouched to honor stable-worktree boundary."
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Skipping stable worktree '$repoName' (no sprint worktree this sprint); agent-specific files left untouched to honor stable-worktree boundary."
           $repoResult.Skipped = $true
           $result.RepositoryResults += $repoResult
           $result.RepositoriesProcessed++
@@ -269,73 +252,51 @@ function Build-AGENTSPerRepository {
 
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Processing repository: $repoName"
 
-        try {
-          $agentsMdPath = Join-Path $repoFullPath 'AGENTS.md'
-
-          # Task 10.23: read the per-repo overlay. ai-local.md is the canonical per-repo
-          # file (the same one Build-CLAUDEPerRepository consumes); fall back to the legacy
-          # CLAUDE-local.md for repos not yet renamed. Reading it identically here keeps the
-          # AI-LOCAL block byte-identical to the CLAUDE.md local block.
-          $localFilePath = Join-Path $repoFullPath 'ai-local.md'
-          if (-not (Test-Path -LiteralPath $localFilePath -PathType Leaf)) {
-            $legacyLocal = Join-Path $repoFullPath 'CLAUDE-local.md'
-            if (Test-Path -LiteralPath $legacyLocal -PathType Leaf) {
-              $localFilePath = $legacyLocal
+        $fileResults = @()
+        foreach ($base in $bases) {
+          $fileResult = [PSCustomObject]@{
+            RelativePath = $base.RelativePath
+            Action       = $null
+            Success      = $false
+          }
+          try {
+            $destPath = Join-Path $repoFullPath ($base.RelativePath -replace '/', [IO.Path]::DirectorySeparatorChar)
+            $destDir = Split-Path -Path $destPath -Parent
+            if (-not (Test-Path -LiteralPath $destDir -PathType Container)) {
+              if ($PSCmdlet.ShouldProcess($destDir, 'Create parent directory')) {
+                New-Item -ItemType Directory -Path $destDir -Force -ErrorAction Stop | Out-Null
+              }
             }
-          }
-          $localContent = $null
-          if (Test-Path -LiteralPath $localFilePath -PathType Leaf) {
-            $localContent = Get-Content -LiteralPath $localFilePath -Raw -ErrorAction Stop
-            $repoResult.HasLocal = $true
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Found $(Split-Path $localFilePath -Leaf) for $repoName"
-          }
 
-          # Combine: AI-LOCAL block (repo-specific) then AI-CORE block (rendered base
-          # verbatim). Deterministic, non-timestamped sentinels make the AI-CORE block
-          # machine-recoverable for the Task 10.23.h core diff and keep the file
-          # byte-idempotent on re-run.
-          $combinedParts = [System.Collections.Generic.List[string]]::new()
-          $combinedParts.Add('<!-- AI-LOCAL:BEGIN -->')
-          if ($localContent) { $combinedParts.Add($localContent.TrimEnd()) }
-          $combinedParts.Add('<!-- AI-LOCAL:END -->')
-          $combinedParts.Add('<!-- AI-CORE:BEGIN -->')
-          $combinedParts.Add($baseContent.TrimEnd())
-          $combinedParts.Add('<!-- AI-CORE:END -->')
-          $combinedParts.Add('')
-          $combinedContent = ($combinedParts -join "`n")
+            $existing = if (Test-Path -LiteralPath $destPath -PathType Leaf) {
+              Get-Content -LiteralPath $destPath -Raw -ErrorAction Stop
+            } else { $null }
 
-          # Idempotent write: a re-run with an unchanged base and overlay is a true no-op
-          # (Action=unchanged), and avoids rewriting a file a cloud-sync provider may hold open.
-          $existing = if (Test-Path -LiteralPath $agentsMdPath -PathType Leaf) {
-            Get-Content -LiteralPath $agentsMdPath -Raw -ErrorAction Stop
-          } else { $null }
-
-          if ($null -ne $existing -and $existing -ceq $combinedContent) {
-            $repoResult.Action = 'unchanged'
-            $repoResult.Success = $true
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "AGENTS.md unchanged for $repoName"
-          } elseif ($PSCmdlet.ShouldProcess($agentsMdPath, 'Write combined AGENTS.md (core + ai-local)')) {
-            # -NoNewline preserves byte-for-byte content; the trailing newline is already
-            # in $combinedContent from the final empty element.
-            Set-Content -LiteralPath $agentsMdPath -Value $combinedContent -Encoding UTF8 -NoNewline -ErrorAction Stop
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Wrote AGENTS.md for $repoName"
-            $repoResult.Action = 'written'
-            $repoResult.Success = $true
+            if ($null -ne $existing -and $existing -ceq $base.Content) {
+              $fileResult.Action = 'unchanged'
+              $fileResult.Success = $true
+            } elseif ($PSCmdlet.ShouldProcess($destPath, "Write agent-specific $($base.Name)")) {
+              Set-Content -LiteralPath $destPath -Value $base.Content -Encoding UTF8 -NoNewline -ErrorAction Stop
+              $fileResult.Action = 'written'
+              $fileResult.Success = $true
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Wrote $($base.RelativePath) for $repoName"
+            }
+          } catch {
+            $errorMessage = "Failed to write '$($base.RelativePath)' for '$repoName': $($_.Exception.Message)"
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+            $result.Errors += $errorMessage
           }
-        } catch {
-          $errorMessage = "Failed to build AGENTS.md for '$repoName': $($_.Exception.Message)"
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-          $repoResult.ErrorMessage = $errorMessage
-          $result.Errors += $errorMessage
+          $fileResults += $fileResult
         }
 
+        $repoResult.Files = $fileResults
         $result.RepositoryResults += $repoResult
         $result.RepositoriesProcessed++
       }
 
       $result.Success = ($result.Errors.Count -eq 0)
     } catch {
-      $errorMessage = "Build-AGENTSPerRepository failed: $($_.Exception.Message)"
+      $errorMessage = "Build-AgentSpecificPerRepository failed: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       $result.Errors += $errorMessage
       throw

@@ -39,7 +39,7 @@ function Reset-DownstreamToSharedVSCodeMain {
 
   begin {
     $fn = $MyInvocation.MyCommand.Name
-    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+    $mn = 'ATAP.Utilities.BuildTooling.AiRendering.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
   }
 

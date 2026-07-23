@@ -32,7 +32,22 @@ BeforeAll {
     }
 
   $script:basenames = $script:fileFunctionMap.BaseName | Sort-Object
-  $script:declared = (Import-PowerShellDataFile $script:manifestPath).FunctionsToExport | Sort-Object
+  $script:manifest = Import-PowerShellDataFile $script:manifestPath
+  $script:declared = $script:manifest.FunctionsToExport | Sort-Object
+  $script:childDeclared = @(
+    foreach ($requiredModule in @($script:manifest.RequiredModules)) {
+      $requiredName = [string] $requiredModule.ModuleName
+      if ($requiredName -notlike 'ATAP.Utilities.BuildTooling.*.PowerShell') {
+        continue
+      }
+      $childManifestPath = Join-Path (
+        Split-Path -Parent $script:moduleRoot
+      ) "$requiredName\$requiredName.psd1"
+      if (Test-Path -LiteralPath $childManifestPath -PathType Leaf) {
+        (Import-PowerShellDataFile $childManifestPath).FunctionsToExport
+      }
+    }
+  ) | Sort-Object -Unique
 }
 
 Describe 'BuildTooling.PowerShell module export consistency' {
@@ -50,9 +65,16 @@ produces a phantom export.
     }
   }
 
-  Context 'Committed manifest FunctionsToExport matches the public file set' {
-    It 'declares exactly one export per public file basename (no extras, no omissions)' {
-      Compare-Object -ReferenceObject $script:basenames -DifferenceObject $script:declared |
+  Context 'Committed manifest FunctionsToExport covers parent and compatibility children' {
+    It 'declares every remaining parent public file basename' {
+      @($script:basenames | Where-Object { $_ -notin $script:declared }) |
+        Should -BeNullOrEmpty
+    }
+
+    It 'sources every compatibility-only export from a required child manifest' {
+      $compatibilityExports = @($script:declared | Where-Object { $_ -notin $script:basenames })
+
+      @($compatibilityExports | Where-Object { $_ -notin $script:childDeclared }) |
         Should -BeNullOrEmpty
     }
   }

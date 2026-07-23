@@ -55,3 +55,28 @@ The parent psm1 now creates contract-preserving proxies for an ordered list of c
 ## Consumer evidence
 
 Eight SharedVSCode canonical `.ai` files referenced GitWorktree commands. Seven are command-name-only consumers and require no edit because the parent compatibility surface remains stable. The canonical `git-commit` skill contained two explicit parent source paths; both now point to the GitWorktree child. The governed render updated all four agent adapters, a second render changed zero files, and instruction drift reports zero drift and zero missing targets.
+
+## Release, deployment, and rollback evidence
+
+GitWorktree 0.1.2 passed its 39/39 source gate, traversed all five BuildMaster
+tiers, and passed 15/15 independent Stable tests. The immutable Stable package
+SHA-256 is
+`A7F7C6CD876EF37C6F392AF553DAB7A377F2F7F6C5845BEFC51A6DEA05BF5884`.
+It is installed AllUsers at
+`C:\Program Files\PowerShell\Modules\ATAP.Utilities.BuildTooling.GitWorktree.PowerShell\0.1.2`
+and exposes fourteen commands in a fresh process. Versions 0.1.0 and 0.1.1 are
+burned; the rollback child is the retained 0.1.2 package itself until a later
+accepted release exists.
+
+The compatibility parent 0.1.52 passed all BuildMaster stages and an independent
+Stable matrix of 610 passed, 0 failed, and 4 skipped tests. Its Stable SHA-256 is
+`0D7FDDF9989DC1A4DB352AAC8CE01F978354CB854DCAA034F4DEA44BE535E272`.
+The exact package is installed AllUsers at
+`C:\Program Files\PowerShell\Modules\ATAP.Utilities.BuildTooling.PowerShell\0.1.52`;
+a fresh consumer process sees 178 exported functions, six aliases, and the
+GitWorktree 0.1.2 dependency with fourteen commands. Parent versions 0.1.50 and
+0.1.51 are burned. Parent 0.1.49 remains the pre-GitWorktree rollback release.
+
+The three private parent dispatch shims are explicit migration debt. The next
+authorized serialized card is Task 13.72.2 PlanningSession; its consumer moves
+must decide when `Resolve-PlanningWorktreeRoot` can be removed from the parent.

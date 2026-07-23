@@ -4,6 +4,8 @@
 
 - Made private GitWorktree dispatch shims explicitly restore the deployed child
   when an isolated test or consumer unloads it.
+- Accepted after all BuildMaster stages, an independent Stable matrix of 610
+  passed/0 failed/4 skipped, and an AllUsers fresh-process surface validation.
 
 # 0.1.51
 
@@ -11,12 +13,15 @@
   remaining parent Sprint and scope-creep commands.
 - Updated parent tests to load moved GitWorktree implementations from their
   canonical child source paths.
+- Burned after independent Stable testing exposed three load-order failures.
 
 # 0.1.50
 
 - Re-exported the GitWorktree child through the parent compatibility surface.
 - Raised the GitWorktree dependency floor to the deployed 0.1.2 release, whose
   Stable package preserves all fourteen child exports.
+- Burned after the Development source gate reported 22 stale-path/private-helper
+  failures.
 
 # 0.1.49
 

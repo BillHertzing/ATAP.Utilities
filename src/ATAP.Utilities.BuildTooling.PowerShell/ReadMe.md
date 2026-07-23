@@ -24,6 +24,11 @@ The compatibility parent imports the deployed GitWorktree child at minimum
 version 0.1.2 and re-exports the legacy Git/worktree command surface while the
 module-family extraction remains in progress.
 
+Parent 0.1.52 is the accepted Stable/AllUsers compatibility release for this
+iteration (Stable SHA-256
+`0D7FDDF9989DC1A4DB352AAC8CE01F978354CB854DCAA034F4DEA44BE535E272`).
+Parent 0.1.49 remains the pre-GitWorktree rollback; 0.1.50 and 0.1.51 are burned.
+
 Full-repository C# MSBuild property audits live outside this module at
 `tests\RepoHealth` and run through `Build\Invoke-RepoHealthGate.ps1`. They are
 not part of `module.build.ps1` for this PowerShell module because they enumerate

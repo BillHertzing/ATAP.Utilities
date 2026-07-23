@@ -4,6 +4,11 @@ This child owns Git repository/worktree discovery, validation, hooks, junction s
 
 It depends on `ATAP.Utilities.BuildTooling.Common.PowerShell` 0.1.5 or later for repository-root and workspace helpers. Implementation moves are serialized in Task 13.72.1 batches; no other extraction owns these files.
 
+Version 0.1.2 is the accepted Stable/AllUsers release. Its immutable Stable
+package SHA-256 is
+`A7F7C6CD876EF37C6F392AF553DAB7A377F2F7F6C5845BEFC51A6DEA05BF5884`.
+Versions 0.1.0 and 0.1.1 are burned and must not be selected as rollback targets.
+
 ## Functional area
 
 PowerShell Build & Packaging - START HERE: `SolutionDocumentation/PowerShell-Modules-Build-Process.md`.

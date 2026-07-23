@@ -58,7 +58,8 @@
         @{ModuleName = 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell'; ModuleVersion = '0.1.3'; },
         @{ModuleName = 'ATAP.Utilities.BuildTooling.PlanningSession.PowerShell'; ModuleVersion = '0.1.2'; },
         @{ModuleName = 'ATAP.Utilities.BuildTooling.AiRendering.PowerShell'; ModuleVersion = '0.1.0'; },
-        @{ModuleName = 'ATAP.Utilities.BuildTooling.Secrets.PowerShell'; ModuleVersion = '0.1.0'; })
+        @{ModuleName = 'ATAP.Utilities.BuildTooling.Secrets.PowerShell'; ModuleVersion = '0.1.0'; },
+        @{ModuleName = 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'; ModuleVersion = '0.1.0'; })
 
     # Assemblies that must be loaded prior to importing this module
     # RequiredAssemblies = @()
@@ -108,6 +109,7 @@
     'Initialize-BWSAccessToken', 'Initialize-BWSCredentialDirectory',
     'Initialize-ProGetSqlServiceLogin',
     'Invoke-BuildToolingPesterDebug', 'Invoke-BWSReadOnlyTokenBootstrap', 'Invoke-DotnetBuildWithRetry',
+    'Invoke-DotnetDatabaseNuGetPush', 'Invoke-DotnetNuGetPush',
     'Invoke-FailureAcknowledgedGate', 'Invoke-GitCommit',
     'Invoke-GitPostCheckoutHook', 'Invoke-GitPostCommitHook', 'Invoke-GitPreCommitHook',
     'Invoke-ModuleBuildWithRetry', 'Invoke-MSBuildWithLists',

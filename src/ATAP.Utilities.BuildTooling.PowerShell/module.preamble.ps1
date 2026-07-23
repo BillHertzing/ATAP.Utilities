@@ -5,6 +5,7 @@ $childModuleNames = @(
     'ATAP.Utilities.BuildTooling.PlanningSession.PowerShell'
     'ATAP.Utilities.BuildTooling.AiRendering.PowerShell'
     'ATAP.Utilities.BuildTooling.Secrets.PowerShell'
+    'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
 )
 foreach ($childModuleName in $childModuleNames) {
     try {
@@ -13,7 +14,16 @@ foreach ($childModuleName in $childModuleNames) {
     } catch {
         # Source worktrees retain sibling manifests for local development.
         $childManifest = Join-Path $PSScriptRoot "..\$childModuleName\$childModuleName.psd1"
-        $childModule = Import-Module -Name $childManifest -Force -PassThru -ErrorAction Stop
+        try {
+            $childModule = Import-Module -Name $childManifest -Force -PassThru -ErrorAction Stop
+        } catch {
+            # During a dependency bootstrap, the sibling's next-version
+            # RequiredModules may not be installed yet. Loading its root module
+            # keeps source-worktree orchestration available; packaged imports
+            # still enforce the manifest dependency graph.
+            $childRootModule = Join-Path $PSScriptRoot "..\$childModuleName\$childModuleName.psm1"
+            $childModule = Import-Module -Name $childRootModule -Force -PassThru -ErrorAction Stop
+        }
     }
     foreach ($childCommand in @(Get-Command -Module $childModule.Name -CommandType Function)) {
         $childCommandName = $childCommand.Name

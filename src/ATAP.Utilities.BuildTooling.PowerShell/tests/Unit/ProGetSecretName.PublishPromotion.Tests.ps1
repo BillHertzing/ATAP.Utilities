@@ -20,11 +20,14 @@ BeforeDiscovery {
 
 BeforeAll {
   $script:publicDir = Join-Path $PSScriptRoot '..\..\public' | Resolve-Path
+  $script:proGetPublicDir = Join-Path $PSScriptRoot '..\..\..\ATAP.Utilities.BuildTooling.ProGet.PowerShell\public' | Resolve-Path
+  $script:parentCommands = @('Invoke-PromotedModuleTests', 'New-HostSettingsForPackageRepositoryFeeds')
 }
 
 Describe 'Task 13.62 publish and promotion SecretName contract' -Tag 'Unit', 'Security' {
   It '<Name> exposes only the SecretName boundary' -ForEach ($script:targets | ForEach-Object { @{ Name = $_ } }) {
-    $path = Join-Path $script:publicDir "$Name.ps1"
+    $commandRoot = if ($Name -in $script:parentCommands) { $script:publicDir } else { $script:proGetPublicDir }
+    $path = Join-Path $commandRoot "$Name.ps1"
     $tokens = $null
     $errors = $null
     $ast = [Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$errors)
@@ -37,14 +40,16 @@ Describe 'Task 13.62 publish and promotion SecretName contract' -Tag 'Unit', 'Se
   }
 
   It '<Name> has no ProGet API-key environment fallback' -ForEach ($script:targets | ForEach-Object { @{ Name = $_ } }) {
-    $content = Get-Content -LiteralPath (Join-Path $script:publicDir "$Name.ps1") -Raw
+    $commandRoot = if ($Name -in $script:parentCommands) { $script:publicDir } else { $script:proGetPublicDir }
+    $content = Get-Content -LiteralPath (Join-Path $commandRoot "$Name.ps1") -Raw
     $content | Should -Not -Match '(?i)PROGET_(ADMIN|BUILDMASTER)_API_KEY'
     $content | Should -Not -Match '(?i)\$env:PROGET[^\r\n]*API.?KEY'
   }
 
   It 'uses the BuildMaster publishing SecretName as the fail-closed default' {
     foreach ($name in $script:targets) {
-      $content = Get-Content -LiteralPath (Join-Path $script:publicDir "$name.ps1") -Raw
+      $commandRoot = if ($name -in $script:parentCommands) { $script:publicDir } else { $script:proGetPublicDir }
+      $content = Get-Content -LiteralPath (Join-Path $commandRoot "$name.ps1") -Raw
       $content | Should -Match "ProGet\.BuildMaster\.API\.Key"
     }
   }

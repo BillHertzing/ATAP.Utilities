@@ -9,11 +9,11 @@
     'ATAP.Utilities.BuildTooling.PlanningSession.PowerShell'
     'ATAP.Utilities.BuildTooling.AiRendering.PowerShell'
     'ATAP.Utilities.BuildTooling.Secrets.PowerShell'
-    'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'
-    'ATAP.Utilities.BuildTooling.DatabasePackaging.PowerShell'
     'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
-    'ATAP.Utilities.BuildTooling.BuildMaster.PowerShell'
     'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
+    'ATAP.Utilities.BuildTooling.DatabasePackaging.PowerShell'
+    'ATAP.Utilities.BuildTooling.BuildMaster.PowerShell'
+    'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'
     'ATAP.Utilities.BuildTooling.PowerShell'
   )
   Defaults = @{
@@ -30,7 +30,7 @@
     @{ Name = 'ATAP.Utilities.BuildTooling.Secrets.PowerShell'; Guid = 'FC569DA2-E693-4E23-946E-2EE9F82BA43E'; Dependencies = @('ATAP.Utilities.BuildTooling.Common.PowerShell'); MinimumVersions = @{ 'ATAP.Utilities.BuildTooling.Common.PowerShell' = '0.1.0' } }
     @{ Name = 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'; Guid = '7B1D7C2B-D54C-473B-B7A5-0A70BBD67AFB'; Dependencies = @('ATAP.Utilities.BuildTooling.Common.PowerShell'); MinimumVersions = @{ 'ATAP.Utilities.BuildTooling.Common.PowerShell' = '0.1.0' } }
     @{ Name = 'ATAP.Utilities.BuildTooling.DatabasePackaging.PowerShell'; Guid = 'F2681E48-6015-42D6-9D16-F2308CE7DE1A'; Dependencies = @('ATAP.Utilities.BuildTooling.Common.PowerShell'); MinimumVersions = @{ 'ATAP.Utilities.BuildTooling.Common.PowerShell' = '0.1.0' } }
-    @{ Name = 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'; Guid = '35EE8B2A-E1D7-4668-8B4A-A6E9F5767303'; Dependencies = @('ATAP.Utilities.BuildTooling.Common.PowerShell'); MinimumVersions = @{ 'ATAP.Utilities.BuildTooling.Common.PowerShell' = '0.1.0' } }
+    @{ Name = 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'; Guid = '35EE8B2A-E1D7-4668-8B4A-A6E9F5767303'; Dependencies = @('ATAP.Utilities.BuildTooling.Common.PowerShell', 'ATAP.Utilities.BuildTooling.AiRendering.PowerShell', 'ATAP.Utilities.BuildTooling.Secrets.PowerShell'); MinimumVersions = @{ 'ATAP.Utilities.BuildTooling.Common.PowerShell' = '0.1.7'; 'ATAP.Utilities.BuildTooling.AiRendering.PowerShell' = '0.1.0'; 'ATAP.Utilities.BuildTooling.Secrets.PowerShell' = '0.1.0' } }
     @{ Name = 'ATAP.Utilities.BuildTooling.BuildMaster.PowerShell'; Guid = '4196BC5E-7545-42A1-8BFD-CF3D0C5FD72E'; Dependencies = @('ATAP.Utilities.BuildTooling.Common.PowerShell'); MinimumVersions = @{ 'ATAP.Utilities.BuildTooling.Common.PowerShell' = '0.1.0' } }
     @{ Name = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'; Guid = 'A2B1C552-FD36-4DCE-92B8-0A76BD4FA92F'; Dependencies = @('ATAP.Utilities.BuildTooling.Common.PowerShell'); MinimumVersions = @{ 'ATAP.Utilities.BuildTooling.Common.PowerShell' = '0.1.0' } }
     @{ Name = 'ATAP.Utilities.BuildTooling.PowerShell'; Guid = 'DBD8663F-C30C-4702-B97A-5365529B4D15'; Dependencies = @('ATAP.Utilities.BuildTooling.PesterScaffolding.PowerShell', 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell', 'ATAP.Utilities.BuildTooling.PlanningSession.PowerShell', 'ATAP.Utilities.BuildTooling.AiRendering.PowerShell'); MinimumVersions = @{ 'ATAP.Utilities.BuildTooling.PesterScaffolding.PowerShell' = '0.1.1'; 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell' = '0.1.3'; 'ATAP.Utilities.BuildTooling.PlanningSession.PowerShell' = '0.1.2'; 'ATAP.Utilities.BuildTooling.AiRendering.PowerShell' = '0.1.0' } }

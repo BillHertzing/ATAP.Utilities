@@ -7,10 +7,12 @@
 # implementations.
 
 BeforeAll {
-  $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
+  $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+  $publicDir = Join-Path $moduleRoot 'public'
+  $proGetPublicDir = Join-Path (Split-Path -Parent $moduleRoot) 'ATAP.Utilities.BuildTooling.ProGet.PowerShell\public'
 
-  . (Join-Path $publicDir 'Get-TierOrder.ps1')
-  . (Join-Path $publicDir 'Test-PromotionWithinCeiling.ps1')
+  . (Join-Path $proGetPublicDir 'Get-TierOrder.ps1')
+  . (Join-Path $proGetPublicDir 'Test-PromotionWithinCeiling.ps1')
   . (Join-Path $publicDir 'Start-BuildMasterModulePipelineBatch.ps1')
 
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {

@@ -86,6 +86,7 @@ $script:_bootstrapCmdlets = @(
 # session definitions cannot leak into the package being built.
 $script:_bootstrapModuleByCommand = @{
   'Test-FailureAcknowledgedGate' = 'ATAP.Utilities.BuildTooling.AiRendering.PowerShell'
+  'Publish-PSModuleToProGetFeed' = 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
 }
 
 foreach ($cmdletName in $script:_bootstrapCmdlets) {

@@ -4,10 +4,11 @@ BeforeAll {
   $script:moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
   $script:publicDir = Join-Path $script:moduleRoot 'public'
   $script:privateDir = Join-Path $script:moduleRoot 'private'
+  $script:proGetPublicDir = Join-Path (Split-Path -Parent $script:moduleRoot) 'ATAP.Utilities.BuildTooling.ProGet.PowerShell\public'
 
   . (Join-Path $script:publicDir 'Resolve-FeatureSlug.ps1')
   . (Join-Path $script:privateDir 'Get-CeilingFromPrereleaseLabel.ps1')
-  . (Join-Path $script:privateDir 'Get-CurrentTierFromStage.ps1')
+  . (Join-Path $script:proGetPublicDir 'Get-CurrentTierFromStage.ps1')
   . (Join-Path $script:publicDir 'Get-BuildContext.ps1')
 
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {

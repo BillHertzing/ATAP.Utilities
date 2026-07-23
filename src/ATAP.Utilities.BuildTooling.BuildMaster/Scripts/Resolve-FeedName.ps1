@@ -131,7 +131,7 @@ function Resolve-FeedName {
           return $null
         }
         $repoRoot = Get-RepositoryRootLocal
-        $resolverPath = Join-Path $repoRoot 'src\ATAP.Utilities.BuildTooling.PowerShell\private\Resolve-ProGetFeedFromSettings.ps1'
+        $resolverPath = Join-Path $repoRoot 'src\ATAP.Utilities.BuildTooling.ProGet.PowerShell\public\Resolve-ProGetFeedFromSettings.ps1'
         if (-not (Test-Path -LiteralPath $resolverPath -PathType Leaf)) {
           throw "Resolve-FeedName : Resolve-ProGetFeedFromSettings.ps1 not found at '$resolverPath'."
         }

@@ -4,6 +4,7 @@ BeforeDiscovery {
   $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
   $repositoryRoot = Split-Path -Parent (Split-Path -Parent $moduleRoot)
   $publicRoot = Join-Path $moduleRoot 'public'
+  $proGetPublicRoot = Join-Path (Split-Path -Parent $moduleRoot) 'ATAP.Utilities.BuildTooling.ProGet.PowerShell\public'
 
   $proGetCommandNames = @(
     'Invoke-PairedTierPromotion'
@@ -32,9 +33,14 @@ BeforeDiscovery {
 
   $commandCases = @(
     foreach ($commandName in $proGetCommandNames) {
+      $commandRoot = if ($commandName -in @('Invoke-PromotedModuleTests', 'New-HostSettingsForPackageRepositoryFeeds')) {
+        $publicRoot
+      } else {
+        $proGetPublicRoot
+      }
       @{
         CommandName = $commandName
-        CommandFile = Join-Path $publicRoot "$commandName.ps1"
+        CommandFile = Join-Path $commandRoot "$commandName.ps1"
       }
     }
   )

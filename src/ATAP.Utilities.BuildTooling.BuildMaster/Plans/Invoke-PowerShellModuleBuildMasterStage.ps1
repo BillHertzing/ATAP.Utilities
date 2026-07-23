@@ -932,10 +932,14 @@ function Invoke-PowerShellModuleBuildMasterStage {
     function Resolve-BuildToolingFunctionFile {
       [CmdletBinding()]
       [OutputType([string])]
-      param([Parameter(Mandatory)][string]$RelativePath)
+      param(
+        [Parameter(Mandatory)][string]$RelativePath,
+        [string]$ModuleName = 'ATAP.Utilities.BuildTooling.PowerShell'
+      )
       BEGIN { $f = 'Resolve-BuildToolingFunctionFile'; $m = 'ATAP.Utilities.BuildTooling.BuildMaster' }
       PROCESS {
-        $path = Join-Path -Path $script:buildToolingRoot -ChildPath $RelativePath
+        $moduleRoot = Join-Path -Path (Split-Path -Parent $script:buildToolingRoot) -ChildPath $ModuleName
+        $path = Join-Path -Path $moduleRoot -ChildPath $RelativePath
         if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
           Write-PSFMessage -FunctionName $f -ModuleName $m -Level Error -Message "Required BuildTooling function file not found: $path"
           throw "Required BuildTooling function file not found: $path"
@@ -946,14 +950,14 @@ function Invoke-PowerShellModuleBuildMasterStage {
     }
 
     . (Resolve-BuildToolingFunctionFile -RelativePath 'private/Get-CeilingFromPrereleaseLabel.ps1')
-    . (Resolve-BuildToolingFunctionFile -RelativePath 'private/Get-CurrentTierFromStage.ps1')
-    . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Get-TierOrder.ps1')
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Get-CurrentTierFromStage.ps1')
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Get-TierOrder.ps1')
     . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Resolve-FeatureSlug.ps1')
-    . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Test-PromotionWithinCeiling.ps1')
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Test-PromotionWithinCeiling.ps1')
     . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Get-BuildContext.ps1')
     . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Invoke-ModuleBuildWithRetry.ps1')
-    . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Move-ProGetPackageInterTier.ps1')
-    . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Promote-ProGetPackage.ps1')
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Move-ProGetPackageInterTier.ps1')
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Promote-ProGetPackage.ps1')
     . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Invoke-PSModulePesterTests.ps1')
     . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Invoke-PromotedModuleTests.ps1')
 

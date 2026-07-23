@@ -877,10 +877,14 @@ function Invoke-DatabasePackageBuildMasterStage {
     function Resolve-BuildToolingFunctionFile {
       [CmdletBinding()]
       [OutputType([string])]
-      param([Parameter(Mandatory)][string]$RelativePath)
+      param(
+        [Parameter(Mandatory)][string]$RelativePath,
+        [string]$ModuleName = 'ATAP.Utilities.BuildTooling.PowerShell'
+      )
       BEGIN { $f = 'Resolve-BuildToolingFunctionFile'; $m = 'ATAP.Utilities.BuildTooling.BuildMaster' }
       PROCESS {
-        $path = Join-Path -Path $script:buildToolingRoot -ChildPath $RelativePath
+        $moduleRoot = Join-Path -Path (Split-Path -Parent $script:buildToolingRoot) -ChildPath $ModuleName
+        $path = Join-Path -Path $moduleRoot -ChildPath $RelativePath
         if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
           Write-PSFMessage -FunctionName $f -ModuleName $m -Level Error -Message "Required BuildTooling function file not found: $path"
           throw "Required BuildTooling function file not found: $path"
@@ -896,10 +900,10 @@ function Invoke-DatabasePackageBuildMasterStage {
       . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Get-DatabasePackageBuildContext.ps1')
     }
     if (-not (Get-Command -Name Publish-DatabaseChangePackageToProGet -ErrorAction SilentlyContinue)) {
-      . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Publish-DatabaseChangePackageToProGet.ps1')
+      . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Publish-DatabaseChangePackageToProGet.ps1')
     }
     if (-not (Get-Command -Name Promote-DatabaseChangePackage -ErrorAction SilentlyContinue)) {
-      . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Promote-DatabaseChangePackage.ps1')
+      . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Promote-DatabaseChangePackage.ps1')
     }
 
     # New-DatabaseChangePackage and the rehearsal/apply cmdlets live in the

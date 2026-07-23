@@ -181,4 +181,4 @@ the AceCommander copy must not be treated as an independent source of truth.
 - [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md) — why
   Integration-and-above must be reproducible.
 - `Set-FloatingPackagePins` — the engine
-  (`src/ATAP.Utilities.BuildTooling.PowerShell/public/Set-FloatingPackagePins.ps1`).
+  (`src/ATAP.Utilities.BuildTooling.ProGet.PowerShell/public/Set-FloatingPackagePins.ps1`).

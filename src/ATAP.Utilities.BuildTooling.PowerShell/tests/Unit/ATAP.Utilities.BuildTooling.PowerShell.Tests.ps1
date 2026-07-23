@@ -96,5 +96,14 @@ produces a phantom export.
       Get-Command -Module 'ATAP.Utilities.BuildTooling.PowerShell' -Name 'Test-ProGetFeedSet' -ErrorAction SilentlyContinue |
         Should -Not -BeNullOrEmpty
     }
+
+    It 'forwards named arguments without adding a null positional argument' {
+      $descriptor = ATAP.Utilities.BuildTooling.PowerShell\Get-DbConnectionStringSecretDescriptor `
+        -SecretName 'dbConnectionString.ATAPUtilities.sql01.Production'
+
+      $descriptor.SecretName | Should -Be 'dbConnectionString.ATAPUtilities.sql01.Production'
+      $descriptor.Environment | Should -Be 'Production'
+      $descriptor.Classification | Should -Be 'credentialed'
+    }
   }
 }

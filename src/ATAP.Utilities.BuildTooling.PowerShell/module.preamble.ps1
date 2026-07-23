@@ -28,7 +28,11 @@ process
 {
     & $childModuleProxy {
         param($commandName, $boundParameters, $remainingArguments)
-        & $commandName @boundParameters @remainingArguments
+        if ($null -eq $remainingArguments -or $remainingArguments.Count -eq 0) {
+            & $commandName @boundParameters
+        } else {
+            & $commandName @boundParameters @remainingArguments
+        }
     } $childCommandName $PSBoundParameters $args
 }
 '@

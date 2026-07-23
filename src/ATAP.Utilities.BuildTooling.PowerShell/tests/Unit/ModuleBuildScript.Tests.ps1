@@ -45,4 +45,13 @@ Describe 'module.build.ps1 package staging contract' {
     $text | Should -Match 'if \(\$null -eq \$functionAst\.Body\.ParamBlock\)'
     $text | Should -Not -Match "GetCommandName\(\) -in @\('Set-Alias', 'New-Alias'\)"
   }
+
+  It 'declares the legacy BWS compatibility names as function Alias metadata that survives package flattening' {
+    $moduleRoot = Split-Path -Parent $script:moduleBuildPath
+    $getSource = Get-Content -LiteralPath (Join-Path $moduleRoot 'src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-BWSAccessToken.ps1') -Raw
+    $initializeSource = Get-Content -LiteralPath (Join-Path $moduleRoot 'src\ATAP.Utilities.BuildTooling.PowerShell\public\Initialize-BWSAccessToken.ps1') -Raw
+
+    $getSource | Should -Match "\[Alias\('Get-ServiceAccountBWSAccessToken'\)\]"
+    $initializeSource | Should -Match "\[Alias\('Initialize-ServiceAccountBWSAccessToken'\)\]"
+  }
 }

@@ -61,6 +61,7 @@ https://github.com/whertzing/ATAP.Utilities
 #>
 function Get-BWSAccessToken {
   [CmdletBinding()]
+  [Alias('Get-ServiceAccountBWSAccessToken')]
   [OutputType([System.Management.Automation.PSCredential])]
   param(
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]

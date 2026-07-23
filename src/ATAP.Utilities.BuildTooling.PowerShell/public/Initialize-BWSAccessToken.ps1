@@ -64,6 +64,7 @@ https://github.com/whertzing/ATAP.Utilities
 #>
 function Initialize-BWSAccessToken {
   [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+  [Alias('Initialize-ServiceAccountBWSAccessToken')]
   [OutputType([PSCustomObject])]
   param(
     [Parameter(Mandatory = $true, Position = 0)]

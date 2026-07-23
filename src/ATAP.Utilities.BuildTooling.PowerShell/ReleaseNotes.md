@@ -1,5 +1,15 @@
 # Production Release Notes in Chronological order
 
+# 0.1.54
+
+- Re-exported nine AiRendering commands through the compatibility parent while
+  moving their implementations, tests, and failure-acknowledgement schema into
+  the independently released AiRendering 0.1.0 child.
+- Preserved the exact 200-function legacy parent manifest and exposed two
+  additional child-only commands through direct child import.
+- Rewired the source bootstrap gate to the AiRendering child so clean
+  BuildMaster builds no longer depend on a removed parent source file.
+
 # 0.1.53
 
 - Re-exported the three PlanningSession commands through the compatibility

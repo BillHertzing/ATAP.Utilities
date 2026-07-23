@@ -37,6 +37,14 @@ Describe 'module.build.ps1 package staging contract' {
     $text | Should -Match '\$script:OutputRoot = \(\$resolvedOutputRoot'
   }
 
+  It 'bootstraps the failure-acknowledgement gate from the AiRendering child source' {
+    $text = Get-Content -LiteralPath $script:moduleBuildPath -Raw
+
+    $text | Should -Match "'Test-FailureAcknowledgedGate'\s*=\s*'ATAP\.Utilities\.BuildTooling\.AiRendering\.PowerShell'"
+    $text | Should -Match '\$bootstrapModuleName'
+    $text | Should -Not -Match "\$script:_bootstrapPublicDir.+ATAP\.Utilities\.BuildTooling\.PowerShell"
+  }
+
   It 'derives exported aliases from the source manifest and public function Alias attributes only' {
     $text = Get-Content -LiteralPath $script:moduleBuildPath -Raw
 

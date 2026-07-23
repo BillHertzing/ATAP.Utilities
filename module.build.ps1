@@ -76,11 +76,20 @@ $script:_bootstrapCmdlets = @(
 # BuildTooling may already be installed or imported, but bootstrap builds must use
 # the functions in this source worktree. Dot-source them every time so stale
 # session definitions cannot leak into the package being built.
-$script:_bootstrapPublicDir = `
-  (Join-Path -Path $resolvedModulePath -ChildPath 'ATAP.Utilities.BuildTooling.PowerShell\public')
+$script:_bootstrapModuleByCommand = @{
+  'Test-FailureAcknowledgedGate' = 'ATAP.Utilities.BuildTooling.AiRendering.PowerShell'
+}
 
 foreach ($cmdletName in $script:_bootstrapCmdlets) {
-  $candidatePath = Join-Path $script:_bootstrapPublicDir "$cmdletName.ps1"
+  $bootstrapModuleName = if ($script:_bootstrapModuleByCommand.ContainsKey($cmdletName)) {
+    $script:_bootstrapModuleByCommand[$cmdletName]
+  } else {
+    'ATAP.Utilities.BuildTooling.PowerShell'
+  }
+  $bootstrapPublicDir = Join-Path -Path $resolvedModulePath -ChildPath (
+    Join-Path -Path $bootstrapModuleName -ChildPath 'public'
+  )
+  $candidatePath = Join-Path $bootstrapPublicDir "$cmdletName.ps1"
   if (Test-Path -LiteralPath $candidatePath -PathType Leaf) {
     . $candidatePath
   } else {

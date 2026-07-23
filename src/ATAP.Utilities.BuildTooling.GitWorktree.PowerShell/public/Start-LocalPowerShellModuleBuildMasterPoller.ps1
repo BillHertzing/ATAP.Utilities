@@ -19,51 +19,6 @@ function Resolve-LocalPowerShellModulePollerRepoRoot {
   return (Resolve-Path -LiteralPath $RepoRoot -ErrorAction Stop).ProviderPath
 }
 
-function Invoke-LocalPowerShellModulePollerGit {
-  [CmdletBinding()]
-  [OutputType([string[]])]
-  param(
-    [Parameter(Mandatory = $true)]
-    [ValidateNotNullOrEmpty()]
-    [string]$RepoRoot,
-
-    [Parameter(Mandatory = $true)]
-    [ValidateNotNullOrEmpty()]
-    [string[]]$Arguments
-  )
-
-  $output = & git -C $RepoRoot @Arguments 2>&1
-  $exitCode = $LASTEXITCODE
-  $lines = @($output | ForEach-Object { [string]$_ })
-  if ($exitCode -ne 0) {
-    $detail = ($lines -join [Environment]::NewLine).Trim()
-    throw "git $($Arguments -join ' ') failed with exit code $exitCode in '$RepoRoot'. $detail"
-  }
-
-  return $lines
-}
-
-function Get-LocalPowerShellModulePollerGitScalar {
-  [CmdletBinding()]
-  [OutputType([string])]
-  param(
-    [Parameter(Mandatory = $true)]
-    [ValidateNotNullOrEmpty()]
-    [string]$RepoRoot,
-
-    [Parameter(Mandatory = $true)]
-    [ValidateNotNullOrEmpty()]
-    [string[]]$Arguments
-  )
-
-  $lines = @(Invoke-LocalPowerShellModulePollerGit -RepoRoot $RepoRoot -Arguments $Arguments)
-  if ($lines.Count -eq 0) {
-    return ''
-  }
-
-  return ([string]$lines[0]).Trim()
-}
-
 function ConvertTo-LocalPowerShellModulePollerPath {
   [CmdletBinding()]
   [OutputType([string])]

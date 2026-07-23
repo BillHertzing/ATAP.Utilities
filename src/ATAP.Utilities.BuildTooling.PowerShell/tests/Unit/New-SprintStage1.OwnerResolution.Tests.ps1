@@ -21,7 +21,7 @@ BeforeAll {
 
   # Dot-source the private helpers (owner resolution) and the Stage 1 function.
   . "$PSScriptRoot\..\..\private\Get-WorkspaceJson.ps1"
-  . "$PSScriptRoot\..\..\private\Get-GitHubOwnerFromWorkspace.ps1"
+  . "$PSScriptRoot\..\..\..\ATAP.Utilities.BuildTooling.GitWorktree.PowerShell\private\Get-GitHubOwnerFromWorkspace.ps1"
   . "$PSScriptRoot\..\..\public\New-SprintStage1.ps1"
 }
 

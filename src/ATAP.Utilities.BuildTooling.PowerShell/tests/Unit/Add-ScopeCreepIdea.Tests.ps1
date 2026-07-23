@@ -3,7 +3,7 @@ BeforeAll {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
 
-  . "$PSScriptRoot\..\..\private\Resolve-PlanningWorktreeRoot.ps1"
+  . "$PSScriptRoot\..\..\..\ATAP.Utilities.BuildTooling.GitWorktree.PowerShell\private\Resolve-PlanningWorktreeRoot.ps1"
   . "$PSScriptRoot\..\..\public\Add-ScopeCreepIdea.ps1"
 }
 

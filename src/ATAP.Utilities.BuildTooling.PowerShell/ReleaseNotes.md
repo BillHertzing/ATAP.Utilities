@@ -1,5 +1,12 @@
 # Production Release Notes in Chronological order
 
+# 0.1.51
+
+- Added private parent dispatch shims for GitWorktree helpers still consumed by
+  remaining parent Sprint and scope-creep commands.
+- Updated parent tests to load moved GitWorktree implementations from their
+  canonical child source paths.
+
 # 0.1.50
 
 - Re-exported the GitWorktree child through the parent compatibility surface.

@@ -11,7 +11,7 @@ BeforeAll {
       'private\Resolve-WorkspaceFiles.ps1',
       'private\Invoke-SprintEndNativeCommand.ps1',
       'private\Invoke-SprintEndServiceAccountFreshShell.ps1',
-      'public\Assert-MainBranchTemplateRef.ps1',
+      '..\ATAP.Utilities.BuildTooling.GitWorktree.PowerShell\public\Assert-MainBranchTemplateRef.ps1',
       'public\Invoke-SprintEndGitHubClose.ps1',
       'public\Set-SprintBoundaryUserProfiles.ps1',
       'public\Test-SprintEndBoundaryState.ps1'

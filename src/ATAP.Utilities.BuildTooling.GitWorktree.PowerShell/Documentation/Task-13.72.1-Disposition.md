@@ -33,6 +33,8 @@ Batch 3 moved the pre-commit hook, issue/worktree commands, junction command, an
 
 The dependency adversarial pass identified two late-bound runtime contracts not represented by the child manifest: `New-GitHubIssue` resolves `Get-PVal` from the configured host, and `Start-LocalPowerShellModuleBuildMasterPoller` invokes `Start-BuildMasterPackagePipeline` only when a qualifying change is detected. These remain aggregate/toolchain contracts for this iteration and must be revisited when ParentResidual and BuildMaster ownership are finalized; they are not silently declared as Common dependencies. The parent compatibility test proved why the interim `Start-*` export is necessary: omitting it reduced the frozen 200-function surface to 199.
 
+The parent 0.1.50 promoted test exposed three remaining parent-private consumers of moved GitWorktree helpers. Parent 0.1.51 therefore carries non-exported dispatch shims for `Confirm-WorktreeGitPointerOwnership`, `Get-GitHubOwnerFromWorkspace`, and `Resolve-PlanningWorktreeRoot`; each invokes the canonical private implementation inside the loaded GitWorktree child module. These shims are temporary migration debt and must be removed when their remaining parent consumers move.
+
 - PowerShell parser: 0 errors across the complete child module.
 - Manifest validation: passed for source version 0.1.0.
 - Complete child Pester gate after Batch 3: 39 passed, 0 failed across ten test files.

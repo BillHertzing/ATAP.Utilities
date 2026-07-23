@@ -82,6 +82,7 @@ FunctionsToExport = @(
     'Invoke-LocalPowerShellModulePollerGit',
     'New-GitHubIssue',
     'New-WorktreeWithJunctions',
+    'Resolve-PlanningWorktreeRoot',
     'Set-WorktreeJunctions',
     'Start-LocalPowerShellModuleBuildMasterPoller'
 )

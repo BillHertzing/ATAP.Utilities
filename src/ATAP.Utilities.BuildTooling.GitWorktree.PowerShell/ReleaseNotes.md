@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.1.3
+
+- Promoted `Resolve-PlanningWorktreeRoot` to a child-only public dependency
+  contract for the PlanningSession extraction.
+- The compatibility parent continues to hide this helper from its legacy
+  export surface.
+
 ## 0.1.2
 
 - Corrected the promoted-test import contract so the harness tests its supplied

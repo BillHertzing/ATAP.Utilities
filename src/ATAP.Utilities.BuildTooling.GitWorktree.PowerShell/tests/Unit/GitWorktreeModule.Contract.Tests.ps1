@@ -11,7 +11,7 @@ Describe 'GitWorktree child scaffold contract' -Tag 'Unit' {
       'Get-BrokenGitSubDirs', 'Get-LocalPowerShellModulePollerGitScalar', 'Invoke-GitCommit',
       'Invoke-GitPostCheckoutHook', 'Invoke-GitPostCommitHook', 'Invoke-GitPreCommitHook',
       'Invoke-LocalPowerShellModulePollerGit', 'New-GitHubIssue', 'New-WorktreeWithJunctions',
-      'Set-WorktreeJunctions', 'Start-LocalPowerShellModuleBuildMasterPoller'
+      'Resolve-PlanningWorktreeRoot', 'Set-WorktreeJunctions', 'Start-LocalPowerShellModuleBuildMasterPoller'
     )
   }
 
@@ -21,7 +21,7 @@ Describe 'GitWorktree child scaffold contract' -Tag 'Unit' {
     @($script:Manifest.CompatiblePSEditions) | Should -Be @('Core')
   }
 
-  It 'declares the fourteen compatibility-preserving public exports' {
+  It 'declares fourteen compatibility exports plus the PlanningSession dependency contract' {
     @($script:Manifest.FunctionsToExport | Sort-Object) | Should -Be @($script:ExpectedExports | Sort-Object)
     @($script:Manifest.CmdletsToExport).Count | Should -Be 0
     @($script:Manifest.VariablesToExport).Count | Should -Be 0
@@ -40,7 +40,7 @@ Describe 'GitWorktree child scaffold contract' -Tag 'Unit' {
 
   It 'has stable-release NBGV metadata' {
     $metadata = Get-Content -LiteralPath (Join-Path $script:ModuleRoot 'version.json') -Raw | ConvertFrom-Json
-    $metadata.version | Should -Be '0.1.2'
+    $metadata.version | Should -Be '0.1.3'
     @($metadata.publicReleaseRefSpec) | Should -Contain '.*'
   }
 }

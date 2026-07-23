@@ -224,6 +224,10 @@ strips direct top-level `Export-ModuleMember` statements and export-only
 `if ($MyInvocation.MyCommand.ScriptBlock.Module)` wrappers while preserving the
 source files, nested commands, and unrelated module guards. The generated
 manifest remains the single authority for `FunctionsToExport`.
+Compatibility aliases that must survive this flattening are declared with
+`[Alias()]` on their public functions; this includes the legacy
+`Get-ServiceAccountBWSAccessToken` and
+`Initialize-ServiceAccountBWSAccessToken` names.
 
 `Build-PSModuleManifest` regenerates package manifests with core
 `New-ModuleManifest` parameters instead of copying a manifest and calling

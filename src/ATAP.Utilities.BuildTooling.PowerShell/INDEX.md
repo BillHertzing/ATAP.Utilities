@@ -19,6 +19,7 @@ child and retains parameter-preserving compatibility exports during the migratio
 
 ## BWS ReadOnly Bootstrap
 
+- [Get-BWSAccessToken.ps1](public/Get-BWSAccessToken.ps1) and [Initialize-BWSAccessToken.ps1](public/Initialize-BWSAccessToken.ps1) carry their legacy service-account names as function alias metadata so packaged modules retain the compatibility surface.
 - [BWSReadOnlyBootstrap.md](Documentation/BWSReadOnlyBootstrap.md) documents the bounded operator workflow and its fail-closed recovery rules.
 - [New-BWSReadOnlyBootstrapEnvelope.ps1](public/New-BWSReadOnlyBootstrapEnvelope.ps1) encrypts a SecureString token to one approved account's public document-encryption certificate.
 - [Invoke-BWSReadOnlyTokenBootstrap.ps1](public/Invoke-BWSReadOnlyTokenBootstrap.ps1) runs the fixed `\ATAP\` Password-logon scheduled-task transport.

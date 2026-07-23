@@ -1,5 +1,11 @@
 # Production Release Notes in Chronological order
 
+# 0.1.49
+
+- Preserved the legacy `Get-ServiceAccountBWSAccessToken` and
+  `Initialize-ServiceAccountBWSAccessToken` aliases in flattened package output.
+- Added a packaging-contract regression for both compatibility aliases.
+
 # 0.1.48
 
 - Made the BuildMaster readiness probe's secret-name default independent of global settings.

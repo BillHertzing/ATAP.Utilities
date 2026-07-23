@@ -1,5 +1,12 @@
 # Release notes — ATAP.Utilities.BuildTooling.Common.PowerShell
 
+## 0.1.6
+
+- Moves `Resolve-BuildToolingSettingValue` from the parent module's ProGet settings source into
+  an eponymous Common public file and exports it for all BuildTooling child consumers.
+- Adds focused direct-key, mapped-key, value-type, uninitialized-state, and missing-value tests.
+- Replaces immutable 0.1.5 so the extracted shared setting resolver can be promoted independently.
+
 ## 0.1.5
 
 - Binds the promoted-module export contract to the `ModuleInfo` returned by the explicit manifest

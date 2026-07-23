@@ -12,5 +12,6 @@ Export-ModuleMember -Function @(
   'Get-RepositoryRoot',
   'Get-WorkspaceJson',
   'Initialize-ATAPConfigurationGlobals',
+  'Resolve-BuildToolingSettingValue',
   'Resolve-WorkspaceFiles'
 ) -Cmdlet @() -Variable @() -Alias @()

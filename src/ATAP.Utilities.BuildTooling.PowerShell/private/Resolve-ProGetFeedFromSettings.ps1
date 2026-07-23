@@ -212,40 +212,4 @@ function Resolve-ProGetBaseUrlFromSettings {
   return ([UriBuilder]::new($scheme, $hostName, [int]$port)).Uri.AbsoluteUri.TrimEnd('/')
 }
 
-function Resolve-BuildToolingSettingValue {
-  [CmdletBinding()]
-  param(
-    [Parameter(Mandatory)]
-    [string]$Name
-  )
-
-  if ($null -eq $global:Settings) {
-    throw '$global:Settings is not initialized. Load host settings before resolving BuildTooling settings.'
-  }
-
-  $candidateKeys = [System.Collections.Generic.List[string]]::new()
-  [void]$candidateKeys.Add($Name)
-
-  if ($null -ne $global:configRootKeys) {
-    foreach ($configKeyName in @("${Name}ConfigRootKey", $Name)) {
-      if ($global:configRootKeys.ContainsKey($configKeyName)) {
-        [void]$candidateKeys.Add([string]$global:configRootKeys[$configKeyName])
-      }
-    }
-  }
-
-  foreach ($candidateKey in ($candidateKeys | Select-Object -Unique)) {
-    if ([string]::IsNullOrWhiteSpace($candidateKey)) {
-      continue
-    }
-    if ($global:Settings.ContainsKey($candidateKey)) {
-      $value = $global:Settings[$candidateKey]
-      if ($null -ne $value -and -not [string]::IsNullOrWhiteSpace([string]$value)) {
-        return $value
-      }
-    }
-  }
-
-  throw "Setting '$Name' could not be resolved from `$global:Settings."
-}
 #endregion Resolve-ProGetFeedFromSettings

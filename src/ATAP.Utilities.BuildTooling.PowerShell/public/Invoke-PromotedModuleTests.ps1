@@ -249,6 +249,7 @@ function Invoke-PromotedModuleTests {
             }
         }
 
+        $previousPromotedPsModulePath = $env:PSModulePath
         Push-Location -Path $WorkingDirectory
         try {
             # Resolve the source-tree module folder (supplies the test files).
@@ -346,6 +347,16 @@ function Invoke-PromotedModuleTests {
                 $remainingPaths = $remainingCopies | ForEach-Object { $_.Path } | Sort-Object -Unique
                 throw "Unable to isolate promoted module '$Name'; loaded copy or copies remain: $($remainingPaths -join ', ')"
             }
+            # Source-owned promoted tests run before child modules are
+            # necessarily installed machine-wide. Make sibling family modules
+            # discoverable for RequiredModules resolution while still importing
+            # the target package by its exact restored manifest path.
+            $sourceFamilyRoot = Join-Path $WorkingDirectory 'src'
+            $modulePathEntries = @($env:PSModulePath -split [IO.Path]::PathSeparator)
+            if ((Test-Path -LiteralPath $sourceFamilyRoot -PathType Container) -and
+                $sourceFamilyRoot -notin $modulePathEntries) {
+                $env:PSModulePath = $sourceFamilyRoot + [IO.Path]::PathSeparator + $env:PSModulePath
+            }
             Import-Module -Name $savedModulePath -Force -ErrorAction Stop
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Imported promoted module $target"
 
@@ -424,6 +435,7 @@ function Invoke-PromotedModuleTests {
             throw
         } finally {
             Remove-Module -Name $Name -Force -ErrorAction SilentlyContinue
+            $env:PSModulePath = $previousPromotedPsModulePath
             Pop-Location
         }
     }

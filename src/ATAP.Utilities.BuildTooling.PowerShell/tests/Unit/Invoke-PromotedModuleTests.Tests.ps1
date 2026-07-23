@@ -227,6 +227,20 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             $script:removeCount | Should -Be 2
         }
 
+        It 'exposes sibling source modules only while importing the promoted target' {
+            $before = $env:PSModulePath
+            Mock Import-Module {
+                @($env:PSModulePath -split [IO.Path]::PathSeparator) |
+                    Should -Contain 'C:\fake\src'
+            }
+
+            Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0' `
+                -Feed 'powershellget-development' -Tier 'Development' -ResultsPath 'r' `
+                -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake' | Out-Null
+
+            $env:PSModulePath | Should -Be $before
+        }
+
         It 'fails before import when a same-name module remains loaded' {
             Mock Get-Module {
                 [PSCustomObject]@{ Name = 'Mod'; Path = 'C:\old-tier\Mod.psd1' }

@@ -227,6 +227,29 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             $script:removeCount | Should -Be 2
         }
 
+        It 'removes a nested prior-tier ModuleInfo copy that name-based removal cannot see' {
+            $nestedCopy = [System.Management.Automation.PSModuleInfo]::new(
+                [scriptblock]::Create('$null = 1')
+            )
+            $script:getModuleCall = 0
+            Mock Get-Module {
+                $script:getModuleCall++
+                if ($script:getModuleCall -eq 1) {
+                    return $nestedCopy
+                }
+                return @()
+            }
+
+            Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0' `
+                -Feed 'powershellget-integration' -Tier 'Integration' -ResultsPath 'r' `
+                -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake' | Out-Null
+
+            Assert-MockCalled Remove-Module -Times 1 -Exactly -Scope It -ParameterFilter {
+                $ModuleInfo -eq $nestedCopy -and $Force
+            }
+            Assert-MockCalled Import-Module -Times 1 -Exactly -Scope It
+        }
+
         It 'exposes sibling source modules only while importing the promoted target' {
             $before = $env:PSModulePath
             Mock Import-Module {

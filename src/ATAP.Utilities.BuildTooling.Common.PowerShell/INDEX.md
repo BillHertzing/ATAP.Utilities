@@ -4,7 +4,7 @@ module: ATAP.Utilities.BuildTooling.Common.PowerShell
 functional-area: BuildTooling
 family-parent: ATAP.Utilities.BuildTooling.PowerShell
 
-release-state: 0.1.6 exports Resolve-BuildToolingSettingValue as the shared BuildTooling settings contract and replaces immutable 0.1.5; release pending. Version 0.1.5 is Stable/AllUsers.
+release-state: 0.1.7 exports Resolve-BuildToolingSettingValue as the shared BuildTooling settings contract and replaces immutable 0.1.5; release pending. Version 0.1.6 is burned after Integration exposed retained nested-module state in the promoted-test runner. Version 0.1.5 is Stable/AllUsers.
 
 ## Public functions
 

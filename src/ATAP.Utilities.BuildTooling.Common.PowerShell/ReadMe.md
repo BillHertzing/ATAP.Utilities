@@ -6,8 +6,9 @@ Shared PowerShell helpers for the `ATAP.Utilities.BuildTooling.*` module family.
 
 This module contains reviewed helper batches created under Sprint 0013 Tasks 13.70, 13.68.c,
 and 13.72.5. Production version `0.1.5` completed the UTAT01 BuildMaster tier path and is
-installed for all users. Version `0.1.6` adds the shared settings resolver and is pending
-promotion.
+installed for all users. Version `0.1.6` is burned after Integration exposed retained
+nested-module state in the promoted-test runner. Version `0.1.7` carries the unchanged
+shared settings contract through the corrected runner and is pending promotion.
 
 ## Contract
 

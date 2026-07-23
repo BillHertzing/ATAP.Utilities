@@ -343,6 +343,16 @@ function Invoke-PromotedModuleTests {
             # from different paths to remain loaded simultaneously.
             Remove-Module -Name $Name -Force -ErrorAction SilentlyContinue
             $remainingCopies = @(Get-Module -Name $Name -All)
+            # A command autoloaded from inside another module can be nested in
+            # that module's session state. Name-based removal only targets the
+            # caller-visible copy, so remove every remaining ModuleInfo object
+            # explicitly before deciding that isolation failed.
+            foreach ($remainingCopy in $remainingCopies) {
+                if ($remainingCopy -is [System.Management.Automation.PSModuleInfo]) {
+                    Remove-Module -ModuleInfo $remainingCopy -Force -ErrorAction SilentlyContinue
+                }
+            }
+            $remainingCopies = @(Get-Module -Name $Name -All)
             if ($remainingCopies.Count -ne 0) {
                 $remainingPaths = $remainingCopies | ForEach-Object { $_.Path } | Sort-Object -Unique
                 throw "Unable to isolate promoted module '$Name'; loaded copy or copies remain: $($remainingPaths -join ', ')"
@@ -435,6 +445,11 @@ function Invoke-PromotedModuleTests {
             throw
         } finally {
             Remove-Module -Name $Name -Force -ErrorAction SilentlyContinue
+            foreach ($remainingCopy in @(Get-Module -Name $Name -All)) {
+                if ($remainingCopy -is [System.Management.Automation.PSModuleInfo]) {
+                    Remove-Module -ModuleInfo $remainingCopy -Force -ErrorAction SilentlyContinue
+                }
+            }
             $env:PSModulePath = $previousPromotedPsModulePath
             Pop-Location
         }

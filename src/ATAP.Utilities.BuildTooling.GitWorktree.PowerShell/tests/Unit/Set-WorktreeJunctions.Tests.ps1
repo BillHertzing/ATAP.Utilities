@@ -1,9 +1,5 @@
 BeforeAll {
-  . "$PSScriptRoot\..\..\public\Set-WorktreeJunctions.ps1"
-
-  if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
-    function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
-  }
+  Import-Module "$PSScriptRoot\..\..\ATAP.Utilities.BuildTooling.GitWorktree.PowerShell.psd1" -Force
 }
 
 Describe 'Set-WorktreeJunctions [public]' {

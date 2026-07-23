@@ -26,3 +26,13 @@ The dependency adversarial pass confirmed that `Invoke-GitCommit` calls `Assert-
 
 - PowerShell parser: 0 errors across the child module.
 - Complete child Pester gate after Batch 2: 34 passed, 0 failed across eight test files.
+
+## Batch 3 evidence
+
+Batch 3 moved the pre-commit hook, issue/worktree commands, junction command, and the local BuildMaster poller file. The junction suite moved with its owner. The child-owned Batch 3 contract verifies all six exported commands supplied by these five implementation files, exercises both Git poller helpers against a temporary local repository, previews issue creation without calling `gh`, and repeats the function-only AST assertion.
+
+The dependency adversarial pass identified two late-bound runtime contracts not represented by the child manifest: `New-GitHubIssue` resolves `Get-PVal` from the configured host, and `Start-LocalPowerShellModuleBuildMasterPoller` invokes `Start-BuildMasterPackagePipeline` only when a qualifying change is detected. These remain aggregate/toolchain contracts for this iteration and must be revisited when ParentResidual and BuildMaster ownership are finalized; they are not silently declared as Common dependencies.
+
+- PowerShell parser: 0 errors across the complete child module.
+- Manifest validation: passed for source version 0.1.0.
+- Complete child Pester gate after Batch 3: 39 passed, 0 failed across ten test files.

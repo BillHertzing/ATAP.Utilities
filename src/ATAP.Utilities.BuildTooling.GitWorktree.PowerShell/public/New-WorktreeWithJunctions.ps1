@@ -101,7 +101,7 @@ function New-WorktreeWithJunctions {
 
     begin {
         $fn = 'New-WorktreeWithJunctions'
-        $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+        $mn = 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell'
 
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 

@@ -3,7 +3,8 @@
   Builds a consolidated PowerShell module (.psm1) file from the source files of a module.
 .DESCRIPTION
   Enumerates *.ps1 files under each named sub-directory of $ModuleRoot (defaulting to
-  'public', 'private', and 'lib'), parses each file with the PowerShell AST, then:
+  'public', 'private', and 'lib'), plus an optional root-level
+  `module.preamble.ps1`, parses each file with the PowerShell AST, then:
     1. Strips and deduplicates all #Requires directives, retaining only the highest
         -RunAsAdministrator is emitted at most once; hoists all to the very top.
     2. Collects and deduplicates all 'using namespace' and 'using assembly' statements,
@@ -91,6 +92,14 @@ function Build-PSModulePsm1 {
         foreach ($f in $found) {
           [void]$sourceFiles.Add($f)
         }
+      }
+
+      # A module may opt in to package-visible initialization by supplying a
+      # root-level preamble. It is deliberately not a public function file, so
+      # it is retained in the built module without becoming a manifest export.
+      $preamblePath = Join-Path -Path $ModuleRoot -ChildPath 'module.preamble.ps1'
+      if (Test-Path -LiteralPath $preamblePath -PathType Leaf) {
+        [void]$sourceFiles.Insert(0, (Get-Item -LiteralPath $preamblePath))
       }
 
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Found $($sourceFiles.Count) source .ps1 file(s) under '$ModuleRoot'"

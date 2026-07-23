@@ -8,6 +8,9 @@
   Stable/AllUsers 0.1.2 release.
 - Kept `Resolve-PlanningWorktreeRoot` child-only while preserving the exact
   legacy parent command surface.
+- Accepted after all BuildMaster stages passed 593/0/4 of 597, an independent
+  Stable matrix passed 597/0/4 of 601, and a fresh AllUsers process recovered
+  all 200 legacy functions plus three child-only helpers.
 
 # 0.1.52
 

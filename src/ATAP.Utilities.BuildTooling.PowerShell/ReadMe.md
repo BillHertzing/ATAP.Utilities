@@ -25,10 +25,11 @@ PlanningSession at minimum version 0.1.2. It re-exports the legacy Git/worktree
 and planning-session command surfaces while keeping the child-only
 `Resolve-PlanningWorktreeRoot` contract hidden.
 
-Parent 0.1.52 is the accepted Stable/AllUsers compatibility release for this
+Parent 0.1.53 is the accepted Stable/AllUsers compatibility release for this
 iteration (Stable SHA-256
-`0D7FDDF9989DC1A4DB352AAC8CE01F978354CB854DCAA034F4DEA44BE535E272`).
-Parent 0.1.49 remains the pre-GitWorktree rollback; 0.1.50 and 0.1.51 are burned.
+`0D89AB810A52041E2B1B244D18C1DDC9B41F0202737447E1FC089BA3940F8956`).
+Parent 0.1.52 remains the pre-PlanningSession rollback; 0.1.50 and 0.1.51 are
+burned.
 
 Full-repository C# MSBuild property audits live outside this module at
 `tests\RepoHealth` and run through `Build\Invoke-RepoHealthGate.ps1`. They are

@@ -14,8 +14,10 @@ Describe 'PlanningSession child scaffold contract' -Tag 'Unit' {
     @($script:Manifest.CompatiblePSEditions) | Should -Be @('Core')
   }
 
-  It 'starts with explicit empty exports' {
-    @($script:Manifest.FunctionsToExport).Count | Should -Be 0
+  It 'exports only the three frozen PlanningSession commands' {
+    @($script:Manifest.FunctionsToExport | Sort-Object) | Should -Be @(
+      'Add-ScopeCreepIdea', 'Complete-PlanningSession', 'Start-PlanningSession'
+    )
     @($script:Manifest.CmdletsToExport).Count | Should -Be 0
     @($script:Manifest.AliasesToExport).Count | Should -Be 0
   }
@@ -29,6 +31,13 @@ Describe 'PlanningSession child scaffold contract' -Tag 'Unit' {
     $member.Count | Should -Be 1
     @($member[0].Dependencies) | Should -Be @('ATAP.Utilities.BuildTooling.GitWorktree.PowerShell')
     $member[0].MinimumVersions['ATAP.Utilities.BuildTooling.GitWorktree.PowerShell'] | Should -Be '0.1.3'
+  }
+
+  It 'declares the external Get-PVal provider explicitly' {
+    $requirement = @($script:Manifest.RequiredModules | Where-Object ModuleName -eq 'ATAP.Utilities.Powershell')
+    $requirement.Count | Should -Be 1
+    $requirement[0].ModuleVersion.ToString() | Should -Be '0.1.23'
+    $requirement[0].MaximumVersion.ToString() | Should -Be '0.999.999'
   }
 
   It 'has stable-release NBGV metadata' {

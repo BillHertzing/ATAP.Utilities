@@ -51,7 +51,10 @@ PowerShellVersion = '7.0'
 # ProcessorArchitecture = ''
 
 # Modules that must be imported into the global environment prior to importing this module
-RequiredModules = @(@{ModuleName = 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell'; ModuleVersion = '0.1.3'; })
+RequiredModules = @(
+    @{ModuleName = 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell'; ModuleVersion = '0.1.3'; },
+    @{ModuleName = 'ATAP.Utilities.Powershell'; ModuleVersion = '0.1.23'; MaximumVersion = '0.999.999'; }
+)
 
 # Assemblies that must be loaded prior to importing this module
 # RequiredAssemblies = @()
@@ -69,7 +72,11 @@ RequiredModules = @(@{ModuleName = 'ATAP.Utilities.BuildTooling.GitWorktree.Powe
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = @()
+FunctionsToExport = @(
+    'Add-ScopeCreepIdea',
+    'Complete-PlanningSession',
+    'Start-PlanningSession'
+)
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = @()

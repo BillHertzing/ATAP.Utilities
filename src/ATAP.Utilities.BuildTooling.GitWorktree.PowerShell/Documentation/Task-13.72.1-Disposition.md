@@ -17,3 +17,12 @@ The migration's adversarial pass found and corrected a pre-existing `Confirm-Git
 - PowerShell parser: 0 errors across the child module.
 - Manifest validation: passed for version 0.1.1.
 - Focused Pester gate: 23 passed, 0 failed across the scaffold contract and four Batch 1 test files.
+
+## Batch 2 evidence
+
+Batch 2 moved the adapter conversion command, repository integrity scanner, grouped commit command, and the post-checkout/post-commit hook commands. The conversion and commit suites moved with their owners. A child-owned Batch 2 contract adds safe behavior coverage for an empty repository collection, export coverage for both hooks, and AST proof that all five files remain function-only.
+
+The dependency adversarial pass confirmed that `Invoke-GitCommit` calls `Assert-LockFilesClean`, which remains assigned to ParentResidual. Aggregate-parent execution continues to supply that command. The child test injects the contract into child module scope so the per-group guard call is verifiable without importing the parent. The ParentResidual review must decide whether the guard becomes a Common primitive or remains an explicitly documented aggregate-only runtime contract before claiming fully standalone child behavior.
+
+- PowerShell parser: 0 errors across the child module.
+- Complete child Pester gate after Batch 2: 34 passed, 0 failed across eight test files.

@@ -1,9 +1,6 @@
 BeforeAll {
-  if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
-    function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
-  }
-
-  . "$PSScriptRoot\..\..\public\Convert-StableWorktreeToConcreteAdapters.ps1"
+  $moduleRoot = Join-Path $PSScriptRoot '..\..'
+  Import-Module (Join-Path $moduleRoot 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell.psd1') -Force
 
   # Build a throwaway git repo whose '.claude' folder is tracked concrete content but
   # is currently occupied by an NTFS junction (the stable-worktree drift this function

@@ -73,7 +73,7 @@ function Convert-StableWorktreeToConcreteAdapters {
 
   begin {
     $fn = 'Convert-StableWorktreeToConcreteAdapters'
-    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+    $mn = 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn (RepoRoot=$RepoRoot)"
 
     $resolvedRepoRoot = (Resolve-Path -LiteralPath $RepoRoot -ErrorAction Stop).Path

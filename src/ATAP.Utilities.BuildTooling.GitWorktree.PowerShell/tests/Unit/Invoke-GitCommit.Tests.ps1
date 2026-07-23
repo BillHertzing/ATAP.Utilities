@@ -1,7 +1,9 @@
 #Requires -Version 7.0
 
 BeforeAll {
-  Import-Module "$PSScriptRoot\..\..\ATAP.Utilities.BuildTooling.PowerShell.psd1" -Force
+  Import-Module "$PSScriptRoot\..\..\ATAP.Utilities.BuildTooling.GitWorktree.PowerShell.psd1" -Force
+  $childModule = Get-Module ATAP.Utilities.BuildTooling.GitWorktree.PowerShell
+  & $childModule { function script:Assert-LockFilesClean { } }
 
   function New-InvokeGitCommitTestRepo {
     $repo = Join-Path -Path $TestDrive -ChildPath ([System.Guid]::NewGuid().ToString('N'))
@@ -64,7 +66,7 @@ Describe 'Invoke-GitCommit' -Tag 'Unit', 'PromotedModuleHostSensitive' {
     Add-InvokeGitCommitTestFile -RepoPath $script:repo -RelativePath 'src/App/app.txt' -Content 'app change'
     Add-InvokeGitCommitTestFile -RepoPath $script:repo -RelativePath 'docs/readme.md' -Content 'doc change'
 
-    Mock Assert-LockFilesClean { } -ModuleName ATAP.Utilities.BuildTooling.PowerShell
+    Mock Assert-LockFilesClean { } -ModuleName ATAP.Utilities.BuildTooling.GitWorktree.PowerShell
 
     Invoke-GitCommit `
       -RepoPath $script:repo `
@@ -74,7 +76,7 @@ Describe 'Invoke-GitCommit' -Tag 'Unit', 'PromotedModuleHostSensitive' {
       ) `
       -Confirm:$false
 
-    Assert-MockCalled Assert-LockFilesClean -ModuleName ATAP.Utilities.BuildTooling.PowerShell -Times 2 -Exactly -Scope It
+    Assert-MockCalled Assert-LockFilesClean -ModuleName ATAP.Utilities.BuildTooling.GitWorktree.PowerShell -Times 2 -Exactly -Scope It
 
     $log = @(& git -C $script:repo log --format='%H|%s' -2)
     $log[0] | Should -Match '\|docs\(readme\): update docs$'

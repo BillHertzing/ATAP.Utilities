@@ -4,20 +4,32 @@ Describe 'PlanningSession public contracts' -Tag 'Unit' {
   BeforeAll {
     $script:ModuleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
     $script:ManifestPath = Join-Path $script:ModuleRoot 'ATAP.Utilities.BuildTooling.PlanningSession.PowerShell.psd1'
+    $script:PromotedManifest = [System.Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
+    $script:ModuleToTest = if ([string]::IsNullOrWhiteSpace($script:PromotedManifest)) {
+      $script:ManifestPath
+    } else {
+      $script:PromotedManifest
+    }
+    $script:ParentWasLoaded = [bool](Get-Module ATAP.Utilities.BuildTooling.PowerShell)
     Remove-Module ATAP.Utilities.BuildTooling.PlanningSession.PowerShell -Force -ErrorAction SilentlyContinue
-    $script:Module = Import-Module $script:ManifestPath -Force -PassThru
+    $script:Module = Import-Module $script:ModuleToTest -Force -PassThru
   }
 
   AfterAll {
     Remove-Module ATAP.Utilities.BuildTooling.PlanningSession.PowerShell -Force -ErrorAction SilentlyContinue
   }
 
-  It 'exports exactly the three frozen commands without loading the compatibility parent' {
+  It 'exports exactly the three frozen commands without changing compatibility-parent load state' {
     @(Get-Command -Module ATAP.Utilities.BuildTooling.PlanningSession.PowerShell).Name |
       Sort-Object | Should -Be @(
         'Add-ScopeCreepIdea', 'Complete-PlanningSession', 'Start-PlanningSession'
       )
-    Get-Module ATAP.Utilities.BuildTooling.PowerShell | Should -BeNullOrEmpty
+    [bool](Get-Module ATAP.Utilities.BuildTooling.PowerShell) | Should -Be $script:ParentWasLoaded
+  }
+
+  It 'imports the promoted artifact when the harness supplies one' {
+    $script:Module.ModuleBase | Should -Be (Split-Path -Parent (Resolve-Path -LiteralPath $script:ModuleToTest).Path)
+    $script:Module.Version.ToString() | Should -Be '0.1.2'
   }
 
   It 'preserves the Add-ScopeCreepIdea global contract parameters' {

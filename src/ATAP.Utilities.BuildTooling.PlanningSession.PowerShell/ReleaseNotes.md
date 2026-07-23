@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.1.2
+
+- Made the public contract test honor `ATAP_PROMOTED_MODULE_MANIFEST` so tier
+  gates test the supplied immutable package rather than the source copy.
+- Proved child import preserves the compatibility parent's pre-existing load
+  state instead of assuming a clean BuildMaster host.
+- Replaces burned 0.1.1, whose Development promoted test exposed the
+  host-contamination assumption.
+
 ## 0.1.1
 
 - Declared an explicit empty `VariablesToExport` contract required by packaged

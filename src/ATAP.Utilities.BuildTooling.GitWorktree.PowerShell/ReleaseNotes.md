@@ -6,6 +6,7 @@
   contract for the PlanningSession extraction.
 - The compatibility parent continues to hide this helper from its legacy
   export surface.
+- Moved all nine resolver contexts into the GitWorktree-owned unit suite.
 
 ## 0.1.2
 

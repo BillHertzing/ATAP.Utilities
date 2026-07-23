@@ -20,9 +20,10 @@ The bounded BWS ReadOnly bootstrap commands provision only `SvcBuildMaster`,
 CMS envelope flow, canonical account paths, Password-logon task isolation under
 `\ATAP\`, idempotency statuses, and fail-closed recovery rules.
 
-The compatibility parent imports the deployed GitWorktree child at minimum
-version 0.1.2 and re-exports the legacy Git/worktree command surface while the
-module-family extraction remains in progress.
+The compatibility parent imports GitWorktree at minimum version 0.1.3 and
+PlanningSession at minimum version 0.1.0. It re-exports the legacy Git/worktree
+and planning-session command surfaces while keeping the child-only
+`Resolve-PlanningWorktreeRoot` contract hidden.
 
 Parent 0.1.52 is the accepted Stable/AllUsers compatibility release for this
 iteration (Stable SHA-256
@@ -280,8 +281,9 @@ inside the authenticated leaf. See
 [ProGetAdministrationSecretNameBoundary.md](Documentation/ProGetAdministrationSecretNameBoundary.md)
 for the covered command surface and fail-closed verification contract.
 
-Scope-creep capture (`Add-ScopeCreepIdea`) now resolves the target `_Planning`
-worktree through `Resolve-PlanningWorktreeRoot` (Task 9.23). Resolution is
+Scope-creep capture (`Add-ScopeCreepIdea`) is now owned by the PlanningSession
+child and resolves the target `_Planning` worktree through GitWorktree's
+child-only `Resolve-PlanningWorktreeRoot` contract. Resolution is
 anchored on the **Sprint token** (`Sprint-<NNNN>-work-items`) shared across
 repos — not the per-repo issue number, which differs (e.g.
 `ATAP.Utilities-wt-110-…` pairs with `_Planning-wt-18-…`). From a sprint shell it

@@ -50,4 +50,11 @@ Describe 'AiRendering child module contract' -Tag 'Unit' {
       Join-Path $script:moduleRoot 'Resources\FailureAcknowledged.schema.json'
     ) | Should -BeTrue
   }
+
+  It 'has stable-release NBGV metadata' {
+    $metadata = Get-Content -LiteralPath (Join-Path $script:moduleRoot 'version.json') -Raw |
+      ConvertFrom-Json
+    $metadata.version | Should -Be '0.1.0'
+    @($metadata.publicReleaseRefSpec) | Should -Contain '.*'
+  }
 }

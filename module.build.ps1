@@ -40,6 +40,14 @@ $helpfunctionsneeded = @(
   #  @{FunctionName = 'Get-ClonedAndModifiedHashtable'; ModuleName = 'ATAP.Utilities.PowerShell' },
 )
 $resolvedModulePath = Join-Path -Path $PSScriptRoot -ChildPath 'src'
+# Source builds must make sibling family modules discoverable while
+# Test-ModuleManifest validates RequiredModules. This is process-local and does
+# not install or persist any module.
+$script:_originalPSModulePath = $env:PSModulePath
+$modulePathEntries = @($env:PSModulePath -split [IO.Path]::PathSeparator)
+if ($resolvedModulePath -notin $modulePathEntries) {
+  $env:PSModulePath = $resolvedModulePath + [IO.Path]::PathSeparator + $env:PSModulePath
+}
 foreach ($helpfunction in $helpfunctionsneeded) {
   $helperPath = Join-Path -Path $resolvedModulePath -ChildPath (Join-Path -Path $helpfunction.ModuleName -ChildPath (Join-Path -Path 'public' -ChildPath "$($helpfunction.FunctionName).ps1"))
   try {
@@ -504,6 +512,7 @@ Task Compress {
 # this script.
 # ---------------------------------------------------------------------------
 Exit-Build {
+  $env:PSModulePath = $script:_originalPSModulePath
   foreach ($repo in $script:_savedHermeticRepos) {
     if (-not (Get-PSResourceRepository -Name $repo.Name -ErrorAction SilentlyContinue)) {
       try {

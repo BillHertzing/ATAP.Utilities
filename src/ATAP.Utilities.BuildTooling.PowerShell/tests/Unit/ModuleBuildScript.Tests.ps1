@@ -45,6 +45,14 @@ Describe 'module.build.ps1 package staging contract' {
     $text | Should -Not -Match "\$script:_bootstrapPublicDir.+ATAP\.Utilities\.BuildTooling\.PowerShell"
   }
 
+  It 'makes sibling source modules discoverable only for the build process' {
+    $text = Get-Content -LiteralPath $script:moduleBuildPath -Raw
+
+    $text | Should -Match '\$script:_originalPSModulePath = \$env:PSModulePath'
+    $text | Should -Match '\$env:PSModulePath = \$resolvedModulePath'
+    $text | Should -Match 'Exit-Build\s*\{\s*\$env:PSModulePath = \$script:_originalPSModulePath'
+  }
+
   It 'derives exported aliases from the source manifest and public function Alias attributes only' {
     $text = Get-Content -LiteralPath $script:moduleBuildPath -Raw
 

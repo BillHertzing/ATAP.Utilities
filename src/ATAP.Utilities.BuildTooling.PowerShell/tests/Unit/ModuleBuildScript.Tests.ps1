@@ -62,6 +62,14 @@ Describe 'module.build.ps1 package staging contract' {
     $text | Should -Not -Match "GetCommandName\(\) -in @\('Set-Alias', 'New-Alias'\)"
   }
 
+  It 'retains source-manifest exports for runtime-created child compatibility proxies' {
+    $text = Get-Content -LiteralPath $script:moduleBuildPath -Raw
+
+    $text | Should -Match '\$physicalPublicFunctions'
+    $text | Should -Match '\$sourceManifestData\.FunctionsToExport'
+    $text | Should -Match '\[string\[\]\] \$publicFunctions = @\('
+  }
+
   It 'declares the legacy BWS compatibility names as function Alias metadata that survives package flattening' {
     $moduleRoot = Split-Path -Parent $script:moduleBuildPath
     $getSource = Get-Content -LiteralPath (Join-Path $moduleRoot 'src\ATAP.Utilities.BuildTooling.Secrets.PowerShell\public\Get-BWSAccessToken.ps1') -Raw

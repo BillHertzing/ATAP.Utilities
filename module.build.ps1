@@ -293,16 +293,25 @@ Task BuildPSM1 {
 # ---------------------------------------------------------------------------
 Task BuildManifest {
   $publicDir = Join-Path $script:ModuleRoot 'public'
-  [string[]] $publicFunctions = if (Test-Path $publicDir) {
+  $sourceManifestData = Import-PowerShellDataFile -LiteralPath $script:meta.ManifestPath
+  [string[]] $physicalPublicFunctions = if (Test-Path $publicDir) {
     Get-ChildItem -Path $publicDir -Filter '*.ps1' -File |
       Select-Object -ExpandProperty BaseName
   } else { @() }
+  # The parent BuildTooling module creates compatibility proxies for extracted
+  # child-module commands in module.preamble.ps1. Those functions have no
+  # physical public/*.ps1 files, so retain the source manifest's explicit
+  # exports alongside the functions discovered from physical source files.
+  [string[]] $publicFunctions = @(
+    $physicalPublicFunctions
+    $sourceManifestData.FunctionsToExport
+  ) | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } |
+    Sort-Object -Unique
 
   # Preserve aliases explicitly declared in the source manifest, then add aliases
   # declared by [Alias()] on each matching public function. Set-Alias/New-Alias
   # command sites inside function bodies are runtime implementation details, not
   # module export metadata, and must never be promoted into AliasesToExport.
-  $sourceManifestData = Import-PowerShellDataFile -LiteralPath $script:meta.ManifestPath
   [string[]] $sourceAliases = @(
     $sourceManifestData.AliasesToExport |
       Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) }

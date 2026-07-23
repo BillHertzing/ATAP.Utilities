@@ -2,10 +2,10 @@
 #
 # Module export-consistency guard (V4-B08).
 #
-# The build (module.build.ps1 -> BuildManifest task) computes FunctionsToExport
-# from the *basenames* of public/*.ps1 files, NOT from the function names parsed
-# out of those files. Therefore a public file whose top-level function name does
-# not equal its basename produces a manifest entry that exports nothing — a
+# The build (module.build.ps1 -> BuildManifest task) computes physical exports
+# from the *basenames* of public/*.ps1 files and retains explicit source-manifest
+# exports for compatibility proxies created at runtime. Therefore a public file
+# whose top-level function name does not equal its basename still produces a
 # "phantom export" that silently disappears from the published module.
 #
 # These tests fail fast if that drift is reintroduced, before a module ever

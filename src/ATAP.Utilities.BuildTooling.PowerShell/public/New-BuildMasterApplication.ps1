@@ -15,7 +15,7 @@ function New-BuildMasterApplication {
 
     The API key secret name is resolved via Get-PVal
     (-BuildMasterAdminApiKeySecretName, then env var, then $global:settings,
-    then default 'BuildMaster.Admin.API.Key'); the key value is then retrieved
+    then default 'BuildMaster.Admin.API.Key.utat01'); the key value is then retrieved
     through Get-SecretATAP.
   .PARAMETER Name
     The unique BuildMaster application name.
@@ -127,7 +127,7 @@ function New-BuildMasterApplication {
 
     [string]$BuildMasterBaseUrl,
 
-    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key'
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key.utat01'
   )
 
   begin {

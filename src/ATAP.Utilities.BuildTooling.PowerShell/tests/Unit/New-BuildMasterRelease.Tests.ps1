@@ -45,7 +45,7 @@ Describe 'New-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {
     }
     $global:settings = @{
       BuildMasterBaseUrl                   = 'https://buildmaster.example.test'
-      BuildMasterAdminApiKeySecretName     = 'BuildMaster.Admin.API.Key'
+      BuildMasterAdminApiKeySecretName     = 'BuildMaster.Admin.API.Key.utat01'
     }
   }
 
@@ -251,7 +251,7 @@ Describe 'New-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {
     }
 
     It 'Uses the localhost BuildMaster default when no base URL is configured' {
-      $global:settings = @{ BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key' }
+      $global:settings = @{ BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key.utat01' }
       [Environment]::SetEnvironmentVariable('BUILDMASTER_BASE_URL', $null, 'Process')
       [Environment]::SetEnvironmentVariable('BUILDMASTER_BASE_URL', $null, 'User')
       Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' } -MockWith {

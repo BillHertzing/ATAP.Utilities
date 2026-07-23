@@ -36,7 +36,7 @@ function Set-BuildMasterStableVariables {
     settings, which is safe and useful after a ProGet host or SQL server change.
 
     Resolves the API key secret name via Get-PVal (default
-    'BuildMaster.Admin.API.Key') and reads the key value with Get-SecretATAP.
+    'BuildMaster.Admin.API.Key.utat01') and reads the key value with Get-SecretATAP.
 
     ** DEPRECATED ** Use Set-BuildMasterApplicationVariables instead.
     This cmdlet will be removed in Sprint 0008.
@@ -75,7 +75,7 @@ function Set-BuildMasterStableVariables {
 
     [string]$BuildMasterBaseUrl,
 
-    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key'
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key.utat01'
   )
 
   begin {

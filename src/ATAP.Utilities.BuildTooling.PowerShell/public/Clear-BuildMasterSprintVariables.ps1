@@ -16,7 +16,7 @@ function Clear-BuildMasterSprintVariables {
     Step 10.5) after workTrees have been removed.
 
     Resolves the API key secret name via Get-PVal (default
-    'BuildMaster.Admin.API.Key') and reads the key value with Get-SecretATAP.
+    'BuildMaster.Admin.API.Key.utat01') and reads the key value with Get-SecretATAP.
 
     Deletion is idempotent — if a variable does not exist the API returns 404,
     which this cmdlet treats as a successful no-op (already deleted).
@@ -45,7 +45,7 @@ function Clear-BuildMasterSprintVariables {
     Defaults to 'http://localhost:50017'.
   .PARAMETER BuildMasterAdminApiKeySecretName
     ATAP secret name for the BuildMaster admin API key. Resolved via Get-PVal
-    (default 'BuildMaster.Admin.API.Key'); value read with Get-SecretATAP.
+    (default 'BuildMaster.Admin.API.Key.utat01'); value read with Get-SecretATAP.
   .OUTPUTS
     PSCustomObject with variablesCleared (array of 'appName/varName' strings)
     and errors (array of error message strings) fields.
@@ -72,7 +72,7 @@ function Clear-BuildMasterSprintVariables {
 
     [string]$BuildMasterBaseUrl = 'http://localhost:50017',
 
-    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key'
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key.utat01'
   )
 
   begin {

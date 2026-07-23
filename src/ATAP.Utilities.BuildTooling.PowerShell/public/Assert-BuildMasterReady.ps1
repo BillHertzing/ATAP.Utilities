@@ -53,7 +53,7 @@ function Assert-BuildMasterReady {
 
 .PARAMETER BuildMasterAdminApiKeySecretName
     The ATAP secret name containing the BuildMaster admin API key. Defaults to
-    'BuildMaster.Admin.API.Key'; the value is read with Get-SecretATAP. The
+    'BuildMaster.Admin.API.Key.utat01'; the value is read with Get-SecretATAP. The
     parameter/default contract is independent of profile-populated settings.
 
 .PARAMETER TimeoutSeconds
@@ -97,7 +97,7 @@ function Assert-BuildMasterReady {
     [string]$BuildMasterBaseUrl,
 
     [Parameter()]
-    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key',
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key.utat01',
 
     [Parameter()]
     [ValidateRange(1, 60)]

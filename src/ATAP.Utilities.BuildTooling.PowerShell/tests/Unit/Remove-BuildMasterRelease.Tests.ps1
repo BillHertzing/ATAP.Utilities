@@ -273,7 +273,7 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
         throw "Unexpected URI: $Uri"
       }
 
-      Remove-BuildMasterRelease -Application 'A' -ReleaseNumber 'R' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key' -Confirm:$false | Out-Null
+      Remove-BuildMasterRelease -Application 'A' -ReleaseNumber 'R' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01' -Confirm:$false | Out-Null
       $script:capturedHeaders['X-ApiKey'] | Should -Be 'explicit-key'
     }
 

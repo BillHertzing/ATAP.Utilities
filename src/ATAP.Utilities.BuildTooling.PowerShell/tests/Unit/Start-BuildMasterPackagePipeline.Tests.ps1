@@ -209,14 +209,14 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
       -ModuleName 'ATAP.Utilities.PowerShell' `
       -ResolvedPackageVersion '0.1.0-Beta001' `
       -BuildMasterBaseUrl 'http://localhost:50017' `
-      -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
+      -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01'
 
     $script:deploymentCall['Application'] | Should -Be 'ATAP.Utilities-PowerShell'
     $script:deploymentCall['ReleaseNumber'] | Should -Be '0.1.0-Beta001.ATAP.Utilities.PowerShell'
     $script:deploymentCall['BuildNumber'] | Should -Be '23'
     $script:deploymentCall['ToStage'] | Should -BeNullOrEmpty
     $script:deploymentCall['BuildMasterBaseUrl'] | Should -Be 'http://localhost:50017'
-    $script:deploymentCall['BuildMasterAdminApiKeySecretName'] | Should -Be 'BuildMaster.Admin.API.Key'
+    $script:deploymentCall['BuildMasterAdminApiKeySecretName'] | Should -Be 'BuildMaster.Admin.API.Key.utat01'
     $result.DeploymentResult.DeploymentId | Should -Be '3003'
     $result.ResponseSummary | Should -Match 'deployment started'
   }

@@ -66,7 +66,7 @@ function New-BuildMasterScript {
 
     [string]$BuildMasterBaseUrl,
 
-    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key'
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key.utat01'
   )
 
   begin {

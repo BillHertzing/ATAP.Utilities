@@ -71,7 +71,7 @@ Describe 'Start-BuildMasterDeployment' -Tag 'Unit', 'PromotedModuleHostSensitive
     }
     $global:settings = @{
       BuildMasterBaseUrl                  = 'https://buildmaster.example.test'
-      BuildMasterAdminApiKeySecretName    = 'BuildMaster.Admin.API.Key'
+      BuildMasterAdminApiKeySecretName    = 'BuildMaster.Admin.API.Key.utat01'
     }
   }
 

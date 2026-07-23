@@ -42,7 +42,7 @@ Describe 'Test-SprintInfrastructureHealth' {
   }
 
   It 'returns a PSCustomObject with AllOk, Checks, Failures, and Timestamp' {
-    $result = Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
+    $result = Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01'
     $result | Should -Not -BeNullOrEmpty
     $result.PSObject.Properties.Name | Should -Contain 'AllOk'
     $result.PSObject.Properties.Name | Should -Contain 'Checks'
@@ -51,14 +51,14 @@ Describe 'Test-SprintInfrastructureHealth' {
   }
 
   It 'Timestamp is a DateTime within the last 60 seconds' {
-    $result = Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
+    $result = Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01'
     $result.Timestamp | Should -BeOfType [DateTime]
     $result.Timestamp | Should -BeGreaterThan (Get-Date).AddSeconds(-60)
   }
 
   Context 'SqlInstances check' {
     It 'is Skipped and Ok when SqlInstancePaths is empty' {
-      $result = Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
+      $result = Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01'
       $result.Checks.SqlInstances.Skipped | Should -BeTrue
       $result.Checks.SqlInstances.Ok | Should -BeTrue
     }
@@ -66,7 +66,7 @@ Describe 'Test-SprintInfrastructureHealth' {
 
   Context 'ProGetReachable check' {
     It 'is Skipped and Ok when ProGetBaseUrl is empty' {
-      $result = Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
+      $result = Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01'
       $result.Checks.ProGetReachable.Skipped | Should -BeTrue
       $result.Checks.ProGetReachable.Ok | Should -BeTrue
     }
@@ -88,24 +88,24 @@ Describe 'Test-SprintInfrastructureHealth' {
     }
 
     It 'BitwardenEnvVars.Ok is true when all required vars are set' {
-      $result = Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
+      $result = Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01'
       $result.Checks.BitwardenEnvVars.Ok | Should -BeTrue
     }
 
     It 'BitwardenEnvVars.Missing is empty when all required vars are set' {
-      $result = Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
+      $result = Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01'
       $result.Checks.BitwardenEnvVars.Missing | Should -BeNullOrEmpty
     }
   }
 
   Context 'FlywayAvailable and NbgvAvailable checks' {
     It 'FlywayAvailable.Ok is true (found or skipped)' {
-      $result = Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
+      $result = Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01'
       $result.Checks.FlywayAvailable.Ok | Should -BeTrue
     }
 
     It 'NbgvAvailable.Ok is true (found or skipped)' {
-      $result = Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
+      $result = Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01'
       $result.Checks.NbgvAvailable.Ok | Should -BeTrue
     }
   }
@@ -120,7 +120,7 @@ Describe 'Test-SprintInfrastructureHealth' {
       try {
         Test-SprintInfrastructureHealth `
           -BuildMasterBaseUrl 'http://127.0.0.1:1' `
-          -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key' `
+          -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01' `
           -ProGetBaseUrl '' `
           -SqlInstancePaths @() `
           -ReachabilityTimeoutSeconds 1 `
@@ -138,7 +138,7 @@ Describe 'Test-SprintInfrastructureHealth' {
     It 'BuildMasterApps is Skipped and Ok when BuildMasterBaseUrl is empty' {
       $result = Test-SprintInfrastructureHealth `
         -BuildMasterBaseUrl '' `
-        -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key' `
+        -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01' `
         -ProGetBaseUrl '' `
         -SqlInstancePaths @()
       $result.Checks.BuildMasterApps.Skipped | Should -BeTrue
@@ -151,7 +151,7 @@ Describe 'Test-SprintInfrastructureHealth' {
       $script:lastSecretField = $null
       Test-SprintInfrastructureHealth `
         -BuildMasterBaseUrl '' `
-        -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key' `
+        -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01' `
         -ProGetBaseUrl '' `
         -SqlInstancePaths @() | Out-Null
       $script:lastSecretField | Should -Be 'notes'
@@ -161,7 +161,7 @@ Describe 'Test-SprintInfrastructureHealth' {
       $script:lastSecretStoreType = $null
       Test-SprintInfrastructureHealth `
         -BuildMasterBaseUrl '' `
-        -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key' `
+        -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01' `
         -ProGetBaseUrl '' `
         -SqlInstancePaths @() | Out-Null
       $script:lastSecretStoreType | Should -Be 'BitwardenSecretsManager'
@@ -170,7 +170,7 @@ Describe 'Test-SprintInfrastructureHealth' {
     It 'does not require BW_SESSION in the BitwardenEnvVars check' {
       $result = Test-SprintInfrastructureHealth `
         -BuildMasterBaseUrl '' `
-        -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key' `
+        -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01' `
         -ProGetBaseUrl '' `
         -SqlInstancePaths @()
       $result.Checks.BitwardenEnvVars.Missing | Should -Not -Contain 'BW_SESSION'
@@ -179,7 +179,7 @@ Describe 'Test-SprintInfrastructureHealth' {
     It 'BuildMasterAdminApiKeyResolvable.Ok is true when Get-SecretATAP returns a value' {
       $result = Test-SprintInfrastructureHealth `
         -BuildMasterBaseUrl '' `
-        -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key' `
+        -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01' `
         -ProGetBaseUrl '' `
         -SqlInstancePaths @()
       $result.Checks.BuildMasterAdminApiKeyResolvable.Ok | Should -BeTrue

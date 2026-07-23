@@ -24,7 +24,7 @@ function Remove-BuildMasterRelease {
 
   The BuildMaster admin API key secret name is resolved via `Get-PVal`
   (`-BuildMasterAdminApiKeySecretName` → env var → `$global:settings` →
-  default `BuildMaster.Admin.API.Key`). The actual key value is then retrieved
+  default `BuildMaster.Admin.API.Key.utat01`). The actual key value is then retrieved
   through `Get-SecretATAP` using that secret name.
 
   The base URL is resolved in the same order from `-BuildMasterBaseUrl`
@@ -52,7 +52,7 @@ function Remove-BuildMasterRelease {
 .PARAMETER BuildMasterAdminApiKeySecretName
   The ATAP secret name containing the BuildMaster admin API key. Resolved via
   `Get-PVal` (parameter → env var → `$global:settings` → default
-  `BuildMaster.Admin.API.Key`); the value is read with `Get-SecretATAP`.
+  `BuildMaster.Admin.API.Key.utat01`); the value is read with `Get-SecretATAP`.
 
 .INPUTS
   None.
@@ -110,7 +110,7 @@ function Remove-BuildMasterRelease {
     [string]$BuildMasterBaseUrl,
 
     [Parameter(Mandatory = $false)]
-    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key'
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key.utat01'
   )
 
   begin {

@@ -62,7 +62,7 @@ function Set-BuildMasterPipelineStageDeploymentStep {
   .PARAMETER BuildMasterAdminApiKeySecretName
     The ATAP secret name containing the BuildMaster admin API key. Resolved via
     `Get-PVal` (parameter → env var → `$global:settings` → default
-    `BuildMaster.Admin.API.Key`); the value is read with `Get-SecretATAP`.
+    `BuildMaster.Admin.API.Key.utat01`); the value is read with `Get-SecretATAP`.
 
   .INPUTS
     None.
@@ -135,7 +135,7 @@ function Set-BuildMasterPipelineStageDeploymentStep {
 
     [string]$BuildMasterBaseUrl,
 
-    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key'
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key.utat01'
   )
 
   begin {

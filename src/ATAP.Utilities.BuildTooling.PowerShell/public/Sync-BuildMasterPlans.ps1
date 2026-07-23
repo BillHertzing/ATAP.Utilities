@@ -10,7 +10,7 @@ function Sync-BuildMasterPlans {
 
     The API key secret name is resolved via Get-PVal
     (-BuildMasterAdminApiKeySecretName, then env var, then $global:settings,
-    then default 'BuildMaster.Admin.API.Key'); the key value is then retrieved
+    then default 'BuildMaster.Admin.API.Key.utat01'); the key value is then retrieved
     through Get-SecretATAP.
 
     BuildMaster stores scripts and plans in rafts. The default raft item type
@@ -63,7 +63,7 @@ function Sync-BuildMasterPlans {
 
     [string]$BuildMasterBaseUrl,
 
-    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key',
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key.utat01',
 
     [ValidateRange(1, [int]::MaxValue)]
     [int]$RaftId = 1,

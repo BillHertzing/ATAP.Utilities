@@ -248,7 +248,7 @@ Describe 'Start-BuildMasterModulePipelineBatch' -Tag 'Unit', 'PromotedModuleHost
       -ModuleName 'ModuleAlpha', 'ModuleBeta' `
       -ApplicationByModule @{ 'ModuleAlpha' = 'ATAP.Utilities-PowerShell'; 'ModuleBeta' = 'ATAP.Utilities-PowerShell' } `
       -Branch 'main' `
-      -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
+      -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01'
 
     $result.OperationName | Should -Be 'Start-BuildMasterModulePipelineBatch'
     $result.PipelineName | Should -Be 'global::PowerShellModule-5Stage'

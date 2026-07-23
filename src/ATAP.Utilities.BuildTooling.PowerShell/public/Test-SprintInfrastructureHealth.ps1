@@ -87,7 +87,7 @@ function Test-SprintInfrastructureHealth {
 
 .PARAMETER BuildMasterAdminApiKeySecretName
     The Bitwarden secret name containing the BuildMaster admin API key. Defaults to
-    'BuildMaster.Admin.API.Key'. The value is read via Get-SecretATAP with
+    'BuildMaster.Admin.API.Key.utat01'. The value is read via Get-SecretATAP with
     SecretField='notes' and SecretStoreType='BitwardenSecretsManager' (bws +
     CommonCIForBitwardenReadOnly machine access token; no BW_SESSION). An unresolved key is reported by the
     BuildMasterApps check rather than thrown.
@@ -130,7 +130,7 @@ function Test-SprintInfrastructureHealth {
     [string]$BuildMasterBaseUrl,
 
     [Parameter()]
-    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key',
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key.utat01',
 
     [Parameter()]
     [string]$ProGetBaseUrl,

@@ -22,7 +22,7 @@ function Approve-BuildMasterStage {
 
     The BuildMaster admin API key secret name is resolved via `Get-PVal`
     (`-BuildMasterAdminApiKeySecretName` → env var → `$global:settings` →
-    default `BuildMaster.Admin.API.Key`). The actual key value is then
+    default `BuildMaster.Admin.API.Key.utat01`). The actual key value is then
     retrieved through `Get-SecretATAP` using that secret name.
 
     The API key value is never logged. Every external call is logged
@@ -51,7 +51,7 @@ function Approve-BuildMasterStage {
 .PARAMETER BuildMasterAdminApiKeySecretName
     The ATAP secret name containing the BuildMaster admin API key. Resolved
     via `Get-PVal` (parameter → env var → `$global:settings` → default
-    `BuildMaster.Admin.API.Key`); the value is read with `Get-SecretATAP`.
+    `BuildMaster.Admin.API.Key.utat01`); the value is read with `Get-SecretATAP`.
 
 .INPUTS
     None.
@@ -107,7 +107,7 @@ function Approve-BuildMasterStage {
     [string]$BuildMasterBaseUrl,
 
     [Parameter(Mandatory = $false)]
-    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key'
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key.utat01'
   )
 
   begin {

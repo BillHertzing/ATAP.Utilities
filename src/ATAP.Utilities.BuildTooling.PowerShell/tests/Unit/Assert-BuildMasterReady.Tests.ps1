@@ -37,7 +37,7 @@ Describe 'Assert-BuildMasterReady' -Tag 'Unit' {
         $result = Assert-BuildMasterReady -BuildMasterBaseUrl $script:unreachableUrl -TimeoutSeconds 1
         $result.Checks.ApiKeyResolvable.Ok | Should -BeTrue
         $script:getPValCallCount | Should -Be 0
-        Should -Invoke Get-SecretATAP -ParameterFilter { $SecretName -eq 'BuildMaster.Admin.API.Key' }
+        Should -Invoke Get-SecretATAP -ParameterFilter { $SecretName -eq 'BuildMaster.Admin.API.Key.utat01' }
       } finally {
         if ($null -ne $savedSettings) { Set-Variable -Name settings -Scope Global -Value $savedSettings.Value }
       }

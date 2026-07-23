@@ -39,7 +39,7 @@ function Invoke-SprintEndInfrastructureCleanup {
     [string[]]$DeveloperNames = @($env:USERNAME),
 
     [Parameter()]
-    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key',
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key.utat01',
 
     [Parameter()]
     [switch]$Apply

@@ -34,7 +34,7 @@ function Set-BuildMasterSprintVariables {
         variables are pushed for repositories outside the build system.
 
     Resolves the API key secret name via Get-PVal (default
-    'BuildMaster.Admin.API.Key') and reads the key value with Get-SecretATAP.
+    'BuildMaster.Admin.API.Key.utat01') and reads the key value with Get-SecretATAP.
 
   .PARAMETER SprintNumber
     The zero-padded four-character sprint number, e.g. '0006'.
@@ -120,7 +120,7 @@ function Set-BuildMasterSprintVariables {
 
     [string]$BuildMasterBaseUrl,
 
-    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key'
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key.utat01'
   )
 
   begin {

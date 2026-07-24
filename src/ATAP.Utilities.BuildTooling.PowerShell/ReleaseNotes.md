@@ -1,5 +1,13 @@
 # Production Release Notes in Chronological order
 
+# 0.1.60
+
+- Replaced the infrastructure-health secret stub with a Pester mock so the
+  promoted Secrets module cannot shadow it in BuildMaster hosts.
+- Updated stale environment-variable assertions to the current
+  `SecretEnvironmentVariables` prohibition contract.
+- Supersedes burned parent package 0.1.59.
+
 # 0.1.59
 
 - Re-exported the ProGet child through the aggregate compatibility module after

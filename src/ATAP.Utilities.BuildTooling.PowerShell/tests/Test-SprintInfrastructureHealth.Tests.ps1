@@ -7,18 +7,6 @@ BeforeAll {
   if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
     function Get-RepositoryRoot { return $null }
   }
-  # Stub the secret store so the function retrieves the BuildMaster admin API key
-  # without contacting Bitwarden. Records the SecretField and SecretStoreType
-  # passed by the caller.
-  $script:lastSecretField = $null
-  $script:lastSecretStoreType = $null
-  function global:Get-SecretATAP {
-    param([string]$SecretName, [string]$SecretField = 'password', [string]$SecretStoreType)
-    $script:lastSecretField = $SecretField
-    $script:lastSecretStoreType = $SecretStoreType
-    'unit-test-key'
-  }
-
   # Dot-source both functions in the file (Test-InfraUrlReachable + Test-SprintInfrastructureHealth)
   $functionPath = Join-Path $PSScriptRoot '../public/Test-SprintInfrastructureHealth.ps1'
   if (-not (Test-Path $functionPath)) {
@@ -35,6 +23,11 @@ BeforeAll {
 }
 
 Describe 'Test-SprintInfrastructureHealth' {
+  BeforeEach {
+    # Use a Pester mock so an installed/promoted Secrets module cannot shadow the
+    # test double through command-precedence differences in the pipeline host.
+    Mock -CommandName Get-SecretATAP -MockWith { 'unit-test-key' }
+  }
 
   It 'function is loaded and discoverable' {
     Get-Command -Name 'Test-SprintInfrastructureHealth' -CommandType Function |
@@ -72,7 +65,7 @@ Describe 'Test-SprintInfrastructureHealth' {
     }
   }
 
-  Context 'BitwardenEnvVars check — env vars present at Process scope' {
+  Context 'SecretEnvironmentVariables check — prohibited env vars present at Process scope' {
     BeforeEach {
       $script:savedVars = @{}
       foreach ($v in $script:requiredVars) {
@@ -87,14 +80,21 @@ Describe 'Test-SprintInfrastructureHealth' {
       }
     }
 
-    It 'BitwardenEnvVars.Ok is true when all required vars are set' {
+    It 'SecretEnvironmentVariables.Ok is false when prohibited vars are set' {
       $result = Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01'
-      $result.Checks.BitwardenEnvVars.Ok | Should -BeTrue
+      $result.Checks.SecretEnvironmentVariables.Ok | Should -BeFalse
     }
 
-    It 'BitwardenEnvVars.Missing is empty when all required vars are set' {
+    It 'SecretEnvironmentVariables.Present identifies each prohibited Process-scope var' {
       $result = Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01'
-      $result.Checks.BitwardenEnvVars.Missing | Should -BeNullOrEmpty
+      $presentProcessNames = @(
+        $result.Checks.SecretEnvironmentVariables.Present |
+          Where-Object Scope -EQ 'Process' |
+          Select-Object -ExpandProperty Name
+      )
+      foreach ($requiredVar in $script:requiredVars) {
+        $presentProcessNames | Should -Contain $requiredVar
+      }
     }
   }
 
@@ -148,32 +148,43 @@ Describe 'Test-SprintInfrastructureHealth' {
 
   Context 'BuildMaster admin API key resolution' {
     It 'calls Get-SecretATAP with SecretField notes to retrieve the BuildMaster admin API key' {
-      $script:lastSecretField = $null
       Test-SprintInfrastructureHealth `
         -BuildMasterBaseUrl '' `
         -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01' `
         -ProGetBaseUrl '' `
         -SqlInstancePaths @() | Out-Null
-      $script:lastSecretField | Should -Be 'notes'
+      Should -Invoke -CommandName Get-SecretATAP -Times 1 -Exactly -ParameterFilter {
+        $SecretField -eq 'notes'
+      }
     }
 
     It 'calls Get-SecretATAP with SecretStoreType BitwardenSecretsManager (no BW_SESSION dependency, SC-0175)' {
-      $script:lastSecretStoreType = $null
       Test-SprintInfrastructureHealth `
         -BuildMasterBaseUrl '' `
         -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01' `
         -ProGetBaseUrl '' `
         -SqlInstancePaths @() | Out-Null
-      $script:lastSecretStoreType | Should -Be 'BitwardenSecretsManager'
+      Should -Invoke -CommandName Get-SecretATAP -Times 1 -Exactly -ParameterFilter {
+        $SecretStoreType -eq 'BitwardenSecretsManager'
+      }
     }
 
-    It 'does not require BW_SESSION in the BitwardenEnvVars check' {
-      $result = Test-SprintInfrastructureHealth `
-        -BuildMasterBaseUrl '' `
-        -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01' `
-        -ProGetBaseUrl '' `
-        -SqlInstancePaths @()
-      $result.Checks.BitwardenEnvVars.Missing | Should -Not -Contain 'BW_SESSION'
+    It 'reports a Process-scope BW_SESSION value as prohibited' {
+      $savedBwSession = [System.Environment]::GetEnvironmentVariable('BW_SESSION', 'Process')
+      try {
+        [System.Environment]::SetEnvironmentVariable('BW_SESSION', 'unit-test-session', 'Process')
+        $result = Test-SprintInfrastructureHealth `
+          -BuildMasterBaseUrl '' `
+          -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01' `
+          -ProGetBaseUrl '' `
+          -SqlInstancePaths @()
+        @(
+          $result.Checks.SecretEnvironmentVariables.Present |
+            Where-Object { $_.Name -eq 'BW_SESSION' -and $_.Scope -eq 'Process' }
+        ).Count | Should -Be 1
+      } finally {
+        [System.Environment]::SetEnvironmentVariable('BW_SESSION', $savedBwSession, 'Process')
+      }
     }
 
     It 'BuildMasterAdminApiKeyResolvable.Ok is true when Get-SecretATAP returns a value' {

@@ -3,6 +3,8 @@
 # 0.1.64
 
 - Adds the DotnetBuild child to the canonical parent dependency graph.
+- Requires accepted DotnetBuild 0.1.1 after the immutable 0.1.0 Development
+  validation failure.
 - Preserves the frozen legacy build command surface through compatibility
   proxies.
 - Retains only `Invoke-DotnetDatabaseNuGetPush` as an intentional residual

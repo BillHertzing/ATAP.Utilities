@@ -28,9 +28,7 @@ BeforeAll {
 
 Describe 'DotnetBuild child module contract' -Tag 'Unit', 'Contract' {
   It 'exports exactly the frozen child-public surface' {
-    $actual = @(Get-Command -Module $script:module.Name -CommandType Function |
-        Select-Object -ExpandProperty Name |
-        Sort-Object)
+    $actual = @($script:module.ExportedFunctions.Keys | Sort-Object)
     Compare-Object ($script:expectedCommands | Sort-Object) $actual | Should -BeNullOrEmpty
   }
 

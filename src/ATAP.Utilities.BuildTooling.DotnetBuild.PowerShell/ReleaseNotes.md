@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.1.1
+
+- Makes the frozen export-contract test robust when the legacy parent module is
+  already loaded and owns overlapping compatibility command names.
+- Supersedes 0.1.0, which stopped at the Development validation gate.
+
 ## 0.1.0
 
 - Extracted 16 build commands from the compatibility parent.

@@ -6,7 +6,7 @@
 
 BeforeAll {
   $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSCommandPath)
-  Import-Module (Join-Path $moduleRoot 'ATAP.Utilities.BuildTooling.PowerShell.psd1') -Force -ErrorAction Stop
+  Import-Module (Join-Path $moduleRoot 'ATAP.Utilities.BuildTooling.DatabasePackaging.PowerShell.psd1') -Force -ErrorAction Stop
 }
 
 Describe 'Test-DatabasePackageCompatibility' {

@@ -15,6 +15,9 @@ child and retains parameter-preserving compatibility exports during the migratio
 The Git/worktree commands are owned by
 `ATAP.Utilities.BuildTooling.GitWorktree.PowerShell` 0.1.2 or later and are likewise
 re-exported through parameter-preserving parent compatibility proxies.
+Database package evidence, compatibility, feed, and SQL-instance commands are owned
+by `ATAP.Utilities.BuildTooling.DatabasePackaging.PowerShell`; the parent retains
+the frozen legacy command names through compatibility proxies.
 Three non-exported parent dispatch shims temporarily preserve private helper calls
 from remaining Sprint and scope-creep commands until those consumers move.
 The accepted compatibility deployment is parent 0.1.52 with GitWorktree 0.1.2;

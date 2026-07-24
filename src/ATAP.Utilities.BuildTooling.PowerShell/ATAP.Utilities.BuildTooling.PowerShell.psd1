@@ -60,7 +60,8 @@
         @{ModuleName = 'ATAP.Utilities.BuildTooling.AiRendering.PowerShell'; ModuleVersion = '0.1.0'; },
         @{ModuleName = 'ATAP.Utilities.BuildTooling.Secrets.PowerShell'; ModuleVersion = '0.1.0'; },
         @{ModuleName = 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'; ModuleVersion = '0.1.1'; },
-        @{ModuleName = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'; ModuleVersion = '0.1.1'; })
+        @{ModuleName = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'; ModuleVersion = '0.1.1'; },
+        @{ModuleName = 'ATAP.Utilities.BuildTooling.DatabasePackaging.PowerShell'; ModuleVersion = '0.1.0'; })
 
     # Assemblies that must be loaded prior to importing this module
     # RequiredAssemblies = @()

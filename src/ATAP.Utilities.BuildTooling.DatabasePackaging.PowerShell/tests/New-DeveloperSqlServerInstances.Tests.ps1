@@ -9,14 +9,11 @@ BeforeAll {
   function Invoke-BuildToolingSqlQuery { throw 'Invoke-BuildToolingSqlQuery should not be called by New-DeveloperSqlServerInstances.' }
 
   $functionName = 'New-DeveloperSqlServerInstances'
-  if (-not (Get-Command -Name $functionName -CommandType Function -ErrorAction SilentlyContinue)) {
-    $functionPath = Join-Path $PSScriptRoot -ChildPath "../public/$functionName.ps1"
-    if (Test-Path $functionPath) {
-      . $functionPath
-    } else {
-      throw "Function file not found: $functionPath"
-    }
+  $functionPath = Join-Path $PSScriptRoot -ChildPath "../public/$functionName.ps1"
+  if (-not (Test-Path -LiteralPath $functionPath)) {
+    throw "Function file not found: $functionPath"
   }
+  . $functionPath
 
   # Minimal stub for Install-SqlServerInstance — returns a success object
   function script:Install-SqlServerInstance {

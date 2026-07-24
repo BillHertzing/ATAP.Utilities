@@ -684,40 +684,6 @@ function Parse-CSharpFile {
   }
 }
 
-function Parse-SQLFile {
-  param(
-    [string]$FilePath,
-    [string]$RelativePath
-  )
-
-  try {
-    $content = Get-Content -Path $FilePath -Raw
-    $fileName = [System.IO.Path]::GetFileNameWithoutExtension($FilePath)
-
-    # Look for comment header describing the script
-    $purposePattern = '--\s+(.*?)(?:\r?\n--|\r?\n\r?\n)'
-    $match = [regex]::Match($content, $purposePattern, [System.Text.RegularExpressions.RegexOptions]::Multiline)
-
-    $purpose = if ($match.Success) {
-      $match.Groups[1].Value.Trim()
-    }
-    else {
-      "SQL script $fileName"
-    }
-
-    return @(
-      [PSCustomObject]@{
-        Name    = $fileName
-        Purpose = $purpose
-      }
-    )
-  }
-  catch {
-    Write-PSFMessage -Level Error -Message "Error parsing SQL file '$FilePath': $($_.Exception.Message)"
-    return $null
-  }
-}
-
 function New-DeterministicGuid {
   param([string]$SeedString)
 

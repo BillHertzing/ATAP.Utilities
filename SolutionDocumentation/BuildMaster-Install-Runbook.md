@@ -7,6 +7,11 @@
 > pass only `ProGet.BuildMaster.API.Key.<service-host>` as `-ProGetApiKeySecretName`; the leaf
 > resolves it through `Get-SecretATAP` immediately before authentication.
 
+> **SC-0288 / Task 13.66 host-suffix convention:** `<service-host>` is derived from the
+> `ServicePlacementMap` setting, never typed as a literal. BuildTooling functions do this
+> themselves and fail closed when placement is unknown. See
+> [SecretName-HostSuffix-Convention.md](SecretName-HostSuffix-Convention.md).
+
 **Status:** Current installation runbook. The Sprint 0007 discovery ledger in
 `Runbook-BuildMasterConfiguration.md` is historical/non-executable; current values are
 resolved from the service-placement host, repository root, and active branch at run time.

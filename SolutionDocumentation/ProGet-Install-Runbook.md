@@ -1,6 +1,18 @@
 # ProGet Install Runbook
 
-> **Task 13.62 security cutover:** Do not create, export, print, or validate a ProGet key through an environment variable as older sections below direct. Use canonical SecretNames `ProGet.Admin.API.Key` and `ProGet.BuildMaster.API.Key` through `Get-SecretATAP`; BuildMaster never falls back to admin.
+> **Task 13.62 security cutover:** Do not create, export, print, or validate a ProGet key through an environment variable as older sections below direct. Use canonical SecretNames `ProGet.Admin.API.Key.<service-host>` and `ProGet.BuildMaster.API.Key.<service-host>` through `Get-SecretATAP`; BuildMaster never falls back to admin.
+
+> **SC-0288 / Task 13.66 host-suffix convention:** `<service-host>` is the host running this
+> ProGet instance, taken from the `ServicePlacementMap` setting (`utat01` or `utat022` today).
+> Resolve it rather than typing it:
+>
+> ```powershell
+> $serviceHost = $global:Settings[$global:configRootKeys['ServicePlacementMapConfigRootKey']]['ProGet']
+> $ProGetAdminSecretName = "ProGet.Admin.API.Key.$serviceHost"
+> ```
+>
+> A suffixless ProGet SecretName is no longer valid. See
+> `SecretName-HostSuffix-Convention.md` for the full rule and its fail-closed behaviour.
 
 > **Provenance:** Migrated from `_Planning/Explainers/0002-ProGet-Setup.md` (rows
 > `0002-install` and `0002-403`) as part of the Sprint 0007 Explainer Elimination Plan.
@@ -19,7 +31,7 @@
 | **Database user**             | `NT SERVICE\INEDOPROGETSVC` (db_owner on `ProGet` database)                                     |
 | **Feed architecture**         | Phase 1 (combined push+pull feeds per tier) — see Architecture Overview below                   |
 | **Build pipeline smoke test** | Complete — `ATAP.Utilities.BuildTooling.CSharp` pushes to `nuget-experimental` on every build   |
-| **Admin API key SecretName**  | `ProGet.Admin.API.Key` — resolved only by secure bootstrap/authenticated leaves                 |
+| **Admin API key SecretName**  | `ProGet.Admin.API.Key.<service-host>` — resolved only by secure bootstrap/authenticated leaves                 |
 
 ---
 
@@ -243,7 +255,7 @@ Before creating feeds via the API, you need a system-level API key.
 | Field        | Value                                                                     |
 | ------------ | ------------------------------------------------------------------------- |
 | Key Type     | System (manage/admin ProGet)                                              |
-| API Key      | Use the secure one-time bootstrap for SecretName `ProGet.Admin.API.Key`; never display, export, or record the value |
+| API Key      | Use the secure one-time bootstrap for SecretName `ProGet.Admin.API.Key.<service-host>`; never display, export, or record the value |
 | Display Name | `ProGet Admin API Token`                                                  |
 | Description  | `ProGet Admin API Token`                                                  |
 | Permissions  | **Full Control (Including Native API)** — check this box                  |
@@ -252,7 +264,7 @@ Before creating feeds via the API, you need a system-level API key.
 4. Click **Save API Key**
 
 > **Critical:** The securely entered value must be the value resolved for
-> `ProGet.Admin.API.Key`. Do not copy it through an environment variable,
+> `ProGet.Admin.API.Key.<service-host>`. Do not copy it through an environment variable,
 > transcript, command argument, or evidence artifact. A mismatch returns `403`.
 
 > **Why Full Control?** This is the system admin key. ProGet Free Edition does not
@@ -260,7 +272,7 @@ Before creating feeds via the API, you need a system-level API key.
 > Control is correct.
 
 After bootstrap, validate only metadata and a redacted authenticated probe through
-a cmdlet that accepts `-ProGetApiKeySecretName 'ProGet.Admin.API.Key'`. Never print
+a cmdlet that accepts `-ProGetApiKeySecretName 'ProGet.Admin.API.Key.<service-host>'`. Never print
 or compare the resolved value. If resolution fails, verify the SecretName, BWS
 project grant, service identity, and purpose-specific BWS credential metadata.
 
@@ -377,9 +389,9 @@ The same pattern applies to the `PowershellGallery-*` feeds — see
 - [ ] `Initialize-ProGetSqlServiceLogin` ran successfully; `NT SERVICE\INEDOPROGETSVC`
       is `db_owner` on the `ProGet` database
 - [ ] Web UI reachable at `http://localhost:50000`; admin password changed from default
-- [ ] The value securely associated with `ProGet.Admin.API.Key` is registered in **Administration → Security → API Keys**
+- [ ] The value securely associated with `ProGet.Admin.API.Key.<service-host>` is registered in **Administration → Security → API Keys**
       with **Full Control (Including Native API)**
-- [ ] `ProGet.Admin.API.Key` exists in the approved BWS project and a redacted
+- [ ] `ProGet.Admin.API.Key.<service-host>` exists in the approved BWS project and a redacted
       authenticated administration probe succeeds
 - [ ] No persistent User, Machine, service, or process-launch ProGet API-key
       environment variable exists

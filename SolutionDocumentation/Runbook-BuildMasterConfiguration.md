@@ -8,6 +8,9 @@
 > derive `ProGet.BuildMaster.API.Key.<service-host>` from the placement host and pass only
 > that SecretName.
 >
+> **Task 13.66 / SC-0288:** the host-suffix rule for every ProGet and BuildMaster SecretName
+> is specified in [SecretName-HostSuffix-Convention.md](SecretName-HostSuffix-Convention.md).
+>
 > Service-account bootstrap steps that used to be scattered here — the git
 > `safe.directory` entry that lets `SvcBuildmaster` operate on Dropbox-owned
 > worktrees, and the machine-wide NBGV install required for

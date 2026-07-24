@@ -194,7 +194,7 @@ function Start-BuildMasterModulePipelineBatch {
     # Ensure the reused entry points are available when this file is run from
     # source (no module import). $PSScriptRoot still resolves inside begin.
     $requiredCommands = @{
-      'Get-BuildContext'                    = 'Get-BuildContext.ps1'
+      'Get-BuildContext'                    = '..\..\ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell\public\Get-BuildContext.ps1'
       'Start-BuildMasterPackagePipeline'    = 'Start-BuildMasterPackagePipeline.ps1'
       'Resolve-BuildMasterPackageProjectPath' = 'Start-BuildMasterPackagePipeline.ps1'
       'Test-PromotionWithinCeiling'         = 'Test-PromotionWithinCeiling.ps1'

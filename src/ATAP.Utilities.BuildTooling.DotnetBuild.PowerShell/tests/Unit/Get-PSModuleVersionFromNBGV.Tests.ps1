@@ -61,10 +61,10 @@ Describe 'Get-PSModuleVersionFromNBGV' {
       # Replace the external nbgv invocation with a function-scoped alias / stub
       Mock -CommandName 'nbgv' -MockWith { '0.1.0-Sprint.1'; $global:LASTEXITCODE = 0 }
     }
-    It 'Returns ModuleVersion 0.1.0 and Prerelease "Sprint1"' {
+    It 'Returns ModuleVersion 0.1.0 and zero-padded Prerelease "Sprint001"' {
       $r = Get-PSModuleVersionFromNBGV -ModuleRoot $script:fakeModuleRoot
       $r.ModuleVersion | Should -Be ([System.Version]'0.1.0')
-      $r.Prerelease | Should -BeExactly 'Sprint1'
+      $r.Prerelease | Should -BeExactly 'Sprint001'
       $r.FullNuGetVersion | Should -BeExactly '0.1.0-Sprint.1'
     }
   }
@@ -73,10 +73,10 @@ Describe 'Get-PSModuleVersionFromNBGV' {
     BeforeAll {
       Mock -CommandName 'nbgv' -MockWith { '0.1.0-Alpha.6'; $global:LASTEXITCODE = 0 }
     }
-    It 'Returns Prerelease "Alpha6" matching ^[A-Za-z0-9]+$' {
+    It 'Returns Prerelease "Alpha006" matching ^[A-Za-z0-9]+$' {
       $r = Get-PSModuleVersionFromNBGV -ModuleRoot $script:fakeModuleRoot
       $r.ModuleVersion | Should -Be ([System.Version]'0.1.0')
-      $r.Prerelease | Should -BeExactly 'Alpha6'
+      $r.Prerelease | Should -BeExactly 'Alpha006'
       $r.Prerelease | Should -Match '^[A-Za-z0-9]+$'
     }
   }
@@ -85,9 +85,9 @@ Describe 'Get-PSModuleVersionFromNBGV' {
     BeforeAll {
       Mock -CommandName 'nbgv' -MockWith { '0.1.0-Beta.3'; $global:LASTEXITCODE = 0 }
     }
-    It 'Returns Prerelease "Beta3"' {
+    It 'Returns Prerelease "Beta003"' {
       $r = Get-PSModuleVersionFromNBGV -ModuleRoot $script:fakeModuleRoot
-      $r.Prerelease | Should -BeExactly 'Beta3'
+      $r.Prerelease | Should -BeExactly 'Beta003'
       $r.ModuleVersion | Should -Be ([System.Version]'0.1.0')
     }
   }
@@ -96,9 +96,9 @@ Describe 'Get-PSModuleVersionFromNBGV' {
     BeforeAll {
       Mock -CommandName 'nbgv' -MockWith { '0.1.0-QA.2'; $global:LASTEXITCODE = 0 }
     }
-    It 'Returns Prerelease "QA2"' {
+    It 'Returns Prerelease "QA002"' {
       $r = Get-PSModuleVersionFromNBGV -ModuleRoot $script:fakeModuleRoot
-      $r.Prerelease | Should -BeExactly 'QA2'
+      $r.Prerelease | Should -BeExactly 'QA002'
       $r.ModuleVersion | Should -Be ([System.Version]'0.1.0')
     }
   }

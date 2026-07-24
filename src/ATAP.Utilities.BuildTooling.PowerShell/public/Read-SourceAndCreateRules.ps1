@@ -684,39 +684,6 @@ function Parse-CSharpFile {
   }
 }
 
-function Parse-MSBuildFile {
-  param(
-    [string]$FilePath,
-    [string]$RelativePath
-  )
-
-  try {
-    $content = Get-Content -Path $FilePath -Raw
-    $xml = [xml]$content
-
-    # Extract project name or assembly name
-    $projectName = $xml.Project.PropertyGroup.AssemblyName | Select-Object -First 1
-
-    if (-not $projectName) {
-      $projectName = [System.IO.Path]::GetFileNameWithoutExtension($FilePath)
-    }
-
-    $description = $xml.Project.PropertyGroup.Description | Select-Object -First 1
-    $purpose = if ($description) { $description } else { "MSBuild project $projectName" }
-
-    return @(
-      [PSCustomObject]@{
-        Name    = $projectName
-        Purpose = $purpose
-      }
-    )
-  }
-  catch {
-    Write-PSFMessage -Level Error -Message "Error parsing MSBuild file '$FilePath': $($_.Exception.Message)"
-    return $null
-  }
-}
-
 function Parse-SQLFile {
   param(
     [string]$FilePath,

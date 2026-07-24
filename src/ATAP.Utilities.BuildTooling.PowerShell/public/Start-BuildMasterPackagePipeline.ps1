@@ -74,7 +74,7 @@ function Resolve-BuildMasterPackageVersionFromProjectPath {
   )
 
   if (-not (Get-Command -Name Get-PSModuleVersionFromNBGV -CommandType Function -ErrorAction SilentlyContinue)) {
-    $helperPath = Join-Path -Path $PSScriptRoot -ChildPath 'Get-PSModuleVersionFromNBGV.ps1'
+    $helperPath = Join-Path -Path $PSScriptRoot -ChildPath '..\..\ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell\public\Get-PSModuleVersionFromNBGV.ps1'
     if (-not (Test-Path -LiteralPath $helperPath -PathType Leaf)) {
       throw "Required helper 'Get-PSModuleVersionFromNBGV' was not found at '$helperPath'."
     }

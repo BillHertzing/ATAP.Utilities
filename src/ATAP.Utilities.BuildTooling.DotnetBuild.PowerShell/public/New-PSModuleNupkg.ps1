@@ -75,7 +75,7 @@ function New-PSModuleNupkg {
 
     begin {
         $fn = 'New-PSModuleNupkg'
-        $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+        $mn = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn with ModulePath='$ModulePath' OutputPath='$OutputPath'" -Tag 'Trace'
     }
 

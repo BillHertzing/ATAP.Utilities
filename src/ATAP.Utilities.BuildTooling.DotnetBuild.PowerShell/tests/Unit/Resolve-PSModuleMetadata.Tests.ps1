@@ -10,13 +10,11 @@
 
 BeforeAll {
   $functionName = 'Resolve-PSModuleMetadata'
-  if (-not (Get-Command -Name $functionName -CommandType Function -ErrorAction SilentlyContinue)) {
-    $functionPath = Join-Path $PSScriptRoot -ChildPath "../../public/$functionName.ps1"
-    if (Test-Path $functionPath) {
-      . $functionPath
-    } else {
-      throw "Function file not found: $functionPath"
-    }
+  $functionPath = Join-Path $PSScriptRoot -ChildPath "../../public/$functionName.ps1"
+  if (Test-Path $functionPath) {
+    . $functionPath
+  } else {
+    throw "Function file not found: $functionPath"
   }
 }
 
@@ -30,11 +28,13 @@ Describe 'Resolve-PSModuleMetadata' {
       param()
       $repo = Join-Path ([System.IO.Path]::GetTempPath()) ('RPMM_' + [guid]::NewGuid().ToString('N'))
       New-Item -ItemType Directory -Path $repo -Force | Out-Null
+      $gitCommand = Get-Command -Name 'git' -CommandType Application -ErrorAction Stop |
+        Select-Object -First 1
       Push-Location $repo
       try {
-        & git init --quiet 2>&1 | Out-Null
-        & git config user.email 'test@example.com' 2>&1 | Out-Null
-        & git config user.name 'test' 2>&1 | Out-Null
+        & $gitCommand.Source init --quiet 2>&1 | Out-Null
+        & $gitCommand.Source config user.email 'test@example.com' 2>&1 | Out-Null
+        & $gitCommand.Source config user.name 'test' 2>&1 | Out-Null
       } finally {
         Pop-Location
       }

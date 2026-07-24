@@ -949,13 +949,13 @@ function Invoke-PowerShellModuleBuildMasterStage {
       END {}
     }
 
-    . (Resolve-BuildToolingFunctionFile -RelativePath 'private/Get-CeilingFromPrereleaseLabel.ps1')
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -RelativePath 'private/Get-CeilingFromPrereleaseLabel.ps1')
     . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Get-CurrentTierFromStage.ps1')
     . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Get-TierOrder.ps1')
-    . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Resolve-FeatureSlug.ps1')
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -RelativePath 'public/Resolve-FeatureSlug.ps1')
     . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Test-PromotionWithinCeiling.ps1')
-    . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Get-BuildContext.ps1')
-    . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Invoke-ModuleBuildWithRetry.ps1')
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -RelativePath 'public/Get-BuildContext.ps1')
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -RelativePath 'public/Invoke-ModuleBuildWithRetry.ps1')
     . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Move-ProGetPackageInterTier.ps1')
     . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Promote-ProGetPackage.ps1')
     . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Invoke-PSModulePesterTests.ps1')

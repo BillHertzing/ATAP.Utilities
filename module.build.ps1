@@ -85,6 +85,12 @@ $script:_bootstrapCmdlets = @(
 # the functions in this source worktree. Dot-source them every time so stale
 # session definitions cannot leak into the package being built.
 $script:_bootstrapModuleByCommand = @{
+  'Resolve-PSModuleMetadata' = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
+  'Get-PSModuleVersionFromNBGV' = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
+  'Build-PSModuleManifest' = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
+  'Build-PSModulePsm1' = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
+  'Invoke-PSModulePSScriptAnalyzer' = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
+  'Compress-PSModuleArtifacts' = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
   'Test-FailureAcknowledgedGate' = 'ATAP.Utilities.BuildTooling.AiRendering.PowerShell'
   'Publish-PSModuleToProGetFeed' = 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
 }

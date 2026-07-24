@@ -83,7 +83,7 @@ function Resolve-FeatureSlug {
 
   begin {
     $fn = 'Resolve-FeatureSlug'
-    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+    $mn = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn with BranchName='$BranchName' DeveloperOffset=$DeveloperOffset" -Tag 'Trace'
   }
 

@@ -44,7 +44,7 @@ function Clear-NuGetCaches {
 
   BEGIN {
     $fn = 'Clear-NuGetCaches'
-    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+    $mn = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Caches may be locked! Stop any IDEs or CI processes."
 

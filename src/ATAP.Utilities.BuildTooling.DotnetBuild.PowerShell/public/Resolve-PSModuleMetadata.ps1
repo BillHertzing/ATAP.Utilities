@@ -52,7 +52,7 @@ function Resolve-PSModuleMetadata {
 
   begin {
     $fn = 'Resolve-PSModuleMetadata'
-    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+    $mn = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
 
     # Check and populate simple parameter: StartPath
     if ([string]::IsNullOrWhiteSpace($StartPath)) {
@@ -103,7 +103,9 @@ function Resolve-PSModuleMetadata {
 
     # Resolve repo root via git. Use '-C <path>' to avoid changing the caller's CWD.
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling 'git -C `"$moduleRoot`" rev-parse --show-toplevel'" -Tag 'InvokeCommandCall'
-    $gitOutput = & git -C $moduleRoot rev-parse --show-toplevel 2>&1
+    $gitCommand = Get-Command -Name 'git' -CommandType Application -ErrorAction Stop |
+      Select-Object -First 1
+    $gitOutput = & $gitCommand.Source -C $moduleRoot rev-parse --show-toplevel 2>&1
     $gitExit = $LASTEXITCODE
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from 'git -C `"$moduleRoot`" rev-parse --show-toplevel' (ExitCode=$gitExit)" -Tag 'InvokeCommandCall'
 

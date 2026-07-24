@@ -224,6 +224,3 @@ function Invoke-PSModulePSScriptAnalyzer {
   }
 }
 
-if ($MyInvocation.MyCommand.ScriptBlock.Module) {
-  Export-ModuleMember -Function Invoke-PSModulePSScriptAnalyzer
-}

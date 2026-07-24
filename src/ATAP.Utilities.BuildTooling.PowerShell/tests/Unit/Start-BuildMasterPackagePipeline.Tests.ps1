@@ -3,11 +3,13 @@
 # Mocks the BuildMaster API wrapper cmdlets; no real network contact.
 
 BeforeAll {
-  $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
+  $parentModuleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+  $publicDir = Join-Path $parentModuleRoot 'public'
+  $dotnetPublicDir = Join-Path (Split-Path -Parent $parentModuleRoot) 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell\public'
   . (Join-Path $publicDir 'New-BuildMasterRelease.ps1')
   . (Join-Path $publicDir 'Start-BuildMasterPipeline.ps1')
   . (Join-Path $publicDir 'Start-BuildMasterDeployment.ps1')
-  . (Join-Path $publicDir 'Get-PSModuleVersionFromNBGV.ps1')
+  . (Join-Path $dotnetPublicDir 'Get-PSModuleVersionFromNBGV.ps1')
   . (Join-Path $publicDir 'Start-BuildMasterPackagePipeline.ps1')
 
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {

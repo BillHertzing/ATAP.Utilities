@@ -14,7 +14,9 @@ BeforeAll {
     # Load the cmdlet under test and its dependency.
     $repoRoot = Split-Path -Parent $PSScriptRoot   # …/ATAP.Utilities.BuildTooling.PowerShell
     $publicDir = Join-Path $repoRoot 'public'
-    . (Join-Path $publicDir 'Get-BuildContext.ps1')
+    $sourceRoot = Split-Path -Parent $repoRoot
+    $dotnetPublicDir = Join-Path $sourceRoot 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell\public'
+    . (Join-Path $dotnetPublicDir 'Get-BuildContext.ps1')
     . (Join-Path $publicDir 'Get-DatabasePackageBuildContext.ps1')
 
     # ---------------------------------------------------------------------------

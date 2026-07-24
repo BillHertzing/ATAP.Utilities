@@ -47,7 +47,7 @@ function Compress-PSModuleArtifacts {
 
   begin {
     $fn = 'Compress-PSModuleArtifacts'
-    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+    $mn = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
 
     # Check and populate simple parameter: OutputRoot
     if ([string]::IsNullOrWhiteSpace($OutputRoot)) {

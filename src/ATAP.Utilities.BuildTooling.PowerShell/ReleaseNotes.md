@@ -1,5 +1,13 @@
 # Production Release Notes in Chronological order
 
+# 0.1.64
+
+- Adds the DotnetBuild child to the canonical parent dependency graph.
+- Preserves the frozen legacy build command surface through compatibility
+  proxies.
+- Retains only `Invoke-DotnetDatabaseNuGetPush` as an intentional residual
+  wrapper for the later DatabasePackaging extraction.
+
 # 0.1.63
 
 - Adds the Secrets and ProGet child modules to the canonical parent entry in

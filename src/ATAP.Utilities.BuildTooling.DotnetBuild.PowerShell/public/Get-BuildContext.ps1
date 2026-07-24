@@ -173,7 +173,7 @@ function Get-BuildContext {
 
   begin {
     $fn = 'Get-BuildContext'
-    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+    $mn = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn with Application='$Application' ProjectPath='$ProjectPath' Stage='$Stage' ParameterSetName='$($PSCmdlet.ParameterSetName)'" -Tag 'Trace'
 
     if (-not $PSBoundParameters.ContainsKey('Branch') -and -not $PSBoundParameters.ContainsKey('ReleaseTag')) {
@@ -399,7 +399,7 @@ function Get-BuildContext {
     $context | Add-Member -MemberType ScriptProperty -Name 'Tier' -Value {
       if (-not $script:GetBuildContextTierAliasWarningEmitted) {
         $script:GetBuildContextTierAliasWarningEmitted = $true
-        Write-PSFMessage -FunctionName 'Get-BuildContext' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Warning -Message "Get-BuildContext.Tier is deprecated and aliases CeilingTier. Use .CeilingTier for version-label ceiling or .CurrentTier for BuildMaster stage context."
+        Write-PSFMessage -FunctionName 'Get-BuildContext' -ModuleName $mn -Level Warning -Message "Get-BuildContext.Tier is deprecated and aliases CeilingTier. Use .CeilingTier for version-label ceiling or .CurrentTier for BuildMaster stage context."
       }
       return $this.CeilingTier
     }

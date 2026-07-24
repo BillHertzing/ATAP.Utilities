@@ -37,7 +37,7 @@ function Build-ImageFromPlantUML {
   )
 
   BEGIN {
-    Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Debug -Message "Entering Function Build-ImageFromPlantUML"
+    Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -Level Debug -Message "Entering Function Build-ImageFromPlantUML"
 
     $Settings = [ordered] @{
       InDir                 = ''
@@ -61,16 +61,16 @@ function Build-ImageFromPlantUML {
     if ($Settings.OutType -match '^SVG$') { $Settings.OutRelativeDir = $Settings.OutRelativeDir } # ToDo: should OutType re-write the outdir final path element?
 
     $SettingsAsString = $Settings.Keys | ForEach-Object { $key = $_; "$key : $($Settings[$key])" } # ToDo: study if write-hashindented is better
-    Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Verbose -Message "Initial Settings: $SettingsAsString"
+    Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -Level Verbose -Message "Initial Settings: $SettingsAsString"
 
     $OutRelativeDirForGenerated = [System.IO.Path]::GetRelativePath($Settings.OutBaseDir, $Settings.OutRelativeDir)
-    Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Verbose -Message "OutRelativeDirForGenerated: $OutRelativeDirForGenerated"
+    Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -Level Verbose -Message "OutRelativeDirForGenerated: $OutRelativeDirForGenerated"
 
     # Plantuml is funny, it needs an absolute path for the -o parameter to create a tree, else all files go into the output subdirectory flat
     # Attribution: https://forum.plantuml.net/9942/keep-the-original-directory-architecture-in-output
     # The link above is the first and so far only  reference I found to /$, the magic sauce that makes this work
     $OutputDirectoryAbsolute = (Join-Path $Settings.OutBaseDir $Settings.OutRelativeDir) + '/$'
-    Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Debug -Message "OutputDirectoryAbsolute: $OutputDirectoryAbsolute"
+    Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -Level Debug -Message "OutputDirectoryAbsolute: $OutputDirectoryAbsolute"
 
   }
   PROCESS {
@@ -85,36 +85,36 @@ function Build-ImageFromPlantUML {
         # Run the command only if any files of the default suffix exist in InRelativeDir
         $cmdAsString = $baseCmdAsString + '"' + $InRelativeDir + '"'
         if ($PSCmdlet.ShouldProcess("$InRelativeDir", $cmdAsString)) {
-          Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Debug -Message "Calling: $cmdAsString" -Tag 'InvokeExpressionCall'
+          Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -Level Debug -Message "Calling: $cmdAsString" -Tag 'InvokeCommandCall'
           java -jar $($Settings.PlantUMLJarPath) -o $OutputDirectoryAbsolute $InRelativeDir
-          Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Debug -Message "Successfully returned from: $cmdAsString" -Tag 'InvokeExpressionCall'
+          Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -Level Debug -Message "Successfully returned from: $cmdAsString" -Tag 'InvokeCommandCall'
         }
         # ToDo: grow this to accept a list of additional file suffixes
         $InDirAdditionalPattern = $InRelativeDir + '**\*.md'
         # This command will search for @startXYZ and @endXYZ into .md files of the $InRelativeDir (as relative to InBaseDir) directory and subdirectories
         #$cmdAsString = $baseCmdAsString + '"' + $InDirAdditionalPattern + '"'
         if ($PSCmdlet.ShouldProcess("$InDirAdditionalPattern", $cmdAsString)) {
-          Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Debug -Message "Calling: $cmdAsString" -Tag 'InvokeExpressionCall'
+          Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -Level Debug -Message "Calling: $cmdAsString" -Tag 'InvokeCommandCall'
           java -jar $($Settings.PlantUMLJarPath) -o $OutputDirectoryAbsolute $InDirAdditionalPattern > $null
-          Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Debug -Message "Successfully returned from: $cmdAsString" -Tag 'InvokeExpressionCall'
+          Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -Level Debug -Message "Successfully returned from: $cmdAsString" -Tag 'InvokeCommandCall'
         }
       }
     }
     catch {
       $err = $_
       $errorMessage = "Exception processing InDir '$InDir' : $($err.Exception.Message)"
-      Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Error -Message $errorMessage
+      Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -Level Error -Message $errorMessage
       if ($err.Exception.StackTrace) {
         $errorMessage = "StackTrace: $($err.Exception.StackTrace)"
-        Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Debug -Message $errorMessage
+        Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -Level Debug -Message $errorMessage
       }
       throw $err
     }
     finally {
-      Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Debug -Message "Leaving Function Build-ImageFromPlantUML"
+      Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -Level Debug -Message "Leaving Function Build-ImageFromPlantUML"
     }
   }
   END {
-    Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Debug -Message "Leaving Function Build-ImageFromPlantUML"
+    Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -Level Debug -Message "Leaving Function Build-ImageFromPlantUML"
   }
 }

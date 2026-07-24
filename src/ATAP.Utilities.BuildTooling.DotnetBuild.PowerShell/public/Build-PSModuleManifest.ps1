@@ -84,7 +84,7 @@ function Build-PSModuleManifest {
 
   begin {
     $fn = 'Build-PSModuleManifest'
-    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+    $mn = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Entering function'
   }

@@ -1,5 +1,12 @@
 # Production Release Notes in Chronological order
 
+# 0.1.62
+
+- Raised the ProGet child dependency floor from burned 0.1.0 to the accepted
+  Stable/AllUsers 0.1.1 release.
+- Supersedes parent 0.1.61, whose promoted matrices passed but whose dependency
+  range still admitted the rejected child version.
+
 # 0.1.61
 
 - Applied the promoted-host-safe `Get-SecretATAP` Pester mock to the duplicate

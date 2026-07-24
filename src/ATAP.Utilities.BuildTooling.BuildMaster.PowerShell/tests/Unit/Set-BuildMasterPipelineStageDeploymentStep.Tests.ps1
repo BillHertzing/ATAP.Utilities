@@ -1,18 +1,13 @@
 BeforeAll {
-  $ModulePath = Resolve-Path "$PSScriptRoot/../../ATAP.Utilities.BuildTooling.Powershell.psd1"
+  $ModulePath = Resolve-Path "$PSScriptRoot/../../ATAP.Utilities.BuildTooling.BuildMaster.PowerShell.psd1"
   Import-Module $ModulePath -Force
-  Write-Host "Module loaded from: $ModulePath"
+  function global:Get-SecretATAP { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) 'test-key' }
 
   # Import the helper function for testing
   . "$PSScriptRoot/../../public/Set-BuildMasterPipelineStageDeploymentStep.ps1"
 }
 
 Describe 'Set-BuildMasterPipelineStageDeploymentStep' {
-
-  BeforeEach {
-    # Clear any previous mocks
-    Remove-Module Pester -Force -ErrorAction SilentlyContinue
-  }
 
   Context 'Parameter Validation' {
     It 'Throws when ApplicationName is empty' {
@@ -39,7 +34,7 @@ Describe 'Set-BuildMasterPipelineStageDeploymentStep' {
         -ApplicationName 'app' `
         -PipelineName 'pipe' `
         -DeploymentStepName 'step' `
-        -ApiKey 'valid-test-key' `
+        -BuildMasterAdminApiKeySecretName 'test-secret' `
         -BuildMasterBaseUrl 'http://127.0.0.1:1' `
         -ErrorAction SilentlyContinue
 
@@ -55,7 +50,7 @@ Describe 'Set-BuildMasterPipelineStageDeploymentStep' {
         -ApplicationName 'NonExistent' `
         -PipelineName 'test-pipeline' `
         -DeploymentStepName 'test-step' `
-        -ApiKey 'dummy-key' `
+        -BuildMasterAdminApiKeySecretName 'test-secret' `
         -BuildMasterBaseUrl 'http://localhost:50001' `
         -ErrorAction SilentlyContinue 2>$null
 
@@ -82,7 +77,7 @@ Describe 'Set-BuildMasterPipelineStageDeploymentStep' {
         -ApplicationName 'TestApp' `
         -PipelineName 'TestPipeline' `
         -DeploymentStepName 'TestStep' `
-        -ApiKey 'dummy-key' `
+        -BuildMasterAdminApiKeySecretName 'test-secret' `
         -BuildMasterBaseUrl 'http://localhost:8622' `
         -WhatIf `
         -ErrorAction SilentlyContinue
@@ -101,7 +96,8 @@ Describe 'Set-BuildMasterPipelineStageDeploymentStep' {
         -ApplicationName 'TestApp' `
         -PipelineName 'TestPipeline' `
         -DeploymentStepName 'TestStep' `
-        -ApiKey 'dummy-key' `
+        -BuildMasterAdminApiKeySecretName 'test-secret' `
+        -BuildMasterBaseUrl 'http://127.0.0.1:1' `
         -ErrorAction SilentlyContinue | Out-Null } |
         Should -Not -Throw
     }
@@ -113,7 +109,8 @@ Describe 'Set-BuildMasterPipelineStageDeploymentStep' {
         -PipelineName 'TestPipeline' `
         -DeploymentStepName 'TestStep' `
         -Stages $customStages `
-        -ApiKey 'dummy-key' `
+        -BuildMasterAdminApiKeySecretName 'test-secret' `
+        -BuildMasterBaseUrl 'http://127.0.0.1:1' `
         -ErrorAction SilentlyContinue | Out-Null } |
         Should -Not -Throw
     }
@@ -124,7 +121,8 @@ Describe 'Set-BuildMasterPipelineStageDeploymentStep' {
         -PipelineName 'TestPipeline' `
         -DeploymentStepName 'TestStep' `
         -RaftName 'custom-raft' `
-        -ApiKey 'dummy-key' `
+        -BuildMasterAdminApiKeySecretName 'test-secret' `
+        -BuildMasterBaseUrl 'http://127.0.0.1:1' `
         -ErrorAction SilentlyContinue | Out-Null } |
         Should -Not -Throw
     }
@@ -134,7 +132,7 @@ Describe 'Set-BuildMasterPipelineStageDeploymentStep' {
         -ApplicationName 'TestApp' `
         -PipelineName 'TestPipeline' `
         -DeploymentStepName 'TestStep' `
-        -ApiKey 'dummy-key' `
+        -BuildMasterAdminApiKeySecretName 'test-secret' `
         -BuildMasterBaseUrl 'http://buildmaster.example:8622' `
         -ErrorAction SilentlyContinue | Out-Null } |
         Should -Not -Throw

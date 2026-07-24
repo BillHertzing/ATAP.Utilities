@@ -15,6 +15,7 @@ $childModuleNames = @(
     'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
     'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
     'ATAP.Utilities.BuildTooling.DatabasePackaging.PowerShell'
+    'ATAP.Utilities.BuildTooling.BuildMaster.PowerShell'
 )
 foreach ($childModuleName in $childModuleNames) {
     try {

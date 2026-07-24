@@ -15,6 +15,8 @@ BeforeAll {
     & $script:invokeRestMethodHandler -Uri $Uri -Method $Method -Body $Body
   }
 
+  function global:Get-SecretATAP { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) 'test-key' }
+
   . "$PSScriptRoot\..\..\public\Sync-BuildMasterPlans.ps1"
 }
 
@@ -62,7 +64,7 @@ Describe 'Sync-BuildMasterPlans [public]' {
   }
 
   It 'uploads .otter files to the BuildMaster raft API' {
-    $result = Sync-BuildMasterPlans -Path $script:tempDir -ApiKey 'test-key' -BuildMasterBaseUrl 'http://buildmaster.test' -SkipExistingLookup
+    $result = Sync-BuildMasterPlans -Path $script:tempDir -BuildMasterAdminApiKeySecretName 'test-key' -BuildMasterBaseUrl 'http://buildmaster.test' -SkipExistingLookup
 
     $uploadCalls = @($script:restCalls | Where-Object { $_.Uri -like '*/Rafts_CreateOrUpdateRaftItem' })
     $uploadCalls.Count | Should -Be 1
@@ -76,7 +78,7 @@ Describe 'Sync-BuildMasterPlans [public]' {
   }
 
   It 'preserves relative paths and resolves application names when requested' {
-    $result = Sync-BuildMasterPlans -Path $script:tempDir -Recurse -PreserveDirectoryStructure -ApplicationName 'ATAP.Utilities' -ApiKey 'test-key' -BuildMasterBaseUrl 'http://buildmaster.test' -SkipExistingLookup
+    $result = Sync-BuildMasterPlans -Path $script:tempDir -Recurse -PreserveDirectoryStructure -ApplicationName 'ATAP.Utilities' -BuildMasterAdminApiKeySecretName 'test-key' -BuildMasterBaseUrl 'http://buildmaster.test' -SkipExistingLookup
 
     $uploadCalls = @($script:restCalls | Where-Object { $_.Uri -like '*/Rafts_CreateOrUpdateRaftItem' })
     $uploadCalls.Count | Should -Be 2
@@ -103,14 +105,14 @@ Describe 'Sync-BuildMasterPlans [public]' {
       return @{}
     }
 
-    Sync-BuildMasterPlans -Path (Join-Path $script:tempDir 'Build.otter') -ApiKey 'test-key' -BuildMasterBaseUrl 'http://buildmaster.test' | Out-Null
+    Sync-BuildMasterPlans -Path (Join-Path $script:tempDir 'Build.otter') -BuildMasterAdminApiKeySecretName 'test-key' -BuildMasterBaseUrl 'http://buildmaster.test' | Out-Null
 
     $uploadCall = @($script:restCalls | Where-Object { $_.Uri -like '*/Rafts_CreateOrUpdateRaftItem' })[0]
     $uploadCall.Body.RaftItem_Id | Should -Be 99
   }
 
   It 'does not upload when WhatIf is used' {
-    Sync-BuildMasterPlans -Path $script:tempDir -ApiKey 'test-key' -BuildMasterBaseUrl 'http://buildmaster.test' -SkipExistingLookup -WhatIf | Out-Null
+    Sync-BuildMasterPlans -Path $script:tempDir -BuildMasterAdminApiKeySecretName 'test-key' -BuildMasterBaseUrl 'http://buildmaster.test' -SkipExistingLookup -WhatIf | Out-Null
 
     @($script:restCalls | Where-Object { $_.Uri -like '*/Rafts_CreateOrUpdateRaftItem' }).Count | Should -Be 0
   }
@@ -125,7 +127,7 @@ Describe 'Sync-BuildMasterPlans [public]' {
       'BuildMaster.BaseUrl'        = 'http://buildmaster.settings'
     }
 
-    Sync-BuildMasterPlans -ApiKey 'test-key' -SkipExistingLookup | Out-Null
+    Sync-BuildMasterPlans -BuildMasterAdminApiKeySecretName 'test-key' -SkipExistingLookup | Out-Null
 
     $uploadCall = @($script:restCalls | Where-Object { $_.Uri -like '*/Rafts_CreateOrUpdateRaftItem' })[0]
     $uploadCall.Uri | Should -Be 'http://buildmaster.settings/api/json/Rafts_CreateOrUpdateRaftItem'
@@ -135,6 +137,6 @@ Describe 'Sync-BuildMasterPlans [public]' {
     $emptyDir = Join-Path $script:tempDir 'empty'
     New-Item -ItemType Directory -Path $emptyDir -Force | Out-Null
 
-    { Sync-BuildMasterPlans -Path $emptyDir -ApiKey 'test-key' -BuildMasterBaseUrl 'http://buildmaster.test' } | Should -Throw -ExpectedMessage '*No .otter files found*'
+    { Sync-BuildMasterPlans -Path $emptyDir -BuildMasterAdminApiKeySecretName 'test-key' -BuildMasterBaseUrl 'http://buildmaster.test' } | Should -Throw -ExpectedMessage '*No .otter files found*'
   }
 }

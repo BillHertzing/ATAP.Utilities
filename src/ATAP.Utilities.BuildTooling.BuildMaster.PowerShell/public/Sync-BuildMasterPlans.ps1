@@ -99,6 +99,12 @@ function Sync-BuildMasterPlans {
       throw 'Path was not supplied and BuildMaster.PlansDirectory was not found in $global:settings.'
     }
 
+    if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl) -and $global:configRootKeys -and $global:settings) {
+      $baseUrlKey = $global:configRootKeys['BuildMasterBaseUrlConfigRootKey']
+      if ($baseUrlKey -and $global:settings.ContainsKey($baseUrlKey)) {
+        $BuildMasterBaseUrl = [string]$global:settings[$baseUrlKey]
+      }
+    }
     $BuildMasterBaseUrl = Get-PVal -ParameterName 'BuildMasterBaseUrl' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterBaseUrl
     if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {
       $BuildMasterBaseUrl = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'Process')

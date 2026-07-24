@@ -8,6 +8,8 @@
   the standard tier verifier.
 - Aligns the checked-in source manifest with released version 0.1.1 so
   BuildMaster can resolve the child before AllUsers installation.
+- Moves the detailed ceiling-label and feature-slug tests to their owning child
+  module.
 - Supersedes 0.1.0, which stopped at the Development validation gate.
 
 ## 0.1.0

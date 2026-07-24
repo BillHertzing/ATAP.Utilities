@@ -1,5 +1,11 @@
 # Production Release Notes in Chronological order
 
+# 0.1.66
+
+- Supersedes 0.1.65, whose Development gate exposed two remaining child-owned
+  test containers in the parent test tree.
+- Moves the ceiling-label and feature-slug tests to the DotnetBuild child.
+
 # 0.1.65
 
 - Supersedes 0.1.64, which stopped after Experimental because the BuildMaster

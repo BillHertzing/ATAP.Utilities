@@ -135,6 +135,9 @@ function Set-CoreConfigRootKeys {
           'ServicePlacementMapConfigRootKey'                                                             = 'ServicePlacementMap'
           # Manim animation renderer executable path
           'ManimExePathConfigRootKey'                                                                    = 'MANIM_EXE_PATH'
+          # Root directory holding cloned/forked open-source repositories (e.g. MCP servers).
+          # Consumed as the ${OSS_FORKS_ROOT} environment variable by .mcp.json.
+          'OSSForksRootConfigRootKey'                                                                    = 'OSS_FORKS_ROOT'
           # related to the Hydrus-Network application
           'HYDRUS_ACCESS_KEYConfigRootKey'                                                               = 'HydrusAccessKey'
           'HydrusAPIHostConfigRootKey'                                                                   = 'HydrusAPIServer'

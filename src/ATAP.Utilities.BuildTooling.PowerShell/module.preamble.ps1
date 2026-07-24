@@ -1,4 +1,11 @@
 # Package-visible compatibility initialization for extracted child modules.
+# PesterScaffolding exports command metadata that references PesterConfiguration.
+# Load Pester before reflecting that child so a fresh consumer shell can construct
+# compatibility proxies without relying on a prior test-session import.
+if (-not ('PesterConfiguration' -as [type])) {
+    Import-Module -Name Pester -ErrorAction Stop
+}
+
 $childModuleNames = @(
     'ATAP.Utilities.BuildTooling.PesterScaffolding.PowerShell'
     'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell'

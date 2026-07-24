@@ -1,5 +1,13 @@
 # Production Release Notes in Chronological order
 
+# 0.1.63
+
+- Adds the Secrets and ProGet child modules to the canonical parent entry in
+  `ModuleFamily.psd1`, ensuring the generated package manifest preserves the
+  accepted ProGet dependency floor of 0.1.1.
+- Supersedes parent 0.1.62, which promoted successfully but generated a package
+  manifest without the extracted Secrets and ProGet dependencies.
+
 # 0.1.62
 
 - Raised the ProGet child dependency floor from burned 0.1.0 to the accepted

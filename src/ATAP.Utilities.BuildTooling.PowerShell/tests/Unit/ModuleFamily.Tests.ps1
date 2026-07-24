@@ -47,6 +47,16 @@ Describe 'ModuleFamily metadata' {
     }
   }
 
+  It 'packages the parent with the accepted ProGet child dependency floor' {
+    $parent = @($script:Family.Members |
+        Where-Object Name -eq 'ATAP.Utilities.BuildTooling.PowerShell')
+
+    $parent.Count | Should -Be 1
+    @($parent[0].Dependencies) | Should -Contain 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
+    [version]$parent[0].MinimumVersions['ATAP.Utilities.BuildTooling.ProGet.PowerShell'] |
+      Should -Be ([version]'0.1.1')
+  }
+
   It 'rejects malformed or cyclic family data before it can be used as a build order' {
     $malformed = @{ Members = @(@{ Name = 'A'; Dependencies = @('Missing') }) }
     $cyclic = @{ Members = @(@{ Name = 'A'; Dependencies = @('B') }, @{ Name = 'B'; Dependencies = @('A') }) }

@@ -102,12 +102,12 @@ Describe 'ProGet administration SecretName contracts' -Tag 'Unit' {
     Mock Write-PSFMessage { }
     $global:proGetSecretResolutionCount = 0
     $global:proGetRestCalls = @()
-    function global:Get-SecretATAP {
+    Mock Get-SecretATAP {
       param([string]$SecretName, [string]$SecretStoreType)
       $global:proGetSecretResolutionCount++
       'admin-auth-value'
     }
-    function global:Invoke-RestMethod {
+    Mock Invoke-RestMethod {
       param($Uri, $Method, $Headers, $Body, $ContentType)
       $global:proGetRestCalls += [PSCustomObject]@{ Uri = $Uri; Method = $Method }
       [PSCustomObject]@{ status = 'deleted' }
@@ -120,12 +120,12 @@ Describe 'ProGet administration SecretName contracts' -Tag 'Unit' {
       $feedResult['unit-feed'] | Should -BeTrue
       $apiKeyResult[42] | Should -BeTrue
       $global:proGetSecretResolutionCount | Should -Be 2
+      Should -Invoke Get-SecretATAP -Times 2 -Exactly
+      Should -Invoke Invoke-RestMethod -Times 2 -Exactly
       @($global:proGetRestCalls | Where-Object { $_.Method -eq 'Post' -and $_.Uri -like '*/api/management/feeds/delete/unit-feed' }).Count | Should -Be 1
       @($global:proGetRestCalls | Where-Object { $_.Method -eq 'Delete' -and $_.Uri -like '*/api/api-keys/delete/*id=42' }).Count | Should -Be 1
     }
     finally {
-      Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
-      Remove-Item Function:\Invoke-RestMethod -ErrorAction SilentlyContinue
       Remove-Variable proGetSecretResolutionCount -Scope Global -ErrorAction SilentlyContinue
       Remove-Variable proGetRestCalls -Scope Global -ErrorAction SilentlyContinue
     }

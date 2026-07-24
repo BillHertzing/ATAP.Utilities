@@ -110,10 +110,21 @@ function Remove-BuildMasterRelease {
     [string]$BuildMasterBaseUrl,
 
     [Parameter(Mandatory = $false)]
-    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key.utat01'
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key'
   )
 
   begin {
+    # SC-0288 / Task 13.66.b: the SecretName host suffix is derived from the service placement
+    # host, never hard-coded. Resolution order is the authoritative host setting,
+    # then the placement map; an unknown placement host fails closed.
+    if (-not $PSBoundParameters.ContainsKey('BuildMasterAdminApiKeySecretName')) {
+      if (-not (Get-Command -Name 'Resolve-HostSuffixedSecretName' -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot '..' '..' 'ATAP.Utilities.BuildTooling.Common.PowerShell' 'public' 'Resolve-HostSuffixedSecretName.ps1')
+      }
+      $BuildMasterAdminApiKeySecretName = Resolve-HostSuffixedSecretName `
+        -BaseName $BuildMasterAdminApiKeySecretName -ServiceName 'BuildMaster' -SettingName 'BuildMasterAdminApiKeySecretName'
+    }
+
     $fn = 'Remove-BuildMasterRelease'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn (Application='$Application' ReleaseNumber='$ReleaseNumber' Purge=$Purge)" -Tag 'Trace'

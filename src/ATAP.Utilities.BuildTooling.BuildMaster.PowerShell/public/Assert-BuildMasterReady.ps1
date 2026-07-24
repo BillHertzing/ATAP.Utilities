@@ -97,7 +97,7 @@ function Assert-BuildMasterReady {
     [string]$BuildMasterBaseUrl,
 
     [Parameter()]
-    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key.utat01',
+    [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key',
 
     [Parameter()]
     [ValidateRange(1, 60)]
@@ -108,6 +108,17 @@ function Assert-BuildMasterReady {
   )
 
   begin {
+    # SC-0288 / Task 13.66.b: the SecretName host suffix is derived from the service placement
+    # host, never hard-coded. Resolution order is the authoritative host setting,
+    # then the placement map; an unknown placement host fails closed.
+    if (-not $PSBoundParameters.ContainsKey('BuildMasterAdminApiKeySecretName')) {
+      if (-not (Get-Command -Name 'Resolve-HostSuffixedSecretName' -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot '..' '..' 'ATAP.Utilities.BuildTooling.Common.PowerShell' 'public' 'Resolve-HostSuffixedSecretName.ps1')
+      }
+      $BuildMasterAdminApiKeySecretName = Resolve-HostSuffixedSecretName `
+        -BaseName $BuildMasterAdminApiKeySecretName -ServiceName 'BuildMaster' -SettingName 'BuildMasterAdminApiKeySecretName'
+    }
+
     $fn = 'Assert-BuildMasterReady'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'

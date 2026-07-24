@@ -13,6 +13,17 @@ function List-ProGetFeeds {
     [string]$ProGetApiKeySecretName = 'ProGet.Admin.API.Key'
   )
   Begin {
+    # SC-0288 / Task 13.66.b: the SecretName host suffix is derived from the service placement
+    # host, never hard-coded. Resolution order is the authoritative host setting,
+    # then the placement map; an unknown placement host fails closed.
+    if (-not $PSBoundParameters.ContainsKey('ProGetApiKeySecretName')) {
+      if (-not (Get-Command -Name 'Resolve-HostSuffixedSecretName' -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot '..' '..' 'ATAP.Utilities.BuildTooling.Common.PowerShell' 'public' 'Resolve-HostSuffixedSecretName.ps1')
+      }
+      $ProGetApiKeySecretName = Resolve-HostSuffixedSecretName `
+        -BaseName $ProGetApiKeySecretName -ServiceName 'ProGet' -SettingName 'ProGetAdminApiKeySecretName'
+    }
+
     Write-PSFMessage -Level Verbose -Message 'Entering function: List-ProGetFeeds'
     if (-not (Get-Command -Name 'ConvertTo-ProGetFeedNameAlternateForm' -CommandType Function -ErrorAction SilentlyContinue)) {
       . (Join-Path $PSScriptRoot 'ConvertTo-ProGetFeedNameAlternateForm.ps1')

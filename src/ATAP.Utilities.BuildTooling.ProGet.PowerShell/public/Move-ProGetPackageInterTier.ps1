@@ -129,6 +129,17 @@ function Move-ProGetPackageInterTier {
     )
 
     begin {
+      # SC-0288 / Task 13.66.b: the SecretName host suffix is derived from the service placement
+      # host, never hard-coded. Resolution order is the authoritative host setting,
+      # then the placement map; an unknown placement host fails closed.
+      if (-not $PSBoundParameters.ContainsKey('ProGetApiKeySecretName')) {
+        if (-not (Get-Command -Name 'Resolve-HostSuffixedSecretName' -ErrorAction SilentlyContinue)) {
+          . (Join-Path $PSScriptRoot '..' '..' 'ATAP.Utilities.BuildTooling.Common.PowerShell' 'public' 'Resolve-HostSuffixedSecretName.ps1')
+        }
+        $ProGetApiKeySecretName = Resolve-HostSuffixedSecretName `
+          -BaseName $ProGetApiKeySecretName -ServiceName 'ProGet' -SettingName 'ProGetBuildMasterApiKeySecretName'
+      }
+
         $fn = 'Move-ProGetPackageInterTier'
         $mn = 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'

@@ -5,22 +5,17 @@ BeforeAll {
   $script:publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
   . (Join-Path $script:publicDir 'Test-SprintInfrastructureHealth.ps1')
 
-  # Stub the secret store so the health check resolves the BuildMaster admin API
-  # key without contacting Bitwarden. Records SecretField and SecretStoreType.
-  $script:lastSecretField = $null
-  $script:lastSecretStoreType = $null
-  function global:Get-SecretATAP {
-    param([string]$SecretName, [string]$SecretField = 'password', [string]$SecretStoreType)
-    $script:lastSecretField = $SecretField
-    $script:lastSecretStoreType = $SecretStoreType
-    'unit-test-key'
-  }
 }
 
 Describe 'Test-SprintInfrastructureHealth' -Tag 'Unit' {
+  BeforeEach {
+    # Use a Pester mock so an installed/promoted Secrets module cannot shadow the
+    # test double through command-precedence differences in the pipeline host.
+    Mock -CommandName Get-SecretATAP -MockWith { 'unit-test-key' }
+  }
 
   Context 'Result shape' {
-    BeforeAll {
+    BeforeEach {
       $script:result = Test-SprintInfrastructureHealth `
         -ProGetBaseUrl '' `
         -BuildMasterBaseUrl '' `
@@ -56,9 +51,10 @@ Describe 'Test-SprintInfrastructureHealth' -Tag 'Unit' {
 
   Context 'BuildMaster admin API key — Bitwarden notes field' {
     It 'calls Get-SecretATAP with SecretField notes' {
-      $script:lastSecretField = $null
       Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' | Out-Null
-      $script:lastSecretField | Should -Be 'notes'
+      Should -Invoke -CommandName Get-SecretATAP -Times 1 -Exactly -ParameterFilter {
+        $SecretField -eq 'notes'
+      }
     }
 
     It 'source documents CommonCIForBitwardenReadOnly for the BWS-backed provider path' {
@@ -68,9 +64,10 @@ Describe 'Test-SprintInfrastructureHealth' -Tag 'Unit' {
     }
 
     It 'forces the BitwardenSecretsManager provider so no BW_SESSION is needed (SC-0175)' {
-      $script:lastSecretStoreType = $null
       Test-SprintInfrastructureHealth -SqlInstancePaths @() -ProGetBaseUrl '' -BuildMasterBaseUrl '' | Out-Null
-      $script:lastSecretStoreType | Should -Be 'BitwardenSecretsManager'
+      Should -Invoke -CommandName Get-SecretATAP -Times 1 -Exactly -ParameterFilter {
+        $SecretStoreType -eq 'BitwardenSecretsManager'
+      }
     }
 
     It 'BuildMasterAdminApiKeyResolvable.Ok is true when stub returns a value' {

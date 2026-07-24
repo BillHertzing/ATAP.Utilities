@@ -1,5 +1,11 @@
 # Production Release Notes in Chronological order
 
+# 0.1.61
+
+- Applied the promoted-host-safe `Get-SecretATAP` Pester mock to the duplicate
+  Unit test container exercised by BuildMaster's Alpha filter.
+- Supersedes burned parent packages 0.1.59 and 0.1.60.
+
 # 0.1.60
 
 - Replaced the infrastructure-health secret stub with a Pester mock so the

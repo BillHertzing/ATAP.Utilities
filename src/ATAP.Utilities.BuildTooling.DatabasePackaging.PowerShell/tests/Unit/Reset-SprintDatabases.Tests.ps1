@@ -60,6 +60,11 @@ BeforeAll {
   }
   Set-Alias -Name Get-PVal -Value Get-ParameterValueFromNeoConfigurationRoot -Scope Script -Force
 
+  # Reset-SprintDatabases inspects the delegated command's parameter metadata.
+  # Use a real, full-signature stub (not a Pester mock wrapper) so the production
+  # command forwards its complete parameter set; the global recorder is test-only.
+  $global:DatabasePackagingFlywayCalls = [System.Collections.Generic.List[object]]::new()
+
   function Build-DatabaseWithFlyway {
     param(
       [string]$DatabaseName,
@@ -84,6 +89,11 @@ BeforeAll {
       [hashtable]$Settings,
       [switch]$Force
     )
+    $snapshot = @{}
+    foreach ($key in $PSBoundParameters.Keys) {
+      $snapshot[$key] = $PSBoundParameters[$key]
+    }
+    $global:DatabasePackagingFlywayCalls.Add($snapshot)
     [PSCustomObject]@{ Success = $true; Errors = @() }
   }
 
@@ -96,21 +106,29 @@ BeforeAll {
   $script:flywayBase = Join-Path $script:tempRepoRoot 'Database' 'Flyway'
   New-Item -ItemType Directory -Path (Join-Path $script:flywayBase 'SQL') -Force | Out-Null
   Set-Content -LiteralPath (Join-Path $script:flywayBase 'flyway.toml') -Value '# stub' -Encoding UTF8
+  $script:hadGlobalSettings = Test-Path -LiteralPath 'Variable:global:settings'
+  $script:originalGlobalSettings = $global:settings
 }
 
 AfterAll {
   Remove-Item -LiteralPath $script:tempRepoRoot -Recurse -Force -ErrorAction SilentlyContinue
+  Remove-Variable -Name DatabasePackagingFlywayCalls -Scope Global -ErrorAction SilentlyContinue
+  if ($script:hadGlobalSettings) {
+    $global:settings = $script:originalGlobalSettings
+  } else {
+    Remove-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
+  }
 }
 
 Describe 'Reset-SprintDatabases [public]' {
   BeforeEach {
+    $global:DatabasePackagingFlywayCalls.Clear()
+    $global:settings = @{}
+
     Mock -CommandName Get-Service -MockWith {
       [PSCustomObject]@{ Name = $Name; Status = 'Running' }
     } -ParameterFilter { $Name -like 'MSSQL$*' }
 
-    Mock -CommandName Build-DatabaseWithFlyway -MockWith {
-      [PSCustomObject]@{ Success = $true; Errors = @() }
-    }
     Mock -CommandName Install-SqlServerInstance -MockWith { throw 'Must not be called.' }
     Mock -CommandName Remove-DbaDatabase -MockWith { throw 'Must not be called.' }
   }
@@ -129,7 +147,8 @@ Describe 'Reset-SprintDatabases [public]' {
       -Confirm:$false
 
     $results.Count | Should -Be 4
-    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 4 -Exactly -ParameterFilter { $Force }
+    $global:DatabasePackagingFlywayCalls.Count | Should -Be 4
+    @($global:DatabasePackagingFlywayCalls | Where-Object { $_['Force'] }).Count | Should -Be 4
     Should -Invoke -CommandName Install-SqlServerInstance -Times 0 -Exactly
     Should -Invoke -CommandName Remove-DbaDatabase -Times 0 -Exactly
   }
@@ -142,12 +161,8 @@ Describe 'Reset-SprintDatabases [public]' {
       -RepositoryRoot $script:tempRepoRoot `
       -Confirm:$false | Out-Null
 
-    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -ParameterFilter {
-      $SqlInstance -eq 'Devtester' -and $Environment -eq 'Development'
-    }
-    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -ParameterFilter {
-      $SqlInstance -eq 'Exptester' -and $Environment -eq 'Experimental'
-    }
+    @($global:DatabasePackagingFlywayCalls | Where-Object { $_['SqlInstance'] -eq 'Devtester' -and $_['Environment'] -eq 'Development' }).Count | Should -Be 1
+    @($global:DatabasePackagingFlywayCalls | Where-Object { $_['SqlInstance'] -eq 'Exptester' -and $_['Environment'] -eq 'Experimental' }).Count | Should -Be 1
   }
 
   It 'defaults connection-part resets to integrated security when no secret or credential key is supplied' {
@@ -158,13 +173,13 @@ Describe 'Reset-SprintDatabases [public]' {
       -RepositoryRoot $script:tempRepoRoot `
       -Confirm:$false | Out-Null
 
-    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -Exactly -ParameterFilter {
-      $SqlInstance -eq 'Devtester' -and
-      $IntegratedSecurity -and
-      [string]::IsNullOrWhiteSpace($CredentialsKey) -and
-      [string]::IsNullOrWhiteSpace($DBConnectionStringMasterSecretName) -and
-      [string]::IsNullOrWhiteSpace($DBConnectionStringDBSecretName)
-    }
+    $global:DatabasePackagingFlywayCalls.Count | Should -Be 1
+    $call = $global:DatabasePackagingFlywayCalls[0]
+    $call['SqlInstance'] | Should -Be 'Devtester'
+    $call['IntegratedSecurity'] | Should -BeTrue
+    [string]::IsNullOrWhiteSpace($call['CredentialsKey']) | Should -BeTrue
+    [string]::IsNullOrWhiteSpace($call['DBConnectionStringMasterSecretName']) | Should -BeTrue
+    [string]::IsNullOrWhiteSpace($call['DBConnectionStringDBSecretName']) | Should -BeTrue
   }
 
   It 'uses an instance-scoped default database path when settings do not provide one' {
@@ -175,14 +190,8 @@ Describe 'Reset-SprintDatabases [public]' {
       -RepositoryRoot $script:tempRepoRoot `
       -Confirm:$false | Out-Null
 
-    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -Exactly -ParameterFilter {
-      $SqlInstance -eq 'Devtester' -and
-      $DatabasePath -eq 'C:\LocalDBs\Devtester\ATAPUtilities'
-    }
-    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -Exactly -ParameterFilter {
-      $SqlInstance -eq 'Exptester' -and
-      $DatabasePath -eq 'C:\LocalDBs\Exptester\ATAPUtilities'
-    }
+    @($global:DatabasePackagingFlywayCalls | Where-Object { $_['SqlInstance'] -eq 'Devtester' -and $_['DatabasePath'] -eq 'C:\LocalDBs\Devtester\ATAPUtilities' }).Count | Should -Be 1
+    @($global:DatabasePackagingFlywayCalls | Where-Object { $_['SqlInstance'] -eq 'Exptester' -and $_['DatabasePath'] -eq 'C:\LocalDBs\Exptester\ATAPUtilities' }).Count | Should -Be 1
   }
 
   It 'prefers an explicitly supplied current provisioning-script path over stale settings' {
@@ -204,10 +213,10 @@ Describe 'Reset-SprintDatabases [public]' {
       -RepositoryRoot $script:tempRepoRoot `
       -Confirm:$false | Out-Null
 
-    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -Exactly -ParameterFilter {
-      $ProvisioningScriptsPath -eq $currentProvisioningPath -and
-      $RepositoryRoot -eq $script:tempRepoRoot
-    }
+    @($global:DatabasePackagingFlywayCalls | Where-Object {
+      $_['ProvisioningScriptsPath'] -eq $currentProvisioningPath -and
+      $_['RepositoryRoot'] -eq $script:tempRepoRoot
+    }).Count | Should -Be 1
   }
 
   It 'uses split master and database connection-string secret names from per-database settings' {
@@ -241,23 +250,23 @@ Describe 'Reset-SprintDatabases [public]' {
       -IntegratedSecurity `
       -Confirm:$false | Out-Null
 
-    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -Exactly -ParameterFilter {
-      $DBConnectionStringMasterSecretName -eq 'ATAPUtilitiesDevelopmentMasterConnectionString' -and
-      $DBConnectionStringDBSecretName -eq 'ATAPUtilitiesDevelopmentDBConnectionString' -and
-      [string]::IsNullOrWhiteSpace($DBConnectionStringSecretName) -and
-      $DatabasePath -eq 'C:\LocalDBs\Development\ATAPUtilities' -and
-      $ProvisioningScriptsPath -eq $settingsProvisioningPath -and
-      $FlywayBasePath -eq $settingsFlywayBasePath -and
-      $FlywaySqlMigrationsPath -eq (Join-Path $settingsFlywayBasePath 'SQL') -and
-      $FlywaySharedSqlMigrationsPath -eq (Join-Path $settingsFlywayBasePath 'Shared') -and
-      $FlywayTomlPath -eq (Join-Path $settingsFlywayBasePath 'flyway.toml') -and
-      $ApplicationName -eq 'ATAP.Utilities.Tests' -and
-      [string]::IsNullOrWhiteSpace($SqlInstance) -and
-      [string]::IsNullOrWhiteSpace($DatabaseHost) -and
-      [string]::IsNullOrWhiteSpace($ConnectionMethod) -and
-      [string]::IsNullOrWhiteSpace($CredentialsKey) -and
-      -not $IntegratedSecurity
-    }
+    $global:DatabasePackagingFlywayCalls.Count | Should -Be 1
+    $call = $global:DatabasePackagingFlywayCalls[0]
+    $call['DBConnectionStringMasterSecretName'] | Should -Be 'ATAPUtilitiesDevelopmentMasterConnectionString'
+    $call['DBConnectionStringDBSecretName'] | Should -Be 'ATAPUtilitiesDevelopmentDBConnectionString'
+    [string]::IsNullOrWhiteSpace($call['DBConnectionStringSecretName']) | Should -BeTrue
+    $call['DatabasePath'] | Should -Be 'C:\LocalDBs\Development\ATAPUtilities'
+    $call['ProvisioningScriptsPath'] | Should -Be $settingsProvisioningPath
+    $call['FlywayBasePath'] | Should -Be $settingsFlywayBasePath
+    $call['FlywaySqlMigrationsPath'] | Should -Be (Join-Path $settingsFlywayBasePath 'SQL')
+    $call['FlywaySharedSqlMigrationsPath'] | Should -Be (Join-Path $settingsFlywayBasePath 'Shared')
+    $call['FlywayTomlPath'] | Should -Be (Join-Path $settingsFlywayBasePath 'flyway.toml')
+    $call['ApplicationName'] | Should -Be 'ATAP.Utilities.Tests'
+    [string]::IsNullOrWhiteSpace($call['SqlInstance']) | Should -BeTrue
+    [string]::IsNullOrWhiteSpace($call['DatabaseHost']) | Should -BeTrue
+    [string]::IsNullOrWhiteSpace($call['ConnectionMethod']) | Should -BeTrue
+    [string]::IsNullOrWhiteSpace($call['CredentialsKey']) | Should -BeTrue
+    $call['IntegratedSecurity'] | Should -BeFalse
   }
 
   It 'accepts per-instance hashtable entries with master connection-string secret names' {
@@ -279,18 +288,18 @@ Describe 'Reset-SprintDatabases [public]' {
       -RepositoryRoot $script:tempRepoRoot `
       -Confirm:$false | Out-Null
 
-    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -Exactly -ParameterFilter {
-      $Environment -eq 'Development' -and
-      $DBConnectionStringMasterSecretName -eq 'dbConnectionString.master.localhost.Dev.tester' -and
-      [string]::IsNullOrWhiteSpace($SqlInstance) -and
-      [string]::IsNullOrWhiteSpace($DatabaseHost)
-    }
-    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -Exactly -ParameterFilter {
-      $Environment -eq 'Experimental' -and
-      $DBConnectionStringMasterSecretName -eq 'dbConnectionString.master.localhost.Exp.tester' -and
-      [string]::IsNullOrWhiteSpace($SqlInstance) -and
-      [string]::IsNullOrWhiteSpace($DatabaseHost)
-    }
+    @($global:DatabasePackagingFlywayCalls | Where-Object {
+      $_['Environment'] -eq 'Development' -and
+      $_['DBConnectionStringMasterSecretName'] -eq 'dbConnectionString.master.localhost.Dev.tester' -and
+      [string]::IsNullOrWhiteSpace($_['SqlInstance']) -and
+      [string]::IsNullOrWhiteSpace($_['DatabaseHost'])
+    }).Count | Should -Be 1
+    @($global:DatabasePackagingFlywayCalls | Where-Object {
+      $_['Environment'] -eq 'Experimental' -and
+      $_['DBConnectionStringMasterSecretName'] -eq 'dbConnectionString.master.localhost.Exp.tester' -and
+      [string]::IsNullOrWhiteSpace($_['SqlInstance']) -and
+      [string]::IsNullOrWhiteSpace($_['DatabaseHost'])
+    }).Count | Should -Be 1
   }
 
   It 'uses Get-PVal instance settings when InstanceNames are plain strings' {
@@ -313,18 +322,18 @@ Describe 'Reset-SprintDatabases [public]' {
       -RepositoryRoot $script:tempRepoRoot `
       -Confirm:$false | Out-Null
 
-    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -Exactly -ParameterFilter {
-      $Environment -eq 'Development' -and
-      $DBConnectionStringMasterSecretName -eq 'settings-dev-master-secret' -and
-      [string]::IsNullOrWhiteSpace($SqlInstance) -and
-      [string]::IsNullOrWhiteSpace($DatabaseHost)
-    }
-    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 1 -Exactly -ParameterFilter {
-      $Environment -eq 'Experimental' -and
-      $DBConnectionStringMasterSecretName -eq 'settings-exp-master-secret' -and
-      [string]::IsNullOrWhiteSpace($SqlInstance) -and
-      [string]::IsNullOrWhiteSpace($DatabaseHost)
-    }
+    @($global:DatabasePackagingFlywayCalls | Where-Object {
+      $_['Environment'] -eq 'Development' -and
+      $_['DBConnectionStringMasterSecretName'] -eq 'settings-dev-master-secret' -and
+      [string]::IsNullOrWhiteSpace($_['SqlInstance']) -and
+      [string]::IsNullOrWhiteSpace($_['DatabaseHost'])
+    }).Count | Should -Be 1
+    @($global:DatabasePackagingFlywayCalls | Where-Object {
+      $_['Environment'] -eq 'Experimental' -and
+      $_['DBConnectionStringMasterSecretName'] -eq 'settings-exp-master-secret' -and
+      [string]::IsNullOrWhiteSpace($_['SqlInstance']) -and
+      [string]::IsNullOrWhiteSpace($_['DatabaseHost'])
+    }).Count | Should -Be 1
   }
 
   It 'fails with onboarding remediation and does not reset anything when an instance is missing' {
@@ -343,7 +352,7 @@ Describe 'Reset-SprintDatabases [public]' {
         -Confirm:$false
     } | Should -Throw -ExpectedMessage '*developer onboarding SQL Server instance setup*'
 
-    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 0 -Exactly
+    $global:DatabasePackagingFlywayCalls.Count | Should -Be 0
   }
 
   It 'does not call Build-DatabaseWithFlyway when WhatIf is set' {
@@ -356,7 +365,7 @@ Describe 'Reset-SprintDatabases [public]' {
 
     $results.Count | Should -Be 4
     ($results | Where-Object { -not $_.skipped }).Count | Should -Be 0
-    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 0 -Exactly
+    $global:DatabasePackagingFlywayCalls.Count | Should -Be 0
   }
 
   It 'does not call Build-DatabaseWithFlyway when DryRun is set' {
@@ -369,7 +378,7 @@ Describe 'Reset-SprintDatabases [public]' {
 
     $results.Count | Should -Be 2
     ($results | Where-Object { -not $_.dryRun -or -not $_.skipped -or $_.reset }).Count | Should -Be 0
-    Should -Invoke -CommandName Build-DatabaseWithFlyway -Times 0 -Exactly
+    $global:DatabasePackagingFlywayCalls.Count | Should -Be 0
   }
 
   It 'uses Dev and Exp instance names for the current user by default' {

@@ -7,12 +7,8 @@
 BeforeAll {
   $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSCommandPath)
   Import-Module (Join-Path $moduleRoot 'ATAP.Utilities.BuildTooling.DatabasePackaging.PowerShell.psd1') -Force -ErrorAction Stop
-}
 
-Describe 'Test-DatabasePackageCompatibility' {
-
-  # ── Helpers ────────────────────────────────────────────────────────────────
-  function New-ManifestFile {
+  function script:New-ManifestFile {
     param(
       [string]$Directory,
       [string[]]$Ranges
@@ -34,7 +30,9 @@ Describe 'Test-DatabasePackageCompatibility' {
     Set-Content -LiteralPath $path -Value $json -Encoding UTF8
     return $path
   }
+}
 
+Describe 'Test-DatabasePackageCompatibility' {
   # ── In-range tests ──────────────────────────────────────────────────────────
   Context 'Application version within range' {
 

@@ -1,5 +1,16 @@
 # Production Release Notes in Chronological order
 
+# 0.1.59
+
+- Re-exported the ProGet child through the aggregate compatibility module after
+  promoting and installing `ATAP.Utilities.BuildTooling.ProGet.PowerShell`
+  0.1.1.
+- Preserved every command in the frozen 200-function parent contract.
+- Retained `Invoke-DotnetNuGetPush` and
+  `Invoke-DotnetDatabaseNuGetPush` as explicit parent-residual wrappers pending
+  their later DotnetBuild and DatabasePackaging extractions.
+- Removed the migrated ProGet implementation and test files from the parent.
+
 # 0.1.54
 
 - Re-exported nine AiRendering commands through the compatibility parent while

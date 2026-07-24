@@ -6,6 +6,8 @@
   already loaded and owns overlapping compatibility command names.
 - Makes the contract fixture honor the promoted-artifact manifest supplied by
   the standard tier verifier.
+- Aligns the checked-in source manifest with released version 0.1.1 so
+  BuildMaster can resolve the child before AllUsers installation.
 - Supersedes 0.1.0, which stopped at the Development validation gate.
 
 ## 0.1.0

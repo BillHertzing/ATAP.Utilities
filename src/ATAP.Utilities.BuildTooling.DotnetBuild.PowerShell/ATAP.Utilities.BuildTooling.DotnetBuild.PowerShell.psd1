@@ -1,6 +1,6 @@
 @{
   RootModule           = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell.psm1'
-  ModuleVersion        = '0.1.0'
+  ModuleVersion        = '0.1.1'
   GUID                 = 'A2B1C552-FD36-4DCE-92B8-0A76BD4FA92F'
   Author               = 'Bill Hertzing for ATAPUtilities.org'
   CompanyName          = 'ATAPUtilities.org'

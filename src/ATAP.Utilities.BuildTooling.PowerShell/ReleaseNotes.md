@@ -1,5 +1,11 @@
 # Production Release Notes in Chronological order
 
+# 0.1.65
+
+- Supersedes 0.1.64, which stopped after Experimental because the BuildMaster
+  service account could not resolve the child's stale 0.1.0 source manifest.
+- Aligns the DotnetBuild source manifest with accepted package version 0.1.1.
+
 # 0.1.64
 
 - Adds the DotnetBuild child to the canonical parent dependency graph.

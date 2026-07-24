@@ -46,10 +46,13 @@ AfterAll {
 Describe 'BuildMaster configuration API functions' -Tag 'Unit' {
   BeforeEach {
     $global:configRootKeys = @{
+      # SC-0288 / Task 13.66.b: SecretName host suffixes come from the placement map.
+      ServicePlacementMapConfigRootKey    = 'ServicePlacementMap'
       BuildMasterBaseUrlConfigRootKey     = 'BuildMasterBaseUrl'
       BuildMasterAdminApiKeyConfigRootKey = 'BuildMasterAdminApiKey'
     }
     $global:settings = @{
+      ServicePlacementMap    = @{ BuildMaster = 'utat022'; ProGet = 'utat022' }
       BuildMasterBaseUrl     = 'https://buildmaster.example.test'
       BuildMasterAdminApiKey = 'unit-test-key'
     }
@@ -264,10 +267,13 @@ Describe 'BuildMaster configuration API functions' -Tag 'Unit' {
 Describe 'Set-BuildMasterApplicationVariables' -Tag 'Unit' {
   BeforeEach {
     $global:configRootKeys = @{
+      # SC-0288 / Task 13.66.b: SecretName host suffixes come from the placement map.
+      ServicePlacementMapConfigRootKey    = 'ServicePlacementMap'
       BuildMasterBaseUrlConfigRootKey     = 'BuildMasterBaseUrl'
       BuildMasterAdminApiKeyConfigRootKey = 'BuildMasterAdminApiKey'
     }
     $global:settings = @{
+      ServicePlacementMap    = @{ BuildMaster = 'utat022'; ProGet = 'utat022' }
       BuildMasterBaseUrl     = 'https://buildmaster.example.test'
       BuildMasterAdminApiKey = 'unit-test-key'
     }
@@ -411,10 +417,13 @@ Describe 'Deprecated BuildMaster variable cmdlets emit deprecation warnings' -Ta
 
   BeforeEach {
     $global:configRootKeys = @{
+      # SC-0288 / Task 13.66.b: SecretName host suffixes come from the placement map.
+      ServicePlacementMapConfigRootKey    = 'ServicePlacementMap'
       BuildMasterBaseUrlConfigRootKey     = 'BuildMasterBaseUrl'
       BuildMasterAdminApiKeyConfigRootKey = 'BuildMasterAdminApiKey'
     }
     $global:settings = @{
+      ServicePlacementMap    = @{ BuildMaster = 'utat022'; ProGet = 'utat022' }
       BuildMasterBaseUrl     = 'https://buildmaster.example.test'
       BuildMasterAdminApiKey = 'unit-test-key'
     }
@@ -444,10 +453,13 @@ Describe 'Deprecated BuildMaster variable cmdlets emit deprecation warnings' -Ta
 Describe 'Set-BuildMasterSprintVariables application targeting (Task 10.12)' -Tag 'Unit' {
   BeforeEach {
     $global:configRootKeys = @{
+      # SC-0288 / Task 13.66.b: SecretName host suffixes come from the placement map.
+      ServicePlacementMapConfigRootKey    = 'ServicePlacementMap'
       BuildMasterBaseUrlConfigRootKey     = 'BuildMasterBaseUrl'
       BuildMasterAdminApiKeyConfigRootKey = 'BuildMasterAdminApiKey'
     }
     $global:settings = @{
+      ServicePlacementMap    = @{ BuildMaster = 'utat022'; ProGet = 'utat022' }
       BuildMasterBaseUrl     = 'https://buildmaster.example.test'
       BuildMasterAdminApiKey = 'unit-test-key'
     }
@@ -557,10 +569,13 @@ Describe 'Set-BuildMasterSprintVariables application targeting (Task 10.12)' -Ta
 Describe 'Clear-BuildMasterSprintVariables application targeting (Task 10.12)' -Tag 'Unit' {
   BeforeEach {
     $global:configRootKeys = @{
+      # SC-0288 / Task 13.66.b: SecretName host suffixes come from the placement map.
+      ServicePlacementMapConfigRootKey    = 'ServicePlacementMap'
       BuildMasterBaseUrlConfigRootKey     = 'BuildMasterBaseUrl'
       BuildMasterAdminApiKeyConfigRootKey = 'BuildMasterAdminApiKey'
     }
     $global:settings = @{
+      ServicePlacementMap    = @{ BuildMaster = 'utat022'; ProGet = 'utat022' }
       BuildMasterBaseUrl     = 'https://buildmaster.example.test'
       BuildMasterAdminApiKey = 'unit-test-key'
     }

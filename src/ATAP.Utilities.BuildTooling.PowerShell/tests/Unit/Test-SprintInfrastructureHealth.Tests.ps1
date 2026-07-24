@@ -12,6 +12,19 @@ Describe 'Test-SprintInfrastructureHealth' -Tag 'Unit' {
     # Use a Pester mock so an installed/promoted Secrets module cannot shadow the
     # test double through command-precedence differences in the pipeline host.
     Mock -CommandName Get-SecretATAP -MockWith { 'unit-test-key' }
+
+    # SC-0288 / Task 13.66.b: the BuildMaster admin SecretName carries the
+    # placement host, and resolution fails closed when placement is unknown, so
+    # this suite must declare placement rather than rely on a host literal.
+    $script:oldConfigRootKeys = $global:configRootKeys
+    $script:oldSettings = $global:Settings
+    $global:configRootKeys = @{ ServicePlacementMapConfigRootKey = 'ServicePlacementMap' }
+    $global:Settings = @{ ServicePlacementMap = @{ BuildMaster = 'utat022'; ProGet = 'utat022' } }
+  }
+
+  AfterEach {
+    $global:configRootKeys = $script:oldConfigRootKeys
+    $global:Settings = $script:oldSettings
   }
 
   Context 'Result shape' {

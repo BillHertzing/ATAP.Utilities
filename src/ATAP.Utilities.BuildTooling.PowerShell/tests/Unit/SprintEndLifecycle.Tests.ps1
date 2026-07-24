@@ -505,6 +505,14 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
 
   Context 'Invoke-SprintEndInfrastructureCleanup' {
     BeforeEach {
+      # SC-0288 / Task 13.66.b: the cleanup cmdlet's BuildMaster admin SecretName
+      # is host-suffixed from the placement map and fails closed when placement
+      # is unknown, so this context must declare placement.
+      $script:oldConfigRootKeys = $global:configRootKeys
+      $script:oldSettings = $global:Settings
+      $global:configRootKeys = @{ ServicePlacementMapConfigRootKey = 'ServicePlacementMap' }
+      $global:Settings = @{ ServicePlacementMap = @{ BuildMaster = 'utat022'; ProGet = 'utat022' } }
+
       Mock Test-SprintInfrastructureHealth {
         [PSCustomObject]@{ AllOk = $true; Failures = @() }
       }
@@ -517,6 +525,11 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       Mock Set-SprintBoundaryContext {
         [PSCustomObject]@{ Errors = @() }
       }
+    }
+
+    AfterEach {
+      $global:configRootKeys = $script:oldConfigRootKeys
+      $global:Settings = $script:oldSettings
     }
 
     It 'runs database and BuildMaster cleanup but never secret or instance removal' {

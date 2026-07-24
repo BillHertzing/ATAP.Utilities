@@ -40,9 +40,12 @@ BeforeAll {
 
     # Empty settings -> the cmdlet should fall back to env var or local default.
     $global:configRootKeys = @{
+      # SC-0288 / Task 13.66.b: SecretName host suffixes come from the placement map.
+      ServicePlacementMapConfigRootKey = 'ServicePlacementMap'
         ProGetFeedCollectionConfigRootKey = 'ProGetFeedCollection'
     }
     $global:Settings = @{
+      ServicePlacementMap = @{ ProGet = 'utat022'; BuildMaster = 'utat022' }
         ProGetFeedCollection = @{}
     }
 }

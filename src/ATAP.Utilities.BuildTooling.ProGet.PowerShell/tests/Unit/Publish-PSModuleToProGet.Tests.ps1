@@ -37,9 +37,12 @@ BeforeAll {
     [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $null, 'Process')
     [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $null, 'User')
     $global:configRootKeys = @{
+      # SC-0288 / Task 13.66.b: SecretName host suffixes come from the placement map.
+      ServicePlacementMapConfigRootKey = 'ServicePlacementMap'
         ProGetFeedCollectionConfigRootKey = 'ProGetFeedCollection'
     }
     $global:Settings = @{
+      ServicePlacementMap = @{ ProGet = 'utat022'; BuildMaster = 'utat022' }
         ProGetFeedCollection = @{
             ProGetFeedPowerShellExperimental = @{
                 FeedName   = 'powershellget-experimental'

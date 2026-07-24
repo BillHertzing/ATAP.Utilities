@@ -68,10 +68,13 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
 
   BeforeEach {
     $global:configRootKeys = @{
+      # SC-0288 / Task 13.66.b: SecretName host suffixes come from the placement map.
+      ServicePlacementMapConfigRootKey    = 'ServicePlacementMap'
       BuildMasterBaseUrlConfigRootKey     = 'BuildMasterBaseUrl'
       BuildMasterAdminApiKeyConfigRootKey = 'BuildMasterAdminApiKey'
     }
     $global:settings = @{
+      ServicePlacementMap    = @{ BuildMaster = 'utat022'; ProGet = 'utat022' }
       BuildMasterBaseUrl     = 'https://buildmaster.example.test'
       BuildMasterAdminApiKey = 'unit-test-key'
     }
@@ -278,7 +281,12 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
     }
 
     It 'Throws when the API key is not resolvable via Get-SecretATAP' {
-      $global:settings = @{ BuildMasterBaseUrl = 'https://x.example' }
+      $global:settings = @{
+        BuildMasterBaseUrl  = 'https://x.example'
+        # SC-0288 / Task 13.66.b: placement must stay declared, or SecretName
+        # resolution fails closed before Get-SecretATAP is ever reached.
+        ServicePlacementMap = @{ BuildMaster = 'utat022'; ProGet = 'utat022' }
+      }
       Mock Get-SecretATAP { throw 'secret store unavailable' }
       { Remove-BuildMasterRelease -Application 'A' -ReleaseNumber '1.0.0' -Confirm:$false } |
         Should -Throw -ExpectedMessage '*Get-SecretATAP*'
@@ -288,7 +296,12 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
       # All BuildMaster cmdlets share a documented http://localhost:50017
       # fallback when no base URL is supplied via parameter, settings, or env
       # var (mirrors Start-BuildMasterPipeline / Start-BuildMasterDeployment).
-      $global:settings = @{ BuildMasterAdminApiKey = 'k' }
+      $global:settings = @{
+        BuildMasterAdminApiKey = 'k'
+        # SC-0288 / Task 13.66.b: base-URL fallback is orthogonal to SecretName
+        # placement, which must still be declared.
+        ServicePlacementMap    = @{ BuildMaster = 'utat022'; ProGet = 'utat022' }
+      }
       [Environment]::SetEnvironmentVariable('BUILDMASTER_BASE_URL', $null, 'Process')
       [Environment]::SetEnvironmentVariable('BUILDMASTER_BASE_URL', $null, 'User')
       $script:capturedUris = @()

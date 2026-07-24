@@ -69,9 +69,12 @@ BeforeAll {
     function Get-SecretATAP { [CmdletBinding()] param($SecretName, $SecretStoreType) $script:secretApiKey }
 
     $global:configRootKeys = @{
+      # SC-0288 / Task 13.66.b: SecretName host suffixes come from the placement map.
+      ServicePlacementMapConfigRootKey = 'ServicePlacementMap'
         ProGetFeedCollectionConfigRootKey = 'ProGetFeedCollection'
     }
     $global:Settings = @{
+      ServicePlacementMap = @{ ProGet = 'utat022'; BuildMaster = 'utat022' }
         ProGetFeedCollection = @{
             ProGetFeedNuGetExperimental = @{
                 FeedName   = 'nuget-experimental'

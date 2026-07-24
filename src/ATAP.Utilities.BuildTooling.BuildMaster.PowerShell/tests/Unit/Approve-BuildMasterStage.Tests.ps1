@@ -1,4 +1,4 @@
-﻿#Requires -Version 7.0
+#Requires -Version 7.0
 # Pester 5+ tests for Approve-BuildMasterStage (Stream H, task H5).
 # Mocks Invoke-RestMethod; no real network or BuildMaster contact.
 
@@ -43,10 +43,13 @@ Describe 'Approve-BuildMasterStage' -Tag 'Unit' {
     Mock Write-PSFMessage { }
 
     $global:configRootKeys = @{
+      # SC-0288 / Task 13.66.b: SecretName host suffixes come from the placement map.
+      ServicePlacementMapConfigRootKey    = 'ServicePlacementMap'
       BuildMasterBaseUrlConfigRootKey      = 'BuildMasterBaseUrl'
       BuildMasterAdminApiKeyConfigRootKey  = 'BuildMasterAdminApiKey'
     }
     $global:settings = @{
+      ServicePlacementMap    = @{ BuildMaster = 'utat022'; ProGet = 'utat022' }
       BuildMasterBaseUrl     = 'https://buildmaster.example.test'
       BuildMasterAdminApiKey = 'unit-test-key'
     }
@@ -148,7 +151,12 @@ Describe 'Approve-BuildMasterStage' -Tag 'Unit' {
 
   Context 'Config resolution' {
     It 'Throws when the API key is not resolvable via Get-SecretATAP' {
-      $global:settings = @{ BuildMasterBaseUrl = 'https://x.example' }
+      $global:settings = @{
+        BuildMasterBaseUrl  = 'https://x.example'
+        # SC-0288 / Task 13.66.b: placement must stay declared, or SecretName
+        # resolution fails closed before Get-SecretATAP is ever reached.
+        ServicePlacementMap = @{ BuildMaster = 'utat022'; ProGet = 'utat022' }
+      }
       Mock Get-SecretATAP { throw 'secret store unavailable' }
       { Approve-BuildMasterStage -Application 'A' -ReleaseNumber '1.0.0' -BuildNumber '1' -Stage 'QA' } |
         Should -Throw -ExpectedMessage '*Get-SecretATAP*'

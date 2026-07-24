@@ -14,6 +14,14 @@ BeforeAll {
         function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
     }
 
+    # SC-0288 / Task 13.66.b: the cmdlet derives its SecretName host suffix from
+    # the service placement map and fails closed when placement is unknown, so a
+    # suite that leaves -ProGetApiKeySecretName unbound must declare placement.
+    $script:oldConfigRootKeys = $global:configRootKeys
+    $script:oldSettings = $global:Settings
+    $global:configRootKeys = @{ ServicePlacementMapConfigRootKey = 'ServicePlacementMap' }
+    $global:Settings = @{ ServicePlacementMap = @{ ProGet = 'utat022'; BuildMaster = 'utat022' } }
+
     # Provide a stand-in definition of the inner cmdlet so Pester's Mock can replace it.
     # Mirrors the post-C2.3 canonical parameter set, with the legacy names kept as aliases.
     if (-not (Get-Command Move-ProGetPackageInterTier -ErrorAction SilentlyContinue)) {
@@ -229,4 +237,10 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit', 'PromotedModuleHostSensitive' {
             $result.PSObject.Properties.Name | Should -Contain 'InnerResult'
         }
     }
+}
+
+AfterAll {
+    # Restore the globals stashed for the SC-0288 placement declaration above.
+    $global:configRootKeys = $script:oldConfigRootKeys
+    $global:Settings = $script:oldSettings
 }

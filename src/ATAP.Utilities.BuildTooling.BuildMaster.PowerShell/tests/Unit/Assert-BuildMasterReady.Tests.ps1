@@ -27,38 +27,73 @@ Describe 'Assert-BuildMasterReady' -Tag 'Unit' {
   BeforeEach {
     $script:getPValCallCount = 0
     Mock Get-SecretATAP { 'fake-test-key' }
+
+    # SC-0288 / Task 13.66.b: the cmdlet derives its SecretName host suffix from
+    # the service placement map, so a suite that leaves the parameter unbound must
+    # declare placement. Contexts that need a different state override this.
+    $script:oldConfigRootKeys = $global:configRootKeys
+    $script:oldSettings = $global:Settings
+    $global:configRootKeys = @{ ServicePlacementMapConfigRootKey = 'ServicePlacementMap' }
+    $global:Settings = @{ ServicePlacementMap = @{ BuildMaster = 'utat022'; ProGet = 'utat022' } }
+  }
+
+  AfterEach {
+    $global:configRootKeys = $script:oldConfigRootKeys
+    $global:Settings = $script:oldSettings
+  }
+
+  Context 'Placement-derived SecretName' {
+    It 'suffixes the default SecretName with the BuildMaster placement host' {
+      # SC-0288: this used to be the hard-coded literal
+      # 'BuildMaster.Admin.API.Key.utat01', which broke whenever the instance
+      # under test was not utat01.
+      $result = Assert-BuildMasterReady -BuildMasterBaseUrl $script:unreachableUrl -TimeoutSeconds 1
+
+      $result.Checks.ApiKeyResolvable.Ok | Should -BeTrue
+      $script:getPValCallCount | Should -Be 0
+      Should -Invoke Get-SecretATAP -ParameterFilter { $SecretName -eq 'BuildMaster.Admin.API.Key.utat022' }
+    }
+
+    It 'follows the placement map to the other host without a code change' {
+      $global:Settings['ServicePlacementMap']['BuildMaster'] = 'utat01'
+
+      $result = Assert-BuildMasterReady -BuildMasterBaseUrl $script:unreachableUrl -TimeoutSeconds 1
+
+      $result.Checks.ApiKeyResolvable.Ok | Should -BeTrue
+      Should -Invoke Get-SecretATAP -ParameterFilter { $SecretName -eq 'BuildMaster.Admin.API.Key.utat01' }
+    }
+
+    It 'fails closed when configuration is loaded but placement is unknown' {
+      $global:Settings = @{ Unrelated = 'value' }
+
+      { Assert-BuildMasterReady -BuildMasterBaseUrl $script:unreachableUrl -TimeoutSeconds 1 } |
+        Should -Throw -ExpectedMessage '*placement host*could not be determined*'
+    }
+
+    It 'honours an explicitly bound SecretName without consulting placement' {
+      $global:Settings = @{ Unrelated = 'value' }
+
+      $result = Assert-BuildMasterReady -BuildMasterBaseUrl $script:unreachableUrl `
+        -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01' -TimeoutSeconds 1
+
+      $result.Checks.ApiKeyResolvable.Ok | Should -BeTrue
+      $script:getPValCallCount | Should -Be 0
+      Should -Invoke Get-SecretATAP -ParameterFilter { $SecretName -eq 'BuildMaster.Admin.API.Key.utat01' }
+    }
   }
 
   Context 'No-profile BuildMaster host' {
-    It 'uses the local secret-name default when global settings is absent' {
-      $savedSettings = Get-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
-      try {
-        Remove-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
-        $result = Assert-BuildMasterReady -BuildMasterBaseUrl $script:unreachableUrl -TimeoutSeconds 1
-        $result.Checks.ApiKeyResolvable.Ok | Should -BeTrue
-        $script:getPValCallCount | Should -Be 0
-        Should -Invoke Get-SecretATAP -ParameterFilter { $SecretName -eq 'BuildMaster.Admin.API.Key.utat01' }
-      } finally {
-        if ($null -ne $savedSettings) { Set-Variable -Name settings -Scope Global -Value $savedSettings.Value }
-      }
-    }
+    It 'uses the unsuffixed base name when no ATAP configuration is loaded at all' {
+      # A profileless shell has no BuildMaster endpoint configured either, so
+      # there is no host to suffix against and nothing to authenticate to.
+      $global:configRootKeys = $null
+      $global:Settings = $null
 
-    It 'uses an explicit secret name when global settings lacks the key' {
-      $savedSettings = Get-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
-      try {
-        Set-Variable -Name settings -Scope Global -Value @{ Unrelated = 'value' }
-        $result = Assert-BuildMasterReady -BuildMasterBaseUrl $script:unreachableUrl `
-          -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01' -TimeoutSeconds 1
-        $result.Checks.ApiKeyResolvable.Ok | Should -BeTrue
-        $script:getPValCallCount | Should -Be 0
-        Should -Invoke Get-SecretATAP -ParameterFilter { $SecretName -eq 'BuildMaster.Admin.API.Key.utat01' }
-      } finally {
-        if ($null -ne $savedSettings) {
-          Set-Variable -Name settings -Scope Global -Value $savedSettings.Value
-        } else {
-          Remove-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
-        }
-      }
+      $result = Assert-BuildMasterReady -BuildMasterBaseUrl $script:unreachableUrl -TimeoutSeconds 1
+
+      $result.Checks.ApiKeyResolvable.Ok | Should -BeTrue
+      $script:getPValCallCount | Should -Be 0
+      Should -Invoke Get-SecretATAP -ParameterFilter { $SecretName -eq 'BuildMaster.Admin.API.Key' }
     }
   }
 

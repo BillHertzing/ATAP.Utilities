@@ -36,6 +36,8 @@ Describe 'New-ProGetFeedSet' -Tag 'Unit', 'PromotedModuleHostSensitive' {
     Mock Write-PSFMessage { }
 
     $global:configRootKeys = @{
+      # SC-0288 / Task 13.66.b: SecretName host suffixes come from the placement map.
+      ServicePlacementMapConfigRootKey = 'ServicePlacementMap'
       ProGetAdminUriSchemeConfigRootKey = 'PROGET_ADMIN_URI_SCHEME'
       ProGetAdminUriHostConfigRootKey   = 'PROGET_ADMIN_URI_HOST'
       ProGetAdminUriPortConfigRootKey   = 'PROGET_ADMIN_URI_PORT'
@@ -43,6 +45,7 @@ Describe 'New-ProGetFeedSet' -Tag 'Unit', 'PromotedModuleHostSensitive' {
       ProGetFeedCollectionConfigRootKey = 'ProGetFeedCollection'
     }
     $global:Settings = @{
+      ServicePlacementMap = @{ ProGet = 'utat022'; BuildMaster = 'utat022' }
       ProGetFeedCollection = [ordered]@{
         ReleaseBundleExperimental = @{
           FeedName        = 'releasebundle-experimental'

@@ -22,6 +22,7 @@ Describe 'ATAP.Utilities.BuildTooling.Common.PowerShell scaffold contract' -Tag 
       'Get-WorkspaceJson',
       'Initialize-ATAPConfigurationGlobals',
       'Resolve-BuildToolingSettingValue',
+      'Resolve-HostSuffixedSecretName',
       'Resolve-WorkspaceFiles'
     )
     @($script:Manifest.CmdletsToExport).Count | Should -Be 0
@@ -43,6 +44,7 @@ Describe 'ATAP.Utilities.BuildTooling.Common.PowerShell scaffold contract' -Tag 
       'Get-WorkspaceJson',
       'Initialize-ATAPConfigurationGlobals',
       'Resolve-BuildToolingSettingValue',
+      'Resolve-HostSuffixedSecretName',
       'Resolve-WorkspaceFiles'
     )
   }

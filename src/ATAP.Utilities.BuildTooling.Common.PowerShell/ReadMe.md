@@ -24,6 +24,12 @@ shared settings contract through the corrected runner and is pending promotion.
 The approved membership is `Assert-GitAvailable`, `Get-RepositoryRoot`,
 `Get-WorkspaceJson`, `Resolve-WorkspaceFiles`, and `Initialize-ATAPConfigurationGlobals`.
 Task 13.72.5 adds `Resolve-BuildToolingSettingValue` as the shared settings-resolution contract.
+Task 13.66.b (SC-0288) adds `Resolve-HostSuffixedSecretName` as the single resolver for the
+canonical `<BaseName>.<placement-host>` ProGet/BuildMaster SecretName form. It belongs in Common
+because the ProGet, BuildMaster, and parent BuildTooling modules all consume it, and because the
+convention must have exactly one implementation — a second copy would drift and silently emit a
+wrong-host SecretName. It resolves names only and never reads a secret value; see
+`SolutionDocumentation/SecretName-HostSuffix-Convention.md`.
 `Get-RepositoryRoot` is the PesterScaffolding prerequisite approved to remove that pilot's
 GitWorktree dependency. `Resolve-BuildToolingSettingValue` has no duplicate parent definition;
 the parent and later children consume the Common export.

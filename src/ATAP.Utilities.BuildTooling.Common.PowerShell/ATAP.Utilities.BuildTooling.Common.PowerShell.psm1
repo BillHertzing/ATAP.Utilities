@@ -13,5 +13,6 @@ Export-ModuleMember -Function @(
   'Get-WorkspaceJson',
   'Initialize-ATAPConfigurationGlobals',
   'Resolve-BuildToolingSettingValue',
+  'Resolve-HostSuffixedSecretName',
   'Resolve-WorkspaceFiles'
 ) -Cmdlet @() -Variable @() -Alias @()

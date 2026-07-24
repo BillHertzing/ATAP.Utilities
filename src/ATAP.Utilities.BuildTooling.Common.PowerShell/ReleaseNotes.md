@@ -1,5 +1,17 @@
 # Release notes — ATAP.Utilities.BuildTooling.Common.PowerShell
 
+## 0.1.8
+
+- Adds `Resolve-HostSuffixedSecretName` (SC-0288 / Sprint 0013 Task 13.66.b): the single
+  resolver for the canonical `<BaseName>.<placement-host>` ProGet and BuildMaster SecretName
+  form. It prefers the authoritative host-settings value, otherwise derives the suffix from
+  `ServicePlacementMap`, replaces a stale known-host suffix, and fails closed when ATAP
+  configuration is loaded but the placement host is missing, empty, a loopback placeholder, or
+  malformed. A shell with no ATAP configuration at all returns the base name unchanged.
+- Resolves names only; the function invokes no secret-reading command on any path, which a
+  focused AST test asserts.
+- Export surface grows from six to seven commands.
+
 ## 0.1.7
 
 - Replaces burned 0.1.6 after the multi-tier promoted-test runner retained an autoloaded

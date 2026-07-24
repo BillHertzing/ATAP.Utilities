@@ -4,7 +4,7 @@ module: ATAP.Utilities.BuildTooling.Common.PowerShell
 functional-area: BuildTooling
 family-parent: ATAP.Utilities.BuildTooling.PowerShell
 
-release-state: 0.1.7 exports Resolve-BuildToolingSettingValue as the shared BuildTooling settings contract and replaces immutable 0.1.5; release pending. Version 0.1.6 is burned after Integration exposed retained nested-module state in the promoted-test runner. Version 0.1.5 is Stable/AllUsers.
+release-state: 0.1.8 adds Resolve-HostSuffixedSecretName (SC-0288 / Task 13.66.b) as the single placement-derived SecretName resolver and replaces unreleased 0.1.7; release pending. Version 0.1.7 exported Resolve-BuildToolingSettingValue as the shared BuildTooling settings contract and replaced immutable 0.1.5. Version 0.1.6 is burned after Integration exposed retained nested-module state in the promoted-test runner. Version 0.1.5 is Stable/AllUsers.
 
 ## Public functions
 
@@ -15,6 +15,7 @@ release-state: 0.1.7 exports Resolve-BuildToolingSettingValue as the shared Buil
 | `Get-WorkspaceJson` | Reads and parses a `.code-workspace` JSON document. |
 | `Initialize-ATAPConfigurationGlobals` | Initializes the standard ATAP configuration globals. |
 | `Resolve-BuildToolingSettingValue` | Resolves a direct or config-root-mapped setting from the initialized ATAP globals. |
+| `Resolve-HostSuffixedSecretName` | Builds the canonical `<BaseName>.<placement-host>` SecretName from the service placement map; fails closed when placement is unknown. Names only, never values. |
 | `Resolve-WorkspaceFiles` | Resolves workspace-file paths to provider paths. |
 
 ## Private functions
@@ -33,10 +34,11 @@ None.
 
 | File | Covers |
 | --- | --- |
-| `tests/Unit/CommonModule.Contract.Tests.ps1` | Manifest contract, source import, six-command export surface, and no-type/no-assembly boundary. |
+| `tests/Unit/CommonModule.Contract.Tests.ps1` | Manifest contract, source import, seven-command export surface, and no-type/no-assembly boundary. |
 | `tests/Unit/Assert-GitAvailable.Tests.ps1` | Git-available and Git-missing behavior through Common module scope. |
 | `tests/Unit/Get-RepositoryRoot.Tests.ps1` | Absolute, relative, and invalid-path Git root behavior through Common module scope. |
 | `tests/Unit/Get-WorkspaceJson.Tests.ps1` | Valid, missing, and malformed workspace JSON behavior. |
 | `tests/Unit/Initialize-ATAPConfigurationGlobals.Tests.ps1` | Source-first initialization, ready-state no-op, and required settings validation. |
 | `tests/Unit/Resolve-BuildToolingSettingValue.Tests.ps1` | Direct and mapped key resolution, value preservation, and failure behavior. |
+| `tests/Unit/Resolve-HostSuffixedSecretName.Tests.ps1` | Placement-derived suffixing, setting precedence, stale-suffix replacement, extensibility to unlisted hosts, fail-closed cases, the unconfigured-shell exception, and secret hygiene. |
 | `tests/Unit/Resolve-WorkspaceFiles.Tests.ps1` | Single/multiple workspace path resolution and missing-path failure. |

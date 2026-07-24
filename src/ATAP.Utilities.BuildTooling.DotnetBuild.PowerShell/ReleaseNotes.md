@@ -4,6 +4,8 @@
 
 - Makes the frozen export-contract test robust when the legacy parent module is
   already loaded and owns overlapping compatibility command names.
+- Makes the contract fixture honor the promoted-artifact manifest supplied by
+  the standard tier verifier.
 - Supersedes 0.1.0, which stopped at the Development validation gate.
 
 ## 0.1.0

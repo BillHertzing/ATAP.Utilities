@@ -3,6 +3,15 @@
 BeforeAll {
   $script:moduleRoot = (Join-Path $PSScriptRoot '..\..' | Resolve-Path).Path
   $script:manifestPath = Join-Path $script:moduleRoot 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell.psd1'
+  $script:promotedManifest = [System.Environment]::GetEnvironmentVariable(
+    'ATAP_PROMOTED_MODULE_MANIFEST',
+    'Process'
+  )
+  $script:moduleToTest = if ([string]::IsNullOrWhiteSpace($script:promotedManifest)) {
+    $script:manifestPath
+  } else {
+    $script:promotedManifest
+  }
   $script:expectedCommands = @(
     'Build-ImageFromPlantUML'
     'Build-PSModuleManifest'
@@ -23,7 +32,7 @@ BeforeAll {
   )
 
   Remove-Module 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -Force -ErrorAction SilentlyContinue
-  $script:module = Import-Module -Name $script:manifestPath -Force -PassThru -ErrorAction Stop
+  $script:module = Import-Module -Name $script:moduleToTest -Force -PassThru -ErrorAction Stop
 }
 
 Describe 'DotnetBuild child module contract' -Tag 'Unit', 'Contract' {

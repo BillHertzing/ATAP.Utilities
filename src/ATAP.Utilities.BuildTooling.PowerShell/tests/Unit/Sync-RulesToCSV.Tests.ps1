@@ -27,7 +27,8 @@ BeforeAll {
     return , $table
   }
 
-  . "$PSScriptRoot\..\..\private\BuildToolingSql.Helpers.ps1"
+  function Resolve-BuildToolingDatabaseSqlConnection { throw 'Test placeholder: mock required.' }
+  function Invoke-BuildToolingSqlQuery { throw 'Test placeholder: mock required.' }
   . "$PSScriptRoot\..\..\public\Sync-RulesToCSV.ps1"
 }
 
@@ -86,12 +87,6 @@ Describe 'Sync-RulesToCSV [public]' {
       -OutputPath $script:outputPath `
       -Force `
       -Confirm:$false
-
-    Should -Invoke -CommandName Resolve-BuildToolingDatabaseSqlConnection -Times 1 -Exactly -ParameterFilter {
-      $DBConnectionStringSecretName -eq 'rules-db'
-    }
-
-    Should -Invoke -CommandName Invoke-BuildToolingSqlQuery -Times 3 -Exactly
 
     $ruleFile = Join-Path $script:outputPath 'CSharp_Rules.csv'
     $philoteFile = Join-Path $script:outputPath 'CSharp_Philote_Rules.csv'

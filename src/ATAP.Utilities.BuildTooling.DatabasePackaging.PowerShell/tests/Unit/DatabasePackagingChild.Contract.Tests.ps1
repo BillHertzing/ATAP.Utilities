@@ -22,6 +22,21 @@ BeforeAll {
 }
 
 Describe 'DatabasePackaging child module contract' -Tag 'Unit', 'Contract' {
+  It 'keeps SQL helper loading portable and resolves from an explicit repository root' {
+    $helperPath = Join-Path $script:moduleRoot 'private\BuildToolingSql.Helpers.ps1'
+    $helperText = Get-Content -LiteralPath $helperPath -Raw
+    $helperText | Should -Not -Match 'C:\\Dropbox'
+    $helperText | Should -Not -Match 'ATAP\.Utilities-wt-\d+'
+
+    Remove-Item Function:\Resolve-DatabaseSqlConnection -ErrorAction SilentlyContinue
+    Remove-Module ATAP.Utilities.DatabaseManagement.Powershell -Force -ErrorAction SilentlyContinue
+    . $helperPath
+    Import-BuildToolingDatabaseResolver -RepositoryRoot (Resolve-Path -LiteralPath (Join-Path $script:moduleRoot '..\..')).Path
+
+    Get-Command -Name Resolve-DatabaseSqlConnection -CommandType Function -ErrorAction Stop |
+      Should -Not -BeNullOrEmpty
+  }
+
   It 'exports exactly the frozen legacy surface plus required child-only SQL helpers' {
     $actual = @($script:module.ExportedFunctions.Keys | Sort-Object)
     Compare-Object ($script:expectedCommands | Sort-Object) $actual | Should -BeNullOrEmpty

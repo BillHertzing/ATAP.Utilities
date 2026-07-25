@@ -1,7 +1,7 @@
 BeforeAll {
   $script:priorModuleAutoLoad = $global:PSModuleAutoLoadingPreference
   $global:PSModuleAutoLoadingPreference = 'None'
-  Remove-Module 'ATAP.Utilities.BuildTooling.PowerShell' -Force -ErrorAction SilentlyContinue
+  Remove-Module 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell' -Force -ErrorAction SilentlyContinue
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }

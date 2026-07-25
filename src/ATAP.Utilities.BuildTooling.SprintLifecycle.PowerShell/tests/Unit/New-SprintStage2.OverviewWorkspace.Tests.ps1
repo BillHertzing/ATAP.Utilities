@@ -3,10 +3,10 @@
 # produces the manifest that Build-CLAUDEPerRepository / CLAUDE.md propagation
 # (Task 10.3) depend on, with no manual agent step.
 BeforeAll {
-  Remove-Module 'ATAP.Utilities.BuildTooling.PowerShell' -Force -ErrorAction SilentlyContinue
+  Remove-Module 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell' -Force -ErrorAction SilentlyContinue
   # New-SprintStage2's begin block runs an autoload contract (Get-Command -Name
   # <exported>) over its dependencies. On a workstation where the installed
-  # ATAP.Utilities.BuildTooling.PowerShell module is on PSModulePath, that lookup
+  # ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell module is on PSModulePath, that lookup
   # triggers module auto-loading, which imports the REAL exported functions and
   # overwrites the global test stubs below (e.g. New-OverviewSprintWorkspace,
   # Set-WorktreeJunctions). Suppress auto-loading for the duration of the test so

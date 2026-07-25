@@ -3,11 +3,11 @@
 Describe 'Test-SprintPrerequisites' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   BeforeAll {
     Import-Module PSFramework -ErrorAction SilentlyContinue
-    if (-not (Get-Module -Name 'ATAP.Utilities.BuildTooling.PowerShell')) {
-      Import-Module "$PSScriptRoot\..\..\ATAP.Utilities.BuildTooling.PowerShell.psd1" -Force
+    if (-not (Get-Module -Name 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell')) {
+      Import-Module "$PSScriptRoot\..\..\ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell.psd1" -Force
     }
 
-    Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell `
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
       -CommandName Initialize-ATAPConfigurationGlobals `
       -MockWith {
         [PSCustomObject]@{
@@ -61,14 +61,14 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit', 'PromotedModuleHostSensitive' {
 
       $r.Checks.ConfigurationGlobals.Ok | Should -BeTrue
       $r.Checks.ConfigurationGlobals.Initialized | Should -BeFalse
-      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell `
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
         -CommandName Initialize-ATAPConfigurationGlobals `
         -Times 1 `
         -Exactly
     }
 
     It 'returns a structured failure when configuration bootstrap fails' {
-      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell `
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
         -CommandName Initialize-ATAPConfigurationGlobals `
         -MockWith { throw 'Host settings unavailable' }
 
@@ -182,7 +182,7 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit', 'PromotedModuleHostSensitive' {
     }
 
     It 'Passes when all requested SQL Server instance services exist' {
-      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell -CommandName Get-Service -MockWith {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell -CommandName Get-Service -MockWith {
         [PSCustomObject]@{ Name = $Name; Status = 'Running' }
       } -ParameterFilter { $Name -like 'MSSQL$*' }
 
@@ -199,7 +199,7 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit', 'PromotedModuleHostSensitive' {
     }
 
     It 'Fails when a required SQL Server instance service is missing' {
-      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell -CommandName Get-Service -MockWith {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell -CommandName Get-Service -MockWith {
         if ($Name -eq 'MSSQL$Devtester') {
           [PSCustomObject]@{ Name = $Name; Status = 'Running' }
         }
@@ -254,10 +254,10 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit', 'PromotedModuleHostSensitive' {
     }
 
     It 'Passes when a built module is in the *-stable feed AND installed' {
-      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell -CommandName Find-Module -MockWith {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell -CommandName Find-Module -MockWith {
         [PSCustomObject]@{ Name = $Name; Version = $RequiredVersion; Repository = $Repository }
       }
-      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell -CommandName Get-Module -MockWith {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell -CommandName Get-Module -MockWith {
         [PSCustomObject]@{ Name = $Name; Version = [Version]'0.1.4' }
       } -ParameterFilter { $ListAvailable -and $Name -eq 'ATAP.Utilities.Powershell' }
 
@@ -273,10 +273,10 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit', 'PromotedModuleHostSensitive' {
     }
 
     It 'Fails with remediation when the version is in the feed but NOT installed' {
-      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell -CommandName Find-Module -MockWith {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell -CommandName Find-Module -MockWith {
         [PSCustomObject]@{ Name = $Name; Version = $RequiredVersion; Repository = $Repository }
       }
-      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell -CommandName Get-Module -MockWith {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell -CommandName Get-Module -MockWith {
         # No version matches 0.1.4 locally
         @()
       } -ParameterFilter { $ListAvailable -and $Name -eq 'ATAP.Utilities.Powershell' }
@@ -295,10 +295,10 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit', 'PromotedModuleHostSensitive' {
     }
 
     It 'Fails with remediation when the version is installed but NOT in the *-stable feed' {
-      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell -CommandName Find-Module -MockWith {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell -CommandName Find-Module -MockWith {
         throw 'No match was found for the specified search criteria.'
       }
-      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell -CommandName Get-Module -MockWith {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell -CommandName Get-Module -MockWith {
         [PSCustomObject]@{ Name = $Name; Version = [Version]'0.1.4' }
       } -ParameterFilter { $ListAvailable -and $Name -eq 'ATAP.Utilities.Powershell' }
 
@@ -329,19 +329,19 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   Context 'BuildToolingVersionIntegrity' {
     BeforeAll {
       $script:tempRepo = Join-Path ([System.IO.Path]::GetTempPath()) ("bt-integrity-test-" + [Guid]::NewGuid())
-      $null = New-Item -ItemType Directory -Path (Join-Path $script:tempRepo 'src\ATAP.Utilities.BuildTooling.PowerShell') -Force
+      $null = New-Item -ItemType Directory -Path (Join-Path $script:tempRepo 'src\ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell') -Force
     }
     AfterAll {
       if (Test-Path $script:tempRepo) { Remove-Item -Recurse -Force -LiteralPath $script:tempRepo }
     }
     It 'Passes when active version matches source version' {
-      $activeVersion = (Get-Module -Name 'ATAP.Utilities.BuildTooling.PowerShell' -ErrorAction SilentlyContinue).Version.ToString()
+      $activeVersion = (Get-Module -Name 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell' -ErrorAction SilentlyContinue).Version.ToString()
       if (-not $activeVersion) { $activeVersion = '0.1.16' }
       
-      $versionJsonPath = Join-Path $script:tempRepo 'src\ATAP.Utilities.BuildTooling.PowerShell\version.json'
+      $versionJsonPath = Join-Path $script:tempRepo 'src\ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell\version.json'
       $null = Set-Content -LiteralPath $versionJsonPath -Value "{`"version`": `"$activeVersion`"}" -Force
       
-      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell -CommandName Get-RepositoryRoot -MockWith {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell -CommandName Get-RepositoryRoot -MockWith {
         return $script:tempRepo
       }
       
@@ -350,10 +350,10 @@ Describe 'Test-SprintPrerequisites' -Tag 'Unit', 'PromotedModuleHostSensitive' {
     }
     
     It 'Fails when active version mismatches source version' {
-      $versionJsonPath = Join-Path $script:tempRepo 'src\ATAP.Utilities.BuildTooling.PowerShell\version.json'
+      $versionJsonPath = Join-Path $script:tempRepo 'src\ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell\version.json'
       $null = Set-Content -LiteralPath $versionJsonPath -Value "{`"version`": `"99.9.9`"}" -Force
       
-      Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell -CommandName Get-RepositoryRoot -MockWith {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell -CommandName Get-RepositoryRoot -MockWith {
         return $script:tempRepo
       }
       

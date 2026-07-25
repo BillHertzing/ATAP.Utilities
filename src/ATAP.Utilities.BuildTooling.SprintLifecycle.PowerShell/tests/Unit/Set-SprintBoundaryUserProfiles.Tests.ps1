@@ -10,7 +10,7 @@ BeforeAll {
     $script:addedGetLocalUserShim = $true
   }
 
-  $script:manifestPath = Join-Path $PSScriptRoot '..' '..' 'ATAP.Utilities.BuildTooling.PowerShell.psd1'
+  $script:manifestPath = Join-Path $PSScriptRoot '..' '..' 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell.psd1'
   Import-Module $script:manifestPath -Force
 }
 
@@ -56,7 +56,7 @@ Set-StrictMode -Version Latest
   }
 
   BeforeEach {
-    Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Initialize-ATAPConfigurationGlobals {
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Initialize-ATAPConfigurationGlobals {
       $global:configRootKeys = @{
         DatabasesCollectionConfigRootKey = 'DatabasesCollection'
         BuildMasterServiceAccountConfigRootKey = 'BuildMasterServiceAccount'
@@ -69,12 +69,12 @@ Set-StrictMode -Version Latest
       }
       [PSCustomObject]@{ Initialized = $true }
     }
-    Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Add-ParityChangeEntry { [PSCustomObject]@{ Id = 'journal-entry' } }
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Add-ParityChangeEntry { [PSCustomObject]@{ Id = 'journal-entry' } }
     Remove-Item -LiteralPath (Join-Path $script:developerHome 'Documents'), (Join-Path $script:serviceHome 'Documents') -Recurse -Force -ErrorAction SilentlyContinue
   }
 
   It 'discovers and validates the canonical developer profile without requiring a cross-account write' {
-    Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Get-LocalUser {
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-LocalUser {
       [PSCustomObject]@{ Name = 'SvcBuildmaster'; Enabled = $false }
     }
 
@@ -102,7 +102,7 @@ Set-StrictMode -Version Latest
   }
 
   It 'discovers and validates the canonical service-account profile without requiring a credential or cross-account write' {
-    Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Get-LocalUser {
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-LocalUser {
       [PSCustomObject]@{ Name = 'SvcBuildmaster'; Enabled = $true }
     }
 
@@ -129,7 +129,7 @@ Set-StrictMode -Version Latest
   }
 
   It 'selects the current-host assignment and deploys only the redirected loaded profile idempotently' {
-    Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Get-LocalUser { $null }
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-LocalUser { $null }
     $currentHome = Join-Path $script:testRoot 'CurrentDeveloperHome'
     $redirectedProfile = Join-Path $script:testRoot 'Dropbox\CurrentDeveloper\PowerShell\profile.ps1'
     $multiHostOverview = Join-Path $script:gitRoot 'Overview.Sprint.0013.MultiHost.code-workspace'
@@ -166,7 +166,7 @@ Set-StrictMode -Version Latest
   }
 
   It 'skips a missing or disabled service account with an explicit warning' {
-    Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Get-LocalUser { $null }
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-LocalUser { $null }
 
     $result = Set-SprintBoundaryUserProfiles `
       -ATAPUtilitiesRoot $script:utilRoot `
@@ -183,7 +183,7 @@ Set-StrictMode -Version Latest
   }
 
   It 'does not mutate the filesystem under WhatIf while still returning the planned profiles' {
-    Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Get-LocalUser {
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-LocalUser {
       [PSCustomObject]@{ Name = 'SvcBuildmaster'; Enabled = $true }
     }
 
@@ -202,7 +202,7 @@ Set-StrictMode -Version Latest
   }
 
   It 'ignores pre-existing retired ATAP.Utilities template candidates' {
-    Mock -ModuleName ATAP.Utilities.BuildTooling.PowerShell Get-LocalUser {
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-LocalUser {
       [PSCustomObject]@{ Name = 'SvcBuildmaster'; Enabled = $true }
     }
     $retiredTemplateRoot = Join-Path $script:utilRoot 'src\ATAP.Utilities.PowerShell\Profiles'

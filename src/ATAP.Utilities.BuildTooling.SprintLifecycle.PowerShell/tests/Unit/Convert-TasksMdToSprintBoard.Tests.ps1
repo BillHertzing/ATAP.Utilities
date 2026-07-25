@@ -1,6 +1,6 @@
 BeforeAll {
-  $script:moduleName = 'ATAP.Utilities.BuildTooling.PowerShell'
-  $script:modulePath = Join-Path $PSScriptRoot '..\..\ATAP.Utilities.BuildTooling.PowerShell.psd1'
+  $script:moduleName = 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'
+  $script:modulePath = Join-Path $PSScriptRoot '..\..\ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell.psd1'
   Remove-Module $script:moduleName -Force -ErrorAction SilentlyContinue
   Import-Module $script:modulePath -Force
 }
@@ -36,7 +36,7 @@ Active board: `TASKS.html` (generated from this file).
 Example purpose text.
 
 - [x] **Task 8.13** [ATAP.Utilities] - Generate the board from markdown.
-  - Files: `src/ATAP.Utilities.BuildTooling.PowerShell/public/Convert-TasksMdToSprintBoard.ps1`
+  - Files: `src/ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell/public/Convert-TasksMdToSprintBoard.ps1`
   - Acceptance: One command regenerates `TASKS.html`.
   - Status: **Done** (2026-06-12) - Implemented the generator.
   - Evidence: Focused Pester coverage passed.

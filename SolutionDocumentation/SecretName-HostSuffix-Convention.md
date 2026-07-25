@@ -37,17 +37,23 @@ running `Get-SecretATAP`. `Get-SecretATAP` called from `utat01` against a ProGet
 
 ### What is NOT host-suffixed
 
-A credential that authenticates **the caller** rather than a placed service is the same value on
-every host, and suffixing it would be wrong — it would name a secret that does not exist.
+**The discriminator:** ask what the credential proves.
+
+- *"This request may administer the ProGet/BuildMaster instance running on host X"* — per
+  **instance**. It takes the suffix, because there is one such credential per instance and the
+  host is what tells them apart.
+- *"This process is allowed to read secrets at all"* — per **caller**. Its value has nothing to
+  do with where any service runs, so suffixing it invents a name that does not exist in the vault.
 
 | Credential | Suffixed? | Why |
 | ---------- | --------- | --- |
 | ProGet / BuildMaster API keys | **Yes** | One credential per service instance; the instance is identified by its host. |
-| **Bitwarden Secrets Manager access token** (`BWS_ACCESS_TOKEN`, via `Get-BWSAccessToken` / `Initialize-BWSAccessToken`) | **No** | This is the caller's machine token for authenticating *to* Bitwarden. Its value is identical regardless of which host resolves it. It is also not a Bitwarden SecretName at all — it is a DPAPI-encrypted credential file scoped to the running account, so it never passes through this convention. |
-| Personal-vault `bw` / `BW_SESSION` credentials | **No** | Interactive-user boundary, out of scope entirely (SC-0175). |
+| `BWS_ACCESS_TOKEN` — the Bitwarden Secrets Manager machine access token (`Get-BWSAccessToken`, provisioned by `Initialize-BWSAccessToken`) | **No** | It is the key *to* the vault, not a key stored *in* it, so there is no SecretName to suffix. It is a DPAPI-encrypted credential file scoped to the running Windows account — already per-account and per-machine by construction. Its value does not change when ProGet or BuildMaster fails over: the same token reads the same project either way. Suffixing it is a category error. |
+| `BW_SESSION` — personal-vault `bw` CLI session | **No** | A different boundary entirely (SC-0175): a real interactive user's personal vault, never used by automation, not a CI/infrastructure secret. |
+| `dbConnectionString-<Database>-<Host>-<Tier>[-<UserName>]` | **No (different scheme)** | These *do* encode a host, but under the older hyphenated connection-string convention, not the dotted `<BaseName>.<placement-host>` form. Do not "correct" them — that scheme is separate and still current. |
 
-If a credential's correct value does not change when the service moves to another host, it is not
-in scope for this convention. Do not suffix it, and do not route it through
+The one-line test: if a credential's correct value does not change when the service moves to
+another host, it is not in scope. Do not suffix it, and do not route it through
 `Resolve-HostSuffixedSecretName`.
 
 ### Why this exists

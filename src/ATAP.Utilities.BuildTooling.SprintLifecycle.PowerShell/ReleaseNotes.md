@@ -1,6 +1,6 @@
 # Release notes
 
-## Unreleased
+## 0.1.6
 
 - `Save-SprintWorkSession` now asserts the conversation archive's **contents** before
   reporting `ConversationArchiveCreated = $true` (Task 13.76.d). Previously the presence

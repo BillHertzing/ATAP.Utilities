@@ -40,7 +40,7 @@ manifest whose `BaseName` matches the folder name.
 | Module                                       | Purpose                                                             |
 | -------------------------------------------- | ------------------------------------------------------------------- |
 | `ATAP.Utilities.PowerShell`                  | Cross-cutting utilities, profile helpers                            |
-| `ATAP.Utilities.BuildTooling.PowerShell`     | Build/pack/publish cmdlets for the whole pipeline (self-hosting)    |
+| `ATAP.Utilities.BuildTooling.PowerShell`     | Compatibility parent for the BuildTooling child-module family       |
 | `ATAP.Utilities.FileIO.PowerShell`           | File / path helpers                                                 |
 | `ATAP.Utilities.Security.Powershell`         | Bitwarden access, secret retrieval                                  |
 | `ATAP.Utilities.DatabaseManagement.Powershell` | Flyway, SQL Server lifecycle helpers                              |
@@ -273,19 +273,28 @@ Build-PSModuleManifest `
 
 ## 8. The self-hosting bootstrap
 
-`ATAP.Utilities.BuildTooling.PowerShell` builds itself — the build cmdlets
-live inside the module they build. The bootstrap order is:
+The BuildTooling family is self-hosted through its independently buildable child
+modules. `ATAP.Utilities.BuildTooling.PowerShell` is the compatibility parent: it
+imports required children and re-exports the legacy command surface. The family
+topology is maintained in
+[`BuildToolingFamilyArchitecture.puml`](../src/ATAP.Utilities.BuildTooling.PowerShell/Documentation/BuildToolingFamilyArchitecture.puml).
 
-1. **Source import** — the module is imported directly from `src/` via
-   dot-sourcing (not from a previously-built `.psm1`). This happens in
-   `build.ps1` or the developer's profile.
-2. **Self-build** — the imported cmdlets are invoked against the module's own
-   folder, producing a `.psm1` + `.psd1` under `_generated/`.
-3. **Re-import (optional)** — the generated module can be re-imported to
-   verify it behaves identically to the source-imported version.
+During the Task 13.73 endgame, build and packaging commands are supplied by the
+child modules rather than by a source-imported monolith. The compatibility parent
+continues to be built last, after its child dependencies. The bootstrap order is:
 
-There is no circular dependency because the source-imported functions are
-entirely self-contained — they depend only on built-in cmdlets and PSFramework.
+1. **Installed child tooling** — import the accepted installed child modules,
+   never packaging commands from an in-flight source tree.
+2. **Dependency-order build** — build, test, publish, and promote `Common`, then
+   each child in `Build/ModuleFamily.psd1` order.
+3. **Compatibility-parent build** — build and test the parent after the child
+   versions satisfy its minimum requirements.
+4. **Fresh-session verification** — verify both child-only imports and the
+   parent compatibility surface from installed paths.
+
+This keeps the dependency direction one way: `Common` → children → compatibility
+parent. The prior bootstrap pin remains in place until a complete tier cycle and
+two-host deploy-state audit prove that it can be retired.
 
 ---
 

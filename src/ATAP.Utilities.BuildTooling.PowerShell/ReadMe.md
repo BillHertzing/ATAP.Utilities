@@ -14,6 +14,20 @@ If you are viewing this `ReadMe.md` in GitHub, [here is this same ReadMe on the 
 
 This package provides PowerShell goodies make it easier when developing Powershell modules for .Net, and especially inside of Visual Studio Code.
 
+## BuildTooling family
+
+`ATAP.Utilities.BuildTooling.PowerShell` is the compatibility parent for the
+independently buildable BuildTooling child modules. It retains the stable legacy
+command surface while importing the children declared in `Build/ModuleFamily.psd1`.
+New consumers may import a child module when they require only that child; existing
+installed parent-only consumers remain supported until the Task 13.73 consumer review
+and HITL parent-mode decision are complete.
+
+The child topology and dependency direction are shown in
+[BuildToolingFamilyArchitecture.puml](Documentation/BuildToolingFamilyArchitecture.puml).
+The reciprocal process guidance is in
+[PowerShell Build & Packaging](../../SolutionDocumentation/PowerShell-Modules-Build-Process.md).
+
 The bounded BWS ReadOnly bootstrap commands provision only `SvcBuildMaster`,
 `SvcProGet`, and `SvcSQLServer` for the fixed `CI-Shared` ReadOnly purpose. See
 [BWSReadOnlyBootstrap.md](Documentation/BWSReadOnlyBootstrap.md) for the public-certificate

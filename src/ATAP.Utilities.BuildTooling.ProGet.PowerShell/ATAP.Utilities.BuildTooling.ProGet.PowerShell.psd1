@@ -24,6 +24,7 @@
     'Get-PairedTierValidationPlan'
     'Get-TierFromNBGVLabel'
     'Get-TierOrder'
+    'Install-ATAPModuleAllUsers'
     'Invoke-MalwareScan'
     'Invoke-PairedTierPromotion'
     'List-ProGetApiKeys'

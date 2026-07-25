@@ -27,6 +27,17 @@ overlay with the core base:
     requires. Provenance still lives in the base's generated-wrapper header
     (SourceId, SourceSha256).
 
+Task 13.76.b: the composer also owns a THIRD region, <!-- AI-AGENT-CODEX:BEGIN/END -->,
+appended after AI-CORE and carrying the canonical .ai/core/agent-specific/codex.md body
+(manifest record ai.core.agent-specific.codex.v1). This exists because that record cannot
+be rendered directly to AGENTS.md: on 2026-07-25 doing so replaced the whole composed
+carrier with the 35-line Codex section in four worktrees, and the drift gates passed
+because -UpdateManifest rebaselined the clobbered content (gates verify manifest-to-file
+consistency, not carrier composition). Routing the record through this composer makes the
+composed carrier the only writer of AGENTS.md, which is what makes the clobber
+unrepeatable. When the canonical file is absent the block is omitted entirely, so repos
+and sprints without it compose exactly as before.
+
 When the workspace is a sprint Overview workspace (it carries a sprintEphemeral block
 and/or lists at least one sprint worktree folder), any repository that has no sprint
 worktree this sprint is listed under its stable folder name and is SKIPPED rather than
@@ -46,6 +57,11 @@ the cmdlet uses this file instead of filename-based discovery in the parent fold
 Internal pre-resolved repository context supplied by
 Build-AIInstructionsPerRepository so all lanes share one workspace read and one
 stable-worktree skip decision.
+
+.PARAMETER CodexAgentInstructionPath
+Optional explicit path to the canonical Codex agent-specific instructions
+(.ai/core/agent-specific/codex.md). Defaults to that path under the resolved SharedVSCode
+worktree. When the file does not exist the AI-AGENT-CODEX block is omitted.
 
 .OUTPUTS
 System.Management.Automation.PSCustomObject
@@ -86,7 +102,12 @@ function Build-AGENTSPerRepository {
     [string]$WorkspacePath,
 
     [Parameter(Mandatory = $false, DontShow = $true)]
-    [PSCustomObject]$RepositoryContext
+    [PSCustomObject]$RepositoryContext,
+
+    [Parameter(Mandatory = $false,
+      HelpMessage = 'Path to canonical .ai/core/agent-specific/codex.md')]
+    [ValidateNotNullOrEmpty()]
+    [string]$CodexAgentInstructionPath
   )
 
   begin {
@@ -127,12 +148,14 @@ function Build-AGENTSPerRepository {
 
     # Initialize result object
     $result = [PSCustomObject]@{
-      Success               = $false
-      WorkspacePath         = $null
-      BaseFilePath          = $null
-      RepositoriesProcessed = 0
-      RepositoryResults     = @()
-      Errors                = @()
+      Success                   = $false
+      WorkspacePath             = $null
+      BaseFilePath              = $null
+      CodexAgentInstructionPath = $null
+      HasCodexAgentInstructions = $false
+      RepositoriesProcessed     = 0
+      RepositoryResults         = @()
+      Errors                    = @()
     }
   }
 
@@ -233,6 +256,30 @@ function Build-AGENTSPerRepository {
       # Read raw bytes so the per-repo copy is byte-identical to the rendered base.
       $baseContent = Get-Content -Path $baseFilePath -Raw -ErrorAction Stop
 
+      # Task 13.76.b: resolve the canonical Codex agent-specific instructions once, outside the
+      # per-repo loop, so every worktree composes from one identical body. Absence is normal
+      # (older sprints, fixtures) and simply omits the AI-AGENT-CODEX block.
+      if (-not $PSBoundParameters.ContainsKey('CodexAgentInstructionPath') -or
+        [string]::IsNullOrWhiteSpace($CodexAgentInstructionPath)) {
+        $CodexAgentInstructionPath = Join-Path $sharedVSCodeFullPath '.ai/core/agent-specific/codex.md'
+      }
+      $codexAgentContent = $null
+      if (Test-Path -LiteralPath $CodexAgentInstructionPath -PathType Leaf) {
+        $codexAgentContent = Get-Content -LiteralPath $CodexAgentInstructionPath -Raw -ErrorAction Stop
+        if ([string]::IsNullOrWhiteSpace($codexAgentContent)) {
+          # An empty canonical file must not emit an empty sentinel pair: that would be a
+          # rendered surface asserting "there is no Codex policy" rather than "not authored yet".
+          $codexAgentContent = $null
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Canonical Codex agent-specific instructions at '$CodexAgentInstructionPath' are empty; AI-AGENT-CODEX block omitted."
+        } else {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Codex agent-specific instructions found at: $CodexAgentInstructionPath"
+        }
+      } else {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "No Codex agent-specific instructions at '$CodexAgentInstructionPath'; AI-AGENT-CODEX block omitted."
+      }
+      $result.CodexAgentInstructionPath = $CodexAgentInstructionPath
+      $result.HasCodexAgentInstructions = ($null -ne $codexAgentContent)
+
       # Step 5: Process each repository worktree
       foreach ($repositoryEntry in $repositoryEntries) {
         if ($repositoryEntry.ResolutionError) {
@@ -246,13 +293,14 @@ function Build-AGENTSPerRepository {
         $repoName = $repositoryEntry.Repository
 
         $repoResult = [PSCustomObject]@{
-          Repository   = $repoName
-          Path         = $repoFullPath
-          HasLocal     = $false
-          Success      = $false
-          Skipped      = $false
-          Action       = $null
-          ErrorMessage = $null
+          Repository    = $repoName
+          Path          = $repoFullPath
+          HasLocal      = $false
+          HasCodexBlock = $false
+          Success       = $false
+          Skipped       = $false
+          Action        = $null
+          ErrorMessage  = $null
         }
 
         # Boundary guard: in a sprint context, never write AGENTS.md into a stable
@@ -301,6 +349,16 @@ function Build-AGENTSPerRepository {
           $combinedParts.Add('<!-- AI-CORE:BEGIN -->')
           $combinedParts.Add($baseContent.TrimEnd())
           $combinedParts.Add('<!-- AI-CORE:END -->')
+          # Task 13.76.b: Codex agent-specific policy is APPENDED after AI-CORE, never in
+          # place of it. Order matters: core first keeps the no-double-core carrier contract
+          # intact and leaves the AI-CORE block extractable by exact sentinel match for the
+          # Task 10.23.h core diff.
+          if ($codexAgentContent) {
+            $combinedParts.Add('<!-- AI-AGENT-CODEX:BEGIN -->')
+            $combinedParts.Add($codexAgentContent.TrimEnd())
+            $combinedParts.Add('<!-- AI-AGENT-CODEX:END -->')
+            $repoResult.HasCodexBlock = $true
+          }
           $combinedParts.Add('')
           $combinedContent = ($combinedParts -join "`n")
 

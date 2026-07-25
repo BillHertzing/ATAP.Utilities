@@ -718,3 +718,45 @@ When adding a new primitive to an **existing** Kind, append to the relevant
 Compendium — do not create a new file. When adding a **new language**, create
 a new file using `SolutionDocumentation/Rules-Compendium-Template.md`.
 <!-- AI-CORE:END -->
+<!-- AI-AGENT-CODEX:BEGIN -->
+## Codex — Agent-Specific Instructions
+
+> **Core instructions live in `AGENTS.md`.** Codex reads the repo-root `AGENTS.md` for all shared core rules.
+
+Use this file only for Codex-specific deltas and operational policy.
+
+### Escalate-first command classes (no sandbox preflight)
+
+For the classes below, skip the sandbox attempt and call `tools.shell_command` first with
+`sandbox_permissions: "require_escalated"` and a one-line justification:
+
+| # | Command class |
+| --- | --- |
+| 1 | `Invoke-Pester` (any suite; HKCU fixture is denied in sandbox) |
+| 2 | `Save-SprintWorkSession` / checkpoint operations |
+| 3 | `Invoke-GitCommit` and any `git commit/add/mv/reset/push` in a linked worktree |
+| 4 | sprint-board regeneration (writes `Tasks.Sprint*.html` in `_Planning`) |
+| 5 | `bws` / `Get-SecretATAP` / authenticated REST calls (BuildMaster, ProGet) |
+| 6 | `Install-Module` / `Install-Package` / `Save-Module` |
+| 7 | `Publish-PSResource` / package packing (PSResourceGet repository store) |
+| 8 | any write under another repo's sprint worktree (for example `_Planning` evidence files) |
+
+### Never loop on UAC
+
+- Use the sanctioned elevation broker when available (Task 3.x follow-up), otherwise perform at most one `Start-Process -Verb RunAs` attempt.
+- On failure of that attempt, capture evidence and hand off to the user; do not retry blindly.
+
+### Elevated-run transcript rule
+
+Every elevated script run must capture command output (`Start-Transcript` or explicit stdout/stderr redirection) into `_generated\`.
+
+When possible, also emit a JSON result record for postmortem auditability.
+
+### Stable-feed dependency note
+
+`Install-Module -Repository powershellget-stable` resolves dependencies only against that feed. Until PSFramework is present in the stable feed, use the canonical validated installer path and never improvise `-SkipDependencies` inline.
+
+### Sandbox proxy artifact note
+
+Proxy environment variables injected by the sandbox are harness artifacts. Proxy-shaped failures inside the sandbox are not proof of a real network failure and should not be treated as root-cause without evidence from an escalated or trusted context.
+<!-- AI-AGENT-CODEX:END -->

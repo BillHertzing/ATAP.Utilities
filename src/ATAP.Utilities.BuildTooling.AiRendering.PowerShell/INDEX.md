@@ -3,7 +3,8 @@
 ## Public commands
 
 - `Build-AgentSpecificPerRepository`
-- `Build-AGENTSPerRepository`
+- `Build-AGENTSPerRepository` — sole writer of repo `AGENTS.md`; composes AI-LOCAL,
+  AI-CORE, and (Task 13.76.b) AI-AGENT-CODEX. See ReadMe "AGENTS.md composition".
 - `Build-AIInstructionsPerRepository`
 - `Build-CLAUDEPerRepository`
 - `Convert-DiagramsToImages`

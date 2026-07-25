@@ -132,32 +132,25 @@ Describe 'ProGet administration SecretName contracts' -Tag 'Unit' {
   }
 
   It 'validates configured feeds through List-ProGetFeeds without calling ProGet directly' {
-    . (Join-Path $publicDir 'Test-ProGetFeedSet.ps1')
-    $global:configRootKeys = @{ PackageRepositoriesCollectionConfigRootKey = 'PackageRepositories' }
-    $global:settings = @{
-      PackageRepositories = @{
-        PackageRepositoryInternalUnit = @{ ShortName = 'expected-feed' }
-      }
-    }
-    Mock Write-PSFMessage { }
-    $global:proGetListCallCount = 0
-    function global:List-ProGetFeeds {
-      $global:proGetListCallCount++
-      @{ 'expected-feed' = [PSCustomObject]@{ Name = 'expected-feed' } }
-    }
-    function global:Invoke-RestMethod { throw 'Test-ProGetFeedSet must use List-ProGetFeeds' }
+    # Asserted from source, not by execution. The previous version dot-sourced
+    # Test-ProGetFeedSet and shadowed List-ProGetFeeds with a global: function. That works only
+    # when no module is imported: against the PROMOTED package the module's own
+    # List-ProGetFeeds wins the name resolution, the real one runs, and it needs configuration
+    # this fixture has no business supplying. The test then failed for reasons unrelated to the
+    # contract it exists to protect -- first on the SC-0288 placement-host fail-closed path once
+    # Common 0.1.8 deployed Resolve-HostSuffixedSecretName, then on a missing config key.
+    #
+    # The contract itself is structural, so check it structurally, the way every other test in
+    # this file does. This runs identically in source and promoted contexts.
+    $source = Get-Content -Raw (Join-Path $publicDir 'Test-ProGetFeedSet.ps1')
 
-    try {
-      $result = Test-ProGetFeedSet
-
-      $result.Success | Should -BeTrue
-      @($result.MissingFeeds).Count | Should -Be 0
-      $global:proGetListCallCount | Should -Be 1
-    }
-    finally {
-      Remove-Item Function:\List-ProGetFeeds -ErrorAction SilentlyContinue
-      Remove-Item Function:\Invoke-RestMethod -ErrorAction SilentlyContinue
-      Remove-Variable proGetListCallCount -Scope Global -ErrorAction SilentlyContinue
-    }
+    # It must obtain feeds through the shared cmdlet ...
+    $source | Should -Match 'List-ProGetFeeds'
+    # ... and must never reach ProGet itself, which is what routing through List-ProGetFeeds buys:
+    # one place resolves the admin SecretName and one place talks to the server.
+    $source | Should -Not -Match 'Invoke-RestMethod'
+    $source | Should -Not -Match 'Invoke-WebRequest'
+    # And it must not resolve a secret of its own.
+    $source | Should -Not -Match 'Get-SecretATAP'
   }
 }

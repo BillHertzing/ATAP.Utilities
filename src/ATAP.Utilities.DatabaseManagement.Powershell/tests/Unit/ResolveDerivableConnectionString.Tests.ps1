@@ -14,8 +14,22 @@ BeforeAll {
 
   # The descriptor helper remains available for diagnostics/legacy callers, but
   # runtime connection opening must not use it to derive missing secrets.
+  #
+  # Resolve it by SEARCHING the BuildTooling family rather than pinning the parent's
+  # public folder. Task 13.72.4 moved this function into the Secrets child, which broke
+  # this dot-source and failed all six tests in this file. Any single hard-coded module
+  # folder goes stale at the next extraction, so probe every family member.
   $srcRoot = Split-Path -Parent $moduleRoot
-  . (Join-Path $srcRoot 'ATAP.Utilities.BuildTooling.PowerShell\public\Get-DbConnectionStringSecretDescriptor.ps1')
+  $descriptorName = 'Get-DbConnectionStringSecretDescriptor.ps1'
+  $descriptorPath = Get-ChildItem -LiteralPath $srcRoot -Directory -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -like 'ATAP.Utilities.BuildTooling.*' } |
+    ForEach-Object { Join-Path $_.FullName "public\$descriptorName" } |
+    Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } |
+    Select-Object -First 1
+  if (-not $descriptorPath) {
+    throw "$descriptorName was not found under any $srcRoot\ATAP.Utilities.BuildTooling.*\public folder."
+  }
+  . $descriptorPath
 
   # Stub Get-SecretATAP so the per-test Mock has a command to replace.
   function global:Get-SecretATAP { param($SecretName, $SecretField, $SecretStoreType) }

@@ -1,5 +1,12 @@
 # Production Release Notes in Chronological order
 
+# 0.1.71
+
+- Adds the extracted SprintLifecycle child to the canonical family dependency
+  graph and raises the parent dependency floor to the repaired child 0.1.5.
+- Preserves the parent compatibility command surface while consuming the
+  separately released SprintLifecycle implementation.
+
 # 0.1.66
 
 - Supersedes 0.1.65, whose Development gate exposed two remaining child-owned

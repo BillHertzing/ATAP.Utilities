@@ -63,7 +63,7 @@
         @{ModuleName = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'; ModuleVersion = '0.1.1'; },
         @{ModuleName = 'ATAP.Utilities.BuildTooling.DatabasePackaging.PowerShell'; ModuleVersion = '0.1.0'; },
         @{ModuleName = 'ATAP.Utilities.BuildTooling.BuildMaster.PowerShell'; ModuleVersion = '0.1.0'; },
-        @{ModuleName = 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'; ModuleVersion = '0.1.0'; })
+        @{ModuleName = 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'; ModuleVersion = '0.1.5'; })
 
     # Assemblies that must be loaded prior to importing this module
     # RequiredAssemblies = @()

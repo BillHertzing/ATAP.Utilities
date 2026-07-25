@@ -18,7 +18,7 @@ Describe 'GitWorktree compatibility parent rewire' {
         Select-Object -ExpandProperty Name | Sort-Object -Unique)
 
     $actual | Should -Be $script:expectedFunctions
-    $actual.Count | Should -Be 200
+    $actual.Count | Should -Be 201
   }
 
   It 're-exports every legacy GitWorktree command with its parameter contract' {
@@ -44,5 +44,7 @@ Describe 'GitWorktree compatibility parent rewire' {
       Should -Be '0.1.3'
     ($requirements | Where-Object ModuleName -eq 'ATAP.Utilities.BuildTooling.PlanningSession.PowerShell').ModuleVersion |
       Should -Be '0.1.2'
+    ($requirements | Where-Object ModuleName -eq 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell').ModuleVersion |
+      Should -Be '0.1.5'
   }
 }

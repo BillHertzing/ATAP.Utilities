@@ -25,6 +25,31 @@ is one credential per service **instance**, so the SecretName has to identify th
 SecretNames are **names only**. The value is resolved with `Get-SecretATAP` immediately before
 the authenticated operation and never stored, logged, or passed as a raw key (Task 13.62).
 
+### The suffix names the service host, not the calling host
+
+This distinction decides what is in scope, so read it before applying the rule anywhere new.
+
+The suffix identifies **which service instance the credential belongs to** — the host running
+that ProGet or BuildMaster server. It has nothing to do with which workstation happens to be
+running `Get-SecretATAP`. `Get-SecretATAP` called from `utat01` against a ProGet placed on
+`utat022` must resolve `ProGet.Admin.API.Key.utat022`, because that is the credential the
+`utat022` server will accept.
+
+### What is NOT host-suffixed
+
+A credential that authenticates **the caller** rather than a placed service is the same value on
+every host, and suffixing it would be wrong — it would name a secret that does not exist.
+
+| Credential | Suffixed? | Why |
+| ---------- | --------- | --- |
+| ProGet / BuildMaster API keys | **Yes** | One credential per service instance; the instance is identified by its host. |
+| **Bitwarden Secrets Manager access token** (`BWS_ACCESS_TOKEN`, via `Get-BWSAccessToken` / `Initialize-BWSAccessToken`) | **No** | This is the caller's machine token for authenticating *to* Bitwarden. Its value is identical regardless of which host resolves it. It is also not a Bitwarden SecretName at all — it is a DPAPI-encrypted credential file scoped to the running account, so it never passes through this convention. |
+| Personal-vault `bw` / `BW_SESSION` credentials | **No** | Interactive-user boundary, out of scope entirely (SC-0175). |
+
+If a credential's correct value does not change when the service moves to another host, it is not
+in scope for this convention. Do not suffix it, and do not route it through
+`Resolve-HostSuffixedSecretName`.
+
 ### Why this exists
 
 Discovered during the BuildTooling 0.1.35 release on `utat01`:
@@ -128,6 +153,8 @@ mangled.
 - **Do not** introduce a host allowlist outside the placement-map fragment.
 - **Do not** reintroduce raw-key parameters or `PROGET_*` / `BUILDMASTER_*` API-key environment
   variables; those were retired by Task 13.62.
+- **Do not** suffix a caller-scoped credential — see "What is NOT host-suffixed" above. The BWS
+  access token in particular is identical on every host and must be left alone.
 
 Callers that must operate against a non-placement host (cross-host administration) pass
 `-PlacementHost` explicitly, or bind the `-*SecretName` parameter outright.

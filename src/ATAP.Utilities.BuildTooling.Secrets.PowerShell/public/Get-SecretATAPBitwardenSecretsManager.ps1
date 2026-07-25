@@ -36,7 +36,10 @@ Ignored when the value is not JSON or has no matching property.
 [string] The plain-text secret value (or extracted field).
 
 .EXAMPLE
-Get-SecretATAPBitwardenSecretsManager -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
+$serviceHost = $global:Settings[$global:configRootKeys['ServicePlacementMapConfigRootKey']]['BuildMaster']
+Get-SecretATAPBitwardenSecretsManager -BuildMasterAdminApiKeySecretName "BuildMaster.Admin.API.Key.$serviceHost"
+Per SC-0288 the SecretName carries the BuildMaster placement host. The BWS access token used to
+reach Bitwarden is caller-scoped and is never host-suffixed.
 
 .EXAMPLE
 Get-SecretATAPBitwardenSecretsManager -SecretName 'Windows.ServiceAccount.BuildMaster' -SecretField 'password'

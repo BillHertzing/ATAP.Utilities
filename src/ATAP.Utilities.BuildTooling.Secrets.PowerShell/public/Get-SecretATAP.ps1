@@ -55,8 +55,12 @@ bw CLI + BW_SESSION) and 'BitwardenSecretsManager' (Secrets Manager, bws CLI
 The plain-text value of the requested field.
 
 .EXAMPLE
-$apiKey = Get-SecretATAP -SecretName 'BuildMaster.Admin.API.Key' -SecretField 'notes'
-Returns the notes field (where the BuildMaster admin API key is stored).
+$serviceHost = $global:Settings[$global:configRootKeys['ServicePlacementMapConfigRootKey']]['BuildMaster']
+$apiKey = Get-SecretATAP -SecretName "BuildMaster.Admin.API.Key.$serviceHost" -SecretField 'notes'
+Returns the notes field (where the BuildMaster admin API key is stored). Per SC-0288 the
+SecretName carries the host running the BuildMaster instance being authenticated against;
+derive it from the placement map rather than hard-coding a host. This does not apply to the
+BWS access token, which is caller-scoped and identical on every host.
 
 .EXAMPLE
 $user = Get-SecretATAP -SecretName 'utat022-SvcBuildmaster-Production' -SecretField 'username'

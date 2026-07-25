@@ -58,19 +58,50 @@ BeforeAll {
   New-Item -ItemType Directory -Path $memoryDir -Force | Out-Null
   Set-Content -LiteralPath (Join-Path $memoryDir 'memory-note.md') -Value '# memory' -Encoding UTF8
 
+  # Task 13.76.d: the archive contents are now asserted after `7z a`, so this stand-in must
+  # model BOTH the add and the bare list. It records what each archive "contains" so `l -ba`
+  # can echo a listing in 7-Zip's real bare format (date, time, attrs, size, packed, name).
+  # $global:MockSevenZipContents lets a test force an empty or wrong-payload archive.
+  $global:MockSevenZipContents = @{}
+
   function global:7z {
     param(
-      [string]$Action,
-      [string]$ArchivePath,
-      [string]$SourcePath
+      [Parameter(ValueFromRemainingArguments = $true)]
+      [string[]]$Args
     )
 
-    if ($Action -ne 'a') {
-      throw "Unexpected 7z action: $Action"
-    }
+    $action = $Args[0]
+    $rest = @($Args | Select-Object -Skip 1 | Where-Object { $_ -notlike '-*' })
 
-    New-Item -ItemType Directory -Path (Split-Path -Path $ArchivePath -Parent) -Force | Out-Null
-    Set-Content -LiteralPath $ArchivePath -Value "mock archive for $SourcePath" -Encoding UTF8
+    switch ($action) {
+      'a' {
+        $archivePath = $rest[0]
+        $sourcePath = $rest[1]
+        New-Item -ItemType Directory -Path (Split-Path -Path $archivePath -Parent) -Force | Out-Null
+        Set-Content -LiteralPath $archivePath -Value "mock archive for $sourcePath" -Encoding UTF8
+        if (-not $global:MockSevenZipContents.ContainsKey($archivePath)) {
+          $global:MockSevenZipContents[$archivePath] = @([IO.Path]::GetFileName($sourcePath))
+        }
+      }
+      'l' {
+        $archivePath = $rest[0]
+        # A test may force the listing for every archive (Task 13.76.d assertion cases);
+        # otherwise echo whatever `a` recorded for this archive.
+        $names = if ($null -ne $global:MockSevenZipForcedEntries) {
+          @($global:MockSevenZipForcedEntries)
+        }
+        elseif ($global:MockSevenZipContents.ContainsKey($archivePath)) {
+          @($global:MockSevenZipContents[$archivePath])
+        }
+        else { @() }
+        foreach ($name in $names) {
+          if (-not [string]::IsNullOrWhiteSpace($name)) {
+            '2026-07-25 10:08:16 ....A            9           13  ' + $name
+          }
+        }
+      }
+      default { throw "Unexpected 7z action: $action" }
+    }
   }
 
   # Re-dot-source after the temp tree is ready.
@@ -84,6 +115,7 @@ AfterAll {
   if (Test-Path -LiteralPath 'Function:\7z') {
     Remove-Item -LiteralPath 'Function:\7z' -ErrorAction SilentlyContinue
   }
+  Remove-Variable -Name MockSevenZipContents -Scope Global -ErrorAction SilentlyContinue
   if (Test-Path $script:gitRoot) {
     Remove-Item -Recurse -Force $script:gitRoot -ErrorAction SilentlyContinue
   }
@@ -376,6 +408,83 @@ Describe 'Save-SprintWorkSession' {
       } finally {
         Set-Location $savedLocation
       }
+    }
+  }
+
+  Context 'Task 13.76.d — archive content assertion' {
+
+    BeforeAll {
+      # Runs one checkpoint with the mock 7z forced to report $ArchiveEntries for whatever
+      # archive it creates, and returns the terminating error (or $null on success).
+      function script:Invoke-CheckpointWithArchiveEntries {
+        param([AllowEmptyCollection()][string[]] $ArchiveEntries)
+
+        $savedLocation = Get-Location
+        Set-Location $script:atapWt
+        try {
+          $savedSettings = $global:settings
+          $global:settings = $null
+          $convDir = Join-Path $script:planningWt 'SprintWorkSessionConversations'
+          $rosterDir = Join-Path $script:planningWt 'SprintWorkSessionRoster'
+          Remove-Item -LiteralPath $convDir, $rosterDir -Recurse -Force -ErrorAction SilentlyContinue
+
+          $global:MockSevenZipContents = @{}
+          $global:MockSevenZipForcedEntries = $ArchiveEntries
+          try {
+            Save-SprintWorkSession `
+              -SprintN $script:sprintNumber `
+              -PlanningRoot $script:planningWt `
+              -ClaudeProjectsRoot $script:claudeProjectsRoot `
+              -GitHubRoot $script:gitRoot `
+              -Confirm:$false
+            return $null
+          }
+          catch {
+            return $_
+          }
+          finally {
+            Remove-Variable -Name MockSevenZipForcedEntries -Scope Global -ErrorAction SilentlyContinue
+            $global:settings = $savedSettings
+          }
+        } finally {
+          Set-Location $savedLocation
+        }
+      }
+    }
+
+    It 'fails loudly when 7z produced an archive with no entries' {
+      # The original defect: Test-Path alone reported ConversationArchiveCreated = $true
+      # for an archive that held nothing at all.
+      $err = script:Invoke-CheckpointWithArchiveEntries -ArchiveEntries @()
+
+      $err | Should -Not -BeNullOrEmpty
+      $err.Exception.Message | Should -Match 'contains no files'
+    }
+
+    It 'fails loudly when the archive exists but omits the rollout JSONL' {
+      # The close variant: a non-empty archive that captured the wrong payload still
+      # means the conversation was not saved.
+      $err = script:Invoke-CheckpointWithArchiveEntries -ArchiveEntries @('some-other-file.txt')
+
+      $err | Should -Not -BeNullOrEmpty
+      $err.Exception.Message | Should -Match "rollout file 'fake-session\.jsonl' is absent"
+    }
+
+    It 'succeeds and records the archive when the rollout JSONL is present' {
+      $err = script:Invoke-CheckpointWithArchiveEntries -ArchiveEntries @('fake-session.jsonl')
+      $err | Should -BeNullOrEmpty
+
+      $rosterPath = Join-Path $script:planningWt "SprintWorkSessionRoster\SprintWorkSessionRoster-$($script:sprintNumber).jsonl"
+      $latestEntry = Get-Content -LiteralPath $rosterPath | Select-Object -Last 1 | ConvertFrom-Json
+      $latestEntry.ConversationArchiveCreated | Should -BeTrue
+    }
+
+    It 'accepts a listing whose entry name is preceded by 7-Zip metadata columns' {
+      # Guards the assertion against 7-Zip's real bare-listing shape: the original
+      # proposed patch counted entries with '^\s*\d+\s+\S+', which never matches a line
+      # beginning with an ISO date, so every checkpoint would have thrown.
+      $err = script:Invoke-CheckpointWithArchiveEntries -ArchiveEntries @('fake-session.jsonl')
+      $err | Should -BeNullOrEmpty
     }
   }
 

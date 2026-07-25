@@ -518,8 +518,30 @@ function Save-SprintWorkSession {
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Archiving '$($jsonl.FullName)' → '$archive'"
                 & 7z a $archive $jsonl.FullName 2>&1 | Out-Null
                 if (Test-Path $archive) {
+                    # Task 13.76.d: the existence of the .7z proves nothing about its payload.
+                    # `7z a` can emit an archive with zero entries when path/token expansion
+                    # fails, and the previous check reported ConversationArchiveCreated = $true
+                    # for it -- a checkpoint that claims the conversation was saved when it was
+                    # not. Assert the contents before claiming success.
+                    $listing = & 7z l -ba $archive 2>&1
+                    $entries = @($listing | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+                    if ($entries.Count -eq 0) {
+                        throw "7z archive was created but contains no files: $archive"
+                    }
+
+                    # The bare listing puts the stored name last on each line; match on the
+                    # file name rather than a column position so 7z formatting changes cannot
+                    # silently turn this assertion into a no-op.
+                    $jsonlFileName = [IO.Path]::GetFileName($jsonl.FullName)
+                    $containsRolloutJsonl = @(
+                        $entries | Where-Object { $_ -match [regex]::Escape($jsonlFileName) }
+                    ).Count -gt 0
+                    if (-not $containsRolloutJsonl) {
+                        throw "7z archive created but rollout file '$jsonlFileName' is absent: $archive"
+                    }
+
                     $archiveCreated = $true
-                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Conversation saved: $archive"
+                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Conversation saved: $archive ($($entries.Count) entr$(if ($entries.Count -eq 1) { 'y' } else { 'ies' }))"
                 } else {
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message 'Archive not created — verify 7z is on PATH.'
                 }

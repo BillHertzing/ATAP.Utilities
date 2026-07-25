@@ -145,7 +145,7 @@ function Test-SprintPrerequisites {
 
   begin {
     $fn = 'Test-SprintPrerequisites'
-    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+    $mn = 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
     # Autoload-or-throw contract (PlanFixSprintStart FSS-12). The BuildTooling
@@ -161,7 +161,7 @@ function Test-SprintPrerequisites {
         'Test-SprintModulePromotionDeploy')) {
       if (-not (Get-Command -Name $required -ErrorAction SilentlyContinue)) {
         throw "Required command '$required' is not available. The " +
-        'ATAP.Utilities.BuildTooling.PowerShell module must be installed and ' +
+        'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell module must be installed and ' +
         'autoloadable. Repair the module install before retrying sprint prerequisites.'
       }
     }
@@ -464,20 +464,20 @@ function Test-SprintPrerequisites {
     $btDetail = ''
     $btVersion = $null
     try {
-      $existing = Get-Module -Name 'ATAP.Utilities.BuildTooling.PowerShell' -ErrorAction SilentlyContinue
+      $existing = Get-Module -Name 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell' -ErrorAction SilentlyContinue
       if ($existing) {
         $btOk = $true
         $btVersion = $existing.Version.ToString()
         $btDetail = "Already imported (version $btVersion)"
       } else {
-        $available = Get-Module -Name 'ATAP.Utilities.BuildTooling.PowerShell' -ListAvailable -ErrorAction SilentlyContinue |
+        $available = Get-Module -Name 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell' -ListAvailable -ErrorAction SilentlyContinue |
           Select-Object -First 1
         if ($available) {
           $btOk = $true
           $btVersion = $available.Version.ToString()
           $btDetail = "Module available for import (version $btVersion)"
         } else {
-          $btDetail = 'ATAP.Utilities.BuildTooling.PowerShell not found in PSModulePath'
+          $btDetail = 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell not found in PSModulePath'
         }
       }
     } catch {
@@ -505,7 +505,7 @@ function Test-SprintPrerequisites {
           if ($wt) {
             $leaf = Split-Path -Path $wt -Leaf
             if ($leaf -eq 'ATAP.Utilities' -or $leaf -like 'ATAP.Utilities-wt-*') {
-              $candidatePath = Join-Path $wt 'src\ATAP.Utilities.BuildTooling.PowerShell\version.json'
+              $candidatePath = Join-Path $wt 'src\ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell\version.json'
               if (Test-Path -LiteralPath $candidatePath -PathType Leaf) {
                 $sourcePath = $candidatePath
                 break
@@ -522,7 +522,7 @@ function Test-SprintPrerequisites {
             $localRoot = Get-RepositoryRoot -ErrorAction SilentlyContinue
             if ($localRoot) {
               $localRootFull = [IO.Path]::GetFullPath($localRoot)
-              $candidatePath = Join-Path $localRootFull 'src\ATAP.Utilities.BuildTooling.PowerShell\version.json'
+              $candidatePath = Join-Path $localRootFull 'src\ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell\version.json'
               if (Test-Path -LiteralPath $candidatePath -PathType Leaf) {
                 $sourcePath = $candidatePath
               }
@@ -538,7 +538,7 @@ function Test-SprintPrerequisites {
           $siblingDirs = Get-ChildItem -LiteralPath $parentDir -Directory -ErrorAction SilentlyContinue |
             Where-Object { $_.Name -eq 'ATAP.Utilities' -or $_.Name -like 'ATAP.Utilities-wt-*' }
           foreach ($sibling in $siblingDirs) {
-            $candidatePath = Join-Path $sibling.FullName 'src\ATAP.Utilities.BuildTooling.PowerShell\version.json'
+            $candidatePath = Join-Path $sibling.FullName 'src\ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell\version.json'
             if (Test-Path -LiteralPath $candidatePath -PathType Leaf) {
               $sourcePath = $candidatePath
               break

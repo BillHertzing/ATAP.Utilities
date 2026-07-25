@@ -14,6 +14,15 @@ BeforeAll {
     $global:LASTEXITCODE = 0
     ''
   }
+  function global:Confirm-WorktreeGitPointerOwnership {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param(
+      [string]$WorktreePath,
+      [string]$InteractiveOperator,
+      [bool]$RepairOwnership = $true
+    )
+    [PSCustomObject]@{ WorktreePath = $WorktreePath; Verified = $true; Repaired = $false }
+  }
   function global:Set-WorktreeJunctions {
     [PSCustomObject]@{
       Success = $true
@@ -62,6 +71,7 @@ AfterAll {
     'Assert-GitAvailable'
     'gh'
     'git'
+    'Confirm-WorktreeGitPointerOwnership'
     'Set-WorktreeJunctions'
     'Initialize-DownstreamSprintFromSharedVSCode'
     'Set-SprintBoundaryContext'

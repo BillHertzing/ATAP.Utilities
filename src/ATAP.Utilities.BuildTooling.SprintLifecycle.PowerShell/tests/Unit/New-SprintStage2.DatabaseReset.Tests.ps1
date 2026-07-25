@@ -15,6 +15,7 @@ BeforeAll {
     'Initialize-SprintAIAdapters',
     'Set-SprintBoundaryContext',
     'Set-ClaudeSettingsSymlink',
+    'Set-PowerShell7ProfileSymlink',
     'Set-UserSettingsSymlink',
     'Get-SprintTaskRepositoryNames',
     'Initialize-ATAPConfigurationGlobals',
@@ -87,6 +88,19 @@ BeforeAll {
 
   function global:Set-ClaudeSettingsSymlink {
     $global:stage2DatabaseResetCalls.Add('Set-ClaudeSettingsSymlink') | Out-Null
+  }
+
+  function global:Set-PowerShell7ProfileSymlink {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param(
+      [string]$ATAPUtilitiesRoot,
+      [string]$ATAPIACRoot
+    )
+    $global:stage2DatabaseResetCalls.Add('Set-PowerShell7ProfileSymlink') | Out-Null
+    [PSCustomObject]@{
+      Ok       = $true
+      Failures = @()
+    }
   }
 
   function global:Set-UserSettingsSymlink {
@@ -195,6 +209,7 @@ BeforeAll {
     }
   }
 
+  . "$PSScriptRoot\..\..\private\Confirm-WorktreeGitPointerOwnership.ps1"
   . "$PSScriptRoot\..\..\public\New-SprintStage2Result.ps1"
   . "$PSScriptRoot\..\..\public\New-SprintStage2.ps1"
 }

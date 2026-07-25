@@ -34,6 +34,17 @@ BeforeAll {
     return ''
   }
 
+  function global:Confirm-WorktreeGitPointerOwnership {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param(
+      [string]$WorktreePath,
+      [string]$InteractiveOperator,
+      [bool]$RepairOwnership = $true
+    )
+    $global:stage1ExternalCalls.Add('Confirm-WorktreeGitPointerOwnership') | Out-Null
+    [PSCustomObject]@{ WorktreePath = $WorktreePath; Verified = $true; Repaired = $false }
+  }
+
   function global:Set-WorktreeJunctions {
     $global:stage1ExternalCalls.Add('Set-WorktreeJunctions') | Out-Null
     [PSCustomObject]@{
@@ -90,6 +101,21 @@ BeforeAll {
   # K04: freeze the set of external calls observed up to and including the
   # dot-source. The 'Load contract' context below asserts this stayed empty.
   $script:callsObservedAtLoad = @($global:stage1ExternalCalls)
+}
+
+AfterAll {
+  @(
+    'Assert-GitAvailable'
+    'gh'
+    'git'
+    'Confirm-WorktreeGitPointerOwnership'
+    'Set-WorktreeJunctions'
+    'Initialize-DownstreamSprintFromSharedVSCode'
+    'Set-SprintBoundaryContext'
+    'Get-SprintHistoryReconstruction'
+  ) | ForEach-Object {
+    Remove-Item -Path "Function:\$_" -Force -ErrorAction SilentlyContinue
+  }
 }
 
 Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit', 'PromotedModuleHostSensitive' {
@@ -173,7 +199,8 @@ Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit', 'Promoted
 
   Context 'Default ProGetBaseUrl (http://localhost:50000)' {
     BeforeEach {
-      New-SprintStage1 -GitRoot $script:tempGitRoot -Owner 'owner' -SprintNumber '0007' -Confirm:$false | Out-Null
+      New-SprintStage1 -GitRoot $script:tempGitRoot -Owner 'owner' -SprintNumber '0007' `
+        -ProGetBaseUrl 'http://localhost:50000' -Confirm:$false | Out-Null
       $script:content = Get-Content -LiteralPath $script:nugetConfigPath -Raw
     }
 

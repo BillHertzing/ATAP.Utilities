@@ -1,9 +1,9 @@
 BeforeAll {
   $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-  . (Join-Path $moduleRoot 'private\Get-WorkspaceJson.ps1')
-  . (Join-Path $moduleRoot 'private\Save-WorkspaceJson.ps1')
-  . (Join-Path $moduleRoot 'private\Resolve-WorkspaceFiles.ps1')
-  . (Join-Path $moduleRoot 'public\Set-WorkspaceSharedVSCodeReference.ps1')
+  . (Join-Path $moduleRoot '..\ATAP.Utilities.BuildTooling.Common.PowerShell\public\Get-WorkspaceJson.ps1')
+  . (Join-Path $moduleRoot '..\ATAP.Utilities.BuildTooling.PowerShell\private\Save-WorkspaceJson.ps1')
+  . (Join-Path $moduleRoot '..\ATAP.Utilities.BuildTooling.Common.PowerShell\public\Resolve-WorkspaceFiles.ps1')
+  . (Join-Path $moduleRoot '..\ATAP.Utilities.BuildTooling.PowerShell\public\Set-WorkspaceSharedVSCodeReference.ps1')
   . (Join-Path $moduleRoot 'public\Initialize-DownstreamSprintFromSharedVSCode.ps1')
 }
 

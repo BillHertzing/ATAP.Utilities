@@ -1,6 +1,6 @@
 Describe 'Sync-SprintBoundaryPrimaryRoleMarker' {
   BeforeAll {
-    $rootModulePath = Join-Path $PSScriptRoot '..\..\ATAP.Utilities.BuildTooling.Powershell.psm1'
+    $rootModulePath = Join-Path $PSScriptRoot '..\..\ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell.psm1'
     Import-Module $rootModulePath -Force
   }
 

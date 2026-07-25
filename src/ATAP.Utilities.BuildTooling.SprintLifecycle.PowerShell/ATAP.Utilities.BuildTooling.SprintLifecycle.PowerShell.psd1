@@ -51,7 +51,15 @@ PowerShellVersion = '7.0'
 # ProcessorArchitecture = ''
 
 # Modules that must be imported into the global environment prior to importing this module
-RequiredModules = @(@{ModuleName = 'ATAP.Utilities.BuildTooling.Common.PowerShell'; ModuleVersion = '0.1.0'; })
+RequiredModules = @(
+  @{ ModuleName = 'ATAP.Utilities.BuildTooling.AiRendering.PowerShell'; ModuleVersion = '0.1.0' },
+  @{ ModuleName = 'ATAP.Utilities.BuildTooling.BuildMaster.PowerShell'; ModuleVersion = '0.1.0' },
+  @{ ModuleName = 'ATAP.Utilities.BuildTooling.Common.PowerShell'; ModuleVersion = '0.1.7' },
+  @{ ModuleName = 'ATAP.Utilities.BuildTooling.DatabasePackaging.PowerShell'; ModuleVersion = '0.1.0' },
+  @{ ModuleName = 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell'; ModuleVersion = '0.1.3' },
+  @{ ModuleName = 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'; ModuleVersion = '0.1.1' },
+  @{ ModuleName = 'ATAP.Utilities.BuildTooling.Secrets.PowerShell'; ModuleVersion = '0.1.0' }
+)
 
 # Assemblies that must be loaded prior to importing this module
 # RequiredAssemblies = @()

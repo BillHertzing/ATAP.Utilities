@@ -1,7 +1,7 @@
 BeforeAll {
   # Import the module from THIS worktree (tests/Unit -> module root) so the test
   # exercises the worktree's source rather than a stable-repo copy on PSModulePath.
-  $script:rootModulePath = Join-Path $PSScriptRoot '..' '..' 'ATAP.Utilities.BuildTooling.Powershell.psm1'
+  $script:rootModulePath = Join-Path $PSScriptRoot '..' '..' 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell.psm1'
   Import-Module $script:rootModulePath -Force
 }
 

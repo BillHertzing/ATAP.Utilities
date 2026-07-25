@@ -19,9 +19,9 @@ BeforeAll {
     Set-Item -Path "Function:\global:$name" -Value ([scriptblock]::Create("throw '$name should not be called during DryRun.'"))
   }
 
-  # Dot-source the private helpers (owner resolution) and the Stage 1 function.
-  . "$PSScriptRoot\..\..\private\Get-WorkspaceJson.ps1"
-  . "$PSScriptRoot\..\..\..\ATAP.Utilities.BuildTooling.GitWorktree.PowerShell\private\Get-GitHubOwnerFromWorkspace.ps1"
+  # Dot-source the SprintLifecycle bridge and the Stage 1 function. The bridge
+  # delegates to the private GitWorktree implementation through its module scope.
+  . "$PSScriptRoot\..\..\private\Get-GitHubOwnerFromWorkspace.ps1"
   . "$PSScriptRoot\..\..\public\New-SprintStage1.ps1"
 }
 

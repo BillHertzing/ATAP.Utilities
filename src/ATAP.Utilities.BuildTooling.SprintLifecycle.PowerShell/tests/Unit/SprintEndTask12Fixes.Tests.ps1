@@ -7,8 +7,8 @@ BeforeAll {
 
   $moduleRoot = Join-Path $PSScriptRoot '..\..'
   foreach ($path in @(
-      'private\Get-WorkspaceJson.ps1',
-      'private\Resolve-WorkspaceFiles.ps1',
+      '..\ATAP.Utilities.BuildTooling.Common.PowerShell\public\Get-WorkspaceJson.ps1',
+      '..\ATAP.Utilities.BuildTooling.Common.PowerShell\public\Resolve-WorkspaceFiles.ps1',
       'private\Invoke-SprintEndNativeCommand.ps1',
       'private\Invoke-SprintEndServiceAccountFreshShell.ps1',
       '..\ATAP.Utilities.BuildTooling.GitWorktree.PowerShell\public\Assert-MainBranchTemplateRef.ps1',

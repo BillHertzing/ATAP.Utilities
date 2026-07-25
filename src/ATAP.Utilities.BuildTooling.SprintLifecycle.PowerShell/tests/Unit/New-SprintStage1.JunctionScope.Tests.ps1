@@ -20,6 +20,15 @@ BeforeAll {
     $global:LASTEXITCODE = 0
     ''
   }
+  function global:Confirm-WorktreeGitPointerOwnership {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param(
+      [string]$WorktreePath,
+      [string]$InteractiveOperator,
+      [bool]$RepairOwnership = $true
+    )
+    [PSCustomObject]@{ WorktreePath = $WorktreePath; Verified = $true; Repaired = $false }
+  }
   function global:Set-WorktreeJunctions {
     param(
       [string]$SourceRepoPath,
@@ -67,6 +76,7 @@ AfterAll {
     'Assert-GitAvailable'
     'gh'
     'git'
+    'Confirm-WorktreeGitPointerOwnership'
     'Set-WorktreeJunctions'
     'Initialize-DownstreamSprintFromSharedVSCode'
     'Invoke-SprintAIAdapterLifecycle'
@@ -80,6 +90,44 @@ Describe 'New-SprintStage1 junction scan scope (SC-0236)' -Tag 'Unit', 'Promoted
   BeforeEach {
     $global:stage1JunctionCalls = [System.Collections.Generic.List[object]]::new()
     $global:stage1CallOrder = [System.Collections.Generic.List[string]]::new()
+
+    # Required-module imports during the first example can replace a global
+    # command stub with the dependency module's exported implementation. Restore
+    # this fixture-local fake before every example so no test reaches a real git
+    # repository or junction mutation.
+    function global:Set-WorktreeJunctions {
+      param(
+        [string]$SourceRepoPath,
+        [string]$WorktreePath,
+        [string]$DevSourceRepoPath,
+        [string[]]$DevSourceRepoFolderNames,
+        [string[]]$SourceRepoFolderNames
+      )
+      $global:stage1JunctionCalls.Add([PSCustomObject]@{
+          SourceRepoFolderNames = $SourceRepoFolderNames
+        }) | Out-Null
+      $global:stage1CallOrder.Add('junctions') | Out-Null
+      [PSCustomObject]@{
+        Success          = $true
+        JunctionsCreated = 3
+        Errors           = @()
+      }
+    }
+    function global:Invoke-SprintAIAdapterLifecycle {
+      [CmdletBinding(SupportsShouldProcess = $true)]
+      param(
+        [string]$Boundary,
+        [string]$TargetRoot,
+        [string]$SharedVSCodeWorktreePath,
+        [switch]$FixtureMode,
+        [switch]$AllowUserGlobalWrite,
+        [switch]$CheckpointConfirmed,
+        [string]$EvidenceRoot,
+        [switch]$OmitSprintWorktrees
+      )
+      $global:stage1CallOrder.Add('render') | Out-Null
+      [PSCustomObject]@{ DriftClean = $true; Results = @(); ChangedCount = 0 }
+    }
 
     $script:tempGitRoot = Join-Path ([System.IO.Path]::GetTempPath()) "stage1_junctionscope_$([guid]::NewGuid().ToString('N'))"
     $script:sharedWorktree = Join-Path $script:tempGitRoot 'SharedVSCode-wt-999-Sprint-0010-work-items'

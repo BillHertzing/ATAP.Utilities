@@ -8,7 +8,7 @@ BeforeAll {
     function Get-RepositoryRoot { return $null }
   }
   # Dot-source both functions in the file (Test-InfraUrlReachable + Test-SprintInfrastructureHealth)
-  $functionPath = Join-Path $PSScriptRoot '../public/Test-SprintInfrastructureHealth.ps1'
+  $functionPath = Join-Path $PSScriptRoot '../../public/Test-SprintInfrastructureHealth.ps1'
   if (-not (Test-Path $functionPath)) {
     throw "Function file not found: $functionPath"
   }

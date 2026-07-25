@@ -7,24 +7,11 @@ BeforeAll {
 
   $moduleRoot = Join-Path $PSScriptRoot '..\..'
   . (Join-Path $moduleRoot 'private\Invoke-SprintEndNativeCommand.ps1')
-  foreach ($name in @(
-      'Get-SprintEndContext',
-      'Test-SprintEndCommandSurface',
-      'Test-SprintEndWorktreeState',
-      'Invoke-SprintEndGitHubClose',
-      'Invoke-SprintEndOverviewClose',
-      'New-SprintEndHandoff',
-      'Invoke-SprintEndInfrastructureCleanup',
-      'Save-SprintHistoryArtifacts',
-      'Restore-SprintHistoryArtifacts',
-      'Save-SprintEndSessionTail',
-      'Set-SprintBoundaryUserProfiles',
-      'Test-SprintCheckpointCoverage',
-      'Test-SprintEndBoundaryState',
-      'Test-SprintEndPullOverlap',
-      'Invoke-SprintEndLifecycle'
-    )) {
-    . (Join-Path $moduleRoot "public\$name.ps1")
+  # Load the complete child-module public surface. A partial hand-maintained list
+  # let commands already present in an interactive developer session mask missing
+  # mock targets; the clean BuildMaster process correctly rejected those mocks.
+  foreach ($publicFunction in Get-ChildItem -LiteralPath (Join-Path $moduleRoot 'public') -Filter '*.ps1' -File) {
+    . $publicFunction.FullName
   }
 }
 

@@ -23,6 +23,7 @@ BeforeAll {
     'Initialize-DownstreamSprintFromSharedVSCode',
     'Invoke-SprintAIAdapterLifecycle',
     'Set-ClaudeSettingsSymlink',
+    'Set-PowerShell7ProfileSymlink',
     'Set-UserSettingsSymlink',
     'Get-SprintTaskRepositoryNames',
     'Initialize-ATAPConfigurationGlobals',
@@ -77,6 +78,12 @@ BeforeAll {
     [PSCustomObject]@{ DriftClean = $true; Results = @(); ChangedCount = 0 }
   }
   function global:Set-ClaudeSettingsSymlink { }
+  function global:Set-PowerShell7ProfileSymlink {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param([string]$ATAPUtilitiesRoot, [string]$ATAPIACRoot)
+    $global:stage2CallOrder.Add('profile-symlink') | Out-Null
+    [PSCustomObject]@{ Ok = $true; Failures = @() }
+  }
   function global:Set-UserSettingsSymlink { }
 
   function global:Get-SprintTaskRepositoryNames {

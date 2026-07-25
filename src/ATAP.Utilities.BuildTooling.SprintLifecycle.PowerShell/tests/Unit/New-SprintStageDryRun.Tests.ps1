@@ -16,6 +16,7 @@ BeforeAll {
     'Initialize-SprintAIAdapters'
     'Set-SprintBoundaryContext'
     'Set-ClaudeSettingsSymlink'
+    'Set-PowerShell7ProfileSymlink'
     'Set-UserSettingsSymlink'
     'Get-SprintTaskRepositoryNames'
     'Initialize-ATAPConfigurationGlobals'
@@ -83,6 +84,11 @@ BeforeAll {
   function global:Set-ClaudeSettingsSymlink {
     $global:dryRunExternalCalls.Add('Set-ClaudeSettingsSymlink') | Out-Null
     throw 'Set-ClaudeSettingsSymlink should not be called during DryRun.'
+  }
+
+  function global:Set-PowerShell7ProfileSymlink {
+    $global:dryRunExternalCalls.Add('Set-PowerShell7ProfileSymlink') | Out-Null
+    throw 'Set-PowerShell7ProfileSymlink should not be called during DryRun.'
   }
 
   function global:Set-UserSettingsSymlink {

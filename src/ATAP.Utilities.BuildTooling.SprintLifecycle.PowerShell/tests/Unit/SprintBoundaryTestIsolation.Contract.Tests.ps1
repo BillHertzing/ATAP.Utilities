@@ -43,4 +43,53 @@ Describe 'Sprint-boundary test isolation contract' -Tag 'Unit' {
 
     $violations | Should -BeNullOrEmpty
   }
+
+  It 'stubs the machine-wide profile worker for every mutating New-SprintStage2 test' {
+    $violations = [System.Collections.Generic.List[string]]::new()
+    $testFiles = Get-ChildItem -LiteralPath $script:testRoot -File -Filter '*.Tests.ps1'
+
+    foreach ($testFile in $testFiles) {
+      if ($testFile.Name -eq 'SprintBoundaryTestIsolation.Contract.Tests.ps1') {
+        continue
+      }
+
+      $tokens = $null
+      $parseErrors = $null
+      $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+        $testFile.FullName,
+        [ref]$tokens,
+        [ref]$parseErrors
+      )
+      $stage2Calls = @($ast.FindAll({
+            param($node)
+            $node -is [System.Management.Automation.Language.CommandAst] -and
+            $node.GetCommandName() -eq 'New-SprintStage2'
+          }, $true))
+      if ($stage2Calls.Count -eq 0) {
+        continue
+      }
+
+      $hasMutatingCall = $false
+      foreach ($stage2Call in $stage2Calls) {
+        $parameterNames = @(
+          $stage2Call.CommandElements |
+            Where-Object { $_ -is [System.Management.Automation.Language.CommandParameterAst] } |
+            ForEach-Object ParameterName
+        )
+        if ($parameterNames -notcontains 'DryRun' -and $parameterNames -notcontains 'WhatIf') {
+          $hasMutatingCall = $true
+          break
+        }
+      }
+
+      if ($hasMutatingCall) {
+        $source = Get-Content -LiteralPath $testFile.FullName -Raw
+        if ($source -notmatch 'function\s+global:Set-PowerShell7ProfileSymlink\b') {
+          $violations.Add($testFile.Name)
+        }
+      }
+    }
+
+    $violations | Should -BeNullOrEmpty
+  }
 }

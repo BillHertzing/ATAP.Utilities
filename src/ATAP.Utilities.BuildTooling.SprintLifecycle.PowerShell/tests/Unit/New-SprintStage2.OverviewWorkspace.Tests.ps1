@@ -27,6 +27,7 @@ BeforeAll {
     'Initialize-SprintAIAdapters',
     'Set-SprintBoundaryContext',
     'Set-ClaudeSettingsSymlink',
+    'Set-PowerShell7ProfileSymlink',
     'Set-UserSettingsSymlink',
     'Get-SprintTaskRepositoryNames',
     'Initialize-ATAPConfigurationGlobals',
@@ -82,6 +83,12 @@ BeforeAll {
     }
   }
   function global:Set-ClaudeSettingsSymlink { }
+  function global:Set-PowerShell7ProfileSymlink {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param([string]$ATAPUtilitiesRoot, [string]$ATAPIACRoot)
+    $global:overviewStubCalls.Add('Set-PowerShell7ProfileSymlink') | Out-Null
+    [PSCustomObject]@{ Ok = $true; Failures = @() }
+  }
   function global:Set-UserSettingsSymlink { }
 
   function global:Get-SprintTaskRepositoryNames {

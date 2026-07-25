@@ -209,6 +209,7 @@ Describe 'New-SprintStage2 junction scan scope (SC-0236)' -Tag 'Unit', 'Promoted
       -GitRoot $script:tempGitRoot `
       -Owner 'owner' `
       -SkipDatabaseReset `
+      -SkipPowerShellProfileRetarget `
       -Confirm:$false | Out-Null
 
     $global:stage2JunctionCalls | Should -HaveCount 1
@@ -223,6 +224,7 @@ Describe 'New-SprintStage2 junction scan scope (SC-0236)' -Tag 'Unit', 'Promoted
       -Owner 'owner' `
       -JunctionFolderNames @('.claude', '.github', '.vscode') `
       -SkipDatabaseReset `
+      -SkipPowerShellProfileRetarget `
       -Confirm:$false | Out-Null
 
     $global:stage2JunctionCalls | Should -HaveCount 1
@@ -236,6 +238,7 @@ Describe 'New-SprintStage2 junction scan scope (SC-0236)' -Tag 'Unit', 'Promoted
       -GitRoot $script:tempGitRoot `
       -Owner 'owner' `
       -SkipDatabaseReset `
+      -SkipPowerShellProfileRetarget `
       -Confirm:$false | Out-Null
 
     @($global:stage2CallOrder) | Should -Contain 'junctions'

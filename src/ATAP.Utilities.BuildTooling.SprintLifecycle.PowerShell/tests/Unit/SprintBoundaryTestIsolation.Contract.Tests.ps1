@@ -44,7 +44,7 @@ Describe 'Sprint-boundary test isolation contract' -Tag 'Unit' {
     $violations | Should -BeNullOrEmpty
   }
 
-  It 'stubs the machine-wide profile worker for every mutating New-SprintStage2 test' {
+  It 'explicitly disables machine-wide profile retargeting for every mutating New-SprintStage2 test' {
     $violations = [System.Collections.Generic.List[string]]::new()
     $testFiles = Get-ChildItem -LiteralPath $script:testRoot -File -Filter '*.Tests.ps1'
 
@@ -69,23 +69,18 @@ Describe 'Sprint-boundary test isolation contract' -Tag 'Unit' {
         continue
       }
 
-      $hasMutatingCall = $false
       foreach ($stage2Call in $stage2Calls) {
         $parameterNames = @(
           $stage2Call.CommandElements |
             Where-Object { $_ -is [System.Management.Automation.Language.CommandParameterAst] } |
             ForEach-Object ParameterName
         )
-        if ($parameterNames -notcontains 'DryRun' -and $parameterNames -notcontains 'WhatIf') {
-          $hasMutatingCall = $true
-          break
-        }
-      }
-
-      if ($hasMutatingCall) {
-        $source = Get-Content -LiteralPath $testFile.FullName -Raw
-        if ($source -notmatch 'function\s+global:Set-PowerShell7ProfileSymlink\b') {
-          $violations.Add($testFile.Name)
+        if (
+          $parameterNames -notcontains 'DryRun' -and
+          $parameterNames -notcontains 'WhatIf' -and
+          $parameterNames -notcontains 'SkipPowerShellProfileRetarget'
+        ) {
+          $violations.Add("$($testFile.Name):$($stage2Call.Extent.StartLineNumber)")
         }
       }
     }

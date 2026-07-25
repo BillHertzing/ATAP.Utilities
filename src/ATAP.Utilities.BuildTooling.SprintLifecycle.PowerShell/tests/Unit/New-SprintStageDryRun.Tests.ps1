@@ -296,7 +296,8 @@ Describe 'New-SprintStage dry-run support' -Tag 'Unit', 'PromotedModuleHostSensi
           -Stage1Result $stage1 `
           -TasksFilePath $tasksPath `
           -GitRoot $script:tempGitRoot `
-          -Owner 'owner'
+          -Owner 'owner' `
+          -SkipPowerShellProfileRetarget
       } | Should -Throw -ExpectedMessage '*developer onboarding SQL Server instance setup*'
 
       $global:dryRunExternalCalls | Should -Contain 'Initialize-ATAPConfigurationGlobals'

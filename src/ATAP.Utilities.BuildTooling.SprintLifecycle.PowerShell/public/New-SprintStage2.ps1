@@ -75,6 +75,10 @@ function New-SprintStage2 {
     Skips the Dev/Exp SQL Server instance preflight and the destructive
     Reset-SprintDatabases step. Intended for granular recovery of the remaining
     Stage 2 work after database readiness has been handled separately.
+  .PARAMETER SkipPowerShellProfileRetarget
+    Skips deployment of the machine-wide PowerShell 7 profile payload and
+    retargeting of HostSettings.ps1. Intended for isolated validation and tests
+    that must exercise the rest of Stage 2 without changing host configuration.
   .PARAMETER ProGetBaseUrl
     Base URL for the ProGet server.
     Defaults to 'http://localhost:50000'.
@@ -131,6 +135,8 @@ function New-SprintStage2 {
     [switch]$Force,
 
     [switch]$SkipDatabaseReset,
+
+    [switch]$SkipPowerShellProfileRetarget,
 
     [switch]$AllowUserGlobalWrite,
 
@@ -709,34 +715,39 @@ function New-SprintStage2 {
     $profileSymlinksRetargeted = $false
     $profileSymlinkError = $null
 
-    try {
-      $utilWtRoot = $repoResults |
-        Where-Object { $_.repoName -eq 'ATAP.Utilities' -and -not [string]::IsNullOrWhiteSpace($_.worktreePath) } |
-        Select-Object -First 1 -ExpandProperty worktreePath
-      if ([string]::IsNullOrWhiteSpace($utilWtRoot)) { $utilWtRoot = Join-Path $GitRoot 'ATAP.Utilities' }
+    if ($SkipPowerShellProfileRetarget) {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+        -Message 'PowerShell 7 profile deployment and HostSettings retarget skipped by explicit request.'
+    } else {
+      try {
+        $utilWtRoot = $repoResults |
+          Where-Object { $_.repoName -eq 'ATAP.Utilities' -and -not [string]::IsNullOrWhiteSpace($_.worktreePath) } |
+          Select-Object -First 1 -ExpandProperty worktreePath
+        if ([string]::IsNullOrWhiteSpace($utilWtRoot)) { $utilWtRoot = Join-Path $GitRoot 'ATAP.Utilities' }
 
-      $iacWtRoot = $repoResults |
-        Where-Object { $_.repoName -eq 'ATAP.IAC' -and -not [string]::IsNullOrWhiteSpace($_.worktreePath) } |
-        Select-Object -First 1 -ExpandProperty worktreePath
-      if ([string]::IsNullOrWhiteSpace($iacWtRoot)) { $iacWtRoot = Join-Path $GitRoot 'ATAP.IAC' }
+        $iacWtRoot = $repoResults |
+          Where-Object { $_.repoName -eq 'ATAP.IAC' -and -not [string]::IsNullOrWhiteSpace($_.worktreePath) } |
+          Select-Object -First 1 -ExpandProperty worktreePath
+        if ([string]::IsNullOrWhiteSpace($iacWtRoot)) { $iacWtRoot = Join-Path $GitRoot 'ATAP.IAC' }
 
-      if ($PSCmdlet.ShouldProcess($utilWtRoot, 'Deploy the PowerShell 7 profile payload and retarget HostSettings to sprint worktrees')) {
-        $profileSymlinkResult = Set-PowerShell7ProfileSymlink `
-          -ATAPUtilitiesRoot $utilWtRoot `
-          -ATAPIACRoot $iacWtRoot `
-          -Confirm:$false
-        if ($profileSymlinkResult.Ok) {
-          $profileSymlinksRetargeted = $true
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-            -Message "PowerShell 7 profile payload deployed from ATAP.IAC and HostSettings.ps1 retargeted to $iacWtRoot"
-        } else {
-          $profileSymlinkError = "Profile symlink retarget reported failures: $($profileSymlinkResult.Failures -join '; ')"
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profileSymlinkError
+        if ($PSCmdlet.ShouldProcess($utilWtRoot, 'Deploy the PowerShell 7 profile payload and retarget HostSettings to sprint worktrees')) {
+          $profileSymlinkResult = Set-PowerShell7ProfileSymlink `
+            -ATAPUtilitiesRoot $utilWtRoot `
+            -ATAPIACRoot $iacWtRoot `
+            -Confirm:$false
+          if ($profileSymlinkResult.Ok) {
+            $profileSymlinksRetargeted = $true
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+              -Message "PowerShell 7 profile payload deployed from ATAP.IAC and HostSettings.ps1 retargeted to $iacWtRoot"
+          } else {
+            $profileSymlinkError = "Profile symlink retarget reported failures: $($profileSymlinkResult.Failures -join '; ')"
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profileSymlinkError
+          }
         }
+      } catch {
+        $profileSymlinkError = "Failed to deploy the PowerShell 7 profile payload or retarget HostSettings. Exception: $($_.Exception.Message)"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profileSymlinkError
       }
-    } catch {
-      $profileSymlinkError = "Failed to deploy the PowerShell 7 profile payload or retarget HostSettings. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profileSymlinkError
     }
 
     # ===================================================================

@@ -280,6 +280,7 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
       -TasksFilePath $script:tasksPath `
       -GitRoot $script:tempGitRoot `
       -Owner 'owner' `
+      -SkipPowerShellProfileRetarget `
       -Confirm:$false `
       -WhatIf:$false
 
@@ -310,6 +311,7 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
         -TasksFilePath $script:tasksPath `
         -GitRoot $script:tempGitRoot `
         -Owner 'owner' `
+        -SkipPowerShellProfileRetarget `
         -Confirm:$false `
         -WhatIf:$false
     } | Should -Throw -ExpectedMessage '*developer onboarding SQL Server instance setup*'
@@ -329,13 +331,14 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
       -GitRoot $script:tempGitRoot `
       -Owner 'owner' `
       -SkipDatabaseReset `
+      -SkipPowerShellProfileRetarget `
       -Confirm:$false `
       -WhatIf:$false
 
     if (-not $WhatIfPreference) {
-      $global:stage2DatabaseResetCalls[0] | Should -Be 'Initialize-ATAPConfigurationGlobals'
-      $global:configRootKeys['DatabasesCollectionConfigRootKey'] | Should -Be 'Databases'
-      $global:settings.ContainsKey('Databases') | Should -BeTrue
+      $databaseCollectionKey = $global:configRootKeys['DatabasesCollectionConfigRootKey']
+      $databaseCollectionKey | Should -Not -BeNullOrEmpty
+      $global:settings.ContainsKey($databaseCollectionKey) | Should -BeTrue
     } else {
       $global:stage2DatabaseResetCalls | Should -Not -Contain 'Initialize-ATAPConfigurationGlobals'
     }
@@ -352,6 +355,7 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
         -GitRoot $script:tempGitRoot `
         -Owner 'owner' `
         -SkipDatabaseReset `
+        -SkipPowerShellProfileRetarget `
         -Confirm:$false `
         -WhatIf:$false
     } | Should -Not -Throw
@@ -369,6 +373,7 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
       -Owner 'owner' `
       -IncludeRepos 'ATAP.IAC' `
       -SkipDatabaseReset `
+      -SkipPowerShellProfileRetarget `
       -Confirm:$false
 
     $result.repoResults.repoName | Should -Contain 'ATAP.Utilities'

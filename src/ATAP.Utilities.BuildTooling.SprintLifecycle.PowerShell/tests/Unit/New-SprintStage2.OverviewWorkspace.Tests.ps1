@@ -226,6 +226,7 @@ Describe 'New-SprintStage2 Overview workspace generation (Task 10.14.a)' -Tag 'U
       -GitRoot $script:tempGitRoot `
       -Owner 'owner' `
       -SkipDatabaseReset `
+      -SkipPowerShellProfileRetarget `
       -Confirm:$false
 
     $global:overviewStubCalls | Should -Contain 'New-OverviewSprintWorkspace'
@@ -250,6 +251,7 @@ Describe 'New-SprintStage2 Overview workspace generation (Task 10.14.a)' -Tag 'U
       -GitRoot $script:tempGitRoot `
       -Owner 'owner' `
       -SkipDatabaseReset `
+      -SkipPowerShellProfileRetarget `
       -Confirm:$false
 
     $result.infrastructure.overviewWorkspaceVerified | Should -BeFalse
@@ -267,6 +269,7 @@ Describe 'New-SprintStage2 Overview workspace generation (Task 10.14.a)' -Tag 'U
       -GitRoot $script:tempGitRoot `
       -Owner 'owner' `
       -SkipDatabaseReset `
+      -SkipPowerShellProfileRetarget `
       -Confirm:$false
 
     $result.infrastructure.overviewWorkspaceVerified | Should -BeFalse

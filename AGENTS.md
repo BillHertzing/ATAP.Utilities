@@ -743,8 +743,9 @@ For the classes below, skip the sandbox attempt and call `tools.shell_command` f
 
 ### Never loop on UAC
 
-- Use the sanctioned elevation broker when available (Task 3.x follow-up), otherwise perform at most one `Start-Process -Verb RunAs` attempt.
-- On failure of that attempt, capture evidence and hand off to the user; do not retry blindly.
+- For an AllUsers module install, use `Request-ElevatedInstall.ps1` through the registered ATAP elevation broker; it submits the approved installer id and waits for the recorded result without showing a UAC prompt.
+- Do not use `Start-Process -Verb RunAs` for a brokered AllUsers install, and never retry a failed broker request blindly. Capture the result record and transcript path, then hand off to the user.
+- If the broker is unavailable, capture that evidence and hand off to the user rather than substituting an ad-hoc elevation path.
 
 ### Elevated-run transcript rule
 

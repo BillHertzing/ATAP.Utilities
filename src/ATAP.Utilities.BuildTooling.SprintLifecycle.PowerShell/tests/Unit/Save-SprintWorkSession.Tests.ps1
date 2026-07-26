@@ -486,6 +486,17 @@ Describe 'Save-SprintWorkSession' {
       $err = script:Invoke-CheckpointWithArchiveEntries -ArchiveEntries @('fake-session.jsonl')
       $err | Should -BeNullOrEmpty
     }
+
+    It 'stages long transcript names under the system temporary directory before calling 7z' {
+      # The durable archive name intentionally includes sprint, worktree, branch, and
+      # collision data; using that same path for a staging directory exceeded 7-Zip's
+      # legacy path limit and produced a 59-byte empty archive with exit code zero.
+      $sourcePath = (Get-Command -Name 'Save-SprintWorkSession' -CommandType Function).ScriptBlock.File
+      $source = Get-Content -LiteralPath $sourcePath -Raw
+
+      $source | Should -Match '\[IO\.Path\]::GetTempPath\(\)'
+      $source | Should -Not -Match '\$snapshotDir = Join-Path \$convDir'
+    }
   }
 
   Context 'Task 9.32 — -Agent parameter surface' {

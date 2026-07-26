@@ -550,7 +550,11 @@ function Save-SprintWorkSession {
             $convDir = Join-Path $PlanningRoot 'SprintWorkSessionConversations'
             New-Item -ItemType Directory -Path $convDir -Force | Out-Null
             $archive = Join-Path $convDir "$convName.7z"
-            $snapshotDir = Join-Path $convDir "$convName-source"
+            # Keep the staging path short. 7-Zip can silently emit a valid but empty
+            # archive when a transcript staging path exceeds the legacy Win32 path limit.
+            # The durable archive retains the descriptive $convName; only its transient
+            # input lives under the system temporary directory.
+            $snapshotDir = Join-Path ([IO.Path]::GetTempPath()) "ATAP-checkpoint-$($nameComponents.Disambiguator)"
             $snapshot = Join-Path $snapshotDir $jsonl.Name
 
             if ($PSCmdlet.ShouldProcess($archive, "Archive conversation JSONL '$($jsonl.Name)'")) {

@@ -84,7 +84,8 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $first.Path | Should -Be $output
       $first.SprintNumber | Should -Be '0010'
       $errors | Should -BeNullOrEmpty
-      $text | Should -Match 'git -C .* worktree remove'
+      $text | Should -Match 'Remove-SprintWorktreeSafely'
+      $text | Should -Not -Match 'git -C .* worktree remove'
       $text | Should -Match 'pull --ff-only'
       $text | Should -Match 'Test-SprintEndPullOverlap'
       $text | Should -Match 'branch -D'
@@ -130,9 +131,9 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $text | Should -Match 'if \(@\(\$boundaryResetResult\.Errors\)\.Count -gt 0\)'
 
       # Ordering: the boundary reset block must appear in the script BEFORE the
-      # first 'git ... worktree remove' command.
+      # first safe teardown command.
       $boundaryResetIndex = $code.IndexOf('Set-SprintBoundaryContext @boundaryParams')
-      $firstRemoveIndex = $code.IndexOf('worktree remove')
+      $firstRemoveIndex = $code.IndexOf('Remove-SprintWorktreeSafely')
       $boundaryResetIndex | Should -BeGreaterThan -1
       $firstRemoveIndex | Should -BeGreaterThan -1
       $boundaryResetIndex | Should -BeLessThan $firstRemoveIndex
@@ -742,6 +743,59 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $planningPlan[0].WorktreeRemovalPlanned | Should -BeTrue
       $result.Phases.GitHub.Count | Should -Be 2
       $result.Phases.Handoff.WorktreePaths | Should -Contain $planning
+    }
+
+    It 'keeps a partial close resumable through generated safe teardown and idempotent re-entry' {
+      $planning = Join-Path $TestDrive '_Planning-wt-20-Sprint-0010-work-items-recovery'
+      $shared = Join-Path $TestDrive 'SharedVSCode-wt-48-Sprint-0010-work-items-recovery'
+      New-Item -ItemType Directory -Path $planning, $shared -Force | Out-Null
+      New-Item -ItemType Directory -Path (Join-Path $planning 'SprintRetrospective') -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $planning 'SprintRetrospective\Notebook-SprintWorkSession-0010-End.md') -Value '# Sprint 0010 End'
+
+      # First live pass simulates a crash after the boundary reset but before handoff completion.
+      Mock Set-SprintBoundaryContext { [PSCustomObject]@{ Errors = @() } }
+      Mock Invoke-SprintEndInfrastructureCleanup {
+        [PSCustomObject]@{ Ok = $true; DatabaseCleanupMode = 'SprintDatabasesOnly'; SqlInstancesRetained = $true }
+      }
+      Mock New-SprintEndHandoff { throw 'simulated process crash during handoff write' }
+
+      $partial = Invoke-SprintEndLifecycle `
+        -GitRoot $TestDrive -PlanningRoot $planning -SharedVSCodeWorktreePath $shared `
+        -WorktreePaths @($planning, $shared) -ApplyBoundary -WriteHandoff -CleanupInfrastructure
+
+      $partial.Ok | Should -BeFalse
+      $partial.Phases.BoundaryReset.Errors | Should -BeNullOrEmpty
+      $partial.Phases.InfrastructureCleanup | Should -BeNullOrEmpty
+
+      # Resume uses the same inputs and only mocked destructive integrations.
+      $handoffPath = Join-Path $TestDrive 'HANDOFF.Sprint0010.md'
+      Mock New-SprintEndHandoff {
+        [PSCustomObject]@{
+          Changed = $true; Planned = $false; Path = $handoffPath
+          WorktreePaths = $WorktreePaths
+        }
+      }
+      Mock Test-SprintEndBoundaryState { [PSCustomObject]@{ Ok = $true; Failures = @() } }
+
+      $resumed = Invoke-SprintEndLifecycle `
+        -GitRoot $TestDrive -PlanningRoot $planning -SharedVSCodeWorktreePath $shared `
+        -WorktreePaths @($shared) -ApplyBoundary -WriteHandoff -CleanupInfrastructure
+
+      $resumed.Ok | Should -BeTrue
+      $resumed.Phases.ClosePlan.WorktreePath | Should -Contain $planning
+      $resumed.Phases.Handoff.WorktreePaths | Should -Contain $planning
+      Should -Invoke Set-SprintBoundaryContext -Times 2
+      Should -Invoke Invoke-SprintEndInfrastructureCleanup -Times 1
+      Should -Invoke New-SprintEndHandoff -Times 2
+
+      # The physical-teardown recipe is generated, bounded, and self-deletes only last.
+      $handoffSource = Get-Content -Raw -LiteralPath (Join-Path $moduleRoot 'public\New-SprintEndHandoff.ps1')
+      $handoffSource | Should -Match 'Remove-SprintWorktreeSafely'
+      $handoffSource | Should -Not -Match 'worktree remove.*--force'
+      $handoffSource | Should -Match 'pull --ff-only origin main'
+      $handoffSource | Should -Match 'Remove-SprintDatabases'
+      $handoffSource | Should -Match 'Set-SprintBoundaryContext'
+      $handoffSource | Should -Match 'Remove-Item @handoffRemovalParams'
     }
   }
 }

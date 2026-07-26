@@ -290,7 +290,16 @@ function Invoke-SprintEndLifecycle {
         Confirm       = $false
       }
       if ($WhatIfPreference) { $handoffParameters.WhatIf = $true }
-      $phases.Handoff = New-SprintEndHandoff @handoffParameters
+      try {
+        $phases.Handoff = New-SprintEndHandoff @handoffParameters
+      } catch {
+        $phases.Handoff = [PSCustomObject]@{
+          Ok = $false
+          Error = $_.Exception.Message
+          WorktreePaths = $worktreeFullPaths
+        }
+        [void]$failures.Add('Handoff')
+      }
     } else {
       $phases.Handoff = $null
     }

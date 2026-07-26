@@ -162,11 +162,9 @@ function New-SprintEndHandoff {
       $fullLiteral = ConvertTo-SprintEndHandoffSingleQuotedLiteral -Value $full
       $stablePathLiteral = ConvertTo-SprintEndHandoffSingleQuotedLiteral -Value $stablePath
       $branchNameLiteral = ConvertTo-SprintEndHandoffSingleQuotedLiteral -Value $branchName
-      $remainingPathMessageLiteral = ConvertTo-SprintEndHandoffSingleQuotedLiteral -Value "Worktree path remains after removal: $full"
       $lines.Add("# Remove $leaf")
-      $lines.Add("git -C $stablePathLiteral worktree remove $fullLiteral --force")
-      $lines.Add("git -C $stablePathLiteral worktree prune")
-      $lines.Add("if (Test-Path -LiteralPath $fullLiteral) { throw $remainingPathMessageLiteral }")
+      $lines.Add("`$teardownResult = Remove-SprintWorktreeSafely -RepositoryPath $stablePathLiteral -WorktreePath $fullLiteral -MaxAttempts 3 -RetryDelayMilliseconds 500 -ThrowOnFailure -Confirm:`$false")
+      $lines.Add("if (-not `$teardownResult.Ok) { throw 'Worktree teardown did not complete; preserve the generated minimal teardown handoff and resume only that step.' }")
       $lines.Add("if (git -C $stablePathLiteral branch --list $branchNameLiteral) { git -C $stablePathLiteral branch -D $branchNameLiteral }")
       $lines.Add('')
     }

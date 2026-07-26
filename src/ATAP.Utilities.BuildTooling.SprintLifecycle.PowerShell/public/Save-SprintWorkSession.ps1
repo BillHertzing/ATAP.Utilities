@@ -153,6 +153,43 @@ function Save-SprintWorkSession {
 
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Entering function'
 
+        function Copy-ConversationSnapshot {
+            [CmdletBinding()]
+            param(
+                [Parameter(Mandatory)]
+                [string] $SourcePath,
+
+                [Parameter(Mandatory)]
+                [string] $DestinationPath,
+
+                [int] $RetryCount = 8,
+
+                [int] $RetryDelayMilliseconds = 250
+            )
+
+            for ($attempt = 1; $attempt -le $RetryCount; $attempt++) {
+                try {
+                    $sourceStream = [IO.File]::Open($SourcePath, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::ReadWrite)
+                    try {
+                        $destinationStream = [IO.File]::Open($DestinationPath, [IO.FileMode]::Create, [IO.FileAccess]::Write, [IO.FileShare]::None)
+                        try {
+                            $sourceStream.CopyTo($destinationStream)
+                        } finally {
+                            $destinationStream.Dispose()
+                        }
+                    } finally {
+                        $sourceStream.Dispose()
+                    }
+                    return
+                } catch [IO.IOException] {
+                    if ($attempt -eq $RetryCount) {
+                        throw "Could not snapshot active conversation '$SourcePath' after $RetryCount shared-read attempts. Close or release the agent transcript and retry checkpoint. Last error: $($_.Exception.Message)"
+                    }
+                    Start-Sleep -Milliseconds $RetryDelayMilliseconds
+                }
+            }
+        }
+
         # Load helper functions
         # None of this is needed once the modules are built and installed into the PSModulePath, but while we are
         # still running from source code, we need to dot source the helper functions that are not yet in a module.
@@ -513,11 +550,19 @@ function Save-SprintWorkSession {
             $convDir = Join-Path $PlanningRoot 'SprintWorkSessionConversations'
             New-Item -ItemType Directory -Path $convDir -Force | Out-Null
             $archive = Join-Path $convDir "$convName.7z"
+            $snapshotDir = Join-Path $convDir "$convName-source"
+            $snapshot = Join-Path $snapshotDir $jsonl.Name
 
             if ($PSCmdlet.ShouldProcess($archive, "Archive conversation JSONL '$($jsonl.Name)'")) {
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Archiving '$($jsonl.FullName)' → '$archive'"
-                & 7z a $archive $jsonl.FullName 2>&1 | Out-Null
-                if (Test-Path $archive) {
+                try {
+                    New-Item -ItemType Directory -Path $snapshotDir -Force | Out-Null
+                    Copy-ConversationSnapshot -SourcePath $jsonl.FullName -DestinationPath $snapshot
+                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Archiving snapshot '$snapshot' → '$archive'"
+                    $sevenZipOutput = @(& 7z a $archive $snapshot 2>&1)
+                    if ($LASTEXITCODE -ne 0) {
+                        throw "7z failed to archive conversation snapshot (exit $LASTEXITCODE): $($sevenZipOutput -join ' ')"
+                    }
+                    if (Test-Path $archive) {
                     # Task 13.76.d: the existence of the .7z proves nothing about its payload.
                     # `7z a` can emit an archive with zero entries when path/token expansion
                     # fails, and the previous check reported ConversationArchiveCreated = $true
@@ -532,7 +577,7 @@ function Save-SprintWorkSession {
                     # The bare listing puts the stored name last on each line; match on the
                     # file name rather than a column position so 7z formatting changes cannot
                     # silently turn this assertion into a no-op.
-                    $jsonlFileName = [IO.Path]::GetFileName($jsonl.FullName)
+                    $jsonlFileName = [IO.Path]::GetFileName($snapshot)
                     $containsRolloutJsonl = @(
                         $entries | Where-Object { $_ -match [regex]::Escape($jsonlFileName) }
                     ).Count -gt 0
@@ -544,6 +589,10 @@ function Save-SprintWorkSession {
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Conversation saved: $archive ($($entries.Count) entr$(if ($entries.Count -eq 1) { 'y' } else { 'ies' }))"
                 } else {
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message 'Archive not created — verify 7z is on PATH.'
+                }
+                } finally {
+                    Remove-Item -LiteralPath $snapshot -Force -ErrorAction SilentlyContinue
+                    Remove-Item -LiteralPath $snapshotDir -Force -ErrorAction SilentlyContinue
                 }
             }
 

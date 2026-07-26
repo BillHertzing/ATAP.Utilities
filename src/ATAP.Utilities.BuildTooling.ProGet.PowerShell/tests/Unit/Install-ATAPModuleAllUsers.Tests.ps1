@@ -224,6 +224,18 @@ Describe 'Install-ATAPModuleAllUsers' {
     Test-Path -LiteralPath (Join-Path $expected 'expand') | Should -BeFalse
   }
 
+  It 'creates the version folder at the AllUsers root instead of moving the broker-temp folder' {
+    $r = Install-ATAPModuleAllUsers -ModuleName $script:Name -RequiredVersion $script:Version `
+      -Repository 'powershellget-stable' -FeedUrl 'http://localhost:50000/nuget/powershellget-stable' `
+      -ExpectedSha256 $script:NupkgHash -ModulesRoot $script:ModulesRoot -DeployRoot $script:DeployRoot -Confirm:$false
+
+    $r.ExitStatus | Should -Be 0
+    $expected = Join-Path (Join-Path $script:ModulesRoot $script:Name) $script:Version
+    $parent = Split-Path -Path $expected -Parent
+    (Get-Acl -LiteralPath $expected).AreAccessRulesProtected | Should -BeFalse
+    (Get-Acl -LiteralPath $expected).AccessToString | Should -Be (Get-Acl -LiteralPath $parent).AccessToString
+  }
+
   It 'writes a JSON result record for the run' {
     $r = Install-ATAPModuleAllUsers -ModuleName $script:Name -RequiredVersion $script:Version `
       -Repository 'powershellget-stable' -FeedUrl 'http://localhost:50000/nuget/powershellget-stable' `

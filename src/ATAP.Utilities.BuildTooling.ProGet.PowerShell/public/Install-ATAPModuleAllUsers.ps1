@@ -22,8 +22,10 @@ The install is deliberately strict and all-or-nothing:
      manifest, rather than asking the feed to resolve it.
   5. Refuses to overwrite an existing version folder, because ProGet versions are immutable and
      silently replacing one hides which bits are actually deployed.
-  6. Stages into a temp folder and moves it into place, then proves a fresh import resolves from
-     that exact folder at the expected version.
+  6. Stages in a temp folder, then creates the version folder under the AllUsers modules root and
+     copies the staged contents into it. Creating the target in place is intentional: a move from
+     the broker service account's temporary directory preserves that account's restrictive ACL,
+     making the apparent AllUsers install unreadable to normal consumers.
   7. Rolls back a version folder THIS run created if any validation fails, so a retry reports the
      real error instead of "Version folder already exists".
 
@@ -223,8 +225,11 @@ function Install-ATAPModuleAllUsers {
         $packageContentRoot = Split-Path -Path $moduleManifest.FullName -Parent
         Copy-Item -Path (Join-Path -Path $packageContentRoot -ChildPath '*') -Destination $stagingFolder -Recurse -Force
 
-        New-Item -ItemType Directory -Path (Split-Path -Path $versionTargetPath -Parent) -Force | Out-Null
-        Move-Item -LiteralPath $stagingFolder -Destination $versionTargetPath
+        # Do not Move-Item the staging directory into Program Files. A moved directory retains the
+        # broker account's ACL from its private temp root. Create the version folder under the
+        # AllUsers module root so it inherits that root's consumer-readable ACL, then copy contents.
+        New-Item -ItemType Directory -Path $versionTargetPath -Force | Out-Null
+        Copy-Item -Path (Join-Path -Path $stagingFolder -ChildPath '*') -Destination $versionTargetPath -Recurse -Force
         $result.VersionPath = $versionTargetPath
         $createdVersionPath = $versionTargetPath
       }

@@ -39,12 +39,12 @@ function Initialize-DabMcpConfiguration {
         return [pscustomobject]@{ ConfigPath = $ConfigPath; Action = 'Preserved'; WhatIf = $false }
       }
 
-      $dab = Get-Command -Name 'dab' -ErrorAction Stop
       $configDirectory = Split-Path -Path $ConfigPath -Parent
       if (-not $PSCmdlet.ShouldProcess($ConfigPath, 'Create secret-free DAB MCP configuration')) {
         return [pscustomobject]@{ ConfigPath = $ConfigPath; Action = 'Create'; WhatIf = $true }
       }
 
+      $dab = Get-Command -Name 'dab' -ErrorAction Stop
       New-Item -ItemType Directory -Path $configDirectory -Force | Out-Null
       if ($Force -and (Test-Path -LiteralPath $ConfigPath -PathType Leaf)) {
         Remove-Item -LiteralPath $ConfigPath -Force

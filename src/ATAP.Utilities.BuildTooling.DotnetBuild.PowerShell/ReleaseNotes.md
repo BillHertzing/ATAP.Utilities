@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.1.3
+
+- Defers the DAB executable lookup until after `-WhatIf` has returned so dry-run
+  configuration planning works on hosts without DAB installed.
+
 ## 0.1.2
 
 - Adds secret-free Data API Builder provisioning, configuration validation, and

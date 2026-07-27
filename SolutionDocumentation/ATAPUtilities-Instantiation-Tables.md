@@ -45,6 +45,34 @@ things belong to a specific instantiation version. The manifestation table
 describes concrete renderer outputs such as directories, module source folders,
 module manifests, and reports.
 
+## Effective-Dated Versioning
+
+`V00.02.000100__Add_RRSBS_Effective_Dating.sql` makes temporal validity the
+authoritative version contract for the RRSBS instantiation tree. Every
+Philote-backed version and every membership/input row that participates in the
+tree carries `EffectiveFrom` and `EffectiveTo` in UTC.
+
+- A row is current exactly when `EffectiveTo IS NULL`.
+- A logical parent can have exactly one current child version; filtered unique
+  indexes enforce that invariant.
+- `VersionNumber` and `VersionLabel` remain useful historical annotations, but
+  neither determines which row is current.
+- A revision closes the current row by setting `EffectiveTo` to the revision
+  UTC timestamp, then inserts its successor with the same logical parent
+  Philote ID, `EffectiveFrom` equal to that timestamp, and `EffectiveTo = NULL`.
+- Published content is append-only. The only permitted update to a temporal
+  RRSBS row is closing a previously open interval. Deletes, content rewrites,
+  re-opening, and invalid/future close timestamps are rejected by triggers.
+
+For example, a Rule revision retains `RulePhiloteId` as its durable identity:
+the old `RuleVersion` is closed and a new `RuleVersion` is inserted with the
+same `RulePhiloteId` and revised content/composition. The same pattern applies
+upward through RuleSet, BuildSet, and Instantiation versions, and downward
+through primitive-composition, membership, rule-instantiation, and input
+binding records. Consumers select the current tree by filtering each temporal
+relation on `EffectiveTo IS NULL`, or reconstruct an earlier tree with an
+as-of timestamp predicate.
+
 ## Source Ingestion
 
 Source ingestion should populate or update `SourceModule` rows from the

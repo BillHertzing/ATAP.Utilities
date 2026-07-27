@@ -26,6 +26,25 @@ The RRSBS implementation follows Flyway's migration pattern with strict DDL/DML 
 
 ## RRSBS Table Structure
 
+## Effective-Dated Lifecycle
+
+RRSBS does not use the largest `VersionNumber` as the definition of current.
+Every temporal RRSBS row has an UTC validity interval:
+
+- `EffectiveFrom` is inclusive.
+- `EffectiveTo` is exclusive and `NULL` only for the current version.
+- A revision closes the current row at one UTC timestamp and inserts the
+  successor at that same timestamp; the logical parent Philote ID is retained.
+- The effective-date check constraint, filtered unique current indexes, and
+  close-only triggers prevent overlapping current versions, rewrites, and
+  deletes.
+
+The durable identity remains the parent Philote ID such as `RulePhiloteId`.
+The version row has its own Philote ID so the complete historical graph can be
+addressed without ambiguity. The same contract applies to the Instantiation
+tree through BuildSet, RuleSet, Rule, composition, membership, instantiation,
+and input-binding rows.
+
 ### Identity Layer
 
 - **Philote**: Stable GUID-based identity (IPhilote<GUID>) for primitives and rules

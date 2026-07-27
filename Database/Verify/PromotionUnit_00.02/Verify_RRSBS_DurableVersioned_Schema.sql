@@ -42,6 +42,11 @@
 -- references and rewrite the guarded dynamic SQL.
 -- Run via sqlcmd / Invoke-Sqlcmd targeting ATAPUtilities directly; no USE.
 
+-- QUOTED_IDENTIFIER must be ON explicitly, not inherited from the caller.
+-- sqlcmd defaults it OFF, and any INSERT touching a table that carries a
+-- filtered index then fails with Msg 1934 before a single check has run.
+-- Setting it here makes the artifact independent of how it is invoked.
+SET QUOTED_IDENTIFIER ON;
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 GO
@@ -945,7 +950,7 @@ BEGIN
         INSERT INTO #VerifyInfo (Area, Detail)
         SELECT N''5-Provenance'',
                N''ManifestationArtifact rows: '' + CAST(COUNT(*) AS NVARCHAR(10))
-               + N'' (RenderFromModel: '' + CAST(SUM(CASE WHEN RenderPolicy = N''RenderFromModel'' THEN 1 ELSE 0 END) AS NVARCHAR(10))
+               + N'' (RenderFromModel: '' + CAST(ISNULL(SUM(CASE WHEN RenderPolicy = N''RenderFromModel'' THEN 1 ELSE 0 END), 0) AS NVARCHAR(10))
                + N''). Zero rows means the provenance checks passed vacuously.''
         FROM ATAPUtilities.ManifestationArtifact;';
 END

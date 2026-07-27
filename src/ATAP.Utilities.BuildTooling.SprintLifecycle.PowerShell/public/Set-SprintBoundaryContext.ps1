@@ -160,6 +160,13 @@ function Set-SprintBoundaryContext {
 
     [string[]]$StableJunctionFolderNames = @('.vscode'),
 
+    # Task 13.88. Root of the durable, Dropbox-backed AI agent memory store.
+    # When omitted it is derived from DropboxBasePathConfigRootKey as
+    # '<DropboxBase>\<user>\ATAP\AIAgentMemory'; when that key is unavailable the
+    # memory junction is skipped rather than guessing a path. Start boundary only.
+    [Parameter(Mandatory = $false)]
+    [string]$AIAgentMemoryRoot,
+
     [string]$GitRoot = 'C:\dropbox\whertzing\GitHub',
 
     [string]$SharedVSCodeRepoName = 'SharedVSCode',
@@ -193,7 +200,7 @@ function Set-SprintBoundaryContext {
 
     # When the file is dot-sourced from source (no module import), the private
     # settings-symlink helpers are not yet defined. Load them on demand.
-    foreach ($privateHelperName in @('Set-ClaudeSettingsSymlink', 'Set-UserSettingsSymlink')) {
+    foreach ($privateHelperName in @('Set-ClaudeSettingsSymlink', 'Set-UserSettingsSymlink', 'Set-AIAgentMemoryJunction')) {
       if (-not (Get-Command -Name $privateHelperName -CommandType Function -ErrorAction SilentlyContinue)) {
         $privateHelperPath = Join-Path $PSScriptRoot '..' 'private' "$privateHelperName.ps1"
         if (Test-Path -LiteralPath $privateHelperPath) {
@@ -236,6 +243,10 @@ function Set-SprintBoundaryContext {
         JunctionError        = $null
         ContextError         = $null
         AdapterError         = $null
+        # Task 13.88: durable AI agent memory junction (Start boundary only).
+        MemoryJunctionCreated = $false
+        MemoryStorePath       = $null
+        MemoryJunctionError   = $null
         Error                = $null
       }
 
@@ -354,6 +365,40 @@ function Set-SprintBoundaryContext {
             $wtEntry.JunctionsRetargeted = $true
           } else {
             throw "Set-WorktreeJunctions reported errors: $($junctionResult.Errors -join '; ')"
+          }
+        }
+
+        # --- AI agent memory junction (Task 13.88) ---------------------
+        # Sprint-scoped and easy to forget: without it /checkpoint archives
+        # ZERO memory files while still reporting success, because
+        # Save-SprintWorkSession treats a missing memory directory as a
+        # benign skip. Provision it at Start only; at End the worktree is
+        # going away and the durable Dropbox store is what survives.
+        # Deliberately NON-FATAL: a missing memory junction must never
+        # abort sprint provisioning, so failures are recorded and surfaced
+        # rather than thrown.
+        if ($Boundary -eq 'Start') {
+          try {
+            $memoryParams = @{ WorktreePath = $worktreePath }
+            if ($PSBoundParameters.ContainsKey('AIAgentMemoryRoot') -and -not [string]::IsNullOrWhiteSpace($AIAgentMemoryRoot)) {
+              $memoryParams.AIAgentMemoryRoot = $AIAgentMemoryRoot
+            }
+            $memoryResult = Set-AIAgentMemoryJunction @memoryParams
+            $wtEntry.MemoryJunctionCreated = [bool]$memoryResult.Success -and -not $memoryResult.Skipped
+            $wtEntry.MemoryStorePath = $memoryResult.MemoryRoot
+            if ($memoryResult.Skipped) {
+              $wtEntry.MemoryJunctionError = "skipped: $($memoryResult.SkipReason)"
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+                -Message "AI agent memory junction skipped for '$worktreePath': $($memoryResult.SkipReason)"
+            } elseif (-not $memoryResult.Success) {
+              $wtEntry.MemoryJunctionError = ($memoryResult.Errors -join '; ')
+              $errors.Add("AI agent memory junction failed for '$worktreePath': $($wtEntry.MemoryJunctionError)")
+            }
+          } catch {
+            $wtEntry.MemoryJunctionError = $_.Exception.Message
+            $errors.Add("AI agent memory junction failed for '$worktreePath': $($_.Exception.Message)")
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
+              -Message "AI agent memory junction failed for '$worktreePath': $($_.Exception.Message)"
           }
         }
       } catch {

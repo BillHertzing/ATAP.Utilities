@@ -1,5 +1,42 @@
 # Release notes
 
+## 0.1.10
+
+- `Set-SprintBoundaryContext -Boundary Start` now provisions the durable AI agent memory
+  junction for every sprint worktree it creates (Task 13.88), via the new private helper
+  `Set-AIAgentMemoryJunction`. Because both `New-SprintStage1` and `New-SprintStage2`
+  delegate per-worktree provisioning to this function, `_Planning` and every downstream
+  repo are covered by the one hook.
+- **Why this exists.** Claude Code and the checkpoint tooling resolve DIFFERENT project
+  slugs under `~\.claude\projects\`. Claude Code derives its slug from
+  `git rev-parse --git-common-dir`, so from a worktree it resolves to the MAIN repository;
+  `Save-SprintWorkSession` derives its path from the transcript slug, which IS the sprint
+  worktree. Left alone the two never meet, and the failure is **silent** —
+  `Save-SprintWorkSession` reports `MemorySnapshotCreated = $false` with reason
+  "Memory directory not found" and still exits successfully, so checkpoints look healthy
+  while archiving zero memory files. Sprint 0013 lost three consecutive checkpoints to it.
+  The helper junctions BOTH slugs' `memory` directories at one canonical store.
+- The store lives under Dropbox, outside every git repository, so memory survives sprint
+  end, reaches every host via Dropbox sync, stays clear of the stable-worktree boundary
+  rule, and is never committed to git. Its root is derived from
+  `DropboxBasePathConfigRootKey` as `<DropboxBase>\<user>\ATAP\AIAgentMemory`, or supplied
+  explicitly with the new `-AIAgentMemoryRoot` parameter.
+- **Fails safe in three directions.** When `DropboxBasePathConfigRootKey` is unavailable
+  (an agent shell with no PowerShell profile, where `$global:settings` is empty) it SKIPS
+  with a recorded reason instead of guessing a path. A pre-existing REAL memory directory
+  is migrated into the store rather than clobbered, and a non-empty one that cannot be
+  fully migrated aborts instead of destroying files. And a memory-junction failure is
+  non-fatal: it is recorded in the per-worktree result as `MemoryJunctionError` and never
+  aborts sprint provisioning.
+- `Set-SprintBoundaryContext`'s per-worktree result gains `MemoryJunctionCreated`,
+  `MemoryStorePath`, and `MemoryJunctionError`.
+- New suite `tests/Unit/Set-AIAgentMemoryJunction.Tests.ps1` passes 8/8 against real git
+  repos, real worktrees, and real NTFS junctions, covering both-slug creation, shared
+  target with a write/read round trip through opposite junctions, main-repo resolution via
+  the git common dir for a repo name containing `.` and `_`, idempotent re-runs that
+  preserve stored memory, migration of a pre-existing real directory, the config-missing
+  skip, a nonexistent worktree, and `-WhatIf`.
+
 ## 0.1.6
 
 - `Save-SprintWorkSession` now asserts the conversation archive's **contents** before

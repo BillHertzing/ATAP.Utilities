@@ -1511,8 +1511,17 @@ Verify end to end by running `/checkpoint` and confirming the roster entry repor
 
 Two things to know:
 
-- **The worktree-slug junction is sprint-scoped** and must be recreated for each new sprint
-  worktree. A missing junction fails silently — `Save-SprintWorkSession` reports
+- **The worktree-slug junction is sprint-scoped**, but from SprintLifecycle `0.1.10`
+  onward it is created automatically: `Set-SprintBoundaryContext -Boundary Start`
+  provisions it for every worktree, and both `New-SprintStage1` and `New-SprintStage2`
+  delegate to that function, so `_Planning` and every downstream repo are covered. The
+  manual commands above are for **first-time host setup** and for repairing a worktree
+  created before that version. If `DropboxBasePathConfigRootKey` is unresolvable the
+  automatic step skips rather than guessing a path, and records the reason in the
+  per-worktree result as `MemoryJunctionError`; a memory-junction failure never aborts
+  sprint provisioning. Check `MemoryJunctionCreated` and `MemoryStorePath` on the
+  `Set-SprintBoundaryContext` result to confirm.
+- A missing junction fails silently — `Save-SprintWorkSession` reports
   `MemorySnapshotCreated: false` with reason "Memory directory not found" and still exits
   successfully, so checkpoints look healthy while archiving zero memory files.
 - **Dropbox sync can produce conflicted copies** if two hosts write memory concurrently.

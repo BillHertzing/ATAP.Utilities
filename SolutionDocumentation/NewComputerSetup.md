@@ -1452,6 +1452,79 @@ compatibility checks and these live findings:
   `Save-PSResource` returns 404 against its `FindPackagesById` request. Treat that as a
   promoted-test-runner/feed-protocol defect, not proof that the package is absent.
 
+### 9.11 Junction AI agent memory to the Dropbox store
+
+AI agent memory for the ATAP repositories is stored under Dropbox, outside every git
+repository, so it survives sprint end and is available on every host:
+
+```text
+C:\Dropbox\whertzing\ATAP\AIAgentMemory\<RepoName>\
+```
+
+Claude Code does not read that path directly. It resolves memory under
+`%USERPROFILE%\.claude\projects\<slug>\memory`, where `<slug>` is the repository path with
+the drive letter lowercased and `:` `\` `_` `.` replaced by `-`. Each host therefore needs
+**NTFS junctions** from the expected slug paths to the Dropbox store. Junctions are
+host-local and do not sync, so this step is required on every new computer even though the
+memory content arrives via Dropbox.
+
+Two junctions are needed per repository, because Claude Code and the checkpoint tooling
+resolve different slugs:
+
+- **Main-repo slug** — Claude Code derives it from `git rev-parse --git-common-dir`, so for
+  a worktree it resolves to the *main* repository. This is where Claude Code reads and
+  writes memory, which is why memory is shared across all worktrees of a repo.
+- **Sprint-worktree slug** — `Save-SprintWorkSession` derives its path from the transcript
+  slug, which *is* the worktree. This is where `/checkpoint` looks for memory to archive.
+
+```powershell
+# Directory junctions do NOT require elevation.
+$projects = Join-Path $env:USERPROFILE '.claude\projects'
+$target   = 'C:\Dropbox\whertzing\ATAP\AIAgentMemory\ATAP.Utilities'
+New-Item -ItemType Directory -Path $target -Force | Out-Null
+
+# Repeat for each repo, and for each active sprint worktree slug.
+$slugs = @(
+  'C--Dropbox-whertzing-GitHub-ATAP-Utilities'
+  'C--Dropbox-whertzing-GitHub-ATAP-Utilities-wt-123-Sprint-0013-work-items'
+)
+
+foreach ($slug in $slugs) {
+  $projDir = Join-Path $projects $slug
+  New-Item -ItemType Directory -Path $projDir -Force | Out-Null
+  $mem = Join-Path $projDir 'memory'
+  if (Test-Path $mem) {
+    if ((Get-Item $mem).LinkType) { Remove-Item -LiteralPath $mem -Force }
+    else { throw "Refusing to clobber real directory: $mem" }
+  }
+  New-Item -ItemType Junction -Path $mem -Target $target | Out-Null
+}
+
+# Verify: both must report LinkType 'Junction' and the same target.
+foreach ($slug in $slugs) {
+  Get-Item (Join-Path $projects "$slug\memory") | Select-Object FullName, LinkType, Target
+}
+```
+
+Verify end to end by running `/checkpoint` and confirming the roster entry reports
+`MemorySnapshotCreated: true` with a non-zero `MemoryFileCount`.
+
+Two things to know:
+
+- **The worktree-slug junction is sprint-scoped** and must be recreated for each new sprint
+  worktree. A missing junction fails silently — `Save-SprintWorkSession` reports
+  `MemorySnapshotCreated: false` with reason "Memory directory not found" and still exits
+  successfully, so checkpoints look healthy while archiving zero memory files.
+- **Dropbox sync can produce conflicted copies** if two hosts write memory concurrently.
+  An agent would read a `... (conflicted copy).md` file as an additional memory. This is
+  accepted deliberately because the files are small and rarely written, but it is worth
+  checking when memory content looks duplicated. Memory also propagates only as fast as
+  Dropbox syncs, so a memory written on one host is not instantly visible on another.
+
+These junctions are host-local configuration in scope for SystemParityMonitor; journal
+their creation with `Add-ParityChangeEntry` so the peer host records a declared change
+rather than undeclared drift.
+
 ## Step 10: Create Cobian Backup Jobs for the Tooling Databases
 
 Create separate Cobian jobs for `ProGet` and `BuildMaster`. Each Cobian job should call
@@ -1556,7 +1629,55 @@ server command is installed, checks the repository `.vscode\settings.json` MCP
 server entry, and performs a GitHub API identity/rate-limit check with the token.
 Restart VS Code after setting the token at user scope.
 
-### 11.5 Mobile-host and Class A certification
+### 11.5 Data API Builder SQL MCP servers
+
+Install Data API Builder (DAB) as a user-global .NET tool and initialize its one
+secret-free shared configuration. The canonical AI adapter starts DAB on demand in
+MCP stdio mode; it does not create a long-lived HTTP listener.
+
+```powershell
+Import-Module ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell
+
+Initialize-DabMcpServer -Version '2.0.9'
+Add-DabMcpEntity -EntityName 'Instantiations' -EntitySource 'ATAPUtilities.Instantiation'
+Test-DabInstallation
+```
+
+The DAB configuration is stored at
+`$env:APPDATA\ATAP\DataApiBuilder\ATAPUtilities\dab-config.json`. It contains only
+the `@env('DAB_ATAPUTILITIES_CONNECTION_STRING')` reference and the approved entity
+allow-list; it never contains a connection string or a `.env` file.
+
+Codex and Claude Code receive five canonical, user-scope MCP registrations:
+`dab-ataputilities-production`, `dab-ataputilities-qa`,
+`dab-ataputilities-integration`, `dab-ataputilities-dev`, and
+`dab-ataputilities-exp`. Each registration launches the same DAB stdio server with an
+explicit tier, so a request cannot silently fall through to a different SQL instance.
+
+At startup, `Start-DabMcpServer` derives the local host's BWS SecretName with
+`Get-DbConnectionStringSecretDescriptor`, resolves it through
+`Get-SecretATAP -SecretStoreType BitwardenSecretsManager`, and assigns the result only
+to the DAB child-process environment. The resolved value must not be displayed,
+persisted, added to agent settings, or written to `.env`. The secret names follow this
+shape:
+
+```text
+dbConnectionString.ATAPUtilities.<current-host>.Production
+dbConnectionString.ATAPUtilities.<current-host>.QA
+dbConnectionString.ATAPUtilities.<current-host>.Integration
+dbConnectionString.ATAPUtilities.<current-host>.Dev.<current-user>
+dbConnectionString.ATAPUtilities.<current-host>.Exp.<current-user>
+```
+
+After the shared MCP catalog is rendered and the agent application is restarted, open
+the MCP status surface and confirm that all five DAB servers appear. Start with the
+Exp server. The DAB configuration grants `mcp-reader:read` only; add an entity only
+after reviewing its columns and least-privilege requirement. DAB's stdio mode requires
+`runtime.mcp.enabled` and keeps protocol messages on stdout; use `--LogLevel Error` as
+the canonical launcher does. See [DAB stdio transport](https://learn.microsoft.com/en-us/azure/data-api-builder/mcp/stdio-transport)
+and [DAB environment substitution](https://learn.microsoft.com/en-us/azure/data-api-builder/concept/config/env-function).
+
+### 11.6 Mobile-host and Class A certification
 
 Before a mobile workstation is considered ready for extended DPOM, record metadata-only
 proof for:

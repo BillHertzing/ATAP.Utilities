@@ -33,6 +33,39 @@ ATAP.Utilities in Task 12.46.
   (expected per-host differences), or **undeclared drift** (the actionable class), and
   flags **stale** snapshots older than the expected cadence.
 
+### Host-local AI agent memory junctions (Sprint 0013)
+
+AI agent memory for the ATAP repositories is stored under Dropbox at
+`C:\Dropbox\whertzing\ATAP\AIAgentMemory\<RepoName>\`, deliberately outside every git
+repository, so it survives sprint end and reaches every host through Dropbox sync.
+
+Each host reaches that store through **NTFS junctions** created under
+`%USERPROFILE%\.claude\projects\<slug>\memory`. Two junctions are required per repository,
+because Claude Code and the checkpoint tooling resolve different slugs:
+
+| Junction slug source | Consumer |
+| --- | --- |
+| Main repo path (`git rev-parse --git-common-dir`) | Claude Code reads and writes memory here |
+| Sprint worktree path (transcript slug) | `Save-SprintWorkSession` reads memory here |
+
+These junctions are **host-local configuration and are in scope for parity**. The Dropbox
+target syncs automatically; the junctions do not, so a second host has the memory content
+but no path to it until its own junctions are created. Treat a missing junction as a
+declarable configuration change:
+
+- Journal junction creation with `Add-ParityChangeEntry` so the peer host sees it as a
+  declared change rather than undeclared drift.
+- The worktree-slug junction is **sprint-scoped** and must be recreated for each new sprint
+  worktree. A missing one is silent: `Save-SprintWorkSession` reports
+  `MemorySnapshotCreated: false` with reason "Memory directory not found" and still exits
+  successfully, so checkpoints appear to succeed while archiving zero memory files.
+- Directory junctions do not require elevation.
+
+Known hazard: because the target is Dropbox-synced, two hosts writing memory concurrently
+can produce "conflicted copy" files, which an agent would read as additional memories. This
+is accepted deliberately — the files are small and infrequently written — but a conflicted
+copy appearing in an audit snapshot is a legitimate finding, not noise.
+
 ## Scheduled operation
 
 `scripts\Register-ParityScheduledTasks.ps1` registers local Task Scheduler entries

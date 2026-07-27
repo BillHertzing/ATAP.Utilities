@@ -12,6 +12,10 @@ Export-ModuleMember -Function @(
   'Compress-PSModuleArtifacts'
   'Get-BuildContext'
   'Get-PSModuleVersionFromNBGV'
+  'Install-DabGlobalTool'
+  'Initialize-DabMcpConfiguration'
+  'Initialize-DabMcpServer'
+  'Add-DabMcpEntity'
   'Invoke-DotnetBuildWithRetry'
   'Invoke-DotnetNuGetPush'
   'Invoke-ModuleBuildWithRetry'
@@ -21,4 +25,7 @@ Export-ModuleMember -Function @(
   'Parse-MSBuildFile'
   'Resolve-FeatureSlug'
   'Resolve-PSModuleMetadata'
+  'Start-DabMcpServer'
+  'Test-DabInstallation'
+  'Test-DabMcpConfiguration'
 ) -Cmdlet @() -Variable @() -Alias @()

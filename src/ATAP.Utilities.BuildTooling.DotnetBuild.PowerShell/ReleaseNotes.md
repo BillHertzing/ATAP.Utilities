@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.1.2
+
+- Adds secret-free Data API Builder provisioning, configuration validation, and
+  read-only entity registration helpers.
+- Adds the on-demand DAB MCP stdio launcher, which resolves the selected local
+  SQL-tier connection string from Bitwarden Secrets Manager only at startup.
+- Adds unit coverage for deterministic BWS SecretName resolution and WhatIf
+  behavior.
+
 ## 0.1.1
 
 - Makes the frozen export-contract test robust when the legacy parent module is

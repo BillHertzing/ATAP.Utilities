@@ -1,6 +1,6 @@
 @{
   RootModule           = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell.psm1'
-  ModuleVersion        = '0.1.1'
+  ModuleVersion        = '0.1.2'
   GUID                 = 'A2B1C552-FD36-4DCE-92B8-0A76BD4FA92F'
   Author               = 'Bill Hertzing for ATAPUtilities.org'
   CompanyName          = 'ATAPUtilities.org'
@@ -22,6 +22,10 @@
     'Compress-PSModuleArtifacts'
     'Get-BuildContext'
     'Get-PSModuleVersionFromNBGV'
+    'Install-DabGlobalTool'
+    'Initialize-DabMcpConfiguration'
+    'Initialize-DabMcpServer'
+    'Add-DabMcpEntity'
     'Invoke-DotnetBuildWithRetry'
     'Invoke-DotnetNuGetPush'
     'Invoke-ModuleBuildWithRetry'
@@ -31,6 +35,9 @@
     'Parse-MSBuildFile'
     'Resolve-FeatureSlug'
     'Resolve-PSModuleMetadata'
+    'Start-DabMcpServer'
+    'Test-DabInstallation'
+    'Test-DabMcpConfiguration'
   )
   CmdletsToExport      = @()
   VariablesToExport    = @()

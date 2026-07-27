@@ -33,6 +33,43 @@ ATAP.Utilities in Task 12.46.
   (expected per-host differences), or **undeclared drift** (the actionable class), and
   flags **stale** snapshots older than the expected cadence.
 
+### Host IPv6 reachability for Inedo services (Sprint 0013)
+
+A host-pair parity concern that is invisible to service configuration: both hosts must be
+able to reach BuildMaster (`50017`) and ProGet (`50000`) at **every address their own
+hostname resolves to**, IPv4 and IPv6 alike.
+
+On `utat01` in Sprint 0013, the hostname resolved to four global DHCPv6 addresses on the
+Wi-Fi adapter ahead of its IPv4 address, and those addresses were **dead** — `ping -6`
+against the host's own address returned *General failure* at 100% loss. Every client
+resolving `utat01` tried a dead address first and hung for 30 seconds, which presented as
+a broken BuildMaster.
+
+Two things this is **not**, both of which have already misled a diagnosis here:
+
+- **Not a listener misconfiguration.** `netstat -ano -p tcpv6` shows `[::]:50017` and
+  `[::]:50000` listening; IPv6 loopback connects in single-digit milliseconds. Both
+  services already bind all IPv4 and IPv6 addresses. A conclusion of "IPv4-only" usually
+  comes from `netstat -ano -p tcp`, which prints only the IPv4 table — the `-p` argument
+  is a protocol-family filter, not evidence of the bind.
+- **Not a firewall rule.** On this host the Private and Public profiles are OFF and no
+  inbound rule exists for either port.
+
+**Parity actions.** Treat per-host IPv6 address health as an auditable surface:
+
+- Run the hostname-reachability sweep in `NewComputerSetup.md` §9.10a on each host, and
+  compare results between the pair — one host reaching its services by hostname while the
+  other times out is exactly the undeclared drift this module exists to surface.
+- The remedy is host networking (routable DHCPv6, or disabling/de-prioritising IPv6 on the
+  adapter), never an edit to `BuildMaster.config`, `ProGet.config`, or
+  `ServicePlacementMap`. Changing the placement map also rewrites the host-suffixed admin
+  SecretName and breaks credential resolution.
+- Journal whichever remedy is applied with `Add-ParityChangeEntry` before applying it on
+  the peer, so the second host records a declared change.
+- This is unresolved on `utat01` as of 2026-07-27 and must be checked on `utat022` when it
+  returns; the earlier note that `utat022` ports 50000/50017/5985 were unreachable may
+  share this root cause.
+
 ### Host-local AI agent memory junctions (Sprint 0013)
 
 AI agent memory for the ATAP repositories is stored under Dropbox at

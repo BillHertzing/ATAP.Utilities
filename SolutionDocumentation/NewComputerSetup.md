@@ -1452,6 +1452,60 @@ compatibility checks and these live findings:
   `Save-PSResource` returns 404 against its `FindPackagesById` request. Treat that as a
   promoted-test-runner/feed-protocol defect, not proof that the package is absent.
 
+### 9.10a Verify Inedo service reachability by hostname (IPv4 and IPv6)
+
+Run this on every host that runs or calls BuildMaster/ProGet, including `utat022`.
+
+BuildMaster and ProGet already bind **all** IPv4 and IPv6 addresses — their
+`Urls="http://*:PORT/"` configuration is correct and must not be changed. The failure this
+step catches is a *host networking* problem: if the machine advertises global IPv6
+addresses that are not actually routable, clients resolving the hostname try those first
+and hang, producing 30-second timeouts that look like a broken service.
+
+```powershell
+# 1. Confirm BOTH families are listening. -p tcp prints ONLY the IPv4 table, so a service
+#    can look "IPv4-only" when it is not. Always check tcpv6 as well.
+netstat -ano -p tcp   | Select-String ':50017|:50000'
+netstat -ano -p tcpv6 | Select-String ':50017|:50000'   # expect [::]:50017 and [::]:50000
+
+# 2. Connect to every address the hostname resolves to. Any TIMEOUT row is the defect.
+$addrs = [System.Net.Dns]::GetHostAddresses($env:COMPUTERNAME)
+foreach ($a in $addrs) {
+  $ip = $a.IPAddressToString
+  $c  = [System.Net.Sockets.TcpClient]::new()
+  try {
+    $ok = $c.ConnectAsync($ip, 50017).Wait(4000)
+    '{0,-46} {1}' -f $ip, $(if ($ok) { 'CONNECT' } else { 'TIMEOUT' })
+  } catch { '{0,-46} FAILED' -f $ip } finally { $c.Dispose() }
+}
+
+# 3. If a global IPv6 address timed out, test whether it works at all:
+ping -6 -n 2 <that-address>        # "General failure" => the address is dead, not the port
+```
+
+If global IPv6 addresses are dead, fix the host networking — do **not** edit
+`BuildMaster.config`, `ProGet.config`, or `ServicePlacementMap`:
+
+- Preferred: fix router/ISP DHCPv6 so the advertised prefix is routable, then re-test.
+- If IPv6 is not used on this network, disable IPv6 on the adapter, or prefer IPv4 in
+  address selection (elevated):
+
+  ```powershell
+  netsh interface ipv6 set prefixpolicy ::ffff:0:0/96 60 4
+  ```
+
+- Interim: use `localhost` / `127.0.0.1` for host-local calls, and pass
+  `-BuildMasterBaseUrl 'http://localhost:50017/'` to the release cmdlets.
+
+> **Do not change `ServicePlacementMap['BuildMaster']` to `localhost`.** The BuildMaster
+> base URL is derived from it, and so is the host-suffixed admin SecretName
+> (`BuildMaster.Admin.API.Key.<placement-host>`). Repointing the map silently rewrites the
+> SecretName to one that does not exist in Bitwarden, turning a slow timeout into a hard
+> credential failure.
+
+Record the outcome with `Add-ParityChangeEntry` so the peer host shows a declared change
+rather than undeclared drift.
+
 ### 9.11 Junction AI agent memory to the Dropbox store
 
 AI agent memory for the ATAP repositories is stored under Dropbox, outside every git

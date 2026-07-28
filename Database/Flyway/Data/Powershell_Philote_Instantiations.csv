@@ -6,3 +6,4 @@ f9c0dcb5-67a4-4af5-a0d1-58731c8950db,Instantiation of New-MCPServerJunction rule
 98407929-ec12-450a-9725-69b8b12d4109,Instantiation of Remove-ObjAndBinSubDirectories rule - Remove-ObjAndBinSubDirectories.ps1
 52a1e6f4-7c72-40de-89b7-bc8026833c0c,Instantiation of Sync-RulesToCSV rule - Sync-RulesToCSV.ps1
 ee4ce73b-8f4d-42a2-a8fe-681b312df6d9,Instantiation of Read-SourceAndCreateRules rule - Read-SourceAndCreateRules.ps1
+c95f9fbb-40bb-4372-a32c-3538fd4d88c2,Instantiation of Write-ArrayIndented rule - Write-ArrayIndented.ps1

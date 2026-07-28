@@ -1584,6 +1584,7 @@ END CATCH;
 
 PRINT N'V00.02.000060 — ATAPUtilities instantiation manifestation tables added and seeded.';
 /* END legacy baseline component: V00.02.000060__Add_Instantiation_Manifestation_Tables.sql */
+GO
 
 /* BEGIN legacy baseline component: V00.02.000070__Add_RRSBS_Durable_Versioned_Snapshots.sql */
 -- =====================================================================
@@ -2246,6 +2247,7 @@ END CATCH;
 
 PRINT N'V00.02.000070 - RRSBS immutable version layer, ordered snapshot membership, and ManifestationArtifact provenance added.';
 /* END legacy baseline component: V00.02.000070__Add_RRSBS_Durable_Versioned_Snapshots.sql */
+GO
 
 /* BEGIN legacy baseline component: V00.02.000080__Migrate_TypedMembership_To_RRSBS_And_Retire_Samples.sql */
 -- =====================================================================
@@ -2971,6 +2973,7 @@ END CATCH;
 
 PRINT N'V00.02.000080 - typed membership path values migrated into RRSBS inputs, typed membership tables deprecated, Sprint 0012 v1/v2 sample rows removed.';
 /* END legacy baseline component: V00.02.000080__Migrate_TypedMembership_To_RRSBS_And_Retire_Samples.sql */
+GO
 
 /* BEGIN legacy baseline component: V00.02.000090__Assert_RulePrimitive_Rule_Identity_Invariant.sql */
 -- =====================================================================
@@ -3148,6 +3151,7 @@ END CATCH;
 
 PRINT N'V00.02.000090 - RulePrimitive/Rule identity invariant asserted: unique indexes enforced, no duplicate identities, no duplicate Philotes.';
 /* END legacy baseline component: V00.02.000090__Assert_RulePrimitive_Rule_Identity_Invariant.sql */
+GO
 
 /* BEGIN legacy baseline component: V00.02.000100__Add_RRSBS_Effective_Dating.sql */
 -- =====================================================================
@@ -3236,6 +3240,22 @@ BEGIN TRY
         SET @sql = N'ALTER TABLE ATAPUtilities.' + QUOTENAME(@tableName)
             + N' ALTER COLUMN EffectiveFrom DATETIME2(7) NOT NULL;';
         EXEC sp_executesql @sql;
+
+        IF NOT EXISTS (
+            SELECT 1
+            FROM sys.default_constraints AS dc
+            INNER JOIN sys.columns AS c
+                ON c.object_id = dc.parent_object_id
+               AND c.column_id = dc.parent_column_id
+            WHERE dc.parent_object_id = OBJECT_ID(N'ATAPUtilities.' + QUOTENAME(@tableName))
+              AND c.name = N'EffectiveFrom'
+        )
+        BEGIN
+            SET @sql = N'ALTER TABLE ATAPUtilities.' + QUOTENAME(@tableName)
+                + N' ADD CONSTRAINT ' + QUOTENAME(N'DF_' + @tableName + N'_EffectiveFrom')
+                + N' DEFAULT SYSUTCDATETIME() FOR EffectiveFrom;';
+            EXEC sp_executesql @sql;
+        END;
 
         FETCH NEXT FROM addColumns INTO @tableName, @currentKeyColumns;
     END;
@@ -3427,3 +3447,4 @@ BEGIN CATCH
     THROW;
 END CATCH;
 /* END legacy baseline component: V00.02.000100__Add_RRSBS_Effective_Dating.sql */
+GO

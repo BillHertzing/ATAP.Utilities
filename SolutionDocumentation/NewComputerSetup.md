@@ -209,6 +209,7 @@ Install and verify these tools before continuing:
    is installed machine-wide separately in Step 4.6)
 6. .NET SDKs required by the repos
 7. Python if the workstation will run Manim or Copilot code execution
+8. Sysinternals Suite at `C:\Program Files\SysinternalsSuite`
 
 Useful checks:
 
@@ -289,7 +290,29 @@ Or install individually as needed during setup. After installing VS Code, open a
 terminal so the `code` command is on `PATH`, then verify with `code --version`. (The `nbgv`
 .NET global tool is installed machine-wide separately in Step 4.4.)
 
-### 2.3 Install Python (for Manim or Copilot code execution)
+### 2.3 Install Sysinternals Suite
+
+Install Sysinternals Suite outside a package manager at the machine-wide path
+`C:\Program Files\SysinternalsSuite`. This location is part of the UTAT workstation
+parity baseline: it was installed on `utat01` on 2026-07-28 and must be installed to the
+same path on `utat022` during the return procedure.
+
+Run from an elevated PowerShell session:
+
+```powershell
+$uri = 'https://download.sysinternals.com/files/SysinternalsSuite.zip'
+$dest = "$env:ProgramFiles\SysinternalsSuite"
+$zip = Join-Path $dest 'SysinternalsSuite.zip'
+
+New-Item -ItemType Directory -Path $dest -Force | Out-Null
+Invoke-WebRequest -Uri $uri -OutFile $zip
+Expand-Archive -Path $zip -DestinationPath $dest -Force
+Remove-Item -LiteralPath $zip
+```
+
+Verify that `C:\Program Files\SysinternalsSuite\Autoruns64.exe` exists after extraction.
+
+### 2.4 Install Python (for Manim or Copilot code execution)
 
 Install Python only if the workstation will run Manim (see the optional Manim section near
 the end of this document) or Copilot code execution.
@@ -1587,6 +1610,86 @@ Two things to know:
 These junctions are host-local configuration in scope for SystemParityMonitor; journal
 their creation with `Add-ParityChangeEntry` so the peer host records a declared change
 rather than undeclared drift.
+
+## Step 9a: Provision the Elevated Install Broker
+
+Agents and build tooling run unelevated, but an AllUsers module install writes under
+`Program Files` and needs administrator rights. The elevated install broker performs those
+installs on their behalf with no UAC interaction, so agents never issue a blind
+`Start-Process -Verb RunAs` retry loop. Without it, `build-deploy-module` cannot complete
+its final install step.
+
+Prerequisites: the `SvcAnsibleAdmin` account and its Bitwarden secret from Step 5, and the
+ProGet feeds from Step 9.
+
+**Bootstrap order matters.** The broker is what installs modules AllUsers, so it must be
+provisioned *before* the module-install machinery works. Run the provisioning function from
+the **git clone**, not from an installed module:
+
+```powershell
+# ELEVATED pwsh. Adjust the clone path to the worktree you synced in Step 3.
+$proGetModule = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.ProGet.PowerShell'
+Import-Module "$proGetModule\ATAP.Utilities.BuildTooling.ProGet.PowerShell.psd1" -Force -DisableNameChecking
+
+Register-ElevationBrokerTask -Verbose
+```
+
+`Register-ElevationBrokerTask` is idempotent and does all of the following:
+
+- creates `C:\ProgramData\ATAP\ElevationBroker` with its `bin`, `requests`, `results`,
+  `transcripts`, and `work` subfolders;
+- copies the broker payload and the config template out of the module's
+  `Resources\ElevationBroker`, never overwriting an existing `config.json` unless
+  `-ForcePayload` is passed, because that file is the broker's trust anchor;
+- applies a restrictive, non-inherited ACL to `requests\`. The broker **refuses to run**
+  when `Everyone`, `Authenticated Users`, or `Users` can write there, since that would let
+  any local account reach an administrator context;
+- exports any existing task registration before replacing it;
+- registers the `\ATAP\ATAP-ElevatedInstallBroker` scheduled task to run as
+  `SvcAnsibleAdmin` with highest privileges, reading the password through `Get-SecretATAP`.
+
+Then grant the developer account the right to start the task on demand:
+
+```powershell
+Grant-ElevationBrokerStartRights -Verbose
+```
+
+This step is **required**, not optional. The task has no repeating timer: it is started on
+demand the moment a request is staged. Without start rights every request returns
+`broker-unreachable`. The grant confers read + execute only, so the grantee can ask the
+broker to drain its queue but cannot alter what the task runs.
+
+Verify the whole path end to end from a **normal, non-elevated** shell — an elevated shell
+would succeed through the `Administrators` ACE and prove nothing:
+
+```powershell
+$s = New-Object -ComObject Schedule.Service
+$s.Connect()
+$t = $s.GetFolder('\ATAP').GetTask('ATAP-ElevatedInstallBroker')
+$t.Run($null)
+Start-Sleep -Seconds 5
+"result=$($t.LastTaskResult) lastrun=$($t.LastRunTime)"
+```
+
+Expect `result=0` and a current timestamp. Access denied means the grant did not target the
+account that actually runs the build tooling.
+
+Notes and gotchas:
+
+- The task deliberately has **no repeating time trigger**. An earlier one-minute timer fired
+  roughly 4,644 times to service 4 real requests and measurably contributed to CPU
+  saturation. `BootTrigger` remains as the catch-up drain for requests staged while the
+  broker could not run.
+- `MultipleInstancesPolicy` must stay `Queue`. Under `-Once` the broker enumerates the
+  requests folder exactly once, so `IgnoreNew` would silently strand a request staged while
+  another instance was running.
+- The client starts the task through the `Schedule.Service` COM API rather than
+  `Start-ScheduledTask`, because the `ScheduledTasks` module is not present under
+  PowerShell 7 on these hosts.
+
+The broker is host-local configuration in scope for SystemParityMonitor; journal its
+provisioning with `Add-ParityChangeEntry` so the peer host records a declared change rather
+than undeclared drift. See `Runbook-ElevationBroker-PeerHost.md` for the peer-host steps.
 
 ## Step 10: Create Cobian Backup Jobs for the Tooling Databases
 

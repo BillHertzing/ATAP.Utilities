@@ -1819,8 +1819,14 @@ Codex and Claude Code receive five canonical, user-scope MCP registrations:
 `dab-ataputilities-integration`, `dab-ataputilities-dev`, and
 `dab-ataputilities-exp`. Each registration launches the same DAB stdio server with an
 explicit tier, so a request cannot silently fall through to a different SQL instance.
+The registrations invoke the dedicated `Mcp/Start-DabMcpServer.ps1` launcher rather
+than importing the full DotnetBuild module: an MCP stdio process must reserve stdout
+for JSON-RPC, while unrelated module-import warnings corrupt the protocol. DAB starts
+Kestrel even in stdio mode, so the registrations also use separate loopback endpoints:
+Dev `5101`, Exp `5102`, Integration `5103`, Production `5104`, and QA `5105`. These
+ports must not be used by the normal DAB host or another MCP registration.
 
-At startup, `Start-DabMcpServer` derives the local host's BWS SecretName with
+At startup, the dedicated MCP launcher derives the local host's BWS SecretName with
 `Get-DbConnectionStringSecretDescriptor`, resolves it through
 `Get-SecretATAP -SecretStoreType BitwardenSecretsManager`, and assigns the result only
 to the DAB child-process environment. The resolved value must not be displayed,

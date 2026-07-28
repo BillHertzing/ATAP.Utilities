@@ -4,7 +4,6 @@
   "permissions": {
     "defaultMode": "acceptEdits",
     "allow": [
-      "PowerShell(:*)",
       "PowerShell(*)",
       "PowerShell(Invoke-Pester:*)",
       "PowerShell(Get-Content:*)",
@@ -22,7 +21,6 @@
       "PowerShell(git diff:*)",
       "PowerShell(git -C * status:*)",
       "PowerShell(git -C * diff:*)",
-      "Bash(:*)",
       "Bash(*)",
       "Bash(pwsh:*)",
       "Bash(pwsh -Command:*)",

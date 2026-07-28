@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-16"?>
+<!--
+  ATAP-ElevatedInstallBroker (Task 13.76.g / plan Task 4.2.b)
+
+  Runs Invoke-ElevationBrokerRequest.ps1 as SvcAnsibleAdmin with highest privileges so
+  unelevated agents can complete AllUsers installs without any UAC interaction.
+
+  REGISTRATION IS HITL: it needs administrator rights and the SvcAnsibleAdmin credential
+  from Bitwarden (SecretName SvcAnsibleAdmin.utat01, provisioned by
+  Task 13.76.f). Do not register this task until 13.76.f has completed.
+
+  Placeholders to replace before registering:
+    __BROKER_ROOT__      C:\ProgramData\ATAP\ElevationBroker
+    __BROKER_SCRIPT__    <BrokerRoot>\bin\Invoke-ElevationBrokerRequest.ps1
+    __SERVICE_ACCOUNT__  .\SvcAnsibleAdmin  (or DOMAIN\SvcAnsibleAdmin)
+
+  Trigger choice (revised 2026-07-28). The original registration used a repeating
+  one-minute time trigger, explicitly REJECTING an event/folder-watch trigger because a
+  folder watcher needs an ETW/WMI subscription on a world-readable directory, i.e. more
+  attack surface than draining a directory the broker already ACL-checks. That reasoning
+  still holds and is NOT reversed here: there is still no watcher and no subscription.
+
+  What changed is that the timer was measured. Between 2026-07-25 and 2026-07-28 it fired
+  ~4,644 times to service 4 real requests (0.086% hit rate); every empty drain paid a full
+  profiled pwsh start (~6 CPU-sec), contributing to sustained CPU saturation on utat01.
+
+  The request itself is now the event. Request-ElevatedInstall.ps1 starts this task on
+  demand immediately after staging a request, which AllowStartOnDemand (already true here)
+  has always permitted. This is NOT a watcher: the task's Action is fixed in this
+  registration, so a caller granted start rights cannot influence WHAT runs. It can only ask
+  the broker to drain a folder it already validates. The escalation surface is unchanged.
+
+  BootTrigger is retained deliberately, as the catch-up path for a request staged while the
+  broker could not run (crash, reboot, revoked start rights). It is the only remaining
+  unattended drain.
+
+  MultipleInstancesPolicy MUST be Queue, not IgnoreNew. Under -Once the broker enumerates
+  the requests folder exactly once and exits. With IgnoreNew, a request staged after a
+  running instance enumerated would have its start request DROPPED and would sit unprocessed
+  until the next boot. The one-minute timer used to mask that race; without the timer it
+  would surface as an intermittent silent hang. Queue makes the second start wait and run.
+
+  Companion: Grant-ElevationBrokerStartRights.ps1 grants the build account the Read+Execute
+  rights that the on-demand start requires against this task. The client starts it through the
+  Schedule.Service COM API, because the ScheduledTasks PowerShell module is not present under
+  PowerShell 7 on utat01 (so Start-ScheduledTask is not available there).
+-->
+<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Description>ATAP elevated install broker. Executes hash-pinned canonical installers requested by unelevated agents via C:\ProgramData\ATAP\ElevationBroker\requests. Task 13.76.g.</Description>
+    <URI>\ATAP\ATAP-ElevatedInstallBroker</URI>
+  </RegistrationInfo>
+  <Triggers>
+    <!--
+      No TimeTrigger. The task is started on demand by Request-ElevatedInstall.ps1 the
+      moment a request is staged, so a periodic drain would be pure waste (see header).
+      BootTrigger is the catch-up path for requests staged while the broker could not run.
+    -->
+    <BootTrigger>
+      <Enabled>true</Enabled>
+    </BootTrigger>
+  </Triggers>
+  <Principals>
+    <Principal id="Author">
+      <UserId>__SERVICE_ACCOUNT__</UserId>
+      <LogonType>Password</LogonType>
+      <RunLevel>HighestAvailable</RunLevel>
+    </Principal>
+  </Principals>
+  <Settings>
+    <!-- Queue, NOT IgnoreNew. See the race documented in the header. -->
+    <MultipleInstancesPolicy>Queue</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <AllowHardTerminate>true</AllowHardTerminate>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
+    <IdleSettings>
+      <StopOnIdleEnd>false</StopOnIdleEnd>
+      <RestartOnIdle>false</RestartOnIdle>
+    </IdleSettings>
+    <AllowStartOnDemand>true</AllowStartOnDemand>
+    <Enabled>true</Enabled>
+    <Hidden>false</Hidden>
+    <RunOnlyIfIdle>false</RunOnlyIfIdle>
+    <WakeToRun>false</WakeToRun>
+    <ExecutionTimeLimit>PT1H</ExecutionTimeLimit>
+    <Priority>7</Priority>
+  </Settings>
+  <Actions Context="Author">
+    <Exec>
+      <Command>pwsh.exe</Command>
+      <Arguments>-NoLogo -NonInteractive -ExecutionPolicy Bypass -File "__BROKER_SCRIPT__" -BrokerRoot "__BROKER_ROOT__" -Once</Arguments>
+      <WorkingDirectory>__BROKER_ROOT__</WorkingDirectory>
+    </Exec>
+  </Actions>
+</Task>

@@ -24,11 +24,8 @@ title "ATAPUtilities.Database — Promotion Package Files and Structure"
 ' -------------------------------------------------------
 package "Database/ (Repository Working Tree)" as repoRoot #E3F2FD {
 
-  package "Database/ATAPUtilities/" as atapRoot #BBDEFB {
-    file "version.json\n(Nerdbank.GitVersioning)" as versionJson
-  }
-
   package "Database/Flyway/" as flywayRoot #BBDEFB {
+    file "version.json\n(Nerdbank.GitVersioning)" as versionJson
     file "flyway.toml\n(Flyway configuration,\nplaceholder settings)" as flywayToml
 
     package "Database/Flyway/SQL/" as sqlDir #E1F5FE {
@@ -63,22 +60,16 @@ package "ATAPUtilities.Database.<Version>.nupkg\n(ZIP container — NuGet conten
 
   file "ATAPUtilities.Database.nuspec\n(Package manifest:\n- id, version, description\n- contentFiles declaration)" as nuspec
 
-  package "contentFiles/any/any/" as contentFilesRoot #EDE7F6 {
-    package "flyway/" as pkgFlyway #D1C4E9 {
-      file "flyway.toml" as pkgToml
-      package "SQL/" as pkgSQL #B39DDB {
+  package "db/" as pkgDb #EDE7F6 {
+      package "migrations/" as pkgSQL #B39DDB {
         file "V*.sql  (versioned migrations)" as pkgVersioned
-        file "R*.sql  (repeatable migrations)" as pkgRepeatable
       }
-      package "Data/" as pkgData #B39DDB {
+      package "seeds/" as pkgData #B39DDB {
         file "*.csv  (seed data files)" as pkgCSV
       }
-    }
-    package "releases/" as pkgReleases #D1C4E9 {
-      file "<Version>.yml  (change-unit manifest)" as pkgReleaseYaml
-    }
-    file "version.json\n(resolved SemVer metadata)" as pkgVersion
   }
+  file "db-release-unit-manifest.json" as pkgReleaseManifest
+  file "package-evidence.json" as pkgEvidence
 
   package "[Content_Types].xml\n_rels/.rels  (NuGet zip boilerplate)" as pkgBoilerplate #EDE7F6
 }
@@ -95,11 +86,10 @@ releasesDir    --> buildStep : release manifest
 buildStep --> nupkg : dotnet pack\n/ New-DatabaseChangePackage
 
 ' Internal mapping annotations
-note right of pkgFlyway
-  Files mirror Database/Flyway/
-  tree so Invoke-Flyway.ps1 can
-  operate on extracted package
-  without path changes.
+note right of pkgDb
+  New-DatabaseChangePackage stages
+  canonical Database/Flyway/SQL
+  and Data into this package layout.
 end note
 
 note bottom of nuspec
@@ -109,10 +99,6 @@ note bottom of nuspec
   + current git commit height.
 end note
 
-note bottom of releasesDir
-  Only the manifest for the
-  version being packaged is
-  included; prior release
   manifests remain in git
   history only.
 end note

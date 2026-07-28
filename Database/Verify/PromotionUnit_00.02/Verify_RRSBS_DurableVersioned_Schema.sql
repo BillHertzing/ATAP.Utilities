@@ -1,10 +1,10 @@
 -- Verify_RRSBS_DurableVersioned_Schema.sql
 --
 -- Sprint 0013 Task 13.78.j. Verifies the RRSBS durable/versioned snapshot
--- layer produced by:
---   Database/ATAPUtilities/db/migrations/V00.02.000070__Add_RRSBS_Durable_Versioned_Snapshots.sql
---   Database/ATAPUtilities/db/migrations/V00.02.000080__Migrate_TypedMembership_To_RRSBS_And_Retire_Samples.sql
--- over the V00.01.000010 core schema and the V00.02.000060 instantiation tables.
+-- layer included in the consolidated baseline:
+--   Database/Flyway/SQL/V00.01.000010__Create_ATAPUtilities_Core_Schema.sql
+-- (the baseline incorporates the former durable-snapshot, membership-migration,
+-- and instantiation schema components).
 --
 -- Five verification areas, one clearly labelled section each:
 --   1. Expected schema objects   (tables, columns, PK/FK/CHECK/UNIQUE, indexes, triggers)

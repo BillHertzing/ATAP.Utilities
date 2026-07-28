@@ -31,8 +31,8 @@ BeforeAll {
     & git commit --allow-empty -m 'init' --quiet 2>&1 | Out-Null
     Pop-Location
 
-    # Database/ATAPUtilities/version.json  (single-stream fixture)
-    $atapDbDir = Join-Path $script:tempRoot 'Database' 'ATAPUtilities'
+    # Database/Flyway/version.json (canonical ATAPUtilities fixture)
+    $atapDbDir = Join-Path $script:tempRoot 'Database' 'Flyway'
     New-Item -ItemType Directory -Path $atapDbDir -Force | Out-Null
     @{
         '$schema'            = 'https://raw.githubusercontent.com/dotnet/Nerdbank.GitVersioning/main/src/NerdBank.GitVersioning/version.schema.json'
@@ -96,13 +96,13 @@ Describe 'Get-DatabasePackageBuildContext' {
             $ctx.DatabasePackageId | Should -Be 'ATAPUtilities.Database'
         }
 
-        It 'Returns DatabasePackageSourcePath pointing to Database/ATAPUtilities' {
+        It 'Returns DatabasePackageSourcePath pointing to Database/Flyway' {
             $ctx = Get-DatabasePackageBuildContext `
                 -Application 'ATAPUtilities' `
                 -RepoRoot $script:tempRoot `
                 -Branch 'main'
 
-            $expected = Join-Path $script:tempRoot 'Database' 'ATAPUtilities'
+            $expected = Join-Path $script:tempRoot 'Database' 'Flyway'
             $ctx.DatabasePackageSourcePath | Should -Be $expected
         }
 
@@ -112,7 +112,7 @@ Describe 'Get-DatabasePackageBuildContext' {
                 -RepoRoot $script:tempRoot `
                 -Branch 'main'
 
-            $expected = Join-Path $script:tempRoot 'Database' 'ATAPUtilities' 'version.json'
+            $expected = Join-Path $script:tempRoot 'Database' 'Flyway' 'version.json'
             $ctx.DatabaseVersionJsonPath | Should -Be $expected
         }
 

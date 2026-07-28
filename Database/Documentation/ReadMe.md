@@ -1,8 +1,8 @@
 # Database/Documentation
 
 This folder holds the **deep implementation reference** for the database
-pipeline that ships in the `ATAP.Utilities` repository. It sits next to
-`Database/ATAPUtilities/` and stores the per-detail design notes, PlantUML
+pipeline that ships in the `ATAP.Utilities` repository. It sits next to the
+canonical `Database/Flyway/` package root and stores the per-detail design notes, PlantUML
 diagrams, and operator references that callers and contributors need when
 working on database change packages, migrations, seed loaders, and the
 BuildMaster/ProGet pipeline that promotes them.

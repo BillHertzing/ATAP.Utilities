@@ -5,7 +5,8 @@ function New-DatabaseChangePackage {
     Packages a database change unit (migrations, repeatables, seeds, loaders) into a NuGet package.
 
 .DESCRIPTION
-    Collects files from the Database/<Application>/ source tree, computes SHA-256 checksums,
+    Collects files from the canonical Database/Flyway/ source tree for ATAPUtilities
+    (or the legacy Database/<Application>/ source tree for other applications), computes SHA-256 checksums,
     generates a db-release-unit-manifest.json conforming to the v2 schema, and calls
     dotnet pack to produce a .nupkg file. The package identity is
     <Application>.Database (or <Application>.<Stream>.Database when -Stream is provided).
@@ -15,8 +16,9 @@ function New-DatabaseChangePackage {
     - The createdUtc timestamp is sourced from the HEAD git commit date, not Get-Date.
 
 .PARAMETER Application
-    Application name (required). Locates source at Database/<Application>/
-    and sets the NuGet package id to <Application>.Database.
+    Application name (required). ATAPUtilities uses Database/Flyway/; other
+    applications use Database/<Application>/. The NuGet package id is
+    <Application>.Database.
 
 .PARAMETER Stream
     Optional stream sub-folder. When supplied, source is at Database/<Application>/<Stream>/
@@ -72,9 +74,13 @@ function New-DatabaseChangePackage {
 
   process {
     # ── 1. Determine package id and source path ─────────────────────────────
+    $usesCanonicalFlywayLayout = $Application -eq 'ATAPUtilities' -and -not $Stream
     if ($Stream) {
       $DatabasePackageId = "$Application.$Stream.Database"
       $DatabasePackageSourcePath = Join-Path $RepositoryRoot 'Database' $Application $Stream
+    } elseif ($usesCanonicalFlywayLayout) {
+      $DatabasePackageId = "$Application.Database"
+      $DatabasePackageSourcePath = Join-Path $RepositoryRoot 'Database' 'Flyway'
     } else {
       $DatabasePackageId = "$Application.Database"
       $DatabasePackageSourcePath = Join-Path $RepositoryRoot 'Database' $Application
@@ -107,10 +113,10 @@ function New-DatabaseChangePackage {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "PackageLifeCycleStage=$packageLifeCycleStage" -Tag 'Config'
 
     # ── 3. Locate source DB folders ──────────────────────────────────────────
-    $migrationsFolder = Join-Path $DatabasePackageSourcePath 'db' 'migrations'
-    $repeatablesFolder = Join-Path $DatabasePackageSourcePath 'db' 'repeatables'
-    $seedsFolder = Join-Path $DatabasePackageSourcePath 'db' 'seeds'
-    $loadersFolder = Join-Path $DatabasePackageSourcePath 'db' 'loaders'
+    $migrationsFolder = if ($usesCanonicalFlywayLayout) { Join-Path $DatabasePackageSourcePath 'SQL' } else { Join-Path $DatabasePackageSourcePath 'db' 'migrations' }
+    $repeatablesFolder = if ($usesCanonicalFlywayLayout) { Join-Path $DatabasePackageSourcePath 'Repeatable' } else { Join-Path $DatabasePackageSourcePath 'db' 'repeatables' }
+    $seedsFolder = if ($usesCanonicalFlywayLayout) { Join-Path $DatabasePackageSourcePath 'Data' } else { Join-Path $DatabasePackageSourcePath 'db' 'seeds' }
+    $loadersFolder = if ($usesCanonicalFlywayLayout) { $null } else { Join-Path $DatabasePackageSourcePath 'db' 'loaders' }
 
     if (-not (Test-Path $migrationsFolder)) {
       $msg = "Migrations folder not found: '$migrationsFolder'."
@@ -140,7 +146,8 @@ function New-DatabaseChangePackage {
         [string]$Kind,
         [string[]]$Extensions
       )
-      if (-not (Test-Path $SourceFolder)) { return }
+      if ([string]::IsNullOrWhiteSpace($SourceFolder) -or
+        -not (Test-Path -LiteralPath $SourceFolder -PathType Container)) { return }
       $destSub = Join-Path $dbFolder $RelSubPath
       New-Item -ItemType Directory -Path $destSub -Force | Out-Null
       Get-ChildItem -Path $SourceFolder -File | Where-Object { $_.Extension -in $Extensions } | ForEach-Object {
@@ -163,7 +170,11 @@ function New-DatabaseChangePackage {
     Copy-DbFiles -SourceFolder $loadersFolder -RelSubPath 'loaders' -Kind 'seedLoader' -Extensions @('.sql', '.ps1')
 
     if ($collectedFiles.Count -eq 0) {
-      $msg = "No files were staged. Check that 'db/migrations/', 'db/repeatables/', 'db/seeds/', or 'db/loaders/' contain files."
+      $msg = if ($usesCanonicalFlywayLayout) {
+        "No files were staged. Check that 'Database/Flyway/SQL/' or 'Database/Flyway/Data/' contain files."
+      } else {
+        "No files were staged. Check that 'db/migrations/', 'db/repeatables/', 'db/seeds/', or 'db/loaders/' contain files."
+      }
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message $msg -Tag 'Warning'
     }
 

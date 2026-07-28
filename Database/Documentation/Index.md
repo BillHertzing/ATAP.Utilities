@@ -5,6 +5,18 @@ and provides deep-link pointers into the cross-cutting `SolutionDocumentation/`
 documents that the database pipeline depends on. See [ReadMe.md](ReadMe.md)
 for the folder's purpose and scope.
 
+## Canonical ATAPUtilities Source Layout
+
+`Database/Flyway/` is the single source root for the `ATAPUtilities.Database`
+package: its `version.json` supplies package metadata, `SQL/` supplies the
+versioned Flyway schema and CSV-loader scripts, and `Data/` supplies their CSV
+inputs. The core rebuild baseline is
+`SQL/V00.01.000010__Create_ATAPUtilities_Core_Schema.sql`; it includes the
+historical RRSBS and instantiation versioning schema evolution. The former
+split source tree and smoke-test fixtures were retired in Task 13.90. Do not
+apply the rewritten baseline to an already-migrated database
+without an approved Flyway rebaseline plan.
+
 ## Database Pipeline — Cross-Cutting References (in `SolutionDocumentation/`)
 
 This folder does **not** duplicate process or release documentation; it links

@@ -9,7 +9,8 @@
     run that targets a database change package. It:
 
       - Constructs the canonical database source folder:
-          Database/<Application>/          (single-stream)
+          Database/Flyway/                 (ATAPUtilities)
+          Database/<Application>/          (other single-stream packages)
           Database/<Application>.<Stream>/ (multi-stream)
       - Validates that a version.json exists in that folder.
       - Delegates to Get-BuildContext, passing the database folder as -ProjectPath.
@@ -24,7 +25,7 @@
 .PARAMETER Application
     The application name. For example 'ATAPUtilities' produces package id
     'ATAPUtilities.Database' and looks for the source folder at
-    'Database/ATAPUtilities/'.
+    'Database/Flyway/'.
 
 .PARAMETER Stream
     Optional stream name. When supplied the folder is 'Database/<Application>.<Stream>/'
@@ -46,7 +47,7 @@
 .OUTPUTS
     [PSCustomObject] — All fields from Get-BuildContext plus:
       - DatabasePackageId         : NuGet package id for the database package.
-      - DatabasePackageSourcePath : Absolute path to Database/<App>/ (or <App>.<Stream>/).
+      - DatabasePackageSourcePath : Absolute path to the database package root.
       - DatabaseVersionJsonPath   : Absolute path to the version.json used.
       - PackageKind               : Always 'DatabaseChangePackage'.
 
@@ -55,7 +56,7 @@
 
     Returns the build context for the ATAPUtilities.Database package on the main
     branch. The context reflects the ceiling tier encoded in
-    Database/ATAPUtilities/version.json.
+    Database/Flyway/version.json.
 
 .EXAMPLE
     PS> Get-DatabasePackageBuildContext `
@@ -149,7 +150,11 @@ function Get-DatabasePackageBuildContext {
       "$Application.$Stream.Database"
     }
 
-    $projectPath = Join-Path $RepoRoot 'Database' $dbFolderName
+    $projectPath = if ($Application -eq 'ATAPUtilities' -and [string]::IsNullOrWhiteSpace($Stream)) {
+      Join-Path $RepoRoot 'Database' 'Flyway'
+    } else {
+      Join-Path $RepoRoot 'Database' $dbFolderName
+    }
     $versionJsonPath = Join-Path $projectPath 'version.json'
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `

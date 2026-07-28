@@ -292,25 +292,20 @@ terminal so the `code` command is on `PATH`, then verify with `code --version`. 
 
 ### 2.3 Install Sysinternals Suite
 
-Install Sysinternals Suite outside a package manager at the machine-wide path
-`C:\Program Files\SysinternalsSuite`. This location is part of the UTAT workstation
-parity baseline: it was installed on `utat01` on 2026-07-28 and must be installed to the
-same path on `utat022` during the return procedure.
+Install the pinned Sysinternals Suite release with WinGet. The suite is part of the
+UTAT workstation parity baseline: it was installed on `utat01` on 2026-07-28 and must
+be installed to the same location on `utat022` during the return procedure.
 
 Run from an elevated PowerShell session:
 
 ```powershell
-$uri = 'https://download.sysinternals.com/files/SysinternalsSuite.zip'
-$dest = "$env:ProgramFiles\SysinternalsSuite"
-$zip = Join-Path $dest 'SysinternalsSuite.zip'
-
-New-Item -ItemType Directory -Path $dest -Force | Out-Null
-Invoke-WebRequest -Uri $uri -OutFile $zip
-Expand-Archive -Path $zip -DestinationPath $dest -Force
-Remove-Item -LiteralPath $zip
+winget install -e --id Microsoft.Sysinternals.Suite --version 2026-07-09
 ```
 
-Verify that `C:\Program Files\SysinternalsSuite\Autoruns64.exe` exists after extraction.
+Record the installed version and resolved executable path in the parity journal. On
+`utat01`, the existing direct-download installation is at
+`C:\Program Files\SysinternalsSuite`; verify the WinGet installation on `utat022`
+resolves to the same path before closing the return action.
 
 ### 2.4 Install Python (for Manim or Copilot code execution)
 

@@ -99,6 +99,11 @@ available from source until version `0.1.2` is installed and verified.
    `bws`, token-purpose, or credential-directory dependency.
 8. Verify the task-result directory is writable by `SvcParityAudit`; no Bitwarden
    credential directory is created or required.
+9. Maintain the Sysinternals Suite baseline with the pinned WinGet command
+   `winget install -e --id Microsoft.Sysinternals.Suite --version 2026-07-09`.
+   `utat01` has the suite at `C:\Program Files\SysinternalsSuite` as of 2026-07-28;
+   install and verify the identical path on `utat022` during the return procedure, then
+   record the change through `Add-ParityChangeEntry`.
 
 ## Windows 10 ScheduledTasks compatibility
 

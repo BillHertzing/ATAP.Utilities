@@ -10,6 +10,9 @@ BeforeAll {
     $script:addedGetLocalUserShim = $true
   }
 
+  $script:setUserScopeProfilePath = Join-Path $PSScriptRoot '..' '..' '..' `
+    'ATAP.Utilities.BuildTooling.PowerShell' 'public' 'Set-UserScopeProfile.ps1'
+  . $script:setUserScopeProfilePath
   $script:manifestPath = Join-Path $PSScriptRoot '..' '..' 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell.psd1'
   Import-Module $script:manifestPath -Force
 }
@@ -30,6 +33,10 @@ Describe 'Set-SprintBoundaryUserProfiles [public]' {
     $script:serviceHome = Join-Path $script:testRoot 'SvcHome'
     $templateDir = Join-Path $script:iacRoot 'Windows\ProfileTemplates'
     New-Item -ItemType Directory -Path $templateDir, $script:developerHome, $script:serviceHome -Force | Out-Null
+    $setUserScopeProfileTarget = Join-Path $script:utilRoot `
+      'src\ATAP.Utilities.BuildTooling.PowerShell\public\Set-UserScopeProfile.ps1'
+    New-Item -ItemType Directory -Path (Split-Path -Parent $setUserScopeProfileTarget) -Force | Out-Null
+    Copy-Item -LiteralPath $script:setUserScopeProfilePath -Destination $setUserScopeProfileTarget
     @'
 # ATAP-Managed-UserScopeProfile: v1
 # developer profile payload
@@ -75,7 +82,9 @@ Set-StrictMode -Version Latest
 
   It 'discovers and validates the canonical developer profile without requiring a cross-account write' {
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-LocalUser {
-      [PSCustomObject]@{ Name = 'SvcBuildmaster'; Enabled = $false }
+      if ($Name -eq 'SvcBuildmaster') {
+        [PSCustomObject]@{ Name = 'SvcBuildmaster'; Enabled = $false }
+      }
     }
 
     $result = Set-SprintBoundaryUserProfiles `
@@ -103,7 +112,9 @@ Set-StrictMode -Version Latest
 
   It 'discovers and validates the canonical service-account profile without requiring a credential or cross-account write' {
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-LocalUser {
-      [PSCustomObject]@{ Name = 'SvcBuildmaster'; Enabled = $true }
+      if ($Name -eq 'SvcBuildmaster') {
+        [PSCustomObject]@{ Name = 'SvcBuildmaster'; Enabled = $true }
+      }
     }
 
     $result = Set-SprintBoundaryUserProfiles `
@@ -128,6 +139,49 @@ Set-StrictMode -Version Latest
       Should -BeFalse
   }
 
+  It 'merges approved local service accounts when ConfigRootKeys do not describe them' {
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Initialize-ATAPConfigurationGlobals {
+      $global:configRootKeys = @{
+        DatabasesCollectionConfigRootKey = 'DatabasesCollection'
+      }
+      $global:settings = @{
+        DatabasesCollection = @{ ATAPUtilities = @{} }
+      }
+      [PSCustomObject]@{ Initialized = $true }
+    }
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-LocalUser {
+      if ($Name -in @('SvcBuildMaster', 'SvcProGet', 'SvcSQLServer')) {
+        [PSCustomObject]@{ Name = $Name; Enabled = $true }
+      }
+    }
+
+    $buildMasterHome = Join-Path $script:testRoot 'SvcBuildMasterHome'
+    $proGetHome = Join-Path $script:testRoot 'SvcProGetHome'
+    $sqlServerHome = Join-Path $script:testRoot 'SvcSQLServerHome'
+    New-Item -ItemType Directory -Path $buildMasterHome, $proGetHome, $sqlServerHome -Force | Out-Null
+
+    $result = Set-SprintBoundaryUserProfiles `
+      -ATAPUtilitiesRoot $script:utilRoot `
+      -ATAPIACRoot $script:iacRoot `
+      -GitRoot $script:gitRoot `
+      -OverviewWorkspacePath $script:overviewPath `
+      -HomeDirectoryOverrides @{
+        alice = $script:developerHome
+        SvcBuildMaster = $buildMasterHome
+        SvcProGet = $proGetHome
+        SvcSQLServer = $sqlServerHome
+      } `
+      -WhatIf `
+      -Confirm:$false
+
+    $result.Ok | Should -BeTrue
+    $serviceResults = @($result.Profiles | Where-Object Kind -EQ 'ServiceAccount')
+    $serviceResults.Count | Should -Be 3
+    @($serviceResults.Identity | Sort-Object) |
+      Should -Be @('SvcBuildMaster', 'SvcProGet', 'SvcSQLServer')
+    @($serviceResults.Action | Select-Object -Unique) | Should -Be @('WouldCreated')
+    @($serviceResults.RequiresSecret | Select-Object -Unique) | Should -Be @($true)
+  }
   It 'selects the current-host assignment and deploys only the redirected loaded profile idempotently' {
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-LocalUser { $null }
     $currentHome = Join-Path $script:testRoot 'CurrentDeveloperHome'
@@ -184,7 +238,9 @@ Set-StrictMode -Version Latest
 
   It 'does not mutate the filesystem under WhatIf while still returning the planned profiles' {
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-LocalUser {
-      [PSCustomObject]@{ Name = 'SvcBuildmaster'; Enabled = $true }
+      if ($Name -eq 'SvcBuildmaster') {
+        [PSCustomObject]@{ Name = 'SvcBuildmaster'; Enabled = $true }
+      }
     }
 
     $result = Set-SprintBoundaryUserProfiles `
@@ -203,7 +259,9 @@ Set-StrictMode -Version Latest
 
   It 'ignores pre-existing retired ATAP.Utilities template candidates' {
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-LocalUser {
-      [PSCustomObject]@{ Name = 'SvcBuildmaster'; Enabled = $true }
+      if ($Name -eq 'SvcBuildmaster') {
+        [PSCustomObject]@{ Name = 'SvcBuildmaster'; Enabled = $true }
+      }
     }
     $retiredTemplateRoot = Join-Path $script:utilRoot 'src\ATAP.Utilities.PowerShell\Profiles'
     New-Item -ItemType Directory -Path $retiredTemplateRoot -Force | Out-Null

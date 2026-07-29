@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.1.11
+
+- `Set-SprintBoundaryUserProfiles` now loads `Set-UserScopeProfile` from the caller-selected
+  ATAP.Utilities worktree, preventing an installed parent module from silently supplying a
+  stale implementation during sprint-boundary deployment.
+- When ConfigRootKeys do not describe established service identities, discovery merges only
+  approved local accounts that actually exist. The fixed policy remains bounded to
+  `SvcBuildMaster`, `SvcProGet`, `SvcSQLServer`, `SvcSeq`, and `SvcParityAudit`; absent
+  accounts are ignored and no broad local-account enumeration is introduced.
+- Added regression coverage proving `SvcBuildMaster`, `SvcProGet`, and `SvcSQLServer` are
+  discovered with the required secret policy when configuration discovery omits them.
 ## 0.1.10
 
 - `Set-SprintBoundaryContext -Boundary Start` now provisions the durable AI agent memory

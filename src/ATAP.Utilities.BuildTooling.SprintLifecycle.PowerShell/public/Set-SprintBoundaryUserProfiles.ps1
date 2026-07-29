@@ -97,6 +97,13 @@ function Set-SprintBoundaryUserProfiles {
       }
     }
 
+    $setUserScopeProfilePath = Join-Path $ATAPUtilitiesRoot `
+      'src\ATAP.Utilities.BuildTooling.PowerShell\public\Set-UserScopeProfile.ps1'
+    if (Test-Path -LiteralPath $setUserScopeProfilePath -PathType Leaf) {
+      . $setUserScopeProfilePath
+    } elseif (-not (Get-Command -Name Set-UserScopeProfile -CommandType Function -ErrorAction SilentlyContinue)) {
+      throw "Set-UserScopeProfile was not found at '$setUserScopeProfilePath' or in the current session."
+    }
     function Resolve-LeafName {
       param([string]$Identity)
       if ([string]::IsNullOrWhiteSpace($Identity)) {
@@ -326,6 +333,65 @@ function Set-SprintBoundaryUserProfiles {
         })
     }
 
+    # ConfigRootKeys remain the preferred source because they can carry a
+    # host-qualified identity and an explicit home. Some established ATAP
+    # service accounts predate those keys, however. Merge in only approved
+    # local accounts that are actually present, without broad account
+    # discovery or changing the approved secret policy.
+    $discoveredServiceLeafNames = @(
+      $profiles |
+        Where-Object Kind -EQ 'ServiceAccount' |
+        ForEach-Object { Resolve-LeafName -Identity $_.Identity }
+    )
+
+    foreach ($approvedIdentity in @($approvedServiceAccountPolicy.Keys | Sort-Object)) {
+      if ($discoveredServiceLeafNames -contains $approvedIdentity) {
+        continue
+      }
+
+      $localUser = $null
+      try {
+        $localUser = Get-LocalUser -Name $approvedIdentity -ErrorAction Stop
+      } catch {
+        $localUser = $null
+      }
+
+      if ($null -eq $localUser) {
+        continue
+      }
+
+      $identity = [string]$localUser.Name
+      $homeDirectory = Resolve-HomeDirectory -Identity $identity -HostName $null
+      $profilePath = if ($homeDirectory) { Join-Path $homeDirectory 'Documents\PowerShell\profile.ps1' } else { $null }
+      $skipReason = $null
+      $isFailure = $false
+
+      if ($localUser.PSObject.Properties['Enabled'] -and -not [bool]$localUser.Enabled) {
+        $skipReason = "Service account '$identity' is disabled on host '$localComputerName'."
+        [void]$warnings.Add($skipReason)
+      } elseif ([string]::IsNullOrWhiteSpace($homeDirectory)) {
+        $skipReason = "Home directory could not be resolved for service account '$identity'."
+        [void]$failures.Add($skipReason)
+        $isFailure = $true
+      }
+
+      [void]$profiles.Add([PSCustomObject]@{
+          Identity       = $identity
+          Kind           = 'ServiceAccount'
+          Host           = $localComputerName
+          HomeDirectory  = $homeDirectory
+          ProfilePath    = $profilePath
+          SourcePath     = $serviceSourcePath
+          RequiresSecret = [bool]$approvedServiceAccountPolicy[$approvedIdentity]
+          Skipped        = [bool]$skipReason -and -not $isFailure
+          Warning        = if ($isFailure) { $null } else { $skipReason }
+          Error          = if ($isFailure) { $skipReason } else { $null }
+          Succeeded      = $false
+          Action         = $null
+          LinkTarget     = $null
+          SourceMatch    = $false
+        })
+    }
     foreach ($profile in $profiles) {
       if ($profile.Warning) {
         $profile.Action = 'Skipped'

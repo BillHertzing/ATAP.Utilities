@@ -213,6 +213,7 @@ Set-StrictMode -Version Latest
           SvcProGet = $proGetHome
           SvcSQLServer = $sqlServerHome
         } `
+        -CurrentIdentityName 'UTAT022\SvcBuildMaster' `
         -WhatIf `
         -Confirm:$false
 

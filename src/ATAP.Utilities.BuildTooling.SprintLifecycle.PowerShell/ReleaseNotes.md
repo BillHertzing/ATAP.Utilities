@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.1.13
+
+- Resolve service-account ownership from the authenticated Windows identity token rather than the inheritable USERNAME environment variable.
+- Add an explicit current-identity test seam for deterministic least-privilege coverage.
+
 ## 0.1.12
 
 - Limit fallback service-account discovery to the three approved ReadOnly identities.

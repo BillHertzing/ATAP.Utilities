@@ -79,6 +79,10 @@ function Set-SprintBoundaryUserProfiles {
     [string]$CurrentUserAllHostsProfilePath = $PROFILE.CurrentUserAllHosts,
 
     [Parameter()]
+    [ValidateNotNullOrEmpty()]
+    [string]$CurrentIdentityName = [Security.Principal.WindowsIdentity]::GetCurrent().Name,
+
+    [Parameter()]
     [switch]$ThrowOnFailure
   )
 
@@ -396,7 +400,7 @@ function Set-SprintBoundaryUserProfiles {
           SourceMatch    = $false
         })
     }
-    $currentIdentityLeaf = Resolve-LeafName -Identity $env:USERNAME
+    $currentIdentityLeaf = Resolve-LeafName -Identity $CurrentIdentityName
     $currentIdentityIsApprovedServiceAccount = $approvedServiceAccountPolicy.ContainsKey($currentIdentityLeaf)
     foreach ($profile in $profiles) {
       if (

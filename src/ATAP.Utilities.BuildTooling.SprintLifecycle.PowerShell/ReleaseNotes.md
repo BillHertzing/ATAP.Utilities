@@ -1,5 +1,9 @@
 # Release notes
 
+## 0.1.14
+
+- Isolate the SprintEnd resumability unit test from live service-account profile management under the BuildMaster service identity.
+
 ## 0.1.13
 
 - Resolve service-account ownership from the authenticated Windows identity token rather than the inheritable USERNAME environment variable.

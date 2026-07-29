@@ -754,6 +754,9 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
 
       # First live pass simulates a crash after the boundary reset but before handoff completion.
       Mock Set-SprintBoundaryContext { [PSCustomObject]@{ Errors = @() } }
+      Mock Set-SprintBoundaryUserProfiles {
+        [PSCustomObject]@{ Ok = $true; Profiles = @(); Warnings = @(); Failures = @() }
+      }
       Mock Invoke-SprintEndInfrastructureCleanup {
         [PSCustomObject]@{ Ok = $true; DatabaseCleanupMode = 'SprintDatabasesOnly'; SqlInstancesRetained = $true }
       }

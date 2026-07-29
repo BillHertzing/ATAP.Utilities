@@ -10,12 +10,14 @@ for the folder's purpose and scope.
 `Database/Flyway/` is the single source root for the `ATAPUtilities.Database`
 package: its `version.json` supplies package metadata, `SQL/` supplies the
 versioned Flyway schema and CSV-loader scripts, and `Data/` supplies their CSV
-inputs. The core rebuild baseline is
-`SQL/V00.01.000010__Create_ATAPUtilities_Core_Schema.sql`; it includes the
-historical RRSBS and instantiation versioning schema evolution. The former
-split source tree and smoke-test fixtures were retired in Task 13.90. Do not
-apply the rewritten baseline to an already-migrated database
-without an approved Flyway rebaseline plan.
+inputs. `SQL/V00.01.000010__Create_ATAPUtilities_Core_Schema.sql` retains the
+immutable bytes already applied to permanent tiers. The historical
+instantiation, durable RRSBS, typed-membership retirement, invariant, and
+effective-dating changes are preserved as forward migrations
+`V00.02.000060` through `V00.02.000100` in that same canonical `SQL/`
+directory. The former split source directory is retired; existing databases at
+`00.02.000040` keep these later migrations pending until a separately reviewed
+promotion.
 
 ## Database Pipeline — Cross-Cutting References (in `SolutionDocumentation/`)
 

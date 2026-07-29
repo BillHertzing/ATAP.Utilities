@@ -4,9 +4,9 @@ This file lists all subfolders and key documents in the `Database/` folder of th
 
 ## Subfolders
 
-- [Flyway/](Flyway/) — Canonical ATAPUtilities database package root. `version.json` controls the `ATAPUtilities.Database` package version; `SQL/` contains the complete rebuild baseline and CSV loaders; `Data/` contains all seed CSVs. The core migration includes the retained Sprint 0012/0013 schema evolution, including durable RRSBS snapshots and effective-dated versioning. The retired split source tree and all smoke-test-only artifacts were removed in Task 13.90.
+- [Flyway/](Flyway/) — Canonical ATAPUtilities database package root. `version.json` controls the `ATAPUtilities.Database` package version; `SQL/` contains the immutable applied baseline, CSV loaders, and forward migrations; `Data/` contains all seed CSVs. `V00.01.000010` retains its historically applied bytes, while the Sprint 0012/0013 instantiation, durable RRSBS, typed-membership retirement, invariant, and effective-dating changes remain forward migrations `V00.02.000060` through `V00.02.000100`. The former split source directory was retired after those migrations were moved into the canonical `SQL/` location.
 
-  > **Running Flyway:** use `Database/Flyway/flyway.toml`, whose only migration location is `SQL/`. This source layout is rebuild-only; it must not be applied to a tier carrying the old split migration history without an approved re-baseline plan.
+  > **Running Flyway:** use `Database/Flyway/flyway.toml`, whose only migration location is `SQL/`. Never fold forward changes into an already-applied migration. Existing tiers at `00.02.000040` validate with `000060`-`000100` pending until a separately reviewed promotion applies them.
 - [Documentation/](Documentation/Index.md) — PlantUML diagrams and Markdown design documents for the database schema and package promotion pipeline. See [Documentation/Index.md](Documentation/Index.md) for the full contents list.
 - [Powershell/](Powershell/) — PowerShell cmdlets for database management operations (rebuild, backup, restore, provisioning). Public functions are in `Powershell/public/`.
 - [Queries/](Queries/) — Ad-hoc and reference SQL query scripts for reporting and diagnostics against the ATAPUtilities schema.

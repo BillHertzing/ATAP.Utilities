@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.1.12
+
+- Limit fallback service-account discovery to the three approved ReadOnly identities.
+- Prevent an approved service identity from managing peer service-account profiles; operator shells retain the three-account deployment path.
+
 ## 0.1.11
 
 - `Set-SprintBoundaryUserProfiles` now loads `Set-UserScopeProfile` from the caller-selected

@@ -182,6 +182,53 @@ Set-StrictMode -Version Latest
     @($serviceResults.Action | Select-Object -Unique) | Should -Be @('WouldCreated')
     @($serviceResults.RequiresSecret | Select-Object -Unique) | Should -Be @($true)
   }
+  It 'prevents an approved service identity from managing peer service-account profiles' {
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Initialize-ATAPConfigurationGlobals {
+      $global:configRootKeys = @{}
+      $global:settings = @{}
+      [PSCustomObject]@{ Initialized = $true }
+    }
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-LocalUser {
+      if ($Name -in @('SvcBuildMaster', 'SvcProGet', 'SvcSQLServer')) {
+        [PSCustomObject]@{ Name = $Name; Enabled = $true }
+      }
+    }
+
+    $oldUsername = $env:USERNAME
+    try {
+      $env:USERNAME = 'SvcBuildMaster'
+      $buildMasterHome = Join-Path $script:testRoot 'SvcBuildMasterOwnHome'
+      $proGetHome = Join-Path $script:testRoot 'SvcProGetPeerHome'
+      $sqlServerHome = Join-Path $script:testRoot 'SvcSQLServerPeerHome'
+      New-Item -ItemType Directory -Path $buildMasterHome, $proGetHome, $sqlServerHome -Force | Out-Null
+
+      $result = Set-SprintBoundaryUserProfiles `
+        -ATAPUtilitiesRoot $script:utilRoot `
+        -ATAPIACRoot $script:iacRoot `
+        -GitRoot $script:gitRoot `
+        -OverviewWorkspacePath $script:overviewPath `
+        -HomeDirectoryOverrides @{
+          alice = $script:developerHome
+          SvcBuildMaster = $buildMasterHome
+          SvcProGet = $proGetHome
+          SvcSQLServer = $sqlServerHome
+        } `
+        -WhatIf `
+        -Confirm:$false
+
+      $result.Ok | Should -BeTrue
+      ($result.Profiles | Where-Object Identity -EQ 'SvcBuildMaster').Action | Should -Be 'WouldCreated'
+      @(
+        $result.Profiles |
+          Where-Object { $_.Identity -in @('SvcProGet', 'SvcSQLServer') } |
+          Select-Object -ExpandProperty Action -Unique
+      ) | Should -Be @('Skipped')
+      (($result.Profiles | Where-Object { $_.Identity -in @('SvcProGet', 'SvcSQLServer') }).Warning -join ';') |
+        Should -Match 'cross-account profile management is skipped'
+    } finally {
+      $env:USERNAME = $oldUsername
+    }
+  }
   It 'selects the current-host assignment and deploys only the redirected loaded profile idempotently' {
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-LocalUser { $null }
     $currentHome = Join-Path $script:testRoot 'CurrentDeveloperHome'

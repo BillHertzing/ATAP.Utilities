@@ -344,7 +344,11 @@ function Set-SprintBoundaryUserProfiles {
         ForEach-Object { Resolve-LeafName -Identity $_.Identity }
     )
 
-    foreach ($approvedIdentity in @($approvedServiceAccountPolicy.Keys | Sort-Object)) {
+    foreach ($approvedIdentity in @(
+        $approvedServiceAccountPolicy.Keys |
+          Where-Object { [bool]$approvedServiceAccountPolicy[$_] } |
+          Sort-Object
+      )) {
       if ($discoveredServiceLeafNames -contains $approvedIdentity) {
         continue
       }
@@ -392,7 +396,24 @@ function Set-SprintBoundaryUserProfiles {
           SourceMatch    = $false
         })
     }
+    $currentIdentityLeaf = Resolve-LeafName -Identity $env:USERNAME
+    $currentIdentityIsApprovedServiceAccount = $approvedServiceAccountPolicy.ContainsKey($currentIdentityLeaf)
     foreach ($profile in $profiles) {
+      if (
+        $profile.Kind -eq 'ServiceAccount' -and
+        $currentIdentityIsApprovedServiceAccount -and
+        -not [string]::Equals(
+          (Resolve-LeafName -Identity $profile.Identity),
+          $currentIdentityLeaf,
+          [StringComparison]::OrdinalIgnoreCase
+        )
+      ) {
+        $profile.Warning = "Service identity '$currentIdentityLeaf' may verify only its own profile; cross-account profile management is skipped."
+        [void]$warnings.Add($profile.Warning)
+        $profile.Action = 'Skipped'
+        $profile.Succeeded = $true
+        continue
+      }
       if ($profile.Warning) {
         $profile.Action = 'Skipped'
         $profile.Succeeded = $true

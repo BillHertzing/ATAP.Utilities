@@ -217,11 +217,9 @@ Describe 'Invoke-BWSReadOnlyTokenBootstrap orchestration policy' -Tag 'Unit', 'B
         default { return [PSCustomObject]@{ State = 'Ready' } }
       }
     }
-    Mock New-ScheduledTaskAction { [PSCustomObject]@{} }
-    Mock New-ScheduledTaskTrigger { [PSCustomObject]@{} }
-    Mock New-ScheduledTaskSettingsSet { [PSCustomObject]@{} }
-    Mock New-ScheduledTaskPrincipal { [PSCustomObject]@{} }
-    Mock New-ScheduledTask { [PSCustomObject]@{} }
+    # Build the task definition with the real in-memory ScheduledTasks cmdlets. PowerShell
+    # 7.6 validates their CIM-typed parameters before Pester can pass PSCustomObject mock
+    # results through the command proxies.
     Mock Register-ScheduledTask { [PSCustomObject]@{} }
     Mock Start-ScheduledTask { }
     Mock Get-ScheduledTaskInfo { throw 'simulated worker failure' }

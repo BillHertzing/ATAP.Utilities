@@ -90,3 +90,22 @@ Generated, ignored evidence is under `_generated/InstantiationFix/13.83/`:
 - `Task-13.83-Manifestation-DryRun.json`
 - `Task-13.83-Manifestation.json`
 
+## Task 13.84 final audit
+
+The 2026-07-30 closeout audit passed. Generated proof index
+`_generated/InstantiationFix/13.84/Task-13.84-Final-Audit.json` ties the
+immutable package and its `db-release-unit-manifest.json` and
+`package-evidence.json` files to the deployment trace, current database
+counts, exact five-entry target tree, documentation links, scoped clean
+worktree paths, and test evidence. The four focused Instantiation and
+manifestation suites passed 28/28 on the final rerun; the prior adversarial
+package gate remains 32/32.
+
+The audit also recorded one phase-sensitive verifier behavior. Before
+manifestation, `Verify_ATAPorg_Instantiation_V1.sql` correctly expects five
+`Planned` artifacts. After manifestation, the unique file artifact is
+intentionally promoted to `RenderFromModel`, while the four directories remain
+`Planned`. Therefore its post-manifest `Artifacts.Planned` finding is not
+deployment drift. The final-state proof instead requires four planned
+directories, one rendered file, five total artifacts, the exact file hash,
+and complete producing keys; all passed.

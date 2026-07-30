@@ -47,10 +47,12 @@ continues to re-export the nine legacy AiRendering commands. Child-only
 frozen 200-command parent surface. SC-0246's ten SharedVSCode `.ai/tools`
 PowerShell files remain reserved for the future AIAdapters module.
 
-Parent 0.1.72 is the accepted final Sprint 0013 compatibility release. The
-complete 12-member family completed the dependency-ordered five-tier cycle and
-is installed AllUsers on UTAT022 and UTAT01. Fresh imports on both hosts expose
-the same 201 parent commands and five legacy aliases.
+Parent 0.1.73 supersedes the Task 13.73 baseline to carry the
+`New-BuildMasterApplication` artifact-schema correction from BuildMaster child
+0.1.2. Both packages passed all five tiers, including 71 child and 169 parent
+tests with zero failures at every tested promoted tier, and are installed
+AllUsers on UTAT022 and UTAT01. Fresh PowerShell 7 imports on both hosts resolve
+the exact versions from Program Files.
 
 Full-repository C# MSBuild property audits live outside this module at
 `tests\RepoHealth` and run through `Build\Invoke-RepoHealthGate.ps1`. They are

@@ -9,3 +9,10 @@
 ## 0.1.0
 
 - Initial BuildMaster child-module scaffold and extracted command surface.
+# 0.1.2
+
+- Omit the local `ArtifactUsage=Default` sentinel from BuildMaster application
+  create/update requests.
+- Validate AssetDirectory pairing, omit unused optional fields, compare API
+  property names case-insensitively for idempotency, and preserve bounded
+  validation response details.

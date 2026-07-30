@@ -10,6 +10,13 @@ Public BuildMaster automation commands are in `public/`; focused Pester tests ar
 the parent, which continues to re-export the legacy command surface for installed
 parent-only consumers.
 
+Version 0.1.2 corrects the BuildMaster Application Management API contract:
+the local `Default` artifact sentinel is omitted, only server-supported artifact
+values are sent, AssetDirectory requires its paired directory, optional fields
+are omitted unless intentionally supplied, and create/update validation details
+are surfaced without exposing the API key. The application comparison is
+case-insensitive across API property names, preserving idempotent re-entry.
+
 ## Functional area
 
 This module belongs to the [PowerShell Build & Packaging](../../SolutionDocumentation/PowerShell-Modules-Build-Process.md)

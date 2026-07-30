@@ -1,233 +1,307 @@
 <#
 .SYNOPSIS
-    Loads the ordered BuildSetVersion-to-RuleSetVersion-to-RuleVersion graph for one InstantiationVersion.
+    Loads one immutable InstantiationVersion graph and its resolved RuleInstantiation snapshots.
 
 .DESCRIPTION
-    Reads versioned manifestation rows from ATAPUtilities and returns a nested graph object in
-    BuildSetVersion order, then RuleSetVersion order, then RuleVersion order. The function
-    follows the corrected Stream J Instantiation model (no Build layer).
-
-.PARAMETER InstantiationVersionPhiloteId
-    The InstantiationVersion.philote identifier used as the graph root.
-
-.PARAMETER SqlConnection
-    Existing open Microsoft.Data.SqlClient.SqlConnection to read from. Caller-owned; this function
-    does not close it.
-
-.PARAMETER DBConnectionStringSecretName
-    Secret name that resolves to a SQL connection string. Function-owned connection is closed on
-    completion.
-
-.PARAMETER DatabaseHost
-    SQL Server host name used when resolving a ConnectionParts connection.
-
-.PARAMETER InstanceName
-    SQL Server instance name used when resolving a ConnectionParts connection.
-
-.PARAMETER DatabaseName
-    Database name used when resolving a ConnectionParts connection.
-
-.PARAMETER ConnectionMethod
-    Connection method used when resolving a ConnectionParts connection.
-
-.PARAMETER CredentialsKey
-    Optional credential lookup key for ConnectionParts resolution.
-
-.PARAMETER IntegratedSecurity
-    Use Windows Integrated Security when resolving a ConnectionParts connection.
-
-.PARAMETER UseTrustedConnection
-    Alias for Trusted_Connection behavior.
-
-.OUTPUTS
-    [PSCustomObject] with InstantiationVersion root and nested BuildSetVersion/RuleSetVersion/RuleVersion graph.
-
-.EXAMPLE
-    Get-InstantiationVersionRuleGraph -InstantiationVersionPhiloteId '6f3c1fb6-842e-4502-a416-88205983ed35' -DatabaseHost localhost -DatabaseName ATAPUtilities
+    Returns the ordered BuildSetVersion-to-RuleSetVersion-to-RuleVersion graph (there is no
+    Build layer), the ordered RuleInstantiationVersion snapshot, declared inputs, bindings as
+    they existed when each snapshot was created, exact source lines, and planned artifacts.
+    Missing, duplicate, undeclared, or out-of-graph inputs fail closed.
 #>
-[CmdletBinding(DefaultParameterSetName = 'ConnectionParts')]
-[OutputType([PSCustomObject])]
-param(
-  [Parameter(Mandatory = $true)]
-  [guid]$InstantiationVersionPhiloteId,
+function Get-InstantiationVersionRuleGraph {
+  [CmdletBinding(DefaultParameterSetName = 'ConnectionParts', SupportsShouldProcess = $true)]
+  [OutputType([PSCustomObject])]
+  param(
+    [Parameter(Mandatory = $true)]
+    [guid]$InstantiationVersionPhiloteId,
 
-  [Parameter(Mandatory = $true, ParameterSetName = 'SqlConnection', ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
-  [object]$SqlConnection,
+    [Parameter(Mandatory = $true, ParameterSetName = 'SqlConnection', ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+    [object]$SqlConnection,
 
-  [Parameter(Mandatory = $false, ParameterSetName = 'DBConnectionStringSecretName', ValueFromPipelineByPropertyName = $true)]
-  [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
-  [string]$DBConnectionStringSecretName,
+    [Parameter(ParameterSetName = 'DBConnectionStringSecretName', ValueFromPipelineByPropertyName = $true)]
+    [Alias('DBConnectionStringSecret', 'SecretName', 'BitwardenSecretName', 'BitwardenSecret')]
+    [string]$DBConnectionStringSecretName,
 
-  [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParts', ValueFromPipelineByPropertyName = $true)]
-  [Alias('HostName', 'ServerInstance')]
-  [string]$DatabaseHost,
+    [Parameter(ParameterSetName = 'ConnectionParts', ValueFromPipelineByPropertyName = $true)]
+    [Alias('HostName', 'ServerInstance')]
+    [string]$DatabaseHost,
 
-  [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParts', ValueFromPipelineByPropertyName = $true)]
-  [Alias('SqlInstance')]
-  [string]$InstanceName,
+    [Parameter(ParameterSetName = 'ConnectionParts', ValueFromPipelineByPropertyName = $true)]
+    [Alias('SqlInstance')]
+    [string]$InstanceName,
 
-  [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
-  [string]$DatabaseName,
+    [Parameter(ValueFromPipelineByPropertyName = $true)]
+    [string]$DatabaseName,
 
-  [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParts', ValueFromPipelineByPropertyName = $true)]
-  [string]$ConnectionMethod,
+    [Parameter(ParameterSetName = 'ConnectionParts', ValueFromPipelineByPropertyName = $true)]
+    [string]$ConnectionMethod,
 
-  [Parameter(Mandatory = $false, ParameterSetName = 'ConnectionParts', ValueFromPipelineByPropertyName = $true)]
-  [string]$CredentialsKey,
+    [Parameter(ParameterSetName = 'ConnectionParts', ValueFromPipelineByPropertyName = $true)]
+    [string]$CredentialsKey,
 
-  [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
-  [switch]$IntegratedSecurity,
+    [Parameter(ValueFromPipelineByPropertyName = $true)]
+    [switch]$IntegratedSecurity,
 
-  [Parameter(Mandatory = $false)]
-  [switch]$UseTrustedConnection,
+    [Parameter()]
+    [switch]$UseTrustedConnection,
 
-  [Parameter(Mandatory = $false)]
-  [hashtable]$Settings,
+    [Parameter()]
+    [hashtable]$Settings,
 
-  [Parameter(Mandatory = $false)]
-  [hashtable]$OriginalPSBoundParameters
-)
+    [Parameter()]
+    [hashtable]$OriginalPSBoundParameters
+  )
 
-begin {
-  $fn = 'Get-InstantiationVersionRuleGraph'
-  $mn = 'ATAP.Utilities.DatabaseManagement.Powershell'
-  Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn" -Tag 'Trace'
-}
+  begin {
+    $fn = 'Get-InstantiationVersionRuleGraph'
+    $mn = 'ATAP.Utilities.DatabaseManagement.Powershell'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn" -Tag 'Trace'
+  }
 
-process {
-  $toInt = {
-    param($value)
-    if ($null -eq $value) {
-      return 0
-    }
+  process {
+    $resolvedConnection = $null
+    $isCallerOwned = $false
     try {
-      [int]$value
-    } catch {
-      0
-    }
-  }
+      if (-not $PSCmdlet.ShouldProcess("InstantiationVersion $InstantiationVersionPhiloteId", 'Load immutable corrected manifestation graph')) {
+        return
+      }
 
-  if (-not $PSCmdlet.ShouldProcess("InstantiationVersion $InstantiationVersionPhiloteId", 'Load BuildSetVersion->RuleSetVersion->RuleVersion graph')) {
-    return
-  }
+      $resolution = Resolve-DatabaseSqlConnection `
+        -OriginalPSBoundParameters $PSBoundParameters `
+        -SqlConnection $SqlConnection `
+        -DBConnectionStringSecretName $DBConnectionStringSecretName `
+        -DatabaseHost $DatabaseHost `
+        -InstanceName $InstanceName `
+        -DatabaseName $DatabaseName `
+        -ConnectionMethod $ConnectionMethod `
+        -CredentialsKey $CredentialsKey `
+        -IntegratedSecurity:$IntegratedSecurity `
+        -UseTrustedConnection:$UseTrustedConnection `
+        -Settings $Settings
 
-  $resolution = Resolve-DatabaseSqlConnection `
-    -OriginalPSBoundParameters $PSBoundParameters `
-    -SqlConnection $SqlConnection `
-    -DBConnectionStringSecretName $DBConnectionStringSecretName `
-    -DatabaseHost $DatabaseHost `
-    -InstanceName $InstanceName `
-    -DatabaseName $DatabaseName `
-    -ConnectionMethod $ConnectionMethod `
-    -CredentialsKey $CredentialsKey `
-    -IntegratedSecurity:$IntegratedSecurity `
-    -UseTrustedConnection:$UseTrustedConnection `
-    -Settings $Settings
+      $resolvedConnection = $resolution.Connection
+      $isCallerOwned = [bool]$resolution.IsCallerOwned
+      $parameters = @{ InstantiationVersionPhiloteId = $InstantiationVersionPhiloteId.ToString() }
 
-  $resolvedConnection = $resolution.Connection
-  $isCallerOwned = [bool]$resolution.IsCallerOwned
-
-  $query = @'
-SELECT
-    bsv.BuildSetVersionPhiloteId,
-    bsv.SortOrder AS BuildSetSortOrder,
-    bsvm.SortOrder AS RuleSetMembershipSortOrder,
-    rsv.RuleSetVersionPhiloteId,
-    rsv.SortOrder AS RuleSetVersionSortOrder,
-    rsvm.SortOrder AS RuleVersionMembershipSortOrder,
-    rv.RuleVersionPhiloteId,
-    rv.SortOrder AS RuleVersionSortOrder
+      $graphRows = @(Invoke-DatabaseSqlQuery -SqlConnection $resolvedConnection -Parameters $parameters -CommandText @'
+/* Task13.80:Graph */
+SELECT iv.InstantiationPhiloteId, iv.VersionNumber AS InstantiationVersionNumber,
+       iv.VersionLabel AS InstantiationVersionLabel, iv.BuildSetVersionPhiloteId,
+       bsv.SortOrder AS BuildSetSortOrder, bsvm.SortOrder AS RuleSetMembershipSortOrder,
+       rsv.RuleSetVersionPhiloteId, rsv.SortOrder AS RuleSetVersionSortOrder,
+       rsvm.SortOrder AS RuleVersionMembershipSortOrder, rv.RuleVersionPhiloteId,
+       rv.RulePhiloteId, rv.SortOrder AS RuleVersionSortOrder, rv.ContentSha256
 FROM ATAPUtilities.InstantiationVersion AS iv
 INNER JOIN ATAPUtilities.BuildSetVersion AS bsv
-    ON bsv.BuildSetVersionPhiloteId = iv.BuildSetVersionPhiloteId
+  ON bsv.BuildSetVersionPhiloteId = iv.BuildSetVersionPhiloteId
 LEFT JOIN ATAPUtilities.BuildSetVersionMember AS bsvm
-    ON bsvm.BuildSetVersionPhiloteId = bsv.BuildSetVersionPhiloteId
+  ON bsvm.BuildSetVersionPhiloteId = bsv.BuildSetVersionPhiloteId
 LEFT JOIN ATAPUtilities.RuleSetVersion AS rsv
-    ON rsv.RuleSetVersionPhiloteId = bsvm.RuleSetVersionPhiloteId
+  ON rsv.RuleSetVersionPhiloteId = bsvm.RuleSetVersionPhiloteId
 LEFT JOIN ATAPUtilities.RuleSetVersionMember AS rsvm
-    ON rsvm.RuleSetVersionPhiloteId = rsv.RuleSetVersionPhiloteId
+  ON rsvm.RuleSetVersionPhiloteId = rsv.RuleSetVersionPhiloteId
 LEFT JOIN ATAPUtilities.RuleVersion AS rv
-    ON rv.RuleVersionPhiloteId = rsvm.RuleVersionPhiloteId
+  ON rv.RuleVersionPhiloteId = rsvm.RuleVersionPhiloteId
 WHERE iv.InstantiationVersionPhiloteId = @InstantiationVersionPhiloteId;
-'@
+'@)
 
-  $rows = @(
-    Invoke-DatabaseSqlQuery `
-      -SqlConnection $resolvedConnection `
-      -CommandText $query `
-      -Parameters @{ InstantiationVersionPhiloteId = $InstantiationVersionPhiloteId.ToString() }
-  )
+      if ($graphRows.Count -eq 0) {
+        throw "No BuildSetVersion-to-RuleSetVersion-to-RuleVersion graph rows found for InstantiationVersion '$InstantiationVersionPhiloteId'."
+      }
 
-  if ($rows.Count -eq 0) {
-    $msg = "No BuildSetVersion-to-RuleSetVersion-to-RuleVersion graph rows found for InstantiationVersion '$InstantiationVersionPhiloteId'. Verify the corrected Instantiation schema and FK chain are deployed."
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'Error'
-    throw $msg
-  }
+      $snapshotRows = @(Invoke-DatabaseSqlQuery -SqlConnection $resolvedConnection -Parameters $parameters -CommandText @'
+/* Task13.80:Snapshots */
+SELECT m.SortOrder, riv.RuleInstantiationVersionPhiloteId,
+       riv.RuleInstantiationPhiloteId, riv.RuleVersionPhiloteId, riv.RulePhiloteId,
+       riv.VersionNumber, riv.VersionLabel, riv.EffectiveFrom
+FROM ATAPUtilities.InstantiationVersionRuleInstantiationVersion AS m
+INNER JOIN ATAPUtilities.RuleInstantiationVersion AS riv
+  ON riv.RuleInstantiationVersionPhiloteId = m.RuleInstantiationVersionPhiloteId
+WHERE m.InstantiationVersionPhiloteId = @InstantiationVersionPhiloteId
+ORDER BY m.SortOrder, riv.RuleInstantiationVersionPhiloteId;
+'@)
 
-  $buildSetRows = @(
-    $rows |
-      Where-Object { -not [string]::IsNullOrWhiteSpace($_.BuildSetVersionPhiloteId) } |
-      Group-Object BuildSetVersionPhiloteId
-  )
-  if ($buildSetRows.Count -eq 0) {
-    $msg = "No BuildSetVersion rows were found for InstantiationVersion '$InstantiationVersionPhiloteId'. Verify corrected InstantiationVersion to BuildSetVersion linkage."
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'Error'
-    throw $msg
-  }
+      $compositionRows = @(Invoke-DatabaseSqlQuery -SqlConnection $resolvedConnection -Parameters $parameters -CommandText @'
+/* Task13.80:Declarations */
+SELECT DISTINCT riv.RuleInstantiationVersionPhiloteId, c.Position,
+       c.PrimitivePhiloteId, c.IsOptional, c.Cardinality,
+       i.InputName, i.TypeName, i.DefaultValue, i.IsRequired
+FROM ATAPUtilities.InstantiationVersionRuleInstantiationVersion AS m
+INNER JOIN ATAPUtilities.RuleInstantiationVersion AS riv
+  ON riv.RuleInstantiationVersionPhiloteId = m.RuleInstantiationVersionPhiloteId
+INNER JOIN ATAPUtilities.RuleVersionPrimitiveComposition AS c
+  ON c.RuleVersionPhiloteId = riv.RuleVersionPhiloteId
+LEFT JOIN ATAPUtilities.RulePrimitiveInput AS i
+  ON i.PhiloteId = c.PrimitivePhiloteId
+WHERE m.InstantiationVersionPhiloteId = @InstantiationVersionPhiloteId
+ORDER BY riv.RuleInstantiationVersionPhiloteId, c.Position, i.InputName;
+'@)
 
-  $buildSetVersions = [System.Collections.Generic.List[object]]::new()
-  foreach ($buildSetGroup in ($buildSetRows | Sort-Object { & $toInt $_.Group[0].BuildSetSortOrder }, { $_.Name })) {
-    $ruleSetGroups = @(
-      $buildSetGroup.Group |
-        Where-Object { -not [string]::IsNullOrWhiteSpace($_.RuleSetVersionPhiloteId) } |
-        Group-Object RuleSetVersionPhiloteId
-    )
-    $ruleSetVersions = [System.Collections.Generic.List[object]]::new()
-    foreach ($ruleSetGroup in ($ruleSetGroups | Sort-Object { & $toInt $_.Group[0].RuleSetMembershipSortOrder }, { $_.Name })) {
-      $ruleVersionRows = @($ruleSetGroup.Group | Where-Object { -not [string]::IsNullOrWhiteSpace($_.RuleVersionPhiloteId) })
-      $ruleVersions = [System.Collections.Generic.List[object]]::new()
-      foreach ($ruleVersionRow in ($ruleVersionRows | Sort-Object { & $toInt $_.RuleVersionMembershipSortOrder })) {
-        $ruleVersions.Add([PSCustomObject]@{
-            RuleVersionPhiloteId = [guid]$ruleVersionRow.RuleVersionPhiloteId
-            SortOrder           = & $toInt $ruleVersionRow.RuleVersionMembershipSortOrder
-            RuleVersionSortOrder = & $toInt $ruleVersionRow.RuleVersionSortOrder
+      $bindingRows = @(Invoke-DatabaseSqlQuery -SqlConnection $resolvedConnection -Parameters $parameters -CommandText @'
+/* Task13.80:BindingsAsOfSnapshot */
+SELECT riv.RuleInstantiationVersionPhiloteId, b.InputName, b.InputValue,
+       b.EffectiveFrom, b.EffectiveTo
+FROM ATAPUtilities.InstantiationVersionRuleInstantiationVersion AS m
+INNER JOIN ATAPUtilities.RuleInstantiationVersion AS riv
+  ON riv.RuleInstantiationVersionPhiloteId = m.RuleInstantiationVersionPhiloteId
+INNER JOIN ATAPUtilities.RuleInstantiationBinding AS b
+  ON b.InstantiationPhiloteId = riv.RuleInstantiationPhiloteId
+ AND b.EffectiveFrom <= riv.EffectiveFrom
+ AND (b.EffectiveTo IS NULL OR b.EffectiveTo > riv.EffectiveFrom)
+WHERE m.InstantiationVersionPhiloteId = @InstantiationVersionPhiloteId
+ORDER BY riv.RuleInstantiationVersionPhiloteId, b.InputName, b.EffectiveFrom;
+'@)
+
+      $sourceLineRows = @(Invoke-DatabaseSqlQuery -SqlConnection $resolvedConnection -Parameters $parameters -CommandText @'
+/* Task13.80:SourceLines */
+SELECT l.RuleInstantiationVersionPhiloteId, l.Ordinal, l.LineText, l.LineEnding
+FROM ATAPUtilities.RuleInstantiationVersionSourceLine AS l
+INNER JOIN ATAPUtilities.InstantiationVersionRuleInstantiationVersion AS m
+  ON m.RuleInstantiationVersionPhiloteId = l.RuleInstantiationVersionPhiloteId
+WHERE m.InstantiationVersionPhiloteId = @InstantiationVersionPhiloteId
+  AND l.EffectiveTo IS NULL
+ORDER BY l.RuleInstantiationVersionPhiloteId, l.Ordinal;
+'@)
+
+      $artifactRows = @(Invoke-DatabaseSqlQuery -SqlConnection $resolvedConnection -Parameters $parameters -CommandText @'
+/* Task13.80:Artifacts */
+SELECT ManifestationArtifactPhiloteId, ArtifactKind, RelativePath, ContentSha256,
+       RenderPolicy, SortOrder, BuildSetVersionPhiloteId,
+       ProducingRuleInstantiationPhiloteId,
+       ProducingRuleInstantiationVersionPhiloteId
+FROM ATAPUtilities.ManifestationArtifact
+WHERE InstantiationVersionPhiloteId = @InstantiationVersionPhiloteId
+  AND EffectiveTo IS NULL
+ORDER BY SortOrder, RelativePath;
+'@)
+
+      $toInt = { param($value) if ($null -eq $value) { 0 } else { [int]$value } }
+      $ruleVersionIds = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+      foreach ($row in $graphRows) {
+        if (-not [string]::IsNullOrWhiteSpace([string]$row.RuleVersionPhiloteId)) {
+          [void]$ruleVersionIds.Add(([guid]$row.RuleVersionPhiloteId).ToString())
+        }
+      }
+
+      $buildSetVersions = [System.Collections.Generic.List[object]]::new()
+      foreach ($buildSetGroup in ($graphRows | Group-Object BuildSetVersionPhiloteId | Sort-Object { & $toInt $_.Group[0].BuildSetSortOrder }, Name)) {
+        $ruleSetVersions = [System.Collections.Generic.List[object]]::new()
+        foreach ($ruleSetGroup in ($buildSetGroup.Group | Where-Object RuleSetVersionPhiloteId | Group-Object RuleSetVersionPhiloteId | Sort-Object { & $toInt $_.Group[0].RuleSetMembershipSortOrder }, Name)) {
+          $ruleVersions = @($ruleSetGroup.Group | Where-Object RuleVersionPhiloteId | Sort-Object { & $toInt $_.RuleVersionMembershipSortOrder } | ForEach-Object {
+              [PSCustomObject]@{
+                RuleVersionPhiloteId = [guid]$_.RuleVersionPhiloteId
+                RulePhiloteId = [guid]$_.RulePhiloteId
+                SortOrder = & $toInt $_.RuleVersionMembershipSortOrder
+                RuleVersionSortOrder = & $toInt $_.RuleVersionSortOrder
+                ContentSha256 = [string]$_.ContentSha256
+              }
+            })
+          $ruleSetVersions.Add([PSCustomObject]@{
+              RuleSetVersionPhiloteId = [guid]$ruleSetGroup.Name
+              SortOrder = & $toInt $ruleSetGroup.Group[0].RuleSetMembershipSortOrder
+              RuleSetVersionSortOrder = & $toInt $ruleSetGroup.Group[0].RuleSetVersionSortOrder
+              RuleVersions = $ruleVersions
+            })
+        }
+        $buildSetVersions.Add([PSCustomObject]@{
+            BuildSetVersionPhiloteId = [guid]$buildSetGroup.Name
+            SortOrder = & $toInt $buildSetGroup.Group[0].BuildSetSortOrder
+            RuleSetVersions = @($ruleSetVersions)
           })
       }
 
-      $ruleSetVersions.Add([PSCustomObject]@{
-          RuleSetVersionPhiloteId = [guid]$ruleSetGroup.Name
-          SortOrder              = & $toInt $ruleSetGroup.Group[0].RuleSetMembershipSortOrder
-          RuleSetVersionSortOrder = & $toInt $ruleSetGroup.Group[0].RuleSetVersionSortOrder
-          RuleVersions           = @($ruleVersions)
-        })
-    }
+      $snapshots = [System.Collections.Generic.List[object]]::new()
+      foreach ($snapshot in ($snapshotRows | Sort-Object { & $toInt $_.SortOrder })) {
+        $snapshotId = ([guid]$snapshot.RuleInstantiationVersionPhiloteId).ToString()
+        $ruleVersionId = ([guid]$snapshot.RuleVersionPhiloteId).ToString()
+        if (-not $ruleVersionIds.Contains($ruleVersionId)) {
+          throw "RuleInstantiationVersion '$snapshotId' references out-of-graph RuleVersion '$ruleVersionId'."
+        }
 
-    $buildSetVersions.Add([PSCustomObject]@{
-        BuildSetVersionPhiloteId = [guid]$buildSetGroup.Name
-        SortOrder               = & $toInt $buildSetGroup.Group[0].BuildSetSortOrder
-        RuleSetVersions         = @($ruleSetVersions)
-      })
-  }
+        $declarations = @($compositionRows | Where-Object { ([guid]$_.RuleInstantiationVersionPhiloteId).ToString() -eq $snapshotId })
+        $declaredInputs = @($declarations | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_.InputName) } |
+            Group-Object InputName | ForEach-Object {
+              $first = $_.Group[0]
+              [PSCustomObject]@{
+                InputName = [string]$first.InputName
+                TypeName = [string]$first.TypeName
+                DefaultValue = $first.DefaultValue
+                IsRequired = [bool]$first.IsRequired
+              }
+            } | Sort-Object InputName)
+        $bindings = @($bindingRows | Where-Object { ([guid]$_.RuleInstantiationVersionPhiloteId).ToString() -eq $snapshotId })
+        foreach ($duplicate in @($bindings | Group-Object InputName | Where-Object Count -gt 1)) {
+          throw "RuleInstantiationVersion '$snapshotId' has duplicate binding '$($duplicate.Name)'."
+        }
 
-  Write-Output [PSCustomObject]@{
-    InstantiationVersionPhiloteId = $InstantiationVersionPhiloteId
-    BuildSetVersions             = @($buildSetVersions)
-  }
-}
+        $declaredNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+        foreach ($declared in $declaredInputs) { [void]$declaredNames.Add($declared.InputName) }
+        foreach ($binding in $bindings) {
+          if (-not $declaredNames.Contains([string]$binding.InputName)) {
+            throw "RuleInstantiationVersion '$snapshotId' has undeclared binding '$($binding.InputName)'."
+          }
+        }
 
-finally {
-  if (-not $isCallerOwned -and $null -ne $resolvedConnection) {
-    try {
-      $resolvedConnection.Close()
+        $resolvedBindings = [System.Collections.Generic.List[object]]::new()
+        foreach ($declared in $declaredInputs) {
+          $binding = @($bindings | Where-Object { $_.InputName -ceq $declared.InputName })
+          $value = if ($binding.Count -eq 1) { $binding[0].InputValue } else { $declared.DefaultValue }
+          if ([bool]$declared.IsRequired -and $null -eq $value) {
+            throw "RuleInstantiationVersion '$snapshotId' is missing required binding '$($declared.InputName)'."
+          }
+          $resolvedBindings.Add([PSCustomObject]@{
+              InputName = $declared.InputName
+              InputValue = $value
+              TypeName = $declared.TypeName
+              UsedDefault = ($binding.Count -eq 0)
+            })
+        }
+
+        $lines = @($sourceLineRows | Where-Object { ([guid]$_.RuleInstantiationVersionPhiloteId).ToString() -eq $snapshotId } | Sort-Object { & $toInt $_.Ordinal })
+        for ($index = 0; $index -lt $lines.Count; $index++) {
+          if ((& $toInt $lines[$index].Ordinal) -ne ($index + 1)) {
+            throw "RuleInstantiationVersion '$snapshotId' has non-contiguous or duplicate source-line ordinals."
+          }
+        }
+
+        $snapshots.Add([PSCustomObject]@{
+            RuleInstantiationVersionPhiloteId = [guid]$snapshot.RuleInstantiationVersionPhiloteId
+            RuleInstantiationPhiloteId = [guid]$snapshot.RuleInstantiationPhiloteId
+            RuleVersionPhiloteId = [guid]$snapshot.RuleVersionPhiloteId
+            RulePhiloteId = [guid]$snapshot.RulePhiloteId
+            VersionNumber = & $toInt $snapshot.VersionNumber
+            VersionLabel = [string]$snapshot.VersionLabel
+            SortOrder = & $toInt $snapshot.SortOrder
+            EffectiveFrom = $snapshot.EffectiveFrom
+            DeclaredInputs = $declaredInputs
+            Bindings = @($resolvedBindings)
+            SourceLines = @($lines | ForEach-Object {
+                [PSCustomObject]@{ Ordinal = & $toInt $_.Ordinal; LineText = [string]$_.LineText; LineEnding = [string]$_.LineEnding }
+              })
+          })
+      }
+
+      [PSCustomObject]@{
+        InstantiationVersionPhiloteId = $InstantiationVersionPhiloteId
+        InstantiationPhiloteId = [guid]$graphRows[0].InstantiationPhiloteId
+        VersionNumber = & $toInt $graphRows[0].InstantiationVersionNumber
+        VersionLabel = [string]$graphRows[0].InstantiationVersionLabel
+        BuildSetVersions = @($buildSetVersions)
+        RuleInstantiations = @($snapshots)
+        ManifestationArtifacts = @($artifactRows)
+      }
     } catch {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Ignoring close failure on non-caller-owned SQL connection.' -Tag 'DatabaseConnection'
-    }
-    try {
-      $resolvedConnection.Dispose()
-    } catch {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Ignoring dispose failure on non-caller-owned SQL connection.' -Tag 'DatabaseConnection'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $_.Exception.Message -Tag 'Error'
+      throw
+    } finally {
+      if (-not $isCallerOwned -and $null -ne $resolvedConnection) {
+        try { $resolvedConnection.Close() } catch { }
+        try { $resolvedConnection.Dispose() } catch { }
+      }
     }
   }
 
-  Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Exiting $fn" -Tag 'Trace'
+  end {
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Exiting $fn" -Tag 'Trace'
+  }
 }

@@ -52,6 +52,7 @@ ToDo: Insert diagram of CI/CD process
   WinRM/`PSModulePath`, credential-backed S4U registration, and version 0.1.1 static-
   payload packaging limitations.
 - [ATAPUtilities Instantiation Tables](./ATAPUtilities-Instantiation-Tables.md)
+- [Task 13.80 — Instantiation Query, Ingestion, and Execution](./Task-13.80-Instantiation-Execution.md)
   defines the Sprint 0012 inventory/version/manifestation schema used to model
   organization, computers, repositories, source modules, and rendered artifacts
   for ATAPUtilities instantiations; Tasks 12.26.b-e added the read-only

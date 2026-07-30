@@ -503,6 +503,9 @@ values and renders deterministic output text.
 _Describes how Ace Commander will work (not how to build software in general)._
 
 - [Task 13.79 — Corrected ATAP.org InstantiationVersion 1](Task-13.79-Instantiation-V1.md)
+- [Task 13.80 — Instantiation Query, Ingestion, and Execution](Task-13.80-Instantiation-Execution.md)
+  — immutable snapshot loading, read-only version proposals, safe exact-byte
+  manifestation, provenance, and database-to-temporary-root evidence.
   — Approved immutable ordered-source-line model, version-1 seed graph,
   exact-byte reconstruction contract, and rehearsal evidence.
 

@@ -2,96 +2,165 @@
 
 BeforeAll {
   $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-  $publicDir = Join-Path $moduleRoot 'public'
-
-  . (Join-Path $publicDir 'Get-InstantiationVersionRuleGraph.ps1')
+  . (Join-Path $moduleRoot 'public\Get-InstantiationVersionRuleGraph.ps1')
 
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
   }
-
-  $script:testConnection = [pscustomobject]@{
-    Closed  = $false
-    Disposed = $false
+  if (-not (Get-Command Invoke-DatabaseSqlQuery -ErrorAction SilentlyContinue)) {
+    function global:Invoke-DatabaseSqlQuery {
+      param($SqlConnection, [string]$CommandText, [hashtable]$Parameters)
+      throw 'Test stub must be mocked.'
+    }
   }
+
+  $script:testConnection = [pscustomobject]@{ Closed = $false; Disposed = $false }
   Add-Member -InputObject $script:testConnection -MemberType ScriptMethod -Name Close -Value { $this.Closed = $true }
   Add-Member -InputObject $script:testConnection -MemberType ScriptMethod -Name Dispose -Value { $this.Disposed = $true }
-
   Mock Resolve-DatabaseSqlConnection {
     [pscustomobject]@{ Connection = $script:testConnection; IsCallerOwned = $false }
   }
-}
 
-AfterAll {
-  Remove-Variable -Name testConnection -Scope Script -ErrorAction SilentlyContinue
+  $script:iv = [guid]'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+  $script:instantiation = [guid]'aaaaaaaa-0000-0000-0000-000000000001'
+  $script:bsv = [guid]'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
+  $script:rsv = [guid]'cccccccc-cccc-cccc-cccc-cccccccccccc'
+  $script:rule = [guid]'dddddddd-dddd-dddd-dddd-dddddddddddd'
+  $script:rv = [guid]'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'
+  $script:ri = [guid]'ffffffff-ffff-ffff-ffff-ffffffffffff'
+  $script:riv = [guid]'11111111-2222-3333-4444-555555555555'
+  $script:primitive = [guid]'99999999-8888-7777-6666-555555555555'
 }
 
 Describe 'Get-InstantiationVersionRuleGraph' -Tag 'Unit' {
-  It 'orders BuildSetVersion, RuleSetVersion, and RuleVersion rows by sort order' {
+  BeforeEach {
+    $script:scenario = 'valid'
+    $script:bindingQuery = $null
     Mock Invoke-DatabaseSqlQuery {
-      @(
-        [pscustomobject]@{
-          BuildSetVersionPhiloteId      = '11111111-1111-1111-1111-111111111111'
-          BuildSetSortOrder             = '2'
-          RuleSetMembershipSortOrder    = '20'
-          RuleSetVersionPhiloteId       = '33333333-3333-3333-3333-333333333333'
-          RuleSetVersionSortOrder       = '4'
-          RuleVersionMembershipSortOrder = '21'
-          RuleVersionPhiloteId          = '55555555-5555-5555-5555-555555555555'
-          RuleVersionSortOrder          = '1'
+      if ($CommandText -match 'Task13\.80:Graph') {
+        return [pscustomobject]@{
+          InstantiationPhiloteId = $script:instantiation
+          InstantiationVersionNumber = 1
+          InstantiationVersionLabel = 'v1'
+          BuildSetVersionPhiloteId = $script:bsv
+          BuildSetSortOrder = 1
+          RuleSetMembershipSortOrder = 10
+          RuleSetVersionPhiloteId = $script:rsv
+          RuleSetVersionSortOrder = 1
+          RuleVersionMembershipSortOrder = 20
+          RuleVersionPhiloteId = $script:rv
+          RulePhiloteId = $script:rule
+          RuleVersionSortOrder = 1
+          ContentSha256 = ('A' * 64)
         }
-        [pscustomobject]@{
-          BuildSetVersionPhiloteId      = '22222222-2222-2222-2222-222222222222'
-          BuildSetSortOrder             = '1'
-          RuleSetMembershipSortOrder    = '10'
-          RuleSetVersionPhiloteId       = '44444444-4444-4444-4444-444444444444'
-          RuleSetVersionSortOrder       = '3'
-          RuleVersionMembershipSortOrder = '11'
-          RuleVersionPhiloteId          = '66666666-6666-6666-6666-666666666666'
-          RuleVersionSortOrder          = '2'
+      }
+      if ($CommandText -match 'Task13\.80:Snapshots') {
+        $selectedRuleVersion = if ($script:scenario -eq 'out-of-graph') {
+          [guid]'12121212-3434-5656-7878-909090909090'
+        } else {
+          $script:rv
         }
-      )
+        return [pscustomobject]@{
+          SortOrder = 10
+          RuleInstantiationVersionPhiloteId = $script:riv
+          RuleInstantiationPhiloteId = $script:ri
+          RuleVersionPhiloteId = $selectedRuleVersion
+          RulePhiloteId = $script:rule
+          VersionNumber = 1
+          VersionLabel = 'v1'
+          EffectiveFrom = [datetime]'2026-01-01T00:00:00Z'
+        }
+      }
+      if ($CommandText -match 'Task13\.80:Declarations') {
+        return [pscustomobject]@{
+          RuleInstantiationVersionPhiloteId = $script:riv
+          Position = 1
+          PrimitivePhiloteId = $script:primitive
+          IsOptional = $false
+          Cardinality = 'One'
+          InputName = 'Value'
+          TypeName = 'string'
+          DefaultValue = $null
+          IsRequired = $true
+        }
+      }
+      if ($CommandText -match 'Task13\.80:BindingsAsOfSnapshot') {
+        $script:bindingQuery = $CommandText
+        if ($script:scenario -eq 'missing') { return @() }
+        $rows = @(
+          [pscustomobject]@{
+            RuleInstantiationVersionPhiloteId = $script:riv
+            InputName = 'Value'
+            InputValue = 'snapshot-value'
+            EffectiveFrom = [datetime]'2025-12-01T00:00:00Z'
+            EffectiveTo = [datetime]'2026-02-01T00:00:00Z'
+          }
+        )
+        if ($script:scenario -eq 'duplicate') { $rows += $rows[0].PSObject.Copy() }
+        if ($script:scenario -eq 'undeclared') {
+          $rows += [pscustomobject]@{
+            RuleInstantiationVersionPhiloteId = $script:riv
+            InputName = 'Typo'
+            InputValue = 'bad'
+            EffectiveFrom = [datetime]'2025-12-01T00:00:00Z'
+            EffectiveTo = $null
+          }
+        }
+        return $rows
+      }
+      if ($CommandText -match 'Task13\.80:SourceLines') { return @() }
+      if ($CommandText -match 'Task13\.80:Artifacts') { return @() }
+      throw "Unexpected query: $CommandText"
     }
-
-    $result = Get-InstantiationVersionRuleGraph -InstantiationVersionPhiloteId ([guid]'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
-
-    $result.BuildSetVersions[0].BuildSetVersionPhiloteId | Should -Be ([guid]'22222222-2222-2222-2222-222222222222')
-    $result.BuildSetVersions[1].BuildSetVersionPhiloteId | Should -Be ([guid]'11111111-1111-1111-1111-111111111111')
-
-    $ruleSet = $result.BuildSetVersions[0].RuleSetVersions[0]
-    $ruleSet.RuleSetVersionPhiloteId | Should -Be ([guid]'44444444-4444-4444-4444-444444444444')
-    $ruleSet.RuleVersions[0].RuleVersionPhiloteId | Should -Be ([guid]'66666666-6666-6666-6666-666666666666')
-    $ruleSet.RuleVersions[0].SortOrder | Should -Be 11
   }
 
-  It 'returns only the corrected three-level InstantiationVersion graph (BuildSetVersion/RuleSetVersion/RuleVersion)' {
-    Mock Invoke-DatabaseSqlQuery {
-      @(
-        [pscustomobject]@{
-          BuildSetVersionPhiloteId      = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
-          BuildSetSortOrder             = '1'
-          RuleSetMembershipSortOrder    = '10'
-          RuleSetVersionPhiloteId       = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
-          RuleSetVersionSortOrder       = '20'
-          RuleVersionMembershipSortOrder = '30'
-          RuleVersionPhiloteId          = 'cccccccc-cccc-cccc-cccc-cccccccccccc'
-          RuleVersionSortOrder          = '40'
-        }
-      )
-    }
+  It 'returns the corrected ordered graph without a Build layer' {
+    $result = Get-InstantiationVersionRuleGraph -InstantiationVersionPhiloteId $script:iv
 
-    $result = Get-InstantiationVersionRuleGraph -InstantiationVersionPhiloteId ([guid]'01234567-89ab-cdef-0123-456789abcdef')
-
-    $result.PSObject.Properties.Name -contains 'BuildVersions' | Should -BeFalse
+    $result.PSObject.Properties.Name | Should -Not -Contain 'BuildVersions'
     $result.BuildSetVersions | Should -HaveCount 1
-    $result.BuildSetVersions[0].RuleSetVersions | Should -HaveCount 1
-    $result.BuildSetVersions[0].RuleSetVersions[0].RuleVersions | Should -HaveCount 1
+    $result.BuildSetVersions[0].RuleSetVersions[0].RuleVersions[0].RuleVersionPhiloteId | Should -Be $script:rv
+    $result.RuleInstantiations[0].Bindings[0].InputValue | Should -Be 'snapshot-value'
   }
 
-  It 'throws if no graph rows are found for the InstantiationVersion' {
-    Mock Invoke-DatabaseSqlQuery { @() }
+  It 'fails when a required input is missing' {
+    $script:scenario = 'missing'
+    { Get-InstantiationVersionRuleGraph -InstantiationVersionPhiloteId $script:iv } |
+      Should -Throw -ExpectedMessage '*missing required binding*Value*'
+  }
 
-    { Get-InstantiationVersionRuleGraph -InstantiationVersionPhiloteId ([guid]'aaaaaaaa-1111-2222-3333-444444444444') } |
+  It 'fails when a binding is duplicated' {
+    $script:scenario = 'duplicate'
+    { Get-InstantiationVersionRuleGraph -InstantiationVersionPhiloteId $script:iv } |
+      Should -Throw -ExpectedMessage '*duplicate binding*Value*'
+  }
+
+  It 'fails when a binding is undeclared' {
+    $script:scenario = 'undeclared'
+    { Get-InstantiationVersionRuleGraph -InstantiationVersionPhiloteId $script:iv } |
+      Should -Throw -ExpectedMessage '*undeclared binding*Typo*'
+  }
+
+  It 'fails when a snapshot RuleVersion is outside the selected graph' {
+    $script:scenario = 'out-of-graph'
+    { Get-InstantiationVersionRuleGraph -InstantiationVersionPhiloteId $script:iv } |
+      Should -Throw -ExpectedMessage '*out-of-graph RuleVersion*'
+  }
+
+  It 'resolves bindings at the snapshot timestamp so a later value cannot mutate a prior version' {
+    $result = Get-InstantiationVersionRuleGraph -InstantiationVersionPhiloteId $script:iv
+
+    $result.RuleInstantiations[0].Bindings[0].InputValue | Should -Be 'snapshot-value'
+    $script:bindingQuery | Should -Match 'b\.EffectiveFrom <= riv\.EffectiveFrom'
+    $script:bindingQuery | Should -Match 'b\.EffectiveTo IS NULL OR b\.EffectiveTo > riv\.EffectiveFrom'
+  }
+
+  It 'throws if no graph rows are found' {
+    Mock Invoke-DatabaseSqlQuery {
+      if ($CommandText -match 'Task13\.80:Graph') { return @() }
+      throw 'No later query should run.'
+    }
+    { Get-InstantiationVersionRuleGraph -InstantiationVersionPhiloteId $script:iv } |
       Should -Throw -ExpectedMessage '*No BuildSetVersion-to-RuleSetVersion-to-RuleVersion graph rows found*'
   }
 }

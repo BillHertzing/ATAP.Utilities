@@ -20,8 +20,10 @@ This package provides PowerShell goodies make it easier when developing Powershe
 independently buildable BuildTooling child modules. It retains the stable legacy
 command surface while importing the children declared in `Build/ModuleFamily.psd1`.
 New consumers may import a child module when they require only that child; existing
-installed parent-only consumers remain supported until the Task 13.73 consumer review
-and HITL parent-mode decision are complete.
+installed parent-only consumers remain supported. The final Task 13.73 refresh found
+34 parent-only code consumers across the current and stable worktrees, so the accepted
+parent mode is compatibility re-export; exports must not shrink until those consumers
+are migrated and their deprecations are recorded.
 
 The child topology and dependency direction are shown in
 [BuildToolingFamilyArchitecture.puml](Documentation/BuildToolingFamilyArchitecture.puml).
@@ -45,11 +47,10 @@ continues to re-export the nine legacy AiRendering commands. Child-only
 frozen 200-command parent surface. SC-0246's ten SharedVSCode `.ai/tools`
 PowerShell files remain reserved for the future AIAdapters module.
 
-Parent 0.1.53 is the accepted Stable/AllUsers compatibility release for this
-iteration (Stable SHA-256
-`0D89AB810A52041E2B1B244D18C1DDC9B41F0202737447E1FC089BA3940F8956`).
-Parent 0.1.52 remains the pre-PlanningSession rollback; 0.1.50 and 0.1.51 are
-burned.
+Parent 0.1.72 is the accepted final Sprint 0013 compatibility release. The
+complete 12-member family completed the dependency-ordered five-tier cycle and
+is installed AllUsers on UTAT022 and UTAT01. Fresh imports on both hosts expose
+the same 201 parent commands and five legacy aliases.
 
 Full-repository C# MSBuild property audits live outside this module at
 `tests\RepoHealth` and run through `Build\Invoke-RepoHealthGate.ps1`. They are

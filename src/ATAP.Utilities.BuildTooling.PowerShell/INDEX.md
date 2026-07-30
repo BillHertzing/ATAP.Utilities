@@ -20,8 +20,10 @@ by `ATAP.Utilities.BuildTooling.DatabasePackaging.PowerShell`; the parent retain
 the frozen legacy command names through compatibility proxies.
 Three non-exported parent dispatch shims temporarily preserve private helper calls
 from remaining Sprint and scope-creep commands until those consumers move.
-The accepted compatibility deployment is parent 0.1.52 with GitWorktree 0.1.2;
-parent 0.1.49 is the rollback and parent 0.1.50/0.1.51 are burned.
+The accepted final Sprint 0013 deployment is parent 0.1.72 with the complete
+11-child family. All 12 exact versions are Stable and installed AllUsers on
+UTAT022 and UTAT01. The refreshed code-consumer map retains compatibility
+re-export mode because 34 parent-only consumers remain.
 - `Resources/`, `Documentation/`, and `Obsolete/` hold support files, docs, and retained historical scripts.
 - `Obsolete/private/` retains retired internal helpers (e.g. the per-sprint ProGet feed and per-sprint database/BuildMaster scaffolding) for provenance only; no current cmdlet dot-sources them.
 - Sprint planning boards now flow from authoritative `TASKS.md` to generated `TASKS.html` via `Convert-TasksMdToSprintBoard`.

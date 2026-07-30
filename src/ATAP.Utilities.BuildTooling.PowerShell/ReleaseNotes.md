@@ -1,5 +1,15 @@
 # Production Release Notes in Chronological order
 
+# 0.1.72
+
+- Completes the Sprint 0013 dependency-ordered release of all eleven extracted
+  child modules plus the compatibility parent through Experimental,
+  Development, Integration, QA, and Stable.
+- Retains the measured 201-command and five-alias compatibility surface because
+  the refreshed cross-repository map still contains 34 parent-only consumers.
+- Is installed AllUsers and fresh-import validated on UTAT022 and UTAT01.
+
+
 # 0.1.71
 
 - Adds the extracted SprintLifecycle child to the canonical family dependency

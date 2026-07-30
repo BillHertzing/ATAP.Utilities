@@ -511,6 +511,9 @@ _Describes how Ace Commander will work (not how to build software in general)._
 - [Task 13.82 — Instantiation Package Rehearsal](Task-13.82-Instantiation-Package-Rehearsal.md)
   — immutable 0.1.1 bundle identity, exact fresh/current Flyway rehearsals,
   adversarial review, and operator hash approval.
+- [Task 13.83 — Instantiation Deployment and Manifestation](Task-13.83-Instantiation-Deployment-and-Manifestation.md)
+  — approved ExpWhertzing migration, deployed-state verification, separately
+  approved exact five-entry filesystem manifestation, and provenance evidence.
 
 - [Architecture Overview](architecture-overview.md) — 2026-03-15 automated
   survey of the ATAP.Utilities repository in its role as the computational

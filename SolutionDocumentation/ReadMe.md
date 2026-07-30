@@ -62,6 +62,9 @@ ToDo: Insert diagram of CI/CD process
 - [Task 13.82 — Instantiation Package Rehearsal](./Task-13.82-Instantiation-Package-Rehearsal.md)
   records the immutable 0.1.1 package identity, fresh/current Flyway
   rehearsals, adversarial review, and approved deployment hash.
+- [Task 13.83 — Instantiation Deployment and Manifestation](./Task-13.83-Instantiation-Deployment-and-Manifestation.md)
+  records the separately approved live migration and exact target-root
+  manifestation, deployed-state checks, and complete provenance proof.
 - [Rules Compendium.AgentText](./Rules%20Compendium.AgentText.md) defines the
   AgentText rule kind and embeds the grammar for AI agent and instruction text.
 - `src/ATAP.Utilities.RulesManagement.PowerShell/public/Import-AgentTextFromFiles.ps1`

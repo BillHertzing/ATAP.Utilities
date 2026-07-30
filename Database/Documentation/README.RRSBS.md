@@ -240,14 +240,15 @@ ORDER BY plk.Name;
 
 ## Future Enhancements
 
-The current seed data only populates base tables. Future migrations may add:
+The versioned RRSBS surface now includes RuleVersion, RuleSetVersion,
+BuildSetVersion, RuleInstantiationVersion, ordered snapshot memberships,
+effective dating, manifestation provenance, and immutable ordered source
+lines. Task 13.79 seeds the first exact-byte graph for
+`Write-ArrayIndented.ps1`; see
+[Task-13.79-Instantiation-V1.md](../../SolutionDocumentation/Task-13.79-Instantiation-V1.md).
 
-1. **RulePrimitiveInput**: Parameter definitions for parameterized primitives
-2. **RulePrimitiveComposition**: BNF derivation trees showing how rules compose primitives
-3. **RuleSet**: Logical groupings of related rules (e.g., "StronglyTypedId Project Files")
-4. **RuleSetMember**: Mappings between RuleSets and Rules
-5. **RuleInstantiation**: Historical records of where/when rules were applied
-6. **RuleInstantiationBinding**: Captured parameter values from instantiations
+Remaining enhancements should build on these versioned tables rather than
+introducing a `Build` layer or mutating durable identities.
 
 ## Related Documentation
 
@@ -295,7 +296,5 @@ For breaking changes (name changes, language changes):
 
 ---
 
-**Last Updated**: 2025-01-XX
-**Schema Version**: V00.01.000020
-**Total Primitives**: 51 (8 MSBuild, 18 CSharp, 23 SQL, 2 PowerShell)
-**Total Rules**: 24 (14 MSBuild, 7 CSharp, 3 SQL, 0 PowerShell)
+**Last Updated**: 2026-07-30
+**Schema Source Version**: V00.02.000110

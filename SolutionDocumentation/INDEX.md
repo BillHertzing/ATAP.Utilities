@@ -502,6 +502,10 @@ values and renders deterministic output text.
 
 _Describes how Ace Commander will work (not how to build software in general)._
 
+- [Task 13.79 — Corrected ATAP.org InstantiationVersion 1](Task-13.79-Instantiation-V1.md)
+  — Approved immutable ordered-source-line model, version-1 seed graph,
+  exact-byte reconstruction contract, and rehearsal evidence.
+
 - [Architecture Overview](architecture-overview.md) — 2026-03-15 automated
   survey of the ATAP.Utilities repository in its role as the computational
   and building core of Ace Commander. Inventories Core Utility Libraries

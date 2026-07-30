@@ -128,6 +128,26 @@ The first migration seeds `ATAP Utilities Sprint 0012` with two versions:
   records the planned casing/layout correction for
   `ATAP.Utilities.Security.PowerShell`.
 
+### Corrected ATAP.org seed (Sprint 0013 Task 13.79)
+
+`V00.02.000110__Seed_ATAPorg_Instantiation_V1.sql` adds the first corrected
+graph after the Sprint 0012 sample versions were retired. The durable
+Instantiation is `ATAP.org Source Manifestation`; version 1 selects one
+BuildSetVersion containing the ordered target-path and PowerShell-file
+RuleSetVersions. It snapshots eight RuleInstantiationVersions and five planned
+artifacts.
+
+Exact source content is stored in
+`RuleInstantiationVersionSourceLine`, keyed to the immutable
+RuleInstantiationVersion with a unique, contiguous one-based ordinal. Line
+text can be blank or duplicated. The exact terminator is stored per line,
+while encoding, BOM policy, and final-newline state remain declared scalar
+bindings. The table is effective-dated and rejects UPDATE and DELETE; revised
+content requires a new RuleInstantiationVersion.
+
+The design and rehearsal evidence are summarized in
+[Task-13.79-Instantiation-V1.md](Task-13.79-Instantiation-V1.md).
+
 ## Follow-On Work
 
 Tasks 12.26.b through 12.26.e implemented the read-only scanner, renderer, and

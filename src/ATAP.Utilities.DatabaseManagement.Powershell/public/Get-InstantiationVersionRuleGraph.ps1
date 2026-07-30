@@ -124,13 +124,16 @@ ORDER BY m.SortOrder, riv.RuleInstantiationVersionPhiloteId;
       $compositionRows = @(Invoke-DatabaseSqlQuery -SqlConnection $resolvedConnection -Parameters $parameters -CommandText @'
 /* Task13.80:Declarations */
 SELECT DISTINCT riv.RuleInstantiationVersionPhiloteId, c.Position,
-       c.PrimitivePhiloteId, c.IsOptional, c.Cardinality,
+       c.PrimitivePhiloteId, p.[Name] AS PrimitiveName,
+       c.IsOptional, c.Cardinality,
        i.InputName, i.TypeName, i.DefaultValue, i.IsRequired
 FROM ATAPUtilities.InstantiationVersionRuleInstantiationVersion AS m
 INNER JOIN ATAPUtilities.RuleInstantiationVersion AS riv
   ON riv.RuleInstantiationVersionPhiloteId = m.RuleInstantiationVersionPhiloteId
 INNER JOIN ATAPUtilities.RuleVersionPrimitiveComposition AS c
   ON c.RuleVersionPhiloteId = riv.RuleVersionPhiloteId
+INNER JOIN ATAPUtilities.RulePrimitive AS p
+  ON p.PhiloteId = c.PrimitivePhiloteId
 LEFT JOIN ATAPUtilities.RulePrimitiveInput AS i
   ON i.PhiloteId = c.PrimitivePhiloteId
 WHERE m.InstantiationVersionPhiloteId = @InstantiationVersionPhiloteId
@@ -223,19 +226,21 @@ ORDER BY SortOrder, RelativePath;
             Group-Object InputName | ForEach-Object {
               $first = $_.Group[0]
               [PSCustomObject]@{
+                PrimitiveName = [string]$first.PrimitiveName
                 InputName = [string]$first.InputName
                 TypeName = [string]$first.TypeName
                 DefaultValue = $first.DefaultValue
                 IsRequired = [bool]$first.IsRequired
               }
             } | Sort-Object InputName)
+        $bindingInputs = @($declaredInputs | Where-Object PrimitiveName -CNE 'SourceLine')
         $bindings = @($bindingRows | Where-Object { ([guid]$_.RuleInstantiationVersionPhiloteId).ToString() -eq $snapshotId })
         foreach ($duplicate in @($bindings | Group-Object InputName | Where-Object Count -gt 1)) {
           throw "RuleInstantiationVersion '$snapshotId' has duplicate binding '$($duplicate.Name)'."
         }
 
         $declaredNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
-        foreach ($declared in $declaredInputs) { [void]$declaredNames.Add($declared.InputName) }
+        foreach ($declared in $bindingInputs) { [void]$declaredNames.Add($declared.InputName) }
         foreach ($binding in $bindings) {
           if (-not $declaredNames.Contains([string]$binding.InputName)) {
             throw "RuleInstantiationVersion '$snapshotId' has undeclared binding '$($binding.InputName)'."
@@ -243,7 +248,7 @@ ORDER BY SortOrder, RelativePath;
         }
 
         $resolvedBindings = [System.Collections.Generic.List[object]]::new()
-        foreach ($declared in $declaredInputs) {
+        foreach ($declared in $bindingInputs) {
           $binding = @($bindings | Where-Object { $_.InputName -ceq $declared.InputName })
           $value = if ($binding.Count -eq 1) { $binding[0].InputValue } else { $declared.DefaultValue }
           if ([bool]$declared.IsRequired -and $null -eq $value) {
@@ -261,6 +266,20 @@ ORDER BY SortOrder, RelativePath;
         for ($index = 0; $index -lt $lines.Count; $index++) {
           if ((& $toInt $lines[$index].Ordinal) -ne ($index + 1)) {
             throw "RuleInstantiationVersion '$snapshotId' has non-contiguous or duplicate source-line ordinals."
+          }
+        }
+        foreach ($sourceLineDeclaration in @($declarations | Where-Object PrimitiveName -CEQ 'SourceLine' |
+            Group-Object PrimitivePhiloteId | ForEach-Object { $_.Group[0] })) {
+          $cardinality = [string]$sourceLineDeclaration.Cardinality
+          $validCount = switch ($cardinality) {
+            'One' { $lines.Count -eq 1 }
+            'ZeroOrOne' { $lines.Count -le 1 }
+            'OneOrMore' { $lines.Count -ge 1 }
+            'ZeroOrMore' { $true }
+            default { throw "RuleInstantiationVersion '$snapshotId' has unsupported SourceLine cardinality '$cardinality'." }
+          }
+          if (-not $validCount) {
+            throw "RuleInstantiationVersion '$snapshotId' has $($lines.Count) source lines, violating SourceLine cardinality '$cardinality'."
           }
         }
 

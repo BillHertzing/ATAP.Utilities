@@ -149,6 +149,25 @@ Describe 'Export-InstantiationManifestation corrected graph' -Tag 'Unit' {
     $bytes[-1] | Should -Be 0x0A
   }
 
+  It 'round-trips the Markdown <Construct> source form exactly' -ForEach @(
+    @{ Construct = 'ATX heading'; Text = '## Parameters' }
+    @{ Construct = 'paragraph'; Text = 'Formats every element in source order.' }
+    @{ Construct = 'blank line'; Text = '' }
+    @{ Construct = 'unordered list'; Text = '- First item' }
+    @{ Construct = 'fenced code'; Text = '```powershell' }
+    @{ Construct = 'link'; Text = '[Source](../public/Write-ArrayIndented.ps1)' }
+    @{ Construct = 'pipe table'; Text = '| Name | Type | Default |' }
+  ) {
+    $lines = @([pscustomobject]@{ Ordinal = 1; LineText = $Text; LineEnding = 'CRLF' })
+    $graph = New-TestInstantiationGraph -RelativePath 'ATAP.Utilities\src\Sample.md' -Lines $lines -FinalNewline true
+
+    Export-InstantiationManifestation -InstantiationGraph $graph -TargetRoot $script:targetRoot | Out-Null
+
+    $actual = [Text.UTF8Encoding]::new($false).GetString(
+      [IO.File]::ReadAllBytes((Join-Path $script:targetRoot 'ATAP.Utilities\src\Sample.md')))
+    $actual | Should -BeExactly "$Text`r`n"
+  }
+
   It 'fails closed on an exact-byte hash mismatch' {
     $graph = New-TestInstantiationGraph -ExpectedHash ('0' * 64)
     { Export-InstantiationManifestation -InstantiationGraph $graph -TargetRoot $script:targetRoot -DryRun } |

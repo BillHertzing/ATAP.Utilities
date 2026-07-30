@@ -148,6 +148,31 @@ content requires a new RuleInstantiationVersion.
 The design and rehearsal evidence are summarized in
 [Task-13.79-Instantiation-V1.md](Task-13.79-Instantiation-V1.md).
 
+### ATAP.org InstantiationVersion 2 Markdown slice (Sprint 0013 Task 13.85)
+
+`V00.02.000130__Add_Markdown_Rule_Kind.sql` adds Markdown as
+`PrimitiveLanguageKindId = 10`; ID 9 remains reserved for the future
+ContentSummary slice. `V00.02.000140__Seed_ATAPorg_Instantiation_V2_Markdown.sql`
+adds an immutable successor graph with fifteen snapshot members and three
+planned artifacts: the Documentation directory, `INDEX.md`, and
+`Write-ArrayIndented.md`. Version 1 membership, bindings, source lines, and
+artifacts remain unchanged.
+
+The initial Markdown RuleVersions use immutable
+`RuleInstantiationVersionSourceLine` rows to preserve exact UTF-8/no-BOM,
+CRLF, final-newline, blank-line, and duplicate-line behavior. The canonical
+verification artifact is
+`Database/Verify/PromotionUnit_00.02/Verify_ATAPorg_Instantiation_V2_Markdown.sql`.
+
+Package `ATAPUtilities.Database` 0.1.2
+(`99381F97238E4011B5C68EBA8800CB66B398DBFF25B9631B5CF9FBE2EE46E518`)
+was rehearsed from an empty database and a copy of the current state, then
+deployed once through the repository Flyway wrapper to
+`UTAT022\EXPWHERTZING.ATAPUtilities`. A separately approved manifestation wrote
+the three Version 2 artifacts to `C:\Dropbox\ATAP.org\_generated`, verified the
+two exact content hashes and complete producing-key provenance, and left the
+Version 1 PowerShell file byte-identical.
+
 ## Follow-On Work
 
 Tasks 12.26.b through 12.26.e implemented the read-only scanner, renderer, and

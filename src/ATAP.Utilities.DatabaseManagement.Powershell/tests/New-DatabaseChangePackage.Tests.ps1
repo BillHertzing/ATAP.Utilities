@@ -112,6 +112,21 @@ Describe 'New-DatabaseChangePackage — ATAPUtilities canonical Flyway layout' {
     $manifest.files.path | Should -Contain 'db/migrations/V00.01.000010__core.sql'
     $manifest.files.path | Should -Contain 'db/seeds/Canonical.csv'
   }
+
+  It 'excludes an explicitly deferred migration by exact file name' {
+    $root = Join-Path $TestDrive 'canonical-flyway-exclusion'
+    New-CanonicalFlywayFixture -RepositoryRoot $root
+    $sqlRoot = Join-Path $root 'Database\Flyway\SQL'
+    "PRINT 'future';" | Set-Content (Join-Path $sqlRoot 'V00.01.000020__future.sql')
+
+    $nupkg = New-DatabaseChangePackage -Application 'ATAPUtilities' -RepositoryRoot $root `
+      -ExcludedMigrationFileName 'V00.01.000020__future.sql'
+    $stagingDir = Split-Path -Parent (Split-Path -Parent $nupkg)
+    $manifest = Get-Content (Join-Path $stagingDir 'db-release-unit-manifest.json') -Raw | ConvertFrom-Json
+
+    $manifest.flywayTargetVersion | Should -Be '00.01.000010'
+    $manifest.files.path | Should -Not -Contain 'db/migrations/V00.01.000020__future.sql'
+  }
 }
 
 Describe 'New-DatabaseChangePackage — flywayTargetVersion derivation (Task 9.12 unified scheme)' {

@@ -1,2 +1,6 @@
 - name: ReadMe
   href: ReadMe.md
+- name: Documentation index
+  href: INDEX.md
+- name: Write-ArrayIndented
+  href: Write-ArrayIndented.md

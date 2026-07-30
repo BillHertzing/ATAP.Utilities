@@ -32,6 +32,11 @@ function New-DatabaseChangePackage {
     Optional resolved NuGet package version. BuildMaster supplies this from the
     NBGV build context when version.json contains height tokens.
 
+.PARAMETER ExcludedMigrationFileName
+    Optional exact migration file names to omit from this release unit. This is
+    intended for explicitly deferred, unapplied future-sprint migrations. Each
+    name must identify a file in the canonical migration source folder.
+
 .OUTPUTS
     [string] Absolute path of the produced .nupkg file.
 
@@ -56,7 +61,11 @@ function New-DatabaseChangePackage {
 
     [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
-    [string]$PackageVersion
+    [string]$PackageVersion,
+
+    [Parameter(Mandatory = $false)]
+    [ValidateNotNullOrEmpty()]
+    [string[]]$ExcludedMigrationFileName = @()
   )
 
   begin {
@@ -150,7 +159,10 @@ function New-DatabaseChangePackage {
         -not (Test-Path -LiteralPath $SourceFolder -PathType Container)) { return }
       $destSub = Join-Path $dbFolder $RelSubPath
       New-Item -ItemType Directory -Path $destSub -Force | Out-Null
-      Get-ChildItem -Path $SourceFolder -File | Where-Object { $_.Extension -in $Extensions } | ForEach-Object {
+      Get-ChildItem -Path $SourceFolder -File |
+        Where-Object { $_.Extension -in $Extensions } |
+        Where-Object { $Kind -ne 'migration' -or $_.Name -notin $ExcludedMigrationFileName } |
+        ForEach-Object {
         $dest = Join-Path $destSub $_.Name
         Copy-Item $_.FullName $dest -Force
         $sha256 = (Get-FileHash -Path $dest -Algorithm SHA256).Hash.ToLower()
@@ -162,6 +174,15 @@ function New-DatabaseChangePackage {
           })
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Staged $Kind : $($_.Name) sha256=$sha256" -Tag 'File'
       }
+    }
+
+    foreach ($excludedName in $ExcludedMigrationFileName) {
+      $excludedPath = Join-Path $migrationsFolder $excludedName
+      if (-not (Test-Path -LiteralPath $excludedPath -PathType Leaf)) {
+        throw "Excluded migration '$excludedName' was not found in '$migrationsFolder'."
+      }
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+        -Message "Migration excluded from this release unit by exact name: $excludedName" -Tag 'File'
     }
 
     Copy-DbFiles -SourceFolder $migrationsFolder -RelSubPath 'migrations' -Kind 'migration' -Extensions '.sql'

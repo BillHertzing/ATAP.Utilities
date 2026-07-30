@@ -72,10 +72,51 @@ Describe 'Get-InstantiationVersionRuleGraph' -Tag 'Unit' {
         }
       }
       if ($CommandText -match 'Task13\.80:Declarations') {
+        if ($script:scenario -in @('source-line', 'source-line-missing')) {
+          return @(
+            [pscustomobject]@{
+              RuleInstantiationVersionPhiloteId = $script:riv
+              Position = 1
+              PrimitivePhiloteId = $script:primitive
+              PrimitiveName = 'SourceLine'
+              IsOptional = $false
+              Cardinality = 'OneOrMore'
+              InputName = 'Ordinal'
+              TypeName = 'int'
+              DefaultValue = $null
+              IsRequired = $true
+            },
+            [pscustomobject]@{
+              RuleInstantiationVersionPhiloteId = $script:riv
+              Position = 1
+              PrimitivePhiloteId = $script:primitive
+              PrimitiveName = 'SourceLine'
+              IsOptional = $false
+              Cardinality = 'OneOrMore'
+              InputName = 'Text'
+              TypeName = 'string'
+              DefaultValue = $null
+              IsRequired = $true
+            },
+            [pscustomobject]@{
+              RuleInstantiationVersionPhiloteId = $script:riv
+              Position = 1
+              PrimitivePhiloteId = $script:primitive
+              PrimitiveName = 'SourceLine'
+              IsOptional = $false
+              Cardinality = 'OneOrMore'
+              InputName = 'LineEnding'
+              TypeName = 'string'
+              DefaultValue = 'CRLF'
+              IsRequired = $false
+            }
+          )
+        }
         return [pscustomobject]@{
           RuleInstantiationVersionPhiloteId = $script:riv
           Position = 1
           PrimitivePhiloteId = $script:primitive
+          PrimitiveName = 'ScalarValue'
           IsOptional = $false
           Cardinality = 'One'
           InputName = 'Value'
@@ -86,7 +127,7 @@ Describe 'Get-InstantiationVersionRuleGraph' -Tag 'Unit' {
       }
       if ($CommandText -match 'Task13\.80:BindingsAsOfSnapshot') {
         $script:bindingQuery = $CommandText
-        if ($script:scenario -eq 'missing') { return @() }
+        if ($script:scenario -in @('missing', 'source-line', 'source-line-missing')) { return @() }
         $rows = @(
           [pscustomobject]@{
             RuleInstantiationVersionPhiloteId = $script:riv
@@ -108,7 +149,17 @@ Describe 'Get-InstantiationVersionRuleGraph' -Tag 'Unit' {
         }
         return $rows
       }
-      if ($CommandText -match 'Task13\.80:SourceLines') { return @() }
+      if ($CommandText -match 'Task13\.80:SourceLines') {
+        if ($script:scenario -eq 'source-line') {
+          return [pscustomobject]@{
+            RuleInstantiationVersionPhiloteId = $script:riv
+            Ordinal = 1
+            LineText = '# Documentation'
+            LineEnding = 'CRLF'
+          }
+        }
+        return @()
+      }
       if ($CommandText -match 'Task13\.80:Artifacts') { return @() }
       throw "Unexpected query: $CommandText"
     }
@@ -153,6 +204,24 @@ Describe 'Get-InstantiationVersionRuleGraph' -Tag 'Unit' {
     $result.RuleInstantiations[0].Bindings[0].InputValue | Should -Be 'snapshot-value'
     $script:bindingQuery | Should -Match 'b\.EffectiveFrom <= riv\.EffectiveFrom'
     $script:bindingQuery | Should -Match 'b\.EffectiveTo IS NULL OR b\.EffectiveTo > riv\.EffectiveFrom'
+  }
+
+  It 'resolves required SourceLine inputs from immutable source-line rows rather than scalar bindings' {
+    $script:scenario = 'source-line'
+
+    $result = Get-InstantiationVersionRuleGraph -InstantiationVersionPhiloteId $script:iv
+
+    $result.RuleInstantiations[0].DeclaredInputs | Should -HaveCount 3
+    $result.RuleInstantiations[0].Bindings | Should -HaveCount 0
+    $result.RuleInstantiations[0].SourceLines | Should -HaveCount 1
+    $result.RuleInstantiations[0].SourceLines[0].LineText | Should -Be '# Documentation'
+  }
+
+  It 'fails when SourceLine cardinality requires source rows but none exist' {
+    $script:scenario = 'source-line-missing'
+
+    { Get-InstantiationVersionRuleGraph -InstantiationVersionPhiloteId $script:iv } |
+      Should -Throw -ExpectedMessage '*violating SourceLine cardinality*OneOrMore*'
   }
 
   It 'throws if no graph rows are found' {

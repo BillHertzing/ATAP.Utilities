@@ -1,5 +1,11 @@
 # ReadMe for the ATAP.Utilities.Powershell Concept Documentation
 
+The folder inventory is [INDEX.md](INDEX.md). The generated function reference
+for `Write-ArrayIndented` is
+[Write-ArrayIndented.md](Write-ArrayIndented.md). Sprint 0013 Task 13.85 stores
+and manifests exact-byte immutable versions of both files through ATAP.org
+InstantiationVersion 2.
+
 ## Overview
 
 Profiles define the environment in which a PowerShell process executes. As of

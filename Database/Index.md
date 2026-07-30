@@ -8,6 +8,14 @@ This file lists all subfolders and key documents in the `Database/` folder of th
 
   > **Running Flyway:** use `Database/Flyway/flyway.toml`, whose only migration location is `SQL/`. Never fold forward changes into an already-applied migration. Existing tiers at `00.02.000040` validate with `000060`-`000100` pending until a separately reviewed promotion applies them.
 - [Documentation/](Documentation/Index.md) — PlantUML diagrams and Markdown design documents for the database schema and package promotion pipeline. See [Documentation/Index.md](Documentation/Index.md) for the full contents list.
+- `Flyway/SQL/V00.02.000130__Add_Markdown_Rule_Kind.sql` and
+  `Flyway/SQL/V00.02.000140__Seed_ATAPorg_Instantiation_V2_Markdown.sql` —
+  Task 13.85's forward-only Markdown Kind and immutable InstantiationVersion 2
+  migrations. Migration 000120 is reserved for the future ContentSummary slice
+  and must not be included in the Task 13.85 package.
+- `Verify/PromotionUnit_00.02/Verify_ATAPorg_Instantiation_V2_Markdown.sql` —
+  verifies the Kind, composition, exact source lines and hashes, ordered graph,
+  Version 1 immutability, and three Version 2 manifestation artifacts.
 - [Powershell/](Powershell/) — PowerShell cmdlets for database management operations (rebuild, backup, restore, provisioning). Public functions are in `Powershell/public/`.
 - [Queries/](Queries/) — Ad-hoc and reference SQL query scripts for reporting and diagnostics against the ATAPUtilities schema.
 - [StoredProcedures/](StoredProcedures/) — SQL scripts for stored procedures that are applied to the database after schema migrations.

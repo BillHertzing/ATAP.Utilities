@@ -8,7 +8,7 @@
 | **Grammar** | Embedded below |
 | **Added** | 2026-07-26 |
 | **Sprint task** | 13.85 |
-| **PrimitiveLanguageKindId** | 9 |
+| **PrimitiveLanguageKindId** | 10 |
 
 Markdown models CommonMark/GFM documents as RRSBS data that can be loaded from existing
 source files, stored with stable identity and ordered content, and instantiated back into
@@ -202,6 +202,28 @@ decision in Sprint 0013 Task 13.79.g, and this Kind is deliberately compatible w
 outcome: `source-line` carries its own `Ordinal`, so it works as a standalone ordered
 entity, and its inputs are simple scalars, so they bind cleanly as `RuleInstantiation`
 values.
+
+### Implemented identity and deployment
+
+Sprint 0013 Task 13.85 allocated `PrimitiveLanguageKindId = 10` to Markdown.
+ID 9 remains reserved for the separately planned `ContentSummary` Kind; its
+inadvertently authored migration `V00.02.000120__Add_ContentSummary_Rule_Kind.sql`
+is outside this slice and was not packaged or deployed.
+
+The implemented Markdown Kind contains 14 primitives, 27 declared inputs, and
+the approved two-row `MarkdownDocument` composition: required `AtxHeading` at
+`SequenceKey = 001`, followed by optional repeated `MarkdownBlock` at
+`SequenceKey = 002`. Migrations `V00.02.000130` and `V00.02.000140` deployed
+the Kind and immutable ATAP.org InstantiationVersion 2 to
+`UTAT022\EXPWHERTZING.ATAPUtilities`.
+
+The exact package was `ATAPUtilities.Database` 0.1.2, SHA-256
+`99381F97238E4011B5C68EBA8800CB66B398DBFF25B9631B5CF9FBE2EE46E518`.
+Its live deployment reached Flyway `00.02.000140` and the verifier passed.
+After a separately approved dry run, manifestation wrote only the Documentation
+directory and the two frozen Markdown files beneath
+`C:\Dropbox\ATAP.org\_generated`; both hashes matched this Compendium's corpus
+table and the Version 1 PowerShell artifact remained unchanged.
 
 ### Round-trip rules
 

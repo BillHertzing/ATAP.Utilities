@@ -52,11 +52,16 @@ ToDo: Insert diagram of CI/CD process
   WinRM/`PSModulePath`, credential-backed S4U registration, and version 0.1.1 static-
   payload packaging limitations.
 - [ATAPUtilities Instantiation Tables](./ATAPUtilities-Instantiation-Tables.md)
-- [Task 13.80 — Instantiation Query, Ingestion, and Execution](./Task-13.80-Instantiation-Execution.md)
   defines the Sprint 0012 inventory/version/manifestation schema used to model
   organization, computers, repositories, source modules, and rendered artifacts
   for ATAPUtilities instantiations; Tasks 12.26.b-e added the read-only
   scanner, renderer, and v1/v2 manifestation evidence.
+- [Task 13.80 — Instantiation Query, Ingestion, and Execution](./Task-13.80-Instantiation-Execution.md)
+  records corrected immutable graph loading, ingestion proposals, exact-byte
+  manifestation, provenance, and isolated SQL E2E evidence.
+- [Task 13.82 — Instantiation Package Rehearsal](./Task-13.82-Instantiation-Package-Rehearsal.md)
+  records the immutable 0.1.1 package identity, fresh/current Flyway
+  rehearsals, adversarial review, and approved deployment hash.
 - [Rules Compendium.AgentText](./Rules%20Compendium.AgentText.md) defines the
   AgentText rule kind and embeds the grammar for AI agent and instruction text.
 - `src/ATAP.Utilities.RulesManagement.PowerShell/public/Import-AgentTextFromFiles.ps1`

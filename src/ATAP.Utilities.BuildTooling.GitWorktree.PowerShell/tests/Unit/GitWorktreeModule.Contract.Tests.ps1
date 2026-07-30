@@ -40,7 +40,7 @@ Describe 'GitWorktree child scaffold contract' -Tag 'Unit' {
 
   It 'has stable-release NBGV metadata' {
     $metadata = Get-Content -LiteralPath (Join-Path $script:ModuleRoot 'version.json') -Raw | ConvertFrom-Json
-    $metadata.version | Should -Be '0.1.3'
+    $metadata.version | Should -Be '0.1.4'
     @($metadata.publicReleaseRefSpec) | Should -Contain '.*'
   }
 }

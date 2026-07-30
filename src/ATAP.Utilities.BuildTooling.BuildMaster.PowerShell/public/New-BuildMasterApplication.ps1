@@ -49,7 +49,8 @@ function New-BuildMasterApplication {
   .PARAMETER BuildPageDescription
     Optional text displayed on the build page.
   .PARAMETER ArtifactUsage
-    Artifact storage mode.
+    Artifact storage mode. The default sentinel means the field is omitted so
+    the server applies its supported default; it is never sent to the API.
   .PARAMETER ArtifactAssetDirectory
     Asset directory secure resource name when ArtifactUsage is AssetDirectory.
   .PARAMETER Raft
@@ -209,10 +210,13 @@ function New-BuildMasterApplication {
       )
 
       foreach ($key in $Desired.Keys) {
-        if (-not ($Existing.PSObject.Properties.Name -contains $key)) {
+        $existingProperty = $Existing.PSObject.Properties |
+          Where-Object { $_.Name.Equals($key, [System.StringComparison]::OrdinalIgnoreCase) } |
+          Select-Object -First 1
+        if ($null -eq $existingProperty) {
           return $false
         }
-        $existingValue = $Existing.$key
+        $existingValue = $existingProperty.Value
         $desiredValue = $Desired[$key]
         if ($null -eq $existingValue -and $null -eq $desiredValue) {
           continue
@@ -224,6 +228,27 @@ function New-BuildMasterApplication {
       return $true
     }
 
+    function Get-BuildMasterApplicationApiErrorDetail {
+      param([System.Management.Automation.ErrorRecord]$ErrorRecord)
+
+      $parts = [System.Collections.Generic.List[string]]::new()
+      if ($null -ne $ErrorRecord.Exception.Response) {
+        $statusCode = $ErrorRecord.Exception.Response.StatusCode
+        if ($null -ne $statusCode) {
+          $parts.Add("HTTP $([int]$statusCode) $statusCode") | Out-Null
+        }
+      }
+      if (-not [string]::IsNullOrWhiteSpace($ErrorRecord.ErrorDetails.Message)) {
+        $detail = $ErrorRecord.ErrorDetails.Message
+        if ($detail.Length -gt 2000) { $detail = $detail.Substring(0, 2000) }
+        $parts.Add($detail) | Out-Null
+      }
+      if ($parts.Count -eq 0) {
+        $parts.Add($ErrorRecord.Exception.Message) | Out-Null
+      }
+      return ($parts -join ': ')
+    }
+
     $settings = Resolve-BuildMasterApiSettings -BaseUrl $BuildMasterBaseUrl -AdminApiKeySecretName $BuildMasterAdminApiKeySecretName
     $headers = @{ 'X-ApiKey' = $settings.ApiKey }
     $listUri = '{0}/api/applications/list' -f $settings.BaseUrl
@@ -232,6 +257,13 @@ function New-BuildMasterApplication {
   }
 
   process {
+    if ($ArtifactUsage -eq 'AssetDirectory' -and [string]::IsNullOrWhiteSpace($ArtifactAssetDirectory)) {
+      throw 'ArtifactAssetDirectory is required when ArtifactUsage is AssetDirectory.'
+    }
+    if ($ArtifactUsage -ne 'AssetDirectory' -and -not [string]::IsNullOrWhiteSpace($ArtifactAssetDirectory)) {
+      throw 'ArtifactAssetDirectory is valid only when ArtifactUsage is AssetDirectory.'
+    }
+
     $desired = [ordered]@{
       name                   = $Name
       description            = $Description
@@ -247,10 +279,18 @@ function New-BuildMasterApplication {
       displayScripts         = $DisplayScripts
       displayConfiguration   = $DisplayConfiguration
       displayDatabase        = $DisplayDatabase
-      buildPageDescription   = $BuildPageDescription
-      artifactUsage          = $ArtifactUsage
-      artifactAssetDirectory = $ArtifactAssetDirectory
-      raft                   = if ([string]::IsNullOrWhiteSpace($Raft)) { $null } else { $Raft }
+    }
+    if ($PSBoundParameters.ContainsKey('BuildPageDescription')) {
+      $desired.buildPageDescription = $BuildPageDescription
+    }
+    if ($ArtifactUsage -ne 'Default') {
+      $desired.artifactUsage = $ArtifactUsage
+    }
+    if ($ArtifactUsage -eq 'AssetDirectory') {
+      $desired.artifactAssetDirectory = $ArtifactAssetDirectory
+    }
+    if ($PSBoundParameters.ContainsKey('Raft') -and -not [string]::IsNullOrWhiteSpace($Raft)) {
+      $desired.raft = $Raft
     }
 
     try {
@@ -301,7 +341,8 @@ function New-BuildMasterApplication {
         $response = Invoke-RestMethod -Uri $updateUri -Method Post -Headers $headers -ContentType 'application/json' -Body $body -ErrorAction Stop
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from $updateUri" -Tag 'RestCall'
       } catch {
-        $errorMessage = "Failed to update BuildMaster application '$Name'. Exception: $($_.Exception.Message)"
+        $detail = Get-BuildMasterApplicationApiErrorDetail -ErrorRecord $_
+        $errorMessage = "Failed to update BuildMaster application '$Name'. Validation response: $detail"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
         throw $errorMessage
       } finally {
@@ -337,7 +378,8 @@ function New-BuildMasterApplication {
       $response = Invoke-RestMethod -Uri $createUri -Method Post -Headers $headers -ContentType 'application/json' -Body $body -ErrorAction Stop
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from $createUri" -Tag 'RestCall'
     } catch {
-      $errorMessage = "Failed to create BuildMaster application '$Name'. Exception: $($_.Exception.Message)"
+      $detail = Get-BuildMasterApplicationApiErrorDetail -ErrorRecord $_
+      $errorMessage = "Failed to create BuildMaster application '$Name'. Validation response: $detail"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
       throw $errorMessage
     } finally {

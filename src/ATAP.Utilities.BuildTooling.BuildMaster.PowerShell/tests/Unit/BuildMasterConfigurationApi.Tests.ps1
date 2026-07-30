@@ -89,8 +89,82 @@ Describe 'BuildMaster configuration API functions' -Tag 'Unit' {
     $body.name | Should -Be 'ATAP.Utilities-CSharp'
     $body.description | Should -Be 'ATAP package application.'
     $body.releaseUsage | Should -Be 'Required'
-    $body.raft | Should -Be $null
+    $body.PSObject.Properties.Name | Should -Not -Contain 'artifactUsage'
+    $body.PSObject.Properties.Name | Should -Not -Contain 'artifactAssetDirectory'
+    $body.PSObject.Properties.Name | Should -Not -Contain 'buildPageDescription'
+    $body.PSObject.Properties.Name | Should -Not -Contain 'raft'
     $createCall.Headers['X-ApiKey'] | Should -Be 'unit-test-key'
+  }
+
+  It 'sends only supported artifact values and the paired asset directory' {
+    Mock Invoke-RestMethod -MockWith {
+      param($Uri, $Method, $Headers, $ContentType, $Body)
+      [void]$script:restCalls.Add([PSCustomObject]@{ Uri = $Uri; Method = $Method; Body = $Body })
+      if ($Uri -like '*/api/applications/list') { return @() }
+      if ($Uri -like '*/api/applications/create') { return [PSCustomObject]@{ id = 102; name = 'Assets' } }
+      throw "Unexpected REST call: $Method $Uri"
+    }
+
+    $null = New-BuildMasterApplication -Name 'Assets' -ArtifactUsage AssetDirectory -ArtifactAssetDirectory 'BuildAssets'
+
+    $body = (@($script:restCalls | Where-Object Uri -Like '*/api/applications/create')[0].Body | ConvertFrom-Json)
+    $body.artifactUsage | Should -Be 'AssetDirectory'
+    $body.artifactAssetDirectory | Should -Be 'BuildAssets'
+  }
+
+  It 'rejects an unpaired artifact asset directory before any API call' {
+    Mock Invoke-RestMethod { throw 'API must not be called' }
+    { New-BuildMasterApplication -Name 'Invalid' -ArtifactAssetDirectory 'Orphaned' } |
+      Should -Throw '*valid only when ArtifactUsage is AssetDirectory*'
+    Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly
+  }
+
+  It 'treats a case-variant supported API projection as unchanged' {
+    Mock Invoke-RestMethod -MockWith {
+      param($Uri)
+      if ($Uri -like '*/api/applications/list') {
+        return [PSCustomObject]@{
+          Name = 'Existing'
+          Description = 'Same'
+          GroupName = $null
+          Active = $true
+          SetupTemplate = $null
+          BuildNumberScheme = 'Sequential'
+          ReleaseUsage = 'Required'
+          DefaultReleaseTemplate = $null
+          AllowIssues = $false
+          DisplayIssues = $false
+          DisplayPipelines = $true
+          DisplayScripts = $true
+          DisplayConfiguration = $true
+          DisplayDatabase = $false
+          Id = 103
+        }
+      }
+      throw "Unexpected REST call: $Uri"
+    }
+
+    $result = New-BuildMasterApplication -Name 'Existing' -Description 'Same'
+    $result.Action | Should -Be 'Unchanged'
+    Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly
+  }
+
+  It 'surfaces bounded server validation response details' {
+    Mock Invoke-RestMethod -MockWith {
+      param($Uri)
+      if ($Uri -like '*/api/applications/list') { return @() }
+      $record = [System.Management.Automation.ErrorRecord]::new(
+        [System.InvalidOperationException]::new('Bad request'),
+        'BuildMasterValidation',
+        [System.Management.Automation.ErrorCategory]::InvalidData,
+        $null
+      )
+      $record.ErrorDetails = [System.Management.Automation.ErrorDetails]::new('artifactUsage must be FileSystem, AssetDirectory, or None')
+      throw $record
+    }
+
+    { New-BuildMasterApplication -Name 'Rejected' -ArtifactUsage None } |
+      Should -Throw '*Validation response:*artifactUsage must be*'
   }
 
   It 'sets simple and sensitive BuildMaster application variables idempotently' {

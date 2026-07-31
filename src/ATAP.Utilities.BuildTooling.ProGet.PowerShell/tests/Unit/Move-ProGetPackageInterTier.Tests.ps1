@@ -187,6 +187,31 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit', 'PromotedModuleHostSensitive
     }
   }
 
+  Context 'Idempotent retry after a completed move' {
+    It 'succeeds without posting when source is absent and destination contains the exact package' {
+      Mock Invoke-RestMethod {
+        if ($Method -eq 'Post') {
+          throw 'Promotion POST must not run for an already-completed move.'
+        }
+        if ($Uri -like '*database-development/versions*') {
+          return @()
+        }
+        if ($Uri -like '*database-integration/versions*') {
+          return , [PSCustomObject]@{ name = 'Test.Package'; version = '1.0.0' }
+        }
+      }
+
+      $result = Move-ProGetPackageInterTier `
+        -Name 'Test.Package' -Version '1.0.0' `
+        -FromFeed 'database-development' -ToFeed 'database-integration' `
+        -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
+
+      $result.Promoted | Should -BeTrue
+      $result.Response | Should -Match 'idempotent retry'
+      Assert-MockCalled Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' } -Times 0 -Exactly
+    }
+  }
+
   Context 'No-profile BuildMaster promotion host' {
 
     It 'uses explicit inputs when the global settings variable is absent' {
@@ -322,7 +347,7 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit', 'PromotedModuleHostSensitive
           -Name 'Missing.Package' -Version '1.0.0' `
           -FromFeed 'powershellget-development' -ToFeed 'powershellget-integration' `
           -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
-      } | Should -Throw -ExpectedMessage "*was not found in source feed 'powershellget-development'*"
+      } | Should -Throw -ExpectedMessage "*found in neither source feed 'powershellget-development' nor destination feed 'powershellget-integration'*"
     }
 
     It 'Throws when promotion returns but the destination feed never exposes the package' {

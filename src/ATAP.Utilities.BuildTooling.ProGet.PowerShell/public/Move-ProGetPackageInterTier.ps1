@@ -305,7 +305,31 @@ function Move-ProGetPackageInterTier {
         }
         if ($sourceCheckAvailable) {
             if (@($packageCheck).Count -lt 1) {
-                $errorMessage = "Package '$Name' v$Version was not found in source feed '$FromFeed'; promotion cannot continue."
+                # A stage can fail after ProGet has completed its move but before
+                # database apply/evidence finishes. Treat an exact package already
+                # present in the destination as a successful idempotent retry.
+                $destinationCheckUrl = "$ProGetBaseUrl/api/packages/$ToFeed/versions" +
+                "?name=$([uri]::EscapeDataString($Name))&version=$([uri]::EscapeDataString($Version))"
+                $destinationCheck = $null
+                try {
+                    $destinationCheck = Invoke-RestMethod -Uri $destinationCheckUrl -Headers $headers `
+                        -Method Get -TimeoutSec 15 -ErrorAction Stop
+                } catch {
+                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
+                        -Message 'Could not verify the destination while evaluating an idempotent retry.'
+                }
+                if (@($destinationCheck).Count -gt 0) {
+                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+                        -Message "Package is already in destination feed '$ToFeed'; treating this promotion retry as successful."
+                    return [PSCustomObject]@{
+                        PackageName = $Name; Version = $Version; SourceFeed = $FromFeed
+                        SourceTier = $parsedTier; DestinationFeed = $ToFeed
+                        DestinationTier = if ($ToFeed -match '-(\w+?)(-push)?$') { $matches[1] } else { '(custom)' }
+                        PackageType = $parsedPrefix; Phase2Mode = [bool]$UsePushFeed
+                        Promoted = $true; Response = 'Already present in destination feed (idempotent retry).'
+                    }
+                }
+                $errorMessage = "Package '$Name' v$Version was found in neither source feed '$FromFeed' nor destination feed '$ToFeed'; promotion cannot continue."
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
                 throw $errorMessage
             }

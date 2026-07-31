@@ -676,7 +676,8 @@ function Invoke-DatabasePackageTierApply {
             $snapshot = New-DatabasePreMigrationSnapshot `
               -DBConnectionStringSecretName $ConnectionStringSecretName `
               -Application $applicationName `
-              -Tier $Tier
+              -DatabaseName $applicationName `
+              -RepositoryRoot $SourcePath
             $snapshotPath = if ($null -ne $snapshot) { [string]$snapshot.SnapshotPath } else { $null }
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
               -Message "Pre-migration snapshot taken for '$applicationName' tier '$Tier'."
@@ -929,6 +930,9 @@ function Invoke-DatabasePackageBuildMasterStage {
       'Invoke-DatabasePackageRehearsal' = 'Invoke-DatabasePackageRehearsal.ps1'
       'Expand-DatabaseChangePackage'   = 'Expand-DatabaseChangePackage.ps1'
       'Get-DatabasePackageManifest'    = 'Get-DatabasePackageManifest.ps1'
+      'Resolve-DatabaseSqlConnection'  = 'Resolve-DatabaseSqlConnection.ps1'
+      'Get-FlywaySchemaVersion'        = 'Get-FlywaySchemaVersion.ps1'
+      'New-DatabasePreMigrationSnapshot' = 'New-DatabasePreMigrationSnapshot.ps1'
       'Invoke-FlywayRehearsal'         = 'Invoke-FlywayRehearsal.ps1'
       'Invoke-Flyway'                  = 'Invoke-Flyway.ps1'
     }

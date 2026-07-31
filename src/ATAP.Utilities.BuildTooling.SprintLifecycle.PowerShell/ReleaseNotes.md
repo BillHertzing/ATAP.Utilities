@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.1.16
+
+- Keep the complete SprintEnd lifecycle dry run non-mutating by invoking the
+  post-boundary template-reference assertion with `-WhatIf`. Current sprint
+  references are reported as a planned-after-boundary preview instead of a
+  false dry-run failure; live closes retain the strict merge-gate assertion.
+
 ## 0.1.14
 
 - Isolate the SprintEnd resumability unit test from live service-account profile management under the BuildMaster service identity.

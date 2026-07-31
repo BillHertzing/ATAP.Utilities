@@ -217,8 +217,16 @@ function Invoke-SprintEndLifecycle {
             Select-Object -ExpandProperty FullName)
         if ($workspaceFiles.Count -gt 0) {
           try {
-            $assertion = Assert-MainBranchTemplateRef -WorkspaceFiles $workspaceFiles
-            [void]$templateResults.Add([PSCustomObject]@{ Path = $worktreePath; Ok = $true; Result = $assertion })
+            $assertionParameters = @{ WorkspaceFiles = $workspaceFiles }
+            if ($WhatIfPreference) { $assertionParameters.WhatIf = $true }
+            $assertion = Assert-MainBranchTemplateRef @assertionParameters
+            [void]$templateResults.Add([PSCustomObject]@{
+                Path = $worktreePath
+                Ok = $true
+                PlannedAfterBoundary = [bool]$WhatIfPreference
+                CurrentStateWouldThrow = [bool]$assertion.WouldThrow
+                Result = $assertion
+              })
           } catch {
             [void]$templateResults.Add([PSCustomObject]@{ Path = $worktreePath; Ok = $false; Error = $_.Exception.Message })
             [void]$failures.Add('TemplateRef')

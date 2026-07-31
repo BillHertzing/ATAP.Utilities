@@ -661,8 +661,24 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       New-Item -ItemType Directory -Path $planning, $shared -Force | Out-Null
       New-Item -ItemType Directory -Path (Join-Path $planning 'SprintRetrospective') -Force | Out-Null
       Set-Content -LiteralPath (Join-Path $planning 'SprintRetrospective\Notebook-SprintWorkSession-0010-End.md') -Value '# Sprint 0010 End'
+      foreach ($workspaceRoot in @($planning, $shared)) {
+        @{
+          folders = @(@{ path = '.' })
+          settings = @{ 'atap.sharedVSCode.templateRef' = 'SharedVSCode-wt-48-Sprint-0010-work-items' }
+        } | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $workspaceRoot 'Fixture.code-workspace') -Encoding UTF8
+      }
       Mock Set-SprintBoundaryContext { [PSCustomObject]@{ Errors = @() } }
-      Mock Assert-MainBranchTemplateRef { [PSCustomObject]@{ Ok = $true } }
+      Mock Assert-MainBranchTemplateRef -ParameterFilter { $WhatIf } {
+        [PSCustomObject]@{
+          Ok = $false
+          WhatIf = $true
+          WouldThrow = $true
+          Violations = @('fixture still points to a sprint ref before the planned boundary reset')
+        }
+      }
+      Mock Assert-MainBranchTemplateRef -ParameterFilter { -not $WhatIf } {
+        throw 'TemplateRef assertion was invoked live during a WhatIf lifecycle run.'
+      }
       Mock Invoke-SprintEndGitHubClose {
         [PSCustomObject]@{ Ok = $true; Repository = (Split-Path -Path $RepoPath -Leaf) }
       }
@@ -697,6 +713,9 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $result.DryRun | Should -BeTrue
       $result.Phases.CheckpointCoverage.Ok | Should -BeTrue
       $result.Phases.BoundaryReset.Errors | Should -BeNullOrEmpty
+      $result.Phases.TemplateRef.Count | Should -Be 2
+      $result.Phases.TemplateRef.PlannedAfterBoundary | Should -Not -Contain $false
+      $result.Phases.TemplateRef.CurrentStateWouldThrow | Should -Not -Contain $false
       $result.Phases.GitHub.Count | Should -Be 2
       $result.Phases.History.Ok | Should -BeTrue
       $result.Phases.Overview.Ok | Should -BeTrue

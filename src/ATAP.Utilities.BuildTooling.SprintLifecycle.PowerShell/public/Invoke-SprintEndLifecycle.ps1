@@ -251,8 +251,14 @@ function Invoke-SprintEndLifecycle {
         if ($WhatIfPreference) { $githubParameters.WhatIf = $true }
         try {
           $githubResult = Invoke-SprintEndGitHubClose @githubParameters
+          if ($WhatIfPreference) {
+            $githubResult | Add-Member -NotePropertyName PlannedAfterDryRun -NotePropertyValue $true -Force
+            $githubResult | Add-Member -NotePropertyName CurrentStateOk -NotePropertyValue ([bool]$githubResult.Ok) -Force
+          }
           [void]$githubResults.Add($githubResult)
-          if (-not $githubResult.Ok) { [void]$failures.Add("GitHub:$($githubResult.Repository)") }
+          if (-not $WhatIfPreference -and -not $githubResult.Ok) {
+            [void]$failures.Add("GitHub:$($githubResult.Repository)")
+          }
         } catch {
           [void]$githubResults.Add([PSCustomObject]@{
               RepoPath = $worktreePath; Ok = $false; Error = $_.Exception.Message

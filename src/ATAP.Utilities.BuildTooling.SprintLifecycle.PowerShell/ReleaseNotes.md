@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.1.17
+
+- Treat a successful GitHub close preview as planned lifecycle work even when
+  the current-state result is not yet `Ok` because its pull request would be
+  created by the live run. Live closes continue to fail on any non-OK GitHub
+  close result.
+
 ## 0.1.16
 
 - Keep the complete SprintEnd lifecycle dry run non-mutating by invoking the

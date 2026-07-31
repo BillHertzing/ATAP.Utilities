@@ -680,7 +680,12 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
         throw 'TemplateRef assertion was invoked live during a WhatIf lifecycle run.'
       }
       Mock Invoke-SprintEndGitHubClose {
-        [PSCustomObject]@{ Ok = $true; Repository = (Split-Path -Path $RepoPath -Leaf) }
+        [PSCustomObject]@{
+          Ok = $false
+          Repository = (Split-Path -Path $RepoPath -Leaf)
+          PullRequest = $null
+          Actions = @('Would create draft PR.')
+        }
       }
       Mock Save-SprintHistoryArtifacts { [PSCustomObject]@{ Ok = $true; Files = @() } }
       Mock Invoke-SprintEndOverviewClose { [PSCustomObject]@{ Ok = $true } }
@@ -717,6 +722,9 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $result.Phases.TemplateRef.PlannedAfterBoundary | Should -Not -Contain $false
       $result.Phases.TemplateRef.CurrentStateWouldThrow | Should -Not -Contain $false
       $result.Phases.GitHub.Count | Should -Be 2
+      $result.Phases.GitHub.PlannedAfterDryRun | Should -Not -Contain $false
+      $result.Phases.GitHub.CurrentStateOk | Should -Not -Contain $true
+      $result.Phases.GitHub.Actions | Should -Contain 'Would create draft PR.'
       $result.Phases.History.Ok | Should -BeTrue
       $result.Phases.Overview.Ok | Should -BeTrue
       $result.Phases.Handoff.Planned | Should -BeTrue

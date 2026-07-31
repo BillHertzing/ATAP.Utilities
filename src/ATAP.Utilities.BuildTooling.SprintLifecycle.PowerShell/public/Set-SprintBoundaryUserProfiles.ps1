@@ -115,10 +115,16 @@ function Set-SprintBoundaryUserProfiles {
 
     $setUserScopeProfilePath = Join-Path $ATAPUtilitiesRoot `
       'src\ATAP.Utilities.BuildTooling.PowerShell\public\Set-UserScopeProfile.ps1'
-    if (Test-Path -LiteralPath $setUserScopeProfilePath -PathType Leaf) {
+    $setUserScopeProfileCommand = Get-Command -Name Set-UserScopeProfile -CommandType Function -ErrorAction SilentlyContinue
+    if (-not $setUserScopeProfileCommand -and (Test-Path -LiteralPath $setUserScopeProfilePath -PathType Leaf)) {
       . $setUserScopeProfilePath
-    } elseif (-not (Get-Command -Name Set-UserScopeProfile -CommandType Function -ErrorAction SilentlyContinue)) {
+      $setUserScopeProfileCommand = Get-Command -Name Set-UserScopeProfile -CommandType Function -ErrorAction SilentlyContinue
+    }
+    if (-not $setUserScopeProfileCommand) {
       throw "Set-UserScopeProfile was not found at '$setUserScopeProfilePath' or in the current session."
+    }
+    if (-not $setUserScopeProfileCommand.Parameters.ContainsKey('TargetProfilePath')) {
+      throw "Set-UserScopeProfile does not expose the required TargetProfilePath parameter. Resolved command: '$($setUserScopeProfileCommand.Source)'."
     }
     function Resolve-LeafName {
       param([string]$Identity)

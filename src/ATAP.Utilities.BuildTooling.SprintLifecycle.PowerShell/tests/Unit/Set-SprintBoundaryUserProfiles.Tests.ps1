@@ -12,8 +12,10 @@ BeforeAll {
 
   $script:setUserScopeProfilePath = Join-Path $PSScriptRoot '..' '..' '..' `
     'ATAP.Utilities.BuildTooling.PowerShell' 'public' 'Set-UserScopeProfile.ps1'
-  . $script:setUserScopeProfilePath
+  Import-Module ATAP.Utilities.BuildTooling.PowerShell -RequiredVersion 0.1.73 -Force
   $script:manifestPath = Join-Path $PSScriptRoot '..' '..' 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell.psd1'
+  Get-Module -Name ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell -All |
+    Remove-Module -Force -ErrorAction SilentlyContinue
   Import-Module $script:manifestPath -Force
 }
 
@@ -137,6 +139,36 @@ Set-StrictMode -Version Latest
       Should -Match 'Set-StrictMode'
     Test-Path -LiteralPath (Join-Path $script:utilRoot 'src\ATAP.Utilities.PowerShell\Profiles') |
       Should -BeFalse
+  }
+
+  It 'does not replace an installed helper command with a stale stable-source fallback' {
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-LocalUser { $null }
+    $fallbackPath = Join-Path $script:utilRoot `
+      'src\ATAP.Utilities.BuildTooling.PowerShell\public\Set-UserScopeProfile.ps1'
+    $originalFallback = Get-Content -LiteralPath $fallbackPath -Raw
+    try {
+      @'
+function Set-UserScopeProfile {
+  [CmdletBinding(SupportsShouldProcess)]
+  param([string] $AccountName)
+}
+'@ | Set-Content -LiteralPath $fallbackPath -Encoding UTF8
+
+      $result = Set-SprintBoundaryUserProfiles `
+        -ATAPUtilitiesRoot $script:utilRoot `
+        -ATAPIACRoot $script:iacRoot `
+        -GitRoot $script:gitRoot `
+        -OverviewWorkspacePath $script:overviewPath `
+        -HomeDirectoryOverrides @{ alice = $script:developerHome } `
+        -WhatIf `
+        -Confirm:$false
+
+      $result.Ok | Should -BeTrue
+      ($result.Profiles | Where-Object Kind -EQ 'Developer').Action | Should -Be 'WouldCreated'
+    }
+    finally {
+      Set-Content -LiteralPath $fallbackPath -Value $originalFallback -Encoding UTF8 -NoNewline
+    }
   }
 
   It 'merges approved local service accounts when ConfigRootKeys do not describe them' {

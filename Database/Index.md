@@ -23,6 +23,7 @@ This file lists all subfolders and key documents in the `Database/` folder of th
 
 ## Key Root Documents
 
+- [../SolutionDocumentation/ATAPUtilities-Database-0.1.3-Release-Record.md](../SolutionDocumentation/ATAPUtilities-Database-0.1.3-Release-Record.md) — Live BuildMaster/ProGet release record for migrations `000060`-`000110` and `000130`-`000140`: stable artifact hash, per-tier Flyway proof, deferred `000120` exclusion, backups, Production legacy checksum reconciliation, and recovered failure modes.
 - [Documentation/FolderStructure.md](Documentation/FolderStructure.md) — Annotated tree of the entire `Database/` folder structure.
 - [Documentation/README.RRSBS.md](Documentation/README.RRSBS.md) — Overview of the Rules, Rule Sets, and Build Sets subsystem in the ATAPUtilities database.
 - [Documentation/PROMOTION_SUMMARY.md](Documentation/PROMOTION_SUMMARY.md) — Executive summary of the database package promotion process.

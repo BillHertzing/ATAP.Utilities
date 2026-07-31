@@ -15,6 +15,11 @@ This repository is intended to be a demonstration of the many many tools and pro
 
 The non-documentation Projects in this repository are written in C#, Powershell, and SQL. Documentation is written in Markdown, Unified Modelling Language (UML), and DrawIO.
 
+The live BuildMaster/ProGet deployment of `ATAPUtilities.Database` `0.1.3`,
+including its exact migration boundary, stable-package hash, permanent-tier
+snapshots, Production checksum reconciliation, and final Flyway audit, is recorded
+in [ATAPUtilities Database 0.1.3 Release Record](ATAPUtilities-Database-0.1.3-Release-Record.md).
+
 ### <a id="Prerequisites" />Prerequisites
 
 There are a lot of prerequisite packages needed to handle all the features of the repository.

@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.1.19
+
+- Project the End-boundary preview's planned process-scoped BWS token removal
+  into the cleanup health check, then restore the exact prior process value.
+  This prevents a false secret-drift failure while preserving the dry run's
+  zero-net-mutation contract.
+
 ## 0.1.18
 
 - Keep the SprintEnd cleanup health check read-only and deterministic under a

@@ -533,20 +533,30 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
 
     It 'keeps ambient WhatIf out of read-only health and reports cleanup as planned' {
       $script:healthWhatIfPreference = $null
+      $script:healthProcessBwsAccessToken = $null
+      $priorProcessBwsAccessToken = [Environment]::GetEnvironmentVariable('BWS_ACCESS_TOKEN', 'Process')
+      [Environment]::SetEnvironmentVariable('BWS_ACCESS_TOKEN', 'fixture-process-token', 'Process')
       Mock Test-SprintInfrastructureHealth {
         $script:healthWhatIfPreference = [bool]$WhatIfPreference
+        $script:healthProcessBwsAccessToken = [Environment]::GetEnvironmentVariable('BWS_ACCESS_TOKEN', 'Process')
         [PSCustomObject]@{ AllOk = $true; Failures = @() }
       }
 
-      $result = Invoke-SprintEndInfrastructureCleanup -GitRoot $TestDrive -Apply -WhatIf -Confirm:$false
+      try {
+        $result = Invoke-SprintEndInfrastructureCleanup -GitRoot $TestDrive -Apply -WhatIf -Confirm:$false
 
-      $script:healthWhatIfPreference | Should -BeFalse
-      $result.Ok | Should -BeTrue
-      $result.Applied | Should -BeFalse
-      $result.Planned | Should -BeTrue
-      Should -Invoke Remove-SprintDatabases -Times 0
-      Should -Invoke Clear-BuildMasterSprintVariables -Times 0
-      Should -Invoke Set-SprintBoundaryContext -Times 0
+        $script:healthWhatIfPreference | Should -BeFalse
+        $script:healthProcessBwsAccessToken | Should -BeNullOrEmpty
+        [Environment]::GetEnvironmentVariable('BWS_ACCESS_TOKEN', 'Process') | Should -Be 'fixture-process-token'
+        $result.Ok | Should -BeTrue
+        $result.Applied | Should -BeFalse
+        $result.Planned | Should -BeTrue
+        Should -Invoke Remove-SprintDatabases -Times 0
+        Should -Invoke Clear-BuildMasterSprintVariables -Times 0
+        Should -Invoke Set-SprintBoundaryContext -Times 0
+      } finally {
+        [Environment]::SetEnvironmentVariable('BWS_ACCESS_TOKEN', $priorProcessBwsAccessToken, 'Process')
+      }
     }
   }
 

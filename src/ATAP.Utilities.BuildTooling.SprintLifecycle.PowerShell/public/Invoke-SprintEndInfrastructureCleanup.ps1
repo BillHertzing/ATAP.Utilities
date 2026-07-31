@@ -63,14 +63,26 @@ function Invoke-SprintEndInfrastructureCleanup {
   }
 
   process {
-    # The read-only health check resolves its API key through Get-SecretATAP,
-    # which creates and then removes a process-scoped BWS_ACCESS_TOKEN. Do not
-    # let an ambient lifecycle -WhatIf suppress that internal cleanup and make
-    # the health check report its own temporary token as prohibited drift.
-    $health = & {
-      $WhatIfPreference = $false
-      Test-SprintInfrastructureHealth `
-        -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName
+    # The End-boundary preview plans removal of a process-scoped BWS token but
+    # correctly leaves the current process unchanged. Project that one planned
+    # removal while running the read-only health check, then restore the exact
+    # prior process value so -WhatIf has no net environment mutation. Also keep
+    # ambient WhatIf from suppressing Get-SecretATAP's own transient cleanup.
+    $priorProcessBwsAccessToken = [Environment]::GetEnvironmentVariable('BWS_ACCESS_TOKEN', 'Process')
+    $projectProcessBwsRemoval = ($WhatIfPreference -and -not [string]::IsNullOrWhiteSpace($priorProcessBwsAccessToken))
+    try {
+      if ($projectProcessBwsRemoval) {
+        [Environment]::SetEnvironmentVariable('BWS_ACCESS_TOKEN', $null, 'Process')
+      }
+      $health = & {
+        $WhatIfPreference = $false
+        Test-SprintInfrastructureHealth `
+          -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName
+      }
+    } finally {
+      if ($projectProcessBwsRemoval) {
+        [Environment]::SetEnvironmentVariable('BWS_ACCESS_TOKEN', $priorProcessBwsAccessToken, 'Process')
+      }
     }
     $databaseResults = @()
     $buildMasterResult = $null

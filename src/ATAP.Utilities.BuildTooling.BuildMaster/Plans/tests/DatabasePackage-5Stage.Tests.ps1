@@ -128,9 +128,10 @@ Describe 'V4-E08 runner shape: Invoke-DatabasePackageBuildMasterStage.ps1 contra
         $script:RunnerText | Should -Match 'New-DatabaseChangePackage'
     }
 
-    It 'runner always binds the canonical database-management package builder' {
-        $script:RunnerText | Should -Match '\$mustLoadCanonicalPackageBuilder\s*=\s*\$commandName\s+-eq\s+''New-DatabaseChangePackage'''
-        $script:RunnerText | Should -Match '\$mustLoadCanonicalPackageBuilder\s+-or'
+    It 'runner always binds every canonical source-tree database-management command' {
+        $script:RunnerText | Should -Match 'foreach\s+\(\$commandName\s+in\s+\$databaseManagementFunctionFiles\.Keys\)'
+        $script:RunnerText | Should -Match '\.\s+\$candidate'
+        $script:RunnerText | Should -Match 'Required database-management cmdlet'
     }
 
     It 'plan passes the exact migration exclusion application variable to the runner' {

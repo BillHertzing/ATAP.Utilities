@@ -913,9 +913,10 @@ function Invoke-DatabasePackageBuildMasterStage {
     . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Promote-DatabaseChangePackage.ps1')
 
     # New-DatabaseChangePackage and the rehearsal/apply cmdlets live in the
-    # DatabaseManagement.Powershell module. Dot-source from source so the
-    # runner works from a worktree without the module installed. Test runs
-    # can stub any of these by defining functions of the same name in scope.
+    # DatabaseManagement.Powershell module. Always dot-source their source-tree
+    # implementations. A machine-wide older module can otherwise shadow a
+    # newer worktree contract and fail only under the BuildMaster service
+    # identity.
     $dbModulePublic = Join-Path -Path $SourcePath -ChildPath 'src/ATAP.Utilities.DatabaseManagement.Powershell/public'
     $databaseManagementFunctionFiles = [ordered]@{
       'New-DatabaseChangePackage'      = 'New-DatabaseChangePackage.ps1'
@@ -926,20 +927,12 @@ function Invoke-DatabasePackageBuildMasterStage {
       'Invoke-Flyway'                  = 'Invoke-Flyway.ps1'
     }
     foreach ($commandName in $databaseManagementFunctionFiles.Keys) {
-      # The parent BuildTooling module also exports a legacy command named
-      # New-DatabaseChangePackage. Always bind the canonical
-      # DatabaseManagement implementation so release-boundary parameters such
-      # as ExcludedMigrationFileName cannot be shadowed by that older command.
-      $mustLoadCanonicalPackageBuilder = $commandName -eq 'New-DatabaseChangePackage'
-      if ($mustLoadCanonicalPackageBuilder -or
-          -not (Get-Command -Name $commandName -ErrorAction SilentlyContinue)) {
-        $candidate = Join-Path -Path $dbModulePublic -ChildPath $databaseManagementFunctionFiles[$commandName]
-        if (Test-Path -LiteralPath $candidate -PathType Leaf) {
-          . $candidate
-        }
-        elseif ($commandName -eq 'New-DatabaseChangePackage') {
-          throw "Required cmdlet New-DatabaseChangePackage not found at '$candidate'."
-        }
+      $candidate = Join-Path -Path $dbModulePublic -ChildPath $databaseManagementFunctionFiles[$commandName]
+      if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+        . $candidate
+      }
+      else {
+        throw "Required database-management cmdlet '$commandName' not found at '$candidate'."
       }
     }
 

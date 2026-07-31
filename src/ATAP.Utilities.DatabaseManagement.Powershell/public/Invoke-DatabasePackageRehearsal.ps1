@@ -150,7 +150,7 @@ function Invoke-DatabasePackageRehearsal {
       $appName = $Application
       if ([string]::IsNullOrWhiteSpace($appName)) {
         $appName = if ($manifest.PSObject.Properties.Name -contains 'dbChangeUnit') {
-          $manifest.dbChangeUnit
+          ([string]$manifest.dbChangeUnit -replace '\.Database$', '')
         } else {
           [System.IO.Path]::GetFileName($expandedPath)
         }

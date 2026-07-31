@@ -659,11 +659,11 @@ function Invoke-DatabasePackageTierApply {
       $expandedPath = Expand-DatabaseChangePackage -NupkgPath $NupkgPath
       $manifest = Get-DatabasePackageManifest -PackagePath $expandedPath
 
+      # dbChangeUnit is the NuGet package identity (for example,
+      # ATAPUtilities.Database), not the SQL database name. The caller passes
+      # the canonical database application separately; never replace it with
+      # package metadata when constructing the Flyway JDBC databaseName.
       $applicationName = $Application
-      if ($manifest.PSObject.Properties.Name -contains 'dbChangeUnit' -and
-        -not [string]::IsNullOrWhiteSpace([string]$manifest.dbChangeUnit)) {
-        $applicationName = [string]$manifest.dbChangeUnit
-      }
 
       # Pre-migration snapshot for permanent tiers (rollback point; see
       # Database-Change-Unit-and-Flyway-Promotion.md section 17). Best-effort: a

@@ -115,6 +115,11 @@ Describe 'V4-E08 runner shape: Invoke-DatabasePackageBuildMasterStage.ps1 contra
         $script:RunnerText | Should -Not -Match 'dotnet\s+nuget\s+push'
     }
 
+    It 'runner always binds the source-tree ProGet database commands' {
+        $script:RunnerText | Should -Match "\.\s+\(Resolve-BuildToolingFunctionFile[^\r\n]+Publish-DatabaseChangePackageToProGet\.ps1'\)"
+        $script:RunnerText | Should -Match "\.\s+\(Resolve-BuildToolingFunctionFile[^\r\n]+Promote-DatabaseChangePackage\.ps1'\)"
+    }
+
     It 'runner invokes Promote-DatabaseChangePackage for non-Experimental tiers' {
         $script:RunnerText | Should -Match 'Promote-DatabaseChangePackage'
     }

@@ -903,12 +903,11 @@ function Invoke-DatabasePackageBuildMasterStage {
     if (-not (Get-Command -Name Get-DatabasePackageBuildContext -ErrorAction SilentlyContinue)) {
       . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Get-DatabasePackageBuildContext.ps1')
     }
-    if (-not (Get-Command -Name Publish-DatabaseChangePackageToProGet -ErrorAction SilentlyContinue)) {
-      . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Publish-DatabaseChangePackageToProGet.ps1')
-    }
-    if (-not (Get-Command -Name Promote-DatabaseChangePackage -ErrorAction SilentlyContinue)) {
-      . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Promote-DatabaseChangePackage.ps1')
-    }
+    # Always bind the source-tree ProGet database commands. The parent
+    # BuildTooling module may export older copies whose parameter contracts do
+    # not include the explicit ProGetBaseUrl required by service-account runs.
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Publish-DatabaseChangePackageToProGet.ps1')
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Promote-DatabaseChangePackage.ps1')
 
     # New-DatabaseChangePackage and the rehearsal/apply cmdlets live in the
     # DatabaseManagement.Powershell module. Dot-source from source so the

@@ -84,7 +84,8 @@ ToDo: Insert diagram of CI/CD process
 - [New Computer Setup](./NewComputerSetup.md) is the current workstation
   bootstrap and certification guide. Its Sprint 0013 reconciliation distinguishes
   host-qualified sprint assignment, canonical profile ownership, five SQL roles,
-  Inedo port/data boundaries, BWS versus personal-vault access, Class A return
+  the five-tier `SvcBuildMaster` `ATAPUtilities` deployment grant, Inedo
+  port/data boundaries, BWS versus personal-vault access, Class A return
   controls, and the open product/HITL gates that must not be reported as deployed.
   `Test-NewComputerSetupDocumentation.ps1` provides the read-only, idempotent contract
   check for the canonical guide and its active linked BuildMaster runbooks.

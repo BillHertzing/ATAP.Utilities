@@ -111,6 +111,8 @@ function Test-NewComputerSetupDocumentation {
         BuildMasterPort = 'port `50017`'
         SecretBoundary = 'SecretName/Get-SecretATAP/bws'
         ReturnGate = 'bounded return'
+        SvcBuildMasterTierGrant = '### 9.2.1 Grant SvcBuildMaster database-package deployment rights'
+        SvcBuildMasterTierParity = 'Record this machine-state grant with `Add-ParityChangeEntry`'
       }
       foreach ($concept in $requiredConcepts.GetEnumerator()) {
         if ($canonical -notmatch [regex]::Escape($concept.Value)) {

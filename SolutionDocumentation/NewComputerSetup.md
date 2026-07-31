@@ -1020,6 +1020,86 @@ Initialize-SqlServiceLogin `
   -TrustServerCertificate
 ```
 
+### 9.2.1 Grant SvcBuildMaster database-package deployment rights
+
+The preceding BuildMaster product-database grant is not sufficient for database
+package deployment. The BuildMaster service identity also performs tier rehearsal,
+pre-migration backup, and Flyway DDL/DML apply operations. Grant the local
+`SvcBuildMaster` identity `db_owner` on the `ATAPUtilities` database in every
+authorized tier instance.
+
+The logical Experimental tier targets `Exp<DeveloperName>`. Never create or grant
+against a generic permanent `Experimental` instance.
+
+Run this idempotent procedure in an elevated, profile-loaded PowerShell session
+after the five databases exist:
+
+```powershell
+Import-Module ATAP.Utilities.PowerShell
+
+$developerName = $env:USERNAME
+$serviceAccount = "$env:COMPUTERNAME\SvcBuildMaster"
+$databaseTierInstances = @(
+  "Exp$developerName"
+  "Dev$developerName"
+  'Integration'
+  'QA'
+  'Production'
+)
+
+foreach ($instanceName in $databaseTierInstances) {
+  Initialize-SqlServiceLogin `
+    -SqlInstance "localhost\$instanceName" `
+    -DatabaseName 'ATAPUtilities' `
+    -ServiceAccount $serviceAccount `
+    -Encrypt Optional `
+    -TrustServerCertificate
+}
+```
+
+Verify the server login, database user, and `db_owner` membership independently:
+
+```powershell
+$principalLiteral = $serviceAccount.Replace("'", "''")
+$verificationQuery = @"
+DECLARE @principal sysname = N'$principalLiteral';
+SELECT
+  CAST(SERVERPROPERTY('MachineName') AS nvarchar(128)) AS MachineName,
+  CAST(SERVERPROPERTY('InstanceName') AS nvarchar(128)) AS InstanceName,
+  DB_NAME() AS DatabaseName,
+  @principal AS AccountName,
+  IIF(SUSER_ID(@principal) IS NULL, 0, 1) AS ServerLoginExists,
+  IIF(USER_ID(@principal) IS NULL, 0, 1) AS DatabaseUserExists,
+  ISNULL(IS_ROLEMEMBER(N'db_owner', @principal), 0) AS IsDbOwner;
+"@
+
+$grantAudit = foreach ($instanceName in $databaseTierInstances) {
+  Invoke-Sqlcmd `
+    -ServerInstance "localhost\$instanceName" `
+    -Database 'ATAPUtilities' `
+    -Query $verificationQuery `
+    -TrustServerCertificate
+}
+
+$grantAudit |
+  Select-Object MachineName, InstanceName, DatabaseName, AccountName,
+    ServerLoginExists, DatabaseUserExists, IsDbOwner
+
+if ($grantAudit.Where({
+      $_.ServerLoginExists -ne 1 -or
+      $_.DatabaseUserExists -ne 1 -or
+      $_.IsDbOwner -ne 1
+    }).Count -gt 0) {
+  throw 'SvcBuildMaster ATAPUtilities database permission verification failed.'
+}
+```
+
+Record this machine-state grant with `Add-ParityChangeEntry`. The peer action must
+repeat the same idempotent procedure using the peer-local
+`<PeerHost>\SvcBuildMaster` identity, then acknowledge the entry only after the
+independent query passes on all five authorized tier databases. Do not copy or
+restore an application or Inedo database to establish parity.
+
 ### 9.3 Reconfigure the Windows services to use the dedicated accounts
 
 ```powershell
@@ -1517,7 +1597,7 @@ If global IPv6 addresses are dead, fix the host networking — do **not** edit
 
 > **Do not change `ServicePlacementMap['BuildMaster']` to `localhost`.** The BuildMaster
 > base URL is derived from it, and so is the host-suffixed admin SecretName
-> (`BuildMaster.Admin.API.Key.<placement-host>`). Repointing the map silently rewrites the
+> (`BuildMaster.Admin.API.Key.<service-host>`). Repointing the map silently rewrites the
 > SecretName to one that does not exist in Bitwarden, turning a slow timeout into a hard
 > credential failure.
 
@@ -1555,11 +1635,15 @@ $projects = Join-Path $env:USERPROFILE '.claude\projects'
 $target   = 'C:\Dropbox\whertzing\ATAP\AIAgentMemory\ATAP.Utilities'
 New-Item -ItemType Directory -Path $target -Force | Out-Null
 
-# Repeat for each repo, and for each active sprint worktree slug.
-$slugs = @(
-  'C--Dropbox-whertzing-GitHub-ATAP-Utilities'
-  'C--Dropbox-whertzing-GitHub-ATAP-Utilities-wt-123-Sprint-0013-work-items'
+# Repeat for each repo and active sprint worktree. Replace the symbolic
+# worktree path with the current sprint path; never pin a sprint number here.
+$repositoryPaths = @(
+  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
+  'C:\Dropbox\whertzing\GitHub\<active-ATAP.Utilities-worktree>'
 )
+$slugs = $repositoryPaths | ForEach-Object {
+  $_ -replace '[:\\_.]', '-'
+}
 
 foreach ($slug in $slugs) {
   $projDir = Join-Path $projects $slug

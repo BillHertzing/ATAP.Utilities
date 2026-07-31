@@ -34,4 +34,27 @@ Use BuildMaster.Admin.API.Key for the service account through BW_SESSION on port
     $result.Findings.Rule | Should -Contain 'HostQualifiedSecretName'
     (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash | Should -Be $beforeValidation
   }
+
+  It 'requires the SvcBuildMaster tier grant and parity-journal procedure' {
+    foreach ($name in @('NewComputerSetup.md', 'BuildMaster-Install-Runbook.md', 'Runbook-BuildMasterConfiguration.md')) {
+      Copy-Item -LiteralPath (Join-Path $script:documentationRoot $name) -Destination (Join-Path $TestDrive $name)
+    }
+    $target = Join-Path $TestDrive 'NewComputerSetup.md'
+    $content = Get-Content -LiteralPath $target -Raw
+    $content = $content.Replace(
+      '### 9.2.1 Grant SvcBuildMaster database-package deployment rights',
+      '### 9.2.1 Database-package deployment rights'
+    )
+    $content = $content.Replace(
+      'Record this machine-state grant with `Add-ParityChangeEntry`',
+      'Record this machine-state grant in the local notes'
+    )
+    Set-Content -LiteralPath $target -Value $content -Encoding utf8
+
+    $result = Test-NewComputerSetupDocumentation -DocumentationRoot $TestDrive
+
+    $result.Passed | Should -BeFalse
+    $result.Findings.Rule | Should -Contain 'SvcBuildMasterTierGrant'
+    $result.Findings.Rule | Should -Contain 'SvcBuildMasterTierParity'
+  }
 }

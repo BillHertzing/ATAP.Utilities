@@ -28,6 +28,15 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $result.Commands[0].MissingParameters | Should -Be @('Missing')
       $result.Failures[0] | Should -Match 'Missing parameter'
     }
+
+    It 'requires the profiled-remoting policy on the boundary command' {
+      $result = Test-SprintEndCommandSurface -CommandContracts @{
+        'Set-SprintBoundaryContext' = @('ProfiledRemotingPolicy')
+      }
+
+      $result.Ok | Should -BeTrue
+      $result.Commands[0].MissingParameters | Should -BeNullOrEmpty
+    }
   }
 
   Context 'Test-SprintEndWorktreeState' {
@@ -91,6 +100,7 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $text | Should -Match 'branch -D'
       $text | Should -Match 'Remove-SprintDatabases'
       $text | Should -Match 'Set-SprintBoundaryContext @boundaryParams'
+      $text | Should -Match "ProfiledRemotingPolicy = 'Auto'"
       $text | Should -Match 'Test-SprintEndBoundaryState @boundaryTestParams'
       $text | Should -Not -Match 'Remove-SprintBitwardenSecrets'
       $text | Should -Not -Match 'Remove-DeveloperSqlServerInstances'
@@ -521,7 +531,7 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
     }
 
     It 'runs database and BuildMaster cleanup but never secret or instance removal' {
-      $result = Invoke-SprintEndInfrastructureCleanup -GitRoot $TestDrive -Apply -Confirm:$false
+      $result = Invoke-SprintEndInfrastructureCleanup -GitRoot $TestDrive -Apply -ProfiledRemotingPolicy Disabled -Confirm:$false
 
       $result.Ok | Should -BeTrue
       $result.BitwardenSecretsRemoved | Should -BeFalse
@@ -529,6 +539,7 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $result.SqlInstancesRetained | Should -BeTrue
       Should -Invoke Remove-SprintDatabases -Times 1
       Should -Invoke Clear-BuildMasterSprintVariables -Times 1
+      Should -Invoke Set-SprintBoundaryContext -Times 1 -ParameterFilter { $ProfiledRemotingPolicy -eq 'Disabled' }
     }
 
     It 'keeps ambient WhatIf out of read-only health and reports cleanup as planned' {
@@ -739,6 +750,7 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
         -CloseOverview `
         -WriteHandoff `
         -CleanupInfrastructure `
+        -ProfiledRemotingPolicy Disabled `
         -TestFreshShell `
         -WhatIf
 
@@ -759,6 +771,9 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $result.Phases.InfrastructureCleanup.SqlInstancesRetained | Should -BeTrue
       $result.Phases.FinalBoundary.Planned | Should -BeTrue
       $result.Phases.FinalBoundary.TestFreshShell | Should -BeTrue
+      Should -Invoke Set-SprintBoundaryContext -Times 1 -ParameterFilter { $ProfiledRemotingPolicy -eq 'Disabled' }
+      Should -Invoke New-SprintEndHandoff -Times 1 -ParameterFilter { $ProfiledRemotingPolicy -eq 'Disabled' }
+      Should -Invoke Invoke-SprintEndInfrastructureCleanup -Times 1 -ParameterFilter { $ProfiledRemotingPolicy -eq 'Disabled' }
     }
 
     It 'adds the Planning worktree to the SprintEnd close plan when omitted by the caller' {

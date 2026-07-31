@@ -1,5 +1,21 @@
 # Release notes
 
+## 0.1.22
+
+- Add `Disabled`, `Auto`, and `Required` profiled-remoting policies to sprint
+  boundary orchestration. `Auto` is the safe default and treats hosts without a
+  remoting surface or managed endpoint state as not applicable without enabling
+  remoting; existing or required endpoint state remains a strict failure gate.
+- Propagate the policy through SprintEnd lifecycle, cleanup, handoff generation,
+  and structured boundary evidence.
+
+## 0.1.21
+
+- Preserve the compatible installed `Set-UserScopeProfile` command during
+  boundary profile deployment; load the stable-source fallback only when the
+  command is absent, and fail explicitly when the required parameter contract
+  is unavailable.
+
 ## 0.1.20
 
 - Keep stable repository worktrees read-only before SprintEnd PR merge by

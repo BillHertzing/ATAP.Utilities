@@ -62,6 +62,24 @@ Describe 'Set-SprintBoundaryContext [public]' {
         Failures = @()
       }
     }
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-ProfiledRemotingBoundaryState {
+      [PSCustomObject]@{
+        ConfigurationName = 'ATAP.PS7.Profiled'
+        CommandAvailable = $true
+        ProbeSucceeded = $true
+        ConfigurationCount = 0
+        RemotingSurfacePresent = $false
+        ManagedConfigurationPresent = $false
+        ManagedRegistryPresent = $false
+        ManagedMarkerPresent = $false
+        ManagedEndpointStatePresent = $false
+        ManagedMarkerPath = $null
+        ProbeError = $null
+      }
+    }
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Register-ProfiledRemotingEndpoint {
+      [PSCustomObject]@{ Ok = $true; Action = 'AlreadyCurrent'; Failures = @() }
+    }
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Sync-SprintBoundaryPrimaryRoleMarker {
       [PSCustomObject]@{
         Boundary = $Boundary
@@ -80,6 +98,117 @@ Describe 'Set-SprintBoundaryContext [public]' {
 
     It 'Requires a non-empty SharedVSCodeWorktreePath' {
       { Set-SprintBoundaryContext -Boundary 'Start' -SharedVSCodeWorktreePath '' } | Should -Throw
+    }
+
+    It 'Rejects an invalid ProfiledRemotingPolicy value' {
+      { Set-SprintBoundaryContext -Boundary Start -SharedVSCodeWorktreePath $script:svSprint -ProfiledRemotingPolicy Sometimes } |
+        Should -Throw
+    }
+  }
+
+  Context 'Profiled remoting boundary policy' {
+    It 'Auto reports an absent remoting surface as nonfatal and not applicable' {
+      $result = Set-SprintBoundaryContext -Boundary End `
+        -SharedVSCodeWorktreePath $script:svStable `
+        -GitRoot $script:gitRoot `
+        -ProfiledRemotingPolicy Auto
+
+      $concern = $result.Concerns | Where-Object Concern -EQ 'ProfiledRemotingEndpoint'
+      $concern.Action | Should -Be 'NotApplicable'
+      $concern.Succeeded | Should -BeTrue
+      $concern.Policy | Should -Be 'Auto'
+      $concern.Reason | Should -Match 'no PowerShell session configurations'
+      $result.Errors | Should -BeNullOrEmpty
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Register-ProfiledRemotingEndpoint -Times 0 -Exactly -Scope It
+    }
+
+    It 'Auto treats a broken registration as fatal when remoting exists' {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-ProfiledRemotingBoundaryState {
+        [PSCustomObject]@{
+          RemotingSurfacePresent = $true
+          ManagedEndpointStatePresent = $false
+          ProbeError = $null
+        }
+      }
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Register-ProfiledRemotingEndpoint {
+        [PSCustomObject]@{ Ok = $false; Failures = @('registration broke') }
+      }
+
+      $result = Set-SprintBoundaryContext -Boundary End `
+        -SharedVSCodeWorktreePath $script:svStable `
+        -GitRoot $script:gitRoot `
+        -ProfiledRemotingPolicy Auto
+
+      ($result.Errors -join '; ') | Should -Match 'registration broke'
+      ($result.Concerns | Where-Object Concern -EQ 'ProfiledRemotingEndpoint').Succeeded | Should -BeFalse
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Register-ProfiledRemotingEndpoint -Times 1 -Exactly -Scope It
+    }
+
+    It 'Required treats an absent remoting surface as fatal with remediation' {
+      $result = Set-SprintBoundaryContext -Boundary End `
+        -SharedVSCodeWorktreePath $script:svStable `
+        -GitRoot $script:gitRoot `
+        -ProfiledRemotingPolicy Required
+
+      $concern = $result.Concerns | Where-Object Concern -EQ 'ProfiledRemotingEndpoint'
+      $concern.Action | Should -Be 'RequiredUnavailable'
+      $concern.Succeeded | Should -BeFalse
+      $concern.Error | Should -Match 'Enable PowerShell remoting explicitly outside SprintEnd'
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Register-ProfiledRemotingEndpoint -Times 0 -Exactly -Scope It
+    }
+
+    It 'Disabled neither probes nor invokes registration' {
+      $result = Set-SprintBoundaryContext -Boundary End `
+        -SharedVSCodeWorktreePath $script:svStable `
+        -GitRoot $script:gitRoot `
+        -ProfiledRemotingPolicy Disabled
+
+      $concern = $result.Concerns | Where-Object Concern -EQ 'ProfiledRemotingEndpoint'
+      $concern.Action | Should -Be 'NotApplicable'
+      $concern.Succeeded | Should -BeTrue
+      $concern.Reason | Should -Match 'Disabled'
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-ProfiledRemotingBoundaryState -Times 0 -Exactly -Scope It
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Register-ProfiledRemotingEndpoint -Times 0 -Exactly -Scope It
+    }
+
+    It 'WhatIf records the planned refresh without mutating registration' {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-ProfiledRemotingBoundaryState {
+        [PSCustomObject]@{
+          RemotingSurfacePresent = $true
+          ManagedEndpointStatePresent = $true
+          ProbeError = $null
+        }
+      }
+
+      $result = Set-SprintBoundaryContext -Boundary End `
+        -SharedVSCodeWorktreePath $script:svStable `
+        -GitRoot $script:gitRoot `
+        -ProfiledRemotingPolicy Auto `
+        -WhatIf
+
+      $concern = $result.Concerns | Where-Object Concern -EQ 'ProfiledRemotingEndpoint'
+      $concern.Action | Should -Be 'WouldRefresh'
+      $concern.Succeeded | Should -BeTrue
+      $concern.State.ManagedEndpointStatePresent | Should -BeTrue
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Register-ProfiledRemotingEndpoint -Times 0 -Exactly -Scope It
+    }
+
+    It 'Auto preserves the current successful refresh behavior when managed state exists' {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-ProfiledRemotingBoundaryState {
+        [PSCustomObject]@{
+          RemotingSurfacePresent = $false
+          ManagedEndpointStatePresent = $true
+          ProbeError = 'No configurations enumerated.'
+        }
+      }
+
+      $result = Set-SprintBoundaryContext -Boundary End `
+        -SharedVSCodeWorktreePath $script:svStable `
+        -GitRoot $script:gitRoot
+
+      $result.Errors | Should -BeNullOrEmpty
+      ($result.Concerns | Where-Object Concern -EQ 'ProfiledRemotingEndpoint').Succeeded | Should -BeTrue
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Register-ProfiledRemotingEndpoint -Times 1 -Exactly -Scope It
     }
   }
 

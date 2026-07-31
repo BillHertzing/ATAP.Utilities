@@ -22,6 +22,9 @@ function New-SprintEndHandoff {
   .PARAMETER OutputPath
   Handoff path. Defaults to <GitRoot>/HANDOFF.SprintNNNN.md.
 
+  .PARAMETER ProfiledRemotingPolicy
+  Policy embedded in the pre-removal stable boundary reset. Defaults to Auto.
+
   .OUTPUTS
   FileInfo for the generated handoff, or a planned result under WhatIf.
 
@@ -48,7 +51,11 @@ function New-SprintEndHandoff {
     [string]$SprintNumber,
 
     [Parameter()]
-    [string]$OutputPath
+    [string]$OutputPath,
+
+    [Parameter()]
+    [ValidateSet('Disabled', 'Auto', 'Required')]
+    [string]$ProfiledRemotingPolicy = 'Auto'
   )
 
   begin {
@@ -138,6 +145,7 @@ function New-SprintEndHandoff {
     $lines.Add('$boundaryParams = @{')
     $lines.Add("  Boundary = 'End'")
     $lines.Add("  SharedVSCodeWorktreePath = Join-Path $gitRootLiteral 'SharedVSCode'")
+    $lines.Add("  ProfiledRemotingPolicy = '$ProfiledRemotingPolicy'")
     $lines.Add('  WorktreePaths = @(')
     for ($worktreeIndex = 0; $worktreeIndex -lt $orderedWorktrees.Count; $worktreeIndex++) {
       $worktreeLiteral = ConvertTo-SprintEndHandoffSingleQuotedLiteral -Value ([IO.Path]::GetFullPath($orderedWorktrees[$worktreeIndex]))

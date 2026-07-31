@@ -32,6 +32,10 @@ function Invoke-SprintEndLifecycle {
   .PARAMETER ApplyBoundary
   Applies the SprintEnd AIAdapter/template boundary reset.
 
+  .PARAMETER ProfiledRemotingPolicy
+  Controls the profiled-remoting boundary concern. Auto is the safe default;
+  Disabled opts out, while Required fails when remoting is unavailable.
+
   .PARAMETER CreatePullRequests
   Creates missing draft PRs and ensures closing keywords.
 
@@ -93,6 +97,10 @@ function Invoke-SprintEndLifecycle {
 
     [Parameter()]
     [switch]$ApplyBoundary,
+
+    [Parameter()]
+    [ValidateSet('Disabled', 'Auto', 'Required')]
+    [string]$ProfiledRemotingPolicy = 'Auto',
 
     [Parameter()]
     [switch]$CreatePullRequests,
@@ -205,6 +213,7 @@ function Invoke-SprintEndLifecycle {
         Boundary                    = 'End'
         SharedVSCodeWorktreePath    = [IO.Path]::GetFullPath($SharedVSCodeWorktreePath)
         WorktreePaths               = $worktreeFullPaths
+        ProfiledRemotingPolicy      = $ProfiledRemotingPolicy
         Confirm                     = $false
       }
       if ($WhatIfPreference) { $boundaryParameters.WhatIf = $true }
@@ -301,6 +310,7 @@ function Invoke-SprintEndLifecycle {
         GitRoot       = $gitRootFull
         WorktreePaths = $worktreeFullPaths
         SprintNumber  = $phases.Context.ClosedSprintNumber
+        ProfiledRemotingPolicy = $ProfiledRemotingPolicy
         Confirm       = $false
       }
       if ($WhatIfPreference) { $handoffParameters.WhatIf = $true }
@@ -321,6 +331,7 @@ function Invoke-SprintEndLifecycle {
     if ($failures.Count -eq 0 -and $CleanupInfrastructure) {
       $cleanupParameters = @{
         GitRoot = $gitRootFull
+        ProfiledRemotingPolicy = $ProfiledRemotingPolicy
         Apply   = $true
         Confirm = $false
       }

@@ -19,6 +19,9 @@ function Invoke-SprintEndInfrastructureCleanup {
   .PARAMETER Apply
   Executes cleanup. Without Apply, only the read-only health check runs.
 
+  .PARAMETER ProfiledRemotingPolicy
+  Policy passed to the stable boundary reassertion. Defaults to Auto.
+
   .OUTPUTS
   PSCustomObject with health, database, BuildMaster, and boundary results.
 
@@ -42,7 +45,11 @@ function Invoke-SprintEndInfrastructureCleanup {
     [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key',
 
     [Parameter()]
-    [switch]$Apply
+    [switch]$Apply,
+
+    [Parameter()]
+    [ValidateSet('Disabled', 'Auto', 'Required')]
+    [string]$ProfiledRemotingPolicy = 'Auto'
   )
 
   begin {
@@ -108,6 +115,7 @@ function Invoke-SprintEndInfrastructureCleanup {
           -Boundary End `
           -SharedVSCodeWorktreePath $stableSharedVSCode `
           -WorktreePaths @() `
+          -ProfiledRemotingPolicy $ProfiledRemotingPolicy `
           -Confirm:$false
         [void]$actions.Add('Reasserted stable boundary.')
       }

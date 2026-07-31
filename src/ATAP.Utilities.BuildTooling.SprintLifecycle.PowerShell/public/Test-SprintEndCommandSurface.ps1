@@ -30,7 +30,7 @@ function Test-SprintEndCommandSurface {
       'Get-SprintEndContext'                = @('GitRoot', 'CurrentPath')
       'Test-SprintPrerequisites'            = @('RequiredRepoWorktrees', 'BuiltModule')
       'Test-SprintInfrastructureHealth'     = @('BuildMasterAdminApiKeySecretName')
-      'Set-SprintBoundaryContext'           = @('Boundary', 'SharedVSCodeWorktreePath', 'WorktreePaths')
+      'Set-SprintBoundaryContext'           = @('Boundary', 'SharedVSCodeWorktreePath', 'WorktreePaths', 'ProfiledRemotingPolicy')
       'Reset-DownstreamToSharedVSCodeMain'  = @('WorkspaceFiles')
       'Assert-MainBranchTemplateRef'        = @('WorkspaceFiles')
       'Update-OverviewWorkspaceStableInfo'  = @('RootWorkspacePath', 'SourceWorkspacePath')

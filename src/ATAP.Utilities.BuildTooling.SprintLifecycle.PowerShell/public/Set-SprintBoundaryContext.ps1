@@ -112,6 +112,12 @@ function Set-SprintBoundaryContext {
   .PARAMETER CheckpointConfirmed
     Confirms the sprint session has been checkpointed before user-global settings
     files are updated.
+  .PARAMETER ProfiledRemotingPolicy
+    Controls the local ATAP.PS7.Profiled endpoint concern. Disabled never probes or
+    registers it. Auto, the safe default, treats a host with no remoting surface and
+    no managed endpoint state as not applicable; existing remoting or managed state
+    is refreshed strictly. Required requires the remoting surface and managed
+    registration. This lifecycle never calls Enable-PSRemoting.
   .PARAMETER PrimaryRoleSharedStatePath
     Optional explicit Dropbox-synchronized ParityState folder for the canonical
     PrimaryRole.json marker. Defaults to the ATAP\ParityState folder beside the
@@ -186,6 +192,9 @@ function Set-SprintBoundaryContext {
     [switch]$AllowUserGlobalWrite,
 
     [switch]$CheckpointConfirmed,
+
+    [ValidateSet('Disabled', 'Auto', 'Required')]
+    [string]$ProfiledRemotingPolicy = 'Auto',
 
     [string]$PrimaryRoleSharedStatePath,
 
@@ -693,12 +702,36 @@ function Set-SprintBoundaryContext {
     # ------------------------------------------------------------------
     $profiledEndpointOk = $true
     $profiledEndpointError = $null
+    $profiledEndpointAction = 'NotProcessed'
+    $profiledEndpointReason = $null
+    $profiledEndpointState = $null
     try {
-      if (-not $SkipProfileSymlinks) {
-        if (-not (Get-Command -Name Register-ProfiledRemotingEndpoint -ErrorAction SilentlyContinue)) {
-          $profiledEndpointError = 'Register-ProfiledRemotingEndpoint (ATAP.Utilities.PowerShell) is not available; skipping local endpoint registration.'
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $profiledEndpointError
-        } elseif ($PSCmdlet.ShouldProcess('local', "Register profiled PowerShell 7 remoting endpoint ($Boundary)")) {
+      if ($SkipProfileSymlinks) {
+        $profiledEndpointAction = 'Skipped'
+        $profiledEndpointReason = 'Profile deployment and its sibling endpoint concern were skipped.'
+      } elseif ($ProfiledRemotingPolicy -eq 'Disabled') {
+        $profiledEndpointAction = 'NotApplicable'
+        $profiledEndpointReason = 'ProfiledRemotingPolicy is Disabled; endpoint registration was not invoked.'
+      } else {
+        $profiledEndpointState = Get-ProfiledRemotingBoundaryState
+        $remotingAbsent = -not $profiledEndpointState.RemotingSurfacePresent -and -not $profiledEndpointState.ManagedEndpointStatePresent
+        if ($remotingAbsent -and $ProfiledRemotingPolicy -eq 'Auto') {
+          $profiledEndpointAction = 'NotApplicable'
+          $profiledEndpointReason = 'Auto policy found no PowerShell session configurations and no managed endpoint state; endpoint registration is not applicable on this host.'
+        } elseif ($remotingAbsent) {
+          $profiledEndpointOk = $false
+          $profiledEndpointAction = 'RequiredUnavailable'
+          $profiledEndpointError = "Required profiled remoting is unavailable: no PowerShell session configurations or managed endpoint state were found. Enable PowerShell remoting explicitly outside SprintEnd, then rerun with -ProfiledRemotingPolicy Required. Probe: $($profiledEndpointState.ProbeError)"
+          $errors.Add($profiledEndpointError)
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profiledEndpointError
+        } elseif (-not (Get-Command -Name Register-ProfiledRemotingEndpoint -ErrorAction SilentlyContinue)) {
+          $profiledEndpointOk = $false
+          $profiledEndpointAction = 'RegistrationUnavailable'
+          $profiledEndpointError = 'Register-ProfiledRemotingEndpoint (ATAP.Utilities.PowerShell) is required because remoting or managed endpoint state exists, but the command is unavailable.'
+          $errors.Add($profiledEndpointError)
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profiledEndpointError
+        } elseif ($PSCmdlet.ShouldProcess('local', "Register profiled PowerShell 7 remoting endpoint ($Boundary, policy $ProfiledRemotingPolicy)")) {
+          $profiledEndpointAction = ($WhatIfPreference ? 'WouldRefresh' : 'Refresh')
           $endpointResult = Register-ProfiledRemotingEndpoint -Confirm:$false -WhatIf:$WhatIfPreference
           if (-not $endpointResult.Ok) {
             $profiledEndpointOk = $false
@@ -706,6 +739,8 @@ function Set-SprintBoundaryContext {
             $errors.Add($profiledEndpointError)
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profiledEndpointError
           }
+        } elseif ($WhatIfPreference) {
+          $profiledEndpointAction = 'WouldRefresh'
         }
       }
     } catch {
@@ -716,10 +751,13 @@ function Set-SprintBoundaryContext {
     }
     $concerns.Add([PSCustomObject]@{
         Concern        = 'ProfiledRemotingEndpoint'
-        Action         = ($SkipProfileSymlinks ? 'Skipped' : "Register-ProfiledRemotingEndpoint ($Boundary)")
+        Action         = $profiledEndpointAction
         StableByDesign = $false
         Succeeded      = $profiledEndpointOk
         Error          = $profiledEndpointError
+        Policy         = $ProfiledRemotingPolicy
+        Reason         = $profiledEndpointReason
+        State          = $profiledEndpointState
       })
 
     # ------------------------------------------------------------------

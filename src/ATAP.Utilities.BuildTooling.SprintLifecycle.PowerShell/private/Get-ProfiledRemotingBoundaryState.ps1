@@ -13,15 +13,25 @@ function Get-ProfiledRemotingBoundaryState {
   param(
     [string]$ConfigurationName = 'ATAP.PS7.Profiled',
 
-    [string]$PowerShellHome = $PSHOME
+    [string]$PowerShellHome = $PSHOME,
+
+    [scriptblock]$SessionConfigurationProvider
   )
 
   $probeError = $null
   $configurations = @()
   $commandAvailable = [bool](Get-Command -Name Get-PSSessionConfiguration -ErrorAction SilentlyContinue)
-  if ($commandAvailable) {
+  $usingDefaultSessionConfigurationProvider = $null -eq $SessionConfigurationProvider
+  if ($usingDefaultSessionConfigurationProvider) {
+    $SessionConfigurationProvider = {
+      Get-PSSessionConfiguration -ErrorAction Stop
+    }
+  }
+
+  $providerAvailable = -not $usingDefaultSessionConfigurationProvider -or $commandAvailable
+  if ($providerAvailable) {
     try {
-      $configurations = @(Get-PSSessionConfiguration -ErrorAction Stop)
+      $configurations = @(& $SessionConfigurationProvider)
     } catch {
       $probeError = $_.Exception.Message
     }
@@ -79,9 +89,9 @@ function Get-ProfiledRemotingBoundaryState {
   [PSCustomObject]@{
     ConfigurationName            = $ConfigurationName
     CommandAvailable             = $commandAvailable
-    ProbeSucceeded               = ($commandAvailable -and [string]::IsNullOrWhiteSpace($probeError))
+    ProbeSucceeded               = ($providerAvailable -and [string]::IsNullOrWhiteSpace($probeError))
     ConfigurationCount           = $configurations.Count
-    RemotingSurfacePresent       = ($commandAvailable -and [string]::IsNullOrWhiteSpace($probeError) -and $configurations.Count -gt 0)
+    RemotingSurfacePresent       = ($providerAvailable -and [string]::IsNullOrWhiteSpace($probeError) -and $configurations.Count -gt 0)
     ManagedConfigurationPresent  = $managedConfigurationPresent
     ManagedRegistryPresent       = $managedRegistryPresent
     ManagedMarkerPresent         = $managedMarkerPresent

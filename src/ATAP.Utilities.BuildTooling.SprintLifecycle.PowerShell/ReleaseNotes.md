@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.1.24
+
+- Make the profiled-remoting boundary probe's session-configuration source
+  injectable for deterministic tests while preserving
+  `Get-PSSessionConfiguration -ErrorAction Stop` as the production default.
+- Remove the remoting-health unit fixture's dependency on Pester mocking a core
+  remoting cmdlet under the BuildMaster service-account promoted-module host.
+- Add adversarial coverage proving the production default remains real and an
+  injected provider failure is reported as an unsuccessful probe.
+
 ## 0.1.23
 
 - Package the private `Set-UserSettingsSymlink` bridge with SprintLifecycle so

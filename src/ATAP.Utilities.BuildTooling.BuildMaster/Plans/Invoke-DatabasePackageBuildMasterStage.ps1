@@ -878,6 +878,12 @@ function Invoke-DatabasePackageBuildMasterStage {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Starting $fn for BuildId='$BuildMasterBuildId'; Application='$DatabaseApplication'; Stream='$DatabaseStream'; Stage='$Stage'"
 
     $script:buildToolingRoot = Split-Path -Parent $BuildToolingModulePath
+    if ([string]::IsNullOrWhiteSpace($env:ATAP_DATABASE_PACKAGE_STAGING_ROOT)) {
+      $env:ATAP_DATABASE_PACKAGE_STAGING_ROOT = Join-Path $env:ProgramData 'ATAP\DatabasePackageStaging'
+    }
+    if (-not (Test-Path -LiteralPath $env:ATAP_DATABASE_PACKAGE_STAGING_ROOT -PathType Container)) {
+      throw "BuildMaster database-package staging root is not provisioned: '$env:ATAP_DATABASE_PACKAGE_STAGING_ROOT'."
+    }
   }
 
   PROCESS {

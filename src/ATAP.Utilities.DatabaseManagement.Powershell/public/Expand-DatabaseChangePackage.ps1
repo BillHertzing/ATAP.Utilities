@@ -6,9 +6,10 @@ function Expand-DatabaseChangePackage {
 
 .DESCRIPTION
     Extracts all files from a .nupkg archive to the specified destination folder using
-    System.IO.Compression.ZipFile. When no destination is supplied, a temp folder named
-    dbpkg-expand-<GUID> is created under $env:TEMP. Returns the absolute path of the
-    destination folder.
+    System.IO.Compression.ZipFile. When no destination is supplied, a folder named
+    dbpkg-expand-<GUID> is created under ATAP_DATABASE_PACKAGE_STAGING_ROOT when
+    configured, otherwise under $env:TEMP. The shared staging-root option lets
+    the SQL Server service identity read files used by BULK INSERT.
 
     The caller is responsible for cleaning up the destination folder when it is a temp
     path (i.e., when -DestinationPath was not explicitly provided).
@@ -18,7 +19,10 @@ function Expand-DatabaseChangePackage {
 
 .PARAMETER DestinationPath
     Optional. Target folder for extraction. Created if it does not exist.
-    Defaults to "$env:TEMP\dbpkg-expand-<NewGuid>".
+    Defaults to
+    "$env:ATAP_DATABASE_PACKAGE_STAGING_ROOT\dbpkg-expand-<NewGuid>" when that
+    environment variable is configured, otherwise
+    "$env:TEMP\dbpkg-expand-<NewGuid>".
 
 .OUTPUTS
     [string] Absolute path of the destination folder where files were extracted.
@@ -83,7 +87,16 @@ function Expand-DatabaseChangePackage {
 
     # ── Determine destination ─────────────────────────────────────────────────
     if (-not $DestinationPath) {
-      $DestinationPath = Join-Path $env:TEMP "dbpkg-expand-$([System.Guid]::NewGuid().ToString('N'))"
+      $stagingRoot = if (-not [string]::IsNullOrWhiteSpace($env:ATAP_DATABASE_PACKAGE_STAGING_ROOT)) {
+        $env:ATAP_DATABASE_PACKAGE_STAGING_ROOT
+      }
+      else {
+        $env:TEMP
+      }
+      if (-not (Test-Path -LiteralPath $stagingRoot -PathType Container)) {
+        throw "Database package staging root does not exist: '$stagingRoot'."
+      }
+      $DestinationPath = Join-Path $stagingRoot "dbpkg-expand-$([System.Guid]::NewGuid().ToString('N'))"
     }
 
     $destAbsolute = [System.IO.Path]::GetFullPath($DestinationPath)

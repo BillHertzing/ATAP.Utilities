@@ -266,6 +266,25 @@ Describe 'Expand-DatabaseChangePackage' {
     Test-Path (Join-Path $explicit 'db-release-unit-manifest.json') | Should -BeTrue
   }
 
+  It 'uses the shared database-package staging root when configured' {
+    $sharedRoot = Join-Path $TestDrive 'shared-staging'
+    New-Item -ItemType Directory -Path $sharedRoot -Force | Out-Null
+    $previousRoot = $env:ATAP_DATABASE_PACKAGE_STAGING_ROOT
+    $dest = $null
+    try {
+      $env:ATAP_DATABASE_PACKAGE_STAGING_ROOT = $sharedRoot
+      $dest = Expand-DatabaseChangePackage -NupkgPath $script:NupkgPath
+      (Split-Path -Parent $dest) | Should -Be $sharedRoot
+      Test-Path (Join-Path $dest 'db-release-unit-manifest.json') | Should -BeTrue
+    }
+    finally {
+      $env:ATAP_DATABASE_PACKAGE_STAGING_ROOT = $previousRoot
+      if ($dest -and (Test-Path -LiteralPath $dest)) {
+        Remove-Item -LiteralPath $dest -Recurse -Force
+      }
+    }
+  }
+
   It 'Throws a terminating error when the nupkg file does not exist' {
     { Expand-DatabaseChangePackage -NupkgPath (Join-Path $TestDrive 'nonexistent.nupkg') } |
       Should -Throw

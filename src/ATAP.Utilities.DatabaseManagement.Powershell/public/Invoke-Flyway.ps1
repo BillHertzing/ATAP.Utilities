@@ -569,9 +569,11 @@ function Invoke-Flyway {
         }
         Push-Location $FlywayBasePath -ErrorAction Stop
         try {
-          & $FlywayExecutablePath @flywayParams
+          $flywayOutput = @(& $FlywayExecutablePath @flywayParams 2>&1)
           $exit = $LASTEXITCODE
-          if ($exit -ne 0) { throw "flyway exited with code $exit" }
+          if ($exit -ne 0) {
+            throw "flyway exited with code $exit`n$($flywayOutput -join [Environment]::NewLine)"
+          }
         } finally {
           Pop-Location
         }
@@ -595,7 +597,7 @@ function Invoke-Flyway {
       PackageVersion = $PackageVersion
       GitTag         = $GitTag
       GitCommit      = $GitCommit
-      FileCount      = @($Files).Count
+      FileCount      = if ($null -eq $Files) { 0 } else { @($Files).Count }
       ManifestValues = $env:FLYWAY_PLACEHOLDERS_MANIFESTVALUES
       FlywayCommand  = $FlywayCommand
       FlywayUrl      = $env:FLYWAY_URL -replace 'password=[^;]*', 'password=***'

@@ -530,6 +530,24 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       Should -Invoke Remove-SprintDatabases -Times 1
       Should -Invoke Clear-BuildMasterSprintVariables -Times 1
     }
+
+    It 'keeps ambient WhatIf out of read-only health and reports cleanup as planned' {
+      $script:healthWhatIfPreference = $null
+      Mock Test-SprintInfrastructureHealth {
+        $script:healthWhatIfPreference = [bool]$WhatIfPreference
+        [PSCustomObject]@{ AllOk = $true; Failures = @() }
+      }
+
+      $result = Invoke-SprintEndInfrastructureCleanup -GitRoot $TestDrive -Apply -WhatIf -Confirm:$false
+
+      $script:healthWhatIfPreference | Should -BeFalse
+      $result.Ok | Should -BeTrue
+      $result.Applied | Should -BeFalse
+      $result.Planned | Should -BeTrue
+      Should -Invoke Remove-SprintDatabases -Times 0
+      Should -Invoke Clear-BuildMasterSprintVariables -Times 0
+      Should -Invoke Set-SprintBoundaryContext -Times 0
+    }
   }
 
   Context 'Invoke-SprintEndGitHubClose' {

@@ -63,8 +63,15 @@ function Invoke-SprintEndInfrastructureCleanup {
   }
 
   process {
-    $health = Test-SprintInfrastructureHealth `
-      -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName
+    # The read-only health check resolves its API key through Get-SecretATAP,
+    # which creates and then removes a process-scoped BWS_ACCESS_TOKEN. Do not
+    # let an ambient lifecycle -WhatIf suppress that internal cleanup and make
+    # the health check report its own temporary token as prohibited drift.
+    $health = & {
+      $WhatIfPreference = $false
+      Test-SprintInfrastructureHealth `
+        -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName
+    }
     $databaseResults = @()
     $buildMasterResult = $null
     $boundaryResult = $null
@@ -95,8 +102,9 @@ function Invoke-SprintEndInfrastructureCleanup {
     }
 
     return [PSCustomObject]@{
-      Ok                         = ($health.AllOk -and (-not $Apply -or $null -ne $buildMasterResult))
-      Applied                    = [bool]$Apply
+      Ok                         = ($health.AllOk -and (-not $Apply -or $WhatIfPreference -or $null -ne $buildMasterResult))
+      Applied                    = [bool]($Apply -and -not $WhatIfPreference)
+      Planned                    = [bool]($Apply -and $WhatIfPreference)
       Health                     = $health
       DatabaseResults            = $databaseResults
       DatabaseCleanupMode        = 'SprintDatabasesOnly'

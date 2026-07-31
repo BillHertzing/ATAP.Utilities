@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.1.18
+
+- Keep the SprintEnd cleanup health check read-only and deterministic under a
+  lifecycle `-WhatIf`: transient Bitwarden Secrets Manager environment setup
+  is cleaned up instead of being mistaken for persistent secret drift, and the
+  cleanup result is reported as planned rather than applied. Live cleanup
+  health and mutation gates remain strict.
+
 ## 0.1.17
 
 - Treat a successful GitHub close preview as planned lifecycle work even when

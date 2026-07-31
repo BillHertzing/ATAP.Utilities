@@ -111,6 +111,25 @@ Describe 'New-DatabaseChangePackage — ATAPUtilities canonical Flyway layout' {
     $manifest.flywayTargetVersion | Should -Be '00.01.000010'
     $manifest.files.path | Should -Contain 'db/migrations/V00.01.000010__core.sql'
     $manifest.files.path | Should -Contain 'db/seeds/Canonical.csv'
+
+    Add-Type -AssemblyName 'System.IO.Compression.FileSystem'
+    $zip = [System.IO.Compression.ZipFile]::OpenRead($nupkg)
+    try {
+      $configEntry = $zip.Entries |
+        Where-Object { $_.FullName -eq 'flyway.toml' } |
+        Select-Object -First 1
+      $configEntry | Should -Not -BeNullOrEmpty
+      $reader = [System.IO.StreamReader]::new($configEntry.Open())
+      try {
+        $config = $reader.ReadToEnd()
+      } finally {
+        $reader.Dispose()
+      }
+      $config | Should -Match 'filesystem:\./db/migrations'
+      $config | Should -Not -Match 'filesystem:\./SQL'
+    } finally {
+      $zip.Dispose()
+    }
   }
 
   It 'excludes an explicitly deferred migration by exact file name' {

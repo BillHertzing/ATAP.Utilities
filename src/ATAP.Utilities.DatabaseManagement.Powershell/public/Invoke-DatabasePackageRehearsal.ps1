@@ -160,12 +160,25 @@ function Invoke-DatabasePackageRehearsal {
         -Message "Starting rehearsal for Application='$appName' BuildId='$BuildId'" -Tag 'Rehearsal'
 
       if ($PSCmdlet.ShouldProcess("$appName (BuildId=$BuildId)", 'Run Flyway rehearsal')) {
+        $packageMigrationsPath = Join-Path $expandedPath 'db\migrations'
+        $packageDataPath = Join-Path $expandedPath 'db\seeds'
+        $packageFlywayTomlPath = Join-Path $expandedPath 'flyway.toml'
+        foreach ($requiredPath in @($packageMigrationsPath, $packageDataPath, $packageFlywayTomlPath)) {
+          if (-not (Test-Path -LiteralPath $requiredPath)) {
+            throw "Database package is not deployable: required path '$requiredPath' is missing."
+          }
+        }
+
         $rehearsalParams = @{
-          Application  = $appName
-          BuildId      = $BuildId
-          SqlInstance  = $SqlInstance
-          DatabaseHost = $DatabaseHost
-          BundlePath   = $expandedPath
+          Application                 = $appName
+          BuildId                    = $BuildId
+          SqlInstance                = $SqlInstance
+          DatabaseHost               = $DatabaseHost
+          BundlePath                 = $expandedPath
+          FlywayBasePath             = $expandedPath
+          FlywaySqlMigrationsPath    = $packageMigrationsPath
+          FlywayDataPath             = $packageDataPath
+          FlywayTomlPath             = $packageFlywayTomlPath
         }
         if (-not [string]::IsNullOrWhiteSpace($RehearsalDb))        { $rehearsalParams['RehearsalDb']        = $RehearsalDb }
         if (-not [string]::IsNullOrWhiteSpace($DBConnectionStringSecretName)) { $rehearsalParams['DBConnectionStringSecretName'] = $DBConnectionStringSecretName }

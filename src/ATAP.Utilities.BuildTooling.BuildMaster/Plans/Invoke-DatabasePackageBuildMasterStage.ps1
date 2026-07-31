@@ -695,6 +695,9 @@ function Invoke-DatabasePackageTierApply {
         FlywayCommand                = 'migrate'
         DBConnectionStringSecretName = $ConnectionStringSecretName
         FlywayBasePath               = $expandedPath
+        FlywaySqlMigrationsPath      = (Join-Path $expandedPath 'db\migrations')
+        FlywayDataPath               = (Join-Path $expandedPath 'db\seeds')
+        FlywayTomlPath               = (Join-Path $expandedPath 'flyway.toml')
         PackageName                  = $DatabasePackageId
         PackageVersion               = $PackageVersion
       }

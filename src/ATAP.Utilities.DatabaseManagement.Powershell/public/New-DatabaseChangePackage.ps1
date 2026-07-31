@@ -199,6 +199,37 @@ function New-DatabaseChangePackage {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message $msg -Tag 'Warning'
     }
 
+    # A database package is a self-contained Flyway release unit. Its canonical
+    # archive layout is db/migrations + db/repeatables + db/seeds, which differs
+    # from the source-tree SQL + Repeatable + Data layout. Generate the package
+    # configuration from the content actually staged so consumers never fall
+    # back to a repository-local flyway.toml.
+    $packageLocations = [System.Collections.Generic.List[string]]::new()
+    if (($collectedFiles | Where-Object { $_['kind'] -eq 'migration' }).Count -gt 0) {
+      $packageLocations.Add('filesystem:./db/migrations')
+    }
+    if (($collectedFiles | Where-Object { $_['kind'] -eq 'repeatable' }).Count -gt 0) {
+      $packageLocations.Add('filesystem:./db/repeatables')
+    }
+    $locationToml = ($packageLocations | ForEach-Object { '  "' + $_ + '"' }) -join ",`n"
+    $packageFlywayTomlPath = Join-Path $stagingFolder 'flyway.toml'
+    $packageFlywayToml = @"
+[flyway]
+cleanDisabled = true
+outOfOrder = false
+validateOnMigrate = true
+validateMigrationNaming = true
+mixed = true
+createSchemas = true
+placeholderReplacement = true
+locations = [
+$locationToml
+]
+"@
+    if ($PSCmdlet.ShouldProcess($packageFlywayTomlPath, 'Write package flyway.toml')) {
+      $packageFlywayToml | Set-Content -LiteralPath $packageFlywayTomlPath -Encoding UTF8
+    }
+
     # ── 6. Build sorted checksum list for determinism ─────────────────────────
     $sortedFiles = $collectedFiles | Sort-Object { $_['path'] }
 
@@ -345,6 +376,7 @@ function New-DatabaseChangePackage {
   </PropertyGroup>
   <ItemGroup>
     <Content Include="db\**\*" Pack="true" PackagePath="db\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Content Include="flyway.toml" Pack="true" PackagePath="flyway.toml" />
     <Content Include="db-release-unit-manifest.json" Pack="true" PackagePath="db-release-unit-manifest.json" />
     <Content Include="package-evidence.json" Pack="true" PackagePath="package-evidence.json" />
   </ItemGroup>

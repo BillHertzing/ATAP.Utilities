@@ -122,6 +122,11 @@ Describe 'V4-E08 runner shape: Invoke-DatabasePackageBuildMasterStage.ps1 contra
         $script:RunnerText | Should -Match 'New-DatabaseChangePackage'
     }
 
+    It 'runner always binds the canonical database-management package builder' {
+        $script:RunnerText | Should -Match '\$mustLoadCanonicalPackageBuilder\s*=\s*\$commandName\s+-eq\s+''New-DatabaseChangePackage'''
+        $script:RunnerText | Should -Match '\$mustLoadCanonicalPackageBuilder\s+-or'
+    }
+
     It 'plan passes the exact migration exclusion application variable to the runner' {
         $script:PlanText | Should -Match '-ExcludedMigrationFileNames\s+"\$ExcludedMigrationFileNames"'
     }

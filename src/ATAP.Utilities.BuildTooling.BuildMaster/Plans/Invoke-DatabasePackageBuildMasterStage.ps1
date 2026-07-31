@@ -924,7 +924,13 @@ function Invoke-DatabasePackageBuildMasterStage {
       'Invoke-Flyway'                  = 'Invoke-Flyway.ps1'
     }
     foreach ($commandName in $databaseManagementFunctionFiles.Keys) {
-      if (-not (Get-Command -Name $commandName -ErrorAction SilentlyContinue)) {
+      # The parent BuildTooling module also exports a legacy command named
+      # New-DatabaseChangePackage. Always bind the canonical
+      # DatabaseManagement implementation so release-boundary parameters such
+      # as ExcludedMigrationFileName cannot be shadowed by that older command.
+      $mustLoadCanonicalPackageBuilder = $commandName -eq 'New-DatabaseChangePackage'
+      if ($mustLoadCanonicalPackageBuilder -or
+          -not (Get-Command -Name $commandName -ErrorAction SilentlyContinue)) {
         $candidate = Join-Path -Path $dbModulePublic -ChildPath $databaseManagementFunctionFiles[$commandName]
         if (Test-Path -LiteralPath $candidate -PathType Leaf) {
           . $candidate

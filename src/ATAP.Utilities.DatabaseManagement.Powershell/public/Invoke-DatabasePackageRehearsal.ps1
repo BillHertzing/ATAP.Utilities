@@ -189,14 +189,34 @@ function Invoke-DatabasePackageRehearsal {
         }
         if (-not [string]::IsNullOrWhiteSpace($LogPath))             { $rehearsalParams['LogPath']             = $LogPath }
 
+        $rehearsalStarted = [datetime]::UtcNow
         $result = Invoke-FlywayRehearsal @rehearsalParams
+        $elapsedSeconds = ([datetime]::UtcNow - $rehearsalStarted).TotalSeconds
+        $validateOutput = if ($result.PSObject.Properties.Name -contains 'ValidateOutput') {
+          $result.ValidateOutput
+        }
+        else {
+          $null
+        }
+        $migrateOutput = if ($result.PSObject.Properties.Name -contains 'MigrateOutput') {
+          $result.MigrateOutput
+        }
+        elseif ($result.PSObject.Properties.Name -contains 'FlywayResult') {
+          $result.FlywayResult
+        }
+        else {
+          $null
+        }
+        if ($result.PSObject.Properties.Name -contains 'ElapsedSeconds') {
+          $elapsedSeconds = [double]$result.ElapsedSeconds
+        }
 
         $output = [PSCustomObject]@{
           Success        = $result.Success
           PackagePath    = $expandedPath
-          ValidateOutput = $result.ValidateOutput
-          MigrateOutput  = $result.MigrateOutput
-          ElapsedSeconds = $result.ElapsedSeconds
+          ValidateOutput = $validateOutput
+          MigrateOutput  = $migrateOutput
+          ElapsedSeconds = $elapsedSeconds
         }
 
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `

@@ -595,7 +595,7 @@ function Invoke-Flyway {
       PackageVersion = $PackageVersion
       GitTag         = $GitTag
       GitCommit      = $GitCommit
-      FileCount      = $Files.Count
+      FileCount      = @($Files).Count
       ManifestValues = $env:FLYWAY_PLACEHOLDERS_MANIFESTVALUES
       FlywayCommand  = $FlywayCommand
       FlywayUrl      = $env:FLYWAY_URL -replace 'password=[^;]*', 'password=***'

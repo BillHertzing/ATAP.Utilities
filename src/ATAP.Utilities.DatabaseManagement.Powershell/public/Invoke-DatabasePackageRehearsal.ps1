@@ -172,8 +172,6 @@ function Invoke-DatabasePackageRehearsal {
         $rehearsalParams = @{
           Application                 = $appName
           BuildId                    = $BuildId
-          SqlInstance                = $SqlInstance
-          DatabaseHost               = $DatabaseHost
           BundlePath                 = $expandedPath
           FlywayBasePath             = $expandedPath
           FlywaySqlMigrationsPath    = $packageMigrationsPath
@@ -181,7 +179,13 @@ function Invoke-DatabasePackageRehearsal {
           FlywayTomlPath             = $packageFlywayTomlPath
         }
         if (-not [string]::IsNullOrWhiteSpace($RehearsalDb))        { $rehearsalParams['RehearsalDb']        = $RehearsalDb }
-        if (-not [string]::IsNullOrWhiteSpace($DBConnectionStringSecretName)) { $rehearsalParams['DBConnectionStringSecretName'] = $DBConnectionStringSecretName }
+        if (-not [string]::IsNullOrWhiteSpace($DBConnectionStringSecretName)) {
+          $rehearsalParams['DBConnectionStringSecretName'] = $DBConnectionStringSecretName
+        }
+        else {
+          $rehearsalParams['SqlInstance'] = $SqlInstance
+          $rehearsalParams['DatabaseHost'] = $DatabaseHost
+        }
         if (-not [string]::IsNullOrWhiteSpace($LogPath))             { $rehearsalParams['LogPath']             = $LogPath }
 
         $result = Invoke-FlywayRehearsal @rehearsalParams

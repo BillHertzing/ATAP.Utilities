@@ -1,0 +1,4 @@
+interface:
+  display_name: "Build Deploy Database"
+  short_description: "Build and promote ATAP database releases"
+  default_prompt: "Use $build-deploy-database to package, test, and promote an ATAP database release through BuildMaster and ProGet."

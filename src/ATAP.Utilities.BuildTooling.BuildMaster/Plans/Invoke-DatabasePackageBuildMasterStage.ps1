@@ -154,6 +154,9 @@ param(
   [string]$DatabaseStream = '',
 
   [AllowEmptyString()]
+  [string]$ExcludedMigrationFileNames = '',
+
+  [AllowEmptyString()]
   [string]$Branch = '',
 
   [Parameter(Mandatory)]
@@ -847,6 +850,7 @@ function Invoke-DatabasePackageBuildMasterStage {
     [Parameter(Mandatory)][string]$ApplicationName,
     [Parameter(Mandatory)][string]$DatabaseApplication,
     [AllowEmptyString()][string]$DatabaseStream = '',
+    [AllowEmptyString()][string]$ExcludedMigrationFileNames = '',
     [AllowEmptyString()][string]$Branch = '',
     [Parameter(Mandatory)][string]$Stage,
     [Parameter(Mandatory)][string]$ProGetUrl,
@@ -956,6 +960,21 @@ function Invoke-DatabasePackageBuildMasterStage {
     $resolvedVersion = [string]$context.ResolvedPackageVersion
     $prereleaseLabel = [string]$context.PrereleaseLabel
     $effectiveCeilingTier = [string]$context.CeilingTier
+    $excludedMigrations = @(
+      $ExcludedMigrationFileNames -split ';' |
+        ForEach-Object { $_.Trim() } |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+    )
+
+    if ($excludedMigrations.Count -ne (@($excludedMigrations | Select-Object -Unique)).Count) {
+      throw 'ExcludedMigrationFileNames contains duplicate file names.'
+    }
+    foreach ($excludedMigration in $excludedMigrations) {
+      if ([System.IO.Path]::GetFileName($excludedMigration) -ne $excludedMigration -or
+          -not $excludedMigration.EndsWith('.sql', [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Excluded migration '$excludedMigration' must be an exact SQL file name without a directory path."
+      }
+    }
 
     if ([string]::IsNullOrWhiteSpace($effectiveCeilingTier)) {
       $effectiveCeilingTier = 'Production'
@@ -1036,6 +1055,7 @@ function Invoke-DatabasePackageBuildMasterStage {
         DatabaseApplication = $DatabaseApplication
         DatabaseStream      = $DatabaseStream
         DatabasePackageId   = $databasePackageId
+        ExcludedMigrations  = $excludedMigrations
       } | Out-Null
 
     if (Test-DatabasePackageStageCompleted -ContextDirectory $contextDirectory -DatabasePackageId $databasePackageId -Tier $Stage) {
@@ -1058,6 +1078,9 @@ function Invoke-DatabasePackageBuildMasterStage {
       }
       if (-not [string]::IsNullOrWhiteSpace($DatabaseStream)) {
         $newPackageParameters['Stream'] = $DatabaseStream
+      }
+      if ($excludedMigrations.Count -gt 0) {
+        $newPackageParameters['ExcludedMigrationFileName'] = $excludedMigrations
       }
 
       $nupkgPath = New-DatabaseChangePackage @newPackageParameters
@@ -1102,6 +1125,7 @@ function Invoke-DatabasePackageBuildMasterStage {
           DatabaseApplication = $DatabaseApplication
           DatabaseStream      = $DatabaseStream
           DatabasePackageId   = $databasePackageId
+          ExcludedMigrations  = $excludedMigrations
           NupkgPath           = $nupkgPath
           PackageVersion      = $resolvedVersion
         } | Out-Null
@@ -1223,6 +1247,7 @@ Invoke-DatabasePackageBuildMasterStage `
   -ApplicationName $ApplicationName `
   -DatabaseApplication $DatabaseApplication `
   -DatabaseStream $DatabaseStream `
+  -ExcludedMigrationFileNames $ExcludedMigrationFileNames `
   -Branch $Branch `
   -Stage $Stage `
   -ProGetUrl $ProGetUrl `

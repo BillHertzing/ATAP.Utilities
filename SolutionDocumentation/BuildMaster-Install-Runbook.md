@@ -911,6 +911,7 @@ Settings → Variables**:
 | `ApplicationName`     | string | BuildMaster application identifier echoed into run-context JSON.                                                                                          | `ATAPUtilitiesDatabase`           |
 | `DatabaseApplication` | string | Source-tree application name used to locate `Database/<DatabaseApplication>/`. **Must not be empty.**                                                     | `ATAPUtilities`                   |
 | `DatabaseStream`      | string | Optional database stream sub-folder. Empty selects single-stream; non-empty resolves the package id to `<DatabaseApplication>.<DatabaseStream>.Database`. | `` (empty)                        |
+| `ExcludedMigrationFileNames` | string | Optional semicolon-delimited exact SQL file names excluded from this immutable release unit. Directory paths and duplicate names are rejected; exclusions are recorded in the build context. | `V00.02.000120__Add_ContentSummary_Rule_Kind.sql` |
 | `Branch`              | string | Source branch supplied by the repository monitor.                                                                                                         | `main`                            |
 | `SourcePath`          | string | Absolute path to the BuildMaster working directory for the active sprint or stable branch.                                                                | `C:\\BuildMaster\\ATAP.Utilities` |
 | `ProGetBaseUrl`       | string | ProGet base URL hosting the canonical five `database-*` feeds.                                                                                            | `http://localhost:50000`          |
@@ -918,6 +919,11 @@ Settings → Variables**:
 The plan passes every one of these to the runner as a `-NAME "$VAR"`
 argument. No secret values appear in Application Variables or in `Arguments:`
 blocks.
+
+Use `ExcludedMigrationFileNames` only for an explicitly approved release
+boundary. An exclusion is package-specific and must not become a permanent way
+to hide a migration. The package manifest, target version, and archive contents
+must be inspected after build to prove that each deferred file is absent.
 
 ### Required ProGet SecretName on the BuildMaster service account
 

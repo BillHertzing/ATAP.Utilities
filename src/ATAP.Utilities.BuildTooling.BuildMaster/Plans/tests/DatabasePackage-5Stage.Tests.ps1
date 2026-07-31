@@ -93,6 +93,7 @@ Describe 'V4-E08 runner shape: Invoke-DatabasePackageBuildMasterStage.ps1 contra
             'ApplicationName',
             'DatabaseApplication',
             'DatabaseStream',
+            'ExcludedMigrationFileNames',
             'Branch',
             'Stage',
             'ProGetUrl',
@@ -119,6 +120,17 @@ Describe 'V4-E08 runner shape: Invoke-DatabasePackageBuildMasterStage.ps1 contra
 
     It 'runner invokes New-DatabaseChangePackage during the Experimental stage' {
         $script:RunnerText | Should -Match 'New-DatabaseChangePackage'
+    }
+
+    It 'plan passes the exact migration exclusion application variable to the runner' {
+        $script:PlanText | Should -Match '-ExcludedMigrationFileNames\s+"\$ExcludedMigrationFileNames"'
+    }
+
+    It 'runner parses, validates, records, and forwards exact migration exclusions' {
+        $script:RunnerText | Should -Match '\$ExcludedMigrationFileNames\s+-split\s+'';'''
+        $script:RunnerText | Should -Match 'GetFileName\(\$excludedMigration\)'
+        $script:RunnerText | Should -Match 'ExcludedMigrationFileName''\]\s*=\s*\$excludedMigrations'
+        $script:RunnerText | Should -Match 'ExcludedMigrations\s*=\s*\$excludedMigrations'
     }
 
     It 'runner invokes Get-DatabasePackageBuildContext' {

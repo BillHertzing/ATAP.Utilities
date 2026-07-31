@@ -19,8 +19,8 @@ BeforeAll {
 Describe 'New-DatabaseChangePackage -PackageVersion' {
   It 'uses the resolved package version when version.json contains NBGV height tokens' {
     $repoRoot = Join-Path $TestDrive 'fixture-repo'
-    $dbRoot = Join-Path $repoRoot 'Database' 'ATAPUtilities'
-    $migrationRoot = Join-Path $dbRoot 'db' 'migrations'
+    $dbRoot = Join-Path $repoRoot 'Database' 'Flyway'
+    $migrationRoot = Join-Path $dbRoot 'SQL'
 
     New-Item -ItemType Directory -Path $migrationRoot -Force | Out-Null
     @{

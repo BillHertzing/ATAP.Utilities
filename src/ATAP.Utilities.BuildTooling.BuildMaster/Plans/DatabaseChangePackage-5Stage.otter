@@ -8,6 +8,12 @@
 #   $DatabaseStream     - Optional stream name; empty for single-stream.
 #                         Resolves package id <App>.Database vs
 #                         <App>.<Stream>.Database.
+#   $ExcludedMigrationFileNames
+#                       - Optional semicolon-delimited list of exact SQL file
+#                         names to exclude from package creation. The runner
+#                         rejects paths and duplicate names, passes the list to
+#                         New-DatabaseChangePackage, and records it in the
+#                         immutable build context.
 #   $Branch             - source branch name supplied by monitor/poller
 #   $SourcePath         - absolute path to the developer/build worktree
 #   $ProGetBaseUrl      - Base URL of the ProGet server hosting the feeds
@@ -78,7 +84,7 @@ set $BuildMasterExecutionId = $ExecutionId;
 Exec
 (
     FileName: pwsh,
-    Arguments: >>-NoProfile -File "$InvokeDatabasePackageStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -DatabaseApplication "$DatabaseApplication" -DatabaseStream "$DatabaseStream" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetBaseUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName" -ExperimentalDatabaseDBConnectionStringSecretName "$ExperimentalDatabaseDBConnectionStringSecretName" -DevelopmentDatabaseDBConnectionStringSecretName "$DevelopmentDatabaseDBConnectionStringSecretName" -IntegrationDatabaseDBConnectionStringSecretName "$IntegrationDatabaseDBConnectionStringSecretName" -QADatabaseDBConnectionStringSecretName "$QADatabaseDBConnectionStringSecretName" -ProductionDatabaseDBConnectionStringSecretName "$ProductionDatabaseDBConnectionStringSecretName">>,
+    Arguments: >>-NoProfile -File "$InvokeDatabasePackageStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -DatabaseApplication "$DatabaseApplication" -DatabaseStream "$DatabaseStream" -ExcludedMigrationFileNames "$ExcludedMigrationFileNames" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetBaseUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName" -ExperimentalDatabaseDBConnectionStringSecretName "$ExperimentalDatabaseDBConnectionStringSecretName" -DevelopmentDatabaseDBConnectionStringSecretName "$DevelopmentDatabaseDBConnectionStringSecretName" -IntegrationDatabaseDBConnectionStringSecretName "$IntegrationDatabaseDBConnectionStringSecretName" -QADatabaseDBConnectionStringSecretName "$QADatabaseDBConnectionStringSecretName" -ProductionDatabaseDBConnectionStringSecretName "$ProductionDatabaseDBConnectionStringSecretName">>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );

@@ -283,12 +283,17 @@ END;
             -not (Test-Path -LiteralPath $stagingRoot -PathType Container)) {
             throw 'ATAP_DATABASE_PACKAGE_STAGING_ROOT must name a provisioned shared directory for clone-based rehearsals.'
           }
-          if (-not (Get-Command -Name Copy-DbaDatabase -ErrorAction SilentlyContinue)) {
-            throw 'Copy-DbaDatabase is required for clone-based database rehearsals.'
+          if (-not (Get-Command -Name Copy-DbaDatabase -ErrorAction SilentlyContinue) -or
+            -not (Get-Command -Name Connect-DbaInstance -ErrorAction SilentlyContinue)) {
+            throw 'Connect-DbaInstance and Copy-DbaDatabase are required for clone-based database rehearsals.'
           }
+          $rehearsalServer = Connect-DbaInstance `
+            -SqlInstance $serverInstance `
+            -TrustServerCertificate `
+            -AllowTrustServerCertificate
           Copy-DbaDatabase `
-            -Source $serverInstance `
-            -Destination $serverInstance `
+            -Source $rehearsalServer `
+            -Destination $rehearsalServer `
             -Database $SourceDatabaseName `
             -NewName $RehearsalDb `
             -BackupRestore `

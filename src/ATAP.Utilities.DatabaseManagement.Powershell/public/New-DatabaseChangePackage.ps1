@@ -205,10 +205,10 @@ function New-DatabaseChangePackage {
     # configuration from the content actually staged so consumers never fall
     # back to a repository-local flyway.toml.
     $packageLocations = [System.Collections.Generic.List[string]]::new()
-    if (($collectedFiles | Where-Object { $_['kind'] -eq 'migration' }).Count -gt 0) {
+    if (@($collectedFiles | Where-Object { $_['kind'] -eq 'migration' }).Count -gt 0) {
       $packageLocations.Add('filesystem:./db/migrations')
     }
-    if (($collectedFiles | Where-Object { $_['kind'] -eq 'repeatable' }).Count -gt 0) {
+    if (@($collectedFiles | Where-Object { $_['kind'] -eq 'repeatable' }).Count -gt 0) {
       $packageLocations.Add('filesystem:./db/repeatables')
     }
     $locationToml = ($packageLocations | ForEach-Object { '  "' + $_ + '"' }) -join ",`n"
@@ -247,8 +247,8 @@ $locationToml
     }
 
     # ── 8. Classify changeKind ────────────────────────────────────────────────
-    $hasMigrations = ($sortedFiles | Where-Object { $_['kind'] -in 'migration', 'repeatable' }).Count -gt 0
-    $hasSeeds = ($sortedFiles | Where-Object { $_['kind'] -in 'seed', 'seedLoader' }).Count -gt 0
+    $hasMigrations = @($sortedFiles | Where-Object { $_['kind'] -in 'migration', 'repeatable' }).Count -gt 0
+    $hasSeeds = @($sortedFiles | Where-Object { $_['kind'] -in 'seed', 'seedLoader' }).Count -gt 0
     $changeKind = if ($hasMigrations -and $hasSeeds) { 'schemaAndData' }
     elseif ($hasMigrations) { 'schema' }
     else { 'data' }

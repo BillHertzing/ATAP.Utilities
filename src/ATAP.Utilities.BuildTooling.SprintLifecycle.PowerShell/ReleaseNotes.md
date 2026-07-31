@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.1.20
+
+- Keep stable repository worktrees read-only before SprintEnd PR merge by
+  materializing stable-only adapter projections into the outgoing sprint
+  branches for review and commit.
+- Replace the fixed two-render assumption with a bounded five-pass convergence
+  gate that records every pass and still fails closed when no clean pass is
+  reached.
+- Resolve an empty automatic current-user profile path through the Windows
+  Documents known folder, with a bounded USERPROFILE fallback.
+
 ## 0.1.19
 
 - Project the End-boundary preview's planned process-scoped BWS token removal

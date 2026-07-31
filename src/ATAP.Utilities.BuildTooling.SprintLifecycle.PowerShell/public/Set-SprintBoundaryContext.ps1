@@ -236,6 +236,9 @@ function Set-SprintBoundaryContext {
         AISettingsDriftClean = $null
         StableAdaptersRegenerated = $false
         StableAdapterSecondPassClean = $null
+        StableAdapterProjectionApplied = $false
+        StableAdapterConverged = $null
+        StableAdapterRenderPassCount = $null
         StableAdapterIntentLedgerPath = $null
         # Granular per-concern errors (Task 12.2.b) so delegating callers
         # (New-SprintStage1/New-SprintStage2) can map severities without
@@ -289,10 +292,11 @@ function Set-SprintBoundaryContext {
         continue
       }
 
-      # SprintEnd audits the outgoing worktree first, then executes the approved
-      # stable-only regeneration policy against the corresponding stable root.
-      # The regeneration wrapper hash-ledgers user/global intent and refuses to
-      # continue unless its second pass changes zero targets (Task 13.20.b).
+      # SprintEnd audits the outgoing worktree first, then materializes the
+      # approved stable-only projection into that same sprint worktree. These
+      # files must be reviewed and committed on the sprint branch; the stable
+      # repository remains read-only until its PR is merged. Post-merge handoff
+      # reasserts machine/user-global stable state (Task 13.20.b).
       if ($Boundary -eq 'End' -and -not $SkipAIAdapterLifecycle) {
         try {
           if ($PSCmdlet.ShouldProcess($worktreePath, 'Audit canonical AI adapter drift before teardown')) {
@@ -304,22 +308,33 @@ function Set-SprintBoundaryContext {
             $wtEntry.AISettingsProcessed = $true
             $wtEntry.AISettingsDriftClean = $adapterLifecycleResult.DriftClean
             if (-not $adapterLifecycleResult.DriftClean) {
-              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "AI adapter drift detected for '$worktreePath'; applying the approved stable-only regeneration policy to '$stableRepoPath'."
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "AI adapter drift detected for '$worktreePath'; applying the approved stable-only projection to its sprint branch."
             }
 
             $stableRenderResult = Invoke-SprintAIAdapterLifecycle `
               -Boundary Start `
-              -TargetRoot $stableRepoPath `
+              -TargetRoot $worktreePath `
               -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath `
               -AllowUserGlobalWrite:$AllowUserGlobalWrite `
               -CheckpointConfirmed:$CheckpointConfirmed `
               -OmitSprintWorktrees `
               -Confirm:$false
             if (-not $stableRenderResult.PSObject.Properties['Idempotent'] -or -not $stableRenderResult.Idempotent) {
-              throw "Stable-only AI adapter regeneration did not prove a zero-change second pass for '$stableRepoPath'."
+              throw "Stable-only AI adapter projection did not converge for '$worktreePath'."
             }
             $wtEntry.StableAdaptersRegenerated = $true
-            $wtEntry.StableAdapterSecondPassClean = $true
+            $wtEntry.StableAdapterProjectionApplied = $true
+            $wtEntry.StableAdapterConverged = $true
+            $wtEntry.StableAdapterSecondPassClean = if ($stableRenderResult.PSObject.Properties['SecondPassChangedCount']) {
+              [int]$stableRenderResult.SecondPassChangedCount -eq 0
+            } else {
+              $true
+            }
+            $wtEntry.StableAdapterRenderPassCount = if ($stableRenderResult.PSObject.Properties['RenderPassCount']) {
+              [int]$stableRenderResult.RenderPassCount
+            } else {
+              2
+            }
             $wtEntry.StableAdapterIntentLedgerPath = $stableRenderResult.UserGlobalIntentLedgerPath
           }
         } catch {

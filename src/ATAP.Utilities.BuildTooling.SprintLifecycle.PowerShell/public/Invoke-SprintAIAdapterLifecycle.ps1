@@ -24,7 +24,7 @@ function Invoke-SprintAIAdapterLifecycle {
   .PARAMETER OmitSprintWorktrees
     For SprintEnd shared-settings renders, resolves sprint-worktree placeholders
     to their stable/closed-state form. This is a render-only recovery path: it
-    performs two passes, requires the second pass to make zero changes, and
+    performs bounded convergence passes, requires a zero-change final pass, and
     writes a metadata-only user/global intent hash ledger beneath EvidenceRoot.
   .OUTPUTS
     PSCustomObject returned by Invoke-AIAdapterLifecycle.
@@ -101,9 +101,10 @@ function Invoke-SprintAIAdapterLifecycle {
           if (-not (Test-Path -LiteralPath $rendererPath -PathType Leaf)) {
             throw "Render-AIAdapters.ps1 not found at expected path: $rendererPath"
           }
-          if (-not (Get-Command -Name Render-AIAdapters -CommandType Function -ErrorAction SilentlyContinue)) {
-            . $rendererPath
-          }
+          # Load the renderer selected by this call even when another source
+          # version is already present in the session. SprintEnd must execute
+          # the exact SharedVSCode worktree supplied by the orchestrator.
+          . $rendererPath
           $renderCommand = Get-Command -Name Render-AIAdapters -CommandType Function -ErrorAction Stop
           if (-not $renderCommand.Parameters.ContainsKey('OmitSprintWorktrees')) {
             throw 'Render-AIAdapters does not support -OmitSprintWorktrees in the selected SharedVSCode worktree.'
@@ -134,27 +135,45 @@ function Invoke-SprintAIAdapterLifecycle {
             Confirm = $false
             WhatIf = $WhatIfPreference
           }
-          $firstRenderResult = Render-AIAdapters @renderParameters
-          $secondRenderResult = Render-AIAdapters @renderParameters
+          $maximumRenderPasses = 5
+          $renderResults = [System.Collections.Generic.List[object]]::new()
+          $convergedRenderResult = $null
+          for ($renderPass = 1; $renderPass -le $maximumRenderPasses; $renderPass++) {
+            $renderResult = Render-AIAdapters @renderParameters
+            $renderResults.Add($renderResult)
+            $renderErrorCount = if ($renderResult.PSObject.Properties['ErrorCount']) {
+              [int]$renderResult.ErrorCount
+            } else {
+              @($renderResult.Results | Where-Object Action -EQ 'error').Count
+            }
+            $nextPassWouldBeClean = if ($renderResult.PSObject.Properties['SecondRunWouldBeClean']) {
+              [bool]$renderResult.SecondRunWouldBeClean
+            } else {
+              $renderErrorCount -eq 0
+            }
+            if ([int]$renderResult.ChangedCount -eq 0 -and $renderErrorCount -eq 0 -and $nextPassWouldBeClean) {
+              $convergedRenderResult = $renderResult
+              break
+            }
+          }
 
-          $secondPassErrorCount = if ($secondRenderResult.PSObject.Properties['ErrorCount']) {
-            [int]$secondRenderResult.ErrorCount
-          } else {
-            @($secondRenderResult.Results | Where-Object Action -EQ 'error').Count
+          if ($null -eq $convergedRenderResult) {
+            $lastRenderResult = $renderResults[$renderResults.Count - 1]
+            $lastErrorCount = if ($lastRenderResult.PSObject.Properties['ErrorCount']) {
+              [int]$lastRenderResult.ErrorCount
+            } else {
+              @($lastRenderResult.Results | Where-Object Action -EQ 'error').Count
+            }
+            throw "Stable-only AI adapter render did not converge within $maximumRenderPasses passes: final pass changed $($lastRenderResult.ChangedCount) target(s) and reported $lastErrorCount error(s)."
           }
-          $secondPassWouldBeClean = if ($secondRenderResult.PSObject.Properties['SecondRunWouldBeClean']) {
-            [bool]$secondRenderResult.SecondRunWouldBeClean
-          } else {
-            $secondPassErrorCount -eq 0
-          }
-          if ([int]$secondRenderResult.ChangedCount -ne 0 -or $secondPassErrorCount -ne 0 -or -not $secondPassWouldBeClean) {
-            throw "Stable-only AI adapter render was not idempotent: second pass changed $($secondRenderResult.ChangedCount) target(s) and reported $secondPassErrorCount error(s)."
-          }
+
+          $firstRenderResult = $renderResults[0]
+          $secondRenderResult = if ($renderResults.Count -gt 1) { $renderResults[1] } else { $renderResults[0] }
 
           $userGlobalIntent = @(
             foreach ($firstRow in @($firstRenderResult.Results | Where-Object { $_.PSObject.Properties['Scope'] -and $_.Scope -in @('user', 'managed') })) {
               $matchingSecondRow = @(
-                $secondRenderResult.Results |
+                $convergedRenderResult.Results |
                   Where-Object { $_.Tool -eq $firstRow.Tool -and $_.Path -eq $firstRow.Path -and $_.Scope -eq $firstRow.Scope }
               ) | Select-Object -First 1
               [pscustomobject]@{
@@ -180,6 +199,8 @@ function Invoke-SprintAIAdapterLifecycle {
               CheckpointConfirmed = [bool]$CheckpointConfirmed
               FirstPassChangedCount = [int]$firstRenderResult.ChangedCount
               SecondPassChangedCount = [int]$secondRenderResult.ChangedCount
+              RenderPassCount = $renderResults.Count
+              FinalPassChangedCount = [int]$convergedRenderResult.ChangedCount
               UserGlobalIntent = $userGlobalIntent
             }
             [IO.File]::WriteAllText(
@@ -202,6 +223,10 @@ function Invoke-SprintAIAdapterLifecycle {
             FirstRenderResult = $firstRenderResult
             SecondRenderResult = $secondRenderResult
             SecondPassChangedCount = [int]$secondRenderResult.ChangedCount
+            RenderResults = $renderResults.ToArray()
+            RenderPassCount = $renderResults.Count
+            FinalRenderResult = $convergedRenderResult
+            FinalPassChangedCount = [int]$convergedRenderResult.ChangedCount
             Idempotent = $true
             UserGlobalIntent = $userGlobalIntent
             UserGlobalIntentLedgerPath = if ($WhatIfPreference) { $null } else { $intentLedgerPath }

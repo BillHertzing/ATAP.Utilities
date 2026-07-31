@@ -1,5 +1,14 @@
 # Release Notes for ATAP.Utilities.PowerShell
 
+## [0.1.24] — 2026-07-31
+
+### Fixed
+
+- Package the source-owned `Profiles/` directory with the module so an
+  AllUsers installation contains `Profiles/WithProfiles.pssc` and
+  `Register-ProfiledRemotingEndpoint` can resolve its default session
+  configuration from the installed module.
+
 ## [0.1.18] — 2026-07-09
 
 ### Fixed

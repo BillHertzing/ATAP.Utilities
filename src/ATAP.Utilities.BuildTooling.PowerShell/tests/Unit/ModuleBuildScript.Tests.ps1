@@ -21,10 +21,10 @@ Describe 'module.build.ps1 package staging contract' {
     $text | Should -Match 'Publish-PSResource\s+`\s+\r?\n\s+-Path \$script:PackageSrcDir'
   }
 
-  It 'stages optional scripts and Documentation folders before packaging' {
+  It 'stages optional scripts, Documentation, and Profiles folders before packaging' {
     $text = Get-Content -LiteralPath $script:moduleBuildPath -Raw
 
-    $text | Should -Match "\$moduleContentDirectories = @\('scripts', 'Documentation'\)"
+    $text | Should -Match "\$moduleContentDirectories = @\('scripts', 'Documentation', 'Profiles'\)"
     $text | Should -Match 'Copy-Item -LiteralPath \$sourceContentDirectory -Destination \$script:PackageSrcDir'
   }
 

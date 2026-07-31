@@ -75,7 +75,8 @@ function Set-SprintBoundaryUserProfiles {
     [hashtable]$HomeDirectoryOverrides = @{},
 
     [Parameter()]
-    [ValidateNotNullOrEmpty()]
+    [AllowNull()]
+    [AllowEmptyString()]
     [string]$CurrentUserAllHostsProfilePath = $PROFILE.CurrentUserAllHosts,
 
     [Parameter()]
@@ -91,6 +92,17 @@ function Set-SprintBoundaryUserProfiles {
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     $localComputerName = if ($env:COMPUTERNAME) { $env:COMPUTERNAME } else { [Environment]::MachineName }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
+
+    if ([string]::IsNullOrWhiteSpace($CurrentUserAllHostsProfilePath)) {
+      $documentsRoot = [Environment]::GetFolderPath([Environment+SpecialFolder]::MyDocuments)
+      if ([string]::IsNullOrWhiteSpace($documentsRoot)) {
+        if ([string]::IsNullOrWhiteSpace($env:USERPROFILE)) {
+          throw 'Unable to resolve the current-user PowerShell profile path: both MyDocuments and USERPROFILE are empty.'
+        }
+        $documentsRoot = Join-Path $env:USERPROFILE 'Documents'
+      }
+      $CurrentUserAllHostsProfilePath = Join-Path $documentsRoot 'PowerShell\profile.ps1'
+    }
 
     foreach ($privateHelperName in @('Get-WorkspaceJson', 'Initialize-ATAPConfigurationGlobals')) {
       if (-not (Get-Command -Name $privateHelperName -CommandType Function -ErrorAction SilentlyContinue)) {

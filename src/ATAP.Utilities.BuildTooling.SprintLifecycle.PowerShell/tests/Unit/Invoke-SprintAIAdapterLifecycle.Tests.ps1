@@ -60,7 +60,7 @@ Describe 'Invoke-SprintAIAdapterLifecycle [public]' {
     $result.CheckpointConfirmed | Should -BeTrue
   }
 
-  It 'directly stable-renders twice, hash-ledgers user-global intent, and proves the second pass made zero changes' {
+  It 'renders to convergence, hash-ledgers user-global intent, and records the clean final pass' {
     $fakeLifecycleWithoutSwitch = @(
       'function Invoke-AIAdapterLifecycle {'
       '  [CmdletBinding(SupportsShouldProcess)]'
@@ -104,17 +104,54 @@ Describe 'Invoke-SprintAIAdapterLifecycle [public]' {
     $result.OmitSprintWorktrees | Should -BeTrue
     $result.RenderResult.Results[0].OmitSprintWorktrees | Should -BeTrue
     $result.SecondPassChangedCount | Should -Be 0
+    $result.RenderPassCount | Should -Be 2
+    $result.FinalPassChangedCount | Should -Be 0
     $result.Idempotent | Should -BeTrue
     $result.UserGlobalIntent | Should -HaveCount 1
     $result.UserGlobalIntent[0].FirstSha256 | Should -Be 'abc123'
     $result.UserGlobalIntent[0].SecondSha256 | Should -Be 'abc123'
     $result.UserGlobalIntentLedgerPath | Should -Exist
     $ledger = Get-Content -LiteralPath $result.UserGlobalIntentLedgerPath -Raw | ConvertFrom-Json
+    $ledger.RenderPassCount | Should -Be 2
     $ledger.SecondPassChangedCount | Should -Be 0
+    $ledger.FinalPassChangedCount | Should -Be 0
     $ledger.UserGlobalIntent[0].Path | Should -Be '~/.codex/AGENTS.md'
   }
 
-  It 'fails closed when the stable-only second render still changes a target' {
+  It 'allows a third pass when the second render still changes a target' {
+    $fakeRenderer = @(
+      'function Render-AIAdapters {'
+      '  [CmdletBinding(SupportsShouldProcess)]'
+      '  param($RegistryPath, [string[]]$Domain, $TargetRoot, $BackupRoot, [switch]$FixtureMode, [switch]$AllowUserGlobalWrite, [switch]$OmitSprintWorktrees, [switch]$Force)'
+      '  $global:threePassRenderCallCount++'
+      '  $changed = $global:threePassRenderCallCount -lt 3'
+      '  [pscustomobject]@{ Results = @(); ChangedCount = ($changed ? 1 : 0); SkippedUserScopeCount = 0; ErrorCount = 0; SecondRunWouldBeClean = $true }'
+      '}'
+    ) -join "`n"
+    [IO.File]::WriteAllText(
+      (Join-Path $script:tools 'Render-AIAdapters.ps1'),
+      $fakeRenderer,
+      [Text.UTF8Encoding]::new($false))
+    $manifestRoot = Join-Path $script:root '.ai/manifests'
+    New-Item -ItemType Directory -Path $manifestRoot -Force | Out-Null
+    '{}' | Set-Content -Path (Join-Path $manifestRoot 'adapter-registry.json') -Encoding UTF8
+    $global:threePassRenderCallCount = 0
+
+    $result = Invoke-SprintAIAdapterLifecycle `
+      -Boundary Start `
+      -TargetRoot (Join-Path $TestDrive 'three-pass-target') `
+      -SharedVSCodeWorktreePath $script:root `
+      -OmitSprintWorktrees `
+      -Confirm:$false
+
+    $result.Idempotent | Should -BeTrue
+    $result.RenderPassCount | Should -Be 3
+    $result.SecondPassChangedCount | Should -Be 1
+    $result.FinalPassChangedCount | Should -Be 0
+    Remove-Variable -Name threePassRenderCallCount -Scope Global -ErrorAction SilentlyContinue
+  }
+
+  It 'fails closed when the stable-only render does not converge within five passes' {
     $fakeRenderer = @(
       'function Render-AIAdapters {'
       '  [CmdletBinding(SupportsShouldProcess)]'
@@ -137,7 +174,7 @@ Describe 'Invoke-SprintAIAdapterLifecycle [public]' {
         -SharedVSCodeWorktreePath $script:root `
         -OmitSprintWorktrees `
         -Confirm:$false
-    } | Should -Throw '*was not idempotent*second pass changed 1*'
+    } | Should -Throw '*did not converge within 5 passes*final pass changed 1*'
   }
 
   It 'requires a confirmed checkpoint before a live stable-only user-global render' {

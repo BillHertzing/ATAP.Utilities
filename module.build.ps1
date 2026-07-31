@@ -378,7 +378,7 @@ Task Package BuildPSM1, BuildManifest, {
   # The generated PSM1 and manifest replace source implementation files, but
   # optional static module content remains source-owned and must be staged
   # explicitly before Publish-PSResource packages the directory.
-  $moduleContentDirectories = @('scripts', 'Documentation')
+  $moduleContentDirectories = @('scripts', 'Documentation', 'Profiles')
   foreach ($contentDirectoryName in $moduleContentDirectories) {
     $sourceContentDirectory = Join-Path $script:ModuleRoot $contentDirectoryName
     if (Test-Path -LiteralPath $sourceContentDirectory -PathType Container) {

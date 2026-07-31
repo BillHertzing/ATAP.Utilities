@@ -305,6 +305,29 @@ Set-StrictMode -Version Latest
     Test-Path -LiteralPath (Join-Path $script:serviceHome 'Documents\PowerShell\profile.ps1') | Should -BeFalse
   }
 
+  It 'falls back to the current user Documents profile when the automatic PROFILE path is empty' {
+    $currentUserOverview = Join-Path $script:gitRoot 'Overview.Sprint.0011.CurrentUser.code-workspace'
+    @{
+      folders = @()
+      developers = @(@{ username = $env:USERNAME; host = $env:COMPUTERNAME })
+    } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $currentUserOverview -Encoding UTF8
+
+    $result = Set-SprintBoundaryUserProfiles `
+      -ATAPUtilitiesRoot $script:utilRoot `
+      -ATAPIACRoot $script:iacRoot `
+      -GitRoot $script:gitRoot `
+      -OverviewWorkspacePath $currentUserOverview `
+      -HomeDirectoryOverrides @{ $env:USERNAME = $script:developerHome } `
+      -CurrentUserAllHostsProfilePath '' `
+      -WhatIf `
+      -Confirm:$false
+
+    $result.Ok | Should -BeTrue
+    $developer = $result.Profiles | Where-Object Kind -EQ 'Developer' | Select-Object -First 1
+    $developer.ProfilePath | Should -Not -BeNullOrEmpty
+    $developer.ProfilePath | Should -Match '[\\/]PowerShell[\\/]profile\.ps1$'
+  }
+
   It 'ignores pre-existing retired ATAP.Utilities template candidates' {
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-LocalUser {
       if ($Name -eq 'SvcBuildmaster') {

@@ -13,13 +13,17 @@ Describe 'Get-ProfiledRemotingBoundaryState PowerShell 7 plug-in health' -Tag 'U
     $script:fixturePsHome = Join-Path $TestDrive 'PowerShell\7'
     New-Item -ItemType Directory -Path $script:fixturePsHome -Force | Out-Null
     New-Item -ItemType File -Path (Join-Path $script:fixturePsHome 'pwrshplugin.dll') -Force | Out-Null
+    $script:missingRegisteredPluginPath = Join-Path $TestDrive 'missing\pwrshplugin.dll'
+    Test-Path -LiteralPath $script:missingRegisteredPluginPath -PathType Leaf | Should -BeFalse
+
+    $missingRegisteredPluginPath = $script:missingRegisteredPluginPath
     $script:brokenConfigurationProvider = {
       [PSCustomObject]@{
         Name = 'PowerShell.7'
         Enabled = $true
-        Filename = '%windir%\system32\PowerShell\7.6.3\pwrshplugin.dll'
+        Filename = $missingRegisteredPluginPath
       }
-    }
+    }.GetNewClosure()
   }
 
   It 'detects an enabled configuration whose registered plug-in is missing' {
@@ -54,13 +58,14 @@ Describe 'Get-ProfiledRemotingBoundaryState PowerShell 7 plug-in health' -Tag 'U
   }
 
   It 'does not classify a disabled stale configuration as an active break' {
+    $missingRegisteredPluginPath = $script:missingRegisteredPluginPath
     $disabledConfigurationProvider = {
       [PSCustomObject]@{
         Name = 'PowerShell.7'
         Enabled = 'False'
-        Filename = '%windir%\system32\PowerShell\7.6.3\pwrshplugin.dll'
+        Filename = $missingRegisteredPluginPath
       }
-    }
+    }.GetNewClosure()
 
     $state = Get-ProfiledRemotingBoundaryState `
       -PowerShellHome $script:fixturePsHome `

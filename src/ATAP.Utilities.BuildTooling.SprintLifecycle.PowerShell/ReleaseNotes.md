@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.1.25
+
+- Replace the remoting-health test fixture's `%windir%`-relative plug-in path
+  with an explicitly verified missing path beneath Pester `TestDrive`, removing
+  the last service-account host-filesystem dependency from the promoted gate.
+- Preserve the 0.1.24 injectable probe seam and the production default provider
+  unchanged.
+
 ## 0.1.24
 
 - Make the profiled-remoting boundary probe's session-configuration source

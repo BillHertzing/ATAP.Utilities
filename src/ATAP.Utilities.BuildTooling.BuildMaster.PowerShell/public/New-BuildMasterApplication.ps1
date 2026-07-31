@@ -267,18 +267,24 @@ function New-BuildMasterApplication {
     $desired = [ordered]@{
       name                   = $Name
       description            = $Description
-      groupName              = $GroupName
       active                 = $Active
-      setupTemplate          = $SetupTemplate
       buildNumberScheme      = $BuildNumberScheme
       releaseUsage           = $ReleaseUsage
-      defaultReleaseTemplate = $DefaultReleaseTemplate
       allowIssues            = $AllowIssues
       displayIssues          = $DisplayIssues
       displayPipelines       = $DisplayPipelines
       displayScripts         = $DisplayScripts
       displayConfiguration   = $DisplayConfiguration
       displayDatabase        = $DisplayDatabase
+    }
+    if (-not [string]::IsNullOrWhiteSpace($GroupName)) {
+      $desired.groupName = $GroupName
+    }
+    if (-not [string]::IsNullOrWhiteSpace($SetupTemplate)) {
+      $desired.setupTemplate = $SetupTemplate
+    }
+    if (-not [string]::IsNullOrWhiteSpace($DefaultReleaseTemplate)) {
+      $desired.defaultReleaseTemplate = $DefaultReleaseTemplate
     }
     if ($PSBoundParameters.ContainsKey('BuildPageDescription')) {
       $desired.buildPageDescription = $BuildPageDescription

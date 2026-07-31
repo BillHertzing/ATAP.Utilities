@@ -93,6 +93,9 @@ Describe 'BuildMaster configuration API functions' -Tag 'Unit' {
     $body.PSObject.Properties.Name | Should -Not -Contain 'artifactAssetDirectory'
     $body.PSObject.Properties.Name | Should -Not -Contain 'buildPageDescription'
     $body.PSObject.Properties.Name | Should -Not -Contain 'raft'
+    $body.PSObject.Properties.Name | Should -Not -Contain 'groupName'
+    $body.PSObject.Properties.Name | Should -Not -Contain 'setupTemplate'
+    $body.PSObject.Properties.Name | Should -Not -Contain 'defaultReleaseTemplate'
     $createCall.Headers['X-ApiKey'] | Should -Be 'unit-test-key'
   }
 

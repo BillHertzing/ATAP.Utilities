@@ -259,7 +259,44 @@ function Register-ProfiledRemotingEndpoint {
 
     if ($isLocal) {
       if ($PSCmdlet.ShouldProcess("$ConfigurationName@local", 'Register profiled remoting endpoint')) {
-        $outcome = & $script:registerScript $ConfigurationName $Path $LocalMarkerPath $localHash
+        $localEnvironmentSnapshot = @{}
+        try {
+          foreach ($environmentName in @('windir', 'SystemRoot')) {
+            $processValue = [System.Environment]::GetEnvironmentVariable($environmentName, 'Process')
+            $localEnvironmentSnapshot[$environmentName] = $processValue
+            if ([string]::IsNullOrWhiteSpace($processValue)) {
+              $resolvedValue = Resolve-ATAPMachineEnvironmentVariable `
+                -Name $environmentName `
+                -FunctionName $fn `
+                -ModuleName $mn
+              if ([string]::IsNullOrWhiteSpace($resolvedValue)) {
+                $alternateEnvironmentName = if ($environmentName -eq 'windir') { 'SystemRoot' } else { 'windir' }
+                $resolvedValue = Resolve-ATAPMachineEnvironmentVariable `
+                  -Name $alternateEnvironmentName `
+                  -FunctionName $fn `
+                  -ModuleName $mn
+              }
+              if ([string]::IsNullOrWhiteSpace($resolvedValue)) {
+                throw "Local profiled-remoting registration requires a Windows root, but '$environmentName' and its alternate are empty in both Process and Machine scopes."
+              }
+              [System.Environment]::SetEnvironmentVariable($environmentName, $resolvedValue, 'Process')
+            }
+          }
+
+          $outcome = & $script:registerScript $ConfigurationName $Path $LocalMarkerPath $localHash
+        } catch {
+          $outcome = [PSCustomObject]@{ Action = 'RegistrationEnvironmentUnavailable'; Error = $_.Exception.Message }
+        } finally {
+          foreach ($environmentName in @('windir', 'SystemRoot')) {
+            if ($localEnvironmentSnapshot.ContainsKey($environmentName)) {
+              [System.Environment]::SetEnvironmentVariable(
+                $environmentName,
+                $localEnvironmentSnapshot[$environmentName],
+                'Process'
+              )
+            }
+          }
+        }
       } else {
         $existing = Get-PSSessionConfiguration -Name $ConfigurationName -ErrorAction SilentlyContinue
         $outcome = [PSCustomObject]@{ Action = $(if ($existing) { 'WouldUpdate' } else { 'WouldCreate' }); Error = $null }

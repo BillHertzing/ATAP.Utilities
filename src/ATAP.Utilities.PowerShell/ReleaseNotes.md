@@ -1,5 +1,15 @@
 # Release Notes for ATAP.Utilities.PowerShell
 
+## [0.1.25] — 2026-07-31
+
+### Fixed
+
+- Temporarily normalize missing local-process `windir` and `SystemRoot` from
+  Machine scope while `Register-PSSessionConfiguration` runs, then restore the
+  exact prior process values in `finally`.
+- Fail closed when neither scope provides the required Windows roots. Remote
+  registration remains unchanged and the function never enables remoting.
+
 ## [0.1.24] — 2026-07-31
 
 ### Fixed

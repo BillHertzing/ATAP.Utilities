@@ -215,6 +215,76 @@ Describe 'Register-ProfiledRemotingEndpoint local registration marker placement'
     $second = Register-ProfiledRemotingEndpoint -Path $script:realPsscPath -LocalMarkerPath $script:fixtureMarkerBase -Confirm:$false
     $second.Action | Should -Be 'AlreadyCurrent'
   }
+
+  It 'temporarily supplies missing local Windows roots from Machine scope and restores them after success' {
+    $priorWindir = [System.Environment]::GetEnvironmentVariable('windir', 'Process')
+    $priorSystemRoot = [System.Environment]::GetEnvironmentVariable('SystemRoot', 'Process')
+    [System.Environment]::SetEnvironmentVariable('windir', $null, 'Process')
+    [System.Environment]::SetEnvironmentVariable('SystemRoot', $null, 'Process')
+    $script:observedRegistrationWindir = $null
+    $script:observedRegistrationSystemRoot = $null
+    Mock -CommandName Resolve-ATAPMachineEnvironmentVariable -MockWith { 'C:\WINDOWS' }
+    Mock -CommandName Register-PSSessionConfiguration -MockWith {
+      $script:observedRegistrationWindir = [System.Environment]::GetEnvironmentVariable('windir', 'Process')
+      $script:observedRegistrationSystemRoot = [System.Environment]::GetEnvironmentVariable('SystemRoot', 'Process')
+    }
+    Mock -CommandName Enable-PSRemoting -MockWith { throw 'Enable-PSRemoting must never be called.' }
+
+    try {
+      $result = Register-ProfiledRemotingEndpoint -Path $script:realPsscPath -LocalMarkerPath $script:fixtureMarkerBase -Confirm:$false
+
+      $result.Ok | Should -BeTrue
+      $script:observedRegistrationWindir | Should -Be 'C:\WINDOWS'
+      $script:observedRegistrationSystemRoot | Should -Be 'C:\WINDOWS'
+      [System.Environment]::GetEnvironmentVariable('windir', 'Process') | Should -BeNullOrEmpty
+      [System.Environment]::GetEnvironmentVariable('SystemRoot', 'Process') | Should -BeNullOrEmpty
+      Should -Invoke Enable-PSRemoting -Times 0
+    } finally {
+      [System.Environment]::SetEnvironmentVariable('windir', $priorWindir, 'Process')
+      [System.Environment]::SetEnvironmentVariable('SystemRoot', $priorSystemRoot, 'Process')
+    }
+  }
+
+  It 'restores the exact prior local Windows roots after registration failure' {
+    $priorWindir = [System.Environment]::GetEnvironmentVariable('windir', 'Process')
+    $priorSystemRoot = [System.Environment]::GetEnvironmentVariable('SystemRoot', 'Process')
+    [System.Environment]::SetEnvironmentVariable('windir', $null, 'Process')
+    [System.Environment]::SetEnvironmentVariable('SystemRoot', $null, 'Process')
+    Mock -CommandName Resolve-ATAPMachineEnvironmentVariable -MockWith { 'C:\WINDOWS' }
+    Mock -CommandName Register-PSSessionConfiguration -MockWith { throw 'fixture registration failure' }
+
+    try {
+      $result = Register-ProfiledRemotingEndpoint -Path $script:realPsscPath -LocalMarkerPath $script:fixtureMarkerBase -Confirm:$false
+
+      $result.Ok | Should -BeFalse
+      $result.Failures | Should -Contain 'fixture registration failure'
+      [System.Environment]::GetEnvironmentVariable('windir', 'Process') | Should -BeNullOrEmpty
+      [System.Environment]::GetEnvironmentVariable('SystemRoot', 'Process') | Should -BeNullOrEmpty
+    } finally {
+      [System.Environment]::SetEnvironmentVariable('windir', $priorWindir, 'Process')
+      [System.Environment]::SetEnvironmentVariable('SystemRoot', $priorSystemRoot, 'Process')
+    }
+  }
+
+  It 'fails closed before registration when Process and Machine Windows roots are unavailable' {
+    $priorWindir = [System.Environment]::GetEnvironmentVariable('windir', 'Process')
+    $priorSystemRoot = [System.Environment]::GetEnvironmentVariable('SystemRoot', 'Process')
+    [System.Environment]::SetEnvironmentVariable('windir', $null, 'Process')
+    [System.Environment]::SetEnvironmentVariable('SystemRoot', $null, 'Process')
+    Mock -CommandName Resolve-ATAPMachineEnvironmentVariable -MockWith { $null }
+
+    try {
+      $result = Register-ProfiledRemotingEndpoint -Path $script:realPsscPath -LocalMarkerPath $script:fixtureMarkerBase -Confirm:$false
+
+      $result.Ok | Should -BeFalse
+      $result.Action | Should -Be 'RegistrationEnvironmentUnavailable'
+      $result.Failures[0] | Should -Match "empty in both Process and Machine scopes"
+      Should -Invoke Register-PSSessionConfiguration -Times 0
+    } finally {
+      [System.Environment]::SetEnvironmentVariable('windir', $priorWindir, 'Process')
+      [System.Environment]::SetEnvironmentVariable('SystemRoot', $priorSystemRoot, 'Process')
+    }
+  }
 }
 
 Describe 'Agent-shell regression: windir/ProgramData resolution in a real child process' -Tag 'Unit' {

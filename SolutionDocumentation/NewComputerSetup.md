@@ -93,6 +93,153 @@ note says so.
 
 ## Phase 1: Windows and Developer Baseline
 
+## Step 0: Validate Memory Before Building (MemTest86)
+
+Run this before installing Windows on a new machine, and on any existing host that
+shows unexplained bugchecks. Memory faults corrupt builds, databases, and Dropbox
+state silently; validating first avoids attributing hardware failures to software.
+
+> **Why this is Step 0.** MemTest86 boots from USB and does not need an OS. On a new
+> build it costs one overnight run before any time is invested in the image. On an
+> existing host it is the cheapest way to separate a hardware fault from a driver fault.
+
+### 0.1 When to run
+
+- Every new workstation, before Step 1.
+- After any RAM change (added, replaced, or reseated DIMMs).
+- After enabling or changing an EXPO/XMP memory profile.
+- Whenever a host records more than one bugcheck in a week, **especially with
+  differing bugcheck codes**. A single repeated code usually indicates a driver; a
+  spread of unrelated codes (`0x1A`, `0x3B`, `0x50`, `0xBE`, `0x124`) indicates
+  memory or another hardware fault.
+
+Check a host's bugcheck history before deciding:
+
+```powershell
+# Bugcheck codes recorded in the last 30 days
+Get-WinEvent -FilterHashtable @{
+  LogName      = 'System'
+  ProviderName = 'Microsoft-Windows-WER-SystemErrorReporting'
+  Id           = 1001
+  StartTime    = (Get-Date).AddDays(-30)
+} -ErrorAction SilentlyContinue |
+  Sort-Object TimeCreated |
+  ForEach-Object {
+    $code = if ($_.Message -match 'bugcheck was:\s*(0x[0-9a-fA-F]+)') { $Matches[1] } else { '?' }
+    '{0}  {1}' -f $_.TimeCreated.ToString('MM-dd HH:mm:ss'), $code
+  }
+
+# WHEA entries are hardware-reported and cannot be caused by software
+Get-WinEvent -FilterHashtable @{
+  LogName      = 'System'
+  ProviderName = 'Microsoft-Windows-WHEA-Logger'
+  StartTime    = (Get-Date).AddDays(-30)
+} -ErrorAction SilentlyContinue |
+  Select-Object TimeCreated, Id, LevelDisplayName
+```
+
+### 0.2 Build the bootable USB
+
+MemTest86 (PassMark) Free Edition is sufficient; the paid editions add reporting
+features this runbook does not require. Do **not** substitute the built-in Windows
+Memory Diagnostic — it is far weaker and misses marginal faults.
+
+1. Download the **MemTest86 Free Edition — Image for creating bootable USB Drive**
+   from `https://www.memtest86.com/download.htm` on a *known-good* machine.
+2. Extract the ZIP. It contains `imageUSB.exe` and the `memtest86-usb.img` image.
+3. Insert a USB stick of 1 GB or larger. **Its contents are destroyed.**
+4. Run `imageUSB.exe` elevated, select the USB drive, choose
+   **Write image to USB drive**, and confirm.
+
+```powershell
+# Identify the USB stick before writing, so the correct disk is selected in imageUSB
+Get-Disk | Where-Object BusType -eq 'USB' |
+  Select-Object Number, FriendlyName, @{ n = 'GB'; e = { [math]::Round($_.Size / 1GB, 1) } }
+```
+
+> **Keep the stick.** Label it and store it with the build media. It is reused for
+> every host, so this step is only performed once per site.
+
+### 0.3 Boot the target machine from the USB
+
+1. Insert the stick and power on, opening the firmware boot menu (commonly `F12`,
+   `F11`, `F8`, or `Esc` — vendor-specific).
+2. Select the USB device, preferring the **UEFI** entry when both are listed.
+3. If the stick will not boot, disable **Secure Boot** in firmware, run the test,
+   then re-enable it afterward.
+
+### 0.4 Run the test
+
+Accept the default test suite and let it complete **at least four full passes**.
+Expect roughly 30–60 minutes per pass for 32 GB, so schedule an overnight run.
+
+- MemTest86 starts automatically after a short countdown.
+- Errors are reported in red and counted per test; the run need not be stopped, but
+  any error at all is a failure.
+- At the end, choose to save the report. It is written to the USB stick as
+  `MemTest86.log` and an HTML report.
+
+**Pass criteria: zero errors across four or more consecutive passes.** One error is
+a failure. Memory faults are frequently intermittent, so a single clean pass proves
+nothing.
+
+### 0.5 Test at the memory profile you intend to run
+
+An enabled EXPO/XMP profile is a factory overclock, not a JEDEC-guaranteed speed. It
+is a common source of exactly the mixed-bugcheck pattern described in 0.1. Test in
+the order below and record which configuration passed:
+
+| Order | Firmware setting | Interpretation of a failure |
+| --- | --- | --- |
+| 1 | EXPO/XMP **enabled** (rated speed) | The profile is unstable on this silicon; continue to test 2. |
+| 2 | EXPO/XMP **disabled** (JEDEC, e.g. DDR5-4800) | The DIMMs themselves are faulty; RMA them. |
+
+If the host passes at JEDEC but fails at the rated profile, either run it at JEDEC
+permanently or step the profile down (for example 6000 → 5600) and re-validate with a
+full four-pass run before trusting the machine.
+
+Record the memory configuration under test:
+
+```powershell
+Get-CimInstance Win32_PhysicalMemory |
+  Select-Object DeviceLocator, Manufacturer, PartNumber,
+                @{ n = 'GB';    e = { [math]::Round($_.Capacity / 1GB) } },
+                @{ n = 'Speed'; e = { $_.Speed } }
+```
+
+### 0.6 If the test fails
+
+1. Re-run with a **single DIMM installed**, repeating for each DIMM, to identify the
+   failing module. Use the same slot each time so a faulty slot is not mistaken for a
+   faulty DIMM.
+2. If every DIMM fails individually in the same slot, test a known-good DIMM in a
+   different slot to implicate the slot or the memory controller.
+3. RMA the failing module. Do not continue with the build; a host that fails
+   MemTest86 must not be used for ATAP development, database, or Dropbox work.
+
+### 0.7 Record the result in the parity journal
+
+Per the parity-journal convention in **Important Conventions**, declare the outcome
+on the host that was tested so the peer host can be scheduled for the same
+validation:
+
+```powershell
+Import-Module ATAP.Utilities.SystemParityMonitor.PowerShell
+
+Add-ParityChangeEntry `
+  -Category      OS `
+  -Item          'MemTest86 memory validation' `
+  -OldValue      'not validated' `
+  -NewValue      'PASS - 4 passes, EXPO disabled (JEDEC DDR5-4800)' `
+  -PeerHostName  'utat01' `
+  -PeerActionKind Document `
+  -PeerAction    'Run MemTest86 per NewComputerSetup.md Step 0; record pass/fail and the memory profile tested.' `
+  -Reason        'Baseline hardware validation gate for all ATAP hosts.'
+```
+
+Adjust `-NewValue` to the configuration actually tested. After the peer host runs its
+own validation, acknowledge the entry there with `Confirm-ParityChangeApplied`.
+
 ## Step 1: Install Windows and Record Machine Identity
 
 1. Install Windows 11.
@@ -919,10 +1066,117 @@ sqlcmd -S 'localhost\QA' -E -Q 'SELECT @@SERVERNAME' -C
 sqlcmd -S 'localhost\Integration' -E -Q 'SELECT @@SERVERNAME' -C
 ```
 
+### 6.6 Cap `max server memory` on every instance
+
+SQL Server ships with `max server memory (MB)` set to `2147483647`, which means
+unlimited. A workstation runs several instances alongside builds, AI agent
+processes, and Dropbox, so uncapped instances compete with each other and with the
+OS until every instance raises error 701 at once. **Cap every instance immediately
+after creating it.**
+
+The standing allocation for a 32 GB host:
+
+| Instance | Cap (MB) | Rationale |
+| --- | --- | --- |
+| `Production` | 7936 | Hosts the ProGet and BuildMaster databases; the only instance under sustained real load. |
+| `QA` | 1792 | Promotion target; intermittent load. |
+| `Integration` | 1024 | Integration runs only. |
+| `Dev<user>` | 768 | Per-developer scratch. |
+| `Exp<user>` | 768 | Per-developer experimental. |
+| **Total** | **12288** | 12 GB of 32 GB, leaving headroom for the OS, builds, and agent processes. |
+
+Scale proportionally on hosts with different physical memory, keeping the total at
+roughly one third of RAM and leaving `Production` the clear majority.
+
+Apply the caps:
+
+```powershell
+$caps = [ordered]@{
+  Production  = 7936
+  QA          = 1792
+  Integration = 1024
+  "Dev$($env:USERNAME)" =  768
+  "Exp$($env:USERNAME)" =  768
+}
+
+foreach ($instance in $caps.Keys) {
+  $mb = $caps[$instance]
+  $tsql = @"
+EXEC sp_configure 'show advanced options', 1; RECONFIGURE;
+EXEC sp_configure 'max server memory (MB)', $mb; RECONFIGURE;
+"@
+  sqlcmd -S "localhost\$instance" -E -C -Q $tsql
+  Write-Output "  $instance capped at $mb MB"
+}
+```
+
+> **No restart required.** `max server memory` is a dynamic setting
+> (`sys.configurations.is_dynamic = 1`); it takes effect immediately.
+
+Verify the applied values and the host-wide total:
+
+```powershell
+$rows = foreach ($instance in @('Production','QA','Integration',"Dev$($env:USERNAME)","Exp$($env:USERNAME)")) {
+  $c = New-Object System.Data.SqlClient.SqlConnection "Server=localhost\$instance;Integrated Security=True;Connect Timeout=10;TrustServerCertificate=True"
+  $c.Open()
+  $cmd = $c.CreateCommand()
+  $cmd.CommandText = @'
+SELECT MaxMB  = (SELECT CONVERT(bigint, value_in_use) FROM sys.configurations WHERE name = 'max server memory (MB)'),
+       UsedMB = (SELECT physical_memory_in_use_kb / 1024 FROM sys.dm_os_process_memory)
+'@
+  $r = $cmd.ExecuteReader()
+  while ($r.Read()) { [pscustomobject] @{ Instance = $instance; MaxMB = $r['MaxMB']; UsedMB = $r['UsedMB'] } }
+  $c.Close()
+}
+$rows | Format-Table -AutoSize
+'TOTAL capped: {0} MB' -f ($rows.MaxMB | Measure-Object -Sum).Sum
+```
+
+A value of `2147483647` in the `MaxMB` column means that instance was missed.
+
+If `Production` later shows sustained memory pressure — error 701, or a page life
+expectancy trending toward single digits — raise its cap before any other
+instance's:
+
+```powershell
+$c = New-Object System.Data.SqlClient.SqlConnection 'Server=localhost\Production;Integrated Security=True;TrustServerCertificate=True'
+$c.Open()
+$cmd = $c.CreateCommand()
+$cmd.CommandText = @'
+SELECT counter_name, cntr_value FROM sys.dm_os_performance_counters
+WHERE counter_name IN ('Page life expectancy', 'Total Server Memory (KB)', 'Target Server Memory (KB)')
+'@
+$r = $cmd.ExecuteReader()
+while ($r.Read()) { '{0,-28} {1}' -f $r[0].Trim(), $r[1] }
+$c.Close()
+```
+
+Declare the caps in the parity journal so the peer host receives the same
+allocation:
+
+```powershell
+Import-Module ATAP.Utilities.SystemParityMonitor.PowerShell
+
+Add-ParityChangeEntry `
+  -Category      SQL `
+  -Item          'max server memory (MB) - all local instances' `
+  -OldValue      'uncapped (2147483647 MB default)' `
+  -NewValue      'capped, 12288 MB total: Production 7936, QA 1792, Integration 1024, Dev 768, Exp 768' `
+  -PeerHostName  'utat01' `
+  -PeerActionKind ConfigureService `
+  -PeerAction    'Apply the same max server memory caps to the corresponding local SQL instances. Setting is dynamic; no restart required.' `
+  -Reason        'Uncapped instances compete for RAM and raise error 701 together under memory pressure.'
+```
+
 ## Step 7: Create Sprint and Feature-Branch Developer Instances
 
 The permanent instances are `Production`, `QA`, and `Integration`. Developer and
 experimental instances are per-user or per-feature and are created separately.
+
+> **Every new instance must be capped.** Instances created here arrive at the SQL
+> default of unlimited. A single uncapped sprint instance can consume the headroom
+> reserved for all the others. Apply the **1024 MB default cap** in 7.1 as part of
+> creating the instance, not as a later cleanup step.
 
 For the active developer:
 
@@ -936,6 +1190,58 @@ New-SprintSqlServerInstances `
   -ConnectionMethod 'tcp'
 ```
 
+### 7.1 Apply the default memory cap to every new instance
+
+**Default cap for any instance created in this step: `1024` MB.** Run this
+immediately after `New-SprintSqlServerInstances` returns, and after creating any
+ad-hoc sprint or feature-branch instance.
+
+```powershell
+# Default cap for newly created sprint / feature-branch instances
+$DefaultInstanceCapMB = 1024
+
+$newInstances = @("Dev$($env:USERNAME)", "Exp$($env:USERNAME)")   # add feature-branch instances here
+
+foreach ($instance in $newInstances) {
+  $tsql = @"
+EXEC sp_configure 'show advanced options', 1; RECONFIGURE;
+EXEC sp_configure 'max server memory (MB)', $DefaultInstanceCapMB; RECONFIGURE;
+"@
+  sqlcmd -S "localhost\$instance" -E -C -Q $tsql
+  Write-Output "  $instance capped at $DefaultInstanceCapMB MB"
+}
+```
+
+Sweep for any instance still at the unlimited default — this catches instances
+created outside this runbook:
+
+```powershell
+Get-Service -Name 'MSSQL$*' |
+  Where-Object Status -eq 'Running' |
+  ForEach-Object {
+    $instance = $_.Name -replace '^MSSQL\$', ''
+    try {
+      $c = New-Object System.Data.SqlClient.SqlConnection "Server=localhost\$instance;Integrated Security=True;Connect Timeout=10;TrustServerCertificate=True"
+      $c.Open()
+      $cmd = $c.CreateCommand()
+      $cmd.CommandText = "SELECT CONVERT(bigint, value_in_use) FROM sys.configurations WHERE name = 'max server memory (MB)'"
+      $maxMb = $cmd.ExecuteScalar()
+      $c.Close()
+      [pscustomobject] @{
+        Instance = $instance
+        MaxMB    = $maxMb
+        Status   = if ($maxMb -eq 2147483647) { 'UNCAPPED - fix' } else { 'ok' }
+      }
+    } catch {
+      [pscustomobject] @{ Instance = $instance; MaxMB = 'unreachable'; Status = $_.Exception.Message }
+    }
+  } | Format-Table -AutoSize
+```
+
+Raise a sprint instance above `1024` MB only when a specific workload requires it,
+and subtract the increase from the host's remaining headroom rather than letting the
+total climb past the budget in 6.6.
+
 Notes:
 
 1. `New-SprintSqlServerInstances` creates only the `Dev...` and `Exp...` instances. It
@@ -944,6 +1250,8 @@ Notes:
    tier prefix and keep the full instance name under 16 characters.
 3. Use the current `Overview.code-workspace` and `Overview.Sprint.NNNN.code-workspace`
    files as the branch matrix when deciding which extra instances are still required.
+4. Sprint instances are torn down at sprint end. Removing them returns their capped
+   memory to the host budget; no cap adjustment is needed elsewhere when they go away.
 
 ## Step 8: Build the Databases on All Instances
 

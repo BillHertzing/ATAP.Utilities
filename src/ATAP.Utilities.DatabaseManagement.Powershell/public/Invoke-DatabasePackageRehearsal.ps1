@@ -172,6 +172,7 @@ function Invoke-DatabasePackageRehearsal {
         $rehearsalParams = @{
           Application                 = $appName
           BuildId                    = $BuildId
+          SourceDatabaseName          = $appName
           BundlePath                 = $expandedPath
           FlywayBasePath             = $expandedPath
           FlywaySqlMigrationsPath    = $packageMigrationsPath

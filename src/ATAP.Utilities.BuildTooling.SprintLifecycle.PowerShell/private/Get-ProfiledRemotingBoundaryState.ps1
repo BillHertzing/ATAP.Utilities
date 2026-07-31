@@ -11,7 +11,9 @@ function Get-ProfiledRemotingBoundaryState {
   [CmdletBinding()]
   [OutputType([PSCustomObject])]
   param(
-    [string]$ConfigurationName = 'ATAP.PS7.Profiled'
+    [string]$ConfigurationName = 'ATAP.PS7.Profiled',
+
+    [string]$PowerShellHome = $PSHOME
   )
 
   $probeError = $null
@@ -42,6 +44,38 @@ function Get-ProfiledRemotingBoundaryState {
   }
   $managedMarkerPresent = [bool]($managedMarkerPath -and (Test-Path -LiteralPath $managedMarkerPath -PathType Leaf -ErrorAction SilentlyContinue))
 
+  # PowerShell 7's canonical plug-in binary is installed beside pwsh.exe. Do
+  # not infer a versioned Windows\System32\PowerShell path from the engine
+  # version: servicing can leave that copied path stale while the installed
+  # $PSHOME payload remains valid.
+  $canonicalPluginPath = Join-Path $PowerShellHome 'pwrshplugin.dll'
+  $canonicalPluginPresent = Test-Path -LiteralPath $canonicalPluginPath -PathType Leaf -ErrorAction SilentlyContinue
+  $brokenPowerShell7Configurations = @(
+    foreach ($configuration in $configurations) {
+      $configurationEnabled = [string]$configuration.Enabled -eq 'True'
+      if ($configuration.Name -notlike 'PowerShell.7*' -or -not $configurationEnabled) {
+        continue
+      }
+
+      $registeredPluginPath = [Environment]::ExpandEnvironmentVariables([string]$configuration.Filename)
+      if ([string]::IsNullOrWhiteSpace($registeredPluginPath) -or -not (Test-Path -LiteralPath $registeredPluginPath -PathType Leaf -ErrorAction SilentlyContinue)) {
+        [PSCustomObject]@{
+          Name                 = [string]$configuration.Name
+          RegisteredPluginPath = $registeredPluginPath
+          CanonicalPluginPath  = $canonicalPluginPath
+          CanonicalPluginPresent = [bool]$canonicalPluginPresent
+          RepairCommand        = "Set-Item -LiteralPath 'WSMan:\localhost\Plugin\$($configuration.Name)\Filename' -Value '$($canonicalPluginPath.Replace("'", "''"))' -Force"
+        }
+      }
+    }
+  )
+
+  $repairGuidance = if ($brokenPowerShell7Configurations.Count -gt 0 -and $canonicalPluginPresent) {
+    @($brokenPowerShell7Configurations.RepairCommand) + 'Restart-Service -Name WinRM -Force'
+  } else {
+    @()
+  }
+
   [PSCustomObject]@{
     ConfigurationName            = $ConfigurationName
     CommandAvailable             = $commandAvailable
@@ -53,6 +87,11 @@ function Get-ProfiledRemotingBoundaryState {
     ManagedMarkerPresent         = $managedMarkerPresent
     ManagedEndpointStatePresent  = ($managedConfigurationPresent -or $managedRegistryPresent -or $managedMarkerPresent)
     ManagedMarkerPath            = $managedMarkerPath
+    CanonicalPluginPath          = $canonicalPluginPath
+    CanonicalPluginPresent       = [bool]$canonicalPluginPresent
+    BrokenPowerShell7Configurations = $brokenPowerShell7Configurations
+    BrokenPowerShell7ConfigurationCount = $brokenPowerShell7Configurations.Count
+    RepairGuidance               = $repairGuidance
     ProbeError                   = $probeError
   }
 }

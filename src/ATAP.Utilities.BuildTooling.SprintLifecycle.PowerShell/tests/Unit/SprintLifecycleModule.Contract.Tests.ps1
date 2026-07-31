@@ -35,6 +35,18 @@ Describe 'SprintLifecycle module dependency contract' -Tag 'Unit' {
       Should -BeTrue
   }
 
+  It 'packages the user-settings bridge required by an exact child-module boundary import' {
+    $helperPath = Join-Path $script:moduleRoot 'private\Set-UserSettingsSymlink.ps1'
+
+    Test-Path -LiteralPath $helperPath -PathType Leaf | Should -BeTrue
+    $tokens = $null
+    $parseErrors = $null
+    $ast = [Management.Automation.Language.Parser]::ParseFile($helperPath, [ref]$tokens, [ref]$parseErrors)
+    $parseErrors | Should -BeNullOrEmpty
+    @($ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Set-UserSettingsSymlink' }, $true)).Count |
+      Should -Be 1
+  }
+
   It 'defines an explicit empty VariablesToExport contract' {
     $script:manifest.ContainsKey('VariablesToExport') | Should -BeTrue
     @($script:manifest.VariablesToExport).Count | Should -Be 0

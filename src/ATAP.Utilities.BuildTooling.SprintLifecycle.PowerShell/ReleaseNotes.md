@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.1.23
+
+- Package the private `Set-UserSettingsSymlink` bridge with SprintLifecycle so
+  an exact child-module import can perform the machine settings boundary without
+  relying on the umbrella module's private session state.
+- Detect enabled PowerShell 7 session configurations whose registered plug-in
+  file is missing, resolve the canonical binary from the unversioned
+  `$PSHOME\pwrshplugin.dll`, and return bounded repair guidance for the existing
+  WSMan entries without enabling remoting or creating another endpoint.
+
 ## 0.1.22
 
 - Add `Disabled`, `Auto`, and `Required` profiled-remoting policies to sprint

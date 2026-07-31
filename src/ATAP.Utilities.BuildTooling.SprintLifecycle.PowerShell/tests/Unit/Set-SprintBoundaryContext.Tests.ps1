@@ -144,6 +144,35 @@ Describe 'Set-SprintBoundaryContext [public]' {
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Register-ProfiledRemotingEndpoint -Times 1 -Exactly -Scope It
     }
 
+    It 'Auto blocks on enabled PowerShell 7 configurations whose plug-in file is missing' {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Get-ProfiledRemotingBoundaryState {
+        [PSCustomObject]@{
+          RemotingSurfacePresent = $true
+          ManagedEndpointStatePresent = $false
+          BrokenPowerShell7ConfigurationCount = 1
+          BrokenPowerShell7Configurations = @([PSCustomObject]@{ Name = 'PowerShell.7' })
+          CanonicalPluginPath = 'C:\Program Files\PowerShell\7\pwrshplugin.dll'
+          RepairGuidance = @(
+            "Set-Item -LiteralPath 'WSMan:\localhost\Plugin\PowerShell.7\Filename' -Value 'C:\Program Files\PowerShell\7\pwrshplugin.dll' -Force",
+            'Restart-Service -Name WinRM -Force'
+          )
+          ProbeError = $null
+        }
+      }
+
+      $result = Set-SprintBoundaryContext -Boundary End `
+        -SharedVSCodeWorktreePath $script:svStable `
+        -GitRoot $script:gitRoot `
+        -ProfiledRemotingPolicy Auto
+
+      $concern = $result.Concerns | Where-Object Concern -EQ 'ProfiledRemotingEndpoint'
+      $concern.Action | Should -Be 'RepairRequired'
+      $concern.Succeeded | Should -BeFalse
+      $concern.Error | Should -Match ([regex]::Escape('C:\Program Files\PowerShell\7\pwrshplugin.dll'))
+      $concern.Error | Should -Not -Match 'Enable-PSRemoting'
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Register-ProfiledRemotingEndpoint -Times 0 -Exactly -Scope It
+    }
+
     It 'Required treats an absent remoting surface as fatal with remediation' {
       $result = Set-SprintBoundaryContext -Boundary End `
         -SharedVSCodeWorktreePath $script:svStable `

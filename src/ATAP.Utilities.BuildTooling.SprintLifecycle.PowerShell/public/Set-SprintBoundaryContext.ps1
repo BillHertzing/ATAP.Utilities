@@ -724,6 +724,14 @@ function Set-SprintBoundaryContext {
           $profiledEndpointError = "Required profiled remoting is unavailable: no PowerShell session configurations or managed endpoint state were found. Enable PowerShell remoting explicitly outside SprintEnd, then rerun with -ProfiledRemotingPolicy Required. Probe: $($profiledEndpointState.ProbeError)"
           $errors.Add($profiledEndpointError)
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profiledEndpointError
+        } elseif ($profiledEndpointState.BrokenPowerShell7ConfigurationCount -gt 0) {
+          $profiledEndpointOk = $false
+          $profiledEndpointAction = 'RepairRequired'
+          $brokenNames = @($profiledEndpointState.BrokenPowerShell7Configurations.Name) -join ', '
+          $repairSteps = @($profiledEndpointState.RepairGuidance) -join '; '
+          $profiledEndpointError = "Enabled PowerShell 7 session configuration(s) have missing plug-in binaries: $brokenNames. The canonical installed plug-in is '$($profiledEndpointState.CanonicalPluginPath)'. Repair only the existing WSMan Filename values from an elevated, profile-enabled PowerShell 7 session, then restart WinRM and rerun SprintEnd. Suggested commands: $repairSteps"
+          $errors.Add($profiledEndpointError)
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $profiledEndpointError
         } elseif (-not (Get-Command -Name Register-ProfiledRemotingEndpoint -ErrorAction SilentlyContinue)) {
           $profiledEndpointOk = $false
           $profiledEndpointAction = 'RegistrationUnavailable'

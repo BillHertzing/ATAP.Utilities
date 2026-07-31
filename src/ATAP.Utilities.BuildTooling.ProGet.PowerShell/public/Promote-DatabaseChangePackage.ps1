@@ -164,6 +164,10 @@ function Promote-DatabaseChangePackage {
         [ValidateNotNullOrEmpty()]
         [string]$Application,
 
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string]$ProGetBaseUrl,
+
         [Parameter(Mandatory, ParameterSetName = 'WithCeiling')]
         [ValidateNotNullOrEmpty()]
         [string]$CeilingTier,
@@ -294,14 +298,19 @@ function Promote-DatabaseChangePackage {
         $succeeded   = $false
         $summary     = $null
         try {
-            $innerResult = Move-ProGetPackageInterTier `
-                -Name      $PackageId `
-                -Version   $Version `
-                -FromFeed  $FromFeed `
-                -ToFeed    $ToFeed `
-                -Reason    $Reason `
-                -ProGetApiKeySecretName $ProGetApiKeySecretName `
-                -ErrorAction Stop
+            $moveParameters = @{
+                Name                       = $PackageId
+                Version                    = $Version
+                FromFeed                   = $FromFeed
+                ToFeed                     = $ToFeed
+                Reason                     = $Reason
+                ProGetApiKeySecretName     = $ProGetApiKeySecretName
+                ErrorAction                = 'Stop'
+            }
+            if (-not [string]::IsNullOrWhiteSpace($ProGetBaseUrl)) {
+                $moveParameters['ProGetBaseUrl'] = $ProGetBaseUrl
+            }
+            $innerResult = Move-ProGetPackageInterTier @moveParameters
 
             # Move-ProGetPackageInterTier returns a PSCustomObject whose success
             # flag is 'Promoted' (and whose API payload is 'Response') - it does

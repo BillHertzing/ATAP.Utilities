@@ -111,6 +111,7 @@ Describe 'V4-E08 runner shape: Invoke-DatabasePackageBuildMasterStage.ps1 contra
 
     It 'runner invokes Publish-DatabaseChangePackageToProGet (no inline dotnet nuget push)' {
         $script:RunnerText | Should -Match 'Publish-DatabaseChangePackageToProGet'
+        $script:RunnerText | Should -Match '-ProGetBaseUrl\s+\$ProGetUrl'
         $script:RunnerText | Should -Not -Match 'dotnet\s+nuget\s+push'
     }
 

@@ -1098,6 +1098,7 @@ function Invoke-DatabasePackageBuildMasterStage {
       $publishResult = Publish-DatabaseChangePackageToProGet `
         -NupkgPath $nupkgPath `
         -Feed $ExperimentalFeed `
+        -ProGetBaseUrl $ProGetUrl `
         -ProGetApiKeySecretName $ProGetApiKeySecretName
       Add-DatabasePackagePublishTrace -Path $tracePath -Message $publishResult.ResponseSummary
 
@@ -1213,6 +1214,7 @@ function Invoke-DatabasePackageBuildMasterStage {
       -ToFeed $toFeed `
       -Reason "$Stage gate for $ApplicationName $resolvedVersion on $Branch" `
       -Application $DatabaseApplication `
+      -ProGetBaseUrl $ProGetUrl `
       -ProGetApiKeySecretName $ProGetApiKeySecretName `
       -CeilingTier $effectiveCeilingTier
     Add-DatabasePackagePublishTrace -Path $tracePath -Message $promotionResult.ResponseSummary

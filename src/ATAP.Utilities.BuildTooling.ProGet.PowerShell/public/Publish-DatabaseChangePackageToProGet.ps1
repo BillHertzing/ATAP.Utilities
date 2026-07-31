@@ -103,6 +103,10 @@ function Publish-DatabaseChangePackageToProGet {
         [Parameter(Mandatory = $false)]
         [switch]$Force,
 
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string]$ProGetBaseUrl,
+
         [ValidateNotNullOrEmpty()]
         [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key'
     )
@@ -199,7 +203,10 @@ function Publish-DatabaseChangePackageToProGet {
 
         # Resolve feed URI. Database feeds use the same NuGet protocol as nuget-*
         # feeds because the packages are .nupkg artifacts.
-        if (Get-Command -Name 'Resolve-ProGetFeedFromSettings' -CommandType Function -ErrorAction SilentlyContinue) {
+        if (-not [string]::IsNullOrWhiteSpace($ProGetBaseUrl)) {
+            $feedName = $Feed
+            $feedUri = "$($ProGetBaseUrl.TrimEnd('/'))/nuget/$Feed"
+        } elseif (Get-Command -Name 'Resolve-ProGetFeedFromSettings' -CommandType Function -ErrorAction SilentlyContinue) {
             $feedInfo = Resolve-ProGetFeedFromSettings -FeedType 'database' -Tier $tierSuffix
             $feedName = $feedInfo.FeedName
             $feedUri  = $feedInfo.EndpointUri

@@ -194,6 +194,15 @@ function Invoke-SprintEndLifecycle {
       $phases.CheckpointCoverage = $null
     }
 
+    $checkpointConfirmed = [bool](
+      $VerifyCheckpoints -and
+      $null -ne $phases.CheckpointCoverage -and
+      $phases.CheckpointCoverage.Ok
+    )
+    if ($ApplyBoundary -and -not $checkpointConfirmed) {
+      [void]$failures.Add('CheckpointCoverageRequiredForBoundary')
+    }
+
     $phases.RetrospectiveNotebook = [PSCustomObject]@{ Ok = $true; Message = 'Notebook check skipped.' }
     if ($phases.Context.Ok) {
       $notebookName = "Notebook-SprintWorkSession-$($phases.Context.ClosedSprintNumber)-End.md"
@@ -214,6 +223,8 @@ function Invoke-SprintEndLifecycle {
         SharedVSCodeWorktreePath    = [IO.Path]::GetFullPath($SharedVSCodeWorktreePath)
         WorktreePaths               = $worktreeFullPaths
         ProfiledRemotingPolicy      = $ProfiledRemotingPolicy
+        AllowUserGlobalWrite        = $true
+        CheckpointConfirmed         = $checkpointConfirmed
         Confirm                     = $false
       }
       if ($WhatIfPreference) { $boundaryParameters.WhatIf = $true }

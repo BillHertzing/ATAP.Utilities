@@ -771,9 +771,34 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $result.Phases.InfrastructureCleanup.SqlInstancesRetained | Should -BeTrue
       $result.Phases.FinalBoundary.Planned | Should -BeTrue
       $result.Phases.FinalBoundary.TestFreshShell | Should -BeTrue
-      Should -Invoke Set-SprintBoundaryContext -Times 1 -ParameterFilter { $ProfiledRemotingPolicy -eq 'Disabled' }
+      Should -Invoke Set-SprintBoundaryContext -Times 1 -ParameterFilter {
+        $ProfiledRemotingPolicy -eq 'Disabled' -and
+        $AllowUserGlobalWrite -and
+        $CheckpointConfirmed
+      }
       Should -Invoke New-SprintEndHandoff -Times 1 -ParameterFilter { $ProfiledRemotingPolicy -eq 'Disabled' }
       Should -Invoke Invoke-SprintEndInfrastructureCleanup -Times 1 -ParameterFilter { $ProfiledRemotingPolicy -eq 'Disabled' }
+    }
+
+    It 'fails closed before boundary mutation when checkpoint coverage was not requested' {
+      $planning = Join-Path $TestDrive '_Planning-wt-20-Sprint-0010-work-items-no-checkpoint'
+      $shared = Join-Path $TestDrive 'SharedVSCode-no-checkpoint'
+      New-Item -ItemType Directory -Path $planning, $shared -Force | Out-Null
+      New-Item -ItemType Directory -Path (Join-Path $planning 'SprintRetrospective') -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $planning 'SprintRetrospective\Notebook-SprintWorkSession-0010-End.md') -Value '# Sprint 0010 End'
+      Mock Set-SprintBoundaryContext { throw 'boundary must not run without checkpoint coverage' }
+
+      $result = Invoke-SprintEndLifecycle `
+        -GitRoot $TestDrive `
+        -PlanningRoot $planning `
+        -SharedVSCodeWorktreePath $shared `
+        -WorktreePaths @($planning, $shared) `
+        -ApplyBoundary `
+        -WhatIf
+
+      $result.Ok | Should -BeFalse
+      $result.Failures | Should -Contain 'CheckpointCoverageRequiredForBoundary'
+      Should -Invoke Set-SprintBoundaryContext -Times 0
     }
 
     It 'adds the Planning worktree to the SprintEnd close plan when omitted by the caller' {
@@ -834,7 +859,7 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
 
       $partial = Invoke-SprintEndLifecycle `
         -GitRoot $TestDrive -PlanningRoot $planning -SharedVSCodeWorktreePath $shared `
-        -WorktreePaths @($planning, $shared) -ApplyBoundary -WriteHandoff -CleanupInfrastructure
+        -WorktreePaths @($planning, $shared) -ApplyBoundary -VerifyCheckpoints -WriteHandoff -CleanupInfrastructure
 
       $partial.Ok | Should -BeFalse
       $partial.Phases.BoundaryReset.Errors | Should -BeNullOrEmpty
@@ -852,7 +877,7 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
 
       $resumed = Invoke-SprintEndLifecycle `
         -GitRoot $TestDrive -PlanningRoot $planning -SharedVSCodeWorktreePath $shared `
-        -WorktreePaths @($shared) -ApplyBoundary -WriteHandoff -CleanupInfrastructure
+        -WorktreePaths @($shared) -ApplyBoundary -VerifyCheckpoints -WriteHandoff -CleanupInfrastructure
 
       $resumed.Ok | Should -BeTrue
       $resumed.Phases.ClosePlan.WorktreePath | Should -Contain $planning

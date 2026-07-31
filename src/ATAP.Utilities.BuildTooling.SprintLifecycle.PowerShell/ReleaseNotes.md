@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.1.26
+
+- Forward the verified checkpoint and user-global write gates from the typed
+  SprintEnd lifecycle into the live and `WhatIf` boundary reset.
+- Fail closed before boundary mutation when checkpoint coverage was not
+  requested or did not pass.
+
 ## 0.1.25
 
 - Replace the remoting-health test fixture's `%windir%`-relative plug-in path

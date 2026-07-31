@@ -1,3 +1,8 @@
 $moduleRoot = $PSScriptRoot
-$allFunctions = @(Get-ChildItem -LiteralPath (Join-Path $moduleRoot 'private') -Filter '*.ps1' -File) + @(Get-ChildItem -LiteralPath (Join-Path $moduleRoot 'public') -Filter '*.ps1' -File)
+$privatePath = Join-Path $moduleRoot 'private'
+$privateFunctions = @(if (Test-Path -LiteralPath $privatePath -PathType Container) {
+  Get-ChildItem -LiteralPath $privatePath -Filter '*.ps1' -File
+})
+$publicFunctions = @(Get-ChildItem -LiteralPath (Join-Path $moduleRoot 'public') -Filter '*.ps1' -File)
+$allFunctions = $privateFunctions + $publicFunctions
 foreach ($import in $allFunctions) { . $import.FullName }

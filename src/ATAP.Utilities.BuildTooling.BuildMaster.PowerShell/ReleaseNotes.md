@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.1.3
+
+- Treat the optional `private/` function directory as empty when it is absent,
+  so importing the child module remains valid when a strict caller promotes
+  `$ErrorActionPreference` to `Stop`.
+
 ## Unreleased
 
 - Document the BuildMaster child as a member of the BuildTooling family. The

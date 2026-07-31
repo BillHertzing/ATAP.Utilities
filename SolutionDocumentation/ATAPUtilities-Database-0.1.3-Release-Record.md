@@ -17,10 +17,11 @@ identical to the BuildMaster artifact:
 - manifest source: git `261514c21d09401bcf1f9f368d54e04f8dfde064`;
 - manifest target: `00.02.000140`.
 
-Development, Integration, QA, and Production independently report eight
-successful release migrations and head `00.02.000140`. Deferred ContentSummary
-migration `V00.02.000120__Add_ContentSummary_Rule_Kind.sql` is absent from the
-package, manifest, and every real tier.
+The ephemeral Experimental database and the permanent Development, Integration,
+QA, and Production databases independently report eight successful release
+migrations and head `00.02.000140`. Deferred ContentSummary migration
+`V00.02.000120__Add_ContentSummary_Rule_Kind.sql` is absent from the package,
+manifest, and every authorized tier.
 
 ## Migration boundary
 
@@ -44,7 +45,7 @@ Excluded:
 
 | Stage | Parent/target execution | Result | Notes |
 | --- | --- | --- | --- |
-| Experimental | `20578` target | success | Logical first stage; permanent Experimental SQL instances remain retired and must not be recreated. |
+| Experimental | `20578` target | success | Published to `database-experimental`, then applied to the approved ephemeral `localhost\Expwhertzing` database; head `00.02.000140`. Permanent Experimental SQL instances remain retired and must not be recreated. |
 | Development | `20595` / `20596` | success | Real apply reached `00.02.000140`. |
 | Integration | `20599` / `20600` | success | Retry resumed after prior ProGet promotion; snapshot and real apply succeeded. |
 | QA | `20601` / `20602` | success | Snapshot, rehearsal, promotion, and real apply succeeded. |
@@ -92,6 +93,9 @@ new forward migrations.
   root, and returns the pipeline `SnapshotPath`;
 - ProGet promotion retries succeed when the exact artifact is already present in
   the destination after a partially completed stage.
+- every stage now fails closed before publish/promotion when its database
+  connection-secret name is absent or apply is bypassed; publish/promotion must
+  precede the exact-package database apply, and completion follows apply.
 
 ## Evidence
 

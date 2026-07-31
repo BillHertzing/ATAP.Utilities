@@ -88,9 +88,9 @@
   promotions only; logged as a warning.
 
 .PARAMETER SkipApply
-  Bypasses the per-tier apply (Flyway migrate against the real tier database)
-  even when a tier connection secret name is supplied. The promotion still
-  happens; the database is not migrated. Logged as a warning.
+  Retained for caller compatibility but rejected by the stage preflight.
+  A ProGet tier cannot pass unless the exact package is applied to its
+  corresponding database.
 
 .OUTPUTS
   None. Side effects: New-DatabaseChangePackage, ProGet publish/promote,
@@ -776,17 +776,11 @@ function Invoke-DatabasePackageStageApply {
 
   PROCESS {
     if ([string]::IsNullOrWhiteSpace($ConnectionStringSecretName)) {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-        -Message "No connection-string secret name configured for tier '$Tier'; per-tier apply skipped for '$DatabasePackageId'."
-      Add-DatabasePackagePublishTrace -Path $TracePath -Message "Apply skipped for tier '$Tier' (no connection secret configured)."
-      return
+      throw "Per-tier apply is required for '$DatabasePackageId' tier '$Tier'; its connection-string secret name is not configured."
     }
 
     if ($SkipApply) {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning `
-        -Message "Per-tier apply BYPASSED (-SkipApply) for '$DatabasePackageId' tier '$Tier'."
-      Add-DatabasePackagePublishTrace -Path $TracePath -Message "Apply bypassed (-SkipApply) for tier '$Tier'."
-      return
+      throw "Per-tier apply is required for '$DatabasePackageId' tier '$Tier'; -SkipApply cannot be used in a passing BuildMaster stage."
     }
 
     $applyMarker = Get-DatabasePackageApplyMarkerPath -ContextDirectory $ContextDirectory -DatabasePackageId $DatabasePackageId -Tier $Tier
@@ -1013,14 +1007,21 @@ function Invoke-DatabasePackageBuildMasterStage {
       throw "Database stage '$Stage' exceeds version ceiling '$effectiveCeilingTier' for package '$databasePackageId'."
     }
 
-    # Resolve this tier's connection-string secret name once. Apply and
-    # rehearsal are enforced only when the tier has a secret name configured.
+    # Resolve this tier's connection-string secret name once. Every ProGet tier
+    # must have a corresponding database target and successful apply.
     $tierConnectionSecretName = Resolve-DatabaseTierConnectionSecretName -Tier $Stage `
       -ExperimentalSecretName $ExperimentalDatabaseDBConnectionStringSecretName `
       -DevelopmentSecretName $DevelopmentDatabaseDBConnectionStringSecretName `
       -IntegrationSecretName $IntegrationDatabaseDBConnectionStringSecretName `
       -QASecretName $QADatabaseDBConnectionStringSecretName `
       -ProductionSecretName $ProductionDatabaseDBConnectionStringSecretName
+
+    if ([string]::IsNullOrWhiteSpace($tierConnectionSecretName)) {
+      throw "Database stage '$Stage' cannot publish, promote, or complete package '$databasePackageId': the corresponding connection-string secret name is not configured."
+    }
+    if ($SkipApply) {
+      throw "Database stage '$Stage' cannot publish, promote, or complete package '$databasePackageId' while -SkipApply is supplied."
+    }
 
     $stateFiles = [ordered]@{
       CeilingTier       = Join-Path -Path $contextDirectory -ChildPath "$databasePackageId.ceiling-tier.tmp"

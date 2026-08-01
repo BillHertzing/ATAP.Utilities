@@ -54,7 +54,7 @@ Describe 'AiRendering child module contract' -Tag 'Unit' {
   It 'has stable-release NBGV metadata' {
     $metadata = Get-Content -LiteralPath (Join-Path $script:moduleRoot 'version.json') -Raw |
       ConvertFrom-Json
-    $metadata.version | Should -Be '0.1.1'
+    $metadata.version | Should -Be '0.1.2'
     @($metadata.publicReleaseRefSpec) | Should -Contain '.*'
   }
 }

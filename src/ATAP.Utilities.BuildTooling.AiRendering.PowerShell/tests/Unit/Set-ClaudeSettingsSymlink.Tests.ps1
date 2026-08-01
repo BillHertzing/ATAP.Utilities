@@ -18,12 +18,16 @@ Describe 'Set-ClaudeSettingsSymlink managed render boundary' {
     $script:testRoot = Join-Path (
       [IO.Path]::GetTempPath()
     ) ('claude-settings-render-' + [Guid]::NewGuid().ToString('N'))
-    $script:sharedRoot = Join-Path $script:testRoot 'SharedVSCode'
+    $script:sharedRoot = Join-Path $script:testRoot 'SharedVSCode-wt-56-Sprint-0013-work-items'
+    $script:sharedStable = Join-Path $script:testRoot 'SharedVSCode'
     $script:userRoot = Join-Path $script:testRoot 'UserProfile'
     $script:configRoot = Join-Path $script:sharedRoot '.ai\config\claudecode'
-    New-Item -ItemType Directory -Path $script:configRoot -Force | Out-Null
+    New-Item -ItemType Directory -Path $script:configRoot, $script:sharedStable -Force | Out-Null
+    $script:overlayPath = Join-Path $script:configRoot 'settings.overlay.json'
+    $script:planningSprint = Join-Path $script:testRoot '_Planning-wt-28-Sprint-0013-work-items'
+    New-Item -ItemType Directory -Path $script:planningSprint -Force | Out-Null
     [IO.File]::WriteAllText(
-      (Join-Path $script:configRoot 'settings.overlay.json'),
+      $script:overlayPath,
       (@{
           model = 'sonnet'
           permissions = @{
@@ -31,6 +35,19 @@ Describe 'Set-ClaudeSettingsSymlink managed render boundary' {
             allow = @('PowerShell(:*)')
             deny = @()
             ask = @()
+            additionalDirectories = @(
+              '${STABLE_WORKTREE_PATH_SHAREDVSCODE}',
+              '${SPRINT_WORKTREE_PATH_ATAP_PLANNING}'
+            )
+          }
+          hooks = @{
+            PreToolUse = @(@{
+                matcher = 'Bash|PowerShell'
+                hooks = @(@{
+                    type = 'command'
+                    command = 'pwsh -File "${SPRINT_WORKTREE_PATH_SHAREDVSCODE}\.claude\hooks\PreToolUse-PwshGuard.ps1"'
+                  })
+              })
           }
           env = @{ CLAUDE_CODE_SHELL = 'pwsh' }
         } | ConvertTo-Json -Depth 10),
@@ -96,7 +113,45 @@ Describe 'Set-ClaudeSettingsSymlink managed render boundary' {
     $settings.permissions.defaultMode | Should -Be 'acceptEdits'
     $settings.permissions.allow | Should -Contain 'PowerShell(:*)'
     $settings.env.CLAUDE_CODE_SHELL | Should -Be 'pwsh'
+    $settings.permissions.additionalDirectories | Should -Contain $script:sharedStable
+    $settings.permissions.additionalDirectories | Should -Contain $script:planningSprint
+    $settings.hooks.PreToolUse[0].hooks[0].command | Should -Match ([regex]::Escape($script:sharedRoot))
+    ($settings | ConvertTo-Json -Depth 20) | Should -Not -Match 'WORKTREE_PATH'
     $settings.localPreference | Should -Be 'keep-me'
+  }
+
+  It 'rejects a rendered projection that still contains a worktree placeholder' {
+    [IO.File]::WriteAllText(
+      $script:overlayPath,
+      '{"permissions":{"additionalDirectories":["${STABLE_WORKTREE_PATH_UNKNOWN}"]}}',
+      [Text.UTF8Encoding]::new($false)
+    )
+
+    {
+      Set-ClaudeSettingsSymlink `
+        -SharedVSCodeWorktreePath $script:sharedRoot `
+        -AllowUserGlobalWrite `
+        -CheckpointConfirmed `
+        -Confirm:$false
+    } | Should -Throw '*unresolved worktree placeholders*'
+  }
+
+  It 'omits sprint directories and resolves the hook to stable SharedVSCode at End' {
+    Set-ClaudeSettingsSymlink `
+      -SharedVSCodeWorktreePath $script:sharedRoot `
+      -AllowUserGlobalWrite `
+      -CheckpointConfirmed `
+      -OmitSprintWorktrees `
+      -Confirm:$false
+
+    $settingsPath = Join-Path $script:userRoot '.claude\settings.json'
+    $settingsText = Get-Content -LiteralPath $settingsPath -Raw
+    $settings = $settingsText | ConvertFrom-Json -Depth 20
+    $settings.permissions.additionalDirectories | Should -Contain $script:sharedStable
+    $settings.permissions.additionalDirectories | Should -Not -Contain $script:planningSprint
+    $settings.hooks.PreToolUse[0].hooks[0].command | Should -Match ([regex]::Escape($script:sharedStable))
+    $settingsText | Should -Not -Match 'WORKTREE_PATH'
+    $settingsText | Should -Not -Match '-wt-28-Sprint-0013-work-items'
   }
 
   It 'replaces a symlink target with a real settings file' {

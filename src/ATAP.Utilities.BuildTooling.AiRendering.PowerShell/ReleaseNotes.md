@@ -10,6 +10,11 @@
   compose unchanged. This replaces the direct manifest render that clobbered the
   composed carrier on 2026-07-25.
 
+## 0.1.2
+
+- Render Claude Code user-global settings from the concrete SharedVSCode
+  projection and reject unresolved stable/sprint worktree placeholders.
+
 ## 0.1.0
 
 - Initial AiRendering extraction from the compatibility parent.

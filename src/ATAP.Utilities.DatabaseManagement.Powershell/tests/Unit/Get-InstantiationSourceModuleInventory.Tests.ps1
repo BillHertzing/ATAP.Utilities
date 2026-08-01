@@ -98,4 +98,57 @@ Describe 'Get-InstantiationSourceModuleInventory' -Tag 'Unit' {
     { Get-InstantiationSourceModuleInventory -RepositoryRoot $script:repoRoot -SourceRootRelativePath 'missing-src' } |
       Should -Throw -ExpectedMessage '*Source root not found*'
   }
+
+  It 'emits no new parent versions for unchanged input' {
+    $baseline = Get-InstantiationSourceModuleInventory -RepositoryRoot $script:repoRoot -AsVersionProposal
+    $proposal = Get-InstantiationSourceModuleInventory -RepositoryRoot $script:repoRoot -AsVersionProposal -BaselineInventory $baseline
+
+    @($proposal.FileDeltas | Where-Object Action -ne 'Unchanged') | Should -HaveCount 0
+    $proposal.RequiresNewParentVersions | Should -BeFalse
+    $proposal.ParentVersionProposal | Should -BeNullOrEmpty
+  }
+
+  It 'proposes a new RuleVersion and parent versions for one added file' {
+    $baseline = Get-InstantiationSourceModuleInventory -RepositoryRoot $script:repoRoot -AsVersionProposal
+    New-Item -ItemType File -Path (Join-Path $script:srcRoot 'ATAP.Utilities.Security.Powershell\public\Get-Added.ps1') -Force | Out-Null
+
+    $proposal = Get-InstantiationSourceModuleInventory -RepositoryRoot $script:repoRoot -AsVersionProposal -BaselineInventory $baseline
+    $added = @($proposal.FileDeltas | Where-Object Action -eq 'Added')
+
+    $added | Should -HaveCount 1
+    $added[0].RelativePath | Should -Be 'src\ATAP.Utilities.Security.Powershell\public\Get-Added.ps1'
+    $proposal.ProposedRuleVersions | Should -HaveCount 1
+    $proposal.RequiresNewParentVersions | Should -BeTrue
+  }
+
+  It 'proposes a new RuleVersion when one source line changes' {
+    $sourcePath = Join-Path $script:srcRoot 'ATAP.Utilities.Security.Powershell\public\Get-SecuritySecret.ps1'
+    Set-Content -LiteralPath $sourcePath -Value "line one`r`nline two" -NoNewline
+    $baseline = Get-InstantiationSourceModuleInventory -RepositoryRoot $script:repoRoot -AsVersionProposal
+    Set-Content -LiteralPath $sourcePath -Value "line one`r`nline changed" -NoNewline
+
+    $proposal = Get-InstantiationSourceModuleInventory -RepositoryRoot $script:repoRoot -AsVersionProposal -BaselineInventory $baseline
+    $changed = @($proposal.FileDeltas | Where-Object Action -eq 'Changed')
+
+    $changed | Should -HaveCount 1
+    $changed[0].ContentSha256 | Should -Not -Be $changed[0].PreviousContentSha256
+  }
+
+  It 'treats an exact-case path difference as a versioned case change' {
+    $baselineProposal = Get-InstantiationSourceModuleInventory -RepositoryRoot $script:repoRoot -AsVersionProposal
+    $baselineRows = @($baselineProposal.CurrentFiles | ForEach-Object {
+        $copy = $_.PSObject.Copy()
+        if ([string]$copy.RelativePath -match 'Get-SecuritySecret\.ps1$') {
+          $copy.RelativePath = ([string]$copy.RelativePath).Replace('Get-SecuritySecret.ps1', 'get-securitysecret.ps1')
+        }
+        $copy
+      })
+
+    $proposal = Get-InstantiationSourceModuleInventory -RepositoryRoot $script:repoRoot -AsVersionProposal -BaselineInventory $baselineRows
+    $caseChanged = @($proposal.FileDeltas | Where-Object Action -eq 'CaseChanged')
+
+    $caseChanged | Should -HaveCount 1
+    $caseChanged[0].PreviousRelativePath | Should -Match 'get-securitysecret\.ps1$'
+    $caseChanged[0].RelativePath | Should -Match 'Get-SecuritySecret\.ps1$'
+  }
 }

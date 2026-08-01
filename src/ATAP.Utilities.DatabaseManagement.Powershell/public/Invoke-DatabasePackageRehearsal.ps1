@@ -150,7 +150,7 @@ function Invoke-DatabasePackageRehearsal {
       $appName = $Application
       if ([string]::IsNullOrWhiteSpace($appName)) {
         $appName = if ($manifest.PSObject.Properties.Name -contains 'dbChangeUnit') {
-          $manifest.dbChangeUnit
+          ([string]$manifest.dbChangeUnit -replace '\.Database$', '')
         } else {
           [System.IO.Path]::GetFileName($expandedPath)
         }
@@ -160,25 +160,63 @@ function Invoke-DatabasePackageRehearsal {
         -Message "Starting rehearsal for Application='$appName' BuildId='$BuildId'" -Tag 'Rehearsal'
 
       if ($PSCmdlet.ShouldProcess("$appName (BuildId=$BuildId)", 'Run Flyway rehearsal')) {
+        $packageMigrationsPath = Join-Path $expandedPath 'db\migrations'
+        $packageDataPath = Join-Path $expandedPath 'db\seeds'
+        $packageFlywayTomlPath = Join-Path $expandedPath 'flyway.toml'
+        foreach ($requiredPath in @($packageMigrationsPath, $packageDataPath, $packageFlywayTomlPath)) {
+          if (-not (Test-Path -LiteralPath $requiredPath)) {
+            throw "Database package is not deployable: required path '$requiredPath' is missing."
+          }
+        }
+
         $rehearsalParams = @{
-          Application  = $appName
-          BuildId      = $BuildId
-          SqlInstance  = $SqlInstance
-          DatabaseHost = $DatabaseHost
-          BundlePath   = $expandedPath
+          Application                 = $appName
+          BuildId                    = $BuildId
+          SourceDatabaseName          = $appName
+          BundlePath                 = $expandedPath
+          FlywayBasePath             = $expandedPath
+          FlywaySqlMigrationsPath    = $packageMigrationsPath
+          FlywayDataPath             = $packageDataPath
+          FlywayTomlPath             = $packageFlywayTomlPath
         }
         if (-not [string]::IsNullOrWhiteSpace($RehearsalDb))        { $rehearsalParams['RehearsalDb']        = $RehearsalDb }
-        if (-not [string]::IsNullOrWhiteSpace($DBConnectionStringSecretName)) { $rehearsalParams['DBConnectionStringSecretName'] = $DBConnectionStringSecretName }
+        if (-not [string]::IsNullOrWhiteSpace($DBConnectionStringSecretName)) {
+          $rehearsalParams['DBConnectionStringSecretName'] = $DBConnectionStringSecretName
+        }
+        else {
+          $rehearsalParams['SqlInstance'] = $SqlInstance
+          $rehearsalParams['DatabaseHost'] = $DatabaseHost
+        }
         if (-not [string]::IsNullOrWhiteSpace($LogPath))             { $rehearsalParams['LogPath']             = $LogPath }
 
+        $rehearsalStarted = [datetime]::UtcNow
         $result = Invoke-FlywayRehearsal @rehearsalParams
+        $elapsedSeconds = ([datetime]::UtcNow - $rehearsalStarted).TotalSeconds
+        $validateOutput = if ($result.PSObject.Properties.Name -contains 'ValidateOutput') {
+          $result.ValidateOutput
+        }
+        else {
+          $null
+        }
+        $migrateOutput = if ($result.PSObject.Properties.Name -contains 'MigrateOutput') {
+          $result.MigrateOutput
+        }
+        elseif ($result.PSObject.Properties.Name -contains 'FlywayResult') {
+          $result.FlywayResult
+        }
+        else {
+          $null
+        }
+        if ($result.PSObject.Properties.Name -contains 'ElapsedSeconds') {
+          $elapsedSeconds = [double]$result.ElapsedSeconds
+        }
 
         $output = [PSCustomObject]@{
           Success        = $result.Success
           PackagePath    = $expandedPath
-          ValidateOutput = $result.ValidateOutput
-          MigrateOutput  = $result.MigrateOutput
-          ElapsedSeconds = $result.ElapsedSeconds
+          ValidateOutput = $validateOutput
+          MigrateOutput  = $migrateOutput
+          ElapsedSeconds = $elapsedSeconds
         }
 
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `

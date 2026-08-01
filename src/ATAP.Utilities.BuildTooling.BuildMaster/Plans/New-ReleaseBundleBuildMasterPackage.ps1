@@ -48,8 +48,8 @@
 .PARAMETER ProGetUrl
   Base URL of the ProGet server.
 
-.PARAMETER ProGetApiKey
-  ProGet API key passed to Publish-UniversalPackageToProGet.
+.PARAMETER ProGetApiKeySecretName
+  Canonical secret-store name passed to Publish-UniversalPackageToProGet.
 
 .PARAMETER RetentionDays
   Run-context retention window.
@@ -128,8 +128,8 @@ param(
   [ValidateNotNullOrEmpty()]
   [string]$ProGetUrl,
 
-  [AllowEmptyString()]
-  [string]$ProGetApiKey = '',
+  [ValidateNotNullOrEmpty()]
+  [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
 
   [ValidateRange(0, 365)]
   [int]$RetentionDays = 14
@@ -168,7 +168,7 @@ function New-ReleaseBundleBuildMasterPackage {
     [Parameter(Mandatory)][string]$ReleaseBundleExperimentalFeedName,
     [Parameter(Mandatory)][string]$CeilingTier,
     [Parameter(Mandatory)][string]$ProGetUrl,
-    [AllowEmptyString()][string]$ProGetApiKey = '',
+    [ValidateNotNullOrEmpty()][string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
     [int]$RetentionDays = 14
   )
 
@@ -199,25 +199,6 @@ function New-ReleaseBundleBuildMasterPackage {
 
       $context = Get-Content -LiteralPath $ReleaseBundleContextFile -Raw | ConvertFrom-Json -ErrorAction Stop
 
-      # Resolve the API key: prefer the explicit parameter, fall back to env vars
-      # provisioned by LoginScript.ps1 / Bitwarden (SEC-T1 / BLOCKER-8).
-      $resolvedApiKey = $ProGetApiKey
-      if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-        $resolvedApiKey = $env:PROGET_BUILDMASTER_API_KEY
-      }
-      if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-        $resolvedApiKey = $env:PROGET_ADMIN_API_KEY
-      }
-      if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-        $resolvedApiKey = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
-      }
-      if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-        $errorMessage = 'Unable to resolve ProGet API key. Set PROGET_BUILDMASTER_API_KEY or PROGET_ADMIN_API_KEY in the service-account environment.'
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-        throw $errorMessage
-      }
-      $env:PROGET_ADMIN_API_KEY = $resolvedApiKey
-      $env:PROGET_BUILDMASTER_API_KEY = $resolvedApiKey
       $global:ProGetBaseUrl = $ProGetUrl
 
       $manifestOutputPath = Join-Path -Path $SourcePath -ChildPath '_generated/release-manifest/manifest.json'
@@ -227,7 +208,7 @@ function New-ReleaseBundleBuildMasterPackage {
       $bundle   = New-ReleaseBundle -Manifest $manifest -OutputPath $bundleOutputPath -SourceRoot $SourcePath
 
       try {
-        Publish-UniversalPackageToProGet -Path $bundle.Path.FullName -Feed $ReleaseBundleExperimentalFeedName -CeilingTier $CeilingTier
+        Publish-UniversalPackageToProGet -Path $bundle.Path.FullName -Feed $ReleaseBundleExperimentalFeedName -CeilingTier $CeilingTier -ProGetApiKeySecretName $ProGetApiKeySecretName
       }
       catch {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Publish-UniversalPackageToProGet failed for bundle '$($bundle.Path.FullName)'. Exception: $($_.Exception.Message)"
@@ -302,5 +283,5 @@ New-ReleaseBundleBuildMasterPackage `
   -ReleaseBundleExperimentalFeedName $ReleaseBundleExperimentalFeedName `
   -CeilingTier $CeilingTier `
   -ProGetUrl $ProGetUrl `
-  -ProGetApiKey $ProGetApiKey `
+  -ProGetApiKeySecretName $ProGetApiKeySecretName `
   -RetentionDays $RetentionDays | Out-Null

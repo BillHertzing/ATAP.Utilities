@@ -14,6 +14,46 @@ If you are viewing this `ReadMe.md` in GitHub, [here is this same ReadMe on the 
 
 This package provides PowerShell goodies make it easier when developing Powershell modules for .Net, and especially inside of Visual Studio Code.
 
+## BuildTooling family
+
+`ATAP.Utilities.BuildTooling.PowerShell` is the compatibility parent for the
+independently buildable BuildTooling child modules. It retains the stable legacy
+command surface while importing the children declared in `Build/ModuleFamily.psd1`.
+New consumers may import a child module when they require only that child; existing
+installed parent-only consumers remain supported. The final Task 13.73 refresh found
+34 parent-only code consumers across the current and stable worktrees, so the accepted
+parent mode is compatibility re-export; exports must not shrink until those consumers
+are migrated and their deprecations are recorded.
+
+The child topology and dependency direction are shown in
+[BuildToolingFamilyArchitecture.puml](Documentation/BuildToolingFamilyArchitecture.puml).
+The reciprocal process guidance is in
+[PowerShell Build & Packaging](../../SolutionDocumentation/PowerShell-Modules-Build-Process.md).
+
+The bounded BWS ReadOnly bootstrap commands provision only `SvcBuildMaster`,
+`SvcProGet`, and `SvcSQLServer` for the fixed `CI-Shared` ReadOnly purpose. See
+[BWSReadOnlyBootstrap.md](Documentation/BWSReadOnlyBootstrap.md) for the public-certificate
+CMS envelope flow, canonical account paths, Password-logon task isolation under
+`\ATAP\`, idempotency statuses, and fail-closed recovery rules.
+
+The compatibility parent imports GitWorktree at minimum version 0.1.3 and
+PlanningSession at minimum version 0.1.2. It re-exports the legacy Git/worktree
+and planning-session command surfaces while keeping the child-only
+`Resolve-PlanningWorktreeRoot` contract hidden.
+
+Task 13.72.3 adds the AiRendering child at minimum version 0.1.0. The parent
+continues to re-export the nine legacy AiRendering commands. Child-only
+`Set-ClaudeSettingsSymlink` and `Test-PairedAgentTextSuite` remain outside the
+frozen 200-command parent surface. SC-0246's ten SharedVSCode `.ai/tools`
+PowerShell files remain reserved for the future AIAdapters module.
+
+Parent 0.1.73 supersedes the Task 13.73 baseline to carry the
+`New-BuildMasterApplication` artifact-schema correction from BuildMaster child
+0.1.2. Both packages passed all five tiers, including 71 child and 169 parent
+tests with zero failures at every tested promoted tier, and are installed
+AllUsers on UTAT022 and UTAT01. Fresh PowerShell 7 imports on both hosts resolve
+the exact versions from Program Files.
+
 Full-repository C# MSBuild property audits live outside this module at
 `tests\RepoHealth` and run through `Build\Invoke-RepoHealthGate.ps1`. They are
 not part of `module.build.ps1` for this PowerShell module because they enumerate
@@ -24,6 +64,15 @@ the workspace file paths being retargeted instead of the caller's current
 directory. Generated `.gitattributes` and `.gitconfig.shared` content also
 replaces any existing generated header before writing a fresh one, so repeated
 retargeting refreshes metadata without stacking header blocks.
+
+SprintStart verifies the owner of each newly created worktree's exact `.git`
+pointer before the first commit. A mismatch is repaired only on that pointer,
+re-read, and failed closed if ownership still differs from the interactive
+operator; the workflow never adds parent-wide or wildcard `safe.directory`
+trust. Sprint overview developer identity is the composite `(username, host)`
+pair, so one developer may be assigned to multiple hosts. Regeneration preserves
+explicit or existing multi-host assignments deterministically instead of
+deduplicating by username.
 
 SprintStart and SprintEnd now use `Invoke-SprintAIAdapterLifecycle`, which calls
 the SharedVSCode registry-backed settings/permissions renderer and drift audit.
@@ -58,6 +107,9 @@ hook command paths in `settings.overlay.json` follow the sprint or stable target
 before user settings are relinked. `Test-SprintEndBoundaryState` auto-discovers
 those managed profiles when `-ProfilePaths` is omitted and verifies that each is
 stable-sourced, readable, and free of stale `-wt-` references after SprintEnd.
+Both developer and service-account source discovery resolves only the canonical
+`ATAP.IAC\Windows\ProfileTemplates` payloads; validation never recreates the
+retired `ATAP.Utilities.PowerShell\Profiles` payload targets.
 SprintEnd stable junction retargeting is now intentionally narrower: by default
 it recreates only the supported `.vscode` junction and does not reintroduce
 obsolete rendered `.claude` / `.github` links. For one-time stable maintenance,
@@ -206,6 +258,10 @@ strips direct top-level `Export-ModuleMember` statements and export-only
 `if ($MyInvocation.MyCommand.ScriptBlock.Module)` wrappers while preserving the
 source files, nested commands, and unrelated module guards. The generated
 manifest remains the single authority for `FunctionsToExport`.
+Compatibility aliases that must survive this flattening are declared with
+`[Alias()]` on their public functions; this includes the legacy
+`Get-ServiceAccountBWSAccessToken` and
+`Initialize-ServiceAccountBWSAccessToken` names.
 
 `Build-PSModuleManifest` regenerates package manifests with core
 `New-ModuleManifest` parameters instead of copying a manifest and calling
@@ -239,10 +295,19 @@ differences in Claude's project folder names do not cause false memory-copy skip
 
 **Batch module pipeline driver (Task 10.33).** `Start-BuildMasterModulePipelineBatch` releases several PowerShell modules in one call without releasing any of them by hand. It accepts an ordered `[string[]] -ModuleName`, normalizes duplicates while preserving caller order, and **preflights every module before creating any BuildMaster release**: it resolves `src/<ModuleName>` (requiring a project-adjacent `version.json` via `Resolve-BuildMasterPackageProjectPath`), computes the immutable package version and `CeilingTier` through `Get-BuildContext`, and resolves each module's BuildMaster application from `-ApplicationByModule` or reviewed configuration — it never guesses when a mapping is absent. Only after all modules pass preflight does it invoke `Start-BuildMasterPackagePipeline` once per module on `global::PowerShellModule-5Stage`, passing the resolved identity and the module's ceiling as the `$CeilingTier` build variable so BuildMaster builds/packages once in Experimental, runs the applicable promoted-module tests, promotes the same immutable bytes through ProGet, and skips every stage above that module's ceiling (`Sprint`/feature → Experimental, `Alpha` → Development, `Beta` → Integration, `QA` → QA, no prerelease label → Production/stable). Modules run sequentially and the batch fails fast unless `-ContinueOnError` is supplied; it supports `-WhatIf`, passes only a secret *name* for BuildMaster credentials, and returns one structured aggregate whose ordered `Results` carry each module's application, project path, package version, ceiling, BuildMaster release/build/execution identifiers, terminal tier, success, and failure detail. The batch only queues and observes BuildMaster work — it never reimplements packaging, tests, feed promotion, or ceiling decisions locally.
 
-**Profileless BuildMaster promotion runners.** `Promote-ProGetPackage` accepts explicit `-ProGetBaseUrl` and `-ApiKey` values and forwards them to `Move-ProGetPackageInterTier`. BuildMaster stage runners must pass those values because they intentionally run under `pwsh -NoProfile`, where `$global:settings` is not guaranteed to exist.
+**Profileless BuildMaster promotion runners.** `Promote-ProGetPackage` accepts explicit `-ProGetBaseUrl` and the non-secret `-ProGetApiKeySecretName`, forwarding the SecretName to `Move-ProGetPackageInterTier`. The authenticated leaf resolves it through `Get-SecretATAP`; runners never receive a raw key or use an environment fallback. Explicit promotion inputs bypass profile-populated global settings, including when `$global:settings` is absent or lacks the promotion keys.
 
-Scope-creep capture (`Add-ScopeCreepIdea`) now resolves the target `_Planning`
-worktree through `Resolve-PlanningWorktreeRoot` (Task 9.23). Resolution is
+`Assert-BuildMasterReady` follows the same host contract: its explicit or local-default BuildMaster API-key SecretName is consumed directly and does not require `$global:settings`.
+
+**ProGet administration SecretName boundary (Task 13.62).** Administration
+cmdlets accept only the non-secret `ProGet.Admin.API.Key` name and resolve it
+inside the authenticated leaf. See
+[ProGetAdministrationSecretNameBoundary.md](Documentation/ProGetAdministrationSecretNameBoundary.md)
+for the covered command surface and fail-closed verification contract.
+
+Scope-creep capture (`Add-ScopeCreepIdea`) is now owned by the PlanningSession
+child and resolves the target `_Planning` worktree through GitWorktree's
+child-only `Resolve-PlanningWorktreeRoot` contract. Resolution is
 anchored on the **Sprint token** (`Sprint-<NNNN>-work-items`) shared across
 repos — not the per-repo issue number, which differs (e.g.
 `ATAP.Utilities-wt-110-…` pairs with `_Planning-wt-18-…`). From a sprint shell it
@@ -405,6 +470,21 @@ for sprint boundaries.
    expected SharedVSCode-managed junction is `.vscode`; treat any `.claude` or
    `.github` junction as legacy drift requiring review or the
    `Convert-StableWorktreeToConcreteAdapters` repair path.
+
+### Process-lock-aware worktree teardown
+
+Use `Remove-SprintWorktreeSafely` only after the SprintEnd boundary reset and
+repository close steps have succeeded. The cmdlet verifies the exact Git
+worktree registration, refuses removal while the current shell, Codex, or VS
+Code references that worktree, and limits Git removal to a caller-selected
+number of attempts (three by default). If removal remains blocked, it writes a
+minimal handoff containing only the remaining teardown command.
+
+Adapter cleanup is opt-in. Pass only direct-child placeholder paths known to be
+safe, such as `.codex`; each candidate must be an empty ordinary directory at
+execution time. Reparse points, nested paths, non-empty directories, and paths
+outside the exact worktree are preserved and reported. The implementation never
+uses recursive deletion.
 
 ```powershell
 # Supported sprint-boundary junction set
@@ -1011,10 +1091,31 @@ The BuildMaster stage runner keeps `Set-StrictMode -Version Latest` for its own
 orchestration, but that policy no longer leaks into Pester fixture code where
 normal missing-property and scalar `.Count` behavior is expected.
 
+For fixtures that must reload the module, the delegated run temporarily sets
+the process-scoped `ATAP_PROMOTED_MODULE_MANIFEST` value to the restored package
+manifest. Fixtures use that path rather than a source manifest, then the runner
+restores the previous value after Pester completes. This keeps the promoted
+artifact—not the source tree—as the system under test.
+
 Suites that must import or dot-source the BuildTooling source tree, depend on
 developer-workstation globals or paths, or evaluate the full repository carry
-the `PromotedModuleHostSensitive` tag. They are excluded only from quiet
-promoted-package gates; normal source test runs still execute them.
+the `PromotedModuleHostSensitive` tag. `Invoke-PromotedModuleTests` passes that
+tag through `AdditionalExcludeTag`, so promoted-package selection is identical
+at every console verbosity. Normal source test runs still execute the tagged
+tests unless the quiet BuildMaster source gate applies its established
+host-sensitive exclusions.
+
+`Invoke-PSModulePesterTests` retains its module-bound result, plugin-restoration,
+and JUnit helper scriptblocks before entering Pester. Tests may therefore remove
+or force-reimport BuildTooling without breaking runner teardown or artifact
+generation. It also restores the pre-run global `Get-SecretATAP` function so a
+test double cannot contaminate the next promoted tier; no secret value is
+retained. Tier totals and JUnit cases exclude Pester's tag-filtered `NotRun`
+records; explicit skips remain represented as skipped cases.
+
+`Set-TaskComplete` validates its literal helper and task-file paths with
+`System.IO.File.Exists`, avoiding unnecessary PowerShell-provider lookup for
+paths that are always literal files.
 
 Task 10.30 promoted `ATAP.Utilities.BuildTooling.PowerShell` 0.1.7 through
 BuildMaster build 14137. Development passed 476/476 tests, and Integration, QA,
@@ -1031,3 +1132,25 @@ canonical `*-stable` tier.
 ## Functional area
 
 PowerShell Build & Packaging - START HERE: SolutionDocumentation\PowerShell-Modules-Build-Process.md (link-up added 2026-07-07, Sprint 0012 Task 12.46.f)
+## BuildTooling family contract
+
+`ModuleFamily.psd1` at the repository root is the checked-in source for approved
+BuildTooling module names, GUIDs, dependency minimums, and deterministic build order.
+`module.build.ps1 -ModuleName <approved name>` builds a named family member while
+preserving the legacy parent-module path. `Build-PSModulePsm1` includes only guarded
+`lib/*.types.ps1` files, and `Build-PSModuleManifest` derives explicit function exports
+from the target module's public files.
+
+`New-BuildToolingChildModule` renders one empty, importable child module from
+`src/_Templates/BuildToolingChildModule` and returns proposed BuildMaster-map and
+SolutionDocumentation-index text. It never edits another repository.
+
+During migration, packaging and publishing commands must resolve from the installed,
+immutable bootstrap module—not from the in-flight source tree. The parent source path is
+used only to build the bootstrap release itself.
+
+The first extraction pilot is
+`ATAP.Utilities.BuildTooling.PesterScaffolding.PowerShell`. It owns ten Pester
+configuration and test-template commands. The parent requires child version 0.1.0 or
+later and generates parameter-preserving compatibility forwarders at import time, so
+the committed 200-command parent surface remains unchanged during migration.

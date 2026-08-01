@@ -186,15 +186,20 @@ Publishing and restore visibility are separate decisions. `Publish-PSModuleToPro
 
 ### 4.3 Authentication
 
-API keys come from Bitwarden first. If Bitwarden is unavailable, `Publish-PSModuleToProGetFeed` uses the `ApiKeyName` value from the resolved feed entry and reads that environment variable from Process or User scope:
+Callers pass the non-secret SecretName `ProGet.BuildMaster.API.Key` to
+`Publish-PSModuleToProGetFeed`. The authenticated publishing leaf resolves it
+through `Get-SecretATAP` immediately before the request:
 
 ```powershell
-$feed   = Resolve-ProGetFeedFromSettings -FeedType powershellget -Tier $tier
-$apiKey = Get-SecretATAP -SecretName "ProGet_PowerShellGet_$($tier)_ApiKey"
-Publish-PSResource -NupkgPath $Nupkg -Repository $feed.FeedName -ApiKey $apiKey
+Publish-PSModuleToProGetFeed `
+  -Tier $tier `
+  -NupkgPath $Nupkg `
+  -ProGetApiKeySecretName 'ProGet.BuildMaster.API.Key'
 ```
 
-If an agent shell cannot see the Bitwarden session, the configured feed `ApiKeyName` environment variable is the fallback. The temporary `PROGET_ADMIN_API_KEY` fallback is retained only for bootstrap and should be removed once per-feed keys are fully provisioned.
+Resolution fails closed when the configured secret provider is unavailable or
+returns an empty value. Environment-variable and administrator-key fallbacks
+are unsupported.
 
 ### 4.4 PSResourceRepository Registration
 

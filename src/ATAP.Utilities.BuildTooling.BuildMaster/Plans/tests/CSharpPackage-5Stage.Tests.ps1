@@ -168,16 +168,17 @@ Describe 'V4-C02 runner shape: Invoke-CSharpPackageBuildMasterStage.ps1 contract
             'Configuration',
             'Branch',
             'Stage',
-            'ProGetUrl'
+            'ProGetUrl',
+            'ProGetApiKeySecretName'
         )) {
             $script:RunnerText | Should -Match "\[string\]\$\b$param\b"
         }
     }
 
-    It 'runner resolves API key from environment, not from a parameter' {
-        $script:RunnerText | Should -Match '\$env:PROGET_BUILDMASTER_API_KEY'
-        $script:RunnerText | Should -Match '\$env:PROGET_ADMIN_API_KEY'
-        $script:RunnerText | Should -Not -Match '\[Parameter\(Mandatory\)\][^\]]*\$ProGetApiKey'
+    It 'runner carries only the canonical BuildMaster SecretName' {
+        $script:RunnerText | Should -Match "ProGetApiKeySecretName\s*=\s*'ProGet\.BuildMaster\.API\.Key'"
+        $script:RunnerText | Should -Not -Match 'PROGET_(?:BUILDMASTER|ADMIN)_API_KEY'
+        $script:RunnerText | Should -Not -Match '\$ProGetApiKey\b'
     }
 
     It 'runner invokes Publish-NuGetPackageToProGet (no inline dotnet nuget push)' {

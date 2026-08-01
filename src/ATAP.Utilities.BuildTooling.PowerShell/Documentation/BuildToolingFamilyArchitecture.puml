@@ -1,0 +1,54 @@
+@startuml
+title ATAP.Utilities BuildTooling PowerShell family
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+package "Shared foundation" {
+  [Common]
+}
+
+package "Independently buildable children" {
+  [AiRendering]
+  [BuildMaster]
+  [DatabasePackaging]
+  [DotnetBuild]
+  [GitWorktree]
+  [PesterScaffolding]
+  [PlanningSession]
+  [ProGet]
+  [Secrets]
+  [SprintLifecycle]
+}
+
+package "Compatibility boundary" {
+  [BuildTooling parent]
+}
+
+[Common] --> [AiRendering]
+[Common] --> [BuildMaster]
+[Common] --> [DatabasePackaging]
+[Common] --> [DotnetBuild]
+[Common] --> [GitWorktree]
+[Common] --> [PesterScaffolding]
+[Common] --> [PlanningSession]
+[Common] --> [ProGet]
+[Common] --> [Secrets]
+[Common] --> [SprintLifecycle]
+
+[AiRendering] --> [BuildTooling parent]
+[BuildMaster] --> [BuildTooling parent]
+[DatabasePackaging] --> [BuildTooling parent]
+[DotnetBuild] --> [BuildTooling parent]
+[GitWorktree] --> [BuildTooling parent]
+[PesterScaffolding] --> [BuildTooling parent]
+[PlanningSession] --> [BuildTooling parent]
+[ProGet] --> [BuildTooling parent]
+[Secrets] --> [BuildTooling parent]
+[SprintLifecycle] --> [BuildTooling parent]
+
+note bottom of [BuildTooling parent]
+  The parent re-exports the legacy command surface.
+  It remains until consumer evidence authorizes a thinner mode.
+end note
+@enduml

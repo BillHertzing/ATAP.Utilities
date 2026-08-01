@@ -20,3 +20,6 @@ f9c0dcb5-67a4-4af5-a0d1-58731c8950db,FilePath,src/ATAP.Utilities.BuildTooling.Po
 ee4ce73b-8f4d-42a2-a8fe-681b312df6d9,FunctionName,Read-SourceAndCreateRules
 ee4ce73b-8f4d-42a2-a8fe-681b312df6d9,FileName,Read-SourceAndCreateRules.ps1
 ee4ce73b-8f4d-42a2-a8fe-681b312df6d9,FilePath,src/ATAP.Utilities.BuildTooling.PowerShell/public/Read-SourceAndCreateRules.ps1
+c95f9fbb-40bb-4372-a32c-3538fd4d88c2,FunctionName,Write-ArrayIndented
+c95f9fbb-40bb-4372-a32c-3538fd4d88c2,FileName,Write-ArrayIndented.ps1
+c95f9fbb-40bb-4372-a32c-3538fd4d88c2,FilePath,src/ATAP.Utilities.BuildTooling.PowerShell/public/Write-ArrayIndented.ps1

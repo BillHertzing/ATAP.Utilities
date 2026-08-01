@@ -28,6 +28,10 @@ function Set-UserScopeProfile {
     by ATAP.IAC and this value is not used to compose deployed content.
   .PARAMETER UserProfilePath
     Explicit profile root.  Intended for tests and carefully scoped repairs.
+  .PARAMETER TargetProfilePath
+    Exact PowerShell 7 CurrentUserAllHosts profile path. Use this when the
+    identity's Documents known folder is redirected and the loaded profile is
+    outside `<UserProfilePath>\Documents\PowerShell`.
   .PARAMETER Force
     Allow replacement of a profile without the managed-header marker.
   .OUTPUTS
@@ -64,6 +68,8 @@ function Set-UserScopeProfile {
     [string] $ATAPUtilitiesRoot,
 
     [string] $UserProfilePath,
+
+    [string] $TargetProfilePath,
 
     [switch] $Force,
 
@@ -147,7 +153,9 @@ function Set-UserScopeProfile {
 
     $profileRoot = Resolve-ProfileRoot -Name $AccountName -Override $UserProfilePath
     $isCurrentIdentity = [string]::Equals($AccountName, $env:USERNAME, [StringComparison]::OrdinalIgnoreCase)
-    $profilePath = if ([string]::IsNullOrWhiteSpace($UserProfilePath) -and $isCurrentIdentity) {
+    $profilePath = if (-not [string]::IsNullOrWhiteSpace($TargetProfilePath)) {
+      [IO.Path]::GetFullPath($TargetProfilePath)
+    } elseif ([string]::IsNullOrWhiteSpace($UserProfilePath) -and $isCurrentIdentity) {
       [IO.Path]::GetFullPath($PROFILE.CurrentUserAllHosts)
     } else {
       Join-Path $profileRoot 'Documents\PowerShell\profile.ps1'

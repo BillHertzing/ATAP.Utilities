@@ -38,7 +38,7 @@ Every file in `public/` is an **eponymous advanced function** (cmdlet shape with
 | `public/Set-SqlInstanceTopologyConfigRootKeys.ps1`    |  3    | Host-invariant schema keys for the ATAP.IAC SQL host/instance topology map (identity, lifecycle, paths, and fixed TCP port fields). |
 | `public/Set-BuildMasterConfigRootKeys.ps1`            |  4    | BuildMaster automation paths, endpoint, and the module→application map (`BuildMasterApplicationByModuleConfigRootKey`) key constants. |
 | `public/Set-RulesManagementConfigRootKeys.ps1`        |  5    | Rules-Management framework key constants.                                                          |
-| `public/Add-PackageRepositoriesConfigRootKeys.ps1`    |  6    | **Single source of truth** for ProGet / NuGet / PowerShellGet feed key constants. Five-tier canonical set (Experimental / Development / Integration / QA / Stable). Loads no sub-fragments. |
+| `public/Add-PackageRepositoriesConfigRootKeys.ps1`    |  6    | **Single source of truth** for ProGet / NuGet / PowerShellGet feed key constants, including canonical ProGet admin and BuildMaster API-key SecretName setting keys. Five-tier canonical set (Experimental / Development / Integration / QA / Stable). Loads no sub-fragments. |
 
 ### Explicit loading — no fragment discovery
 

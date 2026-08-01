@@ -144,7 +144,8 @@ Describe 'V4-A07 Promote runner contract: Promote-ReleaseBundleBuildMasterPackag
             'FromFeed',
             'ToFeed',
             'CeilingTier',
-            'ProGetUrl'
+            'ProGetUrl',
+            'ProGetApiKeySecretName'
         )) {
             $script:RunnerText | Should -Match "\[string\]\$\b$param\b"
         }
@@ -154,10 +155,10 @@ Describe 'V4-A07 Promote runner contract: Promote-ReleaseBundleBuildMasterPackag
         $script:RunnerText | Should -Match "ValidateSet\(\s*'Development'\s*,\s*'Integration'\s*,\s*'QA'\s*,\s*'Production'\s*\)"
     }
 
-    It 'resolves API key from environment, never from a parameter' {
-        $script:RunnerText | Should -Match '\$env:PROGET_BUILDMASTER_API_KEY'
-        $script:RunnerText | Should -Match '\$env:PROGET_ADMIN_API_KEY'
-        $script:RunnerText | Should -Not -Match '\[string\]\s*\$ProGetApiKey'
+    It 'carries only the canonical BuildMaster SecretName' {
+        $script:RunnerText | Should -Match "ProGetApiKeySecretName\s*=\s*'ProGet\.BuildMaster\.API\.Key'"
+        $script:RunnerText | Should -Not -Match 'PROGET_(?:BUILDMASTER|ADMIN)_API_KEY'
+        $script:RunnerText | Should -Not -Match '\$ProGetApiKey\b'
     }
 
     It 'sets global ProGetBaseUrl before calling Promote-ProGetPackage' {

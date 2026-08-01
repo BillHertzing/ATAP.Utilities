@@ -82,10 +82,10 @@ Live rotation on `utat01` and `utat022` is Sprint 0012 Task 12.56.
 | --- | --- | --- |
 | `PSFramework` | any | Logging |
 | `Microsoft.PowerShell.SecretManagement` | any | `Sync-BitWardenDedicatedSecrets` calls its `Test-SecretVault` |
-| `ATAP.Utilities.BuildTooling.PowerShell` | **≥ 0.1.29** | `Invoke-RotateSecretsATAP` calls `Get-BWSAccessToken` / `Initialize-BWSAccessToken` with `-TokenPurpose`, which first ships in 0.1.29 |
+| `ATAP.Utilities.BuildTooling.Secrets.PowerShell` | **≥ 0.1.0** | `Invoke-RotateSecretsATAP` calls its `Get-BWSAccessToken` / `Initialize-BWSAccessToken` contracts with `-TokenPurpose` |
 
-The BuildTooling constraint is a **minimum**, not an exact version, so a later BuildTooling satisfies
-it. It is pinned rather than resolved at call time because an older BuildTooling would bind-fail at
+The Secrets-child constraint is a **minimum**, not an exact version, so a later compatible child satisfies
+it. It is pinned rather than resolved at call time because an older child would bind-fail at
 *rotation* time — the worst possible moment to discover it — instead of at import time. A contract
 test asserts both the pin and that the resolved version really does expose `-TokenPurpose`.
 
@@ -95,12 +95,12 @@ There is **no** edge on `ATAP.Utilities.Security.PKI.PowerShell` — design deci
 resolved through the standard in-function helper-load block, not a manifest dependency.
 
 > **Future direction.** The secrets/Bitwarden functions that currently live in
-> `ATAP.Utilities.BuildTooling.PowerShell` — `Get-SecretATAP`,
+> `ATAP.Utilities.BuildTooling.Secrets.PowerShell` — `Get-SecretATAP`,
 > `Get-SecretATAPBitwardenSecretsManager`, `Get-BitWardenSecret`, `Get-BWSAccessToken`,
 > `Initialize-BWSAccessToken`, `Initialize-BWSCredentialDirectory`, and the
-> `*-SprintBitwardenSecrets` helpers — will eventually move **into this module**. That migration
-> is its own iteration with its own consumer map, because `Get-SecretATAP` is a global-contract
-> function named in agent instructions (`Bitwarden.md`).
+> `*-SprintBitwardenSecrets` helpers — now live in the dedicated BuildTooling Secrets child. The
+> Security child consumes the two BWS token contracts by module dependency, without source-path
+> dot-sourcing, because `Get-SecretATAP` remains a global contract named in agent instructions.
 
 ## Secrets handling
 

@@ -5,7 +5,8 @@ function New-DatabaseChangePackage {
     Packages a database change unit (migrations, repeatables, seeds, loaders) into a NuGet package.
 
 .DESCRIPTION
-    Collects files from the Database/<Application>/ source tree, computes SHA-256 checksums,
+    Collects files from the canonical Database/Flyway/ source tree for ATAPUtilities
+    (or the legacy Database/<Application>/ source tree for other applications), computes SHA-256 checksums,
     generates a db-release-unit-manifest.json conforming to the v2 schema, and calls
     dotnet pack to produce a .nupkg file. The package identity is
     <Application>.Database (or <Application>.<Stream>.Database when -Stream is provided).
@@ -15,8 +16,9 @@ function New-DatabaseChangePackage {
     - The createdUtc timestamp is sourced from the HEAD git commit date, not Get-Date.
 
 .PARAMETER Application
-    Application name (required). Locates source at Database/<Application>/
-    and sets the NuGet package id to <Application>.Database.
+    Application name (required). ATAPUtilities uses Database/Flyway/; other
+    applications use Database/<Application>/. The NuGet package id is
+    <Application>.Database.
 
 .PARAMETER Stream
     Optional stream sub-folder. When supplied, source is at Database/<Application>/<Stream>/
@@ -29,6 +31,11 @@ function New-DatabaseChangePackage {
 .PARAMETER PackageVersion
     Optional resolved NuGet package version. BuildMaster supplies this from the
     NBGV build context when version.json contains height tokens.
+
+.PARAMETER ExcludedMigrationFileName
+    Optional exact migration file names to omit from this release unit. This is
+    intended for explicitly deferred, unapplied future-sprint migrations. Each
+    name must identify a file in the canonical migration source folder.
 
 .OUTPUTS
     [string] Absolute path of the produced .nupkg file.
@@ -54,7 +61,11 @@ function New-DatabaseChangePackage {
 
     [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
-    [string]$PackageVersion
+    [string]$PackageVersion,
+
+    [Parameter(Mandatory = $false)]
+    [ValidateNotNullOrEmpty()]
+    [string[]]$ExcludedMigrationFileName = @()
   )
 
   begin {
@@ -72,9 +83,13 @@ function New-DatabaseChangePackage {
 
   process {
     # ── 1. Determine package id and source path ─────────────────────────────
+    $usesCanonicalFlywayLayout = $Application -eq 'ATAPUtilities' -and -not $Stream
     if ($Stream) {
       $DatabasePackageId = "$Application.$Stream.Database"
       $DatabasePackageSourcePath = Join-Path $RepositoryRoot 'Database' $Application $Stream
+    } elseif ($usesCanonicalFlywayLayout) {
+      $DatabasePackageId = "$Application.Database"
+      $DatabasePackageSourcePath = Join-Path $RepositoryRoot 'Database' 'Flyway'
     } else {
       $DatabasePackageId = "$Application.Database"
       $DatabasePackageSourcePath = Join-Path $RepositoryRoot 'Database' $Application
@@ -107,10 +122,10 @@ function New-DatabaseChangePackage {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "PackageLifeCycleStage=$packageLifeCycleStage" -Tag 'Config'
 
     # ── 3. Locate source DB folders ──────────────────────────────────────────
-    $migrationsFolder = Join-Path $DatabasePackageSourcePath 'db' 'migrations'
-    $repeatablesFolder = Join-Path $DatabasePackageSourcePath 'db' 'repeatables'
-    $seedsFolder = Join-Path $DatabasePackageSourcePath 'db' 'seeds'
-    $loadersFolder = Join-Path $DatabasePackageSourcePath 'db' 'loaders'
+    $migrationsFolder = if ($usesCanonicalFlywayLayout) { Join-Path $DatabasePackageSourcePath 'SQL' } else { Join-Path $DatabasePackageSourcePath 'db' 'migrations' }
+    $repeatablesFolder = if ($usesCanonicalFlywayLayout) { Join-Path $DatabasePackageSourcePath 'Repeatable' } else { Join-Path $DatabasePackageSourcePath 'db' 'repeatables' }
+    $seedsFolder = if ($usesCanonicalFlywayLayout) { Join-Path $DatabasePackageSourcePath 'Data' } else { Join-Path $DatabasePackageSourcePath 'db' 'seeds' }
+    $loadersFolder = if ($usesCanonicalFlywayLayout) { $null } else { Join-Path $DatabasePackageSourcePath 'db' 'loaders' }
 
     if (-not (Test-Path $migrationsFolder)) {
       $msg = "Migrations folder not found: '$migrationsFolder'."
@@ -140,10 +155,14 @@ function New-DatabaseChangePackage {
         [string]$Kind,
         [string[]]$Extensions
       )
-      if (-not (Test-Path $SourceFolder)) { return }
+      if ([string]::IsNullOrWhiteSpace($SourceFolder) -or
+        -not (Test-Path -LiteralPath $SourceFolder -PathType Container)) { return }
       $destSub = Join-Path $dbFolder $RelSubPath
       New-Item -ItemType Directory -Path $destSub -Force | Out-Null
-      Get-ChildItem -Path $SourceFolder -File | Where-Object { $_.Extension -in $Extensions } | ForEach-Object {
+      Get-ChildItem -Path $SourceFolder -File |
+        Where-Object { $_.Extension -in $Extensions } |
+        Where-Object { $Kind -ne 'migration' -or $_.Name -notin $ExcludedMigrationFileName } |
+        ForEach-Object {
         $dest = Join-Path $destSub $_.Name
         Copy-Item $_.FullName $dest -Force
         $sha256 = (Get-FileHash -Path $dest -Algorithm SHA256).Hash.ToLower()
@@ -157,14 +176,58 @@ function New-DatabaseChangePackage {
       }
     }
 
+    foreach ($excludedName in $ExcludedMigrationFileName) {
+      $excludedPath = Join-Path $migrationsFolder $excludedName
+      if (-not (Test-Path -LiteralPath $excludedPath -PathType Leaf)) {
+        throw "Excluded migration '$excludedName' was not found in '$migrationsFolder'."
+      }
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+        -Message "Migration excluded from this release unit by exact name: $excludedName" -Tag 'File'
+    }
+
     Copy-DbFiles -SourceFolder $migrationsFolder -RelSubPath 'migrations' -Kind 'migration' -Extensions '.sql'
     Copy-DbFiles -SourceFolder $repeatablesFolder -RelSubPath 'repeatables' -Kind 'repeatable' -Extensions '.sql'
     Copy-DbFiles -SourceFolder $seedsFolder -RelSubPath 'seeds' -Kind 'seed' -Extensions '.csv'
     Copy-DbFiles -SourceFolder $loadersFolder -RelSubPath 'loaders' -Kind 'seedLoader' -Extensions @('.sql', '.ps1')
 
     if ($collectedFiles.Count -eq 0) {
-      $msg = "No files were staged. Check that 'db/migrations/', 'db/repeatables/', 'db/seeds/', or 'db/loaders/' contain files."
+      $msg = if ($usesCanonicalFlywayLayout) {
+        "No files were staged. Check that 'Database/Flyway/SQL/' or 'Database/Flyway/Data/' contain files."
+      } else {
+        "No files were staged. Check that 'db/migrations/', 'db/repeatables/', 'db/seeds/', or 'db/loaders/' contain files."
+      }
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message $msg -Tag 'Warning'
+    }
+
+    # A database package is a self-contained Flyway release unit. Its canonical
+    # archive layout is db/migrations + db/repeatables + db/seeds, which differs
+    # from the source-tree SQL + Repeatable + Data layout. Generate the package
+    # configuration from the content actually staged so consumers never fall
+    # back to a repository-local flyway.toml.
+    $packageLocations = [System.Collections.Generic.List[string]]::new()
+    if (@($collectedFiles | Where-Object { $_['kind'] -eq 'migration' }).Count -gt 0) {
+      $packageLocations.Add('filesystem:./db/migrations')
+    }
+    if (@($collectedFiles | Where-Object { $_['kind'] -eq 'repeatable' }).Count -gt 0) {
+      $packageLocations.Add('filesystem:./db/repeatables')
+    }
+    $locationToml = ($packageLocations | ForEach-Object { '  "' + $_ + '"' }) -join ",`n"
+    $packageFlywayTomlPath = Join-Path $stagingFolder 'flyway.toml'
+    $packageFlywayToml = @"
+[flyway]
+cleanDisabled = true
+outOfOrder = false
+validateOnMigrate = true
+validateMigrationNaming = true
+mixed = true
+createSchemas = true
+placeholderReplacement = true
+locations = [
+$locationToml
+]
+"@
+    if ($PSCmdlet.ShouldProcess($packageFlywayTomlPath, 'Write package flyway.toml')) {
+      $packageFlywayToml | Set-Content -LiteralPath $packageFlywayTomlPath -Encoding UTF8
     }
 
     # ── 6. Build sorted checksum list for determinism ─────────────────────────
@@ -184,8 +247,8 @@ function New-DatabaseChangePackage {
     }
 
     # ── 8. Classify changeKind ────────────────────────────────────────────────
-    $hasMigrations = ($sortedFiles | Where-Object { $_['kind'] -in 'migration', 'repeatable' }).Count -gt 0
-    $hasSeeds = ($sortedFiles | Where-Object { $_['kind'] -in 'seed', 'seedLoader' }).Count -gt 0
+    $hasMigrations = @($sortedFiles | Where-Object { $_['kind'] -in 'migration', 'repeatable' }).Count -gt 0
+    $hasSeeds = @($sortedFiles | Where-Object { $_['kind'] -in 'seed', 'seedLoader' }).Count -gt 0
     $changeKind = if ($hasMigrations -and $hasSeeds) { 'schemaAndData' }
     elseif ($hasMigrations) { 'schema' }
     else { 'data' }
@@ -313,6 +376,7 @@ function New-DatabaseChangePackage {
   </PropertyGroup>
   <ItemGroup>
     <Content Include="db\**\*" Pack="true" PackagePath="db\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Content Include="flyway.toml" Pack="true" PackagePath="flyway.toml" />
     <Content Include="db-release-unit-manifest.json" Pack="true" PackagePath="db-release-unit-manifest.json" />
     <Content Include="package-evidence.json" Pack="true" PackagePath="package-evidence.json" />
   </ItemGroup>

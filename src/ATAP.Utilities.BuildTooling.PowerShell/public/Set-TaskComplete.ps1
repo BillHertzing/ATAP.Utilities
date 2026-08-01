@@ -91,13 +91,14 @@ function Set-TaskComplete {
 
     # Load the locking helper from the same directory as this script
     $lockScript = Join-Path $PSScriptRoot 'Invoke-WithFileLock.ps1'
-    if (-not (Test-Path $lockScript)) {
+    if (-not [System.IO.File]::Exists($lockScript)) {
       throw "Set-TaskComplete: cannot find Invoke-WithFileLock.ps1 at '$lockScript'"
     }
     . $lockScript
 
-    # Verify TASKS.md exists
-    if (-not (Test-Path $TasksFilePath)) {
+    # This is always a literal file path, so avoid unnecessary provider lookup
+    # and keep validation independent of the caller's provider state.
+    if (-not [System.IO.File]::Exists($TasksFilePath)) {
       throw "Set-TaskComplete: TASKS.md not found at '$TasksFilePath'"
     }
 

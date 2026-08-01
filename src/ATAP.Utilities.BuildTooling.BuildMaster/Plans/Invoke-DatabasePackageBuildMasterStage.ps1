@@ -88,9 +88,9 @@
   promotions only; logged as a warning.
 
 .PARAMETER SkipApply
-  Bypasses the per-tier apply (Flyway migrate against the real tier database)
-  even when a tier connection secret name is supplied. The promotion still
-  happens; the database is not migrated. Logged as a warning.
+  Retained for caller compatibility but rejected by the stage preflight.
+  A ProGet tier cannot pass unless the exact package is applied to its
+  corresponding database.
 
 .OUTPUTS
   None. Side effects: New-DatabaseChangePackage, ProGet publish/promote,
@@ -154,6 +154,9 @@ param(
   [string]$DatabaseStream = '',
 
   [AllowEmptyString()]
+  [string]$ExcludedMigrationFileNames = '',
+
+  [AllowEmptyString()]
   [string]$Branch = '',
 
   [Parameter(Mandatory)]
@@ -163,6 +166,9 @@ param(
   [Parameter(Mandatory)]
   [ValidateNotNullOrEmpty()]
   [string]$ProGetUrl,
+
+  [ValidateNotNullOrEmpty()]
+  [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
 
   [string]$ExperimentalFeed = 'database-experimental',
   [string]$DevelopmentFeed = 'database-development',
@@ -653,11 +659,11 @@ function Invoke-DatabasePackageTierApply {
       $expandedPath = Expand-DatabaseChangePackage -NupkgPath $NupkgPath
       $manifest = Get-DatabasePackageManifest -PackagePath $expandedPath
 
+      # dbChangeUnit is the NuGet package identity (for example,
+      # ATAPUtilities.Database), not the SQL database name. The caller passes
+      # the canonical database application separately; never replace it with
+      # package metadata when constructing the Flyway JDBC databaseName.
       $applicationName = $Application
-      if ($manifest.PSObject.Properties.Name -contains 'dbChangeUnit' -and
-        -not [string]::IsNullOrWhiteSpace([string]$manifest.dbChangeUnit)) {
-        $applicationName = [string]$manifest.dbChangeUnit
-      }
 
       # Pre-migration snapshot for permanent tiers (rollback point; see
       # Database-Change-Unit-and-Flyway-Promotion.md section 17). Best-effort: a
@@ -670,7 +676,8 @@ function Invoke-DatabasePackageTierApply {
             $snapshot = New-DatabasePreMigrationSnapshot `
               -DBConnectionStringSecretName $ConnectionStringSecretName `
               -Application $applicationName `
-              -Tier $Tier
+              -DatabaseName $applicationName `
+              -RepositoryRoot $SourcePath
             $snapshotPath = if ($null -ne $snapshot) { [string]$snapshot.SnapshotPath } else { $null }
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
               -Message "Pre-migration snapshot taken for '$applicationName' tier '$Tier'."
@@ -689,6 +696,9 @@ function Invoke-DatabasePackageTierApply {
         FlywayCommand                = 'migrate'
         DBConnectionStringSecretName = $ConnectionStringSecretName
         FlywayBasePath               = $expandedPath
+        FlywaySqlMigrationsPath      = (Join-Path $expandedPath 'db\migrations')
+        FlywayDataPath               = (Join-Path $expandedPath 'db\seeds')
+        FlywayTomlPath               = (Join-Path $expandedPath 'flyway.toml')
         PackageName                  = $DatabasePackageId
         PackageVersion               = $PackageVersion
       }
@@ -766,17 +776,11 @@ function Invoke-DatabasePackageStageApply {
 
   PROCESS {
     if ([string]::IsNullOrWhiteSpace($ConnectionStringSecretName)) {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
-        -Message "No connection-string secret name configured for tier '$Tier'; per-tier apply skipped for '$DatabasePackageId'."
-      Add-DatabasePackagePublishTrace -Path $TracePath -Message "Apply skipped for tier '$Tier' (no connection secret configured)."
-      return
+      throw "Per-tier apply is required for '$DatabasePackageId' tier '$Tier'; its connection-string secret name is not configured."
     }
 
     if ($SkipApply) {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning `
-        -Message "Per-tier apply BYPASSED (-SkipApply) for '$DatabasePackageId' tier '$Tier'."
-      Add-DatabasePackagePublishTrace -Path $TracePath -Message "Apply bypassed (-SkipApply) for tier '$Tier'."
-      return
+      throw "Per-tier apply is required for '$DatabasePackageId' tier '$Tier'; -SkipApply cannot be used in a passing BuildMaster stage."
     }
 
     $applyMarker = Get-DatabasePackageApplyMarkerPath -ContextDirectory $ContextDirectory -DatabasePackageId $DatabasePackageId -Tier $Tier
@@ -844,9 +848,11 @@ function Invoke-DatabasePackageBuildMasterStage {
     [Parameter(Mandatory)][string]$ApplicationName,
     [Parameter(Mandatory)][string]$DatabaseApplication,
     [AllowEmptyString()][string]$DatabaseStream = '',
+    [AllowEmptyString()][string]$ExcludedMigrationFileNames = '',
     [AllowEmptyString()][string]$Branch = '',
     [Parameter(Mandatory)][string]$Stage,
     [Parameter(Mandatory)][string]$ProGetUrl,
+    [ValidateNotNullOrEmpty()][string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
     [string]$ExperimentalFeed = 'database-experimental',
     [string]$DevelopmentFeed = 'database-development',
     [string]$IntegrationFeed = 'database-integration',
@@ -866,42 +872,27 @@ function Invoke-DatabasePackageBuildMasterStage {
     $mn = 'ATAP.Utilities.BuildTooling.BuildMaster'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Starting $fn for BuildId='$BuildMasterBuildId'; Application='$DatabaseApplication'; Stream='$DatabaseStream'; Stage='$Stage'"
 
-    # Resolve API key from User-scope environment (R-10): try BuildMaster key
-    # first, then the admin key. Never accept the key as a parameter and never
-    # echo it.
-    $userBuildmasterKey = [System.Environment]::GetEnvironmentVariable('PROGET_BUILDMASTER_API_KEY', 'User')
-    $userAdminKey = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
-
-    $script:resolvedProGetApiKey = if (-not [string]::IsNullOrWhiteSpace($env:PROGET_BUILDMASTER_API_KEY)) {
-      $env:PROGET_BUILDMASTER_API_KEY
-    }
-    elseif (-not [string]::IsNullOrWhiteSpace($userBuildmasterKey)) {
-      $userBuildmasterKey
-    }
-    elseif (-not [string]::IsNullOrWhiteSpace($env:PROGET_ADMIN_API_KEY)) {
-      $env:PROGET_ADMIN_API_KEY
-    }
-    elseif (-not [string]::IsNullOrWhiteSpace($userAdminKey)) {
-      $userAdminKey
-    }
-    else {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message 'Unable to resolve ProGet API key.'
-      throw 'Unable to resolve ProGet API key. Set PROGET_BUILDMASTER_API_KEY or PROGET_ADMIN_API_KEY in the BuildMaster service-account User-scope environment.'
-    }
-    $env:PROGET_BUILDMASTER_API_KEY = $script:resolvedProGetApiKey
-    $env:PROGET_ADMIN_API_KEY = $script:resolvedProGetApiKey
-
     $script:buildToolingRoot = Split-Path -Parent $BuildToolingModulePath
+    if ([string]::IsNullOrWhiteSpace($env:ATAP_DATABASE_PACKAGE_STAGING_ROOT)) {
+      $env:ATAP_DATABASE_PACKAGE_STAGING_ROOT = Join-Path $env:ProgramData 'ATAP\DatabasePackageStaging'
+    }
+    if (-not (Test-Path -LiteralPath $env:ATAP_DATABASE_PACKAGE_STAGING_ROOT -PathType Container)) {
+      throw "BuildMaster database-package staging root is not provisioned: '$env:ATAP_DATABASE_PACKAGE_STAGING_ROOT'."
+    }
   }
 
   PROCESS {
     function Resolve-BuildToolingFunctionFile {
       [CmdletBinding()]
       [OutputType([string])]
-      param([Parameter(Mandatory)][string]$RelativePath)
+      param(
+        [Parameter(Mandatory)][string]$RelativePath,
+        [string]$ModuleName = 'ATAP.Utilities.BuildTooling.PowerShell'
+      )
       BEGIN { $f = 'Resolve-BuildToolingFunctionFile'; $m = 'ATAP.Utilities.BuildTooling.BuildMaster' }
       PROCESS {
-        $path = Join-Path -Path $script:buildToolingRoot -ChildPath $RelativePath
+        $moduleRoot = Join-Path -Path (Split-Path -Parent $script:buildToolingRoot) -ChildPath $ModuleName
+        $path = Join-Path -Path $moduleRoot -ChildPath $RelativePath
         if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
           Write-PSFMessage -FunctionName $f -ModuleName $m -Level Error -Message "Required BuildTooling function file not found: $path"
           throw "Required BuildTooling function file not found: $path"
@@ -916,35 +907,36 @@ function Invoke-DatabasePackageBuildMasterStage {
     if (-not (Get-Command -Name Get-DatabasePackageBuildContext -ErrorAction SilentlyContinue)) {
       . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Get-DatabasePackageBuildContext.ps1')
     }
-    if (-not (Get-Command -Name Publish-DatabaseChangePackageToProGet -ErrorAction SilentlyContinue)) {
-      . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Publish-DatabaseChangePackageToProGet.ps1')
-    }
-    if (-not (Get-Command -Name Promote-DatabaseChangePackage -ErrorAction SilentlyContinue)) {
-      . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Promote-DatabaseChangePackage.ps1')
-    }
+    # Always bind the source-tree ProGet database commands. The parent
+    # BuildTooling module may export older copies whose parameter contracts do
+    # not include the explicit ProGetBaseUrl required by service-account runs.
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Publish-DatabaseChangePackageToProGet.ps1')
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Promote-DatabaseChangePackage.ps1')
 
     # New-DatabaseChangePackage and the rehearsal/apply cmdlets live in the
-    # DatabaseManagement.Powershell module. Dot-source from source so the
-    # runner works from a worktree without the module installed. Test runs
-    # can stub any of these by defining functions of the same name in scope.
+    # DatabaseManagement.Powershell module. Always dot-source their source-tree
+    # implementations. A machine-wide older module can otherwise shadow a
+    # newer worktree contract and fail only under the BuildMaster service
+    # identity.
     $dbModulePublic = Join-Path -Path $SourcePath -ChildPath 'src/ATAP.Utilities.DatabaseManagement.Powershell/public'
     $databaseManagementFunctionFiles = [ordered]@{
       'New-DatabaseChangePackage'      = 'New-DatabaseChangePackage.ps1'
       'Invoke-DatabasePackageRehearsal' = 'Invoke-DatabasePackageRehearsal.ps1'
       'Expand-DatabaseChangePackage'   = 'Expand-DatabaseChangePackage.ps1'
       'Get-DatabasePackageManifest'    = 'Get-DatabasePackageManifest.ps1'
+      'Resolve-DatabaseSqlConnection'  = 'Resolve-DatabaseSqlConnection.ps1'
+      'Get-FlywaySchemaVersion'        = 'Get-FlywaySchemaVersion.ps1'
+      'New-DatabasePreMigrationSnapshot' = 'New-DatabasePreMigrationSnapshot.ps1'
       'Invoke-FlywayRehearsal'         = 'Invoke-FlywayRehearsal.ps1'
       'Invoke-Flyway'                  = 'Invoke-Flyway.ps1'
     }
     foreach ($commandName in $databaseManagementFunctionFiles.Keys) {
-      if (-not (Get-Command -Name $commandName -ErrorAction SilentlyContinue)) {
-        $candidate = Join-Path -Path $dbModulePublic -ChildPath $databaseManagementFunctionFiles[$commandName]
-        if (Test-Path -LiteralPath $candidate -PathType Leaf) {
-          . $candidate
-        }
-        elseif ($commandName -eq 'New-DatabaseChangePackage') {
-          throw "Required cmdlet New-DatabaseChangePackage not found at '$candidate'."
-        }
+      $candidate = Join-Path -Path $dbModulePublic -ChildPath $databaseManagementFunctionFiles[$commandName]
+      if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+        . $candidate
+      }
+      else {
+        throw "Required database-management cmdlet '$commandName' not found at '$candidate'."
       }
     }
 
@@ -973,6 +965,21 @@ function Invoke-DatabasePackageBuildMasterStage {
     $resolvedVersion = [string]$context.ResolvedPackageVersion
     $prereleaseLabel = [string]$context.PrereleaseLabel
     $effectiveCeilingTier = [string]$context.CeilingTier
+    $excludedMigrations = @(
+      $ExcludedMigrationFileNames -split ';' |
+        ForEach-Object { $_.Trim() } |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+    )
+
+    if ($excludedMigrations.Count -ne (@($excludedMigrations | Select-Object -Unique)).Count) {
+      throw 'ExcludedMigrationFileNames contains duplicate file names.'
+    }
+    foreach ($excludedMigration in $excludedMigrations) {
+      if ([System.IO.Path]::GetFileName($excludedMigration) -ne $excludedMigration -or
+          -not $excludedMigration.EndsWith('.sql', [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Excluded migration '$excludedMigration' must be an exact SQL file name without a directory path."
+      }
+    }
 
     if ([string]::IsNullOrWhiteSpace($effectiveCeilingTier)) {
       $effectiveCeilingTier = 'Production'
@@ -1000,14 +1007,21 @@ function Invoke-DatabasePackageBuildMasterStage {
       throw "Database stage '$Stage' exceeds version ceiling '$effectiveCeilingTier' for package '$databasePackageId'."
     }
 
-    # Resolve this tier's connection-string secret name once. Apply and
-    # rehearsal are enforced only when the tier has a secret name configured.
+    # Resolve this tier's connection-string secret name once. Every ProGet tier
+    # must have a corresponding database target and successful apply.
     $tierConnectionSecretName = Resolve-DatabaseTierConnectionSecretName -Tier $Stage `
       -ExperimentalSecretName $ExperimentalDatabaseDBConnectionStringSecretName `
       -DevelopmentSecretName $DevelopmentDatabaseDBConnectionStringSecretName `
       -IntegrationSecretName $IntegrationDatabaseDBConnectionStringSecretName `
       -QASecretName $QADatabaseDBConnectionStringSecretName `
       -ProductionSecretName $ProductionDatabaseDBConnectionStringSecretName
+
+    if ([string]::IsNullOrWhiteSpace($tierConnectionSecretName)) {
+      throw "Database stage '$Stage' cannot publish, promote, or complete package '$databasePackageId': the corresponding connection-string secret name is not configured."
+    }
+    if ($SkipApply) {
+      throw "Database stage '$Stage' cannot publish, promote, or complete package '$databasePackageId' while -SkipApply is supplied."
+    }
 
     $stateFiles = [ordered]@{
       CeilingTier       = Join-Path -Path $contextDirectory -ChildPath "$databasePackageId.ceiling-tier.tmp"
@@ -1053,6 +1067,7 @@ function Invoke-DatabasePackageBuildMasterStage {
         DatabaseApplication = $DatabaseApplication
         DatabaseStream      = $DatabaseStream
         DatabasePackageId   = $databasePackageId
+        ExcludedMigrations  = $excludedMigrations
       } | Out-Null
 
     if (Test-DatabasePackageStageCompleted -ContextDirectory $contextDirectory -DatabasePackageId $databasePackageId -Tier $Stage) {
@@ -1076,6 +1091,9 @@ function Invoke-DatabasePackageBuildMasterStage {
       if (-not [string]::IsNullOrWhiteSpace($DatabaseStream)) {
         $newPackageParameters['Stream'] = $DatabaseStream
       }
+      if ($excludedMigrations.Count -gt 0) {
+        $newPackageParameters['ExcludedMigrationFileName'] = $excludedMigrations
+      }
 
       $nupkgPath = New-DatabaseChangePackage @newPackageParameters
       if ([string]::IsNullOrWhiteSpace($nupkgPath) -or -not (Test-Path -LiteralPath $nupkgPath -PathType Leaf)) {
@@ -1085,7 +1103,9 @@ function Invoke-DatabasePackageBuildMasterStage {
 
       $publishResult = Publish-DatabaseChangePackageToProGet `
         -NupkgPath $nupkgPath `
-        -Feed $ExperimentalFeed
+        -Feed $ExperimentalFeed `
+        -ProGetBaseUrl $ProGetUrl `
+        -ProGetApiKeySecretName $ProGetApiKeySecretName
       Add-DatabasePackagePublishTrace -Path $tracePath -Message $publishResult.ResponseSummary
 
       if (-not [bool]$publishResult.Published) {
@@ -1118,6 +1138,7 @@ function Invoke-DatabasePackageBuildMasterStage {
           DatabaseApplication = $DatabaseApplication
           DatabaseStream      = $DatabaseStream
           DatabasePackageId   = $databasePackageId
+          ExcludedMigrations  = $excludedMigrations
           NupkgPath           = $nupkgPath
           PackageVersion      = $resolvedVersion
         } | Out-Null
@@ -1199,6 +1220,8 @@ function Invoke-DatabasePackageBuildMasterStage {
       -ToFeed $toFeed `
       -Reason "$Stage gate for $ApplicationName $resolvedVersion on $Branch" `
       -Application $DatabaseApplication `
+      -ProGetBaseUrl $ProGetUrl `
+      -ProGetApiKeySecretName $ProGetApiKeySecretName `
       -CeilingTier $effectiveCeilingTier
     Add-DatabasePackagePublishTrace -Path $tracePath -Message $promotionResult.ResponseSummary
 
@@ -1238,9 +1261,11 @@ Invoke-DatabasePackageBuildMasterStage `
   -ApplicationName $ApplicationName `
   -DatabaseApplication $DatabaseApplication `
   -DatabaseStream $DatabaseStream `
+  -ExcludedMigrationFileNames $ExcludedMigrationFileNames `
   -Branch $Branch `
   -Stage $Stage `
   -ProGetUrl $ProGetUrl `
+  -ProGetApiKeySecretName $ProGetApiKeySecretName `
   -ExperimentalFeed $ExperimentalFeed `
   -DevelopmentFeed $DevelopmentFeed `
   -IntegrationFeed $IntegrationFeed `

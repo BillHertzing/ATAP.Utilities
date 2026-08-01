@@ -129,7 +129,7 @@ Describe 'Start-LocalPowerShellModuleBuildMasterPoller' -Tag 'Unit', 'PromotedMo
       -RepoRoot $repoRoot `
       -StatePath $statePath `
       -BuildMasterBaseUrl 'http://localhost:8622' `
-      -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key'
+      -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.utat01'
 
     Should -Invoke Start-BuildMasterPackagePipeline -Times 1 -Exactly -Scope It
     $result.Triggered | Should -BeTrue
@@ -143,7 +143,7 @@ Describe 'Start-LocalPowerShellModuleBuildMasterPoller' -Tag 'Unit', 'PromotedMo
     $script:pipelineCall['Tier'] | Should -Be 'Experimental'
     $script:pipelineCall['FeedName'] | Should -Be 'powershellget-experimental'
     $script:pipelineCall['BuildMasterBaseUrl'] | Should -Be 'http://localhost:8622'
-    $script:pipelineCall['BuildMasterAdminApiKeySecretName'] | Should -Be 'BuildMaster.Admin.API.Key'
+    $script:pipelineCall['BuildMasterAdminApiKeySecretName'] | Should -Be 'BuildMaster.Admin.API.Key.utat01'
 
     $savedState = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
     $savedState.LastSeenCommit | Should -Be $currentCommit

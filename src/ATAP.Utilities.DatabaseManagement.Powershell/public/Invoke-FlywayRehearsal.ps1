@@ -20,6 +20,13 @@ function Invoke-FlywayRehearsal {
 .PARAMETER RehearsalDb
     Optional explicit database name override.
 
+.PARAMETER SourceDatabaseName
+    Optional existing database to clone into the rehearsal database by using a
+    same-instance copy-only backup/restore. Use this for mature migration sets
+    whose historical scripts contain fixed database context or whose pending
+    migrations require existing data. When omitted, an empty rehearsal database
+    is created.
+
 .PARAMETER SqlInstance
     SQL Server named instance. Defaults to EXPWHERTZING for the ATAP
     Experimental rehearsal environment.
@@ -73,6 +80,9 @@ function Invoke-FlywayRehearsal {
     [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
     [string]$RehearsalDb,
+
+    [Parameter(Mandatory = $false)]
+    [string]$SourceDatabaseName,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [string]$SqlInstance = 'EXPWHERTZING',
@@ -256,18 +266,47 @@ function Invoke-FlywayRehearsal {
     $errorText = $null
 
     try {
-      $createQuery = @"
+      $dropExistingQuery = @"
 USE [master];
 IF DB_ID(N'$safeLiteral') IS NOT NULL
 BEGIN
   ALTER DATABASE [$safeIdentifier] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
   DROP DATABASE [$safeIdentifier];
 END;
-CREATE DATABASE [$safeIdentifier];
 "@
 
-      if ($PSCmdlet.ShouldProcess("$serverInstance/$RehearsalDb", 'Create ephemeral Flyway rehearsal database')) {
-        [void](Invoke-DatabaseSqlNonQuery -SqlConnection $resolvedSqlConnection -CommandText $createQuery)
+      if ($PSCmdlet.ShouldProcess("$serverInstance/$RehearsalDb", 'Prepare ephemeral Flyway rehearsal database')) {
+        if (-not [string]::IsNullOrWhiteSpace($SourceDatabaseName)) {
+          [void](Invoke-DatabaseSqlNonQuery -SqlConnection $resolvedSqlConnection -CommandText $dropExistingQuery)
+          $stagingRoot = $env:ATAP_DATABASE_PACKAGE_STAGING_ROOT
+          if ([string]::IsNullOrWhiteSpace($stagingRoot) -or
+            -not (Test-Path -LiteralPath $stagingRoot -PathType Container)) {
+            throw 'ATAP_DATABASE_PACKAGE_STAGING_ROOT must name a provisioned shared directory for clone-based rehearsals.'
+          }
+          if (-not (Get-Command -Name Copy-DbaDatabase -ErrorAction SilentlyContinue) -or
+            -not (Get-Command -Name Connect-DbaInstance -ErrorAction SilentlyContinue)) {
+            throw 'Connect-DbaInstance and Copy-DbaDatabase are required for clone-based database rehearsals.'
+          }
+          $rehearsalServer = Connect-DbaInstance `
+            -SqlInstance $serverInstance `
+            -TrustServerCertificate `
+            -AllowTrustServerCertificate
+          Copy-DbaDatabase `
+            -Source $rehearsalServer `
+            -Destination $rehearsalServer `
+            -Database $SourceDatabaseName `
+            -NewName $RehearsalDb `
+            -BackupRestore `
+            -SharedPath $stagingRoot `
+            -WithReplace `
+            -Force `
+            -EnableException `
+            -Confirm:$false | Out-Null
+        }
+        else {
+          $createQuery = "$dropExistingQuery`nCREATE DATABASE [$safeIdentifier];"
+          [void](Invoke-DatabaseSqlNonQuery -SqlConnection $resolvedSqlConnection -CommandText $createQuery)
+        }
         $created = $true
       }
 

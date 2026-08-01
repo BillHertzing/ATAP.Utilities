@@ -1,5 +1,7 @@
 # CSharp Packages — Build Process
 
+> **Task 13.62 security cutover:** Inline `--api-key` and ProGet API-key environment examples below are superseded. `PublishAfterBuild` passes only `ProGet.Admin.API.Key` as a SecretName to its PowerShell wrapper.
+
 **Scope.** How `dotnet build` and `dotnet pack` turn the ~170 `.csproj` files in the
 ATAP.Utilities solution into NuGet packages. Focus is on **what happens on a
 developer workstation or BuildMaster agent** — the MSBuild file hierarchy, the
@@ -578,15 +580,16 @@ packaging step.
 
 ```xml
 <Target Name="PublishAfterBuild" AfterTargets="GenerateNuspec">
-    <Exec Command="dotnet nuget push &quot;...$(PackageId).$(PackageVersion).nupkg&quot;
-                   --source &quot;$(ProGetExperimentalFeedUrl)&quot;
-                   --api-key &quot;$(PROGET_ADMIN_API_KEY)&quot;" />
+    <Exec Command="pwsh -File &quot;$(MSBuildThisFileDirectory)Invoke-ProGetNuGetPublish.ps1&quot;
+                   -NupkgPath &quot;...$(PackageId).$(PackageVersion).nupkg&quot;
+                   -Source &quot;$(ProGetExperimentalFeedUrl)&quot;
+                   -ProGetApiKeySecretName &quot;ProGet.Admin.API.Key&quot;" />
 </Target>
 ```
 
 Pushes the freshly-packed `.nupkg` to the ProGet `nuget-experimental` feed.
-`PROGET_ADMIN_API_KEY` must be present in the process environment (sourced from
-Bitwarden at login). Full pack-and-push mechanics — meta-package, feed promotion,
+The wrapper resolves `ProGet.Admin.API.Key` with `Get-SecretATAP` only at the
+authenticated leaf. Full pack-and-push mechanics — meta-package, feed promotion,
 cache clearing — are in [CSharp-Packages-Pack-and-Push.md](CSharp-Packages-Pack-and-Push.md).
 
 ### 5.7 `PrintBuildVariables` — debug tracing
@@ -767,7 +770,7 @@ dotnet build MyProject.csproj --configuration Release
 | `PackageLifeCycleStage`                        | Individual `.csproj`                                        | `Development`                                                          | Controls whether a pre-release suffix is added.                                               |
 | `PackageLabel`                                 | Individual `.csproj`                                        | `Alpha`                                                                | Pre-release label string.                                                                     |
 | `ProGetExperimentalFeedUrl`                    | `ATAP.Utilities.BuildTooling.targets`                       | `http://localhost:50000/nuget/nuget-experimental/v3/index.json`        | Push destination.                                                                             |
-| `PROGET_ADMIN_API_KEY`                         | Environment variable (from Bitwarden via `LoginScript.ps1`) | (secret)                                                               | ProGet API key.                                                                               |
+| `ProGetApiKeySecretName`                       | `ATAP.Utilities.BuildTooling.targets`                        | `ProGet.Admin.API.Key`                                                  | Non-secret name passed to the publishing wrapper.                                             |
 
 ### 8.1 RepoHealth gate for shared MSBuild properties
 
@@ -869,7 +872,7 @@ See also [github.com/clairernovotny/DeterministicBuilds](https://github.com/clai
 | Version not incrementing                                                            | `CallTarget` inside `BeforeCompile` is commented out.                             | Intentional in current state; uncomment when ready, or rely on NBGV (§9).                                                                                         |
 | Version incremented N times per build (N = number of TFMs)                          | Lock file logic not working; lock file path resolves differently per inner build. | Verify `$(UpdatePackageVersionLockFilePath)` uses `$(MSBuildProjectDirectory)`, not a relative path.                                                              |
 | `AssemblyInfo.cs` has all-zero versions after first build                           | File was not created with valid initial values before bootstrap.                  | Write valid initial content (see [CSharp-Packages-Versioning.md](CSharp-Packages-Versioning.md)).                                                                 |
-| ProGet push fails with 401                                                          | `PROGET_ADMIN_API_KEY` env var not set.                                           | Set it from Bitwarden before building; confirm with `Write-Host $env:PROGET_ADMIN_API_KEY`.                                                                       |
+| ProGet push fails with 401                                                          | `ProGet.Admin.API.Key` cannot resolve or lacks permission.                        | Verify the SecretName metadata and grant; never print or export its value.                                                                                         |
 | DesignTime build in Visual Studio triggers version update                           | `DesignTimeBuild` condition missing from `BeforeCompile` inputs.                  | Restore the `$(DesignTimeBuild) != true` guard inside `BeforeCompile`.                                                                                            |
 | `MSB4022` "result of evaluating the value … is invalid" on `UsingTask`              | Sentinel file points to a nonexistent directory during bootstrap.                 | The `Condition="'$(ATAP…Assembly)' != ''"` guard on `UsingTask` (§5.1) normally prevents this; verify the guard is still present.                                 |
 | Project pack writes dependency `>= resolved-version`                                | `ConstrainATAPPackageDependencyVersionRange` (§3.5) did not run.                  | Verify `IsPackable=true` on the project; confirm the target is present in `Directory.Build.targets`.                                                              |
@@ -907,9 +910,8 @@ system in another repository. Read it top-to-bottom before taking any action.
 2. Agent has write access to the repository root and all subdirectories.
 3. `dotnet` (SDK 8.0+) is available in the shell.
 4. Shell is **PowerShell 7** (`pwsh`). No bash syntax.
-5. A ProGet instance is reachable at a known URL and the API token is in the
-   environment as `PROGET_ADMIN_API_KEY`. If ProGet is not used, disable the
-   `PublishAfterBuild` target (see step 13.5).
+5. A ProGet instance is reachable and `ProGet.Admin.API.Key` resolves through
+   `Get-SecretATAP`. If ProGet is not used, disable `PublishAfterBuild`.
 
 ### 13.2 Step 1 — Choose initial bootstrap version
 

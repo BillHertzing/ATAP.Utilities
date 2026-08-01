@@ -43,11 +43,11 @@ function Set-RulesManagementConfigRootKeys {
   begin {
     $fn = 'Set-RulesManagementConfigRootKeys'
     $mn = 'ATAP.Utilities.ConfigRootKeys.PowerShell'
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
+    if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn" }
 
     if ($null -eq $global:configRootKeys) {
       $errorMessage = '$global:configRootKeys is not initialized. Run Set-GlobalConfigRootKeys (which loads Set-CoreConfigRootKeys first).'
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage }
       throw $errorMessage
     }
   }
@@ -75,18 +75,18 @@ function Set-RulesManagementConfigRootKeys {
         $global:configRootKeys.Add('OtterScriptRulesPrimitiveLanguageKindIdConfigRootKey', 'RulesManagement.OtterScriptRules.PrimitiveLanguageKindId')
         $global:configRootKeys.Add('OtterScriptRulesGrammarPathConfigRootKey', 'RulesManagement.OtterScriptRules.GrammarPath')
         $global:configRootKeys.Add('OtterScriptRulesCompendiumPathConfigRootKey', 'RulesManagement.OtterScriptRules.CompendiumPath')
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Added RulesManagement key constants.'
+        if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Added RulesManagement key constants.' }
       }
     } catch {
       $errorMessage = "Unhandled error in $fn. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage }
       throw
     } finally {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving process block in $fn"
+      if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving process block in $fn" }
     }
   }
 
   end {
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn"
+    if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn" }
   }
 }

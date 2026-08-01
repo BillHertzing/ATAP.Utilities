@@ -27,6 +27,11 @@ function New-DatabasePreMigrationSnapshot {
     "$($global:settings[$global:configRootKeys['DatabaseHostConfigRootKey']])\$($global:settings[$global:configRootKeys['SqlInstanceConfigRootKey']])"
     when not supplied.
 
+.PARAMETER DBConnectionStringSecretName
+    Bitwarden secret name whose notes field contains the target SQL connection
+    string. When supplied, the SQL instance is derived from that connection and
+    the same secret is used to read the Flyway schema version.
+
 .PARAMETER BackupPath
     Destination folder for the .bak file. Defaults to a timestamped subdirectory
     under $env:TEMP when not supplied.
@@ -45,6 +50,7 @@ function New-DatabasePreMigrationSnapshot {
       Timestamp         [string]    ISO-8601 UTC timestamp of the backup
       FlywayVersion     [string]    Flyway schema version at time of backup
       EvidenceFile      [string]    Absolute path of the evidence JSON written
+      SnapshotPath      [string]    Alias of BackupFile for pipeline consumers
 
 .EXAMPLE
     New-DatabasePreMigrationSnapshot -Application ATAPUtilities -DatabaseName ATAPUtilities `
@@ -69,6 +75,10 @@ function New-DatabasePreMigrationSnapshot {
     [string]$SqlInstance,
 
     [Parameter(Mandatory = $false)]
+    [ValidateNotNullOrEmpty()]
+    [string]$DBConnectionStringSecretName,
+
+    [Parameter(Mandatory = $false)]
     [string]$BackupPath,
 
     [Parameter(Mandatory = $false)]
@@ -82,10 +92,26 @@ function New-DatabasePreMigrationSnapshot {
       -Message "Entering $fn (Application='$Application', DatabaseName='$DatabaseName')" -Tag 'Trace'
 
     if (-not $RepositoryRoot) {
-      $RepositoryRoot = Get-RepositoryRoot -ErrorAction Stop
+      $RepositoryRoot = if (Get-Command -Name Get-RepositoryRoot -ErrorAction SilentlyContinue) {
+        Get-RepositoryRoot -ErrorAction Stop
+      }
+      else {
+        (Get-Location).Path
+      }
     }
 
-    if (-not $SqlInstance) {
+    $connectionResolution = $null
+    if (-not [string]::IsNullOrWhiteSpace($DBConnectionStringSecretName)) {
+      $connectionResolution = Resolve-DatabaseSqlConnection `
+        -OriginalPSBoundParameters $PSBoundParameters `
+        -DBConnectionStringSecretName $DBConnectionStringSecretName `
+        -DatabaseName $DatabaseName `
+        -ErrorAction Stop
+      $builder = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new(
+        $connectionResolution.Connection.ConnectionString)
+      $SqlInstance = $builder.DataSource
+    }
+    elseif (-not $SqlInstance) {
       $host_ = $global:settings[$global:configRootKeys['DatabaseHostConfigRootKey']]
       $inst  = $global:settings[$global:configRootKeys['SqlInstanceConfigRootKey']]
       $SqlInstance = if ($inst) { "$host_\$inst" } else { $host_ }
@@ -94,7 +120,13 @@ function New-DatabasePreMigrationSnapshot {
     }
 
     if (-not $BackupPath) {
-      $BackupPath = Join-Path $env:TEMP "dbsnap-$Application-$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+      $stagingRoot = if (-not [string]::IsNullOrWhiteSpace($env:ATAP_DATABASE_PACKAGE_STAGING_ROOT)) {
+        $env:ATAP_DATABASE_PACKAGE_STAGING_ROOT
+      }
+      else {
+        Join-Path $env:ProgramData 'ATAP\DatabasePackageStaging'
+      }
+      $BackupPath = Join-Path $stagingRoot "snapshots\$Application\$(Get-Date -Format 'yyyyMMdd_HHmmss')"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
         -Message "Using generated BackupPath: '$BackupPath'" -Tag 'Trace'
     }
@@ -109,8 +141,18 @@ function New-DatabasePreMigrationSnapshot {
     # ── Capture Flyway schema version before backup ───────────────────────────
     $flywayVersion = $null
     try {
-      $rows = Get-FlywaySchemaVersion -SqlInstance $SqlInstance -DatabaseName $DatabaseName `
-                -IntegratedSecurity -ErrorAction Stop
+      $flywayVersionParameters = @{
+        DatabaseName = $DatabaseName
+        ErrorAction  = 'Stop'
+      }
+      if (-not [string]::IsNullOrWhiteSpace($DBConnectionStringSecretName)) {
+        $flywayVersionParameters['DBConnectionStringSecretName'] = $DBConnectionStringSecretName
+      }
+      else {
+        $flywayVersionParameters['SqlInstance'] = $SqlInstance
+        $flywayVersionParameters['IntegratedSecurity'] = $true
+      }
+      $rows = Get-FlywaySchemaVersion @flywayVersionParameters
       $latestRow = $rows | Where-Object { $_.Success -eq $true } | Sort-Object InstalledRank -Descending | Select-Object -First 1
       $flywayVersion = if ($latestRow) { $latestRow.Version } else { 'none' }
     } catch {
@@ -131,15 +173,25 @@ function New-DatabasePreMigrationSnapshot {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
         -Message "Starting Backup-DbaDatabase on '$SqlInstance' db='$DatabaseName'" -Tag 'Snapshot'
 
-      $backupResult = Backup-DbaDatabase `
-        -SqlInstance $SqlInstance `
-        -Database $DatabaseName `
-        -Path $BackupPath `
-        -FilePath $bakFileName `
-        -Type Full `
-        -Verify `
-        -EnableException `
-        -ErrorAction Stop
+      $dbaConnection = $null
+      try {
+        $dbaConnection = Connect-DbaInstance -SqlInstance $SqlInstance `
+          -TrustServerCertificate -AllowTrustServerCertificate -ErrorAction Stop
+        $backupResult = Backup-DbaDatabase `
+          -SqlInstance $dbaConnection `
+          -Database $DatabaseName `
+          -Path $BackupPath `
+          -FilePath $bakFileName `
+          -Type Full `
+          -Verify `
+          -EnableException `
+          -ErrorAction Stop
+      }
+      finally {
+        if ($null -ne $dbaConnection) {
+          $dbaConnection.ConnectionContext.Disconnect()
+        }
+      }
 
       if (-not $backupResult) {
         $PSCmdlet.ThrowTerminatingError(
@@ -188,10 +240,15 @@ function New-DatabasePreMigrationSnapshot {
         Timestamp     = $evidenceObj.timestamp
         FlywayVersion = $flywayVersion
         EvidenceFile  = $evidenceFile
+        SnapshotPath  = $bakFilePath
       })
   }
 
   end {
+    if ($null -ne $connectionResolution -and -not [bool]$connectionResolution.IsCallerOwned) {
+      $connectionResolution.Connection.Close()
+      $connectionResolution.Connection.Dispose()
+    }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Exiting $fn" -Tag 'Trace'
   }
 }

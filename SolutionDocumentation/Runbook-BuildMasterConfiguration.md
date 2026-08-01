@@ -3,6 +3,14 @@
 > runbook is now [BuildMaster-Install-Runbook.md](BuildMaster-Install-Runbook.md).
 > Do not execute new BuildMaster configuration from this file.
 >
+> **Task 13.62:** All resolved ProGet-value, fixed sprint-branch, and
+> environment-variable instructions below are historical/non-executable. Active callers
+> derive `ProGet.BuildMaster.API.Key.<service-host>` from the placement host and pass only
+> that SecretName.
+>
+> **Task 13.66 / SC-0288:** the host-suffix rule for every ProGet and BuildMaster SecretName
+> is specified in [SecretName-HostSuffix-Convention.md](SecretName-HostSuffix-Convention.md).
+>
 > Service-account bootstrap steps that used to be scattered here — the git
 > `safe.directory` entry that lets `SvcBuildmaster` operate on Dropbox-owned
 > worktrees, and the machine-wide NBGV install required for
@@ -84,7 +92,7 @@ The exact UI labels must be verified during execution. Expected flow:
 8. Navigate to **Settings** → **Variables**.
 9. Add the variables listed for that Application below. Store names without the
    leading `$`; the `$` is OtterScript reference syntax only.
-10. Mark `ProGetApiKey` as **Sensitive** or **Encrypted**.
+10. Set non-secret `ProGetApiKeySecretName` to `ProGet.BuildMaster.API.Key.<service-host>`.
 11. Navigate to the Application's pipeline/plan configuration page. Verify the
     actual UI label, then select the durable plan from §2.1 as the default route
     for builds in this Application.
@@ -102,9 +110,9 @@ Source: `SolutionDocumentation/BuildMaster-ProGet-CSharp-Package-Pipeline.md`
 | Variable name  | Initial value                                       | Sensitive? | Notes                                                                                |
 | -------------- | --------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------ |
 | `SourcePath`   | `C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber` | No         | Confirm actual BuildMaster worktree path during UI session.                          |
-| `Branch`       | `100-Sprint-0007-work-items`                        | No         | Default only; the Repository Monitor supplies the triggering branch at build scope.   |
+| `Branch`       | `<active-sprint-branch>`                        | No         | Default only; the Repository Monitor supplies the triggering branch at build scope.   |
 | `ProGetUrl`    | `http://localhost:50000`                            | No         | Confirm host-specific ProGet URL.                                                    |
-| `ProGetApiKey` | Paste from approved secret source                   | Yes        | Retrieve from the approved `PROGET_ADMIN_API_KEY` secret source. Do not write it here. |
+| `ProGetApiKeySecretName` | `ProGet.BuildMaster.API.Key.<service-host>`              | No         | Non-secret name; authenticated leaf resolution only.                                  |
 
 **Build-scope variables** (supplied by the concrete C# Repository Monitor or manual build):
 
@@ -128,10 +136,10 @@ Execution notes (final state, verified 2026-05-14):
   | Variable           | Value                                                      |
   | ------------------ | ---------------------------------------------------------- |
   | `$ApplicationName` | `ATAP.Utilities`                                           |
-  | `$Branch`          | `100-Sprint-0007-work-items`                               |
+  | `$Branch`          | `<active-sprint-branch>`                               |
   | `$Configuration`   | `Release`                                                  |
   | `$MetaPackageName` | `ATAP.Utilities`                                           |
-  | `$ProGetApiKey`    | `(hidden)` — sensitive                                     |
+  | `$ProGetApiKeySecretName` | `ProGet.BuildMaster.API.Key.<service-host>`                        |
   | `$ProGetUrl`       | `http://localhost:50000`                                   |
   | `$ProjectPath`     | `src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj` |
   | `$SourcePath`      | `C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber`        |
@@ -155,10 +163,10 @@ so no new application is required per module.
 | Variable name     | Initial value                                       | Sensitive? | Notes                                                                                                         |
 | ----------------- | --------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------- |
 | `ApplicationName` | `ATAP.Utilities-PowerShell`                         | No         | BuildMaster Application identity used in log/reason text.                                                     |
-| `Branch`          | `100-Sprint-0007-work-items`                        | No         | Source branch for checkout. Update each sprint. Present in CSharp app; required here for the same reason.     |
+| `Branch`          | `<active-sprint-branch>`                        | No         | Source branch for checkout. Update each sprint. Present in CSharp app; required here for the same reason.     |
 | `SourcePath`      | `C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber` | No         | Use the durable BuildMaster-managed path. Do NOT use a concrete Dropbox worktree path (see CSharp deviation). |
 | `ProGetUrl`       | `http://localhost:50000`                            | No         | Confirm host-specific ProGet URL.                                                                             |
-| `ProGetApiKey`    | Paste from approved secret source                   | Yes        | Retrieve from the approved `PROGET_ADMIN_API_KEY` secret. Do not write the value here.                        |
+| `ProGetApiKeySecretName` | `ProGet.BuildMaster.API.Key.<service-host>`              | No         | Non-secret name; authenticated leaf resolution only.                                                   |
 
 **Build-scope variables** (supplied by the poller at `New-BuildMasterBuild` call time):
 
@@ -185,8 +193,8 @@ Execution notes (final state, verified 2026-05-14):
   | Variable           | Value                                               |
   | ------------------ | --------------------------------------------------- |
   | `$ApplicationName` | `ATAP.Utilities-PowerShell`                         |
-  | `$Branch`          | `100-Sprint-0007-work-items`                        |
-  | `$ProGetApiKey`    | `(hidden)` — sensitive                              |
+  | `$Branch`          | `<active-sprint-branch>`                        |
+  | `$ProGetApiKeySecretName` | `ProGet.BuildMaster.API.Key.<service-host>`                 |
   | `$ProGetUrl`       | `http://localhost:50000`                            |
   | `$SourcePath`      | `C:\BuildMaster\work\ATAP.Utilities\$ReleaseNumber` |
 
@@ -208,7 +216,7 @@ Source: `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/ReleaseBundle-6Stage.
 | `Branch`                                          | `<current release or sprint branch>`                  | No         | Branch fallback when `ReleaseTag` is blank.                                                                                              |
 | `SourcePath`                                      | `C:\BuildMaster\work\AceCommander\$ReleaseNumber`     | No         | Confirm actual product worktree path during UI session; also passed as `Get-BuildContext -ProjectPath` for the repo-root `version.json`. |
 | `ProGetUrl`                                       | `http://localhost:50000`                              | No         | Confirm host-specific ProGet URL.                                                                                                        |
-| `ProGetApiKey`                                    | Paste from approved secret source                     | Yes        | Retrieve from the approved ProGet secret source. Do not write the value here.                                                            |
+| `ProGetApiKeySecretName`                          | `ProGet.BuildMaster.API.Key.<service-host>`                          | No         | Non-secret name; authenticated leaf resolution only.                                                                                     |
 | `ReleaseBundleExperimentalFeedName`               | `releasebundle-experimental`                          | No         | Universal Package feed.                                                                                                                  |
 | `ReleaseBundleDevelopmentFeedName`                | `releasebundle-development`                           | No         | Universal Package feed.                                                                                                                  |
 | `ReleaseBundleIntegrationFeedName`                | `releasebundle-integration`                           | No         | Universal Package feed.                                                                                                                  |
@@ -234,7 +242,7 @@ After the three Applications are created:
 2. Open each Application and confirm the selected durable plan is correct.
 3. Open each Application's variables page and confirm:
    - Required variable names exist without leading `$`.
-   - `ProGetApiKey` is marked sensitive/encrypted.
+   - `ProGetApiKeySecretName` is exactly `ProGet.BuildMaster.API.Key.<service-host>`.
    - No secret value appears in page text, notes, screenshots, or this runbook.
 4. If BuildMaster has an audit/history page, record the audit entry ID or
    timestamp for each Application creation.
@@ -295,11 +303,11 @@ PAT scope: classic `repo` (full), or fine-grained with **Contents: Read** on `Bi
 
 | Raft name                     | Repository URL                                       | Branch                                                       | Credential       | Consumes                                          |
 | ----------------------------- | ---------------------------------------------------- | ------------------------------------------------------------ | ---------------- | ------------------------------------------------- |
-| `ATAP-Utilities-BuildTooling` | `https://github.com/BillHertzing/ATAP.Utilities.git` | `100-Sprint-0007-work-items` (sprint) → `main` at sprint-end | `global::GitHub` | `/Plans/`, `/Monitors/`, `/Scripts/` at repo root |
+| `ATAP-Utilities-BuildTooling` | `https://github.com/BillHertzing/ATAP.Utilities.git` | `<active-sprint-branch>` (sprint) → `main` at sprint-end | `global::GitHub` | `/Plans/`, `/Monitors/`, `/Scripts/` at repo root |
 
 BuildMaster's Git raft has no Path/subfolder field; it reads `Plans/`, `Monitors/`, `Scripts/` (and `Pipelines/` if present) from the **repo root**. The OtterScript and supporting folders were relocated on 2026-05-14 from `src/ATAP.Utilities.BuildTooling.BuildMaster/{Plans,Monitors,Scripts}/` to the repo root of `ATAP.Utilities` to satisfy this convention.
 
-Sprint-end retarget: SprintEndAgent must flip the raft's Branch field from `100-Sprint-0007-work-items` back to `main` just before merge, alongside the other stable-branch pointer retargets called out in CLAUDE.md.
+Sprint-end retarget: SprintEndAgent must flip the raft's Branch field from `<active-sprint-branch>` back to `main` just before merge, alongside the other stable-branch pointer retargets called out in CLAUDE.md.
 
 ---
 
@@ -387,9 +395,9 @@ Actual L3 steps and evidence:
 | 2026-05-14 | L1          | `Global (Shared)` shows no pipelines.                                                                                                                                                                                                                                                                                                                                                                 | Create shared pipeline `CSharpPackage-5Stage` and then bind the application to it.                                                                                                                                                                                                                                                                                                                |
 | 2026-05-14 | L1          | Shared pipeline `global::CSharpPackage-5Stage` created and stage order corrected to `Experimental -> Development -> Integration -> QA -> Production`.                                                                                                                                                                                                                                                 | Proceed to bind `ATAP.Utilities-CSharp` releases/builds to the shared durable pipeline and retire legacy `ReleasePerProject` usage.                                                                                                                                                                                                                                                               |
 | 2026-05-14 | L1          | Release binding mechanism discovered: Application Settings → Pipelines page shows only Application-scoped pipelines; pipeline selection occurs at Release creation time.                                                                                                                                                                                                                              | Releases tab has "Create Release" button → dialog includes Pipeline dropdown with both Application and Global (Shared) sections.                                                                                                                                                                                                                                                                  |
-| 2026-05-14 | L1          | Branch variable updated from `98-sprint-0006-work-items` to `100-Sprint-0007-work-items` in ATAP.Utilities-CSharp application scope for cross-worktree parameterization.                                                                                                                                                                                                                              | Proceed to create Release 'current' with Release name 'current', Pipeline set to `global::CSharpPackage-5Stage`, Branch field defaulting to updated variable.                                                                                                                                                                                                                                     |
+| 2026-05-14 | L1          | Branch variable updated from `98-sprint-0006-work-items` to `<active-sprint-branch>` in ATAP.Utilities-CSharp application scope for cross-worktree parameterization.                                                                                                                                                                                                                              | Proceed to create Release 'current' with Release name 'current', Pipeline set to `global::CSharpPackage-5Stage`, Branch field defaulting to updated variable.                                                                                                                                                                                                                                     |
 | 2026-05-14 | L1          | Create Release dialog shows a `v` prefix in the Release number field as a default placeholder. User accidentally submitted `v` as a release name.                                                                                                                                                                                                                                                     | Clear the entire Release number field before typing the desired name. The `v` prefix is purely cosmetic; BuildMaster does not enforce semantic versioning format.                                                                                                                                                                                                                                 |
-| 2026-05-14 | L1          | Attempting to create a release named `current` returned an error: a release with that name already exists (not visible in All Releases list with Status: any — likely in an archived or closed state). The pre-existing "Placeholder" release is already bound to `global::CSharpPackage-5Stage` with branch `100-Sprint-0007-work-items` and no prior builds. This meets all L1 acceptance criteria. | Decision: use the pre-existing "Placeholder" release as the active Sprint-0007 release for ATAP.Utilities-CSharp. Do not attempt to delete or rename. ATAP.Utilities-CSharp L1 complete. Proceed to create `ATAP.Utilities-PowerShell` application.                                                                                                                                               |
+| 2026-05-14 | L1          | Attempting to create a release named `current` returned an error: a release with that name already exists (not visible in All Releases list with Status: any — likely in an archived or closed state). The pre-existing "Placeholder" release is already bound to `global::CSharpPackage-5Stage` with branch `<active-sprint-branch>` and no prior builds. This meets all L1 acceptance criteria. | Decision: use the pre-existing "Placeholder" release as the active Sprint-0007 release for ATAP.Utilities-CSharp. Do not attempt to delete or rename. ATAP.Utilities-CSharp L1 complete. Proceed to create `ATAP.Utilities-PowerShell` application.                                                                                                                                               |
 | 2026-05-14 | L1          | Creating one BuildMaster application per PowerShell module would require maintaining N applications for N modules — unscalable in a monorepo with many PS modules.                                                                                                                                                                                                                                    | Decision: use a single parameterized `ATAP.Utilities-PowerShell` application for all PowerShell modules. `ModuleName`, `PackageName`, and `PackageVersion` become Build-scope variables supplied by the poller at `New-BuildMasterBuild` call time. Runbook §2.1, §2.4, §2.7, §2.8, and §3 updated accordingly.                                                                                   |
-| 2026-05-14 | L1          | Pasting `ReleaseBundle-6Stage.otter` into a Pipeline's JSON Editor failed (`Unexpected character #`); pasting into a Plan's Text Editor failed (`Expected ( or ;` at `stage Experimental {`). OtterScript `stage X { ... }` is pipeline-as-code grammar, not Plan grammar, and the Pipeline JSON Editor describes stage/gate structure, not OtterScript.                                              | Decision: ingest `.otter` files via a Git Raft. Created credential `global::GitHub` (Bitwarden-backed PAT) and raft `ATAP.Utilities-BuildTooling` pointing at `https://github.com/BillHertzing/ATAP.Utilities.git`, branch `100-Sprint-0007-work-items`, path `src/ATAP.Utilities.BuildTooling.BuildMaster`. Runbook §2.9 added. SprintEndAgent must repoint raft Branch to `main` at sprint-end. |
+| 2026-05-14 | L1          | Pasting `ReleaseBundle-6Stage.otter` into a Pipeline's JSON Editor failed (`Unexpected character #`); pasting into a Plan's Text Editor failed (`Expected ( or ;` at `stage Experimental {`). OtterScript `stage X { ... }` is pipeline-as-code grammar, not Plan grammar, and the Pipeline JSON Editor describes stage/gate structure, not OtterScript.                                              | Decision: ingest `.otter` files via a Git Raft. Created credential `global::GitHub` (Bitwarden-backed PAT) and raft `ATAP.Utilities-BuildTooling` pointing at `https://github.com/BillHertzing/ATAP.Utilities.git`, branch `<active-sprint-branch>`, path `src/ATAP.Utilities.BuildTooling.BuildMaster`. Runbook §2.9 added. SprintEndAgent must repoint raft Branch to `main` at sprint-end. |
 | 2026-05-14 | L1          | BuildMaster Edit Raft dialog has no Path/subfolder field; Git rafts read `Plans/`, `Monitors/`, `Scripts/` from the **repo root** only.                                                                                                                                                                                                                                                               | Relocated `Plans/`, `Monitors/`, `Scripts/` from `src/ATAP.Utilities.BuildTooling.BuildMaster/` to the **ATAP.Utilities repo root** in the sprint worktree. Raft created without a Path field. Runbook §2.9 raft table updated. Commit/push the move so the raft can ingest the files.                                                                                                            |

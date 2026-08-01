@@ -5,6 +5,20 @@ and provides deep-link pointers into the cross-cutting `SolutionDocumentation/`
 documents that the database pipeline depends on. See [ReadMe.md](ReadMe.md)
 for the folder's purpose and scope.
 
+## Canonical ATAPUtilities Source Layout
+
+`Database/Flyway/` is the single source root for the `ATAPUtilities.Database`
+package: its `version.json` supplies package metadata, `SQL/` supplies the
+versioned Flyway schema and CSV-loader scripts, and `Data/` supplies their CSV
+inputs. `SQL/V00.01.000010__Create_ATAPUtilities_Core_Schema.sql` retains the
+immutable bytes already applied to permanent tiers. The historical
+instantiation, durable RRSBS, typed-membership retirement, invariant, and
+effective-dating changes are preserved as forward migrations
+`V00.02.000060` through `V00.02.000100` in that same canonical `SQL/`
+directory. The former split source directory is retired; existing databases at
+`00.02.000040` keep these later migrations pending until a separately reviewed
+promotion.
+
 ## Database Pipeline — Cross-Cutting References (in `SolutionDocumentation/`)
 
 This folder does **not** duplicate process or release documentation; it links
@@ -87,12 +101,12 @@ No actual host values are listed in this index. Read them at runtime via
 ## Secret name conventions
 
 The database promotion cmdlets resolve secrets by **name** at runtime.
-The actual values live only in Bitwarden and in User-scope environment
-variables on the build host. Names used:
+The actual values live only in Bitwarden Secrets Manager; callers and build
+hosts do not export them as environment variables. Names used:
 
-- `PROGET_BUILDMASTER_API_KEY` (preferred) and `PROGET_ADMIN_API_KEY`
-  (fallback) — ProGet API key environment variable names. See
-  `.claude/Rules/ProGet.md` for the resolution order.
+- `ProGet.BuildMaster.API.Key` — CI publishing/promotion SecretName, passed as
+  `-ProGetApiKeySecretName`. The authenticated leaf resolves it through
+  `Get-SecretATAP` and fails closed; there is no administrator-key fallback.
 - `dbConnectionString-<Database>-<Host>-<Tier>` — Bitwarden secure-note
   items for permanent SQL Server connection strings, e.g.
   `dbConnectionString-ATAPUtilities-utat022-Production`. The naming

@@ -178,9 +178,12 @@ Describe 'Set-TaskComplete' -Tag 'Unit' {
   Context 'Parameter validation' {
 
     It 'Throws when TasksFilePath does not exist' {
+      Mock Test-Path { throw 'Provider-based path probing must not run.' }
       $missing = Join-Path ([System.IO.Path]::GetTempPath()) "does_not_exist_$([guid]::NewGuid()).md"
+
       { Set-TaskComplete -TaskNumber 'A04' -TasksFilePath $missing } |
         Should -Throw '*TASKS.md not found*'
+      Should -Invoke Test-Path -Times 0 -Exactly
     }
 
     It 'Rejects calls that supply both TaskText and TaskNumber (parameter sets are exclusive)' {

@@ -55,9 +55,9 @@ function New-SprintBuildMasterBuilds {
     $BuildMasterBaseUrl = Get-PVal -ParameterName 'BuildMasterBaseUrl' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterBaseUrl
 
     # Read API key from the ATAP secret store (never hard-code)
-    $apiKey = Get-SecretATAP -SecretName 'BuildMaster.Admin.API.Key'
+    $apiKey = Get-SecretATAP -SecretName 'BuildMaster.Admin.API.Key.utat01'
     if ([string]::IsNullOrWhiteSpace($apiKey)) {
-      throw "Unable to resolve the BuildMaster admin API key from secret 'BuildMaster.Admin.API.Key' via Get-SecretATAP. Cannot create BuildMaster builds."
+      throw "Unable to resolve the BuildMaster admin API key from secret 'BuildMaster.Admin.API.Key.utat01' via Get-SecretATAP. Cannot create BuildMaster builds."
     }
   }
 

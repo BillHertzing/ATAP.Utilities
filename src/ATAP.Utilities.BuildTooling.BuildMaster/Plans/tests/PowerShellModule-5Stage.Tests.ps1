@@ -92,21 +92,17 @@ Describe 'V4-B02 runner no-profile contract: Invoke-PowerShellModuleBuildMasterS
             'ModulePath',
             'Branch',
             'Stage',
-            'ProGetUrl'
+            'ProGetUrl',
+            'ProGetApiKeySecretName'
         )) {
             $script:RunnerText | Should -Match "\[string\]\$\b$param\b"
         }
     }
 
-    It 'runner resolves the ProGet API key from environment, never from a parameter' {
-        $script:RunnerText | Should -Match '\$env:PROGET_BUILDMASTER_API_KEY'
-        $script:RunnerText | Should -Match '\$env:PROGET_ADMIN_API_KEY'
-        # No ProGetApiKey parameter is declared anywhere in the runner surface.
-        $script:RunnerText | Should -Not -Match '\$ProGetApiKey'
-    }
-
-    It 'runner throws an actionable error when no API key env var is set' {
-        $script:RunnerText | Should -Match 'Unable to resolve ProGet API key'
+    It 'runner carries only the canonical BuildMaster SecretName' {
+        $script:RunnerText | Should -Match "ProGetApiKeySecretName\s*=\s*'ProGet\.BuildMaster\.API\.Key'"
+        $script:RunnerText | Should -Not -Match 'PROGET_(?:BUILDMASTER|ADMIN)_API_KEY'
+        [regex]::IsMatch($script:RunnerText, '\$ProGetApiKey\b') | Should -BeFalse
     }
 
     It 'runner performs no unguarded $global:settings / $global:configRootKeys read' {
@@ -121,15 +117,14 @@ Describe 'V4-B02 runner no-profile contract: Invoke-PowerShellModuleBuildMasterS
         $script:RunnerText | Should -Not -Match 'Resolve-ProGetFeedFromSettings'
     }
 
-    It 'runner seeds $global:ProGetBaseUrl and the key env var before promotion' {
+    It 'runner seeds only $global:ProGetBaseUrl before promotion' {
         $script:RunnerText | Should -Match '\$global:ProGetBaseUrl\s*=\s*\$ProGetUrl'
-        $script:RunnerText | Should -Match '\$env:PROGET_BUILDMASTER_API_KEY\s*=\s*\$script:resolvedProGetApiKey'
     }
 
-    It 'runner passes -ProGetBaseUrl and -ApiKey explicitly into Invoke-PromotedModuleTests' {
+    It 'runner passes -ProGetBaseUrl and -ProGetApiKeySecretName into Invoke-PromotedModuleTests' {
         $script:RunnerText | Should -Match 'Invoke-PromotedModuleTests'
         $script:RunnerText | Should -Match '-ProGetBaseUrl\s+\$ProGetUrl'
-        $script:RunnerText | Should -Match '-ApiKey\s+\$script:resolvedProGetApiKey'
+        $script:RunnerText | Should -Match '-ProGetApiKeySecretName\s+\$ProGetApiKeySecretName'
     }
 
     It 'runner promotes via Promote-ProGetPackage and computes feed URIs from $ProGetUrl' {
@@ -178,5 +173,10 @@ try {
 
     It 'the runner initializes local host settings via Initialize-LocalHostSettings' {
         $script:RunnerText | Should -Match 'Initialize-LocalHostSettings'
+    }
+
+    It 'loads Get-SecretATAP from the extracted Secrets child module' {
+        $script:RunnerText | Should -Match "FunctionName = 'Get-SecretATAP'; ModuleName = 'ATAP\.Utilities\.BuildTooling\.Secrets\.PowerShell'"
+        $script:RunnerText | Should -Not -Match "FunctionName = 'Get-SecretATAP'; ModuleName = 'ATAP\.Utilities\.BuildTooling\.PowerShell'"
     }
 }

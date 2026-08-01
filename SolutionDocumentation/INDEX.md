@@ -10,12 +10,12 @@ carry the per-file detail.
 | Functional area                       | START HERE                                     | Also in this area (selection)                                                                                                                                                                                                                                                                                                                                                                                            |
 | ------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | C# Build & Packaging                  | `CSharp-Packages-Build-Process.md`             | CSharp-Packages-{Versioning,Test-Process,Pack-and-Push}, CSharp-Central-Package-Management, BuildTooling-MSBuild-Internals, CS0246-Errors-TypeNotFound                                                                                                                                                                                                                                                                   |
-| PowerShell Build & Packaging          | `PowerShell-Modules-Build-Process.md`          | PowerShell-Modules-{Versioning,Test-Process,Pack-and-Publish}, PowerShell-Script-Consolidation, PowerShellModule-Pipeline-NoProfile-Runbook; module: `src\ATAP.Utilities.BuildTooling.PowerShell`                                                                                                                                                                                                                        |
+| PowerShell Build & Packaging          | `PowerShell-Modules-Build-Process.md`          | PowerShell-Modules-{Versioning,Test-Process,Pack-and-Publish}, PowerShell-Script-Consolidation, PowerShellModule-Pipeline-NoProfile-Runbook; BuildTooling child-module family under `src\ATAP.Utilities.BuildTooling.*.PowerShell` with `ATAP.Utilities.BuildTooling.PowerShell` retained as the compatibility parent                                                                                                                                                        |
 | Versioning & Immutable Build Strategy | `Immutable-Build-Strategy.md`                  | VersionJsonAsCeiling(+Runbook), Package-Pinning-Ownership-Decision, BranchModel-Future-Work, Long-Developing-Features                                                                                                                                                                                                                                                                                                    |
 | BuildMaster / ProGet Infrastructure   | `Production-and-Tooling-Overview.md`           | BuildMaster-Pipeline-Topology, BuildMaster-Install-Runbook, Runbook-BuildMasterConfiguration, BuildMaster-Run-State-Runbook, ProGet-Install-Runbook                                                                                                                                                                                                                                                                      |
-| Database & Flyway                     | `Database-Change-Unit-and-Flyway-Promotion.md` | Database-Package-\* decisions, Database-MultiDB-Future-Requirements, Developer-SqlServerInstances-Runbook, ATAPUtilities-Instantiation-Tables; machine provisioning and settings-backed `C:\LocalDBs\<INSTANCE>\{Data,Log,Backup}\` topology: `NewComputerSetup.md` / `NewComputerSetupUsingAnsible.md`; module: `src\ATAP.Utilities.DatabaseManagement.Powershell` |
-| RRSBS & Rules Compendiums             | `Rules Compendium.md`                          | Rules Compendium.{CSharp,SQL,PowerShell,MSBuild,Snippet,Manim,Path,OtterScript,AgentText}, Rules-Compendium-Template, Example.RuleInstantiation.HelloWorld; module: `src\ATAP.Utilities.RulesManagement.PowerShell`                                                                                                                                                                                                      |
-| Secrets & Security                    | `Security Shift-Left.md`                       | ServiceAccountsAndBitwarden(+AlternativesConsidered), Runbook-BitwardenServiceAccounts, SecretsPluginArchitecture, GenericPluginArchitecture; modules: `src\ATAP.Utilities.Security.Powershell` (umbrella, re-export mode), `src\ATAP.Utilities.Security.Secrets.PowerShell` (Bitwarden pilot child, Sprint 0012 Task 12.55.b)                                                                                           |
+| Database & Flyway                     | `Database-Change-Unit-and-Flyway-Promotion.md` | `ATAPUtilities-Database-0.1.3-Release-Record.md` (BuildMaster/ProGet live release, checksum-repair backup, final tier proof), Database-Package-\* decisions, Database-MultiDB-Future-Requirements, Developer-SqlServerInstances-Runbook, ATAPUtilities-Instantiation-Tables; machine provisioning, settings-backed `C:\LocalDBs\<INSTANCE>\{Data,Log,Backup}\` topology, and the five-tier `SvcBuildMaster` deployment-database grant: `NewComputerSetup.md` / `NewComputerSetupUsingAnsible.md`; module: `src\ATAP.Utilities.DatabaseManagement.Powershell` |
+| RRSBS & Rules Compendiums             | `Rules Compendium.md`                          | Rules Compendium.{CSharp,SQL,PowerShell,MSBuild,Snippet,Manim,Path,OtterScript,AgentText,Markdown}, Rules-Compendium-Template, Example.RuleInstantiation.HelloWorld; module: `src\ATAP.Utilities.RulesManagement.PowerShell`                                                                                                                                                                                             |
+| Secrets & Security                    | `Security Shift-Left.md`                       | ServiceAccountsAndBitwarden(+AlternativesConsidered), Runbook-BitwardenServiceAccounts, SecretName-HostSuffix-Convention (SC-0288: every ProGet/BuildMaster SecretName is `<BaseName>.<placement-host>`, derived from ServicePlacementMap and fail-closed), SecretsPluginArchitecture, GenericPluginArchitecture; modules: `src\ATAP.Utilities.Security.Powershell` (umbrella, re-export mode), `src\ATAP.Utilities.Security.Secrets.PowerShell` (Bitwarden pilot child, Sprint 0012 Task 12.55.b)                                                                                           |
 | Environment / Workstation Setup       | `NewComputerSetup.md`                          | NewComputerSetupUsingAnsible, NewOrganizationSetup, DevEnvironment, WSL2Setup, VisualStudioExtensions, ConfigRootKeys-and-HostSettings, IAC-Windows-Scripts-Migration, `src\ATAP.Utilities.SystemParityMonitor.PowerShell\Documentation\Overview.md` and `InstallationAndTroubleshooting.md` (host-pair parity architecture plus Windows 10/11 install, credential-backed S4U registration, WinRM/PSModulePath recovery, and static-payload packaging limitations; journal every `utat022`/`utat01` machine-state change before execution, Task 12.38.f; moved from ATAP.IAC 2026-07-07); modules: `src\ATAP.Utilities.ConfigRootKeys.Powershell`, `src\ATAP.Utilities.IAC.Ansible.Powershell`, `src\ATAP.Utilities.SystemParityMonitor.PowerShell` |
 | Sprint & Worktree Infrastructure      | `Sprint-Boundary-Retargeting.md`               | Worktree-Source-of-Truth-Inventory, SprintInfrastructure-Naming, Sprint-Planning references                                                                                                                                                                                                                                                                                                                              |
 | Testing                               | `TestingMethodology.md`                        | CSharp-Packages-Test-Process, PowerShell-Modules-Test-Process                                                                                                                                                                                                                                                                                                                                                            |
@@ -73,6 +73,15 @@ that **describes how the target application — Ace Commander — will work**
 _Teach / Tell how to create software._
 
 - [New Computer Setup](NewComputerSetup.md) — **Far more than a bootstrap page.**
+  Sprint 0013 reconciliation records Dropbox/Git integrity, host-qualified
+  multi-host sprint assignment, canonical ATAP.IAC profile sources, BWS versus
+  personal-vault boundaries, five-role SQL protection, canonical Inedo ports,
+  the parity-journaled `SvcBuildMaster` `db_owner` grant on all five authorized
+  `ATAPUtilities` tier databases, mobile/Class A certification, and explicit deferred/HITL gates. Linked runbook and
+  documentation-contract reconciliation is complete; clean-host rehearsal remains open.
+  Run the read-only,
+  idempotent `Test-NewComputerSetupDocumentation.ps1` contract validator after changing
+  this guide or its active linked BuildMaster runbooks.
   The first half covers Rufus USB preparation, BIOS configuration, Windows
   install, and WinRM/Ansible enablement via `ConfigureRemotingForAnsible.ps1`.
   The second half (the bulk of the 700+-line document) is an end-to-end
@@ -485,6 +494,10 @@ values and renders deterministic output text.
 - [Rules Compendium — AgentText](Rules%20Compendium.AgentText.md) —
   Agent/instruction text kind for loading SharedVSCode `.ai` sources into
   RRSBS records and rendering Claude, Codex, and GitHub Copilot adapters.
+- [Rules Compendium — Markdown](Rules%20Compendium.Markdown.md) —
+  Task 13.85's exact-byte CommonMark/GFM subset, Kind ID 10, 14 primitives,
+  27 inputs, approved composition, grammar, frozen corpus hashes, and verified
+  InstantiationVersion 2 deployment and manifestation.
 - [Rules Compendium Template](Rules-Compendium-Template.md) —
   Template for creating new language-specific Rules Compendium documents.
 
@@ -493,6 +506,19 @@ values and renders deterministic output text.
 ## Ace Commander — Application Description
 
 _Describes how Ace Commander will work (not how to build software in general)._
+
+- [Task 13.79 — Corrected ATAP.org InstantiationVersion 1](Task-13.79-Instantiation-V1.md)
+  — Approved immutable ordered-source-line model, version-1 seed graph,
+  exact-byte reconstruction contract, and rehearsal evidence.
+- [Task 13.80 — Instantiation Query, Ingestion, and Execution](Task-13.80-Instantiation-Execution.md)
+  — immutable snapshot loading, read-only version proposals, safe exact-byte
+  manifestation, provenance, and database-to-temporary-root evidence.
+- [Task 13.82 — Instantiation Package Rehearsal](Task-13.82-Instantiation-Package-Rehearsal.md)
+  — immutable 0.1.1 bundle identity, exact fresh/current Flyway rehearsals,
+  adversarial review, and operator hash approval.
+- [Task 13.83 — Instantiation Deployment and Manifestation](Task-13.83-Instantiation-Deployment-and-Manifestation.md)
+  — approved ExpWhertzing migration, deployed-state verification, separately
+  approved exact five-entry filesystem manifestation, and provenance evidence.
 
 - [Architecture Overview](architecture-overview.md) — 2026-03-15 automated
   survey of the ATAP.Utilities repository in its role as the computational

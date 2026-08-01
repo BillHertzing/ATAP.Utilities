@@ -4,12 +4,12 @@ function Assert-GitAvailable {
     Throws if git is not available on PATH.
   .DESCRIPTION
     Guard function used at the top of any operation that shells out to git.
-    Calls Test-CommandExists internally.
+    Uses Get-Command directly.
   #>
   [CmdletBinding()]
   param()
 
-  if (-not (Test-CommandExists -Name 'git')) {
+  if ($null -eq (Get-Command -Name 'git' -ErrorAction SilentlyContinue)) {
     throw "Required command 'git' was not found in PATH."
   }
 }

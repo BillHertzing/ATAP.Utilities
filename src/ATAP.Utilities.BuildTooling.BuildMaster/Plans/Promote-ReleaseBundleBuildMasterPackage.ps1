@@ -8,8 +8,7 @@
   promote stages (Development, QA, Production). Reads the bundle name and
   bundle version from per-build marker files written by
   New-ReleaseBundleBuildMasterPackage.ps1, resolves the ProGet API key from
-  the process environment (PROGET_BUILDMASTER_API_KEY then
-  PROGET_ADMIN_API_KEY; SEC-T1 / BLOCKER-8), and calls Promote-ProGetPackage
+  the canonical ProGet BuildMaster SecretName and calls Promote-ProGetPackage
   to copy the immutable bundle bytes from the source feed to the
   destination feed.
 
@@ -109,6 +108,9 @@ param(
   [ValidateNotNullOrEmpty()]
   [string]$ProGetUrl,
 
+  [ValidateNotNullOrEmpty()]
+  [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
+
   [AllowEmptyString()]
   [string]$Reason = ''
 )
@@ -150,6 +152,7 @@ function Promote-ReleaseBundleBuildMasterPackage {
     [Parameter(Mandatory)][string]$ToFeed,
     [Parameter(Mandatory)][string]$CeilingTier,
     [Parameter(Mandatory)][string]$ProGetUrl,
+    [ValidateNotNullOrEmpty()][string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
     [AllowEmptyString()][string]$Reason = ''
   )
 
@@ -169,20 +172,6 @@ function Promote-ReleaseBundleBuildMasterPackage {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Module import attempt complete for '$BuildToolingModulePath'."
     }
 
-    $resolvedApiKey = $env:PROGET_BUILDMASTER_API_KEY
-    if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-      $resolvedApiKey = $env:PROGET_ADMIN_API_KEY
-    }
-    if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-      $resolvedApiKey = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
-    }
-    if ([string]::IsNullOrWhiteSpace($resolvedApiKey)) {
-      $errorMessage = 'Unable to resolve ProGet API key. Set PROGET_BUILDMASTER_API_KEY or PROGET_ADMIN_API_KEY in the BuildMaster service-account environment.'
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-      throw $errorMessage
-    }
-    $env:PROGET_BUILDMASTER_API_KEY = $resolvedApiKey
-    $env:PROGET_ADMIN_API_KEY = $resolvedApiKey
     $global:ProGetBaseUrl = $ProGetUrl
   }
 
@@ -220,6 +209,7 @@ function Promote-ReleaseBundleBuildMasterPackage {
             -FromFeed $FromFeed `
             -ToFeed $ToFeed `
             -Reason $resolvedReason `
+            -ProGetApiKeySecretName $ProGetApiKeySecretName `
             -CeilingTier $CeilingTier | Out-Null
         }
         catch {
@@ -252,4 +242,5 @@ Promote-ReleaseBundleBuildMasterPackage `
   -ToFeed $ToFeed `
   -CeilingTier $CeilingTier `
   -ProGetUrl $ProGetUrl `
+  -ProGetApiKeySecretName $ProGetApiKeySecretName `
   -Reason $Reason | Out-Null

@@ -9,13 +9,13 @@
 @{
 
     # Script module or binary module file associated with this manifest.
-    RootModule           = 'ATAP.Utilities.BuildTooling.Powershell.psm1'
+    RootModule           = 'ATAP.Utilities.BuildTooling.PowerShell.psm1'
 
     # Version number of this module.
     ModuleVersion        = '0.1.13'
 
     # Supported PSEditions
-    CompatiblePSEditions = 'Desktop', 'Core'
+    CompatiblePSEditions = @('Core')
 
     # ID used to uniquely identify this module
     GUID                 = 'dbd8663f-c30c-4702-b97a-5365529b4d15'
@@ -33,7 +33,7 @@
     Description          = 'Powershell scripts used for building the ATAPUtilities'
 
     # Minimum version of the PowerShell engine required by this module
-    PowerShellVersion    = '5.1'
+    PowerShellVersion    = '7.0'
 
     # Name of the PowerShell host required by this module
     # PowerShellHostName = ''
@@ -51,9 +51,19 @@
     # ProcessorArchitecture = ''
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules      = @(@{ModuleName = 'ATAP.Utilities.Powershell'; ModuleVersion = '0.1.19'; MaximumVersion = '0.999.999'; },
-        @{ModuleName = 'PSFramework'; ModuleVersion = '0.1.13'; MaximumVersion = '1.999.999'; },
-        @{ModuleName = 'powershell-yaml'; ModuleVersion = '0.1.13'; MaximumVersion = '0.999.999'; })
+    RequiredModules      = @(@{ModuleName = 'ATAP.Utilities.Powershell'; ModuleVersion = '0.1.23'; MaximumVersion = '0.999.999'; },
+        @{ModuleName = 'PSFramework'; ModuleVersion = '1.14.457'; MaximumVersion = '1.999.999'; },
+        @{ModuleName = 'powershell-yaml'; ModuleVersion = '0.4.12'; MaximumVersion = '0.999.999'; },
+        @{ModuleName = 'ATAP.Utilities.BuildTooling.PesterScaffolding.PowerShell'; ModuleVersion = '0.1.1'; },
+        @{ModuleName = 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell'; ModuleVersion = '0.1.3'; },
+        @{ModuleName = 'ATAP.Utilities.BuildTooling.PlanningSession.PowerShell'; ModuleVersion = '0.1.2'; },
+        @{ModuleName = 'ATAP.Utilities.BuildTooling.AiRendering.PowerShell'; ModuleVersion = '0.1.0'; },
+        @{ModuleName = 'ATAP.Utilities.BuildTooling.Secrets.PowerShell'; ModuleVersion = '0.1.0'; },
+        @{ModuleName = 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'; ModuleVersion = '0.1.1'; },
+        @{ModuleName = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'; ModuleVersion = '0.1.1'; },
+        @{ModuleName = 'ATAP.Utilities.BuildTooling.DatabasePackaging.PowerShell'; ModuleVersion = '0.1.0'; },
+        @{ModuleName = 'ATAP.Utilities.BuildTooling.BuildMaster.PowerShell'; ModuleVersion = '0.1.0'; },
+        @{ModuleName = 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'; ModuleVersion = '0.1.5'; })
 
     # Assemblies that must be loaded prior to importing this module
     # RequiredAssemblies = @()
@@ -84,7 +94,7 @@
     'Confirm-ChocolateyInstalls', 'Confirm-GitFSCK',
     'Confirm-RepositoryPackageProvider',
     'Confirm-RepositoryPackageSource', 'Confirm-Tools',
-    'Convert-DiagramsToImages', 'Convert-TasksMdToSprintBoard', 'Copy-Assets', 'Create-MCPJunction',
+    'Convert-DiagramsToImages', 'Convert-StableWorktreeToConcreteAdapters', 'Convert-TasksMdToSprintBoard', 'Copy-Assets', 'Create-MCPJunction',
     'Create-ServiceAccount', 'Get-AllFilesChangedByCommit',
     'Get-ATAPIACConstant', 'Get-BrokenGitSubDirs', 'Get-BuildContext',
     'Get-DatabasePackageBuildContext', 'Get-DbConnectionStringSecretDescriptor',
@@ -102,7 +112,8 @@
     'Initialize-DownstreamSprintFromSharedVSCode', 'Initialize-SprintAIAdapters',
     'Initialize-BWSAccessToken', 'Initialize-BWSCredentialDirectory',
     'Initialize-ProGetSqlServiceLogin',
-    'Invoke-BuildToolingPesterDebug', 'Invoke-DotnetBuildWithRetry',
+    'Invoke-BuildToolingPesterDebug', 'Invoke-BWSReadOnlyTokenBootstrap', 'Invoke-DotnetBuildWithRetry',
+    'Invoke-DotnetDatabaseNuGetPush',
     'Invoke-FailureAcknowledgedGate', 'Invoke-GitCommit',
     'Invoke-GitPostCheckoutHook', 'Invoke-GitPostCommitHook', 'Invoke-GitPreCommitHook',
     'Invoke-ModuleBuildWithRetry', 'Invoke-MSBuildWithLists',
@@ -116,7 +127,7 @@
     'Invoke-WithFileLock', 'List-ProGetApiKeys', 'List-ProGetConnectors',
     'List-ProGetFeeds', 'Merge-PesterConfiguration',
     'Move-ProGetPackageInterTier', 'Move-ProGetPackageIntraTier',
-    'New-BuildMasterApplication', 'New-BuildMasterRelease',
+    'New-BuildMasterApplication', 'New-BuildMasterRelease', 'New-BuildToolingChildModule', 'New-BWSReadOnlyBootstrapEnvelope',
     'New-BuildMasterScript', 'New-BundleProjectFiles',
     'New-DocFilesIfNotPresent', 'New-DocFolderIfNotPresent',
     'New-GitHubIssue', 'New-HostSettingsForPackageRepositoryFeeds',
@@ -143,14 +154,14 @@
     'Remove-DeveloperSqlServerInstances',
     'Remove-ObjAndBinSubDirectories', 'Remove-OverviewSprintWorkspace', 'Remove-ProGetApiKeys',
     'Remove-ProGetFeeds', 'Remove-SprintBitwardenSecrets',
-    'Remove-SprintDatabases', 'Remove-VSComponentCache',
+    'Remove-SprintDatabases', 'Remove-SprintWorktreeSafely', 'Remove-VSComponentCache',
     'Rename-ProGetFeed', 'Reset-DownstreamToSharedVSCodeMain',
     'Reset-SprintDatabases',
     'Resolve-DatabasePackageFeed',
     'Resolve-FeatureSlug', 'Resolve-PSModuleMetadata',
     'Restore-SprintHistoryArtifacts',
     'Save-CopilotCheckpoint', 'Save-SprintEndSessionTail', 'Save-SprintHistoryArtifacts',
-    'Save-SprintRetrospectiveSnapshot', 'Save-SprintWorkSession', 'Select-PSModulePesterRunResult',
+    'Save-SprintRetrospectiveSnapshot', 'Save-SprintWorkSession',
     'Set-BuildMasterApplicationVariables',
     'Set-BuildMasterSprintVariables', 'Set-BuildMasterStableVariables',
     'Set-BuildMasterPipelineStageDeploymentStep', 'Set-DownstreamSharedVSCodeContext',
@@ -167,16 +178,16 @@
     'Test-SprintCheckpointCoverage',
     'Test-SprintEndBoundaryState', 'Test-SprintEndCommandSurface',
     'Test-SprintEndPullOverlap', 'Test-SprintEndWorktreeState',
-    'Test-SprintInfrastructureHealth', 'Test-SprintPrerequisites', 'Test-PSModulePesterRunResult',
+    'Test-SprintInfrastructureHealth', 'Test-SprintPrerequisites',
     'Update-BlocksInCsproj',
     'Update-OverviewWorkspaceStableInfo', 'Update-PackageVersion',
     'Test-ProGetFeedSet'
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-    CmdletsToExport      = '*'
+    CmdletsToExport      = @()
 
     # Variables to export from this module
-    VariablesToExport    = '*'
+    VariablesToExport    = @()
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
     AliasesToExport      = 'Get-ServiceAccountBWSAccessToken', 'Initialize-ServiceAccountBWSAccessToken',

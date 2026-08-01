@@ -86,8 +86,12 @@ Use the module-level getting started guide for the lifecycle workflow:
 | `Remove-FeatureSharedDb`                  | Developer Databases | Drop disposable per-feature shared databases.                                                                              |
 | `Resolve-DatabaseSqlConnection`           | Connection Helpers  | Resolve a SqlConnection from three connection-method parameter sets.                                                       |
 | `Resolve-DbInstanceName`                  | Instance Management | Resolve canonical Stream J database names.                                                                                 |
-| `Get-InstantiationSourceModuleInventory`  | Instantiation       | Scan `src/` PowerShell modules into `ATAPUtilities.SourceModule`-shaped inventory rows.                                    |
-| `Export-InstantiationManifestation`       | Instantiation       | Render source-module model rows into `_generated/Instantiation` JSON, source-file, folder-tree, and report artifacts.      |
+| `Get-InstantiationSourceModuleInventory`  | Instantiation       | Scan source modules or emit a deterministic read-only immutable-version proposal from exact-case paths and byte hashes. |
+| `Get-InstantiationVersionRuleGraph`       | Instantiation       | Load the corrected ordered version graph and validate immutable RuleInstantiation inputs and exact source lines. |
+| `Export-InstantiationManifestation`       | Instantiation       | Dry-run or safely render a corrected graph below the approved root with exact bytes, SHA-256, and idempotent provenance; legacy inventory evidence remains supported. |
+
+See [Task 13.80 — Instantiation Query, Ingestion, and Execution](../../SolutionDocumentation/Task-13.80-Instantiation-Execution.md)
+for the execution contract, safety gates, and verification evidence.
 | `Export-RuleToTextFile`                   | Rules               | Export a Rule from the ATAPUtilities database to a formatted text file.                                                    |
 
 ### Example Scripts

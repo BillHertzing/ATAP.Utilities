@@ -12,16 +12,22 @@ BuildMaster promotion workflows, and offline development.
 
 The end state is:
 
-1. The machine has the expected stable and sprint worktrees under `C:\Dropbox\whertzing\GitHub`.
-2. PowerShell 7 profiles and login automation are installed from `ATAP.Utilities.PowerShell`.
+1. The machine has the expected stable and sprint worktrees under `C:\Dropbox\whertzing\GitHub`,
+   and the active overview assigns each developer to every approved host rather than
+   deduplicating by username.
+2. PowerShell 7 profiles are rendered from the canonical ATAP.IAC templates into the
+   profile paths PowerShell actually loads; profiled remoting passes a bounded identity probe.
 3. Third-party software is installed and configured:
    - SQL Server with the base instances `Production`, `QA`, and `Integration`
    - ProGet using the `Production` SQL instance — full step-by-step procedure: see [ProGet-Install-Runbook.md](ProGet-Install-Runbook.md)
    - BuildMaster using the `Production` SQL instance — full step-by-step procedure: see [BuildMaster-Install-Runbook.md](BuildMaster-Install-Runbook.md)
-4. The local service accounts and Bitwarden secrets required by SQL Server, ProGet, and
-   BuildMaster exist and are wired up.
-5. Backup jobs exist for the ProGet and BuildMaster databases.
-6. Stable-branch builds and tests complete successfully.
+4. Service accounts have managed profiles, while only the explicitly approved identities
+   receive Bitwarden Secrets Manager (`bws`) access. Interactive Password Manager
+   (`bw`/`BW_SESSION`) use remains a separate user-only path.
+5. Classified, verified SQL backups exist outside Git and Dropbox; independent Inedo
+   databases are never copied or merged between hosts.
+6. Stable-branch builds and tests complete successfully, and Class A/off-LAN plus bounded
+   return certification is recorded with metadata-only evidence.
 
 ## Important Conventions
 
@@ -41,6 +47,29 @@ The end state is:
 - Prefer the newest `Overview.code-workspace` and `Overview.Sprint.NNNN.code-workspace`
   files at `C:\Dropbox\whertzing\GitHub` as the current branch/worktree matrix when
   they are present.
+
+### Current architecture and deferred gates
+
+Apply the guide in this dependency order. A later gate does not excuse a failed earlier one.
+
+1. Settle Dropbox, inventory mutable application state, and prove exact repository integrity
+   before changing Git or worktree state. Never grant Git trust to the whole GitHub parent.
+2. Join an existing sprint with the machine-local boundary retarget procedure, not a second
+   SprintStart. Only `.vscode` is a designed junction; AI adapter surfaces are concrete renders.
+3. Resolve the active `(developer, host)` assignment and the profile paths PowerShell actually
+   loads. Profile templates come from ATAP.IAC, not a retired ATAP.Utilities profile target.
+4. Keep personal `bw`/`BW_SESSION` use distinct from project-scoped `bws` automation.
+   Provision no new BWS identity until the Tasks 13.40–13.43 senior decision and release gates.
+5. Declare one package manager as owner for every executable. The Java vendor/version/update
+   decision remains deferred to `SC-0286`; measured Java 21/Flyway success is not that decision.
+6. Verify the five SQL roles, classified backup boundaries, ProGet on port `50000`, and
+   BuildMaster on port `50017` before package or application readiness claims.
+7. Finish with mobile-host security, Class A off-LAN proof, and a bounded return drill.
+
+The profiled-remoting source/runtime-state fix (Task 13.20.e), the BWS identity
+decision (Tasks 13.40–13.43), the Java decision (`SC-0286`), the production-data policy
+(Task 13.60), and the BuildMaster helper release (Task 13.20.j) remain explicit gates. Do not
+turn a successful operator workaround into a claim that these product changes are deployed.
 
 ## OS Image Sources
 
@@ -63,6 +92,153 @@ The steps below assume **Option A** (OEM image). Where a custom image eliminates
 note says so.
 
 ## Phase 1: Windows and Developer Baseline
+
+## Step 0: Validate Memory Before Building (MemTest86)
+
+Run this before installing Windows on a new machine, and on any existing host that
+shows unexplained bugchecks. Memory faults corrupt builds, databases, and Dropbox
+state silently; validating first avoids attributing hardware failures to software.
+
+> **Why this is Step 0.** MemTest86 boots from USB and does not need an OS. On a new
+> build it costs one overnight run before any time is invested in the image. On an
+> existing host it is the cheapest way to separate a hardware fault from a driver fault.
+
+### 0.1 When to run
+
+- Every new workstation, before Step 1.
+- After any RAM change (added, replaced, or reseated DIMMs).
+- After enabling or changing an EXPO/XMP memory profile.
+- Whenever a host records more than one bugcheck in a week, **especially with
+  differing bugcheck codes**. A single repeated code usually indicates a driver; a
+  spread of unrelated codes (`0x1A`, `0x3B`, `0x50`, `0xBE`, `0x124`) indicates
+  memory or another hardware fault.
+
+Check a host's bugcheck history before deciding:
+
+```powershell
+# Bugcheck codes recorded in the last 30 days
+Get-WinEvent -FilterHashtable @{
+  LogName      = 'System'
+  ProviderName = 'Microsoft-Windows-WER-SystemErrorReporting'
+  Id           = 1001
+  StartTime    = (Get-Date).AddDays(-30)
+} -ErrorAction SilentlyContinue |
+  Sort-Object TimeCreated |
+  ForEach-Object {
+    $code = if ($_.Message -match 'bugcheck was:\s*(0x[0-9a-fA-F]+)') { $Matches[1] } else { '?' }
+    '{0}  {1}' -f $_.TimeCreated.ToString('MM-dd HH:mm:ss'), $code
+  }
+
+# WHEA entries are hardware-reported and cannot be caused by software
+Get-WinEvent -FilterHashtable @{
+  LogName      = 'System'
+  ProviderName = 'Microsoft-Windows-WHEA-Logger'
+  StartTime    = (Get-Date).AddDays(-30)
+} -ErrorAction SilentlyContinue |
+  Select-Object TimeCreated, Id, LevelDisplayName
+```
+
+### 0.2 Build the bootable USB
+
+MemTest86 (PassMark) Free Edition is sufficient; the paid editions add reporting
+features this runbook does not require. Do **not** substitute the built-in Windows
+Memory Diagnostic — it is far weaker and misses marginal faults.
+
+1. Download the **MemTest86 Free Edition — Image for creating bootable USB Drive**
+   from `https://www.memtest86.com/download.htm` on a *known-good* machine.
+2. Extract the ZIP. It contains `imageUSB.exe` and the `memtest86-usb.img` image.
+3. Insert a USB stick of 1 GB or larger. **Its contents are destroyed.**
+4. Run `imageUSB.exe` elevated, select the USB drive, choose
+   **Write image to USB drive**, and confirm.
+
+```powershell
+# Identify the USB stick before writing, so the correct disk is selected in imageUSB
+Get-Disk | Where-Object BusType -eq 'USB' |
+  Select-Object Number, FriendlyName, @{ n = 'GB'; e = { [math]::Round($_.Size / 1GB, 1) } }
+```
+
+> **Keep the stick.** Label it and store it with the build media. It is reused for
+> every host, so this step is only performed once per site.
+
+### 0.3 Boot the target machine from the USB
+
+1. Insert the stick and power on, opening the firmware boot menu (commonly `F12`,
+   `F11`, `F8`, or `Esc` — vendor-specific).
+2. Select the USB device, preferring the **UEFI** entry when both are listed.
+3. If the stick will not boot, disable **Secure Boot** in firmware, run the test,
+   then re-enable it afterward.
+
+### 0.4 Run the test
+
+Accept the default test suite and let it complete **at least four full passes**.
+Expect roughly 30–60 minutes per pass for 32 GB, so schedule an overnight run.
+
+- MemTest86 starts automatically after a short countdown.
+- Errors are reported in red and counted per test; the run need not be stopped, but
+  any error at all is a failure.
+- At the end, choose to save the report. It is written to the USB stick as
+  `MemTest86.log` and an HTML report.
+
+**Pass criteria: zero errors across four or more consecutive passes.** One error is
+a failure. Memory faults are frequently intermittent, so a single clean pass proves
+nothing.
+
+### 0.5 Test at the memory profile you intend to run
+
+An enabled EXPO/XMP profile is a factory overclock, not a JEDEC-guaranteed speed. It
+is a common source of exactly the mixed-bugcheck pattern described in 0.1. Test in
+the order below and record which configuration passed:
+
+| Order | Firmware setting | Interpretation of a failure |
+| --- | --- | --- |
+| 1 | EXPO/XMP **enabled** (rated speed) | The profile is unstable on this silicon; continue to test 2. |
+| 2 | EXPO/XMP **disabled** (JEDEC, e.g. DDR5-4800) | The DIMMs themselves are faulty; RMA them. |
+
+If the host passes at JEDEC but fails at the rated profile, either run it at JEDEC
+permanently or step the profile down (for example 6000 → 5600) and re-validate with a
+full four-pass run before trusting the machine.
+
+Record the memory configuration under test:
+
+```powershell
+Get-CimInstance Win32_PhysicalMemory |
+  Select-Object DeviceLocator, Manufacturer, PartNumber,
+                @{ n = 'GB';    e = { [math]::Round($_.Capacity / 1GB) } },
+                @{ n = 'Speed'; e = { $_.Speed } }
+```
+
+### 0.6 If the test fails
+
+1. Re-run with a **single DIMM installed**, repeating for each DIMM, to identify the
+   failing module. Use the same slot each time so a faulty slot is not mistaken for a
+   faulty DIMM.
+2. If every DIMM fails individually in the same slot, test a known-good DIMM in a
+   different slot to implicate the slot or the memory controller.
+3. RMA the failing module. Do not continue with the build; a host that fails
+   MemTest86 must not be used for ATAP development, database, or Dropbox work.
+
+### 0.7 Record the result in the parity journal
+
+Per the parity-journal convention in **Important Conventions**, declare the outcome
+on the host that was tested so the peer host can be scheduled for the same
+validation:
+
+```powershell
+Import-Module ATAP.Utilities.SystemParityMonitor.PowerShell
+
+Add-ParityChangeEntry `
+  -Category      OS `
+  -Item          'MemTest86 memory validation' `
+  -OldValue      'not validated' `
+  -NewValue      'PASS - 4 passes, EXPO disabled (JEDEC DDR5-4800)' `
+  -PeerHostName  'utat01' `
+  -PeerActionKind Document `
+  -PeerAction    'Run MemTest86 per NewComputerSetup.md Step 0; record pass/fail and the memory profile tested.' `
+  -Reason        'Baseline hardware validation gate for all ATAP hosts.'
+```
+
+Adjust `-NewValue` to the configuration actually tested. After the peer host runs its
+own validation, acknowledge the entry there with `Confirm-ParityChangeApplied`.
 
 ## Step 1: Install Windows and Record Machine Identity
 
@@ -180,6 +356,7 @@ Install and verify these tools before continuing:
    is installed machine-wide separately in Step 4.6)
 6. .NET SDKs required by the repos
 7. Python if the workstation will run Manim or Copilot code execution
+8. Sysinternals Suite at `C:\Program Files\SysinternalsSuite`
 
 Useful checks:
 
@@ -260,7 +437,24 @@ Or install individually as needed during setup. After installing VS Code, open a
 terminal so the `code` command is on `PATH`, then verify with `code --version`. (The `nbgv`
 .NET global tool is installed machine-wide separately in Step 4.4.)
 
-### 2.3 Install Python (for Manim or Copilot code execution)
+### 2.3 Install Sysinternals Suite
+
+Install the pinned Sysinternals Suite release with WinGet. The suite is part of the
+UTAT workstation parity baseline: it was installed on `utat01` on 2026-07-28 and must
+be installed to the same location on `utat022` during the return procedure.
+
+Run from an elevated PowerShell session:
+
+```powershell
+winget install -e --id Microsoft.Sysinternals.Suite --version 2026-07-09
+```
+
+Record the installed version and resolved executable path in the parity journal. On
+`utat01`, the existing direct-download installation is at
+`C:\Program Files\SysinternalsSuite`; verify the WinGet installation on `utat022`
+resolves to the same path before closing the return action.
+
+### 2.4 Install Python (for Manim or Copilot code execution)
 
 Install Python only if the workstation will run Manim (see the optional Manim section near
 the end of this document) or Copilot code execution.
@@ -322,7 +516,11 @@ interpreter.
 
 ## Step 3: Sync the Repository Tree
 
-Wait for Dropbox to report `Up to date`, then verify the stable repos exist:
+Before allowing Dropbox to synchronize application state, inventory host-local mutable
+directories such as databases, package stores, logs, caches, sessions, histories, captures,
+and credential stores. Keep them out of Dropbox/Git unless a reviewed procedure explicitly
+classifies a safe declarative subset. Wait for Dropbox to report `Up to date`, scan for
+`*conflicted copy*` files and unexpected reparse points, then verify the stable repos exist:
 
 ```powershell
 $gitHubRoot = 'C:\Dropbox\whertzing\GitHub'
@@ -344,6 +542,12 @@ If the current sprint already exists, verify the sprint worktrees are present as
 Get-ChildItem $gitHubRoot -Directory -Filter '*-wt-*-Sprint-*-work-items' |
   Select-Object FullName
 ```
+
+Do not run SprintStart a second time merely because this host is joining an active sprint.
+Run the current machine-local boundary retarget, then verify clean Git state and exact-path
+ownership/trust for each repository and worktree. Trusting `C:\Dropbox\whertzing\GitHub` as a
+single parent path is prohibited. Confirm `.vscode` is the intended junction and that `.agents`,
+`.claude`, `.codex`, and `.gemini` are concrete rendered surfaces.
 
 Also confirm the shell-folder mapping script is present on disk before running it below:
 
@@ -379,23 +583,19 @@ reboot) so Windows Explorer picks up the changed shell-folder locations.
 
 ## Step 4: Install PowerShell Profiles and the Login Script
 
-The machine-level and user-level PowerShell 7 profiles come from
-`ATAP.Utilities.PowerShell`. Install them either by copying the files or, during active
-development, by linking them back to the source worktree.
+The canonical developer and service-account templates come from ATAP.IAC. Deploy managed
+copies through BuildTooling and HostSettings; do not create a profile symlink or revive the
+retired ATAP.Utilities profile target. Discover the paths PowerShell actually loads from
+`$PROFILE` in a fresh shell, including redirected known folders.
 
-### 4.1 Link the machine-wide PowerShell 7 profile
+### 4.1 Verify the machine-wide PowerShell 7 profile source
 
-```powershell
-$gitHubRoot = 'C:\Dropbox\whertzing\GitHub'
-$atapRoot = Join-Path $gitHubRoot 'ATAP.Utilities'
-$profileSource = Join-Path $atapRoot 'src\ATAP.Utilities.PowerShell\Profiles'
-
-New-Item -ItemType Directory -Path (Join-Path $env:ProgramFiles 'PowerShell\7') -Force | Out-Null
-Remove-Item (Join-Path $env:ProgramFiles 'PowerShell\7\profile.ps1') -ErrorAction SilentlyContinue
-New-Item -ItemType SymbolicLink `
-  -Path (Join-Path $env:ProgramFiles 'PowerShell\7\profile.ps1') `
-  -Target (Join-Path $profileSource 'AllUsersAllHostsV7CoreProfile.ps1') | Out-Null
-```
+Use the current ATAP.IAC profile template selected through HostSettings. In both a direct
+fresh shell and `ATAP.PS7.Profiled`, record the loaded `$PROFILE` paths, source/target
+existence, parser/import results, and current identity. The verified bounded workaround is
+to register the endpoint with an explicit `WithProfiles.pssc` path. Default deployed-module
+resolution and machine-state placement remain deferred to Task 13.20.e; do not present the
+workaround as the installed fix.
 
 ### 4.2 Provision managed current-user profiles
 
@@ -667,6 +867,19 @@ version, printed from the service account's own `-NoProfile` context.
 > see it. If a verified machine-scope package becomes available you may use it, but you
 > must still pass the `-NoProfile` and service-account resolution checks above.
 
+### 4.7 Gate Java, Flyway, and package-manager ownership
+
+Inventory Java from every package manager and every resolved path before installing or
+removing a runtime. A successful UTAT01 repair removed Oracle Java 8 and proved Java 21 with
+Flyway, but the canonical vendor, architecture, version, update owner, rollback, `JAVA_HOME`,
+and PATH-order decision remains deferred to `SC-0286`. Do not generalize that measured repair
+into an organization-wide Java selection.
+
+Apply the same ownership gate to Chocolatey, pip, npm, NuGet/.NET tools, and manually
+installed binaries. Every overlap needs one declared owner even when versions match. Record
+only version, path, architecture, package owner, and test outcome. Flyway validation must run
+with the exact Java executable selected by the gate.
+
 ## Phase 2: Third-Party Software
 
 ## Step 5: Create the Bitwarden Secrets and Local Service Accounts
@@ -853,10 +1066,117 @@ sqlcmd -S 'localhost\QA' -E -Q 'SELECT @@SERVERNAME' -C
 sqlcmd -S 'localhost\Integration' -E -Q 'SELECT @@SERVERNAME' -C
 ```
 
+### 6.6 Cap `max server memory` on every instance
+
+SQL Server ships with `max server memory (MB)` set to `2147483647`, which means
+unlimited. A workstation runs several instances alongside builds, AI agent
+processes, and Dropbox, so uncapped instances compete with each other and with the
+OS until every instance raises error 701 at once. **Cap every instance immediately
+after creating it.**
+
+The standing allocation for a 32 GB host:
+
+| Instance | Cap (MB) | Rationale |
+| --- | --- | --- |
+| `Production` | 7936 | Hosts the ProGet and BuildMaster databases; the only instance under sustained real load. |
+| `QA` | 1792 | Promotion target; intermittent load. |
+| `Integration` | 1024 | Integration runs only. |
+| `Dev<user>` | 768 | Per-developer scratch. |
+| `Exp<user>` | 768 | Per-developer experimental. |
+| **Total** | **12288** | 12 GB of 32 GB, leaving headroom for the OS, builds, and agent processes. |
+
+Scale proportionally on hosts with different physical memory, keeping the total at
+roughly one third of RAM and leaving `Production` the clear majority.
+
+Apply the caps:
+
+```powershell
+$caps = [ordered]@{
+  Production  = 7936
+  QA          = 1792
+  Integration = 1024
+  "Dev$($env:USERNAME)" =  768
+  "Exp$($env:USERNAME)" =  768
+}
+
+foreach ($instance in $caps.Keys) {
+  $mb = $caps[$instance]
+  $tsql = @"
+EXEC sp_configure 'show advanced options', 1; RECONFIGURE;
+EXEC sp_configure 'max server memory (MB)', $mb; RECONFIGURE;
+"@
+  sqlcmd -S "localhost\$instance" -E -C -Q $tsql
+  Write-Output "  $instance capped at $mb MB"
+}
+```
+
+> **No restart required.** `max server memory` is a dynamic setting
+> (`sys.configurations.is_dynamic = 1`); it takes effect immediately.
+
+Verify the applied values and the host-wide total:
+
+```powershell
+$rows = foreach ($instance in @('Production','QA','Integration',"Dev$($env:USERNAME)","Exp$($env:USERNAME)")) {
+  $c = New-Object System.Data.SqlClient.SqlConnection "Server=localhost\$instance;Integrated Security=True;Connect Timeout=10;TrustServerCertificate=True"
+  $c.Open()
+  $cmd = $c.CreateCommand()
+  $cmd.CommandText = @'
+SELECT MaxMB  = (SELECT CONVERT(bigint, value_in_use) FROM sys.configurations WHERE name = 'max server memory (MB)'),
+       UsedMB = (SELECT physical_memory_in_use_kb / 1024 FROM sys.dm_os_process_memory)
+'@
+  $r = $cmd.ExecuteReader()
+  while ($r.Read()) { [pscustomobject] @{ Instance = $instance; MaxMB = $r['MaxMB']; UsedMB = $r['UsedMB'] } }
+  $c.Close()
+}
+$rows | Format-Table -AutoSize
+'TOTAL capped: {0} MB' -f ($rows.MaxMB | Measure-Object -Sum).Sum
+```
+
+A value of `2147483647` in the `MaxMB` column means that instance was missed.
+
+If `Production` later shows sustained memory pressure — error 701, or a page life
+expectancy trending toward single digits — raise its cap before any other
+instance's:
+
+```powershell
+$c = New-Object System.Data.SqlClient.SqlConnection 'Server=localhost\Production;Integrated Security=True;TrustServerCertificate=True'
+$c.Open()
+$cmd = $c.CreateCommand()
+$cmd.CommandText = @'
+SELECT counter_name, cntr_value FROM sys.dm_os_performance_counters
+WHERE counter_name IN ('Page life expectancy', 'Total Server Memory (KB)', 'Target Server Memory (KB)')
+'@
+$r = $cmd.ExecuteReader()
+while ($r.Read()) { '{0,-28} {1}' -f $r[0].Trim(), $r[1] }
+$c.Close()
+```
+
+Declare the caps in the parity journal so the peer host receives the same
+allocation:
+
+```powershell
+Import-Module ATAP.Utilities.SystemParityMonitor.PowerShell
+
+Add-ParityChangeEntry `
+  -Category      SQL `
+  -Item          'max server memory (MB) - all local instances' `
+  -OldValue      'uncapped (2147483647 MB default)' `
+  -NewValue      'capped, 12288 MB total: Production 7936, QA 1792, Integration 1024, Dev 768, Exp 768' `
+  -PeerHostName  'utat01' `
+  -PeerActionKind ConfigureService `
+  -PeerAction    'Apply the same max server memory caps to the corresponding local SQL instances. Setting is dynamic; no restart required.' `
+  -Reason        'Uncapped instances compete for RAM and raise error 701 together under memory pressure.'
+```
+
 ## Step 7: Create Sprint and Feature-Branch Developer Instances
 
 The permanent instances are `Production`, `QA`, and `Integration`. Developer and
 experimental instances are per-user or per-feature and are created separately.
+
+> **Every new instance must be capped.** Instances created here arrive at the SQL
+> default of unlimited. A single uncapped sprint instance can consume the headroom
+> reserved for all the others. Apply the **1024 MB default cap** in 7.1 as part of
+> creating the instance, not as a later cleanup step.
 
 For the active developer:
 
@@ -870,6 +1190,58 @@ New-SprintSqlServerInstances `
   -ConnectionMethod 'tcp'
 ```
 
+### 7.1 Apply the default memory cap to every new instance
+
+**Default cap for any instance created in this step: `1024` MB.** Run this
+immediately after `New-SprintSqlServerInstances` returns, and after creating any
+ad-hoc sprint or feature-branch instance.
+
+```powershell
+# Default cap for newly created sprint / feature-branch instances
+$DefaultInstanceCapMB = 1024
+
+$newInstances = @("Dev$($env:USERNAME)", "Exp$($env:USERNAME)")   # add feature-branch instances here
+
+foreach ($instance in $newInstances) {
+  $tsql = @"
+EXEC sp_configure 'show advanced options', 1; RECONFIGURE;
+EXEC sp_configure 'max server memory (MB)', $DefaultInstanceCapMB; RECONFIGURE;
+"@
+  sqlcmd -S "localhost\$instance" -E -C -Q $tsql
+  Write-Output "  $instance capped at $DefaultInstanceCapMB MB"
+}
+```
+
+Sweep for any instance still at the unlimited default — this catches instances
+created outside this runbook:
+
+```powershell
+Get-Service -Name 'MSSQL$*' |
+  Where-Object Status -eq 'Running' |
+  ForEach-Object {
+    $instance = $_.Name -replace '^MSSQL\$', ''
+    try {
+      $c = New-Object System.Data.SqlClient.SqlConnection "Server=localhost\$instance;Integrated Security=True;Connect Timeout=10;TrustServerCertificate=True"
+      $c.Open()
+      $cmd = $c.CreateCommand()
+      $cmd.CommandText = "SELECT CONVERT(bigint, value_in_use) FROM sys.configurations WHERE name = 'max server memory (MB)'"
+      $maxMb = $cmd.ExecuteScalar()
+      $c.Close()
+      [pscustomobject] @{
+        Instance = $instance
+        MaxMB    = $maxMb
+        Status   = if ($maxMb -eq 2147483647) { 'UNCAPPED - fix' } else { 'ok' }
+      }
+    } catch {
+      [pscustomobject] @{ Instance = $instance; MaxMB = 'unreachable'; Status = $_.Exception.Message }
+    }
+  } | Format-Table -AutoSize
+```
+
+Raise a sprint instance above `1024` MB only when a specific workload requires it,
+and subtract the increase from the host's remaining headroom rather than letting the
+total climb past the budget in 6.6.
+
 Notes:
 
 1. `New-SprintSqlServerInstances` creates only the `Dev...` and `Exp...` instances. It
@@ -878,10 +1250,21 @@ Notes:
    tier prefix and keep the full instance name under 16 characters.
 3. Use the current `Overview.code-workspace` and `Overview.Sprint.NNNN.code-workspace`
    files as the branch matrix when deciding which extra instances are still required.
+4. Sprint instances are torn down at sprint end. Removing them returns their capped
+   memory to the host budget; no cap adjustment is needed elsewhere when they go away.
 
 ## Step 8: Build the Databases on All Instances
 
-Run the database rebuild script after the instances exist:
+Classify the five roles before running any database command:
+
+- `Devwhertzing` and `Expwhertzing` are permanent developer instances managed by the sprint
+  lifecycle and may be rebuilt from Flyway under that contract.
+- `Integration` and `QA` are ecosystem tiers with their own verification and reset policy.
+- `Production` is protected data. Do not rebuild, seed, copy, restore, or reset it merely
+  because a developer instance was created. Task 13.60 owns the protection/seed policy.
+
+Run the database rebuild script only for roles whose current policy explicitly authorizes a
+rebuild:
 
 ```powershell
 Push-Location 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
@@ -890,13 +1273,32 @@ Pop-Location
 ```
 
 This script should be treated as a temporary bootstrap script until it is converted into a
-module cmdlet. For now, it is still the documented way to build and seed the databases on
-the permanent instances.
+module cmdlet. Review its resolved target list before execution. It is not authorization to
+build or seed Production, and it must not collapse the five roles into "two instances total."
 
 ## Step 9: Install and Configure ProGet and BuildMaster
 
 Group all tooling setup under this section. ProGet and BuildMaster both use the local
 `Production` SQL Server instance and Windows integrated security.
+
+The two Inedo products are independent per host. ProGet is canonical on port `50000` and
+BuildMaster on port `50017`; port `8600` is obsolete. Never copy or merge an Inedo database
+between `utat01` and `utat022`. All service placement and derived URLs come from the single
+`ServicePlacementMap`; do not edit derived endpoint keys individually.
+
+ProGet readiness includes the per-host license state, `Storage.PackagesRootPath` readback as
+`C:\ProgramData\ProGet\Packages`, `SvcProGet` ACLs, the canonical 15-feed inventory, explicit
+connector-free mapping, and a harmless publish/download/restore proof. The approved local HTTP
+NuGet source may set `allowInsecureConnections=true`; public sources remain HTTPS. Resolve the
+host-specific administrative SecretName only at the authenticated-operation boundary and never
+record the value.
+
+BuildMaster readiness includes the host-specific administrative SecretName, the approved
+`ATAP.Utilities-CSharp` and `ATAP.Utilities-PowerShell` application definitions, required
+non-secret variables, default raft, and full `Assert-BuildMasterReady` outcome. The supported
+server `ArtifactUsage` values are `FileSystem`, `AssetDirectory`, and `None`; do not send
+`Default`. The direct API fallback is a verified workaround only. Optional/null-field handling,
+response detail, idempotent create/update tests, release, and installation remain Task 13.20.j.
 
 ### 9.1 Install ProGet and BuildMaster from Inedo Hub
 
@@ -925,6 +1327,86 @@ Initialize-SqlServiceLogin `
   -Encrypt Optional `
   -TrustServerCertificate
 ```
+
+### 9.2.1 Grant SvcBuildMaster database-package deployment rights
+
+The preceding BuildMaster product-database grant is not sufficient for database
+package deployment. The BuildMaster service identity also performs tier rehearsal,
+pre-migration backup, and Flyway DDL/DML apply operations. Grant the local
+`SvcBuildMaster` identity `db_owner` on the `ATAPUtilities` database in every
+authorized tier instance.
+
+The logical Experimental tier targets `Exp<DeveloperName>`. Never create or grant
+against a generic permanent `Experimental` instance.
+
+Run this idempotent procedure in an elevated, profile-loaded PowerShell session
+after the five databases exist:
+
+```powershell
+Import-Module ATAP.Utilities.PowerShell
+
+$developerName = $env:USERNAME
+$serviceAccount = "$env:COMPUTERNAME\SvcBuildMaster"
+$databaseTierInstances = @(
+  "Exp$developerName"
+  "Dev$developerName"
+  'Integration'
+  'QA'
+  'Production'
+)
+
+foreach ($instanceName in $databaseTierInstances) {
+  Initialize-SqlServiceLogin `
+    -SqlInstance "localhost\$instanceName" `
+    -DatabaseName 'ATAPUtilities' `
+    -ServiceAccount $serviceAccount `
+    -Encrypt Optional `
+    -TrustServerCertificate
+}
+```
+
+Verify the server login, database user, and `db_owner` membership independently:
+
+```powershell
+$principalLiteral = $serviceAccount.Replace("'", "''")
+$verificationQuery = @"
+DECLARE @principal sysname = N'$principalLiteral';
+SELECT
+  CAST(SERVERPROPERTY('MachineName') AS nvarchar(128)) AS MachineName,
+  CAST(SERVERPROPERTY('InstanceName') AS nvarchar(128)) AS InstanceName,
+  DB_NAME() AS DatabaseName,
+  @principal AS AccountName,
+  IIF(SUSER_ID(@principal) IS NULL, 0, 1) AS ServerLoginExists,
+  IIF(USER_ID(@principal) IS NULL, 0, 1) AS DatabaseUserExists,
+  ISNULL(IS_ROLEMEMBER(N'db_owner', @principal), 0) AS IsDbOwner;
+"@
+
+$grantAudit = foreach ($instanceName in $databaseTierInstances) {
+  Invoke-Sqlcmd `
+    -ServerInstance "localhost\$instanceName" `
+    -Database 'ATAPUtilities' `
+    -Query $verificationQuery `
+    -TrustServerCertificate
+}
+
+$grantAudit |
+  Select-Object MachineName, InstanceName, DatabaseName, AccountName,
+    ServerLoginExists, DatabaseUserExists, IsDbOwner
+
+if ($grantAudit.Where({
+      $_.ServerLoginExists -ne 1 -or
+      $_.DatabaseUserExists -ne 1 -or
+      $_.IsDbOwner -ne 1
+    }).Count -gt 0) {
+  throw 'SvcBuildMaster ATAPUtilities database permission verification failed.'
+}
+```
+
+Record this machine-state grant with `Add-ParityChangeEntry`. The peer action must
+repeat the same idempotent procedure using the peer-local
+`<PeerHost>\SvcBuildMaster` identity, then acknowledge the entry only after the
+independent query passes on all five authorized tier databases. Do not copy or
+restore an application or Inedo database to establish parity.
 
 ### 9.3 Reconfigure the Windows services to use the dedicated accounts
 
@@ -977,759 +1459,104 @@ icacls "C:\ProgramData\ProGet\Packages" /grant "SvcProGet:(OI)(CI)F" /T
 > automatically after creating the `SvcProGet` account. Run it instead of the manual
 > command when provisioning a new machine.
 
-### 9.4 Manually provision DPAPI Bitwarden credentials for the service accounts
+### 9.4 Provision approved Bitwarden Secrets Manager ReadOnly identities
 
-> **⚠ Architecture update (Sprint 0007 — Bitwarden Secrets Manager).** Subsections
-> 9.4.1–9.4.9 below provision the **Password Manager** (`bw`) login/unlock DPAPI files and
-> were originally written for `SvcBuildmaster` / `SvcProGet`. They are **retained** as the
-> reference pattern, which now applies to the **interactive Password Manager user
-> `DeveloperTwo`** (the 2nd Bitwarden org user — see
-> [NewOrganizationSetup.md](NewOrganizationSetup.md)). The **service accounts** obtain
-> runtime secrets from **Bitwarden Secrets Manager** (`bws`) using machine-account access
-> tokens instead — see **§9.4.10** below. Identity map for this host:
->
-> | Identity                                | Bitwarden identity           | Provisioning path                           |
-> | --------------------------------------- | ---------------------------- | ------------------------------------------- |
-> | Windows interactive user `DeveloperTwo` | PM User 2                    | `bw` login/unlock — **9.4.1–9.4.9 pattern** |
-> | `SvcBuildmaster` (service)              | BWS machine `SvcBuildMaster` | `bws` access token — **§9.4.10**            |
-> | `SvcProGet` (service)                   | BWS machine `SvcInfraShared` | `bws` access token — **§9.4.10**            |
-> | AceCommander service / IIS              | BWS machine `AceCommander`   | `bws` access token — **§9.4.10**            |
+This is the only supported non-interactive secret bootstrap. Password Manager
+`bw`/`BW_SESSION` is interactive-user-only and must never be provisioned to or inherited by
+a Windows service. The retired service-account Password Manager procedure is available in
+Git history only and is non-executable.
 
-This section is the manual (no-Ansible) provisioning runbook for the per-service-account
-DPAPI credential files described in
-[ServiceAccountsAndBitwarden.md](ServiceAccountsAndBitwarden.md). Use it after the local
-service accounts exist (Step 5) and after the Inedo services are installed (Step 9.1)
-but before you reconfigure those services to run as the dedicated accounts (Step 9.3).
-The output of this section is two pairs of DPAPI-encrypted `.xml` credential files
-(login + unlock) under
-`C:\ProgramData\ATAP\BitwardenCredentials\<ServiceAccount>\`, each readable only by the
-owning service account on this host.
+The approved automation allowlist is exact: `SvcBuildMaster`, `SvcProGet`, and
+`SvcSQLServer`, each scoped to project `CI-Shared` with purpose `ReadOnly`. `SvcSeq`,
+`SvcParityAudit`, and `ansibleAdmin` receive no BWS token. ReadWrite is approved only for
+`utat022\whertzing` and is not a fallback for any service account. Creating accounts,
+certificates, Bitwarden grants, tokens, logon rights, or scheduled tasks is a separate HITL
+operation under Tasks 13.40–13.43.
 
-Preconditions:
+#### 9.4.1 Preconditions and dry run
 
-1. `SvcProGet` and `SvcBuildmaster` exist on this host (Step 5).
-2. You are logged in interactively as a member of the local Administrators group.
-3. You know the Windows password for each of those two service accounts.
-4. You know the Bitwarden email plus the Bitwarden login password and the master/unlock
-   password that should be bound to each service account. In the simplest single-tenant
-   model these are the same for both service accounts; if each service account has its
-   own dedicated Bitwarden identity, you will need both sets of passwords.
-5. The Bitwarden CLI (`bw`) is installed and on `PATH`.
-6. You are running PowerShell 7 elevated.
-
-#### 9.4.0 Checklist
-
-Work through these steps in order. Tick each box as you complete it.
-
-- [ ] **9.4.1** Create and ACL `C:\ProgramData\ATAP\BitwardenCredentials\SvcBuildmaster\`
-- [ ] **9.4.2** Launch a PowerShell session as `SvcBuildmaster` and create its
-      `BW_Login_Credential.xml` and `BW_Unlock_Credential.xml`
-- [ ] **9.4.3** Validate the BuildMaster credential files were created
-- [ ] **9.4.4** Create and ACL `C:\ProgramData\ATAP\BitwardenCredentials\SvcProGet\`
-- [ ] **9.4.5** Launch a PowerShell session as `SvcProGet` and create its
-      `BW_Login_Credential.xml` and `BW_Unlock_Credential.xml`
-- [ ] **9.4.6** Validate the ProGet credential files were created
-- [ ] **9.4.6.5** Grant `SeBatchLogonRight` ("Log on as a batch job") to
-      `SvcBuildmaster` and `SvcProGet` — required before Task Scheduler will
-      launch the tasks registered in 9.4.7 / 9.4.8
-- [ ] **9.4.6.6** Install `ProfileForServiceAccountUsers.ps1` as the
-      `CurrentUserAllHosts` profile for each service account (creates the
-      `Documents\PowerShell` folder under each home directory and links the
-      worktree script as `profile.ps1`)
-- [ ] **9.4.7** Register the per-service-account startup task that establishes
-      `BW_SESSION` (`Initialize-ServiceAccountBitwardenSession.ps1`)
-- [ ] **9.4.8** Register the per-service-account periodic refresh task
-      (`Refresh-BWSession.ps1`)
-- [ ] **9.4.9** Smoke-test that each service account can establish a `BW_SESSION` and
-      retrieve at least one known Bitwarden item via `Get-SecretATAP`
-
-#### 9.4.1 Create and ACL the BuildMaster credentials folder
-
-Run this from the elevated administrative session. It does not need to run as the
-service account.
+1. Install BuildTooling 0.1.44 or later from `powershellget-stable` at AllUsers scope and
+   verify a fresh shell imports that exact version from `C:\Program Files\PowerShell\Modules`.
+2. Confirm the service account, its Password logon credential, its document-encryption
+   certificate/private key, and its `CI-Shared` ReadOnly machine-account grant were created
+   under explicit operator authority.
+3. Resolve the current repository root and host at run time. Do not paste a sprint worktree
+   path or a suffixless infrastructure SecretName into this procedure.
+4. Run both cmdlets with `-WhatIf`. Require `ProjectName=CI-Shared`,
+   `TokenPurpose=ReadOnly`, the intended account, and no state change.
 
 ```powershell
-$serviceAccount = 'SvcBuildmaster'
-$credentialDirectory = "C:\ProgramData\ATAP\BitwardenCredentials\$serviceAccount"
+$repositoryRoot = git rev-parse --show-toplevel
+Import-Module (Join-Path $repositoryRoot 'src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1') -Force
 
-New-Item -ItemType Directory -Path $credentialDirectory -Force | Out-Null
+$accountName = '.\SvcProGet' # repeat separately for each approved account
+$token = Read-Host 'CI-Shared ReadOnly BWS token' -AsSecureString
+$envelope = Join-Path $env:TEMP 'ATAP-BWS-ReadOnly-bootstrap.cms'
+$certificatePath = Join-Path $env:TEMP 'SvcProGet.cer'
 
-$acl = Get-Acl $credentialDirectory
-$acl.SetAccessRuleProtection($true, $false)
-$acl.Access | ForEach-Object { [void]$acl.RemoveAccessRule($_) }
+New-BWSReadOnlyBootstrapEnvelope `
+  -AccountName $accountName `
+  -AccessToken $token `
+  -RecipientCertificatePath $certificatePath `
+  -OutputPath $envelope `
+  -WhatIf
+```
 
-$inheritFlags = [System.Security.AccessControl.InheritanceFlags]'ContainerInherit,ObjectInherit'
-$propFlags    = [System.Security.AccessControl.PropagationFlags]::None
-$allowType    = [System.Security.AccessControl.AccessControlType]::Allow
-$fullCtl      = [System.Security.AccessControl.FileSystemRights]::FullControl
+The public `.cer` must have document-encryption EKU and a simple name exactly matching the
+approved account. The envelope contains no plaintext token and is bound to that account's
+certificate. Never put a token in an argument, environment variable, transcript, log, or
+evidence artifact.
 
-$rules = @(
-  [System.Security.AccessControl.FileSystemAccessRule]::new($serviceAccount,  $fullCtl, $inheritFlags, $propFlags, $allowType),
-  [System.Security.AccessControl.FileSystemAccessRule]::new('SYSTEM',         $fullCtl, $inheritFlags, $propFlags, $allowType),
-  [System.Security.AccessControl.FileSystemAccessRule]::new('Administrators', $fullCtl, $inheritFlags, $propFlags, $allowType)
-)
+#### 9.4.2 Execute the bounded bootstrap
 
-foreach ($rule in $rules) {
-  $acl.AddAccessRule($rule)
+After reviewing the dry run, create the CMS envelope and invoke the bounded one-shot
+Password-logon scheduled task. The service logon credential identity must exactly match
+`-AccountName`.
+
+```powershell
+$serviceLogonCredential = Get-Credential -UserName $accountName
+$envelopeResult = New-BWSReadOnlyBootstrapEnvelope `
+  -AccountName $accountName `
+  -AccessToken $token `
+  -RecipientCertificatePath $certificatePath `
+  -OutputPath $envelope
+
+$bootstrap = Invoke-BWSReadOnlyTokenBootstrap `
+  -AccountName $accountName `
+  -ServiceLogonCredential $serviceLogonCredential `
+  -EnvelopePath $envelopeResult.EnvelopePath `
+  -CertificateThumbprint $envelopeResult.CertificateThumbprint
+
+Remove-Item -LiteralPath $envelopeResult.EnvelopePath -Force
+$serviceLogonCredential = $null
+$token = $null
+```
+
+The automation uses the fixed `\ATAP\` task path, waits for bounded completion, verifies the
+canonical account-bound DPAPI ReadOnly file, and removes the temporary task. Re-running
+without `-Force` returns the existing-state result without overwriting it; use `-Force` only
+for an operator-reviewed repair. A failure stops and verifies task removal before deleting
+the envelope; a cleanup failure is an operator gate, not permission to continue.
+
+#### 9.4.3 Validate without exposing secret material
+
+Run validation as the owning account in a fresh profile-enabled shell:
+
+```powershell
+$credential = Get-BWSAccessToken -TokenPurpose ReadOnly
+if ($credential.UserName -ne 'BWS_ACCESS_TOKEN') {
+  throw 'The canonical ReadOnly DPAPI slot did not return the expected credential shape.'
 }
-
-Set-Acl -LiteralPath $credentialDirectory -AclObject $acl
+Get-SecretATAP -SecretName '<approved-CI-Shared-secret-name>' | Out-Null
 ```
 
-#### 9.4.2 Create the BuildMaster DPAPI credential files
-
-DPAPI binds the encryption key to the running user, so the `Export-Clixml` files must
-be produced by a process running as `SvcBuildmaster` itself. The standard pattern is
-`Start-Process -Credential` to obtain a shell in that account's security context, then
-run [`Update-ServiceAccountBWCredentialFile.ps1`](../src/ATAP.Utilities.BuildTooling.PowerShell/public/Update-ServiceAccountBWCredentialFile.ps1)
-inside that shell. The helper function takes the new Bitwarden passwords as
-`SecureString` parameters (so they never appear on the command line), runs the security
-guard that verifies the current user equals `-ServiceAccount`, and wraps
-`Get-BitWardenCredential -Replace` with a single call.
-
-Run **from the elevated administrative session**:
-
-```powershell
-$serviceAccount = 'SvcBuildmaster'
-$credentialDirectory = "C:\ProgramData\ATAP\BitwardenCredentials\$serviceAccount"
-
-# Auto-detect the source tree containing the new helpers. Prefer the active sprint
-# worktree during sprint development; fall back to the stable repo after merge.
-$candidateRoots = @(
-  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items',
-  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
-)
-$repoRoot = $candidateRoots | Where-Object {
-  Test-Path -LiteralPath (Join-Path $_ 'src\ATAP.Utilities.BuildTooling.PowerShell\public\Update-ServiceAccountBWCredentialFile.ps1')
-} | Select-Object -First 1
-if (-not $repoRoot) {
-  throw 'Update-ServiceAccountBWCredentialFile.ps1 not found in any known repository root.'
-}
-$updateScript = Join-Path $repoRoot 'src\ATAP.Utilities.BuildTooling.PowerShell\public\Update-ServiceAccountBWCredentialFile.ps1'
-
-$serviceCredential = Get-Credential -UserName ".\$serviceAccount" `
-  -Message "Enter the Windows password for $serviceAccount"
-
-# Build a small provisioning script and write it to the (ACL-protected) credential
-# directory. Driving the spawned pwsh with -File <path> instead of -Command "<here-string>"
-# avoids the Windows command-line argument escaping that was mangling SecureString
-# variables across line continuations. The script self-deletes at the end so the
-# credential directory stays clean.
-$provScript = Join-Path $credentialDirectory ".provision-$serviceAccount-$(Get-Random).ps1"
-
-# Single-quoted here-string keeps every $ literal; explicit Replace() substitutes the
-# three placeholders so there is exactly one substitution mechanism (no nested escaping).
-$scriptBody = @'
-$env:TEMP = '__CREDDIR__'
-$env:TMP  = '__CREDDIR__'
-
-Write-Host '---- Spawned-window security context ----'
-Write-Host ('Windows identity : ' + [System.Security.Principal.WindowsIdentity]::GetCurrent().Name)
-Write-Host ('whoami output    : ' + (whoami))
-Write-Host ('Expected         : *\__SERVICE__')
-Write-Host '-----------------------------------------'
-
-. '__UPDATE__'
-
-$bwUser   = Read-Host 'Bitwarden username/email bound to __SERVICE__'
-$bwLogin  = Read-Host 'Bitwarden login password' -AsSecureString
-$bwUnlock = Read-Host 'Bitwarden unlock/master password' -AsSecureString
-
-# Splat the arguments so PowerShell binds them by name from a hashtable. This avoids the
-# multi-line command-line parameter binding issue that was converting $bwLogin to String.
-$params = @{
-    ServiceAccount          = '__SERVICE__'
-    CredentialDirectory     = '__CREDDIR__'
-    BitwardenUserName       = $bwUser
-    BitWardenLoginPassword  = $bwLogin
-    BitWardenUnlockPassword = $bwUnlock
-    NoRefresh               = $true
-}
-Update-ServiceAccountBWCredentialFile @params
-
-Write-Host ''
-Write-Host 'Provisioning complete. Type "exit" to close this window.'
-
-# Self-delete this provisioning script.
-Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue
-'@
-
-$scriptBody = $scriptBody.Replace('__CREDDIR__', $credentialDirectory)
-$scriptBody = $scriptBody.Replace('__UPDATE__',  $updateScript)
-$scriptBody = $scriptBody.Replace('__SERVICE__', $serviceAccount)
-
-Set-Content -LiteralPath $provScript -Value $scriptBody -Encoding utf8
-
-# -NoProfile bypasses the user profile of the service account. Service accounts that
-# have never interactively logged in have no MyDocuments folder, so the standard ATAP
-# AllUsersAllHostsV7CoreProfile.ps1 throws inside Get-HostSettings.ps1 when it tries to
-# Join-Path against an empty MyDocuments. (Note: -NoProfile is disallowed for Pester per
-# the repo rules, but is appropriate here.)
-Start-Process pwsh `
-  -Credential $serviceCredential `
-  -WorkingDirectory $credentialDirectory `
-  -ArgumentList '-NoProfile', '-NoExit', '-File', $provScript
-```
-
-When the spawned window opens, the first lines printed must include
-`Windows identity : UTAT022\SvcBuildmaster`. If they instead show your interactive
-user (for example `UTAT022\whertzing`), `Start-Process -Credential` did not actually
-elevate. That happens on hardened workstations where the launching session lacks the
-`SeAssignPrimaryToken` privilege; in that case fall back to one of:
-
-- **PsExec** (Sysinternals): `psexec -u .\SvcBuildmaster -p <pwd> -h pwsh.exe -NoProfile -NoExit -File <provScript>`
-- **Task Scheduler one-shot**: register a task with `-Principal SvcBuildmaster -LogonType Password`, trigger once, then `Unregister-ScheduledTask` after the credential files appear.
-
-A new PowerShell window appears running as `SvcBuildmaster`. The window prompts for
-the three Bitwarden values, calls `Update-ServiceAccountBWCredentialFile`, and prints
-a `PSCustomObject` summarizing the rotation. After reviewing the output, close the
-window with `exit`.
-
-> **Why `-NoRefresh`?** `Update-ServiceAccountBWCredentialFile` normally triggers
-> `Refresh-BWSession -ForceReunlock` at the end so a running service picks up the new
-> credentials immediately. During first-time provisioning the live `BW_SESSION` does
-> not exist yet, so the refresh is suppressed; step 9.4.7 registers the startup task
-> that will perform the unlock at next boot, and step 9.4.8 registers the recurring
-> refresh that maintains it thereafter.
-
-#### 9.4.3 Validate the BuildMaster credential files
-
-Back in the elevated administrative session:
-
-```powershell
-$credentialDirectory = 'C:\ProgramData\ATAP\BitwardenCredentials\SvcBuildmaster'
-Get-ChildItem -LiteralPath $credentialDirectory -Filter '*.xml' |
-  Select-Object Name, Length, LastWriteTime
-```
-
-You should see at least these two files:
-
-```text
-<COMPUTERNAME>_SvcBuildmaster_BW_Login_Credential.xml
-<COMPUTERNAME>_SvcBuildmaster_BW_Unlock_Credential.xml
-```
-
-Confirm via ACL that only `SvcBuildmaster`, `SYSTEM`, and `Administrators` are
-granted access:
-
-```powershell
-(Get-Acl $credentialDirectory).Access |
-  Select-Object IdentityReference, FileSystemRights, AccessControlType
-```
-
-#### 9.4.4 Create and ACL the ProGet credentials folder
-
-Repeat Step 9.4.1 substituting `SvcProGet`:
-
-```powershell
-$serviceAccount = 'SvcProGet'
-$credentialDirectory = "C:\ProgramData\ATAP\BitwardenCredentials\$serviceAccount"
-
-New-Item -ItemType Directory -Path $credentialDirectory -Force | Out-Null
-
-$acl = Get-Acl $credentialDirectory
-$acl.SetAccessRuleProtection($true, $false)
-$acl.Access | ForEach-Object { [void]$acl.RemoveAccessRule($_) }
-
-$inheritFlags = [System.Security.AccessControl.InheritanceFlags]'ContainerInherit,ObjectInherit'
-$propFlags    = [System.Security.AccessControl.PropagationFlags]::None
-$allowType    = [System.Security.AccessControl.AccessControlType]::Allow
-$fullCtl      = [System.Security.AccessControl.FileSystemRights]::FullControl
-
-$rules = @(
-  [System.Security.AccessControl.FileSystemAccessRule]::new($serviceAccount,  $fullCtl, $inheritFlags, $propFlags, $allowType),
-  [System.Security.AccessControl.FileSystemAccessRule]::new('SYSTEM',         $fullCtl, $inheritFlags, $propFlags, $allowType),
-  [System.Security.AccessControl.FileSystemAccessRule]::new('Administrators', $fullCtl, $inheritFlags, $propFlags, $allowType)
-)
-
-foreach ($rule in $rules) {
-  $acl.AddAccessRule($rule)
-}
-
-Set-Acl -LiteralPath $credentialDirectory -AclObject $acl
-```
-
-#### 9.4.5 Create the ProGet DPAPI credential files
-
-Same pattern as 9.4.2 — launch a `pwsh` window as `SvcProGet` and invoke
-[`Update-ServiceAccountBWCredentialFile.ps1`](../src/ATAP.Utilities.BuildTooling.PowerShell/public/Update-ServiceAccountBWCredentialFile.ps1)
-inside that shell.
-
-Run **from the elevated administrative session**:
-
-```powershell
-$serviceAccount = 'SvcProGet'
-$credentialDirectory = "C:\ProgramData\ATAP\BitwardenCredentials\$serviceAccount"
-
-$candidateRoots = @(
-  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items',
-  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
-)
-$repoRoot = $candidateRoots | Where-Object {
-  Test-Path -LiteralPath (Join-Path $_ 'src\ATAP.Utilities.BuildTooling.PowerShell\public\Update-ServiceAccountBWCredentialFile.ps1')
-} | Select-Object -First 1
-if (-not $repoRoot) {
-  throw 'Update-ServiceAccountBWCredentialFile.ps1 not found in any known repository root.'
-}
-$updateScript = Join-Path $repoRoot 'src\ATAP.Utilities.BuildTooling.PowerShell\public\Update-ServiceAccountBWCredentialFile.ps1'
-
-$serviceCredential = Get-Credential -UserName ".\$serviceAccount" `
-  -Message "Enter the Windows password for $serviceAccount"
-
-# Same temp-script + splat pattern as 9.4.2.
-$provScript = Join-Path $credentialDirectory ".provision-$serviceAccount-$(Get-Random).ps1"
-
-$scriptBody = @'
-$env:TEMP = '__CREDDIR__'
-$env:TMP  = '__CREDDIR__'
-
-Write-Host '---- Spawned-window security context ----'
-Write-Host ('Windows identity : ' + [System.Security.Principal.WindowsIdentity]::GetCurrent().Name)
-Write-Host ('whoami output    : ' + (whoami))
-Write-Host ('Expected         : *\__SERVICE__')
-Write-Host '-----------------------------------------'
-
-. '__UPDATE__'
-
-$bwUser   = Read-Host 'Bitwarden username/email bound to __SERVICE__'
-$bwLogin  = Read-Host 'Bitwarden login password' -AsSecureString
-$bwUnlock = Read-Host 'Bitwarden unlock/master password' -AsSecureString
-
-$params = @{
-    ServiceAccount          = '__SERVICE__'
-    CredentialDirectory     = '__CREDDIR__'
-    BitwardenUserName       = $bwUser
-    BitWardenLoginPassword  = $bwLogin
-    BitWardenUnlockPassword = $bwUnlock
-    NoRefresh               = $true
-}
-Update-ServiceAccountBWCredentialFile @params
-
-Write-Host ''
-Write-Host 'Provisioning complete. Type "exit" to close this window.'
-
-Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue
-'@
-
-$scriptBody = $scriptBody.Replace('__CREDDIR__', $credentialDirectory)
-$scriptBody = $scriptBody.Replace('__UPDATE__',  $updateScript)
-$scriptBody = $scriptBody.Replace('__SERVICE__', $serviceAccount)
-
-Set-Content -LiteralPath $provScript -Value $scriptBody -Encoding utf8
-
-Start-Process pwsh `
-  -Credential $serviceCredential `
-  -WorkingDirectory $credentialDirectory `
-  -ArgumentList '-NoProfile', '-NoExit', '-File', $provScript
-```
-
-The header in the spawned window must show `Windows identity : UTAT022\SvcProGet`.
-If it shows your interactive user, fall back to PsExec or a one-shot scheduled task
-as described under 9.4.2.
-
-Answer the three prompts in the new window, review the rotation summary, then close
-the window with `exit`. The `-NoRefresh`, `-NoProfile`, and TEMP-reset rationales from
-9.4.2 apply here as well.
-
-#### 9.4.6 Validate the ProGet credential files
-
-```powershell
-$credentialDirectory = 'C:\ProgramData\ATAP\BitwardenCredentials\SvcProGet'
-Get-ChildItem -LiteralPath $credentialDirectory -Filter '*.xml' |
-  Select-Object Name, Length, LastWriteTime
-```
-
-#### 9.4.6.5 Grant `SeBatchLogonRight` to the service accounts
-
-The scheduled tasks registered in 9.4.7 and 9.4.8 run with `LogonType=Password`,
-which under the hood uses `LOGON32_LOGON_BATCH`. Windows requires the target
-account to hold the "Log on as a batch job" user right (`SeBatchLogonRight`),
-otherwise Task Scheduler accepts `Register-ScheduledTask` silently but refuses
-to launch the task: `LastTaskResult` stays at `267011` (`SCHED_S_TASK_HAS_NOT_RUN`)
-and no event is written to the script's event source or PSFramework log file.
-
-Unlike `schtasks.exe`, the PowerShell `Register-ScheduledTask` cmdlet does **not**
-grant `SeBatchLogonRight` automatically when `-Password` is supplied. Grant it
-explicitly via `secedit` from the elevated administrative session, once per
-host, before running 9.4.7:
-
-```powershell
-$sids = @(
-  (Get-LocalUser -Name 'SvcBuildmaster').SID.Value,
-  (Get-LocalUser -Name 'SvcProGet').SID.Value
-)
-
-# Read the current entry so we append rather than replace
-$tmp = "$env:TEMP\userrights-export-$(Get-Random).inf"
-secedit /export /areas USER_RIGHTS /cfg $tmp | Out-Null
-$currentLine = (Select-String -Path $tmp -Pattern '^SeBatchLogonRight\s*=').Line
-Remove-Item $tmp -ErrorAction SilentlyContinue
-
-# Parse the existing entries, add ours (deduplicated), rebuild the entry
-$existing = ($currentLine -replace '^SeBatchLogonRight\s*=\s*', '') -split ','
-$combined = ($existing + ($sids | ForEach-Object { "*$_" })) |
-  ForEach-Object { $_.Trim() } |
-  Where-Object { $_ } |
-  Select-Object -Unique
-$newLine = "SeBatchLogonRight = " + ($combined -join ',')
-
-# Write a minimal INF and apply it (USER_RIGHTS area only)
-$applyInf = "$env:TEMP\grant-batch-$(Get-Random).inf"
-$applyDb  = "$env:TEMP\grant-batch-$(Get-Random).sdb"
-@"
-[Unicode]
-Unicode=yes
-[Version]
-signature="`$CHICAGO`$"
-Revision=1
-[Privilege Rights]
-$newLine
-"@ | Set-Content -LiteralPath $applyInf -Encoding Unicode
-
-secedit /configure /db $applyDb /cfg $applyInf /areas USER_RIGHTS /quiet
-
-Remove-Item $applyInf, $applyDb -ErrorAction SilentlyContinue
-```
-
-Verify the right landed. `secedit` resolves the SIDs of local accounts back to
-their SAM names on import, so the entry shows the accounts by name rather than
-SID — both forms are equivalent:
-
-```powershell
-$tmp = "$env:TEMP\userrights-verify-$(Get-Random).inf"
-secedit /export /areas USER_RIGHTS /cfg $tmp | Out-Null
-$line = (Select-String -Path $tmp -Pattern '^SeBatchLogonRight\s*=').Line
-Remove-Item $tmp -ErrorAction SilentlyContinue
-Write-Host $line
-foreach ($svc in @('SvcBuildmaster', 'SvcProGet')) {
-  $sid = (Get-LocalUser -Name $svc).SID.Value
-  $has = ($line -match [regex]::Escape($svc)) -or ($line -match [regex]::Escape($sid))
-  Write-Host "$svc has SeBatchLogonRight: $has"
-}
-```
-
-Expected — the printed line contains `SvcBuildmaster` and `SvcProGet` (or their
-SIDs), and both verification lines say `True`.
-
-> **Why this is not handled by `Register-ScheduledTask`:** the PowerShell
-> ScheduledTasks module uses the Task Scheduler 2.0 COM API, which does not
-> touch LSA user-rights policy. Only `schtasks.exe` (and its legacy
-> `at.exe` predecessor) grants `SeBatchLogonRight` as a side effect. For a
-> reproducible runbook we grant the right explicitly with `secedit` so the
-> step does not depend on which registration tool happens to be in use.
-
-#### 9.4.6.6 Install the service-account PowerShell profile
-
-`ProfileForServiceAccountUsers.ps1` is the PowerShell `CurrentUserAllHosts`
-profile that interactive service-account sessions load. It dot-sources the
-machine-wide `global_EnvironmentVariables.ps1` and then calls
-`Set-EnvironmentVariablesProcess`, with a service-account-specific exclusion
-list that removes `OPENSSL_CONF`, `OPENSSL_HOME`, and `RANDFILE` from the
-`$global:EnvVars` hash before any environment variable is written. These three
-keys resolve to paths under the operator's personal Dropbox folder; service
-accounts have no read access there, and leaving `OPENSSL_CONF` set causes the
-Bitwarden CLI (`bw.exe`) to abort during TLS init.
-
-> **Scheduled tasks vs interactive sessions.** The 9.4.7 / 9.4.8 tasks run
-> `pwsh.exe -NoProfile -File …`, so the profile installed here is **not**
-> evaluated when the task fires. The two Bitwarden helper scripts also clear
-> these OpenSSL vars defensively at the top of `PROCESS{}` as a belt-and-
-> suspenders measure. The profile is still required because (a) any
-> interactive `Start-Process pwsh -Credential` window opened as a service
-> account during diagnostics, smoke-testing, or future maintenance gets a
-> clean environment, and (b) it documents the contract that service-account
-> sessions must not inherit operator-Dropbox paths.
-
-Run this from an elevated administrative session. BuildTooling copies the
-selected stable or sprint ATAP.IAC payload; it does not create a profile
-symlink or repository dot-source wrapper:
-
-```powershell
-$iacRoot = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC'
-$utilitiesRoot = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
-foreach ($svcAccount in @('SvcBuildMaster', 'SvcProGet', 'SvcSQLServer', 'SvcSeq', 'SvcParityAudit')) {
-  Set-UserScopeProfile -AccountName $svcAccount -AccountClass ServiceAccount `
-    -ATAPIACRoot $iacRoot -ATAPUtilitiesRoot $utilitiesRoot -Confirm:$false
-}
-```
-
-Verification — each deployed profile is a real file whose hash matches the
-selected IAC payload:
-
-```powershell
-$source = Join-Path $iacRoot 'Windows\ProfileTemplates\ProfileForServiceAccountUsers.ps1'
-foreach ($svcAccount in @('SvcBuildMaster', 'SvcProGet', 'SvcSQLServer', 'SvcSeq', 'SvcParityAudit')) {
-  $profilePath = "C:\Users\$svcAccount\Documents\PowerShell\profile.ps1"
-  [PSCustomObject]@{
-    Account = $svcAccount
-    IsRealFile = -not (Get-Item -LiteralPath $profilePath -Force).LinkType
-    HashMatches = (Get-FileHash $profilePath).Hash -eq (Get-FileHash $source).Hash
-  }
-}
-```
-
-Secret policy: `SvcBuildMaster`, `SvcProGet`, and `SvcSQLServer` require
-non-interactive secret access. `SvcSeq` and `SvcParityAudit` do not.
-
-#### 9.4.7 Register the per-service-account startup task
-
-The startup task runs once at host boot under each service account, decrypts the DPAPI
-credential files, and writes `BW_SESSION` into that account's User-scope environment so
-the service inherits it on next start.
-
-```powershell
-# Resolve the init script using the same candidate-roots fallback as 9.4.2 / 9.4.5
-# so this works both during a sprint (script lives only in the sprint worktree)
-# and after the sprint merges into stable. The registered task invokes the script
-# by absolute path with -NoProfile, so no module import is needed here.
-$candidateRoots = @(
-  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items',
-  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
-)
-$initRelative = 'src\ATAP.Utilities.BuildTooling.PowerShell\public\Initialize-ServiceAccountBitwardenSession.ps1'
-$repoRoot = $candidateRoots | Where-Object {
-  Test-Path -LiteralPath (Join-Path $_ $initRelative)
-} | Select-Object -First 1
-if (-not $repoRoot) {
-  throw "Initialize-ServiceAccountBitwardenSession.ps1 not found in any known repository root."
-}
-$initScript = Join-Path $repoRoot $initRelative
-
-foreach ($svcAccount in @('SvcBuildmaster', 'SvcProGet')) {
-  # Use the fully qualified COMPUTER\account form. Register-ScheduledTask's
-  # LookupAccountName call does not reliably resolve the '.\' prefix for local
-  # accounts; passing $env:COMPUTERNAME\<account> works on all Windows versions.
-  $accountUpn = "$env:COMPUTERNAME\$svcAccount"
-  $credentialDirectory = "C:\ProgramData\ATAP\BitwardenCredentials\$svcAccount"
-
-  $svcPassword = Read-Host "Windows password for $svcAccount" -AsSecureString
-
-  $action = New-ScheduledTaskAction -Execute 'pwsh.exe' `
-    -Argument "-NoProfile -File `"$initScript`" -CredentialDirectory `"$credentialDirectory`""
-  $trigger = New-ScheduledTaskTrigger -AtStartup
-  $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
-
-  # -User + -Password belongs to a different parameter set than -Principal in
-  # Register-ScheduledTask. Supplying -Password makes LogonType=Password and
-  # the default RunLevel=Limited is what we want for these service tasks.
-  Register-ScheduledTask `
-    -TaskName "ATAP-BWSession-Init-$svcAccount" `
-    -Action $action `
-    -Trigger $trigger `
-    -Settings $settings `
-    -User $accountUpn `
-    -Password ([Runtime.InteropServices.Marshal]::PtrToStringAuto(
-      [Runtime.InteropServices.Marshal]::SecureStringToBSTR($svcPassword)
-    )) `
-    -Force | Out-Null
-}
-```
-
-#### 9.4.8 Register the per-service-account refresh task
-
-The refresh task runs on a recurring trigger and re-unlocks the vault before the session
-expires.
-
-```powershell
-# Resolve the refresh script using the same candidate-roots fallback as 9.4.7.
-# The registered task invokes the script by absolute path with -NoProfile, so
-# no module import is needed here.
-$candidateRoots = @(
-  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items',
-  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
-)
-$refreshRelative = 'src\ATAP.Utilities.BuildTooling.PowerShell\public\Refresh-BWSession.ps1'
-$repoRoot = $candidateRoots | Where-Object {
-  Test-Path -LiteralPath (Join-Path $_ $refreshRelative)
-} | Select-Object -First 1
-if (-not $repoRoot) {
-  throw "Refresh-BWSession.ps1 not found in any known repository root."
-}
-$refreshScript = Join-Path $repoRoot $refreshRelative
-
-foreach ($svcAccount in @('SvcBuildmaster', 'SvcProGet')) {
-  # See 9.4.7 for the rationale on using $env:COMPUTERNAME\<account> instead of .\<account>.
-  $accountUpn = "$env:COMPUTERNAME\$svcAccount"
-  $credentialDirectory = "C:\ProgramData\ATAP\BitwardenCredentials\$svcAccount"
-
-  $svcPassword = Read-Host "Windows password for $svcAccount" -AsSecureString
-
-  $action = New-ScheduledTaskAction -Execute 'pwsh.exe' `
-    -Argument "-NoProfile -File `"$refreshScript`" -CredentialDirectory `"$credentialDirectory`""
-  $trigger = New-ScheduledTaskTrigger -Once -At ((Get-Date).AddMinutes(5)) `
-    -RepetitionInterval (New-TimeSpan -Hours 1) `
-    -RepetitionDuration ([TimeSpan]::FromDays(365))
-  $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 3)
-
-  # See 9.4.7 for the rationale on -User/-Password vs -Principal.
-  Register-ScheduledTask `
-    -TaskName "ATAP-BWSession-Refresh-$svcAccount" `
-    -Action $action `
-    -Trigger $trigger `
-    -Settings $settings `
-    -User $accountUpn `
-    -Password ([Runtime.InteropServices.Marshal]::PtrToStringAuto(
-      [Runtime.InteropServices.Marshal]::SecureStringToBSTR($svcPassword)
-    )) `
-    -Force | Out-Null
-}
-```
-
-#### 9.4.9 Smoke-test secret retrieval as each service account
-
-For each service account, launch a `Start-Process pwsh -Credential` window and verify:
-
-```powershell
-[System.Environment]::GetEnvironmentVariable('BW_SESSION', 'User') |
-  ForEach-Object { "BW_SESSION length: $($_.Length)" }
-Get-SecretATAP -SecretName "$env:COMPUTERNAME-SvcBuildmaster-Production" -SecretField 'username'
-```
-
-If the second call returns the expected username string, the manual provisioning for
-that service account is complete.
-
-> **Cross-reference:** Re-keying these credential files later (Bitwarden master password
-> change, Windows password rotation, host migration) is handled by
-> `Update-ServiceAccountBWCredentialFile`. See
-> [ServiceAccountsAndBitwarden.md](ServiceAccountsAndBitwarden.md#rotation-and-refresh-strategy)
-> for the rotation runbook.
-
-> **Sprint 0012 status — rotation deferred:** The protected `CommonCIForBitwardenReadOnly`
-> DPAPI files have been created and validated for `whertzing` and for `SvcBuildMaster`,
-> `SvcProGet`, `SvcSeq`, `SvcSQLServer`, and `SvcParityAudit` on both `utat01` and `utat022`.
-> This is a validated provisioning baseline, not authorization to rotate a token or password.
-> The remaining bootstrap automation and all password/access-token rotation implementation are
-> deferred to next-sprint planning; use the carry-forward plan in the `_Planning` repository
-> before attempting a rotation.
-#### 9.4.10 Provision Secrets Manager (ws) access tokens for Windows accounts
-
-Under the current architecture, runtime/project secrets live in **Bitwarden Secrets
-Manager** and are read with a BWS **access token** - there is no `bw login`, no `unlock`,
-no `BW_SESSION`, and no startup/refresh task. The DPAPI-protected access token is the
-entire runtime credential.
-
-This applies to both service accounts and interactive users. The complete
-service-account set requiring both a managed PowerShell profile and project-scoped
-machine-account token is `SvcBuildMaster`, `SvcProGet`, `SvcSeq`, `SvcSQLServer`,
-and `SvcParityAudit`. Interactive users can be given their own project-scoped BWS
-token so they can call the same `Get-SecretATAP` Secrets Manager path without
-duplicating project secrets into Password Manager. User-only secrets remain in
-Password Manager and continue to use the login-time `BW_SESSION` pattern.
-
-Preconditions:
-
-1. The Bitwarden org, projects, machine accounts, and **access tokens** exist
-   ([NewOrganizationSetup.md](NewOrganizationSetup.md) Phase 2).
-2. Any service accounts being provisioned exist on this host.
-3. You are elevated for the credential-folder ACL step.
-4. You have the approved BWS access token authority for the intended project; do not record or persist its value.
-
-Host mapping:
-
-| Windows identity | ReadOnly access-token authority | Intended project | Required DPAPI token file | ReadWrite status |
-| ---------------- | ------------------------------- | ---------------- | ------------------------- | ---------------- |
-| `SvcBuildMaster` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcBuildMaster\<HOST>_SvcBuildMaster_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
-| `SvcProGet` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcProGet\<HOST>_SvcProGet_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
-| `SvcSeq` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcSeq\<HOST>_SvcSeq_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
-| `SvcSQLServer` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcSQLServer\<HOST>_SvcSQLServer_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
-| `SvcParityAudit` | `CommonCIForBitwardenReadOnly` | `CI-Shared` | `…\SvcParityAudit\<HOST>_SvcParityAudit_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Not approved by default |
-
-Interactive-user mapping:
-
-| Windows interactive user | BWS access-token scope | Required DPAPI token file | Optional DPAPI token file |
-| ------------------------ | ---------------------- | ------------------------- | ------------------------- |
-| `whertzing` | `CommonCIForBitwardenReadOnly` for `CI-Shared` | `…\whertzing\<HOST>_whertzing_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml` | Approved only for `utat022\whertzing`; otherwise not approved by default |
-
-**ReadOnly rotation distribution rule:** whenever `CommonCIForBitwardenReadOnly` is
-rotated, update the ReadOnly DPAPI file locally on both `utat01` and `utat022` for
-`SvcBuildMaster`, `SvcProGet`, `SvcSeq`, `SvcSQLServer`, and `SvcParityAudit`. Also refresh
-all active developers listed in `C:\Dropbox\whertzing\GitHub\Overview.Sprint.NNNN.code-workspace` on
-their declared host; Sprint 0012 currently lists `whertzing` on `utat022`. Run the write as
-each owning identity; never copy a DPAPI file between identities or hosts.
-
-##### 9.4.10.1 Confirm the `bws` CLI is installed machine-wide
-
-`bws` is installed machine-wide in **Step 4.6**, so `SvcBuildMaster`, `SvcProGet`,
-`SvcSeq`, `SvcSQLServer`, `SvcParityAudit`, and every interactive account resolve the
-same binary from the system `PATH`. Confirm it is visible from a `-NoProfile` shell
-(the context the service accounts actually run in) and continue:
-
-```powershell
-pwsh -NoProfile -Command "(Get-Command bws -ErrorAction SilentlyContinue).Source"
-bws --version
-```
-
-If `bws` does not resolve, complete Step 4.6 (machine-wide `bws` install) before
-continuing.
-
-##### 9.4.10.2 Create and ACL the BWS credential directory
-
-Create the protected directory before writing the DPAPI token file. This can be run from
-an elevated administrative shell. For the current interactive user:
-
-```powershell
-Import-Module .\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1 -Force
-Initialize-BWSCredentialDirectory
-```
-
-For a service account, pass the account name:
-
-```powershell
-Import-Module .\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1 -Force
-Initialize-BWSCredentialDirectory -AccountName '.\SvcBuildMaster'
-```
-
-The helper creates `C:\ProgramData\ATAP\BitwardenCredentials\<SamAccountName>` and grants
-FullControl only to the owning account, `SYSTEM`, and local `Administrators`.
-
-##### 9.4.10.3 DPAPI-store each access token (run AS the owning account)
-
-DPAPI binds to the running user, so the token file must be written by a process running as
-the account that will later read it. For an interactive user, run the command from that
-user's own shell. For a service account, open a shell as that account and store its token.
-The helper cmdlet `Initialize-BWSAccessToken` encapsulates the DPAPI write:
-
-```powershell
-$token = Read-Host 'BWS access token for CommonCIForBitwardenReadOnly' -AsSecureString
-Initialize-BWSAccessToken -TokenPurpose ReadOnly -AccessToken $token
-```
-
-Only trusted maintainer or provisioning identities should also store:
-
-```powershell
-$token = Read-Host 'BWS access token for CommonCIForBitwardenReadWrite' -AsSecureString
-Initialize-BWSAccessToken -TokenPurpose ReadWrite -AccessToken $token
-```
-
-The token is stored in a PSCredential whose UserName is the literal
-`BWS_ACCESS_TOKEN`; the password is the BWS access token. The canonical helper names are
-`Initialize-BWSAccessToken` and `Get-BWSAccessToken`. The older service-account names
-remain module aliases for compatibility. DPAPI binds these files to the current Windows
-identity and host, so they cannot be copied between users or hosts and still decrypt.
-
-##### 9.4.10.4 Validate (as the owning account)
-
-Decrypt the token in memory and confirm the BWS token can read only its intended projects:
-
-```powershell
-$cred = Get-BWSAccessToken
-$env:BWS_ACCESS_TOKEN = $cred.GetNetworkCredential().Password
-try {
-  bws secret list --output json | ConvertFrom-Json | Select-Object key, projectId
-} finally {
-  Remove-Item Env:BWS_ACCESS_TOKEN -ErrorAction SilentlyContinue
-}
-```
-
-Expected — the listed secret `key`s match the projects granted to that BWS token.
-Runtime secret reads go through `Get-SecretATAP` with the
-`BitwardenSecretsManager` provider (set `SecretStoreType='BitwardenSecretsManager'` in
-`$global:settings`), which resolves the token from this DPAPI file.
-
-> **Rotation:** regenerating the BWS access token in the web vault invalidates the
-> old one; re-run 9.4.10.3 on every host/account that uses that token.
-
-### 9.5 Bootstrap git `safe.directory` for the BuildMaster service account
+Record only account, host, project, purpose, module version/path, operation ID, redacted
+status, and the DPAPI file path/hash. Do not record the credential value, BWS output, CMS
+contents, task XML, runtime environment, transcript, cache, or history. Repeat independently
+for all three approved accounts and both hosts; DPAPI files and envelopes are never copied
+between accounts or hosts.
+
+### 9.5 Bootstrap exact Git trust for the BuildMaster service account
 
 When a BuildMaster build agent runs as the BuildMaster service account
 (`SvcBuildmaster` on `utat022`) against a worktree under
@@ -1748,12 +1575,15 @@ surfaces first during `dotnet restore` because of the
 `Directory.Build.props:36`, which triggers an NBGV evaluation that needs
 git.
 
-Run **once**, as `SvcBuildmaster` itself (not as your interactive login),
-in an elevated `pwsh` session opened with that account's credentials:
+Run as `SvcBuildmaster` itself, not as the interactive developer. Add only the resolved
+repository and worktree paths that this identity is authorized to build. Task 13.5 owns the
+idempotent ownership/trust automation; until that automation is deployed, review each exact
+path before adding it.
 
 ```powershell
-# Elevated pwsh, running as SvcBuildmaster
-git config --global --add safe.directory C:/Dropbox/whertzing/GitHub
+# Elevated pwsh running as SvcBuildmaster; repeat for each reviewed exact path.
+$authorizedWorktree = 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities'
+git config --global --add safe.directory $authorizedWorktree
 ```
 
 Verify:
@@ -1768,13 +1598,10 @@ Critical notes:
    lives in the running user's `~/.gitconfig`. Running it from your
    developer account writes to the wrong user's gitconfig and the dubious
    ownership error persists.
-2. **The trailing path is the parent** that contains every repo worktree
-   (`ATAP.Utilities`, `AceCommander`, `ATAP.IAC`, `SharedVSCode`,
-   `_Planning`, and all `*-wt-*-Sprint-*-work-items` siblings). Using the
-   parent path lets one entry cover every current and future worktree
-   under that root.
-3. **Wildcards are not supported.** If a future repo root moves outside
-   `C:\Dropbox\whertzing\GitHub\`, add a second `safe.directory` entry.
+2. **Never trust the parent GitHub directory.** Parent-wide trust silently authorizes
+   current and future repositories that were not reviewed.
+3. **Wildcards are not supported or acceptable here.** Add each authorized repository or
+   worktree as an exact canonical path, and remove obsolete entries during return cleanup.
 
 A common way to obtain a `SvcBuildmaster` shell from an admin login:
 
@@ -1785,12 +1612,12 @@ $bmCred = New-Object System.Management.Automation.PSCredential(
   (ConvertTo-SecureString $bmPassword -AsPlainText -Force)
 )
 Start-Process pwsh -Credential $bmCred -ArgumentList '-NoExit', '-Command',
-  'git config --global --add safe.directory C:/Dropbox/whertzing/GitHub; git config --global --get-all safe.directory'
+  'git config --global --add safe.directory C:/Dropbox/whertzing/GitHub/ATAP.Utilities; git config --global --get-all safe.directory'
 ```
 
-Acceptance: a fresh BuildMaster build under `SvcBuildmaster` against any
-worktree under `C:\Dropbox\whertzing\GitHub\` completes `dotnet restore`
-and `Get-BuildContext` without a `dubious ownership` error.
+Acceptance: the exact authorized paths appear in `safe.directory`, no parent-wide entry is
+present, and a fresh BuildMaster build under `SvcBuildmaster` completes `dotnet restore` and
+`Get-BuildContext` without a `dubious ownership` error.
 
 ### 9.6 Keep the config files under source control
 
@@ -1826,7 +1653,7 @@ worktree.
 
 ```powershell
 # Dot-source the function and invoke it
-. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items\src\_AdminRequiresHoldingPen\ATAP.Utilities.PowerShell\public\Install-ATAPModulesFromProGet.ps1'
+. 'C:\Dropbox\whertzing\GitHub\<active-ATAP.Utilities-worktree>\src\_AdminRequiresHoldingPen\ATAP.Utilities.PowerShell\public\Install-ATAPModulesFromProGet.ps1'
 
 Install-ATAPModulesFromProGet
 ```
@@ -2031,6 +1858,226 @@ compatibility checks and these live findings:
   `Save-PSResource` returns 404 against its `FindPackagesById` request. Treat that as a
   promoted-test-runner/feed-protocol defect, not proof that the package is absent.
 
+### 9.10a Verify Inedo service reachability by hostname (IPv4 and IPv6)
+
+Run this on every host that runs or calls BuildMaster/ProGet, including `utat022`.
+
+BuildMaster and ProGet already bind **all** IPv4 and IPv6 addresses — their
+`Urls="http://*:PORT/"` configuration is correct and must not be changed. The failure this
+step catches is a *host networking* problem: if the machine advertises global IPv6
+addresses that are not actually routable, clients resolving the hostname try those first
+and hang, producing 30-second timeouts that look like a broken service.
+
+```powershell
+# 1. Confirm BOTH families are listening. -p tcp prints ONLY the IPv4 table, so a service
+#    can look "IPv4-only" when it is not. Always check tcpv6 as well.
+netstat -ano -p tcp   | Select-String ':50017|:50000'
+netstat -ano -p tcpv6 | Select-String ':50017|:50000'   # expect [::]:50017 and [::]:50000
+
+# 2. Connect to every address the hostname resolves to. Any TIMEOUT row is the defect.
+$addrs = [System.Net.Dns]::GetHostAddresses($env:COMPUTERNAME)
+foreach ($a in $addrs) {
+  $ip = $a.IPAddressToString
+  $c  = [System.Net.Sockets.TcpClient]::new()
+  try {
+    $ok = $c.ConnectAsync($ip, 50017).Wait(4000)
+    '{0,-46} {1}' -f $ip, $(if ($ok) { 'CONNECT' } else { 'TIMEOUT' })
+  } catch { '{0,-46} FAILED' -f $ip } finally { $c.Dispose() }
+}
+
+# 3. If a global IPv6 address timed out, test whether it works at all:
+ping -6 -n 2 <that-address>        # "General failure" => the address is dead, not the port
+```
+
+If global IPv6 addresses are dead, fix the host networking — do **not** edit
+`BuildMaster.config`, `ProGet.config`, or `ServicePlacementMap`:
+
+- Preferred: fix router/ISP DHCPv6 so the advertised prefix is routable, then re-test.
+- If IPv6 is not used on this network, disable IPv6 on the adapter, or prefer IPv4 in
+  address selection (elevated):
+
+  ```powershell
+  netsh interface ipv6 set prefixpolicy ::ffff:0:0/96 60 4
+  ```
+
+- Interim: use `localhost` / `127.0.0.1` for host-local calls, and pass
+  `-BuildMasterBaseUrl 'http://localhost:50017/'` to the release cmdlets.
+
+> **Do not change `ServicePlacementMap['BuildMaster']` to `localhost`.** The BuildMaster
+> base URL is derived from it, and so is the host-suffixed admin SecretName
+> (`BuildMaster.Admin.API.Key.<service-host>`). Repointing the map silently rewrites the
+> SecretName to one that does not exist in Bitwarden, turning a slow timeout into a hard
+> credential failure.
+
+Record the outcome with `Add-ParityChangeEntry` so the peer host shows a declared change
+rather than undeclared drift.
+
+### 9.11 Junction AI agent memory to the Dropbox store
+
+AI agent memory for the ATAP repositories is stored under Dropbox, outside every git
+repository, so it survives sprint end and is available on every host:
+
+```text
+C:\Dropbox\whertzing\ATAP\AIAgentMemory\<RepoName>\
+```
+
+Claude Code does not read that path directly. It resolves memory under
+`%USERPROFILE%\.claude\projects\<slug>\memory`, where `<slug>` is the repository path with
+the drive letter lowercased and `:` `\` `_` `.` replaced by `-`. Each host therefore needs
+**NTFS junctions** from the expected slug paths to the Dropbox store. Junctions are
+host-local and do not sync, so this step is required on every new computer even though the
+memory content arrives via Dropbox.
+
+Two junctions are needed per repository, because Claude Code and the checkpoint tooling
+resolve different slugs:
+
+- **Main-repo slug** — Claude Code derives it from `git rev-parse --git-common-dir`, so for
+  a worktree it resolves to the *main* repository. This is where Claude Code reads and
+  writes memory, which is why memory is shared across all worktrees of a repo.
+- **Sprint-worktree slug** — `Save-SprintWorkSession` derives its path from the transcript
+  slug, which *is* the worktree. This is where `/checkpoint` looks for memory to archive.
+
+```powershell
+# Directory junctions do NOT require elevation.
+$projects = Join-Path $env:USERPROFILE '.claude\projects'
+$target   = 'C:\Dropbox\whertzing\ATAP\AIAgentMemory\ATAP.Utilities'
+New-Item -ItemType Directory -Path $target -Force | Out-Null
+
+# Repeat for each repo and active sprint worktree. Replace the symbolic
+# worktree path with the current sprint path; never pin a sprint number here.
+$repositoryPaths = @(
+  'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
+  'C:\Dropbox\whertzing\GitHub\<active-ATAP.Utilities-worktree>'
+)
+$slugs = $repositoryPaths | ForEach-Object {
+  $_ -replace '[:\\_.]', '-'
+}
+
+foreach ($slug in $slugs) {
+  $projDir = Join-Path $projects $slug
+  New-Item -ItemType Directory -Path $projDir -Force | Out-Null
+  $mem = Join-Path $projDir 'memory'
+  if (Test-Path $mem) {
+    if ((Get-Item $mem).LinkType) { Remove-Item -LiteralPath $mem -Force }
+    else { throw "Refusing to clobber real directory: $mem" }
+  }
+  New-Item -ItemType Junction -Path $mem -Target $target | Out-Null
+}
+
+# Verify: both must report LinkType 'Junction' and the same target.
+foreach ($slug in $slugs) {
+  Get-Item (Join-Path $projects "$slug\memory") | Select-Object FullName, LinkType, Target
+}
+```
+
+Verify end to end by running `/checkpoint` and confirming the roster entry reports
+`MemorySnapshotCreated: true` with a non-zero `MemoryFileCount`.
+
+Two things to know:
+
+- **The worktree-slug junction is sprint-scoped**, but from SprintLifecycle `0.1.10`
+  onward it is created automatically: `Set-SprintBoundaryContext -Boundary Start`
+  provisions it for every worktree, and both `New-SprintStage1` and `New-SprintStage2`
+  delegate to that function, so `_Planning` and every downstream repo are covered. The
+  manual commands above are for **first-time host setup** and for repairing a worktree
+  created before that version. If `DropboxBasePathConfigRootKey` is unresolvable the
+  automatic step skips rather than guessing a path, and records the reason in the
+  per-worktree result as `MemoryJunctionError`; a memory-junction failure never aborts
+  sprint provisioning. Check `MemoryJunctionCreated` and `MemoryStorePath` on the
+  `Set-SprintBoundaryContext` result to confirm.
+- A missing junction fails silently — `Save-SprintWorkSession` reports
+  `MemorySnapshotCreated: false` with reason "Memory directory not found" and still exits
+  successfully, so checkpoints look healthy while archiving zero memory files.
+- **Dropbox sync can produce conflicted copies** if two hosts write memory concurrently.
+  An agent would read a `... (conflicted copy).md` file as an additional memory. This is
+  accepted deliberately because the files are small and rarely written, but it is worth
+  checking when memory content looks duplicated. Memory also propagates only as fast as
+  Dropbox syncs, so a memory written on one host is not instantly visible on another.
+
+These junctions are host-local configuration in scope for SystemParityMonitor; journal
+their creation with `Add-ParityChangeEntry` so the peer host records a declared change
+rather than undeclared drift.
+
+## Step 9a: Provision the Elevated Install Broker
+
+Agents and build tooling run unelevated, but an AllUsers module install writes under
+`Program Files` and needs administrator rights. The elevated install broker performs those
+installs on their behalf with no UAC interaction, so agents never issue a blind
+`Start-Process -Verb RunAs` retry loop. Without it, `build-deploy-module` cannot complete
+its final install step.
+
+Prerequisites: the `SvcAnsibleAdmin` account and its Bitwarden secret from Step 5, and the
+ProGet feeds from Step 9.
+
+**Bootstrap order matters.** The broker is what installs modules AllUsers, so it must be
+provisioned *before* the module-install machinery works. Run the provisioning function from
+the **git clone**, not from an installed module:
+
+```powershell
+# ELEVATED pwsh. Adjust the clone path to the worktree you synced in Step 3.
+$proGetModule = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.ProGet.PowerShell'
+Import-Module "$proGetModule\ATAP.Utilities.BuildTooling.ProGet.PowerShell.psd1" -Force -DisableNameChecking
+
+Register-ElevationBrokerTask -Verbose
+```
+
+`Register-ElevationBrokerTask` is idempotent and does all of the following:
+
+- creates `C:\ProgramData\ATAP\ElevationBroker` with its `bin`, `requests`, `results`,
+  `transcripts`, and `work` subfolders;
+- copies the broker payload and the config template out of the module's
+  `Resources\ElevationBroker`, never overwriting an existing `config.json` unless
+  `-ForcePayload` is passed, because that file is the broker's trust anchor;
+- applies a restrictive, non-inherited ACL to `requests\`. The broker **refuses to run**
+  when `Everyone`, `Authenticated Users`, or `Users` can write there, since that would let
+  any local account reach an administrator context;
+- exports any existing task registration before replacing it;
+- registers the `\ATAP\ATAP-ElevatedInstallBroker` scheduled task to run as
+  `SvcAnsibleAdmin` with highest privileges, reading the password through `Get-SecretATAP`.
+
+Then grant the developer account the right to start the task on demand:
+
+```powershell
+Grant-ElevationBrokerStartRights -Verbose
+```
+
+This step is **required**, not optional. The task has no repeating timer: it is started on
+demand the moment a request is staged. Without start rights every request returns
+`broker-unreachable`. The grant confers read + execute only, so the grantee can ask the
+broker to drain its queue but cannot alter what the task runs.
+
+Verify the whole path end to end from a **normal, non-elevated** shell — an elevated shell
+would succeed through the `Administrators` ACE and prove nothing:
+
+```powershell
+$s = New-Object -ComObject Schedule.Service
+$s.Connect()
+$t = $s.GetFolder('\ATAP').GetTask('ATAP-ElevatedInstallBroker')
+$t.Run($null)
+Start-Sleep -Seconds 5
+"result=$($t.LastTaskResult) lastrun=$($t.LastRunTime)"
+```
+
+Expect `result=0` and a current timestamp. Access denied means the grant did not target the
+account that actually runs the build tooling.
+
+Notes and gotchas:
+
+- The task deliberately has **no repeating time trigger**. An earlier one-minute timer fired
+  roughly 4,644 times to service 4 real requests and measurably contributed to CPU
+  saturation. `BootTrigger` remains as the catch-up drain for requests staged while the
+  broker could not run.
+- `MultipleInstancesPolicy` must stay `Queue`. Under `-Once` the broker enumerates the
+  requests folder exactly once, so `IgnoreNew` would silently strand a request staged while
+  another instance was running.
+- The client starts the task through the `Schedule.Service` COM API rather than
+  `Start-ScheduledTask`, because the `ScheduledTasks` module is not present under
+  PowerShell 7 on these hosts.
+
+The broker is host-local configuration in scope for SystemParityMonitor; journal its
+provisioning with `Add-ParityChangeEntry` so the peer host records a declared change rather
+than undeclared drift. See `Runbook-ElevationBroker-PeerHost.md` for the peer-host steps.
+
 ## Step 10: Create Cobian Backup Jobs for the Tooling Databases
 
 Create separate Cobian jobs for `ProGet` and `BuildMaster`. Each Cobian job should call
@@ -2049,10 +2096,13 @@ Operational guidance:
 
 1. Schedule a weekly full backup for each database.
 2. Add nightly differential backups after the first full backup exists.
-3. Point Cobian at the Dropbox-backed backup root so the resulting `.bak` or `.bak.7z`
-   files replicate off-machine.
-4. Verify restore instructions for both databases before the workstation is considered
-   production-ready.
+3. Before extended DPOM, write classified `COPY_ONLY` backups with `CHECKSUM` under
+   `C:\LocalDBs\PRODUCTION\Backup` and run `RESTORE VERIFYONLY`.
+4. Keep backup contents outside Git and Dropbox. Evidence contains metadata such as path
+   identity, size, hash, timestamp, and verification outcome, never database contents.
+5. Never merge or restore ProGet/BuildMaster databases across hosts as workstation state;
+   reconstruct outcomes from Git, packages, and reviewed configuration.
+6. Retention, recovery objectives, monitoring, and rehearsal remain gated by Task 13.60.
 
 ## Phase 3: Validate the Development Environment
 
@@ -2100,6 +2150,10 @@ Minimum checks:
 3. ProGet is reachable.
 4. BuildMaster is reachable.
 
+On a Sprint branch, pass `-p:PackageLifeCycleStage=Sprint` consistently to split and
+combined restore/build/test flows. Preserve the `ATAP5TIER001` guard. Omit the override on
+`main`, where the stable/empty lifecycle label is valid.
+
 Example reachability checks:
 
 ```powershell
@@ -2128,22 +2182,108 @@ server command is installed, checks the repository `.vscode\settings.json` MCP
 server entry, and performs a GitHub API identity/rate-limit check with the token.
 Restart VS Code after setting the token at user scope.
 
+### 11.5 Data API Builder SQL MCP servers
+
+Install Data API Builder (DAB) as a user-global .NET tool and initialize its one
+secret-free shared configuration. The canonical AI adapter starts DAB on demand in
+MCP stdio mode; it does not create a long-lived HTTP listener.
+
+```powershell
+Import-Module ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell
+
+Initialize-DabMcpServer -Version '2.0.9'
+Add-DabMcpEntity -EntityName 'Instantiations' -EntitySource 'ATAPUtilities.Instantiation'
+Test-DabInstallation
+```
+
+The DAB configuration is stored at
+`$env:APPDATA\ATAP\DataApiBuilder\ATAPUtilities\dab-config.json`. It contains only
+the `@env('DAB_ATAPUTILITIES_CONNECTION_STRING')` reference and the approved entity
+allow-list; it never contains a connection string or a `.env` file.
+
+Codex and Claude Code receive five canonical, user-scope MCP registrations:
+`dab-ataputilities-production`, `dab-ataputilities-qa`,
+`dab-ataputilities-integration`, `dab-ataputilities-dev`, and
+`dab-ataputilities-exp`. Each registration launches the same DAB stdio server with an
+explicit tier, so a request cannot silently fall through to a different SQL instance.
+The registrations invoke the dedicated `Mcp/Start-DabMcpServer.ps1` launcher rather
+than importing the full DotnetBuild module: an MCP stdio process must reserve stdout
+for JSON-RPC, while unrelated module-import warnings corrupt the protocol. DAB starts
+Kestrel even in stdio mode, so the registrations also use separate loopback endpoints:
+Dev `5101`, Exp `5102`, Integration `5103`, Production `5104`, and QA `5105`. These
+ports must not be used by the normal DAB host or another MCP registration.
+
+At startup, the dedicated MCP launcher derives the local host's BWS SecretName with
+`Get-DbConnectionStringSecretDescriptor`, resolves it through
+`Get-SecretATAP -SecretStoreType BitwardenSecretsManager`, and assigns the result only
+to the DAB child-process environment. The resolved value must not be displayed,
+persisted, added to agent settings, or written to `.env`. The secret names follow this
+shape:
+
+```text
+dbConnectionString.ATAPUtilities.<current-host>.Production
+dbConnectionString.ATAPUtilities.<current-host>.QA
+dbConnectionString.ATAPUtilities.<current-host>.Integration
+dbConnectionString.ATAPUtilities.<current-host>.Dev.<current-user>
+dbConnectionString.ATAPUtilities.<current-host>.Exp.<current-user>
+```
+
+After the shared MCP catalog is rendered and the agent application is restarted, open
+the MCP status surface and confirm that all five DAB servers appear. Start with the
+Exp server. The DAB configuration grants `mcp-reader:read` only; add an entity only
+after reviewing its columns and least-privilege requirement. DAB's stdio mode requires
+`runtime.mcp.enabled` and keeps protocol messages on stdout; use `--LogLevel Error` as
+the canonical launcher does. See [DAB stdio transport](https://learn.microsoft.com/en-us/azure/data-api-builder/mcp/stdio-transport)
+and [DAB environment substitution](https://learn.microsoft.com/en-us/azure/data-api-builder/concept/config/env-function).
+
+### 11.6 Mobile-host and Class A certification
+
+Before a mobile workstation is considered ready for extended DPOM, record metadata-only
+proof for:
+
+1. BitLocker fully encrypted with protection on; anti-malware current; time synchronized.
+2. Sleep/hibernate, battery-sensitive scheduled tasks, Windows support/EOS, and public-network
+   behavior reviewed.
+3. NordVPN Internet Kill Switch and the trusted-network rule tested before cloud access.
+4. Local SQL and Inedo health, one value-discarding SecretName resolution, representative
+   restore/build/test, GitHub authentication, and Dropbox continuity.
+5. A live off-LAN gate where peer services are unreachable and local Class A work still passes.
+6. A bounded return drill that reconciles parity journals and path/hash-only AI intent,
+   transfers immutable packages by hash, and reconstructs BuildMaster outcomes without copying
+   Inedo databases.
+
+Class B/full-offline secret use is separately limited and is not implied by a Class A pass.
+If a parity-share read encounters Windows double hop, use the documented temporary
+credentialed-PSDrive workaround with a credential resolved by SecretName. Do not weaken
+remoting globally; hardened transport remains deferred to `SC-0242`.
+
 ## Ready State
 
 The new computer is ready for a developer when all of the following are true:
 
-1. The expected stable and sprint worktrees exist and are synchronized.
-2. PowerShell 7 profiles load without manual fixes.
-3. `BW_SESSION`, .ADMIN.API.KEY`, and `BUILDMASTER.ADMIN.API.KEY` are populated
-   at user scope after sign-in.
-4. SQL Server `Production`, `QA`, and `Integration` are running.
-5. The required `Dev...` and `Exp...` instances exist for the active sprint or feature
-   branches.
-6. ProGet and BuildMaster start under their dedicated service accounts and depend on
-   `MSSQL$PRODUCTION`.
-7. Cobian backup jobs exist for both tooling databases.
-8. Stable-branch builds and tests pass.
-9. GitHub MCP token, server, VS Code settings, and API access validation pass.
+1. Dropbox is settled; conflict/reparse and tracked-file integrity checks pass; every Git
+   trust entry is an exact authorized path.
+2. The multi-host overview, machine-local sprint retarget, `.vscode` junction, and concrete AI
+   adapter renders match the current host assignment.
+3. Developer and service-account profiles load from canonical ATAP.IAC templates in the paths
+   PowerShell actually uses; direct and profiled-remoting identity probes pass or carry an
+   explicit deferred exception.
+4. The `SecretName/Get-SecretATAP/bws` automation boundary and separate personal `bw`/`BW_SESSION` boundary are respected. Host settings and
+   callers contain SecretNames only; no raw API-key environment-variable readiness claim is
+   permitted.
+5. The declared Java/package owners and Flyway resolution pass, or the deferred Java decision
+   is recorded without claiming canonicalization.
+6. SQL Server `Devwhertzing`, `Expwhertzing`, `Integration`, `QA`, and `Production` are verified
+   under their distinct data classifications. Required local backups pass checksum and restore
+   verification outside Git/Dropbox.
+7. ProGet answers on `50000` with its package-root, license, feed inventory, ACL, and package
+   proof complete. BuildMaster answers on `50017` with supported application definitions and a
+   full readiness assertion.
+8. Stable-branch builds/tests pass; Sprint-branch flows pass with the lifecycle override.
+9. Mobile security, Class A off-LAN, GitHub/Dropbox continuity, and bounded return evidence pass.
+10. Every acceptance record distinguishes source, deploy, service, and operator state and
+    contains metadata only. Unresolved HITL/deferred gates remain named rather than silently
+    treated as complete.
 
 At that point the workstation can serve as a fully functional developer machine.
 
@@ -2354,12 +2494,12 @@ both keys must point to the **sprint worktree venv**. These settings live in
 | `manim-sideview.defaultManimPath` | Path to the `manim.exe` the Sideview extension invokes |
 | `python.defaultInterpreterPath`   | Python interpreter VS Code uses for the workspace      |
 
-Sprint-start — set to the sprint worktree venv (example sprint `94-sprint-0004-work-items`):
+Sprint-start — set to the sprint worktree venv (example sprint `<active-sprint-branch>`):
 
 ```jsonc
 // In SharedVSCode/UserSettings.jsonc
-"manim-sideview.defaultManimPath": "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities-wt-94-sprint-0004-work-items\\ManimVideoGenerator\\.venv\\Scripts\\manim.exe",
-"python.defaultInterpreterPath": "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities-wt-94-sprint-0004-work-items\\ManimVideoGenerator\\.venv\\Scripts\\python.exe",
+"manim-sideview.defaultManimPath": "C:\\Dropbox\\whertzing\\GitHub\\<active-ATAP.Utilities-worktree>\\ManimVideoGenerator\\.venv\\Scripts\\manim.exe",
+"python.defaultInterpreterPath": "C:\\Dropbox\\whertzing\\GitHub\\<active-ATAP.Utilities-worktree>\\ManimVideoGenerator\\.venv\\Scripts\\python.exe",
 ```
 
 Sprint-end — revert to the main-branch venv after the PR merges and the worktree is removed:

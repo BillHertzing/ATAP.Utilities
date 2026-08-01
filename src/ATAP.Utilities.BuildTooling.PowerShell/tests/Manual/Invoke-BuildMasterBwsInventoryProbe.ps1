@@ -89,7 +89,7 @@ function Get-BwsProbeAccessTokenCredential {
     [string]$CredentialDirectory
   )
 
-  $helperPath = Join-Path $PSScriptRoot '..\..\public\Get-BWSAccessToken.ps1'
+  $helperPath = Join-Path $PSScriptRoot '..\..\..\ATAP.Utilities.BuildTooling.Secrets.PowerShell\public\Get-BWSAccessToken.ps1'
   if (-not (Get-Command -Name 'Get-BWSAccessToken' -CommandType Function -ErrorAction SilentlyContinue)) {
     if (-not (Test-Path -LiteralPath $helperPath -PathType Leaf)) {
       throw "Get-BWSAccessToken helper was not found at '$helperPath'."

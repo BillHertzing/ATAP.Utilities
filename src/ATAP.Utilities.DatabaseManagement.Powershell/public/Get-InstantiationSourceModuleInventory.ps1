@@ -33,6 +33,14 @@ function Get-InstantiationSourceModuleInventory {
     v1/v2 manifestation verification because the initial Sprint 0012 seed also
     includes the ATAP.Utilities.Secrets C# module.
 
+.PARAMETER AsVersionProposal
+    Return a deterministic read-only file-delta and immutable version proposal instead
+    of the legacy SourceModule row stream.
+
+.PARAMETER BaselineInventory
+    Prior proposal or array of file rows containing RelativePath and ContentSha256.
+    Comparisons are exact-case and byte-hash based.
+
 .OUTPUTS
     PSCustomObject rows shaped for ATAPUtilities.SourceModule ingestion.
 
@@ -65,7 +73,14 @@ function Get-InstantiationSourceModuleInventory {
     [string[]]$PlannedPowerShellModuleName = @(),
 
     [Parameter()]
-    [switch]$IncludeCSharp
+    [switch]$IncludeCSharp,
+
+    [Parameter()]
+    [switch]$AsVersionProposal,
+
+    [Parameter()]
+    [AllowNull()]
+    [object]$BaselineInventory
   )
 
   begin {
@@ -104,6 +119,19 @@ function Get-InstantiationSourceModuleInventory {
       $guidBytes[7] = ($guidBytes[7] -band 0x0f) -bor 0x50
       $guidBytes[8] = ($guidBytes[8] -band 0x3f) -bor 0x80
       return [guid]::new($guidBytes)
+    }
+
+    function Get-InstantiationFileSha256 {
+      param([Parameter(Mandatory = $true)][string]$Path)
+
+      $stream = [System.IO.File]::OpenRead($Path)
+      $sha256 = [System.Security.Cryptography.SHA256]::Create()
+      try {
+        return [Convert]::ToHexString($sha256.ComputeHash($stream))
+      } finally {
+        $sha256.Dispose()
+        $stream.Dispose()
+      }
     }
 
     function New-InstantiationArtifact {
@@ -264,7 +292,125 @@ function Get-InstantiationSourceModuleInventory {
           })
       }
 
-      $moduleRows | Sort-Object -Property ModuleName
+      $orderedModuleRows = @($moduleRows | Sort-Object -Property ModuleName)
+      if (-not $AsVersionProposal) {
+        $orderedModuleRows
+        return
+      }
+
+      $currentFiles = [System.Collections.Generic.List[object]]::new()
+      foreach ($moduleRow in $orderedModuleRows | Where-Object { -not $_.IsPlanned }) {
+        $moduleRoot = Join-Path $resolvedRepositoryRoot $moduleRow.SourceRootRelativePath
+        $allowedExtensions = if ($moduleRow.ModuleKind -eq 'CSharp') {
+          @('.cs', '.csproj')
+        } else {
+          @('.ps1', '.psm1', '.psd1')
+        }
+        foreach ($file in (Get-ChildItem -LiteralPath $moduleRoot -File -Recurse -ErrorAction Stop |
+            Where-Object { $allowedExtensions -ccontains $_.Extension } |
+            Sort-Object -Property FullName)) {
+          $relativePath = ConvertTo-InstantiationRelativePath -BasePath $resolvedRepositoryRoot -Path $file.FullName
+          $contentSha256 = Get-InstantiationFileSha256 -Path $file.FullName
+          $currentFiles.Add([PSCustomObject]@{
+              RelativePath = $relativePath
+              ContentSha256 = $contentSha256
+              ByteCount = [long]$file.Length
+              ProposedRuleVersionPhiloteId = New-InstantiationStableGuid -NaturalKey "$RepositoryName|RuleVersion|$relativePath|$contentSha256"
+            })
+        }
+      }
+
+      $baselineFiles = @()
+      if ($null -ne $BaselineInventory) {
+        if ($BaselineInventory.PSObject.Properties.Name -contains 'CurrentFiles') {
+          $baselineFiles = @($BaselineInventory.CurrentFiles)
+        } else {
+          $baselineFiles = @($BaselineInventory)
+        }
+      }
+
+      $baselineOrdinal = [System.Collections.Generic.Dictionary[string, object]]::new([System.StringComparer]::Ordinal)
+      $baselineIgnoreCase = [System.Collections.Generic.Dictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase)
+      foreach ($baselineFile in $baselineFiles) {
+        $path = [string]$baselineFile.RelativePath
+        if ($baselineOrdinal.ContainsKey($path)) {
+          throw "Baseline inventory contains duplicate exact path '$path'."
+        }
+        $baselineOrdinal[$path] = $baselineFile
+        if ($baselineIgnoreCase.ContainsKey($path) -and $baselineIgnoreCase[$path].RelativePath -cne $path) {
+          throw "Baseline inventory contains a case collision between '$($baselineIgnoreCase[$path].RelativePath)' and '$path'."
+        }
+        $baselineIgnoreCase[$path] = $baselineFile
+      }
+
+      $deltas = [System.Collections.Generic.List[object]]::new()
+      $seenBaselinePaths = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+      foreach ($currentFile in $currentFiles) {
+        $action = 'Added'
+        $previousPath = $null
+        $previousHash = $null
+        if ($baselineOrdinal.ContainsKey($currentFile.RelativePath)) {
+          $prior = $baselineOrdinal[$currentFile.RelativePath]
+          [void]$seenBaselinePaths.Add([string]$prior.RelativePath)
+          $previousPath = [string]$prior.RelativePath
+          $previousHash = [string]$prior.ContentSha256
+          $action = if ($previousHash -ceq $currentFile.ContentSha256) { 'Unchanged' } else { 'Changed' }
+        } elseif ($baselineIgnoreCase.ContainsKey($currentFile.RelativePath)) {
+          $prior = $baselineIgnoreCase[$currentFile.RelativePath]
+          [void]$seenBaselinePaths.Add([string]$prior.RelativePath)
+          $previousPath = [string]$prior.RelativePath
+          $previousHash = [string]$prior.ContentSha256
+          $action = 'CaseChanged'
+        }
+        $deltas.Add([PSCustomObject]@{
+            Action = $action
+            RelativePath = $currentFile.RelativePath
+            PreviousRelativePath = $previousPath
+            ContentSha256 = $currentFile.ContentSha256
+            PreviousContentSha256 = $previousHash
+            ProposedRuleVersionPhiloteId = $currentFile.ProposedRuleVersionPhiloteId
+          })
+      }
+      foreach ($baselineFile in $baselineFiles) {
+        if (-not $seenBaselinePaths.Contains([string]$baselineFile.RelativePath)) {
+          $deltas.Add([PSCustomObject]@{
+              Action = 'Removed'
+              RelativePath = [string]$baselineFile.RelativePath
+              PreviousRelativePath = [string]$baselineFile.RelativePath
+              ContentSha256 = $null
+              PreviousContentSha256 = [string]$baselineFile.ContentSha256
+              ProposedRuleVersionPhiloteId = $null
+            })
+        }
+      }
+
+      $orderedDeltas = @($deltas | Sort-Object -Property RelativePath, Action)
+      $changedDeltas = @($orderedDeltas | Where-Object Action -ne 'Unchanged')
+      $proposalCanonical = ($currentFiles | Sort-Object RelativePath | ForEach-Object {
+          '{0}|{1}' -f $_.RelativePath, $_.ContentSha256
+        }) -join "`n"
+      $proposalHashBytes = [System.Security.Cryptography.SHA256]::HashData([System.Text.Encoding]::UTF8.GetBytes($proposalCanonical))
+      $proposalHash = [Convert]::ToHexString($proposalHashBytes)
+
+      [PSCustomObject]@{
+        EntityKind = 'InstantiationVersionProposal'
+        RepositoryName = $RepositoryName
+        IsReadOnly = $true
+        CurrentFiles = @($currentFiles | Sort-Object RelativePath)
+        FileDeltas = $orderedDeltas
+        ProposedRuleVersions = @($changedDeltas | Where-Object Action -in @('Added', 'Changed', 'CaseChanged'))
+        RequiresNewParentVersions = ($changedDeltas.Count -gt 0)
+        ParentVersionProposal = if ($changedDeltas.Count -gt 0) {
+          [PSCustomObject]@{
+            ContentSha256 = $proposalHash
+            ProposedRuleSetVersionPhiloteId = New-InstantiationStableGuid -NaturalKey "$RepositoryName|RuleSetVersion|$proposalHash"
+            ProposedBuildSetVersionPhiloteId = New-InstantiationStableGuid -NaturalKey "$RepositoryName|BuildSetVersion|$proposalHash"
+            ProposedInstantiationVersionPhiloteId = New-InstantiationStableGuid -NaturalKey "$RepositoryName|InstantiationVersion|$proposalHash"
+          }
+        } else {
+          $null
+        }
+      }
     } catch {
       $msg = "Failed to scan SourceModule inventory from '$RepositoryRoot': $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'Error'

@@ -6,6 +6,7 @@
 BeforeAll {
     $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
     . (Join-Path $publicDir 'Invoke-PromotedModuleTests.ps1')
+    function Get-SecretATAP { [CmdletBinding()] param($SecretName, $SecretStoreType) 'secret' }
 
     $script:hadGlobalProGetBaseUrl = Test-Path -Path 'Variable:\global:ProGetBaseUrl'
     $script:originalGlobalProGetBaseUrl = if ($script:hadGlobalProGetBaseUrl) { $global:ProGetBaseUrl } else { $null }
@@ -207,7 +208,8 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             Assert-MockCalled Import-Module -Times 1 -Exactly -Scope It -ParameterFilter { $Name -match 'Mod\.psd1' }
             Assert-MockCalled Invoke-PSModulePesterTests -Times 1 -Exactly -Scope It -ParameterFilter {
                 $ModuleRoot -eq 'C:\fake\src\Mod' -and $Tier -eq 'Alpha' -and (-not $SkipTestResult) -and $SkipCodeCoverage -and
-                $PesterOutputVerbosity -eq 'Normal' -and $PesterProgressInterval -eq 20
+                $PesterOutputVerbosity -eq 'Normal' -and $PesterProgressInterval -eq 20 -and
+                $AdditionalExcludeTag -contains 'PromotedModuleHostSensitive'
             }
         }
 
@@ -223,6 +225,43 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
                 -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake' | Out-Null
 
             $script:removeCount | Should -Be 2
+        }
+
+        It 'removes a nested prior-tier ModuleInfo copy that name-based removal cannot see' {
+            $nestedCopy = [System.Management.Automation.PSModuleInfo]::new(
+                [scriptblock]::Create('$null = 1')
+            )
+            $script:getModuleCall = 0
+            Mock Get-Module {
+                $script:getModuleCall++
+                if ($script:getModuleCall -eq 1) {
+                    return $nestedCopy
+                }
+                return @()
+            }
+
+            Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0' `
+                -Feed 'powershellget-integration' -Tier 'Integration' -ResultsPath 'r' `
+                -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake' | Out-Null
+
+            Assert-MockCalled Remove-Module -Times 1 -Exactly -Scope It -ParameterFilter {
+                $ModuleInfo -eq $nestedCopy -and $Force
+            }
+            Assert-MockCalled Import-Module -Times 1 -Exactly -Scope It
+        }
+
+        It 'exposes sibling source modules only while importing the promoted target' {
+            $before = $env:PSModulePath
+            Mock Import-Module {
+                @($env:PSModulePath -split [IO.Path]::PathSeparator) |
+                    Should -Contain 'C:\fake\src'
+            }
+
+            Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0' `
+                -Feed 'powershellget-development' -Tier 'Development' -ResultsPath 'r' `
+                -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake' | Out-Null
+
+            $env:PSModulePath | Should -Be $before
         }
 
         It 'fails before import when a same-name module remains loaded' {
@@ -288,7 +327,7 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             $result = Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0-Alpha001' `
                 -Feed 'powershellget-development' -Tier 'Development' -ResultsPath 'r' `
                 -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake' `
-                -ProGetBaseUrl 'http://localhost:50000/' -ApiKey 'secret'
+                -ProGetBaseUrl 'http://localhost:50000/' -ProGetApiKeySecretName 'Test.ProGet.API.Key'
 
             $result.GatePass | Should -BeTrue
             Assert-MockCalled Save-PSResource -Times 0 -Exactly -Scope It
@@ -316,7 +355,7 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             $result = Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0-Beta006' `
                 -Feed 'powershellget-integration' -Tier 'Integration' -ResultsPath 'r' `
                 -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake' `
-                -ProGetBaseUrl 'http://localhost:50000/' -ApiKey 'secret' `
+                -ProGetBaseUrl 'http://localhost:50000/' -ProGetApiKeySecretName 'Test.ProGet.API.Key' `
                 -RestoreRetryCount 2 -RestoreRetryDelaySeconds 1
 
             $result.GatePass | Should -BeTrue

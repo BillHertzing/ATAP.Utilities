@@ -66,11 +66,11 @@ function Add-DatabasesConfigRootKeys {
   begin {
     $fn = 'Add-DatabasesConfigRootKeys'
     $mn = 'ATAP.Utilities.ConfigRootKeys.PowerShell'
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
+    if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn" }
 
     if ($null -eq $global:configRootKeys) {
       $errorMessage = '$global:configRootKeys is not initialized. Run Set-GlobalConfigRootKeys (which loads Set-CoreConfigRootKeys first).'
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage }
       throw $errorMessage
     }
 
@@ -89,14 +89,14 @@ function Add-DatabasesConfigRootKeys {
     foreach ($sectionFunction in $perDatabaseSectionFunctions) {
       $siblingPath = Join-Path -Path $Path -ChildPath "$sectionFunction.ps1"
       if (Test-Path -LiteralPath $siblingPath -PathType Leaf) {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Dot-sourcing co-located sibling '$siblingPath'" -Tag 'ConfigRootKeys'
+        if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Dot-sourcing co-located sibling '$siblingPath'" -Tag 'ConfigRootKeys' }
         . $siblingPath
       } elseif (-not (Get-Command -Name $sectionFunction -CommandType Function -ErrorAction SilentlyContinue)) {
         $errorMessage = "Per-database section function '$sectionFunction' is not defined and its source file was not found at '$siblingPath'."
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+        if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage }
         throw $errorMessage
       } else {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Using already-loaded module-scoped '$sectionFunction' (built module; no co-located source)." -Tag 'ConfigRootKeys'
+        if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Using already-loaded module-scoped '$sectionFunction' (built module; no co-located source)." -Tag 'ConfigRootKeys' }
       }
     }
   }
@@ -118,27 +118,27 @@ function Add-DatabasesConfigRootKeys {
         $global:configRootKeys.Add('DBConnectionStringDBSecretNameConfigRootKey', 'DBConnectionStringDBSecretName')
         $global:configRootKeys.Add('LoginPasswordCredentialsKeyConfigRootKey', 'LoginPasswordCredentialsKey')
         $global:configRootKeys.Add('DatabasesCollectionConfigRootKey', 'DatabasesCollection')
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Added core database key constants.'
+        if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Added core database key constants.' }
       }
 
       # Invoke each per-database section function explicitly, in order.
       foreach ($sectionFunction in $perDatabaseSectionFunctions) {
         if ($PSCmdlet.ShouldProcess('$global:configRootKeys', "Invoke $sectionFunction")) {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Invoking '$sectionFunction'" -Tag 'ConfigRootKeys'
+          if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Invoking '$sectionFunction'" -Tag 'ConfigRootKeys' }
           & $sectionFunction
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "$sectionFunction completed."
+          if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "$sectionFunction completed." }
         }
       }
     } catch {
       $errorMessage = "Unhandled error in $fn. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage }
       throw
     } finally {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving process block in $fn"
+      if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving process block in $fn" }
     }
   }
 
   end {
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn"
+    if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn" }
   }
 }

@@ -1,0 +1,86 @@
+{
+  "_comment": [
+    "Broker config template (Task 13.76.g, rewired to the module command by Task 13.76.c).",
+    "Deploy to <BrokerRoot>\\config.json.",
+    "",
+    "THIS FILE IS THE TRUST ANCHOR. It is the only place an executable -- a module command",
+    "or a script path -- may be named; requests carry an installer 'id' and never a path.",
+    "It MUST be writable only by Administrators, otherwise a caller who can edit it obtains",
+    "arbitrary elevated execution.",
+    "",
+    "Two entry kinds, each with its own integrity control:",
+    "",
+    "  commandType 'module' (PREFERRED). Runs an exported command from an installed module.",
+    "  There is no file hash to pin; the equivalent guarantee comes from WHERE the module",
+    "  lives. trustedModuleRoots must list only admin-writable roots, because the security",
+    "  property is that the unelevated caller who submits a request cannot modify code under",
+    "  Program Files. The broker also enforces minimumModuleVersion, so a stale copy that",
+    "  predates a fix cannot be selected, and it imports by absolute manifest path so",
+    "  PSModulePath order -- which is settable per-user -- plays no part in what loads.",
+    "",
+    "  commandType 'script' (LEGACY). Runs a hash-pinned file, re-verified immediately before",
+    "  execution. Retained for machines where the module is not installed. Prefer 'module':",
+    "  a hash pin must be re-issued on every edit, and a stale pin fails every request.",
+    "",
+    "The installer moved into ATAP.Utilities.BuildTooling.ProGet.PowerShell 0.1.2 as",
+    "Install-ATAPModuleAllUsers (Task 13.76.c), which is why this entry is now module-kind."
+  ],
+  "schemaVersion": "2.0.0",
+  "installers": [
+    {
+      "id": "install-atap-module-allusers",
+      "description": "Canonical validated AllUsers module installer (plan Task 2.1, promoted by Task 13.76.c).",
+      "commandType": "module",
+      "moduleName": "ATAP.Utilities.BuildTooling.ProGet.PowerShell",
+      "commandName": "Install-ATAPModuleAllUsers",
+      "minimumModuleVersion": "0.1.2",
+      "trustedModuleRoots": [
+        "C:\\Program Files\\PowerShell\\Modules"
+      ],
+      "allowedParameters": [
+        {
+          "name": "ModuleName",
+          "required": true,
+          "pattern": "^[A-Za-z][A-Za-z0-9]*(\\.[A-Za-z][A-Za-z0-9]*)*$",
+          "_comment": "Dotted module identifier only. Rejects path separators, '..', spaces, and quotes, so the value cannot escape the modules root when the installer joins it into a path."
+        },
+        {
+          "name": "RequiredVersion",
+          "required": true,
+          "pattern": "^\\d+\\.\\d+\\.\\d+(\\.\\d+)?(-[A-Za-z0-9.]+)?$",
+          "_comment": "Exact version, optionally prerelease. No ranges: the installer stages into <ModulesRoot>\\<Name>\\<Version>, so this becomes a directory name."
+        },
+        {
+          "name": "Repository",
+          "required": true,
+          "pattern": "^(powershellget-stable|powershellget-qa|powershellget-experimental)$",
+          "_comment": "Closed set of known ATAP tier feeds. An open pattern would let a request point the installer at an attacker-controlled feed."
+        },
+        {
+          "name": "FeedUrl",
+          "required": true,
+          "pattern": "^https?://(localhost|127\\.0\\.0\\.1|utat01|utat022)(:\\d{1,5})?/nuget/[A-Za-z0-9._-]+/?$",
+          "_comment": "Feed endpoint, restricted to known ATAP hosts. Mandatory on Install-ATAPModuleAllUsers, so marking it optional here only defers the failure into parameter binding with a worse message."
+        },
+        {
+          "name": "ExpectedSha256",
+          "required": true,
+          "pattern": "^[0-9A-Fa-f]{64}$",
+          "_comment": "Package hash the installer verifies before writing anything. Mandatory on the cmdlet: an unpinned install is not a validated install, which is the whole point of routing through this installer."
+        }
+      ],
+      "_deliberatelyNotAllowed": [
+        "ModulesRoot and DeployRoot are parameters of Install-ATAPModuleAllUsers but are",
+        "ABSENT from allowedParameters on purpose. The allowlist is positive, so omitting them",
+        "means the cmdlet's own defaults apply and a request cannot set them.",
+        "",
+        "Do not add them. ModulesRoot decides where the broker writes AS AN ADMINISTRATOR;",
+        "a caller who could set it could have an arbitrary directory populated from a feed,",
+        "or shadow a system module by writing into a directory that appears earlier on",
+        "PSModulePath. DeployRoot decides where the transcript and result record land, so a",
+        "caller who could set it could redirect or suppress the audit trail for their own",
+        "elevated action. Neither is something the requester has any business choosing."
+      ]
+    }
+  ]
+}

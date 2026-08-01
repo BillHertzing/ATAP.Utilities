@@ -12,8 +12,8 @@ entry point is `SolutionDocumentation\NewComputerSetup.md`.
 
 | Host role | Example host | Scheduled tasks | Task logon |
 | --- | --- | --- | --- |
-| Primary | `utat022` | `ATAP-ParityAudit`, `ATAP-ParityCompare` | `Password` when the compare task needs reusable SMB credentials |
-| Peer | `utat01` | `ATAP-ParityAudit` only | `Password`, with `RunLevel Limited`, so the owning account can decrypt its DPAPI token |
+| Primary | `utat022` | `ATAP-ParityAudit`, `ATAP-ParityCompare` | `Password` only when the compare task needs reusable SMB credentials |
+| Peer | `utat01` | `ATAP-ParityAudit` only | `S4U`, with `RunLevel Limited`; runtime requires no vault token or credential directory |
 
 The scheduled runtime performs no PowerShell remoting. Each host writes its own
 snapshot to `C:\ProgramData\ATAP\ParityState`; the primary compare task reads the
@@ -26,12 +26,13 @@ peer's `ParityState` SMB share.
   registration or runtime failures.
 - Give the account `SeBatchLogonRight` (Log on as a batch job), and ensure it is not
   covered by `SeDenyBatchLogonRight`.
-- Provision only the purpose-specific `CommonCIForBitwardenReadOnly` token unless a
-  separate, approved secret-maintenance workflow needs ReadWrite access.
-- Create the DPAPI token on the target host while running as the target account. A
-  token file copied from another host or account cannot be decrypted.
+- Do not provision Bitwarden Password Manager or Secrets Manager access to
+  `SvcParityAudit`. Audit and compare execution requires no vault token, `bws`
+  executable, `BW_SESSION`, or credential directory.
 - Never put passwords, access tokens, secret values, or `BW_SESSION` in commands,
   task arguments, journals, evidence, or documentation.
+- A `PSCredential` supplied during task registration is a Windows logon credential
+  only. It is not passed to the wrapper and does not authorize vault access.
 - Record each machine-state change with `Add-ParityChangeEntry` before applying it.
 
 ## Deployment contract
@@ -94,25 +95,15 @@ available from source until version `0.1.2` is installed and verified.
 5. Create the Task Scheduler folder `\ATAP`.
 6. Grant `SvcParityAudit` `SeBatchLogonRight` without replacing existing right
    holders. Use the guarded procedure in `SolutionDocumentation\NewComputerSetup.md`.
-7. Provision the ReadOnly BWS DPAPI token as `SvcParityAudit` on that host.
-8. Verify `bws.exe` is machine-visible and the token resolves without using `bw`,
-   `BW_SESSION`, an interactive login, browser authentication, or email verification.
-
-The expected token file is:
-
-```text
-C:\ProgramData\ATAP\BitwardenCredentials\SvcParityAudit\<HOST>_SvcParityAudit_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml
-```
-
-Verify presence without reading or printing its contents:
-
-```powershell
-$tokenPath = Join-Path `
-  'C:\ProgramData\ATAP\BitwardenCredentials\SvcParityAudit' `
-  "$($env:COMPUTERNAME)_SvcParityAudit_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml"
-
-Test-Path -LiteralPath $tokenPath -PathType Leaf
-```
+7. Verify the installed audit and compare wrappers contain no `Get-BWSAccessToken`,
+   `bws`, token-purpose, or credential-directory dependency.
+8. Verify the task-result directory is writable by `SvcParityAudit`; no Bitwarden
+   credential directory is created or required.
+9. Maintain the Sysinternals Suite baseline with the pinned WinGet command
+   `winget install -e --id Microsoft.Sysinternals.Suite --version 2026-07-09`.
+   `utat01` has the suite at `C:\Program Files\SysinternalsSuite` as of 2026-07-28;
+   install and verify the identical path on `utat022` during the return procedure, then
+   record the change through `Add-ParityChangeEntry`.
 
 ## Windows 10 ScheduledTasks compatibility
 
@@ -229,9 +220,11 @@ Register-ParityScheduledTasks @parameters
 
 ### Peer host
 
-The peer registers only its local audit task. Use Password logon with `RunLevel
-Limited`: the wrapper decrypts the owning account's per-user DPAPI BWS token, and S4U
-has no password material with which to unlock the DPAPI master key after a cold start.
+The peer registers only its local audit task. Use S4U with `RunLevel Limited`; the
+wrapper reads local parity surfaces and writes metadata-only results without decrypting
+DPAPI material. When an administrator registers the task for a different local account,
+the registration helper may require that account's Windows credential once while still
+saving an S4U principal.
 
 ```powershell
 $parameters = @{
@@ -240,14 +233,13 @@ $parameters = @{
   Cadence          = 'Daily'
   AuditTime        = '03:00'
   RunAsAccountName = 'SvcParityAudit'
-  LogonType        = 'Password'
+  LogonType        = 'S4U'
   Credential       = $svcCredential
   RunLevel         = 'Limited'
 }
 ```
 
-The saved password supplies only batch-logon and DPAPI-unlock material; the account
-remains non-administrative and the task remains Limited. A direct
+The account remains non-administrative and the task remains Limited. A direct
 `LOGON32_LOGON_BATCH` test on `utat01` proved that `SvcParityAudit` can perform a batch
 logon. See Microsoft's [Security Contexts for Tasks](https://learn.microsoft.com/en-us/windows/win32/taskschd/security-contexts-for-running-tasks)
 for the saved-principal rules.
@@ -276,10 +268,9 @@ NextRun   : 7/12/2026 3:00:00 AM
 ```
 
 Version `0.1.3` corrected the credential-backed S4U implementation by using Task
-Scheduler COM while preserving `TASK_LOGON_S4U`. Live cold-start validation then
-proved that S4U is not the deployed topology for the current wrappers: their mandatory
-per-user DPAPI BWS probe requires Password logon. S4U remains available for future
-tasks that do not decrypt per-user DPAPI material.
+Scheduler COM while preserving `TASK_LOGON_S4U`. Its live cold-start finding about the
+then-mandatory DPAPI BWS probe is historical and superseded by the no-token wrappers.
+The current local audit task uses S4U because it decrypts no per-user DPAPI material.
 
 ## Verify registration
 
@@ -300,8 +291,9 @@ Get-ScheduledTask -TaskPath '\ATAP\' |
 
 Expected topology:
 
-- `utat022`: audit and compare, both Ready, Password logon.
-- `utat01`: audit only, Ready, Password logon, limited run level.
+- `utat022`: audit and compare, both Ready; Password logon only when peer SMB access
+  requires it.
+- `utat01`: audit only, Ready, S4U, limited run level.
 - Every action path is below the installed `$moduleRoot`, never a sprint worktree.
 
 ## First-run proof
@@ -340,7 +332,7 @@ Require all of the following before closing Task 12.38.e:
 
 - task result JSON has `Success = true`;
 - `IdentityName` is the intended `SvcParityAudit` account;
-- the BWS probe succeeds using `CommonCIForBitwardenReadOnly`;
+- `SecretAccessRequired` is `false` and no vault probe fields are present;
 - both fresh audit snapshots exist;
 - compare result JSON identifies its report path;
 - immediate first-run `StaleSnapshotCount` is zero;
@@ -361,7 +353,7 @@ days.
 | `TaskPath '\ATAP\'` finds nothing | The scheduler folder does not exist | Create `\ATAP` through `Schedule.Service` before registration |
 | Registration or runtime reports batch-logon failure | `SvcParityAudit` lacks effective `SeBatchLogonRight`, or a deny right applies | Preserve existing rights and verify with a `LOGON32_LOGON_BATCH` test; `secedit` may export a local account by name, so absence of a literal SID is not proof that the right is absent |
 | Version 0.1.0 peer registration returns `Access is denied` | It requests Highest run level for a non-admin account | Upgrade; do not add the service account to Administrators |
-| Version 0.1.1 peer S4U registration returns `0x80070005` although batch logon succeeds | An administrator is registering for a different account without supplying that account's registration credential | Upgrade to 0.1.3 for the corrected S4U capability; use Password/Limited for the deployed DPAPI-reading peer wrapper |
+| Version 0.1.1 peer S4U registration returns `0x80070005` although batch logon succeeds | An administrator is registering for a different account without supplying that account's registration credential | Upgrade to 0.1.3 or later for credential-backed S4U registration; the saved peer principal remains S4U/Limited |
 | Windows 10 WinRM cannot autoload inbox modules | The endpoint's `PSModulePath` omits the Windows PowerShell system-module root | Import manifests by absolute path for recovery; fix `PSModulePath` and add a `pwsh` endpoint under SC-0266 |
 | Audit snapshot has no `Shares/SmbShareNames` row on Windows 10 | `Get-SmbShare` is undiscoverable in the active PowerShell session | Upgrade to 0.1.4 or later; the audit falls back to `Win32_Share` and records that source |
 | First comparison has no whitelist or journal | New ParityState has no `ParityWhitelist.json` or change records yet | Upgrade to 0.1.4 or later; the comparison treats both as empty and reports unmatched differences as undeclared drift |
@@ -370,7 +362,6 @@ days.
 | Error followed by `Registered scheduled task` | Registration error was non-terminating and the logger ran anyway | Treat the error and `Get-ScheduledTask` as authoritative; update code to use `-ErrorAction Stop` and log only after success |
 | Headroom proxy warning appears during a nested `pwsh` call | The child PowerShell process loaded the user's profile | Treat the warning as unrelated unless the child command fails; capture the complete error record |
 | `Add-ParityChangeEntry` asks for mandatory parameters from a nested command string | Backtick continuations were consumed while building a double-quoted here-string | Use a parameter hashtable and splatting inside the child command string |
-| BWS token file exists but decryption fails | The DPAPI file was created under another identity/host, its user master key is stale after password history, or the task uses S4U | Re-provision the token as `SvcParityAudit` on that host (transfer the token value only through an approved secure in-memory channel), register the wrapper as Password logon, and never copy the DPAPI file |
 | Task result JSON is absent | Wrapper failed before or while creating the result directory, or the task never started | Inspect `LastTaskResult`, Task Scheduler history, Application event IDs 12380/12381, action path, and account rights |
 | Compare cannot read the peer share | The saved service-account passwords differ, share/NTFS ACL is wrong, or peer state is absent | Compare the two CI-project password secrets without printing them, register Password logon with the current credentials, and verify read-only SMB access |
 
@@ -378,11 +369,11 @@ days.
 
 Store sprint verification evidence in the repository-root `_generated` folder. Record
 host, task, installed version/path, principal, logon type, trigger, task result,
-snapshot/report paths, BWS probe status, stale count, and drift classification.
+snapshot/report paths, `SecretAccessRequired = false`, stale count, and drift classification.
 
 Rollback unregisters only the affected task definitions; it does not delete parity
-journals, snapshots, acknowledgements, task-result JSON, BWS DPAPI files, or the
-`ParityState` share. Journal the rollback before applying it.
+journals, snapshots, acknowledgements, task-result JSON, unrelated credential stores,
+or the `ParityState` share. Journal the rollback before applying it.
 
 ```powershell
 Unregister-ScheduledTask `

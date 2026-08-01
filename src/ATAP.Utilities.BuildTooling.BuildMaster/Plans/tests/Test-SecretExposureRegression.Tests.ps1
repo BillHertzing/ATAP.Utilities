@@ -79,13 +79,13 @@ Describe 'SEC-T1 — V4-A07 ReleaseBundle runner contracts' {
 
     It 'Promote-ReleaseBundleBuildMasterPackage.ps1 does NOT declare -ProGetApiKey as a parameter' {
         $content = Get-Content -LiteralPath $script:PromoteScriptPath -Raw
-        $content | Should -Not -Match '\[string\]\s*\$ProGetApiKey'
+        $content | Should -Not -Match '\$ProGetApiKey\b'
     }
 
-    It 'Promote-ReleaseBundleBuildMasterPackage.ps1 resolves API key from PROGET_BUILDMASTER_API_KEY or PROGET_ADMIN_API_KEY' {
+    It 'Promote-ReleaseBundleBuildMasterPackage.ps1 carries only the canonical SecretName' {
         $content = Get-Content -LiteralPath $script:PromoteScriptPath -Raw
-        $content | Should -Match 'PROGET_BUILDMASTER_API_KEY'
-        $content | Should -Match 'PROGET_ADMIN_API_KEY'
+        $content | Should -Match 'ProGet\.BuildMaster\.API\.Key'
+        $content | Should -Not -Match 'PROGET_(?:BUILDMASTER|ADMIN)_API_KEY'
     }
 
     It 'Promote-ReleaseBundleBuildMasterPackage.ps1 calls Promote-ProGetPackage' {
@@ -145,16 +145,15 @@ Describe 'SEC-T1 — New-ReleaseBundleBuildMasterPackage.ps1 must not require Pr
         $script:ScriptPath | Should -Exist
     }
 
-    It '-ProGetApiKey parameter is not marked [Parameter(Mandatory)]' {
+    It '-ProGetApiKey raw parameter is absent' {
         $content = Get-Content -LiteralPath $script:ScriptPath -Raw
-        # A mandatory ProGetApiKey would look like [Parameter(Mandatory)]\n...$ProGetApiKey
-        $content | Should -Not -Match '(?s)\[Parameter\s*\(\s*Mandatory\s*\)\]\s+[^\]]*\[string\]\$ProGetApiKey'
+        $content | Should -Not -Match '\$ProGetApiKey\b'
     }
 
-    It 'Script resolves API key from PROGET_BUILDMASTER_API_KEY or PROGET_ADMIN_API_KEY when param is empty' {
+    It 'Script carries only the canonical SecretName' {
         $content = Get-Content -LiteralPath $script:ScriptPath -Raw
-        $content | Should -Match 'PROGET_BUILDMASTER_API_KEY'
-        $content | Should -Match 'PROGET_ADMIN_API_KEY'
+        $content | Should -Match 'ProGet\.BuildMaster\.API\.Key'
+        $content | Should -Not -Match 'PROGET_(?:BUILDMASTER|ADMIN)_API_KEY'
     }
 }
 

@@ -8,6 +8,12 @@ This project provides:
 an additional Targets file that can be imported in a project's build definition (.csproj)
 a .dll file that contains additional MSBuild Task definitions written in CSharp
 
+Authenticated ProGet publishing is delegated to
+`Invoke-ProGetNuGetPublish.ps1`. MSBuild supplies only
+`ProGetApiKeySecretName` (administrator by default because the legacy replace
+workflow deletes before pushing); the wrapper resolves the value through
+`Get-SecretATAP` only at the authenticated leaf.
+
 Repository-wide C# build health checks run through
 `Build\Invoke-RepoHealthGate.ps1` after restore and before pack or publish.
 Those checks live outside this project and outside PowerShell module package

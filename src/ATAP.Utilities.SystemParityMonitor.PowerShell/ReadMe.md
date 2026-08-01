@@ -86,22 +86,21 @@ Set-ParityPrimaryRole `
 - State root: `C:\ProgramData\ATAP\ParityState` (journal, acks, audit snapshots,
   task results); peer state is read over an SMB share (default `\\utat01\ParityState`).
 - Scheduled tasks run under the dedicated `SvcParityAudit` identity by default and
-  resolve that identity's purpose-specific `CommonCIForBitwardenReadOnly` DPAPI token
-  via `Get-BWSAccessToken -TokenPurpose ReadOnly`; the wrappers never use `bw`,
-  `BW_SESSION`, or remoting.
+  require no Bitwarden/BWS token, `BW_SESSION`, credential directory, or vault probe.
+  Successful task-result JSON records `SecretAccessRequired = false`; the wrappers
+  also avoid remoting.
 - Register `AuditOnly` on peer hosts and `AuditAndCompare` on the primary host
-  (`utat022`). Both roles use `-LogonType Password -Credential <PSCredential>` because
-  the current wrappers decrypt a per-user DPAPI BWS token; the peer remains
-  `RunLevel Limited`, while the primary uses `Highest` and its reusable credential to
-  read the peer SMB share.
+  (`utat022`). The peer uses `-LogonType S4U` with `RunLevel Limited`. The primary may
+  use `-LogonType Password -Credential <PSCredential>` when its compare action needs
+  authenticated access to the peer SMB share; that Windows credential is unrelated
+  to secret-vault access.
 - When an administrator registers an S4U task for a different account, supply that
   account's credential at registration while retaining S4U in the saved principal.
   Version `0.1.3` uses Task Scheduler COM for this credential-backed registration;
   the task definition remains S4U/Limited and does not persist the registration
-  password. This capability is for tasks that do not decrypt per-user DPAPI material;
-  it is not the deployed parity-wrapper topology. Version `0.1.2` could incorrectly
-  persist a Password principal on the peer and must not be used for new S4U
-  registrations.
+  password. This is the deployed peer audit topology now that the wrapper has no
+  per-user DPAPI or vault dependency. Version `0.1.2` could incorrectly persist a
+  Password principal on the peer and must not be used for new S4U registrations.
 - Cadence is `Daily` during the first onboarding month; re-register with
   `-Cadence BiWeekly` after the first clean month. The compare wrapper passes the
   expected cadence into `Compare-ParityAudits`, which flags snapshots older than

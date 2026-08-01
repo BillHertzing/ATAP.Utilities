@@ -15,8 +15,8 @@
   per-build run-context output directory, captures the resulting `.nupkg` for
   the configured `$MetaPackageName`, publishes it (and any sibling roll-up
   `.nupkg` files dotnet pack emits) to the Experimental feed via
-  Publish-NuGetPackageToProGet (which itself reads the API key from environment
-  and applies --skip-duplicate), records the immutable package version on
+  Publish-NuGetPackageToProGet (which resolves the supplied SecretName at its
+  authenticated leaf and applies --skip-duplicate), records the immutable package version on
   build-context.json, and writes a per-tier completion marker.
 
   For Development/Integration/QA/Production it promotes the captured immutable
@@ -178,6 +178,9 @@ param(
   [ValidateNotNullOrEmpty()]
   [string]$ProGetUrl,
 
+  [ValidateNotNullOrEmpty()]
+  [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
+
   [string]$ExperimentalFeed = 'nuget-experimental',
   [string]$DevelopmentFeed = 'nuget-development',
   [string]$IntegrationFeed = 'nuget-integration',
@@ -231,6 +234,7 @@ function Set-NoProfileProGetFeedSettings {
   [CmdletBinding()]
   param(
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ProGetUrl,
+    [ValidateNotNullOrEmpty()][string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ExperimentalFeed,
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$DevelopmentFeed,
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$IntegrationFeed,
@@ -284,7 +288,7 @@ function Set-NoProfileProGetFeedSettings {
           FeedName    = $feedName
           Uri         = "$trimmed/nuget/$feedName/"
           NuGetV3Uri  = "$trimmed/nuget/$feedName/v3/index.json"
-          ApiKeyName  = 'PROGET_ADMIN_API_KEY'
+          ApiKeySecretName = $ProGetApiKeySecretName
         }
       }
       $global:Settings[$collectionKey] = $feedCollection
@@ -741,6 +745,7 @@ function Invoke-CSharpPackageBuildMasterStage {
     [AllowEmptyString()][string]$PackageOutputPath = '',
     [AllowEmptyString()][string]$NupkgPathFile = '',
     [Parameter(Mandatory)][string]$ProGetUrl,
+    [ValidateNotNullOrEmpty()][string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
     [string]$ExperimentalFeed = 'nuget-experimental',
     [string]$DevelopmentFeed = 'nuget-development',
     [string]$IntegrationFeed = 'nuget-integration',
@@ -753,21 +758,9 @@ function Invoke-CSharpPackageBuildMasterStage {
     $mn = 'ATAP.Utilities.BuildTooling.BuildMaster'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Starting $fn for BuildId='$BuildMasterBuildId'; MetaPackage='$MetaPackageName'"
 
-    $script:resolvedProGetApiKey = if (-not [string]::IsNullOrWhiteSpace($env:PROGET_BUILDMASTER_API_KEY)) {
-      $env:PROGET_BUILDMASTER_API_KEY
-    }
-    elseif (-not [string]::IsNullOrWhiteSpace($env:PROGET_ADMIN_API_KEY)) {
-      $env:PROGET_ADMIN_API_KEY
-    }
-    else {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message 'Unable to resolve ProGet API key.'
-      throw 'Unable to resolve ProGet API key. Set PROGET_BUILDMASTER_API_KEY or PROGET_ADMIN_API_KEY in the BuildMaster process environment.'
-    }
-    $env:PROGET_BUILDMASTER_API_KEY = $script:resolvedProGetApiKey
-    $env:PROGET_ADMIN_API_KEY = $script:resolvedProGetApiKey
-
     Set-NoProfileProGetFeedSettings `
       -ProGetUrl $ProGetUrl `
+      -ProGetApiKeySecretName $ProGetApiKeySecretName `
       -ExperimentalFeed $ExperimentalFeed `
       -DevelopmentFeed $DevelopmentFeed `
       -IntegrationFeed $IntegrationFeed `
@@ -781,10 +774,14 @@ function Invoke-CSharpPackageBuildMasterStage {
     function Resolve-BuildToolingFunctionFile {
       [CmdletBinding()]
       [OutputType([string])]
-      param([Parameter(Mandatory)][string]$RelativePath)
+      param(
+        [Parameter(Mandatory)][string]$RelativePath,
+        [string]$ModuleName = 'ATAP.Utilities.BuildTooling.PowerShell'
+      )
       BEGIN { $f = 'Resolve-BuildToolingFunctionFile'; $m = 'ATAP.Utilities.BuildTooling.BuildMaster' }
       PROCESS {
-        $path = Join-Path -Path $script:buildToolingRoot -ChildPath $RelativePath
+        $moduleRoot = Join-Path -Path (Split-Path -Parent $script:buildToolingRoot) -ChildPath $ModuleName
+        $path = Join-Path -Path $moduleRoot -ChildPath $RelativePath
         if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
           Write-PSFMessage -FunctionName $f -ModuleName $m -Level Error -Message "Required BuildTooling function file not found: $path"
           throw "Required BuildTooling function file not found: $path"
@@ -794,15 +791,15 @@ function Invoke-CSharpPackageBuildMasterStage {
       END {}
     }
 
-    . (Resolve-BuildToolingFunctionFile -RelativePath 'private/Get-CeilingFromPrereleaseLabel.ps1')
-    . (Resolve-BuildToolingFunctionFile -RelativePath 'private/Get-CurrentTierFromStage.ps1')
-    . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Get-TierOrder.ps1')
-    . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Resolve-FeatureSlug.ps1')
-    . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Test-PromotionWithinCeiling.ps1')
-    . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Get-BuildContext.ps1')
-    . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Move-ProGetPackageInterTier.ps1')
-    . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Promote-ProGetPackage.ps1')
-    . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Publish-NuGetPackageToProGet.ps1')
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -RelativePath 'private/Get-CeilingFromPrereleaseLabel.ps1')
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Get-CurrentTierFromStage.ps1')
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Get-TierOrder.ps1')
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -RelativePath 'public/Resolve-FeatureSlug.ps1')
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Test-PromotionWithinCeiling.ps1')
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -RelativePath 'public/Get-BuildContext.ps1')
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Move-ProGetPackageInterTier.ps1')
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Promote-ProGetPackage.ps1')
+    . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Publish-NuGetPackageToProGet.ps1')
     . (Resolve-BuildToolingFunctionFile -RelativePath 'public/Invoke-PromotedPackageTests.ps1')
 
     # Move-ProGetPackageInterTier references the Get-PVal alias for
@@ -1000,8 +997,6 @@ function Invoke-CSharpPackageBuildMasterStage {
         $promotionTracePath = Join-Path -Path $contextDirectory -ChildPath "$MetaPackageName.$($Tier.ToLowerInvariant()).log"
         Add-BuildMasterPublishTrace -Path $promotionTracePath -Message "Promoting '$PackageName' version '$PromotedPackageVersion' from '$sourceFeed' to '$destinationFeed'. Captured resolved version is '$capturedResolvedVersion'."
 
-        $env:PROGET_BUILDMASTER_API_KEY = $script:resolvedProGetApiKey
-        $env:PROGET_ADMIN_API_KEY = $script:resolvedProGetApiKey
         $global:ProGetBaseUrl = $ProGetUrl
 
         Write-PSFMessage -FunctionName $f -ModuleName $m -Level Important -Message "Promoting '$PackageName' version '$PromotedPackageVersion' from '$sourceFeed' to '$destinationFeed'."
@@ -1012,6 +1007,7 @@ function Invoke-CSharpPackageBuildMasterStage {
             -FromFeed $sourceFeed `
             -ToFeed $destinationFeed `
             -Reason "$Tier gate for $ApplicationName $PromotedPackageVersion on $Branch" `
+            -ProGetApiKeySecretName $ProGetApiKeySecretName `
             -CeilingTier $ceilingTier
         }
         catch {
@@ -1191,7 +1187,7 @@ function Invoke-CSharpPackageBuildMasterStage {
             foreach ($nupkg in $allNupkgs) {
               Add-BuildMasterPublishTrace -Path $publishTracePath -Message "Publishing '$($nupkg.Name)' to '$ExperimentalFeed'."
               try {
-                $publishResult = Publish-NuGetPackageToProGet -NupkgPath $nupkg.FullName -Feed $ExperimentalFeed
+                $publishResult = Publish-NuGetPackageToProGet -NupkgPath $nupkg.FullName -Feed $ExperimentalFeed -ProGetApiKeySecretName $ProGetApiKeySecretName
               }
               catch {
                 Add-BuildMasterPublishTrace -Path $publishTracePath -Message "ERROR: $($_.Exception.GetType().FullName): $($_.Exception.Message)"
@@ -1263,6 +1259,7 @@ Invoke-CSharpPackageBuildMasterStage `
   -PackageOutputPath $PackageOutputPath `
   -NupkgPathFile $NupkgPathFile `
   -ProGetUrl $ProGetUrl `
+  -ProGetApiKeySecretName $ProGetApiKeySecretName `
   -ExperimentalFeed $ExperimentalFeed `
   -DevelopmentFeed $DevelopmentFeed `
   -IntegrationFeed $IntegrationFeed `

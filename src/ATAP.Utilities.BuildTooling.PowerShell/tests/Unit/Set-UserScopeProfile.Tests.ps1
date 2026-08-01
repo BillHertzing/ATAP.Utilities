@@ -62,6 +62,23 @@ Set-StrictMode -Version Latest
     Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Add-ParityChangeEntry -Times 1 -Exactly -Scope It
   }
 
+  It 'uses an exact redirected profile path without creating a duplicate Documents profile' {
+    $redirectedProfile = Join-Path $script:testRoot 'Dropbox\whertzing\PowerShell\profile.ps1'
+
+    $first = Set-UserScopeProfile -AccountName $env:USERNAME -AccountClass Developer `
+      -ATAPIACRoot $script:iacRoot -ATAPUtilitiesRoot $script:utilitiesRoot `
+      -UserProfilePath $script:userHome -TargetProfilePath $redirectedProfile -Confirm:$false
+    $second = Set-UserScopeProfile -AccountName $env:USERNAME -AccountClass Developer `
+      -ATAPIACRoot $script:iacRoot -ATAPUtilitiesRoot $script:utilitiesRoot `
+      -UserProfilePath $script:userHome -TargetProfilePath $redirectedProfile -Confirm:$false
+
+    $first.Action | Should -Be 'Created'
+    $second.Action | Should -Be 'AlreadyCurrent'
+    $second.ProfilePath | Should -Be ([IO.Path]::GetFullPath($redirectedProfile))
+    Test-Path -LiteralPath (Join-Path $script:userHome 'Documents\PowerShell\profile.ps1') | Should -BeFalse
+    Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.PowerShell Add-ParityChangeEntry -Times 1 -Exactly -Scope It
+  }
+
   It 'refuses to overwrite an unmanaged profile unless Force is supplied' {
     $profileDirectory = Join-Path $script:userHome 'Documents\PowerShell'
     New-Item -ItemType Directory -Path $profileDirectory -Force | Out-Null

@@ -12,10 +12,10 @@
   Task 12.38.e hardened the scheduled path: every host registers a local audit task
   that writes only to its own ParityState folder, and the primary host also registers
   the compare task that reads the peer share and writes drift reports. Tasks run as the
-  dedicated local SvcParityAudit identity and use that identity's purpose-specific
-  CommonCIForBitwardenReadOnly DPAPI token through Get-BWSAccessToken. Use S4U for
+  dedicated local SvcParityAudit identity without Bitwarden or BWS access. Use S4U for
   local-only audit registration; use Password with a PSCredential when the compare task
-  must authenticate to a peer SMB share.
+  must authenticate to a peer SMB share. That Windows logon credential is solely for task
+  registration and peer SMB access; it is not a vault credential.
 
 .NOTES
   Dual-purpose script guard: registration only fires under `pwsh -File`; dot-sourcing
@@ -126,14 +126,9 @@ function Register-ParityScheduledTasks {
 
     [double] $StaleMultiplier = 1.5,
 
-    [ValidateSet('ReadOnly', 'ReadWrite')]
-    [string] $TokenPurpose = 'ReadOnly',
-
-    [string] $CredentialDirectory,
-
     [string] $TaskPath = '\ATAP\',
 
-    # Dedicated local service account that owns the DPAPI token and scheduled tasks.
+    # Dedicated local service account that owns the scheduled tasks but no vault token.
     [string] $RunAsAccountName = 'SvcParityAudit',
 
     [string] $UserId,
@@ -184,10 +179,7 @@ function Register-ParityScheduledTasks {
   }
 
   process {
-    $auditArguments = "-StatePath `"$StatePath`" -HostName `"$HostName`" -TokenPurpose $TokenPurpose"
-    if (-not [string]::IsNullOrWhiteSpace($CredentialDirectory)) {
-      $auditArguments += " -CredentialDirectory `"$CredentialDirectory`""
-    }
+    $auditArguments = "-StatePath `"$StatePath`" -HostName `"$HostName`""
 
     $definitions = @(
       @{
@@ -199,10 +191,7 @@ function Register-ParityScheduledTasks {
     )
 
     if ($TaskSet -eq 'AuditAndCompare') {
-      $compareArguments = "-LeftStatePath `"$StatePath`" -RightStatePath `"$RightStatePath`" -LeftHostName `"$HostName`" -RightHostName `"$RightHostName`" -ExpectedCadenceDays $ExpectedCadenceDays -StaleMultiplier $StaleMultiplier -TokenPurpose $TokenPurpose"
-      if (-not [string]::IsNullOrWhiteSpace($CredentialDirectory)) {
-        $compareArguments += " -CredentialDirectory `"$CredentialDirectory`""
-      }
+      $compareArguments = "-LeftStatePath `"$StatePath`" -RightStatePath `"$RightStatePath`" -LeftHostName `"$HostName`" -RightHostName `"$RightHostName`" -ExpectedCadenceDays $ExpectedCadenceDays -StaleMultiplier $StaleMultiplier"
 
       $definitions += @{
         TaskName = 'ATAP-ParityCompare'

@@ -40,6 +40,16 @@ $global:EnvVars = @{
 
 }
 
+# Root directory holding cloned/forked open-source repositories (e.g. MCP servers).
+# Consumed as ${OSS_FORKS_ROOT} by .mcp.json in each repository.
+# Guarded: the installed ATAP.Utilities.ConfigRootKeys.PowerShell module may not yet
+# carry OSSForksRootConfigRootKey (added in the in-flight sprint source but not yet
+# promoted to powershellget-stable). Remove this guard once that module ships and
+# the key is confirmed present in the installed module.
+if ($global:configRootKeys.ContainsKey('OSSForksRootConfigRootKey')) {
+  $global:EnvVars[$global:configRootKeys['OSSForksRootConfigRootKey']] = $global:Settings[$global:configRootKeys['OSSForksRootConfigRootKey']]
+}
+
 # Secret values and API keys are deliberately not projected into the process
 # environment. Callers resolve them by canonical setting name through Get-PVal
 # and Get-SecretATAP. This includes Dropbox access tokens, Jenkins API tokens,

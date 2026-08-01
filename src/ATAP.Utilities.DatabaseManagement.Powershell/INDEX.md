@@ -112,8 +112,11 @@ backup automation, and rule-export utilities in the ATAP 5-tier ecosystem.
 
 | Cmdlet                                  | File                                                                                                             | Synopsis                                                                                                                                                                       |
 | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Get-InstantiationSourceModuleInventory` | [public/Get-InstantiationSourceModuleInventory.ps1](public/Get-InstantiationSourceModuleInventory.ps1)           | Scans repository PowerShell and optional C# source folders into Sprint 0012 `ATAPUtilities.SourceModule`-shaped rows, including planned module support and manifestation artifact hints. |
-| `Export-InstantiationManifestation`      | [public/Export-InstantiationManifestation.ps1](public/Export-InstantiationManifestation.ps1)                     | Renders source-module model rows into `_generated/Instantiation` model JSON, source-file inventory, folder tree, summary JSON, and markdown report artifacts.                  |
+| `Get-InstantiationSourceModuleInventory` | [public/Get-InstantiationSourceModuleInventory.ps1](public/Get-InstantiationSourceModuleInventory.ps1)           | Scans source modules and optionally emits a deterministic, exact-case, byte-hash-based read-only immutable-version proposal. |
+| `Get-InstantiationVersionRuleGraph`      | [public/Get-InstantiationVersionRuleGraph.ps1](public/Get-InstantiationVersionRuleGraph.ps1)                     | Loads the corrected ordered graph plus immutable RuleInstantiation bindings, declared inputs, source lines, and planned artifacts; invalid snapshots fail closed. |
+| `Export-InstantiationManifestation`      | [public/Export-InstantiationManifestation.ps1](public/Export-InstantiationManifestation.ps1)                     | Preserves the legacy inventory export and adds safe corrected-graph dry-run/exact-byte rendering with SHA-256 and idempotent SQL provenance. |
+
+Implementation and verification: [Task 13.80 — Instantiation Query, Ingestion, and Execution](../../SolutionDocumentation/Task-13.80-Instantiation-Execution.md).
 
 ---
 

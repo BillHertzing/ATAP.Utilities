@@ -166,17 +166,17 @@ Describe 'ATAP.Utilities.Security.Secrets.PowerShell module contract' {
       $script:Manifest.RequiredModules | Should -Not -Contain 'ATAP.Utilities.Security.PKI.PowerShell'
     }
 
-    It 'pins BuildTooling at the version that first shipped -TokenPurpose' {
+    It 'pins the BuildTooling Secrets child that owns -TokenPurpose' {
       # Invoke-RotateSecretsATAP resolves Get-BWSAccessToken / Initialize-BWSAccessToken with
-      # -TokenPurpose. That parameter first ships in 0.1.29; an older BuildTooling would bind-fail
+      # -TokenPurpose. The dedicated child owns those parameters; an older child would bind-fail
       # at rotation time rather than at import time, which is the wrong place to find out.
       $pin = $script:Manifest.RequiredModules |
-        Where-Object { $_ -is [hashtable] -and $_.ModuleName -eq 'ATAP.Utilities.BuildTooling.PowerShell' }
+        Where-Object { $_ -is [hashtable] -and $_.ModuleName -eq 'ATAP.Utilities.BuildTooling.Secrets.PowerShell' }
       $pin | Should -Not -BeNullOrEmpty
-      [version]$pin.ModuleVersion | Should -BeGreaterOrEqual ([version]'0.1.29')
+      [version]$pin.ModuleVersion | Should -BeGreaterOrEqual ([version]'0.1.0')
     }
 
-    It 'the pinned BuildTooling actually exposes -TokenPurpose on both functions' {
+    It 'the pinned Secrets child actually exposes -TokenPurpose on both functions' {
       # Guards the pin itself: a version number is only as good as what it contains.
       foreach ($name in @('Get-BWSAccessToken', 'Initialize-BWSAccessToken')) {
         $cmd = Get-Command $name -ErrorAction SilentlyContinue

@@ -1,5 +1,7 @@
 # C# Packages — Test Process
 
+> **Task 13.62 security cutover:** ProGet API-key environment guidance below is superseded. Authenticated callers pass only a canonical SecretName to a PowerShell leaf.
+
 **Scope:** Writing, organizing, and running automated tests for `ATAP.Utilities.*`
 and `AceCommander.*` C# projects; producing and preserving test artifacts.
 **Audience:** Developers writing new xUnit / bUnit tests; engineers configuring
@@ -664,9 +666,9 @@ a build log, package, or test artifact.
 
 ### 12.3 Tests pass locally, fail in BuildMaster
 
-- Machine-specific environment variable is missing on the agent. Check
-  `bitwarden`-provisioned vars (`BW_SESSION`, `PROGET_ADMIN_API_KEY`,
-  DB connection strings).
+- Required configuration or SecretName resolution is missing on the agent.
+  Verify canonical SecretName metadata and service-identity BWS access; never
+  print or export the resolved value.
 - Test's working directory assumption is wrong. Use
   `Path.Combine(AppContext.BaseDirectory, ...)` rather than relative paths.
 - Test relies on culture / timezone. Set the culture explicitly in the test

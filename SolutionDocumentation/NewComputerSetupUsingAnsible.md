@@ -1,5 +1,7 @@
 # Setup a new computer
 
+> **Task 13.62 security cutover:** Legacy ProGet API-key environment setup and raw REST examples below are superseded. Pass only `ProGet.Admin.API.Key` or `ProGet.BuildMaster.API.Key` as a SecretName to the appropriate PowerShell boundary.
+
 > **Status (2026-05-19):** This document is retained for its deeper
 > BIOS / OS-install / Ansible-bootstrap notes that
 > [NewComputerSetup.md](NewComputerSetup.md) deliberately omits. For any
@@ -829,7 +831,7 @@ Expected output: `ProGet`
 
 See `_Planning/Explainers/0002-ProGet-Setup.md` Steps 4–8 for:
 
-- Creating the `PROGET_ADMIN_API_KEY` API key in the ProGet UI
+- Securely registering the value associated with `ProGet.Admin.API.Key` in the ProGet UI
 - Registering NuGet feeds in `NuGet.config`
 - Registering PowerShell feeds with `Register-PSResourceRepository`
 - Setting up inter-tier connectors
@@ -981,21 +983,14 @@ partial install. The only reliable way to remove them is the Management REST API
 
 | Requirement     | Detail                                                                                               |
 | --------------- | ---------------------------------------------------------------------------------------------------- |
-| API key         | Must have **Use/Manage Feeds** (system key) or **Overwrite/Delete** on the specific feed (feed key). |
-| Endpoint        | `DELETE /api/management/feeds/delete/{feed-name}`                                                    |
-| Auth header     | `X-ApiKey: <your-key>`                                                                               |
+| SecretName      | `ProGet.Admin.API.Key`, with **Use/Manage Feeds** permission                                         |
+| Boundary        | `List-ProGetFeeds` / `Remove-ProGetFeeds`; never call the authenticated REST endpoint directly       |
 | ProGet base URL | `$global:settings[$global:configRootKeys['ProGetBaseUrlConfigRootKey']]`                             |
 
 #### Step 1 — List feeds to confirm the exact name
 
 ```powershell
-$baseUrl = $global:settings[$global:configRootKeys['ProGetBaseUrlConfigRootKey']]
-$apiKey  = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
-
-Invoke-RestMethod `
-    -Uri     "$baseUrl/api/management/feeds/list" `
-    -Method  Get `
-    -Headers @{ 'X-ApiKey' = $apiKey }
+List-ProGetFeeds -ProGetApiKeySecretName 'ProGet.Admin.API.Key'
 ```
 
 Returns a JSON array of feed objects. Locate the exact `name` value before deleting.
@@ -1003,21 +998,10 @@ Returns a JSON array of feed objects. Locate the exact `name` value before delet
 #### Step 2 — Delete the feed
 
 ```powershell
-$baseUrl  = $global:settings[$global:configRootKeys['ProGetBaseUrlConfigRootKey']]
-$apiKey   = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
 $feedName = 'IntPreNugetDevPushFeed'   # replace with the name confirmed in Step 1
-
-try {
-    Invoke-RestMethod `
-        -Uri     "$baseUrl/api/management/feeds/delete/$feedName" `
-        -Method  Delete `
-        -Headers @{ 'X-ApiKey' = $apiKey }
-    Write-PSFMessage -Level Important -Message "Feed '$feedName' deleted successfully."
-}
-catch {
-    Write-PSFMessage -Level Error -Message "Feed delete failed: $_"
-    throw
-}
+Remove-ProGetFeeds `
+  -Name $feedName `
+  -ProGetApiKeySecretName 'ProGet.Admin.API.Key'
 ```
 
 HTTP 200 with no body = success. Common errors:
@@ -1027,19 +1011,12 @@ HTTP 200 with no body = success. Common errors:
 | 403    | API key missing, wrong, or lacks Use/Manage Feeds permission |
 | 404    | Feed name not found — verify with `feeds/list` first         |
 
-#### Alternative: pgutil CLI
+#### Direct CLI calls are not an approved alternative
 
-If `pgutil` is installed and reachable:
-
-```powershell
-$port = $global:settings[$global:configRootKeys['ProGetAdminUriPortConfigRootKey']]
-pgutil feed delete `
-    --feed="$feedName" `
-    --apikey="$apiKey" `
-    --url="$baseUrl"
-```
-
-`pgutil` does the HTTP call and prints a status line — convenient in CI/CD scripts.
+Do not call `pgutil` directly for authenticated administration because its
+command-line contract requires a raw credential handoff. Use
+`Remove-ProGetFeeds -ProGetApiKeySecretName 'ProGet.Admin.API.Key'`; it resolves
+the secret only inside the authenticated leaf.
 
 #### After deletion
 

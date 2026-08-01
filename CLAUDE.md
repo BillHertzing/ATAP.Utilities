@@ -12,9 +12,9 @@ Entity Framework Core abstractions, Flyway migration helpers
 
 | Source File    | Last Modified            |
 | -------------- | ------------------------ |
-| CLAUDE-base.md | 2026-07-10 21:39:49 |
-| ai-local.md | 2026-07-03 10:16:12 |
-| CLAUDE.md (combined) | 2026-07-13 21:53:06 |
+| CLAUDE-base.md | 2026-07-18 20:37:21 |
+| ai-local.md | 2026-07-16 00:47:27 |
+| CLAUDE.md (combined) | 2026-07-19 07:58:20 |
 
 ---
 
@@ -53,7 +53,7 @@ another repo and you have opened that repo's root in the same VS Code workspace.
 The five repositories listed below have their stable branch's worktree rooted at the location 'Root Path'
 
 In addition to the stable branch's worktrees one or more of those will be replicated into a 'sprint branch worktree'
-which exists for the duration of a work sprint. Aprint worktrees' root path match the pattern:
+which exists for the duration of a work sprint. Sprint worktrees' root paths match the pattern:
 `stableRepositoryRootPath-wt-...`
 
 | Repository     | Root Path                                  | Role                                                                 |
@@ -106,11 +106,15 @@ and the sprint entries drop out automatically at sprint end.
 All cross-repo planning and ordered work items are tracked in:
 
 ```text
-_PlanningSprintWorktreeRoot\TASKSSprintNNNN.md
-_PlanningSprintWorktreeRoot\TASKSSprintNNNN.html
-_PlanningSprintWorktreeRoot\Tasks.ProceduralDetails.SprintNNNN.html
-_PlanningSprintWorktreeRoot\Tasks.Accomplished.SprintNNNN.html
+_PlanningSprintWorktreeRoot\TASKS.SprintNNNN.md
+_PlanningSprintWorktreeRoot\TASKS.SprintNNNN.html
+_PlanningSprintWorktreeRoot\TASKS.SprintNNNN.ProceduralDetails.html
+_PlanningSprintWorktreeRoot\TASKS.SprintNNNN.Accomplished.html
 ```
+
+(File-name casing on disk may vary, e.g. `Tasks.Sprint0012.html`; Windows paths are
+case-insensitive. Corrected 2026-07-14, DR program item DRR-004 — verified against the
+actual Sprint 0012 files.)
 
 - Before starting any work, read the active sprint TASKS file for the current sprint.
 - After completing a step and confirming tests pass, mark it `[x]` in the active sprint TASKS file.
@@ -463,9 +467,11 @@ When asked to create or modify a Rule, Rule Set, or Build Set:
    REST APIs, or command syntax where the first result determines the next command, run
    commands sequentially. Do not put speculative calls in parallel when one syntax failure
    would invalidate the rest of the batch.
-9. **Environment variable names (R-27):** API-key and token environment variables use
-   `ALL_UPPERCASE_WITH_UNDERSCORES` names. Prefer names like `BUILDMASTER_ADMIN_API_KEY`
-   and `PROGET_ADMIN_API_KEY`; do not invent mixed-case secret environment variables.
+9. **Environment variable names (R-27):** When a non-ProGet integration explicitly
+   requires an API-key or token environment variable, use an
+   `ALL_UPPERCASE_WITH_UNDERSCORES` name such as `BUILDMASTER_ADMIN_API_KEY`; do not
+   invent mixed-case names. ProGet callers use canonical SecretNames and
+   `Get-SecretATAP`, never API-key environment variables.
 10. **Wait for upload completion (R-28):** When the user says they will upload multiple
     files before giving instructions, wait for all uploads and the explicit "go" signal
     before analyzing or acting.

@@ -21,10 +21,10 @@ Describe 'module.build.ps1 package staging contract' {
     $text | Should -Match 'Publish-PSResource\s+`\s+\r?\n\s+-Path \$script:PackageSrcDir'
   }
 
-  It 'stages optional scripts and Documentation folders before packaging' {
+  It 'stages optional scripts, Documentation, and Profiles folders before packaging' {
     $text = Get-Content -LiteralPath $script:moduleBuildPath -Raw
 
-    $text | Should -Match "\$moduleContentDirectories = @\('scripts', 'Documentation'\)"
+    $text | Should -Match "\$moduleContentDirectories = @\('scripts', 'Documentation', 'Profiles'\)"
     $text | Should -Match 'Copy-Item -LiteralPath \$sourceContentDirectory -Destination \$script:PackageSrcDir'
   }
 
@@ -37,6 +37,22 @@ Describe 'module.build.ps1 package staging contract' {
     $text | Should -Match '\$script:OutputRoot = \(\$resolvedOutputRoot'
   }
 
+  It 'bootstraps the failure-acknowledgement gate from the AiRendering child source' {
+    $text = Get-Content -LiteralPath $script:moduleBuildPath -Raw
+
+    $text | Should -Match "'Test-FailureAcknowledgedGate'\s*=\s*'ATAP\.Utilities\.BuildTooling\.AiRendering\.PowerShell'"
+    $text | Should -Match '\$bootstrapModuleName'
+    $text | Should -Not -Match "\$script:_bootstrapPublicDir.+ATAP\.Utilities\.BuildTooling\.PowerShell"
+  }
+
+  It 'makes sibling source modules discoverable only for the build process' {
+    $text = Get-Content -LiteralPath $script:moduleBuildPath -Raw
+
+    $text | Should -Match '\$script:_originalPSModulePath = \$env:PSModulePath'
+    $text | Should -Match '\$env:PSModulePath = \$resolvedModulePath'
+    $text | Should -Match 'Exit-Build\s*\{\s*\$env:PSModulePath = \$script:_originalPSModulePath'
+  }
+
   It 'derives exported aliases from the source manifest and public function Alias attributes only' {
     $text = Get-Content -LiteralPath $script:moduleBuildPath -Raw
 
@@ -44,5 +60,22 @@ Describe 'module.build.ps1 package staging contract' {
     $text | Should -Match '\$functionAst\.Body\.ParamBlock\.Attributes'
     $text | Should -Match 'if \(\$null -eq \$functionAst\.Body\.ParamBlock\)'
     $text | Should -Not -Match "GetCommandName\(\) -in @\('Set-Alias', 'New-Alias'\)"
+  }
+
+  It 'retains source-manifest exports for runtime-created child compatibility proxies' {
+    $text = Get-Content -LiteralPath $script:moduleBuildPath -Raw
+
+    $text | Should -Match '\$physicalPublicFunctions'
+    $text | Should -Match '\$sourceManifestData\.FunctionsToExport'
+    $text | Should -Match '\[string\[\]\] \$publicFunctions = @\('
+  }
+
+  It 'declares the legacy BWS compatibility names as function Alias metadata that survives package flattening' {
+    $moduleRoot = Split-Path -Parent $script:moduleBuildPath
+    $getSource = Get-Content -LiteralPath (Join-Path $moduleRoot 'src\ATAP.Utilities.BuildTooling.Secrets.PowerShell\public\Get-BWSAccessToken.ps1') -Raw
+    $initializeSource = Get-Content -LiteralPath (Join-Path $moduleRoot 'src\ATAP.Utilities.BuildTooling.Secrets.PowerShell\public\Initialize-BWSAccessToken.ps1') -Raw
+
+    $getSource | Should -Match "\[Alias\('Get-ServiceAccountBWSAccessToken'\)\]"
+    $initializeSource | Should -Match "\[Alias\('Initialize-ServiceAccountBWSAccessToken'\)\]"
   }
 }

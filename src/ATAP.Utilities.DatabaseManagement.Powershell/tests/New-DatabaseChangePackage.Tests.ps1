@@ -21,6 +21,18 @@ BeforeAll {
     $MigrationContent | Set-Content (Join-Path $mDir 'V1__init.sql')
   }
 
+  function New-CanonicalFlywayFixture {
+    param([string]$RepositoryRoot)
+
+    $flywayRoot = Join-Path $RepositoryRoot 'Database' 'Flyway'
+    $sqlRoot = Join-Path $flywayRoot 'SQL'
+    $dataRoot = Join-Path $flywayRoot 'Data'
+    New-Item -ItemType Directory -Path $sqlRoot, $dataRoot -Force | Out-Null
+    @{ version = '1.2.3' } | ConvertTo-Json | Set-Content (Join-Path $flywayRoot 'version.json')
+    "PRINT 'canonical';" | Set-Content (Join-Path $sqlRoot 'V00.01.000010__core.sql')
+    "Id,Name`n1,canonical" | Set-Content (Join-Path $dataRoot 'Canonical.csv')
+  }
+
   New-FixtureTree -DbRoot $script:AppDbRoot
 }
 
@@ -82,6 +94,57 @@ Describe 'New-DatabaseChangePackage — error cases' {
       New-DatabaseChangePackage -Application $script:AppName -RepositoryRoot $noMigRoot
     } | Should -Throw -ExceptionType ([System.Exception]) -PassThru |
       ForEach-Object { $_.Exception.Message | Should -Match 'Migrations folder' }
+  }
+}
+
+Describe 'New-DatabaseChangePackage — ATAPUtilities canonical Flyway layout' {
+
+  It 'packages SQL, CSV data, and version metadata from Database/Flyway' {
+    $root = Join-Path $TestDrive 'canonical-flyway'
+    New-CanonicalFlywayFixture -RepositoryRoot $root
+
+    $nupkg = New-DatabaseChangePackage -Application 'ATAPUtilities' -RepositoryRoot $root
+    $stagingDir = Split-Path -Parent (Split-Path -Parent $nupkg)
+    $manifest = Get-Content (Join-Path $stagingDir 'db-release-unit-manifest.json') -Raw | ConvertFrom-Json
+
+    $manifest.dbChangeUnit | Should -Be 'ATAPUtilities.Database'
+    $manifest.flywayTargetVersion | Should -Be '00.01.000010'
+    $manifest.files.path | Should -Contain 'db/migrations/V00.01.000010__core.sql'
+    $manifest.files.path | Should -Contain 'db/seeds/Canonical.csv'
+
+    Add-Type -AssemblyName 'System.IO.Compression.FileSystem'
+    $zip = [System.IO.Compression.ZipFile]::OpenRead($nupkg)
+    try {
+      $configEntry = $zip.Entries |
+        Where-Object { $_.FullName -eq 'flyway.toml' } |
+        Select-Object -First 1
+      $configEntry | Should -Not -BeNullOrEmpty
+      $reader = [System.IO.StreamReader]::new($configEntry.Open())
+      try {
+        $config = $reader.ReadToEnd()
+      } finally {
+        $reader.Dispose()
+      }
+      $config | Should -Match 'filesystem:\./db/migrations'
+      $config | Should -Not -Match 'filesystem:\./SQL'
+    } finally {
+      $zip.Dispose()
+    }
+  }
+
+  It 'excludes an explicitly deferred migration by exact file name' {
+    $root = Join-Path $TestDrive 'canonical-flyway-exclusion'
+    New-CanonicalFlywayFixture -RepositoryRoot $root
+    $sqlRoot = Join-Path $root 'Database\Flyway\SQL'
+    "PRINT 'future';" | Set-Content (Join-Path $sqlRoot 'V00.01.000020__future.sql')
+
+    $nupkg = New-DatabaseChangePackage -Application 'ATAPUtilities' -RepositoryRoot $root `
+      -ExcludedMigrationFileName 'V00.01.000020__future.sql'
+    $stagingDir = Split-Path -Parent (Split-Path -Parent $nupkg)
+    $manifest = Get-Content (Join-Path $stagingDir 'db-release-unit-manifest.json') -Raw | ConvertFrom-Json
+
+    $manifest.flywayTargetVersion | Should -Be '00.01.000010'
+    $manifest.files.path | Should -Not -Contain 'db/migrations/V00.01.000020__future.sql'
   }
 }
 

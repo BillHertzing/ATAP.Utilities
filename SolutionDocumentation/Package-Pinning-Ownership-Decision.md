@@ -67,7 +67,7 @@ without re-implementing the engine.
 | `-ProGetUrl` | _(mandatory)_ | ProGet base URL; a trailing slash is normalized. |
 | `-FeedName` | `nuget-qa` | Tier feed queried for the highest concrete version. |
 | `-PackageIdPrefix` | `ATAP.` | Only `<PackageVersion Include>` entries with this prefix **and** a wildcard `Version` are pinned; everything else (third-party, already-pinned) is left untouched. |
-| `-ProGetApiKey` | _(optional)_ | Sensitive; pass via env var / BuildMaster Application Variable, never hard-coded. |
+| `-ProGetApiKeySecretName` | `ProGet.BuildMaster.API.Key` | Non-secret SecretName; the authenticated leaf resolves it immediately before the request. |
 
 - Supports `-WhatIf` (no file write under `-WhatIf`).
 - Returns `[pscustomobject]` with `PackagePropsPath`, `PackagesPinned`
@@ -90,7 +90,7 @@ param(
   [string]$PackagePropsPath = 'Directory.Packages.props',
   [Parameter(Mandatory)][string]$ProGetUrl,
   [string]$FeedName = 'nuget-qa',
-  [string]$ProGetApiKey
+  [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key'
 )
 Import-Module 'ATAP.Utilities.BuildTooling.PowerShell' -Force
 Set-FloatingPackagePins `
@@ -98,7 +98,7 @@ Set-FloatingPackagePins `
   -ProGetUrl        $ProGetUrl `
   -FeedName         $FeedName `
   -PackageIdPrefix  'ATAP.' `
-  -ProGetApiKey     $ProGetApiKey `
+  -ProGetApiKeySecretName $ProGetApiKeySecretName `
   @PSBoundParametersWhatIfPassthrough
 ```
 
@@ -181,4 +181,4 @@ the AceCommander copy must not be treated as an independent source of truth.
 - [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md) — why
   Integration-and-above must be reproducible.
 - `Set-FloatingPackagePins` — the engine
-  (`src/ATAP.Utilities.BuildTooling.PowerShell/public/Set-FloatingPackagePins.ps1`).
+  (`src/ATAP.Utilities.BuildTooling.ProGet.PowerShell/public/Set-FloatingPackagePins.ps1`).

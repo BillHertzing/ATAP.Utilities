@@ -21,6 +21,10 @@ param(
   # module per invocation.
   [string] $ModuleRoot,
 
+  # Optional approved family member name. When supplied, ModuleRoot is resolved
+  # from the checked-in ModuleFamily.psd1 metadata under this repository's src/.
+  [string] $ModuleName,
+
   # Optional generated output root override. When omitted, Resolve-PSModuleMetadata
   # supplies the legacy shared '<RepoRoot>/_generated/psmodules/<ModuleName>/' path.
   # BuildMaster passes a build-id scoped path to avoid concurrent runs sharing a
@@ -36,6 +40,14 @@ $helpfunctionsneeded = @(
   #  @{FunctionName = 'Get-ClonedAndModifiedHashtable'; ModuleName = 'ATAP.Utilities.PowerShell' },
 )
 $resolvedModulePath = Join-Path -Path $PSScriptRoot -ChildPath 'src'
+# Source builds must make sibling family modules discoverable while
+# Test-ModuleManifest validates RequiredModules. This is process-local and does
+# not install or persist any module.
+$script:_originalPSModulePath = $env:PSModulePath
+$modulePathEntries = @($env:PSModulePath -split [IO.Path]::PathSeparator)
+if ($resolvedModulePath -notin $modulePathEntries) {
+  $env:PSModulePath = $resolvedModulePath + [IO.Path]::PathSeparator + $env:PSModulePath
+}
 foreach ($helpfunction in $helpfunctionsneeded) {
   $helperPath = Join-Path -Path $resolvedModulePath -ChildPath (Join-Path -Path $helpfunction.ModuleName -ChildPath (Join-Path -Path 'public' -ChildPath "$($helpfunction.FunctionName).ps1"))
   try {
@@ -72,11 +84,27 @@ $script:_bootstrapCmdlets = @(
 # BuildTooling may already be installed or imported, but bootstrap builds must use
 # the functions in this source worktree. Dot-source them every time so stale
 # session definitions cannot leak into the package being built.
-$script:_bootstrapPublicDir = `
-  (Join-Path -Path $resolvedModulePath -ChildPath 'ATAP.Utilities.BuildTooling.PowerShell\public')
+$script:_bootstrapModuleByCommand = @{
+  'Resolve-PSModuleMetadata' = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
+  'Get-PSModuleVersionFromNBGV' = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
+  'Build-PSModuleManifest' = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
+  'Build-PSModulePsm1' = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
+  'Invoke-PSModulePSScriptAnalyzer' = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
+  'Compress-PSModuleArtifacts' = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
+  'Test-FailureAcknowledgedGate' = 'ATAP.Utilities.BuildTooling.AiRendering.PowerShell'
+  'Publish-PSModuleToProGetFeed' = 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
+}
 
 foreach ($cmdletName in $script:_bootstrapCmdlets) {
-  $candidatePath = Join-Path $script:_bootstrapPublicDir "$cmdletName.ps1"
+  $bootstrapModuleName = if ($script:_bootstrapModuleByCommand.ContainsKey($cmdletName)) {
+    $script:_bootstrapModuleByCommand[$cmdletName]
+  } else {
+    'ATAP.Utilities.BuildTooling.PowerShell'
+  }
+  $bootstrapPublicDir = Join-Path -Path $resolvedModulePath -ChildPath (
+    Join-Path -Path $bootstrapModuleName -ChildPath 'public'
+  )
+  $candidatePath = Join-Path $bootstrapPublicDir "$cmdletName.ps1"
   if (Test-Path -LiteralPath $candidatePath -PathType Leaf) {
     . $candidatePath
   } else {
@@ -94,7 +122,20 @@ $script:_savedHermeticRepos = @()
 Enter-Build {
   # Resolve effective module root: explicit -ModuleRoot wins; otherwise fall
   # back to $BuildRoot (legacy symlink-into-module-folder layout).
-  if ([string]::IsNullOrEmpty($ModuleRoot)) {
+  if (-not [string]::IsNullOrWhiteSpace($ModuleName) -and -not [string]::IsNullOrWhiteSpace($ModuleRoot)) {
+    throw 'Specify either ModuleName or ModuleRoot, not both.'
+  }
+  if (-not [string]::IsNullOrWhiteSpace($ModuleName)) {
+    $familyPath = Join-Path $PSScriptRoot 'ModuleFamily.psd1'
+    if (-not (Test-Path -LiteralPath $familyPath -PathType Leaf)) {
+      throw "ModuleFamily.psd1 was not found at '$familyPath'."
+    }
+    $family = Import-PowerShellDataFile -LiteralPath $familyPath
+    if (@($family.Members | Where-Object { $_.Name -eq $ModuleName }).Count -ne 1) {
+      throw "ModuleName '$ModuleName' is not an approved ModuleFamily member."
+    }
+    $script:EffectiveModuleRoot = Join-Path $PSScriptRoot (Join-Path 'src' $ModuleName)
+  } elseif ([string]::IsNullOrEmpty($ModuleRoot)) {
     $script:EffectiveModuleRoot = $BuildRoot
   } else {
     $script:EffectiveModuleRoot = $ModuleRoot
@@ -105,6 +146,14 @@ Enter-Build {
   $script:ModuleName = $script:meta.ModuleName
   $script:ModuleRoot = $script:meta.ModuleRoot
   $script:RepoRoot = $script:meta.RepoRoot
+  $candidateFamilyPath = Join-Path $PSScriptRoot 'ModuleFamily.psd1'
+  $script:ModuleFamilyPath = ''
+  if (Test-Path -LiteralPath $candidateFamilyPath -PathType Leaf) {
+    $candidateFamily = Import-PowerShellDataFile -LiteralPath $candidateFamilyPath
+    if (@($candidateFamily.Members | Where-Object { $_.Name -eq $script:ModuleName }).Count -eq 1) {
+      $script:ModuleFamilyPath = $candidateFamilyPath
+    }
+  }
   if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
     $script:OutputRoot = $script:meta.OutputRoot
   } else {
@@ -251,16 +300,25 @@ Task BuildPSM1 {
 # ---------------------------------------------------------------------------
 Task BuildManifest {
   $publicDir = Join-Path $script:ModuleRoot 'public'
-  [string[]] $publicFunctions = if (Test-Path $publicDir) {
+  $sourceManifestData = Import-PowerShellDataFile -LiteralPath $script:meta.ManifestPath
+  [string[]] $physicalPublicFunctions = if (Test-Path $publicDir) {
     Get-ChildItem -Path $publicDir -Filter '*.ps1' -File |
       Select-Object -ExpandProperty BaseName
   } else { @() }
+  # The parent BuildTooling module creates compatibility proxies for extracted
+  # child-module commands in module.preamble.ps1. Those functions have no
+  # physical public/*.ps1 files, so retain the source manifest's explicit
+  # exports alongside the functions discovered from physical source files.
+  [string[]] $publicFunctions = @(
+    $physicalPublicFunctions
+    $sourceManifestData.FunctionsToExport
+  ) | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } |
+    Sort-Object -Unique
 
   # Preserve aliases explicitly declared in the source manifest, then add aliases
   # declared by [Alias()] on each matching public function. Set-Alias/New-Alias
   # command sites inside function bodies are runtime implementation details, not
   # module export metadata, and must never be promoted into AliasesToExport.
-  $sourceManifestData = Import-PowerShellDataFile -LiteralPath $script:meta.ManifestPath
   [string[]] $sourceAliases = @(
     $sourceManifestData.AliasesToExport |
       Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) }
@@ -304,6 +362,8 @@ Task BuildManifest {
     -OutputManifestPath $script:GeneratedManifestPath `
     -ModuleVersion $script:verInfo.ModuleVersion `
     -Prerelease $script:verInfo.Prerelease `
+    -ModuleRoot $script:ModuleRoot `
+    -ModuleFamilyPath $script:ModuleFamilyPath `
     -PublicFunctions $publicFunctions `
     -Aliases $functionAliases
 
@@ -318,7 +378,7 @@ Task Package BuildPSM1, BuildManifest, {
   # The generated PSM1 and manifest replace source implementation files, but
   # optional static module content remains source-owned and must be staged
   # explicitly before Publish-PSResource packages the directory.
-  $moduleContentDirectories = @('scripts', 'Documentation')
+  $moduleContentDirectories = @('scripts', 'Documentation', 'Profiles')
   foreach ($contentDirectoryName in $moduleContentDirectories) {
     $sourceContentDirectory = Join-Path $script:ModuleRoot $contentDirectoryName
     if (Test-Path -LiteralPath $sourceContentDirectory -PathType Container) {
@@ -468,6 +528,7 @@ Task Compress {
 # this script.
 # ---------------------------------------------------------------------------
 Exit-Build {
+  $env:PSModulePath = $script:_originalPSModulePath
   foreach ($repo in $script:_savedHermeticRepos) {
     if (-not (Get-PSResourceRepository -Name $repo.Name -ErrorAction SilentlyContinue)) {
       try {

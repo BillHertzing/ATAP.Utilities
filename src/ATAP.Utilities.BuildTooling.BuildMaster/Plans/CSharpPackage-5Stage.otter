@@ -15,12 +15,9 @@
 #                       (e.g. "ATAP.Utilities.Production.slnf"); defaults to
 #                       "ATAP.Utilities.sln" inside the runner
 #   $Configuration    - MSBuild configuration, defaults to Release
-#   ProGet API key    - supplied to the runner through process environment
-#                       variable PROGET_BUILDMASTER_API_KEY or
-#                       PROGET_ADMIN_API_KEY; do NOT pass secrets in Arguments
-#                       (SEC-T1 / BLOCKER-8). The runner resolves the key and
-#                       Publish-NuGetPackageToProGet / Promote-ProGetPackage
-#                       use it without it ever appearing in command-line args.
+#   ProGet API key    - Arguments carry only ProGet.BuildMaster.API.Key as a
+#                       SecretName. Authenticated leaves resolve it through
+#                       Get-SecretATAP; no environment fallback is permitted.
 #   BuildMaster stage - passed explicitly from $PipelineStageName so deployment
 #                       targets do not depend on agent environment variables
 #   $BuildMasterBuildId - runtime value from $BuildMasterId(build), used to
@@ -64,7 +61,7 @@ set $BuildMasterExecutionId = $ExecutionId;
 Exec
 (
     FileName: pwsh,
-    Arguments: >>-NoProfile -File "$InvokeCSharpPackageStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -MetaPackageName "$MetaPackageName" -PackageName "$PackageName" -ProjectPath "$ProjectPath" -SolutionPath "$SolutionPath" -Configuration "$Configuration" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetUrl">>,
+    Arguments: >>-NoProfile -File "$InvokeCSharpPackageStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -MetaPackageName "$MetaPackageName" -PackageName "$PackageName" -ProjectPath "$ProjectPath" -SolutionPath "$SolutionPath" -Configuration "$Configuration" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName">>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );

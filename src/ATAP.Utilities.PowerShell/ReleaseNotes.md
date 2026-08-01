@@ -1,5 +1,34 @@
 # Release Notes for ATAP.Utilities.PowerShell
 
+## [0.1.26] — 2026-07-31
+
+### Fixed
+
+- Fall back to the verified .NET Windows special-folder directory when both
+  process aliases are absent and Machine-scope `%SystemRoot%` expansion cannot
+  resolve `windir`.
+- Preserve the bounded Process-alias, Machine-alias, then special-folder lookup
+  order and restore the exact prior Process values after registration.
+
+## [0.1.25] — 2026-07-31
+
+### Fixed
+
+- Temporarily normalize missing local-process `windir` and `SystemRoot` from
+  Machine scope while `Register-PSSessionConfiguration` runs, then restore the
+  exact prior process values in `finally`.
+- Fail closed when neither scope provides the required Windows roots. Remote
+  registration remains unchanged and the function never enables remoting.
+
+## [0.1.24] — 2026-07-31
+
+### Fixed
+
+- Package the source-owned `Profiles/` directory with the module so an
+  AllUsers installation contains `Profiles/WithProfiles.pssc` and
+  `Register-ProfiledRemotingEndpoint` can resolve its default session
+  configuration from the installed module.
+
 ## [0.1.18] — 2026-07-09
 
 ### Fixed

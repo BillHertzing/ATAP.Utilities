@@ -51,7 +51,14 @@
     # ProcessorArchitecture = ''
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules      = @(@{ModuleName = 'PSFramework'; ModuleVersion = '0.1.4'; MaximumVersion = '1.999.999'; })
+    # PSFramework was removed from RequiredModules so that importing this module during the
+    # machine-profile config bootstrap no longer force-loads the ~1.7s PSFramework logging
+    # stack. The .psm1 defines only functions (no top-level Write-PSFMessage), so import is
+    # now PSFramework-free. NOTE: the module's functions still call Write-PSFMessage, which
+    # autoloads PSFramework on first use; the startup win is only realized once those calls
+    # are guarded and the module is rebuilt/promoted/installed. See the follow-up task
+    # "Decouple ConfigRootKeys from PSFramework" in _Planning InformationForTheFuture.
+    RequiredModules      = @()
 
     # Assemblies that must be loaded prior to importing this module
     # RequiredAssemblies = @()

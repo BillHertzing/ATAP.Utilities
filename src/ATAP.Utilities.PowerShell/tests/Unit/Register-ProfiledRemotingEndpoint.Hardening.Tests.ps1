@@ -216,11 +216,35 @@ Describe 'Register-ProfiledRemotingEndpoint local registration marker placement'
     $second.Action | Should -Be 'AlreadyCurrent'
   }
 
+  It 'resolves an existing Windows directory without either Process alias' {
+    $priorWindir = [Environment]::GetEnvironmentVariable('windir', 'Process')
+    $priorSystemRoot = [Environment]::GetEnvironmentVariable('SystemRoot', 'Process')
+    $machineWindirWithSystemRootPresent = [Environment]::GetEnvironmentVariable('windir', 'Machine')
+    $machineWindirWithSystemRootPresent | Should -Not -BeNullOrEmpty
+    [Environment]::SetEnvironmentVariable('windir', $null, 'Process')
+    [Environment]::SetEnvironmentVariable('SystemRoot', $null, 'Process')
+    try {
+      $machineSystemRoot = [Environment]::GetEnvironmentVariable('SystemRoot', 'Machine')
+      $machineWindir = [Environment]::GetEnvironmentVariable('windir', 'Machine')
+      $machineSystemRoot | Should -BeNullOrEmpty
+      $machineWindir | Should -BeNullOrEmpty
+
+      $resolved = Get-ATAPWindowsSpecialFolderRoot
+      $resolved | Should -Not -BeNullOrEmpty
+      Test-Path -LiteralPath $resolved -PathType Container | Should -BeTrue
+    } finally {
+      [Environment]::SetEnvironmentVariable('windir', $priorWindir, 'Process')
+      [Environment]::SetEnvironmentVariable('SystemRoot', $priorSystemRoot, 'Process')
+    }
+  }
+
   It 'temporarily supplies missing local Windows roots from Machine scope and restores them after success' {
     $priorWindir = [System.Environment]::GetEnvironmentVariable('windir', 'Process')
     $priorSystemRoot = [System.Environment]::GetEnvironmentVariable('SystemRoot', 'Process')
     [System.Environment]::SetEnvironmentVariable('windir', $null, 'Process')
     [System.Environment]::SetEnvironmentVariable('SystemRoot', $null, 'Process')
+    $expectedWindirPresence = [System.Environment]::GetEnvironmentVariables('Process').Contains('windir')
+    $expectedSystemRootPresence = [System.Environment]::GetEnvironmentVariables('Process').Contains('SystemRoot')
     $script:observedRegistrationWindir = $null
     $script:observedRegistrationSystemRoot = $null
     Mock -CommandName Resolve-ATAPMachineEnvironmentVariable -MockWith { 'C:\WINDOWS' }
@@ -238,6 +262,8 @@ Describe 'Register-ProfiledRemotingEndpoint local registration marker placement'
       $script:observedRegistrationSystemRoot | Should -Be 'C:\WINDOWS'
       [System.Environment]::GetEnvironmentVariable('windir', 'Process') | Should -BeNullOrEmpty
       [System.Environment]::GetEnvironmentVariable('SystemRoot', 'Process') | Should -BeNullOrEmpty
+      [System.Environment]::GetEnvironmentVariables('Process').Contains('windir') | Should -Be $expectedWindirPresence
+      [System.Environment]::GetEnvironmentVariables('Process').Contains('SystemRoot') | Should -Be $expectedSystemRootPresence
       Should -Invoke Enable-PSRemoting -Times 0
     } finally {
       [System.Environment]::SetEnvironmentVariable('windir', $priorWindir, 'Process')
@@ -250,6 +276,8 @@ Describe 'Register-ProfiledRemotingEndpoint local registration marker placement'
     $priorSystemRoot = [System.Environment]::GetEnvironmentVariable('SystemRoot', 'Process')
     [System.Environment]::SetEnvironmentVariable('windir', $null, 'Process')
     [System.Environment]::SetEnvironmentVariable('SystemRoot', $null, 'Process')
+    $expectedWindirPresence = [System.Environment]::GetEnvironmentVariables('Process').Contains('windir')
+    $expectedSystemRootPresence = [System.Environment]::GetEnvironmentVariables('Process').Contains('SystemRoot')
     Mock -CommandName Resolve-ATAPMachineEnvironmentVariable -MockWith { 'C:\WINDOWS' }
     Mock -CommandName Register-PSSessionConfiguration -MockWith { throw 'fixture registration failure' }
 
@@ -260,6 +288,8 @@ Describe 'Register-ProfiledRemotingEndpoint local registration marker placement'
       $result.Failures | Should -Contain 'fixture registration failure'
       [System.Environment]::GetEnvironmentVariable('windir', 'Process') | Should -BeNullOrEmpty
       [System.Environment]::GetEnvironmentVariable('SystemRoot', 'Process') | Should -BeNullOrEmpty
+      [System.Environment]::GetEnvironmentVariables('Process').Contains('windir') | Should -Be $expectedWindirPresence
+      [System.Environment]::GetEnvironmentVariables('Process').Contains('SystemRoot') | Should -Be $expectedSystemRootPresence
     } finally {
       [System.Environment]::SetEnvironmentVariable('windir', $priorWindir, 'Process')
       [System.Environment]::SetEnvironmentVariable('SystemRoot', $priorSystemRoot, 'Process')
@@ -271,15 +301,91 @@ Describe 'Register-ProfiledRemotingEndpoint local registration marker placement'
     $priorSystemRoot = [System.Environment]::GetEnvironmentVariable('SystemRoot', 'Process')
     [System.Environment]::SetEnvironmentVariable('windir', $null, 'Process')
     [System.Environment]::SetEnvironmentVariable('SystemRoot', $null, 'Process')
+    $expectedWindirPresence = [System.Environment]::GetEnvironmentVariables('Process').Contains('windir')
+    $expectedSystemRootPresence = [System.Environment]::GetEnvironmentVariables('Process').Contains('SystemRoot')
     Mock -CommandName Resolve-ATAPMachineEnvironmentVariable -MockWith { $null }
+    Mock -CommandName Get-ATAPWindowsSpecialFolderRoot -MockWith { $null }
 
     try {
       $result = Register-ProfiledRemotingEndpoint -Path $script:realPsscPath -LocalMarkerPath $script:fixtureMarkerBase -Confirm:$false
 
       $result.Ok | Should -BeFalse
       $result.Action | Should -Be 'RegistrationEnvironmentUnavailable'
-      $result.Failures[0] | Should -Match "empty in both Process and Machine scopes"
+      $result.Failures[0] | Should -Match "special-folder API were all unresolved"
+      [System.Environment]::GetEnvironmentVariables('Process').Contains('windir') | Should -Be $expectedWindirPresence
+      [System.Environment]::GetEnvironmentVariables('Process').Contains('SystemRoot') | Should -Be $expectedSystemRootPresence
       Should -Invoke Register-PSSessionConfiguration -Times 0
+    } finally {
+      [System.Environment]::SetEnvironmentVariable('windir', $priorWindir, 'Process')
+      [System.Environment]::SetEnvironmentVariable('SystemRoot', $priorSystemRoot, 'Process')
+    }
+  }
+
+
+  It 'uses the verified Windows special-folder fallback when both Process and Machine aliases are unresolved' {
+    $priorWindir = [System.Environment]::GetEnvironmentVariable('windir', 'Process')
+    $priorSystemRoot = [System.Environment]::GetEnvironmentVariable('SystemRoot', 'Process')
+    [System.Environment]::SetEnvironmentVariable('windir', $null, 'Process')
+    [System.Environment]::SetEnvironmentVariable('SystemRoot', $null, 'Process')
+    $expectedWindirPresence = [System.Environment]::GetEnvironmentVariables('Process').Contains('windir')
+    $expectedSystemRootPresence = [System.Environment]::GetEnvironmentVariables('Process').Contains('SystemRoot')
+    $fallbackRoot = Join-Path $TestDrive 'Windows'
+    New-Item -ItemType Directory -Path $fallbackRoot -Force | Out-Null
+    Mock -CommandName Resolve-ATAPMachineEnvironmentVariable -MockWith { $null }
+    Mock -CommandName Get-ATAPWindowsSpecialFolderRoot -MockWith { $fallbackRoot }
+    Mock -CommandName Enable-PSRemoting -MockWith { throw 'Enable-PSRemoting must never be called.' }
+
+    try {
+      $result = Register-ProfiledRemotingEndpoint -Path $script:realPsscPath -LocalMarkerPath $script:fixtureMarkerBase -Confirm:$false
+
+      $result.Ok | Should -BeTrue
+      [System.Environment]::GetEnvironmentVariable('windir', 'Process') | Should -BeNullOrEmpty
+      [System.Environment]::GetEnvironmentVariable('SystemRoot', 'Process') | Should -BeNullOrEmpty
+      [System.Environment]::GetEnvironmentVariables('Process').Contains('windir') | Should -Be $expectedWindirPresence
+      [System.Environment]::GetEnvironmentVariables('Process').Contains('SystemRoot') | Should -Be $expectedSystemRootPresence
+      Should -Invoke Get-ATAPWindowsSpecialFolderRoot -Times 2
+      Should -Invoke Enable-PSRemoting -Times 0
+    } finally {
+      [System.Environment]::SetEnvironmentVariable('windir', $priorWindir, 'Process')
+      [System.Environment]::SetEnvironmentVariable('SystemRoot', $priorSystemRoot, 'Process')
+    }
+  }
+
+  It 'registers through the real .NET fallback for the installed-equivalent alias-expansion gap' {
+    $priorWindir = [System.Environment]::GetEnvironmentVariable('windir', 'Process')
+    $priorSystemRoot = [System.Environment]::GetEnvironmentVariable('SystemRoot', 'Process')
+    $machineSystemRoot = [System.Environment]::GetEnvironmentVariable('SystemRoot', 'Machine')
+    $machineWindirBefore = [System.Environment]::GetEnvironmentVariable('windir', 'Machine')
+    if (-not [string]::IsNullOrWhiteSpace($machineSystemRoot) -or [string]::IsNullOrWhiteSpace($machineWindirBefore)) {
+      Set-ItResult -Skipped -Because 'Host does not expose the Machine windir/%SystemRoot% expansion gap.'
+      return
+    }
+
+    [System.Environment]::SetEnvironmentVariable('windir', $null, 'Process')
+    [System.Environment]::SetEnvironmentVariable('SystemRoot', $null, 'Process')
+    $expectedWindirPresence = [System.Environment]::GetEnvironmentVariables('Process').Contains('windir')
+    $expectedSystemRootPresence = [System.Environment]::GetEnvironmentVariables('Process').Contains('SystemRoot')
+    $expectedRoot = [Environment]::GetFolderPath([Environment+SpecialFolder]::Windows)
+    $script:observedRegistrationWindir = $null
+    $script:observedRegistrationSystemRoot = $null
+    Mock -CommandName Register-PSSessionConfiguration -MockWith {
+      $script:observedRegistrationWindir = [System.Environment]::GetEnvironmentVariable('windir', 'Process')
+      $script:observedRegistrationSystemRoot = [System.Environment]::GetEnvironmentVariable('SystemRoot', 'Process')
+    }
+    Mock -CommandName Enable-PSRemoting -MockWith { throw 'Enable-PSRemoting must never be called.' }
+
+    try {
+      [System.Environment]::GetEnvironmentVariable('windir', 'Machine') | Should -BeNullOrEmpty
+      $result = Register-ProfiledRemotingEndpoint -Path $script:realPsscPath -LocalMarkerPath $script:fixtureMarkerBase -Confirm:$false
+
+      $result.Ok | Should -BeTrue
+      $script:observedRegistrationWindir | Should -Be $expectedRoot
+      $script:observedRegistrationSystemRoot | Should -Be $expectedRoot
+      [System.Environment]::GetEnvironmentVariables('Process').Contains('windir') | Should -Be $expectedWindirPresence
+      [System.Environment]::GetEnvironmentVariables('Process').Contains('SystemRoot') | Should -Be $expectedSystemRootPresence
+      [System.Environment]::GetEnvironmentVariable('windir', 'Process') | Should -BeNullOrEmpty
+      [System.Environment]::GetEnvironmentVariable('SystemRoot', 'Process') | Should -BeNullOrEmpty
+      Should -Invoke Enable-PSRemoting -Times 0
     } finally {
       [System.Environment]::SetEnvironmentVariable('windir', $priorWindir, 'Process')
       [System.Environment]::SetEnvironmentVariable('SystemRoot', $priorSystemRoot, 'Process')

@@ -74,3 +74,31 @@ function Resolve-ATAPMachineEnvironmentVariable {
 
   return $DefaultValue
 }
+
+function Get-ATAPWindowsSpecialFolderRoot {
+  <#
+  .SYNOPSIS
+  Resolves the operating system's Windows directory without relying on
+  windir/SystemRoot environment-variable expansion.
+
+  .DESCRIPTION
+  Machine-scope windir is commonly stored as `%SystemRoot%`. If an agent shell
+  is missing both process aliases and Machine SystemRoot is absent, the .NET
+  Machine-scope environment API cannot expand windir. The Windows special-folder
+  API remains independent of those aliases. This helper accepts its result only
+  when it names an existing directory; otherwise it returns null so callers fail
+  closed.
+  #>
+  [CmdletBinding()]
+  [OutputType([string])]
+  param()
+
+  $windowsRoot = [Environment]::GetFolderPath([Environment+SpecialFolder]::Windows)
+  if ([string]::IsNullOrWhiteSpace($windowsRoot)) {
+    return $null
+  }
+  if (-not (Test-Path -LiteralPath $windowsRoot -PathType Container)) {
+    return $null
+  }
+  return [IO.Path]::GetFullPath($windowsRoot)
+}

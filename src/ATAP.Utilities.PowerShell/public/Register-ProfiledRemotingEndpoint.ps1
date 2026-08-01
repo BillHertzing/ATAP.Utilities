@@ -261,14 +261,28 @@ function Register-ProfiledRemotingEndpoint {
       if ($PSCmdlet.ShouldProcess("$ConfigurationName@local", 'Register profiled remoting endpoint')) {
         $localEnvironmentSnapshot = @{}
         try {
+          $processEnvironment = [System.Environment]::GetEnvironmentVariables('Process')
           foreach ($environmentName in @('windir', 'SystemRoot')) {
-            $processValue = [System.Environment]::GetEnvironmentVariable($environmentName, 'Process')
-            $localEnvironmentSnapshot[$environmentName] = $processValue
+            $localEnvironmentSnapshot[$environmentName] = [PSCustomObject]@{
+              Present = $processEnvironment.Contains($environmentName)
+              Value = [System.Environment]::GetEnvironmentVariable($environmentName, 'Process')
+            }
+          }
+          $existingProcessWindowsRoot = @(
+            $localEnvironmentSnapshot['windir'].Value,
+            $localEnvironmentSnapshot['SystemRoot'].Value
+          ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -First 1
+
+          foreach ($environmentName in @('windir', 'SystemRoot')) {
+            $processValue = $localEnvironmentSnapshot[$environmentName].Value
             if ([string]::IsNullOrWhiteSpace($processValue)) {
-              $resolvedValue = Resolve-ATAPMachineEnvironmentVariable `
-                -Name $environmentName `
-                -FunctionName $fn `
-                -ModuleName $mn
+              $resolvedValue = $existingProcessWindowsRoot
+              if ([string]::IsNullOrWhiteSpace($resolvedValue)) {
+                $resolvedValue = Resolve-ATAPMachineEnvironmentVariable `
+                  -Name $environmentName `
+                  -FunctionName $fn `
+                  -ModuleName $mn
+              }
               if ([string]::IsNullOrWhiteSpace($resolvedValue)) {
                 $alternateEnvironmentName = if ($environmentName -eq 'windir') { 'SystemRoot' } else { 'windir' }
                 $resolvedValue = Resolve-ATAPMachineEnvironmentVariable `
@@ -277,7 +291,10 @@ function Register-ProfiledRemotingEndpoint {
                   -ModuleName $mn
               }
               if ([string]::IsNullOrWhiteSpace($resolvedValue)) {
-                throw "Local profiled-remoting registration requires a Windows root, but '$environmentName' and its alternate are empty in both Process and Machine scopes."
+                $resolvedValue = Get-ATAPWindowsSpecialFolderRoot
+              }
+              if ([string]::IsNullOrWhiteSpace($resolvedValue)) {
+                throw "Local profiled-remoting registration requires an existing Windows root, but the Process aliases, Machine aliases, and Windows special-folder API were all unresolved."
               }
               [System.Environment]::SetEnvironmentVariable($environmentName, $resolvedValue, 'Process')
             }
@@ -289,9 +306,10 @@ function Register-ProfiledRemotingEndpoint {
         } finally {
           foreach ($environmentName in @('windir', 'SystemRoot')) {
             if ($localEnvironmentSnapshot.ContainsKey($environmentName)) {
+              $snapshot = $localEnvironmentSnapshot[$environmentName]
               [System.Environment]::SetEnvironmentVariable(
                 $environmentName,
-                $localEnvironmentSnapshot[$environmentName],
+                $(if ($snapshot.Present) { $snapshot.Value } else { $null }),
                 'Process'
               )
             }

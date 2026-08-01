@@ -1,20 +1,21 @@
 function Set-ClaudeSettingsSymlink {
   <#
   .SYNOPSIS
-    Renders the Claude Code user settings file from the concrete SharedVSCode projection.
+    Renders the Claude Code user settings file from the SharedVSCode overlay.
   .DESCRIPTION
     Retains the historical function name for sprint-boundary callers, but no
     longer creates a symlink. The cmdlet writes a real
-    ~/.claude/settings.json file from the already-rendered
-    .claude/settings.json projection, preserving unmanaged local root keys
-    already present in the target. Consuming the rendered projection keeps
-    placeholder resolution owned by Render-AIAdapters and prevents raw
-    STABLE/SPRINT_WORKTREE_PATH tokens from reaching user-global settings.
-    Existing target bytes are backed up before mutation and restored if a later
-    write step fails.
+    ~/.claude/settings.json file from
+    .ai/config/claudecode/settings.overlay.json, resolving stable and sprint
+    worktree placeholders before preserving unmanaged local root keys already
+    present in the target. Existing target bytes are backed up before mutation
+    and restored if a later write step fails.
   .PARAMETER SharedVSCodeWorktreePath
-    Path to the SharedVSCode worktree containing the concrete Claude Code
-    projection under .claude/settings.json.
+    Path to the SharedVSCode worktree containing the canonical Claude Code
+    overlay under .ai/config/claudecode/settings.overlay.json.
+  .PARAMETER OmitSprintWorktrees
+    Omits standalone sprint-worktree entries and resolves the Claude hook to
+    stable SharedVSCode. Use at the End boundary.
   .PARAMETER AllowUserGlobalWrite
     Required for live mutation of ~/.claude/settings.json.
   .PARAMETER CheckpointConfirmed
@@ -35,6 +36,8 @@ function Set-ClaudeSettingsSymlink {
     [switch]$AllowUserGlobalWrite,
 
     [switch]$CheckpointConfirmed,
+
+    [switch]$OmitSprintWorktrees,
 
     [string]$UserProfilePath = $env:USERPROFILE,
 
@@ -74,6 +77,69 @@ function Set-ClaudeSettingsSymlink {
       }
       return $InputObject
     }
+
+    function Get-LocalWorktreePathForToken {
+      param([string]$Token, [string]$WorktreeRootFull, [string]$GhRoot, [switch]$OmitSprintWorktrees)
+
+      if ($Token -notmatch '^\$\{(SPRINT|STABLE)_WORKTREE_PATH_([A-Z_]+)\}$') { return $null }
+      $kind = $Matches[1]
+      $repoKey = $Matches[2]
+      $repoFolders = @{
+        SHAREDVSCODE = 'SharedVSCode'; ATAP_PLANNING = '_Planning';
+        ATAP_UTILITIES = 'ATAP.Utilities'; ATAP_IAC = 'ATAP.IAC'; ACECOMMANDER = 'AceCommander'
+      }
+      if (-not $repoFolders.ContainsKey($repoKey)) { return $null }
+      $folder = $repoFolders[$repoKey]
+      if ($kind -eq 'STABLE') {
+        $stablePath = Join-Path $GhRoot $folder
+        if (Test-Path -LiteralPath $stablePath -PathType Container) { return [IO.Path]::GetFullPath($stablePath) }
+        return $null
+      }
+      if ($OmitSprintWorktrees) { return $null }
+      $sprintPattern = '^' + [regex]::Escape($folder) + '-wt-\d+-Sprint-\d{4}-work-items$'
+      if ((Split-Path $WorktreeRootFull -Leaf) -match $sprintPattern) { return $WorktreeRootFull }
+      $newest = Get-ChildItem -LiteralPath $GhRoot -Directory -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -match $sprintPattern } |
+        Sort-Object Name -Descending |
+        Select-Object -First 1
+      if ($newest) { return [IO.Path]::GetFullPath($newest.FullName) }
+      if ($repoKey -eq 'SHAREDVSCODE') { return $WorktreeRootFull }
+      return $null
+    }
+
+    function Resolve-LocalWorktreePlaceholderNode {
+      param([AllowNull()]$Node, [string]$WorktreeRootFull, [string]$GhRoot, [switch]$OmitSprintWorktrees)
+
+      if ($null -eq $Node) { return $null }
+      if ($Node -is [string]) {
+        $result = $Node
+        foreach ($match in [regex]::Matches($Node, '\$\{(?:SPRINT|STABLE)_WORKTREE_PATH_[A-Z_]+\}')) {
+          $token = $match.Value
+          $resolved = if ($OmitSprintWorktrees -and $Node -match 'PreToolUse-PwshGuard\.ps1' -and $token -eq '${SPRINT_WORKTREE_PATH_SHAREDVSCODE}') {
+            Get-LocalWorktreePathForToken -Token '${STABLE_WORKTREE_PATH_SHAREDVSCODE}' -WorktreeRootFull $WorktreeRootFull -GhRoot $GhRoot
+          } else {
+            Get-LocalWorktreePathForToken -Token $token -WorktreeRootFull $WorktreeRootFull -GhRoot $GhRoot -OmitSprintWorktrees:$OmitSprintWorktrees
+          }
+          if ($null -ne $resolved) { $result = $result.Replace($token, $resolved) }
+        }
+        return $result
+      }
+      if ($Node -is [System.Collections.IDictionary]) {
+        foreach ($key in @($Node.Keys)) {
+          $Node[$key] = Resolve-LocalWorktreePlaceholderNode -Node $Node[$key] -WorktreeRootFull $WorktreeRootFull -GhRoot $GhRoot -OmitSprintWorktrees:$OmitSprintWorktrees
+        }
+        return $Node
+      }
+      if ($Node -is [System.Collections.IEnumerable]) {
+        $items = [System.Collections.Generic.List[object]]::new()
+        foreach ($element in $Node) {
+          if ($element -is [string] -and $element -match '^\$\{SPRINT_WORKTREE_PATH_[A-Z_]+\}$' -and $OmitSprintWorktrees) { continue }
+          $items.Add((Resolve-LocalWorktreePlaceholderNode -Node $element -WorktreeRootFull $WorktreeRootFull -GhRoot $GhRoot -OmitSprintWorktrees:$OmitSprintWorktrees))
+        }
+        return , $items.ToArray()
+      }
+      return $Node
+    }
   }
 
   process {
@@ -90,25 +156,31 @@ function Set-ClaudeSettingsSymlink {
       }
     }
 
-    $sourceSettingsPath = Join-Path $SharedVSCodeWorktreePath '.claude\settings.json'
+    if (-not $PSBoundParameters.ContainsKey('OmitSprintWorktrees')) {
+      $OmitSprintWorktrees = (Split-Path ([IO.Path]::GetFullPath($SharedVSCodeWorktreePath)) -Leaf) -ieq 'SharedVSCode'
+    }
+
+    $overlayPath = Join-Path $SharedVSCodeWorktreePath '.ai\config\claudecode\settings.overlay.json'
     $preservePath = Join-Path $SharedVSCodeWorktreePath '.ai\config\claudecode\local-preserve.json'
     $targetPath = Join-Path `
       -Path $UserProfilePath `
       -ChildPath '.claude' `
       -AdditionalChildPath 'settings.json'
 
-    if (-not (Test-Path -LiteralPath $sourceSettingsPath -PathType Leaf)) {
-      throw "Rendered Claude Code settings projection not found at $sourceSettingsPath"
+    if (-not (Test-Path -LiteralPath $overlayPath -PathType Leaf)) {
+      throw "Claude Code settings overlay not found at $overlayPath"
     }
 
-    $sourceSettings = Get-Content -LiteralPath $sourceSettingsPath -Raw |
+    $overlay = Get-Content -LiteralPath $overlayPath -Raw |
       ConvertFrom-Json -Depth 100 -ErrorAction Stop
-    $candidate = ConvertTo-LocalHashtable -InputObject $sourceSettings
+    $candidate = ConvertTo-LocalHashtable -InputObject $overlay
+    $worktreeRootFull = [IO.Path]::GetFullPath($SharedVSCodeWorktreePath)
+    $candidate = Resolve-LocalWorktreePlaceholderNode -Node $candidate -WorktreeRootFull $worktreeRootFull `
+      -GhRoot (Split-Path $worktreeRootFull -Parent) -OmitSprintWorktrees:$OmitSprintWorktrees
 
     $unresolvedPlaceholderPattern = '\$\{(?:STABLE|SPRINT)_WORKTREE_PATH_[A-Z_]+\}'
-    $sourceSettingsText = Get-Content -LiteralPath $sourceSettingsPath -Raw
-    if ($sourceSettingsText -match $unresolvedPlaceholderPattern) {
-      throw "Rendered Claude Code settings projection contains unresolved worktree placeholders: $sourceSettingsPath"
+    if (($candidate | ConvertTo-Json -Depth 100) -match $unresolvedPlaceholderPattern) {
+      throw "Claude Code settings overlay contains unresolved worktree placeholders after resolution: $overlayPath"
     }
 
     $existingSettings = $null
@@ -164,11 +236,10 @@ function Set-ClaudeSettingsSymlink {
       $BackupRoot = Join-Path $SharedVSCodeWorktreePath '_generated\ClaudeSettingsBackups'
     }
 
-    if (-not $PSCmdlet.ShouldProcess($targetPath, 'render real Claude Code settings file from SharedVSCode projection')) {
+    if (-not $PSCmdlet.ShouldProcess($targetPath, 'render real Claude Code settings file from SharedVSCode overlay')) {
       return [PSCustomObject]@{
         TargetPath = $targetPath
-        SourceSettingsPath = $sourceSettingsPath
-        OverlayPath = $sourceSettingsPath
+        OverlayPath = $overlayPath
         BackupPath = $null
         Action = 'whatif'
         LinkType = if ($existingItem) { [string]$existingItem.LinkType } else { $null }
@@ -204,8 +275,7 @@ function Set-ClaudeSettingsSymlink {
 
       return [PSCustomObject]@{
         TargetPath = $targetPath
-        SourceSettingsPath = $sourceSettingsPath
-        OverlayPath = $sourceSettingsPath
+        OverlayPath = $overlayPath
         PreservePath = if (Test-Path -LiteralPath $preservePath -PathType Leaf) { $preservePath } else { $null }
         BackupPath = $backupPath
         Action = 'rendered'

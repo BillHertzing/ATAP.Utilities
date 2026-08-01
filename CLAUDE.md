@@ -12,9 +12,9 @@ Entity Framework Core abstractions, Flyway migration helpers
 
 | Source File    | Last Modified            |
 | -------------- | ------------------------ |
-| CLAUDE-base.md | 2026-07-18 20:37:21 |
-| ai-local.md | 2026-07-16 00:47:27 |
-| CLAUDE.md (combined) | 2026-07-19 07:58:20 |
+| CLAUDE-base.md | 2026-08-01 07:12:21 |
+| ai-local.md | 2026-08-01 13:56:58 |
+| CLAUDE.md (combined) | 2026-08-01 13:57:05 |
 
 ---
 
@@ -453,7 +453,7 @@ When asked to create or modify a Rule, Rule Set, or Build Set:
 4. **ONE clarifying question** — if requirements are ambiguous, ask one focused question
    before generating code or commands
 5. **Save-SprintWorkSession.ps1 path (R-15):** The canonical script is at
-   `ATAP.Utilities/src/ATAP.Utilities.BuildTooling.PowerShell/public/Save-SprintWorkSession.ps1`
+   `ATAP.Utilities/src/ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell/public/Save-SprintWorkSession.ps1`
    (prefer the most-recent ATAP.Utilities sprint worktree copy; fall back to the stable
    repo). The former `_Planning/Powershell/Public/` wrapper was removed 2026-07-07
    (Sprint 0012 Task 12.46.e); never use `_Planning/Scripts/`.

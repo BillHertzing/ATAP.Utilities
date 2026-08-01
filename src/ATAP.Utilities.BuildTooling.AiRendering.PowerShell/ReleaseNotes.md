@@ -12,8 +12,9 @@
 
 ## 0.1.2
 
-- Render Claude Code user-global settings from the concrete SharedVSCode
-  projection and reject unresolved stable/sprint worktree placeholders.
+- Resolve stable/sprint worktree placeholders in the full Claude Code
+  user-global overlay, omit sprint entries at the End boundary, and reject any
+  unresolved worktree token before writing user settings.
 
 ## 0.1.0
 

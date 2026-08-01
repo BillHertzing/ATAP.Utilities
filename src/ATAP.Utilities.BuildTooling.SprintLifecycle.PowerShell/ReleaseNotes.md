@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.1.27
+
+- Classify committed `SolutionDocumentation/*-Task-N.before.summary.json` and
+  `*.after.summary.json` files as historical SprintEnd evidence rather than
+  live configuration drift.
+
 ## 0.1.26
 
 - Forward the verified checkpoint and user-global write gates from the typed

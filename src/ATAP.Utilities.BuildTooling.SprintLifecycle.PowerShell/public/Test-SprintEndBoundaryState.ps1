@@ -145,12 +145,16 @@ function Test-SprintEndBoundaryState {
     $extensions = @('*.code-workspace', '*.json', '*.jsonc', '*.toml')
     $alwaysSkipPathPattern = '[\\/]\.git[\\/]'
     $historicalEvidencePathPattern = '(?i)[\\/](?:_generated|SprintHistory|SprintRetrospective|Archived|Samples?)[\\/]'
+    $committedTaskEvidencePathPattern = '(?i)[\\/]SolutionDocumentation[\\/][^\\/]*-Task-\d+(?:\.\d+)*\.(?:before|after)\.summary\.json$'
     foreach ($searchRoot in $SearchRoots) {
       if (-not (Test-Path -LiteralPath $searchRoot -PathType Container)) { continue }
       foreach ($extension in $extensions) {
         foreach ($file in @(Get-ChildItem -LiteralPath $searchRoot -Filter $extension -File -Recurse -ErrorAction SilentlyContinue)) {
           if ($file.FullName -match $alwaysSkipPathPattern) { continue }
-          $classification = if ($file.FullName -match $historicalEvidencePathPattern) {
+          $classification = if (
+            $file.FullName -match $historicalEvidencePathPattern -or
+            $file.FullName -match $committedTaskEvidencePathPattern
+          ) {
             'HistoricalEvidence'
           } else {
             'LiveConfiguration'

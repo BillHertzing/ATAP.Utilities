@@ -22,8 +22,10 @@ Describe 'Set-ClaudeSettingsSymlink managed render boundary' {
     $script:userRoot = Join-Path $script:testRoot 'UserProfile'
     $script:configRoot = Join-Path $script:sharedRoot '.ai\config\claudecode'
     New-Item -ItemType Directory -Path $script:configRoot -Force | Out-Null
+    $script:renderedSettingsPath = Join-Path $script:sharedRoot '.claude\settings.json'
+    New-Item -ItemType Directory -Path (Split-Path $script:renderedSettingsPath -Parent) -Force | Out-Null
     [IO.File]::WriteAllText(
-      (Join-Path $script:configRoot 'settings.overlay.json'),
+      $script:renderedSettingsPath,
       (@{
           model = 'sonnet'
           permissions = @{
@@ -31,6 +33,15 @@ Describe 'Set-ClaudeSettingsSymlink managed render boundary' {
             allow = @('PowerShell(:*)')
             deny = @()
             ask = @()
+          }
+          hooks = @{
+            PreToolUse = @(@{
+                matcher = 'Bash|PowerShell'
+                hooks = @(@{
+                    type = 'command'
+                    command = 'pwsh -File "C:\GitHub\SharedVSCode\.claude\hooks\PreToolUse-PwshGuard.ps1"'
+                  })
+              })
           }
           env = @{ CLAUDE_CODE_SHELL = 'pwsh' }
         } | ConvertTo-Json -Depth 10),
@@ -96,7 +107,25 @@ Describe 'Set-ClaudeSettingsSymlink managed render boundary' {
     $settings.permissions.defaultMode | Should -Be 'acceptEdits'
     $settings.permissions.allow | Should -Contain 'PowerShell(:*)'
     $settings.env.CLAUDE_CODE_SHELL | Should -Be 'pwsh'
+    $settings.hooks.PreToolUse[0].hooks[0].command | Should -Match 'C:\\GitHub\\SharedVSCode'
+    ($settings | ConvertTo-Json -Depth 20) | Should -Not -Match 'WORKTREE_PATH'
     $settings.localPreference | Should -Be 'keep-me'
+  }
+
+  It 'rejects a rendered projection that still contains a worktree placeholder' {
+    [IO.File]::WriteAllText(
+      $script:renderedSettingsPath,
+      '{"permissions":{"additionalDirectories":["${STABLE_WORKTREE_PATH_SHAREDVSCODE}"]}}',
+      [Text.UTF8Encoding]::new($false)
+    )
+
+    {
+      Set-ClaudeSettingsSymlink `
+        -SharedVSCodeWorktreePath $script:sharedRoot `
+        -AllowUserGlobalWrite `
+        -CheckpointConfirmed `
+        -Confirm:$false
+    } | Should -Throw '*unresolved worktree placeholders*'
   }
 
   It 'replaces a symlink target with a real settings file' {

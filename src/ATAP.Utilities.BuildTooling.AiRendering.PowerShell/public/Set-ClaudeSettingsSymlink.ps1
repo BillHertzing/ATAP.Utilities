@@ -1,17 +1,20 @@
 function Set-ClaudeSettingsSymlink {
   <#
   .SYNOPSIS
-    Renders the Claude Code user settings file from the SharedVSCode overlay.
+    Renders the Claude Code user settings file from the concrete SharedVSCode projection.
   .DESCRIPTION
     Retains the historical function name for sprint-boundary callers, but no
     longer creates a symlink. The cmdlet writes a real
-    ~/.claude/settings.json file from
-    .ai/config/claudecode/settings.overlay.json, preserving unmanaged local
-    root keys already present in the target. Existing target bytes are backed up
-    before mutation and restored if a later write step fails.
+    ~/.claude/settings.json file from the already-rendered
+    .claude/settings.json projection, preserving unmanaged local root keys
+    already present in the target. Consuming the rendered projection keeps
+    placeholder resolution owned by Render-AIAdapters and prevents raw
+    STABLE/SPRINT_WORKTREE_PATH tokens from reaching user-global settings.
+    Existing target bytes are backed up before mutation and restored if a later
+    write step fails.
   .PARAMETER SharedVSCodeWorktreePath
-    Path to the SharedVSCode worktree containing the canonical Claude Code
-    overlay under .ai/config/claudecode/settings.overlay.json.
+    Path to the SharedVSCode worktree containing the concrete Claude Code
+    projection under .claude/settings.json.
   .PARAMETER AllowUserGlobalWrite
     Required for live mutation of ~/.claude/settings.json.
   .PARAMETER CheckpointConfirmed
@@ -87,20 +90,26 @@ function Set-ClaudeSettingsSymlink {
       }
     }
 
-    $overlayPath = Join-Path $SharedVSCodeWorktreePath '.ai\config\claudecode\settings.overlay.json'
+    $sourceSettingsPath = Join-Path $SharedVSCodeWorktreePath '.claude\settings.json'
     $preservePath = Join-Path $SharedVSCodeWorktreePath '.ai\config\claudecode\local-preserve.json'
     $targetPath = Join-Path `
       -Path $UserProfilePath `
       -ChildPath '.claude' `
       -AdditionalChildPath 'settings.json'
 
-    if (-not (Test-Path -LiteralPath $overlayPath -PathType Leaf)) {
-      throw "Claude Code settings overlay not found at $overlayPath"
+    if (-not (Test-Path -LiteralPath $sourceSettingsPath -PathType Leaf)) {
+      throw "Rendered Claude Code settings projection not found at $sourceSettingsPath"
     }
 
-    $overlay = Get-Content -LiteralPath $overlayPath -Raw |
+    $sourceSettings = Get-Content -LiteralPath $sourceSettingsPath -Raw |
       ConvertFrom-Json -Depth 100 -ErrorAction Stop
-    $candidate = ConvertTo-LocalHashtable -InputObject $overlay
+    $candidate = ConvertTo-LocalHashtable -InputObject $sourceSettings
+
+    $unresolvedPlaceholderPattern = '\$\{(?:STABLE|SPRINT)_WORKTREE_PATH_[A-Z_]+\}'
+    $sourceSettingsText = Get-Content -LiteralPath $sourceSettingsPath -Raw
+    if ($sourceSettingsText -match $unresolvedPlaceholderPattern) {
+      throw "Rendered Claude Code settings projection contains unresolved worktree placeholders: $sourceSettingsPath"
+    }
 
     $existingSettings = $null
     if (Test-Path -LiteralPath $targetPath -PathType Leaf) {
@@ -155,10 +164,11 @@ function Set-ClaudeSettingsSymlink {
       $BackupRoot = Join-Path $SharedVSCodeWorktreePath '_generated\ClaudeSettingsBackups'
     }
 
-    if (-not $PSCmdlet.ShouldProcess($targetPath, 'render real Claude Code settings file from SharedVSCode overlay')) {
+    if (-not $PSCmdlet.ShouldProcess($targetPath, 'render real Claude Code settings file from SharedVSCode projection')) {
       return [PSCustomObject]@{
         TargetPath = $targetPath
-        OverlayPath = $overlayPath
+        SourceSettingsPath = $sourceSettingsPath
+        OverlayPath = $sourceSettingsPath
         BackupPath = $null
         Action = 'whatif'
         LinkType = if ($existingItem) { [string]$existingItem.LinkType } else { $null }
@@ -194,7 +204,8 @@ function Set-ClaudeSettingsSymlink {
 
       return [PSCustomObject]@{
         TargetPath = $targetPath
-        OverlayPath = $overlayPath
+        SourceSettingsPath = $sourceSettingsPath
+        OverlayPath = $sourceSettingsPath
         PreservePath = if (Test-Path -LiteralPath $preservePath -PathType Leaf) { $preservePath } else { $null }
         BackupPath = $backupPath
         Action = 'rendered'

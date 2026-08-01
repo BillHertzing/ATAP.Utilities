@@ -10,6 +10,12 @@
   compose unchanged. This replaces the direct manifest render that clobbered the
   composed carrier on 2026-07-25.
 
+## 0.1.2
+
+- Resolve stable/sprint worktree placeholders in the full Claude Code
+  user-global overlay, omit sprint entries at the End boundary, and reject any
+  unresolved worktree token before writing user settings.
+
 ## 0.1.0
 
 - Initial AiRendering extraction from the compatibility parent.

@@ -79,6 +79,28 @@ Describe 'Test-SprintEndBoundaryState stale-reference scope split' -Tag 'Unit' {
       $result.HistoricalStaleReferences.Count | Should -Be $folders.Count
     }
 
+    It 'classifies committed Task before and after summary JSON as historical evidence' {
+      $gitRoot = Join-Path $TestDrive 'committed-task-evidence'
+      $documentationRoot = Join-Path $gitRoot 'SharedVSCode\SolutionDocumentation'
+      New-Item -ItemType Directory -Path $documentationRoot -Force | Out-Null
+      foreach ($phase in @('before', 'after')) {
+        Set-Content -LiteralPath (Join-Path $documentationRoot "AI-Instruction-Inventory-Task-8.20.$phase.summary.json") `
+          -Value '{"path":"SharedVSCode-wt-44-Sprint-0008-work-items"}'
+      }
+
+      $result = Test-SprintEndBoundaryState `
+        -GitRoot $gitRoot `
+        -SearchRoots @($gitRoot) `
+        -ProfilePaths @() `
+        -ProhibitedEnvironmentVariableNames @()
+
+      $result.Ok | Should -BeTrue
+      $result.LiveStaleReferences.Count | Should -Be 0
+      $result.HistoricalStaleReferences.Count | Should -Be 2
+      @($result.HistoricalStaleReferences | Select-Object -ExpandProperty Classification -Unique) |
+        Should -Be @('HistoricalEvidence')
+    }
+
     It 'fails with only the live finding as the cause when both live and historical stale paths exist' {
       $gitRoot = Join-Path $TestDrive 'mixed'
       $historyDir = Join-Path $gitRoot 'SprintHistory'

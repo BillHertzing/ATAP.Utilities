@@ -155,10 +155,11 @@
 
   <!-- NuGet Publish target: push package to ProGet nuget-experimental feed after successful package generation -->
   <!-- ProGet URL defaults to localhost:50000; override via $(ProGetExperimentalFeedUrl) property or PROGET_URL env var -->
-  <!-- API key must be set as env var PROGET_ADMIN_API_KEY (stored in Bitwarden) -->
+  <!-- Authenticated operations pass only a SecretName to a PowerShell leaf. -->
   <PropertyGroup>
     <ProGetExperimentalFeedUrl Condition="'$(ProGetExperimentalFeedUrl)' == ''">http://localhost:50000/nuget/nuget-experimental/v3/index.json</ProGetExperimentalFeedUrl>
     <ProGetBaseUrl Condition="'$(ProGetBaseUrl)' == ''">http://localhost:50000</ProGetBaseUrl>
+    <ProGetApiKeySecretName Condition="'$(ProGetApiKeySecretName)' == ''">ProGet.Admin.API.Key</ProGetApiKeySecretName>
   </PropertyGroup>
   <Target Name="PublishAfterBuild" AfterTargets="GenerateNuspec"
           Condition="'$(Configuration)' == 'Release'">
@@ -177,9 +178,8 @@
     <!-- Delete any existing version from the feed before pushing so iterative rebuilds
          on the same NBGV version (no commit between builds) always land the latest DLLs.
          Uses the NuGet v2 DELETE endpoint; 404 (not yet published) is silently ignored. -->
-    <Exec Command="pwsh -Command &quot;try { Invoke-RestMethod -Method Delete -Uri '$(ProGetBaseUrl)/nuget/nuget-experimental/v2/package/$(PackageId)/$(PackageVersion)' -Headers @{ 'X-ApiKey' = \&quot;$env:PROGET_ADMIN_API_KEY\&quot; } -ErrorAction Stop; Write-Host 'Deleted existing $(PackageId) $(PackageVersion) from feed' } catch { if (\$_.Exception.Response.StatusCode -eq 404) { Write-Host '$(PackageId) $(PackageVersion) not on feed yet, skipping delete' } else { throw } }&quot;"
+    <Exec Command="pwsh -File &quot;$(MSBuildThisFileDirectory)Invoke-ProGetNuGetPublish.ps1&quot; -NupkgPath &quot;$(_NupkgDir)$(PackageId).$(PackageVersion).nupkg&quot; -Source &quot;$(ProGetExperimentalFeedUrl)&quot; -ProGetBaseUrl &quot;$(ProGetBaseUrl)&quot; -PackageId &quot;$(PackageId)&quot; -PackageVersion &quot;$(PackageVersion)&quot; -ProGetApiKeySecretName &quot;$(ProGetApiKeySecretName)&quot;"
           IgnoreExitCode="false" />
-    <Exec Command="dotnet nuget push &quot;$(_NupkgDir)$(PackageId).$(PackageVersion).nupkg&quot; --source &quot;$(ProGetExperimentalFeedUrl)&quot; --api-key &quot;$(PROGET_ADMIN_API_KEY)&quot;" />
     <!-- Keep Directory.Packages.props in sync: update the PackageVersion entry for this package -->
     <PropertyGroup>
       <_DppDir>$([MSBuild]::GetDirectoryNameOfFileAbove('$(MSBuildProjectDirectory)', 'Directory.Packages.props'))</_DppDir>
@@ -219,6 +219,8 @@
     <Copy SourceFiles="@(_BuildToolingBinaries)" DestinationFolder="$(_DeployTFMDir)" SkipUnchangedFiles="true" />
     <!-- Copy the companion .targets file (always overwrite to pick up any edits) -->
     <Copy SourceFiles="$(MSBuildProjectDirectory)\ATAP.Utilities.BuildTooling.targets"
+          DestinationFolder="$(_DeployBuildDir)" SkipUnchangedFiles="false" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\Invoke-ProGetNuGetPublish.ps1"
           DestinationFolder="$(_DeployBuildDir)" SkipUnchangedFiles="false" />
     <!-- Write the sentinel file — Directory.Build.props reads this at evaluation time -->
     <WriteLinesToFile File="$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.current-version"

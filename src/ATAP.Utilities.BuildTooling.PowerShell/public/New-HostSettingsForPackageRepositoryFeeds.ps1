@@ -6,8 +6,8 @@
 
 .DESCRIPTION
     Generates (or overwrites) a machine-scope PowerShell data file that records
-    every permanent ProGet feed name, its URI, and its API-key environment
-    variable name. Feed metadata is resolved from `$global:Settings`; the
+    every permanent ProGet feed name, its URI, and its API-key SecretName.
+    Feed metadata is resolved from `$global:Settings`; the
     generated file is a compatibility export for automation that cannot load
     the full host settings session.
 
@@ -25,7 +25,7 @@
 
     Feed metadata is read from `$global:settings` via `$global:configRootKeys`
     (key: `ProGetFeedCollectionConfigRootKey`). If `$global:settings` is not
-    loaded, the caller must pass explicit values via -FeedBaseUrl and -ApiKey.
+    loaded, the caller must pass an explicit value via -FeedBaseUrl.
 
     The output file is a `.psd1` hashtable understood by `Import-PowerShellDataFile`.
 
@@ -39,9 +39,9 @@
     'http://proget-host:50000'). If omitted, resolved from
     `$global:settings[$global:configRootKeys['ProGetBaseUrlConfigRootKey']]`.
 
-.PARAMETER ApiKey
-    Override the ProGet API key used for all feeds. If omitted, resolved from
-    `$env:PROGET_BUILDMASTER_API_KEY`.
+.PARAMETER ProGetApiKeySecretName
+    Bitwarden Secrets Manager SecretName recorded for all feeds. The cmdlet
+    never resolves or persists the secret value.
 
 .PARAMETER Force
     Overwrite the output file if it already exists without prompting.
@@ -56,14 +56,14 @@
         Written      [bool]    — $true if the file was created/overwritten
 
 .EXAMPLE
-    # Write using $global:settings and env var API key:
+    # Write using $global:settings and the canonical SecretName:
     New-HostSettingsForPackageRepositoryFeeds
 
 .EXAMPLE
     # Explicit values (useful in a BuildMaster agent shell with no profile):
     New-HostSettingsForPackageRepositoryFeeds `
         -FeedBaseUrl 'http://proget.corp:50000' `
-        -ApiKey $env:PROGET_BUILDMASTER_API_KEY `
+        -ProGetApiKeySecretName 'ProGet.BuildMaster.API.Key' `
         -OutputPath 'C:\ProgramData\ATAP\HostSettings.PackageRepositoryFeeds.psd1'
 
 .EXAMPLE
@@ -86,12 +86,24 @@ function New-HostSettingsForPackageRepositoryFeeds {
         [string]$FeedBaseUrl,
 
         [Parameter(Mandatory = $false)]
-        [string]$ApiKey,
+        [ValidateNotNullOrEmpty()]
+        [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
 
         [switch]$Force
     )
 
     begin {
+      # SC-0288 / Task 13.66.b: the SecretName host suffix is derived from the service placement
+      # host, never hard-coded. Resolution order is the authoritative host setting,
+      # then the placement map; an unknown placement host fails closed.
+      if (-not $PSBoundParameters.ContainsKey('ProGetApiKeySecretName')) {
+        if (-not (Get-Command -Name 'Resolve-HostSuffixedSecretName' -ErrorAction SilentlyContinue)) {
+          . (Join-Path $PSScriptRoot '..' '..' 'ATAP.Utilities.BuildTooling.Common.PowerShell' 'public' 'Resolve-HostSuffixedSecretName.ps1')
+        }
+        $ProGetApiKeySecretName = Resolve-HostSuffixedSecretName `
+          -BaseName $ProGetApiKeySecretName -ServiceName 'ProGet' -SettingName 'ProGetBuildMasterApiKeySecretName'
+      }
+
         $fn = $MyInvocation.MyCommand.Name
         $mn = $MyInvocation.MyCommand.ModuleName
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
@@ -114,16 +126,6 @@ function New-HostSettingsForPackageRepositoryFeeds {
         $FeedBaseUrl = $FeedBaseUrl.TrimEnd('/')
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "FeedBaseUrl is '$FeedBaseUrl'"
 
-        # ── ApiKey ────────────────────────────────────────────────────────
-        if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-            $ApiKey = $env:PROGET_BUILDMASTER_API_KEY
-        }
-        if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-            $errorMessage = "ApiKey could not be resolved. Pass it explicitly or set `$env:PROGET_BUILDMASTER_API_KEY."
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-            throw $errorMessage
-        }
-
         # ── Permanent feed definitions ─────────────────────────────────
         # Ten permanent feeds: five NuGet + five PowerShellGet, one per tier.
         # Ordered from lowest to highest tier (matches the inter-tier promotion chain).
@@ -134,19 +136,18 @@ function New-HostSettingsForPackageRepositoryFeeds {
         )
 
         # Build the canonical feed list. Keys are feed names; values are hashtables
-        # with Uri, ApiKeyName, FeedType, and Tier.
+        # with Uri, ApiKeySecretName, FeedType, and Tier.
         $feedMap = [ordered]@{}
         foreach ($pt in $packageTypes) {
             foreach ($tier in $tierOrder) {
                 $feedName   = "$($pt.Prefix)-$tier"
                 $feedUri    = "$FeedBaseUrl/$($pt.FeedUrlSegment)/$feedName/"
-                $apiKeyName = "PROGET_APIKEY_$($feedName.ToUpperInvariant().Replace('-', '_'))"
                 $feedMap[$feedName] = [ordered]@{
                     FeedName   = $feedName
                     FeedType   = $pt.ProGetType
                     Tier       = $tier
                     Uri        = $feedUri
-                    ApiKeyName = $apiKeyName
+                    ApiKeySecretName = $ProGetApiKeySecretName
                 }
             }
         }
@@ -168,14 +169,14 @@ function New-HostSettingsForPackageRepositoryFeeds {
                     if ([string]::IsNullOrWhiteSpace([string]$settingsUri)) {
                         $settingsUri = if ($overrides -is [System.Collections.IDictionary]) { $overrides['Uri'] } else { $overrides.Uri }
                     }
-                    $settingsApiKeyName = if ($overrides -is [System.Collections.IDictionary]) { $overrides['ApiKeyName'] } else { $overrides.ApiKeyName }
+                    $settingsApiKeySecretName = if ($overrides -is [System.Collections.IDictionary]) { $overrides['ApiKeySecretName'] } else { $overrides.ApiKeySecretName }
                     if (-not [string]::IsNullOrWhiteSpace([string]$settingsUri)) {
                         $feedMap[$feedName]['Uri'] = [string]$settingsUri
                         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Overriding URI for feed '$feedName' from `$global:settings"
                     }
-                    if (-not [string]::IsNullOrWhiteSpace([string]$settingsApiKeyName)) {
-                        $feedMap[$feedName]['ApiKeyName'] = [string]$settingsApiKeyName
-                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Overriding ApiKeyName for feed '$feedName' from `$global:settings"
+                    if (-not [string]::IsNullOrWhiteSpace([string]$settingsApiKeySecretName)) {
+                        $feedMap[$feedName]['ApiKeySecretName'] = [string]$settingsApiKeySecretName
+                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Overriding ApiKeySecretName for feed '$feedName' from `$global:settings"
                     }
                 }
             }
@@ -230,7 +231,7 @@ function New-HostSettingsForPackageRepositoryFeeds {
             $lines.Add("            FeedType   = '$($entry.FeedType)'")
             $lines.Add("            Tier       = '$($entry.Tier)'")
             $lines.Add("            Uri        = '$($entry.Uri)'")
-            $lines.Add("            ApiKeyName = '$($entry.ApiKeyName)'")
+            $lines.Add("            ApiKeySecretName = '$($entry.ApiKeySecretName)'")
             $lines.Add('        }')
         }
 

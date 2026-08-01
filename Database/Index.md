@@ -4,16 +4,26 @@ This file lists all subfolders and key documents in the `Database/` folder of th
 
 ## Subfolders
 
-- [ATAPUtilities/](ATAPUtilities/) — Versioning file (`version.json`) for the ATAPUtilities database NuGet promotion package (Nerdbank.GitVersioning reads this file to compute the package version) and the `db/` change-unit source tree (`migrations/`, `loaders/`, `seeds/`) that `New-DatabaseChangePackage` packs. **Migrations here use the same canonical dotted, zero-padded Flyway version scheme as `Flyway/SQL/` (`V00.0X.NNNNNN`)** — unified in Sprint 0009 Task 9.12. A change-unit migration must be numbered strictly greater than the consolidated baseline top (`00.02.000040`) so it sorts correctly when applied on top of a tier already carrying that baseline; `New-DatabaseChangePackage` derives the manifest's `flywayTargetVersion` from the highest such migration. Sprint 0012 adds `V00.02.000060__Add_Instantiation_Manifestation_Tables.sql` for the ATAPUtilities instantiation inventory, version, and manifestation tables.
+- [Flyway/](Flyway/) — Canonical ATAPUtilities database package root. `version.json` controls the `ATAPUtilities.Database` package version; `SQL/` contains the immutable applied baseline, CSV loaders, and forward migrations; `Data/` contains all seed CSVs. `V00.01.000010` retains its historically applied bytes, while the Sprint 0012/0013 instantiation, durable RRSBS, typed-membership retirement, invariant, and effective-dating changes remain forward migrations `V00.02.000060` through `V00.02.000100`. The former split source directory was retired after those migrations were moved into the canonical `SQL/` location.
+
+  > **Running Flyway:** use `Database/Flyway/flyway.toml`, whose only migration location is `SQL/`. Never fold forward changes into an already-applied migration. Existing tiers at `00.02.000040` validate with `000060`-`000100` pending until a separately reviewed promotion applies them.
 - [Documentation/](Documentation/Index.md) — PlantUML diagrams and Markdown design documents for the database schema and package promotion pipeline. See [Documentation/Index.md](Documentation/Index.md) for the full contents list.
-- [Flyway/](Flyway/) — Flyway project root. Contains `flyway.toml`, the **consolidated** migration SQL scripts under `SQL/` (whose `V00.01.000010` core-schema migration folds in several earlier migrations inline), seed data files under `Data/`, and superseded migrations retained for history under `ObsoleteSQL/`.
+- `Flyway/SQL/V00.02.000130__Add_Markdown_Rule_Kind.sql` and
+  `Flyway/SQL/V00.02.000140__Seed_ATAPorg_Instantiation_V2_Markdown.sql` —
+  Task 13.85's forward-only Markdown Kind and immutable InstantiationVersion 2
+  migrations. Migration 000120 is reserved for the future ContentSummary slice
+  and must not be included in the Task 13.85 package.
+- `Verify/PromotionUnit_00.02/Verify_ATAPorg_Instantiation_V2_Markdown.sql` —
+  verifies the Kind, composition, exact source lines and hashes, ordered graph,
+  Version 1 immutability, and three Version 2 manifestation artifacts.
 - [Powershell/](Powershell/) — PowerShell cmdlets for database management operations (rebuild, backup, restore, provisioning). Public functions are in `Powershell/public/`.
 - [Queries/](Queries/) — Ad-hoc and reference SQL query scripts for reporting and diagnostics against the ATAPUtilities schema.
 - [StoredProcedures/](StoredProcedures/) — SQL scripts for stored procedures that are applied to the database after schema migrations.
-- [Verify/](Verify/) — Smoke-test and acceptance-test SQL scripts run after Flyway migrations to verify schema correctness.
+- [Verify/](Verify/) — Smoke-test and acceptance-test SQL scripts run after Flyway migrations to verify schema correctness. `PromotionUnit_00.02/` holds `Verify_ScheduledTask_Schema.sql` and, from Sprint 0013 Stream J, `Verify_RRSBS_DurableVersioned_Schema.sql` — 209 read-only, idempotent assertions over the `V00.02.000070`/`000080` schema objects, input scope, ordering, immutability triggers, and manifestation provenance, raising a severity-16 aggregate so a pipeline can gate on it. **No runner, CI step, or manifest entry currently references this folder**; wiring these scripts into the promotion gate is unowned work.
 
 ## Key Root Documents
 
+- [../SolutionDocumentation/ATAPUtilities-Database-0.1.3-Release-Record.md](../SolutionDocumentation/ATAPUtilities-Database-0.1.3-Release-Record.md) — Live BuildMaster/ProGet release record for migrations `000060`-`000110` and `000130`-`000140`: stable artifact hash, per-tier Flyway proof, deferred `000120` exclusion, backups, Production legacy checksum reconciliation, and recovered failure modes.
 - [Documentation/FolderStructure.md](Documentation/FolderStructure.md) — Annotated tree of the entire `Database/` folder structure.
 - [Documentation/README.RRSBS.md](Documentation/README.RRSBS.md) — Overview of the Rules, Rule Sets, and Build Sets subsystem in the ATAPUtilities database.
 - [Documentation/PROMOTION_SUMMARY.md](Documentation/PROMOTION_SUMMARY.md) — Executive summary of the database package promotion process.

@@ -48,6 +48,8 @@ Describe 'Set-GlobalConfigRootKeys population' -Tag 'Unit' {
     $global:configRootKeys.ContainsKey('BuildMasterApplicationByModuleConfigRootKey') | Should -BeTrue    # Set-BuildMasterConfigRootKeys (module->application map)
     $global:configRootKeys.ContainsKey('RulesManagementDatabaseHostConfigRootKey') | Should -BeTrue       # Set-RulesManagementConfigRootKeys
     $global:configRootKeys.ContainsKey('ProGetFeedNuGetExperimentalFeedNameConfigRootKey') | Should -BeTrue # Add-PackageRepositoriesConfigRootKeys
+    $global:configRootKeys['ProGetAdminApiKeySecretNameConfigRootKey'] | Should -BeExactly 'ProGetAdminApiKeySecretName'
+    $global:configRootKeys['ProGetBuildMasterApiKeySecretNameConfigRootKey'] | Should -BeExactly 'ProGetBuildMasterApiKeySecretName'
   }
 
   It 'does not populate $global:configRootKeys under -WhatIf' {

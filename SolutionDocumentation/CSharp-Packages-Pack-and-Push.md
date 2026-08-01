@@ -1,5 +1,11 @@
 # C# Packages — Pack and Push
 
+> **Task 13.62 security cutover:** Do not use legacy direct-tool,
+> environment-variable, or sensitive-value examples. Use
+> `-ProGetApiKeySecretName` with `ProGet.BuildMaster.API.Key` for CI or
+> `ProGet.Admin.API.Key` for administration; the leaf resolves it with
+> `Get-SecretATAP`.
+
 **Scope:** Producing `.nupkg` / `.snupkg` files from `ATAP.Utilities.*` and
 `AceCommander.*` C# projects and pushing them to the correct ProGet feed.
 **Audience:** Developers cutting packages locally; anyone troubleshooting a failed push.
@@ -194,11 +200,13 @@ dotnet pack src\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj `
 Get-ChildItem _generated\nuget\local -Filter '*.nupkg' |
     Select-Object -ExpandProperty Name
 
-# 4) Push to experimental feed
-$apiKey = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
-dotnet nuget push _generated\nuget\local\*.nupkg `
-    --source http://localhost:50000/nuget/nuget-experimental/v3/index.json `
-    --api-key $apiKey
+# 4) Push through the SecretName-only PowerShell boundary
+Get-ChildItem _generated\nuget\local -Filter '*.nupkg' | ForEach-Object {
+  Publish-NuGetPackageToProGet `
+    -NupkgPath $_.FullName `
+    -Feed 'nuget-experimental' `
+    -ProGetApiKeySecretName 'ProGet.BuildMaster.API.Key'
+}
 ```
 
 Use `--no-build` on the `pack` step when you've just run `build` — skipping the
@@ -348,9 +356,8 @@ because NuGet warning `NU1507` escalates without it.
 
 - All five feeds permit anonymous read. No `<packageSourceCredentials>` section
   is needed.
-- `dotnet nuget push` requires the ProGet admin API key, via `--api-key`. Store
-  it only in Bitwarden; load it only via the `PROGET_ADMIN_API_KEY` env var;
-  never commit it.
+- The publishing leaf performs the tool-required API-key handoff internally.
+  Callers pass only `ProGet.BuildMaster.API.Key` as a SecretName.
 
 ---
 
@@ -390,19 +397,21 @@ for the full automation surface.
 ### 9.1 Single package, single feed
 
 ```powershell
-$apiKey = [System.Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
-dotnet nuget push .\path\to\ATAP.Utilities.ETW.0.1.0-Sprint.47.nupkg `
-    --source http://localhost:50000/nuget/nuget-experimental/v3/index.json `
-    --api-key $apiKey
+Publish-NuGetPackageToProGet `
+  -NupkgPath .\path\to\ATAP.Utilities.ETW.0.1.0-Sprint.47.nupkg `
+  -Feed 'nuget-experimental' `
+  -ProGetApiKeySecretName 'ProGet.BuildMaster.API.Key'
 ```
 
 ### 9.2 All `.nupkg` in a folder
 
 ```powershell
-dotnet nuget push _generated\nuget\local\*.nupkg `
-    --source http://localhost:50000/nuget/nuget-experimental/v3/index.json `
-    --api-key $apiKey `
-    --skip-duplicate
+Get-ChildItem _generated\nuget\local -Filter '*.nupkg' | ForEach-Object {
+  Publish-NuGetPackageToProGet `
+    -NupkgPath $_.FullName `
+    -Feed 'nuget-experimental' `
+    -ProGetApiKeySecretName 'ProGet.BuildMaster.API.Key'
+}
 ```
 
 `--skip-duplicate` prevents the push from erroring on packages that already
@@ -415,7 +424,10 @@ If the source is already defined in `NuGet.config`, the feed name alone is
 accepted:
 
 ```powershell
-dotnet nuget push .\*.nupkg --source nuget-experimental --api-key $apiKey
+Publish-NuGetPackageToProGet `
+  -NupkgPath .\Package.1.0.0.nupkg `
+  -Feed 'nuget-experimental' `
+  -ProGetApiKeySecretName 'ProGet.BuildMaster.API.Key'
 ```
 
 This is the form used by BuildMaster's OtterScript — the feed name resolves via
@@ -425,12 +437,13 @@ without hardcoding URLs.
 ### 9.4 Pushing symbol packages
 
 `.snupkg` files alongside `.nupkg` files are pushed automatically. To push
-**only** the symbol package separately:
+**only** the symbol package separately, keep the same SecretName boundary:
 
 ```powershell
-dotnet nuget push .\ATAP.Utilities.ETW.0.1.0-Sprint.47.snupkg `
-    --source http://localhost:50000/nuget/nuget-experimental/v3/index.json `
-    --api-key $apiKey
+Publish-NuGetPackageToProGet `
+  -PackagePath '.\ATAP.Utilities.ETW.0.1.0-Sprint.47.snupkg' `
+  -FeedName 'nuget-experimental' `
+  -ProGetApiKeySecretName 'ProGet.BuildMaster.API.Key'
 ```
 
 ---
@@ -471,8 +484,8 @@ ATAP.Utilities` is accurate today but should be tightened to
 
 ### 11.1 `401 Unauthorized` on push
 
-- Empty `PROGET_ADMIN_API_KEY` — `LoginScript.ps1` did not run, or the env var
-  is at Process scope rather than User scope.
+- `ProGet.BuildMaster.API.Key` cannot resolve for the current identity or lacks
+  publish permission. Verify metadata and grants without displaying the value.
 - Wrong feed name in the URL — `nuget-experimental` is one hyphenated token,
   not `nuget/experimental`.
 - ProGet has `Require API key for push` enabled but the `--api-key` flag was
@@ -520,12 +533,9 @@ applies; `nuget.org` will not be consulted.
 - The ProGet API key is equivalent to a write token — leaking it lets any
   actor push arbitrary packages to production feeds. **Never** commit it,
   log it to stdout, or paste it into issue comments.
-- `dotnet nuget push` does not redact `--api-key` in its verbose output. Use
-  `--api-key $env:PROGET_ADMIN_API_KEY` and ensure the process-host (BuildMaster,
-  Claude Code agent, etc.) masks the env var.
-- BuildMaster Application Variables with the **Sensitive** flag are decrypted
-  on-demand via `$Decrypt($ProGetApiKey)` in OtterScript and redacted in build
-  logs — use this mechanism for CI.
+- Keep the tool-required raw handoff inside the authenticated PowerShell leaf.
+  BuildMaster and operator callers pass only `ProGetApiKeySecretName`; no
+  resolved value belongs in Application Variables, arguments, or environments.
 - The current feeds accept anonymous reads. This is intentional for developer
   ergonomics but represents a known security gap — production hardening
   should require an API key for reads on `nuget-stable` at minimum.

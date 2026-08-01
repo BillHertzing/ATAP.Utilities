@@ -27,7 +27,7 @@ BeforeAll {
   $script:ReadOnlyToken = '0.11111111-1111-1111-1111-111111111111.AAAAAAAAAAAAAAAAAAAAAAAAAAread'
   $script:ReadWriteToken = '0.22222222-2222-2222-2222-222222222222.BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBwrite'
 
-  $buildToolingPublic = Join-Path $script:ModuleRoot '..\ATAP.Utilities.BuildTooling.PowerShell\public'
+  $buildToolingPublic = Join-Path $script:ModuleRoot '..\ATAP.Utilities.BuildTooling.Secrets.PowerShell\public'
   . (Join-Path $buildToolingPublic 'Get-BWSAccessToken.ps1')
   . (Join-Path $buildToolingPublic 'Initialize-BWSAccessToken.ps1')
   ${function:global:Get-BWSAccessToken} = ${function:Get-BWSAccessToken}

@@ -3,6 +3,19 @@
   "model": "sonnet",
   "permissions": {
     "defaultMode": "acceptEdits",
+    "ask": [],
+    "additionalDirectories": [
+      "D:\\Temp",
+      "C:\\Users\\whertzing\\AppData\\Local\\Temp",
+      "C:\\Dropbox\\whertzing\\GitHub",
+      "C:\\Program Files\\PowerShell\\Modules",
+      "C:\\Program Files\\PowerShell\\7",
+      "C:\\Dropbox\\whertzing\\GitHub\\SharedVSCode",
+      "C:\\Dropbox\\whertzing\\GitHub\\_Planning",
+      "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities",
+      "C:\\Dropbox\\whertzing\\GitHub\\ATAP.IAC",
+      "C:\\Dropbox\\whertzing\\GitHub\\AceCommander"
+    ],
     "allow": [
       "PowerShell(:*)",
       "PowerShell(*)",
@@ -128,19 +141,6 @@
       "PowerShell(git push --force origin master:*)",
       "Bash(bw export:*)",
       "PowerShell(bw export:*)"
-    ],
-    "ask": [],
-    "additionalDirectories": [
-      "D:\\Temp",
-      "C:\\Users\\whertzing\\AppData\\Local\\Temp",
-      "C:\\Dropbox\\whertzing\\GitHub",
-      "C:\\Program Files\\PowerShell\\Modules",
-      "C:\\Program Files\\PowerShell\\7",
-      "C:\\Dropbox\\whertzing\\GitHub\\SharedVSCode",
-      "C:\\Dropbox\\whertzing\\GitHub\\_Planning",
-      "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities",
-      "C:\\Dropbox\\whertzing\\GitHub\\ATAP.IAC",
-      "C:\\Dropbox\\whertzing\\GitHub\\AceCommander"
     ]
   },
   "hooks": {
@@ -150,7 +150,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities\\.claude\\hooks\\PreToolUse-PwshGuard.ps1\""
+            "command": "pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities-wt-123-Sprint-0013-work-items\\.claude\\hooks\\PreToolUse-PwshGuard.ps1\""
           }
         ]
       }

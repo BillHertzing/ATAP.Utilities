@@ -74,6 +74,7 @@
     'Export-InstantiationManifestation', 'Export-RuleToTextFile',
     'Get-DatabaseCredentialsKey', 'Get-DatabasePackageManifest',
     'Get-InstalledDatabaseInformation', 'Get-InstantiationSourceModuleInventory',
+    'Get-InstantiationVersionRuleGraph',
     'Initialize-SqlServiceLogin', 'Install-SqlServerInstance',
     'Invoke-DatabasePackageRehearsal', 'Invoke-Flyway', 'Invoke-FlywayRehearsal',
     'Invoke-SqlServerBackup', 'New-CobianAppJobs', 'New-CobianSqlJobs',

@@ -54,7 +54,7 @@
 #   $Configuration   — supplied by these monitor definitions
 #   $SourcePath      — set as Application Variable: working-directory path
 #   $ProGetUrl       — set as Application Variable: ProGet base URL
-#   $ProGetApiKey    — resolved from environment by the runner
+#   ProGet API key   — runner receives only ProGet.BuildMaster.API.Key as a SecretName
 ##########################################################################
 
 # ---------------------------------------------------------------------------

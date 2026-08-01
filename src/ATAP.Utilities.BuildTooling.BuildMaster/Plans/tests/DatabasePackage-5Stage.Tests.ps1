@@ -93,24 +93,31 @@ Describe 'V4-E08 runner shape: Invoke-DatabasePackageBuildMasterStage.ps1 contra
             'ApplicationName',
             'DatabaseApplication',
             'DatabaseStream',
+            'ExcludedMigrationFileNames',
             'Branch',
             'Stage',
-            'ProGetUrl'
+            'ProGetUrl',
+            'ProGetApiKeySecretName'
         )) {
             $script:RunnerText | Should -Match "\[string\]\$\b$param\b"
         }
     }
 
-    It 'runner resolves API key from User-scope environment, not from a parameter' {
-        $script:RunnerText | Should -Match 'PROGET_BUILDMASTER_API_KEY'
-        $script:RunnerText | Should -Match 'PROGET_ADMIN_API_KEY'
-        $script:RunnerText | Should -Match "GetEnvironmentVariable\('PROGET_BUILDMASTER_API_KEY',\s*'User'\)"
-        $script:RunnerText | Should -Not -Match '\[Parameter\(Mandatory\)\][^\]]*\$ProGetApiKey'
+    It 'runner carries only the canonical BuildMaster SecretName' {
+        $script:RunnerText | Should -Match "ProGetApiKeySecretName\s*=\s*'ProGet\.BuildMaster\.API\.Key'"
+        $script:RunnerText | Should -Not -Match 'PROGET_(?:BUILDMASTER|ADMIN)_API_KEY'
+        $script:RunnerText | Should -Not -Match '\$ProGetApiKey\b'
     }
 
     It 'runner invokes Publish-DatabaseChangePackageToProGet (no inline dotnet nuget push)' {
         $script:RunnerText | Should -Match 'Publish-DatabaseChangePackageToProGet'
+        $script:RunnerText | Should -Match '-ProGetBaseUrl\s+\$ProGetUrl'
         $script:RunnerText | Should -Not -Match 'dotnet\s+nuget\s+push'
+    }
+
+    It 'runner always binds the source-tree ProGet database commands' {
+        $script:RunnerText | Should -Match "\.\s+\(Resolve-BuildToolingFunctionFile[^\r\n]+Publish-DatabaseChangePackageToProGet\.ps1'\)"
+        $script:RunnerText | Should -Match "\.\s+\(Resolve-BuildToolingFunctionFile[^\r\n]+Promote-DatabaseChangePackage\.ps1'\)"
     }
 
     It 'runner invokes Promote-DatabaseChangePackage for non-Experimental tiers' {
@@ -119,6 +126,23 @@ Describe 'V4-E08 runner shape: Invoke-DatabasePackageBuildMasterStage.ps1 contra
 
     It 'runner invokes New-DatabaseChangePackage during the Experimental stage' {
         $script:RunnerText | Should -Match 'New-DatabaseChangePackage'
+    }
+
+    It 'runner always binds every canonical source-tree database-management command' {
+        $script:RunnerText | Should -Match 'foreach\s+\(\$commandName\s+in\s+\$databaseManagementFunctionFiles\.Keys\)'
+        $script:RunnerText | Should -Match '\.\s+\$candidate'
+        $script:RunnerText | Should -Match 'Required database-management cmdlet'
+    }
+
+    It 'plan passes the exact migration exclusion application variable to the runner' {
+        $script:PlanText | Should -Match '-ExcludedMigrationFileNames\s+"\$ExcludedMigrationFileNames"'
+    }
+
+    It 'runner parses, validates, records, and forwards exact migration exclusions' {
+        $script:RunnerText | Should -Match '\$ExcludedMigrationFileNames\s+-split\s+'';'''
+        $script:RunnerText | Should -Match 'GetFileName\(\$excludedMigration\)'
+        $script:RunnerText | Should -Match 'ExcludedMigrationFileName''\]\s*=\s*\$excludedMigrations'
+        $script:RunnerText | Should -Match 'ExcludedMigrations\s*=\s*\$excludedMigrations'
     }
 
     It 'runner invokes Get-DatabasePackageBuildContext' {
@@ -177,6 +201,11 @@ Describe 'Task 9.10 runner contract: per-tier apply + rehearsal-before-promotion
         $script:RunnerText | Should -Match '\[switch\]\$SkipApply'
     }
 
+    It 'runner fails before publish or promotion when the tier database target is absent or apply is bypassed' {
+        $script:RunnerText | Should -Match "cannot publish, promote, or complete package '.+': the corresponding connection-string secret name is not configured"
+        $script:RunnerText | Should -Match "cannot publish, promote, or complete package '.+' while -SkipApply is supplied"
+    }
+
     It 'runner enforces rehearsal BEFORE promotion (rehearsal call precedes the Promote call)' {
         $rehearsalIdx = $script:RunnerText.IndexOf('Invoke-DatabasePackageTierRehearsal `')
         $promoteIdx   = $script:RunnerText.IndexOf('$promotionResult = Promote-DatabaseChangePackage')
@@ -193,6 +222,27 @@ Describe 'Task 9.10 runner contract: per-tier apply + rehearsal-before-promotion
     It 'runner applies the package to the tier database via Invoke-Flyway migrate' {
         $script:RunnerText | Should -Match "FlywayCommand\s*=\s*'migrate'"
         $script:RunnerText | Should -Match 'Invoke-Flyway @flywayParameters'
+    }
+
+    It 'publishes Experimental to ProGet before applying the exact package to ExpDeveloper' {
+        $publishIdx = $script:RunnerText.IndexOf('$publishResult = Publish-DatabaseChangePackageToProGet')
+        $applyIdx   = $script:RunnerText.IndexOf('Invoke-DatabasePackageStageApply `', $publishIdx)
+        $publishIdx | Should -BeGreaterThan 0
+        $applyIdx   | Should -BeGreaterThan $publishIdx
+    }
+
+    It 'promotes each later ProGet tier before applying the exact package to its database' {
+        $promoteIdx = $script:RunnerText.IndexOf('$promotionResult = Promote-DatabaseChangePackage')
+        $applyIdx   = $script:RunnerText.IndexOf('Invoke-DatabasePackageStageApply `', $promoteIdx)
+        $promoteIdx | Should -BeGreaterThan 0
+        $applyIdx   | Should -BeGreaterThan $promoteIdx
+    }
+
+    It 'writes stage completion only after the corresponding database apply' {
+        $promoteIdx  = $script:RunnerText.IndexOf('$promotionResult = Promote-DatabaseChangePackage')
+        $applyIdx    = $script:RunnerText.IndexOf('Invoke-DatabasePackageStageApply `', $promoteIdx)
+        $completeIdx = $script:RunnerText.IndexOf('Set-DatabasePackageStageCompleted ', $applyIdx)
+        $completeIdx | Should -BeGreaterThan $applyIdx
     }
 
     It 'runner takes a pre-migration snapshot for permanent tiers' {
@@ -384,32 +434,24 @@ Describe 'Task 9.10 behavior: per-tier apply + rehearsal helpers' {
     }
 
     Context 'Invoke-DatabasePackageStageApply policy' {
-        It 'skips (no throw, no apply call) when no connection secret is configured' {
-            $script:applyCalls = 0
-            function global:Invoke-DatabasePackageTierApply { param([Parameter(ValueFromRemainingArguments)]$a) $null = $a; $script:applyCalls++ }
+        It 'fails closed when no connection secret is configured' {
             { Invoke-DatabasePackageStageApply -ContextDirectory $script:TempDir `
                 -DatabasePackageId 'ATAPUtilities.Database' -DatabaseApplication 'ATAPUtilities' `
                 -PackageVersion '1.0.0' -Tier 'Development' -NupkgPath $script:FakeNupkg `
-                -ConnectionStringSecretName '' -TracePath $script:TracePath } | Should -Not -Throw
-            $script:applyCalls | Should -Be 0
-            Remove-Item Function:\Invoke-DatabasePackageTierApply -ErrorAction SilentlyContinue
+                -ConnectionStringSecretName '' -TracePath $script:TracePath } |
+                Should -Throw '*connection-string secret name is not configured*'
         }
 
-        It 'skips (no apply call) when -SkipApply is set even with a secret configured' {
-            $script:applyCalls = 0
-            function global:Invoke-DatabasePackageTierApply { param([Parameter(ValueFromRemainingArguments)]$a) $null = $a; $script:applyCalls++ }
-            Invoke-DatabasePackageStageApply -ContextDirectory $script:TempDir `
+        It 'fails closed when -SkipApply is set even with a secret configured' {
+            { Invoke-DatabasePackageStageApply -ContextDirectory $script:TempDir `
                 -DatabasePackageId 'ATAPUtilities.Database' -DatabaseApplication 'ATAPUtilities' `
                 -PackageVersion '1.0.0' -Tier 'Development' -NupkgPath $script:FakeNupkg `
-                -ConnectionStringSecretName 'dbConnectionString-x' -SkipApply -TracePath $script:TracePath
-            $script:applyCalls | Should -Be 0
-            Remove-Item Function:\Invoke-DatabasePackageTierApply -ErrorAction SilentlyContinue
+                -ConnectionStringSecretName 'dbConnectionString-x' -SkipApply -TracePath $script:TracePath } |
+                Should -Throw '*-SkipApply cannot be used in a passing BuildMaster stage*'
         }
 
         It 'applies and writes the .applied marker when a secret is configured' {
-            function global:Invoke-DatabasePackageTierApply {
-                param([Parameter(ValueFromRemainingArguments)]$a)
-                $null = $a
+            Mock Invoke-DatabasePackageTierApply {
                 [PSCustomObject]@{ Applied = $true; Environment = 'Development'; SnapshotPath = $null }
             }
             Invoke-DatabasePackageStageApply -ContextDirectory $script:TempDir `
@@ -418,15 +460,11 @@ Describe 'Task 9.10 behavior: per-tier apply + rehearsal helpers' {
                 -ConnectionStringSecretName 'dbConnectionString-x' -TracePath $script:TracePath
             $marker = Join-Path $script:TempDir 'ATAPUtilities.Database.Development.applied.tmp'
             Test-Path -LiteralPath $marker -PathType Leaf | Should -BeTrue
-            Remove-Item Function:\Invoke-DatabasePackageTierApply -ErrorAction SilentlyContinue
+            Should -Invoke Invoke-DatabasePackageTierApply -Times 1 -Exactly
         }
 
         It 'is idempotent: a second apply with an existing marker does not re-invoke the apply worker' {
-            $script:applyCalls = 0
-            function global:Invoke-DatabasePackageTierApply {
-                param([Parameter(ValueFromRemainingArguments)]$a)
-                $null = $a
-                $script:applyCalls++
+            Mock Invoke-DatabasePackageTierApply {
                 [PSCustomObject]@{ Applied = $true; Environment = 'Development'; SnapshotPath = $null }
             }
             # Marker from the previous test already exists for Development.
@@ -434,8 +472,7 @@ Describe 'Task 9.10 behavior: per-tier apply + rehearsal helpers' {
                 -DatabasePackageId 'ATAPUtilities.Database' -DatabaseApplication 'ATAPUtilities' `
                 -PackageVersion '1.0.0' -Tier 'Development' -NupkgPath $script:FakeNupkg `
                 -ConnectionStringSecretName 'dbConnectionString-x' -TracePath $script:TracePath
-            $script:applyCalls | Should -Be 0
-            Remove-Item Function:\Invoke-DatabasePackageTierApply -ErrorAction SilentlyContinue
+            Should -Invoke Invoke-DatabasePackageTierApply -Times 0 -Exactly
         }
     }
 

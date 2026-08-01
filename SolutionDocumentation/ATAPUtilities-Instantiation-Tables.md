@@ -45,6 +45,34 @@ things belong to a specific instantiation version. The manifestation table
 describes concrete renderer outputs such as directories, module source folders,
 module manifests, and reports.
 
+## Effective-Dated Versioning
+
+`V00.02.000100__Add_RRSBS_Effective_Dating.sql` makes temporal validity the
+authoritative version contract for the RRSBS instantiation tree. Every
+Philote-backed version and every membership/input row that participates in the
+tree carries `EffectiveFrom` and `EffectiveTo` in UTC.
+
+- A row is current exactly when `EffectiveTo IS NULL`.
+- A logical parent can have exactly one current child version; filtered unique
+  indexes enforce that invariant.
+- `VersionNumber` and `VersionLabel` remain useful historical annotations, but
+  neither determines which row is current.
+- A revision closes the current row by setting `EffectiveTo` to the revision
+  UTC timestamp, then inserts its successor with the same logical parent
+  Philote ID, `EffectiveFrom` equal to that timestamp, and `EffectiveTo = NULL`.
+- Published content is append-only. The only permitted update to a temporal
+  RRSBS row is closing a previously open interval. Deletes, content rewrites,
+  re-opening, and invalid/future close timestamps are rejected by triggers.
+
+For example, a Rule revision retains `RulePhiloteId` as its durable identity:
+the old `RuleVersion` is closed and a new `RuleVersion` is inserted with the
+same `RulePhiloteId` and revised content/composition. The same pattern applies
+upward through RuleSet, BuildSet, and Instantiation versions, and downward
+through primitive-composition, membership, rule-instantiation, and input
+binding records. Consumers select the current tree by filtering each temporal
+relation on `EffectiveTo IS NULL`, or reconstruct an earlier tree with an
+as-of timestamp predicate.
+
 ## Source Ingestion
 
 Source ingestion should populate or update `SourceModule` rows from the
@@ -99,6 +127,51 @@ The first migration seeds `ATAP Utilities Sprint 0012` with two versions:
   membership, adds the planned `ATAP.Utilities.Secrets.PowerShell` module, and
   records the planned casing/layout correction for
   `ATAP.Utilities.Security.PowerShell`.
+
+### Corrected ATAP.org seed (Sprint 0013 Task 13.79)
+
+`V00.02.000110__Seed_ATAPorg_Instantiation_V1.sql` adds the first corrected
+graph after the Sprint 0012 sample versions were retired. The durable
+Instantiation is `ATAP.org Source Manifestation`; version 1 selects one
+BuildSetVersion containing the ordered target-path and PowerShell-file
+RuleSetVersions. It snapshots eight RuleInstantiationVersions and five planned
+artifacts.
+
+Exact source content is stored in
+`RuleInstantiationVersionSourceLine`, keyed to the immutable
+RuleInstantiationVersion with a unique, contiguous one-based ordinal. Line
+text can be blank or duplicated. The exact terminator is stored per line,
+while encoding, BOM policy, and final-newline state remain declared scalar
+bindings. The table is effective-dated and rejects UPDATE and DELETE; revised
+content requires a new RuleInstantiationVersion.
+
+The design and rehearsal evidence are summarized in
+[Task-13.79-Instantiation-V1.md](Task-13.79-Instantiation-V1.md).
+
+### ATAP.org InstantiationVersion 2 Markdown slice (Sprint 0013 Task 13.85)
+
+`V00.02.000130__Add_Markdown_Rule_Kind.sql` adds Markdown as
+`PrimitiveLanguageKindId = 10`; ID 9 remains reserved for the future
+ContentSummary slice. `V00.02.000140__Seed_ATAPorg_Instantiation_V2_Markdown.sql`
+adds an immutable successor graph with fifteen snapshot members and three
+planned artifacts: the Documentation directory, `INDEX.md`, and
+`Write-ArrayIndented.md`. Version 1 membership, bindings, source lines, and
+artifacts remain unchanged.
+
+The initial Markdown RuleVersions use immutable
+`RuleInstantiationVersionSourceLine` rows to preserve exact UTF-8/no-BOM,
+CRLF, final-newline, blank-line, and duplicate-line behavior. The canonical
+verification artifact is
+`Database/Verify/PromotionUnit_00.02/Verify_ATAPorg_Instantiation_V2_Markdown.sql`.
+
+Package `ATAPUtilities.Database` 0.1.2
+(`99381F97238E4011B5C68EBA8800CB66B398DBFF25B9631B5CF9FBE2EE46E518`)
+was rehearsed from an empty database and a copy of the current state, then
+deployed once through the repository Flyway wrapper to
+`UTAT022\EXPWHERTZING.ATAPUtilities`. A separately approved manifestation wrote
+the three Version 2 artifacts to `C:\Dropbox\ATAP.org\_generated`, verified the
+two exact content hashes and complete producing-key provenance, and left the
+Version 1 PowerShell file byte-identical.
 
 ## Follow-On Work
 

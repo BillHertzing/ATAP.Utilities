@@ -1,0 +1,240 @@
+function New-SprintEndHandoff {
+  <#
+  .SYNOPSIS
+  Generates the non-interactive SprintEnd handoff file.
+
+  .DESCRIPTION
+  Writes an atomic, sprint-specific handoff with an explicit working directory,
+  safe worktree removal order, non-interactive stable synchronization,
+  database-only cleanup, BuildMaster variable cleanup, boundary verification,
+  and self-removal. Bitwarden secret deletion and SQL-instance removal are
+  deliberately absent.
+
+  .PARAMETER GitRoot
+  Parent directory containing stable repositories and sprint worktrees.
+
+  .PARAMETER WorktreePaths
+  Sprint worktrees to remove. _Planning is ordered last.
+
+  .PARAMETER SprintNumber
+  Closing sprint number. Defaults from WorktreePaths when omitted.
+
+  .PARAMETER OutputPath
+  Handoff path. Defaults to <GitRoot>/HANDOFF.SprintNNNN.md.
+
+  .PARAMETER ProfiledRemotingPolicy
+  Policy embedded in the pre-removal stable boundary reset. Defaults to Auto.
+
+  .OUTPUTS
+  FileInfo for the generated handoff, or a planned result under WhatIf.
+
+  .EXAMPLE
+  New-SprintEndHandoff -GitRoot C:\Repos -WorktreePaths $paths
+
+  .NOTES
+  AI assisted using Powershell.instructions.md as guidelines.
+  #>
+  [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
+  [OutputType([PSCustomObject])]
+  param(
+    [Parameter(Mandatory)]
+    [ValidateScript({ Test-Path -LiteralPath $_ -PathType Container })]
+    [string]$GitRoot,
+
+    [Parameter()]
+    [AllowNull()]
+    [AllowEmptyCollection()]
+    [string[]]$WorktreePaths = @(),
+
+    [Parameter()]
+    [ValidatePattern('^\d{1,4}$')]
+    [string]$SprintNumber,
+
+    [Parameter()]
+    [string]$OutputPath,
+
+    [Parameter()]
+    [ValidateSet('Disabled', 'Auto', 'Required')]
+    [string]$ProfiledRemotingPolicy = 'Auto'
+  )
+
+  begin {
+    $fn = 'New-SprintEndHandoff'
+    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
+  }
+
+  process {
+    # Do not mark this collection Mandatory. PowerShell treats an explicitly
+    # empty mandatory array as missing and prompts for input; a noninteractive
+    # BuildMaster worker then waits forever. Validate explicitly so omitted,
+    # null, empty, and blank entries all fail immediately without host input.
+    if (@($WorktreePaths).Count -eq 0) {
+      throw 'New-SprintEndHandoff requires at least one WorktreePaths entry.'
+    }
+    if (@($WorktreePaths | Where-Object { [string]::IsNullOrWhiteSpace($_) }).Count -gt 0) {
+      throw 'New-SprintEndHandoff WorktreePaths entries must not be null, empty, or whitespace.'
+    }
+
+    function ConvertTo-SprintEndHandoffSingleQuotedLiteral {
+      param(
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [string]$Value
+      )
+      return "'" + ($Value -replace "'", "''") + "'"
+    }
+
+    $gitRootFull = [IO.Path]::GetFullPath($GitRoot)
+    if ([string]::IsNullOrWhiteSpace($SprintNumber)) {
+      $sprintNumbers = @($WorktreePaths | ForEach-Object {
+          $leaf = Split-Path -Path $_ -Leaf
+          if ($leaf -match '-Sprint-(\d{4})-work-items$') { $Matches[1] }
+        } | Select-Object -Unique)
+      if ($sprintNumbers.Count -eq 1) {
+        $SprintNumber = $sprintNumbers[0]
+      } elseif ($sprintNumbers.Count -gt 1) {
+        throw "WorktreePaths contain multiple sprint numbers: $($sprintNumbers -join ', '). Pass -SprintNumber explicitly."
+      } elseif ([string]::IsNullOrWhiteSpace($OutputPath)) {
+        throw 'Could not infer SprintNumber from WorktreePaths. Pass -SprintNumber or -OutputPath.'
+      }
+    }
+    if (-not [string]::IsNullOrWhiteSpace($SprintNumber)) {
+      $SprintNumber = '{0:D4}' -f [int]$SprintNumber
+    }
+    if ([string]::IsNullOrWhiteSpace($OutputPath)) {
+      $OutputPath = Join-Path $gitRootFull "HANDOFF.Sprint$SprintNumber.md"
+    }
+    $outputPathFull = [IO.Path]::GetFullPath($OutputPath)
+    $gitRootLiteral = ConvertTo-SprintEndHandoffSingleQuotedLiteral -Value $gitRootFull
+    $outputPathLiteral = ConvertTo-SprintEndHandoffSingleQuotedLiteral -Value $outputPathFull
+    $orderedWorktrees = @($WorktreePaths | Sort-Object {
+        $leaf = Split-Path -Path $_ -Leaf
+        if ($leaf -like '_Planning*') { 3 }
+        elseif ($leaf -like 'SharedVSCode*') { 2 }
+        else { 1 }
+      }, { Split-Path -Path $_ -Leaf })
+
+    $lines = [System.Collections.Generic.List[string]]::new()
+    $lines.Add('# Agent Handoff - Resume SprintEnd')
+    $lines.Add('')
+    $lines.Add("Run these commands from ``$gitRootFull`` in PowerShell 7 with profiles enabled.")
+    $lines.Add('')
+    $lines.Add('```powershell')
+    $lines.Add("Set-Location -LiteralPath $gitRootLiteral")
+    $lines.Add("`$env:GIT_EDITOR = 'true'")
+    $lines.Add("`$env:GIT_MERGE_AUTOEDIT = 'no'")
+    $lines.Add("Import-Module ATAP.Utilities.BuildTooling.PowerShell -Force")
+    $lines.Add('')
+
+    # CP06-D01/D02 (Sprint 0012 close incident, Task 13.20.a): the boundary
+    # reset must run BEFORE any worktree is removed, and must carry the actual
+    # sprint WorktreePaths captured by this function's own -WorktreePaths
+    # parameter -- never a disk rescan performed after worktrees are gone, and
+    # never a stable repository root substituted for a missing sprint
+    # worktree. Retargeting junctions/adapters back to stable while each
+    # sprint worktree still exists on disk is what makes per-repository
+    # retargeting completable; deferring this call until after removal (the
+    # pre-fix ordering) left it with nothing to retarget and forced an unsafe
+    # stable-root substitution during the Sprint 0012 live close.
+    $lines.Add('# Reset the boundary for every sprint worktree BEFORE any worktree is removed.')
+    $lines.Add('# WorktreePaths below are the actual sprint worktrees carried from this')
+    $lines.Add('# handoff''s own generation-time parameters (Task 13.20.a; CP06-D01/D02) --')
+    $lines.Add('# never rescan GitRoot for worktrees at resume time, and never substitute a')
+    $lines.Add('# stable repository path for a sprint worktree.')
+    $lines.Add('$boundaryParams = @{')
+    $lines.Add("  Boundary = 'End'")
+    $lines.Add("  SharedVSCodeWorktreePath = Join-Path $gitRootLiteral 'SharedVSCode'")
+    $lines.Add("  ProfiledRemotingPolicy = '$ProfiledRemotingPolicy'")
+    $lines.Add('  WorktreePaths = @(')
+    for ($worktreeIndex = 0; $worktreeIndex -lt $orderedWorktrees.Count; $worktreeIndex++) {
+      $worktreeLiteral = ConvertTo-SprintEndHandoffSingleQuotedLiteral -Value ([IO.Path]::GetFullPath($orderedWorktrees[$worktreeIndex]))
+      $trailingComma = if ($worktreeIndex -lt $orderedWorktrees.Count - 1) { ',' } else { '' }
+      $lines.Add("    $worktreeLiteral$trailingComma")
+    }
+    $lines.Add('  )')
+    $lines.Add('  Confirm = $false')
+    $lines.Add('}')
+    $lines.Add('$boundaryResetResult = Set-SprintBoundaryContext @boundaryParams')
+    $lines.Add('if (@($boundaryResetResult.Errors).Count -gt 0) {')
+    $lines.Add('  throw "Boundary reset reported errors before worktree removal: $($boundaryResetResult.Errors -join ''; '')"')
+    $lines.Add('}')
+    $lines.Add('')
+
+    foreach ($worktreePath in $orderedWorktrees) {
+      $full = [IO.Path]::GetFullPath($worktreePath)
+      $leaf = Split-Path -Path $full -Leaf
+      $stableName = $leaf -replace '-wt-\d+-Sprint-\d{4}-work-items$', ''
+      $stablePath = Join-Path $gitRootFull $stableName
+      $branchName = $leaf.Substring($stableName.Length + 4)
+      $fullLiteral = ConvertTo-SprintEndHandoffSingleQuotedLiteral -Value $full
+      $stablePathLiteral = ConvertTo-SprintEndHandoffSingleQuotedLiteral -Value $stablePath
+      $branchNameLiteral = ConvertTo-SprintEndHandoffSingleQuotedLiteral -Value $branchName
+      $lines.Add("# Remove $leaf")
+      $lines.Add("`$teardownResult = Remove-SprintWorktreeSafely -RepositoryPath $stablePathLiteral -WorktreePath $fullLiteral -MaxAttempts 3 -RetryDelayMilliseconds 500 -ThrowOnFailure -Confirm:`$false")
+      $lines.Add("if (-not `$teardownResult.Ok) { throw 'Worktree teardown did not complete; preserve the generated minimal teardown handoff and resume only that step.' }")
+      $lines.Add("if (git -C $stablePathLiteral branch --list $branchNameLiteral) { git -C $stablePathLiteral branch -D $branchNameLiteral }")
+      $lines.Add('')
+    }
+    $lines.Add('# Synchronize stable worktrees without opening an editor.')
+    foreach ($worktreePath in $orderedWorktrees) {
+      $leaf = Split-Path -Path $worktreePath -Leaf
+      $stableName = $leaf -replace '-wt-\d+-Sprint-\d{4}-work-items$', ''
+      $stablePath = Join-Path $gitRootFull $stableName
+      $stablePathLiteral = ConvertTo-SprintEndHandoffSingleQuotedLiteral -Value $stablePath
+      $lines.Add("Test-SprintEndPullOverlap -RepoPath $stablePathLiteral -Fetch -ThrowOnOverlap")
+      $lines.Add("git -C $stablePathLiteral pull --ff-only origin main")
+    }
+    $lines.Add('')
+    $lines.Add('# Infrastructure cleanup: databases only; never SQL instances or Bitwarden secrets.')
+    $lines.Add("Remove-SprintDatabases -DeveloperNames @(`$env:USERNAME) -Force -Confirm:`$false")
+    $lines.Add("Clear-BuildMasterSprintVariables -Confirm:`$false")
+    $lines.Add('$boundaryTestParams = @{')
+    $lines.Add("  GitRoot = $gitRootLiteral")
+    $lines.Add('  TestFreshShell = $true')
+    $lines.Add('  ThrowOnFailure = $true')
+    $lines.Add('}')
+    $lines.Add('Test-SprintEndBoundaryState @boundaryTestParams')
+    $lines.Add('')
+    $lines.Add('# Remove this handoff only after every command above succeeds.')
+    $lines.Add('$handoffRemovalParams = @{')
+    $lines.Add("  LiteralPath = $outputPathLiteral")
+    $lines.Add('  Force = $true')
+    $lines.Add('}')
+    $lines.Add('Remove-Item @handoffRemovalParams')
+    $lines.Add('```')
+    $content = $lines -join [Environment]::NewLine
+
+    $changed = -not (Test-Path -LiteralPath $outputPathFull -PathType Leaf) -or
+      ((Get-Content -Raw -LiteralPath $outputPathFull) -ne $content)
+    if ($changed -and $PSCmdlet.ShouldProcess($outputPathFull, 'Atomically write SprintEnd handoff')) {
+      $directory = Split-Path -Path $outputPathFull -Parent
+      if (-not (Test-Path -LiteralPath $directory -PathType Container)) {
+        New-Item -ItemType Directory -Path $directory -Force | Out-Null
+      }
+      $tempPath = Join-Path $directory ('.' + [IO.Path]::GetFileName($outputPathFull) + '.' + [guid]::NewGuid().ToString('N') + '.tmp')
+      try {
+        [IO.File]::WriteAllText($tempPath, $content, [Text.UTF8Encoding]::new($false))
+        Move-Item -LiteralPath $tempPath -Destination $outputPathFull -Force
+      } finally {
+        if (Test-Path -LiteralPath $tempPath) {
+          Remove-Item -LiteralPath $tempPath -Force -ErrorAction SilentlyContinue
+        }
+      }
+    }
+
+    return [PSCustomObject]@{
+      Path             = $outputPathFull
+      Changed          = $changed
+      SprintNumber     = $SprintNumber
+      WorktreeCount    = $orderedWorktrees.Count
+      ContainsSecretsDeletion = $false
+      ContainsInstanceRemoval = $false
+      WorkingDirectory = $gitRootFull
+    }
+  }
+
+  end {
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function completed'
+  }
+}

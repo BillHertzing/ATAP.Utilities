@@ -1,5 +1,7 @@
 # PowerShell Modules — Pack and Publish
 
+> **Task 13.62 security cutover:** Tier-specific key names and ProGet API-key environment fallbacks below are superseded. Pass `ProGet.BuildMaster.API.Key` as `-ProGetApiKeySecretName`; the publish leaf resolves it immediately before use.
+
 **Scope:** Sprint-0006/0007. How a built PowerShell module (`.psm1` + `.psd1`
 under `_generated/psmodules/<Module>/packages/<Module>/`) becomes a `.nupkg`
 and is published to the **Experimental** ProGet PowerShellGet feed; how that
@@ -157,18 +159,14 @@ See [BuildMaster-ProGet-CSharp-Package-Pipeline.md](BuildMaster-ProGet-CSharp-Pa
 
 ## 6. API-key resolution
 
-ProGet requires an API key for write operations. Resolution order:
+ProGet requires an API key for write operations. Callers pass the non-secret
+SecretName `ProGet.BuildMaster.API.Key` as `-ProGetApiKeySecretName`. The
+authenticated publishing leaf resolves it through `Get-SecretATAP` immediately
+before the ProGet request and fails closed when resolution is unavailable or
+empty. There is no environment-variable or broader administrator fallback.
 
-1. **Bitwarden** — call `Get-SecretATAP -SecretName "ProGet_PowerShellGet_${Tier}_ApiKey"`.
-   The configured provider may be Password Manager (`bw`) or Secrets Manager
-   (`bws`). Wrapped in `try/catch`; failure falls through to env var.
-2. **User-scope environment variable** `PROGET_POWERSHELLGET_APIKEY_<TIER>`
-   (e.g. `PROGET_POWERSHELLGET_APIKEY_SPRINT`).
-3. If neither resolves → throw with both lookup names included in the
-   message so the operator can fix one or the other.
-
-The resolved key is **never logged** — every PSFramework log entry redacts
-the value.
+The resolved value exists only inside that leaf and is never logged, returned,
+or placed in caller-visible state.
 
 ---
 
@@ -196,14 +194,15 @@ or PSGallery.
 
 ## 8. The publish call
 
-This is the call that `Publish-PSModuleToProGet` makes internally — once
-the Experimental repo is registered and the API key is in hand:
+Use the wrapper so the caller supplies only a SecretName:
 
 ```powershell
-Publish-PSResource -NupkgPath $resolvedNupkg -Repository $feedName -ApiKey $apiKey
+Publish-PSModuleToProGet `
+  -NupkgPath $resolvedNupkg `
+  -ProGetApiKeySecretName 'ProGet.BuildMaster.API.Key'
 ```
 
-Note the wrapper passes `-NupkgPath` (a pre-built `.nupkg` path), not
+The authenticated leaf passes `-NupkgPath` (a pre-built `.nupkg` path), not
 `-Path` (a folder). The pack step (`New-PSModuleNupkg`) produces the
 `.nupkg` separately so it can be test-uploaded with `-WhatIf`, hashed for
 the BuildMaster release record, and promoted between feeds without ever
@@ -288,7 +287,8 @@ sprint-0007 (V4-G10) — see §11.
 `Publish-ATAPUtilities.ps1` (at the ATAP.Utilities repo root) exists for the
 developer's local "publish everything I just changed" loop. Behavior:
 
-1. Validates `PROGET_ADMIN_API_KEY` is set (User scope).
+1. Validates that `ProGet.BuildMaster.API.Key` is configured as the publish
+   SecretName; the publish leaf resolves it immediately before use.
 2. Resolves the solution root via `git rev-parse --show-toplevel`.
 3. Iterates a hand-maintained `$libraries` array in dependency order
    (currently `ATAP.Utilities.ETW`, `ATAP.Utilities.Configuration.Extensions`).
@@ -335,7 +335,7 @@ the promotion mechanism — `Promote-ProGetPackage` is.
 | Error                                                                           | Cause                                                                                                                                                               | Fix                                                                                                                                                                                |
 | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `feed URI for tier X is not configured` (raised inside `Promote-ProGetPackage`) | Neither `$global:settings` nor the env var holds the URI for the **target** feed of a promotion. `Publish-PSModuleToProGet` itself only needs the Experimental URI. | `[Environment]::SetEnvironmentVariable('PROGET_POWERSHELLGET_FEED_URI_DEVELOPMENT','http://localhost:50000/nuget/PowershellGet-development/','User')` (substitute the target tier) |
-| `Unable to resolve ProGet API key for tier X`                                   | Bitwarden secret missing AND env var unset                                                                                                                          | Add Bitwarden item `ProGet_PowerShellGet_<Tier>_ApiKey` or set `PROGET_POWERSHELLGET_APIKEY_<TIER>`                                                                                |
+| `Unable to resolve ProGet API key`                                              | `ProGet.BuildMaster.API.Key` is missing, empty, or unavailable through `Get-SecretATAP`                                                                              | Provision or grant the canonical SecretName in Bitwarden Secrets Manager; do not create an environment fallback                                                                   |
 | `Publish-PSResource: A NuGet feed already contains this package`                | Same `Module.Version` already published                                                                                                                             | Bump the height (commit something) and rebuild; ProGet rejects re-uploads                                                                                                          |
 | `Publish-PSResource: ResourceUnauthorized`                                      | API key invalid or wrong tier                                                                                                                                       | Verify the key in ProGet UI (Admin → API Keys) matches the tier                                                                                                                    |
 | `NupkgPath does not exist or is not a file`                                     | Build did not produce the `.nupkg` (path mismatch)                                                                                                                  | Confirm the pack step ran; check `$meta.OutputRoot/packages-nupkg/`                                                                                                                |

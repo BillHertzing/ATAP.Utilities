@@ -34,6 +34,11 @@ interactive troubleshooting.
 When PesterOutputVerbosity is None, writes compact progress lines after this
 many completed tests. Defaults to 20; set to 0 to disable.
 
+.PARAMETER AdditionalExcludeTag
+Additional Pester tags to exclude from this invocation. This lets callers add
+context-specific exclusions without changing the tier filter or coupling test
+selection to console-output verbosity.
+
 .OUTPUTS
 [PSCustomObject] projecting Pester summary fields plus GatePass, OutputFile,
 CoverageFile.
@@ -413,16 +418,22 @@ function Get-PSModulePesterFailedTestSummary {
     $PesterResult,
 
     [ValidateRange(1, [int]::MaxValue)]
-    [int]$Maximum = 50
+    [int]$Maximum = 50,
+
+    [scriptblock]$GetTestContainerCommand = ${function:Get-PSModulePesterTestContainer},
+
+    [scriptblock]$GetTestNameCommand = ${function:Get-PSModulePesterTestName},
+
+    [scriptblock]$GetFailureMessageCommand = ${function:Get-PSModulePesterFailureMessage}
   )
 
   if ($PesterResult -and ($PesterResult.PSObject.Properties.Name -contains 'Failed') -and $PesterResult.Failed) {
     return @(
       foreach ($test in @($PesterResult.Failed | Select-Object -First $Maximum)) {
         [PSCustomObject]@{
-          Container = Get-PSModulePesterTestContainer -Test $test
-          Name      = Get-PSModulePesterTestName -Test $test
-          Message   = Get-PSModulePesterFailureMessage -Test $test
+          Container = & $GetTestContainerCommand -Test $test
+          Name      = & $GetTestNameCommand -Test $test
+          Message   = & $GetFailureMessageCommand -Test $test
         }
       }
     )
@@ -446,8 +457,8 @@ function Get-PSModulePesterFailedTestSummary {
         if ($test -and ($test.PSObject.Properties.Name -contains 'Result') -and $test.Result -eq 'Failed') {
           $failures.Add([PSCustomObject]@{
               Container = $Container
-              Name      = Get-PSModulePesterTestName -Test $test
-              Message   = Get-PSModulePesterFailureMessage -Test $test
+              Name      = & $GetTestNameCommand -Test $test
+              Message   = & $GetFailureMessageCommand -Test $test
             }) | Out-Null
         }
       }
@@ -500,7 +511,15 @@ function Write-PSModulePesterJUnitResult {
     $PesterResult,
 
     [Parameter(Mandatory)]
-    [string]$OutputPath
+    [string]$OutputPath,
+
+    [scriptblock]$SetXmlAttributeCommand = ${function:Set-PSModulePesterXmlAttribute},
+
+    [scriptblock]$GetTestNameCommand = ${function:Get-PSModulePesterTestName},
+
+    [scriptblock]$GetTestContainerCommand = ${function:Get-PSModulePesterTestContainer},
+
+    [scriptblock]$GetFailureMessageCommand = ${function:Get-PSModulePesterFailureMessage}
   )
 
   $resultPropertyNames = @($PesterResult.PSObject.Properties.Name)
@@ -541,48 +560,58 @@ function Write-PSModulePesterJUnitResult {
     $tests = $flattenedTests.ToArray()
   }
 
-  $total = if ($resultPropertyNames -contains 'TotalCount') { [int]$PesterResult.TotalCount } else { $tests.Count }
+  # Pester includes tag-filtered tests in Tests/TotalCount as NotRun. Those tests
+  # were not part of this tier's gate and must not appear as skipped JUnit cases.
+  $tests = @($tests | Where-Object {
+      -not ($_.PSObject.Properties.Name -contains 'Result') -or $_.Result -ne 'NotRun'
+    })
+  $notRun = if ($resultPropertyNames -contains 'NotRunCount') { [int]$PesterResult.NotRunCount } else { 0 }
+  $total = if ($resultPropertyNames -contains 'TotalCount') {
+    [Math]::Max(0, ([int]$PesterResult.TotalCount - $notRun))
+  } else {
+    $tests.Count
+  }
   $failed = if ($resultPropertyNames -contains 'FailedCount') { [int]$PesterResult.FailedCount } else { @($tests | Where-Object { $_.Result -eq 'Failed' }).Count }
-  $skipped = if ($resultPropertyNames -contains 'SkippedCount') { [int]$PesterResult.SkippedCount } else { @($tests | Where-Object { $_.Result -eq 'Skipped' -or $_.Result -eq 'NotRun' }).Count }
+  $skipped = if ($resultPropertyNames -contains 'SkippedCount') { [int]$PesterResult.SkippedCount } else { @($tests | Where-Object { $_.Result -eq 'Skipped' }).Count }
   $duration = if ($resultPropertyNames -contains 'Duration' -and $PesterResult.Duration) { [double]$PesterResult.Duration.TotalSeconds } else { 0 }
 
   $doc = [System.Xml.XmlDocument]::new()
   $null = $doc.AppendChild($doc.CreateXmlDeclaration('1.0', 'utf-8', $null))
   $root = $doc.CreateElement('testsuites')
-  Set-PSModulePesterXmlAttribute -Element $root -Name 'name' -Value 'Pester'
-  Set-PSModulePesterXmlAttribute -Element $root -Name 'tests' -Value $total
-  Set-PSModulePesterXmlAttribute -Element $root -Name 'failures' -Value $failed
-  Set-PSModulePesterXmlAttribute -Element $root -Name 'errors' -Value 0
-  Set-PSModulePesterXmlAttribute -Element $root -Name 'skipped' -Value $skipped
-  Set-PSModulePesterXmlAttribute -Element $root -Name 'time' -Value ('{0:n3}' -f $duration)
+  & $SetXmlAttributeCommand -Element $root -Name 'name' -Value 'Pester'
+  & $SetXmlAttributeCommand -Element $root -Name 'tests' -Value $total
+  & $SetXmlAttributeCommand -Element $root -Name 'failures' -Value $failed
+  & $SetXmlAttributeCommand -Element $root -Name 'errors' -Value 0
+  & $SetXmlAttributeCommand -Element $root -Name 'skipped' -Value $skipped
+  & $SetXmlAttributeCommand -Element $root -Name 'time' -Value ('{0:n3}' -f $duration)
   $null = $doc.AppendChild($root)
 
   $suite = $doc.CreateElement('testsuite')
-  Set-PSModulePesterXmlAttribute -Element $suite -Name 'name' -Value 'Pester'
-  Set-PSModulePesterXmlAttribute -Element $suite -Name 'tests' -Value $total
-  Set-PSModulePesterXmlAttribute -Element $suite -Name 'failures' -Value $failed
-  Set-PSModulePesterXmlAttribute -Element $suite -Name 'errors' -Value 0
-  Set-PSModulePesterXmlAttribute -Element $suite -Name 'skipped' -Value $skipped
-  Set-PSModulePesterXmlAttribute -Element $suite -Name 'time' -Value ('{0:n3}' -f $duration)
+  & $SetXmlAttributeCommand -Element $suite -Name 'name' -Value 'Pester'
+  & $SetXmlAttributeCommand -Element $suite -Name 'tests' -Value $total
+  & $SetXmlAttributeCommand -Element $suite -Name 'failures' -Value $failed
+  & $SetXmlAttributeCommand -Element $suite -Name 'errors' -Value 0
+  & $SetXmlAttributeCommand -Element $suite -Name 'skipped' -Value $skipped
+  & $SetXmlAttributeCommand -Element $suite -Name 'time' -Value ('{0:n3}' -f $duration)
   $null = $root.AppendChild($suite)
 
   foreach ($test in $tests) {
     $case = $doc.CreateElement('testcase')
-    $testName = Get-PSModulePesterTestName -Test $test
-    $container = Get-PSModulePesterTestContainer -Test $test
+    $testName = & $GetTestNameCommand -Test $test
+    $container = & $GetTestContainerCommand -Test $test
     $testPropertyNames = @($test.PSObject.Properties.Name)
     $testDuration = if ($testPropertyNames -contains 'Duration' -and $test.Duration) { [double]$test.Duration.TotalSeconds } else { 0 }
     $testResult = if ($testPropertyNames -contains 'Result') { $test.Result } else { 'Unknown' }
 
-    Set-PSModulePesterXmlAttribute -Element $case -Name 'name' -Value $testName
-    Set-PSModulePesterXmlAttribute -Element $case -Name 'classname' -Value $container
-    Set-PSModulePesterXmlAttribute -Element $case -Name 'status' -Value $testResult
-    Set-PSModulePesterXmlAttribute -Element $case -Name 'time' -Value ('{0:n3}' -f $testDuration)
+    & $SetXmlAttributeCommand -Element $case -Name 'name' -Value $testName
+    & $SetXmlAttributeCommand -Element $case -Name 'classname' -Value $container
+    & $SetXmlAttributeCommand -Element $case -Name 'status' -Value $testResult
+    & $SetXmlAttributeCommand -Element $case -Name 'time' -Value ('{0:n3}' -f $testDuration)
 
     if ($testResult -eq 'Failed') {
       $failure = $doc.CreateElement('failure')
-      $message = Get-PSModulePesterFailureMessage -Test $test
-      Set-PSModulePesterXmlAttribute -Element $failure -Name 'message' -Value $message
+      $message = & $GetFailureMessageCommand -Test $test
+      & $SetXmlAttributeCommand -Element $failure -Name 'message' -Value $message
       $failure.InnerText = $message
       $null = $case.AppendChild($failure)
     } elseif ($testResult -in @('Skipped', 'NotRun')) {
@@ -659,7 +688,9 @@ function Invoke-PSModulePesterTests {
     [string]$PesterOutputVerbosity = 'Normal',
 
     [ValidateRange(0, [int]::MaxValue)]
-    [int]$PesterProgressInterval = 20
+    [int]$PesterProgressInterval = 20,
+
+    [string[]]$AdditionalExcludeTag = @()
   )
 
   begin {
@@ -752,7 +783,7 @@ function Invoke-PSModulePesterTests {
       }
 
       $filter = Get-PSModulePesterTierFilter -Tier $Tier
-      $excludeTag = @($filter.ExcludeTag)
+      $excludeTag = @($filter.ExcludeTag) + @($AdditionalExcludeTag)
       if ($PesterOutputVerbosity -eq 'None') {
         # Some unit tests intentionally exercise SupportsShouldProcess with
         # -WhatIf. PowerShell writes those host messages outside the normal
@@ -763,6 +794,7 @@ function Invoke-PSModulePesterTests {
         $excludeTag += 'BuildTranscriptNoise'
         $excludeTag += 'PromotedModuleHostSensitive'
       }
+      $excludeTag = @($excludeTag | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | Select-Object -Unique)
 
       $coveragePaths = @()
       $publicDir = Join-Path $ModuleRoot 'public'
@@ -788,34 +820,64 @@ function Invoke-PSModulePesterTests {
 
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Running Invoke-Pester for tier $Tier (IncludeTag=$($filter.IncludeTag -join ',') ExcludeTag=$($filter.ExcludeTag -join ','))"
 
+      # Test containers are allowed to exercise module import/reload behavior. Some
+      # BuildTooling tests therefore remove or force-reimport this module while this
+      # function is still coordinating their Pester run. Retain module-bound helper
+      # scriptblocks before entering Pester so result selection, plugin restoration,
+      # and artifact generation remain available even when the module's exported
+      # command table is replaced during the test run.
+      $testRunResultCommand = ${function:Test-PSModulePesterRunResult}
+      $restoreAdditionalPluginCommand = ${function:Restore-PSModulePesterAdditionalPlugin}
+      $writeJUnitResultCommand = ${function:Write-PSModulePesterJUnitResult}
+      $getFailedTestSummaryCommand = ${function:Get-PSModulePesterFailedTestSummary}
+      $setXmlAttributeCommand = ${function:Set-PSModulePesterXmlAttribute}
+      $getTestNameCommand = ${function:Get-PSModulePesterTestName}
+      $getTestContainerCommand = ${function:Get-PSModulePesterTestContainer}
+      $getFailureMessageCommand = ${function:Get-PSModulePesterFailureMessage}
+
+      # Some test containers intentionally install global Get-SecretATAP test
+      # doubles. Retain the real resolver before Pester so a promoted-module
+      # pipeline can resolve the next tier's SecretName after the tested module
+      # has been removed or reloaded. Never retain the secret value itself.
+      $getSecretATAPCommand = ${function:global:Get-SecretATAP}
+      $hadGetSecretATAPFunction = $null -ne $getSecretATAPCommand
+
       $result = $null
       if ($PSCmdlet.ShouldProcess("$TestPaths", 'Invoke-Pester')) {
-        if ($PesterOutputVerbosity -eq 'None') {
-          # BuildMaster summary logging comes from this wrapper. When Pester's
-          # own output is disabled, suppress incidental streams emitted by
-          # tests that intentionally exercise warning/error paths.
-          $progressPluginState = $null
-          if ($PesterProgressInterval -gt 0) {
-            $progressPlugin = New-PSModulePesterProgressPlugin -Interval $PesterProgressInterval -FunctionName $fn
-            $progressPluginState = Push-PSModulePesterAdditionalPlugin -Plugin $progressPlugin
-          }
+        try {
+          if ($PesterOutputVerbosity -eq 'None') {
+            # BuildMaster summary logging comes from this wrapper. When Pester's
+            # own output is disabled, suppress incidental streams emitted by
+            # tests that intentionally exercise warning/error paths.
+            $progressPluginState = $null
+            if ($PesterProgressInterval -gt 0) {
+              $progressPlugin = New-PSModulePesterProgressPlugin -Interval $PesterProgressInterval -FunctionName $fn
+              $progressPluginState = Push-PSModulePesterAdditionalPlugin -Plugin $progressPlugin
+            }
 
-          try {
-            $pesterOutput = Invoke-Pester -Configuration $cfg 2>$null 3>$null 4>$null 5>$null 6>$null
+            try {
+              $pesterOutput = Invoke-Pester -Configuration $cfg 2>$null 3>$null 4>$null 5>$null 6>$null
+              foreach ($item in $pesterOutput) {
+                if (& $testRunResultCommand -InputObject $item) {
+                  $result = $item
+                }
+              }
+            } finally {
+              & $restoreAdditionalPluginCommand -State $progressPluginState
+            }
+          } else {
+            $pesterOutput = Invoke-Pester -Configuration $cfg
             foreach ($item in $pesterOutput) {
-              if (Test-PSModulePesterRunResult -InputObject $item) {
+              if (& $testRunResultCommand -InputObject $item) {
                 $result = $item
               }
             }
-          } finally {
-            Restore-PSModulePesterAdditionalPlugin -State $progressPluginState
           }
-        } else {
-          $pesterOutput = Invoke-Pester -Configuration $cfg
-          foreach ($item in $pesterOutput) {
-            if (Test-PSModulePesterRunResult -InputObject $item) {
-              $result = $item
-            }
+        } finally {
+          if ($hadGetSecretATAPFunction) {
+            ${function:global:Get-SecretATAP} = $getSecretATAPCommand
+          } else {
+            ${function:global:Get-SecretATAP} = $null
           }
         }
       }
@@ -823,14 +885,21 @@ function Invoke-PSModulePesterTests {
       $passed = if ($result) { [int]$result.PassedCount } else { 0 }
       $failed = if ($result) { [int]$result.FailedCount } else { 0 }
       $skipped = if ($result) { [int]$result.SkippedCount } else { 0 }
-      $total = if ($result) { [int]$result.TotalCount } else { 0 }
+      $notRun = if ($result -and ($result.PSObject.Properties.Name -contains 'NotRunCount')) { [int]$result.NotRunCount } else { 0 }
+      $total = if ($result) { [Math]::Max(0, ([int]$result.TotalCount - $notRun)) } else { 0 }
       $duration = if ($result -and $result.Duration) { $result.Duration } else { [TimeSpan]::Zero }
 
       # A filtered run that selects no tests is a configuration failure, not a
       # successful gate. Sprint is the only intentional skip and returns above.
       $gatePass = ($total -gt 0 -and $failed -eq 0)
       if (-not $SkipTestResult -and $result) {
-        Write-PSModulePesterJUnitResult -PesterResult $result -OutputPath $OutputPath
+        & $writeJUnitResultCommand `
+          -PesterResult $result `
+          -OutputPath $OutputPath `
+          -SetXmlAttributeCommand $setXmlAttributeCommand `
+          -GetTestNameCommand $getTestNameCommand `
+          -GetTestContainerCommand $getTestContainerCommand `
+          -GetFailureMessageCommand $getFailureMessageCommand
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Pester test result artifact: '$OutputPath'"
       }
 
@@ -841,7 +910,12 @@ function Invoke-PSModulePesterTests {
           "Pester gate FAILED: $failed failing test(s) of $total"
         }
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $gateFailureMessage
-        $failedTests = Get-PSModulePesterFailedTestSummary -PesterResult $result -Maximum 50
+        $failedTests = & $getFailedTestSummaryCommand `
+          -PesterResult $result `
+          -Maximum 50 `
+          -GetTestContainerCommand $getTestContainerCommand `
+          -GetTestNameCommand $getTestNameCommand `
+          -GetFailureMessageCommand $getFailureMessageCommand
         $failureArtifactPath = [System.IO.Path]::ChangeExtension($OutputPath, '.Failures.json')
         $failureArtifactDirectory = Split-Path -Path $failureArtifactPath -Parent
         if ($failureArtifactDirectory -and -not (Test-Path -LiteralPath $failureArtifactDirectory)) {

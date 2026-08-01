@@ -33,27 +33,98 @@ ATAP.Utilities in Task 12.46.
   (expected per-host differences), or **undeclared drift** (the actionable class), and
   flags **stale** snapshots older than the expected cadence.
 
+### Host IPv6 reachability for Inedo services (Sprint 0013)
+
+A host-pair parity concern that is invisible to service configuration: both hosts must be
+able to reach BuildMaster (`50017`) and ProGet (`50000`) at **every address their own
+hostname resolves to**, IPv4 and IPv6 alike.
+
+On `utat01` in Sprint 0013, the hostname resolved to four global DHCPv6 addresses on the
+Wi-Fi adapter ahead of its IPv4 address, and those addresses were **dead** — `ping -6`
+against the host's own address returned *General failure* at 100% loss. Every client
+resolving `utat01` tried a dead address first and hung for 30 seconds, which presented as
+a broken BuildMaster.
+
+Two things this is **not**, both of which have already misled a diagnosis here:
+
+- **Not a listener misconfiguration.** `netstat -ano -p tcpv6` shows `[::]:50017` and
+  `[::]:50000` listening; IPv6 loopback connects in single-digit milliseconds. Both
+  services already bind all IPv4 and IPv6 addresses. A conclusion of "IPv4-only" usually
+  comes from `netstat -ano -p tcp`, which prints only the IPv4 table — the `-p` argument
+  is a protocol-family filter, not evidence of the bind.
+- **Not a firewall rule.** On this host the Private and Public profiles are OFF and no
+  inbound rule exists for either port.
+
+**Parity actions.** Treat per-host IPv6 address health as an auditable surface:
+
+- Run the hostname-reachability sweep in `NewComputerSetup.md` §9.10a on each host, and
+  compare results between the pair — one host reaching its services by hostname while the
+  other times out is exactly the undeclared drift this module exists to surface.
+- The remedy is host networking (routable DHCPv6, or disabling/de-prioritising IPv6 on the
+  adapter), never an edit to `BuildMaster.config`, `ProGet.config`, or
+  `ServicePlacementMap`. Changing the placement map also rewrites the host-suffixed admin
+  SecretName and breaks credential resolution.
+- Journal whichever remedy is applied with `Add-ParityChangeEntry` before applying it on
+  the peer, so the second host records a declared change.
+- This is unresolved on `utat01` as of 2026-07-27 and must be checked on `utat022` when it
+  returns; the earlier note that `utat022` ports 50000/50017/5985 were unreachable may
+  share this root cause.
+
+### Host-local AI agent memory junctions (Sprint 0013)
+
+AI agent memory for the ATAP repositories is stored under Dropbox at
+`C:\Dropbox\whertzing\ATAP\AIAgentMemory\<RepoName>\`, deliberately outside every git
+repository, so it survives sprint end and reaches every host through Dropbox sync.
+
+Each host reaches that store through **NTFS junctions** created under
+`%USERPROFILE%\.claude\projects\<slug>\memory`. Two junctions are required per repository,
+because Claude Code and the checkpoint tooling resolve different slugs:
+
+| Junction slug source | Consumer |
+| --- | --- |
+| Main repo path (`git rev-parse --git-common-dir`) | Claude Code reads and writes memory here |
+| Sprint worktree path (transcript slug) | `Save-SprintWorkSession` reads memory here |
+
+These junctions are **host-local configuration and are in scope for parity**. The Dropbox
+target syncs automatically; the junctions do not, so a second host has the memory content
+but no path to it until its own junctions are created. Treat a missing junction as a
+declarable configuration change:
+
+- Journal junction creation with `Add-ParityChangeEntry` so the peer host sees it as a
+  declared change rather than undeclared drift.
+- The worktree-slug junction is **sprint-scoped** and must be recreated for each new sprint
+  worktree. A missing one is silent: `Save-SprintWorkSession` reports
+  `MemorySnapshotCreated: false` with reason "Memory directory not found" and still exits
+  successfully, so checkpoints appear to succeed while archiving zero memory files.
+- Directory junctions do not require elevation.
+
+Known hazard: because the target is Dropbox-synced, two hosts writing memory concurrently
+can produce "conflicted copy" files, which an agent would read as additional memories. This
+is accepted deliberately — the files are small and infrequently written — but a conflicted
+copy appearing in an audit snapshot is a legitimate finding, not noise.
+
 ## Scheduled operation
 
 `scripts\Register-ParityScheduledTasks.ps1` registers local Task Scheduler entries
 for the host role:
 
-1. `ATAP-ParityAudit` -> `Invoke-ParityScheduledAuditTask.ps1` — local snapshot plus a
-   `CommonCIForBitwardenReadOnly` BWS credential probe; result JSON under
-   `<StateRoot>\TaskResults`.
+1. `ATAP-ParityAudit` -> `Invoke-ParityScheduledAuditTask.ps1` — token-free local
+   snapshot; metadata-only result JSON under `<StateRoot>\TaskResults` records
+   `SecretAccessRequired = false`.
 2. `ATAP-ParityCompare` -> `Invoke-ParityScheduledCompareTask.ps1` — primary-host
    comparison against the peer's state share (default `\\utat01\ParityState`). Register
    this only on the primary host (`TaskSet AuditAndCompare`).
 
 Both wrappers import the module from this folder's parent by relative path and use the
-shared `ParityScheduledTask.Common.ps1` helper. The scheduled path performs no
-PowerShell remoting: each host writes its own snapshots locally, and `utat022` reads the
+shared `ParityScheduledTask.Common.ps1` event-reporting helper. Scheduled execution
+requires no secret-vault token or credential directory and performs no PowerShell
+remoting: each host writes its own snapshots locally, and `utat022` reads the
 peer snapshot share during compare. Tasks default to `SvcParityAudit` with `S4U`; use
 `-LogonType Password -Credential <PSCredential>` for the primary compare task when SMB
 peer-share access requires reusable service-account credentials. When an administrator
 registers an S4U task for a different identity, Task Scheduler also requires that
 identity's credential during registration even though the saved principal remains S4U
-and does not store the password. Version `0.1.2` supplies that registration credential
+and does not store the password. Version `0.1.3` supplies that registration credential
 while retaining the S4U/Limited saved principal. Re-register tasks when the module's
 on-disk location changes.
 

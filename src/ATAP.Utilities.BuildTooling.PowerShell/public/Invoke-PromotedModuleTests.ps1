@@ -83,9 +83,9 @@
     Optional ProGet base URL. When supplied, restore the promoted .nupkg
     directly from /nuget/<feed>/package/<name>/<version>.
 
-.PARAMETER ApiKey
-    Optional ProGet API key to send as X-ApiKey when restoring directly
-    from ProGet.
+.PARAMETER ProGetApiKeySecretName
+    Bitwarden Secrets Manager SecretName used when restoring directly from the
+    ProGet package endpoint. Raw API-key values are unsupported.
 
 .PARAMETER PesterOutputVerbosity
     Controls the delegated Pester console output. Defaults to Normal to keep
@@ -183,8 +183,8 @@ function Invoke-PromotedModuleTests {
         [string]$ProGetBaseUrl = $global:ProGetBaseUrl,
 
         [Parameter()]
-        [AllowEmptyString()]
-        [string]$ApiKey = $env:PROGET_BUILDMASTER_API_KEY,
+        [ValidateNotNullOrEmpty()]
+        [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
 
         [Parameter()]
         [ValidateSet('None', 'Normal', 'Detailed', 'Diagnostic')]
@@ -204,6 +204,17 @@ function Invoke-PromotedModuleTests {
     )
 
     begin {
+      # SC-0288 / Task 13.66.b: the SecretName host suffix is derived from the service placement
+      # host, never hard-coded. Resolution order is the authoritative host setting,
+      # then the placement map; an unknown placement host fails closed.
+      if (-not $PSBoundParameters.ContainsKey('ProGetApiKeySecretName')) {
+        if (-not (Get-Command -Name 'Resolve-HostSuffixedSecretName' -ErrorAction SilentlyContinue)) {
+          . (Join-Path $PSScriptRoot '..' '..' 'ATAP.Utilities.BuildTooling.Common.PowerShell' 'public' 'Resolve-HostSuffixedSecretName.ps1')
+        }
+        $ProGetApiKeySecretName = Resolve-HostSuffixedSecretName `
+          -BaseName $ProGetApiKeySecretName -ServiceName 'ProGet' -SettingName 'ProGetBuildMasterApiKeySecretName'
+      }
+
         $fn = 'Invoke-PromotedModuleTests'
         $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn with Name='$Name' Version='$Version' Feed='$Feed' Tier='$Tier'" -Tag 'Trace'
@@ -249,6 +260,7 @@ function Invoke-PromotedModuleTests {
             }
         }
 
+        $previousPromotedPsModulePath = $env:PSModulePath
         Push-Location -Path $WorkingDirectory
         try {
             # Resolve the source-tree module folder (supplies the test files).
@@ -279,9 +291,13 @@ function Invoke-PromotedModuleTests {
                 $headers = @{
                     Accept = 'application/zip'
                 }
-                if (-not [string]::IsNullOrWhiteSpace($ApiKey)) {
-                    $headers['X-ApiKey'] = $ApiKey
+                try {
+                    $apiKey = [string](Get-SecretATAP -SecretName $ProGetApiKeySecretName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop)
+                } catch {
+                    throw "Unable to resolve the ProGet API key from SecretName '$ProGetApiKeySecretName'."
                 }
+                if ([string]::IsNullOrWhiteSpace($apiKey)) { throw "The ProGet secret named '$ProGetApiKeySecretName' resolved to an empty value." }
+                $headers['X-ApiKey'] = $apiKey
 
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Downloading promoted module package from '$packageUri'"
                 for ($attempt = 1; $attempt -le $RestoreRetryCount; $attempt++) {
@@ -293,7 +309,8 @@ function Invoke-PromotedModuleTests {
                             throw
                         }
 
-                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "Promoted module package download attempt $attempt/$RestoreRetryCount failed for '$packageUri': $($_.Exception.Message). Retrying in $RestoreRetryDelaySeconds second(s)."
+                        $safeException = ([string]$_.Exception.Message).Replace($apiKey, '***')
+                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "Promoted module package download attempt $attempt/$RestoreRetryCount failed for '$packageUri': $safeException. Retrying in $RestoreRetryDelaySeconds second(s)."
                         if ($RestoreRetryDelaySeconds -gt 0) {
                             Start-Sleep -Seconds $RestoreRetryDelaySeconds
                         }
@@ -337,9 +354,29 @@ function Invoke-PromotedModuleTests {
             # from different paths to remain loaded simultaneously.
             Remove-Module -Name $Name -Force -ErrorAction SilentlyContinue
             $remainingCopies = @(Get-Module -Name $Name -All)
+            # A command autoloaded from inside another module can be nested in
+            # that module's session state. Name-based removal only targets the
+            # caller-visible copy, so remove every remaining ModuleInfo object
+            # explicitly before deciding that isolation failed.
+            foreach ($remainingCopy in $remainingCopies) {
+                if ($remainingCopy -is [System.Management.Automation.PSModuleInfo]) {
+                    Remove-Module -ModuleInfo $remainingCopy -Force -ErrorAction SilentlyContinue
+                }
+            }
+            $remainingCopies = @(Get-Module -Name $Name -All)
             if ($remainingCopies.Count -ne 0) {
                 $remainingPaths = $remainingCopies | ForEach-Object { $_.Path } | Sort-Object -Unique
                 throw "Unable to isolate promoted module '$Name'; loaded copy or copies remain: $($remainingPaths -join ', ')"
+            }
+            # Source-owned promoted tests run before child modules are
+            # necessarily installed machine-wide. Make sibling family modules
+            # discoverable for RequiredModules resolution while still importing
+            # the target package by its exact restored manifest path.
+            $sourceFamilyRoot = Join-Path $WorkingDirectory 'src'
+            $modulePathEntries = @($env:PSModulePath -split [IO.Path]::PathSeparator)
+            if ((Test-Path -LiteralPath $sourceFamilyRoot -PathType Container) -and
+                $sourceFamilyRoot -notin $modulePathEntries) {
+                $env:PSModulePath = $sourceFamilyRoot + [IO.Path]::PathSeparator + $env:PSModulePath
             }
             Import-Module -Name $savedModulePath -Force -ErrorAction Stop
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Imported promoted module $target"
@@ -351,6 +388,11 @@ function Invoke-PromotedModuleTests {
             $coverageFile = Join-Path $ResultsPath 'CoverageResults.xml'
 
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Running $testDescription for $target (tests from '$ModuleSourceRoot', module from '$savedModulePath')"
+            # Source-owned Pester fixtures need an explicit way to identify the
+            # immutable artifact under test. The process-scoped value is restored
+            # immediately after the delegated run so it cannot leak to later tiers.
+            $previousPromotedModuleManifest = [System.Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
+            [System.Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', $savedModulePath, 'Process')
             # BuildMasterRunContext.Common.ps1 intentionally enables
             # StrictMode for the stage runner. Pester test containers are
             # module-consumer code and must not inherit that runner policy:
@@ -358,17 +400,22 @@ function Invoke-PromotedModuleTests {
             # .Count checks abort fixture setup, causing broad false failures.
             # A child scope keeps the caller's StrictMode unchanged while
             # giving the delegated test run normal PowerShell semantics.
-            $innerResult = & {
-                Set-StrictMode -Off
-                Invoke-PSModulePesterTests `
-                    -ModuleRoot $ModuleSourceRoot `
-                    -Tier $pesterTier `
-                    -OutputPath $outputFile `
-                    -CoverageOutputPath $coverageFile `
-                    -SkipCodeCoverage `
-                    -PesterOutputVerbosity $PesterOutputVerbosity `
-                    -PesterProgressInterval $PesterProgressInterval `
-                    -ErrorAction Stop
+            try {
+                $innerResult = & {
+                    Set-StrictMode -Off
+                    Invoke-PSModulePesterTests `
+                        -ModuleRoot $ModuleSourceRoot `
+                        -Tier $pesterTier `
+                        -OutputPath $outputFile `
+                        -CoverageOutputPath $coverageFile `
+                        -SkipCodeCoverage `
+                        -AdditionalExcludeTag 'PromotedModuleHostSensitive' `
+                        -PesterOutputVerbosity $PesterOutputVerbosity `
+                        -PesterProgressInterval $PesterProgressInterval `
+                        -ErrorAction Stop
+                }
+            } finally {
+                [System.Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', $previousPromotedModuleManifest, 'Process')
             }
 
             $passed = if ($null -ne $innerResult) { [int]$innerResult.Passed } else { 0 }
@@ -409,6 +456,12 @@ function Invoke-PromotedModuleTests {
             throw
         } finally {
             Remove-Module -Name $Name -Force -ErrorAction SilentlyContinue
+            foreach ($remainingCopy in @(Get-Module -Name $Name -All)) {
+                if ($remainingCopy -is [System.Management.Automation.PSModuleInfo]) {
+                    Remove-Module -ModuleInfo $remainingCopy -Force -ErrorAction SilentlyContinue
+                }
+            }
+            $env:PSModulePath = $previousPromotedPsModulePath
             Pop-Location
         }
     }

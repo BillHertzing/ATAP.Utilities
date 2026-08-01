@@ -1,5 +1,7 @@
 # PowerShell-Module Pipeline — `-NoProfile` Settings Resolution Runbook
 
+> **Task 13.62 security cutover:** The pipeline now passes `ProGet.BuildMaster.API.Key` as `-ProGetApiKeySecretName`; authenticated leaves resolve it with `Get-SecretATAP`. Retired environment-variable and raw-value guidance has been removed.
+
 **Task:** V4-B02 (Sprint 0007) · **Update:** Task 9.38 (Sprint 0009) · **Status:** Policy of record · **Date:** 2026-06-16
 
 ## Purpose
@@ -30,7 +32,7 @@ Since `$global:settings` is now guaranteed to be populated, the `Get-PVal` loud-
 | Settings lookup | Where | Resolution under `-NoProfile` |
 | --- | --- | --- |
 | BuildMaster app vars: `$ApplicationName`, `$Branch`, `$SourcePath`, `$ModuleName`, `$PackageName`, `$ProGetUrl`, `$BuildMasterBuildId` | `.otter` plan | Passed as explicit `-Parameters` on the single `Exec`. **No `$global:settings` in OtterScript.** |
-| ProGet API key | runner `BEGIN` | `$env:PROGET_BUILDMASTER_API_KEY` → `$env:PROGET_ADMIN_API_KEY` → explicit `throw "Unable to resolve ProGet API key…"`. Never a parameter (keeps secrets off the command line). |
+| ProGet authentication | runner parameter / authenticated leaf | Runner receives `ProGet.BuildMaster.API.Key` as `-ProGetApiKeySecretName`; the leaf resolves with `Get-SecretATAP` and fails closed. |
 | `$env:GIT_CONFIG_COUNT` | runner (`Add-GitSafeDirectoryForCurrentProcess`) | Defaults to `0` when unset. |
 | `$env:ATAP_BUILDTOOLING_PESTER_OUTPUT_VERBOSITY` | runner (promotion/test) | Defaults to `'None'`; unknown values warned + ignored. |
 | `Get-PVal` chain for `Name` / `Version` / `FromFeed` / `ToFeed` | `Move-ProGetPackageInterTier`, `Invoke-PromotedModuleTests` | Resolves **PSBoundParameters → env var → settings**. Because `$global:settings` is explicitly loaded in memory by `Initialize-LocalHostSettings`, `Get-PVal` has full access to host settings just like an interactive session, and resolves settings values cleanly without throwing or degrading. |
@@ -40,15 +42,20 @@ Since `$global:settings` is now guaranteed to be populated, the `Get-PVal` loud-
 
 1. **Never assume user/machine profiles are loaded automatically** in this pipeline. The runner and everything it dot-sources run under `-NoProfile`.
 2. **Always call `Initialize-LocalHostSettings`** at the entry point of any new stage runner script before calling other build tooling functions that depend on `Get-PVal` or settings globals.
-3. **Secrets stay off the command line.** Resolve API keys from `$env:PROGET_*` inside the runner; never add an `ApiKey`/`ProGetApiKey` parameter to the plan or runner.
+3. **Secrets stay off the command line.** Pass only
+   `-ProGetApiKeySecretName ProGet.BuildMaster.API.Key`; never accept a raw
+   `ApiKey` parameter or read a ProGet API-key environment variable.
 4. **No context bypass markers.** Do not re-introduce `$env:ATAP_NOPROFILE_PIPELINE` or similar context degradation flags. All runners should bootstrap settings explicitly.
 
 ## Regression test
 
 [`PowerShellModule-5Stage.Tests.ps1`](../src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/tests/PowerShellModule-5Stage.Tests.ps1) pins this contract:
 
-- Plan is a thin `-NoProfile -File` runner plan with no `$global:settings` in OtterScript, no inline `pwsh -Command`, no API key / `$env:PROGET_*` on the command line.
-- Runner resolves the key from env (not a parameter), performs no unguarded `$global:settings` read (it resolves settings via the helper/cmdlets), and calls `Initialize-LocalHostSettings`.
+- Plan is a thin `-NoProfile -File` runner plan with no `$global:settings` in
+  OtterScript, no inline `pwsh -Command`, and only a SecretName in arguments.
+- Runner carries the canonical SecretName, performs no unguarded
+  `$global:settings` read, and calls `Initialize-LocalHostSettings`; the
+  authenticated leaf performs resolution.
 - **Behavioral proof:** Under a bare `-NoProfile` session with no initialized settings, `Get-PVal` fails loud (throws) as expected. The runner itself calls `Initialize-LocalHostSettings` to bootstrap settings.
 
 Run it (with the profile loaded — never run Pester with `-NoProfile`, per [`PowerShell-Modules-Test-Process.md`](PowerShell-Modules-Test-Process.md)):

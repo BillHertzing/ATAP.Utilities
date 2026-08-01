@@ -91,6 +91,47 @@ FROM '${data_dir}\Path_InstantiationBindings.csv'
 WITH (FORMAT = 'CSV', FIRSTROW = 2, CODEPAGE = '65001', TABLOCK);
 
 -- -----------------------------------------------------------------
+-- 0. Validate source identity uniqueness before seeding.
+-- -----------------------------------------------------------------
+IF EXISTS (
+    SELECT 1
+    FROM (
+        SELECT
+            TRY_CONVERT(TINYINT,          LTRIM(RTRIM(s.PrimitiveLanguageKindId))) AS PrimitiveLanguageKindId,
+            NULLIF(LTRIM(RTRIM(s.[Name])), N'')                            AS [Name],
+            COUNT_BIG(*)                                                    AS IdentityCount
+        FROM ATAPUtilities._stg_Path_RulePrimitives AS s
+        WHERE TRY_CONVERT(UNIQUEIDENTIFIER, LTRIM(RTRIM(s.PhiloteId))) IS NOT NULL
+          AND TRY_CONVERT(TINYINT,          LTRIM(RTRIM(s.PrimitiveLanguageKindId))) = 6
+          AND NULLIF(LTRIM(RTRIM(s.[Name])), N'') IS NOT NULL
+        GROUP BY
+            TRY_CONVERT(TINYINT,          LTRIM(RTRIM(s.PrimitiveLanguageKindId))),
+            NULLIF(LTRIM(RTRIM(s.[Name])), N'')
+        HAVING COUNT_BIG(*) > 1
+    ) AS DuplicateRulePrimitive
+)
+    THROW 51000, 'Path loader aborted: duplicate Path RulePrimitive (PrimitiveLanguageKindId, Name) rows found in source CSV.', 1;
+
+IF EXISTS (
+    SELECT 1
+    FROM (
+        SELECT
+            TRY_CONVERT(TINYINT,          LTRIM(RTRIM(s.PrimitiveLanguageKindId))) AS PrimitiveLanguageKindId,
+            NULLIF(LTRIM(RTRIM(s.[Name])), N'')                            AS [Name],
+            COUNT_BIG(*)                                                    AS IdentityCount
+        FROM ATAPUtilities._stg_Path_Rules AS s
+        WHERE TRY_CONVERT(UNIQUEIDENTIFIER, LTRIM(RTRIM(s.PhiloteId))) IS NOT NULL
+          AND TRY_CONVERT(TINYINT,          LTRIM(RTRIM(s.PrimitiveLanguageKindId))) = 6
+          AND NULLIF(LTRIM(RTRIM(s.[Name])), N'') IS NOT NULL
+        GROUP BY
+            TRY_CONVERT(TINYINT,          LTRIM(RTRIM(s.PrimitiveLanguageKindId))),
+            NULLIF(LTRIM(RTRIM(s.[Name])), N'')
+        HAVING COUNT_BIG(*) > 1
+    ) AS DuplicateRule
+)
+    THROW 51001, 'Path loader aborted: duplicate Path Rule (PrimitiveLanguageKindId, Name) rows found in source CSV.', 1;
+
+-- -----------------------------------------------------------------
 -- 1. Seed ATAPUtilities.Philote for every RulePrimitive PhiloteId
 -- -----------------------------------------------------------------
 INSERT INTO ATAPUtilities.Philote (PhiloteId)
@@ -120,7 +161,8 @@ WHERE TRY_CONVERT(UNIQUEIDENTIFIER, LTRIM(RTRIM(s.PhiloteId))) IS NOT NULL
   AND NOT EXISTS (
           SELECT 1
           FROM   ATAPUtilities.RulePrimitive AS rp
-          WHERE  rp.PhiloteId = TRY_CONVERT(UNIQUEIDENTIFIER, LTRIM(RTRIM(s.PhiloteId)))
+          WHERE  rp.PrimitiveLanguageKindId = TRY_CONVERT(TINYINT, LTRIM(RTRIM(s.PrimitiveLanguageKindId)))
+            AND rp.[Name] = NULLIF(LTRIM(RTRIM(s.[Name])), N'')
       );
 
 -- -----------------------------------------------------------------
@@ -154,7 +196,8 @@ WHERE TRY_CONVERT(UNIQUEIDENTIFIER, LTRIM(RTRIM(s.PhiloteId))) IS NOT NULL
   AND NOT EXISTS (
           SELECT 1
           FROM   ATAPUtilities.[Rule] AS r
-          WHERE  r.PhiloteId = TRY_CONVERT(UNIQUEIDENTIFIER, LTRIM(RTRIM(s.PhiloteId)))
+          WHERE  r.PrimitiveLanguageKindId = TRY_CONVERT(TINYINT, LTRIM(RTRIM(s.PrimitiveLanguageKindId)))
+            AND r.[Name] = NULLIF(LTRIM(RTRIM(s.[Name])), N'')
       );
 
 -- -----------------------------------------------------------------

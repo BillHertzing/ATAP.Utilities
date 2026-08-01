@@ -91,7 +91,9 @@ names, and example invocation** for each one.
   SQL Server instance in a rehearsal mode: optional pre-migration
   snapshot, Flyway migrate, seed loader, Pester validation, and
   evidence capture.
-- **Required env vars:** `BW_SESSION` (for connection-string resolution).
+- **Required environment variables:** None. `Get-SecretATAP` resolves the
+  connection-string SecretName through the configured secret provider and
+  fails closed when it is unavailable.
 - **Required Bitwarden secret names:**
   - `dbConnectionString.<Database>.<Host>.<Tier>` for the target instance.
 - **Example:**
@@ -122,7 +124,7 @@ names, and example invocation** for each one.
 - **What it does:** Runs the seed loader twice and confirms the second
   run is a no-op (idempotent). Compares row counts and content
   checksums.
-- **Required env vars:** `BW_SESSION`.
+- **Required environment variables:** None; secrets resolve through `Get-SecretATAP`.
 - **Required Bitwarden secret names:**
   - `dbConnectionString.<Database>.<Host>.<Tier>` for the target instance.
 - **Example:**
@@ -136,7 +138,7 @@ names, and example invocation** for each one.
 - **Source:** [`../public/Get-FlywaySchemaVersion.ps1`](../public/Get-FlywaySchemaVersion.ps1)
 - **What it does:** Returns the highest applied Flyway version on the
   target database.
-- **Required env vars:** `BW_SESSION`.
+- **Required environment variables:** None; secrets resolve through `Get-SecretATAP`.
 - **Required Bitwarden secret names:**
   - `dbConnectionString.<Database>.<Host>.<Tier>` for the target instance.
 - **Example:**
@@ -162,7 +164,8 @@ The three cmdlets below complete the rollback story owned by DBA1-T05.
   `-SqlInstance` (optional, defaults from `$global:settings`),
   `-BackupPath` (optional, defaults to `$env:TEMP\dbsnap-…`),
   `-RepositoryRoot` (optional, defaults via `Get-RepositoryRoot`).
-- **Required env vars:** `BW_SESSION` (for `Get-FlywaySchemaVersion`).
+- **Required environment variables:** None; `Get-FlywaySchemaVersion` resolves
+  its SecretName through `Get-SecretATAP`.
 - **Required Bitwarden secret names:**
   - `dbConnectionString.<Application>.<Host>.<Tier>` (SELECT on `flyway_schema_history`).
 - **Example:**
@@ -180,7 +183,7 @@ The three cmdlets below complete the rollback story owned by DBA1-T05.
   Returns `[PSCustomObject]@{ Restored; VerifiedVersion; Errors }`.
 - **Parameters:** `-BackupPath` (required), `-DatabaseName` (required),
   `-SqlInstance` (required), `-EvidenceFile` (optional), `-WithReplace` (switch).
-- **Required env vars:** `BW_SESSION`.
+- **Required environment variables:** None; secrets resolve through `Get-SecretATAP`.
 - **Required Bitwarden secret names:**
   - `dbConnectionString.master.<Host>.<Tier>` (ALTER DATABASE rights for restore).
 - **Example:**

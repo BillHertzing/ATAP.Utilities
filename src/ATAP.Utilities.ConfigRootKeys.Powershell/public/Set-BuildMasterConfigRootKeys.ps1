@@ -43,11 +43,11 @@ function Set-BuildMasterConfigRootKeys {
   begin {
     $fn = 'Set-BuildMasterConfigRootKeys'
     $mn = 'ATAP.Utilities.ConfigRootKeys.PowerShell'
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
+    if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn" }
 
     if ($null -eq $global:configRootKeys) {
       $errorMessage = '$global:configRootKeys is not initialized. Run Set-GlobalConfigRootKeys (which loads Set-CoreConfigRootKeys first).'
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage }
       throw $errorMessage
     }
   }
@@ -71,18 +71,18 @@ function Set-BuildMasterConfigRootKeys {
         # Consumed by Resolve-BuildMasterApplicationForModule / Start-BuildMasterModulePipelineBatch;
         # the value (a hashtable) is supplied per host in the ATAP.IAC BuildMaster host-settings fragment.
         $global:configRootKeys.Add('BuildMasterApplicationByModuleConfigRootKey', 'BuildMasterApplicationByModule')
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Added BuildMaster key constants.'
+        if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Added BuildMaster key constants.' }
       }
     } catch {
       $errorMessage = "Unhandled error in $fn. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage }
       throw
     } finally {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving process block in $fn"
+      if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving process block in $fn" }
     }
   }
 
   end {
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn"
+    if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn" }
   }
 }

@@ -25,7 +25,7 @@ BeforeAll {
     <# Build a minimal valid v2 db-release-unit-manifest object #>
     param(
       [string]$AppVersion = '1.2.3',
-      [hashtable[]]$Files = @()
+      [object[]]$Files = @()
     )
     [PSCustomObject]@{
       schemaVersion                    = 2
@@ -42,7 +42,13 @@ BeforeAll {
       requiresPreviousProductionSnapshot = $false
       rollbackSupported                = $false
       rollbackNotes                    = ''
-      evidenceRequirements             = @{}
+      evidenceRequirements             = @{
+        experimental = @{}
+        development = @{}
+        integration = @{}
+        qa = @{}
+        stable = @{}
+      }
     }
   }
 
@@ -75,14 +81,21 @@ BeforeAll {
 
     $fileEntry = [PSCustomObject]@{
       path           = 'db/migrations/V1__init.sql'
+      kind           = 'migration'
       checksumSha256 = $migHash
+      destructiveChangeKind = 'none'
     }
 
     $manifest = New-ValidManifest -Files @($fileEntry)
     if ($MissingFile) {
       # Reference a file that does not exist
       $manifest.files = @(
-        [PSCustomObject]@{ path = 'db/migrations/V2__phantom.sql'; checksumSha256 = 'aaaa' },
+        [PSCustomObject]@{
+          path = 'db/migrations/V2__phantom.sql'
+          kind = 'migration'
+          checksumSha256 = 'aaaa'
+          destructiveChangeKind = 'none'
+        },
         $fileEntry
       )
     }
@@ -201,12 +214,16 @@ Describe 'Test-DatabaseChangePackage — ceiling policy' {
 
     # Stable release version — exceeds Development ceiling
     $manifest = New-ValidManifest -AppVersion '2.0.0'
-    $manifest | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $pkgDir 'db-release-unit-manifest.json') -Encoding UTF8
     New-Item -ItemType Directory -Path $pkgDir -Force | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $pkgDir 'db' 'migrations') -Force | Out-Null
     'SELECT 1;' | Set-Content (Join-Path $pkgDir 'db' 'migrations' 'V1__init.sql') -Encoding UTF8
     $h = Get-Sha256 (Join-Path $pkgDir 'db' 'migrations' 'V1__init.sql')
-    $manifest.files = @([PSCustomObject]@{ path = 'db/migrations/V1__init.sql'; checksumSha256 = $h })
+    $manifest.files = @([PSCustomObject]@{
+        path = 'db/migrations/V1__init.sql'
+        kind = 'migration'
+        checksumSha256 = $h
+        destructiveChangeKind = 'none'
+      })
     $manifest | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $pkgDir 'db-release-unit-manifest.json') -Encoding UTF8
 
     @{ maximumTier = 'Development' } | ConvertTo-Json |
@@ -247,6 +264,25 @@ Describe 'Expand-DatabaseChangePackage' {
 
     $result | Should -Be $explicit
     Test-Path (Join-Path $explicit 'db-release-unit-manifest.json') | Should -BeTrue
+  }
+
+  It 'uses the shared database-package staging root when configured' {
+    $sharedRoot = Join-Path $TestDrive 'shared-staging'
+    New-Item -ItemType Directory -Path $sharedRoot -Force | Out-Null
+    $previousRoot = $env:ATAP_DATABASE_PACKAGE_STAGING_ROOT
+    $dest = $null
+    try {
+      $env:ATAP_DATABASE_PACKAGE_STAGING_ROOT = $sharedRoot
+      $dest = Expand-DatabaseChangePackage -NupkgPath $script:NupkgPath
+      (Split-Path -Parent $dest) | Should -Be $sharedRoot
+      Test-Path (Join-Path $dest 'db-release-unit-manifest.json') | Should -BeTrue
+    }
+    finally {
+      $env:ATAP_DATABASE_PACKAGE_STAGING_ROOT = $previousRoot
+      if ($dest -and (Test-Path -LiteralPath $dest)) {
+        Remove-Item -LiteralPath $dest -Recurse -Force
+      }
+    }
   }
 
   It 'Throws a terminating error when the nupkg file does not exist' {

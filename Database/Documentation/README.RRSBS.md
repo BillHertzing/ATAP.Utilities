@@ -26,6 +26,25 @@ The RRSBS implementation follows Flyway's migration pattern with strict DDL/DML 
 
 ## RRSBS Table Structure
 
+## Effective-Dated Lifecycle
+
+RRSBS does not use the largest `VersionNumber` as the definition of current.
+Every temporal RRSBS row has an UTC validity interval:
+
+- `EffectiveFrom` is inclusive.
+- `EffectiveTo` is exclusive and `NULL` only for the current version.
+- A revision closes the current row at one UTC timestamp and inserts the
+  successor at that same timestamp; the logical parent Philote ID is retained.
+- The effective-date check constraint, filtered unique current indexes, and
+  close-only triggers prevent overlapping current versions, rewrites, and
+  deletes.
+
+The durable identity remains the parent Philote ID such as `RulePhiloteId`.
+The version row has its own Philote ID so the complete historical graph can be
+addressed without ambiguity. The same contract applies to the Instantiation
+tree through BuildSet, RuleSet, Rule, composition, membership, instantiation,
+and input-binding rows.
+
 ### Identity Layer
 
 - **Philote**: Stable GUID-based identity (IPhilote<GUID>) for primitives and rules
@@ -221,14 +240,15 @@ ORDER BY plk.Name;
 
 ## Future Enhancements
 
-The current seed data only populates base tables. Future migrations may add:
+The versioned RRSBS surface now includes RuleVersion, RuleSetVersion,
+BuildSetVersion, RuleInstantiationVersion, ordered snapshot memberships,
+effective dating, manifestation provenance, and immutable ordered source
+lines. Task 13.79 seeds the first exact-byte graph for
+`Write-ArrayIndented.ps1`; see
+[Task-13.79-Instantiation-V1.md](../../SolutionDocumentation/Task-13.79-Instantiation-V1.md).
 
-1. **RulePrimitiveInput**: Parameter definitions for parameterized primitives
-2. **RulePrimitiveComposition**: BNF derivation trees showing how rules compose primitives
-3. **RuleSet**: Logical groupings of related rules (e.g., "StronglyTypedId Project Files")
-4. **RuleSetMember**: Mappings between RuleSets and Rules
-5. **RuleInstantiation**: Historical records of where/when rules were applied
-6. **RuleInstantiationBinding**: Captured parameter values from instantiations
+Remaining enhancements should build on these versioned tables rather than
+introducing a `Build` layer or mutating durable identities.
 
 ## Related Documentation
 
@@ -276,7 +296,5 @@ For breaking changes (name changes, language changes):
 
 ---
 
-**Last Updated**: 2025-01-XX
-**Schema Version**: V00.01.000020
-**Total Primitives**: 51 (8 MSBuild, 18 CSharp, 23 SQL, 2 PowerShell)
-**Total Rules**: 24 (14 MSBuild, 7 CSharp, 3 SQL, 0 PowerShell)
+**Last Updated**: 2026-07-30
+**Schema Source Version**: V00.02.000110

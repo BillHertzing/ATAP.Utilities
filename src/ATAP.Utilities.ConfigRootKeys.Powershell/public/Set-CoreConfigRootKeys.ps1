@@ -41,7 +41,7 @@ function Set-CoreConfigRootKeys {
   begin {
     $fn = 'Set-CoreConfigRootKeys'
     $mn = 'ATAP.Utilities.ConfigRootKeys.PowerShell'
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
+    if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn" }
   }
 
   process {
@@ -135,6 +135,9 @@ function Set-CoreConfigRootKeys {
           'ServicePlacementMapConfigRootKey'                                                             = 'ServicePlacementMap'
           # Manim animation renderer executable path
           'ManimExePathConfigRootKey'                                                                    = 'MANIM_EXE_PATH'
+          # Root directory holding cloned/forked open-source repositories (e.g. MCP servers).
+          # Consumed as the ${OSS_FORKS_ROOT} environment variable by .mcp.json.
+          'OSSForksRootConfigRootKey'                                                                    = 'OSS_FORKS_ROOT'
           # related to the Hydrus-Network application
           'HYDRUS_ACCESS_KEYConfigRootKey'                                                               = 'HydrusAccessKey'
           'HydrusAPIHostConfigRootKey'                                                                   = 'HydrusAPIServer'
@@ -263,18 +266,18 @@ function Set-CoreConfigRootKeys {
           'CertificateServerComputerRoleConfigRootKey'                                                   = 'CertificateServerComputer'
           'ProGetPackageRepositoryProviderComputerRoleConfigRootKey'                                     = 'ProGetPackageRepositoryProviderComputer'
         }
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message '$global:configRootKeys initialized with core key constants.'
+        if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message '$global:configRootKeys initialized with core key constants.' }
       }
     } catch {
       $errorMessage = "Unhandled error in $fn. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage }
       throw
     } finally {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving process block in $fn"
+      if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving process block in $fn" }
     }
   }
 
   end {
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn"
+    if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn" }
   }
 }

@@ -15,6 +15,11 @@ This repository is intended to be a demonstration of the many many tools and pro
 
 The non-documentation Projects in this repository are written in C#, Powershell, and SQL. Documentation is written in Markdown, Unified Modelling Language (UML), and DrawIO.
 
+The live BuildMaster/ProGet deployment of `ATAPUtilities.Database` `0.1.3`,
+including its exact migration boundary, stable-package hash, permanent-tier
+snapshots, Production checksum reconciliation, and final Flyway audit, is recorded
+in [ATAPUtilities Database 0.1.3 Release Record](ATAPUtilities-Database-0.1.3-Release-Record.md).
+
 ### <a id="Prerequisites" />Prerequisites
 
 There are a lot of prerequisite packages needed to handle all the features of the repository.
@@ -56,6 +61,15 @@ ToDo: Insert diagram of CI/CD process
   organization, computers, repositories, source modules, and rendered artifacts
   for ATAPUtilities instantiations; Tasks 12.26.b-e added the read-only
   scanner, renderer, and v1/v2 manifestation evidence.
+- [Task 13.80 — Instantiation Query, Ingestion, and Execution](./Task-13.80-Instantiation-Execution.md)
+  records corrected immutable graph loading, ingestion proposals, exact-byte
+  manifestation, provenance, and isolated SQL E2E evidence.
+- [Task 13.82 — Instantiation Package Rehearsal](./Task-13.82-Instantiation-Package-Rehearsal.md)
+  records the immutable 0.1.1 package identity, fresh/current Flyway
+  rehearsals, adversarial review, and approved deployment hash.
+- [Task 13.83 — Instantiation Deployment and Manifestation](./Task-13.83-Instantiation-Deployment-and-Manifestation.md)
+  records the separately approved live migration and exact target-root
+  manifestation, deployed-state checks, and complete provenance proof.
 - [Rules Compendium.AgentText](./Rules%20Compendium.AgentText.md) defines the
   AgentText rule kind and embeds the grammar for AI agent and instruction text.
 - `src/ATAP.Utilities.RulesManagement.PowerShell/public/Import-AgentTextFromFiles.ps1`
@@ -67,6 +81,14 @@ ToDo: Insert diagram of CI/CD process
 - [Sprint Infrastructure Naming](./SprintInfrastructure-Naming.md) records the
   sprint resource names, including BWS-owned `dbConnectionString-*` keys for
   Development and Experimental database connection strings.
+- [New Computer Setup](./NewComputerSetup.md) is the current workstation
+  bootstrap and certification guide. Its Sprint 0013 reconciliation distinguishes
+  host-qualified sprint assignment, canonical profile ownership, five SQL roles,
+  the five-tier `SvcBuildMaster` `ATAPUtilities` deployment grant, Inedo
+  port/data boundaries, BWS versus personal-vault access, Class A return
+  controls, and the open product/HITL gates that must not be reported as deployed.
+  `Test-NewComputerSetupDocumentation.ps1` provides the read-only, idempotent contract
+  check for the canonical guide and its active linked BuildMaster runbooks.
 
 ### ManimVideoGenerator
 

@@ -1,4 +1,5 @@
 # ToDo : Module comment-based help
+. (Join-Path $PSScriptRoot 'module.preamble.ps1')
 
 # get the fileIO info for each file in the public and private subdirectories
 $publicFunctions = @(Get-ChildItem -Path $PSScriptRoot\public\*.ps1 -ErrorAction SilentlyContinue)

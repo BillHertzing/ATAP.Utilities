@@ -16,9 +16,13 @@ function New-HostSettingsForPackageRepositoryFeeds {
 
 # ToDo: Move this function over to the Powershell.IAC module
 # ToDo: Remove this when packaging works
-#  if (-not (Get-Command -Name 'ConvertTo-ProGetFeedNameAlternateForm' -CommandType Function -ErrorAction SilentlyContinue)) {
-. "$PSScriptRoot\..\private\ConvertTo-ProGetFeedNameAlternateForm.ps1"
-# }
+if (-not (Get-Command -Name 'ConvertTo-ProGetFeedNameAlternateForm' -CommandType Function -ErrorAction SilentlyContinue)) {
+  $proGetHelperPath = Join-Path $PSScriptRoot '..\..\ATAP.Utilities.BuildTooling.ProGet.PowerShell\public\ConvertTo-ProGetFeedNameAlternateForm.ps1'
+  if (-not (Test-Path -LiteralPath $proGetHelperPath -PathType Leaf)) {
+    throw "Required ProGet helper file not found: '$proGetHelperPath'."
+  }
+  . $proGetHelperPath
+}
 
 $results = [PSCustomObject]@{HostSettings = [System.Collections.ArrayList]::new(); ConfigRootKeys = [System.Collections.ArrayList]::new(); }
 

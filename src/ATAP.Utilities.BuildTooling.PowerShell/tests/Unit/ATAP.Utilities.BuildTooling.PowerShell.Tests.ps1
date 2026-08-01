@@ -2,10 +2,10 @@
 #
 # Module export-consistency guard (V4-B08).
 #
-# The build (module.build.ps1 -> BuildManifest task) computes FunctionsToExport
-# from the *basenames* of public/*.ps1 files, NOT from the function names parsed
-# out of those files. Therefore a public file whose top-level function name does
-# not equal its basename produces a manifest entry that exports nothing — a
+# The build (module.build.ps1 -> BuildManifest task) computes physical exports
+# from the *basenames* of public/*.ps1 files and retains explicit source-manifest
+# exports for compatibility proxies created at runtime. Therefore a public file
+# whose top-level function name does not equal its basename still produces a
 # "phantom export" that silently disappears from the published module.
 #
 # These tests fail fast if that drift is reintroduced, before a module ever
@@ -32,7 +32,22 @@ BeforeAll {
     }
 
   $script:basenames = $script:fileFunctionMap.BaseName | Sort-Object
-  $script:declared = (Import-PowerShellDataFile $script:manifestPath).FunctionsToExport | Sort-Object
+  $script:manifest = Import-PowerShellDataFile $script:manifestPath
+  $script:declared = $script:manifest.FunctionsToExport | Sort-Object
+  $script:childDeclared = @(
+    foreach ($requiredModule in @($script:manifest.RequiredModules)) {
+      $requiredName = [string] $requiredModule.ModuleName
+      if ($requiredName -notlike 'ATAP.Utilities.BuildTooling.*.PowerShell') {
+        continue
+      }
+      $childManifestPath = Join-Path (
+        Split-Path -Parent $script:moduleRoot
+      ) "$requiredName\$requiredName.psd1"
+      if (Test-Path -LiteralPath $childManifestPath -PathType Leaf) {
+        (Import-PowerShellDataFile $childManifestPath).FunctionsToExport
+      }
+    }
+  ) | Sort-Object -Unique
 }
 
 Describe 'BuildTooling.PowerShell module export consistency' {
@@ -50,9 +65,16 @@ produces a phantom export.
     }
   }
 
-  Context 'Committed manifest FunctionsToExport matches the public file set' {
-    It 'declares exactly one export per public file basename (no extras, no omissions)' {
-      Compare-Object -ReferenceObject $script:basenames -DifferenceObject $script:declared |
+  Context 'Committed manifest FunctionsToExport covers parent and compatibility children' {
+    It 'declares every remaining parent public file basename' {
+      @($script:basenames | Where-Object { $_ -notin $script:declared }) |
+        Should -BeNullOrEmpty
+    }
+
+    It 'sources every compatibility-only export from a required child manifest' {
+      $compatibilityExports = @($script:declared | Where-Object { $_ -notin $script:basenames })
+
+      @($compatibilityExports | Where-Object { $_ -notin $script:childDeclared }) |
         Should -BeNullOrEmpty
     }
   }
@@ -73,6 +95,15 @@ produces a phantom export.
     It 'resolves the canonical Test-ProGetFeedSet (renamed from Validate-ProGetFeeds)' {
       Get-Command -Module 'ATAP.Utilities.BuildTooling.PowerShell' -Name 'Test-ProGetFeedSet' -ErrorAction SilentlyContinue |
         Should -Not -BeNullOrEmpty
+    }
+
+    It 'forwards named arguments without adding a null positional argument' {
+      $descriptor = ATAP.Utilities.BuildTooling.PowerShell\Get-DbConnectionStringSecretDescriptor `
+        -SecretName 'dbConnectionString.ATAPUtilities.sql01.Production'
+
+      $descriptor.SecretName | Should -Be 'dbConnectionString.ATAPUtilities.sql01.Production'
+      $descriptor.Environment | Should -Be 'Production'
+      $descriptor.Classification | Should -Be 'credentialed'
     }
   }
 }

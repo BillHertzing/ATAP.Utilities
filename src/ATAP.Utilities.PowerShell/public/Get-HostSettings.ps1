@@ -196,12 +196,71 @@ function Get-HostSettings {
       . (Join-Path $PSScriptRoot '..\private\Get-IACHostSettingsCandidatePath.ps1')
     }
 
-    $candidatePaths = [System.Collections.Generic.List[string]]::new()
-    foreach ($candidate in (Get-IACHostSettingsCandidatePath -IACBasePath $IACBasePath -SearchRoot $searchRoots -ProgramFilesResourcePath $programFilesResourcePath)) {
-      Add-CandidatePath -CandidatePaths $candidatePaths -Path $candidate
+    # Task 14.62 fast path. Discovery below enumerates $searchRoots with Get-ChildItem, and one
+    # of those roots is the Dropbox GitHub tree. Every directory there carries a Cloud Files
+    # reparse attribute, so enumerating it forces placeholder resolution: measured at ~1.15 s,
+    # which was roughly 40% of TOTAL PowerShell profile startup on utat022 - paid by every shell,
+    # to locate a file whose location is already known.
+    #
+    # $PSHOME\HostSettings.ps1 is the symlink the sprint lifecycle maintains, pointing at the
+    # active ATAP.IAC worktree. Probing it first is not a hard-coded sprint path (the SC-0252
+    # regression): the link IS the discovery mechanism, retargeted at each sprint boundary. When
+    # it is absent or dangling, discovery runs exactly as before.
+    $hostSettingsScript = $null
+    $fastPathCandidates = [System.Collections.Generic.List[string]]::new()
+    if (-not [string]::IsNullOrWhiteSpace($IACBasePath)) {
+      # An explicit caller-supplied base always outranks anything discovered.
+      foreach ($relativePath in @('Windows\HostSettings.ps1', 'HostSettings.ps1')) {
+        $fastPathCandidates.Add((Join-Path $IACBasePath $relativePath))
+      }
+    }
+    if (-not [string]::IsNullOrWhiteSpace($PSHOME)) {
+      $fastPathCandidates.Add((Join-Path $PSHOME 'HostSettings.ps1'))
+    }
+    foreach ($fastCandidate in $fastPathCandidates) {
+      if (-not (Test-Path -LiteralPath $fastCandidate -PathType Leaf)) { continue }
+
+      # $PSHOME\HostSettings.ps1 is a SYMLINK into the ATAP.IAC worktree. Dot-sourcing a link
+      # sets $PSScriptRoot to the LINK's directory, not the target's - and HostSettings.ps1
+      # resolves its HostSettings.IAC.Fragments\ siblings from $PSScriptRoot. Using the link path
+      # directly therefore loads the script but finds none of its fragments, producing a
+      # half-built settings hashtable. Resolve to the real file so $PSScriptRoot lands beside the
+      # fragments; if the link is dangling, fall through to full discovery.
+      $resolvedCandidate = $fastCandidate
+      try {
+        $candidateItem = Get-Item -LiteralPath $fastCandidate -Force -ErrorAction Stop
+        if ($candidateItem.LinkTarget) {
+          $linkTarget = $candidateItem.LinkTarget
+          if (-not [System.IO.Path]::IsPathRooted($linkTarget)) {
+            $linkTarget = Join-Path (Split-Path -Path $fastCandidate -Parent) $linkTarget
+          }
+          if (-not (Test-Path -LiteralPath $linkTarget -PathType Leaf)) { continue }
+          $resolvedCandidate = $linkTarget
+        }
+      }
+      catch {
+        continue
+      }
+
+      # A HostSettings.ps1 without its fragments directory is unusable; let discovery try.
+      $fragmentDirectory = Join-Path (Split-Path -Path $resolvedCandidate -Parent) 'HostSettings.IAC.Fragments'
+      if (-not (Test-Path -LiteralPath $fragmentDirectory -PathType Container)) {
+        Write-HostSettingsMessage -Level Verbose -Message "Fast-path candidate '$resolvedCandidate' has no HostSettings.IAC.Fragments directory; falling back to discovery."
+        continue
+      }
+
+      $hostSettingsScript = $resolvedCandidate
+      Write-HostSettingsMessage -Level Verbose -Message "Resolved HostSettings.ps1 via fast path '$fastCandidate' -> '$resolvedCandidate'; skipped search-root enumeration."
+      break
     }
 
-    $hostSettingsScript = $null
+    $candidatePaths = [System.Collections.Generic.List[string]]::new()
+    if (-not $hostSettingsScript) {
+      foreach ($candidate in (Get-IACHostSettingsCandidatePath -IACBasePath $IACBasePath -SearchRoot $searchRoots -ProgramFilesResourcePath $programFilesResourcePath)) {
+        Add-CandidatePath -CandidatePaths $candidatePaths -Path $candidate
+      }
+    }
+
     foreach ($candidate in $candidatePaths) {
       foreach ($relativePath in @('Windows\HostSettings.ps1', 'HostSettings.ps1')) {
         $probePath = Join-Path $candidate $relativePath

@@ -5,12 +5,22 @@ Builds a combined CLAUDE.md file for each repository worktree in the current spr
 .DESCRIPTION
 Locates the Overview-wt-sprintNNNN.code-workspace file one level above the current
 worktree root, reads the folders list, then for each repository worktree:
-  1. Reads CLAUDE-base.md from the SharedVSCode sprint worktree
+  1. Builds the shared core body from canonical (Task 14.60)
   2. Reads ai-local.md (legacy: CLAUDE-local.md) from the repository worktree root (if present)
-  3. Combines local + provenance table + base into CLAUDE.md at the worktree root
+  3. Combines local + provenance table + core into CLAUDE.md at the worktree root
 
-The provenance table inserted between local and base content records the last-modified
-timestamps of the base file, the local file, and the newly written combined file.
+Task 14.60: the core body comes DIRECTLY from the canonical
+.ai/core/main-instructions.md through Get-AICoreInstructionBody, so a materialized
+CLAUDE-base.md is no longer a prerequisite. The record's ClaudeCode target is
+materialization 'copy', so the canonical body is used verbatim - byte-identical to what
+CLAUDE-base.md held. CLAUDE-base.md remains a FALLBACK for a SharedVSCode worktree with no
+.ai tree; the result object reports CoreOrigin and CoreSourceSha256.
+
+The provenance table inserted between local and core content records the last-modified
+timestamps of the core source, the local file, and the newly written combined file. Its
+first row names the file actually read - main-instructions.md on the canonical path,
+CLAUDE-base.md on the fallback - rather than a fixed label that could assert a source this
+cmdlet no longer consults.
 
 When the workspace is a sprint Overview workspace (it carries a sprintEphemeral block
 and/or lists at least one sprint worktree folder), any repository that has no sprint
@@ -113,6 +123,10 @@ function Build-CLAUDEPerRepository {
     $result = [PSCustomObject]@{
       Success               = $false
       WorkspacePath         = $null
+      # Task 14.60: 'canonical' when the core body came from .ai/core/main-instructions.md,
+      # 'legacy-base' when it fell back to CLAUDE-base.md.
+      CoreOrigin            = $null
+      CoreSourceSha256      = $null
       RepositoriesProcessed = 0
       RepositoryResults     = @()
       Errors                = @()
@@ -205,15 +219,27 @@ function Build-CLAUDEPerRepository {
       }
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "SharedVSCode worktree: $sharedVSCodeFullPath"
 
-      # Step 4: Locate CLAUDE-base.md in SharedVSCode worktree
-      $baseFilePath = Join-Path $sharedVSCodeFullPath 'CLAUDE-base.md'
-      if (-not (Test-Path $baseFilePath -PathType Leaf)) {
-        throw "CLAUDE-base.md not found at '$baseFilePath'"
-      }
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "CLAUDE-base.md found at: $baseFilePath"
-
-      $baseContent = Get-Content -Path $baseFilePath -Raw -ErrorAction Stop
-      $baseLastModified = (Get-Item $baseFilePath -ErrorAction Stop).LastWriteTime
+      # Step 4: Build the shared core body. Task 14.60 composes it directly from the
+      # canonical source named in the instruction manifest, so a materialized
+      # CLAUDE-base.md is no longer a prerequisite of combining. The record's ClaudeCode
+      # target is materialization 'copy', so the canonical body is used verbatim - byte
+      # identical to what CLAUDE-base.md held. The legacy file remains a FALLBACK for a
+      # SharedVSCode worktree with no .ai tree (older sprints, fixtures).
+      $legacyBaseFilePath = Join-Path $sharedVSCodeFullPath 'CLAUDE-base.md'
+      $coreBody = Get-AICoreInstructionBody `
+        -SharedVSCodeRoot $sharedVSCodeFullPath `
+        -Carrier CLAUDE `
+        -FallbackBaseFilePath $legacyBaseFilePath
+      $baseFilePath = $coreBody.SourcePath
+      $baseContent = $coreBody.Content
+      $baseLastModified = (Get-Item -LiteralPath $baseFilePath -ErrorAction Stop).LastWriteTime
+      # The provenance table must name the file actually read. Hard-coding 'CLAUDE-base.md'
+      # would keep the old bytes but assert a source this cmdlet no longer consults - the
+      # exact "surface claims one thing, truth is another" failure Task 14.60.a chased.
+      $baseProvenanceName = Split-Path -Path $baseFilePath -Leaf
+      $result.CoreOrigin = $coreBody.Origin
+      $result.CoreSourceSha256 = $coreBody.SourceSha256
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Shared core body composed from $($coreBody.Origin): $baseFilePath"
 
       # Remove the sentinel line and its trailing blank line from base content
       $baseContent = $baseContent -replace '(?m)^# Claude-Base md file start \(remove as part of conatenation\)\r?\n\r?\n', ''
@@ -306,7 +332,7 @@ function Build-CLAUDEPerRepository {
             ''
             '| Source File    | Last Modified            |'
             '| -------------- | ------------------------ |'
-            "| CLAUDE-base.md | $($baseLastModified.ToString($dateFormat)) |"
+            "| $baseProvenanceName | $($baseLastModified.ToString($dateFormat)) |"
           )
           if ($localLastModified) {
             $tableLines += "| $localFileName | $($localLastModified.ToString($dateFormat)) |"

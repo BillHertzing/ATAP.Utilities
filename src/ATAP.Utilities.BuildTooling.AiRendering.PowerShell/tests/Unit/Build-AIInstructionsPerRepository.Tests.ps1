@@ -3,6 +3,13 @@ BeforeAll {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
 
+  # This orchestrator fans out to the per-carrier combiners by name. Load them - and the
+  # Task 14.60 core-body helper they now depend on - explicitly rather than relying on a
+  # sibling test file having dot-sourced them into the shared session first, which is
+  # ordering-dependent and silently changes what this test actually exercises.
+  . "$PSScriptRoot\..\..\private\Get-AICoreInstructionBody.ps1"
+  . "$PSScriptRoot\..\..\public\Build-CLAUDEPerRepository.ps1"
+  . "$PSScriptRoot\..\..\public\Build-AGENTSPerRepository.ps1"
   . "$PSScriptRoot\..\..\public\Build-AIInstructionsPerRepository.ps1"
 }
 

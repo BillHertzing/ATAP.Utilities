@@ -8,10 +8,18 @@ It locates the Overview-wt-sprintNNNN.code-workspace file one level above the cu
 worktree root, reads the folders list, then for each repository worktree writes the
 shared Codex base instructions to AGENTS.md at the worktree root.
 
-The Codex base is the AGENTS.md rendered by SharedVSCode/.ai/tools/Render-AIAdapters.ps1
-from the canonical .ai/core/main-instructions.md (the Codex 'generated-wrapper' target of
-the ai.core.main-instructions.v1 manifest record). That rendered base file lives at the
-SharedVSCode sprint worktree root as AGENTS.md and is read here as the source of truth.
+Task 14.60: the core body is composed DIRECTLY from the canonical
+.ai/core/main-instructions.md (the Codex 'generated-wrapper' target of the
+ai.core.main-instructions.v1 manifest record) through Get-AICoreInstructionBody. A
+materialized AGENTS-base.md at the SharedVSCode root is no longer required, and is no
+longer read on the normal path.
+
+Previously this cmdlet threw unless Render-AIAdapters had first written that intermediate
+file, and - worse - a stale or hand-edited base was inherited silently into every
+repository's AGENTS.md. AGENTS-base.md remains a FALLBACK for a SharedVSCode worktree with
+no .ai tree (older sprints, fixtures, a repo rendered from a pinned bundle); the result
+object reports CoreOrigin ('canonical' or 'legacy-base') and CoreSourceSha256 so the
+provenance of any given build is visible.
 
 Task 10.23: AGENTS.md is the shared CORE carrier for Codex, Antigravity (Gemini), and
 GitHub Copilot. Like Build-CLAUDEPerRepository, this cmdlet now COMBINES the per-repo
@@ -151,6 +159,10 @@ function Build-AGENTSPerRepository {
       Success                   = $false
       WorkspacePath             = $null
       BaseFilePath              = $null
+      # Task 14.60: 'canonical' when the core body came from .ai/core/main-instructions.md,
+      # 'legacy-base' when it fell back to AGENTS-base.md.
+      CoreOrigin                = $null
+      CoreSourceSha256          = $null
       CodexAgentInstructionPath = $null
       HasCodexAgentInstructions = $false
       RepositoriesProcessed     = 0
@@ -242,19 +254,23 @@ function Build-AGENTSPerRepository {
       }
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "SharedVSCode worktree: $sharedVSCodeFullPath"
 
-      # Step 4: Locate the rendered shared core base AGENTS-base.md in the SharedVSCode
-      # worktree. Task 10.23 renders the shared core (Codex/Antigravity/Copilot) to the
-      # distinct filename AGENTS-base.md (analogous to CLAUDE-base.md) so this combiner can
-      # write the repo-root AGENTS.md without overwriting its own source.
-      $baseFilePath = Join-Path $sharedVSCodeFullPath 'AGENTS-base.md'
-      if (-not (Test-Path $baseFilePath -PathType Leaf)) {
-        throw "Rendered shared core base AGENTS-base.md not found at '$baseFilePath'. Render it first from canonical via Render-AIAdapters (Codex/shared target of ai.core.main-instructions.v1)."
-      }
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Shared core base AGENTS-base.md found at: $baseFilePath"
-      $result.BaseFilePath = $baseFilePath
-
-      # Read raw bytes so the per-repo copy is byte-identical to the rendered base.
-      $baseContent = Get-Content -Path $baseFilePath -Raw -ErrorAction Stop
+      # Step 4: Build the shared core body. Task 14.60 composes it directly from the
+      # canonical source named in the instruction manifest, so a materialized
+      # AGENTS-base.md is no longer a prerequisite of combining. Previously this step
+      # required Render-AIAdapters to have written that intermediate file first and threw
+      # otherwise; worse, a stale or hand-edited base was inherited silently into every
+      # repository's AGENTS.md. The legacy file is still accepted as a FALLBACK for a
+      # worktree with no .ai tree, and the origin is reported either way.
+      $legacyBaseFilePath = Join-Path $sharedVSCodeFullPath 'AGENTS-base.md'
+      $coreBody = Get-AICoreInstructionBody `
+        -SharedVSCodeRoot $sharedVSCodeFullPath `
+        -Carrier AGENTS `
+        -FallbackBaseFilePath $legacyBaseFilePath
+      $baseContent = $coreBody.Content
+      $result.BaseFilePath = $coreBody.SourcePath
+      $result.CoreOrigin = $coreBody.Origin
+      $result.CoreSourceSha256 = $coreBody.SourceSha256
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Shared core body composed from $($coreBody.Origin): $($coreBody.SourcePath)"
 
       # Task 13.76.b: resolve the canonical Codex agent-specific instructions once, outside the
       # per-repo loop, so every worktree composes from one identical body. Absence is normal

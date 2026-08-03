@@ -1,9 +1,9 @@
-# ATAP.Utilities.Powershell.GELFLogging — Index
+# ATAP.Utilities.GELFLogging.Powershell — Index
 
 | Path | Purpose |
 | --- | --- |
-| `ATAP.Utilities.Powershell.GELFLogging.psd1` | Module manifest. Exports the enable/disable/query trio. |
-| `ATAP.Utilities.Powershell.GELFLogging.psm1` | Dot-sources `private\` then `public\`; declares the export list. |
+| `ATAP.Utilities.GELFLogging.Powershell.psd1` | Module manifest. Exports the enable/disable/query trio. |
+| `ATAP.Utilities.GELFLogging.Powershell.psm1` | Dot-sources `private\` then `public\`; declares the export list. |
 | `version.json` | Nerdbank.GitVersioning source of the package version (0.1.1). |
 | `ReadMe.md` | What the module is for and why it exists. |
 | `ReleaseNotes.md` | Per-version change history. |

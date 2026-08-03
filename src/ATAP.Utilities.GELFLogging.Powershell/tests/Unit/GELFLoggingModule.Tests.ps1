@@ -1,10 +1,10 @@
 BeforeAll {
   $script:moduleRoot = (Resolve-Path "$PSScriptRoot\..\..").Path
-  $script:moduleName = 'ATAP.Utilities.Powershell.GELFLogging'
+  $script:moduleName = 'ATAP.Utilities.GELFLogging.Powershell'
   $script:manifestPath = Join-Path $script:moduleRoot "$($script:moduleName).psd1"
 }
 
-Describe 'ATAP.Utilities.Powershell.GELFLogging module contract' -Tag 'Unit' {
+Describe 'ATAP.Utilities.GELFLogging.Powershell module contract' -Tag 'Unit' {
 
   It 'has a valid module manifest' {
     { Test-ModuleManifest -Path $script:manifestPath -ErrorAction Stop } | Should -Not -Throw

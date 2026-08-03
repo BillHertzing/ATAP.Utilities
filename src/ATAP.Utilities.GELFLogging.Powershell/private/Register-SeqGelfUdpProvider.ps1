@@ -21,7 +21,7 @@ function Register-SeqGelfUdpProvider {
   param()
 
   $fn = $MyInvocation.MyCommand.Name
-  $mn = 'ATAP.Utilities.Powershell.GELFLogging'
+  $mn = 'ATAP.Utilities.GELFLogging.Powershell'
 
   if (Get-PSFLoggingProvider -Name 'gelfudp' -ErrorAction SilentlyContinue) {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Logging provider 'gelfudp' is already registered."

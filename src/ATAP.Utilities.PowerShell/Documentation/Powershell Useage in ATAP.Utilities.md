@@ -97,7 +97,7 @@ When using powershell Core, Note that if the path to the Powershell Desktop modu
 Use PSFramework for logging.
 
 To log to the local SEQ server, use the `gelfudp` provider from the
-**`ATAP.Utilities.Powershell.GELFLogging`** module. SEQ ingests GELF through the
+**`ATAP.Utilities.GELFLogging.Powershell`** module. SEQ ingests GELF through the
 `Seq.Input.Gelf` app (`sqelf.exe`), which listens on `udp://127.0.0.1:12201` and is
 separate from SEQ's normal HTTP ingestion port 5341.
 
@@ -106,10 +106,10 @@ separate from SEQ's normal HTTP ingestion port 5341.
 > `Disable-SeqGelfLogging` and `Get-SeqGelfLoggingStatus` commands it never had — so a
 > session can turn the sink off again, and ask whether it is on, without reaching into
 > PSFramework internals. Importing this umbrella module no longer gives you
-> `Enable-SeqGelfLogging`; import `ATAP.Utilities.Powershell.GELFLogging` instead.
+> `Enable-SeqGelfLogging`; import `ATAP.Utilities.GELFLogging.Powershell` instead.
 
 ```Powershell
-Import-Module ATAP.Utilities.Powershell.GELFLogging
+Import-Module ATAP.Utilities.GELFLogging.Powershell
 
 # Registers the 'gelfudp' provider (if needed) and enables the SendToSEQ instance
 Enable-SeqGelfLogging

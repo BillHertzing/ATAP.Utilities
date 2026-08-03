@@ -98,7 +98,7 @@ function Enable-SeqGelfLogging {
 
   begin {
     $fn = $MyInvocation.MyCommand.Name
-    $mn = 'ATAP.Utilities.Powershell.GELFLogging'
+    $mn = 'ATAP.Utilities.GELFLogging.Powershell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Entering function'
 
     # This is a logging bootstrap: it must work before $global:settings is populated, so

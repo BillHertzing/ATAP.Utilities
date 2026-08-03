@@ -1,4 +1,4 @@
-# ATAP.Utilities.Powershell.GELFLogging — Design Overview
+# ATAP.Utilities.GELFLogging.Powershell — Design Overview
 
 ## Scope
 

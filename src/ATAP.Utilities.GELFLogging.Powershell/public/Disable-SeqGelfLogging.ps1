@@ -60,7 +60,7 @@ function Disable-SeqGelfLogging {
 
   begin {
     $fn = $MyInvocation.MyCommand.Name
-    $mn = 'ATAP.Utilities.Powershell.GELFLogging'
+    $mn = 'ATAP.Utilities.GELFLogging.Powershell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Entering function'
   }
 

@@ -15,7 +15,7 @@ function Assert-PSGelfAvailable {
   param()
 
   $fn = $MyInvocation.MyCommand.Name
-  $mn = 'ATAP.Utilities.Powershell.GELFLogging'
+  $mn = 'ATAP.Utilities.GELFLogging.Powershell'
 
   if (Get-Command -Name 'Send-PSGelfUDP' -ErrorAction SilentlyContinue) {
     return

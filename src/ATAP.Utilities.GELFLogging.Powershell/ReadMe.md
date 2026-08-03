@@ -1,4 +1,4 @@
-# ATAP.Utilities.Powershell.GELFLogging
+# ATAP.Utilities.GELFLogging.Powershell
 
 Explicit **enable / disable / query** control of PSFramework logging to a SEQ GELF (UDP)
 ingestor.

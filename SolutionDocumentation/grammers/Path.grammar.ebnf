@@ -1,0 +1,23 @@
+(*
+  Path grammar contract for deterministic RRSBS rendering.
+  Authority: SolutionDocumentation/grammers per GRAMMAR-01 (2026-08-01).
+  Scope: the retained Windows path primitives documented in the Path compendium.
+  This is not a complete Win32 path parser; reserved-device names, character
+  validity, length, and filesystem-specific semantics are renderer validation.
+*)
+
+path = unc-path | absolute-path | relative-path | extended-path ;
+unc-path = "\\\\", server, "\\", share, [ "\\", path-tail ] ;
+absolute-path = drive, "\\", [ path-tail ] | "\\", path-tail ;
+relative-path = path-tail ;
+extended-path = "\\\\?\\", drive, "\\", [ path-tail ]
+              | "\\\\?\\UNC\\", server, "\\", share, [ "\\", path-tail ] ;
+
+drive = letter, ":" ;
+path-tail = name, { "\\", name } ;
+name = namechar, { namechar } ;
+namechar = ? one Unicode character except \ / : * ? " < > |, a control character,
+             or a terminal period or space; reserved device names are rejected ? ;
+server = name ;
+share = name ;
+letter = "A"…"Z" | "a"…"z" ;

@@ -1,4 +1,13 @@
-# Rules Compendium — PATH
+# Rules Compendium — Path
+
+<!-- METADATA
+  Language: Path
+  Created: pre-existing; normalized 2026-08-02
+  Kind Count: 1
+  Primitive Count: 12
+  Template version: 1.0
+  Source skill: .claude/skills/new-rule-kind/SKILL.md
+-->
 
 This file contains an overview of the PATH-specific Rules used within the ATAP.Utilities databases and the Ace Commander application built from these rules.
 
@@ -33,9 +42,64 @@ Beyond the structural grammar, Windows imposes additional constraints that BNF a
 - **Trailing characters** — Names cannot end with a period `.` or a space
 - **Case insensitivity** — NTFS is case-insensitive by default (unlike Linux ext4, which is case-sensitive)
 
-## Rule Primitives
+## Part I — Grammar Specification
+
+*This section is written once when the Kind is defined. Update only on grammar revision.*
+*The grammar below is authored at `grammers/Path.grammar.ebnf`; its rendered `docs/`
+*copy remains deferred until grammar artifacts become database-stored.*
+
+<!-- rule-grammar-start -->
+
+### Kind: Path
+
+**Philote ID:** Not allocated in the current corpus; the retained-kind decision
+is recorded by GRAMMAR-01 and the baseline seed gate must allocate the Kind identity.
+
+**Grammar file:** `grammers/Path.grammar.ebnf`
+
+**DB record:** No authoritative current `PrimitiveLanguageKind` row is asserted by
+this normalization; database conformance is a later gated baseline activity.
+
+**Description:** Deterministic Windows path rendering from the retained Path
+Rule Primitives, with filesystem-dependent validity enforced by the renderer.
+
+#### Grammar
+
+<!-- EMBEDDED from grammers/Path.grammar.ebnf -->
+```ebnf
+path = unc-path | absolute-path | relative-path | extended-path ;
+unc-path = "\\\\", server, "\\", share, [ "\\", path-tail ] ;
+absolute-path = drive, "\\", [ path-tail ] | "\\", path-tail ;
+relative-path = path-tail ;
+extended-path = "\\\\?\\", drive, "\\", [ path-tail ]
+              | "\\\\?\\UNC\\", server, "\\", share, [ "\\", path-tail ] ;
+```
+<!-- END EMBEDDED -->
+
+#### Composition Constraints
+
+- A `path` selects exactly one path form; a renderer must not infer the form.
+- `path-tail` is an ordered, non-empty sequence of `name` values separated by `\\`.
+- `extended-path` renders either a drive-rooted local path or an UNC path.
+- `namechar` validation rejects prohibited characters, terminal periods/spaces,
+  and reserved device names; these checks are semantic constraints, not EBNF tokens.
+
+#### Valid Expression Examples
+
+```text
+C:\\Repository\\SolutionDocumentation\\Rules Compendium.Path.md
+\\\\server\\share\\folder\\file.txt
+..\\_generated\\RRSBS-V2
+\\\\?\\C:\\LongPath\\artifact.txt
+```
+
+<!-- rule-grammar-end -->
+
+## Part II — Rule Primitives
 
 Rule Primitives are the atomic building blocks from which a Rule is constructed. Each primitive maps to a single BNF non-terminal in the Windows Path EBNF Grammar. When a primitive is instantiated, its inputs are bound to specific values; the rendered output is the exact PATH text that corresponds to that non-terminal node in the parse tree.
+
+<!-- rule-primitives-start -->
 
 ---
 
@@ -397,3 +461,23 @@ Attribution:
 ```
 
 ---
+
+<!-- rule-primitives-end -->
+
+## Part III — Rule Repository
+
+<!-- rule-repository-start -->
+
+No formal Path Rules are present in the normalized corpus. The twelve retained
+Rule Primitives are documented above; Rule composition remains a later baseline
+and database-conformance activity.
+
+<!-- rule-repository-end -->
+
+## Part IV — Rule Sets
+
+<!-- rule-sets-start -->
+
+No formal Path Rule Sets are present in the normalized corpus.
+
+<!-- rule-sets-end -->

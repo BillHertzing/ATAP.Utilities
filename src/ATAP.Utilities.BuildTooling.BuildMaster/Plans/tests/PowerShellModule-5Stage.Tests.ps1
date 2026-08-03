@@ -69,6 +69,8 @@ Describe 'V4-B02 plan shape: PowerShellModule-5Stage.otter is a thin -NoProfile 
         $script:PlanText | Should -Match '-ModuleName\s+"\$ModuleName"'
         $script:PlanText | Should -Match '-PackageName\s+"\$PackageName"'
         $script:PlanText | Should -Match '-ApplicationName\s+"\$ApplicationName"'
+        $script:PlanText | Should -Match '-CodeSigningCertificateThumbprint\s+"\$CodeSigningCertificateThumbprint"'
+        $script:PlanText | Should -Match '-TimestampServerUri\s+"\$TimestampServerUri"'
     }
 
     It 'plan references the runner via $BuildMasterPlanScriptDir + Invoke-PowerShellModuleBuildMasterStage.ps1' {
@@ -93,10 +95,12 @@ Describe 'V4-B02 runner no-profile contract: Invoke-PowerShellModuleBuildMasterS
             'Branch',
             'Stage',
             'ProGetUrl',
-            'ProGetApiKeySecretName'
+            'ProGetApiKeySecretName',
+            'CodeSigningCertificateThumbprint'
         )) {
             $script:RunnerText | Should -Match "\[string\]\$\b$param\b"
         }
+        $script:RunnerText | Should -Match '\[uri\]\$TimestampServerUri\b'
     }
 
     It 'runner carries only the canonical BuildMaster SecretName' {
@@ -125,6 +129,11 @@ Describe 'V4-B02 runner no-profile contract: Invoke-PowerShellModuleBuildMasterS
         $script:RunnerText | Should -Match 'Invoke-PromotedModuleTests'
         $script:RunnerText | Should -Match '-ProGetBaseUrl\s+\$ProGetUrl'
         $script:RunnerText | Should -Match '-ProGetApiKeySecretName\s+\$ProGetApiKeySecretName'
+    }
+
+    It 'runner passes explicit signing inputs into Invoke-ModuleBuildWithRetry' {
+        $script:RunnerText | Should -Match '-CodeSigningCertificateThumbprint\s+\$CodeSigningCertificateThumbprint'
+        $script:RunnerText | Should -Match '-TimestampServerUri\s+\$TimestampServerUri'
     }
 
     It 'runner promotes via Promote-ProGetPackage and computes feed URIs from $ProGetUrl' {

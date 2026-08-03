@@ -172,6 +172,9 @@ function Promote-ProGetPackage {
     )
 
     begin {
+      if (-not (Get-Command Assert-ProGetPowerShellPackageSignature -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot '..\private\Assert-ProGetPowerShellPackageSignature.ps1')
+      }
       # SC-0288 / Task 13.66.b: the SecretName host suffix is derived from the service placement
       # host, never hard-coded. Resolution order is the authoritative host setting,
       # then the placement map; an unknown placement host fails closed.
@@ -225,6 +228,14 @@ function Promote-ProGetPackage {
         }
 
         # Forward to the inner cmdlet using its parameter vocabulary.
+        if ($FromFeed -like 'powershellget-*') {
+            if ([string]::IsNullOrWhiteSpace($ProGetBaseUrl)) {
+                throw 'ProGetBaseUrl is required to verify a PowerShell module signature before promotion.'
+            }
+            Assert-ProGetPowerShellPackageSignature -Name $Name -Version $Version -Feed $FromFeed `
+                -ProGetBaseUrl $ProGetBaseUrl -ProGetApiKeySecretName $ProGetApiKeySecretName `
+                -ErrorAction Stop | Out-Null
+        }
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Promoting $target : '$FromFeed' -> '$ToFeed' (reason: $Reason)" -Tag 'RestCall'
 
         $innerResult = $null

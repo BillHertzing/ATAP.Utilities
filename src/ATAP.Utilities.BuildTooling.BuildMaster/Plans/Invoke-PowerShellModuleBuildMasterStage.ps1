@@ -70,6 +70,13 @@
 .PARAMETER ProGetUrl
   Base URL of the ProGet server hosting the PowerShellGet feeds.
 
+.PARAMETER CodeSigningCertificateThumbprint
+  SHA-1 thumbprint of the code-signing certificate available to the BuildMaster
+  service identity in LocalMachine\My.
+
+.PARAMETER TimestampServerUri
+  Absolute Authenticode timestamp service URI used for durable signatures.
+
 .PARAMETER AllowExperimental
 .PARAMETER AllowDevelopment
 .PARAMETER AllowIntegration
@@ -167,6 +174,13 @@ param(
 
   [ValidateNotNullOrEmpty()]
   [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
+
+  [Parameter(Mandatory)]
+  [ValidatePattern('^[0-9A-Fa-f]{40}$')]
+  [string]$CodeSigningCertificateThumbprint,
+
+  [Parameter(Mandatory)]
+  [uri]$TimestampServerUri,
 
   [AllowEmptyString()]
   [string]$AllowExperimental = '',
@@ -885,6 +899,8 @@ function Invoke-PowerShellModuleBuildMasterStage {
     [AllowEmptyString()][string]$NupkgPathFile = '',
     [Parameter(Mandatory)][string]$ProGetUrl,
     [ValidateNotNullOrEmpty()][string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
+    [Parameter(Mandatory)][ValidatePattern('^[0-9A-Fa-f]{40}$')][string]$CodeSigningCertificateThumbprint,
+    [Parameter(Mandatory)][uri]$TimestampServerUri,
     [string]$ExperimentalFeed = 'powershellget-experimental',
     [string]$DevelopmentFeed = 'powershellget-development',
     [string]$IntegrationFeed = 'powershellget-integration',
@@ -1258,7 +1274,9 @@ function Invoke-PowerShellModuleBuildMasterStage {
                   -SkipPublish `
                   -MaxRetries 1 `
                   -BuildLogPath $buildLogPath `
-                  -OutputRoot $moduleBuildOutputRoot
+                  -OutputRoot $moduleBuildOutputRoot `
+                  -CodeSigningCertificateThumbprint $CodeSigningCertificateThumbprint `
+                  -TimestampServerUri $TimestampServerUri
               )
             }
             catch {
@@ -1361,6 +1379,8 @@ Invoke-PowerShellModuleBuildMasterStage `
   -NupkgPathFile $NupkgPathFile `
   -ProGetUrl $ProGetUrl `
   -ProGetApiKeySecretName $ProGetApiKeySecretName `
+  -CodeSigningCertificateThumbprint $CodeSigningCertificateThumbprint `
+  -TimestampServerUri $TimestampServerUri `
   -ExperimentalFeed $ExperimentalFeed `
   -DevelopmentFeed $DevelopmentFeed `
   -IntegrationFeed $IntegrationFeed `

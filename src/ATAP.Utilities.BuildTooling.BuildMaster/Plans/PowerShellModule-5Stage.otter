@@ -12,6 +12,9 @@
 #                       $ProGetApiKeySecretName (host-suffixed, e.g.
 #                       ProGet.BuildMaster.API.Key.utat01 per SC-0288/13.66.b);
 #                       no environment fallback is permitted.
+#   $CodeSigningCertificateThumbprint - public SHA-1 identity of the signing
+#                       certificate in LocalMachine\My on the build host
+#   $TimestampServerUri - absolute Authenticode timestamp service URI
 #   BuildMaster stage - passed explicitly from $PipelineStageName so deployment
 #                       targets do not depend on agent environment variables
 #   $BuildMasterBuildId - runtime value from $BuildMasterId(build), used to
@@ -52,7 +55,7 @@ set $BuildMasterExecutionId = $ExecutionId;
 Exec
 (
     FileName: pwsh,
-    Arguments: >>-NoProfile -File "$InvokePowerShellModuleStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -ModuleName "$ModuleName" -PackageName "$PackageName" -ModulePath "$ModulePath" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName">>,
+    Arguments: >>-NoProfile -File "$InvokePowerShellModuleStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -ModuleName "$ModuleName" -PackageName "$PackageName" -ModulePath "$ModulePath" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName" -CodeSigningCertificateThumbprint "$CodeSigningCertificateThumbprint" -TimestampServerUri "$TimestampServerUri">>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );

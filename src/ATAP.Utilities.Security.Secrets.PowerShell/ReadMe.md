@@ -17,7 +17,7 @@ following `_Planning/InformationForTheFuture/PlanPowerShellSecurityReorganizatio
 | --- | --- | --- |
 | `ATAP.Utilities.Security.Powershell` | Umbrella. Residual functions + **re-exports this child** for backward compatibility. | Existing |
 | `ATAP.Utilities.Security.Secrets.PowerShell` | **This module.** Bitwarden functions today. | Pilot, partial |
-| `ATAP.Utilities.Security.PKI.PowerShell` | Certificate / PKI functions. | Not yet extracted (plan Task 5.7) |
+| `ATAP.Utilities.Security.PKI.PowerShell` | Certificate / PKI functions. | Extracted, Sprint 0014 Stream E |
 
 Only the **Bitwarden** functions moved in this iteration. The five non-Bitwarden secret-vault
 functions (`Get-UsersSecretVaultInfo`, `Open-UsersSecretVault`, `Unlock-UsersSecretVault`,
@@ -36,8 +36,9 @@ in the umbrella and move later (plan Task 5.6).
 | `Set-BitWardenSecret` | `New-BWSecret`, `Add-BitWardenLogin` | |
 | `Sync-BitWardenDedicatedSecrets` | `Sync-DedicatedSecrets` | Calls `Test-SecretVault` from `Microsoft.PowerShell.SecretManagement` |
 
-`Invoke-RotateSecretsATAP` is **not** re-exported by the umbrella. It is a new function, not a moved
-name, so no existing consumer expects to find it there.
+`Invoke-RotateSecretsATAP` is re-exported by the umbrella with the rest of the Secrets compatibility
+surface. Existing consumers do not require it, but umbrella-only imports now receive one coherent
+Secrets child surface in both source and packaged modules.
 
 ## `Invoke-RotateSecretsATAP`
 

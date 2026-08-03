@@ -43,6 +43,8 @@ Export-ModuleMember -Function @(
   'Resolve-ProGetFeedFromSettings'
   'Resolve-PromotionTierFromFeedName'
   'Set-FloatingPackagePins'
+  'Set-PSModuleFileSignature'
+  'Test-PSModulePackageSignature'
   'Test-ProGetFeedSet'
   'Test-PromotionWithinCeiling'
 ) -Cmdlet @() -Variable @() -Alias @()

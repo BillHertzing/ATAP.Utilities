@@ -5,6 +5,7 @@
 BeforeAll {
     $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
     . (Join-Path $publicDir 'Resolve-ProGetFeedFromSettings.ps1')
+    . (Join-Path $publicDir 'Test-PSModulePackageSignature.ps1')
     . (Join-Path $publicDir 'Publish-PSModuleToProGet.ps1')
 
     if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
@@ -70,6 +71,7 @@ AfterAll {
 Describe 'Publish-PSModuleToProGet' -Tag 'Unit' {
 
     BeforeEach {
+        Mock Test-PSModulePackageSignature { [PSCustomObject]@{ Valid = $true } }
         Mock Get-PSResourceRepository { $null }
         Mock Register-PSResourceRepository { }
         Mock Set-PSResourceRepository { }
@@ -122,6 +124,30 @@ Describe 'Publish-PSModuleToProGet' -Tag 'Unit' {
         It 'Has no -Tier parameter' {
             $cmd = Get-Command Publish-PSModuleToProGet
             $cmd.Parameters.ContainsKey('Tier') | Should -BeFalse
+        }
+    }
+
+    Context 'Signature gate' {
+        It 'verifies the package before publishing' {
+            function global:Get-SecretATAP { [CmdletBinding()] param([string]$SecretName, [string]$SecretStoreType) return 'dummy' }
+            try {
+                $result = Publish-PSModuleToProGet -NupkgPath $script:fakeNupkg
+                $result.SignatureVerified | Should -BeTrue
+                Assert-MockCalled Test-PSModulePackageSignature -Times 1 -Exactly -Scope It -ParameterFilter { $RequireTimestamp }
+            } finally {
+                Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
+            }
+        }
+
+        It 'rejects an unsigned package before secret lookup or publish' {
+            Mock Test-PSModulePackageSignature { throw 'unsigned package' }
+            function global:Get-SecretATAP { throw 'must not be called' }
+            try {
+                { Publish-PSModuleToProGet -NupkgPath $script:fakeNupkg } | Should -Throw '*unsigned package*'
+                Assert-MockCalled Publish-PSResource -Times 0 -Exactly -Scope It
+            } finally {
+                Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
+            }
         }
     }
 

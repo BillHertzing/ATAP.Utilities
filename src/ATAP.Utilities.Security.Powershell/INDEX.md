@@ -4,6 +4,7 @@ module: ATAP.Utilities.Security.Powershell
 functional-area: Secrets & Security
 family-role: umbrella (re-export mode)
 family-child: ATAP.Utilities.Security.Secrets.PowerShell
+family-child: ATAP.Utilities.Security.PKI.PowerShell
 
 ## Contents
 
@@ -14,9 +15,9 @@ family-child: ATAP.Utilities.Security.Secrets.PowerShell
 
 | Module | Role | Status |
 | --- | --- | --- |
-| `ATAP.Utilities.Security.Powershell` | Umbrella; residual functions + re-exports the Secrets child | This module |
+| `ATAP.Utilities.Security.Powershell` | Umbrella; residual functions + re-exports the Secrets and PKI children | This module |
 | [`ATAP.Utilities.Security.Secrets.PowerShell`](../ATAP.Utilities.Security.Secrets.PowerShell/INDEX.md) | Bitwarden functions | Extracted, Sprint 0012 Task 12.55.b |
-| `ATAP.Utilities.Security.PKI.PowerShell` | Certificate / PKI functions | Not yet extracted (plan Task 5.7) |
+| [`ATAP.Utilities.Security.PKI.PowerShell`](../ATAP.Utilities.Security.PKI.PowerShell/INDEX.md) | Certificate / PKI functions | Extracted, Sprint 0014 Stream E |
 
 ## Moved out of `public/` (Sprint 0012 Tasks 12.55.b, 12.55.c)
 
@@ -24,10 +25,10 @@ family-child: ATAP.Utilities.Security.Secrets.PowerShell
 | --- | --- | --- |
 | `SecretVaultTesting.ps1` | `Documentation/SecretVaultTesting.ps1.txt` | Executed destructive top-level code at import |
 | `Test-SecretVault.ps1` | `Documentation/Test-SecretVault.ps1.txt` | No function; dot-sourced stable-worktree absolute paths, including itself |
-| `PKIForNewOrg.ps1` | `Documentation/PKIForNewOrg.ps1.txt` | No function; executed top-level code at import against the user root certificate store |
+| `PKIForNewOrg.ps1` | PKI child `Documentation/PKIForNewOrg.md` | Converted to an opt-in runbook; no import-time execution |
 
 All three were phantom entries in `FunctionsToExport` and have been removed from it. Each `.ps1.txt`
-is preserved verbatim as the input to a future runbook conversion (plan Tasks 5.4 / 5.5).
+for SecretVault remains preserved as a future runbook input. The PKI source was converted and removed.
 
 ## Assessments
 

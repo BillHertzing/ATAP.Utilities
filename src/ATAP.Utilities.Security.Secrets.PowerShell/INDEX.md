@@ -3,7 +3,7 @@
 module: ATAP.Utilities.Security.Secrets.PowerShell
 functional-area: Secrets & Security
 family-parent: ATAP.Utilities.Security.Powershell
-sibling: ATAP.Utilities.Security.PKI.PowerShell (not yet extracted)
+sibling: ATAP.Utilities.Security.PKI.PowerShell (extracted Sprint 0014 Stream E)
 
 ## Public functions
 

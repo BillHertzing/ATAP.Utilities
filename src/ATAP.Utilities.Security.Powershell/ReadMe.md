@@ -9,9 +9,9 @@ Powershell scripts for managing an organization's computer systems' security
 >
 > | Module | Contents | Status |
 > | --- | --- | --- |
-> | `ATAP.Utilities.Security.Powershell` | This module. Residual functions + re-exports the Secrets child. | Umbrella |
+> | `ATAP.Utilities.Security.Powershell` | This module. Residual functions + re-exports the Secrets and PKI children. | Umbrella |
 > | `ATAP.Utilities.Security.Secrets.PowerShell` | The six Bitwarden functions + 3 aliases. | Pilot child, extracted |
-> | `ATAP.Utilities.Security.PKI.PowerShell` | Certificate / PKI functions. | Not yet extracted (plan Task 5.7) |
+> | `ATAP.Utilities.Security.PKI.PowerShell` | Eighteen certificate, PKI, DN, and protected key-file functions. | Extracted, Sprint 0014 Stream E |
 >
 > `Get-BitWardenCredential`, `List-BitwardenSecrets`, `Load-BitwardenBackup`,
 > `New-BitwardenBackup`, `Set-BitWardenSecret`, and `Sync-BitWardenDedicatedSecrets` **moved** to
@@ -32,17 +32,15 @@ Powershell scripts for managing an organization's computer systems' security
 > removed from it. `Test-SecretVault` at runtime resolves to the
 > `Microsoft.PowerShell.SecretManagement` cmdlet, which is what `Sync-BitWardenDedicatedSecrets`
 > actually calls. `PKIForNewOrg.ps1.txt` is preserved verbatim as the input to the
-> `Documentation/PKIForNewOrg.md` runbook conversion (plan Tasks 5.5/5.7, a future sprint).
+> PKI child `Documentation/PKIForNewOrg.md` runbook conversion (completed in Sprint 0014 Stream E).
 
 > **Status (Sprint 9, Task 9.15):** This module is an early-stage prototype and is **not yet
 > releasable**. A read-only shortcomings assessment + revise/complete plan is at
 > [_generated/Security/Task-9.15-SecurityPowershell-GapAssessment.md](../../_generated/Security/Task-9.15-SecurityPowershell-GapAssessment.md).
 > The `PKIForNewOrg.ps1` import-time hazard called out by that assessment was resolved in
 > Sprint 0012 Task 12.55.c (moved to `Documentation/PKIForNewOrg.ps1.txt`), but the exported
-> `Install-*` cmdlets are still stubs — do not `Import-Module` against a live certificate store
-> until Task 9.15-A lands. The working low-level primitives (`New-EncryptedPrivateKey`,
-> `New-CertificateRequest`, `New-CACertificate`, `New-SignedCertificate`,
-> `New-DistinguishedNameHash`) are sound.
+> The PKI implementation now lives in `ATAP.Utilities.Security.PKI.PowerShell`; import remains
+> mutation-free, and live certificate-store or CA operations remain separately authorized.
 >
 > **Git SSL status (Sprint 9, Task 9.16):** Remote Git over HTTPS is restored for
 > this workstation by setting user/global `http.sslBackend=schannel`, overriding

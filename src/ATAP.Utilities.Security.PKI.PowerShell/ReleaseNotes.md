@@ -1,5 +1,19 @@
 # Release notes
 
+## 0.1.2
+
+- Promote verified Root and TrustedPublisher distribution into `Install-PkiTrustCertificate`.
+- Promote stdin-only, SecretName-backed PKCS#12 export into `New-PkiCertificatePfx`.
+- Promote the successful Windows Authenticode issuance path into the organization-parameterized
+  `New-PkiWindowsCodeSigningCertificate` command.
+- Keep RSA signing keys non-exportable, require explicit private-key readers, resolve the root
+  passphrase by SecretName, and transfer public certificate data only.
+- Retain commissioning, Inedo cutover, and certificate-repair scripts as historical Sprint
+  evidence rather than product APIs.
+
+This version is source-prepared only. No module was rebuilt, packaged, published, promoted, or
+installed as part of this documentation and reuse pass.
+
 ## 0.1.1
 
 - Replace Windows PKI-module certificate imports with PowerShell 7 native .NET store operations.

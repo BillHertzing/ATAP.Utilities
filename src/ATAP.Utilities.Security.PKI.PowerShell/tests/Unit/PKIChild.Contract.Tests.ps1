@@ -10,22 +10,25 @@ AfterAll {
 }
 
 Describe 'ATAP.Utilities.Security.PKI.PowerShell module contract' -Tag 'Unit' {
-  It 'exports the approved nineteen-function PKI boundary' {
+  It 'exports the approved twenty-two-function PKI boundary' {
     $expected = @(
       'Get-DistinguishedNameQualifiedFilePath', 'Install-CACertificate',
       'Install-CodeSigningCertificate', 'Install-DataEncryptionCertificate',
-      'Install-SSLCertificate', 'Install-TrustedPublisherCertificate',
+      'Install-PkiTrustCertificate', 'Install-SSLCertificate',
+      'Install-TrustedPublisherCertificate',
       'List-CodeSigningCertificates', 'New-CACertificate',
       'New-CertificateRequest', 'New-DataEncryptionCertificateRequest',
       'New-DistinguishedNameHash', 'New-EncryptedPasswordFile',
-      'New-EncryptedPrivateKey', 'New-RandomEncryptionKeyToFile',
+      'New-EncryptedPrivateKey', 'New-PkiCertificatePfx',
+      'New-PkiWindowsCodeSigningCertificate',
+      'New-RandomEncryptionKeyToFile',
       'New-RandomPassPhraseToFile', 'New-SignedCertificate',
       'New-SSLCertificateRequest', 'Update-KeySecurestringFile',
       'Update-MasterPasswordSecureStringFile'
     )
-    @($script:Manifest.FunctionsToExport).Count | Should -Be 19
+    @($script:Manifest.FunctionsToExport).Count | Should -Be 22
     @($script:Manifest.FunctionsToExport | Sort-Object) | Should -Be ($expected | Sort-Object)
-    @(Get-Command -Module 'ATAP.Utilities.Security.PKI.PowerShell').Count | Should -Be 19
+    @(Get-Command -Module 'ATAP.Utilities.Security.PKI.PowerShell').Count | Should -Be 22
   }
 
   It 'uses explicit empty cmdlet variable and alias exports' {
@@ -36,7 +39,7 @@ Describe 'ATAP.Utilities.Security.PKI.PowerShell module contract' -Tag 'Unit' {
 
   It 'has an independent module version source' {
     $version = Get-Content -LiteralPath (Join-Path $script:ModuleRoot 'version.json') -Raw | ConvertFrom-Json
-    $version.version | Should -Be '0.1.1'
+    $version.version | Should -Be '0.1.2'
     @($version.pathFilters) | Should -Be @('./')
   }
 
@@ -73,6 +76,26 @@ Describe 'ATAP.Utilities.Security.PKI.PowerShell module contract' -Tag 'Unit' {
     $installerSource | Should -Match 'TrustedPublisher'
     $installerSource | Should -Not -Match 'Import-Certificate|Import-PfxCertificate|Get-PfxData'
     $publisherSource | Should -Match '1\.3\.6\.1\.5\.5\.7\.3\.3'
+  }
+
+  It 'promotes reusable Stream E operations without retaining environment-specific values' {
+    $trustSource = Get-Content -LiteralPath (Join-Path $script:ModuleRoot 'public/Install-PkiTrustCertificate.ps1') -Raw
+    $pfxSource = Get-Content -LiteralPath (Join-Path $script:ModuleRoot 'public/New-PkiCertificatePfx.ps1') -Raw
+    $signingSource = Get-Content -LiteralPath (Join-Path $script:ModuleRoot 'public/New-PkiWindowsCodeSigningCertificate.ps1') -Raw
+
+    $trustSource | Should -Match 'ExpectedSha256'
+    $trustSource | Should -Match 'RootCA.*TrustedPublisher|TrustedPublisher.*RootCA'
+    $trustSource | Should -Match 'Invoke-Command'
+    $pfxSource | Should -Match "'-passout', 'stdin'"
+    $pfxSource | Should -Match 'Get-SecretATAP'
+    $pfxSource | Should -Match 'ReadToEndAsync'
+    $pfxSource | Should -Not -Match 'Password\s*=\s*[''"]'
+    $signingSource | Should -Match 'Exportable=FALSE'
+    $signingSource | Should -Match 'KeyLength=3072'
+    $signingSource | Should -Match 'KeySpec=2'
+    $signingSource | Should -Match 'Get-SecretATAP'
+    $signingSource | Should -Match 'Install-PkiTrustCertificate'
+    "$trustSource`n$pfxSource`n$signingSource" | Should -Not -Match 'Sprint0014|StreamE|utat01|utat022|ATAP Foundation|ATAP Consulting'
   }
 
   It 'packages a CA configuration with distinct EKU profiles' {

@@ -16,10 +16,16 @@ materialize passphrase files only for the bounded operation that consumes them. 
 code-signing private keys import into the Windows certificate store as non-exportable. Resolve PFX
 passwords by `SecretName` at the installation boundary.
 
+For Authenticode signing on Windows, use `New-PkiWindowsCodeSigningCertificate`. The earlier
+OpenSSL/ECDSA and generic PFX workflow remains valid for compatible consumers, but the Windows
+signing workflow intentionally creates an RSA machine key through `certreq.exe`; it never creates
+an exportable PFX.
+
 ## Public surface
 
-The child owns the eighteen commands formerly exported by `ATAP.Utilities.Security.Powershell`
-plus `Install-TrustedPublisherCertificate` for non-interactive publisher trust:
+The child owns the eighteen commands formerly exported by `ATAP.Utilities.Security.Powershell`,
+`Install-TrustedPublisherCertificate` for local publisher trust, and three reusable operational
+commands promoted from the Stream E commissioning work:
 
 - Distinguished names and paths: `New-DistinguishedNameHash`,
   `Get-DistinguishedNameQualifiedFilePath`.
@@ -31,10 +37,18 @@ plus `Install-TrustedPublisherCertificate` for non-interactive publisher trust:
 - Installation and discovery: `Install-CACertificate`, `Install-SSLCertificate`,
   `Install-CodeSigningCertificate`, `Install-DataEncryptionCertificate`,
   `Install-TrustedPublisherCertificate`, `List-CodeSigningCertificates`.
+- Multi-host trust: `Install-PkiTrustCertificate` verifies an optional SHA-256 pin and transfers
+  public certificate bytes only to Root or TrustedPublisher stores.
+- PKCS#12 creation: `New-PkiCertificatePfx` resolves its output password by SecretName, sends it
+  to OpenSSL over standard input, and creates an ACL-restricted PFX without command-line secrets.
+- Windows signing authority: `New-PkiWindowsCodeSigningCertificate` issues a parameterized,
+  non-exportable RSA-3072 machine certificate with KeySpec Signature, grants explicit private-key
+  readers, and distributes publisher trust.
 
-The umbrella imports this child and re-exports all nineteen names, so existing consumers remain
-compatible. `List-CodeSigningCertificates` retains its nonstandard verb because the earlier
-architecture decision deferred consumer-facing verb renames.
+The umbrella continues to re-export the original nineteen-name compatibility surface. New
+operational consumers import the PKI child directly for the three additional commands.
+`List-CodeSigningCertificates` retains its nonstandard verb because the earlier architecture
+decision deferred consumer-facing verb renames.
 
 ## Certificate profiles
 

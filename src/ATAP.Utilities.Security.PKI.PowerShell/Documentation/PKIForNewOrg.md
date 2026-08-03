@@ -65,6 +65,11 @@ New-CACertificate -DistinguishedNameHash $caDn `
 After authorization, rerun without `-WhatIf`, inspect the subject, issuer, basic constraints, key
 usage, serial, validity, and SHA-256 thumbprint, then delete the transient passphrase file.
 
+The Sprint 0014 `Invoke-CommissionATAPRootCAs.ps1` wrapper is not a supported module command. It
+atomically commissioned exactly two named organizations and wrote sprint-specific evidence. Use
+the parameterized primitives above for a new organization or root rollover so each operation has
+its own approval, paths, SecretName, and evidence boundary.
+
 ## Back up and restore-test the CA
 
 Create two encrypted backup copies in separate physical locations outside the synchronized active
@@ -85,6 +90,7 @@ For `utat01`, SANs include at least `DNS:utat01`. For `utat022`, SANs include at
 ```powershell
 $organizationName = 'ATAP Foundation' # Or: ATAP Consulting
 $pkiRoot = Join-Path 'C:\Dropbox\Security\PKI' $organizationName
+$organizationToken = $organizationName -replace ' ', ''
 $hostName = 'utat022'
 $hostRoot = Join-Path $pkiRoot "Hosts\$hostName"
 $hostDn = New-DistinguishedNameHash -CN $hostName -O $organizationName -C 'US' `
@@ -109,26 +115,80 @@ creating the host PFX. Store the PFX password under a host-specific SecretName s
 `PKI.PFX.Password.ATAPFoundation.utat022` or
 `PKI.PFX.Password.ATAPConsulting.utat022`; never commit it or accept a raw password parameter.
 
+Create the transient PFX with `New-PkiCertificatePfx`. It resolves the PFX password by SecretName
+and sends it to OpenSSL over standard input, so the value is absent from the command line and
+returned metadata. Import it with `Install-SSLCertificate`, validate the non-exportable installed
+key and service-account ACL, and then remove the PFX and transient leaf-passphrase file.
+
+```powershell
+New-PkiCertificatePfx `
+  -PrivateKeyPath (Join-Path $hostRoot "private\$hostName.key.pem") `
+  -PrivateKeyPassphrasePath (Join-Path $hostRoot "secrets\$hostName.passphrase") `
+  -CertificatePath (Join-Path $hostRoot "public\$hostName.crt") `
+  -CACertificatePath $certPath `
+  -PfxPath (Join-Path $hostRoot "pfx\$hostName.pfx") `
+  -FriendlyName $hostName `
+  -PasswordSecretName "PKI.PFX.Password.$organizationToken.$hostName" `
+  -WhatIf
+```
+
 ## Issue a code-signing certificate
 
-Create a dedicated CSR whose subject uses `CN=$organizationName PowerShell Code Signing` and
-`O=$organizationName`, with `ExtendedkeyUsage 'codeSigning'`, then issue it with
-`-CertificateProfile CodeSigning`, and import its PFX with `Install-CodeSigningCertificate`.
-The certificate subject is the publisher identity; the inventory's `private_key_principal` is the
-separate Windows account authorized to use the key. Do not grant interactive users or general
-service accounts access. Keep the signing key non-exportable after import.
+For Windows Authenticode, use the reusable issuance command. It creates a non-exportable RSA-3072
+machine key with KeySpec Signature, resolves only the root passphrase SecretName, installs the leaf
+in `LocalMachine\My`, grants explicitly named principals read access, archives the prior canonical
+public certificate during renewal, and distributes TrustedPublisher trust with pinned public data.
+
+```powershell
+$organizationName = 'ATAP Foundation' # Or: ATAP Consulting
+$organizationToken = $organizationName -replace ' ', ''
+$pkiRoot = Join-Path 'C:\Dropbox\Security\PKI' $organizationName
+
+New-PkiWindowsCodeSigningCertificate `
+  -OrganizationName $organizationName `
+  -CARootPath (Join-Path $pkiRoot 'RootCA') `
+  -CodeSigningRootPath (Join-Path $pkiRoot 'CodeSigning') `
+  -CAPassphraseSecretName "PKI.RootCA.Passphrase.$organizationToken" `
+  -PrivateKeyReader 'SvcBuildmaster' `
+  -TrustedPublisherComputerName 'utat022', 'utat01' `
+  -WhatIf
+```
+
+The certificate subject is the publisher identity; `PrivateKeyReader` is the separate Windows
+authorization value naming accounts that may use the key. Do not grant general service accounts
+or interactive users unless they are deliberate signing principals. The function does not create
+or retain a PFX. Use the lower-level CSR, signing, and PFX commands only for consumers whose
+signing provider explicitly requires that format.
 
 ## Install trust and leaf certificates
 
 ```powershell
-Install-CACertificate -Path $certPath -WhatIf
+Install-PkiTrustCertificate -Path $certPath -CertificateRole RootCA `
+  -ComputerName 'utat022', 'utat01' -ExpectedSha256 $reviewedRootSha256 -WhatIf
+
 Install-SSLCertificate -Path (Join-Path $hostRoot 'utat022.pfx') `
   -PasswordSecretName 'PKI.PFX.Password.ATAPFoundation.utat022' -WhatIf
 ```
 
-Both commands compare thumbprints and return `Changed = $false` when already installed. Confirm
-the CA lands in `LocalMachine\Root`, the leaf lands in `LocalMachine\My`, the leaf private key is
-non-exportable, and only the required Inedo service identities can read it.
+The trust command verifies the optional SHA-256 pin before transferring public DER bytes and
+returns `Changed = $false` when the certificate is already installed. Confirm the CA lands in
+`LocalMachine\Root`, the leaf lands in `LocalMachine\My`, the leaf private key is non-exportable,
+and only the required Inedo service identities can read it.
+
+## Stream E script disposition
+
+The commissioning scripts under `_generated\Sprint0014\StreamE` remain evidence and should not be
+copied into production automation:
+
+| Script group | Long-term disposition |
+| --- | --- |
+| Root commissioning | Keep as historical evidence. Reusable CA/key/DN operations already exist as module primitives. |
+| Root and TrustedPublisher distribution | Replaced by `Install-PkiTrustCertificate`. |
+| Windows Signature-key code-signing issuance | Replaced by `New-PkiWindowsCodeSigningCertificate`. |
+| Combined Foundation host/code-signing leaf issuance | Keep the wrapper as historical evidence; it hard-codes profiles, hosts, service accounts, and resume state. Its reusable PKCS#12 export is now `New-PkiCertificatePfx`; compose the remaining module primitives with inventory values. |
+| Inedo HTTPS enablement | Keep with the product deployment/runbook layer, not the PKI module. |
+| ECDSA-to-RSA and KeySpec repair | Keep as one-time migration evidence; the supported issuance command creates the correct Windows key initially. |
+| Signing probes, commit, checkpoint, and evidence writers | Keep as test/session artifacts; they are not PKI product APIs. |
 
 ## HTTPS cutover and two-host validation
 

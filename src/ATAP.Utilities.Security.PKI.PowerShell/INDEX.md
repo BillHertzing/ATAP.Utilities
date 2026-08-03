@@ -11,6 +11,6 @@ sibling: ATAP.Utilities.Security.Secrets.PowerShell
 - [PKI for a new organization](Documentation/PKIForNewOrg.md)
 - [Release notes](ReleaseNotes.md)
 - `CertificateRequestConfigurations/AUdefault.cnf`
-- `public/` - nineteen exported commands
-- `private/` - OpenSSL, validity, and certificate-install helpers
+- `public/` - twenty-two exported commands, including PKCS#12 creation, multi-host trust, and Windows code-signing issuance
+- `private/` - OpenSSL, validity, certificate-install, restricted-ACL, and private-key ACL helpers
 - `tests/Unit/` - module, security, file, issuance, and compatibility contracts

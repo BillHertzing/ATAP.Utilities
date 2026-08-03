@@ -17,7 +17,7 @@ family-child: ATAP.Utilities.Security.PKI.PowerShell
 | --- | --- | --- |
 | `ATAP.Utilities.Security.Powershell` | Umbrella; residual functions + re-exports the Secrets and PKI children | This module |
 | [`ATAP.Utilities.Security.Secrets.PowerShell`](../ATAP.Utilities.Security.Secrets.PowerShell/INDEX.md) | Bitwarden functions | Extracted, Sprint 0012 Task 12.55.b |
-| [`ATAP.Utilities.Security.PKI.PowerShell`](../ATAP.Utilities.Security.PKI.PowerShell/INDEX.md) | Certificate / PKI functions | Extracted, Sprint 0014 Stream E |
+| [`ATAP.Utilities.Security.PKI.PowerShell`](../ATAP.Utilities.Security.PKI.PowerShell/INDEX.md) | Twenty-two certificate, PKI, PKCS#12, trust-distribution, and Windows signing functions | Extracted; 0.1.2 source prepared |
 
 ## Moved out of `public/` (Sprint 0012 Tasks 12.55.b, 12.55.c)
 

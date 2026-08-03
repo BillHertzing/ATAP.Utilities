@@ -207,14 +207,28 @@ function Get-HostSettings {
     # regression): the link IS the discovery mechanism, retargeted at each sprint boundary. When
     # it is absent or dangling, discovery runs exactly as before.
     $hostSettingsScript = $null
-    $fastPathCandidates = [System.Collections.Generic.List[string]]::new()
+
+    # An explicit caller-supplied base is AUTHORITATIVE: if its HostSettings.ps1 exists, use
+    # it, full stop. It must never fall through to the implicit $PSHOME candidate below -
+    # doing so silently swapped a test fixture for the real ATAP.IAC host settings, so a
+    # test that thought it was exercising its own fixture was exercising the live machine.
+    $explicitCandidates = [System.Collections.Generic.List[string]]::new()
     if (-not [string]::IsNullOrWhiteSpace($IACBasePath)) {
-      # An explicit caller-supplied base always outranks anything discovered.
       foreach ($relativePath in @('Windows\HostSettings.ps1', 'HostSettings.ps1')) {
-        $fastPathCandidates.Add((Join-Path $IACBasePath $relativePath))
+        $explicitCandidates.Add((Join-Path $IACBasePath $relativePath))
       }
     }
-    if (-not [string]::IsNullOrWhiteSpace($PSHOME)) {
+    foreach ($explicitCandidate in $explicitCandidates) {
+      if (Test-Path -LiteralPath $explicitCandidate -PathType Leaf) {
+        $hostSettingsScript = $explicitCandidate
+        Write-HostSettingsMessage -Level Verbose -Message "Using caller-supplied HostSettings.ps1 '$explicitCandidate'."
+        break
+      }
+    }
+
+    # Implicit fast path. Only consulted when the caller named no base at all.
+    $fastPathCandidates = [System.Collections.Generic.List[string]]::new()
+    if (-not $hostSettingsScript -and $explicitCandidates.Count -eq 0 -and -not [string]::IsNullOrWhiteSpace($PSHOME)) {
       $fastPathCandidates.Add((Join-Path $PSHOME 'HostSettings.ps1'))
     }
     foreach ($fastCandidate in $fastPathCandidates) {

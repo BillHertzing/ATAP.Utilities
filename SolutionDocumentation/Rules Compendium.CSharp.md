@@ -1,6 +1,16 @@
 # Rules Compendium — C# (CSharp)
 
-This file contains an overview of the C#-specific Rules used within the ATAP.Utilities libraries and the Ace Commander application built from these rules.
+<!-- METADATA
+  Language: C#
+  Created: pre-existing; normalized 2026-08-02
+  Kind Count: 1
+  Primitive Count: 18
+  Template version: 1.0
+  Source skill: .claude/skills/new-rule-kind/SKILL.md
+-->
+
+This file documents C# Rule Primitives, Rules, and Rule Sets used within the
+ATAP.Utilities libraries and the Ace Commander application.
 
 ## Philote Identity Convention
 
@@ -30,9 +40,66 @@ Unless there is a compelling reason to target an older version, all C# code shou
 
 As of this writing, the latest stable version is C# 14.0, released in November 2025 alongside .NET 10. C# 15 is in active preview, targeting .NET 11 (currently in preview as of early 2026). If new features in C# 15 arebeneficial, consider adopting them, but document and alert the user if features from versions in development are used.
 
-## Rule Primitives
+## Part I — Grammar Specification
+
+*This section is written once when the Kind is defined. Update only on grammar revision.*
+*The grammar below is authored at `grammers/CSharp.grammar.ebnf`; its rendered `docs/`
+*copy remains deferred until grammar artifacts become database-stored.*
+
+<!-- rule-grammar-start -->
+
+### Kind: CSharp
+
+**Philote ID:** Not allocated in the current corpus; the retained-kind decision is
+recorded by GRAMMAR-01 and the baseline seed gate must allocate the Kind identity.
+
+**Grammar file:** `grammers/CSharp.grammar.ebnf`
+
+**DB record:** No authoritative current `PrimitiveLanguageKind` row is asserted by
+this normalization; database conformance is a later gated baseline activity.
+
+**Description:** Deterministic C# source-file rendering from the retained CSharp
+Rule Primitives.
+
+#### Grammar
+
+<!-- EMBEDDED from grammers/CSharp.grammar.ebnf -->
+```ebnf
+cs-source-file = { file-element } ;
+file-element = using-directive | namespace-block-declaration | type-declaration |
+               single-line-comment | block-comment | new-line ;
+type-declaration = interface-declaration | class-declaration | record-declaration ;
+```
+<!-- END EMBEDDED -->
+
+#### Composition Constraints
+
+- A rendered source file is an ordered sequence of `file-element` values.
+- A namespace body may contain using directives, type declarations, comments, and new lines.
+- A type declaration resolves to an interface, class, or record declaration in this retained subset.
+- Every documented Rule Primitive maps to at least one non-terminal in
+  `grammers/CSharp.grammar.ebnf`.
+
+#### Valid Expression Examples
+
+```csharp
+namespace Example;
+public interface IWidget { string Name { get; } }
+```
+
+```csharp
+public sealed record Widget(Guid Id, string Name);
+```
+
+<!-- rule-grammar-end -->
+
+---
+
+## Part II — Rule Primitives
 
 Rule Primitives are the atomic building blocks from which a Rule is constructed. Each primitive maps to a single BNF non-terminal in the C# grammar. When a primitive is instantiated, its inputs are bound to specific values; the rendered output is the exact C# text that corresponds to that non-terminal node in the parse tree.
+
+<!-- rule-primitives-start -->
 
 ---
 
@@ -643,6 +710,17 @@ Attribution:
 
 ---
 
+<!-- rule-primitives-end -->
+
+---
+
+## Part III — Rule Repository
+
+*This section grows as Rules are written using this Kind. The existing Rule
+entries below preserve their stable Philote IDs and source references.*
+
+<!-- rule-repository-start -->
+
 ## A Single Rule Definition
 
 Each Rule is a named composition of Rule Primitives with bound input values. The Primitive Composition Table lists the primitives in render order and the inputs applied. Rendering each primitive in order produces the final C# source file for that Rule.
@@ -1074,3 +1152,19 @@ Attribution:
 1. https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonconverterfactory
 2. Source file linked above
 ```
+
+<!-- rule-repository-end -->
+
+---
+
+## Part IV — Rule Sets
+
+*No formal C# Rule Set is defined in the retained corpus. This section is
+intentionally empty until a Rule Set and its stable Philote ID are authored.*
+
+<!-- rule-sets-start -->
+<!-- rule-sets-end -->
+
+---
+
+*Last updated: 2026-08-02 | Maintained by: `.claude/skills/new-rule-kind/SKILL.md`*

@@ -1,5 +1,14 @@
 # Rules Compendium — Snippets
 
+<!-- METADATA
+  Language: Snippet
+  Created: pre-existing; normalized 2026-08-02
+  Kind Count: 1
+  Primitive Count: 6
+  Template version: 1.0
+  Source skill: .claude/skills/new-rule-kind/SKILL.md
+-->
+
 This file contains an overview of the Snippets-specific Rules used within the ATAP.Utilities libraries and the Ace Commander application built from these rules.
 
 ## Philote Identity Convention
@@ -28,9 +37,78 @@ Everything in the ATAP.Utilities libraries and the Ace Commander application, an
 
 VS Code snippets are stored in JSON or JSONC (JSON with Comments) format. Each snippet file contains a single JSON object where each property defines one snippet. The property name is the snippet's display name, and the value is an object with `prefix`, `body`, and `description` properties.
 
-## Rule Primitives
+## Part I — Grammar Specification
+
+*This section is written once when the Kind is defined. Update only on grammar revision.*
+*The grammar below is authored at `grammers/Snippet.grammar.ebnf`; its rendered `docs/`*
+*copy remains deferred until grammar artifacts become database-stored.*
+
+<!-- rule-grammar-start -->
+
+### Kind: Snippet
+
+**Philote ID:** Not allocated in the current corpus; the retained-kind decision is
+recorded by GRAMMAR-01 and the baseline seed gate must allocate the Kind identity.
+
+**Grammar file:** `grammers/Snippet.grammar.ebnf`
+
+**DB record:** The frozen source corpus establishes legacy
+`ATAPUtilities.PrimitiveLanguageKind` Id = 5 / `Snippet`; database conformance
+is a later gated baseline activity.
+
+**Description:** Deterministic VS Code JSON/JSONC snippet-file rendering from
+the retained Snippet Rule Primitives.
+
+#### Grammar
+
+<!-- EMBEDDED from grammers/Snippet.grammar.ebnf -->
+```ebnf
+snippet-file = "{", [ new-line ], { comment-line },
+               [ snippet-definition, { ",", [ new-line ], snippet-definition } ], "}" ;
+snippet-definition = quoted-string, ":", "{", prefix-property, ",", body-property,
+                     [ ",", description-property ], [ ",", scope-property ], "}" ;
+```
+<!-- END EMBEDDED -->
+
+#### Composition Constraints
+
+- A snippet file renders one JSON or JSONC object containing zero or more named definitions.
+- Each snippet definition requires exactly one `prefix-property` followed by exactly one `body-property`.
+- `description-property` and `scope-property` are optional and occur only after `body-property`.
+- A body string may contain VS Code tab stops, placeholders, choices, variables, and transforms.
+- Every documented Rule Primitive maps to a non-terminal in `grammers/Snippet.grammar.ebnf`.
+
+#### Valid Expression Examples
+
+```jsonc
+{
+  "Log Debug": {
+    "prefix": "LogDebug",
+    "body": "Write-PSFMessage -Level Debug -Message '${1:message}'$0",
+    "description": "PSFramework debug logging statement"
+  }
+}
+```
+
+```json
+{
+  "Pester data": {
+    "prefix": ["PTestDataYAML", "ptest-data"],
+    "body": ["- Name: ${1:happy path}", "  Expected: ${2:value}$0"],
+    "scope": "yaml"
+  }
+}
+```
+
+<!-- rule-grammar-end -->
+
+---
+
+## Part II — Rule Primitives
 
 Rule Primitives are the atomic building blocks from which a Rule is constructed. Each primitive maps to a concept in the VS Code snippet grammar.
+
+<!-- rule-primitives-start -->
 
 ---
 
@@ -252,9 +330,15 @@ Attribution:
 
 ---
 
-## Rules
+<!-- rule-primitives-end -->
+
+---
+
+## Part III — Rule Repository
 
 Rules are complete, instantiable snippets composed from primitives. Each Rule represents an actual code template defined in the repository's snippet files.
+
+<!-- rule-repository-start -->
 
 ---
 
@@ -1004,7 +1088,13 @@ The `UserSnippetsSQL.jsonc` file contains only the JSON structure comments and n
 
 ---
 
-## Rule Sets
+<!-- rule-repository-end -->
+
+---
+
+## Part IV — Rule Sets
+
+<!-- rule-sets-start -->
 
 ### PowerShell Cmdlet Development Rule Set
 
@@ -1083,6 +1173,10 @@ B --> D[Iterate ArrayList]
 4. `Iterate ArrayList` — collection processing.
 
 **Purpose:** Separation of concerns between connection management and data operations.
+
+---
+
+<!-- rule-sets-end -->
 
 ---
 

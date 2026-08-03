@@ -1,0 +1,97 @@
+(*
+  ManimScene grammar contract for RRSBS rendering.
+  Authority: SolutionDocumentation/grammers per GRAMMAR-01 (2026-08-01).
+  Scope: the deterministic Python/Manim scene subset represented by the
+  documented ManimScene Rule Primitives. This profile is not a replacement for
+  Python syntax or the full Manim Community API.
+*)
+
+manim-scene-file = import-section, new-line, scene-class-list ;
+import-section = "from", whitespace, "manim", whitespace, "import", whitespace, "*"
+               | import-statement, { new-line, import-statement } ;
+import-statement = "from", whitespace, "manim", [ ".", identifier ], whitespace,
+                   "import", whitespace, name-list
+                 | "import", whitespace, "manim" ;
+scene-class-list = scene-class, { new-line, scene-class } ;
+
+scene-class = "class", whitespace, identifier, "(", scene-base-class, "):" , new-line,
+              construct-method ;
+scene-base-class = "Scene" | "ThreeDScene" | "MovingCameraScene" |
+                   "ZoomedScene" | "VectorScene" ;
+construct-method = indent, "def", whitespace, "construct(self):", new-line,
+                   statement-list ;
+statement-list = statement, { statement } ;
+statement = mobject-assignment | play-statement | wait-statement | add-statement |
+            remove-statement | camera-statement | comment-statement ;
+
+mobject-assignment = indent, identifier, whitespace-opt, "=", whitespace-opt,
+                     mobject-expression, new-line ;
+mobject-expression = mobject-constructor, { ".", method-call } ;
+mobject-constructor = text-mobject | math-mobject | shape-mobject | group-mobject |
+                     threed-mobject | graph-mobject ;
+text-mobject = "Text", "(", expression, [ ",", keyword-arguments ], ")" ;
+math-mobject = ( "MathTex" | "Tex" ), "(", expression-list,
+               [ ",", keyword-arguments ], ")" ;
+shape-mobject = ( "Circle" | "Square" | "Rectangle" | "Triangle" | "Dot" ),
+                "(", [ keyword-arguments ], ")"
+              | ( "Line" | "Arrow" ), "(", point, ",", whitespace-opt, point,
+                [ ",", keyword-arguments ], ")" ;
+group-mobject = ( "VGroup" | "Group" ), "(", mobject-list,
+                [ ",", keyword-arguments ], ")" ;
+threed-mobject = ( "Sphere" | "ThreeDAxes" | "Surface" ), "(",
+                 [ expression-list ], ")" ;
+graph-mobject = ( "Axes" | "NumberPlane" | "FunctionGraph" ), "(",
+                [ expression-list ], ")" ;
+
+play-statement = indent, "self.play", "(", animation-list,
+                 [ ",", animation-keyword-arguments ], ")", new-line ;
+animation-list = animation-expression, { ",", whitespace-opt, animation-expression } ;
+animation-expression = creation-animation | transform-animation | indication-animation |
+                       motion-animation | compound-animation | method-animation ;
+creation-animation = ( "Write" | "Create" | "FadeIn" | "FadeOut" |
+                       "GrowFromCenter" | "ShrinkToCenter" ), "(", expression-list, ")" ;
+transform-animation = ( "Transform" | "ReplacementTransform" | "MoveToTarget" ),
+                      "(", expression-list, ")" ;
+indication-animation = ( "Indicate" | "Flash" | "Circumscribe" | "Wiggle" ),
+                       "(", expression-list, ")" ;
+motion-animation = ( "MoveAlongPath" | "Rotating" ), "(", expression-list, ")" ;
+compound-animation = ( "AnimationGroup" | "Succession" | "LaggedStart" ),
+                     "(", animation-list, [ ",", animation-keyword-arguments ], ")" ;
+method-animation = identifier, ".animate.", method-call ;
+animation-keyword-arguments = animation-keyword-argument,
+                             { ",", whitespace-opt, animation-keyword-argument } ;
+animation-keyword-argument = ( "run_time" | "rate_func" | "lag_ratio" ),
+                             "=", expression ;
+
+wait-statement = indent, "self.wait", "(", [ number ], ")", new-line ;
+add-statement = indent, "self.add", "(", identifier-list, ")", new-line ;
+remove-statement = indent, "self.remove", "(", identifier-list, ")", new-line ;
+camera-statement = indent, "self.move_camera", "(", keyword-arguments, ")", new-line ;
+comment-statement = indent, "#", { ? character excluding a new line ? }, new-line ;
+
+method-call = identifier, "(", [ expression-list ], ")" ;
+expression-list = expression, { ",", whitespace-opt, expression } ;
+mobject-list = mobject-expression, { ",", whitespace-opt, mobject-expression } ;
+identifier-list = identifier, { ",", whitespace-opt, identifier } ;
+keyword-arguments = keyword-argument, { ",", whitespace-opt, keyword-argument } ;
+keyword-argument = identifier, "=", expression ;
+expression = identifier | string-literal | number | point | collection-literal |
+             lambda-expression ;
+point = direction | "np.array", "(", "[", number, ",", number, ",", number, "]", ")" ;
+direction = "UP" | "DOWN" | "LEFT" | "RIGHT" | "UL" | "UR" | "DL" | "DR" |
+            "ORIGIN" | "IN" | "OUT" ;
+collection-literal = "[", [ expression-list ], "]" | "(", [ expression-list ], ")" ;
+lambda-expression = "lambda", whitespace, identifier, ":", whitespace-opt, expression ;
+identifier = identifier-start, { identifier-character } ;
+identifier-start = letter | "_" ;
+identifier-character = letter | digit | "_" ;
+string-literal = "\"", { ? character excluding an unescaped double quote ? }, "\""
+               | "'", { ? character excluding an unescaped single quote ? }, "'" ;
+number = [ "-" ], digit, { digit }, [ ".", digit, { digit } ] ;
+name-list = identifier, { ",", whitespace-opt, identifier } ;
+indent = "    " ;
+whitespace-opt = "" | whitespace ;
+whitespace = ( " " | "\t" ), { " " | "\t" } ;
+new-line = "\r\n" | "\n" ;
+letter = "A"…"Z" | "a"…"z" ;
+digit = "0"…"9" ;

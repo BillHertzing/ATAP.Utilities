@@ -1,0 +1,43 @@
+(*
+  Markdown grammar contract for deterministic RRSBS rendering.
+  Authority: SolutionDocumentation/grammers per GRAMMAR-01 (2026-08-01).
+  Scope: the corpus-bounded CommonMark/GFM subset retained by MarkdownDocument.
+  This is not a complete CommonMark or GFM parser.
+*)
+
+markdown-document = atx-heading, { markdown-block } ;
+markdown-block = atx-heading | paragraph | blank-line | fenced-code-block |
+                 unordered-list | pipe-table | source-line ;
+atx-heading = heading-marker, " ", inline-content, line-ending ;
+paragraph = inline-content, line-ending, { inline-content, line-ending } ;
+blank-line = line-ending ;
+fenced-code-block = fence, info-string, line-ending, code-body, fence, line-ending ;
+unordered-list = list-item, { list-item } ;
+list-item = list-marker, " ", inline-content, line-ending, { continuation-line } ;
+pipe-table = table-row, delimiter-row, table-row, { table-row } ;
+table-row = "|", cell, { "|", cell }, "|", line-ending ;
+inline-code = "`", code-text, "`" ;
+link = "[", link-text, "]", "(", link-target, ")" ;
+emphasis = "*", text-run, "*" | "**", text-run, "**" ;
+text-run = character, { character } ;
+source-line = { character }, line-ending ;
+
+inline-content = inline-fragment, { inline-fragment } ;
+inline-fragment = text-run | inline-code | link | emphasis ;
+heading-marker = "#" | "##" | "###" | "####" | "#####" | "######" ;
+line-ending = "\r\n" | "\n" ;
+fence = "```" ;
+info-string = identifier ;
+list-marker = "-" | "*" | "+" ;
+continuation-line = "  ", text-run, line-ending ;
+delimiter-row = "|", alignment, { "|", alignment }, "|", line-ending ;
+alignment = "---" | ":--" | "--:" | ":-:" ;
+cell = inline-content ;
+code-body = { ? verbatim source text that does not close the selected fence ? } ;
+code-text = { ? text except an unescaped closing backtick ? } ;
+link-text = inline-content ;
+link-target = { ? link destination text emitted by the bound input ? } ;
+identifier = letter, { letter | digit | "-" | "_" } ;
+letter = "A"…"Z" | "a"…"z" ;
+digit = "0"…"9" ;
+character = ? one Unicode scalar value except a line terminator ? ;

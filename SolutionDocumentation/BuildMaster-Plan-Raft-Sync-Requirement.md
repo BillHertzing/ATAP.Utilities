@@ -23,6 +23,27 @@ committed; the plan that *invokes* it is not. A commit that changes both leaves 
 holding the **old** argument list while the worktree already has the **new** parameter
 block.
 
+## Which plans this applies to
+
+Every OtterScript plan in
+`src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/`. All four carry an
+`!! EDITING THIS FILE IS NOT ENOUGH !!` header pointing back here.
+
+| Plan | Paired runner script(s) read from disk |
+| --- | --- |
+| `PowerShellModule-5Stage.otter` | `Invoke-PowerShellModuleBuildMasterStage.ps1` |
+| `CSharpPackage-5Stage.otter` | `Invoke-CSharpPackageBuildMasterStage.ps1` |
+| `DatabaseChangePackage-5Stage.otter` | `Invoke-DatabasePackageBuildMasterStage.ps1` |
+| `ReleaseBundle-6Stage.otter` | `New-ReleaseBundleBuildMasterPackage.ps1`, `Promote-ReleaseBundleBuildMasterPackage.ps1`, `Publish-ReleaseBundleDistribution.ps1`, `Invoke-ReleaseBundleFlywayRehearsal.ps1` |
+
+`ReleaseBundle-6Stage` is the highest-risk of the four: it drives **four** runner
+scripts, so it has four independent chances for the raft's argument list to drift from a
+runner's parameter block.
+
+Only the PowerShell-module pipeline has actually been bitten so far (2026-08-03). The
+other three are structurally identical and unbitten only because no one has changed their
+argument lists since the raft was last synced.
+
 ## The failure mode: a missing mandatory parameter blocks forever
 
 When the stale raft plan omits an argument that the new stage script declares as

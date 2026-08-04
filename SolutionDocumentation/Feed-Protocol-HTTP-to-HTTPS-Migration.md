@@ -198,11 +198,19 @@ foreach ($tier in 'experimental', 'development', 'integration', 'qa', 'stable') 
 > OData v2 **only** at the bare feed URL, which PSResourceGet will not accept.
 >
 > Keep the `/v2` registration (the historical state) and use PowerShellGet v2
-> (`Find-Module` / `Install-Module`) for these feeds. The BuildMaster pipeline is
-> unaffected because it downloads packages directly from
-> `/nuget/<feed>/package/<name>/<version>` rather than through `Save-PSResource`. A
-> standalone `Invoke-PromotedModuleTests` call does use `Save-PSResource` and will fail
-> for this reason — read the pipeline's own promoted-test result instead.
+> (`Find-Module` / `Install-Module` / `Save-Module`) for these feeds. Registering them for
+> PSResourceGet is currently pointless but harmless; it is retained so the two stores stay
+> symmetrical if a future ProGet edition implements the endpoint.
+>
+> **Tooling already accounts for this.** `Invoke-PromotedModuleTests` was changed in
+> `ATAP.Utilities.BuildTooling.PowerShell` **0.1.74** (commit `c826363ae`) to restore the
+> promoted package with `Save-Module` instead of `Save-PSResource`. The BuildMaster
+> pipeline was never affected — it passes `-ProGetBaseUrl` and takes the direct
+> `/nuget/<feed>/package/<name>/<version>` branch — but the feed-restore branch used by
+> ad-hoc and local invocations always failed until that fix. On **0.1.74 or later a
+> standalone `Invoke-PromotedModuleTests` call works**; on 0.1.73 or earlier it fails with
+> a 404 on `/v2/FindPackagesById()`, and the pipeline's own promoted-test result in the
+> execution log is the evidence to read instead.
 
 ### Step 3: dotnet/NuGet sources
 

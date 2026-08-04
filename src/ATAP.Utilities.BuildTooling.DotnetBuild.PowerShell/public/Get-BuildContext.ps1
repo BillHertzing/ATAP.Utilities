@@ -277,11 +277,19 @@ function Get-BuildContext {
     # ---------------------------------------------------------------------
     # 3. Derive branch type.
     # ---------------------------------------------------------------------
+    # The prefixed forms are git-flow style. This workspace's real sprint
+    # branches are named '<issue>-Sprint-<nnnn>-work-items', where 'Sprint' is
+    # mid-name with no slash, so '^sprint/' could never match one and every
+    # sprint branch reported 'stable'. The suffix pattern classifies the naming
+    # convention actually in use. BranchType is reported metadata only -- no
+    # tier, version, or prerelease decision reads it -- so this corrects the
+    # label without changing any release behavior.
     $branchType = switch -Regex ($resolvedBranch) {
-      '^feature/' { 'feature'; break }
-      '^sprint/'  { 'sprint';  break }
-      '^release/' { 'release'; break }
-      default     { 'stable' }
+      '^feature/'                     { 'feature'; break }
+      '^sprint/'                      { 'sprint';  break }
+      '-[Ss]print-\d{4}-work-items$'  { 'sprint';  break }
+      '^release/'                     { 'release'; break }
+      default                         { 'stable' }
     }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "BranchType derived as '$branchType'"
 

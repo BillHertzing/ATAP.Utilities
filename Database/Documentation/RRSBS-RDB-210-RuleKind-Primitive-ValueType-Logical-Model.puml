@@ -1,0 +1,308 @@
+@startuml RRSBS_RDB_210_Logical_Model
+hide circle
+hide methods
+left to right direction
+skinparam linetype ortho
+skinparam defaultFontName Segoe UI
+skinparam shadowing false
+skinparam entity {
+  BackgroundColor #F7FAFC
+  BorderColor #34495E
+  FontColor #1F2937
+}
+
+title RDB-210 RuleKind, Primitive, and ValueType Logical Model
+
+legend left
+  Design-only model; no SQL, seeds, or allocated identifiers.
+  <<entity-root>> durable RDB-200 Entity subtype
+  <<entity-version>> immutable published RDB-200 Entity subtype
+  Supporting catalogs fail closed; no wildcard types or latest aliases.
+endlegend
+
+package "RuleKind and executor contracts" #EAF2F8 {
+  entity RuleKind <<entity-root>> {
+    * RuleKindId : bigint <<PK>>
+    * RuleKindPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * RuleKindCode : varchar <<UQ>>
+    * CreatedAtUtc : datetime2
+  }
+
+  entity RuleKindVersion <<entity-version>> {
+    * RuleKindVersionId : bigint <<PK>>
+    * RuleKindVersionPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * RuleKindId : bigint <<FK>>
+    * RevisionSequence : int
+    o PredecessorRuleKindVersionId : bigint <<FK,UQ>>
+    * GrammarSourceEntityId : bigint <<FK>>
+    * GrammarSourceEntityTypeId : bigint <<FK>>
+    * GrammarHashAlgorithmCode : varchar <<FK>>
+    * GrammarContentHash : binary
+    * CompendiumSourceEntityId : bigint <<FK>>
+    * CompendiumSourceEntityTypeId : bigint <<FK>>
+    * CompendiumHashAlgorithmCode : varchar <<FK>>
+    * CompendiumContentHash : binary
+    o ExecutorContractVersionId : bigint <<FK>>
+    * ExecutionClassificationCode : varchar <<FK>>
+    * SecurityCapabilityCode : varchar <<FK>>
+    * RoundTripPolicyCode : varchar <<FK>>
+    * PublishedAtUtc : datetime2
+    --
+    UQ (RuleKindVersionId, RuleKindId)
+    UQ (RuleKindId, RevisionSequence)
+  }
+
+  entity RuleKindVersionCompatibility <<immutable decision>> {
+    * FromRuleKindVersionId : bigint <<PK,FK>>
+    * ToRuleKindVersionId : bigint <<PK,FK>>
+    * RuleKindId : bigint <<FK>>
+    * CompatibilityDispositionCode : varchar <<FK>>
+    * EvidenceEntityId : bigint <<FK>>
+    * EvidenceEntityTypeId : bigint <<FK>>
+    * RecordedAtUtc : datetime2
+  }
+
+  entity ExecutionClassification <<catalog>> {
+    * ExecutionClassificationCode : varchar <<PK>>
+    * AllowsExecutorContract : bit
+    * RequiresPlanApproval : bit
+    * AllowsSideEffects : bit
+    * RequiresObservationOnly : bit
+    * RequiresFrozenOutput : bit
+  }
+
+  entity SecurityCapabilityClassification <<catalog>> {
+    * SecurityCapabilityCode : varchar <<PK>>
+    * IsDefaultDeny : bit = 1
+    * RequiresSeparateApproval : bit
+  }
+
+  entity RoundTripPolicy <<catalog>> {
+    * RoundTripPolicyCode : varchar <<PK>>
+    * RequiresByteHash : bit
+    * RequiresCanonicalization : bit
+    * RequiresFrozenObservation : bit
+  }
+
+  entity ExecutorContract <<entity-root>> {
+    * ExecutorContractId : bigint <<PK>>
+    * ExecutorContractPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * ExecutorContractCode : varchar <<UQ>>
+    * CreatedAtUtc : datetime2
+  }
+
+  entity ExecutorContractVersion <<entity-version>> {
+    * ExecutorContractVersionId : bigint <<PK>>
+    * ExecutorContractVersionPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * ExecutorContractId : bigint <<FK>>
+    * RevisionSequence : int
+    o PredecessorExecutorContractVersionId : bigint <<FK,UQ>>
+    * ContractSchemaVersion : varchar
+    * ExecutorInterfaceCode : varchar
+    * ExecutorInterfaceVersion : varchar
+    * EffectPolicyCode : varchar <<FK>>
+    * EnvironmentContractCode : varchar <<FK>>
+    * ValidationContractCode : varchar <<FK>>
+    * PublishedAtUtc : datetime2
+    --
+    UQ (ExecutorContractId, RevisionSequence)
+  }
+}
+
+package "Primitive definitions" #FDF2E9 {
+  entity Primitive <<entity-root>> {
+    * PrimitiveId : bigint <<PK>>
+    * PrimitivePhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * RuleKindId : bigint <<FK>>
+    * PrimitiveCode : varchar
+    * CreatedAtUtc : datetime2
+    --
+    UQ (PrimitiveId, RuleKindId)
+    UQ (RuleKindId, PrimitiveCode)
+  }
+
+  entity PrimitiveVersion <<entity-version>> {
+    * PrimitiveVersionId : bigint <<PK>>
+    * PrimitiveVersionPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * PrimitiveId : bigint <<FK>>
+    * RuleKindId : bigint <<FK>>
+    * RuleKindVersionId : bigint <<FK>>
+    * RevisionSequence : int
+    o PredecessorPrimitiveVersionId : bigint <<FK,UQ>>
+    * GrammarProductionCode : varchar
+    * DefinitionText : nvarchar
+    * DefinitionHashAlgorithmCode : varchar <<FK>>
+    * DefinitionContentHash : binary
+    * OutputValueTypeVersionId : bigint <<FK>>
+    * OutputMinCardinality : int
+    o OutputMaxCardinality : int
+    * PublishedAtUtc : datetime2
+    --
+    UQ (PrimitiveId, RevisionSequence)
+  }
+
+  entity PrimitiveInputDefinition <<entity-version>> {
+    * PrimitiveInputDefinitionId : bigint <<PK>>
+    * PrimitiveInputDefinitionPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * PrimitiveVersionId : bigint <<FK>>
+    * InputCode : varchar
+    * Ordinal : int
+    * ValueTypeVersionId : bigint <<FK>>
+    * MinCardinality : int
+    o MaxCardinality : int
+    * AllowsNullElement : bit
+    * ValidationContractCode : varchar <<FK>>
+    --
+    UQ (PrimitiveVersionId, InputCode)
+    UQ (PrimitiveVersionId, Ordinal)
+  }
+}
+
+package "Typed value contracts" #E8F8F5 {
+  entity ValueType <<entity-root>> {
+    * ValueTypeId : bigint <<PK>>
+    * ValueTypePhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * ValueTypeCode : varchar <<UQ>>
+    * CreatedAtUtc : datetime2
+  }
+
+  entity ValueTypeVersion <<entity-version>> {
+    * ValueTypeVersionId : bigint <<PK>>
+    * ValueTypeVersionPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * ValueTypeId : bigint <<FK>>
+    * RevisionSequence : int
+    o PredecessorValueTypeVersionId : bigint <<FK,UQ>>
+    * ValueCategoryCode : varchar <<FK>>
+    o ScalarStorageKindCode : varchar <<FK>>
+    o StructuredValueContractVersionId : bigint <<FK>>
+    o ElementValueTypeVersionId : bigint <<FK>>
+    o CollectionOrderingCode : varchar <<FK>>
+    o SecretReferencePolicyId : bigint <<FK>>
+    * ValidationContractCode : varchar <<FK>>
+    * PublishedAtUtc : datetime2
+    --
+    UQ (ValueTypeId, RevisionSequence)
+    CHECK exactly one category shape
+  }
+
+  entity ScalarStorageKind <<catalog>> {
+    * ScalarStorageKindCode : varchar <<PK>>
+    * RelationalRepresentationCode : varchar
+    * CanonicalSerializationCode : varchar
+  }
+
+  entity StructuredValueContract <<entity-root>> {
+    * StructuredValueContractId : bigint <<PK>>
+    * StructuredValueContractPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * StructuredValueContractCode : varchar <<UQ>>
+    * CreatedAtUtc : datetime2
+  }
+
+  entity StructuredValueContractVersion <<entity-version>> {
+    * StructuredValueContractVersionId : bigint <<PK>>
+    * StructuredValueContractVersionPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * StructuredValueContractId : bigint <<FK>>
+    * RevisionSequence : int
+    o PredecessorContractVersionId : bigint <<FK,UQ>>
+    * ContractSchemaVersion : varchar
+    * SerializerContextCode : varchar
+    * DtoTypeCode : varchar
+    * ValidationContractCode : varchar <<FK>>
+    * CanonicalizationPolicyCode : varchar <<FK>>
+    * FixtureContentHash : binary
+    * PublishedAtUtc : datetime2
+    --
+    UQ (StructuredValueContractId, RevisionSequence)
+    UQ (StructuredValueContractId, ContractSchemaVersion)
+  }
+
+  entity SecretReferencePolicy <<catalog>> {
+    * SecretReferencePolicyId : bigint <<PK>>
+    * SecretReferencePolicyCode : varchar <<UQ>>
+    * ResolverCode : varchar = Get-SecretATAP
+    * SecretNameSyntaxPolicyCode : varchar
+    * AllowsNonSecretSelector : bit
+    * AllowsNameInPlanHash : bit
+    * ResolveDuringPublication : bit = 0
+  }
+
+  entity ValueTypeAllowedEntityType <<policy>> {
+    * ValueTypeVersionId : bigint <<PK,FK>>
+    * EntityTypeId : bigint <<PK,FK>>
+  }
+}
+
+RuleKind ||--o{ RuleKindVersion : publishes
+RuleKindVersion |o--o| RuleKindVersion : predecessor
+RuleKindVersion ||--o{ RuleKindVersionCompatibility : source / target
+ExecutionClassification ||--o{ RuleKindVersion : execution posture
+SecurityCapabilityClassification ||--o{ RuleKindVersion : default-deny class
+RoundTripPolicy ||--o{ RuleKindVersion : round-trip contract
+ExecutorContract ||--o{ ExecutorContractVersion : publishes
+ExecutorContractVersion |o--o| ExecutorContractVersion : predecessor
+ExecutorContractVersion |o--o{ RuleKindVersion : exact executor contract
+
+RuleKind ||--o{ Primitive : owns for life
+Primitive ||--o{ PrimitiveVersion : publishes
+RuleKindVersion ||--o{ PrimitiveVersion : exact grammar version
+PrimitiveVersion |o--o| PrimitiveVersion : predecessor
+PrimitiveVersion ||--o{ PrimitiveInputDefinition : declares exact inputs
+
+ValueType ||--o{ ValueTypeVersion : publishes
+ValueTypeVersion |o--o| ValueTypeVersion : predecessor
+ValueTypeVersion ||--o{ PrimitiveInputDefinition : exact input type
+ValueTypeVersion ||--o{ PrimitiveVersion : exact output type
+ScalarStorageKind |o--o{ ValueTypeVersion : scalar shape
+StructuredValueContract ||--o{ StructuredValueContractVersion : publishes
+StructuredValueContractVersion |o--o| StructuredValueContractVersion : predecessor
+StructuredValueContractVersion |o--o{ ValueTypeVersion : structured shape
+ValueTypeVersion |o--o{ ValueTypeVersion : collection element
+SecretReferencePolicy |o--o{ ValueTypeVersion : secret-reference shape
+ValueTypeVersion ||--o{ ValueTypeAllowedEntityType : Entity-reference allow-list
+
+note bottom of PrimitiveVersion
+  Composite FKs prove:
+  Primitive.RuleKindId = RuleKindVersion.RuleKindId.
+  No durable-kind-only interpretation.
+end note
+
+note bottom of RuleKindVersion
+  Grammar/compendium endpoints are exact
+  SourceArtifactVersion Entities plus hashes.
+  Metadata-only/prohibited => no executor contract.
+end note
+
+note bottom of ValueTypeVersion
+  Exactly one category shape:
+  scalar | structured | collection |
+  secret-reference | entity-reference.
+end note
+
+note bottom of SecretReferencePolicy
+  Stores policy only, never SecretNames or values.
+  Resolution is late-bound through Get-SecretATAP.
+end note
+
+@enduml

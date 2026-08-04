@@ -1,5 +1,22 @@
 # Release notes
 
+## 0.1.29
+
+- Task 14.10: add Test-SprintEndWriteTarget and New-SprintEndDefectRoute,
+  and gate the SprintEnd close plan so a stable worktree substituted into
+  WorktreePaths is rejected before any phase runs. Defects discovered during
+  a close route to the active sprint worktree or to a durable next-sprint input
+  under the _Planning sprint worktree, never to a stable checkout.
+- Task 14.11: add Get-SprintEndApprovalPlan. Pull-request merge
+  authorization is recorded once through -MergeAuthorizationConfirmed
+  instead of re-evaluated by each layer that can prompt; a delegated agent
+  relays named authorization provenance or fails closed; and NuGet lock-file
+  runner availability becomes a deterministic NotApplicable/Enforced/Blocked
+  fact rather than an operator proceed anyway question.
+- Task 14.12: add Invoke-SprintEndRehearsal covering the dry-run,
+  stable-boundary, crash/resume, and full-close scenarios, with before/after
+  stable-worktree snapshots proving the rehearsal changed no stable repository.
+
 ## 0.1.27
 
 - Classify committed `SolutionDocumentation/*-Task-N.before.summary.json` and

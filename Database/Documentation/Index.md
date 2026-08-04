@@ -146,6 +146,7 @@ These diagrams document the CI/CD workflow for promoting ATAPUtilities database 
 
 ## Markdown Design Documents
 
+- [RRSBS-RDB-300-Flyway-Allocation-and-Bootstrap-Contract.md](RRSBS-RDB-300-Flyway-Allocation-and-Bootstrap-Contract.md) — Wave 4 allocation of the isolated RRSBS V2 Flyway lineage (`00010`), package `0.0.1`, history-table boundary, bootstrap contract, and future mixing-rejection requirements.
 - [FolderStructure.md](FolderStructure.md) — Annotated folder tree of the entire `Database/` subtree with the purpose of each file and subfolder.
 - [CrossSchema_UserView_Design.md](CrossSchema_UserView_Design.md) — Design notes for cross-schema user views that join the Rules, Philote, Tags, and Instantiation schemas.
 - [API_Specification_RuleExport.md](API_Specification_RuleExport.md) — REST API specification for the Rule Export endpoint: request/response shapes, error codes, and versioning policy.

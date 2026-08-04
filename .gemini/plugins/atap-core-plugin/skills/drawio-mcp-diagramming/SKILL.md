@@ -1,6 +1,6 @@
 ---
 name: "drawio-mcp-diagramming"
-description: "Create and modify draw.io diagrams through the drawio MCP server, using Material Icon Theme icons and the repository's layout anti-pattern rules. Use when asked to draw, generate, edit, or de-clutter a draw.io diagram, architecture diagram, flowchart, or mxGraphModel XML."
+description: "Use when creating or editing draw.io diagrams with the drawio MCP server, applying the repository's icon convention and diagram layout checklist."
 ---
 
 <!--

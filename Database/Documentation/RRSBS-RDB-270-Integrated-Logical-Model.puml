@@ -1,0 +1,39 @@
+@startuml
+hide methods
+skinparam linetype ortho
+class EntityType
+class Entity
+class RuleKindVersion
+class PrimitiveVersion
+class RuleVersion
+class RuleVersionNode
+class BuildSetVersion
+class BuildSetRuleOccurrence
+class InstantiationVersion
+class ManifestationPlan
+class PlanApproval
+class ManifestationAttempt
+class RuleExecution
+class ManifestationArtifact
+class SourceArtifact
+class SourceArtifactVersion
+class ContentSummaryVersion
+class AgentTextProjectionVersion
+EntityType --> Entity : registers
+RuleKindVersion --> PrimitiveVersion : owns kind
+RuleKindVersion --> RuleVersion : selects kind
+RuleVersion --> RuleVersionNode : owns graph
+BuildSetVersion --> BuildSetRuleOccurrence : projects occurrence
+RuleVersion --> BuildSetRuleOccurrence : exact rule
+BuildSetVersion --> InstantiationVersion : selected build
+InstantiationVersion --> ManifestationPlan : planned from
+ManifestationPlan --> PlanApproval : approved as
+PlanApproval --> ManifestationAttempt : authorizes
+ManifestationAttempt --> RuleExecution : contains
+BuildSetRuleOccurrence --> RuleExecution : executes
+ManifestationAttempt --> ManifestationArtifact : produces
+SourceArtifact --> SourceArtifactVersion : observes
+SourceArtifactVersion --> ContentSummaryVersion : summarizes
+RuleVersion --> ContentSummaryVersion : prompt/render
+ContentSummaryVersion --> AgentTextProjectionVersion : watermark
+@enduml

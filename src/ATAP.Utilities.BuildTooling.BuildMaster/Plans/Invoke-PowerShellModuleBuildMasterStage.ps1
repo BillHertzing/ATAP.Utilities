@@ -1066,7 +1066,15 @@ function Invoke-PowerShellModuleBuildMasterStage {
       -StateFiles $stateFiles `
       -AdditionalData @{ PipelineKind = 'PowerShellModule'; ModuleName = $ModuleName; PackageName = $PackageName } | Out-Null
 
-    $moduleBuildOutputRoot = Join-Path -Path $contextDirectory -ChildPath "psmodules/$ModuleName"
+    # MAX_PATH budget: Authenticode signing fails over 260 characters with a misleading
+    # "cannot find the path specified", regardless of LongPathsEnabled. module.build.ps1
+    # stages module files under <OutputRoot>/packages/<ModuleName>/ before packing, so
+    # putting $ModuleName in OutputRoot too spent it twice and pushed long-named modules
+    # past the limit from a sprint worktree. Keep $ModuleName out of OutputRoot.
+    # 'packages' is module.build.ps1's fixed output folder name - do not rename it here,
+    # or Find-LatestPowerShellModulePackage looks in a directory that is never created.
+    # See SolutionDocumentation/Authenticode-Signing-MAX_PATH-Constraint.md
+    $moduleBuildOutputRoot = Join-Path -Path $contextDirectory -ChildPath 'psmodules'
     $moduleBuildPackageOutputPath = Join-Path -Path $moduleBuildOutputRoot -ChildPath 'packages'
     if ([string]::IsNullOrWhiteSpace($PackageOutputPath)) {
       $PackageOutputPath = $moduleBuildPackageOutputPath

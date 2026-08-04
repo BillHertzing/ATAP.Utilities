@@ -29,6 +29,9 @@ function New-PkiWindowsCodeSigningCertificate {
   Requested leaf validity in days.
   .PARAMETER SecretStoreType
   Secret store selector passed to Get-SecretATAP.
+  .PARAMETER ResumeInstalledThumbprint
+  Continues ACL, canonical-public-certificate, and TrustedPublisher steps for an already issued
+  LocalMachine certificate. No new key, request, certificate, or secret access occurs.
   .OUTPUTS
   System.Management.Automation.PSCustomObject
   .EXAMPLE
@@ -81,7 +84,10 @@ function New-PkiWindowsCodeSigningCertificate {
     [int] $ValidityDays = 825,
 
     [ValidateNotNullOrEmpty()]
-    [string] $SecretStoreType = 'BitwardenSecretsManager'
+    [string] $SecretStoreType = 'BitwardenSecretsManager',
+
+    [ValidatePattern('^[A-Fa-f0-9]{40}$')]
+    [string] $ResumeInstalledThumbprint
   )
 
   begin {
@@ -97,20 +103,23 @@ function New-PkiWindowsCodeSigningCertificate {
       $CommonName = "$OrganizationName PowerShell Code Signing"
     }
 
-    $requiredPaths = @(
-      (Join-Path $CARootPath 'private\root-ca.key.pem'),
-      (Join-Path $CARootPath 'public\root-ca.crt'),
-      (Join-Path $CARootPath 'database\index.txt'),
-      (Join-Path $CARootPath 'config\AUdefault.cnf')
-    )
-    foreach ($requiredPath in $requiredPaths) {
-      if (-not (Test-Path -LiteralPath $requiredPath -PathType Leaf)) {
-        throw "Required CA file was not found: '$requiredPath'."
+    $isResume = -not [string]::IsNullOrWhiteSpace($ResumeInstalledThumbprint)
+    if (-not $isResume) {
+      $requiredPaths = @(
+        (Join-Path $CARootPath 'private\root-ca.key.pem'),
+        (Join-Path $CARootPath 'public\root-ca.crt'),
+        (Join-Path $CARootPath 'database\index.txt'),
+        (Join-Path $CARootPath 'config\AUdefault.cnf')
+      )
+      foreach ($requiredPath in $requiredPaths) {
+        if (-not (Test-Path -LiteralPath $requiredPath -PathType Leaf)) {
+          throw "Required CA file was not found: '$requiredPath'."
+        }
       }
-    }
-    $certReqCommand = Get-Command -Name 'certreq.exe' -CommandType Application -ErrorAction SilentlyContinue
-    if ($null -eq $certReqCommand) {
-      throw 'certreq.exe is required but was not found.'
+      $certReqCommand = Get-Command -Name 'certreq.exe' -CommandType Application -ErrorAction SilentlyContinue
+      if ($null -eq $certReqCommand) {
+        throw 'certreq.exe is required but was not found.'
+      }
     }
 
     $timestamp = [datetime]::UtcNow.ToString('yyyyMMdd-HHmmss')
@@ -124,7 +133,12 @@ function New-PkiWindowsCodeSigningCertificate {
     $canonicalCertificatePath = Join-Path $publicDirectory 'CodeSigning.crt'
     $passphrasePath = Join-Path $secretDirectory "root-ca-$timestamp.passphrase"
 
-    if (-not $PSCmdlet.ShouldProcess($CommonName, 'Issue and install non-exportable Windows RSA code-signing certificate')) {
+    $operation = if ($isResume) {
+      "Resume installed Windows RSA code-signing certificate $ResumeInstalledThumbprint"
+    } else {
+      'Issue and install non-exportable Windows RSA code-signing certificate'
+    }
+    if (-not $PSCmdlet.ShouldProcess($CommonName, $operation)) {
       return [PSCustomObject]@{
         OrganizationName = $OrganizationName
         CommonName = $CommonName
@@ -132,6 +146,7 @@ function New-PkiWindowsCodeSigningCertificate {
         PublicCertificatePath = $canonicalCertificatePath
         PrivateKeyReader = @($PrivateKeyReader)
         TrustedPublisherComputerName = @($TrustedPublisherComputerName)
+        ResumeInstalledThumbprint = $ResumeInstalledThumbprint
         Preview = $true
       }
     }
@@ -142,12 +157,27 @@ function New-PkiWindowsCodeSigningCertificate {
         $null = New-Item -ItemType Directory -Path $directory -Force
       }
 
-      $subjectParts = @("CN=$CommonName")
-      if (-not [string]::IsNullOrWhiteSpace($OrganizationUnit)) { $subjectParts += "OU=$OrganizationUnit" }
-      $subjectParts += "O=$OrganizationName"
-      $subjectParts += "C=$Country"
-      $subject = $subjectParts -join ','
-      $infContent = @"
+      if ($isResume) {
+        $installedCertificate = Get-Item -LiteralPath "Cert:\LocalMachine\My\$ResumeInstalledThumbprint" -ErrorAction Stop
+        $issuedCertificateFile = Get-ChildItem -LiteralPath $publicDirectory `
+          -Filter 'CodeSigning-windows-signature-*.crt' -File |
+          Where-Object {
+            ([System.Security.Cryptography.X509Certificates.X509Certificate2]::new($_.FullName)).Thumbprint -eq
+              $installedCertificate.Thumbprint
+          } |
+          Select-Object -First 1
+        if ($null -eq $issuedCertificateFile) {
+          throw "Issued public certificate was not found for resume thumbprint '$ResumeInstalledThumbprint'."
+        }
+        $issuedCertificatePath = $issuedCertificateFile.FullName
+        $requestPath = $null
+      } else {
+        $subjectParts = @("CN=$CommonName")
+        if (-not [string]::IsNullOrWhiteSpace($OrganizationUnit)) { $subjectParts += "OU=$OrganizationUnit" }
+        $subjectParts += "O=$OrganizationName"
+        $subjectParts += "C=$Country"
+        $subject = $subjectParts -join ','
+        $infContent = @"
 [Version]
 Signature="`$Windows NT`$"
 
@@ -167,41 +197,42 @@ FriendlyName="$CommonName"
 [EnhancedKeyUsageExtension]
 OID=1.3.6.1.5.5.7.3.3
 "@
-      [System.IO.File]::WriteAllText($requestInfPath, $infContent, [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText($requestInfPath, $infContent, [System.Text.UTF8Encoding]::new($false))
 
-      $rootSecret = Get-SecretATAP -SecretName $CAPassphraseSecretName -SecretStoreType $SecretStoreType -ErrorAction Stop
-      if ([string]::IsNullOrWhiteSpace([string]$rootSecret)) {
-        throw "Secret '$CAPassphraseSecretName' resolved to an empty value."
+        $rootSecret = Get-SecretATAP -SecretName $CAPassphraseSecretName -SecretStoreType $SecretStoreType -ErrorAction Stop
+        if ([string]::IsNullOrWhiteSpace([string]$rootSecret)) {
+          throw "Secret '$CAPassphraseSecretName' resolved to an empty value."
+        }
+        [System.IO.File]::WriteAllText($passphrasePath, "$rootSecret`n", [System.Text.UTF8Encoding]::new($false))
+        $null = Set-PkiRestrictedFileAcl -Path $passphrasePath
+        $rootSecret = $null
+
+        $certReqOutput = @(& $certReqCommand.Source -new -q $requestInfPath $requestPath 2>&1)
+        if ($LASTEXITCODE -ne 0) {
+          throw "certreq failed to create the machine Signature-key request: $(($certReqOutput | Select-Object -Last 5) -join [Environment]::NewLine)"
+        }
+
+        New-SignedCertificate `
+          -CertificateRequestPath $requestPath `
+          -CACertificatePath (Join-Path $CARootPath 'public\root-ca.crt') `
+          -CAEncryptedPrivateKeyPath (Join-Path $CARootPath 'private\root-ca.key.pem') `
+          -CAEncryptionKeyPassPhrasePath $passphrasePath `
+          -CASigningCertificatesCertificatesIssuedDBPath (Join-Path $CARootPath 'database\index.txt') `
+          -CertificateRequestConfigPath (Join-Path $CARootPath 'config\AUdefault.cnf') `
+          -CertificateProfile CodeSigning `
+          -ValidityPeriod $ValidityDays `
+          -ValidityPeriodUnits days `
+          -CertificatePath $issuedCertificatePath `
+          -Confirm:$false | Out-Null
+
+        $certReqOutput = @(& $certReqCommand.Source -accept -q $issuedCertificatePath 2>&1)
+        if ($LASTEXITCODE -ne 0) {
+          throw "certreq failed to associate the issued certificate with its machine key: $(($certReqOutput | Select-Object -Last 5) -join [Environment]::NewLine)"
+        }
+
+        $publicCertificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($issuedCertificatePath)
+        $installedCertificate = Get-Item -LiteralPath "Cert:\LocalMachine\My\$($publicCertificate.Thumbprint)" -ErrorAction Stop
       }
-      [System.IO.File]::WriteAllText($passphrasePath, "$rootSecret`n", [System.Text.UTF8Encoding]::new($false))
-      $null = Set-PkiRestrictedFileAcl -Path $passphrasePath
-      $rootSecret = $null
-
-      $certReqOutput = @(& $certReqCommand.Source -new -q $requestInfPath $requestPath 2>&1)
-      if ($LASTEXITCODE -ne 0) {
-        throw "certreq failed to create the machine Signature-key request: $(($certReqOutput | Select-Object -Last 5) -join [Environment]::NewLine)"
-      }
-
-      New-SignedCertificate `
-        -CertificateRequestPath $requestPath `
-        -CACertificatePath (Join-Path $CARootPath 'public\root-ca.crt') `
-        -CAEncryptedPrivateKeyPath (Join-Path $CARootPath 'private\root-ca.key.pem') `
-        -CAEncryptionKeyPassPhrasePath $passphrasePath `
-        -CASigningCertificatesCertificatesIssuedDBPath (Join-Path $CARootPath 'database\index.txt') `
-        -CertificateRequestConfigPath (Join-Path $CARootPath 'config\AUdefault.cnf') `
-        -CertificateProfile CodeSigning `
-        -ValidityPeriod $ValidityDays `
-        -ValidityPeriodUnits days `
-        -CertificatePath $issuedCertificatePath `
-        -Confirm:$false | Out-Null
-
-      $certReqOutput = @(& $certReqCommand.Source -accept -q $issuedCertificatePath 2>&1)
-      if ($LASTEXITCODE -ne 0) {
-        throw "certreq failed to associate the issued certificate with its machine key: $(($certReqOutput | Select-Object -Last 5) -join [Environment]::NewLine)"
-      }
-
-      $publicCertificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($issuedCertificatePath)
-      $installedCertificate = Get-Item -LiteralPath "Cert:\LocalMachine\My\$($publicCertificate.Thumbprint)" -ErrorAction Stop
       if (-not $installedCertificate.HasPrivateKey -or $installedCertificate.PublicKey.Oid.Value -ne '1.2.840.113549.1.1.1') {
         throw 'The issued code-signing certificate is not an installed RSA certificate with a private key.'
       }
@@ -266,6 +297,7 @@ OID=1.3.6.1.5.5.7.3.3
         RequestPath = $requestPath
         PublicCertificatePath = $canonicalCertificatePath
         TrustedPublisher = @($publisherTrust)
+        Resumed = $isResume
         Preview = $false
       }
     } catch {

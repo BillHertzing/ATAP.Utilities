@@ -33,7 +33,13 @@ function Grant-PkiPrivateKeyReadAccess {
       if ($privateKey.GetType().FullName -eq 'System.Security.Cryptography.RSACryptoServiceProvider') {
         $privateKeyPath = Join-Path $env:ProgramData "Microsoft\Crypto\RSA\MachineKeys\$($privateKey.CspKeyContainerInfo.UniqueKeyContainerName)"
       } elseif ($privateKey.GetType().FullName -eq 'System.Security.Cryptography.RSACng') {
-        $privateKeyPath = Join-Path $env:ProgramData "Microsoft\Crypto\Keys\$($privateKey.Key.UniqueName)"
+        $privateKeyCandidates = @(
+          (Join-Path $env:ProgramData "Microsoft\Crypto\Keys\$($privateKey.Key.UniqueName)"),
+          (Join-Path $env:ProgramData "Microsoft\Crypto\RSA\MachineKeys\$($privateKey.Key.UniqueName)")
+        )
+        $privateKeyPath = $privateKeyCandidates |
+          Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } |
+          Select-Object -First 1
       } else {
         throw "Unsupported RSA private-key provider '$($privateKey.GetType().FullName)'."
       }
@@ -41,7 +47,7 @@ function Grant-PkiPrivateKeyReadAccess {
       if ($null -ne $privateKey) { $privateKey.Dispose() }
     }
 
-    if (-not (Test-Path -LiteralPath $privateKeyPath -PathType Leaf)) {
+    if ([string]::IsNullOrWhiteSpace($privateKeyPath) -or -not (Test-Path -LiteralPath $privateKeyPath -PathType Leaf)) {
       throw "Private-key file was not found for certificate '$($Certificate.Thumbprint)'."
     }
 

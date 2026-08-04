@@ -38,7 +38,9 @@ commands promoted from the Stream E commissioning work:
   `Install-CodeSigningCertificate`, `Install-DataEncryptionCertificate`,
   `Install-TrustedPublisherCertificate`, `List-CodeSigningCertificates`.
 - Multi-host trust: `Install-PkiTrustCertificate` verifies an optional SHA-256 pin and transfers
-  public certificate bytes only to Root or TrustedPublisher stores.
+  public certificate bytes only to Root or TrustedPublisher stores. Remote hosts use
+  `ATAP.PS7.Profiled` by default; callers must not fall back to the unnamed Windows PowerShell 5.1
+  endpoint when profile-backed ATAP settings or secret resolution are required.
 - PKCS#12 creation: `New-PkiCertificatePfx` resolves its output password by SecretName, sends it
   to OpenSSL over standard input, and creates an ACL-restricted PFX without command-line secrets.
 - Windows signing authority: `New-PkiWindowsCodeSigningCertificate` issues a parameterized,

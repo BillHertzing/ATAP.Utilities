@@ -175,6 +175,12 @@ returns `Changed = $false` when the certificate is already installed. Confirm th
 `LocalMachine\Root`, the leaf lands in `LocalMachine\My`, the leaf private key is non-exportable,
 and only the required Inedo service identities can read it.
 
+Use `-ConfigurationName 'ATAP.PS7.Profiled'` for every remote operation that needs the managed
+ATAP environment. An unqualified `Invoke-Command` selects the legacy Windows PowerShell 5.1
+endpoint, where `$global:settings`, `$global:configRootKeys`, and `Get-SecretATAP` are absent. The
+profiled PowerShell 7 endpoint loads the machine profile and the authenticated remoting identity's
+profile, allowing SecretName resolution to occur on the decrypting host.
+
 ## Stream E script disposition
 
 The commissioning scripts under `_generated\Sprint0014\StreamE` remain evidence and should not be

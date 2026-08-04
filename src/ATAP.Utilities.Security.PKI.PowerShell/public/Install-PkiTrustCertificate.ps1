@@ -15,6 +15,9 @@ function Install-PkiTrustCertificate {
   One or more local or PowerShell-remoting target computer names.
   .PARAMETER ExpectedSha256
   Optional 64-character SHA-256 fingerprint pin for the public certificate.
+  .PARAMETER SessionConfigurationName
+  PowerShell 7 remoting endpoint used for remote hosts. Defaults to the managed ATAP profiled
+  endpoint so machine and connecting-identity profiles establish the ATAP command environment.
   .OUTPUTS
   System.Management.Automation.PSCustomObject
   .EXAMPLE
@@ -42,7 +45,10 @@ function Install-PkiTrustCertificate {
     [string[]] $ComputerName,
 
     [ValidatePattern('^[A-Fa-f0-9]{64}$')]
-    [string] $ExpectedSha256
+    [string] $ExpectedSha256,
+
+    [ValidateNotNullOrEmpty()]
+    [string] $SessionConfigurationName = 'ATAP.PS7.Profiled'
   )
 
   begin {
@@ -118,7 +124,8 @@ function Install-PkiTrustCertificate {
 
       try {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling Invoke-Command on $target." -Tag 'InvokeCommandCall'
-        $remoteResult = Invoke-Command -ComputerName $target -ArgumentList $rawDataBase64, $sha256, $CertificateRole -ScriptBlock {
+        $remoteResult = Invoke-Command -ComputerName $target -ConfigurationName $SessionConfigurationName `
+          -ArgumentList $rawDataBase64, $sha256, $CertificateRole -ScriptBlock {
           param($RawDataBase64, $ExpectedSha256, $CertificateRole)
 
           $certificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(

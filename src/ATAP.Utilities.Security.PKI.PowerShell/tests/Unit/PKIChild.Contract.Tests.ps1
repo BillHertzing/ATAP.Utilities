@@ -86,6 +86,7 @@ Describe 'ATAP.Utilities.Security.PKI.PowerShell module contract' -Tag 'Unit' {
     $trustSource | Should -Match 'ExpectedSha256'
     $trustSource | Should -Match 'RootCA.*TrustedPublisher|TrustedPublisher.*RootCA'
     $trustSource | Should -Match 'Invoke-Command'
+    $trustSource | Should -Match "SessionConfigurationName = 'ATAP\.PS7\.Profiled'"
     $pfxSource | Should -Match "'-passout', 'stdin'"
     $pfxSource | Should -Match 'Get-SecretATAP'
     $pfxSource | Should -Match 'ReadToEndAsync'

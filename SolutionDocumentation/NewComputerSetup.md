@@ -454,6 +454,58 @@ Record the installed version and resolved executable path in the parity journal.
 `C:\Program Files\SysinternalsSuite`; verify the WinGet installation on `utat022`
 resolves to the same path before closing the return action.
 
+### 2.3.1 Configure Avast HTTPS inspection for browsers only
+
+Avast Web Guard (formerly Web Shield) installs a local trusted root and transparently
+intercepts TLS through its network-filter drivers. This is not a WinHTTP, WinINet, or
+environment-variable proxy: those proxy surfaces can all report direct access while a
+non-browser process still receives an Avast-issued certificate instead of the certificate
+presented by the destination service. That breaks PKI evidence and can disrupt PowerShell,
+`bws`, NuGet, ProGet, BuildMaster, and other development automation.
+
+Keep HTTPS inspection enabled for browsers, but restrict Web Guard to browser processes on
+developer and infrastructure hosts:
+
+1. Open Avast and select **Menu > Settings**.
+2. Select **Search**, enter `geek:area`, and open **Avast Geek**.
+3. Search for `well-known browser`.
+4. Enable **Scan traffic from well-known browser processes only**.
+5. Leave **Enable HTTPS scanning** enabled.
+
+Avast documents this control in
+[Using the Avast Geek settings area](https://support.avast.com/en-us/article/Use-Antivirus-Geek-settings).
+Do not replace this configuration with broad URL exceptions: an exception for an internal
+host also bypasses inspection when a browser visits that host. Do not treat `-NoProxy` as a
+permanent fix; it does not configure Avast and only happened to avoid one intercepted client
+path during diagnosis.
+
+Record the change with `Add-ParityChangeEntry` before applying it. The peer action is to
+enable the same browser-process-only setting on the other UTAT host and then acknowledge the
+journal entry.
+
+After applying the setting, verify all of the following:
+
+```powershell
+# Conventional proxy surfaces remain disabled.
+netsh winhttp show proxy
+Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' |
+  Select-Object ProxyEnable, ProxyServer, AutoConfigURL
+Get-ChildItem Env: | Where-Object Name -Match '^(HTTP|HTTPS|ALL|NO)_PROXY$'
+
+# Development traffic succeeds without a bypass switch.
+(Invoke-WebRequest 'https://utat022:50000/' -UseBasicParsing -TimeoutSec 20).StatusCode
+(Invoke-WebRequest 'https://utat022:50017/' -UseBasicParsing -TimeoutSec 20).StatusCode
+
+# Resolve a known metadata-safe test secret without printing its value.
+$null = Get-SecretATAP -SecretName '<approved-test-SecretName>' -ErrorAction Stop
+```
+
+In a browser, confirm Avast inspection remains active. From PowerShell, confirm the TLS leaf
+subject, issuer, and thumbprint are the direct ATAP Foundation values recorded in
+`ATAP.IAC\Windows\AnsibleHostInventory\All\PKI-TLS-ATAP-Foundation.example.yml`, not an
+`Avast Web/Mail Shield` certificate. A successful HTTP status alone is insufficient PKI
+evidence because an intercepting certificate can still produce HTTP 200.
+
 ### 2.4 Install Python (for Manim or Copilot code execution)
 
 Install Python only if the workstation will run Manim (see the optional Manim section near
@@ -1661,8 +1713,8 @@ Install-ATAPModulesFromProGet
 Expected output (module base paths confirm `-Scope AllUsers`):
 
 ```text
-[HH:mm:ss][Install-ATAPModulesFromProGet] Feed URI: http://localhost:50000/nuget/powershellget-stable/
-[HH:mm:ss][Install-ATAPModulesFromProGet] Feed 'powershellget-stable' is reachable at http://localhost:50000/nuget/powershellget-stable/
+[HH:mm:ss][Install-ATAPModulesFromProGet] Feed URI: https://utat022:50000/nuget/powershellget-stable/
+[HH:mm:ss][Install-ATAPModulesFromProGet] Feed 'powershellget-stable' is reachable at https://utat022:50000/nuget/powershellget-stable/
 [HH:mm:ss][Install-ATAPModulesFromProGet] Installed 'ATAP.Utilities.PowerShell' v0.1.0 to 'C:\Program Files\PowerShell\Modules\ATAP.Utilities.Powershell\0.1.0'
 [HH:mm:ss][Install-ATAPModulesFromProGet] Installed 'ATAP.Utilities.BuildTooling.PowerShell' v0.1.0 to 'C:\Program Files\PowerShell\Modules\ATAP.Utilities.BuildTooling.PowerShell\0.1.0'
 
@@ -1689,8 +1741,8 @@ Unregister-PSRepository -Name powershellget-stable -ErrorAction SilentlyContinue
 
 Register-PSRepository `
   -Name              'powershellget-stable' `
-  -SourceLocation    'http://localhost:50000/nuget/powershellget-stable/' `
-  -PublishLocation   'http://localhost:50000/nuget/powershellget-stable/' `
+  -SourceLocation    'https://utat022:50000/nuget/powershellget-stable/' `
+  -PublishLocation   'https://utat022:50000/nuget/powershellget-stable/' `
   -InstallationPolicy Trusted
 
 Register-PSRepository `
@@ -1720,13 +1772,20 @@ package-provider state. Register both PowerShell repository stores so either
 
 Run in a normal PowerShell 7 session for the user who will install modules:
 
+> **Protocol note.** ProGet serves **HTTPS only** on `utat022:50000`; a plain `http://`
+> request fails rather than redirecting. The certificate's SAN covers only `utat022`, so
+> `localhost` is not a usable host name over TLS. Prefer driving these URIs from host
+> settings (`$settings['ProGetFeedPowerShellStableUri']` and siblings) rather than the
+> literals below. See
+> [Feed-Protocol-HTTP-to-HTTPS-Migration.md](Feed-Protocol-HTTP-to-HTTPS-Migration.md).
+
 ```powershell
 $feeds = @(
-  @{ Name = 'powershellget-experimental'; Uri = 'http://localhost:50000/nuget/powershellget-experimental/' },
-  @{ Name = 'powershellget-development';  Uri = 'http://localhost:50000/nuget/powershellget-development/' },
-  @{ Name = 'powershellget-integration';  Uri = 'http://localhost:50000/nuget/powershellget-integration/' },
-  @{ Name = 'powershellget-qa';           Uri = 'http://localhost:50000/nuget/powershellget-qa/' },
-  @{ Name = 'powershellget-stable';       Uri = 'http://localhost:50000/nuget/powershellget-stable/' }
+  @{ Name = 'powershellget-experimental'; Uri = 'https://utat022:50000/nuget/powershellget-experimental/' },
+  @{ Name = 'powershellget-development';  Uri = 'https://utat022:50000/nuget/powershellget-development/' },
+  @{ Name = 'powershellget-integration';  Uri = 'https://utat022:50000/nuget/powershellget-integration/' },
+  @{ Name = 'powershellget-qa';           Uri = 'https://utat022:50000/nuget/powershellget-qa/' },
+  @{ Name = 'powershellget-stable';       Uri = 'https://utat022:50000/nuget/powershellget-stable/' }
 )
 
 foreach ($feed in $feeds) {
@@ -1781,6 +1840,21 @@ in the repo `NuGet.Config` files. Confirm from a repo root with:
 ```powershell
 dotnet nuget list source
 ```
+
+Two further families are registered as dotnet sources: the universal `releasebundle-*`
+feeds (top tier is `production`, not `stable`) and the `database-*` feeds used by the
+database-package pipeline. All must be `https://utat022:50000`. Confirm nothing remains on
+plain HTTP across all four registration surfaces:
+
+```powershell
+Get-PSRepository         | Where-Object SourceLocation -like 'http://*'
+Get-PSResourceRepository | Where-Object Uri            -like 'http://*'
+dotnet nuget list source | Select-String 'http://'
+```
+
+All three must return nothing. Note that `Get-PSRepository` (PowerShellGet v2) and
+`Get-PSResourceRepository` (PSResourceGet) are **separate stores** — migrating one leaves
+the other broken.
 
 ### 9.10 Configure SystemParityMonitor on Windows 10 and Windows 11
 
@@ -1911,6 +1985,48 @@ If global IPv6 addresses are dead, fix the host networking — do **not** edit
 
 Record the outcome with `Add-ParityChangeEntry` so the peer host shows a declared change
 rather than undeclared drift.
+
+### 9.10b Deploy the organization hosts file (name resolution)
+
+Every managed host resolves the organization's static host names (`utat022`, `utat01`,
+`ncat040`, printers, IoT devices, and so on) from a shared `hosts` file rather than from
+DNS. The canonical source is a single template that is deployed to each computer.
+
+**Canonical sources — do not hand-invent host names or IPs:**
+
+- **Host names and IP assignments** come from the organization's canonical compute
+  inventory (the `ansibleInventory` compute-inventory model). The concept is documented in
+  [NewOrganizationSetup.md](NewOrganizationSetup.md) Appendix A ("The organization's hosts
+  file (IP connectivity) is part of the package"); the machine-readable data lives in
+  `ATAP.IAC` (`ansible/inventory` and the host-settings fragments). Router DHCP reservations
+  must agree with these assignments before a name is added.
+- **The hosts-file contents** are the ATAP.IAC template
+  `Windows/NetworkResources/Hosts IP addresess.txt`. Per `ATAP.IAC/ReadMe.md` and
+  `IAC-Windows-Scripts-Migration.md`, this is the static hosts-file template for Ansible
+  deployment. Edit host entries **there**, never directly in a workstation's live file as
+  the primary change — the live file is a deployment target, not the source of truth.
+
+**Deploy the template to this workstation** (elevated; the target is a protected system
+file):
+
+```powershell
+# Source: the canonical ATAP.IAC template (adjust the repo root to the active worktree).
+$src = Join-Path $env:USERPROFILE 'Dropbox\whertzing\GitHub\ATAP.IAC\Windows\NetworkResources\Hosts IP addresess.txt'
+$dst = Join-Path $env:SystemRoot 'System32\drivers\etc\hosts'
+
+# Back up the current file first, then deploy the template verbatim.
+Copy-Item -LiteralPath $dst -Destination "$dst.bak-$(Get-Date -Format yyyyMMddHHmmss)" -Force
+Copy-Item -LiteralPath $src -Destination $dst -Force
+
+# Flush the resolver cache so new entries take effect immediately.
+Clear-DnsClientCache
+```
+
+Under the Ansible deployment model this copy is performed by the provisioning play rather
+than by hand; the manual copy above is the fallback for a host not yet (or not currently)
+driven by Ansible. Either way the template is the source, so a manual edit to a live
+`hosts` file must be mirrored back into `Hosts IP addresess.txt` (and, ultimately, the
+compute inventory) or it will be overwritten on the next deployment.
 
 ### 9.11 Junction AI agent memory to the Dropbox store
 

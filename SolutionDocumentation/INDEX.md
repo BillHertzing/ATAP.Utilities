@@ -94,6 +94,16 @@ _Teach / Tell how to create software._
   registration; and a build of the `aaronontheweb/mssql-mcp` MCP server.
 - [New Computer Setup Using Ansible](NewComputerSetupUsingAnsible.md) —
   Alternate draft of workstation and build-host bootstrap guidance.
+- [New Computer Provisioning Runbook](Runbook-NewComputerProvisioning.md) —
+  Execution plan for `NewComputerSetup.md`, expressed as parallelizable streams with
+  declared owners: organizational work (O1–O5), human-manual/console-bound work (H1–H5),
+  and agent-automated work (A1–A8), joined by four gates (Authorized to build, Clean
+  baseline, Tooling operational, Ready State). Records what may run concurrently and what
+  must not (profiles before repo integrity, broker before module install, SQL before
+  service accounts). Appendix A carries the `ncat040` instance plan: Mission 1 clean-host
+  validation stopping at Gate 1 with a one-task-per-restore-cycle image discipline, then
+  Mission 2 as a DPOM and testing host. Does not restate procedure — `NewComputerSetup.md`
+  remains canonical for every step.
 - [Sprint-Boundary Retargeting](Sprint-Boundary-Retargeting.md) — V4-H03 source of
   truth for the `Set-SprintBoundaryContext` orchestrator: which concern (machine
   links, SharedVSCode settings, downstream contexts, registry-backed AI adapters)
@@ -289,6 +299,20 @@ _Teach / Tell how to create software._
 - [BuildMaster Run-State Runbook](BuildMaster-Run-State-Runbook.md) —
   Operational guide for the build-id scoped `_generated/buildmaster/<BuildMasterBuildId>/`
   inter-stage state channel.
+- [BuildMaster Plan Raft Sync Requirement](BuildMaster-Plan-Raft-Sync-Requirement.md) —
+  Why a committed `.otter` change is not live until `Sync-BuildMasterPlans` runs, and how
+  a stale raft plan silently hangs a stage forever on a hidden mandatory-parameter prompt.
+  Includes the 2026-08-03 incident, a triage checklist, and fail-fast guidance.
+- [Authenticode Signing and the MAX_PATH Constraint](Authenticode-Signing-MAX_PATH-Constraint.md) —
+  Open defect: `Set-AuthenticodeSignature` fails with a misleading `UnknownError` on paths
+  over 260 characters regardless of `LongPathsEnabled`. Affects long-named modules built
+  from sprint worktrees.
+- [Feed Protocol HTTP to HTTPS Migration](Feed-Protocol-HTTP-to-HTTPS-Migration.md) —
+  Runbook for the ProGet/BuildMaster cutover to HTTPS after the `utat022` PKI change.
+  Covers the four independent client registration surfaces (PowerShellGet v2,
+  PSResourceGet, dotnet/NuGet sources, repo `NuGet.Config`), the required
+  `localhost` to `utat022` host change forced by the certificate SAN, all 20 server
+  feeds, strict-TLS verification, rollback, and the Avast TLS-interception caveat.
 - [PowerShell-Module Pipeline -NoProfile Runbook](PowerShellModule-Pipeline-NoProfile-Runbook.md) —
   V4-B02 audit + policy of record: every settings lookup in the PowerShell-module
   plan/runner resolves under `-NoProfile` via explicit parameter, env var, or

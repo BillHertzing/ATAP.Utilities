@@ -50,6 +50,13 @@ function Set-PSModuleFileSignature {
     $results = foreach ($file in $files) {
       if (-not $PSCmdlet.ShouldProcess($file.FullName, "Apply Authenticode signature with certificate $normalizedThumbprint")) { continue }
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Signing '$($file.FullName)'." -Tag 'Trace'
+      # The Authenticode API is not long-path aware, so it reports a path over MAX_PATH as
+      # 'UnknownError The system cannot find the path specified' even though the file
+      # exists and LongPathsEnabled is set. Diagnose that here instead of surfacing the
+      # misleading native message.
+      if ($file.FullName.Length -gt 260) {
+        throw "Cannot Authenticode-sign '$($file.FullName)': the path is $($file.FullName.Length) characters, over the 260-character MAX_PATH limit the signing API enforces regardless of LongPathsEnabled. Shorten the build staging path. See SolutionDocumentation/Authenticode-Signing-MAX_PATH-Constraint.md."
+      }
       $signature = $null
       for ($attempt = 1; $attempt -le 3; $attempt++) {
         $signature = Set-AuthenticodeSignature -FilePath $file.FullName -Certificate $certificate -HashAlgorithm SHA256 -TimestampServer $TimestampServerUri.AbsoluteUri -ErrorAction Stop

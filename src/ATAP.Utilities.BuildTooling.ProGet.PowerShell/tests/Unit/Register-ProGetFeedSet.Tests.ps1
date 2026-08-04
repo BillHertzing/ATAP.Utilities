@@ -10,7 +10,7 @@ BeforeAll {
     }
   }
 
-  foreach ($commandName in @('Get-PSResourceRepository', 'Register-PSResourceRepository', 'Unregister-PSResourceRepository')) {
+  foreach ($commandName in @('Get-PSResourceRepository', 'Register-PSResourceRepository', 'Set-PSResourceRepository', 'Unregister-PSResourceRepository', 'Get-PSRepository', 'Register-PSRepository', 'Set-PSRepository')) {
     if (-not (Get-Command $commandName -ErrorAction SilentlyContinue)) {
       $functionPath = "Function:\global:$commandName"
       Set-Item -Path $functionPath -Value { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
@@ -28,6 +28,7 @@ Describe 'Register-ProGetFeedSet' -Tag 'Unit' {
         'pwshStable' = @{
           FeedName   = 'powershellget-stable'
           FeedType   = 'powershellget'
+          Uri         = 'http://localhost:50000/nuget/powershellget-stable/'
           NuGetV3Uri = 'http://localhost:50000/nuget/powershellget-stable/v2'
         }
         'nugetStable' = @{
@@ -47,7 +48,11 @@ Describe 'Register-ProGetFeedSet' -Tag 'Unit' {
       )
     }
     Mock Register-PSResourceRepository { [PSCustomObject]@{ Name = 'powershellget-stable' } }
+    Mock Set-PSResourceRepository { [PSCustomObject]@{ Name = 'powershellget-stable' } }
     Mock Unregister-PSResourceRepository { }
+    Mock Get-PSRepository { @() }
+    Mock Register-PSRepository { }
+    Mock Set-PSRepository { }
   }
 
   AfterEach {
@@ -71,7 +76,7 @@ Describe 'Register-ProGetFeedSet' -Tag 'Unit' {
     }
   }
 
-  It 'registers only powershellget feeds using the canonical name and v2 endpoint' {
+  It 'registers only powershellget feeds in both repository stores' {
     Register-ProGetFeedSet -Confirm:$false | Out-Null
 
     Assert-MockCalled Register-PSResourceRepository -Times 1 -Exactly -Scope It -ParameterFilter {
@@ -79,6 +84,12 @@ Describe 'Register-ProGetFeedSet' -Tag 'Unit' {
     }
     Assert-MockCalled Register-PSResourceRepository -Times 0 -Exactly -Scope It -ParameterFilter {
       $Name -eq 'nuget-stable'
+    }
+    Assert-MockCalled Register-PSRepository -Times 1 -Exactly -Scope It -ParameterFilter {
+      $Name -eq 'powershellget-stable' -and
+      $SourceLocation -eq 'http://localhost:50000/nuget/powershellget-stable/' -and
+      $PublishLocation -eq 'http://localhost:50000/nuget/powershellget-stable/' -and
+      $InstallationPolicy -eq 'Trusted'
     }
   }
 
@@ -90,12 +101,51 @@ Describe 'Register-ProGetFeedSet' -Tag 'Unit' {
 
   It 'is idempotent — an already-registered canonical feed is not re-registered' {
     Mock Get-PSResourceRepository {
-      @( [PSCustomObject]@{ Name = 'powershellget-stable'; Uri = 'http://localhost:50000/nuget/powershellget-stable/v2' } )
+      @( [PSCustomObject]@{ Name = 'powershellget-stable'; Uri = 'http://localhost:50000/nuget/powershellget-stable/v2'; Trusted = $true } )
     }
 
     $result = Register-ProGetFeedSet -Confirm:$false
 
     Assert-MockCalled Register-PSResourceRepository -Times 0 -Exactly -Scope It
-    ($result | Where-Object { $_.FeedName -eq 'powershellget-stable' }).RegistrationResult | Should -Be 'AlreadyRegistered'
+    Assert-MockCalled Set-PSResourceRepository -Times 0 -Exactly -Scope It
+    ($result | Where-Object { $_.RepositoryKind -eq 'PSResourceGet' }).RegistrationResult | Should -Be 'AlreadyRegistered'
+  }
+
+  It 'reconciles an existing repository whose URI or trust policy has drifted' {
+    Mock Get-PSResourceRepository {
+      @( [PSCustomObject]@{ Name = 'powershellget-stable'; Uri = 'http://legacy:50000/nuget/powershellget-stable/v2'; Trusted = $false } )
+    }
+
+    $result = Register-ProGetFeedSet -Confirm:$false
+
+    Assert-MockCalled Register-PSResourceRepository -Times 0 -Exactly -Scope It
+    Assert-MockCalled Set-PSResourceRepository -Times 1 -Exactly -Scope It -ParameterFilter {
+      $Name -eq 'powershellget-stable' -and
+      $Uri -eq 'http://localhost:50000/nuget/powershellget-stable/v2' -and
+      $Trusted
+    }
+    ($result | Where-Object { $_.RepositoryKind -eq 'PSResourceGet' }).RegistrationResult | Should -Be 'Updated'
+  }
+
+  It 'reconciles URI and trust drift in the PowerShellGet repository store' {
+    Mock Get-PSRepository {
+      @( [PSCustomObject]@{
+          Name = 'powershellget-stable'
+          SourceLocation = 'http://legacy:50000/nuget/powershellget-stable/'
+          PublishLocation = 'http://legacy:50000/nuget/powershellget-stable/'
+          InstallationPolicy = 'Untrusted'
+        } )
+    }
+
+    $result = Register-ProGetFeedSet -Confirm:$false
+
+    Assert-MockCalled Register-PSRepository -Times 0 -Exactly -Scope It
+    Assert-MockCalled Set-PSRepository -Times 1 -Exactly -Scope It -ParameterFilter {
+      $Name -eq 'powershellget-stable' -and
+      $SourceLocation -eq 'http://localhost:50000/nuget/powershellget-stable/' -and
+      $PublishLocation -eq 'http://localhost:50000/nuget/powershellget-stable/' -and
+      $InstallationPolicy -eq 'Trusted'
+    }
+    ($result | Where-Object { $_.RepositoryKind -eq 'PowerShellGet' }).RegistrationResult | Should -Be 'Updated'
   }
 }

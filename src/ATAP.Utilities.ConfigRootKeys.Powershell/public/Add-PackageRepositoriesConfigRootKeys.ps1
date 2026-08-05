@@ -177,6 +177,77 @@ function Add-PackageRepositoriesConfigRootKeys {
         $global:configRootKeys.Add('ProGetFeedNuGetStableFeedConfigRootKey', 'ProGetFeedNuGetStable')
 
         # ══════════════════════════════════════════════════════════════════════
+        #  Database-package feeds — five-tier canonical set
+        #  Feed name values stored in $global:settings are lowercase:
+        #    database-experimental, database-development, database-integration,
+        #    database-qa, database-stable
+        #  These are NuGet-type feeds carrying Flyway database change packages.
+        #  Resolve-DatabasePackageFeed maps the Production tier to 'database-stable'
+        #  (not 'database-production'); only the release-bundle family uses
+        #  'production' as its top-tier token.
+        # ══════════════════════════════════════════════════════════════════════
+
+        # ── database-experimental ─────────────────────────────────────────────
+        $global:configRootKeys.Add('ProGetFeedDatabaseExperimentalUriSchemeConfigRootKey', 'ProGetFeedDatabaseExperimentalUriScheme')
+        $global:configRootKeys.Add('ProGetFeedDatabaseExperimentalUriHostConfigRootKey', 'ProGetFeedDatabaseExperimentalUriHost')
+        $global:configRootKeys.Add('ProGetFeedDatabaseExperimentalUriPortConfigRootKey', 'ProGetFeedDatabaseExperimentalUriPort')
+        $global:configRootKeys.Add('ProGetFeedDatabaseExperimentalUriPathConfigRootKey', 'ProGetFeedDatabaseExperimentalUriPath')
+        $global:configRootKeys.Add('ProGetFeedDatabaseExperimentalUriQueryStringConfigRootKey', 'ProGetFeedDatabaseExperimentalUriQueryString')
+        $global:configRootKeys.Add('ProGetFeedDatabaseExperimentalUriConfigRootKey', 'ProGetFeedDatabaseExperimentalUri')
+        $global:configRootKeys.Add('ProGetFeedDatabaseExperimentalFeedNameConfigRootKey', 'ProGetFeedDatabaseExperimentalFeedName')
+        $global:configRootKeys.Add('ProGetFeedDatabaseExperimentalFeedTypeConfigRootKey', 'ProGetFeedDatabaseExperimentalFeedType')
+        $global:configRootKeys.Add('ProGetFeedDatabaseExperimentalApiKeyNameConfigRootKey', 'ProGetFeedDatabaseExperimentalApiKeyName')
+        $global:configRootKeys.Add('ProGetFeedDatabaseExperimentalFeedConfigRootKey', 'ProGetFeedDatabaseExperimental')
+
+        # ── database-development ──────────────────────────────────────────────
+        $global:configRootKeys.Add('ProGetFeedDatabaseDevelopmentUriSchemeConfigRootKey', 'ProGetFeedDatabaseDevelopmentUriScheme')
+        $global:configRootKeys.Add('ProGetFeedDatabaseDevelopmentUriHostConfigRootKey', 'ProGetFeedDatabaseDevelopmentUriHost')
+        $global:configRootKeys.Add('ProGetFeedDatabaseDevelopmentUriPortConfigRootKey', 'ProGetFeedDatabaseDevelopmentUriPort')
+        $global:configRootKeys.Add('ProGetFeedDatabaseDevelopmentUriPathConfigRootKey', 'ProGetFeedDatabaseDevelopmentUriPath')
+        $global:configRootKeys.Add('ProGetFeedDatabaseDevelopmentUriQueryStringConfigRootKey', 'ProGetFeedDatabaseDevelopmentUriQueryString')
+        $global:configRootKeys.Add('ProGetFeedDatabaseDevelopmentUriConfigRootKey', 'ProGetFeedDatabaseDevelopmentUri')
+        $global:configRootKeys.Add('ProGetFeedDatabaseDevelopmentFeedNameConfigRootKey', 'ProGetFeedDatabaseDevelopmentFeedName')
+        $global:configRootKeys.Add('ProGetFeedDatabaseDevelopmentFeedTypeConfigRootKey', 'ProGetFeedDatabaseDevelopmentFeedType')
+        $global:configRootKeys.Add('ProGetFeedDatabaseDevelopmentApiKeyNameConfigRootKey', 'ProGetFeedDatabaseDevelopmentApiKeyName')
+        $global:configRootKeys.Add('ProGetFeedDatabaseDevelopmentFeedConfigRootKey', 'ProGetFeedDatabaseDevelopment')
+
+        # ── database-integration ──────────────────────────────────────────────
+        $global:configRootKeys.Add('ProGetFeedDatabaseIntegrationUriSchemeConfigRootKey', 'ProGetFeedDatabaseIntegrationUriScheme')
+        $global:configRootKeys.Add('ProGetFeedDatabaseIntegrationUriHostConfigRootKey', 'ProGetFeedDatabaseIntegrationUriHost')
+        $global:configRootKeys.Add('ProGetFeedDatabaseIntegrationUriPortConfigRootKey', 'ProGetFeedDatabaseIntegrationUriPort')
+        $global:configRootKeys.Add('ProGetFeedDatabaseIntegrationUriPathConfigRootKey', 'ProGetFeedDatabaseIntegrationUriPath')
+        $global:configRootKeys.Add('ProGetFeedDatabaseIntegrationUriQueryStringConfigRootKey', 'ProGetFeedDatabaseIntegrationUriQueryString')
+        $global:configRootKeys.Add('ProGetFeedDatabaseIntegrationUriConfigRootKey', 'ProGetFeedDatabaseIntegrationUri')
+        $global:configRootKeys.Add('ProGetFeedDatabaseIntegrationFeedNameConfigRootKey', 'ProGetFeedDatabaseIntegrationFeedName')
+        $global:configRootKeys.Add('ProGetFeedDatabaseIntegrationFeedTypeConfigRootKey', 'ProGetFeedDatabaseIntegrationFeedType')
+        $global:configRootKeys.Add('ProGetFeedDatabaseIntegrationApiKeyNameConfigRootKey', 'ProGetFeedDatabaseIntegrationApiKeyName')
+        $global:configRootKeys.Add('ProGetFeedDatabaseIntegrationFeedConfigRootKey', 'ProGetFeedDatabaseIntegration')
+
+        # ── database-qa ───────────────────────────────────────────────────────
+        $global:configRootKeys.Add('ProGetFeedDatabaseQAUriSchemeConfigRootKey', 'ProGetFeedDatabaseQAUriScheme')
+        $global:configRootKeys.Add('ProGetFeedDatabaseQAUriHostConfigRootKey', 'ProGetFeedDatabaseQAUriHost')
+        $global:configRootKeys.Add('ProGetFeedDatabaseQAUriPortConfigRootKey', 'ProGetFeedDatabaseQAUriPort')
+        $global:configRootKeys.Add('ProGetFeedDatabaseQAUriPathConfigRootKey', 'ProGetFeedDatabaseQAUriPath')
+        $global:configRootKeys.Add('ProGetFeedDatabaseQAUriQueryStringConfigRootKey', 'ProGetFeedDatabaseQAUriQueryString')
+        $global:configRootKeys.Add('ProGetFeedDatabaseQAUriConfigRootKey', 'ProGetFeedDatabaseQAUri')
+        $global:configRootKeys.Add('ProGetFeedDatabaseQAFeedNameConfigRootKey', 'ProGetFeedDatabaseQAFeedName')
+        $global:configRootKeys.Add('ProGetFeedDatabaseQAFeedTypeConfigRootKey', 'ProGetFeedDatabaseQAFeedType')
+        $global:configRootKeys.Add('ProGetFeedDatabaseQAApiKeyNameConfigRootKey', 'ProGetFeedDatabaseQAApiKeyName')
+        $global:configRootKeys.Add('ProGetFeedDatabaseQAFeedConfigRootKey', 'ProGetFeedDatabaseQA')
+
+        # ── database-stable ───────────────────────────────────────────────────
+        $global:configRootKeys.Add('ProGetFeedDatabaseStableUriSchemeConfigRootKey', 'ProGetFeedDatabaseStableUriScheme')
+        $global:configRootKeys.Add('ProGetFeedDatabaseStableUriHostConfigRootKey', 'ProGetFeedDatabaseStableUriHost')
+        $global:configRootKeys.Add('ProGetFeedDatabaseStableUriPortConfigRootKey', 'ProGetFeedDatabaseStableUriPort')
+        $global:configRootKeys.Add('ProGetFeedDatabaseStableUriPathConfigRootKey', 'ProGetFeedDatabaseStableUriPath')
+        $global:configRootKeys.Add('ProGetFeedDatabaseStableUriQueryStringConfigRootKey', 'ProGetFeedDatabaseStableUriQueryString')
+        $global:configRootKeys.Add('ProGetFeedDatabaseStableUriConfigRootKey', 'ProGetFeedDatabaseStableUri')
+        $global:configRootKeys.Add('ProGetFeedDatabaseStableFeedNameConfigRootKey', 'ProGetFeedDatabaseStableFeedName')
+        $global:configRootKeys.Add('ProGetFeedDatabaseStableFeedTypeConfigRootKey', 'ProGetFeedDatabaseStableFeedType')
+        $global:configRootKeys.Add('ProGetFeedDatabaseStableApiKeyNameConfigRootKey', 'ProGetFeedDatabaseStableApiKeyName')
+        $global:configRootKeys.Add('ProGetFeedDatabaseStableFeedConfigRootKey', 'ProGetFeedDatabaseStable')
+
+        # ══════════════════════════════════════════════════════════════════════
         #  PowerShellGet feeds — five-tier canonical set
         #  Feed name values stored in $global:settings are lowercase:
         #    powershellget-experimental, powershellget-development,

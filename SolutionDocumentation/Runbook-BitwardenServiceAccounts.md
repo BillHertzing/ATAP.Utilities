@@ -53,7 +53,7 @@ Example value shape:
 
 ```json
 {
-  "username": "SvcBuildmaster",
+  "username": "SvcBuildMaster",
   "password": "<redacted>",
   "token": "<redacted>",
   "connectionString": "<redacted>"

@@ -12,9 +12,9 @@
 > is specified in [SecretName-HostSuffix-Convention.md](SecretName-HostSuffix-Convention.md).
 >
 > Service-account bootstrap steps that used to be scattered here — the git
-> `safe.directory` entry that lets `SvcBuildmaster` operate on Dropbox-owned
+> `safe.directory` entry that lets `SvcBuildMaster` operate on Dropbox-owned
 > worktrees, and the machine-wide NBGV install required for
-> `Get-BuildContext` under `SvcBuildmaster` — are canonical in
+> `Get-BuildContext` under `SvcBuildMaster` — are canonical in
 > [NewComputerSetup.md § 9.4](NewComputerSetup.md) and
 > [NewComputerSetup.md § 4.4](NewComputerSetup.md). See
 > [BuildMaster-Install-Runbook.md § 4.3](BuildMaster-Install-Runbook.md) for

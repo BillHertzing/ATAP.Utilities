@@ -87,7 +87,7 @@ _Teach / Tell how to create software._
   The second half (the bulk of the 700+-line document) is an end-to-end
   **build-server provisioning runbook**: SQL Server Express install with a
   PRODUCTION named instance on port 50001; creation of `SvcSQLServer`,
-  `SvcProGet`, and `SvcBuildmaster` service accounts via
+  `SvcProGet`, and `SvcBuildMaster` service accounts via
   `New-LocalServiceAccount`; Inedo Hub installation; eight-step ProGet install
   including `Initialize-ProGetSqlServiceLogin`, `Initialize-SqlServiceLogin`,
   ProGet.config symlinking, EncryptionKey retrieval from Bitwarden, API-key
@@ -223,7 +223,7 @@ _Teach / Tell how to create software (with two "describe" entries noted)._
 - [Service Accounts and Bitwarden](ServiceAccountsAndBitwarden.md) —
   Sprint-0007 design and implementation guide for service accounts used by
   BuildMaster, ProGet, and other automation processes to access Bitwarden
-  secrets. Covers `SvcBuildmaster` and `SvcProGet` service account setup,
+  secrets. Covers `SvcBuildMaster` and `SvcProGet` service account setup,
   Bitwarden API key provisioning, and the `Get-SecretATAP` integration pattern
   for non-interactive service contexts.
 - [Bitwarden Secrets Manager Access Token Runbook](Runbook-BitwardenServiceAccounts.md) —

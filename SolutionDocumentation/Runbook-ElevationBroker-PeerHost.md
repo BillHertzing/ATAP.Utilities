@@ -23,7 +23,7 @@ absent.
 ## Prerequisites on the peer host
 
 - `SvcAnsibleAdmin` local account exists.
-- Bitwarden secret `SvcAnsibleAdmin.<hostname>` resolves through `Get-SecretATAP`.
+- Bitwarden secret `SvcAnsibleAdmin.Login.<hostname>` resolves through `Get-SecretATAP`.
 - ProGet feeds reachable, including `powershellget-stable`.
 - A synced clone of `ATAP.Utilities`.
 - PowerShell 7 with profiles loading (`$global:settings` populated). Do not use

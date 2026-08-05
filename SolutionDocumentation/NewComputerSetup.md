@@ -667,7 +667,7 @@ Set-UserScopeProfile -AccountName 'whertzing' -AccountClass Developer `
 
 # Run this only after the local service account exists. Use an elevated shell
 # because a different user's profile directory is being written.
-Set-UserScopeProfile -AccountName 'SvcBuildmaster' -AccountClass ServiceAccount `
+Set-UserScopeProfile -AccountName 'SvcBuildMaster' -AccountClass ServiceAccount `
   -ATAPIACRoot $iacRoot -ATAPUtilitiesRoot $atapRoot -Confirm:$false
 ```
 
@@ -678,7 +678,7 @@ For the complete service-account and BWS-machine-token procedure, see
 
 Install the PowerShell Gallery dependencies before later steps import
 `ATAP.Utilities.BuildTooling.PowerShell`. Use `-Scope AllUsers` (not
-`CurrentUser`) so the BuildMaster service account (`SvcBuildmaster` on
+`CurrentUser`) so the BuildMaster service account (`SvcBuildMaster` on
 `utat022`) and any other local service identity can resolve these modules.
 A `CurrentUser` install only writes under the interactive developer profile
 and is invisible to service accounts — BuildMaster packing will fail
@@ -714,7 +714,7 @@ Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 
 ### 4.4 Install NBGV (Nerdbank.GitVersioning) machine-wide
 
-BuildMaster runs as a service account (`SvcBuildmaster` on `utat022`) and
+BuildMaster runs as a service account (`SvcBuildMaster` on `utat022`) and
 shells out to the `nbgv` CLI through `Get-BuildContext` during the
 Experimental stage. If `nbgv` is installed only as a per-user dotnet tool
 (for example, at `C:\Users\<dev>\.dotnet\tools\nbgv.exe`), the service
@@ -743,7 +743,7 @@ dotnet tool install --tool-path $machineToolPath nbgv
 `AllUsersAllHostsV7CoreProfile.ps1` (installed at
 `$PSHome\profile.ps1` in step 4.1) prepends `C:\ProgramData\dotnet\tools`
 to the process-scope `PATH` for every PowerShell 7 session — including the
-non-interactive session BuildMaster spawns under `SvcBuildmaster`. After
+non-interactive session BuildMaster spawns under `SvcBuildMaster`. After
 opening a new `pwsh` window, both of these must succeed:
 
 ```powershell
@@ -782,7 +782,7 @@ $PROFILE | Format-List *
 ### 4.6 Install the Bitwarden Secrets Manager CLI (`bws`) machine-wide
 
 `Get-SecretATAP` with the `BitwardenSecretsManager` provider shells out to the `bws`
-CLI to read runtime secrets (Step 9.4.10). The Inedo products run as `SvcBuildmaster`
+CLI to read runtime secrets (Step 9.4.10). The Inedo products run as `SvcBuildMaster`
 and `SvcProGet`, and those service / scheduled-task processes start with `-NoProfile`,
 so `bws` must resolve from the **machine** `PATH` — not from a per-user `winget` install
 under one developer's AppData, and not only from the ATAP profile's injected PATH (which
@@ -790,7 +790,7 @@ under one developer's AppData, and not only from the ATAP profile's injected PAT
 
 This is the same machine-wide-resolution requirement Step 4.4 documents for `nbgv`.
 Install `bws.exe` into a shared `Program Files` location and add that folder to the
-system `PATH` so every local account — `SvcBuildmaster`, `SvcProGet`, and every
+system `PATH` so every local account — `SvcBuildMaster`, `SvcProGet`, and every
 interactive developer — resolves the same binary.
 
 The `bws` CLI ships from the `bitwarden/sdk-sm` repository (it is **not** the same
@@ -870,7 +870,7 @@ PowerShell profile.
 
 A **Machine** `PATH` entry is account-independent, so the `-NoProfile` check above
 already proves the binary is resolvable for every account that starts after the change —
-including `SvcBuildmaster` and `SvcProGet` once their services are restarted. The
+including `SvcBuildMaster` and `SvcProGet` once their services are restarted. The
 following is an **optional** belt-and-suspenders confirmation that opens a one-shot
 `-NoProfile` shell _as_ the service account and prints the resolved path.
 
@@ -885,7 +885,7 @@ couple this check to an unrelated dependency (a live `BW_SESSION` and `bw`'s net
 state) that can fail for reasons having nothing to do with `bws`.
 
 ```powershell
-$svc = 'SvcBuildmaster'   # repeat with 'SvcProGet'
+$svc = 'SvcBuildMaster'   # repeat with 'SvcProGet'
 $cred = Get-Credential -UserName "$env:COMPUTERNAME\$svc" `
   -Message "Windows password for $svc (PATH check only)"
 
@@ -941,9 +941,9 @@ third-party service. Each item must contain a username and password field.
 
 | Bitwarden item name                          | Local Windows account | Used by                                         |
 | -------------------------------------------- | --------------------- | ----------------------------------------------- |
-| `<COMPUTERNAME>-SQLServerSrvAcct-Production` | `SQLServerSrvAcct`    | SQL Server Database Engine and SQL Server Agent |
-| `<COMPUTERNAME>-SvcProGet-Production`        | `SvcProGet`           | ProGet service                                  |
-| `<COMPUTERNAME>-SvcBuildmaster-Production`   | `SvcBuildmaster`      | BuildMaster service                             |
+| `SvcSQLServer.Login.<COMPUTERNAME>`   | `SvcSQLServer`   | SQL Server Database Engine and SQL Server Agent |
+| `SvcProGet.Login.<COMPUTERNAME>`      | `SvcProGet`      | ProGet service                                  |
+| `SvcBuildMaster.Login.<COMPUTERNAME>` | `SvcBuildMaster` | BuildMaster service                             |
 
 If this workstation must be brought online **before** an Ansible controller exists,
 use the manual bootstrap procedure in
@@ -958,20 +958,20 @@ Import-Module ATAP.Utilities.PowerShell
 
 $serviceAccounts = @(
   @{
-    SecretName  = "SQLServerSrvAcct.$($env:COMPUTERNAME.ToLowerInvariant())"
-    AccountName = 'SQLServerSrvAcct'
+    SecretName  = "SvcSQLServer.Login.$($env:COMPUTERNAME.ToLowerInvariant())"
+    AccountName = 'SvcSQLServer'
     FullName    = 'SQL Server Service Identity'
     Description = 'Local service account for SQL Server Database Engine and Agent'
   },
   @{
-    SecretName  = "SvcProGet.$($env:COMPUTERNAME.ToLowerInvariant())"
+    SecretName  = "SvcProGet.Login.$($env:COMPUTERNAME.ToLowerInvariant())"
     AccountName = 'SvcProGet'
     FullName    = 'ProGet Service Identity'
     Description = 'Local service account for the Inedo ProGet service'
   },
   @{
-    SecretName  = "SvcBuildmaster.$($env:COMPUTERNAME.ToLowerInvariant())"
-    AccountName = 'SvcBuildmaster'
+    SecretName  = "SvcBuildMaster.Login.$($env:COMPUTERNAME.ToLowerInvariant())"
+    AccountName = 'SvcBuildMaster'
     FullName    = 'BuildMaster Service Identity'
     Description = 'Local service account for Inedo BuildMaster service'
   }
@@ -1064,8 +1064,8 @@ foreach ($role in @('PRODUCTION', 'QA', 'INTEGRATION')) {
 
 When the SQL installer prompts for service accounts:
 
-1. Configure the Database Engine to run as `SQLServerSrvAcct`.
-2. Configure SQL Server Agent to run as `SQLServerSrvAcct`.
+1. Configure the Database Engine to run as `SvcSQLServer`.
+2. Configure SQL Server Agent to run as `SvcSQLServer`.
 3. Set both services to automatic startup.
 4. Keep Windows authentication enabled.
 
@@ -1375,7 +1375,7 @@ Initialize-SqlServiceLogin `
 Initialize-SqlServiceLogin `
   -SqlInstance 'localhost\Production' `
   -DatabaseName 'BuildMaster' `
-  -ServiceAccount "$env:COMPUTERNAME\SvcBuildmaster" `
+  -ServiceAccount "$env:COMPUTERNAME\SvcBuildMaster" `
   -Encrypt Optional `
   -TrustServerCertificate
 ```
@@ -1465,8 +1465,8 @@ restore an application or Inedo database to establish parity.
 ```powershell
 Import-Module ATAP.Utilities.PowerShell
 
-$proGetPassword = Get-SecretATAP -SecretName "$env:COMPUTERNAME-SvcProGet-Production" -SecretField 'password'
-$bmPassword = Get-SecretATAP -SecretName "$env:COMPUTERNAME-SvcBuildmaster-Production" -SecretField 'password'
+$proGetPassword = Get-SecretATAP -SecretName "SvcProGet.Login.$($env:COMPUTERNAME.ToLowerInvariant())" -SecretField 'password'
+$bmPassword = Get-SecretATAP -SecretName "SvcBuildMaster.Login.$($env:COMPUTERNAME.ToLowerInvariant())" -SecretField 'password'
 
 $proGetCredential = New-Object System.Management.Automation.PSCredential(
   "$env:COMPUTERNAME\SvcProGet",
@@ -1474,7 +1474,7 @@ $proGetCredential = New-Object System.Management.Automation.PSCredential(
 )
 
 $buildMasterCredential = New-Object System.Management.Automation.PSCredential(
-  "$env:COMPUTERNAME\SvcBuildmaster",
+  "$env:COMPUTERNAME\SvcBuildMaster",
   (ConvertTo-SecureString $bmPassword -AsPlainText -Force)
 )
 
@@ -1611,7 +1611,7 @@ between accounts or hosts.
 ### 9.5 Bootstrap exact Git trust for the BuildMaster service account
 
 When a BuildMaster build agent runs as the BuildMaster service account
-(`SvcBuildmaster` on `utat022`) against a worktree under
+(`SvcBuildMaster` on `utat022`) against a worktree under
 `C:\Dropbox\whertzing\GitHub\`, git refuses to operate on the directory
 because it was created by a different user (the interactive developer
 account that owns the Dropbox sync). Symptom:
@@ -1627,13 +1627,13 @@ surfaces first during `dotnet restore` because of the
 `Directory.Build.props:36`, which triggers an NBGV evaluation that needs
 git.
 
-Run as `SvcBuildmaster` itself, not as the interactive developer. Add only the resolved
+Run as `SvcBuildMaster` itself, not as the interactive developer. Add only the resolved
 repository and worktree paths that this identity is authorized to build. Task 13.5 owns the
 idempotent ownership/trust automation; until that automation is deployed, review each exact
 path before adding it.
 
 ```powershell
-# Elevated pwsh running as SvcBuildmaster; repeat for each reviewed exact path.
+# Elevated pwsh running as SvcBuildMaster; repeat for each reviewed exact path.
 $authorizedWorktree = 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities'
 git config --global --add safe.directory $authorizedWorktree
 ```
@@ -1646,7 +1646,7 @@ git config --global --get-all safe.directory
 
 Critical notes:
 
-1. **Run as `SvcBuildmaster`, not as your interactive login.** This entry
+1. **Run as `SvcBuildMaster`, not as your interactive login.** This entry
    lives in the running user's `~/.gitconfig`. Running it from your
    developer account writes to the wrong user's gitconfig and the dubious
    ownership error persists.
@@ -1655,12 +1655,12 @@ Critical notes:
 3. **Wildcards are not supported or acceptable here.** Add each authorized repository or
    worktree as an exact canonical path, and remove obsolete entries during return cleanup.
 
-A common way to obtain a `SvcBuildmaster` shell from an admin login:
+A common way to obtain a `SvcBuildMaster` shell from an admin login:
 
 ```powershell
-$bmPassword = Get-SecretATAP -SecretName "$env:COMPUTERNAME-SvcBuildmaster-Production" -SecretField 'password'
+$bmPassword = Get-SecretATAP -SecretName "SvcBuildMaster.Login.$($env:COMPUTERNAME.ToLowerInvariant())" -SecretField 'password'
 $bmCred = New-Object System.Management.Automation.PSCredential(
-  "$env:COMPUTERNAME\SvcBuildmaster",
+  "$env:COMPUTERNAME\SvcBuildMaster",
   (ConvertTo-SecureString $bmPassword -AsPlainText -Force)
 )
 Start-Process pwsh -Credential $bmCred -ArgumentList '-NoExit', '-Command',
@@ -1668,7 +1668,7 @@ Start-Process pwsh -Credential $bmCred -ArgumentList '-NoExit', '-Command',
 ```
 
 Acceptance: the exact authorized paths appear in `safe.directory`, no parent-wide entry is
-present, and a fresh BuildMaster build under `SvcBuildmaster` completes `dotnet restore` and
+present, and a fresh BuildMaster build under `SvcBuildMaster` completes `dotnet restore` and
 `Get-BuildContext` without a `dubious ownership` error.
 
 ### 9.6 Keep the config files under source control

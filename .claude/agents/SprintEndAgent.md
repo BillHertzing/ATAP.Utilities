@@ -33,7 +33,22 @@ contract.
 - Every sprint PR body contains `Closes #<originating sprint issue>`, and the issue
   is verified closed after merge.
 - All intended close-time file changes are committed on sprint branches. Stable
-  worktrees remain read-only before PR merge.
+  worktrees remain read-only before PR merge. This is enforced, not merely
+  stated: `Invoke-SprintEndLifecycle` gates the whole close plan with
+  `Test-SprintEndWriteTarget` before any phase runs, and a stable path in
+  `WorktreePaths` fails the close with `WriteTargetBoundary`. Do not work around
+  the gate; a blocked path means the close plan is wrong.
+- A defect discovered during the close is routed with `New-SprintEndDefectRoute`,
+  never repaired in a stable worktree. It either belongs to an active sprint
+  worktree (fix it on the sprint branch before the PR merges) or becomes a
+  durable next-sprint input under the `_Planning` SPRINT worktree at
+  `InformationForTheFuture\Sprint<NNNN>\SprintEnd-Defects\`.
+- Approval concerns are resolved once, by `Get-SprintEndApprovalPlan`, and never
+  re-asked by a downstream layer. The operator authorizes the merge at the
+  Phase 3 gate; the live close then carries `-MergeAuthorizationConfirmed`. A
+  delegated PR agent relays `-DelegatedAuthorizationSource` or fails closed --
+  it never raises its own merge prompt. Lock-file runner availability is never
+  an operator question.
 - Before SprintEnd imports a module changed during the sprint, that exact version
   must be present in the ProGet stable feed and installed AllUsers.
 - AIAdapter drift is audited through `Set-SprintBoundaryContext` /
@@ -162,9 +177,32 @@ $dryRun = Invoke-SprintEndLifecycle `
 The dry-run must be non-mutating and non-interactive. Present its compact phase
 summary and ask for confirmation before the live close.
 
+For a fuller rehearsal — dry run, stable boundary, crash/resume, and the close
+safety invariants in one pass, with before/after stable-worktree snapshots and
+evidence under `_generated/` — run:
+
+```powershell
+$rehearsal = Invoke-SprintEndRehearsal `
+  -GitRoot $gitRoot `
+  -PlanningRoot $planningWorktree `
+  -SharedVSCodeWorktreePath $sharedVSCodeWorktree `
+  -WorktreePaths $worktreePaths `
+  -BuiltModule $builtModules `
+  -ThrowOnFailure
+```
+
+It never mutates: every lifecycle pass inside it runs with `-WhatIf`.
+
 ## Phase 4 — Live pre-merge close
 
-After confirmation:
+After confirmation, carry the recorded authorization into the live close so the
+merge question is not asked a second time:
+
+```powershell
+Invoke-SprintEndLifecycle @liveParameters -MergeAuthorizationConfirmed
+```
+
+Then:
 
 1. Run `Set-SprintBoundaryContext -Boundary End` through the lifecycle
    orchestrator. It delegates to `Invoke-SprintAIAdapterLifecycle -Boundary End`

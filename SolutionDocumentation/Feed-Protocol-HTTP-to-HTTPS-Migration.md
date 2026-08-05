@@ -383,34 +383,54 @@ inside the artifact and are verified after download, so TLS interception cannot 
 undetected. That property is the reason signature verification, not transport trust, is the
 authority for artifact integrity.
 
+## Completed since the initial migration
+
+1. **Source-code fallback defaults — done** (commit `8bd01fd8f`). All 94 stale
+   `http://localhost:{50000,50017}` literals across 46 files now name
+   `https://utat022`, including the three *live* hardcoded `-ProGetUrl` arguments in the
+   CSharp, Database, and ReleaseBundle stage runners and the MSBuild
+   `ProGetBaseUrl` / `ProGetExperimentalFeedUrl` defaults.
+
+   Two shapes a URL search does not find were fixed separately: `Import-ATAPModuleFromProGet`
+   and the holding-pen `Install-ATAPModulesFromProGet` assembled their URIs from separate
+   `scheme` / `host` defaults rather than a literal.
+
+   Three `http://` usages are **deliberate** and must stay:
+   - the `Install-ATAPModuleAllUsers` negative test fixture, where a cleartext URL is the
+     input proving the guard rejects it;
+   - the `utat01` → `localhost` loopback alias in `Get-ATAPModuleDownloadCandidateUris`
+     and the elevation-broker installer — an intentional peer-host fallback;
+   - `$DatabaseHost = 'localhost'` defaults, which are SQL Server hosts, not ProGet.
+
+   Verified by running the affected modules' Pester before and after: 956 passed / 71
+   failed both times, with an identical set of failing test names.
+
+2. **`NewComputerSetup.md` steps 9.8 and 9.9** — updated by this migration; re-verify on
+   the next clean workstation build.
+
 ## Remaining work
 
-The client registrations are migrated and verified. These items are **not** done:
+1. **`database-*` feeds in host settings — staged, not yet live.** The five feeds are now
+   declared in `ATAP.IAC`
+   (`Windows/HostSettings.IAC.Fragments/HostSettings.IAC.Fragment.PackageRepositories.ps1`),
+   and the 50 supporting `ProGetFeedDatabase*` config-root keys are added to
+   `ATAP.Utilities.ConfigRootKeys.PowerShell` (source bumped to 0.1.11).
 
-1. **Source-code fallback defaults.** Roughly 52 non-test occurrences across the
-   BuildTooling modules still hardcode `http://localhost:50017` (BuildMaster) or
-   `http://localhost:50000` (ProGet) as last-resort defaults, plus 37 in test fixtures.
-   They are reached only when settings and environment lookups both miss, but at that point
-   they now fail rather than degrade. Highest-value targets, because they are live rather
-   than fallback:
-   - `src/ATAP.Utilities.BuildTooling.CSharp/ATAP.Utilities.BuildTooling.targets`
-     (`ProGetBaseUrl`, `ProGetExperimentalFeedUrl` MSBuild defaults)
-   - `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/Invoke-CSharpPackageBuildMasterStage.ps1`
-   - `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/Invoke-DatabasePackageBuildMasterStage.ps1`
-   - `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/Promote-ReleaseBundleBuildMasterPackage.ps1`
+   They stay inert until that module is **released and installed**. The IAC block is
+   guarded: on a machine whose installed ConfigRootKeys predates the keys it logs a skip
+   message and leaves `ProGetFeedCollection` at 15 feeds, rather than throwing
+   `Value cannot be null. (Parameter 'key')` and taking all host settings down. Once
+   ConfigRootKeys 0.1.11+ is installed the family activates with no further edit and the
+   collection reports 20 feeds.
 
-   These three plan runners pass `-ProGetUrl http://localhost:50000` as a literal argument,
-   not a fallback. The PowerShell-module pipeline plans are clean.
+   > Beware the orphan. `HostSettings.IAC.Fragment.PackageRepositories.ProGetFeeds.ps1`
+   > looks like the feed definition file but is marked *OBSOLETE — UNREACHABLE* and is
+   > dot-sourced by nothing. Editing it has no effect. The live file is
+   > `HostSettings.IAC.Fragment.PackageRepositories.ps1`.
 
-   Touching about 70 files across several modules meets the R-36 agent-swarm threshold and
-   requires re-releasing each affected module, so it is deliberately scoped as separate work.
-
-2. **`database-*` feeds absent from host settings.** Add `ProGetFeedDatabase*` entries in
-   `ATAP.IAC` so `ProGetFeedCollection` declares all 20 feeds and registration can be
-   driven from settings rather than a literal list.
-
-3. **`NewComputerSetup.md` steps 9.8 and 9.9** documented `http://localhost:50000`
-   registration. Updated by this migration; re-verify on the next clean workstation build.
+2. **Release the affected BuildTooling modules.** The fallback fix and the config-root keys
+   are committed but not shipped, so every consumer still runs the old deployed code.
+   Deploy-state, not build-state, is the definition of done here.
 
 ## Related documentation
 

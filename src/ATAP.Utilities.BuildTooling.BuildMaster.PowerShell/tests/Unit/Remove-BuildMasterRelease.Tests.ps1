@@ -293,7 +293,7 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
     }
 
     It 'Falls back to the local BuildMaster base URL when none is configured' {
-      # All BuildMaster cmdlets share a documented http://localhost:50017
+      # All BuildMaster cmdlets share a documented https://utat022:50017
       # fallback when no base URL is supplied via parameter, settings, or env
       # var (mirrors Start-BuildMasterPipeline / Start-BuildMasterDeployment).
       $global:settings = @{
@@ -319,7 +319,7 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
       { Remove-BuildMasterRelease -Application 'A' -ReleaseNumber '1.0.0' -Confirm:$false } |
         Should -Not -Throw
       $script:capturedUris | Should -Not -BeNullOrEmpty
-      $script:capturedUris[0] | Should -Match '^http://localhost:50017/'
+      $script:capturedUris[0] | Should -Match '^https://utat022:50017/'
     }
   }
 

@@ -28,13 +28,13 @@ Describe 'Register-ProGetFeedSet' -Tag 'Unit' {
         'pwshStable' = @{
           FeedName   = 'powershellget-stable'
           FeedType   = 'powershellget'
-          Uri         = 'http://localhost:50000/nuget/powershellget-stable/'
-          NuGetV3Uri = 'http://localhost:50000/nuget/powershellget-stable/v2'
+          Uri         = 'https://utat022:50000/nuget/powershellget-stable/'
+          NuGetV3Uri = 'https://utat022:50000/nuget/powershellget-stable/v2'
         }
         'nugetStable' = @{
           FeedName   = 'nuget-stable'
           FeedType   = 'nuget'
-          NuGetV3Uri = 'http://localhost:50000/nuget/nuget-stable/v3/index.json'
+          NuGetV3Uri = 'https://utat022:50000/nuget/nuget-stable/v3/index.json'
         }
       }
     }
@@ -43,7 +43,7 @@ Describe 'Register-ProGetFeedSet' -Tag 'Unit' {
     # Live registry starts with one obsolete legacy feed and no canonical feeds.
     Mock Get-PSResourceRepository {
       @(
-        [PSCustomObject]@{ Name = 'IntPreNugProdPushFeed'; Uri = 'http://localhost:50000/nuget/IntPreNugProdPushFeed/v3/index.json' }
+        [PSCustomObject]@{ Name = 'IntPreNugProdPushFeed'; Uri = 'https://utat022:50000/nuget/IntPreNugProdPushFeed/v3/index.json' }
         [PSCustomObject]@{ Name = 'PSGallery'; Uri = 'https://www.powershellgallery.com/api/v2' }
       )
     }
@@ -80,15 +80,15 @@ Describe 'Register-ProGetFeedSet' -Tag 'Unit' {
     Register-ProGetFeedSet -Confirm:$false | Out-Null
 
     Assert-MockCalled Register-PSResourceRepository -Times 1 -Exactly -Scope It -ParameterFilter {
-      $Name -eq 'powershellget-stable' -and $Uri -eq 'http://localhost:50000/nuget/powershellget-stable/v2'
+      $Name -eq 'powershellget-stable' -and $Uri -eq 'https://utat022:50000/nuget/powershellget-stable/v2'
     }
     Assert-MockCalled Register-PSResourceRepository -Times 0 -Exactly -Scope It -ParameterFilter {
       $Name -eq 'nuget-stable'
     }
     Assert-MockCalled Register-PSRepository -Times 1 -Exactly -Scope It -ParameterFilter {
       $Name -eq 'powershellget-stable' -and
-      $SourceLocation -eq 'http://localhost:50000/nuget/powershellget-stable/' -and
-      $PublishLocation -eq 'http://localhost:50000/nuget/powershellget-stable/' -and
+      $SourceLocation -eq 'https://utat022:50000/nuget/powershellget-stable/' -and
+      $PublishLocation -eq 'https://utat022:50000/nuget/powershellget-stable/' -and
       $InstallationPolicy -eq 'Trusted'
     }
   }
@@ -101,7 +101,7 @@ Describe 'Register-ProGetFeedSet' -Tag 'Unit' {
 
   It 'is idempotent — an already-registered canonical feed is not re-registered' {
     Mock Get-PSResourceRepository {
-      @( [PSCustomObject]@{ Name = 'powershellget-stable'; Uri = 'http://localhost:50000/nuget/powershellget-stable/v2'; Trusted = $true } )
+      @( [PSCustomObject]@{ Name = 'powershellget-stable'; Uri = 'https://utat022:50000/nuget/powershellget-stable/v2'; Trusted = $true } )
     }
 
     $result = Register-ProGetFeedSet -Confirm:$false
@@ -121,7 +121,7 @@ Describe 'Register-ProGetFeedSet' -Tag 'Unit' {
     Assert-MockCalled Register-PSResourceRepository -Times 0 -Exactly -Scope It
     Assert-MockCalled Set-PSResourceRepository -Times 1 -Exactly -Scope It -ParameterFilter {
       $Name -eq 'powershellget-stable' -and
-      $Uri -eq 'http://localhost:50000/nuget/powershellget-stable/v2' -and
+      $Uri -eq 'https://utat022:50000/nuget/powershellget-stable/v2' -and
       $Trusted
     }
     ($result | Where-Object { $_.RepositoryKind -eq 'PSResourceGet' }).RegistrationResult | Should -Be 'Updated'
@@ -142,8 +142,8 @@ Describe 'Register-ProGetFeedSet' -Tag 'Unit' {
     Assert-MockCalled Register-PSRepository -Times 0 -Exactly -Scope It
     Assert-MockCalled Set-PSRepository -Times 1 -Exactly -Scope It -ParameterFilter {
       $Name -eq 'powershellget-stable' -and
-      $SourceLocation -eq 'http://localhost:50000/nuget/powershellget-stable/' -and
-      $PublishLocation -eq 'http://localhost:50000/nuget/powershellget-stable/' -and
+      $SourceLocation -eq 'https://utat022:50000/nuget/powershellget-stable/' -and
+      $PublishLocation -eq 'https://utat022:50000/nuget/powershellget-stable/' -and
       $InstallationPolicy -eq 'Trusted'
     }
     ($result | Where-Object { $_.RepositoryKind -eq 'PowerShellGet' }).RegistrationResult | Should -Be 'Updated'

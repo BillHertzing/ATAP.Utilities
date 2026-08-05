@@ -81,10 +81,10 @@ function New-SprintStage2 {
     that must exercise the rest of Stage 2 without changing host configuration.
   .PARAMETER ProGetBaseUrl
     Base URL for the ProGet server.
-    Defaults to 'http://localhost:50000'.
+    Defaults to 'https://utat022:50000'.
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server.
-    Defaults to 'http://localhost:50017'.
+    Defaults to 'https://utat022:50017'.
   .PARAMETER DryRun
     Preview all sprint-start downstream actions without creating GitHub issues,
     branches, worktrees, junctions, SharedVSCode context, SQL Server database
@@ -180,8 +180,8 @@ function New-SprintStage2 {
     $ownerDefault = if (Get-Command -Name 'Get-GitHubOwnerFromWorkspace' -ErrorAction SilentlyContinue) {
       Get-GitHubOwnerFromWorkspace -GitRoot $gitRootForOwner -Fallback $env:USERNAME
     } else { $env:USERNAME }
-    $proGetBaseUrlDefault = 'http://localhost:50000'
-    $buildMasterBaseUrlDefault = 'http://localhost:50017'
+    $proGetBaseUrlDefault = 'https://utat022:50000'
+    $buildMasterBaseUrlDefault = 'https://utat022:50017'
 
     if ($getPValAvailable) {
       foreach ($spec in @(

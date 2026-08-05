@@ -17,7 +17,7 @@
           settings collection does not yet know about ReleaseBundle feeds
           (Stream F is still landing), it falls back first to a tier-named
           environment variable and finally to a local default
-          (http://localhost:50000/upack/<feed>/).
+          (https://utat022:50000/upack/<feed>/).
         - Resolves the API key named by -ProGetApiKeySecretName through
           Get-SecretATAP immediately before the authenticated request.
         - Invokes `Invoke-RestMethod -Method Put -Uri <feedUri>/<file>
@@ -146,7 +146,7 @@ function Publish-UniversalPackageToProGet {
         # 3. Resolve feed URI with a three-step fallback chain:
         #    (a) Resolve-ProGetFeedFromSettings -FeedType 'Universal' -Tier <Tier>
         #    (b) Env var PROGET_RELEASEBUNDLE_<TIER>_URI
-        #    (c) Local default http://localhost:50000/upack/<feed>/
+        #    (c) Local default https://utat022:50000/upack/<feed>/
         $feedUri = $null
         $feedUriSource = $null
         if (-not [string]::IsNullOrWhiteSpace($tier)) {
@@ -172,8 +172,8 @@ function Publish-UniversalPackageToProGet {
             }
         }
         if ([string]::IsNullOrWhiteSpace($feedUri)) {
-            $feedUri = "http://localhost:50000/upack/$Feed/"
-            $feedUriSource = 'local default (http://localhost:50000/upack/<feed>/)'
+            $feedUri = "https://utat022:50000/upack/$Feed/"
+            $feedUriSource = 'local default (https://utat022:50000/upack/<feed>/)'
         }
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved feed URI '$feedUri' from $feedUriSource"
 

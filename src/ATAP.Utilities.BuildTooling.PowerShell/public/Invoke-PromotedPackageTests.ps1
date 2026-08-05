@@ -70,7 +70,7 @@
     pass the tier-appropriate filter here.
 
 .PARAMETER ProGetUrl
-    Optional ProGet base URL (e.g. 'http://localhost:50000'). When
+    Optional ProGet base URL (e.g. 'https://utat022:50000'). When
     supplied, '<ProGetUrl>/nuget/<Feed>/v3/index.json' is added as an
     explicit restore `--source`.
 

@@ -42,8 +42,8 @@ Describe 'Build-AIInstructionsPerRepository [public]' -Tag 'Unit' {
       )
       sprintEphemeral = @{ sprintNumber = '0010' }
       sprintInfrastructure = @{
-        buildMasterBaseUrl = 'http://localhost:50017'
-        proGetBaseUrl      = 'http://localhost:50000'
+        buildMasterBaseUrl = 'https://utat022:50017'
+        proGetBaseUrl      = 'https://utat022:50000'
       }
     } |
       ConvertTo-Json -Depth 10 |

@@ -30,7 +30,7 @@
 #   $ReleaseTag                            - e.g. "v1.4.0" for release cuts
 #   $Branch                                - branch fallback when ReleaseTag is empty
 #   $SourcePath                            - absolute path to the product worktree
-#   $ProGetUrl                             - e.g. "http://localhost:50000"
+#   $ProGetUrl                             - e.g. "https://utat022:50000"
 #   ProGet API key    - Arguments carry only ProGet.BuildMaster.API.Key as a
 #                       SecretName. Authenticated leaves resolve it through
 #                       Get-SecretATAP; no environment fallback is permitted.

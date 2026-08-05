@@ -46,7 +46,7 @@ function Set-BuildMasterStableVariables {
     Defaults to @('AceCommander', 'ATAP.Utilities').
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server.
-    Defaults to 'http://localhost:50017'.
+    Defaults to 'https://utat022:50017'.
   .OUTPUTS
     PSCustomObject with variablesSet (array of 'appName/varName' strings) and
     errors (array of error message strings) fields.

@@ -336,7 +336,7 @@ Describe 'Test-BrokerRequestParameters' {
           ModuleName = 'ATAP.Utilities.BuildTooling.PowerShell'
           RequiredVersion = '0.1.71'
           Repository = 'powershellget-stable'
-          FeedUrl = 'http://localhost:50000/nuget/powershellget-stable'
+          FeedUrl = 'https://utat022:50000/nuget/powershellget-stable'
           ExpectedSha256 = '8D97C6C46CD2282DD3DE78548BBE07E1617DFCD45994C681CFF831AA4BAC50A1'
         })
       $r.Count | Should -Be 5
@@ -355,7 +355,7 @@ Describe 'Test-BrokerRequestParameters' {
       # the broker names the missing value, the binder just says the command cannot process.
       { Test-BrokerRequestParameters -AllowedParameters $script:Allowed -RequestParameters ([pscustomobject]@{
             ModuleName = 'A'; RequiredVersion = '1.0.0'; Repository = 'powershellget-stable'
-            FeedUrl = 'http://localhost:50000/nuget/powershellget-stable' }) } |
+            FeedUrl = 'https://utat022:50000/nuget/powershellget-stable' }) } |
         Should -Throw -ExpectedMessage "*Required parameter 'ExpectedSha256' was not supplied*"
     }
 
@@ -364,7 +364,7 @@ Describe 'Test-BrokerRequestParameters' {
           ModuleName = 'ATAP.Utilities.PowerShell'
           RequiredVersion = '0.1.10'
           Repository = 'powershellget-stable'
-          FeedUrl = 'http://localhost:50000/nuget/powershellget-stable'
+          FeedUrl = 'https://utat022:50000/nuget/powershellget-stable'
           ExpectedSha256 = '8D97C6C46CD2282DD3DE78548BBE07E1617DFCD45994C681CFF831AA4BAC50A1'
         })
       $r.Count | Should -Be 5
@@ -373,7 +373,7 @@ Describe 'Test-BrokerRequestParameters' {
     It 'accepts a prerelease version' {
       $r = Test-BrokerRequestParameters -AllowedParameters $script:Allowed -RequestParameters ([pscustomobject]@{
           ModuleName = 'A'; RequiredVersion = '1.2.3-beta.1'; Repository = 'powershellget-experimental'
-          FeedUrl = 'http://localhost:50000/nuget/powershellget-experimental'
+          FeedUrl = 'https://utat022:50000/nuget/powershellget-experimental'
           ExpectedSha256 = ('C' * 64) })
       $r.RequiredVersion | Should -Be '1.2.3-beta.1'
     }

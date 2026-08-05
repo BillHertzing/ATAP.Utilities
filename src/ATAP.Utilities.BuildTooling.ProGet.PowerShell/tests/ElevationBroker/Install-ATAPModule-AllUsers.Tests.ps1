@@ -62,7 +62,7 @@ Describe 'Get-ATAPModuleDownloadCandidateUris' {
     # failed against the ProGet the ATAP feeds actually run on (observed 2026-07-25 while
     # deploying SprintLifecycle 0.1.6).
     BeforeAll {
-        $script:Feed = 'http://localhost:50000/nuget/powershellget-stable'
+        $script:Feed = 'https://utat022:50000/nuget/powershellget-stable'
         $script:Name = 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'
         $script:Version = '0.1.6'
     }
@@ -82,7 +82,7 @@ Describe 'Get-ATAPModuleDownloadCandidateUris' {
     It 'prefers localhost over the utat01 hostname' {
         # Session evidence: the localhost endpoint is reachable when the host name is not.
         $uris = @(Get-ATAPModuleDownloadCandidateUris -BaseFeedUrl 'http://utat01:50000/nuget/powershellget-stable' -ModuleName $script:Name -RequiredVersion $script:Version)
-        $uris[0] | Should -Match '^http://localhost:50000/'
+        $uris[0] | Should -Match '^https://utat022:50000/'
         ($uris | Where-Object { $_ -match '^http://utat01:50000/' }).Count | Should -BeGreaterThan 0
     }
 

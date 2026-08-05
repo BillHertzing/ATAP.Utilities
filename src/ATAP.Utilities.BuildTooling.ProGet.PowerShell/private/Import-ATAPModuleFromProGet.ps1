@@ -63,8 +63,11 @@ function Import-ATAPModuleFromProGet {
       }
     }
 
-    if ([string]::IsNullOrWhiteSpace($scheme)) { $scheme = 'http' }
-    if ([string]::IsNullOrWhiteSpace($hostName)) { $hostName = 'localhost' }
+    # ProGet is HTTPS-only since the utat022 PKI change, and the certificate SAN covers
+    # only 'utat022' -- a 'localhost' fallback fails TLS validation even though the same
+    # service answers there. Keep these last-resort defaults aligned with host settings.
+    if ([string]::IsNullOrWhiteSpace($scheme)) { $scheme = 'https' }
+    if ([string]::IsNullOrWhiteSpace($hostName)) { $hostName = 'utat022' }
     $port = 50000
     if (-not [string]::IsNullOrWhiteSpace($portValue)) {
       $parsedPort = 0

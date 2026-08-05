@@ -327,12 +327,12 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             $result = Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0-Alpha001' `
                 -Feed 'powershellget-development' -Tier 'Development' -ResultsPath 'r' `
                 -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake' `
-                -ProGetBaseUrl 'http://localhost:50000/' -ProGetApiKeySecretName 'Test.ProGet.API.Key'
+                -ProGetBaseUrl 'https://utat022:50000/' -ProGetApiKeySecretName 'Test.ProGet.API.Key'
 
             $result.GatePass | Should -BeTrue
             Assert-MockCalled Save-Module -Times 0 -Exactly -Scope It
             Assert-MockCalled Invoke-WebRequest -Times 1 -Exactly -Scope It -ParameterFilter {
-                $Uri -eq 'http://localhost:50000/nuget/powershellget-development/package/Mod/1.0.0-Alpha001' -and
+                $Uri -eq 'https://utat022:50000/nuget/powershellget-development/package/Mod/1.0.0-Alpha001' -and
                 $OutFile -eq 'C:\fake\_generated\_promoted-modules\Mod.1.0.0-Alpha001.powershellget-development\Mod.1.0.0-Alpha001.nupkg' -and
                 $Headers['X-ApiKey'] -eq 'secret' -and
                 $TimeoutSec -eq 30
@@ -355,7 +355,7 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             $result = Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0-Beta006' `
                 -Feed 'powershellget-integration' -Tier 'Integration' -ResultsPath 'r' `
                 -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake' `
-                -ProGetBaseUrl 'http://localhost:50000/' -ProGetApiKeySecretName 'Test.ProGet.API.Key' `
+                -ProGetBaseUrl 'https://utat022:50000/' -ProGetApiKeySecretName 'Test.ProGet.API.Key' `
                 -RestoreRetryCount 2 -RestoreRetryDelaySeconds 1
 
             $result.GatePass | Should -BeTrue

@@ -25,7 +25,7 @@ function New-BuildMasterScript {
     User name stamped on the raft item.
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server. Defaults to $global:settings,
-    BUILDMASTER_BASE_URL, then http://localhost:50017.
+    BUILDMASTER_BASE_URL, then https://utat022:50017.
   .PARAMETER BuildMasterAdminApiKeySecretName
     ATAP secret name for the BuildMaster admin API key (Native API access).
     Resolved via Get-PVal; value read with Get-SecretATAP.
@@ -107,7 +107,7 @@ function New-BuildMasterScript {
         $resolvedBaseUrl = [Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'User')
       }
       if ([string]::IsNullOrWhiteSpace($resolvedBaseUrl)) {
-        $resolvedBaseUrl = 'http://localhost:50017'
+        $resolvedBaseUrl = 'https://utat022:50017'
       }
 
       # Retrieve the BuildMaster admin API key value via Get-SecretATAP using

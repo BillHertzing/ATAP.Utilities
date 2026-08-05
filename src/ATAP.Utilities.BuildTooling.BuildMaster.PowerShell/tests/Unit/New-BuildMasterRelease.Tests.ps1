@@ -261,7 +261,7 @@ Describe 'New-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {
       New-BuildMasterRelease -Application 'A' -ReleaseNumber '1.0.0' -PipelineName 'P' | Out-Null
 
       Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter {
-        $Method -eq 'Post' -and $Uri -eq 'http://localhost:50017/api/releases/create'
+        $Method -eq 'Post' -and $Uri -eq 'https://utat022:50017/api/releases/create'
       }
     }
   }

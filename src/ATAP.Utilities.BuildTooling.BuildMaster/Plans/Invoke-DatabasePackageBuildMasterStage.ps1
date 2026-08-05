@@ -108,7 +108,7 @@
     -DatabaseApplication ATAPUtilities `
     -DatabaseStream '' `
     -Stage Experimental `
-    -ProGetUrl http://localhost:50000
+    -ProGetUrl https://utat022:50000
 
 .NOTES
   AI assisted using Powershell.instructions.md as guidelines.

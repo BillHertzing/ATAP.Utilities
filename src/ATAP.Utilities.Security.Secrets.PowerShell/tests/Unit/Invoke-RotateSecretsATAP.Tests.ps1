@@ -58,7 +58,7 @@ AfterAll {
   Remove-Variable -Name 'RotateTestState' -Scope Global -ErrorAction SilentlyContinue
 }
 
-Describe 'Invoke-RotateSecretsATAP' {
+Describe 'Invoke-RotateSecretsATAP' -Tag 'Unit' {
 
   BeforeEach {
     # Shared mutable state for the mocks. Global because Pester mock bodies execute in the
@@ -321,7 +321,7 @@ Describe 'Invoke-RotateSecretsATAP' {
   }
 }
 
-Describe 'Invoke-RotateSecretsATAP private helpers' {
+Describe 'Invoke-RotateSecretsATAP private helpers' -Tag 'Unit' {
 
   Context 'Get-SecureStringFingerprint' {
 

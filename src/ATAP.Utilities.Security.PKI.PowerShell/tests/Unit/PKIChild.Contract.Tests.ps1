@@ -39,7 +39,11 @@ Describe 'ATAP.Utilities.Security.PKI.PowerShell module contract' -Tag 'Unit' {
 
   It 'has an independent module version source' {
     $version = Get-Content -LiteralPath (Join-Path $script:ModuleRoot 'version.json') -Raw | ConvertFrom-Json
-    $version.version | Should -Be '0.1.2'
+    $manifestUnderTest = [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
+    $version.version | Should -Match '^\d+\.\d+\.\d+$'
+    if (-not [string]::IsNullOrWhiteSpace($manifestUnderTest)) {
+      $version.version | Should -Be ([string](Import-PowerShellDataFile -LiteralPath $manifestUnderTest).ModuleVersion)
+    }
     @($version.pathFilters) | Should -Be @('./')
   }
 

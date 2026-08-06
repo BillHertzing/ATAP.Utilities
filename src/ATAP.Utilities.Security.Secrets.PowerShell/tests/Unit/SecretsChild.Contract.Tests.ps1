@@ -1,6 +1,6 @@
 #requires -Modules Pester
 
-Describe 'ATAP.Utilities.Security.Secrets.PowerShell module contract' {
+Describe 'ATAP.Utilities.Security.Secrets.PowerShell module contract' -Tag 'Unit' {
 
   # Pester 5 expands -ForEach during DISCOVERY, before BeforeAll runs. Data used by -ForEach
   # must therefore be defined in BeforeDiscovery, not BeforeAll.

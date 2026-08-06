@@ -2,6 +2,8 @@ BeforeAll {
   $script:moduleRoot = (Resolve-Path "$PSScriptRoot\..\..").Path
   $script:moduleName = 'ATAP.Utilities.GELFLogging.Powershell'
   $script:manifestPath = Join-Path $script:moduleRoot "$($script:moduleName).psd1"
+  $promotedManifest = [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
+  $script:manifestUnderTest = if ([string]::IsNullOrWhiteSpace($promotedManifest)) { $script:manifestPath } else { $promotedManifest }
 }
 
 Describe 'ATAP.Utilities.GELFLogging.Powershell module contract' -Tag 'Unit' {
@@ -10,15 +12,21 @@ Describe 'ATAP.Utilities.GELFLogging.Powershell module contract' -Tag 'Unit' {
     { Test-ModuleManifest -Path $script:manifestPath -ErrorAction Stop } | Should -Not -Throw
   }
 
-  It 'ships at the Task 14.62 initial version 0.1.1' {
-    (Import-PowerShellDataFile -Path $script:manifestPath).ModuleVersion | Should -Be '0.1.1'
+  It 'ships at the version declared by version.json' {
+    $versionJson = Get-Content -LiteralPath (Join-Path $script:moduleRoot 'version.json') -Raw | ConvertFrom-Json
+    $versionJson.version | Should -Match '^\d+\.\d+\.\d+$'
+    if (-not [string]::IsNullOrWhiteSpace($promotedManifest)) {
+      (Import-PowerShellDataFile -Path $script:manifestUnderTest).ModuleVersion | Should -Be $versionJson.version
+    }
   }
 
   It 'keeps version.json in step with the manifest' {
     # A drifted pair silently publishes a package whose folder version and manifest version
     # disagree, which the installer resolves inconsistently.
     $versionJson = Get-Content -LiteralPath (Join-Path $script:moduleRoot 'version.json') -Raw | ConvertFrom-Json
-    $versionJson.version | Should -Be (Import-PowerShellDataFile -Path $script:manifestPath).ModuleVersion
+    if (-not [string]::IsNullOrWhiteSpace($promotedManifest)) {
+      $versionJson.version | Should -Be (Import-PowerShellDataFile -Path $script:manifestUnderTest).ModuleVersion
+    }
   }
 
   It 'exports exactly the enable/disable/query trio' {

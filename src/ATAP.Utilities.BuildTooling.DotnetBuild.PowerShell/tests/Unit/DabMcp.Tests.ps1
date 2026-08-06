@@ -15,6 +15,8 @@ Describe 'DAB MCP helpers' -Tag 'Unit' {
         Should -BeExactly 'dbConnectionString.ATAPUtilities.utat01.Production'
       Resolve-DabMcpConnectionStringSecretName -Tier 'Exp' -DatabaseHost 'utat01' -UserName 'whertzing' |
         Should -BeExactly 'dbConnectionString.ATAPUtilities.utat01.Exp.whertzing'
+      Resolve-DabMcpConnectionStringSecretName -Tier 'Exp' -DatabaseHost 'utat01' -DatabaseName 'EXPwhertzing' -UserName 'whertzing' |
+        Should -BeExactly 'dbConnectionString.EXPwhertzing.utat01.Exp.whertzing'
     }
   }
 
@@ -26,8 +28,9 @@ Describe 'DAB MCP helpers' -Tag 'Unit' {
 
   It 'does not create a DAB configuration when WhatIf is specified' {
     $configPath = Join-Path $TestDrive 'dab-config.json'
-    $result = Initialize-DabMcpConfiguration -ConfigPath $configPath -WhatIf
+    $result = Initialize-DabMcpConfiguration -ConfigPath $configPath -ExposureMode AllEntitiesReadOnly -WhatIf
     $result.WhatIf | Should -BeTrue
+    $result.ExposureMode | Should -BeExactly 'AllEntitiesReadOnly'
     Test-Path -LiteralPath $configPath | Should -BeFalse
   }
 }

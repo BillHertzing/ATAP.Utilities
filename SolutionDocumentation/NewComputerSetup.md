@@ -2300,34 +2300,42 @@ Restart VS Code after setting the token at user scope.
 
 ### 11.5 Data API Builder SQL MCP servers
 
-Install Data API Builder (DAB) as a user-global .NET tool and initialize its one
-secret-free shared configuration. The canonical AI adapter starts DAB on demand in
-MCP stdio mode; it does not create a long-lived HTTP listener.
+Install Data API Builder (DAB) as a user-global .NET tool and initialize separate
+secret-free read-only (RO) and read-write (RW) configurations. The canonical AI adapter
+starts DAB on demand in MCP stdio mode; it does not create a long-lived HTTP listener.
 
 ```powershell
 Import-Module ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell
 
 Initialize-DabMcpServer -Version '2.0.9'
-Add-DabMcpEntity -EntityName 'Instantiations' -EntitySource 'ATAPUtilities.Instantiation'
+Initialize-DabMcpConfiguration -ConfigPath "$env:APPDATA\ATAP\DataApiBuilder\ATAPUtilities\dab-ro-config.json" -ExposureMode AllEntitiesReadOnly
+Initialize-DabMcpConfiguration -ConfigPath "$env:APPDATA\ATAP\DataApiBuilder\ATAPUtilities\dab-rw-config.json" -ExposureMode AllEntitiesReadWrite
 Test-DabInstallation
 ```
 
-The DAB configuration is stored at
-`$env:APPDATA\ATAP\DataApiBuilder\ATAPUtilities\dab-config.json`. It contains only
-the `@env('DAB_ATAPUTILITIES_CONNECTION_STRING')` reference and the approved entity
-allow-list; it never contains a connection string or a `.env` file.
+The DAB configurations are stored at
+`$env:APPDATA\ATAP\DataApiBuilder\ATAPUtilities\dab-ro-config.json` and
+`$env:APPDATA\ATAP\DataApiBuilder\ATAPUtilities\dab-rw-config.json`. They contain
+only the `@env('DAB_ATAPUTILITIES_CONNECTION_STRING')` reference; they never contain a
+connection string or a `.env` file. Both autoentity configurations include every
+supported object in every schema of their database, with names formed as
+`{schema}_{object}`. For multiple Exp databases, provision one RO/RW configuration and
+one Bitwarden connection-string secret per database; DAB requires a separate data source
+configuration for each database.
 
-Codex and Claude Code receive five canonical, user-scope MCP registrations:
+Codex and Claude Code receive six canonical, user-scope MCP registrations:
 `dab-ataputilities-production`, `dab-ataputilities-qa`,
-`dab-ataputilities-integration`, `dab-ataputilities-dev`, and
-`dab-ataputilities-exp`. Each registration launches the same DAB stdio server with an
-explicit tier, so a request cannot silently fall through to a different SQL instance.
+`dab-ataputilities-integration`, `dab-ataputilities-dev`,
+`dab-RO-ataputilities-exp`, and `dab-RW-ataputilities-exp`. Each registration launches
+an explicit tier and role, so a request cannot silently fall through to a different SQL
+instance or privilege level.
 The registrations invoke the dedicated `Mcp/Start-DabMcpServer.ps1` launcher rather
 than importing the full DotnetBuild module: an MCP stdio process must reserve stdout
 for JSON-RPC, while unrelated module-import warnings corrupt the protocol. DAB starts
 Kestrel even in stdio mode, so the registrations also use separate loopback endpoints:
-Dev `5101`, Exp `5102`, Integration `5103`, Production `5104`, and QA `5105`. These
-ports must not be used by the normal DAB host or another MCP registration.
+Dev `5101`, Exp RO `5102`, Integration `5103`, Production `5104`, QA `5105`, and Exp
+RW `5106`. These ports must not be used by the normal DAB host or another MCP
+registration.
 
 At startup, the dedicated MCP launcher derives the local host's BWS SecretName with
 `Get-DbConnectionStringSecretDescriptor`, resolves it through
@@ -2345,11 +2353,15 @@ dbConnectionString.ATAPUtilities.<current-host>.Exp.<current-user>
 ```
 
 After the shared MCP catalog is rendered and the agent application is restarted, open
-the MCP status surface and confirm that all five DAB servers appear. Start with the
-Exp server. The DAB configuration grants `mcp-reader:read` only; add an entity only
-after reviewing its columns and least-privilege requirement. DAB's stdio mode requires
-`runtime.mcp.enabled` and keeps protocol messages on stdout; use `--LogLevel Error` as
-the canonical launcher does. See [DAB stdio transport](https://learn.microsoft.com/en-us/azure/data-api-builder/mcp/stdio-transport)
+the MCP status surface and confirm that all six DAB servers appear. Start with the RO
+Exp server. Its autoentity configuration grants `mcp-reader:read` only. The RW Exp
+configuration grants `mcp-writer:create,read,update,delete` and enables the corresponding
+MCP DML tools. DAB 2.0.9 rejects `execute` in autoentity permissions, so stored-procedure
+execution is deliberately not exposed by this server; it needs a separately designed,
+allow-listed MCP capability. Both roles are DAB exposure controls, not SQL permissions:
+until SC-0312 is delivered, the RW connection string uses Windows authentication with
+full database access. DAB's stdio mode requires `runtime.mcp.enabled` and keeps protocol
+messages on stdout; use `--LogLevel Error` as the canonical launcher does. See [DAB stdio transport](https://learn.microsoft.com/en-us/azure/data-api-builder/mcp/stdio-transport)
 and [DAB environment substitution](https://learn.microsoft.com/en-us/azure/data-api-builder/concept/config/env-function).
 
 ### 11.6 Mobile-host and Class A certification

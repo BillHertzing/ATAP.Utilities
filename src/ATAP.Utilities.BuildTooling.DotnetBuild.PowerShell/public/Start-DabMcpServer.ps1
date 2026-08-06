@@ -25,6 +25,9 @@ function Start-DabMcpServer {
     [ValidateNotNullOrEmpty()]
     [string] $DatabaseHost = $env:COMPUTERNAME,
 
+    [ValidateNotNullOrEmpty()]
+    [string] $DatabaseName = 'ATAPUtilities',
+
     [string] $UserName = $env:USERNAME,
 
     [string] $ConnectionStringSecretName,
@@ -49,7 +52,7 @@ function Start-DabMcpServer {
         Import-Module -Name 'ATAP.Utilities.BuildTooling.Secrets.PowerShell' -DisableNameChecking -WarningAction SilentlyContinue -ErrorAction Stop
       }
       $secretName = if ([string]::IsNullOrWhiteSpace($ConnectionStringSecretName)) {
-        Resolve-DabMcpConnectionStringSecretName -Tier $Tier -DatabaseHost $DatabaseHost -UserName $UserName
+        Resolve-DabMcpConnectionStringSecretName -Tier $Tier -DatabaseHost $DatabaseHost -DatabaseName $DatabaseName -UserName $UserName
       } else {
         $ConnectionStringSecretName
       }

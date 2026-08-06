@@ -5,6 +5,19 @@ BuildMaster application: `ATAPUtilitiesDatabase`
 Release/build: `0.1.3` / `1` (`ReleaseId 9086`, `BuildId 20217`)  
 Package: `ATAPUtilities.Database` `0.1.3`
 
+## Sprint 0014 provenance boundary
+
+Sprint 0014 Task 14.104 closes Task 13.78 as superseded. This release record is
+the authoritative repository provenance for the completed legacy `V00.*` lineage;
+it is not an instruction to repeat the build, publication, promotion, tier apply,
+or checksum repair.
+
+Task 14.20 owns the isolated RRSBS V2 lineage beginning at package `0.0.1`,
+baseline `00010`, and a separate Flyway history table. Task 14.30 owns
+ContentSummary under the sequencing and model decisions established by Task 14.20.
+The completed 0.1.3 release and checksum reconciliation remain evidence inputs to
+those programs, not open implementation steps.
+
 ## Outcome
 
 BuildMaster built, tested, packaged, promoted, snapshotted, and deployed one

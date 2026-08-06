@@ -87,6 +87,66 @@ function Invoke-Rdb320RegistryValidation {
         }
       }
 
+      $contractText = Get-Content -LiteralPath $contractPath -Raw -ErrorAction Stop
+      $triggerSection = [regex]::Match(
+        $contractText,
+        '(?s)<!-- RDB320-WAVE5-TRIGGERS:BEGIN -->(?<body>.*?)<!-- RDB320-WAVE5-TRIGGERS:END -->'
+      )
+      if (-not $triggerSection.Success) {
+        throw 'RDB-320 Wave 5 trigger registry markers are absent.'
+      }
+      $wave5TriggerNames = @(
+        [regex]::Matches($triggerSection.Groups['body'].Value, '(?m)^- `(?<name>TR_[A-Za-z0-9_]+)`\s*$') |
+          ForEach-Object { $_.Groups['name'].Value }
+      )
+      $triggerNameSet = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+      foreach ($triggerName in $wave5TriggerNames) {
+        if ($triggerName.Length -gt 128) {
+          throw "Wave 5 trigger name exceeds SQL Server's identifier limit: $triggerName"
+        }
+        if (-not $triggerNameSet.Add($triggerName)) {
+          throw "Duplicate Wave 5 trigger name under ordinal case-insensitive comparison: $triggerName"
+        }
+      }
+      if ($wave5TriggerNames.Count -ne 109) {
+        throw "Wave 5 trigger registry count drift: expected 109, actual $($wave5TriggerNames.Count)."
+      }
+
+      $physicalSection = [regex]::Match(
+        $contractText,
+        '(?s)<!-- RDB320-WAVE5-PHYSICAL:BEGIN -->(?<body>.*?)<!-- RDB320-WAVE5-PHYSICAL:END -->'
+      )
+      if (-not $physicalSection.Success) {
+        throw 'RDB-320 Wave 5 physical-object registry markers are absent.'
+      }
+      $wave5PhysicalObjects = @(
+        [regex]::Matches(
+          $physicalSection.Groups['body'].Value,
+          '(?m)^- `(?<type>ROLE|TABLE|PROCEDURE)\|(?<name>[A-Za-z][A-Za-z0-9_]*)`\s*$'
+        ) | ForEach-Object {
+          [pscustomobject]@{
+            ObjectType = $_.Groups['type'].Value
+            ObjectName = $_.Groups['name'].Value
+          }
+        }
+      )
+      $physicalObjectSet = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+      foreach ($physicalObject in $wave5PhysicalObjects) {
+        $key = "$($physicalObject.ObjectType)|$($physicalObject.ObjectName)"
+        if (-not $physicalObjectSet.Add($key)) {
+          throw "Duplicate Wave 5 physical object under ordinal case-insensitive comparison: $key"
+        }
+      }
+      $physicalRoleCount = @($wave5PhysicalObjects | Where-Object ObjectType -eq 'ROLE').Count
+      $physicalTableCount = @($wave5PhysicalObjects | Where-Object ObjectType -eq 'TABLE').Count
+      $physicalProcedureCount = @($wave5PhysicalObjects | Where-Object ObjectType -eq 'PROCEDURE').Count
+      if (($wave5PhysicalObjects.Count -ne 31) -or
+          ($physicalRoleCount -ne 1) -or
+          ($physicalTableCount -ne 10) -or
+          ($physicalProcedureCount -ne 20)) {
+        throw 'Wave 5 physical registry count drift: expected 1 role, 10 tables, and 20 procedures.'
+      }
+
       $rfcVector = New-UuidV5 -Namespace ([guid] '6ba7b810-9dad-11d1-80b4-00c04fd430c8') -Name 'www.widgets.com'
       if ($rfcVector.Guid -ne '21f7f8de-8051-5b89-8680-0195ef798b6a') {
         throw "UUIDv5 implementation failed the RFC vector: $($rfcVector.Guid)"
@@ -313,12 +373,19 @@ function Invoke-Rdb320RegistryValidation {
         $objectRegistry | Export-Csv -LiteralPath (Join-Path $evidenceRoot 'ObjectNameRegistry.csv') -NoTypeInformation
         $philoteRegistry | Export-Csv -LiteralPath (Join-Path $evidenceRoot 'EntityPhiloteRegistry.csv') -NoTypeInformation
         $targetManifest | Export-Csv -LiteralPath (Join-Path $evidenceRoot 'TargetPhiloteManifest.csv') -NoTypeInformation
+        $wave5TriggerNames |
+          ForEach-Object { [pscustomobject]@{ TriggerName = $_ } } |
+          Export-Csv -LiteralPath (Join-Path $evidenceRoot 'TriggerNameRegistry.csv') -NoTypeInformation
+        $wave5PhysicalObjects |
+          Export-Csv -LiteralPath (Join-Path $evidenceRoot 'Wave5PhysicalObjectRegistry.csv') -NoTypeInformation
 
         $contractHash = Get-Sha256 -LiteralPath $contractPath
         $worksheetHash = Get-Sha256 -LiteralPath $worksheetPath
         $objectHash = Get-Sha256 -LiteralPath (Join-Path $evidenceRoot 'ObjectNameRegistry.csv')
         $entityHash = Get-Sha256 -LiteralPath (Join-Path $evidenceRoot 'EntityPhiloteRegistry.csv')
         $targetHash = Get-Sha256 -LiteralPath (Join-Path $evidenceRoot 'TargetPhiloteManifest.csv')
+        $triggerHash = Get-Sha256 -LiteralPath (Join-Path $evidenceRoot 'TriggerNameRegistry.csv')
+        $physicalObjectHash = Get-Sha256 -LiteralPath (Join-Path $evidenceRoot 'Wave5PhysicalObjectRegistry.csv')
         $validatorHash = Get-Sha256 -LiteralPath $PSCommandPath
         $evidence = @"
 # RDB-320 Registry Evidence
@@ -331,6 +398,8 @@ backup, reset, or destructive operation was performed.
 | Measure | Value |
 | --- | ---: |
 | Registered local table/catalog objects | $($objectRegistry.Count) |
+| Wave 5 registered physical triggers | $($wave5TriggerNames.Count) |
+| Wave 5 physical amendment objects | $($wave5PhysicalObjects.Count) |
 | Philote-bearing tables | $($philoteRegistry.Count) |
 | Closed EntityType codes | $($entityTypeCodes.Count) |
 | Frozen source GUIDs | $($sourceRows.Count) |
@@ -352,6 +421,8 @@ backup, reset, or destructive operation was performed.
 | ObjectNameRegistry.csv | ``$objectHash`` |
 | EntityPhiloteRegistry.csv | ``$entityHash`` |
 | TargetPhiloteManifest.csv | ``$targetHash`` |
+| TriggerNameRegistry.csv | ``$triggerHash`` |
+| Wave5PhysicalObjectRegistry.csv | ``$physicalObjectHash`` |
 | Registry validator | ``$validatorHash`` |
 
 The UUIDv5 implementation passed the RFC 4122 DNS namespace vector for
@@ -364,6 +435,8 @@ RDB-010B/C capture was released uncompleted by user direction.
 
       return [pscustomobject]@{
         Objects = $objectRegistry.Count
+        Wave5Triggers = $wave5TriggerNames.Count
+        Wave5PhysicalObjects = $wave5PhysicalObjects.Count
         PhiloteTables = $philoteRegistry.Count
         EntityTypes = $entityTypeCodes.Count
         SourceGuids = $sourceRows.Count

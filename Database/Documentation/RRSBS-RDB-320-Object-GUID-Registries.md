@@ -85,8 +85,173 @@ RDB-460 fragment evidence.
 
 Every table receives `PK_<Table>`. Every Philote column receives
 `UQ_<Table>_<PhiloteColumn>`. Additional candidate keys and FKs are derived in
-the exact logical-model column order. No trigger is currently registered; the
-trigger prefix is reserved so a fragment cannot silently add one.
+the exact logical-model column order.
+
+### Wave 5 proven trigger amendment
+
+RDB-400 through RDB-470 first proved 99 physical triggers necessary. The
+approved RDB-480 contract amendments then proved 10 more for the seven RDB-450
+parents and the three RDB-460 physical parents/bridge, producing the 109-name
+registry below. These names are frozen under the RDB-320 amendment rule. The
+durable validator requires exactly this case-insensitive unique set; any later
+physical trigger must be added by another explicit registry amendment before
+integration.
+
+<!-- RDB320-WAVE5-TRIGGERS:BEGIN -->
+- `TR_Attribution_LineageImmutable`
+- `TR_AttributionDispute_UpdateDeleteImmutable`
+- `TR_AttributionDisputeEvent_StateLineageImmutable`
+- `TR_Authority_UpdateDeleteImmutable`
+- `TR_AuthorityVersion_LineageImmutable`
+- `TR_Entity_UpdateDeleteImmutable`
+- `TR_EntityAuthorityAssignment_LineageImmutable`
+- `TR_EntityExpertiseDomainAssignment_LineageImmutable`
+- `TR_EntityType_UpdateDeleteImmutable`
+- `TR_ExecutionClassification_UpdateDeleteImmutable`
+- `TR_ExecutorContract_UpdateDeleteImmutable`
+- `TR_ExecutorContractVersion_LineageImmutable`
+- `TR_Expert_UpdateDeleteImmutable`
+- `TR_ExpertiseDomain_UpdateDeleteImmutable`
+- `TR_ExpertiseDomainVersion_LineageImmutable`
+- `TR_ExpertVersion_LineageImmutable`
+- `TR_Primitive_UpdateDeleteImmutable`
+- `TR_PrimitiveInputDefinition_OrdinalImmutable`
+- `TR_PrimitiveVersion_LineageImmutable`
+- `TR_RelationshipRoleEndpointEntityType_UpdateDeleteImmutable`
+- `TR_RelationshipRolePolicy_UpdateDeleteImmutable`
+- `TR_RoundTripPolicy_UpdateDeleteImmutable`
+- `TR_RuleKind_UpdateDeleteImmutable`
+- `TR_RuleKindVersion_LineageImmutable`
+- `TR_RuleKindVersionCompatibility_ForwardImmutable`
+- `TR_ScalarStorageKind_UpdateDeleteImmutable`
+- `TR_SecretReferencePolicy_UpdateDeleteImmutable`
+- `TR_SecurityCapabilityClassification_UpdateDeleteImmutable`
+- `TR_StructuredValueContract_UpdateDeleteImmutable`
+- `TR_StructuredValueContractVersion_LineageImmutable`
+- `TR_Tag_UpdateDeleteImmutable`
+- `TR_TagAssignment_LineageImmutable`
+- `TR_TagVersion_LineageImmutable`
+- `TR_ValueType_UpdateDeleteImmutable`
+- `TR_ValueTypeAllowedEntityType_UpdateDeleteImmutable`
+- `TR_ValueTypeVersion_LineageImmutable`
+- `TR_BindingShape_Immutable`
+- `TR_DerivationContractVersion_Immutable`
+- `TR_Rule_Immutable`
+- `TR_RuleDefaultInputValue_Immutable`
+- `TR_RuleInputDefinition_Immutable`
+- `TR_RuleOutputDefinition_Immutable`
+- `TR_RuleVersion_Immutable`
+- `TR_RuleVersionNode_CompositionIntegrity`
+- `TR_RuleVersionNodeInput_Immutable`
+- `TR_BuildSet_UpdateDeleteImmutable`
+- `TR_BuildSetMembershipRole_UpdateDeleteImmutable`
+- `TR_BuildSetVersion_InsertLineage`
+- `TR_BuildSetVersion_UpdateDeleteImmutable`
+- `TR_BuildSetVersionMember_InsertContract`
+- `TR_BuildSetVersionMember_UpdateDeleteImmutable`
+- `TR_RuleSet_UpdateDeleteImmutable`
+- `TR_RuleSetMembershipRole_UpdateDeleteImmutable`
+- `TR_RuleSetVersion_InsertLineage`
+- `TR_RuleSetVersion_UpdateDeleteImmutable`
+- `TR_RuleSetVersionMember_InsertContract`
+- `TR_RuleSetVersionMember_UpdateDeleteImmutable`
+- `TR_BindingResolution_UpdateDeleteImmutable`
+- `TR_BuildSetRuleOccurrence_DerivationImmutable`
+- `TR_EditSession_StateTransition`
+- `TR_InputBlock_UpdateDeleteImmutable`
+- `TR_InputBlockVersion_LineageImmutable`
+- `TR_InputValue_TypeCardinalityImmutable`
+- `TR_Instantiation_UpdateDeleteImmutable`
+- `TR_InstantiationOccurrenceBinding_UpdateDeleteImmutable`
+- `TR_InstantiationPermissionGrant_UpdateDeleteImmutable`
+- `TR_InstantiationVersion_LineageImmutable`
+- `TR_InstantiationVersionInputBlock_UpdateDeleteImmutable`
+- `TR_PermissionVerb_UpdateDeleteImmutable`
+- `TR_ErrorTaxonomy_UpdateDeleteImmutable`
+- `TR_Manifestation_InsertApprovalEffective`
+- `TR_Manifestation_UpdateDeleteImmutable`
+- `TR_ManifestationArtifact_InsertCacheContract`
+- `TR_ManifestationArtifact_UpdateDeleteImmutable`
+- `TR_ManifestationAttempt_InsertContract`
+- `TR_ManifestationAttempt_UpdateDeleteImmutable`
+- `TR_ManifestationEvent_InsertSequence`
+- `TR_ManifestationEvent_UpdateDeleteImmutable`
+- `TR_ManifestationPlan_UpdateDeleteImmutable`
+- `TR_PlanApproval_UpdateDeleteImmutable`
+- `TR_PlanApprovalStateEvent_InsertContract`
+- `TR_PlanApprovalStateEvent_UpdateDeleteImmutable`
+- `TR_PlanArtifact_UpdateDeleteImmutable`
+- `TR_RuleExecution_InsertGraphContract`
+- `TR_RuleExecution_UpdateDeleteImmutable`
+- `TR_RuleUsage_UpdateDeleteImmutable`
+- `TR_AgentTextProjection_ImmutableIdentity`
+- `TR_AgentTextProjectionRefresh_AppendOnly`
+- `TR_AgentTextProjectionVersion_AppendOnly`
+- `TR_ContentSummary_ImmutableIdentity`
+- `TR_ContentSummaryDependency_AppendOnlyIntegrity`
+- `TR_ContentSummaryVersion_AppendOnlyIntegrity`
+- `TR_Organization_ImmutableIdentity`
+- `TR_Repository_ImmutableIdentity`
+- `TR_RepositoryRootRegistration_Immutable`
+- `TR_SourceArtifact_ImmutableIdentity`
+- `TR_SourceArtifactLineage_AppendOnly`
+- `TR_SourceArtifactVersion_AppendOnly`
+- `TR_SourceModule_ValidateHierarchy`
+- `TR_AgentTextProjectionVersionContentSummaryVersion_AppendOnly`
+- `TR_AuthorityPolicyVersion_UpdateDeleteImmutable`
+- `TR_AuthorizationScope_UpdateDeleteImmutable`
+- `TR_ExecutorBoundary_UpdateDeleteImmutable`
+- `TR_ExecutorBuild_UpdateDeleteImmutable`
+- `TR_ExternalReference_ImmutableControlled`
+- `TR_LocatorPolicyVersion_UpdateDeleteImmutable`
+- `TR_PolicyVersion_Immutable`
+- `TR_TargetPolicyVersion_UpdateDeleteImmutable`
+- `TR_TargetScope_UpdateDeleteImmutable`
+<!-- RDB320-WAVE5-TRIGGERS:END -->
+
+### Wave 5 physical-object amendment
+
+The approved RDB-480 contract closure adds the following registered physical
+objects without promoting table-addressable rows to Entity subtypes. The
+machine-readable `TYPE|NAME` entries are validated as an ordinal
+case-insensitive unique set.
+
+<!-- RDB320-WAVE5-PHYSICAL:BEGIN -->
+- `ROLE|RrsbsPublisher`
+- `TABLE|TargetScope`
+- `TABLE|TargetPolicyVersion`
+- `TABLE|ExecutorBoundary`
+- `TABLE|LocatorPolicyVersion`
+- `TABLE|AuthorityPolicyVersion`
+- `TABLE|AuthorizationScope`
+- `TABLE|ExecutorBuild`
+- `TABLE|PolicyVersion`
+- `TABLE|ExternalReference`
+- `TABLE|AgentTextProjectionVersionContentSummaryVersion`
+- `PROCEDURE|usp_PublishRelationshipRolePolicy`
+- `PROCEDURE|usp_PublishRuleKindVersion`
+- `PROCEDURE|usp_PublishValueTypeVersion`
+- `PROCEDURE|usp_PublishPrimitiveVersion`
+- `PROCEDURE|usp_PublishEntityAuthorityAssignment`
+- `PROCEDURE|usp_PublishEntityExpertiseDomainAssignment`
+- `PROCEDURE|usp_PublishTagAssignment`
+- `PROCEDURE|usp_PublishAttribution`
+- `PROCEDURE|usp_PublishRuleKindVersionCompatibility`
+- `PROCEDURE|usp_PublishAttributionDispute`
+- `PROCEDURE|usp_AppendAttributionDisputeEvent`
+- `PROCEDURE|usp_PublishRuleVersionGraph`
+- `PROCEDURE|usp_PublishRuleSetVersion`
+- `PROCEDURE|usp_PublishBuildSetVersion`
+- `PROCEDURE|usp_RollItUpInstantiation`
+- `PROCEDURE|usp_PublishManifestationPlan`
+- `PROCEDURE|usp_RecordPlanApproval`
+- `PROCEDURE|usp_AppendPlanApprovalStateEvent`
+- `PROCEDURE|usp_AppendManifestationAttemptJournal`
+- `PROCEDURE|usp_PublishAgentTextProjectionRefresh`
+<!-- RDB320-WAVE5-PHYSICAL:END -->
+
+The three retained `Tags.usp_GetTag*` read procedures remain owned by RDB-470
+and are not trusted RRSBS publication operations.
 
 ## Table-to-Philote registry
 

@@ -136,6 +136,58 @@ Describe 'BuildMaster run context helper' -Tag 'Unit' {
     @(Get-ChildItem -LiteralPath $contextDirectory -Filter 'build-context.json.*.tmp').Count | Should -Be 0
   }
 
+  It 'retries an overwriting Move that Windows reports as UnauthorizedAccessException' {
+    # Windows surfaces a transient share violation on File.Move(overwrite:$true)
+    # as UnauthorizedAccessException, not IOException, when the destination is
+    # briefly held open by another process. Sprint 0014 Task 14.45: a real
+    # BuildMaster stage run failed here because only IOException was retried.
+    $contextDirectory = Initialize-BuildMasterRunContextDirectory -SourcePath $script:tempRoot -BuildMasterBuildId '4271'
+    $path = Join-Path $contextDirectory 'build-context.json'
+    Write-BuildMasterJsonFileAtomically -Path $path -Content '{"version":1}'
+
+    # Hold the destination open with no sharing, release it after a moment, and
+    # assert the retry loop rides it out instead of failing the stage.
+    $holdJob = Start-ThreadJob -ArgumentList $path -ScriptBlock {
+      param($TargetPath)
+      $stream = [System.IO.File]::Open(
+        $TargetPath,
+        [System.IO.FileMode]::Open,
+        [System.IO.FileAccess]::ReadWrite,
+        [System.IO.FileShare]::None)
+      Start-Sleep -Milliseconds 400
+      $stream.Dispose()
+    }
+
+    try {
+      # Give the thread job time to actually take the lock before writing.
+      Start-Sleep -Milliseconds 100
+      { Write-BuildMasterJsonFileAtomically -Path $path -Content '{"version":2}' } | Should -Not -Throw
+      (Get-Content -LiteralPath $path -Raw | ConvertFrom-Json).version | Should -Be 2
+      @(Get-ChildItem -LiteralPath $contextDirectory -Filter 'build-context.json.*.tmp').Count | Should -Be 0
+    } finally {
+      $null = Wait-Job -Job $holdJob -Timeout 15
+      Remove-Job -Job $holdJob -Force -ErrorAction SilentlyContinue
+    }
+  }
+
+  It 'still surfaces a lock that never clears' {
+    $contextDirectory = Initialize-BuildMasterRunContextDirectory -SourcePath $script:tempRoot -BuildMasterBuildId '4271'
+    $path = Join-Path $contextDirectory 'build-context.json'
+    Write-BuildMasterJsonFileAtomically -Path $path -Content '{"version":1}'
+
+    $holder = [System.IO.File]::Open(
+      $path,
+      [System.IO.FileMode]::Open,
+      [System.IO.FileAccess]::ReadWrite,
+      [System.IO.FileShare]::None)
+    try {
+      { Write-BuildMasterJsonFileAtomically -Path $path -Content '{"version":2}' `
+          -MaxAttempts 2 -RetryDelayMilliseconds 10 } | Should -Throw
+    } finally {
+      $holder.Dispose()
+    }
+  }
+
   It 'rejects malformed context JSON' {
     $contextDirectory = Initialize-BuildMasterRunContextDirectory -SourcePath $script:tempRoot -BuildMasterBuildId '4271'
     Set-Content -LiteralPath (Join-Path $contextDirectory 'build-context.json') -Value '{not-json' -NoNewline

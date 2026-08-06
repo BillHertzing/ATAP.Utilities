@@ -448,6 +448,13 @@ function Write-BuildMasterJsonFileAtomically {
       } catch [System.IO.IOException] {
         if ($attempt -eq $MaxAttempts) { throw }
         Start-Sleep -Milliseconds ($RetryDelayMilliseconds * $attempt)
+      } catch [System.UnauthorizedAccessException] {
+        # Windows reports a transient share violation on an overwriting Move as
+        # UnauthorizedAccessException, not IOException, when the destination is
+        # briefly held open by another process (a concurrent stage run or the
+        # Dropbox sync client). It is retryable in exactly the same way.
+        if ($attempt -eq $MaxAttempts) { throw }
+        Start-Sleep -Milliseconds ($RetryDelayMilliseconds * $attempt)
       }
     }
   } finally {

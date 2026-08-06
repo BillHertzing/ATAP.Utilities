@@ -14,11 +14,13 @@ foreach ($import in @($privateFunctions + $publicFunctions)) {
 # nothing defines. A contract test asserts every exported alias is backed by an [Alias()] attribute.
 
 Export-ModuleMember -Function @(
+  'Get-CredentialFile',
   'Get-BitWardenCredential',
   'Invoke-RotateSecretsATAP',
   'List-BitwardenSecrets',
   'Load-BitwardenBackup',
   'New-BitwardenBackup',
+  'Set-CredentialFile',
   'Set-BitWardenSecret',
   'Sync-BitWardenDedicatedSecrets'
 ) -Alias @(

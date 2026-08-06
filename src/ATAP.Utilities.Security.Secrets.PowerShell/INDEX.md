@@ -9,11 +9,13 @@ sibling: ATAP.Utilities.Security.PKI.PowerShell (extracted Sprint 0014 Stream E)
 
 | Function | Summary |
 | --- | --- |
+| `Get-CredentialFile` | Imports an existing, absolute-path DPAPI credential XML file and verifies it deserializes to `PSCredential`. |
 | `Get-BitWardenCredential` | Retrieves or creates encrypted BitWarden login and unlock credentials for the current user + computer. |
 | `Invoke-RotateSecretsATAP` | Rotates the two Bitwarden machine-account access tokens on this host for this identity, from values the operator pastes into labeled prompts. Interactive-only live path; `-WhatIf` runs anywhere. |
 | `List-BitwardenSecrets` | Lists secrets held in the Bitwarden vault. |
 | `Load-BitwardenBackup` | Restores a Bitwarden vault from an encrypted backup. |
 | `New-BitwardenBackup` | Creates an encrypted backup of the Bitwarden vault. |
+| `Set-CredentialFile` | Prompts for and writes a DPAPI credential XML file; `-Force` is required to create its directory or replace a file. |
 | `Set-BitWardenSecret` | Creates or updates a Bitwarden vault item. |
 | `Sync-BitWardenDedicatedSecrets` | Syncs dedicated secrets into the registered SecretManagement vault. |
 
@@ -49,4 +51,5 @@ rotates a real secret, prompts, or writes a DPAPI file.
 | File | Covers |
 | --- | --- |
 | `SecretsChild.Contract.Tests.ps1` | Module contract: exports, manifest hygiene, no top-level code, logging standards. |
+| `CredentialFile.Tests.ps1` | Credential-file path validation, force/overwrite protection, `-WhatIf`, and type-safe import behavior. |
 | `Invoke-RotateSecretsATAP.Tests.ps1` | Rotation-set closure, `-WhatIf` writes nothing, non-interactive live path fails terminating, mis-paste guards, read-back verification, no token value in any message. |

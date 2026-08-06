@@ -21,11 +21,13 @@
   )
 
   FunctionsToExport     = @(
+    'Get-CredentialFile',
     'Get-BitWardenCredential',
     'Invoke-RotateSecretsATAP',
     'List-BitwardenSecrets',
     'Load-BitwardenBackup',
     'New-BitwardenBackup',
+    'Set-CredentialFile',
     'Set-BitWardenSecret',
     'Sync-BitWardenDedicatedSecrets'
   )

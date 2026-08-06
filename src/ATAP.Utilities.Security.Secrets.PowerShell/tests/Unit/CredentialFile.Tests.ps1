@@ -3,7 +3,12 @@
 Describe 'Credential-file helpers' -Tag 'Unit' {
   BeforeAll {
     $script:ModuleName = 'ATAP.Utilities.Security.Secrets.PowerShell'
-    $script:ModulePath = Join-Path $PSScriptRoot '..\..\ATAP.Utilities.Security.Secrets.PowerShell.psd1'
+    $promotedManifest = [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
+    $script:ModulePath = if ([string]::IsNullOrWhiteSpace($promotedManifest)) {
+      Join-Path $PSScriptRoot '..\..\ATAP.Utilities.Security.Secrets.PowerShell.psd1'
+    } else {
+      $promotedManifest
+    }
     Import-Module -Name $script:ModulePath -Force -ErrorAction Stop
   }
 

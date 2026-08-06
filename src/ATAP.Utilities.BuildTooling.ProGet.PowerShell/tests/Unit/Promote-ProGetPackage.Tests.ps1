@@ -157,6 +157,12 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit', 'PromotedModuleHostSensitive' {
             }
         }
 
+        It 'forwards the build-scoped evidence root to signature verification' {
+            $source = Get-Content -LiteralPath (Join-Path $publicDir 'Promote-ProGetPackage.ps1') -Raw
+
+            $source | Should -Match '-EvidenceRoot \$EvidenceRoot'
+        }
+
         It 'rejects an unsigned PowerShell package before invoking the promotion API' {
             Mock Assert-ProGetPowerShellPackageSignature { throw 'PowerShell package signature verification failed: NotSigned' }
 

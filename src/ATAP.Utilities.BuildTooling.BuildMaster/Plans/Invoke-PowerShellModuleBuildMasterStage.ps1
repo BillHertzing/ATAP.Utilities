@@ -665,7 +665,18 @@ function Set-PSResourceRepositoryEnsured {
   }
 
   PROCESS {
+    $repositoryMutex = [System.Threading.Mutex]::new($false, 'ATAP.BuildMaster.PSResourceRepository')
+    $repositoryMutexAcquired = $false
     try {
+      try {
+        $repositoryMutexAcquired = $repositoryMutex.WaitOne([TimeSpan]::FromMinutes(2))
+      } catch [System.Threading.AbandonedMutexException] {
+        $repositoryMutexAcquired = $true
+      }
+      if (-not $repositoryMutexAcquired) {
+        throw "Timed out waiting for the cross-process PSResourceRepository update lock."
+      }
+
       $existing = Get-PSResourceRepository -Name $Name -ErrorAction SilentlyContinue
       if ($null -eq $existing) {
         if ($PSCmdlet.ShouldProcess($Name, 'Register-PSResourceRepository')) {
@@ -682,6 +693,10 @@ function Set-PSResourceRepositoryEnsured {
       throw
     }
     finally {
+      if ($repositoryMutexAcquired) {
+        $repositoryMutex.ReleaseMutex()
+      }
+      $repositoryMutex.Dispose()
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Ensure complete for '$Name'."
     }
   }
@@ -1176,6 +1191,7 @@ function Invoke-PowerShellModuleBuildMasterStage {
             -Reason "$Tier gate for $ApplicationName $PromotedPackageVersion on $Branch" `
             -ProGetBaseUrl $ProGetUrl `
             -ProGetApiKeySecretName $ProGetApiKeySecretName `
+            -EvidenceRoot (Join-Path -Path $contextDirectory -ChildPath 'promotion-signature-verification') `
             -CeilingTier $ceilingTier
         }
         catch {

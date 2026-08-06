@@ -125,6 +125,17 @@ Describe 'BuildMaster run context helper' -Tag 'Unit' {
     $json.BundleVersion | Should -Be '1.2.3-Sprint.4'
   }
 
+  It 'atomically replaces context JSON without leaving temporary files' {
+    $contextDirectory = Initialize-BuildMasterRunContextDirectory -SourcePath $script:tempRoot -BuildMasterBuildId '4271'
+    $path = Join-Path $contextDirectory 'build-context.json'
+
+    Write-BuildMasterJsonFileAtomically -Path $path -Content '{"version":1}'
+    Write-BuildMasterJsonFileAtomically -Path $path -Content '{"version":2}'
+
+    (Get-Content -LiteralPath $path -Raw | ConvertFrom-Json).version | Should -Be 2
+    @(Get-ChildItem -LiteralPath $contextDirectory -Filter 'build-context.json.*.tmp').Count | Should -Be 0
+  }
+
   It 'rejects malformed context JSON' {
     $contextDirectory = Initialize-BuildMasterRunContextDirectory -SourcePath $script:tempRoot -BuildMasterBuildId '4271'
     Set-Content -LiteralPath (Join-Path $contextDirectory 'build-context.json') -Value '{not-json' -NoNewline
@@ -306,6 +317,14 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
 
     $text | Should -Match 'Register-PSResourceRepository -Name \$Name -Uri \$Uri -Trusted -ApiVersion V2'
     $text | Should -Match 'Set-PSResourceRepository -Name \$Name -Uri \$Uri -Trusted -ApiVersion V2'
+    $text | Should -Match 'ATAP\.BuildMaster\.PSResourceRepository'
+    $text | Should -Match 'WaitOne\(\[TimeSpan\]::FromMinutes\(2\)\)'
+  }
+
+  It 'uses a build-scoped signature-verification evidence directory' {
+    $text = Get-Content -LiteralPath $script:powerShellRunnerPath -Raw
+
+    $text | Should -Match '-EvidenceRoot \(Join-Path -Path \$contextDirectory -ChildPath ''promotion-signature-verification''\)'
   }
 
   It 'translates BuildMaster stage names to the current module.build.ps1 tier names' {

@@ -69,6 +69,9 @@
     Bitwarden Secrets Manager SecretName forwarded to
     Move-ProGetPackageInterTier. Raw API-key values are unsupported.
 
+.PARAMETER EvidenceRoot
+    Optional generated-output directory for package signature verification.
+
 .OUTPUTS
     [PSCustomObject] with at least these properties (per V3 plan S2.1):
       - OperationName   : Always 'Promote-ProGetPackage'.
@@ -168,7 +171,10 @@ function Promote-ProGetPackage {
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key'
+        [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
+
+        [Parameter(Mandatory = $false)]
+        [string]$EvidenceRoot
     )
 
     begin {
@@ -234,6 +240,7 @@ function Promote-ProGetPackage {
             }
             Assert-ProGetPowerShellPackageSignature -Name $Name -Version $Version -Feed $FromFeed `
                 -ProGetBaseUrl $ProGetBaseUrl -ProGetApiKeySecretName $ProGetApiKeySecretName `
+                -EvidenceRoot $EvidenceRoot `
                 -ErrorAction Stop | Out-Null
         }
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Promoting $target : '$FromFeed' -> '$ToFeed' (reason: $Reason)" -Tag 'RestCall'

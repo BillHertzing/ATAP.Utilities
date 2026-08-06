@@ -16,12 +16,16 @@ function Assert-ProGetPowerShellPackageSignature {
       throw 'ProGetBaseUrl must be an absolute HTTPS URI. Cleartext package retrieval is not allowed.'
     }
     if ([string]::IsNullOrWhiteSpace($EvidenceRoot)) {
-      $repoRoot = if (Get-Command Get-RepositoryRoot -ErrorAction SilentlyContinue) {
-        Get-RepositoryRoot
+      $location = Get-Location
+      $locationPath = if ($null -ne $location -and $location.Provider.Name -eq 'FileSystem') {
+        [string]$location.Path
       } else {
-        (Get-Location).Path
+        $null
       }
-      $EvidenceRoot = Join-Path $repoRoot '_generated\promotion-signature-verification'
+      if ([string]::IsNullOrWhiteSpace($locationPath)) {
+        throw 'EvidenceRoot is required when signature verification is not running from a filesystem location.'
+      }
+      $EvidenceRoot = Join-Path $locationPath '_generated\promotion-signature-verification'
     }
     New-Item -ItemType Directory -Path $EvidenceRoot -Force | Out-Null
 

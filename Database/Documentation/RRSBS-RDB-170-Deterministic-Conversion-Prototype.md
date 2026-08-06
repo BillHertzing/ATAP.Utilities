@@ -15,10 +15,11 @@ The generated mapping at `_generated/RRSBS-V2/RDB-170/CsvConversionMapping.csv`
 maps 47 CSV inputs representing 517 source rows. Two unreferenced RuleSet
 inputs remain explicitly unresolved rather than being silently discarded.
 
-`CanonicalSeedShapeMap.json` serializes the mapping in canonical order. Two
-independent prototype runs produced the same SHA-256 value:
-
-`D9D135EC626044B49720F0B40C4062880BF5A9325F7620184B6601A99C61790E`.
+`CanonicalSeedShapeMap.json` serializes the mapping in canonical order. The
+reproducible source-only generator is
+`Database/Tools/Invoke-Rdb170ConversionPrototype.ps1`. Two independent clean
+output runs must produce byte-identical CSV and JSON artifacts; their hash is
+recorded in generated reconciliation evidence, rather than hard-coded here.
 
 The frozen-input reconciliation evidence also records the source artifact
 hashes: V1 `8BB6395B323C21265DCD314E0FEEF27505462936C569188AB5C3E8131EF35531`,

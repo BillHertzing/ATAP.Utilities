@@ -11,7 +11,10 @@ function Remove-BuildMasterRelease {
 
   The cmdlet resolves the Application ID from the application name via
   `Applications_GetApplications`, then looks up the release ID via `Releases_GetReleases`.
-  If zero or multiple releases match, the operation fails.
+  Application names are matched exactly and must identify at most one application.
+  Release numbers are matched exactly against the Native API `Release_Number` field.
+  If zero or multiple releases match, the operation fails. When `-ExpectedReleaseId`
+  is supplied, the cmdlet also fails closed if the selected release ID has drifted.
 
   **Cancel** (default): marks the release as canceled; BuildMaster retains the release
   record and history. The release no longer appears in active lists.
@@ -38,8 +41,13 @@ function Remove-BuildMasterRelease {
 
 .PARAMETER ReleaseNumber
   The release number to cancel or purge (e.g., `0.1.0-Sprint.42`, `Placeholder`,
-  `0.0.0`). The cmdlet matches this string exactly against `Release_Name` in
+  `0.0.0`). The cmdlet matches this string exactly against `Release_Number` in
   the BuildMaster releases table.
+
+.PARAMETER ExpectedReleaseId
+  Optional BuildMaster release ID safety binding. When supplied, the release selected
+  by `ReleaseNumber` must have this exact `Release_Id`; otherwise the cmdlet throws
+  before `ShouldProcess` and before any cancel or purge request.
 
 .PARAMETER Purge
   Purge (permanently delete) the release instead of canceling it. Requires
@@ -70,9 +78,10 @@ function Remove-BuildMasterRelease {
 .EXAMPLE
   PS> Remove-BuildMasterRelease -Application 'ATAP.Utilities-PowerShell' `
                                 -ReleaseNumber '0.0.0' `
+                                -ExpectedReleaseId 1004 `
                                 -Purge -Confirm:$false
 
-  Purges the confusing `0.0.0` placeholder release from the live application.
+  Purges release number `0.0.0` only if it still has release ID 1004.
 
 .EXAMPLE
   PS> Remove-BuildMasterRelease -Application 'ATAP.Utilities-PowerShell' `
@@ -103,6 +112,10 @@ function Remove-BuildMasterRelease {
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
     [string]$ReleaseNumber,
+
+    [Parameter(Mandatory = $false)]
+    [ValidateRange(1, [int]::MaxValue)]
+    [int]$ExpectedReleaseId,
 
     [switch]$Purge,
 
@@ -191,8 +204,8 @@ function Remove-BuildMasterRelease {
       throw $msg
     }
 
-    $matchedApp = $appsResponse | Where-Object { $_.Application_Name -eq $Application } | Select-Object -First 1
-    if ($null -eq $matchedApp) {
+    $matchedApplications = @($appsResponse | Where-Object { $_.Application_Name -ceq $Application })
+    if ($matchedApplications.Count -eq 0) {
       return [PSCustomObject]@{
         OperationName   = $fn
         Succeeded       = $true
@@ -204,10 +217,17 @@ function Remove-BuildMasterRelease {
       }
     }
 
+    if ($matchedApplications.Count -gt 1) {
+      $msg = "Ambiguous application match: found $($matchedApplications.Count) applications with Application_Name='$Application'. Cannot proceed."
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+      throw $msg
+    }
+
+    $matchedApp = $matchedApplications[0]
     $applicationId = $matchedApp.Application_Id
 
     # ---------------------------------------------------------------------
-    # 3. Look up release by Application_Id and Release_Name.
+    # 3. Look up release by Application_Id and Release_Number.
     # ---------------------------------------------------------------------
     $getReleasesUri = '{0}/api/json/Releases_GetReleases' -f $BuildMasterBaseUrl
     $releasesBody = @{ Application_Id = $applicationId } | ConvertTo-Json -Depth 5
@@ -222,7 +242,7 @@ function Remove-BuildMasterRelease {
       throw $msg
     }
 
-    $matchedReleases = @($releasesResponse | Where-Object { $_.Release_Name -eq $ReleaseNumber })
+    $matchedReleases = @($releasesResponse | Where-Object { $_.Release_Number -ceq $ReleaseNumber })
 
     if ($matchedReleases.Count -eq 0) {
       return [PSCustomObject]@{
@@ -237,13 +257,19 @@ function Remove-BuildMasterRelease {
     }
 
     if ($matchedReleases.Count -gt 1) {
-      $msg = "Ambiguous match: found $($matchedReleases.Count) releases with Release_Name='$ReleaseNumber' in application '$Application'. Cannot proceed."
+      $msg = "Ambiguous match: found $($matchedReleases.Count) releases with Release_Number='$ReleaseNumber' in application '$Application'. Cannot proceed."
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
       throw $msg
     }
 
     $release = $matchedReleases[0]
     $releaseId = $release.Release_Id
+
+    if ($PSBoundParameters.ContainsKey('ExpectedReleaseId') -and [int]$releaseId -ne $ExpectedReleaseId) {
+      $msg = "Release ID drift: release number '$ReleaseNumber' in application '$Application' resolved to Release_Id=$releaseId, but ExpectedReleaseId=$ExpectedReleaseId. Cannot proceed."
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+      throw $msg
+    }
 
     # ---------------------------------------------------------------------
     # 4. -WhatIf short-circuit before any side effect.

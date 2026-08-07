@@ -47,6 +47,7 @@
     'Register-ProGetFeedSet'
     'Remove-ProGetApiKeys'
     'Remove-ProGetFeeds'
+    'Remove-ProGetPackageVersion'
     'Rename-ProGetFeed'
     'Request-ElevatedInstall'
     'Resolve-DatabaseFeedTier'

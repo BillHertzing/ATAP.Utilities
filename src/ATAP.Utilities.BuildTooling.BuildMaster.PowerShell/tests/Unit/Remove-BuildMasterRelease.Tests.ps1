@@ -438,7 +438,7 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
   }
 
   Context 'Request body validation' {
-    It 'Purge request body contains Release_Id' {
+    It 'Purge request body contains exact Application_Id and Release_Number contract fields' {
       $script:capturedBody = $null
       Mock Invoke-RestMethod -MockWith {
         if ($Uri -match 'Applications_GetApplications') {
@@ -456,7 +456,9 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
 
       Remove-BuildMasterRelease -Application 'MyApp' -ReleaseNumber 'R' -Purge -Confirm:$false | Out-Null
       $parsed = $script:capturedBody | ConvertFrom-Json
-      $parsed.Release_Id | Should -Be 1234
+      $parsed.Application_Id | Should -Be 42
+      $parsed.Release_Number | Should -Be 'R'
+      $parsed.PSObject.Properties.Name | Should -Not -Contain 'Release_Id'
     }
 
     It 'Cancel request body contains Release_Id' {

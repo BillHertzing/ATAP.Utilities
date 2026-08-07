@@ -294,8 +294,11 @@ function Remove-BuildMasterRelease {
     # ---------------------------------------------------------------------
     if ($Purge) {
       $purgeUri = '{0}/api/json/Releases_PurgeReleaseData' -f $BuildMasterBaseUrl
-      $purgeBody = @{ Release_Id = $releaseId } | ConvertTo-Json -Depth 5
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling $purgeUri for Release_Id=$releaseId (ApiKey='***')" -Tag 'RestCall'
+      $purgeBody = @{
+        Application_Id = $applicationId
+        Release_Number = $ReleaseNumber
+      } | ConvertTo-Json -Depth 5
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling $purgeUri for Application_Id=$applicationId Release_Number='$ReleaseNumber' (verified Release_Id=$releaseId; ApiKey='***')" -Tag 'RestCall'
 
       try {
         Invoke-RestMethod -Method Post -Uri $purgeUri -Headers $headers -ContentType 'application/json' -Body $purgeBody -ErrorAction Stop | Out-Null

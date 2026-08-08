@@ -24,6 +24,12 @@ FROM OPENROWSET(
 IF LEFT(@SourceFile, 1) = NCHAR(65279)
     SET @SourceFile = SUBSTRING(@SourceFile, 2, LEN(@SourceFile));
 
+SET @SourceFile = REPLACE(@SourceFile, CHAR(13) + CHAR(10), CHAR(10));
+
+IF HASHBYTES('SHA2_256', CONVERT(varbinary(max), @SourceFile))
+       <> 0x62e2e90000eeb660a0d8765ad79316f97cf3f91645d9903fa05a01309b8c967d
+    THROW 53903, 'V3 RuleSetRule loader aborted: RuleSetRule.csv content is not the exact approved source.', 1;
+
 DECLARE @FirstLineEnd int = CHARINDEX(CHAR(10), @SourceFile);
 DECLARE @ActualHeader nvarchar(128) = CASE
     WHEN @FirstLineEnd = 0 THEN @SourceFile
@@ -42,14 +48,10 @@ CREATE TABLE #RuleSetRuleSeed (
     Ordinal nvarchar(50) NULL
 );
 
-BULK INSERT #RuleSetRuleSeed
-FROM '${data_dir}\RuleSetRule.csv'
-WITH (
-    FORMAT = 'CSV',
-    FIRSTROW = 2,
-    CODEPAGE = '65001',
-    TABLOCK
-);
+INSERT INTO #RuleSetRuleSeed (RuleSetId, RuleId, Ordinal)
+VALUES
+    (N'23ad4f37-2c70-4f34-9104-9868ec0f3823', N'616fb394-0b4d-486a-98af-48f1fe461af2', N'0'),
+    (N'23ad4f37-2c70-4f34-9104-9868ec0f3823', N'c5c1c63a-4364-4233-9aa1-2a1a5a2ba1f3', N'1');
 
 IF (SELECT COUNT_BIG(*) FROM #RuleSetRuleSeed) <> 2
     THROW 53904, 'V3 RuleSetRule loader aborted: RuleSetRule.csv must contain exactly two data rows.', 1;

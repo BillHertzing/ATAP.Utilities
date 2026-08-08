@@ -21,6 +21,12 @@ FROM OPENROWSET(
 IF LEFT(@SourceFile, 1) = NCHAR(65279)
     SET @SourceFile = SUBSTRING(@SourceFile, 2, LEN(@SourceFile));
 
+SET @SourceFile = REPLACE(@SourceFile, CHAR(13) + CHAR(10), CHAR(10));
+
+IF HASHBYTES('SHA2_256', CONVERT(varbinary(max), @SourceFile))
+       <> 0xb3199b7c606161f862bb250e75ae389517ff839698fbc9b4df128b1ed19cb037
+    THROW 54002, 'V3 BuildSet loader aborted: BuildSet.csv content is not the exact approved source.', 1;
+
 DECLARE @FirstLineEnd int = CHARINDEX(CHAR(10), @SourceFile);
 DECLARE @ActualHeader nvarchar(128) = CASE
     WHEN @FirstLineEnd = 0 THEN @SourceFile
@@ -39,13 +45,11 @@ CREATE TABLE #BuildSetSeed (
     BuildSetCode nvarchar(128) NULL
 );
 
-BULK INSERT #BuildSetSeed
-FROM '${data_dir}\BuildSet.csv'
-WITH (
-    FORMAT = 'CSV',
-    FIRSTROW = 2,
-    CODEPAGE = '65001',
-    TABLOCK
+INSERT INTO #BuildSetSeed (BuildSetId, PhiloteId, BuildSetCode)
+VALUES (
+    N'550e7722-cb57-4e47-a94b-9212b451d6fb',
+    N'550e7722-cb57-4e47-a94b-9212b451d6fb',
+    N'HelloWorld'
 );
 
 IF (SELECT COUNT_BIG(*) FROM #BuildSetSeed) <> 1

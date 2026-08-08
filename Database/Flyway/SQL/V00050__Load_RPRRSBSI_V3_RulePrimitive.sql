@@ -24,6 +24,12 @@ FROM OPENROWSET(
 IF LEFT(@SourceFile, 1) = NCHAR(65279)
     SET @SourceFile = SUBSTRING(@SourceFile, 2, LEN(@SourceFile));
 
+SET @SourceFile = REPLACE(@SourceFile, CHAR(13) + CHAR(10), CHAR(10));
+
+IF HASHBYTES('SHA2_256', CONVERT(varbinary(max), @SourceFile))
+       <> 0x6cbb71f23e825d6d2adfd0207d786750c820ac75c936de0edb9363b0560334d9
+    THROW 53503, 'V3 RulePrimitive loader aborted: RulePrimitive.csv content is not the exact approved source.', 1;
+
 DECLARE @FirstLineEnd int = CHARINDEX(CHAR(10), @SourceFile);
 DECLARE @ActualHeader nvarchar(256) = CASE
     WHEN @FirstLineEnd = 0 THEN @SourceFile
@@ -43,14 +49,23 @@ CREATE TABLE #RulePrimitiveSeed (
     RulePrimitiveCode nvarchar(256) NULL
 );
 
-BULK INSERT #RulePrimitiveSeed
-FROM '${data_dir}\RulePrimitive.csv'
-WITH (
-    FORMAT = 'CSV',
-    FIRSTROW = 2,
-    CODEPAGE = '65001',
-    TABLOCK
-);
+INSERT INTO #RulePrimitiveSeed (RulePrimitiveId, PhiloteId, RuleKindId, RulePrimitiveCode)
+VALUES
+    (N'9460f2f5-9957-4455-b6a6-8ee241b7ebb3', N'9460f2f5-9957-4455-b6a6-8ee241b7ebb3', N'8e06f2af-52cf-47d5-872e-0d3912f4fda0', N'<complete-powershell-cmdlet>'),
+    (N'ff659102-d147-4f1d-bd31-21978858e5fb', N'ff659102-d147-4f1d-bd31-21978858e5fb', N'8e06f2af-52cf-47d5-872e-0d3912f4fda0', N'<composed-powershell-cmdlet>'),
+    (N'36696ed7-e4f2-4305-b83e-5deaddd4a279', N'36696ed7-e4f2-4305-b83e-5deaddd4a279', N'b32c60e0-86f3-40e6-893e-d3240ffea882', N'<path>'),
+    (N'8263f648-2607-452e-ad69-5e4566354cc9', N'8263f648-2607-452e-ad69-5e4566354cc9', N'b32c60e0-86f3-40e6-893e-d3240ffea882', N'<unc-path>'),
+    (N'f8a27327-cb7a-46f4-bc53-5a2a9945784d', N'f8a27327-cb7a-46f4-bc53-5a2a9945784d', N'b32c60e0-86f3-40e6-893e-d3240ffea882', N'<absolute-path>'),
+    (N'03c6c7a1-f6f8-4fcc-a1aa-9239dc96109a', N'03c6c7a1-f6f8-4fcc-a1aa-9239dc96109a', N'b32c60e0-86f3-40e6-893e-d3240ffea882', N'<relative-path>'),
+    (N'9c967a82-098f-4a38-bac5-2be34529ed54', N'9c967a82-098f-4a38-bac5-2be34529ed54', N'b32c60e0-86f3-40e6-893e-d3240ffea882', N'<extended-path>'),
+    (N'250e84cb-abd3-4823-875d-e0e75d88cee3', N'250e84cb-abd3-4823-875d-e0e75d88cee3', N'b32c60e0-86f3-40e6-893e-d3240ffea882', N'<drive>'),
+    (N'c810abaf-010a-426e-afda-d6881831a9e6', N'c810abaf-010a-426e-afda-d6881831a9e6', N'b32c60e0-86f3-40e6-893e-d3240ffea882', N'<path-tail>'),
+    (N'197c9963-55d3-4d80-9e39-23f30bf6c57e', N'197c9963-55d3-4d80-9e39-23f30bf6c57e', N'b32c60e0-86f3-40e6-893e-d3240ffea882', N'<name>'),
+    (N'fa3311ee-3e7c-415a-9eb6-b458c793a675', N'fa3311ee-3e7c-415a-9eb6-b458c793a675', N'b32c60e0-86f3-40e6-893e-d3240ffea882', N'<namechar>'),
+    (N'520ade57-f639-45e1-b7de-e5dc3142655c', N'520ade57-f639-45e1-b7de-e5dc3142655c', N'b32c60e0-86f3-40e6-893e-d3240ffea882', N'<server>'),
+    (N'9b2a48bc-7c85-48cd-ac0d-a09d4b621b0a', N'9b2a48bc-7c85-48cd-ac0d-a09d4b621b0a', N'b32c60e0-86f3-40e6-893e-d3240ffea882', N'<share>'),
+    (N'9c8077ce-7abf-4d9a-969b-75631589a220', N'9c8077ce-7abf-4d9a-969b-75631589a220', N'b32c60e0-86f3-40e6-893e-d3240ffea882', N'<letter>'),
+    (N'8c3d6e7f-5a4b-4c9d-0e12-3c4d5e6f7081', N'8c3d6e7f-5a4b-4c9d-0e12-3c4d5e6f7081', N'b32c60e0-86f3-40e6-893e-d3240ffea882', N'<atap-utilities-secrets-csproj-path>');
 
 IF (SELECT COUNT_BIG(*) FROM #RulePrimitiveSeed) <> 15
     THROW 53504, 'V3 RulePrimitive loader aborted: RulePrimitive.csv must contain exactly 15 data rows.', 1;

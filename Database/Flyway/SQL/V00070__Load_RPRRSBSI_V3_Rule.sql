@@ -32,6 +32,12 @@ FROM OPENROWSET(
 IF LEFT(@SourceFile, 1) = NCHAR(65279)
     SET @SourceFile = SUBSTRING(@SourceFile, 2, LEN(@SourceFile));
 
+SET @SourceFile = REPLACE(@SourceFile, CHAR(13) + CHAR(10), CHAR(10));
+
+IF HASHBYTES('SHA2_256', CONVERT(varbinary(max), @SourceFile))
+       <> 0x5d4a143e07fa156ef966d65fd657650c13b48409254b03d5edbb93a4c1bce01f
+    THROW 53705, 'V3 Rule loader aborted: Rule.csv content is not the exact approved source.', 1;
+
 DECLARE @FirstLineEnd int = CHARINDEX(CHAR(10), @SourceFile);
 DECLARE @ActualHeader nvarchar(256) = CASE
     WHEN @FirstLineEnd = 0 THEN @SourceFile
@@ -53,14 +59,26 @@ CREATE TABLE #RuleSeed (
     RuleBody nvarchar(max) NULL
 );
 
-BULK INSERT #RuleSeed
-FROM '${data_dir}\Rule.csv'
-WITH (
-    FORMAT = 'CSV',
-    FIRSTROW = 2,
-    CODEPAGE = '65001',
-    TABLOCK
-);
+INSERT INTO #RuleSeed (RuleId, PhiloteId, RuleKindId, RulePrimitiveId, RuleCode, RuleBody)
+VALUES
+    (
+        N'616fb394-0b4d-486a-98af-48f1fe461af2',
+        N'616fb394-0b4d-486a-98af-48f1fe461af2',
+        N'8e06f2af-52cf-47d5-872e-0d3912f4fda0',
+        N'9460f2f5-9957-4455-b6a6-8ee241b7ebb3',
+        N'HelloWorld.PowerShell',
+        N'function HelloWorld {' + CHAR(10)
+            + N'  Write-Host ''Hello World''' + CHAR(10)
+            + N'}'
+    ),
+    (
+        N'c5c1c63a-4364-4233-9aa1-2a1a5a2ba1f3',
+        N'c5c1c63a-4364-4233-9aa1-2a1a5a2ba1f3',
+        N'b32c60e0-86f3-40e6-893e-d3240ffea882',
+        N'03c6c7a1-f6f8-4fcc-a1aa-9239dc96109a',
+        N'HelloWorld.Path',
+        N'HelloWorld.ps1'
+    );
 
 IF (SELECT COUNT_BIG(*) FROM #RuleSeed) <> 2
     THROW 53706, 'V3 Rule loader aborted: Rule.csv must contain exactly two data rows.', 1;

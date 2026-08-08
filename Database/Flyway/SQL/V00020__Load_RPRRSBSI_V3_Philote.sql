@@ -18,6 +18,12 @@ FROM OPENROWSET(
 IF LEFT(@SourceFile, 1) = NCHAR(65279)
     SET @SourceFile = SUBSTRING(@SourceFile, 2, LEN(@SourceFile));
 
+SET @SourceFile = REPLACE(@SourceFile, CHAR(13) + CHAR(10), CHAR(10));
+
+IF HASHBYTES('SHA2_256', CONVERT(varbinary(max), @SourceFile))
+       <> 0x7c073beeb6934ae90bb358a61f1509351f471abfc4edfa4ee55deb3ff313a6eb
+    THROW 53201, 'V3 Philote loader aborted: Philote.csv content is not the exact approved source.', 1;
+
 DECLARE @FirstLineEnd int = CHARINDEX(CHAR(10), @SourceFile);
 DECLARE @ActualHeader nvarchar(128) = CASE
     WHEN @FirstLineEnd = 0 THEN @SourceFile
@@ -35,14 +41,30 @@ CREATE TABLE #PhiloteSeed (
     AdditionalIdsStub nvarchar(max) NULL
 );
 
-BULK INSERT #PhiloteSeed
-FROM '${data_dir}\Philote.csv'
-WITH (
-    FORMAT = 'CSV',
-    FIRSTROW = 2,
-    CODEPAGE = '65001',
-    TABLOCK
-);
+INSERT INTO #PhiloteSeed (PhiloteId, AdditionalIdsStub)
+VALUES
+    (N'8e06f2af-52cf-47d5-872e-0d3912f4fda0', N''),
+    (N'b32c60e0-86f3-40e6-893e-d3240ffea882', N''),
+    (N'9460f2f5-9957-4455-b6a6-8ee241b7ebb3', N''),
+    (N'ff659102-d147-4f1d-bd31-21978858e5fb', N''),
+    (N'36696ed7-e4f2-4305-b83e-5deaddd4a279', N''),
+    (N'8263f648-2607-452e-ad69-5e4566354cc9', N''),
+    (N'f8a27327-cb7a-46f4-bc53-5a2a9945784d', N''),
+    (N'03c6c7a1-f6f8-4fcc-a1aa-9239dc96109a', N''),
+    (N'9c967a82-098f-4a38-bac5-2be34529ed54', N''),
+    (N'250e84cb-abd3-4823-875d-e0e75d88cee3', N''),
+    (N'c810abaf-010a-426e-afda-d6881831a9e6', N''),
+    (N'197c9963-55d3-4d80-9e39-23f30bf6c57e', N''),
+    (N'fa3311ee-3e7c-415a-9eb6-b458c793a675', N''),
+    (N'520ade57-f639-45e1-b7de-e5dc3142655c', N''),
+    (N'9b2a48bc-7c85-48cd-ac0d-a09d4b621b0a', N''),
+    (N'9c8077ce-7abf-4d9a-969b-75631589a220', N''),
+    (N'8c3d6e7f-5a4b-4c9d-0e12-3c4d5e6f7081', N''),
+    (N'616fb394-0b4d-486a-98af-48f1fe461af2', N''),
+    (N'c5c1c63a-4364-4233-9aa1-2a1a5a2ba1f3', N''),
+    (N'23ad4f37-2c70-4f34-9104-9868ec0f3823', N''),
+    (N'550e7722-cb57-4e47-a94b-9212b451d6fb', N''),
+    (N'03e28494-998f-4fc2-ba5d-ad6e5832c8b7', N'');
 
 IF (SELECT COUNT_BIG(*) FROM #PhiloteSeed) <> 22
     THROW 53202, 'V3 Philote loader aborted: Philote.csv must contain exactly 22 data rows.', 1;

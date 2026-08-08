@@ -24,6 +24,12 @@ FROM OPENROWSET(
 IF LEFT(@SourceFile, 1) = NCHAR(65279)
     SET @SourceFile = SUBSTRING(@SourceFile, 2, LEN(@SourceFile));
 
+SET @SourceFile = REPLACE(@SourceFile, CHAR(13) + CHAR(10), CHAR(10));
+
+IF HASHBYTES('SHA2_256', CONVERT(varbinary(max), @SourceFile))
+       <> 0x577f3d67e748157946d38a308b67fcb2052c2092e3f938a2bd0564d8d7689c34
+    THROW 54103, 'V3 BuildSetRuleSet loader aborted: BuildSetRuleSet.csv content is not the exact approved source.', 1;
+
 DECLARE @FirstLineEnd int = CHARINDEX(CHAR(10), @SourceFile);
 DECLARE @ActualHeader nvarchar(128) = CASE
     WHEN @FirstLineEnd = 0 THEN @SourceFile
@@ -42,13 +48,11 @@ CREATE TABLE #BuildSetRuleSetSeed (
     Ordinal nvarchar(20) NULL
 );
 
-BULK INSERT #BuildSetRuleSetSeed
-FROM '${data_dir}\BuildSetRuleSet.csv'
-WITH (
-    FORMAT = 'CSV',
-    FIRSTROW = 2,
-    CODEPAGE = '65001',
-    TABLOCK
+INSERT INTO #BuildSetRuleSetSeed (BuildSetId, RuleSetId, Ordinal)
+VALUES (
+    N'550e7722-cb57-4e47-a94b-9212b451d6fb',
+    N'23ad4f37-2c70-4f34-9104-9868ec0f3823',
+    N'0'
 );
 
 IF (SELECT COUNT_BIG(*) FROM #BuildSetRuleSetSeed) <> 1

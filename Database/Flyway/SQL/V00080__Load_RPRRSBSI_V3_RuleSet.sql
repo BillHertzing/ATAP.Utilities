@@ -21,6 +21,12 @@ FROM OPENROWSET(
 IF LEFT(@SourceFile, 1) = NCHAR(65279)
     SET @SourceFile = SUBSTRING(@SourceFile, 2, LEN(@SourceFile));
 
+SET @SourceFile = REPLACE(@SourceFile, CHAR(13) + CHAR(10), CHAR(10));
+
+IF HASHBYTES('SHA2_256', CONVERT(varbinary(max), @SourceFile))
+       <> 0xc6bc0b7405dbd6a45a2605ecc6fc5312324c2e67ea5f7e797784c904406c1bc5
+    THROW 53802, 'V3 RuleSet loader aborted: RuleSet.csv content is not the exact approved source.', 1;
+
 DECLARE @FirstLineEnd int = CHARINDEX(CHAR(10), @SourceFile);
 DECLARE @ActualHeader nvarchar(128) = CASE
     WHEN @FirstLineEnd = 0 THEN @SourceFile
@@ -39,13 +45,11 @@ CREATE TABLE #RuleSetSeed (
     RuleSetCode nvarchar(256) NULL
 );
 
-BULK INSERT #RuleSetSeed
-FROM '${data_dir}\RuleSet.csv'
-WITH (
-    FORMAT = 'CSV',
-    FIRSTROW = 2,
-    CODEPAGE = '65001',
-    TABLOCK
+INSERT INTO #RuleSetSeed (RuleSetId, PhiloteId, RuleSetCode)
+VALUES (
+    N'23ad4f37-2c70-4f34-9104-9868ec0f3823',
+    N'23ad4f37-2c70-4f34-9104-9868ec0f3823',
+    N'HelloWorld'
 );
 
 IF (SELECT COUNT_BIG(*) FROM #RuleSetSeed) <> 1

@@ -21,6 +21,12 @@ FROM OPENROWSET(
 IF LEFT(@SourceFile, 1) = NCHAR(65279)
     SET @SourceFile = SUBSTRING(@SourceFile, 2, LEN(@SourceFile));
 
+SET @SourceFile = REPLACE(@SourceFile, CHAR(13) + CHAR(10), CHAR(10));
+
+IF HASHBYTES('SHA2_256', CONVERT(varbinary(max), @SourceFile))
+       <> 0x4acf68df8ae7ab8bee138c153dfcad52461573f7328b04e3e3e0e0bd5154a2b4
+    THROW 53402, 'V3 RuleKind loader aborted: RuleKind.csv content is not the exact approved source.', 1;
+
 DECLARE @FirstLineEnd int = CHARINDEX(CHAR(10), @SourceFile);
 DECLARE @ActualHeader nvarchar(256) = CASE
     WHEN @FirstLineEnd = 0 THEN @SourceFile
@@ -40,14 +46,10 @@ CREATE TABLE #RuleKindSeed (
     RuleKindName nvarchar(256) NULL
 );
 
-BULK INSERT #RuleKindSeed
-FROM '${data_dir}\RuleKind.csv'
-WITH (
-    FORMAT = 'CSV',
-    FIRSTROW = 2,
-    CODEPAGE = '65001',
-    TABLOCK
-);
+INSERT INTO #RuleKindSeed (RuleKindId, PhiloteId, RuleKindCode, RuleKindName)
+VALUES
+    (N'8e06f2af-52cf-47d5-872e-0d3912f4fda0', N'8e06f2af-52cf-47d5-872e-0d3912f4fda0', N'PowerShell', N'PowerShell'),
+    (N'b32c60e0-86f3-40e6-893e-d3240ffea882', N'b32c60e0-86f3-40e6-893e-d3240ffea882', N'Path', N'Path');
 
 IF (SELECT COUNT_BIG(*) FROM #RuleKindSeed) <> 2
     THROW 53403, 'V3 RuleKind loader aborted: RuleKind.csv must contain exactly two data rows.', 1;

@@ -25,6 +25,12 @@ FROM OPENROWSET(
 IF LEFT(@SourceFile, 1) = NCHAR(65279)
     SET @SourceFile = SUBSTRING(@SourceFile, 2, LEN(@SourceFile));
 
+SET @SourceFile = REPLACE(@SourceFile, CHAR(13) + CHAR(10), CHAR(10));
+
+IF HASHBYTES('SHA2_256', CONVERT(varbinary(max), @SourceFile))
+       <> 0xc2f769277e9f4c058f8df1e43af9d1a583919f46f8a90174c28cb776456e6da5
+    THROW 54203, 'V3 Instantiation loader aborted: Instantiation.csv content is not the exact approved source.', 1;
+
 DECLARE @FirstLineEnd int = CHARINDEX(CHAR(10), @SourceFile);
 DECLARE @ActualHeader nvarchar(256) = CASE
     WHEN @FirstLineEnd = 0 THEN @SourceFile
@@ -44,13 +50,12 @@ CREATE TABLE #InstantiationSeed (
     InstantiationCode nvarchar(128) NULL
 );
 
-BULK INSERT #InstantiationSeed
-FROM '${data_dir}\Instantiation.csv'
-WITH (
-    FORMAT = 'CSV',
-    FIRSTROW = 2,
-    CODEPAGE = '65001',
-    TABLOCK
+INSERT INTO #InstantiationSeed (InstantiationId, PhiloteId, BuildSetId, InstantiationCode)
+VALUES (
+    N'03e28494-998f-4fc2-ba5d-ad6e5832c8b7',
+    N'03e28494-998f-4fc2-ba5d-ad6e5832c8b7',
+    N'550e7722-cb57-4e47-a94b-9212b451d6fb',
+    N'HelloWorld'
 );
 
 IF (SELECT COUNT_BIG(*) FROM #InstantiationSeed) <> 1

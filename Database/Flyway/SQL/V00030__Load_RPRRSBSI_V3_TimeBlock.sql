@@ -23,6 +23,10 @@ IF LEFT(@SourceFile, 1) = NCHAR(65279)
 
 SET @SourceFile = REPLACE(@SourceFile, CHAR(13) + CHAR(10), CHAR(10));
 
+IF HASHBYTES('SHA2_256', CONVERT(varbinary(max), @SourceFile))
+       <> 0x1512417fc92624700c5d82c16ddc76f7e2b5d720ac79974352757a0fc69e1c64
+    THROW 53302, 'V3 TimeBlock loader aborted: TimeBlock.csv content is not the exact approved source.', 1;
+
 IF @SourceFile NOT IN (@ExpectedHeader, @ExpectedHeader + CHAR(10))
     THROW 53302, 'V3 TimeBlock loader aborted: TimeBlock.csv must contain only its exact header and zero data rows.', 1;
 
@@ -33,15 +37,6 @@ CREATE TABLE #TimeBlockSeed (
     StartUtc nvarchar(50) NULL,
     DurationTicks nvarchar(50) NULL,
     EndUtc nvarchar(50) NULL
-);
-
-BULK INSERT #TimeBlockSeed
-FROM '${data_dir}\TimeBlock.csv'
-WITH (
-    FORMAT = 'CSV',
-    FIRSTROW = 2,
-    CODEPAGE = '65001',
-    TABLOCK
 );
 
 IF EXISTS (SELECT 1 FROM #TimeBlockSeed)

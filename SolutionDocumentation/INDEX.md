@@ -397,7 +397,7 @@ _Teach / Tell how to create software._
   and documents the reactivation procedure.
 - [Sprint Infrastructure Naming](SprintInfrastructure-Naming.md) —
   Naming conventions for sprint-scoped infrastructure resources, including
-  BWS-owned `dbConnectionString-*` keys for Development and Experimental
+  BWS-owned dotted `dbConnectionString.*` keys for Development and Experimental
   database connection strings.
 - [Production and Tooling Overview](Production-and-Tooling-Overview.md) —
   Cross-cut overview of production-facing flows and supporting tooling.

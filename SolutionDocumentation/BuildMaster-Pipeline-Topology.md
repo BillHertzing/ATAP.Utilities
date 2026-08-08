@@ -82,7 +82,7 @@ Each BuildMaster Application supplies its own values for the variables its
 | `$ReleaseBundleQAFeedName`                         | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | `releasebundle-qa`                                    |
 | `$ReleaseBundleProductionFeedName`                 | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | `releasebundle-production`                            |
 | `$PreviousProductionBackupPath`                    | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | path to prior production `.bak` (Flyway rehearsal)    |
-| `$IntegrationDatabaseDBConnectionStringSecretName` | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | `dbConnectionString-AceCommander-utat022-Integration` |
+| `$IntegrationDatabaseDBConnectionStringSecretName` | _(not used)_                                       | _(not used)_                                       | _(not used)_                                                | `dbConnectionString.AceCommander.utat022.Integration` |
 
 `$Tier` is the current BuildMaster stage. `$BuildMasterBuildId` is derived in
 each plan with `$BuildMasterId(build)` and is used only for generated run-state

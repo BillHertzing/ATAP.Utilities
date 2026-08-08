@@ -175,7 +175,7 @@ Creates 12 secure notes:
 master, ATAPUtilities, AceCommander
 x host/computer + localhost x Dev and Exp
 Name form:
-dbConnectionString-&lt;DB&gt;-&lt;Host&gt;-&lt;Dev|Exp&gt;-&lt;User&gt; ;
+dbConnectionString.&lt;DB&gt;.&lt;Host&gt;.&lt;Dev|Exp&gt;.&lt;User&gt; ;
 
 note right #f8cecc
   ⚠ Naming drift:

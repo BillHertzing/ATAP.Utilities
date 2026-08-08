@@ -223,7 +223,7 @@ Source: `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/ReleaseBundle-6Stage.
 | `ReleaseBundleQAFeedName`                         | `releasebundle-qa`                                    | No         | Universal Package feed.                                                                                                                  |
 | `ReleaseBundleProductionFeedName`                 | `releasebundle-production`                            | No         | Universal Package feed.                                                                                                                  |
 | `PreviousProductionBackupPath`                    | `<approved .bak path>`                                | No         | Required for Integration Flyway rehearsal traceability.                                                                                  |
-| `IntegrationDatabaseDBConnectionStringSecretName` | `dbConnectionString-AceCommander-utat022-Integration` | No         | Follows `SprintInfrastructure-Naming.md`; pass-through to `Invoke-FlywayRehearsal -DBConnectionStringSecretName`.                        |
+| `IntegrationDatabaseDBConnectionStringSecretName` | `dbConnectionString.AceCommander.utat022.Integration` | No         | Follows `SprintInfrastructure-Naming.md`; pass-through to `Invoke-FlywayRehearsal -DBConnectionStringSecretName`.                        |
 
 Execution notes:
 

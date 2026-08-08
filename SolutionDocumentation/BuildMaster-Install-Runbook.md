@@ -399,7 +399,7 @@ Build-scope variables supplied when creating a build:
 | `ReleaseBundleQAFeedName`                         | `releasebundle-qa`                                    | No        | Universal Package feed.                                                                                                         |
 | `ReleaseBundleProductionFeedName`                 | `releasebundle-production`                            | No        | Universal Package feed.                                                                                                         |
 | `PreviousProductionBackupPath`                    | Approved `.bak` path                                  | No        | Required for Integration Flyway rehearsal.                                                                                      |
-| `IntegrationDatabaseDBConnectionStringSecretName` | `dbConnectionString-AceCommander-utat022-Integration` | No        | Used by `Invoke-FlywayRehearsal`.                                                                                               |
+| `IntegrationDatabaseDBConnectionStringSecretName` | `dbConnectionString.AceCommander.utat022.Integration` | No        | Used by `Invoke-FlywayRehearsal`.                                                                                               |
 
 ### 8.5 Automation call
 

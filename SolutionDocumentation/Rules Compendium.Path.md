@@ -4,7 +4,7 @@
   Language: Path
   Created: pre-existing; normalized 2026-08-02
   Kind Count: 1
-  Primitive Count: 12
+  Primitive Count: 13
   Template version: 1.0
   Source skill: .claude/skills/new-rule-kind/SKILL.md
 -->
@@ -97,7 +97,13 @@ C:\\Repository\\SolutionDocumentation\\Rules Compendium.Path.md
 
 ## Part II — Rule Primitives
 
-Rule Primitives are the atomic building blocks from which a Rule is constructed. Each primitive maps to a single BNF non-terminal in the Windows Path EBNF Grammar. When a primitive is instantiated, its inputs are bound to specific values; the rendered output is the exact PATH text that corresponds to that non-terminal node in the parse tree.
+Rule Primitives are the atomic building blocks from which a Rule is constructed.
+The twelve grammar primitives each map to a single BNF non-terminal in the
+Windows Path EBNF Grammar. When a grammar primitive is instantiated, its inputs
+are bound to specific values; the rendered output is the exact PATH text that
+corresponds to that non-terminal node in the parse tree. The thirteenth retained
+primitive is the zero-input specialized
+`<atap-utilities-secrets-csproj-path>` identity documented below.
 
 <!-- rule-primitives-start -->
 
@@ -462,15 +468,41 @@ Attribution:
 
 ---
 
+### `<atap-utilities-secrets-csproj-path>` Rule Primitive
+
+**Philote ID:** `"8c3d6e7f-5a4b-4c9d-0e12-3c4d5e6f7081"`
+
+Description: Specialized absolute-path primitive for the
+`ATAP.Utilities.Secrets.csproj` file instantiation. This retained primitive is
+not a Path grammar production and does not amend the twelve-primitive grammar.
+
+Body: The complete rendered absolute path to `ATAP.Utilities.Secrets.csproj`.
+
+Inputs: None. The primitive has zero structured `RulePrimitiveInput` rows.
+
+Output: The rendered absolute path to the `ATAP.Utilities.Secrets.csproj` file.
+
+Processing: Resolves the specialized project-file path for its instantiation;
+the twelve grammar primitives remain responsible for general Path composition.
+
+Attribution:
+
+```text
+1. Retained RPRRSBSI Path catalog identity
+```
+
+---
+
 <!-- rule-primitives-end -->
 
 ## Part III — Rule Repository
 
 <!-- rule-repository-start -->
 
-No formal Path Rules are present in the normalized corpus. The twelve retained
-Rule Primitives are documented above; Rule composition remains a later baseline
-and database-conformance activity.
+No formal Path Rules are present in the normalized corpus. The thirteen retained
+Rule Primitives are documented above: twelve grammar primitives and the
+zero-input specialized `<atap-utilities-secrets-csproj-path>` primitive. Rule
+composition remains a later baseline and database-conformance activity.
 
 <!-- rule-repository-end -->
 

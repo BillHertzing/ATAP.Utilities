@@ -15,6 +15,7 @@ RulePrimitive,<namechar>,fa3311ee-3e7c-415a-9eb6-b458c793a675,fa3311ee-3e7c-415a
 RulePrimitive,<server>,520ade57-f639-45e1-b7de-e5dc3142655c,520ade57-f639-45e1-b7de-e5dc3142655c
 RulePrimitive,<share>,9b2a48bc-7c85-48cd-ac0d-a09d4b621b0a,9b2a48bc-7c85-48cd-ac0d-a09d4b621b0a
 RulePrimitive,<letter>,9c8077ce-7abf-4d9a-969b-75631589a220,9c8077ce-7abf-4d9a-969b-75631589a220
+RulePrimitive,<atap-utilities-secrets-csproj-path>,8c3d6e7f-5a4b-4c9d-0e12-3c4d5e6f7081,8c3d6e7f-5a4b-4c9d-0e12-3c4d5e6f7081
 Rule,HelloWorldPowerShell,616fb394-0b4d-486a-98af-48f1fe461af2,616fb394-0b4d-486a-98af-48f1fe461af2
 Rule,HelloWorldRelativePath,c5c1c63a-4364-4233-9aa1-2a1a5a2ba1f3,c5c1c63a-4364-4233-9aa1-2a1a5a2ba1f3
 RuleSet,HelloWorld,23ad4f37-2c70-4f34-9104-9868ec0f3823,23ad4f37-2c70-4f34-9104-9868ec0f3823

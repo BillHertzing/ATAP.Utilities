@@ -4,18 +4,23 @@
 
 V3 retains the Path grammar and all existing Path Rule Primitives by reference to
 [`Rules Compendium.Path.md`](../../SolutionDocumentation/Rules%20Compendium.Path.md).
-It adds no Path primitive and makes no grammar amendment.  The initial V3 Path Rule
-value is exactly `HelloWorld.ps1`, selected under the retained `<relative-path>`
+It adds no Path primitive and makes no grammar amendment. The retained catalog has
+13 Path primitives: 12 grammar primitives plus the specialized
+`<atap-utilities-secrets-csproj-path>` primitive. The initial V3 Path Rule value
+is exactly `HelloWorld.ps1`, selected under the retained `<relative-path>`
 primitive, as directed by the HITL-reviewed V3 plan.
 
 ## Retained catalog
 
-The retained compendium declares **12** Path Rule Primitives (its metadata and Part
-III both state that count):
+The retained compendium declares **13** Path Rule Primitives: 12 grammar
+primitives plus one specialized primitive:
 
 `<path>`, `<unc-path>`, `<absolute-path>`, `<relative-path>`, `<extended-path>`,
 `<drive>`, `<path-tail>`, `<name>`, `<namechar>`, `<server>`, `<share>`, and
-`<letter>`.
+`<letter>`; and `<atap-utilities-secrets-csproj-path>`.
+
+Together with the two retained PowerShell primitives, the V3 catalog contains
+**15 total Rule Primitives**.
 
 It declares **21 named input declarations** across those primitives:
 
@@ -33,12 +38,14 @@ It declares **21 named input declarations** across those primitives:
 | `<server>` | `ServerIdentifier` | 1 |
 | `<share>` | `ShareName` | 1 |
 | `<letter>` | `LetterChar` | 1 |
+| `<atap-utilities-secrets-csproj-path>` | None | 0 |
 | **Total** |  | **21** |
 
 The `<extended-path>` input list presents `Server`, `Share`, and `PathTail` together
 in one bullet; they are nevertheless three separately named declarations. This
 explains why a physical Markdown-bullet count is 19 while the declared input-name
-count is 21.
+count is 21. The specialized primitive has no structured input metadata and
+therefore contributes zero `RulePrimitiveInput` rows.
 
 ## Exact derivation
 
@@ -53,10 +60,10 @@ The retained grammar derives the selected value without an extension:
 The final step uses the retained `<name>` production, `<name> ::= <namechar>
 {<namechar>}`. No recursive `RestOfPath` is needed for this one-name path tail.
 
-Source citations: retained compendium grammar at `<relative-path>` (line 207),
-`<path-tail>` (line 295), and `<name>` (line 324); retained input metadata begins at
-lines 121, 151, 183, 212, 241, 272, 300, 329, 360, 388, 416, and 449. The V3 plan
-selects `HelloWorld.ps1` under `<relative-path>` at lines 85–88 and 226–228.
+Source citations: retained compendium grammar at `<relative-path>`, `<path-tail>`,
+and `<name>`; retained input metadata appears under each primitive in Part II.
+The V3 plan selects `HelloWorld.ps1` under `<relative-path>` at lines 85–88 and
+226–228.
 
 ## Non-selected seed values
 
@@ -67,9 +74,11 @@ retained grammar; this record makes no broader grammar-acceptance claim.
 
 ## Evidence versus assertion
 
-- **Verified from sources:** 12 retained primitive headings; 21 named input
-  declarations; the productions used in the derivation; and the amended plan's
-  `<relative-path>` selection.
+- **Verified from sources:** 13 retained Path primitive headings (12 grammar plus
+  one specialized); 15 total retained primitives across Path and PowerShell; 21
+  named structured Path input declarations, with zero for the specialized
+  primitive; 22 semantic Philotes; the productions used in the derivation; and
+  the amended plan's `<relative-path>` selection.
 - **V3 selection assertion:** the initial seed value must be exactly
   `HelloWorld.ps1`; the rejected values above are excluded from the V3 seed, not a
   general parser conformance judgment.

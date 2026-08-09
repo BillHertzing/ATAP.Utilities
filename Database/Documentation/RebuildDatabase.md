@@ -1,92 +1,63 @@
-# Rebuild Experimental Databases on Expwhertzing
+# Rebuild the ATAPUtilities database
 
-> **Instance-naming correction (2026-08-08):** `Experimental` is a logical
-> database role, not a physical SQL Server instance name. Developer-scoped
-> instances follow `Exp<DeveloperName>`; `Expwhertzing` is the specific instance
-> for developer `whertzing`. Never provision or address an instance named
-> `Experimental`.
+## Authority boundary
 
-## Prerequisites
+The active package source is `Database/Flyway` and the package identity is
+`ATAPUtilities.Database` `0.1.0`. Its active lineage contains one migration:
+`SQL/V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql` plus the eleven
+approved CSV inputs in `Data/`.
 
-- PowerShell 7.x (`pwsh`)
-- Flyway CLI available in `PATH`
-- SQL Server instance `Expwhertzing` is running
-- Windows Integrated Security access to `localhost\Expwhertzing`
-- All ATAP PowerShell modules are autoloaded (available in `PSModulePath`)
+A rebuild is destructive. Do not run it from this document alone. The operator
+must have separate human approval for the exact SQL Server instance, database
+name, backup or backup-waiver decision, and unchanged package hash. There is no
+SQL Server instance named `Experimental`. The developer-scoped instance used by
+the guarded rehearsal is `utat022\expWhertzing`; logical package tiers do not
+rename SQL Server instances.
 
----
+## Required preflight
 
-## Dry-run validation (optional but recommended)
+1. Resolve the approved connection secret by its configured SecretName through
+   `Get-SecretATAP`; never paste a connection string into a command or file.
+2. Prove the connected server identity and exact target database name.
+3. Inventory the target and protected databases before any mutation.
+4. Verify the local package ID, version, manifest, and SHA-256 against the
+   approved release evidence.
+5. Run Flyway `info` and `validate`. A pre-migration validation failure is
+   expected only for a newly created empty target with migration `00010` pending.
+6. Stop on any target, history, package, or hash mismatch.
 
-**Step 1 — Check Flyway migration state without touching the database**
+## Approved apply sequence
 
-```powershell
-$repoRoot   = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items'
-$flywayBase = "$repoRoot\Database\Flyway"
+After the exact-target and destructive-action gates are recorded:
 
-Invoke-Flyway `
-  -DatabaseName   'ATAPUtilities' `
-  -Environment    'Experimental' `
-  -SqlInstance    'Expwhertzing' `
-  -DatabaseHost   'localhost' `
-  -IntegratedSecurity `
-  -FlywayCommand  'info' `
-  -FlywayBasePath $flywayBase
-```
+1. Back up the existing target, or record the approved backup waiver when the
+   target is proven absent.
+2. Create or replace only the exact approved database.
+3. Apply the unchanged `ATAPUtilities.Database` `0.1.0` package through the
+   approved Flyway runner.
+4. Run Flyway `validate`.
+5. Run `Database/Powershell/tests/PhiloteTemporalValidity-Source.Tests.ps1` and
+   the authorized database suite.
+6. Verify the exact 11-table, 45-column, 72-constraint, eight-procedure,
+   one-table-type, 22-Philote, and 22-validity-period contract.
+7. Independently compare the protected-database inventory to the preflight.
+8. Record rollback readiness and the final deployed package identity.
 
----
+## Disposable rehearsal precedent
 
-## Drop and recreate the database
+PTV-450 applied the exact unpublished package twice from empty to
+`ATAPUtilities_PTV450_Rehearsal_20260809` on
+`utat022\expWhertzing`. Both runs passed 21/21 runtime tests and produced
+identical schema, seed, and Flyway-history hashes. Each disposable database was
+dropped, and an independent master-catalog query proved final absence. That
+evidence validates the runbook mechanics; it does not authorize a permanent
+target or a future package/feed/deployment action.
 
-**Step 2 — Run the full rebuild** (provisions DB + runs all active Flyway migrations)
+## Prohibited shortcuts
 
-```powershell
-$repoRoot = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities-wt-100-Sprint-0007-work-items'
-
-$result = Build-DatabaseWithFlyway `
-  -DatabaseName    'ATAPUtilities' `
-  -Environment     'Experimental' `
-  -SqlInstance     'Expwhertzing' `
-  -DatabaseHost    'localhost' `
-  -DatabasePath    'C:\LocalDBs\Expwhertzing' `
-  -IntegratedSecurity `
-  -Force
-
-$result
-```
-
-`-Force` drops the existing database and recreates it. `-IntegratedSecurity` uses Windows auth (no vault lookup needed).
-
-**What this does internally:**
-
-1. Connects to `master` on `localhost\Expwhertzing`
-2. Drops `ATAPUtilities` if it exists (because `-Force`)
-3. Runs `DropAndCreateDatabase.sql`, `CreateLoginAndUser.sql`, `AddFlywaySchemaHistoryTable.sql` from `src\ATAP.Utilities.DatabaseManagement\SharedSQL`
-4. Sets `FLYWAY_URL` and placeholder env vars, then runs `flyway migrate` against all active migrations in `Database\Flyway\SQL\` (V00.01.000010 through V00.01.000301)
-
-The 9 SQL files in `Database\Flyway\SQL\Obsolete\` are outside the `flyway.toml` scan path (`filesystem:./SQL`) and are ignored automatically.
-
-Database `.mdf` and `.ldf` files are written to `C:\LocalDBs\Expwhertzing\`.
-
----
-
-## Verify the migration was applied
-
-**Step 3 — Confirm schema history**
-
-```powershell
-Invoke-Flyway `
-  -DatabaseName   'ATAPUtilities' `
-  -Environment    'Experimental' `
-  -SqlInstance    'Expwhertzing' `
-  -DatabaseHost   'localhost' `
-  -IntegratedSecurity `
-  -FlywayCommand  'info' `
-  -FlywayBasePath "$repoRoot\Database\Flyway"
-```
-
----
-
-## Additional databases
-
-If more than one experimental database needs rebuilding (e.g., `PCMSC`), repeat Step 2 with `-DatabaseName 'PCMSC'`. Note that `PCMSC` migrations live in a different repository; omit or skip Flyway for databases whose migration scripts are not present under `Database\Flyway\SQL\`.
+- Do not run Flyway `clean`, edit Flyway history, or execute archived migrations.
+- Do not apply the archived 13-migration pre-adoption V3 sequence.
+- Do not seed the archived temporal CSV.
+- Do not infer a database target from a logical tier name.
+- Do not reuse a prior approval for another instance, database, package hash, or
+  point in time.

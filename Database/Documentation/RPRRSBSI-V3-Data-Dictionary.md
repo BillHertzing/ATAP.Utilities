@@ -2,7 +2,11 @@
 
 ## Authority and conventions
 
-This is the smallest complete proposed SQL Server 2022 physical contract under HITL decision V3-D09. It is ready for HITL review; it authorizes neither migration/seed work nor database, package, or deployment activity.
+This is the implemented SQL Server 2022 physical contract for the consolidated
+RPRRSBSI V3 initial lineage. It matches the PTV-G0-ratified temporal contract and
+the active `V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql` source.
+Documentation of this contract does not itself authorize database creation,
+package publication, promotion, or deployment.
 
 Content retrieval was requested with retrieval labels [RPRRSBSI,V3,physical-schema,data-dictionary], depth 3, width 2, production. gather-content-summary was unavailable (no registered command), so the direct-read fallback used the amended V3 plan, IPhilote.cs, and retained Path and PowerShell compendiums.
 
@@ -13,7 +17,7 @@ All objects are in schema ATAPUtilities. Every foreign key has ON DELETE NO ACTI
 | # | Table | Purpose |
 | -: | --- | --- |
 | 1 | Philote | Philote registry row. |
-| 2 | TimeBlock | Ordered persisted TimeBlocks member. |
+| 2 | PhiloteValidityPeriod | Ordered half-open business-validity periods for a Philote. |
 | 3 | RuleKind | PowerShell or Path domain. |
 | 4 | RulePrimitive | Retained primitive in a kind. |
 | 5 | RulePrimitiveInput | Primitive-input definition metadata. |
@@ -35,18 +39,27 @@ All objects are in schema ATAPUtilities. Every foreign key has ON DELETE NO ACTI
 
 A Philote-bearing entity has exactly one matching Philote row. The entity key and PhiloteId deliberately equal the registry key; that GUID cannot identify a different semantic object.
 
-### TimeBlock
+### PhiloteValidityPeriod
 
-| Column | Type | Null |
-| --- | --- | --- |
-| TimeBlockId | uniqueidentifier | No |
-| PhiloteId | uniqueidentifier | No |
-| Ordinal | int | No |
-| StartUtc | datetime2(7) | No |
-| DurationTicks | bigint | No |
-| EndUtc | datetime2(7) | No |
+| Column | Type | Null | Meaning |
+| --- | --- | --- | --- |
+| PhiloteValidityPeriodId | uniqueidentifier | No | Stable caller- or registry-supplied period-row identity; primary key. |
+| PhiloteId | uniqueidentifier | No | Parent identity; foreign key to `Philote(PhiloteId)`. |
+| PreviousValidToUtc | datetime2(7) | Yes | End of the immediate predecessor; null only for the first row. |
+| ValidFromUtc | datetime2(7) | No | Included UTC business-validity boundary. |
+| ValidToUtc | datetime2(7) | Yes | Excluded UTC boundary; null means open-ended. |
 
-Constraints: PK_TimeBlock(TimeBlockId); FK_TimeBlock_Philote(PhiloteId) -> Philote(PhiloteId); UQ_TimeBlock_Philote_Ordinal(PhiloteId,Ordinal); CK_TimeBlock_Ordinal_NonNegative; CK_TimeBlock_DurationTicks_Positive: DurationTicks > 0; CK_TimeBlock_EndUtc_Exact in the TimeBlock section below. One Philote has zero or more rows; each row has one Philote. The initial collection is empty.
+Constraints: `PK_PhiloteValidityPeriod`;
+`FK_PhiloteValidityPeriod_Philote` with `NO ACTION` update/delete;
+`CK_PhiloteValidityPeriod_NonEmpty`;
+`CK_PhiloteValidityPeriod_PredecessorNotAfterStart`;
+`UQ_PhiloteValidityPeriod_Philote_ValidFromUtc`;
+`UQ_PhiloteValidityPeriod_Philote_ValidToUtc`;
+`UQ_PhiloteValidityPeriod_Philote_PreviousValidToUtc`; and the self-reference
+`FK_PhiloteValidityPeriod_Predecessor` from
+`(PhiloteId, PreviousValidToUtc)` to `(PhiloteId, ValidToUtc)` with `NO ACTION`
+update/delete. One Philote has zero or more rows. The approved initial seed has
+one open-ended row for each of the 22 Philotes.
 
 ### RuleKind
 
@@ -153,18 +166,33 @@ Constraints: PK_BuildSetRuleSet(BuildSetId,RuleSetId); FK_BuildSetRuleSet_BuildS
 
 Constraints: PK_Instantiation(InstantiationId); FK_Instantiation_Philote(PhiloteId) -> Philote(PhiloteId); FK_Instantiation_BuildSet(BuildSetId) -> BuildSet(BuildSetId); UQ_Instantiation_Philote(PhiloteId); UQ_Instantiation_Code(InstantiationCode); CK_Instantiation_Philote_Equals_Id; CK_Instantiation_Code_NotEmpty. Each Instantiation selects one BuildSet; a BuildSet has zero or more selecting Instantiations.
 
-## TimeBlock exactness
+## Temporal-validity exactness
 
-EndUtc is stored, not computed. SQL Server 2022 DATEADD accepts an int number argument; DurationTicks is bigint, so a computed 100-nanosecond DATEADD expression cannot safely represent the contract. CK_TimeBlock_EndUtc_Exact is:
+Periods use half-open semantics: `[ValidFromUtc, ValidToUtc)`. The start belongs
+to the period; a finite end does not. `ValidToUtc = NULL` means no known end.
+`PreviousValidToUtc` links each non-first row to the exact end of its immediate
+predecessor. Equality between predecessor end and current start is adjacency;
+strict inequality is an allowed gap.
 
-    EndUtc > StartUtc
-    AND DurationTicks =
-          DATEDIFF_BIG(DAY, CONVERT(date, StartUtc), CONVERT(date, EndUtc))
-            * CONVERT(bigint, 864000000000)
-        + DATEDIFF_BIG(NANOSECOND, CONVERT(datetime2(7), CONVERT(date, EndUtc)), EndUtc) / 100
-        - DATEDIFF_BIG(NANOSECOND, CONVERT(datetime2(7), CONVERT(date, StartUtc)), StartUtc) / 100
+The predecessor foreign key plus the three Philote-scoped unique constraints form
+one non-branching chain. The non-empty and predecessor-order checks reject zero or
+reversed periods and overlap. No ordinal, duration, computed end, execution-time
+default, or anytime sentinel is stored. Valid time is business state and is not
+SQL Server transaction time.
 
-The predicate separates whole days and within-day ticks so each term stays in bigint over datetime2(7). datetime2(7) has 100-nanosecond precision; both within-day differences divide by 100 exactly.
+All mutations cross the eight-procedure boundary:
+`CreateFirstPhiloteValidityPeriod`, `CloseCurrentPhiloteValidityPeriod`,
+`ReactivatePhiloteValidityPeriod`, `CorrectPhiloteValidityPeriodBoundary`,
+`SplitPhiloteValidityPeriod`, `MergeAdjacentPhiloteValidityPeriods`,
+`DeletePhiloteValidityPeriod`, and `ReplacePhiloteValidityPeriodSet`. Each
+serializes writers per Philote, validates the complete desired chain, applies the
+rewrite atomically, and returns the resulting five-column set ordered by start.
+
+Point containment uses
+`ValidFromUtc <= @AsOfUtc AND (ValidToUtc IS NULL OR @AsOfUtc < ValidToUtc)`.
+Bounded overlap uses
+`ValidFromUtc < @SearchToUtc AND (ValidToUtc IS NULL OR @SearchFromUtc < ValidToUtc)`.
+`BETWEEN` is prohibited because it would include the excluded end.
 
 ## Positive and invalid-row controls
 
@@ -175,7 +203,8 @@ All symbols below are distinct valid GUIDs unless marked absent. Each invalid ca
 | Philote stub | Philote(P1,NULL) | Philote(P2,N'non-null') | CK_Philote_AdditionalIdsStubIsNull |
 | Philote equality | RuleKind(K1,K1,...); same key pair for RulePrimitive, Rule, RuleSet, BuildSet, Instantiation | any entity has Id=X1 and PhiloteId=P1 | all six CK_*_Philote_Equals_Id |
 | Philote uniqueness | RuleKind(K1,K1,...) | second RuleKind with PhiloteId=K1 | UQ_RuleKind_Philote; equivalent UQs on all Philote-bearing tables |
-| TimeBlock FK | TimeBlock(T1,P1,0,S,1,E), with Philote(P1) | same row has absent PhiloteId=PX | FK_TimeBlock_Philote |
+| Validity-period parent | `VP1(P1,NULL,S,NULL)`, with `Philote(P1)` | same row has absent `PhiloteId=PX` | `FK_PhiloteValidityPeriod_Philote` |
+| Validity-period boundaries | `VP1(P1,NULL,01:00,02:00)` | zero/reversed end, predecessor after start, duplicate start/end/root, broken predecessor, overlap, cycle, or a successor after an open end | the two checks, three unique constraints, and predecessor self-FK |
 | RuleKind FK | RuleKind(K1,K1,...), with Philote(K1) | same row has absent PhiloteId=KX | FK_RuleKind_Philote |
 | Primitive FKs | RulePrimitive(PR1,PR1,K1,N'<relative-path>'), with parents | absent Philote PX or kind KX | FK_RulePrimitive_Philote; FK_RulePrimitive_RuleKind |
 | Input FK | RulePrimitiveInput(I1,PR1,N'PathTail',N'<path-tail>',N'desc',NULL,1,0) | same row has absent primitive PRX | FK_RulePrimitiveInput_RulePrimitive |
@@ -189,7 +218,6 @@ All symbols below are distinct valid GUIDs unless marked absent. Each invalid ca
 | Membership uniqueness | RuleSetRule(RS1,R1,0); BuildSetRuleSet(BS1,RS1,0) | repeat either pair | PK_RuleSetRule; PK_BuildSetRuleSet |
 | All ordinals | first member has Ordinal=0 | Ordinal=-1; or another same-parent member at 0 | all CK_*_Ordinal_NonNegative and UQ_*_Ordinal |
 | Required text | all code/name/input/body values contain text | set a required value to empty string | every CK_*_NotEmpty |
-| TimeBlock duration/end | S=2026-01-01T00:00:00.0000000, DurationTicks=1, E=2026-01-01T00:00:00.0000001 | duration 0; duration 2 with same E; or E <= S | CK_TimeBlock_DurationTicks_Positive; CK_TimeBlock_EndUtc_Exact |
 
 ## Explicit physical exclusions
 
@@ -201,9 +229,14 @@ These names and families are exclusions only: they must not become a table, view
 - ContentSummary, AgentText, PKIArtifact, Organization, Repository, User, Gmail, Tags, BuildMaster, ProGet, or AceCommander domain object.
 - additional-ID child, generic property bag, JSON extension, audit/ownership/soft-delete, or V1/V2 compatibility object.
 
-## HITL review checklist
+## Contract verification checklist
 
-- [ ] The physical inventory is exactly the eleven tables listed above.
-- [ ] Every column, type/length, nullability, key, FK action, unique/check rule, and ordinal base is preserved.
-- [ ] The implementation rejects each negative control.
-- [ ] HITL accepts this contract before the schema-authoring gate closes.
+- [x] The physical inventory is exactly the eleven tables listed above.
+- [x] Every column, type/length, nullability, key, FK action, unique/check rule,
+  and ordinal base matches the consolidated migration.
+- [x] The runtime suite rejects the named temporal negative controls and passes
+  the mutation, boundary, and concurrent-writer cases.
+- [x] PTV-G4 accepted the database/package source before this documentation wave.
+
+See [ADR-Philote-Temporal-Validity-Relational-Contract.md](ADR-Philote-Temporal-Validity-Relational-Contract.md)
+for the complete proof, procedure signatures, and invalid-shape matrix.

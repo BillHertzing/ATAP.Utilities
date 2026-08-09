@@ -292,6 +292,10 @@ _Teach / Tell how to create software._
   Runbook for rendering editable PlantUML, UML, and Draw.io sources into
   checked-in `_generated/diagrams` images with `Convert-DiagramsToImages`.
   Also records the PlantUML MCP relationship for interactive clients.
+- [Philote Temporal Residual-Reference Classification](Philote-Temporal-Reference-Classification.md) —
+  PTV-540 repository-wide classification of every retained vendor/retired
+  temporal-name hit, including the four Rule Export source defects that remain
+  outside the active Flyway package.
 - [BuildMaster Install Runbook](BuildMaster-Install-Runbook.md) —
   Comprehensive installation, verification, and ongoing-configuration guide for
   the BuildMaster server. Covers application setup, raft strategy, application

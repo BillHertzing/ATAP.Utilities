@@ -45,7 +45,7 @@ Retrieves a Rule with all metadata in JSON format.
 - `includeComposition` (optional): Include primitive composition details
   - Type: boolean
   - Default: `true`
-- `includeTimeBlocks` (optional): Include Philote time blocks
+- `includeValidityPeriods` (optional): Include Philote business-validity periods
   - Type: boolean
   - Default: `false`
 - `includeRuleSets` (optional): Include Rule Sets that contain this Rule
@@ -85,7 +85,12 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
       }
     ],
     "additionalIds": [],
-    "timeBlocks": []
+    "validityPeriods": [
+      {
+        "validFromUtc": "2026-08-08T00:00:00.0000000Z",
+        "validToUtc": null
+      }
+    ]
   }
 }
 ```
@@ -345,7 +350,10 @@ Content-Disposition: attachment; filename="rules_export_20260227_143000.zip"
 
 ### Database Integration
 
-All endpoints will call the existing `dbo.GetRuleByName` stored procedure:
+The API projection reads the Rule aggregate and its
+`ATAPUtilities.PhiloteValidityPeriod` rows. Persistence includes the stable
+period-row ID and predecessor link; the public Philote JSON intentionally emits
+only the semantic `validFromUtc` and `validToUtc` interval fields.
 
 ```csharp
 // C# Example using Dapper
@@ -365,18 +373,33 @@ using (var connection = new SqlConnection(connectionString))
         var ruleInfo = await multi.ReadFirstOrDefaultAsync<RuleInfo>();
         var composition = await multi.ReadAsync<RuleComposition>();
         var additionalIds = await multi.ReadAsync<AdditionalId>();
-        var timeBlocks = await multi.ReadAsync<TimeBlock>();
+        var validityPeriods = await multi.ReadAsync<TemporalValidityPeriod>();
 
         return new RuleResponse
         {
             RuleInfo = ruleInfo,
             Composition = composition.ToList(),
             AdditionalIds = additionalIds.ToList(),
-            TimeBlocks = timeBlocks.ToList()
+            ValidityPeriods = validityPeriods.ToList()
         };
     }
 }
 ```
+
+### Temporal JSON contract
+
+Philote JSON uses the exact case-sensitive property names `id`, `additionalIds`,
+and `validityPeriods`. Each validity period uses `validFromUtc` and
+`validToUtc`. A null `validToUtc` is open-ended; a finite end is excluded, so the
+period is `[validFromUtc, validToUtc)`. An empty array means no known business-valid
+existence and is not an anytime sentinel.
+
+The serializer rejects duplicate canonical properties, non-UTC instants,
+overlapping periods, more than one open-ended period, an open-ended period that
+is not last, and the retired vendor-shaped temporal property family. Unknown
+non-temporal properties remain forward-compatible. The implementation's
+multi-target serialization suite verifies the canonical forms and round trips on
+net8.0, net9.0, and net10.0.
 
 ### Text File Generation
 

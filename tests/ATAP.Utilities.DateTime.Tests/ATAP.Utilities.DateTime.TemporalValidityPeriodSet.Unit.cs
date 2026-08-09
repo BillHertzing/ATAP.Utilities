@@ -47,6 +47,23 @@ public sealed class TemporalValidityPeriodSetUnitTests
     result.Should().Equal(Period(0, 10), Period(10, 15), Period(20, 30));
   }
 
+  [Fact]
+  public void Constructor_InterfaceImplementation_MaterializesValidatedConcreteSnapshot()
+  {
+    // Arrange
+    ITemporalValidityPeriod source = new TestTemporalValidityPeriod(Instant(10), Instant(20));
+
+    // Act
+    var result = new TemporalValidityPeriodSet(new[] { source });
+
+    // Assert
+    result.Should().ContainSingle();
+    result[0].Should().BeOfType<TemporalValidityPeriod>();
+    result[0].ValidFromUtc.Should().Be(source.ValidFromUtc);
+    result[0].ValidToUtc.Should().Be(source.ValidToUtc);
+    result[0].Should().NotBeSameAs(source);
+  }
+
   public static IEnumerable<object[]> InvalidWholeSetCases()
   {
     yield return new object[]
@@ -497,5 +514,27 @@ public sealed class TemporalValidityPeriodSetUnitTests
     }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+  }
+
+  private sealed class TestTemporalValidityPeriod : ITemporalValidityPeriod
+  {
+    public TestTemporalValidityPeriod(UtcInstant validFromUtc, UtcInstant? validToUtc)
+    {
+      ValidFromUtc = validFromUtc;
+      ValidToUtc = validToUtc;
+    }
+
+    public UtcInstant ValidFromUtc { get; }
+
+    public UtcInstant? ValidToUtc { get; }
+
+    public bool IsOpenEnded => ValidToUtc is null;
+
+    public TemporalDuration? Duration => ValidToUtc is { } end
+      ? new TemporalDuration(end.Value - ValidFromUtc.Value)
+      : null;
+
+    public bool Contains(UtcInstant instant) => instant.CompareTo(ValidFromUtc) >= 0
+      && (ValidToUtc is null || instant.CompareTo(ValidToUtc.Value) < 0);
   }
 }

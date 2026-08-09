@@ -29,14 +29,18 @@ public sealed class TemporalValidityPeriodSet :
   /// <exception cref="ArgumentException">
   /// Thrown when an element is null, starts are duplicated, periods overlap, or an open-ended period is not the sole last period.
   /// </exception>
-  public TemporalValidityPeriodSet(IEnumerable<TemporalValidityPeriod>? periods = null)
+  public TemporalValidityPeriodSet(IEnumerable<ITemporalValidityPeriod>? periods = null)
   {
-    var snapshot = periods is null ? Array.Empty<TemporalValidityPeriod>() : periods.ToArray();
+    var source = periods is null ? Array.Empty<ITemporalValidityPeriod>() : periods.ToArray();
 
-    if (snapshot.Any(static period => period is null))
+    if (source.Any(static period => period is null))
     {
       throw new ArgumentException("The collection must not contain a null period.", nameof(periods));
     }
+
+    var snapshot = source
+      .Select(static period => Materialize(period))
+      .ToArray();
 
     Array.Sort(snapshot, static (left, right) => left.ValidFromUtc.CompareTo(right.ValidFromUtc));
     ValidateSnapshot(snapshot, nameof(periods));
@@ -110,15 +114,15 @@ public sealed class TemporalValidityPeriodSet :
   /// <param name="replacement">The replacement period.</param>
   /// <returns>A new validated set.</returns>
   public TemporalValidityPeriodSet Replace(
-    TemporalValidityPeriod current,
-    TemporalValidityPeriod replacement)
+    ITemporalValidityPeriod current,
+    ITemporalValidityPeriod replacement)
   {
     ArgumentNullException.ThrowIfNull(current);
     ArgumentNullException.ThrowIfNull(replacement);
 
     var currentIndex = FindSingleIndex(current, nameof(current));
     var result = (TemporalValidityPeriod[])periods.Clone();
-    result[currentIndex] = replacement;
+    result[currentIndex] = Materialize(replacement);
     return new TemporalValidityPeriodSet(result);
   }
 
@@ -129,7 +133,7 @@ public sealed class TemporalValidityPeriodSet :
   /// <param name="splitAtUtc">The strict interior split instant.</param>
   /// <returns>A new validated set.</returns>
   public TemporalValidityPeriodSet Split(
-    TemporalValidityPeriod current,
+    ITemporalValidityPeriod current,
     UtcInstant splitAtUtc)
   {
     ArgumentNullException.ThrowIfNull(current);
@@ -158,8 +162,8 @@ public sealed class TemporalValidityPeriodSet :
   /// <param name="later">The immediately following existing member.</param>
   /// <returns>A new validated set.</returns>
   public TemporalValidityPeriodSet Merge(
-    TemporalValidityPeriod earlier,
-    TemporalValidityPeriod later)
+    ITemporalValidityPeriod earlier,
+    ITemporalValidityPeriod later)
   {
     ArgumentNullException.ThrowIfNull(earlier);
     ArgumentNullException.ThrowIfNull(later);
@@ -265,14 +269,14 @@ public sealed class TemporalValidityPeriodSet :
     }
   }
 
-  private int FindSingleIndex(TemporalValidityPeriod member, string parameterName)
+  private int FindSingleIndex(ITemporalValidityPeriod member, string parameterName)
   {
     var foundIndex = -1;
     var matchCount = 0;
 
     for (var index = 0; index < periods.Length; index++)
     {
-      if (periods[index] == member)
+      if (HasSameBoundaries(periods[index], member))
       {
         foundIndex = index;
         matchCount++;
@@ -286,4 +290,15 @@ public sealed class TemporalValidityPeriodSet :
 
     return foundIndex;
   }
+
+  private static TemporalValidityPeriod Materialize(ITemporalValidityPeriod period) =>
+    period is TemporalValidityPeriod concrete
+      ? concrete
+      : new TemporalValidityPeriod(period.ValidFromUtc, period.ValidToUtc);
+
+  private static bool HasSameBoundaries(
+    ITemporalValidityPeriod left,
+    ITemporalValidityPeriod right) =>
+    left.ValidFromUtc.Equals(right.ValidFromUtc)
+    && Nullable.Equals(left.ValidToUtc, right.ValidToUtc);
 }

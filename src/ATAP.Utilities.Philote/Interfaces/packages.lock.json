@@ -49,13 +49,6 @@
           "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
         }
       },
-      "atap.utilities.datetime.model": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
-        }
-      },
       "atap.utilities.datetime.stringconstants": {
         "type": "Project"
       },
@@ -113,13 +106,6 @@
           "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
         }
       },
-      "atap.utilities.datetime.model": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
-        }
-      },
       "atap.utilities.datetime.stringconstants": {
         "type": "Project"
       },
@@ -174,13 +160,6 @@
       "atap.utilities.datetime.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
-        }
-      },
-      "atap.utilities.datetime.model": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
         }
       },

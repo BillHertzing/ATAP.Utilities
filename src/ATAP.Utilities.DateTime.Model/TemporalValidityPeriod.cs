@@ -8,7 +8,7 @@ namespace ATAP.Utilities.DateTime.Model;
 /// Represents an immutable UTC validity interval with an inclusive start and an optional exclusive end.
 /// </summary>
 [JsonConverter(typeof(TemporalValidityPeriodJsonConverter))]
-public sealed record TemporalValidityPeriod : IHalfOpenTemporalPeriod
+public sealed record TemporalValidityPeriod : ITemporalValidityPeriod
 {
   /// <summary>
   /// Initializes a new instance of the <see cref="TemporalValidityPeriod"/> class.

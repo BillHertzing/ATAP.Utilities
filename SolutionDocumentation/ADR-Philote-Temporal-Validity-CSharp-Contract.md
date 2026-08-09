@@ -1,8 +1,8 @@
 # ADR: Philote temporal-validity C# contract
 
-Status: Proposed for joint approval at Gate PTV-G0
+Status: Accepted at Gate PTV-G0; amended before Gate PTV-G5
 
-Date: 2026-08-08
+Date: 2026-08-08; amended 2026-08-09
 
 Owner: PTV-010 / Task 14.21.e
 
@@ -19,8 +19,10 @@ silently creating an open-ended period at the minimum timestamp.
 `TemporalValidityPeriodSet` is an immutable structural value object that implements
 `IReadOnlyList<TemporalValidityPeriod>`; it is not a mutable collection service.
 
-This ADR freezes the Wave 0 C# contract for PTV-G0 review. It authorizes no source,
-project, package, SQL, seed, database, BuildMaster, or deployment mutation.
+This ADR froze the Wave 0 C# contract accepted at PTV-G0. Before PTV-G5, the
+contract was amended to extract `ITemporalValidityPeriod` and remove the
+Philote.Interfaces dependency on DateTime.Model. The amendment changes no SQL,
+seed, database, package identity, BuildMaster, or deployment boundary.
 
 ## Evidence boundary
 
@@ -71,7 +73,7 @@ the proposed normative contract to ratify at PTV-G0.
 
 | Project | Namespace | Public responsibility |
 | --- | --- | --- |
-| `ATAP.Utilities.DateTime.Interfaces` | `ATAP.Utilities.DateTime.Interfaces` | `UtcInstant`, `TemporalDuration`, `IHalfOpenTemporalPeriod`, and `ITemporalPeriodCalculator` |
+| `ATAP.Utilities.DateTime.Interfaces` | `ATAP.Utilities.DateTime.Interfaces` | `UtcInstant`, `TemporalDuration`, `IHalfOpenTemporalPeriod`, `ITemporalValidityPeriod`, and `ITemporalPeriodCalculator` |
 | `ATAP.Utilities.DateTime.Model` | `ATAP.Utilities.DateTime.Model` | `TemporalValidityPeriod`, `TemporalValidityPeriodSet`, and `ItensoTemporalPeriodCalculator` |
 | `ATAP.Utilities.DateTime.StringConstants` | `ATAP.Utilities.DateTime.StringConstants` | Stable JSON and persistence names only |
 | `ATAP.Utilities.DateTime` | `ATAP.Utilities.DateTime` | Package aggregation, `ToUnixTime`, and DI registration |
@@ -101,11 +103,13 @@ intent, acceptance behavior, and ownership otherwise remain unchanged.
    resulting source files share the Interfaces project.
 2. The plan's single
    `ATAP.Utilities.Philote.Interfaces -> ATAP.Utilities.DateTime.Model` edge is
-   replaced by two explicit direct project
-   references: Philote.Interfaces references DateTime.Model for
-   `TemporalValidityPeriod` and DateTime.Interfaces for `UtcInstant`. The direct
-   Interfaces reference makes every assembly named in Philote's public signature an
-   explicit compile dependency instead of relying on a transitive project reference.
+   replaced by a direct
+   `ATAP.Utilities.Philote.Interfaces -> ATAP.Utilities.DateTime.Interfaces`
+   reference. `ITemporalValidityPeriod` is the semantic validity-period contract,
+   while `TemporalValidityPeriod` remains its validated concrete implementation in
+   DateTime.Model. Philote.Interfaces therefore names no model assembly in its
+   public surface. Philote.Models references both assemblies because it implements
+   the interface using `TemporalValidityPeriodSet`.
 3. The project-graph qualifier "DateTime.Model to TimePeriodLibrary.NET, private
    implementation dependency only if needed" is resolved from optional to required.
    DateTime.Model
@@ -124,6 +128,10 @@ ATAP.Utilities.DateTime.Model
   -> TimePeriodLibrary.NET (sole direct reference; private)
 
 ATAP.Utilities.Philote.Interfaces
+  -> ATAP.Utilities.DateTime.Interfaces
+
+ATAP.Utilities.Philote.Models
+  -> ATAP.Utilities.Philote.Interfaces
   -> ATAP.Utilities.DateTime.Interfaces
   -> ATAP.Utilities.DateTime.Model
 ```
@@ -162,6 +170,10 @@ public interface IHalfOpenTemporalPeriod
   bool Contains(UtcInstant instant);
 }
 
+public interface ITemporalValidityPeriod : IHalfOpenTemporalPeriod
+{
+}
+
 public interface ITemporalPeriodCalculator
 {
   bool Contains(IHalfOpenTemporalPeriod period, UtcInstant instant);
@@ -181,7 +193,7 @@ public interface ITemporalPeriodCalculator
 ```csharp
 namespace ATAP.Utilities.DateTime.Model;
 
-public sealed record TemporalValidityPeriod : IHalfOpenTemporalPeriod
+public sealed record TemporalValidityPeriod : ITemporalValidityPeriod
 {
   public TemporalValidityPeriod(UtcInstant validFromUtc, UtcInstant? validToUtc);
   public UtcInstant ValidFromUtc { get; }
@@ -417,7 +429,7 @@ public interface IAbstractPhilote<TId, TValue>
 {
   TId Id { get; }
   IReadOnlyDictionary<string, IAbstractStronglyTypedId<TValue>> AdditionalIds { get; }
-  IReadOnlyList<TemporalValidityPeriod> ValidityPeriods { get; }
+  IReadOnlyList<ITemporalValidityPeriod> ValidityPeriods { get; }
   bool IsValidAt(UtcInstant instant);
 }
 ```

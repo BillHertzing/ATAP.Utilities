@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using ATAP.Utilities.DateTime.Interfaces;
-using ATAP.Utilities.DateTime.Model;
 using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.Philote;
@@ -24,7 +23,7 @@ public interface IAbstractPhilote<TId, TValue>
 
   IReadOnlyDictionary<string, IAbstractStronglyTypedId<TValue>> AdditionalIds { get; }
 
-  IReadOnlyList<TemporalValidityPeriod> ValidityPeriods { get; }
+  IReadOnlyList<ITemporalValidityPeriod> ValidityPeriods { get; }
 
   bool IsValidAt(UtcInstant instant);
 }

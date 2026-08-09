@@ -9,7 +9,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\ATAP.Utilities.DateTime.Interfaces\ATAP.Utilities.DateTime.Interfaces.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.DateTime.Model\ATAP.Utilities.DateTime.Model.csproj" />
     <ProjectReference Include="..\..\ATAP.Utilities.StronglyTypedId\Interfaces\ATAP.Utilities.StronglyTypedId.Interfaces.csproj" />
   </ItemGroup>
 

@@ -9,7 +9,8 @@ period type. Its child projects provide:
 - `TemporalDuration`, a tick-based duration value;
 - `TemporalValidityPeriod`, an immutable half-open interval;
 - `TemporalValidityPeriodSet`, an immutable ordered, non-overlapping set;
-- `IHalfOpenTemporalPeriod` and `ITemporalPeriodCalculator`; and
+- `IHalfOpenTemporalPeriod`, the semantic `ITemporalValidityPeriod` contract,
+  and `ITemporalPeriodCalculator`; and
 - the private `ItensoTemporalPeriodCalculator` implementation registered by
   `AddATAPUtilitiesDateTime`.
 

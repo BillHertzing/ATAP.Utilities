@@ -18,7 +18,7 @@ public abstract class AbstractPhilote<TId, TValue> : IAbstractPhilote<TId, TValu
   protected AbstractPhilote(
     TId? id = default,
     IEnumerable<KeyValuePair<string, IAbstractStronglyTypedId<TValue>>>? additionalIds = default,
-    IEnumerable<TemporalValidityPeriod>? validityPeriods = default)
+    IEnumerable<ITemporalValidityPeriod>? validityPeriods = default)
   {
     Id = id ?? new TId();
     _additionalIds = MaterializeAdditionalIds(additionalIds);
@@ -29,7 +29,7 @@ public abstract class AbstractPhilote<TId, TValue> : IAbstractPhilote<TId, TValu
 
   public IReadOnlyDictionary<string, IAbstractStronglyTypedId<TValue>> AdditionalIds => _additionalIds;
 
-  public IReadOnlyList<TemporalValidityPeriod> ValidityPeriods => _validityPeriodSet;
+  public IReadOnlyList<ITemporalValidityPeriod> ValidityPeriods => _validityPeriodSet;
 
   protected TemporalValidityPeriodSet ValidityPeriodSet => _validityPeriodSet;
 
@@ -88,7 +88,7 @@ public sealed class IntPhilote<TId> : AbstractPhilote<TId, int>, IIntPhilote<TId
   public IntPhilote(
     TId? id,
     IEnumerable<KeyValuePair<string, IAbstractStronglyTypedId<int>>>? additionalIds,
-    IEnumerable<TemporalValidityPeriod>? validityPeriods)
+    IEnumerable<ITemporalValidityPeriod>? validityPeriods)
     : base(id, additionalIds, validityPeriods)
   {
   }
@@ -97,13 +97,13 @@ public sealed class IntPhilote<TId> : AbstractPhilote<TId, int>, IIntPhilote<TId
 
   public IntPhilote<TId> Deactivate(UtcInstant validToUtc) => With(ValidityPeriodSet.Deactivate(validToUtc));
 
-  public IntPhilote<TId> Replace(TemporalValidityPeriod current, TemporalValidityPeriod replacement) =>
+  public IntPhilote<TId> Replace(ITemporalValidityPeriod current, ITemporalValidityPeriod replacement) =>
     With(ValidityPeriodSet.Replace(current, replacement));
 
-  public IntPhilote<TId> Split(TemporalValidityPeriod current, UtcInstant splitAtUtc) =>
+  public IntPhilote<TId> Split(ITemporalValidityPeriod current, UtcInstant splitAtUtc) =>
     With(ValidityPeriodSet.Split(current, splitAtUtc));
 
-  public IntPhilote<TId> Merge(TemporalValidityPeriod earlier, TemporalValidityPeriod later) =>
+  public IntPhilote<TId> Merge(ITemporalValidityPeriod earlier, ITemporalValidityPeriod later) =>
     With(ValidityPeriodSet.Merge(earlier, later));
 
   private IntPhilote<TId> With(TemporalValidityPeriodSet periods) => new(Id, AdditionalIds, periods);
@@ -124,7 +124,7 @@ public sealed class GuidPhilote<TId> : AbstractPhilote<TId, Guid>, IGuidPhilote<
   public GuidPhilote(
     TId? id,
     IEnumerable<KeyValuePair<string, IAbstractStronglyTypedId<Guid>>>? additionalIds,
-    IEnumerable<TemporalValidityPeriod>? validityPeriods)
+    IEnumerable<ITemporalValidityPeriod>? validityPeriods)
     : base(id, additionalIds, validityPeriods)
   {
   }
@@ -133,13 +133,13 @@ public sealed class GuidPhilote<TId> : AbstractPhilote<TId, Guid>, IGuidPhilote<
 
   public GuidPhilote<TId> Deactivate(UtcInstant validToUtc) => With(ValidityPeriodSet.Deactivate(validToUtc));
 
-  public GuidPhilote<TId> Replace(TemporalValidityPeriod current, TemporalValidityPeriod replacement) =>
+  public GuidPhilote<TId> Replace(ITemporalValidityPeriod current, ITemporalValidityPeriod replacement) =>
     With(ValidityPeriodSet.Replace(current, replacement));
 
-  public GuidPhilote<TId> Split(TemporalValidityPeriod current, UtcInstant splitAtUtc) =>
+  public GuidPhilote<TId> Split(ITemporalValidityPeriod current, UtcInstant splitAtUtc) =>
     With(ValidityPeriodSet.Split(current, splitAtUtc));
 
-  public GuidPhilote<TId> Merge(TemporalValidityPeriod earlier, TemporalValidityPeriod later) =>
+  public GuidPhilote<TId> Merge(ITemporalValidityPeriod earlier, ITemporalValidityPeriod later) =>
     With(ValidityPeriodSet.Merge(earlier, later));
 
   private GuidPhilote<TId> With(TemporalValidityPeriodSet periods) => new(Id, AdditionalIds, periods);

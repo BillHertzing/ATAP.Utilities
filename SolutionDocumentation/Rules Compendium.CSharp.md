@@ -839,7 +839,7 @@ The Rule below renders `IPhilote.cs` from the primitives defined above.
 └── <namespace-block-declaration> → namespace ATAP.Utilities.Philote { ... }
   ├── <interface-declaration> → public interface IGuidPhilote<TId> : IAbstractPhilote<TId, Guid> where TId : IAbstractStronglyTypedId<Guid>, new() { }
   ├── <interface-declaration> → public interface IIntPhilote<TId> : IAbstractPhilote<TId, int> where TId : IAbstractStronglyTypedId<int>, new() { }
-  └── <interface-declaration> → public interface IAbstractPhilote<TId, TValue> where TId : IAbstractStronglyTypedId<TValue>, new() where TValue : notnull { TId Id { get; } IReadOnlyDictionary<string, IAbstractStronglyTypedId<TValue>> AdditionalIds { get; } IReadOnlyList<TemporalValidityPeriod> ValidityPeriods { get; } bool IsValidAt(UtcInstant instant); }
+  └── <interface-declaration> → public interface IAbstractPhilote<TId, TValue> where TId : IAbstractStronglyTypedId<TValue>, new() where TValue : notnull { TId Id { get; } IReadOnlyDictionary<string, IAbstractStronglyTypedId<TValue>> AdditionalIds { get; } IReadOnlyList<ITemporalValidityPeriod> ValidityPeriods { get; } bool IsValidAt(UtcInstant instant); }
 ```
 
 **Primitive Composition Table**
@@ -862,7 +862,7 @@ The Rule below renders `IPhilote.cs` from the primitives defined above.
 | 10b | `<type-constraint-clause>`      | `8ad77df8-8366-40f8-99b5-ff2a2a8d5da9` | `where TValue : notnull`                              | `TypeParameterName = "TValue"`; `Constraints = ["notnull"]`                                                                                                                      |
 | 10c | `<property-declaration>`        | `6d2e4c24-4f59-487f-9e6d-2e65f97a6dd0` | `Id` property                                         | `PropertyType = "TId"`; `PropertyName = "Id"`; `Accessors = [get]`                                                                                                               |
 | 10d | `<property-declaration>`        | `6d2e4c24-4f59-487f-9e6d-2e65f97a6dd0` | `AdditionalIds` property                              | `PropertyType = "IReadOnlyDictionary<string, IAbstractStronglyTypedId<TValue>>"`; `PropertyName = "AdditionalIds"`; `Accessors = [get]`                                         |
-| 10e | `<property-declaration>`        | `6d2e4c24-4f59-487f-9e6d-2e65f97a6dd0` | `ValidityPeriods` property                            | `PropertyType = "IReadOnlyList<TemporalValidityPeriod>"`; `PropertyName = "ValidityPeriods"`; `Accessors = [get]`                                                               |
+| 10e | `<property-declaration>`        | `6d2e4c24-4f59-487f-9e6d-2e65f97a6dd0` | `ValidityPeriods` property                            | `PropertyType = "IReadOnlyList<ITemporalValidityPeriod>"`; `PropertyName = "ValidityPeriods"`; `Accessors = [get]`                                                              |
 | 10f | `<method-declaration>`          | `5c1f93b8-6db5-4aaf-94ef-7b3d8b8a9d3a` | point-in-time validity                                | `ReturnType = "bool"`; `MethodName = "IsValidAt"`; `Parameters = [UtcInstant instant]`                                                                                           |
 
 **Constraint details (items 8a, 9a, 10a, 10b):**
@@ -880,7 +880,7 @@ The Rule below renders `IPhilote.cs` from the primitives defined above.
 | --- | --- | --- |
 | `Id` | `TId` | `get;` |
 | `AdditionalIds` | `IReadOnlyDictionary<string, IAbstractStronglyTypedId<TValue>>` | `get;` |
-| `ValidityPeriods` | `IReadOnlyList<TemporalValidityPeriod>` | `get;` |
+| `ValidityPeriods` | `IReadOnlyList<ITemporalValidityPeriod>` | `get;` |
 | `IsValidAt` | `bool` | `(UtcInstant instant)` |
 
 **Inputs to the Rule:**

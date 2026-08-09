@@ -196,4 +196,24 @@ public sealed class PhiloteUnitTests : IClassFixture<Fixture>
     signatures.Should().NotContain(signature => signature!.Contains("Itenso", StringComparison.Ordinal));
     signatures.Should().NotContain(signature => signature!.Contains("TimeBlocks", StringComparison.Ordinal));
   }
+
+  [Fact]
+  public void PhiloteInterfaces_DependsOnDateTimeInterfacesButNotDateTimeModel()
+  {
+    // Arrange
+    var philoteInterfaceType = typeof(IAbstractPhilote<,>);
+
+    // Act
+    var validityPeriodsProperty = philoteInterfaceType.GetProperty(nameof(IAbstractPhilote<TestGuidId, Guid>.ValidityPeriods));
+    var references = philoteInterfaceType.Assembly
+      .GetReferencedAssemblies()
+      .Select(reference => reference.Name)
+      .ToArray();
+
+    // Assert
+    validityPeriodsProperty.Should().NotBeNull();
+    validityPeriodsProperty!.PropertyType.Should().Be(typeof(IReadOnlyList<ITemporalValidityPeriod>));
+    references.Should().Contain("ATAP.Utilities.DateTime.Interfaces");
+    references.Should().NotContain("ATAP.Utilities.DateTime.Model");
+  }
 }

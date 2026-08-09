@@ -71,7 +71,6 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.Model": "[1.0.0, )",
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
       },
@@ -183,7 +182,6 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.Model": "[1.0.0, )",
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
       },
@@ -295,7 +293,6 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.Model": "[1.0.0, )",
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
       },

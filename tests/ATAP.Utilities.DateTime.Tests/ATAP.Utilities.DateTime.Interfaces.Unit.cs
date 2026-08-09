@@ -39,6 +39,24 @@ public sealed class DateTimeInterfacesUnitTests
   }
 
   [Fact]
+  public void ITemporalValidityPeriod_IsSemanticHalfOpenPeriodContract()
+  {
+    // Arrange
+    var contractType = typeof(ITemporalValidityPeriod);
+
+    // Act
+    var inheritedContracts = contractType.GetInterfaces();
+
+    // Assert
+    contractType.IsInterface.Should().BeTrue();
+    inheritedContracts.Should().ContainSingle(type => type == typeof(IHalfOpenTemporalPeriod));
+    contractType.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public)
+      .Should().BeEmpty();
+    contractType.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public)
+      .Should().BeEmpty();
+  }
+
+  [Fact]
   public void ITemporalPeriodCalculator_HasRatifiedPublicSurface()
   {
     // Arrange
@@ -85,7 +103,8 @@ public sealed class DateTimeInterfacesUnitTests
   public void Interfaces_PublicSurfaceAndAssemblyReferences_ContainNoItensoTypes()
   {
     // Arrange
-    var publicMembers = new[] { typeof(IHalfOpenTemporalPeriod), typeof(ITemporalPeriodCalculator) }
+    var publicMembers = new[]
+      { typeof(IHalfOpenTemporalPeriod), typeof(ITemporalValidityPeriod), typeof(ITemporalPeriodCalculator) }
       .SelectMany(type => type.GetMembers(BindingFlags.Instance | BindingFlags.Public))
       .Select(member => member.ToString());
     var referencedAssemblies = typeof(IHalfOpenTemporalPeriod).Assembly.GetReferencedAssemblies();

@@ -20,6 +20,17 @@ Host name to record in the snapshot.
 .PARAMETER OutputPath
 Optional explicit snapshot output path.
 
+.PARAMETER PackageManagerProfiles
+Explicit identity and profile-path records used to collect pip, npm, and NuGet
+tool inventories. Each record must contain Identity and may contain PipPath,
+NpmPrefix, and NuGetToolPath. The audit never derives these paths from the
+identity running the audit.
+
+.PARAMETER ExpectedSurfaceMinimumCounts
+Minimum required row count by category. The default requires OS, PowerShell,
+three service rows, SQL, PackageManager, Shares, and ParityState. Missing or thin coverage is written into the
+diagnostic snapshot as AuditCoverageFinding rows before the audit throws.
+
 .OUTPUTS
 PSCustomObject.
 
@@ -32,7 +43,19 @@ Invoke-ParityAudit -StatePath C:\ProgramData\ATAP\ParityState -HostName utat022
 
     [string] $HostName = $env:COMPUTERNAME,
 
-    [string] $OutputPath
+    [string] $OutputPath,
+
+    [object[]] $PackageManagerProfiles = @(),
+
+    [hashtable] $ExpectedSurfaceMinimumCounts = @{
+      OS = 1
+      PowerShell = 1
+      Services = 3
+      SQL = 1
+      PackageManager = 1
+      Shares = 1
+      ParityState = 1
+    }
   )
 
   begin {
@@ -81,7 +104,7 @@ Invoke-ParityAudit -StatePath C:\ProgramData\ATAP\ParityState -HostName utat022
         $surfaces.Add($sqlSurface)
       }
 
-      foreach ($packageSurface in @(Get-PackageManagerParitySurfaces -HostName $HostName)) {
+      foreach ($packageSurface in @(Get-PackageManagerParitySurfaces -HostName $HostName -PackageManagerProfiles $PackageManagerProfiles)) {
         $surfaces.Add($packageSurface)
       }
 
@@ -124,6 +147,39 @@ Invoke-ParityAudit -StatePath C:\ProgramData\ATAP\ParityState -HostName utat022
           Source = 'Get-ChildItem'
         })
 
+      if ($null -eq $ExpectedSurfaceMinimumCounts) {
+        throw 'ExpectedSurfaceMinimumCounts cannot be null.'
+      }
+      if ($ExpectedSurfaceMinimumCounts.Count -eq 0) {
+        throw 'ExpectedSurfaceMinimumCounts must contain at least one category.'
+      }
+
+      $coverageFindings = [System.Collections.Generic.List[object]]::new()
+      foreach ($expectedCategory in @($ExpectedSurfaceMinimumCounts.Keys | Sort-Object)) {
+        if ([string]::IsNullOrWhiteSpace([string]$expectedCategory)) {
+          throw 'Expected surface minimum category keys must be non-empty.'
+        }
+        $minimumCount = 0
+        if (-not [int]::TryParse([string]$ExpectedSurfaceMinimumCounts[$expectedCategory], [ref]$minimumCount) -or $minimumCount -lt 1) {
+          throw "Expected minimum count for category '$expectedCategory' must be at least one."
+        }
+
+        $actualCount = @($surfaces | Where-Object { $_.Category -eq $expectedCategory }).Count
+        if ($actualCount -ge $minimumCount) {
+          continue
+        }
+
+        $classification = if ($actualCount -eq 0) { 'Missing' } else { 'Thin' }
+        $finding = [pscustomobject]@{
+          Category = 'AuditCoverageFinding'
+          Item = [string]$expectedCategory
+          Value = "$classification;ActualCount=$actualCount;ExpectedMinimumCount=$minimumCount"
+          Source = 'ExpectedSurfaceMinimumCounts'
+        }
+        $coverageFindings.Add($finding)
+        $surfaces.Add($finding)
+      }
+
       $snapshot = [pscustomobject] @{
         SchemaVersion = 1
         HostName = $HostName.ToLowerInvariant()
@@ -136,9 +192,14 @@ Invoke-ParityAudit -StatePath C:\ProgramData\ATAP\ParityState -HostName utat022
         $snapshot | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $OutputPath -Encoding utf8
       }
 
+      if ($coverageFindings.Count -gt 0) {
+        $coverageSummary = @($coverageFindings | ForEach-Object { "$($_.Item)=$($_.Value)" }) -join '; '
+        throw "Parity audit surface coverage is inadequate. Diagnostic snapshot: '$OutputPath'. Findings: $coverageSummary"
+      }
+
       $snapshot | Add-Member -NotePropertyName SnapshotPath -NotePropertyValue $OutputPath -PassThru
     } catch {
-      Write-ParityMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Failed to write parity audit snapshot. Exception: $($_.Exception.Message)"
+      Write-ParityMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Parity audit did not complete successfully. Exception: $($_.Exception.Message)"
       throw
     }
   }

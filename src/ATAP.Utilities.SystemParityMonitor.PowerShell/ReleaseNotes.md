@@ -1,6 +1,43 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
-## 0.1.4 (unreleased)
+## 0.1.9 release candidate (unreleased)
+
+This candidate is not yet built, promoted, installed, or deployed. Permission-profile
+ACL follow-up remains in flight, so the module is not yet release-ready.
+
+- Add identity-explicit configured path collection for pip, npm, and NuGet global
+  tools. Missing configuration is a status, not an implicit audit of the
+  `SvcParityAudit` profile; package/conflict rows are scoped by identity.
+- Add configurable audit and comparison minimum category counts. Missing and thin
+  coverage are structurally distinct; audit writes its diagnostic snapshot before
+  failing.
+- Add source-level Windows Application event thresholds: event `12380`/`12381` on
+  the second consecutive scheduled failure and event `12382` immediately for stale
+  snapshots or missing/thin comparison coverage. Host event-source registration and
+  SEQ forwarding are not verified or deployed.
+- Add validated scheduler transport for package-manager profiles and coverage minima.
+  Registration atomically materializes schema-versioned JSON, validates its read-back,
+  and places only the quoted configuration path on scheduled command lines. Wrappers
+  fail closed on missing, unreadable, malformed, or unsupported configuration while
+  preserving second-consecutive-failure alerting.
+- Add the local-only, additive `Set-ParityAuditReadAccess` permission tool for the
+  approved filesystem, SQL metadata, SQL Agent metadata, and separately gated WMI
+  read surfaces. It validates exact hosts, accounts, paths, and SQL instances, supports
+  `ShouldProcess`, verifies applied access, and does not accept credentials. Its
+  permission-profile ACL follow-up is not yet settled.
+
+## 0.1.8 (published and deployed 2026-08-09)
+
+- Remove the scheduled audit and compare wrappers' Bitwarden/BWS credential probe,
+  token-purpose parameters, and credential-directory dependency.
+- Record metadata-only task results with `SecretAccessRequired = false`; deployed
+  tasks require no BWS token, `bws`, or `BW_SESSION`.
+
+## Historical source changes recorded before 0.1.8
+
+The following changes were previously grouped under a stale `0.1.4 (unreleased)`
+heading. This file does not reconstruct or invent the exact intervening immutable
+version in which each item shipped.
 
 - Add canonical Task 12.59 `PrimaryRole.json` read/write cmdlets with atomic,
   idempotent writes and schema validation for DPOM entry and exit. The single
@@ -18,10 +55,6 @@
   inputs; unmatched differences are classified as undeclared drift.
 - Fall back to `Win32_Share` when `Get-SmbShare` is unavailable, including on the
   affected Windows 10 module-discovery surface.
-- Remove the scheduled audit and compare wrappers' Bitwarden/BWS credential probe,
-  token-purpose parameters, and credential-directory dependency. Scheduled action
-  arguments now contain no vault-token inputs, and metadata-only task-result JSON
-  records `SecretAccessRequired = false`.
 - Restore S4U/Limited as the peer audit topology; a supplied Windows credential is
   used only for cross-account task registration or primary-host peer SMB access, not
   for vault access.

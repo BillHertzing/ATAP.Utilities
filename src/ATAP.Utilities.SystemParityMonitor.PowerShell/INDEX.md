@@ -6,7 +6,7 @@
 | `ATAP.Utilities.SystemParityMonitor.PowerShell.psd1` | Module manifest (exports the seven public functions) |
 | `ATAP.Utilities.SystemParityMonitor.PowerShell.psm1` | Root module; dot-sources `public\` and `private\` |
 | `version.json` | Nerdbank.GitVersioning version file (module packaging) |
-| `ReleaseNotes.md` | Per-version release notes |
+| `ReleaseNotes.md` | Deployed 0.1.8 baseline, unreleased next-release behavior, and historical version notes |
 | `public\` | Exported functions: Add-ParityChangeEntry, Get-ParityPrimaryRole, Set-ParityPrimaryRole, Get-PeerPendingChanges, Confirm-ParityChangeApplied, Invoke-ParityAudit, Compare-ParityAudits |
 | `private\` | Internal helpers (journal/ack/snapshot paths, atomic JSON and JSONL IO, surface map, whitelist, SQL and package-manager collection, normalized-name conflict detection, native-command adapter, logging shim) |
 | `scripts\ParityScheduledTask.Common.ps1` | Shared scheduled-task helper for event-log failure reporting |
@@ -16,6 +16,6 @@
 | `scripts\Register-ParityScheduledTasks.ps1` | Registers token-free audit-only or audit+compare scheduled tasks for `SvcParityAudit`, with daily or biweekly cadence and optional Windows registration/SMB credentials that are unrelated to vault access |
 | `tests\Unit\Parity.Tests.ps1` | Pester suite (journal round-trip, audit snapshot, Chocolatey/pip/npm/NuGet collection, cross-manager conflicts, drift comparison, stale snapshots, token-free wrapper guards, scheduled-task registration contracts) |
 | `tests\Unit\PrimaryRole.Tests.ps1` | Focused Pester coverage for canonical DPOM marker creation, validation, idempotence, exit, and WhatIf behavior |
-| `Documentation\Overview.md` | Concept overview: parity journal, audit snapshots, drift classes |
-| `Documentation\InstallationAndTroubleshooting.md` | Windows 10/11 token-free deployment contract, S4U/SMB identity choices, package-content verification, first-run proof, and live troubleshooting record |
+| `Documentation\Overview.md` | Concept overview: parity journal, audit snapshots, coverage limits, identity-explicit package paths, drift classes, and D-6 alert state |
+| `Documentation\InstallationAndTroubleshooting.md` | Windows 10/11 token-free deployment contract, proposed least-privilege matrix, profile-path semantics, cadence gate, alert thresholds, first-run proof, and troubleshooting |
 | `Documentation\images\` | Images referenced by module documentation |

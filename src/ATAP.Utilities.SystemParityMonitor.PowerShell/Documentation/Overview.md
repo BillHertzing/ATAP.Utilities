@@ -18,13 +18,15 @@ ATAP.Utilities in Task 12.46.
   and identity, version, logins, server roles and permissions, Agent jobs, endpoints,
   fixed TCP configuration, default directories, and physical-file conformance to
   `C:\LocalDBs\<INSTANCE_NAME>\{Data,Log,Backup}\`.
-- **Package-manager surfaces** — snapshots inventory Chocolatey local packages, pip
-  packages for the active Python interpreter, npm global packages, and NuGet-managed
-  global .NET tools. Each manager/package row carries its installed version, so the
-  two hosts must have both the same managed package set and matching versions.
+- **Package-manager surfaces** — Chocolatey is machine-scoped. In next-release source,
+  pip, npm, and NuGet global tools are read only from configured, identity-explicit
+  `PipPath`, `NpmPrefix`, and `NuGetToolPath` values. The collector does not substitute
+  the scheduled account's profile. Missing configuration produces an explicit status,
+  not an empty inventory that can appear clean.
 - **Package ownership conflicts** — package names are normalized case-insensitively
-  across the four managers. If one normalized name has more than one owning manager,
-  the audit emits a host-qualified `PackageManagerConflict` row beginning
+  within each configured identity. If one identity has more than one owning manager
+  for a normalized name, the audit emits a host-and-identity-qualified
+  `PackageManagerConflict` row beginning
   `ACTION REQUIRED`. Host qualification intentionally keeps the warning in the drift
   report even when both hosts share the same conflict; an operator must select one
   manager and remove the duplicate installation.
@@ -32,6 +34,18 @@ ATAP.Utilities in Task 12.46.
   snapshots and classifies every difference as **declared** (journaled), **whitelisted**
   (expected per-host differences), or **undeclared drift** (the actionable class), and
   flags **stale** snapshots older than the expected cadence.
+- **Coverage failures** — next-release source requires minimum category counts during
+  audit and comparison. A wholly absent category is `Missing`; a nonzero category
+  below its minimum is `Thin`. Audit findings are written into the diagnostic snapshot
+  before the command throws, so incomplete collection cannot be reported as clean.
+
+## Coverage boundary
+
+The snapshot contains only the surfaces its collectors emit. In particular, the
+`PowerShell/PSVersion` row is the PowerShell engine version; installed ATAP PowerShell
+module names and versions are **not** collected. A green comparison is not evidence of
+module-version parity. User-scoped package parity is also meaningful only for identities
+whose explicit profile paths were configured and readable.
 
 ### Host IPv6 reachability for Inedo services (Sprint 0013)
 
@@ -133,16 +147,29 @@ The `0.1.1` package installed on both live hosts omitted `scripts\` and
 Version `0.1.2` stages both folders into the package. SC-0266 owns the incomplete
 Windows 10 WinRM `PSModulePath` plus a PowerShell 7 endpoint.
 
-Version `0.1.4` adds source-level resilience for the associated Windows 10 surface:
+The resilience work formerly described here as unreleased `0.1.4` is historical source
+context. Version `0.1.8` is now the deployed token-free baseline on both hosts. It removes
+the BWS probe and records `SecretAccessRequired = false`; `SvcParityAudit` must not receive
+a BWS token or credential directory.
+
+Current next-release source adds resilience for the associated Windows 10 surface:
 when `Get-SmbShare` is unavailable, audit collection falls back to `Win32_Share`.
 Comparison also treats an absent whitelist or journal as empty and preserves the UTC
-instant of deserialized snapshots during freshness calculation. The change is not live
-until version 0.1.4 is promoted and installed.
+instant of deserialized snapshots during freshness calculation.
 
-Cadence starts as `Daily` for the first onboarding month and then relaxes to
-`BiWeekly` after a clean month. The compare wrapper passes the expected cadence and
+Cadence restarts as `Daily` only after SQL and package collection is trustworthy on both
+hosts, and relaxes to `BiWeekly` only after a verified clean month. The earlier blind
+period does not count. The compare wrapper passes the expected cadence and
 `1.5` stale multiplier into `Compare-ParityAudits`, so stale snapshots are reported as
 their own drift-report line.
+
+Approved D-6 source behavior uses the Windows Application log source
+`ATAP.SystemParityMonitor`: event `12380` or `12381` on the second consecutive audit or
+compare failure, and warning event `12382` immediately when comparison finds stale
+snapshots or missing/thin required coverage. This behavior is source-only until a later
+immutable release is deployed and tasks are re-registered. Event-source registration on
+both hosts and forwarding into SEQ remain unverified; no paging claim follows from the
+presence of source code alone.
 
 ## Related documentation
 

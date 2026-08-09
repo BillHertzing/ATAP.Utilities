@@ -40,6 +40,10 @@ ExpectedCadence multiplied by StaleMultiplier are flagged as stale.
 .PARAMETER StaleMultiplier
 Multiplier applied to ExpectedCadence to determine the stale threshold.
 
+.PARAMETER ExpectedSurfaceMinimumCounts
+Expected minimum row count by surface category. A category with no rows is
+reported as Missing; a category below its minimum is reported as Thin.
+
 .OUTPUTS
 PSCustomObject.
 
@@ -72,7 +76,17 @@ reported as undeclared drift for human escalation.
 
     [TimeSpan] $ExpectedCadence,
 
-    [double] $StaleMultiplier = 1.5
+    [double] $StaleMultiplier = 1.5,
+
+    [hashtable] $ExpectedSurfaceMinimumCounts = @{
+      OS = 1
+      PowerShell = 1
+      Services = 3
+      SQL = 1
+      PackageManager = 1
+      Shares = 1
+      ParityState = 1
+    }
   )
 
   begin {
@@ -104,6 +118,12 @@ reported as undeclared drift for human escalation.
 
       $leftSnapshot = Read-ParityJsonFile -Path $LeftSnapshotPath
       $rightSnapshot = Read-ParityJsonFile -Path $RightSnapshotPath
+      if ($null -eq $ExpectedSurfaceMinimumCounts) {
+        throw 'ExpectedSurfaceMinimumCounts cannot be null.'
+      }
+      if ($ExpectedSurfaceMinimumCounts.Count -eq 0) {
+        throw 'ExpectedSurfaceMinimumCounts must contain at least one category.'
+      }
       $whitelist = @(
         if ($WhitelistPath) {
           Read-ParityJsonFile -Path $WhitelistPath | Where-Object { $null -ne $_ }
@@ -116,6 +136,34 @@ reported as undeclared drift for human escalation.
 
       $leftMap = Get-ParitySurfaceMap -Surfaces @($leftSnapshot.Surfaces)
       $rightMap = Get-ParitySurfaceMap -Surfaces @($rightSnapshot.Surfaces)
+      $coverageFailures = [System.Collections.Generic.List[object]]::new()
+      foreach ($snapshotCandidate in @(
+          [pscustomobject]@{ HostName = $LeftHostName.ToLowerInvariant(); Surfaces = @($leftSnapshot.Surfaces) },
+          [pscustomobject]@{ HostName = $RightHostName.ToLowerInvariant(); Surfaces = @($rightSnapshot.Surfaces) }
+        )) {
+        foreach ($expectedCategory in @($ExpectedSurfaceMinimumCounts.Keys | Sort-Object)) {
+          if ([string]::IsNullOrWhiteSpace([string]$expectedCategory)) {
+            throw 'Expected surface minimum category keys must be non-empty.'
+          }
+          $minimumCount = 0
+          if (-not [int]::TryParse([string]$ExpectedSurfaceMinimumCounts[$expectedCategory], [ref]$minimumCount) -or $minimumCount -lt 1) {
+            throw "Expected minimum count for category '$expectedCategory' must be at least one."
+          }
+
+          $actualCount = @($snapshotCandidate.Surfaces | Where-Object { $_.Category -eq $expectedCategory }).Count
+          if ($actualCount -ge $minimumCount) {
+            continue
+          }
+
+          $coverageFailures.Add([pscustomobject]@{
+              HostName = $snapshotCandidate.HostName
+              Category = [string]$expectedCategory
+              Classification = if ($actualCount -eq 0) { 'Missing' } else { 'Thin' }
+              ActualCount = $actualCount
+              ExpectedMinimumCount = $minimumCount
+            })
+        }
+      }
       $allKeys = @($leftMap.Keys + $rightMap.Keys) | Sort-Object -Unique
       $differences = foreach ($key in $allKeys) {
         $leftSurface = $leftMap[$key]
@@ -231,6 +279,7 @@ reported as undeclared drift for human escalation.
         "- DeclaredDriftCount: $($declared.Count)",
         "- WhitelistedDriftCount: $($accepted.Count)",
         "- StaleSnapshotCount: $($staleSnapshots.Count)",
+        "- SurfaceCoverageFailureCount: $($coverageFailures.Count)",
         "- ConflictedCopyCount: $(@($conflictedCopies).Count)",
         '',
         '## Snapshot Freshness',
@@ -247,6 +296,15 @@ reported as undeclared drift for human escalation.
       foreach ($freshness in $snapshotFreshness) {
         $status = if ($freshness.IsStale) { 'STALE' } else { 'Fresh' }
         $reportLines += "- $($freshness.HostName): $status; CapturedAtUtc=$($freshness.CapturedAtUtc); Age=$($freshness.Age); Snapshot=$($freshness.SnapshotPath)"
+      }
+
+      $reportLines += @('', '## Surface Coverage Failures', '')
+      if ($coverageFailures.Count -eq 0) {
+        $reportLines += '- None'
+      } else {
+        foreach ($failure in $coverageFailures) {
+          $reportLines += "- $($failure.HostName)/$($failure.Category): $($failure.Classification); ActualCount=$($failure.ActualCount); ExpectedMinimumCount=$($failure.ExpectedMinimumCount)"
+        }
       }
 
       $reportLines += @(
@@ -307,6 +365,8 @@ reported as undeclared drift for human escalation.
         StaleSnapshots = $staleSnapshots
         ExpectedCadence = $ExpectedCadence
         StaleThreshold = $staleThreshold
+        SurfaceCoverageFailures = @($coverageFailures)
+        HasSurfaceCoverageFailure = $coverageFailures.Count -gt 0
         ConflictedCopies = @($conflictedCopies)
       }
     } catch {

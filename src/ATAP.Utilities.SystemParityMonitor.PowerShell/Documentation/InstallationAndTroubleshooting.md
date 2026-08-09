@@ -8,6 +8,10 @@ Sprint 0012 Task 12.38.e registration attempt on Windows 11 `utat022` and Window
 The architecture overview is in [Overview.md](Overview.md). The workstation-level
 entry point is `SolutionDocumentation\NewComputerSetup.md`.
 
+Version `0.1.8` is the deployed token-free baseline on both hosts. Sections explicitly
+marked **next-release source** describe approved but unreleased behavior; they are not
+claims about the installed tasks.
+
 ## Intended topology
 
 | Host role | Example host | Scheduled tasks | Task logon |
@@ -34,6 +38,44 @@ peer's `ParityState` SMB share.
 - A `PSCredential` supplied during task registration is a Windows logon credential
   only. It is not passed to the wrapper and does not authorize vault access.
 - Record each machine-state change with `Add-ParityChangeEntry` before applying it.
+
+## Required least-privilege matrix — not yet granted
+
+The following access is required for trustworthy collection, but this document does
+not authorize or claim any grant. Apply it only through a separately approved,
+host-specific security change and verify as `SvcParityAudit`. Never substitute local
+Administrator, SQL `sysadmin`, write, or `ALTER` rights.
+
+| Surface | Required minimum | Explicit exclusions | Current state |
+| --- | --- | --- | --- |
+| Chocolatey | Resolve `choco.exe` from machine `PATH`; read and execute on `C:\ProgramData\chocolatey\bin`, `lib`, and `choco.exe` | No package install, update, uninstall, or directory write | Required; not granted or verified by this task |
+| SQL metadata, on every in-scope instance | Windows login; `VIEW ANY DEFINITION`; `VIEW SERVER STATE` | No data write, `ALTER`, control-server, or `sysadmin` | Proposed; requires explicit security approval |
+| SQL Agent metadata | `msdb` user plus `SQLAgentReaderRole` | No job create, update, start, stop, or ownership change | Proposed; requires explicit security approval |
+| SQL path conformance | NTFS read on `C:\LocalDBs` and each instance's `Data`, `Log`, and `Backup` directories | No create, modify, delete, or ACL ownership | Required; not granted or verified by this task |
+| Service discovery | WMI/CIM read on `root\cimv2` sufficient for `Win32_Service` | No WMI method execution or namespace write | Required; widen only if verified collection remains empty |
+| Parity state | Modify only the local parity state/task-results tree; read the peer share for comparison | No write to the peer share by the comparison task | Existing topology must be independently ACL-verified |
+
+## Next-release identity-explicit package paths
+
+The next-release `Invoke-ParityAudit` accepts `PackageManagerProfiles`. Each record has
+an `Identity` and may specify `PipPath`, `NpmPrefix`, and `NuGetToolPath`. These are
+fully qualified paths for the profile whose packages are being inventoried; they are
+not paths under `SvcParityAudit` unless that identity is intentionally in scope.
+
+- pip is invoked with `--path <PipPath>`.
+- npm is invoked with `--prefix <NpmPrefix>` and global/depth-zero options.
+- `dotnet tool list` is invoked with `--tool-path <NuGetToolPath>`.
+- Package and status rows include the configured identity.
+- An omitted manager path produces `<profile-path-not-configured>` for that identity.
+- Supplying no profile records produces `<profile-paths-not-configured>` for pip, npm,
+  and NuGet and does not query those executables.
+- Chocolatey remains machine-scoped.
+
+The default next-release audit minima are one SQL row and one `PackageManager` row.
+Missing or thin coverage is written as `AuditCoverageFinding` in the diagnostic
+snapshot, and then the audit throws. A `PackageManagerStatus` error remains a distinct
+collector result and does not satisfy the required `PackageManager` inventory count.
+The deployed 0.1.8 scheduled tasks do not yet consume this contract.
 
 ## Deployment contract
 
@@ -77,12 +119,13 @@ promoted package that does not contain them, then correct the module build and p
 contract, publish a new immutable version, install that exact version, and verify it
 from a fresh shell.
 
-Live exception recorded 2026-07-11: version `0.1.1` was promoted and installed for
+Historical exception recorded 2026-07-11: version `0.1.1` was promoted and installed for
 AllUsers on `utat022` and `utat01`, but the package omitted both static folders. The
 operator manually copied `scripts\` into the PowerShell 7 module roots on both hosts to
 unblock Task 12.38.e. Treat those hosts as manually repaired, not reproducibly deployed;
-do not use that exception as the normal installation procedure. `Documentation\` remains
-available from source until version `0.1.2` is installed and verified.
+do not use that exception as the normal installation procedure. Version `0.1.8` is the
+current deployed token-free baseline; always verify static folders in the installed
+immutable package rather than relying on this historical repair.
 
 ## Prerequisites on every host
 
@@ -328,7 +371,7 @@ Audit and compare results are written below:
 C:\ProgramData\ATAP\ParityState\TaskResults
 ```
 
-Require all of the following before closing Task 12.38.e:
+Require all of the following before declaring a trustworthy current baseline:
 
 - task result JSON has `Success = true`;
 - `IdentityName` is the intended `SvcParityAudit` account;
@@ -338,10 +381,37 @@ Require all of the following before closing Task 12.38.e:
 - immediate first-run `StaleSnapshotCount` is zero;
 - undeclared drift is zero or is explicitly investigated and dispositioned;
 - no secret values appear in the evidence.
+- SQL and `PackageManager` surfaces meet their configured minimums, with no
+  `AuditCoverageFinding` rows;
+- every intended developer identity has explicit, readable pip/npm/NuGet paths;
+- installed ATAP PowerShell module versions are checked separately because the parity
+  audit collects `PSVersion`, not installed module inventory.
 
-Use Daily cadence during the first clean month. Re-register with `BiWeekly` afterward;
-the default 14-day expected cadence and `1.5` multiplier make the stale threshold 21
-days.
+Start or restart `Daily` cadence only after the collection checks above pass on both
+hosts. Re-register with `BiWeekly` only after one verified clean month; the earlier
+period in which SQL and package surfaces were absent does not count. The default
+14-day expected cadence and `1.5` multiplier make the stale threshold 21 days.
+
+## D-6 Windows event thresholds — source-only
+
+Approved next-release source records failure state under `<StatePath>\TaskState` and
+uses Windows Application log source `ATAP.SystemParityMonitor`:
+
+| Condition | Event | Timing |
+| --- | --- | --- |
+| Audit task failure | Error `12380` | Exactly when the persisted consecutive failure count reaches two |
+| Compare task failure | Error `12381` | Exactly when the persisted consecutive failure count reaches two |
+| Stale snapshot, missing/thin surface coverage, or both | Warning `12382` | Immediately on the comparison that detects it |
+
+A successful task resets its consecutive failure count. Failure to persist the counter
+does not justify fabricating a second-failure alert. Event writing itself returns
+structured success/failure metadata so the primary task error remains visible.
+
+This is not yet a deployed alerting claim. The event source still needs elevated,
+host-specific registration and verification. Forwarding these events to SEQ is the
+approved channel where forwarding is configured, but no SEQ forwarding rule, ingestion,
+notification, or page has been verified. Until all of those checks pass, inspect Task
+Scheduler results, task-result JSON, and the Windows Application log directly.
 
 ## Troubleshooting matrix
 

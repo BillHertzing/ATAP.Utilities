@@ -258,6 +258,8 @@ _Teach / Tell how to create software._
   build issues.
 - [C# Central Package Management](CSharp-Central-Package-Management.md) —
   Central package-management conventions and migration guidance for C# projects.
+- [ADR: ZSandbox Ownership and Disposition](ADR-ZSandbox-Ownership-And-Disposition.md) —
+  Accepted ownership and project-boundary decision for retained experimental code.
 - [C# Packages — Build Process](CSharp-Packages-Build-Process.md) —
   Step-by-step C# package build flow. Also names the separate
   `Build\Invoke-RepoHealthGate.ps1` RepoHealth gate for shared MSBuild property

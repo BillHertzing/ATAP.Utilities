@@ -39,6 +39,8 @@ Describe 'Set-GlobalConfigRootKeys population' -Tag 'Unit' {
     # one representative key from each section function
     $global:configRootKeys.ContainsKey('SYSTEMDRIVEConfigRootKey') | Should -BeTrue                       # Set-CoreConfigRootKeys
     $global:configRootKeys.ContainsKey('ServicePlacementMapConfigRootKey') | Should -BeTrue               # Set-CoreConfigRootKeys (role -> host placement map)
+    $global:configRootKeys.ContainsKey('AceOutpostServicePortConfigRootKey') | Should -BeTrue              # Set-CoreConfigRootKeys
+    $global:configRootKeys['AceOutpostServicePortConfigRootKey'] | Should -BeExactly 'AceOutpostServicePort'
     $global:configRootKeys.ContainsKey('DatabaseHostConfigRootKey') | Should -BeTrue                      # Add-DatabasesConfigRootKeys
     $global:configRootKeys.ContainsKey('DatabaseATAPUtilitiesNameConfigRootKey') | Should -BeTrue         # Set-DatabasesATAPUtilitiesConfigRootKeys
     $global:configRootKeys.ContainsKey('DatabaseAceCommanderNameConfigRootKey') | Should -BeTrue          # Set-DatabasesAceCommanderConfigRootKeys

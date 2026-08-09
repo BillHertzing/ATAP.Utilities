@@ -17,12 +17,6 @@
           "Fody": "6.7.0"
         }
       },
-      "Microsoft.Extensions.DependencyInjection.Abstractions": {
-        "type": "Direct",
-        "requested": "[9.0.0, )",
-        "resolved": "9.0.0",
-        "contentHash": "+6f2qv2a3dLwd5w6JanPIPs47CxRbnk+ZocMJUhv9NxP88VlOcJYZs9jY+MYSjxvady08bUZn6qgiNh7DadGgg=="
-      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[8.0.0, )",
@@ -48,19 +42,6 @@
         "type": "Transitive",
         "resolved": "8.0.0",
         "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
-      },
-      "atap.utilities.datetime.interfaces": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
-        }
-      },
-      "atap.utilities.datetime.model": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
-        }
       },
       "atap.utilities.datetime.stringconstants": {
         "type": "Project"
@@ -84,12 +65,6 @@
           "Fody": "6.7.0"
         }
       },
-      "Microsoft.Extensions.DependencyInjection.Abstractions": {
-        "type": "Direct",
-        "requested": "[9.0.0, )",
-        "resolved": "9.0.0",
-        "contentHash": "+6f2qv2a3dLwd5w6JanPIPs47CxRbnk+ZocMJUhv9NxP88VlOcJYZs9jY+MYSjxvady08bUZn6qgiNh7DadGgg=="
-      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[8.0.0, )",
@@ -115,19 +90,6 @@
         "type": "Transitive",
         "resolved": "8.0.0",
         "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
-      },
-      "atap.utilities.datetime.interfaces": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
-        }
-      },
-      "atap.utilities.datetime.model": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
-        }
       },
       "atap.utilities.datetime.stringconstants": {
         "type": "Project"
@@ -151,12 +113,6 @@
           "Fody": "6.7.0"
         }
       },
-      "Microsoft.Extensions.DependencyInjection.Abstractions": {
-        "type": "Direct",
-        "requested": "[9.0.0, )",
-        "resolved": "9.0.0",
-        "contentHash": "+6f2qv2a3dLwd5w6JanPIPs47CxRbnk+ZocMJUhv9NxP88VlOcJYZs9jY+MYSjxvady08bUZn6qgiNh7DadGgg=="
-      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[8.0.0, )",
@@ -182,19 +138,6 @@
         "type": "Transitive",
         "resolved": "8.0.0",
         "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
-      },
-      "atap.utilities.datetime.interfaces": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
-        }
-      },
-      "atap.utilities.datetime.model": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
-        }
       },
       "atap.utilities.datetime.stringconstants": {
         "type": "Project"

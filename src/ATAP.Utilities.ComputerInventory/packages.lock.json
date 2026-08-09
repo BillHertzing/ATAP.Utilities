@@ -33,27 +33,6 @@
         "resolved": "3.9.50",
         "contentHash": "HtOgGF6jZ+WYbXnCUCYPT8Y2d6mIJo9ozjK/FINTRsXdm4Zgv9GehUMa7EFoGQkqrMcDJNOIDwCmENnvXg4UbA=="
       },
-      "Newtonsoft.Json": {
-        "type": "Direct",
-        "requested": "[13.0.4, )",
-        "resolved": "13.0.4",
-        "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
-      },
-      "Polly": {
-        "type": "Direct",
-        "requested": "[8.5.0, )",
-        "resolved": "8.5.0",
-        "contentHash": "GBNZPy7i7OpkaIruWPRJ0+AWzdGDQDnKY91b7Ic2aAch4lKhPjUc5KSffpH9krIWe0MoyghqaRxwRC0Uwz2PkA==",
-        "dependencies": {
-          "Polly.Core": "8.5.0"
-        }
-      },
-      "UnitsNet": {
-        "type": "Direct",
-        "requested": "[5.60.0, )",
-        "resolved": "5.60.0",
-        "contentHash": "y+EtFw5cSgEaerlrZMr8QhBT2f4GtbyNhDPNdjVZHntqCAevC8TyvQV3dyEHOM8sR4DuiUcFAZ/McyNyewFcMw=="
-      },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "Transitive",
         "resolved": "1.1.1",
@@ -69,24 +48,39 @@
         "resolved": "8.0.0",
         "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
       },
-      "Microsoft.Win32.SystemEvents": {
+      "runtime.native.System.Data.SqlClient.sni": {
         "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "9opKRyOKMCi2xJ7Bj7kxtZ1r9vbzosMvRrdEhVhDz8j8MoBGgB+WmC94yH839NPH+BclAjtQ/pyagvi/8gDLkw=="
+        "resolved": "4.7.0",
+        "contentHash": "9kyFSIdN3T0qjDQ2R0HRXYIhS3l5psBzQi6qqhdLz+SzFyEy4sVxNOke+yyYv8Cu8rPER12c3RDjLT8wF3WBYQ==",
+        "dependencies": {
+          "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": "4.4.0",
+          "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": "4.4.0",
+          "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": "4.4.0"
+        }
       },
-      "Polly.Core": {
+      "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": {
         "type": "Transitive",
-        "resolved": "8.5.0",
-        "contentHash": "VYYMZNitZ85UEhwOKkTQI63WEMvzUqwQc74I2mm8h/DBVAMcBBxqYPni4DmuRtbCwngmuONuK2yBJfWNRKzI+A=="
+        "resolved": "4.4.0",
+        "contentHash": "LbrynESTp3bm5O/+jGL8v0Qg5SJlTV08lpIpFesXjF6uGNMWqFnUQbYBJwZTeua6E/Y7FIM1C54Ey1btLWupdg=="
       },
-      "ServiceStack.Client": {
+      "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "38ugOfkYJqJoX9g6EYRlZB5U2ZJH51UP8ptxZgdpS07FgOEToV+lS11ouNK2PM12Pr6X/PpT5jK82G3DwH/SxQ=="
+      },
+      "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "YhEdSQUsTx+C8m8Bw7ar5/VesXvCFMItyZF7G1AUY+OM0VPZUOeAVpJ4Wl6fydBGUYZxojTDR3I6Bj/+BPkJNA=="
+      },
+      "ServiceStack.Common": {
         "type": "Transitive",
         "resolved": "5.12.0",
-        "contentHash": "FnNVFB18FNep1KWtJVmo/rxVt5clWQa7unHSCaq5JKNWYkPU6onsL68DdEfUuTkxZKX9iSY7h0PfwPE97rcwFw==",
+        "contentHash": "iBKaQ6BfqZGbBFCHotH/+M6XAPHbCziE31ATXMMSB7X/56x5bhveQRDwFo7EKSeNX0/X4CCV+7Uq+5MWuCkwtQ==",
         "dependencies": {
           "ServiceStack.Interfaces": "5.12.0",
           "ServiceStack.Text": "5.12.0",
-          "System.ServiceModel.Primitives": "4.8.1"
+          "System.Reflection.TypeExtensions": "4.7.0"
         }
       },
       "ServiceStack.Interfaces": {
@@ -97,25 +91,44 @@
           "Microsoft.Bcl.AsyncInterfaces": "1.1.1"
         }
       },
-      "System.Private.ServiceModel": {
+      "System.ComponentModel.Annotations": {
         "type": "Transitive",
-        "resolved": "4.8.1",
-        "contentHash": "neXeXhKIlCUBCg5rxKpYnae4vQSiMWjhqeTgsMedHvKKUTsmP98je+G8oPmDdY9uZVruvxqRGjcljn1XYNhC+w==",
+        "resolved": "4.7.0",
+        "contentHash": "0YFqjhp/mYkDGpU0Ye1GjE53HMp9UVfGN7seGpAMttAC0C40v5gw598jCgpbBLMmCo0E5YRLBv5Z2doypO49ZQ=="
+      },
+      "System.Data.SqlClient": {
+        "type": "Transitive",
+        "resolved": "4.8.2",
+        "contentHash": "80vGtW6uLB4AkyrdVuKTXYUyuXDPAsSKbTVfvjndZaRAYxzFzWhJbvUfeAKrN+128ycWZjLIAl61dFUwWHOOTw==",
         "dependencies": {
-          "System.Security.Cryptography.Xml": "4.7.0"
+          "runtime.native.System.Data.SqlClient.sni": "4.7.0"
         }
       },
-      "System.Security.Cryptography.Pkcs": {
+      "System.Reflection.TypeExtensions": {
         "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA=="
+        "resolved": "4.7.0",
+        "contentHash": "VybpaOQQhqE6siHppMktjfGBw1GCwvCqiufqmP8F1nj7fTUNtW35LOEt3UZTEsECfo+ELAl/9o9nJx3U91i7vA=="
       },
-      "System.ServiceModel.Primitives": {
-        "type": "Transitive",
-        "resolved": "4.8.1",
-        "contentHash": "XjzGCqvWZBHnw2ym8t9PVeTm5Tsp7lSDKEwhDZAU4Jnw+6+zEDu/2ZQYQbRqBR0t/KpfNA4Aya/5aONKJnuyEw==",
+      "atap.utilities.computerinventory.configuration": {
+        "type": "Project",
         "dependencies": {
-          "System.Private.ServiceModel": "4.8.1"
+          "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.enumerations": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Enumeration": "[1.0.0, )"
         }
       },
       "atap.utilities.computerinventory.extensions": {
@@ -137,10 +150,31 @@
           "UnitsNet": "[5.60.0, )"
         }
       },
+      "atap.utilities.computerinventory.hardware": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.StringConstants": "[0.1.0-Alpha, )"
+        }
+      },
       "atap.utilities.computerinventory.hardware.enumerations": {
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Enumeration": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.hardware.extensions": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.StringConstants": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Persistence.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Persistence.Model": "[0.1.0-Alpha, )"
         }
       },
       "atap.utilities.computerinventory.hardware.interfaces": {
@@ -195,10 +229,31 @@
           "UnitsNet": "[5.60.0, )"
         }
       },
+      "atap.utilities.computerinventory.processinfo": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Extensions": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.StringConstants": "[0.1.0-Alpha, )"
+        }
+      },
       "atap.utilities.computerinventory.processinfo.enumerations": {
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Enumeration": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.processinfo.extensions": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.StringConstants": "[0.1.0-Alpha, )",
+          "MedallionShell": "[1.6.2, )",
+          "UnitsNet": "[5.60.0, )"
         }
       },
       "atap.utilities.computerinventory.processinfo.interfaces": {
@@ -218,6 +273,26 @@
           "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
           "MedallionShell": "[1.6.2, )",
           "UnitsNet": "[5.60.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.processinfo.stringconstants": {
+        "type": "Project"
+      },
+      "atap.utilities.computerinventory.software": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.Software.DefaultConfiguration": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Models": "[0.1.0-Alpha, )"
+        }
+      },
+      "atap.utilities.computerinventory.software.defaultconfiguration": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.Software.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Models": "[0.1.0-Alpha, )"
         }
       },
       "atap.utilities.computerinventory.software.enumerations": {
@@ -247,30 +322,6 @@
       },
       "atap.utilities.concurrentobservablecollections": {
         "type": "Project"
-      },
-      "atap.utilities.cryptocoin.enumerations": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.Enumeration": "[1.0.0, )",
-          "ServiceStack.Text": "[5.12.0, )",
-          "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )"
-        }
-      },
-      "atap.utilities.cryptocoin.interfaces": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.CryptoCoin.Enumerations": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )"
-        }
-      },
-      "atap.utilities.cryptocoin.models": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.ComputerInventory.Extensions": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.CryptoCoin.Enumerations": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.CryptoCoin.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )"
-        }
       },
       "atap.utilities.datetime.interfaces": {
         "type": "Project",
@@ -305,14 +356,15 @@
       "atap.utilities.graphdatastructures.interfaces": {
         "type": "Project"
       },
-      "atap.utilities.http": {
+      "atap.utilities.persistence.interfaces": {
+        "type": "Project"
+      },
+      "atap.utilities.persistence.model": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
-          "Polly": "[8.5.0, )",
-          "ServiceStack.HttpClient": "[5.12.0, )",
-          "System.Drawing.Common": "[8.0.2, )",
-          "System.Security.Cryptography.Xml": "[8.0.2, )"
+          "ATAP.Utilities.Persistence.Interfaces": "[0.1.0-Alpha, )",
+          "ServiceStack.OrmLite": "[5.12.0, )",
+          "ServiceStack.OrmLite.SqlServer": "[5.12.0, )"
         }
       },
       "atap.utilities.philote": {
@@ -351,16 +403,26 @@
         "resolved": "1.6.2",
         "contentHash": "fk0FLxBt6pRgrEo69IdzMqV51Wha7iK0ZTkNZyhsEZ2n67gooF8GgGE2ag85w5ewUuHVIu+v97c0YRDn448riA=="
       },
-      "ServiceStack.HttpClient": {
+      "ServiceStack.OrmLite": {
         "type": "CentralTransitive",
         "requested": "[5.12.0, )",
         "resolved": "5.12.0",
-        "contentHash": "U1nErdCbPwGVmzIwt8B+EAvs8K0PkEWhnteWiEc4VojJQcepQ+pu6gvjzTRE/x6zuXhHPEaZopmL0gHV/yPqkA==",
+        "contentHash": "0pGs/Mc32SKaFeC7JBSnM1LWmG2lI4k/v0bFpAPxvo8jzuEWryxLc9JS2MBLq17J8Eqy4eb1KZ/VqHfB14NW7Q==",
         "dependencies": {
-          "ServiceStack.Client": "5.12.0",
-          "ServiceStack.Interfaces": "5.12.0",
-          "ServiceStack.Text": "5.12.0",
-          "System.ServiceModel.Primitives": "4.8.1"
+          "ServiceStack.Common": "5.12.0",
+          "System.ComponentModel.Annotations": "4.7.0",
+          "System.Reflection.TypeExtensions": "4.7.0"
+        }
+      },
+      "ServiceStack.OrmLite.SqlServer": {
+        "type": "CentralTransitive",
+        "requested": "[5.12.0, )",
+        "resolved": "5.12.0",
+        "contentHash": "8OzCjTyaDtyaxkcgmld6ZfZNEN1gS+Xz4Ng3RPSw2zZhcyIB+sMUBTo3Jb6lPdVP9qVmTTmBaMurA4C3hLODPg==",
+        "dependencies": {
+          "ServiceStack.Common": "5.12.0",
+          "ServiceStack.OrmLite": "5.12.0",
+          "System.Data.SqlClient": "4.8.2"
         }
       },
       "ServiceStack.Text": {
@@ -378,47 +440,61 @@
           "ServiceStack.Text": "5.0.0"
         }
       },
-      "System.Drawing.Common": {
+      "UnitsNet": {
         "type": "CentralTransitive",
-        "requested": "[8.0.2, )",
-        "resolved": "8.0.2",
-        "contentHash": "oDedGrYVyzvtGZhgtURpeneHq9D3HQtrvU7q6iCRa+BbIXvTZayGFo0iK3b7qHrwQ/OOAn9B0ghzQH6AbW5LHg==",
-        "dependencies": {
-          "Microsoft.Win32.SystemEvents": "8.0.0"
-        }
-      },
-      "System.Security.Cryptography.Xml": {
-        "type": "CentralTransitive",
-        "requested": "[8.0.2, )",
-        "resolved": "8.0.2",
-        "contentHash": "aDM/wm0ZGEZ6ZYJLzgqjp2FZdHbDHh6/OmpGfb7AdZ105zYmPn/83JRU2xLIbwgoNz9U1SLUTJN0v5th3qmvjA==",
-        "dependencies": {
-          "System.Security.Cryptography.Pkcs": "8.0.1"
-        }
+        "requested": "[5.60.0, )",
+        "resolved": "5.60.0",
+        "contentHash": "y+EtFw5cSgEaerlrZMr8QhBT2f4GtbyNhDPNdjVZHntqCAevC8TyvQV3dyEHOM8sR4DuiUcFAZ/McyNyewFcMw=="
       }
     },
     "net10.0/linux-x64": {
-      "Microsoft.Win32.SystemEvents": {
+      "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": {
         "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "9opKRyOKMCi2xJ7Bj7kxtZ1r9vbzosMvRrdEhVhDz8j8MoBGgB+WmC94yH839NPH+BclAjtQ/pyagvi/8gDLkw=="
+        "resolved": "4.4.0",
+        "contentHash": "LbrynESTp3bm5O/+jGL8v0Qg5SJlTV08lpIpFesXjF6uGNMWqFnUQbYBJwZTeua6E/Y7FIM1C54Ey1btLWupdg=="
       },
-      "System.Security.Cryptography.Pkcs": {
+      "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": {
         "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA=="
+        "resolved": "4.4.0",
+        "contentHash": "38ugOfkYJqJoX9g6EYRlZB5U2ZJH51UP8ptxZgdpS07FgOEToV+lS11ouNK2PM12Pr6X/PpT5jK82G3DwH/SxQ=="
+      },
+      "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "YhEdSQUsTx+C8m8Bw7ar5/VesXvCFMItyZF7G1AUY+OM0VPZUOeAVpJ4Wl6fydBGUYZxojTDR3I6Bj/+BPkJNA=="
+      },
+      "System.Data.SqlClient": {
+        "type": "Transitive",
+        "resolved": "4.8.2",
+        "contentHash": "80vGtW6uLB4AkyrdVuKTXYUyuXDPAsSKbTVfvjndZaRAYxzFzWhJbvUfeAKrN+128ycWZjLIAl61dFUwWHOOTw==",
+        "dependencies": {
+          "runtime.native.System.Data.SqlClient.sni": "4.7.0"
+        }
       }
     },
     "net10.0/win-x64": {
-      "Microsoft.Win32.SystemEvents": {
+      "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": {
         "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "9opKRyOKMCi2xJ7Bj7kxtZ1r9vbzosMvRrdEhVhDz8j8MoBGgB+WmC94yH839NPH+BclAjtQ/pyagvi/8gDLkw=="
+        "resolved": "4.4.0",
+        "contentHash": "LbrynESTp3bm5O/+jGL8v0Qg5SJlTV08lpIpFesXjF6uGNMWqFnUQbYBJwZTeua6E/Y7FIM1C54Ey1btLWupdg=="
       },
-      "System.Security.Cryptography.Pkcs": {
+      "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": {
         "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA=="
+        "resolved": "4.4.0",
+        "contentHash": "38ugOfkYJqJoX9g6EYRlZB5U2ZJH51UP8ptxZgdpS07FgOEToV+lS11ouNK2PM12Pr6X/PpT5jK82G3DwH/SxQ=="
+      },
+      "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "YhEdSQUsTx+C8m8Bw7ar5/VesXvCFMItyZF7G1AUY+OM0VPZUOeAVpJ4Wl6fydBGUYZxojTDR3I6Bj/+BPkJNA=="
+      },
+      "System.Data.SqlClient": {
+        "type": "Transitive",
+        "resolved": "4.8.2",
+        "contentHash": "80vGtW6uLB4AkyrdVuKTXYUyuXDPAsSKbTVfvjndZaRAYxzFzWhJbvUfeAKrN+128ycWZjLIAl61dFUwWHOOTw==",
+        "dependencies": {
+          "runtime.native.System.Data.SqlClient.sni": "4.7.0"
+        }
       }
     },
     "net8.0": {
@@ -453,27 +529,6 @@
         "resolved": "3.9.50",
         "contentHash": "HtOgGF6jZ+WYbXnCUCYPT8Y2d6mIJo9ozjK/FINTRsXdm4Zgv9GehUMa7EFoGQkqrMcDJNOIDwCmENnvXg4UbA=="
       },
-      "Newtonsoft.Json": {
-        "type": "Direct",
-        "requested": "[13.0.4, )",
-        "resolved": "13.0.4",
-        "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
-      },
-      "Polly": {
-        "type": "Direct",
-        "requested": "[8.5.0, )",
-        "resolved": "8.5.0",
-        "contentHash": "GBNZPy7i7OpkaIruWPRJ0+AWzdGDQDnKY91b7Ic2aAch4lKhPjUc5KSffpH9krIWe0MoyghqaRxwRC0Uwz2PkA==",
-        "dependencies": {
-          "Polly.Core": "8.5.0"
-        }
-      },
-      "UnitsNet": {
-        "type": "Direct",
-        "requested": "[5.60.0, )",
-        "resolved": "5.60.0",
-        "contentHash": "y+EtFw5cSgEaerlrZMr8QhBT2f4GtbyNhDPNdjVZHntqCAevC8TyvQV3dyEHOM8sR4DuiUcFAZ/McyNyewFcMw=="
-      },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "Transitive",
         "resolved": "1.1.1",
@@ -489,24 +544,38 @@
         "resolved": "8.0.0",
         "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
       },
-      "Microsoft.Win32.SystemEvents": {
+      "runtime.native.System.Data.SqlClient.sni": {
         "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "9opKRyOKMCi2xJ7Bj7kxtZ1r9vbzosMvRrdEhVhDz8j8MoBGgB+WmC94yH839NPH+BclAjtQ/pyagvi/8gDLkw=="
+        "resolved": "4.7.0",
+        "contentHash": "9kyFSIdN3T0qjDQ2R0HRXYIhS3l5psBzQi6qqhdLz+SzFyEy4sVxNOke+yyYv8Cu8rPER12c3RDjLT8wF3WBYQ==",
+        "dependencies": {
+          "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": "4.4.0",
+          "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": "4.4.0",
+          "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": "4.4.0"
+        }
       },
-      "Polly.Core": {
+      "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": {
         "type": "Transitive",
-        "resolved": "8.5.0",
-        "contentHash": "VYYMZNitZ85UEhwOKkTQI63WEMvzUqwQc74I2mm8h/DBVAMcBBxqYPni4DmuRtbCwngmuONuK2yBJfWNRKzI+A=="
+        "resolved": "4.4.0",
+        "contentHash": "LbrynESTp3bm5O/+jGL8v0Qg5SJlTV08lpIpFesXjF6uGNMWqFnUQbYBJwZTeua6E/Y7FIM1C54Ey1btLWupdg=="
       },
-      "ServiceStack.Client": {
+      "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "38ugOfkYJqJoX9g6EYRlZB5U2ZJH51UP8ptxZgdpS07FgOEToV+lS11ouNK2PM12Pr6X/PpT5jK82G3DwH/SxQ=="
+      },
+      "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "YhEdSQUsTx+C8m8Bw7ar5/VesXvCFMItyZF7G1AUY+OM0VPZUOeAVpJ4Wl6fydBGUYZxojTDR3I6Bj/+BPkJNA=="
+      },
+      "ServiceStack.Common": {
         "type": "Transitive",
         "resolved": "5.12.0",
-        "contentHash": "FnNVFB18FNep1KWtJVmo/rxVt5clWQa7unHSCaq5JKNWYkPU6onsL68DdEfUuTkxZKX9iSY7h0PfwPE97rcwFw==",
+        "contentHash": "iBKaQ6BfqZGbBFCHotH/+M6XAPHbCziE31ATXMMSB7X/56x5bhveQRDwFo7EKSeNX0/X4CCV+7Uq+5MWuCkwtQ==",
         "dependencies": {
           "ServiceStack.Interfaces": "5.12.0",
-          "ServiceStack.Text": "5.12.0",
-          "System.ServiceModel.Primitives": "4.8.1"
+          "ServiceStack.Text": "5.12.0"
         }
       },
       "ServiceStack.Interfaces": {
@@ -517,25 +586,34 @@
           "Microsoft.Bcl.AsyncInterfaces": "1.1.1"
         }
       },
-      "System.Private.ServiceModel": {
+      "System.Data.SqlClient": {
         "type": "Transitive",
-        "resolved": "4.8.1",
-        "contentHash": "neXeXhKIlCUBCg5rxKpYnae4vQSiMWjhqeTgsMedHvKKUTsmP98je+G8oPmDdY9uZVruvxqRGjcljn1XYNhC+w==",
+        "resolved": "4.8.2",
+        "contentHash": "80vGtW6uLB4AkyrdVuKTXYUyuXDPAsSKbTVfvjndZaRAYxzFzWhJbvUfeAKrN+128ycWZjLIAl61dFUwWHOOTw==",
         "dependencies": {
-          "System.Security.Cryptography.Xml": "4.7.0"
+          "runtime.native.System.Data.SqlClient.sni": "4.7.0"
         }
       },
-      "System.Security.Cryptography.Pkcs": {
-        "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA=="
-      },
-      "System.ServiceModel.Primitives": {
-        "type": "Transitive",
-        "resolved": "4.8.1",
-        "contentHash": "XjzGCqvWZBHnw2ym8t9PVeTm5Tsp7lSDKEwhDZAU4Jnw+6+zEDu/2ZQYQbRqBR0t/KpfNA4Aya/5aONKJnuyEw==",
+      "atap.utilities.computerinventory.configuration": {
+        "type": "Project",
         "dependencies": {
-          "System.Private.ServiceModel": "4.8.1"
+          "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.enumerations": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Enumeration": "[1.0.0, )"
         }
       },
       "atap.utilities.computerinventory.extensions": {
@@ -557,10 +635,31 @@
           "UnitsNet": "[5.60.0, )"
         }
       },
+      "atap.utilities.computerinventory.hardware": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.StringConstants": "[0.1.0-Alpha, )"
+        }
+      },
       "atap.utilities.computerinventory.hardware.enumerations": {
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Enumeration": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.hardware.extensions": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.StringConstants": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Persistence.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Persistence.Model": "[0.1.0-Alpha, )"
         }
       },
       "atap.utilities.computerinventory.hardware.interfaces": {
@@ -615,10 +714,31 @@
           "UnitsNet": "[5.60.0, )"
         }
       },
+      "atap.utilities.computerinventory.processinfo": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Extensions": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.StringConstants": "[0.1.0-Alpha, )"
+        }
+      },
       "atap.utilities.computerinventory.processinfo.enumerations": {
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Enumeration": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.processinfo.extensions": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.StringConstants": "[0.1.0-Alpha, )",
+          "MedallionShell": "[1.6.2, )",
+          "UnitsNet": "[5.60.0, )"
         }
       },
       "atap.utilities.computerinventory.processinfo.interfaces": {
@@ -638,6 +758,26 @@
           "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
           "MedallionShell": "[1.6.2, )",
           "UnitsNet": "[5.60.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.processinfo.stringconstants": {
+        "type": "Project"
+      },
+      "atap.utilities.computerinventory.software": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.Software.DefaultConfiguration": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Models": "[0.1.0-Alpha, )"
+        }
+      },
+      "atap.utilities.computerinventory.software.defaultconfiguration": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.Software.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Models": "[0.1.0-Alpha, )"
         }
       },
       "atap.utilities.computerinventory.software.enumerations": {
@@ -667,30 +807,6 @@
       },
       "atap.utilities.concurrentobservablecollections": {
         "type": "Project"
-      },
-      "atap.utilities.cryptocoin.enumerations": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.Enumeration": "[1.0.0, )",
-          "ServiceStack.Text": "[5.12.0, )",
-          "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )"
-        }
-      },
-      "atap.utilities.cryptocoin.interfaces": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.CryptoCoin.Enumerations": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )"
-        }
-      },
-      "atap.utilities.cryptocoin.models": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.ComputerInventory.Extensions": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.CryptoCoin.Enumerations": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.CryptoCoin.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )"
-        }
       },
       "atap.utilities.datetime.interfaces": {
         "type": "Project",
@@ -725,14 +841,15 @@
       "atap.utilities.graphdatastructures.interfaces": {
         "type": "Project"
       },
-      "atap.utilities.http": {
+      "atap.utilities.persistence.interfaces": {
+        "type": "Project"
+      },
+      "atap.utilities.persistence.model": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
-          "Polly": "[8.5.0, )",
-          "ServiceStack.HttpClient": "[5.12.0, )",
-          "System.Drawing.Common": "[8.0.2, )",
-          "System.Security.Cryptography.Xml": "[8.0.2, )"
+          "ATAP.Utilities.Persistence.Interfaces": "[0.1.0-Alpha, )",
+          "ServiceStack.OrmLite": "[5.12.0, )",
+          "ServiceStack.OrmLite.SqlServer": "[5.12.0, )"
         }
       },
       "atap.utilities.philote": {
@@ -771,16 +888,24 @@
         "resolved": "1.6.2",
         "contentHash": "fk0FLxBt6pRgrEo69IdzMqV51Wha7iK0ZTkNZyhsEZ2n67gooF8GgGE2ag85w5ewUuHVIu+v97c0YRDn448riA=="
       },
-      "ServiceStack.HttpClient": {
+      "ServiceStack.OrmLite": {
         "type": "CentralTransitive",
         "requested": "[5.12.0, )",
         "resolved": "5.12.0",
-        "contentHash": "U1nErdCbPwGVmzIwt8B+EAvs8K0PkEWhnteWiEc4VojJQcepQ+pu6gvjzTRE/x6zuXhHPEaZopmL0gHV/yPqkA==",
+        "contentHash": "0pGs/Mc32SKaFeC7JBSnM1LWmG2lI4k/v0bFpAPxvo8jzuEWryxLc9JS2MBLq17J8Eqy4eb1KZ/VqHfB14NW7Q==",
         "dependencies": {
-          "ServiceStack.Client": "5.12.0",
-          "ServiceStack.Interfaces": "5.12.0",
-          "ServiceStack.Text": "5.12.0",
-          "System.ServiceModel.Primitives": "4.8.1"
+          "ServiceStack.Common": "5.12.0"
+        }
+      },
+      "ServiceStack.OrmLite.SqlServer": {
+        "type": "CentralTransitive",
+        "requested": "[5.12.0, )",
+        "resolved": "5.12.0",
+        "contentHash": "8OzCjTyaDtyaxkcgmld6ZfZNEN1gS+Xz4Ng3RPSw2zZhcyIB+sMUBTo3Jb6lPdVP9qVmTTmBaMurA4C3hLODPg==",
+        "dependencies": {
+          "ServiceStack.Common": "5.12.0",
+          "ServiceStack.OrmLite": "5.12.0",
+          "System.Data.SqlClient": "4.8.2"
         }
       },
       "ServiceStack.Text": {
@@ -798,47 +923,61 @@
           "ServiceStack.Text": "5.0.0"
         }
       },
-      "System.Drawing.Common": {
+      "UnitsNet": {
         "type": "CentralTransitive",
-        "requested": "[8.0.2, )",
-        "resolved": "8.0.2",
-        "contentHash": "oDedGrYVyzvtGZhgtURpeneHq9D3HQtrvU7q6iCRa+BbIXvTZayGFo0iK3b7qHrwQ/OOAn9B0ghzQH6AbW5LHg==",
-        "dependencies": {
-          "Microsoft.Win32.SystemEvents": "8.0.0"
-        }
-      },
-      "System.Security.Cryptography.Xml": {
-        "type": "CentralTransitive",
-        "requested": "[8.0.2, )",
-        "resolved": "8.0.2",
-        "contentHash": "aDM/wm0ZGEZ6ZYJLzgqjp2FZdHbDHh6/OmpGfb7AdZ105zYmPn/83JRU2xLIbwgoNz9U1SLUTJN0v5th3qmvjA==",
-        "dependencies": {
-          "System.Security.Cryptography.Pkcs": "8.0.1"
-        }
+        "requested": "[5.60.0, )",
+        "resolved": "5.60.0",
+        "contentHash": "y+EtFw5cSgEaerlrZMr8QhBT2f4GtbyNhDPNdjVZHntqCAevC8TyvQV3dyEHOM8sR4DuiUcFAZ/McyNyewFcMw=="
       }
     },
     "net8.0/linux-x64": {
-      "Microsoft.Win32.SystemEvents": {
+      "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": {
         "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "9opKRyOKMCi2xJ7Bj7kxtZ1r9vbzosMvRrdEhVhDz8j8MoBGgB+WmC94yH839NPH+BclAjtQ/pyagvi/8gDLkw=="
+        "resolved": "4.4.0",
+        "contentHash": "LbrynESTp3bm5O/+jGL8v0Qg5SJlTV08lpIpFesXjF6uGNMWqFnUQbYBJwZTeua6E/Y7FIM1C54Ey1btLWupdg=="
       },
-      "System.Security.Cryptography.Pkcs": {
+      "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": {
         "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA=="
+        "resolved": "4.4.0",
+        "contentHash": "38ugOfkYJqJoX9g6EYRlZB5U2ZJH51UP8ptxZgdpS07FgOEToV+lS11ouNK2PM12Pr6X/PpT5jK82G3DwH/SxQ=="
+      },
+      "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "YhEdSQUsTx+C8m8Bw7ar5/VesXvCFMItyZF7G1AUY+OM0VPZUOeAVpJ4Wl6fydBGUYZxojTDR3I6Bj/+BPkJNA=="
+      },
+      "System.Data.SqlClient": {
+        "type": "Transitive",
+        "resolved": "4.8.2",
+        "contentHash": "80vGtW6uLB4AkyrdVuKTXYUyuXDPAsSKbTVfvjndZaRAYxzFzWhJbvUfeAKrN+128ycWZjLIAl61dFUwWHOOTw==",
+        "dependencies": {
+          "runtime.native.System.Data.SqlClient.sni": "4.7.0"
+        }
       }
     },
     "net8.0/win-x64": {
-      "Microsoft.Win32.SystemEvents": {
+      "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": {
         "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "9opKRyOKMCi2xJ7Bj7kxtZ1r9vbzosMvRrdEhVhDz8j8MoBGgB+WmC94yH839NPH+BclAjtQ/pyagvi/8gDLkw=="
+        "resolved": "4.4.0",
+        "contentHash": "LbrynESTp3bm5O/+jGL8v0Qg5SJlTV08lpIpFesXjF6uGNMWqFnUQbYBJwZTeua6E/Y7FIM1C54Ey1btLWupdg=="
       },
-      "System.Security.Cryptography.Pkcs": {
+      "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": {
         "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA=="
+        "resolved": "4.4.0",
+        "contentHash": "38ugOfkYJqJoX9g6EYRlZB5U2ZJH51UP8ptxZgdpS07FgOEToV+lS11ouNK2PM12Pr6X/PpT5jK82G3DwH/SxQ=="
+      },
+      "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "YhEdSQUsTx+C8m8Bw7ar5/VesXvCFMItyZF7G1AUY+OM0VPZUOeAVpJ4Wl6fydBGUYZxojTDR3I6Bj/+BPkJNA=="
+      },
+      "System.Data.SqlClient": {
+        "type": "Transitive",
+        "resolved": "4.8.2",
+        "contentHash": "80vGtW6uLB4AkyrdVuKTXYUyuXDPAsSKbTVfvjndZaRAYxzFzWhJbvUfeAKrN+128ycWZjLIAl61dFUwWHOOTw==",
+        "dependencies": {
+          "runtime.native.System.Data.SqlClient.sni": "4.7.0"
+        }
       }
     },
     "net9.0": {
@@ -873,27 +1012,6 @@
         "resolved": "3.9.50",
         "contentHash": "HtOgGF6jZ+WYbXnCUCYPT8Y2d6mIJo9ozjK/FINTRsXdm4Zgv9GehUMa7EFoGQkqrMcDJNOIDwCmENnvXg4UbA=="
       },
-      "Newtonsoft.Json": {
-        "type": "Direct",
-        "requested": "[13.0.4, )",
-        "resolved": "13.0.4",
-        "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
-      },
-      "Polly": {
-        "type": "Direct",
-        "requested": "[8.5.0, )",
-        "resolved": "8.5.0",
-        "contentHash": "GBNZPy7i7OpkaIruWPRJ0+AWzdGDQDnKY91b7Ic2aAch4lKhPjUc5KSffpH9krIWe0MoyghqaRxwRC0Uwz2PkA==",
-        "dependencies": {
-          "Polly.Core": "8.5.0"
-        }
-      },
-      "UnitsNet": {
-        "type": "Direct",
-        "requested": "[5.60.0, )",
-        "resolved": "5.60.0",
-        "contentHash": "y+EtFw5cSgEaerlrZMr8QhBT2f4GtbyNhDPNdjVZHntqCAevC8TyvQV3dyEHOM8sR4DuiUcFAZ/McyNyewFcMw=="
-      },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "Transitive",
         "resolved": "1.1.1",
@@ -909,24 +1027,38 @@
         "resolved": "8.0.0",
         "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
       },
-      "Microsoft.Win32.SystemEvents": {
+      "runtime.native.System.Data.SqlClient.sni": {
         "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "9opKRyOKMCi2xJ7Bj7kxtZ1r9vbzosMvRrdEhVhDz8j8MoBGgB+WmC94yH839NPH+BclAjtQ/pyagvi/8gDLkw=="
+        "resolved": "4.7.0",
+        "contentHash": "9kyFSIdN3T0qjDQ2R0HRXYIhS3l5psBzQi6qqhdLz+SzFyEy4sVxNOke+yyYv8Cu8rPER12c3RDjLT8wF3WBYQ==",
+        "dependencies": {
+          "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": "4.4.0",
+          "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": "4.4.0",
+          "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": "4.4.0"
+        }
       },
-      "Polly.Core": {
+      "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": {
         "type": "Transitive",
-        "resolved": "8.5.0",
-        "contentHash": "VYYMZNitZ85UEhwOKkTQI63WEMvzUqwQc74I2mm8h/DBVAMcBBxqYPni4DmuRtbCwngmuONuK2yBJfWNRKzI+A=="
+        "resolved": "4.4.0",
+        "contentHash": "LbrynESTp3bm5O/+jGL8v0Qg5SJlTV08lpIpFesXjF6uGNMWqFnUQbYBJwZTeua6E/Y7FIM1C54Ey1btLWupdg=="
       },
-      "ServiceStack.Client": {
+      "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "38ugOfkYJqJoX9g6EYRlZB5U2ZJH51UP8ptxZgdpS07FgOEToV+lS11ouNK2PM12Pr6X/PpT5jK82G3DwH/SxQ=="
+      },
+      "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "YhEdSQUsTx+C8m8Bw7ar5/VesXvCFMItyZF7G1AUY+OM0VPZUOeAVpJ4Wl6fydBGUYZxojTDR3I6Bj/+BPkJNA=="
+      },
+      "ServiceStack.Common": {
         "type": "Transitive",
         "resolved": "5.12.0",
-        "contentHash": "FnNVFB18FNep1KWtJVmo/rxVt5clWQa7unHSCaq5JKNWYkPU6onsL68DdEfUuTkxZKX9iSY7h0PfwPE97rcwFw==",
+        "contentHash": "iBKaQ6BfqZGbBFCHotH/+M6XAPHbCziE31ATXMMSB7X/56x5bhveQRDwFo7EKSeNX0/X4CCV+7Uq+5MWuCkwtQ==",
         "dependencies": {
           "ServiceStack.Interfaces": "5.12.0",
-          "ServiceStack.Text": "5.12.0",
-          "System.ServiceModel.Primitives": "4.8.1"
+          "ServiceStack.Text": "5.12.0"
         }
       },
       "ServiceStack.Interfaces": {
@@ -937,25 +1069,34 @@
           "Microsoft.Bcl.AsyncInterfaces": "1.1.1"
         }
       },
-      "System.Private.ServiceModel": {
+      "System.Data.SqlClient": {
         "type": "Transitive",
-        "resolved": "4.8.1",
-        "contentHash": "neXeXhKIlCUBCg5rxKpYnae4vQSiMWjhqeTgsMedHvKKUTsmP98je+G8oPmDdY9uZVruvxqRGjcljn1XYNhC+w==",
+        "resolved": "4.8.2",
+        "contentHash": "80vGtW6uLB4AkyrdVuKTXYUyuXDPAsSKbTVfvjndZaRAYxzFzWhJbvUfeAKrN+128ycWZjLIAl61dFUwWHOOTw==",
         "dependencies": {
-          "System.Security.Cryptography.Xml": "4.7.0"
+          "runtime.native.System.Data.SqlClient.sni": "4.7.0"
         }
       },
-      "System.Security.Cryptography.Pkcs": {
-        "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA=="
-      },
-      "System.ServiceModel.Primitives": {
-        "type": "Transitive",
-        "resolved": "4.8.1",
-        "contentHash": "XjzGCqvWZBHnw2ym8t9PVeTm5Tsp7lSDKEwhDZAU4Jnw+6+zEDu/2ZQYQbRqBR0t/KpfNA4Aya/5aONKJnuyEw==",
+      "atap.utilities.computerinventory.configuration": {
+        "type": "Project",
         "dependencies": {
-          "System.Private.ServiceModel": "4.8.1"
+          "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.enumerations": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Enumeration": "[1.0.0, )"
         }
       },
       "atap.utilities.computerinventory.extensions": {
@@ -977,10 +1118,31 @@
           "UnitsNet": "[5.60.0, )"
         }
       },
+      "atap.utilities.computerinventory.hardware": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.StringConstants": "[0.1.0-Alpha, )"
+        }
+      },
       "atap.utilities.computerinventory.hardware.enumerations": {
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Enumeration": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.hardware.extensions": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.StringConstants": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Persistence.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Persistence.Model": "[0.1.0-Alpha, )"
         }
       },
       "atap.utilities.computerinventory.hardware.interfaces": {
@@ -1035,10 +1197,31 @@
           "UnitsNet": "[5.60.0, )"
         }
       },
+      "atap.utilities.computerinventory.processinfo": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Extensions": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.StringConstants": "[0.1.0-Alpha, )"
+        }
+      },
       "atap.utilities.computerinventory.processinfo.enumerations": {
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Enumeration": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.processinfo.extensions": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.ProcessInfo.StringConstants": "[0.1.0-Alpha, )",
+          "MedallionShell": "[1.6.2, )",
+          "UnitsNet": "[5.60.0, )"
         }
       },
       "atap.utilities.computerinventory.processinfo.interfaces": {
@@ -1058,6 +1241,26 @@
           "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
           "MedallionShell": "[1.6.2, )",
           "UnitsNet": "[5.60.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.processinfo.stringconstants": {
+        "type": "Project"
+      },
+      "atap.utilities.computerinventory.software": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.Software.DefaultConfiguration": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Models": "[0.1.0-Alpha, )"
+        }
+      },
+      "atap.utilities.computerinventory.software.defaultconfiguration": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.Software.Enumerations": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Software.Models": "[0.1.0-Alpha, )"
         }
       },
       "atap.utilities.computerinventory.software.enumerations": {
@@ -1087,30 +1290,6 @@
       },
       "atap.utilities.concurrentobservablecollections": {
         "type": "Project"
-      },
-      "atap.utilities.cryptocoin.enumerations": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.Enumeration": "[1.0.0, )",
-          "ServiceStack.Text": "[5.12.0, )",
-          "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )"
-        }
-      },
-      "atap.utilities.cryptocoin.interfaces": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.CryptoCoin.Enumerations": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )"
-        }
-      },
-      "atap.utilities.cryptocoin.models": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.ComputerInventory.Extensions": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.CryptoCoin.Enumerations": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.CryptoCoin.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )"
-        }
       },
       "atap.utilities.datetime.interfaces": {
         "type": "Project",
@@ -1145,14 +1324,15 @@
       "atap.utilities.graphdatastructures.interfaces": {
         "type": "Project"
       },
-      "atap.utilities.http": {
+      "atap.utilities.persistence.interfaces": {
+        "type": "Project"
+      },
+      "atap.utilities.persistence.model": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
-          "Polly": "[8.5.0, )",
-          "ServiceStack.HttpClient": "[5.12.0, )",
-          "System.Drawing.Common": "[8.0.2, )",
-          "System.Security.Cryptography.Xml": "[8.0.2, )"
+          "ATAP.Utilities.Persistence.Interfaces": "[0.1.0-Alpha, )",
+          "ServiceStack.OrmLite": "[5.12.0, )",
+          "ServiceStack.OrmLite.SqlServer": "[5.12.0, )"
         }
       },
       "atap.utilities.philote": {
@@ -1191,16 +1371,24 @@
         "resolved": "1.6.2",
         "contentHash": "fk0FLxBt6pRgrEo69IdzMqV51Wha7iK0ZTkNZyhsEZ2n67gooF8GgGE2ag85w5ewUuHVIu+v97c0YRDn448riA=="
       },
-      "ServiceStack.HttpClient": {
+      "ServiceStack.OrmLite": {
         "type": "CentralTransitive",
         "requested": "[5.12.0, )",
         "resolved": "5.12.0",
-        "contentHash": "U1nErdCbPwGVmzIwt8B+EAvs8K0PkEWhnteWiEc4VojJQcepQ+pu6gvjzTRE/x6zuXhHPEaZopmL0gHV/yPqkA==",
+        "contentHash": "0pGs/Mc32SKaFeC7JBSnM1LWmG2lI4k/v0bFpAPxvo8jzuEWryxLc9JS2MBLq17J8Eqy4eb1KZ/VqHfB14NW7Q==",
         "dependencies": {
-          "ServiceStack.Client": "5.12.0",
-          "ServiceStack.Interfaces": "5.12.0",
-          "ServiceStack.Text": "5.12.0",
-          "System.ServiceModel.Primitives": "4.8.1"
+          "ServiceStack.Common": "5.12.0"
+        }
+      },
+      "ServiceStack.OrmLite.SqlServer": {
+        "type": "CentralTransitive",
+        "requested": "[5.12.0, )",
+        "resolved": "5.12.0",
+        "contentHash": "8OzCjTyaDtyaxkcgmld6ZfZNEN1gS+Xz4Ng3RPSw2zZhcyIB+sMUBTo3Jb6lPdVP9qVmTTmBaMurA4C3hLODPg==",
+        "dependencies": {
+          "ServiceStack.Common": "5.12.0",
+          "ServiceStack.OrmLite": "5.12.0",
+          "System.Data.SqlClient": "4.8.2"
         }
       },
       "ServiceStack.Text": {
@@ -1218,47 +1406,61 @@
           "ServiceStack.Text": "5.0.0"
         }
       },
-      "System.Drawing.Common": {
+      "UnitsNet": {
         "type": "CentralTransitive",
-        "requested": "[8.0.2, )",
-        "resolved": "8.0.2",
-        "contentHash": "oDedGrYVyzvtGZhgtURpeneHq9D3HQtrvU7q6iCRa+BbIXvTZayGFo0iK3b7qHrwQ/OOAn9B0ghzQH6AbW5LHg==",
-        "dependencies": {
-          "Microsoft.Win32.SystemEvents": "8.0.0"
-        }
-      },
-      "System.Security.Cryptography.Xml": {
-        "type": "CentralTransitive",
-        "requested": "[8.0.2, )",
-        "resolved": "8.0.2",
-        "contentHash": "aDM/wm0ZGEZ6ZYJLzgqjp2FZdHbDHh6/OmpGfb7AdZ105zYmPn/83JRU2xLIbwgoNz9U1SLUTJN0v5th3qmvjA==",
-        "dependencies": {
-          "System.Security.Cryptography.Pkcs": "8.0.1"
-        }
+        "requested": "[5.60.0, )",
+        "resolved": "5.60.0",
+        "contentHash": "y+EtFw5cSgEaerlrZMr8QhBT2f4GtbyNhDPNdjVZHntqCAevC8TyvQV3dyEHOM8sR4DuiUcFAZ/McyNyewFcMw=="
       }
     },
     "net9.0/linux-x64": {
-      "Microsoft.Win32.SystemEvents": {
+      "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": {
         "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "9opKRyOKMCi2xJ7Bj7kxtZ1r9vbzosMvRrdEhVhDz8j8MoBGgB+WmC94yH839NPH+BclAjtQ/pyagvi/8gDLkw=="
+        "resolved": "4.4.0",
+        "contentHash": "LbrynESTp3bm5O/+jGL8v0Qg5SJlTV08lpIpFesXjF6uGNMWqFnUQbYBJwZTeua6E/Y7FIM1C54Ey1btLWupdg=="
       },
-      "System.Security.Cryptography.Pkcs": {
+      "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": {
         "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA=="
+        "resolved": "4.4.0",
+        "contentHash": "38ugOfkYJqJoX9g6EYRlZB5U2ZJH51UP8ptxZgdpS07FgOEToV+lS11ouNK2PM12Pr6X/PpT5jK82G3DwH/SxQ=="
+      },
+      "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "YhEdSQUsTx+C8m8Bw7ar5/VesXvCFMItyZF7G1AUY+OM0VPZUOeAVpJ4Wl6fydBGUYZxojTDR3I6Bj/+BPkJNA=="
+      },
+      "System.Data.SqlClient": {
+        "type": "Transitive",
+        "resolved": "4.8.2",
+        "contentHash": "80vGtW6uLB4AkyrdVuKTXYUyuXDPAsSKbTVfvjndZaRAYxzFzWhJbvUfeAKrN+128ycWZjLIAl61dFUwWHOOTw==",
+        "dependencies": {
+          "runtime.native.System.Data.SqlClient.sni": "4.7.0"
+        }
       }
     },
     "net9.0/win-x64": {
-      "Microsoft.Win32.SystemEvents": {
+      "runtime.win-arm64.runtime.native.System.Data.SqlClient.sni": {
         "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "9opKRyOKMCi2xJ7Bj7kxtZ1r9vbzosMvRrdEhVhDz8j8MoBGgB+WmC94yH839NPH+BclAjtQ/pyagvi/8gDLkw=="
+        "resolved": "4.4.0",
+        "contentHash": "LbrynESTp3bm5O/+jGL8v0Qg5SJlTV08lpIpFesXjF6uGNMWqFnUQbYBJwZTeua6E/Y7FIM1C54Ey1btLWupdg=="
       },
-      "System.Security.Cryptography.Pkcs": {
+      "runtime.win-x64.runtime.native.System.Data.SqlClient.sni": {
         "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA=="
+        "resolved": "4.4.0",
+        "contentHash": "38ugOfkYJqJoX9g6EYRlZB5U2ZJH51UP8ptxZgdpS07FgOEToV+lS11ouNK2PM12Pr6X/PpT5jK82G3DwH/SxQ=="
+      },
+      "runtime.win-x86.runtime.native.System.Data.SqlClient.sni": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "YhEdSQUsTx+C8m8Bw7ar5/VesXvCFMItyZF7G1AUY+OM0VPZUOeAVpJ4Wl6fydBGUYZxojTDR3I6Bj/+BPkJNA=="
+      },
+      "System.Data.SqlClient": {
+        "type": "Transitive",
+        "resolved": "4.8.2",
+        "contentHash": "80vGtW6uLB4AkyrdVuKTXYUyuXDPAsSKbTVfvjndZaRAYxzFzWhJbvUfeAKrN+128ycWZjLIAl61dFUwWHOOTw==",
+        "dependencies": {
+          "runtime.native.System.Data.SqlClient.sni": "4.7.0"
+        }
       }
     }
   }

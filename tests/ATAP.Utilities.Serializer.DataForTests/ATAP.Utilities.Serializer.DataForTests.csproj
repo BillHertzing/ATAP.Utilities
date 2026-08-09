@@ -36,7 +36,6 @@
 
   <!-- Library of rich time and interval manipulation routines -->
   <ItemGroup>
-    <PackageReference Include="TimePeriodLibrary.NET" />
   </ItemGroup>
 
 </Project>

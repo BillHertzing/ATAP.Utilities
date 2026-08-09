@@ -1,6 +1,5 @@
 using ATAP.Utilities.Testing;
 using FluentAssertions;
-using Itenso.TimePeriod;
 using System.Collections.Generic;
 using Xunit;
 using Xunit.Abstractions;
@@ -19,9 +18,9 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
     {
       foreach (var itb in inTestData.E)
       {
-        var obj = Fixture.Serializer.Deserialize<IEnumerable<ITimeBlock>>(itb.SerializedTestData);
-        obj.Should().BeOfType(typeof(IEnumerable<ITimeBlock>));
-        Fixture.Serializer.Deserialize<IEnumerable<ITimeBlock>>(itb.SerializedTestData).Should().BeEquivalentTo(itb.ObjTestData);
+        var obj = Fixture.Serializer.Deserialize<ICPU>(itb.SerializedTestData);
+        obj.Should().BeAssignableTo<ICPU>();
+        obj.Should().BeEquivalentTo(itb.ObjTestData);
       }
 
       // ToDo loop over every element of the enumerable and test eah one

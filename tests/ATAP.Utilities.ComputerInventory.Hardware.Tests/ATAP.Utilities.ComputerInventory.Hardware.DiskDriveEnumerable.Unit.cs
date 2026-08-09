@@ -1,7 +1,6 @@
 
 using ATAP.Utilities.Testing;
 using FluentAssertions;
-using Itenso.TimePeriod;
 using System.Collections.Generic;
 using Xunit;
 using Xunit.Abstractions;

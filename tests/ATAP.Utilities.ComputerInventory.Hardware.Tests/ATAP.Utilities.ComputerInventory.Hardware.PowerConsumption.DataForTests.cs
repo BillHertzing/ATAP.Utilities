@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections;
 using ATAP.Utilities.ComputerInventory.Hardware;
-using Itenso.TimePeriod;
 
 namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
 {

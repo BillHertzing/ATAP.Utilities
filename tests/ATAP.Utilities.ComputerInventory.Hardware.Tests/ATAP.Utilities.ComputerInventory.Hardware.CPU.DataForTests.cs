@@ -5,7 +5,6 @@ using System;
 using System.Text;
 using ATAP.Utilities.Testing;
 using ATAP.Utilities.StronglyTypedID;
-using Itenso.TimePeriod;
 
 namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
 {

@@ -115,6 +115,17 @@
           "ATAP.Utilities.Enumeration": "[1.0.0, )"
         }
       },
+      "atap.utilities.computerinventory.hardware.extensions": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.StringConstants": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Persistence.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Persistence.Model": "[0.1.0-Alpha, )"
+        }
+      },
       "atap.utilities.computerinventory.hardware.interfaces": {
         "type": "Project",
         "dependencies": {
@@ -414,6 +425,17 @@
           "ATAP.Utilities.Enumeration": "[1.0.0, )"
         }
       },
+      "atap.utilities.computerinventory.hardware.extensions": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.StringConstants": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Persistence.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Persistence.Model": "[0.1.0-Alpha, )"
+        }
+      },
       "atap.utilities.computerinventory.hardware.interfaces": {
         "type": "Project",
         "dependencies": {
@@ -709,6 +731,17 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Enumeration": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.computerinventory.hardware.extensions": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.Models": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ComputerInventory.Hardware.StringConstants": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Persistence.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Persistence.Model": "[0.1.0-Alpha, )"
         }
       },
       "atap.utilities.computerinventory.hardware.interfaces": {

@@ -20,7 +20,6 @@
     <PackageReference Include="MedallionShell" />
     <PackageReference Include="ServiceStack.Text" />
     <PackageReference Include="ServiceStack.Text.EnumMemberSerializer" />
-    <PackageReference Include="TimePeriodLibrary.NET" />
     <PackageReference Include="UnitsNet" />
   </ItemGroup>
 

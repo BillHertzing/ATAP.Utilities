@@ -7,7 +7,6 @@ using Xunit;
 using Xunit.Abstractions;
 using ServiceStack.Text;
 using ATAP.Utilities.ComputerInventory;
-using Itenso.TimePeriod;
 using ATAP.Utilities.ComputerInventory.ProcessInfo;
 using ATAP.Utilities.ComputerInventory.Hardware;
 using ATAP.Utilities.ComputerInventory.Software;
@@ -60,7 +59,6 @@ namespace ATAP.Utilities.ComputerInventory.ProcessInfo.Tests
       // stop the program in 1/2 of the specified test run time (specifiedTestRunTime is in seconds, timers are in milliseconds)
       Timer aTimer = new Timer(specifiedTestRunTime * 500);
       aTimer.Elapsed += new ElapsedEventHandler(HandleTimer);
-      TimeInterval ti = new TimeInterval(System.DateTime.Now);
       //ToDo turn this into a COD dictionary <int,Command>
       Fixture.PidUnderTest = Fixture.ComputerProcesses.Start(
         computerSoftwareProgram,
@@ -77,13 +75,11 @@ namespace ATAP.Utilities.ComputerInventory.ProcessInfo.Tests
       await Task.Delay(10); //ToDo Fix this test
       /*
       await p.Command.Task;
-      ti.ExpandTo(System.DateTime.Now);
       // Dispose of the timer
       aTimer.Dispose();
       var processResult = p.Command.Task.Result;
       p.Command.Result.ExitCode.Should().Be(-1);
       p.Command.Result.Success.Should().Be(false);
-      ti.Duration.Should().BeCloseTo(new TimeSpan(0, 0, specifiedTestRunTime / 2), 1000);
     }
         /*
     [Theory]
@@ -94,7 +90,6 @@ namespace ATAP.Utilities.ComputerInventory.ProcessInfo.Tests
       // ToDo: Need to create a ComputerSoftwareProgram for PowerShell as a builtin, and figure out how to get its path "the right way"
       ComputerSoftwareProgram powerShell = new ComputerSoftwareProgram(DefaultConfiguration.Production["PowerShell"],new Philote.Philote<IComputerSoftwareProgram>());
       DiFixture.ComputerProcesses = new ComputerProcesses();
-      TimeInterval ti = new TimeInterval(System.DateTime.Now);
       DiFixture.pidUnderTest = DiFixture.ComputerProcesses.Start(powerShell,
                                                                new object[2] {
             "-Command",
@@ -105,14 +100,11 @@ namespace ATAP.Utilities.ComputerInventory.ProcessInfo.Tests
       await Task.Delay(10); //ToDo Fix this test
       /*
       await p.Command.Task;
-      ti.ExpandTo(System.DateTime.Now);
       var processResult = p.Command.Task.Result;
       p.Command.Result.ExitCode.Should()
           .Be(0);
       p.Command.Result.Success.Should()
           .Be(true);
-      ti.Duration.Should()
-          .BeCloseTo(new TimeSpan(0, 0, specifiedTestRunTime), 1000);
 
     }
           */

@@ -3,7 +3,6 @@ using ATAP.Utilities.Testing;
 using ATAP.Utilities.StronglyTypedID;
 using ATAP.Utilities.Persistence;
 using FluentAssertions;
-using Itenso.TimePeriod;
 using System;
 using System.Collections.Generic;
 using System.Globalization;

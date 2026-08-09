@@ -1,7 +1,6 @@
 using ATAP.Utilities.ComputerInventory.Hardware;
 using ATAP.Utilities.Philote;
-using ATAP.Utilities.StronglyTypedID;
-using Itenso.TimePeriod;
+using ATAP.Utilities.StronglyTypedId;
 using System.Collections.Generic;
 
 namespace ATAP.Utilities.ComputerInventory.Hardware
@@ -10,6 +9,6 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
   {
     int? DiskDriveNumber { get; }
     IDiskDriveSignil DiskDriveSignil { get; }
-    IPhilote<IDiskDrive>? Philote { get; }
+    IGuidPhilote<GuidStronglyTypedId>? Philote { get; }
   }
 }

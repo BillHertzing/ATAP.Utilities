@@ -1,135 +1,199 @@
-
-
-
-using ATAP.Utilities.Testing;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+using ATAP.Utilities.DateTime.Interfaces;
+using ATAP.Utilities.DateTime.Model;
 using FluentAssertions;
 using Xunit;
-using Xunit.Abstractions;
-using ATAP.Utilities.Philote;
-using ATAP.Utilities.Testing.XunitSkipAttributeExtension;
-using System.Collections.Generic;
-using System;
-using System.Diagnostics.CodeAnalysis;
 
-namespace ATAP.Utilities.Philote.Tests
+namespace ATAP.Utilities.Philote.Tests;
+
+public sealed class PhiloteUnitTests : IClassFixture<Fixture>
 {
+  private static readonly Guid IdValue = new("01234567-abcd-9876-cdef-456789abcdef");
+  private readonly Fixture _fixture;
 
-  /* Save the following comment4ed block for a StackOverflow question on how yo get the IdType to be the interface for the concrete class, and not the interface for the abstract class
-  // Covariance test classes
-  //======================================
-  public interface IXId<T> { }
-  [Trait("Category", "Unit")]
-  public class XId<T> :  IXId<T>
+  public PhiloteUnitTests(Fixture fixture)
   {
-    Guid Guid { get; set; }
+    _fixture = fixture;
+  }
 
-    public XId(string value)
+  [Theory]
+  [MemberData(nameof(PhiloteTestData.ValidPeriodCollections), MemberType = typeof(PhiloteTestData))]
+  public void Constructor_ValidCollections_PublishesCanonicalImmutableState(
+    IEnumerable<TemporalValidityPeriod> periods)
+  {
+    // Arrange
+    var id = new TestGuidId(IdValue);
+
+    // Act
+    var philote = new GuidPhilote<TestGuidId>(id, null, periods);
+
+    // Assert
+    philote.Id.Should().Be(id);
+    philote.AdditionalIds.Should().BeEmpty();
+    philote.ValidityPeriods.Should().BeInAscendingOrder(period => period.ValidFromUtc);
+  }
+
+  [Fact]
+  public void Constructor_NullCollections_NormalizesToEmpty()
+  {
+    // Arrange / Act
+    var philote = new GuidPhilote<TestGuidId>(new TestGuidId(IdValue), null, null);
+
+    // Assert
+    philote.AdditionalIds.Should().BeEmpty();
+    philote.ValidityPeriods.Should().BeEmpty();
+  }
+
+  [Fact]
+  public void Constructor_OverlappingPeriods_RejectsCollection()
+  {
+    // Arrange
+    var periods = new[]
     {
-      bool success;
-      if (string.IsNullOrEmpty(value))
+      new TemporalValidityPeriod(PhiloteTestData.First, PhiloteTestData.Third),
+      new TemporalValidityPeriod(PhiloteTestData.Second, PhiloteTestData.Fourth)
+    };
+
+    // Act
+    var action = () => new GuidPhilote<TestGuidId>(new TestGuidId(IdValue), null, periods);
+
+    // Assert
+    action.Should().Throw<ArgumentException>().Which.ParamName.Should().Be("periods");
+  }
+
+  [Fact]
+  public void IsValidAt_BoundedAndOpenPeriods_UsesHalfOpenBoundaries()
+  {
+    // Arrange
+    var philote = new GuidPhilote<TestGuidId>(
+      new TestGuidId(IdValue),
+      null,
+      new[]
       {
-        this.Guid = Guid.NewGuid();
-      }
-      else
+        new TemporalValidityPeriod(PhiloteTestData.First, PhiloteTestData.Second),
+        new TemporalValidityPeriod(PhiloteTestData.Third, null)
+      });
+
+    // Act / Assert
+    philote.IsValidAt(PhiloteTestData.First).Should().BeTrue();
+    philote.IsValidAt(PhiloteTestData.Second).Should().BeFalse();
+    philote.IsValidAt(PhiloteTestData.Third).Should().BeTrue();
+    philote.IsValidAt(PhiloteTestData.Fourth).Should().BeTrue();
+  }
+
+  [Fact]
+  public void Equality_SameRuntimeTypeAndId_IgnoresAssociatedState()
+  {
+    // Arrange
+    var id = new TestGuidId(IdValue);
+    var empty = new GuidPhilote<TestGuidId>(id, null, null);
+    var active = new GuidPhilote<TestGuidId>(
+      new TestGuidId(IdValue),
+      new Dictionary<string, ATAP.Utilities.StronglyTypedId.IAbstractStronglyTypedId<Guid>>
       {
-        success = Guid.TryParse(value, out Guid newValue);
-        if (!success) { throw new NotSupportedException($"Guid.TryParse failed,, newValue {value} cannot be parsed as a GUID"); }
-        this.Guid = newValue;
-      }
-    }
+        ["secondary"] = new TestGuidId(Guid.NewGuid())
+      },
+      new[] { new TemporalValidityPeriod(PhiloteTestData.First, null) });
 
-    public XId(Guid guid)
+    // Act / Assert
+    empty.Should().Be(active);
+    empty.GetHashCode().Should().Be(active.GetHashCode());
+  }
+
+  [Fact]
+  public void ActivateAndDeactivate_ReturnNewInstancesAndPreserveReceiver()
+  {
+    // Arrange
+    var original = new GuidPhilote<TestGuidId>(new TestGuidId(IdValue), null, null);
+
+    // Act
+    var active = original.Activate(PhiloteTestData.First);
+    var inactive = active.Deactivate(PhiloteTestData.Second);
+
+    // Assert
+    original.ValidityPeriods.Should().BeEmpty();
+    active.ValidityPeriods.Should().ContainSingle().Which.ValidToUtc.Should().BeNull();
+    inactive.ValidityPeriods.Should().ContainSingle().Which.ValidToUtc.Should().Be(PhiloteTestData.Second);
+  }
+
+  [Fact]
+  public void Json_RoundTrip_PreservesCanonicalState()
+  {
+    // Arrange
+    var philote = new GuidPhilote<TestGuidId>(
+      new TestGuidId(IdValue),
+      new Dictionary<string, ATAP.Utilities.StronglyTypedId.IAbstractStronglyTypedId<Guid>>
+      {
+        ["secondary"] = new TestGuidId(new Guid("11111111-2222-3333-4444-555555555555"))
+      },
+      new[]
+      {
+        new TemporalValidityPeriod(PhiloteTestData.First, PhiloteTestData.Second),
+        new TemporalValidityPeriod(PhiloteTestData.Third, null)
+      });
+
+    // Act
+    var json = JsonSerializer.Serialize(philote, _fixture.SerializerOptions);
+    var roundTripped = JsonSerializer.Deserialize<GuidPhilote<TestGuidId>>(json, _fixture.SerializerOptions);
+
+    // Assert
+    json.Should().Be("{\"id\":\"01234567-abcd-9876-cdef-456789abcdef\",\"additionalIds\":{\"secondary\":\"11111111-2222-3333-4444-555555555555\"},\"validityPeriods\":[{\"validFromUtc\":\"2026-08-08T00:00:00.0000000Z\",\"validToUtc\":\"2026-08-09T00:00:00.0000000Z\"},{\"validFromUtc\":\"2026-08-10T00:00:00.0000000Z\",\"validToUtc\":null}]}");
+    roundTripped.Should().NotBeNull();
+    roundTripped!.Id.Should().Be(philote.Id);
+    roundTripped.AdditionalIds.Should().BeEquivalentTo(philote.AdditionalIds);
+    roundTripped.ValidityPeriods.Should().Equal(philote.ValidityPeriods);
+  }
+
+  [Theory]
+  [InlineData("{\"id\":\"01234567-abcd-9876-cdef-456789abcdef\",\"TimeBlocks\":[]}")]
+  [InlineData("{\"id\":\"01234567-abcd-9876-cdef-456789abcdef\",\"timeBlocks\":[]}")]
+  [InlineData("{\"id\":\"01234567-abcd-9876-cdef-456789abcdef\",\"validityPeriods\":[{\"Start\":\"2026-08-08T00:00:00Z\"}]}")]
+  public void Json_LegacyTemporalShape_ThrowsJsonException(string json)
+  {
+    // Arrange / Act
+    var action = () => JsonSerializer.Deserialize<GuidPhilote<TestGuidId>>(json, _fixture.SerializerOptions);
+
+    // Assert
+    action.Should().Throw<JsonException>();
+  }
+
+  [Fact]
+  public void Json_NonUtcBoundary_ThrowsJsonException()
+  {
+    // Arrange
+    const string json = "{\"id\":\"01234567-abcd-9876-cdef-456789abcdef\",\"validityPeriods\":[{\"validFromUtc\":\"2026-08-08T01:00:00.0000000+01:00\",\"validToUtc\":null}]}";
+
+    // Act
+    var action = () => JsonSerializer.Deserialize<GuidPhilote<TestGuidId>>(json, _fixture.SerializerOptions);
+
+    // Assert
+    action.Should().Throw<JsonException>();
+  }
+
+  [Fact]
+  public void PublicPhiloteSurface_ContainsNoItensoOrTimeBlocks()
+  {
+    // Arrange
+    var types = new[]
     {
-      this.Guid = guid;
-    }
-  }
-  //======================================
-  public interface IP<T>
-  {
-    XId<T> IdAsStruct { get;  }
-    IEnumerable<XId<T>> AdditionalIDs { get; }
-  }
-  public class P<T> : IP<T>
-  {
-    public XId<T> IdAsStruct { get; private set; }
-    public IEnumerable<XId<T>> AdditionalIDs { get; private set; }
-  }
+      typeof(IAbstractPhilote<,>),
+      typeof(AbstractPhilote<,>),
+      typeof(GuidPhilote<>),
+      typeof(IntPhilote<>)
+    };
 
-  //======================================
-  public interface IA
-  {
-    IP<IA>? P { get; }
-  }
+    // Act
+    var signatures = types
+      .SelectMany(type => type.GetMembers())
+      .Select(member => member.ToString())
+      .Where(signature => signature is not null)
+      .ToArray();
 
-  public abstract class A
-  {
-    public  IP<IA>? P { get; set; }
-  }
-  //======================================
-
-  public interface ID1 : IA
-  {
-    string? D1str { get; }
-    //IP<ID1>? P { get; }
-  }
-
-  public class D1 :  A, ID1
-  {
-    public string? D1str { get; private set; }
-    //public IP<ID1>? P { get; private set; }
-  }
-
-  public interface ID2 : IA
-  {
-    int? D2int { get; }
-  }
-
-  public class D2 : A, ID2
-  {
-    public int? D2int { get; private set; }
-  }
-
-  public class NodeSets
-  {
-    public IEnumerable<IA>  Nodes { get; private set; }
-  }
-
-        [Fact]
-    public void NodeSetsTest()
-    {
-      D1 d1 = new D1();
-      D2 d2 = new D2();
-      IEnumerable<ID1> eD1 = new List<ID1>();
-      IEnumerable<ID2> eD2 = new List<ID2>();
-      NodeSets nS = new NodeSets();
-      var nSNodesAsList = nS.Nodes as List<IA>;
-      nSNodesAsList.Add(d1);
-      nSNodesAsList.Add(d2);
-
-    }
-
-
-    End of block for StackOverflow */
-
-
-  public partial class PhiloteUnitTests001 : IClassFixture<Fixture>
-  {
-
-    [Theory]
-    [MemberData(nameof(PhiloteTestDataGenerator<IDummyTypeForPhiloteTest>.TestData), MemberType = typeof(PhiloteTestDataGenerator<IDummyTypeForPhiloteTest>))]
-    public void PhiloteDeserializeFromJSON(PhiloteTestData<IDummyTypeForPhiloteTest> inTestData)
-    {
-      var obj = Fixture.Serializer.Deserialize<Philote<IDummyTypeForPhiloteTest>>(inTestData.SerializedTestData);
-      // ToDo Figure out how to assert that a type implements IEnuerable<T>
-      //obj.Should().BeOfType(typeof(Philote<IDummyTypeForPhiloteTest>));
-      Fixture.Serializer.Deserialize<Philote<IDummyTypeForPhiloteTest>>(inTestData.SerializedTestData).Should().BeEquivalentTo(inTestData.ObjTestData);
-    }
-
-    [Theory]
-    [MemberData(nameof(PhiloteTestDataGenerator<IDummyTypeForPhiloteTest>.TestData), MemberType = typeof(PhiloteTestDataGenerator<IDummyTypeForPhiloteTest>))]
-    public void PhiloteSerializeToJSON(PhiloteTestData<IDummyTypeForPhiloteTest> inTestData)
-    {
-      Fixture.Serializer.Serialize(inTestData.ObjTestData).Should().MatchRegex(inTestData.SerializedTestData);
-    }
+    // Assert
+    signatures.Should().NotContain(signature => signature!.Contains("Itenso", StringComparison.Ordinal));
+    signatures.Should().NotContain(signature => signature!.Contains("TimeBlocks", StringComparison.Ordinal));
   }
 }

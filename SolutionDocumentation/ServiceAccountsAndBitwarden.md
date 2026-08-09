@@ -22,13 +22,13 @@ The current documentation baseline is "read everywhere, write only where justifi
 12.54.a remains the live-review gate for which identities actually receive the optional
 `ReadWrite` slot on a given host.
 
-### Task 12.49 approved profile and Bitwarden scope
+### Current approved profile and Bitwarden scope
 
-The complete service-account set that requires both a managed PowerShell profile
-and Bitwarden Secrets Manager ReadOnly access is `SvcBuildMaster`, `SvcProGet`,
-`SvcSeq`, `SvcSQLServer`, and `SvcParityAudit`. Registry discovery is an
-inventory input; it must not expand this approved provisioning scope without a
-new user decision.
+The managed-profile set is broader than the secret-bearing set. `SvcBuildMaster`,
+`SvcProGet`, and `SvcSQLServer` require managed profiles and Bitwarden Secrets Manager
+ReadOnly access. `SvcSeq` and `SvcParityAudit` require managed profiles but no secret
+material. Registry discovery is an inventory input; it must not expand secret
+provisioning without a new user decision.
 
 ### Recommended identity matrix
 
@@ -36,9 +36,9 @@ new user decision.
 | --- | --- | --- | --- |
 | `SvcBuildMaster` | Yes | Only if BuildMaster on that host creates or rotates BWS secrets | Default runtime/build reads |
 | `SvcProGet` | Yes | No by default | Runtime/package-feed reads only |
-| `SvcSeq` | Yes | No by default | SEQ runtime/configuration reads only |
+| `SvcSeq` | No | No | Managed profile only; no secret material |
 | `SvcSQLServer` | Yes | No by default | SQL Server runtime/configuration reads only |
-| `SvcParityAudit` | Yes | No by default | Parity-audit automation reads only |
+| `SvcParityAudit` | No | No | Managed profile only; deployed parity wrappers are token-free |
 | Trusted maintainer developer workstation | Yes | Optional | Provision `ReadWrite` only when that workstation performs secret maintenance |
 | Non-maintainer developer workstation | Yes | No | Normal development and validation only |
 
@@ -69,9 +69,10 @@ Several ATAP ecosystem services run as dedicated Windows service accounts:
 | SQL Server              | `SvcSQLServer`          |
 | Parity audit            | `SvcParityAudit`        |
 
-These five services need to read secrets from Bitwarden — for example, database
-connection credentials, API keys, and inter-service authentication tokens. They
-are also the complete Task 12.49 user-scope-profile provisioning set.
+Only BuildMaster, ProGet, and SQL Server currently need non-interactive Bitwarden
+secrets. SEQ and the parity audit remain in the managed-profile set but must not receive
+BWS tokens or credential directories. The five-row table therefore describes process
+identities, not a five-identity secret allowlist.
 
 ### Existing Infrastructure
 

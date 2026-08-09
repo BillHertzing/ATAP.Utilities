@@ -1866,9 +1866,10 @@ intended to ship with the module at:
 $moduleRoot\Documentation\InstallationAndTroubleshooting.md
 ```
 
-Version `0.1.1` omitted `Documentation\`; until SC-0264 is implemented, use the
-canonical source copy under
-`src\ATAP.Utilities.SystemParityMonitor.PowerShell\Documentation`.
+Version `0.1.8` is the deployed token-free baseline. The canonical source copy under
+`src\ATAP.Utilities.SystemParityMonitor.PowerShell\Documentation` also describes
+approved next-release package-path, coverage, and alert behavior; do not mistake those
+source-only sections for installed behavior.
 
 An administrator must complete this checklist on each participating host:
 
@@ -1890,9 +1891,9 @@ An administrator must complete this checklist on each participating host:
    holder. Confirm neither the account nor one of its governing policies assigns
    `SeDenyBatchLogonRight`. The guarded `secedit` pattern in §9.4.6.5 applies; add
    `SvcParityAudit` to the SID list.
-7. As `SvcParityAudit` on that same host, provision and validate the
-   `CommonCIForBitwardenReadOnly` DPAPI token. Never copy the token from another host
-   or account, and never use `bw`/`BW_SESSION` in the scheduled path.
+7. Confirm `SvcParityAudit` has no BWS token, Bitwarden credential directory,
+   `bws` dependency, or `BW_SESSION`. The deployed 0.1.8 wrapper records
+   `SecretAccessRequired = false`.
 8. Register `AuditAndCompare` on the primary host with Password logon when peer SMB
    access needs reusable credentials. Register `AuditOnly` on the peer with S4U and a
    limited run level. When the elevated administrator and S4U run-as identities differ,
@@ -1901,7 +1902,27 @@ An administrator must complete this checklist on each participating host:
 9. Run the peer audit, primary audit, and primary comparison in that order; require
    successful task-result JSON, fresh snapshots, a drift report, and no secret values
    in evidence.
-10. Keep Daily cadence for the first clean month, then re-register as BiWeekly.
+10. Do not start the clean-month clock until SQL and package collection is trustworthy
+    on both hosts. Then run Daily for one verified clean month before re-registering as
+    BiWeekly; the earlier blind period does not count.
+
+The required but not-yet-granted least-privilege baseline is: Chocolatey machine-path
+read/execute; SQL `VIEW ANY DEFINITION` and `VIEW SERVER STATE`; an `msdb` user in
+`SQLAgentReaderRole`; NTFS read on `C:\LocalDBs` instance paths; and WMI/CIM read on
+`root\cimv2`. It explicitly excludes Administrator, SQL `sysadmin`, write, `ALTER`,
+job-control, WMI-method, and peer-share-write authority. Each grant is a separate
+security-approved host change, not an action authorized by this checklist.
+
+Next-release source accepts identity-explicit `PipPath`, `NpmPrefix`, and
+`NuGetToolPath` values. Missing configuration remains visible as package-manager status;
+the collector never substitutes the `SvcParityAudit` profile. Missing or thin SQL and
+package categories create diagnostic coverage findings and fail the audit. Installed
+ATAP PowerShell module versions remain outside parity scope; verify them separately.
+
+Approved D-6 next-release source writes Windows Application event `12380`/`12381` on
+the second consecutive audit/compare failure and warning `12382` immediately for stale
+or missing/thin comparison coverage. Host event-source registration and SEQ forwarding
+are not verified or deployed, so no human-notification claim is valid yet.
 
 Windows 10 can require the inbox `ScheduledTasks` manifest to be imported by full path
 from Windows PowerShell 5.1. The observed `utat01` endpoint omitted

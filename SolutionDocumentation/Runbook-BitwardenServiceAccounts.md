@@ -15,6 +15,13 @@ interactive users. The supported runtime pattern is:
 4. Store the required BWS access token slots as DPAPI-protected CLIXML files by running `Initialize-BWSAccessToken` as the owning Windows account: `ReadOnly` for every account that reads secrets, plus optional `ReadWrite` only for trusted maintainer or provisioning accounts that create, update, delete, or rotate secrets.
 5. Read secrets at runtime through `Get-SecretATAP` with the `BitwardenSecretsManager` provider.
 
+This pattern applies only to identities whose workload actually requires secrets.
+The approved current allowlist is `SvcBuildMaster`, `SvcProGet`, and `SvcSQLServer`,
+plus explicitly authorized interactive maintainers. `SvcSeq` and `SvcParityAudit` are
+managed-profile-only identities: do not create a BWS credential directory, provision a
+ReadOnly token, or add a `bws`/`BW_SESSION` dependency for either one. The deployed
+SystemParityMonitor 0.1.8 wrappers are token-free.
+
 Do not persist `BWS_ACCESS_TOKEN` as a long-lived Machine/User environment variable. It may exist only in Process scope while `bws` is being called. DPAPI-protected token files are bound to both the Windows identity and the host, so they cannot be copied to another user profile or another machine and still decrypt.
 
 ## Parity journal requirement
@@ -80,9 +87,7 @@ bws --version
 $serviceAccountNames = @(
   'SvcBuildMaster',
   'SvcProGet',
-  'SvcSeq',
-  'SvcSQLServer',
-  'SvcParityAudit'
+  'SvcSQLServer'
 )
 
 Initialize-BWSCredentialDirectory
@@ -135,22 +140,23 @@ ReadWrite` operation only when such authority is required.
 
 ## Current Finding
 
-### Completed ReadOnly DPAPI baseline — 2026-07-10
+### Historical ReadOnly DPAPI baseline — 2026-07-10
 
 The operator completed the folder-ACL and `CommonCIForBitwardenReadOnly` DPAPI token
 file provisioning on both hosts for every identity below. This records file presence
 and ACL provisioning only; it records no token value, no password, and no secret
 content.
 
-| Host      | Interactive user | Service accounts with protected folder and ReadOnly DPAPI file            |
+| Host      | Interactive user | Historical service accounts with protected folder and ReadOnly DPAPI file |
 | --------- | ---------------- | ------------------------------------------------------------------------- |
 | `utat01`  | `whertzing`      | `SvcBuildMaster`, `SvcProGet`, `SvcSeq`, `SvcSQLServer`, `SvcParityAudit` |
 | `utat022` | `whertzing`      | `SvcBuildMaster`, `SvcProGet`, `SvcSeq`, `SvcSQLServer`, `SvcParityAudit` |
 
-This removes the DPAPI-file prerequisite for the Sprint 0012 BWS read-path tasks on
-both hosts. It does not by itself prove that each identity can invoke `bws`, decrypt
-the token, or access every required project; perform the no-secret validation in
-SA-04 before declaring live access healthy.
+This table records historical file presence, not current authorization. The later
+policy correction removed secret material for `SvcSeq` and `SvcParityAudit`; do not
+recreate those files. For the three currently approved service identities, file
+presence still does not prove `bws`, decryption, or project access; perform SA-04
+without exposing values before declaring live access healthy.
 
 ### Rotation implementation deferred
 

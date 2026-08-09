@@ -8,18 +8,20 @@ Task: PTV-540
 
 The repository-wide case-insensitive scan for
 `Itenso|ITimeBlock|TimeBlock|timeBlocks` found 41 files after excluding only
-generated output and build artifacts. Every file is classified below: 10 approved
+generated output and build artifacts. Every file was classified: 10 approved
 adapter/guard surfaces, eight historical archive files, 19 unrelated or
-historical prose/domain/test-fixture surfaces, and four defects. There are zero
-unclassified files.
+historical prose/domain/test-fixture surfaces, and four defects. The four
+defects were retired on 2026-08-09, leaving zero active defects and zero
+unclassified files. The literal post-retirement reproduction command returns 38
+files: the 37 substantive classified surfaces plus this self-referential
+classification document.
 
 The active Flyway package has zero temporal defects: its only match is the
 transition comment in the consolidated migration, and its source test explicitly
-proves the retired CSV is absent. The four defects belong to the separate legacy
-Rule Export reference/PowerShell utility. They do not enter the active Flyway
-package, but they prevent the stronger repository-wide “zero active database
-defects” PTV-540 acceptance claim until a separately authorized code change
-updates or retires them.
+proves the retired CSV is absent. The four defects belonged to the separate
+legacy Rule Export reference/PowerShell utility and never entered the active
+Flyway package. They were retired after a repository-wide consumer scan found
+no application or automation callers outside that self-contained legacy family.
 
 ## Approved adapter implementation and guards (10)
 
@@ -103,19 +105,17 @@ The last four fixture-family entries are not the active Philote serializer
 contract. PTV-350 already records the wider legacy consumer/test failures; this
 classification does not claim those unrelated suites are modernized.
 
-## Defects requiring a separate source-change authorization (4)
+## Retired defects (4)
 
 - `Database/Queries/Query_Rule_By_Name.sql`
 - `Database/StoredProcedures/GetRuleByName.sql`
 - `src/ATAP.Utilities.DatabaseManagement.Powershell/public/Export-RuleToTextFile.ps1`
 - `src/ATAP.Utilities.DatabaseManagement.Powershell/tests/Unit/Export-RuleToTextFile.Tests.ps1`
 
-The two non-Flyway SQL references still project `dbo.PhiloteTimeBlock`. The
-PowerShell exporter and its unit fixture still consume a fourth result set named
-for the retired contract. These files are not shipped by
-`ATAPUtilities.Database` `0.1.0`, so they do not invalidate PTV-400 through
-PTV-460 or the PTV-G4 package-source approval. They are nevertheless active
-repository source and cannot be called clean under PTV-540's zero-defect clause.
+These paths were deleted on 2026-08-09. The associated example script and stale
+Rule Export documentation were also retired, and the module manifest no longer
+exports either legacy command. The archived pre-V3 migration remains historical
+evidence. See `Database/Documentation/RuleExport-Retirement.md`.
 
 ## Reproduction
 
@@ -127,6 +127,9 @@ rg -l -i 'Itenso|ITimeBlock|TimeBlock|timeBlocks' `
   .
 ```
 
-Result: 41 files; 41 classified; zero unclassified. The generated evidence and
-rendered diagrams remain under `_generated/` and are intentionally outside this
-source classification.
+Original source inventory: 41 files; 41 classified; zero unclassified. The
+classification document itself subsequently became one additional search hit.
+After retiring the four defects, the literal reproduction command returns 38
+files: 37 substantive classified surfaces plus this report; zero active defects
+and zero unclassified. Generated evidence and rendered diagrams remain under
+`_generated/` and are intentionally outside this source classification.

@@ -151,8 +151,7 @@ These diagrams document the CI/CD workflow for promoting ATAPUtilities database 
 - [PROMOTION_SUMMARY.md](PROMOTION_SUMMARY.md) — `ATAPUtilities.Database` `0.1.0` source/release summary and authorization boundary.
 - [FolderStructure.md](FolderStructure.md) — Annotated folder tree of the entire `Database/` subtree with the purpose of each file and subfolder.
 - [CrossSchema_UserView_Design.md](CrossSchema_UserView_Design.md) — Design notes for cross-schema user views that join the Rules, Philote, Tags, and Instantiation schemas.
-- [API_Specification_RuleExport.md](API_Specification_RuleExport.md) — REST API specification for the Rule Export endpoint: request/response shapes, error codes, and versioning policy.
-- [README_RuleExport.md](README_RuleExport.md) — Usage guide and developer quick-start for the Rule Export utilities.
+- [RuleExport-Retirement.md](RuleExport-Retirement.md) — Retirement boundary for the superseded pre-V3 Rule Export SQL, PowerShell, test, and API surfaces.
 - [README.RRSBS.md](README.RRSBS.md) — Overview of the Rules, Rule Sets, and Build Sets (RRSBS) subsystem as implemented in the ATAPUtilities database.
 - [PROMOTION_SUMMARY.md](PROMOTION_SUMMARY.md) — Narrative summary of the database package promotion process, suitable as an executive overview of the pipeline diagrams above.
 - [HelloWorld-Example-Remediation-Plan.md](HelloWorld-Example-Remediation-Plan.md) — Remediation plan and example walkthrough for the canonical "Hello World" BuildSet instantiation.

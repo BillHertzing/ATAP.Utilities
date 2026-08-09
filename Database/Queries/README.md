@@ -23,39 +23,12 @@ This folder contains ad-hoc SQL queries, query templates, and development/debugg
 - Directly in SQL Server Management Studio (SSMS)
 - For development and debugging
 
-## Usage Examples
+## Current status
 
-### From PowerShell
-
-```powershell
-# Execute a query from this folder
-      if (-not (Get-Command -Name 'Get-RepositoryRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-RepositoryRoot.ps1'
-      }
-$repositoryRoot  = Get-RepositoryRoot
-$queryPath = (Join-Path $repositoryRoot "Database\Queries\Query_Rule_By_Name.sql")
-$query = Get-Content $queryPath -Raw
-
-Invoke-DbaQuery -SqlInstance 'localhost' `
-                -Database 'ATAPUtilities' `
-                -Query $query
-```
-
-### From C# API
-
-```csharp
-// Read query from file
-var queryPath = Path.Combine(_hostEnvironment.ContentRootPath,
-    "Database", "Queries", "Query_Rule_By_Name.sql");
-var query = await File.ReadAllTextAsync(queryPath);
-
-// Execute query
-var results = await _dbContext.Database.ExecuteSqlRawAsync(query);
-```
-
-### From SSMS
-
-Simply open the .sql file and execute it directly.
+No supported query is currently stored in this folder. The pre-V3 Rule Export
+query was retired on 2026-08-09 because it depended on the superseded Rule and
+temporal result shape. See
+`Database/Documentation/RuleExport-Retirement.md`.
 
 ## File Organization
 

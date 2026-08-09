@@ -70,8 +70,8 @@
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
     FunctionsToExport    = 'Build-DatabaseWithFlyway', 'DatabaseProvisioning',
-    'Example-RuleExport', 'Expand-DatabaseChangePackage',
-    'Export-InstantiationManifestation', 'Export-RuleToTextFile',
+    'Expand-DatabaseChangePackage',
+    'Export-InstantiationManifestation',
     'Get-DatabaseCredentialsKey', 'Get-DatabasePackageManifest',
     'Get-InstalledDatabaseInformation', 'Get-InstantiationSourceModuleInventory',
     'Get-InstantiationVersionRuleGraph',

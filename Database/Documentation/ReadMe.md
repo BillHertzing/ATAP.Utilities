@@ -36,8 +36,8 @@ promotion, installation, permanent-database work, and deployment remain gated.
   rebuild procedure.
 - [PROMOTION_SUMMARY.md](PROMOTION_SUMMARY.md) — package/source identity and
   release boundary.
-- [README_RuleExport.md](README_RuleExport.md) — Rule Export utility
-  quick-start.
+- [RuleExport-Retirement.md](RuleExport-Retirement.md) — retirement boundary for
+  the superseded pre-V3 Rule Export feature.
 - PlantUML diagrams: schema (`CoreSchema_*.puml`) and pipeline
   (`DB-*.puml`); see [INDEX.md](INDEX.md) for the full list.
 
@@ -76,7 +76,7 @@ for the exact command and renderer prerequisites.
 | Production backup → Integration/QA reseed | `DB-ProductionBackup-SprintInit.puml` |
 | Stable package build-once workflow | `DB-StablePackageBuildOnce.puml` |
 | Cross-schema view design | `CrossSchema_UserView_Design.md` |
-| Rule Export REST API spec | `API_Specification_RuleExport.md` |
+| Rule Export retirement status | `RuleExport-Retirement.md` |
 | Hello-World example walkthrough | `HelloWorld-Example-Remediation-Plan.md` |
 | Per-tier migration state (Integration/QA/Production) + 000302 collision disposition | `../../_generated/DatabaseLadder/Task-9.8-Flyway-Info-Report.md` (generated, local; regenerable via `flyway info`/`validate`) |
 | Drop+recreate of Integration/QA/Production from the consolidated set (Task 9.9 outcome + headless-build runbook) | `../../_generated/DatabaseLadder/Task-9.9-DropRecreate-Report.md` (generated, local; re-run `Powershell/public/Reset-DatabaseLadderTier.ps1` per tier) |

@@ -18,7 +18,7 @@ namespace ATAP.Utilities.ComputerInventory.ProcessInfo.Tests
 {
 
   [Trait("Category", "Unit")]
-  public class Fixture : DiFixture
+  public class Fixture : ConfigurableFixture
   {
     public Fixture() : base()
     {

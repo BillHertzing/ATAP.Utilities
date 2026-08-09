@@ -14,7 +14,6 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 using static FluentAssertions.FluentActions;
-using QuickGraph;
 using System.Diagnostics;
 
 namespace ATAP.Utilities.ComputerInventory.Hardware.Tests {

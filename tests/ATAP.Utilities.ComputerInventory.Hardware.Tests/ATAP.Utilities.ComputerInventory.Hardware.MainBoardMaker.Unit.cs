@@ -17,7 +17,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
     public void MainBoardMakerDeserializeFromJSON(MainBoardMakerTestData inTestData)
     {
       var obj = Fixture.Serializer.Deserialize<MainBoardMaker>(inTestData.SerializedMainBoardMaker);
-      obj.Should().BeOfType(typeof(MainBoardMaker));
+      ((object)obj).Should().BeOfType<MainBoardMaker>();
       Fixture.Serializer.Deserialize<MainBoardMaker>(inTestData.SerializedMainBoardMaker).Should().Be(inTestData.MainBoardMaker);
     }
 

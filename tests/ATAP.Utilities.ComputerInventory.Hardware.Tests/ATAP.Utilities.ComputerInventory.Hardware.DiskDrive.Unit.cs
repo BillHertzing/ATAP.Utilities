@@ -16,16 +16,16 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
     [MemberData(nameof(DiskDriveTestDataGenerator.TestData), MemberType = typeof(DiskDriveTestDataGenerator))]
     public void DiskDriveDeserializeFromJSON(DiskDriveTestData inTestData)
     {
-      var obj = Fixture.Serializer.Deserialize<DiskDrive>(inTestData.SerializedTestData);
+      var obj = Fixture.Serializer.Deserialize<DiskDrive>(inTestData.TestData);
       obj.Should().BeOfType(typeof(DiskDrive));
-      Fixture.Serializer.Deserialize<DiskDrive>(inTestData.SerializedTestData).Should().BeEquivalentTo(inTestData.ObjTestData);
+      Fixture.Serializer.Deserialize<DiskDrive>(inTestData.TestData).Should().BeEquivalentTo(inTestData.ObjTestData);
     }
 
     [Theory]
     [MemberData(nameof(DiskDriveTestDataGenerator.TestData), MemberType = typeof(DiskDriveTestDataGenerator))]
     public void DiskDriveSerializeToJSON(DiskDriveTestData inTestData)
     {
-      Fixture.Serializer.Serialize(inTestData.ObjTestData).Should().BeEquivalentTo(inTestData.SerializedTestData);
+      Fixture.Serializer.Serialize(inTestData.ObjTestData).Should().BeEquivalentTo(inTestData.TestData);
     }
   }
 }

@@ -20,9 +20,9 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
     {
       foreach (var e in inTestData.E)
       {
-        var obj = Fixture.Serializer.Deserialize<IEnumerable<IDiskDrive>>(e.SerializedTestData);
+        var obj = Fixture.Serializer.Deserialize<IEnumerable<IDiskDrive>>(e.TestData);
         obj.Should().BeOfType(typeof(IEnumerable<IDiskDrive>));
-        Fixture.Serializer.Deserialize<IEnumerable<IDiskDrive>>(e.SerializedTestData).Should().BeEquivalentTo(e.ObjTestData);
+        Fixture.Serializer.Deserialize<IEnumerable<IDiskDrive>>(e.TestData).Should().BeEquivalentTo(new[] { e.ObjTestData });
       }
 
       // ToDo loop over every element of the enumerable and test eah one
@@ -39,10 +39,10 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
       foreach (var e in inTestData.E)
       {
 #if DEBUG
-        TestOutput.WriteLine("SerializedTestData is:" + e.SerializedTestData);
+        TestOutput.WriteLine("SerializedTestData is:" + e.TestData);
         TestOutput.WriteLine("Serialized ObjTestData is:" + Fixture.Serializer.Serialize(e.ObjTestData));
 #endif
-        Fixture.Serializer.Serialize(e.ObjTestData).Should().Be(e.SerializedTestData);
+        Fixture.Serializer.Serialize(e.ObjTestData).Should().Be(e.TestData);
 #if DEBUG
         TestOutput.WriteLine("Ending " + nameof(DiskDriveEnumerableSerializeToJSON));
 #endif

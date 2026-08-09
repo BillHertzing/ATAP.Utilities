@@ -1,5 +1,11 @@
 # Rebuild Experimental Databases on Expwhertzing
 
+> **Instance-naming correction (2026-08-08):** `Experimental` is a logical
+> database role, not a physical SQL Server instance name. Developer-scoped
+> instances follow `Exp<DeveloperName>`; `Expwhertzing` is the specific instance
+> for developer `whertzing`. Never provision or address an instance named
+> `Experimental`.
+
 ## Prerequisites
 
 - PowerShell 7.x (`pwsh`)

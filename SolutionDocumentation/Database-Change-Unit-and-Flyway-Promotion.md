@@ -184,7 +184,7 @@ Tier-specific DB validation (regardless of instance type):
 
 | Tier         | DB-related action in the pipeline                                                                                                                                |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Experimental | Apply migrations against the empty Experimental SQL Server instance (`localhost\EXPWHERTZING` in this worktree); assert no errors; assert seed loaders complete. |
+| Experimental | Apply migrations against the empty database assigned to the logical Experimental role (`localhost\EXPWHERTZING` in this worktree); assert no errors; assert seed loaders complete. `Experimental` is not a physical instance name: developer instances follow `Exp<DeveloperName>`, and `EXPWHERTZING` is the instance for developer `whertzing`. |
 | Development  | Apply against a small dev fixture DB.                                                                                                                            |
 | Integration  | Apply against a snapshot of the **previous-prod** DB (taken at the last Production release). Assert no data corruption.                                          |
 | QA           | Apply against a "QA gold" DB (production-shaped, anonymized customer data). Run integration test suite against the result.                                       |

@@ -532,6 +532,1041 @@ BEGIN TRY
     )
         THROW 55404, 'Initial baseline assertion failed: seeded Philotes and validity periods are not one-to-one.', 1;
 
+    /* PTV-430: aggregate-owned temporal mutation boundary. */
+    IF TYPE_ID(N'ATAPUtilities.PhiloteValidityPeriodSetInput') IS NULL
+    BEGIN
+    EXEC sys.sp_executesql N'CREATE TYPE [ATAPUtilities].[PhiloteValidityPeriodSetInput] AS TABLE
+(
+    [PhiloteValidityPeriodId] uniqueidentifier NOT NULL,
+    [PreviousValidToUtc] datetime2(7) NULL,
+    [ValidFromUtc] datetime2(7) NOT NULL,
+    [ValidToUtc] datetime2(7) NULL,
+    PRIMARY KEY ([PhiloteValidityPeriodId]),
+    UNIQUE ([ValidFromUtc]),
+    UNIQUE ([ValidToUtc]),
+    UNIQUE ([PreviousValidToUtc])
+);';
+    END;
+
+    EXEC sys.sp_executesql N'CREATE PROCEDURE [ATAPUtilities].[ReplacePhiloteValidityPeriodSet]
+    @PhiloteId uniqueidentifier,
+    @Periods [ATAPUtilities].[PhiloteValidityPeriodSetInput] READONLY
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF @PhiloteId IS NULL
+        THROW 55200, ''PhiloteId is required.'', 1;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        DECLARE @LockResult int;
+        DECLARE @LockResource nvarchar(255) =
+            N''ATAPUtilities.PhiloteValidityPeriod:''
+            + LOWER(CONVERT(nvarchar(36), @PhiloteId));
+
+        EXEC @LockResult = sys.sp_getapplock
+            @Resource = @LockResource,
+            @LockMode = ''Exclusive'',
+            @LockOwner = ''Transaction'',
+            @LockTimeout = 15000,
+            @DbPrincipal = ''public'';
+
+        IF @LockResult < 0
+            THROW 55201, ''Unable to acquire the Philote temporal-validity writer lock.'', 1;
+
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM [ATAPUtilities].[Philote] WITH (UPDLOCK, HOLDLOCK)
+            WHERE [PhiloteId] = @PhiloteId
+        )
+            THROW 55202, ''The parent Philote does not exist.'', 1;
+
+        DECLARE @Current TABLE
+        (
+            [PhiloteValidityPeriodId] uniqueidentifier NOT NULL PRIMARY KEY,
+            [PreviousValidToUtc] datetime2(7) NULL,
+            [ValidFromUtc] datetime2(7) NOT NULL,
+            [ValidToUtc] datetime2(7) NULL
+        );
+
+        INSERT INTO @Current
+        SELECT
+            [PhiloteValidityPeriodId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        FROM [ATAPUtilities].[PhiloteValidityPeriod] WITH (UPDLOCK, HOLDLOCK)
+        WHERE [PhiloteId] = @PhiloteId;
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM @Periods
+            WHERE [ValidToUtc] IS NOT NULL
+              AND [ValidFromUtc] >= [ValidToUtc]
+        )
+            THROW 55203, ''Every bounded period must be non-empty and forward.'', 1;
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM @Periods
+            WHERE [PreviousValidToUtc] IS NOT NULL
+              AND [PreviousValidToUtc] > [ValidFromUtc]
+        )
+            THROW 55204, ''A predecessor end cannot be after the period start.'', 1;
+
+        IF (SELECT COUNT_BIG(*) FROM @Periods) > 0
+           AND (SELECT COUNT_BIG(*) FROM @Periods WHERE [PreviousValidToUtc] IS NULL) <> 1
+            THROW 55205, ''A non-empty period set must contain exactly one first row.'', 1;
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM @Periods AS successor
+            WHERE successor.[PreviousValidToUtc] IS NOT NULL
+              AND NOT EXISTS
+              (
+                  SELECT 1
+                  FROM @Periods AS predecessor
+                  WHERE predecessor.[ValidToUtc] = successor.[PreviousValidToUtc]
+              )
+        )
+            THROW 55206, ''Every non-first period must reference an existing predecessor end.'', 1;
+
+        DECLARE @DeleteId uniqueidentifier;
+        WHILE EXISTS
+        (
+            SELECT 1
+            FROM [ATAPUtilities].[PhiloteValidityPeriod]
+            WHERE [PhiloteId] = @PhiloteId
+        )
+        BEGIN
+            SELECT TOP (1) @DeleteId = [PhiloteValidityPeriodId]
+            FROM [ATAPUtilities].[PhiloteValidityPeriod]
+            WHERE [PhiloteId] = @PhiloteId
+            ORDER BY [ValidFromUtc] DESC, [PhiloteValidityPeriodId] DESC;
+
+            DELETE FROM [ATAPUtilities].[PhiloteValidityPeriod]
+            WHERE [PhiloteValidityPeriodId] = @DeleteId;
+        END;
+
+        DECLARE @Pending TABLE
+        (
+            [PhiloteValidityPeriodId] uniqueidentifier NOT NULL PRIMARY KEY,
+            [PreviousValidToUtc] datetime2(7) NULL,
+            [ValidFromUtc] datetime2(7) NOT NULL,
+            [ValidToUtc] datetime2(7) NULL
+        );
+
+        INSERT INTO @Pending
+        SELECT
+            [PhiloteValidityPeriodId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        FROM @Periods;
+
+        DECLARE @InsertId uniqueidentifier;
+        DECLARE @PreviousValidToUtc datetime2(7);
+        DECLARE @ValidFromUtc datetime2(7);
+        DECLARE @ValidToUtc datetime2(7);
+
+        WHILE EXISTS (SELECT 1 FROM @Pending)
+        BEGIN
+            SELECT TOP (1)
+                @InsertId = [PhiloteValidityPeriodId],
+                @PreviousValidToUtc = [PreviousValidToUtc],
+                @ValidFromUtc = [ValidFromUtc],
+                @ValidToUtc = [ValidToUtc]
+            FROM @Pending
+            ORDER BY [ValidFromUtc], [PhiloteValidityPeriodId];
+
+            INSERT INTO [ATAPUtilities].[PhiloteValidityPeriod]
+            (
+                [PhiloteValidityPeriodId],
+                [PhiloteId],
+                [PreviousValidToUtc],
+                [ValidFromUtc],
+                [ValidToUtc]
+            )
+            VALUES
+            (
+                @InsertId,
+                @PhiloteId,
+                @PreviousValidToUtc,
+                @ValidFromUtc,
+                @ValidToUtc
+            );
+
+            DELETE FROM @Pending
+            WHERE [PhiloteValidityPeriodId] = @InsertId;
+        END;
+
+        IF EXISTS
+        (
+            SELECT [PhiloteValidityPeriodId], [PreviousValidToUtc], [ValidFromUtc], [ValidToUtc]
+            FROM [ATAPUtilities].[PhiloteValidityPeriod]
+            WHERE [PhiloteId] = @PhiloteId
+            EXCEPT
+            SELECT [PhiloteValidityPeriodId], [PreviousValidToUtc], [ValidFromUtc], [ValidToUtc]
+            FROM @Periods
+        ) OR EXISTS
+        (
+            SELECT [PhiloteValidityPeriodId], [PreviousValidToUtc], [ValidFromUtc], [ValidToUtc]
+            FROM @Periods
+            EXCEPT
+            SELECT [PhiloteValidityPeriodId], [PreviousValidToUtc], [ValidFromUtc], [ValidToUtc]
+            FROM [ATAPUtilities].[PhiloteValidityPeriod]
+            WHERE [PhiloteId] = @PhiloteId
+        )
+            THROW 55207, ''The persisted period set differs from the validated desired set.'', 1;
+
+        COMMIT TRANSACTION;
+
+        SELECT
+            [PhiloteValidityPeriodId],
+            [PhiloteId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        FROM [ATAPUtilities].[PhiloteValidityPeriod]
+        WHERE [PhiloteId] = @PhiloteId
+        ORDER BY [ValidFromUtc], [PhiloteValidityPeriodId];
+
+        RETURN 0;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0
+            ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;';
+
+    EXEC sys.sp_executesql N'CREATE PROCEDURE [ATAPUtilities].[CreateFirstPhiloteValidityPeriod]
+    @PhiloteId uniqueidentifier,
+    @PhiloteValidityPeriodId uniqueidentifier,
+    @ValidFromUtc datetime2(7),
+    @ValidToUtc datetime2(7)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF @PhiloteId IS NULL
+        THROW 55230, ''PhiloteId is required.'', 1;
+    IF @PhiloteValidityPeriodId IS NULL
+        THROW 55231, ''PhiloteValidityPeriodId is required.'', 1;
+    IF @ValidFromUtc IS NULL
+        THROW 55232, ''ValidFromUtc is required.'', 1;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        DECLARE @LockResult int;
+        DECLARE @LockResource nvarchar(255) =
+            N''ATAPUtilities.PhiloteValidityPeriod:''
+            + LOWER(CONVERT(nvarchar(36), @PhiloteId));
+
+        EXEC @LockResult = sys.sp_getapplock
+            @Resource = @LockResource,
+            @LockMode = ''Exclusive'',
+            @LockOwner = ''Transaction'',
+            @LockTimeout = 15000,
+            @DbPrincipal = ''public'';
+
+        IF @LockResult < 0
+            THROW 55220, ''Unable to acquire the Philote temporal-validity writer lock.'', 1;
+
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM [ATAPUtilities].[Philote] WITH (UPDLOCK, HOLDLOCK)
+            WHERE [PhiloteId] = @PhiloteId
+        )
+            THROW 55221, ''The parent Philote does not exist.'', 1;
+
+        DECLARE @Desired [ATAPUtilities].[PhiloteValidityPeriodSetInput];
+
+        INSERT INTO @Desired
+        (
+            [PhiloteValidityPeriodId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        )
+        SELECT
+            [PhiloteValidityPeriodId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        FROM [ATAPUtilities].[PhiloteValidityPeriod] WITH (UPDLOCK, HOLDLOCK)
+        WHERE [PhiloteId] = @PhiloteId;
+
+        IF EXISTS (SELECT 1 FROM @Desired)
+            THROW 55233, ''The Philote already has a validity period.'', 1;
+
+        INSERT INTO @Desired
+        (
+            [PhiloteValidityPeriodId], [PreviousValidToUtc], [ValidFromUtc], [ValidToUtc]
+        )
+        VALUES
+        (
+            @PhiloteValidityPeriodId, NULL, @ValidFromUtc, @ValidToUtc
+        );
+
+        DECLARE @Result TABLE
+        (
+            [PhiloteValidityPeriodId] uniqueidentifier NOT NULL,
+            [PhiloteId] uniqueidentifier NOT NULL,
+            [PreviousValidToUtc] datetime2(7) NULL,
+            [ValidFromUtc] datetime2(7) NOT NULL,
+            [ValidToUtc] datetime2(7) NULL
+        );
+        DECLARE @ReturnCode int;
+
+        INSERT INTO @Result
+        EXEC @ReturnCode = [ATAPUtilities].[ReplacePhiloteValidityPeriodSet]
+            @PhiloteId = @PhiloteId,
+            @Periods = @Desired;
+
+        COMMIT TRANSACTION;
+
+        SELECT
+            [PhiloteValidityPeriodId],
+            [PhiloteId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        FROM @Result
+        ORDER BY [ValidFromUtc], [PhiloteValidityPeriodId];
+
+        RETURN @ReturnCode;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0
+            ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;';
+
+    EXEC sys.sp_executesql N'CREATE PROCEDURE [ATAPUtilities].[CloseCurrentPhiloteValidityPeriod]
+    @PhiloteId uniqueidentifier,
+    @ExpectedPhiloteValidityPeriodId uniqueidentifier,
+    @ValidToUtc datetime2(7)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF @PhiloteId IS NULL
+        THROW 55240, ''PhiloteId is required.'', 1;
+    IF @ExpectedPhiloteValidityPeriodId IS NULL
+        THROW 55241, ''ExpectedPhiloteValidityPeriodId is required.'', 1;
+    IF @ValidToUtc IS NULL
+        THROW 55242, ''ValidToUtc is required.'', 1;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        DECLARE @LockResult int;
+        DECLARE @LockResource nvarchar(255) =
+            N''ATAPUtilities.PhiloteValidityPeriod:''
+            + LOWER(CONVERT(nvarchar(36), @PhiloteId));
+
+        EXEC @LockResult = sys.sp_getapplock
+            @Resource = @LockResource,
+            @LockMode = ''Exclusive'',
+            @LockOwner = ''Transaction'',
+            @LockTimeout = 15000,
+            @DbPrincipal = ''public'';
+
+        IF @LockResult < 0
+            THROW 55220, ''Unable to acquire the Philote temporal-validity writer lock.'', 1;
+
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM [ATAPUtilities].[Philote] WITH (UPDLOCK, HOLDLOCK)
+            WHERE [PhiloteId] = @PhiloteId
+        )
+            THROW 55221, ''The parent Philote does not exist.'', 1;
+
+        DECLARE @Desired [ATAPUtilities].[PhiloteValidityPeriodSetInput];
+
+        INSERT INTO @Desired
+        (
+            [PhiloteValidityPeriodId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        )
+        SELECT
+            [PhiloteValidityPeriodId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        FROM [ATAPUtilities].[PhiloteValidityPeriod] WITH (UPDLOCK, HOLDLOCK)
+        WHERE [PhiloteId] = @PhiloteId;
+
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM @Desired
+            WHERE [PhiloteValidityPeriodId] = @ExpectedPhiloteValidityPeriodId
+              AND [ValidToUtc] IS NULL
+        )
+            THROW 55243, ''The expected open validity period was not found.'', 1;
+
+        UPDATE @Desired
+        SET [ValidToUtc] = @ValidToUtc
+        WHERE [PhiloteValidityPeriodId] = @ExpectedPhiloteValidityPeriodId;
+
+        DECLARE @Result TABLE
+        (
+            [PhiloteValidityPeriodId] uniqueidentifier NOT NULL,
+            [PhiloteId] uniqueidentifier NOT NULL,
+            [PreviousValidToUtc] datetime2(7) NULL,
+            [ValidFromUtc] datetime2(7) NOT NULL,
+            [ValidToUtc] datetime2(7) NULL
+        );
+        DECLARE @ReturnCode int;
+
+        INSERT INTO @Result
+        EXEC @ReturnCode = [ATAPUtilities].[ReplacePhiloteValidityPeriodSet]
+            @PhiloteId = @PhiloteId,
+            @Periods = @Desired;
+
+        COMMIT TRANSACTION;
+
+        SELECT
+            [PhiloteValidityPeriodId],
+            [PhiloteId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        FROM @Result
+        ORDER BY [ValidFromUtc], [PhiloteValidityPeriodId];
+
+        RETURN @ReturnCode;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0
+            ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;';
+
+    EXEC sys.sp_executesql N'CREATE PROCEDURE [ATAPUtilities].[ReactivatePhiloteValidityPeriod]
+    @PhiloteId uniqueidentifier,
+    @PhiloteValidityPeriodId uniqueidentifier,
+    @ValidFromUtc datetime2(7)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF @PhiloteId IS NULL
+        THROW 55250, ''PhiloteId is required.'', 1;
+    IF @PhiloteValidityPeriodId IS NULL
+        THROW 55251, ''PhiloteValidityPeriodId is required.'', 1;
+    IF @ValidFromUtc IS NULL
+        THROW 55252, ''ValidFromUtc is required.'', 1;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        DECLARE @LockResult int;
+        DECLARE @LockResource nvarchar(255) =
+            N''ATAPUtilities.PhiloteValidityPeriod:''
+            + LOWER(CONVERT(nvarchar(36), @PhiloteId));
+
+        EXEC @LockResult = sys.sp_getapplock
+            @Resource = @LockResource,
+            @LockMode = ''Exclusive'',
+            @LockOwner = ''Transaction'',
+            @LockTimeout = 15000,
+            @DbPrincipal = ''public'';
+
+        IF @LockResult < 0
+            THROW 55220, ''Unable to acquire the Philote temporal-validity writer lock.'', 1;
+
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM [ATAPUtilities].[Philote] WITH (UPDLOCK, HOLDLOCK)
+            WHERE [PhiloteId] = @PhiloteId
+        )
+            THROW 55221, ''The parent Philote does not exist.'', 1;
+
+        DECLARE @Desired [ATAPUtilities].[PhiloteValidityPeriodSetInput];
+
+        INSERT INTO @Desired
+        (
+            [PhiloteValidityPeriodId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        )
+        SELECT
+            [PhiloteValidityPeriodId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        FROM [ATAPUtilities].[PhiloteValidityPeriod] WITH (UPDLOCK, HOLDLOCK)
+        WHERE [PhiloteId] = @PhiloteId;
+
+        IF NOT EXISTS (SELECT 1 FROM @Desired)
+            THROW 55253, ''Reactivation requires an existing bounded period.'', 1;
+        IF EXISTS (SELECT 1 FROM @Desired WHERE [ValidToUtc] IS NULL)
+            THROW 55254, ''The Philote already has an open validity period.'', 1;
+
+        DECLARE @LastValidToUtc datetime2(7) =
+        (
+            SELECT MAX([ValidToUtc])
+            FROM @Desired
+        );
+
+        IF @ValidFromUtc <= @LastValidToUtc
+            THROW 55255, ''Reactivation must begin after a strict gap.'', 1;
+
+        INSERT INTO @Desired
+        (
+            [PhiloteValidityPeriodId], [PreviousValidToUtc], [ValidFromUtc], [ValidToUtc]
+        )
+        VALUES
+        (
+            @PhiloteValidityPeriodId, @LastValidToUtc, @ValidFromUtc, NULL
+        );
+
+        DECLARE @Result TABLE
+        (
+            [PhiloteValidityPeriodId] uniqueidentifier NOT NULL,
+            [PhiloteId] uniqueidentifier NOT NULL,
+            [PreviousValidToUtc] datetime2(7) NULL,
+            [ValidFromUtc] datetime2(7) NOT NULL,
+            [ValidToUtc] datetime2(7) NULL
+        );
+        DECLARE @ReturnCode int;
+
+        INSERT INTO @Result
+        EXEC @ReturnCode = [ATAPUtilities].[ReplacePhiloteValidityPeriodSet]
+            @PhiloteId = @PhiloteId,
+            @Periods = @Desired;
+
+        COMMIT TRANSACTION;
+
+        SELECT
+            [PhiloteValidityPeriodId],
+            [PhiloteId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        FROM @Result
+        ORDER BY [ValidFromUtc], [PhiloteValidityPeriodId];
+
+        RETURN @ReturnCode;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0
+            ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;';
+
+    EXEC sys.sp_executesql N'CREATE PROCEDURE [ATAPUtilities].[CorrectPhiloteValidityPeriodBoundary]
+    @PhiloteId uniqueidentifier,
+    @PhiloteValidityPeriodId uniqueidentifier,
+    @ExpectedValidFromUtc datetime2(7),
+    @ExpectedValidToUtc datetime2(7),
+    @NewValidFromUtc datetime2(7),
+    @NewValidToUtc datetime2(7)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF @PhiloteId IS NULL
+        THROW 55260, ''PhiloteId is required.'', 1;
+    IF @PhiloteValidityPeriodId IS NULL
+        THROW 55261, ''PhiloteValidityPeriodId is required.'', 1;
+    IF @ExpectedValidFromUtc IS NULL
+        THROW 55262, ''ExpectedValidFromUtc is required.'', 1;
+    IF @NewValidFromUtc IS NULL
+        THROW 55263, ''NewValidFromUtc is required.'', 1;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        DECLARE @LockResult int;
+        DECLARE @LockResource nvarchar(255) =
+            N''ATAPUtilities.PhiloteValidityPeriod:''
+            + LOWER(CONVERT(nvarchar(36), @PhiloteId));
+
+        EXEC @LockResult = sys.sp_getapplock
+            @Resource = @LockResource,
+            @LockMode = ''Exclusive'',
+            @LockOwner = ''Transaction'',
+            @LockTimeout = 15000,
+            @DbPrincipal = ''public'';
+
+        IF @LockResult < 0
+            THROW 55220, ''Unable to acquire the Philote temporal-validity writer lock.'', 1;
+
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM [ATAPUtilities].[Philote] WITH (UPDLOCK, HOLDLOCK)
+            WHERE [PhiloteId] = @PhiloteId
+        )
+            THROW 55221, ''The parent Philote does not exist.'', 1;
+
+        DECLARE @Desired [ATAPUtilities].[PhiloteValidityPeriodSetInput];
+
+        INSERT INTO @Desired
+        (
+            [PhiloteValidityPeriodId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        )
+        SELECT
+            [PhiloteValidityPeriodId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        FROM [ATAPUtilities].[PhiloteValidityPeriod] WITH (UPDLOCK, HOLDLOCK)
+        WHERE [PhiloteId] = @PhiloteId;
+
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM @Desired
+            WHERE [PhiloteValidityPeriodId] = @PhiloteValidityPeriodId
+              AND [ValidFromUtc] = @ExpectedValidFromUtc
+              AND
+              (
+                  [ValidToUtc] = @ExpectedValidToUtc
+                  OR ([ValidToUtc] IS NULL AND @ExpectedValidToUtc IS NULL)
+              )
+        )
+            THROW 55264, ''The expected validity-period boundaries are stale or absent.'', 1;
+
+        IF @ExpectedValidToUtc IS NOT NULL
+        BEGIN
+            UPDATE @Desired
+            SET [PreviousValidToUtc] = @NewValidToUtc
+            WHERE [PreviousValidToUtc] = @ExpectedValidToUtc
+              AND [PhiloteValidityPeriodId] <> @PhiloteValidityPeriodId;
+        END;
+
+        UPDATE @Desired
+        SET
+            [ValidFromUtc] = @NewValidFromUtc,
+            [ValidToUtc] = @NewValidToUtc
+        WHERE [PhiloteValidityPeriodId] = @PhiloteValidityPeriodId;
+
+        DECLARE @Result TABLE
+        (
+            [PhiloteValidityPeriodId] uniqueidentifier NOT NULL,
+            [PhiloteId] uniqueidentifier NOT NULL,
+            [PreviousValidToUtc] datetime2(7) NULL,
+            [ValidFromUtc] datetime2(7) NOT NULL,
+            [ValidToUtc] datetime2(7) NULL
+        );
+        DECLARE @ReturnCode int;
+
+        INSERT INTO @Result
+        EXEC @ReturnCode = [ATAPUtilities].[ReplacePhiloteValidityPeriodSet]
+            @PhiloteId = @PhiloteId,
+            @Periods = @Desired;
+
+        COMMIT TRANSACTION;
+
+        SELECT
+            [PhiloteValidityPeriodId],
+            [PhiloteId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        FROM @Result
+        ORDER BY [ValidFromUtc], [PhiloteValidityPeriodId];
+
+        RETURN @ReturnCode;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0
+            ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;';
+
+    EXEC sys.sp_executesql N'CREATE PROCEDURE [ATAPUtilities].[SplitPhiloteValidityPeriod]
+    @PhiloteId uniqueidentifier,
+    @PhiloteValidityPeriodId uniqueidentifier,
+    @ExpectedValidFromUtc datetime2(7),
+    @ExpectedValidToUtc datetime2(7),
+    @SplitUtc datetime2(7),
+    @NewLaterPhiloteValidityPeriodId uniqueidentifier
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF @PhiloteId IS NULL
+        THROW 55270, ''PhiloteId is required.'', 1;
+    IF @PhiloteValidityPeriodId IS NULL
+        THROW 55271, ''PhiloteValidityPeriodId is required.'', 1;
+    IF @ExpectedValidFromUtc IS NULL
+        THROW 55272, ''ExpectedValidFromUtc is required.'', 1;
+    IF @ExpectedValidToUtc IS NULL
+        THROW 55273, ''ExpectedValidToUtc is required.'', 1;
+    IF @SplitUtc IS NULL
+        THROW 55274, ''SplitUtc is required.'', 1;
+    IF @NewLaterPhiloteValidityPeriodId IS NULL
+        THROW 55275, ''NewLaterPhiloteValidityPeriodId is required.'', 1;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        DECLARE @LockResult int;
+        DECLARE @LockResource nvarchar(255) =
+            N''ATAPUtilities.PhiloteValidityPeriod:''
+            + LOWER(CONVERT(nvarchar(36), @PhiloteId));
+
+        EXEC @LockResult = sys.sp_getapplock
+            @Resource = @LockResource,
+            @LockMode = ''Exclusive'',
+            @LockOwner = ''Transaction'',
+            @LockTimeout = 15000,
+            @DbPrincipal = ''public'';
+
+        IF @LockResult < 0
+            THROW 55220, ''Unable to acquire the Philote temporal-validity writer lock.'', 1;
+
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM [ATAPUtilities].[Philote] WITH (UPDLOCK, HOLDLOCK)
+            WHERE [PhiloteId] = @PhiloteId
+        )
+            THROW 55221, ''The parent Philote does not exist.'', 1;
+
+        DECLARE @Desired [ATAPUtilities].[PhiloteValidityPeriodSetInput];
+
+        INSERT INTO @Desired
+        (
+            [PhiloteValidityPeriodId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        )
+        SELECT
+            [PhiloteValidityPeriodId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        FROM [ATAPUtilities].[PhiloteValidityPeriod] WITH (UPDLOCK, HOLDLOCK)
+        WHERE [PhiloteId] = @PhiloteId;
+
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM @Desired
+            WHERE [PhiloteValidityPeriodId] = @PhiloteValidityPeriodId
+              AND [ValidFromUtc] = @ExpectedValidFromUtc
+              AND [ValidToUtc] = @ExpectedValidToUtc
+        )
+            THROW 55276, ''The expected bounded validity period is stale or absent.'', 1;
+
+        IF @SplitUtc <= @ExpectedValidFromUtc OR @SplitUtc >= @ExpectedValidToUtc
+            THROW 55277, ''SplitUtc must be strictly inside the bounded period.'', 1;
+
+        UPDATE @Desired
+        SET [ValidToUtc] = @SplitUtc
+        WHERE [PhiloteValidityPeriodId] = @PhiloteValidityPeriodId;
+
+        INSERT INTO @Desired
+        (
+            [PhiloteValidityPeriodId], [PreviousValidToUtc], [ValidFromUtc], [ValidToUtc]
+        )
+        VALUES
+        (
+            @NewLaterPhiloteValidityPeriodId, @SplitUtc, @SplitUtc, @ExpectedValidToUtc
+        );
+
+        DECLARE @Result TABLE
+        (
+            [PhiloteValidityPeriodId] uniqueidentifier NOT NULL,
+            [PhiloteId] uniqueidentifier NOT NULL,
+            [PreviousValidToUtc] datetime2(7) NULL,
+            [ValidFromUtc] datetime2(7) NOT NULL,
+            [ValidToUtc] datetime2(7) NULL
+        );
+        DECLARE @ReturnCode int;
+
+        INSERT INTO @Result
+        EXEC @ReturnCode = [ATAPUtilities].[ReplacePhiloteValidityPeriodSet]
+            @PhiloteId = @PhiloteId,
+            @Periods = @Desired;
+
+        COMMIT TRANSACTION;
+
+        SELECT
+            [PhiloteValidityPeriodId],
+            [PhiloteId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        FROM @Result
+        ORDER BY [ValidFromUtc], [PhiloteValidityPeriodId];
+
+        RETURN @ReturnCode;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0
+            ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;';
+
+    EXEC sys.sp_executesql N'CREATE PROCEDURE [ATAPUtilities].[MergeAdjacentPhiloteValidityPeriods]
+    @PhiloteId uniqueidentifier,
+    @EarlierPhiloteValidityPeriodId uniqueidentifier,
+    @LaterPhiloteValidityPeriodId uniqueidentifier,
+    @ExpectedBoundaryUtc datetime2(7)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF @PhiloteId IS NULL
+        THROW 55280, ''PhiloteId is required.'', 1;
+    IF @EarlierPhiloteValidityPeriodId IS NULL
+        THROW 55281, ''EarlierPhiloteValidityPeriodId is required.'', 1;
+    IF @LaterPhiloteValidityPeriodId IS NULL
+        THROW 55282, ''LaterPhiloteValidityPeriodId is required.'', 1;
+    IF @ExpectedBoundaryUtc IS NULL
+        THROW 55283, ''ExpectedBoundaryUtc is required.'', 1;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        DECLARE @LockResult int;
+        DECLARE @LockResource nvarchar(255) =
+            N''ATAPUtilities.PhiloteValidityPeriod:''
+            + LOWER(CONVERT(nvarchar(36), @PhiloteId));
+
+        EXEC @LockResult = sys.sp_getapplock
+            @Resource = @LockResource,
+            @LockMode = ''Exclusive'',
+            @LockOwner = ''Transaction'',
+            @LockTimeout = 15000,
+            @DbPrincipal = ''public'';
+
+        IF @LockResult < 0
+            THROW 55220, ''Unable to acquire the Philote temporal-validity writer lock.'', 1;
+
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM [ATAPUtilities].[Philote] WITH (UPDLOCK, HOLDLOCK)
+            WHERE [PhiloteId] = @PhiloteId
+        )
+            THROW 55221, ''The parent Philote does not exist.'', 1;
+
+        DECLARE @Desired [ATAPUtilities].[PhiloteValidityPeriodSetInput];
+
+        INSERT INTO @Desired
+        (
+            [PhiloteValidityPeriodId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        )
+        SELECT
+            [PhiloteValidityPeriodId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        FROM [ATAPUtilities].[PhiloteValidityPeriod] WITH (UPDLOCK, HOLDLOCK)
+        WHERE [PhiloteId] = @PhiloteId;
+
+        DECLARE @LaterValidToUtc datetime2(7);
+
+        SELECT @LaterValidToUtc = later.[ValidToUtc]
+        FROM @Desired AS earlier
+        INNER JOIN @Desired AS later
+            ON later.[PhiloteValidityPeriodId] = @LaterPhiloteValidityPeriodId
+           AND later.[PreviousValidToUtc] = earlier.[ValidToUtc]
+        WHERE earlier.[PhiloteValidityPeriodId] = @EarlierPhiloteValidityPeriodId
+          AND earlier.[ValidToUtc] = @ExpectedBoundaryUtc
+          AND later.[ValidFromUtc] = @ExpectedBoundaryUtc;
+
+        IF @@ROWCOUNT <> 1
+            THROW 55284, ''The periods are not the expected consecutive adjacent pair.'', 1;
+
+        DELETE FROM @Desired
+        WHERE [PhiloteValidityPeriodId] = @LaterPhiloteValidityPeriodId;
+
+        UPDATE @Desired
+        SET [ValidToUtc] = @LaterValidToUtc
+        WHERE [PhiloteValidityPeriodId] = @EarlierPhiloteValidityPeriodId;
+
+        DECLARE @Result TABLE
+        (
+            [PhiloteValidityPeriodId] uniqueidentifier NOT NULL,
+            [PhiloteId] uniqueidentifier NOT NULL,
+            [PreviousValidToUtc] datetime2(7) NULL,
+            [ValidFromUtc] datetime2(7) NOT NULL,
+            [ValidToUtc] datetime2(7) NULL
+        );
+        DECLARE @ReturnCode int;
+
+        INSERT INTO @Result
+        EXEC @ReturnCode = [ATAPUtilities].[ReplacePhiloteValidityPeriodSet]
+            @PhiloteId = @PhiloteId,
+            @Periods = @Desired;
+
+        COMMIT TRANSACTION;
+
+        SELECT
+            [PhiloteValidityPeriodId],
+            [PhiloteId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        FROM @Result
+        ORDER BY [ValidFromUtc], [PhiloteValidityPeriodId];
+
+        RETURN @ReturnCode;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0
+            ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;';
+
+    EXEC sys.sp_executesql N'CREATE PROCEDURE [ATAPUtilities].[DeletePhiloteValidityPeriod]
+    @PhiloteId uniqueidentifier,
+    @PhiloteValidityPeriodId uniqueidentifier,
+    @ExpectedValidFromUtc datetime2(7),
+    @ExpectedValidToUtc datetime2(7)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF @PhiloteId IS NULL
+        THROW 55290, ''PhiloteId is required.'', 1;
+    IF @PhiloteValidityPeriodId IS NULL
+        THROW 55291, ''PhiloteValidityPeriodId is required.'', 1;
+    IF @ExpectedValidFromUtc IS NULL
+        THROW 55292, ''ExpectedValidFromUtc is required.'', 1;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        DECLARE @LockResult int;
+        DECLARE @LockResource nvarchar(255) =
+            N''ATAPUtilities.PhiloteValidityPeriod:''
+            + LOWER(CONVERT(nvarchar(36), @PhiloteId));
+
+        EXEC @LockResult = sys.sp_getapplock
+            @Resource = @LockResource,
+            @LockMode = ''Exclusive'',
+            @LockOwner = ''Transaction'',
+            @LockTimeout = 15000,
+            @DbPrincipal = ''public'';
+
+        IF @LockResult < 0
+            THROW 55220, ''Unable to acquire the Philote temporal-validity writer lock.'', 1;
+
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM [ATAPUtilities].[Philote] WITH (UPDLOCK, HOLDLOCK)
+            WHERE [PhiloteId] = @PhiloteId
+        )
+            THROW 55221, ''The parent Philote does not exist.'', 1;
+
+        DECLARE @Desired [ATAPUtilities].[PhiloteValidityPeriodSetInput];
+
+        INSERT INTO @Desired
+        (
+            [PhiloteValidityPeriodId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        )
+        SELECT
+            [PhiloteValidityPeriodId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        FROM [ATAPUtilities].[PhiloteValidityPeriod] WITH (UPDLOCK, HOLDLOCK)
+        WHERE [PhiloteId] = @PhiloteId;
+
+        DECLARE @DeletedPreviousValidToUtc datetime2(7);
+        DECLARE @DeletedValidToUtc datetime2(7);
+
+        SELECT
+            @DeletedPreviousValidToUtc = [PreviousValidToUtc],
+            @DeletedValidToUtc = [ValidToUtc]
+        FROM @Desired
+        WHERE [PhiloteValidityPeriodId] = @PhiloteValidityPeriodId
+          AND [ValidFromUtc] = @ExpectedValidFromUtc
+          AND
+          (
+              [ValidToUtc] = @ExpectedValidToUtc
+              OR ([ValidToUtc] IS NULL AND @ExpectedValidToUtc IS NULL)
+          );
+
+        IF @@ROWCOUNT <> 1
+            THROW 55293, ''The expected validity period is stale or absent.'', 1;
+
+        DELETE FROM @Desired
+        WHERE [PhiloteValidityPeriodId] = @PhiloteValidityPeriodId;
+
+        IF @DeletedValidToUtc IS NOT NULL
+        BEGIN
+            UPDATE @Desired
+            SET [PreviousValidToUtc] = @DeletedPreviousValidToUtc
+            WHERE [PreviousValidToUtc] = @DeletedValidToUtc;
+        END;
+
+        DECLARE @Result TABLE
+        (
+            [PhiloteValidityPeriodId] uniqueidentifier NOT NULL,
+            [PhiloteId] uniqueidentifier NOT NULL,
+            [PreviousValidToUtc] datetime2(7) NULL,
+            [ValidFromUtc] datetime2(7) NOT NULL,
+            [ValidToUtc] datetime2(7) NULL
+        );
+        DECLARE @ReturnCode int;
+
+        INSERT INTO @Result
+        EXEC @ReturnCode = [ATAPUtilities].[ReplacePhiloteValidityPeriodSet]
+            @PhiloteId = @PhiloteId,
+            @Periods = @Desired;
+
+        COMMIT TRANSACTION;
+
+        SELECT
+            [PhiloteValidityPeriodId],
+            [PhiloteId],
+            [PreviousValidToUtc],
+            [ValidFromUtc],
+            [ValidToUtc]
+        FROM @Result
+        ORDER BY [ValidFromUtc], [PhiloteValidityPeriodId];
+
+        RETURN @ReturnCode;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0
+            ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;';
     COMMIT TRANSACTION;
 END TRY
 BEGIN CATCH

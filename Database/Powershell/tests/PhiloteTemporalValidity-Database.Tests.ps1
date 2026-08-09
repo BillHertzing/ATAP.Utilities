@@ -252,7 +252,8 @@ ORDER BY [PhiloteValidityPeriodId];
       $actualPeriods[$index].PhiloteValidityPeriodId | Should -Be $expectedPeriods[$index].PhiloteValidityPeriodId
       $actualPeriods[$index].PhiloteId | Should -Be $expectedPeriods[$index].PhiloteId
       $actualPeriods[$index].PreviousValidToUtc | Should -Be ([DBNull]::Value)
-      $actualPeriods[$index].ValidFromUtc | Should -Be $expectedPeriods[$index].ValidFromUtc
+      [DateTimeOffset]::Parse($actualPeriods[$index].ValidFromUtc) |
+        Should -Be ([DateTimeOffset]::Parse($expectedPeriods[$index].ValidFromUtc))
       $actualPeriods[$index].ValidToUtc | Should -Be ([DBNull]::Value)
     }
   }
@@ -278,15 +279,16 @@ WHERE [PhiloteId] = '$philoteId'
   }
 
   It 'rejects every direct-DML invalid chain shape' -ForEach @(
-    @{ Name = 'zero duration'; Rows = "('10000000-0000-0000-0000-000000000001', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, '2026-01-01T00:00:00', '2026-01-01T00:00:00')" }
-    @{ Name = 'reversed endpoints'; Rows = "('10000000-0000-0000-0000-000000000002', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, '2026-01-02T00:00:00', '2026-01-01T00:00:00')" }
-    @{ Name = 'broken predecessor'; Rows = "('10000000-0000-0000-0000-000000000003', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '2026-01-01T00:00:00', '2026-01-02T00:00:00', '2026-01-03T00:00:00')" }
-    @{ Name = 'arbitrary overlap'; Rows = "('10000000-0000-0000-0000-000000000004', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, '2026-01-01T00:00:00', '2026-01-04T00:00:00'), ('10000000-0000-0000-0000-000000000005', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '2026-01-04T00:00:00', '2026-01-03T00:00:00', '2026-01-05T00:00:00')" }
-    @{ Name = 'duplicate starts'; Rows = "('10000000-0000-0000-0000-000000000006', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, '2026-01-01T00:00:00', '2026-01-02T00:00:00'), ('10000000-0000-0000-0000-000000000007', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '2026-01-02T00:00:00', '2026-01-01T00:00:00', '2026-01-03T00:00:00')" }
-    @{ Name = 'duplicate ends'; Rows = "('10000000-0000-0000-0000-000000000008', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, '2026-01-01T00:00:00', '2026-01-03T00:00:00'), ('10000000-0000-0000-0000-000000000009', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '2026-01-03T00:00:00', '2026-01-02T00:00:00', '2026-01-03T00:00:00')" }
-    @{ Name = 'two open ends'; Rows = "('10000000-0000-0000-0000-000000000010', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, '2026-01-01T00:00:00', NULL), ('10000000-0000-0000-0000-000000000011', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, '2026-02-01T00:00:00', NULL)" }
-    @{ Name = 'open end followed by another row'; Rows = "('10000000-0000-0000-0000-000000000012', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, '2026-01-01T00:00:00', NULL), ('10000000-0000-0000-0000-000000000013', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, '2026-02-01T00:00:00', '2026-03-01T00:00:00')" }
-    @{ Name = 'cycle'; Rows = "('10000000-0000-0000-0000-000000000014', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '2026-01-04T00:00:00', '2026-01-01T00:00:00', '2026-01-02T00:00:00'), ('10000000-0000-0000-0000-000000000015', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '2026-01-02T00:00:00', '2026-01-03T00:00:00', '2026-01-04T00:00:00')" }
+    @{ Name = 'zero duration'; ExpectedMessage = '*CK_PhiloteValidityPeriod_NonEmpty*'; Rows = "('10000000-0000-0000-0000-000000000001', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, '2026-01-01T00:00:00', '2026-01-01T00:00:00')" }
+    @{ Name = 'reversed endpoints'; ExpectedMessage = '*CK_PhiloteValidityPeriod_NonEmpty*'; Rows = "('10000000-0000-0000-0000-000000000002', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, '2026-01-02T00:00:00', '2026-01-01T00:00:00')" }
+    @{ Name = 'broken predecessor'; ExpectedMessage = '*FK_PhiloteValidityPeriod_Predecessor*'; Rows = "('10000000-0000-0000-0000-000000000003', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '2026-01-01T00:00:00', '2026-01-02T00:00:00', '2026-01-03T00:00:00')" }
+    @{ Name = 'arbitrary overlap'; ExpectedMessage = '*CK_PhiloteValidityPeriod_PredecessorNotAfterStart*'; Rows = "('10000000-0000-0000-0000-000000000004', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, '2026-01-01T00:00:00', '2026-01-04T00:00:00'), ('10000000-0000-0000-0000-000000000005', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '2026-01-04T00:00:00', '2026-01-03T00:00:00', '2026-01-05T00:00:00')" }
+    @{ Name = 'full containment overlap'; ExpectedMessage = '*CK_PhiloteValidityPeriod_PredecessorNotAfterStart*'; Rows = "('10000000-0000-0000-0000-000000000016', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, '2026-01-01T00:00:00', '2026-01-05T00:00:00'), ('10000000-0000-0000-0000-000000000017', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '2026-01-05T00:00:00', '2026-01-02T00:00:00', '2026-01-04T00:00:00')" }
+    @{ Name = 'duplicate starts'; ExpectedMessage = '*UQ_PhiloteValidityPeriod_Philote_ValidFromUtc*'; Rows = "('10000000-0000-0000-0000-000000000006', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, '2026-01-01T00:00:00', '2026-01-02T00:00:00'), ('10000000-0000-0000-0000-000000000007', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '2026-01-02T00:00:00', '2026-01-01T00:00:00', '2026-01-03T00:00:00')" }
+    @{ Name = 'duplicate ends'; ExpectedMessage = '*UQ_PhiloteValidityPeriod_Philote_ValidToUtc*'; Rows = "('10000000-0000-0000-0000-000000000008', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, '2026-01-01T00:00:00', '2026-01-03T00:00:00'), ('10000000-0000-0000-0000-000000000009', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '2026-01-03T00:00:00', '2026-01-02T00:00:00', '2026-01-03T00:00:00')" }
+    @{ Name = 'two open ends'; ExpectedMessage = '*UQ_PhiloteValidityPeriod_Philote_PreviousValidToUtc*'; Rows = "('10000000-0000-0000-0000-000000000010', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, '2026-01-01T00:00:00', NULL), ('10000000-0000-0000-0000-000000000011', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, '2026-02-01T00:00:00', NULL)" }
+    @{ Name = 'open end followed by another row'; ExpectedMessage = '*UQ_PhiloteValidityPeriod_Philote_PreviousValidToUtc*'; Rows = "('10000000-0000-0000-0000-000000000012', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, '2026-01-01T00:00:00', NULL), ('10000000-0000-0000-0000-000000000013', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, '2026-02-01T00:00:00', '2026-03-01T00:00:00')" }
+    @{ Name = 'cycle'; ExpectedMessage = '*CK_PhiloteValidityPeriod_PredecessorNotAfterStart*'; Rows = "('10000000-0000-0000-0000-000000000014', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '2026-01-04T00:00:00', '2026-01-01T00:00:00', '2026-01-02T00:00:00'), ('10000000-0000-0000-0000-000000000015', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '2026-01-02T00:00:00', '2026-01-03T00:00:00', '2026-01-04T00:00:00')" }
   ) {
     $transaction = $connection.BeginTransaction()
     try {
@@ -302,7 +304,7 @@ INSERT INTO [ATAPUtilities].[PhiloteValidityPeriod]
 VALUES $Rows;
 "@
       }
-      $action | Should -Throw -Because $Name
+      $action | Should -Throw -ExpectedMessage $ExpectedMessage -Because $Name
     }
     finally {
       $transaction.Rollback()
@@ -423,12 +425,142 @@ EXEC [ATAPUtilities].[ReplacePhiloteValidityPeriodSet]
     }
   }
 
+  It 'preserves datetime2 maximum precision and excludes the exact end boundary' {
+    $transaction = $connection.BeginTransaction()
+    try {
+      Invoke-PhiloteTemporalValidityNonQuery -Connection $connection -Transaction $transaction -Query @'
+INSERT INTO [ATAPUtilities].[Philote] ([PhiloteId], [AdditionalIdsStub])
+VALUES ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', NULL);
+'@ | Out-Null
+
+      Invoke-PhiloteTemporalValidityRows -Connection $connection -Transaction $transaction -Query @'
+EXEC [ATAPUtilities].[CreateFirstPhiloteValidityPeriod]
+    @PhiloteId = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
+    @PhiloteValidityPeriodId = '50000000-0000-0000-0000-000000000001',
+    @ValidFromUtc = '9999-12-31T23:59:59.9999998',
+    @ValidToUtc = '9999-12-31T23:59:59.9999999';
+'@ | Out-Null
+
+      (Invoke-PhiloteTemporalValidityScalar -Connection $connection -Transaction $transaction -Query @'
+SELECT COUNT(*) FROM [ATAPUtilities].[PhiloteValidityPeriod]
+WHERE [PhiloteId] = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'
+  AND [ValidFromUtc] <= CONVERT(datetime2(7), '9999-12-31T23:59:59.9999998', 126)
+  AND CONVERT(datetime2(7), '9999-12-31T23:59:59.9999998', 126) < [ValidToUtc];
+'@) | Should -Be 1
+
+      (Invoke-PhiloteTemporalValidityScalar -Connection $connection -Transaction $transaction -Query @'
+SELECT COUNT(*) FROM [ATAPUtilities].[PhiloteValidityPeriod]
+WHERE [PhiloteId] = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'
+  AND [ValidFromUtc] <= CONVERT(datetime2(7), '9999-12-31T23:59:59.9999999', 126)
+  AND CONVERT(datetime2(7), '9999-12-31T23:59:59.9999999', 126) < [ValidToUtc];
+'@) | Should -Be 0
+    }
+    finally {
+      $transaction.Rollback()
+      $transaction.Dispose()
+    }
+  }
+
+  It 'splits a middle period retroactively and repairs the successor chain' {
+    $transaction = $connection.BeginTransaction()
+    try {
+      Invoke-PhiloteTemporalValidityNonQuery -Connection $connection -Transaction $transaction -Query @'
+INSERT INTO [ATAPUtilities].[Philote] ([PhiloteId], [AdditionalIdsStub])
+VALUES ('ffffffff-ffff-ffff-ffff-ffffffffffff', NULL);
+DECLARE @Periods [ATAPUtilities].[PhiloteValidityPeriodSetInput];
+INSERT INTO @Periods ([PhiloteValidityPeriodId], [PreviousValidToUtc], [ValidFromUtc], [ValidToUtc])
+VALUES
+  ('50000000-0000-0000-0000-000000000010', NULL, '2026-01-01T00:00:00', '2026-01-10T00:00:00'),
+  ('50000000-0000-0000-0000-000000000011', '2026-01-10T00:00:00', '2026-01-15T00:00:00', '2026-01-20T00:00:00'),
+  ('50000000-0000-0000-0000-000000000012', '2026-01-20T00:00:00', '2026-01-25T00:00:00', NULL);
+EXEC [ATAPUtilities].[ReplacePhiloteValidityPeriodSet]
+  @PhiloteId = 'ffffffff-ffff-ffff-ffff-ffffffffffff', @Periods = @Periods;
+'@ | Out-Null
+
+      $rows = @(Invoke-PhiloteTemporalValidityRows -Connection $connection -Transaction $transaction -Query @'
+EXEC [ATAPUtilities].[SplitPhiloteValidityPeriod]
+  @PhiloteId = 'ffffffff-ffff-ffff-ffff-ffffffffffff',
+  @PhiloteValidityPeriodId = '50000000-0000-0000-0000-000000000011',
+  @ExpectedValidFromUtc = '2026-01-15T00:00:00',
+  @ExpectedValidToUtc = '2026-01-20T00:00:00',
+  @SplitUtc = '2026-01-17T00:00:00',
+  @NewLaterPhiloteValidityPeriodId = '50000000-0000-0000-0000-000000000013';
+'@)
+      $rows.Count | Should -Be 4
+      $rows[1].ValidToUtc | Should -Be ([datetime]'2026-01-17T00:00:00')
+      $rows[2].PreviousValidToUtc | Should -Be ([datetime]'2026-01-17T00:00:00')
+      $rows[3].PreviousValidToUtc | Should -Be ([datetime]'2026-01-20T00:00:00')
+    }
+    finally {
+      $transaction.Rollback()
+      $transaction.Dispose()
+    }
+  }
+
+  It 'deletes first, middle, last, and current periods while preserving the chain' {
+    $scenarios = @(
+      @{ Name = 'first'; Prefix = '51'; PhiloteId = '51000000-0000-0000-0000-000000000000'; DeleteSuffix = '1'; OpenLast = $true; ExpectedCount = 2; ExpectedFirstPrevious = $null }
+      @{ Name = 'middle'; Prefix = '52'; PhiloteId = '52000000-0000-0000-0000-000000000000'; DeleteSuffix = '2'; OpenLast = $true; ExpectedCount = 2; ExpectedSuccessorPrevious = [datetime]'2026-01-10T00:00:00' }
+      @{ Name = 'last'; Prefix = '53'; PhiloteId = '53000000-0000-0000-0000-000000000000'; DeleteSuffix = '3'; OpenLast = $false; ExpectedCount = 2 }
+      @{ Name = 'current'; Prefix = '54'; PhiloteId = '54000000-0000-0000-0000-000000000000'; DeleteSuffix = '3'; OpenLast = $true; ExpectedCount = 2 }
+    )
+
+    foreach ($scenario in $scenarios) {
+      $transaction = $connection.BeginTransaction()
+      try {
+        $lastEnd = if ($scenario.OpenLast) { 'NULL' } else { "'2026-01-30T00:00:00'" }
+        Invoke-PhiloteTemporalValidityNonQuery -Connection $connection -Transaction $transaction -Query @"
+INSERT INTO [ATAPUtilities].[Philote] ([PhiloteId], [AdditionalIdsStub])
+VALUES ('$($scenario.PhiloteId)', NULL);
+DECLARE @Periods [ATAPUtilities].[PhiloteValidityPeriodSetInput];
+INSERT INTO @Periods ([PhiloteValidityPeriodId], [PreviousValidToUtc], [ValidFromUtc], [ValidToUtc])
+VALUES
+  ('$($scenario.Prefix)000000-0000-0000-0000-000000000001', NULL, '2026-01-01T00:00:00', '2026-01-10T00:00:00'),
+  ('$($scenario.Prefix)000000-0000-0000-0000-000000000002', '2026-01-10T00:00:00', '2026-01-15T00:00:00', '2026-01-20T00:00:00'),
+  ('$($scenario.Prefix)000000-0000-0000-0000-000000000003', '2026-01-20T00:00:00', '2026-01-25T00:00:00', $lastEnd);
+EXEC [ATAPUtilities].[ReplacePhiloteValidityPeriodSet]
+  @PhiloteId = '$($scenario.PhiloteId)', @Periods = @Periods;
+"@ | Out-Null
+
+        $expectedFrom = switch ($scenario.DeleteSuffix) {
+          '1' { '2026-01-01T00:00:00' }
+          '2' { '2026-01-15T00:00:00' }
+          default { '2026-01-25T00:00:00' }
+        }
+        $expectedTo = switch ($scenario.DeleteSuffix) {
+          '1' { "'2026-01-10T00:00:00'" }
+          '2' { "'2026-01-20T00:00:00'" }
+          default { $lastEnd }
+        }
+        $rows = @(Invoke-PhiloteTemporalValidityRows -Connection $connection -Transaction $transaction -Query @"
+EXEC [ATAPUtilities].[DeletePhiloteValidityPeriod]
+  @PhiloteId = '$($scenario.PhiloteId)',
+  @PhiloteValidityPeriodId = '$($scenario.Prefix)000000-0000-0000-0000-00000000000$($scenario.DeleteSuffix)',
+  @ExpectedValidFromUtc = '$expectedFrom',
+  @ExpectedValidToUtc = $expectedTo;
+"@)
+
+        $rows.Count | Should -Be $scenario.ExpectedCount -Because $scenario.Name
+        if ($scenario.Name -eq 'first') {
+          $rows[0].PreviousValidToUtc | Should -Be ([DBNull]::Value)
+        }
+        if ($scenario.Name -eq 'middle') {
+          $rows[1].PreviousValidToUtc | Should -Be $scenario.ExpectedSuccessorPrevious
+        }
+      }
+      finally {
+        $transaction.Rollback()
+        $transaction.Dispose()
+      }
+    }
+  }
+
   It 'rejects stale and invalid procedure mutations without changing the set' {
     $invalidCases = @(
-      @{ Name = 'closing a bounded row'; Query = "EXEC [ATAPUtilities].[CloseCurrentPhiloteValidityPeriod] @PhiloteId='cccccccc-cccc-cccc-cccc-cccccccccccc', @ExpectedPhiloteValidityPeriodId='30000000-0000-0000-0000-000000000001', @ValidToUtc='2026-03-01T00:00:00';" }
-      @{ Name = 'reactivation without a strict gap'; Query = "EXEC [ATAPUtilities].[ReactivatePhiloteValidityPeriod] @PhiloteId='cccccccc-cccc-cccc-cccc-cccccccccccc', @PhiloteValidityPeriodId='30000000-0000-0000-0000-000000000002', @ValidFromUtc='2026-02-01T00:00:00';" }
-      @{ Name = 'split at the included start'; Query = "EXEC [ATAPUtilities].[SplitPhiloteValidityPeriod] @PhiloteId='cccccccc-cccc-cccc-cccc-cccccccccccc', @PhiloteValidityPeriodId='30000000-0000-0000-0000-000000000001', @ExpectedValidFromUtc='2026-01-01T00:00:00', @ExpectedValidToUtc='2026-02-01T00:00:00', @SplitUtc='2026-01-01T00:00:00', @NewLaterPhiloteValidityPeriodId='30000000-0000-0000-0000-000000000003';" }
-      @{ Name = 'stale delete boundary'; Query = "EXEC [ATAPUtilities].[DeletePhiloteValidityPeriod] @PhiloteId='cccccccc-cccc-cccc-cccc-cccccccccccc', @PhiloteValidityPeriodId='30000000-0000-0000-0000-000000000001', @ExpectedValidFromUtc='2026-01-02T00:00:00', @ExpectedValidToUtc='2026-02-01T00:00:00';" }
+      @{ Name = 'closing a bounded row'; ExpectedMessage = '*expected open validity period was not found*'; Query = "EXEC [ATAPUtilities].[CloseCurrentPhiloteValidityPeriod] @PhiloteId='cccccccc-cccc-cccc-cccc-cccccccccccc', @ExpectedPhiloteValidityPeriodId='30000000-0000-0000-0000-000000000001', @ValidToUtc='2026-03-01T00:00:00';" }
+      @{ Name = 'reactivation without a strict gap'; ExpectedMessage = '*must begin after a strict gap*'; Query = "EXEC [ATAPUtilities].[ReactivatePhiloteValidityPeriod] @PhiloteId='cccccccc-cccc-cccc-cccc-cccccccccccc', @PhiloteValidityPeriodId='30000000-0000-0000-0000-000000000002', @ValidFromUtc='2026-02-01T00:00:00';" }
+      @{ Name = 'split at the included start'; ExpectedMessage = '*SplitUtc must be strictly inside*'; Query = "EXEC [ATAPUtilities].[SplitPhiloteValidityPeriod] @PhiloteId='cccccccc-cccc-cccc-cccc-cccccccccccc', @PhiloteValidityPeriodId='30000000-0000-0000-0000-000000000001', @ExpectedValidFromUtc='2026-01-01T00:00:00', @ExpectedValidToUtc='2026-02-01T00:00:00', @SplitUtc='2026-01-01T00:00:00', @NewLaterPhiloteValidityPeriodId='30000000-0000-0000-0000-000000000003';" }
+      @{ Name = 'stale delete boundary'; ExpectedMessage = '*expected validity period is stale or absent*'; Query = "EXEC [ATAPUtilities].[DeletePhiloteValidityPeriod] @PhiloteId='cccccccc-cccc-cccc-cccc-cccccccccccc', @PhiloteValidityPeriodId='30000000-0000-0000-0000-000000000001', @ExpectedValidFromUtc='2026-01-02T00:00:00', @ExpectedValidToUtc='2026-02-01T00:00:00';" }
     )
 
     foreach ($invalidCase in $invalidCases) {
@@ -450,7 +582,7 @@ EXEC [ATAPUtilities].[CreateFirstPhiloteValidityPeriod]
         $action = {
           Invoke-PhiloteTemporalValidityRows -Connection $connection -Transaction $transaction -Query $invalidCase.Query
         }
-        $action | Should -Throw -Because $invalidCase.Name
+        $action | Should -Throw -ExpectedMessage $invalidCase.ExpectedMessage -Because $invalidCase.Name
       }
       finally {
         if ($transaction.Connection) {
@@ -531,6 +663,8 @@ EXEC [ATAPUtilities].[ReactivatePhiloteValidityPeriod]
 
       @($tasks | Where-Object Status -EQ 'RanToCompletion').Count | Should -Be 1
       @($tasks | Where-Object IsFaulted).Count | Should -Be 1
+      ($tasks | Where-Object IsFaulted | Select-Object -First 1).Exception.ToString() |
+        Should -Match 'already has an open validity period'
 
       foreach ($task in $tasks | Where-Object Status -EQ 'RanToCompletion') {
         $task.Result.Dispose()

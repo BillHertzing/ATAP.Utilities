@@ -12,9 +12,9 @@ Entity Framework Core abstractions, Flyway migration helpers
 
 | Source File    | Last Modified            |
 | -------------- | ------------------------ |
-| main-instructions.md | 2026-08-02 00:04:07 |
+| main-instructions.md | 2026-08-09 18:26:31 |
 | ai-local.md | 2026-08-01 13:56:58 |
-| CLAUDE.md (combined) | 2026-08-02 15:01:44 |
+| CLAUDE.md (combined) | 2026-08-09 18:33:12 |
 
 ---
 
@@ -256,6 +256,13 @@ All agents operate on **Windows** inside **Visual Studio Code**. Use **PowerShel
 - When running Pester, NEVER use `-NoProfile`. Always allow PowerShell profiles:
   `pwsh -Command "Invoke-Pester -Path '<path>' -Output Detailed"`
 - For ATAP repository work, do not pass `-NoProfile` unless the task is explicitly auditing no-profile behavior. PowerShell profiles populate `$global:settings`, and BuildTooling resolves host/user configuration through `Get-PVal`; stripping profiles changes configuration resolution and can create misleading failures.
+- **PowerShell 7 inter-host remoting (R-39):** Every PowerShell remoting connection
+  between hosts in the ATAP organization must explicitly select the PowerShell 7
+  endpoint with `-ConfigurationName 'PowerShell.7'` (for example on
+  `New-PSSession`, `Invoke-Command`, or `Enter-PSSession`). Never silently fall back
+  to the default Windows PowerShell endpoint. If `PowerShell.7` is unavailable, fail
+  closed and repair or register that endpoint through a separately approved
+  administrative action before continuing.
 - If requirements are ambiguous, ask from one to five clarifying question before generating commands
 - **Bash tool override (R-01):** If `tools.bash.command` is configurable, set it to `pwsh`.
   In the Bash/terminal tool, ALL commands must be PowerShell. Never send bare PowerShell

@@ -13,6 +13,7 @@ BeforeAll {
     'Set-WorktreeJunctions',
     'Initialize-DownstreamSprintFromSharedVSCode',
     'Initialize-SprintAIAdapters',
+    'Invoke-SprintAIAdapterLifecycle',
     'Set-SprintBoundaryContext',
     'Set-ClaudeSettingsSymlink',
     'Set-PowerShell7ProfileSymlink',
@@ -58,6 +59,23 @@ BeforeAll {
 
   function global:Initialize-SprintAIAdapters {
     $global:stage2DatabaseResetCalls.Add('Initialize-SprintAIAdapters') | Out-Null
+  }
+
+  # New-SprintStage2 now invokes the generic lifecycle once after all worktrees
+  # exist. Keep this fixture isolated while preserving its successful contract.
+  function global:Invoke-SprintAIAdapterLifecycle {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param(
+      [string]$Boundary,
+      [string]$TargetRoot,
+      [string]$SharedVSCodeWorktreePath,
+      [switch]$FixtureMode,
+      [switch]$AllowUserGlobalWrite,
+      [switch]$CheckpointConfirmed,
+      [string]$EvidenceRoot,
+      [switch]$OmitSprintWorktrees
+    )
+    [PSCustomObject]@{ DriftClean = $true; Results = @(); ChangedCount = 0; Idempotent = $true }
   }
 
   # Task 12.2.b: New-SprintStage2 provisions each worktree via the single Start

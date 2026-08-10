@@ -1934,6 +1934,46 @@ PowerShell 7 (`pwsh`) endpoint; WinRM profile loading is separate work. Windows 
 normally exposes the cmdlets directly. The module runbook records the exact
 compatibility checks and these live findings:
 
+#### Add a new host to existing clients' TrustedHosts
+
+For a workgroup host, add the new host name to the WinRM client `TrustedHosts` list on
+every existing management host before using Negotiate authentication. Run the following
+in an elevated PowerShell session on each existing host. It preserves all existing entries,
+does not add duplicates, and intentionally does not use the insecure wildcard (`*`).
+
+```powershell
+$newHost = 'ncat040'
+$trustedHostsPath = 'WSMan:\localhost\Client\TrustedHosts'
+$oldValue = (Get-Item -Path $trustedHostsPath).Value
+$trustedHosts = @(
+  $oldValue -split ',' |
+    ForEach-Object { $_.Trim() } |
+    Where-Object { $_ }
+)
+
+if ($trustedHosts -notcontains $newHost) {
+  $newValue = @($trustedHosts + $newHost) -join ','
+  Set-Item -Path $trustedHostsPath -Value $newValue -Force
+}
+
+(Get-Item -Path $trustedHostsPath).Value
+```
+
+When this changes `utat022`, record the corresponding `utat01` work in the parity
+journal. Do not record passwords or any other secret values.
+
+```powershell
+Add-ParityChangeEntry `
+  -Category 'Other' `
+  -Item 'WinRM Client TrustedHosts' `
+  -OldValue '<previous TrustedHosts value>' `
+  -NewValue '<updated TrustedHosts value>' `
+  -PeerHostName 'utat01' `
+  -PeerActionKind Command `
+  -PeerAction "Add 'ncat040' to WSMan:\localhost\Client\TrustedHosts, preserving existing entries." `
+  -Reason 'Enable authenticated WinRM management of the new ncat040 host.'
+```
+
 - the registration script must be dot-sourced before calling
   `Register-ParityScheduledTasks`; invoking the file with `&` intentionally performs no
   registration;

@@ -1,8 +1,13 @@
 BeforeAll {
-  Import-Module ATAP.Utilities.BuildTooling.PowerShell -Force
+  Import-Module ATAP.Utilities.BuildTooling.Common.PowerShell -Force
 }
 
-Describe 'Resolve-WorkspaceFiles [private]' {
+Describe 'Resolve-WorkspaceFiles [public]' {
+  It 'resolves from the Common child module' {
+    (Get-Command -Name 'Resolve-WorkspaceFiles').Source |
+      Should -Be 'ATAP.Utilities.BuildTooling.Common.PowerShell'
+  }
+
   BeforeAll {
     $script:tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "rws_test_$([guid]::NewGuid().ToString('N'))"
     New-Item -ItemType Directory -Path $script:tempDir -Force | Out-Null
@@ -19,7 +24,7 @@ Describe 'Resolve-WorkspaceFiles [private]' {
 
       $result = Resolve-WorkspaceFiles -WorkspaceFiles @($wsFile)
       $result.Count | Should -Be 1
-      $result[0] | Should -Be (Resolve-Path $wsFile).ProviderPath
+      @($result)[0] | Should -Be (Resolve-Path $wsFile).ProviderPath
     }
 
     It 'Resolves multiple files' {

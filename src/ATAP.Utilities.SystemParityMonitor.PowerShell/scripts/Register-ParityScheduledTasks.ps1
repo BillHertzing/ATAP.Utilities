@@ -422,17 +422,23 @@ function Register-ParityScheduledTasks {
         throw "Task-action script was not found at '$scriptPath'."
       }
 
-      $action = New-ScheduledTaskAction -Execute $pwshPath `
-        -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$scriptPath`" $($definition.Arguments)"
-      $trigger = New-ParityScheduledTaskTrigger -Cadence $Cadence -At $definition.At -BiWeeklyDaysOfWeek $BiWeeklyDaysOfWeek
-      $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
-        -AllowStartIfOnBatteries `
-        -DontStopIfGoingOnBatteries `
-        -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Hours 2)
-      $principal = New-ScheduledTaskPrincipal -UserId $UserId -LogonType $LogonType -RunLevel $RunLevel
+      # UTAT01's PowerShell 7 endpoint intentionally cannot discover the inbox
+      # ScheduledTasks module. Credential-backed S4U registration uses Task Scheduler
+      # COM exclusively, so do not resolve any ScheduledTasks cmdlet on that path.
+      $usesComS4URegistration = $LogonType -eq 'S4U' -and $null -ne $Credential
+      if (-not $usesComS4URegistration) {
+        $action = New-ScheduledTaskAction -Execute $pwshPath `
+          -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$scriptPath`" $($definition.Arguments)"
+        $trigger = New-ParityScheduledTaskTrigger -Cadence $Cadence -At $definition.At -BiWeeklyDaysOfWeek $BiWeeklyDaysOfWeek
+        $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
+          -AllowStartIfOnBatteries `
+          -DontStopIfGoingOnBatteries `
+          -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Hours 2)
+        $principal = New-ScheduledTaskPrincipal -UserId $UserId -LogonType $LogonType -RunLevel $RunLevel
+      }
 
       if ($PSCmdlet.ShouldProcess("$($definition.TaskName) -> $scriptPath", 'Register scheduled task')) {
-        if ($LogonType -eq 'S4U' -and $Credential) {
+        if ($usesComS4URegistration) {
           Register-ParityScheduledTaskS4U `
             -TaskName $definition.TaskName -TaskPath $TaskPath -PwshPath $pwshPath `
             -Arguments "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$scriptPath`" $($definition.Arguments)" `

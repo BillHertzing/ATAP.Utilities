@@ -1,6 +1,6 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
-## 0.1.11 release candidate (unreleased)
+## 0.1.12 release candidate (unreleased)
 
 This candidate is not yet built, promoted, installed, or deployed. Permission-profile
 ACL follow-up remains in flight, so the module is not yet release-ready.
@@ -29,6 +29,9 @@ ACL follow-up remains in flight, so the module is not yet release-ready.
   than `Win32_Service`. The approved non-inheriting WMI ACE remains unchanged: it is too
   narrow for the deployed service identity's WMI query and must not be widened to method
   execution. SCM status queries preserve least privilege and restore instance discovery.
+- Do not resolve the Windows PowerShell `ScheduledTasks` cmdlets when performing the
+  credential-backed S4U Task Scheduler COM registration path. This keeps UTAT01's
+  PowerShell 7 endpoint able to re-register its S4U/Limited audit task.
 
 ## 0.1.8 (published and deployed 2026-08-09)
 

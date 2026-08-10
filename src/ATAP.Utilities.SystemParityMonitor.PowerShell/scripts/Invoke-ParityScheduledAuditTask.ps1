@@ -130,6 +130,8 @@ function Invoke-ParityScheduledAuditTask {
         EventLog = $eventLogResult
         FailureState = $failureState
         ErrorType = $primaryError.Exception.GetType().FullName
+        ErrorMessage = $primaryError.Exception.Message
+        FullyQualifiedErrorId = $primaryError.FullyQualifiedErrorId
       } | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $resultPath -Encoding utf8
     } catch {
       # Preserve the audit failure as the primary scheduled-task outcome.

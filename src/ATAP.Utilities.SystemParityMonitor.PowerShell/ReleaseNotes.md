@@ -1,9 +1,14 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
+## 0.1.13 release candidate (unreleased)
+
+- Persist a scheduled-task failure's exception message and fully qualified error identifier in the task-result JSON, so S4U failures can be diagnosed without interactive logon.
+
 ## 0.1.12 release candidate (unreleased)
 
 This candidate is not yet built, promoted, installed, or deployed. Permission-profile
-ACL follow-up remains in flight, so the module is not yet release-ready.
+ACL follow-up remains in flight, so the module is not yet release-ready. The candidate's
+version must not be used to describe the installed host tasks.
 
 - Add identity-explicit configured path collection for pip, npm, and NuGet global
   tools. Missing configuration is a status, not an implicit audit of the
@@ -32,6 +37,19 @@ ACL follow-up remains in flight, so the module is not yet release-ready.
 - Do not resolve the Windows PowerShell `ScheduledTasks` cmdlets when performing the
   credential-backed S4U Task Scheduler COM registration path. This keeps UTAT01's
   PowerShell 7 endpoint able to re-register its S4U/Limited audit task.
+
+## 0.1.10 (published and deployed 2026-08-10)
+
+- Deployed to both hosts from the immutable package with SHA-256
+  `70449CD9636D8D3880CF6ED26E69AF7296213AC27B239427E0B3AEF1C37E6BB1`.
+- Repaired the scheduled audit and compare actions to the installed `0.1.10` module
+  root and supplied the validated package-manager profile configuration path.
+- Live evidence confirms successful fresh audit and compare task results, token-free
+  task metadata, and no stale or missing/thin coverage in that run. It also records
+  123 undeclared drift rows, so it is not the two-consecutive-clean-compare acceptance
+  required by Task 14.74.
+- This deployment does not verify least-privilege grants, event-source registration,
+  SEQ forwarding, notification, or paging.
 
 ## 0.1.8 (published and deployed 2026-08-09)
 

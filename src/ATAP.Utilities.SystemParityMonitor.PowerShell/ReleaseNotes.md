@@ -1,6 +1,6 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
-## 0.1.9 release candidate (unreleased)
+## 0.1.11 release candidate (unreleased)
 
 This candidate is not yet built, promoted, installed, or deployed. Permission-profile
 ACL follow-up remains in flight, so the module is not yet release-ready.
@@ -25,6 +25,10 @@ ACL follow-up remains in flight, so the module is not yet release-ready.
   read surfaces. It validates exact hosts, accounts, paths, and SQL instances, supports
   `ShouldProcess`, verifies applied access, and does not accept credentials. Its
   permission-profile ACL follow-up is not yet settled.
+- Collect SQL engine discovery through the Service Control Manager (`Get-Service`) rather
+  than `Win32_Service`. The approved non-inheriting WMI ACE remains unchanged: it is too
+  narrow for the deployed service identity's WMI query and must not be widened to method
+  execution. SCM status queries preserve least privilege and restore instance discovery.
 
 ## 0.1.8 (published and deployed 2026-08-09)
 

@@ -52,6 +52,27 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit', 'Pa
     $snapshot.SnapshotPath | Should -Be $snapshotPath
   }
 
+  It 'discovers SQL engine services through SCM without querying Win32_Service' {
+    InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' {
+      Mock -CommandName Get-Service -ParameterFilter { $Name -eq 'MSSQL$*' } -MockWith {
+        @(
+          [pscustomobject]@{ Name = 'MSSQL$PRODUCTION'; Status = 'Running' }
+          [pscustomobject]@{ Name = 'MSSQL$QA'; Status = 'Stopped' }
+        )
+      }
+      Mock -CommandName Get-CimInstance -MockWith { throw 'Win32_Service must not be queried for SQL engine discovery.' }
+
+      $surfaces = @(Get-SqlParitySurfaces)
+
+      ($surfaces | Where-Object { $_.Item -eq 'InstanceNames' }).Source | Should -Be 'Get-Service'
+      ($surfaces | Where-Object { $_.Item -eq 'InstanceNames' }).Value | Should -Be 'PRODUCTION;QA'
+      ($surfaces | Where-Object { $_.Item -eq 'Instance/PRODUCTION/EngineService' }).Value |
+        Should -Be 'Running|<not-collected>|<not-collected>'
+      Assert-MockCalled -CommandName Get-Service -Times 1 -Exactly -ParameterFilter { $Name -eq 'MSSQL$*' }
+      Assert-MockCalled -CommandName Get-CimInstance -Times 0 -Exactly
+    }
+  }
+
   It 'collects package versions and flags normalized cross-manager ownership conflicts' {
     InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' {
       Mock -CommandName Get-Command -ParameterFilter {

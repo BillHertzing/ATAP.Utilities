@@ -4,18 +4,22 @@ function Get-SqlParitySurfaces {
 
   $surfaces = [System.Collections.Generic.List[object]]::new()
   $localAccountPrefix = [regex]::Escape("$env:COMPUTERNAME\")
-  $engineServices = @(Get-CimInstance -ClassName Win32_Service -Filter "Name LIKE 'MSSQL$%'" -ErrorAction SilentlyContinue |
+  # `SvcParityAudit` has only the approved root\cimv2 Enable/RemoteEnable ACE. That
+  # is intentionally insufficient for the Win32_Service query on the deployed hosts.
+  # Service Control Manager status queries provide the identity with the required
+  # engine discovery without widening the WMI namespace to method execution.
+  $engineServices = @(Get-Service -Name 'MSSQL$*' -ErrorAction SilentlyContinue |
       Where-Object Name -ne 'MSSQLSERVER' | Sort-Object Name)
   $instanceNames = @($engineServices | ForEach-Object { $_.Name.Substring(6) })
   $surfaces.Add([pscustomobject]@{
-      Category = 'SQL'; Item = 'InstanceNames'; Value = ($instanceNames -join ';'); Source = 'Win32_Service'
+      Category = 'SQL'; Item = 'InstanceNames'; Value = ($instanceNames -join ';'); Source = 'Get-Service'
     })
 
   foreach ($service in $engineServices) {
     $instanceName = $service.Name.Substring(6)
     $prefix = "Instance/$instanceName"
     $surfaces.Add([pscustomobject]@{
-        Category = 'SQL'; Item = "$prefix/EngineService"; Value = "$($service.State)|$($service.StartMode)|$($service.StartName)"; Source = 'Win32_Service'
+        Category = 'SQL'; Item = "$prefix/EngineService"; Value = "$($service.Status)|<not-collected>|<not-collected>"; Source = 'Get-Service'
       })
     try {
       $instanceId = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\Instance Names\SQL' -ErrorAction Stop).$instanceName

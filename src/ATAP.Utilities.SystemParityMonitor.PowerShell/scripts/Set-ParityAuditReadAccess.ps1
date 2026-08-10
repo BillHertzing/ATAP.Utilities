@@ -44,7 +44,7 @@ function Grant-ParityWmiCimv2ReadAccess {
     $fn = 'Grant-ParityWmiCimv2ReadAccess'
     $mn = 'ATAP.Utilities.SystemParityMonitor.PowerShell'
     $namespace = 'root\cimv2'
-    $requiredAccessMask = 0x21 # WBEM_ENABLE (1) + WBEM_REMOTE_ACCESS (32)
+    [uint32] $requiredAccessMask = 0x21 # WBEM_ENABLE (1) + WBEM_REMOTE_ACCESS (32)
   }
 
   process {
@@ -73,8 +73,8 @@ function Grant-ParityWmiCimv2ReadAccess {
       }
       $ace = New-CimInstance -ClientOnly -Namespace $namespace -ClassName 'Win32_ACE' -Property @{
         AccessMask = $requiredAccessMask
-        AceFlags   = 0
-        AceType    = 0
+        AceFlags   = [uint32] 0
+        AceType    = [uint32] 0
         Trustee    = $trustee
       }
       $descriptorResult.Descriptor.DACL = @($descriptorResult.Descriptor.DACL) + $ace

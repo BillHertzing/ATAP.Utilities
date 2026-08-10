@@ -1,6 +1,7 @@
 BeforeAll {
   $scriptPath = Join-Path $PSScriptRoot '..\..\scripts\Set-ParityAuditReadAccess.ps1'
   . $scriptPath
+  $script:grantParityWmiFunction = ${function:Grant-ParityWmiCimv2ReadAccess}
 
   if (-not (Get-Command -Name 'Write-PSFMessage' -ErrorAction SilentlyContinue)) {
     function Write-PSFMessage { param($FunctionName, $ModuleName, $Level, $Message) }
@@ -290,6 +291,50 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
     $source | Should -Match 'Namespace \$namespace -ClassName ''__SystemSecurity'''
     $source | Should -Match "MethodName 'SetSecurityDescriptor'"
     $source | Should -Match "MethodName 'GetSecurityDescriptor'"
+  }
+
+  It 'constructs every Win32_ACE numeric property as UInt32 for CIM schema compatibility' {
+    $script:setDescriptor = $null
+    $script:acePropertyTypes = $null
+    $script:securityCimInstance = New-CimInstance -ClientOnly -Namespace 'root\cimv2' -ClassName '__SystemSecurity'
+    Mock Get-CimInstance { $script:securityCimInstance }
+    Mock New-CimInstance {
+      if ($ClassName -eq 'Win32_Trustee') {
+        return [pscustomobject] $Property
+      }
+      if ($ClassName -eq 'Win32_ACE') {
+        $script:acePropertyTypes = [pscustomobject]@{
+          AccessMask = $Property.AccessMask.GetType()
+          AceFlags   = $Property.AceFlags.GetType()
+          AceType    = $Property.AceType.GetType()
+        }
+        return [pscustomobject] $Property
+      }
+    }
+    Mock Invoke-CimMethod {
+      if ($MethodName -eq 'SetSecurityDescriptor') {
+        $script:setDescriptor = $Arguments.Descriptor
+        return [pscustomobject]@{ ReturnValue = 0 }
+      }
+      $descriptor = if ($null -eq $script:setDescriptor) {
+        [pscustomobject]@{ DACL = @() }
+      }
+      else {
+        $script:setDescriptor
+      }
+      [pscustomobject]@{ ReturnValue = 0; Descriptor = $descriptor }
+    }
+
+    $result = & $script:grantParityWmiFunction `
+      -ComputerName ([Environment]::MachineName) `
+      -AccountName ([Security.Principal.WindowsIdentity]::GetCurrent().Name) `
+      -Confirm:$false
+
+    $result.Compliant | Should -BeTrue
+    $script:acePropertyTypes.AccessMask | Should -Be ([uint32])
+    $script:acePropertyTypes.AceFlags | Should -Be ([uint32])
+    $script:acePropertyTypes.AceType | Should -Be ([uint32])
+    Assert-MockCalled Invoke-CimMethod -Times 1 -Exactly -ParameterFilter { $MethodName -eq 'SetSecurityDescriptor' }
   }
 
   It 'contains only function definitions at script load' {

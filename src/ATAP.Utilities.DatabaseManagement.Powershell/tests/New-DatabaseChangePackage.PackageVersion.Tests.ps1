@@ -26,7 +26,20 @@ Describe 'New-DatabaseChangePackage -PackageVersion' {
     @{
       version = '0.1-Sprint.{height}'
     } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $dbRoot 'version.json') -Encoding UTF8
-    "PRINT 'no-op';" | Set-Content -LiteralPath (Join-Path $migrationRoot 'V1__noop.sql') -Encoding UTF8
+    $migrationPath = Join-Path $migrationRoot 'V1__noop.sql'
+    "PRINT 'no-op';" | Set-Content -LiteralPath $migrationPath -Encoding UTF8
+    [ordered]@{
+      schemaVersion = 1
+      packageId     = 'ATAPUtilities.Database'
+      sourceVersion = '0.1-Sprint.{height}'
+      files         = @(
+        [ordered]@{
+          path   = 'SQL/V1__noop.sql'
+          kind   = 'migration'
+          sha256 = (Get-FileHash -LiteralPath $migrationPath -Algorithm SHA256).Hash
+        }
+      )
+    } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $dbRoot 'package-content-allowlist.json') -Encoding UTF8
 
     $nupkg = New-DatabaseChangePackage `
       -Application 'ATAPUtilities' `

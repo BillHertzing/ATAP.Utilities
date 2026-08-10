@@ -4,18 +4,11 @@ This file lists all subfolders and key documents in the `Database/` folder of th
 
 ## Subfolders
 
-- [Flyway/](Flyway/) — Canonical ATAPUtilities database package root. `version.json` controls the `ATAPUtilities.Database` package version; `SQL/` contains the immutable applied baseline, CSV loaders, and forward migrations; `Data/` contains all seed CSVs. `V00.01.000010` retains its historically applied bytes, while the Sprint 0012/0013 instantiation, durable RRSBS, typed-membership retirement, invariant, and effective-dating changes remain forward migrations `V00.02.000060` through `V00.02.000100`. The former split source directory was retired after those migrations were moved into the canonical `SQL/` location.
+- [Flyway/](Flyway/) — Canonical source for `ATAPUtilities.Database` `0.1.0`. The active V3 package contains exactly one migration, `SQL/V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql`, and eleven seed CSVs under `Data/`; `Repeatable/` currently contributes no package content. [package-content-allowlist.json](Flyway/package-content-allowlist.json) freezes the exact path, kind, and SHA-256 of all twelve database-content files and the package builder fails closed when active content differs. Historical V1/V2 and pre-adoption V3 migrations remain under `Archive/` and are never traversed by the active package builder.
 
-  > **Running Flyway:** use `Database/Flyway/flyway.toml`, whose only migration location is `SQL/`. Never fold forward changes into an already-applied migration. Existing tiers at `00.02.000040` validate with `000060`-`000100` pending until a separately reviewed promotion applies them.
+  > **Running Flyway:** use `Database/Flyway/flyway.toml`, whose only migration location is `SQL/`. Never add a package-content file without deliberately updating and reviewing the allowlist, and never fold forward changes into an already-applied migration.
 - [Documentation/](Documentation/Index.md) — PlantUML diagrams and Markdown design documents for the database schema and package promotion pipeline. See [Documentation/Index.md](Documentation/Index.md) for the full contents list.
-- `Flyway/SQL/V00.02.000130__Add_Markdown_Rule_Kind.sql` and
-  `Flyway/SQL/V00.02.000140__Seed_ATAPorg_Instantiation_V2_Markdown.sql` —
-  Task 13.85's forward-only Markdown Kind and immutable InstantiationVersion 2
-  migrations. Migration 000120 is reserved for the future ContentSummary slice
-  and must not be included in the Task 13.85 package.
-- `Verify/PromotionUnit_00.02/Verify_ATAPorg_Instantiation_V2_Markdown.sql` —
-  verifies the Kind, composition, exact source lines and hashes, ordered graph,
-  Version 1 immutability, and three Version 2 manifestation artifacts.
+- `Flyway/Archive/` — retained historical migration lineage. Archive files are evidence and recovery inputs, not active package content.
 - [Powershell/](Powershell/) — PowerShell cmdlets for database management operations (rebuild, backup, restore, provisioning). Public functions are in `Powershell/public/`.
 - [Queries/](Queries/) — Ad-hoc and reference SQL query scripts for reporting and diagnostics against the ATAPUtilities schema.
 - [StoredProcedures/](StoredProcedures/) — SQL scripts for stored procedures that are applied to the database after schema migrations.
@@ -23,7 +16,8 @@ This file lists all subfolders and key documents in the `Database/` folder of th
 
 ## Key Root Documents
 
-- [../SolutionDocumentation/ATAPUtilities-Database-0.1.3-Release-Record.md](../SolutionDocumentation/ATAPUtilities-Database-0.1.3-Release-Record.md) — Live BuildMaster/ProGet release record for migrations `000060`-`000110` and `000130`-`000140`: stable artifact hash, per-tier Flyway proof, deferred `000120` exclusion, backups, Production legacy checksum reconciliation, and recovered failure modes.
+- [../SolutionDocumentation/ATAPUtilities-Database-0.1.0-V3-Experimental-Release-Record.md](../SolutionDocumentation/ATAPUtilities-Database-0.1.0-V3-Experimental-Release-Record.md) — Durable release record for the active V3 `0.1.0` package deployed only to logical Experimental and exact `ATAPUtilities` on `utat022\expWhertzing`.
+- [../SolutionDocumentation/ATAPUtilities-Database-0.1.3-Release-Record.md](../SolutionDocumentation/ATAPUtilities-Database-0.1.3-Release-Record.md) — Historical release record for the retired pre-V3 package lineage. It is not the active package definition.
 - [Documentation/FolderStructure.md](Documentation/FolderStructure.md) — Annotated tree of the entire `Database/` folder structure.
 - [Documentation/README.RRSBS.md](Documentation/README.RRSBS.md) — Overview of the Rules, Rule Sets, and Build Sets subsystem in the ATAPUtilities database.
 - [Documentation/PROMOTION_SUMMARY.md](Documentation/PROMOTION_SUMMARY.md) — Executive summary of the database package promotion process.

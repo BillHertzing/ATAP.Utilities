@@ -78,6 +78,7 @@ public static class RrsbsContractSerializer
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     GenerationMode = JsonSourceGenerationMode.Metadata,
+    RespectRequiredConstructorParameters = true,
     UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow)]
 [JsonSerializable(typeof(RrsbsPayloadEnvelope))]
 [JsonSerializable(typeof(RuleContractV1_1))]

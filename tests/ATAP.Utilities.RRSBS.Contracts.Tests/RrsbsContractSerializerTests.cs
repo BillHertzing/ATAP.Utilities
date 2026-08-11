@@ -56,6 +56,14 @@ public sealed class RrsbsContractSerializerTests
         Assert.Equal("Release", result.Steps[0].Inputs["configuration"]);
     }
 
+    [Theory]
+    [InlineData("{\"contractType\":\"rrsbs.rule\",\"schemaVersion\":\"1.1.0\",\"payload\":{\"ruleId\":\"e5ac7fba-a554-41cc-9b1c-96aba88d801b\",\"language\":\"CSharp\",\"purpose\":null,\"steps\":[]}}")]
+    [InlineData("{\"contractType\":\"rrsbs.rule\",\"schemaVersion\":\"1.1.0\",\"payload\":{\"ruleId\":\"e5ac7fba-a554-41cc-9b1c-96aba88d801b\",\"name\":\"compile\",\"language\":\"CSharp\",\"purpose\":null,\"steps\":[],\"unexpected\":true}}")]
+    public void DeserializeRule_InvalidPayloadShape_Rejects(string fixture)
+    {
+        Assert.Throws<JsonException>(() => RrsbsContractSerializer.DeserializeRule(fixture));
+    }
+
     [Fact]
     public void Assemblies_KeepPersistenceContractAndDomainModelsDistinct()
     {

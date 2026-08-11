@@ -86,7 +86,7 @@ Describe 'Elevation broker artifacts' {
     $entry.commandType | Should -Be 'module'
     $entry.moduleName | Should -Be 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
     $entry.commandName | Should -Be 'Register-ATAPParityScheduledTasks'
-    $entry.minimumModuleVersion | Should -Be '0.1.16'
+    $entry.minimumModuleVersion | Should -Be '0.1.17'
     @($entry.allowedParameters).Count | Should -Be 1
     $entry.allowedParameters[0].name | Should -Be 'ModuleVersion'
     $entry.allowedParameters[0].pattern | Should -Be '^\d+\.\d+\.\d+(\.\d+)?$'
@@ -107,15 +107,23 @@ Describe 'Elevation broker artifacts' {
       $installerText | Should -Match "(?m)^\s+$field\s+="
     }
     $installerText | Should -Match 'Automatic action rollback ALSO FAILED'
+  }
 
-    # R-34: both redirected streams must be draining before the wait, or a full buffer deadlocks.
-    $installerText.IndexOf('$stdoutTask = $process.StandardOutput.ReadToEndAsync()') |
-      Should -BeLessThan $installerText.IndexOf('$process.WaitForExitAsync($timeout.Token)')
+  It 'never shells out to schtasks for a task update' {
+    # schtasks /Change prompts for the run-as password even on an S4U task, which has no
+    # password. With stdin inherited it hung the broker; with stdin closed it failed with
+    # "Please enter the run as password for SvcParityAudit:" (both 2026-08-11). Task
+    # Scheduler COM is the only mechanism that can update either logon type.
+    $installerPath = Join-Path $script:ModuleRoot 'public\Register-ATAPParityScheduledTasks.ps1'
+    $installerText = Get-Content -LiteralPath $installerPath -Raw
 
-    # stdin must be closed: schtasks PROMPTS for the run-as password on a Password-logon task,
-    # and an open stdin turned that prompt into an indefinite broker hang on 2026-08-11.
-    $installerText.IndexOf('$process.StandardInput.Close()') |
-      Should -BeLessThan $installerText.IndexOf('$process.WaitForExitAsync($timeout.Token)')
+    $installerText | Should -Not -Match 'System32\\\\schtasks\.exe'
+    $installerText | Should -Not -Match "'/Change'"
+    $installerText | Should -Match 'RegisterTaskDefinition'
+    # Both logon types must be handled, and S4U must pass a null password.
+    $installerText | Should -Match '\$TASK_LOGON_S4U\s*=\s*2'
+    $installerText | Should -Match '\$TASK_LOGON_PASSWORD\s*=\s*1'
+    $installerText | Should -Match '\$TASK_CREATE_OR_UPDATE\s*=\s*4'
   }
 
   Context 'parity installer host policy (Task 14.72.c)' {
@@ -280,9 +288,10 @@ Describe 'Elevation broker artifacts' {
       }
     }
 
-    It 'produces a task action within the schtasks /TR limit' {
-      # The 261-character /TR limit blocked the direct-script action on 2026-08-11. Prove the
-      # longest approved dispatcher action clears it with room to spare.
+    It 'keeps the task action short enough for any scheduler surface' {
+      # The 261-character schtasks /TR limit blocked the direct versioned-script action on
+      # 2026-08-11. COM has no such limit, but the dispatcher action stays well under it so
+      # the task remains editable by every scheduler tool, including schtasks and the GUI.
       $pwshPath = 'C:\Program Files\PowerShell\7\pwsh.exe'
       $dispatcher = 'C:\Program Files\ATAP\ParityDispatchers\ATAP-ParityCompare.ps1'
       $taskRun = "`"$pwshPath`" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$dispatcher`""

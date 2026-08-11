@@ -203,54 +203,62 @@ function Register-ATAPParityScheduledTasks {
       }
     }
 
-    # schtasks path, used only for the S4U migration. stdin is redirected and closed
-    # immediately: on a Password-logon task schtasks PROMPTS for the run-as password, and an
-    # inherited console turns that prompt into an indefinite hang inside the broker (observed
-    # 2026-08-11). Closing stdin converts that into a prompt failure we can report.
+    # Task Scheduler COM is the only viable update mechanism, for EITHER logon type.
+    #
+    # `schtasks /Change /TR` was tried first and cannot work: it prompts for the run-as
+    # password even on an S4U task, which has no password at all. With stdin inherited that
+    # prompt hung the broker indefinitely; with stdin closed it fails with
+    # "Please enter the run as password for SvcParityAudit:" (both observed 2026-08-11).
+    # The schtasks path was removed rather than left in place as a trap. Note it reached the
+    # prompt, which means the scheduler ACL was already sufficient -- the blocker was the
+    # credential mechanism, not permission.
+    #
+    # COM updates only the Exec action on an otherwise untouched definition:
+    #   * S4U      -> null password with TASK_LOGON_S4U; no credential is needed or resolved.
+    #   * Password -> credential re-supplied with TASK_LOGON_PASSWORD, because Task Scheduler
+    #                 will not carry a stored password through a definition update.
     $invokeTaskActionChange = {
       param(
-        [Parameter(Mandatory = $true)] [string] $TaskPath,
-        [Parameter(Mandatory = $true)] [string] $TaskRun
+        [Parameter(Mandatory = $true)] $TaskFolder,
+        [Parameter(Mandatory = $true)] [string] $TaskName,
+        [Parameter(Mandatory = $true)] [string] $Command,
+        [Parameter(Mandatory = $true)] [string] $Arguments,
+        [Parameter(Mandatory = $true)] [string] $LogonType,
+        [Parameter(Mandatory = $false)] [System.Management.Automation.PSCredential] $Credential
       )
 
-      if ($TaskRun.Length -gt 261) {
-        throw "Approved task action exceeds the schtasks /TR limit: $($TaskRun.Length) characters."
+      $definition = $TaskFolder.GetTask($TaskName).Definition
+      $execActions = @($definition.Actions | Where-Object { $_.Type -eq 0 })
+      if ($execActions.Count -ne 1) {
+        throw "Task '$TaskName' must have exactly one Exec action."
       }
+      $execActions[0].Path = $Command
+      $execActions[0].Arguments = $Arguments
 
-      $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
-      $startInfo.FileName = Join-Path $env:SystemRoot 'System32\schtasks.exe'
-      $startInfo.UseShellExecute = $false
-      $startInfo.CreateNoWindow = $true
-      $startInfo.RedirectStandardOutput = $true
-      $startInfo.RedirectStandardError = $true
-      $startInfo.RedirectStandardInput = $true
-      foreach ($argument in @('/Change', '/TN', $TaskPath, '/TR', $TaskRun)) {
-        $null = $startInfo.ArgumentList.Add($argument)
-      }
+      $TASK_CREATE_OR_UPDATE = 4
+      $TASK_LOGON_PASSWORD = 1
+      $TASK_LOGON_S4U = 2
 
-      $process = [System.Diagnostics.Process]::new()
-      $process.StartInfo = $startInfo
-      $null = $process.Start()
-      $process.StandardInput.Close()
-      # Drain both streams before waiting (R-34): a full redirected buffer deadlocks the wait.
-      $stdoutTask = $process.StandardOutput.ReadToEndAsync()
-      $stderrTask = $process.StandardError.ReadToEndAsync()
-      $timeout = [System.Threading.CancellationTokenSource]::new([TimeSpan]::FromSeconds(60))
       try {
-        $process.WaitForExitAsync($timeout.Token).GetAwaiter().GetResult()
+        if ($LogonType -eq 'Password') {
+          if (-not $Credential) {
+            throw 'A Password-logon task update requires the run-as credential.'
+          }
+          $null = $TaskFolder.RegisterTaskDefinition(
+            $TaskName, $definition, $TASK_CREATE_OR_UPDATE,
+            $Credential.UserName, $Credential.GetNetworkCredential().Password,
+            $TASK_LOGON_PASSWORD, $null)
+        }
+        else {
+          $null = $TaskFolder.RegisterTaskDefinition(
+            $TaskName, $definition, $TASK_CREATE_OR_UPDATE,
+            [string] $definition.Principal.UserId, $null,
+            $TASK_LOGON_S4U, $null)
+        }
       }
-      catch [System.OperationCanceledException] {
-        try { $process.Kill($true) } catch { }
-        throw "Timed out changing the approved action for '$TaskPath'."
-      }
-      finally {
-        $timeout.Dispose()
-      }
-
-      $stdout = $stdoutTask.GetAwaiter().GetResult()
-      $stderr = $stderrTask.GetAwaiter().GetResult()
-      if ($process.ExitCode -ne 0) {
-        throw "Task Scheduler refused the action update for '$TaskPath' (exit $($process.ExitCode)): $($stdout.Trim()) $($stderr.Trim())"
+      catch {
+        $hresult = try { '0x{0:X8}' -f $_.Exception.HResult } catch { '<unknown>' }
+        throw "Task Scheduler refused the action update for '$TaskName' ($hresult): $($_.Exception.Message)"
       }
     }
 
@@ -296,38 +304,8 @@ function Register-ATAPParityScheduledTasks {
       }
     }
 
-    # COM path, used only for the Password-logon migration. Task Scheduler will not preserve a
-    # stored password across a definition update, so the credential must be re-supplied. It is
-    # passed straight into RegisterTaskDefinition and never assigned to any variable that
-    # reaches output, a result file, or a transcript.
-    $invokeTaskActionChangeWithCredential = {
-      param(
-        [Parameter(Mandatory = $true)] $TaskFolder,
-        [Parameter(Mandatory = $true)] [string] $TaskName,
-        [Parameter(Mandatory = $true)] [string] $Command,
-        [Parameter(Mandatory = $true)] [string] $Arguments,
-        [Parameter(Mandatory = $true)] [System.Management.Automation.PSCredential] $Credential
-      )
-
-      $definition = $TaskFolder.GetTask($TaskName).Definition
-      $execActions = @($definition.Actions | Where-Object { $_.Type -eq 0 })
-      if ($execActions.Count -ne 1) {
-        throw "Task '$TaskName' must have exactly one Exec action."
-      }
-      $execActions[0].Path = $Command
-      $execActions[0].Arguments = $Arguments
-
-      # 4 = TASK_CREATE_OR_UPDATE, 1 = TASK_LOGON_PASSWORD.
-      $null = $TaskFolder.RegisterTaskDefinition(
-        $TaskName,
-        $definition,
-        4,
-        $Credential.UserName,
-        $Credential.GetNetworkCredential().Password,
-        1,
-        $null
-      )
-    }
+    # (Both logon types are handled by $invokeTaskActionChange above; there is deliberately
+    # only one task-mutation path, so an S4U and a Password update cannot drift apart.)
   }
 
   process {
@@ -432,8 +410,6 @@ function Register-ATAPParityScheduledTasks {
       $actionOutcome = 'dispatcher-only'
       if (-not $isCanonicalDispatcher) {
         $taskPath = "$taskFolderPath\$($policy.Name)"
-        $originalTaskRun = "`"$($action.Command)`" $currentArguments".Trim()
-        $taskRun = "`"$pwshPath`" $expectedArguments"
 
         if ($PSCmdlet.ShouldProcess($taskPath, 'migrate action onto the fixed dispatcher (one time)')) {
           if ($policy.LogonType -eq 'Password') {
@@ -441,11 +417,8 @@ function Register-ATAPParityScheduledTasks {
             if (-not $migrationCredential) {
               $migrationCredential = if ($TaskCredential) { $TaskCredential } else { & $resolveTaskCredential -RegisteredTaskXml $xml -ForHost $hostName }
             }
-            & $invokeTaskActionChangeWithCredential -TaskFolder $folder -TaskName $policy.Name -Command $pwshPath -Arguments $expectedArguments -Credential $migrationCredential
           }
-          else {
-            & $invokeTaskActionChange -TaskPath $taskPath -TaskRun $taskRun
-          }
+          & $invokeTaskActionChange -TaskFolder $folder -TaskName $policy.Name -Command $pwshPath -Arguments $expectedArguments -LogonType $policy.LogonType -Credential $migrationCredential
 
           # --- Postflight: prove only the action moved, and roll back if not. ---------------
           $updatedTask = $folder.GetTask($policy.Name)
@@ -463,12 +436,7 @@ function Register-ATAPParityScheduledTasks {
               'The postflight action did not match the approved executable and arguments.'
             }
             try {
-              if ($policy.LogonType -eq 'Password') {
-                & $invokeTaskActionChangeWithCredential -TaskFolder $folder -TaskName $policy.Name -Command $action.Command -Arguments $currentArguments -Credential $migrationCredential
-              }
-              else {
-                & $invokeTaskActionChange -TaskPath $taskPath -TaskRun $originalTaskRun
-              }
+              & $invokeTaskActionChange -TaskFolder $folder -TaskName $policy.Name -Command ([string] $action.Command) -Arguments $currentArguments -LogonType $policy.LogonType -Credential $migrationCredential
             }
             catch {
               throw "$failure Automatic action rollback ALSO FAILED: $($_.Exception.Message). Restore '$backupPath' manually."

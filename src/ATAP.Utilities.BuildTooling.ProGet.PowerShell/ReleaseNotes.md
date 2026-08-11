@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.1.17
+
+- Replaced `schtasks /Change` with Task Scheduler COM for the one-time dispatcher migration.
+  `schtasks` prompts for the run-as password **even on an S4U task**, which has no password:
+  with stdin inherited it hung the broker, and with stdin closed it failed with
+  "Please enter the run as password for SvcParityAudit:". COM updates only the Exec action,
+  using a null password with `TASK_LOGON_S4U` for `utat01` and the re-supplied credential with
+  `TASK_LOGON_PASSWORD` for `utat022`.
+- There is now exactly one task-mutation path, so the S4U and Password cases cannot drift apart.
+- COM failures report the HRESULT alongside the message.
+
 ## 0.1.16
 
 - Moved parity version selection out of the scheduled task definition and into a fixed,

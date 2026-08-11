@@ -102,6 +102,9 @@ Describe 'Elevation broker artifacts' {
 
     $arguments | Should -Match ([regex]::Escape("scripts\$scriptName"))
     $installerText | Should -Not -Match [regex]::Escape('scripts\\$($policy.Script)')
+    $installerText | Should -Match '\$dispatcherDirectory = Join-Path \$brokerModuleRoot ''dispatchers'''
+    $installerText | Should -Match 'Dispatcher root.*writable by an untrusted identity'
+    $installerText | Should -Match ([regex]::Escape('$taskRun.Length -gt 261'))
     $installerText | Should -Match ([regex]::Escape('schtasks.exe /Change /TN $taskPath /TR $taskRun 2>&1'))
   }
 

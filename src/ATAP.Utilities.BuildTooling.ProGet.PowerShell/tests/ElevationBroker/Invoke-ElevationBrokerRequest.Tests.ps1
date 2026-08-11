@@ -86,7 +86,7 @@ Describe 'Elevation broker artifacts' {
     $entry.commandType | Should -Be 'module'
     $entry.moduleName | Should -Be 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
     $entry.commandName | Should -Be 'Register-ATAPParityScheduledTasks'
-    $entry.minimumModuleVersion | Should -Be '0.1.17'
+    $entry.minimumModuleVersion | Should -Be '0.1.18'
     @($entry.allowedParameters).Count | Should -Be 1
     $entry.allowedParameters[0].name | Should -Be 'ModuleVersion'
     $entry.allowedParameters[0].pattern | Should -Be '^\d+\.\d+\.\d+(\.\d+)?$'
@@ -174,11 +174,14 @@ Describe 'Elevation broker artifacts' {
 
     It 'binds each host to its approved logon type and run level' {
       $text = Get-Content -LiteralPath $script:InstallerPath -Raw
-      # UTAT01 stays S4U/Limited and non-administrative; UTAT022 keeps Password/Highest for peer SMB.
-      $text | Should -Match "LogonType\s+=\s+'S4U'"
-      $text | Should -Match "RunLevel\s+=\s+'Limited'"
+      # Both hosts are Password logon since 2026-08-11: S4U registration is refused outright on
+      # utat01. Run level is the discriminator -- utat01 stays Limited and non-administrative;
+      # only utat022 runs Highest, for its compare task's peer SMB read.
       $text | Should -Match "LogonType\s+=\s+'Password'"
+      $text | Should -Match "RunLevel\s+=\s+'Limited'"
       $text | Should -Match "RunLevel\s+=\s+'HighestAvailable'"
+      # No policy entry may silently regress to S4U, which cannot be registered on utat01.
+      $text | Should -Not -Match "LogonType\s+=\s+'S4U'"
       # A principal mismatch must abort BEFORE any privileged mutation.
       $text | Should -Match 'policy requires'
     }
@@ -216,13 +219,21 @@ Describe 'Elevation broker artifacts' {
       $script:InstallerText | Should -Match ([regex]::Escape('$migrationCredential = $null'))
     }
 
-    It 'resolves no credential at all for an S4U task' {
-      # S4U carries no stored password, so the migration path for utat01 must not touch the vault.
+    It 'resolves a credential only on the Password branch' {
+      # The S4U code path is retained for any future non-Password task and must stay
+      # credential-free; no vault read may sit outside the Password guard.
       $script:InstallerText | Should -Match ([regex]::Escape("if (`$policy.LogonType -eq 'Password')"))
       $credentialCall = $script:InstallerText.IndexOf('$resolveTaskCredential -RegisteredTaskXml')
       $credentialCall | Should -BeGreaterThan 0
-      # The only invocation sits inside the Password branch, after that guard.
       $credentialCall | Should -BeGreaterThan $script:InstallerText.IndexOf("if (`$policy.LogonType -eq 'Password')")
+      # Exactly one vault read site.
+      ([regex]::Matches($script:InstallerText, 'Get-SecretATAP')).Count | Should -Be 1
+    }
+
+    It 'still supports an S4U update without a credential if one is ever needed' {
+      # Retained capability: TASK_LOGON_S4U with a null password. No current host policy uses it.
+      $script:InstallerText | Should -Match '\$TASK_LOGON_S4U'
+      $script:InstallerText | Should -Match ([regex]::Escape('$TASK_LOGON_S4U, $null)'))
     }
   }
 

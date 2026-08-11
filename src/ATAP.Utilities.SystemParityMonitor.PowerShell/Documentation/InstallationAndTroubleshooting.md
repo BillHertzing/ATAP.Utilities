@@ -248,6 +248,21 @@ Do **not** hand-register the parity tasks to pick up a new module version, and d
 `C:\Windows\System32\Tasks` directly — that desynchronizes Task Scheduler's own state. Use
 the constrained elevation-broker installer.
 
+### Task principals (changed 2026-08-11)
+
+| Host | Task | Logon type | Run level |
+| --- | --- | --- | --- |
+| `utat01` | `ATAP-ParityAudit` | Password | Limited |
+| `utat022` | `ATAP-ParityAudit` | Password | HighestAvailable |
+| `utat022` | `ATAP-ParityCompare` | Password | HighestAvailable |
+
+`utat01` ran S4U until 2026-08-11. S4U task registration is refused on that host for every
+caller — including `NT AUTHORITY\SYSTEM` holding `SeTcbPrivilege`, and equally for a brand-new
+S4U task in an empty folder — so an S4U task there can never be updated. It was converted to
+Password logon by operator decision to restore manageability. `utat01` keeps `Limited`: only
+`utat022` needs `HighestAvailable`, for its compare task's peer SMB read. Do not raise
+`utat01` to Highest.
+
 ### How version selection works
 
 The scheduled task definitions are **immutable and carry no version**. Each task's action is

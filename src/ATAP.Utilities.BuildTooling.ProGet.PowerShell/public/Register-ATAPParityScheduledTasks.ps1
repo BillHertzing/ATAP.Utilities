@@ -84,6 +84,11 @@ function Register-ATAPParityScheduledTasks {
     # Fixed host policy. This table is the allowlist: a task not named here cannot be touched,
     # and the principal each host is expected to keep is asserted before anything is changed.
     $policyByHost = @{
+      # utat01 ran S4U until 2026-08-11. S4U task registration is refused outright on that host
+      # -- E_ACCESSDENIED for every caller including SYSTEM holding SeTcbPrivilege, and equally
+      # for a brand-new S4U task in an empty folder -- so the task could never be updated. It was
+      # converted to Password logon by operator decision. RunLevel stays Limited: only utat022
+      # needs Highest, for its compare task's peer SMB read.
       'utat01'  = @(
         [pscustomobject]@{
           Name      = 'ATAP-ParityAudit'
@@ -93,7 +98,7 @@ function Register-ATAPParityScheduledTasks {
             '-HostName', 'utat01'
             '-PackageManagerProfilesPath', $profilesPath
           )
-          LogonType = 'S4U'
+          LogonType = 'Password'
           RunLevel  = 'Limited'
         }
       )

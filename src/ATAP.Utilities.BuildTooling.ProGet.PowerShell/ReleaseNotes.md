@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.1.18
+
+- `utat01`'s `ATAP-ParityAudit` policy is now Password logon, matching `utat022`. S4U task
+  registration is refused on that host for every caller including SYSTEM with `SeTcbPrivilege`,
+  and for a brand-new S4U task in an empty folder, so an S4U task there could never be updated.
+  Run level stays `Limited`; only `utat022` runs `HighestAvailable`, for its peer SMB read.
+- The credential-free S4U update path is retained for any future task that needs it; no current
+  host policy uses it.
+
 ## 0.1.17
 
 - Replaced `schtasks /Change` with Task Scheduler COM for the one-time dispatcher migration.

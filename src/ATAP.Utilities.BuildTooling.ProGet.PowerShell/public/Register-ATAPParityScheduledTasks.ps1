@@ -64,7 +64,7 @@ function Register-ATAPParityScheduledTasks {
         throw "Task '$($policy.Name)' does not match the approved $hostName run level."
       }
       $action = $xml.Task.Actions.Exec
-      if ($null -eq $action -or $action.Arguments -notmatch [regex]::Escape("scripts\\$($policy.Script)")) {
+      if ($null -eq $action -or $action.Arguments -notmatch ([regex]::Escape("scripts\$($policy.Script)"))) {
         throw "Task '$($policy.Name)' does not reference its approved parity script."
       }
       $backupPath = Join-Path $backupDirectory "$($policy.Name).before.xml"

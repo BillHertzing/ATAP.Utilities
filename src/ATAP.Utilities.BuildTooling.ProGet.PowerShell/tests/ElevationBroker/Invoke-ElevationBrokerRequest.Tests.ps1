@@ -92,6 +92,18 @@ Describe 'Elevation broker artifacts' {
     $entry.allowedParameters[0].pattern | Should -Be '^\d+\.\d+\.\d+(\.\d+)?$'
   }
 
+  It 'recognizes an approved parity script path containing one Windows path separator' {
+    # Regression guard for 0.1.8: PowerShell does not use backslash as a string escape,
+    # so "scripts\\$name" required two literal path separators and rejected every task.
+    $installerPath = Join-Path $script:ModuleRoot 'public\Register-ATAPParityScheduledTasks.ps1'
+    $installerText = Get-Content -LiteralPath $installerPath -Raw
+    $scriptName = 'Invoke-ParityScheduledAuditTask.ps1'
+    $arguments = "-File `"C:\Program Files\PowerShell\Modules\ATAP.Utilities.SystemParityMonitor.PowerShell\0.1.12\scripts\$scriptName`""
+
+    $arguments | Should -Match ([regex]::Escape("scripts\$scriptName"))
+    $installerText | Should -Not -Match [regex]::Escape('scripts\\$($policy.Script)')
+  }
+
   It 'never lets a request name what runs' {
     # The whole trust model: executables live only in the admin-owned config.
     $clientText = Get-Content -LiteralPath $script:ClientScript -Raw

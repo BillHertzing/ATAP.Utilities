@@ -102,6 +102,7 @@ Describe 'Elevation broker artifacts' {
 
     $arguments | Should -Match ([regex]::Escape("scripts\$scriptName"))
     $installerText | Should -Not -Match [regex]::Escape('scripts\\$($policy.Script)')
+    $installerText | Should -Match ([regex]::Escape('schtasks.exe /Change /TN $taskPath /TR $taskRun 2>&1'))
   }
 
   It 'never lets a request name what runs' {

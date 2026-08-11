@@ -77,8 +77,10 @@ function Register-ATAPParityScheduledTasks {
         # the existing Password-logon secret on UTAT022 and risks changing S4U policy.
         $taskPath = "\ATAP\$($policy.Name)"
         $taskRun = "`"$pwshPath`" $arguments"
-        & schtasks.exe /Change /TN $taskPath /TR $taskRun | Out-Null
-        if ($LASTEXITCODE -ne 0) { throw "Task Scheduler refused action update for '$taskPath' (exit $LASTEXITCODE)." }
+        $taskSchedulerOutput = @(& schtasks.exe /Change /TN $taskPath /TR $taskRun 2>&1)
+        if ($LASTEXITCODE -ne 0) {
+          throw "Task Scheduler refused action update for '$taskPath' (exit $LASTEXITCODE): $($taskSchedulerOutput -join [Environment]::NewLine)"
+        }
       }
       [pscustomobject]@{ TaskName = $policy.Name; BackupPath = $backupPath; ModuleVersion = $ModuleVersion; ExitStatus = 0; ErrorText = $null }
     }

@@ -55,13 +55,21 @@ function Register-ATAPParityScheduledTasks {
     }
 
     New-Item -ItemType Directory -Path $dispatcherDirectory -Force | Out-Null
-    $writeRights = [System.Security.AccessControl.FileSystemRights]::Write -bor
-      [System.Security.AccessControl.FileSystemRights]::Modify -bor
+    $writeRights = @(
+      [System.Security.AccessControl.FileSystemRights]::Write
+      [System.Security.AccessControl.FileSystemRights]::WriteData
+      [System.Security.AccessControl.FileSystemRights]::CreateFiles
+      [System.Security.AccessControl.FileSystemRights]::Modify
       [System.Security.AccessControl.FileSystemRights]::FullControl
+    )
     $untrustedDispatcherAccess = (Get-Acl -LiteralPath $dispatcherDirectory).Access | Where-Object {
+      $hasWriteRight = $false
+      foreach ($right in $writeRights) {
+        if ($_.FileSystemRights.HasFlag($right)) { $hasWriteRight = $true; break }
+      }
       $_.AccessControlType -eq 'Allow' -and
       $_.IdentityReference.Value -in @('BUILTIN\Users', 'Everyone', 'NT AUTHORITY\Authenticated Users', 'NT AUTHORITY\INTERACTIVE') -and
-      ($_.FileSystemRights -band $writeRights)
+      $hasWriteRight
     }
     if ($untrustedDispatcherAccess) {
       throw "Dispatcher root '$dispatcherDirectory' is writable by an untrusted identity."

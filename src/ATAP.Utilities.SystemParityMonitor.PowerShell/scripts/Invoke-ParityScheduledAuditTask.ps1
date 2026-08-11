@@ -1,4 +1,4 @@
-function Read-ParityScheduledPackageManagerProfilesConfiguration {
+function Read-ParityScheduledConfiguration {
   [CmdletBinding()]
   param(
     [Parameter(Mandatory = $true)]

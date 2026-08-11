@@ -1,6 +1,6 @@
 # Release notes
 
-## 0.1.15
+## 0.1.16
 
 - Moved parity version selection out of the scheduled task definition and into a fixed,
   version-independent dispatcher under `C:\Program Files\ATAP\ParityDispatchers`. Repointing a

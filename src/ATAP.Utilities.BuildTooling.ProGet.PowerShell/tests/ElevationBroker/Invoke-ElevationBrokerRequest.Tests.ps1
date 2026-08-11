@@ -86,7 +86,7 @@ Describe 'Elevation broker artifacts' {
     $entry.commandType | Should -Be 'module'
     $entry.moduleName | Should -Be 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
     $entry.commandName | Should -Be 'Register-ATAPParityScheduledTasks'
-    $entry.minimumModuleVersion | Should -Be '0.1.15'
+    $entry.minimumModuleVersion | Should -Be '0.1.16'
     @($entry.allowedParameters).Count | Should -Be 1
     $entry.allowedParameters[0].name | Should -Be 'ModuleVersion'
     $entry.allowedParameters[0].pattern | Should -Be '^\d+\.\d+\.\d+(\.\d+)?$'
